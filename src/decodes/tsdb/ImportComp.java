@@ -1,0 +1,453 @@
+/*
+*  $Id$
+*  
+*  Open Source Software
+*  
+*  $Log$
+*  Revision 1.22  2013/03/21 18:27:39  mmaloney
+*  DbKey Implementation
+*
+*/
+package decodes.tsdb;
+
+import java.util.Iterator;
+import java.util.ArrayList;
+
+import opendcs.dai.AlgorithmDAI;
+import opendcs.dai.ComputationDAI;
+import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.SiteDAI;
+import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.AlgorithmDAO;
+
+import ilex.cmdline.*;
+import ilex.util.Logger;
+
+import decodes.db.Constants;
+import decodes.db.DataType;
+import decodes.db.SiteName;
+import decodes.util.CmdLineArgs;
+import decodes.sql.DbKey;
+import decodes.tsdb.xml.*;
+
+/**
+This is the Import program to read an xml file of comp meta data and 
+import it into the TSDB.
+*/
+public class ImportComp
+	extends TsdbAppTemplate
+{
+	private StringToken xmlFileArgs;
+	private BooleanToken createTimeSeries;
+	private SiteDAI siteDAO = null;
+
+	//=======================================================================
+	/**
+	 * Constructor called from main method after parsing arguments.
+	 */
+	public ImportComp()
+	{
+		super("import.log");
+		setSilent(true);
+	}
+
+	public void addCustomArgs(CmdLineArgs cmdLineArgs)
+	{
+		createTimeSeries = new BooleanToken("C", "create parms as needed",
+			"", TokenOptions.optSwitch, false);
+		cmdLineArgs.addToken(createTimeSeries);
+
+		xmlFileArgs = new StringToken("", "xml-file",
+			"", TokenOptions.optArgument | TokenOptions.optMultiple|
+			TokenOptions.optRequired, ""); 
+		cmdLineArgs.addToken(xmlFileArgs);
+	}
+
+	/**
+	 * The run method.
+	 */
+	public void runApp( )
+	{
+		siteDAO = theDb.makeSiteDAO();
+		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
+		AlgorithmDAI algorithmDao = theDb.makeAlgorithmDAO();
+		ComputationDAI computationDAO = theDb.makeComputationDAO();
+
+		try
+		{
+			CompXio cx = new CompXio("ImportComp", theDb);
+			for(int i=0; i<xmlFileArgs.NumberOfValues(); i++)
+			{
+				String fn = xmlFileArgs.getValue(i);
+				ArrayList<CompMetaData> metadata;
+				try
+				{
+					metadata = cx.readFile(fn);
+				}
+				catch(DbXmlException ex)
+				{
+					System.err.println("Could not parse '" + fn + "': " + ex);
+					continue;
+				}
+	
+				//Write the TS groups from the metadata into the tmpTsGrpsList
+				ArrayList<TsGroup> tmpTsGrpsList = new ArrayList<TsGroup>();
+				for(CompMetaData mdobj: metadata) {
+					if (mdobj instanceof TsGroup)
+						tmpTsGrpsList.add((TsGroup)mdobj);
+				}				
+	
+				//Reorder the tmpTsGrpsList and
+				//put all subgroups of a TS group in front of it
+				ArrayList<TsGroup> tsGrpsList = sortTsGroupList(tmpTsGrpsList);
+	
+				//Write the TS groups into the DB
+				if (tsGrpsList != null)
+					for (TsGroup g : tsGrpsList)
+					{
+						Logger.instance().info("Importing group '" + g.getGroupName() + "'");
+						// Lookup the time series unique string
+						lookupObject(g, LookupObjectType.TsUniqStr);
+		
+						// Lookup the site ID
+						lookupObject(g, LookupObjectType.SiteId);
+		
+						// Lookup the subgroup ID
+						lookupObject(g, LookupObjectType.InclSubgrp);
+						lookupObject(g, LookupObjectType.ExclSubgrp);
+						lookupObject(g, LookupObjectType.IntsSubgrp);
+		
+						// Write each TS group into the DB
+						try
+						{
+							TsGroup existingGrp = theDb.getTsGroupByName(g
+								.getGroupName());
+							if (existingGrp != null)
+								g.setGroupId(existingGrp.getGroupId());
+		
+							theDb.writeTsGroup(g);
+						}
+						catch (DbIoException E)
+						{
+							System.err.println("Could not import " + g.getObjectType()
+									+ " " + g.getObjectName() + ": " + E);
+						}
+					}
+				
+				//Import the app infos, the computations, and the algorithms
+				for(CompMetaData mdobj : metadata)
+				{
+					try
+					{
+						if (mdobj instanceof CompAppInfo)
+						{
+							CompAppInfo cai = (CompAppInfo)mdobj;
+							Logger.instance().info("Importing process '" + cai.getAppName() + "'");
+							loadingAppDao.writeComputationApp((CompAppInfo)mdobj);
+						}
+						else if (mdobj instanceof DbComputation)
+						{
+							DbComputation comp = (DbComputation)mdobj;
+							Logger.instance().info("Importing computation '" + comp.getName() + "'");
+							for(Iterator<DbCompParm> dcpi = comp.getParms();
+								dcpi.hasNext(); )
+							{
+								DbCompParm parm = dcpi.next();
+								try 
+								{
+									// Lookup the Site
+									DbKey siteId = Constants.undefinedId;
+									for(SiteName sn : parm.getSiteNames())
+										if ((siteId = siteDAO.lookupSiteID(sn)) != Constants.undefinedId)
+											break;
+									if (siteId == Constants.undefinedId)
+									{
+										Logger.instance().debug1("Parm "
+											+ parm.getRoleName() 
+											+ " No site, assuming dynamic.");
+										continue;
+									}
+									parm.setSiteId(siteId);
+	
+									// Lookup the Data Type
+									DataType dt = parm.getDataType();
+									String dtCode = dt != null ? dt.getCode() : "";
+									parm.setDataType(dt);
+	
+									// Lookup the Time Series
+									try 
+									{
+										theDb.setParmSDI(parm, siteId, dtCode);
+									}
+									catch(NoSuchObjectException ex)
+									{
+										Logger.instance().info("Time Series for parm '"
+											+ parm.getRoleName() + "' doesn't exiist: " + ex);
+										// get preferred name if one is provided.
+										String nm = comp.getProperty(
+											parm.getRoleName() + "_tsname");
+										if (createTimeSeries.getValue())
+										{
+											TimeSeriesIdentifier tsid =
+												theDb.transformTsidByCompParm(null, parm, 
+													true, true, nm);
+										}
+										else
+											throw ex;
+									}
+								}
+								catch(NoSuchObjectException ex)
+								{
+									String msg = "Computation '"
+										+ comp.getName() + "' problem resolving "
+										+ "parameter " + parm.getRoleName()
+										+ ": " + ex;
+									Logger.instance().warning(msg);
+									System.out.println(msg);
+									ex.printStackTrace();
+								}
+								catch(BadTimeSeriesException ex)
+								{
+									String msg = "Computation '"
+										+ comp.getName() + "' problem resolving "
+										+ "parameter " + parm.getRoleName()
+										+ ": " + ex;
+									Logger.instance().warning(msg);
+									System.out.println(msg);
+									ex.printStackTrace();
+								}
+							}
+							//Get the TS group ID
+							String tsGrpName = comp.getGroupName();
+							if (tsGrpName != null)
+							  comp.setGroupId(theDb.getTsGroupByName(tsGrpName).getGroupId()); 
+							
+							computationDAO.writeComputation(comp);
+						}
+						else if (mdobj instanceof DbCompAlgorithm)
+						{
+							algorithmDao.writeAlgorithm((DbCompAlgorithm)mdobj);
+						}
+					}
+					catch(DbIoException ex)
+					{
+						String msg = "Could not import "
+							+ mdobj.getObjectType() + " " + mdobj.getObjectName()
+							+ ": " + ex;
+						Logger.instance().warning(msg);
+						ex.printStackTrace(Logger.instance().getLogOutput());
+					}
+				}
+			}
+		}
+		finally
+		{
+			siteDAO.close();
+			algorithmDao.close();
+			loadingAppDao.close();
+			computationDAO.close();
+		}
+	}
+
+	/**
+	 * Sort the TS Group List with searching subgroups for each TS group and 
+	 * putting them in the front of each referring TS group.
+	 * 
+	 * @param tsGrpsList: a TsGroup array list for sorting
+	 * @return ArrayList<TsGroup>: sorted TsGroup array list 
+	 */
+	protected ArrayList<TsGroup> sortTsGroupList(ArrayList<TsGroup> theTsGrpList)
+	{
+		if ((theTsGrpList == null) || (theTsGrpList.size() == 0))
+			return null;
+		
+		ArrayList<TsGroup> retTsGrpList = new ArrayList<TsGroup>();
+		ArrayList<TsGroup> searchTsGrpList = new ArrayList<TsGroup>();
+		
+		for (TsGroup tsGrp: theTsGrpList) {
+			searchTsGrpList.clear();
+			addTheTSGroup(tsGrp, theTsGrpList, retTsGrpList, searchTsGrpList);
+		}
+		
+		theTsGrpList.clear();
+		searchTsGrpList.clear();
+		return retTsGrpList;
+	}
+
+	 /**
+	  * Add a TS group object with its subgroups into retTsGrpList
+	  * 
+	  * @param tsGrp
+	  * @param theTsGrpList
+	  * @param retTsGrpList
+	  * @param searchTsGrpList
+	  */
+	private void addTheTSGroup(TsGroup tsGrp, ArrayList<TsGroup> theTsGrpList,
+			ArrayList<TsGroup> retTsGrpList, ArrayList<TsGroup> searchTsGrpList)
+	{
+		//tsGrp is null
+		if (tsGrp == null)
+			return;
+		
+		//tsGrp is found in retTsGrpList, so no need to add this object.
+		if (findTsGroup(tsGrp, retTsGrpList) != null)
+			return;
+
+		TsGroup theFoundTsGrp = findTsGroup(tsGrp, theTsGrpList);
+		//tsGrp is not found in theTsGrpList
+		if (theFoundTsGrp == null)
+			return;
+		
+		//If tsGrp appears in the searchTsGrpList, stop recursion
+		if (searchTsGrpList != null) {
+			if (findTsGroup(theFoundTsGrp, searchTsGrpList) != null)
+				return;
+			else
+				searchTsGrpList.add(theFoundTsGrp);
+		}
+		
+		//tsGrp is found in theTsGrpList, so do the following
+		//Add theFoundTsGrp with its included subgroups into retTsGrpList
+		for (TsGroup g: theFoundTsGrp.getIncludedSubGroups())
+			addTheTSGroup(g, theTsGrpList, retTsGrpList, searchTsGrpList);
+
+		//Add theFoundTsGrp with its excluded subgroups into retTsGrpList
+		for (TsGroup g: theFoundTsGrp.getExcludedSubGroups())
+			addTheTSGroup(g, theTsGrpList, retTsGrpList, searchTsGrpList);
+
+		//Add theFoundTsGrp with its excluded subgroups into retTsGrpList
+		for (TsGroup g: theFoundTsGrp.getIntersectedGroups())
+			addTheTSGroup(g, theTsGrpList, retTsGrpList, searchTsGrpList);
+		
+		retTsGrpList.add(theFoundTsGrp);
+	}
+
+	private TsGroup findTsGroup(TsGroup tsGrp, ArrayList<TsGroup> theTsGrpList)
+	{
+		if ((tsGrp == null) || (theTsGrpList == null) || (theTsGrpList.size() == 0))
+			return null;
+		
+		for (TsGroup g: theTsGrpList)
+			if (g.getGroupName().equals(tsGrp.getGroupName()))
+				return g;
+
+		return null;
+	}
+
+	private enum LookupObjectType {TsUniqStr, SiteId, InclSubgrp, ExclSubgrp, IntsSubgrp };
+	
+	/**
+	 * Lookup if a certain object exists in the DB. If not, ignore it within the imported TS group 
+	 * 
+	 * @param tsGrp: TS group needs to be expanded for certain object 
+	 * @param lookupObjType: a certain object type, TsUniqStr  - time series unique string;
+	 *                                              SiteId     - site ID;
+	 *                                              InclSubgrp - included subgroup
+	 *                                              ExclSubgrp - excluded subgroup
+	 */
+	protected void lookupObject(TsGroup tsGrp, LookupObjectType lookupObjType)
+	{
+		ArrayList<Object> objList = new ArrayList<Object>();
+		switch (lookupObjType) {
+			case TsUniqStr: {
+				for(String strObj: tsGrp.getTsMemberIDList())
+					objList.add(strObj);
+				break;
+			}
+			case SiteId: {
+				for(String strObj: tsGrp.getSiteNameList())
+					objList.add(strObj);
+				break;
+			}
+			case InclSubgrp: {
+				for(TsGroup subGrp: tsGrp.getIncludedSubGroups())
+					objList.add(subGrp);
+				break;
+			}
+			case ExclSubgrp: {
+				for(TsGroup subGrp: tsGrp.getExcludedSubGroups())
+					objList.add(subGrp);
+				break;
+			}
+			case IntsSubgrp: {
+				for(TsGroup subGrp: tsGrp.getIntersectedGroups())
+					objList.add(subGrp);
+				break;
+			}
+		}
+		
+		String msgStr;
+		for(Object obj: objList) 
+		{
+			TimeSeriesDAI timeSeriesDAO = null;
+			try 
+			{
+				switch (lookupObjType) 
+				{
+					case TsUniqStr: 
+					{
+						timeSeriesDAO = theDb.makeTimeSeriesDAO();
+						msgStr = " time series unique string does not exist.";
+						TimeSeriesIdentifier objId = 
+							timeSeriesDAO.getTimeSeriesIdentifier((String)obj);
+						if (objId != null)
+							tsGrp.addTsMember(objId);
+						else
+							System.out.println((String)obj + msgStr);
+						break;
+					}
+					case SiteId: {
+						msgStr = "  site does not exist.";
+						DbKey objId = siteDAO.lookupSiteID((String)obj);
+						if (objId != Constants.undefinedId)
+							tsGrp.addSiteId(objId);
+						else
+							System.out.println((String)obj + msgStr);
+					  break;
+					}
+					case InclSubgrp: {
+						msgStr = " subgroup does not exist.";
+						TsGroup objId = theDb.getTsGroupByName(((TsGroup)obj).getGroupName());
+						if (objId != null)
+							((TsGroup)obj).setGroupId(objId.getGroupId());
+						else
+							System.out.println(((TsGroup)obj).getGroupName() + msgStr);
+						break;
+					}
+					case ExclSubgrp: {
+						msgStr = " subgroup does not exist.";
+						TsGroup objId = theDb.getTsGroupByName(((TsGroup)obj).getGroupName());
+						if (objId != null)
+							((TsGroup)obj).setGroupId(objId.getGroupId());
+						else
+							System.out.println(((TsGroup)obj).getGroupName() + msgStr);
+						break;
+					}
+				}
+			}
+			catch (Exception E) 
+			{
+				System.out.println(E.toString());
+			}
+			finally
+			{
+				if (timeSeriesDAO != null)
+					timeSeriesDAO.close();
+			}
+		}
+	}
+	
+	/**
+	 * The main method.
+	 * @param args command line arguments.
+	 */
+	public static void main( String[] args )
+		throws Exception
+	{
+		// Call run method directly. For multi threaded executive, we would
+		// create a thread and start it.
+		ImportComp app = new ImportComp();
+		app.execute(args);
+	}
+}
+

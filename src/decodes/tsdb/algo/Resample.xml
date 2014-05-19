@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="Resample">
+    <Comment>
+      Resample an input to an output with a different interval.
+Output must not
+      be irregular.
+Input may be irregular or any interval greater than or less
+      than the output.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.Resample</ExecClass>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

@@ -1,0 +1,610 @@
+/*
+ *  $Id$
+ */
+package decodes.dbeditor;
+
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.table.*;
+import java.awt.event.*;
+import java.util.Date;
+import java.util.ResourceBundle;
+import java.util.Vector;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Collections;
+
+import ilex.util.TextUtil;
+import decodes.db.*;
+import decodes.gui.*;
+import decodes.util.DecodesSettings;
+
+/**
+ * This panel edits a single network list. Opened from the NetlistListPanel.
+ */
+@SuppressWarnings("serial")
+public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
+{
+	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
+	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
+
+	EntityOpsPanel entityOpsPanel = new EntityOpsPanel(this);
+	JTextField nameField = new JTextField();
+	EnumComboBox siteNameTypeCombo = new EnumComboBox(Constants.enum_SiteName);
+	EnumComboBox mediumTypeCombo = new EnumComboBox(Constants.enum_TMType);
+
+	DbEditorFrame parent;
+	NetworkList theObject, origObject;
+	NetlistContentsTableModel tableModel;
+	JTable netlistContentsTable;
+	JTextField lastModifiedField = new JTextField();
+	boolean goingThroughInit = true;
+
+	/** No-args constructor for JBuilder. */
+	public NetlistEditPanel()
+	{
+		try
+		{
+			jbInit();
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		TableColumnAdjuster.adjustColumnWidths(netlistContentsTable, new int[]
+		{ 20, 20, 60 });
+	}
+
+	/**
+	 * Construct new panel to edit specified object.
+	 * 
+	 * @param ob
+	 *            the object to edit in this panel.
+	 */
+	public NetlistEditPanel(NetworkList ob)
+	{
+		try
+		{
+			origObject = ob;
+			theObject = origObject.copy();
+			setTopObject(origObject);
+			if (theObject.transportMediumType == null)
+				theObject.transportMediumType = Constants.medium_Goes;
+			if (theObject.siteNameTypePref == null)
+				theObject.siteNameTypePref = Constants.snt_NWSHB5;
+			tableModel = new NetlistContentsTableModel(theObject);
+			netlistContentsTable = new SortingListTable(tableModel, new int[]
+			{ 15, 25, 60 });
+			jbInit();
+			fillFields();
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+		}
+	}
+
+	/**
+	 * This method only called in dbedit. Associates this panel with enclosing
+	 * frame.
+	 * 
+	 * @param parent
+	 *            Enclosing frame
+	 */
+	void setParent(DbEditorFrame parent)
+	{
+		this.parent = parent;
+	}
+
+	/** Fills the GUI controls with values from the object. */
+	private void fillFields()
+	{
+		nameField.setText(theObject.name);
+		siteNameTypeCombo.setSelection(theObject.siteNameTypePref);
+		mediumTypeCombo.setSelection(theObject.transportMediumType);
+		lastModifiedField.setText(theObject.lastModifyTime == null ? ""
+			: Constants.defaultDateFormat.format(theObject.lastModifyTime));
+		goingThroughInit = false;
+	}
+
+	/**
+	 * Gets the data from the fields & puts it back into the object.
+	 */
+	private void getDataFromFields()
+	{
+		tableModel.putTableDataInObject(theObject);
+		theObject.name = nameField.getText();
+		theObject.siteNameTypePref = siteNameTypeCombo.getSelection();
+		theObject.transportMediumType = mediumTypeCombo.getSelection();
+	}
+
+	/** Initializes GUI components */
+	private void jbInit() throws Exception
+	{
+		siteNameTypeCombo.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				modifyNetworkListEntries();
+			}
+		});
+		this.setLayout(new BorderLayout());
+		JPanel mainPanel = new JPanel(new BorderLayout());
+		JPanel northParamPanel = new JPanel(new GridBagLayout());
+		nameField.setText("cosprings.nl");
+		JPanel centerTablePanel = new JPanel(new BorderLayout());
+		JButton removeButton = new JButton(dbeditLabels.getString("NetlistEditPanel.RemoveButton"));
+		removeButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				removePressed();
+			}
+		});
+		JButton addButton = new JButton(dbeditLabels.getString("NetlistEditPanel.AddButton"));
+		addButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				addPressed();
+			}
+		});
+		JPanel eastButtonPanel = new JPanel(new GridBagLayout());
+		lastModifiedField.setEnabled(true);
+		lastModifiedField.setEditable(false);
+		this.add(entityOpsPanel, BorderLayout.SOUTH);
+		this.add(mainPanel, BorderLayout.CENTER);
+		mainPanel.add(northParamPanel, BorderLayout.NORTH);
+		
+		northParamPanel.add(new JLabel(dbeditLabels.getString("NetlistEditPanel.NetListName")),
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				new Insets(4, 10, 2, 0), 0, 0));
+		nameField.setEditable(false);
+		northParamPanel.add(nameField, 
+			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				new Insets(2, 2, 2, 15), 30, 0));
+		northParamPanel.add(new JLabel(dbeditLabels.getString("NetlistEditPanel.MediumType")),
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				new Insets(2, 10, 2, 0), 0, 0));
+		northParamPanel.add(mediumTypeCombo, 
+			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(2, 2, 2, 15), 30, 0));
+		northParamPanel.add(new JLabel(dbeditLabels.getString("NetlistEditPanel.NameType")),
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				new Insets(2, 10, 2, 0), 0, 0));
+		northParamPanel.add(siteNameTypeCombo, 
+			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(2, 2, 2, 15), 30, 0));
+		northParamPanel.add(new JLabel(dbeditLabels.getString("NetlistEditPanel.LastModified")),
+			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				new Insets(2, 10, 10, 0), 0, 0));
+		northParamPanel.add(lastModifiedField, 
+			new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				new Insets(2, 2, 10, 100), 30, 0));
+		mainPanel.add(centerTablePanel, BorderLayout.CENTER);
+		centerTablePanel.add(eastButtonPanel, BorderLayout.EAST);
+		eastButtonPanel
+			.add(addButton, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(4, 8, 4, 8), 0, 0));
+		eastButtonPanel.add(removeButton, new GridBagConstraints(0, 2, 1, 1, 0.0, 1.0,
+			GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, new Insets(4, 8, 4, 8), 0, 0));
+		JScrollPane tableScrollPane = new JScrollPane();
+		centerTablePanel.add(tableScrollPane, BorderLayout.CENTER);
+		tableScrollPane.getViewport().add(netlistContentsTable, null);
+	}
+
+	private void modifyNetworkListEntries()
+	{
+		if (goingThroughInit)
+			return;
+		// Get new Prefered Site Name Type
+		String siteNameTypePref = siteNameTypeCombo.getSelection();
+		// Read new Site Names
+		try
+		{
+			for (Iterator<NetworkListEntry> it = theObject.iterator(); it.hasNext();)
+			{
+				NetworkListEntry nle = it.next();
+				Platform p = Database.getDb().platformList.getPlatform(
+					theObject.transportMediumType, nle.transportId);
+				if (p != null)
+				{
+					// Find the right site name for this network list site
+					// name type preference
+					Site pSite = p.getSite();
+					if (pSite != null)
+					{// FIRST - see if it can find a site name for this type
+						SiteName sn = pSite.getName(siteNameTypePref);
+						if (sn != null)
+							nle.platformName = sn.getNameValue();
+						else
+						{
+							// nle.platformName = "";
+							// **In this case it cannot find any site name
+							// for the nl.siteNameTypePref so use the default or
+							// what ever site name it has.
+							// this is like it was before
+							nle.platformName = p.getSiteName(false);
+						}
+					}
+					else
+					{
+						nle.platformName = p.getSiteName(false);
+					}
+				}
+			}
+			// Update the table
+			tableModel.refresh(theObject);
+		}
+		catch (DatabaseException e1)
+		{
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+
+	/**
+	 * Called when the 'Add' button is pressed. Starts a new modal
+	 * PlatformSelectDialog.
+	 */
+	void addPressed()
+	{
+		PlatformSelectDialog dlg = new PlatformSelectDialog(mediumTypeCombo.getSelection());
+		dlg.setMultipleSelection(true);
+		launchDialog(dlg);
+		Platform toAdd[] = dlg.getSelectedPlatforms();
+		for (int i = 0; i < toAdd.length; i++)
+		{
+			Platform p = toAdd[i];
+
+			TransportMedium tm = p.getTransportMedium(mediumTypeCombo.getSelection());
+
+			if (tm == null)
+				tm = p.getTransportMedium(Constants.medium_Goes);
+			if (tm == null)
+				tm = p.getTransportMedium(Constants.medium_GoesST);
+			if (tm == null)
+				tm = p.getTransportMedium(Constants.medium_GoesRD);
+			if (tm == null)
+			{
+				System.out.println(dbeditLabels.getString("NetlistEditPanel.GOESTransport") + " "
+					+ toAdd[i].makeFileName() + " -- " + mediumTypeCombo.getSelection());
+				continue;
+			}
+
+			NetworkListEntry nle = new NetworkListEntry(theObject, tm.getMediumId());
+			Site s = p.getSite();
+			String sn = null;
+			if (s != null)
+				sn = s.getPreferredName().getNameValue();
+			if (sn != null)
+				nle.platformName = sn;
+			else
+				nle.platformName = p.makeFileName();
+			// Get a description from either platform or site record.
+			String desc = s.getDescription();
+			if (desc == null)
+			{
+				desc = p.description;
+				// netlist entry description is only the 1st line of platform
+				// desc.
+				if (desc != null)
+				{
+					int idx = desc.indexOf('\r');
+					if (idx == -1)
+						idx = desc.indexOf('\n');
+					if (idx != -1)
+						desc = desc.substring(0, idx);
+				}
+			}
+			nle.description = desc;
+			tableModel.add(nle);
+		}
+	}
+
+	/**
+	 * Called when the 'Remove' button is pressed. Selected platform(s) are
+	 * removed from the list.
+	 */
+	void removePressed()
+	{
+		int nrows = netlistContentsTable.getSelectedRowCount();
+		if (nrows == 0)
+		{
+			TopFrame.instance().showError(dbeditLabels.getString("NetlistEditPanel.RemoveError"));
+			return;
+		}
+
+		int rows[] = netlistContentsTable.getSelectedRows();
+		NetworkListEntry obs[] = new NetworkListEntry[nrows];
+		for (int i = 0; i < nrows; i++)
+			obs[i] = tableModel.getObjectAt(rows[i]);
+
+		String msg = nrows == 1 ? dbeditLabels.getString("NetlistEditPanel.DeleteSingular")
+			: dbeditLabels.getString("NetlistEditPanel.DeletePlural");
+		int r = JOptionPane.showConfirmDialog(this, msg);
+		if (r == JOptionPane.OK_OPTION)
+			for (int i = 0; i < nrows; i++)
+				tableModel.deleteObject(obs[i]);
+	}
+
+	/**
+	 * From ChangeTracker interface.
+	 * 
+	 * @return true if changes have been made to this screen since the last time
+	 *         it was saved.
+	 */
+	public boolean hasChanged()
+	{
+		getDataFromFields();
+		return !theObject.equals(origObject);
+	}
+
+	/**
+	 * From ChangeTracker interface, save the changes back to the database &
+	 * reset the hasChanged flag.
+	 * 
+	 * @return true if object was successfully saved.
+	 */
+	public boolean saveChanges()
+	{
+		getDataFromFields();
+		try
+		{
+			theObject.write();
+		}
+		catch (DatabaseException e)
+		{
+			TopFrame.instance().showError(
+				dbeditLabels.getString("NetlistEditPanel.SaveError") + " " + e);
+			return false;
+		}
+
+		// Replace the old datasource in the list.
+		// This also updates the SourceListPanel.
+		Database.getDb().networkListList.remove(origObject);
+		Database.getDb().networkListList.add(theObject);
+		parent.getNetlistListPanel().resort();
+
+		// Make a new copy in case user wants to keep editing.
+		origObject = theObject;
+		theObject = origObject.copy();
+		setTopObject(origObject);
+		lastModifiedField.setText(Constants.defaultDateFormat.format(new Date()));
+		return true;
+	}
+
+	/** @see EntityOpsController */
+	public String getEntityName()
+	{
+		return dbeditLabels.getString("NetlistEditPanel.NetlistText");
+	}
+
+	public void commitEntity()
+	{
+		saveChanges();
+	}
+
+	/** @see EntityOpsController */
+	public void closeEntity()
+	{
+		if (hasChanged())
+		{
+			int r = JOptionPane.showConfirmDialog(this,
+				dbeditLabels.getString("NetlistEditPanel.SavePrompt"));
+			if (r == JOptionPane.CANCEL_OPTION)
+				return;
+			else if (r == JOptionPane.YES_OPTION)
+			{
+				if (!saveChanges())
+					return;
+			}
+			else if (r == JOptionPane.NO_OPTION)
+				;
+		}
+		DbEditorTabbedPane tp = parent.getNetworkListTabbedPane();
+		tp.remove(this);
+	}
+
+	/**
+	 * Called from File - CloseAll to close this tab, abandoning any changes.
+	 */
+	public void forceClose()
+	{
+		DbEditorTabbedPane tp = parent.getNetworkListTabbedPane();
+		tp.remove(this);
+	}
+
+	/** Does nothing. */
+	public void help()
+	{
+	}
+}
+
+class NetlistContentsTableModel extends AbstractTableModel implements SortingListTableModel
+{
+	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
+	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
+
+	static String columnNames[] =
+	{ dbeditLabels.getString("NetlistEditPanel.TableColumn1"),
+		dbeditLabels.getString("NetlistEditPanel.TableColumn2"),
+		dbeditLabels.getString("NetlistEditPanel.TableColumn3") };
+	private int lastSortColumn = -1;
+	private Vector<NetworkListEntry> theList;
+
+	public NetlistContentsTableModel(NetworkList ob)
+	{
+		super();
+		theList = new Vector<NetworkListEntry>();
+		for (Iterator it = ob.iterator(); it.hasNext();)
+		{
+			NetworkListEntry nle = (NetworkListEntry) it.next();
+			theList.add(nle);
+		}
+		refill();
+		sortByColumn(0);
+	}
+
+	void refill()
+	{
+	}
+
+	public void refresh(NetworkList ob)
+	{
+		theList.clear();
+		for (Iterator it = ob.iterator(); it.hasNext();)
+		{
+			NetworkListEntry nle = (NetworkListEntry) it.next();
+			theList.add(nle);
+		}
+		resort();
+		fireTableDataChanged();
+	}
+
+	public int getRowCount()
+	{
+		return theList.size();
+	}
+
+	public int getColumnCount()
+	{
+		return columnNames.length;
+	}
+
+	public String getColumnName(int col)
+	{
+		return columnNames[col];
+	}
+
+	public boolean isCellEditable(int r, int c)
+	{
+		return true;
+	}
+
+	NetworkListEntry getObjectAt(int r)
+	{
+		return (NetworkListEntry) getRowObject(r);
+	}
+
+	public Object getRowObject(int r)
+	{
+		if (r >= 0 && r < getRowCount())
+			return theList.elementAt(r);
+		else
+			return null;
+	}
+
+	void add(NetworkListEntry ob)
+	{
+		for (Iterator it = theList.iterator(); it.hasNext();)
+		{
+			NetworkListEntry lob = (NetworkListEntry) it.next();
+			if (ob.transportId.equals(lob.transportId))
+			{
+				it.remove();
+				break;
+			}
+		}
+		theList.add(ob);
+		fireTableDataChanged();
+	}
+
+	void deleteObject(NetworkListEntry ob)
+	{
+		theList.remove(ob);
+		fireTableDataChanged();
+	}
+
+	public Object getValueAt(int r, int c)
+	{
+		NetworkListEntry ob = getObjectAt(r);
+		if (ob == null)
+			return "";
+		else
+			return getNLEColumn(ob, c);
+	}
+
+	public static String getNLEColumn(NetworkListEntry ob, int c)
+	{
+		switch (c)
+		{
+		case 0:
+			return ob.transportId;
+		case 1:
+			return ob.platformName;
+		case 2:
+			return ob.description;
+		default:
+			return "";
+		}
+	}
+
+	public void resort()
+	{
+		if (lastSortColumn != -1)
+			sortByColumn(lastSortColumn);
+	}
+
+	public void sortByColumn(int c)
+	{
+		lastSortColumn = c;
+		Collections.sort(theList, new NLEComparator(c));
+		fireTableDataChanged();
+	}
+
+	public void putTableDataInObject(NetworkList theObject)
+	{
+		theObject.clear();
+		for (Iterator it = theList.iterator(); it.hasNext();)
+		{
+			NetworkListEntry nle = (NetworkListEntry) it.next();
+			theObject.addEntry(nle);
+		}
+	}
+
+	/*
+	 * void replace(NetworkList oldOb, NetworkList newOb) {
+	 * theList.remove(oldOb); theList.add(newOb); if (lastSortColumn != -1)
+	 * sortByColumn(lastSortColumn); else fireTableDataChanged(); }
+	 */
+}
+
+class NLEComparator implements Comparator
+{
+	int column;
+
+	public NLEComparator(int column)
+	{
+		this.column = column;
+	}
+
+	/**
+	 * Compare the eqMod names of the specified type.
+	 */
+	public int compare(Object ob1, Object ob2)
+	{
+		if (ob1 == ob2)
+			return 0;
+		NetworkListEntry ds1 = (NetworkListEntry) ob1;
+		NetworkListEntry ds2 = (NetworkListEntry) ob2;
+
+		String s1 = NetlistContentsTableModel.getNLEColumn(ds1, column);
+		String s2 = NetlistContentsTableModel.getNLEColumn(ds2, column);
+
+		return TextUtil.strCompareIgnoreCase(s1, s2);
+	}
+
+	public boolean equals(Object ob)
+	{
+		return false;
+	}
+}

@@ -1,0 +1,251 @@
+/*
+*  $Id$
+*
+*  $Source$
+*
+*  $State$
+*
+*  $Log$
+*  Revision 1.1  2008/04/04 18:21:11  cvs
+*  Added legacy code to repository
+*
+*  Revision 1.13  2002/05/10 13:08:36  mjmaloney
+*  Replaced calls to LrgsEventQueue with ilex.util.Logger.
+*  Added authenticated user methods to LrgsControllerImpl.
+*
+*  Revision 1.12  2002/02/09 21:24:49  mike
+*  Added stub methods for authenticated DDS users.
+*
+*  Revision 1.11  2000/04/05 20:44:01  mike
+*  dev
+*
+*  Revision 1.10  2000/03/28 16:36:21  mike
+*  Added getLddsUsers method.
+*
+*  Revision 1.9  2000/03/28 16:06:02  mike
+*  Created AutoStartProperties
+*
+*  Revision 1.8  2000/03/15 23:17:02  mike
+*  dev
+*
+*  Revision 1.7  2000/03/14 19:19:11  mike
+*  dev
+*
+*  Revision 1.6  2000/03/14 02:20:52  mike
+*  dev
+*
+*  Revision 1.5  2000/03/11 21:57:01  mike
+*  dev
+*
+*  Revision 1.4  2000/03/11 20:17:09  mike
+*  dev
+*
+*  Revision 1.3  2000/03/11 01:35:52  mike
+*  dev
+*
+*  Revision 1.2  2000/03/07 02:00:26  mike
+*  Defined gatekeeper and top level admin service
+*
+*  Revision 1.1  2000/03/07 01:42:32  mike
+*  Combined config, controller, and device into single IDL file.
+*
+*/
+
+module apiadmin
+{
+	typedef sequence<string> stringseq;
+
+	// Basic exception. Codes are handlied by apicommon.ExceptionCode class.
+	exception AdminException
+	{
+		short code;
+		string why;
+	};
+
+	struct ExceptionStruct
+	{
+		short code;
+		string why;
+	};
+	typedef sequence<ExceptionStruct> ExceptionStructSeq;
+
+	exception MultAdminExceptions
+	{
+		ExceptionStructSeq ex;
+	};
+
+	// low-level property service, used as base class for other services:
+	interface LrgsPropertySet
+	{
+		string getProperty(in string name)
+			raises(AdminException);
+
+		void setProperty(in string name, in string value)
+			raises(AdminException);
+
+		stringseq getPropertyNames();
+
+		boolean isPropertyDefined(in string name);
+	};
+
+	typedef sequence<octet> ByteArray;
+
+	interface LrgsConfiguration
+	{
+		ByteArray getConfigFile()
+			raises(AdminException);
+
+		void putConfigFile(in ByteArray data)
+			raises(AdminException);
+
+		void activateConfig()
+			raises(AdminException);
+	};
+
+	interface LrgsController
+	{
+		// Reboot LRGS system - Equivalent of "init 6"
+		void rebootLrgs()
+			raises(AdminException);
+
+		// Start & Stop LRGS daemons
+		void doNormalStartup() 
+			raises(AdminException);
+		void startLrgs() 
+			raises(AdminException);
+		void stopLrgs()
+			raises(AdminException);
+
+		// Start & Stop LRGS event logger. No argument form uses defaults.
+		void startEventLogger()
+			raises(AdminException);
+		void startEventLoggerF(in string logfile, in long maxsize)
+			raises(AdminException);
+		void stopEventLogger()
+			raises(AdminException);
+
+		// Reload network lists. Causes the files specified in the current
+		// configuration to be reloaded.
+		void reloadNetworkLists()
+			raises(AdminException);
+
+		// Enable/Disable DOMSAT Data Reception
+		void enableDomsat()
+			raises(AdminException);
+		void disableDomsat()
+			raises(AdminException);
+
+		// Enable/Disable Lrgs Dcp Data Server (LDDS)
+		void enableDataSvr()
+			raises(AdminException);
+		void disableDataSvr()
+			raises(AdminException);
+
+		// Enable/Disble LRGS Network Backup Client (lnbc)
+		void enableNetBackClient()
+			raises(AdminException);
+		void disableNetBackClient()
+			raises(AdminException);
+
+		// Enable/Disble LRGS Network Backup Server (lnbs)
+		void enableNetBackServer()
+			raises(AdminException);
+		void disableNetBackServer()
+			raises(AdminException);
+
+		// Send an LRGS Event
+		void sendLrgsEvent(in short priority, in short eventnum, 
+			in string text)
+			raises(AdminException);
+
+		// Can only clean resources if LRGS is not running. Otherwise,
+		// INIT_ERROR is thrown.
+		void cleanLrgsResources()
+			raises(AdminException);
+
+		// LDDS User Account maintenance methods:
+		boolean isLddsUser(in string username)
+			raises(AdminException);
+		void rmLddsUser(in string username)
+			raises(AdminException);
+		void addLddsUser(in string username)
+			raises(AdminException);
+		stringseq getLddsUsers()
+			raises(AdminException);
+		boolean isLddsPasswordRequired()
+			raises(AdminException);
+		void addSecureLddsUser(in string username, in ByteArray pw)
+			raises(AdminException);
+
+		// Auto Start (AS) Configuration Control:
+		boolean getASDoNormalStart() raises(AdminException);
+		void setASDoNormalStart(in boolean yn) raises(AdminException);
+
+		boolean getASstartEventLogger() raises(AdminException);
+		void setASstartEventLogger(in boolean yn) raises(AdminException);
+
+		string getASEventLogFile() raises(AdminException);
+		void setASEventLogFile(in string f) raises(AdminException);
+
+		long getASEventLogSize() raises(AdminException);
+		void setASEventLogSize(in long sz) raises(AdminException);
+
+		boolean getASstartDomsat() raises(AdminException);
+		void setASstartDomsat(in boolean yn) raises(AdminException);
+
+		boolean getASstartLDDS() raises(AdminException);
+		void setASstartLDDS(in boolean yn) raises(AdminException);
+
+		boolean getASstartLNBS() raises(AdminException);
+		void setASstartLNBS(in boolean yn) raises(AdminException);
+
+		boolean getASstartLNBC() raises(AdminException);
+		void setASstartLNBC(in boolean yn) raises(AdminException);
+	};
+
+	interface LrgsDevice : LrgsPropertySet
+	{
+		void saveProperties(in string filename)
+			raises(AdminException);
+
+		void loadProperties(in string filename)
+			raises(AdminException);
+
+		void initialize()
+			raises(AdminException);
+
+		void reset()
+			raises(AdminException);
+
+		// Raw data read/write
+		typedef sequence<octet> OctetSeq;
+
+		OctetSeq read(in long position, in long size)
+			raises(AdminException);
+
+		void write(in OctetSeq bytes, in long position, in long size)
+			raises(AdminException);
+	};
+
+	interface LrgsAdminService
+	{
+		LrgsController getLrgsController()
+			raises(AdminException);
+
+		LrgsConfiguration getLrgsConfiguration()
+			raises(AdminException);
+
+		LrgsDevice getLrgsDevice()
+			raises(AdminException);
+
+		long getTime();
+	};
+
+	interface LrgsGateKeeper
+	{
+		LrgsAdminService requestAdmin(in string username, in long timet, 
+			in string authenticator)
+			raises(AdminException);
+	};
+};
+

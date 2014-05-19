@@ -1,0 +1,181 @@
+/*
+*  $Id$
+*
+*  $Source$
+*
+*  $State$
+*
+*  $Log$
+*  Revision 1.1  2008/04/04 18:21:11  cvs
+*  Added legacy code to repository
+*
+*  Revision 1.10  2005/06/28 17:36:59  mjmaloney
+*  Java-Only-Archive implementation.
+*
+*  Revision 1.9  2004/05/04 14:21:02  mjmaloney
+*  Added additional functions required for LRGS Status Monitor
+*
+*  Revision 1.8  2001/01/26 20:16:19  mike
+*  Added getLastRecvIndex() method.
+*
+*  Revision 1.7  2000/04/03 15:50:58  mike
+*  Added getDomainName operation
+*
+*  Revision 1.6  2000/03/26 22:20:52  mike
+*  Added methods for returning system status.
+*
+*  Revision 1.5  2000/03/11 01:36:42  mike
+*  dev
+*
+*  Revision 1.4  2000/03/07 03:07:38  mike
+*  dev
+*
+*  Revision 1.3  2000/03/05 01:05:07  mike
+*  dev
+*
+*  Revision 1.2  2000/03/03 17:01:40  mike
+*  interim
+*
+*  Revision 1.1  2000/02/17 13:47:48  mike
+*  created
+*
+*
+*/
+
+#include <lrgs/apicommon/apicommon.idl>
+
+module apistatus
+{
+
+	/*
+	* Data structures returned by the status methods:
+	*/
+
+	// A single quality measurement for a particular hour:
+	struct QualityMeasurement
+	{
+		boolean containsData;
+		long numGood;
+		long numDropped;
+		long numRecovered;
+	};
+
+	// A sequence of 24 measurements for an entire day:
+	typedef sequence<QualityMeasurement> QualityMeasurementSeq;
+
+	// Current statistics on DCP messages in storage in the circular archive:
+	struct ArchiveStatistics
+	{
+		long dirOldest;
+		long dirNext;
+		short dirWrap;
+		long dirSize;
+		long oldestOffset;
+		long nextOffset;
+		long oldestMsgTime;
+		long lastSeqNum;
+		long maxMessages;
+		long maxBytes;
+	};
+
+	// Statistics on interaction with a data client:
+	struct AttachedProcess
+	{
+		long pid;
+		string name;
+		string type;
+		string user;
+		long lastSeqNum;
+		long lastPollTime;
+		long lastMsgTime;
+		string status;
+		short stale_count;
+	};
+
+	// A variable length sequence of current data clients:
+	typedef sequence<AttachedProcess> AttachedProcessSeq;
+
+//	enum DownLinkType { UNUSED, PRIMARY, HOTBACKUP, COLDBACKUP };
+	const short DL_UNUSED = 0;
+	const short DL_PRIMARY = 1;
+	const short DL_HOTBACKUP = 2;
+	const short DL_COLDBACKUP = 3;
+	const short DL_DRGS = 4;
+	const short DL_DDS  = 5;
+	const short DL_NOAAPORT = 6;
+	const short DL_LRIT = 7;
+//	enum DownLinkStatus { DISABLED, INIT, ACTIVE, TIMEOUT, ERROR, STRSTAT };
+	const short DISABLED = 0;
+	const short INIT = 1;
+	const short ACTIVE = 2;
+	const short TIMEOUT = 3;
+	const short ERROR = 4;
+	const short STRSTAT = 5;
+
+	// Statistics on a single downlink (i.e. DCP message source):
+	struct DownLink
+	{
+		string name;
+
+//		DownLinkType type;
+		short type;
+
+		boolean hasBER;
+		boolean hasSeqNum;
+//		DownLinkStatus statusCode;
+		short statusCode;
+		long lastMsgRecvTime;
+		long lastSeqNum;
+		string BER;
+		string statusString;
+	};
+
+	// A variable length sequence of current downlinks:
+	typedef sequence<DownLink> DownLinkSeq;
+
+	// The snapshot structure ties everything together.
+	struct LrgsStatusSnapshot
+	{
+		long lrgsTime;
+		short currentHour;  // 0...23
+		long primaryMissingCount;
+		long totalRecoveredCount;
+		long totalGoodCount;
+		DownLinkSeq downLinks;
+		QualityMeasurementSeq qualMeas;
+		ArchiveStatistics arcStats;
+		AttachedProcessSeq attProcs;
+	};
+
+	/*
+	* The LrgsStatus object provides access to the above data structures.
+	*/
+	interface LrgsStatus
+	{
+		boolean isUsable();
+
+		string getDomainName();
+
+		LrgsStatusSnapshot getSnapshot();
+
+		long getLrgsTime();
+
+		DownLinkSeq getDownLinks();
+
+		ArchiveStatistics getArchiveStatistics();
+
+		QualityMeasurementSeq getQualityHistory();
+
+		short getNumClients();
+
+		AttachedProcessSeq getClientList();
+
+		string getHostName();
+
+		short getSystemStatus();
+
+		string getSystemStatusString();
+
+		long getLastRecvIndex();
+	};
+};

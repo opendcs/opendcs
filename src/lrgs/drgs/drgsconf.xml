@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<drgsconf>
+
+	<!-- Debug level is 0 (fewest messages) ... 3 (most verbose) -->
+	<debug>3</debug>
+
+	<!-- Specify up to 64 DRGS connections here... -->
+
+	<connection number="0" host="east-drgs-hostname.mydomain.gov">
+		<name>DRGS-E</name>
+		<enabled>true</enabled>
+		<msgport>17010</msgport>
+		<evtport>17011</evtport>
+		<evtenabled>true</evtenabled>
+		<startpattern>534D0D0A</startpattern>
+	</connection>
+
+	<connection number="1" host="west-drgs-hostname.mydomain.gov">
+		<name>DRGS-W</name>
+		<enabled>true</enabled>
+		<msgport>17010</msgport>
+		<evtport>17011</evtport>
+		<evtenabled>true</evtenabled>
+		<startpattern>534D0D0A</startpattern>
+	</connection>
+
+	<!--
+		Add other connections here (up to number=63)
+	-->
+</drgsconf>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="EstimatedInflow">
+    <Comment>
+      Estimate inflow over the interval from reservoir storage and outflow.
+      Estimated Inflow = delta(Storage) + AverageOutflow over period.
+Inputs
+      are: Storage (in cubic meters), and outflow (in cubic meters per second)
+      Output is estimated inflow in cubic meters over the outputs, interval.
+
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.EstimatedInflow</ExecClass>
+    <AlgoProperty name="aggUpperBoundClosed">true</AlgoProperty>
+    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
+    <AlgoParm roleName="storage">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outflow">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="inflow">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

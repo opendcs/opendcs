@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+
+<EnumList>
+  <Enum name="Dwarves">
+    <EnumValue name="Sleepy"/>
+    <EnumValue name="Grumpy"/>
+    <EnumValue name="Sneezy"/>
+    <EnumValue name="Happy"/>
+    <EnumValue name="Dopey"/>
+    <EnumValue name="Doc"/>
+    <EnumValue name="Bashful"/>
+  </Enum>
+</EnumList>
