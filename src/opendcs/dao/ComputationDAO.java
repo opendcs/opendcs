@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 */
 package opendcs.dao;
 
@@ -163,6 +166,8 @@ Logger.instance().debug3("getComputationById: after rs2comp, groupId = " + comp.
 
 		comp.setAlgorithmId(DbKey.createDbKey(rs, 3));
 		comp.setComment(rs.getString(4));
+		if (comp.getComment() == null)
+			comp.setComment("");
 		comp.setAppId(DbKey.createDbKey(rs, 5));
 		comp.setLastModified(db.getFullDate(rs, 6));
 		comp.setEnabled(TextUtil.str2boolean(rs.getString(7)));
