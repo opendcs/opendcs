@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2013/03/28 17:29:09  mmaloney
  * Refactoring for user-customizable decodes properties.
  *
@@ -47,9 +50,11 @@ public class DecodesSetupFrame
 	private JButton saveDecodesPropsButton = new JButton();
 	private JButton abandonDecodesPropsButton = new JButton();
 	private DecodesPropsPanel decodesPropsPanel;
+	private LauncherFrame launcherFrame = null;
 
-	public DecodesSetupFrame()
+	public DecodesSetupFrame(LauncherFrame launcherFrame)
 	{
+		this.launcherFrame = launcherFrame;
 		exitOnClose = false;
 		try
 		{
@@ -84,7 +89,7 @@ public class DecodesSetupFrame
 		cmdLineArgs.parseArgs(args);
 		labels = getLabels();
 		genericLabels = getGenericLabels();
-		DecodesSetupFrame setupFrame = new DecodesSetupFrame();
+		DecodesSetupFrame setupFrame = new DecodesSetupFrame(null);
 		setupFrame.setExitOnClose(true);
 
 		// Center the window
@@ -194,6 +199,8 @@ public class DecodesSetupFrame
 				"Cannot save DECODES Properties File '" + propFile + "': "
 				+ ex);
 		}
+		if (launcherFrame != null)
+			launcherFrame.setupSaved();
 	}
 
 	private void abandonChangesPressed()
