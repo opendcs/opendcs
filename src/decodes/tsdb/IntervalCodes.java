@@ -76,32 +76,49 @@ public class IntervalCodes
 	/** Zero == Irrigular */
 	public static final String int_cwms_zero = "0";
 	
+	// For each of the CWMS codes there is a _nc version that starts with
+	// a tilde. "nc" = no check. This turns off interval checking.
+	
 	/** 1 minute data */
 	public static final String int_one_minute = "1Minute";
+	public static final String int_one_minute_nc = "~1Minute";
 	/** 2 minute data */
 	public static final String int_two_minutes = "2Minutes";
+	public static final String int_two_minutes_nc = "~2Minutes";
 	/** 3 minute data */
 	public static final String int_three_minutes = "3Minutes";
+	public static final String int_three_minutes_nc = "~3Minutes";
 	/** 4 minute data */
 	public static final String int_four_minutes = "4Minutes";
+	public static final String int_four_minutes_nc = "~4Minutes";
 	/** 5 minute data */
 	public static final String int_five_minutes = "5Minutes";
+	public static final String int_five_minutes_nc = "~5Minutes";
 	/** 6 minute data */
 	public static final String int_six_minutes = "6Minutes";
+	public static final String int_six_minutes_nc = "~6Minutes";
 	/** 10 minute data */
 	public static final String int_ten_minutes = "10Minutes";
+	public static final String int_ten_minutes_nc = "~10Minutes";
 	/** 12 minute data */
 	public static final String int_twelve_minutes = "12Minutes";
+	public static final String int_twelve_minutes_nc = "~12Minutes";
 	/** 15 minute data */
 	public static final String int_fifteen_minutes = "15Minutes";
+	public static final String int_fifteen_minutes_nc = "~15Minutes";
 	/** 20 minute data */
 	public static final String int_twenty_minutes = "20Minutes";
+	public static final String int_twenty_minutes_nc = "~20Minutes";
 	/** 30 minute data */
 	public static final String int_thirty_minutes = "30Minutes";
+	public static final String int_thirty_minutes_nc = "~30Minutes";
 	/** 1 hour    data */
 	public static final String int_one_hour = "1Hour";
+	public static final String int_one_hour_nc = "~1Hour";
 	/** 2 hour    data */
+	public static final String int_two_hours_nc = "~2Hours";
 	public static final String int_two_hours = "2Hours";
+
 	/** 3 hour    data */
 	public static final String int_three_hours = "3Hours";
 	/** 4 hour    data */

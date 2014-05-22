@@ -25,18 +25,32 @@ public class CwmsIntervalDAO extends DaoBase implements IntervalDAI
 	    IntervalCodes.int_cwms_irregular, 
 	    IntervalCodes.int_cwms_zero,
 	    IntervalCodes.int_one_minute,
+	    IntervalCodes.int_one_minute_nc,
 	    IntervalCodes.int_two_minutes, 
+	    IntervalCodes.int_two_minutes_nc, 
 	    IntervalCodes.int_three_minutes,
+	    IntervalCodes.int_three_minutes_nc,
 	    IntervalCodes.int_four_minutes, 
+	    IntervalCodes.int_four_minutes_nc, 
 	    IntervalCodes.int_five_minutes,
+	    IntervalCodes.int_five_minutes_nc,
 	    IntervalCodes.int_six_minutes, 
+	    IntervalCodes.int_six_minutes_nc, 
 	    IntervalCodes.int_ten_minutes,
+	    IntervalCodes.int_ten_minutes_nc,
 	    IntervalCodes.int_twelve_minutes, 
+	    IntervalCodes.int_twelve_minutes_nc, 
 	    IntervalCodes.int_fifteen_minutes,
+	    IntervalCodes.int_fifteen_minutes_nc,
 	    IntervalCodes.int_twenty_minutes, 
+	    IntervalCodes.int_twenty_minutes_nc, 
 	    IntervalCodes.int_thirty_minutes,
+	    IntervalCodes.int_thirty_minutes_nc,
 	    IntervalCodes.int_one_hour, 
+	    IntervalCodes.int_one_hour_nc, 
 	    IntervalCodes.int_two_hours,
+	    IntervalCodes.int_two_hours_nc,
+	    
 	    IntervalCodes.int_three_hours, 
 	    IntervalCodes.int_three_hours_dst, 
 	    IntervalCodes.int_four_hours,
@@ -130,18 +144,32 @@ public class CwmsIntervalDAO extends DaoBase implements IntervalDAI
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_20min, Calendar.MINUTE, 20));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_30min, Calendar.MINUTE, 30));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_minute, Calendar.MINUTE, 1));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_minute_nc, Calendar.MINUTE, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_minutes, Calendar.MINUTE, 2));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_minutes_nc, Calendar.MINUTE, 2));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_minutes, Calendar.MINUTE, 3));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_minutes_nc, Calendar.MINUTE, 3));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_minutes, Calendar.MINUTE, 4));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_minutes_nc, Calendar.MINUTE, 4));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_five_minutes, Calendar.MINUTE, 5));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_five_minutes_nc, Calendar.MINUTE, 5));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_six_minutes, Calendar.MINUTE, 6));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_six_minutes_nc, Calendar.MINUTE, 6));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_ten_minutes, Calendar.MINUTE, 10));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_ten_minutes_nc, Calendar.MINUTE, 10));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_twelve_minutes, Calendar.MINUTE, 12));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_twelve_minutes_nc, Calendar.MINUTE, 12));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_fifteen_minutes, Calendar.MINUTE, 15));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_fifteen_minutes_nc, Calendar.MINUTE, 15));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_twenty_minutes, Calendar.MINUTE, 20));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_twenty_minutes_nc, Calendar.MINUTE, 20));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_thirty_minutes, Calendar.MINUTE, 30));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_thirty_minutes_nc, Calendar.MINUTE, 30));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_hour, Calendar.HOUR_OF_DAY, 1));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_one_hour_nc, Calendar.HOUR_OF_DAY, 1));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_hours, Calendar.HOUR_OF_DAY, 2));
+		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_two_hours_nc, Calendar.HOUR_OF_DAY, 2));
+
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_hours, Calendar.HOUR_OF_DAY, 3));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_three_hours_dst, Calendar.HOUR_OF_DAY, 3));
 		dbIntervals.add(new Interval(DbKey.createDbKey(id++), IntervalCodes.int_four_hours, Calendar.HOUR_OF_DAY, 4));
