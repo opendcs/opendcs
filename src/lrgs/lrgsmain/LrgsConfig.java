@@ -301,22 +301,12 @@ public class LrgsConfig
 	 */
 	private PropertySpec miscPropSpecs[] = 
 	{
-		new PropertySpec("enableLritRecv", PropertySpec.BOOLEAN,
-			"Set to true to enable LRIT interface"),
-		new PropertySpec("lritReceiverType", PropertySpec.JAVA_ENUM + "lrgs.lrit.LritInterfaceType",
-			"Select the LRIT receiver interface type."),
-		new PropertySpec("lritHostName", PropertySpec.HOSTNAME,
-			"For dams-nt LRIT connection, this is the host or IP address to connect to"),
-		new PropertySpec("lritPort", PropertySpec.INT,
-			"For dams-nt LRIT connection, this is the port to connect to"),
-		new PropertySpec("lritDamsNtStartPattern", PropertySpec.STRING,
-			"Hex string representing the 4-byte DAMS NT start Pattern"),
 		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
 			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
 	};
 	
 	
-	public Properties otherProps = new Properties();
+	private Properties otherProps = new Properties();
 
 	public static LrgsConfig instance()
 	{
