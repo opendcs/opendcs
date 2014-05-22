@@ -99,7 +99,6 @@ public class DecodingScriptEditPanel
 	private static IridiumPMParser iridiumPMParser = new IridiumPMParser();
 //	private static StringBufferConsumer consumer = new StringBufferConsumer(new StringBuffer());
 
-	private PresentationGroup editPG;
 	private TimeZone editTZ;
 	private JTable unitConversionTable = new JTable();
 	private JTextPane rawMessagePane = new JTextPane();
@@ -179,18 +178,6 @@ public class DecodingScriptEditPanel
 		unitConversionTable.getTableHeader().setReorderingAllowed(false);
 		TableColumn tc = unitConversionTable.getColumnModel().getColumn(3);
 		tc.setCellEditor(new EnumCellEditor(Constants.eucvt_enumName));
-
-		if (DecodesSettings.instance().editPresentationGroup != null)
-		{
-			editPG = Database.getDb().presentationGroupList
-				.find(DecodesSettings.instance().editPresentationGroup);
-			if (editPG == null)
-				Logger.instance().log(
-					Logger.E_WARNING,
-					"Could not instantiate presentation group '"
-						+ DecodesSettings.instance().editPresentationGroup
-						+ "'. Decoded data may not be formatted as desired.");
-		}
 
 		editTZ = java.util.TimeZone.getTimeZone(DecodesSettings.instance().editTimeZone);
 		if (editTZ == null)
@@ -902,8 +889,6 @@ public class DecodingScriptEditPanel
 			DecodedMessage dm = theScript.decodeMessage(rawMessage);
 			Logger.instance().debug1("After decoding there are " 
 				+ theScript.getDecodedSamples().size() + " decoded samples.");
-			if (editPG != null)
-				dm.formatSamples(editPG);
 			
 			decodedDataTableModel.clear();
 			decodedDataTableModel.setDecodedData(dm);

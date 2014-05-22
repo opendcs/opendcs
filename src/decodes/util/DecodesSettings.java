@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.32  2013/08/18 19:51:01  mmaloney
 *  Added gui tz
 *
@@ -153,9 +156,6 @@ public class DecodesSettings
 
 	/** Transport ID type preference - for display only. */
 	public String transportMediumTypePreference = Constants.medium_GoesST;
-
-	/** Presentation group to use in Script Edit Dialog in db editor. */
-	public String editPresentationGroup = null;
 
 	/** Output format to use in Script Edit Dialog in db editor */
 	public String editOutputFormat = "Human-Readable";
@@ -383,8 +383,6 @@ public class DecodesSettings
 			"DECODES Scan operations scans past EOL character"),
 		new PropertySpec("transportMediumTypePreference", PropertySpec.STRING,
 			"Transport ID type preference - for display only"),
-		new PropertySpec("editPresentationGroup", PropertySpec.STRING,
-			"Presentation group to use in Script Edit Dialog in db editor"),
 		new PropertySpec("editOutputFormat", PropertySpec.STRING,
 			"Output format to use in Script Edit Dialog in db editor"),
 		new PropertySpec("editTimeZone", PropertySpec.TIMEZONE,
