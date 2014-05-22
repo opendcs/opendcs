@@ -12,8 +12,6 @@
 */
 package lrgs.rtstat;
 
-import gov.usgs.nwis.gui.reflist.DDComboBoxModel;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
