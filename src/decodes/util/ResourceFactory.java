@@ -16,13 +16,9 @@ import javax.swing.JFrame;
 
 import decodes.decoder.FunctionList;
 import decodes.gui.TopFrame;
-import decodes.launcher.DecodesSetupFrame;
 import decodes.tsdb.groupedit.TsDbGrpEditor;
 import decodes.util.DecodesVersion;
 
-import lrgs.common.DcpMsgFlag;
-import lrgs.rtstat.LrgsConfigDialog;
-import lrgs.rtstat.LrgsConfigPanel;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 
@@ -51,7 +47,7 @@ public class ResourceFactory
 				{
 					ClassLoader cl = 
 						Thread.currentThread().getContextClassLoader();
-					Class cls = cl.loadClass(clsname);
+					Class<?> cls = cl.loadClass(clsname);
 					_instance = (ResourceFactory)cls.newInstance();
 					Logger.instance().debug1("Using Resource Factory: " + clsname);
 				}
@@ -91,30 +87,11 @@ public class ResourceFactory
 		FunctionList.addFunction(new decodes.decoder.ShefProcess());
 	}
 
-	public void initializeDecodesVersion()
-	{
-	}
-	
 	public JDialog getAboutDialog(JFrame parent, String appAbbr, String appName)
 	{
 		return new decodes.gui.AboutBox(parent, appAbbr, appName);
 	}
 
-	public void addBuiltInEnums()
-	{
-	}
-	
-	public TopFrame getRetrieveDecodeMonitorFrame()
-	{
-		// TODO return the generic monitor frame.
-		return null;
-	}
-
-	public TopFrame getTookitSetupFrame()
-	{
-		return new DecodesSetupFrame();
-	}
-	
 	public String startTag()
 	{
 		return DecodesVersion.startupTag();
@@ -129,40 +106,6 @@ public class ResourceFactory
 		return tsGrpEditor.getFrame();
 	}
 
-	public TopFrame getAlarmAssertionsFrame(String myArgs[])
-		throws Exception
-	{
-		return null;
-	}
-
-	public TopFrame getTimeSeriesStatusFrame(String myArgs[])
-		throws Exception
-	{
-		return null;
-	}
-	
-	private String[] unsupportedDecodesSettings = 
-		{
-			"voxeoTokenId",
-			"voxeoUrl",
-			"callerId",
-			"iridiumSmtpHost",
-			"iridiumSmtpPort",
-			"iridiumSmtpTo",
-			"iridiumSmtpFrom",
-			"iridiumCommandDir",
-			"iridiumLrgsHost",
-			"iridiumLrgsUser",
-			"stationContactLog",
-			"showStationContact",
-			"limitChangeAction",
-			"sendLimits"
-		};
-	public String[] getUnsupportedDecodesSettings()
-	{
-		return unsupportedDecodesSettings;
-	}
-	
 	public String getIconPath()
 	{
 		return EnvExpander.expand("$DCSTOOL_HOME/icons/setup48x48.gif");

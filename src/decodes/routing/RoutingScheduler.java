@@ -357,7 +357,6 @@ public class RoutingScheduler
 	{
 		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
 		DecodesInterface.initializeForDecoding();
-		ResourceFactory.instance().addBuiltInEnums();
 	}
 	
 	@Override

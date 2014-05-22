@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.14  2013/03/28 17:29:09  mmaloney
 *  Refactoring for user-customizable decodes properties.
 *
@@ -108,7 +111,6 @@ public class DecodesInterface
 			System.out.flush();
 		}
 		db.enumList.read();
-		ResourceFactory.instance().addBuiltInEnums();
 
 		if (!silent)
 		{

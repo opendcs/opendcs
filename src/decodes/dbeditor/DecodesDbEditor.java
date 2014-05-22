@@ -186,8 +186,6 @@ public class DecodesDbEditor
 		//db.eqTableList.read();
 		System.out.println("Database initialized.");
 
-		ResourceFactory.instance().addBuiltInEnums();
-
 		fixObjectReferences(db);
 
 		//This flag is used to turn on or off some of the pop ups - specially

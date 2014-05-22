@@ -1404,8 +1404,6 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 		db.presentationGroupList.read();
 		db.routingSpecList.read();
 		
-		ResourceFactory.instance().addBuiltInEnums();
-
 		RoutingSpec rs = db.routingSpecList.find(name);
 		if (rs == null)
 			throw new DecodesException(

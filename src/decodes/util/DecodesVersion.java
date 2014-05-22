@@ -22,23 +22,11 @@ public class DecodesVersion
 	/** the program date */
 	private static String modifyDate = LrgsBuild.buildDate;
 	
-	private static boolean _initialized = false;
-
-	private static void checkInit()
-	{
-    	if (!_initialized)
-    	{
-    		ResourceFactory.instance().initializeDecodesVersion();
-    		_initialized = true;
-    	}
-	}
-
 	/**
 	  @return a String containing complete version info.
 	*/
 	public static final String startupTag()
 	{
-		checkInit();
 		return getAbbr() + " " + getVersion() + " built on " + LrgsBuild.buildDate;
 	}
 
@@ -47,7 +35,6 @@ public class DecodesVersion
      */
     public static String getName()
     {
-		checkInit();
 	    return name;
     }
 
@@ -56,7 +43,6 @@ public class DecodesVersion
      */
     public static String getAbbr()
     {
-		checkInit();
 	    return abbr;
     }
 
@@ -65,7 +51,6 @@ public class DecodesVersion
      */
     public static String getVersion()
     {
-		checkInit();
 	    return version;
     }
 
@@ -74,7 +59,6 @@ public class DecodesVersion
      */
     public static String getModifyDate()
     {
-		checkInit();
 	    return modifyDate;
     }
     
