@@ -14,6 +14,7 @@ public class LritDamsNtReceiver
 	extends DrgsRecvMsgThread
 {
 	private int slot = 0;
+	private long lastConfigure = 0L;
 	
 	public LritDamsNtReceiver(MsgArchive msgArchive, LrgsMain lrgsMain)
 	{
@@ -52,6 +53,7 @@ public class LritDamsNtReceiver
 			+ ", host=" + lrgsCfg.lritHostName
 			+ ", port=" + lrgsCfg.lritPort
 			+ ", startPat=" + lrgsCfg.lritDamsNtStartPattern);
+		lastConfigure = System.currentTimeMillis();
 	}
 	
 	private void debug(String msg)
@@ -93,4 +95,18 @@ public class LritDamsNtReceiver
 		super.enableLrgsInput(enabled);
 	}
 
+	@Override
+	protected void checkConfig()
+	{
+		LrgsConfig lrgsCfg = LrgsConfig.instance();
+		if (lrgsCfg.getLastLoadTime() > lastConfigure)
+			configure(null);
+	}
+	
+	@Override
+	public String getName()
+	{
+		LrgsConfig lrgsCfg = LrgsConfig.instance();
+		return "LRIT:" + lrgsCfg.lritHostName + ":" + lrgsCfg.lritPort;
+	}
 }
