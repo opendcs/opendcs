@@ -135,7 +135,6 @@ public class LritCfgPanel
 		 || !TextUtil.strEqual(srcField.getText().trim(), conf.lritSrcCode)
 		 || !TextUtil.strEqual(timeoutField.getText().trim(), ""+conf.lritTimeout)
 		;
-System.out.println("LritCfgPanel.hasChanged() returning " + ret);
 		return ret;
 	}
 	
@@ -160,7 +159,6 @@ System.out.println("LritCfgPanel.hasChanged() returning " + ret);
 		}
 		conf.lritDamsNtStartPattern = syncPatternField.getText().trim();
 		conf.lritSrcCode = srcField.getText().trim();
-System.out.println("lritSrcCode changed to '" + conf.lritSrcCode + "'");
 		try { conf.lritTimeout = Integer.parseInt(timeoutField.getText().trim()); }
 		catch(Exception ex)
 		{
