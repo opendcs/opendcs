@@ -203,6 +203,10 @@ Logger.instance().info(module + " " + myName + " starting"
 		{
 			long now = System.currentTimeMillis();
 
+			// checkConfig is a hook used by LritDamsNtReceiver. For DRGS, the checkconfig
+			// is handled by the parent.
+			checkConfig();
+			
 			if (configChanged)
 			{
 				configChanged = false;
@@ -261,6 +265,13 @@ Logger.instance().info(module + " " + myName + " starting"
 		status = "Shutdown";
 		_isShutdown = true;
 		lrgsMain.freeInput(mySlot);
+	}
+
+	protected void checkConfig()
+	{
+		// Base class method does nothing.
+		// This is a hook to allow stand alone LritDamsNtReceiver clase to check
+		// for a config change.
 	}
 
 	protected boolean checkMsgOk(DcpMsg msg)
@@ -975,6 +986,7 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	public void enableLrgsInput(boolean enabled)
 	{
 		this._enabled = enabled;
+		Logger.instance().info(module + " " + myName + " Enabled set to " + enabled);
 	}
 
 	/**
