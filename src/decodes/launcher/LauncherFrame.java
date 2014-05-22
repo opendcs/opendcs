@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.8  2013/04/26 14:29:23  mmaloney
  * gif not png.
  *
@@ -698,6 +701,7 @@ public class LauncherFrame extends JFrame
 						new Insets(5, 5, 5, 5), 0, 0));	
 		}
         contentPane.add(fullPanel, BorderLayout.CENTER);
+        setupSaved();
     }
 
 	void retProcButton_actionPerformed(ActionEvent e)
@@ -836,11 +840,25 @@ public class LauncherFrame extends JFrame
 
 	void setupPressed()
 	{
-		TopFrame toolkitSetupFrame = 
-			ResourceFactory.instance().getTookitSetupFrame();
+		TopFrame toolkitSetupFrame = new DecodesSetupFrame(this);
 		toolkitSetupFrame.setExitOnClose(false);
 //		centerWindow(toolkitSetupFrame);
 		toolkitSetupFrame.setVisible(true);
+	}
+	
+	/**
+	 * This method is called after a setup change.
+	 * Enable or Disable the time-series buttons depending on the selected database type.
+	 */
+	void setupSaved()
+	{
+		boolean dbSupportsTS = DecodesSettings.instance().editDatabaseTypeCode != 
+			DecodesSettings.DB_XML;
+		tseditButton.setEnabled(dbSupportsTS);
+		groupEditButton.setEnabled(dbSupportsTS);
+		compeditButton.setEnabled(dbSupportsTS);
+		runcompButton.setEnabled(dbSupportsTS);
+		algoeditButton.setEnabled(dbSupportsTS);
 	}
 
 	void completeDecodesInit() throws DecodesException
