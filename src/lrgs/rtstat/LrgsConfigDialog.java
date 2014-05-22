@@ -211,7 +211,7 @@ public class LrgsConfigDialog extends GuiDialog
 		centralPane.setLayout(new BorderLayout());
 		centralPane.add(getTabbedPane(), BorderLayout.CENTER);
 		centralPane.add(getButtonPanel(),BorderLayout.SOUTH);
-		centralPane.setPreferredSize(new Dimension(720, 560));
+		centralPane.setPreferredSize(new Dimension(720, 700));
 		getContentPane().add(centralPane);
 		pack();
 	}
@@ -341,7 +341,7 @@ public class LrgsConfigDialog extends GuiDialog
 		iridiumCfgTab.fillFields(lrgsConfig);
 		lritCfgPanel.fillFields(lrgsConfig);
 		
-		miscPanel.setProperties(lrgsConfig.otherProps);
+		miscPanel.setProperties(lrgsConfig.getOtherProps());
 
 		//Domsat Tab
 		getInitializeDOMSATcheck().setSelected(lrgsConfig.loadDomsat);
@@ -914,7 +914,6 @@ public class LrgsConfigDialog extends GuiDialog
 		{
 			okButton = new JButton();
 			okButton.setText(genericLabels.getString("OK"));
-			okButton.setPreferredSize(new Dimension(82, 26));
 			okButton.addActionListener(
 				new java.awt.event.ActionListener() 
 			{
@@ -938,7 +937,6 @@ public class LrgsConfigDialog extends GuiDialog
 		{
 			cancelButton = new JButton();
 			cancelButton.setText(genericLabels.getString("cancel"));
-			cancelButton.setPreferredSize(new Dimension(82, 26));
 			cancelButton.addActionListener(
 				new java.awt.event.ActionListener() 
 			{
@@ -962,7 +960,6 @@ public class LrgsConfigDialog extends GuiDialog
 		{
 			applyButton = new JButton();
 			applyButton.setText(labels.getString("LrgsConfigDialog.apply"));
-			applyButton.setPreferredSize(new Dimension(82, 26));
 			applyButton.addActionListener(
 				new java.awt.event.ActionListener() 
 			{
@@ -1610,7 +1607,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JTextField getArchiveTimeoutField() {
 		if (archiveTimeoutField == null) {
 			archiveTimeoutField = new JTextField();
-			//archiveTimeoutField.setPreferredSize(new Dimension(4, 20));
 		}
 		return archiveTimeoutField;
 	}
@@ -1635,7 +1631,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JTextField getStatusPeriodField() {
 		if (statusPeriodField == null) {
 			statusPeriodField = new JTextField();
-			//statusPeriodField.setPreferredSize(new Dimension(4, 20));
 		}
 		return statusPeriodField;
 	}
@@ -1660,7 +1655,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JComboBox getMergePref1Combo() {
 		if (mergePref1Combo == null) {
 			mergePref1Combo = new JComboBox(mergePrefs);
-			//mergePref1Combo.setPreferredSize(new Dimension(4, 25));
 		}
 		return mergePref1Combo;
 	}
@@ -1673,7 +1667,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JComboBox getMergePref2Combo() {
 		if (mergePref2Combo == null) {
 			mergePref2Combo = new JComboBox(mergePrefs);
-			//mergePref2Combo.setPreferredSize(new Dimension(4, 25));
 		}
 		return mergePref2Combo;
 	}
@@ -1686,7 +1679,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JComboBox getMergePref3Combo() {
 		if (mergePref3Combo == null) {
 			mergePref3Combo = new JComboBox(mergePrefs);
-			//mergePref3Combo.setPreferredSize(new Dimension(4, 25));
 		}
 		return mergePref3Combo;
 	}
@@ -1699,7 +1691,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JComboBox getMergePref4Combo() {
 		if (mergePref4Combo == null) {
 			mergePref4Combo = new JComboBox();
-			//mergePref4Combo.setPreferredSize(new Dimension(4, 25));
 			mergePref4Combo.addItem("(unspecified)");
 			mergePref4Combo.addItem("DRGS");
 			mergePref4Combo.addItem("DOMSAT");
@@ -1780,7 +1771,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JTextField getDomsatTimeoutField() {
 		if (domsatTimeoutField == null) {
 			domsatTimeoutField = new JTextField();
-			//domsatTimeoutField.setPreferredSize(new Dimension(150, 20));
 		}
 		return domsatTimeoutField;
 	}
@@ -1793,7 +1783,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JTextField getDdsListenPortField() {
 		if (ddsListenPortField == null) {
 			ddsListenPortField = new JTextField();
-			//ddsListenPortField.setPreferredSize(new Dimension(4, 20));
 		}
 		return ddsListenPortField;
 	}
@@ -1806,7 +1795,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JTextField getDdsBindAddrField() {
 		if (ddsBindAddrField == null) {
 			ddsBindAddrField = new JTextField();
-			//ddsBindAddrField.setPreferredSize(new Dimension(4, 20));
 		}
 		return ddsBindAddrField;
 	}
@@ -1819,7 +1807,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JTextField getDdsMaxClientsField() {
 		if (ddsMaxClientsField == null) {
 			ddsMaxClientsField = new JTextField();
-			//ddsMaxClientsField.setPreferredSize(new Dimension(4, 20));
 		}
 		return ddsMaxClientsField;
 	}
@@ -1910,7 +1897,6 @@ public class LrgsConfigDialog extends GuiDialog
 	private JComboBox getRecoveryCombo() {
 		if (recoveryCombo == null) {
 			recoveryCombo = new JComboBox();
-			//recoveryCombo.setPreferredSize(new Dimension(250, 25));
 			recoveryCombo.addItem("Real - Time Stream");
 			recoveryCombo.addItem("Recover from Outages");
 		}
@@ -2003,7 +1989,6 @@ public class LrgsConfigDialog extends GuiDialog
 		if (ddsConTestButton == null) {
 			ddsConTestButton = new JButton();
 			ddsConTestButton.setText(genericLabels.getString("test"));
-			ddsConTestButton.setPreferredSize(new Dimension(110, 26));
 			ddsConTestButton.setMnemonic(KeyEvent.VK_UNDEFINED);
 			ddsConTestButton.addActionListener(
 				new java.awt.event.ActionListener() 
@@ -2044,7 +2029,6 @@ public class LrgsConfigDialog extends GuiDialog
 		if (ddsConAddButton == null) {
 			ddsConAddButton = new JButton();
 			ddsConAddButton.setText(genericLabels.getString("add"));
-			ddsConAddButton.setPreferredSize(new Dimension(110, 26));
 			ddsConAddButton.setMnemonic(KeyEvent.VK_UNDEFINED);
 			ddsConAddButton.addActionListener(
 				new java.awt.event.ActionListener() 
@@ -2145,7 +2129,7 @@ public class LrgsConfigDialog extends GuiDialog
 		if (ddsConEditButton == null) {
 			ddsConEditButton = new JButton();
 			ddsConEditButton.setText(genericLabels.getString("edit"));
-			ddsConEditButton.setPreferredSize(new Dimension(110, 26));
+//			ddsConEditButton.setPreferredSize(new Dimension(110, 26));
 			ddsConEditButton.addActionListener(
 				new java.awt.event.ActionListener() 
 				{
@@ -2167,7 +2151,7 @@ public class LrgsConfigDialog extends GuiDialog
 		if (ddsConDeleteButton == null) {
 			ddsConDeleteButton = new JButton();
 			ddsConDeleteButton.setText(genericLabels.getString("delete"));
-			ddsConDeleteButton.setPreferredSize(new Dimension(110, 26));
+//			ddsConDeleteButton.setPreferredSize(new Dimension(110, 26));
 			ddsConDeleteButton.addActionListener(
 				new java.awt.event.ActionListener() 
 				{
@@ -2191,7 +2175,7 @@ public class LrgsConfigDialog extends GuiDialog
 			ddsConMoveUpButton = new JButton();
 			ddsConMoveUpButton.setText(labels.getString(
 					"LrgsConfigDialog.moveUp"));
-			ddsConMoveUpButton.setPreferredSize(new Dimension(110, 26));
+//			ddsConMoveUpButton.setPreferredSize(new Dimension(110, 26));
 			ddsConMoveUpButton.addActionListener(
 				new java.awt.event.ActionListener() 
 				{
@@ -2214,7 +2198,7 @@ public class LrgsConfigDialog extends GuiDialog
 			ddsConMoveDownButton = new JButton();
 			ddsConMoveDownButton.setText(labels.getString(
 					"LrgsConfigDialog.moveDn"));
-			ddsConMoveDownButton.setPreferredSize(new Dimension(110, 26));
+//			ddsConMoveDownButton.setPreferredSize(new Dimension(110, 26));
 			ddsConMoveDownButton.addActionListener(
 				new java.awt.event.ActionListener() 
 				{
@@ -2280,7 +2264,7 @@ public class LrgsConfigDialog extends GuiDialog
 		if (networkListsAddButton == null) {
 			networkListsAddButton = new JButton();
 			networkListsAddButton.setText(genericLabels.getString("add"));
-			networkListsAddButton.setPreferredSize(new Dimension(110, 26));
+//			networkListsAddButton.setPreferredSize(new Dimension(110, 26));
 			networkListsAddButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					
@@ -2325,7 +2309,7 @@ public class LrgsConfigDialog extends GuiDialog
 			networkListsDeleteButton = new JButton();
 			networkListsDeleteButton.setText(
 					genericLabels.getString("delete"));
-			networkListsDeleteButton.setPreferredSize(new Dimension(110, 26));
+//			networkListsDeleteButton.setPreferredSize(new Dimension(110, 26));
 			networkListsDeleteButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) 
 				{
@@ -2470,7 +2454,7 @@ public class LrgsConfigDialog extends GuiDialog
 		if (drgsEditButton == null) {
 			drgsEditButton = new JButton();
 			drgsEditButton.setText(genericLabels.getString("edit"));
-			drgsEditButton.setPreferredSize(new Dimension(82, 26));
+//			drgsEditButton.setPreferredSize(new Dimension(82, 26));
 			drgsEditButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) 
 				{
@@ -2546,7 +2530,7 @@ public class LrgsConfigDialog extends GuiDialog
 		if (drgsDeleteButton == null) {
 			drgsDeleteButton = new JButton();
 			drgsDeleteButton.setText(genericLabels.getString("delete"));
-			drgsDeleteButton.setPreferredSize(new Dimension(82, 26));
+//			drgsDeleteButton.setPreferredSize(new Dimension(82, 26));
 			drgsDeleteButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) 
 				{
