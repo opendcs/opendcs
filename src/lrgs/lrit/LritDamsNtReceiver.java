@@ -19,6 +19,8 @@ public class LritDamsNtReceiver
 	{
 		super(msgArchive, lrgsMain);
 		module = "LritRcv";
+		myType = DL_LRIT;
+		myTypeStr = DL_LRIT_TYPESTR;
 	}
 
 	/**
