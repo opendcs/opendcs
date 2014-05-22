@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.26  2013/07/24 19:06:21  mmaloney
  * Don't restrict the datatype lookup to non-group comps.
  *
@@ -96,6 +99,7 @@ import java.util.TimeZone;
 
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
+import ilex.util.Logger;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -766,7 +770,9 @@ public class CompParmDialog extends GuiDialog
 						siteName));
 			}
 			else
+			{
 				theParm.clearSite();
+			}
 
 			if (parent.hasGroupInput())
 			{
@@ -810,6 +816,8 @@ public class CompParmDialog extends GuiDialog
 								true,    // Create if doesn't exist
 								true,    // Do modify parm
 								nm);     // display name
+SiteName sn = theParm.getSiteName();
+Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : sn.getNameValue()));
 						}
 						catch (Exception exi)
 						{

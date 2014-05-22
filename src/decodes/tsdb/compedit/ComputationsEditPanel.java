@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.36  2013/08/19 12:21:12  mmaloney
 *  dev
 *
@@ -695,6 +698,18 @@ public class ComputationsEditPanel
 			compParmTableModel = new CompParmTableModel(this);
 			compParmTable = new SortingListTable(compParmTableModel,
 				compParmTableModel.columnWidths);
+			compParmTable.addMouseListener(
+				new MouseAdapter()
+				{
+					public void mouseClicked(MouseEvent e)
+					{
+						if (e.getClickCount() == 2)
+						{
+							editParamButtonPressed();
+						}
+					}
+				});
+
 		}
 		return compParmTable;
 	}
