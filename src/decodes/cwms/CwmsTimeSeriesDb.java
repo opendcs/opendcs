@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.171  2013/08/06 14:02:49  mmaloney
 *  tasklist queue bug fix.
 *
@@ -1429,7 +1432,9 @@ for(CTimeSeries ts : allts)
 
 		TimeSeriesIdentifier tsidRet = tsid.copyNoKey();
 		boolean transformed = transformUniqueString(tsidRet, parm);
-		
+//Site tssite = tsidRet.getSite();
+//Logger.instance().debug3("After transformUniqueString, sitename=" + tsidRet.getSiteName()
+//+ ", site=" + (tssite==null ? "null" : tssite.getDisplayName()));
 		if (transformed)
 		{
 			String uniqueString = tsidRet.getUniqueString();
@@ -1450,6 +1455,7 @@ for(CTimeSeries ts : allts)
 					if (timeSeriesDisplayName != null)
 						tsidRet.setDisplayName(timeSeriesDisplayName);
 					timeSeriesDAO.createTimeSeries(tsidRet);
+					fillInParm = true;
 				}
 				else
 				{
@@ -1497,6 +1503,21 @@ for(CTimeSeries ts : allts)
 		{
 			tsidRet.setSiteName(sn.getNameValue());
 			transformed = true;
+			// Also lookup the site and set the ID and site object.
+			SiteDAI siteDAO = makeSiteDAO();
+			try
+			{
+				DbKey siteId = siteDAO.lookupSiteID(sn);
+				tsidRet.setSite(siteDAO.getSiteById(siteId));
+			}
+			catch (Exception ex)
+			{
+				Logger.instance().warning("Cannot get site for sitename " + sn + ": " + ex);
+			}
+			finally
+			{
+				siteDAO.close();
+			}
 		}
 		DataType dt = parm.getDataType();
 		if (dt != null)
