@@ -161,9 +161,11 @@ MJM 20031104 - removed - do not use this constructor!
 
 	public void setDbIo(DatabaseIO dbio) { this.dbio = dbio; }
 
+	@Override
 	public void prepareForExec() {}
+	
+	@Override
 	public boolean isPrepared() { return false;}
-	public void validate() {}
 
 	/**
 	 * Reads the entire database into memory.

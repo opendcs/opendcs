@@ -347,21 +347,10 @@ public class DataSource extends IdDatabaseObject
 		return ret;
 	}
 
-	/**
-	* From DatabaseObject interface, returns true if a delegate was
-	* found and instantiated for this data source.
-	*/
+	@Override
 	public boolean isPrepared()
 	{
 		return arguments != null;
-	}
-
-	/**
-	* Overrides the DatabaseObject method; this does nothing.
-	*/
-	public void validate()
-		throws IncompleteDatabaseException, InvalidDatabaseException
-	{
 	}
 
 	/**

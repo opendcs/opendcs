@@ -133,32 +133,17 @@ public class DataTypeSet extends DatabaseObject
 	}
 
 
-	/**
-	* From DatabaseObject
-	*/
+	@Override
 	public void prepareForExec()
 		throws IncompleteDatabaseException, InvalidDatabaseException
 	{
 		throw new InvalidDatabaseException("Not implemented");
 	}
 
-	/**
-	* From DatabaseObject
-	*/
-
+	@Override
 	public boolean isPrepared()
 	{
 		return false;
-	}
-
-	/**
-	* From DatabaseObject
-	*/
-
-	public void validate()
-		throws IncompleteDatabaseException, InvalidDatabaseException
-	{
-		throw new InvalidDatabaseException("Not implemented");
 	}
 
 	public void read()

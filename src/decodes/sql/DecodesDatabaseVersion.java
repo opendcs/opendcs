@@ -1,5 +1,7 @@
 package decodes.sql;
 
+import decodes.util.DecodesVersion;
+
 public class DecodesDatabaseVersion
 {
 	/** Baseline earliest version number */

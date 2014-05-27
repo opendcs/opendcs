@@ -112,8 +112,10 @@ public abstract class DatabaseObject
 	  @throws InvalidDatabaseException if information in this object
 	  is invalid or inconsistent.
 	*/
-	public abstract void validate()
-		throws IncompleteDatabaseException, InvalidDatabaseException;
+	public void validate()
+		throws IncompleteDatabaseException, InvalidDatabaseException
+	{
+	}
 
 	/**
 	  Reads this object from the database. This method may be called on

@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -261,10 +264,7 @@ public class EnumValue extends DatabaseObject
 		return false;
 	}
 
-	/**
-	* This overrides the DatabaseObject method; this always throws an
-	* exception.
-	*/
+	@Override
 	public void validate()
 		throws IncompleteDatabaseException, InvalidDatabaseException
 	{

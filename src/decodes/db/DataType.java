@@ -291,14 +291,11 @@ public class DataType extends IdDatabaseObject
 	/** @return "DataType" */
 	public String getObjectType() { return "DataType"; }
 
-	/** Does nothing. */
+	@Override
 	public void prepareForExec() {}
 
-	/** @return true */
+	@Override
 	public boolean isPrepared() { return true; }
-
-	/** Does nothing. */
-	public void validate() {}
 
 	/** Does nothing. */
 	public void read() {}

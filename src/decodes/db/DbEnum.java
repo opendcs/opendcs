@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -298,28 +301,16 @@ public class DbEnum
 	*/
 	public void setDefault(String ev) { defaultValue = ev; }
 
-	/**
-	* This overrides the DatabaseObject method.  Nothing to do.
-	*/
+	@Override
 	public void prepareForExec()
 		throws IncompleteDatabaseException, InvalidDatabaseException
 	{
 	}
 
-	/**
-	* This overrides the DatabaseObject method; this always returns false.
-	*/
+	@Override
 	public boolean isPrepared()
 	{
 		return true;
-	}
-
-	/**
-	* This overrides the DatabaseObject method. Nothing to do.
-	*/
-	public void validate()
-		throws IncompleteDatabaseException, InvalidDatabaseException
-	{
 	}
 
 	/**

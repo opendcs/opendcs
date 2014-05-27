@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -96,9 +99,6 @@
 */
 package decodes.db;
 
-import java.util.Vector;
-import java.util.Collections;
-import java.util.Iterator;
 import java.text.NumberFormat;
 
 import ilex.util.TextUtil;
@@ -119,17 +119,11 @@ public class DataPresentation extends IdDatabaseObject
 	/** EU abbreviation to convert values to. */
 	private String unitsAbbr = null;
 
-//	/** Optional to distinguish specific sensor */
-//	private String equipmentModelName = null;
-//
 	/** Reference to this object's parent PresentationGroup.  */
 	private PresentationGroup myGroup = null;
 
 	/** Determines data type that this DP will act upon. */
 	private DataType dataType = null;
-
-//	/** Set of rounding rules to apply to this datatype. */
-//	public Vector<RoundingRule> roundingRules = new Vector<RoundingRule>();
 
 	/**
 	  The maximum number of decimal places, overrides all rouding rules.
@@ -208,16 +202,6 @@ public class DataPresentation extends IdDatabaseObject
 		maxDecimals = max;
 	}
 
-	
-//	/**
-//	* Adds a RoundingRule.
-//	  @param rule the rule
-//	*/
-//	public void addRoundingRule(RoundingRule rule)
-//	{
-//		roundingRules.add(rule);
-//	}
-
 	/**
 	* Compares two DataPresentations, and returns true if they can be
 	* considered equal.  Two DataPresentations are equal iff .... (?)
@@ -232,9 +216,6 @@ public class DataPresentation extends IdDatabaseObject
 			return true;
 		if (!TextUtil.strEqualIgnoreCase(getUnitsAbbr(), dp.getUnitsAbbr()))
 			return false;
-//		if (!TextUtil.strEqualIgnoreCase(getEquipmentModelName(), 
-//			dp.getEquipmentModelName()))
-//			return false;
 
 		if (getDataType() != dp.getDataType())
 			return false;
@@ -242,19 +223,6 @@ public class DataPresentation extends IdDatabaseObject
 		if (maxDecimals != dp.maxDecimals)
 			return false;
 
-//		if (roundingRules.size() != dp.roundingRules.size())
-//			return false;
-//
-//		sortRoundingRules();
-//		dp.sortRoundingRules();
-//		for(int i = 0; i < roundingRules.size(); i++)
-//		{
-//			RoundingRule rr1 = roundingRules.elementAt(i);
-//			RoundingRule rr2 = dp.roundingRules.elementAt(i);
-//			if (!rr1.equals(rr2))
-//				return false;
-//		}
-		
 		if (maxValue != dp.maxValue)
 			return false;
 		if (minValue != dp.minValue)
@@ -278,18 +246,8 @@ public class DataPresentation extends IdDatabaseObject
 		ret.setGroup(pg);
 
 		ret.setUnitsAbbr(this.getUnitsAbbr());
-//		ret.setEquipmentModelName(this.getEquipmentModelName());
 		ret.setDataType(this.getDataType());
 		ret.maxDecimals = this.maxDecimals;
-//		for(Iterator<RoundingRule> it = roundingRules.iterator(); it.hasNext(); )
-//		{
-//			RoundingRule rr = it.next();
-//			RoundingRule newRr = new RoundingRule(ret);
-//			//newRr.dataPresentationId = rr.dataPresentationId;
-//			newRr.setUpperLimit(rr.getUpperLimit());
-//			newRr.sigDigits = rr.sigDigits;
-//			ret.addRoundingRule(newRr);
-//		}
 		ret.setMinValue(minValue);
 		ret.setMaxValue(maxValue);
 
@@ -303,41 +261,17 @@ public class DataPresentation extends IdDatabaseObject
 		return myGroup;
 	}
 
-	/**
-	* This overrides the DatabaseObject method.
-	*/
+	@Override
 	public void prepareForExec()
 	{
-//		if (getUnitsAbbr() != null && getUnitsAbbr().length() > 0)
-//			setEU(EngineeringUnit.getEngineeringUnit(getUnitsAbbr()));
-//		sortRoundingRules();
 		if (maxDecimals == Integer.MAX_VALUE)
 			maxDecimals = 2;
 	}
 
-//	/**
-//	Sorts the rounding rules in ascending range order.
-//	*/
-//	public void sortRoundingRules()
-//	{
-//		Collections.sort(roundingRules);
-//	}
-
-	/**
-	* This overrides the DatabaseObject's isPrepared() method.
-	@return true if the EU is not null, meaning it has been prepared.
-	*/
+	@Override
 	public boolean isPrepared()
 	{
 		return true;
-	}
-
-	/**
-	* This overrides the DatabaseObject's validate method; this does nothing.
-	*/
-	public void validate()
-		throws IncompleteDatabaseException, InvalidDatabaseException
-	{
 	}
 
 	/**
@@ -371,30 +305,14 @@ public class DataPresentation extends IdDatabaseObject
 		if (!isPrepared())
 			prepareForExec();
 
-//		RoundingRule best = null;
-//		double abs = v < 0 ? -v : v;
-//		for(Iterator it = roundingRules.iterator(); it.hasNext(); )
-//		{
-//			RoundingRule rr = (RoundingRule)it.next();
-//			if (abs < rr.getUpperLimit())
-//			{
-//				best = rr;
-//				break;
-//			}
-//		}
 		String ret = "";
 
-//		if (best == null)
-			ret = doRounding(v, maxDecimals, -1);
-//		else
-//			ret = doRounding(v, maxDecimals, best.sigDigits);
+		ret = doRounding(v, maxDecimals, -1);
 		return ret;
 	}
 
 	private String doRounding(double v, int maxDecimals, int sigDigits)
 	{
-//		Logger.instance().debug3("doRounding(" + v + ", " 
-//			+ maxDecimals + ", " + sigDigits + ")");
 		double abs = v < 0 ? -v : v;
 
 		int fd = maxDecimals;
@@ -420,13 +338,6 @@ public class DataPresentation extends IdDatabaseObject
 				dotPosition = i;
 				break;
 			}
-		// Remove trailing zeros
-//		if (dotPosition != -1)
-//			for(int i=sb.length()-1; i>dotPosition+1; i--)
-//				if (sb.charAt(i) == '0')
-//					sb.setCharAt(i, ' ');
-//				else
-//					break;
 
 		// Remove leading zeros
 		if (dotPosition == -1) dotPosition = sb.length();
@@ -471,30 +382,6 @@ public class DataPresentation extends IdDatabaseObject
 	{
 		this.dataType = dataType;
 	}
-
-//	/**
-//	 * @return the equipmentModelName
-//	 */
-//	public String getEquipmentModelName()
-//	{
-//		return equipmentModelName;
-//	}
-//
-//	/**
-//	 * @param equipmentModelName the equipmentModelName to set
-//	 */
-//	public void setEquipmentModelName(String equipmentModelName)
-//	{
-//		this.equipmentModelName = equipmentModelName;
-//	}
-
-//	/**
-//	 * @param eu the eu to set
-//	 */
-//	public void setEU(EngineeringUnit eu)
-//	{
-//		this.eu = eu;
-//	}
 
 	/**
 	 * @param myGroup the myGroup to set

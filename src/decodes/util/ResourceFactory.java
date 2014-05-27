@@ -14,6 +14,8 @@ import java.io.IOException;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
+import lrgs.common.DcpMsgFlag;
+
 import decodes.decoder.FunctionList;
 import decodes.gui.TopFrame;
 import decodes.tsdb.groupedit.TsDbGrpEditor;
@@ -35,28 +37,7 @@ public class ResourceFactory
 	{
 		if (_instance == null)
 		{
-			String clsname = System.getProperty("ResourceFactory");
-			if (clsname == null)
-			{
-				_instance = new decodes.util.ResourceFactory();
-				Logger.instance().debug1("Using OpenSource Resource Factory.");
-			}
-			else
-			{
-				try
-				{
-					ClassLoader cl = 
-						Thread.currentThread().getContextClassLoader();
-					Class<?> cls = cl.loadClass(clsname);
-					_instance = (ResourceFactory)cls.newInstance();
-					Logger.instance().debug1("Using Resource Factory: " + clsname);
-				}
-				catch(Exception ex)
-				{
-					_instance = new decodes.util.ResourceFactory();
-					Logger.instance().debug1("Using OpenSource Resource Factory.");
-				}
-			}
+			_instance = new decodes.util.ResourceFactory();
 			_instance.initializeFunctionList();
 		}
 		return _instance;
@@ -71,6 +52,11 @@ public class ResourceFactory
 			return new lrgs.gui.SearchCriteriaEditFrame(f);
 	}
 	
+	public int getFlagRev()
+	{
+		return DcpMsgFlag.myFlagRev;
+	}
+
 	public String getDdsVersionSuffix()
 	{
 		return "";
@@ -110,5 +96,4 @@ public class ResourceFactory
 	{
 		return EnvExpander.expand("$DCSTOOL_HOME/icons/setup48x48.gif");
 	}
-
 }

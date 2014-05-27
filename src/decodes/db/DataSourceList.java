@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -154,31 +157,17 @@ public class DataSourceList extends DatabaseObject
 		}
 	}
 
-	/**
-	  From DatabaseObject, Does nothing.
-	*/
+	@Override
 	public void prepareForExec()
 		throws IncompleteDatabaseException, InvalidDatabaseException
 	{
 		throw new InvalidDatabaseException("Not implemented");
 	}
 
-	/**
-	  From DatabaseObject
-	  @return false
-	*/
+	@Override
 	public boolean isPrepared()
 	{
 		return false;
-	}
-
-	/**
-	  From DatabaseObject
-	*/
-	public void validate()
-		throws IncompleteDatabaseException, InvalidDatabaseException
-	{
-		throw new InvalidDatabaseException("Not implemented");
 	}
 
 	/**

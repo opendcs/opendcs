@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.6  2013/03/28 18:43:10  mmaloney
  * border around scroll pane, not in it.
  *
@@ -66,21 +69,13 @@ public class DecodesPropsPanel extends JPanel
 	String editDbTypes[] = { "XML", "SQL", "NWIS", "CWMS", "OPENTSDB", "HDB"};
 	JComboBox editDbTypeCombo = new JComboBox(editDbTypes);
 	JTextField editDbLocationField = new JTextField(50);
-//	JPanel otherPropsPanel = new JPanel();
-	JComboBox siteNameStandardCombo = new JComboBox(
-	new String[] { "usgs", "nwshb5", "local", "cbtt", "tva-gage-id",
-		"opg", "wiski", "wsi", "ontmnr" } );
-	JComboBox dbeditOutputFormatCombo = new JComboBox(
-	new String[] { "human-readable", "shef", "emit-ascii", "dump", "stdmsg" });
-	JComboBox dbeditTimeZoneCombo = new JComboBox(
-	new String[] { "UTC", "EST", "CST", "MST", "PST"} );
 	private PropertiesEditPanel propsEditPanel = null;
 	private Properties origProps = new Properties();
 
 	JButton dbPasswordButton;
   
-	String[] usedfields = new String[]{"sitenametypepreference",
-		"editoutputformat",
+	String[] usedfields = new String[]{
+		"sitenametypepreference",
 		"edittimezone",
 		"jdbcdriverclass",
 		"sqlkeygenerator",
@@ -181,103 +176,6 @@ public class DecodesPropsPanel extends JPanel
 					editDbTypeChanged();
 				}
 			});
-		
-			
-//		otherPropsPanel.setLayout(new GridBagLayout());
-//		jdbcDriverClassField.setToolTipText(labels
-//				.getString("DecodesPropsPanel.JDBCDriverTT"));
-//		jdbcDriverClassField.setText("");
-//		sqlKeyGenClassField.setToolTipText(labels
-//				.getString("DecodesPropsPanel.javaClassKeyTT"));
-//		sqlKeyGenClassField.setText("");
-//		sqlDateFmtLabel.setText("SQL Date Format:");
-//		sqlDateFormatField.setToolTipText(labels
-//				.getString("DecodesPropsPanel.dateFormatTT"));
-//		sqlDateFormatField.setText("");
-//		sqlTimeZoneLabel.setToolTipText("");
-//		sqlTimeZoneLabel.setText("SQL Time Zone:");
-//		sqlTimeZoneField.setToolTipText(labels
-//				.getString("DecodesPropsPanel.timeZoneTT"));
-//		sqlTimeZoneField.setText("");
-//		dataTypeStdPrefField.setToolTipText(labels
-//				.getString("DecodesPropsPanel.dateTypeStndTT"));
-//		dataTypeStdPrefField.setText("");
-//		dbeditTimeZoneCombo.setToolTipText(labels
-//				.getString("DecodesPropsPanel.timeZoneSampleMsgTT"));
-//		dbeditOutputFormatCombo.setToolTipText(labels
-//				.getString("DecodesPropsPanel.formatDecodeSampleMsgTT"));
-//		siteNameStandardCombo.setToolTipText(labels
-//				.getString("DecodesPropsPanel.preferredNameTypeTT"));
-
-//		JScrollPane myscrollpane = new JScrollPane();
-//		this.add(myscrollpane, BorderLayout.CENTER);
-//		myscrollpane.setBorder(new TitledBorder(
-//			labels.getString("DecodesPropsPanel.preferences")));
-
-//		myscrollpane.getViewport().add(otherPropsPanel);
-//		myscrollpane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-//		otherPropsPanel.add(new JLabel("Site Naming Standard:"),
-//			new GridBagConstraints(0, 0, 1, 1, 0.0,
-//				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-//				new Insets(4, 0, 4, 0), 0, 0));
-//		otherPropsPanel.add(new JLabel("DBEDIT Time Zone:"),
-//			new GridBagConstraints(0, 2, 1, 1, 0.0,
-//				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-//				new Insets(4, 0, 4, 0), 0, 0));
-//		otherPropsPanel.add(new JLabel(" SQL Key Generator Class:"), 
-//			new GridBagConstraints(0, 4, 1, 1, 0.0,
-//				0.0, GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
-//				new Insets(4, 0, 4, 0), 0, 0));
-//		otherPropsPanel.add(new JLabel("DBEDIT Output Format:"), 
-//			new GridBagConstraints(0, 1, 1, 1, 0.0,
-//				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-//				new Insets(4, 0, 4, 0), 0, 0));
-//		otherPropsPanel.add(new JLabel("JDBC Driver Class:"),
-//			new GridBagConstraints(0, 3, 1, 1, 0.0,
-//				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-//				new Insets(4, 0, 4, 0), 0, 0));
-//		otherPropsPanel.add(jdbcDriverClassField,
-//				new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-//						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-//						new Insets(4, 4, 4, 125), 138, 0));
-//		siteNameStandardCombo.setEditable(true);
-//		otherPropsPanel.add(siteNameStandardCombo,
-//				new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-//						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-//						new Insets(4, 4, 4, 125), 125, 0));
-//		otherPropsPanel.add(dbeditOutputFormatCombo,
-//				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
-//						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-//						new Insets(4, 4, 4, 125), 125, 0));
-//		otherPropsPanel.add(dbeditTimeZoneCombo,
-//				new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-//						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-//						new Insets(4, 4, 4, 125), 125, 0));
-//		otherPropsPanel.add(sqlKeyGenClassField,
-//				new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
-//						GridBagConstraints.NORTHWEST,
-//						GridBagConstraints.HORIZONTAL,
-//						new Insets(4, 4, 4, 125), 138, 0));
-//		otherPropsPanel.add(sqlDateFmtLabel, new GridBagConstraints(0, 5, 1, 1,
-//				0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-//				new Insets(4, 0, 0, 0), 0, 0));
-//		otherPropsPanel.add(sqlDateFormatField, new GridBagConstraints(1, 5, 1,
-//				1, 0.0, 0.0, GridBagConstraints.WEST,
-//				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 125), 0, 0));
-//		otherPropsPanel.add(sqlTimeZoneLabel, new GridBagConstraints(0, 6, 1,
-//				1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-//				new Insets(4, 0, 4, 0), 0, 0));
-//		otherPropsPanel.add(sqlTimeZoneField, new GridBagConstraints(1, 6, 1,
-//				1, 0.0, 0.0, GridBagConstraints.WEST,
-//				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 125), 0, 0));
-//
-//		otherPropsPanel.add(new JLabel("Data Type Std Pref:"),
-//				new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0,
-//						GridBagConstraints.EAST, GridBagConstraints.NONE,
-//						new Insets(4, 0, 4, 0), 0, 0));
-//		otherPropsPanel.add(dataTypeStdPrefField, new GridBagConstraints(1, 7,
-//				1, 1, 0.0, 0.0, GridBagConstraints.WEST,
-//				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 125), 0, 0));
 	}
 
 	protected void editDbTypeChanged()
@@ -376,4 +274,3 @@ public class DecodesPropsPanel extends JPanel
 		}
 	}
 }
-

@@ -289,12 +289,6 @@ public class ConfigSensor
 		return true;
 	}
 
-	/** Do nothing. */
-	public void validate()
-		throws IncompleteDatabaseException, InvalidDatabaseException
-	{
-	}
-
 	/**
 	* Overrides the DatabaseObject's read() method.
 	* This does nothing, since I/O for this class is handled by the
