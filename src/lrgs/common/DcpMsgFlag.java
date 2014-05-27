@@ -77,6 +77,10 @@ public class DcpMsgFlag
 	// Indicates a binary message that has detected errors
 	public static final int HAS_BINARY_ERRORS        = 0x00040000;
 	
+	/** Revision number for interpreting flag bits */
+	static public int myFlagRev = 0x4b;
+
+	
 	/** @return true if message is GOES */
 	public static boolean isGOES(int f) 
 	{

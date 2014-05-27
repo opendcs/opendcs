@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.2  2014/05/22 14:13:44  mmaloney
+*  Get rid of editPresentationGroup
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -156,9 +159,6 @@ public class DecodesSettings
 
 	/** Transport ID type preference - for display only. */
 	public String transportMediumTypePreference = Constants.medium_GoesST;
-
-	/** Output format to use in Script Edit Dialog in db editor */
-	public String editOutputFormat = "Human-Readable";
 
 	/** Timezone to use in Script Edit Dialog in db editor. */
 	public String editTimeZone;
