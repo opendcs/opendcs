@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.1  2013/06/17 19:50:59  mmaloney
  * Created
  *
@@ -78,7 +81,7 @@ public class KistersFormatter
 	public boolean attemptDecode() { return true; }
 
 	@Override
-	protected void init(String type, TimeZone tz, PresentationGroup presGrp,
+	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp,
 		Properties rsProps) 
 		throws OutputFormatterException
 	{
@@ -121,7 +124,7 @@ public class KistersFormatter
 	}
 
 	@Override
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
@@ -206,7 +209,7 @@ public class KistersFormatter
 				headerLine.append(headerDelim);
 			}
 				
-			consumer.println(headerLine.toString());
+			consumer.printLine(headerLine.toString());
 
 			ts.sort();
 			for(int idx=0; idx<ts.size(); idx++)
@@ -220,7 +223,7 @@ public class KistersFormatter
 					else 
 						samp = RINVAL;
 				}
-				consumer.println(sdf.format(ts.timeAt(idx)) + " " + samp);
+				consumer.printLine(sdf.format(ts.timeAt(idx)) + " " + samp);
 			}
 		}
 		consumer.endMessage();

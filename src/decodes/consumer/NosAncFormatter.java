@@ -35,7 +35,7 @@ public class NosAncFormatter extends OutputFormatter
 	}
 	
 	@Override
-	protected void init(String type, TimeZone tz, PresentationGroup presGrp,
+	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp,
 			Properties rsProps) throws OutputFormatterException
 	{
 	}
@@ -46,7 +46,7 @@ public class NosAncFormatter extends OutputFormatter
 	}
 
 	@Override
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 			throws DataConsumerException, OutputFormatterException
 	{
 		RawMessage rawmsg = msg.getRawMessage();
@@ -118,13 +118,13 @@ public class NosAncFormatter extends OutputFormatter
 						sb.append("      ");
 				}
 				sb.append("   S");
-				consumer.println(sb.toString());
+				consumer.printLine(sb.toString());
 				sb.setLength(0);
 			}
 		}
 	}
 	
 	@Override
-	public boolean usesTimeZone() { return false; }
+	public boolean usesTZ() { return false; }
 
 }

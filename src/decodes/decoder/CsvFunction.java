@@ -11,7 +11,7 @@ import java.util.StringTokenizer;
 import decodes.db.DecodesScript;
 
 public class CsvFunction
-	extends DecodesFunctionOperation
+	extends DecodesFunction
 {
 	private ArrayList<Integer> sensorNumbers = new ArrayList<Integer>();
 	private String module = "csv";
@@ -22,13 +22,13 @@ public class CsvFunction
 	}
 
 	@Override
-	public DecodesFunctionOperation copy()
+	public DecodesFunction makeCopy()
 	{
 		return new CsvFunction();
 	}
 
 	@Override
-	public String getFunctionName()
+	public String getFuncName()
 	{
 		return module;
 	}

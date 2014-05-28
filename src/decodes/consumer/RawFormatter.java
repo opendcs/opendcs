@@ -50,7 +50,7 @@ public class RawFormatter extends OutputFormatter
 	  @param presGrp The presentation group to handle rounding & EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
-	protected void init(String type, java.util.TimeZone tz,
+	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -72,7 +72,7 @@ public class RawFormatter extends OutputFormatter
 	  @throws OutputFormatterException if there was a problem formatting data.
 	  @throws DataConsumerException, passed through from consumer methods.
 	*/
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
@@ -80,7 +80,7 @@ public class RawFormatter extends OutputFormatter
 		if (rawmsg != null)
 		{
 			String rm = rawmsg.toString();
-			consumer.println(rm);
+			consumer.printLine(rm);
 		}
 		consumer.endMessage();
 	}
@@ -101,7 +101,7 @@ public class RawFormatter extends OutputFormatter
 	public boolean attemptDecode() { return false; }
 	
 	@Override
-	public boolean usesTimeZone() { return false; }
+	public boolean usesTZ() { return false; }
 
 }
 

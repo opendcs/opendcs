@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.6  2013/03/28 19:19:32  mmaloney
 *  User temp files are now placed under DCSTOOL_USERDIR which may be different
 *  from DCSTOOL_HOME on linux/unix multi-user installations.
@@ -214,10 +217,10 @@ public class FileAppendConsumer extends DataConsumer
 		}
 	}
 
-	public void println(String line)
+	public void printLine(String line)
 	{
 		if (currentFile != null)
-			currentFile.println(line);
+			currentFile.printLine(line);
 	}
 	public void endMessage(String dbNo)
 	{

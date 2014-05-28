@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2012/09/10 23:55:39  mmaloney
 *  Allow operation without platform record for OutputTs.
 *
@@ -154,7 +157,7 @@ public class ShefFormatter extends OutputFormatter
 	  @param presGrp The presentation group to handle rounding & EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
-	protected void init(String type, java.util.TimeZone tz,
+	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -228,7 +231,7 @@ public class ShefFormatter extends OutputFormatter
 	  @throws OutputFormatterException if there was a problem formatting data.
 	  @throws DataConsumerException, passed through from consumer methods.
 	*/
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
@@ -334,7 +337,7 @@ public class ShefFormatter extends OutputFormatter
 				if (eu != null && !eu.abbr.equals("unknown"))
 						sb.append(" " + eu.abbr);
 
-				consumer.println(sb.toString());
+				consumer.printLine(sb.toString());
 			}
 			else // output .A
 			{
@@ -364,7 +367,7 @@ public class ShefFormatter extends OutputFormatter
 					if (eu != null && !eu.abbr.equals("unknown"))
 						sb.append(" " + eu.abbr);
 	
-					consumer.println(sb.toString());
+					consumer.printLine(sb.toString());
 				}
 			}
 		}

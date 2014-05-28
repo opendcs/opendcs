@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:20:59  cvs
 *  Added legacy code to repository
 *
@@ -47,7 +50,7 @@ public class NullFormatter extends OutputFormatter
 	}
 
 	/** The NullFormatter requires no initialization and ignores all args.  */
-	protected void init(String type, java.util.TimeZone tz,
+	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -66,7 +69,7 @@ public class NullFormatter extends OutputFormatter
 	  @param consumer The DataConsumer to output to.
 	  @throws DataConsumerException, passed through from consumer methods.
 	*/
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
@@ -87,7 +90,7 @@ public class NullFormatter extends OutputFormatter
 	public boolean requiresDecodedMessage() { return false; }
 
 	@Override
-	public boolean usesTimeZone() { return false; }
+	public boolean usesTZ() { return false; }
 
 
 }

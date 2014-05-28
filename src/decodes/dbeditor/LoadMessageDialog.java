@@ -2,6 +2,9 @@
  *  $Id$
  *
  *  $Log$
+ *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ *  OPENDCS 6.0 Initial Checkin
+ *
  *  Revision 1.5  2010/09/13 15:31:11  mmaloney
  *  dev
  *
@@ -693,7 +696,7 @@ class LoadMessageThread extends Thread
 			try
 			{
 				if (!no_init)
-					dse.init(rsProps, "now - " + back + " hours", "now - " + prevback + " hours",
+					dse.initDataSource(rsProps, "now - " + back + " hours", "now - " + prevback + " hours",
 						new Vector());
 				RawMessage rawMsg = dse.getRawMessage();
 				if (rawMsg != null)

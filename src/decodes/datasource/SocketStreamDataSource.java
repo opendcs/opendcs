@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2009/05/08 14:30:13  mjmaloney
 *  remove debugs
 *
@@ -194,7 +197,7 @@ public class SocketStreamDataSource extends DataSourceExec
 	  @param networkLists contains NetworkList objects.
 	  @throws DataSourceException if the source could not be initialized.
 	*/
-	public void init(Properties routingSpecProps, String since, String until,
+	public void initDataSource(Properties routingSpecProps, String since, String until,
 		Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{

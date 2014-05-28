@@ -273,7 +273,7 @@ theDb.debug3("outputts, after fillTimeSeries dn='" + ts.getDisplayName() + "'");
 				decmsg.addTimeSeries(ts);
 		}
 		
-		outputFormatter.writeMessage(decmsg, consumer);
+		outputFormatter.formatMessage(decmsg, consumer);
 	}
 
 	public void setConsumer(DataConsumer consumer)

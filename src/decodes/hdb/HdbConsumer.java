@@ -11,6 +11,9 @@
  *  For more information contact: info@ilexeng.com
  *
  *  $Log$
+ *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ *  OPENDCS 6.0 Initial Checkin
+ *
  *  Revision 1.8  2013/03/21 18:27:40  mmaloney
  *  DbKey Implementation
  *
@@ -279,7 +282,7 @@ public class HdbConsumer extends DataConsumer
 	 * 
 	 * @param line the line to be written.
 	 */
-	public void println(String line)
+	public void printLine(String line)
 	{
 	}
 

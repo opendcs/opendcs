@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.2  2014/05/22 12:26:48  mmaloney
+*  Remove obsolete methods.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -405,7 +408,7 @@ public class DecodesInterface
 
 		// Use the formatter & consumer to output the message.
 		decodeBuf.delete(0, decodeBuf.length());
-		formatter.writeMessage(dm, consumer);
+		formatter.formatMessage(dm, consumer);
 
 		return decodeBuf.toString();
 	}

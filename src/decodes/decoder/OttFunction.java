@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * 
  * Open Source software by Cove Software, LLC
  */
@@ -15,7 +18,7 @@ import ilex.util.Logger;
 import ilex.var.Variable;
 import decodes.decoder.DataOperations;
 import decodes.decoder.DecodedMessage;
-import decodes.decoder.DecodesFunctionOperation;
+import decodes.decoder.DecodesFunction;
 
 /**
  * Ott does Pseudo Binary in a different way. They construct an array
@@ -28,7 +31,7 @@ import decodes.decoder.DecodesFunctionOperation;
  * This map is provided by command-line arguments.
  */
 public class OttFunction
-	extends DecodesFunctionOperation 
+	extends DecodesFunction 
 {
 	// Ott represents times relative to Jan 1, 2000.
 	public static final long JAN_1_2000 = 946684800000L;
@@ -44,12 +47,12 @@ public class OttFunction
 	}
 
 	@Override
-	public DecodesFunctionOperation copy()
+	public DecodesFunction makeCopy()
 	{
 		return new OttFunction();
 	}
 
-	public String getFunctionName() { return "ott"; }
+	public String getFuncName() { return "ott"; }
 
 	@Override
 	public void setArguments(String sensorList)

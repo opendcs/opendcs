@@ -57,9 +57,9 @@ public class NosConsumer extends DataConsumer
 			fc.open(outputDir.getPath() + "/XXX.DCP", rsProps);
 			fc.startMessage(msg);
 			NosDcpFormatter nosDcpFmt = new NosDcpFormatter();
-			nosDcpFmt.init("NosDcpFormatter", TimeZone.getTimeZone("UTC"),
+			nosDcpFmt.initFormatter("NosDcpFormatter", TimeZone.getTimeZone("UTC"),
 				null, rsProps);
-			nosDcpFmt.writeMessage(msg, fc);
+			nosDcpFmt.formatMessage(msg, fc);
 			nosDcpFmt.shutdown();
 		}
 		catch (OutputFormatterException e)
@@ -82,9 +82,9 @@ public class NosConsumer extends DataConsumer
 			fc.open(outputDir.getPath() + "/XXX.ANC", rsProps);
 			fc.startMessage(msg);
 			NosAncFormatter nosAncFmt = new NosAncFormatter();
-			nosAncFmt.init("NosAncFormatter", TimeZone.getTimeZone("UTC"),
+			nosAncFmt.initFormatter("NosAncFormatter", TimeZone.getTimeZone("UTC"),
 				null, rsProps);
-			nosAncFmt.writeMessage(msg, fc);
+			nosAncFmt.formatMessage(msg, fc);
 			nosAncFmt.shutdown();
 		}
 		catch (OutputFormatterException e)
@@ -107,9 +107,9 @@ public class NosConsumer extends DataConsumer
 			fc.open(outputDir.getPath() + "/XXX.NES", rsProps);
 			fc.startMessage(msg);
 			NosNesFormatter nosNesFmt = new NosNesFormatter();
-			nosNesFmt.init("NosNesFormatter", TimeZone.getTimeZone("UTC"),
+			nosNesFmt.initFormatter("NosNesFormatter", TimeZone.getTimeZone("UTC"),
 				null, rsProps);
-			nosNesFmt.writeMessage(msg, fc);
+			nosNesFmt.formatMessage(msg, fc);
 			nosNesFmt.shutdown();
 		}
 		catch (OutputFormatterException e)
@@ -132,9 +132,9 @@ public class NosConsumer extends DataConsumer
 			fc.open(outputDir.getPath() + "/XXX.QC", rsProps);
 			fc.startMessage(msg);
 			NosQcFormatter nosQcFmt = new NosQcFormatter();
-			nosQcFmt.init("NosQcFormatter", TimeZone.getTimeZone("UTC"),
+			nosQcFmt.initFormatter("NosQcFormatter", TimeZone.getTimeZone("UTC"),
 				null, rsProps);
-			nosQcFmt.writeMessage(msg, fc);
+			nosQcFmt.formatMessage(msg, fc);
 			nosQcFmt.shutdown();
 		}
 		catch (OutputFormatterException e)
@@ -152,7 +152,7 @@ public class NosConsumer extends DataConsumer
 	}
 
 	@Override
-	public void println(String line)
+	public void printLine(String line)
 	{
 		// Do nothing. All work done in startMessage method.
 	}

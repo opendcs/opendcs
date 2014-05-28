@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.3  2011/09/27 01:24:48  mmaloney
 * Enhancements for SHEF and NOS Decoding.
 *
@@ -23,7 +26,7 @@ import decodes.db.Platform;
 import decodes.db.PlatformConfig;
 import decodes.decoder.DataOperations;
 import decodes.decoder.DecodedMessage;
-import decodes.decoder.DecodesFunctionOperation;
+import decodes.decoder.DecodesFunction;
 
 /** Handles NOS Hourly message format. */
 public class NosHourly
@@ -36,12 +39,12 @@ public class NosHourly
 		super();
 	}
 	
-	public DecodesFunctionOperation copy()
+	public DecodesFunction makeCopy()
 	{
 		return new NosHourly();
 	}
 
-	public String getFunctionName() { return module; }
+	public String getFuncName() { return module; }
 
 	/**
 	 * No arguments expected for NOS 6 Min

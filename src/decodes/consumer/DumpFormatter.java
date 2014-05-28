@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2012/09/11 00:07:43  mmaloney
 *  dev
 *
@@ -93,7 +96,7 @@ public class DumpFormatter extends OutputFormatter
 	  @param presGrp The presentation group to handle rounding & EU conversions.
 	  @param rsProps the routing-spec properties.
 	 */
-	protected void init(String type, java.util.TimeZone tz,
+	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -116,58 +119,58 @@ public class DumpFormatter extends OutputFormatter
 	* @throws OutputFormatterException if there was a problem formatting data.
 	* @throws DataConsumerException, passed through from consumer methods.
 	*/
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
 
 		RawMessage rawmsg = msg.getRawMessage();
-		consumer.println("=================================");
-		consumer.println("Start of message");
-		consumer.println("Time Stamp: "
+		consumer.printLine("=================================");
+		consumer.printLine("Start of message");
+		consumer.printLine("Time Stamp: "
 			+ myDateFormat.format(rawmsg.getTimeStamp()));
-		consumer.println("Raw Data:");
-		consumer.println(new String(rawmsg.getData()));
-		consumer.println("");
-		consumer.println("Performance Measurements:");
+		consumer.printLine("Raw Data:");
+		consumer.printLine(new String(rawmsg.getData()));
+		consumer.printLine("");
+		consumer.printLine("Performance Measurements:");
 		for(Iterator it = rawmsg.getPMNames(); it.hasNext(); )
 		{
 			String nm = (String)it.next();
 			Variable v = rawmsg.getPM(nm);
-			consumer.println(nm + "=" + v);
+			consumer.printLine(nm + "=" + v);
 		}
 
 		Platform platform;
 		try { platform = rawmsg.getPlatform(); }
 		catch(UnknownPlatformException e)
 		{
-			consumer.println(
+			consumer.printLine(
 				"Cannot get Platform to format output: " + e);
 			platform = null;
 		}
-		consumer.println("");
+		consumer.printLine("");
 		if (platform != null)
-			consumer.println("Message is for platform " + platform.makeFileName());
-		consumer.println("Decoded Data:");
-		consumer.println("");
+			consumer.printLine("Message is for platform " + platform.makeFileName());
+		consumer.printLine("Decoded Data:");
+		consumer.printLine("");
 		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
 			TimeSeries ts = (TimeSeries)it.next();
 			Sensor sensor = ts.getSensor();
 			String platformName = sensor.getSensorSiteName();
 			EngineeringUnit eu = ts.getEU();
-			consumer.println("Sensor " + ts.getSensorNumber()
+			consumer.printLine("Sensor " + ts.getSensorNumber()
 				+ ": " + sensor.getName()
 				+ ", EU=" + (eu == null ? "unknown" : eu.toString())
 				+ ", DataType=" + sensor.getDataType().toString());
 			if (platformName != null)
-				consumer.println("Site Name Override: " + platformName);
+				consumer.printLine("Site Name Override: " + platformName);
 			int sz = ts.size();
-			consumer.println("Number of Samples=" + sz);
+			consumer.printLine("Number of Samples=" + sz);
 			for(int i=0; i<sz; i++)
 			{
 				TimedVariable tv = ts.sampleAt(i);
-				consumer.println("Sample[" + i + "]=" + 
+				consumer.printLine("Sample[" + i + "]=" + 
 					myDateFormat.format(tv.getTime()) + ": " + tv.valueString()
 					+ "  '" + ts.formattedSampleAt(i) + "'");
 			}

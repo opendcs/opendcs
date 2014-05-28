@@ -197,7 +197,7 @@ public class FileConsumer extends DataConsumer
 	  Sends a line of text to the file.
 	  @param line the line to be written.
 	*/
-	public void println(String line)
+	public void printLine(String line)
 	{
 		os.println(line);
 	}

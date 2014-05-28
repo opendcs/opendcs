@@ -88,9 +88,9 @@ public class NosMeterConsumer extends DataConsumer
 			fc.open(filenameTemplate, rsProps);
 			fc.startMessage(msg);
 			NosDcpFormatter nosDcpFmt = new NosDcpFormatter();
-			nosDcpFmt.init("NosDcpFormatter", TimeZone.getTimeZone("UTC"),
+			nosDcpFmt.initFormatter("NosDcpFormatter", TimeZone.getTimeZone("UTC"),
 				null, rsProps);
-			nosDcpFmt.writeMessage(msg, fc);
+			nosDcpFmt.formatMessage(msg, fc);
 			nosDcpFmt.shutdown();
 		}
 		catch (OutputFormatterException e)
@@ -115,9 +115,9 @@ public class NosMeterConsumer extends DataConsumer
 			fc.open(filenameTemplate, rsProps);
 			fc.startMessage(msg);
 			CurrentMeterFormatter curMetFmt = new CurrentMeterFormatter();
-			curMetFmt.init("CurrentMeterFormatter", TimeZone.getTimeZone("UTC"),
+			curMetFmt.initFormatter("CurrentMeterFormatter", TimeZone.getTimeZone("UTC"),
 				null, rsProps);
-			curMetFmt.writeMessage(msg, fc);
+			curMetFmt.formatMessage(msg, fc);
 			curMetFmt.shutdown();
 		}
 		catch (OutputFormatterException e)
@@ -135,7 +135,7 @@ public class NosMeterConsumer extends DataConsumer
 	}
 
 	@Override
-	public void println(String line)
+	public void printLine(String line)
 	{
 		// Do nothing. All work done in startMessage method.
 	}

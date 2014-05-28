@@ -58,7 +58,7 @@ public class ShefitFormatter extends OutputFormatter
 	  @param rsProps the routing-spec properties.
 	*/
 	@Override
-	protected void init(String type, java.util.TimeZone tz,
+	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -81,7 +81,7 @@ public class ShefitFormatter extends OutputFormatter
 	  @throws DataConsumerException, passed through from consumer methods.
 	*/
 	@Override
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
@@ -237,7 +237,7 @@ public class ShefitFormatter extends OutputFormatter
 				else
 					sb.append("2");
 
-				consumer.println(sb.toString());
+				consumer.printLine(sb.toString());
 			}
 		}
 		consumer.endMessage();

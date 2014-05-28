@@ -277,13 +277,13 @@ public class DcpDecodeMsg
 //			return;
 //		}
 		
-		consumer.setTimeZone(tz);
+		consumer.setTZ(tz);
 		try
 		{
 			formatter = OutputFormatter.makeOutputFormatter(
 					"HtmlFormatter", tz,
 				presentationGroup, new Properties());
-			formatter.writeMessage(dm, consumer); 
+			formatter.formatMessage(dm, consumer); 
 			OutputStream os = consumer.getOutputStream();
 			if (os != null)
 				return os.toString();

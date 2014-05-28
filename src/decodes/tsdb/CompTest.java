@@ -166,7 +166,7 @@ public class CompTest extends TsdbAppTemplate
 				decmsg.addTimeSeries(ts);
 		}
 		
-		outputFormatter.writeMessage(decmsg, consumer);
+		outputFormatter.formatMessage(decmsg, consumer);
 	}
 
 	

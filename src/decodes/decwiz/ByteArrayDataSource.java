@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.4  2013/03/21 18:27:40  mmaloney
  * DbKey Implementation
  *
@@ -59,7 +62,7 @@ public class ByteArrayDataSource
 	/**
 	 * Does nothing.
 	 */
-	public void init(Properties routingSpecProps, String since, 
+	public void initDataSource(Properties routingSpecProps, String since, 
 		String until, Vector networkLists)
 	{
 	}

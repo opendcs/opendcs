@@ -121,7 +121,7 @@ public class LrgsDataSource extends DataSourceExec
 	  @param networkLists contains NetworkList objects.
 	  @throws DataSourceException if the source could not be initialized.
 	*/
-	public void init(Properties routingSpecProps, String since, String until,
+	public void initDataSource(Properties routingSpecProps, String since, String until,
 		Vector networkLists)
 		throws DataSourceException
 	{
@@ -407,8 +407,8 @@ public class LrgsDataSource extends DataSourceExec
 			if (sendSc)
 			{
 				lddsClient.sendSearchCrit(searchCrit);
-				if (routingSpecThread != null)
-					routingSpecThread.implicitAllUsed = 
+				if (rsThread != null)
+					rsThread.implicitAllUsed = 
 						lddsClient.implicitAllUsed;
 			}
 		}

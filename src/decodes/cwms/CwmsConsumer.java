@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.23  2013/04/23 13:25:23  mmaloney
 *  Office ID filtering put back into Java.
 *
@@ -507,7 +510,7 @@ public class CwmsConsumer extends DataConsumer
 	  Does nothing.
 	  @param line the line to be written.
 	*/
-	public void println(String line)
+	public void printLine(String line)
 	{
 	}
 

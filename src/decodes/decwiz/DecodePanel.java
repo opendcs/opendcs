@@ -479,7 +479,7 @@ public class DecodePanel
 			OutputFormatter formatter = OutputFormatter.makeOutputFormatter(
 				fileIdPanel.getSelectedFormat(), TimeZone.getTimeZone(tzs), 
 				null, new Properties());
-			formatter.writeMessage(decodedMessage, consumer); 
+			formatter.formatMessage(decodedMessage, consumer); 
 			decodedDataArea.setText(consumer.getBuffer().toString());
 			try 
 			{

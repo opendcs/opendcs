@@ -41,7 +41,7 @@ import decodes.util.DecodesSettings;
  * successfully parsed.
  */
 public class AsciiSelfDescFunction
-	extends DecodesFunctionOperation 
+	extends DecodesFunction 
 {
 	public static final String module = "AsciiSelfDesc";
 	
@@ -284,14 +284,14 @@ public class AsciiSelfDescFunction
 		return best;
 	}
 	@Override
-	public DecodesFunctionOperation copy()
+	public DecodesFunction makeCopy()
 	{
 		return new AsciiSelfDescFunction();
 	}
 
 
 	@Override
-	public String getFunctionName()
+	public String getFuncName()
 	{
 		return module;
 	}

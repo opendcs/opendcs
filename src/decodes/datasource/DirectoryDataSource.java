@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.15  2011/11/29 16:06:22  mmaloney
 *  Add "filename" to msg before calling PMP
 *
@@ -273,7 +276,7 @@ public class DirectoryDataSource extends DataSourceExec
 	  @param networkLists contains NetworkList objects.
 	  @throws DataSourceException if the source could not be initialized.
 	*/
-	public void init(Properties routingSpecProps, String since, 
+	public void initDataSource(Properties routingSpecProps, String since, 
 		String until, Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{
@@ -520,7 +523,7 @@ Logger.instance().debug3("DirectoryDataSource, added 'filename' property="
 					// opens file.
 Logger.instance().debug3("DirectoryDataSource 2, added 'filename' property=" 
 + allProps.getProperty("filename"));
-					fileDataSource.init(allProps, null, null, null); 
+					fileDataSource.initDataSource(allProps, null, null, null); 
 					messageExists=true;
 				}
 				catch(DataSourceException ex)

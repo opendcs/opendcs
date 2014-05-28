@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:20:59  cvs
 *  Added legacy code to repository
 *
@@ -165,7 +168,7 @@ public class PipeConsumer extends DataConsumer
 	  Outputs a line.
 	  @param line the line to output
 	*/
-	public void println(String line)
+	public void printLine(String line)
 	{
 		os.println(line);
 	}

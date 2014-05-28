@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2013/06/17 19:50:59  mmaloney
 *  Created
 *
@@ -84,7 +87,7 @@ public abstract class OutputFormatter
 	  @param presGrp The presentation group to handle rounding & EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
-	protected abstract void init(String type, java.util.TimeZone tz,
+	protected abstract void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException;
 
@@ -101,7 +104,7 @@ public abstract class OutputFormatter
 	  @throws OutputFormatterException if there was a problem formatting data.
 	  @throws DataConsumerException, passed through from consumer methods.
 	*/
-	public abstract void writeMessage(
+	public abstract void formatMessage(
 		DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException;
 
@@ -158,7 +161,7 @@ public abstract class OutputFormatter
 			ret = new NullFormatter();
 
 		if (rsProps != null)
-			ret.init(type, tz, presGrp, rsProps);
+			ret.initFormatter(type, tz, presGrp, rsProps);
 		return ret;
 	}
 
@@ -198,7 +201,7 @@ public abstract class OutputFormatter
 	/**
 	 * @return true if this formatter uses the timezone setting, false if not.
 	 */
-	public boolean usesTimeZone() { return true; }
+	public boolean usesTZ() { return true; }
 	
 	protected PropertySpec ofPropSpecs[] = 
 	{

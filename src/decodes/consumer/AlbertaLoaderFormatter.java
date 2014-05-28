@@ -75,7 +75,7 @@ public class AlbertaLoaderFormatter
 	}
 
 	@Override
-	protected void init(String type, TimeZone tz, PresentationGroup presGrp, Properties rsProps)
+	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
 		if (tz != null)
@@ -103,7 +103,7 @@ public class AlbertaLoaderFormatter
 	}
 
 	@Override
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		this.consumer = consumer;
@@ -194,14 +194,14 @@ public class AlbertaLoaderFormatter
 				line.append(TextUtil.setLengthLeftJustify(dataType.getCode(), 4));
 				line.append(resultCode);
 
-				consumer.println(line.toString());
+				consumer.printLine(line.toString());
 			}
 		}
 		if (trailer)
 		{
 			// Canned trailer
-			consumer.println("ZZZ      00000000 00001234.678SSD__");
-			consumer.println("ZZZ      00000000 000012345.78SSSSX");
+			consumer.printLine("ZZZ      00000000 00001234.678SSD__");
+			consumer.printLine("ZZZ      00000000 000012345.78SSSSX");
 		}
 		consumer.endMessage();
 	}

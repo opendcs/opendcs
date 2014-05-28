@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.3  2009/10/16 12:39:00  mjmaloney
 * LRIT updates
 *
@@ -391,7 +394,7 @@ public class ManualRetransThread
 			dataSource.setAllowNullPlatform(true);
 			dataSource.setAllowDapsStatusMessages(true);
 
-			dataSource.init(rsProps, sc.getLrgsSince(), sc.getLrgsUntil(), nlVector);
+			dataSource.initDataSource(rsProps, sc.getLrgsSince(), sc.getLrgsUntil(), nlVector);
 		}
 		catch(InvalidDatabaseException ex)
 		{

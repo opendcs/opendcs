@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package decodes.consumer;
 
@@ -65,7 +68,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 	}
 
 	@Override
-	protected void init(String type, TimeZone tz, PresentationGroup presGrp, Properties rsProps)
+	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
 		// If a TZ is specified this becomes the default if none is specifed for the site.
@@ -83,7 +86,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 	}
 
 	@Override
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		Site platformSite = msg.getPlatform().getSite();
@@ -99,7 +102,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 
 		if (justOpened)
 		{
-			consumer.println(
+			consumer.printLine(
 				"yyyyMMMdd hhmm cbtt     PC        NewValue   OldValue   Flag user:"
 				+ System.getProperty("user.name")
 				+ " # DECODES output");
@@ -191,7 +194,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 				line.append(TextUtil.setLengthLeftJustify("998877.00", 10));
 				line.append(' ');
 				line.append(dms3Flag);
-				consumer.println(line.toString());
+				consumer.printLine(line.toString());
 			}
 		}
 	}

@@ -21,26 +21,26 @@ used inside DECODES format statements.
 public class FunctionList
 {
 	/** A set of functions available to the tokenizer. */
-	private static HashMap<String, DecodesFunctionOperation> functions
-		= new HashMap<String, DecodesFunctionOperation>();
+	private static HashMap<String, DecodesFunction> functions
+		= new HashMap<String, DecodesFunction>();
 
 	/**
 	 * Adds a function to the list.
 	 */
-	public static void addFunction(DecodesFunctionOperation func)
+	public static void addFunction(DecodesFunction func)
 	{
-		functions.put(func.getFunctionName().toLowerCase(), func);
+		functions.put(func.getFuncName().toLowerCase(), func);
 	}
 
 	/**
 	 * If a function with matching name exists, return a usable copy of the
 	 * function. Else return null.
 	 */
-	public static DecodesFunctionOperation lookup(String name)
+	public static DecodesFunction lookup(String name)
 	{
-		DecodesFunctionOperation ret = functions.get(name.toLowerCase());
+		DecodesFunction ret = functions.get(name.toLowerCase());
 		if (ret == null)
 			return null;
-		return ret.copy();
+		return ret.makeCopy();
 	}
 }

@@ -126,7 +126,7 @@ public class FormatStatementTokenizer
 				ret = new WhiteSpaceSkipOperation();
 			else
 			{
-				DecodesFunctionOperation func = FunctionList.lookup(op);
+				DecodesFunction func = FunctionList.lookup(op);
 				if (func != null)
 				{
 					func.setRepetitions(repetitions);

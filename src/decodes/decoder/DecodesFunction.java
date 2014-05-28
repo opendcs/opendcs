@@ -6,22 +6,24 @@ package decodes.decoder;
 /**
 This is an abstract base class for all decodes operations.
 */
-public abstract class DecodesFunctionOperation 
+public abstract class DecodesFunction 
 	extends DecodesOperation
 {
+	public static final char METHOD_OP = 'M';
+	
 	/**
 	  Constructor is only called from subclass.
 	*/
-	protected DecodesFunctionOperation()
+	protected DecodesFunction()
 	{
 		super(1);
 	}
 
 	/**
 	 * Functions are usually constructed by registering a copy in the
-	 * tokenizer. The tokenizer then uses copy() when needed.
+	 * tokenizer. The tokenizer then uses makeCopy() when needed.
 	 */
-	public abstract DecodesFunctionOperation copy();
+	public abstract DecodesFunction makeCopy();
 
 	public void setRepetitions(int n)
 	{
@@ -33,7 +35,7 @@ public abstract class DecodesFunctionOperation
 	  has a unique function name.
 	  @return 'M'
 	*/
-	public char getType() { return 'M'; }
+	public char getType() { return METHOD_OP; }
 
 	/**
 	 * Each DECODES Function must have a unique name with 2 or more characters,
@@ -41,7 +43,7 @@ public abstract class DecodesFunctionOperation
 	 * being letter, number, or underscore.
 	 * @return the unique name for this function.
 	 */
-	public abstract String getFunctionName();
+	public abstract String getFuncName();
 
 	/**
 	  Subclass overides this operation to execute the operation against

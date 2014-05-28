@@ -15,7 +15,7 @@ import decodes.db.DataType;
 import decodes.db.PlatformConfig;
 
 public abstract class NosDecoder
-	extends DecodesFunctionOperation
+	extends DecodesFunction
 {
 	public static final String PM_STATION_ID = "NOS_STATION_ID";
 	public static final String PM_DCP_NUM = "NOS_DCP_NUM";

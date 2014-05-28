@@ -55,7 +55,7 @@ public class HydstraFormatter extends OutputFormatter
 	  @param presGrp The presentation group to handle rounding & EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
-	protected void init(String type, java.util.TimeZone tz,
+	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -79,7 +79,7 @@ public class HydstraFormatter extends OutputFormatter
 	  @throws OutputFormatterException if there was a problem formatting data.
 	  @throws DataConsumerException, passed through from consumer methods.
 	*/
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
@@ -154,7 +154,7 @@ public class HydstraFormatter extends OutputFormatter
 				sb.append(delimiter);
 				String s = ts.formattedSampleAt(i).trim();
 				sb.append(TextUtil.setLengthLeftJustify(s, 8));
-				consumer.println(sb.toString());
+				consumer.printLine(sb.toString());
 			}
 		}
 		consumer.endMessage();

@@ -66,7 +66,7 @@ public class HumanReadableFormatter extends OutputFormatter
 	  @param presGrp The presentation group to handle rounding & EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
-	protected void init(String type, java.util.TimeZone tz,
+	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -113,7 +113,7 @@ public class HumanReadableFormatter extends OutputFormatter
 	  @throws OutputFormatterException if there was a problem formatting data.
 	  @throws DataConsumerException, passed through from consumer methods.
 	*/
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
@@ -124,10 +124,10 @@ public class HumanReadableFormatter extends OutputFormatter
 		try 
 		{
 			Platform p = rawmsg.getPlatform();
-			consumer.println("");
+			consumer.printLine("");
 			String name = rawmsg.getPlatform().makeFileName();
 			if ( ! name.equals("dummy") )
-				consumer.println("Message for Platform " 
+				consumer.printLine("Message for Platform " 
 					+ rawmsg.getPlatform().makeFileName());
 		}
 		catch(Exception e) {}
@@ -159,7 +159,7 @@ public class HumanReadableFormatter extends OutputFormatter
 				col.colWidth));
 			sb.append(delimiter);
 		}
-		consumer.println(sb.toString());
+		consumer.printLine(sb.toString());
 
 		// Second header line is sensor data type code
 		sb.setLength(0);
@@ -172,7 +172,7 @@ public class HumanReadableFormatter extends OutputFormatter
 				col.colWidth));
 			sb.append(delimiter);
 		}
-		consumer.println(sb.toString());
+		consumer.printLine(sb.toString());
 
 		// Third header line is EU abbreviation
 		sb.setLength(0);
@@ -189,7 +189,7 @@ public class HumanReadableFormatter extends OutputFormatter
 			sb.append(TextUtil.strcenter(col.euAbbr, col.colWidth));
 			sb.append(delimiter);
 		}
-		consumer.println(sb.toString());
+		consumer.printLine(sb.toString());
 
 		// Forth line is actual-site-name. Only use if a sensor uses it.
 		sb.setLength(0);
@@ -209,7 +209,7 @@ public class HumanReadableFormatter extends OutputFormatter
 			sb.append(delimiter);
 		}
 		if (doSensorSite)
-			consumer.println(sb.toString());
+			consumer.printLine(sb.toString());
 
 		Date d;
 		while((d = findNextDate()) != null)
@@ -229,7 +229,7 @@ public class HumanReadableFormatter extends OutputFormatter
 				sb.append(s);
 				sb.append(delimiter);
 			}
-			consumer.println(sb.toString());
+			consumer.printLine(sb.toString());
 		}
 		consumer.endMessage();
 	}

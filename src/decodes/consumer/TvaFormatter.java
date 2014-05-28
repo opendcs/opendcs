@@ -55,7 +55,7 @@ public class TvaFormatter extends OutputFormatter
 	  @param presGrp The presentation group to handle rounding & EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
-	protected void init(String type, java.util.TimeZone tz,
+	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -75,7 +75,7 @@ public class TvaFormatter extends OutputFormatter
 	  @throws OutputFormatterException if there was a problem formatting data.
 	  @throws DataConsumerException, passed through from consumer methods.
 	*/
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
 		consumer.startMessage(msg);
@@ -223,7 +223,7 @@ public class TvaFormatter extends OutputFormatter
 				for(int j=0; j<7; j++)
 					sb.setCharAt(23+j, num.charAt(j));
 
-				consumer.println(sb.toString());
+				consumer.printLine(sb.toString());
 			}
 		}
 		consumer.endMessage();

@@ -40,7 +40,7 @@ import decodes.util.DecodesSettings;
  * successfully parsed.
  */
 public class LatLonFunction
-	extends DecodesFunctionOperation 
+	extends DecodesFunction 
 {
 	public static final String module = "LatLon";
 	
@@ -157,13 +157,13 @@ public class LatLonFunction
 	}
 	
 	@Override
-	public DecodesFunctionOperation copy()
+	public DecodesFunction makeCopy()
 	{
 		return new LatLonFunction();
 	}
 
 	@Override
-	public String getFunctionName()
+	public String getFuncName()
 	{
 		return module;
 	}

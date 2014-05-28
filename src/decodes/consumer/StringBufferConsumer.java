@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2008/11/20 18:49:17  mjmaloney
 *  merge from usgs mods
 *
@@ -85,7 +88,7 @@ public class StringBufferConsumer extends DataConsumer
 	  Appends a line to the buffer.
 	  @param line the line
 	*/
-	public void println(String line)
+	public void printLine(String line)
 	{
 		sb.append(line);
 		sb.append(lineSep);

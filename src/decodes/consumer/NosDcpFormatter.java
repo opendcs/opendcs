@@ -34,7 +34,7 @@ public class NosDcpFormatter extends OutputFormatter
 	}
 	
 	@Override
-	protected void init(String type, TimeZone tz, PresentationGroup presGrp,
+	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp,
 			Properties rsProps) throws OutputFormatterException
 	{
 	}
@@ -45,7 +45,7 @@ public class NosDcpFormatter extends OutputFormatter
 	}
 
 	@Override
-	public void writeMessage(DecodedMessage msg, DataConsumer consumer)
+	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 			throws DataConsumerException, OutputFormatterException
 	{
 		RawMessage rawmsg = msg.getRawMessage();
@@ -212,10 +212,10 @@ public class NosDcpFormatter extends OutputFormatter
 		// more info:
 		sb.append(" P   14.00  99.999  99.999");
 
-		consumer.println(sb.toString());
+		consumer.printLine(sb.toString());
 	}
 	
 	@Override
-	public boolean usesTimeZone() { return false; }
+	public boolean usesTZ() { return false; }
 
 }

@@ -534,7 +534,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 		//=====================================================
 		try 
 		{
-			formatter.writeMessage(dm, consumer); 
+			formatter.formatMessage(dm, consumer); 
 			doSummary(dm);
 		}
 		catch(OutputFormatterException ex)
@@ -855,7 +855,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 			}
 			consumer = DataConsumer.makeDataConsumer(rs.consumerType);
 			consumer.open(rs.consumerArg, rs.getProperties());
-			consumer.setTimeZone(rs.outputTimeZone);
+			consumer.setTZ(rs.outputTimeZone);
 			consumer.setRoutingSpecThread(this);
 			formatter = OutputFormatter.makeOutputFormatter(
 				rs.outputFormat, rs.outputTimeZone,
@@ -899,7 +899,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 				source = null;
 			}
 			source = rs.dataSource.makeDelegate();
-			source.setRoutingSpecThread(this);
+			source.setRSThread(this);
 
 			String sinceTime = rs.sinceTime;
 			// If we are REinitializing, adjust sinceTime to last rcv time - 60 sec.
@@ -911,7 +911,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 			source.setAllowDapsStatusMessages(
 				!formatter.acceptRealDcpMessagesOnly());
 			source.setAllowNullPlatform(!formatter.requiresDecodedMessage());
-			source.init(rs.getProperties(), sinceTime, rs.untilTime,
+			source.initDataSource(rs.getProperties(), sinceTime, rs.untilTime,
 				rs.networkLists);
 		}
 		catch(InvalidDatabaseException e)

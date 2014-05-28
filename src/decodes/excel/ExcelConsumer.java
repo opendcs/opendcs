@@ -161,7 +161,7 @@ public class ExcelConsumer extends DataConsumer
 	/**
 	 * Do Nothing
 	 */
-	public void println(String line)
+	public void printLine(String line)
 	{
 	}
 

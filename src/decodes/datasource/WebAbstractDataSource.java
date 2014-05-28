@@ -78,7 +78,7 @@ public class WebAbstractDataSource
 	}
 
 	@Override
-	public void init(Properties rsProps, String since, 
+	public void initDataSource(Properties rsProps, String since, 
 			String until, Vector<NetworkList> netlists) 
 		throws DataSourceException
 	{
@@ -150,7 +150,7 @@ public class WebAbstractDataSource
 			myProps.setProperty("url", url);
 			try
 			{
-				currentWebDs.init(myProps, rsSince, rsUntil, null);
+				currentWebDs.initDataSource(myProps, rsSince, rsUntil, null);
 				return currentWebDs.getRawMessage();
 			}
 			catch(Exception ex)

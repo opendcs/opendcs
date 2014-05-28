@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2012/10/08 18:23:25  mmaloney
 *  Hold routingSpecThread
 *
@@ -83,7 +86,7 @@ public abstract class DataConsumer
 		tz = null;
 	}
 
-	public void setTimeZone(TimeZone tz)
+	public void setTZ(TimeZone tz)
 	{
 		this.tz = tz;
 	}
@@ -123,21 +126,12 @@ public abstract class DataConsumer
 	public abstract void startMessage(DecodedMessage msg)
 		throws DataConsumerException;
 
-	public void startMessageAppend(DecodedMessage msg)
-		throws DataConsumerException
-	{
-			try {
-				startMessage(msg);
-			} catch ( DataConsumerException dce ) {
-				throw ( dce );
-			}
-	}		
 	/*
 	  Called from the formatter to output a single line to the consumer.
 	  @param line the line of text to be output, not including any line
 	  terminator.
 	*/
-	public abstract void println(String line);
+	public abstract void printLine(String line);
 
 	/** Called after all lines have been output by the formatter. */
 	public abstract void endMessage();

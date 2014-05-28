@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.2  2012/05/24 15:47:15  mmaloney
 * Fixed date/time processing for DH, etc.
 *
@@ -39,13 +42,13 @@ import decodes.db.Platform;
 import decodes.db.PlatformConfig;
 import decodes.decoder.DataOperations;
 import decodes.decoder.DecodedMessage;
-import decodes.decoder.DecodesFunctionOperation;
+import decodes.decoder.DecodesFunction;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.VarFlags;
 
 /** Handles SHEF. */
 public class ShefProcess
-	extends DecodesFunctionOperation 
+	extends DecodesFunction 
 {
 	public static final String module = "ShefProcess";
 	private boolean matchShefPE = false;
@@ -81,14 +84,14 @@ public class ShefProcess
 		super();
 	}
 	
-	public DecodesFunctionOperation copy()
+	public DecodesFunction makeCopy()
 	{
 		return new ShefProcess();
 	}
 
 	public void enableMatchShefPE() { matchShefPE = true; }
 	
-	public String getFunctionName() { return module; }
+	public String getFuncName() { return module; }
 
 	/**
 	 * No arguments expected
