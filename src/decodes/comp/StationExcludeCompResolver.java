@@ -3,13 +3,17 @@ package decodes.comp;
 import java.util.ArrayList;
 import java.util.Date;
 
+import opendcs.dai.PlatformStatusDAI;
+
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.db.Database;
 import decodes.db.Platform;
+import decodes.db.PlatformStatus;
 import decodes.db.RoutingSpec;
 import decodes.db.NetworkList;
 import decodes.decoder.DecodedMessage;
+import decodes.tsdb.DbIoException;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
@@ -30,6 +34,7 @@ public class StationExcludeCompResolver
 	private boolean isEnabled = false;
 	private String netlistPrefix = "exclude_";
 	private long lastNetlistCheck = 0L;
+	private String rsName = "";
 	private ArrayList<NetworkList> excludeList = new ArrayList<NetworkList>();
 
 	@Override
@@ -51,6 +56,7 @@ public class StationExcludeCompResolver
 		Platform p = dm.getPlatform();
 		if (p == null)
 			return null;
+		
 		for(NetworkList nl : excludeList)
 			if (nl.contains(p))
 			{
@@ -59,12 +65,32 @@ public class StationExcludeCompResolver
 					+ p.getDisplayName() + " because it is on the exclude-"
 					+ "network list '" + nl.name + "'");
 				dm.rmAllTimeSeries();
+				PlatformStatusDAI platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
+				
+				try
+				{
+					PlatformStatus platStat = 
+						platformStatusDAO.readPlatformStatus(p.getId());
+					platStat.setAnnotation("Excluded: " 
+						+ rsName + " netlist=" + nl.name);
+					platformStatusDAO.writePlatformStatus(platStat);
+				}
+				catch (DbIoException ex)
+				{
+					Logger.instance().warning(module
+						+ " Cannot access platform status: " + ex);
+				}
+				finally
+				{
+					platformStatusDAO.close();
+				}
 				break;
 			}
 		
 		// Always return null.
 		return null;
 	}
+	
 
 	private void checkNetlists()
 	{
@@ -107,6 +133,7 @@ public class StationExcludeCompResolver
 		s = routingSpec.getProperty("StationExcludeNLPrefix");
 		if (s != null)
 			netlistPrefix = s;
+		rsName = routingSpec.getName();
 	}
 
 	@Override
