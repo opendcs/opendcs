@@ -127,7 +127,7 @@ public class CurrentMeterFormatter extends OutputFormatter
 			
 			sb.append(columns[0].nextSample());
 			sb.append("\n");		
-			consumer.printLine(sb.toString());
+			consumer.println(sb.toString());
 		}
 		consumer.endMessage();
 	}

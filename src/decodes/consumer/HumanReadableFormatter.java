@@ -124,10 +124,10 @@ public class HumanReadableFormatter extends OutputFormatter
 		try 
 		{
 			Platform p = rawmsg.getPlatform();
-			consumer.printLine("");
+			consumer.println("");
 			String name = rawmsg.getPlatform().makeFileName();
 			if ( ! name.equals("dummy") )
-				consumer.printLine("Message for Platform " 
+				consumer.println("Message for Platform " 
 					+ rawmsg.getPlatform().makeFileName());
 		}
 		catch(Exception e) {}
@@ -159,7 +159,7 @@ public class HumanReadableFormatter extends OutputFormatter
 				col.colWidth));
 			sb.append(delimiter);
 		}
-		consumer.printLine(sb.toString());
+		consumer.println(sb.toString());
 
 		// Second header line is sensor data type code
 		sb.setLength(0);
@@ -172,7 +172,7 @@ public class HumanReadableFormatter extends OutputFormatter
 				col.colWidth));
 			sb.append(delimiter);
 		}
-		consumer.printLine(sb.toString());
+		consumer.println(sb.toString());
 
 		// Third header line is EU abbreviation
 		sb.setLength(0);
@@ -189,7 +189,7 @@ public class HumanReadableFormatter extends OutputFormatter
 			sb.append(TextUtil.strcenter(col.euAbbr, col.colWidth));
 			sb.append(delimiter);
 		}
-		consumer.printLine(sb.toString());
+		consumer.println(sb.toString());
 
 		// Forth line is actual-site-name. Only use if a sensor uses it.
 		sb.setLength(0);
@@ -209,7 +209,7 @@ public class HumanReadableFormatter extends OutputFormatter
 			sb.append(delimiter);
 		}
 		if (doSensorSite)
-			consumer.printLine(sb.toString());
+			consumer.println(sb.toString());
 
 		Date d;
 		while((d = findNextDate()) != null)
@@ -229,7 +229,7 @@ public class HumanReadableFormatter extends OutputFormatter
 				sb.append(s);
 				sb.append(delimiter);
 			}
-			consumer.printLine(sb.toString());
+			consumer.println(sb.toString());
 		}
 		consumer.endMessage();
 	}

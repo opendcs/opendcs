@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:29  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -125,52 +128,52 @@ public class DumpFormatter extends OutputFormatter
 		consumer.startMessage(msg);
 
 		RawMessage rawmsg = msg.getRawMessage();
-		consumer.printLine("=================================");
-		consumer.printLine("Start of message");
-		consumer.printLine("Time Stamp: "
+		consumer.println("=================================");
+		consumer.println("Start of message");
+		consumer.println("Time Stamp: "
 			+ myDateFormat.format(rawmsg.getTimeStamp()));
-		consumer.printLine("Raw Data:");
-		consumer.printLine(new String(rawmsg.getData()));
-		consumer.printLine("");
-		consumer.printLine("Performance Measurements:");
+		consumer.println("Raw Data:");
+		consumer.println(new String(rawmsg.getData()));
+		consumer.println("");
+		consumer.println("Performance Measurements:");
 		for(Iterator it = rawmsg.getPMNames(); it.hasNext(); )
 		{
 			String nm = (String)it.next();
 			Variable v = rawmsg.getPM(nm);
-			consumer.printLine(nm + "=" + v);
+			consumer.println(nm + "=" + v);
 		}
 
 		Platform platform;
 		try { platform = rawmsg.getPlatform(); }
 		catch(UnknownPlatformException e)
 		{
-			consumer.printLine(
+			consumer.println(
 				"Cannot get Platform to format output: " + e);
 			platform = null;
 		}
-		consumer.printLine("");
+		consumer.println("");
 		if (platform != null)
-			consumer.printLine("Message is for platform " + platform.makeFileName());
-		consumer.printLine("Decoded Data:");
-		consumer.printLine("");
+			consumer.println("Message is for platform " + platform.makeFileName());
+		consumer.println("Decoded Data:");
+		consumer.println("");
 		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
 			TimeSeries ts = (TimeSeries)it.next();
 			Sensor sensor = ts.getSensor();
 			String platformName = sensor.getSensorSiteName();
 			EngineeringUnit eu = ts.getEU();
-			consumer.printLine("Sensor " + ts.getSensorNumber()
+			consumer.println("Sensor " + ts.getSensorNumber()
 				+ ": " + sensor.getName()
 				+ ", EU=" + (eu == null ? "unknown" : eu.toString())
 				+ ", DataType=" + sensor.getDataType().toString());
 			if (platformName != null)
-				consumer.printLine("Site Name Override: " + platformName);
+				consumer.println("Site Name Override: " + platformName);
 			int sz = ts.size();
-			consumer.printLine("Number of Samples=" + sz);
+			consumer.println("Number of Samples=" + sz);
 			for(int i=0; i<sz; i++)
 			{
 				TimedVariable tv = ts.sampleAt(i);
-				consumer.printLine("Sample[" + i + "]=" + 
+				consumer.println("Sample[" + i + "]=" + 
 					myDateFormat.format(tv.getTime()) + ": " + tv.valueString()
 					+ "  '" + ts.formattedSampleAt(i) + "'");
 			}

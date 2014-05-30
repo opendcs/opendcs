@@ -53,7 +53,7 @@ public class ByteArrayConsumer extends DataConsumer
 	/**
 	  @param line the line
 	*/
-	public void printLine(String line)
+	public void println(String line)
 	{
 
 	}

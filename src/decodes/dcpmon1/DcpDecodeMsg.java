@@ -277,7 +277,7 @@ public class DcpDecodeMsg
 //			return;
 //		}
 		
-		consumer.setTZ(tz);
+		consumer.setTimeZone(tz);
 		try
 		{
 			formatter = OutputFormatter.makeOutputFormatter(

@@ -194,14 +194,14 @@ public class AlbertaLoaderFormatter
 				line.append(TextUtil.setLengthLeftJustify(dataType.getCode(), 4));
 				line.append(resultCode);
 
-				consumer.printLine(line.toString());
+				consumer.println(line.toString());
 			}
 		}
 		if (trailer)
 		{
 			// Canned trailer
-			consumer.printLine("ZZZ      00000000 00001234.678SSD__");
-			consumer.printLine("ZZZ      00000000 000012345.78SSSSX");
+			consumer.println("ZZZ      00000000 00001234.678SSD__");
+			consumer.println("ZZZ      00000000 000012345.78SSSSX");
 		}
 		consumer.endMessage();
 	}

@@ -855,7 +855,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 			}
 			consumer = DataConsumer.makeDataConsumer(rs.consumerType);
 			consumer.open(rs.consumerArg, rs.getProperties());
-			consumer.setTZ(rs.outputTimeZone);
+			consumer.setTimeZone(rs.outputTimeZone);
 			consumer.setRoutingSpecThread(this);
 			formatter = OutputFormatter.makeOutputFormatter(
 				rs.outputFormat, rs.outputTimeZone,
@@ -899,7 +899,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 				source = null;
 			}
 			source = rs.dataSource.makeDelegate();
-			source.setRSThread(this);
+			source.setRoutingSpecThread(this);
 
 			String sinceTime = rs.sinceTime;
 			// If we are REinitializing, adjust sinceTime to last rcv time - 60 sec.
@@ -911,7 +911,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 			source.setAllowDapsStatusMessages(
 				!formatter.acceptRealDcpMessagesOnly());
 			source.setAllowNullPlatform(!formatter.requiresDecodedMessage());
-			source.initDataSource(rs.getProperties(), sinceTime, rs.untilTime,
+			source.init(rs.getProperties(), sinceTime, rs.untilTime,
 				rs.networkLists);
 		}
 		catch(InvalidDatabaseException e)

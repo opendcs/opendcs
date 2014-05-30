@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:30  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -276,7 +279,7 @@ public class DirectoryDataSource extends DataSourceExec
 	  @param networkLists contains NetworkList objects.
 	  @throws DataSourceException if the source could not be initialized.
 	*/
-	public void initDataSource(Properties routingSpecProps, String since, 
+	public void init(Properties routingSpecProps, String since, 
 		String until, Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{
@@ -523,7 +526,7 @@ Logger.instance().debug3("DirectoryDataSource, added 'filename' property="
 					// opens file.
 Logger.instance().debug3("DirectoryDataSource 2, added 'filename' property=" 
 + allProps.getProperty("filename"));
-					fileDataSource.initDataSource(allProps, null, null, null); 
+					fileDataSource.init(allProps, null, null, null); 
 					messageExists=true;
 				}
 				catch(DataSourceException ex)

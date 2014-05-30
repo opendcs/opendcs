@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:28  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -217,10 +220,10 @@ public class FileAppendConsumer extends DataConsumer
 		}
 	}
 
-	public void printLine(String line)
+	public void println(String line)
 	{
 		if (currentFile != null)
-			currentFile.printLine(line);
+			currentFile.println(line);
 	}
 	public void endMessage(String dbNo)
 	{

@@ -154,7 +154,7 @@ public class HydstraFormatter extends OutputFormatter
 				sb.append(delimiter);
 				String s = ts.formattedSampleAt(i).trim();
 				sb.append(TextUtil.setLengthLeftJustify(s, 8));
-				consumer.printLine(sb.toString());
+				consumer.println(sb.toString());
 			}
 		}
 		consumer.endMessage();

@@ -191,10 +191,10 @@ public class DirectoryConsumer extends DataConsumer
 	  Output a single line by delegating to current FileConsumer.
 	  @param line the line to be written.
 	*/
-	public void printLine(String line)
+	public void println(String line)
 	{
 		if (curFileConsumer != null)
-			curFileConsumer.printLine(line);
+			curFileConsumer.println(line);
 	}
 
 	/**

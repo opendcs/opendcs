@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:30  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -69,7 +72,7 @@ public class InputDirectory
 	  <p>
 	  @throws DataSourceException if the directory does not exist.
 	*/
-	public void initDataSource(Properties props, String since, String until, 
+	public void init(Properties props, String since, String until, 
 		Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{

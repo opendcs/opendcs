@@ -165,10 +165,10 @@ public class EmitOracleFormatter extends OutputFormatter
 				sb.append(delimiter);
 				sb.append(eu.abbr);
 
-				consumer.printLine(sb.toString());
+				consumer.println(sb.toString());
 			}
 		}
-		consumer.printLine("ZZZZ");
+		consumer.println("ZZZZ");
 		consumer.endMessage();
 	}
 	

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/05/28 13:09:29  mmaloney
+ * dev
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -209,7 +212,7 @@ public class KistersFormatter
 				headerLine.append(headerDelim);
 			}
 				
-			consumer.printLine(headerLine.toString());
+			consumer.println(headerLine.toString());
 
 			ts.sort();
 			for(int idx=0; idx<ts.size(); idx++)
@@ -223,7 +226,7 @@ public class KistersFormatter
 					else 
 						samp = RINVAL;
 				}
-				consumer.printLine(sdf.format(ts.timeAt(idx)) + " " + samp);
+				consumer.println(sdf.format(ts.timeAt(idx)) + " " + samp);
 			}
 		}
 		consumer.endMessage();

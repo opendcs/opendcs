@@ -135,7 +135,7 @@ public class NosMeterConsumer extends DataConsumer
 	}
 
 	@Override
-	public void printLine(String line)
+	public void println(String line)
 	{
 		// Do nothing. All work done in startMessage method.
 	}

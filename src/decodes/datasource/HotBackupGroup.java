@@ -99,7 +99,7 @@ public class HotBackupGroup
 				{
 					LrgsDataSource lds = (LrgsDataSource)del;
 					lds.setTimeoutSecOnError(180);
-					lds.setRSThread(rsThread);
+					lds.setRoutingSpecThread(routingSpecThread);
 				}
 				delegates.add(del);
 			}
@@ -113,7 +113,7 @@ public class HotBackupGroup
 	  @param until the until time from the routing spec.
 	  @param networkLists contains NetworkList objects.
 	*/
-	public void initDataSource(Properties props, String since, String until,
+	public void init(Properties props, String since, String until,
 		Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{
@@ -188,8 +188,8 @@ public class HotBackupGroup
 			try
 			{
 				Logger.instance().debug3("HotBackupGroup init new active member " + ds);
-				ds.setRSThread(this.rsThread);
-				ds.initDataSource(props, since, until, networkLists);
+				ds.setRoutingSpecThread(this.routingSpecThread);
+				ds.init(props, since, until, networkLists);
 				if (activeMember != null)
 					activeMember.close();
 			

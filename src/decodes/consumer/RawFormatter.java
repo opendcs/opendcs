@@ -80,7 +80,7 @@ public class RawFormatter extends OutputFormatter
 		if (rawmsg != null)
 		{
 			String rm = rawmsg.toString();
-			consumer.printLine(rm);
+			consumer.println(rm);
 		}
 		consumer.endMessage();
 	}

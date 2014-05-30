@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:29  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -86,7 +89,7 @@ public abstract class DataConsumer
 		tz = null;
 	}
 
-	public void setTZ(TimeZone tz)
+	public void setTimeZone(TimeZone tz)
 	{
 		this.tz = tz;
 	}
@@ -131,7 +134,7 @@ public abstract class DataConsumer
 	  @param line the line of text to be output, not including any line
 	  terminator.
 	*/
-	public abstract void printLine(String line);
+	public abstract void println(String line);
 
 	/** Called after all lines have been output by the formatter. */
 	public abstract void endMessage();

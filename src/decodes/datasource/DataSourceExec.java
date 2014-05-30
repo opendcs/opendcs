@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:29  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -125,7 +128,7 @@ public abstract class DataSourceExec
 	*/
 	protected boolean allowDapsStatusMessages;
 	
-	protected RoutingSpecThread rsThread = null;
+	protected RoutingSpecThread routingSpecThread = null;
 
 	/** default constructor */
 	protected DataSourceExec()
@@ -135,17 +138,17 @@ public abstract class DataSourceExec
 		allowDapsStatusMessages = false;
 	}
 
-	public void setRSThread(RoutingSpecThread rst)
+	public void setRoutingSpecThread(RoutingSpecThread rst)
 	{
-		rsThread = rst;
+		routingSpecThread = rst;
 	}
 	
 	public void log(int priority, String msg)
 	{
-		if (rsThread == null)
+		if (routingSpecThread == null)
 			Logger.instance().log(priority, msg);
 		else
-			rsThread.log(priority, msg);
+			routingSpecThread.log(priority, msg);
 	}
 
 	
@@ -208,7 +211,7 @@ public abstract class DataSourceExec
 	  @param networkLists contains NetworkList objects
 	  @throws DataSourceException if the source could not be initialized.
 	*/
-	public abstract void initDataSource(Properties routingSpecProps, String since, 
+	public abstract void init(Properties routingSpecProps, String since, 
 		String until, Vector<NetworkList> networkLists)
 		throws DataSourceException;
 

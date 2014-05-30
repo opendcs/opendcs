@@ -104,7 +104,7 @@ public class RoundRobinGroup
 	  @param until the until time from the routing spec.
 	  @param networkLists contains NetworkList objects.
 	*/
-	public void initDataSource(Properties props, String since, String until,
+	public void init(Properties props, String since, String until,
 		Vector networkLists)
 		throws DataSourceException
 	{
@@ -145,7 +145,7 @@ public class RoundRobinGroup
 				return;
 			try
 			{
-				ds.initDataSource(props, since, until, networkLists);
+				ds.init(props, since, until, networkLists);
 				if (activeMember != null)
 					activeMember.close();
 			

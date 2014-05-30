@@ -212,7 +212,7 @@ public class NosDcpFormatter extends OutputFormatter
 		// more info:
 		sb.append(" P   14.00  99.999  99.999");
 
-		consumer.printLine(sb.toString());
+		consumer.println(sb.toString());
 	}
 	
 	@Override

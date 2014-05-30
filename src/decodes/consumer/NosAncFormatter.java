@@ -118,7 +118,7 @@ public class NosAncFormatter extends OutputFormatter
 						sb.append("      ");
 				}
 				sb.append("   S");
-				consumer.printLine(sb.toString());
+				consumer.println(sb.toString());
 				sb.setLength(0);
 			}
 		}

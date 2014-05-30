@@ -223,7 +223,7 @@ public class TvaFormatter extends OutputFormatter
 				for(int j=0; j<7; j++)
 					sb.setCharAt(23+j, num.charAt(j));
 
-				consumer.printLine(sb.toString());
+				consumer.println(sb.toString());
 			}
 		}
 		consumer.endMessage();

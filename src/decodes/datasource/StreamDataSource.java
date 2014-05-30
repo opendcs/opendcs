@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:30  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -331,7 +334,7 @@ public abstract class StreamDataSource extends DataSourceExec
 	  @param networkLists contains NetworkList objects.
 	  @throws DataSourceException if the source could not be initialized.
 	*/
-	public void initDataSource(Properties routingSpecProps, String since, String until,
+	public void init(Properties routingSpecProps, String since, String until,
 		Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{

@@ -237,7 +237,7 @@ public class ShefitFormatter extends OutputFormatter
 				else
 					sb.append("2");
 
-				consumer.printLine(sb.toString());
+				consumer.println(sb.toString());
 			}
 		}
 		consumer.endMessage();

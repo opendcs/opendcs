@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:29  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -337,7 +340,7 @@ public class ShefFormatter extends OutputFormatter
 				if (eu != null && !eu.abbr.equals("unknown"))
 						sb.append(" " + eu.abbr);
 
-				consumer.printLine(sb.toString());
+				consumer.println(sb.toString());
 			}
 			else // output .A
 			{
@@ -367,7 +370,7 @@ public class ShefFormatter extends OutputFormatter
 					if (eu != null && !eu.abbr.equals("unknown"))
 						sb.append(" " + eu.abbr);
 	
-					consumer.printLine(sb.toString());
+					consumer.println(sb.toString());
 				}
 			}
 		}

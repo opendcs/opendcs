@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:31  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -510,7 +513,7 @@ public class CwmsConsumer extends DataConsumer
 	  Does nothing.
 	  @param line the line to be written.
 	*/
-	public void printLine(String line)
+	public void println(String line)
 	{
 	}
 

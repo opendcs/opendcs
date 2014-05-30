@@ -196,7 +196,7 @@ public class KHydstraFormatter extends OutputFormatter
 				
 				sb.append(delimiter);
 				sb.append(TextUtil.setLengthRightJustify(HydstraMaxGap, 4));
-				consumer.printLine(sb.toString());
+				consumer.println(sb.toString());
 			}
 		}
 		consumer.endMessage();

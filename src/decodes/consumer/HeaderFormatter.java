@@ -74,7 +74,7 @@ public class HeaderFormatter extends OutputFormatter
 		{			
 			byte[] rm = rawmsg.getHeader();			
 			String rr = new String(rm);		
-			consumer.printLine(rr);
+			consumer.println(rr);
 			
 			
 		}

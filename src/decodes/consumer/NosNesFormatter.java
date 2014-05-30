@@ -117,7 +117,7 @@ public class NosNesFormatter extends OutputFormatter
 		sb.append(new String(rawmsg.getMessageData()));
 		sb.append(' ');
 	
-		consumer.printLine(sb.toString());
+		consumer.println(sb.toString());
 	}
 	
 	@Override

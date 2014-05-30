@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2014/05/28 13:09:31  mmaloney
+* dev
+*
 * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 * OPENDCS 6.0 Initial Checkin
 *
@@ -550,7 +553,7 @@ public class GetMessageThread
 			dataSource.setAllowNullPlatform(true);
 			dataSource.setAllowDapsStatusMessages(true);
 
-			dataSource.initDataSource(rsProps, since, "", new Vector<NetworkList>());
+			dataSource.init(rsProps, since, "", new Vector<NetworkList>());
 		}
 		catch(InvalidDatabaseException ex)
 		{

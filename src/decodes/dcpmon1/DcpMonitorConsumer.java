@@ -385,7 +385,7 @@ Logger.instance().info("MaxCarrierMS=" + cfg.maxCarrierMS);
 	  Delegate to the current DirectoryConsumer to write the HTML file.
 	  @param line ignored.
 	*/
-	public void printLine(String line)
+	public void println(String line)
 	{
 	}
 

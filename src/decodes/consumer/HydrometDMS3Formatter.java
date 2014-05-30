@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/05/28 13:09:27  mmaloney
+ * dev
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -102,7 +105,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 
 		if (justOpened)
 		{
-			consumer.printLine(
+			consumer.println(
 				"yyyyMMMdd hhmm cbtt     PC        NewValue   OldValue   Flag user:"
 				+ System.getProperty("user.name")
 				+ " # DECODES output");
@@ -194,7 +197,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 				line.append(TextUtil.setLengthLeftJustify("998877.00", 10));
 				line.append(' ');
 				line.append(dms3Flag);
-				consumer.printLine(line.toString());
+				consumer.println(line.toString());
 			}
 		}
 	}

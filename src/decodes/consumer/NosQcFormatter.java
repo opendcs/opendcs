@@ -214,7 +214,7 @@ public class NosQcFormatter extends OutputFormatter
 				sb.append(" " + String.format("%6d", sensor_offset));
 				sb.append(" " + String.format("%6d", back_wl_gain));
 				sb.append(" " + String.format("%6d", back_wl_offset));
-				consumer.printLine(sb.toString());
+				consumer.println(sb.toString());
 				sb.setLength(0);
 			}
 		}
