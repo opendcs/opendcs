@@ -159,6 +159,8 @@ public class DcpMsgFlag
 		return -1;
 	}
 
+	public static void setFlagRev(int flagRev) { flagRev = myFlagRev; }
+
 	/** @return true if the flag indicates a msg with accurate carrier times. */
 	public static boolean hasAccurateCarrier(int f)
 	{

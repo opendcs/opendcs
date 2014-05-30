@@ -22,8 +22,6 @@ import decodes.tsdb.groupedit.TsDbGrpEditor;
 import decodes.util.DecodesVersion;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-
 
 public class ResourceFactory
 {

@@ -7,6 +7,8 @@ import java.awt.*;
 import javax.swing.*;
 import java.util.ResourceBundle;
 
+import lrgs.gui.DecodesInterface;
+
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import decodes.db.Database;

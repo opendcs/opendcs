@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.17  2013/05/06 18:17:20  mmaloney
 *  Bug in Platform File Name creation. DbKey is now not a number.
 *
@@ -40,9 +43,6 @@ import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
 import org.xml.sax.SAXException;
-
-//MJM commented this out -- can't refer to sutron in open-source
-//import com.sutron.sutronwin.ClientList;
 
 import decodes.db.Constants;
 import decodes.db.DataSource;

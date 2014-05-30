@@ -8,9 +8,6 @@ import ilex.util.Logger;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-//MJM commented this out -- can't refer to sutron in open-source
-//import com.sutron.sutronwin.ClientList;
-
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
 
@@ -82,9 +79,6 @@ public class Database extends DatabaseObject
 		enumList = new EnumList();
 		enumList.setDatabase(this);
 		
-//MJM commented this out -- can't refer to sutron in open-source
-//		clientList = new ClientList();
-//		clientList.setDatabase(this);
 		networkListList = new NetworkListList();
 		networkListList.setDatabase(this);
 		platformList = new PlatformList();
