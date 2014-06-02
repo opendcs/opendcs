@@ -5,8 +5,8 @@ import java.util.Date;
 
 import lrgs.common.DcpAddress;
 
-import decodes.dcpmon1.XmitRecord;
-import decodes.dcpmon1.DcpGroup;
+import decodes.dcpmon.DcpGroup;
+import decodes.dcpmon.XmitRecord;
 import decodes.tsdb.DbIoException;
 
 public interface XmitRecordDAI
