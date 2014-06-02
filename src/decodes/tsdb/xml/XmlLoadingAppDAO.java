@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import decodes.sql.DbKey;
@@ -216,6 +217,13 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	public boolean supportsLocks()
 	{
 		return false;
+	}
+
+	@Override
+	public Date getLastModified(DbKey appId)
+	{
+		// Only used by dcpmon which is not supported in XML database.
+		return null;
 	}
 
 }

@@ -1,7 +1,7 @@
 /*
 *  $Id$
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 
+import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.XmitRecordDAI;
 
 import lrgs.common.DcpAddress;
@@ -35,6 +36,8 @@ import decodes.db.RoutingSpec;
 import decodes.drgsinfogui.DrgsReceiverIo;
 import decodes.dupdcpgui.DuplicateIo;
 import decodes.routing.RoutingSpecThread;
+import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.CompEventSvr;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.ChannelMap;
@@ -62,19 +65,10 @@ public class DcpMonitor
 	ServerLock mylock;
 
 	/** Tells the application to die. */
-	boolean shutdownFlag;
+	private boolean shutdownFlag = false;
 
-	private DcpMonitorConfig dmc;
+	private DcpMonitorConfig dcpMonitorConfig;
 
-	private StringToken cnfgFileArg = new StringToken(
-		"f", "dcpmon config file", "", TokenOptions.optSwitch, "");
-	private BooleanToken useEditArg = new BooleanToken("e", "Use Edit DB", "",
-		TokenOptions.optSwitch, false);
-	private StringToken lockFileArg = new StringToken("k", "dcpmon lock file",
-		"",TokenOptions.optSwitch, "$HOME/dcpmon.lock");
-	private StringToken dbLocArg = new StringToken("E", 
-		"Explicit Database Location", "", TokenOptions.optSwitch, "");
-	private String dcpmonCfgFileName;
 	private DcpNameDescResolver dcpNameDescResolver = null;
 	
 //	private XmitRecord lastRec = null;
@@ -92,6 +86,12 @@ public class DcpMonitor
 	// list of channels we are accepting data from
 	private int myChannels[];
 	
+	/** Holds app name, id, & description. */
+	private CompAppInfo appInfo = null;
+	private int evtPort = -1;
+	private CompEventSvr compEventSvr = null;
+
+	
 	private XmitRecordDAI xmitRecordDao = null;
 
 	/** Singleton Access Method. */
@@ -108,52 +108,108 @@ public class DcpMonitor
 		super("dcpmon");
 		routingSpecThread = null;
 		routingSpec = null;
-		shutdownFlag = false;
 		myChannels = null;
 	}
 
-	/**
-	 * Adds the following arguments:
-	 * <ul>
-	 *   <li>-f argument provides configuration file</li>
-	 *   <li>-e says to use editable database</li>
-	 *   <li>-k argument provides the lock file</li>
-	 *   <li>-E Allows user to specify explicit XML DECODES database</li>
-	 */
+	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
-		cmdLineArgs.addToken(cnfgFileArg);
-		cmdLineArgs.addToken(useEditArg);
-		cmdLineArgs.addToken(lockFileArg);
-		dbLocArg.setType("dirname");
-		cmdLineArgs.addToken(dbLocArg);
 	}
+
+	/**
+	 * Called after a successful connect to the database, or after detecting
+	 * that the configuration has changed.
+	 */
+	private void loadConfig()
+	{
+		// Load the app info. The config is stored in the app's properties.
+		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
+		try
+		{
+			appInfo = loadingAppDao.getComputationApp(appNameArg.getValue());
+		}
+		catch(Exception ex)
+		{
+			warning("Cannot read app info for '" + appNameArg.getValue() + ": " + ex);
+			disconnectFromDb();
+			return;
+		}
+		finally
+		{
+			loadingAppDao.close();
+		}
+
+		// Load the config object.
+		dcpMonitorConfig = DcpMonitorConfig.instance();
+		dcpMonitorConfig.loadFromProperties(appInfo.getProperties());
+
+		// Look for EventPort and EventPriority properties. If found,
+		String evtPorts = appInfo.getProperty("EventPort");
+		if (evtPorts != null)
+		{
+			try 
+			{
+				evtPort = Integer.parseInt(evtPorts.trim());
+				// If we were formerly serving out event to a different port, shut it down.
+				if (compEventSvr != null && compEventSvr.getPort() != evtPort)
+				{
+					compEventSvr.shutdown();
+					compEventSvr = null;
+				}
+				if (evtPort > 0)
+				{
+					compEventSvr = new CompEventSvr(evtPort);
+					compEventSvr.startup();
+				}
+			}
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("App Name " + appInfo.getAppName()
+					+ ": Bad EventPort property '" + evtPorts
+					+ "' must be integer. -- ignored.");
+			}
+			catch(IOException ex)
+			{
+				Logger.instance().failure(
+					"Cannot create Event server: " + ex
+					+ " -- no events available to external clients.");
+			}
+		}
+		else if (compEventSvr != null)
+		{
+			compEventSvr.shutdown();
+			compEventSvr = null;
+		}
+	}
+	
+	/**
+	 * Called when a database error has been detected. Throws away all database
+	 * references & caches so that a fresh start can be made.
+	 */
+	private void disconnectFromDb()
+	{
+		//TODO disconnect from db and set references to null
+	}
+
 
 	/**
 	 * Specific initialization for DCP Monitor Configuration.
 	 */
 	public void initDcpMonConfig()
 	{
-		// Read the DCPMON configuration file.
-		dcpmonCfgFileName = cnfgFileArg.getValue().trim();
-		if (dcpmonCfgFileName.length() == 0)
-			dcpmonCfgFileName = "dcpmon.conf";
-
-		dmc = DcpMonitorConfig.instance();
-		dmc.loadFromProperties(dcpmonCfgFileName);
 		dcpNameDescResolver = new DcpNameDescResolver();
-		dmc.checkAndLoadNetworkLists();
+		dcpMonitorConfig.checkAndLoadNetworkLists();
 		initCompProc();
 	}
 	
 	public void initCompProc()
 	{
-		if (!dmc.enableComputations)
+		if (!dcpMonitorConfig.enableComputations)
 			setCompProcessor(null);
 		else
 		{
 			ComputationProcessor cp = new ComputationProcessor();
-			String cfgPath = EnvExpander.expand(dmc.compConfig);
+			String cfgPath = EnvExpander.expand(dcpMonitorConfig.compConfig);
 			try 
 			{
 				cp.init(cfgPath, null);
@@ -164,7 +220,7 @@ public class DcpMonitor
 				Logger.instance().warning("Cannot load computation config '"
 					+ cfgPath + "': " + ex 
 					+ " -- No computations will be performed.");
-				dmc.enableComputations = false;
+				dcpMonitorConfig.enableComputations = false;
 			}
 		}
 	}
@@ -223,27 +279,51 @@ public class DcpMonitor
 	*/
 	public void runApp()
 	{
-		Logger.instance().info("DCP Monitor Starting =======================");
+		info("DCP Monitor Starting =======================");
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		// Get the server lock, & fail if error.
-		String lockpath = EnvExpander.expand(lockFileArg.getValue());
-		mylock = new ServerLock(lockpath);
-
-		if (mylock.obtainLock() == false)
-		{
-			Logger.instance().log(Logger.E_FATAL,
-				"DCP Monitor not started: lock file busy");
-			System.exit(0);
-		}
+		
+		
+		//TODO: Copy code from ComputationApp to get the database lock.
+		//Note: get the lock as part of the reconnectDatabase() method.
+		//See ComputationApp, which, I believe, can also reconnect if DB goes down.
+//		String lockpath = EnvExpander.expand(lockFileArg.getValue());
+//		mylock = new ServerLock(lockpath);
+//
+//		if (mylock.obtainLock() == false)
+//		{
+//			Logger.instance().log(Logger.E_FATAL,
+//				"DCP Monitor not started: lock file busy");
+//			System.exit(0);
+//		}
+		
+		//TODO: Start a thread that periodically updates my status in the database.
+		
+		
 
 		this.initDcpMonConfig();
 
-		//For this Dcp Monitor the SQL Database is required.
-		if (theDb == null)
-		{
-			reconnectDatabase();
-		}
 		if (theDb != null && !theDb.isConnected())
-		{	// DcpMonitor will not start until the DB connection is established
+		{
+			// DcpMonitor will not start until the DB connection is established
 			while (super.tryConnect() == false)
 			{
 				Logger.instance().warning("DcpMonitor will try " +
@@ -253,8 +333,10 @@ public class DcpMonitor
 			}
 			try
 			{
+				loadConfig();
 				initDecodes();
-			} catch (Exception ex)
+			}
+			catch (Exception ex)
 			{
 				Logger.instance().warning("DcpMonitor cannot initialize" +
 						"Decodes DB " + ex.getMessage());
@@ -287,23 +369,23 @@ public class DcpMonitor
 		// Initialize the PDT and Channel Map. */
 		Logger.instance().info("Initializing PDT");
 		Pdt pdt = Pdt.instance();
-		pdt.startMaintenanceThread(dmc.pdtUrl, dmc.pdtLocalFile);
+		pdt.startMaintenanceThread(dcpMonitorConfig.pdtUrl, dcpMonitorConfig.pdtLocalFile);
 		
 		Logger.instance().info("Initializing Channel Map");
 		ChannelMap cmap = ChannelMap.instance();
-		cmap.startMaintenanceThread(dmc.channelMapUrl, 
-			dmc.channelMapLocalFile);
+		cmap.startMaintenanceThread(dcpMonitorConfig.channelMapUrl, 
+			dcpMonitorConfig.channelMapLocalFile);
 
 		//If hadsUse - this is to download the National Weather Service
 		//file and use it to fill out the dcp names in case no names
 		//are found according to the name rules - check the DcpMonitorServer
 		//Thread class - setDcpName method
-		Logger.instance().info("Config.hadsUse=" + dmc.hadsUse);
-		if (dmc.hadsUse)
+		Logger.instance().info("Config.hadsUse=" + dcpMonitorConfig.hadsUse);
+		if (dcpMonitorConfig.hadsUse)
 		{
 			Logger.instance().info("Initializing HADS file");
 			Hads hads = Hads.instance();
-			hads.startMaintenanceThread(dmc.hadsUrl, dmc.hadsLocalFile);
+			hads.startMaintenanceThread(dcpMonitorConfig.hadsUrl, dcpMonitorConfig.hadsLocalFile);
 		}
 		
 		//Read Drgs Receiver file and store it in memory
@@ -342,9 +424,9 @@ public class DcpMonitor
 		routingSpecThread = startRoutingSpec();
 
 		// The 'checker' does periodic checking for config & NL changes.
-		DcpMonitorChecker checker = new DcpMonitorChecker(this, 
-			dcpmonCfgFileName);
-		checker.start();
+//		DcpMonitorChecker checker = new DcpMonitorChecker(this, 
+//			dcpmonCfgFileName);
+//		checker.start();
 
 		// enter loop to monitor routing spec, restart it if it dies.
 		//final DcpMonitor dcpmon = this;
@@ -536,7 +618,7 @@ public class DcpMonitor
 		Logger.instance().info("DataSource name="
 			+routingSpec.dataSource.getName() + ", type=" + routingSpec.dataSource.dataSourceType);
 		
-		if (dmc.allChannels == false)
+		if (dcpMonitorConfig.allChannels == false)
 		{
 			// We only want to monitor channels that I have on my groups.
 			// Add the 'channel' property to the routing spec. It will get
@@ -581,7 +663,7 @@ public class DcpMonitor
 		searchCrit.setLrgsSince(ss);
 		searchCrit.setRealtimeSettlingDelay(true);
 		searchCrit.DapsStatus = SearchCriteria.NO;
-		if (dmc.allChannels == false && myChannels != null)
+		if (dcpMonitorConfig.allChannels == false && myChannels != null)
 			for(int i=0; i<myChannels.length; i++)
 				searchCrit.addChannelToken("" + myChannels[i]);
 		File scFile = new File(
@@ -806,20 +888,20 @@ public class DcpMonitor
 				if (dbOld.getDbIo() != null)
 					dbOld.getDbIo().close();
 			DatabaseIO dbio;
-			String dbloc = dbLocArg.getValue();
-			DecodesSettings settings = DecodesSettings.instance();
-			if (dbloc.length() > 0)
-			{
-				dbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, dbloc);
-			}
-			else
-			{
-				dbio = 
-				DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-					settings.editDatabaseLocation);
-			}
-			Database currentDb = Database.getDb();
-			currentDb.setDbIo(dbio);
+//			String dbloc = dbLocArg.getValue();
+//			DecodesSettings settings = DecodesSettings.instance();
+//			if (dbloc.length() > 0)
+//			{
+//				dbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, dbloc);
+//			}
+//			else
+//			{
+//				dbio = 
+//				DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
+//					settings.editDatabaseLocation);
+//			}
+//			Database currentDb = Database.getDb();
+//			currentDb.setDbIo(dbio);
 		} catch (Exception ex)
 		{
 			Logger.instance().warning("DcpMonitor cannot re-initialize" +
@@ -830,7 +912,7 @@ public class DcpMonitor
 
 	public boolean isMyChannel(int chan)
 	{
-		if (dmc.allChannels)
+		if (dcpMonitorConfig.allChannels)
 			return true;
 
 		if (myChannels == null)
@@ -866,6 +948,19 @@ public class DcpMonitor
     public void setCompProcessor(ComputationProcessor compProcessor)
     {
     	this.compProcessor = compProcessor;
+    }
+    
+    public void info(String msg)
+    {
+    	Logger.instance().info("DCPMON " + msg);
+    }
+    public void warning(String msg)
+    {
+    	Logger.instance().warning("DCPMON " + msg);
+    }
+    public void debug(String msg)
+    {
+    	Logger.instance().debug1("DCPMON " + msg);
     }
 
 }

@@ -5,7 +5,7 @@
  * 
  * $Log
  */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 
 import java.io.OutputStream;

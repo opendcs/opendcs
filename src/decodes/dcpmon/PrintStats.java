@@ -1,4 +1,4 @@
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;

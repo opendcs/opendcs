@@ -1,7 +1,7 @@
 /*
 *  $Id$
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import java.util.ArrayList;
 
@@ -21,7 +21,7 @@ public class RecentDataStore
 	private static RecentDataStore _instance = null;
 
 	/** ScrubberThread if one is active, void if not. */
-	decodes.dcpmon1.ScrubberThread scrubberThread;
+	decodes.dcpmon.ScrubberThread scrubberThread;
 
 	private int lastCheckDay = 0;
 	/**
@@ -133,7 +133,7 @@ class ScrubberThread extends Thread
 	{
 		int numDays = DcpMonitorConfig.instance().numDaysStorage;
 		int today = parent.getCurrentDay();
-		decodes.dcpmon1.DcpMonitor.instance().deleteDcpXmitsBefore(
+		decodes.dcpmon.DcpMonitor.instance().deleteDcpXmitsBefore(
 													today - numDays);
 		parent.scrubberThread = null;
 	}

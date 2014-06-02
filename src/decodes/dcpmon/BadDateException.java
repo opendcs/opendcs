@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:01  cvs
 *  Added legacy code to repository
 *
@@ -15,7 +18,7 @@
 *  Implementation of DCP Monitor Server
 *
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import ilex.util.WarningException;
 

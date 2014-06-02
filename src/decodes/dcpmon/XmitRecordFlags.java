@@ -10,7 +10,7 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 /**
  * Definitions for the binary 'flags' value stored in each XmitRecord

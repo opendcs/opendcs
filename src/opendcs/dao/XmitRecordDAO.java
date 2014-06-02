@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package opendcs.dao;
 
@@ -22,8 +25,8 @@ import java.util.TimeZone;
 import opendcs.dai.XmitRecordDAI;
 
 import lrgs.common.DcpAddress;
-import decodes.dcpmon1.DcpGroup;
-import decodes.dcpmon1.XmitRecord;
+import decodes.dcpmon.DcpGroup;
+import decodes.dcpmon.XmitRecord;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbDatabaseVersion;
@@ -332,7 +335,7 @@ public class XmitRecordDAO
 	 * @return XmitRecord
 	 * @throws DbIoException
 	 */
-	private decodes.dcpmon1.XmitRecord rs2XmitRecord(ResultSet rs) 
+	private decodes.dcpmon.XmitRecord rs2XmitRecord(ResultSet rs) 
 	throws DbIoException
 	{
 		try
@@ -344,7 +347,7 @@ public class XmitRecordDAO
 			long ts_ms = ts.getTime();
 			int sod = (int)((ts_ms % MS_PER_DAY) / 1000L);
 			int dayNum = (int)(ts_ms / MS_PER_DAY);
-			XmitRecord xr = new decodes.dcpmon1.XmitRecord(dcpAddress, sod, dayNum);
+			XmitRecord xr = new decodes.dcpmon.XmitRecord(dcpAddress, sod, dayNum);
 
 			xr.setRecordId(recId);
 			
@@ -738,7 +741,7 @@ public class XmitRecordDAO
 	 * @param xr the Xmit Record
 	 */
 	protected void fillDcpInsertStatement(PreparedStatement ps, 
-			decodes.dcpmon1.XmitRecord xr)
+			decodes.dcpmon.XmitRecord xr)
 		throws SQLException
 	{
 		try

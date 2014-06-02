@@ -4,11 +4,14 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.9  2013/03/21 18:27:40  mmaloney
 *  DbKey Implementation
 *
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import ilex.util.Logger;
 

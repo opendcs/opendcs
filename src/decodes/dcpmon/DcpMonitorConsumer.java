@@ -1,7 +1,7 @@
 /*
 *  $Id$
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import ilex.util.ArrayUtil;
 import ilex.util.Logger;
@@ -341,7 +341,7 @@ Logger.instance().info("MaxCarrierMS=" + cfg.maxCarrierMS);
 
 			// Finally, XR is either new or modified. Add it to the database's
 			// write queue.
-			XRWriteThread xwt = decodes.dcpmon1.XRWriteThread.instance();
+			XRWriteThread xwt = decodes.dcpmon.XRWriteThread.instance();
 			for(int nTries = 0; nTries < 10; nTries++)
 			{
 				Logger.instance().debug3("Enqueue: Enqueue XR started; nTries = " + nTries);

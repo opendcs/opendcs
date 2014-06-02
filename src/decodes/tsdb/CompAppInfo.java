@@ -3,6 +3,7 @@
 */
 package decodes.tsdb;
 
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -49,6 +50,9 @@ public class CompAppInfo
 	
 	/** A set of properties for this application. */
 	private Properties props;
+	
+	/** Time that this app was last modified in the database */
+	private Date lastModified = null;
 	
 	private PropertySpec propSpecs[] =
 	{
@@ -282,5 +286,15 @@ public class CompAppInfo
 	public boolean additionalPropsAllowed()
 	{
 		return true;
+	}
+
+	public Date getLastModified()
+	{
+		return lastModified;
+	}
+
+	public void setLastModified(Date lastModified)
+	{
+		this.lastModified = lastModified;
 	}
 }

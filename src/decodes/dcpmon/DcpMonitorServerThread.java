@@ -1,7 +1,7 @@
 /*
 *  $Id$
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import ilex.net.BasicServer;
 import ilex.net.BasicSvrThread;
@@ -37,7 +37,7 @@ import decodes.db.DatabaseException;
 import decodes.db.Platform;
 import decodes.db.PlatformList;
 import decodes.db.TransportMedium;
-import decodes.dcpmon1.RecentDataStore;
+import decodes.dcpmon.RecentDataStore;
 import decodes.util.ChannelMap;
 import decodes.util.Pdt;
 import decodes.util.PdtEntry;

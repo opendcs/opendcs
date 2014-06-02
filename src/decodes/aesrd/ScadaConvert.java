@@ -3,6 +3,8 @@ package decodes.aesrd;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.Logger;
+import ilex.util.ProcWaiterCallback;
+import ilex.util.ProcWaiterThread;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -35,7 +37,7 @@ import decodes.util.PropertySpec;
 
 public class ScadaConvert 
 	extends TsdbAppTemplate
-	implements PropertiesOwner
+	implements PropertiesOwner, ProcWaiterCallback
 {
 	private static final String module = "ScadaConvert";
 	private CompAppInfo appInfo = null;
@@ -54,10 +56,15 @@ public class ScadaConvert
 	private SimpleDateFormat outputFileFmt = new SimpleDateFormat("yyyyMMddHHmmss");
 	private SimpleDateFormat albertaLdrFmt = new SimpleDateFormat("yyyyMMdd HHmm");
 	private PrintWriter outputFile = null;
+	private String outputFilePath = null;
 	private int numFilesProcessed = 0;
 	private int numFileErrors = 0;
 	private int maxAgeHours = 24;
 	private NumberFormat numberFormat = NumberFormat.getNumberInstance();
+	private String cmdAfterFile = null;
+	private boolean cmdFinished = false;
+	private String cmdInProgress = null;
+	private int cmdExitStatus = -1;
 
 	private PropertySpec propSpecs[] = 
 	{
@@ -74,7 +81,10 @@ public class ScadaConvert
 		new PropertySpec("MaxAgeHours", PropertySpec.INT, 
 			"(default=24) discard data older than this"),
 		new PropertySpec("DoneDir", PropertySpec.DIRECTORY, 
-			"Put raw files here after processing.")
+			"Put raw files here after processing."),
+		new PropertySpec("CmdAfterFile", PropertySpec.STRING,
+			"Optional command to execute after finishing file. The command will be passed the "
+			+ "filename as an argument.")
 	};
 
 	public ScadaConvert()
@@ -109,6 +119,13 @@ public class ScadaConvert
 				if (outputFile != null)
 				{
 					outputFile.close();
+					if (cmdAfterFile != null)
+					{
+						StringBuilder sb = new StringBuilder(EnvExpander.expand(cmdAfterFile));
+						sb.append(" ");
+						sb.append(outputFilePath);
+						exec(sb.toString());
+					}
 					outputFile = null;
 				}
 			}
@@ -140,6 +157,42 @@ public class ScadaConvert
 		System.exit(0);
 	}
 	
+	private void exec(String cmd)
+	{
+		this.cmdInProgress = cmd;
+		int cmdTimeout = 20;
+		debug("Executing '" + cmdInProgress 
+			+ "' and waiting up to " + cmdTimeout 
+			+ " seconds for completion.");
+		cmdFinished = false;
+		try 
+		{
+			cmdExitStatus = -1;
+			ProcWaiterThread.runBackground(cmdInProgress, 
+				"cmdAfterFile", this, cmdInProgress);
+		}
+		catch(IOException ex)
+		{
+			warning("Cannot execute '" 
+				+ cmdInProgress + "': " + ex);
+			cmdInProgress = null;
+			cmdFinished = true;
+			return;
+		}
+		long startMsec = System.currentTimeMillis();
+		while(!cmdFinished
+		 && (System.currentTimeMillis()-startMsec) / 1000L < cmdTimeout)
+		{
+			try { Thread.sleep(1000L); }
+			catch(InterruptedException ex) {}
+		}
+		if (cmdFinished)
+			debug("Command '" + cmdInProgress 
+				+ "' completed with exit status " + cmdExitStatus);
+		else
+			warning("Command '" + cmdInProgress + "' Did not complete!");
+	}
+
 	private void processFile(File f)
 	{
 		if (dailyArchiveDir != null)
@@ -271,8 +324,12 @@ public class ScadaConvert
 		try
 		{
 			if (outputFile == null)
-				outputFile = new PrintWriter(new File(outputDir, 
-					"scda-" + outputFileFmt.format(new Date())));
+			{
+				File of = new File(outputDir, 
+					"scda-" + outputFileFmt.format(new Date()));
+				outputFile = new PrintWriter(of);
+				outputFilePath = of.getPath();
+			}
 			for(int idx=0; idx < spec.sensorCodes.length; idx++)
 			{
 				if (spec.sensorCodes[idx] == null)
@@ -457,6 +514,11 @@ public class ScadaConvert
 				maxAgeHours = 24;
 			}
 		}
+		
+		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "cmdAfterFile");
+		if (s != null && s.trim().length() > 0)
+			cmdAfterFile = s;
+
 	}
 
 	private void cleanup()
@@ -523,6 +585,15 @@ public class ScadaConvert
 	{
 		if (myLock != null)
 			myLock.setStatus(status);
+	}
+
+	@Override
+	public void procFinished(String procName, Object obj, int exitStatus)
+	{
+		if (obj != cmdInProgress)
+			return;
+		cmdFinished = true;
+		cmdExitStatus = exitStatus;
 	}
 
 }

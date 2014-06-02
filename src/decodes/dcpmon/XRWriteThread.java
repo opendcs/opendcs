@@ -10,7 +10,7 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import ilex.util.Logger;
 
@@ -186,7 +186,7 @@ int dCallNum = 0;
 		while((xr = dequeue()) != null)
 		{
 			lastMsec = xr.getGoesTimeMsec();
-			decodes.dcpmon1.DcpMonitor.instance().saveDcpTranmission(xr);
+			decodes.dcpmon.DcpMonitor.instance().saveDcpTranmission(xr);
 			if (++n > 50)
 				doCommit();
 		}
@@ -200,7 +200,7 @@ int dCallNum = 0;
 	}
 	private void doCommit()
 	{
-		try { decodes.dcpmon1.DcpMonitor.instance().theDb.commit(); }
+		try { decodes.dcpmon.DcpMonitor.instance().theDb.commit(); }
 		catch(decodes.tsdb.DbIoException ex)
 		{
 			Logger.instance().warning("Error committing: " + ex);

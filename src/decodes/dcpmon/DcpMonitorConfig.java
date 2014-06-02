@@ -1,16 +1,14 @@
 /*
 *  $Id$
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
-import java.io.*;
-import java.util.*;
+import ilex.util.PropertiesUtil;
 
-import decodes.db.NetworkList;
-import decodes.db.NetworkListEntry;
-import decodes.util.ChannelMap;
+import java.io.File;
+import java.util.Enumeration;
+import java.util.Properties;
 
-import ilex.util.*;
 
 
 /**
@@ -23,12 +21,10 @@ public class DcpMonitorConfig
 	/** private singleton instance */
 	private static DcpMonitorConfig _instance = null;
 
-	/** If true, use the editable decodes database. */
-	public boolean useEditDb;
-
 	/** Port to listen on for connections from the GUI. */
 	public int serverPort;
-
+//TODO Remove after testing done.
+	
 	/** DataSource name in the decodes database to use for input. */
 	public String dataSourceName;
 
@@ -135,8 +131,8 @@ public class DcpMonitorConfig
 	public boolean allChannels;
 
 	/** URL to include for the agency home in the page footers */
-	public String agencyHomeUrl = "http://www.usace.army.mil/";
-	public String agencyHomeDisplay = "Agency Home";
+	public String agencyHomeUrl = "http://mydomain.org/";
+	public String agencyHomeDisplay = "My Agency Home";
 
 	/** Set to true to have computations performed when viewing DCP Messages. */
 	public boolean enableComputations = false;
@@ -155,7 +151,6 @@ public class DcpMonitorConfig
 	/** Private constructor. Sets default values for all parameters. */
 	private DcpMonitorConfig()
 	{
-		useEditDb = true;
 		serverPort = 17011;
 		dataSourceName = "localhost";
 		numDaysStorage = 10;
@@ -188,37 +183,13 @@ public class DcpMonitorConfig
 	}
 
 	/**
-	  Loads the configuration parameters from a properties file.
-	  If 'propFileName' is null, use the default name of "dcpmon.conf".
-	  Look for the file first in the current directory. if not found, look
-	  in $DECODES_INSTALL_DIR,
-	*/
-	public void loadFromProperties(String propFileName)
+	 * Loads the configuration parameters from a properties object.
+	 */
+	public void loadFromProperties(Properties props)
 	{
-		propFileName = EnvExpander.expand(propFileName);
-
-		Logger.instance().log(Logger.E_INFORMATION,
-			"Loading config file from '" + propFileName + "'");
-
-		rawProps = new Properties();
-
-		try 
-		{
-			FileInputStream fis = new FileInputStream(propFileName);
-			rawProps.load(fis);
-			fis.close();
-		}
-		catch(IOException ex)
-		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Cannot open config file '" + propFileName + "': " + ex
-				+ " -- will proceed using default config values.");
-			return;
-		}
-
 		String ignorePfx[] = { "group" };
-		PropertiesUtil.loadFromProps(this, rawProps, ignorePfx);
-
+		PropertiesUtil.loadFromProps(this, props, ignorePfx);
+		this.rawProps = props;
 		lastLoadTime = System.currentTimeMillis();
 	}
 
@@ -229,7 +200,7 @@ public class DcpMonitorConfig
 	*/
 	public boolean checkAndLoadNetworkLists()
 	{
-		Enumeration kenum = rawProps.keys();
+		Enumeration<Object> kenum = rawProps.keys();
 		DcpGroupList dgl = DcpGroupList.instance();
 		dgl.uncheckAll();
 		boolean anyChanges = false;
@@ -288,48 +259,5 @@ public class DcpMonitorConfig
 		dgl.sort();
 
 		return anyChanges;
-	}
-
-	/**
-	  Finds the 'dcpmon.conf' file. Looks first in current directory, then
-	  in $DECODES_INSTALL_DIR.
-	  @return complete path or null if not found.
-	*/
-	private String findConfigFile()
-	{
-		File f = new File("dcpmon.conf");
-		if (f.canRead())
-			return f.getPath();
-		f = new File(EnvExpander.expand("$DECODES_INSTALL_DIR/dcpmon.conf"));
-		if (f.canRead())
-			return f.getPath();
-		return null;
-	}
-
-	/**
-	  Test main.
-	*/
-	public static void main(String args[])
-	{
-		DcpMonitorConfig cfg = DcpMonitorConfig.instance();
-		cfg.loadFromProperties(args[0]);
-		System.out.println("useEditDb=" + cfg.useEditDb);
-		System.out.println("serverPort=" + cfg.serverPort);
-		System.out.println("dataSourceName=" + cfg.dataSourceName);
-		System.out.println("numDaysStorage=" + cfg.numDaysStorage);
-		System.out.println("channelMapUrl=" + cfg.channelMapUrl);
-		System.out.println("omitFailureCodes=" + cfg.omitFailureCodes);
-		System.out.println("ddsUserName=" + cfg.ddsUserName);
-		System.out.println("redMsgTime=" + cfg.redMsgTime);
-		System.out.println("yellowMsgTime=" + cfg.yellowMsgTime);
-		System.out.println("redFailureCodes=" + cfg.redFailureCodes);
-		System.out.println("yellowFailureCodes=" + cfg.yellowFailureCodes);
-		System.out.println("redSignalStrength=" + cfg.redSignalStrength);
-		System.out.println("yellowSignalStrength=" + cfg.yellowSignalStrength);
-		System.out.println("redFreqOffset=" + cfg.redFreqOffset);
-		System.out.println("yellowFreqOffset=" + cfg.yellowFreqOffset);
-		System.out.println("redBattery=" + cfg.redBattery);
-		System.out.println("yellowBattery=" + cfg.yellowBattery);
-//		System.out.println("messageFileDir=" + cfg.messageFileDir);
 	}
 }

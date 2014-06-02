@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2008/11/11 00:49:19  mjmaloney
 *  Bug fixes.
 *
@@ -33,7 +36,7 @@
 *  Alpha version of server complete.
 *
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import lrgs.common.DcpAddress;
 

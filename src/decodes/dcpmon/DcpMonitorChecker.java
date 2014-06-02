@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.6  2012/06/28 13:35:07  mmaloney
 *  synchronization deadlock issue at MVR.
 *
@@ -61,7 +64,7 @@
 *  Working server version beta 01
 *
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import java.io.*;
 
@@ -159,59 +162,59 @@ public class DcpMonitorChecker extends Thread
 
 		if (cfgFile.lastModified() > cfg.lastLoadTime)
 		{
-			boolean useEditDb = cfg.useEditDb;
-			int serverPort = cfg.serverPort;
-			String dataSourceName = cfg.dataSourceName;
-			int numDaysStorage = cfg.numDaysStorage;
-			String channelMapUrl = cfg.channelMapUrl;
-
-			cfg.loadFromProperties(cfgFile.getPath());
-
-			if (useEditDb != cfg.useEditDb)
-			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot change choice of DECODES databases "
-					+ " -- you must stop and restart the DCP Monitor Server.");
-				cfg.useEditDb = useEditDb;
-			}
-			if (serverPort != cfg.serverPort)
-			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot change the server port"
-					+ " -- you must stop and restart the DCP Monitor Server.");
-				cfg.serverPort = serverPort;
-			}
-			if (!dataSourceName.equals(cfg.dataSourceName))
-			{
-				cfg.dataSourceName = dataSourceName;
-				Logger.instance().info("dataSourceName has changed");
-				rebuildRoutingSpec();
-			}
-			if (numDaysStorage != cfg.numDaysStorage)
-			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot change Number of Days Storage"
-					+ " -- you must stop and restart the DCP Monitor Server.");
-				cfg.numDaysStorage = numDaysStorage;
-			}
-
-			if (!channelMapUrl.equals(cfg.channelMapUrl))
-			{
-				ChannelMap.instance().stopMaintenanceThread();
-				try { Thread.sleep(5000L);}
-				catch(InterruptedException ex) {}
-				ChannelMap.instance().startMaintenanceThread(
-					cfg.channelMapUrl, cfg.channelMapLocalFile);
-			}
-
-			if (cfg.checkAndLoadNetworkLists())
-			{
-				Logger.instance().info(
-					"Configured network list groups have changed.");
-				rebuildRoutingSpec();
-			}
-			
-			dcpMonitor.initCompProc();
+//			boolean useEditDb = cfg.useEditDb;
+//			int serverPort = cfg.serverPort;
+//			String dataSourceName = cfg.dataSourceName;
+//			int numDaysStorage = cfg.numDaysStorage;
+//			String channelMapUrl = cfg.channelMapUrl;
+//
+//			cfg.loadFromProperties(cfgFile.getPath());
+//
+//			if (useEditDb != cfg.useEditDb)
+//			{
+//				Logger.instance().log(Logger.E_FAILURE,
+//					"Cannot change choice of DECODES databases "
+//					+ " -- you must stop and restart the DCP Monitor Server.");
+//				cfg.useEditDb = useEditDb;
+//			}
+//			if (serverPort != cfg.serverPort)
+//			{
+//				Logger.instance().log(Logger.E_FAILURE,
+//					"Cannot change the server port"
+//					+ " -- you must stop and restart the DCP Monitor Server.");
+//				cfg.serverPort = serverPort;
+//			}
+//			if (!dataSourceName.equals(cfg.dataSourceName))
+//			{
+//				cfg.dataSourceName = dataSourceName;
+//				Logger.instance().info("dataSourceName has changed");
+//				rebuildRoutingSpec();
+//			}
+//			if (numDaysStorage != cfg.numDaysStorage)
+//			{
+//				Logger.instance().log(Logger.E_FAILURE,
+//					"Cannot change Number of Days Storage"
+//					+ " -- you must stop and restart the DCP Monitor Server.");
+//				cfg.numDaysStorage = numDaysStorage;
+//			}
+//
+//			if (!channelMapUrl.equals(cfg.channelMapUrl))
+//			{
+//				ChannelMap.instance().stopMaintenanceThread();
+//				try { Thread.sleep(5000L);}
+//				catch(InterruptedException ex) {}
+//				ChannelMap.instance().startMaintenanceThread(
+//					cfg.channelMapUrl, cfg.channelMapLocalFile);
+//			}
+//
+//			if (cfg.checkAndLoadNetworkLists())
+//			{
+//				Logger.instance().info(
+//					"Configured network list groups have changed.");
+//				rebuildRoutingSpec();
+//			}
+//			
+//			dcpMonitor.initCompProc();
 		}
 	}
 

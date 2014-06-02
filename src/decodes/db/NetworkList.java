@@ -224,66 +224,70 @@ public class NetworkList extends IdDatabaseObject
 	 * From DatabaseObject interface,
 	 */
 	public void prepareForExec()
-	throws InvalidDatabaseException
+		throws InvalidDatabaseException
 	{
 		//Feature added to allow different type of DCP Address (less than 8
 		//hex digits) other than GOES
 		//If transport medium type is one of these types:
-		if (transportMediumType.equalsIgnoreCase(Constants.medium_Goes) ||
-				transportMediumType.equalsIgnoreCase(Constants.medium_GoesRD ) ||
-				transportMediumType.equalsIgnoreCase(Constants.medium_GoesST) ||
-				transportMediumType.equalsIgnoreCase(Constants.medium_IRIDIUM) ||
-				transportMediumType.equalsIgnoreCase(Constants.medium_EDL))
-		{
+		
+		// MJM 5/30/2014 Why not allow it to create a legacy netlist regardless
+		// of type? There may be some use for this later as LRGS becomes more flexible.
+
+//		if (transportMediumType.equalsIgnoreCase(Constants.medium_Goes) ||
+//				transportMediumType.equalsIgnoreCase(Constants.medium_GoesRD ) ||
+//				transportMediumType.equalsIgnoreCase(Constants.medium_GoesST) ||
+//				transportMediumType.equalsIgnoreCase(Constants.medium_IRIDIUM) ||
+//				transportMediumType.equalsIgnoreCase(Constants.medium_EDL))
+//		{
 			// Translate new NetworkList into old LRGS netlist format:
 			legacyNetworkList = new lrgs.common.NetworkList();
 
 			String path = legacyNetlistDir != null ?
-					(legacyNetlistDir + File.separator) : "";
-					path = path + name + ".nl";
+				(legacyNetlistDir + File.separator) : "";
+				path = path + name + ".nl";
 
-					legacyNetworkList.file = new File(path);
+			legacyNetworkList.file = new File(path);
 
-					for (Iterator<NetworkListEntry> it = iterator(); it.hasNext(); )
-					{
-						NetworkListEntry nle = it.next();
+			for (Iterator<NetworkListEntry> it = iterator(); it.hasNext(); )
+			{
+				NetworkListEntry nle = it.next();
 
-						lrgs.common.NetworkListItem nli =
-							new lrgs.common.NetworkListItem();
-						nli.name = nle.platformName == null ? "" : nle.platformName;
-						nli.description =
-							nle.description == null ? "" : nle.description;
+				lrgs.common.NetworkListItem nli =
+					new lrgs.common.NetworkListItem();
+				nli.name = nle.platformName == null ? "" : nle.platformName;
+				nli.description =
+					nle.description == null ? "" : nle.description;
 
-						// Make sure the description is only a single line.
-						int idx = nli.description.indexOf('\r');
-						if (idx == -1)
-							idx = nli.description.indexOf('\n');
-						if (idx != -1)
-							nli.description = nli.description.substring(0, idx);
+				// Make sure the description is only a single line.
+				int idx = nli.description.indexOf('\r');
+				if (idx == -1)
+					idx = nli.description.indexOf('\n');
+				if (idx != -1)
+					nli.description = nli.description.substring(0, idx);
 
-						nli.type = 'U';
-						try
-						{
-							nli.addr = new lrgs.common.DcpAddress(nle.transportId);
-							legacyNetworkList.add(nli);
-						}
-						catch(NumberFormatException nfe)
-						{
-							Logger.instance().log(Logger.E_WARNING,
-									"Network List '" + name
-									+ "' has improper DCP address '" + nle.transportId +
-							"' - must be 8 hex digits -- skipped.");
-						}
-					}
-		}
-		else
-		{
-			Logger.instance().log(Logger.E_WARNING,
-					"NetworkList:prepareForExec - Network List '" + name
-					+ "' did not create legacyNetworkList, transport medium type is "
-					+ "not of a GOES type. Type is " + transportMediumType +
-			" Ignore this message if you want to use a type other than Goes.");
-		}
+				nli.type = 'U';
+				try
+				{
+					nli.addr = new lrgs.common.DcpAddress(nle.transportId);
+					legacyNetworkList.add(nli);
+				}
+				catch(NumberFormatException nfe)
+				{
+					Logger.instance().log(Logger.E_WARNING,
+							"Network List '" + name
+							+ "' has improper DCP address '" + nle.transportId +
+					"' - must be 8 hex digits -- skipped.");
+				}
+			}
+//		}
+//		else
+//		{
+//			Logger.instance().log(Logger.E_WARNING,
+//					"NetworkList:prepareForExec - Network List '" + name
+//					+ "' did not create legacyNetworkList, transport medium type is "
+//					+ "not of a GOES type. Type is " + transportMediumType +
+//			" Ignore this message if you want to use a type other than Goes.");
+//		}
 	}
 
 	/**

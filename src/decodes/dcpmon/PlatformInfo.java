@@ -1,7 +1,7 @@
 /*
 *  $Id$
 */
-package decodes.dcpmon1;
+package decodes.dcpmon;
 
 import ilex.util.Logger;
 import lrgs.common.DcpAddress;
