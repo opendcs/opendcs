@@ -2,10 +2,14 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package opendcs.dai;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import decodes.sql.DbKey;
@@ -141,4 +145,11 @@ public interface LoadingAppDAI
 	 * Closes any resources opened by the DAO
 	 */
 	public void close();
+	
+	/**
+	 * @return the database last modify time for the app or null if
+	 * no LastModified property is defined.
+	 * @param appId The application key
+	 */
+	public Date getLastModified(DbKey appId);
 }

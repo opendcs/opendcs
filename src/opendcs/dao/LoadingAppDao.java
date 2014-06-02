@@ -2,20 +2,27 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package opendcs.dao;
 
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TimeZone;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
@@ -42,10 +49,12 @@ public class LoadingAppDao
 	implements LoadingAppDAI
 {
 	private PreparedStatement lockCheckStmt = null;
+	private SimpleDateFormat lastModifiedSdf = new SimpleDateFormat("yyyyMMddHHmmss");
 
 	public LoadingAppDao(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "LoadingAppDao");
+		lastModifiedSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 	
 	@Override
@@ -209,6 +218,13 @@ public class LoadingAppDao
 
 			propsDao.readProperties("REF_LOADING_APPLICATION_PROP", "LOADING_APPLICATION_ID", id, 
 				cai.getProperties());
+			String lmp = PropertiesUtil.getIgnoreCase(cai.getProperties(), "LastModified");
+			if (lmp != null)
+				try { cai.setLastModified(lastModifiedSdf.parse(lmp)); }
+				catch(ParseException ex)
+				{
+					warning("Cannot parse LastModified '" + lmp + "': " + ex);
+				}
 
 			return cai;
 		}
@@ -324,6 +340,7 @@ public class LoadingAppDao
 				}
 			}
 
+			app.getProperties().setProperty("LastModified", lastModifiedSdf.format(new Date()));
 			propertiesDao.writeProperties("REF_LOADING_APPLICATION_PROP", "LOADING_APPLICATION_ID", 
 				app.getKey(), app.getProperties());
 		}
@@ -518,7 +535,8 @@ public class LoadingAppDao
 	}
 
 	@Override
-	public List<TsdbCompLock> getAllCompProcLocks() throws DbIoException
+	public List<TsdbCompLock> getAllCompProcLocks() 
+		throws DbIoException
 	{
 		ArrayList<TsdbCompLock> ret = new ArrayList<TsdbCompLock>();
 		String q = "SELECT * from CP_COMP_PROC_LOCK";
@@ -549,5 +567,25 @@ public class LoadingAppDao
 			try { lockCheckStmt.close(); }
 			catch(Exception ex) {}
 		super.close();
+	}
+
+	@Override
+	public Date getLastModified(DbKey appId)
+	{
+		String q = "select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
+			+ "where LOADING_APPLICATION_ID = " + appId
+			+ " and PROP_NAME = " + sqlString("LastModified");
+		try
+		{
+			ResultSet rs = doQuery(q);
+			if(rs.next())
+				return lastModifiedSdf.parse(rs.getString(1));
+		}
+		catch(Exception ex)
+		{
+			warning("Cannot retrieve or parse last modify time for appId="
+				+ appId + ": " + ex);
+		}
+		return null;
 	}
 }
