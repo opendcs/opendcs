@@ -2,11 +2,15 @@ package decodes.platstat;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.TimeZone;
 
 import lrgs.gui.DecodesInterface;
 
 import opendcs.dai.PlatformStatusDAI;
+import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.TextUtil;
@@ -27,6 +31,10 @@ public class ShowPlatformStatus
 		TokenOptions.optSwitch, "");
 	private StringToken tzArg = new StringToken("z", "Time Zone", "", 
 		TokenOptions.optSwitch, "");
+	private StringToken sortArg = new StringToken("s", "Sort option (n=name, c=last contact, "
+		+ "m=last message, e=last error", "", TokenOptions.optSwitch, "n");
+	private BooleanToken reverseSortArg = new BooleanToken("r", "Reverse sort order from ascending to "
+		+ "descending.", "", TokenOptions.optSwitch, false);
 
 
 	public ShowPlatformStatus()
@@ -67,6 +75,8 @@ public class ShowPlatformStatus
 		}
 		
 		ArrayList<PlatformStatus> pslist = platformStatusDAO.listPlatformStatus();
+		Collections.sort(pslist, new PlatStatComparator(sortArg.getValue().charAt(0),
+			reverseSortArg.getValue()));
 		System.out.println("   Platform Name         Last Contact         Last Message      FailCode      Last Error       Annotation");
 		System.out.println("====================  ===================  ===================  ========  ===================  ==========");
 		for(PlatformStatus ps : pslist)
@@ -121,6 +131,8 @@ public class ShowPlatformStatus
 		cmdLineArgs.addToken(netlistArg);
 		cmdLineArgs.addToken(errorArg);
 		cmdLineArgs.addToken(tzArg);
+		cmdLineArgs.addToken(sortArg);
+		cmdLineArgs.addToken(reverseSortArg);
 	}
 
 	public static void main(String args[])
@@ -146,8 +158,72 @@ public class ShowPlatformStatus
 
 	@Override
 	public synchronized void createDatabase() {}
+}
 
-
-
-
+class PlatStatComparator implements Comparator<PlatformStatus> 
+{
+	char sortArg = 'n';
+	boolean reverse = false;
+	PlatStatComparator(char sortArg, boolean reverse)
+	{
+		if ("scne".indexOf(sortArg) < 0)
+			sortArg = 'm';
+		
+		this.sortArg = sortArg;
+		this.reverse = reverse;
+		
+	}
+	
+	@Override
+	public int compare(PlatformStatus ps1, PlatformStatus ps2)
+	{
+		int r = 0;
+		Platform p1 = Database.getDb().platformList.getById(ps1.getPlatformId());
+		Platform p2 = Database.getDb().platformList.getById(ps2.getPlatformId());
+		switch(sortArg)
+		{
+		case 'n':
+			r = p1.getDisplayName().compareTo(p2.getDisplayName());
+			return r;
+			// else fall through and sort by contact time.
+		case 'c':
+		  {
+			Date d1 = ps1.getLastContactTime();
+			Date d2 = ps2.getLastContactTime();
+			if (d1 != null)
+				r = d2 != null ? d1.compareTo(d2) : -1;
+			else
+				r = d2 != null ? 1 : 0;
+			if (r == 0)
+				r = p1.getDisplayName().compareTo(p2.getDisplayName());
+			break;
+		  }
+		case 'm':
+		  {
+			Date d1 = ps1.getLastMessageTime();
+			Date d2 = ps2.getLastMessageTime();
+			if (d1 != null)
+				r = d2 != null ? d1.compareTo(d2) : -1;
+			else
+				r = d2 != null ? 1 : 0;
+			if (r == 0)
+				r = p1.getDisplayName().compareTo(p2.getDisplayName());
+			break;
+		  }
+		case 'e':
+		  {
+			Date d1 = ps1.getLastErrorTime();
+			Date d2 = ps2.getLastErrorTime();
+			if (d1 != null)
+				r = d2 != null ? d1.compareTo(d2) : -1;
+			else
+				r = d2 != null ? 1 : 0;
+			if (r == 0)
+				r = p1.getDisplayName().compareTo(p2.getDisplayName());
+			break;
+		  }
+		}
+		return reverse ? -r : r;
+	}
+	
 }
