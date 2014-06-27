@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:09  cvs
 *  Added legacy code to repository
 *
@@ -80,12 +83,17 @@ public abstract class CmdLine
 	* @param tokens Tokens actually seen
 	* @return true if OK to proceed with execute
 	*/
-	protected boolean requireTokens( int min, String[] tokens )
+	public boolean requireTokens( int min, String[] tokens )
 	{
 		if (tokens.length >= min)
 			return true;
 
-		System.out.println(helpmsg);
+		usage();
 		return false;
-	}		
+	}
+	
+	public void usage()
+	{
+		System.out.println("Usage: " + keyword + " " + helpmsg);
+	}
 }
