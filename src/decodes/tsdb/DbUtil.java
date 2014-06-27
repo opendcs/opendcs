@@ -1,3 +1,13 @@
+/*
+ * This software was written by Cove Software, LLC. under contract to the 
+ * U.S. Government. This software is property of the U.S. Government and 
+ * may be used by permission only.
+ * 
+ * No warranty is provided or implied other than specific contractual terms.
+ * 
+ * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * All rights reserved.
+ */
 package decodes.tsdb;
 
 import java.sql.ResultSet;
