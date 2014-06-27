@@ -91,7 +91,8 @@ public class ScheduleEntryExecutive
 			{
 				Logger.instance().warning(getName() + " taking too long to shutdown, "
 					+ "will attempt thread interrupt.");
-				seThread.interrupt();
+				if (seThread != null)
+					seThread.interrupt();
 			}
 		}
 		else
@@ -258,7 +259,8 @@ public class ScheduleEntryExecutive
 	void startThread()
 	{
 		makeThread();
-		seThread.start();
+		if (seThread != null)
+			seThread.start();
 	}
 	
 	/** Write the status structure to the database */

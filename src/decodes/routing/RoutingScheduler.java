@@ -156,7 +156,10 @@ public class RoutingScheduler
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning(module + " Exception while " + action + ": " + ex);
+				String msg = module + " Exception while " + action + ": " + ex;
+				Logger.instance().warning(msg);
+				System.err.println(msg);
+				ex.printStackTrace(System.err);
 				shutdownFlag = true;
 			}
 			finally
