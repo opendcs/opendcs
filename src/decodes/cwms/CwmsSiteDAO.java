@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package decodes.cwms;
 
@@ -15,11 +18,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import decodes.db.Constants;
+import decodes.db.Database;
+import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.DecodesSettings;
 import opendcs.dao.DatabaseConnectionOwner;
@@ -67,6 +73,10 @@ public class CwmsSiteDAO extends SiteDAO
 		site.setPublicName(rsSite.getString(13));
 		site.setLocationType(rsSite.getString(14));
 		site.setActive(TextUtil.str2boolean(rsSite.getString(15)));
+if (cwmsName.getNameValue().toUpperCase().startsWith("FCNE"))
+{
+	Logger.instance().info("Read site '" + cwmsName.getNameValue() + "', key=" + site.getKey());
+}
 	}
 	
 	@Override
@@ -248,12 +258,28 @@ ex.printStackTrace(System.err);
 			newSite.getKey(), newSite.getProperties());
 	}
 
-	public void delete(Site site)
+	@Override
+	public void deleteSite(DbKey location_code)
 		throws DbIoException
 	{
 		if (!DecodesSettings.instance().writeCwmsLocations)
 			throw new DbIoException("Cannot delete location because 'writeCwmsLocations' property is false.");
 
+		if (location_code == null || location_code.isNull())
+		{
+			warning("deleteSite called with null location_code");
+			return;
+		}
+		
+		Site site;
+		try { site = this.getSiteById(location_code); }
+		catch (NoSuchObjectException e) { site = null; }
+		if (site == null)
+		{
+			warning("deleteSite cannot read site with location_code=" + location_code);
+			return;
+		}
+		
 		SiteName cwmsName = site.getName(Constants.snt_CWMS);
 		if (cwmsName == null)
 			throw new DbIoException("Cannot delete site '" + site.getDisplayName()
@@ -265,16 +291,40 @@ ex.printStackTrace(System.err);
 		try
 		{
 			rs = doQuery(q);
-			if(rs != null && rs.next())
+			if (rs != null && rs.next())
 			{
 				int n = rs.getInt(1);
 				if (n > 0)
 					throw new DbIoException("Cannot delete site '" + site.getDisplayName()
 						+ "' because time series exist at this location. Delete the time series first.");
 			}
-			Logger.instance().info("Deleting location_id '" + cwmsName.getNameValue());
+
+			q = "select count(*) from platform where siteid = " + location_code;
+			rs = doQuery(q);
+			if (rs != null && rs.next())
+			{
+				int n = rs.getInt(1);
+				if (n > 0)
+					throw new DbIoException("Cannot delete site '" + site.getDisplayName()
+						+ "' because platform(s) exist at this location. Delete the platform(s) first.");
+			}
+			q = "select platformid from platformsensor where siteid = " + location_code;
+			rs = doQuery(q);
+			if (rs != null && rs.next())
+			{
+				DbKey platformId = DbKey.createDbKey(rs, 1);
+				Platform p = Database.getDb().platformList.getById(platformId);
+				throw new DbIoException("Cannot delete site '" + site.getDisplayName()
+					+ "' because platform '" + p.getDisplayName() + "' has a sensor at this site."
+					+ " Remove this reference before deleting site.");
+			}
+			
+			q = "Deleting location_id '" + cwmsName.getNameValue();
+			Logger.instance().info(q);
 			cwmsdb.CwmsLocJdbc cwmsLocJdbc = new cwmsdb.CwmsLocJdbc(db.getConnection());
 			cwmsLocJdbc.delete(officeId, cwmsName.getNameValue());
+			cache.remove(location_code);
+
 			q = "delete from sitename where siteid = " + site.getId();
 			doModify(q);
 			q = "DELETE FROM SITE_PROPERTY WHERE site_id = " + site.getId();
@@ -339,6 +389,10 @@ ex.printStackTrace(System.err);
 					}
 				String nameType = rs.getString(2);
 				String nameValue = rs.getString(3);
+if (nameValue.toUpperCase().startsWith("FCNE"))
+{
+	Logger.instance().info("Read site name: " + nameType + ":" + nameValue + " key=" + key);
+}
 				if (site == null)
 				{
 					warning("SiteName for id=" + key + " (" + nameType + ":"
@@ -365,6 +419,13 @@ ex.printStackTrace(System.err);
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
 		info("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
+for(Iterator<Site> sit = cache.iterator(); sit.hasNext(); )
+{
+Site st = sit.next();
+SiteName cwmsName = st.getName(Constants.snt_CWMS);
+if (cwmsName != null && cwmsName.getNameValue().toUpperCase().startsWith("FCNE"))
+ Logger.instance().info("From cache: " + cwmsName.getNameValue() + ", key=" + st.getKey());
+}
 	}
 
 
