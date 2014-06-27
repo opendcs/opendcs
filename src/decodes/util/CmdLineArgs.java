@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.9  2013/03/28 17:29:09  mmaloney
 *  Refactoring for user-customizable decodes properties.
 *
@@ -214,7 +217,7 @@ public class CmdLineArgs
 				props.load(fis);
 				fis.close();
 			}
-			catch(IOException e)
+			catch(Exception e)
 			{
 				Logger.instance().log(Logger.E_FAILURE,
 				"CmdLineArgs:parseArgs " +
