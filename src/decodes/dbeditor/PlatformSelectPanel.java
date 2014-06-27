@@ -403,12 +403,7 @@ class PlatformSelectColumnizer
 			case 0: // Site + Designator
 			{
 				if (p.site == null)
-				{
-					try { p.read(); }
-					catch(Exception ex) { p.site = null; }
-					if (p.site == null)
-						return "";
-				}
+					return "";
 				Site site = p.site;
 				SiteName sn = site.getPreferredName();
 				if ( sn == null )
