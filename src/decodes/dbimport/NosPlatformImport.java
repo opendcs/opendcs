@@ -1,6 +1,3 @@
-/**
- * Open source software by Cove Software, LLC
- */
 package decodes.dbimport;
 
 import java.io.IOException;
