@@ -7,6 +7,8 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -14,10 +16,14 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Collections;
 
+import lrgs.gui.PdtSelectDialog;
+
+import ilex.util.EnvExpander;
 import ilex.util.TextUtil;
 import decodes.db.*;
 import decodes.gui.*;
-import decodes.util.DecodesSettings;
+import decodes.util.NwsXrefEntry;
+import decodes.util.PdtEntry;
 
 /**
  * This panel edits a single network list. Opened from the NetlistListPanel.
@@ -28,32 +34,20 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
-	EntityOpsPanel entityOpsPanel = new EntityOpsPanel(this);
-	JTextField nameField = new JTextField();
-	EnumComboBox siteNameTypeCombo = new EnumComboBox(Constants.enum_SiteName);
-	EnumComboBox mediumTypeCombo = new EnumComboBox(Constants.enum_TMType);
+	private EntityOpsPanel entityOpsPanel = new EntityOpsPanel(this);
+	private JTextField nameField = new JTextField();
+	private EnumComboBox siteNameTypeCombo = new EnumComboBox(Constants.enum_SiteName);
+	private EnumComboBox mediumTypeCombo = new EnumComboBox(Constants.enum_TMType);
 
-	DbEditorFrame parent;
-	NetworkList theObject, origObject;
-	NetlistContentsTableModel tableModel;
-	JTable netlistContentsTable;
-	JTextField lastModifiedField = new JTextField();
-	boolean goingThroughInit = true;
-
-	/** No-args constructor for JBuilder. */
-	public NetlistEditPanel()
-	{
-		try
-		{
-			jbInit();
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
-		TableColumnAdjuster.adjustColumnWidths(netlistContentsTable, new int[]
-		{ 20, 20, 60 });
-	}
+	private DbEditorFrame parent;
+	private NetworkList theObject, origObject;
+	private NetlistContentsTableModel tableModel;
+	private JTable netlistContentsTable;
+	private JTextField lastModifiedField = new JTextField();
+	private boolean goingThroughInit = true;
+	private JButton selectFromPdtButton = null;
+	private PdtSelectDialog pdtSelectDialog = null;
+	private static JFileChooser nlFileChooser = null;
 
 	/**
 	 * Construct new panel to edit specified object.
@@ -77,6 +71,12 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			{ 15, 25, 60 });
 			jbInit();
 			fillFields();
+			if (nlFileChooser == null)
+			{
+				nlFileChooser = new JFileChooser();
+				nlFileChooser.setCurrentDirectory(
+					new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
+			}
 		}
 		catch (Exception ex)
 		{
@@ -105,6 +105,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 		lastModifiedField.setText(theObject.lastModifyTime == null ? ""
 			: Constants.defaultDateFormat.format(theObject.lastModifyTime));
 		goingThroughInit = false;
+		mediumTypeSelected();
 	}
 
 	/**
@@ -121,41 +122,16 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 	/** Initializes GUI components */
 	private void jbInit() throws Exception
 	{
-		siteNameTypeCombo.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				modifyNetworkListEntries();
-			}
-		});
 		this.setLayout(new BorderLayout());
 		JPanel mainPanel = new JPanel(new BorderLayout());
-		JPanel northParamPanel = new JPanel(new GridBagLayout());
-		nameField.setText("cosprings.nl");
-		JPanel centerTablePanel = new JPanel(new BorderLayout());
-		JButton removeButton = new JButton(dbeditLabels.getString("NetlistEditPanel.RemoveButton"));
-		removeButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				removePressed();
-			}
-		});
-		JButton addButton = new JButton(dbeditLabels.getString("NetlistEditPanel.AddButton"));
-		addButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				addPressed();
-			}
-		});
-		JPanel eastButtonPanel = new JPanel(new GridBagLayout());
-		lastModifiedField.setEnabled(true);
-		lastModifiedField.setEditable(false);
-		this.add(entityOpsPanel, BorderLayout.SOUTH);
 		this.add(mainPanel, BorderLayout.CENTER);
+		JPanel northParamPanel = new JPanel(new GridBagLayout());
 		mainPanel.add(northParamPanel, BorderLayout.NORTH);
-		
+		JPanel centerTablePanel = new JPanel(new BorderLayout());
+		mainPanel.add(centerTablePanel, BorderLayout.CENTER);
+		this.add(entityOpsPanel, BorderLayout.SOUTH);
+
+		// North Params Panel
 		northParamPanel.add(new JLabel(dbeditLabels.getString("NetlistEditPanel.NetListName")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE, 
@@ -173,6 +149,15 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 15), 30, 0));
+		mediumTypeCombo.addActionListener(
+			new java.awt.event.ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					mediumTypeSelected();
+				}
+			});
+
 		northParamPanel.add(new JLabel(dbeditLabels.getString("NetlistEditPanel.NameType")),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE, 
@@ -189,16 +174,155 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, 
 				new Insets(2, 2, 10, 100), 30, 0));
-		mainPanel.add(centerTablePanel, BorderLayout.CENTER);
-		centerTablePanel.add(eastButtonPanel, BorderLayout.EAST);
-		eastButtonPanel
-			.add(addButton, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(4, 8, 4, 8), 0, 0));
-		eastButtonPanel.add(removeButton, new GridBagConstraints(0, 2, 1, 1, 0.0, 1.0,
-			GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, new Insets(4, 8, 4, 8), 0, 0));
+		siteNameTypeCombo.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				modifyNetworkListEntries();
+			}
+		});
+		lastModifiedField.setEnabled(true);
+		lastModifiedField.setEditable(false);
+
+		// Center Table Panel with button panel along the right margin
 		JScrollPane tableScrollPane = new JScrollPane();
 		centerTablePanel.add(tableScrollPane, BorderLayout.CENTER);
 		tableScrollPane.getViewport().add(netlistContentsTable, null);
+		JPanel eastButtonPanel = new JPanel(new GridBagLayout());
+		centerTablePanel.add(eastButtonPanel, BorderLayout.EAST);
+
+		JButton addButton = new JButton(dbeditLabels.getString("NetlistEditPanel.SelectPlatforms"));
+		addButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				addDecodesPlatformsPressed();
+			}
+		});
+		eastButtonPanel.add(addButton,
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(4, 8, 4, 8), 0, 0));
+		
+		JButton addPlatformIdButton = 
+			new JButton(dbeditLabels.getString("NetlistEditPanel.AddManual"));
+		addPlatformIdButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				addManualPressed();
+			}
+		});
+		eastButtonPanel.add(addPlatformIdButton,
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(4, 8, 4, 8), 0, 0));
+
+		selectFromPdtButton = 
+			new JButton(dbeditLabels.getString("NetlistEditPanel.SelectFromPDT"));
+		selectFromPdtButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				selectFromPdtButtonPressed();
+			}
+		});
+		eastButtonPanel.add(selectFromPdtButton,
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(4, 8, 4, 8), 0, 0));
+		
+		JButton importDotNlButton = 
+			new JButton(dbeditLabels.getString("NetlistEditPanel.ImportDotNL"));
+		importDotNlButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				importDotNlButtonPressed();
+			}
+		});
+		eastButtonPanel.add(importDotNlButton,
+			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(4, 8, 4, 8), 0, 0));
+		
+		
+		JButton removeButton = new JButton(dbeditLabels.getString("NetlistEditPanel.RemovePlatform"));
+		removeButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				removePressed();
+			}
+		});
+		eastButtonPanel.add(removeButton, 
+			new GridBagConstraints(0, 4, 1, 1, 0.0, 1.0,
+				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
+				new Insets(12, 8, 4, 8), 0, 0));
+	}
+
+	protected void mediumTypeSelected()
+	{
+		selectFromPdtButton.setEnabled(
+			mediumTypeCombo.getSelection().toLowerCase().startsWith("goes"));
+	}
+
+	protected void importDotNlButtonPressed()
+	{
+		if (JFileChooser.APPROVE_OPTION != nlFileChooser.showOpenDialog(this))
+			return;
+		File f = nlFileChooser.getSelectedFile();
+		lrgs.common.NetworkList lrgsNl;
+		try
+		{
+			lrgsNl = new lrgs.common.NetworkList(f);
+			for(lrgs.common.NetworkListItem item : lrgsNl)
+			{
+				NetworkListEntry nle = new NetworkListEntry(theObject,
+					item.addr.toString());
+				nle.description = item.description;
+				nle.platformName = item.name;
+				tableModel.add(nle);
+			}		
+		}
+		catch (IOException ex)
+		{
+			parent.showError("Cannot open or parse network list '" + f.getPath() + "': " + ex);
+		}
+	}
+
+	protected void selectFromPdtButtonPressed()
+	{
+System.out.println("Select From PDT Pressed.");
+		if (pdtSelectDialog == null)
+			pdtSelectDialog = new PdtSelectDialog(null);
+		launchDialog(pdtSelectDialog);
+		if (!pdtSelectDialog.isCancelled())
+		{
+			PdtEntry entries[] = pdtSelectDialog.getSelections();
+			if (entries != null)
+				for(PdtEntry ent : entries)
+				{
+					NetworkListEntry nle = new NetworkListEntry(theObject,
+						ent.dcpAddress.toString());
+					if (tableModel.contains(nle.transportId))
+						continue;
+					NwsXrefEntry nwsXrefEntry = ent.getNwsXrefEntry();
+					if (nwsXrefEntry != null)
+						nle.platformName = nwsXrefEntry.getNwsId();
+					nle.description = ent.getDescription();
+					tableModel.add(nle);
+				}
+		}
+	}
+
+	protected void addManualPressed()
+	{
+		NetworkListEntry nle = new NetworkListEntry(theObject, "");
+		NetlistEntryDialog dlg = new NetlistEntryDialog(nle);
+		launchDialog(dlg);
+		if (dlg.wasOkPressed())
+			tableModel.add(nle);
 	}
 
 	private void modifyNetworkListEntries()
@@ -255,7 +379,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 	 * Called when the 'Add' button is pressed. Starts a new modal
 	 * PlatformSelectDialog.
 	 */
-	void addPressed()
+	void addDecodesPlatformsPressed()
 	{
 		PlatformSelectDialog dlg = new PlatformSelectDialog(mediumTypeCombo.getSelection());
 		dlg.setMultipleSelection(true);
@@ -452,6 +576,14 @@ class NetlistContentsTableModel extends AbstractTableModel implements SortingLis
 		}
 		refill();
 		sortByColumn(0);
+	}
+	
+	boolean contains(String id)
+	{
+		for(NetworkListEntry nle : theList)
+			if (id.equals(nle.transportId))
+				return true;
+		return false;
 	}
 
 	void refill()
