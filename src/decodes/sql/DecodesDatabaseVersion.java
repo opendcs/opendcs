@@ -51,6 +51,13 @@ public class DecodesDatabaseVersion
 	 */
 	public static final int DECODES_DB_10 = 10;
 	
-	// Future schema changes should define DECODES_DB_11
+	/**
+	 * Version 11 corresponds to OPENDCS 6.1 release
+	 * - NetworkListEntry adds two columns: platform_name and description
+	 */
+	public static final int DECODES_DB_11 = 11;
+
+	
+	// Future schema changes should define DECODES_DB_12
 	
 }
