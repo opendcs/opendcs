@@ -14,9 +14,6 @@ import opendcs.dai.ScheduleEntryDAI;
 
 import org.xml.sax.SAXException;
 
-//MJM commented this out -- can't refer to sutron in open-source
-//import com.sutron.sutronwin.ClientList;
-
 import ilex.util.Counter;
 
 import decodes.sql.DbKey;
