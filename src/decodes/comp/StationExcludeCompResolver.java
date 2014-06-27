@@ -66,23 +66,25 @@ public class StationExcludeCompResolver
 					+ "network list '" + nl.name + "'");
 				dm.rmAllTimeSeries();
 				PlatformStatusDAI platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
-				
-				try
+				if (platformStatusDAO != null)
 				{
-					PlatformStatus platStat = 
-						platformStatusDAO.readPlatformStatus(p.getId());
-					platStat.setAnnotation("Excluded: " 
-						+ rsName + " netlist=" + nl.name);
-					platformStatusDAO.writePlatformStatus(platStat);
-				}
-				catch (DbIoException ex)
-				{
-					Logger.instance().warning(module
-						+ " Cannot access platform status: " + ex);
-				}
-				finally
-				{
-					platformStatusDAO.close();
+					try
+					{
+						PlatformStatus platStat = 
+							platformStatusDAO.readPlatformStatus(p.getId());
+						platStat.setAnnotation("Excluded: " 
+							+ rsName + " netlist=" + nl.name);
+						platformStatusDAO.writePlatformStatus(platStat);
+					}
+					catch (DbIoException ex)
+					{
+						Logger.instance().warning(module
+							+ " Cannot access platform status: " + ex);
+					}
+					finally
+					{
+						platformStatusDAO.close();
+					}
 				}
 				break;
 			}
