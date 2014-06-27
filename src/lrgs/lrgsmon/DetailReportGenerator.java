@@ -129,11 +129,19 @@ public class DetailReportGenerator
 			XmlOutputStream xos = new XmlOutputStream(fos, "html");
 			writeReport(xos, host, status, scanSeconds);
 			fos.close();
+			fos = null;
 			if (!tmp.renameTo(output))
 			{
 				// On windows, have to explicitely delete before rename.
 				output.delete();
-				tmp.renameTo(output);
+				if (!tmp.renameTo(output))
+				{
+					Logger.instance().warning(
+						"LRGS Status report move failed. This can happen on a "
+						+ "Windows LRGS if the LRGSHOME directory is being "
+						+ "dynamically scanned by your AV. Recommend removing "
+						+ "the LRGSHOME directory from the AV scan.");
+				}
 			}
 		}
 		catch(IOException ex)
