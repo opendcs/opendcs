@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.15  2013/04/22 16:13:32  mmaloney
  * Adjust visibility to implement CwmsPlatformListIO subclass.
  *
@@ -26,6 +29,7 @@ import java.util.Vector;
 
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
+import opendcs.dai.SiteDAI;
 import opendcs.dao.PropertiesSqlDao;
 
 import ilex.util.Logger;
@@ -42,6 +46,7 @@ import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 import decodes.db.Site;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
 
 /**
  * This handles the I/O of the PlatformList object and some of its
@@ -430,18 +435,21 @@ Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 					{
 						if (siteId != Constants.undefinedId)
 						{
-							Site site = new Site();
-							site.setId(siteId);
-							try 
+							SiteDAI siteDAO = _dbio.makeSiteDAO();
+							try
 							{
-								site.read(); 
-								p.getDatabase().siteList.addSite(site);
-								p.site = site;
+								p.site = siteDAO.getSiteById(siteId);
+								p.getDatabase().siteList.addSite(p.site);
 							}
-							catch(DatabaseException ex)
+							catch(Exception ex)
 							{
-								warning("Platform with invalid site ID="
-									+ siteId + ", site record left blank.");
+								warning("Platform " + p.getDisplayName() + " id="
+									+ p.getKey() + " has invalid siteID " + siteId);
+								p.site = null;
+							}
+							finally
+							{
+								siteDAO.close();
 							}
 						}
 					}
@@ -1057,13 +1065,16 @@ Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 		throws SQLException, DatabaseException
 	{
 		PlatformStatusDAI platformStatusDAO = _dbio.makePlatformStatusDAO();
-		try { platformStatusDAO.deletePlatformStatus(p.getId()); }
-		catch(DbIoException ex)
+		if (platformStatusDAO != null)
 		{
-			throw new DatabaseException("Cannot delete platform status for platform with id="
-				+ p.getId() + ": " + ex);
+			try { platformStatusDAO.deletePlatformStatus(p.getId()); }
+			catch(DbIoException ex)
+			{
+				throw new DatabaseException("Cannot delete platform status for platform with id="
+					+ p.getId() + ": " + ex);
+			}
+			finally { platformStatusDAO.close(); }
 		}
-		finally { platformStatusDAO.close(); }
 		deletePlatformSensors(p);
 		deleteTransportMedia(p);
 		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
