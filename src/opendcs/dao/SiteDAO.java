@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 */
 package opendcs.dao;
 
@@ -575,6 +578,7 @@ public class SiteDAO
 		doModify("delete from sitename where siteid = " + key);
 		doModify("delete from site_property where site_id = " + key);
 		doModify("delete from site where " + siteTableKeyColumn + " = " + key);
+		cache.remove(key);
 	}
 	
 	public void close()
