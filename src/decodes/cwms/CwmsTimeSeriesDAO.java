@@ -809,6 +809,7 @@ debug3("After re-getting tsid dn='" + cts.getDisplayName() + "'");
 		{
 			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(db.getConnection());
 			cwmsTsJdbc.deleteAll(dbOfficeId, tsid.getUniqueString());
+			cache.remove(tsid.getKey());
 			refreshTsView();
 		}
 		catch(Exception ex)
