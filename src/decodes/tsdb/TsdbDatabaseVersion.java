@@ -72,5 +72,12 @@ public class TsdbDatabaseVersion
 	 */
 	public static final int VERSION_9 = 9;
 	public static final String VERSION_9_DTK = "OPENDCS 6.0";
+	
+	/**
+	 * Version 10 = OpenDCS 6.1
+	 * 
+	 */
+	public static final int VERSION_10 = 10;
+	public static final String VERSION_10_DTK = "OPENDCS 6.1";
 
 }
