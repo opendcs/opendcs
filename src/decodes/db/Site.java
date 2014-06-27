@@ -283,7 +283,8 @@ public class Site extends IdDatabaseObject
 	
 	public String getUniqueName()
 	{
-		return getDisplayName();
+		SiteName sn = getPreferredName();
+		return sn != null ? sn.getNameValue() : null;
 	}
 
 	/** @return an iterator into vector of SiteName objects */
