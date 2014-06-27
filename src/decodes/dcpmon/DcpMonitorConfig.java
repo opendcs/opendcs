@@ -18,13 +18,6 @@ file.
 */
 public class DcpMonitorConfig
 {
-	/** private singleton instance */
-	private static DcpMonitorConfig _instance = null;
-
-	/** Port to listen on for connections from the GUI. */
-	public int serverPort;
-//TODO Remove after testing done.
-	
 	/** DataSource name in the decodes database to use for input. */
 	public String dataSourceName;
 
@@ -140,18 +133,13 @@ public class DcpMonitorConfig
 	/** If computations enabled, you must provide a comp config file. */
 	public String compConfig = "$DECODES_INSTALL_DIR/computations.conf";
 	
-	/** Singleton access method. */
-	public static DcpMonitorConfig instance()
-	{
-		if (_instance == null)
-			_instance = new DcpMonitorConfig();
-		return _instance;
-	}
-
+	/** For web service components, we need a singleton */
+	private static DcpMonitorConfig _instance = new DcpMonitorConfig();
+	public static DcpMonitorConfig instance() { return _instance; }
+	
 	/** Private constructor. Sets default values for all parameters. */
-	private DcpMonitorConfig()
+	public DcpMonitorConfig()
 	{
-		serverPort = 17011;
 		dataSourceName = "localhost";
 		numDaysStorage = 10;
 		redMsgTime = 0;

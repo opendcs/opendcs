@@ -13,6 +13,7 @@ import ilex.util.ServerLock;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.Date;
 
@@ -39,7 +40,10 @@ import decodes.routing.RoutingSpecThread;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompEventSvr;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.LockBusyException;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.tsdb.TsdbCompLock;
 import decodes.util.ChannelMap;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
@@ -56,21 +60,14 @@ public class DcpMonitor
 	private String module = "DcpMonitor";
 	
 	/** The application uses a RoutingSpecThread to get & decode messages. */
-	RoutingSpecThread routingSpecThread;
+	RoutingSpecThread routingSpecThread = null;
 
 	/** We mock-up a dynamic routing spec for this application */
-	private RoutingSpec routingSpec;
-
-	/** The server lock ensures only one instance runs at a time. */
-	ServerLock mylock;
+	private RoutingSpec routingSpec = null;
 
 	/** Tells the application to die. */
 	private boolean shutdownFlag = false;
 
-	private DcpMonitorConfig dcpMonitorConfig;
-
-	private DcpNameDescResolver dcpNameDescResolver = null;
-	
 //	private XmitRecord lastRec = null;
 
 	// Start time for the real-time routing spec.
@@ -79,36 +76,31 @@ public class DcpMonitor
 	// Handles in-line computations for HTML DCP Message displays
 	private ComputationProcessor compProcessor = null;
 
-
-	// Singleton Instance
-	private static DcpMonitor _instance = null;
-
 	// list of channels we are accepting data from
-	private int myChannels[];
+	private int myChannels[] = null;
 	
 	/** Holds app name, id, & description. */
 	private CompAppInfo appInfo = null;
 	private int evtPort = -1;
 	private CompEventSvr compEventSvr = null;
 
-	
-	private XmitRecordDAI xmitRecordDao = null;
+	private TsdbCompLock myLock;
 
-	/** Singleton Access Method. */
-	public static DcpMonitor instance()
-	{
-		if (_instance == null)
-			_instance = new DcpMonitor();
-		return _instance;
-	}
+	private int pid = -1;
+	private String hostname;
+	private XRWriteThread xrWriteThread = null;
+	private LoadingAppDAI loadingAppDao = null;
+	private DcpMonitorConfig dcpMonitorConfig = new DcpMonitorConfig();
 
-	/** Constructor. */
 	private DcpMonitor()
 	{
 		super("dcpmon");
-		routingSpecThread = null;
-		routingSpec = null;
-		myChannels = null;
+	}
+
+    public static void main(String args[]) throws Exception
+    {
+		DcpMonitor dcpmon = new DcpMonitor();		
+		dcpmon.execute(args);
 	}
 
 	@Override
@@ -116,255 +108,28 @@ public class DcpMonitor
 	{
 	}
 
-	/**
-	 * Called after a successful connect to the database, or after detecting
-	 * that the configuration has changed.
-	 */
-	private void loadConfig()
-	{
-		// Load the app info. The config is stored in the app's properties.
-		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
-		try
-		{
-			appInfo = loadingAppDao.getComputationApp(appNameArg.getValue());
-		}
-		catch(Exception ex)
-		{
-			warning("Cannot read app info for '" + appNameArg.getValue() + ": " + ex);
-			disconnectFromDb();
-			return;
-		}
-		finally
-		{
-			loadingAppDao.close();
-		}
-
-		// Load the config object.
-		dcpMonitorConfig = DcpMonitorConfig.instance();
-		dcpMonitorConfig.loadFromProperties(appInfo.getProperties());
-
-		// Look for EventPort and EventPriority properties. If found,
-		String evtPorts = appInfo.getProperty("EventPort");
-		if (evtPorts != null)
-		{
-			try 
-			{
-				evtPort = Integer.parseInt(evtPorts.trim());
-				// If we were formerly serving out event to a different port, shut it down.
-				if (compEventSvr != null && compEventSvr.getPort() != evtPort)
-				{
-					compEventSvr.shutdown();
-					compEventSvr = null;
-				}
-				if (evtPort > 0)
-				{
-					compEventSvr = new CompEventSvr(evtPort);
-					compEventSvr.startup();
-				}
-			}
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("App Name " + appInfo.getAppName()
-					+ ": Bad EventPort property '" + evtPorts
-					+ "' must be integer. -- ignored.");
-			}
-			catch(IOException ex)
-			{
-				Logger.instance().failure(
-					"Cannot create Event server: " + ex
-					+ " -- no events available to external clients.");
-			}
-		}
-		else if (compEventSvr != null)
-		{
-			compEventSvr.shutdown();
-			compEventSvr = null;
-		}
-	}
-	
-	/**
-	 * Called when a database error has been detected. Throws away all database
-	 * references & caches so that a fresh start can be made.
-	 */
-	private void disconnectFromDb()
-	{
-		//TODO disconnect from db and set references to null
-	}
-
-
-	/**
-	 * Specific initialization for DCP Monitor Configuration.
-	 */
-	public void initDcpMonConfig()
-	{
-		dcpNameDescResolver = new DcpNameDescResolver();
-		dcpMonitorConfig.checkAndLoadNetworkLists();
-		initCompProc();
-	}
-	
-	public void initCompProc()
-	{
-		if (!dcpMonitorConfig.enableComputations)
-			setCompProcessor(null);
-		else
-		{
-			ComputationProcessor cp = new ComputationProcessor();
-			String cfgPath = EnvExpander.expand(dcpMonitorConfig.compConfig);
-			try 
-			{
-				cp.init(cfgPath, null);
-				setCompProcessor(cp);
-			}
-			catch(BadConfigException ex)
-			{
-				Logger.instance().warning("Cannot load computation config '"
-					+ cfgPath + "': " + ex 
-					+ " -- No computations will be performed.");
-				dcpMonitorConfig.enableComputations = false;
-			}
-		}
-	}
-
-	
-	/**
-	 * Overloaded from template. Also init for decoding.
-	 */
-	public void initDecodes()
-		throws DecodesException
-	{
-		super.initDecodes();
-		DecodesInterface.initializeForDecoding();
-		
-		HtmlFormatter.metaDataCgi = true;
-
-		// For backward compatibility with folks who may not have updated
-		// their enumeration list, Force the HtmlFormatter enum entry.
-		DbEnum formatEnum = Database.getDb().getDbEnum("OutputFormat");
-
-		if (formatEnum.findEnumValue("HtmlFormatter") == null)
-		{
-			formatEnum.replaceValue("HtmlFormatter", "HTML-Formatter",
-				"decodes.consumer.HtmlFormatter", null);
-		}
-		
-		//In case we don't have the Null Formatter- add it
-		if (formatEnum.findEnumValue("NullFormatter") == null)
-		{
-			formatEnum.replaceValue("NullFormatter", "Null-Formatter",
-				"decodes.consumer.NullFormatter", null);
-		}
-		System.out.println("Database Initialization Done.");
-	}
-
-	/**
-	* The main method does all the one-time initialization of the
-	* DECODES database and dcpmon configuration. Then it instantiates
-	* a DcpMonitor object to do the real work.
-	*
-	* If you start dcpmon as a non-main thread, you must ensure that
-	* this one-time init is done elsewhere.
-	* @param args command line arguments
-	*/
-    public static void main(String args[]) throws Exception
-    {
-		// Start the dcpmon object in the current thread.
-		DcpMonitor dcpmon = DcpMonitor.instance();		
-		dcpmon.execute(args);
-	}
-	
-	/**
-	  Called from main method to execute the main thread.
-	  This is implemented as a Runnable.run() method in case you want to run
-	  dcp monitor as part of a large application.
-	*/
+    @Override
 	public void runApp()
 	{
 		info("DCP Monitor Starting =======================");
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		// Get the server lock, & fail if error.
-		
-		
-		//TODO: Copy code from ComputationApp to get the database lock.
-		//Note: get the lock as part of the reconnectDatabase() method.
-		//See ComputationApp, which, I believe, can also reconnect if DB goes down.
-//		String lockpath = EnvExpander.expand(lockFileArg.getValue());
-//		mylock = new ServerLock(lockpath);
-//
-//		if (mylock.obtainLock() == false)
-//		{
-//			Logger.instance().log(Logger.E_FATAL,
-//				"DCP Monitor not started: lock file busy");
-//			System.exit(0);
-//		}
-		
-		//TODO: Start a thread that periodically updates my status in the database.
-		
-		
-
-		this.initDcpMonConfig();
-
-		if (theDb != null && !theDb.isConnected())
+		// Determine process ID. Note -- We can't really do this in Java
+		// without assuming a particular OS. Therefore, we rely on the
+		// script that started us to set an environment variable PPID
+		// for parent-process-ID. If not present, we default to 1.
+		pid = 1;
+		String ppids = System.getProperty("PPID");
+		if (ppids != null)
 		{
-			// DcpMonitor will not start until the DB connection is established
-			while (super.tryConnect() == false)
-			{
-				Logger.instance().warning("DcpMonitor will try " +
-						"to connect to Database in 20 seconds");
-				try { Thread.sleep(20000L); }
-				catch(InterruptedException ex) {}
-			}
-			try
-			{
-				loadConfig();
-				initDecodes();
-			}
-			catch (Exception ex)
-			{
-				Logger.instance().warning("DcpMonitor cannot initialize" +
-						"Decodes DB " + ex.getMessage());
-				ex.printStackTrace();
-			}
+			try { pid = Integer.parseInt(ppids); }
+			catch(NumberFormatException ex) { pid = 1; }
 		}
 
-		XRWriteThread.instance().start();
+		try { hostname = InetAddress.getLocalHost().getHostName(); }
+		catch(Exception e) { hostname = "unknown"; }
 
-		mylock.releaseOnExit();
-		Runtime.getRuntime().addShutdownHook(
-			new Thread()
-			{
-				public void run()
-				{
-					Logger.instance().log(Logger.E_INFORMATION,
-						"DCP Monitor Cleaning Up ...");
-
-					// Stop the DB write thread.
-					XRWriteThread.instance().shutdown();
-					XRWriteThread.instance().processQueue();
-
-					Logger.instance().info(
-						"DCP Monitor Server exiting " +
-						(mylock.wasShutdownViaLock() ? "(lock file removed)"
-						: ""));
-				}
-			});
+		if (!loadConfig())
+			System.exit(1);
 
 		// Initialize the PDT and Channel Map. */
 		Logger.instance().info("Initializing PDT");
@@ -376,53 +141,46 @@ public class DcpMonitor
 		cmap.startMaintenanceThread(dcpMonitorConfig.channelMapUrl, 
 			dcpMonitorConfig.channelMapLocalFile);
 
-		//If hadsUse - this is to download the National Weather Service
-		//file and use it to fill out the dcp names in case no names
-		//are found according to the name rules - check the DcpMonitorServer
-		//Thread class - setDcpName method
-		Logger.instance().info("Config.hadsUse=" + dcpMonitorConfig.hadsUse);
-		if (dcpMonitorConfig.hadsUse)
+		startThreads();
+		
+		long lastCheck = 0L;
+		while(!shutdownFlag)
 		{
-			Logger.instance().info("Initializing HADS file");
-			Hads hads = Hads.instance();
-			hads.startMaintenanceThread(dcpMonitorConfig.hadsUrl, dcpMonitorConfig.hadsLocalFile);
+			// If DB went down, periodically try to reconnect.
+			if (theDb == null)
+			{
+				if (!attemptRestart())
+				{
+					warning("Database Connect Failed. Will retry in 20 seconds");
+					try { Thread.sleep(20000L); }
+					catch(InterruptedException ex) {}
+					continue;
+				}
+				lastCheck = 0L; // force lock & config check right away
+			}
+
+			// Check lock and config file every 5 seconds.
+			if (System.currentTimeMillis() - lastCheck > 5000L)
+			{
+				try
+				{
+					if (!checkLock())
+					{
+						failure("Lock is taken! Will exit.");
+						System.exit(0);
+					}
+				}
+				catch (DbIoException ex)
+				{
+					failure("Error attempting to get lock for app name '" + appNameArg.getValue() + ex);
+					goDormant();
+					continue;
+				}
+				checkConfig();
+				lastCheck = System.currentTimeMillis();
+			}
 		}
 		
-		//Read Drgs Receiver file and store it in memory
-		Logger.instance().info("Reading DRGS Receiver File");
-		DrgsReceiverIo.readDrgsReceiverFile();
-
-		// Build a routing spec from the configuration.
-		Logger.instance().info("Making Real-Time Routing Spec.");
-		try { makeRtRoutingSpec(); }
-		catch(DatabaseException ex)
-		{
-			Logger.instance().log(Logger.E_FATAL,
-				"DcpMonitor cannot construct routing spec: " + ex);
-			return;
-		}
-
-/*
-/*		// Build a routing spec to handle history back to last run.
-/*		try { makeHistRoutingSpec(); }
-/*		catch(DatabaseException ex)
-/*		{
-/*			Logger.instance().log(Logger.E_FATAL,
-/*				"DcpMonitor cannot construct history routing spec: " + ex);
-/*			return;
-/*		}
-*/
-
-		// Put my consumer type into the consumer type enum.
-		Database db = Database.getDb();
-		decodes.db.DbEnum ctenum = db.getDbEnum(Constants.enum_DataConsumer);
-		ctenum.replaceValue("DcpMonitorConsumer", 
-			"Custom consumer for the DCP Monitor Application",
-			"decodes.dcpmon1.DcpMonitorConsumer", null);
-		
-		// Instantiate and start RoutingSpecThread from it.
-		routingSpecThread = startRoutingSpec();
-
 		// The 'checker' does periodic checking for config & NL changes.
 //		DcpMonitorChecker checker = new DcpMonitorChecker(this, 
 //			dcpmonCfgFileName);
@@ -476,21 +234,284 @@ public class DcpMonitor
 			};
 		rsmon.start();
 
-		// Instantiate & start the socket server.
-		try 
-		{
-			DcpMonitorServer dms = new DcpMonitorServer(); 
-			dms.listen();
-		}
-		catch(IOException ex)
+		
+		//TODO 		release the lock
+	}
+    
+	private void startThreads()
+	{
+
+		(xrWriteThread = new XRWriteThread(this)).start();
+
+		//TODO ???
+		initCompProc();
+
+		//TODO ???
+		// Put my consumer type into the consumer type enum.
+		Database db = Database.getDb();
+		decodes.db.DbEnum ctenum = db.getDbEnum(Constants.enum_DataConsumer);
+		ctenum.replaceValue("DcpMonitorConsumer", 
+			"Custom consumer for the DCP Monitor Application",
+			"decodes.dcpmon1.DcpMonitorConsumer", null);
+		
+		//TODO ???
+		// Instantiate and start RoutingSpecThread from it.
+		// Build a routing spec from the configuration.
+		Logger.instance().info("Making Real-Time Routing Spec.");
+		try { makeRtRoutingSpec(); }
+		catch(DatabaseException ex)
 		{
 			Logger.instance().log(Logger.E_FATAL,
-				"Cannot start socket server for DcpMonitor: " + ex);
+				"DcpMonitor cannot construct routing spec: " + ex);
 			return;
 		}
-		cleanUpAndDie("Server listening socket failed.");
+		routingSpecThread = startRoutingSpec();
+
 	}
 
+	/**
+     * Go into a dormant state.
+     * Close the db connections and any DAOs that are using them.
+     * Halt the background threads.
+     */
+    public void goDormant()
+    {
+    	if (xrWriteThread != null)
+    	{
+    		xrWriteThread.shutdown();
+    		try { Thread.sleep(1000L); } catch (InterruptedException ex) {}
+    	}
+    	if (loadingAppDao != null)
+    	{
+    		loadingAppDao.close();
+    		loadingAppDao = null;
+    	}
+		//TODO halt the routing spec thread 
+    	
+    	Database.getDb().getDbIo().close();
+    	closeDb(); // This closes the connection and sets theDb to null.
+		myLock = null;
+		
+		
+    }
+    
+	public void handleDbIoException(String doingWhat, Throwable ex)
+	{
+		String msg = "Error " + doingWhat + ": " + ex;
+		failure(msg);
+		System.err.println("\n" + (new Date()) + " " + msg);
+		ex.printStackTrace();
+		goDormant();
+	}
+
+
+    
+    /**
+     * Reconnect both DECODES and TSDB databases. This is attempted after the db goes
+     * down every 20 seconds.
+     * @return true if success, false if failure.
+     */
+	private boolean attemptRestart()
+	{
+		try { initDecodes(); }
+		catch (Exception ex)
+		{
+			failure("Cannot re-initialize Decodes Database connection " + ex.getMessage());
+			return false;
+		}
+
+		try { createDatabase(); }
+		catch(Throwable ex)
+		{
+			failure("Cannot create time series database: " + ex);
+			Database.getDb().getDbIo().close();
+			return false;
+		}
+		
+		if (!tryConnect())
+		{
+			failure("Cannot connect to time series database.");
+			theDb = null;
+			Database.getDb().getDbIo().close();
+			return false;
+		}
+		if (!loadConfig())
+		{
+			goDormant();
+			return false;
+		}
+		startThreads();
+		loadingAppDao = theDb.makeLoadingAppDAO();
+
+		return true;
+	}
+
+    private void checkConfig()
+	{
+		Date cfgLMT = loadingAppDao.getLastModified(appId);
+		if (cfgLMT == null)
+			cfgLMT = new Date(System.currentTimeMillis() - 3600000L);
+		if (cfgLMT.getTime() > dcpMonitorConfig.lastLoadTime)
+			loadConfig();
+	}
+
+
+	/**
+	 * Called after a successful connect to the database, or after detecting
+	 * that the configuration has changed.
+	 * @return true on success, false on failure
+	 */
+	private boolean loadConfig()
+	{
+		// Load the app info. The config is stored in the app's properties.
+		try
+		{
+			appInfo = loadingAppDao.getComputationApp(appNameArg.getValue());
+		}
+		catch(DbIoException ex)
+		{
+			failure("Cannot read app info for '" + appNameArg.getValue() + ": " + ex);
+			return false;
+		}
+		catch (NoSuchObjectException ex)
+		{
+			failure("Cannot read app info for '" + appNameArg.getValue() + ": " + ex 
+				+ " -- will shutdown.");
+			shutdownFlag = true;
+			return false;
+		}
+
+		// Load the config object.
+		dcpMonitorConfig.loadFromProperties(appInfo.getProperties());
+
+		// Look for EventPort and EventPriority properties. If found,
+		String evtPorts = appInfo.getProperty("EventPort");
+		if (evtPorts != null)
+		{
+			try 
+			{
+				evtPort = Integer.parseInt(evtPorts.trim());
+				// If we were formerly serving out event to a different port, shut it down.
+				if (compEventSvr != null && compEventSvr.getPort() != evtPort)
+				{
+					compEventSvr.shutdown();
+					compEventSvr = null;
+				}
+				if (evtPort > 0)
+				{
+					compEventSvr = new CompEventSvr(evtPort);
+					compEventSvr.startup();
+				}
+			}
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("App Name " + appInfo.getAppName()
+					+ ": Bad EventPort property '" + evtPorts
+					+ "' must be integer. -- ignored.");
+			}
+			catch(IOException ex)
+			{
+				Logger.instance().failure(
+					"Cannot create Event server: " + ex
+					+ " -- no events available to external clients.");
+			}
+		}
+		else if (compEventSvr != null)
+		{
+			compEventSvr.shutdown();
+			compEventSvr = null;
+		}
+		dcpMonitorConfig.checkAndLoadNetworkLists();
+		
+		//Read Drgs Receiver file and store it in memory
+		Logger.instance().info("Reading DRGS Receiver File");
+		DrgsReceiverIo.readDrgsReceiverFile();
+
+		return true;
+	}
+	
+	/**
+	 * Called when a database error has been detected. Throws away all database
+	 * references & caches so that a fresh start can be made.
+	 */
+	private void disconnectFromDb()
+	{
+		theDb.closeConnection();
+		Database.getDb().getDbIo().close();
+		myLock = null;
+	}
+
+	
+	/**
+	 * Overloaded from template. Also init for decoding.
+	 */
+	public void initDecodes()
+		throws DecodesException
+	{
+		super.initDecodes();
+		DecodesInterface.initializeForDecoding();
+		System.out.println("DECODES Database Initialization Done.");
+	}
+
+	/**
+	 * Called periodically to check or get lock and set lock's status in db. 
+	 * @return true on success, false if lock is being used by another app.
+	 */
+	private boolean checkLock()
+		throws DbIoException
+	{
+		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+		try
+		{
+			if (myLock == null)
+				myLock = loadingAppDAO.obtainCompProcLock(appInfo, pid, hostname); 
+			else
+			{
+				myLock.setStatus(getCurrentStatus());
+				loadingAppDAO.checkCompProcLock(myLock);
+			}
+			return true;
+		}
+		catch (LockBusyException ex)
+		{
+			failure("Lock for app name '" + appNameArg.getValue() + "' is not available: "
+				+ ex);
+			return false;
+		}
+		finally
+		{
+			loadingAppDAO.close();
+		}
+	}
+
+	private String getCurrentStatus()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void initCompProc()
+	{
+		if (!dcpMonitorConfig.enableComputations)
+			setCompProcessor(null);
+		else
+		{
+			ComputationProcessor cp = new ComputationProcessor();
+			String cfgPath = EnvExpander.expand(dcpMonitorConfig.compConfig);
+			try 
+			{
+				cp.init(cfgPath, null);
+				setCompProcessor(cp);
+			}
+			catch(BadConfigException ex)
+			{
+				Logger.instance().warning("Cannot load computation config '"
+					+ cfgPath + "': " + ex 
+					+ " -- No computations will be performed.");
+				dcpMonitorConfig.enableComputations = false;
+			}
+		}
+	}
 
 	/**
 	  Starts the routing spec thread execution.
@@ -498,7 +519,7 @@ public class DcpMonitor
 	*/
 	RoutingSpecThread startRoutingSpec()
 	{
-		String username = DcpMonitorConfig.instance().ddsUserName;
+		String username = dcpMonitorConfig.ddsUserName;
 		if (username != null)
 		{
 			Logger.instance().info("Data source username will be '" 
@@ -537,7 +558,6 @@ public class DcpMonitor
 		throws DatabaseException
 	{
 		routingSpec = new RoutingSpec("DcpMonitor");
-		decodes.db.Database db = decodes.db.Database.getDb();
 
 		routingSpec.outputFormat = "NullFormatter";
 		routingSpec.outputTimeZoneAbbr = "UTC";
@@ -545,12 +565,18 @@ public class DcpMonitor
 		//Get the latest time stamp on the database if there is one
 		//If not start getting data for that last day - I'm not sure about this
 		//it takes too long to get old data, why not start from today
-		int curday = DcpMonitorServerThread.getCurrentDay();
-		int earliestDay = curday - DcpMonitorConfig.instance().numDaysStorage;
+
+//TODO Figure out what curday and earliestDay values should be.
+//TODO Reconsider the two routing specs on start up. A real-time and a historical.
+// In otherwords refactor the routing spec so I can have multiple instances of it.
+int curday = 0;	
+int earliestDay = 0;
+//		int curday = DcpMonitorServerThread.getCurrentDay();
+//		int earliestDay = curday - dcpMonitorConfig.numDaysStorage;
 		
 		Logger.instance().info("Current day=" + curday + ", earliestDay=" + earliestDay);
 		long lastTimeStamp = System.currentTimeMillis() -
-			(3600000L * 24L * DcpMonitorConfig.instance().numDaysStorage);
+			(3600000L * 24L * dcpMonitorConfig.numDaysStorage);
 
 		for (int day = earliestDay; day <= curday; day++)
 		{
@@ -566,8 +592,8 @@ public class DcpMonitor
 
 		routingSpec.consumerType = "DcpMonitorConsumer";
 
-		String dsName = DcpMonitorConfig.instance().dataSourceName;
-		routingSpec.dataSource = db.dataSourceList.get(dsName);
+		String dsName = dcpMonitorConfig.dataSourceName;
+		routingSpec.dataSource = Database.getDb().dataSourceList.get(dsName);
 		if (routingSpec.dataSource == null)
 		{
 			routingSpec.dataSource = new DataSource();
@@ -575,19 +601,18 @@ public class DcpMonitor
 			routingSpec.dataSource.dataSourceType = "lrgs";
 		}
 
-		DcpMonitorConfig cfg = DcpMonitorConfig.instance();
-		if (cfg.lrgsTimeout == 0)
+		if (dcpMonitorConfig.lrgsTimeout == 0)
 			routingSpec.getProperties().setProperty("lrgs.timeout", "600");
 		else
 			routingSpec.getProperties().setProperty("lrgs.timeout", "" + 
-				cfg.lrgsTimeout);
+				dcpMonitorConfig.lrgsTimeout);
 
-		String args = DcpMonitorConfig.instance().lrgsDataSourceArg;
+		String args = dcpMonitorConfig.lrgsDataSourceArg;
 		if (args != null)
 		{
 			routingSpec.dataSource.dataSourceType = "lrgs";
 			routingSpec.dataSource.dataSourceArg = args;
-			Logger.instance().info("Explicite LRGS data source, args='" + args + "'");
+			Logger.instance().info("Explicit LRGS data source, args='" + args + "'");
 		}
 		else
 		{
@@ -695,8 +720,9 @@ public class DcpMonitor
 	{
 		if (theDb == null)
 		{
-			reconnectDatabase();
+			attemptRestart();
 		}
+		XmitRecordDAI xmitRecordDao = theDb.makeXmitRecordDao(31);
 		try
 		{
 			xmitRecordDao.deleteDcpXmitsBefore(dayNum);
@@ -706,6 +732,10 @@ public class DcpMonitor
 			handleDbIoException(module + ":deleteDcpXmitsBefore(" + 
 					dayNum + ")", ex);
 		}
+		finally
+		{
+			xmitRecordDao.close();
+		}
 	}
 
 	public synchronized XmitRecord findDcpTranmission(DcpAddress dcpAddress, 
@@ -713,8 +743,9 @@ public class DcpMonitor
 	{
 		if (theDb == null)
 		{
-			reconnectDatabase();
+			attemptRestart();
 		}
+		XmitRecordDAI xmitRecordDao = theDb.makeXmitRecordDao(31);
 		try
 		{
 			return xmitRecordDao.findDcpTranmission(dcpAddress, timestamp, dayNum);
@@ -724,14 +755,19 @@ public class DcpMonitor
 			handleDbIoException(module + ":findDcpTranmission", ex);
 			return null;
 		}
+		finally
+		{
+			xmitRecordDao.close();
+		}
 	}
 
 	public synchronized void saveDcpTranmission(XmitRecord xmitRecord)
 	{
 		if (theDb == null)
 		{
-			reconnectDatabase();
+			attemptRestart();
 		}
+		XmitRecordDAI xmitRecordDao = theDb.makeXmitRecordDao(31);
 		try
 		{
 			xmitRecordDao.saveDcpTranmission(xmitRecord);
@@ -740,6 +776,10 @@ public class DcpMonitor
 		{
 			handleDbIoException(module + ":saveDcpTranmission", ex);
 		}
+		finally
+		{
+			xmitRecordDao.close();
+		}
 	}
 	
 	public synchronized int readXmitsByGroup(
@@ -747,8 +787,9 @@ public class DcpMonitor
 	{
 		if (theDb == null)
 		{
-			reconnectDatabase();
+			attemptRestart();
 		}
+		XmitRecordDAI xmitRecordDao = theDb.makeXmitRecordDao(31);
 		try
 		{
 			return xmitRecordDao.readXmitsByGroup(results, dayNum, grp);
@@ -758,6 +799,10 @@ public class DcpMonitor
 			handleDbIoException(module + ":readXmitsByGroup", ex);
 			return 0;
 		}
+		finally
+		{
+			xmitRecordDao.close();
+		}
 	}
 	
 	public synchronized int readXmitsByChannel(
@@ -765,8 +810,9 @@ public class DcpMonitor
 	{
 		if (theDb == null)
 		{
-			reconnectDatabase();
+			attemptRestart();
 		}
+		XmitRecordDAI xmitRecordDao = theDb.makeXmitRecordDao(31);
 		try
 		{
 			return xmitRecordDao.readXmitsByChannel(results, dayNum, chan);
@@ -776,6 +822,10 @@ public class DcpMonitor
 			handleDbIoException(module + ":readXmitsByChannel", ex);
 			return 0;
 		}
+		finally
+		{
+			xmitRecordDao.close();
+		}
 	}
 	
 	//Used from DcpMonitorServerThread - sendWazzupDcp() method
@@ -784,8 +834,9 @@ public class DcpMonitor
 	{
 		if (theDb == null)
 		{
-			reconnectDatabase();
+			attemptRestart();
 		}
+		XmitRecordDAI xmitRecordDao = theDb.makeXmitRecordDao(31);
 		try
 		{
 			return xmitRecordDao.readXmitsByDcpAddress(results, dayNum, dcpAddress);
@@ -795,6 +846,10 @@ public class DcpMonitor
 			handleDbIoException(module + ":readXmitsByDcpAddress", ex);
 			return 0;
 		}
+		finally
+		{
+			xmitRecordDao.close();
+		}
 	}
 	
 	public synchronized XmitRecord readXmitRawMsg(int dayNum, 
@@ -802,8 +857,9 @@ public class DcpMonitor
 	{
 		if (theDb == null)
 		{
-			reconnectDatabase();
+			attemptRestart();
 		}
+		XmitRecordDAI xmitRecordDao = theDb.makeXmitRecordDao(31);
 		try
 		{
 			return xmitRecordDao.readXmitRawMsg(dayNum, dcpAddress, timestamp);
@@ -812,6 +868,10 @@ public class DcpMonitor
 		{
 			handleDbIoException(module + ":readXmitsByDcpAddress", ex);
 			return null;
+		}
+		finally
+		{
+			xmitRecordDao.close();
 		}
 	}
 	
@@ -827,8 +887,9 @@ public class DcpMonitor
 	{
 		if (theDb == null)
 		{
-			reconnectDatabase();
+			attemptRestart();
 		}
+		XmitRecordDAI xmitRecordDao = theDb.makeXmitRecordDao(31);
 		try
 		{
 			return xmitRecordDao.getLatestTimeStamp(dayNum);
@@ -838,77 +899,12 @@ public class DcpMonitor
 			handleDbIoException(module + ":getLatestTimeStamp", ex);
 			return null;
 		}
+		finally
+		{
+			xmitRecordDao.close();
+		}
 	}
 	
-	private void handleDbIoException(String doingWhat, Throwable ex)
-	{
-		String msg = "Error " + doingWhat + ": " + ex;
-		Logger.instance().failure(msg);
-		System.err.println("" + (new Date()) + " " + msg);
-		ex.printStackTrace();
-		Logger.instance().failure("Closing Database connection.");
-		try { theDb.closeConnection(); } catch(Throwable ex2) {}
-		theDb = null;
-	}
-
-	private void reconnectDatabase()
-	{	//Do init decode first like it is done when the Dcp Monitor
-		//starts up.
-		reInitDecodesDb();
-		
-		try { createDatabase(); }
-		catch(Throwable ex)
-		{
-			Logger.instance().failure(module + 
-					":reconnectDatabase Error connecting to database: " + ex);
-		}
-		if (!tryConnect())
-		{
-			Logger.instance().failure(module + 
-				":reconnectDatabase Cannot connect to database.");
-			return;
-		}
-		if (xmitRecordDao != null)
-			xmitRecordDao.close();
-		xmitRecordDao = theDb.makeXmitRecordDao(31);
-	}
-
-	/**
-	 * This method is called to re-connect to the Decodes Database after
-	 * we have lost the DB connection. Gets the current Database object and
-	 * set it with a new dbio object that will contain the new establish
-	 * DB connection.
-	 */
-	private void reInitDecodesDb()
-	{
-		try
-		{
-			Database dbOld = Database.getDb();
-			if (dbOld != null)
-				if (dbOld.getDbIo() != null)
-					dbOld.getDbIo().close();
-			DatabaseIO dbio;
-//			String dbloc = dbLocArg.getValue();
-//			DecodesSettings settings = DecodesSettings.instance();
-//			if (dbloc.length() > 0)
-//			{
-//				dbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, dbloc);
-//			}
-//			else
-//			{
-//				dbio = 
-//				DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-//					settings.editDatabaseLocation);
-//			}
-//			Database currentDb = Database.getDb();
-//			currentDb.setDbIo(dbio);
-		} catch (Exception ex)
-		{
-			Logger.instance().warning("DcpMonitor cannot re-initialize" +
-					"Decodes Database connection " + ex.getMessage());
-			ex.printStackTrace();
-		}
-	}
 
 	public boolean isMyChannel(int chan)
 	{
@@ -927,11 +923,6 @@ public class DcpMonitor
 	public int[] getMyChannels()
 	{
 		return myChannels;
-	}
-	
-	public DcpNameDescResolver getDcpNameDescResolver()
-	{
-		return dcpNameDescResolver;
 	}
 	
 	/**
@@ -957,6 +948,10 @@ public class DcpMonitor
     public void warning(String msg)
     {
     	Logger.instance().warning("DCPMON " + msg);
+    }
+    public void failure(String msg)
+    {
+    	Logger.instance().failure("DCPMON " + msg);
     }
     public void debug(String msg)
     {

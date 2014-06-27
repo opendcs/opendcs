@@ -18,6 +18,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import opendcs.dai.XmitRecordDAI;
+
+import decodes.tsdb.DbIoException;
 import lrgs.common.DcpAddress;
 
 /**
@@ -38,6 +41,9 @@ public class XRWriteThread extends Thread
 	private static final String module = "XRWriteThread";
 	public static long numQueued = 0L;
 	public static long lastMsgMsec = 0L;
+	private DcpMonitor dcpMonitor = null;
+	private XmitRecordDAI xmitRecordDao = null;
+
 
 	/** This wraps XmitRecord and adds an insert time. */
 	class XRWrapper
@@ -57,20 +63,10 @@ public class XRWriteThread extends Thread
 	/** shutdown flag */
 	private boolean _shutdown;
 
-	/** The singleton instance */
-	private static XRWriteThread _instance = null;
-
-	/** The singleton access method */
-	public static XRWriteThread instance()
+	public XRWriteThread(DcpMonitor dcpMonitor)
 	{
-		if (_instance == null)
-			_instance = new XRWriteThread();
-		return _instance;
-	}
-
-	/** Private Constructor */
-	private XRWriteThread()
-	{
+		this.dcpMonitor = dcpMonitor;
+		xmitRecordDao = dcpMonitor.theDb.makeXmitRecordDao(31);
 		q = new ConcurrentLinkedQueue<XRWrapper>();
 		_shutdown = false;
 	}
@@ -81,7 +77,8 @@ public class XRWriteThread extends Thread
 		_shutdown = true;
 	}
 	
-int callNum = 0;
+	int callNum = 0;
+	
 	/**
 	 * Add an xmit record to the queue. First search the queue to see if
 	 * it is already present. If it is do nothing.
@@ -167,13 +164,14 @@ int dCallNum = 0;
 	/** The Thread run method. */
 	public void run()
 	{
-		Logger.instance().info("XRWriteThread started.");
+		dcpMonitor.info("XRWriteThread started.");
 		while(!_shutdown)
 		{
 			try { sleep(1000L); } catch(InterruptedException ex) {}
 			processQueue();
 		}
-		Logger.instance().info("XRWriteThread exiting.");
+		xmitRecordDao.close();
+		dcpMonitor.info("XRWriteThread exiting.");
 	}
 
 	public synchronized void processQueue()
@@ -183,10 +181,17 @@ int dCallNum = 0;
 		int n = 0;
 
 		Logger.instance().debug3("Dequeue: Dequeue XR started; Q size = " + q.size());
-		while((xr = dequeue()) != null)
+		while(!_shutdown && (xr = dequeue()) != null)
 		{
 			lastMsec = xr.getGoesTimeMsec();
-			decodes.dcpmon.DcpMonitor.instance().saveDcpTranmission(xr);
+			try
+			{
+				xmitRecordDao.saveDcpTranmission(xr);
+			}
+			catch(DbIoException ex)
+			{
+				dcpMonitor.handleDbIoException(module + ":processQueue", ex);
+			}
 			if (++n > 50)
 				doCommit();
 		}
@@ -200,10 +205,10 @@ int dCallNum = 0;
 	}
 	private void doCommit()
 	{
-		try { decodes.dcpmon.DcpMonitor.instance().theDb.commit(); }
+		try { dcpMonitor.theDb.commit(); }
 		catch(decodes.tsdb.DbIoException ex)
 		{
-			Logger.instance().warning("Error committing: " + ex);
+			dcpMonitor.warning(module + "doCommit: Error committing: " + ex);
 		}
 	}
 }

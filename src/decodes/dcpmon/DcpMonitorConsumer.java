@@ -34,10 +34,8 @@ import decodes.util.Pdt;
 import decodes.util.PdtEntry;
 
 /**
-This class is part of the DCP Monitor application.
-It puts data into the SQL Database.
-It implements the decodes.consumer.DataConsumer interface, allowing
-it to be the recipient of DecodedMessage objects in a routing spec.
+This class is used by a routing spec to ingest transmission records
+into the database for the web DCP Monitor application.
 */
 public class DcpMonitorConsumer 
 	extends DataConsumer
@@ -170,12 +168,15 @@ Logger.instance().info("MaxCarrierMS=" + cfg.maxCarrierMS);
 			hdr = new String(rawMsg.getHeader());
 
 			// Look for this Xmit record in the queue
-			workingXr = XRWriteThread.instance().find(dcpAddress, tsms);
-			if (workingXr == null)
-				// Not in Queue: Look in the SQL DB
-				workingXr = 
-					DcpMonitor.instance().findDcpTranmission(dcpAddress, 
-						timeStamp, day);
+//TODO:
+// Figure out A.) how to pass reference to XRWriteThread down to this consumer,
+// or B.) If I can relocate the code somewhere else, perhaps within this class.
+//			workingXr = XRWriteThread.instance().find(dcpAddress, tsms);
+//			if (workingXr == null)
+//				// Not in Queue: Look in the SQL DB
+//				workingXr = 
+//					DcpMonitor.instance().findDcpTranmission(dcpAddress, 
+//						timeStamp, day);
 			if (workingXr == null)
 				// Don't have it yet -- create new record.
 				workingXr = new XmitRecord(dcpAddress, sod, day);
@@ -195,14 +196,16 @@ Logger.instance().info("MaxCarrierMS=" + cfg.maxCarrierMS);
 
 			int chan = (int)getVarLongValue(
 				rawMsg.getPM(GoesPMParser.CHANNEL), 0);
-			if (!DcpMonitor.instance().isMyChannel(chan))
-			{
-				Logger.instance().warning("Received msg for DCP "
-					+ mediumId + " on channel " + chan
-					+ ". This is not one of my channels -- discarding!"
-					+ " Hdr: [" + hdr + "]");
-				return;
-			}
+// TODO Can the consumer get a reference to the routing spec somehow?
+// If so, can it get a channel list from the embedded searchcrit therein?
+//			if (!DcpMonitor.instance().isMyChannel(chan))
+//			{
+//				Logger.instance().warning("Received msg for DCP "
+//					+ mediumId + " on channel " + chan
+//					+ ". This is not one of my channels -- discarding!"
+//					+ " Hdr: [" + hdr + "]");
+//				return;
+//			}
 
 			workingXr.setGoesChannel(chan);
 
@@ -341,23 +344,25 @@ Logger.instance().info("MaxCarrierMS=" + cfg.maxCarrierMS);
 
 			// Finally, XR is either new or modified. Add it to the database's
 			// write queue.
-			XRWriteThread xwt = decodes.dcpmon.XRWriteThread.instance();
-			for(int nTries = 0; nTries < 10; nTries++)
-			{
-				Logger.instance().debug3("Enqueue: Enqueue XR started; nTries = " + nTries);
-				if (xwt.enqueue(workingXr))
-				{
-					Logger.instance().debug3("Enqueue: Enqueue XR ended; nTries = " + nTries);
-					return;
-				}
-				else
-				{
-					Logger.instance().warning(
-						"Queue full, retrieval thread will pause.");
-					try { Thread.sleep(2000L); }
-					catch(InterruptedException ex) {}
-				}
-			}
+//TODO Reconsider making XRWriteThread a singleton again.
+// This consumer needs access to the shared queue somehow.
+//			XRWriteThread xwt = decodes.dcpmon.XRWriteThread.instance();
+//			for(int nTries = 0; nTries < 10; nTries++)
+//			{
+//				Logger.instance().debug3("Enqueue: Enqueue XR started; nTries = " + nTries);
+//				if (xwt.enqueue(workingXr))
+//				{
+//					Logger.instance().debug3("Enqueue: Enqueue XR ended; nTries = " + nTries);
+//					return;
+//				}
+//				else
+//				{
+//					Logger.instance().warning(
+//						"Queue full, retrieval thread will pause.");
+//					try { Thread.sleep(2000L); }
+//					catch(InterruptedException ex) {}
+//				}
+//			}
 			error(rawMsg, "Queue Full: Cannot enqueue to database!");
 		}
 		catch(NullPointerException ex)

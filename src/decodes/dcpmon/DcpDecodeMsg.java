@@ -175,10 +175,11 @@ public class DcpDecodeMsg
 						dm.applyScaleAndOffset();
 						if (DcpMonitorConfig.instance().enableComputations)
 						{
-							DcpMonitor dcpmon = DcpMonitor.instance();
-							ComputationProcessor compProc = dcpmon.getCompProcessor();
-							if (compProc != null)
-								compProc.applyComputations(dm);
+//TODO: Figure out how to get comp proc instance without DcpMonitor
+//							DcpMonitor dcpmon = DcpMonitor.instance();
+//							ComputationProcessor compProc = dcpmon.getCompProcessor();
+//							if (compProc != null)
+//								compProc.applyComputations(dm);
 						}
 					}
 					else

@@ -120,14 +120,17 @@ public class PlatformInfo
 		//Code added for Dcp Monitor Ehancement Problem #2.
 		//Reset the description so that we use the same description
 		//in all dcp monitor web pages
-		String tempDesc = 
-			DcpMonitor.instance().getDcpNameDescResolver().getBestDescription(
-				dcpAddress, plat);
-		if (tempDesc != null && tempDesc.trim().length() > 0)
-		{
-			if (ret != null)
-				ret.platformDescription = tempDesc;
-		}
+		
+//TODO Figure out if I even need PlatformInfo, and if so, how to get name
+//resolver instance without referencing the DcpResolver.
+//		String tempDesc = 
+//			DcpMonitor.instance().getDcpNameDescResolver().getBestDescription(
+//				dcpAddress, plat);
+//		if (tempDesc != null && tempDesc.trim().length() > 0)
+//		{
+//			if (ret != null)
+//				ret.platformDescription = tempDesc;
+//		}
 		
 		if (plat == null && pte == null)
 		{

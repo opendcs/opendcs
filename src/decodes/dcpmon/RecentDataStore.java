@@ -133,8 +133,10 @@ class ScrubberThread extends Thread
 	{
 		int numDays = DcpMonitorConfig.instance().numDaysStorage;
 		int today = parent.getCurrentDay();
-		decodes.dcpmon.DcpMonitor.instance().deleteDcpXmitsBefore(
-													today - numDays);
+//TODO Figure out if I even need a RecentDataStore
+// Or can the Web Service do its own retrievals always from the DB.
+//		decodes.dcpmon.DcpMonitor.instance().deleteDcpXmitsBefore(
+//													today - numDays);
 		parent.scrubberThread = null;
 	}
 
