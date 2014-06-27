@@ -196,8 +196,6 @@ public class CwmsRatingDao extends TsdbDao
 	{
 		String officeId = ((CwmsTimeSeriesDb)tsdb).getDbOfficeId();
 		String specId = crr.getRatingSpecId();
-		Logger.instance().debug3(module + " calling fromDatabase with officeId=" + officeId
-			+ " and spec '" + specId + "'");
 		RatingSet ratingSet = getRatingSet(specId);
 		if (!allInSpec)
 		{
@@ -284,6 +282,9 @@ public class CwmsRatingDao extends TsdbDao
 			if (lastUpdate != null && rw.timeLoaded.after(lastUpdate))
 			{
 				rw.lastTimeUsed = new Date();
+				Logger.instance().debug3(module + " retrieving rating spec from cache with officeId="
+					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
+					+ rw.timeLoaded);
 				return rw.ratingSet;
 			}
 		}
@@ -317,6 +318,8 @@ public class CwmsRatingDao extends TsdbDao
 		RatingSet ratingSet = RatingSet.fromDatabase(tsdb.getConnection(),
 			officeId, specId);
 		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
+		Logger.instance().debug3(module + " reading rating from cache took "
+			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
 		return ratingSet;
 	}
