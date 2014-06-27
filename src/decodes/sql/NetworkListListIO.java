@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.7  2013/04/23 13:45:28  mmaloney
  * Add join to NetworkList so that CWMS adds office ID predicate.
  *
@@ -108,6 +111,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	* the initDb(Database) method.
 	*/
 	private NetworkListList _networkListList;
+
 
 	/**
 	  Constructor.
@@ -389,9 +393,12 @@ public class NetworkListListIO extends SqlDbObjIo
 		throws DatabaseException, SQLException
 	{
 		Statement stmt = createStatement();
+		String nle_attributes = "networkListId, transportId";
+		if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+			nle_attributes += ", platform_name, description";
 		
-		String q = "SELECT networkListId, transportId "
-			     + "FROM NetworkListEntry where NetworkListId = "
+		String q = "SELECT " + nle_attributes
+			     + " FROM NetworkListEntry where NetworkListId = "
 			     + nl.getId();
 
 		ResultSet rs_nle = stmt.executeQuery(q);
@@ -430,7 +437,18 @@ public class NetworkListListIO extends SqlDbObjIo
 					nle.platformName = p.getSiteName(false);
 				}
 				
+				// DB Version 11 has name and description in each Netlist Entry.
+				// If present, these will override the values from platform & site.
 				nle.description = p.description;
+				if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+				{
+					String nm = rs_nle.getString(3);
+					if (nm != null && nm.length() > 0)
+						nle.platformName = nm;
+					String desc = rs_nle.getString(4);
+					if (desc != null && desc.length() > 0)
+						nle.description = desc;
+				}
 			}
 
 			nl.addEntry(nle);
@@ -596,10 +614,18 @@ public class NetworkListListIO extends SqlDbObjIo
 	private void insertNLE(DbKey nl_id, NetworkListEntry nle)
 		throws DatabaseException, SQLException
 	{
-		String q = "INSERT INTO NetworkListEntry VALUES(" +
-					 nl_id + ", " +
-					 sqlReqString(nle.transportId) +
-					 ")";
+		String nle_attributes = "networkListId, transportId";
+		if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+			nle_attributes += ", platform_name, description";
+		String q = "INSERT INTO NetworkListEntry(" + nle_attributes + ") VALUES("
+			+ nl_id + ", "
+			+ sqlReqString(nle.transportId);
+		if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+		{
+			q = q + ", " + sqlOptString(nle.platformName)
+				+ ", " + sqlOptString(nle.description);
+		} 
+		q += ")";
 		executeUpdate(q);
 	}
 
