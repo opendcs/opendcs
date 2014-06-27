@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.3  2014/05/30 13:15:35  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/28 13:09:31  mmaloney
 *  dev
 *
@@ -654,7 +657,7 @@ Logger.instance().debug3("Using rs property version '" + cwmsVersion + "'");
 	{
 		StringBuffer timeSeriesDescriptor = new StringBuffer("");
 		// Find the location. Use the CWMS site name or default site name type
-		SiteName sn = platformSite.getName(CwmsConstants.CWMS_DATA_TYPE);
+		SiteName sn = platformSite.getName(Constants.snt_CWMS);
 		if (sn == null)
 			sn = platformSite.getPreferredName();
 		String location = sn.getNameValue();		
