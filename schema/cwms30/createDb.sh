@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DH=/home/oracle/OPENDCS
+DH=$DCSTOOL_HOME
 
 #===========================================================================
 # Run this script to install the CCP Schema on CWMS 3.0 Database
