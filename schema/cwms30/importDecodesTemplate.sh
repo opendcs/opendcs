@@ -1,6 +1,17 @@
 #!/bin/sh
+
+#############################################################################
+# This software was written by Cove Software, LLC ("COVE") under contract 
+# to the United States Government. 
+# No warranty is provided or implied other than specific contractual terms
+# between COVE and the U.S. Government
+# 
+# Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+# All rights reserved.
+#############################################################################
+
 #
-# This script assumes you have already installed the DCS Toolkit
+# This script assumes you have already installed OPENDCS
 # and have setup the DECODES DB connection configurations.
 # The script will import the look-up table data onto the CCP DB
 # that user specifies.
