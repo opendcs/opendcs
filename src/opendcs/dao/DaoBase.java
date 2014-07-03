@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package opendcs.dao;
 
@@ -30,7 +33,7 @@ public class DaoBase
 	private Statement queryStmt2 = null;
 	private ResultSet queryResults2 = null;
 
-	private String module;
+	protected String module;
 	
 	/**
 	 * Constructor
