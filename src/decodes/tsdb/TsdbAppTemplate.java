@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.15  2013/03/28 17:29:09  mmaloney
 *  Refactoring for user-customizable decodes properties.
 *
@@ -124,8 +127,6 @@ public abstract class TsdbAppTemplate
 		if (abortExecute) return;
 		parseArgs(args);
 		if (abortExecute) return;
-		readDecodesProperties();
-		if (abortExecute) return;
 		initDecodes();
 		if (abortExecute) return;
 		createDatabase();
@@ -229,58 +230,35 @@ public abstract class TsdbAppTemplate
 	}
 
 	/**
-	 * Properties are normally loaded from CmdLineArgs.parseArgs already.
-	 * But if user has overloaded that method and not loaded properties.
-	 * This method will do so.
-	 * @throws Exception
-	 */
-	protected void readDecodesProperties()
-		throws Exception
-	{
-		// Note: CmdLineArgs.parseArgs() above will load the properties.
-		// Leave this method as a deprecated stub.
-		DecodesSettings settings = DecodesSettings.instance();
-		if (!settings.isLoaded())
-		{
-			String propFile = cmdLineArgs.getPropertiesFile();
-			if (propFile != null)
-			{
-				Properties props = new Properties();
-				FileInputStream fis = new FileInputStream(propFile);
-				props.load(fis);
-				fis.close();
-				settings.loadFromProperties(props);
-			}
-		}
-	}
-
-	/**
 	 * Attempt to connect to the database.
 	 * @return true if success, false if not.
 	 */
 	public boolean tryConnect()
 	{
-		// Get authorization parameters.
-		String afn = EnvExpander.expand(DecodesSettings.instance().DbAuthFile);
-		UserAuthFile authFile = new UserAuthFile(afn);
-		try { authFile.read(); }
-		catch(Exception ex)
-		{
-			authFileEx(afn, ex);
-			return false;
-		}
-
-		// Connect to the database!
-		Properties props = new Properties();
-		props.setProperty("username", authFile.getUsername());
-		props.setProperty("password", authFile.getPassword());
-
+		Properties credentials = new Properties();
 		String nm = appNameArg.getValue();
-		Logger.instance().info("Connecting to TSDB as user '" 
-			+ authFile.getUsername() + "'");
+		if (!DecodesInterface.isGUI() || !theDb.isCwms())
+		{
+			// Get authorization parameters.
+			String afn = EnvExpander.expand(DecodesSettings.instance().DbAuthFile);
+			UserAuthFile authFile = new UserAuthFile(afn);
+			try { authFile.read(); }
+			catch(Exception ex)
+			{
+				authFileEx(afn, ex);
+				return false;
+			}
+	
+			// Connect to the database!
+			credentials.setProperty("username", authFile.getUsername());
+			credentials.setProperty("password", authFile.getPassword());
+		}
+		// Else this is a CWMS GUI -- user will be prompted for credentials
+		// Leave the property set empty.
+		
 		try
 		{
-			appId = theDb.connect(nm, props);
+			appId = theDb.connect(nm, credentials);
 			return true;
 		}
 		catch(BadConnectException ex)
