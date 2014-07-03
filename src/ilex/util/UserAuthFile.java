@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.6  2010/10/29 15:13:45  mmaloney
 *  debugs
 *
@@ -59,6 +62,7 @@ import java.io.IOException;
 import java.io.FileWriter;
 import java.io.FileInputStream;
 
+import hec.io.Console;
 import ilex.util.AuthException;
 import ilex.util.DesEncrypter;
 
@@ -121,7 +125,7 @@ public class UserAuthFile
 		username = nm;
 		password = pw;
 
-		// pre-fill data with randome printable characters
+		// pre-fill data with random printable characters
 		byte data[] = new byte[256];
 		int i=0;
 		for(i=0; i<data.length; i++)
@@ -138,8 +142,8 @@ public class UserAuthFile
 			data[i + 14 + nm.length() + 21] = (byte)pw.charAt(i);
 
 		// Encrypt it using the canned key plus the user name
-		File p = authFile.getParentFile();
-		String pn = p == null ? "null" : p.getName();
+		File p = authFile.getAbsoluteFile().getParentFile();
+		String pn = (p == null ? "null" : p.getName());
 		String key = new String(pp) + pn;
 //System.out.println("Writing using key '" + key + "', parent file name='" + pn + "'");
 		DesEncrypter de = new DesEncrypter(key);
@@ -183,10 +187,11 @@ public class UserAuthFile
 	private void decryptV1(byte data[])
 		throws AuthException
 	{
-		File p = authFile.getParentFile();
-		String pn = p == null ? "null" : p.getName();
+		File p = authFile.getAbsoluteFile().getParentFile();
+		String pn = (p == null ? "null" : p.getName());
 		String key = new String(pp) + pn;
 //System.out.println("Decrypting using key '" + key + "', parent file name='" + pn + "'");
+
 		DesEncrypter de = new DesEncrypter(key);
 
 		// MJM 20100817 we noticed some strangeness in decrypting having to
@@ -277,8 +282,9 @@ public class UserAuthFile
 		if (!args[0].startsWith("-"))
 		{
 			System.out.print("User Name: ");
-			String user = TTYEcho.readLn();
-			String password = TTYEcho.readPassword("Password: ");
+			String user = System.console().readLine();
+			System.out.print("Password: ");
+			String password = new String(System.console().readPassword());
 			System.out.println("writing...");
 			authFile.write(user, password);
 		}
