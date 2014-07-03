@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/06/27 20:02:23  mmaloney
+ * Fixes for deleting a site. It wasn't being removed from cache.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -49,6 +52,7 @@ public class CwmsSiteDAO extends SiteDAO
 			+ "'', time_zone_name, nation_id, elevation, 'm', description, location_id, public_name"
 			+ ", location_type, active_flag";
 		siteTableKeyColumn = "location_code";
+		this.module = "CwmsSiteDAO";
 	}
 
 	protected void resultSet2Site(Site site, ResultSet rsSite)
@@ -353,9 +357,12 @@ ex.printStackTrace(System.err);
 
 	}
 	
+	@Override
 	protected void fillCache()
 		throws DbIoException
 	{
+		Logger.instance().debug3("CwmsSiteDAO.fillCache()");
+
 		ArrayList<Site> siteList = new ArrayList<Site>();
 		int nNames = 0;
 		String q = buildSiteQuery(Constants.undefinedId);
