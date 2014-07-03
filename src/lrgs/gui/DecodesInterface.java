@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.3  2014/05/28 13:09:31  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/22 12:26:48  mmaloney
 *  Remove obsolete methods.
 *
@@ -147,29 +150,7 @@ public class DecodesInterface
 		if (decodesInitialized)
 			return;
 
-		Logger.instance().log(Logger.E_DEBUG1,
-			"Initializing DECODES database from prop file '"
-			+ propFile + "'.");
-
-		if (propFile == null)
-			propFile = EnvExpander.expand(
-				"$DECODES_INSTALL_DIR/decodes.properties");
-
 		DecodesSettings settings = DecodesSettings.instance();
-		Properties props = new Properties();
-		try
-		{
-			FileInputStream fis = new FileInputStream(propFile);
-			props.load(fis);
-			fis.close();
-		}
-		catch(IOException e)
-		{
-			Logger.instance().log(Logger.E_FAILURE,
-			"Cannot open DECODES Properties File '"+propFile+"': "+e);
-		}
-		if (!settings.isLoaded())
-			settings.loadFromProperties(props);
 
 		if (!silent)
 		{	System.out.print("Init DECODES DB: "); System.out.flush(); }
