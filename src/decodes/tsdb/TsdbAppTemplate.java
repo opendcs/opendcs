@@ -4,6 +4,10 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.2  2014/07/03 12:44:38  mmaloney
+*  Don't call readDecodesProperties() this is done by CmdLineArgs.
+*  Also, better consistency for CWMS GUI Apps in retrieving DB Passwords.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -30,6 +34,7 @@ import ilex.util.AuthException;
 
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
+import decodes.util.DecodesVersion;
 import decodes.tsdb.*;
 import decodes.sql.DbKey;
 import decodes.sql.SqlDatabaseIO;
@@ -127,6 +132,7 @@ public abstract class TsdbAppTemplate
 		if (abortExecute) return;
 		parseArgs(args);
 		if (abortExecute) return;
+		startupLogMessage();
 		initDecodes();
 		if (abortExecute) return;
 		createDatabase();
@@ -134,6 +140,13 @@ public abstract class TsdbAppTemplate
 		tryConnect();
 		if (abortExecute) return;
 		runApp();
+	}
+
+	protected void startupLogMessage()
+	{
+		Logger.instance().info("===============================================");
+		Logger.instance().info(appNameArg.getValue() + " starting. "
+			+ DecodesVersion.startupTag());
 	}
 
 	/**

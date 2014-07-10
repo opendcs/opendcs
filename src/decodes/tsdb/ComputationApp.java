@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.28  2013/07/12 11:50:53  mmaloney
 *  Added tasklist queue stuff.
 *
@@ -134,8 +137,6 @@ public class ComputationApp
 		throws LockBusyException, DbIoException, NoSuchObjectException
 	{
 		initialize();
-		Logger.instance().info("============== CompApp " + getAppName() 
-			+", appId=" + appId + " Starting ==============");
 
 		long lastDataTime = System.currentTimeMillis();
 		while(!shutdownFlag)
