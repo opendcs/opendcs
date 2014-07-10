@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/07/03 12:43:23  mmaloney
+ * debug improvements.
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract 
  * to the United States Government. 
@@ -867,7 +870,7 @@ debug3("After re-getting tsid dn='" + cts.getDisplayName() + "'");
 			+ "FROM CWMS_V_TS_ID a, CWMS_V_LOC c "
 			+ " WHERE a.LOCATION_CODE = c.LOCATION_CODE "
 			+ " AND c.UNIT_SYSTEM = 'SI' ";
-		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
+//		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
 			q = q + "and upper(a.DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
 
 		try
