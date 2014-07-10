@@ -11,7 +11,7 @@ Static final variables values representing software version.
 public class DecodesVersion
 {
 	/** the program name */
-	private static String name = "Device Conversion and Delivery System";
+	private static String name = "OpenDCS";
 
 	/** the program abbreviation */
 	private static String abbr = "OPENDCS";
