@@ -87,12 +87,12 @@ public class ScheduleEntryExecutive
 		}
 		else if (runState == RunState.shutdown)
 		{
-			if (System.currentTimeMillis() - shutdownStarted > maxShutdownTime)
+			if (System.currentTimeMillis() - shutdownStarted > maxShutdownTime
+			 && seThread != null)
 			{
 				Logger.instance().warning(getName() + " taking too long to shutdown, "
 					+ "will attempt thread interrupt.");
-				if (seThread != null)
-					seThread.interrupt();
+				seThread.interrupt();
 			}
 		}
 		else
