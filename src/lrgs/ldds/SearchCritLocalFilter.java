@@ -5,6 +5,9 @@
  * Author: Mike Maloney, Cove Software, LLC.
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2013/03/03 15:46:09  mmaloney
  * Implement local filters for when talking to legacy servers.
  *
@@ -13,6 +16,8 @@
  *
  */
 package lrgs.ldds;
+
+import ilex.util.EnvExpander;
 
 import java.io.File;
 
@@ -54,7 +59,8 @@ public class SearchCritLocalFilter
 		if ((goesST || goesRD) && ! (goesST && goesRD)
 			&& !channelMap.isLoaded())
 		{
-			channelMap.load(new File(DecodesSettings.instance().cdtLocalFile));
+			channelMap.load(
+				new File(EnvExpander.expand(DecodesSettings.instance().cdtLocalFile)));
 		}
 	}
 	
