@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -146,7 +149,7 @@ public class TopLevelParser implements XmlObjectParser
 	 * @return @throws IOException on IO errors
 	 * @throws SAXException on parse errors
 	 */
-	public DatabaseObject parse( InputStream is ) throws IOException, SAXException
+	public synchronized DatabaseObject parse( InputStream is ) throws IOException, SAXException
 	{
 		topLevelObject = null;    // New object will be created.
 		xhp.pushObjectParser(this);
@@ -220,7 +223,7 @@ public class TopLevelParser implements XmlObjectParser
 	 * @throws IOException on IO errors
 	 * @throws SAXException on parse errors
 	 */
-	public void parse( InputStream is, DatabaseObject ob ) throws IOException, SAXException
+	public synchronized void parse( InputStream is, DatabaseObject ob ) throws IOException, SAXException
 	{
 		topLevelObject = ob;         // Use caller-provided object
 		xhp.pushObjectParser(this);
