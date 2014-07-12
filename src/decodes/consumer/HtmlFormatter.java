@@ -252,31 +252,36 @@ public class HtmlFormatter extends OutputFormatter
 				siteDesc = p.description;
 				if (siteDesc == null || siteDesc.equals(""))
 					siteDesc = s.getDescription();
-				
-				if (comesFromDcpMon)
-				{
-					DcpAddress daddr = new DcpAddress(
-						rawmsg.getPM(GoesPMParser.DCP_ADDRESS).getStringValue());
-					DcpNameDescResolver dndr = 
-						DcpMonitor.instance().getDcpNameDescResolver();
-					StringPair sp = dndr.getBestNameDesc(daddr, p);
-					siteName = sp.first;
-					siteDesc = sp.second;
-				}
+	
+//TODO When running as part of the DCP Mon web service, we want to resolve the
+// name according to DCP Monitor config.
+// Options: Make a separate formatter for DCP Mon or figure out how this reference can work
+// without DcpMonitor being a singleton.
+//				if (comesFromDcpMon)
+//				{
+//					DcpAddress daddr = new DcpAddress(
+//						rawmsg.getPM(GoesPMParser.DCP_ADDRESS).getStringValue());
+//					DcpNameDescResolver dndr = 
+//						DcpMonitor.instance().getDcpNameDescResolver();
+//					StringPair sp = dndr.getBestNameDesc(daddr, p);
+//					siteName = sp.first;
+//					siteDesc = sp.second;
+//				}
 			}
 		}
 		catch(Exception ex)
 		{
-			if (comesFromDcpMon)
-			{
-				DcpNameDescResolver dndr = 
-					DcpMonitor.instance().getDcpNameDescResolver();
-				DcpAddress daddr = new DcpAddress(
-					rawmsg.getPM(GoesPMParser.DCP_ADDRESS).getStringValue());
-				StringPair sp = dndr.getBestNameDesc(daddr, null);
-				siteName = sp.first;
-				siteDesc = sp.second;
-			}
+//TODO Likewise, DcpMonitor is no longer a singleton.
+//			if (comesFromDcpMon)
+//			{
+//				DcpNameDescResolver dndr = 
+//					DcpMonitor.instance().getDcpNameDescResolver();
+//				DcpAddress daddr = new DcpAddress(
+//					rawmsg.getPM(GoesPMParser.DCP_ADDRESS).getStringValue());
+//				StringPair sp = dndr.getBestNameDesc(daddr, null);
+//				siteName = sp.first;
+//				siteDesc = sp.second;
+//			}
 			Logger.instance().debug1(
 				"Cannot get platform metadata, will display raw only: " + ex);
 			Variable siteNameV = rawmsg.getPM(GoesPMParser.DCP_ADDRESS);

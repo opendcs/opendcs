@@ -381,7 +381,7 @@ public class MsgArchive
 	/**
 	 * Archive a DCP message.
 	 * @param msg the message.
-	 * @param slot the slot number of the input device that generated the msg.
+	 * @param src the input device that generated the msg.
 	 * @return true if message was archived, false if it was discarded.
 	 */
 	public synchronized void archiveMsg( DcpMsg msg, LrgsInputInterface src)

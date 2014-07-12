@@ -340,7 +340,14 @@ class ScheduleEntryTableModel extends AbstractTableModel implements
 		try
 		{
 			theList.clear();
-			theList.addAll(scheduleEntryDAO.listScheduleEntries(null));
+			ArrayList<ScheduleEntry> sea = scheduleEntryDAO.listScheduleEntries(null);
+			for(Iterator<ScheduleEntry> seit = sea.iterator(); seit.hasNext(); )
+			{
+				ScheduleEntry se = seit.next();
+				if (se.getName().toLowerCase().endsWith("-manual"))
+					seit.remove();
+			}
+			theList.addAll(sea);
 			resort();
 		}
 		catch(DbIoException ex)
