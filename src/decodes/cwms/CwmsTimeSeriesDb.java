@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2014/05/22 12:17:15  mmaloney
+*  Fix bug. After creating TS, set the site attribute of the tsid.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -499,7 +502,6 @@ import java.util.Properties;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.GregorianCalendar;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -529,9 +531,12 @@ import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import decodes.db.Constants;
+import decodes.db.Database;
+import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.DataType;
+import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
 import decodes.util.DecodesSettings;
@@ -552,10 +557,10 @@ public class CwmsTimeSeriesDb
 	private String dbOfficePrivilege = null;
 
 //	private SimpleDateFormat rwdf;
-	private OraclePreparedStatement storeTsStmt = null;
-	private TasklistQueueFile tasklistQueueFile = null;
-	private int tasklistQueueThresholdHours = 8;
-	private int numTasklistQueueErrors = 0;
+//	private OraclePreparedStatement storeTsStmt = null;
+//	private TasklistQueueFile tasklistQueueFile = null;
+//	private int tasklistQueueThresholdHours = 8;
+//	private int numTasklistQueueErrors = 0;
 
 
 	private String[] currentlyUsedVersions = { "" };
@@ -563,8 +568,8 @@ public class CwmsTimeSeriesDb
 		TimeZone.getTimeZone("UTC"));
 	
 	CwmsGroupHelper cwmsGroupHelper = null;
-	private long lastTaskListRecords = 0L;
-	private long taskListTimeoutMillisec = 300000L;
+//	private long lastTaskListRecords = 0L;
+//	private long taskListTimeoutMillisec = 300000L;
 	
 	public boolean requireCcpTables = true;
 	
@@ -1201,7 +1206,7 @@ Logger.instance().debug3("Tasklist rec: sdi=" + sdi + ", valueWasNull="+valueWas
 					TasklistRec rec = new TasklistRec(recordNum, sdi, value,
 						valueWasNull, timeStamp, deleted,
 						unitsAbbr, versionDate, qualityCode);
-					lastTaskListRecords = System.currentTimeMillis();
+//					lastTaskListRecords = System.currentTimeMillis();
 	
 //					// If we are using a tasklist queue for records older than a threshold,
 //					// and this record is older than the threshold, then add this to the queue file.
@@ -1367,7 +1372,38 @@ for(CTimeSeries ts : allts)
 				timeSeriesDAO.close();
 			}
 		}
+		else
+		{
+			// The time series already existed from a previous tasklist rec in this run.
+			// Make sure this rec's unitsAbbr matches the CTimeSeries.getUnitsAbbr().
+			// If not, convert it to the CTS units.
+			if (!TextUtil.strEqualIgnoreCase(rec.getUnitsAbbr(), cts.getUnitsAbbr()))
+			{
+				EngineeringUnit euOld =	EngineeringUnit.getEngineeringUnit(rec.getUnitsAbbr());
+				EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(cts.getUnitsAbbr());
 
+				UnitConverter converter = Database.getDb().unitConverterSet.get(euOld, euNew);
+				if (converter != null)
+				{
+					try { rec.setValue(converter.convert(rec.getValue())); }
+					catch (Exception ex)
+					{
+						Logger.instance().warning(
+							"Tasklist for '" + cts.getTimeSeriesIdentifier().getUniqueString()
+							+ "' exception converting " + rec.getValue() + " " + rec.getUnitsAbbr()
+							+ " to " + cts.getUnitsAbbr() + ": " + ex
+							+ " -- will use as-is.");
+					}
+				}
+				else
+				{
+					Logger.instance().warning(
+						"Tasklist for '" + cts.getTimeSeriesIdentifier().getUniqueString()
+						+ "' cannot convert " + rec.getValue() + " " + rec.getUnitsAbbr()
+						+ " to " + cts.getUnitsAbbr() + ". -- will use as-is.");
+				}
+			}
+		}
 		if (rrhandle != null)
 			rrhandle.addRecNum(rec.getRecordNum());
 
@@ -1736,9 +1772,9 @@ for(CTimeSeries ts : allts)
 	
 	public void closeTasklistQueue()
 	{
-		if (tasklistQueueFile != null)
-			tasklistQueueFile.close();
-		tasklistQueueFile = null;
+//		if (tasklistQueueFile != null)
+//			tasklistQueueFile.close();
+//		tasklistQueueFile = null;
 	}
 
 	/**
