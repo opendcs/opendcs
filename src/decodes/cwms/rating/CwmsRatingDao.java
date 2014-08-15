@@ -78,9 +78,9 @@ public class CwmsRatingDao extends TsdbDao
 		String officeId = ((CwmsTimeSeriesDb)tsdb).getDbOfficeId();
 		String q = "select distinct " + cwms_v_rating_columns
 			+ " from CWMS_V_RATING"
-			+ " where OFFICE_ID = " + tsdb.sqlString(officeId);
+			+ " where upper(OFFICE_ID) = " + tsdb.sqlString(officeId.toUpperCase());
 		if (locationId != null)
-			q = q + " and LOCATION_ID = " + tsdb.sqlString(locationId);
+			q = q + " and upper(LOCATION_ID) = " + tsdb.sqlString(locationId.toUpperCase());
 		
 		ArrayList<CwmsRatingRef> ret = new ArrayList<CwmsRatingRef>();
 
