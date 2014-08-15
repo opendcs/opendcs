@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2014/07/10 17:06:52  mmaloney
+ * Always include office code in query when loading tsid cache.
+ * Even the 5.1 will have this field, and it should be populated correctly.
+ *
  * Revision 1.3  2014/07/03 12:43:23  mmaloney
  * debug improvements.
  *
@@ -561,9 +565,7 @@ debug3("After re-getting tsid dn='" + cts.getDisplayName() + "'");
 		// Convert to the required 'storage units'.
 		debug3("Time Series '" + tsId.getUniqueString() + "' have units '"
 			+ unitsAbbr + "' require units '" + tsId.getStorageUnits() + "'");
-		if (unitsAbbr == null)
-			unitsAbbr = tsId.getStorageUnits(); // Assume they're already correct
-		else if (!unitsAbbr.equalsIgnoreCase(tsId.getStorageUnits()))
+		if (!unitsAbbr.equalsIgnoreCase(tsId.getStorageUnits()))
 		{
 			TimeSeriesHelper.convertUnits(ts, tsId.getStorageUnits());
 			unitsAbbr = tsId.getStorageUnits();
@@ -608,8 +610,8 @@ debug3("After re-getting tsid dn='" + cts.getDisplayName() + "'");
 				//  -- Existing values at different time stamps will be left alone.
 				debug1(" Calling store for ts_id="
 					+ path + ", office='" + dbOfficeId 
-					+ "' with " + num2write + " values, units=" + unitsAbbr);
-				cwmsTsJdbc.store(dbOfficeId, path, unitsAbbr, times, values,
+					+ "' with " + num2write + " values, units=" + ts.getUnitsAbbr());
+				cwmsTsJdbc.store(dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_ALL, 
 					overrideProtection, versionDate);
 			}
@@ -635,9 +637,9 @@ debug3("After re-getting tsid dn='" + cts.getDisplayName() + "'");
 				// The "REPLACE_MISSING_VALUES_ONLY" store-rule means: 
 				//  -- Do not overwrite if a value exists at that time-slice.
 				debug1(" Calling store (no overwrite) for ts_id="
-						+ path + " with " + num2write + " values, units=" + unitsAbbr);
+						+ path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
 
-				cwmsTsJdbc.store(dbOfficeId, path, unitsAbbr, times, values,
+				cwmsTsJdbc.store(dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
 					overrideProtection, versionDate);
 			}
