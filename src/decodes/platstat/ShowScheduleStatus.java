@@ -112,11 +112,10 @@ public class ShowScheduleStatus
 	}
 	
 	@Override
-	public boolean tryConnect()
+	public void tryConnect()
 	{
 		// This app doesn't need the TSDB and must operate with just DECODES even
 		// under XML.
-		return true;
 	}
 	
 	@Override

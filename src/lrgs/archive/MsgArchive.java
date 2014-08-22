@@ -1092,7 +1092,7 @@ public class MsgArchive
 		for(int i=0; i<5; i++)
 			newdata[32+i] = (byte)lenstr.charAt(i);
 
-		DcpMsg ret = new DcpMsg(newdata, newdata.length);
+		DcpMsg ret = new DcpMsg(newdata, newdata.length, 0);
 		ret.setLocalReceiveTime(origMsg.getLocalReceiveTime());
 		return ret;
 	}

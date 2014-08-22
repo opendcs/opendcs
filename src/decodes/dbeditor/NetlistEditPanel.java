@@ -280,8 +280,8 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			{
 				NetworkListEntry nle = new NetworkListEntry(theObject,
 					item.addr.toString());
-				nle.description = item.description;
-				nle.platformName = item.name;
+				nle.setDescription(item.description);
+				nle.setPlatformName(item.name);
 				tableModel.add(nle);
 			}		
 		}
@@ -309,8 +309,8 @@ System.out.println("Select From PDT Pressed.");
 						continue;
 					NwsXrefEntry nwsXrefEntry = ent.getNwsXrefEntry();
 					if (nwsXrefEntry != null)
-						nle.platformName = nwsXrefEntry.getNwsId();
-					nle.description = ent.getDescription();
+						nle.setPlatformName(nwsXrefEntry.getNwsId());
+					nle.setDescription(ent.getDescription());
 					tableModel.add(nle);
 				}
 		}
@@ -348,7 +348,7 @@ System.out.println("Select From PDT Pressed.");
 					{// FIRST - see if it can find a site name for this type
 						SiteName sn = pSite.getName(siteNameTypePref);
 						if (sn != null)
-							nle.platformName = sn.getNameValue();
+							nle.setPlatformName(sn.getNameValue());
 						else
 						{
 							// nle.platformName = "";
@@ -356,12 +356,12 @@ System.out.println("Select From PDT Pressed.");
 							// for the nl.siteNameTypePref so use the default or
 							// what ever site name it has.
 							// this is like it was before
-							nle.platformName = p.getSiteName(false);
+							nle.setPlatformName(p.getSiteName(false));
 						}
 					}
 					else
 					{
-						nle.platformName = p.getSiteName(false);
+						nle.setPlatformName(p.getSiteName(false));
 					}
 				}
 			}
@@ -410,9 +410,9 @@ System.out.println("Select From PDT Pressed.");
 			if (s != null)
 				sn = s.getPreferredName().getNameValue();
 			if (sn != null)
-				nle.platformName = sn;
+				nle.setPlatformName(sn);
 			else
-				nle.platformName = p.makeFileName();
+				nle.setPlatformName(p.makeFileName());
 			// Get a description from either platform or site record.
 			String desc = s.getDescription();
 			if (desc == null)
@@ -429,7 +429,7 @@ System.out.println("Select From PDT Pressed.");
 						desc = desc.substring(0, idx);
 				}
 			}
-			nle.description = desc;
+			nle.setDescription(desc);
 			tableModel.add(nle);
 		}
 	}
@@ -672,9 +672,9 @@ class NetlistContentsTableModel extends AbstractTableModel implements SortingLis
 		case 0:
 			return ob.transportId;
 		case 1:
-			return ob.platformName;
+			return ob.getPlatformName();
 		case 2:
-			return ob.description;
+			return ob.getDescription();
 		default:
 			return "";
 		}

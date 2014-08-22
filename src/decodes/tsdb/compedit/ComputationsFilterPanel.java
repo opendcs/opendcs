@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.6  2013/07/25 18:48:51  mmaloney
  * Don't create site list dialog every time. This is annoying to user because it resets
  * the list to the beginning. There may be hundreds of sites.
@@ -179,11 +182,13 @@ public class ComputationsFilterPanel extends JPanel
 			for(String algoName : theDb.listAlgorithms())
 				algorithmBox.addItem(algoName);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			Logger.instance().warning(
-				compLabels.getString("ComputationsFilterPanel.FillException")
-				+ ": " + e);
+			String msg = compLabels.getString("ComputationsFilterPanel.FillException")
+				+ ": " + ex;
+			Logger.instance().warning(msg);
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
 		}
 		finally
 		{

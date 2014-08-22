@@ -99,6 +99,7 @@ public class CAPEdit
 
 	public void runApp( )
 	{
+		noExitAfterRunApp = true;
 		setupMyLabelDescriptions();
 		fillLabels();
 		

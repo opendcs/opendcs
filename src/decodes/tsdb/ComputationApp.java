@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2014/07/10 17:07:54  mmaloney
+*  Remove startup log from ComputationApp, and add to TsdbAppTemplate.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -75,7 +78,6 @@ public class ComputationApp
 	
 	private boolean shutdownFlag;
 
-	private int pid;
 	private String hostname;
 	private int compsTried = 0;
 	private int compErrors = 0;
@@ -85,8 +87,8 @@ public class ComputationApp
 		"", TokenOptions.optSwitch, false);
 	private StringToken officeIdArg = new StringToken(
 		"O", "OfficeID", "", TokenOptions.optSwitch, "");
+	private CompEventSvr compEventSvr = null;
 	
-
 	/**
 	 * Constructor called from main method after parsing arguments.
 	 */
@@ -107,6 +109,20 @@ public class ComputationApp
 		appNameArg.setDefaultValue("compproc");
 		cmdLineArgs.addToken(officeIdArg);
 	}
+	
+	@Override
+	protected void oneTimeInit()
+	{
+		// Comp Proc can survive DB going down.
+		surviveDatabaseBounce = true;
+		
+		try { hostname = InetAddress.getLocalHost().getHostName(); }
+		catch(Exception e) { hostname = "unknown"; }
+
+		if (officeIdArg.getValue() != null && officeIdArg.getValue().length() > 0)
+			DecodesSettings.instance().CwmsOfficeId = officeIdArg.getValue();
+	}
+
 
 	/**
 	 * Sets the application ID. 
@@ -136,59 +152,32 @@ public class ComputationApp
 	public void runApp( )
 		throws LockBusyException, DbIoException, NoSuchObjectException
 	{
-		initialize();
+		Logger.instance().debug1("runApp starting");
+		shutdownFlag = false;
+		runAppInit();
+		Logger.instance().debug1("runAppInit done, shutdownFlag=" + shutdownFlag 
+			+ ", surviveDatabaseBounce=" + surviveDatabaseBounce);
 
 		long lastDataTime = System.currentTimeMillis();
+		long lastLockCheck = 0L;
+
 		while(!shutdownFlag)
 		{
-			if (theDb == null)
-			{
-				try 
-				{
-					createDatabase();
-					myResolver = new DbCompResolver(theDb);
-				}
-				catch(Exception ex)
-				{
-					Logger.instance().fatal("Cannot create database interface: "
-						+ ex);
-					shutdownFlag = true;
-					continue;
-				}
-			}
-
-			// If not connected, attempt to connect, wait 10 sec between tries.
-			if (!theDb.isConnected())
-			{
-				if (!tryConnect())
-				{
-					closeDb();
-					try { Thread.sleep(10000L); }
-					catch(InterruptedException ex) {}
-					continue;
-				}
-				// New connection, need to obtain new lock & load resolver.
-				myLock = null;
-			}
 			String action="";
 			TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 			LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 			try
 			{
-				// Make sure this process's lock is still valid.
+				long now = System.currentTimeMillis();
+
 				action = "Checking lock";
-				
-				if (myLock == null)
-					myLock = loadingAppDAO.obtainCompProcLock(appInfo, pid, hostname); 
-				else
+				if (myLock != null && now - lastLockCheck > 5000L)
 				{
 					setAppStatus("Cmps: " + compsTried + "/" + compErrors);
 					loadingAppDAO.checkCompProcLock(myLock);
+					lastLockCheck = now;
 				}
-
-				// Periodically reload my list of computations.
-//				long now = System.currentTimeMillis();
-
+				
 				action = "Getting new data";
 				DataCollection data = theDb.getNewData(appId);
 				
@@ -272,7 +261,16 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 			catch(DbIoException ex)
 			{
 				warning("Database Error while " + action + ": " + ex);
-				theDb.closeConnection();
+				shutdownFlag = true;
+				databaseFailed = true;
+			}
+			catch(Exception ex)
+			{
+				String msg = "Unexpected exception while " + action + ": " + ex;
+				warning(msg);
+				System.err.println(msg);
+				ex.printStackTrace(System.err);
+				shutdownFlag = true;
 			}
 			finally
 			{
@@ -282,46 +280,34 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 			try { Thread.sleep(1000L); }
 			catch(InterruptedException ex) {}
 		}
-		theDb.closeConnection();
-		theDb.closeTasklistQueue();
-		System.exit(0);
+		myResolver = null;
+		Logger.instance().debug1("runApp() exiting.");
 	}
 
-	/** Initialization phase -- any error is fatal. */
-	private void initialize()
-		throws DbIoException, NoSuchObjectException
+	/**
+	 * Called at the start of the runApp() method, which is called by the base
+	 * class after connecting to the database.
+	 * @throws DbIoException
+	 * @throws NoSuchObjectException
+	 */
+	private void runAppInit()
 	{
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try
 		{
 			appInfo = loadingAppDao.getComputationApp(appId);
 
-			// Determine process ID. Note -- We can't really do this in Java
-			// without assuming a particular OS. Therefore, we rely on the
-			// script that started us to set an environment variable PPID
-			// for parent-process-ID. If not present, we default to 1.
-			pid = 1;
-			String ppids = System.getProperty("PPID");
-			if (ppids != null)
-			{
-				try { pid = Integer.parseInt(ppids); }
-				catch(NumberFormatException ex) { pid = 1; }
-			}
-
-			try { hostname = InetAddress.getLocalHost().getHostName(); }
-			catch(Exception e) { hostname = "unknown"; }
-
 			// Construct the resolver & load it.
 			myResolver = new DbCompResolver(theDb);
 			
 			// Look for EventPort and EventPriority properties. If found,
 			String evtPorts = appInfo.getProperty("EventPort");
-			if (evtPorts != null)
+			if (compEventSvr == null && evtPorts != null)
 			{
 				try 
 				{
 					evtPort = Integer.parseInt(evtPorts.trim());
-					CompEventSvr compEventSvr = new CompEventSvr(evtPort);
+					compEventSvr = new CompEventSvr(evtPort);
 					compEventSvr.startup();
 				}
 				catch(NumberFormatException ex)
@@ -337,52 +323,31 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 						+ " -- no events available to external clients.");
 				}
 			}
+			
+			try { myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname); }
+			catch(LockBusyException ex)
+			{
+				shutdownFlag = true;
+				Logger.instance().fatal(getAppName() + " runAppInit: lock busy: " + ex);
+			}
 		}
 		catch(NoSuchObjectException ex)
 		{
-			Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
-			throw ex;
+			// This means a bad app name was given on the command line. Exit.
+			Logger.instance().fatal(getAppName() + " runAppInit: " + ex);
+			shutdownFlag = true;
+			return;
 		}
 		catch(DbIoException ex)
 		{
-			Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
-			throw ex;
+			Logger.instance().fatal("App Name " + getAppName() + " error in runAppInit(): " + ex);
+			shutdownFlag = true;
+			databaseFailed = true;
 		}
 		finally
 		{
 			loadingAppDao.close();
 		}
-		
-		if (officeIdArg.getValue() != null && officeIdArg.getValue().length() > 0)
-			DecodesSettings.instance().CwmsOfficeId = officeIdArg.getValue();
-		
-//		String tasklistQueueDir = appInfo.getProperty("tasklistQueueDir");
-//		if (tasklistQueueDir != null)
-//		{
-//			String s = appInfo.getProperty("tasklistQueueThreshold");
-//			int thresh = 8; // hours
-//			if (s != null)
-//			{
-//				try { thresh = Integer.parseInt(s); }
-//				catch(NumberFormatException ex)
-//				{
-//					warning("Invalid tasklistQueueThreshold property '"
-//						+ s + "' -- using default of " + thresh + " hours.");
-//				}
-//			}
-//			String dir = EnvExpander.expand(tasklistQueueDir);
-//			try
-//			{
-//				theDb.useTasklistQueue(new TasklistQueueFile(dir, appInfo.getAppName()),
-//					thresh);
-//			}
-//			catch (IOException ex)
-//			{
-//				warning("Cannot create tasklist queue file in directory '"
-//					+ dir + "' for application '" + appInfo.getAppName()
-//					+ "': " + ex);
-//			}
-//		}
 	}
 	
 	public void initDecodes()
@@ -403,11 +368,6 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 	{
 		ComputationApp compApp = new ComputationApp();
 		compApp.execute(args);
-	}
-
-	private void warning(String x)
-	{
-		Logger.instance().warning("CompApp(" + appId + "): " + x);
 	}
 
 	/**

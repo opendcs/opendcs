@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:08  cvs
 *  Added legacy code to repository
 *
@@ -147,12 +150,12 @@ public class NetworkListEntryParser implements XmlObjectParser, XmlObjectWriter,
 		switch(tag)
 		{
 		case platformNameTag:
-			networkListEntry.platformName = str;
+			networkListEntry.setPlatformName(str);
 			break;
 		case descriptionTag:
 			str = TextUtil.collapseWhitespace(str);
 			str = new String(AsciiUtil.ascii2bin(str));
-			networkListEntry.description = str;
+			networkListEntry.setDescription(str);
 			break;
 		}
 	}
@@ -167,12 +170,12 @@ public class NetworkListEntryParser implements XmlObjectParser, XmlObjectWriter,
 		xos.startElement(myName(), XmlDbTags.TransportId_at,
 			networkListEntry.transportId);
 
-		if (networkListEntry.platformName != null)
+		if (networkListEntry.getPlatformName() != null)
 			xos.writeElement(XmlDbTags.PlatformName_el,
-				networkListEntry.platformName);
-		if (networkListEntry.description != null)
+				networkListEntry.getPlatformName());
+		if (networkListEntry.getDescription() != null)
 			xos.writeElement(XmlDbTags.description_el,
-				AsciiUtil.bin2ascii(networkListEntry.description.getBytes()));
+				AsciiUtil.bin2ascii(networkListEntry.getDescription().getBytes()));
 
 		xos.endElement(myName());
 	}

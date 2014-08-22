@@ -49,11 +49,6 @@ public class PlatformSelectDialog extends JDialog
         super(DbEditorFrame.instance(), "", true);
 		init(mediumType);
     }
-	public PlatformSelectDialog(ArrayList<String> mediumType)
-	{
-        super(DbEditorFrame.instance(), "", true);
-		init(mediumType);
-    }
 	public PlatformSelectDialog(Site site, String mediumType )
     {
         super(TopFrame.instance(), "", true);
@@ -102,27 +97,6 @@ public class PlatformSelectDialog extends JDialog
 	}
 
 	
-	private void init(ArrayList<String> mediumType)
-	{		
-		if (mediumType == null)
-			selectPanel = new PlatformSelectPanel();
-		else
-			selectPanel = new PlatformSelectPanel(mediumType);
-		selectPanel.setParentDialog(this);
-		plat = null;
-        try 
-		{
-            jbInit();
-			getRootPane().setDefaultButton(selectButton);
-            pack();
-        }
-        catch(Exception ex) 
-		{
-            ex.printStackTrace();
-        }
-		cancelled = false;
-	}
-
 	/** Initialize GUI components. */
 	void jbInit() throws Exception 
 	{

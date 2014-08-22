@@ -164,25 +164,29 @@ public class RoutingSpec
 	public RoutingSpec copy()
 	{
 		RoutingSpec ret = new RoutingSpec(getName());
-
-		try { ret.setId(getId()); }
+		copy(ret, this);
+		return ret;
+	}
+	
+	public static void copy(RoutingSpec copyTo, RoutingSpec copyFrom)
+	{
+		try { copyTo.setId(copyFrom.getId()); }
 		catch(DatabaseException ex) {} // won't happen.
 
-		ret.dataSource = dataSource;
-		ret.enableEquations = enableEquations;
-		ret.usePerformanceMeasurements = usePerformanceMeasurements;
-		ret.outputFormat = outputFormat;
-		ret.outputTimeZoneAbbr = outputTimeZoneAbbr;
-		ret.presentationGroupName = presentationGroupName;
-		ret.sinceTime = sinceTime;
-		ret.untilTime = untilTime;
-		ret.consumerType = consumerType;
-		ret.consumerArg = consumerArg;
-		ret.isProduction = isProduction;
-		for(Iterator<String> it=networkListNames.iterator(); it.hasNext(); )
-			ret.addNetworkListName(it.next());
-		PropertiesUtil.copyProps(ret.properties, this.properties);
-		return ret;
+		copyTo.dataSource = copyFrom.dataSource;
+		copyTo.enableEquations = copyFrom.enableEquations;
+		copyTo.usePerformanceMeasurements = copyFrom.usePerformanceMeasurements;
+		copyTo.outputFormat = copyFrom.outputFormat;
+		copyTo.outputTimeZoneAbbr = copyFrom.outputTimeZoneAbbr;
+		copyTo.presentationGroupName = copyFrom.presentationGroupName;
+		copyTo.sinceTime = copyFrom.sinceTime;
+		copyTo.untilTime = copyFrom.untilTime;
+		copyTo.consumerType = copyFrom.consumerType;
+		copyTo.consumerArg = copyFrom.consumerArg;
+		copyTo.isProduction = copyFrom.isProduction;
+		for(Iterator<String> it=copyFrom.networkListNames.iterator(); it.hasNext(); )
+			copyTo.addNetworkListName(it.next());
+		PropertiesUtil.copyProps(copyTo.properties, copyFrom.properties);
 	}
 
 	/**

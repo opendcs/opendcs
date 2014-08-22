@@ -75,7 +75,8 @@ public class TsdbDatabaseVersion
 	
 	/**
 	 * Version 10 = OpenDCS 6.1
-	 * 
+	 * - new table CP_COMPOSITE_DIAGRAM
+	 * - new table CP_COMPOSITE_MEMBER
 	 */
 	public static final int VERSION_10 = 10;
 	public static final String VERSION_10_DTK = "OPENDCS 6.1";

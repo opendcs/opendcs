@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.3  2014/07/10 17:07:54  mmaloney
+*  Remove startup log from ComputationApp, and add to TsdbAppTemplate.
+*
 *  Revision 1.2  2014/07/03 12:44:38  mmaloney
 *  Don't call readDecodesProperties() this is done by CmdLineArgs.
 *  Also, better consistency for CWMS GUI Apps in retrieving DB Passwords.
@@ -85,9 +88,30 @@ public abstract class TsdbAppTemplate
 	/** The application ID determined when connecting to the database. */
 	public DbKey appId;
 
-	/** Subclass can overload any of the template methods and abort execution
-	 * by setting this boolean to true. */
-	protected boolean abortExecute = false;
+	/**
+	 * Subclass can set this to true to cause application to restart if
+	 * the execute method exits due to database going down.
+	 */
+	protected boolean surviveDatabaseBounce = false;
+	
+	/**
+	 * Subclass can set this to true to cause application to restart if
+	 * the execute method exits due to database going down.
+	 */
+	protected boolean databaseFailed = false;
+	
+	/**
+	 * Most apps do the work in the runApp() method. Others, like GUIs
+	 * start threads and then allow the runApp method to exit. GUIs
+	 * should set noExitAfterRunApp to true.
+	 */
+	protected boolean noExitAfterRunApp = false;
+	
+	/**
+	 * Determined at startup, available via getPID();
+	 */
+	private int pid = -1;
+	
 	
 	/**
 	 * Base class constructor. Pass it the default name of the log file.
@@ -128,18 +152,72 @@ public abstract class TsdbAppTemplate
 	public void execute(String args[])
 		throws Exception
 	{
+		pid = determinePID();
+		Logger.instance().debug1("PID=" + getPID());
 		addCustomArgs(cmdLineArgs);
-		if (abortExecute) return;
 		parseArgs(args);
-		if (abortExecute) return;
 		startupLogMessage();
-		initDecodes();
-		if (abortExecute) return;
-		createDatabase();
-		if (abortExecute) return;
-		tryConnect();
-		if (abortExecute) return;
-		runApp();
+		
+		oneTimeInit();
+		
+		// Only daemons will set surviveDatabaseBounce=true.
+		// For other programs, like GUIs and utilities, the code will be
+		// executed only once.
+		// The loop below gives daemons the ability to periodically attempt to
+		// restart if the database goes down.
+		boolean firstRun = true;
+		while(firstRun || (surviveDatabaseBounce && databaseFailed))
+		{
+			if (!firstRun)
+				try { Thread.sleep(15000L); } catch(InterruptedException ex) {}
+			firstRun = false;
+			databaseFailed = false;
+			try
+			{
+				initDecodes();
+			}
+			catch(DecodesException ex)
+			{
+				warning("Cannot init Decodes: " + ex);
+				databaseFailed = true;
+				continue;
+			}
+			try
+			{
+				createDatabase();
+				tryConnect();
+			}
+			catch(BadConnectException ex)
+			{
+				warning("Cannot connect to TSDB: " + ex);
+				databaseFailed = true;
+				continue;
+			}
+			// Note: App must handle its own exceptions, detect database failure
+			// and set databaseFailed if it wants a restart. Any exception thrown
+			// from runApp will terminate the program.
+			runApp();
+			if (!noExitAfterRunApp)
+			{
+				closeDb();
+				shutdownDecodes();
+			}
+		}
+
+		if (!noExitAfterRunApp)
+		{
+			Logger.instance().info(appNameArg.getValue() + " exiting.");
+			System.exit(0);
+		}
+	}
+
+	/**
+	 * Subclass can override this method if it has any one-time initialization
+	 * to do prior to instanting database connections for DECODES and TSDB.
+	 */
+	protected void oneTimeInit()
+	{
+		// Empty stub
 	}
 
 	protected void startupLogMessage()
@@ -245,8 +323,10 @@ public abstract class TsdbAppTemplate
 	/**
 	 * Attempt to connect to the database.
 	 * @return true if success, false if not.
+	 * @throws BadConnectException if failure to connect.
 	 */
-	public boolean tryConnect()
+	public void tryConnect()
+		throws BadConnectException
 	{
 		Properties credentials = new Properties();
 		String nm = appNameArg.getValue();
@@ -259,7 +339,7 @@ public abstract class TsdbAppTemplate
 			catch(Exception ex)
 			{
 				authFileEx(afn, ex);
-				return false;
+				throw new BadConnectException("Cannot read auth file: " + ex);
 			}
 	
 			// Connect to the database!
@@ -269,16 +349,7 @@ public abstract class TsdbAppTemplate
 		// Else this is a CWMS GUI -- user will be prompted for credentials
 		// Leave the property set empty.
 		
-		try
-		{
-			appId = theDb.connect(nm, credentials);
-			return true;
-		}
-		catch(BadConnectException ex)
-		{
-			badConnect(nm, ex);
-			return false;
-		}
+		appId = theDb.connect(nm, credentials);
 	}
 
 	/**
@@ -305,6 +376,11 @@ public abstract class TsdbAppTemplate
 		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
 		DecodesInterface.initializeForEditing();
 	}
+	
+	public void shutdownDecodes()
+	{
+		DecodesInterface.shutdownDecodes();
+	}
 
 	public void closeDb()
 	{
@@ -315,9 +391,39 @@ public abstract class TsdbAppTemplate
 		}
 		theDb = null;
 	}
+	
+	/**
+	 * Convenience method to log warning with app name prefix.
+	 * @param msg the message
+	 */
+	public void warning(String msg)
+	{
+		Logger.instance().warning(appNameArg.getValue() + " " + msg);
+	}
 
 	public void setSilent(boolean silent)
 	{
 		DecodesInterface.silent = silent;
+	}
+	
+	/**
+	 * @return the PID assigned by the underlying VM and determined at startup.
+	 */
+	public int getPID() { return pid; }
+	
+	public static int determinePID()
+	{
+		String pids = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+		if (pids != null)
+		{
+			// String will be of the form 12345@username
+			int idx = pids.indexOf('@');
+			if (idx > 0)
+			{
+				try { return Integer.parseInt(pids.substring(0, idx)); }
+				catch(Exception ex) {}
+			}
+		}
+		return -1;
 	}
 }

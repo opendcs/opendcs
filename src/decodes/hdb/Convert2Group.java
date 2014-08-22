@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.16  2013/03/21 18:27:40  mmaloney
 *  DbKey Implementation
 *
@@ -240,7 +243,7 @@ public class Convert2Group
 		app.execute(args);
 	}
 
-	private void warning(String msg)
+	public void warning(String msg)
 	{
 		Logger.instance().warning(compName + " " + msg);
 		for(int i=0; i<reportIndent; i++)

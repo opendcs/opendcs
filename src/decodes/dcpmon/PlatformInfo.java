@@ -5,6 +5,7 @@ package decodes.dcpmon;
 
 import ilex.util.Logger;
 import lrgs.common.DcpAddress;
+import lrgs.common.DcpMsg;
 import decodes.db.*;
 import decodes.util.ChannelMap;
 import decodes.util.Pdt;
@@ -46,9 +47,10 @@ public class PlatformInfo
 	 * If both fail, mocks up a pseudo record. Guaranteed not to return null.
 	 * @return PlatformInfo for the requested platform.
 	 */
-	public static synchronized PlatformInfo getPlatformInfo(
-		RawMessage rawMsg, DcpAddress dcpAddress, int chan)
+	public static synchronized PlatformInfo getPlatformInfo(RawMessage rawMsg)
 	{
+		DcpMsg dcpMsg = rawMsg.getOrigDcpMsg();
+		DcpAddress dcpAddress = dcpMsg.getDcpAddress();
 		PlatformInfo ret = null;
 
 		PdtEntry pte = null;
@@ -56,7 +58,8 @@ public class PlatformInfo
 		{
 			ret = new PlatformInfo('S', pte.st_first_xmit_sod, 
 				pte.st_xmit_window, pte.st_xmit_interval, pte.baud, 
-				pte.st_channel, chan == pte.st_channel, pte.description);
+				pte.st_channel, dcpMsg.getGoesChannel() == pte.st_channel, 
+				pte.description);
 		}
 		else
 		{
@@ -113,7 +116,7 @@ public class PlatformInfo
 				ret.firstXmitSecOfDay = tm.assignedTime;
 				ret.windowLength = tm.transmitWindow;
 				ret.xmitInterval = tm.transmitInterval;
-				ret.baud = ChannelMap.instance().getBaud(chan);
+				ret.baud = ChannelMap.instance().getBaud(dcpMsg.getGoesChannel());
 			}
 		}
 

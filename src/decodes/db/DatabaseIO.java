@@ -552,13 +552,6 @@ public abstract class DatabaseIO
 	throws DatabaseException , SQLException;
 	
 	/**
-	Populates the list of Platform objects defined in this database based on transport medium passed.	
-	  @param pl the list to populate
-	*/
-	public abstract void readPlatformList(PlatformList pl,ArrayList<String> contMedium)
-		throws DatabaseException;
-	
-	/**
 	 * Factory method to make a DAO for loading applications
 	 * @return the DAO
 	 */

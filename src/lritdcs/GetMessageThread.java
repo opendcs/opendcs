@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.3  2014/05/30 13:15:35  mmaloney
+* dev
+*
 * Revision 1.2  2014/05/28 13:09:31  mmaloney
 * dev
 *
@@ -299,8 +302,7 @@ public class GetMessageThread
 						DcpMsg dcpMsg = lrgsMessage.getOrigDcpMsg();
 						if (dcpMsg == null)
 						{
-							dcpMsg = new DcpMsg();
-							dcpMsg.set(data, data.length);
+							dcpMsg = new DcpMsg(data, data.length, 0);
 						}
 						DcpMsgIndex msgIndex = new DcpMsgIndex();
 						msgIndex.setMessageParams(dcpMsg);

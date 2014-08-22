@@ -230,6 +230,7 @@ public class RoutingSpecThread
 		numMsgsRun = 0;
 		numErrsRun = 0;
 		lastDay = System.currentTimeMillis() / (24 * 60 * 60 * 1000L);
+log(Logger.E_DEBUG1, "run() starting.");
 		writeStatus();
 
 		done = false;
@@ -321,7 +322,7 @@ public class RoutingSpecThread
 			}
 			// Every 60 sec, check to see if my objects have changed.			
 			long now = System.currentTimeMillis();
-			if (now - lastUp2DateCheck > 60000L)
+			if (now - lastUp2DateCheck > 30000L)
 			{
 				Logger.instance().debug1("Doing up2date checks...");
 				lastUp2DateCheck = now;
@@ -337,9 +338,9 @@ public class RoutingSpecThread
 				}
 			}
 			// MJM 20041027 Added the following check:
-			// Every 15 minutes, re-read platform list to see if any platforms
+			// Every 10 minutes, re-read platform list to see if any platforms
 			// have been added.
-			if (now - lastPlatlistRead > 15*60000L)
+			if (now - lastPlatlistRead > 10*60000L)
 			{
 				try { Database.getDb().platformList.read(); }
 				catch(DatabaseException ex)
@@ -402,7 +403,7 @@ public class RoutingSpecThread
 					"Error on data source '" + rs.dataSource.getName() + "': " + e
 					+ " -- exiting");
 				done = true;
-				currentStatus = "ERROR-DataSource";
+				currentStatus = "ERROR-Source";
 				continue;
 			}
 			catch(Exception ex)
@@ -513,13 +514,15 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 			decodes.sql.SqlDatabaseIO sdbio = (decodes.sql.SqlDatabaseIO)dbio;
 			sdbio.close();
 		}
+log(Logger.E_DEBUG1, "run() exiting.");
 	}
 	
 	private void assertPlatformError(String msg, PlatformStatus platstat)
 	{
 		numErrsRun++;
 		numErrsToday++;
-		log(Logger.E_WARNING, msg);
+		
+		log(formatter.requiresDecodedMessage() ? Logger.E_WARNING : Logger.E_DEBUG3, msg);
 		if (platstat != null)
 		{
 			platstat.setLastErrorTime(new Date());
@@ -823,7 +826,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 					"Cannot find presentation group '" +
 					rs.presentationGroupName + "'");
 				done = true;
-				currentStatus = "ERROR-PresGrpInit";
+				currentStatus = "ERR-PresGrp";
 				return;
 			}
 			try { presentationGroup.read(); }
@@ -854,9 +857,11 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 				consumer = null;
 			}
 			consumer = DataConsumer.makeDataConsumer(rs.consumerType);
+			Logger.instance().debug1("Instantiated consumer with type '" + rs.consumerType + "'");
 			consumer.open(rs.consumerArg, rs.getProperties());
 			consumer.setTimeZone(rs.outputTimeZone);
 			consumer.setRoutingSpecThread(this);
+			
 			formatter = OutputFormatter.makeOutputFormatter(
 				rs.outputFormat, rs.outputTimeZone,
 				presentationGroup, rs.getProperties());
@@ -868,7 +873,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 				+ "': " + e.toString());
 			consumer.close();
 			done = true;
-			currentStatus = "ERROR-FormatInit";
+			currentStatus = "ERR-FormatInit";
 			return;
 		}
 		catch(DataConsumerException e)
@@ -876,7 +881,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 			log(Logger.E_FAILURE, "Cannot initialize consumer '" + rs.consumerType
 				+ "': " + e.toString());
 			done = true;
-			currentStatus = "ERROR-OutputInit";
+			currentStatus = "ERR-OutputInit";
 			return;
 		}
 
@@ -920,7 +925,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 				"Cannot make delegate for data source '" + rs.dataSource.getName()
 				+ "': " + e.toString());
 			done = true;
-			currentStatus = "ERROR-Database";
+			currentStatus = "ERR-Database";
 			return;
 		}
 		catch(Exception e) // includes DataSourceException and anything unexpected.
@@ -940,7 +945,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 				e.printStackTrace(System.err);
 			}
 			done = true;
-			currentStatus = "ERROR-SourceInit";
+			currentStatus = "ERR-SourceInit";
 			
 			return;
 		}
@@ -1060,7 +1065,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 				log(Logger.E_INFORMATION, 
 					"Exiting because RoutingSpec object deleted from database.");
 				done = true;
-				currentStatus = "ERROR-Deleted";
+				currentStatus = "ERR-Deleted";
 				return false;
 			}
 
@@ -1078,7 +1083,7 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 		{
 			log(Logger.E_FAILURE, "Error reading routing spec: " + ex);
 			done = true;
-			currentStatus = "ERROR-NoSuchRoutingSpec";
+			currentStatus = "ERR-DB/IO";
 			return false;
 		}
 	}
@@ -1209,7 +1214,10 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 	*/
 	public void shutdown()
 	{
+log(Logger.E_DEBUG1, "shutdown called.");
 		done = true;
+		if (source != null)
+			source.close();
 	}
 
 	private void doSummary(DecodedMessage dm)

@@ -42,6 +42,7 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 		myframe.setRunCompFrametester(this);
 		myframe.setVisible(true);
 		myframe.setDb(this.theDb);
+		noExitAfterRunApp = true;
 	}
 	
 	public static void getMyLabelDescriptions()

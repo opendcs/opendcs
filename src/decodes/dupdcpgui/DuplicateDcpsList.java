@@ -312,8 +312,8 @@ public class DuplicateDcpsList
 							NetworkListEntry nle = 
 								new NetworkListEntry(netwList,
 										nli.addr.toString());
-							nle.description = nli.description;
-							nle.platformName = name;
+							nle.setDescription(nli.description);
+							nle.setPlatformName(name);
 							netwList.addEntry(nle);
 						}
 						//Now add the network list to my networkListList

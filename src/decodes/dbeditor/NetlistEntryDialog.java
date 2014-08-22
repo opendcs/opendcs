@@ -52,8 +52,8 @@ public class NetlistEntryDialog
 	private void fillFields(NetworkListEntry editOb2)
 	{
 		idField.setText(editOb2.transportId);
-		nameField.setText(editOb2.platformName != null ? editOb2.platformName : "");
-		descField.setText(editOb2.description != null ? editOb2.description : "");
+		nameField.setText(editOb2.getPlatformName() != null ? editOb2.getPlatformName() : "");
+		descField.setText(editOb2.getDescription() != null ? editOb2.getDescription() : "");
 	}
 
 	private void guiInit()
@@ -153,8 +153,8 @@ public class NetlistEntryDialog
 			return false;
 		}
 		editOb.transportId = id;
-		editOb.platformName = name.length() == 0 ? null : name;
-		editOb.description = desc.length() == 0 ? null : desc;
+		editOb.setPlatformName(name.length() == 0 ? null : name);
+		editOb.setDescription(desc.length() == 0 ? null : desc);
 		return true;
 	}
 }

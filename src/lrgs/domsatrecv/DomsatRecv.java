@@ -386,7 +386,7 @@ System.out.println(
 				msgBufLen = 0;
 				return;
 			}
-			DcpMsg msg = new DcpMsg(msgBuf, msgBufLen);
+			DcpMsg msg = new DcpMsg(msgBuf, msgBufLen, 0);
 			msg.setSequenceNum(msgseq);
 			msg.flagbits = DcpMsgFlag.MSG_PRESENT | DcpMsgFlag.SRC_DOMSAT;
 			msg.setDomsatTime(new Date());

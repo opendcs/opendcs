@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.2  2014/06/27 20:18:19  mmaloney
+ * New columns in Network List Entry table for DB version 11.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -174,30 +177,38 @@ public class NetworkListListIO extends SqlDbObjIo
 		// For CWMS, by joining with NetworkList, VPD will automatically
 		// add the predicate to filter by office id. For other DBs, the
 		// join does nothing, but does no harm.
-		q = "SELECT a.networkListId, a.transportId "
-		  + "FROM NetworkListEntry a, NetworkList b "
+		String nleColumns = "a.networkListId, a.transportId";
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+			nleColumns += ", a.platform_name, a.description";
+		
+		q = "SELECT " + nleColumns
+		  + " FROM NetworkListEntry a, NetworkList b "
 		  + "WHERE a.networkListId = b.id ";
 		
 		ResultSet rs_nle = stmt.executeQuery( q );
 
-		if (rs_nle != null) 
+		while (rs_nle != null && rs_nle.next()) 
 		{
-			while (rs_nle.next()) 
+			DbKey id = DbKey.createDbKey(rs_nle, 1);
+			String transportId = rs_nle.getString(2);
+
+			NetworkList nl = _networkListList.getById(id);
+			if (nl == null)
 			{
-				DbKey id = DbKey.createDbKey(rs_nle, 1);
-				String transportId = rs_nle.getString(2);
-
-				NetworkList nl = _networkListList.getById(id);
-				if (nl == null)
-				{
-					Logger.instance().log(Logger.E_WARNING,
-					  "Orphan network list entry with invalid network list ID "
-						+ id + ", ignored.");
-					continue;
-				}
-				NetworkListEntry nle = new NetworkListEntry(
-					nl, transportId);
-
+				Logger.instance().log(Logger.E_WARNING,
+				  "Orphan network list entry with invalid network list ID "
+					+ id + ", ignored.");
+				continue;
+			}
+			NetworkListEntry nle = new NetworkListEntry(
+				nl, transportId);
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+			{
+				nle.setPlatformName(rs_nle.getString(3));
+				nle.setDescription(rs_nle.getString(4));
+			}
+			else // Pre version 11 derived name and description from platform & site.
+			{
 				Platform p = _platformList.findPlatform(
 					nl.transportMediumType, transportId, new Date());
 
@@ -210,26 +221,18 @@ public class NetworkListListIO extends SqlDbObjIo
 					{
 						SiteName sn = pSite.getName(nl.siteNameTypePref);
 						if (sn != null)
-							nle.platformName = sn.getNameValue();
+							nle.setPlatformName(sn.getNameValue());
 						else
-						{
-							//nle.platformName = "";
-							//**In this case it cannot find any site name
-							//for the nl.siteNameTypePref so use the default or
-							//what ever site name it has.
-							//this is like it was before
-							nle.platformName = p.getSiteName(false);
-						}
+							nle.setPlatformName(p.getSiteName(false));
 					}
 					else
 					{
-						nle.platformName = p.getSiteName(false);
+						nle.setPlatformName(p.getSiteName(false));
 					}
-					nle.description = p.description;
+					nle.setDescription(p.description);
 				}
-
-				nl.addEntry(nle);
 			}
+			nl.addEntry(nle);
 		}
 	}
 	
@@ -394,7 +397,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	{
 		Statement stmt = createStatement();
 		String nle_attributes = "networkListId, transportId";
-		if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
 			nle_attributes += ", platform_name, description";
 		
 		String q = "SELECT " + nle_attributes
@@ -408,46 +411,38 @@ public class NetworkListListIO extends SqlDbObjIo
 			String transportId = rs_nle.getString(2);
 
 			NetworkListEntry nle = new NetworkListEntry(nl, transportId);
-
-			Platform p = _platformList.getPlatform(nl.transportMediumType, 
-				transportId);
-
-			if (p != null)
+			// DB Version 11 has name and description in each Netlist Entry.
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
 			{
-				//Find the right site name for this network list site
-				//name type preference
-				Site pSite = p.getSite();
-				if (pSite != null)
-				{	//FIRST - see if it can find a site name for this type
-					SiteName sn = pSite.getName(nl.siteNameTypePref);
-					if (sn != null)
-						nle.platformName = sn.getNameValue();
+				nle.setPlatformName(rs_nle.getString(3));
+				nle.setDescription(rs_nle.getString(4));
+			}
+			else
+			{
+				Platform p = _platformList.getPlatform(nl.transportMediumType, 
+					transportId);
+	
+				if (p != null)
+				{
+					//Find the right site name for this network list site
+					//name type preference
+					Site pSite = p.getSite();
+					if (pSite != null)
+					{	//FIRST - see if it can find a site name for this type
+						SiteName sn = pSite.getName(nl.siteNameTypePref);
+						if (sn != null)
+							nle.setPlatformName(sn.getNameValue());
+						else
+						{
+							nle.setPlatformName(p.getSiteName(false));
+						}
+					}
 					else
 					{
-						//nle.platformName = "";
-						//**In this case it cannot find any site name
-						//for the nl.siteNameTypePref so use the default or
-						//what ever site name it has.
-						//this is like it was before
-						nle.platformName = p.getSiteName(false);
+						nle.setPlatformName(p.getSiteName(false));
 					}
-				}
-				else
-				{
-					nle.platformName = p.getSiteName(false);
-				}
-				
-				// DB Version 11 has name and description in each Netlist Entry.
-				// If present, these will override the values from platform & site.
-				nle.description = p.description;
-				if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
-				{
-					String nm = rs_nle.getString(3);
-					if (nm != null && nm.length() > 0)
-						nle.platformName = nm;
-					String desc = rs_nle.getString(4);
-					if (desc != null && desc.length() > 0)
-						nle.description = desc;
+					
+					nle.setDescription(p.description);
 				}
 			}
 
@@ -622,8 +617,8 @@ public class NetworkListListIO extends SqlDbObjIo
 			+ sqlReqString(nle.transportId);
 		if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
 		{
-			q = q + ", " + sqlOptString(nle.platformName)
-				+ ", " + sqlOptString(nle.description);
+			q = q + ", " + sqlOptString(nle.getPlatformName())
+				+ ", " + sqlOptString(nle.getDescription());
 		} 
 		q += ")";
 		executeUpdate(q);

@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -69,7 +72,6 @@ package decodes.xml;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.IDateFormat;
@@ -80,7 +82,9 @@ import ilex.xml.*;
 /**
  * This class maps the DECODES XML representation for TransportMedium elements.
  */
-public class TransportMediumParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, TaggedLongOwner
+public class TransportMediumParser 
+	implements XmlObjectParser, XmlObjectWriter, 
+	TaggedStringOwner, TaggedLongOwner, TaggedBooleanOwner
 {
 	private TransportMedium transportMedium; // object that we will build.
 
@@ -93,6 +97,16 @@ public class TransportMediumParser implements XmlObjectParser, XmlObjectWriter, 
 	private static final int dataOrderTag = 7;
 	private static final int timeZoneTag = 8;
 
+	// Added in DatabaseVersion 11
+	private static final int loggerTypeTag = 9;
+	private static final int baudTag = 10;
+	private static final int stopBitsTag = 11;
+	private static final int parityTag = 12;
+	private static final int dataBitsTag = 13;
+	private static final int doLoginTag = 14;
+	private static final int usernameTag = 15;
+	private static final int passwordTag = 16;
+	
 	/**
 	 * @param ob the object in which to store the data.
 	 */
@@ -189,6 +203,22 @@ public class TransportMediumParser implements XmlObjectParser, XmlObjectWriter, 
 			hier.pushObjectParser(new TaggedStringSetter(this,
 				timeZoneTag));
 		}
+		else if (localName.equalsIgnoreCase(XmlDbTags.loggerType_el))
+			hier.pushObjectParser(new TaggedStringSetter(this, loggerTypeTag));
+		else if (localName.equalsIgnoreCase(XmlDbTags.baud_el))
+			hier.pushObjectParser(new TaggedLongSetter(this, baudTag));
+		else if (localName.equalsIgnoreCase(XmlDbTags.stopBits_el))
+			hier.pushObjectParser(new TaggedLongSetter(this, stopBitsTag));
+		else if (localName.equalsIgnoreCase(XmlDbTags.parity_el))
+			hier.pushObjectParser(new TaggedStringSetter(this, parityTag));
+		else if (localName.equalsIgnoreCase(XmlDbTags.dataBits_el))
+			hier.pushObjectParser(new TaggedLongSetter(this, dataBitsTag));
+		else if (localName.equalsIgnoreCase(XmlDbTags.doLogin_el))
+			hier.pushObjectParser(new TaggedBooleanSetter(this, doLoginTag));
+		else if (localName.equalsIgnoreCase(XmlDbTags.username_el))
+			hier.pushObjectParser(new TaggedStringSetter(this, usernameTag));
+		else if (localName.equalsIgnoreCase(XmlDbTags.password_el))
+			hier.pushObjectParser(new TaggedStringSetter(this, passwordTag));
 		else
 		{
 			Logger.instance().log(Logger.E_WARNING,
@@ -288,9 +318,22 @@ public class TransportMediumParser implements XmlObjectParser, XmlObjectWriter, 
 		case timeZoneTag:
 			transportMedium.setTimeZone(str);
 			break;
+		case loggerTypeTag:
+			transportMedium.setLoggerType(str);
+			break;
+		case parityTag:
+			if (str.length() > 0)
+				transportMedium.setParity(str.charAt(0));
+			break;
+		case usernameTag:
+			transportMedium.setUsername(str);
+			break;
+		case passwordTag:
+			transportMedium.setPassword(str);
+			break;
 		}
 	}
-
+	
 	/**
 	  Called from TaggedLongSetter.
 	  @param tag integer tag defined above
@@ -306,6 +349,25 @@ public class TransportMediumParser implements XmlObjectParser, XmlObjectWriter, 
 		case timeAdjustmentTag:
 			transportMedium.setTimeAdjustment((int)v);
 			break;
+		case baudTag:
+			transportMedium.setBaud((int)v);
+			break;
+		case stopBitsTag:
+			transportMedium.setStopBits((int)v);
+			break;
+		case dataBitsTag:
+			transportMedium.setDataBits((int)v);
+			break;
+		}
+	}
+	
+	@Override
+	public void set(int tag, boolean value)
+	{
+		switch(tag)
+		{
+		case doLoginTag:
+			transportMedium.setDoLogin(value);
 		}
 	}
 
@@ -357,7 +419,29 @@ public class TransportMediumParser implements XmlObjectParser, XmlObjectWriter, 
 		String tz = transportMedium.getTimeZone();
 		if (tz != null)
 			xos.writeElement(XmlDbTags.TimeZone_el, tz);
-
+		
+		if (transportMedium.getLoggerType() != null 
+		 && transportMedium.getLoggerType().length() > 0)
+			xos.writeElement(XmlDbTags.loggerType_el, transportMedium.getLoggerType());
+		if (transportMedium.getBaud() != 0)
+			xos.writeElement(XmlDbTags.baud_el, ""+transportMedium.getBaud());
+		if (transportMedium.getStopBits() != 0)
+			xos.writeElement(XmlDbTags.stopBits_el, ""+transportMedium.getStopBits());
+		if (transportMedium.getParity() != 'N')
+			xos.writeElement(XmlDbTags.parity_el, ""+transportMedium.getParity());
+		if (transportMedium.getDataBits() != 0)
+			xos.writeElement(XmlDbTags.dataBits_el, ""+transportMedium.getDataBits());
+		if (transportMedium.isDoLogin() && transportMedium.getUsername() != null
+		 && transportMedium.getUsername().length() > 0)
+		{
+			xos.writeElement(XmlDbTags.doLogin_el, ""+transportMedium.isDoLogin());
+			xos.writeElement(XmlDbTags.username_el, transportMedium.getUsername());
+			if (transportMedium.getPassword() != null
+			 && transportMedium.getPassword().length() > 0)
+				xos.writeElement(XmlDbTags.password_el, transportMedium.getPassword());
+		}
+		
 		xos.endElement(myName());
 	}
+
 }

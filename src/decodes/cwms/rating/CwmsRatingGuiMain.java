@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.1  2012/10/30 01:59:27  mmaloney
  * First cut of rating GUI.
  *
@@ -80,7 +83,7 @@ public class CwmsRatingGuiMain extends TsdbAppTemplate
 				close();
 			}
 		});
-
+		noExitAfterRunApp = true;
 	}
 
 	private void close()

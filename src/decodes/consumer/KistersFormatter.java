@@ -2,17 +2,27 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/05/30 13:15:33  mmaloney
+ * dev
+ *
  * Revision 1.2  2014/05/28 13:09:29  mmaloney
  * dev
  *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
- * Revision 1.1  2013/06/17 19:50:59  mmaloney
- * Created
+ * Copyright 2014 Cove Software, LLC
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 
- * Open Source Software. Use at your own risk. No warranty or support implied.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package decodes.consumer;
 

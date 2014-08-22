@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2014/06/27 20:19:53  mmaloney
+ * null ptr bug fixes
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -85,7 +88,29 @@ public class PlatformListIO extends SqlDbObjIo
 	protected DecodesScriptIO _decodesScriptIO;
 
 	private String coltpl;
-
+	private String tmColumns = null;
+	
+	protected String getTmColumns()
+	{
+		if (tmColumns == null)
+		{
+			tmColumns = 
+				"PLATFORMID, MEDIUMTYPE, MEDIUMID, "
+					+ "SCRIPTNAME, CHANNELNUM, ASSIGNEDTIME, TRANSMITWINDOW, "
+					+ "TRANSMITINTERVAL, EQUIPMENTID";
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
+				tmColumns = tmColumns + ", TIMEADJUSTMENT, PREAMBLE";
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+				tmColumns = tmColumns + ", TIMEZONE";
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+				tmColumns = tmColumns + ", LOGGERTYPE, BAUD, STOPBITS, PARITY, "
+					+ "DATABITS, DOLOGIN, USERNAME, PASSWORD";
+			Logger.instance().debug3("PlatformListIO: databaseversion=" + getDatabaseVersion()
+				+ ", tmColumns='" + tmColumns + "'");
+		}
+		return tmColumns;
+	}
+	
 	/**
 	* Constructor.
 	* @param dbio the SqlDatabaseIO to which this IO object belongs
@@ -217,147 +242,30 @@ Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 			}
 		}
 		stmt.close();
-		readAllTransportMediaPartial(platformList);
+		readAllTransportMedia(platformList);
 	}
-
 	
-	/**
-	* Read the PlatformList.
-	* This reads  data from the Platform based on the contact/transport medium	
-	* @param platformList the PlatformList object to populate
-	*/
-	public void readPlatforms(PlatformList platformList,ArrayList<String> contMedium)
+	protected void readAllTransportMedia(PlatformList platformList)
 		throws SQLException, DatabaseException
 	{
-		debug1("Reading PlatformList based on transport medium...");
-
-		_platList = platformList;
-
-		for(int i=0;i<contMedium.size();i++)
-		{
-			Statement stmt = createStatement();
-			String q = 
-				(getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7) ?
-					("SELECT ID, Agency, IsProduction, " +
-					 "SiteId, ConfigId, Description, " +
-					 "LastModifyTime, Expiration, platformDesignator " +
-					 "FROM Platform, Transportmedium where platform.id = transportmedium.platformid and transportmedium.mediumtype='"+contMedium.get(i)+"'")
-				:
-					("SELECT ID, Agency, IsProduction, " +
-					 "SiteId, ConfigId, Description, " +
-					 "LastModifyTime, Expiration " +
-					 "FROM Platform, Transportmedium where platform.id = transportmedium.platformid and transportmedium.mediumtype='"+contMedium.get(i)+"'");
-	
-					
-			ResultSet rs = stmt.executeQuery(q);
-	
-			
-			if (rs != null) {
-				while (rs.next()) 
-				{
-					
-					DbKey platformId = DbKey.createDbKey(rs, 1);
-	
-					
-				/*	// MJM 20041027 Check to see if this ID is already in the
-					// cached platform list and ignore if so. That way, I can
-					// periodically refresh the platform list to get any newly
-					// created platforms after the start of the routing spec.
-					// Refreshing will not affect previously read/used platforms.
-					Platform p = _platList.getById(platformId);
-					
-					System.out.println(p);
-					if (p != null)
-						continue;*/
-	
-					Platform p  = new Platform(platformId);
-					_platList.addpaltform(p);
-	
-					p.agency = rs.getString(2);
-	
-					DbKey siteId = DbKey.createDbKey(rs, 4);
-					if (!rs.wasNull()) {
-						p.site = p.getDatabase().siteList.getSiteById(siteId);
-					}
-	
-					DbKey configId = DbKey.createDbKey(rs, 5);
-					if (!rs.wasNull()) 
-					{
-						PlatformConfig pc = 
-							platformList.getDatabase().platformConfigList.getById(
-								configId);
-						if (pc == null)
-{
-Logger.instance().debug1("config(" + configId + ") not in list, will read...");
-							pc = _configListIO.getConfig(configId);
-}
-						p.setConfigName(pc.configName);
-						p.setConfig(pc);
-					}
-	
-					String desc = rs.getString(6);
-					if (!rs.wasNull()) 
-						p.setDescription(desc);
-	
-					p.lastModifyTime = getTimeStamp(rs, 7, null);
-	
-					p.expiration = getTimeStamp(rs, 8, p.expiration);
-	
-					if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-						p.setPlatformDesignator(rs.getString(9));
-	
-					// Now get the TransportMediums for this platform
-	//				readTransportMediaPartial(p);
-				}
-			}
-			stmt.close();
-			readAllTransportMediaPartial(platformList);
-		}
-	}
-	
-	
-	protected void readAllTransportMediaPartial(PlatformList platformList)
-		throws SQLException
-	{
 		Statement stmt = createStatement();
-		String q = 
-			"SELECT platformId, mediumType, mediumId, channelNum, scriptName "
-			+ "from TransportMedium";
+		String q = "select " + getTmColumns() + " from TransportMedium ";
 		ResultSet rs = stmt.executeQuery(q);
 		while (rs != null && rs.next()) 
 		{
 			DbKey platId = DbKey.createDbKey(rs, 1);
-			String type = rs.getString(2);
-			String mediumId = rs.getString(3);
-			int channelNum = rs.getInt(4);
-			if (rs.wasNull()) 
-				channelNum = Constants.undefinedIntKey;
-			String script = rs.getString(5);
 			Platform p = platformList.getById(platId);
 			if (p == null)
 			{
 				Logger.instance().warning(
 					"TM for non-existent platform id=" + platId
-					+ " TM.type=" + type + ", TM.mediumId=" + mediumId);
+					+ " TM.type=" + rs.getString(2) + ", TM.mediumId=" + rs.getString(3));
 				continue;
 			}
-
-			TransportMedium tm = p.getTransportMedium(type);
-			if (tm == null)
-			{
-				tm = new TransportMedium(p, type, mediumId);
-				p.transportMedia.add(tm);
-			}
-			else
-				tm.setMediumId(mediumId);
-
-			tm.channelNum = channelNum;
-			tm.scriptName = script;
+			rs2tm(rs, p);
 		}
 		stmt.close();
 	}
-
-	
 
 	/**
 	* Read the information from the TransportMedium table about the
@@ -369,33 +277,92 @@ Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 	* platform/PlatformList.xml file in the XML database.
 	* @param p the Platform
 	*/
-	public void readTransportMediaPartial(Platform p)
+	public void readTransportMedia(Platform p)
 		throws SQLException, DatabaseException
 	{
 		p.transportMedia.clear();
 
+		String q = "select " + getTmColumns() + " from TransportMedium "
+			+ "WHERE PlatformId = " + p.getId();
+		
 		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT mediumType, mediumId, channelNum " +
-			"FROM TransportMedium " +
-			"WHERE PlatformId = " + p.getId()
-		);
+		ResultSet rs = stmt.executeQuery(q);
+		while (rs != null && rs.next())
+			rs2tm(rs, p);
+		stmt.close();
+	}
+	
+	/**
+	 * Passed a result set where next==true. Assume columns of tmColumns.
+	 * If passed platform != null, the tm is added to the platforms list of media.
+	 * @param rs the result set
+	 * @param platform the Platform that owns this TM
+	 * @return the TransportMedium
+	 */
+	protected TransportMedium rs2tm(ResultSet rs, Platform platform)
+		throws SQLException, DatabaseException
+	{
+		String mediumType = rs.getString(2);
+		String mediumId = rs.getString(3);
 
-		if (rs != null) {
-			while (rs.next()) {
-				String type = rs.getString(1);
+		TransportMedium tm = new TransportMedium(platform, mediumType, mediumId);
+		
+		tm.scriptName = rs.getString(4);
+		int channelNum = rs.getInt(5);
+		if (rs.wasNull()) 
+			channelNum = Constants.undefinedIntKey;
+		tm.channelNum = channelNum;
 
-				String mediumId = rs.getString(2);
-				int channelNum = rs.getInt(3);
-				if (rs.wasNull()) 
-					channelNum = Constants.undefinedIntKey;
+		int assignedTime = rs.getInt(6);
+		if (!rs.wasNull()) tm.assignedTime = assignedTime;
+		int transmitWindow = rs.getInt(7);
+		if (!rs.wasNull()) tm.transmitWindow = transmitWindow;
+		int transmitInterval = rs.getInt(8);
+		if (!rs.wasNull()) tm.transmitInterval = transmitInterval;
 
-				TransportMedium tm = new TransportMedium(p, type, mediumId);
-				tm.channelNum = channelNum;
-				p.transportMedia.add(tm);
+		DbKey equipmentId = DbKey.createDbKey(rs, 9);
+		if (!equipmentId.isNull()) 
+			tm.equipmentModel =
+				_equipmentModelListIO.getEquipmentModel(equipmentId,
+					tm.getDatabase());
+
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
+		{
+			int ta = rs.getInt(10);
+			if (rs.wasNull())
+				ta = 0;
+			tm.setTimeAdjustment(ta);
+			String str = rs.getString(11);
+			if (!rs.wasNull() && str != null && str.length() > 0)
+				tm.setPreamble(Character.toUpperCase(str.charAt(0)));
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+			{
+				str = rs.getString(12);
+				if (rs.wasNull() || str.trim().length() == 0)
+					str = null;
+				tm.setTimeZone(str);
+				if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+				{
+					tm.setLoggerType(rs.getString(13));
+					int x = rs.getInt(14);
+					if (!rs.wasNull()) tm.setBaud(x);
+					x = rs.getInt(15);
+					if (!rs.wasNull()) tm.setStopBits(x);
+					String s = rs.getString(16);
+					if (!rs.wasNull() && s.length() > 0)
+						tm.setParity(s.charAt(0));
+					x = rs.getInt(17);
+					if (!rs.wasNull()) tm.setDataBits(x);
+					tm.setDoLogin(TextUtil.str2boolean(rs.getString(18)));
+					tm.setUsername(rs.getString(19));
+					tm.setPassword(rs.getString(20));
+				}
 			}
 		}
-		stmt.close();
+
+		if (platform != null)
+			platform.transportMedia.add(tm);
+		return tm;
 	}
 
 	/**
@@ -504,8 +471,7 @@ Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
 				p.setPlatformDesignator(rs.getString(9));
 
-			readTransportMediaPartial(p);
-			readTransportMediaComplete(p);
+			readTransportMedia(p);
 
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
 			{
@@ -640,95 +606,6 @@ Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 			catch(NumberFormatException ex) { }
 	}
 
-	/**
-	* This reads the complete data of the TransportMedia associated with
-	* a particular Platform.
-	* @param p the Platform
-	*/
-	public void readTransportMediaComplete(Platform p)
-		throws SQLException, DatabaseException
-	{
-		Vector<TransportMedium> tmv = p.transportMedia;
-		for (int i = 0; i < tmv.size(); ++i)
-		{
-			TransportMedium tm = tmv.get(i);
-			readTransportMediumComplete(tm);
-		}
-	}
-
-	/**
-	* This reads the complete data of a particular TranportMedium.
-	* @param tm the TransportMedium
-	*/
-	public void readTransportMediumComplete(TransportMedium tm)
-		throws DatabaseException, SQLException
-	{
-		String q =
-			"SELECT scriptName, channelNum, assignedTime, transmitWindow, " +
-			"transmitInterval, equipmentId";
-		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-			q = q + ", timeAdjustment, preamble";
-		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-			q = q + ", timeZone";
-		q = q + " FROM TransportMedium " +
-			"WHERE MediumType = " + sqlReqString(tm.getMediumType()) + " AND " +
-			"MediumId = '" + tm.getMediumId() + "'";
-		//debug3("Executing '" + q + "'");
-
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(q);
-
-		if (rs != null) {
-			while (rs.next()) 
-			{
-				tm.scriptName = rs.getString(1);
-
-				int channelNum = rs.getInt(2);
-				boolean hasChannelNum = !rs.wasNull();
-				if (hasChannelNum) tm.channelNum = channelNum;
-
-				int assignedTime = rs.getInt(3);
-				boolean hasAssignedTime = !rs.wasNull();
-				if (hasAssignedTime) tm.assignedTime = assignedTime;
-
-				int transmitWindow = rs.getInt(4);
-				boolean hasTransmitWindow = !rs.wasNull();
-				if (hasTransmitWindow) tm.transmitWindow = transmitWindow;
-
-				int transmitInterval = rs.getInt(5);
-				boolean hasTransmitInterval = !rs.wasNull();
-				if (hasTransmitInterval)
-					tm.transmitInterval = transmitInterval;
-
-				DbKey equipmentId = DbKey.createDbKey(rs, 6);
-				if (!equipmentId.isNull()) 
-				{
-					tm.equipmentModel =
-						_equipmentModelListIO.getEquipmentModel(equipmentId,
-							tm.getDatabase());
-				}
-
-				if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-				{
-					int ta = rs.getInt(7);
-					if (rs.wasNull())
-						ta = 0;
-					tm.setTimeAdjustment(ta);
-					String str = rs.getString(8);
-					if (!rs.wasNull() && str != null && str.length() > 0)
-						tm.setPreamble(Character.toUpperCase(str.charAt(0)));
-					if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-					{
-						str = rs.getString(9);
-						if (rs.wasNull() || str.trim().length() == 0)
-							str = null;
-						tm.setTimeZone(str);
-					}
-				}
-			}
-		}
-		stmt.close();
-	}
 
 	/**
 	* Writes a complete Platform back out to the database.  If the Platform's
@@ -880,7 +757,7 @@ Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 	* The Platform must have already had its SQL database ID set.
 	* @param p the Platform
 	*/
-	public void insertTransportMedia(Platform p)
+	private void insertTransportMedia(Platform p)
 		throws SQLException, DatabaseException
 	{
 		DbKey id = p.getId();
@@ -976,76 +853,44 @@ Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 	public void insertTransportMedium(DbKey platformId, TransportMedium tm)
 		throws SQLException, DatabaseException
 	{
-		String q;
-		if (getDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
+		String medType = tm.getMediumType();
+		String medId = tm.getMediumId();
+		if (medType == null || medType.trim().length() == 0
+		 || medId == null || medId.trim().length() == 0)
 		{
-			if (tm.getTimeAdjustment() != 0)
-				warning(
-					"Cannot save time adjustment in version 5 SQL database.");
-			if (tm.getPreamble() != Constants.preambleUndefined)
-				warning(
-					"Cannot save Transport Medium Preamble in version 5 SQL "
-					+ "database.");
-
-			String medType = tm.getMediumType();
-			String medId = tm.getMediumId();
-			if (medType == null || medType.trim().length() == 0
-			 || medId == null || medId.trim().length() == 0)
-			{
-				warning("Skipping null transport medium");
-				return;
-			}
-			q = "INSERT INTO TransportMedium VALUES (" +
-			  	platformId + ", " +
-			  	sqlReqString(tm.getMediumType()) + ", " +
-			  	sqlReqString(tm.getMediumId()) + ", " +
-			  	sqlOptString(tm.scriptName) + ", " +
-			  	"'" + Constants.dataOrderUndefined + "', " +
-			  	sqlOptInt(tm.channelNum) + ", " +
-			  	sqlOptInt(tm.assignedTime) + ", " +
-			  	sqlOptInt(tm.transmitWindow) + ", " +
-			  	sqlOptInt(tm.transmitInterval) + ", " +
-			  	sqlOptHasId(tm.equipmentModel) +
-				")";
-		}
-		else if (getDatabaseVersion() < 7) 
-			// Version 6 removed dataOrder and added time adjustment.
-		{
-			q = "INSERT INTO TransportMedium VALUES (" +
-			  	platformId + ", " +
-			  	sqlReqString(tm.getMediumType()) + ", " +
-			  	sqlReqString(tm.getMediumId()) + ", " +
-			  	sqlOptString(tm.scriptName) + ", " +
-			  	sqlOptInt(tm.channelNum) + ", " +
-			  	sqlOptInt(tm.assignedTime) + ", " +
-			  	sqlOptInt(tm.transmitWindow) + ", " +
-			  	sqlOptInt(tm.transmitInterval) + ", " +
-			  	sqlOptHasId(tm.equipmentModel) + ", " +
-			  	Integer.toString(tm.getTimeAdjustment()) + ", " +
-				"'" + tm.getPreamble() + "'" +
-			")";
-		}
-		else // Version 6 added time zone.
-		{
-			q = "INSERT INTO TransportMedium(PlatformId,MediumType,MediumId,ScriptName,ChannelNum," +
-				"AssignedTime,TransmitWindow,TransmitInterval,EquipmentId,TimeAdjustment," +
-				"Preamble,TimeZone) " +
-			"VALUES (" +
-			  	platformId + ", " +
-			  	sqlReqString(tm.getMediumType()) + ", " +
-			  	sqlReqString(tm.getMediumId()) + ", " +
-			  	sqlOptString(tm.scriptName) + ", " +
-			  	sqlOptInt(tm.channelNum) + ", " +
-			  	sqlOptInt(tm.assignedTime) + ", " +
-			  	sqlOptInt(tm.transmitWindow) + ", " +
-			  	sqlOptInt(tm.transmitInterval) + ", " +
-			  	sqlOptHasId(tm.equipmentModel) + ", " +
-			  	Integer.toString(tm.getTimeAdjustment()) + ", " +
-				"'" + tm.getPreamble() + "', " +
-			  	sqlOptString(tm.getTimeZone()) +
-			")";
+			warning("Skipping null transport medium");
+			return;
 		}
 
+		String q = "insert into transportmedium(" + getTmColumns() + ") values (";
+		q = q +
+		  	platformId + ", " +
+		  	sqlReqString(tm.getMediumType()) + ", " +
+		  	sqlReqString(tm.getMediumId()) + ", " +
+		  	sqlOptString(tm.scriptName) + ", " +
+		  	sqlOptInt(tm.channelNum) + ", " +
+		  	sqlOptInt(tm.assignedTime) + ", " +
+		  	sqlOptInt(tm.transmitWindow) + ", " +
+		  	sqlOptInt(tm.transmitInterval) + ", " +
+		  	sqlOptHasId(tm.equipmentModel);
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
+			q = q + ", "
+			  	+ Integer.toString(tm.getTimeAdjustment()) + ", " +
+				"'" + tm.getPreamble() + "'";
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+			q = q + ", "
+			+ sqlOptString(tm.getTimeZone());
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+			q = q + ", " +
+				sqlOptString(tm.getLoggerType()) + ", " +
+				sqlOptInt(tm.getBaud()) + ", " +
+				sqlOptInt(tm.getStopBits()) + ", " +
+				"'" + tm.getParity() + "', " +
+				sqlOptInt(tm.getDataBits()) + ", " +
+				(tm.isDoLogin() ? "'TRUE'" : "'FALSE'") + ", " + 
+				sqlOptString(tm.getUsername()) + ", " +
+				sqlOptString(tm.getPassword());
+		q = q + ")";
 		try { executeUpdate(q); }
 		catch(SQLException ex)
 		{

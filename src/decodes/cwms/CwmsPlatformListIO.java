@@ -121,7 +121,7 @@ public class CwmsPlatformListIO extends PlatformListIO
 			}
 		}
 		stmt.close();
-		readAllTransportMediaPartial(platformList);
+		readAllTransportMedia(platformList);
 	}
 
 }

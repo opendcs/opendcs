@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1  2014/06/02 14:28:49  mmaloney
+*  rc5 includes initial refactory for dcpmon
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -138,8 +141,8 @@ public class DcpGroup
 			NetworkListEntry nle = 
 				new NetworkListEntry(netwList,
 						nli.addr.toString());
-			nle.description = nli.description;
-			nle.platformName = name;
+			nle.setDescription(nli.description);
+			nle.setPlatformName(name);
 			netwList.addEntry(nle);
 			//-----------------------------
 		}
@@ -199,13 +202,13 @@ public class DcpGroup
 			try
 			{
 				DcpAddress addr = new DcpAddress(nle.transportId);
-				if (nle.platformName == null)
-					nle.platformName = nle.transportId;
-				addr2name.put(addr, nle.platformName.toUpperCase());
-				name2addr.put(nle.platformName.toUpperCase(), addr);
+				if (nle.getPlatformName() == null)
+					nle.setPlatformName(nle.transportId);
+				addr2name.put(addr, nle.getPlatformName().toUpperCase());
+				name2addr.put(nle.getPlatformName().toUpperCase(), addr);
 				String description = ""; 
-				if (nle.description != null)
-					description = nle.description;
+				if (nle.getDescription() != null)
+					description = nle.getDescription();
 				addr2description.put(addr, description);
 			}
 			catch(NumberFormatException ex)

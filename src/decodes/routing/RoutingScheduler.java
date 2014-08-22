@@ -1,3 +1,22 @@
+/**
+ * $Id$
+ * 
+ * $Log$
+ *
+ * Copyright 2014 Cove Software, LLC
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package decodes.routing;
 
 import ilex.cmdline.StringToken;
@@ -15,6 +34,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Properties;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -24,6 +44,7 @@ import lrgs.gui.DecodesInterface;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.ScheduleEntry;
+import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompEventSvr;
 import decodes.tsdb.DbIoException;
@@ -35,7 +56,6 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
-import decodes.util.ResourceFactory;
 
 /**
  * The main class for scheduling routing specs
@@ -45,18 +65,18 @@ public class RoutingScheduler
 	extends TsdbAppTemplate
 	implements PropertiesOwner
 {
-	private static final String module = "RoutingScheduler";
+	protected static String module = "RoutingScheduler";
 	static StringToken lockFileArg = new StringToken("k", 
 		"Optional Lock File", "", TokenOptions.optSwitch, "");
+
 	/** Holds app name, id, & description. */
-	CompAppInfo appInfo;
+	protected CompAppInfo appInfo;
 
 	/** My lock */
-	private TsdbCompLock myLock = null;
-	private boolean shutdownFlag = false;
+	protected TsdbCompLock myLock = null;
+	protected boolean shutdownFlag = false;
 
-	private int pid = -1;
-	private String hostname = null;
+	protected String hostname = null;
 	private int evtPort = -1;
 	
 	/*** Purge entries older than this many days */
@@ -67,7 +87,7 @@ public class RoutingScheduler
 	public long oldStatusPurgeInterval = 3600L; // default = 1 hr.
 
 	/** Number of seconds at which to refresh schedule entries from the database */
-	public long refreshSchedInterval = 60L;   // default = 1 minutes
+	public long refreshSchedInterval = 30L;   // default = 1 minutes
 	
 	private PropertySpec[] myProps =
 	{
@@ -81,14 +101,21 @@ public class RoutingScheduler
 			"Interval (sec) at which to check for schedule entry changes (def=60 or 1 min)"),
 	};
 
-	private ArrayList<ScheduleEntryExecutive> executives = new ArrayList<ScheduleEntryExecutive>();
-	private ScheduleEntryDAI scheduleEntryDAO = null;
+	protected ArrayList<ScheduleEntryExecutive> executives = new ArrayList<ScheduleEntryExecutive>();
+	protected ScheduleEntryDAI scheduleEntryDAO = null;
 	private ThreadLogger appLogger = null;
 	private Logger origLogger = null;
+	private CompEventSvr compEventSvr = null;
 	
 	public RoutingScheduler()
 	{
 		super("routsched.log");
+		setSilent(true);
+	}
+	
+	protected RoutingScheduler(String appName)
+	{
+		super(appName);
 		setSilent(true);
 	}
 
@@ -101,12 +128,35 @@ public class RoutingScheduler
 	}
 	
 	@Override
-	protected void runApp() throws Exception
+	protected void oneTimeInit()
 	{
-		Logger.instance().info("============== " + getAppName() 
-			+", appId=" + appId + " Starting ==============");
-		
-		runAppInitialization();
+		// Routing Scheduler can survive DB going down.
+		surviveDatabaseBounce = true;
+
+		try { hostname = InetAddress.getLocalHost().getHostName(); }
+		catch(Exception e) { hostname = "unknown"; }
+
+		// Set up a logger that will add a prefix rs name to each log message
+		// generated from within the threads.
+		origLogger = Logger.instance();
+		origLogger.debug1("Before creating thread-specific logger.");
+		appLogger = new ThreadLogger(module, null, null, false);
+		appLogger.setDefaultLogger(origLogger);
+		appLogger.setMinLogPriority(origLogger.getMinLogPriority());
+		Logger.setLogger(appLogger);
+		Logger.instance().debug1("log to thread logger.");
+		origLogger.debug1("log to orig logger.");
+
+	}
+	
+	@Override
+	protected void runApp() 
+	{
+		Logger.instance().debug1("runApp starting");
+		shutdownFlag = false;
+		runAppInit();
+		Logger.instance().debug1("runAppInit done, shutdownFlag=" + shutdownFlag 
+			+ ", surviveDatabaseBounce=" + surviveDatabaseBounce);
 
 		long lastOldStatusPurge = 0L; // Cause it to happen right away
 		long lastSchedRefresh = 0L;
@@ -154,9 +204,16 @@ public class RoutingScheduler
 				Logger.instance().info(module + " No Lock - Application exiting: " + ex);
 				shutdownFlag = true;
 			}
+			catch(DbIoException ex)
+			{
+				Logger.instance().warning(appNameArg.getValue() + " Exception while "
+					+ action + ": " + ex);
+				shutdownFlag = true;
+				databaseFailed = true;
+			}
 			catch(Exception ex)
 			{
-				String msg = module + " Exception while " + action + ": " + ex;
+				String msg = module + " Unexpected exception while " + action + ": " + ex;
 				Logger.instance().warning(msg);
 				System.err.println(msg);
 				ex.printStackTrace(System.err);
@@ -169,71 +226,36 @@ public class RoutingScheduler
 			try { Thread.sleep(1000L); }
 			catch(InterruptedException ex) {}
 		}
-		for(ScheduleEntryExecutive executive : executives)
-			executive.shutdown();
-		try { Thread.sleep(5000L); }
-		catch(InterruptedException ex) {}
-
-		scheduleEntryDAO.close();
-		Logger.instance().info(module + " exiting.");
-		System.exit(0);
+		runAppShutdown();
+		
+		Logger.instance().debug1("runApp() exiting.");
 	}
 	
 	/**
-	 * This method is called at the beginning of the runApp() method
-	 * to perform one-time initialization. This includes:
+	 * This method is called at the beginning of the runApp() method.
 	 * <ul>
 	 *   <li>Reading the Loading App info from the database</li>
 	 *   <li>Return process ID passed on the command line</li>
-	 *   <li>Determine the hostname</li>
 	 *   <li>Open an event listening socket if one is specified in the app info</li>
 	 * </ul>
-	 * @throws LockBusyException if unable to secure a lock for this daemon
-	 * @throws DbIoException on SQL error in the TSDB
-	 * @throws NoSuchObjectException if app ID or app name is invalid.
 	 */
-	private void runAppInitialization()
-		throws LockBusyException, DbIoException, NoSuchObjectException
+	protected void runAppInit()
 	{
-		// Set up a logger that will add a prefix rs name to each log message
-		// generated from within the threads.
-		origLogger = Logger.instance();
-		origLogger.debug1("Before creating thread-specific logger.");
-		appLogger = new ThreadLogger(module, null, null, false);
-		appLogger.setDefaultLogger(origLogger);
-		appLogger.setMinLogPriority(origLogger.getMinLogPriority());
-		Logger.setLogger(appLogger);
-		Logger.instance().debug1("log to thread logger.");
-		origLogger.debug1("log to orig logger.");
-		
+		Logger.instance().debug1("runAppInit starting");
 		// Get the loading app info from the DECODES database, not TSDB.
 		DatabaseIO dbio = decodes.db.Database.getDb().getDbIo();
 		LoadingAppDAI loadingAppDao = dbio.makeLoadingAppDAO();
 
 		try
 		{
+			appId = loadingAppDao.lookupAppId(appNameArg.getValue());
 			appInfo = loadingAppDao.getComputationApp(appNameArg.getValue());
 
-			PropertiesUtil.loadFromProps(this, appInfo.getProperties());
-
-			// Determine process ID. Note -- We can't really do this in Java
-			// without assuming a particular OS. Therefore, we rely on the
-			// script that started us to set an environment variable PPID
-			// for parent-process-ID. If not present, we default to 1.
-			pid = 1;
-			String ppids = System.getProperty("PPID");
-			if (ppids != null)
-			{
-				try { pid = Integer.parseInt(ppids); }
-				catch(NumberFormatException ex) { pid = 1; }
-			}
-
-			try { hostname = InetAddress.getLocalHost().getHostName(); }
-			catch(Exception e) { hostname = "unknown"; }
+			loadConfig(appInfo.getProperties());
 
 			// Look for EventPort and EventPriority properties. If found,
 			String evtPorts = appInfo.getProperty("EventPort");
-			if (evtPorts != null)
+			if (compEventSvr == null && evtPorts != null)
 			{
 				try 
 				{
@@ -256,17 +278,27 @@ public class RoutingScheduler
 			}
 
 			if (loadingAppDao.supportsLocks())
-				myLock = loadingAppDao.obtainCompProcLock(appInfo, pid, hostname);
+			{
+				try { myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname); }
+				catch(LockBusyException ex)
+				{
+					shutdownFlag = true;
+					Logger.instance().fatal(getAppName() + " runAppInit: lock busy: " + ex);
+				}
+			}
 		}
 		catch(NoSuchObjectException ex)
 		{
-			Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
-			throw ex;
+			Logger.instance().fatal(getAppName() + " runAppInit: " + ex);
+			shutdownFlag = true;
+			return;
 		}
 		catch(DbIoException ex)
 		{
-			Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
-			throw ex;
+			Logger.instance().fatal(getAppName() + " runAppInit: " + ex);
+			databaseFailed = true;
+			shutdownFlag = true;
+			return;
 		}
 		finally
 		{
@@ -281,13 +313,34 @@ public class RoutingScheduler
 		}
 	}
 	
+	protected void loadConfig(Properties properties)
+	{
+		PropertiesUtil.loadFromProps(this, properties);
+	}
+
+	/**
+	 * Called from runApp() prior to returning.
+	 */
+	protected void runAppShutdown()
+	{
+		for(ScheduleEntryExecutive executive : executives)
+			executive.shutdown();
+		executives.clear();
+		try { Thread.sleep(5000L); }
+		catch(InterruptedException ex) {}
+		
+		if (scheduleEntryDAO != null)
+			scheduleEntryDAO.close();
+		scheduleEntryDAO = null;
+	}
+	
 	public String getAppName()
 	{
 		return appInfo != null ? appInfo.getAppName() : appNameArg.getValue();
 	}
 
 	
-	private void refreshSchedule() 
+	protected void refreshSchedule() 
 		throws DbIoException
 	{
 		// read list of ScheduleEntry's for my loading app.
@@ -358,6 +411,7 @@ public class RoutingScheduler
 	public void initDecodes()
 		throws DecodesException
 	{
+		Logger.instance().debug1("initDecodes()");
 		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
 		DecodesInterface.initializeForDecoding();
 	}
@@ -371,10 +425,9 @@ public class RoutingScheduler
 	}
 	
 	@Override
-	public boolean tryConnect()
+	public void tryConnect()
 	{
 		// Do nothing. The scheduler must not use the TSDB.
-		return true;
 	}
 
 	/**
@@ -446,7 +499,8 @@ public class RoutingScheduler
 	
 	public void threadFinished(Thread thread)
 	{
-		appLogger.setLogger(thread, null);
+		if (appLogger != null)
+			appLogger.setLogger(thread, null);
 	}
 
 	public String getHostname()

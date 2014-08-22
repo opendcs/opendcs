@@ -89,7 +89,6 @@ public class RoutingSpecEditPanel
 	private DataConsumer selectedConsumer = null;
 	private OutputFormatter selectedFormatter = null;
 	private Properties editProps = new Properties();
-	private DataSourceExec currentDataSource = null;
 
 
 	private static PropertySpec rsPropSpecs[] = 
@@ -159,13 +158,11 @@ public class RoutingSpecEditPanel
 		nameField.setText(theObject.getName());
 		if (theObject.dataSource != null && theObject.dataSource.getName() != null)
 			dataSourceCombo.setSelection(theObject.dataSource.getName());
-		dataSourceSelected();
 
 		if (theObject.consumerType != null)
 			consumerTypeCombo.setSelection(theObject.consumerType);
 		if (theObject.consumerArg != null)
 			consumerArgsField.setText(theObject.consumerArg);
-		consumerTypeSelected();
 		
 		productionCheck.setSelected(theObject.isProduction);
 		enableEquationsCheck.setSelected(theObject.enableEquations);
@@ -174,7 +171,6 @@ public class RoutingSpecEditPanel
 			outputFormatCombo.setSelection(theObject.outputFormat);
 		if (theObject.outputTimeZoneAbbr != null)
 			outputTimezoneCombo.setTZ(theObject.outputTimeZoneAbbr);
-		outputFormatSelected();
 		
 		if (theObject.presentationGroupName != null)
 			presentationGroupCombo.setSelection(theObject.presentationGroupName);
@@ -242,6 +238,10 @@ public class RoutingSpecEditPanel
 		}
 
 		// Now the properties edit panel will edit the props with the SC stuff removed.
+		dataSourceSelected();
+		consumerTypeSelected();
+		outputFormatSelected();
+
 		propertiesEditPanel.setProperties(editProps);
 		propertiesEditPanel.setPropertiesOwner(this);
 	}
@@ -508,35 +508,17 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		
 		if (selectedDataSource != null)
 		{
-			if (currentDataSource == null 
-			 || !currentDataSource.getDataSource().getName().equals(selectedDataSource.getName()))
+			try
 			{
-				if (currentDataSource != null && currentDataSource instanceof PropertiesOwner)
-				{
-					// Remove any unassigned properties used by the old Data Source
-					for(PropertySpec ps : currentDataSource.getSupportedProps())
-					{
-						String v = propertiesEditPanel.getProperty(ps.getName());
-						if (v != null && v.length() == 0)
-							propertiesEditPanel.rmProperty(ps.getName());
-					}
-				}
-				try
-				{
-					currentDataSource = selectedDataSource.makeDelegate();
-					
-					if (currentDataSource instanceof PropertiesOwner)
-					{
-						for(PropertySpec ps : currentDataSource.getSupportedProps())
-							propSpecs.add(ps);
-					}
-					adjustSearchCritFor(currentDataSource);
-				}
-				catch (InvalidDatabaseException ex)
-				{
-					Logger.instance().warning("Cannot instantiate data source of type '"
-						+ dataSourceCombo.getSelectedItem() + "': " + ex);
-				}
+				DataSourceExec currentDataSource = selectedDataSource.makeDelegate();
+				for(PropertySpec ps : currentDataSource.getSupportedProps())
+					propSpecs.add(ps);
+				adjustSearchCritFor(currentDataSource);
+			}
+			catch (InvalidDatabaseException ex)
+			{
+				Logger.instance().warning("Cannot instantiate data source of type '"
+					+ dataSourceCombo.getSelectedItem() + "': " + ex);
 			}
 		}
 		

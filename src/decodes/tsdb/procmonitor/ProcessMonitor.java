@@ -46,6 +46,7 @@ public class ProcessMonitor
 				close();
 			}
 		});
+		noExitAfterRunApp = true;
 	}
 	
 	private void close()

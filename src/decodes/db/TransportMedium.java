@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -107,6 +110,16 @@ public class TransportMedium extends DatabaseObject
 	  Time zone used for decoding data from this transport medium.
 	*/
 	private String timeZone;
+	
+	private String loggerType = null;
+	private int baud = 0;
+	private int stopBits = 0;
+	private char parity = 'U'; // unknown
+	private int dataBits = 0;
+	private boolean doLogin = false;
+	private String username = null;
+	private String password = null;
+
 
 
 	/// Key used for storing this TM in a hash table.
@@ -435,6 +448,86 @@ public class TransportMedium extends DatabaseObject
 		ntm.timeAdjustment = this.timeAdjustment;
 		ntm.timeZone = this.timeZone;
 		return ntm;
+	}
+
+	public String getLoggerType()
+	{
+		return loggerType;
+	}
+
+	public void setLoggerType(String loggerType)
+	{
+		this.loggerType = loggerType;
+	}
+
+	public int getBaud()
+	{
+		return baud;
+	}
+
+	public void setBaud(int baud)
+	{
+		this.baud = baud;
+	}
+
+	public int getStopBits()
+	{
+		return stopBits;
+	}
+
+	public void setStopBits(int stopBits)
+	{
+		this.stopBits = stopBits;
+	}
+
+	public char getParity()
+	{
+		return parity;
+	}
+
+	public void setParity(char parity)
+	{
+		this.parity = parity;
+	}
+
+	public int getDataBits()
+	{
+		return dataBits;
+	}
+
+	public void setDataBits(int dataBits)
+	{
+		this.dataBits = dataBits;
+	}
+
+	public boolean isDoLogin()
+	{
+		return doLogin;
+	}
+
+	public void setDoLogin(boolean doLogin)
+	{
+		this.doLogin = doLogin;
+	}
+
+	public String getUsername()
+	{
+		return username;
+	}
+
+	public void setUsername(String username)
+	{
+		this.username = username;
+	}
+
+	public String getPassword()
+	{
+		return password;
+	}
+
+	public void setPassword(String password)
+	{
+		this.password = password;
 	}
 }
 

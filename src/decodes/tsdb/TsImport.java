@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.8  2012/09/17 19:59:03  mmaloney
  * dev
  *
@@ -372,9 +375,9 @@ ex2.printStackTrace();
 		Logger.instance().info(module + " " + msg);
 	}
 	
-	private void warning(String msg)
+	public void warning(String msg)
 	{
-		Logger.instance().warning(module + " " + filename 
+		super.warning(" " + filename 
 			+ (lineNum <= 0 ? " " : "(" + lineNum + ") ") + msg);
 	}
 }

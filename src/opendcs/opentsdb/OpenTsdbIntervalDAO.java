@@ -22,7 +22,7 @@ public class OpenTsdbIntervalDAO
 	extends DaoBase
 	implements IntervalDAI
 {
-	String validIntervals[] = null;
+	static String validIntervals[] = new String[0];
 	
 	public OpenTsdbIntervalDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -132,12 +132,30 @@ public class OpenTsdbIntervalDAO
 	@Override
 	public String[] getValidIntervalCodes()
 	{
+		if (validIntervals.length == 0)
+		{
+			try { loadAllIntervals(); }
+			catch (DbIoException ex)
+			{
+				failure("Cannot load intervals: " + ex);
+				validIntervals = new String[0];
+			}
+		}
 		return validIntervals;
 	}
 
 	@Override
 	public String[] getValidDurationCodes()
 	{
+		if (validIntervals.length == 0)
+		{
+			try { loadAllIntervals(); }
+			catch (DbIoException ex)
+			{
+				failure("Cannot load intervals: " + ex);
+				validIntervals = new String[0];
+			}
+		}
 		return validIntervals;
 	}
 	

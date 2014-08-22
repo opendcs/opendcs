@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -121,8 +124,20 @@ public class EnumSqlDao
 				while (rs != null && rs.next())
 				{
 					DbEnum en = rs2Enum(rs, dbVer);
-					readValues(en);
 					cache.put(en);
+				}
+				
+				q = "SELECT enumId, enumValue, description, execClass, editClass";
+				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
+					q = q + ", sortNumber";
+				q = q + " FROM EnumValue";
+				rs = doQuery(q);
+				while(rs != null && rs.next())
+				{
+					DbKey key = DbKey.createDbKey(rs, 1);
+					DbEnum dbEnum = cache.getByKey(key);
+					if (dbEnum != null)
+						rs2EnumValue(rs, dbEnum);
 				}
 			}
 		}
@@ -231,25 +246,28 @@ public class EnumSqlDao
 		ResultSet rs = doQuery2(q);
 
 		while (rs != null && rs.next()) 
-		{
-			String enumValue = rs.getString(2);
-			String description = rs.getString(3);
-			String execClass = rs.getString(4);
-			String editClass = rs.getString(5);
+			rs2EnumValue(rs, dbenum);
+	}
+	
+	private void rs2EnumValue(ResultSet rs, DbEnum dbEnum)
+		throws SQLException
+	{
+		String enumValue = rs.getString(2);
+		String description = rs.getString(3);
+		String execClass = rs.getString(4);
+		String editClass = rs.getString(5);
 
-			int sn = 0;
-			boolean setSortNumber = false;
-			if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
-			{
-				sn = rs.getInt(6);
-				if (!rs.wasNull())
-					setSortNumber = true;
-			}
-			EnumValue ev = 
-				dbenum.replaceValue(enumValue, description, execClass, editClass);
-			if (setSortNumber)
-				ev.sortNumber = sn;
+		int sn = 0;
+		boolean setSortNumber = false;
+		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
+		{
+			sn = rs.getInt(6);
+			if (!rs.wasNull())
+				setSortNumber = true;
 		}
+		EnumValue ev = dbEnum.replaceValue(enumValue, description, execClass, editClass);
+		if (setSortNumber)
+			ev.sortNumber = sn;
 	}
 
 	/**

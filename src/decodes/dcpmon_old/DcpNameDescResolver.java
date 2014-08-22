@@ -1,4 +1,4 @@
-package decodes.dcpmon;
+package decodes.dcpmon_old;
 
 import java.util.Iterator;
 
@@ -7,6 +7,9 @@ import lrgs.common.DcpAddress;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.SiteName;
+import decodes.dcpmon.DcpGroup;
+import decodes.dcpmon.DcpGroupList;
+import decodes.dcpmon.DcpMonitorConfig;
 import decodes.dupdcpgui.DuplicateIo;
 import decodes.util.Pdt;
 import decodes.util.PdtEntry;

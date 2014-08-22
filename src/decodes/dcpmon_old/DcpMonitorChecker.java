@@ -1,7 +1,11 @@
+package decodes.dcpmon_old;
 ///*
 //*  $Id$
 //*
 //*  $Log$
+//*  Revision 1.2  2014/06/27 20:36:38  mmaloney
+//*  Initial unfinished version moved from dcpmon1 package to here.
+//*
 //*  Revision 1.1  2014/06/02 14:28:50  mmaloney
 //*  rc5 includes initial refactory for dcpmon
 //*

@@ -60,6 +60,14 @@ public class XmlDbTags
 	public static final String transmitInterval_el = "TransmitInterval";
 	public static final String timeAdjustment_el = "TimeAdjustment";
 	public static final String preamble_el = "Preamble";
+	public static final String loggerType_el = "loggerType";
+	public static final String baud_el = "baud";
+	public static final String stopBits_el = "stopBits";
+	public static final String parity_el = "parity";
+	public static final String dataBits_el = "dataBits";
+	public static final String doLogin_el = "doLogin";
+	public static final String username_el = "username";
+	public static final String password_el = "password";
 
 	public static final String Site_el = "Site";
 	public static final String latitude_el = "Latitude";

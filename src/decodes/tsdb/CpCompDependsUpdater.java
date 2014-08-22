@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.46  2013/03/25 18:15:03  mmaloney
 *  Refactor starting event server.
 *
@@ -67,7 +70,6 @@ public class CpCompDependsUpdater
 	private TsdbCompLock myLock;
 	
 	private boolean shutdownFlag;
-	private int pid;
 	private String hostname;
 	private int evtPort = 0;
 	private long lastCacheRefresh = 0L;
@@ -186,15 +188,19 @@ public class CpCompDependsUpdater
 			// If not connected, attempt to connect, wait 10 sec between tries.
 			if (!theDb.isConnected())
 			{
-				if (!tryConnect())
+				try
 				{
+					lastCacheRefresh = 0L; // force cache refresh
+					tryConnect();
+				}
+				catch(BadConnectException ex)
+				{
+					warning("Connect failed: " + ex);
 					closeDb();
 					try { Thread.sleep(10000L); }
-					catch(InterruptedException ex) {}
+					catch(InterruptedException ex2) {}
 					continue;
 				}
-				else
-					lastCacheRefresh = 0L; // force cache refresh
 				// New connection, need to obtain new lock & load resolver.
 				myLock = null;
 			}
@@ -206,7 +212,7 @@ public class CpCompDependsUpdater
 				// Make sure this process's lock is still valid.
 				action = "Checking lock";
 				if (myLock == null)
-					myLock = loadingAppDAO.obtainCompProcLock(appInfo, pid, hostname); 
+					myLock = loadingAppDAO.obtainCompProcLock(appInfo, getPID(), hostname); 
 				else
 				{
 					setAppStatus("Done=" + done + ", Errs=" + errs);
@@ -280,18 +286,6 @@ public class CpCompDependsUpdater
 		{
 			appInfo = loadingAppDao.getComputationApp(appId);
 
-			// Determine process ID. Note -- We can't really do this in Java
-			// without assuming a particular OS. Therefore, we rely on the
-			// script that started us to set an environment variable PPID
-			// for parent-process-ID. If not present, we default to 1.
-			pid = 1;
-			String ppids = System.getProperty("PPID");
-			if (ppids != null)
-			{
-				try { pid = Integer.parseInt(ppids); }
-				catch(NumberFormatException ex) { pid = 1; }
-			}
-
 			try { hostname = InetAddress.getLocalHost().getHostName(); }
 			catch(Exception e) { hostname = "unknown"; }
 
@@ -357,10 +351,6 @@ public class CpCompDependsUpdater
 		app.execute(args);
 	}
 
-	private void warning(String x)
-	{
-		Logger.instance().warning("CompDependsUpdater(" + appId + "): " + x);
-	}
 	private void info(String x)
 	{
 		Logger.instance().info("CompDependsUpdater(" + appId + "): " + x);

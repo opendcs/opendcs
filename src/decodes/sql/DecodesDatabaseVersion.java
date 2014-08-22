@@ -54,6 +54,10 @@ public class DecodesDatabaseVersion
 	/**
 	 * Version 11 corresponds to OPENDCS 6.1 release
 	 * - NetworkListEntry adds two columns: platform_name and description
+	 * - Several additions to TransportMedium to support modem and network loggers.
+	 * - New tables CP_COMPOSITE_DIAGRAM and CP_COMPOSITE_MEMBER
+	 * - Redefinition of table DACQ_EVENT
+	 * - New table SERIAL_PORT_STATUS
 	 */
 	public static final int DECODES_DB_11 = 11;
 

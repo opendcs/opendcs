@@ -142,7 +142,7 @@ class DuplicateDcpsListTableModel
 					findPDTInfo(dcpAddress);
 					//Corps Dcp Name - platform name and Corps Description
 					findCorpsInfo(dcpAddress,
-							controlOffice, nle.description, nle.platformName);
+							controlOffice, nle.getDescription(), nle.getPlatformName());
 					//Figure out if this is a duplicate dcp address
 					DuplicateDcp dup = 
 						(DuplicateDcp)dupDcpsHash.get(dcpAddress);

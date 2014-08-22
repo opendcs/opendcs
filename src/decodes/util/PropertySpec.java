@@ -49,6 +49,7 @@ public class PropertySpec
 	/** A Java enum property type will be E:<fullEnumClassPath> */
 	public static final String JAVA_ENUM = "E:";
 	
+	
 	public PropertySpec(String name, String type, String description)
 	{
 		super();

@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.28  2013/06/26 19:35:49  mmaloney
  * Don't print stack trace if fail to write due to "insufficient privilege".
  * This is for CWMS which enforces privileges based on the database user ID.
@@ -57,7 +60,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.opentsdb.OpenTsdbIntervalDAO;
 
 import ilex.util.Counter;
 import ilex.util.Logger;
@@ -805,28 +807,6 @@ public class SqlDatabaseIO
 		}
 	}
 
-	/**
-	* Read the platform list based on transport medium passed and populate the passed
-	* PlatformList object.
-	* @param platformList the object to populate from the database.
-	*/
-	public synchronized void readPlatformList(PlatformList platformList,ArrayList<String> contMedium)
-		throws DatabaseException
-	{
-	try 
-		{
-			_platformListIO.readPlatforms(platformList, contMedium);
-			if (commitAfterSelect)
-				commit();
-		}
-		catch (SQLException e) 
-		{
-			System.err.println(e);
-			e.printStackTrace(System.err);
-			throw new DatabaseException(e.toString());
-		}
-	}
-	
 	/**
 	* Reads the list of PlatformConfig objects defined in this database.
 	* @param pcList the object to populate from the database.

@@ -1808,18 +1808,18 @@ public class EmitImport
 				(lrgs.common.NetworkListItem)it.next();
 			decodes.db.NetworkListEntry nle =
 				new decodes.db.NetworkListEntry(dnl, lnli.addr.toString());
-			nle.platformName = lnli.name;
-			nle.description = lnli.description;
+			nle.setPlatformName(lnli.name);
+			nle.setDescription(lnli.description);
 			dnl.addEntry(nle);
-			if (makeSiteNames && nle.platformName != null
-			 && !TextUtil.isAllWhitespace(nle.platformName))
+			if (makeSiteNames && nle.getPlatformName() != null
+			 && !TextUtil.isAllWhitespace(nle.getPlatformName()))
 			{
 				Platform p = db.platformList.findPlatform(
 					Constants.medium_Goes, nle.transportId, new Date());
 				if (p != null && p.site != null)
 				{
 					SiteName sn = new SiteName(p.site, defaultStationNameType,
-						nle.platformName.trim());
+						nle.getPlatformName().trim());
 					p.site.addName(sn);
 					newObjects.add(p.site);
 				}

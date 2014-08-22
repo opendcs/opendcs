@@ -81,37 +81,6 @@ public class PlatformSelectPanel extends JPanel
 		parentDialog = dlg;
 	}
 	
-	public PlatformSelectPanel(ArrayList<String> mediumType)
-	{
-	
-		model = new PlatformSelectTableModel(this, mediumType);
-		platformListTable = new SortingListTable(model,
-			new int[] { 22, 10, 13, 18, 15, 33 });
-		platformListTable.getSelectionModel().setSelectionMode(
-			ListSelectionModel.SINGLE_SELECTION);
-		setMultipleSelection(false);
-		platformListTable.addMouseListener(new MouseAdapter()
-		{
-			public void mouseClicked(MouseEvent e)
-			{
-				if (e.getClickCount() == 2)
-				{
-					if (parentDialog != null)
-						parentDialog.openPressed();
-//					((PlatformListPanel)PlatformSelectPanel.this.getParent()).openPressed();
-				}
-			}
-		} );
-		try
-		{
-			jbInit();
-		}
-		catch(Exception ex)
-		{
-			ex.printStackTrace();
-		}
-	}
-	
 	public PlatformSelectPanel(final PlatformSelectDialog psd, Site site,
 					String mediumType)
 	{
@@ -252,19 +221,6 @@ class PlatformSelectTableModel extends AbstractTableModel
 		this.sortByColumn(0);
 	}
 	
-	public PlatformSelectTableModel(PlatformSelectPanel panel, ArrayList<String> contMedium)
-	{
-		
-		super();
-		
-		this.panel = panel;
-		//this.mediumType = mediumType;
-		columnizer = new PlatformSelectColumnizer(Constants.contMedium_IRIDIUM);
-		if(vec==null) // when this class is called from stationcontact frame, vec  is null.
-			vec = new Vector();		
-		vec = Database.getDb().platformList.getPlatformVector(contMedium);		
-		this.sortByColumn(0);
-	}
 	public PlatformSelectTableModel(PlatformSelectPanel panel, Site site)
 	{
 		super();

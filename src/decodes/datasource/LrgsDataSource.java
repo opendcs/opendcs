@@ -23,6 +23,7 @@ import decodes.db.TransportMedium;
 import decodes.db.NetworkList;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.DatabaseException;
+import decodes.util.PropertySpec;
 
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ServerError;
@@ -70,6 +71,22 @@ public class LrgsDataSource extends DataSourceExec
 	boolean abortFlag;
 
 	private static int connum = 0;
+	
+	PropertySpec[] lrgsDsPropSpecs =
+	{
+		new PropertySpec("host", PropertySpec.HOSTNAME,
+			"LRGS Data Source: Host name or IP Address of LRGS Server"),
+		new PropertySpec("port", PropertySpec.INT,
+			"LRGS Data Source: Listening port on LRGS Server (default = 16003)"),
+		new PropertySpec("username", PropertySpec.STRING,
+			"LRGS Data Source: DDS User name with which to connect to LRGS server"),
+		new PropertySpec("password", PropertySpec.STRING,
+			"LRGS Data Source: DDS User name with which to connect to LRGS server"),
+		new PropertySpec("lrgs.timeout", PropertySpec.INT,
+			"LRGS Data Source: Number of idle seconds after which to assume server has failed (default=60)." +
+			" For sparse data (i.e. small netlist) you should set this to a large value."),
+	};
+
 
 	/**
 	  No-args constructor is necessary because this is instantiated from
@@ -814,4 +831,22 @@ public class LrgsDataSource extends DataSourceExec
 	 * if all of its constituents are in an error condition.
 	 */
 	public void resetLastError() { lastError = 0L; }
+	
+	/**
+	 * Base class returns an empty array for backward compatibility.
+	 */
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return lrgsDsPropSpecs;
+	}
+
+	/**
+	 * Base class return true for backward compatibility.
+	 */
+	@Override
+	public boolean additionalPropsAllowed()
+	{
+		return true;
+	}
 }

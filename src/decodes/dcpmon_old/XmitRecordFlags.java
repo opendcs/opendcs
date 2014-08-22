@@ -10,10 +10,12 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 */
-package decodes.dcpmon;
+package decodes.dcpmon_old;
 
 /**
  * Definitions for the binary 'flags' value stored in each XmitRecord
+ * 
+ * @deprecated Use lrgs.common.DcpMsgFlag
  */
 public class XmitRecordFlags
 {
@@ -73,35 +75,35 @@ public class XmitRecordFlags
 	/** # bits to shift HDR flag bits */
 	public static final int HDR_FLAG_SHIFT    = 12;
 
-	public static int getBaudRate(XmitRecord xr)
-	{
-		int flags = xr.getFlags() & BAUD_MASK;
-		return flags == BAUD_100 ? 100 : 
-		       flags == BAUD_300 ? 300 :
-		       flags == BAUD_1200 ? 1200 : 300;
-	}
-
-	public static char getPreamble(XmitRecord xr)
-	{
-		if ((xr.getFlags() & LONG_PREAMBLE) != 0)
-			return 'L';
-		return 'S';
-	}
-
-	public static boolean testFlag(XmitRecord xr, int flag)
-	{
-		return (xr.getFlags() & flag) != 0;
-	}
-
-	public static byte getHdrFlagByte(XmitRecord xr)
-	{
-		return (byte)((xr.getFlags() & HDR_FLAG_MASK) >> HDR_FLAG_SHIFT);
-	}
-
-	public static void setHdrFlagByte(XmitRecord xr, byte f)
-	{
-		int x = xr.getFlags();
-		xr.clearFlags();
-		xr.addFlags(x | (((int)f&0xff) << HDR_FLAG_SHIFT));
-	}
+//	public static int getBaudRate(XmitTimeWindow xr)
+//	{
+//		int flags = xr.getFlags() & BAUD_MASK;
+//		return flags == BAUD_100 ? 100 : 
+//		       flags == BAUD_300 ? 300 :
+//		       flags == BAUD_1200 ? 1200 : 300;
+//	}
+//
+//	public static char getPreamble(XmitTimeWindow xr)
+//	{
+//		if ((xr.getFlags() & LONG_PREAMBLE) != 0)
+//			return 'L';
+//		return 'S';
+//	}
+//
+//	public static boolean testFlag(XmitTimeWindow xr, int flag)
+//	{
+//		return (xr.getFlags() & flag) != 0;
+//	}
+//
+//	public static byte getHdrFlagByte(XmitTimeWindow xr)
+//	{
+//		return (byte)((xr.getFlags() & HDR_FLAG_MASK) >> HDR_FLAG_SHIFT);
+//	}
+//
+//	public static void setHdrFlagByte(XmitTimeWindow xr, byte f)
+//	{
+//		int x = xr.getFlags();
+//		xr.clearFlags();
+//		xr.addFlags(x | (((int)f&0xff) << HDR_FLAG_SHIFT));
+//	}
 }

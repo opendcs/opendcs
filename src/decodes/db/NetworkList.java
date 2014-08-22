@@ -254,9 +254,9 @@ public class NetworkList extends IdDatabaseObject
 
 				lrgs.common.NetworkListItem nli =
 					new lrgs.common.NetworkListItem();
-				nli.name = nle.platformName == null ? "" : nle.platformName;
+				nli.name = nle.getPlatformName() == null ? "" : nle.getPlatformName();
 				nli.description =
-					nle.description == null ? "" : nle.description;
+					nle.getDescription() == null ? "" : nle.getDescription();
 
 				// Make sure the description is only a single line.
 				int idx = nli.description.indexOf('\r');

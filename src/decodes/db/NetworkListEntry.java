@@ -4,6 +4,9 @@
 *  Open source software
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -56,18 +59,16 @@ public class NetworkListEntry extends DatabaseObject
 	public String transportId;
 
 	/** The name of the platform (site name). */
-	public String platformName;
+	private String platformName = null;
 
 	/** A description */
-	public String description;
-
+	private String description = null;
 
 	/**
 	 * This is a reference to the NetworkList to which this belongs.
 	 * This should never be null.
 	 */
 	public NetworkList parent;
-
 
 	/** 
 	  Constructor.  
@@ -77,8 +78,8 @@ public class NetworkListEntry extends DatabaseObject
 	public NetworkListEntry(NetworkList parent, String transportId)
 	{
 		//this();
-		platformName = null;
-		description = null;
+		setPlatformName(null);
+		setDescription(null);
 
 		this.parent = parent;
 		this.transportId = transportId;
@@ -92,8 +93,8 @@ public class NetworkListEntry extends DatabaseObject
 	public NetworkListEntry copy(NetworkList parent)
 	{
 		NetworkListEntry ret = new NetworkListEntry(parent, transportId);
-		ret.platformName = platformName;
-		ret.description = description;
+		ret.setPlatformName(platformName);
+		ret.setDescription(description);
 		return ret;
 	}
 
@@ -106,8 +107,8 @@ public class NetworkListEntry extends DatabaseObject
 			return true;
 
 		if (!TextUtil.strEqualIgnoreCase(transportId, nle.transportId)
-		 || !TextUtil.strEqualIgnoreCase(platformName, nle.platformName)
-		 || !TextUtil.strEqualIgnoreCase(description, nle.description))
+		 || !TextUtil.strEqualIgnoreCase(getPlatformName(), nle.getPlatformName())
+		 || !TextUtil.strEqualIgnoreCase(getDescription(), nle.getDescription()))
 			return false;
 		return true;
 	}
@@ -157,5 +158,37 @@ public class NetworkListEntry extends DatabaseObject
 	public String getTransportId()
 	{
 		return transportId;
+	}
+
+	/**
+	 * @return the platformName
+	 */
+	public String getPlatformName()
+	{
+		return platformName;
+	}
+
+	/**
+	 * @param platformName the platformName to set
+	 */
+	public void setPlatformName(String platformName)
+	{
+		this.platformName = platformName;
+	}
+
+	/**
+	 * @return the description
+	 */
+	public String getDescription()
+	{
+		return description;
+	}
+
+	/**
+	 * @param description the description to set
+	 */
+	public void setDescription(String description)
+	{
+		this.description = description;
 	}
 }

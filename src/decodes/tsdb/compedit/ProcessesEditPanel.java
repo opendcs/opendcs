@@ -241,7 +241,7 @@ public class ProcessesEditPanel extends EditPanel
 
 		saveToObject(editedObject);
 		
-		LoadingAppDAI loadingAppDao = CAPEdit.instance().theDb.makeLoadingAppDAO();
+		LoadingAppDAI loadingAppDao = CAPEdit.theDb.makeLoadingAppDAO();
 		try 
 		{
 			loadingAppDao.writeComputationApp(editedObject); 

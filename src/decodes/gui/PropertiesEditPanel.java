@@ -543,7 +543,8 @@ class PropertiesTableModel extends AbstractTableModel
 		StringPair sp = props.get(row);
 		if (column == 0)
 			return sp.first;
-		if (sp.first != null && sp.first.toLowerCase().contains("password"))
+		if (sp.first != null && sp.first.toLowerCase().contains("password")
+			&& sp.second != null && sp.second.length() > 0)
 			return "****";
 		return sp.second;
 	}

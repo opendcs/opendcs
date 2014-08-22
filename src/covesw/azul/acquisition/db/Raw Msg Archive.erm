@@ -110,7 +110,7 @@
 			</connections>
 			<display>false</display>
 			<creation_date>2014-07-01 09:02:51</creation_date>
-			<updated_date>2014-07-12 14:27:16</updated_date>
+			<updated_date>2014-07-21 22:20:00</updated_date>
 			<model_property>
 				<name>Project Name</name>
 				<value></value>
@@ -146,32 +146,6 @@
 	<dictionary>
 		<word>
 			<id>0</id>
-			<length>0</length>
-			<decimal>null</decimal>
-			<array>false</array>
-			<array_dimension>null</array_dimension>
-			<unsigned>false</unsigned>
-			<args></args>
-			<description>Up to 8 character codes indicating various aspects of data acquisition,&#x0A;such as early, late, good, questionable, unexpected, etc.</description>
-			<logical_name>ACQ_FLAGS</logical_name>
-			<physical_name>ACQ_FLAGS</physical_name>
-			<type>varchar(n)</type>
-		</word>
-		<word>
-			<id>1</id>
-			<length>null</length>
-			<decimal>null</decimal>
-			<array>false</array>
-			<array_dimension>null</array_dimension>
-			<unsigned>false</unsigned>
-			<args></args>
-			<description>Date/Time of acquisition</description>
-			<logical_name>ACQ_TIME</logical_name>
-			<physical_name>ACQ_TIME</physical_name>
-			<type>bigint</type>
-		</word>
-		<word>
-			<id>2</id>
 			<length>null</length>
 			<decimal>null</decimal>
 			<array>false</array>
@@ -184,7 +158,7 @@
 			<type>float</type>
 		</word>
 		<word>
-			<id>3</id>
+			<id>1</id>
 			<length>null</length>
 			<decimal>null</decimal>
 			<array>false</array>
@@ -197,7 +171,7 @@
 			<type>bigint</type>
 		</word>
 		<word>
-			<id>4</id>
+			<id>2</id>
 			<length>null</length>
 			<decimal>null</decimal>
 			<array>false</array>
@@ -210,17 +184,43 @@
 			<type>bigint</type>
 		</word>
 		<word>
-			<id>5</id>
+			<id>3</id>
+			<length>16</length>
+			<decimal>null</decimal>
+			<array>false</array>
+			<array_dimension>null</array_dimension>
+			<unsigned>false</unsigned>
+			<args></args>
+			<description>Up to 8 character codes indicating various aspects of data acquisition,&#x0A;such as early, late, good, questionable, unexpected, etc.</description>
+			<logical_name>FAILCODES</logical_name>
+			<physical_name>FAILCODES</physical_name>
+			<type>varchar(n)</type>
+		</word>
+		<word>
+			<id>4</id>
 			<length>null</length>
 			<decimal>null</decimal>
 			<array>false</array>
 			<array_dimension>null</array_dimension>
 			<unsigned>false</unsigned>
 			<args></args>
-			<description></description>
-			<logical_name>CHANNEL</logical_name>
-			<physical_name>CHANNEL</physical_name>
-			<type>integer</type>
+			<description>Date/Time of acquisition</description>
+			<logical_name>LOCAL_RECV_TIME</logical_name>
+			<physical_name>LOCAL_RECV_TIME</physical_name>
+			<type>bigint</type>
+		</word>
+		<word>
+			<id>5</id>
+			<length>64</length>
+			<decimal>null</decimal>
+			<array>false</array>
+			<array_dimension>null</array_dimension>
+			<unsigned>false</unsigned>
+			<args></args>
+			<description>For GOES, this is DCP Address, for EDLs it will be the logger name.</description>
+			<logical_name>MEDIUM_ID</logical_name>
+			<physical_name>MEDIUM_ID</physical_name>
+			<type>varchar(n)</type>
 		</word>
 		<word>
 			<id>6</id>
@@ -230,10 +230,10 @@
 			<array_dimension>null</array_dimension>
 			<unsigned>false</unsigned>
 			<args></args>
-			<description>The channel number.</description>
-			<logical_name>CHANNEL</logical_name>
-			<physical_name>CHANNEL</physical_name>
-			<type>integer</type>
+			<description>This determines how to parse the header.&#x0A;G=GOES, I=Iridium, L=USGS EDL</description>
+			<logical_name>MEDIUM_TYPE</logical_name>
+			<physical_name>MEDIUM_TYPE</physical_name>
+			<type>char</type>
 		</word>
 		<word>
 			<id>7</id>
@@ -244,64 +244,12 @@
 			<unsigned>false</unsigned>
 			<args></args>
 			<description></description>
-			<logical_name>CHANNEL_TYPE</logical_name>
-			<physical_name>CHANNEL_TYPE</physical_name>
-			<type>char</type>
+			<logical_name>MERGE_FILTER_CODE</logical_name>
+			<physical_name>MERGE_FILTER_CODE</physical_name>
+			<type>integer</type>
 		</word>
 		<word>
 			<id>8</id>
-			<length>null</length>
-			<decimal>null</decimal>
-			<array>false</array>
-			<array_dimension>null</array_dimension>
-			<unsigned>false</unsigned>
-			<args></args>
-			<description>Coded value indicating satellite or transmission type.&#x0A;&apos;G&apos; = GOES channel&#x0A;&apos;M&apos; = Modem - telnum hash&#x0A;&apos;N&apos; = Network Accessible Logger - IP Address Hash</description>
-			<logical_name>CHANNEL_TYPE</logical_name>
-			<physical_name>CHANNEL_TYPE</physical_name>
-			<type>char</type>
-		</word>
-		<word>
-			<id>9</id>
-			<length>null</length>
-			<decimal>null</decimal>
-			<array>false</array>
-			<array_dimension>null</array_dimension>
-			<unsigned>false</unsigned>
-			<args></args>
-			<description></description>
-			<logical_name>LAST_MESSAGE_TIME</logical_name>
-			<physical_name>LAST_MESSAGE_TIME</physical_name>
-			<type>bigint</type>
-		</word>
-		<word>
-			<id>10</id>
-			<length>64</length>
-			<decimal>null</decimal>
-			<array>false</array>
-			<array_dimension>null</array_dimension>
-			<unsigned>false</unsigned>
-			<args></args>
-			<description></description>
-			<logical_name>LOGGER_ID</logical_name>
-			<physical_name>LOGGER_ID</physical_name>
-			<type>varchar(n)</type>
-		</word>
-		<word>
-			<id>11</id>
-			<length>64</length>
-			<decimal>null</decimal>
-			<array>false</array>
-			<array_dimension>null</array_dimension>
-			<unsigned>false</unsigned>
-			<args></args>
-			<description>For GOES, this is DCP Address, for EDLs it will be the logger name.</description>
-			<logical_name>LOGGER_ID</logical_name>
-			<physical_name>LOGGER_ID</physical_name>
-			<type>varchar(n)</type>
-		</word>
-		<word>
-			<id>12</id>
 			<length>40000</length>
 			<decimal>null</decimal>
 			<array>false</array>
@@ -314,7 +262,7 @@
 			<type>varchar(n)</type>
 		</word>
 		<word>
-			<id>13</id>
+			<id>9</id>
 			<length>null</length>
 			<decimal>null</decimal>
 			<array>false</array>
@@ -322,25 +270,12 @@
 			<unsigned>false</unsigned>
 			<args></args>
 			<description></description>
-			<logical_name>RAW_MSG_KEY</logical_name>
-			<physical_name>RAW_MSG_KEY</physical_name>
+			<logical_name>RECORD_KEY</logical_name>
+			<physical_name>RECORD_KEY</physical_name>
 			<type>bigint</type>
 		</word>
 		<word>
-			<id>14</id>
-			<length>null</length>
-			<decimal>null</decimal>
-			<array>false</array>
-			<array_dimension>null</array_dimension>
-			<unsigned>false</unsigned>
-			<args></args>
-			<description>The table suffix in which values for this channel are stored.</description>
-			<logical_name>TBLGROUP</logical_name>
-			<physical_name>TBLGROUP</physical_name>
-			<type>integer</type>
-		</word>
-		<word>
-			<id>15</id>
+			<id>10</id>
 			<length>null</length>
 			<decimal>null</decimal>
 			<array>false</array>
@@ -358,319 +293,12 @@
 	<contents>
 		<table>
 			<id>0</id>
-			<height>75</height>
-			<width>120</width>
+			<height>231</height>
+			<width>207</width>
 				<font_name>Lucida Grande</font_name>
 				<font_size>9</font_size>
-			<x>378</x>
-			<y>85</y>
-			<color>
-				<r>128</r>
-				<g>128</g>
-				<b>192</b>
-			</color>
-			<connections>
-			</connections>
-			<physical_name>CHANNEL_TBLGROUP</physical_name>
-			<logical_name>CHANNEL_TBLGROUP</logical_name>
-			<description>This table makes an association between integer TBLGROUP &#x0A;values and one or more channels.</description>
-			<constraint></constraint>
-			<primary_key_name></primary_key_name>
-			<option></option>
-			<columns>
-				<normal_column>
-					<word_id>8</word_id>
-					<id>0</id>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>char</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>false</foreign_key>
-					<not_null>true</not_null>
-					<primary_key>true</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-				<normal_column>
-					<word_id>6</word_id>
-					<id>1</id>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>integer</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>false</foreign_key>
-					<not_null>true</not_null>
-					<primary_key>true</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-				<normal_column>
-					<word_id>14</word_id>
-					<id>2</id>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>integer</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>false</foreign_key>
-					<not_null>true</not_null>
-					<primary_key>false</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-			</columns>
-			<indexes>
-			</indexes>
-			<complex_unique_key_list>
-			</complex_unique_key_list>
-			<table_properties>
-				<schema></schema>
-				<without_oids>true</without_oids>
-			</table_properties>
-		</table>
-		<table>
-			<id>1</id>
-			<height>112</height>
-			<width>202</width>
-				<font_name>Lucida Grande</font_name>
-				<font_size>9</font_size>
-			<x>365</x>
-			<y>221</y>
-			<color>
-				<r>128</r>
-				<g>128</g>
-				<b>192</b>
-			</color>
-			<connections>
-				<relation>
-					<id>0</id>
-					<source>0</source>
-					<target>1</target>
-					<child_cardinality>1..n</child_cardinality>
-					<parent_cardinality>1</parent_cardinality>
-					<reference_for_pk>true</reference_for_pk>
-					<name></name>
-					<on_delete_action>RESTRICT</on_delete_action>
-					<on_update_action>RESTRICT</on_update_action>
-					<source_xp>-1</source_xp>
-					<source_yp>-1</source_yp>
-					<target_xp>-1</target_xp>
-					<target_yp>-1</target_yp>
-					<referenced_column>null</referenced_column>
-					<referenced_complex_unique_key>null</referenced_complex_unique_key>
-				</relation>
-			</connections>
-			<physical_name>LOGGER_ID_CHANNEL</physical_name>
-			<logical_name>LOGGER_ID_CHANNEL</logical_name>
-			<description>A record in this table relates a given logger ID to a channel type &amp; number.&#x0A;It also contains the date/time that the last message for this logger ID was&#x0A;received on this channel.&#x0A;It is updated when new messages arrive.&#x0A;When old records are periodically purged, a record in this table may be deleted&#x0A;if the last date/time is before the purge limit.&#x0A;It is used during search to determine what channel(s) that data from a given&#x0A;logger can be on.</description>
-			<constraint></constraint>
-			<primary_key_name></primary_key_name>
-			<option></option>
-			<columns>
-				<normal_column>
-					<word_id>10</word_id>
-					<id>3</id>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>varchar(n)</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>false</foreign_key>
-					<not_null>true</not_null>
-					<primary_key>true</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-				<normal_column>
-					<id>4</id>
-					<referenced_column>0</referenced_column>
-					<relation>0</relation>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>char</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>true</foreign_key>
-					<not_null>true</not_null>
-					<primary_key>true</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-				<normal_column>
-					<id>5</id>
-					<referenced_column>1</referenced_column>
-					<relation>0</relation>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>integer</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>true</foreign_key>
-					<not_null>true</not_null>
-					<primary_key>true</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-				<normal_column>
-					<word_id>9</word_id>
-					<id>6</id>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>bigint</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>false</foreign_key>
-					<not_null>true</not_null>
-					<primary_key>false</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-			</columns>
-			<indexes>
-			</indexes>
-			<complex_unique_key_list>
-			</complex_unique_key_list>
-			<table_properties>
-				<schema></schema>
-				<without_oids>true</without_oids>
-			</table_properties>
-		</table>
-		<table>
-			<id>2</id>
-			<height>180</height>
-			<width>190</width>
-				<font_name>Lucida Grande</font_name>
-				<font_size>9</font_size>
-			<x>96</x>
-			<y>82</y>
+			<x>31</x>
+			<y>60</y>
 			<color>
 				<r>128</r>
 				<g>128</g>
@@ -686,8 +314,8 @@
 			<option></option>
 			<columns>
 				<normal_column>
-					<word_id>13</word_id>
-					<id>7</id>
+					<word_id>9</word_id>
+					<id>0</id>
 					<description></description>
 					<unique_key_name></unique_key_name>
 					<logical_name></logical_name>
@@ -718,8 +346,8 @@
 					</sequence>
 				</normal_column>
 				<normal_column>
-					<word_id>1</word_id>
-					<id>8</id>
+					<word_id>4</word_id>
+					<id>1</id>
 					<description></description>
 					<unique_key_name></unique_key_name>
 					<logical_name></logical_name>
@@ -750,8 +378,8 @@
 					</sequence>
 				</normal_column>
 				<normal_column>
-					<word_id>15</word_id>
-					<id>9</id>
+					<word_id>10</word_id>
+					<id>2</id>
 					<description></description>
 					<unique_key_name></unique_key_name>
 					<logical_name></logical_name>
@@ -782,8 +410,8 @@
 					</sequence>
 				</normal_column>
 				<normal_column>
-					<word_id>7</word_id>
-					<id>10</id>
+					<word_id>6</word_id>
+					<id>3</id>
 					<description></description>
 					<unique_key_name></unique_key_name>
 					<logical_name></logical_name>
@@ -815,12 +443,12 @@
 				</normal_column>
 				<normal_column>
 					<word_id>5</word_id>
-					<id>11</id>
+					<id>4</id>
 					<description></description>
 					<unique_key_name></unique_key_name>
 					<logical_name></logical_name>
 					<physical_name></physical_name>
-					<type>integer</type>
+					<type>varchar(n)</type>
 					<constraint></constraint>
 					<default_value></default_value>
 					<auto_increment>false</auto_increment>
@@ -846,72 +474,72 @@
 					</sequence>
 				</normal_column>
 				<normal_column>
+					<word_id>1</word_id>
+					<id>5</id>
+					<description></description>
+					<unique_key_name></unique_key_name>
+					<logical_name></logical_name>
+					<physical_name></physical_name>
+					<type>bigint</type>
+					<constraint></constraint>
+					<default_value></default_value>
+					<auto_increment>false</auto_increment>
+					<foreign_key>false</foreign_key>
+					<not_null>false</not_null>
+					<primary_key>false</primary_key>
+					<unique_key>false</unique_key>
+					<character_set></character_set>
+					<collation></collation>
+					<sequence>
+						<name></name>
+						<schema></schema>
+						<increment></increment>
+						<min_value></min_value>
+						<max_value></max_value>
+						<start></start>
+						<cache></cache>
+						<cycle>false</cycle>
+						<order>false</order>
+						<description></description>
+						<data_type></data_type>
+						<decimal_size>0</decimal_size>
+					</sequence>
+				</normal_column>
+				<normal_column>
+					<word_id>2</word_id>
+					<id>6</id>
+					<description></description>
+					<unique_key_name></unique_key_name>
+					<logical_name></logical_name>
+					<physical_name></physical_name>
+					<type>bigint</type>
+					<constraint></constraint>
+					<default_value></default_value>
+					<auto_increment>false</auto_increment>
+					<foreign_key>false</foreign_key>
+					<not_null>false</not_null>
+					<primary_key>false</primary_key>
+					<unique_key>false</unique_key>
+					<character_set></character_set>
+					<collation></collation>
+					<sequence>
+						<name></name>
+						<schema></schema>
+						<increment></increment>
+						<min_value></min_value>
+						<max_value></max_value>
+						<start></start>
+						<cache></cache>
+						<cycle>false</cycle>
+						<order>false</order>
+						<description></description>
+						<data_type></data_type>
+						<decimal_size>0</decimal_size>
+					</sequence>
+				</normal_column>
+				<normal_column>
 					<word_id>3</word_id>
-					<id>12</id>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>bigint</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>false</foreign_key>
-					<not_null>false</not_null>
-					<primary_key>false</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-				<normal_column>
-					<word_id>4</word_id>
-					<id>13</id>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>bigint</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>false</foreign_key>
-					<not_null>false</not_null>
-					<primary_key>false</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-				<normal_column>
-					<word_id>11</word_id>
-					<id>14</id>
+					<id>7</id>
 					<description></description>
 					<unique_key_name></unique_key_name>
 					<logical_name></logical_name>
@@ -943,39 +571,7 @@
 				</normal_column>
 				<normal_column>
 					<word_id>0</word_id>
-					<id>15</id>
-					<description></description>
-					<unique_key_name></unique_key_name>
-					<logical_name></logical_name>
-					<physical_name></physical_name>
-					<type>varchar(n)</type>
-					<constraint></constraint>
-					<default_value></default_value>
-					<auto_increment>false</auto_increment>
-					<foreign_key>false</foreign_key>
-					<not_null>true</not_null>
-					<primary_key>false</primary_key>
-					<unique_key>false</unique_key>
-					<character_set></character_set>
-					<collation></collation>
-					<sequence>
-						<name></name>
-						<schema></schema>
-						<increment></increment>
-						<min_value></min_value>
-						<max_value></max_value>
-						<start></start>
-						<cache></cache>
-						<cycle>false</cycle>
-						<order>false</order>
-						<description></description>
-						<data_type></data_type>
-						<decimal_size>0</decimal_size>
-					</sequence>
-				</normal_column>
-				<normal_column>
-					<word_id>2</word_id>
-					<id>16</id>
+					<id>8</id>
 					<description></description>
 					<unique_key_name></unique_key_name>
 					<logical_name></logical_name>
@@ -1006,8 +602,40 @@
 					</sequence>
 				</normal_column>
 				<normal_column>
-					<word_id>12</word_id>
-					<id>17</id>
+					<word_id>7</word_id>
+					<id>9</id>
+					<description></description>
+					<unique_key_name></unique_key_name>
+					<logical_name></logical_name>
+					<physical_name></physical_name>
+					<type>integer</type>
+					<constraint></constraint>
+					<default_value>0</default_value>
+					<auto_increment>false</auto_increment>
+					<foreign_key>false</foreign_key>
+					<not_null>true</not_null>
+					<primary_key>false</primary_key>
+					<unique_key>false</unique_key>
+					<character_set></character_set>
+					<collation></collation>
+					<sequence>
+						<name></name>
+						<schema></schema>
+						<increment></increment>
+						<min_value></min_value>
+						<max_value></max_value>
+						<start></start>
+						<cache></cache>
+						<cycle>false</cycle>
+						<order>false</order>
+						<description></description>
+						<data_type></data_type>
+						<decimal_size>0</decimal_size>
+					</sequence>
+				</normal_column>
+				<normal_column>
+					<word_id>8</word_id>
+					<id>10</id>
 					<description></description>
 					<unique_key_name></unique_key_name>
 					<logical_name></logical_name>
@@ -1047,7 +675,7 @@
 					<description>Non-unique index by acquisition time</description>
 					<columns>
 						<column>
-							<id>8</id>
+							<id>1</id>
 							<desc>false</desc>
 						</column>
 					</columns>
@@ -1060,11 +688,11 @@
 					<description></description>
 					<columns>
 						<column>
-							<id>10</id>
+							<id>3</id>
 							<desc>false</desc>
 						</column>
 						<column>
-							<id>14</id>
+							<id>4</id>
 							<desc>false</desc>
 						</column>
 					</columns>
@@ -1077,11 +705,7 @@
 					<description></description>
 					<columns>
 						<column>
-							<id>10</id>
-							<desc>false</desc>
-						</column>
-						<column>
-							<id>11</id>
+							<id>3</id>
 							<desc>false</desc>
 						</column>
 					</columns>

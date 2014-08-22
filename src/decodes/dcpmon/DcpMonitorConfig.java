@@ -18,23 +18,19 @@ file.
 */
 public class DcpMonitorConfig
 {
-	/** DataSource name in the decodes database to use for input. */
-	public String dataSourceName;
-
+//	data source specifed in "dcpmon" routing spec
+//	/** DataSource name in the decodes database to use for input. */
+//	public String dataSourceName;
+	
 	/** Number of days to store data for. */
 	public int numDaysStorage;
-
-	/** URL pointing to the channel map file. */
-	public String channelMapUrl;
-
-	/** Local file name for ChannelMap */
-	public String channelMapLocalFile;
 
 	/** OMIT the following failure codes from reports: */
 	public String omitFailureCodes;
 
-	/** Optional user name to use in DDS connections. */
-	public String ddsUserName;
+//	Username set by data source, optionally overridden by routspec "username" property.
+//	/** Optional user name to use in DDS connections. */
+//	public String ddsUserName;
 
 	/** limit for red message time alarms */
 	public int redMsgTime;
@@ -72,17 +68,13 @@ public class DcpMonitorConfig
 	/** Last time configuration was loaded. */
 	public long lastLoadTime;
 
-	/** Use LRGS arguments here, rather than as defined in database. */
-	public String lrgsDataSourceArg;
-
-	/** URL from which to download the PDT, leave null to NOT download. */
-	public String pdtUrl;
-
-	/** Local file to load PDT from. */
-	public String pdtLocalFile;
-
-	/** Timeout value in seconds to use for LRGS interfaces. */
-	public int lrgsTimeout;
+//	Data source defined in "dcpmon" routing spec
+//	/** Use LRGS arguments here, rather than as defined in database. */
+//	public String lrgsDataSourceArg;
+//
+//	MJM: use "lrgs.timeout" property in "dcpmon" routing spec
+//	/** Timeout value in seconds to use for LRGS interfaces. */
+//	public int lrgsTimeout;
 
 	/** Raw properties read from file. */
 	private Properties rawProps;
@@ -119,19 +111,20 @@ public class DcpMonitorConfig
 	/**
 	 * This is used to tell the Dcp Monitor that we want to monitor
 	 * all available channels.
-	 * Default is true.
+	 * Default is false.
 	 */
-	public boolean allChannels;
+	public boolean allChannels = false;
 
 	/** URL to include for the agency home in the page footers */
 	public String agencyHomeUrl = "http://mydomain.org/";
 	public String agencyHomeDisplay = "My Agency Home";
 
-	/** Set to true to have computations performed when viewing DCP Messages. */
-	public boolean enableComputations = false;
-	
-	/** If computations enabled, you must provide a comp config file. */
-	public String compConfig = "$DECODES_INSTALL_DIR/computations.conf";
+//	MJM enabling comps & compconfig controlled in the normal way for routing specs.
+//	/** Set to true to have computations performed when viewing DCP Messages. */
+//	public boolean enableComputations = false;
+//	
+//	/** If computations enabled, you must provide a comp config file. */
+//	public String compConfig = "$DECODES_INSTALL_DIR/computations.conf";
 	
 	/** For web service components, we need a singleton */
 	private static DcpMonitorConfig _instance = new DcpMonitorConfig();
@@ -140,7 +133,7 @@ public class DcpMonitorConfig
 	/** Private constructor. Sets default values for all parameters. */
 	public DcpMonitorConfig()
 	{
-		dataSourceName = "localhost";
+//		dataSourceName = "localhost";
 		numDaysStorage = 10;
 		redMsgTime = 0;
 		yellowMsgTime = 2;
@@ -153,21 +146,16 @@ public class DcpMonitorConfig
 		redBattery = 9.0;
 		yellowBattery = 11.0;
 		omitFailureCodes = "";
-		ddsUserName = null;
-		lrgsDataSourceArg = null;
-		pdtUrl = "https://dcs1.noaa.gov/pdts_compressed.txt";
-		pdtLocalFile = "$DECODES_INSTALL_DIR/pdt";
-		channelMapUrl = "https://dcs1.noaa.gov/chans_by_baud.txt";
-		channelMapLocalFile = "$DECODES_INSTALL_DIR/cdt";;
+//		ddsUserName = null;
+//		lrgsDataSourceArg = null;
 		hadsUse = true;
 		hadsUrl =
 			"http://www.weather.gov/ohd/hads/compressed_defs/all_dcp_defs.txt";
 		hadsLocalFile = "$DECODES_INSTALL_DIR/hads";
-		lrgsTimeout = 0;
+//		lrgsTimeout = 0;
 
 		dcpMonType = "dcpmon";
 		nlNamePrefix = "DCPMonDONOTMODIFY-";
-		allChannels = false;
 	}
 
 	/**

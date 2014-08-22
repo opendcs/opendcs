@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.12  2012/07/24 14:03:16  mmaloney
  * Site.explicitList = true;
  *
@@ -132,7 +135,7 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 				close();
 			}
 		});
-
+		noExitAfterRunApp = true;
 	}
 
 	//Overload this method so that we catch when a Database Connection

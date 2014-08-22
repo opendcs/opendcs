@@ -19,9 +19,12 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import opendcs.dai.XmitRecordDAI;
+import opendcs.dao.DatabaseConnectionOwner;
 
+import decodes.db.Database;
 import decodes.tsdb.DbIoException;
 import lrgs.common.DcpAddress;
+import lrgs.common.DcpMsg;
 
 /**
 This class is responsible for writing XmitRecords to the SQL database.
@@ -34,11 +37,17 @@ it is written to the database. This reduces the number of database writes.
 */
 public class XRWriteThread extends Thread
 {
-	/** The age in seconds that entries must be to be archived to database */
-	private int agesec = 5;
-	private static int QueueMax = 1000;
-
 	private static final String module = "XRWriteThread";
+
+	/** The age in msec that entries must be to be archived to database */
+	private long ageToArchiveMS = 30000L;
+
+	/** Maximum number of messages in the queue */
+	private static int queueMaxSize = 10000;
+
+	/** Messages with xmit times within this threshold are considered the same message */
+	public static final long maxTimeDiffMS = 20000L;
+
 	public static long numQueued = 0L;
 	public static long lastMsgMsec = 0L;
 	private DcpMonitor dcpMonitor = null;
@@ -48,10 +57,10 @@ public class XRWriteThread extends Thread
 	/** This wraps XmitRecord and adds an insert time. */
 	class XRWrapper
 	{
-		XmitRecord xr;
+		DcpMsg xr;
 		long insertTime;
 
-		XRWrapper(XmitRecord xr)
+		XRWrapper(DcpMsg xr)
 		{
 			this.xr = xr;
 			this.insertTime = System.currentTimeMillis();
@@ -63,10 +72,11 @@ public class XRWriteThread extends Thread
 	/** shutdown flag */
 	private boolean _shutdown;
 
-	public XRWriteThread(DcpMonitor dcpMonitor)
+	public XRWriteThread()
 	{
-		this.dcpMonitor = dcpMonitor;
-		xmitRecordDao = dcpMonitor.theDb.makeXmitRecordDao(31);
+		dcpMonitor = DcpMonitor.instance();
+		DatabaseConnectionOwner dbo = (DatabaseConnectionOwner)Database.getDb().getDbIo();
+		xmitRecordDao = dbo.makeXmitRecordDao(31);
 		q = new ConcurrentLinkedQueue<XRWrapper>();
 		_shutdown = false;
 	}
@@ -84,10 +94,11 @@ public class XRWriteThread extends Thread
 	 * it is already present. If it is do nothing.
 	 * @return true if enqueued, false if queue is full.
 	 */
-	public synchronized boolean enqueue(XmitRecord xr)
+	public synchronized boolean enqueue(DcpMsg xr)
 	{
 		int sz = q.size();
-		if (sz > QueueMax)
+Logger.instance().debug2("XRWriteThread.enqueue: " + xr.getHeader() + " queue.size=" + sz);
+		if (sz > queueMaxSize)
 		{
 			Logger.instance().warning("Cannot enqueue: queue "
 				+ "size is too big (" + sz + ")");
@@ -98,39 +109,34 @@ public class XRWriteThread extends Thread
 			if (xrw.xr == xr)
 				return true; // already in queue
 
-		Logger.instance().debug3("Enqueue: Before adding XR into Q; Q size = " + q.size());
 		q.add(new XRWrapper(xr));
-		Logger.instance().debug3("Enqueue: After adding XR into Q; Q size = " + q.size());
 		
 		if ((++callNum % 100) == 0)
 		  Logger.instance().debug1("Enqueue: Q size = " + (sz = q.size()));
 		
 		numQueued++;
-		lastMsgMsec = xr.getGoesTimeMsec();
+		lastMsgMsec = xr.getXmitTime().getTime();
 		
 		return true;
 	}
 
 int dCallNum = 0;
 	/**
-	 * If there is an XmitRecord on the queue for longer than 'agesec' seconds,
+	 * If there is an XmitRecord on the queue for longer than ageToArchiveMS,
 	 * or if we are shutting down, return it.
 	 * @return XmitRecord or null if none ready to write.
 	 */
-	public synchronized XmitRecord dequeue()
+	public synchronized DcpMsg dequeue()
 	{
 		XRWrapper xrw = q.peek();
 		if (xrw == null)
 			return null;
 		int sz = q.size();
-		if (sz >= (QueueMax/2)
+		if (sz >= (queueMaxSize/2)
 		 || _shutdown
-		 || System.currentTimeMillis() - xrw.insertTime >= (agesec*1000L))
+		 || System.currentTimeMillis() - xrw.insertTime >= (ageToArchiveMS))
 		{
-			Logger.instance().debug3("Dequeue: Before polling XR from Q; Q size = " + q.size());
 			q.poll();
-			Logger.instance().debug3("Dequeue: After polling XR from Q; Q size = " + q.size());
-
 			if ((++dCallNum % 100) == 0)
 				Logger.instance().debug1("Dequeue: Q size = " + sz);
 			return xrw.xr;
@@ -140,22 +146,42 @@ int dCallNum = 0;
 	}
 
 	/**
-	 * Search the queue for a message with matching address, day
-	 * and second of day. Second of day may be off by as much as 2 min.
+	 * Search the queue for a message with matching address and xmit time.
+	 * The time may be off by as much as maxTimeDiffMS.
 	 * @param dcpAddr the dcp address
 	 * @param tsms the time stamp as a millisecond value
 	 * @return the XmitRecord if one exists, or null if not.
 	 */
-	public synchronized XmitRecord find(DcpAddress dcpAddress, long tsms)
+	public synchronized DcpMsg find(DcpAddress dcpAddress, Date xmitTime)
+	{
+		XRWrapper xrw = findInQueue(dcpAddress, xmitTime);
+		if (xrw != null)
+			return xrw.xr;
+		try { return xmitRecordDao.findDcpTranmission(dcpAddress, xmitTime); }
+		catch(DbIoException ex)
+		{
+			dcpMonitor.handleDbIoException("Finding Xmit", ex);
+			return null;
+		}
+	}
+	
+	/**
+	 * Not synchronized, must only be called from within a synchronized method.
+	 * If match is still in the queue, return its wrapper. Otherwise return null
+	 * @param dcpAddress
+	 * @param xmitTime
+	 * @return wrapper if found, null if not
+	 */
+	private XRWrapper findInQueue(DcpAddress dcpAddress, Date xmitTime)
 	{
 		for(Iterator<XRWrapper> it = q.iterator(); it.hasNext(); )
 		{
 			XRWrapper xrw = it.next();
 			if (xrw.xr.getDcpAddress().equals(dcpAddress))
 			{
-				long tdiff = xrw.xr.getGoesTimeMsec() - tsms;
-				if (tdiff > -120000 && tdiff < 120000)
-					return xrw.xr;
+				long tdiff = xrw.xr.getXmitTime().getTime() - xmitTime.getTime();
+				if (tdiff > -maxTimeDiffMS && tdiff < maxTimeDiffMS)
+					return xrw;
 			}
 		}
 		return null;
@@ -164,26 +190,21 @@ int dCallNum = 0;
 	/** The Thread run method. */
 	public void run()
 	{
-		dcpMonitor.info("XRWriteThread started.");
+		dcpMonitor.info(module + " started.");
 		while(!_shutdown)
 		{
 			try { sleep(1000L); } catch(InterruptedException ex) {}
 			processQueue();
 		}
 		xmitRecordDao.close();
-		dcpMonitor.info("XRWriteThread exiting.");
+		dcpMonitor.info(module + " exiting.");
 	}
 
 	public synchronized void processQueue()
 	{
-		XmitRecord xr;
-		long lastMsec = 0L;
-		int n = 0;
-
-		Logger.instance().debug3("Dequeue: Dequeue XR started; Q size = " + q.size());
+		DcpMsg xr;
 		while(!_shutdown && (xr = dequeue()) != null)
 		{
-			lastMsec = xr.getGoesTimeMsec();
 			try
 			{
 				xmitRecordDao.saveDcpTranmission(xr);
@@ -192,23 +213,34 @@ int dCallNum = 0;
 			{
 				dcpMonitor.handleDbIoException(module + ":processQueue", ex);
 			}
-			if (++n > 50)
-				doCommit();
 		}
-		doCommit();
-		Logger.instance().debug3("Dequeue: Dequeue XR ended; Q size = " + q.size());
-
-		Logger.instance().debug1("After writing " + n 
-			+ ", queue size=" + q.size()
-			+ (lastMsec == 0L ? "" :
-				(", last time stamp = " + new Date(lastMsec))));
 	}
-	private void doCommit()
+	
+	/**
+	 * If the existing message is still in the queue, replace it with the passed
+	 * replacement and return true. Otherwise return false.
+	 * @param existing the existing message that might still be in the queue
+	 * @param replacement the replacement
+	 * @return true if existing was replaced in the queue
+	 */
+	public synchronized boolean replace(DcpMsg existing, DcpMsg replacement)
 	{
-		try { dcpMonitor.theDb.commit(); }
-		catch(decodes.tsdb.DbIoException ex)
+		XRWrapper xrw = findInQueue(existing.getDcpAddress(), existing.getXmitTime());
+		if (xrw != null)
 		{
-			dcpMonitor.warning(module + "doCommit: Error committing: " + ex);
+			xrw.xr = replacement;
+			return true;
+		}
+		return false;
+	}
+
+	public synchronized Date getLastLocalRecvTime()
+	{
+		try { return xmitRecordDao.getLastLocalRecvTime(); }
+		catch(Exception ex)
+		{
+			Logger.instance().warning(module + " getLastLocalRecvTime: " + ex);
+			return null;
 		}
 	}
 }

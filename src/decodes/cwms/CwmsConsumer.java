@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.4  2014/06/27 20:00:44  mmaloney
+*  getSiteName fix: It was using the wrong constant.
+*
 *  Revision 1.3  2014/05/30 13:15:35  mmaloney
 *  dev
 *
@@ -76,6 +79,7 @@ import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbCompLock;
 
 /**
@@ -232,17 +236,7 @@ public class CwmsConsumer extends DataConsumer
 						+ "' -- proceeding without lock.");
 				else
 				{
-					// Determine process ID. Note -- We can't really do this in Java
-					// without assuming a particular OS. Therefore, we rely on the
-					// script that started us to set an environment variable PPID
-					// for parent-process-ID. If not present, we default to 1.
-					int pid = 1;
-					String ppids = System.getProperty("PPID");
-					if (ppids != null)
-					{
-						try { pid = Integer.parseInt(ppids); }
-						catch(NumberFormatException ex) { pid = 1; }
-					}
+					int pid = TsdbAppTemplate.determinePID();
 					
 					String hostname = "unknown";
 					try { hostname = InetAddress.getLocalHost().getHostName(); }

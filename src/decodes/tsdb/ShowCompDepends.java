@@ -142,10 +142,6 @@ public class ShowCompDepends extends TsdbAppTemplate
 		}
 	}
 	
-	private void warning(String x)
-	{
-		Logger.instance().warning("ShowCompDepends: " + x);
-	}
 	private void info(String x)
 	{
 		Logger.instance().info("ShowCompDepends: " + x);

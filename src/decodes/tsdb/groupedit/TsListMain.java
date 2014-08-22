@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.4  2013/04/26 14:22:47  mmaloney
  * added getFrame()
  *
@@ -106,6 +109,7 @@ public class TsListMain extends TsdbAppTemplate
 				close();
 			}
 		});
+		noExitAfterRunApp = true;
 	}
 
 	private void close()

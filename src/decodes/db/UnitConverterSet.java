@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -138,8 +141,7 @@ public class UnitConverterSet extends DatabaseObject
 		// If a match already exists in the exec-set, just return it.
 		StringPair sp = new StringPair(fromAbbr, toAbbr);
 
-		Logger.instance().log(Logger.E_DEBUG2,
-			"Looking for a converter from '" + fromAbbr
+		Logger.instance().debug3("Looking for a converter from '" + fromAbbr
 			+ "' to '" + toAbbr + "'");
 
 		Object obj = execUnitConverters.get(sp);

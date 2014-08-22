@@ -429,7 +429,7 @@ debug(" Processing buffered message of length " + mb_len
 		for(int i=0; i<domsatLen; i++)
 			domsatBuf[DcpMsg.IDX_DATA+i] = message_buf[18+i];
 
-		DcpMsg msg = new DcpMsg(domsatBuf, domsatLen + 37);
+		DcpMsg msg = new DcpMsg(domsatBuf, domsatLen + 37, 0);
 		if (seqNumPresent && seqNum >= 0)
 			msg.setSequenceNum(seqNum);
 		noaaportRecv.archive(msg);

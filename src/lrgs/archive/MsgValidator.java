@@ -171,6 +171,7 @@ public class MsgValidator
 			lastXmitWindow = new XmitWindow(pdtEntry.st_first_xmit_sod,
 				pdtEntry.st_xmit_window, pdtEntry.st_xmit_interval, 
 				(int)(expected_start_tt % SEC_PER_DAY));
+			msg.setXmitWindow(lastXmitWindow);
 
 			// Determine msg end time to nearest msec.
 			Date cstop = msg.getCarrierStop();
@@ -344,7 +345,7 @@ public class MsgValidator
 					+ formatLength(body.length())
 					+ body;
 				byte[] md = msgData.getBytes();
-				DcpMsg msg = new DcpMsg(md, md.length);
+				DcpMsg msg = new DcpMsg(md, md.length, 0);
 				msg.setBaud(expected.pdtEntry.baud);
 				
 				caller.useValidationResults('M', body, msg, 

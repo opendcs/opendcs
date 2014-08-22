@@ -10,6 +10,7 @@ import ilex.util.Logger;
 import opendcs.dai.ScheduleEntryDAI;
 import decodes.db.Constants;
 import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
@@ -58,10 +59,14 @@ public class ScheduleEntryExecutive
 	 */
 	public void check()
 	{
+		if (!scheduleEntry.isEnabled())
+		{
+			Logger.instance().debug1("Checking schedule entry '" + scheduleEntry.getName() 
+				+ "' enabled=" + scheduleEntry.isEnabled());
+			return;
+		}
 		Logger.instance().debug1("Checking schedule entry '" + scheduleEntry.getName() 
 			+ "' enabled=" + scheduleEntry.isEnabled() + ", state=" + runState);
-		if (!scheduleEntry.isEnabled())
-			return;
 
 		if (runState == RunState.initializing)
 		{
@@ -93,6 +98,13 @@ public class ScheduleEntryExecutive
 				Logger.instance().warning(getName() + " taking too long to shutdown, "
 					+ "will attempt thread interrupt.");
 				seThread.interrupt();
+			}
+			
+			// A continuous schedule entry might exit for various transient errors.
+			// Attempt to restart if it does.
+			if (scheduleEntry.getStartTime() == null)
+			{
+				runState = RunState.initializing;
 			}
 		}
 		else
@@ -214,11 +226,19 @@ public class ScheduleEntryExecutive
 			scheduleEntry.getRoutingSpecName());
 		if (rs == null)
 		{
-			Logger.instance().failure("ScheduleEntryExec.startThread: "
+			Logger.instance().failure("ScheduleEntryExec.makeThread: "
 				+ "No such routing spec '" + scheduleEntry.getRoutingSpecName()
 				+ "' in database.");
 			disableScheduleEntry();
 			return null;
+		}
+		try { rs.read(); }
+		catch (DatabaseException ex)
+		{
+			Logger.instance().info("ScheduleEntryExec.makeThread: "
+				+ " Routing Spec '" + scheduleEntry.getRoutingSpecName()
+				+ "' no longer exists in database, disabling the schedule entry: " + ex);
+			disableScheduleEntry();
 		}
 
 		// Allocate a new status structure
@@ -268,8 +288,16 @@ public class ScheduleEntryExecutive
 	{
 		seStatus.setLastModified(new Date());
 		seStatus.setRunStatus(runState.toString() + " " + status);
-		ScheduleEntryDAI scheduleEntryDAO = 
-			Database.getDb().getDbIo().makeScheduleEntryDAO();
+		ScheduleEntryDAI scheduleEntryDAO = null;
+		try
+		{
+			scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
+		}
+		catch(NullPointerException ex)
+		{
+			Logger.instance().debug1("transient error shutting down: " + ex);
+			return;
+		}
 		if (scheduleEntryDAO == null)
 		{
 			Logger.instance().debug1("Cannot write schedule entry. Not supported on this database.");
@@ -347,7 +375,7 @@ public class ScheduleEntryExecutive
 		ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
 		if (scheduleEntryDAO == null)
 		{
-			Logger.instance().debug1("Cannot import schedule entries. Not supported on this database.");
+			Logger.instance().debug1("Schedule entries not supported on this database.");
 			return;
 		}
 

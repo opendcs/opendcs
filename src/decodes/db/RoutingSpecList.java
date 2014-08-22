@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -106,7 +109,7 @@ public class RoutingSpecList extends DatabaseObject
 	*/
 	public void add(RoutingSpec spec)
 	{
-		// MJM 20020922 - if spec is already in collection, do a replace.
+		// if spec is already in collection, do a replace.
 		RoutingSpec rs = null;
 		for(Iterator<RoutingSpec> it = iterator(); it.hasNext(); )
 		{

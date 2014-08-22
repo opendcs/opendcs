@@ -4,9 +4,10 @@ import java.util.Collection;
 import java.util.Date;
 
 import lrgs.common.DcpAddress;
+import lrgs.common.DcpMsg;
 
 import decodes.dcpmon.DcpGroup;
-import decodes.dcpmon.XmitRecord;
+import decodes.dcpmon.XmitMediumType;
 import decodes.tsdb.DbIoException;
 
 public interface XmitRecordDAI
@@ -18,7 +19,7 @@ public interface XmitRecordDAI
 	 * Requires the DCP Monitor Extensions to the Time Series Database.
 	 * @param xr the transmission data
 	 */
-	public void saveDcpTranmission(XmitRecord xr)
+	public void saveDcpTranmission(DcpMsg xr)
 		throws DbIoException;
 
 	/**
@@ -40,7 +41,7 @@ public interface XmitRecordDAI
 	 * @param timestamp
 	 * @return XmitRecord
 	 */
-	public XmitRecord findDcpTranmission(DcpAddress dcpAddress, Date timestamp, int dayNum)
+	public DcpMsg findDcpTranmission(DcpAddress dcpAddress, Date timestamp)
 		throws DbIoException;
 
 
@@ -54,7 +55,7 @@ public interface XmitRecordDAI
 	 * @return num read
 	 * @throws DbIoException
 	 */
-	public int readXmitsByGroup(Collection<XmitRecord> results, int dayNum, DcpGroup grp)
+	public int readXmitsByGroup(Collection<DcpMsg> results, int dayNum, DcpGroup grp)
 		throws DbIoException;
 	
 	/**
@@ -68,7 +69,7 @@ public interface XmitRecordDAI
 	 * @param chan the channel number
 	 * @return the number of records returned.
 	 */
-	public int readXmitsByChannel(Collection<XmitRecord> results, int dayNum, int chan)
+	public int readXmitsByChannel(Collection<DcpMsg> results, int dayNum, int chan)
 		throws DbIoException;
 	
 	/**
@@ -82,7 +83,8 @@ public interface XmitRecordDAI
 	 * @param addr the DCP address or -1 to get all.
 	 * @return the number of records returned.
 	 */
-	public int readXmitsByDcpAddress(Collection<XmitRecord> results, int dayNum, DcpAddress dcpAddress)
+	public int readXmitsByDcpAddress(Collection<DcpMsg> results, int dayNum, 
+		XmitMediumType mediumType, DcpAddress dcpAddress)
 		throws DbIoException;
 	
 	/**
@@ -96,7 +98,7 @@ public interface XmitRecordDAI
 	 * @return XmitRecord containing raw message text including DOMSAT header
 	 * @throws DbIoException on any database error
 	 */
-	public XmitRecord readXmitRawMsg(int dayNum, DcpAddress dcpAddress, Date timestamp)
+	public DcpMsg readXmitRawMsg(int dayNum, DcpAddress dcpAddress, Date timestamp)
 		throws DbIoException;
 	
 	/**
@@ -117,11 +119,16 @@ public interface XmitRecordDAI
 	public String getDcpXmitSuffix(int dayNum, boolean doAllocate)
 		throws DbIoException;
 
-
-
-
 	/**
 	 * Free any resources allocated.
 	 */
 	public void close();
+	
+	/**
+	 * @return the local receive time of the last message stored in the archive, or null
+	 * if archive is empty.
+	 * @throws DbIoException
+	 */
+	public Date getLastLocalRecvTime()
+		throws DbIoException;
 }

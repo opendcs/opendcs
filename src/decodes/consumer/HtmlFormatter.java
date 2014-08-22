@@ -34,7 +34,7 @@ import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 import decodes.dcpmon.DcpMonitor;
-import decodes.dcpmon.DcpNameDescResolver;
+import decodes.dcpmon_old.DcpNameDescResolver;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
 import decodes.drgsinfogui.DrgsReceiverIo;

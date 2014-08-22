@@ -483,20 +483,6 @@ public class PlatformList extends DatabaseObject
 		return platformVec;
 	}
 	
-	/** @return the list of Platforms as a Vector.  */
-	public Vector<Platform> getPlatformVector(ArrayList<String> contMedium)
-	{
-		
-		
-			try { read(contMedium); }
-			catch(DatabaseException ex)
-			{
-				Logger.instance().failure("Cannot read platform list: " + ex);
-			}
-	
-		return platformVector;
-	}
-
 	/** @return the number of Platforms in the list.  */
 	public int size()
 	{
@@ -580,21 +566,6 @@ public class PlatformList extends DatabaseObject
 //System.out.println("Read Platform List: " + size() + " entries.");
 	}
 
-	/**
-	* Read the entire list of Platforms from the database based on transport medium.
-	*/
-	public void read(ArrayList<String> contMedium)
-		throws DatabaseException
-	{
-		
-		if (!myDatabase.siteList.wasRead())
-			myDatabase.siteList.read();
-		myDatabase.getDbIo().readPlatformList(this,contMedium);
-		listWasRead = true;
-//System.out.println("Read Platform List: " + size() + " entries.");
-	}
-
-	
 	/**
 	* Write the list of Platforms to the database.
 	*/

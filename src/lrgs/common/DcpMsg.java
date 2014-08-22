@@ -7,17 +7,27 @@ import java.util.Date;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import lrgs.archive.XmitWindow;
+
+import decodes.db.Constants;
+import decodes.sql.DbKey;
+
 import ilex.util.ArrayUtil;
 import ilex.util.ByteUtil;
 import ilex.util.TwoDigitYear;
 import ilex.util.Logger;
-import decodes.util.ResourceFactory;
 
 /**
 Data Structure that holds a single DCP Message
 */
 public class DcpMsg
 {
+	/**
+	 * Primary database key for this record. This will be undefinedId for messages
+	 * not stored in a database.
+	 */
+	private DbKey recordId = Constants.undefinedId;
+
 	/**
 	  The DCP message data, including header, is stored as an
 	  array of bytes.
@@ -71,8 +81,13 @@ public class DcpMsg
 	/** reserved for future use. */
 	public byte reserved[];
 
-	/** Max length that can be expressed in the 5-digit domsat header. */
-	public static final int MAX_DATA_LENGTH = 99999;
+	/** 
+	 * Max length that can be stored. The upper limit is based on:
+	 * - 5 digit length field in DDS imposes limit to 99999
+	 * - DCP Monitor stores data in BASE64 encoding in 40000 char varchar.
+	 * Thus the limit is 40000 * base64 overhead (3/4) = 30000 chars.
+	 */
+	public static final int MAX_DATA_LENGTH = (int)(40000 * (3./4.));
 	
 	/** transient storage for DRGS interface. Original address is NOT saved. */
 	private DcpAddress origAddress = null;
@@ -83,8 +98,17 @@ public class DcpMsg
 	/** Failure code for non-GOES messages */
 	private char failureCode = (char)0;
 	
-	private Object extraMeasurements = null;
+	/** Set after header is parsed */
+	private int headerLength = 0;
+	
+	/** Max number of failure codes any messge can have */
+	public static final int MAX_FAILURE_CODES = 8;
 
+	/** Additional failure/status codes (used by DCP Monitor) */
+	private char xmitFailureCodes[] = new char[MAX_FAILURE_CODES];
+
+	private XmitWindow xmitWindow = null;
+	
 	// Constructors ===============================================
 
 	/** Allocate an empty DCP message */
@@ -104,17 +128,8 @@ public class DcpMsg
 		setXmitTime(null);
 		setMtmsm(0);
 		setCdrReference(0L);
-	}
-
-	/** 
-	  Use the passed byte array to allocate a new DCP Message.
-	  @param data the data bytes
-	  @param size number of data bytes in this message
-	*/
-	public DcpMsg(byte data[], int size)
-	{
-		this();
-		set(data, size);
+		for(int i=0; i<MAX_FAILURE_CODES; i++)
+			xmitFailureCodes[i] = '\0';
 	}
 
 	/** 
@@ -129,15 +144,6 @@ public class DcpMsg
 		set(data, size, offset);
 	}
 	
-	public DcpMsg(DcpAddress dcpAddress, int flags, byte data[], int size,
-		int offset)
-	{
-		this();
-		this.flagbits = flags;
-		this.dcpAddress = dcpAddress;
-		set(data, size, offset);
-	}
-
 	/**
 	  @return the entire length of the data, including header.
 	*/
@@ -185,17 +191,6 @@ public class DcpMsg
 		data = new byte[size];
 		for(int i=0; i<size; i++)
 			data[i] = (byte)0;
-	}
-
-	/**
-	  Allocate a new data field and populate it with a copy of the
-	  passed byte array.
-	  @param data the data bytes
-	  @param size number of data bytes in this message
-	*/
-	public void set(byte data[], int size)
-	{
-		set(data, size, 0);
 	}
 
 	/**
@@ -412,6 +407,9 @@ public class DcpMsg
 	*/
 	public int getGoesChannel()
 	{
+		if (!DcpMsgFlag.isGOES(flagbits))
+			return 0;
+		
 		byte field[] = getField(IDX_GOESCHANNEL, 3);
 		if (field == null)
 			return 0;
@@ -780,15 +778,108 @@ public class DcpMsg
     	if (DcpMsgFlag.isNetDcp(flagbits))
     		setFailureCode('G');
     }
+    
+    /**
+     * @return the length of the message-proper, not including any header.
+     */
+    public int getMessageLength()
+    {
+    	return length() - headerLength;
+    }
+    
+    public void setHeaderLength(int headerLength)
+    {
+    	this.headerLength = headerLength;
+    }
 
-	public Object getExtraMeasurements()
+    /**
+     * @return database key for this DCP message if it was read from a SQL
+     * database, or Constants.undefinedId if not.
+     */
+	public DbKey getRecordId() { return recordId; }
+
+	/**
+	 * Sets the database key for this message.
+	 * @param id the database key.
+	 */
+	public void setRecordId(DbKey id) { recordId = id; }
+
+	/**
+	  Adds a failure code to this record.
+	  @param code the failure code
+	*/
+	public void addXmitFailureCode(char code)
 	{
-		return extraMeasurements;
+		int i;
+		for(i=0; i < MAX_FAILURE_CODES && xmitFailureCodes[i] != '\0'; i++)
+			if (xmitFailureCodes[i] == code)
+				return;
+		if (i < MAX_FAILURE_CODES)
+			xmitFailureCodes[i] = code;
 	}
 
-	public void setExtraMeasurements(Object extraMeasurements)
+	/** @return a list of failure codes as a string */
+	public String getXmitFailureCodes()
 	{
-		this.extraMeasurements = extraMeasurements;
+		int i=0;
+		while(i < MAX_FAILURE_CODES && xmitFailureCodes[i] != '\0')
+			i++;
+		if (i == 0) return "-";
+		return new String(xmitFailureCodes, 0, i);
 	}
+
+	public boolean hasXmitFailureCode(char code)
+	{
+		for(int i=0; i < MAX_FAILURE_CODES && xmitFailureCodes[i] != '\0'; i++)
+			if (xmitFailureCodes[i] == code)
+				return true;
+		return false;
+	}
+
+	public void rmXmitFailureCode(char code)
+	{
+		for(int i=0; i < MAX_FAILURE_CODES && xmitFailureCodes[i] != '\0'; i++)
+			if (xmitFailureCodes[i] == code)
+			{
+				for(; i<MAX_FAILURE_CODES-1; i++)
+					xmitFailureCodes[i] = xmitFailureCodes[i+1];
+				xmitFailureCodes[MAX_FAILURE_CODES-1] = '\0';
+				return;
+			}
+	}
+	
+	/** These character codes indicate various types of errors */
+	public static final String badCodes = "?MTUBIQW";
+	
+	public boolean hasAnyXmitErrors()
+	{
+		for(int i=0; i < xmitFailureCodes.length; i++)
+			if (badCodes.indexOf(xmitFailureCodes[i]) >= 0)
+				return true;
+		return false;
+	}
+
+	public boolean isGoesRandom()
+	{
+		return (getFlagbits() & DcpMsgFlag.MSG_TYPE_MASK) == DcpMsgFlag.MSG_TYPE_GOES_RD;
+	}
+
+	public boolean hasCarrierTimes()
+	{
+		int f = getFlagbits();
+		return (f & DcpMsgFlag.HAS_CARRIER_TIMES) != 0
+			&& (f & DcpMsgFlag.CARRIER_TIME_EST) == 0; 
+	}
+
+	public XmitWindow getXmitTimeWindow()
+	{
+		return xmitWindow;
+	}
+
+	public void setXmitWindow(XmitWindow xmitWindow)
+	{
+		this.xmitWindow = xmitWindow;
+	}
+
 
 }

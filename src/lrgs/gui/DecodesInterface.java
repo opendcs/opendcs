@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.4  2014/07/03 12:45:44  mmaloney
+*  Don't call readDecodesProperties() this is done by CmdLineArgs.
+*
 *  Revision 1.3  2014/05/28 13:09:31  mmaloney
 *  dev
 *
@@ -156,9 +159,13 @@ public class DecodesInterface
 		{	System.out.print("Init DECODES DB: "); System.out.flush(); }
 
 		// Construct database and the interface specified by properties.
-		Database db = new Database();
-		Database.setDb(db);
-
+		Database db = Database.getDb();
+		if (db == null)
+		{
+			db = new Database();
+			Database.setDb(db);
+		}
+		
 		DatabaseIO dbio;
 		dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
 			settings.editDatabaseLocation);
@@ -439,6 +446,24 @@ public class DecodesInterface
 			// so this is safe to do.
 			xref.startMaintenanceThread(settings.nwsXrefUrl, settings.nwsXrefLocalFile);
 		}
+	}
+	
+	/**
+	 * Called by daemons when they detect that the database has gone down.
+	 * This method closes database connections and discards the cached database
+	 * objects so that a clean restart can be attempted later.
+	 */
+	public static void shutdownDecodes()
+	{
+		Database db = Database.getDb();
+		if (db != null)
+		{
+			DatabaseIO dbio = db.getDbIo();
+			if (dbio != null)
+				dbio.close();
+			db.setDbIo(null);
+		}
+		decodesInitialized = initializedForDecoding = initializedForEditing = false;
 	}
 
 }

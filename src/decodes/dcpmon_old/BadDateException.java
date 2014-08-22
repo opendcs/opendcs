@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1  2014/06/02 14:28:48  mmaloney
+*  rc5 includes initial refactory for dcpmon
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -18,7 +21,7 @@
 *  Implementation of DCP Monitor Server
 *
 */
-package decodes.dcpmon;
+package decodes.dcpmon_old;
 
 import ilex.util.WarningException;
 

@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.2  2014/05/30 13:00:28  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -1866,12 +1869,6 @@ e.printStackTrace();
 	@Override
 	public void updateTransportId(String oldtransportId, String newTransportId)
 			throws DatabaseException, SQLException 
-	{
-	}
-
-	@Override
-	public void readPlatformList(PlatformList pl, ArrayList<String> contMedium)
-			throws DatabaseException
 	{
 	}
 

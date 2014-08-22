@@ -1,21 +1,19 @@
 package opendcs.dbupdate;
 
+import ilex.util.EnvExpander;
 import ilex.util.Logger;
 
 import java.io.Console;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
-
-import lrgs.gui.DecodesInterface;
 
 import decodes.db.Database;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.BadConnectException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.CmdLineArgs;
-import decodes.util.DecodesException;
 
 public class DbUpdate extends TsdbAppTemplate
 {
@@ -31,6 +29,8 @@ public class DbUpdate extends TsdbAppTemplate
 	protected void runApp() throws Exception
 	{
 		System.out.println("Init done.");
+		Database.getDb().networkListList.read();
+
 		if (theDb.getTsdbVersion() < TsdbDatabaseVersion.VERSION_9)
 		{
 			System.out.println("This utility cannot be used on database versions before" +
@@ -49,14 +49,88 @@ public class DbUpdate extends TsdbAppTemplate
 			sql("ALTER TABLE NETWORKLISTENTRY ADD COLUMN PLATFORM_NAME VARCHAR(24)");
 			sql("ALTER TABLE NETWORKLISTENTRY ADD COLUMN DESCRIPTION VARCHAR(80)");
 
-			// Update TSDB_DATABASE_VERSION. Note that separate DECODES DB Version is not used
-			// for 10 and later.
+			String schemaDir = EnvExpander.expand("$DCSTOOL_HOME/schema/")
+				+ (theDb.isCwms() ? "cwms30" : theDb.isOracle() ? "opendcs-oracle" : "opendcs-pg");
+
+			if (!theDb.isCwms()) // CWMS doesn't support DCP Monitor Schema
+			{
+				SQLReader sqlReader = new SQLReader(schemaDir + "dcp_trans_expanded.sql");
+				ArrayList<String> queries = sqlReader.createQueries();
+				for(String q : queries)
+					sql(q);
+			}
+			
+			// The DACQ_EVENT table was not used before 11. Drop it and recreate below.
+			sql("DROP TABLE DACQ_EVENT");
+			
+			// For Oracle, we'll need the table space originally defined on db creation.
+			String tableSpaceSpec = null;
+			SQLReader sqlReader = new SQLReader(schemaDir + "defines.sql");
+			ArrayList<String> queries = sqlReader.createQueries();
+			for(String q : queries)
+				if (q.toUpperCase().startsWith("DEFINE TBL_SPACE_SPEC"))
+				{
+					tableSpaceSpec = q.substring(q.indexOf('\'') + 1);
+					tableSpaceSpec = tableSpaceSpec.substring(0, q.indexOf('\''));
+					break;
+				}
+			
+			sqlReader = new SQLReader(schemaDir + "opendcs.sql");
+			queries = sqlReader.createQueries();
+			for(String q : queries)
+				if (q.contains("CP_COMPOSITE_") // New tables CP_COMPOSITE_DIAGRAM and CP_COMPOSITE_MEMBER
+				 || q.contains("DACQ_EVENT")    // Modified & previously unused DACQ_EVENT was dropped above
+				 || q.contains("SERIAL_PORT_STATUS")) // New table for serial port status
+				{
+					// Oracle will have a table space definition that we need to substitute.
+					int tblSpecIdx = q.indexOf("&TBL_SPACE_SPEC");
+					if (tblSpecIdx != -1 && tableSpaceSpec != null)
+						q = q.substring(0, tblSpecIdx) + tableSpaceSpec;
+					sql(q);
+				}
+		
+			if (!theDb.isOracle())
+			{
+				// NetworkListEntry now has columns PLATFORM_NAME and DESCRIPTION
+				sql("ALTER TABLE NETWORKLISTENTRY ADD COLUMN PLATFORM_NAME VARCHAR(24)");
+				sql("ALTER TABLE NETWORKLISTENTRY ADD COLUMN DESCRIPTION VARCHAR(80)");
+				
+				// TransportMedium has several new columns to support data loggers via modem & network.
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN LOGGERTYPE VARCHAR(24)");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN BAUD INT");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN STOPBITS INT");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN PARITY VARCHAR(1)");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN DATABITS INT");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN DOLOGIN VARCHAR(5)");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN USERNAME VARCHAR(32)");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN PASSWORD VARCHAR(32)");
+			}
+			else
+			{
+				sql("ALTER TABLE NETWORKLISTENTRY ADD PLATFORM_NAME VARCHAR2(24)");
+				sql("ALTER TABLE NETWORKLISTENTRY ADD DESCRIPTION VARCHAR2(80)");
+				
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD LOGGERTYPE VARCHAR2(24)");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD BAUD INT");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD STOPBITS INT");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD PARITY VARCHAR2(1)");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD DATABITS INT");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD DOLOGIN VARCHAR2(5)");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD USERNAME VARCHAR2(32)");
+				sql("ALTER TABLE TRANSPORTMEDIUM ADD PASSWORD VARCHAR2(32)");
+			}
+
+
+			// Update DECODES Database Version
+			sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " + DecodesDatabaseVersion.DECODES_DB_11);
+			theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_11, "");
+			// Update TSDB_DATABASE_VERSION.
 			String desc = "Updated on " + new Date();
 			sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " + TsdbDatabaseVersion.VERSION_10
 				+ ", DESCRIPTION = '" + desc + "'");
 			theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_10, desc);
-			sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " + DecodesDatabaseVersion.DECODES_DB_11);
-			theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_11, "");
+			Database.getDb().networkListList.write();
+
 		}
 	}
 
@@ -104,7 +178,8 @@ public class DbUpdate extends TsdbAppTemplate
 	 * Use console.
 	 */
 	@Override
-	public boolean tryConnect()
+	public void tryConnect()
+		throws BadConnectException
 	{
 		// Connect to the database!
 		Properties props = new Properties();
@@ -113,15 +188,6 @@ public class DbUpdate extends TsdbAppTemplate
 
 		String nm = appNameArg.getValue();
 		Logger.instance().info("Connecting to TSDB as user '" + username + "'");
-		try
-		{
-			appId = theDb.connect(nm, props);
-			return true;
-		}
-		catch(BadConnectException ex)
-		{
-			badConnect(nm, ex);
-			return false;
-		}
+		appId = theDb.connect(nm, props);
 	}
 }

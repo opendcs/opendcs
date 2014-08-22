@@ -117,24 +117,11 @@ public class StaleDataChecker
 				}
 			}
 
-
-			// Determine process ID. Note -- We can't really do this in Java
-			// without assuming a particular OS. Therefore, we rely on the
-			// script that started us to set an environment variable PPID
-			// for parent-process-ID. If not present, we default to 1.
-			int pid = 1;
-			String ppids = System.getProperty("PPID");
-			if (ppids != null)
-			{
-				try { pid = Integer.parseInt(ppids); }
-				catch(NumberFormatException ex) { pid = 1; }
-			}
-
 			String hostname = "unknown";
 			try { hostname = InetAddress.getLocalHost().getHostName(); }
 			catch(Exception e) { hostname = "unknown"; }
 
-			myLock = loadingAppDao.obtainCompProcLock(appInfo, pid, hostname); 
+			myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname); 
 
 		}
 		catch (LockBusyException ex)
@@ -366,9 +353,6 @@ public class StaleDataChecker
 			try { Thread.sleep(1000L); }
 			catch(InterruptedException ex) {}
 		}
-		Logger.instance().info(module + " shutting down.");
-		cleanup();
-		System.exit(0);
 	}
 	
 	private boolean lockCheck()
@@ -507,11 +491,11 @@ public class StaleDataChecker
 
 	}
 	
-	private void info(String msg)
+	public void info(String msg)
 	{
 		Logger.instance().info(module + " " + msg);
 	}
-	private void warning(String msg)
+	public void warning(String msg)
 	{
 		Logger.instance().warning(module + " " + msg);
 	}
