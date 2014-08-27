@@ -17,11 +17,15 @@ import java.util.Date;
 import ilex.util.Logger;
 import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
+import decodes.db.Database;
+import decodes.db.EngineeringUnit;
+import decodes.db.UnitConverter;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.VarFlags;
+import decodes.util.DecodesException;
 
 //AW:JAVADOC
 /**
@@ -40,10 +44,14 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 //AW:INPUTS_END
 
 //AW:LOCALVARS
-	String alg_ver = "1.0.01";
 	double mult = 1.0;
 	boolean multUsed = false;
 	double offs = 0.0;
+	private UnitConverter converter = null;
+	private boolean enhancedDebug = false;
+	private String inUnits = null;
+	private String outUnits = null;
+	private String debugTsid = "DET.Elev-Forebay.Inst.0.0.MIXED-RAW";
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -82,13 +90,54 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 	protected void beforeTimeSlices()
 	{
 //AW:BEFORE_TIMESLICES
+		enhancedDebug = false;
+		ParmRef ref = getParmRef("input");
+		if (ref != null && ref.timeSeries != null 
+		 && ref.timeSeries.getTimeSeriesIdentifier() != null
+		 && ref.timeSeries.getTimeSeriesIdentifier().getUniqueString().toLowerCase().contains(
+			 debugTsid))
+		{
+			enhancedDebug = true;
+		}
+
 		// Normally for copy, output units will be the same as input.
-		String inUnits = getInputUnitsAbbr("input");
-		debug1("CopyAlgorithm, setting output units to '"
-			+ inUnits + "'");
-		if (inUnits != null && inUnits.length() > 0 && !inUnits.equalsIgnoreCase("unknown")
-		 && getParmUnitsAbbr("output") == null)
-			setOutputUnitsAbbr("output", inUnits);
+		converter = null;
+		inUnits = getInputUnitsAbbr("input");
+		outUnits = getParmUnitsAbbr("output");
+		if (enhancedDebug)
+			info("CopyAlgorithm, inUnits=" + inUnits + ", outUnits=" + outUnits);
+		else
+			debug1("CopyAlgorithm, inUnits=" + inUnits + ", outUnits=" + outUnits);
+		
+		if (comp.getProperty("input_EU") != null || comp.getProperty("output_EU") != null)
+		{
+			if (enhancedDebug)
+				info("Will NOT do implicit unit conversion because unit properties are present.");
+			else
+				debug1("Will NOT do implicit unit conversion because unit properties are present.");
+		}
+		else if (inUnits != null && inUnits.length() > 0 && !inUnits.equalsIgnoreCase("unknown"))
+		{
+			// input units are known.
+			if (outUnits != null && outUnits.length() > 0 && !outUnits.equalsIgnoreCase("unknown"))
+			{
+				// output units are also known.
+				if (!inUnits.equalsIgnoreCase(outUnits))
+				{
+					// We need to convert inputs to the output before copy.
+					EngineeringUnit inEU =	EngineeringUnit.getEngineeringUnit(inUnits);
+					EngineeringUnit outEU = EngineeringUnit.getEngineeringUnit(outUnits);
+					converter = Database.getDb().unitConverterSet.get(inEU, outEU);
+				}
+			}
+			else //output units are unknown. Set them to whatever the inUnits is.
+			{
+				setOutputUnitsAbbr("output", inUnits);
+			}
+		}
+		// else inUnits is unknown. This shouldn't happen because tasklist records will
+		// have a units assignment. In any case we can't do any conversions.
+
 		if (multiplier != null && multiplier.trim().length() > 0)
 		{
 			try
@@ -132,12 +181,28 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 	{
 //AW:TIMESLICE
 		// The only thing needed is to copy the input to the output.
-		debug3("CopyAlgorithm doAWTimeSlice- " + alg_ver + " input=" + input);
+		String msg = "CopyAlgorithm doAWTimeSlice input=" + input + ", inUnits=" + inUnits
+			+ ", outUnits=" + outUnits;
+		if (enhancedDebug)
+			info(msg);
+		else
+			debug3(msg);
+		
 		double x = input;
+		if (converter != null)
+		{
+			try { x = converter.convert(x); }
+			catch(DecodesException ex)
+			{
+				warning("Exception in converter: " + ex);
+			}
+		}
 		if (multUsed)
 			x *= mult;
 		x += offs;
 		setOutput(output, x);
+		if (enhancedDebug && outUnits != null && outUnits.toLowerCase().contains("f") && x < 500.)
+			warning("Setting output to " + x + " " + outUnits);
 //AW:TIMESLICE_END
 	}
 
