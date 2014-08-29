@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -231,18 +234,16 @@ public class DataTypeDAO
 		// New datatypes will have no ID, only insert those.
 		for (DataType dt : dts.values())
 		{
-			DataType dbdt = null;
-			if (!dt.getKey().isNull())
-				dbdt = dbSet.getById(dt.getKey());
-			if (dbdt == null)
-				dbdt = dbSet.get(dt.getStandard(), dt.getCode());
+			DataType dbdt = dbSet.get(dt.getStandard(), dt.getCode());
 			if (dbdt != null)
 			{
-				if (!dt.equals(dbdt))
+				if (!dt.getId().equals(dbdt.getId())
+				 || !dt.getDisplayName().equals(dbdt.getDisplayName()))
 				{
 					dt.forceSetId(dbdt.getId());
 					writeDataType(dt);
 				}
+				// Else they're already exactly the same. No need to write.
 			}
 			else // must be new
 				writeDataType(dt);
@@ -263,7 +264,7 @@ public class DataTypeDAO
 				{
 					DbKey id0 = (DbKey)equiv.first;
 					DbKey id1 = (DbKey)equiv.second;
-					debug3("          exists: " + id0 + ", " + id1 );
+//					debug3("          exists: " + id0 + ", " + id1 );
 					if ((id0.equals(dt.getKey()) && id1.equals(eq.getKey()))
 					 || (id1.equals(dt.getKey()) && id0.equals(eq.getKey())))
 					{

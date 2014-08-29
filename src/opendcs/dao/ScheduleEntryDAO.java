@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to the United States Government. No warranty is provided or implied other 
@@ -19,6 +22,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
+import decodes.db.DatabaseException;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
 import decodes.sql.DbKey;
@@ -209,6 +213,22 @@ public class ScheduleEntryDAO
 		}
 
 		scheduleEntry.setLastModified(new Date());
+		// It might be an import from an xml file. If no key, try to lookup from name.
+		if (scheduleEntry.getKey().isNull())
+		{
+			String q = "select schedule_entry_id from schedule_entry where "
+				+ " upper(name) = " + sqlString(scheduleEntry.getName().toUpperCase());
+			ResultSet rs = doQuery(q);
+			try
+			{
+				if (rs != null && rs.next())
+					scheduleEntry.forceSetId(DbKey.createDbKey(rs, 1));
+			}
+			catch (SQLException ex)
+			{
+				warning("Error in query '" + q + "': " + ex);
+			}
+		}
 		if (scheduleEntry.getKey().isNull())
 		{
 			scheduleEntry.forceSetId(getKey("schedule_entry"));
