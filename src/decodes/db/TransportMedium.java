@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.2  2014/08/22 17:23:05  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -277,7 +280,8 @@ public class TransportMedium extends DatabaseObject
 	/** @return true if this is a GOES self-timed or random transport medium. */
 	public boolean isGoes()
 	{
-		return mediumType.toLowerCase().startsWith("goes");
+		return mediumType != null 
+			&& mediumType.toLowerCase().startsWith("goes");
 	}
 
 	/** @return the timezone or null if none is assigned.
@@ -528,6 +532,11 @@ public class TransportMedium extends DatabaseObject
 	public void setPassword(String password)
 	{
 		this.password = password;
+	}
+	
+	public int hashCode()
+	{
+		return mediumType.hashCode() + mediumId.hashCode();
 	}
 }
 

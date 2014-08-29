@@ -103,6 +103,7 @@ public class CwmsSqlDatabaseIO
 
 		// Oracle 11g requires that backslashes NOT be escaped in SQL strings.
 		SqlDbObjIo.escapeBackslash = false;
+		_isOracle = true;
 	}
 
 	/**
@@ -306,6 +307,5 @@ officePrivileges.size());
 	{
 		return new CwmsIntervalDAO(this, dbOfficeId);
 	}
-
 
 }

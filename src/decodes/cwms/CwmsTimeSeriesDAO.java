@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2014/08/15 16:23:36  mmaloney
+ * Get rid of error-prone intermediate variable for unitsAbbr. Always use get method.
+ *
  * Revision 1.4  2014/07/10 17:06:52  mmaloney
  * Always include office code in query when loading tsid cache.
  * Even the 5.1 will have this field, and it should be populated correctly.
@@ -294,7 +297,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			fillTimeSeriesMetadata(cts); // may throw BadTimeSeriesException
 			cts.setIsExpanded();
 		}
-debug3("After fillTimeSeriesMetadata dn='" + cts.getDisplayName() + "'");
+//debug3("After fillTimeSeriesMetadata dn='" + cts.getDisplayName() + "'");
 		StringBuffer q = new StringBuffer();
 		q.append("SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
 			+ " WHERE TS_CODE = " + ts_code);
@@ -306,7 +309,7 @@ debug3("After fillTimeSeriesMetadata dn='" + cts.getDisplayName() + "'");
 			{
 				tsid = getTimeSeriesIdentifier(ts_code);
 				cts.setTimeSeriesIdentifier(tsid);
-debug3("After re-getting tsid dn='" + cts.getDisplayName() + "'");
+//debug3("After re-getting tsid dn='" + cts.getDisplayName() + "'");
 			}
 			catch(NoSuchObjectException ex)
 			{

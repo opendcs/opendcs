@@ -156,7 +156,17 @@ public class NetworkList extends IdDatabaseObject
 	public NetworkListEntry getEntry(String transportId)
 	{
 		return (NetworkListEntry) networkListEntries.get(
-				transportId.toUpperCase());
+			transportId.toUpperCase());
+	}
+	
+	/**
+	 * Remove the entry with the passed transport ID.
+	 * @param transportId the ID to remove
+	 * @return true if entry was deleted, false if it was not in the list.
+	 */
+	public boolean removeEntry(String transportId)
+	{
+		return networkListEntries.remove(transportId.toUpperCase()) != null;
 	}
 
 	/**
@@ -362,4 +372,27 @@ public class NetworkList extends IdDatabaseObject
 		}
 		return false;
 	}
+	
+	public boolean contains(TransportMedium tm)
+	{
+		if ((tm.isGoes() && this.isGoes()
+		 || transportMediumType.equalsIgnoreCase(tm.getMediumType())))
+		{
+			String mediumId = tm.getMediumId();
+			for(Iterator<NetworkListEntry> nleit = iterator(); nleit.hasNext(); )
+			{
+				NetworkListEntry nle = nleit.next();
+				if (mediumId.equalsIgnoreCase(nle.getTransportId()))
+					return true;
+			}
+		}
+		return false;
+	}
+	
+	public boolean isGoes()
+	{
+		return transportMediumType != null 
+			&& transportMediumType.toLowerCase().startsWith("goes");
+	}
+	
 }

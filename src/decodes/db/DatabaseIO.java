@@ -548,9 +548,9 @@ public abstract class DatabaseIO
 	public abstract ArrayList<String> readNetworkListName(String transportId)
 	throws DatabaseException;
 	
-	public abstract  void updateTransportId( String oldtransportId, String newTransportId )
-	throws DatabaseException , SQLException;
-	
+//	public abstract  void updateTransportId( String oldtransportId, String newTransportId )
+//	throws DatabaseException , SQLException;
+//	
 	/**
 	 * Factory method to make a DAO for loading applications
 	 * @return the DAO

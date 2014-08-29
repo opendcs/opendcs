@@ -4,6 +4,9 @@
  * $State$
  *
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2013/04/12 17:09:58  mmaloney
  * column mask on inserts required for VPD
  *
@@ -130,6 +133,8 @@ public class EngineeringUnitIO extends SqlDbObjIo
 		// updated, inserted, or deleted.
 		EngineeringUnitList dbList = new EngineeringUnitList();
 		read(dbList);
+		info("EngineeringUnitIO.write() list to write has " + euList.size()
+			+ " EUs, current database has " + dbList.size());
 
 		for(Iterator<EngineeringUnit> euit = euList.iterator(); euit.hasNext(); )
 		{
@@ -158,6 +163,7 @@ public class EngineeringUnitIO extends SqlDbObjIo
 					sqlOptString(eu.family) + ", " +
 					sqlOptString(eu.measures)
 					+ ")";
+debug3(q);
 				tryUpdate(q);
 			}
 		}
@@ -168,12 +174,16 @@ public class EngineeringUnitIO extends SqlDbObjIo
 			EngineeringUnit dbeu = euit.next();
 			if (!dbeu.getAbbr().equalsIgnoreCase("raw"))
 			{
-				tryUpdate("delete from unitconverter where " +
+				String q = "delete from unitconverter where " +
 					"lower(fromunitsabbr) = "
-					+ sqlString(dbeu.getAbbr().toLowerCase()));
+					+ sqlString(dbeu.getAbbr().toLowerCase());
+				tryUpdate(q);
+debug3(q);
 			}
-			tryUpdate("delete from engineeringunit where lower(unitabbr) = "
-				+ sqlString(dbeu.getAbbr().toLowerCase()));
+			String q = "delete from engineeringunit where lower(unitabbr) = "
+				+ sqlString(dbeu.getAbbr().toLowerCase());
+debug3(q);
+			tryUpdate(q);
 		}
 	}
 

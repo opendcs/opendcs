@@ -69,7 +69,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			tableModel = new NetlistContentsTableModel(theObject);
 			netlistContentsTable = new SortingListTable(tableModel, new int[]
 			{ 15, 25, 60 });
-			jbInit();
+			guiInit();
 			fillFields();
 			if (nlFileChooser == null)
 			{
@@ -120,7 +120,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 	}
 
 	/** Initializes GUI components */
-	private void jbInit() throws Exception
+	private void guiInit() throws Exception
 	{
 		this.setLayout(new BorderLayout());
 		JPanel mainPanel = new JPanel(new BorderLayout());
@@ -217,6 +217,20 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 8, 4, 8), 0, 0));
+		
+		JButton editPlatformIdButton = 
+			new JButton(dbeditLabels.getString("NetlistEditPanel.EditManual"));
+		editPlatformIdButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				editManualPressed();
+			}
+		});
+		eastButtonPanel.add(editPlatformIdButton,
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(4, 8, 4, 8), 0, 0));
 
 		selectFromPdtButton = 
 			new JButton(dbeditLabels.getString("NetlistEditPanel.SelectFromPDT"));
@@ -228,7 +242,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			}
 		});
 		eastButtonPanel.add(selectFromPdtButton,
-			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 8, 4, 8), 0, 0));
 		
@@ -242,7 +256,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			}
 		});
 		eastButtonPanel.add(importDotNlButton,
-			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 8, 4, 8), 0, 0));
 		
@@ -256,9 +270,37 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			}
 		});
 		eastButtonPanel.add(removeButton, 
-			new GridBagConstraints(0, 4, 1, 1, 0.0, 1.0,
+			new GridBagConstraints(0, 5, 1, 1, 0.0, 1.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(12, 8, 4, 8), 0, 0));
+		
+		netlistContentsTable.addMouseListener(
+			new MouseAdapter()
+			{
+				public void mouseClicked(MouseEvent e)
+				{
+					if (e.getClickCount() == 2)
+					{
+       					editManualPressed();
+					}
+				}
+			});
+
+	}
+
+	protected void editManualPressed()
+	{
+		int row = netlistContentsTable.getSelectedRow();
+		if (row == -1)
+		{
+			TopFrame.instance().showError(dbeditLabels.getString("NetlistEditPanel.EditError"));
+			return;
+		}
+		NetworkListEntry nle = tableModel.getObjectAt(row);
+		NetlistEntryDialog dlg = new NetlistEntryDialog(nle);
+		launchDialog(dlg);
+		if (dlg.wasOkPressed())
+			tableModel.replace(nle, row);
 	}
 
 	protected void mediumTypeSelected()
@@ -617,10 +659,7 @@ class NetlistContentsTableModel extends AbstractTableModel implements SortingLis
 		return columnNames[col];
 	}
 
-	public boolean isCellEditable(int r, int c)
-	{
-		return true;
-	}
+	public boolean isCellEditable(int r, int c) { return false; }
 
 	NetworkListEntry getObjectAt(int r)
 	{
@@ -653,6 +692,12 @@ class NetlistContentsTableModel extends AbstractTableModel implements SortingLis
 	void deleteObject(NetworkListEntry ob)
 	{
 		theList.remove(ob);
+		fireTableDataChanged();
+	}
+	
+	void replace(NetworkListEntry ob, int row)
+	{
+		theList.set(row, ob);
 		fireTableDataChanged();
 	}
 

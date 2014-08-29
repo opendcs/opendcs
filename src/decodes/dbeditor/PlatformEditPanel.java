@@ -4,6 +4,9 @@
  *  Open Source Software
  *  
  *  $Log$
+ *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ *  OPENDCS 6.0 Initial Checkin
+ *
  *  Revision 1.6  2013/03/21 18:27:40  mmaloney
  *  DbKey Implementation
  *
@@ -16,15 +19,14 @@ import javax.swing.border.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 import java.awt.event.*;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.Iterator;
 import java.util.Date;
 import java.util.ResourceBundle;
 
+import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
 import ilex.util.Logger;
@@ -109,10 +111,6 @@ ConfigSelectController
 	/** The referenced config, used for populating sensor lists. */
 	private PlatformConfig refConfig = null;
 
-	/**
-	 * Contains the old DCP address as key and new DCP address as new value. Used to track if any change is done in DCP address in TM.	
-	 */
-	private Hashtable< String , String> modifiedTransportId =  new Hashtable<String, String>();
 	/** No-args constructor does basic component construction */
 	public PlatformEditPanel()
 	{
@@ -709,48 +707,16 @@ ConfigSelectController
 	void editTransportMediaPressed()
 	{
 		TransportMedium tm = transportTableModel.getObjectAt(
-				this.transportMediaTable.getSelectedRow());
-		int row = this.transportMediaTable.getSelectedRow();
+			transportMediaTable.getSelectedRow());
 		if (tm == null)
 		{
 			parent.showError(
-					dbeditLabels.getString("PlatformEditPanel.selectTmEdit"));
+				dbeditLabels.getString("PlatformEditPanel.selectTmEdit"));
 			return;
 		}
-		String oldDCPAddr = tm.getMediumId();// store value of dcp address before user can edit
 		TransportMediaEditDialog dlg = new TransportMediaEditDialog(
-				thePlatform, tm, transportTableModel);
+			thePlatform, tm, transportTableModel);
 		launchDialog(dlg);
-
-		//check if DCP address has been changed for the transport medium and store the old value as key and new DCP as value in hashtable.
-		if(!oldDCPAddr.equals(tm.getMediumId()))
-		{
-
-
-			Enumeration<String> oldDcpAddrs	 = modifiedTransportId.keys();
-			Enumeration<String> newDcpAddrs = modifiedTransportId.elements();
-			boolean found =false;
-
-			// There can be a case where user edited DCP addrress but before saving again edited it. 
-			//Hence the previous edited value will be present as value in hashtable. 
-			//and that value should now be replaced by latest DCP id.			
-			while(newDcpAddrs.hasMoreElements())
-			{
-				String oldDcp = oldDcpAddrs.nextElement(); //get the old DCP id stored as key.
-				String newDCP  =newDcpAddrs.nextElement(); // new DCP id stored as value.
-				if(oldDCPAddr.equals(newDCP)) //checks if DCP id stored before editing was a new DCP value for a previous edit.
-				{
-					modifiedTransportId.put(oldDcp, tm.getMediumId());//replace previous value
-					found=true;
-					break;
-				}
-			}
-			if(!found)
-				modifiedTransportId.put(oldDCPAddr, tm.getMediumId());//insert new key-value pair
-		}
-	
-
-
 	}
 
 	/** Called when Transport Medium 'Delete' button pressed. */
@@ -777,7 +743,6 @@ ConfigSelectController
 	{
 		thePlatform.isProduction = isProductionCheck.isSelected();
 	}
-
 
 	/**
 	 * @return true if changes have been made to this screen since the last
@@ -821,57 +786,84 @@ ConfigSelectController
 			Database.getDb().platformList.write();
 			parent.getPlatformListPanel().reSort();
 
-			/*
-			 * if DCP address has been changed in transport medium,
-			 *  check if it is present in any network list and 
-			 *  ask user to update the network list with new value.
-			 */
-			if(modifiedTransportId.size()!=0)
+			// If any transport media have changed, and those media were in a netlist,
+			// ask user if she wants to update the list.
+			ArrayList<ListTmAssoc> affectedLists = new ArrayList<ListTmAssoc>();
+			StringBuilder listStr = new StringBuilder();
+			for(Iterator<TransportMedium> oldTmIt = origPlatform.getTransportMedia();
+				oldTmIt.hasNext(); )
 			{
-				for(Iterator it = modifiedTransportId.keySet().iterator(); it.hasNext(); )
-				{
-					String oldDcpId = (String)it.next(); //old DCP Ids are stored as keys.
+				TransportMedium oldTm = oldTmIt.next();
+				TransportMedium newTm = thePlatform.getTransportMedium(oldTm.getMediumType());
+System.out.println("oldTm: type=" + oldTm.getMediumType() + ", id=" + oldTm.getMediumId());
+System.out.println("newTm: " + 
+	(newTm == null ? "null" : 
+	("type=" + newTm.getMediumType() + ", id=" + newTm.getMediumId())));
 
-					//get network list with old DCP id.
-					ArrayList<String > networklistArray=Database.getDb().getDbIo().readNetworkListName(oldDcpId);
-					if(networklistArray!=null && networklistArray.size()!=0)
+				if (newTm != null && newTm.getMediumId().equals(oldTm.getMediumId()))
+					continue;
+
+				// Else either the TM was deleted or changed.
+				for(NetworkList netlist : Database.getDb().networkListList.getList())
+					if (netlist.contains(oldTm))
 					{
-						int res=JOptionPane
-						.showConfirmDialog(
-								null,
-								"The DCP address "+oldDcpId+" has been changed. Do you want to update the network lists to contain the new address?",
-								"Update Network Lists.", JOptionPane.YES_NO_OPTION);
-						if(res ==0)
+						affectedLists.add(new ListTmAssoc(oldTm, newTm, netlist));
+						listStr.append(netlist.name + ", ");
+					}
+			}
+			
+			if (affectedLists.size() != 0)
+			{
+				String m = "The network lists: "
+					+ listStr.toString()
+					+ "contain this Platform. Do you want to update the lists with "
+					+ "the new transport medium ID?";
+				int res = JOptionPane.showConfirmDialog(null, 
+					AsciiUtil.wrapString(m, 60), 
+					"Update Network List?", JOptionPane.YES_NO_OPTION);
+				if(res == JOptionPane.OK_OPTION)
+				{
+					for (ListTmAssoc lta : affectedLists)
+					{
+						lta.netlist.removeEntry(lta.oldTm.getMediumId());
+						if (lta.newTm != null)
 						{
-							//update networklistentry with new value of DCP address.
-							Database.getDb().getDbIo().updateTransportId(oldDcpId, (String)modifiedTransportId.get(oldDcpId));
-
-							Vector networkLists = Database.getDb().networkListList.getList();
-
-							//clear previous network list entries from list.
-							for(int i=0;i<networkLists.size();i++)
+							NetworkListEntry nle = 
+								new NetworkListEntry(lta.netlist, lta.newTm.getMediumId());
+						
+							Site s = thePlatform.getSite();
+							String sn = null;
+							if (s != null)
+								sn = s.getPreferredName().getNameValue();
+							if (sn != null)
+								nle.setPlatformName(sn);
+							else
+								nle.setPlatformName(thePlatform.makeFileName());
+							// Get a description from either platform or site record.
+							String desc = s.getDescription();
+							if (desc == null)
 							{
-								NetworkList nl = (NetworkList)  networkLists.get(i);
-								nl.networkListEntries.clear();
-
+								desc = thePlatform.description;
+								// netlist entry description is only the 1st line of platform
+								// desc.
+								if (desc != null)
+								{
+									int idx = desc.indexOf('\r');
+									if (idx == -1)
+										idx = desc.indexOf('\n');
+									if (idx != -1)
+										desc = desc.substring(0, idx);
+								}
 							}
-
-							//clear all networklists from networklistlist since we will re-read for new values.
-							Database.getDb().networkListList.getList().removeAllElements();
-							Database.getDb().networkListList.read();// re-read
+							nle.setDescription(desc);
+							lta.netlist.addEntry(nle);
+							lta.netlist.write();
 						}
-
 					}				
 				}
-				modifiedTransportId.clear();
 			}
 		}
 		catch(DatabaseException e)
-		{
-			parent.showError(e.toString());
-			return false;
-		}
-		catch(SQLException e)
 		{
 			parent.showError(e.toString());
 			return false;
@@ -880,8 +872,7 @@ ConfigSelectController
 		// Make a new copy in case user wants to keep editing.
 		origPlatform = thePlatform;
 		thePlatform = origPlatform.copy();
-		//MJM 2006 05/12 commented out the following:
-		//		setTopObject(origPlatform);
+
 		setTopObject(thePlatform);
 		transportTableModel.setPlatform(thePlatform);
 		sensorTableModel.setPlatform(thePlatform, refConfig);
@@ -1305,5 +1296,25 @@ class SensorInfoTableModel extends AbstractTableModel
 	void remove(PlatformSensor ob)
 	{
 		thePlatform.platformSensors.remove(ob);
+	}
+}
+
+/**
+ * Used for detecting associations to network lists when a TM is changed.
+ * @author mmaloney
+ *
+ */
+class ListTmAssoc
+{
+	TransportMedium oldTm;
+	TransportMedium newTm;
+	NetworkList netlist;
+	
+	public ListTmAssoc(TransportMedium oldTm, TransportMedium newTm, NetworkList netlist)
+	{
+		super();
+		this.oldTm = oldTm;
+		this.newTm = newTm;
+		this.netlist = netlist;
 	}
 }

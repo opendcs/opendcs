@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2014/08/22 17:23:10  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -190,7 +193,7 @@ public class SqlDatabaseIO
 	/** Kludge for Oracle DATE data types - the database time zone: */
 	String databaseTimeZone = "UTC";
 
-	boolean _isOracle = false;
+	protected boolean _isOracle = false;
 
 	protected Calendar readCal = null;
 	private OracleDateParser oracleDateParser = null;
@@ -210,20 +213,6 @@ public class SqlDatabaseIO
 	public SqlDatabaseIO()
 	{
 		DecodesSettings settings = DecodesSettings.instance();
-		TimeZone tz = TimeZone.getTimeZone(settings.sqlTimeZone);
-		String writeFmt = settings.sqlDateFormat;
-		String readFmt = settings.SqlReadDateFormat;
-		if (isOracle())
-		{
-			oracleDateParser = new OracleDateParser(tz);
-			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
-			readFmt = "yyyy-MM-dd HH:mm:ss";
-		}
-		writeDateFmt = new SimpleDateFormat(writeFmt);
-		writeDateFmt.setTimeZone(tz);
-		readDateFmt = new SimpleDateFormat(readFmt);
-		readDateFmt.setTimeZone(tz);
-		readCal = Calendar.getInstance(tz);
 
 		// Initialize the child IO objects
 		// Their are dependencies among them, which should be enforced
@@ -455,11 +444,8 @@ public class SqlDatabaseIO
 		Statement stmnt = null;
 		try
 		{
-			String databaseType = getConnection().getMetaData().getDatabaseProductName();
-	
-			if (databaseType.equalsIgnoreCase("Oracle"))
+			if (_isOracle)
 			{
-				_isOracle = true;
 				oracle.jdbc.OracleConnection ocon = (oracle.jdbc.OracleConnection)getConnection();
 				stmnt = getConnection().createStatement();
 
@@ -520,6 +506,32 @@ public class SqlDatabaseIO
 	
 	public synchronized void determineVersion()
 	{
+		try
+		{
+			String productName = getConnection().getMetaData().getDatabaseProductName();
+			_isOracle = productName.toLowerCase().contains("oracle");
+		}
+		catch (SQLException ex)
+		{
+			Logger.instance().warning("SqlDatabaseIO.determineVersion() "
+				+ "Cannot determine Database Product Name: " + ex);
+		}
+		
+		TimeZone tz = TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone);
+		String writeFmt = DecodesSettings.instance().sqlDateFormat;
+		String readFmt = DecodesSettings.instance().SqlReadDateFormat;
+		if (_isOracle)
+		{
+			oracleDateParser = new OracleDateParser(tz);
+			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
+			readFmt = "yyyy-MM-dd HH:mm:ss";
+		}
+		writeDateFmt = new SimpleDateFormat(writeFmt);
+		writeDateFmt.setTimeZone(tz);
+		readDateFmt = new SimpleDateFormat(readFmt);
+		readDateFmt.setTimeZone(tz);
+		readCal = Calendar.getInstance(tz);
+
 		readVersionInfo(this);
 		TimeSeriesDb.readVersionInfo(this);
 	}
@@ -1909,38 +1921,38 @@ public class SqlDatabaseIO
 		}
 	}
 	
-	/**
-	  Reads  names of NetworkList  from the database.  This uses
-	  the transport id to uniquely identify the networklist containing that transport id
-	   in the database.
-	  @param transportId the value of transport id contained in network list.
-	*/
-	public synchronized void updateTransportId( String oldtransportId, String newTransportId )
-		
-	{
-		try{
-		_platformListIO.updateTransportId(oldtransportId, newTransportId);
-		}
-		catch(DatabaseException ex)
-		{
-			//System.out.println(ex);
-			ex.printStackTrace(System.out);
-		}
-			catch (SQLException e) 
-			{
-				//System.out.println(e);
-				e.printStackTrace(System.out);
-				try { rollback(); }
-				catch (SQLException e1)
-				{
-					//System.err.println(e1);
-					e1.printStackTrace(System.err);
-
-				}
-				
-			}
-			
-	}
+//	/**
+//	  Reads  names of NetworkList  from the database.  This uses
+//	  the transport id to uniquely identify the networklist containing that transport id
+//	   in the database.
+//	  @param transportId the value of transport id contained in network list.
+//	*/
+//	public synchronized void updateTransportId( String oldtransportId, String newTransportId )
+//		
+//	{
+//		try{
+//		_platformListIO.updateTransportId(oldtransportId, newTransportId);
+//		}
+//		catch(DatabaseException ex)
+//		{
+//			//System.out.println(ex);
+//			ex.printStackTrace(System.out);
+//		}
+//			catch (SQLException e) 
+//			{
+//				//System.out.println(e);
+//				e.printStackTrace(System.out);
+//				try { rollback(); }
+//				catch (SQLException e1)
+//				{
+//					//System.err.println(e1);
+//					e1.printStackTrace(System.err);
+//
+//				}
+//				
+//			}
+//			
+//	}
 	
 	public boolean isOracle()
 	{

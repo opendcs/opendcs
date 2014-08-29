@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.3  2014/08/22 17:23:10  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  * Revision 1.2  2014/06/27 20:18:19  mmaloney
  * New columns in Network List Entry table for DB version 11.
  *
@@ -617,8 +620,11 @@ public class NetworkListListIO extends SqlDbObjIo
 			+ sqlReqString(nle.transportId);
 		if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
 		{
+			String desc = nle.getDescription();
+			if (desc != null && desc.length() > 80)
+				desc = desc.substring(0, 80);
 			q = q + ", " + sqlOptString(nle.getPlatformName())
-				+ ", " + sqlOptString(nle.getDescription());
+				+ ", " + sqlOptString(desc);
 		} 
 		q += ")";
 		executeUpdate(q);

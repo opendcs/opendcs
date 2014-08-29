@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.12  2013/03/28 17:29:09  mmaloney
 *  Refactoring for user-customizable decodes properties.
 *
@@ -56,8 +59,6 @@ public class DbImport
 		"Validate Only", "", TokenOptions.optSwitch, false);
 	static BooleanToken keepOldArg = new BooleanToken("o",
 		"Keep old records on conflict", "", TokenOptions.optSwitch, false);
-	static BooleanToken writeReflistArg = new BooleanToken("r",
-		"Write Reference Lists", "", TokenOptions.optSwitch, false);
 	static StringToken agencyArg = new StringToken("A", "default agency code", 
 		"", TokenOptions.optSwitch, "");
 	static StringToken platOwnerArg = new StringToken("O", "Platform Owner", "",
@@ -81,12 +82,14 @@ public class DbImport
 	static BooleanToken overwriteDbConfirm = new BooleanToken("y",
 		"Confirm overwrite (otherwise program will ask for confirmation.)", "",
 		TokenOptions.optSwitch, false);
+	static BooleanToken reflistArg = new BooleanToken("r",
+		"Deprecated write-reflist arg. (Reflists are always written.)", "",
+		TokenOptions.optSwitch, false);
 	
 	static
 	{
 		cmdLineArgs.addToken(validateOnlyArg);
 		cmdLineArgs.addToken(keepOldArg);
-		cmdLineArgs.addToken(writeReflistArg);
 		cmdLineArgs.addToken(agencyArg);
 		cmdLineArgs.addToken(platOwnerArg);
 		cmdLineArgs.addToken(dbLocArg);
@@ -95,6 +98,7 @@ public class DbImport
 		cmdLineArgs.addToken(noConfigs);
 		cmdLineArgs.addToken(overwriteDb);
 		cmdLineArgs.addToken(overwriteDbConfirm);
+		cmdLineArgs.addToken(reflistArg);
 	}
 
 	/**
@@ -149,11 +153,18 @@ public class DbImport
 		dbImport.dumpDTS("after initStageDb");
 		dbImport.readXmlFiles();
 		dbImport.dumpDTS("after readXmlFiles");
+Logger.instance().debug3("After readXmlFiles, there are "
++ Database.getDb().engineeringUnitList.size() + " EUs");
 		dbImport.mergeStageToTheDb();
+		
 		dbImport.dumpDTS("after mergeStageToTheDb");
+Logger.instance().debug3("After mergeStageToTheDb, there are "
+	+ Database.getDb().engineeringUnitList.size() + " EUs");
 		if (!dbImport.validateOnly)
 		{
 			dbImport.normalizeTheDb();
+Logger.instance().debug3("After normalizeTheDb, there are "
+	+ Database.getDb().engineeringUnitList.size() + " EUs");
 			dbImport.writeTheChanges();
 			dbImport.dumpDTS("after writeTheChanges");
 		}
@@ -168,12 +179,9 @@ public class DbImport
 	XmlDatabaseIO stageDbio;  // For reading the input files.
 	TopLevelParser topParser; // Top level XML parser.
 	Vector<IdDatabaseObject> newObjects;        // Stores new DatabaseObjects to be added.
-	//boolean enumsModified;     // True if an EnumList file was parsed.
-	boolean euListSeen;       // True if an EngineeringUnitList file was parsed.
-	boolean writeEUList;
-	boolean writeEnumList;
+//	boolean writeEnumList;
 	boolean writePlatformList;
-	boolean writeDataTypes;
+//	boolean writeDataTypes;
 	private Pdt pdt = null;
 	
 	DbImport()
@@ -427,6 +435,9 @@ public class DbImport
 				}
 			}
 		}
+		// BUT ... if I am overwriting, I want to keep the EU list, Data Type list
+		// and Unit Converter lists completely separate to avoid merge.
+		else Logger.instance().debug3("EU and DT lists will remain separate.");
 	}
 
 	/** Read the XML files into the staging database. */
@@ -435,7 +446,6 @@ public class DbImport
 	{
 		//enumsModified = false;
 		EnumParser.enumParsed = false;
-		euListSeen = false;
 
 		// Read all the files into a new 'staging' database.
 		for(int i = 0; i < fileArgs.NumberOfValues(); i++)
@@ -482,13 +492,13 @@ public class DbImport
 //				// the fact that I saw an EnumList file.
 //				enumsModified = true;
 //			}
-			else if (ob instanceof EngineeringUnitList)
-			{
-				// XML parser will add any EUs and Converters that it sees to
-				// the EU List and UC Set of the current database (stageDb). 
-				// So I just need to record the fact that I saw an EUList File.
-				euListSeen = true;
-			}
+//			else if (ob instanceof EngineeringUnitList)
+//			{
+//				// XML parser will add any EUs and Converters that it sees to
+//				// the EU List and UC Set of the current database (stageDb). 
+//				// So I just need to record the fact that I saw an EUList File.
+//				euListSeen = true;
+//			}
 		}
 
 		/*
@@ -543,7 +553,46 @@ public class DbImport
 	*/
 	private void mergeStageToTheDb()
 	{
+Logger.instance().debug3("mergeStageToTheDb 0: #EUs=" + theDb.engineeringUnitList.size());
+Logger.instance().debug3("the db and stage EU lists are "
++ (theDb.engineeringUnitList == stageDb.engineeringUnitList ? "" : "NOT") + " the same.");
+
 		Database.setDb(theDb);
+		
+		if (overwriteDb.getValue())
+		{
+			theDb.engineeringUnitList.clear();
+			theDb.unitConverterSet.clear();
+			theDb.dataTypeSet.clear();
+			if (EnumParser.enumParsed)
+				theDb.enumList.clear();
+		}
+		
+		// An EU is just a bean, not a DatabaseObject. So I can just copy the objects
+		// from stage into db-to-write.
+		for(Iterator<EngineeringUnit> euit = stageDb.engineeringUnitList.iterator();
+			euit.hasNext(); )
+			theDb.engineeringUnitList.add(euit.next());
+		// A UnitConverterDb is an IdDatabaseObject, so it knows which database it
+		// belongs to. Therefore, I have to make copies in the db to write.
+		for(Iterator<UnitConverterDb> ucdbit = stageDb.unitConverterSet.iteratorDb();
+			ucdbit.hasNext(); )
+		{
+			UnitConverterDb stageUC = ucdbit.next();
+			UnitConverterDb dbUC = stageUC.copy();
+			dbUC.clearId();
+			theDb.unitConverterSet.addDbConverter(dbUC);
+		}
+		// Likewise, a DataType is an IdDatabaseObject, so have to make copies.
+		for(Iterator<DataType> dtit = stageDb.dataTypeSet.iterator();
+			dtit.hasNext(); )
+		{
+			DataType stageDT = dtit.next();
+			// getDataType will create it in the current database ('theDb')
+			DataType.getDataType(stageDT.getStandard(), stageDT.getCode());
+		}
+Logger.instance().debug3("mergeStageToTheDb 1: #EUs=" + theDb.engineeringUnitList.size());
+Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineeringUnitList.size());
 
 		if (validateOnly)
 		{
@@ -551,22 +600,6 @@ public class DbImport
 				+ " database. No changes will actually been made.");
 		}
 
-		writeEUList = false;
-		if (euListSeen)
-		{
-			/*
-			  20040420 MJM
-			  See initStageDb, 'stageDb' EU list is set to the list object
-			  in 'theDb'. So it's pointless to compare objects from the two
-			  lists, because its the same list!
-			  Hence, if we saw an EU list file on command line, always write.
-			*/
-			writeEUList = true;  // Added
-		}
-
-		writeEnumList = false;
-		// Only do this is an enumlist file was seen on command line.
-		//if (enumsModified)
 		if (EnumParser.enumParsed)
 		{
 			for(Iterator<DbEnum> it = stageDb.enumList.iterator(); it.hasNext(); )
@@ -582,7 +615,6 @@ public class DbImport
 						EnumValue ev = evit.next();
 						info("    " + ev.value + " - " + ev.description);
 					}
-					writeEnumList = true;
 				}
 				else
 				{
@@ -596,7 +628,6 @@ public class DbImport
 								ev.value, ev.description, 
 								ev.execClassName, ev.editClassName);
 						}
-						writeEnumList = true;
 					}
 					else
 						info("Keeping old version of Enum '"
@@ -813,18 +844,6 @@ public class DbImport
 			}
 		}
 
-		/*
-		  20040420 MJM
-		  Likewise, initStageDb, sets the data type collection in
-		  stageDb to the one in theDb. They are the same list.
-
-		  Furthermore, since data types can come from platform configs,
-		  presentation groups, or equivalence list files, detecting new
-		  data types is non-trivial. Take the easy way out and always
-		  rewrite the merged list.
-		*/
-		writeDataTypes = true;
-
 		// Then make sure that all new equivalences are asserted in the new DB.
 		// Note: data-type equivalences can never be unasserted by dbimport.
 		// The only way to do that is to flush the database and re-import.
@@ -847,7 +866,6 @@ public class DbImport
 					debug(1, "Asserting equivalence between data types '"
 						+ theOb.toString() + "' and '" + tdt.toString() + "'");
 					theOb.assertEquivalence(tdt);
-					writeDataTypes = true;
 				}
 			}
 		}
@@ -905,30 +923,25 @@ public class DbImport
 			}
 		}
 
+//MJM 20140826 I don't think we need to do the following. DataTypes are always
+//created via DataType.getDataType method, regardless of where they're parsed
+//from (config sensors, dp elements, etc.) So they'll already be in the DataTypeSet
+//which was copied above.
 		/*
 		  ConfigSensors and DataPresentation elements contain references
-		  to DataType objects. Data types need to be merged.
-		*/
+		  to DataType objects.
+		  Change the references to the object in the db-to-write.
+		 */
 		for(PlatformConfig stagePc : stageDb.platformConfigList.values())
 		{
 			for(Iterator<ConfigSensor> sit = stagePc.getSensors(); sit.hasNext();)
 			{
-				ConfigSensor cs = sit.next();
-				for(int dtidx = 0; dtidx < cs.getDataTypeVec().size(); dtidx++)
+				ConfigSensor stageSensor = sit.next();
+				for(int dtidx = 0; dtidx < stageSensor.getDataTypeVec().size(); dtidx++)
 				{
-					DataType dt = cs.getDataTypeVec().get(dtidx);
-					DataType dbdt = theDb.dataTypeSet.get(dt.getStandard(), dt.getCode());
-	
-					if (dbdt != null && dbdt != dt)
-					{
-						// DataType already exists, replace copy in CS.
-						cs.getDataTypeVec().set(dtidx, dbdt);
-					}
-					else            
-					{	// DataType is new, add it to set.
-						theDb.dataTypeSet.add(dt);
-						writeDataTypes = true;
-					}
+					DataType dt = stageSensor.getDataTypeVec().get(dtidx);
+					DataType dbdt = DataType.getDataType(dt.getStandard(), dt.getCode());
+					stageSensor.getDataTypeVec().set(dtidx, dbdt);
 				}
 			}
 		}
@@ -938,19 +951,12 @@ public class DbImport
 			PresentationGroup pg = pgit.next();
 			for(Iterator<DataPresentation> dpit = pg.iterator(); dpit.hasNext(); )
 			{
-				DataPresentation dp = dpit.next();
-				if (dp.getDataType() != null)
+				DataPresentation stageDP = dpit.next();
+				if (stageDP.getDataType() != null)
 				{
-					DataType dt = theDb.dataTypeSet.get(
-						dp.getDataType().getStandard(), dp.getDataType().getCode());
-
-					if (dt != null) // already exists, replace copy in DP.
-						dp.setDataType(dt);
-					else            
-					{	// DataType is new, add it to set.
-						theDb.dataTypeSet.add(dp.getDataType());
-						writeDataTypes = true;
-					}
+					DataType dt = DataType.getDataType(
+						stageDP.getDataType().getStandard(), stageDP.getDataType().getCode());
+					stageDP.setDataType(dt);
 				}
 			}
 		}
@@ -1123,7 +1129,6 @@ public class DbImport
 					String nameType = sn.getNameType();
 					if (siteNameTypeEnum.findEnumValue(nameType) == null)
 					{
-						writeEnumList = true;
 						siteNameTypeEnum.replaceValue(
 						 	nameType, nameType, null, null);
 					}
@@ -1131,17 +1136,9 @@ public class DbImport
 			}
 		}
 
-		if (writeEnumList || overwriteDb.getValue())
-		{
-			dumpDTS("before enumList.write");
-			theDb.enumList.write();
-			dumpDTS("after enumList.write");
-		}
-		if (writeEUList || writeReflistArg.getValue() || overwriteDb.getValue())
-			theDb.engineeringUnitList.write();
-
-		if (writeDataTypes || overwriteDb.getValue())
-			theDb.dataTypeSet.write();
+		theDb.enumList.write();
+		theDb.engineeringUnitList.write(); // This will also write converters.
+		theDb.dataTypeSet.write();
 
 		/**
 		  For SQL, have to write objects from bottom up in the hierarchy.

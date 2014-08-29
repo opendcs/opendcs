@@ -12,6 +12,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2014/08/15 16:22:19  mmaloney
+*  When reading tasklist, if mutliple recs for same time series with different units,
+*  then convert subsequent recs to the same units as the first rec seen.
+*
 *  Revision 1.2  2014/05/22 12:17:15  mmaloney
 *  Fix bug. After creating TS, set the site attribute of the tsid.
 *
@@ -592,16 +596,6 @@ public class CwmsTimeSeriesDb
 		// Internally our SDI (site datatype id) is equivalent to CWMS ts_code
 		sdiIsUnique = true;
 
-		// Overwrite dateFmt created by base class. We will use the
-		// Oracle to_date function:
-        writeDateFmt = new SimpleDateFormat(
-			"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
-		String tz = DecodesSettings.instance().sqlTimeZone;
-		if (tz == null)
-			tz = "GMT"; // default to GMT. CWMS 2.0 and later alway use GMT.
-        writeDateFmt.setTimeZone(TimeZone.getTimeZone(tz));
-//		rwdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-//      rwdf.setTimeZone(TimeZone.getTimeZone(tz));
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
 	}
@@ -683,7 +677,10 @@ public class CwmsTimeSeriesDb
 			failure(msg);
 		}
 		
+		// CWMS is Always GMT.
+		DecodesSettings.instance().sqlTimeZone = "GMT";
 		determineTsdbVersion();
+
 		cwmsSchemaVersion = determineCwmsSchemaVersion(getConnection(), tsdbVersion);
 		
 		if (cwmsSchemaVersion >= CWMS_V_2_2)
