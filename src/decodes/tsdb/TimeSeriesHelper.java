@@ -107,7 +107,7 @@ public class TimeSeriesHelper
 		converter = Database.getDb().unitConverterSet.get(euOld, euNew);
 		if (converter == null)
 		{
-			Logger.instance().debug3(
+			Logger.instance().warning(
 				"Cannot convert samples for time series '" + 
 				cts.getNameString()
 				+ "' from " + euOld.abbr + " to " + euNew.abbr
