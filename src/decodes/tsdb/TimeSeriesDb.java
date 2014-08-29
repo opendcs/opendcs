@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.133  2013/07/31 15:27:18  mmaloney
 *  Added methods to check for questionable and set questionable.
 *
@@ -332,6 +335,7 @@ import ilex.var.TimedVariable;
 import ilex.var.Variable;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -473,6 +477,7 @@ public abstract class TimeSeriesDb
 	protected Calendar readCal = null;
 	private OracleDateParser oracleDateParser = null;
 	protected String databaseTimezone = "UTC";
+	protected boolean _isOracle = false;
 	
 	/**
 	 * Lazy initialization, called at the first time a date or timestamp
@@ -493,20 +498,6 @@ public abstract class TimeSeriesDb
 		logger = Logger.instance();
 		tsdbVersion = 1;
 
-		TimeZone tz = TimeZone.getTimeZone(settings.sqlTimeZone);
-		String writeFmt = settings.sqlDateFormat;
-		String readFmt = settings.SqlReadDateFormat;
-		if (isOracle())
-		{
-			oracleDateParser = new OracleDateParser(tz);
-			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
-			readFmt = "yyyy-MM-dd HH:mm:ss";
-		}
-		writeDateFmt = new SimpleDateFormat(writeFmt);
-		writeDateFmt.setTimeZone(tz);
-		readDateFmt = new SimpleDateFormat(readFmt);
-		readDateFmt.setTimeZone(tz);
-		readCal = Calendar.getInstance(tz);
 
 		keyGenerator = null;
 
@@ -1600,12 +1591,43 @@ public abstract class TimeSeriesDb
 	
 	public void determineTsdbVersion()
 	{
+		try
+		{
+			DatabaseMetaData metaData = getConnection().getMetaData();
+			String dbName = metaData.getDatabaseProductName();
+			Logger.instance().info("Connected to database server: "
+				+ dbName + " " + metaData.getDatabaseProductVersion());
+			_isOracle = dbName.toLowerCase().contains("oracle");
+		}
+		catch (SQLException ex)
+		{
+			String msg = "determineTsdbVersion() " + 
+				"Cannot determine Database Product name and/or version: " + ex;
+			Logger.instance().warning(msg);
+		}
+		
+		TimeZone tz = TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone);
+		String writeFmt = DecodesSettings.instance().sqlDateFormat;
+		String readFmt = DecodesSettings.instance().SqlReadDateFormat;
+		if (_isOracle)
+		{
+			oracleDateParser = new OracleDateParser(tz);
+			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
+			readFmt = "yyyy-MM-dd HH:mm:ss";
+		}
+		writeDateFmt = new SimpleDateFormat(writeFmt);
+		writeDateFmt.setTimeZone(tz);
+		readDateFmt = new SimpleDateFormat(readFmt);
+		readDateFmt.setTimeZone(tz);
+		readCal = Calendar.getInstance(tz);
+
 		SqlDatabaseIO.readVersionInfo(this);
 		readVersionInfo(this);
 		info("Connected to TSDB Version " + tsdbVersion + ", Description: " + tsdbDescription);
 		readTsdbProperties();
 		cpCompDepends_col1 = isHdb() || tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
 			? "TS_ID" : "SITE_DATATYPE_ID";
+		
 	}
 	
 	public static void readVersionInfo(DatabaseConnectionOwner dco)
@@ -2451,7 +2473,7 @@ public abstract class TimeSeriesDb
 	
 	public boolean isOracle()
 	{
-		return false;
+		return _isOracle;
 	}
 	
 	public Date getFullDate(ResultSet rs, int column)
