@@ -89,6 +89,27 @@ CREATE TABLE CP_ALGO_TS_PARM
 	CONSTRAINT algo_role_unique UNIQUE (ALGORITHM_ID, ALGO_ROLE_NAME)
 ) &TBL_SPACE_SPEC;
 
+-- This table holds the XML definition for a composite computation diagram in the GUI.
+-- Concatenate all elements for a given composite comp by part_number to form the entire XML.
+-- The XML depends on the SQL composite/member relations. You cannot alter one without altering the other.
+CREATE TABLE CP_COMPOSITE_DIAGRAM
+(
+    COMPOSITE_COMPUTATION_ID INT NOT NULL,
+    BLOCK_NUM INT NOT NULL,
+    DIAGRAM_XML VARCHAR2(4000) NOT NULL,
+    PRIMARY KEY (COMPOSITE_COMPUTATION_ID, BLOCK_NUM)
+) &TBL_SPACE_SPEC;
+
+-- This table relates a composite computation to its member component computations.
+-- A composite has multiple components, each with a different execution order.
+CREATE TABLE CP_COMPOSITE_MEMBER
+(
+    COMPOSITE_COMPUTATION_ID INT NOT NULL,
+    -- Determines the execution order of the component.
+    EXEC_ORDER INT NOT NULL,
+    COMPONENT_COMPUTATION_ID INT NOT NULL,
+    PRIMARY KEY (COMPOSITE_COMPUTATION_ID, EXEC_ORDER)
+) &TBL_SPACE_SPEC;
 
 CREATE TABLE CP_COMPUTATION
 (
@@ -211,15 +232,18 @@ CREATE TABLE DACQ_EVENT
 (
 	-- Surrogate Key. Events are numbered from 0...MAX
 	DACQ_EVENT_ID NUMBER(18) NOT NULL,
-	SCHEDULE_ENTRY_STATUS_ID NUMBER(18) NOT NULL,
-	PLATFORM_ID NUMBER(18) NOT NULL,
+	SCHEDULE_ENTRY_STATUS_ID NUMBER(18),
+	PLATFORM_ID NUMBER(18),
 	EVENT_TIME date NOT NULL,
 	-- INFO = 3, WARNING = 4, FAILURE = 5, FATAL = 6
 	-- 
 	EVENT_PRIORITY INT NOT NULL,
 	-- Software subsystem that generated this event
 	SUBSYSTEM VARCHAR2(24) NOT NULL,
+    -- If this is related to a message, this holds the message's local_recv_time.
+    MSG_RECV_TIME DATE,
 	EVENT_TEXT VARCHAR2(256) NOT NULL,
+	db_office_code integer default &dflt_office_code,
 	PRIMARY KEY (DACQ_EVENT_ID)
 ) &TBL_SPACE_SPEC;
 
@@ -451,7 +475,10 @@ CREATE TABLE NETWORKLISTENTRY
 	NETWORKLISTID NUMBER(18) NOT NULL,
 	-- Must match a transport medium id
 	TRANSPORTID VARCHAR2(64) NOT NULL,
-	CONSTRAINT nl_transport_unique UNIQUE (NETWORKLISTID, TRANSPORTID)
+	-- Short mnemonic platform name
+	PLATFORM_NAME VARCHAR2(24),
+	DESCRIPTION VARCHAR2(80),
+	PRIMARY KEY (NETWORKLISTID, TRANSPORTID)
 ) &TBL_SPACE_SPEC;
 
 
@@ -694,6 +721,31 @@ CREATE TABLE SEASON
 	CONSTRAINT SEASON_ABBR_UNIQUE UNIQUE(SEASON_ABBR, db_office_code)
 ) &TBL_SPACE_SPEC;
 
+CREATE TABLE SERIAL_PORT_STATUS
+(
+	-- Combo of DigiHostName:PortNumber
+	PORT_NAME VARCHAR2(48) NOT NULL,
+	-- True when port is locked.
+	IN_USE VARCHAR2(5) DEFAULT 'FALSE' NOT NULL,
+	-- Name of routing spec (or other process) that last used (or is currently using) the port.
+	-- Null means never been used.
+	LAST_USED_BY_PROC VARCHAR2(64),
+	-- Hostname or IP Address from which this port was last used (or is currently being used).
+	-- Null means never been used.
+	LAST_USED_BY_HOST VARCHAR2(64),
+	-- Java msec Date/Time this port was last used.
+	LAST_ACTIVITY_TIME DATE,
+	-- Java msec Date/Time that a message was successfully received on this port.
+	LAST_RECEIVE_TIME DATE,
+	-- The Medium ID (e.g. logger name) from which a message was last received on this port.
+	LAST_MEDIUM_ID VARCHAR2(64),
+	-- Java msec Date/Time of the last time an error occurred on this port.
+	LAST_ERROR_TIME DATE,
+	-- Short string. Usually one of the following:
+	-- idle, dialing, login, receiving, goodbye, error
+	PORT_STATUS VARCHAR2(32),
+	PRIMARY KEY (PORT_NAME)
+) &TBL_SPACE_SPEC;
 
 -- NOTE: CWMS Locations are mapped to DECODES Sites. So no SITE table in CWMS.
 -- CREATE TABLE SITE
@@ -765,6 +817,16 @@ CREATE TABLE TRANSPORTMEDIUM
 	-- Java time zone name used to parse date/time values that are in the message.
 	-- This doesn't count time parsed from a message header which are usually in a known TZ.
 	TIMEZONE VARCHAR2(64),
+	LOGGERTYPE VARCHAR2(24),
+	BAUD INT,
+	STOPBITS INT,
+	PARITY VARCHAR2(1),
+	DATABITS INT,
+	-- TRUE or FALSE
+	DOLOGIN VARCHAR2(5),
+	USERNAME VARCHAR2(32),
+	PASSWORD VARCHAR2(32),
+
 	db_office_code integer default &dflt_office_code,
 	PRIMARY KEY (PLATFORMID, MEDIUMTYPE)
 ) &TBL_SPACE_SPEC;
@@ -901,6 +963,25 @@ ALTER TABLE CP_COMPUTATION
 	REFERENCES CP_ALGORITHM (ALGORITHM_ID)
 ;
 
+ALTER TABLE CP_COMPOSITE_DIAGRAM
+	ADD CONSTRAINT CP_COMPOSITE_DIAGRAM_FK
+	FOREIGN KEY (COMPOSITE_COMPUTATION_ID)
+	REFERENCES CP_COMPUTATION (COMPUTATION_ID)
+;
+
+
+ALTER TABLE CP_COMPOSITE_MEMBER
+	ADD CONSTRAINT CP_COMPOSITE_MEMBER_FK1
+	FOREIGN KEY (COMPOSITE_COMPUTATION_ID)
+	REFERENCES CP_COMPUTATION (COMPUTATION_ID)
+;
+
+
+ALTER TABLE CP_COMPOSITE_MEMBER
+	ADD CONSTRAINT CP_COMPOSITE_MEMBER_FK2
+	FOREIGN KEY (COMPONENT_COMPUTATION_ID)
+	REFERENCES CP_COMPUTATION (COMPUTATION_ID)
+;
 
 ALTER TABLE CP_COMP_DEPENDS
 	ADD CONSTRAINT CP_COMP_DEPENDS_FK
@@ -1259,4 +1340,8 @@ ALTER TABLE SCRIPTSENSOR
 
 
 CREATE INDEX PLATFORM_ID_IDX ON DACQ_EVENT (PLATFORM_ID) &TBL_SPACE_SPEC;
+CREATE INDEX EVT_PLAT_MSG_IDX ON DACQ_EVENT (PLATFORM_ID, MSG_RECV_TIME);
+CREATE INDEX EVT_SCHED_IDX ON DACQ_EVENT (SCHEDULE_ENTRY_STATUS_ID);
+CREATE INDEX EVT_TIME_IDX ON DACQ_EVENT (EVENT_TIME);
+
 
