@@ -84,10 +84,8 @@ public class DcpMsg
 	/** 
 	 * Max length that can be stored. The upper limit is based on:
 	 * - 5 digit length field in DDS imposes limit to 99999
-	 * - DCP Monitor stores data in BASE64 encoding in 40000 char varchar.
-	 * Thus the limit is 40000 * base64 overhead (3/4) = 30000 chars.
 	 */
-	public static final int MAX_DATA_LENGTH = (int)(40000 * (3./4.));
+	public static final int MAX_DATA_LENGTH = 99999;
 	
 	/** transient storage for DRGS interface. Original address is NOT saved. */
 	private DcpAddress origAddress = null;
