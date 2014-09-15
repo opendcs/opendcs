@@ -23,7 +23,7 @@ import decodes.db.DatabaseIO;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
 import decodes.db.Site;
-import decodes.dcpmon.DcpGroupList;
+import decodes.dcpmon_old.DcpGroupList;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 
