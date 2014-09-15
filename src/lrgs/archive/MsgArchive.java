@@ -559,7 +559,7 @@ public class MsgArchive
 				(mergeResult == MergeFilter.DISCARD ? " NOT" : "")
 				+ " Archiving NON-GOES message for address '" + addr.toString()
 				+ "' from input slot " 
-				+ slot + ", len=" + msg.length() + ", timestamp="
+				+ slot + ", len=" + msg.getMsgLength() + ", timestamp="
 				+ msg.getDapsTime()+ ", failcode=" 
 				+ msg.getFailureCode() + ", lastPtr=" + lastMsgHash.get(addr)
 				+ ", mergeResult=" + mergeResult
@@ -573,7 +573,7 @@ public class MsgArchive
 			lastPtr.indexFileStartTime = currentArchive.startTime;
 			lastPtr.msgTime = (int)(msg.getDapsTime().getTime() / 1000L);
 			lastPtr.flagBits = msg.flagbits;
-			lastPtr.msgLength = msg.length();
+			lastPtr.msgLength = msg.getMsgLength();
 			if (domsatTT > 0 && seqNum >= 0
 			 && (msg.flagbits & DcpMsgFlag.MSG_NO_SEQNUM) == 0)
 			{

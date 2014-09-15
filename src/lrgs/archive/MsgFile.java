@@ -127,7 +127,7 @@ public class MsgFile
 		throws IOException
 	{
 		long offset = raf.length();
-		int len = msg.length();
+		int len = msg.getMsgLength();
 		raf.seek(offset);
 		if (fileVersion >= 7)
 		{

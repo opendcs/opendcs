@@ -62,7 +62,7 @@ public class MsgFile
 		raf.writeInt(msg.flagbits);
 		raf.writeInt((int)(msg.getLocalReceiveTime().getTime()/1000L));
 		raf.writeInt(msg.getSequenceNum());
-		int len = msg.length();
+		int len = msg.getMsgLength();
 		raf.writeInt(len);
 		if (len > 0)
 			raf.write(msg.getData());
