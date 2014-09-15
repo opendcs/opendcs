@@ -150,6 +150,8 @@ public class RoutingSpecThread
 	private ScheduleEntryStatus myStatus = null;
 
 	private RawArchive rawArchive = null;
+	private DcpMsg lastDcpMsg = null;
+	private StatusWriteThread statusWriteThread = null;
 	
 	/**
 	 * Constructs an empty, uninitialized RoutingSpecThread.
@@ -309,7 +311,7 @@ log(Logger.E_DEBUG1, "run() starting.");
 		Logger.instance().debug1("RS Starting, applySensorLimits="
 			+applySensorLimits);
 		currentStatus = "Running";
-		StatusWriteThread statusWriteThread = new StatusWriteThread(this);
+		statusWriteThread = new StatusWriteThread(this);
 		statusWriteThread.start();
 		PlatformStatusDAI platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
 
@@ -457,6 +459,8 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 			//=====================================================
 			DecodedMessage dm = null;
 			DcpMsg dcpMsg = rm.getOrigDcpMsg();
+			if (dcpMsg != null)
+				lastDcpMsg = dcpMsg;
 
 			if (formatter.attemptDecode()
 			 && (dcpMsg == null || !dcpMsg.isDapsStatusMsg()))
@@ -498,16 +502,6 @@ log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.get
 			currentStatus = "Running";
 		}
 
-		statusWriteThread.shutdown = true;
-		if (myStatus != null)
-		{
-			myStatus.setRunStop(new Date());
-			myStatus.setRunStatus("Stopped");
-		}
-		if (myExec != null)
-			myExec.rsFinished();
-
-		writeStatus();
 		quit();
 		if (useThreadDbCon)
 		{
@@ -655,7 +649,7 @@ log(Logger.E_DEBUG1, "run() exiting.");
 			}
 			else
 			{
-				log(Logger.E_DEBUG1,
+				log(Logger.E_DEBUG3,
 					"Processing raw message from data source: " + ex);
 				try { return new DecodedMessage(rm, false); }
 				catch(Exception ex2) 
@@ -785,6 +779,18 @@ log(Logger.E_DEBUG1, "run() exiting.");
 	protected void quit()
 	{
 		closeResources();
+		if (statusWriteThread != null)
+			statusWriteThread.shutdown = true;
+		if (myStatus != null)
+		{
+			myStatus.setRunStop(new Date());
+			myStatus.setRunStatus("Stopped");
+		}
+		if (myExec != null)
+			myExec.rsFinished();
+
+		writeStatus();
+
 		log(Logger.E_INFORMATION,
 			"-------------- RoutingSpec '" + rs.getName()
 			+ "' Terminating --------------");
@@ -1689,6 +1695,11 @@ log(Logger.E_DEBUG1, "shutdown called.");
 	public void setMyStatus(ScheduleEntryStatus myStatus)
 	{
 		this.myStatus = myStatus;
+	}
+
+	public DcpMsg getLastDcpMsg()
+	{
+		return lastDcpMsg;
 	}
 }
 
