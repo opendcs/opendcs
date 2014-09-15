@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2014/08/22 17:23:04  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  *
  * Copyright 2014 Cove Software, LLC
  * 
@@ -87,7 +90,7 @@ public class RoutingScheduler
 	public long oldStatusPurgeInterval = 3600L; // default = 1 hr.
 
 	/** Number of seconds at which to refresh schedule entries from the database */
-	public long refreshSchedInterval = 30L;   // default = 1 minutes
+	public long refreshSchedInterval = 60L;   // default # sec.
 	
 	private PropertySpec[] myProps =
 	{
