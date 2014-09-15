@@ -7,9 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
-import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Properties;
 
 import opendcs.dai.PropertiesDAI;
 
@@ -20,11 +18,8 @@ import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.ConfigSensor;
 import decodes.db.DatabaseException;
-import decodes.db.DecodesScript;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformConfigList;
-import decodes.db.ScriptSensor;
-import decodes.db.UnitConverterDb;
 import decodes.db.DataType;
 import decodes.tsdb.DbIoException;
 
@@ -170,7 +165,6 @@ public class ConfigListIO extends SqlDbObjIo
 		Statement stmt = createStatement();
 		String q = 
 			"SELECT * FROM ConfigSensor WHERE ConfigId = " + platformConfigId;
-Logger.instance().debug3("readConfigSensors executing '" + q + "'");
 		ResultSet rs = stmt.executeQuery(q);
 
 		if (rs != null) 
@@ -324,8 +318,6 @@ Logger.instance().debug3("readConfigSensors executing '" + q + "'");
 	public PlatformConfig readConfig(DbKey id)
 		throws DatabaseException, SQLException
 	{
-debug1("ConfigListIO.readConfig(" + id + ")");
-
 		Statement stmt = createStatement();
 		
 		String q = "SELECT id, name, description, equipmentId " +
