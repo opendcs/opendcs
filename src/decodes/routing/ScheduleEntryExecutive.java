@@ -6,6 +6,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import lrgs.common.DcpMsg;
+
+import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import opendcs.dai.ScheduleEntryDAI;
 import decodes.db.Constants;
@@ -43,6 +46,10 @@ public class ScheduleEntryExecutive
 	
 	private long shutdownStarted = 0L;
 	private long maxShutdownTime = 20000L; // allow 20 sec to gracefully shut down.
+	private long shutdownComplete = 0L;
+	
+	protected boolean rereadRsBeforeExec = true;
+	private DcpMsg lastDcpMsg = null;
 	
 	
 	/** Constructor called from RoutingScheduler */
@@ -101,16 +108,61 @@ public class ScheduleEntryExecutive
 			}
 			
 			// A continuous schedule entry might exit for various transient errors.
-			// Attempt to restart if it does.
-			if (scheduleEntry.getStartTime() == null)
+			// Example, a timeout on an LRGS data source.
+			// Attempt to restart after one minute if it does.
+			long now = System.currentTimeMillis();
+			if (scheduleEntry.getStartTime() == null                    // means continuous
+			 && shutdownComplete != 0L                                  // Completely shutdown
+			 && now - shutdownComplete > 60000L  // over a minute ago
+			 && seStatus.getRunStatus().contains("ERR")                 // Exited due to error
+			 && !dataSourceFinite())                                    // data source not a file
 			{
 				runState = RunState.initializing;
+				RoutingSpec rs = Database.getDb().routingSpecList.find(
+					scheduleEntry.getRoutingSpecName());
+				if (rs != null && lastDcpMsg != null)
+					rs.sinceTime = IDateFormat.toString(lastDcpMsg.getXmitTime(), false);
 			}
+else
+{
+Logger.instance().debug1("Sched Entry '" + scheduleEntry.getName()
+	+ "' startTime=" + scheduleEntry.getStartTime()
+	+ ", shutdownComplete=" + shutdownComplete
+	+ ", now=" + now
+	+ ", seStatus=" + seStatus.toString()
+	+ ", dataSourceFinite=" + dataSourceFinite());
+}
 		}
-		else
+		else // runState == complete.
 		{
-			// It's complete. Do nothing.
 		}
+	}
+	
+	/**
+	 * A 'finite' data source is like a file. Once it's processed it's done.
+	 * @return
+	 */
+	private boolean dataSourceFinite()
+	{
+		// A real-time routing spec that is enabled and has a streaming data
+		// source like an LRGS or directory should never complete.
+		RoutingSpec rs = Database.getDb().routingSpecList.find(
+			scheduleEntry.getRoutingSpecName());
+		if (rs == null || rs.dataSource == null)
+		{
+Logger.instance().debug1("dataSourceFinite no rs or data source, rs=" + (rs==null?"null":rs.getName()));
+			return true;
+		}
+		if (rs.untilTime != null && rs.untilTime.trim().length() > 0)
+		{
+Logger.instance().debug1("dataSourceFinite untilTime=" + rs.untilTime);
+			return true;
+		}
+		String dsType = rs.dataSource.dataSourceType.toLowerCase();
+Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
+		if (dsType.equals("lrgs") || dsType.equals("hotbackupgroup") || dsType.equals("directory"))
+			return false;
+		return true;
 	}
 		
 	/**
@@ -120,6 +172,7 @@ public class ScheduleEntryExecutive
 	void initialize() 
 		throws DbIoException
 	{
+		shutdownComplete = 0L;
 		// Lookup the lastRunStart
 		ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
 		try
@@ -232,13 +285,17 @@ public class ScheduleEntryExecutive
 			disableScheduleEntry();
 			return null;
 		}
-		try { rs.read(); }
-		catch (DatabaseException ex)
+
+		if (rereadRsBeforeExec)
 		{
-			Logger.instance().info("ScheduleEntryExec.makeThread: "
-				+ " Routing Spec '" + scheduleEntry.getRoutingSpecName()
-				+ "' no longer exists in database, disabling the schedule entry: " + ex);
-			disableScheduleEntry();
+			try { rs.read(); }
+			catch (DatabaseException ex)
+			{
+				Logger.instance().info("ScheduleEntryExec.makeThread: "
+					+ " Routing Spec '" + scheduleEntry.getRoutingSpecName()
+					+ "' no longer exists in database, disabling the schedule entry: " + ex);
+				disableScheduleEntry();
+			}
 		}
 
 		// Allocate a new status structure
@@ -266,6 +323,7 @@ public class ScheduleEntryExecutive
 		seThread.setMyExec(this);
 		seThread.setMyStatus(seStatus);
 		seThread.closeDbOnQuit = false;
+		seThread.doRoutingSpecCheck = rereadRsBeforeExec;
 
 		if (parent != null)
 			parent.makeThreadLogger(seThread);
@@ -343,7 +401,9 @@ public class ScheduleEntryExecutive
 		seThread.writeStatus();
 		if (parent != null)
 			parent.threadFinished(seThread);
+		lastDcpMsg = seThread.getLastDcpMsg();
 		seThread = null;
+		shutdownComplete = System.currentTimeMillis();
 	}
 	
 	public RunState getRunState()
@@ -393,5 +453,10 @@ public class ScheduleEntryExecutive
 			scheduleEntryDAO.close();
 		}
 	}
-	
+
+	public void setRereadRsBeforeExec(boolean rereadRsBeforeExec)
+	{
+		this.rereadRsBeforeExec = rereadRsBeforeExec;
+	}
+
 }
