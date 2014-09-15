@@ -6,8 +6,9 @@ import java.util.Date;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 
-import decodes.dcpmon.DcpGroup;
+import decodes.db.NetworkList;
 import decodes.dcpmon.XmitMediumType;
+import decodes.dcpmon_old.DcpGroup;
 import decodes.tsdb.DbIoException;
 
 public interface XmitRecordDAI
@@ -37,14 +38,22 @@ public interface XmitRecordDAI
 	 * the dcp monitor queue to see if the msg is in there, if it is not
 	 * in the queue will check the database.
 	 *  
-	 * @param dcpAddress
+	 * @param mediumType with the mediumId identifies a platform
+	 * @param mediumId with the mediumType identifies a platform
 	 * @param timestamp
 	 * @return XmitRecord
 	 */
-	public DcpMsg findDcpTranmission(DcpAddress dcpAddress, Date timestamp)
+	public DcpMsg findDcpTranmission(XmitMediumType mediumType, String mediumId, Date timestamp)
 		throws DbIoException;
-
-
+	
+	/**
+	 * Used by a test program to dump an entire day's data.
+	 * @param dayNum the day number
+	 * @param recordId the record id
+	 * @return the DCP message or null if none matching recordId
+	 */
+	public DcpMsg readDcpMsg(int dayNum, long recordId)
+		throws DbIoException;
 
 	/**
 	 * This is used from the DcpMonitorServerThread - sendMessageStatus()
@@ -55,7 +64,7 @@ public interface XmitRecordDAI
 	 * @return num read
 	 * @throws DbIoException
 	 */
-	public int readXmitsByGroup(Collection<DcpMsg> results, int dayNum, DcpGroup grp)
+	public int readXmitsByGroup(Collection<DcpMsg> results, int dayNum, NetworkList grp)
 		throws DbIoException;
 	
 	/**
@@ -83,22 +92,8 @@ public interface XmitRecordDAI
 	 * @param addr the DCP address or -1 to get all.
 	 * @return the number of records returned.
 	 */
-	public int readXmitsByDcpAddress(Collection<DcpMsg> results, int dayNum, 
-		XmitMediumType mediumType, DcpAddress dcpAddress)
-		throws DbIoException;
-	
-	/**
-	 * Reads an XmitRecord with the raw msg from the database for the 
-	 * given day, dcp addr and timestamp.
-	 * This method is used when the user request to see a message.
-	 * 
-	 * @param dayNum The day number used as a table suffix.
-	 * @param addr The DCP Address
-	 * @param timestamp The time stamp
-	 * @return XmitRecord containing raw message text including DOMSAT header
-	 * @throws DbIoException on any database error
-	 */
-	public DcpMsg readXmitRawMsg(int dayNum, DcpAddress dcpAddress, Date timestamp)
+	public int readXmitsByMediumId(Collection<DcpMsg> results, int dayNum, 
+		XmitMediumType mediumType, String mediumId)
 		throws DbIoException;
 	
 	/**
@@ -131,4 +126,18 @@ public interface XmitRecordDAI
 	 */
 	public Date getLastLocalRecvTime()
 		throws DbIoException;
+	
+	/**
+	 * Messages longer than 4000 bytes (after base64 expansion) will be chopped.
+	 * The first block will be stored in the DCP_TRANS_SUFFIX table and multiple
+	 * additional blocks (as many as are needed) will be stored in the 
+	 * DCP_TRANS_DATA_SUFFIX table. The DCP Monitor will read records en-mas from
+	 * DCP_TRANS_SUFFIX. Only when needed (at the lowest level of detail) will the
+	 * fillCompleteMsg method be called.
+	 * You can tell a message is incomplete if msgLength() > data.length
+	 * @param msg
+	 */
+	public void fillCompleteMsg(DcpMsg msg)
+		throws DbIoException;
+
 }
