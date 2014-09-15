@@ -422,7 +422,7 @@ public class DecodesScript extends IdDatabaseObject
 			}
 			catch(SwitchFormatException ex)
 			{
-				Logger.instance().log(Logger.E_DEBUG1, ex.toString());
+				Logger.instance().debug3(ex.toString());
 				fs = ex.getNewFormat();
 			}
 			catch(FieldParseException ex)
