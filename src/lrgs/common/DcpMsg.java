@@ -32,24 +32,24 @@ public class DcpMsg
 	  The DCP message data, including header, is stored as an
 	  array of bytes.
 	*/
-	private byte[] data;
+	private byte[] data = null;
 	
 	/** The flag bits */
-	public int flagbits;
+	public int flagbits = 0;
 
 	/** The DROT (LRGS) time stamp */
-	private Date localRecvTime;
+	private Date localRecvTime = DcpMsgIndex.zeroDate;
 
 	/** (legacy) file name constructed from DCP address & sequence num */
-	private String seqFileName;
+	private String seqFileName = null;
 
 	/** DOMSAT (or other) sequence number for this message (-1 if unknown) */
-	private int sequenceNum;
+	private int sequenceNum = -1;
 
-	public byte mergeFilterCode;
+	public byte mergeFilterCode = 0;
 
 	/** Baud rate if known, 0 = unknown */
-	private int baud;
+	private int baud = 0;
 
 	/** Time stamp (msec) of carrier start (0 = unknown) */
 	private Date carrierStart;
@@ -107,17 +107,16 @@ public class DcpMsg
 
 	private XmitWindow xmitWindow = null;
 	
+	private int msgLength = 0;
+	
+	/** When read from DCP Mon database, this indicates the table it was read from */
+	private int dayNumber = 0;
+	
 	// Constructors ===============================================
 
 	/** Allocate an empty DCP message */
 	public DcpMsg()
 	{
-		data = null;
-		flagbits = 0;
-		localRecvTime = DcpMsgIndex.zeroDate;
-		sequenceNum = -1;
-		mergeFilterCode = (byte)0;
-		baud = 0;
 		setCarrierStart(null);
 		setCarrierStop(null);
 		setDomsatTime(null);
@@ -145,9 +144,13 @@ public class DcpMsg
 	/**
 	  @return the entire length of the data, including header.
 	*/
-	public int length() 
+	public int getMsgLength() 
 	{
-		return data != null ? data.length : 0;
+		return msgLength;
+		// In new DCP Mon, a very long message may be only partially read
+		// from the database. Therefore we track length separately from
+		// the length of the data bytes stored here.
+		//OLD:		return data != null ? data.length : 0;
 	}
 
 	/**
@@ -177,18 +180,6 @@ public class DcpMsg
 	public void setSequenceNum(int sn)
 	{
 		sequenceNum = sn;
-	}
-
-	/**
-	  Allocate a new data array to the specified size. It will be filled
-	  with null bytes initially.
-	  @param size number of bytes to reserve
-	*/
-	public void reserve(int size)
-	{
-		data = new byte[size];
-		for(int i=0; i<size; i++)
-			data[i] = (byte)0;
 	}
 
 	/**
@@ -229,13 +220,22 @@ public class DcpMsg
 		setData(buf);
 	}
 
+	/**
+	 * Sets the internally stored message bytes. Assume that a complete
+	 * message is being set and also set this.msgLength accordingly.
+	 * @param buf the message bytes.
+	 */
 	public void setData(byte[] buf)
 	{
 		this.data = buf;
+		msgLength = buf.length;
 		if (DcpMsgFlag.isGOES(flagbits))
 		{
 			setXmitTime(getDapsTime());
 			setDcpAddress(this.getGoesDcpAddress());
+			char c = this.getFailureCode();
+			if (c != '-')
+				addXmitFailureCode(c);
 		}
 	}
 
@@ -453,7 +453,7 @@ public class DcpMsg
 	public int getDcpDataLength()
 	{
 		if (!isGoesMessage())
-			return this.length();
+			return this.getMsgLength();
 		
 		byte field[] = getField(IDX_DATALENGTH, 5);
 		if (field == null)
@@ -757,6 +757,7 @@ public class DcpMsg
     public void setFailureCode(char fc)
     {
     	this.failureCode = fc;
+    	this.addXmitFailureCode(fc);
     }
 
 	/**
@@ -782,7 +783,7 @@ public class DcpMsg
      */
     public int getMessageLength()
     {
-    	return length() - headerLength;
+    	return getMsgLength() - headerLength;
     }
     
     public void setHeaderLength(int headerLength)
@@ -879,5 +880,30 @@ public class DcpMsg
 		this.xmitWindow = xmitWindow;
 	}
 
+	/**
+	 * For DCP mon, a very long message may be only partially read. Return true
+	 * if the entire message is already present in this object. Return false if
+	 * extended message blocks are required.
+	 * @return true if entire message is already present here.
+	 */
+	public boolean isReadComplete()
+	{
+		return msgLength <= data.length;
+	}
+
+	public void setMsgLength(int msgLength)
+	{
+		this.msgLength = msgLength;
+	}
+
+	public int getDayNumber()
+	{
+		return dayNumber;
+	}
+
+	public void setDayNumber(int dayNumber)
+	{
+		this.dayNumber = dayNumber;
+	}
 
 }
