@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:27  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -20,21 +23,12 @@
 */
 package decodes.consumer;
 
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.Date;
-import java.util.Calendar;
-import java.text.SimpleDateFormat;
 
-import ilex.var.TimedVariable;
-import ilex.var.IFlags;
+import ilex.util.Logger;
 
 import decodes.db.*;
 import decodes.decoder.DecodedMessage;
-import decodes.decoder.TimeSeries;
-import decodes.decoder.Sensor;
-import decodes.datasource.RawMessage;
-import decodes.datasource.UnknownPlatformException;
 
 /**
   NullFormatter is used for consumers that don't want formatted
@@ -54,6 +48,7 @@ public class NullFormatter extends OutputFormatter
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
+		Logger.instance().info("NullFormatter initializing.");
 	}
 
 	/** Does nothing. */
