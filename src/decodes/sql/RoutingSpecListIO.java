@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.3  2013/03/21 18:27:39  mmaloney
  * DbKey Implementation
  *
@@ -245,7 +248,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 
 		try
 		{
-			debug3("RoutingSpecListIO.readroutingSpec: " + q);
+			debug2("RoutingSpecListIO.readroutingSpec: " + q);
 			Statement stmt = createStatement();
 			ResultSet resultSet = stmt.executeQuery( q );
 			if (resultSet == null)

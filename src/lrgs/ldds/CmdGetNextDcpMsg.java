@@ -70,7 +70,7 @@ public class CmdGetNextDcpMsg extends LddsCommand
 				DcpMsg msg = ldds.msgretriever.readMsg(idx);
 				ldds.lastSeqNum = msg.getSequenceNum();
 
-				byte md[] = new byte[40 + msg.length()];
+				byte md[] = new byte[40 + msg.getMsgLength()];
 				byte fn[] = msg.makeFileName(idx.getSequenceNum()).getBytes();
 				for(int i=0; i<fn.length; i++)
 					md[i] = fn[i];

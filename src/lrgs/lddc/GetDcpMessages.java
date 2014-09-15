@@ -164,7 +164,7 @@ public class GetDcpMessages extends Thread
 				if (msg != null)
 				{
 					outputMessage(msg);
-					total = total + msg.length();
+					total = total + msg.getMsgLength();
 					if (total > maxData && maxData > 0)
 					{
 						done = true;

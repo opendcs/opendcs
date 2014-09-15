@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.4  2014/08/29 18:22:50  mmaloney
+ * 6.1 Schema Mods
+ *
  * Revision 1.3  2014/08/22 17:23:10  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -221,10 +224,7 @@ public class PlatformListIO extends SqlDbObjIo
 						platformList.getDatabase().platformConfigList.getById(
 							configId);
 					if (pc == null)
-{
-Logger.instance().debug1("config(" + configId + ") not in list, will read...");
 						pc = _configListIO.getConfig(configId);
-}
 					p.setConfigName(pc.configName);
 					p.setConfig(pc);
 				}
