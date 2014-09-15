@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.18  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -82,9 +85,7 @@ public class Constants
 	public static final String medium_IRIDIUM = "iridium";
 	public static final String medium_BACKUP = "backup";
 	public static final String medium_FILE   = "data-file";
-	public static final String medium_ADR    = "paper-tape";
 	public static final String medium_ADAPS  = "ADAPS-archived-uvs";
-	public static final String medium_CHA    = "strip-chart";
 	public static final String medium_OBSERVER = "observer";
 	public static final String medium_NETDCP = "netdcp";
 	public static final String medium_SHEF   = "shef";

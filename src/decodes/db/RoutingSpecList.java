@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/08/22 17:23:05  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -143,7 +146,7 @@ public class RoutingSpecList extends DatabaseObject
 		}
 
 		// Not found in current list. Try to read it from database.
-		Logger.instance().log(Logger.E_DEBUG3,
+		Logger.instance().log(Logger.E_DEBUG2,
 			"Attempting to read routing spec '" + name + "'");
 		RoutingSpec rs = new RoutingSpec(name);
 		try { rs.read(); }
