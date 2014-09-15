@@ -9,6 +9,9 @@ import java.io.File;
 import java.util.Enumeration;
 import java.util.Properties;
 
+import decodes.dcpmon_old.DcpGroup;
+import decodes.dcpmon_old.DcpGroupList;
+
 
 
 /**
@@ -18,49 +21,40 @@ file.
 */
 public class DcpMonitorConfig
 {
-//	data source specifed in "dcpmon" routing spec
-//	/** DataSource name in the decodes database to use for input. */
-//	public String dataSourceName;
-	
 	/** Number of days to store data for. */
-	public int numDaysStorage;
+	public int numDaysStorage = 5;
 
 	/** OMIT the following failure codes from reports: */
-	public String omitFailureCodes;
-
-//	Username set by data source, optionally overridden by routspec "username" property.
-//	/** Optional user name to use in DDS connections. */
-//	public String ddsUserName;
+	public String omitFailureCodes = "";
 
 	/** limit for red message time alarms */
-	public int redMsgTime;
+	public int redMsgTime = 0;
 
 	/** limit for yellow message time alarms */
-	public int yellowMsgTime;
+	public int yellowMsgTime = 2;
 
 	/** Any of these characters will show as red failure codes */
-	public String redFailureCodes;
+	public String redFailureCodes = "M";
 
 	/** Any of these characters will show as yellow failure codes */
-	public String yellowFailureCodes;
+	public String yellowFailureCodes = "?UT";
 
 	/** Values less than this will show as red signal strength. */
-	public int redSignalStrength;
+	public int redSignalStrength = 30;
 
 	/** Values less than this will show as yellow signal strength. */
-	public int yellowSignalStrength;
-
+	public int yellowSignalStrength = 32;
 	/** Offsets greater than this will show in red. */
-	public int redFreqOffset;
+	public int redFreqOffset = 6;
 
 	/** Offsets greater than this will show in yellow. */
-	public int yellowFreqOffset;
+	public int yellowFreqOffset = 5;
 
 	/** BV less than this will show in red. */
-	public double redBattery;
+	public double redBattery = 9.0;
 
 	/** BV less than this will show in yellow. */
-	public double yellowBattery;
+	public double yellowBattery = 11.0;
 
 	/** carrier more than this will result in 'C' code. */
 	public long maxCarrierMS = 2500L;
@@ -68,27 +62,20 @@ public class DcpMonitorConfig
 	/** Last time configuration was loaded. */
 	public long lastLoadTime;
 
-//	Data source defined in "dcpmon" routing spec
-//	/** Use LRGS arguments here, rather than as defined in database. */
-//	public String lrgsDataSourceArg;
-//
-//	MJM: use "lrgs.timeout" property in "dcpmon" routing spec
-//	/** Timeout value in seconds to use for LRGS interfaces. */
-//	public int lrgsTimeout;
-
 	/** Raw properties read from file. */
 	private Properties rawProps;
 
 	/** Set to true to use the National Weather Service "HADS SITE" text file
 	 * to get dcp name from there, in case DECODES DB does not has it. */
-	public boolean hadsUse;
+	public boolean hadsUse = true;
 
 	/** URL from which to download the NWS Hads file, 
 	 * leave null to NOT download. */
-	public String hadsUrl;
+	public String hadsUrl =
+		"http://www.weather.gov/ohd/hads/compressed_defs/all_dcp_defs.txt";
 
 	/** Local file to load the NWS file from. */
-	public String hadsLocalFile;
+	public String hadsLocalFile = "$DECODES_INSTALL_DIR/hads";
 
 	/** Name of merge directory. */
 	public String mergeDir = "$DECODES_INSTALL_DIR/dcptoimport";
@@ -133,27 +120,6 @@ public class DcpMonitorConfig
 	/** Private constructor. Sets default values for all parameters. */
 	public DcpMonitorConfig()
 	{
-//		dataSourceName = "localhost";
-		numDaysStorage = 10;
-		redMsgTime = 0;
-		yellowMsgTime = 2;
-		redFailureCodes = "M";
-		yellowFailureCodes = "?UT";
-		redSignalStrength = 30;
-		yellowSignalStrength = 32;
-		redFreqOffset = 6;
-		yellowFreqOffset = 5;
-		redBattery = 9.0;
-		yellowBattery = 11.0;
-		omitFailureCodes = "";
-//		ddsUserName = null;
-//		lrgsDataSourceArg = null;
-		hadsUse = true;
-		hadsUrl =
-			"http://www.weather.gov/ohd/hads/compressed_defs/all_dcp_defs.txt";
-		hadsLocalFile = "$DECODES_INSTALL_DIR/hads";
-//		lrgsTimeout = 0;
-
 		dcpMonType = "dcpmon";
 		nlNamePrefix = "DCPMonDONOTMODIFY-";
 	}

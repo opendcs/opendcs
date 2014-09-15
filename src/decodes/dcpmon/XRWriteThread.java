@@ -52,6 +52,7 @@ public class XRWriteThread extends Thread
 	public static long lastMsgMsec = 0L;
 	private DcpMonitor dcpMonitor = null;
 	private XmitRecordDAI xmitRecordDao = null;
+	private static final long MS_PER_DAY = 3600L * 24L * 1000L;
 
 
 	/** This wraps XmitRecord and adds an insert time. */
@@ -152,12 +153,14 @@ int dCallNum = 0;
 	 * @param tsms the time stamp as a millisecond value
 	 * @return the XmitRecord if one exists, or null if not.
 	 */
-	public synchronized DcpMsg find(DcpAddress dcpAddress, Date xmitTime)
+	public synchronized DcpMsg find(DcpMsg msg, Date xmitTime)
 	{
-		XRWrapper xrw = findInQueue(dcpAddress, xmitTime);
+		XmitMediumType mediumType = XmitMediumType.flags2type(msg.getFlagbits());
+		String mediumId = msg.getDcpAddress().toString();
+		XRWrapper xrw = findInQueue(mediumType, mediumId, xmitTime);
 		if (xrw != null)
 			return xrw.xr;
-		try { return xmitRecordDao.findDcpTranmission(dcpAddress, xmitTime); }
+		try { return xmitRecordDao.findDcpTranmission(mediumType, mediumId, xmitTime); }
 		catch(DbIoException ex)
 		{
 			dcpMonitor.handleDbIoException("Finding Xmit", ex);
@@ -172,12 +175,13 @@ int dCallNum = 0;
 	 * @param xmitTime
 	 * @return wrapper if found, null if not
 	 */
-	private XRWrapper findInQueue(DcpAddress dcpAddress, Date xmitTime)
+	private XRWrapper findInQueue(XmitMediumType mediumType, String mediumId, Date xmitTime)
 	{
 		for(Iterator<XRWrapper> it = q.iterator(); it.hasNext(); )
 		{
 			XRWrapper xrw = it.next();
-			if (xrw.xr.getDcpAddress().equals(dcpAddress))
+			if (XmitMediumType.flags2type(xrw.xr.getFlagbits()) == mediumType
+			 && xrw.xr.getDcpAddress().toString().equalsIgnoreCase(mediumId))
 			{
 				long tdiff = xrw.xr.getXmitTime().getTime() - xmitTime.getTime();
 				if (tdiff > -maxTimeDiffMS && tdiff < maxTimeDiffMS)
@@ -202,9 +206,18 @@ int dCallNum = 0;
 
 	public synchronized void processQueue()
 	{
+Logger.instance().debug2("XRWriteThread.processQueue qsize=" + q.size());
 		DcpMsg xr;
 		while(!_shutdown && (xr = dequeue()) != null)
 		{
+			if (xr.getXmitTime() != null
+			 && (System.currentTimeMillis() - xr.getXmitTime().getTime()
+				 > DcpMonitorConfig.instance().numDaysStorage * MS_PER_DAY))
+			{
+				Logger.instance().warning("Discarding too-old message: "
+					+ xr.getHeader());
+				continue;
+			}
 			try
 			{
 				xmitRecordDao.saveDcpTranmission(xr);
@@ -225,7 +238,8 @@ int dCallNum = 0;
 	 */
 	public synchronized boolean replace(DcpMsg existing, DcpMsg replacement)
 	{
-		XRWrapper xrw = findInQueue(existing.getDcpAddress(), existing.getXmitTime());
+		XRWrapper xrw = findInQueue(XmitMediumType.flags2type(existing.getFlagbits()), 
+			existing.getDcpAddress().toString(), existing.getXmitTime());
 		if (xrw != null)
 		{
 			xrw.xr = replacement;

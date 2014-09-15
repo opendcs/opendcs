@@ -269,7 +269,7 @@ public class ScheduleEntry extends IdDatabaseObject
 		 || !routingSpecId.equals(se.routingSpecId))
 		{
 			Logger.instance().debug1("id, appId, or rsId is different this=" + toString() + "\n rhs="
-				+ rhs.toString());
+				+ se.toString());
 			return false;
 		}
 		
@@ -278,13 +278,13 @@ public class ScheduleEntry extends IdDatabaseObject
 			if (startTime == null || se.startTime == null)
 			{
 				Logger.instance().debug1("one start time is null this=" + toString() + "\n rhs="
-					+ rhs.toString());
+					+ se.toString());
 				return false;
 			}
 			if (!startTime.equals(se.startTime))
 			{
 				Logger.instance().debug1("Start times are null this=" + toString() + "\n rhs="
-					+ rhs.toString());
+					+ se.toString());
 				return false;
 			}
 		}

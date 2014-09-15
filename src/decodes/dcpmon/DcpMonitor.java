@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/08/22 17:23:06  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  *
  * Copyright 2014 Cove Software, LLC
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -139,7 +142,7 @@ public class DcpMonitor
 		}
 		
 		// Make sure the fields are appropriate for DCP Monitor
-		rtRoutingSpec.outputFormat = "NullFormatter";
+		rtRoutingSpec.outputFormat = "null";
 		rtRoutingSpec.outputTimeZoneAbbr = "UTC";
 		rtRoutingSpec.consumerType = "DcpMonitorConsumer";
 		
@@ -148,10 +151,11 @@ public class DcpMonitor
 		Date lastLocalRecvTime = xrWriteThread.getLastLocalRecvTime();
 		
 		// If this is the first startup for dcpmon. Get specified # days of data.
-		if (lastLocalRecvTime == null)
+		Date recoverLimit = new Date(System.currentTimeMillis() - 
+			3600000L * 24 * dcpMonitorConfig.numDaysStorage);
+		if (lastLocalRecvTime == null || lastLocalRecvTime.before(recoverLimit))
 		{
-			lastLocalRecvTime = new Date(System.currentTimeMillis() - 3600000L * 
-				dcpMonitorConfig.numDaysStorage);
+			lastLocalRecvTime = recoverLimit;
 			info("First run, defaulting lastLocalRecvTime to " 
 				+ debugSdf.format(lastLocalRecvTime));
 		}
@@ -197,7 +201,7 @@ public class DcpMonitor
 		}
 		rtScheduleEntry.setLoadingAppId(appId);
 		rtScheduleEntry.setRoutingSpecId(rtRoutingSpec.getId());
-		rtScheduleEntry.setStartTime(new Date());
+		rtScheduleEntry.setStartTime(null); // null start time means real-time schedule entry.
 		rtScheduleEntry.setEnabled(true);
 		rtScheduleEntry.setLoadingAppName(appNameArg.getValue());
 		rtScheduleEntry.setRoutingSpecName(rtRoutingSpec.getName());
@@ -211,7 +215,9 @@ public class DcpMonitor
 		}
 		
 		executives.clear();
-		executives.add(new ScheduleEntryExecutive(rtScheduleEntry, this));
+		ScheduleEntryExecutive see = new ScheduleEntryExecutive(rtScheduleEntry, this);
+		see.setRereadRsBeforeExec(false);
+		executives.add(see);
 
 		// If we've been down for too long, we have to make a recover routing spec too.
 		if (lastLocalRecvTime.before(rtSince))
@@ -240,7 +246,7 @@ public class DcpMonitor
 			}
 			recScheduleEntry.setLoadingAppId(appId);
 			recScheduleEntry.setRoutingSpecId(recRoutingSpec.getId());
-			recScheduleEntry.setStartTime(new Date());
+			recScheduleEntry.setStartTime(new Date()); // start time means run once.
 			recScheduleEntry.setEnabled(true);
 			recScheduleEntry.setLoadingAppName(appNameArg.getValue());
 			recScheduleEntry.setRoutingSpecName(recRoutingSpec.getName());
@@ -252,7 +258,9 @@ public class DcpMonitor
 				shutdownFlag = true;
 				return;
 			}
-			executives.add(new ScheduleEntryExecutive(recScheduleEntry, this));
+			ScheduleEntryExecutive rsee = new ScheduleEntryExecutive(recScheduleEntry, this);
+			rsee.setRereadRsBeforeExec(false);
+			executives.add(rsee);
 		}
 	}
 	
@@ -260,6 +268,9 @@ public class DcpMonitor
 	protected void refreshSchedule() 
 		throws DbIoException
 	{
+		// TODO check to see if the real time routing spec has died because of some kind of error.
+		// If so, restart it.
+		
 	}
 
 	@Override

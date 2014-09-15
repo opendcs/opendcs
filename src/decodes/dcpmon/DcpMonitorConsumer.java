@@ -127,13 +127,10 @@ Logger.instance().debug2("DcpMonitorConsumer.startMessage() msg=" + msg.getRawMe
 				return;
 			}
 			
-//			tsms = xmitTime.getTime();
-//			day = RecentDataStore.msecToDay(tsms);
-//			int sod = RecentDataStore.msecToSecondOfDay(tsms);
 			DcpAddress dcpAddress = dcpMsg.getDcpAddress();
 			failureCode = dcpMsg.getFailureCode();
 			XRWriteThread xrWriteThread = DcpMonitor.instance().getXrWriteThread();
-			DcpMsg existingMsg = xrWriteThread.find(dcpAddress, xmitTime);
+			DcpMsg existingMsg = xrWriteThread.find(dcpMsg, xmitTime);
 			
 			Action action = Action.Ignore;
 			switch(failureCode)

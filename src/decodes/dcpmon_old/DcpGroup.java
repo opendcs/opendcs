@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.2  2014/08/22 17:23:06  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.1  2014/06/02 14:28:49  mmaloney
 *  rc5 includes initial refactory for dcpmon
 *
@@ -14,7 +17,7 @@
 *  DbKey Implementation
 *
 */
-package decodes.dcpmon;
+package decodes.dcpmon_old;
 
 import java.io.*;
 import java.util.*;
@@ -27,6 +30,7 @@ import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
+import decodes.dcpmon.DcpMonitorConfig;
 import lrgs.common.DcpAddress;
 import lrgs.common.NetworkListItem;
 
