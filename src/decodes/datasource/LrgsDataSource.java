@@ -81,7 +81,7 @@ public class LrgsDataSource extends DataSourceExec
 		new PropertySpec("username", PropertySpec.STRING,
 			"LRGS Data Source: DDS User name with which to connect to LRGS server"),
 		new PropertySpec("password", PropertySpec.STRING,
-			"LRGS Data Source: DDS User name with which to connect to LRGS server"),
+			"LRGS Data Source: Password (if blank, use unauthenticated connection)"),
 		new PropertySpec("lrgs.timeout", PropertySpec.INT,
 			"LRGS Data Source: Number of idle seconds after which to assume server has failed (default=60)." +
 			" For sparse data (i.e. small netlist) you should set this to a large value."),

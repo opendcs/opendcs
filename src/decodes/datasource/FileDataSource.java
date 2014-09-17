@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2012/04/09 15:24:22  mmaloney
 *  Added gzip property.
 *
@@ -67,73 +70,43 @@ import java.io.FileNotFoundException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
-import java.util.Properties;
-import java.util.Vector;
-import java.util.Enumeration;
 import java.util.zip.GZIPInputStream;
 
-import ilex.util.AsciiUtil;
 import ilex.util.Logger;
-import ilex.util.TextUtil;
-import ilex.var.Variable;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
 
-import decodes.db.Database;
-import decodes.db.Constants;
-import decodes.db.Platform;
-import decodes.db.PlatformList;
-import decodes.db.TransportMedium;
 import decodes.db.InvalidDatabaseException;
-import decodes.db.DatabaseException;
+import decodes.util.PropertySpec;
 
 /**
   This is the implementation of the DataSourceInterface for reading data
   out of a file. 
-  <p>
-  Properties for the Data Source are as follows:
-  <ul>
-   <li>lengthAdj - (default=-1) adjustment to header length for reading 
-	   socket. Will read 'adjusted length' bytes following header.</li>
-   <li>before - delimiter expected before each message</li>
-   <li>after - delimiter expected after each message</li>
-   <li>oldChannelRanges - (default=false) If true, then chan<100 assumed to
-       be self-timed, >100 assumed to be random.</li>
-   <li>header - (default "goes"), Specifies type of header for messages in
-	   this file.
-   <li>OneMessageFile - (default=false) If true, assume entire file is a
-	   single message, meaning no delimiters needed and file length is the
-	   message length.</li>
-   <li>gzip - (default=false) If true, then assume file is gzipped.
-       It is uncompressed as it is read.</li>
-  </ul>
-  <p>
 */
 public class FileDataSource
     extends StreamDataSource
 {
 	public static final int LARGEST_MSG_LENGTH = 18000;
 
-    File file;
-	String filename;
-	//String mediumType;
-	//String mediumId;
-	//Platform platform;   // Only used if mediumId is specified
-	//TransportMedium tm;
-	boolean firstCall; // Used dynamically in parsing
+    private File file;
+	protected String filename;
 	boolean gzip = false;
 
+	private static final PropertySpec[] FDSprops =
+	{
+		new PropertySpec("filename", PropertySpec.STRING, 
+			"(required) name of file to read."),
+		new PropertySpec("gzip", PropertySpec.BOOLEAN, 
+			"(default=false) set to true to un-gzip file before processing.")
+	};
+	
 	/** default constructor */
 	public FileDataSource()
 	{
 		super();
         file = null;
 		filename = null;
-		//mediumType = null;
-		//mediumId = null;
-		//platform = null;
-		//tm = null;
 	}
 
 	/**
@@ -213,7 +186,6 @@ public class FileDataSource
 				+ "': " + e);
 		}
 
-		firstCall = true;
 		return istr;
 	}
 
@@ -238,4 +210,11 @@ public class FileDataSource
 	{
 		return false;
 	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return PropertiesUtil.combineSpecs(super.getSupportedProps(), FDSprops);
+	}
+
 }

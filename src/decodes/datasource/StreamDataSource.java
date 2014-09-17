@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.3  2014/05/30 13:15:34  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/28 13:09:30  mmaloney
 *  dev
 *
@@ -248,7 +251,7 @@ public abstract class StreamDataSource extends DataSourceExec
 	private boolean firstMsg;
 	private boolean justGotStartDelim = false;
 	
-	public static final PropertySpec[] SDSprops =
+	static final PropertySpec[] SDSprops =
 	{
 		new PropertySpec("lengthAdj", PropertySpec.INT, 
 			"(default=-1) adjustment to header length for reading "
@@ -260,7 +263,7 @@ public abstract class StreamDataSource extends DataSourceExec
 			"(default null) marks end of message. In legacy" +
 			" systems this is called 'endDelimiter'"),
 		new PropertySpec("header", 
-			PropertySpec.JAVA_ENUM + ":decodes.datasource.PmParsers", 
+			PropertySpec.DECODES_ENUM + "TransportMediumType", 
 			"(default GOES) Determines the format of the message header." +
 			" Legacy systems called this 'mediumType'"),
 		new PropertySpec("MediumId", PropertySpec.STRING, 
@@ -271,7 +274,7 @@ public abstract class StreamDataSource extends DataSourceExec
 			"(default false) if true this sets the begin/end delimiters "
 			+ "and enables special processing for SHEF format data"),
 		new PropertySpec("ParityCheck", 
-			PropertySpec.JAVA_ENUM + ":decodes.datasource.Parity", 
+			PropertySpec.JAVA_ENUM + "decodes.datasource.Parity", 
 			"(default none) If odd or even is specified, any characters that fail" +
 			" the parity check will be replaced with '$'"),
 		new PropertySpec("OneMessageFile", PropertySpec.BOOLEAN, 
