@@ -12,6 +12,7 @@ import decodes.util.PropertySpec;
 
 import java.awt.event.*;
 import java.io.File;
+import java.util.EnumSet;
 import java.util.ResourceBundle;
 
 import ilex.util.AsciiUtil;
@@ -138,6 +139,7 @@ public class PropertyEditDialog
 	}
 
 	/** Initializes gui components. */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	void jbInit() throws Exception
 	{
 		setTitle(genericLabels.getString("PropertyEditDialog.editPropertyValue"));
@@ -217,7 +219,16 @@ Logger.instance().info("decodes enum combo '" + propSpec + "'");
 			}
 			else if (propSpec.getType().startsWith(PropertySpec.JAVA_ENUM))
 			{
-				
+				String enumName = propSpec.getType().substring(2);
+				ClassLoader cl = Thread.currentThread().getContextClassLoader();
+				Class enumClass = cl.loadClass(enumName);
+				EnumSet es = EnumSet.allOf(enumClass);
+				Object ov[] = es.toArray();
+				String enumValues[] = new String[ov.length];
+				for(int i = 0; i<enumValues.length; i++)
+					enumValues[i] = ((Enum)ov[i]).name();
+				JComboBox jcb = new JComboBox(enumValues);
+				valueField = jcb;
 			}
 		}
 
