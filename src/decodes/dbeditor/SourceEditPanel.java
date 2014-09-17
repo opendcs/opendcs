@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.7  2013/03/21 18:27:40  mmaloney
 *  DbKey Implementation
 *
@@ -26,8 +29,10 @@ import ilex.util.PropertiesUtil;
 import ilex.util.Logger;
 
 import decodes.gui.*;
+import decodes.datasource.DataSourceExec;
 import decodes.db.*;
 import decodes.util.DecodesSettings;
+import decodes.util.PropertySpec;
 
 
 /**
@@ -41,9 +46,7 @@ public class SourceEditPanel extends DbEditorTab
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
-	BorderLayout borderLayout1 = new BorderLayout();
 	EntityOpsPanel entityOpsPanel = new EntityOpsPanel(this);
-	JPanel jPanel1 = new JPanel();
 	JPanel jPanel2 = new JPanel();
 	JLabel jLabel1 = new JLabel();
 	JTextField nameField = new JTextField();
@@ -64,7 +67,6 @@ public class SourceEditPanel extends DbEditorTab
 	FlowLayout flowLayout1 = new FlowLayout();
 	BorderLayout borderLayout2 = new BorderLayout();
 	GridBagLayout gridBagLayout1 = new GridBagLayout();
-	GridLayout gridLayout1 = new GridLayout();
 
 	DbEditorFrame parent;
 	DataSource theObject, origObject;
@@ -125,7 +127,7 @@ public class SourceEditPanel extends DbEditorTab
 	{
 		nameField.setText(theObject.getName());
 		sourceTypeCombo.setSelection(theObject.dataSourceType);
-		sourceTypeCombo_actionPerformed(null);
+		sourceTypeSelected();
 		boolean isGroup = theObject.isGroupType();
 		addMemberButton.setEnabled(isGroup);
 		deleteMemberButton.setEnabled(isGroup);
@@ -146,117 +148,149 @@ public class SourceEditPanel extends DbEditorTab
 	}
 
 	/** Initializes GUI components */
-	private void jbInit() throws Exception {
- 		titledBorder1 = new TitledBorder(
-			BorderFactory.createLineBorder(
-				new Color(153, 153, 153),2),
-				dbeditLabels.getString("SourceEditPanel.groupMembers"));
-				this.setLayout(borderLayout1);
-				jPanel1.setLayout(gridLayout1);
-				jLabel1.setText(
-				genericLabels.getString("nameLabel"));
-				jPanel2.setLayout(gridBagLayout1);
-				nameField.setEditable(false);
-				jLabel2.setText(
-				genericLabels.getString("typeLabel"));
-				sourceTypeCombo.addActionListener(new java.awt.event.ActionListener() {
-						public void actionPerformed(ActionEvent e) {
-						    sourceTypeCombo_actionPerformed(e);
-						}
-				});
-				jPanel3.setEnabled(false);
-				jPanel3.setBorder(titledBorder1);
-				jPanel3.setLayout(borderLayout2);
-				groupMemberList.setEnabled(false);
-				groupMemberList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-				upMemberButton.setEnabled(false);
-				upMemberButton.setText(
-//			genericLabels.getString("up"));
-			  "Up");
-			  upMemberButton.addActionListener(new java.awt.event.ActionListener() {
-					  public void actionPerformed(ActionEvent e) {
-					      upMemberButton_actionPerformed(e);
-					  }
-			  });
+	private void jbInit()
+		throws Exception
+	{
+		titledBorder1 = new TitledBorder(
+			BorderFactory.createLineBorder(new Color(153, 153, 153), 2),
+			dbeditLabels.getString("SourceEditPanel.groupMembers"));
+		this.setLayout(new BorderLayout());
+		JPanel jPanel1 = new JPanel();
 
-				downMemberButton.setEnabled(false);
-			 	downMemberButton.setText(
-//			genericLabels.getString("Down"));
-				"Down");
-			  downMemberButton.addActionListener(new java.awt.event.ActionListener() {
-					  public void actionPerformed(ActionEvent e) {
-					      downMemberButton_actionPerformed(e);
-					  }
-			  });
-				deleteMemberButton.setEnabled(false);
-		  	deleteMemberButton.setText(
-				genericLabels.getString("delete"));
-				deleteMemberButton.addActionListener(new java.awt.event.ActionListener() {
-						public void actionPerformed(ActionEvent e) {
-						    deleteMemberButton_actionPerformed(e);
-						}
-				});
-				addMemberButton.setEnabled(false);
-				addMemberButton.setText(
-				genericLabels.getString("add"));
-				addMemberButton.addActionListener(new java.awt.event.ActionListener() {
-						public void actionPerformed(ActionEvent e) {
-						    addMemberButton_actionPerformed(e);
-						}
-				});
-				jPanel4.setLayout(flowLayout1);
-				flowLayout1.setHgap(15);
- //       gridLayout1.setColumns(2);
-				gridLayout1.setColumns(4);
-				gridLayout1.setHgap(5);
-				sourceTypeCombo.addActionListener(new java.awt.event.ActionListener() {
-						public void actionPerformed(ActionEvent e) {
-						    sourceTypeCombo_actionPerformed(e);
-						}
-				});
-				sourceTypeCombo.addActionListener(new java.awt.event.ActionListener() {
-						public void actionPerformed(ActionEvent e) {
-						    sourceTypeCombo_actionPerformed(e);
-						}
-				});
-				this.add(entityOpsPanel, BorderLayout.SOUTH);
-				this.add(jPanel1, BorderLayout.CENTER);
-				jPanel1.add(jPanel2, null);
-				jPanel2.add(jLabel1, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0
-						,GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(2, 10, 2, 2), 0, 0));
-				jPanel2.add(nameField, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0
-						,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(5, 2, 5, 12), 0, 0));
-				jPanel2.add(jPanel3, new GridBagConstraints(0, 2, 3, 1, 1.0, 1.0
-						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(8, 3, 3, 3), 61, 46));
-				jPanel3.add(jScrollPane1, BorderLayout.CENTER);
-				jPanel3.add(jPanel4, BorderLayout.SOUTH);
-				jPanel4.add(addMemberButton, null);
-				jPanel4.add(deleteMemberButton, null);
-				jPanel4.add(upMemberButton, null);
-				jPanel4.add(downMemberButton, null);
-				jPanel2.add(sourceTypeCombo, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0
-						,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(5, 2, 10, 12), 0, 0));
-				jPanel2.add(jLabel2, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
-						,GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(2, 0, 2, 2), 0, 0));
-				jScrollPane1.getViewport().add(groupMemberList, null);
-				jPanel1.add(propertiesEditPanel, null);
-		}
+		GridLayout gridLayout1 = new GridLayout();
+		jPanel1.setLayout(gridLayout1);
+		jLabel1.setText(genericLabels.getString("nameLabel"));
+		jPanel2.setLayout(gridBagLayout1);
+		nameField.setEditable(false);
+		jLabel2.setText(genericLabels.getString("typeLabel"));
+		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				sourceTypeSelected();
+			}
+		});
+		jPanel3.setEnabled(false);
+		jPanel3.setBorder(titledBorder1);
+		jPanel3.setLayout(borderLayout2);
+		groupMemberList.setEnabled(false);
+		groupMemberList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		upMemberButton.setEnabled(false);
+		upMemberButton.setText(
+		// genericLabels.getString("up"));
+			"Up");
+		upMemberButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				upMemberButton_actionPerformed(e);
+			}
+		});
+
+		downMemberButton.setEnabled(false);
+		downMemberButton.setText(
+		// genericLabels.getString("Down"));
+			"Down");
+		downMemberButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				downMemberButton_actionPerformed(e);
+			}
+		});
+		deleteMemberButton.setEnabled(false);
+		deleteMemberButton.setText(genericLabels.getString("delete"));
+		deleteMemberButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				deleteMemberButton_actionPerformed(e);
+			}
+		});
+		addMemberButton.setEnabled(false);
+		addMemberButton.setText(genericLabels.getString("add"));
+		addMemberButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				addMemberButton_actionPerformed(e);
+			}
+		});
+		jPanel4.setLayout(flowLayout1);
+		flowLayout1.setHgap(15);
+		// gridLayout1.setColumns(2);
+		gridLayout1.setColumns(4);
+		gridLayout1.setHgap(5);
+		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				sourceTypeSelected();
+			}
+		});
+		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				sourceTypeSelected();
+			}
+		});
+		this.add(entityOpsPanel, BorderLayout.SOUTH);
+		this.add(jPanel1, BorderLayout.CENTER);
+		jPanel1.add(jPanel2, null);
+		jPanel2.add(jLabel1, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.EAST,
+			GridBagConstraints.NONE, new Insets(2, 10, 2, 2), 0, 0));
+		jPanel2.add(nameField, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+			GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(5, 2, 5, 12), 0, 0));
+		jPanel2.add(jPanel3, new GridBagConstraints(0, 2, 3, 1, 1.0, 1.0,
+			GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(8, 3, 3, 3), 61, 46));
+		jPanel3.add(jScrollPane1, BorderLayout.CENTER);
+		jPanel3.add(jPanel4, BorderLayout.SOUTH);
+		jPanel4.add(addMemberButton, null);
+		jPanel4.add(deleteMemberButton, null);
+		jPanel4.add(upMemberButton, null);
+		jPanel4.add(downMemberButton, null);
+		jPanel2
+			.add(sourceTypeCombo, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(5, 2, 10, 12),
+				0, 0));
+		jPanel2.add(jLabel2, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.EAST,
+			GridBagConstraints.NONE, new Insets(2, 0, 2, 2), 0, 0));
+		jScrollPane1.getViewport().add(groupMemberList, null);
+		jPanel1.add(propertiesEditPanel, null);
+	}
 
 	/**
 	  Called when a selection is made on the source-type combo box.
 	  Enables/Disables the GUI controls appropriately for this type of 
 	  data source.
-	  @param e ignored.
 	*/
-	void sourceTypeCombo_actionPerformed(ActionEvent e)
+	private void sourceTypeSelected()
 	{
-		String type = (String)sourceTypeCombo.getSelectedItem();
-		boolean isGroup = type.toLowerCase().endsWith("roup");
+		String dsType = (String)sourceTypeCombo.getSelectedItem();
+		boolean isGroup = dsType.toLowerCase().endsWith("roup");
 		addMemberButton.setEnabled(isGroup);
 		deleteMemberButton.setEnabled(isGroup);
 		upMemberButton.setEnabled(isGroup);
 		downMemberButton.setEnabled(isGroup);
 		groupMemberList.setEnabled(isGroup);
+		
+		DbEnum dsEnum = Database.getDb().enumList.getEnum(Constants.enum_DataSourceType);
+		if (dsEnum != null)
+		{
+			EnumValue dsEv = dsEnum.findEnumValue(dsType);
+			if (dsEv != null)
+			{
+				Class dsClass = null;
+				try
+				{
+					dsClass = dsEv.getExecClass();
+					DataSourceExec exec = (DataSourceExec)dsClass.newInstance();
+					propertiesEditPanel.setPropertiesOwner(exec);
+				}
+				catch(Exception ex) { }
+			}
+		}
 	}
 
 	/**
