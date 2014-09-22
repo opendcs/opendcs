@@ -16,5 +16,6 @@
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/xwork-core-2.1.6.jar"/>
 	<classpathentry kind="lib" path="/Library/Java/JavaVirtualMachines/jdk1.7.0_45.jdk/Contents/Home/lib/tools.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/ganymed-ssh2-build210.jar"/>
+	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/commons-net-3.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
