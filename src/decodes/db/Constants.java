@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2014/09/15 13:57:41  mmaloney
+*  Code cleanup.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -222,6 +225,7 @@ public class Constants
     public static final String enum_SessionProtocol = "SessionProtocol";
     public static final String enum_contMedium = "ContactMedium";
     public static final String enum_OpType = "OperationType";
+    public static final String enum_Season = "Season";
 
 	/// Code for short preamble in a transport medium.
 	public static final char preambleShort = 'S';

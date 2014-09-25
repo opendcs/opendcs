@@ -44,7 +44,7 @@ public class DTEquivTableModel extends AbstractTableModel
 		for(Iterator it = dtEnum.iterator(); it.hasNext(); )
 		{
 			EnumValue ev = (EnumValue)it.next();
-			columnNames[i++] = ev.value;
+			columnNames[i++] = ev.getValue();
 		}
 
 		dataTypes = new Vector();

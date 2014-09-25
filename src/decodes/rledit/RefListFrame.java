@@ -9,16 +9,11 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
-//MJM commented this out -- can't refer to sutron in open-source
-//import com.sutron.sutronwin.ClientList;
-//import com.sutron.sutronwin.SWCDialog;
-//import com.sutron.sutronwin.SwinClient;
-//import com.sutron.sutronwin.SwinClientTableModel;
-
 import java.util.*;
 
 import ilex.util.*;
 import decodes.db.*;
+import decodes.decoder.Season;
 import decodes.gui.SortingListTable;
 
 /**
@@ -26,6 +21,7 @@ RefListFrame is the GUI application for Reference List Editor.
 This program allows you to edit DECODES enumerations, engineering
 units, EU conversions and data type equivalencies.
 */
+@SuppressWarnings("serial")
 public class RefListFrame extends JFrame
 {
 	private static ResourceBundle genericLabels = 
@@ -39,18 +35,13 @@ public class RefListFrame extends JFrame
 	private JMenuItem jMenuHelpAbout = new JMenuItem();
 	private JLabel statusBar = new JLabel();
 	private BorderLayout borderLayout1 = new BorderLayout();
-	private JTabbedPane jTabbedPane1 = new JTabbedPane();
+	private JTabbedPane rlTabbedPane = new JTabbedPane();
 	private JPanel EnumTab = new JPanel();
 	private JPanel EUTab = new JPanel();
 	private JPanel EuCnvtTab = new JPanel();
-	private JPanel DataTypeTab = new JPanel();
-	
-	private JPanel SwinClientTab = new JPanel();
-	
 	private JMenuItem mi_saveToDb = new JMenuItem();
 	private JTextArea jTextArea1 = new JTextArea();
 	private BorderLayout borderLayout2 = new BorderLayout();
-	private Border border1;
 	
 	private JPanel jPanel1 = new JPanel();
 	private JScrollPane jScrollPane1 = new JScrollPane();
@@ -69,7 +60,6 @@ public class RefListFrame extends JFrame
 	private JComboBox enumComboBox = new JComboBox();
 	private BorderLayout borderLayout3 = new BorderLayout();
 	private JTextArea jTextArea2 = new JTextArea();
-	private Border border2;
 	
 	private JPanel jPanel3 = new JPanel();
 	private JScrollPane jScrollPane2 = new JScrollPane();
@@ -85,7 +75,6 @@ public class RefListFrame extends JFrame
 	private GridBagLayout gridBagLayout2 = new GridBagLayout();
 	private BorderLayout borderLayout4 = new BorderLayout();
 	private JTextArea jTextArea3 = new JTextArea();
-	private Border border3;
 	
 	private JPanel jPanel4 = new JPanel();
 	private JScrollPane jScrollPane3 = new JScrollPane();
@@ -97,33 +86,16 @@ public class RefListFrame extends JFrame
 	private JButton deleteEUCnvtButton = new JButton();
 	private JButton undoDelEuCnvtButton = new JButton();
 	private GridBagLayout gridBagLayout3 = new GridBagLayout();
-	private BorderLayout borderLayout5 = new BorderLayout();
-	private JTextArea jTextArea4 = new JTextArea();
 	private Border border4;
 	
-	private JPanel dtePanelCenter = new JPanel();
-	private JScrollPane jScrollPane4 = new JScrollPane();
 	private DTEquivTableModel dteTableModel = new DTEquivTableModel();
 	private JTable dteTable = new SortingListTable(dteTableModel,null);
 	private JButton addDTEButton = new JButton();
 	private JButton editDTEButton = new JButton();
 	private JButton deleteDTEButton = new JButton();
 	private JButton undoDeleteDTEButton = new JButton();
-	private GridBagLayout gridBagLayout4 = new GridBagLayout();
 	private Border border5;
 	
-	private JPanel jPanel6 = new JPanel();
-	private JScrollPane jScrollPane5 = new JScrollPane();
-	
-//MJM commented this out -- can't refer to sutron in open-source
-//	private SwinClientTableModel swClientTableModel = new SwinClientTableModel();
-//	private JTable swcTable = new SortingListTable(swClientTableModel, new int[] {25, 20, 12, 8});
-//	private JButton addSWCButton = new JButton();
-//	private JButton editSWCButton = new JButton();
-//	private JButton deleteSWCButton = new JButton();
-//	private JButton undoDeleteSWCButton = new JButton();
-	private GridBagLayout gridBagLayout5 = new GridBagLayout();
-	private BorderLayout borderLayout6 = new BorderLayout();
 	private Border border6;
 	private Border border7;
 
@@ -132,25 +104,24 @@ public class RefListFrame extends JFrame
 	private boolean unitsChanged = false;
 	private boolean convertersChanged = false;
 	private boolean dtsChanged = false;
-	private boolean clientsChanged = false;
+	private boolean seasonsChanged = false;
 	private EnumValue deletedEnumValue = null;
 	private EngineeringUnit deletedEU = null;
 	private UnitConverterDb deletedConverter = null;
 	private String []deletedDte = null;
-	
-//MJM commented this out -- can't refer to sutron in open-source
-//	private SwinClient deletedSwc = null;
+
+	private SeasonListTableModel seasonListTableModel = new SeasonListTableModel();
+	private SortingListTable seasonsTable = new SortingListTable(seasonListTableModel,
+		SeasonListTableModel.colWidths);
 
 	/**
 	 * No args constructor for JBuilder.
 	 */
 	public RefListFrame()
 	{
-//		System.out.println("RefListFrame() >>>>>>>>> ");
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		UIManager.put("TextArea.font", new Font("Serif", Font.ITALIC, 14));
-		UIManager.put("TextArea.foreground", Color.green);
-		try {
+		try 
+		{
 			jbInit();
 			initControls();
 		}
@@ -178,25 +149,25 @@ public class RefListFrame extends JFrame
 	 */
 	private void initControls()
 	{
-//		System.out.println("initControls >>>>>>>>>>>>>>>>>> ");
-		Vector v = new Vector();
-		for(Iterator enumIt = Database.getDb().enumList.iterator();
+		ArrayList<String> v = new ArrayList<String>();
+		for(Iterator<DbEnum> enumIt = Database.getDb().enumList.iterator();
 			enumIt.hasNext(); )
 		{
-			decodes.db.DbEnum en = (decodes.db.DbEnum)enumIt.next();
-			if (en.enumName.equals("EquationScope")
-			 || en.enumName.equals("DataOrder")
-			 || en.enumName.equals("UnitFamily")
-			 || en.enumName.equals("LookupAlgorithm")
-			 || en.enumName.equals("RecordingMode")
-			 || en.enumName.equals("EquipmentType"))
+			decodes.db.DbEnum en = enumIt.next();
+			if (en.enumName.equalsIgnoreCase("EquationScope")
+			 || en.enumName.equalsIgnoreCase("DataOrder")
+			 || en.enumName.equalsIgnoreCase("UnitFamily")
+			 || en.enumName.equalsIgnoreCase("LookupAlgorithm")
+			 || en.enumName.equalsIgnoreCase("RecordingMode")
+			 || en.enumName.equalsIgnoreCase("EquipmentType")
+			 || en.enumName.equalsIgnoreCase("Season"))
 				continue;
 			String s = TextUtil.capsExpand(en.enumName);
 			v.add(s);
 		}
 		Collections.sort(v);
 		for(int i=0; i<v.size(); i++)
-			enumComboBox.addItem(v.elementAt(i));
+			enumComboBox.addItem(v.get(i));
 		enumTable.setRowHeight(20);
 		enumTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		euTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -205,26 +176,20 @@ public class RefListFrame extends JFrame
 		ucTable.setRowHeight(20);
 		dteTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		dteTable.setRowHeight(20);
-
-//MJM commented this out -- can't refer to sutron in open-source
-//		swcTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-//		swcTable.setRowHeight(20);
 	}
 
 	/** Initializes GUI components. */
-	private void jbInit() throws Exception	{
-//		System.out.println("jbInit >>>>>>>>>>>>>>>>>>");
+	private void jbInit() throws Exception
+	{
 		contentPane = (JPanel) this.getContentPane();
-		border1 = BorderFactory.createMatteBorder(6,6,6,6,Color.darkGray);
-		border2 = BorderFactory.createMatteBorder(6,6,6,6,Color.darkGray);
-		border3 = BorderFactory.createMatteBorder(6,6,6,6,Color.darkGray);
+
 		border4 = BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED,Color.white,Color.white,new Color(124, 124, 124),new Color(178, 178, 178)),BorderFactory.createEmptyBorder(6,6,6,6));
 		border5 = BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED,Color.white,Color.white,new Color(124, 124, 124),new Color(178, 178, 178)),BorderFactory.createEmptyBorder(6,6,6,6));
 	    border6 = BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED,Color.white,Color.white,new Color(124, 124, 124),new Color(178, 178, 178)),BorderFactory.createEmptyBorder(6,6,6,6));
 	    border7 = BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED,Color.white,Color.white,new Color(124, 124, 124),new Color(178, 178, 178)),BorderFactory.createEmptyBorder(6,6,6,6));
 	    contentPane.setLayout(borderLayout1);
 		this.setFont(new java.awt.Font("Serif", 0, 16));
-    this.setSize(new Dimension(800, 536));
+		this.setSize(new Dimension(800, 536));
 		this.setTitle(labels.getString("RefListFrame.frameTitle"));
 		statusBar.setText(" ");
 		jMenuFile.setText(genericLabels.getString("file"));
@@ -233,7 +198,7 @@ public class RefListFrame extends JFrame
 		jMenuHelp.setText(genericLabels.getString("help"));
 		jMenuHelpAbout.setText(genericLabels.getString("about"));
 		jMenuHelpAbout.addActionListener(new RefListFrame_jMenuHelpAbout_ActionAdapter(this));
-		jTabbedPane1.setTabPlacement(JTabbedPane.TOP);
+		rlTabbedPane.setTabPlacement(JTabbedPane.TOP);
 		mi_saveToDb.setText(labels.getString("RefListFrame.saveToDB"));
 		mi_saveToDb.addActionListener(new RefListFrame_mi_saveToDb_actionAdapter(this));
 		
@@ -351,17 +316,10 @@ public class RefListFrame extends JFrame
 		undoDelEuCnvtButton.setText(labels.getString("RefListFrame.undoDelete"));
 		undoDelEuCnvtButton.addActionListener(new RefListFrame_undoDelEuCnvtButton_actionAdapter(this));
 		
-		DataTypeTab.setLayout(borderLayout5);
-		jTextArea4.setFont(new java.awt.Font("Serif", 0, 14));
-    jTextArea4.setBorder(border4);
-		jTextArea4.setEditable(false);
-		jTextArea4.setText(labels.getString("RefListFrame.dataTypeEquDesc"));
-		jTextArea4.setLineWrap(true);
-		jTextArea4.setRows(3);
-		jTextArea4.setWrapStyleWord(true);
-		DataTypeTab.setDebugGraphicsOptions(0);
-		
-		dtePanelCenter.setLayout(gridBagLayout4);
+
+
+
+
 		addDTEButton.setMaximumSize(new Dimension(122, 23));
 		addDTEButton.setMinimumSize(new Dimension(122, 23));
 		addDTEButton.setPreferredSize(new Dimension(122, 23));
@@ -421,45 +379,147 @@ public class RefListFrame extends JFrame
 		jMenuBar1.add(jMenuHelp);
 		this.setJMenuBar(jMenuBar1);
 		contentPane.add(statusBar, BorderLayout.SOUTH);
-		contentPane.add(jTabbedPane1, BorderLayout.CENTER);
+		contentPane.add(rlTabbedPane, BorderLayout.CENTER);
 		
-		jTabbedPane1.add(EnumTab,	 labels.getString("RefListFrame.enumTab"));
+		rlTabbedPane.add(EnumTab,	 labels.getString("RefListFrame.enumTab"));
 		EnumTab.add(jTextArea1, BorderLayout.NORTH);
 		EnumTab.add(jPanel1, BorderLayout.CENTER);
 		jPanel1.add(jScrollPane1,	 new GridBagConstraints(0, 1, 1, 7, 1.0, 1.0
 						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 8, 12, 0), 10, -98));
 		jScrollPane1.getViewport().add(enumTable, null);
 		
-		jTabbedPane1.add(EUTab,	labels.getString("RefListFrame.EngUnitsTab"));
+		rlTabbedPane.add(EUTab,	labels.getString("RefListFrame.EngUnitsTab"));
 		EUTab.add(jTextArea2, BorderLayout.NORTH);
 		EUTab.add(jPanel3, BorderLayout.CENTER);
 		jPanel3.add(jScrollPane2,	new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0
 						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(18, 10, 13, 0), 18, -56));
 		jScrollPane2.getViewport().add(euTable, null);
 		
-		jTabbedPane1.add(EuCnvtTab,	labels.getString("RefListFrame.euConvTab"));
+		rlTabbedPane.add(EuCnvtTab,	labels.getString("RefListFrame.euConvTab"));
 		EuCnvtTab.add(jTextArea3, BorderLayout.NORTH);
 		EuCnvtTab.add(jPanel4, BorderLayout.CENTER);
 		jPanel4.add(jScrollPane3,	new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0
 						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(21, 11, 10, 0), 25, -90));
 		jScrollPane3.getViewport().add(ucTable, null);
 		
-		jTabbedPane1.add(DataTypeTab,	labels.getString("RefListFrame.dataTypeEquivTab"));
-		DataTypeTab.add(jTextArea4, BorderLayout.NORTH);
-		DataTypeTab.add(dtePanelCenter, BorderLayout.CENTER);
-		dtePanelCenter.add(jScrollPane4,	 new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0,
+		JPanel dtTab = new JPanel(new BorderLayout());
+		JTextArea dtTabDescArea = new JTextArea();
+		dtTabDescArea.setFont(new java.awt.Font("Serif", 0, 14));
+		dtTabDescArea.setBorder(border4);
+		dtTabDescArea.setEditable(false);
+		dtTabDescArea.setText(labels.getString("RefListFrame.dataTypeEquDesc"));
+		dtTabDescArea.setLineWrap(true);
+		dtTabDescArea.setRows(3);
+		dtTabDescArea.setWrapStyleWord(true);
+		dtTab.add(dtTabDescArea, BorderLayout.NORTH);
+		JPanel dtePanelCenter = new JPanel(new GridBagLayout());
+		JScrollPane dtePanelScrollPane = new JScrollPane();
+		dtePanelScrollPane.getViewport().add(dteTable, null);
+		dtePanelCenter.add(dtePanelScrollPane,	 new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0,
 			GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
 			new Insets(17, 15, 10, 0), 27, -77));
-		jScrollPane4.getViewport().add(dteTable, null);
+		dtTab.add(dtePanelCenter, BorderLayout.CENTER);
+		rlTabbedPane.add(dtTab,	labels.getString("RefListFrame.dataTypeEquivTab"));
 
-//MJM commented this out -- can't refer to sutron in open-source
-//		jTabbedPane1.add(SwinClientTab, "SutronWIN Client");
-//		SwinClientTab.add(jPanel6, BorderLayout.CENTER);
-//		jPanel6.add(jScrollPane5, new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0
-//						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(20, 10, 10, 10), 20, -69));
-//		jScrollPane5.getViewport().add(swcTable, null);
+
+		// =========== Seasons Tab ==============
+		JPanel seasonsTab = new JPanel(new BorderLayout());
+		JTextArea seasonsTabDescArea = new JTextArea();
+		seasonsTabDescArea.setFont(new java.awt.Font("Serif", 0, 14));
+		seasonsTabDescArea.setBorder(border4);
+		seasonsTabDescArea.setEditable(false);
+		seasonsTabDescArea.setText(labels.getString("SeasonsTab.desc"));
+		seasonsTabDescArea.setLineWrap(true);
+		seasonsTabDescArea.setRows(3);
+		seasonsTabDescArea.setWrapStyleWord(true);
+		seasonsTab.add(seasonsTabDescArea, BorderLayout.NORTH);
+		JPanel seasonsPanelCenter = new JPanel(new GridBagLayout());
+		JScrollPane seasonsPanelScrollPane = new JScrollPane();
+		seasonsPanelScrollPane.getViewport().add(seasonsTable, null);
+		seasonsPanelCenter.add(seasonsPanelScrollPane,
+			new GridBagConstraints(0, 0, 1, 5, 1.0, 1.0,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+				new Insets(17, 15, 10, 0), 27, -77));
+		seasonsTab.add(seasonsPanelCenter, BorderLayout.CENTER);
+		JButton addSeasonButton = new JButton(genericLabels.getString("add"));
+		addSeasonButton.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					addSeasonPressed();
+				}
+			});
+		seasonsPanelCenter.add(addSeasonButton,
+			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL, 
+				new Insets(10, 5, 5, 5), 0, 0));
+		
+		JButton editSeasonButton = new JButton(genericLabels.getString("edit"));
+		editSeasonButton.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					editSeasonPressed();
+				}
+			});
+		seasonsPanelCenter.add(editSeasonButton,
+			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				new Insets(5, 5, 5, 5), 0, 0));
+		
+		JButton deleteSeasonButton = new JButton(genericLabels.getString("delete"));
+		deleteSeasonButton.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					deleteSeasonPressed();
+				}
+			});
+		seasonsPanelCenter.add(deleteSeasonButton,
+			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				new Insets(5, 5, 5, 5), 0, 0));
+
+		JButton seasonUpButton = new JButton(labels.getString("RefListFrame.moveUp"));
+		seasonUpButton.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					seasonUpPressed();
+				}
+			});
+		seasonsPanelCenter.add(seasonUpButton,
+			new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				new Insets(5, 5, 5, 5), 0, 0));
+
+		JButton seasonDownButton = new JButton(labels.getString("RefListFrame.moveDown"));
+		seasonDownButton.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					seasonDownPressed();
+				}
+			});
+		seasonsPanelCenter.add(seasonDownButton,
+			new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0,
+				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, 
+				new Insets(5, 5, 5, 5), 0, 0));
+		
+		rlTabbedPane.add(seasonsTab, labels.getString("SeasonsTab.tabName"));
 		
 		
+		//====================================
 		jPanel1.add(editEnumValButton,		new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
 		jPanel1.add(deleteEnumValButton,	 new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0
@@ -515,16 +575,90 @@ public class RefListFrame extends JFrame
 			new GridBagConstraints(1, 3, 1, 1, 0.0, .5,
 				GridBagConstraints.NORTH, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 20), 0, 0));
-		
-//MJM commented this out -- can't refer to sutron in open-source
-//		jPanel6.add(addSWCButton,			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0
-//				,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(20, 20, 5, 20), 0, 0));
-//		jPanel6.add(editSWCButton,	 new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0
-//				,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
-//		jPanel6.add(deleteSWCButton,		new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0
-//				,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
-//		jPanel6.add(undoDeleteSWCButton,		new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0
-//				,GridBagConstraints.NORTH, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
+	}
+
+	protected void seasonDownPressed()
+	{
+		int row = seasonsTable.getSelectedRow();
+		if (row == -1)
+		{
+			showError(
+				labels.getString("SeasonsTab.noSelection") + " " + 
+				labels.getString("RefListFrame.moveDown"));
+			return;
+		}
+		if (seasonListTableModel.moveDown(row))
+			seasonsTable.setRowSelectionInterval(row+1, row+1);
+		seasonsChanged = true;
+	}
+
+	protected void seasonUpPressed()
+	{
+		int row = seasonsTable.getSelectedRow();
+		if (row == -1)
+		{
+			showError(
+				labels.getString("SeasonsTab.noSelection") + " " + 
+				labels.getString("RefListFrame.moveUp"));
+			return;
+		}
+		if (seasonListTableModel.moveUp(row))
+			seasonsTable.setRowSelectionInterval(row-1, row-1);
+		seasonsChanged = true;
+	}
+
+	protected void deleteSeasonPressed()
+	{
+		Season season = null;
+		int idx = this.seasonsTable.getSelectedRow();
+		if (idx == -1
+		 || (season = (Season)seasonListTableModel.getRowObject(idx)) == null)
+		{
+			showError(
+				labels.getString("SeasonsTab.noSelection") + " " + genericLabels.getString("delete"));
+			return;
+		}
+		int r = JOptionPane.showConfirmDialog(this,
+			"Confirm", labels.getString("SeasonsTab.confirmDelete") + " " + season.getAbbr(),
+			JOptionPane.YES_NO_OPTION);
+		if (r != JOptionPane.YES_OPTION)
+			return;
+		seasonListTableModel.deleteAt(idx);
+		seasonsChanged = true;
+	}
+
+	protected void editSeasonPressed()
+	{
+		Season season = null;
+		int idx = this.seasonsTable.getSelectedRow();
+		if (idx == -1
+		 || (season = (Season)seasonListTableModel.getRowObject(idx)) == null)
+		{
+			showError(
+				labels.getString("SeasonsTab.noSelection") + " " + genericLabels.getString("edit"));
+			return;
+		}
+		SeasonEditDialog dlg = new SeasonEditDialog(this);
+		dlg.fillValues(season);
+		launchDialog(dlg);
+		if (dlg.isOkPressed())
+		{
+			seasonListTableModel.fireTableDataChanged();
+			seasonsChanged = true;
+		}
+	}
+
+	protected void addSeasonPressed()
+	{
+		Season season = new Season();
+		SeasonEditDialog dlg = new SeasonEditDialog(this);
+		dlg.fillValues(season);
+		launchDialog(dlg);
+		if (dlg.isOkPressed())
+		{
+			seasonListTableModel.add(season);
+			seasonsChanged = true;
+		}
 	}
 
 	/** 
@@ -533,7 +667,7 @@ public class RefListFrame extends JFrame
 	 */
 	public void jMenuFileExit_actionPerformed(ActionEvent e) 
 	{
-		if (enumsChanged || unitsChanged || convertersChanged || dtsChanged)
+		if (enumsChanged || unitsChanged || convertersChanged || dtsChanged || seasonsChanged)
 		{
 			int r = JOptionPane.showConfirmDialog(this,
 				labels.getString("RefListFrame.unsavedChangesQues"), 
@@ -557,7 +691,8 @@ public class RefListFrame extends JFrame
 		dlg.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x, (frmSize.height - dlgSize.height) / 2 + loc.y);
 		dlg.setModal(true);
 		dlg.pack();
-		dlg.show();
+		dlg.setVisible(true);
+//		dlg.show();
 	}
 
 	/**
@@ -596,7 +731,7 @@ public class RefListFrame extends JFrame
 		launchDialog(evd);
 		if (evd.wasChanged())
 		{
-			en.replaceValue(ev.value, ev.description, ev.execClassName, "");
+			en.replaceValue(ev.getValue(), ev.getDescription(), ev.getExecClassName(), "");
 			enumTableModel.fireTableDataChanged();
 			enumsChanged = true;
 		}
@@ -627,7 +762,7 @@ public class RefListFrame extends JFrame
 		launchDialog(evd);
 		if (evd.wasChanged())
 		{
-			en.replaceValue(ev.value, ev.description, ev.execClassName, ev.editClassName);
+			en.replaceValue(ev.getValue(), ev.getDescription(), ev.getExecClassName(), ev.getEditClassName());
 			enumTableModel.fireTableDataChanged();
 			enumsChanged = true;
 		}
@@ -651,7 +786,7 @@ public class RefListFrame extends JFrame
 			(String)enumComboBox.getSelectedItem());
 		decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
 		deletedEnumValue = enumTableModel.getEnumValueAt(row);
-		en.removeValue(deletedEnumValue.value);
+		en.removeValue(deletedEnumValue.getValue());
 		enumTableModel.fireTableDataChanged();
 		undoDeleteEnumValButton.setEnabled(true);
 		enumsChanged = true;
@@ -669,9 +804,9 @@ public class RefListFrame extends JFrame
 			String s = TextUtil.removeAllSpace(
 				(String)enumComboBox.getSelectedItem());
 			decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
-			en.replaceValue(deletedEnumValue.value,
-				deletedEnumValue.description,
-				deletedEnumValue.execClassName, "");
+			en.replaceValue(deletedEnumValue.getValue(),
+				deletedEnumValue.getDescription(),
+				deletedEnumValue.getExecClassName(), "");
 			deletedEnumValue = null;
 			enumTableModel.fireTableDataChanged();
 		}
@@ -697,7 +832,7 @@ public class RefListFrame extends JFrame
 		decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
 		EnumValue ev = enumTableModel.getEnumValueAt(row);
 		enumTableModel.fireTableDataChanged();
-		en.setDefault(ev.value);
+		en.setDefault(ev.getValue());
 		enumsChanged = true;
 	}
 
@@ -1095,11 +1230,16 @@ public class RefListFrame extends JFrame
 		String what = "";
 		try
 		{
+			if (seasonsChanged)
+			{
+				seasonListTableModel.storeBackToEnum();
+				enumsChanged = true;
+			}
 			if (enumsChanged)
 			{
 				what = "Enumerations";
 				db.enumList.write();
-				enumsChanged = false;
+				enumsChanged = seasonsChanged = false;
 			}
 			if (unitsChanged || convertersChanged)
 			{
@@ -1114,13 +1254,6 @@ public class RefListFrame extends JFrame
 				dtsChanged = false;
 			}
 			
-//MJM commented this out -- can't refer to sutron in open-source
-//			if(clientsChanged)
-//			{
-//				what = "Swin Clients";
-//				db.clientList.write();
-//				clientsChanged = false;
-//			}
 			JOptionPane.showConfirmDialog(this, labels.getString("RefListFrame.changesWritten"),
 				"Info", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
 		}
@@ -1145,8 +1278,8 @@ public class RefListFrame extends JFrame
 		int x = (frmSize.width - dlgSize.width) / 2 + loc.x;
 		int y = (frmSize.height - dlgSize.height) / 2 + loc.y;
 		dlg.setLocation(x, y);
-		//dlg.setVisible(true);
-		dlg.show();
+		dlg.setVisible(true);
+		//dlg.show();
 	}
 
 	/**
@@ -1159,118 +1292,6 @@ public class RefListFrame extends JFrame
 		JOptionPane.showMessageDialog(this,
 			AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
 	}
-
-	public void deleteSWCButton_actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void undoDeleteSWCButton_actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-//MJM commented this out -- can't refer to sutron in open-source
-//	public void editSWCButton_actionPerformed(ActionEvent e) 
-//	{
-//		int row = swcTable.getSelectedRow();
-//		if (row == -1)
-//		{
-//			showError(labels.getString("RefListFrame.engEditInfo"));
-//			return;
-//		}
-//		SwinClient swc = (SwinClient)swClientTableModel.getRowObject(row);
-//		String oldName = swc.getOrgName();
-//		SWCDialog dlg = new SWCDialog(swc);
-//		dlg.fillValues(swc);
-//		launchDialog(dlg);
-//		if (dlg.wasChanged() || dlg.userDlgChanged)
-//		{
-//			ClientList cl = Database.getDb().clientList;
-//			String newName = dlg.getName();
-//			
-//			if (newName == null || newName.length() == 0)
-//			{
-//				showError(labels.getString("RefListFrame.euAbbrErr"));
-//				return;
-//			}
-//			
-//			if (!oldName.equalsIgnoreCase(newName))
-//			{
-//				// Name was changed, make sure it doesn't clash with another EU.
-//				SwinClient otherSC = cl.getByName(newName);
-//				if (otherSC != null)
-//				{
-//					showError(LoadResourceBundle.sprintf(
-//							labels.getString("RefListFrame.cantChangeAbbr"),
-//							newName));
-//					return;
-//				}
-//			}
-//
-//			cl.remove(swc);  // Remove hash entry for old name.
-////			swClientTableModel.rebuild();
-//			swc.setOrgName(newName);
-//			swc.setOrgPhone(dlg.getPhone());
-//			swc.setAddress(dlg.getAddr());
-//			swc.setTsGroup(dlg.getTSGroup());
-//			swc.setLat(dlg.getLat());
-//			swc.setLon(dlg.getLon());
-//			swc.setZoom(dlg.getZoom());
-//			swc.setPresentationGroupName(dlg.getPresentation());
-//			swc.setTimeZone(dlg.getTimeZone());
-////			cl.add(swc);     // Re-add with correct hash entries.
-//
-//			clientsChanged = true;
-//			swClientTableModel.rebuild();
-//			swClientTableModel.fireTableDataChanged();
-//		}
-//		
-//	}
-//
-//	public void addSWCButton_actionPerformed(ActionEvent e) 
-//	{
-//		SWCDialog dlg = new SWCDialog();
-//		launchDialog(dlg);
-//		if (dlg.wasChanged())
-//		{
-//			String name = dlg.getName();
-//			if (name == null || name.length() == 0)
-//			{
-//				showError(labels.getString("RefListFrame.euAbbrErr"));
-//				return;
-//			}
-//
-//			SwinClient sc = 
-//				Database.getDb().clientList.getByName(name);
-//			
-//			if (sc != null)
-//			{
-//				showError(LoadResourceBundle.sprintf(
-//						labels.getString("RefListFrame.euAlreadyExistErr"),
-//						name));
-//				return;
-//			}
-//
-//			sc = SwinClient.getSwinClient(name);
-//			sc.setClientId(swClientTableModel.getCnv().size()+1);
-//			sc.setOrgName(name);
-//			sc.setOrgPhone(dlg.getPhone());
-//			sc.setAddress(dlg.getAddr());
-//			sc.setTsGroup(dlg.getTSGroup());
-//			sc.setLat(dlg.getLat());
-//			sc.setLon(dlg.getLon());
-//			sc.setPresentationGroupName(dlg.getPresentation());
-//			sc.setTimeZone(dlg.getTimeZone());
-//			clientsChanged = true;
-//			swClientTableModel.rebuild();
-//			swClientTableModel.fireTableDataChanged();
-//		}
-//		
-//	}
-
-	//============== Stub Methods - Override in Sub-Class ===========
-
 }
 class RefListFrame_jMenuFileExit_ActionAdapter implements ActionListener {
 	RefListFrame adaptee;

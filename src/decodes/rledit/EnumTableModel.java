@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2009/01/22 00:31:33  mjmaloney
 *  DB Caching improvements to make msgaccess start quicker.
 *  Remove the need to cache the entire database.
@@ -39,9 +42,8 @@
 */
 package decodes.rledit;
 
-import java.awt.*;
-import javax.swing.*;
 import javax.swing.table.*;
+
 import java.util.*;
 
 import decodes.db.*;
@@ -51,6 +53,7 @@ import decodes.gui.*;
 Table Model for a DECODES Enumeration. The table will show all of the
 values defined in the database for a specific Enum.
 */
+@SuppressWarnings("serial")
 public class EnumTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
@@ -112,13 +115,13 @@ public class EnumTableModel extends AbstractTableModel
 		if (ev == null)
 			return "";
 		if (column == 0)
-			return ev.value.equals(currentEnum.getDefault()) ? "*" : "";
+			return ev.getValue().equals(currentEnum.getDefault()) ? "*" : "";
 		else if (column == 1)
-			return ev.value;
+			return ev.getValue();
 		else if (column == 2)
-			return ev.description;
+			return ev.getDescription();
 		else if (column == 3)
-			return ev.execClassName;
+			return ev.getExecClassName();
 		else return "";
 	}
 

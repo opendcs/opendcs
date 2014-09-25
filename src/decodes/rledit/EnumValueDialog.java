@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:04  cvs
 *  Added legacy code to repository
 *
@@ -100,11 +103,11 @@ public class EnumValueDialog extends JDialog
 	public void fillValues(EnumValue ev)
 	{
 		myEV = ev;
-		enumNameField.setText(ev.dbenum.enumName);
-		valueField.setText(ev.value != null ? ev.value : "");
-		descriptionField.setText(ev.description != null ? ev.description : "");
-		execClassField.setText(ev.execClassName != null ? ev.execClassName:"");
-		optionsField.setText(ev.editClassName != null ? ev.editClassName : "");
+		enumNameField.setText(ev.getDbenum().enumName);
+		valueField.setText(ev.getValue() != null ? ev.getValue() : "");
+		descriptionField.setText(ev.getDescription() != null ? ev.getDescription() : "");
+		execClassField.setText(ev.getExecClassName() != null ? ev.getExecClassName():"");
+		optionsField.setText(ev.getEditClassName() != null ? ev.getEditClassName() : "");
 		_wasChanged = false;
 	}
 
@@ -211,28 +214,28 @@ public class EnumValueDialog extends JDialog
 	void okButtonPressed() 
 	{
 		String v = valueField.getText();
-		if (!v.equals(myEV.value))
+		if (!v.equals(myEV.getValue()))
 		{
 			_wasChanged = true;
-			myEV.value = v;
+			myEV.setValue(v);
 		}	
 		v = descriptionField.getText();
-		if (!v.equals(myEV.description))
+		if (!v.equals(myEV.getDescription()))
 		{
 			_wasChanged = true;
-			myEV.description = v;
+			myEV.setDescription(v);
 		}	
 		v = execClassField.getText();
-		if (!v.equals(myEV.execClassName))
+		if (!v.equals(myEV.getExecClassName()))
 		{
 			_wasChanged = true;
-			myEV.execClassName = v;
+			myEV.setExecClassName(v);
 		}
 		v = optionsField.getText();
-		if (!TextUtil.equals(v, myEV.editClassName))
+		if (!TextUtil.equals(v, myEV.getEditClassName()))
 		{
 			_wasChanged = true;
-			myEV.editClassName = v;
+			myEV.setEditClassName(v);
 		}
 		
 		closeDlg();
