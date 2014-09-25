@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.2  2014/08/29 18:24:35  mmaloney
+*  6.1 Schema Mods
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -429,9 +432,9 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 				for(Iterator<EnumValue> vit = en.iterator(); vit.hasNext(); )
 				{
 					EnumValue ev = vit.next();
-					EnumValue stageEv = stageEnum.replaceValue(ev.value, 
-						ev.description, ev.execClassName, ev.editClassName);
-					stageEv.sortNumber = ev.sortNumber;
+					EnumValue stageEv = stageEnum.replaceValue(ev.getValue(), 
+						ev.getDescription(), ev.getExecClassName(), ev.getEditClassName());
+					stageEv.setSortNumber(ev.getSortNumber());
 				}
 			}
 		}
@@ -613,7 +616,7 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 					for(Iterator<EnumValue> evit = stageOb.iterator(); evit.hasNext(); )
 					{
 						EnumValue ev = evit.next();
-						info("    " + ev.value + " - " + ev.description);
+						info("    " + ev.getValue() + " - " + ev.getDescription());
 					}
 				}
 				else
@@ -625,8 +628,8 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 						{
 							EnumValue ev = evit.next();
 							oldOb.replaceValue(
-								ev.value, ev.description, 
-								ev.execClassName, ev.editClassName);
+								ev.getValue(), ev.getDescription(), 
+								ev.getExecClassName(), ev.getEditClassName());
 						}
 					}
 					else
@@ -1536,7 +1539,7 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 		for(Iterator<EnumValue> evit = dts.iterator(); evit.hasNext(); )
 		{
 			EnumValue ev = evit.next();
-			info("    " + ev.value + " " + ev.description);
+			info("    " + ev.getValue() + " " + ev.getDescription());
 		}
 	}
 // Debug method:

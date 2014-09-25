@@ -27,7 +27,7 @@ import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import lrgs.common.DcpMsg;
-import lrgs.iridium.IridiumRecv;
+import lrgs.iridiumsbd.IridiumSbdInterface;
 import lrgs.lrgsmain.LrgsConfig;
 
 /**
@@ -88,8 +88,7 @@ public class NoaaportProtocol
 			}
 			catch(IOException ex)
 			{
-				warning("" + IridiumRecv.EVT_BAD_CONFIG
-					+ " Cannot open capture file '" + f.getPath() + "': " 
+				warning("Cannot open capture file '" + f.getPath() + "': " 
 					+ ex);
 				captureStream = null;
 			}

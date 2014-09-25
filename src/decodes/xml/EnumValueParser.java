@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:08  cvs
 *  Added legacy code to repository
 *
@@ -166,13 +169,13 @@ public class EnumValueParser implements XmlObjectParser, TaggedStringOwner, XmlO
 		case descriptionTag:
 			str = TextUtil.collapseWhitespace(str);
 			str = new String(AsciiUtil.ascii2bin(str));
-			enumValue.description = str;
+			enumValue.setDescription(str);
 			break;
 		case execClassTag:
-			enumValue.execClassName = str;
+			enumValue.setExecClassName(str);
 			break;
 		case editClassTag:
-			enumValue.editClassName = str;
+			enumValue.setEditClassName(str);
 			break;
 		}
 	}
@@ -187,7 +190,7 @@ public class EnumValueParser implements XmlObjectParser, TaggedStringOwner, XmlO
 		switch(tag)
 		{
 		case sortNumberTag:
-			enumValue.sortNumber = (int)value;
+			enumValue.setSortNumber((int)value);
 			break;
 		}
 	}
@@ -200,16 +203,16 @@ public class EnumValueParser implements XmlObjectParser, TaggedStringOwner, XmlO
 	public void writeXml( XmlOutputStream xos ) throws IOException
 	{
 		xos.startElement(myName(), 
-			XmlDbTags.EnumValue_value_at, enumValue.value);
-		if (enumValue.description != null)
+			XmlDbTags.EnumValue_value_at, enumValue.getValue());
+		if (enumValue.getDescription() != null)
 			xos.writeElement(XmlDbTags.description_el, 
-				AsciiUtil.bin2ascii(enumValue.description.getBytes()));
-		if (enumValue.execClassName != null)
-			xos.writeElement(XmlDbTags.execClass_el, enumValue.execClassName);
-		if (enumValue.editClassName != null)
-			xos.writeElement(XmlDbTags.editClass_el, enumValue.editClassName);
-		if (enumValue.sortNumber != Integer.MAX_VALUE)
-			xos.writeElement(XmlDbTags.sortNumber_el, ""+enumValue.sortNumber);
+				AsciiUtil.bin2ascii(enumValue.getDescription().getBytes()));
+		if (enumValue.getExecClassName() != null)
+			xos.writeElement(XmlDbTags.execClass_el, enumValue.getExecClassName());
+		if (enumValue.getEditClassName() != null)
+			xos.writeElement(XmlDbTags.editClass_el, enumValue.getEditClassName());
+		if (enumValue.getSortNumber() != Integer.MAX_VALUE)
+			xos.writeElement(XmlDbTags.sortNumber_el, ""+enumValue.getSortNumber());
 		xos.endElement(myName());
 	}
 }

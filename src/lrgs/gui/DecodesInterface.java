@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.5  2014/08/22 17:23:11  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.4  2014/07/03 12:45:44  mmaloney
 *  Don't call readDecodesProperties() this is done by CmdLineArgs.
 *
@@ -295,7 +298,7 @@ public class DecodesInterface
 		for(Iterator it = denum.iterator(); it.hasNext(); )
 		{
 			EnumValue env = (EnumValue)it.next();
-			ret[i++] = env.value;
+			ret[i++] = env.getValue();
 		}
 		return ret;
 	}

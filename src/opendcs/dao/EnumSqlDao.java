@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/08/22 17:23:10  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  * Revision 1.2  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -267,7 +270,7 @@ public class EnumSqlDao
 		}
 		EnumValue ev = dbEnum.replaceValue(enumValue, description, execClass, editClass);
 		if (setSortNumber)
-			ev.sortNumber = sn;
+			ev.setSortNumber(sn);
 	}
 
 	/**
@@ -280,17 +283,17 @@ public class EnumSqlDao
 	{
 		String q =
 			"INSERT INTO EnumValue VALUES(" +
-				ev.dbenum.getId() + ", " +
-				sqlString(ev.value) + ", " +
-				sqlString(ev.description) + ", " +
-				sqlString(ev.execClassName) + ", " +
-				sqlString(ev.editClassName);
+				ev.getDbenum().getId() + ", " +
+				sqlString(ev.getValue()) + ", " +
+				sqlString(ev.getDescription()) + ", " +
+				sqlString(ev.getExecClassName()) + ", " +
+				sqlString(ev.getEditClassName());
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
 			q += ")";
-		else if (ev.sortNumber == EnumValue.UNDEFINED_SORT_NUMBER)
+		else if (ev.getSortNumber() == EnumValue.UNDEFINED_SORT_NUMBER)
 			q += ", NULL)";
 		else
-			q = q + ", " + ev.sortNumber + ")";
+			q = q + ", " + ev.getSortNumber() + ")";
 
 		doModify(q);
 	}

@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2014/05/27 12:56:02  mmaloney
+*  cleanup
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -179,6 +182,11 @@ public class DbEnum
 		enumValues.add(ret);
 		return ret;
 	}
+	
+	public void addValue(EnumValue ev)
+	{
+		enumValues.add(ev);
+	}
 
 	/**
 	 * Replaces the enumeration value
@@ -225,7 +233,7 @@ public class DbEnum
 		for(Iterator<EnumValue> it = enumValues.iterator(); it.hasNext();)
 		{
 			EnumValue ev = it.next();
-			if (value.equalsIgnoreCase(ev.value))
+			if (value.equalsIgnoreCase(ev.getValue()))
 				return ev;
 		}
 		return null;
@@ -273,10 +281,10 @@ public class DbEnum
 			{
 				public int compare(EnumValue ev1, EnumValue ev2)
 				{
-					int i = ev1.sortNumber - ev2.sortNumber;
+					int i = ev1.getSortNumber() - ev2.getSortNumber();
 					if (i != 0)
 						return i;
-					return ev1.value.compareToIgnoreCase(ev2.value);
+					return ev1.getValue().compareToIgnoreCase(ev2.getValue());
 				}
 			});
 	}
@@ -353,5 +361,9 @@ public class DbEnum
 		return getId();
 	}
 
+	public void clear()
+	{
+		enumValues.clear();
+	}
 }
 

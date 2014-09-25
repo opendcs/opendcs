@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/01/08 20:48:27  mmaloney
 *  Relax 100 sensor limit.
 *  Get rid of 'setPreferredSize' calls.
@@ -206,12 +209,12 @@ public class ConfigSensorEditDialog extends GuiDialog
 				for(; j<i; j++)
 				{
 					String std = dtStdCombo[j].getDataTypeStandard();
-					if (ev.value.equalsIgnoreCase(std))
+					if (ev.getValue().equalsIgnoreCase(std))
 						break;
 				}
 				if (j == i) // Didn't use this std yet?
 				{
-					dtStdCombo[j].setSelectedItem(ev.value);
+					dtStdCombo[j].setSelectedItem(ev.getValue());
 		    		dataTypeField[i].setText("");
 					dtStdCombo[i].setEnabled(true);
 		    		dataTypeField[i].setEnabled(true);

@@ -326,9 +326,9 @@ public class DataSource extends IdDatabaseObject
 			if (dsClass == null)
 				Logger.instance().log(Logger.E_FAILURE,
 					"No exec class defined for data source type '"
-					+ mySourceType.value + "'");
+					+ mySourceType.getValue() + "'");
 			Logger.instance().debug2("Making data source delegate '" 
-				+ mySourceType.value + "' class='" + dsClass.getCanonicalName()
+				+ mySourceType.getValue() + "' class='" + dsClass.getCanonicalName()
 				+ "'");
 			ret = (DataSourceExec)dsClass.newInstance();
 			if (ret == null)

@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.12  2013/07/10 19:24:01  mmaloney
 *  Don't modify list if site delete fails.
 *
@@ -214,7 +217,7 @@ class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
 			for(int i = 0; i < colNames.length && it.hasNext(); i++)
 			{
 				EnumValue ev = (EnumValue)it.next();
-				colNames[i] = ev.value;
+				colNames[i] = ev.getValue();
 			}
 			colNames[col.size()] = SiteSelectPanel.descriptionLabel;
 		}

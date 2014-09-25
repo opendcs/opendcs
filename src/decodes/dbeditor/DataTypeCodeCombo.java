@@ -28,9 +28,9 @@ public class DataTypeCodeCombo extends JComboBox
 				for(Iterator it = dte.values().iterator(); it.hasNext(); )
 				{
 					EnumValue ev = (EnumValue)it.next();
-					if (ev.value.equalsIgnoreCase(pref))
-						prefv = ev.value;
-					this.addItem(ev.value);
+					if (ev.getValue().equalsIgnoreCase(pref))
+						prefv = ev.getValue();
+					this.addItem(ev.getValue());
 				}
 				if (prefv != null)
 					this.setSelectedItem(prefv);

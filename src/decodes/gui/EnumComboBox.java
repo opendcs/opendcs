@@ -54,7 +54,7 @@ public class EnumComboBox extends JComboBox
 		for(Iterator it = dbEnum.values().iterator(); it.hasNext(); )
 		{
 			EnumValue ev = (EnumValue)it.next();
-			addItem(ev.value);
+			addItem(ev.getValue());
 		}
 
 		// Initially display 'default' value if one is specified.

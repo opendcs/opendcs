@@ -321,9 +321,9 @@ public class ImportDialog extends GuiDialog
 			for(Iterator vit = en.iterator(); vit.hasNext(); )
 			{
 				EnumValue ev = (EnumValue)vit.next();
-				EnumValue stageEv = stageEnum.replaceValue(ev.value, 
-					ev.description, ev.execClassName, ev.editClassName);
-				stageEv.sortNumber = ev.sortNumber;
+				EnumValue stageEv = stageEnum.replaceValue(ev.getValue(), 
+					ev.getDescription(), ev.getExecClassName(), ev.getEditClassName());
+				stageEv.setSortNumber(ev.getSortNumber());
 			}
 		}
 		stageDb.engineeringUnitList = editDb.engineeringUnitList;

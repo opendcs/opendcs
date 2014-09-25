@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/05/27 12:56:02  mmaloney
+*  cleanup
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -99,22 +102,22 @@ package decodes.db;
 public class EnumValue extends DatabaseObject
 {
 	/** The enum of which this is a member. */
-	public DbEnum dbenum;
+	private DbEnum dbenum;
 
 	/** The name this EnumValue. Values are unique within a particular enum. */
-	public String value;
+	private String value;
 
 	/** A short description. */
-	public String description;
+	private String description;
 
 	/** The Java class that implements the functionality of this enum value. */
-	public String execClassName;
+	private String execClassName;
 
 	/** The Java class that implements an editor for this type of object. */
-	public String editClassName;
+	private String editClassName;
 
 	/** Determines position of this element within GUI pick-lists. */
-	public int sortNumber;
+	private int sortNumber;
 
 	/**
 	  Constant for undefined sort number is largest positive int,
@@ -134,14 +137,14 @@ public class EnumValue extends DatabaseObject
 	*/
 	public EnumValue(DbEnum e, String v)
 	{
-		dbenum = e;
-		value = v.toLowerCase();
-		description = null;
-		execClassName = null;
-		editClassName = null;
+		setDbenum(e);
+		setValue(v.toLowerCase());
+		setDescription(null);
+		setExecClassName(null);
+		setEditClassName(null);
 		execClass = null;
 		editClass = null;
-		sortNumber = UNDEFINED_SORT_NUMBER;
+		setSortNumber(UNDEFINED_SORT_NUMBER);
 	}
 
 	/**
@@ -156,9 +159,9 @@ public class EnumValue extends DatabaseObject
 	public EnumValue(DbEnum e, String v, String d, String ex, String ed)
 	{
 		this(e, v);
-		description = d;
-		execClassName = ex;
-		editClassName = ed;
+		setDescription(d);
+		setExecClassName(ex);
+		setEditClassName(ed);
 	}
 
 	/**
@@ -176,7 +179,7 @@ public class EnumValue extends DatabaseObject
 	*/
 	public String getFullName()
 	{
-		return dbenum.enumName + '.' + value;
+		return getDbenum().enumName + '.' + getValue();
 	}
 	
 	/**
@@ -210,11 +213,11 @@ public class EnumValue extends DatabaseObject
 		if (editClass != null)
 			return editClass;
 
-		if (editClassName == null || editClassName.length() == 0)
+		if (getEditClassName() == null || getEditClassName().length() == 0)
 			throw new ClassNotFoundException("No edit class defined for '"
 				+ getFullName() + "'");
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		editClass = cl.loadClass(editClassName);
+		editClass = cl.loadClass(getEditClassName());
 		return editClass;
 	}
 
@@ -230,12 +233,12 @@ public class EnumValue extends DatabaseObject
 		if (execClass != null)
 			return execClass;
 
-		if (execClassName == null || execClassName.length() == 0)
+		if (getExecClassName() == null || getExecClassName().length() == 0)
 			throw new ClassNotFoundException("No exec class defined for '"
 				+ getFullName() + "'");
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		//ClassLoader cl = ClassLoader.getSystemClassLoader();
-		execClass = cl.loadClass(execClassName);
+		execClass = cl.loadClass(getExecClassName());
 		return execClass;
 	}
 	
@@ -294,5 +297,55 @@ public class EnumValue extends DatabaseObject
 	{
 		ClassLoader cl = ClassLoader.getSystemClassLoader();
 		Class execClass = cl.loadClass(args[0]);
+	}
+
+	public String getValue()
+	{
+		return value;
+	}
+
+	public void setValue(String value)
+	{
+		this.value = value;
+	}
+
+	public String getDescription()
+	{
+		return description;
+	}
+
+	public void setDescription(String description)
+	{
+		this.description = description;
+	}
+
+	public String getExecClassName()
+	{
+		return execClassName;
+	}
+
+	public void setExecClassName(String execClassName)
+	{
+		this.execClassName = execClassName;
+	}
+
+	public String getEditClassName()
+	{
+		return editClassName;
+	}
+
+	public void setEditClassName(String editClassName)
+	{
+		this.editClassName = editClassName;
+	}
+
+	public DbEnum getDbenum()
+	{
+		return dbenum;
+	}
+
+	public void setDbenum(DbEnum dbenum)
+	{
+		this.dbenum = dbenum;
 	}
 }

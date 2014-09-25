@@ -15,7 +15,7 @@ import javax.swing.JTextField;
 
 import ilex.util.TextUtil;
 import decodes.gui.GuiDialog;
-import lrgs.iridium.IridiumRecv;
+import lrgs.iridiumsbd.IridiumSbdInterface;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.rtstat.LrgsConfigPanel;
 import lrgs.rtstat.RtStat;
@@ -30,7 +30,6 @@ public class IridiumCfgPanel
 	extends JPanel implements LrgsConfigPanel
 {
 	private LrgsConfig lrgsConfig = null;
-	private JTextField forwardHostField = new JTextField();
 	private JTextField forwardPortNumField = new JTextField();
 	private JCheckBox enableCheckBox = new JCheckBox();
 	private JTextField portNumField = new JTextField();
@@ -50,18 +49,11 @@ public class IridiumCfgPanel
 		if (lrgsConfig == null)
 			return false;
 		
-		String iridiumForwardHost = forwardHostField.getText();
-		if (iridiumForwardHost.trim().length() == 0)
-			iridiumForwardHost = null;
-		
 		if (enableCheckBox.isSelected() != lrgsConfig.iridiumEnabled
 		 || !TextUtil.strEqual(captureFileField.getText().trim(), 
 			 	lrgsConfig.iridiumCaptureFile)
-		 || getIntField(portNumField, IridiumRecv.DEFAULT_LISTENING_PORT) 
-		 		!= lrgsConfig.iridiumPort
-		 || !TextUtil.strEqual(iridiumForwardHost, lrgsConfig.iridiumForwardHost)
- 		 || getIntField(forwardPortNumField, IridiumRecv.DEFAULT_LISTENING_PORT) 
-		 		!= lrgsConfig.iridiumForwardPort)
+		 || getIntField(portNumField, IridiumSbdInterface.SBD_LISTEN_PORT) 
+		 		!= lrgsConfig.iridiumPort)
 			return true;
 		return false;
 	}
@@ -74,9 +66,6 @@ public class IridiumCfgPanel
 //System.out.println("fillFields, enabled="+ enableCheckBox.isSelected());
 		portNumField.setText(String.valueOf(lrgsConfig.iridiumPort));
 		captureFileField.setText(lrgsConfig.iridiumCaptureFile);
-		forwardHostField.setText(
-			lrgsConfig.iridiumForwardHost == null ? "" : lrgsConfig.iridiumForwardHost);
-		forwardPortNumField.setText("" + lrgsConfig.iridiumForwardPort);
 	}
 	
 	@Override
@@ -88,14 +77,9 @@ public class IridiumCfgPanel
 		lrgsConfig.iridiumEnabled = enableCheckBox.isSelected();
 //System.out.println("saveChanges, enabled="+ enableCheckBox.isSelected());
 		lrgsConfig.iridiumPort = getIntField(portNumField,
-			IridiumRecv.DEFAULT_LISTENING_PORT);
+			IridiumSbdInterface.SBD_LISTEN_PORT);
 		String s = captureFileField.getText().trim();
 		lrgsConfig.iridiumCaptureFile = s.length() == 0 ? null : s;
-		lrgsConfig.iridiumForwardHost = forwardHostField.getText();
-		if (lrgsConfig.iridiumForwardHost.trim().length() == 0)
-			lrgsConfig.iridiumForwardHost = null;
-		lrgsConfig.iridiumForwardPort = getIntField(this.forwardPortNumField,
-			IridiumRecv.DEFAULT_LISTENING_PORT);
 	}
 	
 	private void jbInit()
@@ -127,24 +111,6 @@ public class IridiumCfgPanel
 			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 15), 0, 0));
-		
-		add(new JLabel("Forward to Host:"),
-			new GridBagConstraints(0, 3, 1, 1, 0.5, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(3, 15, 3, 2), 0, 0));
-		add(forwardHostField,
-			new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(3, 0, 3, 15), 0, 0));
-		
-		add(new JLabel("Forward to Port:"),
-			new GridBagConstraints(0, 4, 1, 1, 0.5, 0.5,
-				GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
-				new Insets(3, 15, 3, 2), 0, 0));
-		add(forwardPortNumField,
-			new GridBagConstraints(1, 4, 1, 1, 0.5, 0.5,
-				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
-				new Insets(3, 0, 3, 0), 60, 0));
 	}
 	
 	/**
@@ -160,7 +126,7 @@ public class IridiumCfgPanel
 		try{ return Integer.parseInt(portNumField.getText().trim()); }
 		catch(Exception e)
 		{
-			return IridiumRecv.DEFAULT_LISTENING_PORT;
+			return IridiumSbdInterface.SBD_LISTEN_PORT;
 		}
 	}
 

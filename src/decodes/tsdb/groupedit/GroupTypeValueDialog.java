@@ -183,10 +183,10 @@ public class GroupTypeValueDialog extends JDialog
 	public void fillValues(EnumValue ev)
 	{
 		theEV = ev;
-		enumNameField.setText(ev.dbenum.enumName);
-		grpTypeNameField.setText(ev.value != null ? ev.value : "");
-		grpTypeDescField.setText(ev.description != null ? ev.description : "");
-		execClassField.setText(ev.execClassName != null ? ev.execClassName: "");
+		enumNameField.setText(ev.getDbenum().enumName);
+		grpTypeNameField.setText(ev.getValue() != null ? ev.getValue() : "");
+		grpTypeDescField.setText(ev.getDescription() != null ? ev.getDescription() : "");
+		execClassField.setText(ev.getExecClassName() != null ? ev.getExecClassName(): "");
 		_wasChanged = false;
 	}
 
@@ -199,22 +199,22 @@ public class GroupTypeValueDialog extends JDialog
 	void okButton_actionPerformed(ActionEvent e) 
 	{
 		String v = grpTypeNameField.getText();
-		if (!v.equals(theEV.value))
+		if (!v.equals(theEV.getValue()))
 		{
 			_wasChanged = true;
-			theEV.value = v;
+			theEV.setValue(v);
 		}	
 		v = grpTypeDescField.getText();
-		if (!v.equals(theEV.description))
+		if (!v.equals(theEV.getDescription()))
 		{
 			_wasChanged = true;
-			theEV.description = v;
+			theEV.setDescription(v);
 		}	
 		v = execClassField.getText();
-		if (!v.equals(theEV.execClassName))
+		if (!v.equals(theEV.getExecClassName()))
 		{
 			_wasChanged = true;
-			theEV.execClassName = v;
+			theEV.setExecClassName(v);
 		}
 		closeDlg();
 	}

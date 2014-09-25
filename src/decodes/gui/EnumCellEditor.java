@@ -31,7 +31,7 @@ public class EnumCellEditor extends DefaultCellEditor
 		for(Iterator it = en.values().iterator(); it.hasNext(); )
 		{
 			EnumValue ev = (EnumValue)it.next();
-			jcb.addItem(ev.value);
+			jcb.addItem(ev.getValue());
 		}
 	}
 
