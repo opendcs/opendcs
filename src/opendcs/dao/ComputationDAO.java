@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.3  2014/07/03 12:53:42  mmaloney
+* debug improvements.
+*
 * Revision 1.2  2014/05/20 14:41:06  mmaloney
 * If comment read was null, change it to empty string. This makes it compatible
 * with PG and it prevents compedit from falsely detecting changes.
@@ -39,9 +42,7 @@ import opendcs.dai.TsGroupDAI;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
-import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
-import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CompFilter;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbAlgoParm;
@@ -50,8 +51,6 @@ import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
 
 /**
@@ -92,11 +91,6 @@ public class ComputationDAO
 		{
 			compTableColumns = compTableColumns + ", group_id";
 			compTableColumnsNoTabName = compTableColumnsNoTabName + ", group_id";
-		}
-		if (tsdb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9)
-		{
-			compTableColumns = compTableColumns + ", season_id";
-			compTableColumnsNoTabName = compTableColumnsNoTabName + ", season_id";
 		}
 	}
 
@@ -185,8 +179,6 @@ Logger.instance().debug3("getComputationById: after rs2comp, groupId = " + comp.
 		comp.setValidEnd(db.getFullDate(rs, 9));
 		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
 			comp.setGroupId(DbKey.createDbKey(rs, 10));
-		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9)
-			comp.setSeasonId(DbKey.createDbKey(rs, 11));
 		return comp;
 	}
 
@@ -552,8 +544,6 @@ comp.getKey() + ", groupId=" + comp.getGroupId());
 					+ ", " + db.sqlDate(comp.getValidEnd());
 				if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
 					q = q + ", " + comp.getGroupId();
-				if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9)
-					q = q + ", " + comp.getSeasonId();
 				q = q + ")";
 			}
 			else // update
