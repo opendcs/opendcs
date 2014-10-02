@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.4  2014/09/17 18:42:01  mmaloney
+*  Implement FTP Data Source, Clean up Other Modules.
+*
 *  Revision 1.3  2014/05/30 13:15:34  mmaloney
 *  dev
 *
@@ -230,7 +233,10 @@ public abstract class StreamDataSource extends DataSourceExec
 	/// Close input stream, free any resources allocated.
 	public abstract void close(BufferedInputStream inputStream);
 
-	/// Return true if re-open should be attempted on IO error
+	/**
+	 * @return true if re-open should be attempted on IO error
+	 *
+	 */
 	public abstract boolean doReOpen();
 
 	private boolean startOfStream;
@@ -311,7 +317,7 @@ public abstract class StreamDataSource extends DataSourceExec
 		throws InvalidDatabaseException
 	{
 		Logger.instance().log(Logger.E_DEBUG3, 
-			"StreamDataSource.processDataSource '" + dbDataSource.getName() 
+			"StreamDataSource.processDataSource '" + getName() 
 			+ "', args='" +dbDataSource.dataSourceArg+"'");
 	}
 
@@ -342,19 +348,23 @@ public abstract class StreamDataSource extends DataSourceExec
 		throws DataSourceException
 	{
 		Logger.instance().log(Logger.E_DEBUG1, 
-			"StreamDataSource.init() for '" + dbDataSource.getName() + "'");
+			"StreamDataSource.init() for '" + getName() + "'");
 
 		// Build a complete property set. Routing Spec props override DS props.
-		Properties allProps = new Properties(dbDataSource.arguments);
-		for(Enumeration it = routingSpecProps.propertyNames();
-			it.hasMoreElements();)
+		Properties allProps = routingSpecProps;
+		if (dbDataSource != null)
 		{
-			String name = (String)it.nextElement();
-			String value = routingSpecProps.getProperty(name);
-			allProps.setProperty(name, value);
+			allProps = new Properties(dbDataSource.arguments);
+			for(Enumeration<?> it = routingSpecProps.propertyNames();
+				it.hasMoreElements();)
+			{
+				String name = (String)it.nextElement();
+				String value = routingSpecProps.getProperty(name);
+				allProps.setProperty(name, value);
+			}
 		}
 
-		for(Enumeration it = allProps.propertyNames(); it.hasMoreElements();)
+		for(Enumeration<?> it = allProps.propertyNames(); it.hasMoreElements();)
 		{
 			String name = (String)it.nextElement();
 			String value = allProps.getProperty(name);
@@ -371,7 +381,7 @@ public abstract class StreamDataSource extends DataSourceExec
 				catch(NumberFormatException e)
 				{
 					throw new DataSourceException("StreamDataSource '"
-						+ dbDataSource.getName() 
+						+ getName() 
 						+ "': invalid length adjustment '" +  value
 						+ "' - must be a number");
 				}
@@ -387,7 +397,7 @@ public abstract class StreamDataSource extends DataSourceExec
 				catch(HeaderParseException e)
 				{
 					throw new DataSourceException("StreamDataSource '"
-						+ dbDataSource.getName() 
+						+ getName() 
 						+ "': invalid header type '" + mediumType
 						+ "' - not defined in your database: " + e);
 				}
@@ -398,7 +408,7 @@ public abstract class StreamDataSource extends DataSourceExec
 				oldChannelRanges = 
 					c == 'y' || c == 'Y' || c == 't' || c == 'T';
 				Logger.instance().log(Logger.E_DEBUG1, 
-					"Stream Data Source '" + dbDataSource.getName() + "' "
+					"Stream Data Source '" + getName() + "' "
 					+ "oldChannelRanges=" + oldChannelRanges);
 			}
 			else if (name.equals("onemessagefile"))
@@ -442,7 +452,7 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 		}
 
 		Logger.instance().log(Logger.E_DEBUG3,
-			"Stream Data Source '" + dbDataSource.getName() + "' "
+			"Stream Data Source '" + getName() + "' "
 			+ "lengthAdj=" + lengthAdj + ", "
 			+ "before = '" + 
 				(startDelimiter != null ? AsciiUtil.bin2ascii(startDelimiter)
@@ -470,7 +480,7 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 		{
 			if (pmp.getHeaderLength() == -1 && endDelimiter == null)
 				throw new DataSourceException(
-					"Stream Data Source '" + dbDataSource.getName() + "' "
+					"Stream Data Source '" + getName() + "' "
 					+ " Header type '" + pmp.getHeaderType()
 					+ "' Header Length Unknown -- endDelimiter required!");
 		}
@@ -604,7 +614,7 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 		catch(DatabaseException e)
 		{ 
 			String msg = 
-				"Stream Data Source '" + dbDataSource.getName() + "' "
+				"Stream Data Source '" + getName() + "' "
 				+ "Cannot read complete platform record for message '"
 				+ new String(ret.getData(), 0, 
 				(ret.getData().length > 19 ? 19 : ret.getData().length))
@@ -625,7 +635,7 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 		else // Couldn't find platform using TM
 		{
 			String msg = 
-				"Stream Data Source '" + dbDataSource.getName() + "' "
+				"Stream Data Source '" + getName() + "' "
 				+ "No platform matching '" + ret.getMediumId()+"'"
 				+ " with medium type '" + pmp.getMediumType() + "'";
 			if (chan != Constants.undefinedIntKey)
@@ -752,7 +762,7 @@ Logger.instance().debug3("StreamDS reset 4");
 				if (len < 0 || len > MAX_MESSAGE_LENGTH)
 				{
 					Logger.instance().log(Logger.E_WARNING, 
-						"StreamDataSource '" + dbDataSource.getName() 
+						"StreamDataSource '" + getName() 
 						+ "', scan found invalid message length, skipping.");
 					huntMode = true;
 Logger.instance().debug3("StreamDS reset 5");
@@ -788,7 +798,7 @@ Logger.instance().debug3("Reading " + len + " bytes of msg data after header.");
 						if (System.currentTimeMillis() - start > 5000L)
 						{
 							Logger.instance().log(Logger.E_WARNING, 
-								"StreamDataSource '" + dbDataSource.getName() 
+								"StreamDataSource '" + getName() 
 								+ "', Failed to read all msg data (expected "
 								+ len + " bytes, got " + n + ") -- skipped.");
 							huntMode = true;
@@ -821,7 +831,7 @@ Logger.instance().debug3("Reading " + len + " bytes of msg data after header.");
 					len = readToDelimiter(endDelimiter, msgbuf, false);
 					justGotEndDelimiter = true;
 					Logger.instance().log(Logger.E_DEBUG3,
-						"StreamDataSource '" + dbDataSource.getName() 
+						"StreamDataSource '" + getName() 
 						+ "' read " + len + " bytes & then got endDelimiter.");
 				}
 				else // No end delim. Scan to next start delim, then push it back.
@@ -831,7 +841,7 @@ Logger.instance().debug3("No end delim, looking for next start delim '"
 					len = readToDelimiter(startDelimiter, msgbuf, true);
 					justGotStartDelim = true;
 					Logger.instance().log(Logger.E_DEBUG3,
-						"StreamDataSource '" + dbDataSource.getName() 
+						"StreamDataSource '" + getName() 
 						+ "' read " + len + " bytes & then got startDelimiter.");
 				}
 				
@@ -880,7 +890,7 @@ Logger.instance().debug3("StreamDS reset 7");
 				 && myNetworkList.getEntry(addr) == null)
 				{
 					Logger.instance().log(Logger.E_DEBUG2, 
-						"StreamDataSource '" + dbDataSource.getName() 
+						"StreamDataSource '" + getName() 
 						+ "', skipping message from '" + addr
 						+ "' - not in network lists.");
 					return null;
@@ -900,7 +910,7 @@ Logger.instance().debug3("StreamDS reset 7");
 					close();
 				inputStream = open();	
 			}
-			String msg = "StreamDataSource '" + dbDataSource.getName() 
+			String msg = "StreamDataSource '" + getName() 
 				+ "', IO Error: " + ex;
 			Logger.instance().log(Logger.E_WARNING, msg);
 			throw new DataSourceException(msg);
@@ -985,7 +995,7 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 					skipped++;
 					if (skipped % 100 == 0)
 						Logger.instance().log(Logger.E_WARNING, 
-							"Stream '" + dbDataSource.getName() 
+							"Stream '" + getName() 
 							+ "' skipping lots of data, ("
 							+ skipped + ") bytes -- perhaps "
 							+ "delimiter is not correct?");
@@ -997,14 +1007,14 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 				// Fell through, found complete delimiter.
 				huntMode = false;
 				Logger.instance().log(Logger.E_DEBUG3, 
-					"Stream '" + dbDataSource.getName() + "' found delimiter.");
+					"Stream '" + getName() + "' found delimiter.");
 				inputStream.mark(100);
 			}
 		}
 		if (skipped>0)
 			Logger.instance().log(
 				skipped > 4 ? Logger.E_WARNING : Logger.E_DEBUG1, 
-				"Stream '" + dbDataSource.getName() + "' " 
+				"Stream '" + getName() + "' " 
 				+ skipped + " bytes skipped before delim was found.");
 
 	}
@@ -1149,7 +1159,7 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 						// Fell through, found complete delimiter.
 						delimFound = true;
 						Logger.instance().log(Logger.E_DEBUG3, 
-							"Stream '" + dbDataSource.getName() 
+							"Stream '" + getName() 
 							+ "' found end delimiter.");
 					}
 				}
@@ -1157,7 +1167,7 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 		}
 		catch(IOException e)
 		{
-			String msg = "StreamDataSource.readToDelimiter '" + dbDataSource.getName() + "': " + e;
+			String msg = "StreamDataSource.readToDelimiter '" + getName() + "': " + e;
 			Logger.instance().warning(msg);
 			throw new DataSourceException(msg);
 		}
@@ -1210,7 +1220,7 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 		catch(IOException ex)
 		{
 			throw new DataSourceException(
-				"StreamDataSource '" + dbDataSource.getName() + "': " + ex);
+				"StreamDataSource '" + getName() + "': " + ex);
 		}
 
 		RawMessage ret = new RawMessage(msgbuf, msgbuf.length);

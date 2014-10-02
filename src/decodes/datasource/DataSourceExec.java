@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.3  2014/05/30 13:15:34  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/28 13:09:29  mmaloney
 *  dev
 *
@@ -171,7 +174,7 @@ public abstract class DataSourceExec
 	/** @return name of this data source, as defined in DECODES DB. */
 	public String getName()
 	{
-		return dbDataSource.getName();
+		return dbDataSource == null ? "anon" : dbDataSource.getName();
 	}
 
 	/** 

@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2014/05/30 13:15:35  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/28 13:09:30  mmaloney
 *  dev
 *
@@ -284,7 +287,7 @@ public class DirectoryDataSource extends DataSourceExec
 		throws DataSourceException
 	{
 		Logger.instance().log(Logger.E_DEBUG1, 
-			"DirectoryDataSource.init() for '" + dbDataSource.getName() + "'");
+			"DirectoryDataSource.init() for '" + getName() + "'");
 
 		clear();
 

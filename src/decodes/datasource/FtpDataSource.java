@@ -9,17 +9,22 @@ import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Properties;
+import java.util.Vector;
 
+import decodes.db.InvalidDatabaseException;
+import decodes.db.NetworkList;
 import decodes.util.PropertySpec;
 
 public class FtpDataSource 
-	extends FileDataSource
+	extends DataSourceExec
 {
 	private String module = "FtpDataSource";
 	private PropertySpec[] ftpDsPropSpecs =
@@ -38,6 +43,8 @@ public class FtpDataSource
 			"FTP Data Source: optional local directory in which to store downloaded"
 			+ " file. If not supplied, received file is processed by DECODES but not"
 			+ " saved locally."),
+		new PropertySpec("filenames", PropertySpec.STRING,
+			"Space-separated list of files to download from server"),
 		new PropertySpec("xferMode", 
 			PropertySpec.JAVA_ENUM + "decodes.datasource.FtpMode",
 			"FTP Data Source: FTP transfer mode"),
@@ -54,13 +61,20 @@ public class FtpDataSource
 	private String username = "anon";
 	private String password = null;
 	private String remoteDir = "";
+	private String filenames = "";
 	// String filename = null; Use protected 'filename' from FileDataSource base class.
 	private String localDir = null;
 	private FtpMode ftpMode = FtpMode.Binary;
 	private boolean deleteFromServer = false;
 	private boolean ftpActiveMode = false;
+	private Properties allProps = null;
+	private ArrayList<File> downloadedFiles = new ArrayList<File>();
+	private FileDataSource currentFileDS = null;
+	private int downloadedFileIndex = 0;
+	private String mySince=null, myUntil=null;
+	private Vector<NetworkList> myNetworkLists;
+	private File currentFile = null;
 	
-	@Override
 	public boolean setProperty(String name, String value)
 	{
 		if (name.equalsIgnoreCase("host"))
@@ -89,18 +103,62 @@ public class FtpDataSource
 			deleteFromServer = TextUtil.str2boolean(value);
 		else if (name.equalsIgnoreCase("ftpActiveMode"))
 			ftpActiveMode = TextUtil.str2boolean(value);
-		else // Let super class FileDataSource process it.
-			return super.setProperty(name, value);
+		else if (name.equalsIgnoreCase("filenames"))
+			filenames = value;
 		return true;
 	}		
 	
 	/**
-	 * The open method here first does the entire FTP download and then
-	 * calls the super class FileDataSource.open to open and process the
-	 * local copy of the file.
+	 * Base class returns an empty array for backward compatibility.
 	 */
 	@Override
-	public BufferedInputStream open()
+	public PropertySpec[] getSupportedProps()
+	{
+		FileDataSource fds = new FileDataSource();
+		return PropertiesUtil.combineSpecs(fds.getSupportedProps(), ftpDsPropSpecs);
+	}
+
+	@Override
+	public void processDataSource() throws InvalidDatabaseException
+	{
+		Logger.instance().log(Logger.E_DEBUG3, 
+			module + ".processDataSource '" + getName() 
+			+ "', args='" +dbDataSource.dataSourceArg+"'");
+	}
+
+	@Override
+	public void init(Properties routingSpecProps, String since, String until, Vector<NetworkList> networkLists)
+		throws DataSourceException
+	{
+		mySince = since;
+		myUntil = until;
+		myNetworkLists = networkLists;
+		
+		// Build a complete property set. Routing Spec props override DS props.
+		allProps = new Properties(dbDataSource.arguments);
+		for(Enumeration<?> it = routingSpecProps.propertyNames(); it.hasMoreElements();)
+		{
+			String name = (String)it.nextElement();
+			String value = routingSpecProps.getProperty(name);
+			allProps.setProperty(name, value);
+		}
+		for(Enumeration<?> it = allProps.propertyNames(); it.hasMoreElements();)
+		{
+			String name = (String)it.nextElement();
+			String value = allProps.getProperty(name);
+			name = name.trim().toLowerCase();
+			setProperty(name, value);
+		}
+		
+		downloadFiles();
+		if (downloadedFiles.size() == 0)
+			throw new DataSourceException(module + " Failed to download any files.");
+		
+		openNextFile();
+	}
+
+
+	private void downloadFiles()
 		throws DataSourceException
 	{
 		// First make sure all the required properties are set.
@@ -116,13 +174,20 @@ public class FtpDataSource
 		String remote = remoteDir;
 		if (remote.length() > 0 && !remote.endsWith("/"))
 			remote += "/";
-		remote += filename;
-		File localFile = null;
+
+		downloadedFiles.clear();
+		downloadedFileIndex = 0;
+		// split by whitespace* comma
+		String fns[] = filenames.split(" ");
+		Logger.instance().debug3(module + " there are " + fns.length + " filenames in the list:");
+		for(String fn : fns) Logger.instance().debug3(module + "   " + fn);
+		
+		Logger.instance().debug1(module + " Connecting to FTP Server " + host + ":" + port
+			+ " with username=" + username + ", using "
+			+ (ftpActiveMode ? "Active" : "Passive") + " mode.");
+			
 		try
 		{
-			Logger.instance().debug1(module + " Connecting to FTP Server " + host + ":" + port
-				+ " with username=" + username + ", using "
-				+ (ftpActiveMode ? "Active" : "Passive") + " mode.");
 			ftpClient.connect(host, port);
 			ftpClient.login(username, password);
 			if (ftpActiveMode)
@@ -131,84 +196,147 @@ public class FtpDataSource
 				ftpClient.enterLocalPassiveMode();
 			ftpClient.setFileType(
 				ftpMode == FtpMode.Binary ? FTP.BINARY_FILE_TYPE : FTP.ASCII_FILE_TYPE);
-			
-			String local = localDir;
-			if (local == null || local.length() == 0)
-				local = EnvExpander.expand("$DCSTOOL_USERDIR/tmp");
-			File localDirectory = new File(local);
-			if (!localDirectory.isDirectory())
-				localDirectory.mkdirs();
-			localFile = new File(localDirectory, filename);
-			
-			BufferedOutputStream bos = new BufferedOutputStream(
-				new FileOutputStream(localFile));
-			
-			Logger.instance().debug1(module + " Downloading remote file '" + remote
-				+ "' to '" + localFile.getPath() + "'");
-			if (!ftpClient.retrieveFile(remote, bos))
-				throw new DataSourceException("FTP download failed for "
-					+ "host=" + host + ", user=" + username
-					+ "remote=" + remote + ", local=" + localFile.getPath());
 		}
-		catch(SocketException ex)
+		catch(Exception ex)
 		{
-			throw new DataSourceException(
-				"Connect failed to host '" + host + "' port=" + port + ": " + ex);
-		}
-		catch(FTPConnectionClosedException ex)
-		{
-			throw new DataSourceException(
-				"Connection closed prematurely to host '" + host 
-				+ "' port=" + port + ": " + ex);
-			
-		}
-		catch (IOException ex)
-		{
-			throw new DataSourceException(
-				"IOException in FTP transfer from host '" + host 
+			throw new DataSourceException(module + 
+				" Error connecting to FTP host '" + host 
 				+ "' port=" + port + ", remote='" + remote + "': " + ex);
 		}
-		finally
+			
+		String local = localDir;
+		if (local == null || local.length() == 0)
+			local = EnvExpander.expand("$DCSTOOL_USERDIR/tmp");
+		File localDirectory = new File(local);
+		if (!localDirectory.isDirectory())
+			localDirectory.mkdirs();
+			
+		for(String filename : fns)
 		{
-			if (deleteFromServer)
-			{
-				try
-				{
-					if (!ftpClient.deleteFile(remote))
-						Logger.instance().warning(module + " cannot delete '"
-							+ remote + "' on server.");
-				}
-				catch(Exception ex) { /* ignore exceptions on delete */ }
-			}
-
-	        try 
-	        {
-	            if (ftpClient.isConnected())
-	            {
-	                ftpClient.logout();
-	                ftpClient.disconnect();
-	            }
-	        }
-	        catch (IOException ex)
-	        {
-	            ex.printStackTrace();
-	        }
-		}
-
+			filename = filename.trim(); // remove any whitespace before or after the comma.
+			String remoteName = remote + filename;
+			File localFile = new File(localDirectory, filename);
+			BufferedOutputStream bos = null;
 		
-		// Finally, delegate to super class FileDataSource to process the downloaded
-		// local copy of the file.
-		super.filename = localFile.getPath();
-		return super.open();
+			Logger.instance().debug1(module + " Downloading remote file '" + remoteName
+				+ "' to '" + localFile.getPath() + "'");
+			try
+			{
+				bos = new BufferedOutputStream(
+					new FileOutputStream(localFile));
+
+				if (ftpClient.retrieveFile(remoteName, bos))
+				{
+					downloadedFiles.add(localFile);
+					if (deleteFromServer)
+					{
+						try
+						{
+							if (!ftpClient.deleteFile(remoteName))
+								Logger.instance().warning(module + " cannot delete '"
+									+ remoteName + "' on server.");
+						}
+						catch(Exception ex) { /* ignore exceptions on delete */ }
+					}
+				}
+				else
+					Logger.instance().warning(module + " Download failed for "
+					+ "host=" + host + ", user=" + username
+					+ "remote=" + remoteName + ", local=" + localFile.getPath());
+			}
+			catch(SocketException ex)
+			{
+				throw new DataSourceException(
+					"Connect failed to host '" + host + "' port=" + port + ": " + ex);
+			}
+			catch(FTPConnectionClosedException ex)
+			{
+				throw new DataSourceException(
+					"Connection closed prematurely to host '" + host 
+					+ "' port=" + port + ": " + ex);
+				
+			}
+			catch (IOException ex)
+			{
+				throw new DataSourceException(
+					"IOException in FTP transfer from host '" + host 
+					+ "' port=" + port + ", remote='" + remoteName + "': " + ex);
+			}
+			finally
+			{
+				try { if (bos != null) bos.close(); } catch(Exception ex) {}
+			}
+		}
+        try 
+        {
+            if (ftpClient.isConnected())
+            {
+                ftpClient.logout();
+                ftpClient.disconnect();
+            }
+        }
+        catch (IOException ex)
+        {
+            ex.printStackTrace();
+        }
+        Logger.instance().info(module + " " + downloadedFiles.size() + " files downloaded.");
+	}
+	
+	/**
+	 * Opens the next file downloaded from FTP by constructing a FileDataSource delegate.
+	 * @throws DataSourceEndException exception if there are no more files
+	 * @throws DataSourceException exception if thrown in the init method of FileDataSource delegate.
+	 */
+	private void openNextFile()
+		throws DataSourceException
+	{
+		currentFileDS = null;
+		
+		if (downloadedFileIndex >= downloadedFiles.size())
+			throw new DataSourceEndException(module + " All " + downloadedFileIndex
+				+ " files processed.");
+		
+		currentFile = downloadedFiles.get(downloadedFileIndex++);
+		currentFileDS = new FileDataSource();
+		allProps.setProperty("filename", currentFile.getPath());
+		
+		currentFileDS.init(allProps, mySince, myUntil, myNetworkLists);
 	}
 
-	/**
-	 * Base class returns an empty array for backward compatibility.
-	 */
+
 	@Override
-	public PropertySpec[] getSupportedProps()
+	public void close()
 	{
-		return PropertiesUtil.combineSpecs(super.getSupportedProps(), ftpDsPropSpecs);
+		downloadedFiles.clear();
+		if (currentFileDS != null)
+			currentFileDS.close();
+		currentFileDS = null;
+	}
+
+	@Override
+	public RawMessage getRawMessage() 
+		throws DataSourceException
+	{
+		if (currentFileDS == null)
+			throw new DataSourceEndException(module + " file delegate aborted.");
+		try
+		{
+			return currentFileDS.getRawMessage();
+		}
+		catch(DataSourceEndException ex)
+		{
+			Logger.instance().info(module + " End of file '" 
+				+ currentFile.getPath() + "'");
+			openNextFile();
+			return getRawMessage(); // recursive call with newly opened file.
+		}
+		catch(DataSourceException ex)
+		{
+			Logger.instance().warning(module + " Error processing file '" 
+				+ currentFile.getPath() + "': " + ex);
+			openNextFile();
+			return getRawMessage(); // recursive call with newly opened file.
+		}
 	}
 
 }

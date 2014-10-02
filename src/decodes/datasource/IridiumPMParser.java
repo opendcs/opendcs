@@ -197,5 +197,10 @@ public class IridiumPMParser extends PMParser
 	{
 		return Constants.medium_IRIDIUM;
 	}
+
+	public SimpleDateFormat getGoesDateFormat()
+	{
+		return goesDateFormat;
+	}
 }
 

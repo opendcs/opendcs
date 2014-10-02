@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/09/17 18:42:01  mmaloney
+*  Implement FTP Data Source, Clean up Other Modules.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -119,7 +122,7 @@ public class FileDataSource
 	{
 		super.processDataSource();
 		Logger.instance().log(Logger.E_DEBUG1,
-			"FileDataSource.processDataSource for '" + dbDataSource.getName()
+			"FileDataSource.processDataSource for '" + getName()
 			+ "', args='" +dbDataSource.dataSourceArg+"'");
 		filename = null;
 		//mediumId = null;
@@ -156,13 +159,12 @@ public class FileDataSource
 		throws DataSourceException
 	{
 		if (filename == null)
-			filename = dbDataSource.getName();
+			filename = getName();
 		String expFilename = EnvExpander.expand(filename);
 
 		Logger.instance().log(Logger.E_DEBUG1,
-			"FileDataSource.open for '" + dbDataSource.getName()
-			+ "', args='" +dbDataSource.dataSourceArg+"', actual filename='"
-			+ expFilename + "', gzip="+gzip);
+			"FileDataSource.open for '" + getName()
+			+ "', actual filename='" + expFilename + "', gzip="+gzip);
 
 		file = new File(expFilename);
 
