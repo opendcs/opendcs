@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.9  2012/04/09 15:28:28  mmaloney
 *  Added EUMETSAT medium type.
 *
@@ -110,7 +113,7 @@ public abstract class PMParser
 		if (tmTypeEnum != null)
 		{
 			EnumValue htev = tmTypeEnum.findEnumValue(headerType);
-			if (htev != null && htev.execClassName != null)
+			if (htev != null && htev.getExecClassName() != null)
 			{
 				try
 				{
@@ -121,7 +124,7 @@ public abstract class PMParser
 				catch (Exception ex)
 				{
 					Logger.instance().warning("Cannot instantiate header parser "
-						+ "from class name '" + htev.execClassName + "': " + ex);
+						+ "from class name '" + htev.getExecClassName() + "': " + ex);
 				}
 			}
 		}
