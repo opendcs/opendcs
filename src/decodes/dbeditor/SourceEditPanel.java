@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.2  2014/09/17 18:42:44  mmaloney
+*  Show PropSpecs
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -80,6 +83,7 @@ public class SourceEditPanel extends DbEditorTab
 	{
 		try {
 			propertiesEditPanel = new PropertiesEditPanel(new Properties());
+			propertiesEditPanel.setOwnerFrame(getParentFrame());
 			jbInit();
 		}
 		catch(Exception ex) {

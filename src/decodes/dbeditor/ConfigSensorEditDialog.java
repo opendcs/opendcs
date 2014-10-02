@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.2  2014/09/25 18:08:34  mmaloney
+*  Enum fields encapsulated.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -153,6 +156,7 @@ public class ConfigSensorEditDialog extends GuiDialog
 
 		    propertiesEditPanel = new PropertiesEditPanel(theProperties);
 			propertiesEditPanel.setOwnerDialog(this);
+			propertiesEditPanel.setPropertiesOwner(cs);
             jbInit();
             pack();
 			fillValues();
@@ -406,7 +410,7 @@ public class ConfigSensorEditDialog extends GuiDialog
 
         centerPanel.setLayout(gridBagLayout1);
         borderLayout2.setVgap(10);
-        outerPanel.setPreferredSize(new Dimension(480, 570));//450, 570
+        outerPanel.setPreferredSize(new Dimension(480, 600));//450, 570
         jPanel1.setBorder(border1);
         sensorNameLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         sensorNameLabel.setText(
