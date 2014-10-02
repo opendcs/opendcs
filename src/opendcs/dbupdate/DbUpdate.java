@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.Properties;
 
 import decodes.db.Database;
+import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.BadConnectException;
@@ -49,16 +50,6 @@ public class DbUpdate extends TsdbAppTemplate
 		{
 			System.out.println("TSDB Database is currently " + theDb.getTsdbVersion());
 			System.out.println("DECODES Database is currently " + theDb.getDecodesDatabaseVersion());
-			if (!theDb.isOracle())
-			{
-				sql("ALTER TABLE NETWORKLISTENTRY ADD COLUMN PLATFORM_NAME VARCHAR(24)");
-				sql("ALTER TABLE NETWORKLISTENTRY ADD COLUMN DESCRIPTION VARCHAR(80)");
-			}
-			else
-			{
-				sql("ALTER TABLE NETWORKLISTENTRY ADD PLATFORM_NAME VARCHAR2(24)");
-				sql("ALTER TABLE NETWORKLISTENTRY ADD DESCRIPTION VARCHAR2(80)");
-			}
 
 			String schemaDir = EnvExpander.expand("$DCSTOOL_HOME/schema")
 				+ (theDb.isCwms() ? "/cwms30" : 
@@ -152,7 +143,16 @@ public class DbUpdate extends TsdbAppTemplate
 				sql("ALTER TABLE TRANSPORTMEDIUM ADD USERNAME VARCHAR2(32)");
 				sql("ALTER TABLE TRANSPORTMEDIUM ADD PASSWORD VARCHAR2(32)");
 			}
+			
+			// Remove season stuff. We are now using Enum for this.
+			sql("ALTER TABLE CP_COMPUTATION DROP COLUMN SEASON_ID");
+			sql("DROP TABLE SEASON");
 
+			// Can't insert the Season enum here. It will have to be done with dbimport.
+			// And for CWMS, it will have to be done separately for each office ID.
+//			DbKey seasonKey = theDb.getKeyGenerator().getKey("ENUM", theDb.getConnection());
+//			sql("INSERT INTO ENUM VALUES(" + seasonKey + ", 'Season', "
+//				+ "NULL, 'Seasons for Conditional Processing')");
 
 			// Update DECODES Database Version
 			sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " 
