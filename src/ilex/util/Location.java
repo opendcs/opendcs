@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.1  2010/10/29 15:09:36  mmaloney
  * Created.
  *
@@ -11,6 +14,10 @@ package ilex.util;
 
 public class Location
 {
+	private double latitude = 0.0;
+	private double longitude = 0.0;
+	private double radius = 0.0;
+	
 	/**
 	 * Accept a string in decimal or deg/min/sec notation and return
 	 * a decimal number representing the latitude.
@@ -123,5 +130,35 @@ public class Location
 		int sec = Integer.parseInt(dms.substring(nstart, nend));
 		
 		return (double)deg + (double)min/60.0 + (double)sec/3600.0;
+	}
+
+	public double getLatitude()
+	{
+		return latitude;
+	}
+
+	public void setLatitude(double latitude)
+	{
+		this.latitude = latitude;
+	}
+
+	public double getLongitude()
+	{
+		return longitude;
+	}
+
+	public void setLongitude(double longitude)
+	{
+		this.longitude = longitude;
+	}
+
+	public double getRadius()
+	{
+		return radius;
+	}
+
+	public void setRadius(double radius)
+	{
+		this.radius = radius;
 	}
 }
