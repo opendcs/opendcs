@@ -368,6 +368,7 @@ public class LrgsDataSource extends DataSourceExec
 
 			// Now process network lists explicitely placed in the DECODES
 			// routing spec.
+			log(Logger.E_DEBUG1, "LRGSDS: There are " + networkLists.size() + " netlists explicitly in the RS");
 			for(Iterator it = networkLists.iterator(); it.hasNext(); )
 			{
 				NetworkList nl = (NetworkList)it.next();
