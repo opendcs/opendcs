@@ -5,6 +5,10 @@ package decodes.db;
 
 import java.util.*;
 
+import decodes.cwms.CwmsConstants;
+import decodes.util.PropertiesOwner;
+import decodes.util.PropertySpec;
+import ilex.util.HasProperties;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -15,6 +19,7 @@ import ilex.util.TextUtil;
 */
 public class ConfigSensor
 	extends DatabaseObject
+	implements HasProperties, PropertiesOwner
 {
 	/**
 	* This uniquely identifies this ConfigSensor among all the ConfigSensors
@@ -86,6 +91,48 @@ public class ConfigSensor
 	*/
 	private String usgsStatCode;
 
+	private PropertySpec[] propSpecs =
+	{
+		new PropertySpec("dataOrder", PropertySpec.STRING,
+			"Used to override default data order in config. Set to 'A' for ascending," +
+			" or 'D' for descending."),
+		new PropertySpec("omit", PropertySpec.BOOLEAN,
+			"Set to true to have this sensor omitted from the DECODES output."),
+		new PropertySpec("ignoreSeason", PropertySpec.DECODES_ENUM + Constants.enum_Season,
+			"Set to have this sensor ignored during a specified season."),
+		new PropertySpec("processSeason", PropertySpec.DECODES_ENUM + Constants.enum_Season,
+			"Set to have this sensor only processed during a specified season."),
+		new PropertySpec("preoffset", PropertySpec.NUMBER,
+			"Equation for DECODES Output: (value + preoffset) * scale + offset"),
+		new PropertySpec("scale", PropertySpec.NUMBER,
+			"Equation for DECODES Output: (value + preoffset) * scale + offset"),
+		new PropertySpec("offset", PropertySpec.NUMBER,
+			"Equation for DECODES Output: (value + preoffset) * scale + offset"),
+		new PropertySpec("minReplaceValue", PropertySpec.STRING,
+			"If below minimum, replace with this value."),
+		new PropertySpec("maxReplaceValue", PropertySpec.STRING,
+			"If above maximum, replace with this value."),
+		new PropertySpec("HydstraTransCode", PropertySpec.INT,
+			"Hydstra Translation Code used by the Hydstra Output Formatter."),
+		new PropertySpec("HydstraMaxGap", PropertySpec.INT,
+			"Maximum gap used by the Hydstra Output Formatter."),
+		new PropertySpec("ADAPS_Medium_Type", PropertySpec.DECODES_ENUM + Constants.enum_TMType,
+			"Medium Type to use in the USGS StdMsg Output Formatter."),
+		new PropertySpec("tvacode", PropertySpec.INT,
+			"Data Type Code to use in transaction file in TVA Output Formatter."),
+		new PropertySpec(CwmsConstants.CWMS_PARAM_TYPE, PropertySpec.STRING,
+			"Param Type to use in Time Series ID in CWMS Consumer"),
+		new PropertySpec(CwmsConstants.CWMS_DURATION, PropertySpec.STRING,
+			"Duration to use in Time Series ID in CWMS Consumer"),
+		new PropertySpec(CwmsConstants.CWMS_VERSION, PropertySpec.STRING,
+			"Version to use in Time Series ID in CWMS Consumer"),
+		new PropertySpec("interval", PropertySpec.STRING,
+			"In HDB Consumer, use this for the INTERVAL part of Time Series ID."),
+		new PropertySpec("modeled", PropertySpec.BOOLEAN,
+			"In HDB Consumer, set to true if this is considered a modeled value."),
+		new PropertySpec("modelId", PropertySpec.INT,
+			"In HDB Consumer, you can set a model ID for the output value.")
+	};
 
 	//======================================================================
 	// Constructors and Related Methods.
@@ -327,5 +374,42 @@ public class ConfigSensor
 	}
 	
 	public Properties getProperties() { return properties; }
+
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return propSpecs;
+	}
+
+	@Override
+	public boolean additionalPropsAllowed()
+	{
+		return true;
+	}
+
+	@Override
+	public void setProperty(String name, String value)
+	{
+		rmProperty(name);
+		getProperties().setProperty(name, value);
+	}
+
+	@Override
+	public String getProperty(String name)
+	{
+		return PropertiesUtil.getIgnoreCase(getProperties(), name);
+	}
+
+	@Override
+	public Enumeration getPropertyNames()
+	{
+		return getProperties().keys();
+	}
+
+	@Override
+	public void rmProperty(String name)
+	{
+		PropertiesUtil.rmIgnoreCase(getProperties(), name);
+	}
 }
 
