@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.3  2014/05/27 12:54:38  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/22 14:13:44  mmaloney
 *  Get rid of editPresentationGroup
 *
@@ -250,44 +253,6 @@ public class DecodesSettings
 	 */
 	public String CwmsOfficeId = "";
 	
-//	/**
-//	 *  SMTP host to send messages to iridium
-//	 */
-//	public String iridiumSmtpHost="exchange.workgroup.com";
-//	
-//	/**
-//	 *  SMTP port used to send messages to iridium
-//	 */
-//	public String iridiumSmtpPort="25";
-//	
-//	/**
-//	 *  Email id -to which iridium messages are sent(iridium email id).
-//	 */
-//	public String iridiumSmtpTo = "";
-//	
-//	/**
-//	 *  Email id  - from which iridium messages are sent.
-//	 */
-//	public String iridiumSmtpFrom = "";
-//	
-//	/**
-//	 *  Directory to store commands to be sent to  iridium in email.
-//	 */
-//	public String iridiumCommandDir="$DECODES_INSTALL_DIR/commands";
-//	
-//	/**
-//	 *  LRGS host
-//	 */
-//	public String iridiumLrgsHost = "localhost";
-//	
-//	/**
-//	 *  LRGS user
-//	 */
-//	public String iridiumLrgsUser = "";
-//	
-//	/** Only show the station contact screen if this is true: */
-//	public boolean showStationContact = false;
-//	
 	/** Set to true to allow DECODES to write CWMS Location records */
 	public boolean writeCwmsLocations = true;
 	
@@ -337,6 +302,7 @@ public class DecodesSettings
 	/** Default max decimals if no presentation element is found */
 	public int defaultMaxDecimals = 4;
 	
+	public boolean platformListDesignatorCol = false;
 	
 	//===============================================================================
 	
@@ -475,7 +441,10 @@ public class DecodesSettings
 			" then do attempt to retry by using FAIL_TIME in the tasklist records " +
 			"to retry up to maxComputationRetries set above"),
 		new PropertySpec("defaultMaxDecimals", PropertySpec.INT,
-			"Default max decimals if no presentation element is found")
+			"Default max decimals if no presentation element is found"),
+		new PropertySpec("platformListDesignatorCol", PropertySpec.BOOLEAN,
+			"if TRUE, then include a column for Designator in the Platform List"
+			+ " of the DECODES Database Editor.")
 	};
 	
 	/**
