@@ -58,7 +58,7 @@ public class DecodingScriptEditDialog
 	JButton okButton = new JButton();
 	JButton cancelButton = new JButton();
 	FlowLayout flowLayout3 = new FlowLayout();
-	static DecodingScriptEditPanel decodingScriptEditPanel = null;
+	static DecodesScriptEditPanel decodingScriptEditPanel = null;
 
 	/** 
 	  Constructor.
@@ -96,7 +96,7 @@ public class DecodingScriptEditDialog
 			dbeditLabels.getString("DecodingScriptEditDialog.title")
 			+ ": " + ds.platformConfig.configName, true);
 		if (decodingScriptEditPanel == null)
-			decodingScriptEditPanel = new DecodingScriptEditPanel();
+			decodingScriptEditPanel = new DecodesScriptEditPanel();
 
 		setDecodesScript(ds);
 		try 

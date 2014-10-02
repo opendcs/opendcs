@@ -47,8 +47,7 @@ public class PlatformSelectPanel extends JPanel
 	public PlatformSelectPanel(String mediumType)
 	{
 		model = new PlatformSelectTableModel(this, mediumType);
-		platformListTable = new SortingListTable(model,
-			new int[] { 22, 10, 13, 18, 15, 33 });
+		platformListTable = new SortingListTable(model, model.columnWidths);
 		platformListTable.getSelectionModel().setSelectionMode(
 			ListSelectionModel.SINGLE_SELECTION);
 		setMultipleSelection(false);
@@ -197,8 +196,11 @@ class PlatformSelectTableModel extends AbstractTableModel
 	PlatformSelectColumnizer columnizer;
 	String mediumType;
 	Site site;
+	private PlatformSelectPanel panel;
+	private Vector vec;
+	private int sortColumn = -1;
 
-	private static String columnNames[] =
+	static String colNamesNoDesig[] = 
 	{
 		PlatformSelectPanel.genericLabels.getString("platform"),
 		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.agency"),
@@ -207,9 +209,23 @@ class PlatformSelectTableModel extends AbstractTableModel
 		PlatformSelectPanel.genericLabels.getString("expiration"),
 		PlatformSelectPanel.genericLabels.getString("description")
 	};
-	private PlatformSelectPanel panel;
-	private Vector vec;
-	private int sortColumn = -1;
+	static String colNamesDesig[] = 
+	{
+		PlatformSelectPanel.genericLabels.getString("platform"),
+		"Designator",
+		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.agency"),
+		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.transport"),
+		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.config"),
+		PlatformSelectPanel.genericLabels.getString("expiration"),
+		PlatformSelectPanel.genericLabels.getString("description")
+	};
+	
+	String columnNames[] = DecodesSettings.instance().platformListDesignatorCol
+		? colNamesDesig : colNamesNoDesig;
+
+	int columnWidths [] = DecodesSettings.instance().platformListDesignatorCol
+		? new int[] { 18, 6, 6, 20, 20,10, 30 } : new int[] { 22, 6, 20, 20,10, 33 };
+
 
 	public PlatformSelectTableModel(PlatformSelectPanel panel, String mediumType)
 	{
@@ -342,6 +358,7 @@ class PlatformSelectColumnizer
 {
 	private String mediumType;
 	private Site site;
+	private boolean desig = DecodesSettings.instance().platformListDesignatorCol;
 
 	public PlatformSelectColumnizer(Site site) 
 	{
@@ -372,19 +389,30 @@ class PlatformSelectColumnizer
 					r = r + "-" + d;
 				return r;
 			}
-			case 1: // Agency
-				return p.agency == null ? "" : p.agency;
-			case 2: // Transport-ID
+			case 1: // Desig or Agency
+				if (desig)
+					return p.getPlatformDesignator() == null ? "" : p.getPlatformDesignator();
+				else
+					return p.agency == null ? "" : p.agency;
+			case 2: // Agency or Transport-ID
 			{
-//			TransportMedium tm = p.getTransportMedium(mediumType);
-//			if (tm != null) return tm.getMediumId();
-				return p.getPreferredTransportId();
+				if (desig)
+					return p.agency == null ? "" : p.agency;
+				else
+					return p.getPreferredTransportId();
 			}
-			case 3: // Config
-				return p.getConfigName();
-			case 4: // Expiration
+			case 3: // Transport-ID or Config
 			{
-				if (p.expiration == null)
+				if (desig)
+					return p.getPreferredTransportId();
+				else
+					return p.getConfigName();
+			}
+			case 4: // Config or Expiration
+			{
+				if (desig)
+					return p.getConfigName();
+				else if (p.expiration == null)
 					return "";
 				else
 				{
@@ -392,7 +420,22 @@ class PlatformSelectColumnizer
 						p.expiration).toString();
 				}
 			}
-			case 5: // Description
+			case 5: // Expiration or Description
+			{
+				if (desig)
+				{
+					if (p.expiration == null)
+						return "";
+					else
+					{
+						return decodes.db.Constants.defaultDateFormat.format(
+							p.expiration).toString();
+					}
+				}
+				else
+					return p.description == null ? "" : p.description;
+			}
+			case 6: // desig must be true. return description
 				return p.description == null ? "" : p.description;
 			default:
 				return "";
