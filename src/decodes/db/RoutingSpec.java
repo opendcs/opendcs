@@ -258,7 +258,8 @@ public class RoutingSpec
 	*/
 	public void addNetworkListName(String listname)
 	{
-		networkListNames.add(listname);
+		if (!networkListNames.contains(listname))
+			networkListNames.add(listname);
 	}
 
 

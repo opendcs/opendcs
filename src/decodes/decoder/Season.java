@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2014/09/25 18:09:15  mmaloney
+ * Added Seasons Enum with Editor.
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to the United States Government. No warranty is provided or implied other
@@ -37,6 +40,13 @@ public class Season
 	
 	public Season()
 	{
+	}
+	
+	public Season(EnumValue ev) 
+		throws FieldParseException
+	{
+		this();
+		setFromEnum(ev);
 	}
 	
 	/**

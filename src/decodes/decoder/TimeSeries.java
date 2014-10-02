@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.text.NumberFormat;
 
 import ilex.var.TimedVariable;
-import ilex.var.Variable;
 import ilex.var.NoConversionException;
 import ilex.var.IFlags;
 import ilex.util.Logger;
@@ -21,9 +20,7 @@ import decodes.db.Constants;
 import decodes.db.UnitConverterDb;
 import decodes.db.UnitConverter;
 import decodes.db.DatabaseException;
-import decodes.db.PresentationGroup;
 import decodes.db.DataPresentation;
-import decodes.db.UnitConverterSet;
 import decodes.db.DataType;
 import decodes.util.DecodesException;
 
@@ -291,6 +288,20 @@ public class TimeSeries
 
 		return (samples.elementAt(idx)).tv;
 	}
+	
+	/**
+	 * Deletes the sample at the specified index. All subsequent samples' index 
+	 * are moved up.
+	 * @param idx the index within the samples array
+	 * @return true if it was deleted, false if idx is out of bounds.
+	 */
+	public boolean deleteSampleAt(int idx)
+	{
+		if (idx < 0 || idx >= samples.size())
+			return false;
+		samples.remove(idx);
+		return true;
+	}
 
 	/**
 	  @return the time at the specified index.
@@ -379,9 +390,9 @@ public class TimeSeries
 		if (samples.size() == 0)
 			return null;
 		Date d = new Date(Long.MAX_VALUE);
-		for(Iterator it = samples.iterator(); it.hasNext(); )
+		for(Iterator<TSSample> it = samples.iterator(); it.hasNext(); )
 		{
-			TSSample tss = (TSSample)it.next();
+			TSSample tss = it.next();
 			Date tvd = tss.tv.getTime();
 			if (tvd.before(d))
 				d = tvd;
@@ -590,9 +601,9 @@ public class TimeSeries
 			}
 			
 		// Step through values.
-		for(Iterator it = samples.iterator(); it.hasNext(); )
+		for(Iterator<TSSample> it = samples.iterator(); it.hasNext(); )
 		{
-			TSSample tss = (TSSample)it.next();
+			TSSample tss = it.next();
 			if (tss.tv == null)
 				continue;
 
@@ -645,9 +656,9 @@ public class TimeSeries
 	*/
 	public void discardSamplesBefore(long prevMsgTime)
 	{
-		for(Iterator it = samples.iterator(); it.hasNext(); )
+		for(Iterator<TSSample> it = samples.iterator(); it.hasNext(); )
 		{
-			TSSample tss = (TSSample)it.next();
+			TSSample tss = it.next();
 			if (tss.tv == null)
 				continue;
 			long t = tss.tv.getTime().getTime();
@@ -787,10 +798,10 @@ public class TimeSeries
 	/** @return true if this sensor has a matching data type. */
 	public boolean hasDataType(String code)
 	{
-		for(Iterator it = sensor.configSensor.getDataTypes(); 
+		for(Iterator<DataType> it = sensor.configSensor.getDataTypes(); 
 			it.hasNext(); )
 		{
-			DataType dt = (DataType)it.next();
+			DataType dt = it.next();
 			if (code.equalsIgnoreCase(dt.getCode()))
 				return true;
 		}
@@ -818,14 +829,12 @@ public class TimeSeries
 }
 
 
-class SampleComparator implements java.util.Comparator
+class SampleComparator implements java.util.Comparator<TSSample>
 {
 	public boolean descending = false;
 	
-	public int compare(Object o1, Object o2)
+	public int compare(TSSample ts1, TSSample ts2)
 	{
-		TSSample ts1 = (TSSample)o1;
-		TSSample ts2 = (TSSample)o2;
 		long r = ts1.tv.getTime().getTime() - ts2.tv.getTime().getTime();
 		int ret = r < 0L ? -1 : r > 0L ? 1 : 0;
 		return descending ? -ret : ret;

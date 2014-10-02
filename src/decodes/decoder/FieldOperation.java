@@ -283,10 +283,10 @@ class FieldOperation extends DecodesOperation
 				field = literalData.getBytes();
 			
 			else if (data_type=='Z'||data_type=='z')
-				{
-					isZformat=true;
-					field = dd.getField( field_length, delimiter, isBinary, isZformat);			
-				}
+			{
+				isZformat=true;
+				field = dd.getField( field_length, delimiter, isBinary, isZformat);			
+			}
 			else if(data_type=='R'|| data_type=='r')
 			{
 				field = dd.getField(msg.getRawMessage().getData().length+2, delimiter, isBinary, isString);

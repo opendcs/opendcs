@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.15  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -42,6 +45,8 @@ package decodes.db;
 import java.util.*;
 
 import ilex.util.*;
+import decodes.decoder.FieldParseException;
+import decodes.decoder.Season;
 import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertiesOwner;
@@ -144,8 +149,16 @@ public class Platform
 			" when this platform is decoded."),
 		new PropertySpec("debugLevel", PropertySpec.INT,
 			"(default=0) Set to 1, 2, 3 for increasing levels of log information" +
-			" when this platform is decoded.")
+			" when this platform is decoded."),
+		new PropertySpec("ignoreSeason", PropertySpec.DECODES_ENUM + Constants.enum_Season,
+			"Set to have this platform ignored during a specified season."),
+		new PropertySpec("processSeason", PropertySpec.DECODES_ENUM + Constants.enum_Season,
+			"Set to have this platform only processed during a specified season.")
 	};
+	
+	// Populated during prepareForExec:
+	private Season ignoreSeason = null;
+	private Season processSeason = null;
 	
 	/**
 	* No-arg constructor.  This creates a new Platform which belongs to
@@ -414,6 +427,53 @@ public class Platform
 			// Prepare the TM, which makes its link to the DecodesScript
 			TransportMedium tm = it.next();
 			tm.prepareForExec();
+		}
+		
+		ignoreSeason = processSeason = null;
+		DbEnum seasonEnum = Database.getDb().enumList.getEnum(Constants.enum_Season);
+		if (seasonEnum != null)
+		{
+			String seasonAbbr = getProperty("ignoreSeason");
+			if (seasonAbbr != null && seasonAbbr.trim().length() > 0)
+			{
+				EnumValue ev = seasonEnum.findEnumValue(seasonAbbr);
+				if (ev == null)
+					Logger.instance().warning("Platform " + getDisplayName()
+						+ " Unknown 'ignoreSeason' property value '" + seasonAbbr + "'");
+				else
+				{
+					try
+					{
+						ignoreSeason = new Season(ev);
+					}
+					catch (FieldParseException ex)
+					{
+						Logger.instance().warning("Platform " + getDisplayName()
+							+ " ignoreSeason: " + ex);
+						ignoreSeason = null;
+					}
+				}
+			}
+			if ((seasonAbbr = getProperty("processSeason")) != null && seasonAbbr.trim().length() > 0)
+			{
+				EnumValue ev = seasonEnum.findEnumValue(seasonAbbr);
+				if (ev == null)
+					Logger.instance().warning("Platform " + getDisplayName()
+						+ " Unknown 'processSeason' property value '" + seasonAbbr + "'");
+				else
+				{
+					try
+					{
+						processSeason = new Season(ev);
+					}
+					catch (FieldParseException ex)
+					{
+						Logger.instance().warning("Platform " + getDisplayName()
+							+ " processSeason: " + ex);
+						processSeason = null;
+					}
+				}
+			}
 		}
 	}
 
@@ -959,5 +1019,15 @@ public class Platform
 			catch(Exception ex) {}
 		}
 		return 0;
+	}
+
+	public Season getIgnoreSeason()
+	{
+		return ignoreSeason;
+	}
+
+	public Season getProcessSeason()
+	{
+		return processSeason;
 	}
 }

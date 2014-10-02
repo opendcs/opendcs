@@ -921,6 +921,24 @@ public class DecodedMessage implements IDataCollection
 						ts.formatSamples(dp);
 				}
 			}
+			Season ignoreSeason = sensor.getIgnoreSeason();
+			if (ignoreSeason == null)
+				ignoreSeason = platform.getIgnoreSeason();
+			Season processSeason = sensor.getProcessSeason();
+			if (processSeason == null)
+				processSeason = platform.getProcessSeason();
+			if (ignoreSeason != null || processSeason != null)
+			{
+				for(int idx = 0; idx < ts.size(); )
+				{
+					Date d = ts.sampleAt(idx).getTime();
+					if ((ignoreSeason != null && ignoreSeason.isInSeason(d))
+					 || (processSeason != null && !processSeason.isInSeason(d)))
+						ts.deleteSampleAt(idx);
+					else
+						idx++;
+				}
+			}
 		}
 		for (Iterator<TimeSeries> it = omit.iterator(); it.hasNext();)
 			timeSeriesVec.remove(it.next());
@@ -1088,12 +1106,12 @@ public class DecodedMessage implements IDataCollection
 
 	// The following 2 methods are to fix a problem where the special auto-
 	// increment cases are messing up the simple case like this:
-	// 106,2008,218,1200,209.32,202.81,185.54,31.427,12.268®
-	// 106,2008,218,1300,209.31,202.81,185.58,33.9,12.306®
-	// 106,2008,218,1400,209.31,202.81,185.59,34.705,12.305®
-	// 106,2008,218,1300,130.32,202.81,185.58,33.9,12.306®
-	// 106,2008,218,1400,140.31,202.81,185.59,34.705,12.305®
-	// 106,2008,218,1500,150.31,200.00,185.63,33.23,12.299®
+	// 106,2008,218,1200,209.32,202.81,185.54,31.427,12.268
+	// 106,2008,218,1300,209.31,202.81,185.58,33.9,12.306
+	// 106,2008,218,1400,209.31,202.81,185.59,34.705,12.305
+	// 106,2008,218,1300,130.32,202.81,185.58,33.9,12.306
+	// 106,2008,218,1400,140.31,202.81,185.59,34.705,12.305
+	// 106,2008,218,1500,150.31,200.00,185.63,33.23,12.299
 	// In these cases a full date/time is given followed by a series of data
 	// samples.
 	// Note the duplicate data on the 4th & 5th data line. This was causing

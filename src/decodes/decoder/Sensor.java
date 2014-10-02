@@ -3,15 +3,15 @@
 */
 package decodes.decoder;
 
-import java.util.Properties;
-import java.util.Enumeration;
 import java.util.Iterator;
 
 import ilex.util.PropertiesUtil;
 import ilex.util.Logger;
-
 import decodes.db.Constants;
 import decodes.db.ConfigSensor;
+import decodes.db.Database;
+import decodes.db.DbEnum;
+import decodes.db.EnumValue;
 import decodes.db.ScriptSensor;
 import decodes.db.PlatformSensor;
 import decodes.db.Platform;
@@ -34,6 +34,9 @@ public class Sensor
 	private Platform platform;
 
 	private int _tofs;
+	private boolean isPrepared = false;
+	private Season ignoreSeason = null;
+	private Season processSeason = null;
 
 	/**
 	  Constructor.
@@ -295,6 +298,72 @@ public class Sensor
 		return platformSensor != null ? platformSensor.getUsgsDdno() : 0;
 	}
 
+	public void prepareForExec()
+	{
+		if (isPrepared)
+			return;
+		isPrepared = true;
+		
+		DbEnum seasonEnum = Database.getDb().enumList.getEnum(Constants.enum_Season);
+		if (seasonEnum != null)
+		{
+			String seasonAbbr = getProperty("ignoreSeason");
+			if (seasonAbbr != null && seasonAbbr.trim().length() > 0)
+			{
+				EnumValue ev = seasonEnum.findEnumValue(seasonAbbr);
+				if (ev == null)
+					Logger.instance().warning("Sensor " + getDisplayName()
+						+ " Unknown 'ignoreSeason' property value '" + seasonAbbr + "'");
+				else
+				{
+					try
+					{
+						ignoreSeason = new Season(ev);
+					}
+					catch (FieldParseException ex)
+					{
+						Logger.instance().warning("Sensor " + getDisplayName()
+							+ " ignoreSeason: " + ex);
+						ignoreSeason = null;
+					}
+				}
+			}
+			if ((seasonAbbr = getProperty("processSeason")) != null && seasonAbbr.trim().length() > 0)
+			{
+				EnumValue ev = seasonEnum.findEnumValue(seasonAbbr);
+				if (ev == null)
+					Logger.instance().warning("Sensor " + getDisplayName()
+						+ " Unknown 'processSeason' property value '" + seasonAbbr + "'");
+				else
+				{
+					try
+					{
+						processSeason = new Season(ev);
+					}
+					catch (FieldParseException ex)
+					{
+						Logger.instance().warning("Sensor " + getDisplayName()
+							+ " processSeason: " + ex);
+						processSeason = null;
+					}
+				}
+			}
+		}
+	}
+
+	public Season getIgnoreSeason()
+	{
+		if (!isPrepared)
+			prepareForExec();
+		return ignoreSeason;
+	}
+
+	public Season getProcessSeason()
+	{
+		if (!isPrepared)
+			prepareForExec();
+		return processSeason;
+	}
 
 }
 
