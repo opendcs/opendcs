@@ -9,6 +9,7 @@ import java.net.URL;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 
 /**
  * Extends StreamDataSource to read data from an URL opened on the internet.
@@ -32,7 +33,7 @@ public class WebDataSource
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
-		return propSpecs;
+		return PropertiesUtil.combineSpecs(super.getSupportedProps(), propSpecs);
 	}
 
 	/**
