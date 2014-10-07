@@ -236,10 +236,6 @@ public class LrgsConfig
 	/** Store XMIT Records (i.e. the DCP Monitor Function) */
 	public boolean storeXmitRecords = false;
 	
-	/** Special feature to forward Iridium messages to an additional LRGS */
-	public String iridiumForwardHost = null;
-	public int iridiumForwardPort = 10800;
-
 	/** Meteosat LRIT can be VCS (default) or IBL*/
 	public boolean iblLrit = false;
 	
