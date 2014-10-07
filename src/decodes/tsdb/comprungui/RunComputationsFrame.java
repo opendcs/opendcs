@@ -4,12 +4,6 @@
  * Copyright 2008 Ilex Engineering, Inc. - All Rights Reserved.
  * No part of this file may be duplicated in either hard-copy or electronic
  * form without specific written permission.
- * 
- * 2014 Notice: Cove Software, LLC believes the above copyright notice to be
- * in error. This module was 100% funded by the U.S. Federal Government under
- * contracts requiring that it be Government-Owned. It has been delivered to
- * U.S. Bureau of Reclamation, U.S. Geological Survey, and U.S. Army Corps of
- * Engineers under contract.
  */
 package decodes.tsdb.comprungui;
 import ilex.gui.DateTimeCalendar;

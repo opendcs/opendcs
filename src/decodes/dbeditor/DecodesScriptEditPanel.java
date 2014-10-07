@@ -2,8 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2014/10/02 14:25:09  mmaloney
+ * Added platformListDesignatorCol
+ *
  * 
- * Reworked from open-source code in USGS repository and USGS HEC repository.
+ * Reworked from open-source code in USGS repository and USACE HEC repository.
  * 
  * Open Source Software written by Cove Software, LLC under contract to the
  * U.S. Government.
