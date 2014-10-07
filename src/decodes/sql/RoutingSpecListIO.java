@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.2  2014/09/15 14:04:56  mmaloney
+ * Code cleanup.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -336,9 +339,13 @@ public class RoutingSpecListIO extends SqlDbObjIo
 			while (resultSet.next()) 
 			{
 				String nm = resultSet.getString(1);
-				routingSpec.networkListNames.add(nm);
+				//Logger.instance().debug1("read_RS_NL: After select for RS " 
+				// + routingSpec.getName() + "' adding list " + nm);
+				routingSpec.addNetworkListName(nm);
 			}
 		}
+		//Logger.instance().debug1("read_RS_NL: After select for RS " + routingSpec.getName() + "', there are " 
+		//+ routingSpec.networkListNames.size() +" NL Names.");
 		stmt.close();
 	}
 
