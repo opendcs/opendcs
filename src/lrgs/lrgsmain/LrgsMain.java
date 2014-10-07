@@ -33,7 +33,6 @@ import ilex.util.ProcWaiterThread;
 import ilex.util.TextUtil;
 import ilex.jni.SignalHandler;
 import ilex.jni.SignalTrapper;
-
 import lrgs.archive.MsgArchive;
 import lrgs.archive.InvalidArchiveException;
 import lrgs.archive.MsgFile;
@@ -45,7 +44,7 @@ import lrgs.drgsrecv.DrgsRecv;
 import lrgs.domsatrecv.DomsatRecv;
 import lrgs.gui.LrgsApp;
 import lrgs.gui.DecodesInterface;
-import lrgs.iridium.IridiumRecv;
+import lrgs.iridiumsbd.IridiumSbdInterface;
 import lrgs.lrgsmon.DetailReportGenerator;
 import lrgs.lrit.LritDamsNtReceiver;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
@@ -53,7 +52,6 @@ import lrgs.dqm.DapsDqmInterface;
 import lrgs.db.LrgsDatabaseThread;
 import lrgs.noaaportrecv.NoaaportRecv;
 import lrgs.networkdcp.NetworkDcpRecv;
-
 import decodes.util.DecodesException;
 
 /**
@@ -392,7 +390,7 @@ public class LrgsMain
 		if (cfg.iridiumEnabled)
 		{
 			Logger.instance().info("Enabling Iridium Receive Module.");
-			addInput(new IridiumRecv(this, msgArchive));
+			addInput(new IridiumSbdInterface(this, msgArchive));
 		}
 
 		// If a preload XML file was specified on the command line, load it.
