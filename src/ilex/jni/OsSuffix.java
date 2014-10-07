@@ -17,8 +17,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 /**
-Determines the correct Shared Object Library suffix to use when loading
-a native library.
+ * $Id$
+ * 
+ * $Log$
+ * 
+ * Copyright 2008 Ilex Engineering, Inc. - All Rights Reserved.
+ * No part of this file may be duplicated in either hard-copy or electronic
+ * form without specific written permission.
+ *
+ * Determines the correct Shared Object Library suffix to use when loading
+ * a native library.
 */
 public class OsSuffix
 {
