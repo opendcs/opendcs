@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  2014/05/22 12:14:09  mmaloney
+ * Disable TS buttons when database is XML.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -514,88 +517,98 @@ public class LauncherFrame extends JFrame
 	{
 	}
 
-	private void jbInit() throws Exception 
+	private void jbInit() throws Exception
 	{
-        JPanel contentPane = (JPanel) this.getContentPane();
+		JPanel contentPane = (JPanel) this.getContentPane();
 
-        dcstoolButtonBorder = new TitledBorder(BorderFactory.createEtchedBorder(Color.white,new Color(148, 145, 140)),labels.getString("LauncherFrame.dcsToolKitCompTitle"));
-        dcstoolButtonPanel.setLayout(dcstoolLayout);
-        int rows = 5
-          + (DecodesSettings.instance().showPlatformWizard ? 1 : 0);
-        dcstoolLayout.setRows(rows);
-        dcstoolLayout.setColumns(1);
-        dcstoolButtonPanel.setBorder(dcstoolButtonBorder);
+		dcstoolButtonBorder = new TitledBorder(BorderFactory.createEtchedBorder(Color.white, new Color(148,
+			145, 140)), labels.getString("LauncherFrame.dcsToolKitCompTitle"));
+		dcstoolButtonPanel.setLayout(dcstoolLayout);
+		int rows = 4 + (DecodesSettings.instance().showPlatformWizard ? 1 : 0)
+			+ (DecodesSettings.instance().showNetlistEditor ? 1 : 0);
+		dcstoolLayout.setRows(rows);
+		dcstoolLayout.setColumns(1);
+		dcstoolButtonPanel.setBorder(dcstoolButtonBorder);
 
-        lrgsStatButton.setText(
-            labels.getString("LauncherFrame.lrgsStatButton"));
-        lrgsStatButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-            	lrgsStatButton_actionPerformed(e);
-            }
-        });
+		lrgsStatButton.setText(labels.getString("LauncherFrame.lrgsStatButton"));
+		lrgsStatButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				lrgsStatButton_actionPerformed(e);
+			}
+		});
 
-        
-        browserButton.setText(
-        	labels.getString("LauncherFrame.messageBrowserButton"));
-        browserButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                browserButton_actionPerformed(e);
-            }
-        });
-        netlistButton.setText(
-        	labels.getString("LauncherFrame.networkListMaintButton"));
-        netlistButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                netlistButton_actionPerformed(e);
-            }
-        });
-        dbeditButton.setText(
-        		labels.getString("LauncherFrame.DECODESDBEditorButton"));
-        dbeditButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                dbeditButtonPressed();
-            }
-        });
-        platwizButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-            	platwizButtonButtonPressed();
-            }
-        });
-        toolkitConfigButton.setText(
-        		labels.getString("LauncherFrame.DCSToolkitSetupButton"));
-        toolkitConfigButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                setupPressed();
-            }
-        });
-        
+		browserButton.setText(labels.getString("LauncherFrame.messageBrowserButton"));
+		browserButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				browserButton_actionPerformed(e);
+			}
+		});
+		netlistButton.setText(labels.getString("LauncherFrame.networkListMaintButton"));
+		netlistButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				netlistButton_actionPerformed(e);
+			}
+		});
+		dbeditButton.setText(labels.getString("LauncherFrame.DECODESDBEditorButton"));
+		dbeditButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				dbeditButtonPressed();
+			}
+		});
+		platwizButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				platwizButtonButtonPressed();
+			}
+		});
+		toolkitConfigButton.setText(labels.getString("LauncherFrame.DCSToolkitSetupButton"));
+		toolkitConfigButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				setupPressed();
+			}
+		});
+
 		dcstoolButtonPanel.add(lrgsStatButton, null);
 		dcstoolButtonPanel.add(browserButton, null);
-		dcstoolButtonPanel.add(netlistButton, null);
+
+		// Don't add unless showNetlistButton is true
+		if (DecodesSettings.instance().showNetlistEditor)
+			dcstoolButtonPanel.add(netlistButton, null);
 		dcstoolButtonPanel.add(dbeditButton, null);
 		if (DecodesSettings.instance().showPlatformWizard)
 			dcstoolButtonPanel.add(platwizButton, null);
 
 		dcstoolButtonPanel.add(toolkitConfigButton, null);
 
-        String borderString = labels.getString("LauncherFrame.hydroMetCompTitle");
-        if (tsdbType == TsdbType.CWMS)
-        	borderString = "CWMS Database Components";
-        else if (tsdbType == TsdbType.HDB)
-        	borderString = "HDB Database Components";
-        	
-        tsdbButtonBorder = new TitledBorder(BorderFactory.createEtchedBorder(
-			Color.white,new Color(148, 145, 140)), borderString);
-        tsdbButtonPanel.setLayout(tsdbLayout);
-        
-        rows = 6;
-        tsdbLayout.setRows(rows);
-        tsdbLayout.setColumns(1);
-        tsdbButtonPanel.setBorder(tsdbButtonBorder);
+		String borderString = labels.getString("LauncherFrame.hydroMetCompTitle");
+		if (tsdbType == TsdbType.CWMS)
+			borderString = "CWMS Database Components";
+		else if (tsdbType == TsdbType.HDB)
+			borderString = "HDB Database Components";
 
-        // ROW 0: Time Series Button
-		tseditButton.setIcon(new ImageIcon(installDir + File.separator
-			+ "icons" + File.separator + "tsedit48x48.gif"));
+		tsdbButtonBorder = new TitledBorder(BorderFactory.createEtchedBorder(Color.white, new Color(148, 145,
+			140)), borderString);
+		tsdbButtonPanel.setLayout(tsdbLayout);
+
+		rows = 6;
+		tsdbLayout.setRows(rows);
+		tsdbLayout.setColumns(1);
+		tsdbButtonPanel.setBorder(tsdbButtonBorder);
+
+		// ROW 0: Time Series Button
+		tseditButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
+			+ "tsedit48x48.gif"));
 		tseditButton.setText("Time Series");
 		tseditButton.setHorizontalAlignment(SwingConstants.CENTER);
 		tseditButton.setBackground(Color.white);
@@ -609,8 +622,8 @@ public class LauncherFrame extends JFrame
 		tsdbButtonPanel.add(tseditButton);
 
 		// ROW 1: Time Series Groups Button
-		groupEditButton.setIcon(new ImageIcon(installDir + File.separator
-			+ "icons" + File.separator + "groups48x48.png"));
+		groupEditButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
+			+ "groups48x48.png"));
 		groupEditButton.setText("Time Series Groups");
 		groupEditButton.setHorizontalAlignment(SwingConstants.CENTER);
 		groupEditButton.setBackground(Color.white);
@@ -624,10 +637,9 @@ public class LauncherFrame extends JFrame
 		tsdbButtonPanel.add(groupEditButton, null);
 
 		// ROW 2: Computations Button
-		compeditButton.setIcon(new ImageIcon(installDir + File.separator
-			+ "icons" + File.separator + "compedit48x48.gif"));
-		compeditButton.setText(labels
-			.getString("LauncherFrame.computationsButton"));
+		compeditButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
+			+ "compedit48x48.gif"));
+		compeditButton.setText(labels.getString("LauncherFrame.computationsButton"));
 		compeditButton.setHorizontalAlignment(SwingConstants.CENTER);
 		compeditButton.setBackground(Color.white);
 		compeditButton.addActionListener(new java.awt.event.ActionListener()
@@ -637,13 +649,12 @@ public class LauncherFrame extends JFrame
 				compeditButtonPressed();
 			}
 		});
-		tsdbButtonPanel.add(compeditButton, null);        
+		tsdbButtonPanel.add(compeditButton, null);
 
 		// ROW 3: Run/Test Computations Button
-		runcompButton.setIcon(new ImageIcon(installDir + File.separator
-			+ "icons" + File.separator + "runcomp48x48.gif"));
-		runcompButton.setText(labels
-			.getString("LauncherFrame.testComputationsButton"));
+		runcompButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
+			+ "runcomp48x48.gif"));
+		runcompButton.setText(labels.getString("LauncherFrame.testComputationsButton"));
 		runcompButton.setHorizontalAlignment(SwingConstants.CENTER);
 		runcompButton.setBackground(Color.white);
 		runcompButton.addActionListener(new java.awt.event.ActionListener()
@@ -653,13 +664,12 @@ public class LauncherFrame extends JFrame
 				runcompButtonPressed();
 			}
 		});
-		tsdbButtonPanel.add(runcompButton, null);		
-	
+		tsdbButtonPanel.add(runcompButton, null);
+
 		// ROW 4: Process Status Button
-		procstatButton.setIcon(new ImageIcon(installDir + File.separator
-			+ "icons" + File.separator + "procstat48x48.gif"));
-		procstatButton.setText(labels
-			.getString("LauncherFrame.processStatusButton"));
+		procstatButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
+			+ "procstat48x48.gif"));
+		procstatButton.setText(labels.getString("LauncherFrame.processStatusButton"));
 		procstatButton.setHorizontalAlignment(SwingConstants.CENTER);
 		procstatButton.setBackground(Color.white);
 		procstatButton.addActionListener(new java.awt.event.ActionListener()
@@ -669,13 +679,12 @@ public class LauncherFrame extends JFrame
 				procstatButtonPressed();
 			}
 		});
-		tsdbButtonPanel.add(procstatButton, null); 		
+		tsdbButtonPanel.add(procstatButton, null);
 
 		// ROW 4: Algorithm Edit Button
-		algoeditButton.setIcon(new ImageIcon(installDir + File.separator
-			+ "icons" + File.separator + "algoedit48x48.gif"));
-		algoeditButton.setText(labels
-			.getString("LauncherFrame.algorithmsButton"));
+		algoeditButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
+			+ "algoedit48x48.gif"));
+		algoeditButton.setText(labels.getString("LauncherFrame.algorithmsButton"));
 		algoeditButton.setHorizontalAlignment(SwingConstants.CENTER);
 		algoeditButton.setBackground(Color.white);
 		algoeditButton.addActionListener(new java.awt.event.ActionListener()
@@ -688,21 +697,17 @@ public class LauncherFrame extends JFrame
 		tsdbButtonPanel.add(algoeditButton, null);
 
 		fullPanel.setLayout(fullLayout);
-		fullPanel.add(dcstoolButtonPanel,
-			new GridBagConstraints(0, 0, 1, 1, .5, .5,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(5, 5, 5, 5), 0, 0));
-		//Verify if user install the Tempest Tsdb components
+		fullPanel.add(dcstoolButtonPanel, new GridBagConstraints(0, 0, 1, 1, .5, .5,
+			GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
+		// Verify if user install the Tempest Tsdb components
 		if (tsdbType != TsdbType.NONE)
 		{
-			fullPanel.add(tsdbButtonPanel,
-					new GridBagConstraints(0, 1, 1, 1, .5, .5,
-						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-						new Insets(5, 5, 5, 5), 0, 0));	
+			fullPanel.add(tsdbButtonPanel, new GridBagConstraints(0, 1, 1, 1, .5, .5,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
 		}
-        contentPane.add(fullPanel, BorderLayout.CENTER);
-        setupSaved();
-    }
+		contentPane.add(fullPanel, BorderLayout.CENTER);
+		setupSaved();
+	}
 
 	void retProcButton_actionPerformed(ActionEvent e)
 	{

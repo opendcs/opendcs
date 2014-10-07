@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.4  2014/10/02 14:16:32  mmaloney
+*  Added platformListDesignatorCol
+*
 *  Revision 1.3  2014/05/27 12:54:38  mmaloney
 *  dev
 *
@@ -259,6 +262,9 @@ public class DecodesSettings
 	/** Show the Platform Wizard button on the button panel */
 	public boolean showPlatformWizard = false;
 	
+	/** Show the legacy network list button on the button panel */
+	public boolean showNetlistEditor = false;
+	
 	/** For CWMS Datchk Validation configuration */
 	public String datchkConfigFile = "$DCSTOOL_USERDIR/datchk.cfg";
 	
@@ -410,6 +416,8 @@ public class DecodesSettings
 			"Set to true to allow DECODES to write CWMS Location records"),
 		new PropertySpec("showPlatformWizard", PropertySpec.BOOLEAN,
 			"Show the Platform Wizard button on the button panel"),
+			new PropertySpec("showNetlistEditor", PropertySpec.BOOLEAN,
+				"Show the (legacy) network list editor button on the button panel"),
 		new PropertySpec("datchkConfigFile", PropertySpec.FILENAME,
 			"File containing CWMS Datchk Validation configuration"),
 		new PropertySpec("routingMonitorUrl", PropertySpec.STRING,
