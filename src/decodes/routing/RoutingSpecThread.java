@@ -3,30 +3,20 @@
 */
 package decodes.routing;
 
-import java.sql.Connection;
 import java.util.*;
 import java.io.*;
-import java.nio.channels.FileLock;
-import java.nio.channels.FileChannel;
 
-import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
-
 import lrgs.common.DcpMsg;
-
 import ilex.util.*;
 import ilex.var.Variable;
 import ilex.cmdline.*;
-
 import decodes.db.*;
-import decodes.xml.XmlDatabaseIO;
 import decodes.datasource.*;
 import decodes.sql.DbKey;
-import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.util.*;
-import decodes.decoder.ScriptFormatException;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecoderException;
 import decodes.decoder.SummaryReportGenerator;
@@ -232,7 +222,7 @@ public class RoutingSpecThread
 		numMsgsRun = 0;
 		numErrsRun = 0;
 		lastDay = System.currentTimeMillis() / (24 * 60 * 60 * 1000L);
-log(Logger.E_DEBUG1, "run() starting.");
+		log(Logger.E_DEBUG1, "run() starting.");
 		writeStatus();
 
 		done = false;
@@ -430,7 +420,7 @@ log(Logger.E_DEBUG1, "run() starting.");
 			{
 				try
 				{
-log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.getId());
+					//log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.getId());
 					
 					platstat = platformStatusDAO.readPlatformStatus(platform.getId());
 				}
@@ -922,8 +912,10 @@ log(Logger.E_DEBUG1, "run() exiting.");
 			source.setAllowDapsStatusMessages(
 				!formatter.acceptRealDcpMessagesOnly());
 			source.setAllowNullPlatform(!formatter.requiresDecodedMessage());
-			source.init(rs.getProperties(), sinceTime, rs.untilTime,
-				rs.networkLists);
+			log(Logger.E_DEBUG1, "rst.init: calling source init, there are "
+				+ rs.networkLists.size() + " NLs, and " + rs.networkListNames.size() + " NL Names");
+			
+			source.init(rs.getProperties(), sinceTime, rs.untilTime, rs.networkLists);
 		}
 		catch(InvalidDatabaseException e)
 		{
@@ -1116,6 +1108,8 @@ log(Logger.E_DEBUG1, "run() exiting.");
 				}
 			}
 
+			log(Logger.E_DEBUG1, "checkNetworkLists: There are " + rs.networkLists.size() + " explicit lists.");
+			log(Logger.E_DEBUG1, "checkNetworkLists: There are " + rs.networkListNames.size() + " explicit list namess.");
 			for(Iterator<NetworkList> it = rs.networkLists.iterator(); 
 				it.hasNext(); )
 			{
@@ -1392,6 +1386,7 @@ log(Logger.E_DEBUG1, "shutdown called.");
 		}
 
 		// Construct the database and the interface specified by properties.
+		ResourceFactory.instance();
 		Database db = new decodes.db.Database();
 		Database.setDb(db);
 
