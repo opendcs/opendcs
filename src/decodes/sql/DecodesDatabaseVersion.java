@@ -58,6 +58,8 @@ public class DecodesDatabaseVersion
 	 * - New tables CP_COMPOSITE_DIAGRAM and CP_COMPOSITE_MEMBER
 	 * - Redefinition of table DACQ_EVENT
 	 * - New table SERIAL_PORT_STATUS
+	 * - Drop table SEASON
+	 * - Drop CP_COMPUTATION.SEASON_ID
 	 */
 	public static final int DECODES_DB_11 = 11;
 
