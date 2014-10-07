@@ -12,15 +12,11 @@
 */
 package lrgs.lrgsmain;
 
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.TimeZone;
-import java.util.Vector;
-import java.util.Iterator;
 import java.util.Properties;
 import java.net.InetAddress;
 
@@ -35,8 +31,6 @@ import ilex.jni.SignalHandler;
 import ilex.jni.SignalTrapper;
 import lrgs.archive.MsgArchive;
 import lrgs.archive.InvalidArchiveException;
-import lrgs.archive.MsgFile;
-import lrgs.common.DcpMsg;
 import lrgs.ddsserver.DdsServer;
 import lrgs.ddsrecv.DdsRecv;
 import lrgs.ddsrecv.OutageDdsRecv;
@@ -274,8 +268,7 @@ public class LrgsMain
 
 		lrgsInputs = new LrgsInputInterface[cfg.maxDownlinks];
 
-		if (cfg.getLoadDecodes()
-		 || cfg.enableDcpInterface)
+		if (cfg.getLoadDecodes())
 		{
 			try
 			{
@@ -393,49 +386,6 @@ public class LrgsMain
 			addInput(new IridiumSbdInterface(this, msgArchive));
 		}
 
-		// If a preload XML file was specified on the command line, load it.
-		String preloadFile = cmdLineArgs.getPreloadFile();
-		if (preloadFile != null)
-		{
-			MsgFile msgFileIN = null;
-			int num = 0;
-			try
-			{
-				msgFileIN = new MsgFile(new File(preloadFile), false);
-				long loc = 0L;
-				DcpMsg dcpMsg = null;
-				PreloadLrgsInterface pli = new PreloadLrgsInterface();
-				while((dcpMsg = msgFileIN.readMsg(loc)) != null)
-				{
-					msgArchive.archiveMsg(dcpMsg, pli);
-					loc = msgFileIN.getLocation();
-					num++;
-				}
-				Logger.instance().info("Preloaded " + num + " messages from file '" + preloadFile + "'");
-			}
-			catch (FileNotFoundException e)
-			{
-				System.err.println("No such preload file '" + preloadFile + "': " + e);
-				e.printStackTrace();
-			}
-			catch (EOFException e)
-			{
-				Logger.instance().info("EOF: Preloaded " + num + " messages from file '" + preloadFile + "'");
-			}
-			catch (IOException e)
-			{
-				System.err.println("Error loading preload file '" + preloadFile + "': " + e);
-				e.printStackTrace();
-			}
-			finally
-			{
-				if (msgFileIN != null)
-					msgFileIN.close();
-			}
-		}
-		else
-			Logger.instance().info("No preload file specified.");
-		
 		// Initialize all of the input interfaces.
 		for(int i=0; i < lrgsInputs.length; i++)
 		{
@@ -748,8 +698,8 @@ public class LrgsMain
 		Logger.instance().info("SIGHUP received -- rotating logs.");
 		cmdLineArgs.fLogger.rotateLogs();
 		if (ddsServer != null
-		 && ddsServer.statLoggerThread != null)
-			ddsServer.statLoggerThread.rotateLogs();
+		 && DdsServer.statLoggerThread != null)
+			DdsServer.statLoggerThread.rotateLogs();
 	}
 
 	public LrgsDatabaseThread getDbThread()

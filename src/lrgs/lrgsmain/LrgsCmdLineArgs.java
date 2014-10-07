@@ -13,7 +13,6 @@
 package lrgs.lrgsmain;
 
 import java.io.IOException;
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
@@ -35,7 +34,6 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	public static final String progname = "lrgs";
 	QueueLogger qLogger;
 	SequenceFileLogger fLogger;
-	private StringToken preloadFile_arg;
 
 	public LrgsCmdLineArgs()
 	{
@@ -65,12 +63,6 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 
 		qLogger = null;
 		fLogger = null;
-		
-		preloadFile_arg = new StringToken(
-			"L", "XML Message Preload", "", TokenOptions.optSwitch, 
-			"");
-		addToken(preloadFile_arg);
-		
 	}
 
     /**
@@ -139,13 +131,4 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	{
 		return configFile_arg.getValue();
 	}
-	
-	public String getPreloadFile()
-	{
-		String ret = preloadFile_arg.getValue();
-		if (ret == null || ret.trim().length() == 0)
-			return null;
-		return ret;
-	}
-
 }

@@ -230,9 +230,6 @@ public class LrgsConfig
 	/** Accept Abnormal Response Messages from DOMSAT (default=true) */
 	public boolean acceptDomsatARMs = true; 
 	
-	/** Enable the new Network DCP Interface Module. */
-	public boolean enableDcpInterface = false;
-	
 	/** Store XMIT Records (i.e. the DCP Monitor Function) */
 	public boolean storeXmitRecords = false;
 	
