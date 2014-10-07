@@ -16,7 +16,7 @@ import decodes.db.ConfigSensor;
 import decodes.db.DecodesScript;
 import decodes.db.ScriptSensor;
 import decodes.db.TransportMedium;
-import decodes.dbeditor.DecodingScriptEditPanel;
+import decodes.dbeditor.DecodesScriptEditPanel;
 import decodes.dbeditor.LoadMessageDialog;
 import decodes.dbeditor.TraceDialog;
 import decodes.gui.TopFrame;
@@ -35,8 +35,8 @@ public class ScriptEditPanel extends JPanel
 	private static ResourceBundle platwizLabels = 
 		PlatformWizard.getPlatwizLabels();
 	BorderLayout borderLayout1 = new BorderLayout();
-	DecodingScriptEditPanel decodingScriptEditPanel 
-		= new DecodingScriptEditPanel();
+	DecodesScriptEditPanel decodingScriptEditPanel 
+		= new DecodesScriptEditPanel();
 
 	/** The name of this script */
 	String name;
