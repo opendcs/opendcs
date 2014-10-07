@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.18  2013/08/18 19:48:45  mmaloney
 *  Implement EffectiveStart/End relative properties
 *
@@ -102,9 +105,6 @@ public class DbComputation
 	/** Used during execution to correlate run id's between inputs & outputs. */
 	private int modelRunId;
 	
-	/** Added for OPENDCS6 */
-	private DbKey seasonId = null;
-
 	/** Assigned when computation is initialized for exec. */
 	private int dataSourceId = Constants.undefinedIntKey;
 
@@ -690,15 +690,5 @@ public class DbComputation
 	public String getUniqueName()
 	{
 		return getName();
-	}
-
-	public DbKey getSeasonId()
-	{
-		return seasonId;
-	}
-
-	public void setSeasonId(DbKey seasonId)
-	{
-		this.seasonId = seasonId;
 	}
 }
