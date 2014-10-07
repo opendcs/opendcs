@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/10/02 14:36:32  mmaloney
+ * Added bean attributes and accessor methods.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -17,6 +20,11 @@ public class Location
 	private double latitude = 0.0;
 	private double longitude = 0.0;
 	private double radius = 0.0;
+	
+	public String toString()
+	{
+		return "Loc: lat=" + latitude + ", lon=" + longitude + ", rad=" + radius;
+	}
 	
 	/**
 	 * Accept a string in decimal or deg/min/sec notation and return
