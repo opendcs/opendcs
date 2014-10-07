@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.6  2014/09/25 18:12:23  mmaloney
+*  Enum fields encapsulated.
+*
 *  Revision 1.5  2014/08/22 17:23:11  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -37,13 +40,8 @@ package lrgs.gui;
 
 import java.util.Iterator;
 import java.util.Properties;
-import java.io.IOException;
-import java.io.FileInputStream;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-import ilex.util.EnvExpander;
-
 import decodes.db.*;
 import decodes.util.*;
 import decodes.datasource.LrgsDataSource;
@@ -51,7 +49,6 @@ import decodes.datasource.RawMessage;
 import decodes.consumer.OutputFormatter;
 import decodes.consumer.StringBufferConsumer;
 import decodes.decoder.DecodedMessage;
-
 import lrgs.common.DcpMsg;
 
 
@@ -156,6 +153,7 @@ public class DecodesInterface
 		if (decodesInitialized)
 			return;
 
+		ResourceFactory.instance();
 		DecodesSettings settings = DecodesSettings.instance();
 
 		if (!silent)
