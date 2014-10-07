@@ -89,7 +89,7 @@ public class ScadaConvert
 
 	public ScadaConvert()
 	{
-		super("util.log");
+		super("scadaconv.log");
 		arcNameSdf.setTimeZone(TimeZone.getTimeZone("MST"));
 		scadaFmt1.setTimeZone(TimeZone.getTimeZone("MST"));
 		scadaFmt2.setTimeZone(TimeZone.getTimeZone("MST"));
