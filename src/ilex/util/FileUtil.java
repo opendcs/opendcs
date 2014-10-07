@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2011/01/14 21:03:03  sparab
 *  *** empty log message ***
 *
@@ -101,6 +104,18 @@ public class FileUtil
 			sb.append((char)c);
 		fr.close();
 		return sb.toString();
+	}
+	
+	public static byte[] getfileBytes(File f)
+		throws IOException
+	{
+		byte ret[] = new byte[(int)f.length()];
+		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
+		int b = 0;
+		for(int idx = 0; idx < ret.length && (b = bis.read()) != -1; idx++)
+			ret[idx] = (byte)b;
+		bis.close();
+		return ret;
 	}
 
 	/**
