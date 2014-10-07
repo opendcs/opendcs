@@ -104,12 +104,12 @@ public class IridiumCfgPanel
 				new Insets(3, 0, 3, 0), 60, 0));
 
 		add(new JLabel(RtStat.getLabels().getString("LrgsConfigDialog.iridiumCapture")),
-			new GridBagConstraints(0, 2, 1, 1, 0.5, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE,
+			new GridBagConstraints(0, 2, 1, 1, 0.5, 0.5,
+				GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
 		add(captureFileField,
-			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.5,
+				GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 15), 0, 0));
 	}
 	
