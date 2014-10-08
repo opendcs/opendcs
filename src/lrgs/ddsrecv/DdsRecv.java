@@ -42,7 +42,8 @@ import lrgs.lrgsmain.LrgsMain;
  * connection fails, it re-evaluates.</li>
  * </ol>
  */
-public class DdsRecv extends Thread implements LrgsInputInterface {
+public class DdsRecv extends Thread implements LrgsInputInterface
+{
 	/** Module name */
 	public static String module = "DdsRecv";
 
@@ -102,7 +103,8 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * @param msgArchive
 	 *            used to store incoming messages.
 	 */
-	public DdsRecv(LrgsMain lrgsMain, MsgArchive msgArchive) {
+	public DdsRecv(LrgsMain lrgsMain, MsgArchive msgArchive)
+	{
 		this.lrgsMain = lrgsMain;
 		this.msgArchive = msgArchive;
 		recvConList = new DdsRecvConList(lrgsMain);
@@ -117,7 +119,8 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	}
 
 	/** Causes the entire DdsRecv module to shut down. */
-	public void shutdown() {
+	public void shutdown()
+	{
 		isShutdown = true;
 		recvConList.shutdown();
 		statusCode = DL_DISABLED;
@@ -130,7 +133,8 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * @param rt
 	 *            the last receive time, usually retrieved from the quality log.
 	 */
-	public void setLastMsgRecvTime(long rt) {
+	public void setLastMsgRecvTime(long rt)
+	{
 		if (rt <= 0)
 			rt = System.currentTimeMillis() - 3600000L;
 		lastMsgRecvTime = rt;
@@ -140,7 +144,8 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	/**
 	 * Thread run method
 	 */
-	public void run() {
+	public void run()
+	{
 		Logger.instance().debug1(module + " starting.");
 
 		checkConfig();
@@ -149,24 +154,26 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 		long lastCfgCheck = 0L;
 		statusCode = DL_STRSTAT;
 		status = "Active";
-		while (!isShutdown) {
-			if (System.currentTimeMillis() - lastCfgCheck > cfgCheckTime) {
+		while (!isShutdown)
+		{
+			if (System.currentTimeMillis() - lastCfgCheck > cfgCheckTime)
+			{
 				checkConfig();
 
 				lastCfgCheck = System.currentTimeMillis();
 			}
-			if (LrgsConfig.instance().enableDdsRecv) {
+			if (LrgsConfig.instance().enableDdsRecv)
+			{
 				status = "Active";
 				statusCode = DL_STRSTAT;
 				getSomeData();
-			} else {
+			}
+			else
+			{
 				status = "Disabled";
 				statusCode = DL_DISABLED;
 				// Logger.instance().debug3(module + " not enabled.");
-				try {
-					sleep(1000L);
-				} catch (InterruptedException ex) {
-				}
+				try { sleep(1000L); } catch (InterruptedException ex) {}
 			}
 		}
 	}
@@ -174,68 +181,65 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	/**
 	 * Internal method to get the next message and archive it.
 	 */
-	protected void getSomeData() {
+	protected void getSomeData()
+	{
 		// If we don't currently have a connection, get the highest priority
 		// one from the list that's ready-to-go.
 		DdsRecvConnection con = recvConList.currentConnection;
-		if (con == null) {
+		if (con == null)
+		{
 			con = getConnection();
-			if (con == null) {
-				if(isSecondary)					
-				Logger
-				.instance()
-				.debug3(
-						module
-						+ ":"
-						+ EVT_NO_CONNECTIONS
-						+ " No 'Secondary Group' DDS Connections available to receive data.");
+			if (con == null)
+			{
+				if (isSecondary)
+					Logger.instance().debug3(
+						module + ":" + EVT_NO_CONNECTIONS
+							+ " No 'Secondary Group' DDS Connections available to receive data.");
 				else
-					Logger.instance().debug3(module
-							+ ":"
-							+ EVT_NO_CONNECTIONS
+					Logger.instance().debug3(
+						module + ":" + EVT_NO_CONNECTIONS
 							+ " No 'Primary Group' DDS Connections available to receive data.");
-					
-				try {
-					sleep(10000L);
-				} catch (InterruptedException ex) {
-				}
+
+				try { sleep(1000L); } catch (InterruptedException ex) {}
 				return;
 			}
-			Logger
-			.instance()
-			.debug3(
-					module
-					+ ":"
-					+ (-EVT_NO_CONNECTIONS)
-					+ " DDS Connections ARE available to receive data.");
+			Logger.instance().debug3(
+				module + ":" + (-EVT_NO_CONNECTIONS) + " DDS Connections ARE available to receive data.");
 			// We now have a new connection. Send it the search criteria.
 			SearchCriteria searchCrit = buildSearchCrit();
 			Logger.instance().debug1(
-					module + " Sending searchcrit to connection '"
-					+ con.getName() + "': " + searchCrit.toString());
-			if (!con.sendSearchCriteria(searchCrit)) {
+				module + " Sending searchcrit to connection '" + con.getName() + "': "
+					+ searchCrit.toString());
+			if (!con.sendSearchCriteria(searchCrit))
+			{
 				recvConList.currentConnection = null;
 				return;
 			}
 		}
-		try {
+		try
+		{
 			// Logger.instance().info("trying getDcpMsg from " + con.getName());
 			DcpMsg dcpMsg = con.getDcpMsg();
-			if (dcpMsg != null) {
+			if (dcpMsg != null)
+			{
 				lastMsgRecvTime = System.currentTimeMillis();
 				archiveMsg(dcpMsg, con);
-			} else // all caught up, pause for 1 sec.
+			}
+			else
+			// all caught up, pause for 1 sec.
 			{
 				// Logger.instance().info("All Caught Up from " +
 				// con.getName());
 				allCaughtUp();
 			}
-		} catch (LrgsInputException ex) {
-			if (!isShutdown) {
+		}
+		catch (LrgsInputException ex)
+		{
+			if (!isShutdown)
+			{
 				String msg = "- Connection to " + con.getName()
-				+ " failed -- will switch to different connection.";
-				Logger.instance().warning(
-						module + ":" + EVT_CONNECTION_FAILED + msg);
+					+ " failed -- will switch to different connection.";
+				Logger.instance().warning(module + ":" + EVT_CONNECTION_FAILED + msg);
 			}
 			recvConList.currentConnection = null;
 		}
@@ -246,7 +250,8 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * 
 	 * @return a connection from the pool.
 	 */
-	protected DdsRecvConnection getConnection() {
+	protected DdsRecvConnection getConnection()
+	{
 		return recvConList.getCurrentConnection();
 	}
 
@@ -258,7 +263,8 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * @param slotNum
 	 *            the input interface's slot number
 	 */
-	protected void archiveMsg(DcpMsg dcpMsg, DdsRecvConnection con) {
+	protected void archiveMsg(DcpMsg dcpMsg, DdsRecvConnection con)
+	{
 		msgArchive.archiveMsg(dcpMsg, con);
 	}
 
@@ -266,11 +272,9 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * Template method to take action when server reports that we are all caught
 	 * up. This base-class implementation just pauses 1 second.
 	 */
-	protected void allCaughtUp() {
-		try {
-			sleep(1000L);
-		} catch (InterruptedException ex) {
-		}
+	protected void allCaughtUp()
+	{
+		try { sleep(1000L); } catch (InterruptedException ex) {}
 	}
 
 	/**
@@ -282,25 +286,23 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 		SearchCriteria searchCrit = new SearchCriteria();
 		try
 		{
-			searchCrit.setLrgsSince(IDateFormat
-					.time_t2string((int) (lastMsgRecvTime / 1000L) - 60));
-			for(NetlistGroupAssoc nga : ddsRecvSettings.getNetlistGroupAssociations())
-//			for (NetworkList netlist : ddsRecvSettings.networkLists) 
+			searchCrit.setLrgsSince(IDateFormat.time_t2string((int) (lastMsgRecvTime / 1000L) - 60));
+			for (NetlistGroupAssoc nga : ddsRecvSettings.getNetlistGroupAssociations())
+			// for (NetworkList netlist : ddsRecvSettings.networkLists)
 			{
 				String netListFileName = nga.getNetworkList().makeFileName();
 				String netlistGroup = nga.getGroupName();
-				
+
 				if (isSecondary)
 				{ // add networklists to secondary group
 
-					if (netlistGroup.equalsIgnoreCase("secondary") 
-					 || netlistGroup.equalsIgnoreCase("both"))
+					if (netlistGroup.equalsIgnoreCase("secondary") || netlistGroup.equalsIgnoreCase("both"))
 						searchCrit.addNetworkList(nga.getNetworkList().makeFileName());
 				}
-				else // add networklists to primary group
+				else
+				// add networklists to primary group
 				{
-					if (netlistGroup.equalsIgnoreCase("primary")
-					 || netlistGroup.equalsIgnoreCase("both"))
+					if (netlistGroup.equalsIgnoreCase("primary") || netlistGroup.equalsIgnoreCase("both"))
 						searchCrit.addNetworkList(nga.getNetworkList().makeFileName());
 				}
 			}
@@ -310,7 +312,8 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 				searchCrit.addNetworkList("<production>");
 		}
 
-		catch (Exception e) {
+		catch (Exception e)
+		{
 			// TODO: handle exception
 		}
 		return searchCrit;
@@ -320,66 +323,79 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * Check the configuration file to see if it has changed. If so, reload it
 	 * and put the changes into effect.
 	 */
-	protected void checkConfig() {
+	protected void checkConfig()
+	{
 		Logger.instance().debug3(module + " checkConfig");
 		String fn = EnvExpander.expand(LrgsConfig.instance().ddsRecvConfig);
 		File cf = new File(fn);
 
-		if (cf.lastModified() > lastConfigRead
-				|| ddsRecvSettings.networkListsHaveChanged()) {
+		if (cf.lastModified() > lastConfigRead || ddsRecvSettings.networkListsHaveChanged())
+		{
 
 			lastConfigRead = System.currentTimeMillis();
-			if (!isSecondary) { // reloads configuration from file if primary
+			if (!isSecondary)
+			{ // reloads configuration from file if primary
 				// group thread.
-				try {
-					synchronized (ddsRecvSettings) {
+				try
+				{
+					synchronized (ddsRecvSettings)
+					{
 						ddsRecvSettings.setFromFile(fn);
 						ddsRecvSettings.setReloaded(true);
 						Logger.instance().info(
-								module + ":" + (-EVT_BAD_CONFIG)
-								+ " Loaded Config File '" + cf + "'");
+							module + ":" + (-EVT_BAD_CONFIG) + " Loaded Config File '" + cf + "'");
 
 					}
 
-				} catch (BadConfigException ex) {
-					Logger.instance().failure(
-							module + ":" + EVT_BAD_CONFIG
-							+ " Cannot read DDS Recv Config File '"
-							+ cf + "': " + ex);
 				}
-			} 
-			
-			else // secondary group thread waits for the configuration to be reloaded
-			{
-				while (!ddsRecvSettings.isReloaded()) 
+				catch (BadConfigException ex)
 				{
-					try {
+					Logger.instance().failure(
+						module + ":" + EVT_BAD_CONFIG + " Cannot read DDS Recv Config File '" + cf + "': "
+							+ ex);
+				}
+			}
+
+			else
+			// secondary group thread waits for the configuration to be reloaded
+			{
+				while (!ddsRecvSettings.isReloaded())
+				{
+					try
+					{
 						sleep(5000L);
-					} catch (Exception ex2) {
+					}
+					catch (Exception ex2)
+					{
 
 						Logger.instance().failure(
-								module + ":" + EVT_BAD_CONFIG
-								+ " Cannot read DDS Recv Config File '"
-								+ cf + "': " + ex2);
+							module + ":" + EVT_BAD_CONFIG + " Cannot read DDS Recv Config File '" + cf
+								+ "': " + ex2);
 					}
 					continue;
 				}
-				synchronized (ddsRecvSettings) {
+				synchronized (ddsRecvSettings)
+				{
 					ddsRecvSettings.setReloaded(false);
 				}
 
 			}
 
-			synchronized (recvConList) {
+			synchronized (recvConList)
+			{
 				recvConList.removeAll();
-				for (Iterator it = ddsRecvSettings.getConnectConfigs(); it.hasNext();) {
+				for (Iterator it = ddsRecvSettings.getConnectConfigs(); it.hasNext();)
+				{
 					DdsRecvConnectCfg ddsCfg = (DdsRecvConnectCfg) it.next();
 
-					if (isSecondary) { // adds to secondary group list
-						if (ddsCfg.group != null && ddsCfg.group.equalsIgnoreCase("secondary")) 
+					if (isSecondary)
+					{ // adds to secondary group list
+						if (ddsCfg.group != null && ddsCfg.group.equalsIgnoreCase("secondary"))
 							recvConList.addConnection(ddsCfg);
-					} else { // adds to primary group list
-						if (ddsCfg.group == null || ddsCfg.group.equalsIgnoreCase("primary")) 
+					}
+					else
+					{ // adds to primary group list
+						if (ddsCfg.group == null || ddsCfg.group.equalsIgnoreCase("primary"))
 							recvConList.addConnection(ddsCfg);
 
 					}
@@ -395,12 +411,12 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	/**
 	 * @return the type of this input interface.
 	 */
-	public int getType() {
-		if(isSecondary)
-			return
-			DL_DDS_SECONDRAY;
+	public int getType()
+	{
+		if (isSecondary)
+			return DL_DDS_SECONDRAY;
 		else
-		 return DL_DDS;
+			return DL_DDS;
 	}
 
 	/**
@@ -410,22 +426,25 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * @param slot
 	 *            the slot number.
 	 */
-	public void setSlot(int slot) {
+	public void setSlot(int slot)
+	{
 		this.slot = slot;
 	}
 
 	/** @return the slot numbery that this interface was given at startup */
-	public int getSlot() {
+	public int getSlot()
+	{
 		return this.slot;
 	}
 
 	/**
 	 * @return the name of this interface.
 	 */
-	public String getInputName() {
-		if(isSecondary)
+	public String getInputName()
+	{
+		if (isSecondary)
 			return "DDS-Recv:Main(Secondary)";
-			else
+		else
 			return "DDS-Recv:Main";
 	}
 
@@ -433,14 +452,16 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * Initializes the interface. May throw LrgsInputException when an
 	 * unrecoverable error occurs.
 	 */
-	public void initLrgsInput() throws LrgsInputException {
+	public void initLrgsInput() throws LrgsInputException
+	{
 	}
 
 	/**
 	 * Shuts down the interface. Any errors encountered should be handled within
 	 * this method.
 	 */
-	public void shutdownLrgsInput() {
+	public void shutdownLrgsInput()
+	{
 	}
 
 	/**
@@ -450,57 +471,66 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * @param enabled
 	 *            true if the interface is to be enabled, false if disabled.
 	 */
-	public void enableLrgsInput(boolean enabled) {
+	public void enableLrgsInput(boolean enabled)
+	{
 	}
 
 	/**
 	 * @return true if this downlink can report a Bit Error Rate.
 	 */
-	public boolean hasBER() {
+	public boolean hasBER()
+	{
 		return false;
 	}
 
 	/**
 	 * @return the Bit Error Rate as a string.
 	 */
-	public String getBER() {
+	public String getBER()
+	{
 		return "";
 	}
 
 	/**
 	 * @return true if this downlink assigns a sequence number to each msg.
 	 */
-	public boolean hasSequenceNums() {
+	public boolean hasSequenceNums()
+	{
 		return false;
 	}
 
 	/**
 	 * @return the numeric code representing the current status.
 	 */
-	public int getStatusCode() {
+	public int getStatusCode()
+	{
 		return statusCode;
 	}
 
 	/**
 	 * @return a short string description of the current status.
 	 */
-	public String getStatus() {
+	public String getStatus()
+	{
 		return status;
 	}
 
-	public int getDataSourceId() {
+	public int getDataSourceId()
+	{
 		return -1;
 	}
 
 	/** @return true if this interface receives APR messages */
-	public boolean getsAPRMessages() {
+	public boolean getsAPRMessages()
+	{
 		return true;
 	}
 
 	/**
 	 * @return the isSecondary
 	 */
-	public boolean isSecondary() {
+	public boolean isSecondary()
+	{
 		return isSecondary;
 	}
 
@@ -508,12 +538,14 @@ public class DdsRecv extends Thread implements LrgsInputInterface {
 	 * @param isSecondary
 	 *            the isSecondary to set
 	 */
-	public void setSecondary(boolean isSecondary) {
+	public void setSecondary(boolean isSecondary)
+	{
 		this.isSecondary = isSecondary;
 	}
 
 	@Override
-	public String getGroup() {
+	public String getGroup()
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
