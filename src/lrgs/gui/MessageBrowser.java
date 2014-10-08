@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.13  2013/03/28 19:19:32  mmaloney
 *  User temp files are now placed under DCSTOOL_USERDIR which may be different
 *  from DCSTOOL_HOME on linux/unix multi-user installations.
@@ -19,6 +22,7 @@ import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.*;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.border.BevelBorder;
@@ -37,7 +41,6 @@ import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import ilex.util.StderrLogger;
 import ilex.util.EnvExpander;
-
 import lrgs.common.*;
 import lrgs.ldds.*;
 
@@ -98,6 +101,8 @@ public class MessageBrowser extends MenuFrame
 
 	private static String[] showChoices;
 	private JComboBox showCombo;
+	private JComboBox outCombo;
+    private static String[] outFmts;
 
 	/**
 	  Construct new MessageBrowser frame.
@@ -414,23 +419,56 @@ public class MessageBrowser extends MenuFrame
 					GuiApp.setProperty("MessageBrowser.Show", showChoices[i]);
 				}
 			});
+		
+		//=========
+		southwest.add(new JLabel(labels.getString("MessageBrowser.outFormat")),
+			new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(2, 5, 2, 5), 0, 0));
+		outFmts = DecodesInterface.getOutputFormats();
+		if (outFmts == null)
+		{
+			String[] thisFmt = new String[1];
+			thisFmt[0] = "human-readable"; 
+			outCombo = new JComboBox(thisFmt);
+		} else {
+
+			outCombo = new JComboBox(outFmts);
+		}
+		outCombo.setSelectedItem(
+			GuiApp.getProperty("MessageBrowser.OutputFormat", "human-readable"));
+		southwest.add(outCombo,
+			new GridBagConstraints(1, 3, 1, 1, 1.0, 1.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(2, 5, 2, 5), 0, 0));
+
+		outCombo.addActionListener(
+			new ActionListener()
+			{
+				public void actionPerformed(java.awt.event.ActionEvent e)
+				{
+					int i = outCombo.getSelectedIndex();
+					GuiApp.setProperty("MessageBrowser.OutputFormat", outFmts[i]);
+				}
+			});
+		//=========
 
 		southwest.add(new JLabel(
 				labels.getString("MessageBrowser.beforeData")),
-			new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
+			new GridBagConstraints(0, 4, 1, 1, 0.2, 1.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 		southwest.add(beforeDataField = new JTextField(16),
-			new GridBagConstraints(1, 3, 1, 1, 0.8, 1.0,
+			new GridBagConstraints(1, 4, 1, 1, 0.8, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 
 		southwest.add(new JLabel(labels.getString("MessageBrowser.afterData")),
-			new GridBagConstraints(0, 4, 1, 1, 0.2, 1.0,
+			new GridBagConstraints(0, 5, 1, 1, 0.2, 1.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 		southwest.add(afterDataField = new JTextField(16),
-			new GridBagConstraints(1, 4, 1, 1, 0.8, 1.0,
+			new GridBagConstraints(1, 5, 1, 1, 0.8, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 
@@ -438,9 +476,9 @@ public class MessageBrowser extends MenuFrame
 				labels.getString("MessageBrowser.wraplonglines"),
 			GuiApp.getBooleanProperty("MessageBrowser.WrapLongLines", false));
 		southwest.add(wrapCheck,
-			new GridBagConstraints(0, 5, 2, 1, 1.0, 1.0,
+			new GridBagConstraints(0, 6, 2, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
-				new Insets(2, 5, 2, 5), 0, 0)); 
+				new Insets(2, 6, 2, 5), 0, 0)); 
 		wrapLines = wrapCheck.isSelected();
 		messageArea.setLineWrap(wrapLines);
 		wrapCheck.addItemListener(
