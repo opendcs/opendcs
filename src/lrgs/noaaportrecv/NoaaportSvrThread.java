@@ -13,7 +13,6 @@
 package lrgs.noaaportrecv;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Socket;
 
 import lrgs.lrgsmain.LrgsConfig;
