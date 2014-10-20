@@ -31,6 +31,8 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	private StringToken configFile_arg;
 	private IntegerToken maxLogSize_arg;
 	private IntegerToken numOldLogs_arg;
+	private StringToken lockArg = new StringToken("k", "lock-file", "",
+		TokenOptions.optSwitch, "$LRGSHOME/lrgs.lock");
 	public static final String progname = "lrgs";
 	QueueLogger qLogger;
 	SequenceFileLogger fLogger;
@@ -60,6 +62,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 		numOldLogs_arg = new IntegerToken("N", "NumOldLogs", "",
 			TokenOptions.optSwitch, 5);
 		addToken(numOldLogs_arg);
+		addToken(lockArg);
 
 		qLogger = null;
 		fLogger = null;
@@ -130,5 +133,10 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	public String getConfigFile()
 	{
 		return configFile_arg.getValue();
+	}
+	
+	public String getLockFile()
+	{
+		return lockArg.getValue();
 	}
 }

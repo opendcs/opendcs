@@ -145,8 +145,8 @@ public class LrgsMain
 			+ " Starting ============");
 
 		// Establish a server lock file & start the server lock monitor
-		String lockName = EnvExpander.expand("$LRGSHOME") + File.separator 
-			+ LrgsCmdLineArgs.progname + ".lock";
+		
+		String lockName = EnvExpander.expand(cmdLineArgs.getLockFile());
 		myServerLock = new ServerLock(lockName);
 		if (!myServerLock.obtainLock(this))
 		{
