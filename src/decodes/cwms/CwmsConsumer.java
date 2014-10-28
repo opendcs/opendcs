@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.5  2014/08/22 17:23:11  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.4  2014/06/27 20:00:44  mmaloney
 *  getSiteName fix: It was using the wrong constant.
 *
@@ -650,11 +653,17 @@ Logger.instance().debug3("Using rs property version '" + cwmsVersion + "'");
 	private String createTimeSeriesDesc(TimeSeries ts, Site platformSite)
 	{
 		StringBuffer timeSeriesDescriptor = new StringBuffer("");
+		
+		Site site = ts.getSensor().getSite();
+		if (site == null)
+			site = platformSite;
+		
 		// Find the location. Use the CWMS site name or default site name type
-		SiteName sn = platformSite.getName(Constants.snt_CWMS);
+		SiteName sn = site.getName(Constants.snt_CWMS);
 		if (sn == null)
-			sn = platformSite.getPreferredName();
-		String location = sn.getNameValue();		
+			sn = site.getPreferredName();
+		String location = sn.getNameValue();
+		
 		timeSeriesDescriptor.append(location);
 		timeSeriesDescriptor.append(".");
 		
