@@ -164,7 +164,7 @@ public class DomsatSangoma
 		if (System.getProperty("os.name").toLowerCase().startsWith("win"))
 		{
 			System.load(EnvExpander.expand(
-				"$LRGSHOME/lib/WinDomsatSangoma.dll"));
+				"$DCSTOOL_HOME/lib/WinDomsatSangoma.dll"));
 		}
 		else
 		{
