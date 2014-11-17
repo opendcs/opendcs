@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.Date;
 import java.util.Arrays;
 
+import lrgs.lrgsmain.LrgsConfig;
 import ilex.util.Logger;
 
 /**
@@ -557,8 +558,8 @@ public class DcpMsgRetriever
 				return f;
 		}
 
-		// Look in $LRGSHOME/netlist
-		path = "$LRGSHOME/netlist/" + name;
+		// Look in shared netlist directory
+		path = LrgsConfig.instance().ddsNetlistDir + "/" + name;
 		exp = EnvExpander.expand(path);
 		Logger.instance().debug3("Looking for shared list '" + exp + "'");
 		f = new File(exp);
