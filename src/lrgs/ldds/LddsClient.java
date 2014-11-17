@@ -2215,7 +2215,7 @@ public class LddsClient extends BasicClient
 	/** find the LddsConnections file and return path */
 	public static String getLddsConnectionsFile()
 	{
-		String dirs[] = { "DECODES_INSTALL_DIR", "LRGSHOME", "user.home" };
+		String dirs[] = { "DCSTOOL_USERDIR", "DCSTOOL_HOME", "user.home" };
 		for(String p : dirs)
 		{
 			String dir = System.getProperty(p);
