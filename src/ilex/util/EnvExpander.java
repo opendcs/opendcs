@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2008/12/17 22:52:41  mjmaloney
 *  case insensitive compare fix.
 *
@@ -238,24 +241,6 @@ public class EnvExpander
 			if ( month >= Calendar.OCTOBER )
 				year++;
 			val = "WY"+Integer.toString(year);
-		}
-		else if (TextUtil.startsWithIgnoreCase(name, "DATE"))
-		{
- 	    // Look for SimpleDateFormat string in parens
-			String fmt = "yyyyMMdd-HHmmss";
-			k = name.indexOf('(');
-			if (k != -1 && k < length && name.charAt(k) == '(')
-			{
-				int fmtStart = ++k;
-				for(; k<length && name.charAt(k) != ')'; k++);
-				fmt = name.substring(fmtStart, k);
-				if (name.charAt(k) == ')')
-				  k++;
-			}
-			SimpleDateFormat sdf = new SimpleDateFormat(fmt);
-			if (tz != null)
-				sdf.setTimeZone(tz);
-			val = sdf.format(date);
 		}
 		else if (name.equalsIgnoreCase("USER"))
 			val = props.getProperty("user.name");
