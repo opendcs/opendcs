@@ -1,4 +1,4 @@
-package decodes.dcpmon_old;
+//package decodes.dcpmon_old;
 ///**
 // * $Id$
 // * 
@@ -6,7 +6,6 @@ package decodes.dcpmon_old;
 // * 
 // * $Log
 // */
-//package decodes.dcpmon;
 //
 //
 //import java.io.OutputStream;

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2014/09/15 13:59:42  mmaloney
+ * DCP Mon Daemon Impl
+ *
  * Revision 1.3  2014/08/22 17:23:06  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -33,7 +36,6 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import lrgs.gui.DecodesInterface;
-
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.RoutingSpec;
@@ -42,6 +44,7 @@ import decodes.routing.RoutingScheduler;
 import decodes.routing.ScheduleEntryExecutive;
 import decodes.tsdb.DbIoException;
 import decodes.util.CmdLineArgs;
+import decodes.util.PropertySpec;
 
 /**
 Main class for DCP Monitor Server
@@ -55,6 +58,87 @@ public class DcpMonitor
 	private String status = "";
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
 	
+	private static PropertySpec[] dcpmonProps =
+	{
+		new PropertySpec("numDaysStorage", PropertySpec.INT,
+			"Number of days for which to store data (default=5)"),
+		new PropertySpec("omitFailureCodes", PropertySpec.STRING,
+			"List of character codes to omit"),
+		new PropertySpec("redMsgTime", PropertySpec.INT,
+			"Limit in seconds for red message time alarms (default=0)"),
+		new PropertySpec("yellowMsgTime", PropertySpec.INT,
+			"Limit in seconds for yellow message time warnings (default=2)"),
+		new PropertySpec("redFailureCodes", PropertySpec.STRING,
+			"Any of these characters will show as red failure codes"),
+		new PropertySpec("yellowFailureCodes", PropertySpec.STRING,
+			"Any of these characters will show as yellow failure codes (default=?UT)"),
+		new PropertySpec("redFreqOffset", PropertySpec.INT,
+			"Offsets greater than this will show in red (default=6)"),
+		new PropertySpec("yellowFreqOffset", PropertySpec.INT,
+			"Offsets greater than this will show in yellow (default=5)"),
+		new PropertySpec("redSignalStrength", PropertySpec.INT,
+			"Values less than this will show as red signal strength."),
+		new PropertySpec("yellowSignalStrength", PropertySpec.INT,
+			"Values less than this will show as yellow signal strength."),
+		new PropertySpec("redBattery", PropertySpec.NUMBER,
+			"BV less than this will show in red."),
+		new PropertySpec("yellowBattery", PropertySpec.NUMBER,
+			"BV less than this will show in yellow."),
+		new PropertySpec("maxCarrierMS", PropertySpec.INT,
+			"Carrier more than this (ms) will result in 'C' code."),
+		new PropertySpec("hadsUse", PropertySpec.BOOLEAN,
+			"Deprecated -- replaced by nwisXref params"),
+		new PropertySpec("hadsUrl", PropertySpec.STRING,
+			"Deprecated -- replaced by nwisXref params"),
+		new PropertySpec("hadsLocalFile", PropertySpec.FILENAME,
+			"Deprecated -- replaced by nwisXref params"),
+		new PropertySpec("allChannels", PropertySpec.BOOLEAN,
+			"This is used to tell the Dcp Monitor that we want to monitor "
+			+ "all available GOES channels (default=false)."),
+
+		new PropertySpec("grp:<netlist-name>", PropertySpec.STRING,
+			"Add properties with name 'grp:' plus the network list name. Prop value is "
+			+ "the display name you want shown on the DCP Monitor web page. This "
+			+ "allows you to specify which lists are shown for selection on the web page"
+			+ " and to supply a descriptive name for each."),
+		new PropertySpec("webUsesRoutingSpecNetlists", PropertySpec.BOOLEAN,
+			"(default=true) True means that all of the network lists assigned to the "
+			+ "'dcpmon' routing spec are also shown as groups for selection on the "
+			+ "DCP Monitor web page. To disable this behavior and only show lists "
+			+ "defined here with the 'grp:' prefix, set this property to false."),
+			
+		new PropertySpec("mergeDir", PropertySpec.DIRECTORY,
+			"Directory for merging lists and decode specs from different districts."
+			+ " (default=$DECODES_INSTALL_DIR/dcptoimport)"),
+		new PropertySpec("controlDistList", PropertySpec.STRING,
+			"File name of the control-district-list file within the merge dir. "
+			+ "(default=controlling-districts.txt)"),
+		new PropertySpec("controlDistSuffix", PropertySpec.STRING,
+			"This is used in particular for the RiverGages group names. "
+			+ "This is used to convert from District to an actual group name "
+			+ "in the dcpmon.conf"),
+			
+		new PropertySpec("pdtLocalFile", PropertySpec.FILENAME,
+			"GOES PDT is downloaded to this local file"),
+		new PropertySpec("pdtUrl", PropertySpec.STRING,
+			"GOES PDT is downloaded from this URL. No download if left blank."),
+		new PropertySpec("cdtLocalFile", PropertySpec.FILENAME,
+			"GOES Channel Info stored in this local file"),
+		new PropertySpec("cdtUrl", PropertySpec.STRING,
+			"GOES Channel Info downloaded from this URL. No download if left blank."),
+		new PropertySpec("nwsXrefLocalFile", PropertySpec.FILENAME,
+			"National Weather Service cross-reference stored in this local file"),
+		new PropertySpec("nwsXrefUrl", PropertySpec.STRING,
+			"National Weather Service cross-reference downloaded from this URL. "
+			+ "No download if left blank."),
+		new PropertySpec("dcpmonNameType", PropertySpec.DECODES_ENUM + Constants.enum_SiteName,
+			"Site name type to use in display pages on DCP Monitor"),
+		new PropertySpec("rtstatURL", PropertySpec.STRING,
+			"URL to dynamic HTML file being updated by LRGS Daemon. Set to '-' to disable this feature."),
+		new PropertySpec("statusErrorThreshold", PropertySpec.INT,
+			"# of seconds. Devices and Platforms with an error within this amount of time are shown in red.")
+	};
+
 	/**
 	 * Singleton instance method for DcpMonitor
 	 */
@@ -65,7 +149,7 @@ public class DcpMonitor
 		return _instance;
 	}
 
-	private DcpMonitor()
+	public DcpMonitor()
 	{
 		super("dcpmon");
 		module = "DcpMonitor";
@@ -331,5 +415,18 @@ public class DcpMonitor
     {
     	DcpMonitorConfig.instance().loadFromProperties(properties);
     }
+    
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return PropertiesUtil.combineSpecs(dcpmonProps, super.getSupportedProps());
+	}
+
+	@Override
+	public boolean additionalPropsAllowed()
+	{
+		return true;
+	}
+
 
 }

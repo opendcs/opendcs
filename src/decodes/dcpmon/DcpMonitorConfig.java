@@ -9,8 +9,8 @@ import java.io.File;
 import java.util.Enumeration;
 import java.util.Properties;
 
-import decodes.dcpmon_old.DcpGroup;
-import decodes.dcpmon_old.DcpGroupList;
+//import decodes.dcpmon_old.DcpGroup;
+//import decodes.dcpmon_old.DcpGroupList;
 
 
 
@@ -31,7 +31,7 @@ public class DcpMonitorConfig
 	public int redMsgTime = 0;
 
 	/** limit for yellow message time alarms */
-	public int yellowMsgTime = 2;
+	public int yellowMsgTime = 1;
 
 	/** Any of these characters will show as red failure codes */
 	public String redFailureCodes = "M";
@@ -65,17 +65,15 @@ public class DcpMonitorConfig
 	/** Raw properties read from file. */
 	private Properties rawProps;
 
-	/** Set to true to use the National Weather Service "HADS SITE" text file
-	 * to get dcp name from there, in case DECODES DB does not has it. */
+	/** @deprecated */
 	public boolean hadsUse = true;
 
-	/** URL from which to download the NWS Hads file, 
-	 * leave null to NOT download. */
-	public String hadsUrl =
-		"http://www.weather.gov/ohd/hads/compressed_defs/all_dcp_defs.txt";
-
-	/** Local file to load the NWS file from. */
-	public String hadsLocalFile = "$DECODES_INSTALL_DIR/hads";
+	public String pdtLocalFile = "/tmp/pdt";
+	public String pdtUrl = "https://dcs1.noaa.gov/pdts_compressed.txt";
+	public String cdtLocalFile = "/tmp/chans_by_baud.txt";
+	public String cdtUrl = "https://dcs1.noaa.gov/chans_by_baud.txt";
+	public String nwsXrefLocalFile = "/tmp/nwsxref.txt";
+	public String nwsXrefUrl = "http://www.nws.noaa.gov/oh/hads/USGS/ALL_USGS-HADS_SITES.txt";
 
 	/** Name of merge directory. */
 	public String mergeDir = "$DECODES_INSTALL_DIR/dcptoimport";
@@ -89,11 +87,7 @@ public class DcpMonitorConfig
 	public String controlDistSuffix = "-RIVERGAGES-DAS";
 	
 	/** This is the dcpmon type */
-	public String dcpMonType;
-	
-	/** This is used to identify the .nl (lrgs old style network list
-	 * that are inserted into the SQL Database */
-	public String nlNamePrefix;
+	public String dcpmonNameType;
 	
 	/**
 	 * This is used to tell the Dcp Monitor that we want to monitor
@@ -102,16 +96,18 @@ public class DcpMonitorConfig
 	 */
 	public boolean allChannels = false;
 
-	/** URL to include for the agency home in the page footers */
-	public String agencyHomeUrl = "http://mydomain.org/";
-	public String agencyHomeDisplay = "My Agency Home";
-
-//	MJM enabling comps & compconfig controlled in the normal way for routing specs.
-//	/** Set to true to have computations performed when viewing DCP Messages. */
-//	public boolean enableComputations = false;
-//	
-//	/** If computations enabled, you must provide a comp config file. */
-//	public String compConfig = "$DECODES_INSTALL_DIR/computations.conf";
+	/** Set to true to have computations performed when viewing DCP Messages. */
+	public boolean enableComputations = false;
+	
+	/** If computations enabled, you must provide a comp config file. */
+	public String compConfig = "$DECODES_INSTALL_DIR/computations.conf";
+	
+	public String rtstatUrl = "file:///tmp/lrgsstatus.html";
+	
+	public int statusErrorThreshold = 3600 * 4;
+	
+	/** @deprecated */
+	public String nlNamePrefix = "";
 	
 	/** For web service components, we need a singleton */
 	private static DcpMonitorConfig _instance = new DcpMonitorConfig();
@@ -120,8 +116,8 @@ public class DcpMonitorConfig
 	/** Private constructor. Sets default values for all parameters. */
 	public DcpMonitorConfig()
 	{
-		dcpMonType = "dcpmon";
-		nlNamePrefix = "DCPMonDONOTMODIFY-";
+		dcpmonNameType = "dcpmon";
+//		nlNamePrefix = "DCPMonDONOTMODIFY-";
 	}
 
 	/**
@@ -129,7 +125,7 @@ public class DcpMonitorConfig
 	 */
 	public void loadFromProperties(Properties props)
 	{
-		String ignorePfx[] = { "group" };
+		String ignorePfx[] = { "grp" };
 		PropertiesUtil.loadFromProps(this, props, ignorePfx);
 		this.rawProps = props;
 		lastLoadTime = System.currentTimeMillis();
@@ -143,8 +139,8 @@ public class DcpMonitorConfig
 	public boolean checkAndLoadNetworkLists()
 	{
 		Enumeration<Object> kenum = rawProps.keys();
-		DcpGroupList dgl = DcpGroupList.instance();
-		dgl.uncheckAll();
+//		DcpGroupList dgl = DcpGroupList.instance();
+//		dgl.uncheckAll();
 		boolean anyChanges = false;
 		while(kenum.hasMoreElements())
 		{
@@ -166,40 +162,45 @@ public class DcpMonitorConfig
 					if (gName.toLowerCase().endsWith(".nl"))
 						gName = gName.substring(0,gName.length()-3);
 
-					DcpGroup dg = dgl.getGroup(gName);
-					if (dg != null)
-					{
-						if (dg.checkForChange())
-							anyChanges = true;
-					}
-					else
-					{
-						dgl.addLrgsNetworkList(gName, f, key);
-						anyChanges = true;
-					}
+//					DcpGroup dg = dgl.getGroup(gName);
+//					if (dg != null)
+//					{
+//						if (dg.checkForChange())
+//							anyChanges = true;
+//					}
+//					else
+//					{
+//						dgl.addLrgsNetworkList(gName, f, key);
+//						anyChanges = true;
+//					}
 				}
 				else
 				{
-					String gName = v;
-					DcpGroup dg = dgl.getGroup(gName);
-					if (dg != null)
-					{
-						if (dg.checkForChange())
-							anyChanges = true;
-					}
-					else
-					{
-						dgl.addDecodesNetworkList(v, key);
-						anyChanges = true;
-					}
+//					String gName = v;
+//					DcpGroup dg = dgl.getGroup(gName);
+//					if (dg != null)
+//					{
+//						if (dg.checkForChange())
+//							anyChanges = true;
+//					}
+//					else
+//					{
+//						dgl.addDecodesNetworkList(v, key);
+//						anyChanges = true;
+//					}
 				}
 			}
 		}
-		if (dgl.removeUnchecked())
-			anyChanges = true;
-
-		dgl.sort();
+//		if (dgl.removeUnchecked())
+//			anyChanges = true;
+//
+//		dgl.sort();
 
 		return anyChanges;
+	}
+
+	public String getRtstatUrl()
+	{
+		return rtstatUrl;
 	}
 }

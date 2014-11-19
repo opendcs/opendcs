@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2014/08/22 17:23:07  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  *
  * Copyright 2014 Cove Software, LLC
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,9 +23,9 @@ package decodes.dcpmon;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import lrgs.common.DcpAddress;
-
 import decodes.db.IncompleteDatabaseException;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
@@ -74,8 +77,13 @@ public class DcpMonRoutingSpec extends RoutingSpec
 					}
 			chanSet.remove(0);
 			
-			// Clear the network lists. We will use channel set instead.
-			networkLists.clear();
+			// Clear the goes network lists. We will use channel set instead.
+			for(Iterator<NetworkList> nlit = networkLists.iterator(); nlit.hasNext(); )
+			{
+				NetworkList nl = nlit.next();
+				if (nl.transportMediumType.toLowerCase().startsWith("goes"))
+					nlit.remove();
+			}
 			
 			// Remove the old channels from the search criteria in properties
 			ArrayList<String> toRemove = new ArrayList<String>();

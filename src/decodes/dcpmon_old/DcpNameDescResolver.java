@@ -1,7 +1,5 @@
 package decodes.dcpmon_old;
 
-import java.util.Iterator;
-
 import ilex.util.StringPair;
 import lrgs.common.DcpAddress;
 import decodes.db.Platform;
@@ -15,9 +13,7 @@ import decodes.util.hads.Hads;
 import decodes.util.hads.HadsEntry;
 
 /**
- * This class is used by the Dcp Monitor to determine what
- * dcp name to display on the web pages. 
- *
+ * @deprecated
  */
 public class DcpNameDescResolver
 {
@@ -76,7 +72,7 @@ public class DcpNameDescResolver
 			// Check if we have a dcpmon name type.
 			if (pSite != null)
 			{
-				String dcpmonNameType = cfg.dcpMonType;
+				String dcpmonNameType = cfg.dcpmonNameType;
 				SiteName sn = pSite.getName(dcpmonNameType);
 				if (sn != null)
 				{

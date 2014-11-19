@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1  2014/06/02 14:28:50  mmaloney
+*  rc5 includes initial refactory for dcpmon
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -36,7 +39,7 @@
 *  Alpha version of server complete.
 *
 */
-package decodes.dcpmon;
+package decodes.dcpmon_old;
 
 import lrgs.common.DcpAddress;
 
