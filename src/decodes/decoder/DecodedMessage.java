@@ -13,12 +13,22 @@ import ilex.var.Variable;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
-import decodes.util.*;
-import decodes.db.*;
 import decodes.datasource.RawMessage;
 import decodes.datasource.EdlPMParser;
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.UnknownPlatformException;
+import decodes.db.ConfigSensor;
+import decodes.db.Constants;
+import decodes.db.DataPresentation;
+import decodes.db.DecodesScript;
+import decodes.db.EquipmentModel;
+import decodes.db.Platform;
+import decodes.db.PlatformConfig;
+import decodes.db.PlatformSensor;
+import decodes.db.PresentationGroup;
+import decodes.db.ScriptSensor;
+import decodes.db.Site;
+import decodes.db.TransportMedium;
 import decodes.comp.IDataCollection;
 import decodes.comp.ITimeSeries;
 
@@ -39,7 +49,7 @@ public class DecodedMessage implements IDataCollection
 	/** The Platform */
 	private Platform platform;
 	/** Vector of TimeSeries objects */
-	private Vector<TimeSeries> timeSeriesVec;
+	private ArrayList<TimeSeries> timeSeriesArray;
 
 	/** Extracted from message (or file) header. */
 	private Date messageTime;
@@ -110,7 +120,7 @@ public class DecodedMessage implements IDataCollection
 		else
 			this.platform = null;
 
-		timeSeriesVec = new Vector<TimeSeries>();
+		timeSeriesArray = new ArrayList<TimeSeries>();
 		if (this.platform != null)
 		{
 			// Construct time-series array for each sensor
@@ -127,17 +137,17 @@ public class DecodedMessage implements IDataCollection
 					+ "and press Commit. Then re-enter "
 					+ "the dialog to decode your sample message.");
 			}
-			for (Iterator it = pc.getSensors(); it.hasNext();)
+			for (Iterator<ConfigSensor> it = pc.getSensors(); it.hasNext();)
 			{
 				// Find the individual sensor objects:
-				ConfigSensor configSensor = (ConfigSensor) it.next();
+				ConfigSensor configSensor = it.next();
 				int snum = configSensor.sensorNumber;
 				ScriptSensor scriptSensor = tm.getDecodesScript().getScriptSensor(snum);
 				PlatformSensor platformSensor = platform.getPlatformSensor(snum);
 
 				// Construct a new time series to hold the data:
 				TimeSeries ts = new TimeSeries(configSensor.sensorNumber);
-				timeSeriesVec.add(ts);
+				timeSeriesArray.add(ts);
 				ts.setSensor(new Sensor(configSensor, scriptSensor, platformSensor, platform));
 
 				// Set the time-interval for all fixed-interval sensors.
@@ -275,7 +285,7 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public TimeSeries getTimeSeries(int sensorNumber)
 	{
-		for (Iterator<TimeSeries> it = timeSeriesVec.iterator(); it.hasNext();)
+		for (Iterator<TimeSeries> it = timeSeriesArray.iterator(); it.hasNext();)
 		{
 			TimeSeries ts = it.next();
 			if (ts.getSensorNumber() == sensorNumber)
@@ -287,7 +297,7 @@ public class DecodedMessage implements IDataCollection
 	/**
 	 * @return number of time series herein.
 	 */
-	public int getNumTimeSeries() { return timeSeriesVec.size(); }
+	public int getNumTimeSeries() { return timeSeriesArray.size(); }
 
 	/**
 	 * Gets TimeSeries object by data-type. Returns the first time-series in the
@@ -299,7 +309,7 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public TimeSeries getTimeSeries(String dataType)
 	{
-		for (Iterator<TimeSeries> it = timeSeriesVec.iterator(); it.hasNext();)
+		for (Iterator<TimeSeries> it = timeSeriesArray.iterator(); it.hasNext();)
 		{
 			TimeSeries ts = it.next();
 			if (ts.hasDataType(dataType))
@@ -316,9 +326,9 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public Iterator<TimeSeries> getAllTimeSeries()
 	{
-		if (timeSeriesVec == null)
+		if (timeSeriesArray == null)
 			return null;
-		return timeSeriesVec.iterator();
+		return timeSeriesArray.iterator();
 	}
 
 	/**
@@ -341,12 +351,12 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public void rmTimeSeries(ITimeSeries ts)
 	{
-		timeSeriesVec.remove(ts);
+		timeSeriesArray.remove(ts);
 	}
 
 	public void rmAllTimeSeries()
 	{
-		timeSeriesVec.clear();
+		timeSeriesArray.clear();
 	}
 	
 	/**
@@ -368,7 +378,7 @@ public class DecodedMessage implements IDataCollection
 		GregorianCalendar cal = new GregorianCalendar(currentTime.getCalendar().getTimeZone());
 
 		// Logger.instance().info("upgradeStoredTimes current time = " + cal);
-		for (Iterator<TimeSeries> it = timeSeriesVec.iterator(); it.hasNext();)
+		for (Iterator<TimeSeries> it = timeSeriesArray.iterator(); it.hasNext();)
 		{
 			int lastDOY = -1;
 			int dayIncrement = 0;
@@ -545,7 +555,7 @@ public class DecodedMessage implements IDataCollection
 			// Is 1st sample in DST?
 			if (dsttz.inDaylightTime(firstSample.getTime()))
 			{
-				for (Iterator<TimeSeries> it = timeSeriesVec.iterator(); it.hasNext();)
+				for (Iterator<TimeSeries> it = timeSeriesArray.iterator(); it.hasNext();)
 				{
 					TimeSeries ts = it.next();
 					int n = ts.size();
@@ -588,7 +598,7 @@ public class DecodedMessage implements IDataCollection
 			if (tmOffset != 0)
 			{
 				/* Apply offset */
-				for (TimeSeries ts : timeSeriesVec)
+				for (TimeSeries ts : timeSeriesArray)
 				{
 					int n = ts.size();
 					if (n == 0)
@@ -599,7 +609,7 @@ public class DecodedMessage implements IDataCollection
 		}
 		
 		// Apply any sensor "TimeOffsetSec" properties.
-		for (TimeSeries ts : timeSeriesVec)
+		for (TimeSeries ts : timeSeriesArray)
 		{
 			if (ts.size() == 0)
 				continue;
@@ -871,7 +881,7 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public void applyInitialEuConversions()
 	{
-		for (Iterator<TimeSeries> it = timeSeriesVec.iterator(); it.hasNext();)
+		for (Iterator<TimeSeries> it = timeSeriesArray.iterator(); it.hasNext();)
 		{
 			TimeSeries ts = it.next();
 			ts.convertUnits();
@@ -889,10 +899,10 @@ public class DecodedMessage implements IDataCollection
 	{
 		Logger.instance().debug3(
 			"Formatting Samples, pg=" + (pg == null ? "null" : pg.getDisplayName()));
-		if (timeSeriesVec == null)
+		if (timeSeriesArray == null)
 			return;
 		Vector<TimeSeries> omit = new Vector<TimeSeries>();
-		for (TimeSeries ts : timeSeriesVec)
+		for (TimeSeries ts : timeSeriesArray)
 		{
 			if (ts.size() == 0)
 				continue;
@@ -941,7 +951,7 @@ public class DecodedMessage implements IDataCollection
 			}
 		}
 		for (Iterator<TimeSeries> it = omit.iterator(); it.hasNext();)
-			timeSeriesVec.remove(it.next());
+			timeSeriesArray.remove(it.next());
 		presentationGroupApplied = pg;
 	}
 
@@ -950,7 +960,7 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public void applyScaleAndOffset()
 	{
-		for (Iterator<TimeSeries> it = timeSeriesVec.iterator(); it.hasNext();)
+		for (Iterator<TimeSeries> it = timeSeriesArray.iterator(); it.hasNext();)
 		{
 			TimeSeries ts = it.next();
 			Sensor sensor = ts.getSensor();
@@ -1015,7 +1025,7 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public void applySensorLimits()
 	{
-		for (Iterator<TimeSeries> it = timeSeriesVec.iterator(); it.hasNext();)
+		for (Iterator<TimeSeries> it = timeSeriesArray.iterator(); it.hasNext();)
 		{
 			TimeSeries ts = it.next();
 			ts.applySensorLimits();
@@ -1030,7 +1040,7 @@ public class DecodedMessage implements IDataCollection
 	 */
 	public void removeRedundantData()
 	{
-		if (platform == null || timeSeriesVec == null || rawMessage == null || messageTime == null)
+		if (platform == null || timeSeriesArray == null || rawMessage == null || messageTime == null)
 			return;
 		try
 		{
@@ -1040,7 +1050,7 @@ public class DecodedMessage implements IDataCollection
 
 			// Note: timeAdjustment already incorporated in messageTime.
 			long prevMsgMsec = messageTime.getTime() - (tm.transmitInterval * 1000L);
-			for (TimeSeries ts : timeSeriesVec)
+			for (TimeSeries ts : timeSeriesArray)
 				ts.discardSamplesBefore(prevMsgMsec);
 		}
 		catch (UnknownPlatformException ex)
@@ -1064,13 +1074,13 @@ public class DecodedMessage implements IDataCollection
 		ConfigSensor cs = new ConfigSensor(null, sensorId);
 		cs.sensorName = name;
 		ts.setSensor(new Sensor(cs, null, ps, platform));
-		timeSeriesVec.add(ts);
+		timeSeriesArray.add(ts);
 		return ts;
 	}
 
 	public void addTimeSeries(TimeSeries ts)
 	{
-		timeSeriesVec.add(ts);
+		timeSeriesArray.add(ts);
 	}
 
 	/**
@@ -1125,7 +1135,7 @@ public class DecodedMessage implements IDataCollection
 	{
 		this.justGotFullDateTime = justGotFullDateTime;
 		justAddedSample = false;
-		for (TimeSeries ts : timeSeriesVec)
+		for (TimeSeries ts : timeSeriesArray)
 			ts.setTimeJustSet();
 	}
 
@@ -1134,7 +1144,12 @@ public class DecodedMessage implements IDataCollection
 	{
 		if (justAddedSample)
 			justGotFullDateTime = false;
-		for (TimeSeries ts : timeSeriesVec)
+		for (TimeSeries ts : timeSeriesArray)
 			ts.setTimeJustSet();
+	}
+
+	public ArrayList<TimeSeries> getTimeSeriesArray()
+	{
+		return timeSeriesArray;
 	}
 }

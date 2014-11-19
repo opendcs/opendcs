@@ -97,6 +97,8 @@ public class TimeSeries
 
 	/** @return sensor object */
 	public Sensor getSensor() { return sensor; }
+	
+	public String getDataTypeCode() { return sensor.getDataType().getCode(); }
 
 	/** 
 	  Sets sensor object.
