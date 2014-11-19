@@ -203,6 +203,7 @@ public class LrgsConfig
 	 */
 	public boolean doPdtValidation = false;
 	
+	/** URL for downloading channel table from NOAA */
 	public String channelMapUrl = 
 		"https://dcs1.noaa.gov/chans_by_baud.txt";
 	

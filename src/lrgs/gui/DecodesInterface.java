@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.7  2014/10/07 12:50:54  mmaloney
+*  Must init resource factory.
+*
 *  Revision 1.6  2014/09/25 18:12:23  mmaloney
 *  Enum fields encapsulated.
 *
@@ -40,15 +43,31 @@ package lrgs.gui;
 
 import java.util.Iterator;
 import java.util.Properties;
+
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-import decodes.db.*;
-import decodes.util.*;
 import decodes.datasource.LrgsDataSource;
 import decodes.datasource.RawMessage;
+import decodes.db.Database;
+import decodes.db.DatabaseIO;
+import decodes.db.DbEnum;
+import decodes.db.DecodesScript;
+import decodes.db.EnumValue;
+import decodes.db.InvalidDatabaseException;
+import decodes.db.Platform;
+import decodes.db.PresentationGroup;
+import decodes.db.PresentationGroupList;
+import decodes.db.Site;
+import decodes.db.TransportMedium;
 import decodes.consumer.OutputFormatter;
 import decodes.consumer.StringBufferConsumer;
 import decodes.decoder.DecodedMessage;
+import decodes.util.ChannelMap;
+import decodes.util.DecodesException;
+import decodes.util.DecodesSettings;
+import decodes.util.NwsXref;
+import decodes.util.Pdt;
+import decodes.util.ResourceFactory;
 import lrgs.common.DcpMsg;
 
 
@@ -275,9 +294,9 @@ public class DecodesInterface
 		PresentationGroupList pgl = Database.getDb().getPresentationGroupList();
 		String ret[] = new String[pgl.size()];
 		int i=0;
-		for(Iterator it = pgl.iterator(); it.hasNext(); )
+		for(Iterator<PresentationGroup> it = pgl.iterator(); it.hasNext(); )
 		{
-			PresentationGroup pg = (PresentationGroup)it.next();
+			PresentationGroup pg = it.next();
 			ret[i++] = pg.groupName;
 		}
 		return ret;
@@ -293,9 +312,9 @@ public class DecodesInterface
 			return null;
 		String ret[] = new String[denum.values().size()];
 		int i=0;
-		for(Iterator it = denum.iterator(); it.hasNext(); )
+		for(Iterator<EnumValue> it = denum.iterator(); it.hasNext(); )
 		{
-			EnumValue env = (EnumValue)it.next();
+			EnumValue env = it.next();
 			ret[i++] = env.getValue();
 		}
 		return ret;
