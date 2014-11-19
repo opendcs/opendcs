@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2014/07/03 12:25:41  mmaloney
+*  Bug fix: use authFile.getAbsoluteFile().getParentFile(). That way it should never be null.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -101,7 +104,12 @@ public class UserAuthFile
 	*/
 	public UserAuthFile(String path)
 	{
-		authFile = new File(EnvExpander.expand(path));
+		this(new File(EnvExpander.expand(path)));
+	}
+	
+	public UserAuthFile(File af)
+	{
+		authFile = af;
 		username = null;
 		password = null;
 		fileVersion = 0;
