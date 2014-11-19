@@ -15,7 +15,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -114,8 +116,16 @@ public class FtpDataSource
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
+		// Remove 'filename' from file data source specs, but keep everything else.
 		FileDataSource fds = new FileDataSource();
-		return PropertiesUtil.combineSpecs(fds.getSupportedProps(), ftpDsPropSpecs);
+		PropertySpec[] x = fds.getSupportedProps();
+		PropertySpec[] y = new PropertySpec[x.length-1];
+		int xidx = 0, yidx = 0;
+		for(; xidx < x.length; xidx++)
+			if (!x[xidx].getName().equalsIgnoreCase("filename"))
+				y[yidx++] = x[xidx];
+		
+		return PropertiesUtil.combineSpecs(y, ftpDsPropSpecs);
 	}
 
 	@Override

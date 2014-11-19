@@ -3,12 +3,17 @@
  */
 package decodes.datasource;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.Vector;
 
+import lrgs.common.LrgsErrorCode;
+import lrgs.common.SearchSyntaxException;
 import ilex.util.EnvExpander;
+import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.db.DataSource;
@@ -46,11 +51,22 @@ public class WebAbstractDataSource
 
 	private WebDataSource currentWebDs = null;
 	private int xportIdx = 0;
+	private int urlsGenerated = 0;
+	private static String dfltSinceFmt = "yyyyMMdd-HHmm";
+	private SimpleDateFormat sinceFormat = new SimpleDateFormat(dfltSinceFmt);
+	private TimeZone sinceTimeZone = TimeZone.getTimeZone("UTC");
 	
 	private static final PropertySpec[] UTprops =
 	{
 		new PropertySpec("abstractUrl", PropertySpec.STRING, 
-			"(default=null) Abstract URL containing $MEDIUM_ID.")
+			"(default=null) Abstract URL containing $MEDIUM_ID, $SINCE,"
+			+ " and $UNTIL."),
+		new PropertySpec("sinceFormat", PropertySpec.STRING, 
+			"(default=" + dfltSinceFmt + ") Specifies how to format $SINCE and $UNTIL"
+			+ " if they are present in the abstract URL."),
+		new PropertySpec("sinceTimeZone", PropertySpec.TIMEZONE, 
+			"(default=UTC) Used to format $SINCE and $UNTIL"
+			+ " if they are present in the abstract URL."),
 	};
 
 	// No arg ctor required to instantiate from class name
@@ -62,19 +78,22 @@ public class WebAbstractDataSource
 	private String buildNextWebAddr()
 		throws DataSourceException
 	{
-		if (xportIdx >= aggIds.size())
+		// Processed all DCPs in the netlists and at least one URL was generated.
+		if (xportIdx >= aggIds.size() && urlsGenerated > 0)
 			return null;
 
 		Date now = new Date();
-		myProps.setProperty("MEDIUMID", aggIds.get(xportIdx++));
+		if (xportIdx < aggIds.size())
+			myProps.setProperty("MEDIUMID", aggIds.get(xportIdx++));
+		
+		urlsGenerated++;
 		return EnvExpander.expand(abstractUrl, myProps, now);
 	}
 
 	@Override
 	public void processDataSource()
 	{
-		PropertiesUtil.copyProps(myProps, 
-			getDataSource().getArguments());
+		PropertiesUtil.copyProps(myProps, getDataSource().getArguments());
 	}
 
 	@Override
@@ -89,8 +108,46 @@ public class WebAbstractDataSource
 			throw new DataSourceException(module 
 				+ " Missing required property 'AbstractUrl'!");
 
+		String s = myProps.getProperty("sinceFormat");
+		if (s != null && s.trim().length() > 0)
+			sinceFormat = new SimpleDateFormat(s);
+		s = myProps.getProperty("sinceTimeZone");
+		if (s != null && s.trim().length() > 0)
+			sinceTimeZone = TimeZone.getTimeZone(s);
+		sinceFormat.setTimeZone(sinceTimeZone);
+			
 		rsSince = since;
 		rsUntil = until;
+
+		// The URL is allowed to contain $SINCE and/or $UNTIL.
+		// Evaluate these strings according to the routing spec and format
+		// them in the specified way.
+		if (rsSince != null && rsSince.trim().length() > 0
+		 && abstractUrl.toUpperCase().contains("$SINCE"))
+		{
+			try
+			{
+				Date sinceDate = IDateFormat.parse(rsSince);
+				myProps.setProperty("SINCE", sinceFormat.format(sinceDate));
+			}
+			catch(Exception ex)
+			{
+				throw new DataSourceException("Bad Since Time: " + ex.getMessage());
+			}
+		}
+		if (rsUntil != null && rsUntil.trim().length() > 0
+		 && abstractUrl.toUpperCase().contains("$UNTIL"))
+		{
+			try
+			{
+				Date untilDate = IDateFormat.parse(rsUntil);
+				myProps.setProperty("UNTIL", sinceFormat.format(untilDate));
+			}
+			catch(Exception ex)
+			{
+				throw new DataSourceException("Bad Until Time: " + ex.getMessage());
+			}
+		}
 		
 		if (netlists != null)
 			for(NetworkList nl : netlists)
@@ -102,12 +159,11 @@ public class WebAbstractDataSource
 		
 		if (aggIds.size() == 0)
 		{
-			String msg = module + " init() No medium ids. Did you forget to " +
-				"supply a network list?";
-			Logger.instance().failure(msg);
-			throw new DataSourceException(msg);
+			String msg = module + " init() No medium ids. Will only execute once.";
+			Logger.instance().info(msg);
 		}
 		xportIdx = 0;
+		urlsGenerated = 0;
 
 		try
 		{
