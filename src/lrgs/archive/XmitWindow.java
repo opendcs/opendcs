@@ -10,10 +10,14 @@ package lrgs.archive;
  */
 public class XmitWindow
 {
-	public int firstXmitSecOfDay;  // Second-of-day for 1st xmit
-	public int windowLengthSec;    // Window length in seconds
-	public int xmitInterval;       // Transmit interval in seconds
-	public int thisWindowStart;    // Start sec-of-day for this specific window
+	/** Second-of-day for 1st xmit */
+	public int firstXmitSecOfDay;
+	/** Window length in seconds */
+	public int windowLengthSec;
+	/** Transmit interval in seconds */
+	public int xmitInterval;
+	/** Start sec-of-day for this specific window */
+	public int thisWindowStart;
 
 	public XmitWindow(int firstXmitSecOfDay, int windowLengthSec,
 		int xmitInterval, int thisWindowStart)

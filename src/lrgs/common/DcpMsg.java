@@ -3,17 +3,18 @@
 */
 package lrgs.common;
 
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Calendar;
 import java.util.TimeZone;
 
 import lrgs.archive.XmitWindow;
-
 import decodes.db.Constants;
 import decodes.sql.DbKey;
-
 import ilex.util.ArrayUtil;
 import ilex.util.ByteUtil;
+import ilex.util.IDateFormat;
 import ilex.util.TwoDigitYear;
 import ilex.util.Logger;
 
@@ -111,6 +112,18 @@ public class DcpMsg
 	
 	/** When read from DCP Mon database, this indicates the table it was read from */
 	private int dayNumber = 0;
+	
+	private static SimpleDateFormat timeSdfSec = new SimpleDateFormat("HH:mm:ss");
+	private static SimpleDateFormat timeSdfMS = new SimpleDateFormat("HH:mm:ss.SSS");
+	static NumberFormat bvFormat = NumberFormat.getNumberInstance();
+	static
+	{
+		timeSdfSec.setTimeZone(TimeZone.getTimeZone("UTC")); 
+		timeSdfMS.setTimeZone(TimeZone.getTimeZone("UTC")); 
+		bvFormat.setGroupingUsed(false);
+		bvFormat.setMaximumFractionDigits(1);
+	}
+
 	
 	// Constructors ===============================================
 
@@ -905,5 +918,72 @@ public class DcpMsg
 	{
 		this.dayNumber = dayNumber;
 	}
+	
+	public String getStartTimeStr()
+	{
+		if (carrierStart != null)
+		{
+			String ret = "";
+			synchronized(timeSdfMS) { ret = timeSdfMS.format(carrierStart); }
+			// Limit to tenths of seconds.
+			if (ret.length() > 10)
+				ret = ret.substring(0,10);
+			return ret;
+		}
+		else
+		{
+			synchronized(timeSdfSec) { return timeSdfSec.format(getXmitTime()); }
+		}
+	}
 
+	public String getStopTimeStr()
+	{
+		String ret = "";
+		if (carrierStop != null)
+		{
+			synchronized(timeSdfMS) { ret = timeSdfMS.format(carrierStop); }
+			// Limit to tenths of seconds.
+			if (ret.length() > 10)
+				ret = ret.substring(0,10);
+		}
+		else
+		{
+			double dursec = getMessageLength() * 8.0 / (double)baud;
+			if (baud == 300)
+				dursec += .693;
+            else // 1200
+            	dursec += .298;
+			Date stop = new Date(getXmitTime().getTime() + (long)(dursec*1000));
+			synchronized(timeSdfSec) { ret = timeSdfSec.format(stop); }
+			System.out.println("getStopTimeStr() computed="+stop+", fmt='" + timeSdfSec.format(stop) + ", ret='" + ret + "'");
+		}
+		return ret;
+	}
+	
+	public String getWindowStartStr()
+	{
+		if (xmitWindow == null)
+			return "";
+		return IDateFormat.printSecondOfDay(xmitWindow.thisWindowStart, true);
+	}
+
+	public String getWindowStopStr()
+	{
+		if (xmitWindow == null)
+			return "";
+		return IDateFormat.printSecondOfDay(
+			xmitWindow.thisWindowStart + xmitWindow.windowLengthSec, true);
+	}
+	
+	public String getBattVoltStr()
+	{
+		if (battVolt < .01)
+			return "N/A";
+		synchronized(bvFormat) { return bvFormat.format(battVolt); }
+	}
+	
+	public String getDataStr()
+	{
+		return new String(getData());
+	}
 }

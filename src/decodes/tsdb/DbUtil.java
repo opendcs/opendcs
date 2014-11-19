@@ -15,8 +15,10 @@ import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 
+import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import decodes.db.Database;
@@ -25,10 +27,12 @@ import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.SiteList;
 import decodes.db.SiteName;
+import decodes.polling.DeviceStatus;
 import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
 import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
+import ilex.util.TextUtil;
 
 /**
  * General purpose database command-line utility
@@ -96,6 +100,23 @@ public class DbUtil extends TsdbAppTemplate
 				doDeleteTS(tokens);
 			}
 		};
+	private CmdLine devListCmd =	
+		new CmdLine("list-dev", "List Device Statuses")
+		{
+			public void execute(String[] tokens)
+			{
+				doListDev(tokens);
+			}
+		};
+	private CmdLine devUpdateCmd =	
+		new CmdLine("update-dev", "[devname] [procname] [mediumId] [status] List Device Statuses")
+		{
+			public void execute(String[] tokens)
+			{
+				doUpdateDev(tokens);
+			}
+		};
+
 
 
 
@@ -103,6 +124,7 @@ public class DbUtil extends TsdbAppTemplate
 	{
 		super("util.log");
 	}
+
 
 	protected void doTsAliases(String[] tokens)
 	{
@@ -176,7 +198,8 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(locAliasCmd);
 		cmdLineProc.addCmd(tsAliasCmd);
 		cmdLineProc.addCmd(tsDeleteCmd);
-		
+		cmdLineProc.addCmd(devListCmd);
+		cmdLineProc.addCmd(devUpdateCmd);
 		cmdLineProc.addHelpAndQuitCommands();
 		
 		cmdLineProc.prompt = "cmd: ";
@@ -367,6 +390,58 @@ public class DbUtil extends TsdbAppTemplate
 			timeSeriesDAO.close();
 		}
 
+	}
+
+	protected void doListDev(String[] tokens)
+	{
+		DeviceStatusDAI devStatusDAO = theDb.makeDeviceStatusDAO();
+		try
+		{
+			System.out.println("Device Statuses: ");
+			for(DeviceStatus devstat : devStatusDAO.listDeviceStatuses())
+				System.out.println(devstat.toString());
+		}
+		catch (DbIoException ex)
+		{
+			System.err.println("Error listing device statuses: " + ex);
+			ex.printStackTrace(System.err);
+		}
+		finally
+		{
+			devStatusDAO.close();
+		}
+	}
+	
+	protected void doUpdateDev(String[] tokens)
+	{
+		if (!devUpdateCmd.requireTokens(5, tokens))
+			return;
+		DeviceStatusDAI devStatusDAO = theDb.makeDeviceStatusDAO();
+		try
+		{
+			DeviceStatus devStat = devStatusDAO.getDeviceStatus(tokens[1]);
+			if (devStat == null)
+				devStat = new DeviceStatus(tokens[1]);
+			devStat.setInUse(!devStat.isInUse());
+			devStat.setLastUsedByProc(tokens[2]);
+			devStat.setLastUsedByHost("localhost");
+			devStat.setLastActivityTime(new Date());
+			devStat.setLastReceiveTime(new Date());
+			devStat.setLastMediumId(tokens[3]);
+			devStat.setLastErrorTime(new Date());
+			devStat.setPortStatus(tokens[4]);
+			devStatusDAO.writeDeviceStatus(devStat);
+		}
+		catch (DbIoException ex)
+		{
+			System.err.println("Error writing device status: " + ex);
+			ex.printStackTrace(System.err);
+		}
+		finally
+		{
+			devStatusDAO.close();
+		}
+		
 	}
 
 

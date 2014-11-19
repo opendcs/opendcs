@@ -8,7 +8,6 @@ import lrgs.common.DcpMsg;
 
 import decodes.db.NetworkList;
 import decodes.dcpmon.XmitMediumType;
-import decodes.dcpmon_old.DcpGroup;
 import decodes.tsdb.DbIoException;
 
 public interface XmitRecordDAI

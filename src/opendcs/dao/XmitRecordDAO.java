@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2014/09/15 14:09:52  mmaloney
+ * DCP Mon Daemon Impl
+ *
  * Revision 1.4  2014/08/22 17:23:10  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -350,8 +353,9 @@ public class XmitRecordDAO
 		{
 			xr.setRecordId(getKey(tab));
 			
-			if ((++numXmitsSaved % 100) == 0)
-				debug1("Saving new msg at time " + debugSdf.format(xmitTime)
+//			if ((++numXmitsSaved % 100) == 0)
+				debug1("Saving new msg with dcp addr=" + xr.getDcpAddress() 
+					+ " at time " + debugSdf.format(xmitTime)
 					+ ", day=" + dayNum + " to " + tab);
 			
 			PreparedStatement ps = getInsertStatement(suffix);
@@ -834,6 +838,7 @@ Logger.instance().debug1("XmitRecordDAO.rs2XmitRecord read a partial message: da
 				DcpMsg ret = rs2XmitRecord(rs);
 				ret.setDayNumber(dayNum);
 				results.add(ret);
+				n++;
 			}
 		}
 		catch (SQLException ex)

@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.5  2014/09/15 14:04:36  mmaloney
+ * Code cleanup.
+ *
  * Revision 1.4  2014/08/29 18:22:50  mmaloney
  * 6.1 Schema Mods
  *
@@ -655,14 +658,14 @@ public class PlatformListIO extends SqlDbObjIo
 			"UPDATE Platform SET " +
 			  "Agency = " + sqlString(p.agency) + ", " +
 			  "IsProduction = " + sqlString(p.isProduction) + ", " +
-			  "SiteId = " + sqlOptHasId(p.site) + ", " +
+//			  "SiteId = " + sqlOptHasId(p.site) + ", " +
 			  "ConfigId = " + sqlOptHasId(p.getConfig()) + ", " +
 			  "Description = " + sqlOptString(p.description) + ", " +
 			  "LastModifyTime = " + sqlOptDate(p.lastModifyTime) + ", " +
 			  "Expiration = " + sqlOptDate(p.expiration);
-		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-			q = q + ", platformDesignator = " + 
-				sqlOptString(p.getPlatformDesignator());
+//		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+//			q = q + ", platformDesignator = " + 
+//				sqlOptString(p.getPlatformDesignator());
 
 		q = q + " WHERE ID = " + p.getId();
 

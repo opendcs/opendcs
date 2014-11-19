@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.4  2014/08/22 17:23:04  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.3  2014/07/10 17:07:54  mmaloney
 *  Remove startup log from ComputationApp, and add to TsdbAppTemplate.
 *
@@ -399,6 +402,15 @@ public abstract class TsdbAppTemplate
 	public void warning(String msg)
 	{
 		Logger.instance().warning(appNameArg.getValue() + " " + msg);
+	}
+
+	/**
+	 * Convenience method to log warning with app name prefix.
+	 * @param msg the message
+	 */
+	public void failure(String msg)
+	{
+		Logger.instance().failure(appNameArg.getValue() + " " + msg);
 	}
 
 	public void setSilent(boolean silent)

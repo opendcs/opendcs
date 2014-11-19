@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.3  2014/08/29 18:22:50  mmaloney
+ * 6.1 Schema Mods
+ *
  * Revision 1.2  2014/08/22 17:23:10  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -25,7 +28,6 @@ package decodes.sql;
 
 import decodes.db.*;
 
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -42,6 +44,7 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DataTypeDAI;
+import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -51,10 +54,12 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.ComputationDAO;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.DeviceStatusDAO;
 import opendcs.dao.EnumSqlDao;
 import opendcs.dao.LoadingAppDao;
 import opendcs.dao.PlatformStatusDAO;
@@ -63,12 +68,10 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-
 import ilex.util.Counter;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.UserAuthFile;
-
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompParm;
@@ -273,7 +276,8 @@ public class SqlDatabaseIO
 		_conn = conn;
 		this.keyGenerator = keyGenerator;
 		_sqlDbLocation = location;
-		determineVersion();
+		if (writeDateFmt == null)
+			determineVersion();
 	}
 
 	/**
@@ -284,6 +288,10 @@ public class SqlDatabaseIO
 	public void connectToDatabase(String sqlDbLocation)
 		throws DatabaseException
 	{
+		// Placeholder for connecting from web where connection is from a DataSource.
+		if (sqlDbLocation == null || sqlDbLocation.trim().length() == 0)
+			return;
+		
 		// Retrieve username and password for database
 		String authFileName = DecodesSettings.instance().DbAuthFile;
 		UserAuthFile authFile = new UserAuthFile(authFileName);
@@ -1859,7 +1867,7 @@ public class SqlDatabaseIO
 		return _conn;
 	}
 	
-	protected void setConnection(Connection conn)
+	public void setConnection(Connection conn)
 	{
 		_conn = conn;
 	}
@@ -2063,7 +2071,7 @@ public class SqlDatabaseIO
 	}
 
 	@Override
-	public XmitRecordDAO makeXmitRecordDao(int maxDays)
+	public XmitRecordDAI makeXmitRecordDao(int maxDays)
 	{
 		return new XmitRecordDAO(this, maxDays);
 	}
@@ -2208,6 +2216,12 @@ public class SqlDatabaseIO
 			return new PlatformStatusDAO(this);
 		else
 			return null; 
+	}
+
+	@Override
+	public DeviceStatusDAI makeDeviceStatusDAO()
+	{
+		return new DeviceStatusDAO(this);
 	}
 
 }

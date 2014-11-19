@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to the United States Government. No warranty is provided or implied other 
@@ -22,6 +25,7 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DataTypeDAI;
+import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -31,7 +35,7 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
-
+import opendcs.dai.XmitRecordDAI;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
@@ -152,7 +156,7 @@ public interface DatabaseConnectionOwner
 	 * Factory method to make a DAO for xmit records
 	 * @return the DAO
 	 */
-	public XmitRecordDAO makeXmitRecordDao(int maxDays);
+	public XmitRecordDAI makeXmitRecordDao(int maxDays);
 
 	/**
 	 * Factory method to make a DAO for loading applications
@@ -266,4 +270,9 @@ public interface DatabaseConnectionOwner
 		TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
 		boolean fillInParm, String timeSeriesDisplayName)
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException;
+	
+	/**
+	 * Construct a DAO for reading writing DeviceStatus structures.
+	 */
+	public DeviceStatusDAI makeDeviceStatusDAO();
 }

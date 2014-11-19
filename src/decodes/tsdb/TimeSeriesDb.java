@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2014/08/29 18:21:19  mmaloney
+*  For opendcs-oracle, determine _isOracle AFTER connection.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -357,6 +360,7 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DataTypeDAI;
+import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -370,6 +374,7 @@ import opendcs.dao.CompDependsDAO;
 import opendcs.dao.ComputationDAO;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.DeviceStatusDAO;
 import opendcs.dao.EnumSqlDao;
 import opendcs.dao.LoadingAppDao;
 import opendcs.dao.PlatformStatusDAO;
@@ -377,7 +382,6 @@ import opendcs.dao.PropertiesSqlDao;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-
 import decodes.tsdb.compedit.AlgorithmInList;
 import decodes.util.DecodesSettings;
 import decodes.db.Constants;
@@ -2590,6 +2594,13 @@ public abstract class TimeSeriesDb
 	{
 		return new PlatformStatusDAO(this);
 	}
+	
+	@Override
+	public DeviceStatusDAI makeDeviceStatusDAO()
+	{
+		return new DeviceStatusDAO(this);
+	}
+
 
 	
 }
