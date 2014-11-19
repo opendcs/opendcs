@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2014/10/07 12:49:20  mmaloney
+*  added getFileBytes
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -175,12 +178,8 @@ public class FileUtil
 	public static int moveFile(File from, File to)
 		throws IOException
 	{
-Logger.instance().debug3("FileUtil.moveFile(" + from.getPath() + "," + to.getPath() + ")");
 		if (from.renameTo(to))
-		{
-Logger.instance().debug3(" ... rename worked");
 			return (int)to.length();
-		}
 		int ret = copyFile(from, to);
 		from.delete();
 		return ret;
