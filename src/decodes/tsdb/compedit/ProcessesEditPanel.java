@@ -13,16 +13,21 @@
 package decodes.tsdb.compedit;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Properties;
+
 import javax.swing.*;
 import javax.swing.border.*;
 
 import opendcs.dai.LoadingAppDAI;
-
+import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.db.Constants;
+import decodes.db.EnumValue;
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
+import decodes.util.PropertiesOwner;
 import decodes.gui.EnumComboBox;
 import decodes.gui.PropertiesEditPanel;
 
@@ -32,7 +37,6 @@ public class ProcessesEditPanel extends EditPanel
 	private JPanel paramPanel = null;
 	private JLabel processNameLabel = null;
 	private JTextField nameField = null;
-	private JLabel processIdLabel = null;
 	private JTextField idField = null;
 	private JPanel commentsPanel = null;
 	private JScrollPane commentsScrollPane = null;
@@ -90,8 +94,7 @@ public class ProcessesEditPanel extends EditPanel
 	 */
 	private JPanel getParamPanel() 
 	{
-		paramPanel = new JPanel();
-		paramPanel.setLayout(new GridBagLayout());
+		paramPanel = new JPanel(new GridBagLayout());
 
 		processNameLabel = new JLabel(CAPEdit.instance().compeditDescriptions
 				.getString("ProcessEditPanel.ProcNameLabel"));
@@ -104,13 +107,12 @@ public class ProcessesEditPanel extends EditPanel
 		nameField.setToolTipText(CAPEdit.instance().compeditDescriptions
 				.getString("ProcessEditPanel.ProcNameLabelTT"));
 		paramPanel.add(nameField,
-			new GridBagConstraints(1, 0, 1, 1, 0.5, 0.0,
+			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(20, 0, 5, 10), 60, 0));
 
-		processIdLabel = new JLabel(CAPEdit.instance().compeditDescriptions
-				.getString("ProcessEditPanel.ProcIDLabel"));
-		paramPanel.add(processIdLabel,
+		paramPanel.add(new JLabel(CAPEdit.instance().compeditDescriptions
+			.getString("ProcessEditPanel.ProcIDLabel")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 2), 0, 0));
@@ -120,7 +122,7 @@ public class ProcessesEditPanel extends EditPanel
 		idField.setToolTipText(CAPEdit.instance().compeditDescriptions
 				.getString("ProcessEditPanel.ProcIDLabelTT"));
 		paramPanel.add(idField,
-			new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0,
+			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 10), 30, 0));
 
@@ -130,7 +132,7 @@ public class ProcessesEditPanel extends EditPanel
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 2), 0, 0));
 		paramPanel.add(processTypeCombo,
-			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
+			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 10), 30, 0));
 		
@@ -147,7 +149,7 @@ public class ProcessesEditPanel extends EditPanel
 				.getString("ProcessEditPanel.PropsPanelTitle")+" ");
 		propsPanel.setOwnerFrame(CAPEdit.instance().getFrame());
 		paramPanel.add(propsPanel,
-			new GridBagConstraints(2, 0, 1, 4, 0.5, 0.5,
+			new GridBagConstraints(2, 0, 1, 4, 1.0, 0.5,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH,
 				new Insets(5, 0, 5, 10), 40, 0));
 
@@ -155,8 +157,43 @@ public class ProcessesEditPanel extends EditPanel
 			new GridBagConstraints(0, 4, 3, 1, 0.5, 0.5,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(10, 10, 10, 10), 0, 0));
+		
+		processTypeCombo.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					processTypeSelected();
+				}
+			});
 			
 		return paramPanel;
+	}
+
+	protected void processTypeSelected()
+	{
+		String pt = processTypeCombo.getSelection();
+		if (pt == null || pt.trim().length() == 0)
+		{
+			propsPanel.setPropertiesOwner(null);
+			return;
+		}
+		EnumValue procType = processTypeCombo.getSelectedEnumValue();
+		try
+		{
+			Class execClass = procType.getExecClass();
+			PropertiesOwner propOwner = (PropertiesOwner)execClass.newInstance();
+			propsPanel.setPropertiesOwner(propOwner);
+System.out.println("set prop owner to class '" + execClass.getName() + "'");
+		}
+		catch (Exception ex)
+		{
+			String msg = "Cannot instantiate PropertiesOwner class for '" + pt + "': " + ex;
+			Logger.instance().warning(msg);
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
+		}
 	}
 
 	/**
