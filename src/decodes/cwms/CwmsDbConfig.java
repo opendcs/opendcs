@@ -52,12 +52,12 @@ public class CwmsDbConfig
 	private CwmsDbConfig()
 	{	
 		DbUri = null;
-		DbAuthFile = "$DECODES_INSTALL_DIR/.decodes.auth";
+		DbAuthFile = "$DCSTOOL_USERDIR/.decodes.auth";
 		jdbcOracleDriver = "oracle.jdbc.driver.OracleDriver"; //"jdbc:oracle:thin:@";
 		timeZone = "GMT";
 		cwmsOfficeId = null;
 		cwmsVersion = "raw";
-		shefCwmsParamFile = "$DECODES_INSTALL_DIR/shefCwmsParam.prop";
+		shefCwmsParamFile = "$DCSTOOL_USERDIR/shefCwmsParam.prop";
 	}
 
 	/**

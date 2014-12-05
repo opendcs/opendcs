@@ -8,7 +8,7 @@ public class CwmsConstants
 {
 	/** The file path to get the Cwms Configuration file */
 	public static final String CONFIG_FILE_NAME = 
-									"$DECODES_INSTALL_DIR/decodes-cwms.conf";
+									"$DCSTOOL_USERDIR/decodes-cwms.conf";
 	/** The Sensor Cwms data type used by CwmsConsumer */
 	public static final String CWMS_DATA_TYPE = "CWMS";
 	/** The default value for the Time Series descriptor Parameter Type */
