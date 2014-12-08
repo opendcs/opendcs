@@ -237,7 +237,7 @@ CREATE TABLE DACQ_EVENT
 	-- 
 	EVENT_PRIORITY INT NOT NULL,
 	-- Software subsystem that generated this event
-	SUBSYSTEM VARCHAR2(24) NOT NULL,
+	SUBSYSTEM VARCHAR2(24),
     -- If this is related to a message, this holds the message's local_recv_time.
     MSG_RECV_TIME DATE,
 	EVENT_TEXT VARCHAR2(256) NOT NULL,
