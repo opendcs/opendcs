@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/07/03 12:41:49  mmaloney
+ * debug improvements.
+ *
  * Revision 1.2  2014/06/27 20:02:23  mmaloney
  * Fixes for deleting a site. It wasn't being removed from cache.
  *
@@ -192,7 +195,7 @@ if (cwmsName.getNameValue().toUpperCase().startsWith("FCNE"))
 		{
 			if (DecodesSettings.instance().writeCwmsLocations)
 			{
-				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue());
+				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue() + "'");
 				cwmsdb.CwmsLocJdbc cwmsLocJdbc = new cwmsdb.CwmsLocJdbc(db.getConnection());
 
 				if (newSite.country == null || newSite.country.trim().length() == 0
