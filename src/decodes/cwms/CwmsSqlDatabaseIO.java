@@ -113,6 +113,10 @@ public class CwmsSqlDatabaseIO
 	public void connectToDatabase(String sqlDbLocation)
 		throws DatabaseException
 	{
+		// Placeholder for connecting from web where connection is from a DataSource.
+		if (sqlDbLocation == null || sqlDbLocation.trim().length() == 0)
+			return;
+
 		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
 		if (DecodesInterface.isGUI())
 		{
