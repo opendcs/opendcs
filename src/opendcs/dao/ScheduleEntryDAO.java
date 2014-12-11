@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/08/29 18:18:46  mmaloney
+ * For XML import, handle case where existing entry doesn't have a DbKey.
+ *
  * Revision 1.2  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -284,7 +287,7 @@ public class ScheduleEntryDAO
 		String q = "select " + sesColumns + " from schedule_entry_status";
 		if (scheduleEntry != null)
 			q = q + " where schedule_entry_id = " + scheduleEntry.getKey();
-		q = q + " order by run_start_time";
+		q = q + " order by run_start_time desc";
 		
 		ResultSet rs = doQuery(q);
 		try

@@ -128,6 +128,8 @@ public class DbUpdate extends TsdbAppTemplate
 				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN DOLOGIN VARCHAR(5)");
 				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN USERNAME VARCHAR(32)");
 				sql("ALTER TABLE TRANSPORTMEDIUM ADD COLUMN PASSWORD VARCHAR(32)");
+				
+				sql("CREATE SEQUENCE DACQ_EVENTIdSeq");
 			}
 			else
 			{
@@ -142,6 +144,8 @@ public class DbUpdate extends TsdbAppTemplate
 				sql("ALTER TABLE TRANSPORTMEDIUM ADD DOLOGIN VARCHAR2(5)");
 				sql("ALTER TABLE TRANSPORTMEDIUM ADD USERNAME VARCHAR2(32)");
 				sql("ALTER TABLE TRANSPORTMEDIUM ADD PASSWORD VARCHAR2(32)");
+				
+				sql("CREATE SEQUENCE DACQ_EVENTIdSeq nocache");
 			}
 			
 			// Remove season stuff. We are now using Enum for this.

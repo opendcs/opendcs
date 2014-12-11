@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2014/11/19 16:16:05  mmaloney
+ * Additions for dcpmon
+ *
  * Revision 1.5  2014/09/15 14:09:52  mmaloney
  * DCP Mon Daemon Impl
  *
@@ -256,7 +259,7 @@ public class XmitRecordDAO
 		doModify(q);
 		
 		q = "UPDATE dcp_trans_day_map SET day_number = null"
-			+ " WHERE table_suffix = " + suffix;
+			+ " WHERE table_suffix = " + sqlString(suffix);
 		doModify(q);
 	}
 

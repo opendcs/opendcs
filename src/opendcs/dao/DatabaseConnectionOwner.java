@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/11/19 16:16:05  mmaloney
+ * Additions for dcpmon
+ *
  * Revision 1.2  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -24,6 +27,7 @@ import java.util.Date;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
@@ -275,4 +279,10 @@ public interface DatabaseConnectionOwner
 	 * Construct a DAO for reading writing DeviceStatus structures.
 	 */
 	public DeviceStatusDAI makeDeviceStatusDAO();
+	
+	/**
+	 * Construct a DAO for reading/writing Data Acquisition Events
+	 * @return the DAO.
+	 */
+	public DacqEventDAI makeDacqEventDAO();
 }

@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.9  2013/09/26 13:38:09  mmaloney
 *  Refactor to allow the same netlist to be used in multiple groups.
 *
@@ -405,6 +408,8 @@ public class DdsRecvSettings
 		
 		for(NetlistGroupAssoc nga : netlistGroupAssociations)
 		{
+			if (nga.getNetworkList() == null)
+				continue;
 			decodes.db.NetworkList decNl =
 				(decodes.db.NetworkList)nga.getNetworkList().getHandle();
 			if (decNl != null)
