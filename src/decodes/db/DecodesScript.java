@@ -386,24 +386,6 @@ public class DecodesScript extends IdDatabaseObject
 		if (formatStatements.size() == 0)
 			throw new DecoderException("No format statements");
 		
-		int defaultDebugLevel = Logger.instance().getMinLogPriority();
-		Platform p = rawmsg.getPlatform();
-		if (p != null)
-		{
-			switch(p.getDebugLevel())
-			{
-			case 0: break;
-			case 1:
-				Logger.instance().setMinLogPriority(Logger.E_DEBUG1);
-				break;
-			case 2:
-				Logger.instance().setMinLogPriority(Logger.E_DEBUG2);
-				break;
-			case 3:
-				Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
-				break;
-			}
-		}
 		FormatStatement fs = formatStatements.elementAt(0);
 		DecodedMessage decmsg = new DecodedMessage(rawmsg);
 		DataOperations dops = new DataOperations(rawmsg);
@@ -447,7 +429,6 @@ public class DecodesScript extends IdDatabaseObject
 		}
 		decmsg.finishMessage();
 		decmsg.applyInitialEuConversions();
-		Logger.instance().setMinLogPriority(defaultDebugLevel);
 		return decmsg;
 	}
 	
