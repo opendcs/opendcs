@@ -1,5 +1,7 @@
 package decodes.util;
 
+import java.io.Serializable;
+
 /**
  * Used by the PropertiesOwner interface, a PropertySpec describes a property
  * supported by some class including its name, type, and description.
@@ -7,6 +9,7 @@ package decodes.util;
  * @author mmaloney, Mike Maloney, Cove Software LLC
  */
 public class PropertySpec
+	implements Serializable
 {
 	/** The name of the property in a Properties object */
 	private String name = null;
