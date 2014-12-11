@@ -110,7 +110,13 @@ public class RoutingSpecEditPanel
 		new PropertySpec("RawArchiveEndDelim", PropertySpec.STRING, 
 			"String placed after each message in the file"),
 		new PropertySpec("RawArchiveMaxAge", PropertySpec.STRING, 
-			"Example: '1 year'. Files older than this are deleted.")
+			"Example: '1 year'. Files older than this are deleted."),
+		new PropertySpec("debugLevel", PropertySpec.INT,
+			"(default=0) Set to 1, 2, 3 for increasing levels of debug information" +
+			" when this routing spec is run."),
+		new PropertySpec("purgeOldEvents", PropertySpec.BOOLEAN,
+			"(default=true) Set to false to tell this routing spec to NOT attempt to "
+			+ "purge expired events from the database. Also see DecodesSettings.eventPurgeDays")
 	};
 	
 	private PropertySpec combinedProps[] = rsPropSpecs;
