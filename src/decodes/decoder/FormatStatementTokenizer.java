@@ -146,7 +146,8 @@ public class FormatStatementTokenizer
 			// Goto statement: >label
 			StringBuilder argsb = new StringBuilder();
 			boolean leading = true;
-			while(Character.isLetterOrDigit(c = nextChar()) || c == '_' ||
+			// MJM 20141210 labels may contain a hyphen, e.g. 'shef-chek'.
+			while(Character.isLetterOrDigit(c = nextChar()) || c == '_' || c == '-' ||
 				Character.isWhitespace(c))
 			{
 				if (Character.isWhitespace(c))
