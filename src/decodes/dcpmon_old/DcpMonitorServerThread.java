@@ -48,6 +48,7 @@
 //
 ///**
 //One of these objects is created to service each client that connects.
+//@deprecated
 //*/
 //public class DcpMonitorServerThread extends BasicSvrThread
 //{

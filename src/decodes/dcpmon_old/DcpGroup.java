@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1  2014/09/15 14:00:00  mmaloney
+*  DCP Mon Daemon Impl
+*
 *  Revision 1.2  2014/08/22 17:23:06  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -37,6 +40,7 @@ import lrgs.common.NetworkListItem;
 /**
 Holds a group of DCPs. The user associates DCPs to a group via network
 lists.
+@deprecated
 */
 public class DcpGroup
 	implements Comparable<DcpGroup>

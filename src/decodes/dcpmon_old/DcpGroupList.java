@@ -20,6 +20,7 @@ DCPs to names and groups.
 A 'group' is one of these types of network
 lists. If a DCP is in the list it is considered to be in the group.
 <p>
+@deprecated
 */
 public class DcpGroupList
 {
