@@ -109,7 +109,7 @@ public class FileLogger extends Logger
 	* @param priority the priority
 	* @param text the formatted log message text
 	*/
-	protected synchronized void doLog( int priority, String text )
+	public synchronized void doLog( int priority, String text )
 	{
 		output.println(standardMessage(priority, text));
 		
