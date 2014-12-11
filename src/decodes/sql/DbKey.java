@@ -5,6 +5,9 @@
  * @author - Mike Maloney, Cove Software, LLC
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.1  2013/03/21 18:27:39  mmaloney
  * DbKey Implementation
  *
@@ -13,6 +16,7 @@ package decodes.sql;
 
 import ilex.util.Logger;
 
+import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -42,8 +46,9 @@ import java.util.Map.Entry;
  * 
  * Recommendation: In new code, always compare keys with key1.equals(key2);
  */
+@SuppressWarnings("serial")
 public class DbKey
-	implements Comparable<DbKey>
+	implements Comparable<DbKey>, Serializable
 {
 	/** Immutable internal long integer key value */
 	private long value;
