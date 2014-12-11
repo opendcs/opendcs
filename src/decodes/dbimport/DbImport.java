@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.3  2014/09/25 18:08:35  mmaloney
+*  Enum fields encapsulated.
+*
 *  Revision 1.2  2014/08/29 18:24:35  mmaloney
 *  6.1 Schema Mods
 *
@@ -66,6 +69,9 @@ public class DbImport
 		"", TokenOptions.optSwitch, "");
 	static StringToken platOwnerArg = new StringToken("O", "Platform Owner", "",
 		TokenOptions.optSwitch, "");
+	static StringToken platDesigArg = new StringToken("G", 
+		"Platform Designator (for platforms with no designator in XML file)", "",
+		TokenOptions.optSwitch, "");
 	static StringToken dbLocArg = new StringToken("E", 
 		"Explicit Database Location", "", TokenOptions.optSwitch, "");
 	static StringToken fileArgs = new StringToken("", "XmlFiles", "",
@@ -95,6 +101,7 @@ public class DbImport
 		cmdLineArgs.addToken(keepOldArg);
 		cmdLineArgs.addToken(agencyArg);
 		cmdLineArgs.addToken(platOwnerArg);
+		cmdLineArgs.addToken(platDesigArg);
 		cmdLineArgs.addToken(dbLocArg);
 		cmdLineArgs.addToken(pdtFilePath);
 		cmdLineArgs.addToken(fileArgs);
@@ -181,7 +188,7 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 	Database stageDb;
 	XmlDatabaseIO stageDbio;  // For reading the input files.
 	TopLevelParser topParser; // Top level XML parser.
-	Vector<IdDatabaseObject> newObjects;        // Stores new DatabaseObjects to be added.
+	Vector<IdDatabaseObject> newObjects;   // Stores new DatabaseObjects to be added.
 //	boolean writeEnumList;
 	boolean writePlatformList;
 //	boolean writeDataTypes;
@@ -665,15 +672,45 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 			}
 		}
 
+		// If a designator was specified with -G arg, add it to all platforms in the stage
+		// db that have no designator.
+		String newDesig = platDesigArg.getValue();
+		if (newDesig.length() == 0) newDesig = null;
+		for(Platform p : stageDb.platformList.getPlatformVector())
+			if ((p.getPlatformDesignator() == null || p.getPlatformDesignator().trim().length() == 0)
+			 && newDesig != null)
+				p.setPlatformDesignator(newDesig);
+		
+		// Platform matching is tricky because there are two unique keys.
+		// The main key is by matching Site and Platform Designator.
+		// The secondary key is by matching a transport medium (TM).
+		//
+		// There are 5 possible use cases:
+		// 1. (site,desig) matches existing platform AND TM matches same platform
+		// 2. (site,desig) matches existing platform. TM does not match any platform
+		// 3. (site,desig) matches existing platform, but TM matches a different platform.
+		// 4. No match for (site,desig). No match for TM.
+		// 5. No match for (site,desig). There is a match for TM.
 		writePlatformList = false;
 		for(Iterator<Platform> it = stageDb.platformList.iterator(); it.hasNext(); )
 		{
 			Platform ob = it.next();
-			Platform oldOb = null;
+			Platform oldSiteDesigMatch = null;
 
+			// See if a matching old site exists
+			Site oldSite = theDb.siteList.getSite(ob.getSite().getPreferredName());
+			if (oldSite == null)
+				for(SiteName sn : ob.getSite().getNameArray())
+					if ((oldSite = theDb.siteList.getSite(sn)) != null)
+						break;
+			// Then find an old platform with matching (site,designator) 
+			if (oldSite != null)
+				oldSiteDesigMatch = theDb.platformList.findPlatform(oldSite, ob.getPlatformDesignator());
+			
 			// Try to find existing platform with a matching transport id.
+			Platform oldTmMatch = null;
 			for(Iterator<TransportMedium> tmit = ob.transportMedia.iterator();
-				oldOb == null && tmit.hasNext(); )
+				oldTmMatch == null && tmit.hasNext(); )
 			{
 				TransportMedium tm = tmit.next();
 				Date d = ob.expiration;
@@ -682,52 +719,68 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 
 				try
 				{
-					oldOb = theDb.platformList.getPlatform(
+					oldTmMatch = theDb.platformList.getPlatform(
 						tm.getMediumType(), tm.getMediumId(), d);
 				}
-				catch(DatabaseException ex) { oldOb = null; }
+				catch(DatabaseException ex) { oldTmMatch = null; }
 			}
-
-			if (oldOb == null)
+			
+			if (oldSiteDesigMatch == null)
 			{
-				// No match for transport media.
-				// Now try to find old platform with matching site & designator.
-				// This will catch the case where someone has changed a platform's
-				// address.
-				Site s = ob.getSite();
-				if (s != null)
-				{
-					oldOb = theDb.platformList.findPlatform(s, 
-						ob.getPlatformDesignator());
-				}
-			}
-
-			if (oldOb == null)
-			{
+				// use cases 4 & 5: This is a NEW platform.
 				info("Adding new "
 					+ ob.getObjectType() + " '" + ob.makeFileName() + "'");
 				theDb.platformList.add(ob);
+				
+				if (oldTmMatch != null)
+				{
+					// use case 5 No match for (site,desig) but there is a match for TM.
+					// Need to cause the old TMs to be removed from existing platform.
+					for(Iterator<TransportMedium> tmit = ob.getTransportMedia(); tmit.hasNext(); )
+					{
+						TransportMedium newTM = tmit.next();
+						TransportMedium oldTM = oldTmMatch.getTransportMedium(newTM.getMediumType());
+						if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
+							tmit.remove();
+					}
+					newObjects.add(oldTmMatch);
+				}
 				newObjects.add(ob);
 				writePlatformList = true;
 			}
-			else if (!oldOb.equals(ob))
+			else if (!oldSiteDesigMatch.equals(ob))
 			{
+				// use cases 1, 2, and 3: There was a match for (site,desig)
 				if (!keepOld)
 				{
 					info("Overwriting "
-						+ oldOb.getObjectType() + " '" + ob.makeFileName()+"'");
+						+ oldSiteDesigMatch.getObjectType() + " '" + ob.makeFileName()+"'");
 
-					DbKey id = oldOb.getId();
-					theDb.platformList.removePlatform(oldOb);
+					DbKey oldId = oldSiteDesigMatch.getId();
+					theDb.platformList.removePlatform(oldSiteDesigMatch);
 					ob.clearId();
-					try { ob.setId(id); } catch(Exception e) {}
+					try { ob.setId(oldId); } catch(Exception e) {}
 					theDb.platformList.add(ob);
+					
+					if (oldTmMatch != null && oldTmMatch != oldSiteDesigMatch)
+					{
+						// use case 3 The Transport Media matched a different platform than (site,desig)
+						// Need to cause the old offending TMs to be removed, before the new platform is written.
+						for(Iterator<TransportMedium> tmit = ob.getTransportMedia(); tmit.hasNext(); )
+						{
+							TransportMedium newTM = tmit.next();
+							TransportMedium oldTM = oldTmMatch.getTransportMedium(newTM.getMediumType());
+							if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
+								tmit.remove();
+						}
+						newObjects.add(oldTmMatch);
+					}
 					newObjects.add(ob);
 					writePlatformList = true;
 				}
 				else
 					info("Keeping old version of "
-					+oldOb.getObjectType() + " '" + ob.makeFileName() + "'");
+					+oldSiteDesigMatch.getObjectType() + " '" + ob.makeFileName() + "'");
 			}
 		}
 
@@ -1228,18 +1281,23 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 			IdDatabaseObject ob = it.next();
 			String newOwner = platOwnerArg.getValue();
 			if (newOwner.length() == 0) newOwner = null;
+			
+			// TODO remove this, the cmdline arg desig was added in mergeStageToTheDb().
+			String newDesig = platDesigArg.getValue();
+			if (newDesig.length() == 0) newDesig = null;
 			if (ob instanceof Platform)
 			{
+				Platform p = (Platform)ob;
 				if (newOwner != null)
-				{
-					Platform p = (Platform)ob;
 					p.setAgency(newOwner);
-				}
+				if ((p.getPlatformDesignator() == null || p.getPlatformDesignator().trim().length() == 0)
+				 && newDesig != null)
+					p.setPlatformDesignator(newDesig);
+				
 				//Code added Oct 17, 2007 for DCP Mon Enhancement Prob. #2
 				//To set the Platform Description - if platform description
 				//is empty - get it from Site record - if site description
 				//is empty - get it from pdt
-				Platform p = (Platform)ob;
 				String desc = setPlatformDescription(p);
 				if (desc != null && desc.trim().length() > 0)
 					p.setDescription(desc);
