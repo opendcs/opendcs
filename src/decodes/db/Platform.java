@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2014/10/02 14:33:13  mmaloney
+*  Conditional Season Processing
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -145,10 +148,7 @@ public class Platform
 	private PropertySpec[] platformPropSpecs =
 	{
 		new PropertySpec("debugLevel", PropertySpec.INT,
-			"(default=0) Set to 1, 2, 3 for increasing levels of log information" +
-			" when this platform is decoded."),
-		new PropertySpec("debugLevel", PropertySpec.INT,
-			"(default=0) Set to 1, 2, 3 for increasing levels of log information" +
+			"(default=0) Set to 1, 2, 3 for increasing levels of debug information" +
 			" when this platform is decoded."),
 		new PropertySpec("ignoreSeason", PropertySpec.DECODES_ENUM + Constants.enum_Season,
 			"Set to have this platform ignored during a specified season."),
