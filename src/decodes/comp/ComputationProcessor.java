@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2009/06/18 18:01:56  mjmaloney
 *  Run computations from HTML display in dcp monitor
 *
@@ -166,7 +169,7 @@ public class ComputationProcessor
 	* collection.
 	* @param r the resolver
 	*/
-	private void addCompResolver( CompResolver r )
+	public void addCompResolver( CompResolver r )
 	{
 		compResolvers.add(r);
 	}
