@@ -3,6 +3,10 @@
 */
 package lrgs.common;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -985,5 +989,28 @@ public class DcpMsg
 	public String getDataStr()
 	{
 		return new String(getData());
+	}
+	
+	public String getSource()
+	{
+		if (DcpMsgFlag.isGOES(flagbits))
+			return "GOES";
+		else if (DcpMsgFlag.isIridium(flagbits))
+			return "Iridium";
+		LineNumberReader lnr = new LineNumberReader(new InputStreamReader(
+			new ByteArrayInputStream(data)));
+		String line;
+		try
+		{
+			while((line = lnr.readLine()) != null && line.startsWith("//"))
+			{
+				line = line.substring(2).trim();
+				if (line.startsWith("SOURCE"))
+					return line.substring(6).trim();
+			}
+		}
+		catch (IOException e) { /* Won't happen */ }
+		finally { try { lnr.close(); } catch(Exception ex) {} }
+		return "";
 	}
 }
