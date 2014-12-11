@@ -80,6 +80,7 @@ public class ProcessesEditPanel extends EditPanel
 		panelProps.remove("appType");
 		propsPanel.setPropertiesOwner(cai);
 		propsPanel.setProperties(panelProps);
+		processTypeSelected();
 	}
 
 	public CompAppInfo getEditedObject()
@@ -179,13 +180,19 @@ public class ProcessesEditPanel extends EditPanel
 			propsPanel.setPropertiesOwner(null);
 			return;
 		}
+
 		EnumValue procType = processTypeCombo.getSelectedEnumValue();
+		String execClassName = procType.getExecClassName();
+		PropertiesOwner propOwner = null;
 		try
 		{
-			Class execClass = procType.getExecClass();
-			PropertiesOwner propOwner = (PropertiesOwner)execClass.newInstance();
-			propsPanel.setPropertiesOwner(propOwner);
-System.out.println("set prop owner to class '" + execClass.getName() + "'");
+			Class<?> execClass = null;
+			if (execClassName != null && execClassName.trim().length() > 0)
+			{
+				execClass = procType.getExecClass();
+				propOwner = (PropertiesOwner)execClass.newInstance();
+				propsPanel.setPropertiesOwner(propOwner);
+			}
 		}
 		catch (Exception ex)
 		{
@@ -194,6 +201,7 @@ System.out.println("set prop owner to class '" + execClass.getName() + "'");
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 		}
+		propsPanel.setPropertiesOwner(propOwner);
 	}
 
 	/**
@@ -204,7 +212,7 @@ System.out.println("set prop owner to class '" + execClass.getName() + "'");
 	private JScrollPane getCommentsScrollPane() {
 		if (commentsScrollPane == null) {
 			commentsScrollPane = new JScrollPane();
-			commentsScrollPane.setHorizontalScrollBarPolicy(commentsScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+			commentsScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 			commentsScrollPane.setViewportView(getCommentsText());
 			commentsScrollPane.setToolTipText(
 					CAPEdit.instance().compeditDescriptions
