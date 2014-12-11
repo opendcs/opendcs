@@ -9,7 +9,6 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.Enumeration;
 
-import decodes.sql.DbKey;
 import decodes.util.PropertySpec;
 
 /**
@@ -18,6 +17,9 @@ sets.
 */
 public class PropertiesUtil
 {
+	public static final String possibleDelims  = ",;|#+!~^&*";
+	public static final String possibleAssigns = "=:><`()[]";
+	
 	/**
 	* Returns true if two properties sets are the same. Meaning they have
 	* exactly the same keys and values.
@@ -56,7 +58,56 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 	*/
 	public static String props2string( Properties pr )
 	{
+		int dIdx = 0, aIdx = 0;
+	  nextDelim:
+		while(dIdx < possibleDelims.length())
+		{
+			for(Object v : pr.values())
+			{
+				String sv = (String)v;
+				if (sv.indexOf(possibleDelims.charAt(dIdx)) >= 0)
+				{
+					dIdx++;
+					continue nextDelim;
+				}
+			}
+			break;
+		}
+	  nextAssign:
+		while(aIdx < possibleAssigns.length())
+		{
+			for(Object v : pr.values())
+			{
+				String sv = (String)v;
+				if (sv.indexOf(possibleAssigns.charAt(aIdx)) >= 0)
+				{
+					aIdx++;
+					continue nextAssign;
+				}
+			}
+			break;
+		}
+
+		if (dIdx == possibleDelims.length())
+		{
+			Logger.instance().warning("Cannot encode props because values contain "
+				+ "all possible delims " + possibleDelims);
+			dIdx = aIdx = 0;
+		}
+		if (aIdx == possibleAssigns.length())
+		{
+			Logger.instance().warning("Cannot encode props because values contain"
+				+ " all possible assignment operators " + possibleAssigns);
+			dIdx = aIdx = 0;
+		}
 		StringBuffer ret = new StringBuffer();
+		char delim = possibleDelims.charAt(dIdx);
+		char assign = possibleAssigns.charAt(aIdx);
+		if (dIdx != 0 || aIdx != 0)
+		{
+			ret.append(delim);
+			ret.append(assign);
+		}
 		int i=0;
 		Enumeration en = pr.propertyNames();
 		while(en.hasMoreElements())
@@ -64,9 +115,12 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 			String key = (String)en.nextElement();
 			String value = pr.getProperty(key);
 			if (i++ > 0)
-				ret.append(", ");
+			{
+				ret.append(delim);
+				ret.append(' ');
+			}
 			ret.append(key);
-			ret.append('=');
+			ret.append(assign);
 			ret.append(value);
 		}
 		return ret.toString();
@@ -83,13 +137,26 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		Properties ret = new Properties();
 		if (s == null)
 			return ret;
+		s = s.trim();
+		if (s.length() < 3) // Would have to have at least one name=value
+			return ret;
+		
+		char delim = ',';
+		char assign = '=';
+		if (!Character.isLetterOrDigit(s.charAt(0)))
+		{
+			delim = s.charAt(0);
+			assign = s.charAt(1);
+			s = s.substring(2);
+		}
 
-		StringTokenizer tokenizer = new StringTokenizer(
-			TextUtil.collapseWhitespace(s), ",");
+		StringTokenizer tokenizer = new StringTokenizer(s, "" + delim);
+//			TextUtil.collapseWhitespace(s), ",");
+	
 		while(tokenizer.hasMoreTokens())
 		{
-			String tok = tokenizer.nextToken();
-			int ei = tok.indexOf('=');
+			String tok = tokenizer.nextToken().trim();
+			int ei = tok.indexOf(assign);
 			if (ei == -1)
 				ret.setProperty(tok, "");
 			else
@@ -389,6 +456,25 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		for(int i=0; i<specs2.length; i++)
 			ret[i+specs1.length] = specs2[i];
 		return ret;
+	}
+	
+	public static void main(String args[])
+	{
+		System.out.println("Enter properties encoded as a string. Blank line when done.");
+		String line;
+		while((line = System.console().readLine()) != null)
+		{
+			Properties p = string2props(line);
+			for(Object key : p.keySet())
+			{
+				String keys = (String)key;
+				String val = p.getProperty(keys);
+				System.out.println(keys + " = " + val);
+			}
+			System.out.println("Re-encoded as string: ");
+			System.out.println(props2string(p));
+			System.out.println();
+		}
 	}
 
 }

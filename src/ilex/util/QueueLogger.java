@@ -2,6 +2,9 @@
 *	$Id$
 *
 *	$Log$
+*	Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*	OPENDCS 6.0 Initial Checkin
+*	
 *	Revision 1.1  2008/04/04 18:21:10  cvs
 *	Added legacy code to repository
 *	
@@ -74,7 +77,7 @@ public class QueueLogger extends Logger
 	* @param priority the priority.
 	* @param text the formatted message.
 	*/
-	protected void doLog( int priority, String text )
+	public void doLog( int priority, String text )
 	{
 		String msg = standardMessage(priority, text);
 		addToQueue(msg);

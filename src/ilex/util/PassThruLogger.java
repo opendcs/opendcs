@@ -5,6 +5,9 @@
  * Author: Michael Maloney, Cove Software, LLC
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.1  2013/02/05 21:07:59  mmaloney
  * Created.
  *
@@ -32,7 +35,7 @@ public class PassThruLogger extends Logger
 	}
 
 	@Override
-	protected void doLog(int priority, String text)
+	public void doLog(int priority, String text)
 	{
 		parent.doLog(priority, text);
 	}

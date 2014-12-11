@@ -237,7 +237,7 @@ public abstract class Logger
 	* @param priority message priority
 	* @param text formatted message text
 	*/
-	protected abstract void doLog( int priority, String text );
+	public abstract void doLog( int priority, String text );
 
 	/**
 	* This produces the "standard message" for a given text string.

@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:10  cvs
 *  Added legacy code to repository
 *
@@ -128,15 +131,30 @@ public class ThreadLogger extends Logger
 	}
 
 	/**
-	* Logs a message by sending it to the current thread's Logger.
-	* If no logger yet exists for the current thread, one is created.
-	* @param priority the priority
-	* @param text the formatted text
-	*/
-	protected synchronized void doLog( int priority, String text )
+	 * {@inheritDoc}
+	 * Thread Logger overrides log() so that each thread-specific logger can do
+	 * its own priority filtering.
+	 */
+	@Override
+	public synchronized void log( int priority, String text )
 	{
-		getCurrentThreadLogger().doLog(priority, 
-			(moduleName != null ? (moduleName + " ") : "") + text);
+		Logger tl = getCurrentThreadLogger();
+		if (tl != this)
+			tl.log(priority, (moduleName != null ? (moduleName + " ") : "") + text);
+		else // Shouldn't happen, but avoid endless loop if it does.
+			doLog(priority, text);
+	}
+
+	/**
+	 * Logs a message by sending it to the current thread's Logger.
+	 * If no logger yet exists for the current thread, one is created.
+	 * @param priority the priority
+	 * @param text the formatted text
+	 */
+	@Override
+	public  void doLog( int priority, String text )
+	{
+		System.err.println(standardMessage(priority, "ThreadLogger: " + text));
 	}
 
 	/**

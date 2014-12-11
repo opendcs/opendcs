@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2013/08/23 20:12:01  mmaloney
 *  TeeLogger should always pass message to both logger and let each handle its own
 *  priority levels.
@@ -132,7 +135,7 @@ public class TeeLogger extends Logger
 	* @param priority the priority
 	* @param text the formatted text
 	*/
-	protected void doLog( int priority, String text )
+	public void doLog( int priority, String text )
 	{
 		logger1.doLog(priority, text);
 		logger2.doLog(priority, text);
