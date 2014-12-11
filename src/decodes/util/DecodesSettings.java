@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.5  2014/10/07 12:34:54  mmaloney
+*  DecodesSetting.showNetlistEditor
+*
 *  Revision 1.4  2014/10/02 14:16:32  mmaloney
 *  Added platformListDesignatorCol
 *
@@ -310,6 +313,9 @@ public class DecodesSettings
 	
 	public boolean platformListDesignatorCol = false;
 	
+	/** For OpenDCS 6.1, purge data acquisition events after this many days */
+	public int eventPurgeDays = 5;
+	
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
@@ -452,7 +458,10 @@ public class DecodesSettings
 			"Default max decimals if no presentation element is found"),
 		new PropertySpec("platformListDesignatorCol", PropertySpec.BOOLEAN,
 			"if TRUE, then include a column for Designator in the Platform List"
-			+ " of the DECODES Database Editor.")
+			+ " of the DECODES Database Editor."),
+		new PropertySpec("eventPurgeDays", PropertySpec.INT,
+			"For OpenDCS 6.1, purge data acquisition events after this many days. Events "
+			+ "are purged by each routing spec with a purgeOldEvents property that is true.")
 	};
 	
 	/**
