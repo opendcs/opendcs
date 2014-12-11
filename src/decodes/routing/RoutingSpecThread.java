@@ -6,6 +6,7 @@ package decodes.routing;
 import java.util.*;
 import java.io.*;
 
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import lrgs.common.DcpMsg;
@@ -15,6 +16,8 @@ import ilex.cmdline.*;
 import decodes.db.*;
 import decodes.datasource.*;
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
+import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
 import decodes.util.*;
 import decodes.decoder.DecodedMessage;
@@ -142,6 +145,8 @@ public class RoutingSpecThread
 	private RawArchive rawArchive = null;
 	private DcpMsg lastDcpMsg = null;
 	private StatusWriteThread statusWriteThread = null;
+	
+	private boolean purgeOldEvents = true;
 	
 	/**
 	 * Constructs an empty, uninitialized RoutingSpecThread.
@@ -307,15 +312,13 @@ public class RoutingSpecThread
 
 		while(!done)
 		{
-			loopStart();
-			if (done)
-			{
-				break;
-			}
+			myExec.setSubsystem(null);
+
 			// Every 60 sec, check to see if my objects have changed.			
 			long now = System.currentTimeMillis();
 			if (now - lastUp2DateCheck > 30000L)
 			{
+				myExec.setSubsystem("update");
 				Logger.instance().debug1("Doing up2date checks...");
 				lastUp2DateCheck = now;
 				
@@ -334,6 +337,7 @@ public class RoutingSpecThread
 			// have been added.
 			if (now - lastPlatlistRead > 10*60000L)
 			{
+				myExec.setSubsystem("platlist");
 				try { Database.getDb().platformList.read(); }
 				catch(DatabaseException ex)
 				{
@@ -342,10 +346,31 @@ public class RoutingSpecThread
 				}
 				lastPlatlistRead = System.currentTimeMillis();
 			}
-
+			
+			if (purgeOldEvents && now - myExec.getLastEventsPurge() > 3600000L) // every hour, or on first run
+			{
+				myExec.setLastEventsPurge(now);
+				if ((dbio instanceof SqlDatabaseIO)
+				 && ((SqlDatabaseIO)dbio).getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+				{
+					DacqEventDAI dao = ((SqlDatabaseIO)dbio).makeDacqEventDAO();
+					Calendar cal = Calendar.getInstance();
+					cal.add(Calendar.DAY_OF_MONTH, -DecodesSettings.instance().eventPurgeDays);
+					log(Logger.E_INFORMATION, "Purging old DACQ_EVENTs before " + cal.getTime());
+					try { dao.deleteBefore(cal.getTime()); }
+					catch(Exception ex)
+					{
+						Logger.instance().warning("Failed to delete events before " + cal.getTime()
+							+ ": " + ex);
+					}
+					finally { dao.close(); }
+				}
+			}
+			
 			//=====================================================
 			// Retrieve the next raw message from the data source.
 			//=====================================================
+			myExec.setSubsystem("acquire");
 			RawMessage rm = null;
 			try 
 			{
@@ -411,8 +436,13 @@ public class RoutingSpecThread
 			}
 			lastMsgReceiveMsec = System.currentTimeMillis();
 
+			myExec.setPlatform(rm.getPlatformOrNull());
+
 			if (rawArchive != null)
+			{
+				myExec.setSubsystem("raw-archive");
 				rawArchive.archive(rm);
+			}
 			
 			PlatformStatus platstat = null;
 			Platform platform = rm.getPlatformOrNull();
@@ -455,6 +485,7 @@ public class RoutingSpecThread
 			if (formatter.attemptDecode()
 			 && (dcpMsg == null || !dcpMsg.isDapsStatusMsg()))
 			{
+				myExec.setSubsystem("decode");
 				dm = attemptDecode(rm, platstat);
 			}
 			else // Just make the Decoded message a wrapper around raw.
@@ -475,12 +506,16 @@ public class RoutingSpecThread
 			}
 			
 			if (dm != null)
+			{
+				myExec.setSubsystem("format-output");
 				formatAndOutputMessage(dm, platstat);
+			}
 			
 			if (platstat != null && platformStatusDAO != null)
 			{
 				try
 				{
+					myExec.setSubsystem("platstat");
 					platformStatusDAO.writePlatformStatus(platstat);
 				}
 				catch (DbIoException ex)
@@ -489,6 +524,7 @@ public class RoutingSpecThread
 				}
 				
 			}
+			myExec.setPlatform(null);
 			currentStatus = "Running";
 		}
 
@@ -614,13 +650,20 @@ log(Logger.E_DEBUG1, "run() exiting.");
 			dm.applyScaleAndOffset();
 
 			if (compProcessor != null)
+			{
+				myExec.setSubsystem("computation");
 				compProcessor.applyComputations(dm);
+			}
 
 			// If we are to apply min/max (default==true), do it.
 			if (applySensorLimits)
+			{
+				myExec.setSubsystem("limits");
 				dm.applySensorLimits();
+			}
 
 			// Use presentation group to convert units & format values
+			myExec.setSubsystem("presentation");
 			dm.formatSamples(presentationGroup);
 
 			if (removeRedundantData)
@@ -984,6 +1027,9 @@ log(Logger.E_DEBUG1, "run() exiting.");
 		s = rs.getProperty("usgsSummaryFile");
 		if (s != null && s.trim().length() > 0)
 			usgsSummaryFile = s;
+		
+		s = rs.getProperty("purgeOldEvents");
+		purgeOldEvents = s == null || s.trim().length() == 0 ? true : TextUtil.str2boolean(s);
 	}
 
  	/**
@@ -1385,6 +1431,7 @@ log(Logger.E_DEBUG1, "shutdown called.");
 				});
 		}
 
+		
 		// Construct the database and the interface specified by properties.
 		ResourceFactory.instance();
 		Database db = new decodes.db.Database();
@@ -1510,6 +1557,7 @@ log(Logger.E_DEBUG1, "shutdown called.");
 			}
 		}
 
+Logger.instance().info("before mainThread.start(), minPri=" + Logger.instance().getMinLogPriority());
 		mainThread.start();
 	}
 	
@@ -1646,6 +1694,7 @@ log(Logger.E_DEBUG1, "shutdown called.");
 				scheduleEntry = new ScheduleEntry(seName);
 				scheduleEntry.setRoutingSpecId(rs.getId());
 				scheduleEntry.setRoutingSpecName(rs.getName());
+				scheduleEntry.setEnabled(false);
 			}
 			scheduleEntry.setEnabled(true);
 			scheduleEntry.setLastModified(new Date());
@@ -1668,9 +1717,6 @@ log(Logger.E_DEBUG1, "shutdown called.");
 				scheduleEntryDAO.close();
 		}
 	}
-
-	/** Does nothing here but allows hook for subclass. */
-	protected void loopStart() {}
 
 	public ScheduleEntryExecutive getMyExec()
 	{

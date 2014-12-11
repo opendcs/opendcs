@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -27,11 +28,13 @@ import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.SiteList;
 import decodes.db.SiteName;
+import decodes.polling.DacqEvent;
 import decodes.polling.DeviceStatus;
 import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
 import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
+import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -116,15 +119,35 @@ public class DbUtil extends TsdbAppTemplate
 				doUpdateDev(tokens);
 			}
 		};
-
-
-
+	private CmdLine devEventsContaining =	
+		new CmdLine("events-containing", "[string] List events containing a specified string")
+		{
+			public void execute(String[] tokens)
+			{
+				devEventsContaining(tokens);
+			}
+		};
+	private CmdLine genEventsCmd =	
+		new CmdLine("event", "[priority (I,W,F)] [subsystem] [event text...]")
+		{
+			public void execute(String[] tokens)
+			{
+				genEventsCmd(tokens);
+			}
+		};
+	private CmdLine genSchedEventsCmd =	
+		new CmdLine("sched-event", "[priority (I,W,F)] schedStatusId platformId(or -1) subsystem [event text...]")
+		{
+			public void execute(String[] tokens)
+			{
+				genSchedEventsCmd(tokens);
+			}
+		};
 
 	public DbUtil()
 	{
 		super("util.log");
 	}
-
 
 	protected void doTsAliases(String[] tokens)
 	{
@@ -200,6 +223,10 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(tsDeleteCmd);
 		cmdLineProc.addCmd(devListCmd);
 		cmdLineProc.addCmd(devUpdateCmd);
+		cmdLineProc.addCmd(devEventsContaining);
+		cmdLineProc.addCmd(genEventsCmd);
+		cmdLineProc.addCmd(genSchedEventsCmd);
+		
 		cmdLineProc.addHelpAndQuitCommands();
 		
 		cmdLineProc.prompt = "cmd: ";
@@ -316,10 +343,10 @@ public class DbUtil extends TsdbAppTemplate
 				}
 			}
 		}
-		catch (DbIoException e)
+		catch (DbIoException ex)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Error deleting site: " + ex);
+			ex.printStackTrace();
 		}
 		finally
 		{
@@ -380,10 +407,10 @@ public class DbUtil extends TsdbAppTemplate
 			System.err.println(ex);
 			ex.printStackTrace();
 		}
-		catch (NoSuchObjectException e)
+		catch (NoSuchObjectException ex)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(ex);
+			ex.printStackTrace();
 		}
 		finally
 		{
@@ -444,7 +471,148 @@ public class DbUtil extends TsdbAppTemplate
 		
 	}
 
+	ArrayList<DacqEvent> devEvents = new ArrayList<DacqEvent>();
+	
+	protected void devEventsContaining(String[] tokens)
+	{
+		if (!devUpdateCmd.requireTokens(2, tokens))
+			return;
+		DacqEventDAI dacqEventDAO = theDb.makeDacqEventDAO();
+		try
+		{
+			int oldSize = devEvents.size();
+			dacqEventDAO.readEventsContaining(tokens[1], devEvents);
+			while(oldSize < devEvents.size())
+				System.out.println(devEvents.get(oldSize++).toString());
+		}
+		catch (DbIoException ex)
+		{
+			System.err.println("Error reading device events: " + ex);
+			ex.printStackTrace(System.err);
+		}
+		finally
+		{
+			dacqEventDAO.close();
+		}
+	}
 
+	protected void genEventsCmd(String[] tokens)
+	{
+		if (!genEventsCmd.requireTokens(3, tokens))
+			return;
+System.out.println("t[0]='" + tokens[0] + "' t[1]='" + tokens[1] + "' t[3]='" + tokens[3] + "'");
+		char c = tokens[1].toLowerCase().charAt(0);
+		int priority = 
+			c == '3' ? Logger.E_DEBUG3 :
+			c == '2' ? Logger.E_DEBUG2 :
+			c == '1' ? Logger.E_DEBUG1 :
+			c == 'i' ? Logger.E_INFORMATION :
+			c == 'w' ? Logger.E_WARNING : Logger.E_FAILURE;
+System.out.println("priority = " + priority);
+		String subsystem = tokens[2];
+		String evtText = cmdLineProc.inputLine.trim();
+		int space = evtText.indexOf(' ');
+		if (space != -1)
+		{
+			evtText = evtText.substring(space).trim();
+			space = evtText.indexOf(' ');
+			if (space != -1)
+			{
+				evtText = evtText.substring(space).trim();
+				space = evtText.indexOf(' ');
+				if (space != -1)
+					evtText = evtText.substring(space).trim();
+			}
+		}
+			
+		
+		DacqEventDAI dacqEventDAO = theDb.makeDacqEventDAO();
+		try
+		{
+			DacqEvent evt = new DacqEvent();
+			evt.setEventPriority(priority);
+			evt.setSubsystem(subsystem);
+			evt.setEventText(evtText);
+			dacqEventDAO.writeEvent(evt);
+		}
+		catch (DbIoException ex)
+		{
+			System.err.println("Error writing event: " + ex);
+			ex.printStackTrace(System.err);
+		}
+		finally
+		{
+			dacqEventDAO.close();
+		}
+	}
+
+	protected void genSchedEventsCmd(String[] tokens)
+	{
+//		new CmdLine("sched-event", "[priority (I,W,F)] schedStatusId platformId(or -1) subsystem [event text...]")
+		if (!genEventsCmd.requireTokens(6, tokens))
+			return;
+		char c = tokens[1].toLowerCase().charAt(0);
+		int priority = 
+			c == '3' ? Logger.E_DEBUG3 :
+			c == '2' ? Logger.E_DEBUG2 :
+			c == '1' ? Logger.E_DEBUG1 :
+			c == 'i' ? Logger.E_INFORMATION :
+			c == 'w' ? Logger.E_WARNING : Logger.E_FAILURE;
+		
+		DbKey schedStatusId = DbKey.NullKey;
+		try
+		{
+			long id = Long.parseLong(tokens[2]);
+			if (id != -1)
+				schedStatusId = DbKey.createDbKey(id);
+		}
+		catch(NumberFormatException ex)
+		{
+			System.err.println("Invalid schedStatusId '" + tokens[2] + "' -- must be number");
+			return;
+		}
+
+		DbKey platformId = DbKey.NullKey;
+		try
+		{
+			long id = Long.parseLong(tokens[3]);
+			if (id != -1)
+				platformId = DbKey.createDbKey(id);
+		}
+		catch(NumberFormatException ex)
+		{
+			System.err.println("Invalid platformId '" + tokens[3] + "' -- must be number");
+			return;
+		}
+		
+		String subsystem = tokens[4];
+		
+		
+		String evtText = "";
+		for(int i = 5; i<tokens.length; i++)
+			evtText = evtText + tokens[i] + " ";
+		
+		DacqEventDAI dacqEventDAO = theDb.makeDacqEventDAO();
+		try
+		{
+			DacqEvent evt = new DacqEvent();
+			evt.setEventPriority(priority);
+			evt.setScheduleEntryStatusId(schedStatusId);
+			evt.setPlatformId(platformId);
+			evt.setSubsystem(subsystem);
+			evt.setEventText(evtText);
+			dacqEventDAO.writeEvent(evt);
+		}
+		catch (DbIoException ex)
+		{
+			System.err.println("Error writing event: " + ex);
+			ex.printStackTrace(System.err);
+		}
+		finally
+		{
+			dacqEventDAO.close();
+		}
+	}
 	
 	/**
 	 * @param args

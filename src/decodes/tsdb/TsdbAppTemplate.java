@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.5  2014/11/19 16:09:48  mmaloney
+*  Additions for dcpmon
+*
 *  Revision 1.4  2014/08/22 17:23:04  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -37,17 +40,17 @@ import ilex.util.Logger;
 import ilex.util.StderrLogger;
 import ilex.util.UserAuthFile;
 import ilex.util.AuthException;
-
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesVersion;
+import decodes.util.PropertySpec;
 import decodes.tsdb.*;
 import decodes.sql.DbKey;
 import decodes.sql.SqlDatabaseIO;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.util.DecodesException;
-
+import decodes.util.PropertiesOwner;
 import lrgs.gui.DecodesInterface;
 
 /**
@@ -69,6 +72,7 @@ execute method. Then consider overriding the following methods:
 <p>
 */
 public abstract class TsdbAppTemplate
+	implements PropertiesOwner
 {
 	// Static command line arguments and initialization for main method.
 	protected CmdLineArgs cmdLineArgs;
@@ -438,4 +442,26 @@ public abstract class TsdbAppTemplate
 		}
 		return -1;
 	}
+	
+
+	/**
+	 * {@inheritDoc}
+	 * Base class always returns an empty array.
+	 */
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return new PropertySpec[0];
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * Base class always returns true. Allows any properties.
+	 */
+	@Override
+	public boolean additionalPropsAllowed()
+	{
+		return true;
+	}
+
 }

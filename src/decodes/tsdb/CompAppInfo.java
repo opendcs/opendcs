@@ -3,13 +3,13 @@
 */
 package decodes.tsdb;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dao.CachableDbObject;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.HasProperties;
@@ -31,7 +31,7 @@ a single computation application.
 */
 public class CompAppInfo
 	extends IdDatabaseObject
-	implements CompMetaData, CachableDbObject, HasProperties, PropertiesOwner
+	implements CompMetaData, CachableDbObject, HasProperties, PropertiesOwner, Serializable
 {
 	/** The app ID */
 	private DbKey appId;

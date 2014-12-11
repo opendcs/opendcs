@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.4  2014/11/19 16:09:23  mmaloney
+ * Additions for dcpmon
+ *
  * Revision 1.3  2014/08/29 18:22:50  mmaloney
  * 6.1 Schema Mods
  *
@@ -43,6 +46,7 @@ import java.util.TimeZone;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
@@ -57,6 +61,7 @@ import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.ComputationDAO;
+import opendcs.dao.DacqEventDAO;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DeviceStatusDAO;
@@ -2222,6 +2227,15 @@ public class SqlDatabaseIO
 	public DeviceStatusDAI makeDeviceStatusDAO()
 	{
 		return new DeviceStatusDAO(this);
+	}
+	
+	@Override
+	public DacqEventDAI makeDacqEventDAO()
+	{
+		if (databaseVersion >= DecodesDatabaseVersion.DECODES_DB_10)
+			return new DacqEventDAO(this);
+		else
+			return null;
 	}
 
 }

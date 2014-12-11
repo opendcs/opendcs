@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2014/09/15 14:00:54  mmaloney
+ * Schedule Entry Refresh interval set to 60 seconds.
+ *
  * Revision 1.4  2014/08/22 17:23:04  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -39,14 +42,14 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
-
 import lrgs.gui.DecodesInterface;
-
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.ScheduleEntry;
+import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompEventSvr;
@@ -107,8 +110,9 @@ public class RoutingScheduler
 	protected ArrayList<ScheduleEntryExecutive> executives = new ArrayList<ScheduleEntryExecutive>();
 	protected ScheduleEntryDAI scheduleEntryDAO = null;
 	private ThreadLogger appLogger = null;
-	private Logger origLogger = null;
+	Logger origLogger = null;
 	private CompEventSvr compEventSvr = null;
+	private DacqEventDAI dacqEventDAO = null;
 	
 	public RoutingScheduler()
 	{
@@ -314,6 +318,11 @@ public class RoutingScheduler
 				+ " cannot run routing scheduler -- schedule entries not supported in this database.");
 			System.exit(1);
 		}
+		if (dbio instanceof SqlDatabaseIO)
+		{
+			SqlDatabaseIO sqlDbio = (SqlDatabaseIO)dbio;
+			dacqEventDAO = sqlDbio.makeDacqEventDAO(); // will be null for < db version 10
+		}
 	}
 	
 	protected void loadConfig(Properties properties)
@@ -335,6 +344,12 @@ public class RoutingScheduler
 		if (scheduleEntryDAO != null)
 			scheduleEntryDAO.close();
 		scheduleEntryDAO = null;
+		
+		if (dacqEventDAO != null)
+		{
+			dacqEventDAO.close();
+			dacqEventDAO = null;
+		}
 	}
 	
 	public String getAppName()
@@ -491,13 +506,12 @@ public class RoutingScheduler
 	
 	/**
 	 * Called from a ScheduleEntryExecutive when it create a RoutingSpecThread
-	 * to execute the routing spec. This method associates a pass-through logger
-	 * with the thread so that it can have its own log priority, set by property.
+	 * to execute the routing spec. Register the thread's specific logger.
 	 * @param thread the ScheduleEntryThread that is about to start.
 	 */
-	public void makeThreadLogger(Thread thread)
+	public void setThreadLogger(Thread thread, Logger logger)
 	{
-		appLogger.setLogger(thread, new PassThruLogger(origLogger));
+		appLogger.setLogger(thread, logger);
 	}
 	
 	public void threadFinished(Thread thread)
@@ -509,5 +523,10 @@ public class RoutingScheduler
 	public String getHostname()
 	{
 		return hostname;
+	}
+
+	public DacqEventDAI getDacqEventDAO()
+	{
+		return dacqEventDAO;
 	}
 }

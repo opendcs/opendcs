@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2014/11/19 16:09:48  mmaloney
+*  Additions for dcpmon
+*
 *  Revision 1.2  2014/08/29 18:21:19  mmaloney
 *  For opendcs-oracle, determine _isOracle AFTER connection.
 *
@@ -359,6 +362,7 @@ import java.util.TimeZone;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
@@ -372,6 +376,7 @@ import opendcs.dai.TsGroupDAI;
 import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.ComputationDAO;
+import opendcs.dao.DacqEventDAO;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DeviceStatusDAO;
@@ -2601,6 +2606,10 @@ public abstract class TimeSeriesDb
 		return new DeviceStatusDAO(this);
 	}
 
-
+	@Override
+	public DacqEventDAI makeDacqEventDAO()
+	{
+		return new DacqEventDAO(this);
+	}
 	
 }

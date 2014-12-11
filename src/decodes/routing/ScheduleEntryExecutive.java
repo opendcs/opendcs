@@ -7,16 +7,20 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import lrgs.common.DcpMsg;
-
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
+import decodes.db.Platform;
 import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
+import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
+import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalIncrement;
 
@@ -50,13 +54,30 @@ public class ScheduleEntryExecutive
 	
 	protected boolean rereadRsBeforeExec = true;
 	private DcpMsg lastDcpMsg = null;
-	
+	private DacqEventLogger dacqEventLogger = null;
+	private int schedEntryMinLogPriority = Logger.E_INFORMATION;
+	private long lastEventsPurge = 0L;
 	
 	/** Constructor called from RoutingScheduler */
 	public ScheduleEntryExecutive(ScheduleEntry scheduleEntry, RoutingScheduler parent)
 	{
 		this.scheduleEntry = scheduleEntry;
 		this.parent = parent;
+		if (parent == null && (Database.getDb().getDbIo() instanceof SqlDatabaseIO))
+		{
+			// This means that this is a stand-alone rs from command line, the DCPmon
+			// daemon, or some other single-threaded app.
+			SqlDatabaseIO sqlDbio = (SqlDatabaseIO)Database.getDb().getDbIo();
+			DacqEventDAI dacqEventDAO = sqlDbio.makeDacqEventDAO();
+			dacqEventLogger = new DacqEventLogger(Logger.instance());
+			dacqEventLogger.setDacqEventDAO(dacqEventDAO);
+			Logger.setLogger(dacqEventLogger);
+		}
+		else // This is a child of RoutingScheduler
+		{
+			dacqEventLogger = new DacqEventLogger(parent.origLogger);
+			dacqEventLogger.setDacqEventDAO(parent.getDacqEventDAO());
+		}
 	}
 	
 	/**
@@ -68,11 +89,11 @@ public class ScheduleEntryExecutive
 	{
 		if (!scheduleEntry.isEnabled())
 		{
-			Logger.instance().debug1("Checking schedule entry '" + scheduleEntry.getName() 
+			dacqEventLogger.debug1("Checking schedule entry '" + scheduleEntry.getName() 
 				+ "' enabled=" + scheduleEntry.isEnabled());
 			return;
 		}
-		Logger.instance().debug1("Checking schedule entry '" + scheduleEntry.getName() 
+		dacqEventLogger.debug1("Checking schedule entry '" + scheduleEntry.getName() 
 			+ "' enabled=" + scheduleEntry.isEnabled() + ", state=" + runState);
 
 		if (runState == RunState.initializing)
@@ -84,7 +105,7 @@ public class ScheduleEntryExecutive
 			}
 			catch (DbIoException ex)
 			{
-				Logger.instance().warning(getName() + " Cannot initialize: " + ex);
+				dacqEventLogger.warning(getName() + " Cannot initialize: " + ex);
 				// Stay in initialize state and retry later.
 			}
 			return;
@@ -102,7 +123,7 @@ public class ScheduleEntryExecutive
 			if (System.currentTimeMillis() - shutdownStarted > maxShutdownTime
 			 && seThread != null)
 			{
-				Logger.instance().warning(getName() + " taking too long to shutdown, "
+				dacqEventLogger.warning(getName() + " taking too long to shutdown, "
 					+ "will attempt thread interrupt.");
 				seThread.interrupt();
 			}
@@ -125,7 +146,7 @@ public class ScheduleEntryExecutive
 			}
 else
 {
-Logger.instance().debug1("Sched Entry '" + scheduleEntry.getName()
+dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 	+ "' startTime=" + scheduleEntry.getStartTime()
 	+ ", shutdownComplete=" + shutdownComplete
 	+ ", now=" + now
@@ -150,16 +171,13 @@ Logger.instance().debug1("Sched Entry '" + scheduleEntry.getName()
 			scheduleEntry.getRoutingSpecName());
 		if (rs == null || rs.dataSource == null)
 		{
-Logger.instance().debug1("dataSourceFinite no rs or data source, rs=" + (rs==null?"null":rs.getName()));
 			return true;
 		}
 		if (rs.untilTime != null && rs.untilTime.trim().length() > 0)
 		{
-Logger.instance().debug1("dataSourceFinite untilTime=" + rs.untilTime);
 			return true;
 		}
 		String dsType = rs.dataSource.dataSourceType.toLowerCase();
-Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 		if (dsType.equals("lrgs") || dsType.equals("hotbackupgroup") || dsType.equals("directory"))
 			return false;
 		return true;
@@ -250,7 +268,7 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 		}
 		
 		Date nextRunTime = cal.getTime();
-		Logger.instance().debug1(getName() + " next run time = " + nextRunTime);
+		dacqEventLogger.debug1(getName() + " next run time = " + nextRunTime);
 
 		// Check if current time is after the next run time we computed.
 		return !now.before(nextRunTime);
@@ -270,6 +288,9 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 			runState = RunState.shutdown;
 			shutdownStarted = System.currentTimeMillis();
 		}
+		
+		if (parent == null && dacqEventLogger != null)
+			dacqEventLogger.getDacqEventDAO().close();
 	}
 
 	RoutingSpecThread makeThread()
@@ -279,7 +300,7 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 			scheduleEntry.getRoutingSpecName());
 		if (rs == null)
 		{
-			Logger.instance().failure("ScheduleEntryExec.makeThread: "
+			dacqEventLogger.failure("ScheduleEntryExec.makeThread: "
 				+ "No such routing spec '" + scheduleEntry.getRoutingSpecName()
 				+ "' in database.");
 			disableScheduleEntry();
@@ -291,10 +312,32 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 			try { rs.read(); }
 			catch (DatabaseException ex)
 			{
-				Logger.instance().info("ScheduleEntryExec.makeThread: "
+				dacqEventLogger.info("ScheduleEntryExec.makeThread: "
 					+ " Routing Spec '" + scheduleEntry.getRoutingSpecName()
 					+ "' no longer exists in database, disabling the schedule entry: " + ex);
 				disableScheduleEntry();
+			}
+		}
+		
+		String s = rs.getProperty("debugLevel");
+		if (s != null)
+		{
+			try
+			{
+				int dblev = Integer.parseInt(s);
+				schedEntryMinLogPriority =
+					dblev == 1 ? Logger.E_DEBUG1 :
+					dblev == 2 ? Logger.E_DEBUG2 :
+					dblev == 3 ? Logger.E_DEBUG3 : Logger.E_INFORMATION;
+				// debugLevel property should only be used to increase debug level. Never decrease.
+				if (schedEntryMinLogPriority > Logger.instance().getMinLogPriority())
+					schedEntryMinLogPriority = Logger.instance().getMinLogPriority();
+				dacqEventLogger.setMinLogPriority(schedEntryMinLogPriority);
+			}
+			catch(NumberFormatException ex)
+			{
+				dacqEventLogger.warning("RoutingSpec " + rs.getName() + " Ignoring invalid debugLevel property '" 
+					+ s + "' -- must be 1, 2, or 3.");
 			}
 		}
 
@@ -312,7 +355,7 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 			}
 			catch (UnknownHostException ex)
 			{
-				Logger.instance().warning("Cannot get hostname: " + ex);
+				dacqEventLogger.warning("Cannot get hostname: " + ex);
 				seStatus.setHostname("unknown");
 			}
 		runState = RunState.running;
@@ -326,7 +369,7 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 		seThread.doRoutingSpecCheck = rereadRsBeforeExec;
 
 		if (parent != null)
-			parent.makeThreadLogger(seThread);
+			parent.setThreadLogger(seThread, dacqEventLogger);
 		return seThread;
 	}
 	
@@ -350,15 +393,16 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 		try
 		{
 			scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
+			dacqEventLogger.setSchedEntryStatusId(seStatus.getId());
 		}
 		catch(NullPointerException ex)
 		{
-			Logger.instance().debug1("transient error shutting down: " + ex);
+			dacqEventLogger.debug1("transient error shutting down: " + ex);
 			return;
 		}
 		if (scheduleEntryDAO == null)
 		{
-			Logger.instance().debug1("Cannot write schedule entry. Not supported on this database.");
+			dacqEventLogger.debug1("Cannot write schedule entry. Not supported on this database.");
 			return;
 		}
 
@@ -368,7 +412,7 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning(getName() + " Cannot write status: " + ex);
+			dacqEventLogger.warning(getName() + " Cannot write status: " + ex);
 		}
 		finally
 		{
@@ -404,6 +448,7 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 		lastDcpMsg = seThread.getLastDcpMsg();
 		seThread = null;
 		shutdownComplete = System.currentTimeMillis();
+		dacqEventLogger.setSchedEntryStatusId(DbKey.NullKey);
 	}
 	
 	public RunState getRunState()
@@ -435,7 +480,7 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 		ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
 		if (scheduleEntryDAO == null)
 		{
-			Logger.instance().debug1("Schedule entries not supported on this database.");
+			dacqEventLogger.debug1("Schedule entries not supported on this database.");
 			return;
 		}
 
@@ -446,7 +491,7 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().failure("Cannot disable schedule entry: " + ex);
+			dacqEventLogger.failure("Cannot disable schedule entry: " + ex);
 		}
 		finally
 		{
@@ -458,5 +503,38 @@ Logger.instance().debug1("dataSourceFinite dsType=" + dsType);
 	{
 		this.rereadRsBeforeExec = rereadRsBeforeExec;
 	}
+	
+	public void setPlatform(Platform p)
+	{
+		if (p == null)
+		{
+			dacqEventLogger.setPlatformId(DbKey.NullKey);
+			dacqEventLogger.setMinLogPriority(schedEntryMinLogPriority);
+		}
+		else
+		{	
+			dacqEventLogger.setPlatformId(p.getId());
+			int dblev = p.getDebugLevel();
+			int newMinPriority =
+				dblev == 1 ? Logger.E_DEBUG1 :
+				dblev == 2 ? Logger.E_DEBUG2 :
+				dblev == 3 ? Logger.E_DEBUG3 : schedEntryMinLogPriority;
+			dacqEventLogger.setMinLogPriority(newMinPriority);
+		}
+	}
+	
+	public void setSubsystem(String subsystem)
+	{
+		dacqEventLogger.setSubsystem(subsystem);
+	}
 
+	public long getLastEventsPurge()
+	{
+		return lastEventsPurge;
+	}
+
+	public void setLastEventsPurge(long lastEventsPurge)
+	{
+		this.lastEventsPurge = lastEventsPurge;
+	}
 }
