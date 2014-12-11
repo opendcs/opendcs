@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2014/11/19 16:05:40  mmaloney
+ * dev
+ *
  * Revision 1.4  2014/09/15 13:59:42  mmaloney
  * DCP Mon Daemon Impl
  *
@@ -40,6 +43,7 @@ import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
+import decodes.routing.DacqEventLogger;
 import decodes.routing.RoutingScheduler;
 import decodes.routing.ScheduleEntryExecutive;
 import decodes.tsdb.DbIoException;
@@ -406,7 +410,7 @@ public class DcpMonitor
 	}
     
     @Override
-    public void makeThreadLogger(Thread thread)
+    public void setThreadLogger(Thread thread, Logger logger)
     {
     	// Don't want thread loggers for dcpmon. Do nothing.
     }
