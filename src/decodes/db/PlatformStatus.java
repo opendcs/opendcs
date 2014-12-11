@@ -2,10 +2,11 @@ package decodes.db;
 
 import ilex.util.Logger;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import opendcs.dai.PlatformStatusDAI;
-
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
@@ -36,6 +37,15 @@ public class PlatformStatus
 	
 	/** Link to ScheduleEntryStatus rec for the last contact */
 	private DbKey lastScheduleEntryStatusId = Constants.undefinedId;
+	
+	/** For displays, the DAO will retrieve site name and set it here. */
+	private String siteName = null;
+	
+	/** For displays, the DAO will retrieve designator and set it here. */
+	private String designator = null;
+	
+	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+	static { sdf.setTimeZone(TimeZone.getTimeZone("UTC")); }
 	
 	public PlatformStatus(DbKey platformId)
 	{
@@ -172,5 +182,46 @@ public class PlatformStatus
 				platformStatusDAO.close();
 			}
 		}
+	}
+
+	public String getSiteName()
+	{
+		return siteName;
+	}
+
+	public void setSiteName(String siteName)
+	{
+		this.siteName = siteName;
+	}
+
+	public String getDesignator()
+	{
+		return designator;
+	}
+
+	public void setDesignator(String designator)
+	{
+		this.designator = designator;
+	}
+	
+	public String getLastContactTimeStr()
+	{
+		if (lastContactTime == null)
+			return "";
+		synchronized(sdf) { return sdf.format(lastContactTime); }
+	}
+
+	public String getLastMessageTimeStr()
+	{
+		if (lastMessageTime == null)
+			return "";
+		synchronized(sdf) { return sdf.format(lastMessageTime); }
+	}
+	
+	public String getLastErrorTimeStr()
+	{
+		if (lastErrorTime == null)
+			return "";
+		synchronized(sdf) { return sdf.format(lastErrorTime); }
 	}
 }

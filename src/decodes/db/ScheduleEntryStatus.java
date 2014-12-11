@@ -1,6 +1,8 @@
 package decodes.db;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import decodes.sql.DbKey;
 
@@ -59,6 +61,9 @@ public class ScheduleEntryStatus
 	
 	/** Used to refer to a schedule entry in an XML database */
 	private String scheduleEntryName = "";
+	
+	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+	static { sdf.setTimeZone(TimeZone.getTimeZone("UTC")); }
 	
 	public ScheduleEntryStatus(DbKey id)
 	{
@@ -228,5 +233,24 @@ public class ScheduleEntryStatus
 	{
 		this.lastConsumer = lastConsumer;
 	}
+	
+	public String getRunStartStr()
+	{
+		synchronized(sdf) { return runStart == null ? "" : sdf.format(runStart); }
+	}
+	
+	public String getRunStopStr()
+	{
+		synchronized(sdf) { return runStop == null ? "" : sdf.format(runStop); }
+	}
 
+	public String getLastMessageTimeStr()
+	{
+		synchronized(sdf) { return lastMessageTime == null ? "" : sdf.format(lastMessageTime); }
+	}
+
+	public String getLastModifiedStr()
+	{
+		synchronized(sdf) { return lastModified == null ? "" : sdf.format(lastModified); }
+	}
 }
