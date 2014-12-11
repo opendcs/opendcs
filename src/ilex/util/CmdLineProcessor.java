@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:09  cvs
 *  Added legacy code to repository
 *
@@ -74,6 +77,9 @@ public class CmdLineProcessor
 	* Default is null, meaning that no prompt is issued.
 	*/
 	public String prompt = null;
+	
+	/** The unprocessed input line last read */
+	public String inputLine = "";
 
 	/**
 	* Pass the constructor the input stream you want to read commands
@@ -140,8 +146,8 @@ public class CmdLineProcessor
 	*/
 	public String[] getTokens( ) throws IOException
 	{
-		String s = getLine();
-		StringTokenizer st = new StringTokenizer(s);
+		inputLine = getLine();
+		StringTokenizer st = new StringTokenizer(inputLine);
 		int n = st.countTokens();
 		if (n == 0)
 			return null;
