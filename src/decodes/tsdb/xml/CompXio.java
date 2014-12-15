@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.18  2013/07/12 13:06:24  mmaloney
 *  Fix bug whereby LoadingApplication nodes was not saving or reading properties.
 *
@@ -855,7 +858,7 @@ public class CompXio
 		{
 			try 
 			{
-			  xos.writeElement(CompXioTags.siteName, (theDb.getSiteById(i)).getDisplayName());
+			  xos.writeElement(CompXioTags.siteName, (theDb.getSiteById(i)).getUniqueName());
 			}
 			catch (Exception E) {
 				System.out.println(E.toString());
