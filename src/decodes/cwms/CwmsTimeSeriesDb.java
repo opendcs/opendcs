@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2014/08/29 18:24:50  mmaloney
+*  6.1 Schema Mods
+*
 *  Revision 1.3  2014/08/15 16:22:19  mmaloney
 *  When reading tasklist, if mutliple recs for same time series with different units,
 *  then convert subsequent recs to the same units as the first rec seen.
@@ -1374,10 +1377,16 @@ for(CTimeSeries ts : allts)
 			// The time series already existed from a previous tasklist rec in this run.
 			// Make sure this rec's unitsAbbr matches the CTimeSeries.getUnitsAbbr().
 			// If not, convert it to the CTS units.
-			if (!TextUtil.strEqualIgnoreCase(rec.getUnitsAbbr(), cts.getUnitsAbbr()))
+			String recUnitsAbbr = rec.getUnitsAbbr();
+			String ctsUnitsAbbr = cts.getUnitsAbbr();
+			if (ctsUnitsAbbr == null) // no units yet assigned?
+				cts.setUnitsAbbr(ctsUnitsAbbr = recUnitsAbbr);
+			else if (recUnitsAbbr == null) // for some reason, this tasklist record doesn't have units
+				recUnitsAbbr = ctsUnitsAbbr;
+			else if (!TextUtil.strEqualIgnoreCase(recUnitsAbbr, ctsUnitsAbbr))
 			{
-				EngineeringUnit euOld =	EngineeringUnit.getEngineeringUnit(rec.getUnitsAbbr());
-				EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(cts.getUnitsAbbr());
+				EngineeringUnit euOld =	EngineeringUnit.getEngineeringUnit(recUnitsAbbr);
+				EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(ctsUnitsAbbr);
 
 				UnitConverter converter = Database.getDb().unitConverterSet.get(euOld, euNew);
 				if (converter != null)
