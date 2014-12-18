@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.8  2012/11/20 21:17:18  mmaloney
  * Implemented cache for ratings.
  *
@@ -94,6 +97,7 @@ public class CwmsRatingMultIndep
 	ArrayList<Double> indep8Values = null;
 	ArrayList<Double> indep9Values = null;
 	int numIndeps = 1;
+	String specId = "";
 	
 	private String buildIndepSpec()
 		throws DbCompException
@@ -105,7 +109,7 @@ public class CwmsRatingMultIndep
 		if (tsid == null)
 			throw new DbCompException("No time series identifier associated with indep1");
 		
-		String specId = tsid.getSiteName() + "." + tsid.getDataType().getCode();
+		String indepSpecId = tsid.getSiteName() + "." + tsid.getDataType().getCode();
 		
 		parmRef = getParmRef("indep2");
 		if (parmRef == null || parmRef.timeSeries == null
@@ -114,10 +118,10 @@ public class CwmsRatingMultIndep
 			if (!indep2_MISSING.equalsIgnoreCase("ignore"))
 				throw new DbCompException("No time series mapped to indep2");
 			
-			return specId;
+			return indepSpecId;
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		specId = specId + "," + tsid.getDataType().getCode();
+		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
 		indep2Values = new ArrayList<Double>();
 		numIndeps = 2;
 		
@@ -127,10 +131,10 @@ public class CwmsRatingMultIndep
 		{
 			if (!indep3_MISSING.equalsIgnoreCase("ignore"))
 				throw new DbCompException("No time series mapped to indep3");
-			return specId;
+			return indepSpecId;
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		specId = specId + "," + tsid.getDataType().getCode();
+		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
 		indep3Values = new ArrayList<Double>();
 		numIndeps = 3;
 
@@ -141,10 +145,10 @@ public class CwmsRatingMultIndep
 			if (!indep4_MISSING.equalsIgnoreCase("ignore"))
 				throw new DbCompException("No time series mapped to indep4");
 			
-			return specId;
+			return indepSpecId;
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		specId = specId + "," + tsid.getDataType().getCode();
+		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
 		indep4Values = new ArrayList<Double>();
 		numIndeps = 4;
 
@@ -155,10 +159,10 @@ public class CwmsRatingMultIndep
 			if (!indep5_MISSING.equalsIgnoreCase("ignore"))
 				throw new DbCompException("No time series mapped to indep5");
 			
-			return specId;
+			return indepSpecId;
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		specId = specId + "," + tsid.getDataType().getCode();
+		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
 		indep5Values = new ArrayList<Double>();
 		numIndeps = 5;
 
@@ -169,10 +173,10 @@ public class CwmsRatingMultIndep
 			if (!indep6_MISSING.equalsIgnoreCase("ignore"))
 				throw new DbCompException("No time series mapped to indep6");
 			
-			return specId;
+			return indepSpecId;
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		specId = specId + "," + tsid.getDataType().getCode();
+		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
 		indep6Values = new ArrayList<Double>();
 		numIndeps = 6;
 
@@ -183,10 +187,10 @@ public class CwmsRatingMultIndep
 			if (!indep7_MISSING.equalsIgnoreCase("ignore"))
 				throw new DbCompException("No time series mapped to indep7");
 			
-			return specId;
+			return indepSpecId;
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		specId = specId + "," + tsid.getDataType().getCode();
+		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
 		indep7Values = new ArrayList<Double>();
 		numIndeps = 7;
 
@@ -197,10 +201,10 @@ public class CwmsRatingMultIndep
 			if (!indep8_MISSING.equalsIgnoreCase("ignore"))
 				throw new DbCompException("No time series mapped to indep8");
 			
-			return specId;
+			return indepSpecId;
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		specId = specId + "," + tsid.getDataType().getCode();
+		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
 		indep8Values = new ArrayList<Double>();
 		numIndeps = 8;
 
@@ -211,14 +215,14 @@ public class CwmsRatingMultIndep
 			if (!indep9_MISSING.equalsIgnoreCase("ignore"))
 				throw new DbCompException("No time series mapped to indep9");
 			
-			return specId;
+			return indepSpecId;
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		specId = specId + "," + tsid.getDataType().getCode();
+		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
 		indep9Values = new ArrayList<Double>();
 		numIndeps = 9;
 
-		return specId;
+		return indepSpecId;
 	}
 //AW:LOCALVARS_END
 
@@ -269,7 +273,7 @@ public class CwmsRatingMultIndep
 	{
 //AW:BEFORE_TIMESLICES
 		// Get parm refs for indep and dep
-		String specId = buildIndepSpec();
+		specId = buildIndepSpec();
 		
 		ParmRef depParmRef = getParmRef("dep");
 		specId = specId + ";" + depParmRef.compParm.getDataType().getCode() + "."
@@ -352,7 +356,7 @@ public class CwmsRatingMultIndep
 		}
 		catch (RatingException ex)
 		{
-			warning("Rating failure: " + ex);
+			warning("Rating failure specId='" + specId + "': " + ex);
 		}
 //AW:TIMESLICE_END
 	}

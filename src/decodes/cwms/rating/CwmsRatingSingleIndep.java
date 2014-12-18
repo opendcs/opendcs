@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.7  2013/04/25 20:46:07  mmaloney
  * Fixed error message.
  *
@@ -71,6 +74,7 @@ public class CwmsRatingSingleIndep
 	Date endTime = null;
 	ArrayList<Long> indepTimes = new ArrayList<Long>();
 	ArrayList<Double> indepValues = new ArrayList<Double>();
+	String specId = "";
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -115,7 +119,7 @@ public class CwmsRatingSingleIndep
 		// {indep:CwmsLocID}.{indep:cwmsDataType};{dep:cwmsDataType}.{templateVersion}.{specVersion}
 		TimeSeriesIdentifier indepTsid = indepParmRef.timeSeries.getTimeSeriesIdentifier();
 		
-		String specId = indepTsid.getSiteName() + "." 
+		specId = indepTsid.getSiteName() + "." 
 			+ indepTsid.getDataType().getCode() + ";"
 			+ depParmRef.compParm.getDataType().getCode() + "."
 			+ templateVersion + "." + specVersion;
@@ -199,7 +203,7 @@ public class CwmsRatingSingleIndep
 			}
 			catch(RatingException ex)
 			{
-				String msg = "RatingException for value " + vals[i]
+				String msg = "RatingException for spec '" + specId + "' value " + vals[i]
 					+ " at time " + debugSdf.format(d) + ": " + ex;
 				warning(msg);
 			}
