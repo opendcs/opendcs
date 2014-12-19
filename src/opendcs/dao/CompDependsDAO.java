@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract 
  * to the United States Government. 
@@ -72,7 +75,9 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		doModify(mq);
 		
 		// If this ts is explicitly included in a group, remove it.
-		q = "delete from tsdb_group_member_ts where data_id = "+key;
+		q = "delete from tsdb_group_member_ts where "
+			+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+			+ " = "+key;
 		doModify(q);
 	}
 

@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.2  2014/07/03 12:53:41  mmaloney
+* debug improvements.
+*
 * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 * OPENDCS 6.0 Initial Checkin
 *
@@ -288,7 +291,9 @@ public class TsGroupDAO
 		doModify(q);
 		for(TimeSeriesIdentifier dd : group.getTsMemberList())
 		{
-			q = "INSERT INTO tsdb_group_member_ts(group_id, data_id) "
+			q = "INSERT INTO tsdb_group_member_ts(group_id, "
+				+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+				+ ") "
 				+ "VALUES(" + groupId + ", " + dd.getKey() + ")";
 			doModify(q);
 		}

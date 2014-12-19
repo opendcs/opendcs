@@ -69,6 +69,8 @@ public class TsdbDatabaseVersion
 	 * - CP_COMP_TS_PARM.SITE_ID
 	 * - INTERVAL_CODE (entire table - OpenTSDB only)
 	 * - for CWMS, uses new set_ccp_session_ctx method rather than the 2.2 set_session_office_id
+	 * - TSDB_GROUP_MEMBER_TS: the 2nd column's name was changed from DATA_ID to TS_ID.
+	 *   (It is DATA_ID in CWMS 2.1. It is TS_ID in CWMS 3.0 and all versions of OpenDCS Schema).
 	 */
 	public static final int VERSION_9 = 9;
 	public static final String VERSION_9_DTK = "OPENDCS 6.0";

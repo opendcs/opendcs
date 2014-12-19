@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.2  2014/08/22 17:23:04  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -37,9 +40,7 @@ import java.net.InetAddress;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
-
 import lrgs.gui.DecodesInterface;
-
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
@@ -48,7 +49,6 @@ import ilex.util.Logger;
 import ilex.util.QueueLogger;
 import ilex.util.TeeLogger;
 import ilex.var.TimedVariable;
-
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
@@ -592,7 +592,9 @@ public class CpCompDependsUpdater
 						grp.getTsMemberList().remove(tsid);
 						String q = "delete from TSDB_GROUP_MEMBER_TS where "
 							+ "GROUP_ID = " + grp.getGroupId()
-							+ " and DATA_ID = " + tsKey;
+							+ " and "
+							+ (theDb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+							+ " = " + tsKey;
 						try
 						{
 							theDb.doModify(q);

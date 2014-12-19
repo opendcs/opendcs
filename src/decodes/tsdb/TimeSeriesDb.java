@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2014/12/11 20:29:31  mmaloney
+*  Added DacqEventLogging capability.
+*
 *  Revision 1.3  2014/11/19 16:09:48  mmaloney
 *  Additions for dcpmon
 *
@@ -2242,30 +2245,32 @@ public abstract class TimeSeriesDb
 		return cts.getDependentCompIds().size();
 	}
 	
-	public void removeTsDependencies(TimeSeriesIdentifier tsid)
-		throws DbIoException
-	{
-		DbKey key = tsid.getKey();
-		// Remove any computation dependencies to this time-series.
-		doModify("DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = " 
-			+ key);
-		
-		// Disable any computations that use this time-series as input or
-		// output.
-		String q = "select distinct a.computation_id from "
-			+ "cp_computation a, cp_comp_ts_parm b "
-			+ "where a.computation_id = b.computation_id "
-			+ "and a.enabled = 'Y' "
-			+ "and b.site_datatype_id = " + key;
-		String mq = "update cp_computation set enabled = 'N' "
-			+ "where computation_id in (" + q + ")";
-		doModify(mq);
-		
-		// If this ts is explicitly included in a group, remove it.
-		q = "delete from tsdb_group_member_ts where data_id = "+key;
-		doModify(q);
-	}
-	
+//	public void removeTsDependencies(TimeSeriesIdentifier tsid)
+//		throws DbIoException
+//	{
+//		DbKey key = tsid.getKey();
+//		// Remove any computation dependencies to this time-series.
+//		doModify("DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = " 
+//			+ key);
+//		
+//		// Disable any computations that use this time-series as input or
+//		// output.
+//		String q = "select distinct a.computation_id from "
+//			+ "cp_computation a, cp_comp_ts_parm b "
+//			+ "where a.computation_id = b.computation_id "
+//			+ "and a.enabled = 'Y' "
+//			+ "and b.site_datatype_id = " + key;
+//		String mq = "update cp_computation set enabled = 'N' "
+//			+ "where computation_id in (" + q + ")";
+//		doModify(mq);
+//		
+//		// If this ts is explicitly included in a group, remove it.
+//		q = "delete from tsdb_group_member_ts where "
+//			+ (getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+//			+ " = "+key;
+//		doModify(q);
+//	}
+//	
 	/**
 	 * Return the platform ID of a given type for the specified platform, or null
 	 * if there is none.
