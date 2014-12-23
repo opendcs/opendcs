@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2014/12/17 21:37:20  mmaloney
+*  Failsafe check to make sure that tasklist record doesn't have null units.
+*
 *  Revision 1.4  2014/08/29 18:24:50  mmaloney
 *  6.1 Schema Mods
 *
@@ -784,6 +787,17 @@ public class CwmsTimeSeriesDb
 			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + dbOfficeCode + ")");
 
 		cgl.setLoginSuccess(true);
+		
+		try
+		{
+			Logger.instance().info(module + " calling hec.data.Units.getAvailableUnits()");
+			hec.data.Units.getAvailableUnits();
+		}
+		catch(Exception ex)
+		{
+			Logger.instance().warning(module + " Exception in hec.data.Units.getAvailableUnits: "
+				+ ex);
+		}
 		
 		return appId;
 	}
