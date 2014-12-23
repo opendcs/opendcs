@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/12/18 21:52:21  mmaloney
+ * In error messages, print the specId.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -34,6 +37,7 @@ package decodes.cwms.rating;
 import java.util.Date;
 
 import ilex.util.EnvExpander;
+import ilex.util.Logger;
 import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import decodes.cwms.CwmsTimeSeriesDb;
@@ -50,7 +54,9 @@ import ilex.var.TimedVariable;
 //AW:IMPORTS
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+
 import java.util.ArrayList;
+
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
 
@@ -199,7 +205,9 @@ public class CwmsRatingSingleIndep
 			Date d = new Date(times[i]);
 			try
 			{
-				setOutput(dep, ratingSet.rate(vals[i], times[i]), d);
+				double ratedValue = ratingSet.rate(vals[i], times[i]);
+debug3("RatingSet.rate: input=" + vals[i] + ", output=" + ratedValue + ", at time " + debugSdf.format(d));
+				setOutput(dep, ratedValue, d);
 			}
 			catch(RatingException ex)
 			{
