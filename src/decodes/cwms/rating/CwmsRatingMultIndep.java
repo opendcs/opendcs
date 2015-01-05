@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/12/18 21:52:21  mmaloney
+ * In error messages, print the specId.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -44,6 +47,7 @@ import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.CTimeSeries;
@@ -54,7 +58,9 @@ import ilex.var.TimedVariable;
 //AW:IMPORTS
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+
 import java.util.ArrayList;
+
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
 
@@ -83,6 +89,7 @@ public class CwmsRatingMultIndep
 //AW:INPUTS_END
 
 //AW:LOCALVARS
+	public static final String module = "CwmsRatingMultIndep";
 	RatingSet ratingSet = null;
 	Date beginTime = null;
 	Date endTime = null;
@@ -284,6 +291,41 @@ public class CwmsRatingMultIndep
 		{
 			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 			ratingSet = crd.getRatingSet(specId);
+			
+			// As per instructions from Mike Perryman: I must find out what the native units
+			// for the rating are and convert before calling the Java rating. The Java rating
+			// method assumes that data are already in correct units.
+			String punits[] = ratingSet.getDataUnits();
+			for(int pidx = 0; pidx < punits.length-1 && pidx < 9; pidx++)
+			{
+				if (punits[pidx] == null)
+					continue;
+				String pname = "indep" + (pidx+1);
+				ParmRef indepParmRef = getParmRef(pname);
+				if (indepParmRef == null || indepParmRef.timeSeries == null 
+				 || indepParmRef.timeSeries.getUnitsAbbr() == null)
+					continue;
+
+				if (!indepParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[pidx]))
+				{
+					debug1(module + " Converting " + pname + " units for time series " 
+						+ indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
+						+ indepParmRef.timeSeries.getUnitsAbbr() + " to " + punits[pidx]);
+					TimeSeriesHelper.convertUnits(indepParmRef.timeSeries, punits[pidx]);
+				}
+			}
+			
+			// Likewise for the dependent param:
+			if (punits.length > 1 && punits[punits.length-1] != null
+			 && depParmRef.timeSeries.getUnitsAbbr() != null
+			 && !depParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[punits.length-1]))
+			{
+				debug1(module + " Converting dep units for time series " 
+					+ depParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
+					+ depParmRef.timeSeries.getUnitsAbbr() + " to " + punits[punits.length-1]);
+				TimeSeriesHelper.convertUnits(depParmRef.timeSeries, punits[punits.length-1]);
+			}
+
 		}
 		catch (RatingException ex)
 		{

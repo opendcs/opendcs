@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/12/23 14:15:57  mmaloney
+ * Debug to print input and output to/from HEC Rating method.
+ *
  * Revision 1.2  2014/12/18 21:52:21  mmaloney
  * In error messages, print the specId.
  *
@@ -44,6 +47,7 @@ import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.CTimeSeries;
@@ -81,6 +85,7 @@ public class CwmsRatingSingleIndep
 	ArrayList<Long> indepTimes = new ArrayList<Long>();
 	ArrayList<Double> indepValues = new ArrayList<Double>();
 	String specId = "";
+	public static final String module = "CwmsRatingSingleIndep";
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -135,6 +140,30 @@ public class CwmsRatingSingleIndep
 		{
 			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 			ratingSet = crd.getRatingSet(specId);
+			
+			// As per instructions from Mike Perryman: I must find out what the native units
+			// for the rating are and convert before calling the Java rating. The Java rating
+			// method assumes that data are already in correct units.
+			String punits[] = ratingSet.getDataUnits();
+			if (punits.length > 0 && punits[0] != null
+			 && indepParmRef.timeSeries.getUnitsAbbr() != null
+			 && !indepParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[0]))
+			{
+				debug1(module + " Converting indep units for time series " 
+					+ indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
+					+ indepParmRef.timeSeries.getUnitsAbbr() + " to " + punits[0]);
+				TimeSeriesHelper.convertUnits(indepParmRef.timeSeries, punits[0]);
+			}
+			// Likewise for the dependent param:
+			if (punits.length > 1 && punits[1] != null
+			 && depParmRef.timeSeries.getUnitsAbbr() != null
+			 && !depParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[1]))
+			{
+				debug1(module + " Converting dep units for time series " 
+					+ depParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
+					+ depParmRef.timeSeries.getUnitsAbbr() + " to " + punits[1]);
+				TimeSeriesHelper.convertUnits(depParmRef.timeSeries, punits[1]);
+			}
 		}
 		catch (RatingException ex)
 		{
