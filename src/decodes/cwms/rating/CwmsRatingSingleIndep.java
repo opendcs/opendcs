@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2015/01/05 21:04:39  mmaloney
+ * Automatically convert units to the dataUnits reported by the RatingSet.
+ *
  * Revision 1.3  2014/12/23 14:15:57  mmaloney
  * Debug to print input and output to/from HEC Rating method.
  *
@@ -159,6 +162,7 @@ public class CwmsRatingSingleIndep
 			 && depParmRef.timeSeries.getUnitsAbbr() != null
 			 && !depParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[1]))
 			{
+debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 				debug1(module + " Converting dep units for time series " 
 					+ depParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
 					+ depParmRef.timeSeries.getUnitsAbbr() + " to " + punits[1]);
