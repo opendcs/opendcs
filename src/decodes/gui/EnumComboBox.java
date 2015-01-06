@@ -69,6 +69,12 @@ public class EnumComboBox extends JComboBox
 	*/
 	public void setSelection(String s)
 	{
+		if (s == null)
+		{
+			setSelectedIndex(0);
+			return;
+		}
+		
 		int n = getItemCount();
 		for(int i = 0; i < n; i++)
 		{

@@ -299,11 +299,8 @@ public class RoutingSpec
 				throw new IncompleteDatabaseException(
 				"Invalid time zone abbreviation '" + outputTimeZoneAbbr + "'");
 		}
-
-		// If Equations are to be used, resolve which are to be used and
-		// prepare them for execution.
-		//if (enableEquations)
-		//	? future
+		
+		properties.setProperty("RoutingSpecName", name);
 
 		_isPrepared = true;
 	}

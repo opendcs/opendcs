@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.11  2011/09/10 10:24:58  mmaloney
 *  Implement EUMETSAT LRIT File Capability.
 *
@@ -118,6 +121,8 @@ public interface LrgsInputInterface
 	public static final int DL_SESSIONMGR = 17;
 	/** EUMETSAT File Monitor (European LRIT) */
 	public static final int DL_EUMETSAT = 18;
+	/** EDL File Monitor */
+	public static final int DL_EDL = 19;
 
 	/** Type Name for DOMSAT */
 	public static final String DL_DOMSAT_TYPESTR = "DOMSAT";
@@ -158,6 +163,7 @@ public interface LrgsInputInterface
 	/** DCP Session Manager */
 	public static final String DL_SESSIONMGR_TYPESTR = "DCP_SESSION_MGR";
 	public static final String DL_EUMETSAT_TYPESTR = "EUMETSAT";
+	public static final String DL_EDL_TYPESTR = "EDL";
 
 	/*
 	 * Definitions for numeric status codes.

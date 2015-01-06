@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.4  2014/10/02 18:21:42  mmaloney
+*  FTP Data Source to handle multiple file names.
+*
 *  Revision 1.3  2014/05/30 13:15:34  mmaloney
 *  dev
 *
@@ -230,7 +233,7 @@ public abstract class DataSourceExec
 	  This DataSource will fill in the message data and attempt to 
 	  associate it with a TransportMedium object.
 
-	  @return the next RawMessage object from the data source.
+	  @return the next RawMessage object from the data source, or null if none currently available.
 
 	  @throws DataSourceTimeoutException if the data source is still
 	  waiting for a message and the timeout (as defined in the properties

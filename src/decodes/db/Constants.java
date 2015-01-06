@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2014/09/25 18:07:11  mmaloney
+*  Added Seasons Enum with Editor.
+*
 *  Revision 1.2  2014/09/15 13:57:41  mmaloney
 *  Code cleanup.
 *
@@ -226,6 +229,9 @@ public class Constants
     public static final String enum_contMedium = "ContactMedium";
     public static final String enum_OpType = "OperationType";
     public static final String enum_Season = "Season";
+	public static final String enum_LoggerType = "LoggerType";
+
+
 
 	/// Code for short preamble in a transport medium.
 	public static final char preambleShort = 'S';

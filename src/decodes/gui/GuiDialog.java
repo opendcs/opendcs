@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2013/01/30 20:40:54  mmaloney
 *  added showConfirm method.
 *
@@ -45,6 +48,7 @@ import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import decodes.dbeditor.DbEditorFrame;
 import decodes.platwiz.PlatformWizard;
+import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 
 @SuppressWarnings("serial")
@@ -147,6 +151,10 @@ public class GuiDialog extends JDialog
 		// If already tracking changes, do nothing.
 		if (trackingChanges)
 			return;
+		// Option in OpenDCS 6.1 to NOT remember screen positions & sizes.
+		if (!DecodesSettings.instance().rememberScreenPosition)
+			return;
+
 		trackingChanges = true;
 		File tmpDir = new File(EnvExpander.expand("$DCSTOOL_USERDIR/tmp"));
 		if (!tmpDir.isDirectory())

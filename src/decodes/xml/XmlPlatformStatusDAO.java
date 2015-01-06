@@ -30,7 +30,7 @@ public class XmlPlatformStatusDAO
 	}
 
 	@Override
-	public PlatformStatus readPlatformStatus(DbKey platformId) throws DbIoException
+	public synchronized PlatformStatus readPlatformStatus(DbKey platformId) throws DbIoException
 	{
 		File f = new File(psDir,  makeFileName(platformId));
 		try
@@ -55,7 +55,7 @@ public class XmlPlatformStatusDAO
 	}
 
 	@Override
-	public void writePlatformStatus(PlatformStatus platformStatus) throws DbIoException
+	public synchronized void writePlatformStatus(PlatformStatus platformStatus) throws DbIoException
 	{
 		File f = new File(psDir,  makeFileName(platformStatus.getId()));
 		try

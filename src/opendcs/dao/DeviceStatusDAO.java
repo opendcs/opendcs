@@ -31,7 +31,8 @@ import decodes.polling.DeviceStatus;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.DeviceStatusDAI;
 
-public class DeviceStatusDAO extends DaoBase implements DeviceStatusDAI
+public class DeviceStatusDAO extends DaoBase 
+	implements DeviceStatusDAI
 {
 	public static final String tableName = "SERIAL_PORT_STATUS";
 	public static final String tableColumns = "PORT_NAME, IN_USE, LAST_USED_BY_PROC, "

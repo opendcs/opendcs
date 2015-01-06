@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2014/09/25 18:07:25  mmaloney
+*  Enum fields encapsulated.
+*
 *  Revision 1.2  2014/05/27 12:56:02  mmaloney
 *  cleanup
 *
@@ -347,5 +350,10 @@ public class EnumValue extends DatabaseObject
 	public void setDbenum(DbEnum dbenum)
 	{
 		this.dbenum = dbenum;
+	}
+	
+	public String getOptions()
+	{
+		return editClassName;
 	}
 }

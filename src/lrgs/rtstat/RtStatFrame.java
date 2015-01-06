@@ -204,6 +204,7 @@ public class RtStatFrame
 						System.exit(0);
 				}
 			});
+		trackChanges("RtStat");
 	}
 
 	/** Initializes GUI components. */

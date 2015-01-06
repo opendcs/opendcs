@@ -114,6 +114,8 @@ public class RoutingSpecEditPanel
 		new PropertySpec("debugLevel", PropertySpec.INT,
 			"(default=0) Set to 1, 2, 3 for increasing levels of debug information" +
 			" when this routing spec is run."),
+		new PropertySpec("updatePlatformStatus", PropertySpec.BOOLEAN,
+			"(default=true) set to false to NOT update platform status records as messages are processed."),
 		new PropertySpec("purgeOldEvents", PropertySpec.BOOLEAN,
 			"(default=true) Set to false to tell this routing spec to NOT attempt to "
 			+ "purge expired events from the database. Also see DecodesSettings.eventPurgeDays")

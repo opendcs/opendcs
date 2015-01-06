@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:09  cvs
 *  Added legacy code to repository
 *
@@ -131,7 +134,7 @@ public abstract class DirectoryMonitorThread extends Thread
 		while(!isShutdown)
 		{
 			int numFilesProcessed = 0;
-			for(int pos=0; pos<myDirs.size(); pos++)
+			for(int pos=0; !isShutdown && pos<myDirs.size(); pos++)
 			{
 				File dir = (File)myDirs.get(pos);
 
@@ -142,7 +145,7 @@ public abstract class DirectoryMonitorThread extends Thread
 				else
 					myfiles = dir.listFiles();
 
-				for(int pos1=0; myfiles != null && pos1<myfiles.length; pos1++)
+				for(int pos1=0; !isShutdown && myfiles != null && pos1<myfiles.length; pos1++)
 				{
 					if (!myfiles[pos1].isDirectory())
 					{

@@ -200,6 +200,7 @@ public class LrgsConfigDialog extends GuiDialog
 	private JCheckBox acceptDomsatARMsCheck = new JCheckBox();
 	private IridiumCfgPanel iridiumCfgTab = null;
 	private LritCfgPanel lritCfgPanel = null;
+	private EdlConfigPanel edlConfigPanel = null;
 	
 	public LrgsConfigDialog(JFrame parent, String title)
 	{
@@ -340,6 +341,7 @@ public class LrgsConfigDialog extends GuiDialog
 		noaaConfigTab.fillFields(lrgsConfig);
 		iridiumCfgTab.fillFields(lrgsConfig);
 		lritCfgPanel.fillFields(lrgsConfig);
+		edlConfigPanel.fillFields(lrgsConfig);
 		
 		miscPanel.setProperties(lrgsConfig.getOtherProps());
 
@@ -874,6 +876,8 @@ public class LrgsConfigDialog extends GuiDialog
 			tabbedPane.addTab(iridiumCfgTab.getLabel(), iridiumCfgTab);
 			lritCfgPanel = new LritCfgPanel(this);
 			tabbedPane.addTab(lritCfgPanel.getLabel(), lritCfgPanel);
+			edlConfigPanel = new EdlConfigPanel(this);
+			tabbedPane.addTab(edlConfigPanel.getLabel(), edlConfigPanel);
 			
 			tabbedPane.addTab(labels.getString("LrgsConfigDialog.miscTab"),
 					null, getMiscConfigTab(),
@@ -3009,6 +3013,11 @@ public class LrgsConfigDialog extends GuiDialog
 			{
 				extraChanges = true;
 				lritCfgPanel.saveChanges();
+			}
+			if (edlConfigPanel.hasChanged())
+			{
+				extraChanges = true;
+				edlConfigPanel.saveChanges();
 			}
 			if (copyBackLrgsConfig() || force || extraChanges)
 				ddsClientIf.applyLrgsConfig(lrgsConfig);

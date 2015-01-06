@@ -152,17 +152,17 @@ public class DirectoryConsumer extends DataConsumer
 
 		try
 		{
+			Logger.instance().debug2( 
+            	"FileNameTemplate = " + filenameTemplate );
+			Logger.instance().debug2( 
+                "TRANSPORTID = " + props.getProperty("TRANSPORTID") );
 			if ( currentFileName == null || !appendToCurrentFile )
 			{
 				Date d = rm.getTimeStamp();
 				currentFileName = EnvExpander.expand(filenameTemplate, props, d);
 			}
-			Logger.instance().log(Logger.E_DEBUG3, 
-            	"FileNameTemplate = " + filenameTemplate );
-			Logger.instance().log(Logger.E_DEBUG3, 
-                "TRANSPORTID = " + props.getProperty("TRANSPORTID") );
 
-			Logger.instance().log(Logger.E_DEBUG3, 
+			Logger.instance().debug2( 
                 "CurrentFileName = " + currentFileName );
 
 			if (tmpdir != null)
@@ -170,7 +170,7 @@ public class DirectoryConsumer extends DataConsumer
 			else
 				outFile = new File(directory, currentFileName);
 
-			Logger.instance().log(Logger.E_DEBUG3,
+			Logger.instance().debug2(
 				"Opening file '" + outFile.getPath() + "'");
 
 			curFileConsumer = new FileConsumer();

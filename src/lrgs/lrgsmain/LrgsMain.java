@@ -44,6 +44,7 @@ import lrgs.lrit.LritDamsNtReceiver;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
 import lrgs.dqm.DapsDqmInterface;
 import lrgs.db.LrgsDatabaseThread;
+import lrgs.edl.EdlInputInterface;
 import lrgs.noaaportrecv.NoaaportRecv;
 import lrgs.networkdcp.NetworkDcpRecv;
 import decodes.util.DecodesException;
@@ -456,6 +457,21 @@ public class LrgsMain
 			DapsDqmInterface ddi = new DapsDqmInterface(statusProvider);
 			statusProvider.setDqmInterface(ddi);
 			ddi.start();
+		}
+		
+		// EDL Input Interface watches hot directories for EDL files.
+		if (cfg.edlIngestEnable)
+		{
+			EdlInputInterface edlII = new EdlInputInterface(this);
+			try
+			{
+				edlII.initLrgsInput();
+				addInput(edlII);
+			}
+			catch (LrgsInputException ex)
+			{
+				Logger.instance().failure("Cannot start EdlInputInterface: " + ex);
+			}
 		}
 		
 		// Config allows addition of additional input interfaces as follows:

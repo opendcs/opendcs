@@ -15,6 +15,7 @@ import ilex.var.Variable;
 import ilex.cmdline.*;
 import decodes.db.*;
 import decodes.datasource.*;
+import decodes.polling.PollingDataSource;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
@@ -147,6 +148,7 @@ public class RoutingSpecThread
 	private StatusWriteThread statusWriteThread = null;
 	
 	private boolean purgeOldEvents = true;
+	private boolean updatePlatformStatus = true;
 	
 	/**
 	 * Constructs an empty, uninitialized RoutingSpecThread.
@@ -308,7 +310,8 @@ public class RoutingSpecThread
 		currentStatus = "Running";
 		statusWriteThread = new StatusWriteThread(this);
 		statusWriteThread.start();
-		PlatformStatusDAI platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
+		PlatformStatusDAI platformStatusDAO = 
+			updatePlatformStatus ? Database.getDb().getDbIo().makePlatformStatusDAO() : null;
 
 		while(!done)
 		{
@@ -462,8 +465,12 @@ public class RoutingSpecThread
 				if (platstat == null)
 					platstat = new PlatformStatus(platform.getId());
 				Date x = new Date();
-				platstat.setLastContactTime(x);
-				platstat.setLastMessageTime(x);
+				// PollingDataSource manages its own contact and message times.
+				if (!(source instanceof PollingDataSource))
+				{
+					platstat.setLastContactTime(x);
+					platstat.setLastMessageTime(x);
+				}
 				String annot = platstat.getAnnotation();
 				if (annot != null && annot.toUpperCase().startsWith("STALE"))
 					platstat.setAnnotation("");
@@ -1030,6 +1037,9 @@ log(Logger.E_DEBUG1, "run() exiting.");
 		
 		s = rs.getProperty("purgeOldEvents");
 		purgeOldEvents = s == null || s.trim().length() == 0 ? true : TextUtil.str2boolean(s);
+
+		s = rs.getProperty("updatePlatformStatus");
+		updatePlatformStatus = s == null || s.trim().length() == 0 ? true : TextUtil.str2boolean(s);
 	}
 
  	/**

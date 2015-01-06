@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to the United States Government. No warranty is provided or implied other 
@@ -38,7 +41,7 @@ public class PlatformStatusDAO
 	}
 
 	@Override
-	public PlatformStatus readPlatformStatus(DbKey platformId)
+	public synchronized PlatformStatus readPlatformStatus(DbKey platformId)
 		throws DbIoException
 	{
 		String q = "select " + ps_attrs + " from platform_status "
@@ -73,7 +76,7 @@ public class PlatformStatusDAO
 	}
 
 	@Override
-	public void writePlatformStatus(PlatformStatus platformStatus) 
+	public synchronized void writePlatformStatus(PlatformStatus platformStatus) 
 		throws DbIoException
 	{
 		PlatformStatus existing = readPlatformStatus(platformStatus.getPlatformId());

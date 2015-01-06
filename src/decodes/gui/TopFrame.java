@@ -10,9 +10,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Properties;
 
 import javax.swing.ImageIcon;
@@ -24,11 +22,11 @@ import javax.swing.JTabbedPane;
 
 import decodes.dbeditor.DbEditorFrame;
 import decodes.platwiz.PlatformWizard;
+import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.AsciiUtil;
-import ilex.util.PropertiesUtil;
 
 /**
 * Common base class for top-level frames in DECODES GUI applications.
@@ -162,6 +160,9 @@ public class TopFrame extends JFrame
 	{
 		// If already tracking changes, do nothing.
 		if (trackingChanges)
+			return;
+		// Option in OpenDCS 6.1 to NOT remember screen positions & sizes.
+		if (!DecodesSettings.instance().rememberScreenPosition)
 			return;
 		trackingChanges = true;
 		File tmpDir = new File(EnvExpander.expand("$DCSTOOL_USERDIR/tmp"));

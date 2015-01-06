@@ -240,6 +240,21 @@ public class LrgsConfig
 	/** Number of seconds after which to assert an LRIT timeout. */
 	public int lritTimeout = 120;
 	
+	/** Enables ingest of EDL files via hot directory */
+	public boolean edlIngestEnable = false;
+	
+	/** Specifies directory for incoming EDL files to be ingested into LRGS archive */
+	public String edlIngestDirectory = "$LRGSHOME/edl-incoming";
+	
+	/** If true, then subdirectories of edlIngestDirectory are recursively searched */
+	public boolean edlIngestRecursive = false;
+	
+	/** If set, then only files with a specific suffix will be processed */
+	public String edlFilenameSuffix = null;
+	
+	/** If set, then edl files will be moved here after processing */
+	public String edlDoneDirectory = null;
+	
 	public static final boolean def_noaaportEnabled = false;
 	public static final int def_noaaportPort = 18000;
 	public static final String def_archiveDir = ".";

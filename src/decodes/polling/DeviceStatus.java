@@ -1,4 +1,6 @@
 /*
+ * $Id$
+ * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
  * No warranty is provided or implied other than specific contractual terms 

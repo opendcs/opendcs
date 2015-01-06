@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.3  2014/08/29 18:24:35  mmaloney
+*  6.1 Schema Mods
+*
 *  Revision 1.2  2014/08/22 17:23:05  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -431,6 +434,17 @@ public class TransportMedium extends DatabaseObject
 			return false;
 		}
 		
+		if (!TextUtil.strEqual(loggerType, tm.loggerType))
+			return false;
+		if (baud != tm.baud
+		 || stopBits != tm.stopBits
+		 || parity != tm.parity
+		 || dataBits != tm.dataBits
+		 || doLogin != tm.doLogin
+		 || !TextUtil.strEqual(username, tm.username)
+		 || !TextUtil.strEqual(password, tm.password))
+			return false;
+		
 		return true;
 	}
 
@@ -451,6 +465,15 @@ public class TransportMedium extends DatabaseObject
 		ntm.preamble = this.preamble;
 		ntm.timeAdjustment = this.timeAdjustment;
 		ntm.timeZone = this.timeZone;
+		ntm.loggerType = this.loggerType;
+		ntm.baud = this.baud;
+		ntm.stopBits = this.stopBits;
+		ntm.parity = this.parity;
+		ntm.dataBits = this.dataBits;
+		ntm.doLogin = this.doLogin;
+		ntm.username = this.username;
+		ntm.password = this.password;
+		
 		return ntm;
 	}
 
