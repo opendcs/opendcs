@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2015/01/05 21:04:39  mmaloney
+ * Automatically convert units to the dataUnits reported by the RatingSet.
+ *
  * Revision 1.2  2014/12/18 21:52:21  mmaloney
  * In error messages, print the specId.
  *
@@ -320,8 +323,7 @@ public class CwmsRatingMultIndep
 			 && depParmRef.timeSeries.getUnitsAbbr() != null
 			 && !depParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[punits.length-1]))
 			{
-				debug1(module + " Converting dep units for time series " 
-					+ depParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
+				debug1(module + " Converting dep units from "
 					+ depParmRef.timeSeries.getUnitsAbbr() + " to " + punits[punits.length-1]);
 				TimeSeriesHelper.convertUnits(depParmRef.timeSeries, punits[punits.length-1]);
 			}
