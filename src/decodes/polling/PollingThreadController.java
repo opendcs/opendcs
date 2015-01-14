@@ -64,15 +64,17 @@ public class PollingThreadController
 			dataSource.log(Logger.E_WARNING, "There are no stations to poll in the list.");
 			_shutdown = true;
 		}
-		dataSource.log(Logger.E_DEBUG1, module + " " + threads.size() + " session threads will run.");
+		dataSource.log(Logger.E_DEBUG1, module + " starting. " + threads.size() + " session threads will be attempted."
+			+ " #waiting=" + countThreads(PollingThreadState.Waiting));
 		
+long debugmsec = 0L;
 		tmIdx = 0;
 		while(!_shutdown)
 		{
 			if (countThreads(PollingThreadState.Waiting) == 0
 			 && countThreads(PollingThreadState.Running) == 0)
 			{
-				dataSource.log(Logger.E_INFORMATION, "Polling complete. All stations polled.");
+				dataSource.log(Logger.E_INFORMATION, module + " Polling complete. All stations polled.");
 				_shutdown = true;
 				break;
 			}
@@ -80,32 +82,49 @@ public class PollingThreadController
 			PollingThread pt = getNextWaitingThread();
 			if (pt != null)
 			{
-				pt.setState(PollingThreadState.Running);
-				pt.setSaveSessionFile(saveSessionFile);
 				IOPort ioPort = portPool.allocatePort();
 				if (ioPort == null)
 				{
-					dataSource.log(Logger.E_DEBUG1, "No ports available, will try later.");
+//					dataSource.log(Logger.E_DEBUG2, module + " No ports available, will try later.");
 					// go back so that we try the same polling thread again next time.
 					if (--tmIdx < 0)
 						tmIdx = threads.size()-1;
 				}
 				else // start a new poll on the allocated port.
 				{
+					dataSource.log(Logger.E_DEBUG1, module + " starting thread for TM " + pt.getTransportMedium()
+						+ " on port number " + ioPort.getPortNum());
+					pt.setState(PollingThreadState.Running);
+					pt.setSaveSessionFile(saveSessionFile);
 					pt.setIoPort(ioPort);
 					(new Thread(pt)).start();
 				}
 			}
+if (System.currentTimeMillis() - debugmsec > 10000L)
+{dataSource.log(Logger.E_DEBUG2, module + " there are " + threads.size() + " total threads and " 
++ countThreads(PollingThreadState.Waiting) + " still waiting, and " + countThreads(PollingThreadState.Running) + " running.");
+ debugmsec = System.currentTimeMillis();
+}
 			
 			try { sleep(PAUSE_MSEC); } catch(InterruptedException ex) {}
 		}
 		
 		// Kill any PollingThreads that are still alive.
+		dataSource.log(Logger.E_INFORMATION, module + " checking " + threads.size() + " polling threads");
+		int nk = 0;
 		for(PollingThread pt : threads)
 			if (pt.getState() == PollingThreadState.Running)
+			{
 				pt.shutdown();
+				nk++;
+			}
 		
 		// Wait up to 30 sec until all the kids have called pollComplete().
+		if (nk > 0)
+			dataSource.log(Logger.E_INFORMATION, module + " Will wait up to 30 sec for " + nk + " polling threads to terminate.");
+		else
+			dataSource.log(Logger.E_INFORMATION, module + " All threads terminated, proceeding with shutdown.");
+
 		long x = System.currentTimeMillis();
 		while(countThreads(PollingThreadState.Running) > 0
 			&& System.currentTimeMillis() - x < 30000L)
@@ -124,15 +143,15 @@ public class PollingThreadController
 	{
 		if (tmIdx >= threads.size())
 			tmIdx = 0;
-		int start = tmIdx;
-		do
+		// Only check each thread once.
+		for(int n = 0; n < threads.size(); n++)
 		{
 			PollingThread pt = threads.get(tmIdx);
 			if (++tmIdx >= threads.size())
 				tmIdx = 0;
 			if (pt.getState() == PollingThreadState.Waiting)
 				return pt;
-		} while(tmIdx != start);
+		}
 		// Went all the way around and didn't find a waiting thread
 		return null;
 	}
@@ -148,10 +167,13 @@ public class PollingThreadController
 	 */
 	public void pollComplete(PollingThread pollingThread)
 	{
+		dataSource.log(Logger.E_DEBUG1, module + " pollComplete for "
+			+ pollingThread.getTransportMedium().toString());
 		portPool.releasePort(pollingThread.getIoPort(), pollingThread.getState());
 		if (pollingThread.getState() == PollingThreadState.Success)
 		{
-			dataSource.log(Logger.E_DEBUG1, "Polling of " + pollingThread.getTransportMedium().toString()
+			dataSource.log(Logger.E_DEBUG1, "Polling of " 
+				+ pollingThread.getTransportMedium().toString()
 				+ " was successfull.");
 			successfullPolls++;
 		}

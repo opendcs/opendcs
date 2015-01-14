@@ -59,7 +59,7 @@ public class WebAbstractDataSource
 	private static final PropertySpec[] UTprops =
 	{
 		new PropertySpec("abstractUrl", PropertySpec.STRING, 
-			"(default=null) Abstract URL containing $MEDIUM_ID, $SINCE,"
+			"(default=null) Abstract URL containing $MEDIUMID, $SINCE,"
 			+ " and $UNTIL."),
 		new PropertySpec("sinceFormat", PropertySpec.STRING, 
 			"(default=" + dfltSinceFmt + ") Specifies how to format $SINCE and $UNTIL"

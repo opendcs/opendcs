@@ -22,23 +22,55 @@
  */
 package decodes.polling;
 
+import java.io.IOException;
+
 public class PollScriptWaitCmd extends PollScriptCommand
 {
 	private double sec = 0.0;
-	private byte[] match = null;
+	private PatternMatcher patternMatcher[] = new PatternMatcher[0];
+	private boolean mustMatch = false;
+	private String cmdline = "";
 
-	public PollScriptWaitCmd(PollScriptProtocol owner, double sec, byte[] match)
+	public PollScriptWaitCmd(PollScriptProtocol owner, double sec, boolean mustMatch, String cmdline)
 	{
 		super(owner);
 		this.sec = sec;
-		this.match = match;
+		this.mustMatch = mustMatch;
+		this.cmdline = cmdline;
+	}
+	
+	public void addMatch(byte[] match)
+	{
+		if (patternMatcher.length > 0)
+		{
+			PatternMatcher newArray[] = new PatternMatcher[patternMatcher.length + 1];
+			for(int idx = 0; idx < patternMatcher.length; idx++)
+				newArray[idx] = patternMatcher[idx];
+			patternMatcher = newArray;
+		}
+		else
+			patternMatcher = new PatternMatcher[1];
+		patternMatcher[patternMatcher.length-1] = new PatternMatcher(match);
 	}
 
 	@Override
 	public void execute() 
 		throws ProtocolException
 	{
-		owner.getStreamReader().wait(sec, match);
+		try
+		{
+			if (!owner.getStreamReader().wait(sec, patternMatcher) && mustMatch)
+				throw new ProtocolException("Failed to receive expected response for '" + cmdline + "'");
+		}
+		catch (IOException ex)
+		{
+			throw new ProtocolException(ex.getMessage());
+		}
+	}
+
+	public void setMustMatch(boolean mustMatch)
+	{
+		this.mustMatch = mustMatch;
 	}
 
 }

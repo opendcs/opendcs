@@ -38,21 +38,23 @@ import java.io.InputStream;
 public class StreamReader
 	extends Thread
 {
-	public static final String module = "StreamReader";
+	private String module = "StreamReader";
 	private InputStream in = null;
 	private ByteArrayOutputStream captured = new ByteArrayOutputStream();
 	private boolean capture = false;
 	private PollSessionLogger psLog = null;
-	private byte[] sessionBuf = new byte[8192];
+	private static final int MAX_BUF_SIZE = 99900;
+	private byte[] sessionBuf = new byte[MAX_BUF_SIZE];
 	private int sessionIdx = 0;
 	private int processIdx = 0;
 	private boolean _shutdown = false;
-	private PollScriptProtocol owner = null;
+	private StreamReaderOwner owner = null;
 	
-	public StreamReader(InputStream in, PollScriptProtocol owner)
+	public StreamReader(InputStream in, StreamReaderOwner owner)
 	{
 		this.in = in;
 		this.owner = owner;
+		module = module + "(" + owner.getModule() + ")";
 	}
 	
 	@Override
@@ -75,7 +77,7 @@ public class StreamReader
 					else
 					{
 						if (sessionIdx >= sessionBuf.length)
-							growBuffer();
+							throw new IOException("Message too long. Size=" + sessionIdx);
 						sessionBuf[sessionIdx++] = (byte)c;
 						if (capture)
 							captured.write(c);
@@ -96,74 +98,70 @@ public class StreamReader
 			owner.inputError(ex);
 			_shutdown = true;
 		}
+		Logger.instance().debug1(module + " exiting.");
 	}
 	
 	public void shutdown()
 	{
 		Logger.instance().debug1(module + " shutdown() called.");
 		_shutdown = true;
-		try { in.close(); } catch(IOException ex) {}
+		// Note: mustn't close the InputStream, Multiple StreamReaders
+		// may be used at various phases of a session on the same ioPort.
+		// try { in.close(); } catch(IOException ex) {}
 	}
 	
-	private synchronized void growBuffer()
-	{
-		byte newbuf[] = new byte[sessionBuf.length + 8192];
-		for(int i=0; i<sessionIdx; i++)
-			newbuf[i] = sessionBuf[i];
-		sessionBuf = newbuf;
-	}
+//	private synchronized void growBuffer()
+//	{
+//		byte newbuf[] = new byte[sessionBuf.length + 8192];
+//		for(int i=0; i<sessionIdx; i++)
+//			newbuf[i] = sessionBuf[i];
+//		sessionBuf = newbuf;
+//	}
 	
 	/**
 	 * From the current processing point forward, wait for the match string
 	 * to appear in the input, or the specified number of seconds to elapse.
 	 * @param sec floating point number of seconds
-	 * @param match String to search for, or null if unconditional wait
+	 * @param patternMatcher array of patterns to search for (may be zero-length array)
 	 * @return true if match string was found, false if sec expires.
+	 * @throws IOException if the input stream was shut down.
 	 */
-	public boolean wait(double sec, byte[] matchBytes)
+	public boolean wait(double sec, PatternMatcher patternMatcher[])
+		throws IOException
 	{
-		Logger.instance().debug1(module + " Waiting " + sec + " seconds for " 
-			+ (matchBytes==null ? "(null)" : new String(matchBytes)));
+		if (patternMatcher.length == 0)
+			Logger.instance().debug1(module + " Waiting " + sec + " seconds.");
+		else
+		{
+			StringBuilder sb = new StringBuilder(module + " Waiting " + sec + " seconds  for ");
+			for(PatternMatcher pm : patternMatcher)
+				sb.append("'" + new String(pm.getPattern()) + "' ");
+			Logger.instance().debug1(sb.toString());
+		}
+		for(PatternMatcher pm : patternMatcher)
+			pm.setProcessIdx(processIdx);
+		
 		long endMsec = System.currentTimeMillis() + (long)(sec * 1000);
 		while(System.currentTimeMillis() < endMsec)
 		{
-			if (matchBytes != null && check(matchBytes))
-				return true;
+			synchronized(this)
+			{
+				for(PatternMatcher pm : patternMatcher)
+					if (pm.check(sessionBuf, sessionIdx))
+					{
+						processIdx = pm.getProcessIdx();
+						return true;
+					}
+			}
+			if (_shutdown)
+				throw new IOException("Input stream was shut down.");
 			try { sleep(50L); } catch(InterruptedException ex) {}
 		}
+		if (patternMatcher.length > 0)
+			processIdx = patternMatcher[0].getProcessIdx();
 		return false; // sec timed out without match
 	}
-	
-	/**
-	 * Checks current data in buffer from last processing point for a match.
-	 * Must be synchronized with growBuffer.
-	 * @param matchBytes the bytes to look for.
-	 * @return true if match found, false if not.
-	 */
-	public synchronized boolean check(byte[] matchBytes)
-	{
-		int mbidx = 0;
-		while(processIdx + matchBytes.length <= sessionIdx)
-		{
-			Logger.instance().debug3(module + " check(" + processIdx + "): '" 
-				+ (char)(sessionBuf[processIdx + mbidx]) + "' '" + (char)(matchBytes[mbidx]) + "'");
-			if (sessionBuf[processIdx + mbidx] == matchBytes[mbidx])
-			{
-				if (++mbidx >= matchBytes.length)
-				{	
-					processIdx += mbidx;
-					return true;
-				}
-			}
-			else // doesn't match, start over
-			{
-				mbidx = 0;
-				processIdx++;
-			}
-		}
-		return false;
-	}
-	
+		
 	/**
 	 * Start or stop capturing data for subsequent inclusion in DCP message
 	 * @param capture true to turn capture on, false to turn it off.
@@ -176,6 +174,17 @@ public class StreamReader
 	}
 	
 	/**
+	 * Discard any captured data and set processIdx such that only data received after
+	 * this point will be processed by the wait and check methods.
+	 */
+	public void flushBacklog()
+	{
+		Logger.instance().debug1(module + " flushing backlog at sessionIdx=" + sessionIdx);
+		this.processIdx = sessionIdx;
+		captured.reset();
+	}
+	
+	/**
 	 * @return a byte array containing all data received when capture was ON.
 	 */
 	public byte[] getCapturedData()
@@ -183,21 +192,23 @@ public class StreamReader
 		return captured.toByteArray();
 	}
 	
-	/**
-	 * @return a byte array containing all data received during entire session.
-	 */
-	public synchronized byte[] getEntireSession()
-	{
-		byte [] ret = new byte[sessionIdx];
-		for(int i = 0; i<ret.length; i++)
-			ret[i] = sessionBuf[i];
-		Logger.instance().debug1(module + " Returning session buf of length " + ret.length);
-		return ret;
-	}
+//	/**
+//	 * @return a byte array containing all data received during entire session.
+//	 */
+//	public byte[] getEntireSession()
+//	{
+//		byte [] ret = new byte[sessionIdx];
+//		for(int i = 0; i<ret.length; i++)
+//			ret[i] = sessionBuf[i];
+//		Logger.instance().debug1(module + " Returning session buf of length " + ret.length);
+//		return ret;
+//	}
 
 	public void setPollSessionLogger(PollSessionLogger psLog)
 	{
 		this.psLog = psLog;
 	}
+	
+	public String getModule() { return module; }
 
 }

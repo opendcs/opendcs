@@ -47,6 +47,7 @@ public class PollSessionLogger
 			if (lastOp != 'R')
 				out.write(lineSep + "RECV:" + lineSep);
 			out.write(c);
+			out.flush();
 			lastOp = 'R';
 		}
 		catch (IOException ex)

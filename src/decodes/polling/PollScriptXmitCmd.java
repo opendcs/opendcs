@@ -24,6 +24,7 @@ package decodes.polling;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
+import ilex.util.Logger;
 
 import java.io.IOException;
 
@@ -53,8 +54,10 @@ public class PollScriptXmitCmd extends PollScriptCommand
 			owner.getIoPort().getOut().write(data);
 			
 			// The session logger gets the evaluated data, but converted back to String object.
+			String strdata = new String(data);
 			if (owner.getPollSessionLogger() != null)
-				owner.getPollSessionLogger().sent(new String(data));
+				owner.getPollSessionLogger().sent(strdata);
+			Logger.instance().debug2(module + " sent '" + strdata + "'");
 		}
 		catch (IOException ex)
 		{

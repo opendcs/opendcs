@@ -65,7 +65,9 @@ public class PollingThread
 	public void run()
 	{
 		numTries++;
-		Logger.instance().debug3(module + " polling " + transportMedium.toString() + " attempt #" + numTries);
+		Logger.instance().info(module + " polling " + 
+			transportMedium.getMediumType() + ":" + transportMedium.getMediumId() + " attempt #" + numTries);
+		PollingThreadState exitState = state;
 		try
 		{
 			platformStatus = dataSource.getPlatformStatus(transportMedium); 
@@ -122,13 +124,13 @@ public class PollingThread
 			}
 			
 			protocol.goodbye(ioPort, transportMedium);
-			state = PollingThreadState.Success;
+			exitState = PollingThreadState.Success;
 		}
 		catch (DialException ex)
 		{
 			String msg = "Cannot connect IOPort: " + ex;
 			dataSource.log(Logger.E_FAILURE, msg);
-			state = PollingThreadState.Failed;
+			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
 		}
@@ -136,7 +138,7 @@ public class PollingThread
 		{
 			String msg = "Configuration error: " + ex;
 			dataSource.log(Logger.E_FAILURE, msg);
-			state = PollingThreadState.Failed;
+			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
 		}
@@ -144,7 +146,7 @@ public class PollingThread
 		{
 			String msg = "Error logging into the station: " + ex;
 			dataSource.log(Logger.E_FAILURE, msg);
-			state = PollingThreadState.Failed;
+			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
 		}
@@ -152,7 +154,7 @@ public class PollingThread
 		{
 			String msg = "Error communicating with station: " + ex;
 			dataSource.log(Logger.E_FAILURE, msg);
-			state = PollingThreadState.Failed;
+			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
 		}
@@ -164,7 +166,13 @@ public class PollingThread
 				pollSessionLogger.close();
 			pollSessionLogger = null;
 		}
+		
+Logger.instance().debug2(module + " writing final platform status for " + transportMedium);		
 		dataSource.writePlatformStatus(platformStatus, transportMedium);
+		
+		// Parent will be calling getState(). Make sure the RS doesn't prematurely
+		// exit because no states are waiting.
+		state = exitState;
 		parent.pollComplete(this);
 	}
 	

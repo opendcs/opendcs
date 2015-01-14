@@ -4,6 +4,9 @@
  *  Open Source Software
  *  
  *  $Log$
+ *  Revision 1.2  2014/08/29 18:24:35  mmaloney
+ *  6.1 Schema Mods
+ *
  *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  *  OPENDCS 6.0 Initial Checkin
  *
@@ -795,10 +798,10 @@ ConfigSelectController
 			{
 				TransportMedium oldTm = oldTmIt.next();
 				TransportMedium newTm = thePlatform.getTransportMedium(oldTm.getMediumType());
-System.out.println("oldTm: type=" + oldTm.getMediumType() + ", id=" + oldTm.getMediumId());
-System.out.println("newTm: " + 
-	(newTm == null ? "null" : 
-	("type=" + newTm.getMediumType() + ", id=" + newTm.getMediumId())));
+//System.out.println("oldTm: type=" + oldTm.getMediumType() + ", id=" + oldTm.getMediumId());
+//System.out.println("newTm: " + 
+//	(newTm == null ? "null" : 
+//	("type=" + newTm.getMediumType() + ", id=" + newTm.getMediumId())));
 
 				if (newTm != null && newTm.getMediumId().equals(oldTm.getMediumId()))
 					continue;

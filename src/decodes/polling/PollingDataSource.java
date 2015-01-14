@@ -78,7 +78,7 @@ public class PollingDataSource extends DataSourceExec
 		new PropertySpec("digiIpAddr", PropertySpec.HOSTNAME,
 			"Host name or IP Address of the Digi ConnectPort device."),
 		new PropertySpec("digiPortBase", PropertySpec.INT,
-			"Base port number for TCP PassThrough interface on Digi Device (default=2101)"),
+			"Base port number for TCP PassThrough interface on Digi Device (default=2100)"),
 		new PropertySpec("digiUserName", PropertySpec.STRING,
 			"User name to login to digi telnet (port 23) for port configuration."),
 		new PropertySpec("digiPassword", PropertySpec.STRING,
@@ -245,7 +245,8 @@ public class PollingDataSource extends DataSourceExec
 	}
 
 	@Override
-	public synchronized RawMessage getRawMessage()
+//	public synchronized RawMessage getRawMessage()
+	public RawMessage getRawMessage()
 		throws DataSourceException
 	{
 		RawMessage ret = rawMessageQueue.poll();
@@ -260,7 +261,8 @@ public class PollingDataSource extends DataSourceExec
 	 * method.
 	 * @param rawMessage the complete raw message
 	 */
-	public synchronized void enqueueMsg(RawMessage rawMessage)
+//	public synchronized void enqueueMsg(RawMessage rawMessage)
+	public void enqueueMsg(RawMessage rawMessage)
 	{
 		try
 		{
@@ -335,6 +337,11 @@ public class PollingDataSource extends DataSourceExec
 	{
 		// Enqueue special end-marker raw message as a signal to the routing spec that we're done.
 		try { rawMessageQueue.put(endMarker); } catch(InterruptedException ex) {}
+	}
+
+	public PollingThreadController getController()
+	{
+		return controller;
 	}
 
 	

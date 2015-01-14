@@ -35,9 +35,12 @@ public class MITMLogger
 	
 	private void flush()
 	{
+System.out.println("flush() bufidx=" + bufidx);
 		if (bufidx == 0)
 			return;
-		pw.println(b2a(lastPfx, buffer, bufidx, true));
+		String s = b2a(lastPfx, buffer, bufidx, true);
+System.out.println(s);
+		pw.println(s);
 		if (printHex)
 			pw.println(b2a(lastPfx, buffer, bufidx, false));
 		pw.println();

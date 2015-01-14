@@ -2,6 +2,9 @@
  *  $Id$
  *
  *  $Log$
+ *  Revision 1.2  2015/01/06 16:09:32  mmaloney
+ *  First cut of Polling Modules
+ *
  *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  *  OPENDCS 6.0 Initial Checkin
  *
@@ -174,6 +177,8 @@ public class TransportMediaEditDialog extends GuiDialog
 		parityCombo.setSelectedItem(Parity.fromCode(myTM.getParity()));
 		stopbitsCombo.setSelectedItem((Integer)myTM.getStopBits());
 		databitsCombo.setSelectedItem((Integer)myTM.getDataBits());
+		
+		previousSpecialParamsPanel = null;
 		
 		mediumTypeSelected();
 	}
@@ -522,12 +527,14 @@ public class TransportMediaEditDialog extends GuiDialog
 		
 		if (previousSpecialParamsPanel == polledTcpParamsPanel)
 		{
+			loggerTypeModemCombo.setSelectedIndex(loggerTypeTcpCombo.getSelectedIndex());
 			polledModemDoLoginCheck.setSelected(polledTcpDoLoginCheck.isSelected());
 			polledModemUserName.setText(polledTcpUserName.getText());
 			polledModemPassword.setText(new String(polledTcpPassword.getPassword()));
 		}
 		else if (previousSpecialParamsPanel == polledModemParamsPanel)
 		{
+			loggerTypeTcpCombo.setSelectedIndex(loggerTypeModemCombo.getSelectedIndex());
 			polledTcpDoLoginCheck.setSelected(polledModemDoLoginCheck.isSelected());
 			polledTcpUserName.setText(polledModemUserName.getText());
 			polledTcpPassword.setText(new String(polledModemPassword.getPassword()));
@@ -549,11 +556,15 @@ public class TransportMediaEditDialog extends GuiDialog
 		{
 			typeSpecificParamsPanel.add(previousSpecialParamsPanel = polledTcpParamsPanel, BorderLayout.CENTER);
 			mediumIdLabel.setText(dbeditLabels.getString("TransportMediaEditDialog.HostPort"));
+			polledTcpUserName.setEnabled(polledTcpDoLoginCheck.isSelected());
+			polledTcpPassword.setEnabled(polledTcpDoLoginCheck.isSelected());
 		}
 		else if (tmType.toLowerCase().equals("polled-modem"))
 		{
 			typeSpecificParamsPanel.add(previousSpecialParamsPanel = polledModemParamsPanel, BorderLayout.CENTER);
 			mediumIdLabel.setText(dbeditLabels.getString("TransportMediaEditDialog.Telnum"));
+			polledModemUserName.setEnabled(polledTcpDoLoginCheck.isSelected());
+			polledModemPassword.setEnabled(polledTcpDoLoginCheck.isSelected());
 		}
 		else
 		{
@@ -630,21 +641,43 @@ public class TransportMediaEditDialog extends GuiDialog
 		myTM.setMediumType(mediumTypeCombo.getSelection());
 		myTM.scriptName = decodesScriptCombo.getSelection();
 
-		mediumTypeSelected(); // copy TCP to Modem or vice versa, so that they're the same.
-		String s = loggerTypeTcpCombo.getSelection();
-		if (s != null && s.trim().length() > 0)
-			myTM.setLoggerType(s);
-		myTM.setDoLogin(polledTcpDoLoginCheck.isSelected());
-		s = polledTcpUserName.getText();
-		if (s != null && s.trim().length() > 0)
-			myTM.setUsername(s);
-		s = new String(polledTcpPassword.getPassword());
-		if (s.trim().length() > 0)
-			myTM.setPassword(s);
-		myTM.setBaud((Integer)baudCombo.getSelectedItem());
-		myTM.setStopBits((Integer)stopbitsCombo.getSelectedItem());
-		myTM.setDataBits((Integer)databitsCombo.getSelectedItem());
-		myTM.setParity(((Parity)parityCombo.getSelectedItem()).getCode());
+		String tmType = (String) mediumTypeCombo.getSelectedItem();
+		if (tmType.toLowerCase().equals("polled-tcp"))
+		{
+			String s = loggerTypeTcpCombo.getSelection();
+			myTM.setLoggerType(s == null || s.trim().length()==0 ? null : s);
+			myTM.setDoLogin(polledTcpDoLoginCheck.isSelected());
+			s = polledTcpUserName.getText();
+			if (s != null && s.trim().length() > 0)
+				myTM.setUsername(s);
+			else
+				myTM.setUsername(null);
+			s = new String(polledTcpPassword.getPassword());
+			if (s.trim().length() > 0)
+				myTM.setPassword(s);
+			else
+				myTM.setPassword(null);
+		}
+		else if (tmType.toLowerCase().equals("polled-modem"))
+		{
+			String s = loggerTypeModemCombo.getSelection();
+			myTM.setLoggerType(s == null || s.trim().length()==0 ? null : s);
+			myTM.setDoLogin(polledModemDoLoginCheck.isSelected());
+			s = polledModemUserName.getText();
+			if (s != null && s.trim().length() > 0)
+				myTM.setUsername(s);
+			else
+				myTM.setUsername(null);
+			s = new String(polledModemPassword.getPassword());
+			if (s.trim().length() > 0)
+				myTM.setPassword(s);
+			else
+				myTM.setPassword(null);
+			myTM.setBaud((Integer)baudCombo.getSelectedItem());
+			myTM.setStopBits((Integer)stopbitsCombo.getSelectedItem());
+			myTM.setDataBits((Integer)databitsCombo.getSelectedItem());
+			myTM.setParity(((Parity)parityCombo.getSelectedItem()).getCode());
+		}
 
 		if (listModel != null)
 			listModel.fireTableDataChanged();

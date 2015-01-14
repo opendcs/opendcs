@@ -52,6 +52,7 @@ import decodes.util.DecodesSettings;
 
 public class PollScriptProtocol
 	extends LoggerProtocol
+	implements StreamReaderOwner
 {
 	public static final String module = "PollScriptProtocol";
 	private ArrayList<PollScriptCommand> script = new ArrayList<PollScriptCommand>();
@@ -62,6 +63,7 @@ public class PollScriptProtocol
 	private Properties properties = new Properties();
 	private Date start = null;
 	private TransportMedium transportMedium = null;
+	private boolean _inputClosed = false;
 
 	public PollScriptProtocol()
 	{
@@ -109,6 +111,7 @@ public class PollScriptProtocol
 			properties.setProperty("USERNAME", tm.getUsername());
 		if (tm.getPassword() != null && tm.getPassword().trim().length() > 0)
 			properties.setProperty("PASSWORD", tm.getPassword());
+		properties.setProperty("HOURS", ""+dataSource.getController().getMaxBacklogHours());
 		
 		// Then read it into memory
 		readScript(scriptFile);
@@ -159,7 +162,7 @@ public class PollScriptProtocol
 						|| TextUtil.str2boolean(strtok.nextToken());
 					script.add(new PollScriptCaptureCmd(this, captureOn));
 				}
-				else if (keyword.equals("wait"))
+				else if (keyword.equals("wait") || keyword.equals("waitr"))
 				{
 					// First arg after keyword should be floating point number of seconds.
 					if (!strtok.hasMoreTokens())
@@ -174,19 +177,34 @@ public class PollScriptProtocol
 							+ lnr.getLineNumber() + " invalid number of seconds '" + s + "' after WAIT.");
 					}
 					
+					PollScriptWaitCmd pswc = new PollScriptWaitCmd(this, sec, keyword.equals("waitr"), line);
+					
 					// String expression to wait for.
-					String match = null;
-					if (strtok.hasMoreTokens())
+					int comma = line.indexOf(',');
+					if (comma > 0)
 					{
-						int quote = line.indexOf('"');
-						if (quote == -1 || line.charAt(line.length()-1) != '"')
-							throw new LoginException("Script '" + scriptFile.getPath() + "':"
-								+ lnr.getLineNumber() + " string to wait for must be surrounded in double quotes.");
-						match = line.substring(quote+1, line.length()-1);
+						int startQuote = line.indexOf('"', comma);
+						while(startQuote > 0)
+						{
+							int endQuote = startQuote + 1;
+							while(endQuote < line.length() && (line.charAt(endQuote) != '"' || line.charAt(endQuote-1) == '\\'))
+								endQuote++;
+							String match = line.substring(startQuote+1, endQuote);
+							// Expand the string with the platform/site's properties.
+							String estr = EnvExpander.expand(match, getProperties());
+
+							pswc.addMatch(AsciiUtil.ascii2bin(estr));
+							startQuote = endQuote+1 >= line.length() ? -1 : line.indexOf('"', endQuote+1);
+						}
 					}
 
-					script.add(new PollScriptWaitCmd(this, sec, match == null ? null : AsciiUtil.ascii2bin(match)));
+					script.add(pswc);
 				}
+				else if (keyword.equals("flush"))
+				{
+					script.add(new PollScriptFlushCmd(this));
+				}
+
 			}
 		}
 		catch (IOException ex)
@@ -204,6 +222,8 @@ public class PollScriptProtocol
 		throws ProtocolException
 	{
 		this.ioPort = port;
+Logger.instance().info(module + " spawning StreamReader to responses from station.");
+
 		streamReader = new StreamReader(port.getIn(), this);
 		streamReader.setPollSessionLogger(pollSessionLogger);
 		
@@ -214,6 +234,8 @@ public class PollScriptProtocol
 			abnormalShutdown = null;
 			for(PollScriptCommand cmd : script)
 			{
+				if (_inputClosed)
+					throw new ProtocolException("Input Stream from Station Closed.");
 				cmd.execute();
 				if (abnormalShutdown != null)
 					break;
@@ -231,11 +253,13 @@ public class PollScriptProtocol
 		start = since;
 		this.transportMedium = tm;
 		Date sessionStart = new Date();
-		dataSource.log(Logger.E_DEBUG3, module + ".getData() session starting at " + sessionStart);
+		dataSource.log(Logger.E_DEBUG2, module + ".getData() session starting at " + sessionStart);
 
 		executeScript(port, since);
 		if (abnormalShutdown != null)
 			return null;
+		Date sessionEnd = new Date();
+		dataSource.log(Logger.E_DEBUG2, module + ".getData() session finished at " + sessionEnd);
 
 		// Build DcpMsg from info in tm and captured data.
 		// Set all necessary attributes in DcpMsg.
@@ -246,7 +270,7 @@ public class PollScriptProtocol
 
 		try
 		{
-			Date recvTime = new Date();
+			Date recvTime = sessionEnd;
 			String station = tm.platform.getSiteName(false);
 			baos.write(
 				 ("//STATION " + station + "\n"
@@ -273,6 +297,8 @@ public class PollScriptProtocol
 				| DcpMsgFlag.MSG_TYPE_NETDCP
 	            | DcpMsgFlag.MSG_NO_SEQNUM);
 			ret.setHeaderLength(msgdata.length - capturedData.length);
+			dataSource.log(Logger.E_DEBUG2, module + ".getData() returning message.");
+
 			return ret;
 		}
 		catch (IOException ex)
@@ -282,12 +308,12 @@ public class PollScriptProtocol
 			dataSource.log(Logger.E_FAILURE, msg);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
+			throw new ProtocolException(msg);
 		}
 		finally
 		{
 			try {baos.close();} catch(Exception ex){}
 		}
-		return null;
 	}
 
 	@Override
@@ -305,44 +331,40 @@ public class PollScriptProtocol
 		streamReader.setCapture(captureOn);
 	}
 	
-	/**
-	 * Called by the input StreamReader when an IOException has occured.
-	 * It means that the input stream from the station has failed.
-	 * @param ex the exception thrown
-	 */
+	@Override
 	public void inputError(IOException ex)
 	{
 		Logger.instance().warning(module + " input error: " + ex);
 		abnormalShutdown = ex;
 	}
 	
-	/**
-	 * Test main opens a mock session with stdin/stdout.
-	 * @param args two args are expected: station-name and script-file-name
-	 */
-	public static void main(String[] args)
-		throws Exception
-	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
-		IOPort ioPort = new IOPort(null, 1, (Dialer)null);
-		ioPort.setIn(System.in);
-		ioPort.setOut(System.out);
-		
-		TransportMedium tm = new TransportMedium(null, Constants.medium_EDL, args[0]);
-		PollScriptProtocol tlp = new PollScriptProtocol();
-		tlp.readScript(new File(args[1]));
-		System.out.println("After reading " + args[1] + ", there are " + tlp.script.size() + " commands.");
-		
-		DcpMsg msg = tlp.getData(ioPort, tm, new Date());
-		
-		System.out.println("=========== Results ===========");
-		System.out.println("Complete Session Log:");
-		System.out.println(new String(tlp.streamReader.getEntireSession()));
-		System.out.println("------ Captured Data ------");
-		System.out.println(new String(tlp.streamReader.getCapturedData()));
-		System.out.println("------ DCP Message ------");
-		System.out.println(msg.toString());
-	}
+//	/**
+//	 * Test main opens a mock session with stdin/stdout.
+//	 * @param args two args are expected: station-name and script-file-name
+//	 */
+//	public static void main(String[] args)
+//		throws Exception
+//	{
+//		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
+//		IOPort ioPort = new IOPort(null, 1, (Dialer)null);
+//		ioPort.setIn(System.in);
+//		ioPort.setOut(System.out);
+//		
+//		TransportMedium tm = new TransportMedium(null, Constants.medium_EDL, args[0]);
+//		PollScriptProtocol tlp = new PollScriptProtocol();
+//		tlp.readScript(new File(args[1]));
+//		System.out.println("After reading " + args[1] + ", there are " + tlp.script.size() + " commands.");
+//		
+//		DcpMsg msg = tlp.getData(ioPort, tm, new Date());
+//		
+//		System.out.println("=========== Results ===========");
+//		System.out.println("Complete Session Log:");
+//		System.out.println(new String(tlp.streamReader.getEntireSession()));
+//		System.out.println("------ Captured Data ------");
+//		System.out.println(new String(tlp.streamReader.getCapturedData()));
+//		System.out.println("------ DCP Message ------");
+//		System.out.println(msg.toString());
+//	}
 
 	public IOPort getIoPort()
 	{
@@ -374,4 +396,14 @@ public class PollScriptProtocol
 			sdf.setTimeZone(TimeZone.getTimeZone(transportMedium.getTimeZone().trim()));
 		properties.setProperty("START", sdf.format(start));
 	}
+
+	@Override
+	public void inputClosed()
+	{
+		_inputClosed = true;
+	}
+	
+	@Override
+	public String getModule() { return module; }
+
 }

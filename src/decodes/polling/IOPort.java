@@ -22,6 +22,8 @@
  */
 package decodes.polling;
 
+import ilex.util.Logger;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -45,6 +47,7 @@ public class IOPort
 	private Dialer dialer = null;
 	
 	private PollingThreadState configureState = PollingThreadState.Waiting;
+	private boolean dialerConnected = false;
 	
 	public IOPort(PortPool portPool, int portNum, Dialer dialer)
 	{
@@ -62,7 +65,11 @@ public class IOPort
 	public void connect(TransportMedium tm)
 		throws DialException
 	{
+Logger.instance().debug2("IOPort.connect() -- calling portPool.configPort");
+		portPool.configPort(this, tm);
+Logger.instance().debug2("IOPort.connect() -- calling dialer.connect");
 		dialer.connect(this, tm);
+		dialerConnected = true;
 	}
 	
 	/**
@@ -71,7 +78,9 @@ public class IOPort
 	 */
 	public void disconnect()
 	{
-		dialer.disconnect(this);
+		if (dialerConnected) // don't use dialer to disconnect if we never connected.
+			dialer.disconnect(this);
+Logger.instance().debug2("IOPort.disconnect() complete.");		
 	}
 	
 	public InputStream getIn()

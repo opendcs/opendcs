@@ -380,7 +380,7 @@ public class RoutingSpecThread
 				rm = source.getRawMessage();
 				if (rm == null)
 				{
-					log(Logger.E_DEBUG1,
+					log(Logger.E_DEBUG3,
 				"Data source failed to return message, pausing for 1 seconds.");
 					currentStatus = "Wait-Msg";
 					try { sleep(1000L); }

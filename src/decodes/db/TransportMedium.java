@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.4  2015/01/06 16:09:32  mmaloney
+*  First cut of Polling Modules
+*
 *  Revision 1.3  2014/08/29 18:24:35  mmaloney
 *  6.1 Schema Mods
 *
@@ -561,5 +564,11 @@ public class TransportMedium extends DatabaseObject
 	{
 		return mediumType.hashCode() + mediumId.hashCode();
 	}
+	
+	public String toString()
+	{
+		return mediumType + ":" + mediumId;
+	}
+	
 }
 
