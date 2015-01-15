@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2015/01/06 16:09:33  mmaloney
+ * First cut of Polling Modules
+ *
  * Revision 1.2  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -24,6 +27,7 @@ import java.util.Date;
 
 import decodes.db.PlatformStatus;
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.PlatformStatusDAI;
 
@@ -44,6 +48,9 @@ public class PlatformStatusDAO
 	public synchronized PlatformStatus readPlatformStatus(DbKey platformId)
 		throws DbIoException
 	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return null;
+		
 		String q = "select " + ps_attrs + " from platform_status "
 			+ "where platform_id = " + platformId;
 		
@@ -79,6 +86,9 @@ public class PlatformStatusDAO
 	public synchronized void writePlatformStatus(PlatformStatus platformStatus) 
 		throws DbIoException
 	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return;
+
 		PlatformStatus existing = readPlatformStatus(platformStatus.getPlatformId());
 		String q = "";
 		if (existing != null)
@@ -163,6 +173,10 @@ public class PlatformStatusDAO
 			+ "transportmedium b where a.id = b.platformid)";
 
 		ArrayList<PlatformStatus> ret = new ArrayList<PlatformStatus>();
+		
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return ret;
+
 		ResultSet rs = doQuery(q);
 		try
 		{
@@ -181,6 +195,9 @@ public class PlatformStatusDAO
 	@Override
 	public void deletePlatformStatus(DbKey platformId) throws DbIoException
 	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return;
+
 		String q = "delete from platform_status "
 			+ "where platform_id = " + platformId;
 		doModify(q);

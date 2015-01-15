@@ -243,6 +243,8 @@ public class Site extends IdDatabaseObject
 	*/
 	public SiteName getName(String type)
 	{
+		if (type == null)
+			return getPreferredName();
 		for(SiteName sn : siteNames)
 			if (sn.getNameType().equalsIgnoreCase(type))
 				return sn;

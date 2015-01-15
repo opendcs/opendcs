@@ -162,7 +162,7 @@ public class PollScriptProtocol
 						|| TextUtil.str2boolean(strtok.nextToken());
 					script.add(new PollScriptCaptureCmd(this, captureOn));
 				}
-				else if (keyword.equals("wait") || keyword.equals("waitr"))
+				else if (keyword.equals("wait") || keyword.equals("waitr") || keyword.equals("waitx"))
 				{
 					// First arg after keyword should be floating point number of seconds.
 					if (!strtok.hasMoreTokens())
@@ -178,6 +178,8 @@ public class PollScriptProtocol
 					}
 					
 					PollScriptWaitCmd pswc = new PollScriptWaitCmd(this, sec, keyword.equals("waitr"), line);
+					if (keyword.equals("waitx"))
+						pswc.setExclude(true);
 					
 					// String expression to wait for.
 					int comma = line.indexOf(',');

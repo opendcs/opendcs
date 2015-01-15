@@ -30,6 +30,7 @@ public class PollScriptWaitCmd extends PollScriptCommand
 	private PatternMatcher patternMatcher[] = new PatternMatcher[0];
 	private boolean mustMatch = false;
 	private String cmdline = "";
+	private boolean exclude = false;
 
 	public PollScriptWaitCmd(PollScriptProtocol owner, double sec, boolean mustMatch, String cmdline)
 	{
@@ -59,8 +60,11 @@ public class PollScriptWaitCmd extends PollScriptCommand
 	{
 		try
 		{
-			if (!owner.getStreamReader().wait(sec, patternMatcher) && mustMatch)
+			boolean found = owner.getStreamReader().wait(sec, patternMatcher);
+			if (!found && mustMatch)
 				throw new ProtocolException("Failed to receive expected response for '" + cmdline + "'");
+			else if (found && exclude)
+				throw new ProtocolException("Received excluded response for '" + cmdline + "'");
 		}
 		catch (IOException ex)
 		{
@@ -71,6 +75,11 @@ public class PollScriptWaitCmd extends PollScriptCommand
 	public void setMustMatch(boolean mustMatch)
 	{
 		this.mustMatch = mustMatch;
+	}
+
+	public void setExclude(boolean exclude)
+	{
+		this.exclude = exclude;
 	}
 
 }

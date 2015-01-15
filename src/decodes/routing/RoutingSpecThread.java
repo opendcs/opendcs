@@ -1474,9 +1474,15 @@ log(Logger.E_DEBUG1, "shutdown called.");
 		if (rs == null)
 			throw new DecodesException(
 				"No such routing spec '" + name + "' in database");
-
+		
+		String s = rs.getProperty("debugLevel");
+		if (s == null && Logger.instance().getMinLogPriority() < Logger.E_INFORMATION)
+		{
+			rs.setProperty("debugLevel", "" + 
+				(3 - Logger.instance().getMinLogPriority()));
+		}
 		// Since & Until argument overrides value in DB routing spec.
-		String s = sinceArg.getValue().trim();
+		s = sinceArg.getValue().trim();
 		if (s.length() > 0)
 			rs.sinceTime = s;
 		s = untilArg.getValue().trim();

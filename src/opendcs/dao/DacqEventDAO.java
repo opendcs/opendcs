@@ -10,6 +10,7 @@ import java.util.Date;
 
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.DacqEventDAI;
 
@@ -29,6 +30,9 @@ public class DacqEventDAO
 	@Override
 	public synchronized void writeEvent(DacqEvent evt) throws DbIoException
 	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return;
+		
 		if (evt.getDacqEventId().isNull())
 			evt.setDacqEventId(getKey(tableName));
 		evt.setEventTime(new Date());
@@ -74,6 +78,9 @@ public class DacqEventDAO
 	@Override
 	public synchronized void deleteBefore(Date cutoff) throws DbIoException
 	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return;
+
 		String q = "DELETE FROM " + tableName + " WHERE EVENT_TIME < " + db.sqlDate(cutoff);
 		doModify(q);
 	}
@@ -82,6 +89,9 @@ public class DacqEventDAO
 	public int readEventsContaining(String text, ArrayList<DacqEvent> evtList)
 		throws DbIoException
 	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return 0;
+
 		String q = "SELECT " + columns + " FROM " + tableName
 			+ " WHERE EVENT_TEXT LIKE '%" + text + "%'";
 		if (evtList.size() > 0)
@@ -135,6 +145,9 @@ public class DacqEventDAO
 	public int readEventsForScheduleStatus(DbKey scheduleEntryStatusId, ArrayList<DacqEvent> evtList)
 		throws DbIoException
 	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return 0;
+
 		String q = "SELECT " + columns + " FROM " + tableName
 			+ " WHERE SCHEDULE_ENTRY_STATUS_ID =" + scheduleEntryStatusId;
 		if (evtList.size() > 0)
@@ -148,6 +161,9 @@ public class DacqEventDAO
 	public int readEventsForPlatform(DbKey platformId, ArrayList<DacqEvent> evtList)
 		throws DbIoException
 	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+			return 0;
+
 		String q = "SELECT " + columns + " FROM " + tableName
 			+ " WHERE PLATFORM_ID =" + platformId;
 		if (evtList.size() > 0)

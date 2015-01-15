@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.15  2013/02/15 17:26:53  mmaloney
 *  Added 'failIfNoTable' property.
 *
@@ -164,6 +167,16 @@ public class RdbRating
 //AW:INIT_END
 
 //AW:USERINIT
+//AW:USERINIT_END
+	}
+	
+	/**
+	 * This method is called once before iterating all time slices.
+	 */
+	protected void beforeTimeSlices()
+		throws DbCompException
+	{
+//AW:BEFORE_TIMESLICES
 		// Find the name for the input parameter.
 		tableReader = null;
 		String siteName = getSiteName("indep", Constants.snt_USGS);
@@ -186,7 +199,7 @@ debug1("trying '" + f.getPath() + "'");
 			if (namePref.equalsIgnoreCase(Constants.snt_USGS))
 				throw new DbCompException("No usgs site name for independent "
 					+ "variable with SDI=" + getSDI("indep"));
-			siteName = getSiteName("indep", namePref);
+			siteName = getSiteName("indep");
 			if (siteName != null)
 			{
 				String fn = tableDir + "/" + filePrefix + siteName + ".rdb";
@@ -203,24 +216,14 @@ debug1("trying '" + f.getPath() + "'");
 		
 		// MJM regardless of the failure above, fail if we don't have a table-reader.
 		if (tableReader == null)
-			warning("No table file. Tried: " + tried);
-//AW:USERINIT_END
-	}
-	
-	/**
-	 * This method is called once before iterating all time slices.
-	 */
-	protected void beforeTimeSlices()
-		throws DbCompException
-	{
-//AW:BEFORE_TIMESLICES
-		if (tableReader == null)
 		{
+			String msg = "No table file. Tried: " + tried;
+			warning(msg);
 			if (failIfNoTable)
-				throw new DbCompException("No rating table");
+				throw new DbCompException(msg);
 			return;
 		}
-		
+
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		lookupTable = new LookupTable();
@@ -271,7 +274,9 @@ debug1("trying '" + f.getPath() + "'");
 		catch(TableBoundsException ex)
 		{
 			warning("Table bounds exceeded on indep value at site "
-				+ getSiteName("indep", null));
+				+ getSiteName("indep", null) + ", value was " + indep + " at time " 
+				+ debugSdf.format(_timeSliceBaseTime) + ", indep units="
+				+ this.getParmRef("indep").timeSeries.getUnitsAbbr());
 		}
 //GC comment at 2010/08/17
 /*

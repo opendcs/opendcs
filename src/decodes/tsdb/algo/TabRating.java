@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.7  2012/09/18 15:57:06  mmaloney
  * Use EnvExpander on path name.
  *
@@ -126,6 +129,16 @@ public class TabRating
 //AW:INIT_END
 
 //AW:USERINIT
+//AW:USERINIT_END
+	}
+	
+	/**
+	 * This method is called once before iterating all time slices.
+	 */
+	protected void beforeTimeSlices()
+		throws DbCompException
+	{
+//AW:BEFORE_TIMESLICES
 		// Find the name for the input parameter.
 		if (tableName.length() == 0)
 		{
@@ -147,16 +160,7 @@ public class TabRating
 			debug3("Constructing Tab reader for '" + p + "'");
 			tableReader = new TabRatingReader(p);
 		}
-//AW:USERINIT_END
-	}
-	
-	/**
-	 * This method is called once before iterating all time slices.
-	 */
-	protected void beforeTimeSlices()
-		throws DbCompException
-	{
-//AW:BEFORE_TIMESLICES
+
 		if (tableReader == null)
 			return;
 		
@@ -206,7 +210,9 @@ public class TabRating
 		catch(TableBoundsException ex)
 		{
 			warning("Table bounds exceeded on indep value at site "
-				+ getSiteName("indep", null));
+				+ getSiteName("indep", null) + ", value was " + indep + " at time " 
+				+ debugSdf.format(_timeSliceBaseTime) + ", indep units="
+				+ this.getParmRef("indep").timeSeries.getUnitsAbbr());
 		}
 //AW:TIMESLICE_END
 	}

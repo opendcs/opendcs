@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/08/22 17:23:04  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -269,6 +272,10 @@ ex2.printStackTrace();
 			units = paramValue;
 			if (currentTS != null)
 				currentTS.setUnitsAbbr(units);
+		}
+		else if (paramName.equalsIgnoreCase("DATEFORMAT"))
+		{
+			dataSdf.applyPattern(paramValue);
 		}
 		else
 			warning("Unrecognized param name '" + paramName + "' -- ignored.");

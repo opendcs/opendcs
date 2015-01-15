@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.6  2014/11/19 16:09:23  mmaloney
+ * Additions for dcpmon
+ *
  * Revision 1.5  2014/09/15 14:04:36  mmaloney
  * Code cleanup.
  *
@@ -263,7 +266,7 @@ public class PlatformListIO extends SqlDbObjIo
 			Platform p = platformList.getById(platId);
 			if (p == null)
 			{
-				Logger.instance().warning(
+				Logger.instance().debug1(
 					"TM for non-existent platform id=" + platId
 					+ " TM.type=" + rs.getString(2) + ", TM.mediumId=" + rs.getString(3));
 				continue;

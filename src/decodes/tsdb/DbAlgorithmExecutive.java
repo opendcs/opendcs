@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.74  2013/08/19 12:58:34  mmaloney
 *  dev
 *
@@ -370,7 +373,7 @@ debug3("DbAlgorithmExec.apply()");
 		DbCompParm parm = comp.getParm(role);
 		if (parm == null)
 		{
-			warning("No param defined for role '" + role);
+			debug1("No param defined for role '" + role);
 			return;
 		}
 
