@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2014/12/11 20:24:07  mmaloney
+ * Logging mods.
+ *
  * Revision 1.5  2014/11/19 16:05:40  mmaloney
  * dev
  *
@@ -64,6 +67,7 @@ public class DcpMonitor
 	
 	private static PropertySpec[] dcpmonProps =
 	{
+		
 		new PropertySpec("numDaysStorage", PropertySpec.INT,
 			"Number of days for which to store data (default=5)"),
 		new PropertySpec("omitFailureCodes", PropertySpec.STRING,
@@ -179,12 +183,16 @@ public class DcpMonitor
 
     	surviveDatabaseBounce = true;
 
-		try { hostname = InetAddress.getLocalHost().getHostName(); }
-		catch(Exception e) { hostname = "unknown"; }
-
 		// Initialize the PDT and Channel Map. */
 		setStatus("Initializing PDT Maintenance");
 		DecodesInterface.maintainGoesPdt();
+		
+		try { hostname = InetAddress.getLocalHost().getHostName(); }
+		catch(Exception ex)
+		{
+			Logger.instance().warning("Cannot determine hostname, will use 'localhost': " + ex);
+			hostname = "localhost";
+		}
 	}
 
 	@Override

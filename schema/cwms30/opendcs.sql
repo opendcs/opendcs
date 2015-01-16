@@ -94,7 +94,7 @@ CREATE TABLE CP_ALGO_TS_PARM
 -- The XML depends on the SQL composite/member relations. You cannot alter one without altering the other.
 CREATE TABLE CP_COMPOSITE_DIAGRAM
 (
-    COMPOSITE_COMPUTATION_ID INT NOT NULL,
+    COMPOSITE_COMPUTATION_ID NUMBER(18)  NOT NULL,
     BLOCK_NUM INT NOT NULL,
     DIAGRAM_XML VARCHAR2(4000) NOT NULL,
     PRIMARY KEY (COMPOSITE_COMPUTATION_ID, BLOCK_NUM)
@@ -104,10 +104,10 @@ CREATE TABLE CP_COMPOSITE_DIAGRAM
 -- A composite has multiple components, each with a different execution order.
 CREATE TABLE CP_COMPOSITE_MEMBER
 (
-    COMPOSITE_COMPUTATION_ID INT NOT NULL,
+    COMPOSITE_COMPUTATION_ID NUMBER(18) NOT NULL,
     -- Determines the execution order of the component.
     EXEC_ORDER INT NOT NULL,
-    COMPONENT_COMPUTATION_ID INT NOT NULL,
+    COMPONENT_COMPUTATION_ID NUMBER(18) NOT NULL,
     PRIMARY KEY (COMPOSITE_COMPUTATION_ID, EXEC_ORDER)
 ) &TBL_SPACE_SPEC;
 
@@ -559,7 +559,8 @@ CREATE TABLE PLATFORM_STATUS
 	-- Null means that the schedule entry is too old and has been purged.
 	LAST_SCHEDULE_ENTRY_STATUS_ID NUMBER(18),
 	ANNOTATION VARCHAR2(400),
-	PRIMARY KEY (PLATFORM_ID)
+	db_office_code integer default &dflt_office_code,
+	PRIMARY KEY (PLATFORM_ID, db_office_code)
 ) &TBL_SPACE_SPEC;
 
 
@@ -725,7 +726,8 @@ CREATE TABLE SERIAL_PORT_STATUS
 	-- Short string. Usually one of the following:
 	-- idle, dialing, login, receiving, goodbye, error
 	PORT_STATUS VARCHAR2(32),
-	PRIMARY KEY (PORT_NAME)
+	db_office_code integer default &dflt_office_code,
+	PRIMARY KEY (PORT_NAME, db_office_code)
 ) &TBL_SPACE_SPEC;
 
 -- NOTE: CWMS Locations are mapped to DECODES Sites. So no SITE table in CWMS.

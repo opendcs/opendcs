@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2015/01/15 19:25:45  mmaloney
+ * RC01
+ *
  * Revision 1.2  2014/08/22 17:23:04  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -47,12 +50,13 @@ import java.util.TimeZone;
 
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
-
+import decodes.cwms.CwmsTimeSeriesDAO;
 import decodes.db.Site;
 import decodes.hdb.HdbTsId;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
+import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.Logger;
@@ -102,6 +106,9 @@ public class TsImport extends TsdbAppTemplate
 	private StringToken filenameArg = new StringToken("", "input-file", "", 
 		TokenOptions.optArgument|TokenOptions.optRequired
 		|TokenOptions.optMultiple, "");
+	private BooleanToken noUnitConvArg = new BooleanToken("U", "Pass file units directly to CWMS", "",
+		TokenOptions.optSwitch, false);
+
 	private SimpleDateFormat dataSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	
 	private String filename = null;
@@ -122,6 +129,7 @@ public class TsImport extends TsdbAppTemplate
 
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
+		cmdLineArgs.addToken(noUnitConvArg);
 		cmdLineArgs.addToken(filenameArg);
 	}
 
@@ -133,6 +141,7 @@ public class TsImport extends TsdbAppTemplate
 		dataSdf.setTimeZone(TimeZone.getTimeZone(
 			DecodesSettings.instance().sqlTimeZone));
 		siteNameType = DecodesSettings.instance().siteNameTypePreference;
+		CwmsTimeSeriesDAO.setNoUnitConv(noUnitConvArg.getValue());
 		
 		for(int n = filenameArg.NumberOfValues(), i=0; i<n; i++)
 		{

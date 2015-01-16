@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2014/12/11 20:28:09  mmaloney
+ * Added DacqEventLogging capability.
+ *
  * Revision 1.5  2014/09/15 14:00:54  mmaloney
  * Schedule Entry Refresh interval set to 60 seconds.
  *
@@ -97,6 +100,8 @@ public class RoutingScheduler
 	
 	private PropertySpec[] myProps =
 	{
+		new PropertySpec("monitor", PropertySpec.BOOLEAN,
+			"Set to true to allow monitoring from the GUI."),
 		new PropertySpec("EventPort", PropertySpec.INT,
 			"Open listening socket on this port to serve out app events."),
 		new PropertySpec("purgeBeforeDays", PropertySpec.INT, 
@@ -140,9 +145,6 @@ public class RoutingScheduler
 		// Routing Scheduler can survive DB going down.
 		surviveDatabaseBounce = true;
 
-		try { hostname = InetAddress.getLocalHost().getHostName(); }
-		catch(Exception e) { hostname = "unknown"; }
-
 		// Set up a logger that will add a prefix rs name to each log message
 		// generated from within the threads.
 		origLogger = Logger.instance();
@@ -153,6 +155,13 @@ public class RoutingScheduler
 		Logger.setLogger(appLogger);
 		Logger.instance().debug1("log to thread logger.");
 		origLogger.debug1("log to orig logger.");
+
+		try { hostname = InetAddress.getLocalHost().getHostName(); }
+		catch(Exception ex)
+		{
+			Logger.instance().warning("Cannot determine hostname, will use 'localhost': " + ex);
+			hostname = "localhost";
+		}
 
 	}
 	

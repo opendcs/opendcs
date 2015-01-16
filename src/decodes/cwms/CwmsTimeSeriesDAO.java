@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2014/08/29 18:24:50  mmaloney
+ * 6.1 Schema Mods
+ *
  * Revision 1.5  2014/08/15 16:23:36  mmaloney
  * Get rid of error-prone intermediate variable for unitsAbbr. Always use get method.
  *
@@ -74,6 +77,7 @@ public class CwmsTimeSeriesDAO
 	protected SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	private String dbOfficeId = null;
+	private static boolean noUnitConv = false;
 
 	protected CwmsTimeSeriesDAO(DatabaseConnectionOwner tsdb, String dbOfficeId)
 	{
@@ -565,14 +569,20 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			unitsAbbr = ts.getUnitsAbbr();
 		}
 		
-		// Convert to the required 'storage units'.
-		debug3("Time Series '" + tsId.getUniqueString() + "' have units '"
-			+ unitsAbbr + "' require units '" + tsId.getStorageUnits() + "'");
-		if (!unitsAbbr.equalsIgnoreCase(tsId.getStorageUnits()))
+		// noUnitConv is used for testing by TsImport only
+		if (!noUnitConv)
 		{
-			TimeSeriesHelper.convertUnits(ts, tsId.getStorageUnits());
-			unitsAbbr = tsId.getStorageUnits();
+			// Convert to the required 'storage units'.
+			debug3("Time Series '" + tsId.getUniqueString() + "' have units '"
+				+ unitsAbbr + "' require units '" + tsId.getStorageUnits() + "'");
+			if (!unitsAbbr.equalsIgnoreCase(tsId.getStorageUnits()))
+			{
+				TimeSeriesHelper.convertUnits(ts, tsId.getStorageUnits());
+				unitsAbbr = tsId.getStorageUnits();
+			}
 		}
+		else
+			debug3("Will write time series " + tsId.getUniqueString() + " with unit " + unitsAbbr);
 		
 		// We do not yet support versioned data
 		java.sql.Timestamp versionDate = null;
@@ -969,6 +979,11 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			warning("Error in cwms_util.refresh_mv_cwms_ts_id: " + ex);
 			ex.printStackTrace(Logger.instance().getLogOutput());
 		}
+	}
+
+	public static void setNoUnitConv(boolean noUnitConv)
+	{
+		CwmsTimeSeriesDAO.noUnitConv = noUnitConv;
 	}
 
 
