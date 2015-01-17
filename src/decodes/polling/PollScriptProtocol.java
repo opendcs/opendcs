@@ -54,16 +54,17 @@ public class PollScriptProtocol
 	extends LoggerProtocol
 	implements StreamReaderOwner
 {
-	public static final String module = "PollScriptProtocol";
+	protected String module = "PollScriptProtocol";
 	private ArrayList<PollScriptCommand> script = new ArrayList<PollScriptCommand>();
-	private StreamReader streamReader = null;
-	private IOPort ioPort = null;
-	private Exception abnormalShutdown = null;
-	private PollingDataSource dataSource = null;
-	private Properties properties = new Properties();
-	private Date start = null;
-	private TransportMedium transportMedium = null;
-	private boolean _inputClosed = false;
+	protected StreamReader streamReader = null;
+	protected IOPort ioPort = null;
+	protected Exception abnormalShutdown = null;
+	protected PollingDataSource dataSource = null;
+	protected Properties properties = new Properties();
+	protected Date start = null;
+	protected TransportMedium transportMedium = null;
+	protected boolean _inputClosed = false;
+	private int scriptIdx = 0;
 
 	public PollScriptProtocol()
 	{
@@ -125,6 +126,8 @@ public class PollScriptProtocol
 	{
 		script.clear();
 		LineNumberReader lnr = null;
+		PollScriptLoopWaitCmd loopWaitCmd = null;
+		PollScriptWaitCmd lastWait = null;
 		try
 		{
 			lnr = new LineNumberReader(new FileReader(scriptFile));
@@ -200,13 +203,42 @@ public class PollScriptProtocol
 						}
 					}
 
-					script.add(pswc);
+					script.add(lastWait = pswc);
 				}
 				else if (keyword.equals("flush"))
 				{
 					script.add(new PollScriptFlushCmd(this));
 				}
-
+				else if (keyword.equals("loopwait"))
+				{
+					// First arg after keyword should be integer # of iterations.
+					if (!strtok.hasMoreTokens())
+						throw new LoginException("Script '" + scriptFile.getPath() + "':"
+							+ lnr.getLineNumber() + " expected number of iterations after LOOPWAIT.");
+					String s = strtok.nextToken();
+					int iterations = 0;
+					try { iterations = Integer.parseInt(s); }
+					catch(NumberFormatException ex)
+					{
+						throw new LoginException("Script '" + scriptFile.getPath() + "':"
+							+ lnr.getLineNumber() + " invalid integer number of iterations '" 
+							+ s + "' after LOOPWAIT.");
+					}
+					script.add(loopWaitCmd = new PollScriptLoopWaitCmd(this, iterations));
+				}
+				else if (keyword.equals("endloop"))
+				{
+					if (loopWaitCmd == null)
+						throw new LoginException("Script '" + scriptFile.getPath() + "':"
+							+ lnr.getLineNumber() + " ENDLOOP without prior LOOPWAIT");
+					if (lastWait == null)
+						throw new LoginException("Script '" + scriptFile.getPath() + "':"
+							+ lnr.getLineNumber() + " LOOPWAIT ... ENDLOOP must have a WAIT command in it.");
+					
+					script.add(new PollScriptEndLoopCmd(this, loopWaitCmd, lastWait));
+					loopWaitCmd = null;
+					lastWait = null;
+				}
 			}
 		}
 		catch (IOException ex)
@@ -220,7 +252,7 @@ public class PollScriptProtocol
 		}
 	}
 	
-	public void executeScript(IOPort port, Date since)
+	protected void executeScript(IOPort port, Date since)
 		throws ProtocolException
 	{
 		this.ioPort = port;
@@ -234,8 +266,9 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 		try
 		{
 			abnormalShutdown = null;
-			for(PollScriptCommand cmd : script)
+			for(scriptIdx = 0; scriptIdx < script.size(); scriptIdx++)
 			{
+				PollScriptCommand cmd = script.get(scriptIdx);
 				if (_inputClosed)
 					throw new ProtocolException("Input Stream from Station Closed.");
 				cmd.execute();
@@ -407,5 +440,20 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 	
 	@Override
 	public String getModule() { return module; }
+
+	/**
+	 * Called from PollScriptEndLoop if a match was not found.
+	 * @param rewindTo
+	 */
+	public void rewind(PollScriptLoopWaitCmd rewindTo)
+		throws ProtocolException
+	{
+		while(scriptIdx >= 0 && script.get(scriptIdx) != rewindTo)
+			scriptIdx--;
+		if (scriptIdx < 0) // shouldn't happen
+			throw new ProtocolException("ENDLOOP with no matching LOOPWAIT");
+		// decrement once more, because execute's loop will increment at end of for loop.
+		scriptIdx--;
+	}
 
 }
