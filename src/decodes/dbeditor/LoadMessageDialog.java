@@ -2,6 +2,9 @@
  *  $Id$
  *
  *  $Log$
+ *  Revision 1.3  2014/05/30 13:15:35  mmaloney
+ *  dev
+ *
  *  Revision 1.2  2014/05/28 13:09:31  mmaloney
  *  dev
  *
@@ -460,7 +463,7 @@ public class LoadMessageDialog extends GuiDialog
 			try
 			{
 				myDSE = myDS.makeDelegate();
-				rsProps.setProperty("single", "true");
+//				rsProps.setProperty("single", "true");
 				rsProps.setProperty("dcpaddress", dcpaddr);
 				if (chan != -1)
 					rsProps.setProperty("channel", "&" + chan);

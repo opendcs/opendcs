@@ -30,7 +30,7 @@ public class PlatformListPanel extends JPanel
     BorderLayout borderLayout1 = new BorderLayout();
     ListOpsPanel listOpsPanel;
     JLabel jLabel1 = new JLabel();
-	PlatformSelectPanel platformSelectPanel = new PlatformSelectPanel();
+	PlatformSelectPanel platformSelectPanel = new PlatformSelectPanel(null);
     DbEditorFrame parent;
 	int newIndex = 1;
 

@@ -39,16 +39,12 @@ public class PlatformSelectDialog extends JDialog
 	private Platform plat;
 	private boolean cancelled;
 
-	/** Constructor. */
-	public PlatformSelectDialog()
+	public PlatformSelectDialog(JFrame owner, String mediumType)
 	{
-		this((String)null);
-	}
-	public PlatformSelectDialog(String mediumType)
-	{
-        super(DbEditorFrame.instance(), "", true);
+        super(owner, "", true);
 		init(mediumType);
     }
+	
 	public PlatformSelectDialog(Site site, String mediumType )
     {
         super(TopFrame.instance(), "", true);
@@ -77,10 +73,7 @@ public class PlatformSelectDialog extends JDialog
 
 	private void init(String mediumType)
 	{
-		if (mediumType == null)
-			selectPanel = new PlatformSelectPanel();
-		else
-			selectPanel = new PlatformSelectPanel(mediumType);
+		selectPanel = new PlatformSelectPanel(mediumType);
 		selectPanel.setParentDialog(this);
 		plat = null;
         try 

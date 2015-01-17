@@ -38,12 +38,6 @@ public class PlatformSelectPanel extends JPanel
 	PlatformSelectDialog parentDialog = null;
 	PlatformListPanel parentPanel = null;
 
-	/** Constructor. */
-	public PlatformSelectPanel()
-	{
-		this(DecodesSettings.instance().transportMediumTypePreference);
-	}
-
 	public PlatformSelectPanel(String mediumType)
 	{
 		model = new PlatformSelectTableModel(this, mediumType);
@@ -80,8 +74,7 @@ public class PlatformSelectPanel extends JPanel
 		parentDialog = dlg;
 	}
 	
-	public PlatformSelectPanel(final PlatformSelectDialog psd, Site site,
-					String mediumType)
+	public PlatformSelectPanel(final PlatformSelectDialog psd, Site site, String mediumType)
 	{
 		if ( site == null ) 
 			model = new PlatformSelectTableModel(this, mediumType);
@@ -194,10 +187,10 @@ class PlatformSelectTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
 	PlatformSelectColumnizer columnizer;
-	String mediumType;
 	Site site;
 	private PlatformSelectPanel panel;
-	private Vector vec;
+//	private Vector vec;
+	private ArrayList<Platform> platformList = new ArrayList<Platform>();
 	private int sortColumn = -1;
 
 	static String colNamesNoDesig[] = 
@@ -231,9 +224,16 @@ class PlatformSelectTableModel extends AbstractTableModel
 	{
 		super();
 		this.panel = panel;
-		this.mediumType = mediumType;
-		columnizer = new PlatformSelectColumnizer(mediumType);		
-		vec = Database.getDb().platformList.getPlatformVector();
+		columnizer = new PlatformSelectColumnizer();		
+		for(Platform platform : Database.getDb().platformList.getPlatformVector())
+		{
+			if (mediumType == null 
+			 || platform.getTransportMedium(mediumType) != null
+			 || (mediumType.equalsIgnoreCase(Constants.medium_Goes)
+				 && (platform.getTransportMedium(Constants.medium_GoesST) != null
+				  || platform.getTransportMedium(Constants.medium_GoesRD) != null)))
+				platformList.add(platform);
+		}
 		this.sortByColumn(0);
 	}
 	
@@ -242,11 +242,10 @@ class PlatformSelectTableModel extends AbstractTableModel
 		super();
 		this.panel = panel;
 		this.site = site;
-		columnizer = new PlatformSelectColumnizer(site );
+		columnizer = new PlatformSelectColumnizer();
 		Vector fvec = Database.getDb().platformList.getPlatformVector();
 		Platform p = null;
 		Vector tvec = (Vector)fvec.clone();
-		vec = new Vector();
 		SiteName usgsName = site.getName(Constants.snt_USGS);
 		if (usgsName != null)
 		{
@@ -258,7 +257,7 @@ class PlatformSelectTableModel extends AbstractTableModel
 					SiteName sn = p.site.getName(Constants.snt_USGS);
 					if(sn != null) {
 						if ( sn.equals(usgsName) )
-							vec.add(p);
+							platformList.add(p);
 					}
 					
 				}
@@ -280,8 +279,7 @@ class PlatformSelectTableModel extends AbstractTableModel
 
 	void deletePlatformAt(int index)
 	{
-		Platform ob = (Platform)vec.elementAt(index);
-		deletePlatform(ob);
+		platformList.remove(index);
 	}
 
 	void deletePlatform(Platform ob)
@@ -318,7 +316,7 @@ class PlatformSelectTableModel extends AbstractTableModel
 
 	public int getRowCount()
 	{
-		return vec.size();
+		return platformList.size();
 	}
 
 	public Object getValueAt(int r, int c)
@@ -333,13 +331,13 @@ class PlatformSelectTableModel extends AbstractTableModel
 
 	public Object getRowObject(int r)
 	{
-		return vec.elementAt(r);
+		return platformList.get(r);
 	}
 
 	public void sortByColumn(int c)
 	{
 		sortColumn = c;
-		Collections.sort(vec, new PlatformColumnComparator(c, columnizer));
+		Collections.sort(platformList, new PlatformColumnComparator(c, columnizer));
 	}
 
 	public void reSort()
@@ -356,18 +354,7 @@ class PlatformSelectTableModel extends AbstractTableModel
 */
 class PlatformSelectColumnizer
 {
-	private String mediumType;
-	private Site site;
 	private boolean desig = DecodesSettings.instance().platformListDesignatorCol;
-
-	public PlatformSelectColumnizer(Site site) 
-	{
-		this.site = site;
-	}
-	public PlatformSelectColumnizer(String mediumType)
-	{
-		this.mediumType = mediumType;
-	}
 
 	String getColumn(Platform p, int c)
 	{
@@ -443,7 +430,7 @@ class PlatformSelectColumnizer
 	}
 }
 
-class PlatformColumnComparator implements Comparator
+class PlatformColumnComparator implements Comparator<Platform>
 {
 	int col;
 	PlatformSelectColumnizer columnizer;
@@ -454,12 +441,10 @@ class PlatformColumnComparator implements Comparator
 		this.columnizer = columnizer;
 	}
 
-	public int compare(Object ob1, Object ob2)
+	public int compare(Platform p1, Platform p2)
 	{
-		if (ob1 == ob2)
+		if (p1 == p2)
 			return 0;
-		Platform p1 = (Platform)ob1;
-		Platform p2 = (Platform)ob2;
 		return columnizer.getColumn(p1, col).compareToIgnoreCase(
 			columnizer.getColumn(p2, col));
 	}

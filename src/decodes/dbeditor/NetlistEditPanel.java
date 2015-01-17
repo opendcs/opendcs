@@ -4,8 +4,10 @@
 package decodes.dbeditor;
 
 import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.table.*;
+
 import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +19,6 @@ import java.util.Iterator;
 import java.util.Collections;
 
 import lrgs.gui.PdtSelectDialog;
-
 import ilex.util.EnvExpander;
 import ilex.util.TextUtil;
 import decodes.db.*;
@@ -423,7 +424,8 @@ System.out.println("Select From PDT Pressed.");
 	 */
 	void addDecodesPlatformsPressed()
 	{
-		PlatformSelectDialog dlg = new PlatformSelectDialog(mediumTypeCombo.getSelection());
+		PlatformSelectDialog dlg = new PlatformSelectDialog(
+			DbEditorFrame.instance(), mediumTypeCombo.getSelection());
 		dlg.setMultipleSelection(true);
 		launchDialog(dlg);
 		Platform toAdd[] = dlg.getSelectedPlatforms();
