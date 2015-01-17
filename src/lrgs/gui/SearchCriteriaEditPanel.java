@@ -4,6 +4,9 @@
 *  Open Source Software written by Cove Software, LLC
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2013/02/28 16:44:26  mmaloney
 *  New SearchCriteriaEditPanel implementation.
 *
@@ -54,13 +57,13 @@ import javax.swing.table.AbstractTableModel;
 import decodes.db.Database;
 import decodes.db.NetworkList;
 import decodes.db.Platform;
+import decodes.dbeditor.PlatformSelectDialog;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
 import decodes.util.Pdt;
 import decodes.util.PdtEntry;
-
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.SearchCriteria;
@@ -898,28 +901,37 @@ public class SearchCriteriaEditPanel
 	protected void addNameButtonPressed()
 	{
 		Database db = Database.getDb();
-		String name = null;
+//		String name = null;
 		if (db != null && db.platformList != null && db.platformList.size() > 0)
 		{
-			String names[] = new String[db.platformList.size()];
-			int i=0;
-			for(Platform p : db.platformList.getPlatformVector())
-				names[i++] = p.getDisplayName();
-			name = (String)JOptionPane.showInputDialog(this, "Enter Platform Name:", 
-				"Platform Name", JOptionPane.PLAIN_MESSAGE, null, 
-				names, names[0]);
+			PlatformSelectDialog psd = new PlatformSelectDialog(parent, null);
+			psd.setMultipleSelection(true);
+			parent.launchDialog(psd);
+			for(Platform p : psd.getSelectedPlatforms())
+			{
+				platSelectModel.add(PlatSelectModel.PlatformNameLabel, p.getDisplayName());
+
+			}
+			
+//			String names[] = new String[db.platformList.size()];
+//			int i=0;
+//			for(Platform p : db.platformList.getPlatformVector())
+//				names[i++] = p.getDisplayName();
+//			name = (String)JOptionPane.showInputDialog(this, "Enter Platform Name:", 
+//				"Platform Name", JOptionPane.PLAIN_MESSAGE, null, 
+//				names, names[0]);
 		}
 		else
 		{
-			name = JOptionPane.showInputDialog(this, "Enter Platform Name:", 
+			String name = JOptionPane.showInputDialog(this, "Enter Platform Name:", 
 				"Platform Name", JOptionPane.PLAIN_MESSAGE);
+			if (name == null)
+				return;
+			name = name.trim();
+			if (name.length() == 0)
+				return;
+			platSelectModel.add(PlatSelectModel.PlatformNameLabel, name);
 		}
-		if (name == null)
-			return;
-		name = name.trim();
-		if (name.length() == 0)
-			return;
-		platSelectModel.add(PlatSelectModel.PlatformNameLabel, name);
 	}
 
 	protected void addIdButtonPressed()
