@@ -602,7 +602,8 @@ public class LrgsDataSource extends DataSourceExec
 			else
 				log(Logger.E_DEBUG2, 
 					"Skipping DAPS Status Message with type '" 
-					+ failureCode + "'");
+					+ failureCode + "' isGoesMsg=" + dcpMsg.isGoesMessage()
+					+ ", flags=0x" + Integer.toHexString(dcpMsg.flagbits));
 		}
 
 		// Parse the message & establish platform linkage.
