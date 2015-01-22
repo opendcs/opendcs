@@ -305,8 +305,7 @@ public class RoutingSpecThread
 		if (rawArchivePath != null)
 			rawArchive = new RawArchive(rs);
 
-		Logger.instance().debug1("RS Starting, applySensorLimits="
-			+applySensorLimits);
+		log(Logger.E_DEBUG3, "Starting, applySensorLimits=" +applySensorLimits);
 		currentStatus = "Running";
 		statusWriteThread = new StatusWriteThread(this);
 		statusWriteThread.start();
@@ -1573,7 +1572,6 @@ log(Logger.E_DEBUG1, "shutdown called.");
 			}
 		}
 
-Logger.instance().info("before mainThread.start(), minPri=" + Logger.instance().getMinLogPriority());
 		mainThread.start();
 	}
 	

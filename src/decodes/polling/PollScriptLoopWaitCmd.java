@@ -48,6 +48,6 @@ public class PollScriptLoopWaitCmd extends PollScriptCommand
 	{
 		if (count++ >= iterations)
 			throw new ProtocolException(module + " " + iterations 
-				+ " attempted without finding match.");
+				+ " attempted without finding match. Script=" + owner.getScriptFileName());
 	}
 }

@@ -1,5 +1,6 @@
 package decodes.polling;
 
+import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class ModemDialer
 	extends Dialer
 	implements StreamReaderOwner
 {
-	public static final String module = "ModemDialer";
+	public String module = "ModemDialer";
 	public static String EOL = "\r\n";
 	private String AT = "AT" + EOL;
 	private double AtWaitSec = 3.0;
@@ -39,7 +40,9 @@ public class ModemDialer
 	public void connect(IOPort ioPort, TransportMedium tm)
 		throws DialException
 	{
-Logger.instance().info(module + ".connect() - Spawning StreamReader to read responses from modem.");
+		module = "ModemDialer(" + tm.platform.getSiteName(false) + ":" + ioPort.getPortNum() + ")";
+		
+		Logger.instance().debug2(module + ".connect() - Spawning StreamReader to read responses from modem.");
 		// Spawn a separate thread to read and buffer responses from the device
 		readError = null;
 		_inputClosed = false;
@@ -50,22 +53,24 @@ Logger.instance().info(module + ".connect() - Spawning StreamReader to read resp
 			for(int ntries = 0; ntries < 3 && readError == null; ntries++)
 			{
 				streamReader.flushBacklog();
-Logger.instance().info(module + " sending " + AT + " to modem. Try #" + ntries);
+				Logger.instance().debug2(module + " sending " + AT + " to modem. Try #" + (ntries+1));
 				ioPort.getOut().write(AT.getBytes());
 				ioPort.getOut().flush();
 				if (!streamReader.wait(AtWaitSec, OK))
 				{
-Logger.instance().info(module + " response to AT failed.");
+					Logger.instance().warning(module + " response to AT failed, session buf: "
+						+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
+					
 					disconnect(ioPort);
 					continue;
 				}
 				
 				String dialstr = "ATDT " + tm.getMediumId() + EOL;
-Logger.instance().info(module + " sending " + dialstr + " to modem. Try #" + ntries);
+				Logger.instance().debug1(module + " sending " + dialstr + " to modem. Try #" + (ntries+1));
 				ioPort.getOut().write(dialstr.getBytes());
 				if (!streamReader.wait(ConnectWaitSec, CONNECT))
 				{
-Logger.instance().info(module + " response to ATDT failed.");
+					Logger.instance().warning(module + " response to ATDT failed.");
 					disconnect(ioPort);
 					continue;
 				}
@@ -92,20 +97,20 @@ Logger.instance().info(module + " response to ATDT failed.");
 			return; // must already be in the process of shutting down.
 		try
 		{
-Logger.instance().debug2(module + " sending " + Break + " to modem.");
+			Logger.instance().debug2(module + " sending " + Break + " to modem.");
 			ioPort.getOut().write(Break.getBytes());
-			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
-Logger.instance().debug2(module + " sending " + Hangup + " to modem.");
+			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
+			Logger.instance().debug1(module + " sending " + Hangup + " to modem.");
 			if (ioPort.getOut() != null)
 				try { ioPort.getOut().write(Hangup.getBytes()); }
 				catch(Exception ex) {}
-			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
+			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
 		}
 		catch(IOException ex)
 		{
 			Logger.instance().warning(module + " Error while disconnecting: " + ex);
 		}
-Logger.instance().debug2(module + " disconnect complete.");	
+		Logger.instance().debug2(module + " disconnect complete.");	
 	}
 
 	@Override

@@ -54,8 +54,7 @@ public class PollingThreadController
 	public void run()
 	{
 		_shutdown = false;
-		dataSource.log(Logger.E_DEBUG1, module + " starting");
-		
+
 		// Construct a PollingThread runnable for each Transport Medium
 		while (tmIdx < aggTMList.size())
 			threads.add(new PollingThread(this, dataSource, aggTMList.get(tmIdx++)));
@@ -64,7 +63,8 @@ public class PollingThreadController
 			dataSource.log(Logger.E_WARNING, "There are no stations to poll in the list.");
 			_shutdown = true;
 		}
-		dataSource.log(Logger.E_DEBUG1, module + " starting. " + threads.size() + " session threads will be attempted."
+		dataSource.log(Logger.E_DEBUG1, module + " starting. " + threads.size() 
+			+ " sessions will be attempted."
 			+ " #waiting=" + countThreads(PollingThreadState.Waiting));
 		
 long debugmsec = 0L;
@@ -92,7 +92,8 @@ long debugmsec = 0L;
 				}
 				else // start a new poll on the allocated port.
 				{
-					dataSource.log(Logger.E_DEBUG1, module + " starting thread for TM " + pt.getTransportMedium()
+					dataSource.log(Logger.E_DEBUG1, module + " starting " + pt.module
+						+ ", TM " + pt.getTransportMedium()
 						+ " on port number " + ioPort.getPortNum());
 					pt.setState(PollingThreadState.Running);
 					pt.setSaveSessionFile(saveSessionFile);

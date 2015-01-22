@@ -65,6 +65,7 @@ public class PollScriptProtocol
 	protected TransportMedium transportMedium = null;
 	protected boolean _inputClosed = false;
 	private int scriptIdx = 0;
+	private File scriptFile = null;
 
 	public PollScriptProtocol()
 	{
@@ -77,7 +78,7 @@ public class PollScriptProtocol
 	{
 		this.ioPort = port;
 		
-		dataSource.log(Logger.E_DEBUG3, module + ".login()");
+		pollingThread.debug3(module + ".login()");
 		
 		// Use enum associated with tm.loggerType to find Poll script.
 		DbEnum lte = Database.getDb().enumList.getEnum(Constants.enum_LoggerType);
@@ -98,7 +99,7 @@ public class PollScriptProtocol
 			throw new LoginException("Script directory '" + scriptDir + "' does not exist. Check "
 				+ "decodes setting for 'pollScriptDir'");
 		
-		File scriptFile = new File(scriptDir, ltev.getOptions().trim());
+		scriptFile = new File(scriptDir, ltev.getOptions().trim());
 		if (!scriptFile.canRead())
 			throw new LoginException(module + " Cannot read poll script '" + scriptFile.getPath() + "'");
 
@@ -112,11 +113,10 @@ public class PollScriptProtocol
 			properties.setProperty("USERNAME", tm.getUsername());
 		if (tm.getPassword() != null && tm.getPassword().trim().length() > 0)
 			properties.setProperty("PASSWORD", tm.getPassword());
-		properties.setProperty("HOURS", ""+dataSource.getController().getMaxBacklogHours());
 		
 		// Then read it into memory
 		readScript(scriptFile);
-		dataSource.log(Logger.E_DEBUG3, module + " Successfully read script file '" + scriptFile + "'");
+		pollingThread.debug2("Successfully read script file '" + scriptFile + "'");
 		
 		// Note: No actual login is done here. The script handles it.
 	}
@@ -256,7 +256,7 @@ public class PollScriptProtocol
 		throws ProtocolException
 	{
 		this.ioPort = port;
-Logger.instance().info(module + " spawning StreamReader to responses from station.");
+		pollingThread.debug1("spawning StreamReader to responses from station.");
 
 		streamReader = new StreamReader(port.getIn(), this);
 		streamReader.setPollSessionLogger(pollSessionLogger);
@@ -275,7 +275,7 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 				if (abnormalShutdown != null)
 					break;
 			}
-			Logger.instance().debug1(module + " Script execution complete."
+			pollingThread.debug1("Script execution complete."
 				+ (abnormalShutdown == null ? "" : " Abnormal Shutdown: " + abnormalShutdown));
 		}
 		finally { streamReader.shutdown(); }
@@ -286,15 +286,21 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 		throws ProtocolException
 	{
 		start = since;
+		
+		int hours = (int)((System.currentTimeMillis() - since.getTime()) / 3600L) + 1;
+		if (hours > dataSource.getController().getMaxBacklogHours())
+			hours = dataSource.getController().getMaxBacklogHours();
+		properties.setProperty("HOURS", ""+hours);
+		
 		this.transportMedium = tm;
 		Date sessionStart = new Date();
-		dataSource.log(Logger.E_DEBUG2, module + ".getData() session starting at " + sessionStart);
+		pollingThread.debug2("getData() session starting at " + sessionStart);
 
 		executeScript(port, since);
 		if (abnormalShutdown != null)
 			return null;
 		Date sessionEnd = new Date();
-		dataSource.log(Logger.E_DEBUG2, module + ".getData() session finished at " + sessionEnd);
+		pollingThread.debug2("getData() session finished at " + sessionEnd);
 
 		// Build DcpMsg from info in tm and captured data.
 		// Set all necessary attributes in DcpMsg.
@@ -332,7 +338,7 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 				| DcpMsgFlag.MSG_TYPE_NETDCP
 	            | DcpMsgFlag.MSG_NO_SEQNUM);
 			ret.setHeaderLength(msgdata.length - capturedData.length);
-			dataSource.log(Logger.E_DEBUG2, module + ".getData() returning message.");
+			pollingThread.debug2("getData() returning message.");
 
 			return ret;
 		}
@@ -340,7 +346,7 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 		{
 			// Won't happen for byte array OS
 			String msg = module + "U nexpected error in PollScriptProtocol.getData(): " + ex;
-			dataSource.log(Logger.E_FAILURE, msg);
+			pollingThread.failure(msg);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 			throw new ProtocolException(msg);
@@ -369,7 +375,7 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 	@Override
 	public void inputError(IOException ex)
 	{
-		Logger.instance().warning(module + " input error: " + ex);
+		pollingThread.warning("input error: " + ex);
 		abnormalShutdown = ex;
 	}
 	
@@ -439,7 +445,7 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 	}
 	
 	@Override
-	public String getModule() { return module; }
+	public String getModule() { return pollingThread.module; }
 
 	/**
 	 * Called from PollScriptEndLoop if a match was not found.
@@ -451,9 +457,12 @@ Logger.instance().info(module + " spawning StreamReader to responses from statio
 		while(scriptIdx >= 0 && script.get(scriptIdx) != rewindTo)
 			scriptIdx--;
 		if (scriptIdx < 0) // shouldn't happen
-			throw new ProtocolException("ENDLOOP with no matching LOOPWAIT");
+			throw new ProtocolException("ENDLOOP with no matching LOOPWAIT. script="
+				+ getScriptFileName());
 		// decrement once more, because execute's loop will increment at end of for loop.
 		scriptIdx--;
 	}
+	
+	public String getScriptFileName() { return scriptFile == null ? "(null)" : scriptFile.getName(); }
 
 }

@@ -111,8 +111,6 @@ public class PollingDataSource extends DataSourceExec
 		Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{
-		log(Logger.E_INFORMATION, module + " init()");
-		
 		// The args in the dataSource form the default settings that can be
 		// overridden by routing spec properties.
 		Properties aggProps = new Properties(dbDataSource.arguments);
@@ -161,7 +159,8 @@ public class PollingDataSource extends DataSourceExec
 		if (aggTMList.size() == 0)
 			throw new DataSourceException(module + " There are no valid transport media in the network lists.");
 		else
-			log(Logger.E_DEBUG1, module + " " + aggTMList.size() + " transport media in network lists.");
+			log(Logger.E_INFORMATION, module + ": There are " + aggTMList.size() 
+				+ " stations to be polled.");
 		
 		// Determine the port type and construct the port pool
 		String portType = PropertiesUtil.getIgnoreCase(aggProps, "portType");

@@ -1,20 +1,19 @@
 package decodes.polling;
 
 import java.io.IOException;
-import java.rmi.UnknownHostException;
-import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import decodes.db.TransportMedium;
 import ilex.net.BasicClient;
+import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 
 public class DigiConnectPortManager 
 	extends Thread
 	implements StreamReaderOwner
 {
-	public static String module = "DigiConnectPortManager";
+	public static String module = "DigiPortManager";
 	private boolean _shutdown = false;
 	
 	/** Number of ms to pause if config request queue is empty. */
@@ -22,28 +21,24 @@ public class DigiConnectPortManager
 	
 	/** Number of ms for a calling thread to wait to successfully enqueue a config request. */
 	private long ENQUEUE_WAIT_MS = 5000L;
-	public static final long WAIT_FOR_CONFIG_MS = 30000L;
 	
-	/** If telnet connection fails, wait this many ms before re-attempting */
-	public static final long WAIT_RECONNECT_MS = 60000L;
-	private BasicClient telnetCon = null;
+	/** Calling threads wait this long for a configuration to succeed. */
+	public static final long WAIT_FOR_CONFIG_MS = 60000L;
+	
 	private DigiConnectPortPool parent = null;
-	StreamReader streamReader = null;
 	private byte[] digiPrompt = "#>".getBytes(); 
 	private String captured = null;
-	private int consecutiveFails = 0;
-	private boolean telnetInputStreamClosed = false;
 	public static String EOL = "\r\0";
 	
 	/** The queue holding configuration tasks to be done. */
-	private ArrayBlockingQueue<AllocatedSerialPort> configQueue = new ArrayBlockingQueue<AllocatedSerialPort>(500);
+	private ArrayBlockingQueue<AllocatedSerialPort> configQueue = 
+		new ArrayBlockingQueue<AllocatedSerialPort>(500);
 
 
 	public DigiConnectPortManager(DigiConnectPortPool parent)
 	{
 		this.parent = parent;
 		setName(module);
-		telnetCon = new BasicClient(parent.getDigiIpAddr(), 23);
 	}
 	
 	
@@ -52,67 +47,13 @@ public class DigiConnectPortManager
 	{
 		while (!_shutdown)
 		{
-			if (!telnetCon.isConnected())
-			{
-				try
-				{
-					tryConnectTelnet();
-				}
-				catch (IOException ex)
-				{
-					Logger.instance().failure(module + " Cannot connect to Digi: " + ex);
-					disconnect();
-					try { sleep(WAIT_RECONNECT_MS); } catch(InterruptedException ie) {}
-					continue;
-				}
-			}
+			AllocatedSerialPort asp = configQueue.poll();
 			
-			if (telnetCon.isConnected())
-			{
-				AllocatedSerialPort asp = configQueue.poll();
-				if (asp != null)
-					processPort(asp);
-			}
-			if (configQueue.size() == 0)
-			{
-				try { sleep(PAUSE_MSEC); } catch(InterruptedException ex) {}
-			}
+			if (asp != null)
+				processPort(asp);
+			
+			try { sleep(PAUSE_MSEC); } catch(InterruptedException ex) {}
 		}
-		disconnect();
-	}
-	
-	private void tryConnectTelnet()
-		throws IOException, UnknownHostException
-	{
-		// Connect to the parent's digiIpAddr on port 23
-		telnetCon.setHost(parent.getDigiIpAddr());
-		telnetCon.setPort(23);
-		telnetCon.connect();
-		
-		// Spawn a separate thread to read and buffer responses from the device
-		consecutiveFails = 0;
-		telnetInputStreamClosed = false;
-
-Logger.instance().info(module + " spawning StreamReader to read telnet 23 port.");
-		streamReader = new StreamReader(telnetCon.getInputStream(), this);
-		streamReader.start();
-		
-		if (!sendAndAwaitResponse(null, 5, "login:".getBytes()))
-			throw new IOException("Never got login prompt from digiconnect device " + parent.getDigiIpAddr());
-		if (!sendAndAwaitResponse((parent.getDigiUserName()+EOL).getBytes(), 5, "Password:".getBytes()))
-			throw new IOException("Never got password prompt from digiconnect device " + parent.getDigiIpAddr());
-		if (!sendAndAwaitResponse((parent.getDigiPassword()+EOL).getBytes(), 5, "#>".getBytes()))
-			throw new IOException("Never got initial prompt after login from digiconnect device " + parent.getDigiIpAddr());
-	}
-	
-	public void disconnect()
-	{
-		if (streamReader != null)
-			streamReader.shutdown();
-		streamReader = null;
-
-		// disconnect the basicClient
-		telnetCon.disconnect();
 	}
 	
 	public void shutdown() { _shutdown = true; }
@@ -136,22 +77,20 @@ Logger.instance().info(module + " spawning StreamReader to read telnet 23 port."
 			try { Thread.sleep(PAUSE_MSEC); }
 			catch(InterruptedException ex) {}
 		}
-		return asp.ioPort.getConfigureState() == PollingThreadState.Success;
+		PollingThreadState result = asp.ioPort.getConfigureState();
+		if (result == PollingThreadState.Success)
+			return true;
+		else if (result == PollingThreadState.Failed)
+			return false;
+		else // must be still waiting.
+		{
+			configQueue.remove(asp); // Make sure it's not still on the queue.
+			return false;
+		}
 	}
 	
 	private boolean tryEnqueue(AllocatedSerialPort asp)
 	{
-		// There can be only one config request for a given port. This one supersedes
-		// any outstanding config requests.
-//		for(Iterator<AllocatedSerialPort> aspit = configQueue.iterator(); aspit.hasNext(); )
-//		{
-//			AllocatedSerialPort qasp = aspit.next();
-//			if (qasp.ioPort.getPortNum() == asp.ioPort.getPortNum())
-//			{
-//				aspit.remove();
-//				break;
-//			}
-//		}
 		try
 		{
 			if (configQueue.offer(asp, ENQUEUE_WAIT_MS, TimeUnit.MILLISECONDS) == false)
@@ -166,7 +105,6 @@ Logger.instance().info(module + " spawning StreamReader to read telnet 23 port."
 			return false;
 		}
 		return true;
-		
 	}
 	
 	/**
@@ -178,76 +116,127 @@ Logger.instance().info(module + " spawning StreamReader to read telnet 23 port."
 	 */
 	private void processPort(AllocatedSerialPort asp)
 	{
-		// Build command to send to telnet with settings in transport medium.
-		StringBuilder cmdb = new StringBuilder("set serial port=" + asp.ioPort.getPortNum());
-		int nparams = 0;
-		if (asp.transportMedium.getBaud() > 0)
+		// Connect to telnet port 23 on digi device.
+		BasicClient telnetCon = new BasicClient(parent.getDigiIpAddr(), 23);
+		StreamReader streamReader = null;
+		String cmd = null;
+		try
 		{
-			cmdb.append(" baud=" + asp.transportMedium.getBaud());
-			nparams++;
-		}
-		if (asp.transportMedium.getDataBits() > 0)
-		{
-			cmdb.append(" databits=" + asp.transportMedium.getDataBits());
-			nparams++;
-		}
-		if (asp.transportMedium.getStopBits() > 0)
-		{
-			cmdb.append(" stopbits=" + asp.transportMedium.getStopBits());
-			nparams++;
-		}
-		Parity parity = Parity.fromCode(asp.transportMedium.getParity());
-		if (parity != Parity.Unknown)
-		{
-			cmdb.append(" parity=" + parity.toString().toLowerCase());
-			nparams++;
-		}
-		String cmd = cmdb.toString();
-Logger.instance().info(module + " will attempt " + cmd);		
-		
-		if (nparams == 0) // nothing to do
-			asp.ioPort.setConfigureState(PollingThreadState.Success);
-		else
-		{
-			try
+			Logger.instance().debug2(module + " connecting to " + telnetCon.getName());
+			telnetCon.connect();
+			
+			Logger.instance().debug1(module + " spawning StreamReader to read telnet 23 port.");
+			
+			streamReader = new StreamReader(telnetCon.getInputStream(), this);
+			streamReader.setCapture(true);
+			streamReader.start();
+			try { sleep(500L); } catch(InterruptedException ex) {}
+			
+			// Login with supplied username & password
+			cmd = "(initial connect)";
+			if (!sendAndAwaitResponse(null, 5, "login:".getBytes(), telnetCon, streamReader))
 			{
-				if (!sendAndAwaitResponse((cmd + EOL).getBytes(), 5, digiPrompt))
-				{
-					// Failed to get prompt after sending set serial command. 
-					// Also, more than one consecutive failure means we close telnet.
-					if (consecutiveFails >= 2)
-						disconnect();
-					asp.ioPort.setConfigureState(PollingThreadState.Failed);
-					return;
-				}
-				
-				String showCmd = "show serial port=" + asp.ioPort.getPortNum() + EOL;
-				if (!sendAndAwaitResponse(showCmd.getBytes(), 5, digiPrompt))
-				{
-					// Failed to get prompt after sending show serial command.
-					// Also, more than one consecutive failure means we close telnet.
-					if (consecutiveFails >= 2)
-						disconnect();
-					asp.ioPort.setConfigureState(PollingThreadState.Failed);
-					return;
-				}
-				
-				if (!verifySettings(asp.ioPort.getPortNum(), asp.transportMedium))
-				{
-					// This means that the set command failed to make the required settings
-					asp.ioPort.setConfigureState(PollingThreadState.Failed);
-					return;
-				}
-				
+				byte[] sessionBuf = streamReader.getSessionBuf();
+				throw new IOException("Never got login prompt from digiconnect device " 
+					+ parent.getDigiIpAddr() + ", received " + sessionBuf.length + " bytes: "
+					+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
+			}
+			cmd = parent.getDigiUserName()+EOL;
+			if (!sendAndAwaitResponse(cmd.getBytes(), 5, "Password:".getBytes(), telnetCon, streamReader))
+				throw new IOException("Never got password prompt from digiconnect device " 
+					+ parent.getDigiIpAddr());
+			cmd = parent.getDigiPassword()+EOL;
+			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
+				throw new IOException("Never got initial prompt after login from digiconnect device " 
+					+ parent.getDigiIpAddr());
+			
+			// Build command to send to telnet with settings in transport medium.
+			StringBuilder cmdb = new StringBuilder("set serial port=" + asp.ioPort.getPortNum());
+			
+			// KLUDGE - Sometimes the modem goes catatonic. A baud rate change seems to kick it in the
+			// head.
+//			int toggleBaud = asp.transportMedium.getBaud() == 1200 ? 9600 : 1200;
+//			cmd = cmdb.toString() + " baud=" + toggleBaud + EOL;
+//			Logger.instance().debug1(module + " KLUDGE sending '" + cmd + "'");
+//			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
+//			{
+//				Logger.instance().failure(module + " KLUDGE failure!");
+//				// Failed to get prompt after sending show serial command.
+//				asp.ioPort.setConfigureState(PollingThreadState.Failed);
+//				return;
+//			}
+//			asp.basicClient.sendData("AT\r".getBytes());
+//			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
+
+			// End of Kludge, build actual params for this session
+			int nparams = 0;
+			if (asp.transportMedium.getBaud() > 0)
+			{
+				cmdb.append(" baud=" + asp.transportMedium.getBaud());
+				nparams++;
+			}
+			if (asp.transportMedium.getDataBits() > 0)
+			{
+				cmdb.append(" databits=" + asp.transportMedium.getDataBits());
+				nparams++;
+			}
+			if (asp.transportMedium.getStopBits() > 0)
+			{
+				cmdb.append(" stopbits=" + asp.transportMedium.getStopBits());
+				nparams++;
+			}
+			Parity parity = Parity.fromCode(asp.transportMedium.getParity());
+			if (parity != Parity.Unknown)
+			{
+				cmdb.append(" parity=" + parity.toString().toLowerCase());
+				nparams++;
+			}
+			cmd = cmdb.toString() + EOL;
+			
+			if (nparams == 0) // nothing to do
+			{
 				asp.ioPort.setConfigureState(PollingThreadState.Success);
+				return;
 			}
-			catch(IOException ex)
+			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
 			{
-				Logger.instance().failure(module + " Error sending config cmd '" + cmd
-					+ "' to digi device " + telnetCon.getName() + ": " + ex);
+				// Failed to get prompt after sending set serial command. 
 				asp.ioPort.setConfigureState(PollingThreadState.Failed);
-				disconnect();
+				return;
 			}
+			
+			cmd = "show serial port=" + asp.ioPort.getPortNum() + EOL;
+			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
+			{
+				// Failed to get prompt after sending show serial command.
+				asp.ioPort.setConfigureState(PollingThreadState.Failed);
+				return;
+			}
+			
+			if (!verifySettings(asp.ioPort.getPortNum(), asp.transportMedium))
+			{
+				// This means that the set command failed to make the required settings
+				asp.ioPort.setConfigureState(PollingThreadState.Failed);
+				return;
+			}
+			
+			asp.ioPort.setConfigureState(PollingThreadState.Success);
+		}
+		catch (Exception ex)
+		{
+			Logger.instance().failure(module + " Error sending '" + cmd
+				+ "' to digi device " + telnetCon.getName() + ": " + ex);
+			asp.ioPort.setConfigureState(PollingThreadState.Failed);
+		}
+		finally
+		{
+			Logger.instance().debug1(module + " Closing telnet 23 to digi.");		
+			if (streamReader != null)
+			{
+				streamReader.shutdown();
+				try { sleep(500L); } catch(InterruptedException ex) {}
+			}
+			telnetCon.disconnect();
 		}
 	}
 
@@ -263,21 +252,20 @@ Logger.instance().info(module + " will attempt " + cmd);
 	 * @return true if expected response was received, false if timeout
 	 * @throws IOException
 	 */
-	private boolean sendAndAwaitResponse(byte[] toSend, int seconds, byte[] expect)
+	private boolean sendAndAwaitResponse(byte[] toSend, int seconds, byte[] expect,
+		BasicClient telnetCon, StreamReader streamReader)
 		throws IOException
 	{
-		// Flush any received data up til now.
-		streamReader.flushBacklog();
-		streamReader.setCapture(true);
+		// If I'm sending a prompt, flush any received data up til now.
+		if (toSend != null)
+			streamReader.flushBacklog();
+		if (!streamReader.isCapture())
+			streamReader.setCapture(true);
 		if (toSend != null)
 			telnetCon.sendData(toSend);
 		
 		PatternMatcher expectPat[] = new PatternMatcher[] { new PatternMatcher(expect) };
 		boolean found = streamReader.wait(seconds, expectPat);
-		if (found)
-			consecutiveFails = 0;
-		else
-			consecutiveFails++;
 		
 		streamReader.setCapture(false);
 		
@@ -287,20 +275,14 @@ Logger.instance().info(module + " will attempt " + cmd);
 			" Sent " 
 			+ (toSend == null ? "nothing" : ("'"+new String(toSend)+"'"))
 			+ " to digi device " + telnetCon.getName()
-			+ " and received response '" + captured + "'."
-			+ (found ? "" : " Expected '" + new String(expect) + "'"));
+			+ " and received response '" + AsciiUtil.bin2ascii(streamReader.getCapturedData()) + "'."
+			+ (found ? "" : " Expected '" + 
+				AsciiUtil.bin2ascii(expect) + "'"));
 
 		return found;
 	}
 
 
-	@Override
-	public void inputError(IOException ex)
-	{
-		Logger.instance().failure(module + " Error reading from Digi telnet port: " + ex);
-		disconnect();
-	}
-	
 	/**
 	 * This is called after sending the 'show serial' command. Look at the captured data
 	 * returned by the command and compare to settings in TransportMedium.
@@ -323,19 +305,15 @@ Logger.instance().info(module + " will attempt " + cmd);
 		// Split the string with whitespace as delimiter
 		String tokens[] = cap.split("\\s+");
 		
-Logger.instance().info(module + " Tokanized response is: ");
 		int idx=0;
 		for(; idx < tokens.length && !tokens[idx].equals("flowcontrol"); idx++);
 		if (idx >= tokens.length-5)
 		{
 			Logger.instance().warning(module + " verifySettings failed. Not enough"
-				+ " tokens in response to show serial: " + cap);
+				+ " tokens in response to show serial, #tokens=" + tokens.length
+				+ "flowcontrol' found at token " + idx + ", data returned: " + cap);
 			return false;
 		}
-		
-//for(int ti = 0; ti<tokens.length; ti++)
-//	Logger.instance().info("tok[" + ti + "] = '" + tokens[ti] + "'");
-//
 		
 		String parsing = "port number";
 		String tok = tokens[idx+1];
@@ -398,11 +376,24 @@ Logger.instance().info(module + " Tokanized response is: ");
 
 
 	@Override
+	public void inputError(IOException ex)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
 	public void inputClosed()
 	{
-		telnetInputStreamClosed = true;
+		// TODO Auto-generated method stub
+		
 	}
-	
+
+
 	@Override
-	public String getModule() { return module; }
+	public String getModule()
+	{
+		return module;
+	}
 }

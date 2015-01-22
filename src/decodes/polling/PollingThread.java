@@ -22,7 +22,7 @@ import decodes.db.TransportMedium;
 public class PollingThread 
 	implements Runnable
 {
-	public static final String module = "PollingThread";
+	public String module = "PollingThread";
 	
 	/** The controller that owns this thread */
 	private PollingThreadController parent;
@@ -59,14 +59,17 @@ public class PollingThread
 		this.parent = parent;
 		this.dataSource = dataSource;
 		this.transportMedium = transportMedium;
+		if (transportMedium.platform != null)
+			module = "Poll(" + transportMedium.platform.getSiteName(false) + ")";
 	}
 
 	@Override
 	public void run()
 	{
 		numTries++;
-		Logger.instance().info(module + " polling " + 
-			transportMedium.getMediumType() + ":" + transportMedium.getMediumId() + " attempt #" + numTries);
+		info("transport medium: " + 
+			transportMedium.getMediumType() + ":" + transportMedium.getMediumId() 
+			+ " attempt #" + numTries);
 		PollingThreadState exitState = state;
 		try
 		{
@@ -95,7 +98,7 @@ public class PollingThread
 				}
 				catch (IOException ex)
 				{
-					dataSource.log(Logger.E_WARNING, module + " Cannot open session log file: " + fn + ": " + ex);
+					warning("Cannot open session log file: " + fn + ": " + ex);
 					pollSessionLogger = null;
 				}
 				protocol.setPollSessionLogger(pollSessionLogger);
@@ -109,6 +112,9 @@ public class PollingThread
 			if (platformStatus.getLastContactTime() != null
 			 && platformStatus.getLastContactTime().after(since))
 				since = platformStatus.getLastContactTime();
+			// Always get at least an hour.
+			if (System.currentTimeMillis() - since.getTime() < 3600000L)
+				since = new Date(System.currentTimeMillis() - 3600000L);
 			
 			if (!_shutdown)
 			{
@@ -129,7 +135,7 @@ public class PollingThread
 		catch (DialException ex)
 		{
 			String msg = "Cannot connect IOPort: " + ex;
-			dataSource.log(Logger.E_FAILURE, msg);
+			failure(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
@@ -137,7 +143,7 @@ public class PollingThread
 		catch (ConfigException ex)
 		{
 			String msg = "Configuration error: " + ex;
-			dataSource.log(Logger.E_FAILURE, msg);
+			failure(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
@@ -145,7 +151,7 @@ public class PollingThread
 		catch (LoginException ex)
 		{
 			String msg = "Error logging into the station: " + ex;
-			dataSource.log(Logger.E_FAILURE, msg);
+			failure(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
@@ -153,7 +159,7 @@ public class PollingThread
 		catch (ProtocolException ex)
 		{
 			String msg = "Error communicating with station: " + ex;
-			dataSource.log(Logger.E_FAILURE, msg);
+			failure(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
@@ -167,7 +173,7 @@ public class PollingThread
 			pollSessionLogger = null;
 		}
 		
-Logger.instance().debug2(module + " writing final platform status for " + transportMedium);		
+		debug2("writing final platform status for " + transportMedium);		
 		dataSource.writePlatformStatus(platformStatus, transportMedium);
 		
 		// Parent will be calling getState(). Make sure the RS doesn't prematurely
@@ -198,6 +204,7 @@ Logger.instance().debug2(module + " writing final platform status for " + transp
 			Class<?> protClass = ev.getExecClass();
 			protocol = (LoggerProtocol)protClass.newInstance();
 			protocol.setDataSource(dataSource);
+			protocol.setPollingThread(this);
 		}
 		catch(ClassNotFoundException ex)
 		{
@@ -227,6 +234,9 @@ Logger.instance().debug2(module + " writing final platform status for " + transp
 	public void setIoPort(IOPort ioPort)
 	{
 		this.ioPort = ioPort;
+		if (transportMedium.platform != null)
+			module = "Poll(" + transportMedium.platform.getSiteName(false) + ":" + ioPort.getPortNum() + ")";
+
 	}
 
 	public PollingThreadState getState()
@@ -263,4 +273,12 @@ Logger.instance().debug2(module + " writing final platform status for " + transp
 	{
 		this.state = state;
 	}
+	
+	public void info(String msg) { dataSource.log(Logger.E_INFORMATION, module + " " + msg); }
+	public void warning(String msg) { dataSource.log(Logger.E_WARNING, module + " " + msg); }
+	public void failure(String msg) { dataSource.log(Logger.E_FAILURE, module + " " + msg); }
+	public void debug1(String msg) { dataSource.log(Logger.E_DEBUG1, module + " " + msg); }
+	public void debug2(String msg) { dataSource.log(Logger.E_DEBUG2, module + " " + msg); }
+	public void debug3(String msg) { dataSource.log(Logger.E_DEBUG3, module + " " + msg); }
+	
 }

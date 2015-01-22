@@ -63,9 +63,11 @@ public class PollScriptWaitCmd extends PollScriptCommand
 		{
 			matchFound = owner.getStreamReader().wait(sec, patternMatcher);
 			if (!matchFound && mustMatch)
-				throw new ProtocolException("Failed to receive expected response for '" + cmdline + "'");
+				throw new ProtocolException("Failed to receive expected response for '" 
+					+ cmdline + "' in file " + owner.getScriptFileName());
 			else if (matchFound && exclude)
-				throw new ProtocolException("Received excluded response for '" + cmdline + "'");
+				throw new ProtocolException("Received excluded response for '" 
+					+ cmdline + "' in file " + owner.getScriptFileName());
 		}
 		catch (IOException ex)
 		{

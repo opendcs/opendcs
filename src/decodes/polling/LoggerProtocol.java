@@ -30,6 +30,7 @@ import decodes.db.TransportMedium;
 public abstract class LoggerProtocol
 {
 	protected PollSessionLogger pollSessionLogger = null;
+	protected PollingThread pollingThread = null;
 
 	public LoggerProtocol()
 	{
@@ -72,5 +73,15 @@ public abstract class LoggerProtocol
 	public void setPollSessionLogger(PollSessionLogger pollSessionLogger)
 	{
 		this.pollSessionLogger = pollSessionLogger;
+	}
+
+	public PollingThread getPollingThread()
+	{
+		return pollingThread;
+	}
+
+	public void setPollingThread(PollingThread pollingThread)
+	{
+		this.pollingThread = pollingThread;
 	}
 }

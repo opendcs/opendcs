@@ -4,7 +4,9 @@ import ilex.net.BasicClient;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.rmi.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
@@ -22,7 +24,7 @@ public class DigiConnectPortPool
 {
 	public static final String module = "DigiConnectPortPool";
 	private String digiIpAddr = null;
-	private int digiPortBase = 2100;
+	public int digiPortBase = 2100;
 	private String digiUserName = null;
 	private String digiPassword = null;
 	private String processName = null;
@@ -48,7 +50,6 @@ public class DigiConnectPortPool
 	public DigiConnectPortPool()
 	{
 		super(module);
-		Logger.instance().debug1("Constructing " + module);
 		portManager = new DigiConnectPortManager(this);
 	}
 
@@ -115,7 +116,8 @@ public class DigiConnectPortPool
 		}
 		if (portNames.size() == 0)
 			throw new ConfigException("No availablePorts specified");
-		Logger.instance().info(module + " initialized with " + portNames.size() + " ports.");
+		Logger.instance().info(module + " initialized with " + portNames.size() + " ports. Ports are: "
+			+ PropertiesUtil.getIgnoreCase(dataSourceProps, "availablePorts"));
 		
 		// Parse properties for digiUserName and digiPassword
 		digiUserName = PropertiesUtil.getIgnoreCase(dataSourceProps, "digiUserName");
@@ -147,11 +149,7 @@ public class DigiConnectPortPool
 			throw new ConfigException("The DECODES Database is not a SQL Database. Cannot use Digi!");
 		sqldbio = (SqlDatabaseIO)dbio;
 		
-		if (!portManager.isAlive())
-			portManager.start();
-		else
-			portManager.disconnect();
-Logger.instance().info(module+".configPool() There are " + portNames.size() + " to manage.");
+		portManager.start();
 	}
 
 	@Override
@@ -178,7 +176,7 @@ Logger.instance().debug3(module + " trying port " + portName);
 				 || devStat.getLastActivityTime() == null
 				 || System.currentTimeMillis() - devStat.getLastActivityTime().getTime() > PORT_STALE_MS)
 				{
-Logger.instance().debug3(module + " Port " + portName + " is free. Will attempt to allocate.");
+Logger.instance().debug2(module + " Port " + portName + " is free. Will attempt to allocate.");
 					// Set its IN_USE, LAST_USED_BY_PROC, and LAST_USED_BY_HOST
 					devStat.setInUse(true);
 					devStat.setLastUsedByProc(processName);
@@ -191,7 +189,7 @@ Logger.instance().debug3(module + " Port " + portName + " is free. Will attempt 
 					try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
 					devStat = deviceStatusDAO.getDeviceStatus(portName);
 					
-Logger.instance().debug3(module + " After 2 sec delay, " + portName + " is still mine. Will use.");
+Logger.instance().debug2(module + " After 2 sec delay, " + portName + " is still mine. Will use.");
 					if (!devStat.getLastUsedByHost().equals(hostname)
 					 || !devStat.getLastUsedByProc().equals(processName))
 					{
@@ -208,11 +206,15 @@ Logger.instance().debug3(module + " After 2 sec delay, " + portName + " is still
 						try
 						{
 							bc = new BasicClient(digiIpAddr, digiPortBase + portnum);
-Logger.instance().debug3(module + " Connecting to " + portName + " on port " + bc.getPort() + ".");
-							bc.connect();
+// MJM Note: I determined experimentally that configuring the digi baudrate, stopbits, etc.,
+// will cause DTR to the modem to drop. This tells the modem to hangup and become unusable.
+// Therefore, we defer opening the socket until the configPort() method is called below.
+// We open the socket to the port AFTER all the settings are done.
+//							Logger.instance().debug2(module + " Connecting to " + portName + " on port " + bc.getPort() + ".");
+//							bc.connect();
 							ret = new IOPort(this, portnum, new ModemDialer());
-							ret.setIn(bc.getInputStream());
-							ret.setOut(bc.getOutputStream());
+//							ret.setIn(bc.getInputStream());
+//							ret.setOut(bc.getOutputStream());
 							allocatedPorts.add(new AllocatedSerialPort(ret, devStat, bc));
 						}
 						catch(Exception ex)
@@ -360,6 +362,21 @@ Logger.instance().debug3(module + " releasePort returning.");
 		portManager.configPort(allocatedPort);
 		if (allocatedPort.ioPort.getConfigureState() != PollingThreadState.Success)
 			throw new DialException("Failed to configure serial port.");
+		
+		
+		Logger.instance().debug2(module + " Connecting to " + allocatedPort.basicClient.getHost()
+			+ ":" + allocatedPort.basicClient.getPort());
+		try
+		{
+			allocatedPort.basicClient.connect();
+			ioPort.setIn(allocatedPort.basicClient.getInputStream());
+			ioPort.setOut(allocatedPort.basicClient.getOutputStream());
+		}
+		catch (IOException ex)
+		{
+			throw new DialException("Cannot connect to " + allocatedPort.basicClient.getHost()
+			+ ":" + allocatedPort.basicClient.getPort() + ": " + ex);
+		}
 	}
 
 
@@ -372,6 +389,9 @@ Logger.instance().debug3(module + " releasePort returning.");
 		// So close anything still open.
 		while(allocatedPorts.size() > 0)
 			releasePort(allocatedPorts.get(0).ioPort, PollingThreadState.Failed);
+		if (portManager != null)
+			portManager.shutdown();
+		portManager = null;
 	}
 
 	public String getDigiIpAddr()

@@ -22,6 +22,7 @@
  */
 package decodes.polling;
 
+import ilex.util.ArrayUtil;
 import ilex.util.Logger;
 
 import java.io.ByteArrayOutputStream;
@@ -54,7 +55,8 @@ public class StreamReader
 	{
 		this.in = in;
 		this.owner = owner;
-		module = module + "(" + owner.getModule() + ")";
+		if (owner != null)
+			module = module + "(" + owner.getModule() + ")";
 	}
 	
 	@Override
@@ -90,12 +92,12 @@ public class StreamReader
 					try { sleep(100L); } catch(InterruptedException ex) {}
 				}
 			}
-			Logger.instance().debug1(module + " done. lastChar=" + (char)c + " 0x" + Integer.toHexString(c));
 		}
 		catch (IOException ex)
 		{
 			Logger.instance().debug1(module + " " + ex);
-			owner.inputError(ex);
+			if (owner != null)
+				owner.inputError(ex);
 			_shutdown = true;
 		}
 		Logger.instance().debug1(module + " exiting.");
@@ -103,7 +105,7 @@ public class StreamReader
 	
 	public void shutdown()
 	{
-		Logger.instance().debug1(module + " shutdown() called.");
+		Logger.instance().debug3(module + " shutdown() called.");
 		_shutdown = true;
 		// Note: mustn't close the InputStream, Multiple StreamReaders
 		// may be used at various phases of a session on the same ioPort.
@@ -133,7 +135,7 @@ public class StreamReader
 			Logger.instance().debug1(module + " Waiting " + sec + " seconds.");
 		else
 		{
-			StringBuilder sb = new StringBuilder(module + " Waiting " + sec + " seconds  for ");
+			StringBuilder sb = new StringBuilder(module + " Waiting " + sec + " seconds for ");
 			for(PatternMatcher pm : patternMatcher)
 				sb.append("'" + new String(pm.getPattern()) + "' ");
 			Logger.instance().debug1(sb.toString());
@@ -170,7 +172,7 @@ public class StreamReader
 	{
 		this.capture = capture;
 		this.processIdx = sessionIdx;
-		Logger.instance().debug1(module + " capture=" + capture + ", processIdx=" + processIdx);
+		Logger.instance().debug3(module + " capture=" + capture + ", processIdx=" + processIdx);
 	}
 	
 	/**
@@ -179,7 +181,7 @@ public class StreamReader
 	 */
 	public void flushBacklog()
 	{
-		Logger.instance().debug1(module + " flushing backlog at sessionIdx=" + sessionIdx);
+		Logger.instance().debug3(module + " flushing backlog at sessionIdx=" + sessionIdx);
 		this.processIdx = sessionIdx;
 		captured.reset();
 	}
@@ -210,5 +212,15 @@ public class StreamReader
 	}
 	
 	public String getModule() { return module; }
+
+	public byte[] getSessionBuf()
+	{
+		return ArrayUtil.getField(sessionBuf, 0, sessionIdx);
+	}
+
+	public boolean isCapture()
+	{
+		return capture;
+	}
 
 }
