@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2014/12/11 20:19:20  mmaloney
+ * Debug msg improvement
+ *
  * Revision 1.3  2014/07/03 12:41:49  mmaloney
  * debug improvements.
  *
@@ -427,7 +430,7 @@ if (nameValue.toUpperCase().startsWith("FCNE"))
 		int nProps = 0;
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
-		info("Site Cache Filled: " + cache.size() + " sites, " + nNames
+		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
 for(Iterator<Site> sit = cache.iterator(); sit.hasNext(); )
 {

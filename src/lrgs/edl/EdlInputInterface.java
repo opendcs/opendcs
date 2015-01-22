@@ -61,7 +61,7 @@ Logger.instance().info("EDL Ingest config thread starting.");
 		// Watch for config changes.
 		while(!_shutdown)
 		{
-Logger.instance().info("EDL Ingest config check last="+lastConfigCheck + ", loaded=" 
+Logger.instance().debug3("EDL Ingest config check last="+lastConfigCheck + ", loaded=" 
 + LrgsConfig.instance().getLastLoadTime());
 
 			if (LrgsConfig.instance().getLastLoadTime() > lastConfigCheck)

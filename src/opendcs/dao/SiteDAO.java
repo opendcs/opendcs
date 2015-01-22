@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.3  2014/07/03 12:47:57  mmaloney
+* debug improvements.
+*
 * Revision 1.2  2014/06/27 20:36:07  mmaloney
 * After deleting a site, remove it from the local cache.
 *
@@ -257,7 +260,7 @@ public class SiteDAO
 		int nProps = 0;
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
-		info("Site Cache Filled: " + cache.size() + " sites, " + nNames
+		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
 	}
 

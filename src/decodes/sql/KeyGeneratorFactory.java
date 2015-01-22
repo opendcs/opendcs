@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -52,7 +55,7 @@ public class KeyGeneratorFactory
 	public static KeyGenerator makeKeyGenerator(String clsname, Connection con)
 		throws DatabaseException
 	{
-		Logger.instance().debug1("Making KeyGenerator for class '" + clsname + "'");
+		Logger.instance().debug3("Making KeyGenerator for class '" + clsname + "'");
 		try
 		{
 //			Class cls = ClassLoader.getSystemClassLoader().loadClass(clsname);

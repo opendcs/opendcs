@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.5  2014/12/11 20:29:11  mmaloney
+ * Added DacqEventLogging capability.
+ *
  * Revision 1.4  2014/11/19 16:09:23  mmaloney
  * Additions for dcpmon
  *
@@ -427,7 +430,7 @@ public class SqlDatabaseIO
 		{
 			boolean autoCommit = TextUtil.str2boolean(
 				DecodesSettings.instance().autoCommit);
-			Logger.instance().info("Setting SQL AutoCommit Option to "
+			Logger.instance().debug1("Setting SQL AutoCommit Option to "
 				+ autoCommit);
 			try { ret.setAutoCommit(autoCommit); }
 			catch(SQLException ex)
@@ -475,7 +478,7 @@ public class SqlDatabaseIO
 				catch(SQLException ex)
 				{
 					databaseTimeZone = DecodesSettings.instance().sqlTimeZone;
-					Logger.instance().info(q +
+					Logger.instance().debug3(q +
 						" -- failed, must not be HDB, using sqlTimeZone setting of '"
 						+ databaseTimeZone + "'");
 				}
@@ -485,24 +488,22 @@ public class SqlDatabaseIO
 					rs = null;
 				}
 				ocon.setSessionTimeZone(databaseTimeZone);
-				Logger.instance().info("Set OracleConnection session time zone to '"
-					+ ocon.getSessionTimeZone() + "'");
 
 				stmnt = getConnection().createStatement();
 				q = "ALTER SESSION SET TIME_ZONE = '" + databaseTimeZone + "'";
-				Logger.instance().info(q);
+				Logger.instance().debug3(q);
 				stmnt.execute(q);
 	
 				q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
-				Logger.instance().info(q);
+				Logger.instance().debug3(q);
 				stmnt.execute(q);
 				
 				q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
-				Logger.instance().info(q);
+				Logger.instance().debug3(q);
 				stmnt.execute(q);
 
 				q = "ALTER SESSION SET NLS_TIMESTAMP_TZ_FORMAT = 'yyyy-mm-dd hh24:mi:ss'";
-				Logger.instance().info(q);
+				Logger.instance().debug3(q);
 				stmnt.execute(q);
 			}
 		}
@@ -603,7 +604,7 @@ public class SqlDatabaseIO
 			}
 		}
 		dco.setDecodesDatabaseVersion(databaseVersion, databaseOptions);
-		Logger.instance().info("Connected to DECODES database version " + databaseVersion);
+		Logger.instance().info("Connected to DECODES SQL database version " + databaseVersion);
 	}
 		
 	/** @return 'SQL'. */
