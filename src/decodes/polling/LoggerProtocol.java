@@ -84,4 +84,10 @@ public abstract class LoggerProtocol
 	{
 		this.pollingThread = pollingThread;
 	}
+	
+	public void annotate(String msg)
+	{
+		if (pollSessionLogger != null)
+			pollSessionLogger.annotate(msg);
+	}
 }

@@ -33,9 +33,9 @@ public class PollScriptXmitCmd extends PollScriptCommand
 	public static final String module = "PollScriptXmitCmd";
 	private String str = null;
 
-	public PollScriptXmitCmd(PollScriptProtocol owner, String str)
+	public PollScriptXmitCmd(PollScriptProtocol owner, String str, String cmdLine)
 	{
-		super(owner);
+		super(owner, cmdLine);
 		this.str = str;
 	}
 

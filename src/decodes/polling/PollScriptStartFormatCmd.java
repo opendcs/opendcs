@@ -29,9 +29,9 @@ public class PollScriptStartFormatCmd extends PollScriptCommand
 	public static final String module = "StartFormatTermCommand";
 	private SimpleDateFormat sdf = null;
 
-	public PollScriptStartFormatCmd(PollScriptProtocol owner, String sdfFmt)
+	public PollScriptStartFormatCmd(PollScriptProtocol owner, String sdfFmt, String cmdLine)
 	{
-		super(owner);
+		super(owner, cmdLine);
 		sdf = new SimpleDateFormat(sdfFmt);
 	}
 

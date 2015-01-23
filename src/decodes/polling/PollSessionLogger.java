@@ -1,63 +1,78 @@
+/*
+ * $Id$
+ * 
+ * This software was written by Cove Software, LLC ("COVE") under contract
+ * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
+ * No warranty is provided or implied other than specific contractual terms 
+ * between COVE and Alberta ESRD.
+ *
+ * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package decodes.polling;
 
-import java.io.IOException;
-import java.io.Writer;
+import java.io.PrintStream;
 import java.util.Date;
 
 public class PollSessionLogger
 {
 	private char lastOp = '\0';
-	private Writer out;
-	private String lineSep = System.getProperty("line.separator");
+	private PrintStream out;
 	
-	public PollSessionLogger(Writer out, String sitename)
+	public PollSessionLogger(PrintStream out, String sitename)
 	{
 		this.out = out;
-		try
-		{
-			out.write("Session with station " + sitename + " starting at " + new Date()
-				+ lineSep + lineSep);
-		}
-		catch (IOException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		out.println("Session with station " + sitename + " starting at " + new Date());
+		out.println();
+		out.flush();
 	}
 	
 	public synchronized void sent(String sent)
 	{
-		try
+		if (lastOp != 'S')
 		{
-			if (lastOp != 'S')
-				out.write(lineSep + "SENT:" + lineSep);
-			out.write(sent);
-			lastOp = 'S';
+			out.println();
+			out.println("SENT:");
 		}
-		catch (IOException ex)
-		{
-		}
-			
+		out.print(sent);
+		out.flush();
+		lastOp = 'S';
 	}
 	
 	public synchronized void received(char c)
 	{
-		try
+		if (lastOp != 'R')
 		{
-			if (lastOp != 'R')
-				out.write(lineSep + "RECV:" + lineSep);
-			out.write(c);
-			out.flush();
-			lastOp = 'R';
+			out.println();
+			out.println("RECV:");
 		}
-		catch (IOException ex)
-		{
-		}
+		out.write(c);
+		out.flush();
+		lastOp = 'R';
+	}
+	
+	public synchronized void annotate(String msg)
+	{
+		out.println();
+		out.println("[" + msg + "]");
+		out.flush();
 	}
 	
 	public void close()
 	{
-		try { out.close(); } catch(Exception ex) {}
+		if (out != System.out)
+			try { out.close(); } catch(Exception ex) {}
 	}
 
 }

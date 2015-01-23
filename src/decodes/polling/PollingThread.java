@@ -1,7 +1,29 @@
+/*
+ * $Id$
+ * 
+ * This software was written by Cove Software, LLC ("COVE") under contract
+ * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
+ * No warranty is provided or implied other than specific contractual terms 
+ * between COVE and Alberta ESRD.
+ *
+ * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package decodes.polling;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Date;
 import java.util.Properties;
 
@@ -22,7 +44,7 @@ import decodes.db.TransportMedium;
 public class PollingThread 
 	implements Runnable
 {
-	public String module = "PollingThread";
+	private String module = "PollingThread";
 	
 	/** The controller that owns this thread */
 	private PollingThreadController parent;
@@ -50,6 +72,7 @@ public class PollingThread
 	private PlatformStatus platformStatus = null;
 	private String saveSessionFile = null;
 	private PollSessionLogger pollSessionLogger = null;
+	public static PrintStream staticSessionLogger = null;
 
 
 	public PollingThread(PollingThreadController parent, PollingDataSource dataSource, 
@@ -67,6 +90,7 @@ public class PollingThread
 	public void run()
 	{
 		numTries++;
+		makeSessionLogger();
 		info("transport medium: " + 
 			transportMedium.getMediumType() + ":" + transportMedium.getMediumId() 
 			+ " attempt #" + numTries);
@@ -76,33 +100,14 @@ public class PollingThread
 			platformStatus = dataSource.getPlatformStatus(transportMedium); 
 
 			if (!_shutdown)
-				ioPort.connect(transportMedium);
+				ioPort.connect(transportMedium, this);
 			platformStatus.setLastContactTime(new Date());
 			
 			// Construct protocol according to transportMedium.loggerType
 			if (!_shutdown)
 				makeProtocol();
+			protocol.setPollSessionLogger(pollSessionLogger);
 			
-			if (saveSessionFile != null)
-			{
-				Properties props = new Properties(System.getProperties());
-				props.setProperty("MEDIUMID", transportMedium.getMediumId());
-				Platform p = transportMedium.platform;
-				if (p != null)
-					props.setProperty("SITENAME", p.getSiteName(false));
-				String fn = EnvExpander.expand(saveSessionFile, props);
-				try
-				{
-					FileWriter fw = new FileWriter(fn);
-					pollSessionLogger = new PollSessionLogger(fw, p.getSiteName(false));
-				}
-				catch (IOException ex)
-				{
-					warning("Cannot open session log file: " + fn + ": " + ex);
-					pollSessionLogger = null;
-				}
-				protocol.setPollSessionLogger(pollSessionLogger);
-			}
 			
 			if (!_shutdown)
 				protocol.login(ioPort, transportMedium);
@@ -180,6 +185,32 @@ public class PollingThread
 		// exit because no states are waiting.
 		state = exitState;
 		parent.pollComplete(this);
+	}
+	
+	private void makeSessionLogger()
+	{
+		if (saveSessionFile != null)
+		{
+			Properties props = new Properties(System.getProperties());
+			props.setProperty("MEDIUMID", transportMedium.getMediumId());
+			Platform p = transportMedium.platform;
+			if (p != null)
+				props.setProperty("SITENAME", p.getSiteName(false));
+			String fn = EnvExpander.expand(saveSessionFile, props);
+			try
+			{
+				PrintStream ps = staticSessionLogger != null ? staticSessionLogger : new PrintStream(fn);
+				
+				pollSessionLogger = new PollSessionLogger(ps, p.getSiteName(false));
+			}
+			catch (IOException ex)
+			{
+				warning("Cannot open session log file: " + fn + ": " + ex);
+				pollSessionLogger = null;
+			}
+			protocol.setPollSessionLogger(pollSessionLogger);
+		}
+
 	}
 	
 	private void makeProtocol()
@@ -280,5 +311,16 @@ public class PollingThread
 	public void debug1(String msg) { dataSource.log(Logger.E_DEBUG1, module + " " + msg); }
 	public void debug2(String msg) { dataSource.log(Logger.E_DEBUG2, module + " " + msg); }
 	public void debug3(String msg) { dataSource.log(Logger.E_DEBUG3, module + " " + msg); }
+	
+	public void annotate(String msg)
+	{
+		if (pollSessionLogger != null)
+			pollSessionLogger.annotate(msg);
+	}
+
+	public String getModule()
+	{
+		return module;
+	}
 	
 }

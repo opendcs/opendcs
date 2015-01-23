@@ -33,7 +33,7 @@ public abstract class Dialer
 	 * @param tm the TransportMedium containing dailing information
 	 * @throws DialException if failed to connect to remote station
 	 */
-	public abstract void connect(IOPort ioPort, TransportMedium tm)
+	public abstract void connect(IOPort ioPort, TransportMedium tm, PollingThread pollingThread)
 		throws DialException;
 	
 	/**

@@ -33,9 +33,9 @@ public class PollScriptEndLoopCmd extends PollScriptCommand
 	private PollScriptWaitCmd finalWait = null;
 
 	public PollScriptEndLoopCmd(PollScriptProtocol owner, 
-		PollScriptLoopWaitCmd rewindTo, PollScriptWaitCmd finalWait)
+		PollScriptLoopWaitCmd rewindTo, PollScriptWaitCmd finalWait, String cmdLine)
 	{
-		super(owner);
+		super(owner, cmdLine);
 		this.rewindTo = rewindTo;
 		this.finalWait = finalWait;
 	}

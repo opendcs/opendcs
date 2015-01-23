@@ -25,12 +25,17 @@ package decodes.polling;
 public abstract class PollScriptCommand
 {
 	protected PollScriptProtocol owner;
+	private String cmdLine = "";
+
 	
-	public PollScriptCommand(PollScriptProtocol owner)
+	public PollScriptCommand(PollScriptProtocol owner, String cmdLine)
 	{
 		this.owner = owner;
+		this.cmdLine = cmdLine;
 	}
 
 	public abstract void execute()
 		throws ProtocolException;
+	
+	public String getCmdLine() { return cmdLine; } 
 }

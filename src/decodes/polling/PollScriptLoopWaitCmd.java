@@ -36,9 +36,9 @@ public class PollScriptLoopWaitCmd extends PollScriptCommand
 	private int iterations;
 	private int count = 0;
 
-	public PollScriptLoopWaitCmd(PollScriptProtocol owner, int iterations)
+	public PollScriptLoopWaitCmd(PollScriptProtocol owner, int iterations, String cmdLine)
 	{
-		super(owner);
+		super(owner, cmdLine);
 		this.iterations = iterations;
 	}
 

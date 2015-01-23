@@ -30,9 +30,9 @@ package decodes.polling;
  */
 public class PollScriptFlushCmd extends PollScriptCommand
 {
-	public PollScriptFlushCmd(PollScriptProtocol owner)
+	public PollScriptFlushCmd(PollScriptProtocol owner, String cmdLine)
 	{
-		super(owner);
+		super(owner, cmdLine);
 	}
 
 	@Override

@@ -29,16 +29,14 @@ public class PollScriptWaitCmd extends PollScriptCommand
 	private double sec = 0.0;
 	private PatternMatcher patternMatcher[] = new PatternMatcher[0];
 	private boolean mustMatch = false;
-	private String cmdline = "";
 	private boolean exclude = false;
 	private boolean matchFound = false;
 
-	public PollScriptWaitCmd(PollScriptProtocol owner, double sec, boolean mustMatch, String cmdline)
+	public PollScriptWaitCmd(PollScriptProtocol owner, double sec, boolean mustMatch, String cmdLine)
 	{
-		super(owner);
+		super(owner, cmdLine);
 		this.sec = sec;
 		this.mustMatch = mustMatch;
-		this.cmdline = cmdline;
 	}
 	
 	public void addMatch(byte[] match)
@@ -64,10 +62,10 @@ public class PollScriptWaitCmd extends PollScriptCommand
 			matchFound = owner.getStreamReader().wait(sec, patternMatcher);
 			if (!matchFound && mustMatch)
 				throw new ProtocolException("Failed to receive expected response for '" 
-					+ cmdline + "' in file " + owner.getScriptFileName());
+					+ getCmdLine() + "' in file " + owner.getScriptFileName());
 			else if (matchFound && exclude)
 				throw new ProtocolException("Received excluded response for '" 
-					+ cmdline + "' in file " + owner.getScriptFileName());
+					+ getCmdLine() + "' in file " + owner.getScriptFileName());
 		}
 		catch (IOException ex)
 		{

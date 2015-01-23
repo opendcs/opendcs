@@ -48,6 +48,7 @@ public class IOPort
 	
 	private PollingThreadState configureState = PollingThreadState.Waiting;
 	private boolean dialerConnected = false;
+	private PollingThread pollingThread = null;
 	
 	public IOPort(PortPool portPool, int portNum, Dialer dialer)
 	{
@@ -62,13 +63,14 @@ public class IOPort
 	 * @param tm
 	 * @throws DialException
 	 */
-	public void connect(TransportMedium tm)
+	public void connect(TransportMedium tm, PollingThread pollingThread)
 		throws DialException
 	{
-Logger.instance().debug2("IOPort.connect() -- calling portPool.configPort");
+		this.pollingThread = pollingThread;
+		pollingThread.debug2("IOPort.connect() -- calling portPool.configPort");
 		portPool.configPort(this, tm);
-Logger.instance().debug2("IOPort.connect() -- calling dialer.connect");
-		dialer.connect(this, tm);
+		pollingThread.debug2("IOPort.connect() -- calling dialer.connect");
+		dialer.connect(this, tm, this.pollingThread);
 		dialerConnected = true;
 	}
 	
@@ -80,7 +82,7 @@ Logger.instance().debug2("IOPort.connect() -- calling dialer.connect");
 	{
 		if (dialerConnected) // don't use dialer to disconnect if we never connected.
 			dialer.disconnect(this);
-Logger.instance().debug2("IOPort.disconnect() complete.");		
+		pollingThread.debug2("IOPort.disconnect() complete.");		
 	}
 	
 	public InputStream getIn()

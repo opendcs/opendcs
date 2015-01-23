@@ -26,9 +26,9 @@ public class PollScriptCaptureCmd extends PollScriptCommand
 {
 	private boolean captureOn = false;
 	
-	public PollScriptCaptureCmd(PollScriptProtocol owner, boolean captureOn)
+	public PollScriptCaptureCmd(PollScriptProtocol owner, boolean captureOn, String cmdLine)
 	{
-		super(owner);
+		super(owner, cmdLine);
 		this.captureOn = captureOn;
 	}
 	

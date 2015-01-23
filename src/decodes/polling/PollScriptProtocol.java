@@ -24,7 +24,6 @@ package decodes.polling;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -115,6 +114,7 @@ public class PollScriptProtocol
 			properties.setProperty("PASSWORD", tm.getPassword());
 		
 		// Then read it into memory
+		annotate("Loading script file: " + scriptFile.getPath());
 		readScript(scriptFile);
 		pollingThread.debug2("Successfully read script file '" + scriptFile + "'");
 		
@@ -147,7 +147,7 @@ public class PollScriptProtocol
 						throw new LoginException("Script '" + scriptFile.getPath() + "':"
 							+ lnr.getLineNumber() + " XMIT command requires a string surrounded by double quotes.");
 					String str = line.substring(x+1, y);
-					script.add(new PollScriptXmitCmd(this, str));
+					script.add(new PollScriptXmitCmd(this, str, line));
 				}
 				else if (keyword.equals("startformat"))
 				{
@@ -157,13 +157,13 @@ public class PollScriptProtocol
 						throw new LoginException("Script '" + scriptFile.getPath() + "':"
 							+ lnr.getLineNumber() + " format for STARTFORMAT for must be surrounded in double quotes.");
 					String sdfFmt = line.substring(x+1, y);
-					script.add(new PollScriptStartFormatCmd(this, sdfFmt));
+					script.add(new PollScriptStartFormatCmd(this, sdfFmt, line));
 				}
 				else if (keyword.equals("capture"))
 				{
 					boolean captureOn = !strtok.hasMoreTokens()
 						|| TextUtil.str2boolean(strtok.nextToken());
-					script.add(new PollScriptCaptureCmd(this, captureOn));
+					script.add(new PollScriptCaptureCmd(this, captureOn, line));
 				}
 				else if (keyword.equals("wait") || keyword.equals("waitr") || keyword.equals("waitx"))
 				{
@@ -207,7 +207,7 @@ public class PollScriptProtocol
 				}
 				else if (keyword.equals("flush"))
 				{
-					script.add(new PollScriptFlushCmd(this));
+					script.add(new PollScriptFlushCmd(this, line));
 				}
 				else if (keyword.equals("loopwait"))
 				{
@@ -224,7 +224,7 @@ public class PollScriptProtocol
 							+ lnr.getLineNumber() + " invalid integer number of iterations '" 
 							+ s + "' after LOOPWAIT.");
 					}
-					script.add(loopWaitCmd = new PollScriptLoopWaitCmd(this, iterations));
+					script.add(loopWaitCmd = new PollScriptLoopWaitCmd(this, iterations, line));
 				}
 				else if (keyword.equals("endloop"))
 				{
@@ -235,7 +235,7 @@ public class PollScriptProtocol
 						throw new LoginException("Script '" + scriptFile.getPath() + "':"
 							+ lnr.getLineNumber() + " LOOPWAIT ... ENDLOOP must have a WAIT command in it.");
 					
-					script.add(new PollScriptEndLoopCmd(this, loopWaitCmd, lastWait));
+					script.add(new PollScriptEndLoopCmd(this, loopWaitCmd, lastWait, line));
 					loopWaitCmd = null;
 					lastWait = null;
 				}
@@ -243,7 +243,9 @@ public class PollScriptProtocol
 		}
 		catch (IOException ex)
 		{
-			throw new LoginException("Error reading script file '" + scriptFile.getPath() + "': " + ex);
+			String msg = "Error reading script file '" + scriptFile.getPath() + "': " + ex;
+			annotate(msg);
+			throw new LoginException(msg);
 		}
 		finally
 		{
@@ -271,12 +273,15 @@ public class PollScriptProtocol
 				PollScriptCommand cmd = script.get(scriptIdx);
 				if (_inputClosed)
 					throw new ProtocolException("Input Stream from Station Closed.");
+				annotate(cmd.getCmdLine());
 				cmd.execute();
 				if (abnormalShutdown != null)
 					break;
 			}
-			pollingThread.debug1("Script execution complete."
-				+ (abnormalShutdown == null ? "" : " Abnormal Shutdown: " + abnormalShutdown));
+			String msg = "Script execution complete."
+				+ (abnormalShutdown == null ? "" : " Abnormal Shutdown: " + abnormalShutdown);
+			annotate(msg);
+			pollingThread.debug1(msg);
 		}
 		finally { streamReader.shutdown(); }
 	}
@@ -379,34 +384,6 @@ public class PollScriptProtocol
 		abnormalShutdown = ex;
 	}
 	
-//	/**
-//	 * Test main opens a mock session with stdin/stdout.
-//	 * @param args two args are expected: station-name and script-file-name
-//	 */
-//	public static void main(String[] args)
-//		throws Exception
-//	{
-//		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
-//		IOPort ioPort = new IOPort(null, 1, (Dialer)null);
-//		ioPort.setIn(System.in);
-//		ioPort.setOut(System.out);
-//		
-//		TransportMedium tm = new TransportMedium(null, Constants.medium_EDL, args[0]);
-//		PollScriptProtocol tlp = new PollScriptProtocol();
-//		tlp.readScript(new File(args[1]));
-//		System.out.println("After reading " + args[1] + ", there are " + tlp.script.size() + " commands.");
-//		
-//		DcpMsg msg = tlp.getData(ioPort, tm, new Date());
-//		
-//		System.out.println("=========== Results ===========");
-//		System.out.println("Complete Session Log:");
-//		System.out.println(new String(tlp.streamReader.getEntireSession()));
-//		System.out.println("------ Captured Data ------");
-//		System.out.println(new String(tlp.streamReader.getCapturedData()));
-//		System.out.println("------ DCP Message ------");
-//		System.out.println(msg.toString());
-//	}
-
 	public IOPort getIoPort()
 	{
 		return ioPort;
@@ -445,7 +422,7 @@ public class PollScriptProtocol
 	}
 	
 	@Override
-	public String getModule() { return pollingThread.module; }
+	public String getModule() { return pollingThread.getModule(); }
 
 	/**
 	 * Called from PollScriptEndLoop if a match was not found.
