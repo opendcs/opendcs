@@ -127,5 +127,13 @@ public class CwmsFlags
 		}
 		return sb.toString();
 	}
+	
+	public static void main(String args[])
+		throws Exception
+	{
+		int x = Integer.parseInt(args[0]);
+		System.out.println("Entered: " + Integer.toHexString(x));
+		System.out.println("cwmsQuality2flag: " + Integer.toHexString(cwmsQuality2flag(x)));
+	}
 
 }
