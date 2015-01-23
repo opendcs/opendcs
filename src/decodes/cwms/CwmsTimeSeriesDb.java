@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2014/12/23 14:11:57  mmaloney
+*  Explicitly reference hec.data.Units after connect to pre-initialize it.
+*
 *  Revision 1.5  2014/12/17 21:37:20  mmaloney
 *  Failsafe check to make sure that tasklist record doesn't have null units.
 *
@@ -1440,14 +1443,16 @@ for(CTimeSeries ts : allts)
 			cts.addTaskListRecNum(rec.getRecordNum());
 			Logger.instance().debug3("Added value " + tv + " to time series "
 				+ cts.getTimeSeriesIdentifier().getUniqueString()
-				+ " flags=0x" + Integer.toHexString(tv.getFlags()));
+				+ " flags=0x" + Integer.toHexString(tv.getFlags())
+				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
 		}
 		else
 		{
 			VarFlags.setWasDeleted(tv);
 			Logger.instance().warning("Discarding deleted value " + tv.toString()
 				+ " for time series " + cts.getTimeSeriesIdentifier().getUniqueString()
-				+ " flags=0x" + Integer.toHexString(tv.getFlags()));
+				+ " flags=0x" + Integer.toHexString(tv.getFlags())
+				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
 		}
 	}
 
