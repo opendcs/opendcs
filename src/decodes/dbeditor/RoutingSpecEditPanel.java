@@ -306,6 +306,7 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		
 		NumberFormat nf = NumberFormat.getIntegerInstance();
 		nf.setMinimumIntegerDigits(4);
+		nf.setGroupingUsed(false);
 		for(int i=0; sc.channels != null && i < sc.channels.length; i++)
 			theObject.getProperties().setProperty("sc:CHANNEL_" + nf.format(i), "|"+sc.channels[i]);
 
