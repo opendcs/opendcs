@@ -73,7 +73,8 @@ public class ModemDialer
 		try
 		{
 			streamReader.flushBacklog();
-			String msg = module + " sending " + AT + " to modem.";
+			String msg = module + " sending '" + AsciiUtil.bin2ascii(AT.getBytes()) + "' to modem on port "
+				+ ioPort.getPortNum();
 			pollingThread.debug2(msg);
 			pollingThread.annotate(msg);
 			ioPort.getOut().write(AT.getBytes());
@@ -86,7 +87,8 @@ public class ModemDialer
 			else // success OK response to AT
 			{
 				String dialstr = "ATDT " + tm.getMediumId() + EOL;
-				msg = module + " sending " + dialstr + " to modem.";
+				msg = module + " sending '" + AsciiUtil.bin2ascii(dialstr.getBytes()) + "' to modem on port "
+					+ ioPort.getPortNum();
 				Logger.instance().debug1(msg);
 				pollingThread.annotate(msg);
 				ioPort.getOut().write(dialstr.getBytes());
@@ -124,12 +126,13 @@ public class ModemDialer
 			return; // must already be in the process of shutting down.
 		try
 		{
-			String msg = module + " sending " + Break + " to modem.";
+			String msg = module + " sending '" + Break + "' to modem on port " + ioPort.getPortNum();
 			pollingThread.debug2(msg);
 			pollingThread.annotate(msg);
 			ioPort.getOut().write(Break.getBytes());
 			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-			msg = module + " sending " + Hangup + " to modem.";
+			msg = module + " sending '" + AsciiUtil.bin2ascii(Hangup.getBytes()) + "' to modem on port "
+				+ ioPort.getPortNum();
 			pollingThread.debug1(msg);
 			pollingThread.annotate(msg);
 			if (ioPort.getOut() != null)

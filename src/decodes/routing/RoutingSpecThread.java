@@ -150,6 +150,8 @@ public class RoutingSpecThread
 	private boolean purgeOldEvents = true;
 	private boolean updatePlatformStatus = true;
 	
+	private Runnable shutdownHook = null;
+	
 	/**
 	 * Constructs an empty, uninitialized RoutingSpecThread.
 	 */
@@ -833,6 +835,9 @@ log(Logger.E_DEBUG1, "run() exiting.");
 		log(Logger.E_INFORMATION,
 			"-------------- RoutingSpec '" + rs.getName()
 			+ "' Terminating --------------");
+		if (shutdownHook != null)
+			shutdownHook.run();
+		
 		try { sleep(2000L); } catch(InterruptedException ex) {}
 		if (exitOnCompletion)
 			System.exit(0);
@@ -1755,6 +1760,11 @@ log(Logger.E_DEBUG1, "shutdown called.");
 	public DcpMsg getLastDcpMsg()
 	{
 		return lastDcpMsg;
+	}
+
+	public void setShutdownHook(Runnable shutdownHook)
+	{
+		this.shutdownHook = shutdownHook;
 	}
 }
 

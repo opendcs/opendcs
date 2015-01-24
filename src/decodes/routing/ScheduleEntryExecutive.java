@@ -52,7 +52,7 @@ public class ScheduleEntryExecutive
 	private long maxShutdownTime = 20000L; // allow 20 sec to gracefully shut down.
 	private long shutdownComplete = 0L;
 	
-	protected boolean rereadRsBeforeExec = true;
+	protected static boolean rereadRsBeforeExec = true;
 	private DcpMsg lastDcpMsg = null;
 	private DacqEventLogger dacqEventLogger = null;
 	private int schedEntryMinLogPriority = Logger.E_INFORMATION;
@@ -309,6 +309,7 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 
 		if (rereadRsBeforeExec)
 		{
+			Logger.instance().info("ScheduleEntryExecutive.makeThread -- rereading Routing Spec.");
 			try { rs.read(); }
 			catch (DatabaseException ex)
 			{
@@ -499,9 +500,9 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 		}
 	}
 
-	public void setRereadRsBeforeExec(boolean rereadRsBeforeExec)
+	public static void setRereadRsBeforeExec(boolean tf)
 	{
-		this.rereadRsBeforeExec = rereadRsBeforeExec;
+		rereadRsBeforeExec = tf;
 	}
 	
 	public void setPlatform(Platform p)

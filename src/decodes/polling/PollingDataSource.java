@@ -24,6 +24,7 @@ package decodes.polling;
 
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 
 import java.util.ArrayList;
 import java.util.Properties;
@@ -155,6 +156,26 @@ public class PollingDataSource extends DataSourceExec
 				}
 			}
 		}
+		
+		Properties allProps = new Properties(dbDataSource.arguments);
+		PropertiesUtil.copyProps(allProps, routingSpecProps);
+		for(Object key : allProps.keySet())
+		{
+			String propName = (String)key;
+			String value = allProps.getProperty(propName);
+			if (TextUtil.startsWithIgnoreCase(propName, "sc:DCP_NAME"))
+			{
+				Platform p = Database.getDb().platformList.getByFileName(value);
+				if (p != null)
+					for (TransportMedium tm : p.transportMedia)
+						if (tm.getMediumType().toLowerCase().startsWith("polled"))
+						{
+							aggTMList.add(tm);
+							break;
+						}
+			}
+		}
+
 
 		if (aggTMList.size() == 0)
 			throw new DataSourceException(module + " There are no valid transport media in the network lists.");
@@ -240,7 +261,8 @@ public class PollingDataSource extends DataSourceExec
 		if (controller != null)
 			controller.shutdown();
 		controller = null;
-		platformStatusDAO.close();
+		if (platformStatusDAO != null)
+			platformStatusDAO.close();
 	}
 
 	@Override

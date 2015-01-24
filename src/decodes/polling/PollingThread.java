@@ -200,7 +200,6 @@ public class PollingThread
 			try
 			{
 				PrintStream ps = staticSessionLogger != null ? staticSessionLogger : new PrintStream(fn);
-				
 				pollSessionLogger = new PollSessionLogger(ps, p.getSiteName(false));
 			}
 			catch (IOException ex)
@@ -208,7 +207,6 @@ public class PollingThread
 				warning("Cannot open session log file: " + fn + ": " + ex);
 				pollSessionLogger = null;
 			}
-			protocol.setPollSessionLogger(pollSessionLogger);
 		}
 
 	}

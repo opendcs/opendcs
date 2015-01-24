@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2015/01/16 16:11:04  mmaloney
+ * RC01
+ *
  * Revision 1.6  2014/12/11 20:24:07  mmaloney
  * Logging mods.
  *
@@ -310,9 +313,11 @@ public class DcpMonitor
 			return;
 		}
 		
+		// We don't want to 'refresh' our mocked-up routing specs from the db template.
+		ScheduleEntryExecutive.setRereadRsBeforeExec(false);
+
 		executives.clear();
 		ScheduleEntryExecutive see = new ScheduleEntryExecutive(rtScheduleEntry, this);
-		see.setRereadRsBeforeExec(false);
 		executives.add(see);
 
 		// If we've been down for too long, we have to make a recover routing spec too.
@@ -355,7 +360,6 @@ public class DcpMonitor
 				return;
 			}
 			ScheduleEntryExecutive rsee = new ScheduleEntryExecutive(recScheduleEntry, this);
-			rsee.setRereadRsBeforeExec(false);
 			executives.add(rsee);
 		}
 	}

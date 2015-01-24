@@ -11,11 +11,12 @@
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/poi-3.0.1-FINAL-20070705.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/ext/cobra-no-commons.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/cwmsdb.jar"/>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/hec.jar"/>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/hecData.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/xwork-core-2.1.6.jar"/>
 	<classpathentry kind="lib" path="/Library/Java/JavaVirtualMachines/jdk1.7.0_45.jdk/Contents/Home/lib/tools.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/ganymed-ssh2-build210.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace/opendcs-cove/3rd_party/commons-net-3.3.jar"/>
+	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/hec.jar"/>
+	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/hecData.jar"/>
+	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/heclib.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -195,7 +195,7 @@ public class EdlMonitorThread
 	@Override
 	protected void finishedScan()
 	{
-Logger.instance().info(module + " finished scan.");
+		Logger.instance().debug3(module + " finished scan.");
 	}
 
 	@Override

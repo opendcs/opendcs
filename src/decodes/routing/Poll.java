@@ -7,6 +7,7 @@ import lrgs.gui.DecodesInterface;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.IDateFormat;
+import decodes.consumer.DirectoryConsumer;
 import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.PlatformStatus;
@@ -84,15 +85,29 @@ public class Poll
 		String dcpname = station 
 			+ (platform.getPlatformDesignator() != null && platform.getPlatformDesignator().length() > 0
 			? ("-" + platform.getPlatformDesignator()) : "");
-		rs.setProperty("DCP_NAME_0000", dcpname);
+		rs.setProperty("sc:DCP_NAME_0000", dcpname);
 		
-		RoutingSpecThread rst = RoutingSpecThread.makeInstance(rs);
+		ScheduleEntryExecutive.setRereadRsBeforeExec(false);
+		final RoutingSpecThread rst = RoutingSpecThread.makeInstance(rs);
 
 		// Set a static arg in PollingThread to tell it to use stdout as session logger.
 		PollingThread.staticSessionLogger = System.out;
 
 		// Start the routing spec thread to do the work.
 		noExitAfterRunApp = true;
+		rst.setShutdownHook(
+			new Runnable()
+			{
+				public void run()
+				{
+					if (rst.consumer != null && rst.consumer instanceof DirectoryConsumer)
+					{
+						DirectoryConsumer dc = (DirectoryConsumer)rst.consumer;
+						if (dc.getActiveOutput() != null)
+							System.out.println("Output written to " + dc.getActiveOutput());
+					}
+				}
+			});
 		rst.start();
 	}
 

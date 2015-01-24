@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.3  2014/10/07 12:40:45  mmaloney
+ * dev
+ *
  * Revision 1.2  2014/09/15 14:04:56  mmaloney
  * Code cleanup.
  *
@@ -550,8 +553,8 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	{
 		Statement stmt = createStatement();
 		ResultSet rs = stmt.executeQuery(
-			"SELECT id FROM RoutingSpec where name = "
-			+ sqlReqString(name));
+			"SELECT id FROM RoutingSpec where lower(name) = "
+			+ sqlReqString(name.toLowerCase()));
 
 		DbKey ret = Constants.undefinedId;
 		if (rs != null && rs.next())
