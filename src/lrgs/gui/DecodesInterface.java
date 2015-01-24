@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.8  2014/11/19 16:14:46  mmaloney
+*  code cleanup
+*
 *  Revision 1.7  2014/10/07 12:50:54  mmaloney
 *  Must init resource factory.
 *
@@ -257,7 +260,10 @@ public class DecodesInterface
 		Database db = Database.getDb();
 		readSiteList();
 		if (!silent)
-		{	System.out.print("Platform List, "); System.out.flush(); }
+		{	System.out.print("Platform Configs, "); System.out.flush(); }
+		db.platformConfigList.read();
+		if (!silent)
+		{	System.out.print("Platforms, "); System.out.flush(); }
 		db.platformList.read();
 		if (!silent)
 		{	System.out.print("Presentation Groups, "); System.out.flush(); }
