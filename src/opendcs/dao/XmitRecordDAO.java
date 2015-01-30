@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2014/12/11 20:33:11  mmaloney
+ * dev
+ *
  * Revision 1.6  2014/11/19 16:16:05  mmaloney
  * Additions for dcpmon
  *
@@ -480,10 +483,8 @@ public class XmitRecordDAO
 				while(st.hasMoreTokens())
 				{
 					if (!first)
-					{
 						q.append(", ");
-						first = false;
-					}
+					first = false;
 					q.append(st.nextToken() + " = ?");
 				}
 				// The final token in the update statement is for the where clause.
