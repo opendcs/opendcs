@@ -353,6 +353,7 @@ public class StaleDataChecker
 			try { Thread.sleep(1000L); }
 			catch(InterruptedException ex) {}
 		}
+		cleanup();
 	}
 	
 	private boolean lockCheck()
@@ -377,6 +378,8 @@ public class StaleDataChecker
 
 	private void cleanup()
 	{
+		if (myLock == null)
+			return;
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try
 		{
