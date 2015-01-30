@@ -23,6 +23,7 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 	private static final int InDTE = 1;
 	private static final int InDT = 2;
 	private DataType firstDT;
+	public static boolean dtEquivalencesParsed = false;
 
 	/** Default constructor */
 	public DataTypeEquivalenceListParser( )
@@ -59,6 +60,7 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 	 */
 	public void startElement( XmlHierarchyParser hier, String namespaceURI, String localName, String qname, Attributes atts ) throws SAXException
 	{
+		dtEquivalencesParsed = true;
 		if (localName.equalsIgnoreCase(XmlDbTags.DataTypeEquivalence_el))
 		{
 			if (state != Top)

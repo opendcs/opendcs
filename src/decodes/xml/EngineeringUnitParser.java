@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:08  cvs
 *  Added legacy code to repository
 *
@@ -46,6 +49,9 @@ public class EngineeringUnitParser
 	private static final int familyTag = 1;
 	private static final int measuresTag = 2;
 
+	// Used by dbimport to detect if any new units were parsed.
+	public static boolean engineeringUnitsParsed = false;
+	
 	/**
 	 * @param ob the object in which to store the data.
 	 */
@@ -83,6 +89,7 @@ public class EngineeringUnitParser
 	 */
 	public void startElement( XmlHierarchyParser hier, String namespaceURI, String localName, String qname, Attributes atts ) throws SAXException
 	{
+		engineeringUnitsParsed = true;
 		if (localName.equalsIgnoreCase(XmlDbTags.name_el))
 		{
 			hier.pushObjectParser(new TaggedStringSetter(this, nameTag));

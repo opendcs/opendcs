@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2011/08/01 00:58:22  mmaloney
 *  Don't XML write if from or to is null.
 *
@@ -65,6 +68,9 @@ public class UnitConverterParser implements XmlObjectParser, XmlObjectWriter, Ta
 	private static final int dTag = 4;
 	private static final int eTag = 5;
 	private static final int fTag = 6;
+	
+	// Used by dbimport to detect if any unit converters were parsed.
+	public static boolean unitConvertersParsed = false;
 
 	/**
 	 * @param ob the object in which to store the data.
@@ -103,6 +109,7 @@ public class UnitConverterParser implements XmlObjectParser, XmlObjectWriter, Ta
 	 */
 	public void startElement( XmlHierarchyParser hier, String namespaceURI, String localName, String qname, Attributes atts ) throws SAXException
 	{
+		unitConvertersParsed = true;
 		if (localName.equalsIgnoreCase(XmlDbTags.algorithm_el))
 		{
 			hier.pushObjectParser(new TaggedStringSetter(this, algorithmTag));
