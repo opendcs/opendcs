@@ -1,5 +1,6 @@
 package decodes.routing;
 
+import java.io.File;
 import java.util.Date;
 
 import opendcs.dai.PlatformStatusDAI;
@@ -27,8 +28,6 @@ public class Poll
 		TokenOptions.optArgument |TokenOptions.optRequired, "");
 	private StringToken sinceArg = new StringToken("S", "Since Time", "",
 		TokenOptions.optSwitch, "");
-
-
 
 	public Poll()
 	{
@@ -59,10 +58,11 @@ public class Poll
 		
 		String pollType = tm.getMediumType();
 		
-		RoutingSpec rs = Database.getDb().routingSpecList.find(pollType);
+		String rsName = pollType + "-template";
+		RoutingSpec rs = Database.getDb().routingSpecList.find(rsName);
 		if (rs == null)
 			throw new DecodesException(
-				"No routing spec named '" + pollType + "' in database. This is needed as a template.");
+				"No routing spec named '" + rsName + "' in database. This is needed as a template.");
 		
 		// Retrieve up station status and set rs.sinceTime to last poll time.
 		PlatformStatusDAI platformStatusDAO = theDb.makePlatformStatusDAO();
@@ -70,14 +70,27 @@ public class Poll
 		Date lastMsgTime = null;
 		if (platStat != null)
 			lastMsgTime = platStat.getLastMessageTime();
-		else // default to 4 hours.
+		if (lastMsgTime == null) // default to 4 hours.
 			lastMsgTime = new Date(System.currentTimeMillis() - 3600000L * 4);
 		rs.sinceTime = IDateFormat.time_t2string((int)(lastMsgTime.getTime()/1000L));
 		
 		// Argument can override since time in station status.
 		String s = sinceArg.getValue().trim();
 		if (s.length() > 0)
+		{
 			rs.sinceTime = s;
+			try 
+			{
+				Date since = IDateFormat.parse(s);
+				PollingThread.backlogOverrideHours =
+					(int)(((System.currentTimeMillis() - since.getTime()) + 3599999L) / 3600000L);
+			}
+			catch(Exception ex)
+			{
+				System.err.println("Illegal since time '" + s + "': " + ex);
+				return;
+			}
+		}
 		
 		// Remove the netlists in the prototype and replace with the single station name.
 		rs.networkListNames.clear();
@@ -86,6 +99,8 @@ public class Poll
 			+ (platform.getPlatformDesignator() != null && platform.getPlatformDesignator().length() > 0
 			? ("-" + platform.getPlatformDesignator()) : "");
 		rs.setProperty("sc:DCP_NAME_0000", dcpname);
+		
+		rs.setProperty("pollNumTries", "1"); // Only try poll once.
 		
 		ScheduleEntryExecutive.setRereadRsBeforeExec(false);
 		final RoutingSpecThread rst = RoutingSpecThread.makeInstance(rs);
@@ -103,9 +118,13 @@ public class Poll
 					if (rst.consumer != null && rst.consumer instanceof DirectoryConsumer)
 					{
 						DirectoryConsumer dc = (DirectoryConsumer)rst.consumer;
-						if (dc.getActiveOutput() != null)
-							System.out.println("Output written to " + dc.getActiveOutput());
+						if (dc.getLastOutFile() != null)
+							System.out.println("Output written to " + dc.getLastOutFile().getPath());
+						else
+							System.out.println("(no active output)");
 					}
+					else System.out.println(
+						rst.consumer == null ? "No output file produced." : rst.consumer.getClass().getName());
 				}
 			});
 		rst.start();
@@ -121,6 +140,7 @@ public class Poll
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		super.addCustomArgs(cmdLineArgs);
+		cmdLineArgs.addToken(sinceArg);
 		cmdLineArgs.addToken(stationArg);
 	}
 

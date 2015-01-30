@@ -819,6 +819,9 @@ log(Logger.E_DEBUG1, "run() exiting.");
 
 	protected void quit()
 	{
+		if (shutdownHook != null)
+			shutdownHook.run();
+
 		closeResources();
 		if (statusWriteThread != null)
 			statusWriteThread.shutdown = true;
@@ -835,8 +838,6 @@ log(Logger.E_DEBUG1, "run() exiting.");
 		log(Logger.E_INFORMATION,
 			"-------------- RoutingSpec '" + rs.getName()
 			+ "' Terminating --------------");
-		if (shutdownHook != null)
-			shutdownHook.run();
 		
 		try { sleep(2000L); } catch(InterruptedException ex) {}
 		if (exitOnCompletion)
@@ -1023,9 +1024,8 @@ log(Logger.E_DEBUG1, "run() exiting.");
 		}
 
 		s = PropertiesUtil.getIgnoreCase(rs.getProperties(),"processgoodmsg");
-		if (s != null &&
-			(s.equalsIgnoreCase("yes") || s.equalsIgnoreCase("true")))
-			processGoodMsgCheck = true;
+		if (s != null && s.trim().length() > 0)
+			processGoodMsgCheck = TextUtil.str2boolean(s);
 		
 		s = rs.getProperty("removeRedundantData");
 		if (s != null && TextUtil.str2boolean(s))
@@ -1692,7 +1692,7 @@ log(Logger.E_DEBUG1, "shutdown called.");
 	 * from the command line.
 	 * @param rs the RoutingSpec object to use.
 	 */
-	protected static RoutingSpecThread makeInstance(RoutingSpec rs)
+	public static RoutingSpecThread makeInstance(RoutingSpec rs)
 		throws DbIoException
 	{
 		ScheduleEntryDAI scheduleEntryDAO = 

@@ -520,7 +520,6 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 				dblev == 1 ? Logger.E_DEBUG1 :
 				dblev == 2 ? Logger.E_DEBUG2 :
 				dblev == 3 ? Logger.E_DEBUG3 : schedEntryMinLogPriority;
-			dacqEventLogger.setMinLogPriority(newMinPriority);
 		}
 	}
 	
