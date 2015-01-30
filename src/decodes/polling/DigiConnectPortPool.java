@@ -31,6 +31,7 @@ import java.net.InetAddress;
 import java.rmi.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -68,6 +69,12 @@ public class DigiConnectPortPool
 	private int nextPortIdx = 0;
 	
 	private SqlDatabaseIO sqldbio = null;
+	class PortStats
+	{
+		long dontUseUntil = 0L;
+		int consecutiveErrors = 0;
+	};
+	HashMap<String, PortStats> portStats = new HashMap<String, PortStats>();
 	
 	public DigiConnectPortPool()
 	{
@@ -177,7 +184,7 @@ public class DigiConnectPortPool
 	@Override
 	public synchronized IOPort allocatePort()
 	{
-Logger.instance().debug3(module + " allocatePort starting.");
+		Logger.instance().debug3(module + " allocatePort starting.");
 		// Use SERIAL_PORT_STATUS table to find a free port
 		DeviceStatusDAI deviceStatusDAO = sqldbio.makeDeviceStatusDAO();
 		
@@ -190,15 +197,20 @@ Logger.instance().debug3(module + " allocatePort starting.");
 			while(ret == null)
 			{
 				String portName = portNames.get(nextPortIdx);
-Logger.instance().debug3(module + " trying port " + portName);
+				PortStats ps = portStats.get(portName);
+				
+				Logger.instance().debug3(module + " trying port " + portName);
 				DeviceStatus devStat = deviceStatusDAO.getDeviceStatus(portName);
 				if (devStat == null) // first time this device used?
 					devStat = new DeviceStatus(portName);
-				if (!devStat.isInUse()
+				long now = System.currentTimeMillis();
+				if ((!devStat.isInUse()
 				 || devStat.getLastActivityTime() == null
-				 || System.currentTimeMillis() - devStat.getLastActivityTime().getTime() > PORT_STALE_MS)
+				 || now - devStat.getLastActivityTime().getTime() > PORT_STALE_MS)
+				 && (ps == null || now > ps.dontUseUntil))
 				{
-Logger.instance().debug2(module + " Port " + portName + " is free. Will attempt to allocate.");
+					Logger.instance().debug2(module + " Port " + portName 
+						+ " is free. Will attempt to allocate.");
 					// Set its IN_USE, LAST_USED_BY_PROC, and LAST_USED_BY_HOST
 					devStat.setInUse(true);
 					devStat.setLastUsedByProc(processName);
@@ -211,7 +223,8 @@ Logger.instance().debug2(module + " Port " + portName + " is free. Will attempt 
 					try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
 					devStat = deviceStatusDAO.getDeviceStatus(portName);
 					
-Logger.instance().debug2(module + " After 2 sec delay, " + portName + " is still mine. Will use.");
+					Logger.instance().debug3(module + " After 2 sec delay, " + portName 
+						+ " is still mine. Will use.");
 					if (!devStat.getLastUsedByHost().equals(hostname)
 					 || !devStat.getLastUsedByProc().equals(processName))
 					{
@@ -232,11 +245,8 @@ Logger.instance().debug2(module + " After 2 sec delay, " + portName + " is still
 // will cause DTR to the modem to drop. This tells the modem to hangup and become unusable.
 // Therefore, we defer opening the socket until the configPort() method is called below.
 // We open the socket to the port AFTER all the settings are done.
-//							Logger.instance().debug2(module + " Connecting to " + portName + " on port " + bc.getPort() + ".");
-//							bc.connect();
 							ret = new IOPort(this, portnum, new ModemDialer());
-//							ret.setIn(bc.getInputStream());
-//							ret.setOut(bc.getOutputStream());
+							ret.setPortName(portName);
 							allocatedPorts.add(new AllocatedSerialPort(ret, devStat, bc));
 						}
 						catch(Exception ex)
@@ -248,7 +258,8 @@ Logger.instance().debug2(module + " After 2 sec delay, " + portName + " is still
 				}
 				else // Else this is already in use
 				{
-Logger.instance().debug3(module + " Port " + portName + " was already in use, last activity time=" + devStat.getLastActivityTimeStr());
+					Logger.instance().debug3(module + " Port " + portName 
+						+ " was already in use, last activity time=" + devStat.getLastActivityTimeStr());
 				}
 				
 				if (++nextPortIdx >= portNames.size())
@@ -279,9 +290,10 @@ Logger.instance().debug3(module + " success. returning port " + ret.getPortNum()
 	}
 
 	@Override
-	public synchronized void releasePort(IOPort ioPort, PollingThreadState finalState)
+	public synchronized void releasePort(IOPort ioPort, PollingThreadState finalState,
+		boolean wasConnectException)
 	{
-Logger.instance().debug3(module + " releasePort starting.");
+		Logger.instance().debug1(module + " releasePort starting.");
 		// Close the socket and remove it from my allocatedPorts
 		AllocatedSerialPort allocatedPort = null;
 		for (AllocatedSerialPort ap : allocatedPorts)
@@ -290,14 +302,37 @@ Logger.instance().debug3(module + " releasePort starting.");
 				allocatedPort = ap;
 				break;
 			}
-		allocatedPorts.remove(allocatedPort);
 		if (allocatedPort == null)
 			return;
+		allocatedPorts.remove(allocatedPort);
 		
+		PortStats ps = portStats.get(ioPort.getPortName());
+		if (ps == null)
+			portStats.put(ioPort.getPortName(), ps = new PortStats());
+		
+		Logger.instance().debug1(module + " disconnecting basic client from: "
+			+ allocatedPort.basicClient.getName());
 		allocatedPort.basicClient.disconnect();
 		ioPort.setIn(null);
 		ioPort.setOut(null);
+		if (wasConnectException)
+			ps.consecutiveErrors++;
+		else
+			ps.consecutiveErrors = 0;
 		
+		if (ps.consecutiveErrors >= 3)
+		{
+			Logger.instance().warning(module + " Port " + ioPort.getPortNum() 
+				+ " has had 3 consecutive connect errors. It will be disabled for two minutes.");
+			ps.dontUseUntil = System.currentTimeMillis() + 120000L;
+			ps.consecutiveErrors = 0;
+		}
+		else
+		{
+			// Give it a 2 second rest to ensure that modem notices DTR low.
+			// This also ensures that an idle modem will be used, if one is available.
+			ps.dontUseUntil = System.currentTimeMillis() + 2000L;
+		}
 		// Free the port in SERIAL_PORT_STATUS
 		DeviceStatusDAI deviceStatusDAO = sqldbio.makeDeviceStatusDAO();
 		
@@ -396,6 +431,7 @@ Logger.instance().debug3(module + " releasePort returning.");
 		}
 		catch (IOException ex)
 		{
+			allocatedPort.basicClient.disconnect();
 			throw new DialException("Cannot connect to " + allocatedPort.basicClient.getHost()
 			+ ":" + allocatedPort.basicClient.getPort() + ": " + ex);
 		}
@@ -410,7 +446,7 @@ Logger.instance().debug3(module + " releasePort returning.");
 		// So if anything is left, it means the controller is shutting down prematurely.
 		// So close anything still open.
 		while(allocatedPorts.size() > 0)
-			releasePort(allocatedPorts.get(0).ioPort, PollingThreadState.Failed);
+			releasePort(allocatedPorts.get(0).ioPort, PollingThreadState.Failed, false);
 		if (portManager != null)
 			portManager.shutdown();
 		portManager = null;

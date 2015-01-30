@@ -91,71 +91,83 @@ public class PollingThreadController
 		
 long debugmsec = 0L;
 		tmIdx = 0;
-		while(!_shutdown)
+		try
 		{
-			if (countThreads(PollingThreadState.Waiting) == 0
-			 && countThreads(PollingThreadState.Running) == 0)
+			while(!_shutdown)
 			{
-				dataSource.log(Logger.E_INFORMATION, module + " Polling complete. All stations polled.");
-				_shutdown = true;
-				break;
+				if (countThreads(PollingThreadState.Waiting) == 0
+				 && countThreads(PollingThreadState.Running) == 0)
+				{
+					dataSource.log(Logger.E_INFORMATION, module + " Polling complete. All stations polled.");
+					_shutdown = true;
+					break;
+				}
+				
+				PollingThread pt = getNextWaitingThread();
+				if (pt != null)
+				{
+					IOPort ioPort = portPool.allocatePort();
+					if (ioPort == null)
+					{
+	//					dataSource.log(Logger.E_DEBUG2, module + " No ports available, will try later.");
+						// go back so that we try the same polling thread again next time.
+						if (--tmIdx < 0)
+							tmIdx = threads.size()-1;
+					}
+					else // start a new poll on the allocated port.
+					{
+						dataSource.log(Logger.E_DEBUG1, module + " starting " + pt.getModule()
+							+ ", TM " + pt.getTransportMedium()
+							+ " on port number " + ioPort.getPortNum());
+						pt.setState(PollingThreadState.Running);
+						pt.setSaveSessionFile(saveSessionFile);
+						pt.setIoPort(ioPort);
+						(new Thread(pt)).start();
+					}
+				}
+				if (System.currentTimeMillis() - debugmsec > 10000L)
+				{
+					dataSource.log(Logger.E_INFORMATION, 
+						module + " Threads: total=" + threads.size()
+						+ ", waiting=" + countThreads(PollingThreadState.Waiting) 
+						+ ", running=" + countThreads(PollingThreadState.Running)
+						+ ", success=" + countThreads(PollingThreadState.Success)
+						+ ", failed=" + countThreads(PollingThreadState.Failed)
+						);
+				 debugmsec = System.currentTimeMillis();
+				}
+				
+				try { sleep(PAUSE_MSEC); } catch(InterruptedException ex) {}
 			}
 			
-			PollingThread pt = getNextWaitingThread();
-			if (pt != null)
-			{
-				IOPort ioPort = portPool.allocatePort();
-				if (ioPort == null)
+			// Kill any PollingThreads that are still alive.
+			dataSource.log(Logger.E_INFORMATION, module + " checking " + threads.size() + " polling threads");
+			int nk = 0;
+			for(PollingThread pt : threads)
+				if (pt.getState() == PollingThreadState.Running)
 				{
-//					dataSource.log(Logger.E_DEBUG2, module + " No ports available, will try later.");
-					// go back so that we try the same polling thread again next time.
-					if (--tmIdx < 0)
-						tmIdx = threads.size()-1;
+					pt.shutdown();
+					nk++;
 				}
-				else // start a new poll on the allocated port.
-				{
-					dataSource.log(Logger.E_DEBUG1, module + " starting " + pt.getModule()
-						+ ", TM " + pt.getTransportMedium()
-						+ " on port number " + ioPort.getPortNum());
-					pt.setState(PollingThreadState.Running);
-					pt.setSaveSessionFile(saveSessionFile);
-					pt.setIoPort(ioPort);
-					(new Thread(pt)).start();
-				}
-			}
-if (System.currentTimeMillis() - debugmsec > 10000L)
-{dataSource.log(Logger.E_DEBUG2, module + " there are " + threads.size() + " total threads and " 
-+ countThreads(PollingThreadState.Waiting) + " still waiting, and " + countThreads(PollingThreadState.Running) + " running.");
- debugmsec = System.currentTimeMillis();
-}
 			
-			try { sleep(PAUSE_MSEC); } catch(InterruptedException ex) {}
-		}
-		
-		// Kill any PollingThreads that are still alive.
-		dataSource.log(Logger.E_INFORMATION, module + " checking " + threads.size() + " polling threads");
-		int nk = 0;
-		for(PollingThread pt : threads)
-			if (pt.getState() == PollingThreadState.Running)
-			{
-				pt.shutdown();
-				nk++;
+			// Wait up to 30 sec until all the kids have called pollComplete().
+			if (nk > 0)
+				dataSource.log(Logger.E_INFORMATION, module + " Will wait up to 30 sec for " + nk + " polling threads to terminate.");
+			else
+				dataSource.log(Logger.E_INFORMATION, module + " All threads terminated, proceeding with shutdown.");
+	
+			long x = System.currentTimeMillis();
+			while(countThreads(PollingThreadState.Running) > 0
+				&& System.currentTimeMillis() - x < 30000L)
+			{	
+				try { sleep(PAUSE_MSEC); }
+				catch(InterruptedException ex) {}
 			}
-		
-		// Wait up to 30 sec until all the kids have called pollComplete().
-		if (nk > 0)
-			dataSource.log(Logger.E_INFORMATION, module + " Will wait up to 30 sec for " + nk + " polling threads to terminate.");
-		else
-			dataSource.log(Logger.E_INFORMATION, module + " All threads terminated, proceeding with shutdown.");
-
-		long x = System.currentTimeMillis();
-		while(countThreads(PollingThreadState.Running) > 0
-			&& System.currentTimeMillis() - x < 30000L)
-		{	
-			try { sleep(PAUSE_MSEC); }
-			catch(InterruptedException ex) {}
 		}
-		portPool.close();
+		finally
+		{
+			portPool.close();
+		}
 		dataSource.log(Logger.E_INFORMATION, "Polling finished. "
 			+ aggTMList.size() + " stations polled, " + successfullPolls + " success, "
 			+ failedPolls + " failed.");
@@ -192,7 +204,9 @@ if (System.currentTimeMillis() - debugmsec > 10000L)
 	{
 		dataSource.log(Logger.E_DEBUG1, module + " pollComplete for "
 			+ pollingThread.getTransportMedium().toString());
-		portPool.releasePort(pollingThread.getIoPort(), pollingThread.getState());
+		portPool.releasePort(pollingThread.getIoPort(), pollingThread.getState(),
+			pollingThread.getTerminatingException() != null 
+			&& (pollingThread.getTerminatingException() instanceof DialException));
 		if (pollingThread.getState() == PollingThreadState.Success)
 		{
 			dataSource.log(Logger.E_DEBUG1, "Polling of " 

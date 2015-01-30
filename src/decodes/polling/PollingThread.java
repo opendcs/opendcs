@@ -73,6 +73,8 @@ public class PollingThread
 	private String saveSessionFile = null;
 	private PollSessionLogger pollSessionLogger = null;
 	public static PrintStream staticSessionLogger = null;
+	private PollException terminatingException = null;
+	public static int backlogOverrideHours = 0;
 
 
 	public PollingThread(PollingThreadController parent, PollingDataSource dataSource, 
@@ -90,14 +92,39 @@ public class PollingThread
 	public void run()
 	{
 		numTries++;
+		terminatingException = null;
 		makeSessionLogger();
-		info("transport medium: " + 
-			transportMedium.getMediumType() + ":" + transportMedium.getMediumId() 
-			+ " attempt #" + numTries);
+		String s = module + " " + 
+			transportMedium.getMediumType() + ":" + transportMedium.getMediumId()
+			+ " type=" + transportMedium.getLoggerType()
+			+ " attempt #" + numTries;
+		info(s);
+		annotate(s);
 		PollingThreadState exitState = state;
 		try
 		{
 			platformStatus = dataSource.getPlatformStatus(transportMedium); 
+
+			// Determine the since time from platform status, or use default.
+			Date since = new Date(System.currentTimeMillis() - 3600000L * parent.getMaxBacklogHours());
+			
+			if (backlogOverrideHours != 0)
+			{
+				// backlog Override is used by poll GUI and command line utility.
+				since = new Date(System.currentTimeMillis() - 3600000L * backlogOverrideHours);
+			}
+			else if (platformStatus.getLastMessageTime() != null
+				  && platformStatus.getLastMessageTime().after(since))
+			{
+				// Backup 15 min fudge factor
+				since = new Date(platformStatus.getLastMessageTime().getTime() - 15*60000L);
+			}
+			// Always get at least an hour.
+			if (System.currentTimeMillis() - since.getTime() < 3600000L)
+				since = new Date(System.currentTimeMillis() - 3600000L);
+			
+			info("Since time set to " + since);
+			annotate("Since time set to " + since);
 
 			if (!_shutdown)
 				ioPort.connect(transportMedium, this);
@@ -112,14 +139,6 @@ public class PollingThread
 			if (!_shutdown)
 				protocol.login(ioPort, transportMedium);
 			
-			// Determine the since time from platform status, or use default.
-			Date since = new Date(System.currentTimeMillis() - 3600000L * parent.getMaxBacklogHours());
-			if (platformStatus.getLastContactTime() != null
-			 && platformStatus.getLastContactTime().after(since))
-				since = platformStatus.getLastContactTime();
-			// Always get at least an hour.
-			if (System.currentTimeMillis() - since.getTime() < 3600000L)
-				since = new Date(System.currentTimeMillis() - 3600000L);
 			
 			if (!_shutdown)
 			{
@@ -144,6 +163,7 @@ public class PollingThread
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
+			terminatingException = ex;
 		}
 		catch (ConfigException ex)
 		{
@@ -152,6 +172,7 @@ public class PollingThread
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
+			terminatingException = ex;
 		}
 		catch (LoginException ex)
 		{
@@ -160,6 +181,7 @@ public class PollingThread
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
+			terminatingException = ex;
 		}
 		catch (ProtocolException ex)
 		{
@@ -168,6 +190,7 @@ public class PollingThread
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
+			terminatingException = ex;
 		}
 		finally
 		{
@@ -319,6 +342,11 @@ public class PollingThread
 	public String getModule()
 	{
 		return module;
+	}
+
+	public PollException getTerminatingException()
+	{
+		return terminatingException;
 	}
 	
 }

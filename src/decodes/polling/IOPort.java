@@ -22,8 +22,6 @@
  */
 package decodes.polling;
 
-import ilex.util.Logger;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -49,6 +47,7 @@ public class IOPort
 	private PollingThreadState configureState = PollingThreadState.Waiting;
 	private boolean dialerConnected = false;
 	private PollingThread pollingThread = null;
+	private String portName = null;
 	
 	public IOPort(PortPool portPool, int portNum, Dialer dialer)
 	{
@@ -120,4 +119,13 @@ public class IOPort
 		this.configureState = configureState;
 	}
 
+	public String getPortName()
+	{
+		return portName;
+	}
+
+	public void setPortName(String portName)
+	{
+		this.portName = portName;
+	}
 }

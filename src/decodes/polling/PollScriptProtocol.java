@@ -292,9 +292,7 @@ public class PollScriptProtocol
 	{
 		start = since;
 		
-		int hours = (int)((System.currentTimeMillis() - since.getTime()) / 3600L) + 1;
-		if (hours > dataSource.getController().getMaxBacklogHours())
-			hours = dataSource.getController().getMaxBacklogHours();
+		int hours = (int)((System.currentTimeMillis() - since.getTime()) / 3600000L) + 1;
 		properties.setProperty("HOURS", ""+hours);
 		
 		this.transportMedium = tm;

@@ -48,7 +48,8 @@ public abstract class PortPool
 	 * @param finalState TODO
 	 * @param port the port previously returned from allocatePort.
 	 */
-	public abstract void releasePort(IOPort ioPort, PollingThreadState finalState);
+	public abstract void releasePort(IOPort ioPort, PollingThreadState finalState,
+		boolean wasConnectException);
 	
 	/**
 	 * @return total number of ports in this pool.

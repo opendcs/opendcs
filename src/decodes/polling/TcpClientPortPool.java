@@ -72,7 +72,7 @@ public class TcpClientPortPool extends PortPool
 	}
 
 	@Override
-	public void releasePort(IOPort port, PollingThreadState finalState)
+	public void releasePort(IOPort port, PollingThreadState finalState, boolean wasConnectException)
 	{
 		ioPorts.remove(port);
 	}

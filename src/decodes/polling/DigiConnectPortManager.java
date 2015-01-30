@@ -173,7 +173,8 @@ public class DigiConnectPortManager
 					+ parent.getDigiIpAddr());
 			
 			// Build command to send to telnet with settings in transport medium.
-			StringBuilder cmdb = new StringBuilder("set serial port=" + asp.ioPort.getPortNum());
+			StringBuilder cmdb = new StringBuilder("set serial port=" + asp.ioPort.getPortNum()
+				+ " flowcontrol=none");
 			
 			// KLUDGE - Sometimes the modem goes catatonic. A baud rate change seems to kick it in the
 			// head.
@@ -191,35 +192,17 @@ public class DigiConnectPortManager
 //			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
 
 			// End of Kludge, build actual params for this session
-			int nparams = 0;
 			if (asp.transportMedium.getBaud() > 0)
-			{
 				cmdb.append(" baud=" + asp.transportMedium.getBaud());
-				nparams++;
-			}
 			if (asp.transportMedium.getDataBits() > 0)
-			{
 				cmdb.append(" databits=" + asp.transportMedium.getDataBits());
-				nparams++;
-			}
 			if (asp.transportMedium.getStopBits() > 0)
-			{
 				cmdb.append(" stopbits=" + asp.transportMedium.getStopBits());
-				nparams++;
-			}
 			Parity parity = Parity.fromCode(asp.transportMedium.getParity());
 			if (parity != Parity.Unknown)
-			{
 				cmdb.append(" parity=" + parity.toString().toLowerCase());
-				nparams++;
-			}
 			cmd = cmdb.toString() + EOL;
 			
-			if (nparams == 0) // nothing to do
-			{
-				asp.ioPort.setConfigureState(PollingThreadState.Success);
-				return;
-			}
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
 			{
 				// Failed to get prompt after sending set serial command. 

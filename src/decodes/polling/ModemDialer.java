@@ -45,9 +45,9 @@ public class ModemDialer
 	implements StreamReaderOwner
 {
 	public String module = "ModemDialer";
-	public static String EOL = "\r\n";
+	public static String EOL = "\r";
 	private String AT = "AT" + EOL;
-	private double AtWaitSec = 3.0;
+	private double AtWaitSec = 5.0;
 	private double ConnectWaitSec = 90.0;
 	private IOException readError = null;
 	private String Break = "+++";
@@ -58,6 +58,15 @@ public class ModemDialer
 	private PatternMatcher  OK[] = new PatternMatcher[]
 		{ new PatternMatcher("OK".getBytes()) };
 	private PollingThread pollingThread = null;
+	
+	/**
+	 * S0=0 = turn off auto answer
+	 * &D2 = normal DTR operation (hangup when digi drops DTR)
+	 * &C1 = normal DCD operation
+	 * &R2 = hardware flow control
+	 * &I0 = disable software xon/xoff
+	 */
+	private String modemInitString = "ATS0=0&D2&C1&R2&I0";
 
 	@Override
 	public void connect(IOPort ioPort, TransportMedium tm, PollingThread pollingThread)
@@ -72,12 +81,18 @@ public class ModemDialer
 		streamReader.start();
 		try
 		{
+			ioPort.getOut().write(EOL.getBytes()); ioPort.getOut().flush();
+			try { Thread.sleep(500L); } catch(InterruptedException ex) {}
+			ioPort.getOut().write(EOL.getBytes()); ioPort.getOut().flush();
+			try { Thread.sleep(500L); } catch(InterruptedException ex) {}
+			
 			streamReader.flushBacklog();
-			String msg = module + " sending '" + AsciiUtil.bin2ascii(AT.getBytes()) + "' to modem on port "
+			String init = modemInitString+EOL;
+			String msg = module + " sending '" + AsciiUtil.bin2ascii(init.getBytes()) + "' to modem on port "
 				+ ioPort.getPortNum();
 			pollingThread.debug2(msg);
 			pollingThread.annotate(msg);
-			ioPort.getOut().write(AT.getBytes());
+			ioPort.getOut().write(init.getBytes());
 			ioPort.getOut().flush();
 			if (!streamReader.wait(AtWaitSec, OK))
 			{
@@ -88,7 +103,7 @@ public class ModemDialer
 			{
 				String dialstr = "ATDT " + tm.getMediumId() + EOL;
 				msg = module + " sending '" + AsciiUtil.bin2ascii(dialstr.getBytes()) + "' to modem on port "
-					+ ioPort.getPortNum();
+					+ ioPort.getPortNum() + ", will wait " + ConnectWaitSec + " sec for CONNECT.";
 				Logger.instance().debug1(msg);
 				pollingThread.annotate(msg);
 				ioPort.getOut().write(dialstr.getBytes());
@@ -100,13 +115,13 @@ public class ModemDialer
 				}
 				else
 				{
-					pollingThread.annotate(module + " dialing success!");
+					pollingThread.annotate(module + " dialing success on port" + ioPort.getPortNum() + "!");
 					return; // Success!
 				}
 			}
 			pollingThread.annotate("Dialing failed.");
 			disconnect(ioPort);
-			throw new DialException("Could not dial modem.");
+			throw new DialException("Could not dial modem on port" + ioPort.getPortNum());
 		}
 		catch (IOException ex)
 		{
