@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2015/01/22 19:50:59  mmaloney
+ * log message improvements
+ *
  * Revision 1.4  2014/12/11 20:19:20  mmaloney
  * Debug msg improvement
  *
@@ -198,7 +201,8 @@ if (cwmsName.getNameValue().toUpperCase().startsWith("FCNE"))
 		{
 			if (DecodesSettings.instance().writeCwmsLocations)
 			{
-				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue() + "'");
+				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue() 
+					+ "' with officeId=" + officeId);
 				cwmsdb.CwmsLocJdbc cwmsLocJdbc = new cwmsdb.CwmsLocJdbc(db.getConnection());
 
 				if (newSite.country == null || newSite.country.trim().length() == 0
