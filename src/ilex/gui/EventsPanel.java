@@ -2,6 +2,9 @@
 *	$Id$
 *
 *	$Log$
+*	Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*	OPENDCS 6.0 Initial Checkin
+*	
 *	Revision 1.1  2008/04/04 18:21:08  cvs
 *	Added legacy code to repository
 *	
@@ -142,6 +145,11 @@ public class EventsPanel extends JPanel
 			}
 		}
 	}
+	
+	public void clear()
+	{
+		listModel.clear();
+	}
 }
 
 /**
@@ -211,6 +219,13 @@ class EventsListModel extends AbstractListModel
 	public int getSize()
 	{
 		return lines.size();
+	}
+	
+	public void clear()
+	{
+		int n = lines.size();
+		lines.clear();
+		this.fireIntervalRemoved(this, 0, n);
 	}
 }
 
