@@ -555,6 +555,31 @@ public class DetailReportGenerator
 	                xos.endElement("tr");
 				}
 
+				// If there is a EDL_INPUT, print an extra row for it.
+				qual = status.getDownlinkQualityHistory(LrgsInputInterface.DL_EDL);
+				if (qual != null)
+				{
+	                xos.startElement("tr");
+	                  xos.writeElement("td", "style", right, 
+						"EDL Ingest:");
+	                  hr = (status.lss.currentHour + 17) % 24;
+					  for(int i=0; i<8; i++)
+	                  {
+	                    int g = qual[hr] != null ? qual[hr].numGood : 0;
+                    	String v = "" + g;
+						if (status.majorVersion >= 5)
+						{
+							int e = qual[hr] != null ? qual[hr].numDropped : 0;
+					    	if (e != 0)
+								v = v + " / " + e;
+						}
+                    	xos.writeElement("td", "style", revOK + center, v);
+	                    hr = (hr + 1) % 24;
+	                  }
+	                xos.endElement("tr");
+				}
+
+				
 				// Print row with number of messages ARCHIVED
 				qual = status.lss.qualMeas;
 	            xos.startElement("tr");
