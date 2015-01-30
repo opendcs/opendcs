@@ -57,6 +57,9 @@ public class DirectoryConsumer extends DataConsumer
 
 	/** Temporary directory for building files. */
 	private File tmpdir;
+	
+	/** So apps like poll and PollGUI can retrieve last file written */
+	private File lastOutFile = null;
 
 	/** No-args constructor required */
 	public DirectoryConsumer()
@@ -218,6 +221,7 @@ public class DirectoryConsumer extends DataConsumer
 						+ permFile.getPath() + "': " + ex);
 				}
 			}
+			lastOutFile = outFile;
 			outFile = null;
 			//Don't set curfile to null, so getActiveOutput will
 			//return the last file written. Otherwise routmon always
@@ -243,6 +247,11 @@ public class DirectoryConsumer extends DataConsumer
 	public String getArgLabel()
 	{
 		return "Directory Name";
+	}
+
+	public File getLastOutFile()
+	{
+		return lastOutFile;
 	}
 
 }
