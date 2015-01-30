@@ -11,6 +11,7 @@
 #############################################################################
 
 DH=$DCSTOOL_HOME
+LOG=update.log
 
 if [ -z "$DH" ]
 then
@@ -36,18 +37,19 @@ then
 fi
 . defines.sh
 
-echo -n "Running createDb.sh at " >$LOG
+echo -n "Running update52to61.sh at " >$LOG
 date >> $LOG
 echo >> $LOG
 
 echo "======================" >>$LOG
-echo "Creating roles & users" >>$LOG
-echo "Creating roles & users"
+echo "Modifying roles & users" >>$LOG
+echo "Modifying roles & users"
 rm -f roles.log
-echo sqlplus $DBSUPER/$DBSUPER_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME as sysdba @roles.sql >>$LOG
-sqlplus $DBSUPER/$DBSUPER_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME as sysdba @roles.sql
+echo sqlplus $DBSUPER/$DBSUPER_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME as sysdba @update52to61grants.sql >>$LOG
+sqlplus $DBSUPER/$DBSUPER_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME as sysdba @update52to61grants.sql
 cat roles.log >>$LOG
 rm roles.log
+
 
 echo "======================" >>$LOG
 echo "Running initialization as CWMS_20" >>$LOG
@@ -59,30 +61,13 @@ cat cwmsAdmin.log >>$LOG
 rm cwmsAdmin.log
 
 echo "=================================" >>$LOG
-echo "Creating combined schema file ..." >>$LOG
-echo "Creating combined schema file ..."
-cp combined_hdr.sql combined.sql
-cat opendcs.sql >> combined.sql
-cat sequences.sql >>combined.sql
-echo >> combined.sql
-echo "-- Set Version Numbers" >> combined.sql
-now=`date`
-echo 'delete from DecodesDatabaseVersion; ' >> combined.sql
-echo "insert into DecodesDatabaseVersion values(11, 'Installed $now');" >> combined.sql
-echo 'delete from tsdb_database_version; ' >> combined.sql
-echo "insert into tsdb_database_version values(10, 'Installed $now');" >> combined.sql
-echo "spool off" >>combined.sql
-echo "exit;" >> combined.sql
-
-echo "======================" >>$LOG
-echo "creating tables, indexes, and sequences" >>$LOG
-echo "creating tables, indexes, and sequences"
+echo "Updating the tables, indexes, and constraints ..." >>$LOG
+echo "Updating the tables, indexes, and constraints ..."
 rm -f combined.log
-echo sqlplus $CCP_SCHEMA/$CCP_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME @combined.sql >>$LOG
-sqlplus $CCP_SCHEMA/$CCP_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME @combined.sql
+echo sqlplus $CCP_SCHEMA/$CCP_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME @update52to61.sql >>$LOG
+sqlplus $CCP_SCHEMA/$CCP_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME @update52to61.sql
 cat combined.log >>$LOG
 rm combined.log
-echo >>$LOG
 
 echo "======================" >>$LOG
 echo "Setting permissions" >>$LOG
@@ -113,14 +98,5 @@ sqlplus $CCP_SCHEMA/$CCP_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME @vpd_policy.sql
 cat vpd_policy.log >>$LOG
 rm -f vpd_policy.log
 echo >>$LOG
-
-echo "Left for you to do ..."
-echo "  For each office that will use CCP on this database ..."
-echo "     Create a CCP user with manager privilege in that office."
-echo "     In the toolkit Setup menu, set URL, DB User and Password for that user."
-echo "     In the Setup menu, set DbOfficeId appropriately."
-echo "     CD to the directory containing this script and ..."
-echo "     If you have a snapshot of that office's db, run dbimport -r filename"
-echo "     Otherwise run the importDecodesTemplate.sh script in this directory."
 
 rm defines.sql

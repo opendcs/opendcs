@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------
--- Create roles for CCP CWMS 3.0
+-- Privileges necessary for updating 5.2 to 6.1 schema.
 -- Maintainer: Cove Software, LLC
 --------------------------------------------------------------------------
 
@@ -20,12 +20,6 @@ whenever sqlerror continue
 set define on
 @@defines.sql
 
-DROP USER &CCP_SCHEMA CASCADE;
-
--- adm_role:  DB admin_role who can manipulate DB objects and data
-DROP ROLE CCP_ADMS;
-CREATE ROLE CCP_ADMS;
-
 -- Grant the system privileges to the CCP_ADMS.
 GRANT ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,
   CREATE ANY VIEW,CREATE ANY PROCEDURE,CREATE ANY TRIGGER,CREATE ANY JOB,
@@ -33,34 +27,9 @@ GRANT ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,
   TO CCP_ADMS;
 GRANT CREATE ANY CONTEXT,ADMINISTER DATABASE TRIGGER TO CCP_ADMS;
 
--- user_role:     DB user_role who can access the CWMS/CCP DB and APIs
-DROP ROLE CCP_USERS;
-CREATE ROLE CCP_USERS;
-
 GRANT CREATE SESSION,RESOURCE,CONNECT TO CCP_USERS;
 GRANT CCP_USERS TO CCP_ADMS;
 GRANT CCP_USERS TO CWMS_USER;
-
--- MJM In CWMS 3.0, read/write privileges will be controlled by office
--- privileges and checked by the VPD policy functions.
--- Therefore, we don't need the following Oracle roles:
--- DROP ROLE "CCP_USERS._R";
--- DROP ROLE "CCP_USERS._W";
--- DROP ROLE "CCP_USERS._P";
--- CREATE ROLE "CCP_USERS._R";
--- CREATE ROLE "CCP_USERS._W";
--- CREATE ROLE "CCP_USERS._P";
-
----------------------------------------------------------------------------
--- Create the schema user and grant the privileges and permissions.
----------------------------------------------------------------------------
--- Create the DB schema user
-DROP USER &CCP_SCHEMA CASCADE;
-CREATE USER &CCP_SCHEMA IDENTIFIED BY &CCP_PASSWD
-DEFAULT TABLESPACE &TBL_SPACE_DATA QUOTA UNLIMITED ON &TBL_SPACE_DATA
-TEMPORARY TABLESPACE &TBL_SPACE_TEMP
-PROFILE DEFAULT
-ACCOUNT UNLOCK;
 
 -- Grant the privileges and permissions to the &CCP_SCHEMA.
 GRANT CCP_ADMS TO &CCP_SCHEMA WITH ADMIN OPTION;
