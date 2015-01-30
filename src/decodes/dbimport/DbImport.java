@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.4  2014/12/11 20:23:16  mmaloney
+*  Match platforms by (site,desig), not TM.
+*
 *  Revision 1.3  2014/09/25 18:08:35  mmaloney
 *  Enum fields encapsulated.
 *
@@ -27,10 +30,10 @@ import java.io.IOException;
 import java.util.Vector;
 import java.util.Iterator;
 import java.util.Date;
+
 import javax.xml.parsers.ParserConfigurationException;
 
 import lrgs.common.DcpAddress;
-
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -42,7 +45,6 @@ import ilex.util.Logger;
 import ilex.util.StderrLogger;
 import ilex.util.TeeLogger;
 import ilex.cmdline.*;
-
 import decodes.sql.DbKey;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
@@ -50,6 +52,9 @@ import decodes.tsdb.DbIoException;
 import decodes.util.*;
 import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.db.*;
+import decodes.xml.DataTypeEquivalenceListParser;
+import decodes.xml.EngineeringUnitParser;
+import decodes.xml.UnitConverterParser;
 import decodes.xml.XmlDatabaseIO;
 import decodes.xml.TopLevelParser;
 import decodes.xml.EnumParser;
@@ -456,6 +461,9 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 	{
 		//enumsModified = false;
 		EnumParser.enumParsed = false;
+		EngineeringUnitParser.engineeringUnitsParsed = false;
+		UnitConverterParser.unitConvertersParsed = false;
+		DataTypeEquivalenceListParser.dtEquivalencesParsed = false;
 
 		// Read all the files into a new 'staging' database.
 		for(int i = 0; i < fileArgs.NumberOfValues(); i++)
@@ -1192,9 +1200,16 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 			}
 		}
 
-		theDb.enumList.write();
-		theDb.engineeringUnitList.write(); // This will also write converters.
-		theDb.dataTypeSet.write();
+		// Only write the ENUM List if ENUMS were actually seen in the imported xml files.
+		if (EnumParser.enumParsed)
+			theDb.enumList.write();
+		// Only write EUs if EUs or converters were seen in the imported xml
+		if (EngineeringUnitParser.engineeringUnitsParsed || UnitConverterParser.unitConvertersParsed)
+			theDb.engineeringUnitList.write(); // This will also write converters.
+		// Configs, Pres Groups, & Computations all write their own data types.
+		// Writing the dataTypeSet is really only the equivalences.
+		if (DataTypeEquivalenceListParser.dtEquivalencesParsed)
+			theDb.dataTypeSet.write();
 
 		/**
 		  For SQL, have to write objects from bottom up in the hierarchy.
