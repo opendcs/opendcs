@@ -45,6 +45,7 @@ public class EdlInputInterface
 	private EdlMonitorThread monitorThread = null;
 	private boolean _shutdown = false;
 	private long lastConfigCheck = 0L;
+	private int count = 0;
 	
 	public EdlInputInterface(LrgsMain lrgsMain)
 	{
@@ -90,6 +91,7 @@ Logger.instance().debug3("EDL Ingest config check last="+lastConfigCheck + ", lo
 	
 	public void saveMessage(DcpMsg dcpMsg)
 	{
+		dcpMsg.setSequenceNum(count++);
 		lrgsMain.msgArchive.archiveMsg(dcpMsg, this);
 	}
 	
@@ -169,7 +171,7 @@ Logger.instance().info("EDL Ingest initializing.");
 	@Override
 	public boolean hasSequenceNums()
 	{
-		return false;
+		return true;
 	}
 
 	@Override
