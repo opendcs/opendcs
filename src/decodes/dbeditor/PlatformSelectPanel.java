@@ -231,7 +231,10 @@ class PlatformSelectTableModel extends AbstractTableModel
 			 || platform.getTransportMedium(mediumType) != null
 			 || (mediumType.equalsIgnoreCase(Constants.medium_Goes)
 				 && (platform.getTransportMedium(Constants.medium_GoesST) != null
-				  || platform.getTransportMedium(Constants.medium_GoesRD) != null)))
+				  || platform.getTransportMedium(Constants.medium_GoesRD) != null))
+			 || (mediumType.equalsIgnoreCase("poll")
+				 && (platform.getTransportMedium("polled-modem") != null
+				  || platform.getTransportMedium("polled-tcp") != null)))
 				platformList.add(platform);
 		}
 		this.sortByColumn(0);
