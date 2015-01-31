@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.7  2015/01/06 16:09:33  mmaloney
+*  First cut of Polling Modules
+*
 *  Revision 1.6  2014/12/11 20:30:54  mmaloney
 *  Added eventPurgeDays with default = 5.
 *
@@ -323,6 +326,15 @@ public class DecodesSettings
 	
 	public boolean rememberScreenPosition = true;
 	
+	public String decodeScriptColor1 = null;
+	public String decodeScriptColor2 = null;
+	public String decodeScriptColor3 = null;
+	public String decodeScriptColor4 = null;
+	public String decodeScriptColor5 = null;
+	public String decodeScriptColor6 = null;
+	public String decodeScriptColor7 = null;
+	public String decodeScriptColor8 = null;
+
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
@@ -472,7 +484,32 @@ public class DecodesSettings
 		new PropertySpec("pollScriptDir", PropertySpec.DIRECTORY,
 			"If poll-scripts are used, this is the directory where they should be located."),
 		new PropertySpec("rememberScreenPosition", PropertySpec.BOOLEAN,
-			"Remember position and size of GUI screens when they are moved.")
+			"Remember position and size of GUI screens when they are moved."),
+		new PropertySpec("decodeScriptColor1", PropertySpec.STRING,
+			"Hex color representation for decoded-data color 1. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values. Default=0000FF "),
+		new PropertySpec("decodeScriptColor2", PropertySpec.STRING,
+			"Hex color representation for decoded-data color 2. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values. Default=00FFFF "),
+		new PropertySpec("decodeScriptColor3", PropertySpec.STRING,
+			"Hex color representation for decoded-data color 3. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values. Default=D2691E "),
+		new PropertySpec("decodeScriptColor4", PropertySpec.STRING,
+			"Hex color representation for decoded-data color 4. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values. Default=00D000 "),
+		new PropertySpec("decodeScriptColor5", PropertySpec.STRING,
+			"Hex color representation for decoded-data color 5. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values. Default=8B0000 "),
+		new PropertySpec("decodeScriptColor6", PropertySpec.STRING,
+			"Hex color representation for decoded-data color 6. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values. Default=4B0082 "),
+		new PropertySpec("decodeScriptColor7", PropertySpec.STRING,
+			"Hex color representation for decoded-data color 7. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values. Default=808000 "),
+		new PropertySpec("decodeScriptColor8", PropertySpec.STRING,
+			"Hex color representation for decoded-data color 8. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values. Default=8B4513 ")
+			
 	};
 	
 	/**
