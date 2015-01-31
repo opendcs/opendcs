@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/10/07 12:55:39  mmaloney
+ * dev
+ *
  * Revision 1.1  2014/10/02 14:25:09  mmaloney
  * Added platformListDesignatorCol
  *
@@ -255,6 +258,99 @@ public class DecodesScriptEditPanel
 			headerTypeCombo.setSelection(headerType);
 		else
 			headerTypeCombo.setSelectedIndex(0);
+		initColors();
+	}
+	
+	void initColors()
+	{
+		DecodesSettings settings = DecodesSettings.instance();
+		if (settings.decodeScriptColor1 != null && settings.decodeScriptColor1.trim().length() > 0)
+		{
+			try { colorValues[0] = Integer.parseInt(settings.decodeScriptColor1.trim(), 16); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Invalid setting 'decodesScriptColor1: "
+					+ settings.decodeScriptColor1 + " ignored.");
+			}
+		}
+		if (settings.decodeScriptColor2 != null && settings.decodeScriptColor2.trim().length() > 0)
+		{
+			try { colorValues[1] = Integer.parseInt(settings.decodeScriptColor2.trim(), 16); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Invalid setting 'decodesScriptColor2: "
+					+ settings.decodeScriptColor2 + " ignored.");
+			}
+		}
+		if (settings.decodeScriptColor3 != null && settings.decodeScriptColor3.trim().length() > 0)
+		{
+			try { colorValues[2] = Integer.parseInt(settings.decodeScriptColor3.trim(), 16); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Invalid setting 'decodesScriptColor3: "
+					+ settings.decodeScriptColor3 + " ignored.");
+			}
+		}
+		if (settings.decodeScriptColor4 != null && settings.decodeScriptColor4.trim().length() > 0)
+		{
+			try { colorValues[3] = Integer.parseInt(settings.decodeScriptColor4.trim(), 16); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Invalid setting 'decodesScriptColor4: "
+					+ settings.decodeScriptColor4 + " ignored.");
+			}
+		}
+		if (settings.decodeScriptColor5 != null && settings.decodeScriptColor5.trim().length() > 0)
+		{
+			try { colorValues[4] = Integer.parseInt(settings.decodeScriptColor5.trim(), 16); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Invalid setting 'decodesScriptColor5: "
+					+ settings.decodeScriptColor5 + " ignored.");
+			}
+		}
+		if (settings.decodeScriptColor6 != null && settings.decodeScriptColor6.trim().length() > 0)
+		{
+			try { colorValues[5] = Integer.parseInt(settings.decodeScriptColor6.trim(), 16); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Invalid setting 'decodesScriptColor6: "
+					+ settings.decodeScriptColor6 + " ignored.");
+			}
+		}
+		if (settings.decodeScriptColor7 != null && settings.decodeScriptColor7.trim().length() > 0)
+		{
+			try { colorValues[6] = Integer.parseInt(settings.decodeScriptColor7.trim(), 16); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Invalid setting 'decodesScriptColor7: "
+					+ settings.decodeScriptColor7 + " ignored.");
+			}
+		}
+		if (settings.decodeScriptColor8 != null && settings.decodeScriptColor8.trim().length() > 0)
+		{
+			try { colorValues[7] = Integer.parseInt(settings.decodeScriptColor8.trim(), 16); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Invalid setting 'decodesScriptColor8: "
+					+ settings.decodeScriptColor8 + " ignored.");
+			}
+		}
+		
+		for(int i=0; i<colorValues.length; i++)
+		{
+			StringBuilder sb = new StringBuilder("#");
+			sb.append(Integer.toHexString(colorValues[i]));
+			while(sb.length() < 7)
+				sb.insert(1, '0');
+			sensorColorHtml[i] = sb.toString();
+		}
+
+		for(int i = 0; i<colorValues.length; i++)
+		{
+			sensorColorStyle[i] = rawMessagePane.addStyle("sensor"+i, null);
+			StyleConstants.setForeground(sensorColorStyle[i], new Color(colorValues[i]));
+		}
 	}
 
 	/**
@@ -526,11 +622,9 @@ public class DecodesScriptEditPanel
 			StyleConstants.getFontSize(normalRawDataStyle) + 2);
 		headerDataStyle = rawMessagePane.addStyle("header", null);
 		StyleConstants.setForeground(headerDataStyle, Color.gray);
-		for(int i = 0; i<colorValues.length; i++)
-		{
-			sensorColorStyle[i] = rawMessagePane.addStyle("sensor"+i, null);
-			StyleConstants.setForeground(sensorColorStyle[i], new Color(colorValues[i]));
-		}
+		
+		initColors();
+
 		highlightStyle = rawMessagePane.addStyle("highlight", null);
 		StyleConstants.setBackground(highlightStyle, Color.yellow);
 		unhighlightStyle = rawMessagePane.addStyle("unhighlight", null);
