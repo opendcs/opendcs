@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2011/06/09 18:13:14  shweta
 *  added try catch in disconnect method
 *
@@ -122,6 +125,9 @@ public class BasicClient
 	*/
 	public void connect( ) throws IOException, UnknownHostException
 	{
+		if (isConnected())
+			disconnect();
+		
 		lastConnectAttempt = System.currentTimeMillis();
 		if (debug != null)
 			debug.println("Connecting to host "
@@ -152,8 +158,6 @@ public class BasicClient
 			throw new UnknownHostException(host);
 		ret.connect(iaddr, 20000);
 		return ret;
-		
-		//return new Socket(host, port);
 	}
 
 	/**
@@ -174,7 +178,7 @@ public class BasicClient
 			}
 			catch (Exception e)
 			{
-				Logger.instance().failure("Error closing input: "+e.getMessage());
+				Logger.instance().debug1("Error closing input: "+e.getMessage());
 				e.printStackTrace();
 			}
 			try
@@ -184,7 +188,7 @@ public class BasicClient
 			}
 			catch (Exception e)
 			{
-				Logger.instance().failure("Error closing ouput: "+e.getMessage());
+				Logger.instance().debug1("Error closing ouput: "+e.getMessage());
 				e.printStackTrace();
 			}
 			try
@@ -194,7 +198,7 @@ public class BasicClient
 			}
 			catch (Exception e)
 			{
-				Logger.instance().failure("Error closing socket: "+e.getMessage());
+				Logger.instance().debug1("Error closing socket: "+e.getMessage());
 				e.printStackTrace();
 			}
 			
