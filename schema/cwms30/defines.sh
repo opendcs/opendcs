@@ -38,3 +38,5 @@ export CCP_PASSWD=CCP
 # A user account for testing. By default no test users are created.
 export USER_SCHEMA=CCPUSER
 export USER_PASSWD=xxxxxxx
+
+export DEFAULT_OFFICE_ID=SPA

@@ -30,7 +30,7 @@ CREATE TABLE SCHEDULE_ENTRY
     -- Unique name for this schedule entry.
     NAME VARCHAR2(64) NOT NULL,
     LOADING_APPLICATION_ID NUMBER(18),
-    ROUTINGSPEC_ID NUMBER(18) NOT NULL,
+    ROUTINGSPEC_ID INTEGER NOT NULL,
     -- date/time for first execution.
     -- Null means start immediately.
     START_TIME date,
@@ -80,6 +80,13 @@ ALTER TABLE SCHEDULE_ENTRY
     FOREIGN KEY (LOADING_APPLICATION_ID)
     REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID)
 ;
+
+ALTER TABLE ROUTINGSPEC ADD (
+  CONSTRAINT ROUTINGSPECIDUQ
+ UNIQUE
+  (ID)
+  USING INDEX ROUTINGSPECIDIDX
+  ENABLE VALIDATE);
 
 ALTER TABLE SCHEDULE_ENTRY
     ADD CONSTRAINT SCHEDULE_ENTRY_FKRS
@@ -318,8 +325,6 @@ ALTER TABLE SITENAME ADD CONSTRAINT SITENAME_PK PRIMARY KEY(SITEID, NAMETYPE) US
 DROP INDEX CCP.EUABBRIDX;
 
 DROP INDEX CCP.DATATYPECODE_IDIDX;
-create unique index datatypecode_ididx
-    on datatype (standard, code, db_office_code) &TBL_SPACE_SPEC;
 
 DROP INDEX CCP.CP_COMP_TASKLIST_APP_IDX;
 create unique index cp_comp_tasklist_idx_app
@@ -350,7 +355,6 @@ ALTER TABLE CCP.ENGINEERINGUNIT MODIFY(FAMILY  NOT NULL);
 
 ALTER TABLE CCP.ENGINEERINGUNIT MODIFY(MEASURES  NOT NULL);
 
-ALTER TABLE ENGINEERINGUNIT ADD CONSTRAINT EU_PK PRIMARY KEY(UNITABBR, db_office_code) USING INDEX &TBL_SPACE_SPEC; 
 
 ALTER TABLE CCP.EQUIPMENTPROPERTY RENAME COLUMN VALUE TO PROP_VALUE;
 
@@ -482,9 +486,6 @@ ALTER TABLE CCP.PLATFORMSENSORPROPERTY RENAME COLUMN VALUE TO PROP_VALUE;
 ALTER TABLE CCP.TRANSPORTMEDIUM MODIFY(MEDIUMID  NOT NULL);
 
 DROP INDEX CCP.TRANSPORTMEDIUMIDX;
-
-CREATE UNIQUE INDEX CCP.TRANSPORTMEDIUMIDX ON CCP.TRANSPORTMEDIUM
-(MEDIUMTYPE, MEDIUMID, DB_OFFICE_CODE) &TBL_SPACE_SPEC;
 
 DROP INDEX CCP.CP_COMP_TASKLIST_IDX_APP;
 
@@ -623,6 +624,7 @@ ALTER TABLE CCP.CONFIGSENSORPROPERTY
   FOREIGN KEY (CONFIGID, SENSORNUMBER)
   REFERENCES CCP.CONFIGSENSOR (CONFIGID,SENSORNUMBER);
 
+update CCP.CP_COMPUTATION set GROUP_ID = null where GROUP_ID = -1;
 ALTER TABLE CCP.CP_COMPUTATION
  ADD CONSTRAINT CP_COMPUTATION_FKGR
   FOREIGN KEY (GROUP_ID)
@@ -669,6 +671,28 @@ ALTER TABLE CCP.CP_COMPUTATION MODIFY(DB_OFFICE_CODE DEFAULT sys_context('CCPENV
 ALTER TABLE CCP.TRANSPORTMEDIUM ADD (DB_OFFICE_CODE INTEGER DEFAULT sys_context('CCPENV','CCP_OFFICE_CODE'));
 ALTER TABLE DATATYPE ADD db_office_code INTEGER DEFAULT &dflt_office_code;
 
+update CCP.CP_ALGORITHM set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.DATASOURCE set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.ENGINEERINGUNIT set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.ENUM set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.EQUIPMENTMODEL set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.HDB_LOADING_APPLICATION set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.NETWORKLIST set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.PLATFORMCONFIG set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.PRESENTATIONGROUP set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.ROUTINGSPEC set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.TSDB_GROUP set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.UNITCONVERTER set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.CP_COMPUTATION set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update CCP.TRANSPORTMEDIUM set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+update DATATYPE set db_office_code = (select cwms_util.get_office_code('&DEFAULT_OFFICE_ID') from dual) where db_office_code is null;
+
+
+create unique index datatypecode_ididx
+    on datatype (standard, code, db_office_code) &TBL_SPACE_SPEC;
+ALTER TABLE ENGINEERINGUNIT ADD CONSTRAINT EU_PK PRIMARY KEY(UNITABBR, db_office_code) USING INDEX &TBL_SPACE_SPEC; 
+CREATE UNIQUE INDEX CCP.TRANSPORTMEDIUMIDX ON CCP.TRANSPORTMEDIUM
+(MEDIUMTYPE, MEDIUMID, DB_OFFICE_CODE) &TBL_SPACE_SPEC;
 
 
 DROP PUBLIC SYNONYM siteidseq;

@@ -29,8 +29,8 @@ set define on
 BEGIN
 -- this is a kludge. In order to register callbacks, the ts api requires that
 -- the caller be registered in an office as a CWMS user.
--- This call registers 'CCP' as a user in the SPA office.
-  &CWMS_SCHEMA..cwms_sec.create_user('CCP',NULL,cwms_20.char_32_array_type('CWMS PD Users'), 'SPA');
+-- This call registers 'CCP' as a user in the default office.
+  &CWMS_SCHEMA..cwms_sec.create_user('CCP',NULL,cwms_20.char_32_array_type('CWMS PD Users'), '&DEFAULT_OFFICE_ID');
 END;
 /
 

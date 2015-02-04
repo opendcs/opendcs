@@ -63,5 +63,6 @@ echo "define USER_PASSWD = $USER_PASSWD;" >>defines.sql
 echo "define CWMS_SCHEMA = $CWMS_SCHEMA;" >>defines.sql
 echo "define DBSUPER = $DBSUPER;" >>defines.sql
 echo "define dflt_office_code = sys_context('CCPENV','CCP_OFFICE_CODE');" >>defines.sql
+echo "define DEFAULT_OFFICE_ID = '$DEFAULT_OFFICE_ID'" >> defines.sql
 
 echo "The file 'defines.sql' has been created. You may now continue the installation."

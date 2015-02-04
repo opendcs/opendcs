@@ -1480,9 +1480,9 @@ CREATE PUBLIC SYNONYM cwms_ccp FOR &CCP_SCHEMA..cwms_ccp;
 -- Start the check callback procedure job
 ---------------------------------------------------------------------------
 begin
-  -- in 'addCcpUser.sql' we registered user CCP in the SPA office.
+  -- in 'addCcpUser.sql' we registered user CCP in the default office.
   -- This is a kludge: TS API requires caller to be registered in an office.
-  &CWMS_SCHEMA..cwms_env.set_session_office_id('SPA');
+  &CWMS_SCHEMA..cwms_env.set_session_office_id('&DEFAULT_OFFICE_ID');
   &CCP_SCHEMA..cwms_ccp.reload_callback_proc(
     'CCP_SUBSCRIBER');
 
