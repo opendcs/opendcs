@@ -119,9 +119,9 @@ public class PollingThread
 				// Backup 15 min fudge factor
 				since = new Date(platformStatus.getLastMessageTime().getTime() - 15*60000L);
 			}
-			// Always get at least an hour.
-			if (System.currentTimeMillis() - since.getTime() < 3600000L)
-				since = new Date(System.currentTimeMillis() - 3600000L);
+			// Get at least the minimum number of hours.
+			if (System.currentTimeMillis() - since.getTime() < parent.getMinBacklogHours() * 3600000L)
+				since = new Date(System.currentTimeMillis() - parent.getMinBacklogHours() * 3600000L);
 			
 			info("Since time set to " + since);
 			annotate("Since time set to " + since);
@@ -138,7 +138,6 @@ public class PollingThread
 			
 			if (!_shutdown)
 				protocol.login(ioPort, transportMedium);
-			
 			
 			if (!_shutdown)
 			{
@@ -309,6 +308,8 @@ public class PollingThread
 	public void shutdown()
 	{
 		_shutdown = true;
+		if (protocol != null)
+			protocol.setAbnormalShutdown(new AbortException("PollingThread.shutdown()"));
 	}
 
 	public PlatformStatus getPlatformStatus()

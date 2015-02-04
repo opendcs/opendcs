@@ -292,8 +292,12 @@ public class PollScriptProtocol
 	{
 		start = since;
 		
-		int hours = (int)((System.currentTimeMillis() - since.getTime()) / 3600000L) + 1;
+		int hours = (int)((System.currentTimeMillis() - since.getTime()) / 3600000L);
 		properties.setProperty("HOURS", ""+hours);
+		if (tm.getLoggerType() != null && tm.getLoggerType().toLowerCase().contains("campice"))
+			properties.setProperty("LINES", "" + (hours*60 + 6));
+		if (tm.getLoggerType() != null && tm.getLoggerType().toLowerCase().contains("campbell"))
+			properties.setProperty("LINES", "" + (hours*6));
 		
 		this.transportMedium = tm;
 		Date sessionStart = new Date();
@@ -439,5 +443,11 @@ public class PollScriptProtocol
 	}
 	
 	public String getScriptFileName() { return scriptFile == null ? "(null)" : scriptFile.getName(); }
+
+	@Override
+	public void setAbnormalShutdown(Exception abnormalShutdown)
+	{
+		this.abnormalShutdown = abnormalShutdown;
+	}
 
 }

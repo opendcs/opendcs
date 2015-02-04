@@ -147,7 +147,7 @@ public class DigiConnectPortManager
 			Logger.instance().debug2(module + " connecting to " + telnetCon.getName());
 			telnetCon.connect();
 			
-			Logger.instance().debug1(module + " spawning StreamReader to read telnet 23 port.");
+			Logger.instance().debug3(module + " spawning StreamReader to read telnet 23 port.");
 			
 			streamReader = new StreamReader(telnetCon.getInputStream(), this);
 			streamReader.setCapture(true);
@@ -235,7 +235,7 @@ public class DigiConnectPortManager
 		}
 		finally
 		{
-			Logger.instance().debug1(module + " Closing telnet 23 to digi.");		
+			Logger.instance().debug3(module + " Closing telnet 23 to digi.");		
 			if (streamReader != null)
 			{
 				streamReader.shutdown();

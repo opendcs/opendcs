@@ -94,8 +94,10 @@ public class ModemDialer
 			pollingThread.annotate(msg);
 			ioPort.getOut().write(init.getBytes());
 			ioPort.getOut().flush();
+			String what = "";
 			if (!streamReader.wait(AtWaitSec, OK))
 			{
+				what = "No response to 'AT' from modem";
 				pollingThread.warning(module + " response to AT failed, session buf: "
 					+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
 			}
@@ -109,7 +111,8 @@ public class ModemDialer
 				ioPort.getOut().write(dialstr.getBytes());
 				if (!streamReader.wait(ConnectWaitSec, CONNECT))
 				{
-					msg = module + " response to ATDT failed.";
+					what = "No answer from station at " + tm.getMediumId();
+					msg = module + " " + what;
 					pollingThread.warning(msg);
 					pollingThread.annotate(msg);
 				}
@@ -119,7 +122,7 @@ public class ModemDialer
 					return; // Success!
 				}
 			}
-			pollingThread.annotate("Dialing failed.");
+			pollingThread.annotate("Dialing failed -- " + what);
 			disconnect(ioPort);
 			throw new DialException("Could not dial modem on port" + ioPort.getPortNum());
 		}

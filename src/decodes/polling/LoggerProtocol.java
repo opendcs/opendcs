@@ -90,4 +90,7 @@ public abstract class LoggerProtocol
 		if (pollSessionLogger != null)
 			pollSessionLogger.annotate(msg);
 	}
+	
+	public abstract void setAbnormalShutdown(Exception abnormalShutdown);
+
 }

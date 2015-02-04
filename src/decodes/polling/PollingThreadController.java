@@ -55,7 +55,8 @@ public class PollingThreadController
 	
 	private int pollNumTries = 3;
 	
-	private int maxBacklogHours = 24;
+	private int maxBacklogHours = 48;
+	private int minBacklogHours = 2;
 	
 	private String saveSessionFile = null;
 	
@@ -193,6 +194,9 @@ long debugmsec = 0L;
 	
 	public void shutdown()
 	{
+		for(PollingThread pt : threads)
+			pt.shutdown();
+		portPool.close();
 		_shutdown = true;
 	}
 
@@ -202,31 +206,27 @@ long debugmsec = 0L;
 	 */
 	public void pollComplete(PollingThread pollingThread)
 	{
-		dataSource.log(Logger.E_DEBUG1, module + " pollComplete for "
-			+ pollingThread.getTransportMedium().toString());
+		pollingThread.info(module + ".pollComplete result=" + pollingThread.getState().toString());
+		
 		portPool.releasePort(pollingThread.getIoPort(), pollingThread.getState(),
 			pollingThread.getTerminatingException() != null 
 			&& (pollingThread.getTerminatingException() instanceof DialException));
 		if (pollingThread.getState() == PollingThreadState.Success)
 		{
-			dataSource.log(Logger.E_DEBUG1, "Polling of " 
-				+ pollingThread.getTransportMedium().toString()
-				+ " was successfull.");
 			successfullPolls++;
 		}
 		else if (!_shutdown && pollingThread.getNumTries() < pollNumTries)
 		{
-			dataSource.log(Logger.E_DEBUG1, "Polling of " + pollingThread.getTransportMedium().toString()
+			pollingThread.warning("Polling attempt " + pollingThread.getNumTries()
 				+ " failed. Will retry.");
 			pollingThread.reset();
 		}
 		else
 		{
-			dataSource.log(Logger.E_DEBUG1, "Polling of " + pollingThread.getTransportMedium().toString()
-				+ " failed. " + pollingThread.getNumTries() + " attempts have been made.");
+			pollingThread.warning("Polling attempt " + pollingThread.getNumTries()
+				+ " failed. Max retries reached.");
 			failedPolls++;
 		}
-		
 	}
 	
 	/**
@@ -266,6 +266,16 @@ long debugmsec = 0L;
 	public void setSaveSessionFile(String saveSessionFile)
 	{
 		this.saveSessionFile = saveSessionFile;
+	}
+
+	public int getMinBacklogHours()
+	{
+		return minBacklogHours;
+	}
+
+	public void setMinBacklogHours(int minBacklogHours)
+	{
+		this.minBacklogHours = minBacklogHours;
 	}
 
 }

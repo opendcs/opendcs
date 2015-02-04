@@ -76,6 +76,11 @@ public class DigiConnectPortPool
 	};
 	HashMap<String, PortStats> portStats = new HashMap<String, PortStats>();
 	
+	// Once a BC is created it is reused rather than recreating.
+	// This ensures that there are no orphan sockets due to abnormal termination.
+	private HashMap<String, BasicClient> name2bc = new HashMap<String, BasicClient>();
+
+	
 	public DigiConnectPortPool()
 	{
 		super(module);
@@ -237,23 +242,14 @@ public class DigiConnectPortPool
 						int colon = portName.indexOf(':');
 						int portnum = Integer.parseInt(portName.substring(colon+1));
 						
-						BasicClient bc = null;
-						try
-						{
-							bc = new BasicClient(digiIpAddr, digiPortBase + portnum);
+						BasicClient bc = getBasicClient(digiIpAddr, digiPortBase + portnum);
 // MJM Note: I determined experimentally that configuring the digi baudrate, stopbits, etc.,
 // will cause DTR to the modem to drop. This tells the modem to hangup and become unusable.
 // Therefore, we defer opening the socket until the configPort() method is called below.
 // We open the socket to the port AFTER all the settings are done.
-							ret = new IOPort(this, portnum, new ModemDialer());
-							ret.setPortName(portName);
-							allocatedPorts.add(new AllocatedSerialPort(ret, devStat, bc));
-						}
-						catch(Exception ex)
-						{
-							Logger.instance().warning(module + " cannot open " + bc.getName() 
-								+ " (" +portName + "): " + ex);
-						}
+						ret = new IOPort(this, portnum, new ModemDialer());
+						ret.setPortName(portName);
+						allocatedPorts.add(new AllocatedSerialPort(ret, devStat, bc));
 					}
 				}
 				else // Else this is already in use
@@ -436,6 +432,22 @@ Logger.instance().debug3(module + " releasePort returning.");
 			+ ":" + allocatedPort.basicClient.getPort() + ": " + ex);
 		}
 	}
+	
+	/**
+	 * Manage the basic clients & return the requested one. Create the object
+	 * if one has not already been created for this port.
+	 * @param host the host name of the digi device
+	 * @param port The actual TCP listening socket port number (e.g. 2101)
+	 * @return
+	 */
+	private BasicClient getBasicClient(String host, int port)
+	{
+		String name = host + ":" + port;
+		BasicClient bc = name2bc.get(name);
+		if (bc == null)
+			name2bc.put(name, bc = new BasicClient(digiIpAddr, port));
+		return bc;
+	}
 
 
 	@Override
@@ -450,6 +462,10 @@ Logger.instance().debug3(module + " releasePort returning.");
 		if (portManager != null)
 			portManager.shutdown();
 		portManager = null;
+		for(BasicClient bc : name2bc.values())
+			if (bc.isConnected())
+				bc.disconnect();
+		name2bc.clear();
 	}
 
 	public String getDigiIpAddr()

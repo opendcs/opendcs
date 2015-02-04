@@ -91,9 +91,14 @@ public class PollingDataSource extends DataSourceExec
 			"(default=1) A polling session is tried this many times, total, before declaring the poll"
 			+ " to have failed."),
 		new PropertySpec("maxBacklogHours", PropertySpec.INT,
-			"Default = 24. Normally the poll will retrieve data back to the last time that data was "
+			"Default = 48. Normally the poll will retrieve data back to the last time that data was "
 			+ "retrieved for each station, plus 1 hour. This property limits the backlog in cases "
-			+ "where a station has never been contacted, or it has been a very long time.")
+			+ "where a station has never been contacted, or it has been a very long time."),
+		new PropertySpec("minBacklogHours", PropertySpec.INT,
+			"Default = 2. Normally the poll will retrieve data back to the last time that data was "
+			+ "retrieved for each station, plus 1 hour. This property ensures that at least a certain"
+			+ " number of hours is polled.")
+		
 	};
 	
 	private PollingThreadController controller = null;
@@ -104,7 +109,6 @@ public class PollingDataSource extends DataSourceExec
 	public void processDataSource()
 		throws InvalidDatabaseException
 	{
-		log(Logger.E_DEBUG1, module + " constructor");
 	}
 
 	@Override
@@ -244,7 +248,15 @@ public class PollingDataSource extends DataSourceExec
 				log(Logger.E_WARNING, module + " Invalid maxBacklogHours property '" + s 
 					+ "' -- must be integer. Using default of " + controller.getMaxBacklogHours() + ".");
 			}
-		
+		s = PropertiesUtil.getIgnoreCase(aggProps, "minBacklogHours");
+		if (s != null && s.trim().length() > 0)
+			try { controller.setMinBacklogHours(Integer.parseInt(s)); }
+			catch(NumberFormatException ex)
+			{
+				log(Logger.E_WARNING, module + " Invalid minBacklogHours property '" + s 
+					+ "' -- must be integer. Using default of " + controller.getMinBacklogHours() + ".");
+			}
+	
 		s = PropertiesUtil.getIgnoreCase(aggProps, "saveSessionFile");
 		if (s != null && s.trim().length() > 0)
 			controller.setSaveSessionFile(s);
