@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2015/01/16 16:11:04  mmaloney
+ * RC01
+ *
  * Revision 1.6  2014/12/11 20:28:09  mmaloney
  * Added DacqEventLogging capability.
  *
@@ -376,15 +379,13 @@ public class RoutingScheduler
 		for(ScheduleEntry dbEntry : dbEntries)
 		{
 			boolean running = false;
-			for(Iterator<ScheduleEntryExecutive> execit = executives.iterator();
-				execit.hasNext(); )
+			for(Iterator<ScheduleEntryExecutive> execit = executives.iterator(); execit.hasNext(); )
 			{
 				ScheduleEntryExecutive exec = execit.next();
 				// Have to match on name to accommodate xml.
 				if (exec.getScheduleEntry().getName().equalsIgnoreCase(dbEntry.getName()))
 				{
-					if (exec.getScheduleEntry().getLastModified().before(
-						dbEntry.getLastModified()))
+					if (exec.getScheduleEntry().getLastModified().before(dbEntry.getLastModified()))
 					{
 						// Changed! Shutdown the old executive and init a new one.
 						exec.shutdown();

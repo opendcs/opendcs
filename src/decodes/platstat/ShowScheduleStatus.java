@@ -2,11 +2,12 @@ package decodes.platstat;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.TimeZone;
 
 import lrgs.gui.DecodesInterface;
-
 import opendcs.dai.ScheduleEntryDAI;
 import ilex.cmdline.IntegerToken;
 import ilex.cmdline.StringToken;
@@ -79,6 +80,16 @@ public class ShowScheduleStatus
 		}
 		else
 			schedEntries = scheduleEntryDAO.listScheduleEntries(null);
+		
+		Collections.sort(schedEntries,
+			new Comparator<ScheduleEntry>()
+			{
+				@Override
+				public int compare(ScheduleEntry o1, ScheduleEntry o2)
+				{
+					return o1.getName().compareTo(o2.getName());
+				}
+			});
 		
 		Date cutoff = new Date(System.currentTimeMillis() - hoursArg.getValue() * 3600000L);
 		for(ScheduleEntry se : schedEntries)

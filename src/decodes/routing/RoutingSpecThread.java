@@ -454,8 +454,6 @@ public class RoutingSpecThread
 			{
 				try
 				{
-					//log(Logger.E_DEBUG3, "Attempting to read platform status for id=" + platform.getId());
-					
 					platstat = platformStatusDAO.readPlatformStatus(platform.getId());
 				}
 				catch (DbIoException ex)
@@ -542,10 +540,9 @@ public class RoutingSpecThread
 			decodes.sql.SqlDatabaseIO sdbio = (decodes.sql.SqlDatabaseIO)dbio;
 			sdbio.close();
 		}
-log(Logger.E_DEBUG1, "run() exiting.");
 	}
 	
-	private void assertPlatformError(String msg, PlatformStatus platstat)
+	public void assertPlatformError(String msg, PlatformStatus platstat)
 	{
 		numErrsRun++;
 		numErrsToday++;
@@ -826,10 +823,7 @@ log(Logger.E_DEBUG1, "run() exiting.");
 		if (statusWriteThread != null)
 			statusWriteThread.shutdown = true;
 		if (myStatus != null)
-		{
 			myStatus.setRunStop(new Date());
-			myStatus.setRunStatus("Stopped");
-		}
 		if (myExec != null)
 			myExec.rsFinished();
 

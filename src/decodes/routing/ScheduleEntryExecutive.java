@@ -18,6 +18,7 @@ import decodes.db.Platform;
 import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
+import decodes.dcpmon.DcpMonitor;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
@@ -57,12 +58,19 @@ public class ScheduleEntryExecutive
 	private DacqEventLogger dacqEventLogger = null;
 	private int schedEntryMinLogPriority = Logger.E_INFORMATION;
 	private long lastEventsPurge = 0L;
+	private long lastSchedDebug = 0L;
+	private int appMinLogPriority = Logger.E_INFORMATION;
+
 	
 	/** Constructor called from RoutingScheduler */
 	public ScheduleEntryExecutive(ScheduleEntry scheduleEntry, RoutingScheduler parent)
 	{
 		this.scheduleEntry = scheduleEntry;
 		this.parent = parent;
+		schedEntryMinLogPriority = 
+			appMinLogPriority = parent != null ? parent.getAppDebugMinPriority() 
+				: Logger.instance().getMinLogPriority();
+		
 		if (parent == null && (Database.getDb().getDbIo() instanceof SqlDatabaseIO))
 		{
 			// This means that this is a stand-alone rs from command line, the DCPmon
@@ -73,6 +81,12 @@ public class ScheduleEntryExecutive
 			dacqEventLogger.setDacqEventDAO(dacqEventDAO);
 			Logger.setLogger(dacqEventLogger);
 		}
+		else if (parent != null && (parent instanceof DcpMonitor))
+		{
+			// I don't want any DACQ Events logged by Dcp Monitor Daemon
+			// Since no DAO, it will just act as a pass-through.
+			dacqEventLogger = new DacqEventLogger(Logger.instance());
+		}
 		else // This is a child of RoutingScheduler
 		{
 			dacqEventLogger = new DacqEventLogger(parent.origLogger);
@@ -80,6 +94,7 @@ public class ScheduleEntryExecutive
 		}
 	}
 	
+private long lastDebug = 0L;
 	/**
 	 * Called periodically from RoutingScheduler, this method checks the status
 	 * and schedule of the entry it is managing and takes appropriate action,
@@ -87,14 +102,15 @@ public class ScheduleEntryExecutive
 	 */
 	public void check()
 	{
-		if (!scheduleEntry.isEnabled())
+		if (System.currentTimeMillis() - lastDebug > 60000L)
 		{
 			dacqEventLogger.debug1("Checking schedule entry '" + scheduleEntry.getName() 
-				+ "' enabled=" + scheduleEntry.isEnabled());
-			return;
+				+ "' enabled=" + scheduleEntry.isEnabled() + ", state=" + runState);
+			lastDebug = System.currentTimeMillis();
 		}
-		dacqEventLogger.debug1("Checking schedule entry '" + scheduleEntry.getName() 
-			+ "' enabled=" + scheduleEntry.isEnabled() + ", state=" + runState);
+		
+		if (!scheduleEntry.isEnabled())
+			return;
 
 		if (runState == RunState.initializing)
 		{
@@ -223,7 +239,15 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 		
 		Date now = new Date();
 		if (now.before(startTime))
+		{
+			if (System.currentTimeMillis()-lastSchedDebug > 60000L)
+			{
+				dacqEventLogger.debug1(getName() + " Before start time of " + startTime);
+				lastSchedDebug = System.currentTimeMillis();
+			}
+
 			return false;
+		}
 		
 		if (seStatus == null)
 			// It is after start time and it has never been run.
@@ -268,8 +292,11 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 		}
 		
 		Date nextRunTime = cal.getTime();
-		dacqEventLogger.debug1(getName() + " next run time = " + nextRunTime);
-
+		if (System.currentTimeMillis()-lastSchedDebug > 60000L)
+		{
+			dacqEventLogger.debug1(getName() + " next run time = " + nextRunTime);
+			lastSchedDebug = System.currentTimeMillis();
+		}
 		// Check if current time is after the next run time we computed.
 		return !now.before(nextRunTime);
 	}
@@ -282,6 +309,7 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 	 */
 	public void shutdown()
 	{
+		Logger.instance().debug1("ScheduleEntryExec shutdown() called for " + getName());
 		if (seThread != null)
 		{
 			seThread.shutdown();
@@ -331,8 +359,8 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 					dblev == 2 ? Logger.E_DEBUG2 :
 					dblev == 3 ? Logger.E_DEBUG3 : Logger.E_INFORMATION;
 				// debugLevel property should only be used to increase debug level. Never decrease.
-				if (schedEntryMinLogPriority > Logger.instance().getMinLogPriority())
-					schedEntryMinLogPriority = Logger.instance().getMinLogPriority();
+				if (schedEntryMinLogPriority > appMinLogPriority)
+					schedEntryMinLogPriority = appMinLogPriority;
 				dacqEventLogger.setMinLogPriority(schedEntryMinLogPriority);
 			}
 			catch(NumberFormatException ex)
@@ -389,7 +417,7 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 	public void writeStatus(String status)
 	{
 		seStatus.setLastModified(new Date());
-		seStatus.setRunStatus(runState.toString() + " " + status);
+		seStatus.setRunStatus(status == null || status.trim().length()==0 ? "-" : status);
 		ScheduleEntryDAI scheduleEntryDAO = null;
 		try
 		{
@@ -450,16 +478,13 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 		seThread = null;
 		shutdownComplete = System.currentTimeMillis();
 		dacqEventLogger.setSchedEntryStatusId(DbKey.NullKey);
+		Logger.instance().debug1("ScheduleEntryExecutive.rsFinished() " + getName() + " state is now " +
+			runState.toString());
 	}
 	
 	public RunState getRunState()
 	{
 		return runState;
-	}
-
-	public void setRunState(RunState runState)
-	{
-		this.runState = runState;
 	}
 
 	public ScheduleEntry getScheduleEntry()
@@ -520,6 +545,10 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 				dblev == 1 ? Logger.E_DEBUG1 :
 				dblev == 2 ? Logger.E_DEBUG2 :
 				dblev == 3 ? Logger.E_DEBUG3 : schedEntryMinLogPriority;
+			// Platform debug level can only increase debug info, not decrease it.
+			if (newMinPriority > schedEntryMinLogPriority)
+				newMinPriority = schedEntryMinLogPriority;
+			dacqEventLogger.setMinLogPriority(newMinPriority);
 		}
 	}
 	
@@ -536,5 +565,10 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 	public void setLastEventsPurge(long lastEventsPurge)
 	{
 		this.lastEventsPurge = lastEventsPurge;
+	}
+
+	public DacqEventLogger getDacqEventLogger()
+	{
+		return dacqEventLogger;
 	}
 }
