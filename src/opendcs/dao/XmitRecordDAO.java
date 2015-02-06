@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2015/01/30 20:14:28  mmaloney
+ * Fix SQL for UPDATE xmit rec statment.
+ *
  * Revision 1.7  2014/12/11 20:33:11  mmaloney
  * dev
  *
@@ -591,7 +594,56 @@ public class XmitRecordDAO
 			throw new DbIoException(msg);
 		}
 	}
+	
+	@Override
+	public long getFirstRecordID(int dayNum)
+		throws DbIoException
+	{
+		String suffix = getDcpXmitSuffix(dayNum, false);
+		if (suffix == null)
+			return -1;
+		String q = "select min(record_id) from DCP_TRANS_" + suffix;
+		ResultSet rs = doQuery(q);
+		try
+		{
+			if (rs != null && rs.next())
+				return rs.getLong(1);
+			else
+				return -1;
+		}
+		catch (SQLException ex)
+		{
+			String msg = "getFirstRecordId: Error in query '" + q + "': " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+	}
+	
+	@Override
+	public long getLastRecordID(int dayNum)
+		throws DbIoException
+	{
+		String suffix = getDcpXmitSuffix(dayNum, false);
+		if (suffix == null)
+			return -1;
+		String q = "select max(record_id) from DCP_TRANS_" + suffix;
+		ResultSet rs = doQuery(q);
+		try
+		{
+			if (rs != null && rs.next())
+				return rs.getLong(1);
+			else
+				return -1;
+		}
+		catch (SQLException ex)
+		{
+			String msg = "getFirstRecordId: Error in query '" + q + "': " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+	}
 
+	
 	
 	@Override
 	public DcpMsg findDcpTranmission(XmitMediumType mediumType, String mediumId, Date timestamp)
@@ -805,11 +857,12 @@ Logger.instance().debug1("XmitRecordDAO.rs2XmitRecord read a partial message: da
 		{
 			while(rs != null && rs.next())
 			{
-				byte base64data[] = rs.getBytes(1);
-				byte data[] = Base64.decodeBase64(base64data);
-				for(; cmdi<data.length && cmdi < completeMsgData.length; cmdi++)
-					completeMsgData[cmdi] = data[cmdi];
+				String base64data = rs.getString(1);
+				byte data[] = Base64.decodeBase64(base64data.getBytes());
+				for(int idx = 0; idx<data.length && cmdi < completeMsgData.length; idx++, cmdi++)
+					completeMsgData[cmdi] = data[idx];
 			}
+			msg.setData(completeMsgData);
 		}
 		catch (SQLException ex)
 		{
@@ -830,7 +883,7 @@ Logger.instance().debug1("XmitRecordDAO.rs2XmitRecord read a partial message: da
 			+ "where a.medium_type = '" + 
 				XmitMediumType.transportMediumType2type(grp.transportMediumType).getCode() + "' "
 			+ " and b.networklistid = " + grp.getId()
-			+ " and a.medium_id = b.transportid"
+			+ " and upper(a.medium_id) = upper(b.transportid)"
 			+ " order by transmit_time";
 			
 		ResultSet rs = doQuery(q);
@@ -958,4 +1011,5 @@ Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
 		}
 		return null;
 	}
+	
 }
