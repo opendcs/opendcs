@@ -697,7 +697,6 @@ public class LrgsDataSource extends DataSourceExec
 		Platform p = null;
 		try
 		{
-//			if (dcpMsg.isGoesMessage())
 			if (Database.getDb() != null)
 				p = Database.getDb().platformList.getPlatform(
 					pmp.getMediumType(), addrField, ret.getTimeStamp());
@@ -724,33 +723,14 @@ public class LrgsDataSource extends DataSourceExec
 					"Cannot resolve platform for addr='" 
 					+ addrField + "', chan=" + chan);
 			ret.setTransportMedium(tm);
-			
-			if (tm !=null && tm.getMediumType().equalsIgnoreCase(Constants.medium_EDL)
-					&& tm.transmitInterval != -1) {
-				try {
-					Logger.instance()
-							.debug1("This is SSP data for op_current. Setting time as per sampling interval .'");
-
-					Variable v = ret.getPM(EdlPMParser.BEGIN_TIME_STAMP);
-
-					ret.removePM(EdlPMParser.BEGIN_TIME_STAMP);
-					ret.removePM(EdlPMParser.END_TIME_STAMP);
-
-					ret.setPM(GoesPMParser.MESSAGE_TIME, v);
-					ret.setTimeStamp(v.getDateValue());
-				} catch (NoConversionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			
 		}
 		else if (!getAllowNullPlatform()) // Couldn't find platform using TM
 		{
 			
 			throw new UnknownPlatformException(
 				"lrgsMsg2RawMessage: No platform matching '" + addrField
-				+ "' and channel " + chan);
+				+ (dcpMsg.isGoesMessage() ? ("' and channel " + chan) : "'")
+				+ " and medium type " + pmp.getMediumType());
 		}
 
 		return ret;
