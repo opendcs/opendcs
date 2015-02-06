@@ -253,4 +253,10 @@ public class ScheduleEntryStatus
 	{
 		synchronized(sdf) { return lastModified == null ? "" : sdf.format(lastModified); }
 	}
+	
+	public String getStats()
+	{
+		return "#msgs=" + getNumMessages() + ", #plat=" + getNumPlatforms() + ", #errs="
+			+ getNumDecodesErrors();
+	}
 }
