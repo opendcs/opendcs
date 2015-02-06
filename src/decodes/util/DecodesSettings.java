@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.8  2015/01/31 15:44:31  mmaloney
+*  Configurable Decoded Value Colors.
+*
 *  Revision 1.7  2015/01/06 16:09:33  mmaloney
 *  First cut of Polling Modules
 *
@@ -274,6 +277,18 @@ public class DecodesSettings
 	/** Show the legacy network list button on the button panel */
 	public boolean showNetlistEditor = false;
 	
+	/** Show the time series list/edit button */
+	public boolean showTimeSeriesEditor = true;
+	
+	/** Show the time series group list/edit button */
+	public boolean showGroupEditor = true;
+	
+	/** Show the 'Test Computations' button */
+	public boolean showTestCmputations = true;
+	
+	/** Show the 'Algorithms' button on the launcher. */
+	public boolean showAlgorithmEditor = true;
+	
 	/** For CWMS Datchk Validation configuration */
 	public String datchkConfigFile = "$DCSTOOL_USERDIR/datchk.cfg";
 	
@@ -441,8 +456,16 @@ public class DecodesSettings
 			"Set to true to allow DECODES to write CWMS Location records"),
 		new PropertySpec("showPlatformWizard", PropertySpec.BOOLEAN,
 			"Show the Platform Wizard button on the button panel"),
-			new PropertySpec("showNetlistEditor", PropertySpec.BOOLEAN,
-				"Show the (legacy) network list editor button on the button panel"),
+		new PropertySpec("showNetlistEditor", PropertySpec.BOOLEAN,
+			"Show the (legacy) network list editor button on the button panel"),
+		new PropertySpec("showTimeSeriesEditor", PropertySpec.BOOLEAN,
+			"Show the Time Series list/editor button on the button panel"),
+		new PropertySpec("showGroupEditor", PropertySpec.BOOLEAN,
+			"Show the Time Series Group list/editor button on the button panel"),
+		new PropertySpec("showTestCmputations", PropertySpec.BOOLEAN,
+			"Show the Test Computations button on the button panel"),
+		new PropertySpec("showAlgorithmEditor", PropertySpec.BOOLEAN,
+			"Show the Algorithms Editor button on the button panel"),
 		new PropertySpec("datchkConfigFile", PropertySpec.FILENAME,
 			"File containing CWMS Datchk Validation configuration"),
 		new PropertySpec("routingMonitorUrl", PropertySpec.STRING,

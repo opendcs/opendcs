@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  2014/10/07 12:34:37  mmaloney
+ * DecodesSetting.showNetlistEditor
+ *
  * Revision 1.2  2014/05/22 12:14:09  mmaloney
  * Disable TS buttons when database is XML.
  *
@@ -601,7 +604,11 @@ public class LauncherFrame extends JFrame
 			140)), borderString);
 		tsdbButtonPanel.setLayout(tsdbLayout);
 
-		rows = 6;
+		rows = 2 +
+			(DecodesSettings.instance().showTimeSeriesEditor ? 1 : 0) +
+			(DecodesSettings.instance().showGroupEditor ? 1 : 0) +
+			(DecodesSettings.instance().showTestCmputations ? 1 : 0) +
+			(DecodesSettings.instance().showAlgorithmEditor ? 1 : 0);
 		tsdbLayout.setRows(rows);
 		tsdbLayout.setColumns(1);
 		tsdbButtonPanel.setBorder(tsdbButtonBorder);
@@ -619,7 +626,8 @@ public class LauncherFrame extends JFrame
 				tseditButtonPressed();
 			}
 		});
-		tsdbButtonPanel.add(tseditButton);
+		if (DecodesSettings.instance().showTimeSeriesEditor)
+			tsdbButtonPanel.add(tseditButton);
 
 		// ROW 1: Time Series Groups Button
 		groupEditButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
@@ -634,7 +642,8 @@ public class LauncherFrame extends JFrame
 				groupEditButtonPressed();
 			}
 		});
-		tsdbButtonPanel.add(groupEditButton, null);
+		if (DecodesSettings.instance().showGroupEditor)
+			tsdbButtonPanel.add(groupEditButton, null);
 
 		// ROW 2: Computations Button
 		compeditButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
@@ -664,7 +673,8 @@ public class LauncherFrame extends JFrame
 				runcompButtonPressed();
 			}
 		});
-		tsdbButtonPanel.add(runcompButton, null);
+		if (DecodesSettings.instance().showTestCmputations)
+			tsdbButtonPanel.add(runcompButton, null);
 
 		// ROW 4: Process Status Button
 		procstatButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
@@ -694,7 +704,8 @@ public class LauncherFrame extends JFrame
 				algoeditButtonPressed();
 			}
 		});
-		tsdbButtonPanel.add(algoeditButton, null);
+		if (DecodesSettings.instance().showAlgorithmEditor)
+			tsdbButtonPanel.add(algoeditButton, null);
 
 		fullPanel.setLayout(fullLayout);
 		fullPanel.add(dcstoolButtonPanel, new GridBagConstraints(0, 0, 1, 1, .5, .5,
