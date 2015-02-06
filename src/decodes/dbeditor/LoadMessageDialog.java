@@ -2,6 +2,9 @@
  *  $Id$
  *
  *  $Log$
+ *  Revision 1.4  2015/01/17 21:25:49  mmaloney
+ *  Fix for non-GOES DCP Messages
+ *
  *  Revision 1.3  2014/05/30 13:15:35  mmaloney
  *  dev
  *
@@ -667,6 +670,12 @@ public class LoadMessageDialog extends GuiDialog
 	public void setSampleMessageOwner(SampleMessageOwner sampleMessageOwner)
 	{
 		this.sampleMessageOwner = sampleMessageOwner;
+	}
+	
+	public void reset()
+	{
+		resultsArea.setText("");
+		okButton.setEnabled(true);
 	}
 }
 

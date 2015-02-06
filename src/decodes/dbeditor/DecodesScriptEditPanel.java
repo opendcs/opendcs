@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2015/01/31 15:44:59  mmaloney
+ * Configurable Decoded Value Colors
+ *
  * Revision 1.2  2014/10/07 12:55:39  mmaloney
  * dev
  *
@@ -841,6 +844,8 @@ public class DecodesScriptEditPanel
 			loadMessageDialog = new LoadMessageDialog();
 			loadMessageDialog.setSampleMessageOwner(this);
 		}
+		else
+			loadMessageDialog.reset();
 		TopFrame.getDbEditFrame().launchDialog(loadMessageDialog);
 		decodingDone = false;
 	}
