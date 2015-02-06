@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.6  2014/12/11 20:29:31  mmaloney
+*  Added DacqEventLogging capability.
+*
 *  Revision 1.5  2014/11/19 16:09:48  mmaloney
 *  Additions for dcpmon
 *
@@ -118,6 +121,8 @@ public abstract class TsdbAppTemplate
 	 * Determined at startup, available via getPID();
 	 */
 	private int pid = -1;
+	
+	protected int appDebugMinPriority = Logger.E_INFORMATION;
 	
 	
 	/**
@@ -266,6 +271,9 @@ public abstract class TsdbAppTemplate
 		{
 			System.exit(1);
 		}
+		
+		// Remember the application-level debug level set from arguments.
+		appDebugMinPriority = Logger.instance().getMinLogPriority();
 	}
 
 	/**
@@ -462,6 +470,11 @@ public abstract class TsdbAppTemplate
 	public boolean additionalPropsAllowed()
 	{
 		return true;
+	}
+
+	public int getAppDebugMinPriority()
+	{
+		return appDebugMinPriority;
 	}
 
 }
