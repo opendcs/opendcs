@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.5  2015/01/06 16:09:31  mmaloney
+*  First cut of Polling Modules
+*
 *  Revision 1.4  2014/10/02 18:21:42  mmaloney
 *  FTP Data Source to handle multiple file names.
 *
@@ -358,6 +361,11 @@ public abstract class DataSourceExec
 	public boolean additionalPropsAllowed()
 	{
 		return true;
+	}
+
+	public RoutingSpecThread getRoutingSpecThread()
+	{
+		return routingSpecThread;
 	}
 }
 
