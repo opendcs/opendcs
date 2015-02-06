@@ -32,17 +32,21 @@ public class DacqEventLogger
 	public void doLog(int priority, String text)
 	{
 		parent.doLog(priority, text);
-		if (priority < Logger.E_INFORMATION)
-			return;
-		
-		if (dacqEventDAO == null)
+		if (priority < Logger.E_INFORMATION || dacqEventDAO == null)
 			return;
 		DacqEvent evt = new DacqEvent();
 		evt.setPlatformId(platformId);
-		evt.setScheduleEntryStatusId(schedEntryStatusId);
 		evt.setSubsystem(subsystem);
 		evt.setEventPriority(priority);
 		evt.setEventText(text);
+		writeDacqEvent(evt);
+	}
+	
+	public void writeDacqEvent(DacqEvent evt)
+	{
+		if (dacqEventDAO == null)
+			return;
+		evt.setScheduleEntryStatusId(schedEntryStatusId);
 		try
 		{
 			dacqEventDAO.writeEvent(evt);
@@ -55,6 +59,7 @@ public class DacqEventLogger
 			dacqEventDAO.close();
 			dacqEventDAO = null;
 		}
+
 	}
 
 	public void setSchedEntryStatusId(DbKey schedEntryStatusId)
