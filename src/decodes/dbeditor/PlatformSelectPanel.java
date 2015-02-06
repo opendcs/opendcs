@@ -113,10 +113,10 @@ public class PlatformSelectPanel extends JPanel
 	/** Initializes GUI components. */
 		private void jbInit() throws Exception
 	{
-		this.setPreferredSize(new Dimension(700,500));
-    this.setLayout(borderLayout1);
-    this.add(jScrollPane1, BorderLayout.CENTER);
-    jScrollPane1.getViewport().add(platformListTable, null);
+		this.setPreferredSize(new Dimension(800,500));
+	    this.setLayout(borderLayout1);
+	    this.add(jScrollPane1, BorderLayout.CENTER);
+	    jScrollPane1.getViewport().add(platformListTable, null);
 	}
 
 	/**
