@@ -330,6 +330,7 @@ class FieldOperation extends DecodesOperation
 						s = "//";
 					if (s.startsWith("//") 
 					 || s.startsWith("??")
+					 || s.startsWith("---")
 					 || s.equalsIgnoreCase("M"))
 					{
 						v = new Variable("m");
