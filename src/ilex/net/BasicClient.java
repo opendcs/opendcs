@@ -6,6 +6,10 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2015/02/04 19:43:47  mmaloney
+*  In connect(), if currently connected, do a disconnect first. Ensures that there are no
+*  orphan sockets left open if a BasicClient is reused.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -169,6 +173,7 @@ public class BasicClient
 	*/
 	public void disconnect( )
 	{
+Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
 		try 
 		{
 			try
