@@ -138,5 +138,11 @@ public interface XmitRecordDAI
 	 */
 	public void fillCompleteMsg(DcpMsg msg)
 		throws DbIoException;
+	
+	public long getFirstRecordID(int dayNum)
+		throws DbIoException;
+
+	public long getLastRecordID(int dayNum)
+		throws DbIoException;
 
 }
