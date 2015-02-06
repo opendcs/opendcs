@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2015/01/06 16:09:31  mmaloney
+*  First cut of Polling Modules
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -266,6 +269,7 @@ public class EdlPMParser extends PMParser
 					{
 						Date d = endTimeSdf.parse(s.substring(9).trim());
 						msg.setPM(POLL_STOP, new Variable(d));
+						msg.setTimeStamp(d);
 					}
 					catch (Exception ex)
 					{
