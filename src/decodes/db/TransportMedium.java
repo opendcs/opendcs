@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.5  2015/01/14 17:22:51  mmaloney
+*  Polling implementation
+*
 *  Revision 1.4  2015/01/06 16:09:32  mmaloney
 *  First cut of Polling Modules
 *
@@ -318,9 +321,9 @@ public class TransportMedium extends DatabaseObject
 	static String makeTmKey(String typ, String id)
 	{
 		if (typ.toLowerCase().startsWith("goes"))
-			return "goes:" + id.trim();
+			return "goes:" + id.trim().toUpperCase();
 		else
-			return typ + ":" + id.trim();
+			return typ + ":" + id.trim().toUpperCase();
 	}
 
 	/**
