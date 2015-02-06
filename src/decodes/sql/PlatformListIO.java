@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.7  2015/01/15 19:25:46  mmaloney
+ * RC01
+ *
  * Revision 1.6  2014/11/19 16:09:23  mmaloney
  * Additions for dcpmon
  *
@@ -666,9 +669,9 @@ public class PlatformListIO extends SqlDbObjIo
 			  "Description = " + sqlOptString(p.description) + ", " +
 			  "LastModifyTime = " + sqlOptDate(p.lastModifyTime) + ", " +
 			  "Expiration = " + sqlOptDate(p.expiration);
-//		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-//			q = q + ", platformDesignator = " + 
-//				sqlOptString(p.getPlatformDesignator());
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+			q = q + ", platformDesignator = " + 
+				sqlOptString(p.getPlatformDesignator());
 
 		q = q + " WHERE ID = " + p.getId();
 
@@ -1018,7 +1021,7 @@ public class PlatformListIO extends SqlDbObjIo
 		}
 		else
 			q = q + "lower(mediumType) = " + sqlReqString(mediumType);
-		q = q + " AND mediumId = " + sqlReqString(mediumId);
+		q = q + " AND upper(mediumId) = " + sqlReqString(mediumId.toUpperCase());
 		q = q + " AND TransportMedium.platformId = Platform.id";
 		if (timeStamp == null)
 			timeStamp = new Date();
