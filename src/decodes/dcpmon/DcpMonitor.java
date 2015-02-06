@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2015/01/24 15:13:59  mmaloney
+ * Poll cleanup.
+ *
  * Revision 1.7  2015/01/16 16:11:04  mmaloney
  * RC01
  *
@@ -49,7 +52,6 @@ import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
-import decodes.routing.DacqEventLogger;
 import decodes.routing.RoutingScheduler;
 import decodes.routing.ScheduleEntryExecutive;
 import decodes.tsdb.DbIoException;
@@ -132,16 +134,16 @@ public class DcpMonitor
 		new PropertySpec("pdtLocalFile", PropertySpec.FILENAME,
 			"GOES PDT is downloaded to this local file"),
 		new PropertySpec("pdtUrl", PropertySpec.STRING,
-			"GOES PDT is downloaded from this URL. No download if left blank."),
+			"GOES PDT is downloaded from this URL. Set to a single hyphen for no download."),
 		new PropertySpec("cdtLocalFile", PropertySpec.FILENAME,
 			"GOES Channel Info stored in this local file"),
 		new PropertySpec("cdtUrl", PropertySpec.STRING,
-			"GOES Channel Info downloaded from this URL. No download if left blank."),
+			"GOES Channel Info downloaded from this URL. Set to a single hyphen for no download."),
 		new PropertySpec("nwsXrefLocalFile", PropertySpec.FILENAME,
 			"National Weather Service cross-reference stored in this local file"),
 		new PropertySpec("nwsXrefUrl", PropertySpec.STRING,
 			"National Weather Service cross-reference downloaded from this URL. "
-			+ "No download if left blank."),
+			+ "Set to a single hyphen for no download."),
 		new PropertySpec("dcpmonNameType", PropertySpec.DECODES_ENUM + Constants.enum_SiteName,
 			"Site name type to use in display pages on DCP Monitor"),
 		new PropertySpec("rtstatURL", PropertySpec.STRING,

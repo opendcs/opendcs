@@ -7,10 +7,9 @@ import java.util.TimeZone;
 
 import lrgs.archive.XmitWindow;
 import lrgs.common.DcpMsg;
-
 import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.XmitRecordDAO;
-
+import ilex.cmdline.IntegerToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import decodes.tsdb.TsdbAppTemplate;
@@ -27,6 +26,7 @@ public class ReadAllXmitsTest extends TsdbAppTemplate
 		TokenOptions.optSwitch, "");
 	protected SimpleDateFormat dateSdf = new SimpleDateFormat("yyyyMMdd");
 	protected SimpleDateFormat msecSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss.SSS");
+	protected IntegerToken startIdArg = new IntegerToken("I", "start id", "", TokenOptions.optSwitch, -1);
 
 	public ReadAllXmitsTest()
 	{
@@ -39,6 +39,7 @@ public class ReadAllXmitsTest extends TsdbAppTemplate
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		cmdLineArgs.addToken(dateArg);
+		cmdLineArgs.addToken(startIdArg);
 	}
 
 	protected Date getDay() throws ParseException
@@ -53,11 +54,18 @@ public class ReadAllXmitsTest extends TsdbAppTemplate
 		XmitRecordDAI xmitRecordDAO = theDb.makeXmitRecordDao(31);
 		int dayNum = XmitRecordDAO.msecToDay(d.getTime());
 		System.out.println("dayNum=" + dayNum);
-		DcpMsg msg = null;
-		long recId;
-		for(recId = 1L; (msg = xmitRecordDAO.readDcpMsg(dayNum, recId)) != null; recId++)
-			printMsg(msg);
-		System.out.println(recId + " messages processed.");
+		long endId = xmitRecordDAO.getLastRecordID(dayNum);
+		int n=0;
+		long recId = xmitRecordDAO.getFirstRecordID(dayNum);
+		if (startIdArg.getValue() > recId)
+			recId = startIdArg.getValue();
+		for(; recId <= endId; recId++)
+		{
+			DcpMsg msg = xmitRecordDAO.readDcpMsg(dayNum, recId);
+			if (msg != null)
+				printMsg(msg);
+		}
+		System.out.println(n + " messages processed.");
 		System.exit(0);
 	}
 
