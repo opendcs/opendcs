@@ -22,10 +22,10 @@ import javax.swing.SwingConstants;
 import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.ScheduleEntryDAI;
-
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
+import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -301,6 +301,14 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 		tableModel.add(se);
 	}
 
+	public void deleteForRs(RoutingSpec ob)
+	{
+		ArrayList<ScheduleEntry> tlist = new ArrayList<ScheduleEntry>(tableModel.theList);
+		for(ScheduleEntry se : tlist)
+			if (se.getRoutingSpecName().equals(ob.getName()))
+				tableModel.deleteObject(se);
+	}
+
 }
 
 @SuppressWarnings("serial")
@@ -319,7 +327,7 @@ class ScheduleEntryTableModel extends AbstractTableModel implements
 		dbeditLabels.getString("ScheduleEntryPanel.TableColumn5")
 	};
 	private int lastSortColumn = -1;
-	private ArrayList<ScheduleEntry> theList = new ArrayList<ScheduleEntry>();
+	ArrayList<ScheduleEntry> theList = new ArrayList<ScheduleEntry>();
 
 	public ScheduleEntryTableModel() 
 	{
