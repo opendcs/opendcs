@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * Revision 1.2  2014/06/02 00:22:18  mmaloney
  * Add getLastModified method.
  *
@@ -498,7 +501,7 @@ public class LoadingAppDao
 		throws LockBusyException, DbIoException
 	{
 		TsdbCompLock tlock;
-		Logger.instance().debug1("Checking lock for appID=" + lock.getAppId());
+		Logger.instance().debug3("Checking lock for appID=" + lock.getAppId());
 		try
 		{
 			// Retrieve the lock for this process.
