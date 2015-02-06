@@ -28,7 +28,7 @@ public class DacqEventDAO
 	}
 
 	@Override
-	public synchronized void writeEvent(DacqEvent evt) throws DbIoException
+	public void writeEvent(DacqEvent evt) throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return;
@@ -76,7 +76,7 @@ public class DacqEventDAO
 	}
 
 	@Override
-	public synchronized void deleteBefore(Date cutoff) throws DbIoException
+	public void deleteBefore(Date cutoff) throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return;
