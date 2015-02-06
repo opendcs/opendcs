@@ -315,7 +315,6 @@ System.out.println("cleanupBeforeExit()");
 			{
 				public void windowClosed(WindowEvent e)
 				{
-System.out.println("windowClosed()");
 					myframe.cleanupBeforeExit();
 					if (exitOnClose)
 						System.exit(0);
