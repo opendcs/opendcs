@@ -325,9 +325,9 @@ Logger.instance().debug3(module + " success. returning port " + ret.getPortNum()
 		}
 		else
 		{
-			// Give it a 2 second rest to ensure that modem notices DTR low.
+			// Give it a 5 second rest to ensure that modem notices DTR low.
 			// This also ensures that an idle modem will be used, if one is available.
-			ps.dontUseUntil = System.currentTimeMillis() + 2000L;
+			ps.dontUseUntil = System.currentTimeMillis() + 5000L;
 		}
 		// Free the port in SERIAL_PORT_STATUS
 		DeviceStatusDAI deviceStatusDAO = sqldbio.makeDeviceStatusDAO();
@@ -416,7 +416,9 @@ Logger.instance().debug3(module + " releasePort returning.");
 		if (allocatedPort.ioPort.getConfigureState() != PollingThreadState.Success)
 			throw new DialException("Failed to configure serial port.");
 		
-		
+		// I'm seeing broken pipe on sending init string. Try waiting two seconds after
+		// configuring before actually opening the socket to the port.
+		try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
 		Logger.instance().debug2(module + " Connecting to " + allocatedPort.basicClient.getHost()
 			+ ":" + allocatedPort.basicClient.getPort());
 		try
@@ -462,10 +464,23 @@ Logger.instance().debug3(module + " releasePort returning.");
 		if (portManager != null)
 			portManager.shutdown();
 		portManager = null;
+		int closed = 0;
 		for(BasicClient bc : name2bc.values())
 			if (bc.isConnected())
+			{
 				bc.disconnect();
+				closed++;
+			}
 		name2bc.clear();
+		if (closed > 0)
+			Logger.instance().warning(module + " " + closed 
+				+ " ports were left open when close() was called.");
+	}
+	
+	@Override
+	public void finalize()
+	{
+		close();
 	}
 
 	public String getDigiIpAddr()

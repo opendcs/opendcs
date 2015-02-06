@@ -50,7 +50,7 @@ public class DigiConnectPortManager
 	private DigiConnectPortPool parent = null;
 	private byte[] digiPrompt = "#>".getBytes(); 
 	private String captured = null;
-	public static String EOL = "\r\0";
+	public static String EOL = "\r"; // "\r\0";
 	
 	/** The queue holding configuration tasks to be done. */
 	private ArrayBlockingQueue<AllocatedSerialPort> configQueue = 
@@ -169,8 +169,11 @@ public class DigiConnectPortManager
 					+ parent.getDigiIpAddr());
 			cmd = parent.getDigiPassword()+EOL;
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
-				throw new IOException("Never got initial prompt after login from digiconnect device " 
-					+ parent.getDigiIpAddr());
+			{
+				if (!sendAndAwaitResponse(EOL.getBytes(), 3, digiPrompt, telnetCon, streamReader))
+					throw new IOException("Never got initial prompt after login from digiconnect device " 
+						+ parent.getDigiIpAddr());
+			}
 			
 			// Build command to send to telnet with settings in transport medium.
 			StringBuilder cmdb = new StringBuilder("set serial port=" + asp.ioPort.getPortNum()

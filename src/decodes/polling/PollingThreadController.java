@@ -26,7 +26,13 @@ import ilex.util.Logger;
 
 import java.util.ArrayList;
 
+import opendcs.dai.PlatformStatusDAI;
+import decodes.db.Database;
+import decodes.db.Platform;
+import decodes.db.PlatformStatus;
 import decodes.db.TransportMedium;
+import decodes.routing.DacqEventLogger;
+import decodes.tsdb.DbIoException;
 
 public class PollingThreadController
 	extends Thread
@@ -53,12 +59,15 @@ public class PollingThreadController
 	
 	private int successfullPolls = 0, failedPolls = 0;
 	
-	private int pollNumTries = 3;
+	private int pollNumTries = 5;
 	
 	private int maxBacklogHours = 48;
 	private int minBacklogHours = 2;
 	
 	private String saveSessionFile = null;
+	
+	private DacqEventLogger dacqEventLogger = null;
+	
 	
 	/** PollingDataSource creates the controller */
 	public PollingThreadController(PollingDataSource dataSource, ArrayList<TransportMedium> aggTMList,
@@ -206,7 +215,8 @@ long debugmsec = 0L;
 	 */
 	public void pollComplete(PollingThread pollingThread)
 	{
-		pollingThread.info(module + ".pollComplete result=" + pollingThread.getState().toString());
+		pollingThread.info(module + ".pollComplete result=" + pollingThread.getState().toString()
+			+ ", attempt #" + pollingThread.getNumTries());
 		
 		portPool.releasePort(pollingThread.getIoPort(), pollingThread.getState(),
 			pollingThread.getTerminatingException() != null 
@@ -226,6 +236,9 @@ long debugmsec = 0L;
 			pollingThread.warning("Polling attempt " + pollingThread.getNumTries()
 				+ " failed. Max retries reached.");
 			failedPolls++;
+			PlatformStatus platstat = pollingThread.getPlatformStatus();
+			// Assert error through RS Thread will increment # errors.
+			dataSource.getRoutingSpecThread().assertPlatformError("Polling Failed", platstat);
 		}
 	}
 	
@@ -276,6 +289,16 @@ long debugmsec = 0L;
 	public void setMinBacklogHours(int minBacklogHours)
 	{
 		this.minBacklogHours = minBacklogHours;
+	}
+
+	public void setDacqEventLogger(DacqEventLogger dacqEventLogger)
+	{
+		this.dacqEventLogger = dacqEventLogger;
+	}
+
+	public DacqEventLogger getDacqEventLogger()
+	{
+		return dacqEventLogger;
 	}
 
 }

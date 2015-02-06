@@ -37,6 +37,7 @@ import decodes.db.EnumValue;
 import decodes.db.Platform;
 import decodes.db.PlatformStatus;
 import decodes.db.TransportMedium;
+import decodes.routing.DacqEventLogger;
 
 /**
  * This class manages a single polling session.
@@ -75,6 +76,7 @@ public class PollingThread
 	public static PrintStream staticSessionLogger = null;
 	private PollException terminatingException = null;
 	public static int backlogOverrideHours = 0;
+	private DacqEventLogger dacqEventLogger = null;
 
 
 	public PollingThread(PollingThreadController parent, PollingDataSource dataSource, 
@@ -86,6 +88,7 @@ public class PollingThread
 		this.transportMedium = transportMedium;
 		if (transportMedium.platform != null)
 			module = "Poll(" + transportMedium.platform.getSiteName(false) + ")";
+		dacqEventLogger = parent.getDacqEventLogger();
 	}
 
 	@Override
@@ -123,7 +126,7 @@ public class PollingThread
 			if (System.currentTimeMillis() - since.getTime() < parent.getMinBacklogHours() * 3600000L)
 				since = new Date(System.currentTimeMillis() - parent.getMinBacklogHours() * 3600000L);
 			
-			info("Since time set to " + since);
+			debug1("Since time set to " + since);
 			annotate("Since time set to " + since);
 
 			if (!_shutdown)
@@ -327,9 +330,45 @@ public class PollingThread
 		this.state = state;
 	}
 	
-	public void info(String msg) { dataSource.log(Logger.E_INFORMATION, module + " " + msg); }
-	public void warning(String msg) { dataSource.log(Logger.E_WARNING, module + " " + msg); }
-	public void failure(String msg) { dataSource.log(Logger.E_FAILURE, module + " " + msg); }
+	public void info(String msg)
+	{
+		dataSource.log(Logger.E_INFORMATION, module + " " + msg);
+		if (dacqEventLogger != null)
+		{
+			DacqEvent evt = new DacqEvent();
+			evt.setPlatformId(transportMedium.platform.getId());
+			evt.setSubsystem("Polling");
+			evt.setEventPriority(Logger.E_INFORMATION);
+			evt.setEventText(msg);
+			dacqEventLogger.writeDacqEvent(evt);
+		}
+	}
+	public void warning(String msg)
+	{
+		dataSource.log(Logger.E_WARNING, module + " " + msg);
+		if (dacqEventLogger != null)
+		{
+			DacqEvent evt = new DacqEvent();
+			evt.setPlatformId(transportMedium.platform.getId());
+			evt.setSubsystem("Polling");
+			evt.setEventPriority(Logger.E_WARNING);
+			evt.setEventText(msg);
+			dacqEventLogger.writeDacqEvent(evt);
+		}
+	}
+	public void failure(String msg)
+	{
+		dataSource.log(Logger.E_FAILURE, module + " " + msg);
+		if (dacqEventLogger != null)
+		{
+			DacqEvent evt = new DacqEvent();
+			evt.setPlatformId(transportMedium.platform.getId());
+			evt.setSubsystem("Polling");
+			evt.setEventPriority(Logger.E_FAILURE);
+			evt.setEventText(msg);
+			dacqEventLogger.writeDacqEvent(evt);
+		}
+	}
 	public void debug1(String msg) { dataSource.log(Logger.E_DEBUG1, module + " " + msg); }
 	public void debug2(String msg) { dataSource.log(Logger.E_DEBUG2, module + " " + msg); }
 	public void debug3(String msg) { dataSource.log(Logger.E_DEBUG3, module + " " + msg); }

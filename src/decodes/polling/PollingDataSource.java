@@ -49,6 +49,7 @@ import decodes.db.NetworkListEntry;
 import decodes.db.Platform;
 import decodes.db.PlatformStatus;
 import decodes.db.TransportMedium;
+import decodes.routing.DacqEventLogger;
 import decodes.tsdb.DbIoException;
 import decodes.util.PropertySpec;
 
@@ -264,12 +265,17 @@ public class PollingDataSource extends DataSourceExec
 		
 		platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
 		
+		if (routingSpecThread != null && routingSpecThread.getMyExec() != null)
+			controller.setDacqEventLogger(routingSpecThread.getMyExec().getDacqEventLogger());
+		
 		controller.start();
 	}
 
 	@Override
 	public void close()
 	{
+		if (portPool != null)
+			portPool.close();
 		if (controller != null)
 			controller.shutdown();
 		controller = null;

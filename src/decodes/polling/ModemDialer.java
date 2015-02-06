@@ -60,13 +60,15 @@ public class ModemDialer
 	private PollingThread pollingThread = null;
 	
 	/**
+	 * E0 = turn off echo.
+	 * Q0 = Don't be quiet. Send us OK responses.
 	 * S0=0 = turn off auto answer
 	 * &D2 = normal DTR operation (hangup when digi drops DTR)
 	 * &C1 = normal DCD operation
-	 * &R2 = hardware flow control
+	 * &R1 = no flow control, CTS is always on. (&R2 = hardware flow control)
 	 * &I0 = disable software xon/xoff
 	 */
-	private String modemInitString = "ATS0=0&D2&C1&R2&I0";
+	private String modemInitString = "ATE0Q0S0=0&D2&C1&R1&I0";
 
 	@Override
 	public void connect(IOPort ioPort, TransportMedium tm, PollingThread pollingThread)
@@ -79,6 +81,7 @@ public class ModemDialer
 		_inputClosed = false;
 		StreamReader streamReader = new StreamReader(ioPort.getIn(), this);
 		streamReader.start();
+		String what = "sending initial CRs";
 		try
 		{
 			ioPort.getOut().write(EOL.getBytes()); ioPort.getOut().flush();
@@ -92,29 +95,30 @@ public class ModemDialer
 				+ ioPort.getPortNum();
 			pollingThread.debug2(msg);
 			pollingThread.annotate(msg);
+			what = msg;
 			ioPort.getOut().write(init.getBytes());
 			ioPort.getOut().flush();
-			String what = "";
 			if (!streamReader.wait(AtWaitSec, OK))
 			{
-				what = "No response to 'AT' from modem";
+				what = "waiting for response to init string from modem";
 				pollingThread.warning(module + " response to AT failed, session buf: "
 					+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
 			}
 			else // success OK response to AT
 			{
 				String dialstr = "ATDT " + tm.getMediumId() + EOL;
-				msg = module + " sending '" + AsciiUtil.bin2ascii(dialstr.getBytes()) + "' to modem on port "
-					+ ioPort.getPortNum() + ", will wait " + ConnectWaitSec + " sec for CONNECT.";
+				what = module + " sending '" + AsciiUtil.bin2ascii(dialstr.getBytes()) + "' to modem on port "
+					+ ioPort.getPortNum();
+				msg = what + ", will wait " + ConnectWaitSec + " sec for CONNECT.";
 				Logger.instance().debug1(msg);
 				pollingThread.annotate(msg);
 				ioPort.getOut().write(dialstr.getBytes());
 				if (!streamReader.wait(ConnectWaitSec, CONNECT))
 				{
-					what = "No answer from station at " + tm.getMediumId();
-					msg = module + " " + what;
+					msg = module + " No answer from station at " + tm.getMediumId();
 					pollingThread.warning(msg);
 					pollingThread.annotate(msg);
+					what = "waiting for answer from station at " + tm.getMediumId();
 				}
 				else
 				{
@@ -124,11 +128,11 @@ public class ModemDialer
 			}
 			pollingThread.annotate("Dialing failed -- " + what);
 			disconnect(ioPort);
-			throw new DialException("Could not dial modem on port" + ioPort.getPortNum());
+			throw new DialException(module + " failed while " + what);
 		}
 		catch (IOException ex)
 		{
-			throw new DialException("IOException talking to modem: " + ex);
+			throw new DialException("IOException while " + what + ": " + ex);
 		}
 		finally
 		{
@@ -142,27 +146,28 @@ public class ModemDialer
 	{
 		if (ioPort == null || ioPort.getOut() == null)
 			return; // must already be in the process of shutting down.
-		try
-		{
-			String msg = module + " sending '" + Break + "' to modem on port " + ioPort.getPortNum();
-			pollingThread.debug2(msg);
-			pollingThread.annotate(msg);
-			ioPort.getOut().write(Break.getBytes());
-			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-			msg = module + " sending '" + AsciiUtil.bin2ascii(Hangup.getBytes()) + "' to modem on port "
-				+ ioPort.getPortNum();
-			pollingThread.debug1(msg);
-			pollingThread.annotate(msg);
-			if (ioPort.getOut() != null)
-				try { ioPort.getOut().write(Hangup.getBytes()); }
-				catch(Exception ex) {}
-			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-		}
-		catch(IOException ex)
-		{
-			Logger.instance().warning(module + " Error while disconnecting: " + ex);
-		}
-		Logger.instance().debug2(module + " disconnect complete.");	
+// The +++ ATZ sequence is not necessary. Modem will hangup when we drop DTR.
+//		try
+//		{
+////			String msg = module + " sending '" + Break + "' to modem on port " + ioPort.getPortNum();
+//			pollingThread.debug2(msg);
+//			pollingThread.annotate(msg);
+//			ioPort.getOut().write(Break.getBytes());
+//			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
+//			msg = module + " sending '" + AsciiUtil.bin2ascii(Hangup.getBytes()) + "' to modem on port "
+//				+ ioPort.getPortNum();
+//			pollingThread.debug1(msg);
+//			pollingThread.annotate(msg);
+//			if (ioPort.getOut() != null)
+//				try { ioPort.getOut().write(Hangup.getBytes()); }
+//				catch(Exception ex) {}
+//			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
+//		}
+//		catch(IOException ex)
+//		{
+//			Logger.instance().warning(module + " Error while disconnecting: " + ex);
+//		}
+//		Logger.instance().debug2(module + " disconnect complete.");	
 	}
 
 	@Override

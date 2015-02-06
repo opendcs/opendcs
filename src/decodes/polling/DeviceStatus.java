@@ -123,6 +123,8 @@ public class DeviceStatus
 	
 	public String getLastReceiveTimeStr()
 	{
+		if (lastReceiveTime == null)
+			return "";
 		synchronized(sdf) { return sdf.format(lastReceiveTime); }
 	}
 
