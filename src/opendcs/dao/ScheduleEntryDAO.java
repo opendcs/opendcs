@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2014/12/11 20:33:11  mmaloney
+ * dev
+ *
  * Revision 1.3  2014/08/29 18:18:46  mmaloney
  * For XML import, handle case where existing entry doesn't have a DbKey.
  *
@@ -414,7 +417,12 @@ public class ScheduleEntryDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 			return;
 		
-		String q = "delete from platform_status where last_schedule_entry_status_id in "
+		String q = "delete from dacq_event where schedule_entry_status_id in "
+			+ "(select schedule_entry_status_id from schedule_entry_status where schedule_entry_id = "
+			+ scheduleEntry.getId() + ")";
+		doModify(q);
+		
+		q = "delete from platform_status where last_schedule_entry_status_id in "
 			+ "(select schedule_entry_status_id from schedule_entry_status "
 			+ "where schedule_entry_id = " + scheduleEntry.getKey() + ")";
 		doModify(q);
