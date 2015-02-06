@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.4  2015/01/24 15:14:00  mmaloney
+ * Poll cleanup.
+ *
  * Revision 1.3  2014/10/07 12:40:45  mmaloney
  * dev
  *
@@ -75,20 +78,22 @@ package decodes.sql;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Date;
 
 import opendcs.dai.PropertiesDAI;
+import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dao.PropertiesSqlDao;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-
 import decodes.db.Constants;
+import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.DataSource;
 import decodes.db.RoutingSpec;
 import decodes.db.RoutingSpecList;
+import decodes.db.ScheduleEntry;
 import decodes.tsdb.DbIoException;
 
 /**
@@ -519,7 +524,17 @@ public class RoutingSpecListIO extends SqlDbObjIo
 		delete_RS_NL(rs);
 
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
-		try { propsDao.deleteProperties("RoutingSpecProperty", "RoutingSpecId", id); }
+		ScheduleEntryDAI seDAO = _dbio.makeScheduleEntryDAO();
+		try
+		{
+			propsDao.deleteProperties("RoutingSpecProperty", "RoutingSpecId", id);
+			ArrayList<ScheduleEntry> seList = seDAO.listScheduleEntries(null);
+			for(ScheduleEntry se : seList)
+			{
+				if (se.getRoutingSpecId().equals(rs.getId()))
+					seDAO.deleteScheduleEntry(se);
+			}
+		}
 		catch (DbIoException e)
 		{
 			throw new DatabaseException(e.getMessage());
@@ -527,6 +542,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 		finally
 		{
 			propsDao.close();
+			seDAO.close();
 		}
 
 		// Finally, do the main RoutingSpec table
