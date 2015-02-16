@@ -5,16 +5,20 @@
 package decodes.gui;
 
 import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.table.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.TreeSet;
 import java.util.Enumeration;
+
 import javax.swing.border.*;
 
 import decodes.util.PropertiesOwner;
@@ -36,6 +40,7 @@ public class PropertiesEditPanel extends JPanel
 {
 	private static ResourceBundle genericLabels = null;
 	private JScrollPane jScrollPane1 = new JScrollPane();
+//	private SortingListTable propertiesTable;
 	private JTable propertiesTable;
 	private PropertiesTableModel ptm;
 	private TitledBorder titledBorder1;
@@ -68,7 +73,8 @@ public class PropertiesEditPanel extends JPanel
 			ownerDialog = null;
 			ownerFrame = null;
 			ptm = new PropertiesTableModel(properties);
-			propertiesTable = new JTable(ptm);
+//			propertiesTable = new JTable(ptm);
+			propertiesTable = new SortingListTable(ptm, new int[]{30, 70});
 			propertiesTable.getTableHeader().setReorderingAllowed(false);
 			jbInit(canAddAndDelete);
 		}
@@ -403,9 +409,11 @@ public class PropertiesEditPanel extends JPanel
 		}
 
 		// Set column renderer so that tooltip is property description
-		TableColumn col = propertiesTable.getColumn(PropertiesTableModel.columnNames[0]);
+		TableColumn col = propertiesTable.getColumnModel().getColumn(0);
+//			.getColumn(PropertiesTableModel.columnNames[0]);
 		col.setCellRenderer(new ttCellRenderer());
-		col = propertiesTable.getColumn(PropertiesTableModel.columnNames[1]);
+		col = propertiesTable.getColumnModel().getColumn(1);
+//			.getColumn(PropertiesTableModel.columnNames[1]);
 		col.setCellRenderer(new ttCellRenderer());
 		ptm.setPropHash(propHash);
 	}
@@ -418,6 +426,7 @@ public class PropertiesEditPanel extends JPanel
  */
 @SuppressWarnings("serial")
 class PropertiesTableModel extends AbstractTableModel
+	implements SortingListTableModel
 {
 	private static ResourceBundle genericLabels = PropertiesEditDialog.getGenericLabels();
 	/** The properties as a list of StringPair object. */
@@ -661,5 +670,54 @@ class PropertiesTableModel extends AbstractTableModel
 	{
 		saveChanges();
 		fireTableDataChanged();
+	}
+
+	@Override
+	public void sortByColumn(int column)
+	{
+		if (column == 0)
+			Collections.sort(props,
+				new Comparator<StringPair>()
+				{
+					@Override
+					public int compare(StringPair o1, StringPair o2)
+					{
+						return o1.first.compareTo(o2.first);
+					}
+				});
+		else
+			Collections.sort(props,
+				new Comparator<StringPair>()
+				{
+					@Override
+					public int compare(StringPair o1, StringPair o2)
+					{
+						String s1 = o1.second;
+						String s2 = o2.second;
+						if (s1 == null || s1.trim().length() == 0)
+						{
+							if (s2 == null || s2.trim().length() == 0)
+								return o1.first.compareTo(o2.first);
+							else // sort non-empty strings to the front
+								return 1;
+						}
+						else // s1 is not empty
+						{
+							if (s2 == null || s2.trim().length() == 0)
+								return -1;
+							int r = s1.compareTo(s2);
+							if (r != 0)
+								return r;
+							return o1.first.compareTo(o2.first);
+						}
+					}
+				});
+		fireTableDataChanged();
+	}
+
+	@Override
+	public Object getRowObject(int row)
+	{
+		return props.get(row);
 	}
 }
