@@ -547,7 +547,7 @@ public class RoutingSpecThread
 		numErrsRun++;
 		numErrsToday++;
 		
-		log(formatter.requiresDecodedMessage() ? Logger.E_WARNING : Logger.E_DEBUG3, msg);
+		log(formatter==null || formatter.requiresDecodedMessage() ? Logger.E_WARNING : Logger.E_DEBUG3, msg);
 		if (platstat != null)
 		{
 			platstat.setLastErrorTime(new Date());
