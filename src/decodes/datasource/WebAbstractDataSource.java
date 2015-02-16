@@ -209,6 +209,12 @@ public class WebAbstractDataSource
 				currentWebDs.init(myProps, rsSince, rsUntil, null);
 				return currentWebDs.getRawMessage();
 			}
+			catch(DataSourceException ex)
+			{
+				String msg = module + " cannot open '"
+					+ url + "': " + ex;
+				Logger.instance().warning(msg);
+			}
 			catch(Exception ex)
 			{
 				String msg = module + " cannot open '"
