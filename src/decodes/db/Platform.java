@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2014/12/11 20:21:24  mmaloney
+*  Removed duplicate PropertySpec
+*
 *  Revision 1.2  2014/10/02 14:33:13  mmaloney
 *  Conditional Season Processing
 *
@@ -153,7 +156,10 @@ public class Platform
 		new PropertySpec("ignoreSeason", PropertySpec.DECODES_ENUM + Constants.enum_Season,
 			"Set to have this platform ignored during a specified season."),
 		new PropertySpec("processSeason", PropertySpec.DECODES_ENUM + Constants.enum_Season,
-			"Set to have this platform only processed during a specified season.")
+			"Set to have this platform only processed during a specified season."),
+		new PropertySpec("pollPriority", PropertySpec.INT,
+			"(default=3) For polled stations, this determines the order in which "
+			+ "they will be polled (1 = highest priority = polled first)")
 	};
 	
 	// Populated during prepareForExec:
