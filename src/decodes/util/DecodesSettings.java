@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.9  2015/02/06 18:47:20  mmaloney
+*  Config option to not display certain buttons: Time Series, Groups, Run Comps, & Algorithms.
+*
 *  Revision 1.8  2015/01/31 15:44:31  mmaloney
 *  Configurable Decoded Value Colors.
 *
@@ -337,7 +340,9 @@ public class DecodesSettings
 	/** For OpenDCS 6.1, purge data acquisition events after this many days */
 	public int eventPurgeDays = 5;
 	
-	public String pollScriptDir = "$DCSTOOL_HOME/poll-scripts";
+	public String pollScriptDir = "$HOME/SHARED/dacq/poll-scripts";
+	public String pollMessageDir = "$HOME/SHARED/dacq/edl-done";
+	public String pollRoutingTemplate = "PollGuiTemplate";
 	
 	public boolean rememberScreenPosition = true;
 	
@@ -505,7 +510,11 @@ public class DecodesSettings
 			"For OpenDCS 6.1, purge data acquisition events after this many days. Events "
 			+ "are purged by each routing spec with a purgeOldEvents property that is true."),
 		new PropertySpec("pollScriptDir", PropertySpec.DIRECTORY,
-			"If poll-scripts are used, this is the directory where they should be located."),
+			"The directory where poll scripts are located."),
+		new PropertySpec("pollMessageDir", PropertySpec.DIRECTORY,
+			"The directory to open message files after a GUI poll."),
+		new PropertySpec("pollRoutingTemplate", PropertySpec.STRING,
+			"Name of the routing spec that PollGUI uses as a template."),
 		new PropertySpec("rememberScreenPosition", PropertySpec.BOOLEAN,
 			"Remember position and size of GUI screens when they are moved."),
 		new PropertySpec("decodeScriptColor1", PropertySpec.STRING,
