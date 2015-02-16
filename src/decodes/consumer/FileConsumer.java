@@ -94,7 +94,7 @@ public class FileConsumer extends DataConsumer
 		try
 		{
 			// open file named in consumerArg
-			Logger.instance().info("Opening '" + fn + "'");
+			Logger.instance().debug1("Opening '" + fn + "'");
 			File f = new File(fn);
 			boolean overwrite = defaultFileOverwrite;
 			String s = props.getProperty("file.overwrite");
