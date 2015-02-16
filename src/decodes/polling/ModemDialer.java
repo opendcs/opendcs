@@ -82,6 +82,7 @@ public class ModemDialer
 		StreamReader streamReader = new StreamReader(ioPort.getIn(), this);
 		streamReader.start();
 		String what = "sending initial CRs";
+		boolean portError = true;
 		try
 		{
 			ioPort.getOut().write(EOL.getBytes()); ioPort.getOut().flush();
@@ -101,11 +102,15 @@ public class ModemDialer
 			if (!streamReader.wait(AtWaitSec, OK))
 			{
 				what = "waiting for response to init string from modem";
-				pollingThread.warning(module + " response to AT failed, session buf: "
+				pollingThread.warning(module + " port=" + ioPort.getPortName()
+					+ " response to AT failed, session buf: "
 					+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
 			}
 			else // success OK response to AT
 			{
+				// We have successfully talked to the modem through the port.
+				// Any error after this is not considered a port error.
+				portError = false;
 				String dialstr = "ATDT " + tm.getMediumId() + EOL;
 				what = module + " sending '" + AsciiUtil.bin2ascii(dialstr.getBytes()) + "' to modem on port "
 					+ ioPort.getPortNum();
@@ -116,7 +121,6 @@ public class ModemDialer
 				if (!streamReader.wait(ConnectWaitSec, CONNECT))
 				{
 					msg = module + " No answer from station at " + tm.getMediumId();
-					pollingThread.warning(msg);
 					pollingThread.annotate(msg);
 					what = "waiting for answer from station at " + tm.getMediumId();
 				}
@@ -128,11 +132,12 @@ public class ModemDialer
 			}
 			pollingThread.annotate("Dialing failed -- " + what);
 			disconnect(ioPort);
-			throw new DialException(module + " failed while " + what);
+			throw new DialException(module + " port=" + ioPort.getPortName()
+				+ " failed while " + what, portError);
 		}
 		catch (IOException ex)
 		{
-			throw new DialException("IOException while " + what + ": " + ex);
+			throw new DialException("IOException while " + what + ": " + ex, portError);
 		}
 		finally
 		{

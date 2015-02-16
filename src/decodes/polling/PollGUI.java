@@ -50,6 +50,7 @@ import decodes.gui.TopFrame;
 import decodes.routing.RoutingSpecThread;
 import decodes.routing.ScheduleEntryExecutive;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
 
 public class PollGUI extends TsdbAppTemplate
 {
@@ -296,10 +297,9 @@ public class PollGUI extends TsdbAppTemplate
 	{
 		if (lastOutFile != null)
 		{
-			String path = lastOutFile.getPath();
-			int idx = path.indexOf("edl-incoming");
-			if (idx != -1)
-				path = path.substring(0, idx) + "edl-done" + path.substring(idx + 12);
+			String path = EnvExpander.expand(
+				DecodesSettings.instance().pollMessageDir + File.separator
+				+ lastOutFile.getName());
 			ShowFileDialog showFileDialog = new ShowFileDialog(theFrame, path, false);
 			showFileDialog.setFile(new File(path));
 			theFrame.launchDialog(showFileDialog);
@@ -390,30 +390,21 @@ public class PollGUI extends TsdbAppTemplate
 		DefaultCaret df = (DefaultCaret)sessionLogArea.getCaret();
 		df.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
-		TransportMedium pollTM = null;
-		for(TransportMedium tm : selectedPlatform.transportMedia)
-			if (tm.getMediumType().toLowerCase().startsWith("poll"))
-			{
-				pollTM = tm;
-				break;
-			}
-		
-		String pollType = pollTM.getMediumType();
-		String rsName = pollType + "-template";
-		RoutingSpec rs = Database.getDb().routingSpecList.find(rsName);
+		RoutingSpec rs = Database.getDb().routingSpecList.find(
+			DecodesSettings.instance().pollRoutingTemplate);
 		if (rs == null)
 		{
-			theFrame.showError("No routing spec named '" + rsName 
-				+ "' in database. This is needed as a template.");
+			theFrame.showError("No routing spec named '"
+				+ DecodesSettings.instance().pollRoutingTemplate 
+				+ "' in database. This is needed as a template."
+				+ " Check the DECODES Setting for pollRoutingTemplate.");
 			return;
 		}
-		
 		
 		rs.setProperty("debugLevel", 
 			Logger.instance().getMinLogPriority() == Logger.E_DEBUG1 ? "1" :
 			Logger.instance().getMinLogPriority() == Logger.E_DEBUG2 ? "2" :
 			Logger.instance().getMinLogPriority() == Logger.E_DEBUG3 ? "3" : "0");
-				
 		
 		// Retrieve up station status and set rs.sinceTime to last poll time.
 		PlatformStatusDAI platformStatusDAO = theDb.makePlatformStatusDAO();

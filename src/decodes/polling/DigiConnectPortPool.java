@@ -414,7 +414,7 @@ Logger.instance().debug3(module + " releasePort returning.");
 		// Port Manager will use info in tm to set serial port parameters.
 		portManager.configPort(allocatedPort);
 		if (allocatedPort.ioPort.getConfigureState() != PollingThreadState.Success)
-			throw new DialException("Failed to configure serial port.");
+			throw new DialException("Failed to configure serial port.", false);
 		
 		// I'm seeing broken pipe on sending init string. Try waiting two seconds after
 		// configuring before actually opening the socket to the port.
@@ -430,8 +430,9 @@ Logger.instance().debug3(module + " releasePort returning.");
 		catch (IOException ex)
 		{
 			allocatedPort.basicClient.disconnect();
-			throw new DialException("Cannot connect to " + allocatedPort.basicClient.getHost()
-			+ ":" + allocatedPort.basicClient.getPort() + ": " + ex);
+			throw new DialException("Cannot connect to port " + ioPort.getPortName()
+				+ ", host:tcpPort=" + allocatedPort.basicClient.getName()
+				+ ": " + ex, true);
 		}
 	}
 	

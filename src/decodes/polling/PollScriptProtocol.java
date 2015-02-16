@@ -277,6 +277,8 @@ public class PollScriptProtocol
 				cmd.execute();
 				if (abnormalShutdown != null)
 					break;
+				if (streamReader.getSessionIdx() >= StreamReader.MAX_BUF_SIZE)
+					break;
 			}
 			String msg = "Script execution complete."
 				+ (abnormalShutdown == null ? "" : " Abnormal Shutdown: " + abnormalShutdown);

@@ -58,7 +58,8 @@ public class TcpDialer extends Dialer
 			}
 			catch(NumberFormatException ex)
 			{
-				throw new DialException("Invalid host string '" + host + "' -- expected port number after colon.");
+				throw new DialException("Invalid host string '" + host 
+					+ "' -- expected port number after colon.", false);
 			}
 		}
 		basicClient = new BasicClient(host, port);
@@ -68,7 +69,8 @@ public class TcpDialer extends Dialer
 		}
 		catch (IOException ex)
 		{
-			throw new DialException("Cannot connect to '" + tm.getMediumId() + "': " + ex);
+			throw new DialException("Cannot connect to '" + tm.getMediumId() + "': " + ex,
+				true);
 		}
 		ioPort.setIn(basicClient.getInputStream());
 		ioPort.setOut(basicClient.getOutputStream());

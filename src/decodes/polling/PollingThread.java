@@ -77,7 +77,8 @@ public class PollingThread
 	private PollException terminatingException = null;
 	public static int backlogOverrideHours = 0;
 	private DacqEventLogger dacqEventLogger = null;
-
+	private int pollPriority = 3;
+	private Date threadStart = null;
 
 	public PollingThread(PollingThreadController parent, PollingDataSource dataSource, 
 		TransportMedium transportMedium)
@@ -87,13 +88,29 @@ public class PollingThread
 		this.dataSource = dataSource;
 		this.transportMedium = transportMedium;
 		if (transportMedium.platform != null)
+		{
 			module = "Poll(" + transportMedium.platform.getSiteName(false) + ")";
+			String pps = transportMedium.platform.getProperty("pollPriority");
+			if (pps != null)
+			{
+				try 
+				{
+					pollPriority = Integer.parseInt(pps.trim());
+					info("pollPriority set to " + pollPriority);
+				}
+				catch(NumberFormatException ex)
+				{
+					warning("Invalid pollPriority property '" + pps + "' -- ignored.");
+				}
+			}
+		}
 		dacqEventLogger = parent.getDacqEventLogger();
 	}
 
 	@Override
 	public void run()
 	{
+		threadStart = new Date();
 		numTries++;
 		terminatingException = null;
 		makeSessionLogger();
@@ -161,7 +178,10 @@ public class PollingThread
 		catch (DialException ex)
 		{
 			String msg = "Cannot connect IOPort: " + ex;
-			failure(msg);
+			if (numTries < parent.getPollNumTries())
+				info(msg);
+			else
+				failure(msg);
 			exitState = PollingThreadState.Failed;
 			platformStatus.setLastErrorTime(new Date());
 			platformStatus.setAnnotation(msg);
@@ -387,6 +407,16 @@ public class PollingThread
 	public PollException getTerminatingException()
 	{
 		return terminatingException;
+	}
+
+	public int getPollPriority()
+	{
+		return pollPriority;
+	}
+
+	public Date getThreadStart()
+	{
+		return threadStart;
 	}
 	
 }

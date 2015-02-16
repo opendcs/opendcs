@@ -79,9 +79,10 @@ public class IOPort
 	 */
 	public void disconnect()
 	{
-		if (dialerConnected) // don't use dialer to disconnect if we never connected.
+		if (dialerConnected && dialer != null) // don't use dialer to disconnect if we never connected.
 			dialer.disconnect(this);
-		pollingThread.debug2("IOPort.disconnect() complete.");		
+		if (pollingThread != null)
+			pollingThread.debug2("IOPort.disconnect() complete.");		
 	}
 	
 	public InputStream getIn()

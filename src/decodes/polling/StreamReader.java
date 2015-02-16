@@ -44,7 +44,7 @@ public class StreamReader
 	private ByteArrayOutputStream captured = new ByteArrayOutputStream();
 	private boolean capture = false;
 	private PollSessionLogger psLog = null;
-	private static final int MAX_BUF_SIZE = 99900;
+	public static final int MAX_BUF_SIZE = 99900;
 	private byte[] sessionBuf = new byte[MAX_BUF_SIZE];
 	private int sessionIdx = 0;
 	private int processIdx = 0;
@@ -79,7 +79,12 @@ public class StreamReader
 					else
 					{
 						if (sessionIdx >= sessionBuf.length)
-							throw new IOException("Message too long. Size=" + sessionIdx);
+						{
+							Logger.instance().info(module + "Message too long. Size=" 
+								+ sessionIdx + ", truncating message at this point.");
+							_shutdown = true;
+							break;
+						}
 						sessionBuf[sessionIdx++] = (byte)c;
 						if (capture)
 							captured.write(c);
@@ -144,7 +149,7 @@ public class StreamReader
 			pm.setProcessIdx(processIdx);
 		
 		long endMsec = System.currentTimeMillis() + (long)(sec * 1000);
-		while(System.currentTimeMillis() < endMsec)
+		while(!_shutdown && System.currentTimeMillis() < endMsec)
 		{
 			synchronized(this)
 			{
@@ -155,8 +160,8 @@ public class StreamReader
 						return true;
 					}
 			}
-			if (_shutdown)
-				throw new IOException("Input stream was shut down.");
+//			if (_shutdown)
+//				throw new IOException("Input stream was shut down.");
 			try { sleep(50L); } catch(InterruptedException ex) {}
 		}
 		if (patternMatcher.length > 0)
@@ -217,6 +222,8 @@ public class StreamReader
 	{
 		return ArrayUtil.getField(sessionBuf, 0, sessionIdx);
 	}
+	
+	public int getSessionIdx() { return sessionIdx; }
 
 	public boolean isCapture()
 	{

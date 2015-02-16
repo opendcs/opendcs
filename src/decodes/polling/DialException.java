@@ -28,8 +28,19 @@ package decodes.polling;
 @SuppressWarnings("serial")
 public class DialException extends PollException
 {
-	public DialException(String msg)
+	/** True if the error was due to inability to communicate over the port.
+	 * If so, this is also considered a device error.
+	 */
+	private boolean portError = false;
+	
+	public DialException(String msg, boolean portError)
 	{
 		super(msg);
+		this.portError = portError;
+	}
+
+	public boolean isPortError()
+	{
+		return portError;
 	}
 }

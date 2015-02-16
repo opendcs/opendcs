@@ -51,11 +51,14 @@ public class PollingThreadController
 	private ArrayList<PollingThread> threads = new ArrayList<PollingThread>();
 
 	/** The current index in the aggTMList */
-	private int tmIdx = 0;
+	private int lastPTidx = 0;
 	
 	private boolean _shutdown = false;
 	
 	private static final long PAUSE_MSEC = 500L;
+
+	// no thread should take > 10 min -- probably hung
+	private static final long THREAD_MAX_RUN_TIME = 600000L;
 	
 	private int successfullPolls = 0, failedPolls = 0;
 	
@@ -88,8 +91,8 @@ public class PollingThreadController
 		_shutdown = false;
 
 		// Construct a PollingThread runnable for each Transport Medium
-		while (tmIdx < aggTMList.size())
-			threads.add(new PollingThread(this, dataSource, aggTMList.get(tmIdx++)));
+		for(int idx = 0; idx < aggTMList.size(); idx++)
+			threads.add(new PollingThread(this, dataSource, aggTMList.get(idx)));
 		if (threads.size() == 0)
 		{
 			dataSource.log(Logger.E_WARNING, "There are no stations to poll in the list.");
@@ -99,8 +102,8 @@ public class PollingThreadController
 			+ " sessions will be attempted."
 			+ " #waiting=" + countThreads(PollingThreadState.Waiting));
 		
-long debugmsec = 0L;
-		tmIdx = 0;
+		long debugmsec = 0L;
+		lastPTidx = 0;
 		try
 		{
 			while(!_shutdown)
@@ -121,14 +124,16 @@ long debugmsec = 0L;
 					{
 	//					dataSource.log(Logger.E_DEBUG2, module + " No ports available, will try later.");
 						// go back so that we try the same polling thread again next time.
-						if (--tmIdx < 0)
-							tmIdx = threads.size()-1;
+						if (--lastPTidx < 0)
+							lastPTidx = threads.size()-1;
 					}
 					else // start a new poll on the allocated port.
 					{
-						dataSource.log(Logger.E_DEBUG1, module + " starting " + pt.getModule()
+						dataSource.log(Logger.E_DEBUG1, module + " starting " 
+							+ pt.getModule()
 							+ ", TM " + pt.getTransportMedium()
-							+ " on port number " + ioPort.getPortNum());
+							+ " on port number " + ioPort.getPortNum()
+							+ ", pollPriority=" + pt.getPollPriority());
 						pt.setState(PollingThreadState.Running);
 						pt.setSaveSessionFile(saveSessionFile);
 						pt.setIoPort(ioPort);
@@ -137,6 +142,7 @@ long debugmsec = 0L;
 				}
 				if (System.currentTimeMillis() - debugmsec > 10000L)
 				{
+					checkDeadThreads();
 					dataSource.log(Logger.E_INFORMATION, 
 						module + " Threads: total=" + threads.size()
 						+ ", waiting=" + countThreads(PollingThreadState.Waiting) 
@@ -144,7 +150,7 @@ long debugmsec = 0L;
 						+ ", success=" + countThreads(PollingThreadState.Success)
 						+ ", failed=" + countThreads(PollingThreadState.Failed)
 						);
-				 debugmsec = System.currentTimeMillis();
+					debugmsec = System.currentTimeMillis();
 				}
 				
 				try { sleep(PAUSE_MSEC); } catch(InterruptedException ex) {}
@@ -184,20 +190,52 @@ long debugmsec = 0L;
 		dataSource.pollingComplete();
 	}
 	
+	private void checkDeadThreads()
+	{
+		for(PollingThread pt : threads)
+			if (pt.getState() == PollingThreadState.Running
+			 && pt.getThreadStart() != null
+			 && System.currentTimeMillis() - pt.getThreadStart().getTime() > 
+				THREAD_MAX_RUN_TIME)
+			{
+				pt.shutdown();
+				pt.setState(PollingThreadState.Failed);
+				pollComplete(pt);
+			}
+		
+	}
+
 	private PollingThread getNextWaitingThread()
 	{
-		if (tmIdx >= threads.size())
-			tmIdx = 0;
-		// Only check each thread once.
+		// Starting with thread after last returned index, find thread with highest
+		// priority.
+		if (++lastPTidx >= threads.size())
+			lastPTidx = 0;
+		int p1idx=-1, p2idx=-1, p3idx=-1;
 		for(int n = 0; n < threads.size(); n++)
 		{
-			PollingThread pt = threads.get(tmIdx);
-			if (++tmIdx >= threads.size())
-				tmIdx = 0;
+			int idx = (lastPTidx + n) % threads.size();
+			PollingThread pt = threads.get(idx);
 			if (pt.getState() == PollingThreadState.Waiting)
-				return pt;
+			{
+				if (pt.getPollPriority() == 1)
+				{
+					p1idx = idx;
+					break;
+				}
+				else if (pt.getPollPriority() == 2)
+					p2idx = idx;
+				else
+					p3idx = idx;
+			}
 		}
-		// Went all the way around and didn't find a waiting thread
+		if (p1idx != -1)
+			return threads.get(lastPTidx = p1idx);
+		else if (p2idx != -1)
+			return threads.get(lastPTidx = p2idx);
+		else if (p3idx != -1)
+			return threads.get(lastPTidx = p3idx);
+		// Went didn't find any waiting thread
 		return null;
 	}
 	
@@ -218,22 +256,25 @@ long debugmsec = 0L;
 		pollingThread.info(module + ".pollComplete result=" + pollingThread.getState().toString()
 			+ ", attempt #" + pollingThread.getNumTries());
 		
-		portPool.releasePort(pollingThread.getIoPort(), pollingThread.getState(),
-			pollingThread.getTerminatingException() != null 
-			&& (pollingThread.getTerminatingException() instanceof DialException));
+		PollException pex = pollingThread.getTerminatingException();
+		boolean portError = (pex != null)
+			&& (pex instanceof DialException)
+			&& ((DialException)pex).isPortError();
+			
+		portPool.releasePort(pollingThread.getIoPort(), pollingThread.getState(), portError);
 		if (pollingThread.getState() == PollingThreadState.Success)
 		{
 			successfullPolls++;
 		}
 		else if (!_shutdown && pollingThread.getNumTries() < pollNumTries)
 		{
-			pollingThread.warning("Polling attempt " + pollingThread.getNumTries()
+			pollingThread.info("Polling attempt " + pollingThread.getNumTries()
 				+ " failed. Will retry.");
 			pollingThread.reset();
 		}
 		else
 		{
-			pollingThread.warning("Polling attempt " + pollingThread.getNumTries()
+			pollingThread.failure("Polling attempt " + pollingThread.getNumTries()
 				+ " failed. Max retries reached.");
 			failedPolls++;
 			PlatformStatus platstat = pollingThread.getPlatformStatus();

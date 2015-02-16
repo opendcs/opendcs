@@ -56,14 +56,14 @@ public class Poll
 		if (tm == null)
 			throw new Exception("Station '" + station + "' has no polled-modem or polled-tcp transport medium.");
 		
-		String pollType = tm.getMediumType();
-		
-		String rsName = pollType + "-template";
-		RoutingSpec rs = Database.getDb().routingSpecList.find(rsName);
+		RoutingSpec rs = Database.getDb().routingSpecList.find(
+			DecodesSettings.instance().pollRoutingTemplate);
 		if (rs == null)
-			throw new DecodesException(
-				"No routing spec named '" + rsName + "' in database. This is needed as a template.");
-		
+			throw new DecodesException("No routing spec named '"
+				+ DecodesSettings.instance().pollRoutingTemplate 
+				+ "' in database. This is needed as a template."
+				+ " Check the DECODES Setting for pollRoutingTemplate.");
+
 		// Retrieve up station status and set rs.sinceTime to last poll time.
 		PlatformStatusDAI platformStatusDAO = theDb.makePlatformStatusDAO();
 		PlatformStatus platStat = platformStatusDAO.readPlatformStatus(platform.getId());
@@ -133,7 +133,6 @@ public class Poll
 	@Override
 	protected void oneTimeInit()
 	{
-		// TODO Auto-generated method stub
 	}
 
 	@Override
