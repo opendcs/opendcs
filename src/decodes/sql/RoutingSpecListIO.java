@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.5  2015/02/06 18:57:51  mmaloney
+ * Delete dependent schedule entries when deleting a routing spec.
+ *
  * Revision 1.4  2015/01/24 15:14:00  mmaloney
  * Poll cleanup.
  *
@@ -305,6 +308,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 				TextUtil.str2boolean(resultSet.getString(14));
 
 			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+			routingSpec.getProperties().clear();
 			try { propsDao.readProperties("RoutingSpecProperty", "RoutingSpecId", routingSpec.getId(),
 				routingSpec.getProperties()); }
 			catch (DbIoException e)
