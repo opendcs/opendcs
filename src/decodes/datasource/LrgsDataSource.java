@@ -576,8 +576,8 @@ public class LrgsDataSource extends DataSourceExec
 				lastError = System.currentTimeMillis();
 				String errmsg = "Error on LRGS data source '" 
 					+ dbDataSource.getName() + "': " + ex;
-				System.err.println(errmsg);
-				ex.printStackTrace(System.err);
+//				System.err.println(errmsg);
+//				ex.printStackTrace(System.err);
 				throw new DataSourceException(errmsg);
 			}
 //			finally
