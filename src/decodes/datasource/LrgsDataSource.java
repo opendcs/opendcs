@@ -519,6 +519,9 @@ public class LrgsDataSource extends DataSourceExec
 	public RawMessage getRawMessage()
 		throws DataSourceException
 	{
+		if (lddsClient == null || !lddsClient.isConnected())
+			throw new DataSourceException("LddsDataSource not connected to server");
+			
 		// Absolute end time:
 		long endTime = System.currentTimeMillis()
 			+ (timeout * (retries+1)) * 1000L;
