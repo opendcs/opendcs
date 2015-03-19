@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.15  2012/08/20 20:08:05  mmaloney
 *  Implement HDB Convert2Group utility.
 *
@@ -45,16 +48,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import lrgs.gui.DecodesInterface;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
-
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.StderrLogger;
 import ilex.util.UserAuthFile;
-
 import decodes.db.Constants;
 import decodes.util.AppMessages;
 import decodes.util.CmdLineArgs;
@@ -92,6 +94,7 @@ public class ExportComp
 			"", TokenOptions.optArgument | TokenOptions.optRequired, ""); 
 		cmdLineArgs.addToken(controlFileArg);
 		cmdLineArgs.addToken(xmlFileArg);
+		DecodesInterface.silent = true;
 	}
 
 	/**
