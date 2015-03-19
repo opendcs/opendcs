@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2015/02/06 18:52:45  mmaloney
+ * Downgrade lock check debug message.
+ *
  * Revision 1.3  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -492,8 +495,9 @@ public class LoadingAppDao
 	@Override
 	public void releaseCompProcLock(TsdbCompLock lock) throws DbIoException
 	{
-		doModify("DELETE from CP_COMP_PROC_LOCK WHERE "
-			+ "LOADING_APPLICATION_ID = " + lock.getAppId());
+		if (lock != null)
+			doModify("DELETE from CP_COMP_PROC_LOCK WHERE "
+				+ "LOADING_APPLICATION_ID = " + lock.getAppId());
 	}
 
 	@Override
