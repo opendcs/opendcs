@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2014/09/15 13:55:32  mmaloney
+ * Updates for AESRD
+ *
  * Revision 1.4  2014/08/22 17:23:10  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -31,8 +34,14 @@ package decodes.consumer;
 
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
+import ilex.var.IFlags;
+import ilex.var.TimedVariable;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
@@ -83,8 +92,55 @@ public class KistersFormatter
 	private String sitePrefix = "";
 	/** Can be set by "includeLayout" property */
 	private boolean includeLayout = false;
+	private int bufferTimeSec = 0;
+	private DataConsumer theConsumer = null;
 	
 	public static final String headerDelim = "|*|";
+	
+	class SampleValue
+	{
+		long t;
+		String v;
+		SampleValue(long t, String v) { this.t = t; this.v = v; }
+	};
+	class SensorData
+	{
+		String header;
+		DecodedMessage msg;
+		ArrayList<SampleValue> samples = new ArrayList<SampleValue>();
+		SensorData(String header, DecodedMessage msg)
+		{
+			this.header = header;
+			this.msg = msg;
+		}
+		void addSample(long t, String v)
+		{
+			for(SampleValue sv : samples)
+				if (sv.t == t)
+				{
+					// Don't overwrite good data with RINVAL data.
+					if (!v.contains(RINVAL))
+						sv.v = v;
+					return;
+				}
+			samples.add(new SampleValue(t,v));
+		}
+		void sort()
+		{
+			Collections.sort(samples,
+				new Comparator<SampleValue>()
+				{
+					@Override
+					public int compare(SampleValue o1, SampleValue o2)
+					{
+						return o1.t - o2.t < 0 ? -1 : o1.t - o2.t > 0 ? 1 : 0;
+					}
+				
+				});
+		}
+	}
+	long bufferingStarted = -1L;
+	ArrayList<SensorData> sensorDataArray = new ArrayList<SensorData>();
 	
 	/**
 	 * Constructor for Kisters ZRXP Formatter
@@ -147,19 +203,69 @@ public class KistersFormatter
 		s = PropertiesUtil.getIgnoreCase(rsProps, "includeLayout");
 		if (s != null)
 			includeLayout = TextUtil.str2boolean(s);
+		s = PropertiesUtil.getIgnoreCase(rsProps, "bufferTimeSec");
+		if (s != null)
+		{
+			try { bufferTimeSec = Integer.parseInt(s.trim()); }
+			catch(Exception ex)
+			{
+				logger.warning("Invalid bufferTimeSec property '" + s + "' ignored. Buffering disabled.");
+				bufferTimeSec = 0;
+			}
+		}
 	}
 
 	@Override
 	public void shutdown()
 	{
-		// Nothing to do
+		if (bufferTimeSec <= 0)
+			return;
+		
+		// If any data is accumulated in the buffer, flush it now.
+		try
+		{
+			this.flushBuffer();
+		}
+		catch (DataConsumerException ex)
+		{
+			logger.warning("Error shutting down formatter: " + ex);
+		}
 	}
 
 	@Override
 	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
-		consumer.startMessage(msg);
+		theConsumer = consumer;
+		
+		//MJM 20150227 If a message is nothing but missing, don't output anything.
+		boolean hasData = false;
+//		logger.debug3("KistersFormatter msg from " + msg.getPlatform().makeFileName() + " with time " + 
+//			sdf.format(msg.getMessageTime()));
+	  ts_loop:
+		for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
+		{
+			TimeSeries ts = tsit.next();
+			if (ts == null || ts.size() == 0)
+				continue;
+			for(int idx=0; idx<ts.size(); idx++)
+			{
+				TimedVariable tv = ts.sampleAt(idx);
+				if ((tv.getFlags() & (IFlags.IS_ERROR | IFlags.IS_MISSING)) == 0)
+				{
+//					logger.debug1("Found first data: " + ts.getSensorName() + " " 
+//						+ sdf.format(tv.getTime()) + " " + tv.getStringValue());
+					hasData = true;
+					break ts_loop;
+				}
+			}
+		}
+		if (!hasData)
+		{
+			logger.debug1("Skipping message with no non-missing data");
+			return;
+		}
+		
 		
 		// Get the site associated with the Platform that generated the message.
 		Site platformSite = null;
@@ -174,6 +280,9 @@ public class KistersFormatter
 			throw new OutputFormatterException(
 				"Cannot determine platform site: " + ex.toString());
 		}
+
+		if (bufferTimeSec <= 0)
+			consumer.startMessage(msg);
 
 		// For each time series in the message ...
 		for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
@@ -207,27 +316,27 @@ public class KistersFormatter
 					|| (dt = sensor.getDataType(dataTypeStandardAlt)) == null)
 					dt = sensor.getDataType();
 
-			StringBuilder headerLine = new StringBuilder();
-			headerLine.append("#REXCHANGE");
-			headerLine.append(sitePrefix);
-			headerLine.append(siteName.getNameValue());
-			headerLine.append("." + dt.getCode());
-			headerLine.append(headerDelim);
+			StringBuilder headerLineBuilder = new StringBuilder();
+			headerLineBuilder.append("#REXCHANGE");
+			headerLineBuilder.append(sitePrefix);
+			headerLineBuilder.append(siteName.getNameValue());
+			headerLineBuilder.append("." + dt.getCode());
+			headerLineBuilder.append(headerDelim);
 			
 			if (includeTZ)
 			{
-				headerLine.append("TZ" + tzName);
-				headerLine.append(headerDelim);
+				headerLineBuilder.append("TZ" + tzName);
+				headerLineBuilder.append(headerDelim);
 			}
 			if (includeRINVAL)
 			{
-				headerLine.append("RINVAL" + RINVAL);
-				headerLine.append(headerDelim);
+				headerLineBuilder.append("RINVAL" + RINVAL);
+				headerLineBuilder.append(headerDelim);
 			}
 			if (includeCNAME)
 			{
-				headerLine.append("CNAME" + sensor.getName());
-				headerLine.append(headerDelim);
+				headerLineBuilder.append("CNAME" + sensor.getName());
+				headerLineBuilder.append(headerDelim);
 			}
 			if (includeCUNIT)
 			{
@@ -235,13 +344,18 @@ public class KistersFormatter
 				EngineeringUnit eu = ts.getEU();
 				if (eu != null)
 					eustr = eu.getAbbr();
-				headerLine.append("CUNIT" + eustr);
-				headerLine.append(headerDelim);
+				headerLineBuilder.append("CUNIT" + eustr);
+				headerLineBuilder.append(headerDelim);
 			}
-				
-			consumer.println(headerLine.toString());
-			if (includeLayout)
-				consumer.println("#LAYOUT(timestamp,value)");
+			
+			String headerLine = headerLineBuilder.toString();
+			if (bufferTimeSec <= 0)
+			{
+				// output data directly -- no buffering.
+				consumer.println(headerLine);
+				if (includeLayout)
+					consumer.println("#LAYOUT(timestamp,value)");
+			}
 
 			ts.sort();
 			for(int idx=0; idx<ts.size(); idx++)
@@ -255,10 +369,21 @@ public class KistersFormatter
 					else 
 						samp = RINVAL;
 				}
-				consumer.println(sdf.format(ts.timeAt(idx)) + " " + samp);
+				Date sampTime = ts.timeAt(idx);
+				String dataLine = sdf.format(sampTime) + " " + samp;
+				if (bufferTimeSec <= 0)
+					consumer.println(dataLine); // No buffering
+				else
+				{
+					addToBuffer(headerLine, dataLine, sampTime.getTime(), msg);
+				}
 			}
 		}
-		consumer.endMessage();
+		if (bufferTimeSec <= 0)
+			consumer.endMessage();
+		else if (bufferingStarted > 0L
+			&& (System.currentTimeMillis() - bufferingStarted)/1000L > bufferTimeSec)
+			flushBuffer();
 	}
 	
 	protected PropertySpec kfPropSpecs[] = 
@@ -292,7 +417,10 @@ public class KistersFormatter
 		new PropertySpec("SitePrefix", PropertySpec.STRING, 
 			"A constant string to be placed before the site name in REXCHANGE values."),
 		new PropertySpec("includeLayout", PropertySpec.BOOLEAN, 
-			"Default=true. Set to true to include a separate header line with layout.")
+			"Default=true. Set to true to include a separate header line with layout."),
+		new PropertySpec("bufferTimeSec", PropertySpec.INT,
+			"(# seconds, default=0) Set this to positive number to have data lines buffered and combined."
+			+ " This may result in fewer ZRXP headers with more data lines.")
 	};
 	
 	@Override
@@ -306,5 +434,82 @@ public class KistersFormatter
 	public boolean additionalPropsAllowed()
 	{
 		return false;
+	}
+	
+	private void flushBuffer()
+		throws DataConsumerException
+	{
+		if (bufferingStarted <= 0)
+			return;
+		
+		// Sort the SensrData array by header. This will put all data for same platform together.
+		Collections.sort(sensorDataArray,
+			new Comparator<SensorData>()
+			{
+				@Override
+				public int compare(SensorData o1, SensorData o2)
+				{
+					return o1.header.compareTo(o2.header);
+				}
+			});
+		
+
+		String platformName = "";
+		for(SensorData sd : sensorDataArray)
+		{
+			// Within each SensorData struct, sort the samples ascending by time
+			Collections.sort(sd.samples,
+				new Comparator<SampleValue>()
+				{
+					@Override
+					public int compare(SampleValue o1, SampleValue o2)
+					{
+						long deltat = o1.t - o2.t;
+						return deltat < 0 ? -1 : deltat > 0 ? 1 : 0;
+					}
+				});
+
+			String pn = sd.msg.getPlatform().makeFileName();
+			if (!platformName.equals(pn))
+			{
+				// Platform Name is different. Start a new message.
+				if (platformName.length() > 0)
+					theConsumer.endMessage(); // End the previous message if one was started.
+				
+				theConsumer.startMessage(sd.msg);
+				platformName = pn;
+			}
+			
+			// output the header line
+			theConsumer.println(sd.header);
+			if (includeLayout)
+				theConsumer.println("#LAYOUT(timestamp,value)");
+			
+			// output each data line
+			for(SampleValue sv : sd.samples)
+				theConsumer.println(sv.v);
+		}
+		
+		// End the last message we were working on.
+		if (platformName.length() > 0)
+			theConsumer.endMessage();
+		sensorDataArray.clear();
+		bufferingStarted = -1;
+	}
+	
+	private void addToBuffer(String header, String dataLine, long t, DecodedMessage dm)
+	{
+		if (bufferingStarted < 0)
+			bufferingStarted = System.currentTimeMillis();
+		SensorData sensorData = null;
+		for(SensorData sd : sensorDataArray)
+			if (header.equals(sd.header))
+			{
+				sensorData = sd;
+				break;
+			}
+		if (sensorData == null)
+			sensorDataArray.add(sensorData = new SensorData(header, dm));
+		sensorData.addSample(t, dataLine);
 	}
 }
