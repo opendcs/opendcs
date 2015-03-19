@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.4  2015/02/16 15:35:02  mmaloney
+*  added pollPriority property.
+*
 *  Revision 1.3  2014/12/11 20:21:24  mmaloney
 *  Removed duplicate PropertySpec
 *
@@ -823,6 +826,7 @@ public class Platform
 		// Check properties for equality.
 		if (this.properties.size() != p.properties.size())
 			return false;
+Logger.instance().debug3("Platform.equals, checking props...");
 		for(Enumeration it = this.properties.propertyNames(); 
 			it.hasMoreElements(); )
 		{
@@ -830,7 +834,10 @@ public class Platform
 			String v1 = this.properties.getProperty(nm);
 			String v2 = p.properties.getProperty(nm);
 			if (!TextUtil.strEqual(v1, v2))
+			{
+Logger.instance().debug3("   prop '" + nm + "' differs: '" + v1 + "' '" + v2 + "'");
 				return false;
+			}
 		}
 		return true;
 	}
