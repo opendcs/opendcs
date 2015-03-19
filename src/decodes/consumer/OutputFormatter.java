@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/05/28 13:09:27  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -107,6 +110,18 @@ public abstract class OutputFormatter
 	public abstract void formatMessage(
 		DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException;
+
+	/**
+	 * Base class does nothing. This is called by the RoutingSpecThread when
+	 * a data source either returns null (meaning try again later) or throws
+	 * a DataSourceEndException (which terminates the routing spec). This
+	 * method allows an output formatter to do any special processing like
+	 * flushing buffers, etc.
+	 * @param dataSourceEnd true if this is the result of DataSourceEndException
+	 */
+	public void dataSourceCaughtUp(boolean dataSourceEnd)
+	{
+	}
 
 	/**
 	  Factory method to make a concrete OutputFormatter object.
