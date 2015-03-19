@@ -78,4 +78,9 @@ public class ScadaQueryRow
 			return r;
 		return data.compareTo(rhs.data);
 	}
+	
+	public String toString()
+	{
+		return "ScadaQueryRow: " + datetime + ", " + tag + ", " + data + ", " + quality;
+	}
 }
