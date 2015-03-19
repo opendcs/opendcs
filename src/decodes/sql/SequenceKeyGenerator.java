@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -102,7 +105,6 @@ public class SequenceKeyGenerator
 			{
 				String err = "Cannot read sequence value from '" + seqname 
 					+ "': " + (rs == null ? "Null Return" : "Empty Return");
-				Logger.instance().log(Logger.E_FAILURE, err);
 				throw new DatabaseException(err);
 			}
 	
@@ -113,7 +115,6 @@ public class SequenceKeyGenerator
 		catch(SQLException ex)
 		{
 			String err = "SQL Error executing '" + q + "': " + ex;
-			Logger.instance().log(Logger.E_FAILURE, err);
 			throw new DatabaseException(err);
 		}
 	}

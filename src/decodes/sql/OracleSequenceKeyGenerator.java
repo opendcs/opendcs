@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -94,19 +97,16 @@ public class OracleSequenceKeyGenerator
 			{
 				String err = "Cannot read sequence value from '" + seqname 
 					+ "': " + (rs == null ? "Null Return" : "Empty Return");
-				Logger.instance().log(Logger.E_FAILURE, err);
 				throw new DatabaseException(err);
 			}
 	
 			DbKey ret = DbKey.createDbKey(rs, 1);
 			stmt.close();
-			Logger.instance().debug3("OracleSequenceGenerator.getKey: " + q + " returning " + ret);
 			return ret;
 		}
 		catch(SQLException ex)
 		{
 			String err = "SQL Error executing '" + q + "': " + ex;
-			Logger.instance().log(Logger.E_FAILURE, err);
 			throw new DatabaseException(err);
 		}
 	}

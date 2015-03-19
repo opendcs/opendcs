@@ -136,9 +136,6 @@ public class RoutingSpecThread
 	
 	public void setCloseDbOnQuit(boolean tf) { closeDbOnQuit = tf; }
 	
-	/** Set to true to have this RS Thread establish its own SQL DB Connection */
-	public boolean useThreadDbCon = false;
-	
 	DbKey scheduleEntryStatusId = Constants.undefinedId;
 	private ScheduleEntryExecutive myExec = null;
 	private ScheduleEntryStatus myStatus = null;
@@ -236,6 +233,9 @@ public class RoutingSpecThread
 
 		done = false;
 		long lastMsgReceiveMsec = 0L;
+		checkRoutingSpec();
+		checkNetworkLists();
+		checkPresentationGroup();
 		init(lastMsgReceiveMsec);
 		if (done)
 		{
@@ -244,27 +244,6 @@ public class RoutingSpecThread
 		}
 		
 		decodes.db.DatabaseIO dbio = Database.getDb().getDbIo();
-		if (useThreadDbCon)
-		{
-			if (dbio instanceof decodes.sql.SqlDatabaseIO)
-			{
-				log(Logger.E_INFORMATION, 
-					"Establishing thread-specific database connection");
-				decodes.sql.SqlDatabaseIO sdbio = (decodes.sql.SqlDatabaseIO)dbio;
-				try
-				{
-					sdbio.reconnectForThread();
-				}
-				catch(DatabaseException ex)
-				{
-					log(Logger.E_WARNING, 
-						"Cannot open thread specific DB con: " + ex);
-					useThreadDbCon = false;
-				}
-			}
-			else
-				useThreadDbCon = false;
-		}
 		
 		long lastUp2DateCheck = System.currentTimeMillis();
 		//long lastStatusWrite = System.currentTimeMillis();
@@ -384,6 +363,8 @@ public class RoutingSpecThread
 					log(Logger.E_DEBUG3,
 				"Data source failed to return message, pausing for 1 seconds.");
 					currentStatus = "Wait-Msg";
+					if (formatter != null)
+						formatter.dataSourceCaughtUp(false);
 					try { sleep(1000L); }
 					catch (InterruptedException e) {}
 					continue;
@@ -401,6 +382,8 @@ public class RoutingSpecThread
 				log(Logger.E_INFORMATION,
 					"Normal termination of data source '" + rs.dataSource.getName()
 					+ "': " + e);
+				if (formatter != null)
+					formatter.dataSourceCaughtUp(true);
 				currentStatus = "Completed";
 				done = true;
 				continue;
@@ -535,11 +518,6 @@ public class RoutingSpecThread
 		}
 
 		quit();
-		if (useThreadDbCon)
-		{
-			decodes.sql.SqlDatabaseIO sdbio = (decodes.sql.SqlDatabaseIO)dbio;
-			sdbio.close();
-		}
 	}
 	
 	public void assertPlatformError(String msg, PlatformStatus platstat)

@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.6  2015/02/16 16:16:12  mmaloney
+ * When re-reading, clear properties before populating the Properties set.
+ *
  * Revision 1.5  2015/02/06 18:57:51  mmaloney
  * Delete dependent schedule entries when deleting a routing spec.
  *
@@ -277,8 +280,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 			routingSpec.dataSource = null;
 			try
 			{
-				routingSpec.dataSource = _dbio._dataSourceListIO.getDS(
-					routingSpec, dataSourceId);
+				routingSpec.dataSource = _dbio._dataSourceListIO.readDS(dataSourceId);
 			}
 			catch(DatabaseException ex)
 			{

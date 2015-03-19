@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.4  2013/03/21 18:27:39  mmaloney
 * DbKey Implementation
 *
@@ -193,9 +196,17 @@ public class DataSourceListIO extends SqlDbObjIo
 		DataSource ret = _dsList.getById(id);
 		if (ret != null)
 			return ret;
-
-		try {
-			Statement stmt = createStatement();
+		
+		return readDS(id);
+	}
+	
+	public DataSource readDS(DbKey id)
+		throws DatabaseException
+	{
+		Statement stmt = null;
+		try
+		{
+			stmt = createStatement();
 			
 			String q = "SELECT id, name, dataSourceType, dataSourceArg " +
 					   "FROM DataSource WHERE id = " + id;
@@ -207,17 +218,19 @@ public class DataSourceListIO extends SqlDbObjIo
 				throw new DatabaseException(
 					"No DataSource found with id " + id);
 
-			ret = setNewDataSource(id, rs);
-
+			DataSource ret = setNewDataSource(id, rs);
 			resolveGroupMembers(ret, id);
-
-			stmt.close();
+			return ret;
 		}
-		catch (SQLException e) {
+		catch (SQLException e)
+		{
 			throw new DatabaseException(e.toString());
 		}
-
-		return ret;
+		finally
+		{
+			if (stmt != null)
+				try { stmt.close(); } catch(SQLException ex) {}
+		}
 	}
 
 	/**
@@ -237,7 +250,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	* @param rs the JDBC result set
 	* @return the new DataSource object.
 	*/
-	public DataSource setNewDataSource(DbKey id, ResultSet rs)
+	private DataSource setNewDataSource(DbKey id, ResultSet rs)
 		throws DatabaseException, SQLException
 	{
 		String name = rs.getString(2);
@@ -260,27 +273,26 @@ public class DataSourceListIO extends SqlDbObjIo
 	* @param ds the DataSource
 	* @param id the database ID
 	*/
-	public void resolveGroupMembers(DataSource ds, DbKey id)
+	private void resolveGroupMembers(DataSource ds, DbKey id)
 		throws DatabaseException, SQLException
 	{
 		if (!ds.isGroupType()) return;
 
 		Statement stmt = null;
-		try {
+		try
+		{
 			stmt = createStatement();
-			
 			ResultSet rs = stmt.executeQuery(
 				"SELECT groupId, sequenceNum, memberId " +
 				"FROM DataSourceGroupMember WHERE GroupId = " + id
-			);
+				+ " order by sequenceNum");
 
-			if (rs != null) {
-				while (rs.next()) {
-					int seqNum = rs.getInt(2);
-					DbKey memberId = DbKey.createDbKey(rs, 3);
-					DataSource member = getDS(ds, memberId);
-					ds.addGroupMember(seqNum, member);
-				}
+			while (rs != null && rs.next())
+			{
+				int seqNum = rs.getInt(2);
+				DbKey memberId = DbKey.createDbKey(rs, 3);
+				DataSource member = readDS(memberId);
+				ds.addGroupMember(seqNum, member);
 			}
 		}
 		catch (SQLException e) 
@@ -289,7 +301,7 @@ public class DataSourceListIO extends SqlDbObjIo
 		}
 		finally 
 		{
-			if (stmt != null) stmt.close();
+			if (stmt != null) try { stmt.close(); } catch(SQLException ex) {}
 		}
 	}
 

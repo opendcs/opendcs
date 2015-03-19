@@ -313,8 +313,8 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 		if (seThread != null)
 		{
 			seThread.shutdown();
-			runState = RunState.shutdown;
 			shutdownStarted = System.currentTimeMillis();
+			runState = RunState.shutdown;
 		}
 		
 		if (parent == null && dacqEventLogger != null)
@@ -467,8 +467,13 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 			// A periodic SE has finished for now and is waiting for the next run.
 			runState = RunState.waiting;
 		}
-		else // A realtime SE has terminated because the scheduler is going down.
+		else
+		{
+			// A realtime SE has terminated due to data source error or 
+			// because the scheduler is going down.
+			shutdownStarted = System.currentTimeMillis();
 			runState = RunState.shutdown;
+		}
 
 		// This will cause it to write the final status to this.writeStatus() below
 		seThread.writeStatus();
