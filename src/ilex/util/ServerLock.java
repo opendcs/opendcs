@@ -25,6 +25,7 @@ public class ServerLock implements Runnable
 	private long lastLockTime = 0L;
 	private int filePseudoPID = 0;
 	private int myPseudoPID = 0;
+	private boolean critical = true;
 
 	/**
 	* Creates a new ServerLock object with the specified file path.
@@ -78,9 +79,13 @@ public class ServerLock implements Runnable
 			if (isLocked())
 			{
 				// Lock is in use by another instance!
-				System.err.println("Failed to get lock '" 
-					+ myLockFile.getName() + 
-					"': This service already running?");
+				if (critical)
+					System.err.println("Failed to get lock '" 
+						+ myLockFile.getName() + 
+						"': This service already running?");
+				else
+					Logger.instance().info("Non-critical lock '" + myLockFile.getName()
+						+ "' is already used by another process.");
 				return false;
 			}
 			
@@ -297,5 +302,10 @@ public class ServerLock implements Runnable
 	public boolean wasShutdownViaLock( )
 	{
 		return shutdownViaLock;
+	}
+
+	public void setCritical(boolean critical)
+	{
+		this.critical = critical;
 	}
 }
