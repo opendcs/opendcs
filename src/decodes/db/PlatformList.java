@@ -72,40 +72,6 @@ public class PlatformList extends DatabaseObject
 	}
 
 	
-	/**
-	  Adds a Platform object to the collection.
-	  The SQL ID (if used) should be set prior to calling this method.
-	  @param plat the platform to add.
-	*/
-	public synchronized void addpaltform(Platform plat)
-	{
-		
-		boolean inVector = false;
-		for(Platform tp : platformVector)
-			if (plat == tp)
-			{
-			
-				inVector = true;
-				break;
-			}
-
-		if (!inVector && plat.idIsSet())
-		{
-			
-			Platform oldplat = (Platform)pidList.get(plat.getId());
-			if (oldplat != null)
-				platformVector.remove(oldplat);
-		}
-
-		if (!inVector)
-		{
-			
-			platformVector.add(plat);
-
-		}
-		pidList.add(plat);  // Adds or replaces in the ID list.
-	}
-	
 	/** 
 	  Return a Platform object, given a SQL ID. Returns null if no match. 
 	  @param id the ID to search for
