@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
+import lrgs.gui.DecodesInterface;
 import opendcs.dai.LoadingAppDAI;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompEventSvr;
@@ -123,6 +124,7 @@ public class ScadaConvert
 	@Override
 	protected void runApp() throws Exception
 	{
+		info("runApp() Starting");
 		init();
 		long lastLockCheck = System.currentTimeMillis();
 		// Set lastCheck to cause first check 5 seconds after startup.
@@ -548,10 +550,9 @@ public class ScadaConvert
 	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
+		setSilent(true);
 		appNameArg.setDefaultValue("ScadaConvert");
 	}
-
-	
 	
 	/**
 	 * The main method.
