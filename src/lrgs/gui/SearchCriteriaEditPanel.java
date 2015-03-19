@@ -4,6 +4,9 @@
 *  Open Source Software written by Cove Software, LLC
 *  
 *  $Log$
+*  Revision 1.2  2015/01/17 21:29:15  mmaloney
+*  Use platform select dialog.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -112,7 +115,7 @@ public class SearchCriteriaEditPanel
 	
 	private JCheckBox iridiumCheck = new JCheckBox("Iridium");
 	private JCheckBox networkDcpCheck = null;
-	private JCheckBox modemDcpCheck = null;
+//	private JCheckBox modemDcpCheck = null;
 	private JCheckBox parityCheck = null;
 	private JComboBox parityCheckCombo = null;
 	private JFileChooser nlFileChooser = new JFileChooser();
@@ -221,7 +224,7 @@ public class SearchCriteriaEditPanel
 			});
 		networkDcpCheck = new JCheckBox(
 			scLabels.getString("SearchCriteriaEditor.networkDCP"));
-		modemDcpCheck = new JCheckBox("Modem DCP");
+//		modemDcpCheck = new JCheckBox("Modem DCP");
 		parityCheck = new JCheckBox("Parity: ");
 		parityCheckCombo = new JComboBox(
 			new String[] 
@@ -536,12 +539,12 @@ public class SearchCriteriaEditPanel
 			new GridBagConstraints(0, 5, 2, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, 
 				new Insets(2, 4, 2, 4), 0, 0));
-		platformTypesPanel.add(modemDcpCheck,
-			new GridBagConstraints(0, 6, 2, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
-				new Insets(2, 4, 2, 4), 0, 0));
+//		platformTypesPanel.add(modemDcpCheck,
+//			new GridBagConstraints(0, 6, 2, 1, 0.0, 0.0,
+//				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+//				new Insets(2, 4, 2, 4), 0, 0));
 		platformTypesPanel.add(parityCheck,
-			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0,
+			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, 
 				new Insets(2, 4, 2, 1), 0, 0));
 		parityCheck.addActionListener(
@@ -553,7 +556,7 @@ public class SearchCriteriaEditPanel
 				}
 			});
 		platformTypesPanel.add(parityCheckCombo, 
-			new GridBagConstraints(1, 7, 1, 1, 0.0, 0.0,
+			new GridBagConstraints(1, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, 
 				new Insets(2, 1, 2, 4), 0, 0));
 		JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
@@ -580,7 +583,7 @@ public class SearchCriteriaEditPanel
 			});
 		p.add(selectAllTypesButton);
 		platformTypesPanel.add(p,
-			new GridBagConstraints(0, 8, 2, 1, 0.0, 1.0,
+			new GridBagConstraints(0, 7, 2, 1, 0.0, 1.0,
 				GridBagConstraints.NORTH, GridBagConstraints.NONE, 
 				new Insets(2, 4, 2, 4), 0, 0));
 
@@ -733,7 +736,7 @@ public class SearchCriteriaEditPanel
 		goesSpacecraftCombo.setEnabled(true);
 		iridiumCheck.setSelected(true);
 		networkDcpCheck.setSelected(true);
-		modemDcpCheck.setSelected(true);
+//		modemDcpCheck.setSelected(true);
 		parityCheck.setSelected(true);
 		parityCheckCombo.setEnabled(true);
 	}
@@ -747,7 +750,7 @@ public class SearchCriteriaEditPanel
 		goesSpacecraftCombo.setEnabled(false);
 		iridiumCheck.setSelected(false);
 		networkDcpCheck.setSelected(false);
-		modemDcpCheck.setSelected(false);
+//		modemDcpCheck.setSelected(false);
 		parityCheck.setSelected(false);
 		parityCheckCombo.setEnabled(false);
 	}
@@ -1092,10 +1095,10 @@ public class SearchCriteriaEditPanel
 					iridiumCheck.setSelected(true);
 					anythingChecked = true;
 					break;
-				case DcpMsgFlag.SRC_OTHER:
-					modemDcpCheck.setSelected(true);
-					anythingChecked = true;
-					break;
+//				case DcpMsgFlag.SRC_OTHER:
+//					modemDcpCheck.setSelected(true);
+//					anythingChecked = true;
+//					break;
 				case DcpMsgFlag.MSG_TYPE_GOES_ST:
 					goesSelfTimedCheck.setSelected(true);
 					anythingChecked = true;
@@ -1260,11 +1263,11 @@ public class SearchCriteriaEditPanel
 			sc.addSource(DcpMsgFlag.SRC_IRIDIUM);
 			sourcesChecked = true;
 		}
-		if (modemDcpCheck.isSelected())
-		{
-			sc.addSource(DcpMsgFlag.SRC_OTHER);
-			sourcesChecked = true;
-		}
+//		if (modemDcpCheck.isSelected())
+//		{
+//			sc.addSource(DcpMsgFlag.SRC_OTHER);
+//			sourcesChecked = true;
+//		}
 
 		if (goesQualityCheck.isSelected())
 		{
@@ -1348,7 +1351,7 @@ public class SearchCriteriaEditPanel
 		goesSpacecraftCombo.setEnabled(isLrgsType);
 		iridiumCheck.setEnabled(isLrgsType);
 		networkDcpCheck.setEnabled(isLrgsType);
-		modemDcpCheck.setEnabled(isLrgsType);
+//		modemDcpCheck.setEnabled(isLrgsType);
 		parityCheck.setEnabled(isLrgsType);
 		parityCheckCombo.setEnabled(isLrgsType);
 		selectFromPdtButton.setEnabled(isLrgsType);
