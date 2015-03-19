@@ -105,7 +105,8 @@ public class ScadaRetrieve
 	private String tagList = "";
 	private static final String queryTemplateDefault = 
 		"SELECT v_AnalogHistory.DateTime, v_AnalogHistory.TagName, "
-		+ "Right(Str([Value]),25) AS data, v_AnalogHistory.Quality "
+		+ "Value AS data, v_AnalogHistory.Quality "
+//		+ "Right(Str([Value]),25) AS data, v_AnalogHistory.Quality "
 		+ "FROM v_AnalogHistory "
 		+ "WHERE v_AnalogHistory.DateTime>GETDATE()-$numdays AND "
 		+ "lower(v_AnalogHistory.TagName) IN ($TAGLIST)";
@@ -278,6 +279,8 @@ public class ScadaRetrieve
 				String data = rs.getString(3);
 				String quality = rs.getString(4);
 				
+debug("row: ds='" + ds + "', tag='" + tag + "', data='" + data + "', qual='" + quality + "'");
+				
 				if (ds == null || tag == null)
 				{
 					debug("Discarding null result row: " + ds + ", " + tag + ", "
@@ -340,7 +343,7 @@ public class ScadaRetrieve
 					y1 = Double.parseDouble(lastRow.getData().trim());
 					y2 = Double.parseDouble(sqr.getData().trim());
 					long dt = t2 - t1;
-					if (dt < DISPLAY_INTERVAL_MS*4) // can only interpolate 4 intervals.
+					if (dt > 0 && dt < DISPLAY_INTERVAL_MS*4) // can only interpolate 4 intervals.
 					{
 						double dy = y2 - y1;
 						double slope = dy / (double)dt;
@@ -349,9 +352,10 @@ public class ScadaRetrieve
 							t < t2; t += DISPLAY_INTERVAL_MS)
 						{
 							double v = y1 + ((t-t1) / (double)dt) * slope;
-							displayRows.add(
-								new ScadaQueryRow(new Date(t), sqr.getTag(), 
-									numberFormat.format(v), sqr.getQuality()));
+							ScadaQueryRow nr = new ScadaQueryRow(new Date(t), sqr.getTag(), 
+								numberFormat.format(v), sqr.getQuality());
+							displayRows.add(nr);
+debug("Added interpolated " + nr);
 						}
 					}
 				}
