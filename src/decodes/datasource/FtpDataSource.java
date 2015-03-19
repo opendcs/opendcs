@@ -8,6 +8,7 @@ import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
+import ilex.var.Variable;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -55,7 +56,10 @@ public class FtpDataSource
 			+ "after retrieval. (May be disallowed on some servers.)"),
 		new PropertySpec("ftpActiveMode", PropertySpec.BOOLEAN,
 			"FTP Data Source: (default=false for passive mode) Set to true to " +
-			"use FTP active mode.")
+			"use FTP active mode."),
+		new PropertySpec("nameIsMediumId", PropertySpec.BOOLEAN,
+			"Use with OneMessageFile=true if the downloaded filename is to be treated as a medium ID"
+			+ " in order to link this data with a platform.")
 	};
 	
 	private String host = null;
@@ -309,6 +313,8 @@ public class FtpDataSource
 		currentFile = downloadedFiles.get(downloadedFileIndex++);
 		currentFileDS = new FileDataSource();
 		allProps.setProperty("filename", currentFile.getPath());
+		if (TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(allProps, "NameIsMediumId")))
+			allProps.setProperty("mediumid", currentFile.getName());
 		
 		currentFileDS.init(allProps, mySince, myUntil, myNetworkLists);
 	}
