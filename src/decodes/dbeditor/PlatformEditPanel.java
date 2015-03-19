@@ -4,6 +4,9 @@
  *  Open Source Software
  *  
  *  $Log$
+ *  Revision 1.3  2015/01/14 17:22:51  mmaloney
+ *  Polling implementation
+ *
  *  Revision 1.2  2014/08/29 18:24:35  mmaloney
  *  6.1 Schema Mods
  *
@@ -787,6 +790,7 @@ ConfigSelectController
 			Database.getDb().platformList.removePlatform(origPlatform);
 			Database.getDb().platformList.add(thePlatform);
 			Database.getDb().platformList.write();
+			parent.getPlatformListPanel().replacePlatform(origPlatform, thePlatform);
 			parent.getPlatformListPanel().reSort();
 
 			// If any transport media have changed, and those media were in a netlist,

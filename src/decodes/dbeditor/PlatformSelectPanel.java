@@ -276,17 +276,19 @@ class PlatformSelectTableModel extends AbstractTableModel
 	void addPlatform(Platform ob)
 	{
 		Database.getDb().platformList.add(ob);
+		platformList.add(ob);
 		reSort();
 		fireTableDataChanged();
 	}
 
 	void deletePlatformAt(int index)
 	{
-		platformList.remove(index);
+		deletePlatform(platformList.get(index));
 	}
 
 	void deletePlatform(Platform ob)
 	{
+		platformList.remove(ob);
 		try
 		{
 			if (ob.idIsSet())
@@ -305,7 +307,10 @@ class PlatformSelectTableModel extends AbstractTableModel
 	void replacePlatform(Platform oldp, Platform newp)
 	{
 		Database.getDb().platformList.removePlatform(oldp);
+		if (!platformList.remove(oldp))
+			Logger.instance().debug3("oldp was not in list.");
 		addPlatform(newp);
+		fireTableDataChanged();
 	}
 
 	public int getColumnCount() { return columnNames.length; }
