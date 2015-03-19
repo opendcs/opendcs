@@ -14,6 +14,7 @@ package decodes.util;
 
 import java.util.HashMap;
 import java.util.Collection;
+import java.util.Random;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -21,7 +22,6 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 
 import decodes.db.Database;
-
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.ServerLock;
@@ -148,6 +148,7 @@ public class Pdt
 	
 	public void stopMaintenanceThread()
 	{
+		Logger.instance().debug3("Pdt.stopMaintenanceThread()");
 		if (mthread != null)
 			mthread.shutdown = true;
 		mthread = null;
@@ -162,6 +163,8 @@ public class Pdt
 		long lastDownload = 0L;
 		Pdt pdt = null;
 		boolean shutdown = false;
+		Random random = new Random();
+		boolean doDownload = false;
 
 		PdtMaintenanceThread(Pdt pdt, String url, String fn)
 		{
@@ -200,33 +203,31 @@ public class Pdt
 					}
 				}
 				final ServerLock mylock = new ServerLock(lockpath);
+				mylock.setCritical(false);
 
 				if (mylock.obtainLock())
 				{
+					doDownload = true;
 					mylock.releaseOnExit();
-					Runtime.getRuntime().addShutdownHook(
-						new Thread()
+				}
+				Runtime.getRuntime().addShutdownHook(
+					new Thread()
+					{
+						public void run()
 						{
-							public void run()
-							{
-								stopMaintenanceThread();
-							}
-						});
-				}
-				else
-				{
-					Logger.instance().info(
-						"PDT Download not started: lock file busy: " + lockpath);
-					stopMaintenanceThread();
-				}
+							stopMaintenanceThread();
+						}
+					});
 			}
-			Logger.instance().info("Starting PDT Maintenance Thread, url='"
-				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + pdtfile.getPath());
 			
 			if (pdtfile.canRead())
 				lastDownload = pdtfile.lastModified();
 
+			Logger.instance().debug1("Starting PDT Maintenance Thread, url='"
+				+ url + "', localfile='" + localfn + "'"
+				+ ", localpath=" + pdtfile.getPath() + ", lastDownload=" + lastDownload + ", shutdown="+shutdown
+				+ ", doDownload=" + doDownload);
+			
 			while(!shutdown)
 			{
 				if (pdtfile.lastModified() > lastLoad)
@@ -234,17 +235,21 @@ public class Pdt
 					lastLoad = System.currentTimeMillis();
 					pdt.load(pdtfile);
 				}
-				if (url != null && url.length() > 0
-				 && !url.equals("-")
-				 && System.currentTimeMillis() - lastDownload 
-				 	> downloadIntervalMsec)
+				if (doDownload)
 				{
-					lastDownload = System.currentTimeMillis();
-					DownloadPdtThread lpt = 
-						new DownloadPdtThread(url, localfn, pdt);
-					lpt.start();
+					if (url != null && url.length() > 0 && !url.equals("-")
+					 && System.currentTimeMillis() - lastDownload > downloadIntervalMsec)
+					{
+						lastDownload = System.currentTimeMillis();
+						DownloadPdtThread lpt = 
+							new DownloadPdtThread(url, localfn, pdt);
+						lpt.start();
+					}
 				}
-				try { sleep(fileCheckIntervalMsec); }
+				
+				// 30 min + random # seconds between 0...31
+				long interval = fileCheckIntervalMsec + (random.nextInt() & 0x1f) * 1000L;
+				try { sleep(interval); }
 				catch(InterruptedException ex) {}
 			}
 		}

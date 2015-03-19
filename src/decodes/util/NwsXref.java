@@ -5,6 +5,9 @@
  * Author: Mike Maloney, Cove Software, LLC
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2013/03/28 19:19:32  mmaloney
  * User temp files are now placed under DCSTOOL_USERDIR which may be different
  * from DCSTOOL_HOME on linux/unix multi-user installations.
@@ -27,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Random;
 
 import lrgs.common.DcpAddress;
 
@@ -171,6 +175,8 @@ public class NwsXref
 		long lastDownload = 0L;
 		NwsXref xref = null;
 		boolean shutdown = false;
+		Random random = new Random();
+		boolean doDownload = false;
 
 		MaintenanceThread(NwsXref xref, String url, String fn)
 		{
@@ -209,29 +215,25 @@ public class NwsXref
 					}
 				}
 				final ServerLock mylock = new ServerLock(lockpath);
+				mylock.setCritical(false);
 
 				if (mylock.obtainLock())
 				{
+					doDownload = true;
 					mylock.releaseOnExit();
-					Runtime.getRuntime().addShutdownHook(
-						new Thread()
+				}
+				Runtime.getRuntime().addShutdownHook(
+					new Thread()
+					{
+						public void run()
 						{
-							public void run()
-							{
-								stopMaintenanceThread();
-							}
-						});
-				}
-				else
-				{
-					Logger.instance().info(
-						"NwsXref Download not started: lock file busy: " + lockpath);
-					stopMaintenanceThread();
-				}
+							stopMaintenanceThread();
+						}
+					});
 			}
-			Logger.instance().info("Starting NwsXref Maintenance Thread, url='"
+			Logger.instance().debug1("Starting NwsXref Maintenance Thread, url='"
 				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + localfile.getPath());
+				+ ", localpath=" + localfile.getPath() + ", doDownload=" + doDownload);
 			
 			if (localfile.canRead())
 				lastDownload = localfile.lastModified();
@@ -243,17 +245,19 @@ public class NwsXref
 					lastLoad = System.currentTimeMillis();
 					xref.load(localfile);
 				}
-				if (url != null && url.length() > 0
-				 && !url.equals("-")
-				 && System.currentTimeMillis() - lastDownload 
-				 	> Pdt.downloadIntervalMsec)
+				if (doDownload)
 				{
-					lastDownload = System.currentTimeMillis();
-					DownloadNwsXrefThread lpt = 
-						new DownloadNwsXrefThread(url, localfn, xref);
-					lpt.start();
+					if (url != null && url.length() > 0 && !url.equals("-")
+					 && System.currentTimeMillis() - lastDownload > Pdt.downloadIntervalMsec)
+					{
+						lastDownload = System.currentTimeMillis();
+						DownloadNwsXrefThread lpt = 
+							new DownloadNwsXrefThread(url, localfn, xref);
+						lpt.start();
+					}
 				}
-				try { sleep(Pdt.fileCheckIntervalMsec); }
+				long interval = Pdt.fileCheckIntervalMsec + (random.nextInt() & 0x1f) * 1000L;
+				try { sleep(interval); }
 				catch(InterruptedException ex) {}
 			}
 		}

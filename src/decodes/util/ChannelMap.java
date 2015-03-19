@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.6  2013/03/28 19:19:32  mmaloney
 *  User temp files are now placed under DCSTOOL_USERDIR which may be different
 *  from DCSTOOL_HOME on linux/unix multi-user installations.
@@ -319,6 +322,8 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 		long lastDownload = 0L;
 		private ChannelMap cmap;
 		boolean shutdown = false;
+		Random random = new Random();
+		boolean doDownload = false;
 
 		ChanMaintenanceThread(ChannelMap cmap, String url, String fn)
 		{
@@ -356,29 +361,25 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 					}
 				}
 				final ServerLock mylock = new ServerLock(lockpath);
+				mylock.setCritical(false);
 
 				if (mylock.obtainLock())
 				{
+					doDownload = true;
 					mylock.releaseOnExit();
-					Runtime.getRuntime().addShutdownHook(
-						new Thread()
+				}
+				Runtime.getRuntime().addShutdownHook(
+					new Thread()
+					{
+						public void run()
 						{
-							public void run()
-							{
-								stopMaintenanceThread();
-							}
-						});
-				}
-				else
-				{
-					Logger.instance().info(
-						"CDT Download not started: lock file busy: " + lockpath);
-					stopMaintenanceThread();
-				}
+							stopMaintenanceThread();
+						}
+					});
 			}
-			Logger.instance().info("Starting CDT Maintenance Thread, url='"
+			Logger.instance().debug1("Starting CDT Maintenance Thread, url='"
 				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + channelsfile.getPath());
+				+ ", localpath=" + channelsfile.getPath() + ", doDownload=" + doDownload);
 
 			if (channelsfile.canRead())
 				lastDownload = channelsfile.lastModified();
@@ -391,16 +392,19 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 					lastLoad = System.currentTimeMillis();
 					cmap.load(channelsfile);
 				}
-				if (url != null && url.length() > 0
-				 && System.currentTimeMillis() - lastDownload > 
-					Pdt.downloadIntervalMsec)
+				if (doDownload)
 				{
-					lastDownload = System.currentTimeMillis();
-					DownloadChannelMapThread downloadThread  = 
-						new DownloadChannelMapThread(url, localfn, cmap);
-					downloadThread.start();
+					if (url != null && url.length() > 0 && !url.equals("-")
+					 && System.currentTimeMillis() - lastDownload > Pdt.downloadIntervalMsec)
+					{
+						lastDownload = System.currentTimeMillis();
+						DownloadChannelMapThread downloadThread = 
+							new DownloadChannelMapThread(url, localfn, cmap);
+						downloadThread.start();
+					}
 				}
-				try { sleep(600000L); }
+				long interval = Pdt.fileCheckIntervalMsec + (random.nextInt() & 0x1f) * 1000L;
+				try { sleep(interval); }
 				catch(InterruptedException ex) {}
 			}
 		}
