@@ -4,7 +4,9 @@
 package decodes.dcpmon;
 
 import ilex.util.Logger;
+import ilex.var.IFlags;
 import ilex.var.NoConversionException;
+import ilex.var.TimedVariable;
 import ilex.var.Variable;
 
 import java.io.OutputStream;
@@ -320,16 +322,20 @@ Logger.instance().debug2("DcpMonitorConsumer.startMessage() msg=" + msg.getRawMe
 		}
 		if (batt_ts != null)
 		{
-			// Take the most recent sample
+			// Take the most recent sample that's not flagged as missing and is in proper range.
 			batt_ts.sort();
-			try
+			for(int idx = batt_ts.size()-1; idx >= 0; idx--)
 			{
-				double bv = 
-					batt_ts.sampleAt(batt_ts.size()-1).getDoubleValue();
-				return (float)bv;
-			}
-			catch(ilex.var.NoConversionException ex)
-			{
+				try
+				{
+					TimedVariable tv = batt_ts.sampleAt(idx);
+					if ((tv.getFlags() & (IFlags.IS_ERROR|IFlags.IS_MISSING)) != 0)
+						continue;
+					double bv = tv.getDoubleValue();
+					if (bv > 0.0 && bv < 20.)
+						return (float)bv;
+				}
+				catch(ilex.var.NoConversionException ex) {}
 			}
 		}
 		// Either couldn't find BV or it was in a bad format.
