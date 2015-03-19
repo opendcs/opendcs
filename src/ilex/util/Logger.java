@@ -87,6 +87,8 @@ public abstract class Logger
 
 	/** If true, include process name in output messages. */
 	protected boolean useProcName;
+	
+	protected boolean insideLog = false;
 
     /**
 	* The priority names.
@@ -142,8 +144,20 @@ public abstract class Logger
 	*/
 	public void log( int priority, String text )
 	{
-		if (priority >= minLogPriority)
-			doLog(priority, text);
+		// Guard against endless recursion that could be called by a log message
+		// being generated inside the doLog method.
+		if (insideLog)
+			return;
+		insideLog = true;
+		try
+		{
+			if (priority >= minLogPriority)
+				doLog(priority, text);
+		}
+		finally
+		{
+			insideLog = false;
+		}
 	}
 
 	/**
