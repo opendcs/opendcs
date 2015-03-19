@@ -22,7 +22,6 @@
  */
 package decodes.polling;
 
-import java.io.IOException;
 
 public interface StreamReaderOwner
 {
@@ -31,7 +30,7 @@ public interface StreamReaderOwner
 	 * It means that the input stream from the station has failed.
 	 * @param ex the exception thrown
 	 */
-	void inputError(IOException ex);
+	void inputError(Exception ex);
 	
 	/**
 	 * Called by the input StreamReader when end of stream (-1) is received.

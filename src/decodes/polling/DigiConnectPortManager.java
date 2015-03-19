@@ -23,6 +23,7 @@
 package decodes.polling;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -47,6 +48,8 @@ public class DigiConnectPortManager
 	/** Calling threads wait this long for a configuration to succeed. */
 	public static final long WAIT_FOR_CONFIG_MS = 60000L;
 	
+	public static final long MaxConsecutiveConfigFails = 10;
+	
 	private DigiConnectPortPool parent = null;
 	private byte[] digiPrompt = "#>".getBytes(); 
 	private String captured = null;
@@ -56,6 +59,7 @@ public class DigiConnectPortManager
 	private ArrayBlockingQueue<AllocatedSerialPort> configQueue = 
 		new ArrayBlockingQueue<AllocatedSerialPort>(500);
 
+	private int consecutiveConfigFails = 0;
 
 	public DigiConnectPortManager(DigiConnectPortPool parent)
 	{
@@ -208,32 +212,25 @@ public class DigiConnectPortManager
 			
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
 			{
-				// Failed to get prompt after sending set serial command. 
-				asp.ioPort.setConfigureState(PollingThreadState.Failed);
-				return;
+				throw new IOException("No response or invalid response to set serial");
 			}
 			
 			cmd = "show serial port=" + asp.ioPort.getPortNum() + EOL;
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
-			{
-				// Failed to get prompt after sending show serial command.
-				asp.ioPort.setConfigureState(PollingThreadState.Failed);
-				return;
-			}
+				throw new IOException("No response or invalid response to show serial");
 			
 			if (!verifySettings(asp.ioPort.getPortNum(), asp.transportMedium))
-			{
-				// This means that the set command failed to make the required settings
-				asp.ioPort.setConfigureState(PollingThreadState.Failed);
-				return;
-			}
+				throw new IOException("verify settings failed. Response was '" + captured + "'");
 			
 			asp.ioPort.setConfigureState(PollingThreadState.Success);
+			consecutiveConfigFails = 0;
 		}
 		catch (Exception ex)
 		{
+			consecutiveConfigFails++;
 			Logger.instance().failure(module + " Error sending '" + cmd
-				+ "' to digi device " + telnetCon.getName() + ": " + ex);
+				+ "' to digi device " + telnetCon.getName() + ", consecutive failure=" 
+				+ consecutiveConfigFails + ": " + ex);
 			asp.ioPort.setConfigureState(PollingThreadState.Failed);
 		}
 		finally
@@ -246,6 +243,88 @@ public class DigiConnectPortManager
 			}
 			telnetCon.disconnect();
 		}
+		if (consecutiveConfigFails > MaxConsecutiveConfigFails)
+			tryRebootDigi();
+	}
+
+
+	private void tryRebootDigi()
+	{
+		String s = "There have been " + consecutiveConfigFails 
+			+ " consecutive configuration failures. Rebooting digi device.";
+		Logger.instance().warning(s);
+		System.out.println((new Date()).toString() + " " + s);
+		consecutiveConfigFails = 0;
+		
+		// Connect to telnet port 23 on digi device.
+		BasicClient telnetCon = new BasicClient(parent.getDigiIpAddr(), 23);
+		StreamReader streamReader = null;
+		String cmd = null;
+		boolean success = false;
+		try
+		{
+			Logger.instance().info(module + ".tryRebootDigi() connecting to " + telnetCon.getName());
+			telnetCon.connect();
+			
+			Logger.instance().info(module + ".tryRebootDigi() spawning StreamReader to read telnet 23 port.");
+			
+			streamReader = new StreamReader(telnetCon.getInputStream(), this);
+			streamReader.setCapture(true);
+			streamReader.start();
+			
+			// Login with supplied username & password
+			cmd = "(initial connect)";
+			if (!sendAndAwaitResponse(null, 5, "login:".getBytes(), telnetCon, streamReader))
+			{
+				byte[] sessionBuf = streamReader.getSessionBuf();
+				throw new IOException("Never got login prompt from digiconnect device " 
+					+ parent.getDigiIpAddr() + ", received " + sessionBuf.length + " bytes: "
+					+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
+			}
+			cmd = parent.getDigiUserName()+EOL;
+			if (!sendAndAwaitResponse(cmd.getBytes(), 5, "Password:".getBytes(), telnetCon, streamReader))
+				throw new IOException("Never got password prompt from digiconnect device " 
+					+ parent.getDigiIpAddr());
+			cmd = parent.getDigiPassword()+EOL;
+			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
+			{
+				if (!sendAndAwaitResponse(EOL.getBytes(), 3, digiPrompt, telnetCon, streamReader))
+					throw new IOException("Never got initial prompt after login from digiconnect device " 
+						+ parent.getDigiIpAddr());
+			}
+			
+			cmd = "boot action=reset" + EOL;
+			telnetCon.sendData(cmd.getBytes());
+
+			// There won't be any further prompts.
+			consecutiveConfigFails = 0;
+			success = true;
+		}
+		catch (Exception ex)
+		{
+			Logger.instance().failure(module + ".tryRebootDigi() Error sending '" + cmd
+				+ "' to digi device " + telnetCon.getName() + ": " + ex);
+		}
+		finally
+		{
+			Logger.instance().info(module + ".tryRebootDigi() Closing telnet 23 to digi.");		
+			if (streamReader != null)
+			{
+				streamReader.shutdown();
+				try { sleep(100L); } catch(InterruptedException ex) {}
+			}
+			telnetCon.disconnect();
+		}
+		if (success)
+		{
+			Logger.instance().info(module + ".tryRebootDigi() Successfully rebooted "
+				+ parent.getDigiIpAddr() + " -- will wait 30 sec before continuing.");
+			// Digi takes about 30 sec to reboot.
+			try { sleep(30000L); } catch(InterruptedException ex) {}
+			Logger.instance().info(module + ".tryRebootDigi() Continuing after digi reboot.");
+		}
+		else
+			Logger.instance().failure(module + ".tryRebootDigi() -- reboot failed.");
 	}
 
 
@@ -384,7 +463,7 @@ public class DigiConnectPortManager
 
 
 	@Override
-	public void inputError(IOException ex)
+	public void inputError(Exception ex)
 	{
 		// TODO Auto-generated method stub
 		

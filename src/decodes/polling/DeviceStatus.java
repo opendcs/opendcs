@@ -150,6 +150,8 @@ public class DeviceStatus
 	
 	public String getLastErrorTimeStr()
 	{
+		if (lastErrorTime == null)
+			return "";
 		synchronized(sdf) { return sdf.format(lastErrorTime); }
 	}
 

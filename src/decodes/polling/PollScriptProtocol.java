@@ -382,7 +382,7 @@ public class PollScriptProtocol
 	}
 	
 	@Override
-	public void inputError(IOException ex)
+	public void inputError(Exception ex)
 	{
 		pollingThread.warning("input error: " + ex);
 		abnormalShutdown = ex;

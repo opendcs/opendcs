@@ -26,6 +26,7 @@ import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 
 import java.io.IOException;
+import java.util.Date;
 
 import decodes.db.TransportMedium;
 
@@ -49,7 +50,7 @@ public class ModemDialer
 	private String AT = "AT" + EOL;
 	private double AtWaitSec = 5.0;
 	private double ConnectWaitSec = 90.0;
-	private IOException readError = null;
+	private Exception readError = null;
 	private String Break = "+++";
 	private String Hangup = "ATZ" + EOL;
 	private boolean _inputClosed = false;
@@ -85,9 +86,11 @@ public class ModemDialer
 		boolean portError = true;
 		try
 		{
-			ioPort.getOut().write(EOL.getBytes()); ioPort.getOut().flush();
+			ioPort.getOut().write(EOL.getBytes());
+			ioPort.getOut().flush();
 			try { Thread.sleep(500L); } catch(InterruptedException ex) {}
-			ioPort.getOut().write(EOL.getBytes()); ioPort.getOut().flush();
+			ioPort.getOut().write(EOL.getBytes());
+			ioPort.getOut().flush();
 			try { Thread.sleep(500L); } catch(InterruptedException ex) {}
 			
 			streamReader.flushBacklog();
@@ -139,11 +142,21 @@ public class ModemDialer
 		{
 			throw new DialException("IOException while " + what + ": " + ex, portError);
 		}
+		catch(DialException ex)
+		{
+			throw ex;
+		}
+		catch(Exception ex)
+		{
+			String msg = " Unexpected Exception while " + what + ": " + ex;
+			System.err.println((new Date()).toString() + msg);
+			ex.printStackTrace(System.err);
+			throw new DialException(msg, portError);
+		}
 		finally
 		{
 			streamReader.shutdown();
 		}
-			
 	}
 
 	@Override
@@ -176,7 +189,7 @@ public class ModemDialer
 	}
 
 	@Override
-	public void inputError(IOException ex)
+	public void inputError(Exception ex)
 	{
 		readError = ex;
 		pollingThread.annotate(module + " Input Error: " + ex);

@@ -25,6 +25,7 @@ package decodes.polling;
 import ilex.util.Logger;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import opendcs.dai.PlatformStatusDAI;
 import decodes.db.Database;
@@ -91,8 +92,33 @@ public class PollingThreadController
 		_shutdown = false;
 
 		// Construct a PollingThread runnable for each Transport Medium
+		Date now = new Date();
 		for(int idx = 0; idx < aggTMList.size(); idx++)
+		{
+			Platform p = aggTMList.get(idx).platform;
+			if (p == null)
+			{
+				// This should not happen.
+				dataSource.log(Logger.E_WARNING, module + " Not polling TM '" 
+					+ aggTMList.get(idx).getMediumId() +"' because no associated platform.");
+				continue;
+			}
+			if (p.getIgnoreSeason() != null && p.getIgnoreSeason().isInSeason(now))
+			{
+				dataSource.log(Logger.E_INFORMATION, module + " Not polling platform "
+					+ p.makeFileName() + " because we are in its ignoreSeason '"
+					+ p.getIgnoreSeason().getName() + "'");
+				continue;
+			}
+			if (p.getProcessSeason() != null && !p.getProcessSeason().isInSeason(now))
+			{
+				dataSource.log(Logger.E_INFORMATION, module + " Not polling platform "
+					+ p.makeFileName() + " because we are NOT in its processSeason '"
+					+ p.getProcessSeason().getName() + "'");
+				continue;
+			}
 			threads.add(new PollingThread(this, dataSource, aggTMList.get(idx)));
+		}
 		if (threads.size() == 0)
 		{
 			dataSource.log(Logger.E_WARNING, "There are no stations to poll in the list.");
@@ -129,14 +155,15 @@ public class PollingThreadController
 					}
 					else // start a new poll on the allocated port.
 					{
+						pt.setState(PollingThreadState.Running);
+						pt.setSaveSessionFile(saveSessionFile);
+						pt.setIoPort(ioPort);
+						pt.setThreadStart(new Date());
 						dataSource.log(Logger.E_DEBUG1, module + " starting " 
 							+ pt.getModule()
 							+ ", TM " + pt.getTransportMedium()
 							+ " on port number " + ioPort.getPortNum()
 							+ ", pollPriority=" + pt.getPollPriority());
-						pt.setState(PollingThreadState.Running);
-						pt.setSaveSessionFile(saveSessionFile);
-						pt.setIoPort(ioPort);
 						(new Thread(pt)).start();
 					}
 				}
@@ -198,6 +225,7 @@ public class PollingThreadController
 			 && System.currentTimeMillis() - pt.getThreadStart().getTime() > 
 				THREAD_MAX_RUN_TIME)
 			{
+				dataSource.log(Logger.E_WARNING, "Killing dead thread " + pt.getModule());
 				pt.shutdown();
 				pt.setState(PollingThreadState.Failed);
 				pollComplete(pt);

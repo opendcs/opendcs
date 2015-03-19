@@ -153,8 +153,9 @@ public class PollingThread
 			// Construct protocol according to transportMedium.loggerType
 			if (!_shutdown)
 				makeProtocol();
+			if (protocol == null)
+				throw new ConfigException("Protocol is null after makeProtocol -- should never happen.");
 			protocol.setPollSessionLogger(pollSessionLogger);
-			
 			
 			if (!_shutdown)
 				protocol.login(ioPort, transportMedium);
@@ -162,14 +163,17 @@ public class PollingThread
 			if (!_shutdown)
 			{
 				DcpMsg dcpMsg = protocol.getData(ioPort, transportMedium, since);
-				RawMessage ret = new RawMessage(dcpMsg.getData());
-				ret.setOrigDcpMsg(dcpMsg);
-				ret.setPlatform(transportMedium.platform);
-				ret.setTimeStamp(dcpMsg.getXmitTime());
-				dataSource.enqueueMsg(ret);
-				platformStatus.setLastMessageTime(new Date());
-				platformStatus.setLastFailureCodes("" + dcpMsg.getFailureCode());
-				platformStatus.setAnnotation("");
+				if (dcpMsg != null)
+				{
+					RawMessage ret = new RawMessage(dcpMsg.getData());
+					ret.setOrigDcpMsg(dcpMsg);
+					ret.setPlatform(transportMedium.platform);
+					ret.setTimeStamp(dcpMsg.getXmitTime());
+					dataSource.enqueueMsg(ret);
+					platformStatus.setLastMessageTime(new Date());
+					platformStatus.setLastFailureCodes("" + dcpMsg.getFailureCode());
+					platformStatus.setAnnotation("");
+				}
 			}
 			
 			protocol.goodbye(ioPort, transportMedium);
@@ -417,6 +421,11 @@ public class PollingThread
 	public Date getThreadStart()
 	{
 		return threadStart;
+	}
+
+	public void setThreadStart(Date threadStart)
+	{
+		this.threadStart = threadStart;
 	}
 	
 }

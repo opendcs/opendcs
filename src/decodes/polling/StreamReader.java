@@ -105,6 +105,17 @@ public class StreamReader
 				owner.inputError(ex);
 			_shutdown = true;
 		}
+		catch(Exception ex)
+		{
+			String msg = module + " Unexpected exception: " + ex;
+			Logger.instance().warning(msg);
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
+			if (owner != null)
+				owner.inputError(ex);
+			_shutdown = true;
+
+		}
 		Logger.instance().debug1(module + " exiting.");
 	}
 	

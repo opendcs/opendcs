@@ -121,9 +121,13 @@ public class DigiConnectPortPool
 				{
 					String t = st.nextToken();
 					int hyphen = t.indexOf('-');
+Logger.instance().debug1(module + " token '" + t + "' hyphen=" + hyphen);
 					if (hyphen == -1)
 					{
-						portNames.add(digiIpAddr + ":" + Integer.parseInt(t));
+						int portnum = Integer.parseInt(t);
+						String n = digiIpAddr + ":" + (portnum<10?"0":"") + portnum;
+Logger.instance().debug1(module + "   adding " + n);
+						portNames.add(n);
 					}
 					else
 					{
@@ -133,7 +137,12 @@ public class DigiConnectPortPool
 							throw new ConfigException("Invalid range '" + t + "' in availablePorts property '"
 								+ s + "'");
 						while(start <= end)
-							portNames.add(digiIpAddr + ":" + start++);
+						{
+							int portnum = start++;
+							String n = digiIpAddr + ":" + (portnum<10?"0":"") + portnum;
+Logger.instance().debug1(module + "   adding " + n);
+							portNames.add(n);
+						}
 					}
 				}
 			}
@@ -289,7 +298,7 @@ Logger.instance().debug3(module + " success. returning port " + ret.getPortNum()
 	public synchronized void releasePort(IOPort ioPort, PollingThreadState finalState,
 		boolean wasConnectException)
 	{
-		Logger.instance().debug1(module + " releasePort starting.");
+		Logger.instance().debug1(module + " releasePort starting for port " + ioPort.getPortName());
 		// Close the socket and remove it from my allocatedPorts
 		AllocatedSerialPort allocatedPort = null;
 		for (AllocatedSerialPort ap : allocatedPorts)
@@ -419,7 +428,7 @@ Logger.instance().debug3(module + " releasePort returning.");
 		// I'm seeing broken pipe on sending init string. Try waiting two seconds after
 		// configuring before actually opening the socket to the port.
 		try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-		Logger.instance().debug2(module + " Connecting to " + allocatedPort.basicClient.getHost()
+		Logger.instance().debug1(module + " Connecting to " + allocatedPort.basicClient.getHost()
 			+ ":" + allocatedPort.basicClient.getPort());
 		try
 		{
