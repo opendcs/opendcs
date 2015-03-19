@@ -697,7 +697,7 @@ class PropertiesTableModel extends AbstractTableModel
 						if (s1 == null || s1.trim().length() == 0)
 						{
 							if (s2 == null || s2.trim().length() == 0)
-								return o1.first.compareTo(o2.first);
+								return o1.first.compareToIgnoreCase(o2.first);
 							else // sort non-empty strings to the front
 								return 1;
 						}
@@ -705,10 +705,10 @@ class PropertiesTableModel extends AbstractTableModel
 						{
 							if (s2 == null || s2.trim().length() == 0)
 								return -1;
-							int r = s1.compareTo(s2);
+							int r = s1.compareToIgnoreCase(s2);
 							if (r != 0)
 								return r;
-							return o1.first.compareTo(o2.first);
+							return o1.first.compareToIgnoreCase(o2.first);
 						}
 					}
 				});
