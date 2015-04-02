@@ -310,12 +310,18 @@ public class LrgsConfig
 	 */
 	private PropertySpec miscPropSpecs[] = 
 	{
-		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
-			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
+		new PropertySpec("loadDecodes", PropertySpec.BOOLEAN,
+			"Set to true to have DECODES database loaded at LRGS startup. Used in some"
+			+ " circumstances to resolve network lists for DDS Receive"),
+//		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
+//			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
 	};
 	
-	
-	private Properties otherProps = new Properties();
+	/** 
+	 * This needs to be public so that PropertiesUtil.loadFromProps will add
+	 * properties with names that don't match public attributes to it.
+	 */
+	public Properties otherProps = new Properties();
 
 	public static LrgsConfig instance()
 	{
@@ -504,6 +510,11 @@ public class LrgsConfig
 	{
 		return getMiscBooleanProperty("noTimeout", false);
 	}
+	
+	public boolean getLoadDecodes()
+	{
+		return getMiscBooleanProperty("loadDecodes", false);
+	}
 
 	public String getSangomaIfName()
 	{
@@ -521,11 +532,6 @@ public class LrgsConfig
 	/** @return URL for downloading channel map - default = nesdis ftp site */
 	public String getChannelMapUrl() { return channelMapUrl; }
 	
-	public boolean getLoadDecodes()
-	{
-		return getMiscBooleanProperty("loadDecodes", false);
-	}
-
 	public Properties getOtherProps()
 	{
 		return otherProps;
