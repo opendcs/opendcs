@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.7  2015/01/23 19:15:53  mmaloney
+*  Improved debugs on CWMS qualcode in getNewData
+*
 *  Revision 1.6  2014/12/23 14:11:57  mmaloney
 *  Explicitly reference hec.data.Units after connect to pre-initialize it.
 *
@@ -591,6 +594,10 @@ public class CwmsTimeSeriesDb
 	public static final int CWMS_V_3_0 = 30;
 	private int cwmsSchemaVersion = 0;
 	
+	private String dbUri = null;
+	private String jdbcOracleDriver = null;
+	
+	
 	/**
 	 * No args constructor required because this is instantiated from
 	 * the class name.
@@ -621,8 +628,10 @@ public class CwmsTimeSeriesDb
 	public DbKey connect( String appName, Properties credentials )
 		throws BadConnectException
 	{
-		String driverClass = DecodesSettings.instance().jdbcDriverClass;
-		String dbUri = DecodesSettings.instance().editDatabaseLocation;
+		String driverClass = this.jdbcOracleDriver != null ? this.jdbcOracleDriver :
+			DecodesSettings.instance().jdbcDriverClass;
+		String dbUri = this.dbUri != null ? this.dbUri :
+			DecodesSettings.instance().editDatabaseLocation;
 		
 		String username = credentials.getProperty("username");
 		String password = credentials.getProperty("password");
@@ -1106,6 +1115,7 @@ public class CwmsTimeSeriesDb
 		// Reload the TSID cache every hour.
 		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
 		{
+			lastTsidCacheRead = System.currentTimeMillis();
 			TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO();
 			try { timeSeriesDAO.reloadTsIdCache(); }
 			finally { timeSeriesDAO.close(); }
@@ -1938,6 +1948,16 @@ for(CTimeSeries ts : allts)
 	public int getCwmsSchemaVersion()
 	{
 		return cwmsSchemaVersion;
+	}
+
+	public void setDbUri(String dbUri)
+	{
+		this.dbUri = dbUri;
+	}
+
+	public void setJdbcOracleDriver(String jdbcOracleDriver)
+	{
+		this.jdbcOracleDriver = jdbcOracleDriver;
 	}
 
 }
