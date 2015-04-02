@@ -371,6 +371,13 @@ public class DdsRecvConnection
 		{
 			if (!TextUtil.strEqualIgnoreCase(nga.getGroupName(), group))
 				continue;
+			if (nga.getNetworkList() == null)
+			{
+				Logger.instance().warning(DdsRecv.module +
+					" No network list found for group=" + nga.getGroupName()
+					+ " list='" + nga.getNetlistName() + "' -- ignored.");
+				continue;
+			}
 			try
 			{
 				lddsClient.sendNetList(nga.getNetworkList(), null);
@@ -384,10 +391,12 @@ public class DdsRecvConnection
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning(
-					DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED + "- " 
+				String msg = DdsRecv.module + ":" + DdsRecv.EVT_CONNECTION_FAILED + "- " 
 					+ " Error sending network list to "
-					+ lddsClient.getName() + ": " + ex);
+					+ lddsClient.getName() + ": " + ex;
+				Logger.instance().warning(msg);
+				System.err.println(msg);
+				ex.printStackTrace(System.err);
 				shutdownLrgsInput();
 				status = "Error";
 				return false;
