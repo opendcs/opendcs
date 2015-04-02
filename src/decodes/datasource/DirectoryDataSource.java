@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.4  2014/10/02 18:21:42  mmaloney
+*  FTP Data Source to handle multiple file names.
+*
 *  Revision 1.3  2014/05/30 13:15:35  mmaloney
 *  dev
 *
@@ -99,7 +102,6 @@
 */
 package decodes.datasource;
 
-import java.text.SimpleDateFormat;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.Enumeration;
@@ -110,14 +112,12 @@ import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.PropertiesUtil;
-
 import decodes.db.DataSource;
-import decodes.db.Constants;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
-import decodes.db.TransportMedium;
 import decodes.db.Platform;
 import decodes.util.DecodesSettings;
+import decodes.util.PropertySpec;
 
 
 /**
@@ -230,13 +230,64 @@ public class DirectoryDataSource extends DataSourceExec
 	private Properties allProps;
 
 	/// Expanded list of directories to search.
-	private Vector dirs;
+	private Vector<File> dirs;
 
 	/// Current index in the list of directories.
 	private int dirsIdx;
 
 	/// Used to list data files that we want.
 	private FilenameFilter fileFilter;
+	
+	private int fileRestSeconds = 0;
+	
+	private static final PropertySpec[] DDSprops =
+	{
+		new PropertySpec("directoryName", PropertySpec.DIRECTORY, 
+			"(required) name of directory to read."),
+		new PropertySpec("fileExt", PropertySpec.STRING, 
+			"If set, only process files with a matching extension. Other files are ignored."),
+		new PropertySpec("nameIsMediumId", PropertySpec.BOOLEAN,
+			"The file name contains the medium ID. Used with oneMessageFile. The medium ID"
+			+ " is the file name minus the fileExt, if one is specified. Also see"
+			+ " fileNameDelimiter"),
+		new PropertySpec("fileNameDelimiter", PropertySpec.STRING, 
+			"Used with nameIsMediumId if only the first part of the name, up to some "
+			+ "delimiter, is to be considered the medium ID. Specify the delimiter here."),
+		new PropertySpec("recursive", PropertySpec.BOOLEAN,
+			"(default=false) This means to process the tree of subdirectories under "
+			+ "the specified directoryName"),
+		new PropertySpec("subDirIsMediumId", PropertySpec.BOOLEAN,
+			"(default=false) Used with recursive. If true, then the subdirectory containing "
+			+ "the file being processed is taken as the medium ID."),
+		new PropertySpec("doneProcessing", PropertySpec.BOOLEAN,
+			"(default=true) If false, then simply delete a file after processing. If "
+			+ "true, then either rename the file with doneExt or move the file to doneDir"),
+		new PropertySpec("doneExt", PropertySpec.STRING,
+			"If set, then after processing a file, rename it by adding this extension. "
+			+ "This should be something different than fileExt to prevent the same file from "
+			+ "being processed repeatedly."),
+		new PropertySpec("doneDir", PropertySpec.DIRECTORY,
+			"If set, then after processing a file, move it to this directory."),
+		new PropertySpec("oneMessageFile", PropertySpec.BOOLEAN,
+			"(default=false) If set to true, then the entire file contents is taken to be"
+			+ " a single message for the purposes of decoding."),
+		new PropertySpec("fileNameTimeStamp", PropertySpec.BOOLEAN,
+			"(default=false) Used with oneMessageFile, fileNameDelimiter, and fileExt. "
+			+ " If true, then the characters between the dilimiter and the extension are "
+			+ "taken to contain the message time stamp, which must be in the format "
+			+ "MMDDYYYYHHMMSS"),
+		new PropertySpec("oneScanOnly", PropertySpec.BOOLEAN,
+			"(default=false) If true, then only scan the directory once. The normal "
+			+ "behavior is to repeatedly scan the directory with a brief pause between "
+			+ "each scan."),
+		new PropertySpec("gzip", PropertySpec.BOOLEAN, 
+			"(default=false) set to true to un-gzip each file before processing."),
+		new PropertySpec("fileRestSeconds", PropertySpec.INT,
+			"(default=0) Don't process files until at least this many seconds have elapsed "
+			+ "since the file was last modified. This is a way of preventing DECODES from "
+			+ "processing a file as it is being created.")
+	};
+
 	
 	/** default constructor */
 	public DirectoryDataSource()
@@ -256,7 +307,7 @@ public class DirectoryDataSource extends DataSourceExec
 		doneExt = null;
 		fileDataSource = null;
 		allProps = null;
-		dirs = new Vector();
+		dirs = new Vector<File>();
 		dirsIdx = 0;
 		siteNo ="";
 		onemessagefile = false;
@@ -364,6 +415,16 @@ public class DirectoryDataSource extends DataSourceExec
 				fileNameTimeStamp = TextUtil.str2boolean(value);
 			else if (name.equals("onescanonly"))
 				oneScanOnly = TextUtil.str2boolean(value);
+			else if (name.equals("filerestseconds"))
+			{
+				try { fileRestSeconds = Integer.parseInt(value); }
+				catch(NumberFormatException ex)
+				{
+					Logger.instance().warning("DirectoryDataSource invalid property '"
+						+ name + "' should be integer. Ignored.");
+					fileRestSeconds = 0;
+				}
+			}
 		}
 		
 		String archiveDirName = DecodesSettings.instance().archiveDataDir;
@@ -402,6 +463,12 @@ public class DirectoryDataSource extends DataSourceExec
 					File f = new File(dir, name);
 					if (!f.isFile())
 						return false;
+					if (fileRestSeconds > 0)
+					{
+						int sec = (int)((System.currentTimeMillis() - f.lastModified())/1000L);
+						if (sec < fileRestSeconds)
+							return false;
+					}
 					return fext == null || name.endsWith(fext);
 				}
 			};
@@ -442,7 +509,7 @@ public class DirectoryDataSource extends DataSourceExec
 		while(true)
 		{
 			boolean fileWasOpen = fileDataSource.isOpen();
-			RawMessage ret = scanDirectory((File)dirs.elementAt(dirsIdx));
+			RawMessage ret = scanDirectory(dirs.elementAt(dirsIdx));
 			
 			// MJM if we get null because the current file hit EOF,
 			// then try again, which will force the directory to move to the next file.
@@ -454,14 +521,10 @@ public class DirectoryDataSource extends DataSourceExec
 				if ( onemessagefile ) 
 				{
 					Platform p = ret.getPlatform();
-					if ( p != null ) 
-					{
-						if ( p.site != null ) 
-						{
-							siteNo = p.site.getDisplayName();
-						}
-					}
+					if ( p != null && p.site != null ) 
+						siteNo = p.site.getDisplayName();
 				}
+				
 				return ret;
 			}
 			else if (oneScanOnly)
@@ -474,8 +537,6 @@ public class DirectoryDataSource extends DataSourceExec
 
 			if (dirsIdx == startIdx)
 				break;
-			
-			
 		}
 
 		// Fell through means searched entire list with no success,
@@ -644,5 +705,12 @@ Logger.instance().log(Logger.E_DEBUG3,"Expanded '" + topdir.getPath()
 				expand(files[i]);
 			}
 	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return PropertiesUtil.combineSpecs(super.getSupportedProps(), DDSprops);
+	}
+
 }
 
