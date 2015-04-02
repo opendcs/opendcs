@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2014/08/22 17:23:04  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.2  2014/07/10 17:07:54  mmaloney
 *  Remove startup log from ComputationApp, and add to TsdbAppTemplate.
 *
@@ -47,19 +50,16 @@ import java.net.InetAddress;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
-
 import lrgs.gui.DecodesInterface;
-
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.EnvExpander;
 import ilex.util.Logger;
-
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
+import decodes.util.PropertySpec;
 
 /**
 ComputationApp is the main module for the background comp processor.
@@ -88,6 +88,15 @@ public class ComputationApp
 	private StringToken officeIdArg = new StringToken(
 		"O", "OfficeID", "", TokenOptions.optSwitch, "");
 	private CompEventSvr compEventSvr = null;
+	
+	private PropertySpec[] myProps =
+	{
+		new PropertySpec("monitor", PropertySpec.BOOLEAN,
+			"Set to true to allow monitoring from the GUI."),
+		new PropertySpec("EventPort", PropertySpec.INT,
+			"Open listening socket on this port to serve out app events.")
+	};
+
 	
 	/**
 	 * Constructor called from main method after parsing arguments.
@@ -378,5 +387,12 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 		if (myLock != null)
 			myLock.setStatus(status);
 	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return myProps;
+	}
+
 }
 
