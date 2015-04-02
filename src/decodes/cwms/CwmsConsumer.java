@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.6  2014/10/28 18:37:34  mmaloney
+*  Use Platform Sensor Site for location if one is defined.
+*
 *  Revision 1.5  2014/08/22 17:23:11  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -209,6 +212,11 @@ public class CwmsConsumer extends DataConsumer
 		{
 			cwmsTsdb = new CwmsTimeSeriesDb();
 			cwmsTsdb.requireCcpTables = false;
+			if (cwmsCfg.DbUri != null)
+				cwmsTsdb.setDbUri(cwmsCfg.DbUri);
+			if (cwmsCfg.jdbcOracleDriver != null)
+				cwmsTsdb.setJdbcOracleDriver(cwmsCfg.jdbcOracleDriver);
+			
 			DbKey appId = cwmsTsdb.connect("decodes", credentials);
 			loadingAppDAO = cwmsTsdb.makeLoadingAppDAO();
 			
