@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2014/12/11 20:35:55  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -158,11 +161,14 @@ public class DdsRecvSettings
 		decodes.db.Database decDb = decodes.db.Database.getDb();
 		if (decDb != null)
 		{
+			Logger.instance().info("DECODES Database is loaded. Will re-read netlists.");
 			try 
 			{
-				decDb.networkListList.read(); 
+				decDb.networkListList.read();
 				decodes.db.NetworkList.legacyNetlistDir = 
 					EnvExpander.expand("$LRGSHOME/tmp");
+				Logger.instance().info("After reading, there are " 
+					+ decDb.networkListList.size() + " network lists.");
 			}
 			catch(decodes.db.DatabaseException ex)
 			{
