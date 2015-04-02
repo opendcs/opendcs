@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2010/10/22 18:02:24  mmaloney
 *  fixed header line
 *
@@ -100,7 +103,7 @@ public class QualLogFile
 				output.println("# date/time domsatGood domsatPar aveBER maxBER"
 					+ " drgsGood drgsPar ddsGood ddsPar noaaportGood "
 					+ "noaaportPar lritGood lritErr nbGood nbPar "
-					+ "arcGood arcPar domsatDropped gr3110 iridium");
+					+ "arcGood arcPar domsatDropped gr3110 iridium edl");
 			}
 		}
 		catch(FileNotFoundException ex)
@@ -159,6 +162,7 @@ public class QualLogFile
 		int netbackIdx = -1;
 		int gr3110Idx = -1;
 		int iridiumIdx = -1;
+		int edlIdx = -1;
 
 		for(int i=0; i < lsse.lss.downLinks.length; i++)
 		{
@@ -178,6 +182,8 @@ public class QualLogFile
 				gr3110Idx = i;
 			else if (lsse.lss.downLinks[i].type == LrgsInputInterface.DL_IRIDIUM)
 				iridiumIdx = i;
+			else if (lsse.lss.downLinks[i].type == LrgsInputInterface.DL_EDL)
+				edlIdx = i;
 		}
 
 //		Logger.instance().debug1("Reading quality log, domsatIdx=" + domsatIdx
@@ -285,6 +291,11 @@ public class QualLogFile
 					lsse.downlinkQMs[iridiumIdx].dl_qual[h].numGood += 
 						qle.iridiumCount;
 				}
+				if (edlIdx != -1)
+				{
+					lsse.downlinkQMs[edlIdx].dl_qual[h].containsData = true;
+					lsse.downlinkQMs[edlIdx].dl_qual[h].numGood += qle.edlCount;
+				}
 			}
 		}
 		catch(IOException ex)
@@ -340,11 +351,19 @@ public class QualLogFile
 			qle.archivedGood = Integer.parseInt(st.nextToken());
 			qle.archivedErr = Integer.parseInt(st.nextToken());
 			if (st.hasMoreTokens())
+			{
 				qle.domsatDropped = Integer.parseInt(st.nextToken());
-			if (st.hasMoreTokens())
-				qle.gr3110Count = Integer.parseInt(st.nextToken());
-			if (st.hasMoreTokens())
-				qle.iridiumCount = Integer.parseInt(st.nextToken());
+				if (st.hasMoreTokens())
+				{
+					qle.gr3110Count = Integer.parseInt(st.nextToken());
+					if (st.hasMoreTokens())
+					{
+						qle.iridiumCount = Integer.parseInt(st.nextToken());
+						if (st.hasMoreTokens())
+							qle.edlCount = Integer.parseInt(st.nextToken());
+					}
+				}
+			}
 		}
 		catch(Exception ex)
 		{
@@ -376,6 +395,7 @@ public class QualLogFile
 			+ " " + qle.archivedErr
 			+ " " + qle.domsatDropped
 			+ " " + qle.gr3110Count
-			+ " " + qle.iridiumCount;
+			+ " " + qle.iridiumCount
+			+ " " + qle.edlCount;
 	}
 }

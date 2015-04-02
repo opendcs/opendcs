@@ -484,6 +484,8 @@ public class JavaLrgsStatusProvider
 		}
 		else if (dl.type == LrgsInputInterface.DL_IRIDIUM)
 			minuteQuality.iridiumCount += goodInc;
+		else if (dl.type == LrgsInputInterface.DL_EDL)
+			minuteQuality.edlCount += goodInc;
 	}
 
 	/**

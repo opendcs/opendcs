@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2009/04/07 14:17:05  mjmaloney
 *  Save Iridium Quality stats in quality.log
 *
@@ -100,6 +103,9 @@ public class QualLogEntry
 	/** # messages received on iridium interface */
 	public int iridiumCount;
 
+	/** # of EDL files ingested */
+	public int edlCount = 0;
+	
 	/** Constructor. */
 	public QualLogEntry()
 	{
