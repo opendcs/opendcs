@@ -13,6 +13,7 @@
 package lrgs.lrgsmain;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -48,6 +49,7 @@ import lrgs.edl.EdlInputInterface;
 import lrgs.noaaportrecv.NoaaportRecv;
 import lrgs.networkdcp.NetworkDcpRecv;
 import decodes.util.DecodesException;
+import decodes.util.DecodesSettings;
 
 /**
 Main class for LRGS process.
@@ -273,9 +275,30 @@ public class LrgsMain
 		{
 			try
 			{
-				DecodesInterface.initDecodes(
-					EnvExpander.expand(
-						"$DECODES_INSTALL_DIR/decodes.properties"));
+				String propFile = EnvExpander.expand(
+					"$DECODES_INSTALL_DIR/decodes.properties");
+				Logger.instance().info("Loading DECODES Database from '" + propFile + "'");
+				
+				//Load the decodes.properties
+				DecodesSettings settings = DecodesSettings.instance();
+				if (!settings.isLoaded())
+				{
+					Properties props = new Properties();
+					try
+					{
+						FileInputStream fis = new FileInputStream(propFile);
+						props.load(fis);
+						fis.close();
+					}
+					catch(Exception e)
+					{
+						Logger.instance().log(Logger.E_FAILURE,
+							"Cannot open DECODES Properties File '"+propFile+"': "+e);
+					}
+					settings.loadFromProperties(props);
+				}
+				
+				DecodesInterface.initDecodes(propFile);
 				// MJM 9/25/2008 - In order for DDS Receive to be able to use
 				// network lists <all> and <production>, we have to load the
 				// platform lists too:
