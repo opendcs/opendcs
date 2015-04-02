@@ -71,14 +71,21 @@ public class ScheduleEntryExecutive
 			appMinLogPriority = parent != null ? parent.getAppDebugMinPriority() 
 				: Logger.instance().getMinLogPriority();
 		
-		if (parent == null && (Database.getDb().getDbIo() instanceof SqlDatabaseIO))
+		if (parent == null) // This means that this is the 'rs' command.
 		{
-			// This means that this is a stand-alone rs from command line, the DCPmon
-			// daemon, or some other single-threaded app.
-			SqlDatabaseIO sqlDbio = (SqlDatabaseIO)Database.getDb().getDbIo();
-			DacqEventDAI dacqEventDAO = sqlDbio.makeDacqEventDAO();
 			dacqEventLogger = new DacqEventLogger(Logger.instance());
-			dacqEventLogger.setDacqEventDAO(dacqEventDAO);
+
+			if (Database.getDb().getDbIo() instanceof SqlDatabaseIO)
+			{
+				// This means that this is a stand-alone rs from command line, the DCPmon
+				// daemon, or some other single-threaded app.
+				SqlDatabaseIO sqlDbio = (SqlDatabaseIO)Database.getDb().getDbIo();
+				DacqEventDAI dacqEventDAO = sqlDbio.makeDacqEventDAO();
+				dacqEventLogger.setDacqEventDAO(dacqEventDAO);
+			}
+			// Else this is an XML database, no actual DACQ Event Logging
+			
+			// For RS, set default logger to the event logger.
 			Logger.setLogger(dacqEventLogger);
 		}
 		else if (parent != null && (parent instanceof DcpMonitor))
