@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  2015/02/06 18:46:59  mmaloney
+ * Config option to not display certain buttons: Time Series, Groups, Run Comps, & Algorithms.
+ *
  * Revision 1.3  2014/10/07 12:34:37  mmaloney
  * DecodesSetting.showNetlistEditor
  *
@@ -1107,24 +1110,38 @@ public class LauncherFrame extends JFrame
 		
 		try
 		{
-			groupEditFrame = ResourceFactory.instance().getTsdbEditorFrame(myArgs);
-			if (groupEditFrame != null)
+			afterDecodesInit = new Runnable()
 			{
-				groupEditFrame.setExitOnClose(false);
-				groupEditFrame.addWindowListener(tsEditorReaper);
-			}
+				public void run()
+				{
+					try
+					{
+						groupEditFrame = ResourceFactory.instance().getTsdbEditorFrame(myArgs);
+						if (groupEditFrame != null)
+						{
+							groupEditFrame.setExitOnClose(false);
+							groupEditFrame.addWindowListener(tsEditorReaper);
+						}
+					}
+					catch (Exception ex)
+					{
+						groupEditFrame = null;
+						String msg = LoadResourceBundle.sprintf(
+							labels.getString("LauncherFrame.cannotLaunch"),
+							labels.getString("LauncherFrame.timeSeriesButton"))
+								+ ex;
+						Logger.instance().warning(msg);
+						System.err.println(msg);
+						ex.printStackTrace();
+						showError(msg);
+					}
+				}
+			};
+			completeDecodesInit();
 		}
-		catch (Exception ex)
+		catch (DecodesException ex)
 		{
-			groupEditFrame = null;
-			String msg = LoadResourceBundle.sprintf(
-				labels.getString("LauncherFrame.cannotLaunch"),
-				labels.getString("LauncherFrame.timeSeriesButton"))
-					+ ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
-			showError(msg);
+			Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
 		}
 	}
 	
@@ -1142,28 +1159,41 @@ public class LauncherFrame extends JFrame
 
 		try
 		{
-			
-			TsListMain tsListMain = new TsListMain();
-			tsListMain.setExitOnClose(false);
-			tsListMain.execute(myArgs);
-			tseditFrame = tsListMain.getFrame();
-			if (tseditFrame != null)
+			afterDecodesInit = new Runnable()
 			{
-				tseditFrame.setExitOnClose(false);
-				tseditFrame.addWindowListener(tseditReaper);
-			}
+				public void run()
+				{
+					try
+					{
+						TsListMain tsListMain = new TsListMain();
+						tsListMain.setExitOnClose(false);
+						tsListMain.execute(myArgs);
+						tseditFrame = tsListMain.getFrame();
+						if (tseditFrame != null)
+						{
+							tseditFrame.setExitOnClose(false);
+							tseditFrame.addWindowListener(tseditReaper);
+						}
+					}
+					catch (Exception ex)
+					{
+						tseditFrame = null;
+						String msg = LoadResourceBundle.sprintf(
+							labels.getString("LauncherFrame.cannotLaunch"),
+							"Time Series Editor")
+								+ ex;
+						Logger.instance().warning(msg);
+						System.err.println(msg);
+						ex.printStackTrace();
+						showError(msg);
+					}
+				}
+			};
+			completeDecodesInit();
 		}
-		catch (Exception ex)
+		catch (DecodesException ex)
 		{
-			tseditFrame = null;
-			String msg = LoadResourceBundle.sprintf(
-				labels.getString("LauncherFrame.cannotLaunch"),
-				"Time Series Editor")
-					+ ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
-			showError(msg);
+			Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
 		}
 	}
 
@@ -1181,26 +1211,40 @@ public class LauncherFrame extends JFrame
 
 		try
 		{
-			CAPEdit compEdit = new CAPEdit();
-			compEdit.execute(compArgs);
-			compEditFrame = compEdit.getFrame();
-			if (compEditFrame != null)
+			afterDecodesInit = new Runnable()
 			{
-				compEdit.setExitOnClose(false);
-				compEditFrame.addWindowListener(compEditReaper);
-			}
+				public void run()
+				{
+					CAPEdit compEdit = new CAPEdit();
+					try
+					{
+						compEdit.execute(compArgs);
+						compEditFrame = compEdit.getFrame();
+						if (compEditFrame != null)
+						{
+							compEdit.setExitOnClose(false);
+							compEditFrame.addWindowListener(compEditReaper);
+						}
+					}
+					catch(Exception ex)
+					{
+						compEditFrame = null;
+						String msg = LoadResourceBundle.sprintf(
+							labels.getString("LauncherFrame.cannotLaunch"),
+							labels.getString("LauncherFrame.computationsButton"))
+								+ ex;
+						Logger.instance().warning(msg);
+						System.err.println(msg);
+						ex.printStackTrace();
+						showError(msg);
+					}
+				}
+			};
+			completeDecodesInit();
 		}
-		catch (Exception ex)
+		catch (DecodesException ex)
 		{
-			compEditFrame = null;
-			String msg = LoadResourceBundle.sprintf(
-				labels.getString("LauncherFrame.cannotLaunch"),
-				labels.getString("LauncherFrame.computationsButton"))
-					+ ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
-			showError(msg);
+			Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
 		}
 	}
 
@@ -1218,29 +1262,43 @@ public class LauncherFrame extends JFrame
 
 		try
 		{
-			RunComputationsFrameTester runComputations = new RunComputationsFrameTester();
-			runComputations.execute(compArgs);
-
-			runComputationsFrame = runComputations.getFrame();
-
-			if (runComputationsFrame != null)
+			afterDecodesInit = new Runnable()
 			{
-				runComputationsFrame.setRunCompFrametester(runComputations);
-				runComputationsFrame.setExitOnClose(false);
-				runComputationsFrame.addWindowListener(runComputationsReaper);
-			}
+				public void run()
+				{
+					try
+					{
+						RunComputationsFrameTester runComputations = new RunComputationsFrameTester();
+						runComputations.execute(compArgs);
+
+						runComputationsFrame = runComputations.getFrame();
+
+						if (runComputationsFrame != null)
+						{
+							runComputationsFrame.setRunCompFrametester(runComputations);
+							runComputationsFrame.setExitOnClose(false);
+							runComputationsFrame.addWindowListener(runComputationsReaper);
+						}
+					}
+					catch (Exception ex)
+					{
+						runComputationsFrame = null;
+						String msg = LoadResourceBundle.sprintf(
+							labels.getString("LauncherFrame.cannotLaunch"),
+							labels.getString("LauncherFrame.testComputationsButton"))
+								+ ex;
+						Logger.instance().warning(msg);
+						System.err.println(msg);
+						ex.printStackTrace();
+						showError(msg);
+					}
+				}
+			};
+			completeDecodesInit();
 		}
-		catch (Exception ex)
+		catch (DecodesException ex)
 		{
-			runComputationsFrame = null;
-			String msg = LoadResourceBundle.sprintf(
-				labels.getString("LauncherFrame.cannotLaunch"),
-				labels.getString("LauncherFrame.testComputationsButton"))
-					+ ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
-			showError(msg);
+			Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
 		}
 	}
 
@@ -1255,29 +1313,43 @@ public class LauncherFrame extends JFrame
 		// DB init in progress!
 		if (afterDecodesInit != null)
 			return;
-
+		
 		try
 		{
-			ProcessMonitor procMon = new ProcessMonitor();
-			procMon.execute(compArgs);
-			procMonFrame = procMon.getFrame();
-			if (procMonFrame != null)
+			afterDecodesInit = new Runnable()
 			{
-				procMon.setExitOnClose(false);
-				procMonFrame.addWindowListener(procMonReaper);
-			}
+				public void run()
+				{
+					try
+					{
+						ProcessMonitor procMon = new ProcessMonitor();
+						procMon.execute(compArgs);
+						procMonFrame = procMon.getFrame();
+						if (procMonFrame != null)
+						{
+							procMon.setExitOnClose(false);
+							procMonFrame.addWindowListener(procMonReaper);
+						}
+					}
+					catch (Exception ex)
+					{
+						procMonFrame = null;
+						String msg = LoadResourceBundle.sprintf(
+							labels.getString("LauncherFrame.cannotLaunch"),
+							labels.getString("LauncherFrame.processStatusButton"))
+								+ ex;
+						Logger.instance().warning(msg);
+						System.err.println(msg);
+						ex.printStackTrace();
+						showError(msg);
+					}
+				}
+			};
+			completeDecodesInit();
 		}
-		catch (Exception ex)
+		catch (DecodesException ex)
 		{
-			procMonFrame = null;
-			String msg = LoadResourceBundle.sprintf(
-				labels.getString("LauncherFrame.cannotLaunch"),
-				labels.getString("LauncherFrame.processStatusButton"))
-					+ ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
-			showError(msg);
+			Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
 		}
 	}
 
@@ -1288,10 +1360,6 @@ public class LauncherFrame extends JFrame
 			algorithmWizFrame.toFront();
 			return;
 		}
-
-		// DB init in progress!
-		if (afterDecodesInit != null)
-			return;
 
 		try
 		{

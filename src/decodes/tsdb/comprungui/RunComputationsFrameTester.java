@@ -81,7 +81,7 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		cmdLineArgs.addToken(NoCompFilterToken);
-		appNameArg.setDefaultValue("runcomp");
+		appNameArg.setDefaultValue("compedit");
 	}
 	
 	/**
