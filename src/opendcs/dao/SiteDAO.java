@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.4  2015/01/22 19:51:49  mmaloney
+* log message improvements
+*
 * Revision 1.3  2014/07/03 12:47:57  mmaloney
 * debug improvements.
 *
@@ -143,13 +146,34 @@ public class SiteDAO
 	}
 	
 	@Override
-	public synchronized DbKey lookupSiteID(String nameValue)
+	public synchronized DbKey lookupSiteID(final String nameValue)
 		throws DbIoException
 	{
+		// The 'uniqueName' in the cache will be the preferred site name type
 		Site site = cache.getByUniqueName(nameValue);
 		if (site != null)
 			return site.getKey();
+
+		// If not found, search the cache for any name match
+		site = cache.search(
+			new Comparable<Site>()
+			{
+				@Override
+				public int compareTo(Site ob)
+				{
+					for(SiteName sn : ob.getNameArray())
+						if (sn.getNameValue().equalsIgnoreCase(nameValue))
+							return 0;
+					// Note: DbObjectCache.search does a linear search, not a binary search.
+					// So always returning -1 meaning 'no match' is okay.
+					return -1;
+				}
+			});
+		if (site != null)
+			return site.getKey();
+
 		
+		// Finally search the database for a SiteName with matching value.
 		String q = "select siteid from SiteName "
 			+ " where lower(siteName) = " + sqlString(nameValue.toLowerCase());
 		try
