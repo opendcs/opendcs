@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/05/22 12:27:24  mmaloney
+ * CWMS fix: Wasn't displaying Location after creating new TS.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -592,6 +595,7 @@ public class CompParmDialog extends GuiDialog
 		try
 		{
 			DbKey siteId = Constants.undefinedId;
+			Site site = null;
 			String siteName = siteField.getText().trim();
 			if (siteName.length() > 0)
 			{
@@ -603,6 +607,8 @@ public class CompParmDialog extends GuiDialog
 							+ ceResources.getString("CompParmDialog.OKError5"));
 					return;
 				}
+				else
+					site = theDb.getSiteById(siteId);
 			}
 			else if (!parent.hasGroupInput())
 			{
@@ -738,9 +744,10 @@ public class CompParmDialog extends GuiDialog
 				}
 			}
 
-			theParm.setSiteId(siteId);
-			theParm.setInterval(interval);
+//			theParm.setSiteId(siteId);
+			theParm.setSite(site);
 			theParm.setDataType(dt);
+			theParm.setInterval(interval);
 			DbKey dtid = dt == null ? Constants.undefinedId : dt.getId();
 			theParm.setDataTypeId(dtid);
 			theParm.setTableSelector(tabSel);
@@ -763,16 +770,22 @@ public class CompParmDialog extends GuiDialog
 				parent.setHiddenProperty(theParm.getRoleName()+"_MISSING", s);
 			}
 
-			if (siteId != Constants.undefinedId)
-			{
-				theParm.addSiteName(
-					new SiteName(null, DecodesSettings.instance().siteNameTypePreference,
-						siteName));
-			}
-			else
-			{
-				theParm.clearSite();
-			}
+// The following code is suspect: it is changing the site that is in the cache!!
+// Furthermore it is assuming that the siteName in the TextField is of the preferred type,
+// which is not necessarily true.
+// It must never do this!
+// Is this done so that when the dialog is displayed again, the same name can be displayed,
+// and not some alias for the same site??
+//			if (siteId != Constants.undefinedId)
+//			{
+//				theParm.addSiteName(
+//					new SiteName(null, DecodesSettings.instance().siteNameTypePreference,
+//						siteName));
+//			}
+//			else
+//			{
+//				theParm.clearSite();
+//			}
 
 			if (parent.hasGroupInput())
 			{
@@ -831,7 +844,8 @@ Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : s
 					else
 					// Params for inputs must pre-exist.
 					{
-						showError(ex.toString());
+						showError("No such time series. Input parameters for non-group computations "
+							+ "must refer to time series that already exist. Create it first.");
 						return;
 					}
 				}
@@ -873,10 +887,6 @@ Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : s
 			SiteName sn = site.getPreferredName();
 			if (sn != null)
 				siteField.setText(sn.getNameValue());
-		}
-		else
-		{
-			siteField.setText("");
 		}
 	}
 
