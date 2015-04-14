@@ -402,7 +402,7 @@ public class LrgsMain
 			addInput(ldnr);
 		}
 		else
-			Logger.instance().info("LRIT is not enabled enabled.");
+			Logger.instance().info("LRIT is not enabled.");
 		
 		if (cfg.iridiumEnabled)
 		{
