@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:40  mmaloney
+ * debug improvements.
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to the United States Government. No warranty is provided or implied other 
@@ -165,6 +168,8 @@ public class DbObjectCache<DBT extends CachableDbObject>
 
 	/**
 	 * Searches the cache for an object that is 'equal to' the passed comparator.
+	 * This method does a linear search of the objects in the cache, so it is not
+	 * necessary that the Comparable be consistent in a sorting sense.
 	 * @param cmp The comparator
 	 * @return a matching object, or null if non is found.
 	 */
