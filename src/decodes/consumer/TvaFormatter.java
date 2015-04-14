@@ -148,10 +148,11 @@ public class TvaFormatter extends OutputFormatter
 			String tvaDataCode = shef2tvaDataCode(dt.getCode(), sensor);
 			if (tvaDataCode == null || tvaDataCode.length() < 2)
 			{
-				Logger.instance().info(
-					"Station '" + platform.getSiteName()
-					+ "' Cannot find TVA Data Code for sensor '" 
-					+ sensor.getName() + "' -- skipped.");
+				if (!sensor.getName().equalsIgnoreCase("battery"))
+					Logger.instance().info(
+						"Station '" + platform.getSiteName()
+						+ "' Cannot find TVA Data Code for sensor '" 
+						+ sensor.getName() + "' -- skipped.");
 				continue;
 			}
 
