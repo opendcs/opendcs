@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.55  2013/07/31 15:43:00  mmaloney
 *  dev
 *
@@ -499,6 +502,9 @@ public abstract class AW_AlgorithmBase
 			// Add agg period to it to find the upper limit of t's influence.
 			aggCal.setTime(t);
 			IntervalIncrement calIncr = IntervalCodes.getIntervalCalIncr(intervalS);
+			if (calIncr == null)
+				throw new DbCompException("Comp '" + comp.getName() 
+					+ "' Invalid interval string '" + intervalS + "'");
 			aggCal.add(calIncr.getCalConstant(), calIncr.getCount());
 			Date end = aggCal.getTime();
 //debug3("Running aggregate, added " + calIncr + " end time is " + debugSdf.format(end));
