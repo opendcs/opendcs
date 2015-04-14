@@ -298,6 +298,7 @@ public class LrgsMain
 					settings.loadFromProperties(props);
 				}
 				
+				DecodesInterface.silent = true;
 				DecodesInterface.initDecodes(propFile);
 				// MJM 9/25/2008 - In order for DDS Receive to be able to use
 				// network lists <all> and <production>, we have to load the
