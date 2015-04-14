@@ -140,7 +140,7 @@ public class DirectoryConsumer extends DataConsumer
 			if (p != null)
 			{
 				String n = p.getSiteName(false);
-				if (n != null)
+				if (n != null && n.length() > 0)
 					props.setProperty("SITENAME", n);
 			}
 			TransportMedium tm = rm.getTransportMedium();
