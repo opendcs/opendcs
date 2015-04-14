@@ -113,7 +113,8 @@ public class ScheduleEntryEditPanel
 				String type = cai.getProperty("appType");
 				if (type == null)
 					appsInCombo.add(cai);
-				else if (type.equalsIgnoreCase("routingscheduler"))
+				else if (type.equalsIgnoreCase("routingscheduler")
+					  || type.equalsIgnoreCase("routing-scheduler"))
 					// Sort RoutingScheduler apps to the front.
 					appsInCombo.add(0, cai);
 			}
