@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2015/02/06 18:51:35  mmaloney
+ * When deleting schedule entry status, also delete dependent DACQ_EVENTs
+ *
  * Revision 1.4  2014/12/11 20:33:11  mmaloney
  * dev
  *
@@ -339,6 +342,10 @@ public class ScheduleEntryDAO
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 			return;
+		
+		if (seStatus.getRunStatus() != null
+		 && seStatus.getRunStatus().length() > 24)
+			seStatus.setRunStatus(seStatus.getRunStatus().substring(0,24));
 
 		seStatus.setLastModified(new Date());
 		if (seStatus.getKey().isNull())
