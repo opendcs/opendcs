@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.5  2015/03/19 18:00:27  mmaloney
+*  Added debugs in equals() method.
+*
 *  Revision 1.4  2015/02/16 15:35:02  mmaloney
 *  added pollPriority property.
 *
@@ -1042,5 +1045,13 @@ Logger.instance().debug3("   prop '" + nm + "' differs: '" + v1 + "' '" + v2 + "
 	public Season getProcessSeason()
 	{
 		return processSeason;
+	}
+	
+	public boolean hasTmKey(String tmKey)
+	{
+		for(int idx = 0; idx < transportMedia.size(); idx++)
+			if (transportMedia.get(idx).getTmKey().equals(tmKey))
+				return true;
+		return false;
 	}
 }

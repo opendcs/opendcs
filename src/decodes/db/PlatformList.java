@@ -195,22 +195,17 @@ public class PlatformList extends DatabaseObject
 		for(Iterator<Platform> it = platformVec.iterator(); it.hasNext(); )
 		{
 			Platform p = it.next();
-			for(Iterator<TransportMedium> tmit = p.transportMedia.iterator(); tmit.hasNext(); )
+			if (p.hasTmKey(tmKey))
 			{
-				TransportMedium tm = tmit.next();
-				if (tmKey.equals(tm.getTmKey()))
+				// Matches the key! Check expiration date
+				if (p.expiration == null)
+					current = p;
+				else if (p.expiration.compareTo(ts) >= 0) // exp time >= ts
 				{
-					// Matches the key! Check expiration date
-					if (p.expiration == null)
-						current = p;
-					else if (p.expiration.compareTo(ts) >= 0) // exp time >= ts
-					{
-						if (best == null)
-							best = p;
-						else if (p.expiration.compareTo(best.expiration) < 0)
-							best = p;
-					}
-					break;
+					if (best == null)
+						best = p;
+					else if (p.expiration.compareTo(best.expiration) < 0)
+						best = p;
 				}
 			}
 		}
