@@ -288,7 +288,7 @@ class DuplicateDcpsListTableModel
 //				try
 //				{
 //					p.read();//this really slow down the GUI
-					Site pSite = p.site;
+					Site pSite = p.getSite();
 					if (pSite != null)
 						corpsDesc = pSite.getDescription();		
 //				} catch (DatabaseException e)

@@ -100,8 +100,8 @@ public class PlatformParser
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.Site_el))
 		{
-			platform.site = new Site(platform);
-			hier.pushObjectParser(new SiteParser(platform.site));
+			platform.setSite(new Site(platform));
+			hier.pushObjectParser(new SiteParser(platform.getSite()));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.PlatformConfig_el))
 		{
@@ -248,6 +248,7 @@ public class PlatformParser
 			try
 			{
 				platform.lastModifyTime = Constants.defaultDateFormat.parse(str);
+//Logger.instance().debug3("PlatformParser set LMT to " + platform.lastModifyTime);
 			}
 			catch(Exception e)
 			{
@@ -316,9 +317,9 @@ public class PlatformParser
 		if (platform.expiration != null)
 			xos.writeElement(XmlDbTags.expiration_el,
 				Constants.defaultDateFormat.format(platform.expiration));
-		if (platform.site != null)
+		if (platform.getSite() != null)
 		{
-			SiteParser p = new SiteParser(platform.site);
+			SiteParser p = new SiteParser(platform.getSite());
 			p.writeXml(xos);
 		}
 		PlatformConfig pc = platform.getConfig();

@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2013/03/21 18:27:40  mmaloney
 *  DbKey Implementation
 *
@@ -251,7 +254,7 @@ public class PlatformListParser
 			if (workingName == null)
 				throw new SAXException("Unexpected site name!");
 			workingName.setNameValue(str);
-			platform.site = plist.getDatabase().siteList.getSite(workingName);
+			platform.setSite(plist.getDatabase().siteList.getSite(workingName));
 			workingName = null;
 			break;
 		case expirationTag:
@@ -330,9 +333,9 @@ public class PlatformListParser
 					XmlDbTags.TransportMedium_mediumId_at, tm.getMediumId(), null);
 			}
 
-			if (plat.site != null)
+			if (plat.getSite() != null)
 			{
-				SiteName sn = plat.site.getPreferredName();
+				SiteName sn = plat.getSite().getPreferredName();
 				if (sn != null)
 					xos.writeElement(XmlDbTags.SiteName_el,
 						XmlDbTags.SiteName_nameType_at, sn.getNameType(),

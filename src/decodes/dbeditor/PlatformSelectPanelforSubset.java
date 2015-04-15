@@ -240,8 +240,8 @@ class PlatformSelectColumnizerforSubset
 		{
 		case 0: // Site + Designator
 		  {
-			Site site = p.site;
-			if (p.site == null)
+			Site site = p.getSite();
+			if (p.getSite() == null)
 				return "";
 		    else
 			{

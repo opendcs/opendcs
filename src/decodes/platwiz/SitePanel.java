@@ -2,6 +2,9 @@
 *	$Id$
 *
 *	$Log$
+*	Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*	OPENDCS 6.0 Initial Checkin
+*	
 *	Revision 1.2  2008/06/06 15:10:06  cvs
 *	updates from USGS & fixes to update-check.
 *	
@@ -171,8 +174,8 @@ public class SitePanel extends JPanel
 		if (site != null) // selection was made?
 		{
 			Platform p = PlatformWizard.instance().getPlatform();
-			p.site = site;
-			try { p.site.read(); }
+			p.setSite(site);
+			try { p.getSite().read(); }
 			catch(DatabaseException ex)
 			{
 				TopFrame.instance().showError(ex.toString());
@@ -200,7 +203,7 @@ public class SitePanel extends JPanel
 		Site site = dlg.getSite();
 		if (site != null)
 		{
-			p.site = site;
+			p.setSite(site);
 		}
 		//==========
 		siteNameField.setText("<<new>>");

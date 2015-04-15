@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.6  2015/04/14 18:57:13  mmaloney
+*  Fixed concurrent modification exception when searching for platform by tm key.
+*
 *  Revision 1.5  2015/03/19 18:00:27  mmaloney
 *  Added debugs in equals() method.
 *
@@ -120,7 +123,7 @@ public class Platform
 	* The Site at which this Platform resides.  This can be null, if the
 	* Site is unknown.
 	*/
-	public Site site;
+	private Site site;
 
 	/**
 	* The PlatformConfig associated with this Platform.
@@ -202,7 +205,7 @@ public class Platform
 		lastModifyTime = null;
 		isProduction = false;
 		expiration = null;
-		site = null;
+		setSite(null);
 		platformConfig = null;
 		platformSensors = new Vector<PlatformSensor>();
 		transportMedia = new Vector<TransportMedium>();
@@ -219,7 +222,7 @@ public class Platform
 	*/
 	public String makeFileName()
 	{
-		String ret = (site == null) ? "unknownSite" : getSiteName(false);
+		String ret = (getSite() == null) ? "unknownSite" : getSiteName(false);
 		if (platformDesignator != null && platformDesignator.length() > 0)
 			ret = ret + "-" + platformDesignator;
 		return ret;
@@ -250,15 +253,15 @@ public class Platform
 	*/
 	public String getSiteName(boolean prefixWithType)
 	{
-		if (site == null)
+		if (getSite() == null)
 			return "";
-		SiteName sn = site.getPreferredName();
+		SiteName sn = getSite().getPreferredName();
 		if ( sn == null )
 			return "";
 		else if (!prefixWithType)
-			return site.getPreferredName().getNameValue();
+			return getSite().getPreferredName().getNameValue();
 		else
-			return site.getPreferredName().makeFileName();
+			return getSite().getPreferredName().makeFileName();
 	}
 
 	/**
@@ -409,9 +412,12 @@ public class Platform
 	  Prepares this platform, and all its subordinate objects for execution
 	  by a routing specification.
 	*/
-	public void prepareForExec()
+	public synchronized void prepareForExec()
 		throws IncompleteDatabaseException, InvalidDatabaseException
 	{
+		if (isPrepared())
+			return;
+		
 		// Make sure we have the complete object from the run-time database.
 		if (!isComplete())
 		{
@@ -529,7 +535,7 @@ public class Platform
 	public void write()
 		throws DatabaseException
 	{
-		if (site == null)
+		if (getSite() == null)
 			throw new DatabaseException(
 				"Cannot save platform without site assignment.");
 		lastModifyTime = new Date();
@@ -575,7 +581,7 @@ public class Platform
 		this.isProduction = rhs.isProduction;
 		this.lastModifyTime = rhs.lastModifyTime;
 		this.expiration = rhs.expiration;
-		this.site = rhs.site;
+		this.setSite(rhs.getSite());
 		this.platformConfig = rhs.platformConfig;
 		this.configName = rhs.configName;
 		this.platformDesignator = rhs.platformDesignator;
@@ -630,9 +636,9 @@ public class Platform
 
 		Logger.instance().debug3("Comparing '" + makeFileName()
 			+ "' to imported '" + op.makeFileName() + "'");
-		if ((site == null && op.site != null)
-		 || (site != null && op.site == null)
-		 || (site != null && !site.importEquals(op.getSite())))
+		if ((getSite() == null && op.getSite() != null)
+		 || (getSite() != null && op.getSite() == null)
+		 || (getSite() != null && !getSite().importEquals(op.getSite())))
 		{
 			Logger.instance().debug3("Sites differ");
 			return false;
@@ -764,10 +770,10 @@ public class Platform
 			return false;
 
 		Platform p = (Platform)obj;
-		if (this.site != p.site
+		if (this.getSite() != p.getSite()
 		 || this.platformConfig != p.platformConfig
 		 || isProduction != p.isProduction
-		 || site != p.site)
+		 || getSite() != p.getSite())
 			return false;
 
 		if (!TextUtil.strEqual(description, p.description))
@@ -1029,7 +1035,7 @@ Logger.instance().debug3("   prop '" + nm + "' differs: '" + v1 + "' '" + v2 + "
 			try { return Integer.parseInt(s.trim()); }
 			catch(Exception ex) {}
 		}
-		if (site != null && (s = site.getProperty("debugLevel")) != null)
+		if (getSite() != null && (s = getSite().getProperty("debugLevel")) != null)
 		{
 			try { return Integer.parseInt(s.trim()); }
 			catch(Exception ex) {}

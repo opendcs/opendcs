@@ -2,6 +2,10 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.5  2015/04/02 18:13:38  mmaloney
+*  Added 'fileRestSeconds' property.
+*  Added PropertySpecs.
+*
 *  Revision 1.4  2014/10/02 18:21:42  mmaloney
 *  FTP Data Source to handle multiple file names.
 *
@@ -521,8 +525,8 @@ public class DirectoryDataSource extends DataSourceExec
 				if ( onemessagefile ) 
 				{
 					Platform p = ret.getPlatform();
-					if ( p != null && p.site != null ) 
-						siteNo = p.site.getDisplayName();
+					if ( p != null && p.getSite() != null ) 
+						siteNo = p.getSite().getDisplayName();
 				}
 				
 				return ret;

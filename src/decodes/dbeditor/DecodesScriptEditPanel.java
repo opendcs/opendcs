@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2015/02/06 19:01:11  mmaloney
+ * Bugfix: reset dbedit Load Message Dialog after successful retrieval.
+ *
  * Revision 1.3  2015/01/31 15:44:59  mmaloney
  * Configurable Decoded Value Colors
  *
@@ -931,8 +934,8 @@ public class DecodesScriptEditPanel
 		{
 			// Set up dummy platform to do decoding.
 			Platform tmpPlatform = new Platform();
-			tmpPlatform.site = new Site();
-			tmpPlatform.site.addName(new SiteName(tmpPlatform.site, "USGS", "dummy"));
+			tmpPlatform.setSite(new Site());
+			tmpPlatform.getSite().addName(new SiteName(tmpPlatform.getSite(), "USGS", "dummy"));
 			tmpPlatform.setConfig(theScript.platformConfig);
 			tmpPlatform.setConfigName(theScript.platformConfig.configName);
 			TransportMedium tmpMedium = new TransportMedium(tmpPlatform, mediumType, "11111111");

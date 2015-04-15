@@ -836,7 +836,7 @@ public class EmitImport
 			if (existingSite != null)
 			{
 				sn.setSite(existingSite);
-				platform.site = existingSite;
+				platform.setSite(existingSite);
 			}
 			else
 			{
@@ -845,7 +845,7 @@ public class EmitImport
 				Site site = new Site(platform);
 				site.addName(sn);
 				sn.setSite(site);
-				platform.site = site;
+				platform.setSite(site);
 			}
 		}
 
@@ -866,7 +866,7 @@ public class EmitImport
 		if (tzstr.length() > 5)
 			tzstr = tzstr.substring(0, 5);
 		tzstr = tzstr.trim();
-		if (tzstr.length() > 0 && platform.site != null)
+		if (tzstr.length() > 0 && platform.getSite() != null)
 		{
 			int min = 0;
 			try 
@@ -874,7 +874,7 @@ public class EmitImport
 				min = Integer.parseInt(tzstr); 
 				boolean dst = line.length() >= 29 && line.charAt(28) == 'Y';
 //				platform.site.timeZoneAbbr = getSdfTZ(min, dst);
-				platform.site.timeZoneAbbr = getSdfTZ(min, daylightFlag);
+				platform.getSite().timeZoneAbbr = getSdfTZ(min, daylightFlag);
 			}
 			catch(NumberFormatException ex)
 			{
@@ -882,9 +882,9 @@ public class EmitImport
 					+ "' -- ignored.");
 			}
 		}
-		else if (platform.site != null)
+		else if (platform.getSite() != null)
 		{
-			platform.site.timeZoneAbbr = "GMT";
+			platform.getSite().timeZoneAbbr = "GMT";
 		}
 	}
 
@@ -912,14 +912,14 @@ public class EmitImport
 			SiteName sn = new SiteName(null, Constants.snt_NWSHB5, s);
 			Site existingSite = db.siteList.getSite(sn);
 
-			if (platform.site == null)
+			if (platform.getSite() == null)
 			{
 				if (existingSite != null)
-					platform.site = existingSite;
+					platform.setSite(existingSite);
 				else
 				{
-					platform.site = new Site(platform);
-					platform.site.addName(sn);
+					platform.setSite(new Site(platform));
+					platform.getSite().addName(sn);
 				}
 			}
 			else // platform.site already supplied by USGS number
@@ -930,8 +930,8 @@ public class EmitImport
 			  	  site with a different USGS sitenume, then this is an error.
 				*/
 				if (existingSite == null)
-					platform.site.addName(sn);
-				else if (existingSite != platform.site)
+					platform.getSite().addName(sn);
+				else if (existingSite != platform.getSite())
 					warning(
 			"SI1 record contains HB5 name that is already used by a different"
 			+ " site. HB5 name ignored.");
@@ -996,9 +996,9 @@ public class EmitImport
 				statnum + "-" + devId + "-" + line.charAt(19));
 			edlTM.scriptName = Constants.script_EDL;
 			edlTM.setTimeZone(
-				platform.site.timeZoneAbbr == null 
-					|| platform.site.timeZoneAbbr.length() == 0
-				? null : platform.site.timeZoneAbbr);
+				platform.getSite().timeZoneAbbr == null 
+					|| platform.getSite().timeZoneAbbr.length() == 0
+				? null : platform.getSite().timeZoneAbbr);
 			platform.transportMedia.add(edlTM);
 		}
 		else
@@ -1351,7 +1351,7 @@ public class EmitImport
 		if (hb5.length() <= 0)
 			return;
 
-		SiteName sn = platform.site.getName(Constants.snt_NWSHB5);
+		SiteName sn = platform.getSite().getName(Constants.snt_NWSHB5);
 		if (sn != null && sn.getNameValue().equalsIgnoreCase(hb5))
 		{
 			debug(1, "sensor site name '" + hb5 + "' same as site assigned to "
@@ -1393,10 +1393,10 @@ public class EmitImport
 		if (line.length() < 4)
 			return;
 		String s = line.substring(3).trim();
-		if (platform.site == null)
-			platform.site = new Site(platform);
-		SiteName sn = new SiteName(platform.site, defaultStationNameType, s);
-		platform.site.addName(sn);
+		if (platform.getSite() == null)
+			platform.setSite(new Site(platform));
+		SiteName sn = new SiteName(platform.getSite(), defaultStationNameType, s);
+		platform.getSite().addName(sn);
 	}
 
 	/**
@@ -1496,8 +1496,8 @@ public class EmitImport
 			}
 
 			db.platformList.add(platform);
-			if (platform.site != null)
-				newObjects.add(platform.site);
+			if (platform.getSite() != null)
+				newObjects.add(platform.getSite());
 			newObjects.add(platform);
 			platformListChanged = true;
 		}
@@ -1816,12 +1816,12 @@ public class EmitImport
 			{
 				Platform p = db.platformList.findPlatform(
 					Constants.medium_Goes, nle.transportId, new Date());
-				if (p != null && p.site != null)
+				if (p != null && p.getSite() != null)
 				{
-					SiteName sn = new SiteName(p.site, defaultStationNameType,
+					SiteName sn = new SiteName(p.getSite(), defaultStationNameType,
 						nle.getPlatformName().trim());
-					p.site.addName(sn);
-					newObjects.add(p.site);
+					p.getSite().addName(sn);
+					newObjects.add(p.getSite());
 				}
 			}
 		}
@@ -1834,7 +1834,7 @@ public class EmitImport
 	*/
 	private void parseTZ(String line)
 	{
-		if (platform == null || platform.site == null)
+		if (platform == null || platform.getSite() == null)
 		{
 			warning("TZ can only occur inside Site block - ignored");
 			return;
@@ -1846,7 +1846,7 @@ public class EmitImport
 		try
 		{
 			int min = Integer.parseInt(line);
-			platform.site.timeZoneAbbr = getSdfTZ(min, daylightFlag);
+			platform.getSite().timeZoneAbbr = getSdfTZ(min, daylightFlag);
 		}
 		catch(NumberFormatException ex)
 		{

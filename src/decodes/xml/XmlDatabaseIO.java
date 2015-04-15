@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.4  2014/08/29 18:20:00  mmaloney
+*  remove updateTransportId method
+*
 *  Revision 1.3  2014/08/22 17:23:04  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -1208,11 +1211,11 @@ e.printStackTrace();
 			{
 				Platform p = it.next();
 				boolean writeThis = false;
-				if (p.site == site)
+				if (p.getSite() == site)
 					writeThis = true;
-				else if (p.site != null)
+				else if (p.getSite() != null)
 				{
-					SiteName sn2 = p.site.getPreferredName();
+					SiteName sn2 = p.getSite().getPreferredName();
 					if (sn2 != null)
 					{
 						String pfn2 = sn2.makeFileName();

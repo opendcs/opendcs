@@ -4,6 +4,9 @@
  *  Open Source Software
  *  
  *  $Log$
+ *  Revision 1.4  2015/03/19 18:02:03  mmaloney
+ *  Fixed caching of lists so that when platform is committed, the in-memory lists are updated.
+ *
  *  Revision 1.3  2015/01/14 17:22:51  mmaloney
  *  Polling implementation
  *
@@ -270,7 +273,7 @@ ConfigSelectController
 			if ( desig == null || desig.trim().isEmpty() ) {
 				if (DecodesSettings.instance().setPlatformDesignatorName ) {
 					String[] comp = refConfig.getDisplayName().split("-");
-					String newdesignator = Database.getDb().platformList.getDesignator(thePlatform.site.getDisplayName(),comp[0]);
+					String newdesignator = Database.getDb().platformList.getDesignator(thePlatform.getSite().getDisplayName(),comp[0]);
 					thePlatform.setPlatformDesignator(newdesignator);
 				}
 			}
@@ -550,7 +553,7 @@ ConfigSelectController
 		Site site = dlg.getSelectedSite();
 		if (site != null) // selection was made?
 		{
-			thePlatform.site = site;
+			thePlatform.setSite(site);
 			siteNameField.setText(thePlatform.getSiteName());
 			
 			/*  For USGS, use the name type as the agency code */
@@ -575,7 +578,7 @@ ConfigSelectController
 			 default designator  -- SED 05/15/2008 */
 		if (DecodesSettings.instance().setPlatformDesignatorName ) {
 			String[] comp = refConfig.getDisplayName().split("-");
-			String newdesignator = Database.getDb().platformList.getDesignator(thePlatform.site.getDisplayName(),comp[0]);
+			String newdesignator = Database.getDb().platformList.getDesignator(thePlatform.getSite().getDisplayName(),comp[0]);
 			designatorField.setText(newdesignator);
 		}
 		sensorTableModel.fillValues();

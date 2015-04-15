@@ -319,12 +319,12 @@ public class PlatformExport
 						pit.hasNext(); )
 					{
 						Platform p = pit.next();
-						if (p.site == null)
+						if (p.getSite() == null)
 							continue;
 						if (!TextUtil.strEqualIgnoreCase(designator, 
 							p.getPlatformDesignator()))
 							continue;
-						for(Iterator<SiteName> sit = p.site.getNames();
+						for(Iterator<SiteName> sit = p.getSite().getNames();
 							sit.hasNext(); )
 						{
 							SiteName sn = sit.next();

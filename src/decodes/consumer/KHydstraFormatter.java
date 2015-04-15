@@ -112,9 +112,9 @@ public class KHydstraFormatter extends OutputFormatter
 			throw new OutputFormatterException(e.toString());
 		}
 
-		SiteName sn = platform.site.getName(Constants.snt_USGS);
+		SiteName sn = platform.getSite().getName(Constants.snt_USGS);
 		if (sn == null)
-			sn = platform.site.getPreferredName();
+			sn = platform.getSite().getPreferredName();
 	
 
 		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )

@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.5  2015/01/30 20:09:46  mmaloney
+*  Don't overwrite reflists unless they were actually imported in the XML.
+*
 *  Revision 1.4  2014/12/11 20:23:16  mmaloney
 *  Match platforms by (site,desig), not TM.
 *
@@ -539,13 +542,13 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 					stageDb.equipmentModelList.add(pc.equipmentModel);
 			}
 		
-			if (plat.site != null)
+			if (plat.getSite() != null)
 			{
-				SiteName sn = plat.site.getPreferredName();
+				SiteName sn = plat.getSite().getPreferredName();
 				Site oldSite = stageDb.siteList.getSite(sn);
 				if (oldSite != null)
 					stageDb.siteList.removeSite(oldSite);
-				stageDb.siteList.addSite(plat.site);
+				stageDb.siteList.addSite(plat.getSite());
 			}
 		}
 		

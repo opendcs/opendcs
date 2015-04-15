@@ -79,7 +79,7 @@ public class CwmsPlatformListIO extends PlatformListIO
 
 				DbKey siteId = DbKey.createDbKey(rs, 4);
 				if (!rs.wasNull()) {
-					p.site = p.getDatabase().siteList.getSiteById(siteId);
+					p.setSite(p.getDatabase().siteList.getSiteById(siteId));
 				}
 
 				DbKey configId = DbKey.createDbKey(rs, 5);

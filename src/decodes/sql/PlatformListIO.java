@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.8  2015/02/06 18:48:20  mmaloney
+ * Bugfix: Designator wasn't being saved on update. Only on create.
+ *
  * Revision 1.7  2015/01/15 19:25:46  mmaloney
  * RC01
  *
@@ -223,7 +226,7 @@ public class PlatformListIO extends SqlDbObjIo
 
 				DbKey siteId = DbKey.createDbKey(rs, 4);
 				if (!rs.wasNull()) {
-					p.site = p.getDatabase().siteList.getSiteById(siteId);
+					p.setSite(p.getDatabase().siteList.getSiteById(siteId));
 				}
 
 				DbKey configId = DbKey.createDbKey(rs, 5);
@@ -400,7 +403,7 @@ public class PlatformListIO extends SqlDbObjIo
 			if (!rs.wasNull()) 
 			{
 				// If site was previously loaded, use it.
-				p.site = p.getDatabase().siteList.getSiteById(siteId);
+				p.setSite(p.getDatabase().siteList.getSiteById(siteId));
 
 				boolean commitAfterSelect = _dbio.commitAfterSelect;
 				try
@@ -410,21 +413,21 @@ public class PlatformListIO extends SqlDbObjIo
 					_dbio.commitAfterSelect = false;
 					
 					// Else attempt to read site from database.
-					if (p.site == null)
+					if (p.getSite() == null)
 					{
 						if (siteId != Constants.undefinedId)
 						{
 							SiteDAI siteDAO = _dbio.makeSiteDAO();
 							try
 							{
-								p.site = siteDAO.getSiteById(siteId);
-								p.getDatabase().siteList.addSite(p.site);
+								p.setSite(siteDAO.getSiteById(siteId));
+								p.getDatabase().siteList.addSite(p.getSite());
 							}
 							catch(Exception ex)
 							{
 								warning("Platform " + p.getDisplayName() + " id="
 									+ p.getKey() + " has invalid siteID " + siteId);
-								p.site = null;
+								p.setSite(null);
 							}
 							finally
 							{
@@ -433,7 +436,7 @@ public class PlatformListIO extends SqlDbObjIo
 						}
 					}
 					else
-						p.site.read();
+						p.getSite().read();
 				}
 				finally
 				{
@@ -726,7 +729,7 @@ public class PlatformListIO extends SqlDbObjIo
 			  id + ", " +
 			  sqlString(p.agency) + ", " +
 			  sqlString(p.isProduction) + ", " +
-			  sqlOptHasId(p.site) + ", " +
+			  sqlOptHasId(p.getSite()) + ", " +
 			  sqlOptHasId(p.getConfig()) + ", " +
 			  sqlOptString(p.description) + ", " +
 			  sqlOptDate(p.lastModifyTime) + ", " +

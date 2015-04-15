@@ -2,6 +2,9 @@
  *  $Id$
  *
  *  $Log$
+ *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ *  OPENDCS 6.0 Initial Checkin
+ *
  *  Revision 1.5  2009/11/19 15:38:56  mjmaloney
  *  Bugfix reading platform multiple times.
  *
@@ -723,9 +726,9 @@ public class StartPanel extends JPanel
 				if ( tm != null ) {
 					rdChanField.setText(""+tm.channelNum);
 				}
-				if ( goesPlat.site != null ) {
-					if ( goesPlat.site != null )
-						usgsSiteNumField.setText(goesPlat.site.getDisplayName());
+				if ( goesPlat.getSite() != null ) {
+					if ( goesPlat.getSite() != null )
+						usgsSiteNumField.setText(goesPlat.getSite().getDisplayName());
 				}
 				//-----	
 			//}

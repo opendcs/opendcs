@@ -203,7 +203,7 @@ public class Sensor
 	{
 		if (platformSensor != null && platformSensor.site != null)
 			return platformSensor.site;
-		return platform.site;
+		return platform.getSite();
 	}
 
 	public String getDisplayName()

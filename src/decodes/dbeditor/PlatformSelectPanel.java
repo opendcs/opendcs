@@ -255,9 +255,9 @@ class PlatformSelectTableModel extends AbstractTableModel
 			for (int i =0; i < tvec.size(); i++ )
 			{
 				p = (Platform)tvec.elementAt(i);
-				if ( p.site != null )
+				if ( p.getSite() != null )
 				{
-					SiteName sn = p.site.getName(Constants.snt_USGS);
+					SiteName sn = p.getSite().getName(Constants.snt_USGS);
 					if(sn != null) {
 						if ( sn.equals(usgsName) )
 							platformList.add(p);
@@ -370,9 +370,9 @@ class PlatformSelectColumnizer
 		{
 			case 0: // Site + Designator
 			{
-				if (p.site == null)
+				if (p.getSite() == null)
 					return "";
-				Site site = p.site;
+				Site site = p.getSite();
 				SiteName sn = site.getPreferredName();
 				if ( sn == null )
 					return "";

@@ -157,7 +157,14 @@ public class PlatformList extends DatabaseObject
 				removePlatform(p);
 				return null;
 			}
-			if (p.lastModifyTime.compareTo(dbLMT) < 0)
+			
+			// MJM Note: p.lastModifyTime is set from the <LastModifyTime> element
+			// in an XML file.
+			// But in XML, dbLMT will be the actual file time stamp from the OS.
+			// The OS timestamp will always be slightly later.
+			// Thus only reload if there is at least a 2 second difference.
+			long deltaMsec = p.lastModifyTime.getTime() - dbLMT.getTime();
+			if (deltaMsec < -2000)
 			{
 				String msg = "Platform '" + p.makeFileName() 
 					+ "' has been modified in the database -- will reload";
@@ -234,18 +241,18 @@ public class PlatformList extends DatabaseObject
 		for(Iterator<Platform> it = iterator(); it.hasNext(); )
 		{
 			Platform p = it.next();
-			if (p.site == null)
+			if (p.getSite() == null)
 				continue;
 
 			boolean siteMatch = false;
-			if (p.site == site)
+			if (p.getSite() == site)
 				siteMatch = true;
 
 			// check for site name matches (might be a copy of the site).
 			for(Iterator<SiteName> sit = site.getNames(); sit.hasNext(); )
 			{
 				SiteName sn1 = sit.next();
-				SiteName sn2 = p.site.getName(sn1.getNameType());
+				SiteName sn2 = p.getSite().getName(sn1.getNameType());
 				if (sn1.equals(sn2))
 				{
 					siteMatch = true;
@@ -327,7 +334,7 @@ public class PlatformList extends DatabaseObject
 		for(Iterator<Platform> it = platformVec.iterator(); it.hasNext(); ) 
 		{
 			Platform p = it.next();
-			Site s = p.site;
+			Site s = p.getSite();
 			if ( s != null ) {
 				if ( s.getDisplayName().equals(siteName) ) {
 					String pdes = p.getPlatformDesignator();
@@ -357,18 +364,18 @@ public class PlatformList extends DatabaseObject
 		Vector<Platform> ret = new Vector<Platform>();
 		for(Platform p : platformVec)
 		{
-			if (p.site == null)
+			if (p.getSite() == null)
 				continue;
 
 			boolean siteMatch = false;
-			if (p.site == site)
+			if (p.getSite() == site)
 				siteMatch = true;
 
 			// check for site name matches (might be a copy of the site).
 			for(Iterator<SiteName> sit = site.getNames(); sit.hasNext(); )
 			{
 				SiteName sn1 = sit.next();
-				SiteName sn2 = p.site.getName(sn1.getNameType());
+				SiteName sn2 = p.getSite().getName(sn1.getNameType());
 				if (sn1.equals(sn2))
 				{
 					siteMatch = true;
@@ -411,9 +418,9 @@ public class PlatformList extends DatabaseObject
 		for(Iterator<Platform> pit = iterator(); pit.hasNext(); )
 		{
 			Platform p = pit.next();
-			if (p.site != null)
+			if (p.getSite() != null)
 			{
-				for(Iterator<SiteName> sit = p.site.getNames(); sit.hasNext(); )
+				for(Iterator<SiteName> sit = p.getSite().getNames(); sit.hasNext(); )
 				{
 					SiteName sn = sit.next();
 					if (sn.getNameValue().equalsIgnoreCase(snv))

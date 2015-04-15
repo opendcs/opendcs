@@ -262,6 +262,7 @@ public class DecodesScript extends IdDatabaseObject
 	public void prepareForExec()
 		throws IncompleteDatabaseException, InvalidDatabaseException
 	{
+		
 		for(Iterator<ScriptSensor> it = scriptSensors.iterator(); it.hasNext(); )
 		{
 			ScriptSensor ss = it.next();
@@ -373,7 +374,7 @@ public class DecodesScript extends IdDatabaseObject
 	 * @param rawmsg the RawMessage to decode
 	 * @return the DecodedMessage containing the raw message and decoded time series.
 	 */
-	public DecodedMessage decodeMessage(RawMessage rawmsg)
+	public synchronized DecodedMessage decodeMessage(RawMessage rawmsg)
 		throws DecoderException, UnknownPlatformException,
 			IncompleteDatabaseException, InvalidDatabaseException
 	{

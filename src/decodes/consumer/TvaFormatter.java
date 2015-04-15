@@ -25,13 +25,15 @@ import decodes.datasource.UnknownPlatformException;
 */
 public class TvaFormatter extends OutputFormatter
 {
-	private SimpleDateFormat tvaDateFormat;
+	private SimpleDateFormat tvaDateFormat = new SimpleDateFormat("yyyyMMddHHmm");
 	public static final String TVA_GAGE_ID = "tva-gage-id";
 
-	private static NumberFormat tvaNumberFormat;
-	static
+	private NumberFormat tvaNumberFormat = NumberFormat.getNumberInstance();
+
+	/** default constructor */
+	protected TvaFormatter()
 	{
-		tvaNumberFormat = NumberFormat.getNumberInstance();
+		super();
 		tvaNumberFormat.setMaximumFractionDigits(2);
 		tvaNumberFormat.setMinimumFractionDigits(2);
 		tvaNumberFormat.setGroupingUsed(false);
@@ -39,17 +41,10 @@ public class TvaFormatter extends OutputFormatter
 		tvaNumberFormat.setMinimumIntegerDigits(4);
 	}
 
-	/** default constructor */
-	protected TvaFormatter()
-	{
-		super();
-		tvaDateFormat = new SimpleDateFormat("yyyyMMddHHmm");
-	}
-
 	/**
 	  Initializes the Formatter. This method is called from the static
 	  makeOutputFormatter method in this class. The RoutingSpec does not
-	  need to call it explicitely.
+	  need to call it explicitly.
 	  @param type the type of this output formatter.
 	  @param tz the time zone as specified in the routing spec.
 	  @param presGrp The presentation group to handle rounding & EU conversions.
@@ -95,7 +90,7 @@ public class TvaFormatter extends OutputFormatter
 			throw new OutputFormatterException(e.toString());
 		}
 
-		SiteName sn = platform.site.getName(TVA_GAGE_ID);
+		SiteName sn = platform.getSite().getName(TVA_GAGE_ID);
 		if (sn == null)
 		{
 			String err = "No name of type '" + TVA_GAGE_ID
