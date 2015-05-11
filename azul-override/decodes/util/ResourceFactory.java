@@ -1,0 +1,94 @@
+/*
+*  $Id$
+*
+*  Copyright 2015 Cove Software, LLC -- All Rights Reserved
+*/
+package decodes.util;
+
+import java.io.File;
+import java.io.IOException;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+
+import lrgs.common.DcpMsgFlag;
+
+import decodes.decoder.FunctionList;
+import decodes.gui.TopFrame;
+import decodes.tsdb.groupedit.TsDbGrpEditor;
+import decodes.util.DecodesVersion;
+
+import ilex.util.EnvExpander;
+
+public class ResourceFactory
+{
+	private static ResourceFactory _instance = null;
+	
+	protected ResourceFactory()
+	{
+	}
+
+	public static ResourceFactory instance()
+	{
+		if (_instance == null)
+		{
+System.out.println("Azul ResourceFactory");
+			_instance = new decodes.util.ResourceFactory();
+			_instance.initializeFunctionList();
+		}
+		return _instance;
+	}
+
+	public lrgs.gui.SearchCriteriaEditorIF getSearchCriteriaEditor(File f)
+		throws IOException
+	{
+		if (f == null)
+			return new lrgs.gui.SearchCriteriaEditFrame();
+		else
+			return new lrgs.gui.SearchCriteriaEditFrame(f);
+	}
+	
+	public int getFlagRev()
+	{
+		return DcpMsgFlag.myFlagRev;
+	}
+
+	public String getDdsVersionSuffix()
+	{
+		return "";
+	}
+
+	/**
+	 * Initializes the decoder's function list with canned functions.
+	 */
+	public void initializeFunctionList()
+	{
+		FunctionList.addFunction(new decodes.decoder.CsvFunction());
+		FunctionList.addFunction(new decodes.decoder.Nos6Min());
+		FunctionList.addFunction(new decodes.decoder.NosHourly());
+		FunctionList.addFunction(new decodes.decoder.ShefProcess());
+	}
+
+	public JDialog getAboutDialog(JFrame parent, String appAbbr, String appName)
+	{
+		return new decodes.gui.AboutBox(parent, appAbbr, appName);
+	}
+
+	public String startTag()
+	{
+		return DecodesVersion.startupTag();
+	}
+
+	public TopFrame getTsdbEditorFrame(String myArgs[])
+		throws Exception
+	{
+		TsDbGrpEditor tsGrpEditor = new TsDbGrpEditor();
+		tsGrpEditor.setExitOnClose(false);
+		tsGrpEditor.execute(myArgs);
+		return tsGrpEditor.getFrame();
+	}
+
+	public String getIconPath()
+	{
+		return EnvExpander.expand("$DCSTOOL_HOME/icons/setup48x48.gif");
+	}
+}
