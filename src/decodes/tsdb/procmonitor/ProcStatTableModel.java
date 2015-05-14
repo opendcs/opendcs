@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.9  2013/03/25 19:21:15  mmaloney
  * cleanup
  *
@@ -131,13 +134,14 @@ class ProcStatTableModel extends AbstractTableModel
 		return (AppInfoStatus)getRowObject(row);
 	}
 	
-	public synchronized AppInfoStatus getAppById(DbKey key)
+	public synchronized AppInfoStatus getAppByName(String name)
 	{
 		for (AppInfoStatus ais : apps)
-			if (ais.getAppId().equals(key))
+			if (ais.getCompAppInfo().getAppName().equalsIgnoreCase(name))
 				return ais;
 		return null;
 	}
+	
 	
 	public void addApp(CompAppInfo appInfo)
 	{
@@ -180,7 +184,8 @@ class AppColumnizer
 		TsdbCompLock lock = app.getCompLock();
 		switch(col)
 		{
-		case 0: return app.getAppId().toString();
+		case 0: 
+			return app.getAppId() == null || app.getAppId().isNull() ? "N/A" : app.getAppId().toString();
 		case 1: return app.getCompAppInfo().getAppName();
 		case 2: return lock != null ? lock.getHost() : "N/A";
 		case 3: return lock != null ? ("" + lock.getPID()) : "N/A";

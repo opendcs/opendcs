@@ -12,6 +12,12 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.8  2015/04/02 18:10:03  mmaloney
+*  Store dbURI and jdbcDriver so that CwmsConsumer can override them and
+*  make them different from the definitions in DecodesSettings.
+*  Fix bug in getNewDataSince whereby cache was getting refreshed on every
+*  call rather than only once per hour.
+*
 *  Revision 1.7  2015/01/23 19:15:53  mmaloney
 *  Improved debugs on CWMS qualcode in getNewData
 *
@@ -524,7 +530,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
 import opendcs.dai.DataTypeDAI;

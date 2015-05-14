@@ -7,7 +7,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import opendcs.dai.TimeSeriesDAI;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariableList;
@@ -18,6 +17,7 @@ import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
@@ -138,7 +138,9 @@ public class ScreeningAlgorithm
 		
 		// Using the tests, determine the amount of past-data needed at each time-slice.
 		TreeSet<Date> needed = new TreeSet<Date>();
-		
+		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
+		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
+
 		debug3("Retrieving additional data needed for checks.");
 		ScreeningCriteria prevcrit = null;
 		for(int idx = 0; idx<inputParm.timeSeries.size(); idx++)
@@ -149,8 +151,7 @@ public class ScreeningAlgorithm
 				ScreeningCriteria crit = screening.findForDate(tv.getTime());
 				if (crit == null || crit == prevcrit)
 					continue;
-				crit.fillTimesNeeded(inputParm.timeSeries, needed, 
-					aggCal, this);
+				crit.fillTimesNeeded(inputParm.timeSeries, needed, aggCal, this);
 				prevcrit = crit;
 			}
 		}
@@ -165,11 +166,10 @@ public class ScreeningAlgorithm
 				// use a range retrieval.
 				Date start = needed.first();
 				Date end = needed.last();
-				if (needed.size() >= 50
-				 && end.getTime() - start.getTime() <= (4*24*3600*1000L))
+				if (inputIrregular
+				 || (needed.size() >= 50 && end.getTime() - start.getTime() <= (4*24*3600*1000L)))
 				{
-					timeSeriesDAO.fillTimeSeries(inputParm.timeSeries, start, end,
-							true, true, false);
+					timeSeriesDAO.fillTimeSeries(inputParm.timeSeries, start, end, true, true, false);
 				}
 				else
 					timeSeriesDAO.fillTimeSeries(inputParm.timeSeries, needed);
@@ -186,11 +186,13 @@ public class ScreeningAlgorithm
 		
 		String euAbbr = screening.getCheckUnitsAbbr();
 		if (euAbbr != null 
-		 && TextUtil.strCompareIgnoreCase(euAbbr, inputParm.timeSeries.getUnitsAbbr())
-		 	!= 0)
+		 && TextUtil.strCompareIgnoreCase(euAbbr, inputParm.timeSeries.getUnitsAbbr()) != 0)
 		{
 			// Need to convert the input param into the proper units.
 			TimeSeriesHelper.convertUnits(inputParm.timeSeries, euAbbr);
+			
+			// Also, if there is an output, make sure its units match the input.
+			setOutputUnitsAbbr("output", euAbbr);
 		}
 //AW:BEFORE_TIMESLICES_END
 	}

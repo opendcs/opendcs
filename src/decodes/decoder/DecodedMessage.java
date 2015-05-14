@@ -898,18 +898,26 @@ public class DecodedMessage implements IDataCollection
 	public void formatSamples(PresentationGroup pg)
 	{
 		Logger.instance().debug3(
-			"Formatting Samples, pg=" + (pg == null ? "null" : pg.getDisplayName()));
+			"Formatting Samples, pg=" + (pg == null ? "null" : pg.getDisplayName())
+			+ ", there are " + (timeSeriesArray==null ? "null" : 
+				(""+timeSeriesArray.size())) + " time series in the message.");
 		if (timeSeriesArray == null)
 			return;
 		Vector<TimeSeries> omit = new Vector<TimeSeries>();
 		for (TimeSeries ts : timeSeriesArray)
 		{
-			if (ts.size() == 0)
-				continue;
 			Sensor sensor = ts.getSensor();
+			if (ts.size() == 0)
+			{
+				Logger.instance().debug3("Skipping empty time series for sensor " 
+					+ (sensor==null ? "null" : sensor.getName()));
+				continue;
+			}
 			String p = sensor.getProperty("omit");
 			if (p != null && TextUtil.str2boolean(p))
 			{
+				Logger.instance().debug3(" will omit sensor " + sensor.getName()
+					+ " due to omit property");
 				omit.add(ts);
 				continue;
 			}
@@ -928,9 +936,13 @@ public class DecodedMessage implements IDataCollection
 						omit.add(ts);
 					}
 					else
+					{
 						ts.formatSamples(dp);
+					}
 				}
 			}
+			else Logger.instance().debug3(" No pg element for sensor " 
+				+ sensor.getName() + " with dt=" + sensor.getDataType());
 			Season ignoreSeason = sensor.getIgnoreSeason();
 			if (ignoreSeason == null)
 				ignoreSeason = platform.getIgnoreSeason();

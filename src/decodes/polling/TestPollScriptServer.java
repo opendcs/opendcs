@@ -29,6 +29,7 @@ import java.util.Date;
 
 import ilex.net.BasicServer;
 import ilex.net.BasicSvrThread;
+import ilex.util.Logger;
 
 public class TestPollScriptServer extends BasicServer
 {
@@ -59,7 +60,7 @@ public class TestPollScriptServer extends BasicServer
 		throws Exception
 	{
 		int port = Integer.parseInt(args[0]);
-		
+		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		TestPollScriptServer tts = new TestPollScriptServer(port, args[1]);
 		tts.listen();
 	}
@@ -79,13 +80,17 @@ class TestPollScriptServerThread
 		PollScriptProtocol prot = new PollScriptProtocol();
 		try
 		{
-			prot.readScript(new File(((TestPollScriptServer)parent).scriptFileName));
+			File scriptFile = new File(((TestPollScriptServer)parent).scriptFileName);
+			System.out.println("New client detected. Reading script '" + scriptFile.getPath() + "'");
+			prot.readScript(scriptFile);
 			
+			System.out.println("Constructing ioPort...");
 			// mock up an IOPort to execute the script
 			IOPort ioPort = new IOPort(null, 0, null);
 			ioPort.setIn(getSocket().getInputStream());
 			ioPort.setOut(getSocket().getOutputStream());
 			
+			System.out.println("Executing script...");
 			prot.executeScript(ioPort, new Date(System.currentTimeMillis() - 3600000L));
 		}
 		catch (Exception ex)

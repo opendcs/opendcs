@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.7  2015/02/06 18:56:59  mmaloney
+*  Added appMinDebugLevel
+*
 *  Revision 1.6  2014/12/11 20:29:31  mmaloney
 *  Added DacqEventLogging capability.
 *
@@ -165,7 +168,6 @@ public abstract class TsdbAppTemplate
 		throws Exception
 	{
 		pid = determinePID();
-		Logger.instance().debug1("PID=" + getPID());
 		addCustomArgs(cmdLineArgs);
 		parseArgs(args);
 		startupLogMessage();
@@ -236,7 +238,7 @@ public abstract class TsdbAppTemplate
 	{
 		Logger.instance().info("===============================================");
 		Logger.instance().info(appNameArg.getValue() + " starting. "
-			+ DecodesVersion.startupTag());
+			+ DecodesVersion.startupTag() + ", pid=" + getPID());
 	}
 
 	/**
@@ -376,6 +378,7 @@ public abstract class TsdbAppTemplate
 		String msg = "Cannot read DB auth from file '" + afn + "': " + ex;
 		System.err.println(msg);
 		Logger.instance().failure(msg);
+try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); }
 	}
 	
 	protected void badConnect(String appName, BadConnectException ex)

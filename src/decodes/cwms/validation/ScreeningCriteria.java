@@ -93,8 +93,7 @@ public class ScreeningCriteria
 			return;
 		
 		// MJM 20121002 Leave protected values completely unchanged. Don't even validate.
-		if (alg.inputIsOutput()
-		 && (tv.getFlags() & CwmsFlags.PROTECTED) != 0)
+		if (alg.inputIsOutput() && (tv.getFlags() & CwmsFlags.PROTECTED) != 0)
 		{
 			alg.debug1("Skipping PROTECTED value at " + alg.debugSdf.format(dataTime));
 			return;
@@ -108,9 +107,9 @@ public class ScreeningCriteria
 			return;
 		}
 		
-		TimeSeriesIdentifier tsid = input.getTimeSeriesIdentifier();
-		IntervalIncrement tsinc = 
-			IntervalCodes.getIntervalCalIncr(tsid.getInterval());
+		TimeSeriesIdentifier inputTsid = input.getTimeSeriesIdentifier();
+		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
+		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
 
 		output.setValue(v);
 		int flags = tv.getFlags();
@@ -122,6 +121,7 @@ public class ScreeningCriteria
 			alg.debugSdf.format(dataTime)
 			+ ", flags initially=0x" + Integer.toHexString(flags));
 
+		// ABS checks
 		flags |= CwmsFlags.SCREENED;
 		for(AbsCheck chk : absChecks)
 		{
@@ -135,65 +135,108 @@ public class ScreeningCriteria
 					+ " failed " + chk.toString());
 			}
 		}
+		
+		// CONST checks
 		Calendar aggCal = alg.aggCal;
+	nextConstCheck:
 		for(ConstCheck chk : constChecks)
 		{
 			alg.debug1(chk.toString());
+			
 			// Flag if value has not changed more than tolerance
 			// over specified duration.
 			// Abort check if more than allowedMissing are not present.
-			IntervalIncrement durinc = 
-				IntervalCodes.getIntervalCalIncr(chk.getDuration());
-			if (tsinc.getCount() == 0)
-				continue;
-			int nvalues = 0;
+			IntervalIncrement durinc = IntervalCodes.getIntervalCalIncr(chk.getDuration());
+			
 			double minvalue = Double.POSITIVE_INFINITY;
 			double maxvalue = Double.NEGATIVE_INFINITY;
-			int nmissing = 0;
 			aggCal.setTime(dataTime);
 			aggCal.add(durinc.getCalConstant(), -durinc.getCount());
-			for(Date d = aggCal.getTime(); 
-				!d.after(dataTime); 
-				aggCal.add(tsinc.getCalConstant(), tsinc.getCount()), 
-				d = aggCal.getTime())
+			Date startTime = aggCal.getTime();
+
+			// Compute the maximum allowable time gap in seconds.
+			// For regular inputs, this is expressed as nmiss * the interval of the input
+			IntervalIncrement maxGap = null;
+			if (!inputIrregular)
 			{
-				TimedVariable x = input.findWithin(d, alg.roundSec);
-				if (x == null)
-				{
-					if (++nmissing >= chk.getAllowedMissing())
-						break;
-					continue;
-				}
-				double xv = 0;
+				if (chk.getAllowedMissing() > 0)
+					maxGap = new IntervalIncrement(tsinc.getCalConstant(), 
+						tsinc.getCount() * chk.getAllowedMissing());
+				
+			}
+			else // maxGap can be specified in the DATCHK files
+				maxGap = chk.getMaxGap();
+			
+			// find the earliest index in the input TS >= aggCal. Then increment through CTS
+			// until !d.after(dataTime)
+			if (input.size() < 1)
+				continue nextConstCheck;
+			alg.debug3("Iterating for CONST check, maxGap=" + maxGap);
+			int idx = 0;
+			Date lastTime = null, firstTime = null;
+			for(; idx < input.size() && input.sampleAt(idx).getTime().before(startTime); idx++);
+			
+			// For irregular, we may need to backup to first sample before the start of period.
+			if (input.sampleAt(idx).getTime().after(startTime) && idx > 0)
+				idx--;
+			for(; idx < input.size() && !input.sampleAt(idx).getTime().after(dataTime); idx++)
+			{
+				TimedVariable x = input.sampleAt(idx);
+				
+				double xv = 0.0;
 				try { xv = x.getDoubleValue(); }
 				catch(NoConversionException ex)
 				{
-					alg.warning("Crit-2: " + ex.toString());
-					if (++nmissing >= chk.getAllowedMissing())
-						break;
-					continue;
+					continue; // treat as missing.
 				}
-				nvalues++;
+				
+				if (firstTime == null)
+					firstTime = x.getTime();
+//alg.debug3("    CONST value=" + xv + " at time " + alg.debugSdf.format(x.getTime()));
+
+				if (maxGap != null && lastTime != null)
+				{
+					aggCal.setTime(lastTime);
+					aggCal.add(maxGap.getCalConstant(), maxGap.getCount());
+					if (aggCal.getTime().before(x.getTime()))
+					{
+						alg.debug1("Value skipped because of time gap: "
+							+ alg.debugSdf.format(lastTime) + " - " + alg.debugSdf.format(x.getTime()));
+						lastTime = x.getTime();
+						continue nextConstCheck;
+					}
+				}
+				
 				if (xv < minvalue)
 					minvalue = xv;
 				if (xv > maxvalue)
 					maxvalue = xv;
+				lastTime = x.getTime();
 			}
-			if (nmissing < chk.getAllowedMissing())
+			
+			// If variance is less than the tolerance, flag the value.
+			double variance = maxvalue - minvalue;
+//alg.debug3("  Iteration done, max=" + maxvalue + ", min=" + minvalue + ", variance=" + variance);
+			if (compare(variance, chk.getTolerance()) <= 0)
 			{
-				double variance = maxvalue - minvalue;
-				// MJM is this logic reversed? Shouldn't I check for variance >= tolerance?
-				if (compare(variance, chk.getTolerance()) <= 0)
+				// Make sure that specified duration was exceeded.
+				aggCal.setTime(firstTime);
+				aggCal.add(durinc.getCalConstant(), durinc.getCount());
+				if (!lastTime.before(aggCal.getTime()))
 				{
 					setValidity(chk.getFlag(), CwmsFlags.TEST_CONSTANT_VALUE);
-
 					alg.info(input.getTimeSeriesIdentifier().getUniqueString()
 						+ " value " + v + " at time " + alg.debugSdf.format(dataTime)
-						+ " failed " + chk.toString());
+						+ " failed " + chk.toString()
+						+ " max=" + maxvalue + ", min=" + minvalue);
 				}
+//else alg.debug3("No flag set because duration was not seen.");
 			}
+//else alg.debug3("No flag set because variance exceeded.");
 		}
-		
+
+
+		// RATE checks
 		TimedVariable prevtv = input.findWithin(
 			new Date(dataTime.getTime()-3600000L), alg.roundSec);
 		if (prevtv != null 
@@ -222,66 +265,63 @@ public class ScreeningCriteria
 			}
 		}
 		
+		// DUR checks
 		// For Duration-Magnitude tests, first figure out what kind of 
 		// accumulation. If input duration is not 0 then we have periodic
 		// incremental numbers -- just add them. If duration
 		// IS 0 then we have a cumulative number and we have to take the delta.
-		String tsDur = tsid.getPart("duration");
+		String tsDur = inputTsid.getPart("duration");
 		IntervalIncrement tsDurCalInc = IntervalCodes.getIntervalCalIncr(tsDur);
 		boolean incremental = tsDurCalInc != null && tsDurCalInc.getCount() > 0;
-//		alg.debug1("incremental=" + incremental);
 		
 		for(DurCheckPeriod chk : durCheckPeriods)
 		{
-			alg.debug1(chk.toString());
-			// Accumulate change over duration
-			// appropriate for cumulative precip input.
-			// Flag if accumulation is too high or low
-			IntervalIncrement durinc = 
-				IntervalCodes.getIntervalCalIncr(chk.getDuration());
-			if (tsinc.getCount() == 0)
+			alg.debug1(chk.toString() + ", incremental=" + incremental);
+			
+			// Accumulate change over duration specified in the DATCHK file.
+			IntervalIncrement durinc = IntervalCodes.getIntervalCalIncr(chk.getDuration());
+			if (durinc.getCount() == 0)
 				continue;
-			int nvalues = 0;
+//alg.debug3("   DUR period=" + tsinc);
+			
 			double prev = Double.NEGATIVE_INFINITY;
 			double tally = 0;
-			int nmissing = 0;
 			aggCal.setTime(dataTime);
 			aggCal.add(durinc.getCalConstant(), -durinc.getCount());
-			for(Date d = aggCal.getTime(); 
-				!d.after(dataTime); 
-				aggCal.add(tsinc.getCalConstant(), tsinc.getCount()), 
-				d = aggCal.getTime())
+			Date startTime = aggCal.getTime();
+			
+			// find the earliest index in the input TS >= aggCal. Then increment through CTS
+			// until !d.after(dataTime)
+			int idx = 0;
+			for(; idx < input.size() && input.sampleAt(idx).getTime().before(startTime); idx++);
+			if (!incremental && input.sampleAt(idx).getTime().after(startTime) && idx > 0)
+				idx--;
+			for(; idx < input.size() && !input.sampleAt(idx).getTime().after(dataTime); idx++)
 			{
-				TimedVariable x = input.findWithin(d, alg.roundSec);
-				if (x == null)
-				{
-					++nmissing;
-					continue;
-				}
+				TimedVariable x = input.sampleAt(idx);
 				double xv = 0;
 				try { xv = x.getDoubleValue(); }
 				catch(NoConversionException ex)
 				{
 					alg.warning("Crit-4: " + ex.toString());
-					++nmissing;
 					continue;
 				}
-				nvalues++;
+//alg.debug3("   DUR sample[" + idx + "] time=" + alg.debugSdf.format(x.getTime()) + ", value=" + xv);
 				if (!incremental)
 				{
-					// Must take deltas and then add them.
+					// Must take deltas of cumulative values and then add them.
 					if (prev != Double.NEGATIVE_INFINITY)
 					{
 						double delta = xv - prev;
 						tally += delta;
-//						alg.debug2("TV=" + x + ", delta=" + delta
-//							+ ", new tally=" + tally);
 					}
 					prev = xv;
 				}
 				else // Already have incremental numbers, just add them.
 					tally += xv;
+//alg.debug3("    Tally is now " + tally);
 			}
+//alg.debug3("  Looping done, tally=" + tally + ", low=" + chk.getLow() + ", high=" + chk.getHigh());
 			if (compare(tally,chk.getLow()) < 0 || compare(tally,chk.getHigh()) > 0)
 			{
 				setValidity(chk.getFlag(), CwmsFlags.TEST_DURATION_VALUE);
@@ -290,6 +330,7 @@ public class ScreeningCriteria
 					+ " failed " + chk.toString() + ", tally=" + tally
 					+ "limits=(" + chk.getLow() + "," + chk.getHigh());
 			}
+//else alg.debug3("  Not out of limits.");
 		}
 		
 		switch(validity)
@@ -352,11 +393,15 @@ public class ScreeningCriteria
 	 */
 	private int compare(double value, double limit)
 	{
-		double x = value - limit;
-		int sign = (x < 0) ? -1 : 1;
-		if (x < 0) x = -x;
-		long diff = (long)(x*1000.0 + .5) * sign;
+		long lval = (long)(value*1000 + .5);
+		long llim = (long)(limit*1000 + .5);
+		long diff = lval - llim;
 		return diff < 0 ? -1 : diff > 0 ? 1 : 0;
+//		double x = value - limit;
+//		int sign = (x < 0) ? -1 : 1;
+//		if (x < 0) x = -x;
+//		long diff = (long)(x*1000.0 + .5) * sign;
+//		return diff < 0 ? -1 : diff > 0 ? 1 : 0;
 	}
 	
 	private void setValidity(char testFlag, int testbits)
@@ -390,12 +435,9 @@ public class ScreeningCriteria
 		TimeSeriesIdentifier tsid = inTS.getTimeSeriesIdentifier();
 		IntervalIncrement tsinc = 
 			IntervalCodes.getIntervalCalIncr(tsid.getInterval());
+		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
 
-		// AbsChecks don't need any historical data
-
-		boolean isIrregular = tsinc == null || tsinc.getCount() == 0;
-		if (isIrregular)
-			return;
+		// Note: AbsChecks don't need any historical data
 		
 		// ConstChecks will need the range from t-duration through t.
 		for(ConstCheck cc : constChecks)
@@ -403,13 +445,16 @@ public class ScreeningCriteria
 			alg.debug3("Adding dates for const check: " + cc.toString());
 			addDatesThruDuration(inTS, tsinc, 
 				IntervalCodes.getIntervalCalIncr(cc.getDuration()),
-				aggCal,needed, alg);
+				aggCal,needed, alg, inputIrregular);
 		}
 
 		// ROC checks need the previous hour for each trigger value
 		if (rocPerHourChecks.size() > 0)
 		{
 			alg.debug3("Adding dates for ROC checks");
+
+			// With the changes to addToNeeded, the following works fine for regular and irregular.
+			// Although, 1 hour deltas are an odd thing for irregular.
 			for(int idx = 0; idx < inTS.size(); idx++)
 			{
 				TimedVariable tv = inTS.sampleAt(idx);
@@ -420,7 +465,7 @@ public class ScreeningCriteria
 				aggCal.setTime(sampleTime);
 				aggCal.add(Calendar.HOUR_OF_DAY, -1);
 				Date d = aggCal.getTime();
-				needed.add(d);
+				addToNeeded(d, needed, inputIrregular);
 			}
 		}
 		
@@ -430,16 +475,20 @@ public class ScreeningCriteria
 			alg.debug3("Adding dates for dur check: " + cc.toString());
 			addDatesThruDuration(inTS, tsinc, 
 				IntervalCodes.getIntervalCalIncr(cc.getDuration()),
-				aggCal,needed, alg);
+				aggCal,needed, alg, inputIrregular);
 		}
 
 		// Finally remove from 'needed' anything we already have
-		alg.debug3("Removing needed dates we already have. needed.size=" + needed.size());
-		for(Iterator<Date> dit = needed.iterator(); dit.hasNext(); )
+		if (!inputIrregular)
 		{
-			Date d = dit.next();
-			if (inTS.findWithin(d, alg.roundSec) != null)
-				dit.remove();
+			// Don't do this if inputIrregular -- there should only be two dates and we need them both.
+			alg.debug3("Removing needed dates we already have. needed.size=" + needed.size());
+			for(Iterator<Date> dit = needed.iterator(); dit.hasNext(); )
+			{
+				Date d = dit.next();
+				if (inTS.findWithin(d, alg.roundSec) != null)
+					dit.remove();
+			}
 		}
 		alg.debug1("ScreeningCriteria.fillTimesNeeded done.");
 	}
@@ -451,7 +500,7 @@ public class ScreeningCriteria
 	
 	private void addDatesThruDuration(CTimeSeries inTS,
 		IntervalIncrement tsinc, IntervalIncrement durinc, Calendar aggCal,
-		TreeSet<Date> needed, ScreeningAlgorithm alg)
+		TreeSet<Date> needed, ScreeningAlgorithm alg, boolean inputIrregular)
 	{
 		int nProcessed = 0;
 		int nAdded = 0;
@@ -463,25 +512,58 @@ public class ScreeningCriteria
 			nProcessed++;
 			// Get this sample's time and subtract duration
 			Date sampleTime = tv.getTime();
-//			alg.debug3("addDatesThruDuration: sampleTime=" + alg.debugSdf.format(sampleTime));
 			aggCal.setTime(sampleTime);
 			aggCal.add(durinc.getCalConstant(), -durinc.getCount());
 			Date d = aggCal.getTime();
-			// Now iterate forward by interval
-			while(d.before(sampleTime))
+			if (inputIrregular)
 			{
-//				alg.debug3("addDatesThruDuration: checking=" + alg.debugSdf.format(d));
-				if (inTS.findWithin(d, 5) == null)
+				addToNeeded(d, needed, inputIrregular);
+				addToNeeded(sampleTime, needed, inputIrregular);
+				alg.debug3("addDatesThruDuration (irregular input) first=" + needed.first()
+					+ ", last=" + needed.last());
+			}
+			else // Regular input, iterate forward by interval to get discrete times we need.
+			{
+				while(d.before(sampleTime))
 				{
-					needed.add(d);
-					nAdded++;
+					if (inTS.findWithin(d, 5) == null)
+					{
+						addToNeeded(d, needed, inputIrregular);
+						nAdded++;
+					}
+					aggCal.add(tsinc.getCalConstant(), tsinc.getCount());
+					d = aggCal.getTime();
 				}
-				aggCal.add(tsinc.getCalConstant(), tsinc.getCount());
-				d = aggCal.getTime();
+				alg.debug3("addDatesThruDuration inTS.size="
+					+ inTS.size() + ", nProcessed=" + nProcessed
+					+ ", nAdded=" + nAdded);
 			}
 		}
-		alg.debug3("addDatesThruDuration inTS.size="
-			+ inTS.size() + ", nProcessed=" + nProcessed
-			+ ", nAdded=" + nAdded);
+	}
+	
+	private void addToNeeded(Date d, TreeSet<Date> needed, boolean inputIrregular)
+	{
+		if (inputIrregular)
+		{
+			int sz = needed.size();
+			if (sz < 2)
+				needed.add(d);
+			else // there are already 2 distinct Date objects in the list
+			{
+				if (d.before(needed.first()))
+				{
+					needed.remove(needed.first());
+					needed.add(d);
+				}
+				else if (d.after(needed.last()))
+				{
+					needed.remove(needed.last());
+					needed.add(d);
+				}
+				// else it's in the middle of the range. Do nothing.
+			}
+		}
+		else // We are accumulating a set of distinct dates.
+			needed.add(d);
 	}
 }

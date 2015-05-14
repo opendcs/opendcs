@@ -4,6 +4,7 @@
 package ilex.util;
 
 import java.io.*;
+import java.util.Date;
 
 /**
 * ServerLock is used to ensure that only one instance of a given server
@@ -17,15 +18,16 @@ import java.io.*;
 public class ServerLock implements Runnable
 {
 	private File myLockFile;
-	private int updatePeriod;
+	private int updateSeconds;
 	private Thread updateThread;
 	private boolean active;
 	private boolean shutdownViaLock;
 	private ServerLockable lockable;
-	private long lastLockTime = 0L;
-	private int filePseudoPID = 0;
-	private int myPseudoPID = 0;
+	private long lastLockMsec = 0L;
+	private int filePID = 0;
+	private int myPID = 0;
 	private boolean critical = true;
+	private String appStatus = "";
 
 	/**
 	* Creates a new ServerLock object with the specified file path.
@@ -37,18 +39,20 @@ public class ServerLock implements Runnable
 	public ServerLock( String lockFilePath )
 	{
 		myLockFile = new File(lockFilePath);
-		updatePeriod = 10; // default = 10 seconds
+		updateSeconds = 10; // default = 10 seconds
 		updateThread = null;
 		active = false;
 		lockable = null;
-		myPseudoPID = (int)(System.currentTimeMillis() / 1000L);
+		myPID = determinePID();
+		if (myPID == -1)
+			myPID = (int)(System.currentTimeMillis() / 1000L);
 	}
 
 	/**
 	* @return the period (in seconds) at which the lock file is updated
 	* with the current time.
 	*/
-	public int getLockUpdatePeriod( ) { return updatePeriod; }
+	public int getLockUpdatePeriod( ) { return updateSeconds; }
 
 	/**
 	* Sets the period (in seconds) at which the lock file is updated
@@ -57,7 +61,7 @@ public class ServerLock implements Runnable
 	*/
 	public void setLockUpdatePeriod( int period ) 
 	{ 
-		if (period > 0) updatePeriod = period;
+		if (period > 0) updateSeconds = period;
 	}
 
 	/**
@@ -76,7 +80,7 @@ public class ServerLock implements Runnable
 	{
 		try
 		{
-			if (isLocked())
+			if (isLocked(true))
 			{
 				// Lock is in use by another instance!
 				if (critical)
@@ -145,11 +149,10 @@ public class ServerLock implements Runnable
 	*/
 	private void updateLock( ) throws IOException
 	{
-		DataOutputStream outs = 
-			new DataOutputStream(new FileOutputStream(myLockFile));
-		outs.writeLong(System.currentTimeMillis() / (long)1000);
-		outs.writeInt(myPseudoPID);
-		outs.writeBytes("     ");
+		DataOutputStream outs = new DataOutputStream(new FileOutputStream(myLockFile));
+		outs.writeLong(lastLockMsec = System.currentTimeMillis());
+		outs.writeInt(myPID);
+		outs.writeUTF(appStatus);
 		outs.close();
 	}
 
@@ -157,9 +160,10 @@ public class ServerLock implements Runnable
 	* This method returns true if the lock is currently active.
 	* It may be called by clients wishing to find out if a given server is
 	* running.
+	* @param checkTimeout if set, then return false if lock exists but has timed out.
 	* @return true if file is locked.
 	*/
-	public boolean isLocked( )
+	public boolean isLocked(boolean checkTimeout)
 	{
 		if (myLockFile.canRead())
 		{
@@ -167,25 +171,24 @@ public class ServerLock implements Runnable
 			try
 			{
 				ins = new DataInputStream(new FileInputStream(myLockFile));
-				long t = ins.readLong();
-				lastLockTime = t;
-				filePseudoPID = ins.readInt();
-				long now = System.currentTimeMillis() / (long)1000;
+				lastLockMsec = ins.readLong();
+				filePID = ins.readInt();
+				try { appStatus = ins.readUTF(); }
+				catch(Exception ex) { appStatus = ""; }
 				ins.close();
-
+				long now = System.currentTimeMillis();
+				
 				// MJM 20080505 - If I am updating the lock, don't check for
 				// timeout, just that the lock exists and it is my PID.
 				// We saw when a system got very busy, it didn't do its update
 				// in time, and then exited.
-				if (updateThread != null)
+				if (!checkTimeout)
 					return true;
 
 				// Timeout applies to initial obtainLock, and when checking
-				// the lock of some other process. In both cases, updateThread
-				// has not yet been created.
-				if (now <= t + (updatePeriod * 2) && now >= t)
+				// the lock of some other process.
+				if (now <= lastLockMsec + (updateSeconds * 2000L) && now >= lastLockMsec)
 					return true;
-//Logger.instance().info("Lock file '" + myLockFile.getName() + "' out of date.");
 			}
 			catch(IOException ioe)
 			{
@@ -199,17 +202,7 @@ public class ServerLock implements Runnable
 				}
 			}
 		}
-//else Logger.instance().info("Cannot read lock file '" + myLockFile.getName()+"'.");
 		return false;
-	}
-
-	/**
-	 * For monitors of locks, this method returns the millisecond value
-	 * of the last time the lock was read by 'isLocked()'.
-	 */
-	public long getLastLockTime()
-	{
-		return lastLockTime * 1000L;
 	}
 
 	/**
@@ -230,12 +223,12 @@ public class ServerLock implements Runnable
 		shutdownViaLock = false;
 		while (active)
 		{
-			if (!isLocked())
+			if (!isLocked(false))
 			{
 				active = false;
 				shutdownViaLock = true;
 			}
-			else if (filePseudoPID != myPseudoPID)
+			else if (filePID != myPID)
 			{
 				active = false;
 				shutdownViaLock = true;
@@ -250,7 +243,7 @@ public class ServerLock implements Runnable
 					System.err.println("Error updating server lock file '"
 						+ myLockFile + "': " + ioe);
 				}
-				try { Thread.sleep(updatePeriod * (long)1000); }
+				try { Thread.sleep(updateSeconds * (long)1000); }
 				catch(InterruptedException ie) {}
 			}
 		}
@@ -308,4 +301,48 @@ public class ServerLock implements Runnable
 	{
 		this.critical = critical;
 	}
+	
+	public static int determinePID()
+	{
+		String pids = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+		if (pids != null)
+		{
+			// String will be of the form 12345@username
+			int idx = pids.indexOf('@');
+			if (idx > 0)
+			{
+				try { return Integer.parseInt(pids.substring(0, idx)); }
+				catch(Exception ex) {}
+			}
+		}
+		return -1;
+	}
+
+	public String getAppStatus()
+	{
+		return appStatus;
+	}
+
+	public void setAppStatus(String appStatus)
+	{
+		if (appStatus == null)
+			appStatus = "";
+		this.appStatus = appStatus;
+	}
+
+	public void setPID(int pid)
+	{
+		this.myPID = pid;
+	}
+
+	public long getLastLockMsec()
+	{
+		return lastLockMsec;
+	}
+
+	public int getFilePID()
+	{
+		return filePID;
+	}
+
 }

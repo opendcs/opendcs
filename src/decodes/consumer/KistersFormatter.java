@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2015/03/19 13:18:29  mmaloney
+ * Added bufferTimeSec to allow buffering before outputting. This aggregates more
+ * samples under the same REXCHANGE header, and allows the Kisters importer to
+ * operate more efficiently.
+ *
  * Revision 1.5  2014/09/15 13:55:32  mmaloney
  * Updates for AESRD
  *
@@ -308,7 +313,7 @@ public class KistersFormatter
 			SiteName siteName = site.getName(siteNameType);
 			if (siteName == null)
 				if ((siteName = site.getName(siteNameTypeAlt)) == null)
-					siteName = sensorSite.getPreferredName();
+					siteName = site.getPreferredName();
 			
 			DataType dt = sensor.getDataType(dataTypeStandard);
 			if (dt == null)
@@ -360,8 +365,11 @@ public class KistersFormatter
 			ts.sort();
 			for(int idx=0; idx<ts.size(); idx++)
 			{
+				TimedVariable tv = ts.sampleAt(idx);
 				String samp = ts.formattedSampleAt(idx);
-				boolean inval = samp.equals("error") || samp.equals("missing");
+				boolean inval = samp.equals("error") || samp.equals("missing")
+					|| ((tv.getFlags() & (IFlags.IS_ERROR | IFlags.IS_MISSING)) != 0);
+				
 				if (inval)
 				{
 					if (!includeRINVAL)

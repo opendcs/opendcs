@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2015/03/19 18:08:00  mmaloney
+ * null ptr protection.
+ *
  * Revision 1.4  2015/02/06 18:52:45  mmaloney
  * Downgrade lock check debug message.
  *
@@ -466,6 +469,7 @@ public class LoadingAppDao
 			+ ")";
 		doModify(q);
 		debug1("Obtained lock for application ID " + appInfo.getAppId());
+		lock.setAppName(appInfo.getAppName());
 		return lock;
 	}
 
@@ -564,9 +568,30 @@ public class LoadingAppDao
 		}
 		catch(SQLException ex)
 		{
-			warning("Error iterating results for query '" + q + "': " 
-				+ ex);
+			warning("Error iterating results for query '" + q + "': " + ex);
 		}
+		
+		q = "SELECT LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME FROM HDB_LOADING_APPLICATION";
+		rs = doQuery(q);
+		try
+		{
+			while(rs.next())
+			{
+				DbKey appId = DbKey.createDbKey(rs, 1);
+				String appName = rs.getString(2);
+				for(TsdbCompLock lock : ret)
+					if (lock.getAppId().equals(appId))
+					{
+						lock.setAppName(appName);
+						break;
+					}
+			}
+		}
+		catch(SQLException ex)
+		{
+			warning("Error iterating results for query '" + q + "': " + ex);
+		}
+		
 		return ret;
 	}
 

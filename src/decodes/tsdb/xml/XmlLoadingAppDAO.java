@@ -1,13 +1,18 @@
 package decodes.tsdb.xml;
 
+import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import ilex.util.ServerLock;
+import ilex.util.TextUtil;
 import ilex.xml.XmlOutputStream;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import decodes.sql.DbKey;
@@ -35,6 +40,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	public final static String module = "XmlLoadingAppDAO";
 	private File loadingAppDir = null;
 	private CompXio compXio = new CompXio(module, null);
+	private ServerLock serverLock = null;
 	
 	public XmlLoadingAppDAO(String dbTop)
 	{
@@ -47,6 +53,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	public ArrayList<CompAppInfo> listComputationApps(boolean usedOnly)
 		throws DbIoException
 	{
+//System.out.println("listComputationApps() loadingAppDir is '" + loadingAppDir.getPath() + "'");
 		ArrayList<CompAppInfo> ret = new ArrayList<CompAppInfo>();
 		File [] files = loadingAppDir.listFiles();
 		for(File f : files)
@@ -68,6 +75,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 				throw new DbIoException(msg);
 			}
 		}
+//System.out.println("Returning " + ret.size() + " apps.");
 		return ret;
 	}
 
@@ -166,7 +174,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		NoSuchObjectException
 	{
 		// Not needed in XML
-		return null;
+		return DbKey.NullKey;
 	}
 
 	@Override
@@ -181,42 +189,115 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	@Override
 	public void releaseCompProcLock(TsdbCompLock lock) throws DbIoException
 	{
+		serverLock = lock.getServerLock();
+		if (serverLock != null)
+			serverLock.releaseLock();
 	}
 
-	/**
-	 * Locks are not supported in an xml database. Does nothing.
-	 */
 	@Override
-	public void checkCompProcLock(TsdbCompLock lock) throws LockBusyException,
-		DbIoException
+	public void checkCompProcLock(TsdbCompLock lock) 
+		throws LockBusyException, DbIoException
 	{
+		serverLock = lock.getServerLock();
+		if (serverLock == null)
+			return; // this is not an XML database lock.
+		if (!serverLock.isLocked(true))
+		{	
+			// It is NOT locked, meaning lock has been removed or stolen by another PID
+			throw new LockBusyException("Lock has been removed.");
+		}
 	}
 
-	/**
-	 * Locks are not supported in an xml database: always returns empty list.
-	 */
 	@Override
 	public List<TsdbCompLock> getAllCompProcLocks()
 		throws DbIoException
 	{
-		Logger.instance().warning("Locks not supported in XML database.");
-		return new ArrayList<TsdbCompLock>();
+		ArrayList<TsdbCompLock> ret = new ArrayList<TsdbCompLock>();
+		File userdir = new File(EnvExpander.expand("$DCSTOOL_USERDIR"));
+		File lockFiles[] = userdir.listFiles(
+			new FilenameFilter()
+			{
+				@Override
+				public boolean accept(File dir, String name)
+				{
+					return TextUtil.endsWithIgnoreCase(name, ".lock");
+				}
+			});
+		ArrayList<CompAppInfo> applist = listComputationApps(false);
+		for(File lf : lockFiles)
+		{
+			String appName = lf.getName();
+			// Guaranteed from above that it ends in ".lock"
+			appName = appName.substring(0, appName.lastIndexOf('.'));
+//System.out.println("Looking for match for appName '" + appName + "'");
+			for(CompAppInfo cai : applist)
+			{
+				String fn = compressFileName(cai.getAppName());
+//System.out.println("  ... checking '" + fn + "'");
+				if (appName.equals(fn))
+				{
+					ServerLock serverLock = new ServerLock(lf.getPath());
+					// Don't care about result, the isLocked method reads the lock info.
+					serverLock.isLocked(true);
+					TsdbCompLock tcl = new TsdbCompLock(DbKey.NullKey, serverLock.getFilePID(),
+						"", new Date(serverLock.getLastLockMsec()), serverLock.getAppStatus());
+					tcl.setServerLock(serverLock);
+					tcl.setAppName(appName);
+					ret.add(tcl);
+				}
+			}
+		}
+		return ret;
 	}
 
-	/**
-	 * Locks are not supported in an xml database: always throws lock busy.
-	 */
 	@Override
-	public TsdbCompLock obtainCompProcLock(CompAppInfo appInfo, int pid,
-		String host) throws LockBusyException, DbIoException
+	public TsdbCompLock obtainCompProcLock(CompAppInfo appInfo, int pid, String host)
+		throws LockBusyException, DbIoException
 	{
-		throw new LockBusyException("Locks not supported in XML database.");
+		String lockpath = makeFilePath(appInfo.getAppName());
+		serverLock = new ServerLock(lockpath);
+		serverLock.setPID(pid);
+		if (!serverLock.obtainLock())
+			throw new LockBusyException("Lock file '" + lockpath + "' is already busy.");
+		TsdbCompLock ret = new TsdbCompLock(DbKey.NullKey, pid, host, 
+			new Date(serverLock.getLastLockMsec()), serverLock.getAppStatus());
+		ret.setServerLock(serverLock);
+		ret.setAppName(appInfo.getAppName());
+		return ret;
+	}
+	
+	/**
+	 * Collapse white space and resolve $DCSTOOL_USERDIR to return complete path to the lock
+	 * file for a given app name.
+	 * @param appName
+	 * @return
+	 */
+	private String makeFilePath(String appName)
+	{
+		return EnvExpander.expand("$DCSTOOL_USERDIR/" + compressFileName(appName) + ".lock");
+	}
+	
+	/**
+	 * Collapse whitespace in appName in order to have something that works as a filename.
+	 */
+	private String compressFileName(String appName)
+	{
+		StringBuilder sb = new StringBuilder(appName);
+		for(int idx = 0; idx < sb.length(); )
+		{
+			char c = sb.charAt(idx);
+			if (!Character.isLetterOrDigit(c) && c != '-' && c != '_')
+				sb.deleteCharAt(idx);
+			else
+				idx++;
+		}
+		return sb.toString();
 	}
 
 	@Override
 	public boolean supportsLocks()
 	{
-		return false;
+		return true;
 	}
 
 	@Override

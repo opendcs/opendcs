@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.2  2014/12/15 20:39:10  mmaloney
+*  writeTsGrp for Site List, must use site.getUniqueName, not getDisplayName.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -77,6 +80,7 @@ public class CompXio
 	public ArrayList<CompMetaData> readFile(String filename)
 		throws DbXmlException
 	{
+//System.out.println("CompXio.readFile(" + filename + ")");
 		this.filename = filename;
 		Document doc;
 		try

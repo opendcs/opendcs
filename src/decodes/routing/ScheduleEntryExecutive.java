@@ -173,7 +173,7 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 	+ "' startTime=" + scheduleEntry.getStartTime()
 	+ ", shutdownComplete=" + shutdownComplete
 	+ ", now=" + now
-	+ ", seStatus=" + seStatus.toString()
+	+ ", runStatus=" + seStatus.getRunStatus()
 	+ ", dataSourceFinite=" + dataSourceFinite());
 }
 		}

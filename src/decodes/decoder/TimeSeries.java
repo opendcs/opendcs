@@ -483,6 +483,7 @@ public class TimeSeries
 	*/
 	public void formatSamples(DataPresentation dp)
 	{
+
 		// Unit conversion.
 		UnitConverter converter = null;
 		EngineeringUnit dpEU = null;

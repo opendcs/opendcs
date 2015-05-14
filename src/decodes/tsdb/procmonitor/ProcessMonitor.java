@@ -36,6 +36,7 @@ public class ProcessMonitor
 		pmFrame.setIconImage(titleIcon.getImage());
 //		pmFrame.centerOnScreen();
 		
+//System.out.println("starting dbPollThread");
 		dbPollThread.start();
 		pmFrame.setVisible(true);
 		
@@ -87,4 +88,17 @@ public class ProcessMonitor
 	public TimeSeriesDb getTsdb() { return theDb; }
 	
 	public ProcessMonitorFrame getFrame() { return pmFrame; }
+
+	@Override
+	public void createDatabase()
+	{
+		// ProcessMonitor must work with XML DECODES databases too.
+		// So don't create the TSDB interface.
+	}
+	
+	@Override
+	public void tryConnect()
+	{
+		// Likewise, don't connect to the TSDB. Just DECODES DB.
+	}
 }

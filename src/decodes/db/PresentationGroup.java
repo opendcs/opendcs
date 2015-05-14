@@ -417,27 +417,20 @@ public class PresentationGroup extends IdDatabaseObject
 	
 	public DataPresentation findDataPresentation(Sensor sensor)
 	{
-		for(Iterator<DataType> dtit = sensor.getAllDataTypes();
-			dtit.hasNext(); )
+		for (DataPresentation dp : dataPresentations)
 		{
-			DataType dt = dtit.next();
-			if (dt == null)
-				continue;
-			for (DataPresentation dp : dataPresentations)
+			for(Iterator<DataType> dtit = sensor.getAllDataTypes(); dtit.hasNext(); )
+			{
+				DataType dt = dtit.next();
+				if (dt == null)
+					continue;
 				if (dp.getDataType().equals(dt))
 					return dp;
-
-//			DataPresentation dp = presentationMap.get(
-//				new MapKey(dt, sensor.equipmentModelName()));
-//			if (dp != null)
-//				return dp;
-			
-//			// MJM 5/4/09 - If no exact match for this equip model,
-//			// see if there is a match for any equip model.
-//			dp = presentationMap.get(new MapKey(dt, ""));
-//			if (dp != null)
-//				return dp;
+			}
 		}
+		if (parent != null)
+			return parent.findDataPresentation(sensor);
+
 		if (defaultPresentation == null)
 			initDefaultPresentation();
 		return defaultPresentation;

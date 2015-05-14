@@ -1,5 +1,7 @@
 package decodes.cwms.validation;
 
+import decodes.tsdb.IntervalIncrement;
+
 /**
  * Constant Value (stuck-sensor) Check.
  * Checks to make sure a minimum amount of change occurred in a
@@ -11,6 +13,7 @@ public class ConstCheck
 	private String duration;
 	private double minToCheck;
 	private double tolerance;
+	private IntervalIncrement maxGap = null;
 	private int allowedMissing;
 	
 	/**
@@ -61,7 +64,19 @@ public class ConstCheck
 	public String toString()
 	{
 		return "CONST " + flag + " " + duration + " " + minToCheck + " "
-			+ tolerance + " " + allowedMissing;
+			+ tolerance + " " 
+			+ (allowedMissing>0 ? (""+allowedMissing) : 
+				maxGap != null ? maxGap.toString() : "");
+	}
+
+	public IntervalIncrement getMaxGap()
+	{
+		return maxGap;
+	}
+
+	public void setMaxGap(IntervalIncrement maxGap)
+	{
+		this.maxGap = maxGap;
 	}
 
 }

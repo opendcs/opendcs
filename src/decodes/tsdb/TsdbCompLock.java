@@ -12,6 +12,8 @@
 */
 package decodes.tsdb;
 
+import ilex.util.ServerLock;
+
 import java.util.Date;
 
 import decodes.sql.DbKey;
@@ -40,6 +42,18 @@ public class TsdbCompLock
 
 	/** Locks with heartbeats more than this old are considered stale. */
 	public static final long LockStaleMS = 15000L;
+	
+	/** 
+	 * For XML databases, a TsdbCompLock is mapped to a ServerLock binary file.
+	 * Store the ServerLock object so that setHeartBeat and setStatus methods will
+	 * be delegated to the ServerLock.
+	 */
+	private ServerLock serverLock = null;
+	
+	/**
+	 * The name of the loading app in the CompAppInfo record.
+	 */
+	private String appName = null;
 
 
 	/**
@@ -107,10 +121,15 @@ public class TsdbCompLock
 	{
 		return "appId=" + appId + ", pid=" + pid
 			+ ", host=" + host + ", heartbeat=" + heartbeat
-			+ ", status=" + status;
+			+ ", status=" + status + ", name=" + appName;
 	}
 
-	public void setStatus(String status) { this.status = status; }
+	public void setStatus(String status)
+	{
+		this.status = status;
+		if (serverLock != null)
+			serverLock.setAppStatus(status);
+	}
 
 	public String getStatus() { return status; }
 	
@@ -124,5 +143,25 @@ public class TsdbCompLock
 		if (heartbeat == null)
 			return true;
 		return System.currentTimeMillis() - heartbeat.getTime() > LockStaleMS;
+	}
+
+	public ServerLock getServerLock()
+	{
+		return serverLock;
+	}
+
+	public void setServerLock(ServerLock serverLock)
+	{
+		this.serverLock = serverLock;
+	}
+
+	public String getAppName()
+	{
+		return appName;
+	}
+
+	public void setAppName(String appName)
+	{
+		this.appName = appName;
 	}
 }

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/10/07 13:02:09  mmaloney
+ * dev
+ *
  * 
  * Copyright 2007 Ilex Engineering, Inc. - All Rights Reserved.
  * No part of this file may be duplicated in either hard-copy or electronic
@@ -211,5 +214,14 @@ public class DecodesSensorAdapter
 	public int getUsgsDdno()
 	{
 		return 0;
+	}
+	
+	/**
+	 * @return the time series identifier as it was defined in the database.
+	 */
+	public String getDbTsId()
+	{
+		return cts.getTimeSeriesIdentifier() != null ? cts.getTimeSeriesIdentifier().getUniqueString()
+			: null;
 	}
 }

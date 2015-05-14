@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.5  2015/04/03 19:53:27  mmaloney
+ * Fixed CWMS-5626 where by some GUIs would silently exit if user had no privilege.
+ *
  * Revision 1.4  2015/02/06 18:46:59  mmaloney
  * Config option to not display certain buttons: Time Series, Groups, Run Comps, & Algorithms.
  *
@@ -136,7 +139,7 @@ public class LauncherFrame extends JFrame
 	JButton groupEditButton = new JButton();
 	JButton compeditButton = new JButton();
 	JButton runcompButton = new JButton();
-	JButton procstatButton = new JButton();
+	private JButton procstatButton = new JButton();
 	JButton algoeditButton = new JButton();
 
 	boolean exitOnClose;

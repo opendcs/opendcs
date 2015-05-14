@@ -4,6 +4,11 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.6  2015/04/15 19:59:46  mmaloney
+*  Fixed synchronization bugs when the same data sets are being processed by multiple
+*  routing specs at the same time. Example is multiple real-time routing specs with same
+*  network lists. They will all receive and decode the same data together.
+*
 *  Revision 1.5  2015/01/30 20:09:46  mmaloney
 *  Don't overwrite reflists unless they were actually imported in the XML.
 *
@@ -1150,7 +1155,22 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 						sn.setAgencyCode(defAgency);
 				}
 			}
+			// Presentation Group parent references need to be normalized
+			else if (dob instanceof PresentationGroup)
+			{
+				PresentationGroup pg = (PresentationGroup)dob;
+				if (pg.parent != null)
+				{
+					PresentationGroup theDbParent = 
+						theDb.presentationGroupList.find(pg.parent.groupName);
+					if (theDbParent != null)
+						pg.parent = theDbParent;
+					else
+						pg.parent = null;
+				}
+			}
 		}
+		
 
 		/*
 		  RoutingSpec needs to normalize references to datasource & netlists.

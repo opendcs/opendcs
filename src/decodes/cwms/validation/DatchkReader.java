@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.14  2013/03/21 18:27:40  mmaloney
  * DbKey Implementation
  *
@@ -28,10 +31,10 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import ilex.xml.DomHelper;
-
 import decodes.db.Constants;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.IntervalCodes;
+import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 
@@ -555,7 +558,7 @@ public class DatchkReader
 		}
 		else if (type.startsWith("CONST"))
 		{
-			// constant value test args: qflag duration [min [tolerance]]
+			// constant value test args: qflag duration [min [tolerance [maxmissing]]]
 			if (!st.hasMoreTokens())
 			{
 				fileWarning(file, lineNum, "CRITERIA " + type
@@ -567,6 +570,7 @@ public class DatchkReader
 			double min = 0.0;
 			double tolerance = 0.0;
 			int nmissing = 0;
+			IntervalIncrement maxGap = null;
 			if (st.hasMoreTokens())
 			{
 				try 
@@ -577,7 +581,15 @@ public class DatchkReader
 						tolerance = Double.parseDouble(st.nextToken());
 						if (st.hasMoreTokens())
 						{
-							nmissing = Integer.parseInt(st.nextToken());
+							String missingArg = st.nextToken();
+							try { nmissing = Integer.parseInt(missingArg); }
+							catch(NumberFormatException ex)
+							{
+								maxGap = IntervalCodes.getIntervalCalIncr(missingArg);
+								if (maxGap == null)
+									fileWarning(file, lineNum, "Invalid nmissing argument '" 
+										+ missingArg + "' -- ignored.");
+							}
 						}
 					}
 				}
@@ -588,8 +600,10 @@ public class DatchkReader
 					return;
 				}
 			}
-			critBuffer.addConstCheck(new ConstCheck(qflag, duration,
-				min, tolerance, nmissing));
+			ConstCheck cc = new ConstCheck(qflag, duration, min, tolerance, nmissing);
+			cc.setMaxGap(maxGap);
+			critBuffer.addConstCheck(cc);
+			
 		}
 		else if (type.startsWith("RATE"))
 		{

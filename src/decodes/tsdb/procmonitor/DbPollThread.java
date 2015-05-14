@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.7  2013/04/17 15:35:38  mmaloney
  * If lock disappears, update display to "Not Running".
  *
@@ -67,7 +70,8 @@ public class DbPollThread
 		long lastAppInfoPoll = 0L;
 		while(!_shutdown)
 		{
-			LoadingAppDAI loadingAppDAO = processMonitor.getTsdb().makeLoadingAppDAO();
+			LoadingAppDAI loadingAppDAO = //processMonitor.getTsdb().makeLoadingAppDAO();
+				decodes.db.Database.getDb().getDbIo().makeLoadingAppDAO();
 			try
 			{
 				ProcStatTableModel model = processMonitor.getFrame().getModel();
@@ -78,9 +82,13 @@ public class DbPollThread
 					for(CompAppInfo app : apps)
 					{
 						// Apps to be displayed must have property monitor = true.
-						boolean doMonitor = TextUtil.str2boolean(app.getProperty("monitor"));
+						boolean doMonitor = true;
+						String monitor = app.getProperty("monitor");
+						if (monitor != null && monitor.trim().length() > 0)
+							doMonitor = TextUtil.str2boolean(monitor);
+						
 						// Get this app from the currently-displayed model.
-						AppInfoStatus appStatus = model.getAppById(app.getAppId());
+						AppInfoStatus appStatus = model.getAppByName(app.getAppName());
 						if (appStatus == null && doMonitor)
 						{
 							model.addApp(app);
@@ -113,6 +121,7 @@ public class DbPollThread
 						model.fireTableDataChanged();
 					lastAppInfoPoll = System.currentTimeMillis();
 				}
+
 				if (System.currentTimeMillis() - lastLockPoll > LockPollInterval)
 				{
 					List<TsdbCompLock> locks = loadingAppDAO.getAllCompProcLocks();

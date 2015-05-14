@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2015/01/16 16:11:04  mmaloney
+ * RC01
+ *
  * Revision 1.3  2015/01/15 19:25:45  mmaloney
  * RC01
  *
@@ -79,10 +82,11 @@ import lrgs.gui.DecodesInterface;
  *   ParmValue := STRING (appropriate data type for the ParmName being set) 
  *   TsIdLine := 'TSID:' TimeSeriesID
  *   TimeSeriesID := STRING (defined by underlying database)
- *   DataLine := DateTime ',' Value ',' Flags
+ *   DataLine := DateTime ',' Value ',' Flags TrailingComment
  *   DateTime := (date and time in format yyyy/MM/dd-HH:mm:ss
  *   Value := NUMBER
  *   Flags := INTEGER  (flag bit-fields appropriate for underlying database)
+ *   TrailingComment := '#' STRING
  *   CommentLine := '#' STRING   (blank and comment lines are ignored)
  * </pre>
  * <p>
@@ -338,6 +342,10 @@ ex2.printStackTrace();
 		// Then just skip the data.
 		if (currentTS == null)
 			return;
+		
+		int hash = line.indexOf('#');
+		if (hash != -1)
+			line = line.substring(0, hash).trim();
 
 		String x[] = line.split(",");
 		if (x.length < 2)

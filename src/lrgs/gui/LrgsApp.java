@@ -18,7 +18,7 @@ public class LrgsApp
 	public static final int minorVersion = 0;
 
 	/** Sub version number */
-	public static final String subVersion = "OpenDCS-RC" +LrgsBuild.rcNum;
+	public static final String subVersion = DecodesVersion.getName() + "-" + DecodesVersion.getVersion();
 
 	/** Source Last Modified */
 	public static final String releasedOn = LrgsBuild.buildDate;

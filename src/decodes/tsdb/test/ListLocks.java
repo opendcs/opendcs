@@ -2,47 +2,56 @@ package decodes.tsdb.test;
 
 import java.util.List;
 
+import lrgs.gui.DecodesInterface;
 import opendcs.dai.LoadingAppDAI;
 import decodes.tsdb.*;
 import decodes.util.CmdLineArgs;
+import decodes.util.DecodesException;
 
-public class ListLocks extends TestProg
+public class ListLocks 
+	extends TsdbAppTemplate
 {
+	public static final String module = "ListLocks";
+	
 	public ListLocks()
 	{
-		super(null);
+		super("util.log");
+		appNameArg.setDefaultValue("utility");
 	}
 
-	protected void runTest()
+	@Override
+	protected void runApp()
 		throws Exception
 	{
-		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
+		LoadingAppDAI loadingAppDao = decodes.db.Database.getDb().getDbIo().makeLoadingAppDAO();
 		List<TsdbCompLock> locks = loadingAppDao.getAllCompProcLocks();
 		System.out.println("" + locks.size() + " Locks Retrieved:");
 
 		for(TsdbCompLock lock : locks)
-		{
-			String appName = "";
-			try
-			{
-				CompAppInfo cai = loadingAppDao.getComputationApp(lock.getAppId());
-				appName = cai.getAppName();
-			}
-			catch(Exception ex)
-			{
-				System.err.println("Cannot get app info for appId=" + lock.getAppId()
-					+ ": " + ex);
-			}
-			System.out.println("" + lock + 
-				(appName != null ? ", name=" + appName : ""));
-		}
+			System.out.println(lock.toString());
 		loadingAppDao.close();
 	}
 
 	public static void main(String args[])
 		throws Exception
 	{
-		TestProg tp = new ListLocks();
+		ListLocks tp = new ListLocks();
 		tp.execute(args);
 	}
+	
+	@Override
+	public void initDecodes()
+		throws DecodesException
+	{
+		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
+	}
+
+	@Override
+	public void createDatabase() {}
+	
+	@Override
+	public void tryConnect() {}
+
+
+
 }

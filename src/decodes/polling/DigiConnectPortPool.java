@@ -469,8 +469,15 @@ Logger.instance().debug3(module + " releasePort returning.");
 		// It's up to each PollingThread to close it's own port.
 		// So if anything is left, it means the controller is shutting down prematurely.
 		// So close anything still open.
-		while(allocatedPorts.size() > 0)
-			releasePort(allocatedPorts.get(0).ioPort, PollingThreadState.Failed, false);
+		try
+		{
+			while(allocatedPorts.size() > 0)
+				releasePort(allocatedPorts.get(0).ioPort, PollingThreadState.Failed, false);
+		}
+		catch(Exception ex)
+		{
+			Logger.instance().warning(module + ".close() - unexpected erro releasing ports: " + ex);
+		}
 		if (portManager != null)
 			portManager.shutdown();
 		portManager = null;

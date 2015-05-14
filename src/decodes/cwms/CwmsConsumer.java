@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.7  2015/04/02 18:08:24  mmaloney
+*  Use DbURI and jdbcOracleDriver if they are defined in CwmsDbConfig.
+*  This (re)allows the use of an XML decodes database writing to CWMS.
+*
 *  Revision 1.6  2014/10/28 18:37:34  mmaloney
 *  Use Platform Sensor Site for location if one is defined.
 *
@@ -658,7 +662,7 @@ Logger.instance().debug3("Using rs property version '" + cwmsVersion + "'");
 	 * @return String timeseries descriptor or null if can not build the
 	 * 			param part
 	 */
-	private String createTimeSeriesDesc(TimeSeries ts, Site platformSite)
+	public String createTimeSeriesDesc(TimeSeries ts, Site platformSite)
 	{
 		StringBuffer timeSeriesDescriptor = new StringBuffer("");
 		
@@ -846,7 +850,7 @@ Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
 	 *   <li>Override with properties from the routing spec.</li>
 	 * </ul> 
 	 */
-	private void initCwmsConfig(Properties props)
+	public void initCwmsConfig(Properties props)
 	{
 		String configFileName = CwmsConstants.CONFIG_FILE_NAME;
 		DatabaseIO dbio = Database.getDb().getDbIo();
@@ -888,7 +892,7 @@ Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
 	 * 
 	 * @param shefCwmsFilePath the file of the shefCwmsParam.prop file
 	 */
-	private void loadShefCwmsParamMapping(String shefCwmsFilePath)
+	public void loadShefCwmsParamMapping(String shefCwmsFilePath)
 	{
 		//CwmsConstants.SHEF_CWMS_PARAM_FILEPATH
 		shefCwmsProps = new Properties();

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2015/01/30 20:08:12  mmaloney
+ * Improve debug.
+ *
  * Revision 1.5  2015/01/22 19:50:59  mmaloney
  * log message improvements
  *
@@ -59,7 +62,7 @@ public class CwmsSiteDAO extends SiteDAO
 		siteAttributes = 
 			"location_code, latitude, longitude, nearest_city, state_initial, "
 			+ "'', time_zone_name, nation_id, elevation, 'm', description, location_id, public_name"
-			+ ", location_type, active_flag";
+			+ ", location_type, active_flag, vertical_datum, horizontal_datum, location_type";
 		siteTableKeyColumn = "location_code";
 		this.module = "CwmsSiteDAO";
 	}
@@ -86,10 +89,15 @@ public class CwmsSiteDAO extends SiteDAO
 		site.setPublicName(rsSite.getString(13));
 		site.setLocationType(rsSite.getString(14));
 		site.setActive(TextUtil.str2boolean(rsSite.getString(15)));
-if (cwmsName.getNameValue().toUpperCase().startsWith("FCNE"))
-{
-	Logger.instance().info("Read site '" + cwmsName.getNameValue() + "', key=" + site.getKey());
-}
+		String s = rsSite.getString(16);
+		if (s != null && s.trim().length() > 0)
+			site.setProperty("vertical_datum", s);
+		s = rsSite.getString(17);
+		if (s != null && s.trim().length() > 0)
+			site.setProperty("horizontal_datum", s);
+		s = rsSite.getString(18);
+		if (s != null && s.trim().length() > 0)
+			site.setProperty("location_type", s);
 	}
 	
 	@Override
@@ -216,13 +224,13 @@ if (cwmsName.getNameValue().toUpperCase().startsWith("FCNE"))
 					state, 
 					(String)null,               // countyName
 					tz, 
-					(String)null,               // locationType
+					newSite.getProperty("location_type"),
 					dlat,
 					dlon,
 					delev,
-					newSite.getElevationUnits(), 
-					(String)null,               // verticalDatum
-					(String)null,               // horizontalDatum
+					newSite.getElevationUnits(),
+					newSite.getProperty("vertical_datum"),
+					newSite.getProperty("horizontal_datum"),
 					newSite.getPublicName(),       // publicName
 					newSite.getBriefDescription(), // longName
 					newSite.getDescription(),      // description

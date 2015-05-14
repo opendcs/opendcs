@@ -239,6 +239,10 @@ public class PollScriptProtocol
 					loopWaitCmd = null;
 					lastWait = null;
 				}
+				else if (keyword.equals("datasim"))
+				{
+					script.add(new PollScriptDataSim(this, line));
+				}
 			}
 		}
 		catch (IOException ex)
@@ -258,7 +262,8 @@ public class PollScriptProtocol
 		throws ProtocolException
 	{
 		this.ioPort = port;
-		pollingThread.debug1("spawning StreamReader to responses from station.");
+		if (pollingThread != null)
+			pollingThread.debug1("spawning StreamReader to responses from station.");
 
 		streamReader = new StreamReader(port.getIn(), this);
 		streamReader.setPollSessionLogger(pollSessionLogger);
@@ -283,7 +288,8 @@ public class PollScriptProtocol
 			String msg = "Script execution complete."
 				+ (abnormalShutdown == null ? "" : " Abnormal Shutdown: " + abnormalShutdown);
 			annotate(msg);
-			pollingThread.debug1(msg);
+			if (pollingThread != null)
+				pollingThread.debug1(msg);
 		}
 		finally { streamReader.shutdown(); }
 	}
@@ -426,7 +432,10 @@ public class PollScriptProtocol
 	}
 	
 	@Override
-	public String getModule() { return pollingThread.getModule(); }
+	public String getModule()
+	{
+		return pollingThread != null ? pollingThread.getModule() : "PollScriptProtocol";
+	}
 
 	/**
 	 * Called from PollScriptEndLoop if a match was not found.
