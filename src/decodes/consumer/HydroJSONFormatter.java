@@ -44,7 +44,7 @@ public class HydroJSONFormatter extends OutputFormatter
 {
 	private String module = "HydroJSONFormatter";
 	private String timeFormat = "%Y-%m-%dT%H:%M:%S%z";
-	private String indent = "    ";
+	private String indent = "  ";
 	private String siteNameTypePreference = Constants.snt_CWMS;
 	private String officeId = "";
 	private TimeZone tz = null;
@@ -137,11 +137,11 @@ public class HydroJSONFormatter extends OutputFormatter
 			
 			// coordinates block
 			String lat = site.latitude;
-			if (lat == null)
-				lat = "";
+			if (lat == null || lat.trim().length() == 0)
+				lat = "null";
 			String lon = site.longitude;
-			if (lon == null)
-				lon = "";
+			if (lon == null || lon.trim().length() == 0)
+				lon = "null";
 			String datum = site.getProperty("horizontal_datum");
 			if (datum == null)
 				datum = "";
@@ -155,11 +155,13 @@ public class HydroJSONFormatter extends OutputFormatter
 			
 			// elevation block
 			String elev = "" + site.getElevation();
+			if (elev == null || elev.trim().length() == 0)
+				elev = "null";
 			datum = site.getProperty("vertical_datum");
 			if (datum == null)
 				datum = "";
 			consumer.println(indent+indent + "\"elevation\": {");
-			consumer.println(indent+indent+indent + "\"value\": \"" + elev + "\",");
+			consumer.println(indent+indent+indent + "\"value\": " + elev + ",");
 			consumer.println(indent+indent+indent + "\"accuracy\": 0.0,");
 			consumer.println(indent+indent+indent + "\"datum\": \"" + datum + "\",");
 			consumer.println(indent+indent+indent + "\"method\": \"\",");
@@ -174,12 +176,14 @@ public class HydroJSONFormatter extends OutputFormatter
 				locType = "";
 			consumer.println(indent+indent + "\"location_type\": \"" + locType + "\",");
 			
-			consumer.println(indent+indent + "\"timeseries\":{");
+			consumer.println(indent+indent + "\"timeseries\": {");
 			for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
 			{
 				TimeSeries ts = tsit.next();
 				if (ts.size() == 0)
 					continue;
+				
+				ts.sort();
 				
 				// If this is from OutputTs, we will have read real CWMS tsids
 				// from the database. Use these
@@ -264,6 +268,8 @@ public class HydroJSONFormatter extends OutputFormatter
 			consumer.println(indent+indent + "}" + (siteIdx < sites.size()-1 ? "," : ""));
 
 			consumer.println(indent + "}");
+			consumer.println("}");
+
 		}
 		
 		consumer.endMessage();
