@@ -116,6 +116,7 @@ public class ScadaRetrieve
 	private File lastFile = null;
 	private long DISPLAY_INTERVAL_MS = 1800 * 1000L; // half hour
 	private NumberFormat numberFormat = NumberFormat.getNumberInstance();
+	private boolean haveLock = false;
 
 	private PropertySpec propSpecs[] = 
 	{
@@ -222,6 +223,7 @@ public class ScadaRetrieve
 				{
 					warning("Shutting down: lock removed: " + ex);
 					shutdown = true;
+					haveLock = false;
 				}
 				finally
 				{
@@ -570,6 +572,7 @@ debug("Added interpolated " + nr);
 			catch(Exception e) { hostname = "unknown"; }
 
 			myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname);
+			haveLock = true;
 		}
 		catch (LockBusyException ex)
 		{
@@ -774,18 +777,21 @@ debug("Added interpolated " + nr);
 
 	private void cleanup()
 	{
-		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
-		try
+		if (haveLock)
 		{
-			loadingAppDao.releaseCompProcLock(myLock);
-		}
-		catch (DbIoException ex)
-		{
-			warning("Error attempting to release lock: " + ex);
-		}
-		finally
-		{
-			loadingAppDao.close();
+			LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
+			try
+			{
+				loadingAppDao.releaseCompProcLock(myLock);
+			}
+			catch (DbIoException ex)
+			{
+				warning("Error attempting to release lock: " + ex);
+			}
+			finally
+			{
+				loadingAppDao.close();
+			}
 		}
 	}
 
