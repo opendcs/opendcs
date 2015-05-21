@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:09  cvs
 *  Added legacy code to repository
 *
@@ -71,13 +74,17 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.ResourceBundle;
 import java.awt.*;
+
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
 
 import java.awt.event.*;
+import java.beans.PropertyChangeListener;
+
 import javax.swing.border.BevelBorder;
 import javax.swing.*;
 
+import decodes.gui.AboutBox;
 import decodes.util.ResourceFactory;
 
 /**
@@ -161,8 +168,19 @@ public abstract class MenuFrame extends JFrame
 				labels.getString("MenuFrame.thisScreen")));
 			n++;
 			menu.insertSeparator(n);
-			menu.add(new ViewHelpAction("about.html", 
-				labels.getString("MenuFrame.about") + GuiApp.getAppName()));
+			final Frame theFrame = this;
+			menu.add(
+				new AbstractAction("About")
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						AboutBox aboutBox = new AboutBox(theFrame, getTitle(), getTitle());
+						aboutBox.setVisible(true);
+					}
+				});
+//				new ViewHelpAction("about.html", 
+//				labels.getString("MenuFrame.about") + GuiApp.getAppName()));
 			menuBar.add(menu);
 		}
 		setJMenuBar(menuBar);
