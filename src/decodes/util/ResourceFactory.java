@@ -11,16 +11,16 @@ package decodes.util;
 
 import java.io.File;
 import java.io.IOException;
+
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
 import lrgs.common.DcpMsgFlag;
-
 import decodes.decoder.FunctionList;
 import decodes.gui.TopFrame;
 import decodes.tsdb.groupedit.TsDbGrpEditor;
 import decodes.util.DecodesVersion;
-
 import ilex.util.EnvExpander;
 
 public class ResourceFactory
@@ -93,5 +93,16 @@ public class ResourceFactory
 	public String getIconPath()
 	{
 		return EnvExpander.expand("$DCSTOOL_HOME/icons/setup48x48.gif");
+	}
+	
+	public JButton[] additionalSetupButtons()
+	{
+		return new JButton[0];
+	}
+	
+	public void initDbResources()
+		throws decodes.db.DatabaseException
+	{
+		DcpMsgFlag.setFlagRev(0x4b);
 	}
 }

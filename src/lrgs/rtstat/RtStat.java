@@ -10,6 +10,7 @@ import java.util.ResourceBundle;
 import javax.swing.*;
 
 import decodes.util.DecodesSettings;
+import decodes.util.ResourceFactory;
 
 /**
 Main class for the Real Time Status Applications.
@@ -26,9 +27,11 @@ public class RtStat
 
 	//Construct the application
 	public RtStat(String args[])
+		throws Exception
 	{
 		cmdLineArgs.parseArgs(args);
 		getMyLabelDescriptions();
+		ResourceFactory.instance().initDbResources();
 		frame = new RtStatFrame(
 			cmdLineArgs.getScanPeriod(), 
 			cmdLineArgs.getIconFile(),
@@ -92,6 +95,7 @@ public class RtStat
 	
 	//Main method
 	public static void main(String[] args)
+		throws Exception
 	{
 		try
 		{

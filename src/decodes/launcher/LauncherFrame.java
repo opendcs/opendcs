@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.6  2015/05/14 13:52:20  mmaloney
+ * RC08 prep
+ *
  * Revision 1.5  2015/04/03 19:53:27  mmaloney
  * Fixed CWMS-5626 where by some GUIs would silently exit if user had no privilege.
  *
@@ -178,6 +181,8 @@ public class LauncherFrame extends JFrame
 	private TopFrame lrgsStatFrame = null;
 	private WindowAdapter lrgsStatReaper;
 	private String installDir;
+	TopFrame toolkitSetupFrame = null;
+	WindowAdapter setupFrameReaper;
 
 	public LauncherFrame()
 	{
@@ -347,6 +352,15 @@ public class LauncherFrame extends JFrame
 					dbEditorFrame = null;
 					Logger.instance().log(Logger.E_DEBUG1,
 						"DbEditorFrame closed");
+				}
+			};
+			setupFrameReaper = new WindowAdapter()
+			{
+				public void windowClosed(WindowEvent e)
+				{
+					toolkitSetupFrame = null;
+					Logger.instance().log(Logger.E_DEBUG1,
+						"Setup frame closed");
 				}
 			};
 			browserReaper = new WindowAdapter()
@@ -763,12 +777,19 @@ public class LauncherFrame extends JFrame
 			lrgsStatFrame.toFront();
 			return;
 		}
-		RtStat rtStat = new RtStat(myArgs);
-		lrgsStatFrame = rtStat.getFrame();
-		lrgsStatFrame.setExitOnClose(false);
-		centerWindow(lrgsStatFrame);
-		lrgsStatFrame.addWindowListener(lrgsStatReaper);
-		lrgsStatFrame.setVisible(true);
+		try
+		{
+			RtStat rtStat = new RtStat(myArgs);
+			lrgsStatFrame = rtStat.getFrame();
+			lrgsStatFrame.setExitOnClose(false);
+			centerWindow(lrgsStatFrame);
+			lrgsStatFrame.addWindowListener(lrgsStatReaper);
+			lrgsStatFrame.setVisible(true);
+		}
+		catch(Exception ex)
+		{
+			showError(ex.getMessage());
+		}
 	}
 
 	
@@ -846,8 +867,7 @@ public class LauncherFrame extends JFrame
 					launcherFrame.dbEditorFrame = new DbEditorFrame();
 //					launcherFrame.centerWindow(launcherFrame.dbEditorFrame);
 					launcherFrame.dbEditorFrame.setExitOnClose(false);
-					launcherFrame.dbEditorFrame
-						.addWindowListener(launcherFrame.dbEditorReaper);
+					launcherFrame.dbEditorFrame.addWindowListener(launcherFrame.dbEditorReaper);
 					launcherFrame.dbEditorFrame.setVisible(true);
 				}
 			};
@@ -862,9 +882,14 @@ public class LauncherFrame extends JFrame
 
 	void setupPressed()
 	{
-		TopFrame toolkitSetupFrame = new DecodesSetupFrame(this);
+		if (toolkitSetupFrame != null)
+		{
+			toolkitSetupFrame.toFront();
+			return;
+		}
+		toolkitSetupFrame = new DecodesSetupFrame(this);
 		toolkitSetupFrame.setExitOnClose(false);
-//		centerWindow(toolkitSetupFrame);
+		toolkitSetupFrame.addWindowListener(setupFrameReaper);
 		toolkitSetupFrame.setVisible(true);
 	}
 	

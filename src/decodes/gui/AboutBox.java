@@ -83,7 +83,7 @@ public class AboutBox extends JDialog implements ActionListener
 		buildDateLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		labelsPanel.add(buildDateLabel);
 		
-		JLabel ossLabel = new JLabel("Open Source Software, Supported by");
+		JLabel ossLabel = new JLabel("Supported by");
 		ossLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		labelsPanel.add(ossLabel);
 

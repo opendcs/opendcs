@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  2014/05/22 12:15:21  mmaloney
+ * Call Launcher Frame's setupSaved after saving config so it can adjust if necessary.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -23,7 +26,9 @@
 package decodes.launcher;
 
 import java.awt.*;
+
 import javax.swing.*;
+
 import java.awt.event.*;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -32,11 +37,11 @@ import java.io.*;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
-
 import decodes.gui.TopFrame;
 import decodes.launcher.DecodesPropsPanel;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
+import decodes.util.ResourceFactory;
 
 @SuppressWarnings("serial")
 public class DecodesSetupFrame 
@@ -51,6 +56,9 @@ public class DecodesSetupFrame
 	private JButton abandonDecodesPropsButton = new JButton();
 	private DecodesPropsPanel decodesPropsPanel;
 	private LauncherFrame launcherFrame = null;
+	
+	private static DecodesSetupFrame _lastInstance = null;
+	public static DecodesSetupFrame lastInstance() { return _lastInstance; }
 
 	public DecodesSetupFrame(LauncherFrame launcherFrame)
 	{
@@ -77,6 +85,7 @@ public class DecodesSetupFrame
 			e.printStackTrace();
 		}
 		trackChanges("DecodesSetupFrame");
+		_lastInstance = this;
 	}
 
 	public void cleanupBeforeExit()
@@ -167,8 +176,8 @@ public class DecodesSetupFrame
 			});
 		southButtonPanel.add(saveDecodesPropsButton, null);
 		southButtonPanel.add(abandonDecodesPropsButton, null);
-		southButtonPanel.add(saveDecodesPropsButton, null);
-		southButtonPanel.add(abandonDecodesPropsButton, null);
+		for(JButton jb : ResourceFactory.instance().additionalSetupButtons())
+			southButtonPanel.add(jb, null);
 		this.getContentPane().add(southButtonPanel, BorderLayout.SOUTH);
 
 		decodesPropsPanel = new DecodesPropsPanel(this, labels, genericLabels);

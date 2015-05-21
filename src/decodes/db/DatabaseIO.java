@@ -15,11 +15,11 @@ import opendcs.dai.ScheduleEntryDAI;
 import org.xml.sax.SAXException;
 
 import ilex.util.Counter;
-
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
+import decodes.util.ResourceFactory;
 import decodes.xml.XmlDatabaseIO;
 
 /**
@@ -40,6 +40,8 @@ public abstract class DatabaseIO
 	public static final DatabaseIO makeDatabaseIO(int type, String location)
 		throws DatabaseException
 	{
+		ResourceFactory.instance().initDbResources();
+		
 		try 
 		{
 			if (type == DecodesSettings.DB_XML)

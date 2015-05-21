@@ -36,8 +36,8 @@ public class NetlistEditFrame_AboutBox extends JDialog implements ActionListener
         super(parent);
         product = labels.getString("NetlistEditFrame.frameTitle");
         version = "LRGS 3.2";
-        copyright = "Open Source Software";
-        comments = "See www.ilexeng.com for more information";
+        copyright = "";
+        comments = "See www.covesw.com for more information";
         enableEvents(AWTEvent.WINDOW_EVENT_MASK);
         try {
             jbInit();
