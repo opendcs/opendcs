@@ -191,7 +191,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	{
 		serverLock = lock.getServerLock();
 		if (serverLock != null)
-			serverLock.releaseLock();
+			serverLock.deleteLockFile();
 	}
 
 	@Override
@@ -226,6 +226,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		ArrayList<CompAppInfo> applist = listComputationApps(false);
 		for(File lf : lockFiles)
 		{
+//System.out.println("Checking lock file '" + lf.getName() + "'");
 			String appName = lf.getName();
 			// Guaranteed from above that it ends in ".lock"
 			appName = appName.substring(0, appName.lastIndexOf('.'));
@@ -236,6 +237,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 //System.out.println("  ... checking '" + fn + "'");
 				if (appName.equals(fn))
 				{
+//System.out.println("This lock is for app '" + appName + "'");
 					ServerLock serverLock = new ServerLock(lf.getPath());
 					// Don't care about result, the isLocked method reads the lock info.
 					serverLock.isLocked(true);
