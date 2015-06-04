@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.4  2014/08/29 18:22:50  mmaloney
+ * 6.1 Schema Mods
+ *
  * Revision 1.3  2014/08/22 17:23:10  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -621,9 +624,14 @@ public class NetworkListListIO extends SqlDbObjIo
 		if (_dbio.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
 		{
 			String desc = nle.getDescription();
+			String platname = nle.getPlatformName();
+			if (_dbio.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_12
+			 && platname != null && platname.length() > 24)
+				platname = platname.substring(0, 24);
+				
 			if (desc != null && desc.length() > 80)
 				desc = desc.substring(0, 80);
-			q = q + ", " + sqlOptString(nle.getPlatformName())
+			q = q + ", " + sqlOptString(platname)
 				+ ", " + sqlOptString(desc);
 		} 
 		q += ")";
