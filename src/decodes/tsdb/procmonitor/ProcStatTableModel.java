@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2015/05/14 13:52:19  mmaloney
+ * RC08 prep
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -129,6 +132,14 @@ class ProcStatTableModel extends AbstractTableModel
 		return apps.get(row);
 	}
 	
+	public synchronized int getAppNameIndex(String appName)
+	{
+		for(int i=0; i<apps.size(); i++)
+			if (TextUtil.strEqual(appName, apps.get(i).getCompAppInfo().getAppName()))
+				return i;
+		return -1;
+	}
+	
 	public AppInfoStatus getAppAt(int row)
 	{
 		return (AppInfoStatus)getRowObject(row);
@@ -169,6 +180,34 @@ class ProcStatTableModel extends AbstractTableModel
 		}
 		sortByColumn(sortColumn);
 	}
+
+	public void clearChecked()
+	{
+		for(AppInfoStatus app : apps)
+			app.setChecked(false);
+	}
+
+	/**
+	 * Delete any records that are unchecked.
+	 * @return true if any were deleted.
+	 */
+	public synchronized boolean deleteUnchecked()
+	{
+		boolean ret = false;
+		for(Iterator<AppInfoStatus> ait = apps.iterator(); ait.hasNext(); )
+		{
+			AppInfoStatus ais = ait.next();
+			if (!ais.isChecked())
+			{
+				ais.stopEventsClient();
+				ait.remove();
+				ret = true;
+			}
+		}
+		sortByColumn(sortColumn);
+
+		return ret;
+	}
 	
 }
 
@@ -189,7 +228,7 @@ class AppColumnizer
 		case 1: return app.getCompAppInfo().getAppName();
 		case 2: return lock != null ? lock.getHost() : "N/A";
 		case 3: return lock != null ? ("" + lock.getPID()) : "N/A";
-		case 4: return lock != null ? sdf.format(lock.getHeartbeat()) : "-";
+		case 4: return lock != null ? sdf.format(lock.getHeartbeat()) : "~";
 		case 5: return lock != null ? app.getCompLock().getStatus() : "Not Running";
 		case 6: return app.getRetrieveEvents();
 		default: return "";

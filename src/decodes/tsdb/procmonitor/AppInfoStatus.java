@@ -4,6 +4,9 @@
  * Open Source Software 
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.8  2013/04/18 13:53:28  mmaloney
  * Event socket bug fix.
  *
@@ -54,6 +57,8 @@ public class AppInfoStatus
 	
 	private EventClient eventPollClient = null;
 	private ProcessMonitorFrame frame = null;
+	
+	private boolean checked = true;
 	
 	/** Constructed with immutable compAppInfo */
 	public AppInfoStatus(CompAppInfo compAppInfo, ProcessMonitorFrame frame)
@@ -111,5 +116,15 @@ public class AppInfoStatus
 			eventPollClient.shutdown();
 			eventPollClient = null;
 		}
+	}
+
+	public boolean isChecked()
+	{
+		return checked;
+	}
+
+	public void setChecked(boolean checked)
+	{
+		this.checked = checked;
 	}
 }

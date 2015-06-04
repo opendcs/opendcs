@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2015/05/14 13:52:20  mmaloney
+ * RC08 prep
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -53,7 +56,9 @@ public class DbPollThread
 	private boolean _shutdown = false;
 	public static final long LockPollInterval = 5000L;
 	public static final long AppInfoPollInterval = 30000L;
-	
+	private long lastLockPoll;
+	private long lastAppInfoPoll;
+
 	public DbPollThread(ProcessMonitor processMonitor)
 	{
 		this.processMonitor = processMonitor;
@@ -66,8 +71,8 @@ public class DbPollThread
 	
 	public void run()
 	{
-		long lastLockPoll = System.currentTimeMillis();
-		long lastAppInfoPoll = 0L;
+		lastLockPoll = System.currentTimeMillis();
+		lastAppInfoPoll = 0L;
 		while(!_shutdown)
 		{
 			LoadingAppDAI loadingAppDAO = //processMonitor.getTsdb().makeLoadingAppDAO();
@@ -79,6 +84,7 @@ public class DbPollThread
 				{
 					ArrayList<CompAppInfo> apps = loadingAppDAO.listComputationApps(false);
 					boolean changed = false;
+					model.clearChecked();
 					for(CompAppInfo app : apps)
 					{
 						// Apps to be displayed must have property monitor = true.
@@ -96,6 +102,7 @@ public class DbPollThread
 						}
 						else // already in model.
 						{
+							appStatus.setChecked(true);
 							if (!doMonitor) // Was the monitor property was turned off?
 							{
 								model.rmApp(app);
@@ -109,14 +116,11 @@ public class DbPollThread
 									eapp.setAppName(app.getAppName());
 									changed = true;
 								}
-								if (!app.getAppName().equals(eapp.getAppName()))
-								{
-									eapp.setAppName(app.getAppName());
-									changed = true;
-								}
 							}
 						}
 					}
+					if (model.deleteUnchecked())
+						changed = true;
 					if (changed)
 						model.fireTableDataChanged();
 					lastAppInfoPoll = System.currentTimeMillis();
@@ -125,13 +129,16 @@ public class DbPollThread
 				if (System.currentTimeMillis() - lastLockPoll > LockPollInterval)
 				{
 					List<TsdbCompLock> locks = loadingAppDAO.getAllCompProcLocks();
+//System.out.println("DbPollThread read " + locks.size() + " locks.");
 					for(int r = 0; r < model.getRowCount(); r++)
 					{
 						AppInfoStatus appStatus = model.getAppAt(r);
 						boolean found = false;
 						for (TsdbCompLock lock : locks)
 						{
-							if (appStatus.getAppId().equals(lock.getAppId()))
+							if ((!lock.getAppId().isNull() && appStatus.getAppId().equals(lock.getAppId()))
+							 || (lock.getAppId().isNull() && 
+								 lock.getAppName().equalsIgnoreCase(appStatus.getCompAppInfo().getAppName())))
 							{
 								appStatus.setCompLock(lock);
 								found = true;
@@ -157,5 +164,10 @@ public class DbPollThread
 
 			try { sleep(1000L); } catch(InterruptedException ex) {}
 		}
+	}
+	
+	public void pollNow()
+	{
+		lastLockPoll = lastAppInfoPoll = 0L;
 	}
 }

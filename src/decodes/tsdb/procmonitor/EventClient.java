@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.13  2013/04/18 15:07:17  mmaloney
  * Fixed event thread reconnect issue.
  *
@@ -50,6 +53,7 @@ package decodes.tsdb.procmonitor;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 
 import ilex.net.BasicClient;
 
@@ -63,6 +67,7 @@ public class EventClient
 	private BufferedReader reader = null;
 	private AppInfoStatus appInfoStatus = null;
 	private long lastConnectAttempt = 0L;
+	private boolean justStarted = true;
 	
 	public EventClient(int port, AppInfoStatus appInfoStatus, ProcessMonitorFrame frame)
 	{
@@ -103,7 +108,22 @@ public class EventClient
 				}
 				catch (Exception ex)
 				{
-					localEvent("Cannot connect: " + ex);
+					// If the host name matches the local host name, also try the loopback connector.
+					try
+					{
+						localEvent("Cannot connect to '" + getHost() + "': " + ex);
+						String localHostName = InetAddress.getLocalHost().getHostName();
+						if (this.getHost().equalsIgnoreCase(localHostName))
+						{
+							setHost("localhost");
+							connect();
+							reader = new BufferedReader(new InputStreamReader(this.input));
+						}
+					}
+					catch(Exception ex2)
+					{
+						localEvent("Cannot connect to '" + getHost() + "': " + ex2);
+					}
 				}
 				lastConnectAttempt = System.currentTimeMillis();
 			}
@@ -145,15 +165,13 @@ public class EventClient
 					}
 				}
 			}
-//else
-//{
-//if (appInfoStatus.getCompLock() == null)
-//	localEvent("Not connected, complock is null.");
-//else localEvent("Not connected, complock is "
-//+ (!appInfoStatus.getCompLock().isStale() ? "NOT " : "") + "stale.");
-//localEvent("Time since last connect attempt="
-//+ (System.currentTimeMillis()-lastConnectAttempt));
-//}
+			if (justStarted)
+			{
+				if (!isConnected()
+				 && (appInfoStatus.getCompLock() == null || appInfoStatus.getCompLock().isStale()))
+					localEvent("is not currently running -- will periodically retry.");
+				justStarted = false;
+			}
 			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
 		}
 		disconnect();

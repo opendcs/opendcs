@@ -31,9 +31,11 @@ public class ProcessMonitor
 	protected void runApp() throws Exception
 	{
 		pmFrame = new ProcessMonitorFrame();
+		pmFrame.setTsdb(theDb);
 		ImageIcon titleIcon = new ImageIcon(
 				EnvExpander.expand("$DECODES_INSTALL_DIR/icons/toolkit24x24.gif"));
 		pmFrame.setIconImage(titleIcon.getImage());
+		pmFrame.setDbPollThread(dbPollThread);
 //		pmFrame.centerOnScreen();
 		
 //System.out.println("starting dbPollThread");
