@@ -173,6 +173,8 @@ public class ServerLock implements Runnable
 				ins = new DataInputStream(new FileInputStream(myLockFile));
 				lastLockMsec = ins.readLong();
 				filePID = ins.readInt();
+//System.out.println("isLocked file=" + myLockFile.getName() + ", msec=" + lastLockMsec + " (" + new Date(lastLockMsec) 
+//+ "), pid=" + filePID);
 				try { appStatus = ins.readUTF(); }
 				catch(Exception ex) { appStatus = ""; }
 				ins.close();
@@ -247,6 +249,7 @@ public class ServerLock implements Runnable
 				catch(InterruptedException ie) {}
 			}
 		}
+		
 		if (!shutdownViaLock)
 			myLockFile.delete();
 		if (lockable != null)
