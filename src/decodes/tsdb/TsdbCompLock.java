@@ -12,8 +12,10 @@
 */
 package decodes.tsdb;
 
+import ilex.util.Logger;
 import ilex.util.ServerLock;
 
+import java.net.InetAddress;
 import java.util.Date;
 
 import decodes.sql.DbKey;
@@ -163,5 +165,28 @@ public class TsdbCompLock
 	public void setAppName(String appName)
 	{
 		this.appName = appName;
+	}
+	
+	/**
+	 * @return true if it can be determined that the process is running on this host.
+	 */
+	public boolean isRunningLocally()
+	{
+		if (host == null || host.trim().length() == 0)
+			return true;
+		try
+		{
+			InetAddress localHost = InetAddress.getLocalHost();
+			if (localHost == null)
+				return true;
+			InetAddress ih = InetAddress.getByName(host);
+			if (localHost.equals(ih))
+				return true;
+		}
+		catch (Exception ex)
+		{
+			Logger.instance().warning("isRunningLocally() cannot check inet address: " + ex);
+		}
+		return false;
 	}
 }
