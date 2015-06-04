@@ -157,22 +157,32 @@ public class DbUpdate extends TsdbAppTemplate
 //			DbKey seasonKey = theDb.getKeyGenerator().getKey("ENUM", theDb.getConnection());
 //			sql("INSERT INTO ENUM VALUES(" + seasonKey + ", 'Season', "
 //				+ "NULL, 'Seasons for Conditional Processing')");
-
-			// Update DECODES Database Version
-			sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " 
-				+ DecodesDatabaseVersion.DECODES_DB_11);
-			theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_11, "");
-			((SqlDatabaseIO)Database.getDb().getDbIo()).setDecodesDatabaseVersion(
-				DecodesDatabaseVersion.DECODES_DB_11, "");
-			// Update TSDB_DATABASE_VERSION.
-			String desc = "Updated on " + new Date();
-			sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " 
-				+ TsdbDatabaseVersion.VERSION_10
-				+ ", DESCRIPTION = '" + desc + "'");
-			theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_10, desc);
-			Database.getDb().networkListList.write();
-
 		}
+		
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_12)
+		{
+			if (theDb.isOracle())
+				sql("ALTER TABLE NETWORKLISTENTRY MODIFY PLATFORM_NAME VARCHAR2(64)");
+			else
+				sql("ALTER TABLE NETWORKLISTENTRY ALTER COLUMN PLATFORM_NAME TYPE VARCHAR2(64)");
+		}
+
+		// Update DECODES Database Version
+		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " 
+			+ DecodesDatabaseVersion.DECODES_DB_12);
+		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_12, "");
+		((SqlDatabaseIO)Database.getDb().getDbIo()).setDecodesDatabaseVersion(
+			DecodesDatabaseVersion.DECODES_DB_12, "");
+		// Update TSDB_DATABASE_VERSION.
+		String desc = "Updated on " + new Date();
+		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " 
+			+ TsdbDatabaseVersion.VERSION_10
+			+ ", DESCRIPTION = '" + desc + "'");
+		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_10, desc);
+		
+		// Rewrite the netlists with the changes.
+		Database.getDb().networkListList.write();
+
 	}
 
 	private void sql(String query)
