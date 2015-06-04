@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.9  2013/04/18 19:03:39  mmaloney
 *  When copying a loading app, also copy the properties.
 *
@@ -38,7 +41,6 @@ import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.LoadingAppDAI;
-
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.sql.DbKey;
@@ -176,9 +178,9 @@ public class ProcessesListPanel extends ListPanel
 		for(int idx = 1; idx<n; idx++)
 		{
 			Component c = tabbedPane.getComponentAt(idx);
-			if (c instanceof ProcessesEditPanel)
+			if (c instanceof ProcessEditPanel)
 			{
-				ProcessesEditPanel pep = (ProcessesEditPanel)c;
+				ProcessEditPanel pep = (ProcessEditPanel)c;
 				CompAppInfo eo = pep.getEditedObject();
 				if (eo == cai)
 				{
@@ -187,7 +189,8 @@ public class ProcessesListPanel extends ListPanel
 				}
 			}
 		}
-		ProcessesEditPanel pep = new ProcessesEditPanel();
+		ProcessEditPanel pep = new ProcessEditPanel(this);
+		pep.setTopFrame(CAPEdit.instance().getFrame());
 		pep.setEditedObject(cai);
 		tabbedPane.addTab(cai.getAppName(), null, pep);
 		tabbedPane.setSelectedIndex(n);

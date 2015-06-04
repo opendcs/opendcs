@@ -112,6 +112,7 @@ public class AlgorithmsEditPanel extends EditPanel
 		this.add(getButtonPanel(), java.awt.BorderLayout.SOUTH);
 		this.add(getTopPanel(), java.awt.BorderLayout.CENTER);
 		editedObject = null;
+		setTopFrame(CAPEdit.instance().getFrame());
 	}
 	
 	

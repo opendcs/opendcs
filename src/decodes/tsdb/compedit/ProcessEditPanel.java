@@ -16,24 +16,29 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 import javax.swing.*;
 import javax.swing.border.*;
 
 import opendcs.dai.LoadingAppDAI;
+import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.db.EnumValue;
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
+import decodes.tsdb.procmonitor.ProcessEditDialog;
+import decodes.util.DecodesSettings;
 import decodes.util.PropertiesOwner;
 import decodes.gui.EnumComboBox;
 import decodes.gui.PropertiesEditPanel;
 
-public class ProcessesEditPanel extends EditPanel 
+@SuppressWarnings("serial")
+public class ProcessEditPanel extends EditPanel 
 {
-	private JPanel mainPanel = null;
 	private JPanel paramPanel = null;
 	private JLabel processNameLabel = null;
 	private JTextField nameField = null;
@@ -44,12 +49,24 @@ public class ProcessesEditPanel extends EditPanel
 	private CompAppInfo editedObject;
 	private Properties panelProps = new Properties();
 	private PropertiesEditPanel propsPanel;
-	private JCheckBox manualEditCheck = new JCheckBox(CAPEdit.instance().compeditDescriptions
-			.getString("ProcessEditPanel.ManualCheckBox"), false);
+	private JCheckBox manualEditCheck = null;
 	private EnumComboBox processTypeCombo = new EnumComboBox("ApplicationType", "");
+	private ResourceBundle genericDescriptions = null, compeditDescriptions = null;
 	
-	public ProcessesEditPanel()
+	/** Will be set for CAPEdit, but not for Process Status GUI */
+	private ProcessesListPanel listPanel = null;
+	private ProcessEditDialog parentDialog = null;
+
+	public ProcessEditPanel(ProcessesListPanel listPanel)
 	{
+		this.listPanel = listPanel;
+		DecodesSettings settings = DecodesSettings.instance();
+		genericDescriptions = LoadResourceBundle.getLabelDescriptions(
+				"decodes/resources/generic", settings.language);
+		compeditDescriptions =  LoadResourceBundle.getLabelDescriptions(
+				"decodes/resources/compedit", settings.language);
+
+		manualEditCheck = new JCheckBox(compeditDescriptions.getString("ProcessEditPanel.ManualCheckBox"), false);
 		setLayout(new BorderLayout());
 		this.add(getButtonPanel(), java.awt.BorderLayout.SOUTH);
 		this.add(getParamPanel(), java.awt.BorderLayout.CENTER);
@@ -64,8 +81,7 @@ public class ProcessesEditPanel extends EditPanel
 		nameField.setText(cai.getAppName());
 		DbKey id = cai.getAppId();
 		if (id.isNull())
-			idField.setText(CAPEdit.instance().compeditDescriptions
-					.getString("ProcessEditPanel.NA"));
+			idField.setText(compeditDescriptions.getString("ProcessEditPanel.NA"));
 		else
 			idField.setText("" + id);
 		commentsText.setText(cai.getComment());
@@ -97,38 +113,33 @@ public class ProcessesEditPanel extends EditPanel
 	{
 		paramPanel = new JPanel(new GridBagLayout());
 
-		processNameLabel = new JLabel(CAPEdit.instance().compeditDescriptions
-				.getString("ProcessEditPanel.ProcNameLabel"));
+		processNameLabel = new JLabel(compeditDescriptions.getString("ProcessEditPanel.ProcNameLabel"));
 		paramPanel.add(processNameLabel,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(20, 20, 5, 2), 0, 0));
 
 		nameField = new JTextField();
-		nameField.setToolTipText(CAPEdit.instance().compeditDescriptions
-				.getString("ProcessEditPanel.ProcNameLabelTT"));
+		nameField.setToolTipText(compeditDescriptions.getString("ProcessEditPanel.ProcNameLabelTT"));
 		paramPanel.add(nameField,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(20, 0, 5, 10), 60, 0));
 
-		paramPanel.add(new JLabel(CAPEdit.instance().compeditDescriptions
-			.getString("ProcessEditPanel.ProcIDLabel")),
+		paramPanel.add(new JLabel(compeditDescriptions.getString("ProcessEditPanel.ProcIDLabel")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 2), 0, 0));
 
 		idField = new JTextField();
 		idField.setEditable(false);
-		idField.setToolTipText(CAPEdit.instance().compeditDescriptions
-				.getString("ProcessEditPanel.ProcIDLabelTT"));
+		idField.setToolTipText(compeditDescriptions.getString("ProcessEditPanel.ProcIDLabelTT"));
 		paramPanel.add(idField,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 10), 30, 0));
 
-		paramPanel.add(new JLabel(
-			CAPEdit.instance().compeditDescriptions.getString("ProcessEditPanel.ProcessType")),
+		paramPanel.add(new JLabel(compeditDescriptions.getString("ProcessEditPanel.ProcessType")),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 2), 0, 0));
@@ -138,17 +149,20 @@ public class ProcessesEditPanel extends EditPanel
 				new Insets(5, 0, 5, 10), 30, 0));
 		
 		manualEditCheck.setToolTipText(
-			CAPEdit.instance().compeditDescriptions.getString(
-				"ProcessEditPanel.ManualCheckBoxTT"));
+			compeditDescriptions.getString("ProcessEditPanel.ManualCheckBoxTT"));
 		paramPanel.add(manualEditCheck,
 			new GridBagConstraints(0, 3, 2, 1, 0.0, 0.5,
 				GridBagConstraints.NORTH, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 20), 0, 0));
 
 		propsPanel = new PropertiesEditPanel(panelProps);
-		propsPanel.setTitle(" "+CAPEdit.instance().compeditDescriptions
-				.getString("ProcessEditPanel.PropsPanelTitle")+" ");
-		propsPanel.setOwnerFrame(CAPEdit.instance().getFrame());
+		propsPanel.setTitle(" "+compeditDescriptions.getString("ProcessEditPanel.PropsPanelTitle")+" ");
+		
+		if (listPanel != null)
+			propsPanel.setOwnerFrame(CAPEdit.instance().getFrame());
+		else if (parentDialog != null)
+			propsPanel.setOwnerDialog(parentDialog);
+
 		paramPanel.add(propsPanel,
 			new GridBagConstraints(2, 0, 1, 4, 1.0, 0.5,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH,
@@ -194,6 +208,10 @@ public class ProcessesEditPanel extends EditPanel
 				propsPanel.setPropertiesOwner(propOwner);
 			}
 		}
+		catch(ClassCastException ex)
+		{
+			// ClassCastException if exec class doesn't implement PropertiesOwner
+		}
 		catch (Exception ex)
 		{
 			String msg = "Cannot instantiate PropertiesOwner class for '" + pt + "': " + ex;
@@ -214,9 +232,7 @@ public class ProcessesEditPanel extends EditPanel
 			commentsScrollPane = new JScrollPane();
 			commentsScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 			commentsScrollPane.setViewportView(getCommentsText());
-			commentsScrollPane.setToolTipText(
-					CAPEdit.instance().compeditDescriptions
-					.getString("ProcessEditPanel.ScrollPaneTT"));
+			commentsScrollPane.setToolTipText(compeditDescriptions.getString("ProcessEditPanel.ScrollPaneTT"));
 		}
 		return commentsScrollPane;
 	}
@@ -231,9 +247,7 @@ public class ProcessesEditPanel extends EditPanel
 			commentsText = new JTextArea();
 			commentsText.setWrapStyleWord(true);
 			commentsText.setLineWrap(true);
-			commentsText.setToolTipText(
-					CAPEdit.instance().compeditDescriptions
-					.getString("ProcessEditPanel.CommentTextTT"));
+			commentsText.setToolTipText(compeditDescriptions.getString("ProcessEditPanel.CommentTextTT"));
 		}
 		return commentsText;
 	}
@@ -255,8 +269,7 @@ public class ProcessesEditPanel extends EditPanel
 					CAPEdit.instance().compeditDescriptions
 					.getString("ProcessEditPanel.CommentPanelBorder1"), TitledBorder.DEFAULT_JUSTIFICATION, 
 					TitledBorder.DEFAULT_POSITION, 
-					new Font(CAPEdit.instance().compeditDescriptions
-							.getString("ProcessEditPanel.CommentPanelBorder2"), Font.BOLD, 12), 
+					new Font(compeditDescriptions.getString("ProcessEditPanel.CommentPanelBorder2"), Font.BOLD, 12), 
 					new Color(51,51,51)));
 			commentsPanel.setPreferredSize(new Dimension(10,100));
 			commentsPanel.add(getCommentsScrollPane(), BorderLayout.CENTER);
@@ -264,39 +277,46 @@ public class ProcessesEditPanel extends EditPanel
 		return commentsPanel;
 	}
 
-	protected void doCommit()
+	public void doCommit()
 	{
 		String nm = nameField.getText().trim();
 		if (nm.length() == 0)
 		{
-			showError(CAPEdit.instance().compeditDescriptions
-					.getString("ProcessEditPanel.CommitError1"));
+			showError(compeditDescriptions.getString("ProcessEditPanel.CommitError1"));
 			return;
 		}
 
-		CompAppInfo existingProc = 
-			CAPEdit.instance().processesListPanel.procTableModel.findByName(nm);
-		if (existingProc != null
-		 && editedObject.getAppId() == Constants.undefinedId)
-		{
-			showError(CAPEdit.instance().compeditDescriptions
-					.getString("ProcessEditPanel.CommitError2"));
-			return;
-		}
-
-		saveToObject(editedObject);
-		
-		LoadingAppDAI loadingAppDao = CAPEdit.theDb.makeLoadingAppDAO();
+		String oldNm = editedObject == null ? null : editedObject.getAppName();
+		LoadingAppDAI loadingAppDao = decodes.db.Database.getDb().getDbIo().makeLoadingAppDAO();
 		try 
 		{
+			if (oldNm != null && TextUtil.strCompareIgnoreCase(nm, oldNm) != 0)
+			{
+				// The name has changed. Make sure the new name doesn't clash with an existing proc.
+				try 
+				{
+					if (loadingAppDao.getComputationApp(nm) != null)
+					{
+						showError(compeditDescriptions.getString("ProcessEditPanel.CommitError2"));
+						return;
+					}
+				}
+				catch (NoSuchObjectException e)
+				{
+					// This is ok -- it means there is no existing proc with that name -- no clash.
+				}
+			}
+	
+			saveToObject(editedObject);
+		
 			loadingAppDao.writeComputationApp(editedObject); 
 			idField.setText("" + editedObject.getAppId());
-			CAPEdit.instance().processesListPanel.procTableModel.fill();
+			if (listPanel != null)
+				listPanel.procTableModel.fill();
 		}
 		catch(DbIoException ex)
 		{
-			showError(CAPEdit.instance().compeditDescriptions
-					.getString("ProcessEditPanel.CommitError3")+" " + ex);
+			showError(compeditDescriptions.getString("ProcessEditPanel.CommitError3")+" " + ex);
 		}
 		finally
 		{
@@ -317,20 +337,35 @@ public class ProcessesEditPanel extends EditPanel
 			cai.setProperty("appType", s);
 	}
 
-	protected void doClose()
+	public void doClose()
 	{
 		CompAppInfo testCopy = editedObject.copyNoId();
 		saveToObject(testCopy);
 		if (!editedObject.equalsNoId(testCopy))
 		{
-			int r = JOptionPane.showConfirmDialog(this, CAPEdit.instance().compeditDescriptions
-					.getString("ProcessEditPanel.CloseConfirm"));
+			int r = JOptionPane.showConfirmDialog(this, compeditDescriptions.getString("ProcessEditPanel.CloseConfirm"));
 			if (r == JOptionPane.CANCEL_OPTION)
 				return;
 			else if (r == JOptionPane.YES_OPTION)
 				doCommit();
 		}
-		JTabbedPane tabbedPane = CAPEdit.instance().getProcessesTab();
-		tabbedPane.remove(this);
+		if (listPanel != null)
+		{
+			// This will be true in CAPEdit but not in Process Status GUI
+			JTabbedPane tabbedPane = CAPEdit.instance().getProcessesTab();
+			tabbedPane.remove(this);
+		}
+		else if (parentDialog != null)
+			parentDialog.closeDlg();
+	}
+
+	public ResourceBundle getGenericDescriptions()
+	{
+		return genericDescriptions;
+	}
+
+	public void setParentDialog(ProcessEditDialog parentDialog)
+	{
+		this.parentDialog = parentDialog;
 	}
 }

@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2014/05/22 12:27:24  mmaloney
+*  CWMS fix: Wasn't displaying Location after creating new TS.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -37,7 +40,6 @@ package decodes.tsdb.compedit;
 
 import java.awt.*;
 import java.awt.event.*;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -55,14 +57,12 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.ComputationDAI;
-
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.PropertiesUtil;
 import ilex.util.LoadResourceBundle;
-
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.SiteName;
@@ -70,7 +70,6 @@ import decodes.dbeditor.SiteSelectPanel;
 import decodes.gui.PropertiesEditPanel;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
-
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbCompAlgorithm;
@@ -162,6 +161,7 @@ public class ComputationsEditPanel
 		}
 		tsdbDateFormat = new TsdbDateFormat(guiTimeZone);
 		buildPanels();
+		setTopFrame(CAPEdit.instance().getFrame());
 	}
 	
 	private void buildPanels()

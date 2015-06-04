@@ -14,17 +14,20 @@ package decodes.tsdb.compedit;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Properties;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.JTable;
 
+import decodes.gui.TopFrame;
+
+@SuppressWarnings("serial")
 public abstract class EditPanel extends JPanel 
 {
 	protected abstract void doCommit();
 
 	protected abstract void doClose();
+	
+	protected TopFrame topFrame = null;
 
 	protected JPanel getButtonPanel() 
 	{
@@ -86,8 +89,13 @@ public abstract class EditPanel extends JPanel
 	protected void showError(String msg)
 	{
 		if (msg.toLowerCase().contains("insufficient priv"))
-			CAPEdit.instance().getFrame().showError("Insufficient privilege to write to database.");
+			topFrame.showError("Insufficient privilege to write to database.");
 		else
-			CAPEdit.instance().getFrame().showError(msg);
+			topFrame.showError(msg);
+	}
+
+	public void setTopFrame(TopFrame topFrame)
+	{
+		this.topFrame = topFrame;
 	}
 }
