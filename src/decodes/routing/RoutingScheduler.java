@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2015/02/06 18:46:24  mmaloney
+ * RC03
+ *
  * Revision 1.7  2015/01/16 16:11:04  mmaloney
  * RC01
  *
@@ -113,6 +116,8 @@ public class RoutingScheduler
 			"Interval (sec) at which to purge old statuses (def=3600 or 1 hour)"),
 		new PropertySpec("refreshSchedInterval", PropertySpec.INT,
 			"Interval (sec) at which to check for schedule entry changes (def=60 or 1 min)"),
+		new PropertySpec("allowedHosts", PropertySpec.STRING, 
+			"comma-separated list of hostnames or ip addresses")
 	};
 
 	protected ArrayList<ScheduleEntryExecutive> executives = new ArrayList<ScheduleEntryExecutive>();
@@ -269,7 +274,13 @@ public class RoutingScheduler
 		{
 			appId = loadingAppDao.lookupAppId(appNameArg.getValue());
 			appInfo = loadingAppDao.getComputationApp(appNameArg.getValue());
-
+			if (!appInfo.canRunLocally())
+			{
+				Logger.instance().fatal("The 'allowedHosts' property for application '" + appInfo.getAppName()
+					+ "' does not allow this application to run on this machine!");
+				shutdownFlag = true;
+				return;
+			}
 			loadConfig(appInfo.getProperties());
 
 			// Look for EventPort and EventPriority properties. If found,
