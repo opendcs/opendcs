@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.4  2015/01/06 16:09:31  mmaloney
+*  First cut of Polling Modules
+*
 *  Revision 1.3  2014/09/25 18:07:11  mmaloney
 *  Added Seasons Enum with Editor.
 *
@@ -230,6 +233,7 @@ public class Constants
     public static final String enum_OpType = "OperationType";
     public static final String enum_Season = "Season";
 	public static final String enum_LoggerType = "LoggerType";
+	public static final String enum_ApplicationType = "ApplicationType";
 
 
 
