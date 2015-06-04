@@ -4,9 +4,12 @@
 package decodes.tsdb;
 
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.StringTokenizer;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dao.CachableDbObject;
@@ -296,5 +299,41 @@ public class CompAppInfo
 	public void setLastModified(Date lastModified)
 	{
 		this.lastModified = lastModified;
+	}
+	
+	/**
+	 * Some processes are restricted by an 'allowedHosts' property. If no
+	 * such property exists, or if it does and the local system's IP address
+	 * or hostname is included in the list, then return true.
+	 * If any error occurs while retrieving the local system's inet address
+	 * or in comparing, then this method returns true.
+	 * Otherwise return false.
+	 * @return true if this process is allowed to run on the local system.
+	 */
+	public boolean canRunLocally()
+	{
+		String s = getProperty("allowedHosts");
+		if (s == null)
+			return true; // no restrictions
+		try
+		{
+			InetAddress localHost = InetAddress.getLocalHost();
+			if (localHost == null)
+				return true;
+			StringTokenizer st = new StringTokenizer(s, ", ");
+			while(st.hasMoreTokens())
+			{
+				String h = st.nextToken();
+				InetAddress ih = InetAddress.getByName(h);
+				if (localHost.equals(ih))
+					return true;
+			}
+			return false;
+		}
+		catch (Exception e)
+		{
+			Logger.instance().warning("canRunLocally() cannot check inet address: " + e);
+			return true;
+		}
 	}
 }
