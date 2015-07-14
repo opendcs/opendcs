@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2015/01/06 02:09:11  mmaloney
+ * dev
+ *
  * Revision 1.3  2015/01/05 21:04:39  mmaloney
  * Automatically convert units to the dataUnits reported by the RatingSet.
  *
@@ -47,6 +50,8 @@ import ilex.util.Logger;
 import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.db.Constants;
+import decodes.db.SiteName;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
@@ -108,6 +113,7 @@ public class CwmsRatingMultIndep
 	ArrayList<Double> indep9Values = null;
 	int numIndeps = 1;
 	String specId = "";
+	String indep1SiteName = null;
 	
 	private String buildIndepSpec()
 		throws DbCompException
@@ -119,7 +125,8 @@ public class CwmsRatingMultIndep
 		if (tsid == null)
 			throw new DbCompException("No time series identifier associated with indep1");
 		
-		String indepSpecId = tsid.getSiteName() + "." + tsid.getDataType().getCode();
+		indep1SiteName = tsid.getSiteName();
+		String indepSpecId = tsid.getDataType().getCode();
 		
 		parmRef = getParmRef("indep2");
 		if (parmRef == null || parmRef.timeSeries == null
@@ -253,10 +260,12 @@ public class CwmsRatingMultIndep
 	public String indep7_MISSING = "ignore";
 	public String indep8_MISSING = "ignore";
 	public String indep9_MISSING = "ignore";
+	public boolean useDepLocation = false;
 
 	public String _propertyNames[] = { "templateVersion", "specVersion",
 		"indep1_MISSING", "indep2_MISSING", "indep3_MISSING", "indep4_MISSING", "indep5_MISSING",
-		"indep6_MISSING", "indep7_MISSING", "indep8_MISSING", "indep9_MISSING" };
+		"indep6_MISSING", "indep7_MISSING", "indep8_MISSING", "indep9_MISSING", 
+		"useDepLocation" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -282,11 +291,21 @@ public class CwmsRatingMultIndep
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
-		// Get parm refs for indep and dep
 		specId = buildIndepSpec();
 		
 		ParmRef depParmRef = getParmRef("dep");
-		specId = specId + ";" + depParmRef.compParm.getDataType().getCode() + "."
+		String specLocation = indep1SiteName;
+		if (useDepLocation)
+		{
+			SiteName depSiteName = depParmRef.compParm.getSiteName(Constants.snt_CWMS);
+			if (depSiteName == null)
+				debug1("No dependent site name available, using site from indep1");
+			else
+				specLocation = depSiteName.getNameValue();
+		}
+		
+		specId = specLocation
+			+ "." + specId + ";" + depParmRef.compParm.getDataType().getCode() + "."
 			+ templateVersion + "." + specVersion;
 
 		// Retrieve the RatingSet object
@@ -396,7 +415,16 @@ public class CwmsRatingMultIndep
 		if (numIndeps >= 9) valueSet[8] = indep9;
 		try
 		{
-			setOutput(dep, ratingSet.rateOne(valueSet, _timeSliceBaseTime.getTime()));
+			double output = ratingSet.rateOne(valueSet, _timeSliceBaseTime.getTime());
+			setOutput(dep, output);
+			if (Logger.instance().getMinLogPriority() == Logger.E_DEBUG3)
+			{
+				StringBuilder sb = new StringBuilder();
+				for(int i=0; i<numIndeps; i++)
+					sb.append((i>0?", ":"") + "i" + (i+1) + "=" + valueSet[i]);
+				sb.append(" -- output=" + output);
+				debug3(sb.toString());
+			}
 		}
 		catch (RatingException ex)
 		{
