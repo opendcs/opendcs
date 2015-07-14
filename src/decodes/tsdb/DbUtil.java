@@ -31,6 +31,7 @@ import decodes.db.SiteName;
 import decodes.polling.DacqEvent;
 import decodes.polling.DeviceStatus;
 import decodes.sql.DbKey;
+import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
 import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
@@ -143,10 +144,24 @@ public class DbUtil extends TsdbAppTemplate
 				genSchedEventsCmd(tokens);
 			}
 		};
+	private CmdLine versionCmd =	
+		new CmdLine("version", " -- show DECODES and tsdb database versions")
+		{
+			public void execute(String[] tokens)
+			{
+				versionCmd(tokens);
+			}
+		};
 
 	public DbUtil()
 	{
 		super("util.log");
+	}
+
+	protected void versionCmd(String[] tokens)
+	{
+		System.out.println("DECODES Database Version: " + theDb.getDecodesDatabaseVersion());
+		System.out.println("TSDB Version: " + theDb.getTsdbVersion());
 	}
 
 	protected void doTsAliases(String[] tokens)
@@ -226,6 +241,7 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(devEventsContaining);
 		cmdLineProc.addCmd(genEventsCmd);
 		cmdLineProc.addCmd(genSchedEventsCmd);
+		cmdLineProc.addCmd(versionCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		
