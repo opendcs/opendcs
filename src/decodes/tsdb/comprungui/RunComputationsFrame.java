@@ -458,18 +458,16 @@ public class RunComputationsFrame extends TopFrame
 			CTimeSeries tempTs = ctsList.get(i);
 			if (tempTs.size() == 0)
 				continue; //Continue if the TS has no values to plot
+			TimeSeriesIdentifier tsid = tempTs.getTimeSeriesIdentifier();
+			if (tsid == null)
+				continue;
 
 
 			String timeSeriesName;
 			if(i<inputs)
-			{
-
-				timeSeriesName = inputLabel + tempTs.getDisplayName();
-			}
+				timeSeriesName = inputLabel + tsid.getUniqueString();
 			else
-			{
-				timeSeriesName = outputLabel + tempTs.getDisplayName();
-			}
+				timeSeriesName = outputLabel + tsid.getUniqueString();
 
 			if (correctedTs.getUnitsAbbr().equals(tempTs.getUnitsAbbr()) &&
 					i == 0)
@@ -1027,7 +1025,7 @@ Logger.instance().debug3("Setting selection list with " + transformedTsids.size(
 				DbCompParm parm = parmIt.next();
 
 				//check for null on parm.getAlgoParmType
-				if (parm.isInput())
+				if (parm.isInput() && parm.getSiteDataTypeId() != null && !parm.getSiteDataTypeId().isNull())
 				{
 
 					CTimeSeries ts = new CTimeSeries(parm);
