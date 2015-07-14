@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2015/01/16 16:11:04  mmaloney
+ * RC01
+ *
  * Revision 1.6  2014/08/29 18:24:50  mmaloney
  * 6.1 Schema Mods
  *
@@ -960,6 +963,31 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		}
 		catch(SQLException ex)
 		{
+			// CWMS-5773 If the create error is due to some kind of user-level constraint,
+			// then throw NoSuchObject, meaning that the tsid is bad but the connection is still
+			// Ok. Prasad says ORA numbers > 20000 mean user-defined. Probably some kind of 
+			// constraint violation.
+			String exs = ex.toString();
+			int oraidx = exs.indexOf("ORA-");
+			if (oraidx >= 0)
+			{
+				exs = exs.substring(oraidx+4);
+				int intlen = 0;
+				for(; intlen < exs.length() && Character.isDigit(exs.charAt(intlen)); intlen++);
+				if (intlen > 0)
+				{
+					try
+					{
+						int oraerr = Integer.parseInt(exs.substring(0, intlen));
+						if (oraerr >= 20000)
+							throw new NoSuchObjectException(
+								"Error creating time series for '" + path + "' with officeId '"
+								+ dbOfficeId + "': " + ex);
+					}
+					catch(NumberFormatException ex2) { /* fall through & throw DbIoException */ }
+				}
+			}
+			// This must be more serious. Assume db connection is now hosed.
 			throw new DbIoException(
 				"Error creating time series for '" + path + "' with officeId '"
 				+ dbOfficeId + "': " + ex);
