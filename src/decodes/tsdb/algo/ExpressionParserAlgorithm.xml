@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="ExpressionParserAlgorithm">
+    <Comment>
+      Allow up to 5 inputs labeled in1...in5 and two outputs labeled out1 and
+      out2.
+Properties can include:
+- Time slice expressions labeled
+      ex_&lt;label&gt;, where &lt;label&gt; is any string.
+- Pre-time slice
+      expressions labeled pre_&lt;label&gt;
+- Post-time slice expressions
+      labeled post_&lt;label&gt;
+
+Expressions are executed in sort order.
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.ExpressionParserAlgorithm</ExecClass>
+    <AlgoProperty name="pre_1"></AlgoProperty>
+    <AlgoProperty name="ex_1"></AlgoProperty>
+    <AlgoProperty name="post_1"></AlgoProperty>
+    <AlgoParm roleName="in1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="in2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="in3">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="in4">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="in5">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="out1">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="out2">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>
