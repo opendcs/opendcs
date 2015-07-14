@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2015/01/06 02:09:11  mmaloney
+ * dev
+ *
  * Revision 1.5  2015/01/06 00:41:58  mmaloney
  * dev
  *
@@ -50,6 +53,8 @@ import ilex.util.Logger;
 import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.db.Constants;
+import decodes.db.SiteName;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
@@ -102,7 +107,8 @@ public class CwmsRatingSingleIndep
 //AW:PROPERTIES
 	public String templateVersion = "USGS-EXSA";
 	public String specVersion = "Production";
-	public String _propertyNames[] = { "templateVersion", "specVersion" };
+	public boolean useDepLocation = false;
+	public String _propertyNames[] = { "templateVersion", "specVersion", "useDepLocation" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -133,10 +139,21 @@ public class CwmsRatingSingleIndep
 		ParmRef depParmRef = getParmRef("dep");
 		
 		// Build rating spec ID as follows:
-		// {indep:CwmsLocID}.{indep:cwmsDataType};{dep:cwmsDataType}.{templateVersion}.{specVersion}
+		// {CwmsLocID}.{indep:cwmsDataType};{dep:cwmsDataType}.{templateVersion}.{specVersion}
 		TimeSeriesIdentifier indepTsid = indepParmRef.timeSeries.getTimeSeriesIdentifier();
 		
-		specId = indepTsid.getSiteName() + "." 
+		String specLocation = indepTsid.getSiteName();
+		// OpenDCS 6.1 RC10 feature allows location to be taken from dep variable:
+		if (useDepLocation)
+		{
+			SiteName depSiteName = depParmRef.compParm.getSiteName(Constants.snt_CWMS);
+			if (depSiteName == null)
+				debug1("No dependent site name available, using site from indep1");
+			else
+				specLocation = depSiteName.getNameValue();
+		}
+		
+		specId = specLocation + "." 
 			+ indepTsid.getDataType().getCode() + ";"
 			+ depParmRef.compParm.getDataType().getCode() + "."
 			+ templateVersion + "." + specVersion;
