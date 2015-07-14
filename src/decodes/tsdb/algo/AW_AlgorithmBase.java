@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2015/04/14 18:19:26  mmaloney
+*  Throw DbCompException on an invalid aggregate interval. Before it was throwing
+*  NullPointer.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -174,6 +178,11 @@ public abstract class AW_AlgorithmBase
 	};
 	private PropertySpec allprops[] = null;
 	
+	/** Flag set from 'setFlagBits' method to let saveOutput know to not
+	 * mess with the flags.
+	 */
+	private boolean setFlagBitsCalled = false;
+
 
 	/**
 	 * No-args Constructor because object is constructed from the class name.
@@ -924,6 +933,7 @@ public abstract class AW_AlgorithmBase
 		}
 	}
 
+	
 	/**
 	 * Sets bits in the flags, leaving other bits alone.
 	 * @param v the named variable containing the flags
@@ -932,7 +942,9 @@ public abstract class AW_AlgorithmBase
 	public void setFlagBits(NamedVariable v, int bits)
 	{
 		v.setFlags(v.getFlags() | bits);
+		setFlagBitsCalled = true;
 		saveOutput(v);
+		setFlagBitsCalled = false;
 	}
 
 	/**
@@ -1076,7 +1088,10 @@ public abstract class AW_AlgorithmBase
 		VarFlags.setToWrite(v);
 		_saveOutputCalled = true;
 		
-		if (_questionOutput)
+		// MJM 2015 06/30 If this is being called from setFlagBits, then it is
+		// some kind of validation computation that has just derived the flag bits.
+		// This method should not resort to the "Q-input = Q-output" rule.
+		if (_questionOutput && !setFlagBitsCalled)
 			tsdb.setQuestionable(v);
 
 		// Set the output's source ID from the computation.
