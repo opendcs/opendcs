@@ -308,6 +308,8 @@ public class Pdt
 	public static void main(String args[])
 		throws Exception
 	{
+		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
+		Logger.instance().info("====== PDT Utility Starting ======");
 		String filename = args.length > 0 ? args[0] : "$HOME/pdt";
 		Pdt pdt = new Pdt();
 		pdt.startMaintenanceThread("https://dcs1.noaa.gov/pdts_compressed.txt", 
