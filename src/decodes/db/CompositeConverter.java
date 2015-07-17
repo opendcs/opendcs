@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:00  cvs
 *  Added legacy code to repository
 *
@@ -114,7 +117,7 @@ public class CompositeConverter extends UnitConverter
 	}
 
 	/**
-	  Attempts to build a composit converter from one EU to another, using
+	  Attempts to build a composite converter from one EU to another, using
 	  the current conversions defined in the singleton UnitConverterSet.
 	  @param from EU we're converting from.
 	  @param to EU we're converting to.
@@ -160,14 +163,13 @@ public class CompositeConverter extends UnitConverter
 	{
 		from.cnvtSearched = true;
 
-		// First look for direct convertsion to target.
-		for (Iterator it = Database.getDb().unitConverterSet.iteratorExec();
-			it.hasNext(); )
+		// First look for direct conversion to target.
+		for (Iterator it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
 		{
 			UnitConverter uc = (UnitConverter)it.next();
-			if (uc.getFrom() != from)
+			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()))
 				continue;
-			if (uc.getTo() == to)
+			if (uc.getTo().getAbbr().equalsIgnoreCase(to.getAbbr()))
 			{
 				callStack.push(uc);
 				CompositeConverter cc = new CompositeConverter(
@@ -180,13 +182,12 @@ public class CompositeConverter extends UnitConverter
 		}
 
 		// No direct conversion. Do recursive branching.
-		for (Iterator it = Database.getDb().unitConverterSet.iteratorExec();
-			it.hasNext(); )
+		for (Iterator it = Database.getDb().unitConverterSet.iteratorExec(); it.hasNext(); )
 		{
 			UnitConverter uc = (UnitConverter)it.next();
 
 			// Skip if 'from' doesn't match or if I've already searched 'To'.
-			if (uc.getFrom() != from || uc.getTo().cnvtSearched)
+			if (!uc.getFrom().getAbbr().equalsIgnoreCase(from.getAbbr()) || uc.getTo().cnvtSearched)
 				continue;
 
 			callStack.push(uc);
