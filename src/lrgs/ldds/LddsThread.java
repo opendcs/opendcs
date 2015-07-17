@@ -376,7 +376,10 @@ Logger.instance().debug1(DdsServer.module
 					+ " Client hangup on connection with user '"
 					+ getClientName() + "', elapsed msec=" + elapsed
 					+ ": " + ex.toString();
-				Logger.instance().warning(emsg);
+				if (emsg.contains("Connection reset by peer"))
+					Logger.instance().debug1(emsg);
+				else
+					Logger.instance().warning(emsg);
 				disconnect();
 			}
 			catch(Exception ex)
