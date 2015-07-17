@@ -364,7 +364,7 @@ class BackgroundStuff extends Thread
 			}
 			if (badClient != null) // Found one to hang up on?
 			{
-				Logger.instance().warning(DdsServer.module +
+				Logger.instance().debug1(DdsServer.module +
 					" Hanging up on client '" + badClient.getClientName()
 					+ "' due to inactivity for more than "
 					+ LddsParams.ServerHangupSeconds + " seconds.");
