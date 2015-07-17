@@ -334,9 +334,9 @@ public class CmdUser extends LddsCommand
 			userRoot.mkdirs();
 
 		File userDir = new File(userRoot, username);
-System.out.println("set username=" + username + ", userDir=" + userDir.getPath()
-+ ", isLocal=" + localUser + ", logged in as=" + ldds.getUserName()
-+ " (local=" + ldds.isLocal() + ")");
+//System.out.println("set username=" + username + ", userDir=" + userDir.getPath()
+//+ ", isLocal=" + localUser + ", logged in as=" + ldds.getUserName()
+//+ " (local=" + ldds.isLocal() + ")");
 		if (!userDir.isDirectory())
 		{
 			if (!ldds.user.isAdmin)
