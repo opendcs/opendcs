@@ -313,6 +313,9 @@ public class LrgsConfig
 		new PropertySpec("loadDecodes", PropertySpec.BOOLEAN,
 			"Set to true to have DECODES database loaded at LRGS startup. Used in some"
 			+ " circumstances to resolve network lists for DDS Receive"),
+		new PropertySpec("damsNtTimeout", PropertySpec.INT,
+			"If no data is received on a DAMS-NT socket in this many seconds, then issue a timeout"
+			+ " warning and reconnect."),
 //		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
 //			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
 	};
@@ -514,6 +517,11 @@ public class LrgsConfig
 	public boolean getLoadDecodes()
 	{
 		return getMiscBooleanProperty("loadDecodes", false);
+	}
+	
+	public int getDamsNtTimeout()
+	{
+		return this.getMiscIntProperty("damsNtTimeout", 20);
 	}
 
 	public String getSangomaIfName()
