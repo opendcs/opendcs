@@ -712,8 +712,14 @@ DROP PUBLIC SYNONYM cp_algorithmidseq;
 DROP PUBLIC SYNONYM cp_computationidseq;
 DROP PUBLIC SYNONYM tsdb_groupidseq;
 
+-- Added for DECODES DB Version 12
+ALTER TABLE NETWORKLISTENTRY MODIFY PLATFORM_NAME VARCHAR2(64);
+
+-----------------------------------------------------------------
+-- Finally, update the database version numbers in the database
+-----------------------------------------------------------------
 delete from DecodesDatabaseVersion;
-insert into DecodesDatabaseVersion values(11, 'Updated from 5.2');
+insert into DecodesDatabaseVersion values(12, 'Updated from 5.2');
 delete from tsdb_database_version;
 insert into tsdb_database_version values(10, 'Updated from 5.2');
 
