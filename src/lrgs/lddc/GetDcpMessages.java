@@ -9,6 +9,8 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
+
+import decodes.util.ResourceFactory;
 import ilex.util.*;
 import ilex.cmdline.*;
 import lrgs.common.*;
@@ -119,6 +121,8 @@ public class GetDcpMessages extends Thread
 	{
 		try
 		{
+			ResourceFactory.instance().initDbResources();
+
 			// Connect & login as specified user.
 			lddsClient.connect();
 			if (passwd != null)

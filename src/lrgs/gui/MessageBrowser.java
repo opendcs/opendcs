@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.2  2014/10/08 17:24:49  mmaloney
+*  Added combo box for decoder format.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -27,8 +30,10 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.border.BevelBorder;
 
+import decodes.db.DatabaseException;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
+import decodes.util.ResourceFactory;
 
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
@@ -114,6 +119,17 @@ public class MessageBrowser extends MenuFrame
 	{
 	
 		super(TITLE);
+		
+		try
+		{
+			ResourceFactory.instance().initDbResources();
+		}
+		catch (DatabaseException e1)
+		{
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		getMyLabelDescriptions();		
 		setTitle(labels.getString("MessageBrowser.frameTitle"));
 		filechooser = new JFileChooser();
