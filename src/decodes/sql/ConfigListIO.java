@@ -526,6 +526,12 @@ public class ConfigListIO extends SqlDbObjIo
 	public void insert(ConfigSensor cs)
 		throws DatabaseException, SQLException
 	{
+		if (cs.sensorName == null || cs.sensorName.trim().length() == 0)
+		{
+			warning("PlatformConfig '" + cs.platformConfig.getName() + "' sensor number "
+				+ cs.sensorNumber + " is missing required sensorName. Set to UNKNOWN");
+			cs.sensorName = "UNKNOWN";
+		}
 		if (getDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
 		{
 			DataType dt = cs.getDataType();
