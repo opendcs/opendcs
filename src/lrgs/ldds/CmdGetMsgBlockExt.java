@@ -223,16 +223,16 @@ debug(ldds,
 			}
 			catch(SearchTimeoutException stex)
 			{
-				Logger.instance().info("DDS Connection '"+ldds.getName()
-					+ "' aborting because of 45 second timeout: " + stex);
-
 				if (ldds.ins.isMsgAvailable())
 				{
-					Logger.instance().info(cmdType() + 
+					Logger.instance().debug1(cmdType() + 
 						" aborting to service another client message from "
 							+ ldds.getClientName());
 					return 0;
 				}
+				else
+					Logger.instance().debug1("DDS Connection '"+ldds.getClientName()
+						+ "' aborting because of 45 second timeout: " + stex);
 
 				if (numMessages == 0)
 					throw stex;     // Means 'try again'
