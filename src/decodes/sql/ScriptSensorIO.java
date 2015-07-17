@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2013/03/21 18:27:39  mmaloney
  * DbKey Implementation
  *
@@ -109,6 +112,8 @@ public class ScriptSensorIO extends SqlDbObjIo
 		UnitConverterDb rc = ss.rawConverter;
 		if (rc != null) 
 		{
+			if (rc.toAbbr == null || rc.toAbbr.trim().length() == 0)
+				rc.toAbbr = rc.fromAbbr;
 			if (rc.idIsSet())
 				_unitConverterIO.insert(rc);
 			else
