@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.10  2015/02/16 16:18:04  mmaloney
+*  Added pollMessageDir and pollRoutingTemplate
+*
 *  Revision 1.9  2015/02/06 18:47:20  mmaloney
 *  Config option to not display certain buttons: Time Series, Groups, Run Comps, & Algorithms.
 *
@@ -283,6 +286,8 @@ public class DecodesSettings
 	/** Show the time series list/edit button */
 	public boolean showTimeSeriesEditor = true;
 	
+	public boolean showComputationEditor = true;
+	
 	/** Show the time series group list/edit button */
 	public boolean showGroupEditor = true;
 	
@@ -465,6 +470,8 @@ public class DecodesSettings
 			"Show the (legacy) network list editor button on the button panel"),
 		new PropertySpec("showTimeSeriesEditor", PropertySpec.BOOLEAN,
 			"Show the Time Series list/editor button on the button panel"),
+		new PropertySpec("showComputationEditor", PropertySpec.BOOLEAN,
+			"Show the Computation editor button on the button panel"),
 		new PropertySpec("showGroupEditor", PropertySpec.BOOLEAN,
 			"Show the Time Series Group list/editor button on the button panel"),
 		new PropertySpec("showTestCmputations", PropertySpec.BOOLEAN,
