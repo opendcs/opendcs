@@ -97,6 +97,12 @@ public class XRWriteThread extends Thread
 	 */
 	public synchronized boolean enqueue(DcpMsg xr)
 	{
+		if (dcpMonitor.isIgnoreInvalidAddr() && xr.hasXmitFailureCode('I'))
+		{
+			Logger.instance().info("XRWriteThread.enqueue ignoring message with header '"
+				+ xr.getHeader() + "' because it has an Invalid DCP Address.");
+			return true;
+		}
 		int sz = q.size();
 Logger.instance().debug2("XRWriteThread.enqueue: " + xr.getHeader() + " queue.size=" + sz);
 		if (sz > queueMaxSize)

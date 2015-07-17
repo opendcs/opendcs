@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2015/02/06 18:59:50  mmaloney
+ * Numerous reliability improvements.
+ *
  * Revision 1.8  2015/01/24 15:13:59  mmaloney
  * Poll cleanup.
  *
@@ -39,6 +42,7 @@ package decodes.dcpmon;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
@@ -69,6 +73,7 @@ public class DcpMonitor
 	private static DcpMonitor _instance = null;
 	private String status = "";
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
+	private boolean ignoreInvalidAddr = false;
 	
 	private static PropertySpec[] dcpmonProps =
 	{
@@ -149,7 +154,9 @@ public class DcpMonitor
 		new PropertySpec("rtstatURL", PropertySpec.STRING,
 			"URL to dynamic HTML file being updated by LRGS Daemon. Set to '-' to disable this feature."),
 		new PropertySpec("statusErrorThreshold", PropertySpec.INT,
-			"# of seconds. Devices and Platforms with an error within this amount of time are shown in red.")
+			"# of seconds. Devices and Platforms with an error within this amount of time are shown in red."),
+		new PropertySpec("ingoreInvalidAddr", PropertySpec.BOOLEAN,
+			"(default=false) If true then ignore any message an invalid DCP address.")
 	};
 
 	/**
@@ -209,6 +216,11 @@ public class DcpMonitor
 		setStatus("Starting xrWriteThread");
 		xrWriteThread = new XRWriteThread();
 		xrWriteThread.start();
+		
+		ignoreInvalidAddr = false;
+		String s = appInfo.getProperty("ignoreInvalidAddr");
+		if (s != null && s.trim().length() > 0)
+			ignoreInvalidAddr = TextUtil.str2boolean(s);
 		
 		// Put my consumer type into the consumer type enum.
 		Database db = Database.getDb();
@@ -444,6 +456,11 @@ public class DcpMonitor
 	public boolean additionalPropsAllowed()
 	{
 		return true;
+	}
+
+	public boolean isIgnoreInvalidAddr()
+	{
+		return ignoreInvalidAddr;
 	}
 
 
