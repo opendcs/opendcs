@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.5  2015/04/14 18:22:20  mmaloney
+* Search the entire cache before going to the database in lookupSiteID(String)
+*
 * Revision 1.4  2015/01/22 19:51:49  mmaloney
 * log message improvements
 *
@@ -595,6 +598,10 @@ public class SiteDAO
 	protected void insertSiteName(DbKey siteId, SiteName sn)
 		throws DbIoException
 	{
+		// Ignore null or missing name values. Oracle can't store them.
+		if (sn.getNameValue() == null || sn.getNameValue().trim().length() == 0)
+			return;
+		
 		String q =
 			"INSERT INTO SiteName VALUES (" +
 				siteId + ", " +
