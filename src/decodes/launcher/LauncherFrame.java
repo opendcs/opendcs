@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.7  2015/05/21 13:26:14  mmaloney
+ * RC08
+ *
  * Revision 1.6  2015/05/14 13:52:20  mmaloney
  * RC08 prep
  *
@@ -624,8 +627,9 @@ public class LauncherFrame extends JFrame
 			140)), borderString);
 		tsdbButtonPanel.setLayout(tsdbLayout);
 
-		rows = 2 +
+		rows = 1 +
 			(DecodesSettings.instance().showTimeSeriesEditor ? 1 : 0) +
+			(DecodesSettings.instance().showComputationEditor ? 1 : 0) +
 			(DecodesSettings.instance().showGroupEditor ? 1 : 0) +
 			(DecodesSettings.instance().showTestCmputations ? 1 : 0) +
 			(DecodesSettings.instance().showAlgorithmEditor ? 1 : 0);
@@ -678,7 +682,8 @@ public class LauncherFrame extends JFrame
 				compeditButtonPressed();
 			}
 		});
-		tsdbButtonPanel.add(compeditButton, null);
+		if (DecodesSettings.instance().showComputationEditor)
+			tsdbButtonPanel.add(compeditButton, null);
 
 		// ROW 3: Run/Test Computations Button
 		runcompButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
