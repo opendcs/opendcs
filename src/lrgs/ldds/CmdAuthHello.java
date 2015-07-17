@@ -247,9 +247,11 @@ public class CmdAuthHello extends LddsCommand
 			username + " " + timestr + " " + DdsVersion.DdsVersionNum);
 		ldds.send(msg);
 
-		Logger.instance().info(DdsServer.module + " " + toString()
-			+ " - Successfully authenticated!"
-			+ (user.isAdmin ? " (admin=true)" : ""));
+		if (user.isAdmin)
+			Logger.instance().info(DdsServer.module + " ADMIN authenticated connection from "
+				+ ldds.getClientName());
+		else
+			Logger.instance().debug1(DdsServer.module + " " + ldds.getClientName() + " - Successfully authenticated!");
 		return 0;
 	}
 
