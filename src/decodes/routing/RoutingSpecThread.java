@@ -297,7 +297,7 @@ public class RoutingSpecThread
 		{
 			myExec.setSubsystem(null);
 
-			// Every 60 sec, check to see if my objects have changed.			
+			// Periodically check to see if my objects have changed.			
 			long now = System.currentTimeMillis();
 			if (now - lastUp2DateCheck > 30000L)
 			{
@@ -833,7 +833,24 @@ public class RoutingSpecThread
 				return;
 			}
 		}
-
+		
+		if (compProcessor != null)
+		{
+			compProcessor.shutdown();
+			compProcessor = null;
+		}
+		
+		if (rs.enableEquations)
+		{
+			compProcessor = new ComputationProcessor();
+			try { compProcessor.init(compConfigFile, rs); }
+			catch(decodes.comp.BadConfigException ex)
+			{
+				log(Logger.E_WARNING,
+					"Cannot configure computation processor: " + ex);
+				compProcessor = null;
+			}
+		}
 
 		// Initialize the PresentationGroup for this routing spec.
 		if (rs.presentationGroupName != null
@@ -1182,36 +1199,45 @@ public class RoutingSpecThread
 			if (presentationGroup == null
 		 	 || rs.presentationGroupName.equals("(none)"))
 				return false;
-			Date dbLMT = rs.getDatabase().getDbIo().getPresentationGroupLMT(
-				presentationGroup);
-			if (dbLMT == null)
+			
+			ArrayList<PresentationGroup> checked = new ArrayList<PresentationGroup>();
+			boolean changesMade = false;
+			for(PresentationGroup checkPG = presentationGroup; checkPG != null; checkPG = checkPG.parent)
 			{
-				log(Logger.E_INFORMATION, 
-					"PresentationGroup was deleted, proceeding without it.");
-				presentationGroup = null;
-				return true;
-			}
-			else 
-			{
-				Date lmt = presentationGroup.lastModifyTime;
-				if (lmt == null)
+				if (checked.contains(checkPG))
 				{
-					log(Logger.E_WARNING, "Presentation Group LMT is null");
-					return false;
+					log(Logger.E_INFORMATION, "Circular presentation group references detected. Aborting check.");
+					break;
 				}
-				else if (lmt.compareTo(dbLMT) < 0)
+				checked.add(checkPG);
+				
+				Date dbLMT = rs.getDatabase().getDbIo().getPresentationGroupLMT(checkPG);
+				if (dbLMT == null)
 				{
-					log(Logger.E_INFORMATION, 
-						"PresentationGroup '" + presentationGroup.groupName 
-				 		+ "' was modified, reloading it.");
-					presentationGroup.clear();
-					presentationGroup.read();
-					presentationGroup.prepareForExec();
+					log(Logger.E_INFORMATION, "PresentationGroup was deleted from database, proceeding without it.");
+					if (checkPG == presentationGroup)
+						presentationGroup = null; // This routing spec no longer has a PG.
+					else
+						checked.get(checked.size()-1).parent = null; // Remove from chain.
 					return true;
 				}
-				else
-					return false;
+				else 
+				{
+					Date lmt = checkPG.lastModifyTime;
+					if (lmt == null)
+						log(Logger.E_WARNING, "Presentation Group '" + checkPG.groupName + "' LMT is null");
+					else if (lmt.compareTo(dbLMT) < 0)
+					{
+						log(Logger.E_INFORMATION, "PresentationGroup '" + checkPG.groupName 
+					 		+ "' was modified, reloading it.");
+						checkPG.clear();
+						checkPG.read();
+						checkPG.prepareForExec();
+						changesMade = true;
+					}
+				}
 			}
+			return changesMade;
 		}
 		catch(DatabaseException ex)
 		{
