@@ -2,6 +2,7 @@ package decodes.dbeditor;
 
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
@@ -512,7 +513,7 @@ class ScheduleEntryComparator implements Comparator<ScheduleEntry>
 		String s1 = ScheduleEntryTableModel.getSEColumn(ds1, column);
 		String s2 = ScheduleEntryTableModel.getSEColumn(ds2, column);
 
-		return s1.compareToIgnoreCase(s2);
+		return TextUtil.strCompareIgnoreCase(s1, s2);
 	}
 
 	public boolean equals(Object ob)
