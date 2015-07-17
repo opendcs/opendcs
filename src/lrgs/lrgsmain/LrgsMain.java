@@ -48,8 +48,10 @@ import lrgs.db.LrgsDatabaseThread;
 import lrgs.edl.EdlInputInterface;
 import lrgs.noaaportrecv.NoaaportRecv;
 import lrgs.networkdcp.NetworkDcpRecv;
+import decodes.db.DatabaseException;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
+import decodes.util.ResourceFactory;
 
 /**
 Main class for LRGS process.
@@ -143,6 +145,16 @@ public class LrgsMain
 
 	public void run()
 	{
+		try
+		{
+			ResourceFactory.instance().initDbResources();
+		}
+		catch (DatabaseException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		shutdownFlag = false;
 		Logger.instance().info("============ " + getAppName()
 			+ " Starting ============");
