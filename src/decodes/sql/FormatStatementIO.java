@@ -4,6 +4,9 @@
  * Open source software
  *
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.4  2013/03/21 18:27:39  mmaloney
  * DbKey Implementation
  *
@@ -115,6 +118,13 @@ public class FormatStatementIO extends SqlDbObjIo
 		for (int i = 0; i < v.size(); ++i) 
 		{
 			FormatStatement fs = v.get(i);
+			if (fs.label == null || fs.label.trim().length() == 0)
+			{
+				if (fs.format == null || fs.format.trim().length() == 0)
+					continue; // ignore empty format statement.
+				else
+					fs.label = "nolabel_" + i;
+			}
 			try { insert(fs, ds.getId()); }
 			catch(SQLException ex)
 			{
