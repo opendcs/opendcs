@@ -238,7 +238,7 @@ Logger.instance().info(module + " " + myName + " starting"
 						if (activityLogger != null)
 							activityLogger.info(msg.getHeader());
 					}
-					else if (now - lastResponseTime > 20000)
+					else if (now - lastResponseTime > LrgsConfig.instance().getDamsNtTimeout() * 1000L)
 					{
 						// More than 20 seconds since either msg or NONE.
 						status = "Timeout";
