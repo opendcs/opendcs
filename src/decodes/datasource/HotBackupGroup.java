@@ -294,9 +294,9 @@ public class HotBackupGroup
 			}
 			catch(DataSourceException e)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"DataSource '" + activeMember.getName()
-					+ "' failed: " + e);
+				if (activeMember != null)
+					Logger.instance().log(Logger.E_WARNING, "DataSource '" + activeMember.getName()
+						+ "' failed: " + e);
 				close();
 			}
 		}
