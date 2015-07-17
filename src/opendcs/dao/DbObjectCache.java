@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2015/04/14 18:24:42  mmaloney
+ * Improved comments.
+ *
  * Revision 1.2  2014/07/03 12:53:40  mmaloney
  * debug improvements.
  *
@@ -65,11 +68,13 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 */
 	public void put(DBT dbObj)
 	{
+		String un = dbObj.getUniqueName();
+		if (un == null || un.trim().length() == 0)
+			return;
 		ObjWrapper ow = new ObjWrapper(dbObj);
 		keyObjMap.put(dbObj.getKey(), ow);
-		nameObjMap.put(
-			nameIsCaseSensitive ? dbObj.getUniqueName() : dbObj.getUniqueName().toUpperCase(),
-			ow);
+		
+		nameObjMap.put(nameIsCaseSensitive ? un : un.toUpperCase(), ow);
 	}
 	
 	/**
