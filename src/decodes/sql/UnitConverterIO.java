@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.3  2013/04/12 19:34:27  mmaloney
  * column mask on inserts required for VPD
  *
@@ -33,6 +36,8 @@ import decodes.db.UnitConverterSet;
  */
 public class UnitConverterIO extends SqlDbObjIo
 {
+	private String context = "";
+	
 	/** 
 	* Constructor. 
 	* @param dbio parent SqlDatabaseIO object
@@ -147,6 +152,13 @@ public class UnitConverterIO extends SqlDbObjIo
 		for(Iterator<UnitConverterDb> it = ucs2write.iteratorDb(); it.hasNext(); )
 		{
 			UnitConverterDb uc2write = it.next();
+			if (uc2write.fromAbbr == null || uc2write.fromAbbr.trim().length() == 0
+			 || uc2write.toAbbr == null || uc2write.toAbbr.trim().length() == 0)
+			{
+				warning("Unit Converter Set: Neither from nor to may be null: from='" 
+					+ uc2write.fromAbbr + "' to='" + uc2write.toAbbr + "'");
+				continue;
+			}
 			UnitConverterDb inDb = dbUcs.getDb(uc2write.fromAbbr, uc2write.toAbbr);
 			try
 			{
@@ -245,6 +257,15 @@ public class UnitConverterIO extends SqlDbObjIo
 				coeffStr += ", ";
 			}
 		}
+		
+		if (ucdb.fromAbbr == null || ucdb.fromAbbr.trim().length() == 0
+		 || ucdb.toAbbr == null || ucdb.toAbbr.trim().length() == 0)
+		{
+			warning(context 
+				+ " Unit Converter -- neither from nor to may be null: from='" 
+				+ ucdb.fromAbbr + "' to='" + ucdb.toAbbr + "'");
+			return;
+		}
 
 		String q = "INSERT INTO " +
 				"UnitConverter(ID, FROMUNITSABBR, TOUNITSABBR, ALGORITHM, A, B, C, D, E, F)" +
@@ -270,5 +291,10 @@ public class UnitConverterIO extends SqlDbObjIo
 	{
 		String q = "DELETE FROM UnitConverter WHERE ID = " + ucdb.getId();
 		executeUpdate(q);
+	}
+
+	public void setContext(String context)
+	{
+		this.context = context;
 	}
 }
