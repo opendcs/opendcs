@@ -66,7 +66,7 @@ public interface DacqEventDAI
 	 * @param evtList the event list to add to.
 	 * @return number of events added to the list
 	 */
-	int readEventsContaining(String text, ArrayList<DacqEvent> evtList)
+	public int readEventsContaining(String text, ArrayList<DacqEvent> evtList)
 		throws DbIoException;
 	
 	/**
@@ -78,7 +78,7 @@ public interface DacqEventDAI
 	 * @return number of events added to the list
 	 * @throws DbIoException
 	 */
-	int readEventsForScheduleStatus(DbKey scheduleEntryStatusId, ArrayList<DacqEvent> evtList)
+	public int readEventsForScheduleStatus(DbKey scheduleEntryStatusId, ArrayList<DacqEvent> evtList)
 		throws DbIoException;
 
 	/**
@@ -90,7 +90,16 @@ public interface DacqEventDAI
 	 * @return number of events added to the list
 	 * @throws DbIoException
 	 */
-	int readEventsForPlatform(DbKey platformId, ArrayList<DacqEvent> evtList)
+	public int readEventsForPlatform(DbKey platformId, ArrayList<DacqEvent> evtList)
+		throws DbIoException;
+	
+	
+	/**
+	 * Delete any events for the specified platform ID.
+	 * @param platformId the surrogate key of the platform
+	 * @throws DbIoException on any SQL error
+	 */
+	public void deleteEventsForPlatform(DbKey platformId)
 		throws DbIoException;
 
 }
