@@ -173,7 +173,10 @@ public class DacqEventDAO
 		return queryForEvents(q, evtList);
 	}
 
-	
-	
-
+	@Override
+	public void deleteEventsForPlatform(DbKey platformId) throws DbIoException
+	{
+		String q = "DELETE FROM " + tableName + " WHERE PLATFORM_ID =" + platformId;
+		doModify(q);
+	}
 }

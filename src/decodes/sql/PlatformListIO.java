@@ -4,6 +4,11 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.9  2015/04/15 19:59:47  mmaloney
+ * Fixed synchronization bugs when the same data sets are being processed by multiple
+ * routing specs at the same time. Example is multiple real-time routing specs with same
+ * network lists. They will all receive and decode the same data together.
+ *
  * Revision 1.8  2015/02/06 18:48:20  mmaloney
  * Bugfix: Designator wasn't being saved on update. Only on create.
  *
@@ -48,15 +53,14 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Vector;
 
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.PropertiesSqlDao;
-
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.db.Platform;
@@ -952,6 +956,17 @@ public class PlatformListIO extends SqlDbObjIo
 			}
 		}
 
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+		{
+			DacqEventDAI dacqEventDAO = _dbio.makeDacqEventDAO();
+			try { dacqEventDAO.deleteEventsForPlatform(p.getId()); }
+			catch (DbIoException ex)
+			{
+				warning("Error deleting DACQ_EVENT records for platform " + p.getDisplayName() + ": " + ex);
+			}
+			finally { dacqEventDAO.close(); }
+		}
+		
 		String q = "DELETE FROM Platform WHERE ID = " + p.getId();
 		executeUpdate(q);
 
