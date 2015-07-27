@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2015/07/14 18:33:40  mmaloney
+*  CWMS-6160 fix. If an algorithm explicitly set flag bits, then don't automatically assume
+*  that a quesntionable input implies a questionable output.
+*
 *  Revision 1.2  2015/04/14 18:19:26  mmaloney
 *  Throw DbCompException on an invalid aggregate interval. Before it was throwing
 *  NullPointer.
@@ -1263,8 +1267,13 @@ debug1("Storing aggregate value=" + v.getStringValue()
 		for(String varName : getInputNames())
 		{
 			ParmRef parmRef = getParmRef(varName);
-			if (parmRef == null || parmRef.compParm == null)
-				continue;
+			
+			boolean unused = (parmRef == null || parmRef.compParm == null);
+			// MJM 20150727 Optional parms that are unused in an algorithm should be
+			// filled with the special value meaning MISSING.
+			
+//			if (unused)
+//				continue;
 
 			_sliceInputsDeleted = false;
 			// Use reflection to find the variable with same name.
@@ -1277,15 +1286,19 @@ debug1("Storing aggregate value=" + v.getStringValue()
 				// note: getField only returns public members.
 				// so first use getDeclaredFields to handle protected but accessible members.
 				Field field = getField(cls, varName);
+				String ftyp = field.getType().getName();
+				NamedVariable v = null;
 				
 //debug3("Found field matching varName '" + varName + "'");
-				String nm = varName;
-				String typ = parmRef.compParm.getAlgoParmType().toLowerCase();
+				if (!unused)
+				{
+					String nm = varName;
+					String typ = parmRef.compParm.getAlgoParmType().toLowerCase();
 //debug3("parm-typ is '" + typ + "'");
-				if (typ.length() > 1 && typ.charAt(1) == 'd')
-					nm += "_d";
-				NamedVariable v = _timeSliceVars.findByNameIgnoreCase(nm);
-				String ftyp = field.getType().getName();
+				 	if (typ.length() > 1 && typ.charAt(1) == 'd')
+				 		nm += "_d";
+				 	v = _timeSliceVars.findByNameIgnoreCase(nm);
+				}
 //debug3("field type is '" + ftyp + "'");
 
 				// NOTE: Missing data is handled by DbAlgorithmExecutive in
