@@ -3,6 +3,7 @@ package decodes.util;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.Logger;
+import ilex.util.ServerLock;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -49,6 +50,19 @@ public class DownloadNwsXrefThread extends Thread
 	 */
 	public void run()
 	{
+		ServerLock mylock = null;
+		/** Optional server lock ensures only one instance runs at a time. */
+		String lockpath = EnvExpander.expand(localfn + ".lock");
+		mylock = new ServerLock(lockpath);
+		mylock.setCritical(false);
+		if (!mylock.obtainLock())
+		{
+			Logger.instance().warning("Cannot download NWS Xref because lock file '" + lockpath
+				+ "' is either taken by another process or is unwritable.");
+			return;
+		}
+		Logger.instance().info("Obtained lock file '" + lockpath + "' -- proceeding with download.");
+		
 		BufferedInputStream bis = null;
 		BufferedOutputStream bos = null;
 		long now = System.currentTimeMillis();
@@ -116,5 +130,6 @@ public class DownloadNwsXrefThread extends Thread
 				oldFile.delete();
 			}
 		}
+		mylock.releaseLock();
 	}
 }

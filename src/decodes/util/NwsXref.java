@@ -5,6 +5,9 @@
  * Author: Mike Maloney, Cove Software, LLC
  * 
  * $Log$
+ * Revision 1.2  2015/03/19 17:56:53  mmaloney
+ * If lock is taken, continue to spawn maintenance thread to check for file changes.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -159,11 +162,18 @@ public class NwsXref
 		}
 	}
 	
+	/**
+	 * Shuts down the maintenance thread and destroys the singleton instance.
+	 */
 	public void stopMaintenanceThread()
 	{
 		if (mthread != null)
+		{
 			mthread.shutdown = true;
+			mthread.interrupt();
+		}
 		mthread = null;
+		_instance = null;
 	}
 
 	private class MaintenanceThread extends Thread
@@ -176,7 +186,6 @@ public class NwsXref
 		NwsXref xref = null;
 		boolean shutdown = false;
 		Random random = new Random();
-		boolean doDownload = false;
 
 		MaintenanceThread(NwsXref xref, String url, String fn)
 		{
@@ -189,51 +198,9 @@ public class NwsXref
 
 		public void run()
 		{
-			if (Pdt.useLockForDownload)
-			{
-				/** Optional server lock ensures only one instance runs at a time. */
-				String lockpath = EnvExpander.expand(
-					"$DCSTOOL_USERDIR/nwsxrefdownload.lock");
-				File lockFile = new File(lockpath);
-				if (!lockFile.canWrite())
-				{
-					// Either it doesn't exist or it does and we don't have perms.
-					try
-					{
-						if (!lockFile.createNewFile())
-						{
-							// can't write and can't create.
-							throw new Exception();
-						}
-					}
-					catch (Exception ex)
-					{
-						String homelockpath = EnvExpander.expand("$HOME/nwsxrefdownload.lock");
-						Logger.instance().info("Cannot write to '" + lockpath
-							+ "', will try '" + homelockpath + "'");
-						lockpath = homelockpath;
-					}
-				}
-				final ServerLock mylock = new ServerLock(lockpath);
-				mylock.setCritical(false);
-
-				if (mylock.obtainLock())
-				{
-					doDownload = true;
-					mylock.releaseOnExit();
-				}
-				Runtime.getRuntime().addShutdownHook(
-					new Thread()
-					{
-						public void run()
-						{
-							stopMaintenanceThread();
-						}
-					});
-			}
 			Logger.instance().debug1("Starting NwsXref Maintenance Thread, url='"
 				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + localfile.getPath() + ", doDownload=" + doDownload);
+				+ ", localpath=" + localfile.getPath());
 			
 			if (localfile.canRead())
 				lastDownload = localfile.lastModified();
@@ -245,16 +212,13 @@ public class NwsXref
 					lastLoad = System.currentTimeMillis();
 					xref.load(localfile);
 				}
-				if (doDownload)
+				if (url != null && url.length() > 0 && !url.equals("-")
+				 && System.currentTimeMillis() - lastDownload > Pdt.downloadIntervalMsec)
 				{
-					if (url != null && url.length() > 0 && !url.equals("-")
-					 && System.currentTimeMillis() - lastDownload > Pdt.downloadIntervalMsec)
-					{
-						lastDownload = System.currentTimeMillis();
-						DownloadNwsXrefThread lpt = 
-							new DownloadNwsXrefThread(url, localfn, xref);
-						lpt.start();
-					}
+					lastDownload = System.currentTimeMillis();
+					DownloadNwsXrefThread lpt = 
+						new DownloadNwsXrefThread(url, localfn, xref);
+					lpt.start();
 				}
 				long interval = Pdt.fileCheckIntervalMsec + (random.nextInt() & 0x1f) * 1000L;
 				try { sleep(interval); }
@@ -285,37 +249,27 @@ public class NwsXref
 	public int size() { return dcpAddrMap.size(); }
 	
 	/**
-	 * Test main.
-	 * Starts maintenance download thread.
-	 * Reads DCP addresses from command line, spits out the PDT.
-	 * Log messages go to stderr about loading activities.
+	 * args: url localfile
 	 */
 	public static void main(String args[])
 		throws Exception
 	{
-		String filename = args.length > 0 ? args[0] : "$HOME/nwsxref.txt";
-		NwsXref xref = NwsXref.instance();
-		xref.startMaintenanceThread("http://www.nws.noaa.gov/oh/hads/USGS/ALL_USGS-HADS_SITES.txt", 
-			filename);
-		java.io.BufferedReader br = 
-			new java.io.BufferedReader(
-				new java.io.InputStreamReader(System.in));
-		
-		while(true)
+		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
+
+		NwsXref xref = instance();
+		xref.startMaintenanceThread(args[0], args[1]);
+		while(!xref._isLoaded)
 		{
-			String s = br.readLine().trim();
-			if(s.equals("print"))
-			{
-				xref.printMe();
-			}
-			else
-			{
-				NwsXrefEntry pe = xref.getByNwsName(s);
-				if (pe == null)
-					System.out.println(s + " not found.");
-				else
-					System.out.println(pe.toString());
-			}
+			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
+			System.out.println("Awaiting _isLoaded");
 		}
+
+			
+			//"http://www.nws.noaa.gov/oh/hads/USGS/ALL_USGS-HADS_SITES.txt", 
+		System.out.println("Press enter to exit ...");
+		System.console().readLine();
+		xref.stopMaintenanceThread();
+		
+		System.exit(0);
 	}
 }

@@ -25,6 +25,7 @@ import java.net.MalformedURLException;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.Logger;
+import ilex.util.ServerLock;
 
 /**
 An instance of this class downloads the PDT from an URL into a local file,
@@ -61,6 +62,19 @@ class DownloadPdtThread extends Thread
 	 */
 	public void run()
 	{
+		ServerLock mylock = null;
+		/** Optional server lock ensures only one instance runs at a time. */
+		String lockpath = EnvExpander.expand(localfn + ".lock");
+		mylock = new ServerLock(lockpath);
+		mylock.setCritical(false);
+		if (!mylock.obtainLock())
+		{
+			Logger.instance().warning("Cannot download PDT because lock file '" + lockpath
+				+ "' is either taken by another process or is unwritable.");
+			return;
+		}
+		Logger.instance().info("Obtained lock file '" + lockpath + "' -- proceeding with download.");
+		
 		BufferedInputStream bis = null;
 		BufferedOutputStream bos = null;
 		long now = System.currentTimeMillis();
@@ -116,6 +130,7 @@ class DownloadPdtThread extends Thread
 				oldFile.delete();
 			}
 		}
+		mylock.releaseLock();
 	}
 	
 	/**
@@ -155,16 +170,4 @@ class DownloadPdtThread extends Thread
 				+ " Final PDT has " + Pdt.instance().size() + " entries.");
 	}
 	
-	/**
-	 * main for testing merge capability:
-	 * Takes 2 command line args: oldfile newfile
-	 * Loads oldfile and then merges newfile into it, and then prints it to stdout.
-	 * @param args oldfile newfile
-	 */
-	public static void main(String args[])
-	{
-		DownloadPdtThread dpt = new DownloadPdtThread("", "", new Pdt());
-		dpt.merge2ExistingPdt(new File(args[1]), new File(args[0]));
-		dpt.existingPdt.printMe();
-	}
 }

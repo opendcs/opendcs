@@ -3,6 +3,7 @@ package decodes.util;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.Logger;
+import ilex.util.ServerLock;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -49,6 +50,20 @@ public class DownloadChannelMapThread extends Thread
 	 */
 	public void run()
 	{
+		ServerLock mylock = null;
+		/** Optional server lock ensures only one instance runs at a time. */
+		String lockpath = EnvExpander.expand(localfn + ".lock");
+		mylock = new ServerLock(lockpath);
+		mylock.setCritical(false);
+		if (!mylock.obtainLock())
+		{
+			Logger.instance().warning("Cannot download channel map because lock file '" + lockpath
+				+ "' is either taken by another process or is unwritable.");
+			return;
+		}
+		Logger.instance().info("Obtained lock file '" + lockpath + "' -- proceeding with download.");
+		
+		//==========================
 		BufferedInputStream bis = null;
 		BufferedOutputStream bos = null;
 		long now = System.currentTimeMillis();
@@ -66,11 +81,9 @@ public class DownloadChannelMapThread extends Thread
 			bis = null;
 			bos = null;
 
-			Logger.instance().info("CDT Download complete, file size=" 
-				+ localFile.length());
+			Logger.instance().info("CDT Download complete, file size=" + localFile.length());
 			File current = new File(EnvExpander.expand(localfn));
-			Logger.instance().info("Copying Channels to " +
-					"'"+current.getPath()+"'");
+			Logger.instance().info("Copying Channels to " +	"'" + current.getPath()+"'");
 			FileUtil.copyFile(localFile, current);
 			cmap.load(current);
 		}
@@ -81,9 +94,7 @@ public class DownloadChannelMapThread extends Thread
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot download Channels from '" + 
-					purlstr
-				+ "': " + ex);
+			Logger.instance().warning("Cannot download Channels from '" + purlstr + "': " + ex);
 		}
 		finally
 		{
@@ -107,5 +118,6 @@ public class DownloadChannelMapThread extends Thread
 				oldFile.delete();
 			}
 		}
+		mylock.releaseLock();
 	}
 }

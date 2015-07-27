@@ -12,6 +12,7 @@
 */
 package decodes.util;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Random;
@@ -146,12 +147,19 @@ public class Pdt
 		}
 	}
 	
+	/**
+	 * Stops the maintenance thread and destroys the singleton instance.
+	 */
 	public void stopMaintenanceThread()
 	{
 		Logger.instance().debug3("Pdt.stopMaintenanceThread()");
 		if (mthread != null)
+		{
 			mthread.shutdown = true;
+			mthread.interrupt();
+		}
 		mthread = null;
+		_instance = null;
 	}
 
 	private class PdtMaintenanceThread extends Thread
@@ -164,7 +172,6 @@ public class Pdt
 		Pdt pdt = null;
 		boolean shutdown = false;
 		Random random = new Random();
-		boolean doDownload = false;
 
 		PdtMaintenanceThread(Pdt pdt, String url, String fn)
 		{
@@ -177,56 +184,13 @@ public class Pdt
 
 		public void run()
 		{
-			if (Pdt.useLockForDownload)
-			{
-				/** Optional server lock ensures only one instance runs at a time. */
-				String lockpath = EnvExpander.expand(
-					"$DCSTOOL_USERDIR/pdtdownload.lock");
-				File lockFile = new File(lockpath);
-				if (!lockFile.canWrite())
-				{
-					// Either it doesn't exist or it does and we don't have perms.
-					try
-					{
-						if (!lockFile.createNewFile())
-						{
-							// can't write and can't create.
-							throw new Exception();
-						}
-					}
-					catch (Exception ex)
-					{
-						String homelockpath = EnvExpander.expand("$HOME/pdtdownload.lock");
-						Logger.instance().info("Cannot write to '" + lockpath
-							+ "', will try '" + homelockpath + "'");
-						lockpath = homelockpath;
-					}
-				}
-				final ServerLock mylock = new ServerLock(lockpath);
-				mylock.setCritical(false);
-
-				if (mylock.obtainLock())
-				{
-					doDownload = true;
-					mylock.releaseOnExit();
-				}
-				Runtime.getRuntime().addShutdownHook(
-					new Thread()
-					{
-						public void run()
-						{
-							stopMaintenanceThread();
-						}
-					});
-			}
-			
 			if (pdtfile.canRead())
 				lastDownload = pdtfile.lastModified();
 
 			Logger.instance().debug1("Starting PDT Maintenance Thread, url='"
 				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + pdtfile.getPath() + ", lastDownload=" + lastDownload + ", shutdown="+shutdown
-				+ ", doDownload=" + doDownload);
+				+ ", localpath=" + pdtfile.getPath() + ", lastDownload=" 
+				+ new Date(lastDownload) + ", shutdown="+shutdown);
 			
 			while(!shutdown)
 			{
@@ -235,16 +199,13 @@ public class Pdt
 					lastLoad = System.currentTimeMillis();
 					pdt.load(pdtfile);
 				}
-				if (doDownload)
+				if (url != null && url.length() > 0 && !url.equals("-")
+				 && System.currentTimeMillis() - lastDownload > downloadIntervalMsec)
 				{
-					if (url != null && url.length() > 0 && !url.equals("-")
-					 && System.currentTimeMillis() - lastDownload > downloadIntervalMsec)
-					{
-						lastDownload = System.currentTimeMillis();
-						DownloadPdtThread lpt = 
-							new DownloadPdtThread(url, localfn, pdt);
-						lpt.start();
-					}
+					lastDownload = System.currentTimeMillis();
+					DownloadPdtThread lpt = 
+						new DownloadPdtThread(url, localfn, pdt);
+					lpt.start();
 				}
 				
 				// 30 min + random # seconds between 0...31
@@ -300,47 +261,24 @@ public class Pdt
 	}
 
 	/**
-	 * Test main.
-	 * Starts maintenance download thread.
-	 * Reads DCP addresses from command line, spits out the PDT.
-	 * Log messages go to stderr about loading activities.
+	 * args: url localfile
 	 */
 	public static void main(String args[])
 		throws Exception
 	{
 		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
-		Logger.instance().info("====== PDT Utility Starting ======");
-		String filename = args.length > 0 ? args[0] : "$HOME/pdt";
-		Pdt pdt = new Pdt();
-		pdt.startMaintenanceThread("https://dcs1.noaa.gov/pdts_compressed.txt", 
-			filename);
-		java.io.BufferedReader br = 
-			new java.io.BufferedReader(
-				new java.io.InputStreamReader(System.in));
-		
-		while(true)
+		Pdt pdt = instance();
+		pdt.startMaintenanceThread(args[0], args[1]);
+		while(!pdt._isLoaded)
 		{
-			String s = br.readLine().trim();
-			if(s.equals("print"))
-			{
-				pdt.printMe();
-			}
-			else
-			{
-				try
-				{
-					DcpAddress dcpaddr = new DcpAddress(s);
-					PdtEntry pe = pdt.find(dcpaddr);
-					if (pe == null)
-						System.out.println(s + " not found.");
-					else
-						System.out.println(pe.toString());
-				}
-				catch (NumberFormatException ex)
-				{
-					System.out.println("Invalid DCP Address: " + ex);
-				}
-			}
+			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
+			System.out.println("Awaiting _isLoaded");
 		}
+		
+		System.out.println("Press enter to exit ...");
+		System.console().readLine();
+		pdt.stopMaintenanceThread();
+		
+		System.exit(0);
 	}
 }

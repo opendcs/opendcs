@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2015/03/19 17:56:53  mmaloney
+*  If lock is taken, continue to spawn maintenance thread to check for file changes.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -60,7 +63,7 @@ import java.util.*;
 
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.ServerLock;
+//import ilex.util.ServerLock;
 
 /**
 Contains an array of channels, baud rates, and types.
@@ -77,28 +80,19 @@ public class ChannelMap
 	/** Array of chars for each channel: S=SelfTimed, R=Random */
 	private char channelTypes[];
 
-	/** Msec time value of the last time file was loaded. */
-	private long lastLoadMsec;
-	
-	/** Array of channel list */
-	private ArrayList<Integer> channels;
-	
 	private boolean _isLoaded = false;
 
-	private ChanMaintenanceThread mthread = null; 
+	private ChanMaintenanceThread mthread = null;
+
 	
 	public static final String module = "ChannelMap";
-	public static boolean useLockForDownload = false;
 
 	/** Constructor called from DcpMonitorConfig. */
 	public ChannelMap()
 	{
 		channelBauds = new String[NUM_CHANNELS];
 		channelTypes = new char[NUM_CHANNELS];
-		channels = new ArrayList<Integer>();
 		setMapToDefaults();
-
-		lastLoadMsec = -1L;
 	}
 	
 	/** @return the singleton instance of the ChannelMap. */
@@ -127,9 +121,8 @@ public class ChannelMap
 	*/
 	public synchronized void loadFromUrl(String urlstr)
 	{
-Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
+		Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 
-		lastLoadMsec = System.currentTimeMillis();
 		try
 		{
 			URL channelMapURL = new URL(urlstr);
@@ -247,22 +240,6 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 	}
 	
 	/**
-	 * Return the entire channel list
-	 * @return channel list
-	 */
-	public int[] getChannelList()
-	{
-		int ret[] = new int[channels.size()];
-		int x=0;
-		for(Integer chan : channels)
-		{
-			ret[x] = chan.intValue();
-			x++;
-		}
-		return ret;
-	}
-
-	/**
 	  Return true if the specified channel is a Random channel.
 	  @param chan the channel number
 	  @return true if the specified channel is a Random channel.
@@ -281,7 +258,6 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 	public void dumpMap(Writer output)
 		throws IOException
 	{
-		output.write("lastLoadMsec=" + lastLoadMsec + "\n");
 		for(int i=0; i<channelBauds.length; i++)
 			output.write("channel[" + i + "]: " + channelTypes[i]
 				+ " " + channelBauds[i] + "\n");
@@ -306,11 +282,18 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 		}
 	}
 	
+	/**
+	 * Shuts down the maintenance thread and destroys the singleton instance.
+	 */
 	public void stopMaintenanceThread()
 	{
 		if (mthread != null)
+		{
 			mthread.shutdown = true;
+			mthread.interrupt();
+		}
 		mthread = null;
+		_instance = null;
 	}
 
 	private class ChanMaintenanceThread extends Thread
@@ -323,7 +306,6 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 		private ChannelMap cmap;
 		boolean shutdown = false;
 		Random random = new Random();
-		boolean doDownload = false;
 
 		ChanMaintenanceThread(ChannelMap cmap, String url, String fn)
 		{
@@ -335,51 +317,9 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 
 		public void run()
 		{
-			if (ChannelMap.useLockForDownload)
-			{
-				/** Optional server lock ensures only one instance runs at a time. */
-				String lockpath = EnvExpander.expand(
-					"$DCSTOOL_USERDIR/cdtdownload.lock");
-				File lockFile = new File(lockpath);
-				if (!lockFile.canWrite())
-				{
-					// Either it doesn't exist or it does and we don't have perms.
-					try
-					{
-						if (!lockFile.createNewFile())
-						{
-							// can't write and can't create.
-							throw new Exception();
-						}
-					}
-					catch (Exception ex)
-					{
-						String homelockpath = EnvExpander.expand("$HOME/cdtdownload.lock");
-						Logger.instance().info("Cannot write to '" + lockpath
-							+ "', will try '" + homelockpath + "'");
-						lockpath = homelockpath;
-					}
-				}
-				final ServerLock mylock = new ServerLock(lockpath);
-				mylock.setCritical(false);
-
-				if (mylock.obtainLock())
-				{
-					doDownload = true;
-					mylock.releaseOnExit();
-				}
-				Runtime.getRuntime().addShutdownHook(
-					new Thread()
-					{
-						public void run()
-						{
-							stopMaintenanceThread();
-						}
-					});
-			}
 			Logger.instance().debug1("Starting CDT Maintenance Thread, url='"
 				+ url + "', localfile='" + localfn + "'"
-				+ ", localpath=" + channelsfile.getPath() + ", doDownload=" + doDownload);
+				+ ", localpath=" + channelsfile.getPath());
 
 			if (channelsfile.canRead())
 				lastDownload = channelsfile.lastModified();
@@ -392,33 +332,41 @@ Logger.instance().debug3("Loading channel map from URL '"+urlstr+"'");
 					lastLoad = System.currentTimeMillis();
 					cmap.load(channelsfile);
 				}
-				if (doDownload)
+				if (url != null && url.length() > 0 && !url.equals("-")
+				 && System.currentTimeMillis() - lastDownload > Pdt.downloadIntervalMsec)
 				{
-					if (url != null && url.length() > 0 && !url.equals("-")
-					 && System.currentTimeMillis() - lastDownload > Pdt.downloadIntervalMsec)
-					{
-						lastDownload = System.currentTimeMillis();
-						DownloadChannelMapThread downloadThread = 
-							new DownloadChannelMapThread(url, localfn, cmap);
-						downloadThread.start();
-					}
+					lastDownload = System.currentTimeMillis();
+					DownloadChannelMapThread downloadThread = 
+						new DownloadChannelMapThread(url, localfn, cmap);
+					downloadThread.start();
 				}
 				long interval = Pdt.fileCheckIntervalMsec + (random.nextInt() & 0x1f) * 1000L;
 				try { sleep(interval); }
 				catch(InterruptedException ex) {}
 			}
+			Logger.instance().debug1("CDT Maintenance thread stopped.");
 		}
 	}
 	
+	/**
+	 * Usage ChannelMap url localfile
+	 * @param args
+	 */
 	public static void main(String args[])
 	{
 		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		ChannelMap cm = instance();
-		cm.loadFromUrl(args[0]);
-		System.out.println("lastLoadMsec=" + cm.lastLoadMsec);
+		cm.startMaintenanceThread(args[0], args[1]);
+		while(!cm._isLoaded)
+		{
+			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
+			System.out.println("Awaiting _isLoaded");
+		}
 		for(int i=0; i<cm.channelBauds.length; i++)
-			System.out.println("channel[" + i + "]: " + cm.channelTypes[i]
-				+ " " + cm.channelBauds[i]);
-
+			if (cm.channelBauds[i] != null)
+				System.out.println("channel[" + i + "]: " + cm.channelTypes[i]
+					+ " " + cm.channelBauds[i]);
+		cm.stopMaintenanceThread();
+		System.exit(0);
 	}
 }
