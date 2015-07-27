@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2015/06/04 21:43:22  mmaloney
+*  Some refactoring to allow ProcessEditPanel under new Proc Monitor GUI
+*
 *  Revision 1.2  2014/05/22 12:27:24  mmaloney
 *  CWMS fix: Wasn't displaying Location after creating new TS.
 *
@@ -976,12 +979,22 @@ public class ComputationsEditPanel
 					}
 				}
 				propertiesPanel.saveChanges();
-				for(Enumeration pnenum = propCopy.propertyNames(); 
-					pnenum.hasMoreElements(); )
+			nextCompProp:
+				for(Enumeration cpnenum = propCopy.propertyNames(); cpnenum.hasMoreElements(); )
 				{
-					String pname = (String)pnenum.nextElement();
+					String pname = (String)cpnenum.nextElement();
 					if (dlg.selectedAlgo.getProperty(pname) == null)
 					{
+						// MJM 20150727 check for algo props that have wildcards.
+						for(Enumeration apnenum = dlg.selectedAlgo.getPropertyNames();
+							apnenum.hasMoreElements(); )
+						{
+							String apn = (String)apnenum.nextElement();
+							int starIdx = apn.indexOf('*');
+							if (starIdx >= 0 && pname.startsWith(apn.substring(0, starIdx)))
+								continue nextCompProp;
+						}
+						
 						if (n > 0) plist.append(",");
 						n++;
 						plist.append(" " + pname);
