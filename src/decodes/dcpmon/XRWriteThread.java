@@ -97,14 +97,9 @@ public class XRWriteThread extends Thread
 	 */
 	public synchronized boolean enqueue(DcpMsg xr)
 	{
-		if (dcpMonitor.isIgnoreInvalidAddr() && xr.hasXmitFailureCode('I'))
-		{
-			Logger.instance().info("XRWriteThread.enqueue ignoring message with header '"
-				+ xr.getHeader() + "' because it has an Invalid DCP Address.");
-			return true;
-		}
 		int sz = q.size();
-Logger.instance().debug2("XRWriteThread.enqueue: " + xr.getHeader() + " queue.size=" + sz);
+Logger.instance().debug2("XRWriteThread.enqueue: " + xr.getHeader() + " queue.size=" + sz 
+	+", failureCodes=" + xr.getXmitFailureCodes());
 		if (sz > queueMaxSize)
 		{
 			Logger.instance().warning("Cannot enqueue: queue "
@@ -216,6 +211,13 @@ Logger.instance().debug2("XRWriteThread.processQueue qsize=" + q.size());
 		DcpMsg xr;
 		while(!_shutdown && (xr = dequeue()) != null)
 		{
+			if (dcpMonitor.isIgnoreInvalidAddr() && xr.hasXmitFailureCode('I'))
+			{
+				Logger.instance().info("XRWriteThread.processQueue ignoring message with header '"
+					+ xr.getHeader() + "' because it has an Invalid DCP Address.");
+				continue;
+			}
+			
 			if (xr.getXmitTime() != null
 			 && (System.currentTimeMillis() - xr.getXmitTime().getTime()
 				 > DcpMonitorConfig.instance().numDaysStorage * MS_PER_DAY))

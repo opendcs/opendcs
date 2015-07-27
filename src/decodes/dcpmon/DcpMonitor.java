@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2015/07/17 13:26:37  mmaloney
+ * Added ignoreInvalidAddr feature.
+ *
  * Revision 1.9  2015/02/06 18:59:50  mmaloney
  * Numerous reliability improvements.
  *
@@ -47,6 +50,7 @@ import ilex.util.TextUtil;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
@@ -73,7 +77,7 @@ public class DcpMonitor
 	private static DcpMonitor _instance = null;
 	private String status = "";
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
-	private boolean ignoreInvalidAddr = false;
+	private boolean ignoreInvalidAddr = true;
 	
 	private static PropertySpec[] dcpmonProps =
 	{
@@ -217,10 +221,11 @@ public class DcpMonitor
 		xrWriteThread = new XRWriteThread();
 		xrWriteThread.start();
 		
-		ignoreInvalidAddr = false;
+		ignoreInvalidAddr = true;
 		String s = appInfo.getProperty("ignoreInvalidAddr");
 		if (s != null && s.trim().length() > 0)
 			ignoreInvalidAddr = TextUtil.str2boolean(s);
+		info("ignoreInvalidAddr=" + ignoreInvalidAddr);
 		
 		// Put my consumer type into the consumer type enum.
 		Database db = Database.getDb();
@@ -264,8 +269,14 @@ public class DcpMonitor
 		Date lastLocalRecvTime = xrWriteThread.getLastLocalRecvTime();
 		
 		// If this is the first startup for dcpmon. Get specified # days of data.
-		Date recoverLimit = new Date(System.currentTimeMillis() - 
-			3600000L * 24 * dcpMonitorConfig.numDaysStorage);
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		cal.setTimeInMillis(System.currentTimeMillis());
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		cal.add(Calendar.DAY_OF_YEAR, -(dcpMonitorConfig.numDaysStorage-1));
+		Date recoverLimit = cal.getTime();
 		if (lastLocalRecvTime == null || lastLocalRecvTime.before(recoverLimit))
 		{
 			lastLocalRecvTime = recoverLimit;
