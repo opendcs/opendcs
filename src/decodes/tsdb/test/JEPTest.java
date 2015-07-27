@@ -1,7 +1,9 @@
 package decodes.tsdb.test;
 
+import ilex.util.StringPair;
 import ilex.util.TextUtil;
 
+import java.util.Date;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Stack;
@@ -16,26 +18,35 @@ import org.nfunk.jep.Variable;
 import org.nfunk.jep.function.CallbackEvaluationI;
 import org.nfunk.jep.function.PostfixMathCommand;
 
+import decodes.tsdb.algo.jep.JepContext;
+
 public class JEPTest
 	implements Observer
 {
-	JEP jep = new JEP();
+//	JEP jep = new JEP();
 	
 	public void run()
 	{
+		JepContext jepContext = new JepContext(null, null);
+		JEP jep = jepContext.getParser();
 		
-		jep.addStandardFunctions();
-		jep.addStandardConstants();
-		jep.setAllowAssignment(true);
-		jep.setAllowUndeclared(true);
-		jep.addFunction("lookupMeta", new LookupMeta());
-		jep.addFunction("cond", new Condition());
+//		jep.addStandardFunctions();
+//		jep.addStandardConstants();
+//		jep.setAllowAssignment(true);
+//		jep.setAllowUndeclared(true);
+//		jep.addFunction("lookupMeta", new LookupMeta());
+//		jep.addFunction("cond", new Condition());
+//		jep.addFunction("info", new Info());
 		jep.getSymbolTable().addObserver(this);
 		
+		jepContext.setOnErrorLabel(null);
+		int idx = 0;
 		while(true)
 		{
 			System.out.print("Enter expression: ");
 			String line = System.console().readLine();
+			jepContext.reset();
+			jepContext.setTimeSliceBaseTime(new Date());
 			jep.parseExpression(line);
 			Object value = jep.getValueAsObject();
 
@@ -46,7 +57,16 @@ public class JEPTest
 				if (value != null)
 					System.out.println("Result type=" + value.getClass().getName());
 				System.out.println("Result=" + value);
+				if (jepContext.isExitCalled())
+				{
+					System.out.println("Exit called.");
+					break;
+				}
+				else if (jepContext.getLastConditionFailed())
+					System.out.println("Last condition failed");
 			}
+			
+			idx++;
 		}
 
 	}
@@ -171,6 +191,25 @@ System.out.println("result of condition is numeric: " + d);
 
 		else
 			throw new ParseException("Condition must result in boolean or number!");
+	}
+}
+
+class Info extends PostfixMathCommand
+{
+	public Info()
+	{
+		numberOfParameters = 1;
+	}
+	
+	public void run(Stack inStack)
+		throws ParseException
+	{
+		System.out.println("Info, stack.size=" + inStack.size());
+		checkStack(inStack);
+		String msg1 = inStack.pop().toString();
+	
+		System.out.println("info(msg1='" + msg1 + "')"); 
+		inStack.push(new Double(0.0));	
 	}
 }
 
