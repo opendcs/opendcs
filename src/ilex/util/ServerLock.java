@@ -74,7 +74,6 @@ public class ServerLock implements Runnable
 	* start a thread to update the file periodically.
 	* <p>
 	* @return true if lock is obtained, false if lock is busy.
-	* @throws IOException if the lock file could not be written.
 	*/
 	public boolean obtainLock( )
 	{
@@ -104,7 +103,10 @@ public class ServerLock implements Runnable
 		{
 			System.err.println("IOException while trying to get lock '"
 				+ myLockFile.getPath() + "': " + ex);
-			System.exit(1);
+			if (critical)
+				System.exit(1);
+			else
+				return false;
 		}
 		return true;
 	}
@@ -256,9 +258,11 @@ public class ServerLock implements Runnable
 			lockable.lockFileRemoved();
 		else
 		{
-			Logger.instance().info("Exiting -- lock file '" 
+			Logger.instance().info((critical ? "Exiting -- " : "") 
+				+ "Lock file '" 
 				+ myLockFile.getPath() + "' removed.");
-			System.exit(0);
+			if (critical)
+				System.exit(0);
 		}
 	}
 
