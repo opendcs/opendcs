@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2015/02/06 18:55:08  mmaloney
+ * Bug fixes and addition of method to get 1st & last record ID in a day.
+ *
  * Revision 1.8  2015/01/30 20:14:28  mmaloney
  * Fix SQL for UPDATE xmit rec statment.
  *
@@ -351,6 +354,16 @@ public class XmitRecordDAO
 			warning("Cannot save message without xmitTime: " + xr.getHeader());
 			return;
 		}
+		
+		// MJM LRD DCPMon was seeing garbage messages with times way in the future.
+		// Don't allow messages more than half hour in the future.
+		long msgAgeMsec = System.currentTimeMillis() - xmitTime.getTime();
+		if (msgAgeMsec < -1800000L)
+		{
+			warning("Ignoring future message: " + xr.getHeader() + ", xmitTime=" + xmitTime);
+			return;
+		}
+		
 		int dayNum = msecToDay(xmitTime.getTime());
 		String suffix = getDcpXmitSuffix(dayNum, true);
 		if (suffix == null)
