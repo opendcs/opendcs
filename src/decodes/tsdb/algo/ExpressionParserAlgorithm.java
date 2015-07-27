@@ -58,7 +58,6 @@ public class ExpressionParserAlgorithm
 	JepContext jepContext = null;
 	public ExpressionParserAlgorithm()
 	{
-		jepContext = new JepContext(tsdb, this);
 	}
 	
 	// Enter any local class variables needed by the algorithm.
@@ -95,21 +94,23 @@ public class ExpressionParserAlgorithm
 	{
 		// Remove outputs from the symbol table so that I can detect assignments after execution.
 		for(String nm: _outputNames)
-			jepContext.getSymbolTable().remove(nm);
+			jepContext.getParser().getSymbolTable().remove(nm);
 		int idx = 0;
 		jepContext.setOnErrorLabel(null);
+//		jepContext.setAllowAssignment(true);
+//		jepContext.setAllowUndeclared(true);
 		while(idx >= 0 && idx < script.size())
 		{
 			StringPair label_expr = script.get(idx);
 			String expr = label_expr.second;
 			debug2("Executing expression[" + idx + "]: " + expr);
 			jepContext.reset();
-			jepContext.parseExpression(expr);
-			Object value = jepContext.getValueAsObject();
+			jepContext.getParser().parseExpression(expr);
+			Object value = jepContext.getParser().getValueAsObject();
 
-			if (jepContext.hasError() || value == null)
+			if (jepContext.getParser().hasError() || value == null)
 			{
-				debug2("Expression '" + expr + "' resulted in error: " + jepContext.getErrorInfo());
+				debug2("Expression '" + expr + "' resulted in error: " + jepContext.getParser().getErrorInfo());
 				String lab = jepContext.getOnErrorLabel();
 				if (lab != null)
 					idx = findLabel(script, lab);
@@ -146,7 +147,8 @@ public class ExpressionParserAlgorithm
 
 //AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
-		
+		jepContext = new JepContext(tsdb, this);
+
 		// Extract the three scripts (pre, time-slice, and post) from the properties.
 		Properties props = comp.getProperties();
 		for(Object key : props.keySet())
@@ -156,7 +158,7 @@ public class ExpressionParserAlgorithm
 			
 			if (propName.toLowerCase().startsWith("pre_"))
 				preScript.add(new StringPair(propName, value));
-			else if (propName.toLowerCase().startsWith("e_"))
+			else if (propName.toLowerCase().startsWith("ex_"))
 				timeSliceScript.add(new StringPair(propName, value));
 			else if (propName.toLowerCase().startsWith("post_"))
 				postScript.add(new StringPair(propName, value));
@@ -193,21 +195,13 @@ public class ExpressionParserAlgorithm
 		// period.
 		
 		// Prepopulate the symbol table with the info about the parameters.
-		SymbolTable symTab = jepContext.getSymbolTable();
+		SymbolTable symTab = jepContext.getParser().getSymbolTable();
 		for(String inputName : _inputNames)
 		{
-			double inputVal = inputName.equals("in1") ? in1 :
-				inputName.equals("in1") ? in1 :
-				inputName.equals("in2") ? in2 :
-				inputName.equals("in3") ? in3 :
-				inputName.equals("in4") ? in4 :
-				inputName.equals("in5") ? in5 : Double.NEGATIVE_INFINITY;
 			ParmRef pr = getParmRef(inputName);		
 			if (pr != null && pr.compParm != null && pr.timeSeries != null 
 			 && pr.timeSeries.getTimeSeriesIdentifier() != null)
 			{
-				if (inputVal != Double.NEGATIVE_INFINITY)
-					symTab.addVariable(inputName, new Double(inputVal));
 				TimeSeriesIdentifier tsid = pr.timeSeries.getTimeSeriesIdentifier();
 				for(String part : tsid.getParts())
 				{
@@ -277,23 +271,48 @@ public class ExpressionParserAlgorithm
 //AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
 		jepContext.setTimeSliceBaseTime(_timeSliceBaseTime);
+
+		// Add the inputs to the symbol table for this time slice.
+		SymbolTable symTab = jepContext.getParser().getSymbolTable();
+		for(String inputName : _inputNames)
+		{
+			double inputVal = inputName.equals("in1") ? in1 :
+				inputName.equals("in1") ? in1 :
+				inputName.equals("in2") ? in2 :
+				inputName.equals("in3") ? in3 :
+				inputName.equals("in4") ? in4 :
+				inputName.equals("in5") ? in5 : Double.NEGATIVE_INFINITY;
+
+			symTab.remove(inputName);
+			if (!isMissing(inputVal))
+			{
+				symTab.addVariable(inputName, new Double(inputVal));
+				info("" + debugSdf.format(_timeSliceBaseTime) + " " + inputName + "=" + inputVal);
+			}
+		}
+		
 		executeScript(timeSliceScript);
-		Object out1value = jepContext.getSymbolTable().getValue("out1");
+		Object out1value = jepContext.getParser().getSymbolTable().getValue("out1");
 		if (out1value != null)
 		{
+info("out1 was set to " + out1value);
 			if (out1value instanceof Double)
 				setOutput(out1, (Double)out1value);
 			else if (out1value instanceof String)
 				setOutput(out1, (String)out1value);
 		}
-		Object out2value = jepContext.getSymbolTable().getValue("out2");
+else info("out1 was not assigned.");
+		Object out2value = jepContext.getParser().getSymbolTable().getValue("out2");
 		if (out2value != null)
 		{
+info("out2 was set to " + out2value);
 			if (out2value instanceof Double)
 				setOutput(out2, (Double)out2value);
 			else if (out2value instanceof String)
 				setOutput(out2, (String)out2value);
 		}
+else info("out2 was not assigned.");
+
 //AW:TIMESLICE_END
 	}
 
@@ -312,7 +331,7 @@ public class ExpressionParserAlgorithm
 		// Leave the base time alone. It should be set to the last base time seen 
 		// in the time slices.
 		executeScript(postScript);
-		Object out1value = jepContext.getSymbolTable().getValue("out1");
+		Object out1value = jepContext.getParser().getSymbolTable().getValue("out1");
 		if (out1value != null)
 		{
 			if (out1value instanceof Double)
@@ -320,7 +339,7 @@ public class ExpressionParserAlgorithm
 			else if (out1value instanceof String)
 				setOutput(out1, (String)out1value);
 		}
-		Object out2value = jepContext.getSymbolTable().getValue("out2");
+		Object out2value = jepContext.getParser().getSymbolTable().getValue("out2");
 		if (out2value != null)
 		{
 			if (out2value instanceof Double)

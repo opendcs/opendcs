@@ -2,6 +2,7 @@ package decodes.tsdb.algo.jep;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import ilex.util.Logger;
 
 import java.util.Date;
 import java.util.Stack;
@@ -22,6 +23,7 @@ public class RatingFunction
 {
 	public static final String funcName = "rating";
 	private JepContext ctx = null;
+	private int numParms = 0;
 
 	public RatingFunction(JepContext ctx)
 	{
@@ -33,6 +35,8 @@ public class RatingFunction
 	@Override
 	public boolean checkNumberOfParameters(int np)
 	{
+		numParms = np;
+//System.out.println("rating checkNumParams, np=" + np);
 		// Required arg table name followed by 1...9 indeps
 		return np >= 2 && np <= 10;
 	}
@@ -50,15 +54,20 @@ public class RatingFunction
 	public void run(Stack inStack)
 		throws ParseException
 	{
+//System.out.println("rating-1");
 		checkStack(inStack);
+//System.out.println("rating-2");
 		Date tsbt = ctx.getTimeSliceBaseTime();
 		if (tsbt == null)
 			throw new ParseException(funcName + " can only be called from within a time-slice script.");
 
-		int np = this.getNumberOfParameters();
-		double valueSet[] = new double[np-1];
+//System.out.println("rating-2a -- calling getNumberOfParameters()");
+//
+//System.out.println("rating-3, np=" + numParms);
+		double valueSet[] = new double[numParms-1];
 
-		switch(np)
+
+		switch(numParms)
 		{
 		case 10: valueSet[8] = getArgAsDouble(inStack.pop(), 9);
 		case  9: valueSet[7] = getArgAsDouble(inStack.pop(), 8);
@@ -72,7 +81,18 @@ public class RatingFunction
 		}
 		
 		String specId = inStack.pop().toString();
+//System.out.println("rating-4, spec='" + specId + "'");
 		
+		if (ctx.getTsdb() == null)
+		{
+			double sum = 0.0;
+			for(double v : valueSet)
+				sum += v;
+			Logger.instance().warning("TEST-MODE: No database, rating returning sum of all inputs=" + sum);
+			inStack.push(new Double(sum));
+			return;
+		}
+
 		String what = "reading rating";
 		try
 		{

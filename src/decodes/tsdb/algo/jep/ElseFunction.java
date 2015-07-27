@@ -1,5 +1,6 @@
 package decodes.tsdb.algo.jep;
 
+import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import org.nfunk.jep.EvaluatorI;
@@ -44,9 +45,14 @@ public class ElseFunction
 		
 		if (ctx.getLastConditionFailed())
 		{
-			return evaluator.eval(node.jjtGetChild(1));
+//Logger.instance().info("executing the else arg");
+			return evaluator.eval(node.jjtGetChild(0));
 		}
 		else
-			throw new ParseException("Else failed");
+		{
+//Logger.instance().info("Else failed");
+			return new Double(0.0);
+	//throw new ParseException("Else failed");
+		}
 	}
 }

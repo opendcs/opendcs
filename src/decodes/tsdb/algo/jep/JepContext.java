@@ -14,7 +14,6 @@ import decodes.tsdb.algo.AW_AlgorithmBase;
  * state of certain function calls.
  */
 public class JepContext
-	extends JEP
 {
 	private JEP parser = null;
 	private boolean exitCalled = false;
@@ -24,6 +23,7 @@ public class JepContext
 	private TimeSeriesDb tsdb = null;
 	private String gotoLabel = null;
 	private String onErrorLabel = null;
+	private boolean lastStatementWasCond = false;
 	
 	public JepContext(TimeSeriesDb tsdb, AW_AlgorithmBase algo)
 	{
@@ -45,7 +45,7 @@ public class JepContext
 		parser.addFunction("warning", new LogFunction(this, Logger.E_WARNING));
 		parser.addFunction(OnErrorFunction.funcName, new OnErrorFunction(this));
 
-		if (tsdb.isCwms())
+		if (tsdb == null || tsdb.isCwms())
 			parser.addFunction(RatingFunction.funcName, new RatingFunction(this));
 	}
 
@@ -54,7 +54,10 @@ public class JepContext
 	 */
 	public void reset()
 	{
-		exitCalled = lastConditionFailed = false;
+		exitCalled = false;
+		if (!lastStatementWasCond)
+			lastConditionFailed = false;
+		lastStatementWasCond = false;
 		gotoLabel = null;
 	}
 	
@@ -116,5 +119,15 @@ public class JepContext
 	public void setOnErrorLabel(String onErrorLabel)
 	{
 		this.onErrorLabel = onErrorLabel;
+	}
+
+	public JEP getParser()
+	{
+		return parser;
+	}
+
+	public void setLastStatementWasCond(boolean lastStatementWasCond)
+	{
+		this.lastStatementWasCond = lastStatementWasCond;
 	}
 }

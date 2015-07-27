@@ -1,5 +1,6 @@
 package decodes.tsdb.algo.jep;
 
+import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import org.nfunk.jep.EvaluatorI;
@@ -42,23 +43,22 @@ public class ConditionFunction
 	public Object evaluate(Node node, EvaluatorI evaluator) throws ParseException
 	{
 		if (!checkNumberOfParameters(node.jjtGetNumChildren()))
-			throw new ParseException("cond function requires 2 arguments!");
+			throw new ParseException("cond syntax error. Usage: cond(cond-expression, true-expression)!");
+	
+		ctx.setLastStatementWasCond(true);
 		
 		// Evaluate the condition
 		Object condResult = evaluator.eval(node.jjtGetChild(0));
-		boolean tf = isTrue(condResult);
-//		System.out.println("Condition.evaluate result is " + tf);
-		if (!tf)
+		if (!isTrue(condResult))
 		{
-			//System.out.println("false -- throwing ParseException");
 			ctx.setLastConditionFailed(true);
-			throw new ParseException("Condition is false.");
+Logger.instance().info("condition is false, returning zero.");
+			// Return zero and don't evaluate the second expression, which is probably
+			// an assignment.
+			return new Double(0.0);
 		}
-		else
-		{
-//			System.out.println("Evaluating second arg");
+		else // evaluate & return value of second arg
 			return evaluator.eval(node.jjtGetChild(1));
-		}
 	}
 
 	private boolean isTrue(Object result)
