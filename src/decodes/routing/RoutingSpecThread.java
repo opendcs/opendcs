@@ -840,6 +840,10 @@ public class RoutingSpecThread
 			compProcessor = null;
 		}
 		
+		String s = rs.getProperty("compConfig");
+		if (s != null && s.trim().length() > 0)
+			compConfigFile = s.trim();
+
 		if (rs.enableEquations)
 		{
 			compProcessor = new ComputationProcessor();
@@ -993,7 +997,7 @@ public class RoutingSpecThread
 		}
 
 		// If 'properties' contains script names, get them.
-		String s = PropertiesUtil.getIgnoreCase(rs.getProperties(),"scriptname");
+		s = PropertiesUtil.getIgnoreCase(rs.getProperties(),"scriptname");
 		if (s == null)
 			s = PropertiesUtil.getIgnoreCase(rs.getProperties(),"scriptnames");
 		if (s != null)
@@ -1019,10 +1023,6 @@ public class RoutingSpecThread
 		s = rs.getProperty("removeRedundantData");
 		if (s != null && TextUtil.str2boolean(s))
 			removeRedundantData = true;
-		
-		s = rs.getProperty("compConfig");
-		if (s != null && s.trim().length() > 0)
-			compConfigFile = s.trim();
 		
 		s = rs.getProperty("usgsSummaryFile");
 		if (s != null && s.trim().length() > 0)
