@@ -18,5 +18,7 @@
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jfreechart-1.0.14.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jcommon-1.0.10.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/commons-codec-1.10.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jeval.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jep-2.4.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

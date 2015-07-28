@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.9  2015/01/24 13:51:59  mmaloney
+*  Preload configs before platforms in initializeForDecoding(). Otherwise, each platform read has to read the config individually, which is MUCH slower.
+*
 *  Revision 1.8  2014/11/19 16:14:46  mmaloney
 *  code cleanup
 *
@@ -457,7 +460,7 @@ public class DecodesInterface
 			// Get CDT singleton instance.
 			ChannelMap cdt = ChannelMap.instance();
 			Pdt.downloadIntervalMsec = 24 * 3600 * 1000L; // 24 hrs
-			ChannelMap.useLockForDownload = true;
+//			ChannelMap.useLockForDownload = true;
 			// Note thread will not do download if url is null, blank or "-",
 			// so this is safe to do.
 			cdt.startMaintenanceThread(settings.cdtUrl, settings.cdtLocalFile);
