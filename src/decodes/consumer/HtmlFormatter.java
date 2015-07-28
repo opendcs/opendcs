@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
 
-import lrgs.common.DcpAddress;
 import lrgs.common.DapsFailureCode;
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.RawMessage;
@@ -33,15 +32,12 @@ import decodes.db.PresentationGroup;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.TransportMedium;
-import decodes.dcpmon.DcpMonitor;
-import decodes.dcpmon_old.DcpNameDescResolver;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
 import decodes.drgsinfogui.DrgsReceiverIo;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
 import decodes.xml.XmlDatabaseIO;
-import decodes.util.Pdt;
 
 /**
   This class formats raw and decoded data together in an HTML page.
@@ -485,12 +481,12 @@ public class HtmlFormatter extends OutputFormatter
 	{
 		// Construct column array for any time series with data in it.
 		int numColumns = 0;
-		Iterator tsit = msg.getAllTimeSeries();
+		Iterator<TimeSeries> tsit = msg.getAllTimeSeries();
 		if (tsit == null)
 			return;
 		while(tsit.hasNext())
 		{
-			TimeSeries ts = (TimeSeries)tsit.next();
+			TimeSeries ts = tsit.next();
 			if (ts.size() > 0)
 				numColumns++;
 		}
@@ -499,9 +495,9 @@ public class HtmlFormatter extends OutputFormatter
 
 		columns = new Column[numColumns];
 		int i=0;
-		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
+		for(Iterator<TimeSeries> it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
-			TimeSeries ts = (TimeSeries)it.next();
+			TimeSeries ts = it.next();
 			if (ts.size() > 0)
 				columns[i++] = new Column(ts);
 		}
@@ -537,11 +533,11 @@ public class HtmlFormatter extends OutputFormatter
 				xos.writePCDATA(sn);
 			xos.writeElement("br", null);
 			String dt = columns[i].dataType;
-			if (dt != null || dt.length() > 0)
+			if (dt != null && dt.length() > 0)
 				xos.writePCDATA(dt);
 			xos.writeElement("br", null);
 			String eu = columns[i].euAbbr;
-			if (eu != null || eu.length() > 0)
+			if (eu != null && eu.length() > 0)
 				xos.writePCDATA(eu);
 			xos.writeElement("br", null);
 			xos.endElement("th");
