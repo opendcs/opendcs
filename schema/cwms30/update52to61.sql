@@ -715,6 +715,8 @@ DROP PUBLIC SYNONYM tsdb_groupidseq;
 -- Added for DECODES DB Version 12
 ALTER TABLE NETWORKLISTENTRY MODIFY PLATFORM_NAME VARCHAR2(64);
 
+update unitconverter set A = 6894.74729 where lower(fromunitsabbr) = 'psi' and lower(tounitsabbr) = 'pa';
+
 -----------------------------------------------------------------
 -- Finally, update the database version numbers in the database
 -----------------------------------------------------------------
