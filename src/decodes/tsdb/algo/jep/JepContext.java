@@ -10,8 +10,10 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 
 /**
- * JepContext is a thin layer around the JEP context that keeps track of the
- * state of certain function calls.
+ * JepContext provides a link to the database and the algorithm.
+ * It also stores the current time slice date/time if this is being executed
+ * within a time slice.
+ * It also stores various context flags resulting from execution of cond, else, etc.
  */
 public class JepContext
 {
