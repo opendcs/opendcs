@@ -64,7 +64,8 @@ public class DecodesDatabaseVersion
 	public static final int DECODES_DB_11 = 11;
 
 	/**
-	 * Version 12 has minor mods concerning varchar lengths. It corresponds to OpenDCS 6.1 RC09
+	 * Version 12 has minor mods concerning varchar lengths. It corresponds to OpenDCS 6.1 RC09.
+	 * This update was included in a script with OpenDCS 6.1 RC11.
 	 * - NETWORKLISTENTRY.PLATFORM_NAME increased from 24 to 64.
 	 */
 	public static final int DECODES_DB_12 = 12;
