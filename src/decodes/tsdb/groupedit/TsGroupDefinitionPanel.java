@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/09/25 18:10:40  mmaloney
+ * Enum fields encapsulated.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -52,6 +55,9 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 
@@ -70,23 +76,25 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.IntervalDAI;
-
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
+import ilex.util.StringPair;
 import ilex.util.TextUtil;
-
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DataType;
 import decodes.db.DatabaseException;
 import decodes.db.EnumValue;
 import decodes.db.Site;
+import decodes.db.SiteName;
 import decodes.dbeditor.ChangeTracker;
 import decodes.dbeditor.SiteSelectDialog;
 import decodes.gui.EnumComboBox;
+import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
@@ -98,6 +106,7 @@ import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.groupedit.TsGroupListPanel;
 import decodes.util.DecodesSettings;
+import decodes.gui.SortingListTableModel;
 
 /**
  * This class is the Ts Group tab of the Time Series GUI.
@@ -142,10 +151,8 @@ public class TsGroupDefinitionPanel
 	private JButton deleteSubgroupMemberButton;
 	/*	Other group members */
 	private JPanel queryPanel;
-	@SuppressWarnings("rawtypes")
-	private DefaultListModel queryListModel;
-	@SuppressWarnings("rawtypes")
-	private JList queryList;
+//	private DefaultListModel queryListModel;
+//	private JList queryList;
 	
 	//Time Series DB
 	private TimeSeriesDb theTsDb;
@@ -196,6 +203,8 @@ public class TsGroupDefinitionPanel
 	private String addIncludedSubgroupButtonLabel;
 	private String addExcludedSubgroupButtonLabel;
 	private TimeSeriesSelectDialog timeSeriesSelectDialog = null;
+	private QuerySelectorTableModel queryModel = new QuerySelectorTableModel();
+	private SortingListTable queryTable = null;
 	
 	public TsGroupDefinitionPanel()
 	{	
@@ -229,6 +238,7 @@ public class TsGroupDefinitionPanel
 			dataTypeArray = new String[dataTypeList.size()];
 			for(int i=0; i<dataTypeList.size(); i++)
 				dataTypeArray[i] = dataTypeList.get(i).getCode();
+			Arrays.sort(dataTypeArray);
 			
 			IntervalDAI intervalDAO = theTsDb.makeIntervalDAO();
 			try
@@ -558,11 +568,19 @@ public class TsGroupDefinitionPanel
 		queryPanel = new JPanel(new BorderLayout());
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		JScrollPane listPane = new JScrollPane();
-		queryListModel = new DefaultListModel();
-		queryList = new JList(queryListModel);
-		queryList.getSelectionModel().setSelectionMode(
-			ListSelectionModel.SINGLE_SELECTION);
-		listPane.getViewport().add(queryList, null);
+		
+// Left col is the type of thing (i.e. the button label that was pressed to enter this, like "Location").
+// Right col is the value.
+//		queryListModel = new DefaultListModel();
+//		queryList = new JList(queryListModel);
+//		queryList.getSelectionModel().setSelectionMode(
+//			ListSelectionModel.SINGLE_SELECTION);
+		
+		queryTable = new SortingListTable(queryModel, QuerySelectorTableModel.colWidths);
+		
+//		listPane.getViewport().add(queryList, null);
+		listPane.getViewport().add(queryTable, null);
+
 		queryPanel.add(buttonPanel, BorderLayout.EAST);
 		queryPanel.add(listPane, BorderLayout.CENTER);
 		queryPanel.setBorder(new TitledBorder(queryPanelLabelStr));
@@ -685,7 +703,7 @@ public class TsGroupDefinitionPanel
 		tsGroupsListSelectPanel.addSubgroups(tsGroup.getIntersectedGroups());
 
 		//Load other group members from the TsDB
-		queryListModel.clear();
+		queryModel.clear();
 		String[] tsIdParts = theTsDb.getTsIdParts();
 
 		for(DbKey siteId: tsGroup.getSiteIdList())
@@ -693,10 +711,17 @@ public class TsGroupDefinitionPanel
 			try
 			{
 				Site st = theTsDb.getSiteById(siteId);
+				SiteName sn = null;
+				if (theTsDb.isCwms())
+					sn = st.getName(Constants.snt_CWMS);
+				if (sn == null)
+					sn = st.getPreferredName();
+				
 				if (!knownSites.contains(st))
 					knownSites.add(st);
 				// Location or Site is always the first part of the TSID.
-				queryListModel.addElement(tsIdParts[0] + ": " + st.getDisplayName());
+				queryModel.items.add(new StringPair(tsIdParts[0], sn.getNameValue()));
+//				queryListModel.addElement(tsIdParts[0] + ": " + st.getDisplayName());
 			}
 			catch(Exception ex)
 			{
@@ -710,7 +735,8 @@ public class TsGroupDefinitionPanel
 			{
 				DataType dt = DataType.getDataType(dtId);
 				// DataType or Param is always the 2nd part of the TSID
-				queryListModel.addElement(tsIdParts[1] + ": " + dt.getCode());
+				queryModel.items.add(new StringPair(tsIdParts[1], dt.getCode()));
+//				queryListModel.addElement(tsIdParts[1] + ": " + dt.getCode());
 			}
 			catch(Exception ex)
 			{
@@ -719,8 +745,12 @@ public class TsGroupDefinitionPanel
 			}
 		}
 		for(TsGroupMember member : tsGroup.getOtherMembers())
-			queryListModel.addElement(member.getMemberType() + ": "
-				+ member.getMemberValue());
+		{
+			queryModel.items.add(new StringPair(member.getMemberType(), member.getMemberValue()));
+//			queryListModel.addElement(member.getMemberType() + ": "
+//				+ member.getMemberValue());
+		}
+		queryModel.sortByColumn(0);
 	}
 
 	private boolean getDataFromFields(boolean validationFlag)
@@ -767,33 +797,49 @@ public class TsGroupDefinitionPanel
 			tempGroup.addSubGroup(g, g.getInclusion().charAt(0));
 
 		//Feed other group members to the TsDb
-		for(int i=0; i<queryListModel.size(); i++)
+		for(StringPair sp : queryModel.items)
 		{
-			String theLine = (String) queryListModel.get(i);
+			
+//		for(int i=0; i<queryListModel.size(); i++)
+//		{
+//			String theLine = (String) queryListModel.get(i);
 			// Each line in the model is is "label: value"
-			int colon = theLine.indexOf(": ");
-			if (colon == -1 || theLine.length() < colon + 2)
-				continue;
-			String label = theLine.substring(0, colon);
-			String value = theLine.substring(colon+2);
+//			int colon = theLine.indexOf(": ");
+//			if (colon == -1 || theLine.length() < colon + 2)
+//				continue;
+//			String label = theLine.substring(0, colon);
+//			String value = theLine.substring(colon+2);
 
+			String label = sp.first;
+			String value = sp.second;
+			
 			if (label.equalsIgnoreCase("site") || label.equalsIgnoreCase("location"))
 			{
+				boolean found = false;
 				for(Site st: knownSites)
-					if (value.equals(st.getDisplayName()))
+					if (st.hasNameValue(sp.second))
+//					if (value.equals(st.getDisplayName()))
 					{
 						tempGroup.addSiteId(st.getId());
 						break;
 					}
+				if (!found)
+					Logger.instance().warning("No match for sitename '" + value + "' -- ignored.");
 			}
 			else if (label.equalsIgnoreCase("datatype") || label.equalsIgnoreCase("param"))
 			{
+				boolean found = false;
 				for(DataType dt : dataTypeList)
+				{
 					if (dt.getCode().equalsIgnoreCase(value))
 					{
 						tempGroup.addDataTypeId(dt.getId());
+						found = true;
 						break;
 					}
+				}
+				if (!found)
+					Logger.instance().warning("No match for param/datatype '" + value + "' -- ignored.");
 			}
 			else 
 				tempGroup.addOtherMember(label, value);
@@ -1424,10 +1470,12 @@ public class TsGroupDefinitionPanel
 
 	private void deleteQueryParam()
 	{
-		int idx = queryList.getSelectedIndex();
+		int idx = queryTable.getSelectedRow();
+//		int idx = queryList.getSelectedIndex();
 		if (idx == -1)
 			return;
-		queryListModel.remove(idx);
+		queryModel.deleteItemAt(idx);
+//		queryListModel.remove(idx);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1452,9 +1500,16 @@ public class TsGroupDefinitionPanel
 			{
 				if (!knownSites.contains(aSite))
 					knownSites.add(aSite);
-				String listItem = keyStr + ": " + aSite.getDisplayName();
-				if (!queryListModel.contains(listItem))
-					queryListModel.addElement(listItem);
+				// MJM 20150731 - don't use getDisplayName, but rather the location ID.
+				SiteName siteName = theTsDb.isCwms() ? aSite.getName(Constants.snt_CWMS) : null;
+				if (siteName == null)
+					siteName = aSite.getPreferredName();
+				//MJM20150803 Instead of a list item with keyStr prefix, keyStr is the left column, 
+				// nameValue is the right column
+				queryModel.addItem(keyStr, siteName.getNameValue());
+//				String listItem = keyStr + ": " + siteName.getNameValue();
+//				if (!queryListModel.contains(listItem))
+//					queryListModel.addElement(listItem);
 			}
 		}
 		else if (keyStr.equalsIgnoreCase("datatype") || keyStr.equalsIgnoreCase("param"))
@@ -1503,9 +1558,10 @@ public class TsGroupDefinitionPanel
 		// selection may be set from above, or it may be null if user cancelled.
 		if (selection != null)
 		{
-			String listItem = keyStr + ": " + selection;
-			if (!queryListModel.contains(listItem))
-				queryListModel.addElement(listItem);
+			queryModel.addItem(keyStr, selection);
+//			String listItem = keyStr + ": " + selection;
+//			if (!queryListModel.contains(listItem))
+//				queryListModel.addElement(listItem);
 		}
 	}
 
@@ -1549,4 +1605,109 @@ public class TsGroupDefinitionPanel
 	{
 	}
 
+}
+
+class QuerySelectorTableModel 
+	extends AbstractTableModel
+	implements SortingListTableModel
+{
+	ArrayList<StringPair> items = new ArrayList<StringPair>();
+	static int colWidths[] = { 20, 80 };
+	int sortColumn = 0;
+	Comparator<StringPair> partSorter = 
+		new Comparator<StringPair>()
+		{
+			@Override
+			public int compare(StringPair o1, StringPair o2)
+			{
+				int r = o1.first.compareTo(o2.first);
+				if (r != 0)
+					return r;
+				return o1.second.compareTo(o2.second);
+			}
+		};
+	Comparator<StringPair> valueSorter = 
+		new Comparator<StringPair>()
+		{
+			@Override
+			public int compare(StringPair o1, StringPair o2)
+			{
+				int r = o1.second.compareTo(o2.second);
+				if (r != 0)
+					return r;
+				return o1.first.compareTo(o2.first);
+			}
+		};
+	
+
+	boolean addItem(String tsidPart, String tsidValue)
+	{
+		for(StringPair sp : items)
+			if (sp.first.equalsIgnoreCase(tsidPart) && sp.second.equalsIgnoreCase(tsidValue))
+				return false;
+		items.add(new StringPair(tsidPart, tsidValue));
+		if (sortColumn != -1)
+			sortByColumn(sortColumn);
+		else
+			fireTableDataChanged();
+		return true;
+	}
+	
+	void deleteItemAt(int row)
+	{
+		if (row >= 0 && row < items.size())
+		{
+			items.remove(row);
+			sortByColumn(0);
+		}
+	}
+	
+	@Override
+	public int getRowCount()
+	{
+		return items.size();
+	}
+
+	@Override
+	public int getColumnCount()
+	{
+		return 2;
+	}
+
+	@Override
+	public String getColumnName(int columnIndex)
+	{
+		if (columnIndex == 0)
+			return "TSID Part";
+		else
+			return "Value";
+	}
+
+	@Override
+	public Object getValueAt(int rowIndex, int columnIndex)
+	{
+		if (rowIndex >= items.size())
+			return "";
+		StringPair sp = items.get(rowIndex);
+		return columnIndex == 0 ? sp.first : columnIndex == 1 ? sp.second : "";
+	}
+
+	@Override
+	public void sortByColumn(int column)
+	{
+		Collections.sort(items, column == 0 ? partSorter : valueSorter);
+		fireTableDataChanged();
+	}
+
+	@Override
+	public Object getRowObject(int row)
+	{
+		return row >= 0 && row < items.size() ? items.get(row) : null;
+	}
+	
+	void clear()
+	{
+		items.clear();
+	}
+	
 }
