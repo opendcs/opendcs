@@ -283,6 +283,18 @@ public class Site extends IdDatabaseObject
 		return sn.getNameValue();
 	}
 	
+	/**
+	 * @param nameValue the name value
+	 * @return true if this site has a name with the passed value (case INsensitive)
+	 */
+	public boolean hasNameValue(String nameValue)
+	{
+		for(SiteName sn : siteNames)
+			if (sn.getNameValue().equalsIgnoreCase(nameValue))
+				return true;
+		return false;
+	}
+	
 	public String getUniqueName()
 	{
 		SiteName sn = getPreferredName();
