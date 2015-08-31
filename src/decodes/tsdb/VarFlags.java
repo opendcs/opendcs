@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2010/08/20 19:19:31  mmaloney
 *  Code to handle NO-OVERWRITE feature in Tempest and CWMS.
 *
@@ -78,6 +81,9 @@ public class VarFlags
 	 */
 	// Obsolete.
 	//public static final int NO_TRIGGER   = 0x08000000;
+
+	/** Computations use the 4 low-order bits */
+	public static final int RESERVED_4_COMP               = 0x0000000F;
 
 	/**
 	 * Return true if the variable was recently added to the database.
@@ -209,5 +215,14 @@ public class VarFlags
 		int f = v.getFlags();
 		f |= NO_OVERWRITE;
 		v.setFlags(f);
+	}
+	
+	/**
+	 * Clears the non-reserved bits in the passed variable's flags.
+	 * @param v
+	 */
+	public static void clearNonReserved(Variable v)
+	{
+		v.setFlags(v.getFlags() & (IFlags.RESERVED_MASK | RESERVED_4_COMP));
 	}
 }
