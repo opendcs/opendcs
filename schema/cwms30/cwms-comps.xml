@@ -48,6 +48,7 @@ Uses the CWMS API provided by HEC to
     <AlgoProperty name="indep8_MISSING">ignore</AlgoProperty>
     <AlgoProperty name="indep4_MISSING">ignore</AlgoProperty>
     <AlgoProperty name="specVersion">Production</AlgoProperty>
+    <AlgoProperty name="useDepLocation">false</AlgoProperty>
     <AlgoParm roleName="indep1">
       <ParmType>i</ParmType>
     </AlgoParm>
