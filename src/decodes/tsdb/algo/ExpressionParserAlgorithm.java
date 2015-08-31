@@ -10,6 +10,7 @@ import java.util.Properties;
 
 import org.nfunk.jep.SymbolTable;
 
+import ilex.var.IFlags;
 import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import decodes.db.Constants;
@@ -196,6 +197,7 @@ public class ExpressionParserAlgorithm
 		
 		// Prepopulate the symbol table with the info about the parameters.
 		SymbolTable symTab = jepContext.getParser().getSymbolTable();
+		symTab.clear();
 		for(String inputName : _inputNames)
 		{
 			ParmRef pr = getParmRef(inputName);		
@@ -284,34 +286,114 @@ public class ExpressionParserAlgorithm
 				inputName.equals("in5") ? in5 : Double.NEGATIVE_INFINITY;
 
 			symTab.remove(inputName);
+			String flagName = inputName + ".flags";
+			symTab.remove(flagName);
 			if (!isMissing(inputVal))
 			{
 				symTab.addVariable(inputName, new Double(inputVal));
-				info("" + debugSdf.format(_timeSliceBaseTime) + " " + inputName + "=" + inputVal);
+				int f = getInputFlagBits(inputName);
+				symTab.addVariable(flagName, new Double(f));
+
+				debug1("" + debugSdf.format(_timeSliceBaseTime) + " " + inputName + "=" + inputVal
+					+ ", " + flagName + "=0x" + Integer.toHexString(f));
 			}
 		}
 		
+		// Remove the outputs from the symbol table so we can detect assignments.
+		// Any user-defined temporary vars stay in the table. The user can use these
+		// for accumulating, counting, etc., across all time slices.
+		symTab.remove("out1");
+		symTab.remove("out1.flags");
+		symTab.remove("out2");
+		symTab.remove("out2.flags");
+		
+		// Execute the script should at some point set an output or input flags.
 		executeScript(timeSliceScript);
+
+		// Check to see if assignments were made to the output variables.
 		Object out1value = jepContext.getParser().getSymbolTable().getValue("out1");
+		Object out1Flags = jepContext.getParser().getSymbolTable().getValue("out1.flags");
 		if (out1value != null)
 		{
-info("out1 was set to " + out1value);
+debug3("out1 was set to " + out1value);
 			if (out1value instanceof Double)
 				setOutput(out1, (Double)out1value);
 			else if (out1value instanceof String)
 				setOutput(out1, (String)out1value);
+			if (out1Flags != null)
+			{
+				int f = (out1Flags instanceof Double) ? (int)(double)(Double)out1Flags
+					: (out1Flags instanceof Long) ? (int)(long)(Long)out1Flags
+					: 0;
+debug3("out1.flags was set to 0x" + Integer.toHexString(f));
+				clearNonReservedFlags(out1);
+				setFlagBits(out1, f);
+			}
+else debug3("out1.flags not assigned.");
+				
 		}
-else info("out1 was not assigned.");
+		else
+		{
+			debug3("out1 was not assigned.");
+			if (out1Flags != null)
+				warning("Cannot set out1.flags without also ssetting out1 value. Ignored.");
+		}
+		
+		
 		Object out2value = jepContext.getParser().getSymbolTable().getValue("out2");
+		Object out2Flags = jepContext.getParser().getSymbolTable().getValue("out2.flags");
 		if (out2value != null)
 		{
-info("out2 was set to " + out2value);
+debug3("out2 was set to " + out2value);
 			if (out2value instanceof Double)
 				setOutput(out2, (Double)out2value);
 			else if (out2value instanceof String)
 				setOutput(out2, (String)out2value);
+			if (out2Flags != null)
+			{
+				int f = (out2Flags instanceof Double) ? (int)(double)(Double)out2Flags
+					: (out2Flags instanceof Long) ? (int)(long)(Long)out2Flags
+					: 0;
+				clearNonReservedFlags(out2);
+				setFlagBits(out2, f);
+			}
 		}
-else info("out2 was not assigned.");
+		else
+		{
+			debug3("out2 was not assigned.");
+			if (out2Flags != null)
+				warning("Cannot set out2.flags without also ssetting out2 value. Ignored.");
+		}
+		
+		// Check the input '.flags' values in the symbol table to see if any values were
+		// changed. If so, set the new flags and cause them to be written to the database.
+		for(String inputName : _inputNames)
+		{
+			String flagName = inputName + ".flags";
+debug3("Checking for " + flagName);
+			org.nfunk.jep.Variable v = symTab.getVar(flagName);
+			if (v != null)
+			{
+debug3("...found");
+				Object vv = v.getValue();
+				if (vv instanceof Number)
+				{
+					int newFlags = ((Number)vv).intValue();
+					int origFlags = this.getInputFlagBits(inputName);
+debug3("origFlags=0x" + Integer.toHexString(origFlags) + ", newFlags=0x" + Integer.toHexString(newFlags));
+					if (newFlags != origFlags)
+					{
+						debug1("" + debugSdf.format(_timeSliceBaseTime) + " " + flagName + 
+							" changed from 0x" + Integer.toHexString(origFlags)
+							+ " to 0x" + Integer.toHexString(newFlags));
+						// Clear all application-level bits and set to the new values.
+						setInputFlagBits(inputName, newFlags, 
+							~(VarFlags.RESERVED_4_COMP|IFlags.RESERVED_MASK));
+					}
+				}
+			}
+else debug3("...not found");
+		}
 
 //AW:TIMESLICE_END
 	}
