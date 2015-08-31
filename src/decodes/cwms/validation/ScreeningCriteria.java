@@ -16,8 +16,11 @@ import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
+import decodes.tsdb.algo.AW_AlgorithmBase;
+import decodes.util.PropertySpec;
 
 /**
  * Holds a collection of checks to perform on one or more
@@ -25,6 +28,8 @@ import decodes.tsdb.VarFlags;
  */
 public class ScreeningCriteria
 {
+	public static final String module = "ScreeningCriteria";
+	
 	/** Start of season for this group of checks, or null if all-time */
 	Calendar seasonStart = null;
 	
@@ -92,6 +97,11 @@ public class ScreeningCriteria
 		if (tv == null)
 			return;
 		
+		boolean setInputFlags = alg.setInputFlags;
+		boolean noOverwrite = alg.noOverwrite;
+		boolean noOutputOnReject = alg.noOutputOnReject;
+		boolean setRejectMissing = alg.setRejectMissing;
+		
 		// MJM 20121002 Leave protected values completely unchanged. Don't even validate.
 		if (alg.inputIsOutput() && (tv.getFlags() & CwmsFlags.PROTECTED) != 0)
 		{
@@ -107,30 +117,342 @@ public class ScreeningCriteria
 			return;
 		}
 		
-		TimeSeriesIdentifier inputTsid = input.getTimeSeriesIdentifier();
-		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
-		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
+//		//vvvvvvvvvvvvvvvvvvvvv snip
+//		TimeSeriesIdentifier inputTsid = input.getTimeSeriesIdentifier();
+//		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
+//		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
+//		//^^^^^^^^^^^^^^^^^^^^^^ snip
 
 		output.setValue(v);
 		int flags = tv.getFlags();
 		
-		validity = ValidityOK;
-		testbits = 0;
+//		//vvvvvvvvvvvvvvv snip
+//		validity = ValidityOK;
+//		testbits = 0;
+//		//^^^^^^^^^^^^^^^ snip
 		
 		alg.debug3("Executing checks, value " + v + " at time " + 
 			alg.debugSdf.format(dataTime)
 			+ ", flags initially=0x" + Integer.toHexString(flags));
 
+		flags |= doChecks(dc, input, dataTime, alg, v);
+		
+//		//=========================================
+//		// ABS checks
+//		flags |= CwmsFlags.SCREENED;
+//		for(AbsCheck chk : absChecks)
+//		{
+//			alg.debug1(chk.toString());
+//			if (compare(v, chk.getLow()) < 0 || compare(v,chk.getHigh()) > 0)
+//			{
+//				setValidity(chk.getFlag(), CwmsFlags.TEST_ABSOLUTE_VALUE);
+//				alg.info(input.getTimeSeriesIdentifier().getUniqueString()
+//					+ " value " + v + " at time " 
+//					+ alg.debugSdf.format(dataTime)
+//					+ " failed " + chk.toString());
+//			}
+//		}
+//		
+//		// CONST checks
+//		Calendar aggCal = alg.aggCal;
+//	nextConstCheck:
+//		for(ConstCheck chk : constChecks)
+//		{
+//			alg.debug1(chk.toString());
+//			
+//			// Flag if value has not changed more than tolerance
+//			// over specified duration.
+//			// Abort check if more than allowedMissing are not present.
+//			IntervalIncrement durinc = IntervalCodes.getIntervalCalIncr(chk.getDuration());
+//			
+//			double minvalue = Double.POSITIVE_INFINITY;
+//			double maxvalue = Double.NEGATIVE_INFINITY;
+//			aggCal.setTime(dataTime);
+//			aggCal.add(durinc.getCalConstant(), -durinc.getCount());
+//			Date startTime = aggCal.getTime();
+//
+//			// Compute the maximum allowable time gap in seconds.
+//			// For regular inputs, this is expressed as nmiss * the interval of the input
+//			IntervalIncrement maxGap = null;
+//			if (!inputIrregular)
+//			{
+//				if (chk.getAllowedMissing() > 0)
+//					maxGap = new IntervalIncrement(tsinc.getCalConstant(), 
+//						tsinc.getCount() * chk.getAllowedMissing());
+//				
+//			}
+//			else // maxGap can be specified in the DATCHK files
+//				maxGap = chk.getMaxGap();
+//			
+//			// find the earliest index in the input TS >= aggCal. Then increment through CTS
+//			// until !d.after(dataTime)
+//			if (input.size() < 1)
+//				continue nextConstCheck;
+//			alg.debug3("Iterating for CONST check, maxGap=" + maxGap);
+//			int idx = 0;
+//			Date lastTime = null, firstTime = null;
+//			for(; idx < input.size() && input.sampleAt(idx).getTime().before(startTime); idx++);
+//			
+//			// For irregular, we may need to backup to first sample before the start of period.
+//			if (input.sampleAt(idx).getTime().after(startTime) && idx > 0)
+//				idx--;
+//			for(; idx < input.size() && !input.sampleAt(idx).getTime().after(dataTime); idx++)
+//			{
+//				TimedVariable x = input.sampleAt(idx);
+//				
+//				double xv = 0.0;
+//				try { xv = x.getDoubleValue(); }
+//				catch(NoConversionException ex)
+//				{
+//					continue; // treat as missing.
+//				}
+//				
+//				if (firstTime == null)
+//					firstTime = x.getTime();
+////alg.debug3("    CONST value=" + xv + " at time " + alg.debugSdf.format(x.getTime()));
+//
+//				if (maxGap != null && lastTime != null)
+//				{
+//					aggCal.setTime(lastTime);
+//					aggCal.add(maxGap.getCalConstant(), maxGap.getCount());
+//					if (aggCal.getTime().before(x.getTime()))
+//					{
+//						alg.debug1("Value skipped because of time gap: "
+//							+ alg.debugSdf.format(lastTime) + " - " + alg.debugSdf.format(x.getTime()));
+//						lastTime = x.getTime();
+//						continue nextConstCheck;
+//					}
+//				}
+//				
+//				if (xv < minvalue)
+//					minvalue = xv;
+//				if (xv > maxvalue)
+//					maxvalue = xv;
+//				lastTime = x.getTime();
+//			}
+//			
+//			// If variance is less than the tolerance, flag the value.
+//			double variance = maxvalue - minvalue;
+////alg.debug3("  Iteration done, max=" + maxvalue + ", min=" + minvalue + ", variance=" + variance);
+//			if (compare(variance, chk.getTolerance()) <= 0)
+//			{
+//				// Make sure that specified duration was exceeded.
+//				aggCal.setTime(firstTime);
+//				aggCal.add(durinc.getCalConstant(), durinc.getCount());
+//				if (!lastTime.before(aggCal.getTime()))
+//				{
+//					setValidity(chk.getFlag(), CwmsFlags.TEST_CONSTANT_VALUE);
+//					alg.info(input.getTimeSeriesIdentifier().getUniqueString()
+//						+ " value " + v + " at time " + alg.debugSdf.format(dataTime)
+//						+ " failed " + chk.toString()
+//						+ " max=" + maxvalue + ", min=" + minvalue);
+//				}
+////else alg.debug3("No flag set because duration was not seen.");
+//			}
+////else alg.debug3("No flag set because variance exceeded.");
+//		}
+//
+//
+//		// RATE checks
+//		TimedVariable prevtv = input.findWithin(
+//			new Date(dataTime.getTime()-3600000L), alg.roundSec);
+//		if (prevtv != null 
+//		 && (prevtv.getFlags() & CwmsFlags.QC_MISSING_OR_REJECTED) == 0)
+//		{
+//			for(RocPerHourCheck chk : rocPerHourChecks)
+//			{
+//				alg.debug1(chk.toString());
+//				try
+//				{
+//					double delta = v - prevtv.getDoubleValue();
+//					if (compare(delta, chk.getFall()) < 0 || compare(delta,chk.getRise()) > 0)
+//					{
+//						setValidity(chk.getFlag(), CwmsFlags.TEST_RATE_OF_CHANGE);
+//						alg.info(input.getTimeSeriesIdentifier().getUniqueString()
+//							+ " value " + v + " at time " + alg.debugSdf.format(dataTime)
+//							+ " failed " + chk.toString()
+//							+ " prev=" + prevtv.getDoubleValue() + ", delta=" + delta);
+//					}
+//				}
+//				catch(NoConversionException ex)
+//				{
+//					alg.warning("Crit-3: " + ex.toString());
+//					continue;
+//				}
+//			}
+//		}
+//		
+//		// DUR checks
+//		// For Duration-Magnitude tests, first figure out what kind of 
+//		// accumulation. If input duration is not 0 then we have periodic
+//		// incremental numbers -- just add them. If duration
+//		// IS 0 then we have a cumulative number and we have to take the delta.
+//		String tsDur = inputTsid.getPart("duration");
+//		IntervalIncrement tsDurCalInc = IntervalCodes.getIntervalCalIncr(tsDur);
+//		boolean incremental = tsDurCalInc != null && tsDurCalInc.getCount() > 0;
+//		
+//		for(DurCheckPeriod chk : durCheckPeriods)
+//		{
+//			alg.debug1(chk.toString() + ", incremental=" + incremental);
+//			
+//			// Accumulate change over duration specified in the DATCHK file.
+//			IntervalIncrement durinc = IntervalCodes.getIntervalCalIncr(chk.getDuration());
+//			if (durinc.getCount() == 0)
+//				continue;
+////alg.debug3("   DUR period=" + tsinc);
+//			
+//			double prev = Double.NEGATIVE_INFINITY;
+//			double tally = 0;
+//			aggCal.setTime(dataTime);
+//			aggCal.add(durinc.getCalConstant(), -durinc.getCount());
+//			Date startTime = aggCal.getTime();
+//			
+//			// find the earliest index in the input TS >= aggCal. Then increment through CTS
+//			// until !d.after(dataTime)
+//			int idx = 0;
+//			for(; idx < input.size() && input.sampleAt(idx).getTime().before(startTime); idx++);
+//			if (!incremental && input.sampleAt(idx).getTime().after(startTime) && idx > 0)
+//				idx--;
+//			for(; idx < input.size() && !input.sampleAt(idx).getTime().after(dataTime); idx++)
+//			{
+//				TimedVariable x = input.sampleAt(idx);
+//				double xv = 0;
+//				try { xv = x.getDoubleValue(); }
+//				catch(NoConversionException ex)
+//				{
+//					alg.warning("Crit-4: " + ex.toString());
+//					continue;
+//				}
+////alg.debug3("   DUR sample[" + idx + "] time=" + alg.debugSdf.format(x.getTime()) + ", value=" + xv);
+//				if (!incremental)
+//				{
+//					// Must take deltas of cumulative values and then add them.
+//					if (prev != Double.NEGATIVE_INFINITY)
+//					{
+//						double delta = xv - prev;
+//						tally += delta;
+//					}
+//					prev = xv;
+//				}
+//				else // Already have incremental numbers, just add them.
+//					tally += xv;
+////alg.debug3("    Tally is now " + tally);
+//			}
+////alg.debug3("  Looping done, tally=" + tally + ", low=" + chk.getLow() + ", high=" + chk.getHigh());
+//			if (compare(tally,chk.getLow()) < 0 || compare(tally,chk.getHigh()) > 0)
+//			{
+//				setValidity(chk.getFlag(), CwmsFlags.TEST_DURATION_VALUE);
+//				alg.info(input.getTimeSeriesIdentifier().getUniqueString()
+//					+ " value " + v + " at time " + alg.debugSdf.format(dataTime)
+//					+ " failed " + chk.toString() + ", tally=" + tally
+//					+ "limits=(" + chk.getLow() + "," + chk.getHigh());
+//			}
+////else alg.debug3("  Not out of limits.");
+//		}
+//		
+//		switch(validity)
+//		{
+//		case ValidityOK: flags |= CwmsFlags.VALIDITY_OKAY; break;
+//		case ValidityQuestion: flags |= CwmsFlags.VALIDITY_QUESTIONABLE; break;
+//		case ValidityReject: flags |= CwmsFlags.VALIDITY_REJECTED; break;
+//		case ValidityMissing: flags |= CwmsFlags.VALIDITY_MISSING; break;
+//		}
+//		flags |= testbits;
+//		
+//		alg.debug1("After all checks, value " + v + " at time " + 
+//			alg.debugSdf.format(dataTime)
+//			+ ", origFlags = 0x" + Integer.toHexString(tv.getFlags())
+//			+ ", newFlags = 0x" + Integer.toHexString(flags));
+//		
+//		
+//		//=====================================================
+		
+		int mask = CwmsFlags.TEST_MASK|CwmsFlags.VALIDITY_MASK;
+		// MJM 20121002 If input & output are the same time series
+		// and the flags are unchanged. Then do nothing.
+		if (alg.inputIsOutput())
+		{
+			if ((flags&mask) != (tv.getFlags()&mask))
+				// Flags are changed as a result of validation.
+			{
+				alg.clearFlagBits(output, CwmsFlags.VALIDITY_MASK | CwmsFlags.TEST_MASK);
+				alg.setFlagBits(output, flags);
+			}
+		}
+		else // output is different from input.
+		{
+			// The 'setInputFlags' means that, in addition to setting output,
+			// set the flag bits on the input param. Thus it is only used when
+			// output and input are different time series.
+			// Also, it must only be done if the flags have changed to avoid infinite loop.
+			if (setInputFlags && (flags&mask) != (tv.getFlags()&mask))
+				alg.setInputFlagBits("input", flags, mask);
+			
+			// Set NO_OVERWRITE if the property is set in the comp.
+			if (noOverwrite)
+				flags |= VarFlags.NO_OVERWRITE;
+			
+			// The 'setRejectedMissing' property means that, if the result of the
+			// checks is that the value is 'REJECTED', then in the output, set it as MISSING.
+			// It is typically used along with setInputFlags. The input value gets the 'REJECTED'
+			// flag, where the output gets flagged as MISSING.
+			if ((flags & CwmsFlags.VALIDITY_MASK) == CwmsFlags.VALIDITY_REJECTED)
+			{
+				if (noOutputOnReject)
+				{
+					return; // Simply don't write output if rejected.
+				}
+				else if (setRejectMissing)
+				{
+					flags = (flags & (~CwmsFlags.VALIDITY_MASK))
+						  | CwmsFlags.VALIDITY_MISSING;
+				}
+			}
+			alg.clearFlagBits(output, mask);
+			alg.setFlagBits(output, flags);
+		}
+	}
+	
+	/**
+	 * Perform the checks and return the flag results
+	 * @param dc the data collection
+	 * @param input the input time series
+	 * @param dataTime the time of the value to check
+	 * @param alg The algorithm executive (for log messages with context)
+	 * @return the flag results
+	 */
+	public int doChecks(DataCollection dc, CTimeSeries input,
+		Date dataTime, AW_AlgorithmBase alg, double value)
+	{
+//		TimedVariable tv = input.findWithin(dataTime, alg.roundSec);
+//		if (tv == null)
+//			throw new NoSuchObjectException(module + ".doChecks - no value at time "
+//				+ alg.debugSdf.format(dataTime));
+//		double value = 0.0;
+//		try { value = tv.getDoubleValue(); }
+//		catch(NoConversionException ex)
+//		{
+//			throw new NoSuchObjectException(module + ".doChecks - Value at time "
+//				+ alg.debugSdf.format(dataTime) + " is not a number: " + tv.toString());
+//		}
+		
+		TimeSeriesIdentifier inputTsid = input.getTimeSeriesIdentifier();
+		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
+		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
+
+		int resultFlags = CwmsFlags.SCREENED;
+		validity = ValidityOK;
+		testbits = 0;
+
 		// ABS checks
-		flags |= CwmsFlags.SCREENED;
 		for(AbsCheck chk : absChecks)
 		{
 			alg.debug1(chk.toString());
-			if (compare(v, chk.getLow()) < 0 || compare(v,chk.getHigh()) > 0)
+			if (compare(value, chk.getLow()) < 0 || compare(value,chk.getHigh()) > 0)
 			{
 				setValidity(chk.getFlag(), CwmsFlags.TEST_ABSOLUTE_VALUE);
 				alg.info(input.getTimeSeriesIdentifier().getUniqueString()
-					+ " value " + v + " at time " 
+					+ " value " + value + " at time " 
 					+ alg.debugSdf.format(dataTime)
 					+ " failed " + chk.toString());
 			}
@@ -226,7 +548,7 @@ public class ScreeningCriteria
 				{
 					setValidity(chk.getFlag(), CwmsFlags.TEST_CONSTANT_VALUE);
 					alg.info(input.getTimeSeriesIdentifier().getUniqueString()
-						+ " value " + v + " at time " + alg.debugSdf.format(dataTime)
+						+ " value " + value + " at time " + alg.debugSdf.format(dataTime)
 						+ " failed " + chk.toString()
 						+ " max=" + maxvalue + ", min=" + minvalue);
 				}
@@ -247,12 +569,12 @@ public class ScreeningCriteria
 				alg.debug1(chk.toString());
 				try
 				{
-					double delta = v - prevtv.getDoubleValue();
+					double delta = value - prevtv.getDoubleValue();
 					if (compare(delta, chk.getFall()) < 0 || compare(delta,chk.getRise()) > 0)
 					{
 						setValidity(chk.getFlag(), CwmsFlags.TEST_RATE_OF_CHANGE);
 						alg.info(input.getTimeSeriesIdentifier().getUniqueString()
-							+ " value " + v + " at time " + alg.debugSdf.format(dataTime)
+							+ " value " + value + " at time " + alg.debugSdf.format(dataTime)
 							+ " failed " + chk.toString()
 							+ " prev=" + prevtv.getDoubleValue() + ", delta=" + delta);
 					}
@@ -326,7 +648,7 @@ public class ScreeningCriteria
 			{
 				setValidity(chk.getFlag(), CwmsFlags.TEST_DURATION_VALUE);
 				alg.info(input.getTimeSeriesIdentifier().getUniqueString()
-					+ " value " + v + " at time " + alg.debugSdf.format(dataTime)
+					+ " value " + value + " at time " + alg.debugSdf.format(dataTime)
 					+ " failed " + chk.toString() + ", tally=" + tally
 					+ "limits=(" + chk.getLow() + "," + chk.getHigh());
 			}
@@ -335,56 +657,18 @@ public class ScreeningCriteria
 		
 		switch(validity)
 		{
-		case ValidityOK: flags |= CwmsFlags.VALIDITY_OKAY; break;
-		case ValidityQuestion: flags |= CwmsFlags.VALIDITY_QUESTIONABLE; break;
-		case ValidityReject: flags |= CwmsFlags.VALIDITY_REJECTED; break;
-		case ValidityMissing: flags |= CwmsFlags.VALIDITY_MISSING; break;
+		case ValidityOK: resultFlags |= CwmsFlags.VALIDITY_OKAY; break;
+		case ValidityQuestion: resultFlags |= CwmsFlags.VALIDITY_QUESTIONABLE; break;
+		case ValidityReject: resultFlags |= CwmsFlags.VALIDITY_REJECTED; break;
+		case ValidityMissing: resultFlags |= CwmsFlags.VALIDITY_MISSING; break;
 		}
-		flags |= testbits;
+		resultFlags |= testbits;
 		
-		alg.debug1("After all checks, value " + v + " at time " + 
+		alg.debug1("After all checks, value " + value + " at time " + 
 			alg.debugSdf.format(dataTime)
-			+ ", origFlags = 0x" + Integer.toHexString(tv.getFlags())
-			+ ", newFlags = 0x" + Integer.toHexString(flags));
+			+ ", resultFlags = 0x" + Integer.toHexString(resultFlags));
 		
-		int mask = CwmsFlags.TEST_MASK|CwmsFlags.VALIDITY_MASK;
-		// MJM 20121002 If input & output are the same time series
-		// and the flags are unchanged. Then do nothing.
-		if (alg.inputIsOutput())
-		{
-			if ((flags&mask) != (tv.getFlags()&mask))
-				// Flags are changed as a result of validation.
-			{
-				alg.clearFlagBits(output, CwmsFlags.VALIDITY_MASK | CwmsFlags.TEST_MASK);
-				alg.setFlagBits(output, flags);
-			}
-		}
-		else // output is different from input.
-		{
-			// The 'setInputFlags' means that, in addition to setting output,
-			// set the flag bits on the input param. Thus it is only used when
-			// output and input are different time series.
-			// Also, it must only be done if the flags have changed to avoid infinite loop.
-			if (alg.setInputFlags && (flags&mask) != (tv.getFlags()&mask))
-				alg.setInputFlagBits("input", flags, mask);
-			
-			// Set NO_OVERWRITE if the property is set in the comp.
-			if (alg.noOverwrite)
-				flags |= VarFlags.NO_OVERWRITE;
-			
-			// The 'setRejectedMissing' property means that, if the result of the
-			// checks is that the value is 'REJECTED', then in the output, set it as MISSING.
-			// It is typically used along with setInputFlags. The input value gets the 'REJECTED'
-			// flag, where the output gets flagged as MISSING.
-			if (alg.setRejectMissing 
-			 && (flags & CwmsFlags.VALIDITY_MASK) == CwmsFlags.VALIDITY_REJECTED)
-			{
-				flags = (flags & (~CwmsFlags.VALIDITY_MASK))
-					  | CwmsFlags.VALIDITY_MISSING;
-			}
-			alg.clearFlagBits(output, mask);
-			alg.setFlagBits(output, flags);
-		}
+		return resultFlags;
 	}
 	
 	/**
@@ -430,7 +714,7 @@ public class ScreeningCriteria
 	}
 	
 	public void fillTimesNeeded(CTimeSeries inTS, TreeSet<Date> needed,
-		Calendar aggCal, ScreeningAlgorithm alg)
+		Calendar aggCal, AW_AlgorithmBase alg)
 	{
 		TimeSeriesIdentifier tsid = inTS.getTimeSeriesIdentifier();
 		IntervalIncrement tsinc = 
@@ -500,7 +784,7 @@ public class ScreeningCriteria
 	
 	private void addDatesThruDuration(CTimeSeries inTS,
 		IntervalIncrement tsinc, IntervalIncrement durinc, Calendar aggCal,
-		TreeSet<Date> needed, ScreeningAlgorithm alg, boolean inputIrregular)
+		TreeSet<Date> needed, AW_AlgorithmBase alg, boolean inputIrregular)
 	{
 		int nProcessed = 0;
 		int nAdded = 0;
