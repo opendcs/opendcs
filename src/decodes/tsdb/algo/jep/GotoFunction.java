@@ -1,7 +1,5 @@
 package decodes.tsdb.algo.jep;
 
-import ilex.util.Logger;
-
 import java.util.Stack;
 
 import org.nfunk.jep.ParseException;

@@ -14,8 +14,8 @@ import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 
 /**
- * This implements the lookupMeta(location, varname) function for the JEP parser when run inside
- * the ExpressionParserAlgorithm.
+ * This implements the rating function in the Expression Parser.
+ * 
  * The function takes two arguments: location and variable name.
  */
 public class RatingFunction

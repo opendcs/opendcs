@@ -1,12 +1,28 @@
 package decodes.tsdb.algo.jep;
 
 import ilex.util.Logger;
+import ilex.util.TextUtil;
+import ilex.var.TimedVariable;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.TreeSet;
+
+import opendcs.dai.TimeSeriesDAI;
 
 import org.nfunk.jep.JEP;
+import org.nfunk.jep.ParseException;
 
+import decodes.cwms.validation.Screening;
+import decodes.cwms.validation.ScreeningCriteria;
+import decodes.tsdb.IntervalCodes;
+import decodes.tsdb.IntervalIncrement;
+import decodes.tsdb.ParmRef;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TimeSeriesHelper;
+import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 
 /**
@@ -26,6 +42,7 @@ public class JepContext
 	private String gotoLabel = null;
 	private String onErrorLabel = null;
 	private boolean lastStatementWasCond = false;
+	private HashSet<String> rolesInitializedForScreening = null;
 	
 	public JepContext(TimeSeriesDb tsdb, AW_AlgorithmBase algo)
 	{
@@ -46,6 +63,9 @@ public class JepContext
 		parser.addFunction("info", new LogFunction(this, Logger.E_INFORMATION));
 		parser.addFunction("warning", new LogFunction(this, Logger.E_WARNING));
 		parser.addFunction(OnErrorFunction.funcName, new OnErrorFunction(this));
+		parser.addFunction(DatchkFunction.funcName, new DatchkFunction(this));
+		parser.addFunction(IsRejectedFunction.funcName, new IsRejectedFunction(this));
+		parser.addFunction(IsQuestionableFunction.funcName, new IsQuestionableFunction(this));
 
 		if (tsdb == null || tsdb.isCwms())
 			parser.addFunction(RatingFunction.funcName, new RatingFunction(this));
@@ -131,5 +151,75 @@ public class JepContext
 	public void setLastStatementWasCond(boolean lastStatementWasCond)
 	{
 		this.lastStatementWasCond = lastStatementWasCond;
+	}
+	
+	public void initForScreening(String inputRole, Screening screening)
+		throws ParseException
+	{
+		if (rolesInitializedForScreening == null)
+			rolesInitializedForScreening = new HashSet<String>();
+		else if (rolesInitializedForScreening.contains(inputRole))
+			return; // already done.
+		
+		algo.debug3("Retrieving additional data needed for checks for '" + inputRole + "'.");
+		rolesInitializedForScreening.add(inputRole);
+		
+		ParmRef inputParm = algo.getParmRef(inputRole);
+		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
+
+		// Using the tests, determine the amount of past-data needed at each time-slice.
+		TreeSet<Date> needed = new TreeSet<Date>();
+		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
+		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
+
+		ScreeningCriteria prevcrit = null;
+		for(int idx = 0; idx<inputParm.timeSeries.size(); idx++)
+		{
+			TimedVariable tv = inputParm.timeSeries.sampleAt(idx);
+			if (VarFlags.wasAdded(tv))
+			{
+				ScreeningCriteria crit = screening.findForDate(tv.getTime());
+				if (crit == null || crit == prevcrit)
+					continue;
+				crit.fillTimesNeeded(inputParm.timeSeries, needed, algo.aggCal, algo);
+				prevcrit = crit;
+			}
+		}
+		algo.debug3("additional data done for '" + inputRole + "', #times needed=" + needed.size());
+		
+		if (needed.size() > 0)
+		{
+			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+			try
+			{
+				// Optimization: if >= 50 values within 4 days,
+				// use a range retrieval.
+				Date start = needed.first();
+				Date end = needed.last();
+				if (inputIrregular
+				 || (needed.size() >= 50 && end.getTime() - start.getTime() <= (4*24*3600*1000L)))
+				{
+					timeSeriesDAO.fillTimeSeries(inputParm.timeSeries, start, end, true, true, false);
+				}
+				else
+					timeSeriesDAO.fillTimeSeries(inputParm.timeSeries, needed);
+			}
+			catch (Exception ex)
+			{
+				throw new ParseException(ex.toString());
+			}
+			finally
+			{
+				timeSeriesDAO.close();
+			}
+		}
+		
+		String euAbbr = screening.getCheckUnitsAbbr();
+		if (euAbbr != null 
+		 && TextUtil.strCompareIgnoreCase(euAbbr, inputParm.timeSeries.getUnitsAbbr()) != 0)
+		{
+			// Need to convert the input param into the proper units.
+			TimeSeriesHelper.convertUnits(inputParm.timeSeries, euAbbr);
+		}
 	}
 }
