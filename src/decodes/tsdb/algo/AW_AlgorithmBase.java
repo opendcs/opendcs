@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2015/07/27 18:35:50  mmaloney
+*  Unused (optional) params should be flagged as missing so that the isMissing() method
+*  works inside the algorithms.
+*
 *  Revision 1.3  2015/07/14 18:33:40  mmaloney
 *  CWMS-6160 fix. If an algorithm explicitly set flag bits, then don't automatically assume
 *  that a quesntionable input implies a questionable output.
@@ -961,6 +965,16 @@ public abstract class AW_AlgorithmBase
 		v.setFlags(v.getFlags() & (~bits));
 		saveOutput(v);
 	}
+	
+	/**
+	 * Clears all the application-level flag bits. These are the
+	 * bits not reserved by the computation or variable infrastructure.
+	 * @param v
+	 */
+	public void clearNonReservedFlags(NamedVariable v)
+	{
+		VarFlags.clearNonReserved(v);
+	}
 
 	/**
 	 * Retrieve the flag bits for the named input param.
@@ -985,6 +999,15 @@ public abstract class AW_AlgorithmBase
 		return v.getFlags();
 	}
 
+	/**
+	 * Sets the 1-bits in the 'bits' argument into the named variables flag.
+	 * DOES NOT CLEAR ANY BITS. Use SetInputFlagBits with the additional mask
+	 * arg to first clear bits.
+	 * Also, sets the TO_WRITE flag causing this value to be written (along with the
+	 * new flag bits) after all computations have been tried.
+	 * @param name the name of the input variable
+	 * @param bits the bits to set.
+	 */
 	public void setInputFlagBits(String name, int bits)
 	{
 		if (!_inTimeSlice)
@@ -1018,7 +1041,12 @@ public abstract class AW_AlgorithmBase
 		v.setFlags( v.getFlags() | bits | VarFlags.TO_WRITE );
 	}
 
-	// Like setInputFlagBits above, but will first clear bits in the specified mask.
+	/**
+	 * Like setInputFlagBits above, but will first clear bits in the specified mask.
+	 * @param name the name of the input variable
+	 * @param bits the bits to set
+	 * @param mask the bits to clear prior to setting
+	 */
 	public void setInputFlagBits(String name, int bits, int mask)
 	{
 		if (!_inTimeSlice)
