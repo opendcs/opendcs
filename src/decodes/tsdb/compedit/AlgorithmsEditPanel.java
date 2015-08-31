@@ -14,7 +14,6 @@ package decodes.tsdb.compedit;
 
 import java.awt.*;
 import java.awt.event.*;
-
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Properties;
@@ -25,14 +24,16 @@ import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.AlgorithmDAI;
-
+import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.gui.PropertiesEditPanel;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.tsdb.DbAlgoParm;
+import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbIoException;
+import decodes.util.PropertiesOwner;
 import decodes.db.Constants;
 
 public class AlgorithmsEditPanel extends EditPanel 
@@ -172,6 +173,24 @@ public class AlgorithmsEditPanel extends EditPanel
 		PropertiesUtil.copyProps(propCopy, editedObject.getProperties());
 		propertiesPanel.setProperties(propCopy);
 		algoParmTableModel.fill(editedObject);
+		String clsName = dca.getExecClass();
+		try
+		{
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			Logger.instance().debug3("Instantiating new algo exec '"
+				+ clsName + "'");
+			Class<?> cls = cl.loadClass(clsName);
+			DbAlgorithmExecutive executive = (DbAlgorithmExecutive)cls.newInstance();
+			if (executive instanceof PropertiesOwner)
+			{
+				propertiesPanel.setPropertiesOwner((PropertiesOwner)executive);
+			}
+		}
+		catch(Exception ex)
+		{
+			Logger.instance().warning("Cannot instantiate algorithm class '" + clsName + "': " + ex);
+		}
+
 	}
 
 	public DbCompAlgorithm getEditedObject()
