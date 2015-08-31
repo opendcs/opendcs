@@ -26,6 +26,7 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesException;
+import decodes.util.PropertySpec;
 
 //AW:JAVADOC
 /**
@@ -44,14 +45,25 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 //AW:INPUTS_END
 
 //AW:LOCALVARS
-	double mult = 1.0;
-	boolean multUsed = false;
-	double offs = 0.0;
 	private UnitConverter converter = null;
 	private boolean enhancedDebug = false;
 	private String inUnits = null;
 	private String outUnits = null;
 	private String debugTsid = "DET.Elev-Forebay.Inst.0.0.MIXED-RAW";
+	
+	private PropertySpec copyPropertySpecs[] = 
+	{
+		new PropertySpec("multiplier", PropertySpec.NUMBER,
+			"(optional) Multiply input by this amount."),
+		new PropertySpec("offset", PropertySpec.NUMBER,
+			"(optional) Add this to input (after applying multiplier, if specified).")
+	};
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return copyPropertySpecs;
+	}
+
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -61,10 +73,10 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-	public String input_MISSING = "ignore";
-	public String multiplier = "";
-	public String offset = "";
-	String _propertyNames[] = {"input_MISSING", "multiplier", "offset" };
+	public double multiplier = 1.0;
+	public double offset = 0.0;
+	public Double x = null;
+	String _propertyNames[] = {"multiplier", "offset", "x" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -138,31 +150,6 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 		// else inUnits is unknown. This shouldn't happen because tasklist records will
 		// have a units assignment. In any case we can't do any conversions.
 
-		if (multiplier != null && multiplier.trim().length() > 0)
-		{
-			try
-			{
-				mult = Double.parseDouble(multiplier);
-				multUsed = true;
-			}
-			catch(NumberFormatException ex)
-			{
-				warning("multiplier property must be a number -- ignored.");
-				multUsed = false;
-			}
-		}
-		if (offset != null && offset.trim().length() > 0)
-		{
-			try
-			{
-				offs = Double.parseDouble(offset);
-			}
-			catch(NumberFormatException ex)
-			{
-				warning("offset property must be a number -- ignored.");
-				offs = 0.0;
-			}
-		}
 ///AW:BEFORE_TIMESLICES_END
 	}
 	
@@ -197,9 +184,7 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 				warning("Exception in converter: " + ex);
 			}
 		}
-		if (multUsed)
-			x *= mult;
-		x += offs;
+		x = (x*multiplier) + offset;
 		setOutput(output, x);
 		if (enhancedDebug && outUnits != null && outUnits.toLowerCase().contains("f") && x < 500.)
 			warning("Setting output to " + x + " " + outUnits);

@@ -30,6 +30,7 @@ import decodes.cwms.CwmsFlags;
 import decodes.cwms.validation.Screening;
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
+import decodes.util.PropertySpec;
 
 //AW:JAVADOC
 /**
@@ -56,6 +57,27 @@ public class ScreeningAlgorithm
 	}
 	boolean _inputIsOutput = false;
 	public boolean inputIsOutput() { return _inputIsOutput; }
+	
+	PropertySpec algoPropSpecs[] =
+	{
+		new PropertySpec("noOverwrite", PropertySpec.BOOLEAN, "(default=false) "
+			+ "Set to true to disable overwriting of output parameter."),
+		new PropertySpec("setInputFlags", PropertySpec.BOOLEAN, "(default=false) "
+			+ "Set to true to set quality flags on the input parameter."),
+		new PropertySpec("setRejectMissing", PropertySpec.BOOLEAN, "(default=false) "
+			+ "If true and the value is REJECTED, set the output flags to MISSING."),
+		new PropertySpec("noOutputOnReject", PropertySpec.BOOLEAN, "(default=false) "
+			+ "If true and the value is REJECTED, then do not write output param at all. "
+			+ "Warning: This may leave a previous value for the output param at that time slice "
+			+ "unchanged.")
+	};
+	
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return algoPropSpecs;
+	}
+
 
 //AW:LOCALVARS_END
 
@@ -68,7 +90,9 @@ public class ScreeningAlgorithm
 	public boolean noOverwrite = false;
 	public boolean setInputFlags = false;
 	public boolean setRejectMissing = false;
-	String _propertyNames[] = { "noOverwrite", "setInputFlags", "setRejectMissing" };
+	public boolean noOutputOnReject = false;
+	String _propertyNames[] = { "noOverwrite", "setInputFlags", "setRejectMissing",
+		"noOutputOnReject" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -239,8 +263,7 @@ public class ScreeningAlgorithm
 		}
 		ParmRef inputParm = getParmRef("input");
 
-		crit.executeChecks(dc, inputParm.timeSeries,
-			_timeSliceBaseTime, output, this);
+		crit.executeChecks(dc, inputParm.timeSeries, _timeSliceBaseTime, output, this);
 		
 //AW:TIMESLICE_END
 	}
