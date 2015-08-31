@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2015/07/14 17:52:18  mmaloney
+ * Catch error on TS creation.
+ *
  * Revision 1.7  2015/01/16 16:11:04  mmaloney
  * RC01
  *
@@ -618,7 +621,8 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 					
 					debug3("sample[" + idx + "] time=" + 
 						db.getLogDateFormat().format(new Date(times[idx]))
-						+ ", value=" + values[idx] + ", qual=" + qualities[idx]);
+						+ ", value=" + values[idx] 
+						+ ", qual=0x" + Integer.toHexString(qualities[idx]));
 				}
 				// The "Replace All" store-rule means: 
 				//  -- Values at same time stamp I provide will replace existing values
