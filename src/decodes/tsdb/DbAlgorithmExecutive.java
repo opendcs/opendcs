@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2015/01/15 19:25:45  mmaloney
+*  RC01
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -1770,6 +1773,8 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 		else 
 			return null;
 	}
+	
+	public DataCollection getDataCollection() { return dc; }
 
 	/**
 	 * Often, especially when filling an aggregate period, we already
