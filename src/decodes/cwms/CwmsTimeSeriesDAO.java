@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2015/08/31 00:34:50  mmaloney
+ * Log messages with flag values should print in hex.
+ *
  * Revision 1.8  2015/07/14 17:52:18  mmaloney
  * Catch error on TS creation.
  *
@@ -950,6 +953,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			}
 			else // CWMS 2.2 or later
 			{
+Logger.instance().debug3("createTsCodeBigInteger(" + path + ")");
 				BigInteger tsCode = cwmsTsJdbc.createTsCodeBigInteger(dbOfficeId,
 					path,   // 6-part path name 
 					utcOffset, // utcOfficeMinutes 
@@ -958,6 +962,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 					false,  // versionFlag
 					true);  // active
 				tsKey = DbKey.createDbKey(tsCode.longValue());
+Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 			}
 			tsid.setKey(tsKey);
 			

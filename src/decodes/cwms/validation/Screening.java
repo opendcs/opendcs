@@ -5,12 +5,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import opendcs.dao.CachableDbObject;
 import decodes.sql.DbKey;
 
 /**
  * Represents a named set of screening-criteria for CWMS.
  */
 public class Screening
+	implements CachableDbObject
 {
 	/** surrogate database key */
 	private DbKey screeningCode;
@@ -31,6 +33,20 @@ public class Screening
 	
 	ArrayList<ScreeningCriteria> criteriaSeasons = 
 		new ArrayList<ScreeningCriteria>();
+	
+	/** When read from CWMS database, paramId will always be present */
+	private String paramId = null;
+	
+	/** In a CWMS database, this can be set to act as a filter on candidate time series. */
+	private String paramTypeId = null;
+	
+	/** In a CWMS database, this can be set to act as a filter on candidate time series. */
+	private String durationId = null;
+	
+	private boolean rangeActive = true;
+	private boolean rocActive = true;
+	private boolean constActive = true;
+	private boolean durMagActive = true;
 
 	/**
 	 * Constructor
@@ -165,5 +181,102 @@ public class Screening
 		}
 		// Fell through means all seasons are before this date, return last one.
 		return criteriaSeasons.get(criteriaSeasons.size()-1);
+	}
+
+	public void setScreeningCode(DbKey screeningCode)
+	{
+		this.screeningCode = screeningCode;
+	}
+
+	public String getParamId()
+	{
+		return paramId;
+	}
+
+	public void setParamId(String paramId)
+	{
+		this.paramId = paramId;
+	}
+
+	public String getParamTypeId()
+	{
+		return paramTypeId;
+	}
+
+	public void setParamTypeId(String paramTypeId)
+	{
+		this.paramTypeId = paramTypeId;
+	}
+
+	public String getDurationId()
+	{
+		return durationId;
+	}
+
+	public void setDurationId(String durationId)
+	{
+		this.durationId = durationId;
+	}
+
+	public ArrayList<ScreeningCriteria> getCriteriaSeasons()
+	{
+		return criteriaSeasons;
+	}
+
+	public boolean isRangeActive()
+	{
+		return rangeActive;
+	}
+
+	public void setRangeActive(boolean rangeActive)
+	{
+		this.rangeActive = rangeActive;
+	}
+
+	public boolean isRocActive()
+	{
+		return rocActive;
+	}
+
+	public void setRocActive(boolean rocActive)
+	{
+		this.rocActive = rocActive;
+	}
+
+	public boolean isConstActive()
+	{
+		return constActive;
+	}
+
+	public void setConstActive(boolean constActive)
+	{
+		this.constActive = constActive;
+	}
+
+	public boolean isDurMagActive()
+	{
+		return durMagActive;
+	}
+
+	public void setDurMagActive(boolean durMagActive)
+	{
+		this.durMagActive = durMagActive;
+	}
+
+	@Override
+	public DbKey getKey()
+	{
+		return screeningCode;
+	}
+
+	@Override
+	public String getUniqueName()
+	{
+		return screeningName;
+	}
+
+	public void setScreeningName(String screeningName)
+	{
+		this.screeningName = screeningName;
 	}
 }

@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.9  2015/05/14 13:52:19  mmaloney
+*  RC08 prep
+*
 *  Revision 1.8  2015/04/02 18:10:03  mmaloney
 *  Store dbURI and jdbcDriver so that CwmsConsumer can override them and
 *  make them different from the definitions in DecodesSettings.
@@ -537,20 +540,18 @@ import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
-
 import lrgs.gui.DecodesInterface;
-
 import cwmsdb.CwmsSecJdbc;
 import cwmsdb.CwmsCatJdbc;
-
 import oracle.jdbc.OraclePreparedStatement;
-
 import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
+import decodes.cwms.validation.dao.ScreeningDAI;
+import decodes.cwms.validation.dao.ScreeningDAO;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.EngineeringUnit;
@@ -601,6 +602,8 @@ public class CwmsTimeSeriesDb
 	
 	private String dbUri = null;
 	private String jdbcOracleDriver = null;
+	
+	private BaseParam baseParam = new BaseParam();
 	
 	
 	/**
@@ -765,6 +768,15 @@ public class CwmsTimeSeriesDb
 				failure(msg);
 				cgl.setLoginSuccess(false);
 				throw new BadConnectException(msg);
+			}
+			try
+			{
+				baseParam.load(this);
+			}
+			catch (Exception ex)
+			{
+				String msg = "Cannot load baseParam Units Map: " + ex;
+				failure(msg);
 			}
 		}
 		else // CWMS 2.1 or earlier
@@ -1965,4 +1977,19 @@ for(CTimeSeries ts : allts)
 		this.jdbcOracleDriver = jdbcOracleDriver;
 	}
 
+	public DbKey getDbOfficeCode()
+	{
+		return dbOfficeCode;
+	}
+
+	public BaseParam getBaseParam()
+	{
+		return baseParam;
+	}
+
+	public ScreeningDAI makeScreeningDAO() 
+		throws DbIoException
+	{
+		return new ScreeningDAO(this);
+	}
 }

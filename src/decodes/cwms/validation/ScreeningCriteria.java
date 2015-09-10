@@ -53,6 +53,8 @@ public class ScreeningCriteria
 	private char validity = ValidityOK;
 	private int testbits = 0;
 	
+	private String estimateExpression = null;
+	
 	//TODO: Add Relative Value Checks and Distribution Checks
 	
 	public ScreeningCriteria(Calendar seasonStart)
@@ -850,4 +852,44 @@ public class ScreeningCriteria
 		else // We are accumulating a set of distinct dates.
 			needed.add(d);
 	}
+
+	public ArrayList<DurCheckPeriod> getDurCheckPeriods()
+	{
+		return durCheckPeriods;
+	}
+	
+	public AbsCheck getAbsCheckFor(char flag)
+	{
+		for(AbsCheck ac : absChecks)
+			if (ac.getFlag() == flag)
+				return ac;
+		return null;
+	}
+	
+	public RocPerHourCheck getRocCheckFor(char flag)
+	{
+		for(RocPerHourCheck rocc : rocPerHourChecks)
+			if (rocc.getFlag() == flag)
+				return rocc;
+		return null;
+	}
+	
+	public ConstCheck getConstCheckFor(char flag)
+	{
+		for(ConstCheck cc : constChecks)
+			if (cc.getFlag() == flag)
+				return cc;
+		return null;
+	}
+
+	public String getEstimateExpression()
+	{
+		return estimateExpression;
+	}
+
+	public void setEstimateExpression(String estimateExpression)
+	{
+		this.estimateExpression = estimateExpression;
+	}
+
 }

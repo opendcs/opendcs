@@ -1,18 +1,9 @@
 /**
  * $Id$
  * 
- * Open Source Software
+ * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
- * Revision 1.2  2015/05/14 13:52:17  mmaloney
- * RC08 prep
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.14  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
  */
 package decodes.cwms.validation;
 
@@ -27,11 +18,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
@@ -50,10 +39,10 @@ import org.w3c.dom.NodeList;
 
 
 
-public class DatchkReader
+public class ScreeningImport
 {
 	public String module = "DatchkValidation";
-	private static DatchkReader _instance = null;
+	private static ScreeningImport _instance = null;
 
 	private LoadedFile cfgFile = null;
 	private HashMap<String, PathMapping> dssPath2pathMap = 
@@ -68,10 +57,10 @@ public class DatchkReader
 	private HashMap<String, ScreeningCriteria> storedTests
 		= new HashMap<String, ScreeningCriteria>();
 	private HashMap<String, Screening> tsidScreeningMap = new HashMap<String, Screening>();
-	private HashSet<String> screenedTsids = new HashSet<String>();
 	private TimeZone seasonTz = TimeZone.getTimeZone("UTC");
+	private boolean pathIsCwmsTsId = false;
 
-	private DatchkReader()
+	private ScreeningImport()
 	{
 		cfgFile = new LoadedFile(
 			EnvExpander.expand(DecodesSettings.instance().datchkConfigFile));
@@ -80,25 +69,11 @@ public class DatchkReader
 		seasonTz = TimeZone.getTimeZone(
 			DecodesSettings.instance().aggregateTimeZone);
 	}
-	
-	/**
-	 * For DatchkExport, allow creation with an alternate config file.
-	 * @param cfgFile the config file name.
-	 */
-	public DatchkReader(String cfgFileName)
-	{
-		cfgFile = new LoadedFile(
-			EnvExpander.expand(cfgFileName));
-		Logger.instance().info(module + " created new instance with config file '"
-			+ cfgFile.getPath() + "'");
-		seasonTz = TimeZone.getTimeZone(
-			DecodesSettings.instance().aggregateTimeZone);
-	}
 
-	public static DatchkReader instance()
+	public static ScreeningImport instance()
 	{
 		if (_instance == null)
-			_instance = new DatchkReader();
+			_instance = new ScreeningImport();
 		return _instance;
 	}
 	
@@ -106,25 +81,20 @@ public class DatchkReader
 		throws DbCompException
 	{
 		checkConfig();
-		return findScreening(tsid.getUniqueString());
-	}
-	
-	public Screening findScreening(String tsidStr)
-	{
-		String uc = tsidStr.toUpperCase();
-		Logger.instance().debug1(module + " looking for match to '" + tsidStr + "'");
-		Screening ret = tsidScreeningMap.get(uc);
+		String s = tsid.getUniqueString().toUpperCase();
+		Logger.instance().debug1(module + " looking for match to '" + s + "'");
+		Screening ret = tsidScreeningMap.get(s);
 		if (ret == null)
 		{
 			Logger.instance().debug1("No screening defined for '"
-				+ uc + "', " + tsidScreeningMap.size()
+				+ s + "', " + tsidScreeningMap.size()
 				+ " screenings defined.");
 		}
 		else
-			Logger.instance().debug1("Found screening for '" + tsidStr + "'");
+			Logger.instance().debug1("Found screening for '" + s + "'");
 		return ret;
 	}
-	
+
 	/**
 	 * Checks to see if the configuration file has changed. If so it loads it
 	 * and then loads all of the caches.
@@ -158,12 +128,11 @@ public class DatchkReader
 			dssPath2pathMap.clear();
 			seasons.clear();
 			tsidScreeningMap.clear();
-			screenedTsids.clear();
 			reloadAll();
 		}
 	}
 
-	public void reloadAll() 
+	private void reloadAll() 
 		throws DbCompException
 	{
 		Logger.instance().info(module + " reloading all files.");
@@ -688,17 +657,25 @@ public class DatchkReader
 				line.substring(dssPathStart);
 
 		// Lookup the mapping to the CWMS path
-		PathMapping pm = dssPath2pathMap.get(dssPath);
-		if (pm == null)
+		PathMapping pm = null;
+		if (pathIsCwmsTsId)
 		{
-			fileWarning(file, lineNum, "No mapping for DSS path '"
-				+ dssPath + "' -- ignored.");
-			return;
+			
+			pm = new PathMapping(dssPath, dssPath, null);
+		}
+		else
+		{
+			pm = dssPath2pathMap.get(dssPath);
+			if (pm == null)
+			{
+				fileWarning(file, lineNum, "No mapping for DSS path '"
+					+ dssPath + "' -- ignored.");
+				return;
+			}
 		}
 		
 		// Get the screening for this TSID, or create one if none yet exists.
-		String cwmsTSID = pm.getCwmsPath();
-		String tsid_uc = cwmsTSID.toUpperCase();
+		String tsid_uc = pm.getCwmsPath().toUpperCase();
 		Screening screening = tsidScreeningMap.get(tsid_uc);
 		if (screening == null)
 		{
@@ -707,7 +684,6 @@ public class DatchkReader
 				"Read from " + file.getPath(),
 				pm.getDssUnitsAbbr());
 			tsidScreeningMap.put(tsid_uc, screening);
-			screenedTsids.add(cwmsTSID);
 			Logger.instance().debug2(module + " Created new screening for '" +
 				tsid_uc + "'");
 		}
@@ -776,7 +752,7 @@ public class DatchkReader
 	public static void main(String args[])
 		throws Exception
 	{
-		DatchkReader datchkReader = DatchkReader.instance();
+		ScreeningImport datchkReader = ScreeningImport.instance();
 		datchkReader.cfgFile = new LoadedFile(args[0]);
 		
 		datchkReader.checkConfig();
@@ -823,7 +799,7 @@ public class DatchkReader
 	public static void printScreening(Screening scr)
 	{
 		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd HH:mm");
-		DatchkReader datchkReader = DatchkReader.instance();
+		ScreeningImport datchkReader = ScreeningImport.instance();
 		sdf.setTimeZone(datchkReader.seasonTz);
 
 		for(ScreeningCriteria crit : scr.criteriaSeasons)
@@ -846,9 +822,15 @@ public class DatchkReader
 		}
 	}
 
-	public HashSet<String> getScreenedTsids()
+	public void setPathIsCwmsTsId(boolean pathIsCwmsTsId)
 	{
-		return screenedTsids;
+		this.pathIsCwmsTsId = pathIsCwmsTsId;
 	}
 	
 }
+
+//TODO add parser for *UNITS
+//TODO add parser for *PARAM
+//TODO add parser for *PARAM_TYPE
+//TODO add parser for *DURATION
+//TODO add parser for *SEASON mm/dd
