@@ -130,7 +130,8 @@ public class DatchkImport extends TsdbAppTemplate
 				System.out.println("Creating time series " + tsa.getTsid().getUniqueString());
 				tsa.getTsid().setKey(timeSeriesDAO.createTimeSeries(tsa.getTsid()));
 			}
-			System.out.println("Importing Screening " + tsa.getScreening().getScreeningName());
+			System.out.println("Importing Screening " + tsa.getScreening().getScreeningName() + ":");
+			//DatchkReader.printScreening(tsa.getScreening());
 			screeningDAO.writeScreening(tsa.getScreening());
 			System.out.println("Importing assignment to " + tsa.getTsid().getUniqueString());
 			screeningDAO.assignScreening(tsa.getScreening(), tsa.getTsid(), true);
@@ -140,8 +141,8 @@ public class DatchkImport extends TsdbAppTemplate
 	@Override
 	public void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
-		cmdLineArgs.addToken(configFile);
 		cmdLineArgs.addToken(confirmEach);
+		cmdLineArgs.addToken(configFile);
 	}
 	
 	public static void main(String[] args)

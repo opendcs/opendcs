@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import opendcs.dao.CachableDbObject;
 import decodes.sql.DbKey;
@@ -15,7 +16,7 @@ public class Screening
 	implements CachableDbObject
 {
 	/** surrogate database key */
-	private DbKey screeningCode;
+	private DbKey screeningCode = DbKey.NullKey;
 	
 	/**
 	 * Unique name of this screening set. For DATCHK screenings,
@@ -23,13 +24,13 @@ public class Screening
 	 * For CWMS, this is an arbitrary name that may be shared by
 	 * multiple time-series.
 	 */
-	private String screeningName;
+	private String screeningName = null;
 	
 	/** Description */
-	private String screeningDesc;
+	private String screeningDesc = null;
 	
 	/** The units that the checks are done in */
-	private String checkUnitsAbbr;
+	private String checkUnitsAbbr = null;
 	
 	ArrayList<ScreeningCriteria> criteriaSeasons = 
 		new ArrayList<ScreeningCriteria>();
@@ -48,6 +49,10 @@ public class Screening
 	private boolean constActive = true;
 	private boolean durMagActive = true;
 
+	public Screening()
+	{
+	}
+	
 	/**
 	 * Constructor
 	 * @param screeningCode surrogate database key
@@ -105,6 +110,7 @@ public class Screening
 			// Fell through, this is after all the existing seasons
 			criteriaSeasons.add(screeningCriteria);
 		}
+		screeningCriteria.setScreening(this);
 	}
 	
 	/**
@@ -278,5 +284,20 @@ public class Screening
 	public void setScreeningName(String screeningName)
 	{
 		this.screeningName = screeningName;
+	}
+
+	public void setCheckUnitsAbbr(String checkUnitsAbbr)
+	{
+		this.checkUnitsAbbr = checkUnitsAbbr;
+	}
+	
+	public void setSeasonTimeZone(TimeZone tz)
+	{
+		for(ScreeningCriteria crit : criteriaSeasons)
+		{
+			Calendar cal = crit.getSeasonStart();
+			if (cal != null)
+				cal.setTimeZone(tz);
+		}
 	}
 }

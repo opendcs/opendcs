@@ -4,375 +4,177 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.1  2015/09/10 21:18:08  mmaloney
+ * Development on Screening
+ *
  */
 package decodes.cwms.validation;
 
-import ilex.util.EnvExpander;
+import ilex.cmdline.BooleanToken;
+import ilex.cmdline.StringToken;
+import ilex.cmdline.TokenOptions;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.FileReader;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.StringTokenizer;
-import java.util.TimeZone;
 
-import ilex.xml.DomHelper;
-import decodes.db.Constants;
-import decodes.tsdb.DbCompException;
+import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.cwms.validation.dao.ScreeningDAI;
+import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.util.DecodesSettings;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-
+import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.CmdLineArgs;
+import opendcs.dai.TimeSeriesDAI;
 
 public class ScreeningImport
+	extends TsdbAppTemplate
 {
-	public String module = "DatchkValidation";
-	private static ScreeningImport _instance = null;
-
-	private LoadedFile cfgFile = null;
-	private HashMap<String, PathMapping> dssPath2pathMap = 
-		new HashMap<String, PathMapping>();
-	private ArrayList<LoadedFile> loadedFiles = 
-		new ArrayList<LoadedFile>();
-	private HashMap<String, GregorianCalendar> seasons
-		= new HashMap<String, GregorianCalendar>();
+	public String module = "ScreeningImport";
+	
+	private BooleanToken noTsidsToken = new BooleanToken("T", "(Do NOT import TSIDs and their screening assignments.)",
+		"", TokenOptions.optSwitch, false);
+	private StringToken fileNameToken = new StringToken("", "Screening file(s) to import",
+		"", TokenOptions.optArgument | TokenOptions.optRequired | TokenOptions.optMultiple, "");
+	private BooleanToken yesToken = new BooleanToken("y", "(Yes do the import. Don't ask for confirmation.)",
+		"", TokenOptions.optSwitch, false);
+	
+	private Screening currentScreening = null;
 	private ScreeningCriteria critBuffer = null;
-	private transient Calendar datchkSeason = null;
-	private transient String testName = null;
-	private HashMap<String, ScreeningCriteria> storedTests
-		= new HashMap<String, ScreeningCriteria>();
-	private HashMap<String, Screening> tsidScreeningMap = new HashMap<String, Screening>();
-	private TimeZone seasonTz = TimeZone.getTimeZone("UTC");
-	private boolean pathIsCwmsTsId = false;
+	private ArrayList<Screening> screenings = new ArrayList<Screening>();
+	
+	// For each screening name, a list of time series assigned to it.
+	private HashMap<String, ArrayList<String>> screeningName2TsidMap = new HashMap<String, ArrayList<String>>();
+	
+	private TimeSeriesDAI timeSeriesDAO = null;
+	private LineNumberReader lnr = null;
+	private String curFile = null;
+	
+	enum ParseState { Top, InScreening, InCriteria };
+	private ParseState parseState = ParseState.Top;
+	private int numWarnings = 0;
 
 	private ScreeningImport()
 	{
-		cfgFile = new LoadedFile(
-			EnvExpander.expand(DecodesSettings.instance().datchkConfigFile));
-		Logger.instance().info(module + " created new instance with config file '"
-			+ cfgFile.getPath() + "'");
-		seasonTz = TimeZone.getTimeZone(
-			DecodesSettings.instance().aggregateTimeZone);
-	}
-
-	public static ScreeningImport instance()
-	{
-		if (_instance == null)
-			_instance = new ScreeningImport();
-		return _instance;
+		super("screening.log");
 	}
 	
-	public Screening getScreening(TimeSeriesIdentifier tsid)
-		throws DbCompException
+	@Override
+	public void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
-		checkConfig();
-		String s = tsid.getUniqueString().toUpperCase();
-		Logger.instance().debug1(module + " looking for match to '" + s + "'");
-		Screening ret = tsidScreeningMap.get(s);
-		if (ret == null)
+		cmdLineArgs.addToken(noTsidsToken);
+		cmdLineArgs.addToken(yesToken);
+		cmdLineArgs.addToken(fileNameToken);
+	}
+	
+	@Override
+	protected void runApp() throws Exception
+	{
+		timeSeriesDAO = theDb.makeTimeSeriesDAO();
+		
+		int totalWarnings = 0;
+		for(int idx=0; idx < fileNameToken.NumberOfValues(); idx++)
 		{
-			Logger.instance().debug1("No screening defined for '"
-				+ s + "', " + tsidScreeningMap.size()
-				+ " screenings defined.");
+			numWarnings = 0;
+			curFile = fileNameToken.getValue(idx);
+			System.out.println("Reading file " + curFile);
+			readFile(curFile);
+			if (numWarnings > 0)
+			{
+				System.out.println("There were " + numWarnings + " errors in reading this file.");
+				totalWarnings += numWarnings;
+			}
 		}
-		else
-			Logger.instance().debug1("Found screening for '" + s + "'");
-		return ret;
+		curFile = null;
+		
+		// Printout list of what will be imported
+		System.out.println("The following screenings will be imported:");
+		for(Screening s : screenings)
+		{
+			System.out.println("\t" + s.getScreeningName());
+			if (!noTsidsToken.getValue())
+			{
+				System.out.println("\t...For time series:");
+				ArrayList<String> tsidList = screeningName2TsidMap.get(s.getScreeningName());
+				if (tsidList == null)
+					System.out.println("\t\t(none)");
+				else for(String tsid : tsidList)
+					System.out.println("\t\t" + tsid);
+			}
+		}
+		if (totalWarnings > 0)
+			System.out.println("NOTE: There were " + totalWarnings + " in reading the screening files.");
+		
+		if (!yesToken.getValue())
+		{
+			System.out.print("OK to continue? (y/n)");
+			System.out.flush();
+			String line = System.console().readLine();
+			if (line == null || !line.trim().toLowerCase().startsWith("y"))
+				System.exit(1);
+		}
+		
+		ScreeningDAI screeningDAO = ((CwmsTimeSeriesDb)theDb).makeScreeningDAO();
+		// Write the screenings
+		for(Screening screening : screenings)
+		{
+			try
+			{
+				screeningDAO.writeScreening(screening);
+			}
+			catch(DbIoException ex)
+			{
+				warning("Cannot write screening '" + screening.getScreeningName() + "': " + ex);
+				ex.printStackTrace();
+				continue;
+			}
+			
+			if (!noTsidsToken.getValue())
+			{	
+				// Resolve the time series and create if necessary
+				ArrayList<String> tsidList = screeningName2TsidMap.get(screening.getScreeningName());
+				if (tsidList != null)
+				{
+					for(String tsidStr : tsidList)
+					{
+						TimeSeriesIdentifier tsid = getTsid(tsidStr);
+						if (tsid != null)
+							screeningDAO.assignScreening(screening, tsid, true);
+					}
+				}
+			}
+		}
+		
+		
+		timeSeriesDAO.close();
 	}
 
 	/**
-	 * Checks to see if the configuration file has changed. If so it loads it
-	 * and then loads all of the caches.
-	 * 
-	 * @throws DbCompException
+	 * Read the passed file name and load into screening buffers.
+	 * @param value
 	 */
-	private void checkConfig() throws DbCompException
+	private void readFile(String filename)
 	{
-		if (!cfgFile.canRead())
-			throw new DbCompException(module + " Cannot open configuration '"
-					+ cfgFile.getPath() + "'");
-		boolean doReload = false;
-		if (cfgFile.lastModified() > cfgFile.getLastRead())
-		{
-			doReload = true;
-			Logger.instance().info(module + " must reload because config file was changed.");
-		}
-		else
-			for (LoadedFile lf : loadedFiles)
-			{
-				if (lf.lastModified() > lf.getLastRead())
-				{
-					doReload = true;
-					Logger.instance().info(module + " must reload because file '"
-						+ lf.getPath() + "' was changed.");
-				}
-			}
-		if (doReload)
-		{
-			loadedFiles.clear();
-			dssPath2pathMap.clear();
-			seasons.clear();
-			tsidScreeningMap.clear();
-			reloadAll();
-		}
-	}
+		File file = new File(filename);
+		parseState = ParseState.Top;
+		currentScreening = null;
+		critBuffer = null;
 
-	private void reloadAll() 
-		throws DbCompException
-	{
-		Logger.instance().info(module + " reloading all files.");
-		// Load the configuration file. Throw DbCompException if error.
-		Document doc;
-		try
-		{
-			doc = DomHelper.readFile(module, cfgFile.getPath());
-			cfgFile.setLastRead(System.currentTimeMillis());
-		}
-		catch(ilex.util.ErrorException ex)
-		{
-			throw new DbCompException(module + " Cannot read config file '"
-				+ cfgFile.getPath() + "': " + ex);
-		}
-
-		Node topElement = doc.getDocumentElement();
-		NodeList children = topElement.getChildNodes();
-		if (children == null)
-		{
-			fileWarning(cfgFile, -1, 
-				"Empty config! No mappings or datchk files specified!");
-			return;
-		}
-		
-		// First walk the tree and get path mappings and seasons
-		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd HH:mm");
-		sdf.setTimeZone(seasonTz);
-		for(int i=0; i<children.getLength(); i++)
-		{
-			Node node = children.item(i);
-			if (node.getNodeType() == Node.ELEMENT_NODE)
-			{
-				Element elem = (Element)node;		
-				if (node.getNodeName().equalsIgnoreCase("timezone"))
-				{
-					String tx = DomHelper.getTextContent(node);
-					TimeZone tz = TimeZone.getTimeZone(tx);
-					if (tz != null)
-					{
-						seasonTz = tz;
-						sdf.setTimeZone(seasonTz);
-					}
-					else
-						fileWarning(cfgFile, -1,
-							"Invalid TimeZone '" + tx + "' -- ignored.");
-				}
-				else if (node.getNodeName().equalsIgnoreCase("season"))
-				{
-					String seasonName = DomHelper.findAttr(elem, "name");
-					if (seasonName == null)
-					{
-						fileWarning(cfgFile, -1,
-							"season with no 'name' attribute -- ignored.");
-						continue;
-					}
-					String tx = DomHelper.getTextContent(node);
-					try
-					{
-						Date d = sdf.parse(tx);
-						GregorianCalendar gc = new GregorianCalendar();
-						gc.setTimeZone(seasonTz);
-						gc.setTime(d);
-						seasons.put(seasonName, gc);
-					}
-					catch(ParseException ex)
-					{
-						fileWarning(cfgFile, -1,
-							"Invalid date format for season " + seasonName
-							+ " '" + tx + "' -- season ignored.");
-					}
-				}
-				else if (node.getNodeName().equalsIgnoreCase("pathmap"))
-				{
-					String tx = DomHelper.getTextContent(node);
-					loadPathmapFile(tx);
-				}
-				else if (!node.getNodeName().equalsIgnoreCase("datchk"))
-				{
-					fileWarning(cfgFile, -1,
-						"Unrecognized element '" + node.getNodeName()
-						+ " -- ignored.");
-				}
-			}
-		}
-
-		// Walk the DOM tree again
-		// Load each DATCHK file with the optional season.
-		// Issue warnings for read & parse errors but don't throw.
-		for(int i=0; i<children.getLength(); i++)
-		{
-			Node node = children.item(i);
-			if (node.getNodeType() == Node.ELEMENT_NODE)
-			{
-				Element elem = (Element)node;
-				if (node.getNodeName().equalsIgnoreCase("datchk"))
-				{
-					String filename = DomHelper.getTextContent(node);
-					GregorianCalendar gc = null;
-					String seasonName = DomHelper.findAttr(elem, "season");
-					if (seasonName != null)
-					{
-						gc = seasons.get(seasonName);
-						if (gc == null)
-							fileWarning(cfgFile, -1,
-								"Unrecognzied season name '"
-								+ seasonName + "' for datchk file "
-								+ filename + " -- ignored.");
-						continue;
-					}
-					loadDatchkFile(filename, gc);
-				}
-			}
-		}
-		
-		Logger.instance().info(module + " Loaded " + tsidScreeningMap.size()
-			+ " time-series screenings.");
-	}
-	
-	private void loadPathmapFile(String filename)
-	{
-		LineNumberReader lnr = null;
-		LoadedFile file = new LoadedFile(filename);
-		file.setLastRead(System.currentTimeMillis());
-		loadedFiles.add(file);
+		Logger.instance().debug1("Loading Screening file '" + filename + "'");
 
 		try
 		{
 			lnr = new LineNumberReader(new FileReader(file));
 			String line;
-			while((line = lnr.readLine()) != null)
-			{
-				line = line.trim();
-				if (line.length() == 0 || line.charAt(0) == '#')
-					continue;
-				StringTokenizer st = new StringTokenizer(line, ";");
-				String mapping = st.nextToken();
-				int idx = mapping.indexOf('=');
-				if (idx == -1)
-				{
-					fileWarning(file, lnr.getLineNumber(), 
-						"Path assignment with no equal sign '" + mapping
-						+ "' -- ignored.");
-					continue;
-				}
-				else if (idx >= mapping.length()-1)
-				{
-					fileWarning(file, lnr.getLineNumber(),
-						"Missing DSS Path in '" + mapping
-						+ "' -- ignored.");
-					continue;
-				}
-				String cwmsPath = mapping.substring(0,idx).trim();
-				if (cwmsPath.length() == 0)
-				{
-					fileWarning(file, lnr.getLineNumber(),
-						"Missing CWMS Time Series ID in '" + mapping
-						+ "' -- ignored.");
-					continue;
-				}
-				String dssPath = mapping.substring(idx+1).trim();
-				if (dssPath.length() == 0)
-				{
-					fileWarning(file, lnr.getLineNumber(),
-						"Missing DSS Path in '" + mapping
-						+ "' -- ignored.");
-					continue;
-				}
-				String units = null;
-				while(st.hasMoreTokens())
-				{
-					String t = st.nextToken();
-					if (t.toLowerCase().startsWith("units"))
-					{
-						idx = t.indexOf('=');
-						if (idx == -1 || idx>=t.length()-1)
-						{
-							fileWarning(file, lnr.getLineNumber(),
-								"Bad units assignment '" + t
-								+ "' -- ignored.");
-							continue;
-						}
-						units = t.substring(idx+1).trim();
-						if (units.length() == 0)
-						{
-							fileWarning(file, lnr.getLineNumber(),
-								"Missing units assignment '" + t
-								+ "' -- ignored.");
-							units = null;
-						}
-					}
-				}
-				dssPath2pathMap.put(dssPath, new PathMapping(dssPath, cwmsPath, units));
-			}
-		}
-		catch (IOException ex)
-		{
-			Logger.instance().warning(module + " Error reading pathmap file '"
-				+ filename + "': " + ex);
-		}
-		finally
-		{
-			if (file != null)
-				file.setLastRead(System.currentTimeMillis());
-			if (lnr != null)
-			{
-				try {lnr.close(); } catch(Exception ex) {}
-			}
-		}
-	}
-	
-	private void fileWarning(File file, int linenum, String msg)
-	{
-		String w = module + " file " + file.getPath() + " ";
-		if (linenum >= 0)
-			w = w + "line=" + linenum + " ";
-		w = w + msg;
-		Logger.instance().warning(w);	}
-
-	/**
-	 * Loads a datchk file optionally to a season
-	 * @param filename datchk file name containing the validations.
-	 * @param season season name or null if these are all-time checks.
-	 */
-	private void loadDatchkFile(String filename, Calendar season)
-	{
-		LineNumberReader lnr = null;
-		LoadedFile file = new LoadedFile(filename);
-		file.setLastRead(System.currentTimeMillis());
-		loadedFiles.add(file);
-		datchkSeason = season;
-		
-		Logger.instance().debug1("Loading DATCHK file '" + filename + "'");
-
-		try
-		{
-			flushCriteria();
-			lnr = new LineNumberReader(new FileReader(file));
-			String line;
-			DatchkKeyword prevKeyword = null;
 			while((line = lnr.readLine()) != null)
 			{
 				line = line.trim();
@@ -381,121 +183,343 @@ public class ScreeningImport
 				
 				StringTokenizer st = new StringTokenizer(line, " ");
 				String kw = st.nextToken();
-				DatchkKeyword keyword = DatchkKeyword.token2keyword(kw);
-				if (keyword == null)
-				{
-					fileWarning(file, lnr.getLineNumber(),
-						"Unrecognized keyword '" + kw + "' -- ignored.");
-					continue;
-				}
-				if (keyword != DatchkKeyword.DATA
-				 && prevKeyword == DatchkKeyword.DATA)
-					flushCriteria();
-						
-				int lineNum = lnr.getLineNumber();
-				switch(keyword)
-				{
-				case DEFINE:
-					startNamedTest(st, file, lineNum);
-					break;
-				case END:
-					endNamedTest();
-					break;
-				case TEST:
-					recallNamedTest(st, file, lineNum);
-					break;
-				case CRITERIA:
-					specifyCriteria(st, file, lineNum);
-					break;
-				case DATA:
-					specifyData(line, file, lineNum);
-					break;
-				case CRITFILE:
-				case TIME:
-				case CONTEXT:
-					break;
 				
-				default:
-					fileWarning(file, lnr.getLineNumber(), 
-						"Keyword '"
-						+ keyword.name() + "' ignored.");
-				}
-				prevKeyword = keyword;
-
+				if (kw.equalsIgnoreCase("SCREENING"))
+					screening(st);
+				else if (kw.equalsIgnoreCase("screening_end"))
+					screening_end();
+				else if (kw.equalsIgnoreCase("desc"))
+					desc(line);
+				else if (kw.equalsIgnoreCase("param"))
+					param(st);
+				else if (kw.equalsIgnoreCase("paramType"))
+					paramType(st);
+				else if (kw.equalsIgnoreCase("duration"))
+					duration(st);
+				else if (kw.equalsIgnoreCase("units"))
+					units(st);
+				else if (kw.equalsIgnoreCase("criteria_set"))
+					criteria_set(st);
+				else if (kw.equalsIgnoreCase("criteria"))
+					criteria(st);
+				else if (kw.equalsIgnoreCase("criteria_set_end"))
+					criteria_set_end();
+				else if (kw.equalsIgnoreCase("assign"))
+					assign(line);
+				else if (kw.equalsIgnoreCase("season"))
+					season(st);
+				else if (kw.equalsIgnoreCase("range_active"))
+					range_active(st);
+				else if (kw.equalsIgnoreCase("roc_active"))
+					roc_active(st);
+				else if (kw.equalsIgnoreCase("const_active"))
+					const_active(st);
+				else if (kw.equalsIgnoreCase("durmag_active"))
+					durmag_active(st);
+				else if (kw.equalsIgnoreCase("estimate"))
+					estimate(line);
 			}
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " Error reading datchk file '"
+			Logger.instance().warning(module + " Error reading screening file '"
 				+ filename + "': " + ex);
 		}
 		finally
 		{
-			if (file != null)
-				file.setLastRead(System.currentTimeMillis());
 			if (lnr != null)
 			{
 				try {lnr.close(); } catch(Exception ex) {}
+				lnr = null;
 			}
 		}
-	
 	}
 	
-	private void flushCriteria()
+	private void estimate(String line)
 	{
-		critBuffer = new ScreeningCriteria(datchkSeason);
-		testName = null;
+		if (parseState != ParseState.InCriteria)
+		{
+			warning("ESTIMATE while not inside a CRITERIA block. Ignored.");
+			return;
+		}
+		
+		critBuffer.setEstimateExpression(line.substring(8).trim());
 	}
 
-	private void startNamedTest(StringTokenizer st, File file, int lineNum)
+	private void durmag_active(StringTokenizer st)
 	{
-		flushCriteria();
-		if (st.hasMoreTokens())
-			testName = st.nextToken();
-		else
-			fileWarning(file, lineNum, "DEFINE without name -- ignored");
-	}
-	
-	private void endNamedTest()
-	{
-		if (testName != null)
-			storedTests.put(testName, critBuffer);
-	}
-	
-	private void recallNamedTest(StringTokenizer st, File file, int lineNum)
-	{
-		flushCriteria();
-		if (st.hasMoreTokens())
+		if (currentScreening == null)
 		{
-			String name = st.nextToken();
-			critBuffer = storedTests.get(name);
-			if (critBuffer == null)
-			{
-				fileWarning(file, lineNum, "TEST with unknown name '"
-					+ name + "' -- ignored.");
-				flushCriteria();
-			}
+			warning("DURMAG_ACTIVE while not in a SCREENING block. Ignored.");
+			return;
 		}
-	}
-	
-	private void specifyCriteria(StringTokenizer st, File file, int lineNum)
-	{
 		if (!st.hasMoreTokens())
 		{
-			fileWarning(file, lineNum, "CRITERIA with no type field -- ignored.");
+			warning("DURMAG_ACTIVE with no boolean argument. Ignored.");
+			return;
+		}
+		currentScreening.setDurMagActive(TextUtil.str2boolean(st.nextToken()));
+	}
+
+	private void const_active(StringTokenizer st)
+	{
+		if (currentScreening == null)
+		{
+			warning("CONST_ACTIVE while not in a SCREENING block. Ignored.");
+			return;
+		}
+		if (!st.hasMoreTokens())
+		{
+			warning("CONST_ACTIVE with no boolean argument. Ignored.");
+			return;
+		}
+		currentScreening.setConstActive(TextUtil.str2boolean(st.nextToken()));
+	}
+
+	private void roc_active(StringTokenizer st)
+	{
+		if (currentScreening == null)
+		{
+			warning("ROC_ACTIVE while not in a SCREENING block. Ignored.");
+			return;
+		}
+		if (!st.hasMoreTokens())
+		{
+			warning("ROC_ACTIVE with no boolean argument. Ignored.");
+			return;
+		}
+		currentScreening.setRocActive(TextUtil.str2boolean(st.nextToken()));
+	}
+
+	private void range_active(StringTokenizer st)
+	{
+		if (currentScreening == null)
+		{
+			warning("RANGE_ACTIVE while not in a SCREENING block. Ignored.");
+			return;
+		}
+		if (!st.hasMoreTokens())
+		{
+			warning("RANGE_ACTIVE with no boolean argument. Ignored.");
+			return;
+		}
+		currentScreening.setRangeActive(TextUtil.str2boolean(st.nextToken()));
+	}
+
+	private void season(StringTokenizer st)
+	{
+		if (parseState != ParseState.InCriteria)
+		{
+			warning("SEASON while not in a criteria block. Ignored.");
+			return;
+		}
+		if (!st.hasMoreTokens())
+		{
+			warning("SEASON expected MM/DD. Ignored.");
+			return;
+		}
+		String mmdd = st.nextToken();
+		int slash = mmdd.indexOf('/');
+		if (slash == -1)
+		{
+			warning("Cannot parse value after SEASON. Expected MM/DD. Got '" + mmdd + "'. Ignored.");
+			return;
+		}
+		try
+		{
+			int mm = Integer.parseInt(mmdd.substring(0, slash));
+			int dd = Integer.parseInt(mmdd.substring(slash+1));
+			Calendar cal = Calendar.getInstance();
+			cal.set(Calendar.MONTH, mm - 1);
+			cal.set(Calendar.DAY_OF_MONTH, dd);
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+			critBuffer.seasonStart = cal;
+		}
+		catch(Exception ex)
+		{
+			warning("Cannot parse value after SEASON. Expected MM/DD. Got '" + mmdd + "'. Ignored.");
+			return;
+		}
+	}
+
+	private void assign(String line)
+	{
+		line = line.trim();
+		line = line.substring(6).trim();
+		
+		int colon = line.indexOf(':');
+		String tsidStr = line.substring(0, colon).trim();
+		String screeningName = line.substring(colon+1).trim();
+		
+		ArrayList<String> tsList = screeningName2TsidMap.get(screeningName);
+		if (tsList == null)
+		{
+			tsList = new ArrayList<String>();
+			screeningName2TsidMap.put(screeningName, tsList);
+		}
+		tsList.add(tsidStr);
+	}
+	
+	private TimeSeriesIdentifier getTsid(String tsidStr)
+	{
+		TimeSeriesIdentifier tsid = null;
+		try
+		{
+			try
+			{
+				tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsidStr);
+			}
+			catch (NoSuchObjectException e)
+			{
+				tsid = theDb.makeEmptyTsId();
+				tsid.setUniqueString(tsidStr);
+				timeSeriesDAO.createTimeSeries(tsid);
+			}
+			return tsid;
+		}
+		catch (Exception ex)
+		{
+			warning("Cannot retrieve or create time series '" + tsidStr + "': " + ex);
+			return null;
+		}
+	}
+
+	private void criteria_set_end()
+	{
+		if (parseState != ParseState.InCriteria)
+		{
+			warning("CRITERIA_SET_END while not in a criteria block. Ignored.");
+			return;
+		}
+		currentScreening.add(critBuffer);
+		critBuffer = null;
+		parseState = ParseState.InScreening;
+	}
+
+	private void criteria_set(StringTokenizer st)
+	{
+		if (parseState == ParseState.Top)
+		{
+			warning("CRITERIA_SET not inside a SCREENING block. Ignored.");
+			return;
+		}
+		else if (parseState == ParseState.InCriteria)
+		{
+			warning("CRITERIA_SET while already in a criteria block. Starting new block.");
+			criteria_set_end();
+		}
+		critBuffer = new ScreeningCriteria(null);
+		parseState = ParseState.InCriteria;
+		
+	}
+
+	private void units(StringTokenizer st)
+	{
+		if (currentScreening == null)
+		{
+			warning("UNITS not inside valid SCREENING block. Ignored.");
+			return;
+		}
+		currentScreening.setCheckUnitsAbbr(st.nextToken());
+	}
+
+	private void duration(StringTokenizer st)
+	{
+		if (currentScreening == null)
+		{
+			warning("DURATION not inside valid SCREENING block. Ignored.");
+			return;
+		}
+		currentScreening.setDurationId(st.nextToken());
+	}
+
+	private void paramType(StringTokenizer st)
+	{
+		if (currentScreening == null)
+		{
+			warning("PARAMTYPE not inside valid SCREENING block. Ignored.");
+			return;
+		}
+		currentScreening.setParamTypeId(st.nextToken());
+	}
+
+	private void param(StringTokenizer st)
+	{
+		if (currentScreening == null)
+		{
+			warning("PARAM not inside valid SCREENING block. Ignored.");
+			return;
+		}
+		currentScreening.setParamId(st.nextToken());
+	}
+
+	private void desc(String line)
+	{
+		if (currentScreening == null)
+		{
+			warning("DESC not inside valid SCREENING block. Ignored.");
+			return;
+		}
+		String desc = currentScreening.getScreeningDesc();
+		if (desc == null)
+			desc = "";
+		else
+			desc = desc + "\n" + line.substring(4).trim();
+	}
+
+	private void screening_end()
+	{
+		if (currentScreening != null)
+			screenings.add(currentScreening);
+		currentScreening = null;
+		critBuffer = null;
+		parseState = ParseState.Top;
+	}
+
+	private void screening(StringTokenizer st)
+	{
+		if (parseState != ParseState.Top)
+		{
+			warning("SCREENING when already inside a screening. Assume missing SCREENING_END keyword.");
+			screening_end();
+		}
+		
+		if (!st.hasMoreTokens())
+		{
+			warning("SCREENING with no screening name. Ignored");
+			return;
+		}
+		currentScreening = new Screening();
+		currentScreening.setScreeningName(st.nextToken());
+		parseState = ParseState.InScreening;
+	}
+
+	private void criteria(StringTokenizer st)
+	{
+		if (parseState != ParseState.InCriteria)
+		{
+			warning("CRITERIA while not in CRITERIA block. Ignored.");
+			return;
+		}
+		if (!st.hasMoreTokens())
+		{
+			warning("CRITERIA with no type field -- ignored.");
 			return;
 		}
 		String type = st.nextToken().toUpperCase();
 		if (!st.hasMoreTokens())
 		{
-			fileWarning(file, lineNum, "CRITERIA " + type + " with no arguments.");
+			warning("CRITERIA " + type + " with no arguments.");
 			return;
 		}
 		String tok = st.nextToken().toUpperCase();
 		char qflag = tok.charAt(0);
 		if (qflag != 'R' && qflag != 'Q' && qflag != 'M')
 		{
-			fileWarning(file, lineNum, "CRITERIA " + type
+			warning("CRITERIA " + type
 				+ " with unrecognized qflag '" + qflag + " -- ignored.");
 			return;
 		}
@@ -504,7 +528,7 @@ public class ScreeningImport
 			// absolute magnitude test args: qflag min max
 			if (st.countTokens() < 2)
 			{
-				fileWarning(file, lineNum, "CRITERIA " + type
+				warning("CRITERIA " + type
 					+ " missing range variables -- ignored.");
 				return;
 			}
@@ -517,7 +541,7 @@ public class ScreeningImport
 			}
 			catch(Exception ex)
 			{
-				fileWarning(file, lineNum, "CRITERIA " + type
+				warning("CRITERIA " + type
 					+ " non-numeric range variables -- ignored.");
 				return;
 			}
@@ -528,7 +552,7 @@ public class ScreeningImport
 			// duration magnitude test args: qflag min max duration
 			if (st.countTokens() < 3)
 			{
-				fileWarning(file, lineNum, "CRITERIA " + type
+				warning("CRITERIA " + type
 					+ " missing variables -- ignored.");
 				return;
 			}
@@ -541,7 +565,7 @@ public class ScreeningImport
 			}
 			catch(Exception ex)
 			{
-				fileWarning(file, lineNum, "CRITERIA " + type
+				warning("CRITERIA " + type
 					+ " non-numeric range variables -- ignored.");
 				return;
 			}
@@ -555,7 +579,7 @@ public class ScreeningImport
 			// constant value test args: qflag duration [min [tolerance [maxmissing]]]
 			if (!st.hasMoreTokens())
 			{
-				fileWarning(file, lineNum, "CRITERIA " + type
+				warning("CRITERIA " + type
 					+ " missing duration -- ignored.");
 				return;
 			}
@@ -581,7 +605,7 @@ public class ScreeningImport
 							{
 								maxGap = IntervalCodes.getIntervalCalIncr(missingArg);
 								if (maxGap == null)
-									fileWarning(file, lineNum, "Invalid nmissing argument '" 
+									warning("Invalid nmissing argument '" 
 										+ missingArg + "' -- ignored.");
 							}
 						}
@@ -589,7 +613,7 @@ public class ScreeningImport
 				}
 				catch(Exception ex)
 				{
-					fileWarning(file, lineNum, "CRITERIA " + type
+					warning("CRITERIA " + type
 						+ " non-numeric min and/or tolerance.");
 					return;
 				}
@@ -604,7 +628,7 @@ public class ScreeningImport
 			// rate of change test args: qflag neg-rate positive-rate
 			if (st.countTokens() < 2)
 			{
-				fileWarning(file, lineNum, "CRITERIA " + type
+				warning("CRITERIA " + type
 					+ " missing variables -- ignored.");
 				return;
 			}
@@ -617,7 +641,7 @@ public class ScreeningImport
 			}
 			catch(Exception ex)
 			{
-				fileWarning(file, lineNum, "CRITERIA " + type
+				warning("CRITERIA " + type
 					+ " non-numeric range variables -- ignored.");
 				return;
 			}
@@ -636,64 +660,10 @@ public class ScreeningImport
 //		}
 		else
 		{
-			fileWarning(file, lineNum, "CRITERIA " + type
-				+ " not implemented.");
+			warning("CRITERIA " + type + " not implemented.");
 		}
 	}
 	
-	private void specifyData(String line, File file, int lineNum)
-	{
-		// Isolate the DSS path on the line
-		int colon = line.indexOf(':');
-		int dssPathStart = colon >= 0 ? colon + 1 : line.indexOf('/');
-		if (dssPathStart == -1 || colon >= line.length())
-		{
-			fileWarning(file, lineNum, "DATA line with no DSS path -- ignored.");
-			return;
-		}
-		int dssPathEnd = line.indexOf(';', dssPathStart);
-		String dssPath = 
-			dssPathEnd != -1 ? line.substring(dssPathStart, dssPathEnd) :
-				line.substring(dssPathStart);
-
-		// Lookup the mapping to the CWMS path
-		PathMapping pm = null;
-		if (pathIsCwmsTsId)
-		{
-			
-			pm = new PathMapping(dssPath, dssPath, null);
-		}
-		else
-		{
-			pm = dssPath2pathMap.get(dssPath);
-			if (pm == null)
-			{
-				fileWarning(file, lineNum, "No mapping for DSS path '"
-					+ dssPath + "' -- ignored.");
-				return;
-			}
-		}
-		
-		// Get the screening for this TSID, or create one if none yet exists.
-		String tsid_uc = pm.getCwmsPath().toUpperCase();
-		Screening screening = tsidScreeningMap.get(tsid_uc);
-		if (screening == null)
-		{
-			screening = new Screening(Constants.undefinedId,
-				pm.getCwmsPath(),
-				"Read from " + file.getPath(),
-				pm.getDssUnitsAbbr());
-			tsidScreeningMap.put(tsid_uc, screening);
-			Logger.instance().debug2(module + " Created new screening for '" +
-				tsid_uc + "'");
-		}
-		
-		// Add the accumulated criteria checks to this screening.
-		screening.add(critBuffer);
-		Logger.instance().debug3(module + " Added new criteria for '" +
-			tsid_uc + "' read from file '" + file.getPath() + "'");
-	}
-
 	// Convert a datchk duration into a CWMS interval/duration code
 	private String dur2IntervalCode(String tok)
 	{
@@ -744,6 +714,16 @@ public class ScreeningImport
 		return IntervalCodes.int_one_hour;
 	}
 	
+	public void warning(String msg)
+	{
+		numWarnings++;
+		System.err.println(
+			(curFile != null ? curFile : "") + 
+			(lnr != null ? (":" + lnr.getLineNumber()) : "")
+			+ " " + msg);
+	}
+	
+	
 	/**
 	 * Reads all the input files specified in the config and prints a 
 	 * report containing all screenings.
@@ -752,85 +732,10 @@ public class ScreeningImport
 	public static void main(String args[])
 		throws Exception
 	{
-		ScreeningImport datchkReader = ScreeningImport.instance();
-		datchkReader.cfgFile = new LoadedFile(args[0]);
-		
-		datchkReader.checkConfig();
-		
-		System.out.println("Files Loaded:");
-		for(LoadedFile lf : datchkReader.loadedFiles)
-			System.out.println("\t" + lf.getPath());
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd HH:mm");
-		sdf.setTimeZone(datchkReader.seasonTz);
-		System.out.println("Seasons Defined:");
-		for(String seasonName : datchkReader.seasons.keySet())
-		{
-			GregorianCalendar cal = datchkReader.seasons.get(seasonName);
-			Date d = cal.getTime();
-			System.out.println("\t" + seasonName + " = " + sdf.format(d));
-		}
-		
-		System.out.println("DSS - CWMS Path Mappings:");
-		for(PathMapping pmap : datchkReader.dssPath2pathMap.values())
-			System.out.println(pmap.getDssPath() + " = " + pmap.getCwmsPath()
-				+ " DSS Units=" + pmap.getDssUnitsAbbr());
-		
-		System.out.println("Screenings by Time Series Identifier:");
-		for(String tsid : datchkReader.tsidScreeningMap.keySet())
-		{
-			Screening scr = datchkReader.tsidScreeningMap.get(tsid);
-			System.out.println("\t" + tsid);
-			printScreening(scr);
-		}
-		if (args.length > 1)
-		{
-			System.out.println("Screening searches from command line:");
-		}
-		for(int idx = 1; idx < args.length; idx++)
-		{
-			System.out.println("Searching for '" + args[idx] + "'");
-			Screening scr = datchkReader.tsidScreeningMap.get(args[idx]);
-			if (scr == null)
-				System.out.println("\tNo screening found.");
-		}
+		ScreeningImport me = new ScreeningImport();
+		me.execute(args);
 	}
 	
-	public static void printScreening(Screening scr)
-	{
-		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd HH:mm");
-		ScreeningImport datchkReader = ScreeningImport.instance();
-		sdf.setTimeZone(datchkReader.seasonTz);
-
-		for(ScreeningCriteria crit : scr.criteriaSeasons)
-		{
-			Calendar cal = crit.seasonStart;
-			if (cal != null)
-			{
-				Date d = cal.getTime();
-				System.out.println("\t\tSeason start: " + sdf.format(d));
-			}
-
-			for(AbsCheck chk : crit.absChecks)
-				System.out.println("\t\t" + chk);
-			for(ConstCheck chk : crit.constChecks)
-				System.out.println("\t\t" + chk);
-			for(RocPerHourCheck chk : crit.rocPerHourChecks)
-				System.out.println("\t\t" + chk);
-			for(DurCheckPeriod chk : crit.durCheckPeriods)
-				System.out.println("\t\t" + chk);
-		}
-	}
-
-	public void setPathIsCwmsTsId(boolean pathIsCwmsTsId)
-	{
-		this.pathIsCwmsTsId = pathIsCwmsTsId;
-	}
 	
 }
 
-//TODO add parser for *UNITS
-//TODO add parser for *PARAM
-//TODO add parser for *PARAM_TYPE
-//TODO add parser for *DURATION
-//TODO add parser for *SEASON mm/dd

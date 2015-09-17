@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.StringTokenizer;
 
+import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
+import ilex.util.Logger;
 import lrgs.gui.DecodesInterface;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.validation.dao.ScreeningDAI;
@@ -21,6 +23,8 @@ import decodes.db.InvalidDatabaseException;
 import decodes.db.PresentationGroup;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
+import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
@@ -40,6 +44,11 @@ public class ScreeningExport extends TsdbAppTemplate
 		TokenOptions.optSwitch, "");
 	private BooleanToken allArg = new BooleanToken("A", "(Export all screenings)",
 		"", TokenOptions.optSwitch, false);
+	private BooleanToken englishUnitsArg = new BooleanToken("E", "(Export in English units)",
+		"", TokenOptions.optSwitch, false);
+	private StringToken tsIdArg = new StringToken("T", "Time Series ID -- output screening for referenced TSID.",
+		"", TokenOptions.optSwitch | TokenOptions.optMultiple, "");
+
 
 	
 	private ArrayList<String> screeningIDs = new ArrayList<String>();
@@ -47,7 +56,7 @@ public class ScreeningExport extends TsdbAppTemplate
 	private NumberFormat intf = NumberFormat.getIntegerInstance();
 	private PresentationGroup presGroup = null;
 	private DataPresentation dataPres = null;
-	UnitConverter unitConverter = null;
+	private UnitConverter unitConverter = null;
 	
 
 	public ScreeningExport()
@@ -72,7 +81,8 @@ public class ScreeningExport extends TsdbAppTemplate
 		cmdLineArgs.addToken(nameListOnStdin);
 		cmdLineArgs.addToken(presentationArg);
 		cmdLineArgs.addToken(allArg);
-
+		cmdLineArgs.addToken(englishUnitsArg);
+		cmdLineArgs.addToken(tsIdArg);
 		DecodesInterface.silent = true;
 	}
 
@@ -102,6 +112,7 @@ public class ScreeningExport extends TsdbAppTemplate
 			}
 		}
 		ScreeningDAI screeningDAO = cwmsDb.makeScreeningDAO();
+		TimeSeriesDAI timeSeriesDAO = cwmsDb.makeTimeSeriesDAO();
 
 		if (allArg.getValue())
 		{
@@ -118,6 +129,23 @@ public class ScreeningExport extends TsdbAppTemplate
 					continue;
 				screeningIDs.add(id);
 			}
+			for(int idx = 0; idx < tsIdArg.NumberOfValues(); idx++)
+			{
+				String tsidStr = tsIdArg.getValue(idx);
+				try
+				{
+					TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsidStr);
+					TsidScreeningAssignment tsa = screeningDAO.getScreeningForTS(tsid);
+					if (tsa == null)
+						warning("No screening assigned to '" + tsidStr + "'");
+					else screeningIDs.add(tsa.getScreening().getScreeningName());
+				}
+				catch(NoSuchObjectException ex)
+				{
+					warning("No such time series '" + tsidStr + "': " + ex);
+				}
+			}
+			
 			if (nameListOnStdin.getValue())
 			{
 				String line;
@@ -157,10 +185,26 @@ public class ScreeningExport extends TsdbAppTemplate
 				}
 			System.out.println();	
 		}
+		screeningDAO.close();
+		timeSeriesDAO.close();
 	}
 	
 	private void output(Screening screening)
 	{
+		String unitsAbbr = ((CwmsTimeSeriesDb)theDb).getBaseParam().getStoreUnits4Param(screening.getParamId());
+
+		if (englishUnitsArg.getValue())
+		{
+			// Convert all the limits in this screening to the english units
+			String storUnits = screening.getCheckUnitsAbbr();
+			String engUnits = ((CwmsTimeSeriesDb)theDb).getBaseParam().getEnglishUnits4Param(screening.getParamId());
+Logger.instance().info("English units requested, looking for converter for param '" + screening.getParamId()
+	+ "' storUnits='" + storUnits + "' engunits='" + engUnits + "'");
+			unitConverter = Database.getDb().unitConverterSet.get(
+				EngineeringUnit.getEngineeringUnit(storUnits), 
+				EngineeringUnit.getEngineeringUnit(engUnits));
+			unitsAbbr = engUnits;
+		}
 		System.out.println("*===========================================");
 		System.out.println("SCREENING " + screening.getScreeningName());
 		if (screening.getScreeningDesc() != null)
@@ -194,8 +238,6 @@ public class ScreeningExport extends TsdbAppTemplate
 				}
 			}
 		}
-		String unitsAbbr = ((CwmsTimeSeriesDb)theDb).getBaseParam().getUnitsAbbr4Param(screening.getParamId());
-		unitConverter = null;
 		if (dataPres != null && dataPres.getUnitsAbbr() != null && !unitsAbbr.equalsIgnoreCase(dataPres.getUnitsAbbr()))
 		{
 			unitConverter = decodes.db.Database.getDb().unitConverterSet.get(
@@ -210,14 +252,10 @@ public class ScreeningExport extends TsdbAppTemplate
 		}
 		System.out.println("UNITS " + unitsAbbr);
 
-		if (!screening.isRangeActive())
-			System.out.println("RANGE_ACTIVE: FALSE");
-		if (!screening.isRocActive())
-			System.out.println("ROC_ACTIVE: FALSE");
-		if (!screening.isConstActive())
-			System.out.println("CONST_ACTIVE: FALSE");
-		if (!screening.isDurMagActive())
-			System.out.println("DURMAG_ACTIVE: FALSE");
+		System.out.println("RANGE_ACTIVE " + screening.isRangeActive());
+		System.out.println("ROC_ACTIVE " + screening.isRocActive());
+		System.out.println("CONST_ACTIVE " + screening.isConstActive());
+		System.out.println("DURMAG_ACTIVE " + screening.isDurMagActive());
 		
 		for(ScreeningCriteria crit : screening.criteriaSeasons)
 			outputCrit(crit);
@@ -261,13 +299,13 @@ public class ScreeningExport extends TsdbAppTemplate
 		
 		ConstCheck con = crit.getConstCheckFor('R');
 		if (con != null)
-			System.out.println("CRITERIA CONST R " + cwmsDur2Datchk(con.getDuration()) 
+			System.out.println("CRITERIA CONST R " + cwmsDur2Datchk(con.getDuration()) + " "
 				+ nf.format(cnvt(con.getMinToCheck())) + " " + nf.format(cnvt(con.getTolerance())) 
 				+ " " + intf.format(con.getAllowedMissing()));
 		
 		con = crit.getConstCheckFor('Q');
 		if (con != null)
-			System.out.println("CRITERIA CONST Q " + cwmsDur2Datchk(con.getDuration()) 
+			System.out.println("CRITERIA CONST Q " + cwmsDur2Datchk(con.getDuration()) + " "
 				+ nf.format(cnvt(con.getMinToCheck())) + " " + nf.format(cnvt(con.getTolerance())) 
 				+ " " + intf.format(con.getAllowedMissing()));
 		

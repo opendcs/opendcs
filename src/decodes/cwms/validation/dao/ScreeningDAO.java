@@ -60,13 +60,13 @@ public class ScreeningDAO
 		+ "PARAMETER_ID, PARAMETER_TYPE_ID, DURATION_ID";
 	
 	/** Columns in cwms_v_screening_criteria to read screening criteria info */
-	public static final String screenCritTable = "CWMS_V_CCP_SCREENING_CRITERIA";
+	public static final String screenCritTable = "CWMS_V_SCREENING_CRITERIA";
 	public static final String screenCritColumns = "SCREENING_CODE, "
 		+ "SEASON_START_DAY, SEASON_START_MONTH, "
 		+ "ESTIMATE_EXPRESSION, "
 		+ "RANGE_REJECT_LO, RANGE_REJECT_HI, RANGE_QUESTION_LO, RANGE_QUESTION_HI, "
-		+ "RATE_CHANGE_REJECT_RISE, RATE_CHANGE_REJECT_FALL, "
-		+ "RATE_CHANGE_QUEST_RISE, RATE_CHANGE_QUEST_FALL, "
+		+ "RATE_CHANGE_REJECT_FALL, RATE_CHANGE_REJECT_RISE, "
+		+ "RATE_CHANGE_QUEST_FALL, RATE_CHANGE_QUEST_RISE, "
 		+ "CONST_REJECT_DURATION, CONST_REJECT_MIN, CONST_REJECT_TOLERANCE, CONST_REJECT_N_MISS, "
 		+ "CONST_QUEST_DURATION, CONST_QUEST_MIN, CONST_QUEST_TOLERANCE, CONST_QUEST_N_MISS";
 //		+ "RANGE_ACTIVE_FLAG, RATE_CHANGE_ACTIVE_FLAG, CONST_ACTIVE_FLAG, DUR_MAG_ACTIVE_FLAG";
@@ -75,7 +75,7 @@ public class ScreeningDAO
 	public static final String screenControlColumns = "SCREENING_CODE, "
 		+ "RANGE_ACTIVE_FLAG, RATE_CHANGE_ACTIVE_FLAG, CONST_ACTIVE_FLAG, DUR_MAG_ACTIVE_FLAG";
 
-	public static final String durMagTable = "CWMS_V_CCP_SCREENING_DUR_MAG";
+	public static final String durMagTable = "CWMS_V_SCREENING_DUR_MAG";
 	public static final String durMagColumns = "SCREENING_CODE, SEASON_START_DAY, SEASON_START_MONTH, "
 		+ "DUR_MAG_DURATION_ID, REJECT_LO, REJECT_HI, QUESTION_LO, QUESTION_HI";
 	
@@ -312,16 +312,16 @@ System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER
 				rsAddControl(rs, ret);
 			
 			q = "select distinct " + screenCritColumns + " from " + screenCritTable
-				+ " where screening_code = " + screeningCode;
-// In the CCP crit view, there are not units. Storage units are assumed.
-//				+ "and unit_id = " + sqlString(ret.getCheckUnitsAbbr());
+				+ " where screening_code = " + screeningCode
+				+ " and unit_system = 'SI'";
 			rs = doQuery(q);
 			while(rs.next())
 				rsAddCriteria(rs, ret);
 			
 			q = "select distinct " + durMagColumns + " from " + durMagTable
-				+ " where screening_code = " + screeningCode;
-//				+ "and unit_id = " + sqlString(ret.getCheckUnitsAbbr());
+				+ " where screening_code = " + screeningCode
+				+ " and unit_system = 'SI'"
+				+ " and unit_id = " + sqlString(ret.getCheckUnitsAbbr());
 			rs = doQuery(q);
 			while(rs.next())
 			{
@@ -364,8 +364,8 @@ System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER
 			}
 				
 			q = "select distinct " + screenCritColumns + " from " + screenCritTable
-				+ " where upper(db_office_id) = " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId());
-//				+ " and (unit_system = 'SI' or unit_system is null)";
+				+ " where upper(db_office_id) = " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
+				+ " and (unit_system = 'SI' or unit_system is null)";
 			rs = doQuery(q);
 			while(rs.next())
 			{
@@ -408,8 +408,8 @@ System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER
 			}
 
 			q = "select distinct " + durMagColumns + " from " + durMagTable
-				+ " where upper(db_office_id) = " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId());
-//				+ " and (unit_system = 'SI' or unit_system is null)";
+				+ " where upper(db_office_id) = " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
+				+ " and (unit_system = 'SI' or unit_system is null)";
 			rs = doQuery(q);
 			while(rs.next())
 			{
@@ -507,12 +507,16 @@ System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER
 
 		// Note the screening is created with the storage units ID for the base param ID
 		Screening ret = new Screening(screeningCode, id, desc, 
-			((CwmsTimeSeriesDb)db).getBaseParam().getUnitsAbbr4Param(paramId));
+			((CwmsTimeSeriesDb)db).getBaseParam().getStoreUnits4Param(paramId));
 		
 		ret.setParamId(paramId);
 		ret.setParamTypeId(rs.getString(5));
 		ret.setDurationId(rs.getString(6));
 
+		// Now since we always query for SI units, set the check units to this param's
+		// SI units
+		ret.setCheckUnitsAbbr(((CwmsTimeSeriesDb)db).getBaseParam().getStoreUnits4Param(paramId));
+		
 		return ret;
 	}
 	
@@ -587,14 +591,14 @@ System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER
 		}
 		
 		String dur = rs.getString(13);
-		if (dur != null)
+		if (dur != null && !dur.toLowerCase().startsWith("u"))
 		{
 			// ctor args: check, duration, min2Check, tolerance, allowedMissing
 			crit.addConstCheck(new ConstCheck('R', dur, rs.getDouble(14), rs.getDouble(15), rs.getInt(16)));
 		}
 
 		dur = rs.getString(17);
-		if (dur != null)
+		if (dur != null && !dur.toLowerCase().startsWith("u"))
 		{
 			// ctor args: check, duration, min2Check, tolerance, allowedMissing
 			crit.addConstCheck(new ConstCheck('Q', dur, rs.getDouble(18), rs.getDouble(19), rs.getInt(20)));

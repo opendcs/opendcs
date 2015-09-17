@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.SortedSet;
+import java.util.TimeZone;
 import java.util.TreeSet;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -28,6 +29,7 @@ import decodes.tsdb.ParmRef;
 import decodes.tsdb.IntervalIncrement;
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.validation.Screening;
+import decodes.db.Site;
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
 import decodes.util.PropertySpec;
@@ -173,6 +175,13 @@ public class ScreeningAlgorithm
 			if (VarFlags.wasAdded(tv))
 			{
 				ScreeningCriteria crit = screening.findForDate(tv.getTime());
+				Site site = inputTsid.getSite();
+				if (site != null && site.timeZoneAbbr != null && site.timeZoneAbbr.length() > 0)
+				{
+					TimeZone tz = TimeZone.getTimeZone(site.timeZoneAbbr);
+					debug1("Setting criteria season time zone to: " + tz.getID());
+					screening.setSeasonTimeZone(tz);
+				}
 				if (crit == null || crit == prevcrit)
 					continue;
 				crit.fillTimesNeeded(inputParm.timeSeries, needed, aggCal, this);

@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.3  2015/09/10 21:18:07  mmaloney
+ * Development on Screening
+ *
  * Revision 1.2  2015/05/14 13:52:17  mmaloney
  * RC08 prep
  *
@@ -822,6 +825,8 @@ public class DatchkReader
 	
 	public static void printScreening(Screening scr)
 	{
+		System.out.println("Screening Name: " + scr.getScreeningName());
+		System.out.println("Units: " + scr.getCheckUnitsAbbr());
 		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd HH:mm");
 		DatchkReader datchkReader = DatchkReader.instance();
 		sdf.setTimeZone(datchkReader.seasonTz);

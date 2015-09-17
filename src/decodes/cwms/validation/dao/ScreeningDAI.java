@@ -117,4 +117,8 @@ public interface ScreeningDAI
 	public void updateScreeningDescription(String screeningId, String desc)
 		throws DbIoException;
 
+	/**
+	 * Free any resource allocated in the DAO.
+	 */
+	public void close();
 }
