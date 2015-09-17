@@ -1,5 +1,7 @@
 package decodes.cwms;
 
+import ilex.util.Logger;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -13,6 +15,7 @@ import decodes.tsdb.DbIoException;
 public class BaseParam
 {
 	private HashMap<String, String> bparamUnitsMap = new HashMap<String, String>();
+	private HashMap<String, String> bparamEnglishUnitsMap = new HashMap<String, String>();
 	
 	public BaseParam()
 	{
@@ -24,27 +27,55 @@ public class BaseParam
 		String q = "select distinct upper(a.base_parameter_id), b.unit_id "
 			+ "from cwms_v_parameter a, cwms_v_storage_unit b "
 			+ "where a.base_parameter_id = b.base_parameter_id "
-			+ "order by upper(a.base_parameter_id)";
+			+ " and db_office_code = " + db.getDbOfficeCode()
+			+ " order by upper(a.base_parameter_id)";
 		ResultSet rs = db.doQuery(q);
 		
 		while(rs.next())
 		{
 			String bparam = rs.getString(1);
 			String units = rs.getString(2);
+Logger.instance().debug3("baseParam '" + bparam + "' units '" + units + "'");
 			bparamUnitsMap.put(bparam, units);
+		}
+		
+		q = "select parameter_id, unit_id from cwms_v_display_units "
+			+ " where office_id = '" + db.getDbOfficeId() + "'"
+			+ " and unit_system = 'EN'";
+		rs = db.doQuery(q);
+		
+		while(rs.next())
+		{
+			String p = rs.getString(1);
+			if (p.contains("-"))
+				continue; // we only want base params
+			String units = rs.getString(2);
+Logger.instance().debug3("baseParam '" + p + "' engUnits '" + units + "'");
+			bparamEnglishUnitsMap.put(p.toUpperCase(), units);
 		}
 	}
 	
-	public String getUnitsAbbr4Param(String param)
+	public String getStoreUnits4Param(String param)
 	{
 		int idx = param.indexOf('-');
 		if (idx >= 0)
 			param = param.substring(0, idx);
-		return getUntsAbbr4BaseParam(param);
+		return getStorUnits4BaseParam(param);
 	}
 
-	private String getUntsAbbr4BaseParam(String baseParam)
+	private String getStorUnits4BaseParam(String baseParam)
 	{
 		return bparamUnitsMap.get(baseParam.toUpperCase());
+	}
+	
+	public String getEnglishUnits4Param(String param)
+	{
+		int idx = param.indexOf('-');
+		if (idx >= 0)
+			param = param.substring(0, idx);
+		String ret = bparamEnglishUnitsMap.get(param.toUpperCase());
+		if (ret != null)
+			return ret;
+		return getStorUnits4BaseParam(param);
 	}
 }
