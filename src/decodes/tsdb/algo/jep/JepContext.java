@@ -7,6 +7,7 @@ import ilex.var.TimedVariable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.TimeZone;
 import java.util.TreeSet;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -16,6 +17,7 @@ import org.nfunk.jep.ParseException;
 
 import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.ScreeningCriteria;
+import decodes.db.Site;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.ParmRef;
@@ -66,6 +68,7 @@ public class JepContext
 		parser.addFunction(DatchkFunction.funcName, new DatchkFunction(this));
 		parser.addFunction(IsRejectedFunction.funcName, new IsRejectedFunction(this));
 		parser.addFunction(IsQuestionableFunction.funcName, new IsQuestionableFunction(this));
+		parser.addFunction(ScreeningFunction.funcName, new ScreeningFunction(this));
 
 		if (tsdb == null || tsdb.isCwms())
 			parser.addFunction(RatingFunction.funcName, new RatingFunction(this));
@@ -166,6 +169,13 @@ public class JepContext
 		
 		ParmRef inputParm = algo.getParmRef(inputRole);
 		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
+		
+		Site site = inputTsid.getSite();
+		if (site != null && site.timeZoneAbbr != null && site.timeZoneAbbr.length() > 0)
+		{
+			TimeZone tz = TimeZone.getTimeZone(site.timeZoneAbbr);
+			algo.debug1("Setting criteria season timezone to " + tz.getID());
+		}
 
 		// Using the tests, determine the amount of past-data needed at each time-slice.
 		TreeSet<Date> needed = new TreeSet<Date>();

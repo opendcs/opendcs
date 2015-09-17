@@ -13,23 +13,27 @@ import decodes.cwms.CwmsFlags;
 import decodes.cwms.validation.DatchkReader;
 import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.ScreeningCriteria;
+import decodes.cwms.validation.dao.ScreeningDAI;
+import decodes.cwms.validation.dao.TsidScreeningAssignment;
+import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.tsdb.DbIoException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.TimeSeriesIdentifier;
 
 /**
- * This implements the datchk function in the Expression Parser.
+ * This implements the CWMS screening() function in the Expression Parser.
  * The function takes a single argument which is the algorithm role name.
  * It can only be called during a time slice.
  * It finds the value at the current time slice, performs the screening
- * specified in datchk files, and returns the flag value.
+ * specified in CWMS database, and returns the flag value.
  */
-public class DatchkFunction
+public class ScreeningFunction
 	extends PostfixMathCommand
 {
-	public static final String funcName = "datchk";
+	public static final String funcName = "screening";
 	private JepContext ctx = null;
 
-	public DatchkFunction(JepContext ctx)
+	public ScreeningFunction(JepContext ctx)
 	{
 		super();
 		this.ctx = ctx;
@@ -57,17 +61,20 @@ public class DatchkFunction
 		if (inputTsid == null)
 			throw new ParseException("No input time-series identifier associated with '" + name + "'!");
 		
+		ScreeningDAI screeningDAO = null;
 		Screening screening = null;
 		try
 		{
-			screening = DatchkReader.instance().getScreening(inputTsid);
+			screeningDAO = ((CwmsTimeSeriesDb)ctx.getTsdb()).makeScreeningDAO();
+			TsidScreeningAssignment tsa = screeningDAO.getScreeningForTS(inputTsid);
+			screening = tsa != null && tsa.isActive() ? tsa.getScreening() : null;
 		}
-		catch(Exception ex)
+		catch(DbIoException ex)
 		{
-			ctx.getAlgo().warning(funcName + ": error reading datchk criteria: " + ex);
+			ctx.getAlgo().warning(funcName + ": error reading screening: " + ex);
 		}
 		if (screening == null)
-			throw new ParseException("No screening defined for " + inputTsid.getUniqueString());
+			throw new ParseException("No active screening found for " + inputTsid.getUniqueString());
 		
 		int retFlags = 0;
 		TimedVariable tv = inputParm.timeSeries.findWithin(tsbt, ctx.getAlgo().roundSec);
