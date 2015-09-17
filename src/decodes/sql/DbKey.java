@@ -5,6 +5,9 @@
  * @author - Mike Maloney, Cove Software, LLC
  * 
  * $Log$
+ * Revision 1.2  2014/12/11 20:28:45  mmaloney
+ * Implement serializable for webapp.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -181,5 +184,10 @@ public class DbKey
 		// Really. I mean it. Don't implement this method.
 		// Okay???
 		throw new IllegalArgumentException("Broken Java Code. Somebody tried to change DbKey!!!");
+	}
+
+	public static boolean isNull(DbKey key)
+	{
+		return key == null || key.isNull();
 	}
 }
