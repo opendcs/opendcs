@@ -318,7 +318,7 @@ public class CwmsRatingDao extends TsdbDao
 		RatingSet ratingSet = RatingSet.fromDatabase(tsdb.getConnection(),
 			officeId, specId);
 		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
-		Logger.instance().debug3(module + " reading rating from cache took "
+		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
 		return ratingSet;
