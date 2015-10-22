@@ -71,7 +71,7 @@ public class ScreeningDAO
 		+ "CONST_QUEST_DURATION, CONST_QUEST_MIN, CONST_QUEST_TOLERANCE, CONST_QUEST_N_MISS";
 //		+ "RANGE_ACTIVE_FLAG, RATE_CHANGE_ACTIVE_FLAG, CONST_ACTIVE_FLAG, DUR_MAG_ACTIVE_FLAG";
 	
-	public static final String screenControlTable = "CWMS_V_CCP_SCREENING_CONTROL";
+	public static final String screenControlTable = "CWMS_V_SCREENING_CONTROL";
 	public static final String screenControlColumns = "SCREENING_CODE, "
 		+ "RANGE_ACTIVE_FLAG, RATE_CHANGE_ACTIVE_FLAG, CONST_ACTIVE_FLAG, DUR_MAG_ACTIVE_FLAG";
 
