@@ -198,7 +198,17 @@ class FieldOperation extends DecodesOperation
 				s = s.substring(0, idxX);
 				supressOutput = true;
 			}
-			try { sensorNumber = Integer.parseInt(s); }
+			try 
+			{
+				sensorNumber = Integer.parseInt(s);
+				if (sensorNumber < 0)
+				{
+					// The code uses -1 to mean an error condition,
+					// so set the supress flag and make the number positive.
+					supressOutput = true;
+					sensorNumber = -sensorNumber;
+				}
+			}
 			catch ( NumberFormatException nfe ) 
 			{
 				sensorNumber = -1;
