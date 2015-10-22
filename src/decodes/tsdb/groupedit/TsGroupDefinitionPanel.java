@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2015/08/04 18:54:03  mmaloney
+ * CWMS-6388 Display should show location ID, not public name. This fixes the issue
+ * with evaluation.
+ *
  * Revision 1.2  2014/09/25 18:10:40  mmaloney
  * Enum fields encapsulated.
  *
@@ -821,6 +825,7 @@ public class TsGroupDefinitionPanel
 //					if (value.equals(st.getDisplayName()))
 					{
 						tempGroup.addSiteId(st.getId());
+						found = true;
 						break;
 					}
 				if (!found)
