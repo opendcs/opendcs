@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2015/08/31 00:38:33  mmaloney
+*  added getDataCollection() method.
+*
 *  Revision 1.2  2015/01/15 19:25:45  mmaloney
 *  RC01
 *
@@ -1746,8 +1749,15 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	protected void setOutputUnitsAbbr(String rolename, String unitsAbbr)
 	{
 		ParmRef ref = getParmRef(rolename);
+		//MJM 20151012 fix to obscure NAE bug. If values are already in the
+		//output ts, I must convert them.
 		if (ref != null && ref.timeSeries != null)
-			ref.timeSeries.setUnitsAbbr(unitsAbbr);
+		{
+			// old bad code:
+			// ref.timeSeries.setUnitsAbbr(unitsAbbr);
+			// Correct code:
+			TimeSeriesHelper.convertUnits(ref.timeSeries, unitsAbbr);
+		}
 	}
 
 	/**
@@ -1775,6 +1785,13 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	}
 	
 	public DataCollection getDataCollection() { return dc; }
+	
+	/**
+	 * Subclass should override this and provide a one-line description
+	 * of what the Java code does.
+	 * @return one line description of algorithm code.
+	 */
+	public String getBriefDescription() { return ""; }
 
 	/**
 	 * Often, especially when filling an aggregate period, we already
