@@ -52,6 +52,7 @@ public class PropertySpec
 	/** A Java enum property type will be E:<fullEnumClassPath> */
 	public static final String JAVA_ENUM = "E:";
 	
+	private boolean dynamic = false;
 	
 	public PropertySpec(String name, String type, String description)
 	{
@@ -94,5 +95,15 @@ public class PropertySpec
 	public String toString()
 	{
 		return name + ":" + type + ":" + description;
+	}
+
+	public boolean isDynamic()
+	{
+		return dynamic;
+	}
+
+	public void setDynamic(boolean dynamic)
+	{
+		this.dynamic = dynamic;
 	}
 }
