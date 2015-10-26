@@ -44,7 +44,7 @@ public abstract class EditPanel extends JPanel
 		commitConstraints.gridy = 0;
 		buttonPanel = new JPanel();
 		buttonPanel.setLayout(new GridBagLayout());
-		buttonPanel.setPreferredSize(new java.awt.Dimension(430,37));
+//		buttonPanel.setPreferredSize(new java.awt.Dimension(430,37));
 		buttonPanel.add(getCommitButton(), commitConstraints);
 		buttonPanel.add(getCloseButton(), closeConstraints);
 		return buttonPanel;

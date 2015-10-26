@@ -15,16 +15,16 @@ import decodes.tsdb.DbCompAlgorithm;
 public class AlgoSelectDialog extends JDialog
 {
 	private static final long serialVersionUID = 1L;
-	JPanel mainPanel = new JPanel();
-	JButton selectButton = new JButton();
-	JButton cancelButton = new JButton();
+	private JPanel mainPanel = new JPanel();
+	private JButton selectButton = new JButton();
+	private JButton cancelButton = new JButton();
 
-	AlgoSelectPanel algoSelectPanel = new AlgoSelectPanel(this);
+	private AlgoSelectPanel algoSelectPanel = new AlgoSelectPanel(this);
 	DbCompAlgorithm selectedAlgo = null;
 	boolean okPressed = false;
 
-	private String selectString;
-	private String selectAlgoString;
+	String selectString;
+	String selectAlgoString;
 
 	/**
 	 * Construct new dialog.

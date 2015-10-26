@@ -21,6 +21,8 @@ import java.util.Vector;
 import java.util.Iterator;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.AlgorithmDAI;
@@ -36,46 +38,27 @@ import decodes.tsdb.DbIoException;
 import decodes.util.PropertiesOwner;
 import decodes.db.Constants;
 
+@SuppressWarnings("serial")
 public class AlgorithmsEditPanel extends EditPanel 
 {
-	private JPanel jContentPane = null;
 	private JPanel inputPanel = null;
-	private JLabel algoNameLabel = null;
-	private JLabel execClassLabel = null;
-	private JTextField nameText = null;
-	private JLabel algoIdLabel = null;
-	private JTextField idText = null;
-	private JTextField execText = null;
+	private JTextField nameText = new JTextField();
+	private JTextField idText = new JTextField();
+	private JTextField execClassField = new JTextField();
 	private JPanel commentPanel = null; // @jve:decl-index=0:visual-constraint="657,111"
-
 	private JScrollPane commentsScroll = null;
-	
 	private JScrollPane tableScroll = null;
-
 	private JTextArea commentsText = null;
-
 	private PropertiesEditPanel propertiesPanel = null;
-
 	private JPanel Parameters = null;
-
 	private JPanel parametersButtonPanel = null;
-
 	private JButton deleteParamButton = null;
-
 	private JButton addParamButton = null;
-
 	private JButton editParamButton = null;
-
 	private JTable algoParmTable = null;
-	
-	private JLabel numCompsLabel = null;
-
-	private JTextField numCompsText = null;
-	
+	private JTextField numCompsText = new JTextField();
 	private AlgoParmTableModel algoParmTableModel = null;
-
 	private JButton changeNameButton = null;
-
 	private DbCompAlgorithm editedObject;
 	private Properties propCopy = null;
 	
@@ -103,20 +86,75 @@ public class AlgorithmsEditPanel extends EditPanel
 	private String deleteParamPrompt1;
 	private String editParamErr1;
 	private String editParamErr2;
-
 	
+	private JButton pythonButton = new JButton("Python");
+	private ExecClassSelectDialog execSelectDialog = null;
+	private PythonAlgoEditDialog pythonDialog = null;
 
 	public AlgorithmsEditPanel()
 	{
 		setLayout(new BorderLayout());
 		fillLabels();
-		this.add(getButtonPanel(), java.awt.BorderLayout.SOUTH);
-		this.add(getTopPanel(), java.awt.BorderLayout.CENTER);
+		this.add(makeCenterPanel(), java.awt.BorderLayout.CENTER);
+		JPanel southButtonPanel = getButtonPanel();
+		southButtonPanel.add(pythonButton, 
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(0, 6, 6, 4), 0, 0));
+		pythonButton.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					pythonButtonPressed();
+				}
+			});
+		pythonButton.setEnabled(false);
+		this.add(southButtonPanel, java.awt.BorderLayout.SOUTH);
+		execClassField.getDocument().addDocumentListener(
+			new DocumentListener()
+			{
+				@Override
+				public void insertUpdate(DocumentEvent e)
+				{
+					pythonButton.setEnabled(
+						execClassField.getText().trim().toLowerCase().contains("python"));
+				}
+
+				@Override
+				public void removeUpdate(DocumentEvent e)
+				{
+					pythonButton.setEnabled(
+						execClassField.getText().trim().toLowerCase().contains("python"));
+				}
+
+				@Override
+				public void changedUpdate(DocumentEvent e)
+				{
+					pythonButton.setEnabled(
+						execClassField.getText().trim().toLowerCase().contains("python"));
+				}
+			});
+		
+		
 		editedObject = null;
 		setTopFrame(CAPEdit.instance().getFrame());
+		execSelectDialog = new ExecClassSelectDialog(CAPEdit.instance().getFrame());
+		execSelectDialog.load();
 	}
 	
-	
+	protected void pythonButtonPressed()
+	{
+		if (pythonDialog == null)
+		{
+			pythonDialog = new PythonAlgoEditDialog(CAPEdit.instance().getFrame());
+			pythonDialog.setPythonAlgo(editedObject);
+		}
+		
+		CAPEdit.instance().getFrame().launchDialog(pythonDialog);
+	}
+
 	private void fillLabels()
 	{
 		algoNameLabelText=CAPEdit.instance().compeditDescriptions.getString("AlgorithmsEditPanel.NameLabel");
@@ -143,19 +181,15 @@ public class AlgorithmsEditPanel extends EditPanel
 		deleteParamPrompt1=CAPEdit.instance().compeditDescriptions.getString("AlgorithmsEditPanel.DeleteParamPrompt1");
 	}
 	
-	private JPanel getTopPanel() 
+	private JPanel makeCenterPanel() 
 	{
-		if (jContentPane == null) 
-		{
-			jContentPane = new JPanel();
-			jContentPane.setLayout(new BoxLayout(getTopPanel(),
-					BoxLayout.Y_AXIS));
-			jContentPane.add(getInputPanel(), null);
-			jContentPane.add(getcommentPanel(), null);
-			jContentPane.add(getParameters(), null);
-			jContentPane.add(getPropertiesPanel(), null);
-		}
-		return jContentPane;
+		JPanel centerPanel = new JPanel();
+		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+		centerPanel.add(getInputPanel(), null);
+		centerPanel.add(getcommentPanel(), null);
+		centerPanel.add(getParameters(), null);
+		centerPanel.add(getPropertiesPanel(), null);
+		return centerPanel;
 	}
 
 	public void setEditedObject(DbCompAlgorithm dca)
@@ -165,7 +199,7 @@ public class AlgorithmsEditPanel extends EditPanel
 		// fill in controls:
 		nameText.setText(editedObject.getName());
 		idText.setText("" + editedObject.getId());
-		execText.setText(editedObject.getExecClass());
+		execClassField.setText(editedObject.getExecClass());
 		commentsText.setText(editedObject.getComment());
 		numCompsText.setText("" + editedObject.getNumCompsUsing());
 
@@ -203,24 +237,6 @@ public class AlgorithmsEditPanel extends EditPanel
 	{
 		if (inputPanel == null) 
 		{
-			GridBagConstraints algoNameLabConstraints =new GridBagConstraints();
-			algoNameLabConstraints.gridx = 0;
-			algoNameLabConstraints.insets = new java.awt.Insets(10, 10, 4, 2);
-			algoNameLabConstraints.gridy = 0;
-			algoNameLabel = new JLabel();
-			algoNameLabel.setText(algoNameLabelText);
-
-			GridBagConstraints nameTextConstraints = new GridBagConstraints();
-			nameTextConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-			nameTextConstraints.gridy = 0;
-			nameTextConstraints.weightx = 1.0;
-			nameTextConstraints.insets = new java.awt.Insets(10, 0, 4, 0);
-			nameTextConstraints.gridx = 1;
-
-			GridBagConstraints changeNameConstraints = 
-				new GridBagConstraints(2, 0,  1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
-				new Insets(10, 5, 4, 5), 0, 0);
 			changeNameButton = new JButton(changeButtonText);
 			changeNameButton.addActionListener(
 				new java.awt.event.ActionListener()
@@ -231,61 +247,92 @@ public class AlgorithmsEditPanel extends EditPanel
 					}
 				});
 
-			GridBagConstraints algoIdLabConstraints = new GridBagConstraints();
-			algoIdLabConstraints.gridx = 3;
-			algoIdLabConstraints.insets = new java.awt.Insets(10, 10, 4, 5);
-			algoIdLabConstraints.gridy = 0;
-			algoIdLabel = new JLabel();
-			algoIdLabel.setText(algoIDText);
-
-			GridBagConstraints idTextConstraints = new GridBagConstraints();
-			idTextConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-			idTextConstraints.gridy = 0;
-			idTextConstraints.weightx = 0.3;
-			idTextConstraints.insets = new java.awt.Insets(10, 0, 4, 5);
-			idTextConstraints.gridx = 4;
-
-			GridBagConstraints execClassLabConstraints=new GridBagConstraints();
-			execClassLabConstraints.gridx = 0;
-			execClassLabConstraints.insets = new java.awt.Insets(4, 10, 10, 2);
-			execClassLabConstraints.gridy = 1;
-			execClassLabConstraints.anchor= java.awt.GridBagConstraints.EAST;
-			execClassLabel = new JLabel();
-			execClassLabel.setText(execLabelText);
-
-			GridBagConstraints execTextConstraints =
-				new GridBagConstraints(1, 1,  2, 1, 1.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
-				new Insets(4, 0, 10, 0), 0, 0);
-
-			GridBagConstraints numCompsLabConstraints = new GridBagConstraints();
-			numCompsLabConstraints.insets = new java.awt.Insets(4, 10, 10, 2);
-			numCompsLabConstraints.gridx = 3;
-			numCompsLabConstraints.gridy = 1;
-			numCompsLabel = new JLabel();
-			numCompsLabel.setText(numCompsLabelText);
-
-			GridBagConstraints numCompsConstraints = new GridBagConstraints();
-			numCompsConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-			numCompsConstraints.gridy = 1;
-			numCompsConstraints.insets = new java.awt.Insets(4, 0, 10, 5);
-			numCompsConstraints.weightx = 0.3;
-			numCompsConstraints.gridx = 4;
-
 			inputPanel = new JPanel();
 			inputPanel.setLayout(new GridBagLayout());
-			inputPanel.add(algoNameLabel, algoNameLabConstraints);
-			inputPanel.add(getNameText(), nameTextConstraints);
-			inputPanel.add(changeNameButton, changeNameConstraints);
-			inputPanel.add(algoIdLabel, algoIdLabConstraints);
-			inputPanel.add(getIdText(), idTextConstraints);
-			inputPanel.add(execClassLabel, execClassLabConstraints);
-			inputPanel.add(getExecText(), execTextConstraints);
-			inputPanel.add(numCompsLabel, numCompsLabConstraints);
-			inputPanel.add(getNumCompsText(), numCompsConstraints);
+			inputPanel.add(new JLabel(algoNameLabelText),
+				new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(6, 10, 3, 2), 0, 0));
+			
+			nameText.setEditable(false);
+			nameText.setToolTipText(nameToolTip);
+			inputPanel.add(nameText, 
+				new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 3, 2), 0, 0));
+			
+			inputPanel.add(changeNameButton, 
+				new GridBagConstraints(2, 0,  1, 1, 0.0, 0.0, 
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 2, 3, 10), 0, 0));
+
+				
+			inputPanel.add(new JLabel(algoIDText),
+				new GridBagConstraints(3, 0,  1, 1, 0.0, 0.0, 
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(6, 5, 3, 2), 0, 0));
+
+			idText.setEditable(false);
+			idText.setToolTipText(idToolTip);
+
+			inputPanel.add(idText, 
+				new GridBagConstraints(4, 0,  1, 1, 0.0, 0.0, 
+					GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 3, 10), 0, 0));
+				
+			inputPanel.add(new JLabel(execLabelText),
+				new GridBagConstraints(0, 1,  1, 1, 0.0, 0.0, 
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(3, 10, 6, 2), 0, 0));
+		
+			execClassField.setToolTipText(execToolTipText);
+
+			inputPanel.add(execClassField, 
+				new GridBagConstraints(1, 1,  1, 1, 1.0, 0.0, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(3, 0, 6, 2), 0, 0));
+
+			JButton selectButton = new JButton("Select");
+			selectButton.addActionListener(
+				new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						selectExecClassPressed();
+					}
+				});
+			inputPanel.add(selectButton,
+				new GridBagConstraints(2, 1,  1, 1, 0.0, 0.0, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(3, 2, 6, 10), 0, 0));
+			
+				
+			inputPanel.add(new JLabel(numCompsLabelText),
+				new GridBagConstraints(3, 1,  1, 1, 0.0, 0.0, 
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(3, 10, 6, 2), 0, 0));
+	
+			numCompsText.setEditable(false);
+			setToolTipText(numCompsToolTip);
+			inputPanel.add(numCompsText, 
+				new GridBagConstraints(4, 1,  1, 1, 1.0, 0.0, 
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+					new Insets(3, 0, 6, 10), 0, 0));
 		}
 		return inputPanel;
 	}
+	protected void selectExecClassPressed()
+	{
+		execSelectDialog.setSelection(null);
+		String cls = execClassField.getText().trim();
+		if (cls != null)
+			execSelectDialog.setSelection(cls);
+		CAPEdit.instance().getFrame().launchDialog(execSelectDialog);
+		if (!execSelectDialog.wasCancelled() && execSelectDialog.getSelection() != null)
+			execClassField.setText(execSelectDialog.getSelection());
+	}
+
 	/**
 	 * This method initializes jTextField
 	 * 
@@ -303,37 +350,6 @@ public class AlgorithmsEditPanel extends EditPanel
 	}
 
 	/**
-	 * This method initializes jTextField1
-	 * 
-	 * @return javax.swing.JTextField
-	 */
-	private JTextField getIdText() 
-	{
-		if (idText == null) 
-		{
-			idText = new JTextField();
-			idText.setEditable(false);
-			idText.setToolTipText(idToolTip);
-		}
-		return idText;
-	}
-
-	/**
-	 * This method initializes jTextField
-	 * 
-	 * @return javax.swing.JTextField
-	 */
-	private JTextField getExecText() 
-	{
-		if (execText == null) 
-		{
-			execText = new JTextField();
-			execText.setToolTipText(execToolTipText);
-		}
-		return execText;
-	}
-
-	/**
 	 * This method initializes jScrollPane to contain the comments
 	 * 
 	 * @return javax.swing.JScrollPane
@@ -343,7 +359,8 @@ public class AlgorithmsEditPanel extends EditPanel
 		if (commentsScroll == null) 
 		{
 			commentsScroll = new JScrollPane();
-			commentsScroll.setHorizontalScrollBarPolicy(commentsScroll.HORIZONTAL_SCROLLBAR_NEVER);
+			commentsScroll.setHorizontalScrollBarPolicy(
+				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 			commentsScroll.setViewportView(getCommentsText());
 		}
 		return commentsScroll;
@@ -407,7 +424,7 @@ public class AlgorithmsEditPanel extends EditPanel
 			algoParmTableModel = new AlgoParmTableModel();
 			algoParmTable = 
 				new SortingListTable(algoParmTableModel,
-					algoParmTableModel.columnWidths);
+					AlgoParmTableModel.columnWidths);
 		}
 		return algoParmTable;
 	}
@@ -453,7 +470,7 @@ public class AlgorithmsEditPanel extends EditPanel
 		String nm = nameText.getText().trim();
 		ob.setName(nm);
 		ob.setComment(commentsText.getText());
-		ob.setExecClass(execText.getText().trim());
+		ob.setExecClass(execClassField.getText().trim());
 		propertiesPanel.saveChanges();
 		ob.getProperties().clear();
 		PropertiesUtil.copyProps(ob.getProperties(), propCopy);
@@ -593,20 +610,6 @@ public class AlgorithmsEditPanel extends EditPanel
 		return editParamButton;
 	}
 	
-	/**
-	 * This method initializes jTextField	
-	 * 	
-	 * @return javax.swing.JTextField	
-	 */
-	private JTextField getNumCompsText() {
-		if (numCompsText == null) {
-			numCompsText = new JTextField();
-			numCompsText.setEditable(false);
-			setToolTipText(numCompsToolTip);
-		}
-		return numCompsText;
-	}
-
 	private void changeNameButtonPressed()
 	{
 	    String newName = JOptionPane.showInputDialog(
@@ -696,6 +699,7 @@ public class AlgorithmsEditPanel extends EditPanel
 	}
 }
 
+@SuppressWarnings("serial")
 class AlgoParmTableModel extends AbstractTableModel implements
 		SortingListTableModel 
 {
@@ -707,6 +711,7 @@ class AlgoParmTableModel extends AbstractTableModel implements
 		};
 	static int columnWidths[] = { 50, 50 };
 
+	@SuppressWarnings("unchecked")
 	public void sortByColumn(int c) {
 		Collections.sort(myvector, new AlgorithmsEditComparator(c));
 		fireTableDataChanged();
