@@ -39,6 +39,7 @@ public class PropertyEditDialog
 	private boolean changed;
 	private PropertySpec propSpec = null;
 	private static JFileChooser fileChooser = null;
+	private JTextArea descArea = new JTextArea();
 
 	/**
 	 * Construct dialog with frame owner.
@@ -124,7 +125,7 @@ public class PropertyEditDialog
 		nameField.setText(name);
 		setValue(value);
 		pack();
-
+		
 		addWindowListener(new WindowAdapter()
 		{
 			boolean started = false;
@@ -195,7 +196,6 @@ public class PropertyEditDialog
 				valueField = new TimeZoneSelector();
 			else if (propSpec.getType().startsWith(PropertySpec.DECODES_ENUM))
 			{
-Logger.instance().info("decodes enum combo '" + propSpec + "'");
 				String enumName = propSpec.getType().substring(2);
 				EnumComboBox ecb = new EnumComboBox(enumName, "");
 				if (ecb.getModel().getSize() > 0)
@@ -237,31 +237,39 @@ Logger.instance().info("decodes enum combo '" + propSpec + "'");
 			new Insets(5, 0, 5, 10), 0, 0));
 		mainPanel.add(centerPropPanel, BorderLayout.CENTER);
 
-		if (propSpec != null && propSpec.getDescription() != null
-		 && propSpec.getDescription().length() > 0)
+		if (propSpec != null && propSpec.getDescription() != null)
 		{
-			nameField.setEditable(false);
-			String descText = AsciiUtil.wrapString(propSpec.getDescription(), 50);
-			int nRows=1;
-			StringBuilder sb = new StringBuilder("<html>");
-			for(int i=0; i<descText.length(); i++)
-				if (descText.charAt(i) == '\n')
-				{
-					nRows++;
-					sb.append("<br>");
-				}
-				else
-					sb.append(descText.charAt(i));
-			JLabel descArea = new JLabel(sb.toString());
-//			JTextArea descArea = new JTextArea(descText, nRows, 50);
-//			JTextArea descArea = new JTextArea(descText);
-//			descArea.setRows(nRows);
-			descArea.setBorder(new LineBorder(Color.gray));
-//			descArea.setEditable(false);
-//			descArea.setWrapStyleWord(true);
-//			descArea.setLineWrap(true);
-//			descArea.setEnabled(false);
-			centerPropPanel.add(descArea, new GridBagConstraints(0, 2, 3, 1, 1.0, 1.0,
+			if (!propSpec.isDynamic())
+				nameField.setEditable(false);
+			
+			JComponent descComp = null;
+			if (propSpec == null || !propSpec.isDynamic())
+			{
+				String descText = AsciiUtil.wrapString(propSpec.getDescription(), 50);
+				StringBuilder sb = new StringBuilder("<html>");
+				for(int i=0; i<descText.length(); i++)
+					if (descText.charAt(i) == '\n')
+						sb.append("<br>");
+					else
+						sb.append(descText.charAt(i));
+				JLabel da = new JLabel(sb.toString());
+				da.setBorder(new LineBorder(Color.gray));
+				descComp = da;
+			}
+			else
+			{
+				descArea.setText(propSpec.getDescription());
+				descArea.setLineWrap(true);
+				descArea.setWrapStyleWord(true);
+				descArea.setEditable(true);
+				JScrollPane jsp = new JScrollPane(descArea,
+					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
+					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+				jsp.setPreferredSize(new Dimension(190, 66));
+				descComp = jsp;
+			}
+
+			centerPropPanel.add(descComp, new GridBagConstraints(0, 2, 3, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(20, 10, 20, 10), 0, 0));
 		}
@@ -332,6 +340,15 @@ Logger.instance().info("decodes enum combo '" + propSpec + "'");
 				}
 			}
 		}
+		if (propSpec.isDynamic())
+		{
+			String desc = descArea.getText();
+			if (!propSpec.getDescription().equals(desc))
+			{
+				propSpec.setDescription(desc);
+				changed = true;
+			}
+		}
 		if (!value.equals(nv))
 		{
 			value = nv;
@@ -395,4 +412,6 @@ Logger.instance().info("decodes enum combo '" + propSpec + "'");
 		else if (valueField instanceof JComboBox)
 			((JComboBox)valueField).setSelectedItem(value);
 	}
+	
+	
 }

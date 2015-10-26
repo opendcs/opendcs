@@ -21,6 +21,7 @@ import java.util.Enumeration;
 
 import javax.swing.border.*;
 
+import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
@@ -50,6 +51,7 @@ public class PropertiesEditPanel extends JPanel
 	private JDialog ownerDialog;
 	private JFrame ownerFrame;
 	private HashMap<String, PropertySpec> propHash = null;
+	private PropertiesOwner propertiesOwner = null;
 
 	/** Will be true after any changes were made. */
 	public boolean changesMade;
@@ -224,18 +226,46 @@ public class PropertiesEditPanel extends JPanel
 	void addButton_actionPerformed(ActionEvent e)
 	{
 		PropertyEditDialog dlg = null;
+		PropertySpec propSpec = null;
+		
+//System.out.println("propertiesOwner is "
+//+ (propertiesOwner != null ? "not" : "") + " null");
+//System.out.println("propertiesOwner is "
+//+ (propertiesOwner instanceof DynamicPropertiesOwner ? "" : "not") +
+//" an instance of DynamicPropertiesOwner");
+//if  (propertiesOwner instanceof DynamicPropertiesOwner)
+//System.out.println("Dynamic props are " +
+//(((DynamicPropertiesOwner)propertiesOwner).dynamicPropsAllowed()
+//? "" : "not") + " allowed on this object.");
+
+	
+		if (propertiesOwner != null
+		 && (propertiesOwner instanceof DynamicPropertiesOwner)
+		 && ((DynamicPropertiesOwner)propertiesOwner).dynamicPropsAllowed())
+		{
+			propSpec = new PropertySpec("", PropertySpec.STRING, "");
+			propSpec.setDynamic(true);
+		}
+			
 		if (ownerDialog != null)
-			dlg = new PropertyEditDialog(ownerDialog, "", "");
+			dlg = new PropertyEditDialog(ownerDialog, "", "", propSpec);
 		else if (ownerFrame != null)
-			dlg = new PropertyEditDialog(ownerFrame, "", "");
+			dlg = new PropertyEditDialog(ownerFrame, "", "", propSpec);
 		else
-			dlg = new PropertyEditDialog(TopFrame.instance(), "", "");
+			dlg = new PropertyEditDialog(TopFrame.instance(), "", "", propSpec);
 		dlg.setLocation(50, 50);
 		dlg.setLocationRelativeTo(this);
 		dlg.setVisible(true);
 		StringPair sp = dlg.getResult();
 		if (sp != null)
 			ptm.add(sp);
+		
+		if (propSpec != null && propSpec.getDescription().trim().length() > 0)
+		{
+			((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
+				sp.first, propSpec.getDescription());
+		}
+		
 		changesMade = true;
 	}
 
@@ -269,8 +299,10 @@ public class PropertiesEditPanel extends JPanel
 		dlg.setVisible(true);
 		StringPair res = dlg.getResult();
 		if (res != null)
+		{
 			ptm.setPropAt(r, res);
-		changesMade = true;
+			changesMade = true;
+		}
 	}
 
 	/**
@@ -396,6 +428,7 @@ public class PropertiesEditPanel extends JPanel
 	 */
 	public void setPropertiesOwner(PropertiesOwner propertiesOwner)
 	{
+		this.propertiesOwner = propertiesOwner;
 		if (propertiesOwner == null)
 		{
 			propHash = null;
@@ -406,6 +439,13 @@ public class PropertiesEditPanel extends JPanel
 		for (PropertySpec ps : propertiesOwner.getSupportedProps())
 		{
 			propHash.put(ps.getName().toUpperCase(), ps);
+		}
+		if (propertiesOwner instanceof DynamicPropertiesOwner)
+		{
+			DynamicPropertiesOwner dpo = (DynamicPropertiesOwner)propertiesOwner;
+			if (dpo.dynamicPropsAllowed())
+				for(PropertySpec ps : dpo.getDynamicPropSpecs())
+					propHash.put(ps.getName().toUpperCase(), ps);
 		}
 
 		// Set column renderer so that tooltip is property description
