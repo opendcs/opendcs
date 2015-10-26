@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.4  2012/08/01 16:55:58  mmaloney
  * dev
  *
@@ -187,6 +190,11 @@ public class TimeSeriesSelectDialog extends JDialog
 		if (cancelled)
 			return new TimeSeriesIdentifier[0];
 		return ddSelectPanel.getSelectedDataDescriptors();
+	}
+	
+	public void setSelectedTS(TimeSeriesIdentifier tsid)
+	{
+		ddSelectPanel.setSelection(tsid);
 	}
 
 	/** 
