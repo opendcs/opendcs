@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.11  2015/07/17 13:05:29  mmaloney
+*  added 'showComputationEditor' boolean.
+*
 *  Revision 1.10  2015/02/16 16:18:04  mmaloney
 *  Added pollMessageDir and pollRoutingTemplate
 *
@@ -82,11 +85,11 @@ package decodes.util;
 
 import java.util.Properties;
 import java.util.Enumeration;
+
 import ilex.util.Logger;
 import ilex.util.EnvExpander;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-
 import decodes.db.Constants;
 
 /**
@@ -359,6 +362,16 @@ public class DecodesSettings
 	public String decodeScriptColor6 = null;
 	public String decodeScriptColor7 = null;
 	public String decodeScriptColor8 = null;
+	
+	// Python colors
+	public String pyNormalColor      = "0x000000";
+	public String pyKeywordColor     = "0x0000FF";
+	public String pyBuiltinColor     = "0xD2691E";
+	public String pyQuotedColor      = "0x00D000";
+	public String pyTsRoleColor      = "0x8B0000";
+	public String pyPropColor        = "0x4B0082";
+	public String pyCommentColor     = "0x808000";
+	public String pyCpFuncColor      = "0x8B4513";
 
 	//===============================================================================
 	
@@ -547,8 +560,32 @@ public class DecodesSettings
 			+ " That is, 2 hex digits each for the RGB values. Default=808000 "),
 		new PropertySpec("decodeScriptColor8", PropertySpec.STRING,
 			"Hex color representation for decoded-data color 8. Should be 6 digits."
-			+ " That is, 2 hex digits each for the RGB values. Default=8B4513 ")
-			
+			+ " That is, 2 hex digits each for the RGB values. Default=8B4513 "),
+		new PropertySpec("pyNormalColor", PropertySpec.STRING,
+			"Hex color representation for normal text in a python script. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values."),
+		new PropertySpec("pyKeywordColor", PropertySpec.STRING,
+			"Hex color representation for keywords in a python script. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values."),
+		new PropertySpec("pyBuiltinColor", PropertySpec.STRING,
+			"Hex color representation for built-in functions in a python script. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values."),
+		new PropertySpec("pyQuotedColor", PropertySpec.STRING,
+			"Hex color representation for quoted strings in a python script. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values."),
+		new PropertySpec("pyTsRoleColor", PropertySpec.STRING,
+			"Hex color representation for time series roles in a python script. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values."),
+		new PropertySpec("pyPropColor", PropertySpec.STRING,
+			"Hex color representation for comp-property names in a python script. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values."),
+		new PropertySpec("pyCommentColor", PropertySpec.STRING,
+			"Hex color representation for comments in a python script. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values."),
+		new PropertySpec("pyCpFuncColor", PropertySpec.STRING,
+			"Hex color representation for CP Function Names in a python script. Should be 6 digits."
+			+ " That is, 2 hex digits each for the RGB values.")
+		
 	};
 	
 	/**
