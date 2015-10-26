@@ -225,4 +225,11 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 	{
 		return _propertyNames;
 	}
+
+	@Override
+	public String getBriefDescription()
+	{
+		return "Copies input to output with optional multiplier and offset.";
+	}
+	
 }

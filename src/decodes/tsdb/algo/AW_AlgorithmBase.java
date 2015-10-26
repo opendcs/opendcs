@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2015/08/31 00:39:34  mmaloney
+*  Added clearNonReservedFlags() method.
+*
 *  Revision 1.4  2015/07/27 18:35:50  mmaloney
 *  Unused (optional) params should be flagged as missing so that the isMissing() method
 *  works inside the algorithms.
@@ -1311,6 +1314,11 @@ debug1("Storing aggregate value=" + v.getStringValue()
 			{
 				cls = this.getClass();
 				
+//TODO MJM Refactor the following a bit:
+// - Define NamedVariable v outside the try block so it can be used
+//   below in NoSuchFieldException
+// - Don't getField or ftyp until after I get the variable into v.
+				
 				// note: getField only returns public members.
 				// so first use getDeclaredFields to handle protected but accessible members.
 				Field field = getField(cls, varName);
@@ -1386,6 +1394,8 @@ ex.printStackTrace(System.err);
 			}
 			catch(NoSuchFieldException ex)
 			{
+//TODO MJM If this is PythonAlgorithm, then call its setTimeSliceInput method
+// and don't issue the warning.
 				warning("Inconsistent class -- no input field named '"
 					+ varName + "'");
 			}

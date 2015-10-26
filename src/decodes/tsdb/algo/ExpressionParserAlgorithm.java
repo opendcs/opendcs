@@ -278,7 +278,7 @@ public class ExpressionParserAlgorithm
 		SymbolTable symTab = jepContext.getParser().getSymbolTable();
 		for(String inputName : _inputNames)
 		{
-			double inputVal = inputName.equals("in1") ? in1 :
+			double inputVal =
 				inputName.equals("in1") ? in1 :
 				inputName.equals("in2") ? in2 :
 				inputName.equals("in3") ? in3 :
