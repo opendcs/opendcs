@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.18  2013/03/21 18:27:40  mmaloney
  * DbKey Implementation
  *
@@ -422,8 +425,8 @@ Logger.instance().debug3("TS " + getUniqueString() + ", setting displayName='" +
 	@Override
 	public int compareTo(TimeSeriesIdentifier rhs)
 	{
-		int ret = TextUtil.strCompareIgnoreCase(getDisplayName(),
-			rhs.getDisplayName());
+		int ret = TextUtil.strCompareIgnoreCase(getUniqueString(),
+			rhs.getUniqueString());
 		if (ret != 0)
 			return ret;
 		long diff = getKey().getValue() - rhs.getKey().getValue();
