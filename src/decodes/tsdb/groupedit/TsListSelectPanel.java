@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.11  2013/03/21 18:27:40  mmaloney
  * DbKey Implementation
  *
@@ -232,6 +235,16 @@ public class TsListSelectPanel extends JPanel
 	public void clearSelection()
 	{
 		tsIdListTable.clearSelection();
+	}
+	
+	public void setSelection(TimeSeriesIdentifier tsid)
+	{
+		for(int idx = 0; idx < model.getRowCount(); idx++)
+			if (tsid.equals(model.getRowObject(idx)))
+			{
+				tsIdListTable.setRowSelectionInterval(idx, idx);
+				return;
+			}
 	}
 }
 
