@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.6  2015/01/22 19:52:07  mmaloney
+ * log message improvements
+ *
  * Revision 1.5  2014/12/11 20:29:11  mmaloney
  * Added DacqEventLogging capability.
  *
@@ -32,6 +35,7 @@
  */
 package decodes.sql;
 
+import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.*;
 
 import java.sql.Connection;
@@ -2237,6 +2241,13 @@ public class SqlDatabaseIO
 			return new DacqEventDAO(this);
 		else
 			return null;
+	}
+
+	@Override
+	public ScreeningDAI makeScreeningDAO() throws DbIoException
+	{
+		// This is a CWMS thing. Base class returns null.
+		return null;
 	}
 
 }

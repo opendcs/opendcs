@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2014/12/19 19:25:35  mmaloney
+*  Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
+*
 *  Revision 1.4  2014/12/11 20:29:31  mmaloney
 *  Added DacqEventLogging capability.
 *
@@ -392,6 +395,7 @@ import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
 import decodes.tsdb.compedit.AlgorithmInList;
 import decodes.util.DecodesSettings;
+import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
@@ -2615,6 +2619,14 @@ public abstract class TimeSeriesDb
 	public DacqEventDAI makeDacqEventDAO()
 	{
 		return new DacqEventDAO(this);
+	}
+	
+	@Override
+	public ScreeningDAI makeScreeningDAO() 
+		throws DbIoException
+	{
+		// This is a CWMS thing. So Base class returns null.
+		return null;
 	}
 	
 }
