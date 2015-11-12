@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2015/10/26 12:45:35  mmaloney
+*  PythonAlgorithm
+*
 *  Revision 1.5  2015/08/31 00:39:34  mmaloney
 *  Added clearNonReservedFlags() method.
 *
@@ -1120,7 +1123,8 @@ public abstract class AW_AlgorithmBase
 
 	private void saveOutput(NamedVariable v)
 	{
-		VarFlags.setToWrite(v);
+		if ((v.getFlags() & VarFlags.NO_OVERWRITE) != VarFlags.NO_OVERWRITE)	
+			VarFlags.setToWrite(v);
 		_saveOutputCalled = true;
 		
 		// MJM 2015 06/30 If this is being called from setFlagBits, then it is
