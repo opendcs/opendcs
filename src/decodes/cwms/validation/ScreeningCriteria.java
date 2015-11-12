@@ -12,15 +12,14 @@ import java.util.Iterator;
 import java.util.TreeSet;
 
 import decodes.cwms.CwmsFlags;
+import decodes.db.UnitConverter;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
-import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AW_AlgorithmBase;
-import decodes.util.PropertySpec;
 
 /**
  * Holds a collection of checks to perform on one or more
@@ -58,13 +57,16 @@ public class ScreeningCriteria
 	/** The owner of this criteria set */
 	private Screening screening;
 	
-	//TODO: Add Relative Value Checks and Distribution Checks
-	
 	public ScreeningCriteria(Calendar seasonStart)
 	{
 		this.seasonStart = seasonStart;
 	}
 	
+	public ScreeningCriteria()
+	{
+		setSeasonStart(Calendar.JANUARY, 1);
+	}
+
 	public void addAbsCheck(AbsCheck absCheck)
 	{
 		absChecks.add(absCheck);
@@ -907,5 +909,81 @@ public class ScreeningCriteria
 	public void setScreening(Screening screening)
 	{
 		this.screening = screening;
+	}
+
+	/**
+	 * Set season start.
+	 * @param monthConst - One of the MONTH constants defined in Calendar.
+	 * @param day - the day of the month (1 = first day of month).
+	 */
+	public void setSeasonStart(int monthConst, int day)
+	{
+		if (seasonStart == null)
+			seasonStart = Calendar.getInstance();
+		seasonStart.set(Calendar.MONTH, monthConst);
+		seasonStart.set(Calendar.DAY_OF_MONTH, day);
+	}
+
+	/**
+	 * Converts units in this criteria object to the specified units using
+	 * the passed converter.
+	 * @param paramUnits
+	 * @param uc
+	 */
+	public void convertUnits(String paramUnits, UnitConverter uc)
+	{
+		String what = "";
+		try
+		{
+			for(AbsCheck ac : absChecks)
+			{
+				what = "abs " + ac.getFlag() + " high";
+				if (ac.getHigh() != Double.POSITIVE_INFINITY)
+					ac.setHigh(uc.convert(ac.getHigh()));
+				what = "abs " + ac.getFlag() + " low";
+				if (ac.getLow() != Double.NEGATIVE_INFINITY)
+					ac.setLow(uc.convert(ac.getLow()));
+			}
+			for(RocPerHourCheck rc : rocPerHourChecks)
+			{
+				what = "roc " + rc.getFlag() + " rise";
+				if (rc.getRise() != Double.POSITIVE_INFINITY)
+					rc.setRise(uc.convert(rc.getRise()));
+				what = "roc " + rc.getFlag() + " fall";
+				if (rc.getFall() != Double.NEGATIVE_INFINITY)
+					rc.setFall(uc.convert(rc.getFall()));
+			}
+			for(ConstCheck cc : constChecks)
+			{
+				what = "const " + cc.getFlag() + " tol";
+				cc.setTolerance(uc.convert(cc.getTolerance()));
+				what = "const " + cc.getFlag() + " min";
+				cc.setMinToCheck(uc.convert(cc.getMinToCheck()));
+			}
+			for(DurCheckPeriod dcp : durCheckPeriods)
+			{
+				what = "durmag " + dcp.getFlag() + " high";
+				if (dcp.getHigh() != Double.POSITIVE_INFINITY)
+					dcp.setHigh(uc.convert(dcp.getHigh()));
+				what = "durmag " + dcp.getFlag() + " low";
+				if (dcp.getLow() != Double.NEGATIVE_INFINITY)
+					dcp.setLow(uc.convert(dcp.getLow()));
+			}
+		}
+		catch(Exception ex)
+		{
+			Logger.instance().warning("Screening '" + screening.getScreeningName()
+				+ "' " + what + ": cannot convert to " + paramUnits + ": " + ex);
+		}
+	
+		
+	}
+
+	public void clearChecks()
+	{
+		absChecks.clear();
+		constChecks.clear();
+		rocPerHourChecks.clear();
+		durCheckPeriods.clear();
 	}
 }
