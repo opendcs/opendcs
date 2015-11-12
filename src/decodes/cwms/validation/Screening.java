@@ -7,6 +7,9 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import opendcs.dao.CachableDbObject;
+import decodes.db.EngineeringUnit;
+import decodes.db.NoConversionException;
+import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 
 /**
@@ -39,10 +42,10 @@ public class Screening
 	private String paramId = null;
 	
 	/** In a CWMS database, this can be set to act as a filter on candidate time series. */
-	private String paramTypeId = null;
+	private String paramTypeId = "Inst";
 	
 	/** In a CWMS database, this can be set to act as a filter on candidate time series. */
-	private String durationId = null;
+	private String durationId = "1Day";
 	
 	private boolean rangeActive = true;
 	private boolean rocActive = true;
@@ -299,5 +302,29 @@ public class Screening
 			if (cal != null)
 				cal.setTimeZone(tz);
 		}
+	}
+
+	public void convertUnits(String paramUnits)
+		throws NoConversionException
+	{
+		UnitConverter uc = decodes.db.Database.getDb().unitConverterSet.get(
+			EngineeringUnit.getEngineeringUnit(checkUnitsAbbr),
+			EngineeringUnit.getEngineeringUnit(paramUnits));
+		if (uc == null)
+			throw new NoConversionException("Cannot derive a converter from '"
+				+ checkUnitsAbbr + "' to '" + paramUnits + "'");
+		
+		// Descend through all checks and convert the limits to the new units.
+		// then set this.checkUnitsAbbr
+		for(ScreeningCriteria crit : criteriaSeasons)
+			crit.convertUnits(paramUnits, uc);
+		
+		checkUnitsAbbr = paramUnits;
+		
+	}
+
+	public void setScreeningDesc(String screeningDesc)
+	{
+		this.screeningDesc = screeningDesc;
 	}
 }
