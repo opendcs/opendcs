@@ -53,4 +53,24 @@ public class DurCheckPeriod
 	{
 		return "DUR " + flag + " " + duration + " " + low + " " + high;
 	}
+
+	public void setFlag(char flag)
+	{
+		this.flag = flag;
+	}
+
+	public void setDuration(String duration)
+	{
+		this.duration = duration;
+	}
+
+	public void setLow(double low)
+	{
+		this.low = low;
+	}
+
+	public void setHigh(double high)
+	{
+		this.high = high;
+	}
 }

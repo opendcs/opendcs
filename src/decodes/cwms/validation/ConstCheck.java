@@ -60,6 +60,7 @@ public class ConstCheck
 	{
 		return allowedMissing;
 	}
+	//TODO for new impl, #missing may be a float representing a fraction of the duration.
 
 	public String toString()
 	{
@@ -77,6 +78,31 @@ public class ConstCheck
 	public void setMaxGap(IntervalIncrement maxGap)
 	{
 		this.maxGap = maxGap;
+	}
+
+	public void setFlag(char flag)
+	{
+		this.flag = flag;
+	}
+
+	public void setDuration(String duration)
+	{
+		this.duration = duration;
+	}
+
+	public void setMinToCheck(double minToCheck)
+	{
+		this.minToCheck = minToCheck;
+	}
+
+	public void setTolerance(double tolerance)
+	{
+		this.tolerance = tolerance;
+	}
+
+	public void setAllowedMissing(int allowedMissing)
+	{
+		this.allowedMissing = allowedMissing;
 	}
 
 }

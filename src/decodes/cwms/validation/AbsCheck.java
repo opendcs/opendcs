@@ -42,4 +42,14 @@ public class AbsCheck
 	{
 		return "ABS " + flag + " " + low + " " + high;
 	}
+
+	public void setLow(double low)
+	{
+		this.low = low;
+	}
+
+	public void setHigh(double high)
+	{
+		this.high = high;
+	}
 }

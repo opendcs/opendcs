@@ -43,5 +43,15 @@ public class RocPerHourCheck
 		return "ROC/HR " + flag + " " + fall + " " + rise;
 	}
 
+	public void setRise(double rise)
+	{
+		this.rise = rise;
+	}
+
+	public void setFall(double fall)
+	{
+		this.fall = fall;
+	}
+
 
 }

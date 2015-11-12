@@ -35,4 +35,9 @@ public class TsidScreeningAssignment
 	{
 		this.tsid = tsid;
 	}
+
+	public void setActive(boolean active)
+	{
+		this.active = active;
+	}
 }
