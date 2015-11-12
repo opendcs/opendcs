@@ -1,7 +1,12 @@
 /**
  * $Id$
  * 
+ * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * 
  * $Log$
+ * Revision 1.1  2015/09/17 17:44:56  mmaloney
+ * CWMS Screening I/O and Algorithm
+ *
  */
 package decodes.cwms.validation;
 

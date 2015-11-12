@@ -1,3 +1,10 @@
+/**
+ * $Id$
+ * 
+ * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * 
+ * $Log$
+ */
 package decodes.cwms.validation;
 
 import java.util.Date;

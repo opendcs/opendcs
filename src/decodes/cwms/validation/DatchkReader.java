@@ -1,9 +1,12 @@
 /**
  * $Id$
  * 
- * Open Source Software
+ * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.4  2015/09/17 17:44:55  mmaloney
+ * CWMS Screening I/O and Algorithm
+ *
  * Revision 1.3  2015/09/10 21:18:07  mmaloney
  * Development on Screening
  *

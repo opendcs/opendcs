@@ -1,7 +1,12 @@
 /**
  * $Id$
  * 
+ * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2011/04/01 20:34:51  mmaloney
  * dev
  *
