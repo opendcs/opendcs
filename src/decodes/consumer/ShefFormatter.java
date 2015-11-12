@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2014/05/30 13:15:34  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/28 13:09:29  mmaloney
 *  dev
 *
@@ -101,13 +104,14 @@ import ilex.var.IFlags;
 import ilex.util.PropertiesUtil;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-
 import decodes.db.*;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
 import decodes.decoder.Sensor;
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
+import decodes.util.DecodesSettings;
+import decodes.util.PropertySpec;
 
 /**
   This class formats decoded data in SHEF .A or .E lines.
@@ -136,6 +140,31 @@ public class ShefFormatter extends OutputFormatter
 	private String defcode;
 	private NumberFormat numberFormat;
 	private PresentationGroup presGrp;
+	private String siteNameType = null;
+	
+	private PropertySpec propSpecs[] = 
+	{		
+		new PropertySpec("dotAOnly", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to force .A SHEF output, even for"
+			+ " regular time series."),
+		new PropertySpec("seconds", PropertySpec.BOOLEAN,
+			"(default=true) Set to false to omit seconds from the time stamp."),
+		new PropertySpec("century", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to include the century in the time stamp."),
+		new PropertySpec("useNesdisId", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to use the GOES DCP Address in the"
+			+ " output in place of the site name."),
+		new PropertySpec("fullShefCode", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to include the full 7-char SHEF code"
+			+ "in the output. Normally only the physical element code will be included."),
+		new PropertySpec("sitenametype", PropertySpec.STRING,
+			"Preferred site name type (default set in your decodes.properties)"),
+		new PropertySpec("DefaultShefCode", PropertySpec.STRING,
+			"(default=xxIRZZZ) If you are including the full shef code, this property allows "
+			+ "you to specify the default residual fields. Leave two char place holder"
+			+ " (xx in the default) for the Physical element code."),
+	};
+
 
 	/** default constructor */
 	protected ShefFormatter()
@@ -219,6 +248,12 @@ public class ShefFormatter extends OutputFormatter
 				(century ? "yy" : "") + "yyMMdd  'DH'HHmm"
 				+ (seconds ? "ss" : ""));
 		}
+		
+		siteNameType = DecodesSettings.instance().siteNameTypePreference;
+		s = PropertiesUtil.getIgnoreCase(rsProps, "sitenametype");
+		if (s != null)
+			siteNameType = s;
+
 	}
 
 	/** Does nothing. */
@@ -243,7 +278,7 @@ public class ShefFormatter extends OutputFormatter
 		RawMessage rawmsg = msg.getRawMessage();
 
 		TransportMedium tm;
-		Platform platform;
+		Platform platform = null;
 
 		String platformSiteName = "unknown";
 		char platformType = 'R';
@@ -255,7 +290,14 @@ public class ShefFormatter extends OutputFormatter
 			if (tm.getMediumType().equalsIgnoreCase(Constants.medium_GoesST))
 				platformType = 'I';
 			platform = rawmsg.getPlatform();
-			platformSiteName = platform.getSiteName(false);
+
+			// MJM 20151028 added siteNameType property
+//			platformSiteName = platform.getSiteName(false);
+			Site s = platform.getSite();
+			SiteName sn = s.getName(siteNameType);
+			if (sn == null)
+				sn = s.getPreferredName();
+			platformSiteName = sn.getNameValue();
 		}
 		catch(UnknownPlatformException e)
 		{
@@ -276,7 +318,16 @@ public class ShefFormatter extends OutputFormatter
 				platformName = dcpId;
 			else
 			{
-				platformName = sensor.getSensorSiteName();
+				platformName = platformSiteName;
+				if (sensor.getSite() != null
+				 && platform != null
+				 && sensor.getSite() != platform.getSite())
+				{
+					SiteName sn = sensor.getSite().getName(siteNameType);
+					if (sn == null)
+						sn = sensor.getSite().getPreferredName();
+					platformName = sn.getNameValue();
+				}
 				if (platformName == null)
 					platformName = platformSiteName;
 			}
@@ -453,5 +504,12 @@ public class ShefFormatter extends OutputFormatter
 
 		return ret;
 	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return propSpecs;
+	}
+
 }
 
