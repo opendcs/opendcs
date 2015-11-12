@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.10  2015/07/18 15:01:28  mmaloney
+ * Delete DACQ_EVENT records before deleting the parent PLATFORM record.
+ *
  * Revision 1.9  2015/04/15 19:59:47  mmaloney
  * Fixed synchronization bugs when the same data sets are being processed by multiple
  * routing specs at the same time. Example is multiple real-time routing specs with same
@@ -671,7 +674,7 @@ public class PlatformListIO extends SqlDbObjIo
 			"UPDATE Platform SET " +
 			  "Agency = " + sqlString(p.agency) + ", " +
 			  "IsProduction = " + sqlString(p.isProduction) + ", " +
-//			  "SiteId = " + sqlOptHasId(p.site) + ", " +
+			  "SiteId = " + sqlOptHasId(p.getSite()) + ", " +
 			  "ConfigId = " + sqlOptHasId(p.getConfig()) + ", " +
 			  "Description = " + sqlOptString(p.description) + ", " +
 			  "LastModifyTime = " + sqlOptDate(p.lastModifyTime) + ", " +
