@@ -29,10 +29,12 @@ import decodes.cwms.validation.db.ScreenCritArray;
 import decodes.cwms.validation.db.ScreenCritType;
 import decodes.cwms.validation.db.ScreenDurMagArray;
 import decodes.cwms.validation.db.ScreenDurMagType;
+import decodes.db.NoConversionException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.util.DecodesSettings;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
@@ -336,6 +338,7 @@ System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER
 				}
 				rsAddDurMag(rs, crit);
 			}
+			checkUnits(ret);
 			cache.put(ret);
 			return ret;
 		}
@@ -435,6 +438,10 @@ System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER
 				}
 				rsAddDurMag(rs, crit);
 			}
+			
+			for(Screening scr : ret)
+				checkUnits(scr);
+			
 			return ret;
 		}
 		catch (SQLException ex)
@@ -442,6 +449,29 @@ System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER
 			String msg = module + ".getAllScreenings(): Error parsing results for query '" + q + "': " + ex;
 			throw new DbIoException(msg);
 		}
+	}
+	
+	/** 
+	 * Called after freshly reading a screening in SI units from the database.
+	 * @param scr
+	 */
+	private void checkUnits(Screening scr)
+	{
+		if (DecodesSettings.instance().screeningUnitSystem.equalsIgnoreCase("SI"))
+			return;
+
+		String engUnits = 
+			((CwmsTimeSeriesDb)this.db).getBaseParam().getEnglishUnits4Param(
+				scr.getParamId());
+		if (engUnits != null && !engUnits.equalsIgnoreCase(scr.getCheckUnitsAbbr()))
+			try
+			{
+				scr.convertUnits(engUnits);
+			}
+			catch (NoConversionException ex)
+			{
+				warning("Screening '" + scr.getScreeningName() + "': " + ex);
+			}
 	}
 
 	
