@@ -340,7 +340,7 @@ public class PropertyEditDialog
 				}
 			}
 		}
-		if (propSpec.isDynamic())
+		if (propSpec != null && propSpec.isDynamic())
 		{
 			String desc = descArea.getText();
 			if (!propSpec.getDescription().equals(desc))
