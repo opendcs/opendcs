@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2014/12/11 20:33:11  mmaloney
+ * dev
+ *
  * Revision 1.3  2014/11/19 16:16:05  mmaloney
  * Additions for dcpmon
  *
@@ -40,6 +43,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
+import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
@@ -285,4 +289,8 @@ public interface DatabaseConnectionOwner
 	 * @return the DAO.
 	 */
 	public DacqEventDAI makeDacqEventDAO();
+	
+	public ScreeningDAI makeScreeningDAO() 
+		throws DbIoException;
+
 }
