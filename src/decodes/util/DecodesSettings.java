@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.12  2015/10/26 12:47:32  mmaloney
+*  Added Python color settings
+*
 *  Revision 1.11  2015/07/17 13:05:29  mmaloney
 *  added 'showComputationEditor' boolean.
 *
@@ -373,6 +376,8 @@ public class DecodesSettings
 	public String pyCommentColor     = "0x808000";
 	public String pyCpFuncColor      = "0x8B4513";
 
+	public String screeningUnitSystem = "English"; // SI or English
+	
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
@@ -584,8 +589,10 @@ public class DecodesSettings
 			+ " That is, 2 hex digits each for the RGB values."),
 		new PropertySpec("pyCpFuncColor", PropertySpec.STRING,
 			"Hex color representation for CP Function Names in a python script. Should be 6 digits."
-			+ " That is, 2 hex digits each for the RGB values.")
-		
+			+ " That is, 2 hex digits each for the RGB values."),
+		new PropertySpec("screeningUnitSystem", 
+			PropertySpec.JAVA_ENUM + "decodes.util.UnitSystem",
+			"Unit system to use for limit values in screening editor and execution")
 	};
 	
 	/**
