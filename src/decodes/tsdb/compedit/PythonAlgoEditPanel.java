@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2015/10/26 12:46:05  mmaloney
+ * Additions for PythonAlgorithm
+ *
  *
  * Open Source Software written by Cove Software, LLC under contract to the
  * U.S. Government.
@@ -164,6 +167,7 @@ public class PythonAlgoEditPanel
 		
 		// Center holds split pane for scripts and test area
 		JSplitPane centerSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		centerSplitPane.setResizeWeight(.7d);
 		this.add(centerSplitPane, BorderLayout.CENTER);
 
 		// ================= North Header Pane ===================
@@ -191,11 +195,19 @@ public class PythonAlgoEditPanel
 		// =============== Center Script Editing Pane ====================
 		
 		// Construct the JTextPanes for the scripts
-		beforeScriptPane = new JTextPane(new PythonStyledDocument());
-		timeSliceScriptPane = new JTextPane();
-		afterScriptPane = new JTextPane();
+		PythonStyledDocument psd = new PythonStyledDocument();
+		beforeScriptPane = new JTextPane(psd);
+		psd.setPane(beforeScriptPane);
 		beforeScriptPane.addCaretListener(this);
+		
+		psd = new PythonStyledDocument();
+		timeSliceScriptPane = new JTextPane(psd);
+		psd.setPane(timeSliceScriptPane);
 		timeSliceScriptPane.addCaretListener(this);
+		
+		psd = new PythonStyledDocument();
+		afterScriptPane = new JTextPane(psd);
+		psd.setPane(afterScriptPane);
 		afterScriptPane.addCaretListener(this);
 		
 		// Add styles for each of the python text types to each of the panes.
@@ -459,17 +471,17 @@ afterScriptPane.setText("afterScriptPane");
 	 */
 	public boolean okPressed()
 	{
-		// TODO Auto-generated method stub
-		System.out.println("PythonAlgoEditPanel.okPressed");
-		return false;
+		// TODO Validate info in the controls
+		// If errors, showError and return false
+		
+		// TODO Copy the info in the controls back to the algorithm object.
+//System.out.println("PythonAlgoEditPanel.okPressed");
+		return true;
 	}
 
 	public void cancelPressed()
 	{
-		System.out.println("PythonAlgoEditPanel.cancelPressed");
-
-		// TODO Auto-generated method stub
-		
+//		System.out.println("PythonAlgoEditPanel.cancelPressed");
 	}
 
 	@Override
@@ -481,7 +493,7 @@ afterScriptPane.setText("afterScriptPane");
 		int row = map.getElementIndex(pos);
 		Element lineElem = map.getElement(row);
 		int col = pos - lineElem.getStartOffset();
-System.out.println("caretUpdate pos=" + pos + ", row=" + row + ", col=" + col);
+//System.out.println("caretUpdate pos=" + pos + ", row=" + row + ", col=" + col);
 		if (jtp == beforeScriptPane)
 			beforeScriptPos.setText("" + row + "/" + col);
 		else if (jtp == timeSliceScriptPane)

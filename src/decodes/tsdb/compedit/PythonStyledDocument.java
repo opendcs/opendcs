@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import ilex.util.AsciiUtil;
 
+import javax.swing.JTextPane;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
@@ -13,6 +14,8 @@ import javax.swing.text.Element;
 
 public class PythonStyledDocument extends DefaultStyledDocument
 {
+	private JTextPane pane = null;
+	
 	private static HashSet<String> keyWords = new HashSet<String>();
 	private static PyFuncList builtinFunctions = new PyFuncList(
 		"Python Built-In", "$DCSTOOL_HOME/doc/python-builtin.xml");
@@ -33,8 +36,8 @@ public class PythonStyledDocument extends DefaultStyledDocument
 		cpFunctions.readFile();
 		
 //builtinFunctions.dump();
-System.out.println("CP Functions:");
-cpFunctions.dump();
+//System.out.println("CP Functions:");
+//cpFunctions.dump();
 	}
 	
 	
@@ -43,23 +46,25 @@ cpFunctions.dump();
 	@Override
 	public void remove(int offs, int len) throws BadLocationException
 	{
-System.out.println("remove(offs=" + offs + ", len=" + len + ")");
+//System.out.println("remove(offs=" + offs + ", len=" + len + ")");
 		super.remove(offs, len);
 
-//		// Get the paraElem that the offset NOW refers to after the delete.
-//		Element paraElem = this.getParagraphElement(offs);
-//		
-//		int lineStart = paraElem.getStartOffset();
-//		if (lineStart != paraElem.getEndOffset())
-//		{
-//			// Retrieve, and then Remove the entire thing from the doc.
-//			String line = getText(lineStart, paraElem.getEndOffset() - lineStart);
-//			super.remove(lineStart, paraElem.getEndOffset() - lineStart);
-//			// Now re-add it with THIS.insertString so the line gets reprocessed.
-//			this.insertString(lineStart, line, getStyle(PythonTextType.NormalText.toString()));
-//		}
+		// Get the paraElem that the offset NOW refers to after the delete.
+		Element paraElem = this.getParagraphElement(offs);
 		
-
+		int lineStart = paraElem.getStartOffset();
+		int lineEnd = paraElem.getEndOffset();
+//System.out.println("After removal, offs=" + offs + " line start=" + lineStart + ", end=" + lineEnd);
+		if (lineStart != paraElem.getEndOffset())
+		{
+			// Retrieve, and then Remove the entire thing from the doc.
+			String line = getText(lineStart, paraElem.getEndOffset() - lineStart);
+//System.out.println("Re-inserting '" + line + "' at position " + lineStart);
+			super.remove(lineStart, paraElem.getEndOffset() - lineStart);
+			// Now re-add it with THIS.insertString so the line gets reprocessed.
+			this.insertString(lineStart, line, getStyle(PythonTextType.NormalText.toString()));
+		}
+		pane.setCaretPosition(offs);
 	}
 
 	enum CharState { normal, comment, quoted };
@@ -67,7 +72,7 @@ System.out.println("remove(offs=" + offs + ", len=" + len + ")");
 	@Override
 	public void insertString(int offs, String str, AttributeSet a) throws BadLocationException
 	{
-System.out.println("insertString(" + AsciiUtil.bin2ascii(str.getBytes()) + ")");
+//System.out.println("insertString(" + AsciiUtil.bin2ascii(str.getBytes()) + ")");
 
 		// First write using parent in normal attribute.
 		super.insertString(offs, str, getStyle(PythonTextType.NormalText.toString()));
@@ -75,7 +80,7 @@ System.out.println("insertString(" + AsciiUtil.bin2ascii(str.getBytes()) + ")");
 		// Back up to the start of the line to determine if we are in a 
 		// comment or a quoted string, and to fill in a partial word.
 		Element paraElem = this.getParagraphElement(offs);
-System.out.println("--- paraElem: " + paraElem.getStartOffset() + " to " + paraElem.getEndOffset());
+//System.out.println("--- paraElem: " + paraElem.getStartOffset() + " to " + paraElem.getEndOffset());
 		CharState charState = CharState.normal;
 		char q = 0;
 		StringBuilder wordBuf = new StringBuilder();
@@ -145,7 +150,7 @@ System.out.println("--- paraElem: " + paraElem.getStartOffset() + " to " + paraE
 					if (wordBuf.length() > 0)
 					{
 						String word = wordBuf.toString();
-System.out.println("End of word seen '" + word + "'");
+//System.out.println("End of word seen '" + word + "'");
 						wordBuf.setLength(0);
 						// Just finished a word. Is it a keyword?
 						if (isKeyword(word))
@@ -235,6 +240,11 @@ System.out.println("End of word seen '" + word + "'");
 	public static PyFuncList getCpFunctions()
 	{
 		return cpFunctions;
+	}
+
+	public void setPane(JTextPane pane)
+	{
+		this.pane = pane;
 	}
 	
 
