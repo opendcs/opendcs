@@ -35,6 +35,8 @@ import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.algo.RoleTypes;
 import decodes.util.PropertiesOwner;
 import decodes.db.Constants;
 
@@ -141,7 +143,14 @@ public class AlgorithmsEditPanel extends EditPanel
 		editedObject = null;
 		setTopFrame(CAPEdit.instance().getFrame());
 		execSelectDialog = new ExecClassSelectDialog(CAPEdit.instance().getFrame());
-		execSelectDialog.load();
+		try
+		{
+			execSelectDialog.load();
+		}
+		catch (NoSuchObjectException e1)
+		{
+			execSelectDialog = null;
+		}
 	}
 	
 	protected void pythonButtonPressed()
@@ -322,8 +331,18 @@ public class AlgorithmsEditPanel extends EditPanel
 		}
 		return inputPanel;
 	}
+	
 	protected void selectExecClassPressed()
 	{
+		// If couldn't load the algorithms.txt lists, then revert to JOptionPane.
+		if (execSelectDialog == null)
+		{
+			String cn = JOptionPane.showInputDialog(null, "Enter full Java class name with package prefixes:");
+			if (cn == null)
+				return;
+			execClassField.setText(cn);
+			return;
+		}
 		execSelectDialog.setSelection(null);
 		String cls = execClassField.getText().trim();
 		if (cls != null)
@@ -791,7 +810,8 @@ class AlgoParmTableModel extends AbstractTableModel implements
 		case 0:
 			return obj.getRoleName();
 		case 1:
-			return obj.getParmType();
+			int pti = RoleTypes.getIndex(obj.getParmType());
+			return pti >= 0 ? RoleTypes.getRoleType(pti) : obj.getParmType();
 		default:
 			return "";
 		}
