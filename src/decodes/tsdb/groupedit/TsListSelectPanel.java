@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2015/10/26 12:47:03  mmaloney
+ * Added setSelection method
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -557,47 +560,45 @@ class TsIdSelectColumnizer
 
 class TsIdColumnComparator implements Comparator<TimeSeriesIdentifier>
 {
-	int col;
-	String colName;
+	int col, numCols;
 
 	TsIdColumnComparator(int col)
 	{
-		this(col, "");
-	}
-
-	TsIdColumnComparator(String colName)
-	{
-		this(-1, colName);
-	}
-
-	TsIdColumnComparator(int col, String colName)
-	{
 		this.col = col;
-		this.colName = colName;
 	}
-	
+
 	public int compare(TimeSeriesIdentifier d1, TimeSeriesIdentifier d2)
 	{
 		if (d1 == d2)
 			return 0;
 		
+		if (col == 0)// sort integers ascendingly
+			return compIds(d1, d2);
 		String s1 = TsIdSelectColumnizer.getColumn(d1, col).trim();
 		String s2 = TsIdSelectColumnizer.getColumn(d2, col).trim();
-		
-		if (col == 0)// sort integers assendingly
+		int ret = s1.compareToIgnoreCase(s2);
+		if (ret != 0)
+			return ret;
+		return compIds(d1, d2);
+	}
+	
+	int compIds(TimeSeriesIdentifier d1, TimeSeriesIdentifier d2)
+	{
+		String s1 = TsIdSelectColumnizer.getColumn(d1, 0).trim();
+		String s2 = TsIdSelectColumnizer.getColumn(d2, 0).trim();
+
+		try
 		{
-			try
-			{
-				int i1 = Integer.parseInt(s1);
-				int i2 = Integer.parseInt(s2);
-				return i1 - i2;
-			} catch (Exception ex)
-			{
-				Logger.instance().warning(
-						" TsListSelectPanel:DataDescriptorColumnComparator" +
-						" Can not sort column by data id.");
-			}
+			int i1 = Integer.parseInt(s1);
+			int i2 = Integer.parseInt(s2);
+			return i1 - i2;
+		} catch (Exception ex)
+		{
+			Logger.instance().warning(
+					" TsListSelectPanel:DataDescriptorColumnComparator" +
+					" Can not sort column by data id.");
+			return s1.compareToIgnoreCase(s2);
 		}
-		return s1.compareToIgnoreCase(s2);
+
 	}
 }
