@@ -2,6 +2,9 @@
  *  $Id$
  *  
  *  $Log$
+ *  Revision 1.1  2015/10/26 12:46:06  mmaloney
+ *  Additions for PythonAlgorithm
+ *
  */
 package decodes.tsdb.compedit;
 
@@ -35,7 +38,7 @@ import java.util.Comparator;
 
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
-import decodes.tsdb.DbAlgorithmExecutive;
+import decodes.tsdb.NoSuchObjectException;
 
 /**
  * Dialog to select an equipment model by name.
@@ -115,21 +118,12 @@ public class ExecClassSelectDialog extends JDialog
 	}
 	
 	public void load()
+		throws NoSuchObjectException
 	{
 		if (isLoaded)
 			return;
+		model.load();
 		isLoaded = true;
-		// Load the model in a background thread for speed.
-		new Thread(
-			new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					model.load();
-				}
-				
-			}).start();
 	}
 
 	public void setSelection(String selection)
@@ -242,10 +236,22 @@ class ExecClassTableModel extends AbstractTableModel
 	
 	@SuppressWarnings("rawtypes")
 	void load()
+		throws NoSuchObjectException
 	{
-		File listfile = new File(EnvExpander.expand("$DCSTOOL_USERDIR/algorithms.txt"));
+		String homelist = EnvExpander.expand("$DCSTOOL_HOME/doc/algorithms.txt");
+		String userlist = EnvExpander.expand("$DCSTOOL_USERDIR/algorithms.txt");
+		if (!loadFile(new File(homelist)) && !loadFile(new File(userlist)))
+		{
+			String msg = "Cannot open either '" + homelist + "' or '" + userlist + "'";
+			Logger.instance().warning(msg);
+			throw new NoSuchObjectException(msg);
+		}
+	}
+	
+	private boolean loadFile(File listfile)
+	{
 		if (!listfile.canRead())
-			return;
+			return false;
 		LineNumberReader lnr = null;
 		try
 		{
@@ -254,43 +260,38 @@ class ExecClassTableModel extends AbstractTableModel
 		  nextLine:
 			while((line = lnr.readLine()) != null)
 			{
-				String className = line.trim();
-				if (className.length() == 0)
+				line = line.trim();
+				if (line.length() == 0 || line.charAt(0) == '#')
 					continue;
+				String className = line;
+				String desc = "";
+				int spc = line.indexOf(' ');
+				if (spc > 0)
+				{
+					className = line.substring(0, spc);
+					desc = line.substring(spc+1);
+				}
 				for(StringPair sp : classlist)
 					if (sp.first.equals(className))
+					{
+						sp.second = desc;
 						continue nextLine;
-				classlist.add(new StringPair(className, ""));
+					}
+				classlist.add(new StringPair(className, desc));
 			}
 		}
 		catch (IOException ex)
 		{
 			Logger.instance().warning("Error reading '" + listfile.getPath() + "': " + ex);
+			return false;
 		}
 		finally
 		{
 			if (lnr != null)
 				try { lnr.close(); } catch(Exception x){}
 		}
-		
-		// Now instantiate each class to try to get a description.
-		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		return true;
 
-		for(StringPair sp : classlist)
-		{
-			try
-			{
-				Class execClass = cl.loadClass(sp.first);
-				DbAlgorithmExecutive dbe = (DbAlgorithmExecutive) execClass.newInstance();
-				sp.second = dbe.getBriefDescription();
-System.out.println("algo '" + sp.first + "' desc=" + sp.second);
-			}
-			catch(Exception ex)
-			{
-				Logger.instance().warning("Class from " + listfile.getPath()
-					+ ": '" + sp.first + "': " + ex);
-			}
-		}
 	}
 }
 
