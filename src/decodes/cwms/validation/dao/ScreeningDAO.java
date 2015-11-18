@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.5  2015/11/12 15:13:41  mmaloney
+ * Added HEC header.
+ *
  */
 package decodes.cwms.validation.dao;
 
@@ -147,7 +150,7 @@ public class ScreeningDAO
 				Logger.instance().info("Creating screening '" + screening.getScreeningName() + "' param="
 					+ screening.getParamId() + ", paramType=" + screening.getParamTypeId() + ", dur="
 					+ screening.getDurationId() + ", officeId=" + officeId);
-System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER_ID);
+//System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER_ID);
 				csdbio.createScreeningId(P_SCREENING_ID, P_SCREENING_ID_DESC, P_PARAMETER_ID,
 					P_PARAMETER_TYPE_ID, P_DURATION_ID, P_DB_OFFICE_ID);
 				
