@@ -11,6 +11,11 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2015/10/22 14:01:42  mmaloney
+*  CCP bug fix: If tasklist contained both inputs and output values for a comp,
+*  the old code was not converting the units of the existing values. It was just
+*  writing values in the output units, leaving existing ones alone.
+*
 *  Revision 1.3  2015/08/31 00:38:33  mmaloney
 *  added getDataCollection() method.
 *
@@ -1786,13 +1791,6 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	
 	public DataCollection getDataCollection() { return dc; }
 	
-	/**
-	 * Subclass should override this and provide a one-line description
-	 * of what the Java code does.
-	 * @return one line description of algorithm code.
-	 */
-	public String getBriefDescription() { return ""; }
-
 	/**
 	 * Often, especially when filling an aggregate period, we already
 	 * have all of the data we need within a time range. This method 
