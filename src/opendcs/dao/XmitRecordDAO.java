@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2015/07/27 18:47:05  mmaloney
+ * Don't save xmit records where message time is more than 1/2 hour in the future.
+ *
  * Revision 1.9  2015/02/06 18:55:08  mmaloney
  * Bug fixes and addition of method to get 1st & last record ID in a day.
  *
@@ -54,12 +57,12 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import opendcs.dai.XmitRecordDAI;
-
 import lrgs.archive.XmitWindow;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import decodes.db.NetworkList;
 import decodes.dcpmon.XmitMediumType;
+import decodes.dcpmon.XmitRecSpec;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
@@ -270,6 +273,13 @@ public class XmitRecordDAO
 		q = "UPDATE dcp_trans_day_map SET day_number = null"
 			+ " WHERE table_suffix = " + sqlString(suffix);
 		doModify(q);
+		
+		// Reset sequence so record_id starts at 1. We don't want it wrapping.
+		try { db.getKeyGenerator().reset("DCP_TRANS_"+suffix, db.getConnection()); }
+		catch(Exception ex)
+		{
+			throw new DbIoException(ex.toString());
+		}
 	}
 
 	
@@ -375,8 +385,8 @@ public class XmitRecordDAO
 		{
 			xr.setRecordId(getKey(tab));
 			
-//			if ((++numXmitsSaved % 100) == 0)
-				debug1("Saving new msg with dcp addr=" + xr.getDcpAddress() 
+			if ((++numXmitsSaved % 100) == 0)
+				debug2("Saving new msg with dcp addr=" + xr.getDcpAddress() 
 					+ " at time " + debugSdf.format(xmitTime)
 					+ ", day=" + dayNum + " to " + tab);
 			
@@ -1024,5 +1034,59 @@ Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
 		}
 		return null;
 	}
+	
+	@Override
+	public ArrayList<XmitRecSpec> readSince(int dayNum, long lastRecId)
+		throws DbIoException
+	{
+		ArrayList<XmitRecSpec> ret = new ArrayList<XmitRecSpec>();
+		String suffix = getDcpXmitSuffix(dayNum, false);
+		if (suffix == null)
+		{
+			warning("No suffix for dayNum=" + dayNum);
+			return ret;
+		}
+		
+		String tab = "DCP_TRANS_" + suffix;
+		String q = "SELECT RECORD_ID, MEDIUM_TYPE, MEDIUM_ID, TRANSMIT_TIME, FAILURE_CODES, CHANNEL"
+			+ " FROM " + tab;
+		if (lastRecId != -1)
+			q = q + " WHERE RECORD_ID > " + lastRecId;
+		q = q + " ORDER BY RECORD_ID";
+		
+		ResultSet rs = doQuery(q);
+		debug2("Query complete");
+
+		try
+		{
+			int n = 0;
+			while (rs != null && rs.next())
+			{
+				XmitRecSpec xrs = new XmitRecSpec(rs.getLong(1));
+				String s = rs.getString(2);
+				if (s == null || s.length() == 0)
+					xrs.setMediumType('G');
+				else
+					xrs.setMediumType(s.charAt(0));
+				xrs.setMediumId(rs.getString(3));
+				xrs.setXmitTime(new Date(rs.getLong(4)));
+				xrs.setFailureCodes(rs.getString(5));
+				xrs.setGoesChannel(rs.getInt(6));
+				ret.add(xrs);
+				if (++n % 1000 == 0)
+					debug2("" + n + " records so far");
+			}
+			debug2("" + n + " records received.");
+		}
+		catch (SQLException ex)
+		{
+			String msg = "getLatestTimeStamp Cannot parse xmit result: " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+
+		return ret;
+	}
+
 	
 }

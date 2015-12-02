@@ -1,13 +1,15 @@
 package opendcs.dai;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
-
 import decodes.db.NetworkList;
 import decodes.dcpmon.XmitMediumType;
+import decodes.dcpmon.XmitRecSpec;
+import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
 public interface XmitRecordDAI
@@ -143,6 +145,17 @@ public interface XmitRecordDAI
 		throws DbIoException;
 
 	public long getLastRecordID(int dayNum)
+		throws DbIoException;
+	
+	/**
+	 * Read XmitRecSpecs from the specified day number that have been created
+	 * since the lastRecId. That is, they have a recordId > lastRecId.
+	 * @param dayNum
+	 * @param lastRecId
+	 * @return
+	 * @throws DbIoException
+	 */
+	public ArrayList<XmitRecSpec> readSince(int dayNum, long lastRecId)
 		throws DbIoException;
 
 }
