@@ -23,11 +23,10 @@ public class PlatformList extends DatabaseObject
 {
 	/** This stores all the known Platform objects. */
 	private Vector<Platform> platformVec = new Vector<Platform>();
+	
+	/** This is a hashmap by transport medium of current platforms (i.e. no expiration) */
+	private HashMap<String, Platform> currentPlatformMap = new HashMap<String, Platform>();
 
-	/** This stores all the known Platform objects filtered on basis of transport medium. */
-	private Vector<Platform> platformVector = new Vector<Platform>();
-	
-	
 	/** Cross reference of Platform objects to SQL IDs. */
 	private IdRecordList pidList = new IdRecordList("Platform");
 	
@@ -69,6 +68,15 @@ public class PlatformList extends DatabaseObject
 			platformVec.add(plat);
 
 		pidList.add(plat);  // Adds or replaces in the ID list.
+		
+		if (plat.expiration == null)
+		{
+			for(Iterator<TransportMedium> tmit = plat.getTransportMedia(); tmit.hasNext(); )
+			{
+				TransportMedium tm = tmit.next();
+				currentPlatformMap.put(tm.getTmKey(), plat);
+			}
+		}
 	}
 
 	
@@ -185,17 +193,21 @@ public class PlatformList extends DatabaseObject
 	  The returned platform may not be completely read or up-to-date.
 	  @param mediumType transport medium type
 	  @param mediumId transport medium ID
-	  @param ts the time stamp
+	  @param ts the time stamp, or null to return only 'current' platforms.
 	  @return Platform or null if no match.
 	*/
 	public Platform findPlatform(String mediumType, String mediumId, Date ts)
 	{
-
+		// MJM 20151130 Added the HashMap for fast retrieval of 'current' platforms
+		// (i.e. platforms with no expiration). This is needed by dcpmon.
+		String tmKey = TransportMedium.makeTmKey(mediumType, mediumId);
+		if (ts == null || System.currentTimeMillis() - ts.getTime() < 3600000L)
+			return currentPlatformMap.get(tmKey);
+			
 		// Find the platform with earliest exp time that's after ts.
 		// While iterating, find the current version.
 
 		// The key we will search for:
-		String tmKey = TransportMedium.makeTmKey(mediumType, mediumId);
 
 		Platform current = null;
 		Platform best = null;
@@ -555,8 +567,8 @@ public class PlatformList extends DatabaseObject
 	public void clear()
 	{
 		platformVec.clear();
-		platformVector.clear();
 		pidList.clear();
+		currentPlatformMap.clear();
 	}
 }
 
