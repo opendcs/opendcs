@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2015/07/27 18:34:06  mmaloney
+ * Fixed ignoreInvalidAddr feature and fine-tuned the start time.
+ *
  * Revision 1.10  2015/07/17 13:26:37  mmaloney
  * Added ignoreInvalidAddr feature.
  *
@@ -55,12 +58,14 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import lrgs.common.DcpMsg;
 import lrgs.gui.DecodesInterface;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.routing.RoutingScheduler;
+import decodes.routing.RunState;
 import decodes.routing.ScheduleEntryExecutive;
 import decodes.tsdb.DbIoException;
 import decodes.util.CmdLineArgs;
@@ -78,6 +83,9 @@ public class DcpMonitor
 	private String status = "";
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
 	private boolean ignoreInvalidAddr = true;
+	private ScheduleEntryExecutive recoveryScheduleEntryExec = null;
+	SimpleDateFormat statSdf = new SimpleDateFormat("DDD/HH");
+
 	
 	private static PropertySpec[] dcpmonProps =
 	{
@@ -178,6 +186,7 @@ public class DcpMonitor
 		super("dcpmon");
 		module = "DcpMonitor";
 		debugSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		statSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
     public static void main(String args[]) throws Exception
@@ -384,8 +393,8 @@ public class DcpMonitor
 				shutdownFlag = true;
 				return;
 			}
-			ScheduleEntryExecutive rsee = new ScheduleEntryExecutive(recScheduleEntry, this);
-			executives.add(rsee);
+			recoveryScheduleEntryExec = new ScheduleEntryExecutive(recScheduleEntry, this);
+			executives.add(recoveryScheduleEntryExec);
 		}
 	}
 	
@@ -473,6 +482,38 @@ public class DcpMonitor
 	{
 		return ignoreInvalidAddr;
 	}
+	
 
+	@Override
+	protected String getStatistics()
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		if (xrWriteThread == null)
+			sb.append("init");
+		else
+		{
+			sb.append("#today=");
+			sb.append(xrWriteThread.numWrittenToday);
+		}
+		
+		if (recoveryScheduleEntryExec != null)
+		{
+			DcpMsg lastRecovered = recoveryScheduleEntryExec.getLastDcpMsg();
+			if (recoveryScheduleEntryExec.getRunState() == RunState.shutdown
+			 || recoveryScheduleEntryExec.getRunState() == RunState.complete)
+			{
+				info("Recovery thread is now complete.");
+				recoveryScheduleEntryExec = null;
+			}
+			else if (lastRecovered != null && lastRecovered.getXmitTime() != null)
+			{
+				sb.append(", recover=");
+				sb.append(statSdf.format(lastRecovered.getXmitTime()));
+			}
+		}
+		
+		return sb.toString();
+	}
 
 }

@@ -14,13 +14,13 @@ package decodes.dcpmon;
 
 import ilex.util.Logger;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.DatabaseConnectionOwner;
-
 import decodes.db.Database;
 import decodes.tsdb.DbIoException;
 import lrgs.common.DcpAddress;
@@ -53,6 +53,8 @@ public class XRWriteThread extends Thread
 	private DcpMonitor dcpMonitor = null;
 	private XmitRecordDAI xmitRecordDao = null;
 	private static final long MS_PER_DAY = 3600L * 24L * 1000L;
+	public static long numWrittenToday = 0L;
+	private int daynum = -1;
 
 
 	/** This wraps XmitRecord and adds an insert time. */
@@ -98,7 +100,7 @@ public class XRWriteThread extends Thread
 	public synchronized boolean enqueue(DcpMsg xr)
 	{
 		int sz = q.size();
-Logger.instance().debug2("XRWriteThread.enqueue: " + xr.getHeader() + " queue.size=" + sz 
+Logger.instance().debug3("XRWriteThread.enqueue: " + xr.getHeader() + " queue.size=" + sz 
 	+", failureCodes=" + xr.getXmitFailureCodes());
 		if (sz > queueMaxSize)
 		{
@@ -207,7 +209,12 @@ int dCallNum = 0;
 
 	public synchronized void processQueue()
 	{
-Logger.instance().debug2("XRWriteThread.processQueue qsize=" + q.size());
+		Calendar cal = Calendar.getInstance();
+		if (cal.get(Calendar.DAY_OF_YEAR) != daynum)
+		{
+			numWrittenToday = 0;
+			daynum = cal.get(Calendar.DAY_OF_YEAR);
+		}
 		DcpMsg xr;
 		while(!_shutdown && (xr = dequeue()) != null)
 		{
@@ -229,6 +236,7 @@ Logger.instance().debug2("XRWriteThread.processQueue qsize=" + q.size());
 			try
 			{
 				xmitRecordDao.saveDcpTranmission(xr);
+				numWrittenToday++;
 			}
 			catch(DbIoException ex)
 			{

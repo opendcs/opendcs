@@ -104,7 +104,7 @@ public class DcpMonitorConsumer
 	public void startMessage(DecodedMessage msg)
 		throws DataConsumerException
 	{
-Logger.instance().debug2("DcpMonitorConsumer.startMessage() msg=" + msg.getRawMessage().getOrigDcpMsg().getHeader());
+Logger.instance().debug3("DcpMonitorConsumer.startMessage() msg=" + msg.getRawMessage().getOrigDcpMsg().getHeader());
 		RawMessage rawMsg = null;
 		Date xmitTime = null;
 		DcpMsg dcpMsg = null;
