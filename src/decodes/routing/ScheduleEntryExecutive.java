@@ -583,4 +583,9 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 	{
 		return dacqEventLogger;
 	}
+
+	public DcpMsg getLastDcpMsg()
+	{
+		return lastDcpMsg;
+	}
 }
