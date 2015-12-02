@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2015/03/19 15:23:14  mmaloney
+*  punch list
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -48,8 +51,8 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import decodes.db.DatabaseException;
 
+import decodes.db.DatabaseException;
 import ilex.util.Logger;
 
 /**
@@ -85,12 +88,12 @@ public class OracleSequenceKeyGenerator
 			seqname = "EquipmentIdSeq";
 		else
 			seqname = tableName.trim() + "IdSeq";
-		//String q = "SELECT nextval('" + seqname + "');";
 		String q = "SELECT " + seqname.trim() + ".nextval from dual";
 
+		Statement stmt = null;
 		try
 		{
-			Statement stmt = conn.createStatement();
+			stmt = conn.createStatement();
 	
 			ResultSet rs = stmt.executeQuery(q);
 			if (rs == null || !rs.next())
@@ -100,14 +103,52 @@ public class OracleSequenceKeyGenerator
 				throw new DatabaseException(err);
 			}
 	
-			DbKey ret = DbKey.createDbKey(rs, 1);
-			stmt.close();
-			return ret;
+			return DbKey.createDbKey(rs, 1);
 		}
 		catch(SQLException ex)
 		{
 			String err = "SQL Error executing '" + q + "': " + ex;
 			throw new DatabaseException(err);
+		}
+		finally
+		{
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
+		}
+
+	}
+
+	@Override
+	public void reset(String tableName, Connection conn) throws DatabaseException
+	{
+		// Primitive Oracle SQL requires 4 steps:
+		// 1. Get current sequence value
+		// 2. Set increment to negative that amount
+		// 3. Get next sequence value (which causes increment to be applied).
+		// 4. Set increment back to 1.
+		DbKey curval = getKey(tableName, conn);
+		
+		String seqname = tableName.trim() + "IdSeq";
+		String q = "alter sequence " + seqname + " increment by -" + (curval.getValue()-1);
+		Statement stmt = null;
+		try
+		{
+			stmt = conn.createStatement();
+			stmt.executeUpdate(q);
+			q = "SELECT " + seqname + ".nextval from dual";
+			stmt.executeUpdate(q);
+			q = "alter sequence " + seqname + " increment by 1 minvalue 0";
+			stmt.executeUpdate(q);
+		}
+		catch(SQLException ex)
+		{
+			String err = "SQL Error executing '" + q + "': " + ex;
+			throw new DatabaseException(err);
+		}
+		finally
+		{
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
 		}
 	}
 }

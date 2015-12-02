@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2015/03/19 15:23:14  mmaloney
+*  punch list
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -96,9 +99,10 @@ public class SequenceKeyGenerator
 			seqname = tableName + sequenceSuffix;
 		String q = "SELECT nextval('" + seqname + "')";
 
+		Statement stmt = null;
 		try
 		{
-			Statement stmt = conn.createStatement();
+			stmt = conn.createStatement();
 	
 			ResultSet rs = stmt.executeQuery(q);
 			if (rs == null || !rs.next())
@@ -108,20 +112,47 @@ public class SequenceKeyGenerator
 				throw new DatabaseException(err);
 			}
 	
-			DbKey ret = DbKey.createDbKey(rs, 1);
-			stmt.close();
-			return ret;
+			return DbKey.createDbKey(rs, 1);
 		}
 		catch(SQLException ex)
 		{
 			String err = "SQL Error executing '" + q + "': " + ex;
 			throw new DatabaseException(err);
 		}
+		finally
+		{
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
+		}
 	}
 
 	public void setSequenceSuffix(String sequenceSuffix)
 	{
 		this.sequenceSuffix = sequenceSuffix;
+	}
+
+	@Override
+	public void reset(String tableName, Connection conn)
+		throws DatabaseException
+	{
+		String seqname = tableName + sequenceSuffix;
+		String q = "alter sequence " + seqname + " restart with 1";
+		Statement stmt = null;
+		try
+		{
+			stmt = conn.createStatement();
+			stmt.executeUpdate(q);
+		}
+		catch(SQLException ex)
+		{
+			String err = "SQL Error executing '" + q + "': " + ex;
+			throw new DatabaseException(err);
+		}
+		finally
+		{
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
+		}
 	}
 }
 

@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -52,5 +55,13 @@ public interface KeyGenerator
 	  @param tableName name of SQL table for which a new key is needed.
 	*/
 	public DbKey getKey(String tableName, Connection conn)
+		throws DatabaseException;
+	
+	/**
+	 * Resets the sequence for the named table so that the nextval returned is 1.
+	 * @param tableName
+	 * @throws DatabaseException
+	 */
+	public void reset(String tableName, Connection conn)
 		throws DatabaseException;
 }
