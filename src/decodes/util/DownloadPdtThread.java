@@ -131,6 +131,12 @@ class DownloadPdtThread extends Thread
 			}
 		}
 		mylock.releaseLock();
+		
+		if (existingPdt.getPdtLoadListener() != null)
+		{
+			existingPdt.getPdtLoadListener().pdtLoaded();
+			existingPdt.setPdtLoadListener(null);
+		}
 	}
 	
 	/**

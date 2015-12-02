@@ -41,6 +41,7 @@ public class Pdt
 	public static boolean useLockForDownload = false;
 	private boolean _isLoaded = false;
 	private PdtMaintenanceThread mthread = null;
+	private PdtLoadListener pdtLoadListener = null;
 
 	/** For singleton, use instance() method. */
 	public Pdt()
@@ -199,13 +200,21 @@ public class Pdt
 					lastLoad = System.currentTimeMillis();
 					pdt.load(pdtfile);
 				}
+				long now = System.currentTimeMillis();
 				if (url != null && url.length() > 0 && !url.equals("-")
-				 && System.currentTimeMillis() - lastDownload > downloadIntervalMsec)
+				 && now - lastDownload > downloadIntervalMsec)
 				{
+Logger.instance().debug1("Starting download. lastDownload=" + lastDownload
++ ", now=" + now + ", intv=" + downloadIntervalMsec + ", dT=" + (now - lastDownload));
 					lastDownload = System.currentTimeMillis();
 					DownloadPdtThread lpt = 
 						new DownloadPdtThread(url, localfn, pdt);
 					lpt.start();
+				}
+				else if (pdtLoadListener != null)
+				{
+					pdtLoadListener.pdtLoaded();
+					pdtLoadListener = null;
 				}
 				
 				// 30 min + random # seconds between 0...31
@@ -280,5 +289,15 @@ public class Pdt
 		pdt.stopMaintenanceThread();
 		
 		System.exit(0);
+	}
+
+	public void setPdtLoadListener(PdtLoadListener pdtLoadListener)
+	{
+		this.pdtLoadListener = pdtLoadListener;
+	}
+
+	public PdtLoadListener getPdtLoadListener()
+	{
+		return pdtLoadListener;
 	}
 }
