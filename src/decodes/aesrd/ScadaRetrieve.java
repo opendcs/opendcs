@@ -104,12 +104,12 @@ public class ScadaRetrieve
 	private long nextConfig = 0L;
 	private String tagList = "";
 	private static final String queryTemplateDefault = 
-		"SELECT v_AnalogHistory.DateTime, v_AnalogHistory.TagName, "
+		"SELECT v_AnalogHistory.DateTime, lower(v_AnalogHistory.TagName), "
 		+ "Value AS data, v_AnalogHistory.Quality "
 //		+ "Right(Str([Value]),25) AS data, v_AnalogHistory.Quality "
 		+ "FROM v_AnalogHistory "
 		+ "WHERE v_AnalogHistory.DateTime>GETDATE()-$numdays AND "
-		+ "lower(v_AnalogHistory.TagName) IN ($TAGLIST)";
+		+ "v_AnalogHistory.TagName IN ($TAGLIST)";
 	private String queryTemplate = queryTemplateDefault;
 	private String username = "", password = "";
 	private String jdbcDriverClass = "net.sourceforge.jtds.jdbc.Driver";
