@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/04/11 21:01:42  mmaloney
 *  dev
 *
@@ -24,10 +27,10 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
-
 import ilex.util.Logger;
 
 /**
@@ -89,5 +92,12 @@ public class CwmsSequenceKeyGenerator
 			throw new DatabaseException(err);
 		}
 	}
+
+	@Override
+	public void reset(String tableName, Connection conn) throws DatabaseException
+	{
+		// Never reset the one-and-only cwms sequence
+	}
+	
 }
 
