@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2015/06/04 21:39:20  mmaloney
+ * Added property spec for allowedHosts
+ *
  * Revision 1.8  2015/02/06 18:46:24  mmaloney
  * RC03
  *
@@ -413,7 +416,7 @@ public class RoutingScheduler
 		executives.addAll(newExecs);
 	}
 	
-	private String getStatistics()
+	protected String getStatistics()
 	{
 		int run, wait, complete, init, down;
 		run = wait = complete = init = down = 0;
