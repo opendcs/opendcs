@@ -4,35 +4,32 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2013/03/21 18:27:40  mmaloney
  * DbKey Implementation
  *
  */
 package decodes.hdb;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 
 import decodes.sql.DbKey;
 
 public class HdbSdiCache
 {
-	private ArrayList<HdbSiteDatatype> cache = new ArrayList<HdbSiteDatatype>();
+	/** Maps SDI to object with site id and datatype id */
+	private HashMap<DbKey, HdbSiteDatatype> sdiMap = new HashMap<DbKey, HdbSiteDatatype>();
 	
 	public void clear()
 	{
-		cache.clear();
+		sdiMap.clear();
 	}
 	
 	public void add(HdbSiteDatatype sdi)
 	{
-		for(Iterator<HdbSiteDatatype> sdiit = cache.iterator(); sdiit.hasNext();)
-			if (sdiit.next().getSdi() == sdi.getSdi())
-			{
-				sdiit.remove();
-				break;
-			}
-		cache.add(sdi);
+		sdiMap.put(sdi.getSdi(), sdi);
 	}
 	
 	/**
@@ -40,10 +37,7 @@ public class HdbSdiCache
 	 */
 	public HdbSiteDatatype get(DbKey sdi)
 	{
-		for(HdbSiteDatatype hsd : cache)
-			if (hsd.getSdi().equals(sdi))
-				return hsd;
-		return null;
+		return sdiMap.get(sdi);
 	}
 	
 	/**
@@ -51,7 +45,7 @@ public class HdbSdiCache
 	 */
 	public HdbSiteDatatype get(DbKey siteId, DbKey datatypeId)
 	{
-		for(HdbSiteDatatype hsd : cache)
+		for(HdbSiteDatatype hsd : sdiMap.values())
 			if (hsd.getSiteId().equals(siteId) && hsd.getDatatypeId().equals(datatypeId))
 				return hsd;
 		return null;
