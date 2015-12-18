@@ -167,7 +167,8 @@ public class ShefitFormatter extends OutputFormatter
 				if(shefCode.length() > 2) {
 					sb.append(shefCode.substring(0, 2));
 					sb.append(' ');
-					sb.append(shefCode.substring(3, 5));
+					int end = shefCode.length() > 5 ? 5 : shefCode.length();
+					sb.append(shefCode.substring(3, end));
 					sb.append("Z");
 				} else {
 					sb.append(shefCode);
