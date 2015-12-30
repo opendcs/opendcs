@@ -2,8 +2,13 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package opendcs.dai;
+
+import java.util.ArrayList;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.ConstraintException;
@@ -46,6 +51,14 @@ public interface AlgorithmDAI
 	 */
 	public DbCompAlgorithm getAlgorithmById(DbKey id)
 		throws DbIoException, NoSuchObjectException;
+	
+	/**
+	 * Return complete list of algorithms.
+	 * @return
+	 * @throws DbIoException
+	 */
+	public ArrayList<DbCompAlgorithm> listAlgorithms()
+		throws DbIoException;
 	
 	/**
 	 * Writes an algorithm to the database.
