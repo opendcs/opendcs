@@ -4,6 +4,7 @@
 package decodes.consumer;
 
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -21,10 +22,13 @@ import decodes.db.DataType;
 import decodes.db.EngineeringUnit;
 import decodes.db.Platform;
 import decodes.db.PresentationGroup;
+import decodes.db.Site;
+import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
+import decodes.util.PropertySpec;
 
 /**
   This class formats decoded data into the intermediate SHEFIT format used by
@@ -34,6 +38,7 @@ public class ShefitFormatter extends OutputFormatter
 {
 	private SimpleDateFormat dateFormat;
 	private NumberFormat numberFormat;
+	private String siteNameType = null;
 
 	/** default constructor */
 	protected ShefitFormatter()
@@ -47,6 +52,14 @@ public class ShefitFormatter extends OutputFormatter
 		numberFormat.setMaximumIntegerDigits(6);
 		numberFormat.setMinimumIntegerDigits(6);
 	}
+	
+	private PropertySpec propSpecs[] = 
+	{
+		new PropertySpec("sitenametype", 
+			PropertySpec.DECODES_ENUM + Constants.enum_SiteName,
+			"Preferred site name type (default is hex DCP Address)")
+
+	};
 
 	/**
 	  Initializes the Formatter. This method is called from the static
@@ -64,6 +77,9 @@ public class ShefitFormatter extends OutputFormatter
 	{
 		Calendar cal = Calendar.getInstance(tz);
 		dateFormat.setCalendar(cal);
+		String s = PropertiesUtil.getIgnoreCase(rsProps, "sitenametype");
+		if (s != null && s.trim().length() > 0)
+			siteNameType = s.trim();
 	}
 
 	/** Does nothing. */
@@ -94,7 +110,8 @@ public class ShefitFormatter extends OutputFormatter
 
 		char platformType = 'I';
 		String dcpId = "unknown";
-		String platformSiteName = "unknown";
+//		String platformSiteName = "unknown";
+		Site platformSite = null;
 		try
 		{
 			tm = rawmsg.getTransportMedium();
@@ -102,7 +119,20 @@ public class ShefitFormatter extends OutputFormatter
 				platformType = 'R';
 			dcpId = tm.getMediumId();
 			platform = rawmsg.getPlatform();
-			platformSiteName = platform.getSiteName(false);
+			platformSite = platform.getSite();
+			if (siteNameType != null && platformSite != null)
+			{
+				SiteName sn = platformSite.getName(siteNameType);
+				if (sn == null)
+					sn = platformSite.getPreferredName();
+				if (sn != null)
+				{
+					dcpId = sn.getNameValue().trim();
+					if (dcpId.length() > 8)
+						dcpId = dcpId.substring(0, 8);
+				}
+			}
+//			platformSiteName = platform.getSiteName(false);
 		}
 		catch(UnknownPlatformException e)
 		{
@@ -111,26 +141,44 @@ public class ShefitFormatter extends OutputFormatter
 
 		
 
-		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
+		for(Iterator<TimeSeries> it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
-			TimeSeries ts = (TimeSeries)it.next();
+			TimeSeries ts = it.next();
 			Sensor sensor = ts.getSensor();
-
-			String platformName = sensor.getSensorSiteName();
-			if (platformName == null)
-				platformName = platformSiteName;
-			else if (platformSiteName == "unknown")
+			String lineStationId = dcpId; // Default is to use the ID from Platform
+			
+			if (siteNameType != null)
 			{
-				dcpId = platformName;
-				platformSiteName = platformName;
+				Site ss = sensor.getSensorSite();
+				if (ss != null && ss != platformSite)
+				{
+					SiteName sn = ss.getName(siteNameType);
+					if (sn == null)
+						sn = ss.getPreferredName();
+					if (sn != null)
+					{
+						lineStationId = sn.getNameValue().trim();
+						if (lineStationId.length() > 8)
+							lineStationId = lineStationId.substring(0, 8);
+					}
+				}
 			}
 
-			EngineeringUnit eu = ts.getEU();
+//			String platformName = sensor.getSensorSiteName();
+//			if (platformName == null)
+//				platformName = platformSiteName;
+//			else if (platformSiteName == "unknown")
+//			{
+//				dcpId = platformName;
+//				platformSiteName = platformName;
+//			}
+
+//			EngineeringUnit eu = ts.getEU();
 
 			DataType dt = sensor.getDataType(Constants.datatype_SHEF);
 			String shefCode = dt != null ? dt.getCode() : "XX";
 
-			String recordingInt = "" + sensor.getRecordingInterval();
+//			String recordingInt = "" + sensor.getRecordingInterval();
 
 			int sz = ts.size();
 			for(int i=0; i<sz; i++)
@@ -150,7 +198,7 @@ public class ShefitFormatter extends OutputFormatter
 				}
 
 				sb.setLength(0);
-				sb.append(dcpId);
+				sb.append(lineStationId);
 				for(int j=sb.length(); j<8; j++)
 					sb.append(' ');
 
@@ -243,5 +291,12 @@ public class ShefitFormatter extends OutputFormatter
 		}
 		consumer.endMessage();
 	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return propSpecs;
+	}
+
 }
 
