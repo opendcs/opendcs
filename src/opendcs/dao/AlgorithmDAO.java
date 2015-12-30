@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -18,11 +21,11 @@ package opendcs.dao;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
 import opendcs.dai.AlgorithmDAI;
-
 import decodes.sql.DbKey;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbAlgoParm;
@@ -97,7 +100,39 @@ public class AlgorithmDAO
 			throw new DbIoException(msg);
 		}
 	}
+	
+	@Override
+	public ArrayList<DbCompAlgorithm> listAlgorithms()
+		throws DbIoException
+	{
+		ArrayList<DbCompAlgorithm> ret = new ArrayList<DbCompAlgorithm>();
+		String q = "select * from CP_ALGORITHM";
+		try
+		{
+			ResultSet rs = doQuery(q);
+			while (rs.next())
+			{
+				DbKey id = DbKey.createDbKey(rs, 1);
+				String nm = rs.getString(2);
+				String cls = rs.getString(3);
+				String cmmt = rs.getString(4);
+				DbCompAlgorithm algo = new DbCompAlgorithm(id, nm, cls, cmmt);
 
+				ret.add(algo);
+			}
+	
+			for(DbCompAlgorithm algo : ret)
+				fillAlgorithmSubordinates(algo);
+			
+			return ret;
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error reading algorithm list: " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+	}
 
 	/**
 	 * Return an algorithm with its subordinate meta-data.
