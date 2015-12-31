@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.7  2015/05/14 13:52:18  mmaloney
+*  RC08 prep
+*
 *  Revision 1.6  2015/04/15 19:59:46  mmaloney
 *  Fixed synchronization bugs when the same data sets are being processed by multiple
 *  routing specs at the same time. Example is multiple real-time routing specs with same
@@ -711,6 +714,7 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 		for(Iterator<Platform> it = stageDb.platformList.iterator(); it.hasNext(); )
 		{
 			Platform ob = it.next();
+Logger.instance().debug3("merging platform " + ob.getDisplayName());
 			Platform oldSiteDesigMatch = null;
 
 			// See if a matching old site exists
@@ -719,9 +723,11 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 				for(SiteName sn : ob.getSite().getNameArray())
 					if ((oldSite = theDb.siteList.getSite(sn)) != null)
 						break;
+Logger.instance().debug3("    site does " + (oldSite==null ? "not " : "") + "exists in old database.");
 			// Then find an old platform with matching (site,designator) 
 			if (oldSite != null)
 				oldSiteDesigMatch = theDb.platformList.findPlatform(oldSite, ob.getPlatformDesignator());
+Logger.instance().debug3("    Old platform does " + (oldSiteDesigMatch==null?"not ":"") + " exist with matching site/desig.");
 			
 			// Try to find existing platform with a matching transport id.
 			Platform oldTmMatch = null;
@@ -732,11 +738,12 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 				Date d = ob.expiration;
 				if (d == null)
 					d = new Date();
-
+Logger.instance().debug3("    Looking for match to TM " + tm.toString());
 				try
 				{
 					oldTmMatch = theDb.platformList.getPlatform(
 						tm.getMediumType(), tm.getMediumId(), d);
+Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") + "found.");
 				}
 				catch(DatabaseException ex) { oldTmMatch = null; }
 			}
@@ -1625,18 +1632,19 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 
 	private void dumpDTS(String when)
 	{
-		DbEnum dts = theDb.enumList.getEnum(Constants.enum_DataTypeStd);
-		if (dts == null)
-		{
-			info("dumpDTS " + when + " there is no enum " + Constants.enum_DataTypeStd);
-			return;
-		}
-		info("dumpDTS " + when + " enum " + Constants.enum_DataTypeStd + " has the following members:");
-		for(Iterator<EnumValue> evit = dts.iterator(); evit.hasNext(); )
-		{
-			EnumValue ev = evit.next();
-			info("    " + ev.getValue() + " " + ev.getDescription());
-		}
+		return;
+//		DbEnum dts = theDb.enumList.getEnum(Constants.enum_DataTypeStd);
+//		if (dts == null)
+//		{
+//			info("dumpDTS " + when + " there is no enum " + Constants.enum_DataTypeStd);
+//			return;
+//		}
+//		info("dumpDTS " + when + " enum " + Constants.enum_DataTypeStd + " has the following members:");
+//		for(Iterator<EnumValue> evit = dts.iterator(); evit.hasNext(); )
+//		{
+//			EnumValue ev = evit.next();
+//			info("    " + ev.getValue() + " " + ev.getDescription());
+//		}
 	}
 // Debug method:
 //	private void showEnums(String when)
