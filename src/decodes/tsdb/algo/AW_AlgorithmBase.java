@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.7  2015/11/12 15:24:17  mmaloney
+*  Bugfix in saveOutput() whereby the NO_OVERWRITE feature was being thwarted.
+*
 *  Revision 1.6  2015/10/26 12:45:35  mmaloney
 *  PythonAlgorithm
 *
@@ -188,7 +191,11 @@ public abstract class AW_AlgorithmBase
 		new PropertySpec("maxInterpIntervals", PropertySpec.INT,
 			"Max number of intervals that can be interpolated for missing"),
 		new PropertySpec("ifQuestionable", PropertySpec.STRING,
-			"ProcessAsNormal, QuestionOutput, or SkipTimeslice")
+			"ProcessAsNormal, QuestionOutput, or SkipTimeslice"),
+		new PropertySpec("maxMissingValuesForFill", PropertySpec.INT,
+			"When filling regular interval missing input data, do not fill more than this many intervals."),
+		new PropertySpec("maxMissingTimeForFill", PropertySpec.INT,
+			"When filling missing input data, fail if the missing gap is more than this many seconds."),
 	};
 	private PropertySpec allprops[] = null;
 	
