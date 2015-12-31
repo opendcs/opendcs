@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.8  2015/12/31 17:06:27  mmaloney
+*  dev
+*
 *  Revision 1.7  2015/05/14 13:52:18  mmaloney
 *  RC08 prep
 *
@@ -736,16 +739,16 @@ Logger.instance().debug3("    Old platform does " + (oldSiteDesigMatch==null?"no
 			{
 				TransportMedium tm = tmit.next();
 				Date d = ob.expiration;
-				if (d == null)
-					d = new Date();
-Logger.instance().debug3("    Looking for match to TM " + tm.toString());
-				try
-				{
-					oldTmMatch = theDb.platformList.getPlatform(
+//				if (d == null)
+//					d = new Date();
+Logger.instance().debug3("    Looking for match to TM " + tm.toString() + " with expiration " + d);
+//				try
+//				{
+					oldTmMatch = theDb.platformList.findPlatform(
 						tm.getMediumType(), tm.getMediumId(), d);
 Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") + "found.");
-				}
-				catch(DatabaseException ex) { oldTmMatch = null; }
+//				}
+//				catch(DatabaseException ex) { oldTmMatch = null; }
 			}
 			
 			if (oldSiteDesigMatch == null)
