@@ -291,7 +291,7 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		}
 		catch(EOFException ex)
 		{
-			Logger.instance().warning("EOF reading schedule entry, startPtr=" + startPtr);
+			Logger.instance().debug1("EOF reading schedule entry, startPtr=" + startPtr);
 			return null;
 		}
 	}
