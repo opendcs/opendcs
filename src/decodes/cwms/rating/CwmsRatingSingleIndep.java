@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2015/07/14 17:59:45  mmaloney
+ * Added 'useDepLocation' property with default=false.
+ * Set to true to use the dep param location for building rating spec.
+ *
  * Revision 1.6  2015/01/06 02:09:11  mmaloney
  * dev
  *
@@ -162,6 +166,14 @@ public class CwmsRatingSingleIndep
 		try
 		{
 			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
+			Date earliestBaseTime = baseTimes.first();
+//debug3("Will do rating for the following " + baseTimes.size() + " base times:");
+//for(Date baseTime : baseTimes)
+//{
+//	debug3("    " + baseTime.toString());
+//}
+			if (earliestBaseTime == null)
+				earliestBaseTime = new Date();
 			ratingSet = crd.getRatingSet(specId);
 			
 			// As per instructions from Mike Perryman: I must find out what the native units

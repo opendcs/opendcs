@@ -353,4 +353,33 @@ public class CwmsRatingDao extends TsdbDao
 		}
 		return null;
 	}
+	
+	/**
+	 * As per Mike Perryman's email 1/11/16, the 'from' time for fromDatabase must be the
+	 * actual earliest effective date that I want. This method retrieves that.
+	 * @param dataTime the Java msec time of the data
+	 * @return the Java msec time of the effective date of the rating.
+	 */
+	private long getEffectiveDateFor(String ratingId, long dataTime)
+	{
+		String q = "select cwms_util.to_millis(max(effective_date)) "
+			+ "  from cwms_v_rating "
+			+ " where lower(rating_id) = " + tsdb.sqlString(ratingId)
+			+ "   and effective_date <= cwms_util.to_timestamp(" + dataTime + ")";
+		try
+		{
+			ResultSet rs = tsdb.doQuery(q);
+			if (!rs.next())
+				return -1L;
+			return rs.getLong(1);
+		}
+		catch (Exception ex)
+		{
+			Logger.instance().warning(module + " getEffectiveDateFor(" + ratingId
+				+ ", " + dataTime + ": " + ex);
+			return -1;
+		}
+	}
+
+	
 }
