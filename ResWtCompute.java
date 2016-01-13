@@ -6,8 +6,11 @@
 package usace.rowcps.computation.resevap;
 
 import hec.heclib.util.HecTime;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *  Class used to compute reservoir temperature profile
@@ -552,7 +555,26 @@ System.out.println( currentTime + " resj, resj_old " + resj + "  " + resj_old );
             }
             catch ( IOException ioe )
             {
-
+            	
+            	
+            	String msg =  dateTimeStr + "\n";
+            	msg += "resj " + resj + "\n";
+            	msg += "sum_energy_in " + sum_energy_in + "\n";
+            	msg += "sum_energy_diff " + sum_energy_diff + "\n";
+            	msg += "fi_check " + fi_check + "\n";
+            	msg += "changeEng " + changeEng + "\n";
+            	msg += "engBalance " + engBalance + "\n";
+            	msg += "efficiency " + efficiency + "\n";
+            	msg += "zarea[resj] " + zarea[resj] + "\n";
+            	
+                for ( i=resj; i>=0; i--)
+                {            	
+                	msg += " i, wt[i], zvol[i] " + wt[i] + "  " + zvol[i]+ "\n";
+                }
+            	Logger logger = Logger.getLogger(ResWtCompute.class.getName());
+            	logger.log(Level.SEVERE, msg, ioe);
+            	
+            	return false;
             }
         }
 
