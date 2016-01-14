@@ -269,11 +269,17 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 					{
 						String ftyp = fld.getType().getName();
 						if (ftyp.equals("java.lang.String"))
+						{
 							fld.set(obj, pval);
+						}
 						else if (ftyp.equals("char"))
+						{
 							fld.setChar(obj, pval.charAt(0));
+						}
 						else if (ftyp.equals("int"))
+						{
 							fld.setInt(obj, Integer.parseInt(pval));
+						}
 						else if (ftyp.equals("long"))
 							fld.setLong(obj, Long.parseLong(pval));
 						else if (ftyp.equals("float"))
