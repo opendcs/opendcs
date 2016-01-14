@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2015/04/15 19:59:46  mmaloney
+ * Fixed synchronization bugs when the same data sets are being processed by multiple
+ * routing specs at the same time. Example is multiple real-time routing specs with same
+ * network lists. They will all receive and decode the same data together.
+ *
  * Revision 1.4  2015/02/06 19:01:11  mmaloney
  * Bugfix: reset dbedit Load Message Dialog after successful retrieval.
  *
@@ -203,6 +208,7 @@ public class DecodesScriptEditPanel
 		editTZ = java.util.TimeZone.getTimeZone(DecodesSettings.instance().editTimeZone);
 		if (editTZ == null)
 			editTZ = java.util.TimeZone.getTimeZone("UTC");
+		decodedDataTableModel.setTZ(editTZ);
 
 		Properties props = new Properties();
 		props.setProperty("includeSensorNum", "true");
