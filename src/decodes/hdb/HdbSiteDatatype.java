@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2013/03/21 18:27:40  mmaloney
  * DbKey Implementation
  *
@@ -19,6 +22,9 @@
  * government, this source code is provided completely without warranty.
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.2  2013/03/21 18:27:40  mmaloney
  * DbKey Implementation
  *
@@ -64,5 +70,20 @@ public class HdbSiteDatatype
 	public DbKey getDatatypeId()
 	{
 		return datatypeId;
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return sdi.hashCode();
+	}
+	
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (!(obj instanceof HdbSiteDatatype))
+			return false;
+		HdbSiteDatatype rhs = (HdbSiteDatatype)obj;
+		return sdi.equals(rhs.getSdi());
 	}
 }
