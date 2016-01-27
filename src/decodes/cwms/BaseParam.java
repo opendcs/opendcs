@@ -35,7 +35,7 @@ public class BaseParam
 		{
 			String bparam = rs.getString(1);
 			String units = rs.getString(2);
-Logger.instance().debug3("baseParam '" + bparam + "' units '" + units + "'");
+//Logger.instance().debug3("baseParam '" + bparam + "' units '" + units + "'");
 			bparamUnitsMap.put(bparam, units);
 		}
 		
@@ -50,7 +50,7 @@ Logger.instance().debug3("baseParam '" + bparam + "' units '" + units + "'");
 			if (p.contains("-"))
 				continue; // we only want base params
 			String units = rs.getString(2);
-Logger.instance().debug3("baseParam '" + p + "' engUnits '" + units + "'");
+//Logger.instance().debug3("baseParam '" + p + "' engUnits '" + units + "'");
 			bparamEnglishUnitsMap.put(p.toUpperCase(), units);
 		}
 	}

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2015/05/14 13:52:19  mmaloney
+ * RC08 prep
+ *
  * Revision 1.6  2015/01/30 20:08:12  mmaloney
  * Improve debug.
  *
@@ -80,6 +83,7 @@ public class CwmsSiteDAO extends SiteDAO
 		site.country = rsSite.getString(8);
 
 		double d = rsSite.getDouble(9);
+//Logger.instance().debug3("CwmsSiteDAO.resultSet2Site read elevation: " + d);
 		if (!rsSite.wasNull())
 			site.setElevation(d);
 		site.setElevationUnits(rsSite.getString(10));
@@ -219,6 +223,8 @@ public class CwmsSiteDAO extends SiteDAO
 				
 				// MJM for release 5.3 use the new improved version of store
 				// This allows us to save country and nearest city.
+Logger.instance().debug3("CwmsSiteDAO.writeSite calling cwmsLocJdbc.store ... delev=" + delev
++ ", elevUnits = " + newSite.getElevationUnits());
 				cwmsLocJdbc.store(officeId, 
 					cwmsName.getNameValue(), 
 					state, 
