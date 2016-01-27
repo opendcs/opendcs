@@ -100,7 +100,7 @@ public class DrgsRecvMsgThread
 	private byte sourceCode[];
 
 	private SimpleDateFormat carrierDateFmt;
-	private SimpleDateFormat debugDateFmt;
+	protected SimpleDateFormat debugDateFmt;
 
 	private boolean msgHasCarrierTimes;
 	private boolean isBinaryMsg;
