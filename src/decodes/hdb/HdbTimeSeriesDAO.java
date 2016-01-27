@@ -48,7 +48,14 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	private SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	private static SimpleDateFormat rwdf = null;
-
+	
+	// MJM 2016/1/8 Calls to reloadTsIdCache only does a refresh for time series
+	// since the last call.
+	// Once per hour only it does a full load.
+	private static long lastCacheLoad = 0L;
+	private static final long CACHE_RELOAD_INTERVAL = 3600000L;
+	private static long lastCacheRefresh = 0L;
+	private static final long CACHE_REFRESH_OVERLAP = 120000L;
 
 	protected HdbTimeSeriesDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -905,7 +912,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 	}
 
 	@Override
-	public void reloadTsIdCache() throws DbIoException
+	public synchronized void reloadTsIdCache() throws DbIoException
 	{
         //
         // this query modified 13-March-2013 by M. Bogner to add the sitename view into the query to
@@ -913,17 +920,40 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
         // where the CP failed because no corresponding SITENAME records existed for a CP_TS_ID record 
         // in databases where the sitename view is limited by db_site_code for master and slave HDB databases
         //
-		String q = "SELECT a.ts_id, a.site_datatype_id, a.interval, "
-				+ "a.table_selector, a.model_id, "
-				+ "b.SITE_ID, b.DATATYPE_ID, "
-				+ "d.UNIT_COMMON_NAME "
-				+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, SITENAME e "
+//		String q = "SELECT a.ts_id, a.site_datatype_id, a.interval, "
+//			+ "a.table_selector, a.model_id, "
+//			+ "b.SITE_ID, b.DATATYPE_ID, "
+//			+ "d.UNIT_COMMON_NAME "
+//			+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, SITENAME e "
+//			+ " WHERE a.site_datatype_id = b.site_datatype_id "
+//			+ " AND b.DATATYPE_ID = c.DATATYPE_ID "
+//			+ " and c.UNIT_ID = d.UNIT_ID"
+//            + " and b.SITE_ID = e.SITEID";
+
+		// MJM 2016/1/8 Join with SITE rather than SITENAME. The latter has an inconsistency
+		// in the view which is causing it to get "invisible" sites in a foreign district.
+		String q = "SELECT a.ts_id, a.site_datatype_id, a.interval, a.table_selector, a.model_id, "
+				+ "b.SITE_ID, b.DATATYPE_ID, d.UNIT_COMMON_NAME "
+				+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, SITE e "
 				+ " WHERE a.site_datatype_id = b.site_datatype_id "
 				+ " AND b.DATATYPE_ID = c.DATATYPE_ID "
 				+ " and c.UNIT_ID = d.UNIT_ID"
-                + " and b.SITE_ID = e.SITEID";
+                + " and b.SITE_ID = e.ID";
+		
+		// MJM 2016/1/8 Added this block of code to minimize reloading the entire cache.
+		boolean doFullLoad = System.currentTimeMillis() - lastCacheLoad > CACHE_RELOAD_INTERVAL;
+		debug3("reloadTsIdCache doFullLoad=" + doFullLoad + ", lastCacheLoad=" + new Date(lastCacheLoad)
+			+ ", lastCacheRefresh=" + new Date(lastCacheRefresh));
+		if (!doFullLoad)
+			q = q + " and a.date_time_loaded > " 
+				  + db.sqlDate(new Date(lastCacheRefresh-CACHE_REFRESH_OVERLAP));
+		lastCacheRefresh = System.currentTimeMillis();
+		if (doFullLoad)
+			lastCacheLoad = lastCacheRefresh;
 
-		cache.clear();
+//		cache.clear();
+			
+			
 		try
 		{
 			ResultSet rs = doQuery(q);

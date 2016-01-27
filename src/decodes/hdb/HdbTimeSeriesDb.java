@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.117  2013/07/25 15:21:21  mmaloney
 *  DbKey in lookup data type bug fix.
 *
@@ -338,30 +341,19 @@ public class HdbTimeSeriesDb
 		if (sdi.isNull())
 			throw new NoSuchObjectException("Cannot expand sdi with value "
 				+ sdi);
-		info("HdbTimeSeriesDb.expandSDI for sdi=" + sdi);
-		
-//		siteDatatype.clearAttributes();
+		debug3("HdbTimeSeriesDb.expandSDI for sdi=" + sdi);
 		
 		HdbSiteDatatype hsdi = getHSDI(sdi);
 		if (hsdi == null)
 			throw new NoSuchObjectException(
 				"No such site-datatype with SDI=" + sdi);
 		parm.setSite(getSiteById(hsdi.getSiteId()));
-//		siteDatatype.setSiteId(hsdi.getSiteId());
 		
 		DataType dt = DataType.getDataType(hsdi.getDatatypeId());
 		if (dt == null)
 			dt = DataType.getDataType(
 				Constants.datatype_HDB, "" + hsdi.getDatatypeId());
 		parm.setDataType(dt);
-
-//		siteDatatype.setDataType(DataType.getDataType(
-//			Constants.datatype_HDB, "" + hsdi.getDatatypeId()));
-		
-		
-//		Site site = getSiteById(hsdi.getSiteId());
-//		for(Iterator<SiteName> snit = site.getNames(); snit.hasNext(); )
-//			siteDatatype.addSiteName(snit.next());
 	}
 
 	
@@ -1189,15 +1181,13 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		if (hsdi != null)
 			return hsdi;
 
-		String q = "select SITE_ID, DATATYPE_ID from HDB_SITE_DATATYPE"
-			+ " where SITE_DATATYPE_ID = " + sdi;
+		String q = "select SITE_ID, DATATYPE_ID from HDB_SITE_DATATYPE where SITE_DATATYPE_ID = " + sdi;
 		try
 		{
 			ResultSet rs = doQuery(q);
-			if (!rs.next())
-				return null;
-			hsdi = new HdbSiteDatatype(sdi, DbKey.createDbKey(rs, 1), DbKey.createDbKey(rs, 2));
-			hdbSdiCache.add(hsdi);
+			if(rs.next())
+				hdbSdiCache.add(
+					hsdi = new HdbSiteDatatype(sdi, DbKey.createDbKey(rs, 1), DbKey.createDbKey(rs, 2)));
 			return hsdi;
 		}
 		catch(SQLException ex)
