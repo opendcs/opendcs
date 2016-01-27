@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package opendcs.dai;
 
@@ -16,6 +19,7 @@ import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.compedit.ComputationInList;
 
 /**
  * Defines public interface for reading/writing site (i.e. location) objects.
@@ -86,4 +90,12 @@ public interface ComputationDAI
 	 * Closes any resources opened by the DAO
 	 */
 	public void close();
+
+	/**
+	 * New 6.2 List computations for GUI method.
+	 * @param filter
+	 * @return
+	 * @throws DbIoException
+	 */
+	public ArrayList<ComputationInList> compEditList(CompFilter filter) throws DbIoException;
 }
