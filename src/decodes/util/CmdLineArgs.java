@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/06/27 20:33:49  mmaloney
+*  Bug fix: Catch any exception, not just IOException.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -208,6 +211,7 @@ public class CmdLineArgs
 
 		//Load the decodes.properties
 		DecodesSettings settings = DecodesSettings.instance();
+		File userProps = new File(EnvExpander.expand("$DCSTOOL_USERDIR/user.properties"));
 		if (!settings.isLoaded())
 		{
 			Properties props = new Properties();
@@ -219,9 +223,11 @@ public class CmdLineArgs
 			}
 			catch(Exception e)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-				"CmdLineArgs:parseArgs " +
-				"Cannot open DECODES Properties File '"+propFile+"': "+e);
+				// MJM if user props exists, this is not an error.
+				if (!userProps.canRead())
+					Logger.instance().failure(
+						"CmdLineArgs:parseArgs " +
+						"Cannot open DECODES Properties File '"+propFile+"': "+e);
 			}
 			settings.loadFromProperties(props);
 		}
