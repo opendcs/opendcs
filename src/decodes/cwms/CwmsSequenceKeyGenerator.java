@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2015/12/02 21:13:12  mmaloney
+*  Overload new reset() method to do nothing. CWMS sequence is never reset.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -30,6 +33,7 @@ import java.sql.SQLException;
 
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.KeyGenerator;
 import ilex.util.Logger;
 
@@ -45,11 +49,13 @@ public class CwmsSequenceKeyGenerator
 	implements KeyGenerator
 {
 	private int cwmsSchemaVersion = CwmsTimeSeriesDb.CWMS_V_2_2;
+	private int decodesDatabaseVersion = 0;
 	
 	/** Default constructor. */
-	public CwmsSequenceKeyGenerator(int v)
+	public CwmsSequenceKeyGenerator(int v, int decodesDatabaseVersion)
 	{
 		cwmsSchemaVersion = v;
+		this.decodesDatabaseVersion = decodesDatabaseVersion;
 	}
 	
 	/**
@@ -66,7 +72,14 @@ public class CwmsSequenceKeyGenerator
 		String seqname = cwmsSchemaVersion <= CwmsTimeSeriesDb.CWMS_V_2_2
 			? "ccp.ccp_seq" : "cwms_20.cwms_seq";
 		
-		String q = "SELECT " + seqname.trim() + ".nextval from dual";
+		// DB 13 is DECODES 6.2 or later. Use table-specific sequences for
+		// high-volume records so we don't overrun CWMS_SEQ.
+		if (decodesDatabaseVersion >= DecodesDatabaseVersion.DECODES_DB_13
+		 && (tableName.equalsIgnoreCase("SCHEDULE_ENTRY_STATUS")
+			 || tableName.equalsIgnoreCase("DACQ_EVENT")))
+			seqname = tableName + "IdSeq";
+		
+		String q = "SELECT " + seqname + ".nextval from dual";
 
 		try
 		{

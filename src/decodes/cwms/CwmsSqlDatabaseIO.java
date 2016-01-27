@@ -74,7 +74,7 @@ public class CwmsSqlDatabaseIO
 		connectToDatabase(sqlDbLocation);
 
 		// The key generator is always for Oracle.
-		keyGenerator = new CwmsSequenceKeyGenerator(cwmsSchemaVersion);
+		keyGenerator = new CwmsSequenceKeyGenerator(cwmsSchemaVersion, getDecodesDatabaseVersion());
 		
 		/* 
 		 * Oracle does not require a COMMIT after each block of nested SELECTs.

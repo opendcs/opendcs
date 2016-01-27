@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.10  2015/09/10 21:18:29  mmaloney
+*  Development on Screening
+*
 *  Revision 1.9  2015/05/14 13:52:19  mmaloney
 *  RC08 prep
 *
@@ -787,7 +790,7 @@ public class CwmsTimeSeriesDb
 
 		postConnectInit(appName);
 		
-		keyGenerator = new CwmsSequenceKeyGenerator(cwmsSchemaVersion);
+		keyGenerator = new CwmsSequenceKeyGenerator(cwmsSchemaVersion, getDecodesDatabaseVersion());
 
 		if (dbOfficeId != null && dbOfficeId.length() > 0)
 		{
