@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2015/09/10 21:18:29  mmaloney
+ * Development on Screening
+ *
  * Revision 1.9  2015/08/31 00:34:50  mmaloney
  * Log messages with flag values should print in hex.
  *
@@ -399,17 +402,31 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 	}
 
 	@Override
-	public int fillTimeSeries(CTimeSeries ts, Collection<Date> queryTimes)
+	public int fillTimeSeries(CTimeSeries cts, Collection<Date> queryTimes)
 		throws DbIoException, BadTimeSeriesException
 	{
-		String qbase = "select DATE_TIME, ROUND(VALUE,8), QUALITY_CODE "
-			+ "FROM CWMS_V_TSV_DQU " 
-			+ "where TS_CODE = " + ts.getSDI()
-			+ " AND UNIT_ID = " + sqlString(ts.getUnitsAbbr()) + " "
+		if (!cts.isExpanded())
+		{
+			fillTimeSeriesMetadata(cts); // may throw BadTimeSeriesException
+			cts.setIsExpanded();
+		}
+
+		// Part of the contract is to honor the units already specified
+		// in the CTimeSeries.
+		UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
+
+//		String qbase = "select DATE_TIME, ROUND(VALUE,8), QUALITY_CODE "
+//			+ "FROM CWMS_V_TSV_DQU " 
+//			+ "where TS_CODE = " + cts.getSDI()
+//			+ " AND UNIT_ID = " + sqlString(cts.getUnitsAbbr()) + " "
+//			+ " and DATE_TIME IN (";
+		
+		
+		String qbase = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+			+ " WHERE TS_CODE = " + cts.getSDI()
 			+ " and DATE_TIME IN (";
 
-		fillTimeSeriesMetadata(ts); // may throw BadTimeSeriesException
-		
+
 		int datesPerQuery = 300;
 		int start = 0;
 		int end = 0;
@@ -450,7 +467,29 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 							ex.printStackTrace(System.err);
 							continue;
 						}
-						ts.addSample(tv);
+						
+						if (tv != null)
+						{
+							// For computation processor, we never want to overwrite data
+							// we already have.
+							Date d = tv.getTime();
+							if (cts.findWithin(d.getTime()/1000L, 10) != null)
+								continue;
+							
+							if (unitConverter != null)
+							{
+								try
+								{
+									tv.setValue(unitConverter.convert(tv.getDoubleValue()));
+								}
+								catch (Exception ex)
+								{
+									warning("fillTimeSeries: " + ex);
+								}
+							}
+							cts.addSample(tv);
+							numAdded++;
+						}
 						numAdded++;
 					}
 				}
