@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.3  2015/11/18 14:13:17  mmaloney
+ * Bug fix: Make the TsIdColumnCaparator be consistent.
+ *
  * Revision 1.2  2015/10/26 12:47:03  mmaloney
  * Added setSelection method
  *
@@ -523,7 +526,16 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 	public void sortByColumn(int c)
 	{
 		sortColumn = c;
-		Collections.sort(tsidList, new TsIdColumnComparator(c));
+		TsIdColumnComparator cmp = new TsIdColumnComparator(c);
+		try { Collections.sort(tsidList, cmp); }
+		catch(IllegalArgumentException ex)
+		{
+			System.err.println("Inconsistent comparator. Last comparison was: ");
+			System.err.println(cmp.lastd1.getKey().toString() + ": " + cmp.lastd1.getUniqueString());
+			System.err.println(cmp.lastd2.getKey().toString() + ": " + cmp.lastd2.getUniqueString());
+			System.err.println(ex.toString());
+			ex.printStackTrace(System.err);
+		}
 	}
 
 	public void reSort()
@@ -561,6 +573,7 @@ class TsIdSelectColumnizer
 class TsIdColumnComparator implements Comparator<TimeSeriesIdentifier>
 {
 	int col, numCols;
+	TimeSeriesIdentifier lastd1, lastd2;
 
 	TsIdColumnComparator(int col)
 	{
@@ -569,6 +582,9 @@ class TsIdColumnComparator implements Comparator<TimeSeriesIdentifier>
 
 	public int compare(TimeSeriesIdentifier d1, TimeSeriesIdentifier d2)
 	{
+		lastd1 = d1;
+		lastd2 = d2;
+		
 		if (d1 == d2)
 			return 0;
 		
@@ -584,21 +600,6 @@ class TsIdColumnComparator implements Comparator<TimeSeriesIdentifier>
 	
 	int compIds(TimeSeriesIdentifier d1, TimeSeriesIdentifier d2)
 	{
-		String s1 = TsIdSelectColumnizer.getColumn(d1, 0).trim();
-		String s2 = TsIdSelectColumnizer.getColumn(d2, 0).trim();
-
-		try
-		{
-			int i1 = Integer.parseInt(s1);
-			int i2 = Integer.parseInt(s2);
-			return i1 - i2;
-		} catch (Exception ex)
-		{
-			Logger.instance().warning(
-					" TsListSelectPanel:DataDescriptorColumnComparator" +
-					" Can not sort column by data id.");
-			return s1.compareToIgnoreCase(s2);
-		}
-
+		return d1.getKey().compareTo(d2.getKey());
 	}
 }
