@@ -84,5 +84,22 @@ public class TsdbDatabaseVersion
 	 */
 	public static final int VERSION_10 = 10;
 	public static final String VERSION_10_DTK = "OPENDCS 6.1";
+	
+	// Waste 11 and 12 to bring DecodesDatabaseVersion into alignment with this.
+	public static final int VERSION_11 = 11;
+	public static final String VERSION_11_DTK = "UNUSED";
+	public static final int VERSION_12 = 12;
+	public static final String VERSION_12_DTK = "UNUSED";
+
+	/**
+	 * Version 13 schema changes corresponds to OpenDCS 6.2 RC01
+	 * - For CWMS, don't use CWMS_SEQ for SCHEDULE_ENTRY_STATUS and DACQ_EVENT, instead
+	 *   use the CCP-sequences SCHEDULE_ENTRY_STATUSIdSeq and DACQ_EVENTIdSeq
+	 * - Addition of CP_ALGO_SCRIPT table
+	 * - Removal of unused tables CP_COMPOSITE_DIAGRAM and CP_COMPOSITE_MEMBER.
+	 */
+	public static final int VERSION_13 = 13;
+	public static final String VERSION_13_DTK = "OpenDCS 6.2 RC01";
+
 
 }

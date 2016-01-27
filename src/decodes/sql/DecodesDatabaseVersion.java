@@ -70,6 +70,15 @@ public class DecodesDatabaseVersion
 	 */
 	public static final int DECODES_DB_12 = 12;
 
-	// Future schema changes should define DECODES_DB_13
+	/**
+	 * Version 13 schema changes corresponds to OpenDCS 6.2 RC01
+	 * - For CWMS, don't use CWMS_SEQ for SCHEDULE_ENTRY_STATUS and DACQ_EVENT, instead
+	 *   use the CCP-sequences SCHEDULE_ENTRY_STATUSIdSeq and DACQ_EVENTIdSeq
+	 * - Addition of CP_ALGO_SCRIPT table
+	 * - Removal of unused tables CP_COMPOSITE_DIAGRAM and CP_COMPOSITE_MEMBER.
+	 */
+	public static final int DECODES_DB_13 = 13;
+
+	// Future schema changes should define DECODES_DB_14
 	
 }
