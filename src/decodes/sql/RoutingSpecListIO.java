@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.7  2015/03/19 15:23:14  mmaloney
+ * punch list
+ *
  * Revision 1.6  2015/02/16 16:16:12  mmaloney
  * When re-reading, clear properties before populating the Properties set.
  *
@@ -534,11 +537,14 @@ public class RoutingSpecListIO extends SqlDbObjIo
 		try
 		{
 			propsDao.deleteProperties("RoutingSpecProperty", "RoutingSpecId", id);
-			ArrayList<ScheduleEntry> seList = seDAO.listScheduleEntries(null);
-			for(ScheduleEntry se : seList)
+			if (seDAO != null)
 			{
-				if (se.getRoutingSpecId().equals(rs.getId()))
-					seDAO.deleteScheduleEntry(se);
+				ArrayList<ScheduleEntry> seList = seDAO.listScheduleEntries(null);
+				for(ScheduleEntry se : seList)
+				{
+					if (se.getRoutingSpecId().equals(rs.getId()))
+						seDAO.deleteScheduleEntry(se);
+				}
 			}
 		}
 		catch (DbIoException e)
@@ -548,7 +554,8 @@ public class RoutingSpecListIO extends SqlDbObjIo
 		finally
 		{
 			propsDao.close();
-			seDAO.close();
+			if (seDAO != null)
+				seDAO.close();
 		}
 
 		// Finally, do the main RoutingSpec table
