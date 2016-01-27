@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2015/11/18 14:06:23  mmaloney
+*  Get rid of 'getBriefDescription()' after all.
+*
 *  Revision 1.4  2015/10/22 14:01:42  mmaloney
 *  CCP bug fix: If tasklist contained both inputs and output values for a comp,
 *  the old code was not converting the units of the existing values. It was just
@@ -543,7 +546,7 @@ Logger.instance().debug3("addTsToParmRef: propName='" + propName + "' neededEU='
 				if (parmRef.timeSeries.findWithin(paramTime, roundSec/2) == null)
 				{
 debug3("getAllInputData: role=" + role + ", baseTime=" 
-+ bd + ", paramTime=" + paramTime + ", nsamps=" + parmRef.timeSeries.size());
++ debugSdf.format(bd) + ", paramTime=" + debugSdf.format(paramTime) + ", nsamps=" + parmRef.timeSeries.size());
 					queryTimes.add(paramTime);
 				}
 			}
@@ -1223,6 +1226,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 	  nextBaseTime:
 		for(Date baseTime : baseTimes)
 		{
+			debug3("DbAlgorithmExecutive starting base time slice " + debugSdf.format(baseTime));
 			timeSlice.clear();
 
 			// Place all input params for this baseTime into the time slice.
@@ -1239,6 +1243,8 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 
 				if (tv == null) // Time series missing value for this slice?
 				{
+Logger.instance().debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
++ ", missingAction=" + parmRef.missingAction.toString());
 					if (parmRef.missingAction == MissingAction.FAIL)
 						// Required param - fail this slice if not present.
 //						continue nextBaseTime;
@@ -1254,10 +1260,12 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 					TimedVariable prevTv = parmRef.timeSeries.findPrev(varSec);
 					if (prevTv == null)
 					{
+Logger.instance().debug3("... no previous value, skipping.");
 						// Can't compute non-ignored param. Skip slice.
 						continue nextBaseTime;
 					}
 					int prevSec = (int)(prevTv.getTime().getTime() / 1000L);
+Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTime()) + " : " + prevTv.getStringValue());
 
 					int intvSecs = IntervalCodes.getIntervalSeconds(
 						parmRef.compParm.getInterval());
@@ -1279,7 +1287,14 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 						}
 
 						// Else we have a recent-enough prev value - use it.
-						tv = prevTv;
+//						tv = prevTv;
+						// MJM 2016-01-26: Mock up a new TV with current time and previous value.
+						// This is necessary in case they're doing a delta below
+						tv = new TimedVariable(prevTv);
+						tv.setTime(paramTime);
+						
+						debug3("DbAlgorithmExecutive role '" + role + "' missing at base time "
+							+ debugSdf.format(baseTime) + ", using prev value=" + tv.getStringValue());
 					}
 					else // one of NEXT, INTERP, or CLOSEST
 					{
@@ -1307,7 +1322,8 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 						switch(parmRef.missingAction)
 						{
 						case NEXT:
-							tv = nextTv;
+							tv = new TimedVariable(nextTv);
+							tv.setTime(paramTime);
 							break;
 						case INTERP:
 							tv = parmRef.timeSeries.findInterp(varSec);
@@ -1341,8 +1357,10 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 						parmRef.compParm.getInterval(), true);
 					TimedVariable prev = parmRef.timeSeries.findWithin(
 						(int)(qMsec/1000L), roundSec);
-debug3("DbAlgorithmExecutive.iterateTimeSlices: " +
-"prev=" + prev + ", this=" + tv + ", qMsec=" + (new Date(qMsec)) 
+debug3("DbAlgorithmExecutive.iterateTimeSlices: "
++ "prev=" + (prev==null ? "null" : (debugSdf.format(prev.getTime()) + ":" + prev.getStringValue())) + ", " 
++ "this=" + (tv == null ? "null" : (debugSdf.format(tv.getTime()) +":" + tv.getStringValue()))
++ ", qMsec=" + (debugSdf.format(new Date(qMsec))) 
 + ", roundSec=" + roundSec);
 					if (prev != null)
 					{
@@ -1604,6 +1622,16 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 			return role + "-undefined";
 		return tsid.getUniqueString();
 	}
+	
+	/**
+	 * Return true if a time series is assigned to the passed role name. False if not.
+	 * @param role the role name in the algorithm
+	 */
+	public boolean isAssigned(String role)
+	{
+		return getParmTsId(role) != null;
+	}
+	
 	/**
 	 * Returns the interval of the selected parameter for a role
 	 * @param rolename the role of interest
