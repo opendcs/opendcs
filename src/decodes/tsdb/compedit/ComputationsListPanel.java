@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.16  2013/07/25 18:42:24  mmaloney
 *  dev
 *
@@ -296,7 +299,7 @@ public class ComputationsListPanel extends ListPanel
 	{
 		Logger.instance().debug1("ComputationListPanel.doRefresh() ------------");
 		ComputationDAI computationDAO = tsdb.makeComputationDAO();
-		LoadingAppDAI loadingAppDao = tsdb.makeLoadingAppDAO();
+//		LoadingAppDAI loadingAppDao = tsdb.makeLoadingAppDAO();
 		
 		CompFilter compFilter = tsdb.getCompFilter();
 		
@@ -304,74 +307,78 @@ public class ComputationsListPanel extends ListPanel
 		filterPanel.setFilterParams(compFilter, tsdb);
 		try
 		{
-			ArrayList<AlgorithmInList> algorithms = tsdb.listAlgorithmsForGui();
-			ArrayList<CompAppInfo> apps = loadingAppDao.listComputationApps(true);
-			ArrayList<DbComputation> comps = computationDAO.listCompsForGUI(compFilter);
+			// MJM 6.2 moves filtering into the DAO.
+			ArrayList<ComputationInList> displayComps = computationDAO.compEditList(compFilter);
 			
-			for(Iterator<DbComputation> compit = comps.iterator(); compit.hasNext(); )
-			{
-				DbComputation comp = compit.next();
-				TsGroup group = comp.getGroup();
-
-				boolean passes = false;
-				if (group == null) // Single, non-group comp?
-					passes = compFilter.passes(comp);
-				else if (!compFilter.hasParamConditions())
-					passes = true;
-				else // group computation
-				{	
-					// Group object may be shared by multiple comps. Only expand it once.
-					if (!group.getIsExpanded())
-						tsdb.expandTsGroup(group);
-
-					ArrayList<DbComputation> expandedGroupComps = new ArrayList<DbComputation>();
-					
-					for(TimeSeriesIdentifier tsid : group.getExpandedList())
-						try 
-						{
-							expandedGroupComps.add(
-								DbCompResolver.makeConcrete(tsdb, tsid, comp, false));
-						}
-						catch(NoSuchObjectException ex)
-						{
-							Logger.instance().debug1("Cannot expand comp(" + comp.getId()
-								+ ") " + comp.getName() + ": " + ex);
-						}
-
-					if (expandedGroupComps.size() == 0) 
-						// No expansions succeeded. Check the abstract comp.
-						passes = compFilter.passes(comp);
-					else
-						for(DbComputation exComp : expandedGroupComps)
-							if (passes = compFilter.passes(exComp))
-								break;
-				}
-				if (!passes)
-					compit.remove();
-			}
-			
-			ArrayList<ComputationInList> displayComps = new ArrayList<ComputationInList>();
-			for(DbComputation comp : comps)
-				displayComps.add(
-					new ComputationInList(comp.getId(), comp.getName(),
-						comp.getAlgorithmId(), comp.getAppId(), comp.isEnabled(), 
-						comp.getComment()));
-
-			for(ComputationInList cil : displayComps)
-			{
-				for(AlgorithmInList algo : algorithms)
-					if (cil.getAlgorithmId() == algo.getAlgorithmId())
-					{
-						cil.setAlgorithmName(algo.getAlgorithmName());
-						break;
-					}
-				for(CompAppInfo app : apps)
-					if (cil.getProcessId() == app.getAppId())
-					{
-						cil.setProcessName(app.getAppName());
-						break;
-					}
-			}
+// Old 6.1 code			
+//			ArrayList<AlgorithmInList> algorithms = tsdb.listAlgorithmsForGui();
+//			ArrayList<CompAppInfo> apps = loadingAppDao.listComputationApps(true);
+//			ArrayList<DbComputation> comps = computationDAO.listCompsForGUI(compFilter);
+//			
+//			for(Iterator<DbComputation> compit = comps.iterator(); compit.hasNext(); )
+//			{
+//				DbComputation comp = compit.next();
+//				TsGroup group = comp.getGroup();
+//
+//				boolean passes = false;
+//				if (group == null) // Single, non-group comp?
+//					passes = compFilter.passes(comp);
+//				else if (!compFilter.hasParamConditions())
+//					passes = true;
+//				else // group computation
+//				{	
+//					// Group object may be shared by multiple comps. Only expand it once.
+//					if (!group.getIsExpanded())
+//						tsdb.expandTsGroup(group);
+//
+//					ArrayList<DbComputation> expandedGroupComps = new ArrayList<DbComputation>();
+//					
+//					for(TimeSeriesIdentifier tsid : group.getExpandedList())
+//						try 
+//						{
+//							expandedGroupComps.add(
+//								DbCompResolver.makeConcrete(tsdb, tsid, comp, false));
+//						}
+//						catch(NoSuchObjectException ex)
+//						{
+//							Logger.instance().debug1("Cannot expand comp(" + comp.getId()
+//								+ ") " + comp.getName() + ": " + ex);
+//						}
+//
+//					if (expandedGroupComps.size() == 0) 
+//						// No expansions succeeded. Check the abstract comp.
+//						passes = compFilter.passes(comp);
+//					else
+//						for(DbComputation exComp : expandedGroupComps)
+//							if (passes = compFilter.passes(exComp))
+//								break;
+//				}
+//				if (!passes)
+//					compit.remove();
+//			}
+//			
+//			ArrayList<ComputationInList> displayComps = new ArrayList<ComputationInList>();
+//			for(DbComputation comp : comps)
+//				displayComps.add(
+//					new ComputationInList(comp.getId(), comp.getName(),
+//						comp.getAlgorithmId(), comp.getAppId(), comp.isEnabled(), 
+//						comp.getComment()));
+//
+//			for(ComputationInList cil : displayComps)
+//			{
+//				for(AlgorithmInList algo : algorithms)
+//					if (cil.getAlgorithmId() == algo.getAlgorithmId())
+//					{
+//						cil.setAlgorithmName(algo.getAlgorithmName());
+//						break;
+//					}
+//				for(CompAppInfo app : apps)
+//					if (cil.getProcessId() == app.getAppId())
+//					{
+//						cil.setProcessName(app.getAppName());
+//						break;
+//					}
+//			}
 			compListTableModel.setContents(displayComps);
 			if (compListTableModel.sortedBy != -1)
 				compListTableModel.sortByColumn(compListTableModel.sortedBy);
@@ -385,7 +392,7 @@ public class ComputationsListPanel extends ListPanel
 		}
 		finally
 		{
-			loadingAppDao.close();
+//			loadingAppDao.close();
 			computationDAO.close();
 		}
 
