@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.8  2015/12/31 21:18:30  mmaloney
+*  PropertySpecs for maxMissingValuesForFill and maxMissingTimeForFill.
+*
 *  Revision 1.7  2015/11/12 15:24:17  mmaloney
 *  Bugfix in saveOutput() whereby the NO_OVERWRITE feature was being thwarted.
 *
@@ -144,7 +147,7 @@ public abstract class AW_AlgorithmBase
 	private boolean _deleteOutputCalled = false;
 
 	/** Sorted set of base times to execute over. */
-	TreeSet<Date> baseTimes = null;
+	protected TreeSet<Date> baseTimes = null;
 
 	/** Set to true to disable automatic filling of aggregate periods. */
 	protected boolean noAggregateFill = false;
