@@ -184,7 +184,8 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
 			JOptionPane.YES_NO_OPTION);
 		if (r == JOptionPane.YES_OPTION)
 		{
-			parent.scheduleListPanel.deleteForRs(ob);
+			if (parent.getScheduleListPanel() != null)
+				parent.getScheduleListPanel().deleteForRs(ob);
 			try { Database.getDb().getDbIo().deleteRoutingSpec(ob); }
 			catch(DatabaseException e)
 			{
