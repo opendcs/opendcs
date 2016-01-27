@@ -295,7 +295,15 @@ debug("row: ds='" + ds + "', tag='" + tag + "', data='" + data + "', qual='" + q
 					continue;
 				data = data.trim();
 				Date d = null;
-				try { d = dbSdf.parse(ds); }
+				try
+				{
+					int dot = ds.indexOf('.');
+					if (dot > 0 && ds.length() > dot+3)
+						ds = ds.substring(0, dot+4);
+					d = dbSdf.parse(ds);
+if (tag.equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
+	debug("\tds='" + ds + "' parsed to " + d + " with tz=" + dbSdf.getTimeZone().getID());
+				}
 				catch(ParseException ex)
 				{
 					warning("Cannot parse date for result set: " + ds + ", " + tag + ", "
@@ -357,7 +365,10 @@ debug("row: ds='" + ds + "', tag='" + tag + "', data='" + data + "', qual='" + q
 							ScadaQueryRow nr = new ScadaQueryRow(new Date(t), sqr.getTag(), 
 								numberFormat.format(v), sqr.getQuality());
 							displayRows.add(nr);
-debug("Added interpolated " + nr);
+debug("Added interpolated" + nr);
+if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
+	debug("\t1=" + new Date(t1) + ", t2=" + new Date(t2) + ", t=" + new Date(t));
+
 						}
 					}
 				}
