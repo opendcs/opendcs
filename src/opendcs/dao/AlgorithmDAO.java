@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2015/12/30 20:39:23  mmaloney
+ * Bugfix: listAlgorithms was using the same Statement in nested queries, causing SQL exception.
+ *
  * Revision 1.2  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -121,8 +124,21 @@ public class AlgorithmDAO
 				ret.add(algo);
 			}
 	
-			for(DbCompAlgorithm algo : ret)
-				fillAlgorithmSubordinates(algo);
+			q = "select * from CP_ALGO_TS_PARM";
+			rs = doQuery(q);
+			while(rs.next())
+			{
+				DbKey algoId = DbKey.createDbKey(rs, 1);
+				String role = rs.getString(2);
+				String type = rs.getString(3);
+				for(DbCompAlgorithm algo : ret)
+					if (algo.getId().equals(algoId))
+					{
+						algo.addParm(new DbAlgoParm(role, type));
+						break;
+					}
+			}
+			propertiesSqlDao.readPropertiesIntoList("CP_ALGO_PROPERTY", ret, null);
 			
 			return ret;
 		}
