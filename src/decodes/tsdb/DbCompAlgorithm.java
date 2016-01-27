@@ -11,6 +11,9 @@
 *  For more information contact: tempest@sutron.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -22,9 +25,9 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 
+import opendcs.dao.CachableHasProperties;
 import ilex.util.HasProperties;
 import ilex.util.PropertiesUtil;
-
 import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.sql.DbKey;
@@ -34,7 +37,7 @@ import decodes.tsdb.xml.CompXioTags;
 This data structure class holds the meta-data for an algorithm.
 */
 public class DbCompAlgorithm
-	implements CompMetaData, HasProperties
+	implements CompMetaData, CachableHasProperties
 {
 	/** Surrogate key for this algorithm in the time series database.  */
 	private DbKey algorithmId;
@@ -246,5 +249,19 @@ public class DbCompAlgorithm
 				return false;
 		}
 		return true;
+	}
+
+
+	@Override
+	public DbKey getKey()
+	{
+		return algorithmId;
+	}
+
+
+	@Override
+	public String getUniqueName()
+	{
+		return name;
 	}
 }
