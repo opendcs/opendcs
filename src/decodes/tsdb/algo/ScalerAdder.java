@@ -7,6 +7,8 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.MissingAction;
+import decodes.tsdb.ParmRef;
 import decodes.tsdb.VarFlags;
 
 //AW:IMPORTS
@@ -113,6 +115,32 @@ public class ScalerAdder extends AW_AlgorithmBase
 	{
 //AW:TIMESLICE
 		double tally = 0.0;
+		ParmRef pr = null;
+		String t = null;
+		if (((pr = getParmRef(t = "input1")) != null && isAssigned(t) && isMissing(input1) && 
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input2")) != null && isAssigned(t) && isMissing(input2) && 
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input3")) != null && isAssigned(t) && isMissing(input3) && 
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input4")) != null && isAssigned(t) && isMissing(input4) && 
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input5")) != null && isAssigned(t) && isMissing(input5) && 
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input6")) != null && isAssigned(t) && isMissing(input6) && 
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input7")) != null && isAssigned(t) && isMissing(input7) && 
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input8")) != null && isAssigned(t) && isMissing(input8) && 
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input0")) != null && isAssigned(t) && isMissing(input9) && 
+			pr.missingAction != MissingAction.IGNORE))
+		{
+			debug2("Skipping time slice with base time " + debugSdf.format(_timeSliceBaseTime)
+			+ " because of missing value for param " + t);
+			return;
+		}
+			
 		if (!isMissing(input1))
 			tally += (input1 * coeff1);
 		if (!isMissing(input2))
