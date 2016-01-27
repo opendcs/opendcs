@@ -1,10 +1,14 @@
 package lrgs.lrit;
 
+import java.util.Date;
+
 import ilex.util.ByteUtil;
 import ilex.util.Logger;
 import decodes.util.PropertySpec;
 import lrgs.archive.MsgArchive;
+import lrgs.common.DcpMsg;
 import lrgs.drgs.DrgsConnectCfg;
+import lrgs.drgsrecv.DrgsRecv;
 import lrgs.drgsrecv.DrgsRecvMsgThread;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputException;
@@ -109,4 +113,28 @@ public class LritDamsNtReceiver
 		LrgsConfig lrgsCfg = LrgsConfig.instance();
 		return "LRIT:" + lrgsCfg.lritHostName + ":" + lrgsCfg.lritPort;
 	}
+	
+	@Override
+	protected boolean checkMsgOk(DcpMsg msg)
+	{
+		//If Drgs receives msgs older than an hour ago 
+		//- ignore then Check Msg Date 
+		Date msgDate = msg.getDapsTime();
+		long currentTime = System.currentTimeMillis();
+		if (msgDate != null)
+		{
+			if ((currentTime - msgDate.getTime()) > LrgsConfig.instance().lritMaxMsgAgeSec*1000L )
+			{
+				log(Logger.E_WARNING, DrgsRecv.EVT_MSG_TOO_OLD,
+					"Received msg older than threshold. DCP"
+					+ " address: " + msg.getDcpAddress()
+					+ ", msgtime=" + debugDateFmt.format(msgDate)
+					+ ", curtime=" + debugDateFmt.format(new Date(currentTime))
+					+ ", threshold = " + LrgsConfig.instance().lritMaxMsgAgeSec + " seconds.");
+				return false;
+			}
+		}
+		return true;
+	}
+
 }

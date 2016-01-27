@@ -255,6 +255,9 @@ public class LrgsConfig
 	/** If set, then edl files will be moved here after processing */
 	public String edlDoneDirectory = null;
 	
+	/** Max age of an LRIT message in seconds. Messages older than this are discarded. */
+	public int lritMaxMsgAgeSec = 7200;
+	
 	public static final boolean def_noaaportEnabled = false;
 	public static final int def_noaaportPort = 18000;
 	public static final String def_archiveDir = ".";

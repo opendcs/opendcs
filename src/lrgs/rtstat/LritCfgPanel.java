@@ -35,6 +35,7 @@ public class LritCfgPanel
 	private JTextField syncPatternField = new JTextField();
 	private JTextField srcField = new JTextField();
 	private JTextField timeoutField = new JTextField();
+	private JTextField maxAgeSecField = new JTextField();
 	private GuiDialog parent = null;
 
 	public LritCfgPanel(GuiDialog parent)
@@ -101,12 +102,22 @@ public class LritCfgPanel
 				new Insets(3, 0, 3, 30), 0, 0));
 		
 		add(new JLabel(RtStat.getGenericLabels().getString("timeout")),
-			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.5,
-				GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
+			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
 
 		add(timeoutField,
-			new GridBagConstraints(1, 5, 1, 1, 0.5, 0.5,
+			new GridBagConstraints(1, 5, 1, 1, 0.5, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(3, 0, 3, 30), 50, 0));
+		
+		add(new JLabel(RtStat.getLabels().getString("LritPanel.maxage")),
+			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.5,
+				GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
+				new Insets(3, 25, 3, 1), 0, 0));
+
+		add(maxAgeSecField,
+			new GridBagConstraints(1, 6, 1, 1, 0.5, 0.5,
 				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
 				new Insets(3, 0, 3, 30), 50, 0));
 	}
@@ -120,6 +131,7 @@ public class LritCfgPanel
 		syncPatternField.setText(conf.lritDamsNtStartPattern);
 		srcField.setText(conf.lritSrcCode);
 		timeoutField.setText("" + conf.lritTimeout);
+		maxAgeSecField.setText("" + conf.lritMaxMsgAgeSec);
 		this.conf = conf;
 	}
 	
@@ -134,6 +146,7 @@ public class LritCfgPanel
 		 || !TextUtil.strEqual(syncPatternField.getText().trim(), conf.lritDamsNtStartPattern)
 		 || !TextUtil.strEqual(srcField.getText().trim(), conf.lritSrcCode)
 		 || !TextUtil.strEqual(timeoutField.getText().trim(), ""+conf.lritTimeout)
+		 || !TextUtil.strEqual(maxAgeSecField.getText().trim(), ""+conf.lritMaxMsgAgeSec)
 		;
 		return ret;
 	}
@@ -165,6 +178,13 @@ public class LritCfgPanel
 			Logger.instance().warning("Invalid lrit timeout '" + timeoutField.getText()
 				+ "' -- set to default of 120 seconds");
 			conf.lritTimeout = 120;
+		}
+		try { conf.lritMaxMsgAgeSec = Integer.parseInt(maxAgeSecField.getText().trim()); }
+		catch(Exception ex)
+		{
+			Logger.instance().warning("Invalid lrit max age (seconds) '" + timeoutField.getText()
+				+ "' -- set to default of 7200 seconds");
+			conf.lritTimeout = 7200;
 		}
 	}
 
