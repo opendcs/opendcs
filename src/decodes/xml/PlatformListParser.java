@@ -4,6 +4,11 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.2  2015/04/15 19:59:47  mmaloney
+*  Fixed synchronization bugs when the same data sets are being processed by multiple
+*  routing specs at the same time. Example is multiple real-time routing specs with same
+*  network lists. They will all receive and decode the same data together.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -126,7 +131,6 @@ public class PlatformListParser
 			else
 			{
 				platform = new Platform(platformId);
-				plist.add(platform);
 			}
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.TransportXref_el))
@@ -216,6 +220,7 @@ public class PlatformListParser
 			{
 				if (platform.lastModifyTime == null)
 					platform.lastModifyTime = fileLMT;
+				plist.add(platform);
 			}
 			platform = null;
 		}
