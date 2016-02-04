@@ -18,9 +18,9 @@ import java.io.IOException;
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import lrgs.ldds.PasswordChecker;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
-
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -319,6 +319,8 @@ public class LrgsConfig
 		new PropertySpec("damsNtTimeout", PropertySpec.INT,
 			"If no data is received on a DAMS-NT socket in this many seconds, then issue a timeout"
 			+ " warning and reconnect."),
+		new PropertySpec("passwordCheckerClass", PropertySpec.STRING,
+			"Name of class that does password checking. If not set, then all passwords accepted.")
 //		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
 //			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
 	};
@@ -328,6 +330,8 @@ public class LrgsConfig
 	 * properties with names that don't match public attributes to it.
 	 */
 	public Properties otherProps = new Properties();
+	
+	private PasswordChecker passwordChecker = null;
 
 	public static LrgsConfig instance()
 	{
@@ -559,5 +563,15 @@ public class LrgsConfig
 	public boolean additionalPropsAllowed()
 	{
 		return true;
+	}
+	
+	public PasswordChecker getPasswordChecker()
+	{
+		return passwordChecker;
+	}
+
+	public void setPasswordChecker(PasswordChecker passwordChecker)
+	{
+		this.passwordChecker = passwordChecker;
 	}
 }
