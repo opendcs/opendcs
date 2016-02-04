@@ -416,6 +416,12 @@ public class ExportDialog extends GuiDialog
 					{
 						p = pl.getPlatform(nl.transportMediumType,
 							nle.transportId, new Date());
+						if (p == null)
+						{
+							Logger.instance().warning("List contains '" + nl.transportMediumType 
+								+ ":" + nle.transportId + "' but no matching platform in database -- skipped.");
+							continue;
+						}
 						p.read();
 					}
 					catch(DatabaseException ex) { p = null; }
