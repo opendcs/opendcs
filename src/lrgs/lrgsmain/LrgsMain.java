@@ -40,6 +40,7 @@ import lrgs.domsatrecv.DomsatRecv;
 import lrgs.gui.LrgsApp;
 import lrgs.gui.DecodesInterface;
 import lrgs.iridiumsbd.IridiumSbdInterface;
+import lrgs.ldds.PasswordChecker;
 import lrgs.lrgsmon.DetailReportGenerator;
 import lrgs.lrit.LritDamsNtReceiver;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
@@ -486,6 +487,22 @@ public class LrgsMain
 		drgsRecv.start();
 
 		// Open DDS for business.
+		String pcc = cfg.getMiscProp("passwordCheckerClass");
+		if (pcc != null && pcc.trim().length() > 0)
+		{
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			try
+			{
+				Class pccClass = cl.loadClass(pcc);
+				cfg.setPasswordChecker((PasswordChecker)pccClass.newInstance());
+			}
+			catch (Exception ex)
+			{
+				Logger.instance().fatal("Cannot load password checker class '" + pcc + "': " + ex);
+				return false;
+			}
+
+		}
 		ddsServer.setEnabled(true);
 
 		if (cfg.enableDapsDqm)
