@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2015/06/04 21:37:39  mmaloney
+ * Added control buttons to process monitor GUI.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -404,7 +407,7 @@ public class ProcessMonitorFrame
 		}
 
 		String ev = LoadResourceBundle.sprintf(procmonLabels.getString("startingProc"), procName,
-			sel.getCompAppInfo().getAppName(), startCmd);
+			startCmd);
 		Logger.instance().info(ev);
 		addEvent(ev);
 		try
@@ -413,6 +416,34 @@ public class ProcessMonitorFrame
 		}
 		catch (IOException ex)
 		{
+			// If it's windoze try to change slashes to backslash and tack on .bat
+			if (System.getProperty("os.name").toLowerCase().startsWith("win"))
+			{
+				StringBuilder sb = new StringBuilder(startCmd);
+				int exeEnd = sb.length();
+				for(int idx = 0; idx < sb.length(); idx++)
+				{
+					char c = sb.charAt(idx);
+					if (c == ' ')
+					{
+						exeEnd = idx;
+						break;
+					}
+					else if (c == '/')
+						sb.setCharAt(idx, '\\');
+				}
+				if (exeEnd > 4 && !sb.toString().toLowerCase().substring(0, exeEnd).endsWith(".bat"))
+					sb.insert(exeEnd, ".bat");
+				Logger.instance().info("Execution of '" + startCmd + "' failed. Windozified to '" + sb.toString() 
+					+ "' and trying again...");
+				startCmd = sb.toString();
+				try
+				{
+					ProcWaiterThread.runBackground(startCmd, procName);
+					return;
+				}
+				catch(IOException ex2) { ex = ex2; }
+			}
 			String msg = LoadResourceBundle.sprintf(procmonLabels.getString("cannotStart"), procName,
 				sel.getCompAppInfo().getAppName(), ex.toString());
 			Logger.instance().warning(msg);
