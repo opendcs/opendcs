@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2015/12/02 21:17:43  mmaloney
+ * Make getStatistics protected to allow special apps like DcpMonitor to overload.
+ *
  * Revision 1.9  2015/06/04 21:39:20  mmaloney
  * Added property spec for allowedHosts
  *
@@ -389,6 +392,13 @@ public class RoutingScheduler
 	{
 		// read list of ScheduleEntry's for my loading app.
 		ArrayList<ScheduleEntry> dbEntries = scheduleEntryDAO.listScheduleEntries(appInfo);
+		for(Iterator<ScheduleEntry> seit = dbEntries.iterator(); seit.hasNext(); )
+		{
+			ScheduleEntry se = seit.next();
+			if (se.getName() != null && se.getName().toLowerCase().endsWith("-manual"))
+				seit.remove();
+		}
+		
 		ArrayList<ScheduleEntryExecutive> newExecs = new ArrayList<ScheduleEntryExecutive>();
 		for(ScheduleEntry dbEntry : dbEntries)
 		{
