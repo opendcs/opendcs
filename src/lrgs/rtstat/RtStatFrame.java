@@ -22,11 +22,11 @@ import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import java.util.Enumeration;
 import java.util.Properties;
+
 import org.w3c.dom.Document;
 
 import decodes.gui.AboutBox;
 import decodes.gui.TopFrame;
-
 import ilex.gui.EventsPanel;
 import ilex.gui.JobDialog;
 import ilex.gui.LoginDialog;
@@ -35,6 +35,7 @@ import ilex.util.AuthException;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 import ilex.xml.DomHelper;
 import lrgs.ldds.ServerError;
 import lrgs.ldds.ProtocolError;
@@ -1075,7 +1076,7 @@ public class RtStatFrame
 		launch(ld);
 		if (ld.isOK())
 		{
-System.out.println("Modifying password");
+//System.out.println("Modifying password");
 			char pw[] = ld.getPassword();
 			try
 			{
@@ -1094,6 +1095,12 @@ System.out.println("Modifying password");
 
 	public void fileUserAdmin_actionPerformed()
 	{
+		if (client == null || !client.isConnected())
+		{
+			showError("Not connected.");
+			return;
+		}
+		
 		if (!client.isAuthenticated())
 		{
 			showError(labels.getString(
@@ -1113,8 +1120,39 @@ System.out.println("Modifying password");
 		// Retrieve user list from server.
 		try
 		{
-			userListDialog.setUsers(getUsers());
-			launch(userListDialog);
+			ArrayList<DdsUser> userList = getUsers();
+			
+			// Non-administrators can see, and modify certain fields, in their own
+			// user record. Jump directly to UserEditDialog with isAdmin=false.
+			if (userList.size() == 1 
+			 && TextUtil.strEqual(client.getUserName(), userList.get(0).userName)
+			 && !userList.get(0).isAdmin())
+			{
+				EditUserDialog editUserDialog = new EditUserDialog(null, 
+					labels.getString("UserListDialog.modUserDataTitle"), true, false);
+
+				editUserDialog.set(host, userList.get(0), false);
+				launch(editUserDialog);
+				if (editUserDialog.okPressed())
+				{
+					try 
+					{
+						client.modUser(userList.get(0), editUserDialog.getPassword());
+					}
+					catch(AuthException ex)
+					{
+						JOptionPane.showMessageDialog(this,
+		            		AsciiUtil.wrapString(ex.toString(),60),
+							"Error!", JOptionPane.ERROR_MESSAGE);
+						return;
+					}
+				}
+			}
+			else
+			{
+				userListDialog.setUsers(userList);
+				launch(userListDialog);
+			}
 		}
 		catch(AuthException ex)
 		{
@@ -1139,6 +1177,12 @@ System.out.println("Modifying password");
 
 	public void fileLrgsConfig_actionPerformed()
 	{
+		if (client == null)
+		{
+			showError("Not connected.");
+			return;
+			
+		}
 		if ( !client.isAuthenticated())
 		{
 			showError(labels.getString(

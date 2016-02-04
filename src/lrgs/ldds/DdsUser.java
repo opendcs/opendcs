@@ -38,6 +38,12 @@ public class DdsUser
 	public String desc;
 	
 	public boolean isLocal = false;
+	
+	private String fname = null;
+	private String lname = null;
+	private String org = null;
+	private String email = null;
+	private String  tel = null;
 
 	/** Constructor */
 	public DdsUser()
@@ -75,6 +81,21 @@ public class DdsUser
 		this.forceAscending = rhs.forceAscending;
 		this.desc = rhs.desc;
 		this.isLocal = rhs.isLocal;
+		this.fname = rhs.fname;
+		this.lname = rhs.lname;
+		this.org = rhs.org;
+		this.email = rhs.email;
+		this.tel = rhs.tel;
+	}
+	
+	public boolean isAdmin()
+	{
+		if (perms == null)
+			return false;
+		for(String p : perms)
+			if (p.equalsIgnoreCase("admin"))
+				return true;
+		return false;
 	}
 
 	/**
@@ -121,45 +142,35 @@ public class DdsUser
 	 */
 	public String propsString()
 	{
-		StringBuilder sb = new StringBuilder();
+		Properties props = new Properties();
 
 		if (ipAddr != null && ipAddr.trim().length() > 0)
-		{
-			sb.append("ipaddr=");
-			sb.append(ipAddr);
-		}
+			props.setProperty("ipaddr", ipAddr);
 
 		if (dcpLimit != -1)
-		{
-			if (sb.length() > 0)
-				sb.append(",");
-			sb.append("maxdcps=" + dcpLimit);
-		}
+			props.setProperty("maxdcps", "" + dcpLimit);
 
 		if (forceAscending)
-		{
-			if (sb.length() > 0)
-				sb.append(",");
-			sb.append("forceAscending=true");
-		}
+			props.setProperty("forceAscending", "true");
 
-		if (desc != null && desc.length() > 0)
-		{
-			if (sb.length() > 0)
-				sb.append(",");
-			sb.append("desc=" + AsciiUtil.bin2ascii(desc.getBytes(), ",= '\""));
-		}
+		if (desc != null && desc.trim().length() > 0)
+			props.setProperty("desc", desc);
 		
 		if (isLocal)
-		{
-			if (sb.length() > 0)
-				sb.append(",");
-			sb.append("local=true");
-		}
-
-		String ret = sb.toString();
-
-		return ret;
+			props.setProperty("local", "true");
+		
+		if (fname != null && fname.trim().length() > 0)
+			props.setProperty("fname", fname);
+		if (lname != null && lname.trim().length() > 0)
+			props.setProperty("lname", lname);
+		if (org != null && org.trim().length() > 0)
+			props.setProperty("org", org);
+		if (email != null && email.trim().length() > 0)
+			props.setProperty("email", email);
+		if (tel != null && tel.trim().length() > 0)
+			props.setProperty("tel", tel);
+		
+		return PropertiesUtil.props2string(props);
 	}
 
 	/**
@@ -188,12 +199,26 @@ public class DdsUser
 		if (!st.hasMoreTokens())
 			return;
 		x = st.nextToken();
-		perms = x.split(",");
-
-		if (!st.hasMoreTokens())
-			return;
-		x = st.nextToken();
-		Properties props = PropertiesUtil.string2props(x);
+//System.out.println("permsString='" + x + "'");
+		perms=x.split(",");
+		
+		// Must have at least 3 space delimited tokens. Find the beginning of the 3rd token.
+//System.out.println("entire userSpec='" + userSpec + "'");
+		int idx = userSpec.indexOf(' ');
+		while(idx < userSpec.length() && Character.isWhitespace(userSpec.charAt(idx)))
+			idx++;
+		while(idx < userSpec.length() && !Character.isWhitespace(userSpec.charAt(idx)))
+			idx++;
+		while(idx < userSpec.length() && Character.isWhitespace(userSpec.charAt(idx)))
+			idx++;
+		while(idx < userSpec.length() && !Character.isWhitespace(userSpec.charAt(idx)))
+			idx++;
+		while(idx < userSpec.length() && Character.isWhitespace(userSpec.charAt(idx)))
+			idx++;
+	
+		String pstr = userSpec.substring(idx);
+//System.out.println("user spec propstr = '" + pstr + "'");
+		Properties props = PropertiesUtil.string2props(pstr);
 		ipAddr = PropertiesUtil.getIgnoreCase(props, "ipaddr");
 		x = PropertiesUtil.getIgnoreCase(props, "maxdcps");
 		if (x == null)
@@ -203,13 +228,17 @@ public class DdsUser
 			try { dcpLimit = Integer.parseInt(x); }
 			catch(NumberFormatException ex) { dcpLimit = -1; }
 		}
-		x = PropertiesUtil.getIgnoreCase(props, "forceAscending");
-		forceAscending = TextUtil.str2boolean(x);
-		x = PropertiesUtil.getIgnoreCase(props, "desc");
-		if (x != null && x.length() > 0)
-			desc = new String(AsciiUtil.ascii2bin(x));
-		x = PropertiesUtil.getIgnoreCase(props, "local");
-		isLocal = TextUtil.str2boolean(x);
+		forceAscending = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "forceAscending"));
+		desc = PropertiesUtil.getIgnoreCase(props, "desc");
+		if (desc != null && desc.contains("\\"))
+			desc = new String(AsciiUtil.ascii2bin(desc));
+		isLocal = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "local"));
+		fname = PropertiesUtil.getIgnoreCase(props, "fname");
+		lname = PropertiesUtil.getIgnoreCase(props, "lname");
+		org = PropertiesUtil.getIgnoreCase(props, "org");
+		email = PropertiesUtil.getIgnoreCase(props, "email");
+		tel = PropertiesUtil.getIgnoreCase(props, "tel");
+//System.out.println("fromString, after parse, lname='" + lname + "' org='" + org + "'");
 	}
 
 	public boolean hasPerm(String perm)
@@ -260,5 +289,55 @@ public class DdsUser
 		}
 		
 		ipAddr = sb.toString();
+	}
+
+	public String getFname()
+	{
+		return fname;
+	}
+
+	public void setFname(String fname)
+	{
+		this.fname = fname;
+	}
+
+	public String getLname()
+	{
+		return lname;
+	}
+
+	public void setLname(String lname)
+	{
+		this.lname = lname;
+	}
+
+	public String getOrg()
+	{
+		return org;
+	}
+
+	public void setOrg(String org)
+	{
+		this.org = org;
+	}
+
+	public String getEmail()
+	{
+		return email;
+	}
+
+	public void setEmail(String email)
+	{
+		this.email = email;
+	}
+
+	public String getTel()
+	{
+		return tel;
+	}
+
+	public void setTel(String tel)
+	{
+		this.tel = tel;
 	}
 }

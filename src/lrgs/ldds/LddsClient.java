@@ -19,7 +19,6 @@ import ilex.net.BasicClient;
 import lrgs.common.*;
 import lrgs.apiadmin.AuthenticatorString;
 import lrgs.db.Outage;
-
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.Platform;
@@ -68,6 +67,9 @@ public class LddsClient extends BasicClient
 	public boolean implicitAllUsed = false;
 	
 	SearchCritLocalFilter searchCritLocalFilter = null;
+
+	// The user name used in the last call to hello or auth.
+	private String userName = null;
 
 
 	/**
@@ -261,6 +263,8 @@ public class LddsClient extends BasicClient
 		Logger.instance().debug2(module + 
 			"DDS Connection (" + host + ":" + port + ") Hello response '"
 			+ resp+ "', protocolVersion=" + serverProtoVersion);
+		userName = name;
+
 	}
 
 	/**
@@ -300,12 +304,16 @@ public class LddsClient extends BasicClient
 		try
 		{
 			PasswordFileEntry pfe = new PasswordFileEntry(name, passwd);
+//System.out.println("sendAuthHello user='" + name + "' pw='" + passwd + "', authStr='" 
+//+ ByteUtil.toHexString(pfe.getShaPassword()) + "'");
 			sendAuthHello(pfe);
 		}
 		catch(AuthException ex)
 		{
 			throw new ProtocolError("Invalid username or password: " + ex);
 		}
+		userName = name;
+
 	}
 
 	/**
@@ -391,6 +399,9 @@ public class LddsClient extends BasicClient
 		Logger.instance().debug2(module + 
 			"DDS Connection (" + host + ":" + port + ") AuthHello response '"
 			+ resp+ "', protocolVersion=" + serverProtoVersion);
+		
+		userName = pfe.getUsername();
+
 	}
 
 	/**
@@ -2137,7 +2148,11 @@ public class LddsClient extends BasicClient
 		}
 		catch(Exception ex)
 		{
-			throw new AuthException("Cannot list users: " + ex);
+			String m = "Cannot list users: " + ex;
+			Logger.instance().warning(m);
+			System.err.println(m);
+			ex.printStackTrace();
+			throw new AuthException(m);
 		}
 	}
 
@@ -2151,18 +2166,22 @@ public class LddsClient extends BasicClient
 	public void modUser(DdsUser ddsUser, String pw)
 		throws AuthException
 	{
+		byte[] sk = getSessionKey();
+		if (sk == null)
+			throw new AuthException(
+				"Modify user requires authenticated connection.");
+		String sks = ByteUtil.toHexString(sk);
+
 		String cmd = "set " + ddsUser.userName + " ";
-		if (pw == null || pw.length() == 0)
+		
+		// If not setting pw, or if v13, put placeholder in pw field.
+		if (pw == null || pw.length() == 0
+		 || serverProtoVersion >= DdsVersion.version_13)
 			cmd += "-";
 		else
 		{
-			byte[] sk = getSessionKey();
-			if (sk == null)
-				throw new AuthException(
-					"Modify user requires authenticated connection.");
 			PasswordFileEntry pfe = new PasswordFileEntry(ddsUser.userName);
 			pfe.setPassword(pw);
-			String sks = ByteUtil.toHexString(sk);
 			pw = ByteUtil.toHexString(pfe.getShaPassword());
 			DesEncrypter de = new DesEncrypter(sks);
 			pw = de.encrypt(pw);
@@ -2172,7 +2191,7 @@ public class LddsClient extends BasicClient
 		// Syntax: set username DES(pw) perms props
 		// No field may have embedded blanks.
 		cmd = cmd + " " + ddsUser.permsString() + " " + ddsUser.propsString();
-
+//System.out.println("LddsClient.modUser sending '" + cmd + "'");
 		try
 		{
 			LddsMessage msg = new LddsMessage(LddsMessage.IdUser, cmd);
@@ -2181,6 +2200,22 @@ public class LddsClient extends BasicClient
 		catch(Exception ex)
 		{
 			throw new AuthException("Cannot set user info: " + ex);
+		}
+		
+		if (pw != null && pw.length() > 0 && serverProtoVersion >= DdsVersion.version_13)
+		{
+			cmd = "pw " + ddsUser.userName + " ";
+			DesEncrypter de = new DesEncrypter(sks);
+			cmd += de.encrypt(pw);
+			try
+			{
+				LddsMessage msg = new LddsMessage(LddsMessage.IdUser, cmd);
+				LddsMessage resp = serverExec(msg);
+			}
+			catch(Exception ex)
+			{
+				throw new AuthException("Cannot set user password: " + ex);
+			}
 		}
 	}
 
@@ -2223,6 +2258,11 @@ public class LddsClient extends BasicClient
 				return dir + "/LddsConnections";
 		}
 		return "LddsConnections";
+	}
+
+	public String getUserName()
+	{
+		return userName;
 	}
 
 }

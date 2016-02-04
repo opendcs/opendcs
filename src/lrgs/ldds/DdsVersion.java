@@ -20,7 +20,13 @@ import decodes.util.ResourceFactory;
 public class DdsVersion
 {
 	/** Current version of servers & clients compiled with this code. */
-	public static final int DdsVersionNum = 12;
+	public static final int DdsVersionNum = 13;
+	
+	/**
+	 * Version 13:
+	 * Addition of set pw functions.
+	 */
+	public static final int version_13 = 13;
 	
 	/**
 	 * Version 12:

@@ -19,10 +19,8 @@ import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-
 import lrgs.common.ArchiveException;
 import lrgs.common.LrgsErrorCode;
-
 import lrgs.lrgsmain.LrgsConfig;
 
 /**
@@ -44,6 +42,14 @@ public class CmdUser extends LddsCommand
 
 	/** Property Assignments string */
 	String propAssigns;
+	
+	private boolean fromSetPw = false;
+	
+	// These are the properties that require admin privilege.
+	private static final String[] adminProps = 
+	{
+		"maxdcps", "ipaddr"
+	};
 
 	/**
 	  Create a new 'User' request with the specified user name.
@@ -60,6 +66,7 @@ public class CmdUser extends LddsCommand
 		rm name
 			- Must be logged in as a user with admin permissions on this system.
 			- Respond OK or Error
+		pw name base64(encrypt(password))
 	  @param data body of the request from client.
 	*/
 	public CmdUser(byte data[])
@@ -72,9 +79,44 @@ public class CmdUser extends LddsCommand
 		username = st.hasMoreTokens() ? st.nextToken() : null;
 		encAuth = st.hasMoreTokens() ? st.nextToken() : null;
 		roles = st.hasMoreTokens() ? st.nextToken() : null;
-		propAssigns = st.hasMoreTokens() ? st.nextToken() : null;
+		
+		propAssigns = getPropAssigns(args);
+//System.out.println("CmdUser args='" + args + "' propAssigns='" + propAssigns + "'");
 //System.out.println("CmdUser subcmd='" + subcmd + "', user='" + username
 //+ "' encAuth='" + encAuth + "' roles='" + roles + ", props='" + propAssigns+ "'");
+	}
+	
+	private String getPropAssigns(String args)
+	{
+		// skip past subcmd
+		int idx = args.indexOf(' ');
+		if (idx < 0) return null;
+		
+		// skip past username
+		while(idx < args.length() && Character.isWhitespace(args.charAt(idx))) idx++;
+		if (idx >= args.length()) return null;
+		while(idx < args.length() && !Character.isWhitespace(args.charAt(idx))) idx++;
+		if (idx >= args.length()) return null;
+		
+		// skip past authenticator
+		while(idx < args.length() && Character.isWhitespace(args.charAt(idx))) idx++;
+		if (idx >= args.length()) return null;
+		while(idx < args.length() && !Character.isWhitespace(args.charAt(idx))) idx++;
+		if (idx >= args.length()) return null;
+		
+		// skip past roles
+		while(idx < args.length() && Character.isWhitespace(args.charAt(idx))) idx++;
+		if (idx >= args.length()) return null;
+		while(idx < args.length() && !Character.isWhitespace(args.charAt(idx))) idx++;
+		if (idx >= args.length()) return null;
+		
+		// Skip whitespace
+		while(idx < args.length() && Character.isWhitespace(args.charAt(idx))) idx++;
+		if (idx >= args.length()) return null;
+		// The rest of the string contains property assignments
+		return args.substring(idx);
+
+
 	}
 
 	/** @return "CmdUser"; */
@@ -115,6 +157,8 @@ public class CmdUser extends LddsCommand
 				return rm(ldds);
 			else if (subcmd.equalsIgnoreCase("set"))
 				return set(ldds);
+			else if (subcmd.equalsIgnoreCase("pw"))
+				return pw(ldds);
 			else
 				throw new ArchiveException("Unrecognized user subcommand '" 
 					+ subcmd + "'!",
@@ -133,11 +177,36 @@ public class CmdUser extends LddsCommand
 	private int list(LddsThread ldds)
 		throws ArchiveException, IOException
 	{
-		CmdAdminCmd.checkAdminPriviledge(ldds);
-
+		if (ldds.user == null)
+			throw new UnknownUserException(
+				"Authenticated Login required prior to user commands.");
+		if (!ldds.user.isAuthenticated)
+			throw new ArchiveException("Must be authenticated to list user info.", 
+				LrgsErrorCode.DDDSAUTHFAILED, false);
 		StringBuilder sb = new StringBuilder();
-		listDir(false, sb);
-		listDir(true, sb);
+		if (!ldds.user.isAdmin)
+		{
+			// if NOT an admin, allow the request but only include THIS user's info.
+			PasswordFile pf = readPasswordFile(true);
+			boolean local = true;
+			PasswordFileEntry pfe = pf.getEntryByName(ldds.user.name);
+			if (pfe == null)
+			{
+				pf = readPasswordFile(local = false);
+				pfe = pf.getEntryByName(ldds.user.name);
+			}
+			if (pfe == null)
+				// This shouldn't happen because we are already authenticated.
+				// It could happen if user record was deleted since session start.
+				throw new UnknownUserException("Cannot find user record for '" + ldds.user.name + "'.");
+			else
+				addUserToBuffer(pfe, sb, local);
+		}
+		else
+		{
+			listDir(false, sb);
+			listDir(true, sb);
+		}
 		LddsMessage msg = new LddsMessage(LddsMessage.IdUser, sb.toString());
 		ldds.send(msg);
 
@@ -181,29 +250,32 @@ public class CmdUser extends LddsCommand
 			PasswordFileEntry pfe = 
 				pf == null ? null : pf.getEntryByName(uname);
 			if (pfe != null)
-			{
-				sb.append(uname + " + ");
-				String roles[] = pfe.getRoles();
-				if (roles == null || roles.length == 0)
-					sb.append("-");
-				else
-				{
-					for(int i=0; i<roles.length; i++)
-					{
-						sb.append(roles[i]);
-						if (i < roles.length-1)
-							sb.append(',');
-					}
-				}
-				sb.append(' ');
-				if (local)
-					pfe.setProperty("local", "true");
-				sb.append(pfe.getPropertiesString());
-			}
+				addUserToBuffer(pfe, sb, local);
 			else // Not in password file, no passwd, DDS role, no props.
 				sb.append(uname + " - dds -");
 			sb.append("\n");
 		}
+	}
+	
+	private void addUserToBuffer(PasswordFileEntry pfe, StringBuilder sb, boolean local)
+	{
+		sb.append(pfe.getUsername() + " + ");
+		String roles[] = pfe.getRoles();
+		if (roles == null || roles.length == 0)
+			sb.append("-");
+		else
+		{
+			for(int i=0; i<roles.length; i++)
+			{
+				sb.append(roles[i]);
+				if (i < roles.length-1)
+					sb.append(',');
+			}
+		}
+		sb.append(' ');
+		if (local)
+			pfe.setProperty("local", "true");
+		sb.append(pfe.getPropertiesString());
 	}
 
 	private int rm(LddsThread ldds)
@@ -301,9 +373,10 @@ public class CmdUser extends LddsCommand
 		if (!ldds.user.isAdmin
 		 && (username == null || !username.equals(ldds.getUserName())))
 			throw new ArchiveException(
-				"Only an administrator on this LRGS can set a user!",
+				"Not authorized to set record for user '" + username + "'!",
 				LrgsErrorCode.DDDSAUTHFAILED, false);
 		
+//System.out.println("set encAuth='" + encAuth + "'");
 		if (username == null)
 			throw new ArchiveException("No username specified to add/modify!",
 				LrgsErrorCode.DINVALIDUSER, false);
@@ -318,6 +391,8 @@ public class CmdUser extends LddsCommand
 		if (propAssigns != null && !propAssigns.equals("-"))
 		{
 			userProps = PropertiesUtil.string2props(propAssigns);
+//System.out.println("CmdUser: propAssigns='" + propAssigns + "'");
+//System.out.println(">>> reverse from userProps='" + PropertiesUtil.props2string(userProps) + "'");
 			String pv = userProps.getProperty("local");
 			if (pv != null)
 			{
@@ -325,7 +400,7 @@ public class CmdUser extends LddsCommand
 				userProps.remove("local");
 			}
 		}
-		
+
 		LrgsConfig cfg = LrgsConfig.instance();
 		File userRoot = new File(
 			EnvExpander.expand( 
@@ -368,15 +443,24 @@ public class CmdUser extends LddsCommand
 			; // '-' means leave password alone -- it may be already set fine.
 		else
 		{
+			// The presence of a password checker indicates that this server wants
+			// to enforce complexity, length, etc.
+			if (!fromSetPw && LrgsConfig.instance().getPasswordChecker() != null)
+				throw new ArchiveException(
+					"You cannot set the password from your version of the client software."
+					+ " Upgrade to OpenDCS 6.2 or later to use this feature."
+					+ " (Contact info@covesw.com for more information).", 
+					LrgsErrorCode.DBADPASSWORD, false);
+			
 			// decrypt the password passed from the client.
 			try
 			{
 				String sks = ByteUtil.toHexString(ldds.user.getSessionKey());
 //Logger.instance().info("Session Key: " + sks);
 				DesEncrypter de = new DesEncrypter(sks);
-//Logger.instance().info("    encrypted: " + encAuth);
+//System.out.println("    set: encrypted: " + encAuth);
 				newAuth = de.decrypt(encAuth); 
-//Logger.instance().info("authenticator: " + newAuth);
+//System.out.println("    set: authenticator: " + newAuth);
 			}
 			catch(AuthException ex)
 			{
@@ -422,14 +506,25 @@ public class CmdUser extends LddsCommand
 					pfe.assignRole(st.nextToken());
 			}
 
-			// If this is an admin, set the properties.
-			if (ldds.user.isAdmin 
-			 && propAssigns != null && !propAssigns.equals("-")
-			 && pfe != null)
+			// Set properties
+			if (propAssigns != null && !propAssigns.equals("-") && pfe != null)
 			{
+				// Non admin means user setting his/her own record.
+				// Disallow changing certain props.
+				if (!ldds.user.isAdmin)
+					for(int idx = 0; idx < adminProps.length; idx++)
+					{
+						String val = PropertiesUtil.getIgnoreCase(pfe.getProperties(), adminProps[idx]);
+						if (val == null)
+							PropertiesUtil.rmIgnoreCase(userProps, adminProps[idx]);
+						else
+							userProps.setProperty(adminProps[idx], val);
+					}
+						
 				pfe.setProperties(userProps);
 			}
 
+//System.out.println(">>> reverse from pfe before write='" + PropertiesUtil.props2string(pfe.getProperties()) + "'");
 			pf.write();
 		}
 		catch(IOException ioe)
@@ -443,6 +538,50 @@ public class CmdUser extends LddsCommand
 		LddsMessage msg = new LddsMessage(LddsMessage.IdUser, txt);
 		ldds.send(msg);
 //		Logger.instance().info(txt);
+		return 0;
+	}
+	
+	private int pw(LddsThread ldds)
+		throws ArchiveException, IOException
+	{
+		if (!ldds.user.isAdmin
+		 && (username == null || !username.equals(ldds.getUserName())))
+			throw new ArchiveException("Not authorized to set record for user '" + username + "'!",
+				LrgsErrorCode.DDDSAUTHFAILED, false);
+
+		
+		// Format of data should be: 
+		//     pw username base64(encrypt(new text password))
+		// Constructor will get username and place base64(encrypt(pw)) into 'encAuth'.
+		try
+		{
+			String sks = ByteUtil.toHexString(ldds.user.getSessionKey());
+			DesEncrypter de = new DesEncrypter(sks);
+			String newPw = de.decrypt(encAuth);
+			if (LrgsConfig.instance().getPasswordChecker() != null)
+				LrgsConfig.instance().getPasswordChecker().checkPassword(newPw);
+			PasswordFileEntry pfe = new PasswordFileEntry(username, newPw);
+			String shaPw = ByteUtil.toHexString(pfe.getShaPassword());
+//System.out.println("SHA pw name='" + username + ", pw='" + newPw + "', prior to encryption='" + shaPw + "'");
+			String encPw = de.encrypt(shaPw);
+//System.out.println("SHA pw after encryption='" + encPw + "'");
+			
+			
+			// Now run the set command with the new authenticator
+			encAuth = encPw;
+			roles = null;
+			propAssigns = null;
+			fromSetPw = true;
+			set(ldds);
+		}
+		catch(AuthException ex)
+		{
+			Logger.instance().warning("Cannot decrypt password: " + ex);
+			throw new ArchiveException(
+				"Cannot decrypt the passed passphrase.",
+				LrgsErrorCode.DDDSAUTHFAILED, false);
+		}
+		
 		return 0;
 	}
 

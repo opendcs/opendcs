@@ -4,10 +4,14 @@
 package lrgs.rtstat;
 
 import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.table.*;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ArrayList;
@@ -58,9 +62,23 @@ public class UserListDialog
 			jbInit();
 			userTable.getSelectionModel().setSelectionMode(
             	ListSelectionModel.SINGLE_SELECTION);
+			
+			// Note: the only way to get a user list is by being an administrator,
+			// so set isAdmin=true.
 			editUserDialog = new EditUserDialog(this, 
-					labels.getString("UserListDialog.modUserDataTitle"), true);
+					labels.getString("UserListDialog.modUserDataTitle"), true, true);
 			pack();
+			
+			userTable.addMouseListener(
+				new MouseAdapter()
+				{
+					public void mouseClicked(MouseEvent e)
+					{
+						if (e.getClickCount() == 2)
+							editButtonPressed();
+					}
+				});
+
 		}
 		catch (Exception exception)
 		{
@@ -101,7 +119,7 @@ public class UserListDialog
 	{
 		panel1.setLayout(borderLayout1);
 		this.setModal(true);
-		okButton.setPreferredSize(new Dimension(100, 23));
+//		okButton.setPreferredSize(new Dimension(100, 23));
 		okButton.setText(genericLabels.getString("OK"));
 		okButton.addActionListener(new ActionListener()
 		{
@@ -128,7 +146,7 @@ public class UserListDialog
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				editButton_actionPerformed(e);
+				editButtonPressed();
 			}
 		});
 		deleteButton.setToolTipText(labels.getString(
@@ -148,13 +166,13 @@ public class UserListDialog
 		panel1.add(eastPanel, java.awt.BorderLayout.EAST);
 		eastPanel.add(addButton, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.5
 			, GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
-			new Insets(5, 5, 5, 5), 0, 0));
+			new Insets(5, 5, 3, 5), 0, 0));
 		eastPanel.add(editButton, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
 			, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-			new Insets(5, 5, 5, 5), 0, 0));
+			new Insets(3, 5, 3, 5), 0, 0));
 		eastPanel.add(deleteButton, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.5
 			, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
-			new Insets(5, 5, 5, 5), 0, 0));
+			new Insets(3, 5, 5, 5), 0, 0));
 		panel1.add(userScrollPane, java.awt.BorderLayout.CENTER);
 		userScrollPane.getViewport().add(userTable);
 	}
@@ -163,7 +181,7 @@ public class UserListDialog
 	{
 		DdsUser newUser = new DdsUser();
 		newUser.addPerm("dds");
-		editUserDialog.set(host, newUser, false, true);
+		editUserDialog.set(host, newUser, true);
 		launch(editUserDialog);
 		if (editUserDialog.okPressed())
 		{
@@ -184,7 +202,7 @@ public class UserListDialog
 		}
 	}
 
-	public void editButton_actionPerformed(ActionEvent e)
+	private void editButtonPressed()
 	{
 		int r = userTable.getSelectedRow();
 		if (r == -1)
@@ -197,7 +215,7 @@ public class UserListDialog
 		}
 		DdsUser ddsUserOrig = (DdsUser)tableModel.getRowObject(r);
 		DdsUser ddsUserCopy = new DdsUser(ddsUserOrig);
-		editUserDialog.set(host, ddsUserCopy, false, false);
+		editUserDialog.set(host, ddsUserCopy, false);
 		launch(editUserDialog);
 		if (editUserDialog.okPressed())
 		{
