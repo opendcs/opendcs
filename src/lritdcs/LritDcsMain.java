@@ -2,6 +2,9 @@
  *  $Id$
  *
  *  $Log$
+ *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ *  OPENDCS 6.0 Initial Checkin
+ *
  *  Revision 1.6  2012/12/12 16:01:31  mmaloney
  *  Several updates for 5.2
  *
@@ -71,6 +74,7 @@ package lritdcs;
 
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
+import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -813,10 +817,10 @@ public class LritDcsMain implements ServerLockable
 	public static void main(String args[])
 	{
 		StringToken rsaKeyArg = new StringToken("r", "rsa key file",
-            "", TokenOptions.optSwitch, "C:/LRITDCS/ssh/id_rsa");
+            "", TokenOptions.optSwitch, "$LRITDCS_HOME/ssh/id_rsa");
 		cmdLineArgs.addToken(rsaKeyArg);
 		cmdLineArgs.parseArgs(args);
-		LritDcsMain.instance().rsaKeyFile = rsaKeyArg.getValue();
+		LritDcsMain.instance().rsaKeyFile = EnvExpander.expand(rsaKeyArg.getValue());
 		
 		LritDcsMain.instance().run();
 	}
