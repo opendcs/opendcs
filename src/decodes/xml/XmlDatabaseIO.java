@@ -4,6 +4,11 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.5  2015/04/15 19:59:47  mmaloney
+*  Fixed synchronization bugs when the same data sets are being processed by multiple
+*  routing specs at the same time. Example is multiple real-time routing specs with same
+*  network lists. They will all receive and decode the same data together.
+*
 *  Revision 1.4  2014/08/29 18:20:00  mmaloney
 *  remove updateTransportId method
 *
@@ -820,10 +825,13 @@ public class XmlDatabaseIO extends DatabaseIO
         {
         	readPlatformList(platList);
         }
-        Platform p = 
-        	platList.findPlatform(mediumType, mediumId, timeStamp);
+        Platform p = platList.findPlatform(mediumType, mediumId, timeStamp);
        	if (p == null)
+       	{
+Logger.instance().debug3("XmlDatabaseIO: lookup - No platform matching " + mediumType + ":" + mediumId);
        		return Constants.undefinedId;
+       	}
+Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
        	return p.getId();
 	}
 	
