@@ -119,7 +119,7 @@ public class PasswordFileEditor extends CmdLineProcessor
 				public void execute(String[] tokens)
 				{
 					if (requireTokens(3, tokens))
-						doAddProp(tokens[1], tokens[2]);
+						doAddProp(tokens[1], inputLine);
 				}
 			});
 
@@ -263,6 +263,9 @@ public class PasswordFileEditor extends CmdLineProcessor
 			return;
 		}
 		System.out.println(pfe.toString());
+		System.out.println("Properties:");
+		for(Object key : pfe.getProperties().keySet())
+			System.out.println("   " + key + "=" + pfe.getProperties().getProperty((String)key));
 	}
 
 	/**
@@ -329,7 +332,7 @@ public class PasswordFileEditor extends CmdLineProcessor
 	* @param user
 	* @param assignment
 	*/
-	private void doAddProp( String user, String assignment )
+	private void doAddProp( String user, String inputLine )
 	{
 		PasswordFileEntry pfe = passwordFile.getEntryByName(user);
 		if (pfe == null)
@@ -337,7 +340,14 @@ public class PasswordFileEditor extends CmdLineProcessor
 			System.out.println("No such user '" + user + "'");
 			return;
 		}
-		int idx = assignment.indexOf('=');
+		
+		// User name has to be the 2nd arg.
+		int idx = inputLine.indexOf(user);
+		idx += user.length();
+		while(Character.isWhitespace(inputLine.charAt(idx)))
+			idx++;
+		String assignment = inputLine.substring(idx);
+		idx = assignment.indexOf('=');
 		if (idx == -1)
 		{
 			System.out.println("Property assignment must be: name=value");

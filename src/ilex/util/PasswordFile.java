@@ -3,6 +3,7 @@
 */
 package ilex.util;
 
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Enumeration;
 import java.text.ParsePosition;
@@ -23,7 +24,7 @@ import java.io.FileWriter;
 public class PasswordFile implements FileParser
 {
 	private File passwordFile;
-	private Hashtable entries;
+	private HashMap<String, PasswordFileEntry> entries = new HashMap<String, PasswordFileEntry>();
     private FileExceptionList exlist;
 
 	/**
@@ -59,9 +60,21 @@ public class PasswordFile implements FileParser
 	*/
 	public int read( ) throws IOException
 	{
-		entries = new Hashtable();
-		parseFile(passwordFile);
-		return entries.size();
+		return doRead(this);
+	}
+	
+	/**
+	 * This method does the actual read. Prevents multiple threads
+	 * from reading and/or writing at the same time.
+	 * @param pf
+	 */
+	private static synchronized int doRead(PasswordFile pf)
+		throws IOException
+	{
+		pf.entries.clear();
+		pf.parseFile(pf.passwordFile);
+		return pf.entries.size();
+		
 	}
 
 	/**
@@ -72,13 +85,23 @@ public class PasswordFile implements FileParser
 	*/
 	public void write( ) throws IOException
 	{
-		if (entries == null || entries.size() == 0)
+		doWrite(this);
+	}
+	
+	/**
+	 * This method does the actual write. Prevents multiple threads
+	 * from reading and/or writing at the same time.
+	 * @param pf
+	 */
+	private static synchronized void doWrite(PasswordFile pf)
+		throws IOException
+	{
+		if (pf.entries == null || pf.entries.size() == 0)
 			return;
 
-		FileWriter fw = new FileWriter(passwordFile);
-		Enumeration e = entries.elements();
-		while(e.hasMoreElements())
-			fw.write(e.nextElement().toString() + "\n");
+		FileWriter fw = new FileWriter(pf.passwordFile);
+		for(PasswordFileEntry pfe : pf.entries.values())
+			fw.write(pfe.toString() + "\n");
 		fw.flush();
 		fw.close();
 	}
@@ -115,8 +138,6 @@ public class PasswordFile implements FileParser
 	*/
 	public void addEntry( PasswordFileEntry entry )
 	{
-		if (entries == null)
-			entries = new Hashtable();
 		entries.put(entry.getUsername(), entry);
 	}
 

@@ -202,7 +202,7 @@ public class ServerLock implements Runnable
 					catch(IOException ex) {}
 					Logger.instance().info(
 						"Lock file I/O Error '" + myLockFile.getName() 
-						+ " -- Assuming lock file removed.");
+						+ ": " + ioe);
 				}
 			}
 		}

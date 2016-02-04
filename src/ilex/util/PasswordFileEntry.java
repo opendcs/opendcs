@@ -103,6 +103,7 @@ public class PasswordFileEntry
 	public void parseLine( String file_line ) 
 		throws AuthException
 	{
+
 		StringTokenizer tokenizer = new StringTokenizer(file_line,":");
 		if (tokenizer.countTokens() < 3)
 			throw new AuthException("Only " + tokenizer.countTokens()
@@ -113,9 +114,20 @@ public class PasswordFileEntry
 			username = tokenizer.nextToken();
 			String roles_str = tokenizer.nextToken();
 			String passwd_str = tokenizer.nextToken();
+			
+			// prop str starts after the colon after password
 			String prop_str = null;
-			if (tokenizer.hasMoreTokens())
-				prop_str = tokenizer.nextToken();
+			if (passwd_str != null && passwd_str.length() > 0)
+			{
+				int idx = file_line.indexOf(passwd_str);
+				String x = file_line.substring(idx);
+				idx = x.indexOf(':');
+				if (idx > 0 && x.length() > idx+1)
+				{
+					idx++;
+					prop_str = x.substring(idx);
+				}
+			}
 
 			// Special string 'none' for roles:
 			if (roles_str.compareToIgnoreCase("none") == 0)
@@ -171,16 +183,17 @@ public class PasswordFileEntry
 
 	public String getPropertiesString()
 	{
-		StringBuilder sb = new StringBuilder();
-		int n = 0;
-		for(Enumeration en = properties.propertyNames(); en.hasMoreElements();)
-		{
-			String pname = (String)en.nextElement();
-			if (n++ > 0)
-				sb.append(',');
-			sb.append(pname + "=" + properties.getProperty(pname));
-		}
-		return sb.toString();
+		return PropertiesUtil.props2string(properties);
+//		StringBuilder sb = new StringBuilder();
+//		int n = 0;
+//		for(Enumeration en = properties.propertyNames(); en.hasMoreElements();)
+//		{
+//			String pname = (String)en.nextElement();
+//			if (n++ > 0)
+//				sb.append(',');
+//			sb.append(pname + "=" + properties.getProperty(pname));
+//		}
+//		return sb.toString();
 	}
 
 	/**
