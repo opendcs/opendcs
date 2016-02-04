@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2015/04/14 18:21:39  mmaloney
+ * Prevent schedule entry statuses of more than 24 chars.
+ *
  * Revision 1.5  2015/02/06 18:51:35  mmaloney
  * When deleting schedule entry status, also delete dependent DACQ_EVENTs
  *
@@ -174,7 +177,8 @@ public class ScheduleEntryDAO
 						+ " where " + seJoinClause
 						+ " and a.schedule_entry_id = " + scheduleEntry.getKey();
 					rs = doQuery(q);
-					rs2scheduleEntry(rs, scheduleEntry);
+					if (rs != null && rs.next())
+						rs2scheduleEntry(rs, scheduleEntry);
 					return true;
 				}
 				else
