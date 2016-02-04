@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -130,13 +129,15 @@ public class PlatformList extends DatabaseObject
 	{
 		Platform p = findPlatform(mediumType, mediumId, ts);
 		if (getDatabase() == null || getDatabase().getDbIo() == null)
+		{
+			Logger.instance().debug3("getPlatform: No db or dbio.");
 			return null;
+		}
 		boolean cs = getDatabase().getDbIo().commitAfterSelectStatus();
 		if (p == null)
 		{
+			Logger.instance().debug3("getPlatform: No platform matching '" + mediumType + ":" + mediumId);
 			DatabaseIO dbio = getDatabase().getDbIo();
-			if (dbio == null)
-				return null;
 			DbKey platId = getDatabase().getDbIo().lookupPlatformId(
 				mediumType, mediumId, ts);
 			if (platId == null || platId == Constants.undefinedId)
