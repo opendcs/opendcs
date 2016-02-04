@@ -123,6 +123,10 @@ END;
 -- used to assign record numbers for new task list entries and reset once hit the 2 billion
 CREATE PUBLIC SYNONYM cp_comp_tasklistidseq FOR &CCP_SCHEMA..cp_comp_tasklistidseq;
 
+GRANT SELECT ON DACQ_EVENTIDSEQ TO CCP_USERS;
+GRANT SELECT ON SCHEDULE_ENTRY_STATUSIDSEQ TO CCP_USERS;
+
+
 spool off
 exit;
 
