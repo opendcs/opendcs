@@ -41,17 +41,27 @@ public class RtStat
 		if (hostname != null)
 		{
 			final String username = cmdLineArgs.getUserName();
-			SwingUtilities.invokeLater(
-				new Runnable()
+			
+			Thread delay = new Thread()
+			{
+				public void run()
 				{
-					public void run()
-					{
-						frame.setHost(hostname);
-						if (username != null)
-							frame.userField.setText(username.trim());
-						frame.connectButton_actionPerformed(null);
-					}
-				});
+					try { sleep(3000L); } catch (InterruptedException e){}
+					SwingUtilities.invokeLater(
+						new Runnable()
+						{
+							public void run()
+							{
+								frame.setHost(hostname);
+								if (username != null)
+									frame.userField.setText(username.trim());
+								frame.connectButton_actionPerformed(null);
+							}
+						});
+				}
+			};
+			delay.start();
+
 		}
 		if (packFrame)
 		{
