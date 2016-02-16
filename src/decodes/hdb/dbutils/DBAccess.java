@@ -415,11 +415,6 @@ public class DBAccess
 
 
 
-
-
-
-
-
 /**  Public method closeConnection closes the database connection if the 
      instance variable conn is not null.
 
@@ -445,6 +440,38 @@ public class DBAccess
           }
         } // End of if the conn is not null block
       } // End of closeConnection method 
+
+    /** Public method callProc performs the database procedure call
+        The procedure is called with the _field input paramter and the returned
+        String is placed into the passed in DataObject.
+
+        @author Mark A. Bogner
+        @param _procname  The procedure to be run with entire signature
+
+        Date: 08-November-2011
+    */
+    public void callProc(String _procname, DataObject do1)
+    {
+        try 
+        {
+            // initialize the procedure call, set the parameters , etc..
+            String proc = "{ call  " + _procname + " }";
+            CallableStatement stmt = getConnection(do1).prepareCall(proc);
+
+            // now execute the procedure call and go get the return string value
+            stmt.execute();
+ 
+            // we are done with the procedure 
+            stmt.close();
+
+        }
+        catch ( SQLException e )
+        {
+           log.debug(e.toString());
+           //e.printStackTrace();
+        }
+     } // end of callProc method
+
 
     /** Public method performCall performs the database procedure call
         that requests the data specific to the mergefield that is sent in.
