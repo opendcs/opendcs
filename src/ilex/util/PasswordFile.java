@@ -23,8 +23,8 @@ import java.io.FileWriter;
 */
 public class PasswordFile implements FileParser
 {
-	private File passwordFile;
-	private HashMap<String, PasswordFileEntry> entries = new HashMap<String, PasswordFileEntry>();
+	protected File passwordFile;
+	protected HashMap<String, PasswordFileEntry> entries = new HashMap<String, PasswordFileEntry>();
     private FileExceptionList exlist;
 
 	/**
@@ -169,6 +169,7 @@ public class PasswordFile implements FileParser
 			try 
 			{
 				pfe.parseLine(ln); 
+				pfe.setOwner(this);
 				entries.put(pfe.getUsername(), pfe);
 			}
 			catch (AuthException e)
