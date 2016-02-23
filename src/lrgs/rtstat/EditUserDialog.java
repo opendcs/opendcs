@@ -5,15 +5,21 @@ package lrgs.rtstat;
 
 import java.awt.*;
 import java.awt.event.*;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.border.Border;
+
+import decodes.util.ResourceFactory;
 
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 
 import ilex.util.AsciiUtil;
+import ilex.util.Logger;
 import lrgs.ldds.DdsUser;
+import lrgs.ldds.PasswordChecker;
+import lrgs.lrgsmain.LrgsConfig;
 
 public class EditUserDialog
 	extends JDialog
@@ -30,7 +36,7 @@ public class EditUserDialog
 	private FlowLayout flowLayout1 = new FlowLayout();
 	private JPanel centerPanel = new JPanel();
 	private JTextField ddsNameField = new JTextField();
-	private JPasswordField ddsPasswordField = new JPasswordField();
+	private JTextField ddsPasswordField = new JTextField();
 	private JPanel permissionsPanel = new JPanel();
 	private Border permissionsBorder = null;
 	private Border restrictionsBorder = null;
@@ -42,6 +48,7 @@ public class EditUserDialog
 	private JCheckBox ddsPermCheck = new JCheckBox();
 	private GridLayout gridLayout1 = new GridLayout();
 	private JCheckBox adminCheck = new JCheckBox();
+	private JCheckBox suspendedCheck = new JCheckBox("Suspended");
 	private JTextField descField = new JTextField(25);
 	private GridBagLayout gridBagLayout1 = new GridBagLayout();
 	private GridBagLayout gridBagLayout2 = new GridBagLayout();
@@ -163,7 +170,7 @@ public class EditUserDialog
 		ddsPermCheck.setText(labels.getString(
 				"EditUserDialog.retrDCPMsgs"));
 		gridLayout1.setColumns(1);
-		gridLayout1.setRows(2);
+		gridLayout1.setRows(3);
 		adminCheck.setToolTipText(labels.getString(
 			"EditUserDialog.administratorTT"));
 		adminCheck.setText(labels.getString("EditUserDialog.administrator"));
@@ -179,8 +186,11 @@ public class EditUserDialog
 		northPanel.add(hostField);
 		permissionsPanel.add(ddsPermCheck);
 		permissionsPanel.add(adminCheck);
+		permissionsPanel.add(suspendedCheck);
 		ddsPermCheck.setEnabled(isAdmin);
 		adminCheck.setEnabled(isAdmin);
+		suspendedCheck.setEnabled(isAdmin);
+		suspendedCheck.setToolTipText("Check to prevent this user from connecting.");
 
 		centerPanel.add(new JLabel(labels.getString("EditUserDialog.DDSUserName")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
@@ -194,10 +204,44 @@ public class EditUserDialog
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
-		centerPanel.add(ddsPasswordField,
-			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(1, 0, 2, 15), 0, 0));
+		
+		if (isAdmin)
+		{
+			centerPanel.add(ddsPasswordField,
+				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(1, 0, 2, 15), 0, 0));
+			
+			final PasswordChecker pc = ResourceFactory.instance().getPasswordChecker();
+			if (pc != null)
+			{
+				JButton genButton = new JButton("Gen Rand");
+				centerPanel.add(genButton,
+					new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
+						GridBagConstraints.WEST, GridBagConstraints.NONE,
+						new Insets(1, 2, 2, 2), 0, 0));
+				genButton.addActionListener(
+					new ActionListener()
+					{
+						@Override
+						public void actionPerformed(ActionEvent e)
+						{
+							ddsPasswordField.setText(pc.generateRandomPassword());
+						}
+					});
+			}
+		}
+		else
+		{
+			JTextField dummy = new JTextField();
+			dummy.setEditable(false);
+			dummy.setEnabled(false);
+			dummy.setText("Select File - Set Password");
+			centerPanel.add(dummy,
+				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(1, 0, 2, 15), 0, 0));
+		}
 		
 		centerPanel.add(new JLabel(labels.getString("EditUserDIalog.fname")),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
@@ -220,7 +264,7 @@ public class EditUserDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(orgField,
-			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 4, 2, 1, 1.0, 0.0, 
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("EditUserDIalog.email")),
@@ -228,7 +272,7 @@ public class EditUserDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(emailField,
-			new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 5, 2, 1, 1.0, 0.0, 
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("EditUserDIalog.tel")),
@@ -246,7 +290,7 @@ public class EditUserDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 15, 2, 2), 0, 0));
 		centerPanel.add(descField,
-			new GridBagConstraints(1, 7, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 7, 2, 1, 1.0, 0.0, 
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 2, 15), 0, 0));
 		centerPanel.add(isLocalCheck,
@@ -255,11 +299,11 @@ public class EditUserDialog
 				new Insets(1, 0, 5, 15), 0, 0));
 
 		centerPanel.add(permissionsPanel, 
-			new GridBagConstraints(0, 9, 2, 1, 1.0, 0.0, 
+			new GridBagConstraints(0, 9, 3, 1, 1.0, 0.0, 
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 5, 3, 5), 0, 0));
 		centerPanel.add(getRestrictionsPanel(), 
-			new GridBagConstraints(0, 10, 2, 1, 0.0, 0.0,
+			new GridBagConstraints(0, 10, 3, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 5, 5, 5), 0, 0));
 
@@ -300,6 +344,7 @@ public class EditUserDialog
 			ddsUser.addPerm("dds");
 		if (adminCheck.isSelected())
 			ddsUser.addPerm("admin");
+		ddsUser.setSuspended(suspendedCheck.isSelected());
 
 		if (!ipAddrCheckbox.isSelected())
 			ddsUser.setIpAddr(null);
@@ -368,6 +413,8 @@ public class EditUserDialog
 		forceAscendingCheck.setSelected(ddsUser.forceAscending);
 		isLocalCheck.setSelected(ddsUser.isLocal);
 		isLocalCheck.setEnabled(modUserName);
+		suspendedCheck.setSelected(ddsUser.isSuspended());
+//System.out.println("EditUserDialog.set user=" + ddsUser.userName + ", suspended=" + ddsUser.isSuspended());
 
 		if (ddsUser.desc == null)
 			descField.setText("");
