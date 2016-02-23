@@ -76,10 +76,10 @@ public class RtStatFrame
 	private JLabel hostLabel = new JLabel();
 	private JComboBox hostCombo = new JComboBox();
 	private JLabel portLabel = new JLabel();
-	private JTextField portField = new JTextField();
+	private JTextField portField = new JTextField(6);
 	private JLabel userLabel = new JLabel();
-	JTextField userField = new JTextField();
-	private JPasswordField passwordField = new JPasswordField();
+	JTextField userField = new JTextField(8);
+	private JPasswordField passwordField = new JPasswordField(12);
 	private JButton connectButton = new JButton();
 	private GridBagLayout gridBagLayout1 = new GridBagLayout();
 	private JButton pauseButton = new JButton();
@@ -138,10 +138,6 @@ public class RtStatFrame
 		}
 		isPaused = false;
 		client = null;
-		String host = null;
-		int port = 0;
-		String user = null;
-		String passwd = null;
 		passwordCheck.setSelected(false);
 		passwordField.setEnabled(false);
 		myThread = new RtStatFrameThread(this, scanPeriod,iconFile,headerFile);
@@ -212,6 +208,13 @@ public class RtStatFrame
 	private void jbInit()
 		throws Exception
 	{
+		boolean canConfig = true;
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		try { cl.loadClass("lrgs.ddsrecv.DdsRecvConnectCfg"); }
+		catch(ClassNotFoundException ex) { canConfig = false; }
+
+		
+		
 		contentPane = (JPanel)this.getContentPane();
 		contentPane.setLayout(borderLayout1);
 		this.setSize(new Dimension(793, 716));
@@ -247,38 +250,43 @@ public class RtStatFrame
 					fileUserAdmin_actionPerformed();
 				}
 			});
-		fileLrgsConfig.setText(
-				labels.getString("RtStatFrame.LRGSConfiguration"));
-		fileLrgsConfig.addActionListener(
-			new java.awt.event.ActionListener()
-			{
-	    		public void actionPerformed(ActionEvent e)
-	    		{
-					fileLrgsConfig_actionPerformed();
-				}
-			});
+		
 
-		fileOutageMaintenance.setText(
-				labels.getString("RtStatFrame.outages"));
-		fileOutageMaintenance.addActionListener(
-			new java.awt.event.ActionListener()
-			{
-	    		public void actionPerformed(ActionEvent e)
-	    		{
-					fileOutageMaintenance_actionPerformed();
-				}
-			});
-		fileNetworkLists.setText(
-				labels.getString("RtStatFrame.networkLists"));
-		fileNetworkLists.addActionListener(
-			new java.awt.event.ActionListener()
-			{
-	    		public void actionPerformed(ActionEvent e)
-	    		{
-					fileNetworkLists_actionPerformed();
-				}
-			});
-
+		if (canConfig)
+		{
+			fileLrgsConfig.setText(
+					labels.getString("RtStatFrame.LRGSConfiguration"));
+			fileLrgsConfig.addActionListener(
+				new java.awt.event.ActionListener()
+				{
+		    		public void actionPerformed(ActionEvent e)
+		    		{
+						fileLrgsConfig_actionPerformed();
+					}
+				});
+	
+			fileOutageMaintenance.setText(
+					labels.getString("RtStatFrame.outages"));
+			fileOutageMaintenance.addActionListener(
+				new java.awt.event.ActionListener()
+				{
+		    		public void actionPerformed(ActionEvent e)
+		    		{
+						fileOutageMaintenance_actionPerformed();
+					}
+				});
+			fileNetworkLists.setText(
+					labels.getString("RtStatFrame.networkLists"));
+			fileNetworkLists.addActionListener(
+				new java.awt.event.ActionListener()
+				{
+		    		public void actionPerformed(ActionEvent e)
+		    		{
+						fileNetworkLists_actionPerformed();
+					}
+				});
+		}	
+		
 		jMenuHelp.setText(
 				genericLabels.getString("help"));
 		jMenuHelpAbout.setText(
@@ -297,19 +305,19 @@ public class RtStatFrame
 		topPanel.setLayout(gridBagLayout1);
 		portLabel.setText(
 				labels.getString("RtStatFrame.port"));
-		portField.setMinimumSize(new Dimension(60, 23));
-		portField.setPreferredSize(new Dimension(60, 23));
+//		portField.setMinimumSize(new Dimension(60, 23));
+//		portField.setPreferredSize(new Dimension(60, 23));
 		portField.setText("16003");
 		userLabel.setText(
 				labels.getString("RtStatFrame.user"));
-		userField.setMinimumSize(new Dimension(90, 23));
-		userField.setPreferredSize(new Dimension(90, 23));
-		passwordField.setMinimumSize(new Dimension(90, 23));
-		passwordField.setPreferredSize(new Dimension(90, 23));
+//		userField.setMinimumSize(new Dimension(90, 23));
+//		userField.setPreferredSize(new Dimension(90, 23));
+//		passwordField.setMinimumSize(new Dimension(90, 23));
+//		passwordField.setPreferredSize(new Dimension(90, 23));
 		connectButton.setText(
 				labels.getString("RtStatFrame.connectButton"));
-		connectButton.setMinimumSize(new Dimension(100, 27));
-		connectButton.setPreferredSize(new Dimension(100, 27));
+//		connectButton.setMinimumSize(new Dimension(100, 27));
+//		connectButton.setPreferredSize(new Dimension(100, 27));
 		connectButton.addActionListener(
 			new java.awt.event.ActionListener()
 			{
@@ -318,8 +326,8 @@ public class RtStatFrame
 					connectButton_actionPerformed(e);
 	    		}
 			});
-		pauseButton.setMinimumSize(new Dimension(100, 27));
-		pauseButton.setPreferredSize(new Dimension(100, 27));
+//		pauseButton.setMinimumSize(new Dimension(100, 27));
+//		pauseButton.setPreferredSize(new Dimension(100, 27));
 		pauseButton.setText(
 				labels.getString("RtStatFrame.pause"));
 		pauseButton.addActionListener(
@@ -346,9 +354,12 @@ public class RtStatFrame
 			});
 		jMenuFile.add(fileSetPasswordMenuItem);
 		jMenuFile.add(fileUserAdmin);
-		jMenuFile.add(fileLrgsConfig);
-		jMenuFile.add(fileOutageMaintenance);
-		jMenuFile.add(fileNetworkLists);
+		if (canConfig)
+		{
+			jMenuFile.add(fileLrgsConfig);
+			jMenuFile.add(fileOutageMaintenance);
+			jMenuFile.add(fileNetworkLists);
+		}
 		jMenuFile.addSeparator();
 		jMenuFile.add(jMenuFileExit);
 		jMenuHelp.add(jMenuHelpAbout);
@@ -1064,14 +1075,19 @@ public class RtStatFrame
 
 	public void fileSetPasswordMenuItem_actionPerformed()
 	{
+		if (client == null)
+		{
+			showError("Connect to server before attempting to change password.");
+			return;
+		}
 		if (!client.isAuthenticated())
 		{
-			showError(labels.getString("RtStatFrame.changePassErr"));
+			showError("You must login with the old password before you can change the password.");
 			return;
 		}
 		
 		LoginDialog ld = new LoginDialog(this, 
-				labels.getString("RtStatFrame.modifyPassTitle"));
+				labels.getString("RtStatFrame.modifyPassTitle"), true);
 		ld.setEditableUsername(false, user);
 		launch(ld);
 		if (ld.isOK())
@@ -1132,20 +1148,28 @@ public class RtStatFrame
 					labels.getString("UserListDialog.modUserDataTitle"), true, false);
 
 				editUserDialog.set(host, userList.get(0), false);
-				launch(editUserDialog);
-				if (editUserDialog.okPressed())
+				boolean done = false;
+				int tries=0;
+				while(!done && tries++ < 5)
 				{
-					try 
+					launch(editUserDialog);
+					if (editUserDialog.okPressed())
 					{
-						client.modUser(userList.get(0), editUserDialog.getPassword());
+						try 
+						{
+							client.modUser(userList.get(0), editUserDialog.getPassword());
+							done = true;
+						}
+						catch(AuthException ex)
+						{
+							JOptionPane.showMessageDialog(this,
+			            		AsciiUtil.wrapString(ex.toString(),60),
+								"Error!", JOptionPane.ERROR_MESSAGE);
+							done = false;
+						}
 					}
-					catch(AuthException ex)
-					{
-						JOptionPane.showMessageDialog(this,
-		            		AsciiUtil.wrapString(ex.toString(),60),
-							"Error!", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
+					else
+						done = true;
 				}
 			}
 			else
