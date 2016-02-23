@@ -28,6 +28,8 @@ public class ServerLock implements Runnable
 	private int myPID = 0;
 	private boolean critical = true;
 	private String appStatus = "";
+	private static boolean isWindowsService = false;
+	private int numConsecutiveFailures = 0;
 
 	/**
 	* Creates a new ServerLock object with the specified file path.
@@ -79,7 +81,7 @@ public class ServerLock implements Runnable
 	{
 		try
 		{
-			if (isLocked(true))
+			if (isLocked(true) && !isWindowsService)
 			{
 				// Lock is in use by another instance!
 				if (critical)
@@ -106,7 +108,7 @@ public class ServerLock implements Runnable
 			if (critical)
 				System.exit(1);
 			else
-				return false;
+				return isWindowsService ? true : false;
 		}
 		return true;
 	}
@@ -151,11 +153,19 @@ public class ServerLock implements Runnable
 	*/
 	private void updateLock( ) throws IOException
 	{
-		DataOutputStream outs = new DataOutputStream(new FileOutputStream(myLockFile));
-		outs.writeLong(lastLockMsec = System.currentTimeMillis());
-		outs.writeInt(myPID);
-		outs.writeUTF(appStatus);
-		outs.close();
+		DataOutputStream outs = null;
+		try
+		{
+			outs = new DataOutputStream(new FileOutputStream(myLockFile));
+			outs.writeLong(lastLockMsec = System.currentTimeMillis());
+			outs.writeInt(myPID);
+			outs.writeUTF(appStatus);
+			outs.close();
+		}
+		finally
+		{
+			if (outs != null) try { outs.close(); } catch(Exception ex) {}
+		}
 	}
 
 	/**
@@ -175,11 +185,8 @@ public class ServerLock implements Runnable
 				ins = new DataInputStream(new FileInputStream(myLockFile));
 				lastLockMsec = ins.readLong();
 				filePID = ins.readInt();
-//System.out.println("isLocked file=" + myLockFile.getName() + ", msec=" + lastLockMsec + " (" + new Date(lastLockMsec) 
-//+ "), pid=" + filePID);
 				try { appStatus = ins.readUTF(); }
 				catch(Exception ex) { appStatus = ""; }
-				ins.close();
 				long now = System.currentTimeMillis();
 				
 				// MJM 20080505 - If I am updating the lock, don't check for
@@ -187,25 +194,38 @@ public class ServerLock implements Runnable
 				// We saw when a system got very busy, it didn't do its update
 				// in time, and then exited.
 				if (!checkTimeout)
+				{
+					numConsecutiveFailures = 0;
 					return true;
+				}
 
 				// Timeout applies to initial obtainLock, and when checking
 				// the lock of some other process.
 				if (now <= lastLockMsec + (updateSeconds * 2000L) && now >= lastLockMsec)
+				{
+					numConsecutiveFailures = 0;
 					return true;
+				}
 			}
 			catch(IOException ioe)
 			{
-				if (ins != null)
-				{
-					try { ins.close(); }
-					catch(IOException ex) {}
-					Logger.instance().info(
-						"Lock file I/O Error '" + myLockFile.getName() 
-						+ ": " + ioe);
-				}
+				Logger.instance().info(
+						"isLocked() Lock file I/O Error '" + myLockFile.getName() + ": " + ioe);
+			}
+			finally
+			{
+				try { ins.close(); }
+				catch(IOException ex) {}
 			}
 		}
+		else
+			Logger.instance().info("Lock file '" + myLockFile.getPath() + "' does not exist or is not readable.");
+		
+		// Getting to here means that the lock check failed.
+		if (isWindowsService)
+			return true;
+		else if (isWindows() && ++numConsecutiveFailures < 3)
+			return true;
 		return false;
 	}
 
@@ -350,6 +370,17 @@ public class ServerLock implements Runnable
 	public int getFilePID()
 	{
 		return filePID;
+	}
+
+	public static void setWindowsService(boolean winsvc)
+	{
+		isWindowsService = winsvc;
+	}
+	
+	public static boolean isWindows()
+	{
+		String osname = System.getProperty("os.name");
+		return osname.toLowerCase().startsWith("win");
 	}
 
 }
