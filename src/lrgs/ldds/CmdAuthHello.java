@@ -17,10 +17,12 @@ import ilex.util.EnvExpander;
 import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
 import ilex.util.TextUtil;
-
 import lrgs.common.*;
 import lrgs.apiadmin.AuthenticatorString;
+import lrgs.db.DbPasswordFile;
 import lrgs.db.DdsConnectionStats;
+import lrgs.db.LrgsDatabase;
+import lrgs.db.LrgsDatabaseThread;
 import lrgs.ddsserver.DdsServer;
 import lrgs.lrgsmain.LrgsConfig;
 
@@ -177,52 +179,109 @@ public class CmdAuthHello extends LddsCommand
 			Logger.instance().warning(DdsServer.module + " " + msg);
 			throw new AuthFailedException(msg);
 		}
+		
+		// LddsUser ctor will throw UnknownUserException if no sandbox dir.
+		boolean isLocal = TextUtil.str2boolean(pfe.getProperty("local"));
+		LrgsConfig cfg = LrgsConfig.instance();
+		String userRoot = isLocal ? cfg.ddsUserRootDirLocal : cfg.ddsUserRootDir;
+		LddsUser user = new LddsUser(username, userRoot);
+		if (ddsVersion != null)
+			user.setClientDdsVersion(ddsVersion);
 
 		// Construct an authenticator & compare to the one passed.
 		AuthenticatorString authstr = null;
 		int timet;
+		String constructed = "";
+		String algo = AuthenticatorString.ALGO_SHA256;
 		try
 		{
 			timet = (int)(mt/1000);
-			authstr = new AuthenticatorString(timet, pfe);
+			authstr = new AuthenticatorString(timet, pfe, algo);
+			constructed = authstr.getString();
+			if (!constructed.equals(authenticator))
+			{
+				// No match with SHA-256, Try again with SHA.
+				authstr = new AuthenticatorString(timet, pfe, algo = AuthenticatorString.ALGO_SHA);
+				constructed = authstr.getString();
+			}
 		}
 		catch (java.security.NoSuchAlgorithmException nsae)
 		{
-			throw new LddsRequestException("SHA not supported in JVE",
+			throw new LddsRequestException(algo + " not supported in JVE",
 				LrgsErrorCode.DDDSINTERNAL, true);
 		}
-		String constructed = authstr.getString();
 
 		if (!constructed.equals(authenticator))
 		{
+			// Didn't match either SHA256 or SHA.
 			ldds.myStats.setSuccessCode(DdsConnectionStats.SC_BAD_PASSWORD);
+			ldds.myStats.setUserName(username);
 			ldds.statLogger.incrBadPasswords();
 			String msg = DdsServer.module + 
 				" Rejecting connection from user '" + username 
 				+ "' -- bad password used from clent " + ldds.getClientName();
 			Logger.instance().warning(msg);
-			throw new LddsRequestException("Bad password",
-				LrgsErrorCode.DDDSAUTHFAILED, true);
+			
+			// If this is the 3rd consecutive bad password, suspend account for 30 sec.
+			if (LrgsConfig.instance().getPasswordChecker() != null)
+			{
+				LrgsDatabaseThread ldt = LrgsDatabaseThread.instance();
+				if (ldt != null)
+				{
+					LrgsDatabase lrgsDb = ldt.getLrgsDb();
+					if (lrgsDb != null)
+					{
+						if (lrgsDb.getNumConsecutiveBadPasswords(username) == 4)
+						{
+							Logger.instance().warning(
+								"User '" + username + "' -- 5 consecutive bad passwords. "
+								+ "Account will be suspended for 5 minutes.");
+							user.suspendUntil(new Date(System.currentTimeMillis() + 5*60000L));
+						}
+					}
+				}
+			}
+			throw new LddsRequestException("Bad password", LrgsErrorCode.DDDSAUTHFAILED, true);
+		}
+		
+		// If I get to here, it means the constructed authenticator matched what the user sent.
+		if (algo == AuthenticatorString.ALGO_SHA && LrgsConfig.instance().reqStrongEncryption)
+		{
+			// The match was with SHA, but this server requires SHA256.
+			if (ldds.secondAuthAttempt)
+			{
+				ldds.myStats.setSuccessCode(DdsConnectionStats.SC_BAD_PASSWORD);
+				ldds.myStats.setUserName(username);
+				ldds.statLogger.incrBadPasswords();
+				String msg = DdsServer.module + 
+					" Rejecting connection from user '" + username 
+					+ "' -- bad password used from clent " + ldds.getClientName();
+				Logger.instance().warning(msg);
+				throw new LddsRequestException("Server requires SHA-256.", LrgsErrorCode.DDDSAUTHFAILED, true);
+			}
+			else // Allow them to try again with SHA-256
+			{
+				String msg = DdsServer.module + 
+					" Received SHA auth from user '" + username 
+					+ "' -- but this server requires SHA-256. " + ldds.getClientName();
+				Logger.instance().debug1(msg);
+				ldds.secondAuthAttempt = true;
+				throw new LddsRequestException("Server requires SHA-256.", LrgsErrorCode.DSTRONGREQUIRED, false);
+			}
 		}
 
+		// If I get to here, the user is authenticated, wither with SHA-256 or SHA.
+		
+		// Some users are restricted by IP Address
 		checkValidIpAddress(pfe, ldds, username);
 
-		// LddsUser ctor will throw UnknownUserException if no sandbox dir.
-		boolean isLocal = TextUtil.str2boolean(pfe.getProperty("local"));
-//System.out.println("set user: pfe='" + pfe.toString + ", local prop='"
-//+ pfe.getProperty("local") + "' isLocal=" +isLocal);
-		LrgsConfig cfg = LrgsConfig.instance();
-		String userRoot = isLocal ? cfg.ddsUserRootDirLocal :
-			cfg.ddsUserRootDir;
-		LddsUser user = new LddsUser(username, userRoot);
-		if (ddsVersion != null)
-			user.setClientDdsVersion(ddsVersion);
 		user.isAuthenticated = true;
 		user.setLocal(isLocal);
 		try
 		{
+			// Session key will use the same algorithm as selected above.
 			user.setSessionKey(AuthenticatorString.makeAuthenticator(
-				authstr.getString().getBytes(), pfe.getShaPassword(), timet));
+				authstr.getString().getBytes(), pfe.getShaPassword(), timet, algo));
 			user.isAdmin = pfe.isRoleAssigned("admin");
 			if (!isLocal && cfg.localAdminOnly)
 				user.isAdmin = false;
@@ -231,6 +290,16 @@ public class CmdAuthHello extends LddsCommand
 		{
 			// Can't happen if we got this far!
 		}
+		
+		// Callback to thread to attach to LRGS as this user.
+		ldds.attachLrgs(user);
+
+		// OpenDCS 6.2 NOAA enhancements for suspending an account.
+		if (user.isSuspended())
+		{
+			ldds.myStats.setSuccessCode(DdsConnectionStats.SC_ACCOUNT_SUSPENDED);
+			throw new LddsRequestException("Account suspended.", LrgsErrorCode.DDDSAUTHFAILED, true);
+		}
 
 		String x = pfe.getProperty("disableBackLinkSearch");
 		if (x == null)
@@ -238,8 +307,6 @@ public class CmdAuthHello extends LddsCommand
 		if (x != null)
 			user.setDisableBackLinkSearch(TextUtil.str2boolean(x));
 
-		// Callback to thread to attach to LRGS as this user.
-		ldds.attachLrgs(user);
 		getDcpLimit(pfe, ldds);
 
 		// Echo AuthHELLO with username and proto version as an acknowledgement.
@@ -249,9 +316,10 @@ public class CmdAuthHello extends LddsCommand
 
 		if (user.isAdmin)
 			Logger.instance().info(DdsServer.module + " ADMIN authenticated connection from "
-				+ ldds.getClientName());
+				+ ldds.getClientName() + " (algo=" + algo + ")");
 		else
-			Logger.instance().debug1(DdsServer.module + " " + ldds.getClientName() + " - Successfully authenticated!");
+			Logger.instance().debug1(DdsServer.module + " " + ldds.getClientName() 
+				+ " - Successfully authenticated (algo=" + algo + ")!");
 		return 0;
 	}
 
@@ -270,10 +338,16 @@ public class CmdAuthHello extends LddsCommand
 	 * @return the PasswordFileEntry for the named user
 	 * @throws UnknownUserException if the user cannot be found.
 	 */
-	public static synchronized PasswordFileEntry getPasswordFileEntry(
-		String user)
+	public static synchronized PasswordFileEntry getPasswordFileEntry(String user)
 		throws UnknownUserException
 	{
+		LrgsDatabase lrgsDb = LrgsDatabaseThread.instance().getLrgsDb();
+		if (lrgsDb != null)
+		{
+			DbPasswordFile dpf = new DbPasswordFile(null, lrgsDb);
+			return dpf.readSingle(user);
+		}
+		
 		// Read the password file entry for this user.
 		String fileNames[] = { LRGS_LOCAL_PASSWORD_FILE_NAME,
 			LRGS_PASSWORD_FILE_NAME, ALT_LRGS_PASSWORD_FILE_NAME };
@@ -291,7 +365,10 @@ public class CmdAuthHello extends LddsCommand
 				if (pfe != null)
 				{
 					if (fn.equals(LRGS_LOCAL_PASSWORD_FILE_NAME))
+					{
 						pfe.setProperty("local", "true");
+						pfe.setLocal(true);
+					}
 					return pfe;
 				}
 				Logger.instance().debug1(DdsServer.module

@@ -44,6 +44,7 @@ public class DdsUser
 	private String org = null;
 	private String email = null;
 	private String  tel = null;
+	private boolean suspended = false;
 
 	/** Constructor */
 	public DdsUser()
@@ -86,6 +87,7 @@ public class DdsUser
 		this.org = rhs.org;
 		this.email = rhs.email;
 		this.tel = rhs.tel;
+		this.suspended = rhs.suspended;
 	}
 	
 	public boolean isAdmin()
@@ -169,6 +171,8 @@ public class DdsUser
 			props.setProperty("email", email);
 		if (tel != null && tel.trim().length() > 0)
 			props.setProperty("tel", tel);
+		if (suspended)
+			props.setProperty("suspended", "true");
 		
 		return PropertiesUtil.props2string(props);
 	}
@@ -238,7 +242,8 @@ public class DdsUser
 		org = PropertiesUtil.getIgnoreCase(props, "org");
 		email = PropertiesUtil.getIgnoreCase(props, "email");
 		tel = PropertiesUtil.getIgnoreCase(props, "tel");
-//System.out.println("fromString, after parse, lname='" + lname + "' org='" + org + "'");
+		suspended = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "suspended"));
+//System.out.println("fromString, after parse, username=" + userName + ", suspended=" + suspended);
 	}
 
 	public boolean hasPerm(String perm)
@@ -339,5 +344,15 @@ public class DdsUser
 	public void setTel(String tel)
 	{
 		this.tel = tel;
+	}
+
+	public boolean isSuspended()
+	{
+		return suspended;
+	}
+
+	public void setSuspended(boolean suspended)
+	{
+		this.suspended = suspended;
 	}
 }

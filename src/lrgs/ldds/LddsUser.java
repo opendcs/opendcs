@@ -3,7 +3,13 @@
 */
 package lrgs.ldds;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.util.Date;
 
 import ilex.util.Logger;
 import ilex.util.EnvExpander;
@@ -140,4 +146,88 @@ public class LddsUser
     {
     	this.local = local;
     }
+    
+    
+	/**
+	 * If the account is suspended, return the time it is suspended to. Return
+	 * null if not suspended.
+	 * 
+	 * @return null if not suspended, or date/time suspension ends if it is.
+	 */
+	public Date getSuspendTo()
+	{
+		File suspendFile = new File(directory, ".suspended");
+		DataInputStream dis = null;
+//Logger.instance().info("LddsUser.getSuspendTo: file=" + suspendFile.getPath());
+		try
+		{
+			dis = new DataInputStream(new FileInputStream(suspendFile));
+			Date suspendDate = new Date(dis.readLong());
+//Logger.instance().info("LddsUser.getSuspendTo: suspendDate=" + suspendDate);
+			return suspendDate;
+		}
+		catch (FileNotFoundException ex)
+		{
+//Logger.instance().info("LddsUser.getSuspendTo -- no file");
+			return null;
+		}
+		catch (Exception ex)
+		{
+			Logger.instance().warning("Error reading '" + suspendFile.getPath() + "': " + ex);
+			suspendFile.delete();
+			return null;
+		}
+		finally
+		{
+			if (dis != null)
+				try { dis.close(); }
+				catch (Exception ex) {}
+		}
+	}
+	
+	public boolean isSuspended()
+	{
+		Date d = getSuspendTo();
+		if (d == null)
+			return false;
+		if (d.after(new Date()))
+			return true;
+		File suspendFile = new File(directory, ".suspended");
+		suspendFile.delete();
+		return false;
+	}
+	
+	/** Convenient value for permanent suspension. This is Nov 20 12:46:40 2286 */
+    public static final Date permSuspendTime = new Date(10000000000000L);
+
+    /**
+     * Suspended the user account until the passed time.
+     * If passed null then the account is unsuspended.
+     * @param d the suspension time or null to unsuspend.
+     */
+	public void suspendUntil(Date d)
+	{
+		File suspendFile = new File(directory, ".suspended");
+		if (d == null)
+		{
+			suspendFile.delete();
+			return;
+		}
+		DataOutputStream dos = null;
+		try
+		{
+			dos = new DataOutputStream(new FileOutputStream(suspendFile));
+			dos.writeLong(d.getTime());
+		}
+		catch (Exception ex)
+		{
+			Logger.instance().warning("Error writing '" + suspendFile.getPath() + "': " + ex);
+		}
+		finally
+		{
+			if (dos != null)
+				try { dos.close(); }
+				catch (Exception ex) {}
+		}
+	}
 }

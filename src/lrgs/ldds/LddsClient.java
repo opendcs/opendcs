@@ -306,7 +306,7 @@ public class LddsClient extends BasicClient
 			PasswordFileEntry pfe = new PasswordFileEntry(name, passwd);
 //System.out.println("sendAuthHello user='" + name + "' pw='" + passwd + "', authStr='" 
 //+ ByteUtil.toHexString(pfe.getShaPassword()) + "'");
-			sendAuthHello(pfe);
+			sendAuthHello(pfe, AuthenticatorString.ALGO_SHA);
 		}
 		catch(AuthException ex)
 		{
@@ -320,7 +320,7 @@ public class LddsClient extends BasicClient
 	 * Sends an authenticated hello, using a prepared password file entry.
 	 * @param pfe the password file entry.
 	 */
-	public void sendAuthHello(PasswordFileEntry pfe)
+	public void sendAuthHello(PasswordFileEntry pfe, String algo)
 		throws ServerError, ProtocolError, IOException
 	{
 		Date now = new Date();
@@ -328,11 +328,11 @@ public class LddsClient extends BasicClient
 		AuthenticatorString auth;
 		try 
 		{
-			auth = new AuthenticatorString(timet, pfe);
+			auth = new AuthenticatorString(timet, pfe, algo);
 
 			// Construct a 1-time session key for admin functions.
 			sessionKey = AuthenticatorString.makeAuthenticator(
-				auth.getString().getBytes(), pfe.getShaPassword(), timet);
+				auth.getString().getBytes(), pfe.getShaPassword(), timet, algo);
 		}
 		catch(Exception ex)
 		{
@@ -359,14 +359,21 @@ public class LddsClient extends BasicClient
 		}
 
 		String resp = ByteUtil.getCString(msg.MsgData, 0);
-		if (debug != null)
-			debug.println("AuthHello response '" + resp + "'");
+		Logger.instance().debug1("AuthHello response '" + resp + "'");
 
 		// '?' means that server refused the login.
 		if (resp.length() > 0 && resp.charAt(0) == '?')
 		{
 			sessionKey = null;
-			throw new ServerError(resp);
+			ServerError serverError = new ServerError(resp);
+			if (serverError.Derrno == LrgsErrorCode.DSTRONGREQUIRED
+			 && algo == AuthenticatorString.ALGO_SHA)
+			{
+				// We tried with SHA, but server requires SHA-256. Try again.
+				sendAuthHello(pfe, AuthenticatorString.ALGO_SHA256);
+				return;
+			}
+			throw serverError;
 		}
 		StringTokenizer st = new StringTokenizer(resp);
 		if (st.countTokens() < 3)

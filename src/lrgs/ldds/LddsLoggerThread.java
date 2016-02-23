@@ -114,6 +114,8 @@ public class LddsLoggerThread extends Thread
 
 	private void logStats()
 	{
+//Logger.instance().info("LddsLoggerThread.logStats() numClients = " + theServer.getAllSvrThreads().size()
+//+ ", isNull(statLogger)=" + (statLogger==null));
 		if (statLogger == null)
 			return;
 		// Collect & log info from each thread.
@@ -143,6 +145,7 @@ public class LddsLoggerThread extends Thread
 			return;
 		if (lt != null)
 		{
+			lt.myStats.setLastActivity(lt.getLastActivity());
 			statLogger.log(Logger.E_INFORMATION,
 				lt.myStats.getConnectionId()
 				+ " " + lt.getClientName() 

@@ -21,6 +21,9 @@ import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import lrgs.common.ArchiveException;
 import lrgs.common.LrgsErrorCode;
+import lrgs.db.DbPasswordFile;
+import lrgs.db.LrgsDatabase;
+import lrgs.db.LrgsDatabaseThread;
 import lrgs.lrgsmain.LrgsConfig;
 
 /**
@@ -48,7 +51,7 @@ public class CmdUser extends LddsCommand
 	// These are the properties that require admin privilege.
 	private static final String[] adminProps = 
 	{
-		"maxdcps", "ipaddr"
+		"maxdcps", "ipaddr", "suspended"
 	};
 
 	/**
@@ -187,20 +190,13 @@ public class CmdUser extends LddsCommand
 		if (!ldds.user.isAdmin)
 		{
 			// if NOT an admin, allow the request but only include THIS user's info.
-			PasswordFile pf = readPasswordFile(true);
-			boolean local = true;
-			PasswordFileEntry pfe = pf.getEntryByName(ldds.user.name);
-			if (pfe == null)
-			{
-				pf = readPasswordFile(local = false);
-				pfe = pf.getEntryByName(ldds.user.name);
-			}
+			PasswordFileEntry pfe = CmdAuthHello.getPasswordFileEntry(ldds.user.name);
 			if (pfe == null)
 				// This shouldn't happen because we are already authenticated.
 				// It could happen if user record was deleted since session start.
 				throw new UnknownUserException("Cannot find user record for '" + ldds.user.name + "'.");
 			else
-				addUserToBuffer(pfe, sb, local);
+				addUserToBuffer(pfe, sb, pfe.isLocal());
 		}
 		else
 		{
@@ -240,7 +236,7 @@ public class CmdUser extends LddsCommand
 				Logger.instance().debug1(msg);
 			return;
 		}
-
+//TODO handle this
 		PasswordFile pf = readPasswordFile(local);
 		for(String uname : ls)
 		{
@@ -275,6 +271,18 @@ public class CmdUser extends LddsCommand
 		sb.append(' ');
 		if (local)
 			pfe.setProperty("local", "true");
+		
+		LrgsConfig cfg = LrgsConfig.instance();
+		try
+		{
+			LddsUser tu = new LddsUser(pfe.getUsername(), local ? cfg.ddsUserRootDirLocal : cfg.ddsUserRootDir);
+			if (tu.getSuspendTo() != null && tu.getSuspendTo().equals(LddsUser.permSuspendTime))
+				pfe.setProperty("suspended", "true");
+		}
+		catch (UnknownUserException e)
+		{
+			
+		}
 		sb.append(pfe.getPropertiesString());
 	}
 
@@ -320,39 +328,13 @@ public class CmdUser extends LddsCommand
 				actionsTaken++;
 		}
 		
-		PasswordFile pf = readPasswordFile(false);
-		if (pf != null)
+		PasswordFileEntry pfe = CmdAuthHello.getPasswordFileEntry(username);
+		if (pfe != null)
 		{
-			try
-			{
-				if (pf.rmEntryByName(username))
-					pf.write();
-				actionsTaken++;
-			}
-			catch(IOException ioe)
-			{
-				String msg = "Cannot write password file '"
-					+ pf.getFile().getPath() 
-					+ "': " + ioe;
-				Logger.instance().warning(msg);
-			}
-		}
-		pf = readPasswordFile(true);
-		if (pf != null)
-		{
-			try
-			{
-				if (pf.rmEntryByName(username))
-					pf.write();
-				actionsTaken++;
-			}
-			catch(IOException ioe)
-			{
-				String msg = "Cannot write password file '"
-					+ pf.getFile().getPath() 
-					+ "': " + ioe;
-				Logger.instance().warning(msg);
-			}
+			pfe.getOwner().rmEntryByName(username);
+			if (!(pfe.getOwner() instanceof DbPasswordFile))
+				pfe.getOwner().write();
+			actionsTaken++;
 		}
 
 		if (actionsTaken == 0)
@@ -476,7 +458,7 @@ public class CmdUser extends LddsCommand
 			PasswordFileEntry pfe = pf.getEntryByName(username);
 			if (pfe == null)
 			{
-//System.out.println("Is a new user with name '" + username + "'");
+Logger.instance().info("CmdUser.set no PFE for '" + username + "'");
 				// New user! If pw specified, create new pw file entry.
 				try 
 				{
@@ -487,14 +469,18 @@ public class CmdUser extends LddsCommand
 						// Set auth to all zeros -- will never match anything.
 						newAuth = "0000000000000000000000000000000000000000";
 					}
-					
+					pfe.setChanged(true);
 					pf.addEntry(pfe);
 				}
 				catch(AuthException ex) { /* won't happen */ }
 			}
 
 			if (newAuth != null)
+			{
 				pfe.setShaPassword(ByteUtil.fromHexString(newAuth));
+				pfe.setChanged(true);
+Logger.instance().info("CmdUser.set set auth to '" + newAuth + "'");
+			}
 
 			// If this is an admin, set the roles specified.
 			if (ldds.user.isAdmin && roles != null && pfe != null
@@ -504,6 +490,17 @@ public class CmdUser extends LddsCommand
 				StringTokenizer st = new StringTokenizer(roles,",");
 				while(st.hasMoreTokens())
 					pfe.assignRole(st.nextToken());
+				pfe.setChanged(true);
+			}
+			
+			if (ldds.user.isAdmin && userProps != null)
+			{
+				boolean isSuspended = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(userProps, "suspended"));
+Logger.instance().info("CmdUser.set() suspended=" + isSuspended);
+				LddsUser user = new LddsUser(username, userRoot.getPath());
+				user.suspendUntil(isSuspended ? LddsUser.permSuspendTime : null);
+				PropertiesUtil.rmIgnoreCase(userProps, "suspended");
+				pfe.setChanged(true);
 			}
 
 			// Set properties
@@ -520,8 +517,9 @@ public class CmdUser extends LddsCommand
 						else
 							userProps.setProperty(adminProps[idx], val);
 					}
-						
+Logger.instance().info("CmdUser.set() Setting props to '" + PropertiesUtil.props2string(userProps));					
 				pfe.setProperties(userProps);
+				pfe.setChanged(true);
 			}
 
 //System.out.println(">>> reverse from pfe before write='" + PropertiesUtil.props2string(pfe.getProperties()) + "'");
@@ -558,16 +556,17 @@ public class CmdUser extends LddsCommand
 			String sks = ByteUtil.toHexString(ldds.user.getSessionKey());
 			DesEncrypter de = new DesEncrypter(sks);
 			String newPw = de.decrypt(encAuth);
-			if (LrgsConfig.instance().getPasswordChecker() != null)
-				LrgsConfig.instance().getPasswordChecker().checkPassword(newPw);
-			PasswordFileEntry pfe = new PasswordFileEntry(username, newPw);
-			String shaPw = ByteUtil.toHexString(pfe.getShaPassword());
-//System.out.println("SHA pw name='" + username + ", pw='" + newPw + "', prior to encryption='" + shaPw + "'");
-			String encPw = de.encrypt(shaPw);
-//System.out.println("SHA pw after encryption='" + encPw + "'");
 			
+			PasswordFileEntry oldPfe = CmdAuthHello.getPasswordFileEntry(username);
+			
+			PasswordChecker checker = LrgsConfig.instance().getPasswordChecker();
+			PasswordFileEntry newPfe = new PasswordFileEntry(username, newPw);
+			String shaPw = ByteUtil.toHexString(newPfe.getShaPassword());
+			if (checker != null)
+				checker.checkPassword(username, newPw, shaPw);
 			
 			// Now run the set command with the new authenticator
+			String encPw = de.encrypt(shaPw);
 			encAuth = encPw;
 			roles = null;
 			propAssigns = null;
@@ -593,9 +592,26 @@ public class CmdUser extends LddsCommand
 
 	/** @return the code associated with this command. */
 	public char getCommandCode() { return LddsMessage.IdUser; }
-
+	
 	private PasswordFile readPasswordFile(boolean local)
 	{
+		LrgsDatabase lrgsDb = LrgsDatabaseThread.instance().getLrgsDb();
+		if (lrgsDb != null)
+		{
+			DbPasswordFile dpf = new DbPasswordFile(null, lrgsDb);
+			try
+			{
+				if (!local)     // Only fill once for shared, this will get everything, including local.
+					dpf.read();
+			}
+			catch (IOException ex)
+			{
+				Logger.instance().warning("Error reading DbPasswordFile: " + ex);
+			}
+			return dpf;
+		}
+
+		
 		PasswordFile pf = null;
 		String pfname = local ?
 			EnvExpander.expand(CmdAuthHello.LRGS_LOCAL_PASSWORD_FILE_NAME)

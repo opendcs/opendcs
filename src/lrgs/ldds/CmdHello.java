@@ -8,7 +8,6 @@ import java.io.IOException;
 import ilex.util.Logger;
 import ilex.util.PasswordFileEntry;
 import ilex.util.TextUtil;
-
 import lrgs.common.*;
 import lrgs.db.DdsConnectionStats;
 import lrgs.ddsserver.DdsServer;
@@ -84,6 +83,8 @@ public class CmdHello extends LddsCommand
 			// AuthFailedException will always hangup on user.
 			throw new AuthFailedException("Empty user name");
 		}
+		
+		ldds.myStats.setUserName(username);
 
 		// Check to see if user is connecting from a valid IP address.
 		PasswordFileEntry pfe = null;
@@ -122,8 +123,13 @@ public class CmdHello extends LddsCommand
 		{
 			Logger.instance().debug1("No shared user dir for " + username);
 			userRoot = LrgsConfig.instance().ddsUserRootDir;
-			user = new LddsUser(username, userRoot);
-			// If this throws, allow it to propegate.
+			try { user = new LddsUser(username, userRoot); }
+			catch(UnknownUserException ex2)
+			{
+				ldds.myStats.setSuccessCode(DdsConnectionStats.SC_BAD_USERNAME);
+				// If this throws, allow it to propegate.
+				throw ex2;
+			}
 		}
 		if (ddsVersion != null)
 			user.setClientDdsVersion(ddsVersion);
@@ -135,12 +141,19 @@ public class CmdHello extends LddsCommand
 			if (x != null)
 				user.setDisableBackLinkSearch(TextUtil.str2boolean(x));
 		}
-
+		
 		// Callback to thread to attach to LRGS as this user.
 		Logger.instance().debug1(DdsServer.module
 			+ " Attaching slot for " + username + " " 
 			+ ldds.getClientName());
 		ldds.attachLrgs(user);
+		
+		if (user.isSuspended())
+		{
+			ldds.myStats.setSuccessCode(DdsConnectionStats.SC_ACCOUNT_SUSPENDED);
+			throw new LddsRequestException("Account suspended.", LrgsErrorCode.DDDSAUTHFAILED, true);
+		}
+
 		if (pfe != null)
 		{
 			CmdAuthHello.getDcpLimit(pfe, ldds);

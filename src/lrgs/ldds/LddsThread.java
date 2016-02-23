@@ -103,6 +103,8 @@ public abstract class LddsThread extends BasicSvrThread
 	private OutageXmlParser outageXmlParser = null;
 	
 	private String hostname = "(unknown host)";
+	
+	boolean secondAuthAttempt = false;
 
 	/**
 	  Constructor.
@@ -143,6 +145,7 @@ public abstract class LddsThread extends BasicSvrThread
 		myStats.setStartTime(new Date());
 		myStats.setFromIpAddr(hostname);
 		myStats.setSuccessCode(DdsConnectionStats.SC_CONNECTED);
+		myStats.setLastActivity(myStats.getStartTime());
 		
 		int pri = this.getPriority();
 		this.setPriority(pri - 1);
@@ -196,6 +199,7 @@ Logger.instance().debug1(DdsServer.module
 			statLogger.incrNumUnAuth();
 		}
 		myStats.setUserName(user.name);
+		myStats.setProtocolVersion(user.getClientDdsVersionNum());
 
 		// The name mapper maps DCP names in a search crit to addresses
 		if (nameMapper == null)
@@ -447,6 +451,8 @@ Logger.instance().debug1(DdsServer.module
 	public void setHostName(String hostname)
 	{
 		this.hostname = hostname;
+		if (myStats != null)
+			myStats.setFromIpAddr(hostname);
 	}
 	
 	/** @return the hostname for remote user. */
