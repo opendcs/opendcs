@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:09  cvs
 *  Added legacy code to repository
 *
@@ -41,6 +44,8 @@ import java.util.ResourceBundle;
 
 import javax.swing.*;
 
+import decodes.gui.GuiDialog;
+
 
 /**
 * LoginDialog is a modal dialog that queries a user for a login name
@@ -51,13 +56,20 @@ import javax.swing.*;
 * You can re-use the same LoginDialog object by calling clear before
 * making it visible.
 */
-public class LoginDialog extends JDialog
+public class LoginDialog extends GuiDialog
 {
 	private static ResourceBundle labels = null;
 	private JButton okButton, cancelButton;
 	private JTextField usernameField;
 	private JPasswordField passwordField;
+	private JPasswordField confirmField = null;
 	private boolean ok;
+	
+	public LoginDialog(JFrame f, String title, boolean confirm)
+	{
+		super(f, title, true);
+		guiInit(confirm);
+	}
 	
 	/**
 	* Constructs a new LrgsAccess GUI display.
@@ -67,6 +79,11 @@ public class LoginDialog extends JDialog
 	public LoginDialog( JFrame f, String title )
 	{
 		super(f, title, true);
+		guiInit(false);
+	}
+	
+	private void guiInit(boolean confirm)
+	{
 		getLabels();
 		ok = false;
 //		Point loc = f.getLocation();
@@ -128,6 +145,20 @@ public class LoginDialog extends JDialog
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 5, 10), 0, 0));
+		
+		if (confirm)
+		{
+			center.add(new JLabel(labels.getString("LoginDialog.Confirm")),
+				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(3, 10, 5, 2), 0, 0));
+	
+			confirmField = new JPasswordField(10);
+			center.add(confirmField,
+				new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(3, 0, 5, 10), 0, 0));
+		}
 
 		contpane.add(center, BorderLayout.CENTER);
 
@@ -174,6 +205,13 @@ public class LoginDialog extends JDialog
 	/** Called when OK pressed. */
 	private void doOK( )
 	{
+		if (confirmField != null && 
+			! (new String(confirmField.getPassword())).equals(
+				new String(passwordField.getPassword())))
+		{
+			showError("Password differs from confirmation!");
+			return;
+		}
 		ok = true;
 		closeDlg();
 	}
