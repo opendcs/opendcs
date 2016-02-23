@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:11  cvs
 *  Added legacy code to repository
 *
@@ -39,49 +42,66 @@ import java.security.*;
 public class AuthenticatorString
 {
 	private String astr;
-
-	/**
-	 * The client constructs a string from the username, time, and password
-	 * entered by the user.
-	 *
-	 * @param username the user name
-	 * @param timet the Unix time_t value
-	 * @param passwd the password
-	 *
-	 * @throws NoSuchAlgorithmException if SHA hashing is not supported
-	 * by your Java Runtime Environment.
-	 * @throws AuthException if username is blank.
-	 */
-	public AuthenticatorString(String username, int timet, String passwd)
-		throws NoSuchAlgorithmException, AuthException
-	{
-		this(timet, new PasswordFileEntry(username, passwd));
-	}
+	
+	public static final String ALGO_SHA = "SHA";
+	public static final String ALGO_SHA256 = "SHA-256";
+	private String algorithm = ALGO_SHA;
 
 	/**
 	 * The server constructs a string from the username and time supplied
 	 * by the user, and the hashed-password from the password file.
 	 *
+	 * @param timet the Unix time_t value
+	 * @pfe The PasswordFileEntry containing the user's hashed password.
 	 * @throws NoSuchAlgorithmException if SHA hashing is not supported
 	 * by your Java Runtime Environment.
 	 */
 	public AuthenticatorString(int timet, PasswordFileEntry pfe)
 		throws NoSuchAlgorithmException
 	{
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		MessageDigest md = MessageDigest.getInstance("SHA");
-		DigestOutputStream dos = new DigestOutputStream(baos, md);
-
 		astr = ByteUtil.toHexString(
 			makeAuthenticator(pfe.getUsername().getBytes(), 
 			pfe.getShaPassword(), timet));
 	}
+	
+	public AuthenticatorString(int timet, PasswordFileEntry pfe, String algorithm)
+		throws NoSuchAlgorithmException
+	{
+		this.algorithm = algorithm;
+		astr = ByteUtil.toHexString(
+			makeAuthenticator(pfe.getUsername().getBytes(), 
+			pfe.getShaPassword(), timet, algorithm));
+	}
 
+
+	/**
+	 * Makes authenticator with SHA
+	 * @param b1
+	 * @param b2
+	 * @param t
+	 * @return
+	 * @throws NoSuchAlgorithmException
+	 */
 	public static byte[] makeAuthenticator(byte b1[], byte b2[], int t)
 		throws NoSuchAlgorithmException
 	{
+		return makeAuthenticator(b1, b2, t, ALGO_SHA);
+	}
+		
+	/**
+	 * Makes authenticator. Pass one of the constants ALGO_SHA or ALGO_SHA256
+	 * @param b1 username as byte array
+	 * @param b2 password hash as byte array
+	 * @param t time_t
+	 * @param algorithm one of the constants ALGO_SHA or ALGO_SHA256
+	 * @return byte array authenticator
+	 * @throws NoSuchAlgorithmException
+	 */
+	public static byte[] makeAuthenticator(byte b1[], byte b2[], int t, String algorithm)
+		throws NoSuchAlgorithmException
+	{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		MessageDigest md = MessageDigest.getInstance("SHA");
+		MessageDigest md = MessageDigest.getInstance(algorithm);
 		DigestOutputStream dos = new DigestOutputStream(baos, md);
 
 		// Put the time in a byte array.
@@ -110,5 +130,10 @@ public class AuthenticatorString
 	public String getString()
 	{
 		return astr;
+	}
+
+	public String getAlgorithm()
+	{
+		return algorithm;
 	}
 }
