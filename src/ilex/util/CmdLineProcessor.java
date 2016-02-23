@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/12/11 20:32:27  mmaloney
+*  Make last read inputLine available to commands.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -36,6 +39,8 @@
 
 package ilex.util;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.io.BufferedReader;
@@ -80,6 +85,15 @@ public class CmdLineProcessor
 	
 	/** The unprocessed input line last read */
 	public String inputLine = "";
+	
+	/**
+	* The CmdLineProcessor object can hold a CmdLineList, which contains
+	* a number of CmdLine objects.
+	*/
+	protected ArrayList<CmdLine> myCmdList = new ArrayList<CmdLine>();
+	
+	protected HashMap<String,CmdLine> synonyms = new HashMap<String,CmdLine>();
+
 
 	/**
 	* Pass the constructor the input stream you want to read commands
@@ -93,8 +107,7 @@ public class CmdLineProcessor
 		skipBlankLines = true;
 		skipCommentLines = true;
 		currentLine = 0;
-		input = new BufferedReader(new InputStreamReader(is));
-		myCmdList = new CmdLineList();
+		input = is != null ? new BufferedReader(new InputStreamReader(is)) : null;
 	}
 
 	/**
@@ -147,6 +160,11 @@ public class CmdLineProcessor
 	public String[] getTokens( ) throws IOException
 	{
 		inputLine = getLine();
+		if (inputLine == null)
+			return null;
+		else if (inputLine.trim().length() == 0)
+			return new String[0];
+		
 		StringTokenizer st = new StringTokenizer(inputLine);
 		int n = st.countTokens();
 		if (n == 0)
@@ -175,7 +193,7 @@ public class CmdLineProcessor
 	* @return total number of commands executed
 	  @throws IOException on IO error
 	*/
-	public int processInput( CmdLineList cmdlist ) throws IOException
+	public int processInput( ArrayList<CmdLine> cmdlist ) throws IOException
 	{
 		int n = 0;   // Count commands executed
 		try
@@ -184,24 +202,27 @@ public class CmdLineProcessor
 			while(true)
 			{
 				if (prompt != null)
-				{
-					System.out.print(prompt);
-					System.out.flush();
-				}
+					prompt();
 
 				String tokens[] = getTokens();
-				Iterator it = cmdlist.iterator();
-				while(it.hasNext())
-				{
-					CmdLine cmd = (CmdLine)it.next();
+				if (tokens.length == 0)
+					continue;
+				
+				for(CmdLine cmd : cmdlist)
 					if (cmd.keyword.equalsIgnoreCase(tokens[0]))
 					{
 						cmd.execute(tokens);
 						n++;
 						continue Get_Next_Command;
 					}
+				CmdLine cmd = synonyms.get(tokens[0]);
+				if (cmd != null)
+				{
+					cmd.execute(tokens);
+					n++;
+					continue Get_Next_Command;
 				}
-				cmdlist.unrecognizedCmd(tokens);
+				unrecognizedCmd(tokens);
 			}
 		}
 		catch(EOFException eof)
@@ -222,11 +243,6 @@ public class CmdLineProcessor
 		return processInput(myCmdList);
 	}
 
-	/**
-	* The CmdLineProcessor object can hold a CmdLineList, which contains
-	* a number of CmdLine objects.
-	*/
-	protected CmdLineList myCmdList;
 
 	/**
 	* Adds a command to the internal Command List.
@@ -246,7 +262,8 @@ public class CmdLineProcessor
 		addCmd(
 			new CmdLine("quit", "- Quit the program") 
 			{
-				public void execute(String[] tokens) throws EOFException
+				public void execute(String[] tokens) 
+					throws EOFException
 				{
 					if (isOkToQuit())
 						throw new EOFException("All done");
@@ -256,13 +273,11 @@ public class CmdLineProcessor
 			new CmdLine("help", "- Print this message")
 			{
 				public void execute(String[] tokens)
+					throws IOException
 				{
-					System.out.println("Valid commands are:");
-					for(int i = 0; i<myCmdList.size(); i++)
-					{
-						CmdLine cl = (CmdLine)myCmdList.elementAt(i);
-						System.out.println(cl.keyword + " " + cl.helpmsg);
-					}
+					println("Valid commands are:");
+					for(CmdLine cl : myCmdList)
+						println(cl.keyword + " " + cl.helpmsg);
 				}
 			});
 	}
@@ -293,5 +308,28 @@ public class CmdLineProcessor
 	public void errorMsg( String msg )
 	{
 		System.err.println(msg);
+	}
+	
+	protected void unrecognizedCmd(String tokens[])
+	{
+		if (tokens != null)
+		try
+		{
+			println("Unrecognized cmd '" + tokens[0] + "' (type 'help' for list)");
+		}
+		catch(Exception ex) {}
+	}
+	
+	protected void println(String line)
+		throws IOException
+	{
+		System.out.println(line);
+	}
+	
+	protected void prompt()
+		throws IOException
+	{
+		System.out.print(prompt);
+		System.out.flush();
 	}
 }
