@@ -209,7 +209,7 @@ public class IndexFile
 				+ ", curPtr=" + raf.getFilePointer() 
 				+ ", numEntries=" + numEntries
 				+ ", fileLen=" + raf.length();
-			Logger.instance().debug1(msg);
+			Logger.instance().debug3(msg);
 		}
 		// Allow other IO exceptions to propegate.
 		return nr;
