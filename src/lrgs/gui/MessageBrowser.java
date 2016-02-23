@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.3  2015/07/17 13:10:30  mmaloney
+*  *** empty log message ***
+*
 *  Revision 1.2  2014/10/08 17:24:49  mmaloney
 *  Added combo box for decoder format.
 *
@@ -108,6 +111,8 @@ public class MessageBrowser extends MenuFrame
 	private JComboBox showCombo;
 	private JComboBox outCombo;
     private static String[] outFmts;
+	private static boolean canDecode = true;
+
 
 	/**
 	  Construct new MessageBrowser frame.
@@ -129,15 +134,28 @@ public class MessageBrowser extends MenuFrame
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		try { cl.loadClass("lrgs.ddsrecv.DdsRecvConnectCfg"); }
+		catch(ClassNotFoundException ex)
+		{
+			canDecode = false;
+			showRaw = true;
+			doDecode = false;
+		}
+
 
 		getMyLabelDescriptions();		
 		setTitle(labels.getString("MessageBrowser.frameTitle"));
 		filechooser = new JFileChooser();
 		
-		showChoices = new String[3];
-		showChoices[0] = labels.getString("MessageBrowser.rawCombo");
-		showChoices[1] = labels.getString("MessageBrowser.rawDecodedCombo");
-		showChoices[2] = labels.getString("MessageBrowser.decodedCombo");
+		if (canDecode)
+		{
+			showChoices = new String[3];
+			showChoices[0] = labels.getString("MessageBrowser.rawCombo");
+			showChoices[1] = labels.getString("MessageBrowser.rawDecodedCombo");
+			showChoices[2] = labels.getString("MessageBrowser.decodedCombo");
+		}
 
 		this.hostName = hostName != null ? hostName : "";
 		this.portNum = portNum == 0 ? DEFAULT_PORT_NUM : portNum;
@@ -412,87 +430,90 @@ public class MessageBrowser extends MenuFrame
 		suffixField.setText(GuiApp.getProperty("MessageBrowser.Suffix"));
 
 
-		southwest.add(new JLabel(labels.getString("MessageBrowser.show")),
-			new GridBagConstraints(0, 2, 1, 1, 0.2, 1.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(2, 5, 2, 5), 0, 0)); 
-		showCombo = new JComboBox(showChoices);
-		showCombo.setSelectedItem(
-			GuiApp.getProperty("MessageBrowser.Show", "Raw"));
-		southwest.add(showCombo,
-			new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 5, 2, 5), 0, 0)); 
-
-		showCombo.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(java.awt.event.ActionEvent e)
-				{
-					int i = showCombo.getSelectedIndex();
-					showRaw = (i == 0 || i == 1);
-					doDecode = (i == 1 || i == 2);
-					GuiApp.setProperty("MessageBrowser.Show", showChoices[i]);
-				}
-			});
-		
-		//=========
-		southwest.add(new JLabel(labels.getString("MessageBrowser.outFormat")),
-			new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(2, 5, 2, 5), 0, 0));
-		outFmts = DecodesInterface.getOutputFormats();
-		if (outFmts == null)
+		if (canDecode)
 		{
-			String[] thisFmt = new String[1];
-			thisFmt[0] = "human-readable"; 
-			outCombo = new JComboBox(thisFmt);
-		} else {
-
-			outCombo = new JComboBox(outFmts);
-		}
-		outCombo.setSelectedItem(
-			GuiApp.getProperty("MessageBrowser.OutputFormat", "human-readable"));
-		southwest.add(outCombo,
-			new GridBagConstraints(1, 3, 1, 1, 1.0, 1.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 5, 2, 5), 0, 0));
-
-		outCombo.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(java.awt.event.ActionEvent e)
+			southwest.add(new JLabel(labels.getString("MessageBrowser.show")),
+				new GridBagConstraints(0, 2, 1, 1, 0.2, 1.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(2, 5, 2, 5), 0, 0)); 
+			showCombo = new JComboBox(showChoices);
+			showCombo.setSelectedItem(
+				GuiApp.getProperty("MessageBrowser.Show", "Raw"));
+			southwest.add(showCombo,
+				new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE,
+					new Insets(2, 5, 2, 5), 0, 0)); 
+	
+			showCombo.addActionListener(
+				new ActionListener()
 				{
-					int i = outCombo.getSelectedIndex();
-					GuiApp.setProperty("MessageBrowser.OutputFormat", outFmts[i]);
-				}
-			});
-		//=========
-
-		southwest.add(new JLabel(
-				labels.getString("MessageBrowser.beforeData")),
-			new GridBagConstraints(0, 4, 1, 1, 0.2, 1.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(2, 5, 2, 5), 0, 0)); 
-		southwest.add(beforeDataField = new JTextField(16),
-			new GridBagConstraints(1, 4, 1, 1, 0.8, 1.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 5, 2, 5), 0, 0)); 
-
-		southwest.add(new JLabel(labels.getString("MessageBrowser.afterData")),
-			new GridBagConstraints(0, 5, 1, 1, 0.2, 1.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(2, 5, 2, 5), 0, 0)); 
-		southwest.add(afterDataField = new JTextField(16),
-			new GridBagConstraints(1, 5, 1, 1, 0.8, 1.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 5, 2, 5), 0, 0)); 
+					public void actionPerformed(java.awt.event.ActionEvent e)
+					{
+						int i = showCombo.getSelectedIndex();
+						showRaw = (i == 0 || i == 1);
+						doDecode = (i == 1 || i == 2);
+						GuiApp.setProperty("MessageBrowser.Show", showChoices[i]);
+					}
+				});
+			
+			//=========
+			southwest.add(new JLabel(labels.getString("MessageBrowser.outFormat")),
+				new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(2, 5, 2, 5), 0, 0));
+			outFmts = DecodesInterface.getOutputFormats();
+			if (outFmts == null)
+			{
+				String[] thisFmt = new String[1];
+				thisFmt[0] = "human-readable"; 
+				outCombo = new JComboBox(thisFmt);
+			} else {
+	
+				outCombo = new JComboBox(outFmts);
+			}
+			outCombo.setSelectedItem(
+				GuiApp.getProperty("MessageBrowser.OutputFormat", "human-readable"));
+			southwest.add(outCombo,
+				new GridBagConstraints(1, 3, 1, 1, 1.0, 1.0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE,
+					new Insets(2, 5, 2, 5), 0, 0));
+	
+			outCombo.addActionListener(
+				new ActionListener()
+				{
+					public void actionPerformed(java.awt.event.ActionEvent e)
+					{
+						int i = outCombo.getSelectedIndex();
+						GuiApp.setProperty("MessageBrowser.OutputFormat", outFmts[i]);
+					}
+				});
+			//=========
+	
+			southwest.add(new JLabel(
+					labels.getString("MessageBrowser.beforeData")),
+				new GridBagConstraints(0, 4, 1, 1, 0.2, 1.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(2, 5, 2, 5), 0, 0)); 
+			southwest.add(beforeDataField = new JTextField(16),
+				new GridBagConstraints(1, 4, 1, 1, 0.8, 1.0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(2, 5, 2, 5), 0, 0)); 
+	
+			southwest.add(new JLabel(labels.getString("MessageBrowser.afterData")),
+				new GridBagConstraints(0, 5, 1, 1, 0.2, 1.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(2, 5, 2, 5), 0, 0)); 
+			southwest.add(afterDataField = new JTextField(16),
+				new GridBagConstraints(1, 5, 1, 1, 0.8, 1.0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(2, 5, 2, 5), 0, 0)); 
+		}
 
 		wrapCheck = new JCheckBox(
 				labels.getString("MessageBrowser.wraplonglines"),
 			GuiApp.getBooleanProperty("MessageBrowser.WrapLongLines", false));
 		southwest.add(wrapCheck,
-			new GridBagConstraints(0, 6, 2, 1, 1.0, 1.0,
+			new GridBagConstraints(0, (canDecode ? 6 : 2), 2, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 6, 2, 5), 0, 0)); 
 		wrapLines = wrapCheck.isSelected();
@@ -523,14 +544,17 @@ public class MessageBrowser extends MenuFrame
 		// Copy DECODES properties into the GUI controls
 //		decodeCheck.setSelected(GuiApp.getBooleanProperty(
 //			"MessageBrowser.Decode", false));
-		beforeDataField.setText(
-			GuiApp.getProperty("MessageBrowser.BeforeData", "----\\n"));
-		afterDataField.setText(
-			GuiApp.getProperty("MessageBrowser.AfterData", ""));
-
-		int i = showCombo.getSelectedIndex();
-		showRaw = (i == 0 || i == 1);
-		doDecode = (i == 1 || i == 2);
+		if (canDecode)
+		{
+			beforeDataField.setText(
+				GuiApp.getProperty("MessageBrowser.BeforeData", "----\\n"));
+			afterDataField.setText(
+				GuiApp.getProperty("MessageBrowser.AfterData", ""));
+	
+			int i = showCombo.getSelectedIndex();
+			showRaw = (i == 0 || i == 1);
+			doDecode = (i == 1 || i == 2);
+		}
 	}
 
 	/**
@@ -573,7 +597,8 @@ public class MessageBrowser extends MenuFrame
 		{
 //			DecodesInterface.initDecodesMinimal(dpf);
 			DecodesInterface.initDecodes(dpf);
-			DecodesInterface.initializeForDecoding();
+			if (canDecode)
+				DecodesInterface.initializeForDecoding();
 			
 		}
 		catch(decodes.util.DecodesException ex)
@@ -591,37 +616,40 @@ public class MessageBrowser extends MenuFrame
 			return;
 		}
 
-		nm = "MessageBrowser.PresentationGroup";
-		String pgs[] = DecodesInterface.getPresentationGroups();
-		GuiApp.getProperty(nm, "empty-presentation");
-		if (pgs != null && pgs.length > 0)
-			EditPropsAction.registerEditor(nm, new JComboBox(pgs));
-
-		nm = "MessageBrowser.OutputFormat";
-		String fmts[] = DecodesInterface.getOutputFormats();
-		GuiApp.getProperty(nm, "human-readable");
-		if (fmts != null && fmts.length > 0)
-			EditPropsAction.registerEditor(nm, new JComboBox(fmts));
-
-		GuiApp.getProperty("MessageBrowser.TimeZone", "UTC");
-
-		nm = "MessageBrowser.EnableEquations";
-		GuiApp.getProperty(nm, "true");
-		EditPropsAction.registerEditor(nm, 
-			new JComboBox(new String[] { "true", "false" }));
-
-		nm = "MessageBrowser.Show";
-		GuiApp.getProperty(nm, "Raw");
-		EditPropsAction.registerEditor(nm, new JComboBox(showChoices));
-
-//		nm = "MessageBrowser.Decode";
-//		GuiApp.getProperty(nm, "false");
-//		EditPropsAction.registerEditor(nm, 
-//			new JComboBox(new String[] { "true", "false" }));
-
-		GuiApp.getProperty("MessageBrowser.BeforeData", "----\\n");
-
-		GuiApp.getProperty("MessageBrowser.AfterData", "");
+		if (canDecode)
+		{
+			nm = "MessageBrowser.PresentationGroup";
+			String pgs[] = DecodesInterface.getPresentationGroups();
+			GuiApp.getProperty(nm, "empty-presentation");
+			if (pgs != null && pgs.length > 0)
+				EditPropsAction.registerEditor(nm, new JComboBox(pgs));
+	
+			nm = "MessageBrowser.OutputFormat";
+			String fmts[] = DecodesInterface.getOutputFormats();
+			GuiApp.getProperty(nm, "human-readable");
+			if (fmts != null && fmts.length > 0)
+				EditPropsAction.registerEditor(nm, new JComboBox(fmts));
+	
+			GuiApp.getProperty("MessageBrowser.TimeZone", "UTC");
+	
+			nm = "MessageBrowser.EnableEquations";
+			GuiApp.getProperty(nm, "true");
+			EditPropsAction.registerEditor(nm, 
+				new JComboBox(new String[] { "true", "false" }));
+	
+			nm = "MessageBrowser.Show";
+			GuiApp.getProperty(nm, "Raw");
+			EditPropsAction.registerEditor(nm, new JComboBox(showChoices));
+	
+	//		nm = "MessageBrowser.Decode";
+	//		GuiApp.getProperty(nm, "false");
+	//		EditPropsAction.registerEditor(nm, 
+	//			new JComboBox(new String[] { "true", "false" }));
+	
+			GuiApp.getProperty("MessageBrowser.BeforeData", "----\\n");
+	
+			GuiApp.getProperty("MessageBrowser.AfterData", "");
+		}
 	}
 
 	/**
@@ -1037,8 +1065,8 @@ public class MessageBrowser extends MenuFrame
 			GuiApp.getIntProperty("MessageBrowser.Timeout", 5);
 		msgOutputThread.showRaw = showRaw;
 		msgOutputThread.doDecode = doDecode;
-		msgOutputThread.beforeData = beforeDataField.getText();
-		msgOutputThread.afterData = afterDataField.getText();
+		msgOutputThread.beforeData = canDecode ? beforeDataField.getText() : null;
+		msgOutputThread.afterData = canDecode ? afterDataField.getText() : null;
 		msgOutputThread.showMetaData = 
 			GuiApp.getBooleanProperty("MessageBrowser.showMsgMetaData", false);
 
@@ -1155,7 +1183,8 @@ public class MessageBrowser extends MenuFrame
 			(String)hostField.getSelectedItem(), port, userField.getText(),
 			outputcrit, prefixField.getText(), suffixField.getText(),
 			true, doDecode,
-			beforeDataField.getText(), afterDataField.getText(), showRaw);
+			(canDecode ? beforeDataField.getText() : null),
+			(canDecode ? afterDataField.getText() : null), showRaw);
 		//String s = passwordField.getText().trim();
 		String s = new String(passwordField.getPassword());
 		if (s.length() > 0)
@@ -1368,8 +1397,8 @@ public class MessageBrowser extends MenuFrame
 			GuiApp.getIntProperty("MessageBrowser.Timeout", 30);
 		msgOutputThread.doDecode = doDecode;
 		msgOutputThread.showRaw = showRaw;
-		msgOutputThread.beforeData = beforeDataField.getText();
-		msgOutputThread.afterData = afterDataField.getText();
+		msgOutputThread.beforeData = canDecode ? beforeDataField.getText() : null;
+		msgOutputThread.afterData = canDecode ? afterDataField.getText() : null;
 		msgOutputThread.showMetaData = 
 			GuiApp.getBooleanProperty("MessageBrowser.showMsgMetaData", false);
 
