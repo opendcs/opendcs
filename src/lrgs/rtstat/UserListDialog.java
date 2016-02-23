@@ -57,8 +57,7 @@ public class UserListDialog
 		{
 			//setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 			tableModel = new UserListTableModel();
-			userTable = new SortingListTable(tableModel,
-                new int[] { 24, 10, 30, 12, 12, 12 });
+			userTable = new SortingListTable(tableModel, UserListTableModel.colwidths);
 			jbInit();
 			userTable.getSelectionModel().setSelectionMode(
             	ListSelectionModel.SINGLE_SELECTION);
@@ -67,6 +66,7 @@ public class UserListDialog
 			// so set isAdmin=true.
 			editUserDialog = new EditUserDialog(this, 
 					labels.getString("UserListDialog.modUserDataTitle"), true, true);
+			setPreferredSize(new Dimension(1000, 600));
 			pack();
 			
 			userTable.addMouseListener(
@@ -119,7 +119,6 @@ public class UserListDialog
 	{
 		panel1.setLayout(borderLayout1);
 		this.setModal(true);
-//		okButton.setPreferredSize(new Dimension(100, 23));
 		okButton.setText(genericLabels.getString("OK"));
 		okButton.addActionListener(new ActionListener()
 		{
@@ -182,23 +181,31 @@ public class UserListDialog
 		DdsUser newUser = new DdsUser();
 		newUser.addPerm("dds");
 		editUserDialog.set(host, newUser, true);
-		launch(editUserDialog);
-		if (editUserDialog.okPressed())
+		boolean done = false;
+		int tries=0;
+		while(!done && tries++ < 5)
 		{
-			try 
+			launch(editUserDialog);
+			if (editUserDialog.okPressed())
 			{
-				tableModel.addUser(newUser);
-				ddsClientIf.modUser(newUser, editUserDialog.getPassword()); 
-				tableModel.resort();
+				try 
+				{
+					tableModel.addUser(newUser);
+					ddsClientIf.modUser(newUser, editUserDialog.getPassword()); 
+					tableModel.resort();
+					done = true;
+				}
+				catch(AuthException ex)
+				{
+					JOptionPane.showMessageDialog(this,
+	            		AsciiUtil.wrapString(ex.toString(),60),
+						"Error!", JOptionPane.ERROR_MESSAGE);
+					tableModel.deleteObject(newUser);
+					done = false;
+				}
 			}
-			catch(AuthException ex)
-			{
-				JOptionPane.showMessageDialog(this,
-            		AsciiUtil.wrapString(ex.toString(),60),
-					"Error!", JOptionPane.ERROR_MESSAGE);
-				tableModel.deleteObject(newUser);
-				return;
-			}
+			else
+				done = true;
 		}
 	}
 
@@ -216,23 +223,31 @@ public class UserListDialog
 		DdsUser ddsUserOrig = (DdsUser)tableModel.getRowObject(r);
 		DdsUser ddsUserCopy = new DdsUser(ddsUserOrig);
 		editUserDialog.set(host, ddsUserCopy, false);
-		launch(editUserDialog);
-		if (editUserDialog.okPressed())
+		boolean done = false;
+		int tries = 0;
+		while(!done && tries++ < 5)
 		{
-			try 
+			launch(editUserDialog);
+			if (editUserDialog.okPressed())
 			{
-				ddsClientIf.modUser(ddsUserCopy, editUserDialog.getPassword());
-				tableModel.deleteObject(ddsUserOrig);
-				tableModel.addUser(ddsUserCopy);
-				tableModel.resort();
+				try 
+				{
+					ddsClientIf.modUser(ddsUserCopy, editUserDialog.getPassword());
+					tableModel.deleteObject(ddsUserOrig);
+					tableModel.addUser(ddsUserCopy);
+					tableModel.resort();
+					done = true;
+				}
+				catch(AuthException ex)
+				{
+					JOptionPane.showMessageDialog(this,
+	            		AsciiUtil.wrapString(ex.toString(),60),
+						"Error!", JOptionPane.ERROR_MESSAGE);
+					done = false;
+				}
 			}
-			catch(AuthException ex)
-			{
-				JOptionPane.showMessageDialog(this,
-            		AsciiUtil.wrapString(ex.toString(),60),
-					"Error!", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
+			else
+				done = true;
 		}
 	}
 
@@ -298,17 +313,22 @@ class UserListTableModel extends AbstractTableModel
 	private String colNames[] = null;
 	private int lastSortColumn = -1;
 	private ArrayList<DdsUser> userList;
+	static int[] colwidths = new int[] { 12, 14, 12, 14, 10, 10, 10, 6, 6, 6 };
 
 	public UserListTableModel()
 	{
 		super();
-		colNames = new String[6];
+		colNames = new String[10];
 		colNames[0] = labels.getString("UserListDialog.userNameColumn");
-		colNames[1] = labels.getString("UserListDialog.pwColumn");
-		colNames[2] = labels.getString("UserListDialog.permissionsColumn");
-		colNames[3] = labels.getString("UserListDialog.ipAddrColumn");
-		colNames[4] = labels.getString("UserListDialog.DCPLimColumn");
-		colNames[5] = labels.getString("UserListDialog.localUserColumn");
+		colNames[1] = "Organization";
+		colNames[2] = "Last Name";
+		colNames[3] = "Email";
+		colNames[4] = labels.getString("UserListDialog.permissionsColumn");
+		colNames[5] = labels.getString("UserListDialog.ipAddrColumn");
+		colNames[6] = labels.getString("UserListDialog.DCPLimColumn");
+		colNames[7] = labels.getString("UserListDialog.localUserColumn");
+		colNames[8] = "PW?";
+		colNames[9] = "Susp?";
 		userList = null;
 	}
 
@@ -383,11 +403,15 @@ class UserListTableModel extends AbstractTableModel
 		switch(c)
 		{
 		case 0: return du.userName;
-		case 1: return du.hasPassword ? "Y" : "N";
-		case 2: return du.permsString();
-		case 3: return du.getIpAddr() == null ? "" : du.getIpAddr();
-		case 4: return du.dcpLimit == -1 ? "" : ("" + du.dcpLimit);
-		case 5: return du.isLocal ? "*" : "";
+		case 1: return du.getOrg() == null ? "" : du.getOrg();
+		case 2: return du.getLname() == null ? "" : du.getLname();
+		case 3: return du.getEmail() == null ? "" : du.getEmail();
+		case 4: return du.permsString();
+		case 5: return du.getIpAddr() == null ? "" : du.getIpAddr();
+		case 6: return du.dcpLimit == -1 ? "" : ("" + du.dcpLimit);
+		case 7: return du.isLocal ? "*" : "";
+		case 8:	return du.hasPassword ? "Y" : "N";
+		case 9: return du.isSuspended() ? "*" : "";
 		default: return "";
 		}
 	}
