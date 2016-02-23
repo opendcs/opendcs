@@ -116,20 +116,15 @@ public class LrgsConfigDialog extends GuiDialog
 	private JTextField domsatTimeoutField = null;
 	private JTextField domsatDpcHost = new JTextField();;
 	private JTextField domsatDpcPort = new JTextField();;
-	private JLabel ddsListenPortLabel = null;
-	private JLabel ddsBindAddLabel = null;
 	private JTextField ddsListenPortField = null;
 	private JTextField ddsBindAddrField = null;
-	private JLabel ddsMaxClientsLabel = null;
 	private JTextField ddsMaxClientsField = null;
-	private JLabel ddsParentDirectoryLabel = null;
 	private JTextField ddsParentDirectoryField = null;
-	private JLabel ddsLogFileLabel = null;
 	private JTextField ddsLogFileField = null;
 	private JCheckBox ddsRequireAuthCheck = null;
 	private JPanel recoverPanel = null;
 	private JLabel recoveryLabel = null;
-	private JComboBox recoveryCombo = null;
+//	private JComboBox recoveryCombo = null;
 	private JCheckBox enableDDSReceiveCheck = null;
 	private JLabel emptyLabel1 = null;
 	private JLabel emptyLabel2 = null;
@@ -183,6 +178,7 @@ public class LrgsConfigDialog extends GuiDialog
 	private JCheckBox localAdminOnlyCheck = new JCheckBox();
 	private JTextField localSandboxDir = new JTextField();
 	private JCheckBox goesXmitCheck = new JCheckBox("Save GOES Xmit Records");
+	private JCheckBox requireStrongAuthCheck = new JCheckBox();
 
 	private String mergePrefs[] = { "(unspecified)", "DRGS",
 		"DOMSAT", "DDS-Receive" };
@@ -269,7 +265,7 @@ public class LrgsConfigDialog extends GuiDialog
 		getDdsRequireAuthCheck().setSelected(false);
 		
 		//DDS Receive tab
-		recoveryCombo.setSelectedIndex(0);
+//		recoveryCombo.setSelectedIndex(0);
 		enableDDSReceiveCheck.setSelected(true);
 		//netlistListModel.clear();
 		netlistTableModel.getDataVector().removeAllElements();
@@ -367,12 +363,13 @@ public class LrgsConfigDialog extends GuiDialog
 		getDdsRequireAuthCheck().setSelected(lrgsConfig.ddsRequireAuth);
 		localAdminOnlyCheck.setSelected(lrgsConfig.localAdminOnly);
 		localSandboxDir.setText(lrgsConfig.ddsUserRootDirLocal);
+		requireStrongAuthCheck.setSelected(lrgsConfig.reqStrongEncryption);
 		
 		//DDS Receive tab
-		if (lrgsConfig.recoverOutages)
-			recoveryCombo.setSelectedIndex(1);
-		else
-			recoveryCombo.setSelectedIndex(0);
+//		if (lrgsConfig.recoverOutages)
+//			recoveryCombo.setSelectedIndex(1);
+//		else
+//			recoveryCombo.setSelectedIndex(0);
 		enableDDSReceiveCheck.setSelected(lrgsConfig.enableDdsRecv);
 		ddsTimeoutField.setText("" + ddsSettings.timeout);
 
@@ -710,6 +707,13 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.localAdminOnly = bv;
 				changed = true;
 			}
+			
+			bv = requireStrongAuthCheck.isSelected();
+			if (lrgsConfig.reqStrongEncryption != bv)
+			{
+				lrgsConfig.reqStrongEncryption = bv;
+				changed = true;
+			}
 
 			fieldName = "Local DDS User Dir";
 			sv = getStringFieldValue(localSandboxDir, 
@@ -721,13 +725,15 @@ public class LrgsConfigDialog extends GuiDialog
 			}
 
 			// on the DDS Recv Tab
-			iv = recoveryCombo.getSelectedIndex();
-			bv = iv == 0 ? false : true;
-			if (lrgsConfig.recoverOutages != bv)
-			{
-				lrgsConfig.recoverOutages = bv;
-				changed = true;
-			}
+			// MJM OpenDCS 6.2 does not support Outage recovery
+//			iv = recoveryCombo.getSelectedIndex();
+//			bv = iv == 0 ? false : true;
+//			if (lrgsConfig.recoverOutages != bv)
+//			{
+//				lrgsConfig.recoverOutages = bv;
+//				changed = true;
+//			}
+			lrgsConfig.recoverOutages = false;
 
 			bv = enableDDSReceiveCheck.isSelected();
 			if (lrgsConfig.enableDdsRecv != bv)
@@ -1086,152 +1092,87 @@ public class LrgsConfigDialog extends GuiDialog
 	{
 		if (ddsServerConfigTab == null) 
 		{
-			GridBagConstraints nicLabelConstraints = new GridBagConstraints();
-			nicLabelConstraints.gridx = 3;
-			nicLabelConstraints.weightx = 1.0D;
-			nicLabelConstraints.fill = GridBagConstraints.BOTH;
-			nicLabelConstraints.insets = new Insets(0, 10, 3, 0);
-			nicLabelConstraints.gridy = 1;
-			nicLabel = new JLabel();
-			nicLabel.setText(labels.getString(
-					"LrgsConfigDialog.ddsMultiNICSystems"));
-
-			GridBagConstraints emptyLabel5Constraints = new GridBagConstraints();
-			emptyLabel5Constraints.gridx = 2;
-			emptyLabel5Constraints.weightx = 0.25D;
-			emptyLabel5Constraints.fill = GridBagConstraints.BOTH;
-			emptyLabel5Constraints.gridy = 2;
-			emptyLabel5 = new JLabel();
-			emptyLabel5.setText("");
-
-			GridBagConstraints ddsRequireAuthCheckConstraints = new GridBagConstraints();
-			ddsRequireAuthCheckConstraints.gridx = 1;
-			ddsRequireAuthCheckConstraints.anchor = GridBagConstraints.WEST;
-			ddsRequireAuthCheckConstraints.gridwidth = 3;
-			ddsRequireAuthCheckConstraints.insets = new Insets(6, 0, 6, 0);
-			ddsRequireAuthCheckConstraints.gridy = 5;
-
-			GridBagConstraints ddsLogFileFieldConstraints = new GridBagConstraints();
-			ddsLogFileFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
-			ddsLogFileFieldConstraints.gridy = 4;
-			ddsLogFileFieldConstraints.weightx = 1.0;
-			ddsLogFileFieldConstraints.anchor = GridBagConstraints.WEST;
-			ddsLogFileFieldConstraints.insets = new Insets(6, 0, 6, 40);
-			ddsLogFileFieldConstraints.gridwidth = 3;
-			ddsLogFileFieldConstraints.gridx = 1;
-
-			GridBagConstraints ddsLogFileLabelConstraints = new GridBagConstraints();
-			ddsLogFileLabelConstraints.gridx = 0;
-			ddsLogFileLabelConstraints.anchor = GridBagConstraints.EAST;
-			ddsLogFileLabelConstraints.insets = new Insets(6, 0, 7, 2);
-			ddsLogFileLabelConstraints.weighty = 0.0D;
-			ddsLogFileLabelConstraints.gridy = 4;
-			ddsLogFileLabel = new JLabel();
-			ddsLogFileLabel.setText(labels.getString(
-					"LrgsConfigDialog.ddsUsageLogFile"));
-
-			GridBagConstraints ddsParentDirectoryFieldConstraints = new GridBagConstraints();
-			ddsParentDirectoryFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
-			ddsParentDirectoryFieldConstraints.gridy = 3;
-			ddsParentDirectoryFieldConstraints.weightx = 1.0;
-			ddsParentDirectoryFieldConstraints.anchor = GridBagConstraints.WEST;
-			ddsParentDirectoryFieldConstraints.gridwidth = 3;
-			ddsParentDirectoryFieldConstraints.insets = new Insets(6, 0, 6, 40);
-			ddsParentDirectoryFieldConstraints.gridx = 1;
-
-			GridBagConstraints ddsParentDirectoryLabelConstraints = new GridBagConstraints();
-			ddsParentDirectoryLabelConstraints.gridx = 0;
-			ddsParentDirectoryLabelConstraints.anchor = GridBagConstraints.EAST;
-			ddsParentDirectoryLabelConstraints.insets = new Insets(6, 0, 7, 2);
-			ddsParentDirectoryLabelConstraints.weighty = 0.0D;
-			ddsParentDirectoryLabelConstraints.gridy = 3;
-			ddsParentDirectoryLabel = new JLabel();
-			ddsParentDirectoryLabel.setText(labels.getString(
-					"LrgsConfigDialog.ddsSandboxDir"));
-			GridBagConstraints ddsMaxClientsFieldConstraints = new GridBagConstraints();
-			ddsMaxClientsFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
-			ddsMaxClientsFieldConstraints.gridy = 2;
-			ddsMaxClientsFieldConstraints.weightx = 0.25D;
-			ddsMaxClientsFieldConstraints.anchor = GridBagConstraints.WEST;
-			ddsMaxClientsFieldConstraints.insets = new Insets(6, 0, 6, 0);
-			ddsMaxClientsFieldConstraints.gridx = 1;
-			GridBagConstraints ddsMaxClientsLabelConstraints = new GridBagConstraints();
-			ddsMaxClientsLabelConstraints.gridx = 0;
-			ddsMaxClientsLabelConstraints.anchor = GridBagConstraints.EAST;
-			ddsMaxClientsLabelConstraints.insets = new Insets(6, 40, 7, 2);
-			ddsMaxClientsLabelConstraints.weighty = 0.0D;
-			ddsMaxClientsLabelConstraints.gridy = 2;
-			ddsMaxClientsLabel = new JLabel();
-			ddsMaxClientsLabel.setText(labels.getString(
-					"LrgsConfigDialog.ddsMaxClients"));
-			GridBagConstraints ddsBindAddrFieldConstraints = new GridBagConstraints();
-			ddsBindAddrFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
-			ddsBindAddrFieldConstraints.gridy = 1;
-			ddsBindAddrFieldConstraints.weightx = 0.5D;
-			ddsBindAddrFieldConstraints.anchor = GridBagConstraints.WEST;
-			ddsBindAddrFieldConstraints.gridwidth = 2;
-			ddsBindAddrFieldConstraints.insets = new Insets(6, 0, 6, 0);
-			ddsBindAddrFieldConstraints.gridx = 1;
-			ddsBindAddrFieldConstraints.ipadx = 80;
-			GridBagConstraints ddsListenPortFieldConstraints = new GridBagConstraints();
-			ddsListenPortFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
-			ddsListenPortFieldConstraints.gridy = 0;
-			ddsListenPortFieldConstraints.weightx = 0.25D;
-			ddsListenPortFieldConstraints.anchor = GridBagConstraints.SOUTHWEST;
-			ddsListenPortFieldConstraints.insets = new Insets(6, 0, 6, 0);
-			ddsListenPortFieldConstraints.gridx = 1;
-			GridBagConstraints ddsBindAddLabelConstraints = new GridBagConstraints();
-			ddsBindAddLabelConstraints.gridx = 0;
-			ddsBindAddLabelConstraints.anchor = GridBagConstraints.EAST;
-			ddsBindAddLabelConstraints.insets = new Insets(6, 0, 7, 2);
-			ddsBindAddLabelConstraints.weighty = 0.0D;
-			ddsBindAddLabelConstraints.gridy = 1;
-			ddsBindAddLabel = new JLabel();
-			ddsBindAddLabel.setText(labels.getString(
-					"LrgsConfigDialog.ddsBindIPAddress"));
-			GridBagConstraints ddsListenPortLabelConstraints = new GridBagConstraints();
-			ddsListenPortLabelConstraints.gridx = 0;
-			ddsListenPortLabelConstraints.anchor = GridBagConstraints.SOUTHEAST;
-			ddsListenPortLabelConstraints.insets = new Insets(6, 0, 8, 2);
-			ddsListenPortLabelConstraints.weighty = 0.5D;
-			ddsListenPortLabelConstraints.gridy = 0;
-			ddsListenPortLabel = new JLabel();
-			ddsListenPortLabel.setText(labels.getString(
-					"LrgsConfigDialog.ddsListeningPort"));
 			ddsServerConfigTab = new JPanel();
 			ddsServerConfigTab.setLayout(new GridBagLayout());
 			ddsServerConfigTab.setBorder(BorderFactory.createTitledBorder(null, 
 					labels.getString("LrgsConfigDialog.ddsLRGSDDSTitle"), 
 					TitledBorder.CENTER, TitledBorder.BELOW_TOP, new Font("Dialog", Font.BOLD, 14), new Color(51, 51, 51)));
-			ddsServerConfigTab.add(ddsListenPortLabel, ddsListenPortLabelConstraints);
-			ddsServerConfigTab.add(ddsBindAddLabel, ddsBindAddLabelConstraints);
-			ddsServerConfigTab.add(getDdsListenPortField(), ddsListenPortFieldConstraints);
-			ddsServerConfigTab.add(getDdsBindAddrField(), ddsBindAddrFieldConstraints);
-			ddsServerConfigTab.add(ddsMaxClientsLabel, ddsMaxClientsLabelConstraints);
-			ddsServerConfigTab.add(getDdsMaxClientsField(), ddsMaxClientsFieldConstraints);
-			ddsServerConfigTab.add(ddsParentDirectoryLabel, ddsParentDirectoryLabelConstraints);
-			ddsServerConfigTab.add(getDdsParentDirectoryField(), ddsParentDirectoryFieldConstraints);
-			ddsServerConfigTab.add(ddsLogFileLabel, ddsLogFileLabelConstraints);
-			ddsServerConfigTab.add(getDdsLogFileField(), ddsLogFileFieldConstraints);
-			ddsServerConfigTab.add(getDdsRequireAuthCheck(), ddsRequireAuthCheckConstraints);
-			ddsServerConfigTab.add(emptyLabel5, emptyLabel5Constraints);
-			ddsServerConfigTab.add(nicLabel, nicLabelConstraints);
+
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsListeningPort")), 
+				new GridBagConstraints(0, 0, 1, 1, 0, .5,
+					GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
+					new Insets(6, 0, 6, 2), 0, 0));
+			ddsServerConfigTab.add(getDdsListenPortField(), 
+				new GridBagConstraints(1, 0, 1, 1, .25, 0.,
+					GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 6, 0), 0, 0));
 			
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsBindIPAddress")), 
+				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(6, 0, 6, 2), 0, 0));
+			ddsServerConfigTab.add(getDdsBindAddrField(), 
+				new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 6, 0), 80, 0));
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsMultiNICSystems")), 
+				new GridBagConstraints(2, 1, 1, 1, 0.5, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE,
+					new Insets(6, 0, 6, 10), 0, 0));
+			
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsMaxClients")),
+				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(6, 10, 6, 2), 0, 0));
+			ddsServerConfigTab.add(getDdsMaxClientsField(),
+				new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 6, 0), 0, 0));
+	
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsSandboxDir")), 
+				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(6, 10, 6, 2), 0, 0));
+			ddsServerConfigTab.add(getDdsParentDirectoryField(), 
+				new GridBagConstraints(1, 3, 2, 1, 1.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 6, 40), 0, 0));
+			
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsUsageLogFile")), 
+				new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(6, 10, 6, 2), 0, 0));
+			ddsServerConfigTab.add(getDdsLogFileField(), 
+				new GridBagConstraints(1, 4, 2, 1, 1.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 6, 40), 0, 0));
+
+			ddsServerConfigTab.add(getDdsRequireAuthCheck(), 
+				new GridBagConstraints(1, 5, 2, 1, 0.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE,
+					new Insets(6, 0, 6, 0), 0, 0));
+
 			localAdminOnlyCheck.setText("Local Administrators Only");
 			localAdminOnlyCheck.setToolTipText(
 				"Do not allow administration from remotely shared accounts.");
 			ddsServerConfigTab.add(localAdminOnlyCheck,
-				new GridBagConstraints(1, 6, 1, 1, 0.0, 0.0,
+				new GridBagConstraints(1, 6, 2, 1, 0.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE,
+					new Insets(6, 0, 6, 5), 0, 0));
+
+			requireStrongAuthCheck.setText("Require SHA-256 Authentication");
+			ddsServerConfigTab.add(requireStrongAuthCheck,
+				new GridBagConstraints(1, 7, 2, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(6, 0, 6, 5), 0, 0));
 			
 			JLabel lb = new JLabel("Local Sandbox Directory:");
 			ddsServerConfigTab.add(lb,
-				new GridBagConstraints(0, 7, 1, 1, 0.0, 0.5,
+				new GridBagConstraints(0, 8, 1, 1, 0.0, 0.5,
 					GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 					new Insets(6, 10, 6, 2), 0, 0));
 			ddsServerConfigTab.add(localSandboxDir,
-				new GridBagConstraints(1, 7, 1, 1, 1.0, 0.5,
+				new GridBagConstraints(1, 8, 1, 1, 1.0, 0.5,
 					GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
 					new Insets(5, 0, 5, 40), 0, 0));
 		}
@@ -1869,14 +1810,14 @@ public class LrgsConfigDialog extends GuiDialog
 			recoverPanel.setBorder(BorderFactory.createTitledBorder(null, 
 				labels.getString(
 					"LrgsConfigDialog.LRGSDDSBackupTitle"), TitledBorder.CENTER, TitledBorder.BELOW_TOP, new Font("Dialog", Font.BOLD, 14), new Color(51, 51, 51)));
-			recoverPanel.add(recoveryLabel,
-				new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
-					GridBagConstraints.EAST, GridBagConstraints.NONE,
-					new Insets(10, 10, 4, 2), 0, 0));
-			recoverPanel.add(getRecoveryCombo(),
-				new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-					GridBagConstraints.WEST, GridBagConstraints.NONE,
-					new Insets(10, 0, 4, 10), 100, 0));
+//			recoverPanel.add(recoveryLabel,
+//				new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
+//					GridBagConstraints.EAST, GridBagConstraints.NONE,
+//					new Insets(10, 10, 4, 2), 0, 0));
+//			recoverPanel.add(getRecoveryCombo(),
+//				new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+//					GridBagConstraints.WEST, GridBagConstraints.NONE,
+//					new Insets(10, 0, 4, 10), 100, 0));
 			recoverPanel.add(new JLabel(genericLabels.getString("timeout")),
 				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -1893,19 +1834,19 @@ public class LrgsConfigDialog extends GuiDialog
 		return recoverPanel;
 	}
 
-	/**
-	 * This method initializes recoveryCombo	
-	 * 	
-	 * @return javax.swing.JComboBox	
-	 */
-	private JComboBox getRecoveryCombo() {
-		if (recoveryCombo == null) {
-			recoveryCombo = new JComboBox();
-			recoveryCombo.addItem("Real - Time Stream");
-			recoveryCombo.addItem("Recover from Outages");
-		}
-		return recoveryCombo;
-	}
+//	/**
+//	 * This method initializes recoveryCombo	
+//	 * 	
+//	 * @return javax.swing.JComboBox	
+//	 */
+//	private JComboBox getRecoveryCombo() {
+//		if (recoveryCombo == null) {
+//			recoveryCombo = new JComboBox();
+//			recoveryCombo.addItem("Real - Time Stream");
+//			recoveryCombo.addItem("Recover from Outages");
+//		}
+//		return recoveryCombo;
+//	}
 
 	/**
 	 * This method initializes enableDDSReceiveCheck	
