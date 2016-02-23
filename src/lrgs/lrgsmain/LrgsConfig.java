@@ -333,6 +333,9 @@ public class LrgsConfig
 	
 	private PasswordChecker passwordChecker = null;
 
+	/** If true, then Authenticated DDS connections must be done with SHA-256. */
+	public boolean reqStrongEncryption = false;
+
 	public static LrgsConfig instance()
 	{
 		if (_instance == null)
@@ -384,6 +387,7 @@ public class LrgsConfig
 		JdbcDriverClass = def_JdbcDriverClass;
 		recoverOutages = def_recoverOutages;
 		localAdminOnly = def_localAdminOnly;
+		reqStrongEncryption = false;
 	}
 
 	public void setConfigFileName(String cfgName)
