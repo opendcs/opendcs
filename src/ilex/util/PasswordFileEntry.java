@@ -4,6 +4,7 @@
 package ilex.util;
 
 import java.security.*;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -16,6 +17,8 @@ Represent a single entry in a PasswordFile.
 public class PasswordFileEntry 
 	implements HasProperties, Cloneable, Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	/** the user name */
 	private String username;
 
@@ -27,6 +30,17 @@ public class PasswordFileEntry
 
 	/** Additional properties of this entry */
 	private Properties properties;
+
+	private PasswordFile owner = null;
+	
+	private boolean changed = false;
+	
+	private boolean local = false;
+	
+	private Date lastModified = null;
+	
+	public static final String digestAlgo = "SHA";
+	
 
 	//=================================================================
 	// Constructors & Parsers
@@ -260,7 +274,7 @@ public class PasswordFileEntry
 	*/
 	public boolean matchesPassword( String passwd )
 	{
-		byte test[] = buildShaPassword(username, passwd);
+		byte test[] = buildShaPassword(username, passwd, digestAlgo);
 		if (ShaPassword.length != test.length)
 			return false;
 		for(int i = 0; i < test.length; i++)
@@ -352,7 +366,7 @@ public class PasswordFileEntry
 	*/
 	public void setPassword( String passwd )
 	{
-		ShaPassword = buildShaPassword(username, passwd);
+		ShaPassword = buildShaPassword(username, passwd, digestAlgo);
 	}
 
 	/**
@@ -371,12 +385,12 @@ public class PasswordFileEntry
 	* @return the SHA hash
 	*/
 	private static final byte[] 
-		buildShaPassword( String username, String password )
+		buildShaPassword( String username, String password, String digestAlgo )
 	{
 		try
 		{
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			MessageDigest md = MessageDigest.getInstance("SHA");
+			MessageDigest md = MessageDigest.getInstance(digestAlgo);
 			DigestOutputStream dos = new DigestOutputStream(baos, md);
 
 			dos.write(username.getBytes());
@@ -444,5 +458,45 @@ public class PasswordFileEntry
 	public Properties getProperties()
 	{
 		return properties;
+	}
+
+	public PasswordFile getOwner()
+	{
+		return owner;
+	}
+
+	public void setOwner(PasswordFile owner)
+	{
+		this.owner = owner;
+	}
+
+	public boolean isChanged()
+	{
+		return changed;
+	}
+
+	public void setChanged(boolean changed)
+	{
+		this.changed = changed;
+	}
+
+	public boolean isLocal()
+	{
+		return local;
+	}
+
+	public void setLocal(boolean local)
+	{
+		this.local = local;
+	}
+
+	public Date getLastModified()
+	{
+		return lastModified;
+	}
+
+	public void setLastModified(Date lastModified)
+	{
+		this.lastModified = lastModified;
 	}
 }
