@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2011/09/10 10:23:34  mmaloney
 *  added getFloat method
 *
@@ -430,6 +433,30 @@ public class ByteUtil
 			new ByteArrayInputStream(b, offset, 4));
 		try { return dis.readFloat(); }
 		catch(Exception ex) { return (float)0.0; }
+	}
+	
+	/**
+	 * Return true if two byte arrays are the same, false otherwise.
+	 * Tolerates either being null. Returns true if both are null.
+	 * @param a1
+	 * @param a2
+	 * @return
+	 */
+	public static boolean equals(byte[] a1, byte[] a2)
+	{
+		if (a1 == null)
+			return a2 == null;
+		else if (a2 == null)
+			return false;
+		
+		if (a1.length != a2.length)
+			return false;
+		
+		for(int i=0; i<a1.length; i++)
+			if (a1[i] != a2[i])
+				return false;
+		
+		return true;
 	}
 
 //	public static final void main(String args[])
