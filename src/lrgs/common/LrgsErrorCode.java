@@ -68,8 +68,9 @@ public class LrgsErrorCode
 	public static final int DNOSUCHFILE = 52;
 	public static final int DTOOMANYDCPS = 53;
 	public static final int DBADPASSWORD = 54;
+	public static final int DSTRONGREQUIRED = 55;
 
-	public static final int DMAXERROR    = 54;
+	public static final int DMAXERROR    = 55;
 
 	/**
 	  Returns the name corresponding to an LRGS error code.
@@ -133,7 +134,9 @@ public class LrgsErrorCode
 		case DALREADYATTACHED: return "DALREADYATTACHED"; /* Used */
 		case DNOSUCHFILE: return "DNOSUCHFILE";           /* Used */
 		case DTOOMANYDCPS: return "DTOOMANYDCPS";         /* Used */
-		case DBADPASSWORD: return "DBADPASSWORD";
+		case DBADPASSWORD: return "DBADPASSWORD";         /* Used */
+		case DSTRONGREQUIRED: return "DSTRONGREQUIRED";   /* Used */
+
 
 		default:
 			return "UNKNOWN";
@@ -201,7 +204,9 @@ public class LrgsErrorCode
 		case DALREADYATTACHED: return "User already attached (mult disallowed)";
 		case DNOSUCHFILE: return "No such file";
 		case DTOOMANYDCPS: return "Too many DCPs for real-time stream";
-		case DBADPASSWORD: return "Password does not meet local length and complexity requirements.";
+		case DBADPASSWORD: return "Password does not meet local requirements.";
+		case DSTRONGREQUIRED: return "Server requires strong encryption algorithm";
+
 
 		default:
 			return "UNKNOWN";
