@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/06/27 20:34:40  mmaloney
+*  Added usage() method.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -33,6 +36,7 @@
 package ilex.util;
 
 import java.io.EOFException;
+import java.io.IOException;
 
 /**
 Works with CmdLineList and CmdLineProcessor to create applications that
@@ -74,7 +78,8 @@ public abstract class CmdLine
 	* @param tokens all command line words: token[0]==keyword
 	* @throws EOFException to cause processor to halt
 	*/
-	public abstract void execute( String[] tokens ) throws EOFException;
+	public abstract void execute( String[] tokens )
+		throws IOException, EOFException;
 
 	/**
 	* Convenience method for sub-classes: call this with the required
