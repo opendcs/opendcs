@@ -229,6 +229,8 @@ MJM 20031104 - removed - do not use this constructor!
 	 */
 	public DbEnum getDbEnum(String enumName)
 	{
+		if (enumList == null)
+			return null;
 		DbEnum ret = enumList.getEnum(enumName);
 		if (ret != null || enumList.haveReadAllEnums())
 			return ret;
