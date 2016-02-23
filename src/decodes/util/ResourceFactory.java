@@ -17,6 +17,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 
 import lrgs.common.DcpMsgFlag;
+import lrgs.ldds.PasswordChecker;
 import decodes.decoder.FunctionList;
 import decodes.gui.TopFrame;
 import decodes.tsdb.groupedit.TsDbGrpEditor;
@@ -104,5 +105,10 @@ public class ResourceFactory
 		throws decodes.db.DatabaseException
 	{
 		DcpMsgFlag.setFlagRev(0x4b);
+	}
+	
+	public PasswordChecker getPasswordChecker()
+	{
+		return null;
 	}
 }
