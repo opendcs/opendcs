@@ -444,16 +444,17 @@ public class LrgsMain
 		}
 
 		// Initialize & Start the DDS Receiver Module
-		if (cfg.recoverOutages)
-			ddsRecv = new OutageDdsRecv(this, msgArchive);
-		else
+		// MJM OpenDCS 6.2 does not support Outage Recovery
+//		if (cfg.recoverOutages)
+//			ddsRecv = new OutageDdsRecv(this, msgArchive);
+//		else
 			ddsRecv = new DdsRecv(this, msgArchive);
 		addInput(ddsRecv);
 		
 		// Initialize & Start the DDS Receiver Module for secondary group
-		if (cfg.recoverOutages)
-			ddsRecv2 = new OutageDdsRecv(this, msgArchive);
-		else
+//		if (cfg.recoverOutages)
+//			ddsRecv2 = new OutageDdsRecv(this, msgArchive);
+//		else
 			ddsRecv2 = new DdsRecv(this, msgArchive);
 		
 		ddsRecv2.setSecondary(true);
@@ -469,16 +470,17 @@ public class LrgsMain
 
 		// If I'm recovering outages, set 'since' time to the last time I got
 		// a message on _any_ downlink.
-		if (cfg.recoverOutages)
-		{
-			ddsRecv.setLastMsgRecvTime(statusProvider.getLastReceiveTime());
-			ddsRecv2.setLastMsgRecvTime(statusProvider.getLastReceiveTime()); // for secondary group
-		}
-		else // Otherwise, use last time DDS returned a message
-		{
+		// MJM OpenDCS 6.2 does not support Outage Recovery
+//		if (cfg.recoverOutages)
+//		{
+//			ddsRecv.setLastMsgRecvTime(statusProvider.getLastReceiveTime());
+//			ddsRecv2.setLastMsgRecvTime(statusProvider.getLastReceiveTime()); // for secondary group
+//		}
+//		else // Otherwise, use last time DDS returned a message
+//		{
 			ddsRecv.setLastMsgRecvTime(statusProvider.getLastDdsReceiveTime());
 			ddsRecv2.setLastMsgRecvTime(statusProvider.getLastSecDdsReceiveTime()); // for secondary group
-		}
+//		}
 		
 		
 		
