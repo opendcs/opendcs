@@ -26,10 +26,15 @@ public class PropertiesUtil
 	* In this method, keys are compared case SENSITIVE.
 	* @param p1 the first properties set.
 	* @param p2 the second properties set.
-	* @return true if keys & values in both sets are equal.
+	* @return true if keys & values in both sets are equal, or if both are null.
 	*/
 	public static boolean propertiesEqual( Properties p1, Properties p2 )
 	{
+		if (p1 == null)
+			return p2 == null;
+		else if (p2 == null)
+			return false;
+		
 		if (p1.size() != p2.size())
 		{
 Logger.instance().debug3("differing num of props p1='" + props2string(p1) + "' p2='" + props2string(p2) + "'");
