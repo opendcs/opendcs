@@ -286,7 +286,6 @@ public class SearchCriteriaEditFrame
 	@Override
 	public void cleanupBeforeExit()
 	{
-System.out.println("cleanupBeforeExit()");
 		if (parent != null)
 			parent.closingSearchCritEditor();
 	}
