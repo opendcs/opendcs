@@ -12,25 +12,21 @@
 */
 package lrgs.ddsrecv;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-import ilex.util.AuthException;
-import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
 import ilex.util.TextUtil;
-
-import lrgs.apistatus.DownLink;
+import lrgs.apiadmin.AuthenticatorString;
 import lrgs.common.DcpMsg;
 import lrgs.common.LrgsErrorCode;
-import lrgs.common.NetworkList;
 import lrgs.common.SearchCriteria;
+import lrgs.ldds.CmdAuthHello;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ProtocolError;
 import lrgs.ldds.ServerError;
+import lrgs.ldds.UnknownUserException;
 import lrgs.lrgsmain.LrgsMain;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsInputException;
@@ -51,7 +47,6 @@ public class DdsRecvConnection
 	/** My configuration */
 	private DdsRecvConnectCfg config;
 
-	private long errorTime;
 	private long lastActivityTime;
 	private long lastMessageTime;
 
@@ -78,7 +73,6 @@ public class DdsRecvConnection
 		this.config = config;
 		slot = -1;
 		status = "Unused";
-		errorTime = 0L;
 		lastActivityTime = 0L;
 		lastMessageTime = 0L;
 		dataSourceId = lrgs.db.LrgsConstants.undefinedId;
@@ -167,31 +161,40 @@ public class DdsRecvConnection
 
 		if (config.authenticate)
 		{
-			PasswordFile pf;
+			PasswordFileEntry pfe;
 			try
 			{
- 				pf = new PasswordFile(new File(
-					EnvExpander.expand("$LRGSHOME/.lrgs.passwd")));
-				pf.read();
+				pfe = CmdAuthHello.getPasswordFileEntry(config.username);
 			}
-			catch(IOException ex)
+			catch (UnknownUserException e)
 			{
-				status = "Auth Error";
-				throw new LrgsInputException("Connection to "
-					+ lddsClient.getName() 
-					+ " calls for authenticated connection "
-					+ "but can't read local password file: " + ex);
+				pfe = null;
 			}
-			PasswordFileEntry pfe = pf.getEntryByName(config.username);
+//			PasswordFile pf;
+//			try
+//			{
+// 				pf = new PasswordFile(new File(
+//					EnvExpander.expand("$LRGSHOME/.lrgs.passwd")));
+//				pf.read();
+//			}
+//			catch(IOException ex)
+//			{
+//				status = "Auth Error";
+//				throw new LrgsInputException("Connection to "
+//					+ lddsClient.getName() 
+//					+ " calls for authenticated connection "
+//					+ "but can't read local password file: " + ex);
+//			}
+//			PasswordFileEntry pfe = pf.getEntryByName(config.username);
 			if (pfe == null)
 				throw new LrgsInputException("Connection to "
 					+ lddsClient.getName() 
 					+ " calls for authenticated connection "
-					+ "but no local entry for username '" + config.username
+					+ "but no entry for username '" + config.username
 					+ "'");
 			try
 			{
-				lddsClient.sendAuthHello(pfe);
+				lddsClient.sendAuthHello(pfe, AuthenticatorString.ALGO_SHA);
 			}
 			catch(IOException ex)
 			{
