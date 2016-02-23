@@ -267,6 +267,7 @@ public class LrgsDatabaseTest
 		{
 			System.out.println("Data Source Object");
 			System.out.println("Data Source ID = " + ds.getDataSourceId());
+			System.out.println("Data Source LRGS Host = " + ds.getLrgsHost());
 			System.out.println("Data Source Name = " + ds.getDataSourceName());
 			System.out.println("Data Source Type = " + ds.getDataSourceType());
 		}
@@ -282,11 +283,11 @@ public class LrgsDatabaseTest
 		System.out.println("============================================================");
 		//Test Data Source save method
 		System.out.println("Adding Data Source records.");
-		DataSource dsWrite1 = new DataSource(-1, "name1", "type1");			
+		DataSource dsWrite1 = new DataSource(-1, "localhost", "name1", "type1");			
 		lrgsDB.saveDataSource(dsWrite1);
-		DataSource dsWrite2 = new DataSource(-1, "name2", "type2");			
+		DataSource dsWrite2 = new DataSource(-1, "localhost", "name2", "type2");			
 		lrgsDB.saveDataSource(dsWrite2);
-		DataSource dsWrite3 = new DataSource(-1, "name3", "type3");			
+		DataSource dsWrite3 = new DataSource(-1, "localhost", "name3", "type3");			
 		lrgsDB.saveDataSource(dsWrite3);
 
 		// verify what we inserted
@@ -307,7 +308,7 @@ public class LrgsDatabaseTest
 	{
 		System.out.println("============================================================");
 		DataSource dsRead;
-		List<DataSource> dataSourcesList = lrgsDB.getDataSources();
+		List<DataSource> dataSourcesList = lrgsDB.getDataSources(false);
 		Iterator dsIterator = dataSourcesList.iterator();
 		System.out.println("Reading all Data Source records found on the data_source table." +
 							"\nDisplay Multiple Data Source Objects");
@@ -359,16 +360,16 @@ public class LrgsDatabaseTest
 		 * 	int connectionId, Date startTime, Date endTime, String fromIpAddr,
 		 *	char successCode, String userName, int msgsReceived, boolean admin_done
 		 */
-		ddsConnectionStats = new DdsConnectionStats(-1, startTime1, endTime1, "192.168.1.47",
-				'A', "username", 20, false);
+		ddsConnectionStats = new DdsConnectionStats(-1, "localhost", startTime1, endTime1, "192.168.1.47",
+				'A', "username", 20, false, 0, null);
 		lrgsDB.logDdsConn(ddsConnectionStats);
 		
-		ddsConnectionStats = new DdsConnectionStats(-1, startTime2, endTime2, "192.168.1.48",
-				'U', "username2", 21, true);
+		ddsConnectionStats = new DdsConnectionStats(-1, "localhost", startTime2, endTime2, "192.168.1.48",
+				'U', "username2", 21, true, 0, null);
 		lrgsDB.logDdsConn(ddsConnectionStats);
 		
-		ddsConnectionStats = new DdsConnectionStats(-1, startTime3, endTime3, "192.168.1.49",
-				'U', "username3", 22, false);
+		ddsConnectionStats = new DdsConnectionStats(-1, "localhost", startTime3, endTime3, "192.168.1.49",
+				'U', "username3", 22, false, 0, null);
 		lrgsDB.logDdsConn(ddsConnectionStats);
 		
 		System.out.println("Display the records saved.");
@@ -529,15 +530,15 @@ public class LrgsDatabaseTest
 			int badPasswords, int badUsernames, int maxClients, int minClients,
 			int aveClients, int msgsDelivered
 		 */
-		ddsPeriodStats = new DdsPeriodStats(startTime1, 'H', 1, 2, 3, 4 , 5, 6, 7, 8);
+		ddsPeriodStats = new DdsPeriodStats(startTime1, "localhost", 'H', 1, 2, 3, 4 , 5, 6, 7, 8);
 		lrgsDB.logDdsPeriodStats(ddsPeriodStats);
-		ddsPeriodStats = new DdsPeriodStats(startTime2, 'H', 8, 7, 6, 5 , 4, 3, 2, 1);
+		ddsPeriodStats = new DdsPeriodStats(startTime2, "localhost", 'H', 8, 7, 6, 5 , 4, 3, 2, 1);
 		lrgsDB.logDdsPeriodStats(ddsPeriodStats);
-		ddsPeriodStats = new DdsPeriodStats(endTime1, 'H', 1, 2, 3, 4 , 5, 6, 7, 8);
+		ddsPeriodStats = new DdsPeriodStats(endTime1, "localhost", 'H', 1, 2, 3, 4 , 5, 6, 7, 8);
 		lrgsDB.logDdsPeriodStats(ddsPeriodStats);
-		ddsPeriodStats = new DdsPeriodStats(endTime2, 'H', 8, 7, 6, 5 , 4, 3, 2, 1);
+		ddsPeriodStats = new DdsPeriodStats(endTime2, "localhost", 'H', 8, 7, 6, 5 , 4, 3, 2, 1);
 		lrgsDB.logDdsPeriodStats(ddsPeriodStats);		
-		ddsPeriodStats = new DdsPeriodStats(startTime3, 'H', 1, 2, 3, 4 , 5, 6, 7, 8);
+		ddsPeriodStats = new DdsPeriodStats(startTime3, "localhost", 'H', 1, 2, 3, 4 , 5, 6, 7, 8);
 		lrgsDB.logDdsPeriodStats(ddsPeriodStats);
 		
 		System.out.println("Display the records saved.");
@@ -545,7 +546,7 @@ public class LrgsDatabaseTest
 		// Test Update
 		System.out.println("Now test updating an inserted record. " +
 				"Updating Dds Period Stat where Start_Time = " + dateFmt.format(endTime1));
-		ddsPeriodStats = new DdsPeriodStats(endTime1, 'H', 10, 20, 30, 40 , 50, 60, 70, 80);
+		ddsPeriodStats = new DdsPeriodStats(endTime1, "localhost", 'H', 10, 20, 30, 40 , 50, 60, 70, 80);
 		lrgsDB.logDdsPeriodStats(ddsPeriodStats);
 		System.out.println("============================================================");
 	}

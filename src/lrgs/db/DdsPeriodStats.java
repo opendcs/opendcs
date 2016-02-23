@@ -12,6 +12,7 @@ public class DdsPeriodStats
 {
 
 	private Date startTime;
+	private String lrgsHost;
 	private char periodDuration;
 	private int numAuth;
 	private int numUnAuth;
@@ -29,6 +30,7 @@ public class DdsPeriodStats
 	public DdsPeriodStats()
 	{
 		startTime = null;
+		lrgsHost = null;
 		periodDuration = 'H'; // store hourly
 		numAuth = 0;
 		numUnAuth = 0;
@@ -56,12 +58,13 @@ public class DdsPeriodStats
 	 * @param aveClients average concurrent connections number
 	 * @param msgsDelivered number of messages delivered
 	 */
-	public DdsPeriodStats(Date startTime, char periodDuration, int numAuth, 
+	public DdsPeriodStats(Date startTime, String lrgsHost, char periodDuration, int numAuth, 
 		int numUnAuth, int badPasswords, int badUsernames, int maxClients, 
 		int minClients, double aveClients, int msgsDelivered)
 	{
 		this();
 		this.startTime = startTime;
+		this.lrgsHost = lrgsHost;
 		this.periodDuration = periodDuration;
 		this.numAuth = numAuth;
 		this.numUnAuth = numUnAuth;
@@ -287,4 +290,14 @@ public class DdsPeriodStats
 	public void incrNumUnAuth() { numUnAuth++; }
 	public void incrBadPasswords() { badPasswords++; }
 	public void incrBadUsernames() { badUsernames++; }
+
+	public String getLrgsHost()
+	{
+		return lrgsHost;
+	}
+
+	public void setLrgsHost(String lrgsHost)
+	{
+		this.lrgsHost = lrgsHost;
+	}
 }

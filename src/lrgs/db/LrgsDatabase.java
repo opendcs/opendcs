@@ -11,6 +11,8 @@
 */
 package lrgs.db;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -26,6 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import lrgs.ldds.BadPasswordException;
 import lrgs.lrgsmain.LrgsConfig;
 import decodes.db.DatabaseException;
 import decodes.sql.KeyGenerator;
@@ -73,6 +77,8 @@ public class LrgsDatabase
 
 	/** The URL we're currently connected to. */
 	private String dbUrl;
+	
+	private String myHostName = "unknown";
 
 	/**
 	 * Lrgs constructor. Initialize all private members.
@@ -88,6 +94,8 @@ public class LrgsDatabase
 		readDateFmt.setTimeZone(tz);
 		keyGenerator = null;
 		resultSetCalendar = Calendar.getInstance(tz);
+		try { myHostName = InetAddress.getLocalHost().getHostName(); }
+		catch (UnknownHostException e) { myHostName = "localhost"; }
 	}
 
 	/**
@@ -98,6 +106,12 @@ public class LrgsDatabase
 	public Connection getConnection() 
 	{ 
 		return conn;
+	}
+	
+	public synchronized Statement createStatement()
+		throws SQLException
+	{
+		return conn.createStatement();
 	}
 	
 	/**
@@ -129,7 +143,7 @@ public class LrgsDatabase
 		{
 			if (queryStmt != null)
 				queryStmt.close();
-			queryStmt = conn.createStatement();
+			queryStmt = createStatement();
 			Logger.instance().debug3("Querying '" + q + "'");
 			return queryStmt.executeQuery(q);
 		}
@@ -154,7 +168,7 @@ public class LrgsDatabase
 	{
 		try
 		{
-			modStmt = conn.createStatement();
+			modStmt = createStatement();
 			if (!q.equals("COMMIT"))
 				logger.debug2("Executing statement '" + q + "'");
 			int numChanged = modStmt.executeUpdate(q);
@@ -464,7 +478,7 @@ public class LrgsDatabase
 	{
 		DataSource dataSource = null;
 		String q = 
-			"SELECT data_source_id, data_source_name, data_source_type " +
+			"SELECT data_source_id, lrgs_host, data_source_name, data_source_type " +
 			"FROM data_source WHERE data_source_type = " +
 			sqlString(type) + " AND data_source_name = " + sqlString(name) + "";
 		
@@ -474,7 +488,7 @@ public class LrgsDatabase
 			if (rs != null && rs.next())
 			{
 				// Set DataSource object.
-				dataSource = new DataSource(rs.getInt(1), rs.getString(2), rs.getString(3) );	
+				dataSource = new DataSource(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4) );	
 			}			
 		}
 		catch(SQLException ex)
@@ -493,20 +507,22 @@ public class LrgsDatabase
 	 * @return List of DataSource objects, an empty list if no Data Sources are found
 	 * @throws LrgsDatabaseException exception thrown in case of error while reading from DB
 	 */
-	public List<DataSource> getDataSources() throws LrgsDatabaseException
+	public List<DataSource> getDataSources(boolean localOnly) throws LrgsDatabaseException
 	{
 		ArrayList<DataSource> dataSourceList = new ArrayList<DataSource>();
 		DataSource dataSource = null;
 		String q = 
-			"SELECT data_source_id, data_source_name, data_source_type " +
+			"SELECT data_source_id, lrgs_host, data_source_name, data_source_type " +
 			"FROM data_source";
+		if (localOnly)
+			q = q + " WHERE lrgs_host = " + sqlString(myHostName);
 		try
 		{
 			ResultSet rs = doQuery(q);
 			// Set DataSource Array List.
 			while(rs.next())
 			{
-				dataSource = new DataSource(rs.getInt(1), rs.getString(2), rs.getString(3));
+				dataSource = new DataSource(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4));
 				dataSourceList.add(dataSource);
 			}
 		}
@@ -562,9 +578,10 @@ public class LrgsDatabase
 				}
 				
 				String q = 
-					"INSERT INTO data_source(data_source_id, data_source_name, "+
-					"data_source_type) VALUES (" + dataSourceID + ", " +
-					sqlString(dataSourceName) + ", " + sqlString(dataSourceType) + ")";
+					"INSERT INTO data_source(data_source_id, lrgs_host, data_source_name, "+
+					"data_source_type) VALUES (" + dataSourceID + ", " 
+					+ sqlString(dataSource.getLrgsHost()) + ", "
+					+ sqlString(dataSourceName) + ", " + sqlString(dataSourceType) + ")";
 				doModify(q);
 				commit();
 			}
@@ -601,14 +618,21 @@ public class LrgsDatabase
 				{
 					connectionID = (int)keyGenerator.getKey(table, conn).getValue();
 					stats.setConnectionId(connectionID);
+					String fromIpAddr = stats.getFromIpAddr();
+					if (fromIpAddr != null && fromIpAddr.length() > 64)
+						fromIpAddr = fromIpAddr.substring(0,64);
 					String q = 
-			"INSERT INTO dds_connection(connection_id, start_time, " +
+			"INSERT INTO dds_connection(connection_id, lrgs_host, start_time, " +
 			"end_time, from_ip_addr, success_code, username, " +
-			"msgs_received, admin_done) VALUES (" + connectionID + ", " +
+			"msgs_received, admin_done, protocol_version, last_activity) VALUES (" 
+			+ connectionID + ", " + sqlString(myHostName) + ", " +
 			sqlDate(stats.getStartTime()) + ", " + sqlDate(stats.getEndTime()) + 
 			", " + sqlString(stats.getFromIpAddr()) + ", " + sqlChar(stats.getSuccessCode()) + 
 			", " + sqlString(stats.getUserName()) + ", " + stats.getMsgsReceived() + 
-			", " + sqlBoolean(stats.isAdmin_done()) + ")";
+			", " + sqlBoolean(stats.isAdmin_done()) 
+			+ ", " + stats.getProtocolVersion()
+			+ ", " + sqlDate(stats.getLastActivity())
+			+ ")";
 					doModify(q);
 					commit();
 					stats.setInDb(true);
@@ -626,8 +650,10 @@ public class LrgsDatabase
 					", end_time = " + sqlDate(stats.getEndTime()) + ", from_ip_addr = " +
 					sqlString(stats.getFromIpAddr()) + ", success_code = " + sqlChar(stats.getSuccessCode()) +
 					", username = " + sqlString(stats.getUserName()) + ", msgs_received = " + 
-					stats.getMsgsReceived() + ", admin_done = " + sqlBoolean(stats.isAdmin_done()) +
-					" WHERE connection_id = " + connectionID;				
+					stats.getMsgsReceived() + ", admin_done = " + sqlBoolean(stats.isAdmin_done())
+					+ ", protocol_version = " + stats.getProtocolVersion()
+					+ ", last_activity = " + sqlDate(stats.getLastActivity())
+					+ " WHERE connection_id = " + connectionID;				
 				doModify(q);
 				commit();
 			}
@@ -655,8 +681,8 @@ public class LrgsDatabase
 		StringBuffer q = new StringBuffer();
 		
 		q.append( 
-			"SELECT connection_id, start_time, end_time, from_ip_addr, success_code, " +
-			" username, msgs_received, admin_done" +
+			"SELECT connection_id, lrgs_host, start_time, end_time, from_ip_addr, success_code, " +
+			" username, msgs_received, admin_done, protocol_version, last_activity" +
 			" FROM dds_connection");
 		if (startTime != null && endTime != null)
 		{
@@ -679,9 +705,11 @@ public class LrgsDatabase
 			// Set DdsConnectionStats Array List.
 			while(rs.next())
 			{
-				ddsConnectionStats = new DdsConnectionStats(rs.getInt(1), getFullDate(rs, 2),
-						getFullDate(rs, 3), rs.getString(4), getChar(rs, 5),
-						rs.getString(6), rs.getInt(7), getBoolean(rs, 8));
+				ddsConnectionStats = new DdsConnectionStats(rs.getInt(1), rs.getString(2),
+					getFullDate(rs, 3),
+						getFullDate(rs, 4), rs.getString(5), getChar(rs, 6),
+						rs.getString(7), rs.getInt(8), getBoolean(rs, 9),
+						rs.getInt(10), getFullDate(rs, 10));
 				ddsConnectionStats.setInDb(true);
 				ddsConnectionStatsList.add(ddsConnectionStats);
 			}
@@ -716,10 +744,10 @@ public class LrgsDatabase
 			{
 				// New Object to insert
 				String q = 
-			"INSERT INTO dds_period_stats(start_time, period_duration, " +
+			"INSERT INTO dds_period_stats(start_time, lrgs_host, period_duration, " +
 			"num_auth, num_unauth, bad_passwords, bad_usernames, " +
 			"max_clients, min_clients, ave_clients, msgs_delivered) " +
-			"VALUES (" + sqlDate(stats.getStartTime()) + ", " +
+			"VALUES (" + sqlDate(stats.getStartTime()) + ", " + sqlString(myHostName) + ", " + 
 			sqlChar(stats.getPeriodDuration()) + ", " + 
 			stats.getNumAuth() + ", " + stats.getNumUnAuth() +
 			", " + stats.getBadPasswords() + ", " + stats.getBadUsernames() + 
@@ -741,7 +769,8 @@ public class LrgsDatabase
 						", min_clients = " + stats.getMinClients() +
 						", ave_clients = " + stats.getAveClients() +
 						", msgs_delivered = " + stats.getMsgsDelivered() +
-						" WHERE start_time = " + sqlDate(stats.getStartTime());				
+						" WHERE start_time = " + sqlDate(stats.getStartTime())
+						+ " and lrgs_host = " + sqlString(myHostName);				
 				doModify(q);
 				commit();
 			}
@@ -759,7 +788,8 @@ public class LrgsDatabase
 	private boolean ddsPeriodStatExists(Date startTime) throws LrgsDatabaseException
 	{
 		boolean returnValue = false;
-		String  q = "SELECT start_time FROM dds_period_stats WHERE start_time = " + sqlDate(startTime);
+		String  q = "SELECT start_time FROM dds_period_stats WHERE start_time = " + sqlDate(startTime)
+			+ " and lrgs_host = " + sqlString(myHostName);
 		try
 		{
 			ResultSet rs = doQuery(q);
@@ -798,7 +828,7 @@ public class LrgsDatabase
 		DdsPeriodStats ddsPeriodStats = null;
 		StringBuffer q = new StringBuffer();
 		q.append(
-	"SELECT start_time, period_duration, num_auth, num_unauth, bad_passwords," +
+	"SELECT start_time, lrgs_host, period_duration, num_auth, num_unauth, bad_passwords," +
 	" bad_usernames, max_clients, min_clients, ave_clients, msgs_delivered" +
 			" FROM dds_period_stats");
 
@@ -822,10 +852,10 @@ public class LrgsDatabase
 			// Set DdsPeriodStats Array List.
 			while(rs.next())
 			{
-				ddsPeriodStats = new DdsPeriodStats(getFullDate(rs, 1), 
-					getChar(rs, 2), rs.getInt(3), rs.getInt(4), rs.getInt(5), 
-					rs.getInt(6), rs.getInt(7), rs.getInt(8), rs.getDouble(9), 
-					rs.getInt(10));
+				ddsPeriodStats = new DdsPeriodStats(getFullDate(rs, 1), rs.getString(2),
+					getChar(rs, 3), rs.getInt(4), rs.getInt(5), rs.getInt(6), 
+					rs.getInt(7), rs.getInt(8), rs.getInt(9), rs.getDouble(10), 
+					rs.getInt(11));
 				ddsPeriodStatsList.add(ddsPeriodStats);
 			}
 		}
@@ -853,49 +883,51 @@ public class LrgsDatabase
 	 */
 	public void saveOutage(Outage outage) throws LrgsDatabaseException
 	{
-		if (outage == null)
-			return;
+		//MJM OpenDCS 6.2 does not support Outage recovery
 
-		if (!outage.getInDb())
-		{
-			// New Object to insert
-			// Get outageID from OutageIdseq
-			String table = LrgsConstants.outageTable;
-			// Check the outage Type.					
-			if (outage.getOutageType() == LrgsConstants.systemOutageType)
-			{ // Outage Type = S - store in system_outage
-				saveSystemOutage(outage);						
-			}
-			else if (outage.getOutageType() 
-				== LrgsConstants.domsatGapOutageType)
-			{ // Outage Type = G - store in domsat_gap
-				saveDomsatGapOutage(outage);
-			} 
-			else if (outage.getOutageType() 
-				== LrgsConstants.damsntOutageType)
-			{ // Outage Type = C - store in damsnt_outage
-				saveDamsntOutage(outage);
-			}
-			outage.setInDb(true);
-		}
-		else
-		{
-			// Object to modify.
-			// Outage Type = S - store in system_outage
-			if (outage.getOutageType() == LrgsConstants.systemOutageType)
-			{
-				updateSystemOutage(outage);
-			}
-			else if (outage.getOutageType() 
-				== LrgsConstants.domsatGapOutageType)
-			{ // Outage Type = G - store in domsat_gap
-				updateDomsatGapOutage(outage);
-			}
-			else if (outage.getOutageType() == LrgsConstants.damsntOutageType)
-			{ // Outage Type = C - store in damsnt_outage
-				updateDamsntOutage(outage);
-			}
-		}
+//		if (outage == null)
+//			return;
+//
+//		if (!outage.getInDb())
+//		{
+//			// New Object to insert
+//			// Get outageID from OutageIdseq
+//			String table = LrgsConstants.outageTable;
+//			// Check the outage Type.					
+//			if (outage.getOutageType() == LrgsConstants.systemOutageType)
+//			{ // Outage Type = S - store in system_outage
+//				saveSystemOutage(outage);						
+//			}
+//			else if (outage.getOutageType() 
+//				== LrgsConstants.domsatGapOutageType)
+//			{ // Outage Type = G - store in domsat_gap
+//				saveDomsatGapOutage(outage);
+//			} 
+//			else if (outage.getOutageType() 
+//				== LrgsConstants.damsntOutageType)
+//			{ // Outage Type = C - store in damsnt_outage
+//				saveDamsntOutage(outage);
+//			}
+//			outage.setInDb(true);
+//		}
+//		else
+//		{
+//			// Object to modify.
+//			// Outage Type = S - store in system_outage
+//			if (outage.getOutageType() == LrgsConstants.systemOutageType)
+//			{
+//				updateSystemOutage(outage);
+//			}
+//			else if (outage.getOutageType() 
+//				== LrgsConstants.domsatGapOutageType)
+//			{ // Outage Type = G - store in domsat_gap
+//				updateDomsatGapOutage(outage);
+//			}
+//			else if (outage.getOutageType() == LrgsConstants.damsntOutageType)
+//			{ // Outage Type = C - store in damsnt_outage
+//				updateDamsntOutage(outage);
+//			}
+//		}
 	}
 
 	/**
@@ -909,14 +941,16 @@ public class LrgsDatabase
 	private void updateDamsntOutage(Outage outage) 
 		throws LrgsDatabaseException
 	{
-		String q = "UPDATE damsnt_outage SET data_source_id = " +
-		outage.getSourceId() +
-		", begin_Time = " + sqlDate(outage.getBeginTime()) + 
-		", end_time = " + sqlDate(outage.getEndTime()) + 
-		", status_code = " + sqlChar(outage.getStatusCode())+
-		" WHERE outage_id = " + outage.getOutageId();
-		doModify(q);
-		commit();
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		String q = "UPDATE damsnt_outage SET data_source_id = " +
+//		outage.getSourceId() +
+//		", begin_Time = " + sqlDate(outage.getBeginTime()) + 
+//		", end_time = " + sqlDate(outage.getEndTime()) + 
+//		", status_code = " + sqlChar(outage.getStatusCode())+
+//		" WHERE outage_id = " + outage.getOutageId();
+//		doModify(q);
+//		commit();
 	}
 
 	/**
@@ -930,15 +964,17 @@ public class LrgsDatabase
 	private void updateDomsatGapOutage(Outage outage) 
 		throws LrgsDatabaseException
 	{
-		String q = "UPDATE domsat_gap SET " +
-		" begin_Time = " + sqlDate(outage.getBeginTime()) +
-		", begin_seq = " + outage.getBeginSeq() +
-		", end_time = " + sqlDate(outage.getEndTime()) +
-		", end_seq = " + outage.getEndSeq() +
-		", status_code = " + sqlChar(outage.getStatusCode())+
-		" WHERE outage_id = " + outage.getOutageId();
-		doModify(q);
-		commit();
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		String q = "UPDATE domsat_gap SET " +
+//		" begin_Time = " + sqlDate(outage.getBeginTime()) +
+//		", begin_seq = " + outage.getBeginSeq() +
+//		", end_time = " + sqlDate(outage.getEndTime()) +
+//		", end_seq = " + outage.getEndSeq() +
+//		", status_code = " + sqlChar(outage.getStatusCode())+
+//		" WHERE outage_id = " + outage.getOutageId();
+//		doModify(q);
+//		commit();
 	}
 	
 	/**
@@ -952,13 +988,15 @@ public class LrgsDatabase
 	private void updateSystemOutage(Outage outage) 
 		throws LrgsDatabaseException
 	{
-		String q = "UPDATE system_outage SET begin_Time = " 
-			+ sqlDate(outage.getBeginTime()) + 
-			", end_time = " + sqlDate(outage.getEndTime()) + 
-			", status_code = " + sqlChar(outage.getStatusCode())+
-			" WHERE outage_id = " + outage.getOutageId();
-		doModify(q);
-		commit();
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		String q = "UPDATE system_outage SET begin_Time = " 
+//			+ sqlDate(outage.getBeginTime()) + 
+//			", end_time = " + sqlDate(outage.getEndTime()) + 
+//			", status_code = " + sqlChar(outage.getStatusCode())+
+//			" WHERE outage_id = " + outage.getOutageId();
+//		doModify(q);
+//		commit();
 	}
 
 	/**
@@ -972,16 +1010,18 @@ public class LrgsDatabase
 	private void saveDamsntOutage(Outage outage) 
 		throws LrgsDatabaseException
 	{
-		String q = 
-			"INSERT INTO damsnt_outage(outage_id, data_source_id, " +
-			"begin_time, end_time, status_code) VALUES (" 
-			+ outage.getOutageId()+ ", " +
-			outage.getSourceId() + ", " + sqlDate(outage.getBeginTime()) + 
-			", " + sqlDate(outage.getEndTime()) + 
-			", " + sqlChar(outage.getStatusCode()) + ")";
-		doModify(q);
-		commit();
-		outage.setInDb(true);
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		String q = 
+//			"INSERT INTO damsnt_outage(outage_id, data_source_id, " +
+//			"begin_time, end_time, status_code) VALUES (" 
+//			+ outage.getOutageId()+ ", " +
+//			outage.getSourceId() + ", " + sqlDate(outage.getBeginTime()) + 
+//			", " + sqlDate(outage.getEndTime()) + 
+//			", " + sqlChar(outage.getStatusCode()) + ")";
+//		doModify(q);
+//		commit();
+//		outage.setInDb(true);
 	}
 
 	/**
@@ -995,18 +1035,20 @@ public class LrgsDatabase
 	private void saveDomsatGapOutage(Outage outage) 
 		throws LrgsDatabaseException
 	{
-		String q = 
-			"INSERT INTO domsat_gap(outage_id, begin_time, " +
-			"begin_seq, end_time, end_seq, status_code) " +
-			"VALUES (" + outage.getOutageId() + ", " +
-			sqlDate(outage.getBeginTime()) +
-			", " + outage.getBeginSeq() +
-			", " + sqlDate(outage.getEndTime()) + 
-			", " + outage.getEndSeq() +
-			", " + sqlChar(outage.getStatusCode()) + ")";
-		doModify(q);
-		commit();
-		outage.setInDb(true);
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		String q = 
+//			"INSERT INTO domsat_gap(outage_id, begin_time, " +
+//			"begin_seq, end_time, end_seq, status_code) " +
+//			"VALUES (" + outage.getOutageId() + ", " +
+//			sqlDate(outage.getBeginTime()) +
+//			", " + outage.getBeginSeq() +
+//			", " + sqlDate(outage.getEndTime()) + 
+//			", " + outage.getEndSeq() +
+//			", " + sqlChar(outage.getStatusCode()) + ")";
+//		doModify(q);
+//		commit();
+//		outage.setInDb(true);
 	}
 
 	/**
@@ -1020,15 +1062,17 @@ public class LrgsDatabase
 	private void saveSystemOutage(Outage outage) 
 		throws LrgsDatabaseException
 	{
-		String q = 
-			"INSERT INTO system_outage(outage_id, begin_time, " +
-			"end_time, status_code) VALUES (" + outage.getOutageId() + ", " +
-			sqlDate(outage.getBeginTime()) + ", " + 
-			sqlDate(outage.getEndTime()) + 
-			", " + sqlChar(outage.getStatusCode()) + ")";
-		doModify(q);
-		commit();
-		outage.setInDb(true);
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		String q = 
+//			"INSERT INTO system_outage(outage_id, begin_time, " +
+//			"end_time, status_code) VALUES (" + outage.getOutageId() + ", " +
+//			sqlDate(outage.getBeginTime()) + ", " + 
+//			sqlDate(outage.getEndTime()) + 
+//			", " + sqlChar(outage.getStatusCode()) + ")";
+//		doModify(q);
+//		commit();
+//		outage.setInDb(true);
 	}
 	
 	/**
@@ -1049,16 +1093,18 @@ public class LrgsDatabase
 	public ArrayList<Outage> getOutages(Date startTime, Date endTime) 
 		throws LrgsDatabaseException
 	{
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
 		ArrayList<Outage> outageList = new ArrayList<Outage>();
 
-		// Select from system_outage table
-		outageList = selectSystemOutage(startTime, endTime, outageList);
-		// Select from domsat_gap table
-		outageList = selectDomsatGap(startTime, endTime, outageList);
-		// Select from damsnt_outage table
-		outageList = selectDamsntOutage(startTime, endTime, outageList);
-
-		Collections.sort(outageList);
+//		// Select from system_outage table
+//		outageList = selectSystemOutage(startTime, endTime, outageList);
+//		// Select from domsat_gap table
+//		outageList = selectDomsatGap(startTime, endTime, outageList);
+//		// Select from damsnt_outage table
+//		outageList = selectDamsntOutage(startTime, endTime, outageList);
+//
+//		Collections.sort(outageList);
 		return outageList;
 	}
 
@@ -1075,46 +1121,48 @@ public class LrgsDatabase
 	private ArrayList<Outage> selectSystemOutage(Date startTime, Date endTime, 
 		ArrayList<Outage> outageList) throws LrgsDatabaseException
 	{
-		Outage outage = null;
-		StringBuffer q = new StringBuffer();
-		q.append( 
-			"SELECT outage_id, begin_time, end_time, status_code" +
-			" FROM system_outage");
-		if (startTime != null && endTime != null)
-		{
-			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
-					" AND end_time <= " + sqlDate(endTime));
-		}
-		else if (startTime == null && endTime != null)
-		{
-			q.append(" WHERE end_time <= " + sqlDate(endTime));
-		} 
-		else if (startTime != null && endTime == null)
-		{
-			q.append(" WHERE begin_time >= " + sqlDate(startTime));
-		}
-		try
-		{
-			ResultSet rs = doQuery(q.toString());
-			// Set Outage Array List.
-			while(rs.next())
-			{   // Set outageId, beginTime, endTime, statusCode and
-				// outageType
-				// Set sourceId, dcpAddress, beginSeq and endSeq to 0
-				outage = new Outage(rs.getInt(1), getFullDate(rs, 2), 
-						getFullDate(rs, 3), LrgsConstants.systemOutageType,
-						getChar(rs, 4), 0, 0, 0, 0);
-				outage.setInDb(true);
-				outageList.add(outage);
-			}
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error while reading the system_outage table " + ex;
-			logger.failure(msg);
-			closeConnection();
-			throw new LrgsDatabaseException(msg);
-		}
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		Outage outage = null;
+//		StringBuffer q = new StringBuffer();
+//		q.append( 
+//			"SELECT outage_id, begin_time, end_time, status_code" +
+//			" FROM system_outage");
+//		if (startTime != null && endTime != null)
+//		{
+//			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
+//					" AND end_time <= " + sqlDate(endTime));
+//		}
+//		else if (startTime == null && endTime != null)
+//		{
+//			q.append(" WHERE end_time <= " + sqlDate(endTime));
+//		} 
+//		else if (startTime != null && endTime == null)
+//		{
+//			q.append(" WHERE begin_time >= " + sqlDate(startTime));
+//		}
+//		try
+//		{
+//			ResultSet rs = doQuery(q.toString());
+//			// Set Outage Array List.
+//			while(rs.next())
+//			{   // Set outageId, beginTime, endTime, statusCode and
+//				// outageType
+//				// Set sourceId, dcpAddress, beginSeq and endSeq to 0
+//				outage = new Outage(rs.getInt(1), getFullDate(rs, 2), 
+//						getFullDate(rs, 3), LrgsConstants.systemOutageType,
+//						getChar(rs, 4), 0, 0, 0, 0);
+//				outage.setInDb(true);
+//				outageList.add(outage);
+//			}
+//		}
+//		catch(SQLException ex)
+//		{
+//			String msg = "Error while reading the system_outage table " + ex;
+//			logger.failure(msg);
+//			closeConnection();
+//			throw new LrgsDatabaseException(msg);
+//		}
 		return outageList;
 	}
 	
@@ -1131,46 +1179,48 @@ public class LrgsDatabase
 		ArrayList<Outage> outageList) 
 		throws LrgsDatabaseException
 	{
-		Outage outage = null;
-		StringBuffer q = new StringBuffer();
-		q.append( 
-			"SELECT outage_id, begin_time, begin_seq, end_time, end_seq, status_code" +
-			" FROM domsat_gap");
-		if (startTime != null && endTime != null)
-		{
-			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
-					" AND end_time <= " + sqlDate(endTime));
-		}
-		else if (startTime == null && endTime != null)
-		{
-			q.append(" WHERE end_time <= " + sqlDate(endTime));
-		} 
-		else if (startTime != null && endTime == null)
-		{
-			q.append(" WHERE begin_time >= " + sqlDate(startTime));
-		}
-		try
-		{
-			ResultSet rs = doQuery(q.toString());
-			// Set Outage Array List.
-			while(rs.next())
-			{   // Set outageId, beginTime, beginSeq, endTime, endSeq , 
-				// statusCode and outageType
-				// Set sourceId and dcpAddress to 0
-				outage = new Outage(rs.getInt(1), getFullDate(rs, 2), 
-						getFullDate(rs, 4), LrgsConstants.domsatGapOutageType,
-						getChar(rs, 6), 0, 0, rs.getInt(3), rs.getInt(5));
-				outage.setInDb(true);
-				outageList.add(outage);
-			}
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error while reading the domsat_gap table " + ex;
-			logger.failure(msg);
-			closeConnection();
-			throw new LrgsDatabaseException(msg);
-		}
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		Outage outage = null;
+//		StringBuffer q = new StringBuffer();
+//		q.append( 
+//			"SELECT outage_id, begin_time, begin_seq, end_time, end_seq, status_code" +
+//			" FROM domsat_gap");
+//		if (startTime != null && endTime != null)
+//		{
+//			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
+//					" AND end_time <= " + sqlDate(endTime));
+//		}
+//		else if (startTime == null && endTime != null)
+//		{
+//			q.append(" WHERE end_time <= " + sqlDate(endTime));
+//		} 
+//		else if (startTime != null && endTime == null)
+//		{
+//			q.append(" WHERE begin_time >= " + sqlDate(startTime));
+//		}
+//		try
+//		{
+//			ResultSet rs = doQuery(q.toString());
+//			// Set Outage Array List.
+//			while(rs.next())
+//			{   // Set outageId, beginTime, beginSeq, endTime, endSeq , 
+//				// statusCode and outageType
+//				// Set sourceId and dcpAddress to 0
+//				outage = new Outage(rs.getInt(1), getFullDate(rs, 2), 
+//						getFullDate(rs, 4), LrgsConstants.domsatGapOutageType,
+//						getChar(rs, 6), 0, 0, rs.getInt(3), rs.getInt(5));
+//				outage.setInDb(true);
+//				outageList.add(outage);
+//			}
+//		}
+//		catch(SQLException ex)
+//		{
+//			String msg = "Error while reading the domsat_gap table " + ex;
+//			logger.failure(msg);
+//			closeConnection();
+//			throw new LrgsDatabaseException(msg);
+//		}
 		return outageList;
 	}
 	
@@ -1188,46 +1238,48 @@ public class LrgsDatabase
 		ArrayList<Outage> outageList) 
 		throws LrgsDatabaseException
 	{
-		Outage outage = null;
-		StringBuffer q = new StringBuffer();
-		q.append(
-			"SELECT outage_id, data_source_id, begin_time, end_time, status_code" +
-			" FROM damsnt_outage");
-		if (startTime != null && endTime != null)
-		{
-			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
-					" AND end_time <= " + sqlDate(endTime));
-		}
-		else if (startTime == null && endTime != null)
-		{
-			q.append(" WHERE end_time <= " + sqlDate(endTime));
-		} 
-		else if (startTime != null && endTime == null)
-		{
-			q.append(" WHERE begin_time >= " + sqlDate(startTime));
-		}
-		try
-		{
-			ResultSet rs = doQuery(q.toString());
-			// Set Outage Array List.
-			while(rs.next())
-			{   // Set outageId, dataSourceId, beginTime, endTime 
-				// statusCode and outageType
-				// Set dcpAddress, beginSeq and endSeq to 0
-				outage = new Outage(rs.getInt(1), getFullDate(rs, 3), 
-						getFullDate(rs, 4), LrgsConstants.damsntOutageType,
-						getChar(rs, 5), rs.getInt(2), 0, 0, 0);
-				outage.setInDb(true);
-				outageList.add(outage);
-			}
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error while reading the damsnt_outage table " + ex;
-			logger.failure(msg);
-			closeConnection();
-			throw new LrgsDatabaseException(msg);
-		}
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		Outage outage = null;
+//		StringBuffer q = new StringBuffer();
+//		q.append(
+//			"SELECT outage_id, data_source_id, begin_time, end_time, status_code" +
+//			" FROM damsnt_outage");
+//		if (startTime != null && endTime != null)
+//		{
+//			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
+//					" AND end_time <= " + sqlDate(endTime));
+//		}
+//		else if (startTime == null && endTime != null)
+//		{
+//			q.append(" WHERE end_time <= " + sqlDate(endTime));
+//		} 
+//		else if (startTime != null && endTime == null)
+//		{
+//			q.append(" WHERE begin_time >= " + sqlDate(startTime));
+//		}
+//		try
+//		{
+//			ResultSet rs = doQuery(q.toString());
+//			// Set Outage Array List.
+//			while(rs.next())
+//			{   // Set outageId, dataSourceId, beginTime, endTime 
+//				// statusCode and outageType
+//				// Set dcpAddress, beginSeq and endSeq to 0
+//				outage = new Outage(rs.getInt(1), getFullDate(rs, 3), 
+//						getFullDate(rs, 4), LrgsConstants.damsntOutageType,
+//						getChar(rs, 5), rs.getInt(2), 0, 0, 0);
+//				outage.setInDb(true);
+//				outageList.add(outage);
+//			}
+//		}
+//		catch(SQLException ex)
+//		{
+//			String msg = "Error while reading the damsnt_outage table " + ex;
+//			logger.failure(msg);
+//			closeConnection();
+//			throw new LrgsDatabaseException(msg);
+//		}
 		return outageList;
 	}
 
@@ -1291,7 +1343,7 @@ public class LrgsDatabase
 	{
 		String q = 
 			"DELETE FROM dds_period_stats WHERE start_time <= " + 
-			sqlDate(beforeDate);
+			sqlDate(beforeDate) + " and lrgs_host = " + sqlString(myHostName);
 		try
 		{
 			doModify(q);
@@ -1433,6 +1485,7 @@ public class LrgsDatabase
 	{
 		if (conn != null)
 		{
+			Logger.instance().info("LrgsDatabase.closeConnection()");
 			try { conn.close(); }
 			catch(Exception ex) {}
 			conn = null;
@@ -1518,4 +1571,111 @@ public class LrgsDatabase
 			commit();
 		}
 	}
+
+	public String getMyHostName()
+	{
+		return myHostName;
+	}
+	
+	/**
+	 * This method implemented for the NOAA password checker.
+	 * Hard-coded limits: new PW cannot match a password within last 2 years or 8 previous passwords.
+	 * This method also deletes any old passwords beyond those limits.
+	 * If no match found, the new password is saved in the database with the current time.
+	 * @param username the user name
+	 * @param hexPwHash the new password has as a hex string
+	 * 
+	 * @throws BadPasswordException if password is in the history
+	 */
+	public void checkHistoricalPassword(String username, String hexPwHash)
+		throws BadPasswordException
+	{
+		String q = "select set_time, pw_hash from pw_history where username = " + sqlString(username)
+			+ " order by set_time";
+		Logger.instance().debug3("checkHistoricalPassword '" + q + "'");
+		Statement stat = null;
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.YEAR, -2);
+		Date cutoff = cal.getTime();
+		try
+		{
+			stat = createStatement();
+			ResultSet rs = stat.executeQuery(q);
+			ArrayList<OldPasswordHash> ophs = new ArrayList<OldPasswordHash>();
+			while(rs != null && rs.next())
+				ophs.add(new OldPasswordHash(this.getFullDate(rs,  1), rs.getString(2)));
+
+//System.out.println("Read " + ophs.size() + " old passwords for user '" + username + "'");
+//for(OldPasswordHash oph : ophs)
+//System.out.println("" + oph.getSetTime() + " " + oph.getPwHash());
+			
+			// Trim old passwords 
+			while(ophs.size() > 8 && ophs.get(0).getSetTime().before(cutoff))
+			{
+				q = "delete from pw_history where username = " + sqlString(username)
+					+ " and set_time = " + sqlDate(ophs.get(0).getSetTime());
+				stat.executeUpdate(q);
+//System.out.println("Removing " + ophs.get(0).getSetTime());
+				ophs.remove(0);
+			}
+			
+//System.out.println("Checking for match to: " + hexPwHash);
+			// Now check for a match
+			for(OldPasswordHash oph : ophs)
+				if (oph.getPwHash().equals(hexPwHash))
+					throw new BadPasswordException("This password matches the password set on "
+						+ oph.getSetTime());
+			
+			// No match. Insert the new entry.
+			q = "insert into pw_history(username, set_time, pw_hash) values("
+				+ sqlString(username) + ", " + sqlDate(new Date()) + ", " + sqlString(hexPwHash) + ")";
+			stat.executeUpdate(q);
+		}
+		catch(SQLException ex)
+		{
+			String msg = "SQL Error in query '" + q + "': " + ex;
+			Logger.instance().warning(msg);
+			throw new BadPasswordException(msg);
+		}
+		finally
+		{
+			if (stat != null)
+				try {stat.close(); } catch(Exception ex) {}
+		}
+	}
+	
+	/**
+	 * @param username
+	 * @return number of consecutive bad passwords after all other sessions.
+	 */
+	public int getNumConsecutiveBadPasswords(String username)
+	{
+		Statement stat = null;
+		String q = "select count(*) from dds_connection where username = " + sqlString(username)
+			+ " and success_code = 'P' and start_time > (select max(start_time) from dds_connection "
+			+ "where username = " + sqlString(username) + " and success_code != 'P')";
+		try
+		{
+			stat = createStatement();
+			ResultSet rs = stat.executeQuery(q);
+			if (rs != null && rs.next())
+				return rs.getInt(1);
+			else
+				return 0;
+		}
+		catch(Exception ex)
+		{
+			String msg = "SQL Error in query '" + q + "': " + ex;
+			Logger.instance().warning(msg);
+			return 0;
+		}
+		finally
+		{
+			if (stat != null)
+				try {stat.close(); } catch(Exception ex) {}
+		}
+
+	}
+	
+	
 }

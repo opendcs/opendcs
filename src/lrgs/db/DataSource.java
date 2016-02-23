@@ -11,6 +11,7 @@ public class DataSource
 	implements LrgsDatabaseObject
 {
 	private int dataSourceId;
+	private String lrgsHost;
 	private String dataSourceType;
 	private String dataSourceName;
 	
@@ -21,6 +22,7 @@ public class DataSource
 	public DataSource()
 	{
 		dataSourceId = 0;
+		lrgsHost = null;
 		dataSourceType = null;
 		dataSourceName = null;
 	}
@@ -33,10 +35,11 @@ public class DataSource
 	 *  @param name the name of this DataSource
 	 *  @param type the type of this DataSource
 	 */
-	public DataSource(int dataSourceId, String name, String type)
+	public DataSource(int dataSourceId, String lrgsHost, String name, String type)
 	{
 		this();
 		this.dataSourceId = dataSourceId;
+		this.lrgsHost = lrgsHost;
 		this.dataSourceName = name;
 		this.dataSourceType = type;
 	}
@@ -99,5 +102,15 @@ public class DataSource
 	public void setDataSourceId(int dataSourceId) 
 	{
 		this.dataSourceId = dataSourceId;
+	}
+
+	public String getLrgsHost()
+	{
+		return lrgsHost;
+	}
+
+	public void setLrgsHost(String lrgsHost)
+	{
+		this.lrgsHost = lrgsHost;
 	}
 }

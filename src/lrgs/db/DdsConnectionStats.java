@@ -12,6 +12,7 @@ public class DdsConnectionStats
 	implements LrgsDatabaseObject
 {	
 	private int connectionId;
+	private String lrgsHost;
 	private Date startTime;
 	private Date endTime;
 	private String fromIpAddr;
@@ -20,6 +21,8 @@ public class DdsConnectionStats
 	/** Total # of messages delivered during connection. */
 	private int msgsReceived;
 	private boolean admin_done;
+	private int protocolVersion = 0;
+	private Date lastActivity = null;
 
 	/** True after this connection's stats have been saved to database. */
 	private boolean _inDb;
@@ -51,12 +54,15 @@ public class DdsConnectionStats
 	/** Connection terminated because disallowed IP address */
 	public static final char SC_BAD_IP_ADDR     = 'I';
 	
+	public static final char SC_ACCOUNT_SUSPENDED = 'S';
+	
 	/**
 	 * Constructor. Initialize all private variables.
 	 */
 	public DdsConnectionStats()
 	{
 		connectionId = 0;
+		lrgsHost = null;
 		startTime = null;
 		endTime = null;
 		fromIpAddr = null;
@@ -81,12 +87,13 @@ public class DdsConnectionStats
 	 * @param msgsReceived number of messages received in that connection 
 	 * @param admin_done a true or false value indicating if any administration was done
 	*/
-	public DdsConnectionStats(int connectionId, Date startTime, Date endTime, 
+	public DdsConnectionStats(int connectionId, String lrgsHost, Date startTime, Date endTime, 
 		String fromIpAddr, char successCode, String userName, int msgsReceived,
-		boolean admin_done)
+		boolean admin_done, int protocolVersion, Date lastActivity)
 	{
 		this();
 		this.connectionId = connectionId;
+		this.lrgsHost = lrgsHost;
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.fromIpAddr = fromIpAddr;
@@ -274,5 +281,35 @@ public class DdsConnectionStats
 		int r = msgTallyForAgg;
 		msgTallyForAgg = 0;
 		return r;
+	}
+
+	public String getLrgsHost()
+	{
+		return lrgsHost;
+	}
+
+	public void setLrgsHost(String lrgsHost)
+	{
+		this.lrgsHost = lrgsHost;
+	}
+
+	public int getProtocolVersion()
+	{
+		return protocolVersion;
+	}
+
+	public void setProtocolVersion(int protocolVersion)
+	{
+		this.protocolVersion = protocolVersion;
+	}
+
+	public Date getLastActivity()
+	{
+		return lastActivity;
+	}
+
+	public void setLastActivity(Date lastActivity)
+	{
+		this.lastActivity = lastActivity;
 	}
 }

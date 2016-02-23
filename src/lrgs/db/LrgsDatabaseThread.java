@@ -185,7 +185,7 @@ public class LrgsDatabaseThread
 			{
 				debug("Reading data sources and outages.");
 				dataSources.clear();
-				for(DataSource ds : lrgsDb.getDataSources())
+				for(DataSource ds : lrgsDb.getDataSources(true))
 					dataSources.add(ds);
 
 				Date now = new Date();
@@ -243,6 +243,7 @@ public class LrgsDatabaseThread
 		ds.setDataSourceType(dsType);
 		ds.setDataSourceName(dsName);
 		ds.setDataSourceId(dataSources.size());
+		ds.setLrgsHost(lrgsDb.getMyHostName());
 		dataSources.add(ds);
 		info("Queuing data source " + ds.getDataSourceType()
 			+ ":" + ds.getDataSourceName());
@@ -304,12 +305,13 @@ debug("Adding object to dbWriteQueue.");
 						+ ":" + ds.getDataSourceName());
 					lrgsDb.saveDataSource(ds);
 				}
-				else if (ldo instanceof Outage)
-				{
-					Outage og = (Outage)ldo;
-					debug("Writing Outage: " + og);
-					lrgsDb.saveOutage(og);
-				}
+				//MJM OpenDCS 6.2 does not support Outage recovery
+//				else if (ldo instanceof Outage)
+//				{
+//					Outage og = (Outage)ldo;
+//					debug("Writing Outage: " + og);
+//					lrgsDb.saveOutage(og);
+//				}
 				else if (ldo instanceof DdsConnectionStats)
 				{
 					DdsConnectionStats dcs = (DdsConnectionStats)ldo;
@@ -361,19 +363,21 @@ debug("Adding object to dbWriteQueue.");
 	 */
 	public synchronized ArrayList<Outage> getOutages() 
 	{
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
 		ArrayList<Outage> ret = new ArrayList<Outage>();
-		for(Outage otg : outages)
-		{
-			if (otg.getOutageType() == LrgsConstants.damsntOutageType)
-			{
-				int id = otg.getSourceId();
-				DataSource ds = getDataSource(id);
-				if (ds != null)
-					otg.setDataSourceName(ds.getDataSourceName());
-			}
-			ret.add(otg);
-		}
-		Collections.sort(ret);
+//		for(Outage otg : outages)
+//		{
+//			if (otg.getOutageType() == LrgsConstants.damsntOutageType)
+//			{
+//				int id = otg.getSourceId();
+//				DataSource ds = getDataSource(id);
+//				if (ds != null)
+//					otg.setDataSourceName(ds.getDataSourceName());
+//			}
+//			ret.add(otg);
+//		}
+//		Collections.sort(ret);
 		return ret;
 	}
 
@@ -385,15 +389,17 @@ debug("Adding object to dbWriteQueue.");
 	public synchronized void 
 		getOutages(ArrayList<Outage> ret, Date start, Date end)
 	{
-		for(Outage outage : outages)
-		{
-			Date ostart = outage.getBeginTime();
-			Date oend = outage.getEndTime();
+		//MJM OpenDCS 6.2 does not support Outage recovery
 
-			if ((start == null || ostart.compareTo(start) >= 0)
-			 && (end   == null || (oend != null && oend.compareTo(end) <= 0)))
-				ret.add(outage);
-		}
+//		for(Outage outage : outages)
+//		{
+//			Date ostart = outage.getBeginTime();
+//			Date oend = outage.getEndTime();
+//
+//			if ((start == null || ostart.compareTo(start) >= 0)
+//			 && (end   == null || (oend != null && oend.compareTo(end) <= 0)))
+//				ret.add(outage);
+//		}
 	}
 
 	/**
@@ -403,10 +409,12 @@ debug("Adding object to dbWriteQueue.");
 	 */
 	public synchronized void changeOutageStatus(Outage otg, char newstat)
 	{
-		outages.remove(otg);
-		otg.setStatusCode(newstat);
-		outages.add(otg);
-		doEnqueue(otg);
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		outages.remove(otg);
+//		otg.setStatusCode(newstat);
+//		outages.add(otg);
+//		doEnqueue(otg);
 	}
 
 	/**
@@ -415,28 +423,24 @@ debug("Adding object to dbWriteQueue.");
 	 */
 	public synchronized void assertOutage(Outage newout)
 	{
-		if (!LrgsConfig.instance().recoverOutages)
+		//MJM OpenDCS 6.2 does not support Outage recovery
+//		if (!LrgsConfig.instance().recoverOutages)
 			return;
 
-		int id = newout.getOutageId();
-		if (id <= 0)
-			newout.setOutageId(nextOutageId++);
-		else if (id >= nextOutageId)
-			nextOutageId = id+1;
-
-		doEnqueue(newout);
-//		boolean alreadyThere = outages.remove(newout);
-		outages.add(newout);
-//		Logger.instance().info(
-//			(alreadyThere ? "Reassert" : "Assert")
-//			+ " outage: " + newout.toString());
-		debug(" outages.size()=" + outages.size());
-		while (outages.size() > MAX_NUM_OUTAGES)
-		{
-			Outage otg = outages.last();
-debug(" Removing outage: " + otg);
-			outages.remove(otg);
-		}
+//		int id = newout.getOutageId();
+//		if (id <= 0)
+//			newout.setOutageId(nextOutageId++);
+//		else if (id >= nextOutageId)
+//			nextOutageId = id+1;
+//
+//		doEnqueue(newout);
+//		outages.add(newout);
+//		debug(" outages.size()=" + outages.size());
+//		while (outages.size() > MAX_NUM_OUTAGES)
+//		{
+//			Outage otg = outages.last();
+//			outages.remove(otg);
+//		}
 	}
 
 	/**
@@ -449,9 +453,11 @@ debug(" Removing outage: " + otg);
 	 */
 	public synchronized Outage highestPriorityOutage()
 	{
-		if (!outages.isEmpty())
-			return outages.first();
-		else
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		if (!outages.isEmpty())
+//			return outages.first();
+//		else
 			return null;
 	}
 
@@ -461,9 +467,11 @@ debug(" Removing outage: " + otg);
 	 */
 	public synchronized void deleteOutage(Outage otg)
 	{
-		dbDeleteQueue.add(otg);
-		boolean wasThere = outages.remove(otg);
-debug(" Attempted to delete Outage (" + otg + ") wasThere=" +wasThere);
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		dbDeleteQueue.add(otg);
+//		boolean wasThere = outages.remove(otg);
+//debug(" Attempted to delete Outage (" + otg + ") wasThere=" +wasThere);
 	}
 
 	/**
@@ -473,9 +481,11 @@ debug(" Attempted to delete Outage (" + otg + ") wasThere=" +wasThere);
 	 */
 	public synchronized Outage getOutageById(int id)
 	{
-		for(Outage otg : outages)
-			if (otg.getOutageId() == id)
-				return otg;
+		//MJM OpenDCS 6.2 does not support Outage recovery
+
+//		for(Outage otg : outages)
+//			if (otg.getOutageId() == id)
+//				return otg;
 		return null;
 	}
 
@@ -536,6 +546,11 @@ debug(" Attempted to delete Outage (" + otg + ") wasThere=" +wasThere);
 	private void failure(String msg)
 	{
 		Logger.instance().failure(module + " " + msg);
+	}
+
+	public LrgsDatabase getLrgsDb()
+	{
+		return lrgsDb;
 	}
 
 }
