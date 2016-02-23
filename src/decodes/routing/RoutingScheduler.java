@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2016/02/04 18:47:32  mmaloney
+ * Ignore "-manual" schedule entries.
+ *
  * Revision 1.10  2015/12/02 21:17:43  mmaloney
  * Make getStatistics protected to allow special apps like DcpMonitor to overload.
  *
@@ -40,6 +43,7 @@
  */
 package decodes.routing;
 
+import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
@@ -89,6 +93,8 @@ public class RoutingScheduler
 	protected static String module = "RoutingScheduler";
 	static StringToken lockFileArg = new StringToken("k", 
 		"Optional Lock File", "", TokenOptions.optSwitch, "");
+	static BooleanToken windowsSvcArg = new BooleanToken("w", "Run as Windows Service", "", 
+		TokenOptions.optSwitch, false);
 
 	/** Holds app name, id, & description. */
 	protected CompAppInfo appInfo;
@@ -150,12 +156,20 @@ public class RoutingScheduler
 	{
 		lockFileArg.setType("filename");
 		cmdLineArgs.addToken(lockFileArg);
+		cmdLineArgs.addToken(windowsSvcArg);
 		appNameArg.setDefaultValue("RoutingScheduler");
 	}
 	
 	@Override
 	protected void oneTimeInit()
 	{
+		/** 
+		 * Using lock files as an IPC mechanism (for status GUI) is unreliable in windoze.
+		 * Tell server lock never to exit as a result of lock file I/O error.
+		 */
+		if (windowsSvcArg.getValue())
+			ServerLock.setWindowsService(true);
+		
 		// Routing Scheduler can survive DB going down.
 		surviveDatabaseBounce = true;
 
