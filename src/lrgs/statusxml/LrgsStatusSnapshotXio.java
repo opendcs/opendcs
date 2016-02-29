@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2010/09/21 01:33:20  mmaloney
 *  Don't include downlinks like LRIT and DDS if they are not used in this LRGS.
 *
@@ -396,7 +399,7 @@ public class LrgsStatusSnapshotXio
 			{
 				xos.startElement(StatusXmlTags.Process, 
 					"slot", ""+i, "pid", ""+ap.pid);
-				xos.writeElement(StatusXmlTags.name, ap.name);
+				xos.writeElement(StatusXmlTags.name, ap.getName());
 				xos.writeElement(StatusXmlTags.type, ap.type);
 				xos.writeElement(StatusXmlTags.user, ap.user);
 				xos.writeElement(StatusXmlTags.status, ap.status);

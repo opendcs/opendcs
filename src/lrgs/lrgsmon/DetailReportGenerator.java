@@ -750,7 +750,7 @@ public class DetailReportGenerator
                    
                   xos.startElement("tr");
                     xos.writeElement("td", "style", center, "" + i);
-                    xos.writeElement("td", "style", center, ap.name);
+                    xos.writeElement("td", "style", center, ap.getName());
                     xos.writeElement("td", "style", center, ap.type);
                     xos.writeElement("td", "style", center, ap.user);
                     xos.writeElement("td", "style", center, "" + ap.lastSeqNum);

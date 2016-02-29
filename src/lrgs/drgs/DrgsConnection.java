@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2008/09/21 16:08:51  mjmaloney
 *  network DCPs
 *
@@ -62,8 +65,8 @@ public class DrgsConnection
 		Thread t = new Thread(myMsgThread);
 		t.start();
 		myEvtThread = new DrgsEvtThread();
-		t = new Thread(myEvtThread);
-		t.start();
+//		t = new Thread(myEvtThread);
+//		t.start();
 	}
 
 	/**

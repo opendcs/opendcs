@@ -2,22 +2,23 @@ package lrgs.apistatus;
 public final class AttachedProcess
 {
 	public int pid;
-	public java.lang.String name;
-	public java.lang.String type;
-	public java.lang.String user;
+	private String name;
+	public String type;
+	public String user;
 	public int lastSeqNum;
 	public int lastPollTime;
 	public int lastMsgTime;
-	public java.lang.String status;
+	public String status;
 	public short stale_count;
 
 	public String ddsVersion = null;
 
 	public AttachedProcess(){}
-	public AttachedProcess(int pid, java.lang.String name, java.lang.String type, java.lang.String user, int lastSeqNum, int lastPollTime, int lastMsgTime, java.lang.String status, short stale_count)
+	public AttachedProcess(int pid, String name, String type, String user, int lastSeqNum, 
+		int lastPollTime, int lastMsgTime, String status, short stale_count)
 	{
 		this.pid = pid;
-		this.name = name;
+		this.setName(name);
 		this.type = type;
 		this.user = user;
 		this.lastSeqNum = lastSeqNum;
@@ -25,5 +26,13 @@ public final class AttachedProcess
 		this.lastMsgTime = lastMsgTime;
 		this.status = status;
 		this.stale_count = stale_count;
+	}
+	public String getName()
+	{
+		return name;
+	}
+	public void setName(String name)
+	{
+		this.name = name;
 	}
 }

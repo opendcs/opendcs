@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:16  cvs
 *  Added legacy code to repository
 *
@@ -169,7 +172,7 @@ public class ProcessXio
 		switch(tag)
 		{
 		case nTag:
-			ap.name = value;
+			ap.setName(value);
 			break;
 		case tTag:
 			ap.type = value;

@@ -268,7 +268,7 @@ public class MessageArchiveRetriever
 			}
 			lastMsgDrotTime = 0;
 		}
-		attachedProcess.name = "";
+		attachedProcess.setName("");
 		attachedProcess.pid = -1;
 	}
 
@@ -280,7 +280,7 @@ public class MessageArchiveRetriever
 	public void setClientName(String name)
 	{
 		this.clientName = name;
-		attachedProcess.name = name;
+		attachedProcess.setName(name);
 	}
 	
 	public String getClientName() { return clientName; }

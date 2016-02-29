@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.6  2009/12/09 19:04:32  mjmaloney
 *  GetHostnameThread addition
 *
@@ -211,6 +214,6 @@ if (user == null) System.err.println("JLddsThread: makeDcpMsgSrc, user is null!"
 	{
 		super.setHostName(hostname);
 		if (attachedProcess != null)
-			attachedProcess.name = hostname;
+			attachedProcess.setName(hostname);
 	}
 }
