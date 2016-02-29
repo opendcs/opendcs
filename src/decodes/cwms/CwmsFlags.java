@@ -74,8 +74,12 @@ public class CwmsFlags
 	
 	public static final int PROTECTED             = 0x08000000;
 
+	public static final int FLAG_MISSING_OR_REJECTED = (VALIDITY_MISSING|VALIDITY_REJECTED);
+	
+	
 	// The following IS for use in selecting from the Quality Code
 	// values in the time series tables:
+	// THIS IS AS THE BITS ARE DEFINED IN CWMS
 	public static final int QC_MISSING_OR_REJECTED = 0x14;
 	
 	
