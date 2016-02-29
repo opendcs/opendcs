@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.6  2015/11/18 14:04:37  mmaloney
+ * Remove debugs
+ *
  * Revision 1.5  2015/11/12 15:13:41  mmaloney
  * Added HEC header.
  *
@@ -134,6 +137,7 @@ public class ScreeningDAO
 			String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
 			CHAR P_SCREENING_ID = OracleTypeMap.buildChar(screening.getScreeningName());
 			CHAR P_DB_OFFICE_ID = OracleTypeMap.buildChar(officeId);
+			CHAR P_SCREENING_ID_DESC = OracleTypeMap.buildChar(screening.getScreeningDesc());
 
 			// If it still does not have a key, create the screening id and assign a surrogate key.
 			if (DbKey.isNull(screening.getScreeningCode()))
@@ -142,7 +146,6 @@ public class ScreeningDAO
 					throw new DbIoException(module + " invalid screeningId '" + screening.getScreeningName()
 						+ "' must be a string of 16 chars or less");
 				
-				CHAR P_SCREENING_ID_DESC = OracleTypeMap.buildChar(screening.getScreeningDesc());
 				CHAR P_PARAMETER_ID = OracleTypeMap.buildChar(screening.getParamId());
 				CHAR P_PARAMETER_TYPE_ID = OracleTypeMap.buildChar(screening.getParamTypeId());
 				CHAR P_DURATION_ID = OracleTypeMap.buildChar(screening.getDurationId());
@@ -161,7 +164,12 @@ public class ScreeningDAO
 					throw new DbIoException("Key for screening '" + screening.getScreeningName() 
 						+ "' does not exist and cannot be created.");
 			}
-			else Logger.instance().info("Screening already exists with key=" + screening.getScreeningCode());
+			else // Screening exists. The only thing that can be changed is the description.
+			{
+				Logger.instance().info("Screening already exists with key=" + screening.getScreeningCode()
+					+ ", updating description.");
+				csdbio.updateScreeningIdDesc(P_SCREENING_ID, P_SCREENING_ID_DESC, P_DB_OFFICE_ID);
+			}
 			
 			// Translate the CCP's array list of ScreeningCriteria into an Oracle ScreenCritArray
 			ArrayList<ScreeningCriteria> cpCriteriaArray = screening.getCriteriaSeasons();
