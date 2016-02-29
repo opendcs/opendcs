@@ -458,7 +458,7 @@ public class CmdUser extends LddsCommand
 			PasswordFileEntry pfe = pf.getEntryByName(username);
 			if (pfe == null)
 			{
-Logger.instance().info("CmdUser.set no PFE for '" + username + "'");
+//Logger.instance().info("CmdUser.set no PFE for '" + username + "'");
 				// New user! If pw specified, create new pw file entry.
 				try 
 				{
@@ -479,7 +479,7 @@ Logger.instance().info("CmdUser.set no PFE for '" + username + "'");
 			{
 				pfe.setShaPassword(ByteUtil.fromHexString(newAuth));
 				pfe.setChanged(true);
-Logger.instance().info("CmdUser.set set auth to '" + newAuth + "'");
+//Logger.instance().info("CmdUser.set set auth to '" + newAuth + "'");
 			}
 
 			// If this is an admin, set the roles specified.
@@ -496,7 +496,7 @@ Logger.instance().info("CmdUser.set set auth to '" + newAuth + "'");
 			if (ldds.user.isAdmin && userProps != null)
 			{
 				boolean isSuspended = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(userProps, "suspended"));
-Logger.instance().info("CmdUser.set() suspended=" + isSuspended);
+//Logger.instance().info("CmdUser.set() suspended=" + isSuspended);
 				LddsUser user = new LddsUser(username, userRoot.getPath());
 				user.suspendUntil(isSuspended ? LddsUser.permSuspendTime : null);
 				PropertiesUtil.rmIgnoreCase(userProps, "suspended");
@@ -517,7 +517,7 @@ Logger.instance().info("CmdUser.set() suspended=" + isSuspended);
 						else
 							userProps.setProperty(adminProps[idx], val);
 					}
-Logger.instance().info("CmdUser.set() Setting props to '" + PropertiesUtil.props2string(userProps));					
+//Logger.instance().info("CmdUser.set() Setting props to '" + PropertiesUtil.props2string(userProps));					
 				pfe.setProperties(userProps);
 				pfe.setChanged(true);
 			}
