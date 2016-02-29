@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.1  2015/11/12 15:12:39  mmaloney
+ * Initial release.
+ *
  */
 package decodes.cwms.validation.gui;
 
@@ -46,6 +49,7 @@ import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.db.NoConversionException;
+import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
 
 public class ScreeningEditTab extends JPanel
@@ -69,6 +73,7 @@ public class ScreeningEditTab extends JPanel
 	private int currentUnitsSystem = 0;
 	private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd");
 	private boolean committed = false;
+	private JButton paramButton = null;
 
 	
 	public ScreeningEditTab(ScreeningEditFrame frame)
@@ -112,6 +117,15 @@ public class ScreeningEditTab extends JPanel
 				season.setSeasonStart(Calendar.JANUARY, 1);
 			seasonsPane.add(seasonPanel, seasonTitleSdf.format(season.getSeasonStart().getTime()));
 			
+		}
+		
+		if (!DbKey.isNull(screening.getKey()))
+		{
+			// This is an existing screening. Disable the fields which cannot be changed.
+			durationCombo.setEnabled(false);
+			paramField.setEnabled(false);
+			paramTypeCombo.setEnabled(false);
+			paramButton.setEnabled(false);
 		}
 	}
 	
@@ -200,7 +214,7 @@ public class ScreeningEditTab extends JPanel
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 2), 0, 0));
-		JButton paramButton = new JButton("Select");
+		paramButton = new JButton("Select");
 		paramButton.addActionListener(
 			new ActionListener()
 			{
