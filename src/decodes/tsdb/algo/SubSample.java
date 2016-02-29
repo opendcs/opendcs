@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.13  2011/11/08 22:23:24  mmaloney
  * dev
  *
@@ -47,8 +50,10 @@ import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.VarFlags;
+import decodes.util.PropertySpec;
 
 //AW:IMPORTS
 // Place an import statements you need here.
@@ -72,6 +77,17 @@ public class SubSample
 //AW:LOCALVARS
 	private IntervalIncrement outputIncr = null;
 	private GregorianCalendar outputCal = null;
+	private PropertySpec subsampPropertySpecs[] = 
+	{
+		new PropertySpec("samplingTimeOffset", PropertySpec.STRING,
+			"(optional) E.g. for a daily subsample: '6 Hours' to grab the 6AM value.")
+	};
+	
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return subsampPropertySpecs;
+	}
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -80,9 +96,11 @@ public class SubSample
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-	public boolean aggLowerBoundClosed = true;
-	public boolean aggUpperBoundClosed = false;
-	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed" };
+//	public boolean aggLowerBoundClosed = true;
+//	public boolean aggUpperBoundClosed = false;
+//	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed" };
+	public String samplingTimeOffset = "";
+	String _propertyNames[] = { "samplingTimeOffset" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -109,6 +127,8 @@ public class SubSample
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
+		
+		// Note aggTZ may be set either globally of specifically for this algo or comp.
 		outputCal = new GregorianCalendar(aggCal.getTimeZone());
 		
 		// We will use outputCal to keep track of the next output time.
@@ -122,23 +142,36 @@ public class SubSample
 		if (outputIncr == null || outputIncr.getCount() == 0)
 			throw new DbCompException("SubSample requires regular interval output!");
 
-		debug3("beforeTimeSlices firstInputT=" + debugSdf.format(firstInputT)
-			+ " outputIncr = " + outputIncr);
+		debug3("beforeTimeSlices firstInputT=" + debugSdf.format(firstInputT) + " outputIncr = " + outputIncr
+			+ (samplingTimeOffset!= null ? (", samplingTimeOffset=" + samplingTimeOffset) : ""));
 
-		debug3("beforeTimeSlices before set MS & S cal=" + debugSdf.format(outputCal.getTime()));
+		// Always get rid of seconds and msecs.
 		outputCal.set(Calendar.MILLISECOND, 0);
 		outputCal.set(Calendar.SECOND, 0);
-		debug3("beforeTimeSlices after set MS & S cal=" + debugSdf.format(outputCal.getTime()));
 
+		// MJM Added samplingTimeOffset processing for OpenDCS 6.2 RC03
+		IntervalIncrement offsetIncr[] = null;
+		if (samplingTimeOffset != null && samplingTimeOffset.trim().length() > 0)
+		{
+			try
+			{
+				offsetIncr = IntervalIncrement.parseMult(samplingTimeOffset);
+				debug1("Honoring sampling time offset '" + samplingTimeOffset + "'");
+			}
+			catch (NoSuchObjectException ex)
+			{
+				warning("Invalid samplingTimeOffset property '" + samplingTimeOffset + "': " + ex
+					+ " -- ignored.");
+				offsetIncr = null;
+			}
+		}
+		
 		if (outputIncr.getCalConstant() == Calendar.MINUTE)
 		{
 			// output interval is in # of minutes
 			int min = outputCal.get(Calendar.MINUTE);
 			min = (min / outputIncr.getCount()) * outputIncr.getCount();
-			debug3("beforeTimeSlices before setMINUTE to " + min + ", cal="
-				+ debugSdf.format(outputCal.getTime()));
 			outputCal.set(Calendar.MINUTE, min);
-			debug3("beforeTimeSlices after setMINUTE cal=" + debugSdf.format(outputCal.getTime()));
 		}
 		else if (outputIncr.getCalConstant() == Calendar.HOUR_OF_DAY)
 		{
@@ -161,17 +194,30 @@ public class SubSample
 				outputParmRef.compParm.getInterval());
 		}
 		
-		TimeZone tz = outputCal.getTimeZone();
-		if (tz.inDaylightTime(firstInputT)
-		 && !tz.inDaylightTime(outputCal.getTime()))
-		{
-			outputCal.add(Calendar.HOUR_OF_DAY, -1);
-		}
-		else if (!tz.inDaylightTime(firstInputT)
-		 	  && tz.inDaylightTime(outputCal.getTime()))
-		{
-			outputCal.add(Calendar.HOUR_OF_DAY, 1);
-		}
+		// If an offset was supplied, add it. Note: it's up to the user to make sure
+		// it makes sense. Good: output interval = 1Day, offsetIncr = 6 hours.
+		// Bad: output interval = 1 hour, offsetIncr = 1 week.
+		if (offsetIncr != null)
+			for(IntervalIncrement ii : offsetIncr)
+				outputCal.add(ii.getCalConstant(), ii.getCount());
+		
+		
+		// 20160226
+		// MJM -- I think the following code is broken. Why would I do this?
+		// It says: if there is a change in time zone between the first data I have and the
+		// next expected output, then adjust the next expected output.
+		// 
+//		TimeZone tz = outputCal.getTimeZone();
+//		if (tz.inDaylightTime(firstInputT)
+//		 && !tz.inDaylightTime(outputCal.getTime()))
+//		{
+//			outputCal.add(Calendar.HOUR_OF_DAY, -1);
+//		}
+//		else if (!tz.inDaylightTime(firstInputT)
+//		 	  && tz.inDaylightTime(outputCal.getTime()))
+//		{
+//			outputCal.add(Calendar.HOUR_OF_DAY, 1);
+//		}
 		
 		while(firstInputT.before(outputCal.getTime()))
 		{
