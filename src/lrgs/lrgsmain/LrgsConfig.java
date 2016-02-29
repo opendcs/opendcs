@@ -320,7 +320,9 @@ public class LrgsConfig
 			"If no data is received on a DAMS-NT socket in this many seconds, then issue a timeout"
 			+ " warning and reconnect."),
 		new PropertySpec("passwordCheckerClass", PropertySpec.STRING,
-			"Name of class that does password checking. If not set, then all passwords accepted.")
+			"Name of class that does password checking. If not set, then all passwords accepted."),
+		new PropertySpec("localIpMask", PropertySpec.STRING,
+			"(e.g. 192.168.0.0/24) Local IP addresses will not be displayed on rtstat page")
 //		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
 //			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
 	};
