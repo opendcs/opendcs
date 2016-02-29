@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.5  2015/11/12 15:17:12  mmaloney
+ * Added HEC headers.
+ *
  */
 package decodes.cwms.validation;
 
@@ -186,7 +189,6 @@ public class ScreeningAlgorithm
 				if (site != null && site.timeZoneAbbr != null && site.timeZoneAbbr.length() > 0)
 				{
 					TimeZone tz = TimeZone.getTimeZone(site.timeZoneAbbr);
-					debug1("Setting criteria season time zone to: " + tz.getID());
 					screening.setSeasonTimeZone(tz);
 				}
 				if (crit == null || crit == prevcrit)
