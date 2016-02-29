@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.7  2015/11/12 15:17:13  mmaloney
+ * Added HEC headers.
+ *
  */
 package decodes.cwms.validation;
 
@@ -574,14 +577,17 @@ public class ScreeningCriteria
 	//else alg.debug3("No flag set because variance exceeded.");
 			}
 		}
-
+		
+		if (screening != null && !screening.isRocActive())
+		alg.debug1("Skipping ROC checks because ROC is not active.");
+		
 		if (screening == null || screening.isRocActive())
 		{
 			// RATE checks
 			TimedVariable prevtv = input.findWithin(
 				new Date(dataTime.getTime()-3600000L), alg.roundSec);
 			if (prevtv != null 
-			 && (prevtv.getFlags() & CwmsFlags.QC_MISSING_OR_REJECTED) == 0)
+			 && (prevtv.getFlags() & CwmsFlags.FLAG_MISSING_OR_REJECTED) == 0)
 			{
 				for(RocPerHourCheck chk : rocPerHourChecks)
 				{
@@ -595,7 +601,8 @@ public class ScreeningCriteria
 							alg.info(input.getTimeSeriesIdentifier().getUniqueString()
 								+ " value " + value + " at time " + alg.debugSdf.format(dataTime)
 								+ " failed " + chk.toString()
-								+ " prev=" + prevtv.getDoubleValue() + ", delta=" + delta);
+								+ " prev=" + prevtv.getDoubleValue() 
+								+ ", prevFlags=0x" + Integer.toHexString(prevtv.getFlags()) + ", delta=" + delta);
 						}
 					}
 					catch(NoConversionException ex)
@@ -605,6 +612,8 @@ public class ScreeningCriteria
 					}
 				}
 			}
+			else alg.debug1("Not checking dataTime=" + dataTime + " because prev is missing or rejected.");
+				
 		}
 		
 		if (screening == null || screening.isDurMagActive())
