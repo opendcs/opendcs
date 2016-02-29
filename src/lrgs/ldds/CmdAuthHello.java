@@ -345,7 +345,10 @@ public class CmdAuthHello extends LddsCommand
 		if (lrgsDb != null)
 		{
 			DbPasswordFile dpf = new DbPasswordFile(null, lrgsDb);
-			return dpf.readSingle(user);
+			PasswordFileEntry pfe = dpf.readSingle(user);
+			if (pfe != null)
+				return pfe;
+			// else fall through and try the flat files...
 		}
 		
 		// Read the password file entry for this user.
