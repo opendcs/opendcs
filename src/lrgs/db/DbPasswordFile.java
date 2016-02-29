@@ -95,14 +95,14 @@ public class DbPasswordFile extends PasswordFile
 	{
 		Statement stat = null;
 		String q = "";
-Logger.instance().info("DbPasswordFile.write() #entries=" + entries.size());
+//Logger.instance().info("DbPasswordFile.write() #entries=" + entries.size());
 		try
 		{
 			stat = lrgsDb.createStatement();
 			for(PasswordFileEntry pfe : entries.values())
 				if (pfe.isChanged())
 				{
-Logger.instance().info("Entry for " + pfe.getUsername() + " is changed.");
+//Logger.instance().info("Entry for " + pfe.getUsername() + " is changed.");
 					PasswordFileEntry oldPfe = readSingle(pfe.getUsername());
 					if (oldPfe == null)
 					{
@@ -120,29 +120,43 @@ Logger.instance().info("Entry for " + pfe.getUsername() + " is changed.");
 					}
 					else
 					{
-Logger.instance().info("Old Entry: " + oldPfe.toString());
-Logger.instance().info("New Entry: " + pfe.toString());
+//Logger.instance().info("Old Entry: " + oldPfe.toString());
+//Logger.instance().info("New Entry: " + pfe.toString());
 
 						// update
 						int nmods = 0;
 						q = "update dds_user set ";
-						if (!ByteUtil.equals(pfe.getShaPassword(), oldPfe.getShaPassword()))
-							q = q + " pw_hash = " + (pfe.getShaPassword()==null ? "null" : 
-								lrgsDb.sqlString(ByteUtil.toHexString(pfe.getShaPassword()))) + ",";
-						if (pfe.isRoleAssigned("dds") != oldPfe.isRoleAssigned("dds"))
-							q = q + " dds_perm = " + (pfe.isRoleAssigned("dds") ? "'Y'" : "'N'") + ",";
-						if (pfe.isRoleAssigned("admin") != oldPfe.isRoleAssigned("admin"))
-							q = q + " is_admin = " + (pfe.isRoleAssigned("admin") ? "'Y'" : "'N'") + ",";
-						if (pfe.isLocal() != oldPfe.isLocal())
-							q = q + " is_local = " + (pfe.isLocal() ? "'Y'" : "'N'") + ",";
-						if (!PropertiesUtil.propertiesEqual(pfe.getProperties(), oldPfe.getProperties()))
-							q = q + " props = " + (pfe.getProperties() == null ? "null" : 
-								lrgsDb.sqlString(PropertiesUtil.props2string(pfe.getProperties()))) + ",";
-						q = q + " last_modified = " + lrgsDb.sqlDate(new Date());
 						
-						q = q + " where username = " + lrgsDb.sqlString(pfe.getUsername());
+						StringBuilder sets = new StringBuilder();
+						
+						if (!ByteUtil.equals(pfe.getShaPassword(), oldPfe.getShaPassword()))
+						{
+							addSet(sets, "pw_hash = " + 
+								(pfe.getShaPassword()==null ? "null" : 
+									lrgsDb.sqlString(ByteUtil.toHexString(pfe.getShaPassword()))));
+							addSet(sets, "last_modified = " + lrgsDb.sqlDate(new Date()));
+						}
+							
+						if (pfe.isRoleAssigned("dds") != oldPfe.isRoleAssigned("dds"))
+							addSet(sets, "dds_perm = " + (pfe.isRoleAssigned("dds") ? "'Y'" : "'N'"));
+						
+						if (pfe.isRoleAssigned("admin") != oldPfe.isRoleAssigned("admin"))
+							addSet(sets, "is_admin = " + (pfe.isRoleAssigned("admin") ? "'Y'" : "'N'"));
+						
+						if (pfe.isLocal() != oldPfe.isLocal())
+							addSet(sets, "is_local = " + (pfe.isLocal() ? "'Y'" : "'N'"));
+						
+						if (!PropertiesUtil.propertiesEqual(pfe.getProperties(), oldPfe.getProperties()))
+							addSet(sets, "props = " + 
+								(pfe.getProperties() == null ? "null" : 
+								lrgsDb.sqlString(PropertiesUtil.props2string(pfe.getProperties()))));
+						
+						if (sets.length() == 0)
+							continue; // nothing to change.
+						
+						q = q + sets.toString() + " where username = " + lrgsDb.sqlString(pfe.getUsername());
 					}
-Logger.instance().info("DbPasswordFile.write: " + q);
+//Logger.instance().info("DbPasswordFile.write: " + q);
 					stat.executeUpdate(q);
 				}
 		}
@@ -157,6 +171,13 @@ Logger.instance().info("DbPasswordFile.write: " + q);
 			if (stat != null)
 				try { stat.close(); } catch(Exception ex) {}
 		}
+	}
+	
+	private void addSet(StringBuilder sets, String setclause)
+	{
+		if (sets.length() > 0)
+			sets.append(", ");
+		sets.append(setclause);
 	}
 	
 	/**
