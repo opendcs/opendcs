@@ -207,7 +207,8 @@ Logger.instance().debug1(DdsServer.module
 
 		// the DcpMsgSource provides the actual interface to the archive.
 		msgacc = makeDcpMsgSource();
-		msgacc.setClientName(hostname+"-"+uniqueID);
+//		msgacc.setClientName(hostname+"-"+uniqueID);
+		msgacc.setClientName(hostname);
 		msgacc.attachSource();
 		msgacc.setProcInfo("DDS-CLI", user.name);
 
