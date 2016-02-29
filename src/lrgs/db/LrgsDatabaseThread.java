@@ -12,6 +12,8 @@
 */
 package lrgs.db;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -243,7 +245,15 @@ public class LrgsDatabaseThread
 		ds.setDataSourceType(dsType);
 		ds.setDataSourceName(dsName);
 		ds.setDataSourceId(dataSources.size());
-		ds.setLrgsHost(lrgsDb.getMyHostName());
+		try
+		{
+			ds.setLrgsHost(InetAddress.getLocalHost().getHostName());
+		}
+		catch (UnknownHostException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		dataSources.add(ds);
 		info("Queuing data source " + ds.getDataSourceType()
 			+ ":" + ds.getDataSourceName());
