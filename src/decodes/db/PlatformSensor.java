@@ -96,7 +96,10 @@ public class PlatformSensor
 		new PropertySpec("modeled", PropertySpec.BOOLEAN,
 			"In HDB Consumer, set to true if this is considered a modeled value."),
 		new PropertySpec("modelId", PropertySpec.INT,
-			"In HDB Consumer, you can set a model ID for the output value.")
+			"In HDB Consumer, you can set a model ID for the output value."),
+		new PropertySpec("TimeOffsetSec", PropertySpec.INT,
+			"Time adjustment (positive or negative seconds) to add to this sensor's"
+			+ " samples after decoding.")
 	};
 
 	
