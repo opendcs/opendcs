@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.8  2016/02/29 22:14:48  mmaloney
+ * Fixed ROC checks. It was not using the correct flags mask.
+ *
  * Revision 1.7  2015/11/12 15:17:13  mmaloney
  * Added HEC headers.
  *
@@ -612,7 +615,8 @@ public class ScreeningCriteria
 					}
 				}
 			}
-			else alg.debug1("Not checking dataTime=" + dataTime + " because prev is missing or rejected.");
+			else if (rocPerHourChecks.size() > 0) 
+				alg.debug1("Not checking dataTime=" + dataTime + " because prev is missing or rejected.");
 				
 		}
 		
