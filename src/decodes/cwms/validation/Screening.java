@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.5  2015/11/12 15:17:13  mmaloney
+ * Added HEC headers.
+ *
  */
 package decodes.cwms.validation;
 
@@ -311,22 +314,28 @@ public class Screening
 		}
 	}
 
-	public void convertUnits(String paramUnits)
+	public void convertUnits(String paramUnitsAbbr)
 		throws NoConversionException
 	{
-		UnitConverter uc = decodes.db.Database.getDb().unitConverterSet.get(
-			EngineeringUnit.getEngineeringUnit(checkUnitsAbbr),
-			EngineeringUnit.getEngineeringUnit(paramUnits));
+		EngineeringUnit chkEU = EngineeringUnit.getEngineeringUnit(checkUnitsAbbr);
+		if (chkEU == null)
+			throw new NoConversionException("Screening.convertUnits: Invalid check units abbr '"
+				+ checkUnitsAbbr + "'");
+		EngineeringUnit prmEU = EngineeringUnit.getEngineeringUnit(paramUnitsAbbr);
+		if (prmEU == null)
+			throw new NoConversionException("Screening.convertUnits: Invalid param units abbr '"
+				+ paramUnitsAbbr + "'");
+		UnitConverter uc = decodes.db.Database.getDb().unitConverterSet.get(chkEU, prmEU);
 		if (uc == null)
 			throw new NoConversionException("Cannot derive a converter from '"
-				+ checkUnitsAbbr + "' to '" + paramUnits + "'");
+				+ checkUnitsAbbr + "' to '" + paramUnitsAbbr + "'");
 		
 		// Descend through all checks and convert the limits to the new units.
 		// then set this.checkUnitsAbbr
 		for(ScreeningCriteria crit : criteriaSeasons)
-			crit.convertUnits(paramUnits, uc);
+			crit.convertUnits(paramUnitsAbbr, uc);
 		
-		checkUnitsAbbr = paramUnits;
+		checkUnitsAbbr = paramUnitsAbbr;
 		
 	}
 
