@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.7  2016/02/29 22:16:46  mmaloney
+ * Bug fix -- on update it was not saving the new description.
+ *
  * Revision 1.6  2015/11/18 14:04:37  mmaloney
  * Remove debugs
  *
@@ -231,10 +234,10 @@ public class ScreeningDAO
 					rAbsCheck == null ? null : rAbsCheck.getHigh() == Double.POSITIVE_INFINITY ? null : new NUMBER(rAbsCheck.getHigh()),
 					qAbsCheck == null ? null : qAbsCheck.getLow() == Double.NEGATIVE_INFINITY ? null : new NUMBER(qAbsCheck.getLow()),
 					qAbsCheck == null ? null : qAbsCheck.getHigh() == Double.POSITIVE_INFINITY ? null : new NUMBER(qAbsCheck.getHigh()),
-					rRocCheck == null ? null : new NUMBER(rRocCheck.getRise()),
-					rRocCheck == null ? null : new NUMBER(rRocCheck.getFall()),
-					qRocCheck == null ? null : new NUMBER(qRocCheck.getRise()),
-					qRocCheck == null ? null : new NUMBER(qRocCheck.getFall()),
+					rRocCheck == null ? null : rRocCheck.getRise() == Double.POSITIVE_INFINITY ? null : new NUMBER(rRocCheck.getRise()),
+					rRocCheck == null ? null : rRocCheck.getFall() == Double.NEGATIVE_INFINITY ? null : new NUMBER(rRocCheck.getFall()),
+					qRocCheck == null ? null : qRocCheck.getRise() == Double.POSITIVE_INFINITY ? null : new NUMBER(qRocCheck.getRise()),
+					qRocCheck == null ? null : qRocCheck.getFall() == Double.NEGATIVE_INFINITY ? null : new NUMBER(qRocCheck.getFall()),
 						
 					rConstCheck == null ? null : OracleTypeMap.buildChar(rConstCheck.getDuration()),
 					rConstCheck == null ? null : new NUMBER(rConstCheck.getMinToCheck()),
