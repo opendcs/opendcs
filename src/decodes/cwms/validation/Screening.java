@@ -4,11 +4,16 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.6  2016/03/09 16:45:52  mmaloney
+ * Null Ptr Checks
+ *
  * Revision 1.5  2015/11/12 15:17:13  mmaloney
  * Added HEC headers.
  *
  */
 package decodes.cwms.validation;
+
+import ilex.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -329,6 +334,8 @@ public class Screening
 		if (uc == null)
 			throw new NoConversionException("Cannot derive a converter from '"
 				+ checkUnitsAbbr + "' to '" + paramUnitsAbbr + "'");
+		Logger.instance().debug1("Screening.convertUnits: converting screening units from " + checkUnitsAbbr
+			+ " to " + paramUnitsAbbr);
 		
 		// Descend through all checks and convert the limits to the new units.
 		// then set this.checkUnitsAbbr
