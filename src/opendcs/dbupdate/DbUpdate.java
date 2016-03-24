@@ -46,34 +46,35 @@ public class DbUpdate extends TsdbAppTemplate
 			System.exit(1);
 		}
 
+		String schemaDir = EnvExpander.expand("$DCSTOOL_HOME/schema")
+			+ (theDb.isCwms() ? "/cwms30" : 
+			   theDb.isOracle() ? "/opendcs-oracle" : "/opendcs-pg");
+		System.out.println("Schema dir is '" + schemaDir + "'");
+
+		// For Oracle, we'll need the table space originally defined on db creation.
+		String tableSpaceSpec = null;
+		if (theDb.isOracle())
+		{
+			LineNumberReader lnr = new LineNumberReader(
+				new FileReader(schemaDir + "/defines.sh"));
+			String line;
+			while((line = lnr.readLine()) != null)
+			{
+				if (line.indexOf("TBL_SPACE_DATA=") >= 0)
+				{
+					tableSpaceSpec = 
+						"tablespace " + line.substring(line.indexOf('=') + 1).trim();
+					break;
+				}
+			}
+			lnr.close();
+		}
+
 		if (theDb.getDecodesDatabaseVersion() == DecodesDatabaseVersion.DECODES_DB_10)
 		{
 			System.out.println("TSDB Database is currently " + theDb.getTsdbVersion());
 			System.out.println("DECODES Database is currently " + theDb.getDecodesDatabaseVersion());
-
-			String schemaDir = EnvExpander.expand("$DCSTOOL_HOME/schema")
-				+ (theDb.isCwms() ? "/cwms30" : 
-				   theDb.isOracle() ? "/opendcs-oracle" : "/opendcs-pg");
-			System.out.println("Schema dir is '" + schemaDir + "'");
 			
-			// For Oracle, we'll need the table space originally defined on db creation.
-			String tableSpaceSpec = null;
-			if (theDb.isOracle())
-			{
-				LineNumberReader lnr = new LineNumberReader(
-					new FileReader(schemaDir + "/defines.sh"));
-				String line;
-				while((line = lnr.readLine()) != null)
-				{
-					if (line.indexOf("TBL_SPACE_DATA=") >= 0)
-					{
-						tableSpaceSpec = 
-							"tablespace " + line.substring(line.indexOf('=') + 1).trim();
-						break;
-					}
-				}
-				lnr.close();
-			}
 
 			if (!theDb.isCwms()) // CWMS doesn't support DCP Monitor Schema
 			{
@@ -164,25 +165,58 @@ public class DbUpdate extends TsdbAppTemplate
 			if (theDb.isOracle())
 				sql("ALTER TABLE NETWORKLISTENTRY MODIFY PLATFORM_NAME VARCHAR2(64)");
 			else
-				sql("ALTER TABLE NETWORKLISTENTRY ALTER COLUMN PLATFORM_NAME TYPE VARCHAR2(64)");
+				sql("ALTER TABLE NETWORKLISTENTRY ALTER COLUMN PLATFORM_NAME TYPE VARCHAR(64)");
+		}
+		
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_13)
+		{
+			SQLReader sqlReader = new SQLReader(schemaDir + "/opendcs.sql");
+			ArrayList<String> queries = sqlReader.createQueries();
+			for(String q : queries)
+				if (q.contains("CP_ALGO_SCRIPT")
+				 || (theDb.isCwms() && q.contains("DACQ_EVENTIDSEQ"))
+				 || (theDb.isCwms() && q.contains("SCHEDULE_ENTRY_STATUSIDSEQ")))
+				{
+					if (tableSpaceSpec != null)
+					{
+						// Oracle will have a table space definition that we need to substitute.
+						int tblSpecIdx = q.indexOf("&TBL_SPACE_SPEC");
+						if (tblSpecIdx != -1 && tableSpaceSpec != null)
+							q = q.substring(0, tblSpecIdx) + tableSpaceSpec;
+					}
+					sql(q);
+				}
+			if (theDb.isCwms())
+			{
+				sql("DROP PUBLIC SYNONYM CP_COMPOSITE_DIAGRAM");
+				sql("DROP PUBLIC SYNONYM CP_COMPOSITE_MEMBER");
+				sql("GRANT SELECT,INSERT,UPDATE,DELETE ON CP_ALGO_SCRIPT TO CCP_USERS");
+				sql("GRANT SELECT ON DACQ_EVENTIDSEQ TO CCP_USERS");
+				sql("GRANT SELECT ON SCHEDULE_ENTRY_STATUSIDSEQ TO CCP_USERS");
+				sql("CREATE PUBLIC SYNONYM CP_ALGO_SCRIPT FOR CCP.CP_ALGO_SCRIPT");
+				sql("CREATE PUBLIC SYNONYM DACQ_EVENTIDSEQ FOR CCP.DACQ_EVENTIDSEQ");
+				sql("CREATE PUBLIC SYNONYM SCHEDULE_ENTRY_STATUSIDSEQ FOR CCP.SCHEDULE_ENTRY_STATUSIDSEQ");
+			}
+			sql("DROP TABLE CP_COMPOSITE_DIAGRAM");
+			sql("DROP TABLE CP_COMPOSITE_MEMBER");
+
 		}
 
 		// Update DECODES Database Version
 		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " 
-			+ DecodesDatabaseVersion.DECODES_DB_12);
-		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_12, "");
+			+ DecodesDatabaseVersion.DECODES_DB_13);
+		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_13, "");
 		((SqlDatabaseIO)Database.getDb().getDbIo()).setDecodesDatabaseVersion(
-			DecodesDatabaseVersion.DECODES_DB_12, "");
+			DecodesDatabaseVersion.DECODES_DB_13, "");
 		// Update TSDB_DATABASE_VERSION.
 		String desc = "Updated on " + new Date();
 		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " 
-			+ TsdbDatabaseVersion.VERSION_10
+			+ TsdbDatabaseVersion.VERSION_13
 			+ ", DESCRIPTION = '" + desc + "'");
-		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_10, desc);
+		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_13, desc);
 		
 		// Rewrite the netlists with the changes.
 		Database.getDb().networkListList.write();
-
 	}
 
 	private void sql(String query)
