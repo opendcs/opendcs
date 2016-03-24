@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.3  2015/05/14 13:52:18  mmaloney
+*  RC08 prep
+*
 *  Revision 1.2  2014/12/15 20:39:10  mmaloney
 *  writeTsGrp for Site List, must use site.getUniqueName, not getDisplayName.
 *
@@ -19,12 +22,15 @@
 */
 package decodes.tsdb.xml;
 
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -42,7 +48,6 @@ import ilex.xml.TaggedStringSetter;
 import ilex.xml.XmlHierarchyParser;
 import ilex.xml.XmlObjectParser;
 import ilex.xml.XmlOutputStream;
-
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
 import decodes.xml.XmlDbTags;
@@ -185,6 +190,70 @@ public class CompXio
 					}
 					String pts = DomHelper.getTextContent(pt);
 					algo.addParm(new DbAlgoParm(roleName, pts));
+				}
+				else if (nn.equalsIgnoreCase(CompXioTags.algoScript))
+				{
+					Element scriptElem = (Element)childNode;
+					String scriptTypeStr = DomHelper.findAttr(scriptElem, CompXioTags.algoScriptType);
+					if (scriptTypeStr == null || scriptTypeStr.trim().length() == 0)
+					{
+						Logger.instance().warning("Algorithm '" + name
+							+ "' has an " + CompXioTags.algoScript 
+							+ " element with no " + CompXioTags.algoScriptType
+							+ " element -- ignored.");
+						continue;
+					}
+					scriptTypeStr = scriptTypeStr.trim();
+					
+					StringBuilder scriptBuilder = new StringBuilder();
+					
+					NodeList scriptLines = scriptElem.getChildNodes();
+					for(int si=0; scriptLines != null && si<scriptLines.getLength(); si++)
+					{
+						Node scriptLine = scriptLines.item(si);
+						if (scriptLine.getNodeName().equalsIgnoreCase(CompXioTags.algoScriptLine))
+						{
+							// Get indent attribute
+							Element scriptLineElem = (Element)scriptLine;
+							String indents = DomHelper.findAttr(scriptLineElem, CompXioTags.indent);
+							int indent = -1;
+							if (indents != null)
+								try { indent = Integer.parseInt(indents.trim()); }
+								catch(NumberFormatException ex) { indent = -1; }
+														
+							String line = scriptLine.getTextContent();
+							if (indent != -1)
+								line = line.trim();
+							if (line != null)
+							{
+								// Remove any line breaks that xml encoding added.
+								StringBuilder lineb = new StringBuilder(line);
+								for(int lineidx = 0; lineidx < lineb.length(); )
+								{
+									char c = lineb.charAt(lineidx);
+									if (c == '\n' || c == '\r')
+										lineb.deleteCharAt(lineidx);
+									else
+										lineidx++;
+								}
+								while(indent-- > 0)
+									lineb.insert(0, ' ');
+								scriptBuilder.append(lineb);
+								scriptBuilder.append("\n");
+								// Add the indent
+							}	
+							else
+							{
+								Logger.instance().warning("Algorithm '" + name
+									+ "' has an " + CompXioTags.algoScriptLine 
+									+ " element with null content -- ignored.");
+							}
+						}
+					}
+					DbCompAlgorithmScript newScript = new DbCompAlgorithmScript(algo, 
+						ScriptType.fromDbChar(scriptTypeStr.charAt(0)));
+					newScript.addToText(scriptBuilder.toString());
+					algo.putScript(newScript);
 				}
 				else
 					Logger.instance().warning("Unrecognized element '"
@@ -718,6 +787,41 @@ public class CompXio
 			xos.writeElement(CompXioTags.parmType, dap.getParmType());
 			xos.endElement(CompXioTags.algoParm);
 		}
+		
+		for(ScriptType st : ScriptType.values())
+		{
+			DbCompAlgorithmScript script = algo.getScript(st);
+			// Temporarily set width very wide to prevent script lines from wrapping
+			// and inserting awkward spacing when read back in.
+			int w = xos.width;
+			xos.width = 200;
+			if (script != null)
+			{
+				xos.startElement(CompXioTags.algoScript, CompXioTags.algoScriptType, ""+st.getDbChar());
+				String scriptText = script.getText();
+				BufferedReader bufReader = new BufferedReader(new StringReader(scriptText));
+				String line = null;
+				while((line = bufReader.readLine()) != null)
+				{
+					int indent = 0;
+					for(int idx=0; idx<line.length(); idx++)
+					{
+						char c = line.charAt(idx);
+						if (c == ' ')
+							indent++;
+						else if (c == '\t')
+							indent += 4;
+						else
+							break;
+					}
+					line = line.trim();
+					xos.writeElement(CompXioTags.algoScriptLine, CompXioTags.indent, ""+indent, line);
+				}
+				xos.endElement(CompXioTags.algoScript);
+			}
+			xos.width = w;
+		}
+		
 		xos.endElement(CompXioTags.algorithm);
 	}
 

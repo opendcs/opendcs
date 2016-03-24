@@ -17,6 +17,10 @@ public class CompXioTags
 	public static final String comment = "Comment";
 	public static final String algoProperty = "AlgoProperty";
 	public static final String algoParm = "AlgoParm";
+	public static final String algoScript = "AlgoScript";
+	public static final String algoScriptType = "scriptType";
+	public static final String algoScriptLine = "AlgoScriptLine";
+	public static final String indent = "indent";
 	public static final String parmType = "ParmType";
 	public static final String algorithmName = "AlgorithmName";
 	public static final String compProcName = "CompProcName";
