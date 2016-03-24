@@ -11,6 +11,9 @@
 *  For more information contact: tempest@sutron.com
 *  
 *  $Log$
+*  Revision 1.2  2016/01/27 22:02:52  mmaloney
+*  Implement CacheableHasProperties
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -20,6 +23,8 @@
 */
 package decodes.tsdb;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -27,6 +32,7 @@ import java.util.Iterator;
 
 import opendcs.dao.CachableHasProperties;
 import ilex.util.HasProperties;
+import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
@@ -59,6 +65,10 @@ public class DbCompAlgorithm
 
 	/** For use in the editor -- the number of computations using this algo. */
 	private int numCompsUsing;
+	
+	private HashMap<ScriptType, DbCompAlgorithmScript> algoScripts = 
+		new HashMap<ScriptType, DbCompAlgorithmScript>();
+	
 
 	/** 
 	 * Constructor. 
@@ -222,6 +232,9 @@ public class DbCompAlgorithm
 		PropertiesUtil.copyProps(dca.props, this.props);
 		for(DbAlgoParm parm : this.parms)
 			dca.addParm(new DbAlgoParm(parm.getRoleName(), parm.getParmType()));
+		
+		for(DbCompAlgorithmScript script : getScripts())
+			dca.putScript(script.copy(dca));
 
 		return dca;
 	}
@@ -232,21 +245,48 @@ public class DbCompAlgorithm
 	 */
 	public boolean equalsNoId(DbCompAlgorithm rhs)
 	{
+		// Oracle treats empty strings as nulls. Prevent bogus "Are You Sure"
+		// messages when comment is empty and user hasn't changed anything.
+		if (rhs.comment != null && rhs.comment.length() == 0 && comment == null)
+			rhs.comment = null;
+			
 		if (!TextUtil.strEqual(name, rhs.name)
 		 || !TextUtil.strEqual(execClass, rhs.execClass)
-		 || !TextUtil.strEqual(comment, rhs.comment)
-		 || !PropertiesUtil.propertiesEqual(props, rhs.props))
+		 || !TextUtil.strEqual(comment, rhs.comment))
+		{
+Logger.instance().debug1("Algorithm '" + name + "' equalsNoId 1"
++ "("+name +","+execClass+","+comment+") != ("+rhs.name+","+rhs.execClass+","+rhs.comment+")");
 			return false;
+		}
+		if (!PropertiesUtil.propertiesEqual(props, rhs.props))
+		{
+Logger.instance().debug1("Algorithm '" + name + "' equalsNoId props: '"
++ PropertiesUtil.props2string(props) + "' != '" + PropertiesUtil.props2string(rhs.props) + "'");
+			return false;
+		}
 
 		if (parms.size() != rhs.parms.size())
+		{
+Logger.instance().debug1("Algorithm '" + name + "' Different number of parms: "+parms.size() + "," + rhs.parms.size());
 			return false;
+		}
 		for(int i=0; i<parms.size(); i++)
 		{
 			DbAlgoParm p1 = parms.get(i);
 			DbAlgoParm p2 = rhs.parms.get(i);
 			if (!TextUtil.strEqual(p1.getRoleName(), p2.getRoleName())
 			 || !TextUtil.strEqual(p1.getParmType(), p2.getParmType()))
+			{
+Logger.instance().debug1("Algorithm '" + name + "' param[" + i + "] differs role("
++ p1.getRoleName() + ","+ p2.getRoleName() + ") type("
++ p1.getParmType() + ","+ p2.getParmType() + ")");
 				return false;
+			}
+		}
+		if (!this.algoScripts.equals(rhs.algoScripts))
+		{
+Logger.instance().debug1("Algorithm '" + name + "' algo scripts differ.");
+			return false;
 		}
 		return true;
 	}
@@ -263,5 +303,37 @@ public class DbCompAlgorithm
 	public String getUniqueName()
 	{
 		return name;
+	}
+	
+	/**
+	 * @param scriptType
+	 * @return the script for the given type or null if none is defined.
+	 */
+	public DbCompAlgorithmScript getScript(ScriptType scriptType)
+	{
+		return algoScripts.get(scriptType);
+	}
+	
+	/**
+	 * Add or replace the script of a given type.
+	 * @param script
+	 */
+	public void putScript(DbCompAlgorithmScript script)
+	{
+Logger.instance().debug1("DbCompAlgorithm " + name + ": Adding script " + script.getScriptType()
++ " with text '" + script.getText() + "'");
+		algoScripts.put(script.getScriptType(), script);
+Logger.instance().debug1("DbCompAlgorithm after put, this algo has " + getScripts().size() + " scripts.");
+	}
+	
+	public void clearScripts()
+	{
+Logger.instance().debug1("DbCompAlgorithm.clearScripts()");
+		algoScripts.clear();
+	}
+	
+	public Collection<DbCompAlgorithmScript> getScripts()
+	{
+		return algoScripts.values();
 	}
 }
