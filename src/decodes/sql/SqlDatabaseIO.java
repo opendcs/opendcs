@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.7  2015/11/12 15:22:13  mmaloney
+ * Added makeScreeningDAO method.
+ *
  * Revision 1.6  2015/01/22 19:52:07  mmaloney
  * log message improvements
  *
@@ -2120,10 +2123,11 @@ public class SqlDatabaseIO
 	}
 
 	@Override
-	public void expandSDI(DbCompParm parm) throws DbIoException,
+	public TimeSeriesIdentifier expandSDI(DbCompParm parm) throws DbIoException,
 		NoSuchObjectException
 	{
 		// This method should never be called in the DECODES db interface.
+		return null;
 	}
 
 	@Override

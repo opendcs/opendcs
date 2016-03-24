@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2016/01/27 21:58:44  mmaloney
+*  Init Optimization
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -334,7 +337,7 @@ public class HdbTimeSeriesDb
 	 * the passed object.
 	 * @param parm the computation parameter
 	 */
-	public void expandSDI(DbCompParm parm)
+	public TimeSeriesIdentifier expandSDI(DbCompParm parm)
 		throws DbIoException, NoSuchObjectException
 	{
 		DbKey sdi = parm.getSiteDataTypeId();
@@ -354,6 +357,9 @@ public class HdbTimeSeriesDb
 			dt = DataType.getDataType(
 				Constants.datatype_HDB, "" + hsdi.getDatatypeId());
 		parm.setDataType(dt);
+		
+		//TODO Get the HdbTsId
+		return null;
 	}
 
 	
