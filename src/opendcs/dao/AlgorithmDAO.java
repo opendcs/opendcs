@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2016/01/27 22:12:10  mmaloney
+ * When reading the complete list, get the params and props in one go rather than
+ * individually.
+ *
  * Revision 1.3  2015/12/30 20:39:23  mmaloney
  * Bugfix: listAlgorithms was using the same Statement in nested queries, causing SQL exception.
  *
@@ -22,6 +26,9 @@
  */
 package opendcs.dao;
 
+import ilex.util.Logger;
+import ilex.util.Base64;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -33,8 +40,11 @@ import decodes.sql.DbKey;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
+import decodes.tsdb.DbCompAlgorithmScript;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.ScriptType;
+import decodes.tsdb.TsdbDatabaseVersion;
 
 
 /**
@@ -140,6 +150,49 @@ public class AlgorithmDAO
 			}
 			propertiesSqlDao.readPropertiesIntoList("CP_ALGO_PROPERTY", ret, null);
 			
+			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
+			{
+				// Join with CP_ALGORITHM for CWMS to implicitly filter by db_office_code.
+				q = "select a.ALGORITHM_ID, a.SCRIPT_TYPE, a.SCRIPT_DATA "
+					+ "from CP_ALGO_SCRIPT a, CP_ALGORITHM b "
+					+ "where a.ALGORITHM_ID = b.ALGORITHM_ID "
+					+ "order by ALGORITHM_ID, SCRIPT_TYPE, BLOCK_NUM";
+				rs = doQuery(q);
+				DbCompAlgorithm lastAlgo = null;
+				while(rs.next())
+				{
+					DbKey algoId = DbKey.createDbKey(rs, 1);
+					DbCompAlgorithm algo = null;
+					for(DbCompAlgorithm dca : ret)
+						if (dca.getId().equals(algoId))
+						{
+							algo = dca;
+							break;
+						}
+					if (algo == null)
+					{
+						// Shouldn't happen because of the join
+						continue;
+					}
+					if (algo != lastAlgo)
+					{
+						algo.clearScripts();
+						lastAlgo = algo;
+					}
+					ScriptType scriptType = ScriptType.fromDbChar(rs.getString(2).charAt(0));
+					String scriptData = rs.getString(3);
+					if (scriptData != null)
+						scriptData = new String(Base64.decodeBase64(scriptData.getBytes()));
+					DbCompAlgorithmScript script = algo.getScript(scriptType);
+					if (script == null)
+					{
+						script = new DbCompAlgorithmScript(algo, scriptType);
+						algo.putScript(script);
+					}
+					script.addToText(scriptData);
+				}
+			}
+			
 			return ret;
 		}
 		catch(SQLException ex)
@@ -178,6 +231,29 @@ public class AlgorithmDAO
 		
 		propertiesSqlDao.readProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
 			algo.getId(), algo.getProperties());
+		
+		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
+		{
+			algo.clearScripts();
+			q = "select SCRIPT_TYPE, SCRIPT_DATA from CP_ALGO_SCRIPT "
+				+ "where ALGORITHM_ID = " + algo.getId()
+				+ " order by SCRIPT_TYPE, BLOCK_NUM";
+			rs = doQuery(q);
+			while(rs.next())
+			{
+				ScriptType scriptType = ScriptType.fromDbChar(rs.getString(1).charAt(0));
+				String b64 = rs.getString(2);
+				String scriptData = new String(Base64.decodeBase64(b64.getBytes()));
+Logger.instance().debug1("DAO fill subord: b64='" + b64 + "' scriptData='" + scriptData + "'");
+				DbCompAlgorithmScript script = algo.getScript(scriptType);
+				if (script == null)
+				{
+					script = new DbCompAlgorithmScript(algo, scriptType);
+					algo.putScript(script);
+				}
+				script.addToText(scriptData);
+			}
+		}
 	}
 
 	@Override
@@ -240,6 +316,36 @@ public class AlgorithmDAO
 			
 			propertiesSqlDao.writeProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
 				id, algo.getProperties());
+			
+			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
+			{
+				q = "DELETE FROM CP_ALGO_SCRIPT WHERE ALGORITHM_ID = " + algo.getId();
+				doModify(q);
+Logger.instance().debug1("AlgorithmDAO.writeAlgo algorithm has " + algo.getScripts().size() + " scripts.");
+				for(DbCompAlgorithmScript script : algo.getScripts())
+				{
+					String text = script.getText();
+					if (text == null || text.length() == 0)
+						continue;
+					// Have to convert to Base64 to preserve quotes, newlines, etc.
+					String b64 = new String(Base64.encodeBase64(text.getBytes()));
+Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType() + " text '"
+	+ text + "' b64=" + b64);
+					int blockNum = 1;
+					while(b64 != null)
+					{
+						String block = b64.length() < 4000 ? b64 : b64.substring(0, 4000);
+						b64 = (block == b64) ? null : b64.substring(4000);
+						q = "INSERT INTO CP_ALGO_SCRIPT VALUES("
+							+ algo.getId() + ", " 
+							+ "'" + script.getScriptType().getDbChar() + "', "
+							+ (blockNum++) + ", "
+							+ sqlString(block)
+							+ ")";
+						doModify(q);
+					}
+				}
+			}
 			
 			q = "UPDATE CP_COMPUTATION "
 			    + "SET DATE_TIME_LOADED = " + db.sqlDate(new Date())
