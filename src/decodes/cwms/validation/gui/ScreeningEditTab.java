@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.2  2016/02/29 22:17:46  mmaloney
+ * Disable fields that cannot be changed on editing an existing screening.
+ *
  * Revision 1.1  2015/11/12 15:12:39  mmaloney
  * Initial release.
  *
@@ -410,7 +413,11 @@ public class ScreeningEditTab extends JPanel
 				catch(NoConversionException ex)
 				{
 					frame.showError(ex.getMessage());
+					
 				}
+				// screening.paramId may still be null if this is a new screening.
+				if (screening.getParamId() == null)
+					screening.setParamId(paramField.getText());
 				setScreening(screening);
 			}
 			else // Leave selection but don't convert units.
