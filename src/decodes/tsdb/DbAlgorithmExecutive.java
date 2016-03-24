@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2016/01/27 22:02:08  mmaloney
+*  Fix for CWMS-7386 that occurs when MISSING=PREV used in conjunction with
+*  automatic deltas.
+*
 *  Revision 1.5  2015/11/18 14:06:23  mmaloney
 *  Get rid of 'getBriefDescription()' after all.
 *
@@ -203,13 +207,18 @@ public abstract class DbAlgorithmExecutive
 
 		parseTimeRound();
 
+		// MJM 20160312 Moved initAlgorithm to BEFORE the mapParm calls.
+		// This give PythonAlgorithm a chance to replace the dummy input/output parm lists
+		// with the parms defined in the algorithm record.
+		initAlgorithm();
+		
 		// Construct the parm map as a convenience to the subclass.
 		for(String role : getInputNames())
 			mapParm(role, tsdb);
 		for(String role : getOutputNames())
 			mapParm(role, tsdb);
 
-		initAlgorithm();
+//		initAlgorithm();
 	}
 
 	/**
@@ -387,13 +396,14 @@ debug3("DbAlgorithmExec.apply()");
 		DbCompParm parm = comp.getParm(role);
 		if (parm == null)
 		{
-			debug1("No param defined for role '" + role);
+			debug1("No param defined for role '" + role + "'");
 			return;
 		}
 
+		TimeSeriesIdentifier tsid = null;
 		try
 		{
-			tsdb.expandSDI(parm);
+			tsid = tsdb.expandSDI(parm);
 		}
 		catch(Exception ex)
 		{
@@ -402,12 +412,14 @@ debug3("DbAlgorithmExec.apply()");
 		}
 
 		ParmRef parmRef = new ParmRef(role, parm, null);
+		if (tsid != null)
+			parmRef.tsid = tsid;
 
 		// Retrieve the 'missing action' property, either specific to this
 		// role, or global for the whole algorithm.
 		// Specific one is <role>_MISSING
 		String propval = comp.getProperty(role + "_MISSING");
-		parmRef.setMissingAction(propval);
+		parmRef.setMissingAction(MissingAction.fromString(propval));
 
 		parmMap.put(role, parmRef);
 	}
@@ -460,18 +472,20 @@ debug3("DbAlgorithmExec.apply()");
 			}
 			
 		}
-		ref.timeSeries = dc.getTimeSeries(ref.compParm.getSiteDataTypeId(), 
-			intv, tabsel, modelRunId);
+		ref.timeSeries = dc.getTimeSeries(ref.compParm.getSiteDataTypeId(), intv, tabsel, modelRunId);
 		if (ref.timeSeries == null)
 		{
 			ref.timeSeries = new CTimeSeries(ref.compParm);
 			if (TextUtil.strEqualIgnoreCase(tabsel, "M_"))
 				ref.timeSeries.setModelRunId(modelRunId);
+			if (ref.tsid != null)
+				ref.timeSeries.setTimeSeriesIdentifier(ref.tsid);
 			debug1("addTsToParmRef: Made empty time series for " 
 				+ ref.getDescription() 
 				+ ", sdiIsUnique=" + TimeSeriesDb.sdiIsUnique
 				+ ", sdi=" + ref.compParm.getSiteDataTypeId() + ", intv='" 
 				+ intv + "', + tabsel='" + tabsel + "'");
+			
 
 			try { dc.addTimeSeries(ref.timeSeries); }
 			catch(DuplicateTimeSeriesException ex)
@@ -1238,12 +1252,12 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 
 				Date paramTime = parmRef.compParm.baseTimeToParamTime(baseTime, aggCal);
 				long varSec = paramTime.getTime()/1000L;
-				TimedVariable tv = 
-					parmRef.timeSeries.findWithin(paramTime, roundSec/2);
+				TimedVariable tv = parmRef.timeSeries.findWithin(paramTime, roundSec/2);
+				
 
 				if (tv == null) // Time series missing value for this slice?
 				{
-Logger.instance().debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
+debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
 + ", missingAction=" + parmRef.missingAction.toString());
 					if (parmRef.missingAction == MissingAction.FAIL)
 						// Required param - fail this slice if not present.
@@ -1336,6 +1350,9 @@ Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTi
 							continue nextBaseTime;
 					}
 				}
+//else debug3("DbAlgorithmExecutive found value (" + debugSdf.format(tv.getTime()) + ":" + tv.getStringValue()
+//+ ") paramTime=" + debugSdf.format(paramTime) + ", roundSec=" + roundSec);
+
 
 				NamedVariable t_nvar = null;
 				if (tv != null)
@@ -1444,7 +1461,8 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 				if (v != null)
 				{
 					Date paramTime = parmRef.compParm.baseTimeToParamTime(baseTime, aggCal);
-
+//debug3("DbAlgorithmExecutive.iterateTimeSlices output baseTime=" + debugSdf.format(baseTime)
+//+ ", paramTime=" + debugSdf.format(paramTime));
 					// NOTE: It's up to the algorithm to set the TO_WRITE
 					// and/or TO_DELETE flags.
 					TimedVariable tv = new TimedVariable(v, paramTime);
