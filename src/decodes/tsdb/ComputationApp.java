@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2015/04/02 18:16:19  mmaloney
+*  Added property definitions.
+*
 *  Revision 1.3  2014/08/22 17:23:04  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -74,7 +77,7 @@ public class ComputationApp
 	private TsdbCompLock myLock;
 	
 	/** My resolver */
-	private DbCompResolver myResolver;
+	private DbCompResolver resolver;
 	
 	private boolean shutdownFlag;
 
@@ -88,6 +91,9 @@ public class ComputationApp
 	private StringToken officeIdArg = new StringToken(
 		"O", "OfficeID", "", TokenOptions.optSwitch, "");
 	private CompEventSvr compEventSvr = null;
+	
+	private static ComputationApp _instance = null;
+	public static ComputationApp instance() { return _instance; }
 	
 	private PropertySpec[] myProps =
 	{
@@ -105,7 +111,7 @@ public class ComputationApp
 	{
 		super("compproc.log");
 		myLock = null;
-		myResolver = null;
+		resolver = null;
 		shutdownFlag = false;
 	}
 
@@ -162,6 +168,7 @@ public class ComputationApp
 		throws LockBusyException, DbIoException, NoSuchObjectException
 	{
 		Logger.instance().debug1("runApp starting");
+		_instance = this;
 		shutdownFlag = false;
 		runAppInit();
 		Logger.instance().debug1("runAppInit done, shutdownFlag=" + shutdownFlag 
@@ -202,7 +209,7 @@ public class ComputationApp
 				}
 
 				action = "Resolving computations";
-				DbComputation comps[] = myResolver.resolve(data);
+				DbComputation comps[] = resolver.resolve(data);
 
 				action = "Applying computations";
 				for(DbComputation comp : comps)
@@ -289,7 +296,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 			try { Thread.sleep(1000L); }
 			catch(InterruptedException ex) {}
 		}
-		myResolver = null;
+		resolver = null;
 		Logger.instance().debug1("runApp() exiting.");
 	}
 
@@ -307,7 +314,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 			appInfo = loadingAppDao.getComputationApp(appId);
 
 			// Construct the resolver & load it.
-			myResolver = new DbCompResolver(theDb);
+			resolver = new DbCompResolver(theDb);
 			
 			// Look for EventPort and EventPriority properties. If found,
 			String evtPorts = appInfo.getProperty("EventPort");
@@ -392,6 +399,11 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 	public PropertySpec[] getSupportedProps()
 	{
 		return myProps;
+	}
+
+	public DbCompResolver getResolver()
+	{
+		return resolver;
 	}
 
 }
