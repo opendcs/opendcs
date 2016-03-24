@@ -4,8 +4,10 @@
 package decodes.gui;
 
 import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
 
 import decodes.dbeditor.TimeZoneSelector;
 import decodes.util.PropertySpec;
@@ -239,12 +241,10 @@ public class PropertyEditDialog
 
 		if (propSpec != null && propSpec.getDescription() != null)
 		{
-			if (!propSpec.isDynamic())
-				nameField.setEditable(false);
-			
 			JComponent descComp = null;
-			if (propSpec == null || !propSpec.isDynamic())
+			if (!propSpec.isDynamic())
 			{
+				nameField.setEditable(false);
 				String descText = AsciiUtil.wrapString(propSpec.getDescription(), 50);
 				StringBuilder sb = new StringBuilder("<html>");
 				for(int i=0; i<descText.length(); i++)
@@ -256,8 +256,9 @@ public class PropertyEditDialog
 				da.setBorder(new LineBorder(Color.gray));
 				descComp = da;
 			}
-			else
+			else // It is dynamic
 			{
+//				nameField.setEditable(true);
 				descArea.setText(propSpec.getDescription());
 				descArea.setLineWrap(true);
 				descArea.setWrapStyleWord(true);
@@ -266,6 +267,7 @@ public class PropertyEditDialog
 					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
 					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 				jsp.setPreferredSize(new Dimension(190, 66));
+				jsp.setBorder(new TitledBorder("Description"));
 				descComp = jsp;
 			}
 
@@ -301,7 +303,12 @@ public class PropertyEditDialog
 	{
 		if (!name.equals(nameField.getText()))
 		{
-			name = nameField.getText();
+			name = nameField.getText().trim();
+			if (name.length() == 0)
+			{
+				showError("Name cannot be empty.");
+				return;
+			}
 			changed = true;
 		}
 		String nv = getValueText().trim();
@@ -342,11 +349,14 @@ public class PropertyEditDialog
 		}
 		if (propSpec != null && propSpec.isDynamic())
 		{
+			propSpec.setName(name);
 			String desc = descArea.getText();
 			if (!propSpec.getDescription().equals(desc))
 			{
 				propSpec.setDescription(desc);
 				changed = true;
+System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName()
+	+ "' description=" + propSpec.getDescription());
 			}
 		}
 		if (!value.equals(nv))

@@ -143,6 +143,9 @@ public class PropertiesEditPanel extends JPanel
 				String pn = ((String) ptm.getValueAt(row, 0)).toUpperCase();
 				PropertySpec ps = propHash.get(pn);
 				cr.setToolTipText(ps != null ? ps.getDescription() : "");
+//if (ps == null) System.out.println("No propHash entry for '" + pn + "'");
+//else System.out.println("propHash entry for '" + pn + "' has description: " 
+//+ ps.getDescription());
 			}
 
 			return cr;
@@ -228,17 +231,6 @@ public class PropertiesEditPanel extends JPanel
 		PropertyEditDialog dlg = null;
 		PropertySpec propSpec = null;
 		
-//System.out.println("propertiesOwner is "
-//+ (propertiesOwner != null ? "not" : "") + " null");
-//System.out.println("propertiesOwner is "
-//+ (propertiesOwner instanceof DynamicPropertiesOwner ? "" : "not") +
-//" an instance of DynamicPropertiesOwner");
-//if  (propertiesOwner instanceof DynamicPropertiesOwner)
-//System.out.println("Dynamic props are " +
-//(((DynamicPropertiesOwner)propertiesOwner).dynamicPropsAllowed()
-//? "" : "not") + " allowed on this object.");
-
-	
 		if (propertiesOwner != null
 		 && (propertiesOwner instanceof DynamicPropertiesOwner)
 		 && ((DynamicPropertiesOwner)propertiesOwner).dynamicPropsAllowed())
@@ -259,11 +251,19 @@ public class PropertiesEditPanel extends JPanel
 		StringPair sp = dlg.getResult();
 		if (sp != null)
 			ptm.add(sp);
+		else
+			return;
 		
-		if (propSpec != null && propSpec.getDescription().trim().length() > 0)
+		if (propSpec != null && propSpec.isDynamic())
 		{
 			((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
 				sp.first, propSpec.getDescription());
+			propHash.put(propSpec.getName().toUpperCase(), propSpec);
+//System.out.println("Put '" + propSpec.getName() + "' desc=" + propSpec.getDescription()
+//+ " into propHash, dynamic=" + propSpec.isDynamic());
+//PropertySpec tps = propHash.get(propSpec.getName());
+//if (tps == null)
+//System.out.println("After putting, propHash still doesn't have '" + propSpec.getName() + "'");
 		}
 		
 		changesMade = true;
@@ -282,18 +282,20 @@ public class PropertiesEditPanel extends JPanel
 		if (r == -1)
 			return;
 		StringPair sp = ptm.propAt(r);
-		PropertySpec ps = null;
+		PropertySpec propSpec = null;
 		if (propHash != null)
-			ps = propHash.get(sp.first.toUpperCase());
+			propSpec = propHash.get(sp.first.toUpperCase());
+System.out.println("Editing prop '" + sp.first + "' isDynamic=" + 
+(propSpec != null && propSpec.isDynamic()));
 
 		PropertyEditDialog dlg = null;
-		Logger.instance().debug3("Editing propspec=" + ps);
+		Logger.instance().debug3("Editing propspec=" + propSpec);
 		if (ownerDialog != null)
-			dlg = new PropertyEditDialog(ownerDialog, sp.first, sp.second, ps);
+			dlg = new PropertyEditDialog(ownerDialog, sp.first, sp.second, propSpec);
 		else if (ownerFrame != null)
-			dlg = new PropertyEditDialog(ownerFrame, sp.first, sp.second, ps);
+			dlg = new PropertyEditDialog(ownerFrame, sp.first, sp.second, propSpec);
 		else
-			dlg = new PropertyEditDialog(TopFrame.instance(), sp.first, sp.second, ps);
+			dlg = new PropertyEditDialog(TopFrame.instance(), sp.first, sp.second, propSpec);
 		dlg.setLocation(50, 50);
 		dlg.setLocationRelativeTo(this);
 		dlg.setVisible(true);
@@ -302,6 +304,13 @@ public class PropertiesEditPanel extends JPanel
 		{
 			ptm.setPropAt(r, res);
 			changesMade = true;
+		}
+		
+		if (propSpec != null && propSpec.isDynamic())
+		{
+			((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
+				propSpec.getName(), propSpec.getDescription());
+			propHash.put(propSpec.getName().toUpperCase(), propSpec);
 		}
 	}
 
@@ -317,6 +326,18 @@ public class PropertiesEditPanel extends JPanel
 		int r = propertiesTable.getSelectedRow();
 		if (r == -1)
 			return;
+		StringPair sp = ptm.propAt(r);
+		PropertySpec propSpec = 
+			propHash == null ? null : propHash.get(sp.first.toUpperCase());
+		if (propSpec != null)
+		{
+			propHash.remove(sp.first.toUpperCase());
+			if (propSpec.isDynamic())
+				((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
+					propSpec.getName(), null);
+
+		}
+
 		ptm.deletePropAt(r);
 		changesMade = true;
 	}
@@ -437,9 +458,7 @@ public class PropertiesEditPanel extends JPanel
 		// For quick access, construct a hash with upper-case names.
 		propHash = new HashMap<String, PropertySpec>();
 		for (PropertySpec ps : propertiesOwner.getSupportedProps())
-		{
 			propHash.put(ps.getName().toUpperCase(), ps);
-		}
 		if (propertiesOwner instanceof DynamicPropertiesOwner)
 		{
 			DynamicPropertiesOwner dpo = (DynamicPropertiesOwner)propertiesOwner;
