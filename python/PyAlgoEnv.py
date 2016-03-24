@@ -1,0 +1,101 @@
+#
+# This file contains canned variables and functions for the CCP PythonAlgorithm.
+# The code in this method is called after instantiating the PythonInterpreter.
+#
+from decodes.tsdb.algo import PythonAlgorithm
+from decodes.tsdb import NoSuchObjectException
+from decodes.tsdb import NoValueException
+
+# The Java code places the running instance into a static var
+# so that it is availabe to Python:
+algo = PythonAlgorithm.getRunningInstance()
+algo.debug1('Retrieved Running PythonAlgorithm Instance in Python')
+
+# define the algorithm parameter class
+class AlgoParm:
+	def __init__(self, tsid, value='NV', qual=0x40000000):
+		self.tsid = tsid
+		self.value = value
+		self.qual = qual
+
+def warning(msg):
+	algo.warning(msg)
+
+def info(msg):
+	algo.info(msg)
+
+def debug1(msg):
+	algo.debug1(msg)
+
+def debug2(msg):
+	algo.debug2(msg)
+
+def debug3(msg):
+	algo.debug3(msg)
+
+def setOutput(rolename, value):
+	globals()[rolename].value = value
+	if value == 'NV':
+		return
+	algo.setOutput(rolename, value)
+
+def isPresent(rolename):
+	return algo.isPresent(rolename)
+
+def isQuestionable(rolename):
+	return algo.isQuestionable(rolename)
+
+def isRejected(rolename):
+	return algo.isRejected(rolename)
+
+def isMissing(rolename):
+	return isPresent(rolename) != 0
+
+def isGoodQuality(rolename):
+	return algo.isGoodQuality(rolename)
+
+def runningAverage(rolename, duration, boundaries = '(]'):
+	return algo.runningAverage(rolename, duration, boundaries)
+
+def datchk(rolename):
+	globals()[rolename].qual = algo.datchk(rolename)
+
+def screening(rolename):
+	globals()[rolename].qual = algo.screening(rolename)
+
+def setQual(rolename, qual):
+	algo.setQual(rolename, qual)
+	globals()[rolename].qual = qual
+
+def setOutputAndQual(rolename, value, qual):
+	globals()[rolename].value = value
+	globals()[rolename].qual = qual
+	if value == 'NV':
+		return
+	algo.setOutputAndQual(rolename, value, qual)
+
+def isNew(rolename):
+	return algo.isNew(rolename)
+
+def changeSince(rolename, duration):
+	return algo.changeSince(rolename, duration)
+
+def rating(specId, *indep):
+	for v in indep:
+		if v == 'NV':
+			warning('Rating failed: One of the indeps is not present.')
+			return 'NV'
+	return algo.rating(specId, indep)
+
+def rdbrating(tabfile, indep):
+	if indep == 'NV':
+		warning('RDB Rating failed: indep is not present.')
+		return 'NV'
+	return algo.rdbrating(tabfile, indep)
+
+def tabrating(tabfile, indep):
+	if indep == 'NV':
+		warning('TAB Rating failed: indep is not present.')
+		return 'NV'
+	return algo.tabrating(tabfile, indep)
+

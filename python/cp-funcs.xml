@@ -1,0 +1,170 @@
+<funclist>
+
+<func name="isPresent" sig="isPresent(rolename)">
+  Return True if the a value for the named time series param is present at this time slice.
+  Returns false if there is no value, or if there is a value but it is flagged as MISSING.
+  <br/>
+  The rolename argument should be a String name of a time series role in this algorithm.
+  <br/>
+  See also: isMissing, isRejected, isGoodQuality, isQuestionable
+  This function may only be called inside a time slice.
+</func>
+<func name="isQuestionable" sig="isQuestionable(rolename)">
+  Return True if the time series param at this time slice is flagged as questionable. 
+  Returns false otherwise.
+  <br/>
+  The rolename argument should be a String name of a time series role in this algorithm.
+  <br/>
+  See also: isMissing, isRejected, isGoodQuality
+  This function may only be called inside a time slice.
+</func>
+<func name="isRejected" sig="isRejected(rolename)">
+  Return True if the time series param at this time slice is flagged as rejected. 
+  Returns false otherwise.
+  <br/>
+  The rolename argument should be a String name of a time series role in this algorithm.
+  <br/>
+  See also: isMissing, isQuestionable, isGoodQuality
+  This function may only be called inside a time slice.
+</func>
+<func name="isMissing" sig="isMissing(rolename)">
+  Return True if there is no sample for the named
+  time series param at this time slice. Returns true if there is one.
+  <br/>
+  The rolename argument should be a String name of a time series role in this algorithm.
+  <br/>
+  See also: isQuestionable, isRejected, isGoodQuality
+  This function may only be called inside a time slice.
+</func>
+<func name="isGoodQuality" sig="isGoodQuality(rolename)">
+  Return True if the time series param at this time slice is flagged as good quality -- 
+  that is, it is not missing, questionable, or rejected. Returns false otherwise.
+  <br/>
+  This function may only be called inside a time slice.
+  <br/>
+  The rolename argument should be a String name of a time series role in this algorithm.
+  See also: isQuestionable, isRejected, isGoodQuality
+</func>
+
+<func name="datchk" sig="datchk(rolename)">
+  Performs a DATCHK screening on the passed input parameter value at this time slice.
+  The quality flags are set on the input parameter, and may be subsequently checked
+  by the isQuestionable, isRejected, or isGoodQuality functions.
+  <br/>
+  This function may only be called inside a time slice.
+  <br/>
+  Example:
+<![CDATA[
+        datchk("input1")
+        if (isGoodQuality("input1")):
+            output1 = input1
+            setFlags("output1", "input1")
+]]>
+</func>
+
+<func name="screening" sig="screening(rolename)">
+  Performs a CWMS screening on the passed input parameter value at this time slice.
+  The quality flags are set on the input parameter, and may be subsequently checked
+  by the isQuestionable, isRejected, or isGoodQuality functions.
+  <br/>
+  This function may only be called inside a time slice.
+  <br/>
+  Example:
+<![CDATA[
+        screening('input1')
+        if (isGoodQuality('input1')):
+            output1 = input1
+            setQual('output1', input1.qual)
+]]>
+</func>
+
+<func name="setOutput" sig="setOutput(outputTsParm, value)">
+  Sets the named output parameter to the specified value.
+</func>
+<func name="setQual" sig="setQual(TsParm, qual)">
+  Sets the quality flags of the named time series parameter.
+  This is most often used to set an output parameters flags from the flags of
+  an input parameter, such as:
+    setQual('outParm', inParm.qual)
+</func>
+<func name="setOutputAndQual" sig="setOutputAndQual(outputTsParm, value, qual)">
+  Sets the named output parameter to the specified value. Also sets the
+  quality bits to the value passed.
+</func>
+
+<func name="isNew" sig="isNew(rolename1)">
+  Returns true if any of the named parameters was either a trigger 
+  for this run of the computation, or it was just computed and flagged to write. 
+  Return false otherwise.  Any number of inputs can be named.
+  <br/>
+  This can be used to skip unneeded processing steps in a multi-step computation.
+  Consider a comp with 2 inputs and one output. input1 determines input2. Both
+  then determine output:
+  <br/>
+<![CDATA[
+	if isNew('input1'):
+		value = some math using input1.value
+		setOutput('input2', value)
+	value = some math using input2.value and maybe also input1.value
+	setOutput('output', value)
+]]>
+</func>
+<func name="runningAverage" sig="runningAverage(rolename, duration, [co])">
+  Perform a running average of the specified time series parameter over the specified
+  duration. Example: runningAverage(stage_rev, "6Hours") will return a running average
+  of the time series for stage_rev over the past 6 hours.
+  A third string parameter may be supplied indicating whether the boundary values at the
+  beginning and end of the period should be included. Square brackets [] indicate
+  that the boundary values ARE included. Parentheses () indicate that they should NOT
+  be included. For example: runningAverage(stage_rev, "6Hours", "(]") means to do
+  the 6 hour running average that includes THIS value but not the one 6 hours ago.
+  Note that this is the default if the third argument is not supplied.
+  This function will throw NoSuchObjectException if duration or boundaries are invalid.
+  This function will throw NoValueException if there are no rolename values within
+  the specified duration.
+</func>
+<func name="changeSince" sig="changeSince(rolename, duration)">
+  Return the change in the specified parameter compared to the historical value at
+  the specified duration. Example: changeSince('storage', '6Hours') will return the change
+  in the time series for storage compared to the value 6 hours ago.
+  <br/>
+  Can throw NoValueException if there is no value at the specified duration ago,
+  and the system can't derive one through interpolation.
+</func>
+<func name="rating" sig="rating(specID, indep1, indep2, ...)">
+  Perform a rating and return the result. The first argument is the spec ID for the
+  CWMS-resident rating. Subsequent arguments are the independent variables. CWMS
+  allows up to 9 independent variables in a rating.
+</func>
+<func name="rdbrating" sig="rdbrating(tabfile, indep)">
+  Perform a rating using an RDB file and return the result. The first argument is the name of the
+  table file. The second argument is the independent variable.
+</func>
+<func name="tabrating" sig="tabrating(tabfile, indep)">
+  Perform a rating using an simple table file and return the result. The first argument is the name of the
+  table file. The second argument is the independent variable.
+</func>
+<func name="debug3" sig="debug3(msg)">
+  Write a DEBUG3 level message to the log.
+  Will only appear if code is running in debug level 3 mode.
+</func>
+<func name="debug2" sig="debug2(msg)">
+  Write a DEBUG2 level message to the log.
+  Will only appear if code is running in debug level 2 or higher mode.
+</func>
+<func name="debug1" sig="debug1(msg)">
+  Write a DEBUG1 level message to the log.
+  Will only appear if code is running in debug level 1 or higher mode.
+</func>
+<func name="info" sig="info(msg)">
+  Write a INFO level message to the log.
+</func>
+<func name="warning" sig="warning(msg)">
+  Write a WARNINGlevel message to the log.
+</func>
+
+<func name="lookupMeta" sig="rating(locationID, paramName)">
+  (NOT IMPLEMENTED) Lookup the named parameter at the specified location and return its value.
+</func>
+
+</funclist>
