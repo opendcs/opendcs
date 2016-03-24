@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2016/02/29 22:26:43  mmaloney
+*  Encapsulate 'name'.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -399,7 +402,10 @@ public class LrgsStatusSnapshotXio
 			{
 				xos.startElement(StatusXmlTags.Process, 
 					"slot", ""+i, "pid", ""+ap.pid);
-				xos.writeElement(StatusXmlTags.name, ap.getName());
+				String hostname = ap.getName();
+				if (LrgsConfig.instance().getMiscBooleanProperty("hideHostNames", false))
+					hostname = "-";
+				xos.writeElement(StatusXmlTags.name, hostname);
 				xos.writeElement(StatusXmlTags.type, ap.type);
 				xos.writeElement(StatusXmlTags.user, ap.user);
 				xos.writeElement(StatusXmlTags.status, ap.status);

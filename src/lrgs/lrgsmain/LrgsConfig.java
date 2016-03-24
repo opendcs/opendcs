@@ -322,7 +322,9 @@ public class LrgsConfig
 		new PropertySpec("passwordCheckerClass", PropertySpec.STRING,
 			"Name of class that does password checking. If not set, then all passwords accepted."),
 		new PropertySpec("localIpMask", PropertySpec.STRING,
-			"(e.g. 192.168.0.0/24) Local IP addresses will not be displayed on rtstat page")
+			"(e.g. 192.168.0.0/24) Local IP addresses will not be displayed on rtstat page"),
+		new PropertySpec("hideHostNames", PropertySpec.BOOLEAN,
+			"(default=false) Set to tru to hide host names on the rtstat display.")
 //		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
 //			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
 	};
