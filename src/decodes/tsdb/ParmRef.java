@@ -30,6 +30,11 @@ public class ParmRef
 	public CTimeSeries timeSeries;
 
 	public MissingAction missingAction;
+	
+	/** Temporary storage until a time series is established, then it is
+	 * stored in the time series object
+	 */
+	public TimeSeriesIdentifier tsid = null;
 
 	public ParmRef(String role, DbCompParm compParm, CTimeSeries timeSeries)
 	{
@@ -39,13 +44,9 @@ public class ParmRef
 		this.missingAction = MissingAction.FAIL;
 	}
 
-	public void setMissingAction(String ma)
+	public void setMissingAction(MissingAction ma)
 	{
-		if (ma == null)
-			missingAction = MissingAction.FAIL;
-		else for(MissingAction action : MissingAction.values())
-			if (ma.equalsIgnoreCase(action.toString()))
-				missingAction = action;
+		missingAction = ma;
 	}
 
 	public String getDescription()
