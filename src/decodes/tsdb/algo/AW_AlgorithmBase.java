@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.9  2016/01/27 22:03:55  mmaloney
+*  make baseTimes protected so it is available to sub-classes.
+*
 *  Revision 1.8  2015/12/31 21:18:30  mmaloney
 *  PropertySpecs for maxMissingValuesForFill and maxMissingTimeForFill.
 *
@@ -135,7 +138,7 @@ public abstract class AW_AlgorithmBase
 	public static final long MS_PER_DAY = MS_PER_HOUR * 24L;
 
 	/** Used to detect if an algorithm produced results. */
-	private boolean _saveOutputCalled;
+	protected boolean _saveOutputCalled;
 
 	/** Used to track if any inputs in time slice were marked as 'DB_DELETED' */
 	protected boolean _sliceInputsDeleted = false;
@@ -581,12 +584,20 @@ public abstract class AW_AlgorithmBase
 			{
 				debug3("Special processing for double-closed boundaries."
 					+ " Just did period ending " + debugSdf.format(baseTime));
-				// bump the base time by a second temporarily to force it into
-				// the next period. Then put it back.
-				long msec = baseTime.getTime();
-				baseTime.setTime(msec+1000L);
+
+//MJM Original impl causes endless loop at DST change				
+//				// bump the base time by a second temporarily to force it into
+//				// the next period. Then put it back.
+//				long msec = baseTime.getTime();
+//				baseTime.setTime(msec+1000L);
+//				aggPer = determineAggPeriod(baseTime, intervalS);
+//				baseTime.setTime(msec);
+// Fix provided by Mike Neilson SPK:
+				if (!timesIterator.hasNext())
+					break;
+				baseTime = timesIterator.next();
 				aggPer = determineAggPeriod(baseTime, intervalS);
-				baseTime.setTime(msec);
+	
 				debug3("New agg per: " + debugSdf.format(aggPer.getBegin())
 					+ " to " + debugSdf.format(aggPer.getEnd()));
 			}
@@ -1324,32 +1335,23 @@ debug1("Storing aggregate value=" + v.getStringValue()
 			// Use reflection to find the variable with same name.
 			// Then determine its type (double, long, or String).
 			Class cls = null;
+			NamedVariable v = null;
 			try
 			{
-				cls = this.getClass();
-				
-//TODO MJM Refactor the following a bit:
-// - Define NamedVariable v outside the try block so it can be used
-//   below in NoSuchFieldException
-// - Don't getField or ftyp until after I get the variable into v.
-				
-				// note: getField only returns public members.
-				// so first use getDeclaredFields to handle protected but accessible members.
-				Field field = getField(cls, varName);
-				String ftyp = field.getType().getName();
-				NamedVariable v = null;
-				
-//debug3("Found field matching varName '" + varName + "'");
 				if (!unused)
 				{
 					String nm = varName;
 					String typ = parmRef.compParm.getAlgoParmType().toLowerCase();
-//debug3("parm-typ is '" + typ + "'");
 				 	if (typ.length() > 1 && typ.charAt(1) == 'd')
 				 		nm += "_d";
 				 	v = _timeSliceVars.findByNameIgnoreCase(nm);
 				}
-//debug3("field type is '" + ftyp + "'");
+
+				// note: getField only returns public members.
+				// so first use getDeclaredFields to handle protected but accessible members.
+				cls = this.getClass();
+				Field field = getField(cls, varName);
+				String ftyp = field.getType().getName();
 
 				// NOTE: Missing data is handled by DbAlgorithmExecutive in
 				// the iterateTimeSlices method. Assume if an input param is
@@ -1408,10 +1410,11 @@ ex.printStackTrace(System.err);
 			}
 			catch(NoSuchFieldException ex)
 			{
-//TODO MJM If this is PythonAlgorithm, then call its setTimeSliceInput method
-// and don't issue the warning.
-				warning("Inconsistent class -- no input field named '"
-					+ varName + "'");
+				if (this instanceof PythonAlgorithm)
+					((PythonAlgorithm)this).setTimeSliceInput(varName, v);
+				else
+					warning("Inconsistent class -- no input field named '"
+						+ varName + "'");
 			}
 			catch(NoConversionException ex)
 			{
