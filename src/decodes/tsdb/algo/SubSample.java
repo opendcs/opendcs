@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2016/02/29 22:19:22  mmaloney
+ * CWMS-7764 Sampling Time Offset Fix.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -199,7 +202,9 @@ public class SubSample
 		// Bad: output interval = 1 hour, offsetIncr = 1 week.
 		if (offsetIncr != null)
 			for(IntervalIncrement ii : offsetIncr)
-				outputCal.add(ii.getCalConstant(), ii.getCount());
+			{
+				outputCal.set(ii.getCalConstant(), ii.getCount());
+			}
 		
 		
 		// 20160226
@@ -219,11 +224,18 @@ public class SubSample
 //			outputCal.add(Calendar.HOUR_OF_DAY, 1);
 //		}
 		
-		while(firstInputT.before(outputCal.getTime()))
+		
+		// Because of the added increment, I could end up with an outputCal time that
+		// is before the first input time.
+		// Example Daily average at 6 AM from hourly inputs, and the first value I'm given is 7 AM.
+		// The above code will set outputCal to 6AM. I need to add the output increment so that
+		// the outputCal is always >= the first input time.
+		while(outputCal.getTime().before(firstInputT))
 		{
 			debug3("beforeTimeSlices firstInputT=" + debugSdf.format(firstInputT)
 				+ ", outputCal=" + debugSdf.format(outputCal.getTime())
 				+ ", incr=" + outputIncr);
+// should the following be -outputIncr.getCount()
 			outputCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
 		}
 			
