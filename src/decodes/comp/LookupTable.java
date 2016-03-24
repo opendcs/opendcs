@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2008/04/30 21:37:08  cvs
 *  dev
 *
@@ -45,8 +48,10 @@
 package decodes.comp;
 
 import decodes.comp.TableBoundsException;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 
 /**
@@ -55,6 +60,7 @@ import java.util.Iterator;
  * Supports several types of lookup algorithms. See the INTERP constants.
  */
 public class LookupTable
+	implements HasLookupTable
 {
 	public static boolean debug = false;
 
@@ -337,6 +343,38 @@ System.out.println("LogInterp(" + p0.indep + " -> " + p0.dep
 	}
 
 	public void clear()
+	{
+		points.clear();
+	}
+
+	@Override
+	public void setProperty(String name, String value)
+	{
+	}
+
+	@Override
+	public void addPoint(double indep, double dep)
+	{
+		add(indep, dep);
+	}
+
+	@Override
+	public void addShift(double indep, double shift)
+	{
+	}
+
+	@Override
+	public void setBeginTime(Date bt)
+	{
+	}
+
+	@Override
+	public void setEndTime(Date et)
+	{
+	}
+
+	@Override
+	public void clearTable()
 	{
 		points.clear();
 	}
