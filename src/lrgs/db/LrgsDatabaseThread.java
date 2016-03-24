@@ -501,7 +501,7 @@ debug("Adding object to dbWriteQueue.");
 
 	public synchronized DdsPeriodStats getPeriodStats(Date perStart)
 	{
-		if (lrgsDb != null)
+		if (lrgsDb != null && lrgsDb.isConnected())
 		{
 			try
 			{
