@@ -146,7 +146,7 @@ public class OpenTsdb extends TimeSeriesDb
 	}
 
 	@Override
-	public void expandSDI(DbCompParm parm) throws DbIoException,
+	public TimeSeriesIdentifier expandSDI(DbCompParm parm) throws DbIoException,
 		NoSuchObjectException
 	{
 		TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
@@ -156,6 +156,7 @@ public class OpenTsdb extends TimeSeriesDb
 				parm.getSiteDataTypeId());
 			parm.setSite(tsid.getSite());
 			parm.setDataType(tsid.getDataType());
+			return tsid;
 		}
 		finally
 		{

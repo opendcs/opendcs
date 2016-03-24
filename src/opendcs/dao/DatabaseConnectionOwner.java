@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2015/11/12 15:27:31  mmaloney
+ * Added makeScreeningDAO.
+ *
  * Revision 1.4  2014/12/11 20:33:11  mmaloney
  * dev
  *
@@ -201,8 +204,9 @@ public interface DatabaseConnectionOwner
 	 * expand it into all known datatype and site names. Store these back into
 	 * the parameter object.
 	 * @param siteDatatype the object to expand
+	 * @return TimeSeries Identifier is one can be identified, otherwise, null.
 	 */
-	public void expandSDI(DbCompParm parm)
+	public TimeSeriesIdentifier expandSDI(DbCompParm parm)
 		throws DbIoException, NoSuchObjectException;
 
 	/**
