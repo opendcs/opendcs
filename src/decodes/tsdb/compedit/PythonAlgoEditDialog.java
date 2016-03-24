@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2015/10/26 12:46:05  mmaloney
+ * Additions for PythonAlgorithm
+ *
  *
  * Open Source Software written by Cove Software, LLC under contract to the
  * U.S. Government.
@@ -52,13 +55,6 @@ public class PythonAlgoEditDialog
 		pythonAlgoEditPanel.fillValues();
 	}
 
-	/** Move values from GUI components back to object */
-	void getDataFromFields()
-	{
-		pythonAlgoEditPanel.getDataFromFields();
-	}
-
-
 	/** JBuilder-generated method to initialize the GUI components */
 	private void guiInit()
 	{
@@ -73,19 +69,8 @@ public class PythonAlgoEditDialog
 					okPressed();
 				}
 			});
-		JButton cancelButton = new JButton("Cancel");
-		cancelButton.addActionListener(
-			new java.awt.event.ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					cancelPressed();
-				}
-			});
-		
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 8));
 		buttonPanel.add(okButton);
-		buttonPanel.add(cancelButton);
 		dlgPanel.add(buttonPanel, BorderLayout.SOUTH);
 
 		pythonAlgoEditPanel = new PythonAlgoEditPanel(this);
@@ -99,24 +84,13 @@ public class PythonAlgoEditDialog
 	*/
 	void okPressed()
 	{
-		if (pythonAlgoEditPanel.okPressed())
-			closeDlg();
-	}
-
-	/** Closes the dialog */
-	void closeDlg()
-	{
 		setVisible(false);
 		dispose();
 	}
 
-	/** 
-	  Called when Cancel button is pressed. 
-	*/
-	void cancelPressed()
+	public void saveToObject(DbCompAlgorithm ob)
 	{
-		pythonAlgoEditPanel.cancelPressed();
-		closeDlg();
+		pythonAlgoEditPanel.saveToObject(ob);
 	}
 }
 

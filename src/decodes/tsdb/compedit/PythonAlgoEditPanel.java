@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2015/11/18 14:11:24  mmaloney
+ * Initial implementation.
+ *
  * Revision 1.1  2015/10/26 12:46:05  mmaloney
  * Additions for PythonAlgorithm
  *
@@ -13,54 +16,56 @@
  */
 package decodes.tsdb.compedit;
 
-import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
+//import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.*;
-import java.util.Calendar;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+//import java.util.Calendar;
+//import java.util.Iterator;
 import java.util.Properties;
-import java.util.TimeZone;
+//import java.util.TimeZone;
 
-import javax.swing.table.*;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Element;
-import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.PlainDocument;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
-import ilex.gui.DateTimeCalendar;
+//import ilex.gui.DateTimeCalendar;
 import ilex.util.Logger;
-import ilex.util.TeeLogger;
-import ilex.var.TimedVariable;
-import decodes.gui.PropertiesEditDialog;
+import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
+//import decodes.sql.DbKey;
+//import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
+import decodes.tsdb.DbCompAlgorithmScript;
+//import decodes.tsdb.DbCompException;
+//import decodes.tsdb.DbComputation;
+//import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.ScriptType;
+//import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.algo.AWAlgoType;
+//import decodes.tsdb.algo.PythonAlgorithm;
 
 
 /**
@@ -69,7 +74,7 @@ import decodes.tsdb.algo.AWAlgoType;
 @SuppressWarnings("serial")
 public class PythonAlgoEditPanel 
 	extends JPanel
-	implements CaretListener
+	implements CaretListener, PythonAlgoTracer
 {
 	private JTextPane beforeScriptPane = null, timeSliceScriptPane = null,
 		afterScriptPane = null;
@@ -86,8 +91,10 @@ public class PythonAlgoEditPanel
 	private PyFuncSelectDialog pyFuncSelectDlg = null;
 	private PyFuncSelectDialog cpFuncSelectDlg = null;
 	private PyParamSetDialog pyParamSetDlg = null;
-	private DateTimeCalendar runDateTimeCal = null;
-	private PropertiesEditDialog propertiesEditDialog = null;
+//	private DateTimeCalendar runDateTimeCal = null;
+//	private PropertiesEditDialog propertiesEditDialog = null;
+	private Properties initProps = new Properties();
+
 
 	/** Noargs constructor */
 	public PythonAlgoEditPanel(PythonAlgoEditDialog parent)
@@ -125,9 +132,20 @@ public class PythonAlgoEditPanel
 	{
 		algoNameField.setText("");
 		algoTypeCombo.setSelectedIndex(0);
-		beforeScriptPane.setText("");
-		timeSliceScriptPane.setText("");
-		afterScriptPane.setText("");
+		initProps.clear();
+		try
+		{
+			if (beforeScriptPane.getDocument().getLength() > 0)
+				beforeScriptPane.getDocument().remove(0, beforeScriptPane.getDocument().getLength());
+			if (timeSliceScriptPane.getDocument().getLength() > 0)
+				timeSliceScriptPane.getDocument().remove(0, timeSliceScriptPane.getDocument().getLength());
+			if (afterScriptPane.getDocument().getLength() > 0)
+				afterScriptPane.getDocument().remove(0, afterScriptPane.getDocument().getLength());
+		}
+		catch (BadLocationException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	/** Fills GUI components from the object */
@@ -137,24 +155,54 @@ public class PythonAlgoEditPanel
 		
 		algoNameField.setText(pythonAlgo.getName());
 
-		//TODO where do I store the algo type? Property? Get it and set control here.
 		algoTypeCombo.setSelectedIndex(0);
-		
-		//TODO where are the scripts in the Java model?
-		// They will be stored somewhere in the DbCompAlgorithm object.
-		//TODO go through the text and set proper colors for each type of text.
-	}
-	
-	/**
-	 * Gets the data from the fields & puts it back into the object.
-	 * 
-	 * @return the internal copy of the object being edited.
-	 */
-	public DbCompAlgorithm getDataFromFields()
-	{
-		//TODO store the algo type from the combo
-		//TODO store the 3 scripts
-		return pythonAlgo;
+Logger.instance().debug1("PythonAlgoEditPanel.fillValues, algo has " + pythonAlgo.getScripts().size() + " scripts.");
+		for(DbCompAlgorithmScript script : pythonAlgo.getScripts())
+		{
+Logger.instance().debug1("PythonAlgoEditPanel.fillValues script " 
++ script.getScriptType() + " text='\n" + script.getText() + "'");
+			try
+			{
+				switch(script.getScriptType())
+				{
+				case PY_BeforeTimeSlices:
+					beforeScriptPane.getDocument().insertString(0, script.getText(), null);
+					break;
+				case PY_TimeSlice:
+					timeSliceScriptPane.getDocument().insertString(0, script.getText(), null);
+					break;
+				case PY_AfterTimeSlices:
+					afterScriptPane.getDocument().insertString(0, script.getText(), null);
+					break;
+				case PY_Init:
+					try
+					{
+						initProps.load(new StringReader(script.getText()));
+						String s = PropertiesUtil.getIgnoreCase(initProps, "AlgorithmType");
+						if (s != null)
+						{
+							AWAlgoType aat = AWAlgoType.fromString(s);
+							if (aat != null)
+								algoTypeCombo.setSelectedItem(aat);
+						}
+					}
+					catch (IOException e)
+					{
+						Logger.instance().warning("PythonAlgoEditPanel.fillValues cannot parse init properties from '"
+							+ script.getText() + "'");
+					}
+					break;
+				default:
+					Logger.instance().warning("Algorithm '" + pythonAlgo.getName()
+						+ "' has invalid script type '" + script.getScriptType() + "' -- ignored.");
+				}
+			}
+			catch (BadLocationException ex)
+			{
+				Logger.instance().warning("PythonAlgoEditPanel.fillValues script "
+					+ script.getScriptType() + " text='" + script.getText() + "': " + ex);
+			}
+		}
 	}
 
 	/** GUI component initialization */
@@ -166,9 +214,9 @@ public class PythonAlgoEditPanel
 		this.add(northHeaderPanel, BorderLayout.NORTH);
 		
 		// Center holds split pane for scripts and test area
-		JSplitPane centerSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		centerSplitPane.setResizeWeight(.7d);
-		this.add(centerSplitPane, BorderLayout.CENTER);
+//		JSplitPane centerSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+//		centerSplitPane.setResizeWeight(.7d);
+//		this.add(centerSplitPane, BorderLayout.CENTER);
 
 		// ================= North Header Pane ===================
 		JLabel algoNameLabel = new JLabel("Algorithm Name:");
@@ -196,16 +244,19 @@ public class PythonAlgoEditPanel
 		
 		// Construct the JTextPanes for the scripts
 		PythonStyledDocument psd = new PythonStyledDocument();
+	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
 		beforeScriptPane = new JTextPane(psd);
 		psd.setPane(beforeScriptPane);
 		beforeScriptPane.addCaretListener(this);
 		
 		psd = new PythonStyledDocument();
+	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
 		timeSliceScriptPane = new JTextPane(psd);
 		psd.setPane(timeSliceScriptPane);
 		timeSliceScriptPane.addCaretListener(this);
 		
 		psd = new PythonStyledDocument();
+	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
 		afterScriptPane = new JTextPane(psd);
 		psd.setPane(afterScriptPane);
 		afterScriptPane.addCaretListener(this);
@@ -234,7 +285,9 @@ public class PythonAlgoEditPanel
 		
 		JPanel tabbedPaneParent = new JPanel(new BorderLayout());
 		tabbedPaneParent.setBorder(new TitledBorder("Python Scripts"));
-		centerSplitPane.add(tabbedPaneParent, JSplitPane.TOP);
+		
+		this.add(tabbedPaneParent, BorderLayout.CENTER);
+//		centerSplitPane.add(tabbedPaneParent, JSplitPane.TOP);
 	
 		tabbedPaneParent.add(scriptTabbedPane, BorderLayout.CENTER);
 		
@@ -246,7 +299,6 @@ public class PythonAlgoEditPanel
 		scriptTabbedPane.add(afterTab, "After Time Slices");
 
 		// before
-beforeScriptPane.setText("beforeScriptPane");
 		JPanel noWrapPanel = new JPanel(new BorderLayout());
 		noWrapPanel.add(beforeScriptPane, BorderLayout.CENTER);
 		JScrollPane beforeScrollPane = new JScrollPane(noWrapPanel,
@@ -258,10 +310,7 @@ beforeScriptPane.setText("beforeScriptPane");
 		p.add(beforeScriptPos);
 		beforeTab.add(p, BorderLayout.SOUTH);
 		
-		//TODO figure out how to do tooltip on the tab label
-		
 		// ts
-timeSliceScriptPane.setText("timeSliceScriptPane");
 		noWrapPanel = new JPanel(new BorderLayout());
 		noWrapPanel.add(timeSliceScriptPane, BorderLayout.CENTER);
 		JScrollPane tsScrollPane = new JScrollPane(noWrapPanel,
@@ -319,110 +368,145 @@ afterScriptPane.setText("afterScriptPane");
 		tabbedPaneParent.add(editButtonsPanel, BorderLayout.EAST);
 
 		//=================== Test Area ==================
-		testPane = new JTextPane();
-		JPanel testAreaPanel = new JPanel(new GridBagLayout());
-		centerSplitPane.add(testAreaPanel, JSplitPane.BOTTOM);
-		testAreaPanel.setBorder(new TitledBorder("Test Run"));
-		
-		JButton setInputsButton = new JButton("Set Inputs");
-		setInputsButton.addActionListener(
-			new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					setParamsPressed();
-				}
-			});
-		testAreaPanel.add(setInputsButton,
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
-				new Insets(3, 4, 2, 2), 0, 0));
-		
-		Calendar cal = Calendar.getInstance();
-		cal.setTimeZone(TimeZone.getTimeZone("UTC"));
-		cal.set(Calendar.MINUTE, 0);
-		cal.set(Calendar.SECOND, 0);
-		cal.set(Calendar.MILLISECOND, 0);
-		runDateTimeCal = new DateTimeCalendar(
-			"Run for Time: ", cal.getTime(), "dd/MMM/yyyy", "UTC");
-		testAreaPanel.add(runDateTimeCal,
-			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
-				new Insets(2, 2, 2, 4), 0, 0));
-
-		JButton runTestButton = new JButton("Run Script");
-		runTestButton.addActionListener(
-			new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					runScriptPressed();
-				}
-			});
-		testAreaPanel.add(runTestButton,
-			new GridBagConstraints(2, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
-				new Insets(2, 4, 2, 4), 0, 0));
-	
-		noWrapPanel = new JPanel(new BorderLayout());
-		noWrapPanel.add(testPane, BorderLayout.CENTER);
-		JScrollPane testScrollPane = new JScrollPane(noWrapPanel,
-			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		testAreaPanel.add(testScrollPane, 
-			new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
-				new Insets(4, 8, 4, 8), 0, 0));
+//		testPane = new JTextPane();
+//		JPanel testAreaPanel = new JPanel(new GridBagLayout());
+//		centerSplitPane.add(testAreaPanel, JSplitPane.BOTTOM);
+//		testAreaPanel.setBorder(new TitledBorder("Test Run"));
+//		
+//		JButton setInputsButton = new JButton("Set Inputs");
+//		setInputsButton.addActionListener(
+//			new ActionListener()
+//			{
+//				@Override
+//				public void actionPerformed(ActionEvent e)
+//				{
+//					setParamsPressed();
+//				}
+//			});
+//		testAreaPanel.add(setInputsButton,
+//			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+//				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+//				new Insets(3, 4, 2, 2), 0, 0));
+//		
+//		Calendar cal = Calendar.getInstance();
+//		cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+//		cal.set(Calendar.MINUTE, 0);
+//		cal.set(Calendar.SECOND, 0);
+//		cal.set(Calendar.MILLISECOND, 0);
+//		runDateTimeCal = new DateTimeCalendar(
+//			"Run for Time: ", cal.getTime(), "dd/MMM/yyyy", "UTC");
+//		testAreaPanel.add(runDateTimeCal,
+//			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+//				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+//				new Insets(2, 2, 2, 4), 0, 0));
+//
+//		JButton runTestButton = new JButton("Run Script");
+//		runTestButton.addActionListener(
+//			new ActionListener()
+//			{
+//				@Override
+//				public void actionPerformed(ActionEvent e)
+//				{
+//					runScriptPressed();
+//				}
+//			});
+//		testAreaPanel.add(runTestButton,
+//			new GridBagConstraints(2, 0, 1, 1, 1.0, 0.0,
+//				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+//				new Insets(2, 4, 2, 4), 0, 0));
+//	
+//		noWrapPanel = new JPanel(new BorderLayout());
+//		noWrapPanel.add(testPane, BorderLayout.CENTER);
+//		JScrollPane testScrollPane = new JScrollPane(noWrapPanel,
+//			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+//		testAreaPanel.add(testScrollPane, 
+//			new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
+//				GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+//				new Insets(4, 8, 4, 8), 0, 0));
 	}
 	
 			
-
-
-
-
-	protected void runScriptPressed()
-	{
-		// TODO Fill in the following code sections
-		testPane.setText("");
-		appendToTestPane("Run time will be " + runDateTimeCal.getDate());
-		
-		appendToTestPane("\nList of Properties with Values Here...");
-		appendToTestPane("\n\nInitial Property Values:");
-		
-		for(Object key : pythonAlgo.getProperties().keySet())
-			appendToTestPane("\n\t" + (String)key + " = " + pythonAlgo.getProperty((String)key));
-		
-		appendToTestPane("\n\nList of Parameters with initial values here...");
-		
-		appendToTestPane("\n\nScript trace messages here...");
-		
-		appendToTestPane("\n\nParameter values and flags after script run here...");
-	}
-	
-	public void appendToTestPane(String str)
-	{
-		StyledDocument doc = testPane.getStyledDocument();
-		int pos = testPane.getCaret().getDot();
-		try
-		{
-			doc.insertString(pos, str,
-				doc.getStyle(PythonTextType.NormalText.name()));
-		}
-		catch (BadLocationException ex)
-		{
-			Logger.instance().warning("Can't insert text '" + str
-				+ "' into test pane at position " + pos + ": " + ex);
-		}
-	}
-
-	protected void setParamsPressed()
-	{
-		if (pyParamSetDlg == null)
-			pyParamSetDlg = new PyParamSetDialog(parent);
-		pyParamSetDlg.fillControls(pythonAlgo);
-		parent.launchDialog(pyParamSetDlg);
-	}
+//	protected void runScriptPressed()
+//	{
+//		DbComputation comp = new DbComputation(DbKey.NullKey, "Python Test");
+//		comp.setAlgorithm(pythonAlgo);
+//		try
+//		{
+//			comp.prepareForExec(TsdbAppTemplate.theDb);
+//		}
+//		catch(Exception ex)
+//		{
+//			String msg = "Cannot initialize dummy computation to run algorithm scripts: " + ex;
+//			System.err.println(msg);
+//			ex.printStackTrace(System.err);
+//			parent.showError(msg);
+//			return;
+//		}
+//		
+//		testPane.setText("");
+//		appendToTestPane("Run time will be " + runDateTimeCal.getDate());
+//		
+//		PythonAlgorithm pythonAlgoExec = (PythonAlgorithm)comp.getExecutive();
+//		pythonAlgoExec.setTracer(this);
+//		try
+//		{
+//			pythonAlgoExec.firstBeforeTimeSlices();
+//		}
+//		catch (Exception ex)
+//		{
+//			ex.printStackTrace();
+//		}
+//		
+//		appendToTestPane("Setting supplied parameters...\n");
+//		String linesep = System.getProperty("line.separator");
+//		StringBuilder sb = new StringBuilder();
+//		for(Iterator<DbAlgoParm> parmit = pythonAlgo.getParms(); parmit.hasNext(); )
+//		{
+//			DbAlgoParm algoParm = parmit.next();
+//			String tsid = initProps.getProperty(algoParm.getRoleName()+".tsid");
+//			if (tsid== null) tsid = "";
+//			String value = initProps.getProperty(algoParm.getRoleName() + ".value");
+//			if (value == null)
+//				value = "0.0";
+//			sb.append(algoParm.getRoleName() 
+//				+ " = AlgoParm('" + tsid + "', " + value +")" + linesep);
+//		}
+//		String setScript = sb.toString();
+//		traceMsg("Setting test variables:" + linesep + setScript);
+//		pythonAlgoExec.getPythonIntepreter().exec(setScript);
+//		
+//		int idx = scriptTabbedPane.getSelectedIndex();
+//		JTextPane activeScriptPane = 
+//			idx == 0 ? beforeScriptPane : 
+//			idx == 1 ? timeSliceScriptPane : afterScriptPane;
+//		String script = activeScriptPane.getText();
+//		traceMsg(linesep + "Executing script: " + linesep + script + linesep);
+//		pythonAlgoExec.getPythonIntepreter().exec(script);
+//	}
+//	
+//	public void appendToTestPane(String str)
+//	{
+//		StyledDocument doc = testPane.getStyledDocument();
+//		int pos = testPane.getCaret().getDot();
+//		try
+//		{
+//			doc.insertString(pos, str,
+//				doc.getStyle(PythonTextType.NormalText.name()));
+//		}
+//		catch (BadLocationException ex)
+//		{
+//			Logger.instance().warning("Can't insert text '" + str
+//				+ "' into test pane at position " + pos + ": " + ex);
+//		}
+//	}
+//
+//	protected void setParamsPressed()
+//	{
+//		if (pyParamSetDlg == null)
+//			pyParamSetDlg = new PyParamSetDialog(parent);
+//		pyParamSetDlg.fillControls(pythonAlgo, initProps);
+//		parent.launchDialog(pyParamSetDlg);
+//	}
 
 	protected void ccpBuiltInsPressed()
 	{
@@ -465,23 +549,62 @@ afterScriptPane.setText("afterScriptPane");
 		}
 	}
 
-	/**
-	 * OK was pressed. Stop editing and copy back controls to the object.
-	 * @return true if it's ok to exit. Otherwise, show error and return false.
-	 */
-	public boolean okPressed()
+	/** Called when the parent dialog hits the commit button. */
+	public void saveToObject(DbCompAlgorithm ob)
 	{
-		// TODO Validate info in the controls
-		// If errors, showError and return false
+		String text = beforeScriptPane.getText();
+		if (text.length() > 0 && !TextUtil.isAllWhitespace(text))
+		{
+			DbCompAlgorithmScript script = new DbCompAlgorithmScript(ob, 
+				ScriptType.PY_BeforeTimeSlices);
+			script.addToText(text);
+			ob.putScript(script);
+		}
 		
-		// TODO Copy the info in the controls back to the algorithm object.
-//System.out.println("PythonAlgoEditPanel.okPressed");
-		return true;
-	}
+		text = timeSliceScriptPane.getText();
+		if (text.length() > 0 && !TextUtil.isAllWhitespace(text))
+		{
+			DbCompAlgorithmScript script = new DbCompAlgorithmScript(ob, 
+				ScriptType.PY_TimeSlice);
+			script.addToText(text);
+			ob.putScript(script);
+		}
 
-	public void cancelPressed()
-	{
-//		System.out.println("PythonAlgoEditPanel.cancelPressed");
+		text = afterScriptPane.getText();
+		if (text.length() > 0 && !TextUtil.isAllWhitespace(text))
+		{
+			DbCompAlgorithmScript script = new DbCompAlgorithmScript(ob, 
+				ScriptType.PY_AfterTimeSlices);
+			script.addToText(text);
+			ob.putScript(script);
+		}
+		
+		initProps.setProperty("AlgorithmType", algoTypeCombo.getSelectedItem().toString());
+		if (pyParamSetDlg != null)
+		{
+			ArrayList<PyParamSpec> pspecs = pyParamSetDlg.getParamSpecs();
+			if (pspecs != null)
+				for (PyParamSpec pps : pspecs)
+				{
+					if (pps.tsid != null)
+						initProps.setProperty(pps.role + ".tsid", pps.tsid.getUniqueString());
+					if (pps.value != null)
+						initProps.setProperty(pps.role + ".value", pps.value.toString());
+				}
+		}
+		StringWriter sw = new StringWriter();
+		try
+		{
+			initProps.store(sw, null);
+			DbCompAlgorithmScript script = new DbCompAlgorithmScript(ob, 
+				ScriptType.PY_Init);
+			script.addToText(sw.toString());
+			ob.putScript(script);
+		}
+		catch (IOException ex)
+		{
+			Logger.instance().warning("Error building init script from properties: " + ex);
+		}
 	}
 
 	@Override
@@ -501,57 +624,11 @@ afterScriptPane.setText("afterScriptPane");
 		else
 			afterScriptPos.setText("" + row + "/" + col);
 	}
+
+	@Override
+	public void traceMsg(String msg)
+	{
+//		appendToTestPane(msg + "\n");
+	}
+
 }
-
-//@SuppressWarnings("serial")
-//class FmtStatementRenderer
-//	extends JLabel
-//	implements TableCellRenderer
-//{
-//	public FmtStatementRenderer()
-//	{
-//		super();
-//		setFont(new Font("Monospaced", Font.PLAIN, getFont().getSize()+1));
-//	}
-//
-//	@Override
-//	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-//		boolean hasFocus, int row, int column)
-//	{
-//		//TODO -- decide if I need to do any html insertion/extaction here.
-//		setText((String)value);
-//		return this;
-//	}
-//}
-//
-//@SuppressWarnings("serial")
-//class FmtStatementEditor
-//	extends DefaultCellEditor
-//{
-//	private String origText = null;
-//	
-//	public FmtStatementEditor()
-//	{
-//		super(new JTextField());
-//		editorComponent.setFont(new Font("Monospaced", Font.PLAIN, 
-//			editorComponent.getFont().getSize()+1));
-//	}
-//	
-//	public Component getTableCellEditorComponent(JTable table, 
-//		Object value, boolean isSelected, int row, int column)
-//	{
-//		JTextField ec = (JTextField)super.getTableCellEditorComponent(table,
-//			value, isSelected, row, column);
-//		origText = ec.getText();
-////System.out.println("Starting edit of text '" + origText + "'");
-//		return ec;
-//	}
-//	
-//	public boolean stopCellEditing()
-//	{
-////System.out.println("in stopCellEditing, text is now '" + ((JTextField)editorComponent).getText() + "'");
-//		return super.stopCellEditing();
-//	}
-//}
-
-

@@ -14,8 +14,13 @@ package decodes.tsdb.compedit;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.Iterator;
@@ -34,14 +39,21 @@ import decodes.gui.SortingListTableModel;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompAlgorithm;
+import decodes.tsdb.DbCompAlgorithmScript;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.ScriptType;
+import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.RoleTypes;
+import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
+import decodes.util.PropertySpec;
 import decodes.db.Constants;
 
 @SuppressWarnings("serial")
-public class AlgorithmsEditPanel extends EditPanel 
+public class AlgorithmsEditPanel 
+	extends EditPanel
+	implements PropertiesOwner, DynamicPropertiesOwner
 {
 	private JPanel inputPanel = null;
 	private JTextField nameText = new JTextField();
@@ -92,6 +104,8 @@ public class AlgorithmsEditPanel extends EditPanel
 	private JButton pythonButton = new JButton("Python");
 	private ExecClassSelectDialog execSelectDialog = null;
 	private PythonAlgoEditDialog pythonDialog = null;
+	private PropertySpec[] staticPropSpecs = new PropertySpec[0];
+	private HashMap<String, PropertySpec> dynamicPropSpecs = new HashMap<String, PropertySpec>();
 
 	public AlgorithmsEditPanel()
 	{
@@ -225,15 +239,39 @@ public class AlgorithmsEditPanel extends EditPanel
 			Class<?> cls = cl.loadClass(clsName);
 			DbAlgorithmExecutive executive = (DbAlgorithmExecutive)cls.newInstance();
 			if (executive instanceof PropertiesOwner)
-			{
-				propertiesPanel.setPropertiesOwner((PropertiesOwner)executive);
-			}
+				staticPropSpecs = ((PropertiesOwner) executive).getSupportedProps();
 		}
 		catch(Exception ex)
 		{
 			Logger.instance().warning("Cannot instantiate algorithm class '" + clsName + "': " + ex);
 		}
+Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.getScripts().size() + " scripts.");
 
+		// Python dynamic properties are not defined in the algorithm record.
+		// Tooltips are stored in the python Init script.
+		DbCompAlgorithmScript script = editedObject.getScript(ScriptType.ToolTip);
+		if (script != null)
+		{
+			Properties initProps = new Properties();
+			try { initProps.load(new StringReader(script.getText())); }
+			catch (IOException e) {}
+			for(Object key : initProps.keySet())
+			{
+				String propName = (String)key;
+				int idx = propName.toLowerCase().indexOf(".tooltip");
+				if (idx > 0)
+				{
+					String algoPropName = propName.substring(0, idx);
+					PropertySpec ps = new PropertySpec(algoPropName, PropertySpec.STRING,
+						initProps.getProperty(propName));
+					ps.setDynamic(true);
+					dynamicPropSpecs.put(algoPropName.toUpperCase(), ps);
+System.out.println("Made new dynamicPropSpec: name=" + ps.getName() + ", desc=" + ps.getDescription());
+				}
+			}
+		}
+		
+		propertiesPanel.setPropertiesOwner(this);
 	}
 
 	public DbCompAlgorithm getEditedObject()
@@ -353,22 +391,6 @@ public class AlgorithmsEditPanel extends EditPanel
 	}
 
 	/**
-	 * This method initializes jTextField
-	 * 
-	 * @return javax.swing.JTextField
-	 */
-	private JTextField getNameText() 
-	{
-		if (nameText == null) 
-		{
-			nameText = new JTextField();
-			nameText.setEditable(false);
-			nameText.setToolTipText(nameToolTip);
-		}
-		return nameText;
-	}
-
-	/**
 	 * This method initializes jScrollPane to contain the comments
 	 * 
 	 * @return javax.swing.JScrollPane
@@ -439,11 +461,23 @@ public class AlgorithmsEditPanel extends EditPanel
 	
 	protected JTable getAlgoParmTable() 
 	{
-		if (algoParmTableModel == null) {
+		if (algoParmTableModel == null) 
+		{
 			algoParmTableModel = new AlgoParmTableModel();
 			algoParmTable = 
 				new SortingListTable(algoParmTableModel,
 					AlgoParmTableModel.columnWidths);
+			algoParmTable.addMouseListener(new MouseAdapter()
+			{
+				public void mouseClicked(MouseEvent e)
+				{
+					if (e.getClickCount() == 2)
+					{
+						editParamButtonPressed();
+					}
+				}
+			} );
+
 		}
 		return algoParmTable;
 	}
@@ -494,6 +528,22 @@ public class AlgorithmsEditPanel extends EditPanel
 		ob.getProperties().clear();
 		PropertiesUtil.copyProps(ob.getProperties(), propCopy);
 		algoParmTableModel.saveTo(ob);
+		if (pythonButton.isEnabled())
+		{
+			if (pythonDialog != null)
+				pythonDialog.saveToObject(ob);
+			DbCompAlgorithmScript script = null;
+			if (dynamicPropSpecs.values().size() > 0)
+			{
+				script = new DbCompAlgorithmScript(ob, ScriptType.ToolTip);
+				ob.putScript(script);
+				for(PropertySpec ps : dynamicPropSpecs.values())
+				{
+					script.addToText(ps.getName()+".tooltip=" + ps.getDescription()	+ "\n");
+				}
+				System.out.println("AlgoEdit.save: ttscript:\n" + script.getText());
+			}
+		}
 	}
 
 	protected void doClose() 
@@ -715,6 +765,65 @@ public class AlgorithmsEditPanel extends EditPanel
 		{
 			algoParmTableModel.deleteAt(r);
 		}
+	}
+
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return staticPropSpecs;
+	}
+
+	@Override
+	public boolean additionalPropsAllowed()
+	{
+		return true;
+	}
+
+	@Override
+	public boolean dynamicPropsAllowed()
+	{
+		return execClassField.getText().toLowerCase().contains("python");
+	}
+
+	@Override
+	public Collection<PropertySpec> getDynamicPropSpecs()
+	{
+		return dynamicPropSpecs.values();
+	}
+
+	@Override
+	public void setDynamicPropDescription(String propName, String description)
+	{
+		PropertySpec propSpec = dynamicPropSpecs.get(propName.toUpperCase());
+
+System.out.println("AlgorithmsEditPanel.setDynPropDesc: " + propName 
++ " '" + description + "' propSpec is " + (propSpec==null?"new.":"existing."));
+		if (propSpec != null)
+		{
+			if (description == null)
+			{
+				dynamicPropSpecs.remove(propName.toUpperCase());
+				return;
+			}
+			else
+				propSpec.setDescription(description);
+		}
+		else if (description != null)// this is a new property
+		{
+			PropertySpec ps = new PropertySpec(propName, PropertySpec.STRING, description);
+			ps.setDynamic(true);
+			String pnuc = propName.toUpperCase();
+			dynamicPropSpecs.put(pnuc, ps);
+System.out.println("After put, there are " + dynamicPropSpecs.values().size() + " dynamic props.");
+for(String key : dynamicPropSpecs.keySet())
+	System.out.println("\t'" + key + "'");
+		}
+	}
+
+	@Override
+	public String getDynamicPropDescription(String propName)
+	{
+		return null;
 	}
 }
 

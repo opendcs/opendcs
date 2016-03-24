@@ -287,7 +287,8 @@ public class CAPEdit
 	public static void main(String[] args)
 		throws Exception
 	{
-		DecodesInterface.setGUI(true);
+//TODO Remove the following before delivery.
+//		DecodesInterface.setGUI(true);
 		CAPEdit myedit = new CAPEdit();
 		myedit.execute(args);
 	}

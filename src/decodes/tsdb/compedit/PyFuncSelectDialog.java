@@ -2,6 +2,9 @@
  *  $Id$
  *  
  *  $Log$
+ *  Revision 1.1  2015/10/26 12:46:05  mmaloney
+ *  Additions for PythonAlgorithm
+ *
  */
 package decodes.tsdb.compedit;
 
@@ -143,7 +146,6 @@ public class PyFuncSelectDialog extends JDialog
 					{
 						PyFunction pyf = (PyFunction)model.getRowObject(row);
 						descArea.setText(pyf.getDesc());
-System.out.println("Row " + row + " selected. set desc to: " + pyf.getDesc());
 					}
 				}
 			});

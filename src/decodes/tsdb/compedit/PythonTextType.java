@@ -27,6 +27,8 @@ public enum PythonTextType
 	{
 		if (hexColor != null)
 		{
+			if (hexColor.toLowerCase().startsWith("0x"))
+				hexColor = hexColor.substring(2);
 			try { displayColor = new Color(Integer.parseInt(hexColor, 16)); }
 			catch(Exception ex)
 			{
