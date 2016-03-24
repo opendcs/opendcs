@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.11  2016/01/27 21:41:27  mmaloney
+*  schedule_entry_status and dacq_event have their own sequences.
+*
 *  Revision 1.10  2015/09/10 21:18:29  mmaloney
 *  Development on Screening
 *
@@ -991,7 +994,7 @@ public class CwmsTimeSeriesDb
 	 * the passed object.
 	 * @param siteDatatype the association between sdi, names, & datatypes
 	 */
-	public void expandSDI(DbCompParm parm)
+	public TimeSeriesIdentifier expandSDI(DbCompParm parm)
 		throws DbIoException, NoSuchObjectException
 	{
 		TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
@@ -1001,6 +1004,7 @@ public class CwmsTimeSeriesDb
 				parm.getSiteDataTypeId());
 			parm.setSite(tsid.getSite());
 			parm.setDataType(tsid.getDataType());
+			return tsid;
 		}
 		finally
 		{
