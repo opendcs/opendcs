@@ -11,20 +11,23 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.21  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
 */
 package decodes.tsdb;
 
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.Vector;
 import java.util.Iterator;
 
 import opendcs.dai.ComputationDAI;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-
 import decodes.sql.DbKey;
 
 /**
@@ -35,6 +38,7 @@ public class DbCompResolver
 {
 	/** The time series database we're using. */
 	private TimeSeriesDb theDb;
+	private LinkedList<PythonWritten> pythonWrittenQueue = new LinkedList<PythonWritten>();
 	
 	/**
 	 * Constructor, saves reference to tsdb for later use.
@@ -53,6 +57,7 @@ public class DbCompResolver
 	public DbComputation[] resolve( DataCollection data )
 		throws DbIoException
 	{
+		trimPythonWrittenQueue();
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
 		try
 		{
@@ -60,54 +65,54 @@ public class DbCompResolver
 			for(CTimeSeries ts : data.getAllTimeSeries())
 				if (ts.hasAddedOrDeleted())
 				{
-					// As of v5, the DB uses a dependency table to determine comps.
-					if (theDb.tsdbVersion >= TsdbDatabaseVersion.VERSION_5)
+					Logger.instance().debug3("ts id=" + ts.getTimeSeriesIdentifier().getUniqueString() 
+						+ "#comps = " + ts.getDependentCompIds().size());
+					for(DbKey compId : ts.getDependentCompIds())
 					{
-						Logger.instance().debug3("ts id=" + ts.getSDI() + "#comps = "
-							+ ts.getDependentCompIds().size());
-						for(DbKey compId : ts.getDependentCompIds())
+						Logger.instance().debug1("\t\tdependent compId=" + compId);
+						if (isInPythonWrittenQueue(compId, ts.getTimeSeriesIdentifier().getKey()))
 						{
-							Logger.instance().debug1("\t\tdependent compId=" + compId);
-							DbComputation comp = null;
+							Logger.instance().debug3("\t\t\t--Resolver Skipping because recently written by python.");
+							continue;
+						}
+						DbComputation comp = null;
+						try
+						{
+							comp = computationDAO.getComputationById(compId);
+						}
+						catch (NoSuchObjectException ex)
+						{
+							Logger.instance().warning("Resolver: Time Series " 
+								+ ts.getDisplayName() + " uses compId " + compId
+								+ " which no longer exists in database.");
+							continue;
+						}
+						if (comp.hasGroupInput())
+						{
+							// Group comps will have partial (abstract) params.
+							// Use this time series to make the computation concrete.
 							try
 							{
-								comp = computationDAO.getComputationById(compId);
+								comp = makeConcrete(theDb, ts.getTimeSeriesIdentifier(), 
+									comp, true);
 							}
-							catch (NoSuchObjectException ex)
+							catch(NoSuchObjectException ex)
 							{
-								Logger.instance().warning("Resolver: Time Series " 
-									+ ts.getDisplayName() + " uses compId " + compId
-									+ " which no longer exists in database.");
 								continue;
 							}
-							if (comp.hasGroupInput())
-							{
-								// Group comps will have partial (abstract) params.
-								// Use this time series to make the computation concrete.
-								try
-								{
-									comp = makeConcrete(theDb, ts.getTimeSeriesIdentifier(), 
-										comp, true);
-								}
-								catch(NoSuchObjectException ex)
-								{
-									continue;
-								}
-							}
-	
-							DbComputation already = searchResults(results, comp);
-							if (already != null)
-								already.getTriggeringRecNums().addAll(
-									ts.getTaskListRecNums());
-							else // newly added computation
-							{
-								comp.getTriggeringRecNums().addAll(ts.getTaskListRecNums());
-								results.add(comp);
-							}
 						}
-						continue;
+
+						DbComputation already = searchResults(results, comp);
+						if (already != null)
+							already.getTriggeringRecNums().addAll(
+								ts.getTaskListRecNums());
+						else // newly added computation
+						{
+							comp.getTriggeringRecNums().addAll(ts.getTaskListRecNums());
+							results.add(comp);
+						}
 					}
-	
+					continue;
 				}
 			DbComputation[] r = new DbComputation[results.size()];
 			return results.toArray(r);
@@ -251,5 +256,27 @@ Logger.instance().debug3("makeConcrete of computation " + comp.getName()
 		}
 		// Shouldn't happen, the parm will have at least one input defined.
 		return null;
+	}
+	
+	private void trimPythonWrittenQueue()
+	{
+		PythonWritten pw = null;
+		Date cutoff = new Date(System.currentTimeMillis() - 120000L); // 2 minutes ago
+		while((pw = pythonWrittenQueue.peekFirst()) != null && pw.getTimeWritten().before(cutoff))
+			pythonWrittenQueue.remove();
+	}
+	
+	private boolean isInPythonWrittenQueue(DbKey compId, DbKey tsCode)
+	{
+		for (PythonWritten pw : pythonWrittenQueue)
+			if (compId.equals(pw.getCompId())
+			 && tsCode.equals(pw.getTsCode()))
+				return true;
+		return false;
+	}
+	
+	public void pythonWrote(DbKey compId, DbKey tsCode)
+	{
+		pythonWrittenQueue.addLast(new PythonWritten(compId, tsCode));
 	}
 }
