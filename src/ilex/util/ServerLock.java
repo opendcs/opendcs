@@ -219,7 +219,10 @@ public class ServerLock implements Runnable
 			}
 		}
 		else
+		{
 			Logger.instance().info("Lock file '" + myLockFile.getPath() + "' does not exist or is not readable.");
+			return false;
+		}
 		
 		// Getting to here means that the lock check failed.
 		if (isWindowsService)
