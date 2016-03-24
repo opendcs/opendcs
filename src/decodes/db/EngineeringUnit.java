@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2010/02/06 17:32:01  mjmaloney
 *  If no name defined, getName() returns the abbreviation.
 *
@@ -124,6 +127,8 @@ public class EngineeringUnit
 	 */
 	public static synchronized EngineeringUnit getEngineeringUnit(String abbr)
 	{
+		if (abbr == null)
+			return null;
 		Database db = Database.getDb();
 		
 		EngineeringUnit ret = null;
