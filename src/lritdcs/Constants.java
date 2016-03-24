@@ -8,8 +8,8 @@ package lritdcs;
 */
 public class Constants
 {
-	public static final String version = "5.2";
-	public static final String releaseDate = "Dec 12, 2012";
+	public static final String version = "2.2";
+	public static final String releaseDate = "Mar 01, 2016";
 	public static final int MaxDdsServers = 3;
 
 	public static final char HighPri = 'H';
