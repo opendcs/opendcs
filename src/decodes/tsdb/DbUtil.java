@@ -22,6 +22,7 @@ import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.Platform;
@@ -152,10 +153,30 @@ public class DbUtil extends TsdbAppTemplate
 				versionCmd(tokens);
 			}
 		};
+	private CmdLine bparamCmd = 
+		new CmdLine("bparam", " -- show CWMS Base Param - Unit Associations")
+		{
+			public void execute(String[] tokens)
+			{
+				bparamCmd(tokens);
+			}
+		};
+
 
 	public DbUtil()
 	{
 		super("util.log");
+	}
+
+	protected void bparamCmd(String[] tokens)
+	{
+		if (!(theDb instanceof CwmsTimeSeriesDb))
+		{
+			System.out.println("This command is only available for CWMS databases.");
+			return;
+		}
+		CwmsTimeSeriesDb cwmsdb = (CwmsTimeSeriesDb)theDb;
+		cwmsdb.getBaseParam().print();
 	}
 
 	protected void versionCmd(String[] tokens)
@@ -242,6 +263,7 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(genEventsCmd);
 		cmdLineProc.addCmd(genSchedEventsCmd);
 		cmdLineProc.addCmd(versionCmd);
+		cmdLineProc.addCmd(bparamCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		
