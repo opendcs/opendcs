@@ -1,9 +1,9 @@
 package decodes.cwms;
 
-import ilex.util.Logger;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 import decodes.tsdb.DbIoException;
@@ -21,13 +21,24 @@ public class BaseParam
 	{
 	}
 	
+	public void print()
+	{
+		System.out.println("BaseParam - Storage Units - English Units");
+		ArrayList<String> keyset = new ArrayList<String>();
+		keyset.addAll(bparamUnitsMap.keySet());
+		Collections.sort(keyset);
+		for(Object key : keyset)
+			System.out.println("\t" + key + " - " + bparamUnitsMap.get(key) + " - " + 
+				bparamEnglishUnitsMap.get(key));
+	}
+	
 	public void load(CwmsTimeSeriesDb db)
 		throws DbIoException, SQLException
 	{
 		String q = "select distinct upper(a.base_parameter_id), b.unit_id "
 			+ "from cwms_v_parameter a, cwms_v_storage_unit b "
 			+ "where a.base_parameter_id = b.base_parameter_id "
-			+ " and db_office_code = " + db.getDbOfficeCode()
+			+ " and (db_office_code = " + db.getDbOfficeCode() + " or db_office_code=53)"
 			+ " order by upper(a.base_parameter_id)";
 		ResultSet rs = db.doQuery(q);
 		
