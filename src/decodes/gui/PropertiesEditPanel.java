@@ -285,8 +285,8 @@ public class PropertiesEditPanel extends JPanel
 		PropertySpec propSpec = null;
 		if (propHash != null)
 			propSpec = propHash.get(sp.first.toUpperCase());
-System.out.println("Editing prop '" + sp.first + "' isDynamic=" + 
-(propSpec != null && propSpec.isDynamic()));
+//System.out.println("Editing prop '" + sp.first + "' isDynamic=" + 
+//(propSpec != null && propSpec.isDynamic()));
 
 		PropertyEditDialog dlg = null;
 		Logger.instance().debug3("Editing propspec=" + propSpec);
