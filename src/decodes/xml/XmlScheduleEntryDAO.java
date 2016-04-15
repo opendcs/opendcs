@@ -392,7 +392,9 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 			ScheduleEntryStatus ses = readNextEntry();
 			if (ses.getScheduleEntryName().length() == 0)
 				return n;
-			if (oldestLMT == null || ses.getLastMessageTime().before(oldestLMT))
+			if (oldestLMT == null || 
+				(ses.getLastMessageTime() != null
+				&& ses.getLastMessageTime().before(oldestLMT)))
 			{
 				oldestRecnum = n;
 				oldestLMT = ses.getLastMessageTime();

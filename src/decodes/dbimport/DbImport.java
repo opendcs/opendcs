@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.9  2015/12/31 17:19:54  mmaloney
+*  dev
+*
 *  Revision 1.8  2015/12/31 17:06:27  mmaloney
 *  dev
 *
@@ -902,6 +905,11 @@ Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") +
 		for(Iterator<Site> it = stageDb.siteList.iterator(); it.hasNext(); )
 		{
 			Site ob = it.next();
+			if (ob.getPreferredName() == null)
+			{
+				warning("Import file contained a site with no name. Ignoring.");
+				continue;
+			}
 			Site oldOb= theDb.siteList.getSite(ob.getPreferredName());
 
 			if (oldOb == null)
@@ -1480,18 +1488,21 @@ Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") +
 			if (theDbio instanceof SqlDatabaseIO)
 			{
 				IntervalDAI intervalDAO = ((SqlDatabaseIO)theDbio).makeIntervalDAO();
-				try
+				if (intervalDAO != null)
 				{
-					for(Interval intv : editList.getList())
-						intervalDAO.writeInterval(intv);
-				}
-				catch(DbIoException ex)
-				{
-					warning("Error writing interval: " + ex);
-				}
-				finally
-				{
-					intervalDAO.close();
+					try
+					{
+						for(Interval intv : editList.getList())
+							intervalDAO.writeInterval(intv);
+					}
+					catch(DbIoException ex)
+					{
+						warning("Error writing interval: " + ex);
+					}
+					finally
+					{
+						intervalDAO.close();
+					}
 				}
 			}
 		}
