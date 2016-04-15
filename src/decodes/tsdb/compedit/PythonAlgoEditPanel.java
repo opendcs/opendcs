@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2016/03/24 19:17:39  mmaloney
+ * Additions for Python Algorithm.
+ *
  * Revision 1.2  2015/11/18 14:11:24  mmaloney
  * Initial implementation.
  *
@@ -25,12 +28,16 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -44,12 +51,34 @@ import java.util.ArrayList;
 import java.util.Properties;
 //import java.util.TimeZone;
 
+
+
+
+
+
+
+
+
+
+import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Element;
 import javax.swing.text.PlainDocument;
+import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
+import javax.swing.text.TabSet;
+import javax.swing.text.TabStop;
+
+
+
+
+
+
+
+
 
 //import ilex.gui.DateTimeCalendar;
 import ilex.util.Logger;
@@ -244,30 +273,31 @@ Logger.instance().debug1("PythonAlgoEditPanel.fillValues script "
 		
 		// Construct the JTextPanes for the scripts
 		PythonStyledDocument psd = new PythonStyledDocument();
-	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
+//	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
 		beforeScriptPane = new JTextPane(psd);
 		psd.setPane(beforeScriptPane);
 		beforeScriptPane.addCaretListener(this);
 		
 		psd = new PythonStyledDocument();
-	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
+//	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
 		timeSliceScriptPane = new JTextPane(psd);
 		psd.setPane(timeSliceScriptPane);
 		timeSliceScriptPane.addCaretListener(this);
 		
 		psd = new PythonStyledDocument();
-	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
+//	    psd.putProperty(PlainDocument.tabSizeAttribute, 4);
 		afterScriptPane = new JTextPane(psd);
 		psd.setPane(afterScriptPane);
 		afterScriptPane.addCaretListener(this);
 		
 		// Add styles for each of the python text types to each of the panes.
+		int fsize = 0;
 		for(PythonTextType ptt : PythonTextType.values())
 		{
 			Style style = beforeScriptPane.addStyle(ptt.name(), null);
 			StyleConstants.setFontFamily(style, "Monospaced");
 			StyleConstants.setFontSize(style, 
-				StyleConstants.getFontSize(style) + 1);
+				(fsize = StyleConstants.getFontSize(style) + 1));
 			StyleConstants.setForeground(style, ptt.getDisplayColor());
 
 			style = timeSliceScriptPane.addStyle(ptt.name(), null);
@@ -283,6 +313,9 @@ Logger.instance().debug1("PythonAlgoEditPanel.fillValues script "
 			StyleConstants.setForeground(style, ptt.getDisplayColor());
 		}
 		
+
+		
+		// Put the code panes in a tabbed pane.
 		JPanel tabbedPaneParent = new JPanel(new BorderLayout());
 		tabbedPaneParent.setBorder(new TitledBorder("Python Scripts"));
 		
@@ -366,6 +399,17 @@ afterScriptPane.setText("afterScriptPane");
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, 
 				new Insets(2, 4, 2, 4), 0, 0));
 		tabbedPaneParent.add(editButtonsPanel, BorderLayout.EAST);
+		
+		setTabStops();
+//		SwingUtilities.invokeLater(
+//			new Runnable()
+//			{
+//				@Override
+//				public void run()
+//				{
+//					setTabStops();
+//				}
+//			});
 
 		//=================== Test Area ==================
 //		testPane = new JTextPane();
@@ -507,6 +551,30 @@ afterScriptPane.setText("afterScriptPane");
 //		pyParamSetDlg.fillControls(pythonAlgo, initProps);
 //		parent.launchDialog(pyParamSetDlg);
 //	}
+	
+	private void setTabStops()
+	{
+		// Set tabstop to be 4 chars
+		TabStop tabStops[] = new TabStop[10];
+//		Graphics g = beforeScriptPane.getGraphics();
+//		if (g == null) System.out.println("getGraphics returns null.");
+//		if (g.getFontMetrics() == null) System.out.println("getFontMetrics returns null.");
+//		int charWidth = beforeScriptPane.getGraphics().getFontMetrics().charWidth('x');
+		int charWidth = 8;
+//System.out.println("charWidth=" + charWidth);
+		for(int ti = 0; ti<tabStops.length; ti++)
+		{
+			int pos = (ti+1) * 4 * charWidth;
+			tabStops[ti] = new TabStop(pos, TabStop.ALIGN_LEFT, TabStop.LEAD_NONE);
+//System.out.println("tabstop at pos=" + pos);
+		}
+		TabSet tabset = new TabSet(tabStops);
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+        AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.TabSet, tabset);
+        beforeScriptPane.setParagraphAttributes(aset, false);
+        timeSliceScriptPane.setParagraphAttributes(aset, false);
+        afterScriptPane.setParagraphAttributes(aset, false);
+	}
 
 	protected void ccpBuiltInsPressed()
 	{

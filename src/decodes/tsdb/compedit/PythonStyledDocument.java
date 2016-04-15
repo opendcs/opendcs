@@ -41,10 +41,15 @@ public class PythonStyledDocument extends DefaultStyledDocument
 //cpFunctions.dump();
 	}
 	
+	public PythonStyledDocument()
+	{
+		super();
+		putProperty("IgnoreCharsetDirective", Boolean.TRUE);
+	}
 	
 	public static boolean isKeyword(String w) { return keyWords.contains(w); }
 
-private void pause() { /* try { Thread.sleep(2000L); } catch(InterruptedException ex) {} */}
+private void pause() { /* try { Thread.sleep(500L); } catch(InterruptedException ex) {} */ }
 	
 	@Override
 	public void remove(int offs, int len) throws BadLocationException
@@ -57,16 +62,16 @@ Logger.instance().debug1("remove(offs=" + offs + ", len=" + len + ")"); pause();
 		
 		int lineStart = paraElem.getStartOffset();
 		int lineEnd = paraElem.getEndOffset();
-Logger.instance().debug1("After removal, offs=" + offs + " line start=" + lineStart + ", end=" + lineEnd); pause();
+//Logger.instance().debug1("After removal, offs=" + offs + " line start=" + lineStart + ", end=" + lineEnd); pause();
 		if (lineStart != paraElem.getEndOffset())
 		{
 			// Retrieve, and then Remove the entire thing from the doc.
 			String line = getText(lineStart, paraElem.getEndOffset() - lineStart);
-Logger.instance().debug1("calling super.remove(" + lineStart + ", " + (paraElem.getEndOffset() - lineStart) + ")"); pause();
+//Logger.instance().debug1("calling super.remove(" + lineStart + ", " + (paraElem.getEndOffset() - lineStart) + ")"); pause();
 
 			super.remove(lineStart, paraElem.getEndOffset() - lineStart);
 			// Now re-add it with THIS.insertString so the line gets reprocessed.
-Logger.instance().debug1("Re-inserting '" + line + "' at position " + lineStart); pause();
+//Logger.instance().debug1("Re-inserting '" + line + "' at position " + lineStart); pause();
 			this.insertString(lineStart, line, getStyle(PythonTextType.NormalText.toString()));
 		}
 		pane.setCaretPosition(offs);
@@ -82,51 +87,39 @@ Logger.instance().debug1("insertString(" + AsciiUtil.bin2ascii(str.getBytes()) +
 		// First write using parent in normal attribute.
 		super.insertString(offs, str, getStyle(PythonTextType.NormalText.toString()));
 		
-		// Back up to the start of the line to determine if we are in a 
-		// comment or a quoted string, and to fill in a partial word.
-		Element paraElem = this.getParagraphElement(offs);
-Logger.instance().debug1("--- paraElem: " + paraElem.getStartOffset() + " to " + paraElem.getEndOffset()); pause();
+		// Get the chars from the beginning of the line containing start and the end of the
+		// line containing end. Then process the chars and set context colors.
+		Element startElem = this.getParagraphElement(offs);
+		int startOffset = startElem.getStartOffset();
+		Element endElem = this.getParagraphElement(offs + str.length());
+		int endOffset = endElem.getEndOffset() -1;
+		
+		this.processChars(startOffset, endOffset);
+		
+		pane.setCaretPosition(offs + str.length());
+
+
+
+		//TODO Recognize the pattern: word *(
+		//     And then attempt to match word to a python built-in or CCP-defined function.
+
+		//TODO Recognize python comments that start with unquoted # and go to end of line.
+
+	}
+
+	private void processChars(int startOffset, int endOffset) 
+		throws BadLocationException
+	{
+Logger.instance().debug1("processChars(" + startOffset + ", " + endOffset + ")");	
 		CharState charState = CharState.normal;
 		char q = 0;
 		StringBuilder wordBuf = new StringBuilder();
 		boolean escaped = false;
-		for(int pos = paraElem.getStartOffset(); pos < offs; pos++)
-		{
-			char c = this.getText(pos, 1).charAt(0);
-			switch(charState)
-			{
-			case normal:
-				if (c == '\'')
-				{
-					charState = CharState.quoted;
-					q = '\'';
-				}
-				else if (c == '"')
-				{
-					charState = CharState.quoted;
-					q = '"';
-				}
-				else if (c == '#')
-				{
-					charState = CharState.comment;
-					pos = offs; // comment goes to EOL
-				}
-				if (Character.isLetterOrDigit(c))
-					wordBuf.append(c);
-				else
-					wordBuf.setLength(0);
-				break;
-			case quoted:
-				if (c == q && !escaped)
-					charState = CharState.normal;
-				else if (c == '\\' && !escaped)
-					escaped = true;
-				else if (escaped)
-					escaped = false;
-				break;
-			}
-		}
 		
+		String str = this.getText(startOffset, endOffset - startOffset);
+Logger.instance().debug1("processChars inserting: " + AsciiUtil.bin2ascii(str.getBytes())); pause();
+
+		int offs = startOffset;
 		for(int idx = 0; idx < str.length(); idx++)
 		{
 			char c = str.charAt(idx);
@@ -138,7 +131,7 @@ Logger.instance().debug1("--- paraElem: " + paraElem.getStartOffset() + " to " +
 					charState = CharState.normal;
 				else // rewrite this char with comment style.
 				{
-Logger.instance().debug1("case comment");
+//Logger.instance().debug1("case comment");
 					super.remove(offs+idx, 1);
 					super.insertString(offs+idx, ""+c, this.getStyle(PythonTextType.Comment.name()));
 				}
@@ -161,7 +154,7 @@ Logger.instance().debug1("case comment");
 						// Just finished a word. Is it a keyword?
 						if (isKeyword(word))
 						{
-Logger.instance().debug1("isKeyword"); pause();
+//Logger.instance().debug1("isKeyword"); pause();
 							super.remove(offs+idx-word.length(), word.length());
 							super.insertString(offs+idx-word.length(), word.toString(), 
 								this.getStyle(PythonTextType.Keywords.toString()));
@@ -171,7 +164,7 @@ Logger.instance().debug1("isKeyword"); pause();
 							PyFunction func = builtinFunctions.get(word);
 							if (func != null)
 							{
-Logger.instance().debug1("builtinFunctions"); pause();
+//Logger.instance().debug1("builtinFunctions"); pause();
 								super.remove(offs+idx-word.length(), word.length());
 								super.insertString(offs+idx-word.length(), word.toString(), 
 									this.getStyle(PythonTextType.BuiltIns.toString()));
@@ -179,7 +172,7 @@ Logger.instance().debug1("builtinFunctions"); pause();
 							}
 							else if ((func = cpFunctions.get(word)) != null)
 							{
-Logger.instance().debug1("cpFunctions"); pause();
+//Logger.instance().debug1("cpFunctions"); pause();
 								super.remove(offs+idx-word.length(), word.length());
 								super.insertString(offs+idx-word.length(), word.toString(), 
 									this.getStyle(PythonTextType.CpFunction.toString()));
@@ -190,14 +183,14 @@ Logger.instance().debug1("cpFunctions"); pause();
 					}
 					if (c == '#')
 					{
-Logger.instance().debug1("#comment");
+//Logger.instance().debug1("#comment");
 						charState = CharState.comment;
 						super.remove(offs+idx, 1);
 						super.insertString(offs+idx, "#", this.getStyle(PythonTextType.Comment.name()));
 					}
 					else if (c == '"' || c == '\'')
 					{
-Logger.instance().debug1("quoted1"); pause();
+//Logger.instance().debug1("start of quote " + c); pause();
 						super.remove(offs+idx, 1);
 						super.insertString(offs+idx, ""+c, this.getStyle(PythonTextType.QuotedString.name()));
 						charState = CharState.quoted;
@@ -206,7 +199,7 @@ Logger.instance().debug1("quoted1"); pause();
 				}
 				break;
 			case quoted:
-Logger.instance().debug1("quoted2");
+//Logger.instance().debug1("quoted2");
 				super.remove(offs+idx, 1);
 				super.insertString(offs+idx, ""+c, this.getStyle(PythonTextType.QuotedString.name()));
 				if (c == q && !escaped)
@@ -230,18 +223,6 @@ Logger.instance().debug1("quoted2");
 				break;
 			}
 		}
-		
-		// TODO Auto-generated method stub
-//		Element charElem = getCharacterElement(offs);
-//System.out.println("After insert, char at " + offs + "='" + getText(offs, 1) + "'"
-//	+ " Element text is '" + getText(charElem.getStartOffset(), 
-//			charElem.getEndOffset()-charElem.getStartOffset()) + "'");
-
-		//TODO Recognize the pattern: word *(
-		//     And then attempt to match word to a python built-in or CCP-defined function.
-
-		//TODO Recognize python comments that start with unquoted # and go to end of line.
-
 	}
 
 	public static PyFuncList getBuiltinFunctions()
