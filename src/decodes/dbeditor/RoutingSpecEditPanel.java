@@ -362,21 +362,21 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		paramPanel.add(new JLabel(genericLabels.getString("nameLabel")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE, 
-				new Insets(4, 4, 2, 2), 0, 0));
+				new Insets(2, 4, 1, 2), 0, 0));
 		nameField.setEditable(false);
 		paramPanel.add(nameField, 
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
-				new Insets(4, 0, 2, 10), 0, 0));
+				new Insets(2, 0, 1, 10), 0, 0));
 	
 		paramPanel.add(new JLabel(dbeditLabels.getString("RoutingSpecEditPanel.dataSource")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE, 
-				new Insets(2, 4, 2, 2), 0, 0));
+				new Insets(1, 4, 1, 2), 0, 0));
 		paramPanel.add(dataSourceCombo, 
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
-				new Insets(2, 0, 2, 10), 0, 0));
+				new Insets(1, 0, 1, 10), 0, 0));
 		dataSourceCombo.addActionListener(
 			new java.awt.event.ActionListener()
 			{
@@ -389,11 +389,11 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		paramPanel.add(new JLabel(dbeditLabels.getString("RoutingSpecEditPanel.consumerType")),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(2, 4, 2, 2), 0, 0));
+				new Insets(1, 4, 1, 2), 0, 0));
 		paramPanel.add(consumerTypeCombo, 
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
-				new Insets(2, 0, 2, 10), 0, 0));
+				new Insets(1, 0, 1, 10), 0, 0));
 		consumerTypeCombo.addActionListener(
 			new java.awt.event.ActionListener()
 			{
@@ -409,16 +409,16 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		paramPanel.add(consumerArgLabel,
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(2, 4, 2, 2), 0, 0));
+				new Insets(1, 4, 1, 2), 0, 0));
 		paramPanel.add(consumerArgsField, 
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
-				new Insets(2, 0, 2, 10), 0, 0));
+				new Insets(1, 0, 1, 10), 0, 0));
 	
 		paramPanel.add(new JLabel(dbeditLabels.getString("RoutingSpecEditPanel.outFormat")),
 			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(2, 4, 2, 2), 0, 0));
+				new Insets(1, 4, 1, 2), 0, 0));
 		outputFormatCombo.addActionListener(
 			new java.awt.event.ActionListener()
 			{
@@ -430,16 +430,16 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		paramPanel.add(outputFormatCombo, 
 			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, 
-				new Insets(2, 0, 2, 10), 0, 0));
+				new Insets(1, 0, 1, 10), 0, 0));
 		
 		paramPanel.add(new JLabel(genericLabels.getString("timeZoneLabel")),
 			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(2, 4, 2, 2), 0, 0));
+				new Insets(1, 4, 1, 2), 0, 0));
 		paramPanel.add(outputTimezoneCombo, 
 			new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, 
-				new Insets(2, 0, 2, 10), -30, 0));
+				new Insets(1, 0, 1, 10), -30, 0));
 	
 		paramPanel.add(new JLabel(dbeditLabels.getString("RoutingSpecEditPanel.presGroup")),
 			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0, 
@@ -448,9 +448,9 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		paramPanel.add(presentationGroupCombo, 
 			new GridBagConstraints(1, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, 
-				new Insets(2, 0, 2, 10), 0, 0));
+				new Insets(1, 0, 1, 10), 0, 0));
 
-		JPanel checkPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 2));
+		JPanel checkPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 1));
 		enableEquationsCheck.setText(
 			dbeditLabels.getString("RoutingSpecEditPanel.enableEquations"));
 		checkPanel.add(enableEquationsCheck);
@@ -459,7 +459,7 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		paramPanel.add(checkPanel, 
 			new GridBagConstraints(0, 7, 4, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE, 
-				new Insets(2, 10, 2, 10), 0, 0));
+				new Insets(1, 10, 1, 10), 0, 0));
 	}
 
 

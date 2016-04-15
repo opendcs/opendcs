@@ -249,7 +249,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 		jMenuBar1.add(jMenuHelp);
 		this.setJMenuBar(jMenuBar1);
 
-		contentPane.add(statusBar, BorderLayout.SOUTH);
+//		contentPane.add(statusBar, BorderLayout.SOUTH);
 		contentPane.add(topLevelTabs, BorderLayout.CENTER);
 		sitesTab.add(sitesTabbedPane, BorderLayout.CENTER);
 		sitesTabbedPane.add(sitesListTab, 
