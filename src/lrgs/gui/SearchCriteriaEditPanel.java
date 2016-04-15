@@ -4,6 +4,9 @@
 *  Open Source Software written by Cove Software, LLC
 *  
 *  $Log$
+*  Revision 1.3  2015/03/19 18:07:18  mmaloney
+*  Removed modemDCP check.
+*
 *  Revision 1.2  2015/01/17 21:29:15  mmaloney
 *  Use platform select dialog.
 *
@@ -277,7 +280,7 @@ public class SearchCriteriaEditPanel
 		platformSelectPanel.add(addIdButton,
 			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
-				new Insets(0, 4, 2, 4), 0, 0));
+				new Insets(0, 4, 1, 4), 0, 0));
 		
 		JButton addNameButton = new JButton(
 			scLabels.getString("SearchCriteriaEditor.enterPlatformName"));
@@ -292,7 +295,7 @@ public class SearchCriteriaEditPanel
 		platformSelectPanel.add(addNameButton,
 			new GridBagConstraints(3, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
-				new Insets(2, 4, 2, 4), 0, 0));
+				new Insets(1, 4, 1, 4), 0, 0));
 
 		selectFromPdtButton = new JButton(
 			scLabels.getString("SearchCriteriaEditor.selectFromPDT"));
@@ -307,7 +310,7 @@ public class SearchCriteriaEditPanel
 		platformSelectPanel.add(selectFromPdtButton,
 			new GridBagConstraints(3, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
-				new Insets(2, 4, 2, 4), 0, 0));
+				new Insets(1, 4, 1, 4), 0, 0));
 
 		JButton addDbListButton = new JButton(
 			scLabels.getString("SearchCriteriaEditor.addNetworkList"));
@@ -322,7 +325,7 @@ public class SearchCriteriaEditPanel
 		platformSelectPanel.add(addDbListButton,
 			new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
-				new Insets(2, 4, 2, 4), 0, 0));
+				new Insets(1, 4, 1, 4), 0, 0));
 
 //		JButton addFileListButton = new JButton("Add File Network List");
 //		addFileListButton.addActionListener(
@@ -351,7 +354,7 @@ public class SearchCriteriaEditPanel
 		platformSelectPanel.add(addGoesChannelButton,
 			new GridBagConstraints(3, 4, 1, 1, 0.0, 1.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, 
-				new Insets(2, 4, 0, 4), 0, 0));
+				new Insets(1, 4, 0, 4), 0, 0));
 		
 		JButton editSelectionButton = new JButton(genericLabels.getString("edit"));
 		editSelectionButton.addActionListener(

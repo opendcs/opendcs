@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.4  2016/02/23 19:55:18  mmaloney
+*  Refactor to allow a no-decode version of the browser.
+*
 *  Revision 1.3  2015/07/17 13:10:30  mmaloney
 *  *** empty log message ***
 *
@@ -51,6 +54,7 @@ import ilex.util.StderrLogger;
 import ilex.util.EnvExpander;
 import lrgs.common.*;
 import lrgs.ldds.*;
+import lrgs.rtstat.RtStatFrame;
 
 /**
 The MessageBrowser allows the user to display DCP messages on the screen
@@ -195,7 +199,7 @@ public class MessageBrowser extends MenuFrame
 				new Insets(2, 5, 2, 5), 0, 0)); 
 
 		hostField = new JComboBox();
-		loadConnectionsField();
+		RtStatFrame.loadConnectionsField(hostField, connectionList, null);
 		hostField.setEditable(true);
 		hostField.addActionListener(
 			new ActionListener()
@@ -585,8 +589,8 @@ public class MessageBrowser extends MenuFrame
 		EditPropsAction.registerEditor(nm, 
 			new JComboBox(new String[] { "true", "false" }));
 
-		GuiApp.getProperty("MessageBrowser.ConnectionsFile", 
-			LddsClient.getLddsConnectionsFile());
+//		GuiApp.getProperty("MessageBrowser.ConnectionsFile", 
+//			LddsClient.getLddsConnectionsFile());
 
 		// Try to initialize DECODES:
 		String dpf = GuiApp.getProperty("MessageBrowser.DecodesPropFile",
@@ -659,7 +663,8 @@ public class MessageBrowser extends MenuFrame
 	private void initConnectionList()
 	{
 		connectionList = new Properties();
-		String fn = GuiApp.getProperty("MessageBrowser.ConnectionsFile");
+//		String fn = GuiApp.getProperty("MessageBrowser.ConnectionsFile");
+		String fn = LddsClient.getLddsConnectionsFile();
 		fn = EnvExpander.expand(fn, System.getProperties());
 		File file = new File(fn);
 		try
@@ -680,8 +685,9 @@ public class MessageBrowser extends MenuFrame
 	*/
 	private void updateConnectionList(String host, String port, String user)
 	{
-		connectionList.setProperty(host, port + " " + user);
-		String fn = GuiApp.getProperty("MessageBrowser.ConnectionsFile");
+		connectionList.setProperty(host, port + " " + user + " " + System.currentTimeMillis());
+		String fn = LddsClient.getLddsConnectionsFile();
+//			GuiApp.getProperty("MessageBrowser.ConnectionsFile");
 		fn = EnvExpander.expand(fn, System.getProperties());
 		File file = new File(fn);
 		try
@@ -694,30 +700,31 @@ public class MessageBrowser extends MenuFrame
 		{
 			System.out.println("Cannot save connections");
 		}
-		loadConnectionsField();
+		RtStatFrame.loadConnectionsField(hostField, connectionList, null);
+//		loadConnectionsField();
 	}
 
-	private void loadConnectionsField()
-	{
-		
-		Enumeration enames = connectionList.propertyNames();
-		int selected = -1;
-		int i = 0;
-		hostField.removeAllItems();
-		for(; enames.hasMoreElements(); i++)
-		{
-			String s = (String)enames.nextElement();
-			if (hostName != null && hostName.compareToIgnoreCase(s) == 0)
-				selected = i;
-			hostField.addItem(s);
-		}
-		if (selected == -1)
-		{
-			hostField.addItem(hostName);
-			selected = i;
-		}
-		hostField.setSelectedIndex(selected);
-	}
+//	private void loadConnectionsField()
+//	{
+//		
+//		Enumeration enames = connectionList.propertyNames();
+//		int selected = -1;
+//		int i = 0;
+//		hostField.removeAllItems();
+//		for(; enames.hasMoreElements(); i++)
+//		{
+//			String s = (String)enames.nextElement();
+//			if (hostName != null && hostName.compareToIgnoreCase(s) == 0)
+//				selected = i;
+//			hostField.addItem(s);
+//		}
+//		if (selected == -1)
+//		{
+//			hostField.addItem(hostName);
+//			selected = i;
+//		}
+//		hostField.setSelectedIndex(selected);
+//	}
 
 	private void setPortFromHostSelection()
 	{
