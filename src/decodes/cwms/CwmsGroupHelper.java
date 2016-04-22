@@ -8,6 +8,9 @@
 * Open Source Software
 * 
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.10  2013/04/23 13:25:23  mmaloney
 * Office ID filtering put back into Java.
 *
@@ -51,7 +54,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.TreeSet;
 
 import decodes.db.Constants;
@@ -74,6 +76,24 @@ public class CwmsGroupHelper
 	{
 		this.tsdb = tsdb;
 	}
+	
+	@SuppressWarnings("serial")
+	class TsIdSet extends TreeSet<TimeSeriesIdentifier>
+	{
+		TsIdSet()
+		{
+			super(
+				new Comparator<TimeSeriesIdentifier>()
+				{
+					public int compare(TimeSeriesIdentifier dd1, TimeSeriesIdentifier dd2)
+					{
+						long diff = dd1.getKey().getValue() - dd2.getKey().getValue();
+						return diff < 0L ? -1 : diff > 0L ? 1 : 0;
+					}
+					public boolean equals(Object obj) { return false; }
+				});
+		}
+	}
 
 	/**
 	 * Recursively expand groups to find all ts_ids under the 
@@ -86,76 +106,35 @@ public class CwmsGroupHelper
 	public void expandTsGroupDescriptors(TsGroup tsGroup)
 		throws DbIoException
 	{
-		tsdb.debug("CwmsGroupHelper.expandTsGroupDescriptors");
+		tsdb.debug("CwmsGroupHelper.expandTsGroupDescriptors group '" + tsGroup.getGroupName() + "'");
 		tsGroup.clearExpandedList();
 
 		ArrayList<DbKey> idsDone = new ArrayList<DbKey>();
-		TreeSet<TimeSeriesIdentifier> tsIdSet 
-			= new TreeSet<TimeSeriesIdentifier>(
-				new Comparator<TimeSeriesIdentifier>()
-				{
-					public int compare(TimeSeriesIdentifier dd1, TimeSeriesIdentifier dd2)
-					{
-						long diff = dd1.getKey().getValue() - dd2.getKey().getValue();
-						return diff < 0L ? -1 : diff > 0L ? 1 : 0;
-					}
-					public boolean equals(Object obj) { return false; }
-				});
-		doExpandTsGroup(tsGroup, idsDone, tsIdSet);
+		TsIdSet tsIdSet = doExpandTsGroup(tsGroup, idsDone);
 		
 		for(TimeSeriesIdentifier dd : tsIdSet)
 			tsGroup.addToExpandedList(dd);
 		
-		// Now expand all the 'excluded' groups and remove them from the
-		// expanded list.
-		tsIdSet.clear();
-		idsDone.clear();
-		for(TsGroup excludedGroup : tsGroup.getExcludedSubGroups())
-			doExpandTsGroup(excludedGroup, idsDone, tsIdSet);
-		for(TimeSeriesIdentifier dd : tsIdSet)
-			tsGroup.rmFromExpandedList(dd);
-		
-		// Now handle all 'intersected' groups.
-		if (tsGroup.getIntersectedGroups().size() > 0)
-		{
-			tsIdSet.clear();
-			idsDone.clear();
-			for(TsGroup intersectedGroup : tsGroup.getIntersectedGroups())
-				doExpandTsGroup(intersectedGroup, idsDone, tsIdSet);
-			for(Iterator<TimeSeriesIdentifier> tsit = tsGroup.getExpandedList().iterator();
-				tsit.hasNext(); )
-			{
-				TimeSeriesIdentifier tsInGroup = tsit.next();
-				boolean found = false;
-				for(TimeSeriesIdentifier intTsId : tsIdSet)
-					if (tsInGroup.getKey() == intTsId.getKey())
-					{
-						found = true;
-						break;
-					}
-				if (!found)
-					tsit.remove();
-			}
-		}
-		
 		tsGroup.setIsExpanded(true);
 	}
 
-	private void doExpandTsGroup(TsGroup tsGroup, ArrayList<DbKey> idsDone,
-		TreeSet<TimeSeriesIdentifier> tsIdSet)
+	private TsIdSet doExpandTsGroup(TsGroup tsGroup, ArrayList<DbKey> idsDone)
 		throws DbIoException
 	{
-tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName());
-tsdb.debug("  #sites=" + tsGroup.getSiteIdList().size()
-+ ", isTransient=" + tsGroup.isTransient());
+//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName());
 
+		TsIdSet tsIdSet = new TsIdSet();
+		
 		// There may be dups & circular references in the hierarchy.
 		// Only process each group once.
 		for(DbKey id : idsDone)
 			if (id.equals(tsGroup.getGroupId()))
-				return;
+			{
+//try { throw new Exception(""); } catch(Exception ex) { ex.printStackTrace(); }
+				tsIdSet.addAll(tsGroup.getExpandedList());
+				return tsIdSet;
+			}
 
-		tsdb.debug("CwmsGroupHelper.doExpandTsGroup - 2");
 		idsDone.add(tsGroup.getGroupId());
 		if (!tsGroup.isTransient())
 			// transient groups are built programmatically -- not in DB.
@@ -187,7 +166,6 @@ tsdb.debug("  #sites=" + tsGroup.getSiteIdList().size()
 		{
 			StringBuilder where = new StringBuilder();
 			where.append("where a.db_office_code = a.db_office_code ");
-//			where.append("where a.db_office_code = " + tsdb.getDbOfficeCode());
 			if (siteIds.size() > 0)
 			{
 				where.append(" and a.location_code in(");
@@ -301,8 +279,54 @@ tsdb.debug("  #sites=" + tsGroup.getSiteIdList().size()
 					+ q + "': " + ex);
 			}
 		}
+		
+		tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+			+ " component check eresulted in " + tsIdSet.size() + " time series.");
 
-		for(TsGroup subGroup : tsGroup.getIncludedSubGroups())
-			doExpandTsGroup(subGroup, idsDone, tsIdSet);
+
+//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+//	+ " has " + tsGroup.getIncludedSubGroups().size() + " included subgroups.");
+		for(TsGroup inclGroup : tsGroup.getIncludedSubGroups())
+		{
+			TreeSet<TimeSeriesIdentifier> addedTsids = doExpandTsGroup(inclGroup, idsDone);
+			tsIdSet.addAll(addedTsids);
+		}
+//		tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+//			+ " after inclusions there are " + tsIdSet.size() + " time series.");
+//
+//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+//	+ " has " + tsGroup.getExcludedSubGroups().size() + " excluded subgroups.");
+
+		
+		for(TsGroup exclGroup : tsGroup.getExcludedSubGroups())
+		{
+			TreeSet<TimeSeriesIdentifier> exclTsids = doExpandTsGroup(exclGroup, idsDone);
+			tsIdSet.removeAll(exclTsids);
+		}
+//		tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+//			+ " after exclusions there are " + tsIdSet.size() + " time series.");
+//		
+//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+//	+ " has " + tsGroup.getIntersectedGroups().size() + " intersected subgroups.");
+
+		
+		
+		for(TsGroup intsGroup : tsGroup.getIntersectedGroups())
+		{
+			tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+				+ " processing intersecting group " + intsGroup.getGroupName());
+			TreeSet<TimeSeriesIdentifier> intsTsids = doExpandTsGroup(intsGroup, idsDone);
+//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+//	+ " Intersecting group " + intsGroup.getGroupName() + " has " + intsTsids.size() + " tsids.");
+
+			tsIdSet.retainAll(intsTsids);
+//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+//	+ " after retainAll, this group has " + tsIdSet.size() + " tsids.");
+		}
+		tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
+			+ " after intersections there are " + tsIdSet.size() + " time series.");
+		return tsIdSet;
 	}
+
+	
 }
