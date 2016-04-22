@@ -49,7 +49,7 @@ public class PythonStyledDocument extends DefaultStyledDocument
 	
 	public static boolean isKeyword(String w) { return keyWords.contains(w); }
 
-private void pause() { /* try { Thread.sleep(500L); } catch(InterruptedException ex) {} */ }
+private void pause() { /* try { Thread.sleep(500L); } catch(InterruptedException ex) {} */}
 	
 	@Override
 	public void remove(int offs, int len) throws BadLocationException
@@ -61,15 +61,22 @@ Logger.instance().debug1("remove(offs=" + offs + ", len=" + len + ")"); pause();
 		Element paraElem = this.getParagraphElement(offs);
 		
 		int lineStart = paraElem.getStartOffset();
-		int lineEnd = paraElem.getEndOffset();
+		int lineEnd = paraElem.getEndOffset()-1;
 //Logger.instance().debug1("After removal, offs=" + offs + " line start=" + lineStart + ", end=" + lineEnd); pause();
-		if (lineStart != paraElem.getEndOffset())
+		if (lineStart < lineEnd)
 		{
 			// Retrieve, and then Remove the entire thing from the doc.
-			String line = getText(lineStart, paraElem.getEndOffset() - lineStart);
-//Logger.instance().debug1("calling super.remove(" + lineStart + ", " + (paraElem.getEndOffset() - lineStart) + ")"); pause();
+			String line = getText(lineStart, lineEnd - lineStart);
+			int rmlen = lineEnd - lineStart;
+//Logger.instance().debug1("calling super.remove(" + lineStart + ", " + rmlen + ") to remove '" + line + "'"); pause();
 
-			super.remove(lineStart, paraElem.getEndOffset() - lineStart);
+			try { super.remove(lineStart, rmlen); }
+			catch(BadLocationException ex)
+			{
+				Logger.instance().warning("PythonStyledDocument.remove thrown in super.remove: " + ex
+					+ "offsetRequested=" + ex.offsetRequested());
+				return;
+			}
 			// Now re-add it with THIS.insertString so the line gets reprocessed.
 //Logger.instance().debug1("Re-inserting '" + line + "' at position " + lineStart); pause();
 			this.insertString(lineStart, line, getStyle(PythonTextType.NormalText.toString()));
@@ -82,7 +89,7 @@ Logger.instance().debug1("remove(offs=" + offs + ", len=" + len + ")"); pause();
 	@Override
 	public void insertString(int offs, String str, AttributeSet a) throws BadLocationException
 	{
-Logger.instance().debug1("insertString(" + AsciiUtil.bin2ascii(str.getBytes()) + ")"); pause();
+//Logger.instance().debug1("insertString(" + AsciiUtil.bin2ascii(str.getBytes()) + ")"); pause();
 
 		// First write using parent in normal attribute.
 		super.insertString(offs, str, getStyle(PythonTextType.NormalText.toString()));
