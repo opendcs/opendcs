@@ -7,6 +7,9 @@
 *  contained in this file may be claimed to be proprietary.
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.12  2013/03/21 18:27:39  mmaloney
 * DbKey Implementation
 *
@@ -425,9 +428,29 @@ public class TsGroup
 	 */
 	public void addSubGroup(TsGroup subGroupMember, char combine)
 	{
+		// MJM 2016 04/18 a group can only be in one of the lists and only once.
+		for(Iterator<TsGroup> git = excludeGroups.iterator(); git.hasNext(); )
+		{
+			TsGroup grp = git.next();
+			if (grp.getKey().equals(subGroupMember.getKey()))
+				git.remove();
+		}
+		for(Iterator<TsGroup> git = intersectedGroups.iterator(); git.hasNext(); )
+		{
+			TsGroup grp = git.next();
+			if (grp.getKey().equals(subGroupMember.getKey()))
+				git.remove();
+		}
+		for(Iterator<TsGroup> git = includeGroups.iterator(); git.hasNext(); )
+		{
+			TsGroup grp = git.next();
+			if (grp.getKey().equals(subGroupMember.getKey()))
+				git.remove();
+		}
+		
 		combine = Character.toUpperCase(combine);
 		Logger.instance().debug3("TsGroup.addSubGroup(" + subGroupMember.getGroupName()
-			+ ", " + combine);
+			+ ", " + combine + ") this group=" + this.groupName);
 		if (combine == 'S' || combine == 'F')
 		{
 			subGroupMember.setInclusion("Subtract");
