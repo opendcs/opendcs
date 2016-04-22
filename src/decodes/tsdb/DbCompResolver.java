@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2016/03/24 19:13:37  mmaloney
+*  Added history stuff needed for Python.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -262,8 +265,14 @@ Logger.instance().debug3("makeConcrete of computation " + comp.getName()
 	{
 		PythonWritten pw = null;
 		Date cutoff = new Date(System.currentTimeMillis() - 120000L); // 2 minutes ago
+		int n = 0;
 		while((pw = pythonWrittenQueue.peekFirst()) != null && pw.getTimeWritten().before(cutoff))
+		{
 			pythonWrittenQueue.remove();
+			n++;
+		}
+//		Logger.instance().debug3("resolver.trimPythonWrittenQueue: trimmed to: " + cutoff +
+//			", removed " + n + " PythonWritten objects. Q size is now " + pythonWrittenQueue.size());
 	}
 	
 	private boolean isInPythonWrittenQueue(DbKey compId, DbKey tsCode)
@@ -277,6 +286,16 @@ Logger.instance().debug3("makeConcrete of computation " + comp.getName()
 	
 	public void pythonWrote(DbKey compId, DbKey tsCode)
 	{
+		// I only need a single instance for a given compId/tsCode pair.
+		// Remove the old one if present, and add a new one at the end with current date/time.
+		for(PythonWritten pw : pythonWrittenQueue)
+			if (pw.getCompId().equals(compId) && pw.getTsCode().equals(tsCode))
+			{
+				pythonWrittenQueue.remove(pw);
+				break;
+			}
 		pythonWrittenQueue.addLast(new PythonWritten(compId, tsCode));
+//		Logger.instance().debug3("resolver.pythonWrote(compId=" + compId.getValue() + ", tsCode=" 
+//			+ tsCode.getValue() + "). Q size is now " + pythonWrittenQueue.size());
 	}
 }
