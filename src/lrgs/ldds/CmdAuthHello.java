@@ -186,7 +186,18 @@ public class CmdAuthHello extends LddsCommand
 		String userRoot = isLocal ? cfg.ddsUserRootDirLocal : cfg.ddsUserRootDir;
 		LddsUser user = new LddsUser(username, userRoot);
 		if (ddsVersion != null)
-			user.setClientDdsVersion(ddsVersion);
+		{
+			try
+			{
+				int dv = Integer.parseInt(ddsVersion);
+				user.setClientDdsVersion(""+dv);
+			}
+			catch(NumberFormatException ex)
+			{
+				throw new LddsRequestException("Protocol Error",
+					LrgsErrorCode.DDDSAUTHFAILED, true);
+			}
+		}
 
 		// Construct an authenticator & compare to the one passed.
 		AuthenticatorString authstr = null;
