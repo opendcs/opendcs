@@ -30,6 +30,6 @@ public enum AWAlgoType
 			return AGGREGATING;
 		else if (c == 'R' || c == 'r')
 			return RUNNING_AGGREGATE;
-		return null;
+		return TIME_SLICE;
 	}
 }
