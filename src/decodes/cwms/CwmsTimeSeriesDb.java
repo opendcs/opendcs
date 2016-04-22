@@ -12,6 +12,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.12  2016/03/24 19:00:45  mmaloney
+*  Refactor: Have expandSDI return the TimeSeriesID that it uses. This saves the caller from
+*  having to re-look it up. Needed for PythonAlgorithm.
+*
 *  Revision 1.11  2016/01/27 21:41:27  mmaloney
 *  schedule_entry_status and dacq_event have their own sequences.
 *
@@ -825,7 +829,6 @@ public class CwmsTimeSeriesDb
 		
 		try
 		{
-			Logger.instance().info(module + " calling hec.data.Units.getAvailableUnits()");
 			hec.data.Units.getAvailableUnits();
 		}
 		catch(Exception ex)
