@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2016/03/24 19:09:18  mmaloney
+*  Added instance() method needed by Python Algorithm.
+*
 *  Revision 1.4  2015/04/02 18:16:19  mmaloney
 *  Added property definitions.
 *
@@ -208,66 +211,70 @@ public class ComputationApp
 					loadingAppDAO.releaseCompProcLock(myLock);
 				}
 
-				action = "Resolving computations";
-				DbComputation comps[] = resolver.resolve(data);
-
-				action = "Applying computations";
-				for(DbComputation comp : comps)
+				if (!data.isEmpty())
 				{
-					Logger.instance().debug1("Trying computation '" 
-						+ comp.getName() + "' #trigs=" + comp.getTriggeringRecNums().size());
-					compsTried++;
-					try
+					action = "Resolving computations";
+					DbComputation comps[] = resolver.resolve(data);
+	
+					action = "Applying computations";
+					for(DbComputation comp : comps)
 					{
-						comp.prepareForExec(theDb);
-						comp.apply(data, theDb);
+						Logger.instance().debug1("Trying computation '" 
+							+ comp.getName() + "' #trigs=" + comp.getTriggeringRecNums().size());
+						compsTried++;
+						try
+						{
+							comp.prepareForExec(theDb);
+							comp.apply(data, theDb);
+						}
+						catch(NoSuchObjectException ex)
+						{
+							compErrors++;
+							warning("Computation '" + comp.getName()
+								+ "removed from DB: " + ex);
+						}
+						catch(DbCompException ex)
+						{
+							String msg = "Computation '" + comp.getName() 
+								+ "' DbCompException: " + ex;
+							warning(msg);
+							compErrors++;
+							for(Integer rn : comp.getTriggeringRecNums())
+								 data.getTasklistHandle().markComputationFailed(rn);
+						}
+						catch(Exception ex)
+						{
+							compErrors++;
+							String msg = "Computation '" + comp.getName() 
+								+ "' Exception: " + ex;
+							warning(msg);
+							System.err.println(msg);
+							ex.printStackTrace(System.err);
+							for(Integer rn : comp.getTriggeringRecNums())
+								 data.getTasklistHandle().markComputationFailed(rn);
+						}
+						comp.getTriggeringRecNums().clear();
+						Logger.instance().debug1("End of computation '" 
+							+ comp.getName() + "'");
 					}
-					catch(NoSuchObjectException ex)
+	
+					action = "Saving results";
+					List<CTimeSeries> tsList = data.getAllTimeSeries();
+	Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
+					for(CTimeSeries ts : tsList)
 					{
-						compErrors++;
-						warning("Computation '" + comp.getName()
-							+ "removed from DB: " + ex);
+						try { timeSeriesDAO.saveTimeSeries(ts); }
+						catch(BadTimeSeriesException ex)
+						{
+							warning("Cannot save time series " + ts.getNameString()
+								+ ": " + ex);
+						}
 					}
-					catch(DbCompException ex)
-					{
-						String msg = "Computation '" + comp.getName() 
-							+ "' DbCompException: " + ex;
-						warning(msg);
-						compErrors++;
-						for(Integer rn : comp.getTriggeringRecNums())
-							 data.getTasklistHandle().markComputationFailed(rn);
-					}
-					catch(Exception ex)
-					{
-						compErrors++;
-						String msg = "Computation '" + comp.getName() 
-							+ "' Exception: " + ex;
-						warning(msg);
-						System.err.println(msg);
-						ex.printStackTrace(System.err);
-						for(Integer rn : comp.getTriggeringRecNums())
-							 data.getTasklistHandle().markComputationFailed(rn);
-					}
-					comp.getTriggeringRecNums().clear();
-					Logger.instance().debug1("End of computation '" 
-						+ comp.getName() + "'");
+	
+					action = "Releasing new data";
+					theDb.releaseNewData(data);
+					lastDataTime = System.currentTimeMillis();
 				}
-
-				action = "Saving results";
-				List<CTimeSeries> tsList = data.getAllTimeSeries();
-Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
-				for(CTimeSeries ts : tsList)
-				{
-					try { timeSeriesDAO.saveTimeSeries(ts); }
-					catch(BadTimeSeriesException ex)
-					{
-						warning("Cannot save time series " + ts.getNameString()
-							+ ": " + ex);
-					}
-				}
-
-				action = "Releasing new data";
-				theDb.releaseNewData(data);
 			}
 			catch(LockBusyException ex)
 			{
