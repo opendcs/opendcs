@@ -20,7 +20,13 @@ import decodes.util.ResourceFactory;
 public class DdsVersion
 {
 	/** Current version of servers & clients compiled with this code. */
-	public static final int DdsVersionNum = 13;
+	public static final int DdsVersionNum = 14;
+	
+	/**
+	 * Version 14
+	 * Support for SHA256 for hashing.
+	 */
+	public static final int version_14 = 14;
 	
 	/**
 	 * Version 13:
@@ -82,7 +88,6 @@ public class DdsVersion
 
 	public static String getVersion()
 	{
-		return "" + DdsVersionNum +
-			ResourceFactory.instance().getDdsVersionSuffix();
+		return "" + DdsVersionNum;
 	}
 }
