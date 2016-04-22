@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2015/10/22 14:04:55  mmaloney
+ * Clean up debug: Old code was saying no match for site even when it did find match.
+ *
  * Revision 1.3  2015/08/04 18:54:03  mmaloney
  * CWMS-6388 Display should show location ID, not public name. This fixes the issue
  * with evaluation.
@@ -803,17 +806,6 @@ public class TsGroupDefinitionPanel
 		//Feed other group members to the TsDb
 		for(StringPair sp : queryModel.items)
 		{
-			
-//		for(int i=0; i<queryListModel.size(); i++)
-//		{
-//			String theLine = (String) queryListModel.get(i);
-			// Each line in the model is is "label: value"
-//			int colon = theLine.indexOf(": ");
-//			if (colon == -1 || theLine.length() < colon + 2)
-//				continue;
-//			String label = theLine.substring(0, colon);
-//			String value = theLine.substring(colon+2);
-
 			String label = sp.first;
 			String value = sp.second;
 			
@@ -822,7 +814,6 @@ public class TsGroupDefinitionPanel
 				boolean found = false;
 				for(Site st: knownSites)
 					if (st.hasNameValue(sp.second))
-//					if (value.equals(st.getDisplayName()))
 					{
 						tempGroup.addSiteId(st.getId());
 						found = true;
