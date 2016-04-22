@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
@@ -186,7 +187,7 @@ public class RtStatFrame
 					setPortFromHostSelection();
 				}
 			});
-		loadConnectionsField();
+		loadConnectionsField(hostCombo, connectionList, connectedHostName);
 		netlistDlg = null;
 		rtStatPanel.htmlPanel.addHyperlinkListener(this);
 
@@ -975,7 +976,8 @@ public class RtStatFrame
 		eventsPanel.addLine(event);
 	}
 
-	private void loadConnectionsField()
+	public static void loadConnectionsField(JComboBox hostCombo, Properties connectionList,
+		String connectedHostName)
 	{
 		String fn = LddsClient.getLddsConnectionsFile();
 		File file = new File(fn);
@@ -990,24 +992,66 @@ public class RtStatFrame
 		{
 			System.out.println("No previously recorded connections");
 		}
-		Enumeration enames = connectionList.propertyNames();
-		int selected = -1;
-		int i = 0;
-		hostCombo.removeAllItems();
-		for(; enames.hasMoreElements(); i++)
+		
+		class ht 
+			implements Comparable<ht>
 		{
-			String s = (String)enames.nextElement();
-			if (connectedHostName != null 
-			 && connectedHostName.equalsIgnoreCase(s))
-				selected = i;
-			hostCombo.addItem(s);
+			long lastUse;
+			String hostname;
+			@Override
+			public int compareTo(ht o)
+			{
+				if (lastUse > o.lastUse)
+					return -1;
+				else if (lastUse < o.lastUse)
+					return 1;
+				return hostname.compareTo(o.hostname);
+			}
+			public ht(long lastUse, String hostname)
+			{
+				super();
+				this.lastUse = lastUse;
+				this.hostname = hostname;
+			}
 		}
+		ArrayList<ht> hosts = new ArrayList<ht>();
+		for(Object key : connectionList.keySet())
+		{
+			String host = (String)key;
+			String v = connectionList.getProperty(host);
+			long lastUse = 0L;
+			String f[] = v.split(" ");
+			if (f != null && f.length >= 3)
+				try { lastUse = Long.parseLong(f[2]); }
+				catch(NumberFormatException ex) {}
+			hosts.add(new ht(lastUse, host));
+		}
+		Collections.sort(hosts);
+		int selected = -1;
+		for(int i = 0; i<hosts.size(); i++)
+		{
+			ht x = hosts.get(i);
+			hostCombo.addItem(x.hostname);
+			if (connectedHostName != null && connectedHostName.equalsIgnoreCase(x.hostname))
+				selected = i;
+		}
+		
+//		Enumeration enames = connectionList.propertyNames();
+//		int i = 0;
+//		hostCombo.removeAllItems();
+//		for(; enames.hasMoreElements(); i++)
+//		{
+//			String s = (String)enames.nextElement();
+//			if (connectedHostName != null 
+//			 && connectedHostName.equalsIgnoreCase(s))
+//				selected = i;
+//			hostCombo.addItem(s);
+//		}
 		if (selected == -1)
 		{
 			hostCombo.addItem(connectedHostName);
-			selected = i;
+			selected = hosts.size();
 		}
-		hostCombo.setSelectedIndex(selected);
 	}
 
 	private void setPortFromHostSelection()
@@ -1036,7 +1080,7 @@ public class RtStatFrame
 	private void updateConnectionList(String host, String port, String user)
 	{
 		connectedHostName = host;
-		connectionList.setProperty(host, port + " " + user);
+		connectionList.setProperty(host, port + " " + user + " " + System.currentTimeMillis());
 		String fn = LddsClient.getLddsConnectionsFile();
 		File file = new File(fn);
 		try
@@ -1050,7 +1094,7 @@ public class RtStatFrame
 			System.out.println("Cannot save connections to '"
 				+ file.getPath() + "': " + ioe);
 		}
-		loadConnectionsField();
+		loadConnectionsField(hostCombo, connectionList, connectedHostName);
 	}
 
 	/**
