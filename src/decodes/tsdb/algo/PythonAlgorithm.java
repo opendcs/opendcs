@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2016/03/24 19:16:06  mmaloney
+ * Added for Python Algorithm
+ *
  * Revision 1.1  2015/10/26 12:45:34  mmaloney
  * PythonAlgorithm
  *
@@ -11,6 +14,8 @@ package decodes.tsdb.algo;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StringReader;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -19,6 +24,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
@@ -30,6 +36,7 @@ import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.var.IFlags;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
@@ -130,6 +137,7 @@ public class PythonAlgorithm
 //AW:INIT_END
 
 //AW:USERINIT
+		
 		// Code here will be run once, after the algorithm object is created.
 		pyNumFmt.setGroupingUsed(false);
 		pyNumFmt.setMaximumFractionDigits(5);
@@ -165,6 +173,35 @@ public class PythonAlgorithm
 		debug3("initAWAlgorithm: Installed " + _inputNames.length 
 			+ " inputs and " + _outputNames.length + " outputs.");
 		
+		for(DbCompAlgorithmScript script : comp.getAlgorithm().getScripts())
+			if (script.getScriptType() == ScriptType.PY_Init)
+			{
+				Properties initProps = new Properties();
+				try
+				{
+					initProps.load(new StringReader(script.getText()));
+					String s = PropertiesUtil.getIgnoreCase(initProps, "AlgorithmType");
+					if (s != null)
+					{
+						_awAlgoType = AWAlgoType.fromString(s);
+						debug1("AlgorithmType set to " + _awAlgoType);
+						
+						// set _aggPeriodVarRoleName to the first output parameter.
+						if (_awAlgoType == AWAlgoType.AGGREGATING
+						 && _outputNames.length > 0)
+						{
+							_aggPeriodVarRoleName = _outputNames[0];
+							debug1("set _aggPeriodVarRoleName to " + _aggPeriodVarRoleName);
+						}
+					}
+				}
+				catch (IOException ex)
+				{
+					warning("Error parsing init script '" + script.getText() + "': " + ex);
+				}
+				break;
+			}
+
 //AW:USERINIT_END
 	}
 	
@@ -468,7 +505,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		// See docs in PythonWritten.java for explanation of the following:
 		ParmRef parmRef = this.getParmRef(rolename);
 		ComputationApp app = ComputationApp.instance();
-		if (app != null)
+		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
 			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
 	}
 	
@@ -935,7 +972,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		// See docs in PythonWritten.java for explanation of the following:
 		ParmRef parmRef = this.getParmRef(rolename);
 		ComputationApp app = ComputationApp.instance();
-		if (app != null)
+		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
 			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
 	}
 	
@@ -968,7 +1005,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		// See docs in PythonWritten.java for explanation of the following:
 		ParmRef parmRef = this.getParmRef(rolename);
 		ComputationApp app = ComputationApp.instance();
-		if (app != null)
+		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
 			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
 	}
 	
@@ -1207,6 +1244,12 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	public void setTracer(PythonAlgoTracer tracer)
 	{
 		this.tracer = tracer;
+	}
+	
+	public void abortComp(String msg)
+		throws DbCompException
+	{
+		throw new DbCompException(msg);
 	}
 	
 }
