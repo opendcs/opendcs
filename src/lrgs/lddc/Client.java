@@ -51,6 +51,15 @@ public class Client extends CmdLineProcessor
 		client.setDebugStream(System.err);
 
 		addCmd(
+			new CmdLine("strong", " - Use strong dds v14 auth only.")
+			{
+				public void execute(String[] tokens)
+				{
+					client.setStrongOnly(true);
+				}
+			});
+
+		addCmd(
 			new CmdLine("hello", "[username]  - Login to server")
 			{
 				public void execute(String[] tokens)
