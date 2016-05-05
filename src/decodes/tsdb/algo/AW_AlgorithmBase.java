@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.10  2016/03/24 19:15:01  mmaloney
+*  Some refactoring to support Python. Also, the Mike Neilson fix for doubly-closed
+*  aggregate periods to prevent endless loop.
+*
 *  Revision 1.9  2016/01/27 22:03:55  mmaloney
 *  make baseTimes protected so it is available to sub-classes.
 *
@@ -202,6 +206,10 @@ public abstract class AW_AlgorithmBase
 			"When filling regular interval missing input data, do not fill more than this many intervals."),
 		new PropertySpec("maxMissingTimeForFill", PropertySpec.INT,
 			"When filling missing input data, fail if the missing gap is more than this many seconds."),
+		new PropertySpec("aggregateTimeOffset", PropertySpec.STRING, 
+			"e.g. '8 hours', '1 day'. If supplied it is added to the output time of an aggregate."
+			+ " An example would be to center an average within its period."), 
+		
 	};
 	private PropertySpec allprops[] = null;
 	
