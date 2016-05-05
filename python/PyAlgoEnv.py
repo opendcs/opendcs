@@ -99,3 +99,7 @@ def tabrating(tabfile, indep):
 		return 'NV'
 	return algo.tabrating(tabfile, indep)
 
+def abortComp(msg):
+	algo.abortComp(msg)
+
+

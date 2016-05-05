@@ -55,10 +55,9 @@
   <br/>
   Example:
 <![CDATA[
-        datchk("input1")
-        if (isGoodQuality("input1")):
-            output1 = input1
-            setFlags("output1", "input1")
+        datchk('input1')
+        if (isGoodQuality('input1')):
+            setOutputAndQual('output1', input1.value, input1.qual)
 ]]>
 </func>
 
@@ -73,9 +72,8 @@
 <![CDATA[
         screening('input1')
         if (isGoodQuality('input1')):
-            output1 = input1
-            setQual('output1', input1.qual)
-]]>
+             setOutputAndQual('output1', input1.value, input1.qual)
+]>
 </func>
 
 <func name="setOutput" sig="setOutput(outputTsParm, value)">
@@ -160,11 +158,17 @@
   Write a INFO level message to the log.
 </func>
 <func name="warning" sig="warning(msg)">
-  Write a WARNINGlevel message to the log.
+  Write a WARNING level message to the log.
 </func>
 
 <func name="lookupMeta" sig="rating(locationID, paramName)">
   (NOT IMPLEMENTED) Lookup the named parameter at the specified location and return its value.
+</func>
+<func name="abortComp" sig="abortComp(msg)">
+  Aborts the computation with an error message. Can be thrown before, within, 
+  and after time slices to abort the entire run of the computation. No data is 
+  written from an aborted computation, even if setOutput has previously been called.
+  Use the Python exit() function to exit a script without throwing an error.
 </func>
 
 </funclist>
