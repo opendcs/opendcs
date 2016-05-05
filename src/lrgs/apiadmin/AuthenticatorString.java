@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2016/02/23 19:45:03  mmaloney
+*  Support for SHA-256, as required by NOAA.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -30,8 +33,10 @@
 package lrgs.apiadmin;
 
 import ilex.util.ByteUtil;
+import ilex.util.Logger;
 import ilex.util.PasswordFileEntry;
 import ilex.util.AuthException;
+
 import java.io.*;
 import java.security.*;
 
@@ -68,6 +73,7 @@ public class AuthenticatorString
 		throws NoSuchAlgorithmException
 	{
 		this.algorithm = algorithm;
+//System.out.println("Building authenticator with " + algorithm);
 		astr = ByteUtil.toHexString(
 			makeAuthenticator(pfe.getUsername().getBytes(), 
 			pfe.getShaPassword(), timet, algorithm));
