@@ -129,7 +129,9 @@ public class EditPresentationDialog
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE, 
 				new Insets(5, 10, 5, 2), 0, 0));
-		unitsField.setEditable(false);
+		// MJM Leave editable so user can type 'omit', or perhaps
+		// some EU that doesn't yet exist in the database.
+//		unitsField.setEditable(false);
 		paramPanel.add(unitsField,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
