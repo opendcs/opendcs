@@ -324,7 +324,10 @@ public class LrgsConfig
 		new PropertySpec("localIpMask", PropertySpec.STRING,
 			"(e.g. 192.168.0.0/24) Local IP addresses will not be displayed on rtstat page"),
 		new PropertySpec("hideHostNames", PropertySpec.BOOLEAN,
-			"(default=false) Set to tru to hide host names on the rtstat display.")
+			"(default=false) Set to true to hide host names on the rtstat display."),
+		new PropertySpec("restrictEventsToAdmin", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to disallow events to non-adminstrators "
+			+ "on the rtstat display."),
 //		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
 //			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
 	};

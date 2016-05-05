@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2009/04/21 13:26:17  mjmaloney
 *  dev
 *
@@ -35,6 +38,7 @@ import java.net.InetAddress;
 
 import ilex.util.IndexRangeException;
 import lrgs.common.*;
+import lrgs.lrgsmain.LrgsConfig;
 
 /**
 This command returns events that have been generated on the LRGS.
@@ -67,23 +71,28 @@ public class CmdGetEvents extends LddsCommand
 				"HELLO required before GetEvents.");
 
 		StringBuffer sb = new StringBuffer();
-		try
+		
+		if (!LrgsConfig.instance().getMiscBooleanProperty("restrictEventsToAdmin", false)
+		 || ldds.user.isAdmin)
 		{
-			String evt;
-			while((evt = ldds.qlog.getMsg(ldds.logIndex)) != null)
+			try
 			{
-				sb.append(evt);
-				sb.append('\n');
-				ldds.logIndex++;
+				String evt;
+				while((evt = ldds.qlog.getMsg(ldds.logIndex)) != null)
+				{
+					sb.append(evt);
+					sb.append('\n');
+					ldds.logIndex++;
+				}
 			}
-		}
-		catch(IndexRangeException ex)
-		{
-			int newIdx = ldds.qlog.getNextIdx();
-			sb.append("Events Resynchronized: " + ex.getMessage()
-				+ " tried=" + ldds.logIndex + ", reset to "
-				+ newIdx + "\n");
-			ldds.logIndex = newIdx;
+			catch(IndexRangeException ex)
+			{
+				int newIdx = ldds.qlog.getNextIdx();
+				sb.append("Events Resynchronized: " + ex.getMessage()
+					+ " tried=" + ldds.logIndex + ", reset to "
+					+ newIdx + "\n");
+				ldds.logIndex = newIdx;
+			}
 		}
 
 		LddsMessage response = 
