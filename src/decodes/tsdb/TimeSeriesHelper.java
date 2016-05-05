@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2014/10/07 13:04:56  mmaloney
+ * dev
+ *
  * 
  * Copyright 2007 Ilex Engineering, Inc. - All Rights Reserved.
  * No part of this file may be duplicated in either hard-copy or electronic
@@ -118,6 +121,7 @@ public class TimeSeriesHelper
 				cts.getNameString()
 				+ "' from " + euOld.abbr + " to " + euNew.abbr
 				+ " -- assuming already correct units.");
+			cts.setUnitsAbbr(newUnits);
 			return;
 		}
 		Logger.instance().debug3(
