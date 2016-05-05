@@ -70,6 +70,7 @@ public class LddsClient extends BasicClient
 
 	// The user name used in the last call to hello or auth.
 	private String userName = null;
+	private boolean strongOnly = false;
 
 
 	/**
@@ -306,7 +307,7 @@ public class LddsClient extends BasicClient
 			PasswordFileEntry pfe = new PasswordFileEntry(name, passwd);
 //System.out.println("sendAuthHello user='" + name + "' pw='" + passwd + "', authStr='" 
 //+ ByteUtil.toHexString(pfe.getShaPassword()) + "'");
-			sendAuthHello(pfe, AuthenticatorString.ALGO_SHA);
+			sendAuthHello(pfe, strongOnly ? AuthenticatorString.ALGO_SHA256 : AuthenticatorString.ALGO_SHA);
 		}
 		catch(AuthException ex)
 		{
@@ -2270,6 +2271,11 @@ public class LddsClient extends BasicClient
 	public String getUserName()
 	{
 		return userName;
+	}
+
+	public void setStrongOnly(boolean strongOnly)
+	{
+		this.strongOnly = strongOnly;
 	}
 
 }
