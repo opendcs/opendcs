@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2016/01/27 21:41:04  mmaloney
+ * Rm references to CWMS_V_TSV_DQU. Always use CWMS_V_TSV and then do
+ * our own conversions if necessary.
+ *
  * Revision 1.10  2015/09/10 21:18:29  mmaloney
  * Development on Screening
  *
@@ -509,23 +513,44 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 	}
 
 	@Override
-	public TimedVariable getPreviousValue(CTimeSeries ts, Date refTime)
+	public TimedVariable getPreviousValue(CTimeSeries cts, Date refTime)
 		throws DbIoException, BadTimeSeriesException
 	{
-		String q = "select DATE_TIME, ROUND(VALUE,8), QUALITY_CODE "
-			+ "FROM CWMS_V_TSV_DQU " 
-			+ "where TS_CODE = " + ts.getSDI()
-			+ " AND UNIT_ID = " + sqlString(ts.getUnitsAbbr())
-			+ " and date_time = "
-			+   "(select max(date_time) from CWMS_V_TSV_DQU "
-			+   	"where TS_CODE = " + ts.getSDI()
+		if (!cts.isExpanded())
+		{
+			fillTimeSeriesMetadata(cts); // may throw BadTimeSeriesException
+			cts.setIsExpanded();
+		}
+
+		// Part of the contract is to honor the units already specified
+		// in the CTimeSeries.
+		UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
+
+		String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+			+ " WHERE TS_CODE = " + cts.getSDI()
+			+ " and DATE_TIME = "
+			+   "(select max(date_time) from CWMS_V_TSV "
+			+   	"where TS_CODE = " + cts.getSDI()
  			+   	" and date_time < " + db.sqlDate(refTime)
 			+ 		" AND VALUE IS NOT NULL "
 			+ 		" AND BITAND(QUALITY_CODE, " 
 						+ CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
-			+	")";
-		q = q + " AND VALUE IS NOT INFINITE";
+			+	")"
+			+ " AND VALUE IS NOT INFINITE";
 
+//		String q = "select DATE_TIME, ROUND(VALUE,8), QUALITY_CODE "
+//			+ "FROM CWMS_V_TSV_DQU " 
+//			+ "where TS_CODE = " + cts.getSDI()
+//			+ " AND UNIT_ID = " + sqlString(cts.getUnitsAbbr())
+//			+ " and date_time = "
+//			+   "(select max(date_time) from CWMS_V_TSV_DQU "
+//			+   	"where TS_CODE = " + cts.getSDI()
+// 			+   	" and date_time < " + db.sqlDate(refTime)
+//			+ 		" AND VALUE IS NOT NULL "
+//			+ 		" AND BITAND(QUALITY_CODE, " 
+//						+ CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
+//			+	")";
+//		q = q + " AND VALUE IS NOT INFINITE";
 
 		try
 		{
@@ -533,8 +558,22 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			if (!rs.next())
 				return null;  // There is no previous value.
 			TimedVariable tv = rs2TimedVariable(rs);
+			
 			if (tv != null)
-				ts.addSample(tv);
+			{
+				if (unitConverter != null)
+				{
+					try
+					{
+						tv.setValue(unitConverter.convert(tv.getDoubleValue()));
+					}
+					catch (Exception ex)
+					{
+						warning("getNextValue: Error in unit conversion: " + ex);
+					}
+				}
+				cts.addSample(tv);
+			}
 			return tv;
 		}
 		catch(SQLException ex)
@@ -549,22 +588,30 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 	}
 
 	@Override
-	public TimedVariable getNextValue(CTimeSeries ts, Date refTime)
+	public TimedVariable getNextValue(CTimeSeries cts, Date refTime)
 		throws DbIoException, BadTimeSeriesException
 	{
-		String q = "select DATE_TIME, ROUND(VALUE,8), QUALITY_CODE "
-			+ "FROM CWMS_V_TSV_DQU " 
-			+ "where TS_CODE = " + ts.getSDI()
-			+ " AND UNIT_ID = " + sqlString(ts.getUnitsAbbr())
-			+ " and date_time = "
-			+   "(select min(date_time) from CWMS_V_TSV_DQU "
-			+   	"where TS_CODE = " + ts.getSDI()
+		if (!cts.isExpanded())
+		{
+			fillTimeSeriesMetadata(cts); // may throw BadTimeSeriesException
+			cts.setIsExpanded();
+		}
+
+		// Part of the contract is to honor the units already specified
+		// in the CTimeSeries.
+		UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
+
+		String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+			+ " WHERE TS_CODE = " + cts.getSDI()
+			+ " and DATE_TIME = "
+			+   "(select min(date_time) from CWMS_V_TSV "
+			+   	"where TS_CODE = " + cts.getSDI()
  			+   	" and date_time > " + db.sqlDate(refTime)
 			+ 		" AND VALUE IS NOT NULL "
 			+ 		" AND BITAND(QUALITY_CODE, " 
-			+ 			CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
-			+	")";
-		q = q + " AND VALUE IS NOT INFINITE";
+						+ CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
+			+	")"
+			+ " AND VALUE IS NOT INFINITE";
 
 		try
 		{
@@ -572,12 +619,22 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			if (!rs.next())
 				return null;  // There is no next value.
 			
-			Date timeStamp = db.getFullDate(rs, 1);
-			double value = rs.getDouble(2);
-			TimedVariable tv = new TimedVariable(value);
-			tv.setTime(timeStamp);
-			tv.setFlags(CwmsFlags.cwmsQuality2flag(rs.getInt(3)));
-			ts.addSample(tv);
+			TimedVariable tv = rs2TimedVariable(rs);
+			if (tv != null)
+			{
+				if (unitConverter != null)
+				{
+					try
+					{
+						tv.setValue(unitConverter.convert(tv.getDoubleValue()));
+					}
+					catch (Exception ex)
+					{
+						warning("getNextValue: Error in unit conversion: " + ex);
+					}
+				}
+				cts.addSample(tv);
+			}
 			return tv;
 		}
 		catch(SQLException ex)
