@@ -186,18 +186,7 @@ public class CmdAuthHello extends LddsCommand
 		String userRoot = isLocal ? cfg.ddsUserRootDirLocal : cfg.ddsUserRootDir;
 		LddsUser user = new LddsUser(username, userRoot);
 		if (ddsVersion != null)
-		{
-			try
-			{
-				int dv = Integer.parseInt(ddsVersion);
-				user.setClientDdsVersion(""+dv);
-			}
-			catch(NumberFormatException ex)
-			{
-				throw new LddsRequestException("Protocol Error",
-					LrgsErrorCode.DDDSAUTHFAILED, true);
-			}
-		}
+			user.setClientDdsVersion(ddsVersion);
 
 		// Construct an authenticator & compare to the one passed.
 		AuthenticatorString authstr = null;
@@ -282,6 +271,24 @@ public class CmdAuthHello extends LddsCommand
 		}
 
 		// If I get to here, the user is authenticated, wither with SHA-256 or SHA.
+		if (algo == AuthenticatorString.ALGO_SHA256)
+		{
+			try
+			{
+				if (ddsVersion != null)
+				{
+					int dv = Integer.parseInt(ddsVersion);
+					// TODO: Should we check for version number >= 13, or is there
+					// any harm in letting earlier versions go as long as they support
+					// proper authentication?
+				}
+			}
+			catch(NumberFormatException ex)
+			{
+				throw new LddsRequestException("Protocol Error",
+					LrgsErrorCode.DDDSAUTHFAILED, true);
+			}
+		}
 		
 		// Some users are restricted by IP Address
 		checkValidIpAddress(pfe, ldds, username);
