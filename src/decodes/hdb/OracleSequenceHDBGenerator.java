@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -45,10 +48,10 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.sql.OracleSequenceKeyGenerator;
-
 import ilex.util.Logger;
 
 /**
@@ -62,6 +65,7 @@ This implementation will work with Version 5 or Version 6 database.
 public class OracleSequenceHDBGenerator
 	extends OracleSequenceKeyGenerator
 {
+	public static String module = "OracleSequenceHDBGenerator";
 
 	/** Default constructor. */
 	public OracleSequenceHDBGenerator()
@@ -88,9 +92,39 @@ public class OracleSequenceHDBGenerator
 		throws DatabaseException
 	{
 		if (tableName.equalsIgnoreCase("HDB_LOADING_APPLICATION"))
-			return DbKey.createDbKey(0);
+		{
+			String q = "select max(loading_application_id) from hdb_loading_application";
+			Statement stmt = null;
+			try
+			{
+				stmt = conn.createStatement();
+		
+				ResultSet rs = stmt.executeQuery(q);
+				if (rs == null || !rs.next())
+				{
+					String msg = module + " query '" + q + "' returned no values.";
+					Logger.instance().warning(msg);
+					throw new DatabaseException(msg);
+				}
+				long max = rs.getLong(1);
+		
+				return DbKey.createDbKey(max+1);
+			}
+			catch(SQLException ex)
+			{
+				String err = "SQL Error executing '" + q + "': " + ex;
+				throw new DatabaseException(err);
+			}
+			finally
+			{
+				if (stmt != null)
+					try { stmt.close(); } catch(Exception ex) {}
+			}
+		}
 		else
 			return super.getKey(tableName, conn);
 	}
+	
+	
 }
 
