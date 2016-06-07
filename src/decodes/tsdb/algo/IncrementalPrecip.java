@@ -8,6 +8,7 @@ import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
+import decodes.util.PropertySpec;
 
 //AW:IMPORTS
 //AW:IMPORTS_END
@@ -28,10 +29,27 @@ public class IncrementalPrecip
 //AW:INPUTS_END
 
 //AW:LOCALVARS
-	double previousValue = -1.0;
+	double previousValue = 0.0;
+	private boolean startOfPeriod = true;
 	double tally = 0.0;
 	int count = 0;
+	
+	private PropertySpec algoPropertySpecs[] = 
+	{
+		new PropertySpec("aggLowerBoundClosed", PropertySpec.BOOLEAN,
+			"default=true, meaning to include the lower bound of the period."),
+		new PropertySpec("aggUpperBoundClosed", PropertySpec.NUMBER,
+			"default=true, meaning to include the upper bound of the period."),
+		new PropertySpec("allowNegative", PropertySpec.BOOLEAN,
+			"default=false, if true, then allow negative precip values. Normally, "
+			+ "negative values are ignored.")
+	};
 
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return algoPropertySpecs;
+	}
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -42,7 +60,8 @@ public class IncrementalPrecip
 //AW:PROPERTIES
 	public boolean aggLowerBoundClosed = true;
 	public boolean aggUpperBoundClosed = true;
-	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed" };
+	public boolean allowNegative = false;
+	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed", "allowNegative" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -69,7 +88,8 @@ public class IncrementalPrecip
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
-		previousValue = -1.0;
+		previousValue = 0.0;
+		startOfPeriod = true;
 		tally = 0.0;
 		count = 0;
 		
@@ -95,14 +115,16 @@ public class IncrementalPrecip
 	{
 //AW:TIMESLICE
 debug3("cumulativePrecip = " + cumulativePrecip + ", at time " + debugSdf.format(_timeSliceBaseTime));
-		if (cumulativePrecip < 0.0)                       // Sanity check
+
+		// Normal case is to ignore negative cumulative inputs. But allow if option set.
+		if (cumulativePrecip < 0.0 && !allowNegative) 
 			warning("Negative cumulativePrecip (" + cumulativePrecip + ") " +
 					" in " + getParmTsUniqueString("cumulativePrecip")
 					+ " at time " + debugSdf.format(_timeSliceBaseTime)
 					+ " -- ignored.");
-		else
+		else // good cumulative precip
 		{
-			if (previousValue >= 0.0)                   // Not first value in period
+			if (!startOfPeriod)
 			{
 				if (cumulativePrecip < previousValue)   // Reset occurred
 					info("cumulativePrecip reset detected in "
@@ -112,6 +134,8 @@ debug3("cumulativePrecip = " + cumulativePrecip + ", at time " + debugSdf.format
 				else
 					tally += (cumulativePrecip - previousValue);
 			}
+			else
+				startOfPeriod = false;
 			previousValue = cumulativePrecip;
 			count++;
 		}
