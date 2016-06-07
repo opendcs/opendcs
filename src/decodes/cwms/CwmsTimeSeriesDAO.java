@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2016/05/06 14:45:14  mmaloney
+ * Never use CWMS_V_TSV_DQU.
+ *
  * Revision 1.11  2016/01/27 21:41:04  mmaloney
  * Rm references to CWMS_V_TSV_DQU. Always use CWMS_V_TSV and then do
  * our own conversions if necessary.
@@ -985,6 +988,10 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 	@Override
 	public void reloadTsIdCache() throws DbIoException
 	{
+		// Each TSID will need a site, so prefill the site cache to prevent
+		// it from doing individual reads for each site.
+		siteDAO.fillCache();
+		
 		String q = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
 			+ "a.UNIT_ID, a.PARAMETER_ID, c.PUBLIC_NAME, a.TS_CODE, a.LOCATION_CODE, "
 			+ "a.LOCATION_ID "
