@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2015/07/17 13:03:55  mmaloney
+ * Added context to improve debug/error messages.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -19,10 +22,10 @@ package decodes.sql;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import ilex.util.Logger;
-
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
@@ -37,6 +40,7 @@ import decodes.db.UnitConverterSet;
 public class UnitConverterIO extends SqlDbObjIo
 {
 	private String context = "";
+	private String columns = "id, fromUnitsAbbr, toUnitsAbbr, algorithm, a, b, c, d, e, f";
 	
 	/** 
 	* Constructor. 
@@ -56,14 +60,12 @@ public class UnitConverterIO extends SqlDbObjIo
 	{
 		Logger.instance().debug1("Reading UnitConversions...");
 
-		int n=0;
+		Statement stmt = null;
 		try 
 		{
-			Statement stmt = createStatement();
+			stmt = createStatement();
 			String q = 
-				"SELECT id, fromUnitsAbbr, toUnitsAbbr, " +
-				"algorithm, a, b, c, d, e, f " +
-				"FROM UnitConverter WHERE fromUnitsAbbr != 'raw'";
+				"SELECT " + columns + " FROM UnitConverter WHERE fromUnitsAbbr != 'raw'";
 			
 			debug3("Executing '" + q + "'");
 			
@@ -71,28 +73,60 @@ public class UnitConverterIO extends SqlDbObjIo
 
 			while (rs != null && rs.next())
 			{
-				DbKey id = DbKey.createDbKey(rs, 1);
-
-				String from = rs.getString(2);
-				String to = rs.getString(3);
-
-				UnitConverterDb ucdb = new UnitConverterDb(from, to);
-				ucdb.setId(id);
-
-				ucdb.algorithm = rs.getString(4);
-
-				for (int i = 0; i < 6; ++i) {
-					ucdb.coefficients[i] = rs.getDouble(5 + i);
-				}
-
+				UnitConverterDb ucdb = rs2Uc(rs);
 				ucs.addDbConverter(ucdb);
 			}
-
-			stmt.close();
 		}
-		catch (SQLException e) {
+		catch (SQLException e)
+		{
 			throw new DatabaseException(e.toString());
 		}
+		finally
+		{
+			if (stmt != null)
+				try {stmt.close();} catch(Exception ex) {}
+		}
+	}
+	
+	/**
+	 * In clause should be complete a complete list of IDs, containing surrounding parens.
+	 * @param inClause
+	 * @return
+	 */
+	public ArrayList<UnitConverterDb> readUCsIn(String inClause)
+		throws DatabaseException
+	{
+		ArrayList<UnitConverterDb> ret = new  ArrayList<UnitConverterDb>();
+		Logger.instance().debug1("Reading UnitConversions in " + inClause);
+
+		Statement stmt = null;
+		try 
+		{
+			stmt = createStatement();
+			String q = "SELECT " + columns + " FROM UnitConverter WHERE id in " + inClause;
+			
+			debug3("Executing '" + q + "'");
+			
+			ResultSet rs = stmt.executeQuery(q);
+
+			while (rs != null && rs.next())
+			{
+				UnitConverterDb ucdb = rs2Uc(rs);
+				ret.add(ucdb);
+			}
+
+			return ret;
+		}
+		catch (SQLException e)
+		{
+			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (stmt != null)
+				try {stmt.close();} catch(Exception ex) {}
+		}
+
 	}
 
 	/**
@@ -103,39 +137,46 @@ public class UnitConverterIO extends SqlDbObjIo
 	public UnitConverterDb readUnitConverter(DbKey id)
 		throws DatabaseException
 	{
+		Statement stmt = null;
 		try 
 		{
-			Statement stmt = createStatement();
+			stmt = createStatement();
 			
-			String q = "SELECT id, fromUnitsAbbr, toUnitsAbbr, " +
-				       "algorithm, a, b, c, d, e, f " +
-				       "FROM UnitConverter WHERE id = " + id;
+			String q = "SELECT " + columns + " FROM UnitConverter WHERE id = " + id;
 			
 			debug3("Query:" + q);
 			ResultSet rs = stmt.executeQuery(q);
 
-			while (rs != null && rs.next())
-			{
-				String from = rs.getString(2);
-				String to = rs.getString(3);
-
-				UnitConverterDb ucdb = new UnitConverterDb(from, to);
-				ucdb.setId(id);
-
-				ucdb.algorithm = rs.getString(4);
-				
-				for (int i = 0; i < 6; ++i)
-					ucdb.coefficients[i] = rs.getDouble(5 + i);
-				stmt.close();
-				return ucdb;
-			}
-
-			stmt.close();
+			if (rs != null && rs.next())
+				return rs2Uc(rs);
 		}
-		catch (SQLException e) {
+		catch (SQLException e)
+		{
 			throw new DatabaseException(e.toString());
 		}
+		finally
+		{
+			if (stmt != null)
+				try {stmt.close();} catch(Exception ex) {}
+		}
 		return null;
+	}
+	
+	private UnitConverterDb rs2Uc(ResultSet rs)
+		throws SQLException
+	{
+		DbKey key = DbKey.createDbKey(rs, 1);
+		String from = rs.getString(2);
+		String to = rs.getString(3);
+
+		UnitConverterDb ucdb = new UnitConverterDb(from, to);
+		ucdb.forceSetId(key);
+
+		ucdb.algorithm = rs.getString(4);
+		
+		for (int i = 0; i < 6; ++i)
+			ucdb.coefficients[i] = rs.getDouble(5 + i);
+		return ucdb;
 	}
 
 	/** 
