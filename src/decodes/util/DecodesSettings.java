@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.13  2015/11/12 15:26:15  mmaloney
+*  Added DecodesSetting screeningUnitSystem.
+*
 *  Revision 1.12  2015/10/26 12:47:32  mmaloney
 *  Added Python color settings
 *
@@ -123,6 +126,7 @@ public class DecodesSettings
 	public static final int DB_CWMS = 4;
 	/** Code meaning OPEN TSDB Database */
 	public static final int DB_OPENTSDB = 5;
+	public static final int DB_HDB = 6;
 
 	/** Editable database type (XML, URL, or SQL) */
  	public String editDatabaseType = "";
@@ -648,6 +652,8 @@ public class DecodesSettings
 			editDatabaseTypeCode = DB_CWMS;
 		else if (editDatabaseType.equalsIgnoreCase("opentsdb"))
 			editDatabaseTypeCode = DB_OPENTSDB;
+		else if (editDatabaseType.equalsIgnoreCase("hdb"))
+			editDatabaseTypeCode = DB_HDB;
 	}
 
 	/**
@@ -689,6 +695,8 @@ public class DecodesSettings
 			editDatabaseType = "CWMS";
 		else if (editDatabaseTypeCode ==  DB_OPENTSDB)
 			editDatabaseType = "OPENTSDB";
+		else if (editDatabaseTypeCode == DB_HDB)
+			editDatabaseType = "HDB";
 
 		PropertiesUtil.storeInProps(this, props, null);
 		props.remove("databaseTypeCode");
