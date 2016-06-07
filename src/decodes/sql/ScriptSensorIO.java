@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2015/07/17 13:02:33  mmaloney
+ * Guard against null toAbbr in unit conversions.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -22,7 +25,7 @@ import decodes.db.UnitConverterDb;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
+import java.util.ArrayList;
 import java.util.Vector;
 
 import ilex.util.Logger;
@@ -69,14 +72,37 @@ public class ScriptSensorIO extends SqlDbObjIo
 		Logger.instance().debug3("Query: " + q);
 		ResultSet rs = stmt.executeQuery(q);
 
-		if (rs != null) {
-			while (rs.next()) {
+		if (rs != null)
+		{
+			StringBuilder inList = new StringBuilder();
+			while (rs.next())
+			{
 				int sensorNum = rs.getInt(1);
 				DbKey ucid = DbKey.createDbKey(rs, 2);
+				
+				if (inList.length() > 0)
+					inList.append(", ");
+				inList.append("" + ucid);
 
 				ScriptSensor ss = new ScriptSensor(ds, sensorNum);
 				ds.scriptSensors.add(ss);
-				ss.rawConverter = _unitConverterIO.readUnitConverter(ucid);
+				ss.setUnitConverterId(ucid);
+//				ss.rawConverter = _unitConverterIO.readUnitConverter(ucid);
+			}
+			
+			if (inList.length() > 0)
+			{
+				String inClause = "(" + inList.toString() + ")";
+				ArrayList<UnitConverterDb> ucs = _unitConverterIO.readUCsIn(inClause);
+				for (ScriptSensor ss : ds.scriptSensors)
+				{
+					for(UnitConverterDb uc : ucs)
+						if (ss.getUnitConverterId().equals(uc.getId()))
+						{
+							ss.rawConverter = uc;
+							break;
+						}
+				}
 			}
 		}
 
