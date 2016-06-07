@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2016/03/24 19:07:43  mmaloney
+*  Refactor: Have expandSDI return the TimeSeriesID that it uses. This saves the caller from
+*  having to re-look it up. Needed for PythonAlgorithm.
+*
 *  Revision 1.2  2016/01/27 21:58:44  mmaloney
 *  Init Optimization
 *
@@ -37,29 +41,22 @@ package decodes.hdb;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.GregorianCalendar;
-import java.sql.CallableStatement;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
+import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
-
-import oracle.jdbc.OracleCallableStatement;
 import oracle.jdbc.OraclePreparedStatement;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
@@ -68,11 +65,9 @@ import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.DataType;
-import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.sql.OracleDateParser;
 import decodes.tsdb.*;
-import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 
 /**
@@ -1370,5 +1365,12 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 	{
 		return new HdbComputationDAO(this);
 	}
+	
+	@Override
+	public SiteDAI makeSiteDAO()
+	{
+		return new HdbSiteDAO(this);
+	}
+
 
 }
