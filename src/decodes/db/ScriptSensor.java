@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:00  cvs
 *  Added legacy code to repository
 *
@@ -64,6 +67,8 @@
 */
 package decodes.db;
 
+import decodes.sql.DbKey;
+
 /**
 This class holds the information about sensors that are specific to a
 script. This includes the EU assignment and coefficients.
@@ -92,6 +97,8 @@ public class ScriptSensor extends DatabaseObject
 
 	/** Executable unit converter after preparation */
 	public UnitConverter execConverter;
+	
+	private DbKey unitConverterId = DbKey.NullKey;
 
 
   	/**
@@ -220,6 +227,16 @@ public class ScriptSensor extends DatabaseObject
 	public void write()
 		throws DatabaseException
 	{
+	}
+
+	public DbKey getUnitConverterId()
+	{
+		return unitConverterId;
+	}
+
+	public void setUnitConverterId(DbKey unitConverterId)
+	{
+		this.unitConverterId = unitConverterId;
 	}
 }
 
