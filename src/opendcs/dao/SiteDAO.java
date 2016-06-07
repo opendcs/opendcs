@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.6  2015/07/17 13:19:23  mmaloney
+* Guard against null/blank site name.
+*
 * Revision 1.5  2015/04/14 18:22:20  mmaloney
 * Search the entire cache before going to the database in lookupSiteID(String)
 *
@@ -34,10 +37,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import opendcs.dai.SiteDAI;
-
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.db.Site;
@@ -76,6 +79,7 @@ public class SiteDAO
 			(tsdb.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7) ?
 				"siteid, nameType, SiteName, dbNum, agency_cd" :
 				"siteid, nameType, SiteName";
+		// MJM 2016/05/23 Do not add the new fields for HDB.
 		if (tsdb.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
 			siteAttributes = siteAttributes + 
 				", active_flag, location_type, modify_time, public_name";
@@ -234,10 +238,12 @@ public class SiteDAO
 		}
 	}
 	
-	protected void fillCache()
+	@Override
+	public void fillCache()
 		throws DbIoException
 	{
-		ArrayList<Site> siteList = new ArrayList<Site>();
+		HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
+//		ArrayList<Site> siteList = new ArrayList<Site>();
 		int nNames = 0;
 		String q = buildSiteQuery(Constants.undefinedId);
 		try
@@ -247,22 +253,23 @@ public class SiteDAO
 			{
 				Site site = new Site();
 				resultSet2Site(site, rs);
-				siteList.add(site);
+				siteHash.put(site.getKey(), site);
+//				siteList.add(site);
 				// Can't put in cache because names are not yet known
 			}
 
-			q = "SELECT " + siteNameAttributes + " FROM SiteName";
+			q = buildSiteNameQuery(null);
 			rs = doQuery(q);
 			while (rs != null && rs.next())
 			{
 				DbKey key = DbKey.createDbKey(rs, 1);
-				Site site = null;
-				for(Site s : siteList)
-					if (key.equals(s.getKey()))
-					{
-						site = s;
-						break;
-					}
+				Site site = siteHash.get(key);
+//				for(Site s : siteList)
+//					if (key.equals(s.getKey()))
+//					{
+//						site = s;
+//						break;
+//					}
 				if (site == null)
 				{
 					warning("SiteName for id=" + key + ", but no matching site.");
@@ -282,13 +289,23 @@ public class SiteDAO
 			warning(msg);
 			throw new DbIoException(msg);
 		}
-		for(Site site : siteList)
+//		for(Site site : siteList)
+		for(Site site : siteHash.values())
 			cache.put(site);
 		int nProps = 0;
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
 		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
+	}
+	
+	protected String buildSiteNameQuery(Site site)
+	{
+		String r = "SELECT " + siteNameAttributes 
+			+ " FROM SiteName";
+		if (site != null)
+			r = r + " WHERE siteid = " + site.getKey();
+		return r;
 	}
 
 	@Override
@@ -337,7 +354,7 @@ public class SiteDAO
 	{
 		String q = "SELECT " + siteAttributes + " FROM " + siteTableName;
 		if (siteId != null && !siteId.isNull())
-			q = q + " where id = " + siteId;
+			q = q + " where " + siteTableKeyColumn + " = " + siteId;
 			
 		return q;
 	}
@@ -459,7 +476,7 @@ public class SiteDAO
 	 * @throws DatabaseException
 	 * @throws SQLException
 	 */
-	private void updateAllSiteNames(Site newSite, Site dbSite)
+	protected void updateAllSiteNames(Site newSite, Site dbSite)
 		throws DbIoException, NoSuchObjectException
 	{
 		//Go through the site names to determine records to insert or update
@@ -491,7 +508,7 @@ public class SiteDAO
 	 * @throws DatabaseException
 	 * @throws SQLException
 	 */
-	private void updateSiteName(DbKey siteId, SiteName sn)
+	protected void updateSiteName(DbKey siteId, SiteName sn)
 		throws DbIoException
 	{
 		String q =

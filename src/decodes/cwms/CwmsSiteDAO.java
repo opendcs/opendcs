@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2016/01/27 21:38:52  mmaloney
+ * Removed unneeded debugs.
+ *
  * Revision 1.7  2015/05/14 13:52:19  mmaloney
  * RC08 prep
  *
@@ -382,7 +385,7 @@ ex.printStackTrace(System.err);
 	}
 	
 	@Override
-	protected void fillCache()
+	public void fillCache()
 		throws DbIoException
 	{
 		Logger.instance().debug3("CwmsSiteDAO.fillCache()");

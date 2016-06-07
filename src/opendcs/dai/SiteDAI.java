@@ -86,4 +86,12 @@ public interface SiteDAI
 	 * Closes any resources opened by the DAO
 	 */
 	public void close();
+
+	/**
+	 * Fills the cache of all known sites in an efficient manner.
+	 * @throws DbIoException
+	 */
+	public void fillCache()
+		throws DbIoException;
+
 }
