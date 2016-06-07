@@ -103,9 +103,10 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
 			return;
 		}
 
-//		RoutingSpec ob = new RoutingSpec(newName);
+		RoutingSpec ob = new RoutingSpec(newName);
+		ob.untilTime = "now";
 //		rsSelectPanel.addRoutingSpec(ob);
-		doOpen(new RoutingSpec(newName));
+		doOpen(ob);
 	}
 
 	/** Called when the 'Copy' button is pressed. */
