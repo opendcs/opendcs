@@ -68,6 +68,9 @@ public abstract class DatabaseIO
 		if (type == DecodesSettings.DB_OPENTSDB)
 			return new opendcs.opentsdb.OpenTsdbSqlDbIO(location);
 		
+		if (type == DecodesSettings.DB_HDB)
+			return new decodes.hdb.HdbSqlDatabaseIO(location);
+		
 		// Add other database interface types (URL) here...
 
 		throw new DatabaseException(
