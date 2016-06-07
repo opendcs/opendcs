@@ -23,6 +23,7 @@ import ilex.util.EnvExpander;
 import ilex.util.TextUtil;
 import decodes.db.*;
 import decodes.gui.*;
+import decodes.util.DecodesSettings;
 import decodes.util.NwsXrefEntry;
 import decodes.util.PdtEntry;
 
@@ -66,7 +67,11 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			if (theObject.transportMediumType == null)
 				theObject.transportMediumType = Constants.medium_Goes;
 			if (theObject.siteNameTypePref == null)
-				theObject.siteNameTypePref = Constants.snt_NWSHB5;
+			{
+				theObject.siteNameTypePref = DecodesSettings.instance().siteNameTypePreference;
+				if (theObject.siteNameTypePref == null)
+					theObject.siteNameTypePref = Constants.snt_NWSHB5;
+			}
 			tableModel = new NetlistContentsTableModel(theObject);
 			netlistContentsTable = new SortingListTable(tableModel, new int[]
 			{ 15, 25, 60 });
