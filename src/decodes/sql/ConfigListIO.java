@@ -243,9 +243,9 @@ public class ConfigListIO extends SqlDbObjIo
 
 				pc.addSensor(cs);
 
-				// Read the ConfigSensorProperty table
-				readConfigSensorProps(platformConfigId, sensorNum, cs);
 			}
+			// Read the ConfigSensorProperty table
+			readConfigSensorProps(pc, stmt);
 			if (getDatabaseVersion()  >= DecodesDatabaseVersion.DECODES_DB_6)
 			{
 				// DB Version 6 or later, read ConfigSensorDataType table.
@@ -274,37 +274,54 @@ public class ConfigListIO extends SqlDbObjIo
 		stmt.close();
 	}
 
-	/**
-	* This reads the ConfigSensorProperty table to get the properties
-	* for a particular sensor which belongs to a particular PlatformConfig.
-	* @param platformConfigId database surrogate platform config ID
-	* @param sensorNum the sensor number
-	* @param cs the ConfigSensor to populate
-	*/
-	public void readConfigSensorProps(DbKey platformConfigId,
-		int sensorNum, ConfigSensor cs)
+//	/**
+//	* This reads the ConfigSensorProperty table to get the properties
+//	* for a particular sensor which belongs to a particular PlatformConfig.
+//	* @param platformConfigId database surrogate platform config ID
+//	* @param sensorNum the sensor number
+//	* @param cs the ConfigSensor to populate
+//	*/
+//	private void readConfigSensorProps(DbKey platformConfigId,
+//		int sensorNum, ConfigSensor cs)
+//		throws SQLException
+//	{
+//		PropertiesDAI propertiesDAO = this._dbio.makePropertiesDAO();
+//	
+//		try
+//		{
+//			propertiesDAO.readProperties("ConfigSensorProperty", "configId", 
+//				"sensorNumber", platformConfigId, sensorNum, cs.getProperties());
+//		}
+//		catch (DbIoException e)
+//		{
+//			throw new SQLException(e.getMessage());
+//		}
+//		finally
+//		{
+//			propertiesDAO.close();
+//		}
+//		String s = PropertiesUtil.getIgnoreCase(cs.getProperties(), "StatisticsCode");
+//		if (s != null)
+//		{
+//			cs.setUsgsStatCode(s);
+//			PropertiesUtil.rmIgnoreCase(cs.getProperties(), "StatisticsCode");
+//		}
+//	}
+	
+	private void readConfigSensorProps(PlatformConfig cfg, Statement stmt)
 		throws SQLException
 	{
-		PropertiesDAI propertiesDAO = this._dbio.makePropertiesDAO();
-	
-		try
+		String q = "select * from ConfigSensorProperty where configId = " + cfg.getKey();
+		ResultSet rs = stmt.executeQuery(q);
+		while(rs != null && rs.next())
 		{
-			propertiesDAO.readProperties("ConfigSensorProperty", "configId", 
-				"sensorNumber", platformConfigId, sensorNum, cs.getProperties());
-		}
-		catch (DbIoException e)
-		{
-			throw new SQLException(e.getMessage());
-		}
-		finally
-		{
-			propertiesDAO.close();
-		}
-		String s = PropertiesUtil.getIgnoreCase(cs.getProperties(), "StatisticsCode");
-		if (s != null)
-		{
-			cs.setUsgsStatCode(s);
-			PropertiesUtil.rmIgnoreCase(cs.getProperties(), "StatisticsCode");
+			int sensorNum = rs.getInt(2);
+			String propName = rs.getString(3);
+			String propValue = rs.getString(4);
+			
+			ConfigSensor cs = cfg.getSensor(sensorNum);
+			if (cs != null)
+				cs.setProperty(propName, propValue);
 		}
 	}
 
