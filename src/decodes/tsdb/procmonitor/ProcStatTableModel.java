@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.3  2015/06/04 21:37:40  mmaloney
+ * Added control buttons to process monitor GUI.
+ *
  * Revision 1.2  2015/05/14 13:52:19  mmaloney
  * RC08 prep
  *
@@ -258,6 +261,8 @@ class AppComparator implements Comparator<AppInfoStatus>
 	@Override
 	public int compare(AppInfoStatus app1, AppInfoStatus app2)
 	{
+		if (sortColumn == 0)
+			return app1.getAppId().compareTo(app2.getAppId());
 		return TextUtil.strCompareIgnoreCase(
 			columnizer.getColumnString(app1, sortColumn),
 			columnizer.getColumnString(app2, sortColumn));
