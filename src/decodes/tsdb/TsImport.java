@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2015/05/14 13:52:18  mmaloney
+ * RC08 prep
+ *
  * Revision 1.4  2015/01/16 16:11:04  mmaloney
  * RC01
  *
@@ -135,6 +138,7 @@ public class TsImport extends TsdbAppTemplate
 	{
 		cmdLineArgs.addToken(noUnitConvArg);
 		cmdLineArgs.addToken(filenameArg);
+		appNameArg.setDefaultValue("utility");
 	}
 
 	@Override
