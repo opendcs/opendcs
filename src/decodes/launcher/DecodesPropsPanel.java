@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/05/27 12:56:36  mmaloney
+ * cleanup
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -228,7 +231,8 @@ public class DecodesPropsPanel extends JPanel
 			typ == DecodesSettings.DB_SQL ? 1 :
 			typ == DecodesSettings.DB_NWIS ? 2 : 
 			typ == DecodesSettings.DB_CWMS ? 3 : 
-			typ == DecodesSettings.DB_OPENTSDB ? 4 : 0);
+			typ == DecodesSettings.DB_OPENTSDB ? 4 : 
+			typ == DecodesSettings.DB_HDB ? 5 : 0);
 		editDbLocationField.setText(settings.editDatabaseLocation);
 	}
 
@@ -243,7 +247,8 @@ public class DecodesPropsPanel extends JPanel
 			idx == 1 ? DecodesSettings.DB_SQL :
 			idx == 2 ? DecodesSettings.DB_NWIS : 
 			idx == 3 ? DecodesSettings.DB_CWMS : 
-			idx == 4 ? DecodesSettings.DB_OPENTSDB : DecodesSettings.DB_NONE;
+			idx == 4 ? DecodesSettings.DB_OPENTSDB : 
+			idx == 5 ? DecodesSettings.DB_HDB : DecodesSettings.DB_NONE;
 		settings.editDatabaseLocation = editDbLocationField.getText();
 	}
 
