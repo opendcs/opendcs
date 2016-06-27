@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2015/04/14 18:19:51  mmaloney
+ * Fixed GUI issues with selecting Sites.
+ *
  * Revision 1.2  2014/05/22 12:27:24  mmaloney
  * CWMS fix: Wasn't displaying Location after creating new TS.
  *
@@ -564,7 +567,7 @@ public class CompParmDialog extends GuiDialog
 			});
 		siteField.setToolTipText(
 			ceResources.getString("CompParmDialog.SiteFieldToolTip"));
-		dataTypeField.setToolTipText("Data type code for this parameter.");
+		dataTypeField.setToolTipText("Type data type code or press Lookup for list.");
 		dataTypeLookupButton.addActionListener(
 			new java.awt.event.ActionListener()
 			{
