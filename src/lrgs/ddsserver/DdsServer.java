@@ -18,9 +18,6 @@ import java.util.Iterator;
 
 import ilex.util.*;
 import ilex.net.*;
-import ilex.jni.*;
-import ilex.cmdline.*;
-
 import lrgs.apistatus.AttachedProcess;
 import lrgs.common.ArchiveUnavailableException;
 import lrgs.archive.MsgArchive;
@@ -28,12 +25,9 @@ import lrgs.common.NetlistDcpNameMapper;
 import lrgs.ldds.GetHostnameThread;
 import lrgs.ldds.LddsLoggerThread;
 import lrgs.ldds.LddsParams;
-import lrgs.ldds.LddsLoggerThread;
 import lrgs.ldds.LddsThread;
-import lrgs.ldds.StatLogger;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.JavaLrgsStatusProvider;
-import lrgs.db.LrgsDatabaseThread;
 
 
 /**
@@ -310,14 +304,14 @@ public class DdsServer extends BasicServer
 		Logger.instance().info(module + " listen timeout");
 	}
 
-	/** 
-	  Log status for an LddsThread object.
-	  @param lt the thread object
-	*/
-	public void logStat(LddsThread lt)
-	{
-		statLoggerThread.logStat(lt);
-	}
+//	/** 
+//	  Log status for an LddsThread object.
+//	  @param lt the thread object
+//	*/
+//	public void logStat(LddsThread lt)
+//	{
+//		statLoggerThread.logStat(lt);
+//	}
 }
 
 
@@ -349,7 +343,8 @@ class BackgroundStuff extends Thread
 
 			synchronized(svr)
 			{
-				for(Iterator it = svr.getSvrThreads(); it.hasNext(); )
+				for(@SuppressWarnings("rawtypes")
+				Iterator it = svr.getSvrThreads(); it.hasNext(); )
 				{
 					LddsThread lt = (LddsThread)it.next();
 					if ((now - lt.getLastActivity().getTime()) 
