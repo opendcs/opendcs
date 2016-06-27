@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.8  2013/07/24 15:28:28  mmaloney
  * dev
  *
@@ -39,6 +42,7 @@ public class CompFilter
 	protected DbKey algoId = Constants.undefinedId;
 	protected boolean filterLowIds = false;
 	static public boolean doIntervalCheck = true;
+	protected boolean enabledOnly = false;
 	
 	/**
 	 * Return true if this filter includes checks on computation parameters
@@ -119,7 +123,7 @@ public class CompFilter
 			}
 			if (!passes)
 			{
-Logger.instance().debug3("CompFilter: Interval Failed for comp " + dbComp.getId() + ", " + dbComp.getName());
+//Logger.instance().debug3("CompFilter: Interval Failed for comp " + dbComp.getId() + ", " + dbComp.getName());
 				return false;
 			}
 		}
@@ -138,7 +142,7 @@ Logger.instance().debug3("CompFilter: Interval Failed for comp " + dbComp.getId(
 			}
 			if (!passes)
 			{
-Logger.instance().debug3("CompFilter: Site Failed for comp " + dbComp.getId() + ", " + dbComp.getName());
+//Logger.instance().debug3("CompFilter: Site Failed for comp " + dbComp.getId() + ", " + dbComp.getName());
 				return false;
 			}
 		}
@@ -157,12 +161,15 @@ Logger.instance().debug3("CompFilter: Site Failed for comp " + dbComp.getId() + 
 			}
 			if (!passes)
 			{
-Logger.instance().debug3("CompFilter: DataType Failed for comp " + dbComp.getId() + ", " + dbComp.getName());
+//Logger.instance().debug3("CompFilter: DataType Failed for comp " + dbComp.getId() + ", " + dbComp.getName());
 				return false;
 			}
 		}
+		
+		if (enabledOnly && !dbComp.isEnabled())
+			return false;
 
-Logger.instance().debug3("CompFilter: PASSES comp " + dbComp.getId() + ", " + dbComp.getName());
+//Logger.instance().debug3("CompFilter: PASSES comp " + dbComp.getId() + ", " + dbComp.getName());
 		return true;
 	}
 
@@ -216,5 +223,10 @@ Logger.instance().debug3("CompFilter: PASSES comp " + dbComp.getId() + ", " + db
 	public DbKey getAlgoId()
 	{
 		return algoId;
+	}
+
+	public void setEnabledOnly(boolean enabledOnly)
+	{
+		this.enabledOnly = enabledOnly;
 	}
 }
