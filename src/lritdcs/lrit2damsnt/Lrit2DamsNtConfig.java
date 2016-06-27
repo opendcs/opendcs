@@ -97,11 +97,14 @@ public class Lrit2DamsNtConfig
 			if (!f.mkdirs())
 				System.out.println("Directory '" + f.getPath() 
 					+ "' does not exist and cannot be made.");
-		f = new File(fileDoneDir);
-		if (!f.isDirectory())
-			if (!f.mkdirs())
-				System.out.println("Directory '" + f.getPath() 
-					+ "' does not exist and cannot be made.");
+		if (fileDoneDir != null)
+		{
+			f = new File(fileDoneDir);
+			if (!f.isDirectory())
+				if (!f.mkdirs())
+					System.out.println("Directory '" + f.getPath() 
+						+ "' does not exist and cannot be made.");
+		}
 		lastLoadTime = System.currentTimeMillis();
 	}
 
