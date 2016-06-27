@@ -725,15 +725,16 @@ public class DetailReportGenerator
                		  labels.getString("DetailReportGenerator.slot"));
                   xos.writeElement("th", "style", thStyle, 
                		  labels.getString("DetailReportGenerator.hostName"));
-                  xos.writeElement("th", "style", thStyle, 
-               		  labels.getString("DetailReportGenerator.clientType"));
+//                  xos.writeElement("th", "style", thStyle, 
+//               		  labels.getString("DetailReportGenerator.clientType"));
                   xos.writeElement("th", "style", thStyle, 
                		  labels.getString("DetailReportGenerator.user"));
                   xos.writeElement("th", "style", thStyle, 
                		  labels.getString("DetailReportGenerator.msgCount"));
                   xos.writeElement("th", "style", thStyle, 
-               		  labels.getString(
-                				  "DetailReportGenerator.lastActivityTime"));
+               		  labels.getString("DetailReportGenerator.lastActivityTime"));
+                  xos.writeElement("th", "style", thStyle, 
+               		  labels.getString("DetailReportGenerator.lastMsgTime"));
                   xos.writeElement("th", "style", thStyle, 
                		  labels.getString("DetailReportGenerator.status"));
                 xos.endElement("tr");
@@ -751,11 +752,11 @@ public class DetailReportGenerator
                   xos.startElement("tr");
                     xos.writeElement("td", "style", center, "" + i);
                     xos.writeElement("td", "style", center, ap.getName());
-                    xos.writeElement("td", "style", center, ap.type);
+//                    xos.writeElement("td", "style", center, ap.type);
                     xos.writeElement("td", "style", center, ap.user);
                     xos.writeElement("td", "style", center, "" + ap.lastSeqNum);
-                    xos.writeElement("td","style", center,  
-                      columnDF.format(new Date(ap.lastPollTime*1000L)));
+                    xos.writeElement("td","style", center, fmtColTime(ap.lastPollTime));
+                    xos.writeElement("td","style", center, fmtColTime(ap.lastMsgTime));
                     xos.writeElement("td", "style", center, ap.status);
                   xos.endElement("tr");
                 }
@@ -774,6 +775,13 @@ xos.endElement("html");
 	{
 		xos.writeLiteral("<br>");
     	//xos.writeElement("br", null);
+	}
+	
+	private String fmtColTime(int timet)
+	{
+		if (timet <= 0)
+			return "-";
+		return columnDF.format(new Date(timet*1000L));
 	}
 
 	private void writeReportHeader(XmlOutputStream xos, String host, 
