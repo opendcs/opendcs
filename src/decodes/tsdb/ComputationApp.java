@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2016/04/22 14:38:40  mmaloney
+*  Skip resolving and saving results if the tasklist set is empty.
+*
 *  Revision 1.5  2016/03/24 19:09:18  mmaloney
 *  Added instance() method needed by Python Algorithm.
 *
@@ -380,6 +383,7 @@ public class ComputationApp
 		if (DecodesInterface.isInitialized())
 			return;
 		DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
+		decodes.db.Database.getDb().dataTypeSet.read();
 	}
 
 	/**

@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.3  2014/12/19 19:24:58  mmaloney
+*  Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
+*
 *  Revision 1.2  2014/08/22 17:23:04  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -54,6 +57,7 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.Database;
 import decodes.hdb.HdbTsId;
 
 
@@ -338,6 +342,7 @@ public class CpCompDependsUpdater
 		if (DecodesInterface.isInitialized())
 			return;
 		DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
+		Database.getDb().dataTypeSet.read();
 	}
 
 	/**
@@ -382,23 +387,32 @@ public class CpCompDependsUpdater
 			info("Refreshing Computation Cache...");
 			enabledCompCache.clear();
 			
-			// Note: This daemon processes comps for all app IDs.
-			List<String> compNames = loadingAppDao.listComputationsByApplicationId(
-				Constants.undefinedId, true);
-			for(String nm : compNames)
+			CompFilter enabledOnly = new CompFilter();
+			enabledOnly.setEnabledOnly(true);
+			ArrayList<DbComputation> comps = computationDAO.listCompsForGUI(enabledOnly);
+			for(DbComputation comp : comps)
 			{
-				try
-				{
-					DbComputation comp = computationDAO.getComputationByName(nm);
-					expandComputationInputs(comp);
-					enabledCompCache.add(comp);
-				}
-				catch (NoSuchObjectException ex)
-				{
-					warning("Computation '" + nm 
-						+ "' could not be read: " + ex);
-				}
+				expandComputationInputs(comp);
+				enabledCompCache.add(comp);
 			}
+			
+//			// Note: This daemon processes comps for all app IDs.
+//			List<String> compNames = loadingAppDao.listComputationsByApplicationId(
+//				Constants.undefinedId, true);
+//			for(String nm : compNames)
+//			{
+//				try
+//				{
+//					DbComputation comp = computationDAO.getComputationByName(nm);
+//					expandComputationInputs(comp);
+//					enabledCompCache.add(comp);
+//				}
+//				catch (NoSuchObjectException ex)
+//				{
+//					warning("Computation '" + nm 
+//						+ "' could not be read: " + ex);
+//				}
+//			}
 			info("After loading, " + enabledCompCache.size()
 				+ " computations in cache.");
 
@@ -1199,13 +1213,13 @@ info(q);
 			DbCompParm parm = parmit.next();
 			if (parm.isInput() && parm.getSiteId() == Constants.undefinedId)
 			{
-				info("Expanding input parm '" + parm.getRoleName() + "' in comp '" + comp.getName() + "'");
+//				info("Expanding input parm '" + parm.getRoleName() + "' in comp '" + comp.getName() + "'");
 				try { theDb.expandSDI(parm); }
 				catch(NoSuchObjectException ex)
 				{
 					// Do nothing, it may be a group parm with no SDI specified.
 				}
-				info("After expanding, siteId=" + parm.getSiteId() + ", sitename='" + parm.getSiteName() + "'");
+//				info("After expanding, siteId=" + parm.getSiteId() + ", sitename='" + parm.getSiteName() + "'");
 			}
 		}
 	}
