@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.File;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -190,12 +189,12 @@ Logger.instance().debug1(DdsServer.module
 		this.user = user;
 		if (user.isAuthenticated)
 		{
-			myStats.setSuccessCode(myStats.SC_AUTHENTICATED);
+			myStats.setSuccessCode(DdsConnectionStats.SC_AUTHENTICATED);
 			statLogger.incrNumAuth();
 		}
 		else
 		{
-			myStats.setSuccessCode(myStats.SC_UNAUTHENTICATED);
+			myStats.setSuccessCode(DdsConnectionStats.SC_UNAUTHENTICATED);
 			statLogger.incrNumUnAuth();
 		}
 		myStats.setUserName(user.name);
@@ -269,8 +268,8 @@ Logger.instance().debug1(DdsServer.module
 		Logger.instance().debug1(DdsServer.module + " Connection #"
 			+ getUniqueID() + " " + getClientName() + " disconnecting");
 		myStats.setEndTime(new Date());
-		if (myStats.getSuccessCode() == myStats.SC_CONNECTED)
-			myStats.setSuccessCode(myStats.SC_HANGUP);
+		if (myStats.getSuccessCode() == DdsConnectionStats.SC_CONNECTED)
+			myStats.setSuccessCode(DdsConnectionStats.SC_HANGUP);
 
 		try
 		{
@@ -366,7 +365,7 @@ Logger.instance().debug1(DdsServer.module
 				try { send(resp); }
 				catch(IOException ioex)
 				{
-					Logger.instance().warning(DdsServer.module
+					Logger.instance().debug1(DdsServer.module
 						+ "Cannot return response to "
 						+ getClientName() + ": " + ioex);
 					aex.setHangup(true);
@@ -381,7 +380,8 @@ Logger.instance().debug1(DdsServer.module
 					+ " Client hangup on connection with user '"
 					+ getClientName() + "', elapsed msec=" + elapsed
 					+ ": " + ex.toString();
-				if (emsg.contains("Connection reset by peer"))
+				if (emsg.contains("Connection reset by peer")
+				 || emsg.contains("Broken pipe"))
 					Logger.instance().debug1(emsg);
 				else
 					Logger.instance().warning(emsg);
@@ -391,7 +391,8 @@ Logger.instance().debug1(DdsServer.module
 			{
 				long elapsed = System.currentTimeMillis() - serviceStart;
 				String emsg = DdsServer.module +
-					" Unexpected Exception on connection with user '"
+					" " + (new Date()).toString()
+					+ " Unexpected Exception on connection with user '"
 					+ getClientName() + "', elapsed msec=" + elapsed
 					+ ": " + ex.toString();
 				System.err.println(emsg);
