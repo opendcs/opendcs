@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2015/12/05 16:19:55  mmaloney
+ * Replaced ArrayList with HashMap. A Typical HDB will have thousands of SDIs.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -50,4 +53,6 @@ public class HdbSdiCache
 				return hsd;
 		return null;
 	}
+	
+	public int size() { return sdiMap.size(); }
 }
