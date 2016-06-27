@@ -160,14 +160,12 @@ debug(ldds, "CmdGetBlock: added '"
 					}
 				}
 			}
-catch(NullPointerException npex)
-{
-	if (ldds == null) System.err.println("ldds IS NULL");
-	else if (ldds.msgretriever == null)System.err.println("ldds.msgretriever IS NULL");
-	else System.err.println("something else IS NULL");
-	throw npex;
-	// This will cause ldds to catch the unexpected exception & print stack trace.
-}
+			catch(NullPointerException npex)
+			{
+				// This can happen if user was disconnected while this command
+				// was executing. Just return.
+				return 0;
+			}
 			// Allow ArchiveUnavailable to propegate.
 		}
 
