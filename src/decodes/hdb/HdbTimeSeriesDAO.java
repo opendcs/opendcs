@@ -914,6 +914,10 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 	@Override
 	public synchronized void reloadTsIdCache() throws DbIoException
 	{
+		// Each TSID will need a site, so prefill the site cache to prevent
+		// it from doing individual reads for each site.
+		siteDAO.fillCache();
+
         //
         // this query modified 13-March-2013 by M. Bogner to add the sitename view into the query to
         // assure that only TS_IDs are selected that have a record in sitename.  An error was noted
