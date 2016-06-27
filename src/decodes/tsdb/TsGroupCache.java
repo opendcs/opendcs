@@ -7,6 +7,9 @@
 *  contained in this file may be claimed to be proprietary.
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -155,7 +158,7 @@ public class TsGroupCache
 				if (passesParts(grp, tsid))
 				{
 					grp.addToExpandedList(tsid);
-					info("TSID '" + tsid.getUniqueString() + "' passes component specs.");
+//					info("TSID '" + tsid.getUniqueString() + "' passes component specs.");
 				}
 		}
 		catch (DbIoException ex)
@@ -176,8 +179,8 @@ public class TsGroupCache
 			for(TimeSeriesIdentifier tsid : included.getExpandedList())
 			{
 				grp.addToExpandedList(tsid);
-				info("TSID '" + tsid.getUniqueString() + "' included from subgroup "
-					+ included.getGroupName());
+//				info("TSID '" + tsid.getUniqueString() + "' included from subgroup "
+//					+ included.getGroupName());
 			}
 		}
 		for(TsGroup excluded : grp.getExcludedSubGroups())
@@ -191,8 +194,8 @@ public class TsGroupCache
 			for(TimeSeriesIdentifier tsid : excluded.getExpandedList())
 			{
 				grp.rmFromExpandedList(tsid);
-				info("TSID '" + tsid.getUniqueString() + "' EXcluded from subgroup "
-					+ excluded.getGroupName());
+//				info("TSID '" + tsid.getUniqueString() + "' EXcluded from subgroup "
+//					+ excluded.getGroupName());
 			}
 		}
 		
@@ -220,8 +223,8 @@ public class TsGroupCache
 				 && !intersected.isInExpandedList(tsid.getKey()))
 				{
 					tsidit.remove();
-					info("TSID '" + tsid.getUniqueString() + "' Excluded by intersection with "
-						+ intersected.getGroupName());
+//					info("TSID '" + tsid.getUniqueString() + "' Excluded by intersection with "
+//						+ intersected.getGroupName());
 				}
 			}
 		}
@@ -293,14 +296,14 @@ public class TsGroupCache
 	 */
 	private boolean passesParts(TsGroup grp, TimeSeriesIdentifier tsid)
 	{
-info("passesParts(" + grp.getGroupName() + ") tsid=" + tsid.getUniqueString());
+//info("passesParts(" + grp.getGroupName() + ") tsid=" + tsid.getUniqueString());
 		// In order to pass the 'parts', there must be at least one match.
 		// I.e., an empty group definition contains nothing.
 		int matches = 0;
 
 		// Is this tsid's site in the site list?
 		ArrayList<DbKey> siteIds = grp.getSiteIdList();
-		debug("   siteIds.size()=" + siteIds.size());
+//		debug("   siteIds.size()=" + siteIds.size());
 		if (siteIds.size() > 0)
 		{
 			boolean found = false;
@@ -318,7 +321,7 @@ info("passesParts(" + grp.getGroupName() + ") tsid=" + tsid.getUniqueString());
 
 		// Data Types are specified in this group?
 		ArrayList<DbKey> dataTypeIds = grp.getDataTypeIdList();
-		debug("   dataTypeIds.size()=" + dataTypeIds.size());
+//		debug("   dataTypeIds.size()=" + dataTypeIds.size());
 		if (dataTypeIds.size() > 0) 
 		{
 			boolean found = false;
@@ -338,7 +341,7 @@ info("passesParts(" + grp.getGroupName() + ") tsid=" + tsid.getUniqueString());
 		// So skip those and check all the subsequent parts.
 		for (int pi = 2; pi < parts.length; pi++)
 		{
-			debug("   checking " + parts[pi]);
+//			debug("   checking " + parts[pi]);
 
 			ArrayList<TsGroupMember> otherParts = grp.getOtherMembers();
 			boolean found = false;
@@ -349,7 +352,7 @@ info("passesParts(" + grp.getGroupName() + ") tsid=" + tsid.getUniqueString());
 				{
 					thisPartSpecified = true;
 					String tsidVal = tsid.getPart(parts[pi]);
-					debug("      -- groupValue=" + tgm.getMemberValue() + ", tsidValue=" + tsidVal);
+//					debug("      -- groupValue=" + tgm.getMemberValue() + ", tsidValue=" + tsidVal);
 					if (tgm.getMemberValue().equalsIgnoreCase(tsidVal))
 					{
 						found = true;
@@ -443,11 +446,11 @@ info("passesParts(" + grp.getGroupName() + ") tsid=" + tsid.getUniqueString());
 		Logger.instance().info("TsGroupCache: " + msg);
 	}
 
-	private void debug(String msg)
-	{
-		Logger.instance().debug3("TsGroupCache: " + msg);
-	}
-
+//	private void debug(String msg)
+//	{
+//		Logger.instance().debug3("TsGroupCache: " + msg);
+//	}
+//
 	public void setGroupCacheDumpDir(File groupCacheDumpDir)
 	{
 		this.groupCacheDumpDir = groupCacheDumpDir;
