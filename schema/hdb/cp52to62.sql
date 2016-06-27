@@ -102,6 +102,47 @@ CREATE PUBLIC SYNONYM DECODES_SITE_EXT FOR &CP_OWNER..DECODES_SITE_EXT;
 
 GRANT REFERENCES ON HDB_LOADING_APPLICATION TO &DECODES_OWNER;
 
+CREATE OR REPLACE TRIGGER &CP_OWNER..cp_comp_ts_parm_delete
+after delete on cp_comp_ts_parm
+for each row
+begin
+/*  This trigger created by M.  Bogner  04/05/2006
+    This trigger archives any deletes to the table
+    cp_comp_ts_parm.
+
+    updated 5/19/2008 by M. Bogner to update the date_time_loaded
+    collumn of cp_computation table
+*/
+insert into cp_comp_ts_parm_archive (
+   COMPUTATION_ID,
+   ALGO_ROLE_NAME,
+   SITE_DATATYPE_ID,
+   INTERVAL,
+   TABLE_SELECTOR,
+   DELTA_T,
+   MODEL_ID,
+   ARCHIVE_REASON,
+   DATE_TIME_ARCHIVED,
+   ARCHIVE_CMMNT
+)
+values (
+  :old.COMPUTATION_ID,
+  :old.ALGO_ROLE_NAME,
+  :old.SITE_DATATYPE_ID,
+  :old.INTERVAL_ABBR,
+  :old.TABLE_SELECTOR,
+  :old.DELTA_T,
+  :old.MODEL_ID,
+  'DELETE',
+  sysdate,
+  NULL);
+
+/* now update parent table's date_time_loaded for sql statements issued on this table */
+  hdb_utilities.touch_cp_computation(:old.computation_id);
+end;
+
+
+
 
 spool off
 exit;
