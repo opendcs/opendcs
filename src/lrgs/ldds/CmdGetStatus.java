@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:14  cvs
 *  Added legacy code to repository
 *
@@ -28,16 +31,9 @@ package lrgs.ldds;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
-import java.net.InetAddress;
-
-import ilex.util.Logger;
 import ilex.xml.XmlOutputStream;
-
 import lrgs.common.*;
-import lrgs.apistatus.AttachedProcess;
-import lrgs.apistatus.DownLink;
-import lrgs.apistatus.ArchiveStatistics;
-import lrgs.apistatus.QualityMeasurement;
+import lrgs.lrgsmain.LrgsConfig;
 import lrgs.statusxml.StatusXmlTags;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
 import lrgs.statusxml.LrgsStatusSnapshotXio;
@@ -79,6 +75,9 @@ public class CmdGetStatus extends LddsCommand
 			new XmlOutputStream(baos, StatusXmlTags.LrgsStatusSnapshot);
 
 		LrgsStatusSnapshotXio lssxio = new LrgsStatusSnapshotXio(lsse);
+		lssxio.setHideHostNames(
+			LrgsConfig.instance().getMiscBooleanProperty("hideHostNames", false)
+			&& !ldds.user.isAdmin);
 		lssxio.writeXml(xos);
 
 		LddsMessage response = new LddsMessage(LddsMessage.IdStatus,

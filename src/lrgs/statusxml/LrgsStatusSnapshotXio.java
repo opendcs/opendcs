@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2016/03/24 19:20:16  mmaloney
+*  Added hideHostNames property.
+*
 *  Revision 1.2  2016/02/29 22:26:43  mmaloney
 *  Encapsulate 'name'.
 *
@@ -60,7 +63,6 @@
 package lrgs.statusxml;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -70,7 +72,6 @@ import ilex.util.*;
 
 import lrgs.apistatus.*;
 import lrgs.lrgsmain.LrgsConfig;
-import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.networkdcp.NetworkDcpStatus;
 import lrgs.networkdcp.NetworkDcpStatusList;
 
@@ -98,6 +99,7 @@ public class LrgsStatusSnapshotXio
 	private static final int fvTag      = 9;
 
 	private boolean inNetworkDcpList = false;
+	private boolean hideHostNames = false;
 	
 	/**
 	  Construct parser.
@@ -403,7 +405,7 @@ public class LrgsStatusSnapshotXio
 				xos.startElement(StatusXmlTags.Process, 
 					"slot", ""+i, "pid", ""+ap.pid);
 				String hostname = ap.getName();
-				if (LrgsConfig.instance().getMiscBooleanProperty("hideHostNames", false))
+				if (hideHostNames)
 					hostname = "-";
 				xos.writeElement(StatusXmlTags.name, hostname);
 				xos.writeElement(StatusXmlTags.type, ap.type);
@@ -500,5 +502,10 @@ public class LrgsStatusSnapshotXio
 			lsse.networkDcpStatusList.saveToXml(xos);
 
 		xos.endElement(StatusXmlTags.LrgsStatusSnapshot);
+	}
+
+	public void setHideHostNames(boolean hideHostNames)
+	{
+		this.hideHostNames = hideHostNames;
 	}
 }
