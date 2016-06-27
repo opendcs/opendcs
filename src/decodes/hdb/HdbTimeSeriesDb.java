@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2016/06/07 21:51:27  mmaloney
+*  Added makeSiteDAO. Cleaned up imports.
+*
 *  Revision 1.3  2016/03/24 19:07:43  mmaloney
 *  Refactor: Have expandSDI return the TimeSeriesID that it uses. This saves the caller from
 *  having to re-look it up. Needed for PythonAlgorithm.
@@ -157,7 +160,10 @@ public class HdbTimeSeriesDb
 			{ 
 				rs = st.executeQuery(q);
 				if (rs != null && rs.next())
+				{
 					databaseTimezone = rs.getString(1);
+					DecodesSettings.instance().sqlTimeZone = databaseTimezone;
+				}
 //				Logger.instance().info("databaseTimezone is '" + databaseTimezone + "'");
 			}
 			catch(SQLException ex)
@@ -195,6 +201,8 @@ public class HdbTimeSeriesDb
 			writeDateFmt = new SimpleDateFormat(
 				"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
 			writeDateFmt.setTimeZone(TimeZone.getTimeZone(databaseTimezone));
+			info("Set date fmt to time zone '" + databaseTimezone + "' current time="
+				+ writeDateFmt.format(new Date()));
 		}
 		catch(SQLException ex)
 		{
@@ -208,7 +216,7 @@ public class HdbTimeSeriesDb
 		}
 		
 		readDateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		readDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+		readDateFmt.setTimeZone(TimeZone.getTimeZone(databaseTimezone));
 
 		this.postConnectInit(appName);
 		
@@ -339,7 +347,7 @@ public class HdbTimeSeriesDb
 		if (sdi.isNull())
 			throw new NoSuchObjectException("Cannot expand sdi with value "
 				+ sdi);
-		debug3("HdbTimeSeriesDb.expandSDI for sdi=" + sdi);
+//		debug3("HdbTimeSeriesDb.expandSDI for sdi=" + sdi);
 		
 		HdbSiteDatatype hsdi = getHSDI(sdi);
 		if (hsdi == null)
@@ -617,6 +625,7 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 		// Reload the TSID cache every hour.
 		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
 		{
+			lastTsidCacheRead = System.currentTimeMillis();
 			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
 			try { timeSeriesDAO.reloadTsIdCache(); }
 			finally
@@ -1178,6 +1187,8 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 	HdbSiteDatatype getHSDI(DbKey sdi)
 		throws DbIoException
 	{
+		if (hdbSdiCache.size() == 0)
+			fillHdbSdiCache();
 		HdbSiteDatatype hsdi = hdbSdiCache.get(sdi);
 		if (hsdi != null)
 			return hsdi;
@@ -1194,6 +1205,24 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		catch(SQLException ex)
 		{
 			throw new DbIoException("getHSDI error in query '" + q + "': " + ex);
+		}
+	}
+	
+	private void fillHdbSdiCache()
+		throws DbIoException
+	{
+		String q = "select SITE_DATATYPE_ID, SITE_ID, DATATYPE_ID from HDB_SITE_DATATYPE";
+		try
+		{
+			ResultSet rs = doQuery(q);
+			if(rs.next())
+				hdbSdiCache.add(
+					new HdbSiteDatatype(DbKey.createDbKey(rs, 1), 
+						DbKey.createDbKey(rs, 2), DbKey.createDbKey(rs, 3)));
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("fillHdbSdiCache error in query '" + q + "': " + ex);
 		}
 	}
 
