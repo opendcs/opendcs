@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2015/11/12 15:22:46  mmaloney
+*  Added makeScreeningDAO method.
+*
 *  Revision 1.5  2014/12/19 19:25:35  mmaloney
 *  Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
 *
@@ -358,9 +361,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
@@ -472,7 +472,7 @@ public abstract class TimeSeriesDb
 	*/
 	public static boolean sdiIsUnique = false; // default for USBR HDB.
 
-	private PreparedStatement lockCheckStmt = null;
+//	private PreparedStatement lockCheckStmt = null;
 
 	protected static String curTimeName = "current_timestamp";
 	protected static String maxCompRetryTimeFrmt = "INTERVAL '%d hour'";
@@ -505,7 +505,7 @@ public abstract class TimeSeriesDb
 	 */
 	public TimeSeriesDb()
 	{
-		DecodesSettings settings = DecodesSettings.instance();
+//		DecodesSettings settings = DecodesSettings.instance();
 		
 		writeModelRunId = Constants.undefinedIntKey;
 		testMode = false;
@@ -864,7 +864,7 @@ public abstract class TimeSeriesDb
 		conn = null;
 		queryStmt = null;
 		queryStmt2 = null;
-		lockCheckStmt = null;
+//		lockCheckStmt = null;
 	}
 
 	/**
@@ -1198,7 +1198,6 @@ public abstract class TimeSeriesDb
 			+ inList.substring(i+1);
 			q = q + w;	
 		}
-//System.out.println(q);
 		try
 		{
 			ResultSet rs = doQuery(q);
@@ -1743,6 +1742,7 @@ public abstract class TimeSeriesDb
 	/**
 	 * @return enumeration of all names in the property set.
 	 */
+	@SuppressWarnings("rawtypes")
 	public Enumeration getPropertyNames()
 	{
 		return props.keys();

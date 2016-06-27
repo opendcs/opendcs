@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.7  2012/10/12 19:50:41  mmaloney
 * Added -T argument to completely delete a time series from the DB
 * including all its data and meta data.
@@ -33,17 +36,13 @@ import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Properties;
 import java.util.TimeZone;
 
 import opendcs.dai.TimeSeriesDAI;
 
-import lrgs.gui.DecodesInterface;
-
 import ilex.cmdline.*;
 import ilex.util.Logger;
 
-import decodes.hdb.HdbTsId;
 import decodes.util.CmdLineArgs;
 
 /**
@@ -111,6 +110,7 @@ public class DeleteTs
 
 		String s = sinceArg.getValue().trim();
 		Date since = s != null && s.length() > 0 ? convert2Date(s, false) : null;
+//System.out.println("since string='" + s + "', tz='" + tz.getID() + "', converted since=" + since);
 		
 		s = untilArg.getValue().trim();
 		Date until = s != null && s.length() > 0 ? convert2Date(s, true) : null;
