@@ -88,7 +88,7 @@ public class Multiplication
 		throws DbCompException
 	{
 //AW:TIMESLICE
-		setOutput(output, (a*input1+b) + (c*input2+d));
+		setOutput(output, (a*input1+b) * (c*input2+d));
 //AW:TIMESLICE_END
 	}
 

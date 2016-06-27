@@ -2,9 +2,7 @@
 <CompMetaData>
   <Algorithm name="Multiplication">
     <Comment>
-      Divide one time series with another using : (a*input1+b)/(c*input2+d). 
-If
-      the denominator is zero then output is not set 
+      Multiply one time series with another using : (a*input1+b)*(c*input2+d). 
 
     </Comment>
     <ExecClass>decodes.tsdb.algo.Multiplication</ExecClass>
