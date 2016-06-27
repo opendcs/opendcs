@@ -354,7 +354,7 @@ public class LrgsDatabase
 				//Logger.instance().info("Reading date value '" + ds + "'");
 				return readDateFmt.parse(ds);
 			}
-			catch(ParseException ex)
+			catch(Exception ex)
 			{
 				Logger.instance().warning(
 					"Error parsing date '" + ds + "': " + ex);
