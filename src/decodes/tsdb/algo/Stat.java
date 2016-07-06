@@ -30,30 +30,31 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 	//AW:LOCALVARS
 		ArrayList<Double> inputData = new ArrayList<Double>();
 		double tally;
-		double min;
-		double max;
+		double _min;
+		double _max;
 		int count;
 
 	//AW:LOCALVARS_END
 
 	//AW:OUTPUTS
-		NamedVariable average = new NamedVariable("average", 0);
-		NamedVariable mn = new NamedVariable("minimum", 0);
-		NamedVariable mx = new NamedVariable("maximum", 0);
-		NamedVariable median = new NamedVariable("median", 0);
-		NamedVariable stdDev = new NamedVariable("standard_deviation", 0);
+		NamedVariable ave = new NamedVariable("ave", 0);
+		NamedVariable min = new NamedVariable("min", 0);
+		NamedVariable max = new NamedVariable("max", 0);
+		NamedVariable med = new NamedVariable("med", 0);
+		NamedVariable stddev = new NamedVariable("stddev", 0);
 		
-		String _outputNames[] = { "average", "minimum", "maximum", "median", "standard_deviation" };
+		String _outputNames[] = { "ave", "min", "max", "med", "stddev" };
 	//AW:OUTPUTS_END
 
 	//AW:PROPERTIES
 		long minSamplesNeeded = 1;
-		long aveEnabled = 1;
-		long minEnabled = 1;
-		long maxEnabled = 1;
-		long medEnabled = 1;
-		long deviationEnabled = 1;
-		String _propertyNames[] = { "minSamplesNeeded", "aveEnabled", "minEnabled", "maxEnabled", "medEnabled", "deviationEnabled" };
+		boolean aveEnabled = true;
+		boolean minEnabled = true;
+		boolean maxEnabled = true;
+		boolean medEnabled = true;
+		boolean stddevEnabled = true;
+		String _propertyNames[] = { "minSamplesNeeded", "aveEnabled", "minEnabled", "maxEnabled", "medEnabled", 
+			"stddevEnabled" };
 	//AW:PROPERTIES_END
 
 		// Allow javac to generate a no-args constructor.
@@ -65,7 +66,7 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 		{
 	//AW:INIT
 			_awAlgoType = AWAlgoType.AGGREGATING;
-			_aggPeriodVarRoleName = "average";
+			_aggPeriodVarRoleName = "ave";
 	//AW:INIT_END
 
 	//AW:USERINIT
@@ -82,19 +83,26 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 			// Zero out the tally & count for this agg period.
 			tally = 0.0;
 			count = 0;
-			min = 123456790.0;
-			max = -123456790.0;
+			_min = Double.POSITIVE_INFINITY;
+			_max = Double.NEGATIVE_INFINITY;
 			
 			// Normally for average, output units will be the same as input.
 			String inUnits = getInputUnitsAbbr("input");
 			if (inUnits != null && inUnits.length() > 0)
 			{
-				setOutputUnitsAbbr("average", inUnits);
-				setOutputUnitsAbbr("minimum", inUnits);
-				setOutputUnitsAbbr("maximum", inUnits);
-				setOutputUnitsAbbr("median", inUnits);
-				setOutputUnitsAbbr("standard_deviation", inUnits);
+				setOutputUnitsAbbr("ave", inUnits);
+				setOutputUnitsAbbr("min", inUnits);
+				setOutputUnitsAbbr("max", inUnits);
+				setOutputUnitsAbbr("med", inUnits);
+				setOutputUnitsAbbr("stddev", inUnits);
 			}
+			this.debug3("Starting aggregate period at " + debugSdf.format(_aggregatePeriodBegin));
+//			debug3("present: ave=" + isAssigned("ave")
+//				+ ", min=" + isAssigned("min")
+//				+ ", max=" + isAssigned("max")
+//				+ ", med=" + isAssigned("med")
+//				+ ", stddev=" + isAssigned("stddev"));
+
 	//AW:BEFORE_TIMESLICES_END
 		}
 
@@ -112,14 +120,14 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 			throws DbCompException
 		{
 		//AW:TIMESLICE
-			//	debug2("AverageAlgorithm:doAWTimeSlice, input=" + input);
+			debug2("AverageAlgorithm:doAWTimeSlice, input=" + input + ", timeslice=" + debugSdf.format(_timeSliceBaseTime));
 			if (!isMissing(input))
 			{
 				inputData.add(input);
-				if(input<min)
-					min = input;
-				if(input>max)
-					max = input;
+				if(input<_min)
+					_min = input;
+				if(input>_max)
+					_max = input;
 				tally += input;
 				count++;
 			}
@@ -131,52 +139,33 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 		 */
 		protected void afterTimeSlices()
 		{
-	//AW:AFTER_TIMESLICES
-//			debug2("AverageAlgorithm:afterTimeSlices, count=" + count);
-	//debug1("AverageAlgorithm:afterTimeSlices, per begin="
-	//+ debugSdf.format(_aggregatePeriodBegin) + ", end=" + debugSdf.format(_aggregatePeriodEnd));
-			
-			
-			Collections.sort(inputData);
-			if (count >= minSamplesNeeded)
-			{
-				if(count==minSamplesNeeded)
-					setOutput(median, input);
-				else
-					if(medEnabled!=0)
-					{
-						if(count%2==0)
-							setOutput(median, (inputData.get((count/2)-1)+inputData.get(count/2))/2);
-						else
-							setOutput(median, inputData.get(((int)count/2)));
-					}
-				
-				if(aveEnabled!=0)
-				{
-					setOutput(average, tally / (double)count);
-				}
-				if(minEnabled!=0)
-				{
-					setOutput(mn, min);
-				}
-				if(maxEnabled!=0)
-				{
-					setOutput(mx, max);
-				}
-				if(deviationEnabled!=0)
-				{
-					setOutput(stdDev, stdDeviation(inputData, tally/(double)count));	
-				}
-				inputData.clear();
-			}
-			else 
+//AW:AFTER_TIMESLICES
+			if (count < minSamplesNeeded)
 			{
 				warning("Do not have minimum # samples (" + minSamplesNeeded
 					+ ") -- not producing an average.");
 				if (_aggInputsDeleted)
-					deleteOutput(average);
+					deleteOutput(ave);
 			}
-		//AW:AFTER_TIMESLICES_END
+			debug3("After timeslice aggPeriodEnd=" + debugSdf.format(_aggregatePeriodEnd)
+				+ " count=" + count + ", min=" + _min + ", max=" + _max + ", tally=" + tally);
+
+			Collections.sort(inputData);
+
+			if (aveEnabled)
+				setOutput(ave, tally / (double)count);
+			if (minEnabled)
+				setOutput(min, _min);
+			if (maxEnabled)
+				setOutput(max, _max);
+			if (medEnabled)
+			{
+				int medIdx = (count % 2 == 0) ? count/2-1 : count/2;
+				setOutput(med, inputData.get(medIdx));
+			}
+			if (stddevEnabled)
+				setOutput(stddev, stdDeviation(inputData, tally/(double)count));
+//AW:AFTER_TIMESLICES_END
 		}
 		
 		/**Standard Deviation based on entire population
