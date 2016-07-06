@@ -28,11 +28,13 @@ import org.w3c.dom.Document;
 
 import decodes.gui.AboutBox;
 import decodes.gui.TopFrame;
+import decodes.util.DecodesVersion;
 import ilex.gui.EventsPanel;
 import ilex.gui.JobDialog;
 import ilex.gui.LoginDialog;
 import ilex.util.AsciiUtil;
 import ilex.util.AuthException;
+import ilex.util.DesEncrypter;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -47,6 +49,7 @@ import lrgs.lrgsmain.LrgsConfig;
 import lrgs.ddsrecv.DdsRecvSettings;
 import lrgs.drgs.DrgsInputSettings;
 import lrgs.db.Outage;
+import lrgs.gui.MessageBrowser;
 import ilex.util.LoadResourceBundle;
 
 
@@ -88,6 +91,7 @@ public class RtStatFrame
 	private RtStatPanel rtStatPanel = new RtStatPanel();
 	private EventsPanel eventsPanel = new EventsPanel(false);
 	private JCheckBox passwordCheck = new JCheckBox();
+	
 
 	/** True if the display is currently paused. */
 	boolean isPaused = false;
@@ -123,6 +127,8 @@ public class RtStatFrame
 	private NetlistMaintenanceDialog netlistDlg;
 	private DrgsInputSettings networkDcpSettings;
 	private NetworkDcpStatusFrame networkDcpStatusFrame = null;
+	private static String pwk = MessageBrowser.class.toString() + 
+		(""+Math.PI).substring(3, 10) + DecodesVersion.class.toString();
 
 	/** Constructor. */
 	public RtStatFrame(int scanPeriod, String iconFile, String headerFile)
@@ -184,7 +190,9 @@ public class RtStatFrame
 			{
 				public void actionPerformed(ActionEvent ae)
 				{
-					setPortFromHostSelection();
+					setFieldsFromHostSelection(hostCombo, 
+						connectionList, portField, userField, passwordField);
+					passwordCheck.setSelected(passwordField.getText().length() > 0);
 				}
 			});
 		loadConnectionsField(hostCombo, connectionList, connectedHostName);
@@ -576,7 +584,8 @@ public class RtStatFrame
 		{
 			setTitle(labels.getString("RtStatFrame.frameTitle")+": " + host);
 			client = tclient;
-			updateConnectionList(host, "" + port, user);
+			updateConnectionList(connectedHostName = host, "" + port, user, connectionList, passwd);
+			loadConnectionsField(hostCombo, connectionList, connectedHostName);
 			displayEvent("Connected to " + host + ":"
 				+ port + " as user '" + user + "'");
 		}
@@ -979,6 +988,7 @@ public class RtStatFrame
 	public static void loadConnectionsField(JComboBox hostCombo, Properties connectionList,
 		String connectedHostName)
 	{
+//System.out.println("loadConnectionsField connected='" + connectedHostName + "'");
 		String fn = LddsClient.getLddsConnectionsFile();
 		File file = new File(fn);
 		try
@@ -1036,25 +1046,16 @@ public class RtStatFrame
 				selected = i;
 		}
 		
-//		Enumeration enames = connectionList.propertyNames();
-//		int i = 0;
-//		hostCombo.removeAllItems();
-//		for(; enames.hasMoreElements(); i++)
-//		{
-//			String s = (String)enames.nextElement();
-//			if (connectedHostName != null 
-//			 && connectedHostName.equalsIgnoreCase(s))
-//				selected = i;
-//			hostCombo.addItem(s);
-//		}
-		if (selected == -1)
+		if (selected == -1 && connectedHostName != null)
 		{
 			hostCombo.addItem(connectedHostName);
 			selected = hosts.size();
 		}
 	}
 
-	private void setPortFromHostSelection()
+	public static void setFieldsFromHostSelection(JComboBox hostCombo, 
+		Properties connectionList, JTextField portField, JTextField userField,
+		JPasswordField passwordField)
 	{
 		String host = (String)hostCombo.getSelectedItem();
 		if (host == null || host.length() == 0)
@@ -1072,15 +1073,49 @@ public class RtStatFrame
 			portField.setText("16003");
 		if (st.hasMoreTokens())
 			userField.setText(st.nextToken());
+		if (st.hasMoreTokens())
+		{
+			st.nextToken(); // Gobble the last modify time field.
+			if (st.hasMoreTokens())
+			{
+				String epw = st.nextToken();
+				try
+				{
+					DesEncrypter de = new DesEncrypter(pwk);
+					String dpw = de.decrypt(epw);
+					passwordField.setText(dpw);
+				}
+				catch (AuthException e)
+				{
+				}
+			}
+			else
+			{
+				passwordField.setText("");
+			}
+		}
 	}
 
 	/** 
 	  Updates the connection list file with a new connection.
 	*/
-	private void updateConnectionList(String host, String port, String user)
+	public static void updateConnectionList(String host, String port, String user,
+		Properties connectionList, String passwd)
 	{
-		connectedHostName = host;
-		connectionList.setProperty(host, port + " " + user + " " + System.currentTimeMillis());
+		String v = port + " " + user + " " + System.currentTimeMillis();
+		if (passwd != null && passwd.trim().length() > 0)
+		{
+			// Encrypt password and tack it to the end of the line.
+			try
+			{
+				DesEncrypter de = new DesEncrypter(pwk);
+				v = v + " " + de.encrypt(passwd);
+			}
+			catch (AuthException e)
+			{
+			}
+		}
+		connectionList.setProperty(host, v);
 		String fn = LddsClient.getLddsConnectionsFile();
 		File file = new File(fn);
 		try
@@ -1094,7 +1129,6 @@ public class RtStatFrame
 			System.out.println("Cannot save connections to '"
 				+ file.getPath() + "': " + ioe);
 		}
-		loadConnectionsField(hostCombo, connectionList, connectedHostName);
 	}
 
 	/**

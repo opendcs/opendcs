@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.5  2016/04/15 19:31:22  mmaloney
+*  LRGS Server List sorted by access time, most-recent-first.
+*
 *  Revision 1.4  2016/02/23 19:55:18  mmaloney
 *  Refactor to allow a no-decode version of the browser.
 *
@@ -79,8 +82,8 @@ public class MessageBrowser extends MenuFrame
 	private SearchCriteriaEditorIF scedit;
 
 	private JComboBox hostField;
-	private JTextField portField, userField;
-	private JPasswordField passwordField;
+	private JTextField portField = new JTextField(15), userField = new JTextField(15);
+	private JPasswordField passwordField = new JPasswordField(15);
 	private JButton connectButton;
 	private JTextField scfileField;
 	private JButton scSelectButton, scEditButton;
@@ -199,16 +202,17 @@ public class MessageBrowser extends MenuFrame
 				new Insets(2, 5, 2, 5), 0, 0)); 
 
 		hostField = new JComboBox();
-		RtStatFrame.loadConnectionsField(hostField, connectionList, null);
 		hostField.setEditable(true);
 		hostField.addActionListener(
 			new ActionListener()
 			{
 				public void actionPerformed(ActionEvent ae)
 				{
-					setPortFromHostSelection();
+					RtStatFrame.setFieldsFromHostSelection(hostField, connectionList, portField, 
+						userField, passwordField);
 				}
 			});
+		RtStatFrame.loadConnectionsField(hostField, connectionList, "");
 		northwest.add(hostField,
 			new GridBagConstraints(1, 0, 1, 1, 0.8, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
@@ -218,7 +222,7 @@ public class MessageBrowser extends MenuFrame
 			new GridBagConstraints(0, 1, 1, 1, 0.2, 1.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0)); 
-		northwest.add(portField = new JTextField(15),
+		northwest.add(portField,
 			new GridBagConstraints(1, 1, 1, 1, 0.8, 1.0,
 				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0)); 
@@ -232,7 +236,7 @@ public class MessageBrowser extends MenuFrame
 			new GridBagConstraints(0, 2, 1, 1, 0.2, 1.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0)); 
-		northwest.add(userField = new JTextField(15),
+		northwest.add(userField,
 			new GridBagConstraints(1, 2, 1, 1, 0.8, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0)); 
@@ -247,11 +251,10 @@ public class MessageBrowser extends MenuFrame
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 		//northwest.add(passwordField = new JTextField(15),
-		northwest.add(passwordField = new JPasswordField(15),
+		northwest.add(passwordField,
 			new GridBagConstraints(1, 3, 1, 1, 0.8, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0)); 
-		passwordField.setText(GuiApp.getProperty("MessageBrowser.Password"));
 
 		// Connect button across bottom:
 		connectButton =
@@ -679,30 +682,26 @@ public class MessageBrowser extends MenuFrame
 		}
 	}
 
-	/** 
-	  Updates the file specified by the MessageBrowser.ConnectionsFile
-	  with a newly selected connection.
-	*/
-	private void updateConnectionList(String host, String port, String user)
-	{
-		connectionList.setProperty(host, port + " " + user + " " + System.currentTimeMillis());
-		String fn = LddsClient.getLddsConnectionsFile();
-//			GuiApp.getProperty("MessageBrowser.ConnectionsFile");
-		fn = EnvExpander.expand(fn, System.getProperties());
-		File file = new File(fn);
-		try
-		{
-			FileOutputStream fos = new FileOutputStream(file);
-			connectionList.store(fos, "Recent LRGS Connections");
-			fos.close();
-		}
-		catch(IOException ioe)
-		{
-			System.out.println("Cannot save connections");
-		}
-		RtStatFrame.loadConnectionsField(hostField, connectionList, null);
-//		loadConnectionsField();
-	}
+//	/** 
+//	  Updates the file specified by the MessageBrowser.ConnectionsFile
+//	  with a newly selected connection.
+//	*/
+//	private void updateConnectionList(String host, String port, String user)
+//	{
+//		connectionList.setProperty(host, port + " " + user + " " + System.currentTimeMillis());
+//		String fn = LddsClient.getLddsConnectionsFile();
+//		File file = new File(fn);
+//		try
+//		{
+//			FileOutputStream fos = new FileOutputStream(file);
+//			connectionList.store(fos, "Recent LRGS Connections");
+//			fos.close();
+//		}
+//		catch(IOException ioe)
+//		{
+//			System.out.println("Cannot save connections");
+//		}
+//	}
 
 //	private void loadConnectionsField()
 //	{
@@ -726,26 +725,26 @@ public class MessageBrowser extends MenuFrame
 //		hostField.setSelectedIndex(selected);
 //	}
 
-	private void setPortFromHostSelection()
-	{
-		String host = (String)hostField.getSelectedItem();
-		if (host == null || host.length() == 0)
-			return;
-
-		String hl = connectionList.getProperty(host);
-		if (hl == null || hl.length() == 0)
-		{
-			portField.setText("16003");
-			return;
-		}
-		StringTokenizer st = new StringTokenizer(hl);
-		if (st.hasMoreTokens())
-			portField.setText(st.nextToken());
-		else
-			portField.setText("16003");
-		if (st.hasMoreTokens())
-			userField.setText(st.nextToken());
-	}
+//	private void setPortFromHostSelection()
+//	{
+//		String host = (String)hostField.getSelectedItem();
+//		if (host == null || host.length() == 0)
+//			return;
+//
+//		String hl = connectionList.getProperty(host);
+//		if (hl == null || hl.length() == 0)
+//		{
+//			portField.setText("16003");
+//			return;
+//		}
+//		StringTokenizer st = new StringTokenizer(hl);
+//		if (st.hasMoreTokens())
+//			portField.setText(st.nextToken());
+//		else
+//			portField.setText("16003");
+//		if (st.hasMoreTokens())
+//			userField.setText(st.nextToken());
+//	}
 
 	/** Sets the screen size. */
 	public void setSize(Dimension d)
@@ -849,13 +848,14 @@ public class MessageBrowser extends MenuFrame
 
 		String errmsg = null;
 		hostName = (String)hostField.getSelectedItem();
+		String pw = new String(passwordField.getPassword());
+
 		try
 		{
 			client = new LddsClient(hostName, port);
 			client.connect();
 
 			//String pw = passwordField.getText().trim();
-			String pw = new String(passwordField.getPassword());
 			if (pw.length() > 0)
 				client.sendAuthHello(userField.getText(), pw);
 			else
@@ -900,13 +900,10 @@ public class MessageBrowser extends MenuFrame
 					labels.getString("MessageBrowser.connectedToAsUserLabel"),
 					hostName, port, userField.getText()));
 
-//			JOptionPane.showMessageDialog(getContentPane(),
-//				"Connected to " + hostName + " as user "
-//				+ userField.getText(),
-//				"Connected!", JOptionPane.INFORMATION_MESSAGE);
 			firstAfterConnect = true;
-			updateConnectionList(hostName, portField.getText(),
-				userField.getText());
+			RtStatFrame.updateConnectionList(hostName, portField.getText(),
+				userField.getText(), connectionList, pw);
+			RtStatFrame.loadConnectionsField(hostField, connectionList, hostName);
 		}
 	}
 
