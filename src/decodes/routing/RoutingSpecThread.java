@@ -118,6 +118,9 @@ public class RoutingSpecThread
 
 	/** Explicit LRGS data source, if one provided on command line. */
 	protected DataSource explicitDataSource;
+	
+	/** Explicit Directory Consumer privded on rs command line */
+	protected String explicitConsumerDir = null;
 
 	private boolean exitOnCompletion = false;
 
@@ -900,8 +903,18 @@ public class RoutingSpecThread
 				consumer.close();
 				consumer = null;
 			}
+			
+			// If an explicit FOLDER consumer was provided on command line,
+			// then set rs.consumerType and rs.conumerArg.
+			if (explicitConsumerDir != null && explicitConsumerDir.length() > 0)
+			{
+				log(Logger.E_INFORMATION, "Explicit directory consumer '" + explicitConsumerDir + "'");
+				rs.consumerType = "directory";
+				rs.consumerArg = explicitConsumerDir;
+			}
+			
 			consumer = DataConsumer.makeDataConsumer(rs.consumerType);
-			Logger.instance().debug1("Instantiated consumer with type '" + rs.consumerType + "'");
+			log(Logger.E_DEBUG1, "Instantiated consumer with type '" + rs.consumerType + "'");
 			consumer.open(rs.consumerArg, rs.getProperties());
 			consumer.setTimeZone(rs.outputTimeZone);
 			consumer.setRoutingSpecThread(this);
@@ -1272,7 +1285,7 @@ public class RoutingSpecThread
 	*/
 	public void shutdown()
 	{
-log(Logger.E_DEBUG1, "shutdown called.");
+		log(Logger.E_INFORMATION, "shutdown called.");
 		done = true;
 		if (source != null)
 			source.close();
@@ -1336,6 +1349,11 @@ log(Logger.E_DEBUG1, "shutdown called.");
 		TokenOptions.optArgument |TokenOptions.optRequired, "");
 	static StringToken officeIdArg = new StringToken(
 		"O", "OfficeID", "", TokenOptions.optSwitch, "");
+	static StringToken dirConsumerArg = new StringToken("F", 
+		"Explicit directory-consumer folder-name", "", TokenOptions.optSwitch, "");
+	static BooleanToken editDbArg = new BooleanToken("e", 
+		"(deprecated -- does nothing)", "", TokenOptions.optSwitch, false);
+
 
 	static
 	{
@@ -1362,6 +1380,8 @@ log(Logger.E_DEBUG1, "shutdown called.");
 		cmdLineArgs.addToken(usgsSummaryFileArg);
 		rsArg.setType("RoutingSpecName");
 		cmdLineArgs.addToken(officeIdArg);
+		cmdLineArgs.addToken(dirConsumerArg);
+		cmdLineArgs.addToken(editDbArg);
 		cmdLineArgs.addToken(rsArg);
 	}
 
@@ -1574,6 +1594,10 @@ log(Logger.E_DEBUG1, "shutdown called.");
 				mainThread.explicitDataSource.dataSourceArg += (", password=" + pw);
 			}
 		}
+		
+		// Set rs.explicitConsumerDir from -F command line arg here.
+		if (dirConsumerArg.getValue() != null && dirConsumerArg.getValue().trim().length() > 0)
+			mainThread.explicitConsumerDir = EnvExpander.expand(dirConsumerArg.getValue()).trim();
 
 		mainThread.start();
 	}
