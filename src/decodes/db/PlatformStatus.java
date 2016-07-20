@@ -1,6 +1,7 @@
 package decodes.db;
 
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -47,11 +48,12 @@ public class PlatformStatus
 	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	static { sdf.setTimeZone(TimeZone.getTimeZone("UTC")); }
 	
+	private transient boolean checked = false;
+	
 	public PlatformStatus(DbKey platformId)
 	{
 		super(platformId);
 		this.platformId = platformId;
-		Logger.instance().debug3("New PlatformStatus for id=" + platformId);
 	}
 
 	public DbKey getPlatformId()
@@ -224,4 +226,53 @@ public class PlatformStatus
 			return "";
 		synchronized(sdf) { return sdf.format(lastErrorTime); }
 	}
+
+	public boolean isChecked()
+	{
+		return checked;
+	}
+
+	public void setChecked(boolean checked)
+	{
+		this.checked = checked;
+	}
+
+	@Override
+	public boolean equals(Object rhs)
+	{
+		if (!(rhs instanceof PlatformStatus))
+			return false;
+		PlatformStatus p2 = (PlatformStatus)rhs;
+		return this.platformId.equals(p2.platformId)
+			&& dateCmp(this.lastContactTime, p2.lastContactTime) == 0
+			&& dateCmp(this.lastMessageTime, p2.lastMessageTime) == 0
+			&& TextUtil.strEqual(this.lastFailureCodes, p2.lastFailureCodes)
+			&& dateCmp(this.lastErrorTime, p2.lastErrorTime) == 0
+			&& TextUtil.strEqual(this.annotation, p2.annotation);
+	}
+	
+	private int dateCmp(Date d1, Date d2)
+	{
+		if (d1 == null || d1.getTime() == 0L)
+		{
+			if (d2 == null || d2.getTime() == 0L)
+				return 0;
+			return -1;
+		}
+		else if (d2 == null || d2.getTime() == 0L)
+		{
+			return 1;
+		}
+		long d = d1.getTime() - d2.getTime();
+		return d < 0 ? -1 : d > 0 ? 1 : 0;
+	}
+	
+	public String getPlatformName()
+	{
+		String r = getSiteName();
+		if (designator != null && designator.length() > 0)
+			r = r + "-" + designator;
+		return r;
+	}
+	
 }
