@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1  2016/06/27 15:15:41  mmaloney
+ * Initial checkin.
+ *
  * Revision 1.3  2016/02/04 18:50:07  mmaloney
  * In start(), account for backslash in windows filenames.
  *
@@ -115,24 +118,27 @@ public class RoutingMonitorFrame
 	static ResourceBundle genericLabels = null;
 	static ResourceBundle procmonLabels = null;
 	static ResourceBundle compeditLabels = null;
-	private SortingListTable routingSpecTable = null;
+	private SortingListTable routingTable = null;
 	private RsRunModel rsRunModel = null;
 	private JTable rsRunTable = null;
 	private RSBean selectedRS = null;
 //	private TimeSeriesDb tsdb = null;
 //	private DbPollThread dbPollThread = null;
 	private ArrayList<DacqEvent> evtList = new ArrayList<DacqEvent>();
-	private ScheduleEntryStatus selectedSES = null;
+	private ScheduleEntryStatus selectedRun = null;
 	private SimpleDateFormat evtTimeSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	private JLabel rsRunLabel = new JLabel();
 	private JLabel runEventsLabel = new JLabel();
 	private DbPollThread dbPollThread;
+	private RoutingMonitor parent = null;
+	private boolean inDbUpdate = false;
 	
 	/**
 	 * Constructor
 	 */
-	public RoutingMonitorFrame()
+	public RoutingMonitorFrame(RoutingMonitor parent)
 	{
+		this.parent = parent;
 		DecodesSettings settings = DecodesSettings.instance();
 		genericLabels = LoadResourceBundle.getLabelDescriptions("decodes/resources/generic", settings.language);
 		procmonLabels = LoadResourceBundle.getLabelDescriptions("decodes/resources/procmon", settings.language);
@@ -141,17 +147,7 @@ public class RoutingMonitorFrame
 		
 		guiInit();
 		pack();
-System.out.println("Packed");
 		this.trackChanges("RoutingMonitorFrame");
-		SwingUtilities.invokeLater(
-			new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					outerPane.setDividerLocation(outerPane.getHeight()*2/3);
-				}
-			});
 	}
 	
 	private void guiInit()
@@ -163,16 +159,16 @@ System.out.println("Packed");
 		
 		outerPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		mainPanel.add(outerPane, BorderLayout.CENTER);
-		routingSpecTable = new SortingListTable(routingModel, routingModel.widths);
-		JPanel procListPanel = new JPanel(new BorderLayout());
+		routingTable = new SortingListTable(routingModel, routingModel.widths);
+		JPanel rsListPanel = new JPanel(new BorderLayout());
 		JPanel p = new JPanel(new FlowLayout());
 		p.add(new JLabel(procmonLabels.getString("rsPanelHeader")));
-		procListPanel.add(p, BorderLayout.NORTH);
+		rsListPanel.add(p, BorderLayout.NORTH);
 		JScrollPane scrollPane = new JScrollPane(
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		scrollPane.setViewportView(routingSpecTable);
-		procListPanel.add(scrollPane, BorderLayout.CENTER);
-		outerPane.setTopComponent(procListPanel);
+		scrollPane.setViewportView(routingTable);
+		rsListPanel.add(scrollPane, BorderLayout.CENTER);
+		outerPane.setTopComponent(rsListPanel);
 		innerPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		outerPane.setBottomComponent(innerPane);
 		
@@ -195,8 +191,9 @@ System.out.println("Packed");
 		p.add(runEventsLabel);
 		eventsPanel.add(p, BorderLayout.NORTH);
 		innerPane.setBottomComponent(eventsPanel);
-		scrollPane.setPreferredSize(new Dimension(900, 300));
-		rsRunScrollPane.setPreferredSize(new Dimension(900,300));
+		
+		rsListPanel.setPreferredSize(new Dimension(900, 300));
+		rsRunTablePanel.setPreferredSize(new Dimension(900,300));
 		eventsPanel.setPreferredSize(new Dimension(900, 300));
 		
 		JPanel buttonPanel = new JPanel(new FlowLayout());
@@ -214,8 +211,8 @@ System.out.println("Packed");
 			});
 		buttonPanel.add(closeButton);
 		
-		routingSpecTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		routingSpecTable.getSelectionModel().addListSelectionListener(
+		routingTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		routingTable.getSelectionModel().addListSelectionListener(
 			new ListSelectionListener()
 			{
 				@Override
@@ -236,33 +233,39 @@ System.out.println("Packed");
 			});
 	}
 	
-	protected void runSelected()
+	protected synchronized void runSelected()
 	{
-System.out.println("RMF runSelected");
+		if (inDbUpdate)
+			return;
 		int sel = rsRunTable.getSelectedRow();
 		if (sel == -1 || selectedRS == null)
 			return;
 		else
 		{
 			ScheduleEntryStatus ses = selectedRS.getRunHistory().get(sel);
-			if (ses != selectedSES)
+			if (ses != selectedRun)
 			{
 				eventsPanel.clear();
 				evtList.clear();
-				selectedSES = ses;
+				selectedRun = ses;
 				rsRunLabel.setText(
 					LoadResourceBundle.sprintf(procmonLabels.getString("runEventsHeader"), 
-					selectedRS.getRsName(), evtTimeSdf.format(selectedSES.getRunStart())));
+					selectedRS.getRsName(), evtTimeSdf.format(selectedRun.getRunStart())));
+				runEventsLabel.setText(
+					LoadResourceBundle.sprintf(procmonLabels.getString("runEventsHeader"), 
+						selectedRS.getRsName(), evtTimeSdf.format(selectedRun.getRunStart())));
 			}
 
 			fillEventsFor(ses);
 		}
 	}
 
-	protected void routingSpecSelected()
+	protected synchronized void routingSpecSelected()
 	{
-System.out.println("RMF routingSpecSelected");
-		int sel = routingSpecTable.getSelectedRow();
+		if (inDbUpdate)
+			return;
+
+		int sel = routingTable.getSelectedRow();
 		if (sel == -1)
 			return;
 		else
@@ -270,6 +273,7 @@ System.out.println("RMF routingSpecSelected");
 			RSBean rsb = routingModel.getRSAt(sel);
 			if (rsb != selectedRS)
 			{
+				selectedRun = null;
 				rsRunModel.setActiveRS(selectedRS = rsb);
 				eventsPanel.clear();
 				rsRunLabel.setText(
@@ -282,9 +286,7 @@ System.out.println("RMF routingSpecSelected");
 
 	protected void closePressed()
 	{
-System.out.println("closePressed");
-		// TODO Auto-generated method stub
-		
+		parent.close();
 	}
 
 	public void cleanupBeforeExit()
@@ -317,28 +319,8 @@ System.out.println("closePressed");
 	}
 	
 
-//	@Override
-//	public void tableChanged(TableModelEvent e)
-//	{
-//		if (selectedRS == null)
-//			;
-//		System.out.println("RoutingSpecFrame.tableChanged");
-////		else
-////		{
-////			final int selidx = model.getAppNameIndex(selectedProc.getCompAppInfo().getAppName());
-////			if (selidx != -1)
-////				SwingUtilities.invokeLater(
-////					new Runnable()
-////					{
-////						public void run() {	processTable.setRowSelectionInterval(selidx, selidx); }
-////					});
-////		}	
-//	}
-
-	
 	private void fillEventsFor(ScheduleEntryStatus ses)
 	{
-System.out.println("fillEventsFor");
 		// Use DAO to get events for selected ses and fill events panel.
 		DatabaseIO dbio = Database.getDb().getDbIo();
 		if (dbio instanceof SqlDatabaseIO)
@@ -354,17 +336,15 @@ System.out.println("fillEventsFor");
 					eventsPanel.addLine(formatEvt(evt));
 				}
 			}
-			catch (DbIoException e)
+			catch (DbIoException ex)
 			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Logger.instance().warning("Error reading events: " + ex);
 			}
 			finally
 			{
 				evtDAO.close();
 			}
 		}
-		
 	}
 
 	private String formatEvt(DacqEvent evt)
@@ -388,33 +368,115 @@ System.out.println("fillEventsFor");
 		this.dbPollThread = dbPollThread;
 	}
 
-	public RoutingTableModel getRoutingModel()
-	{
-		return routingModel;
-	}
-	
 	public RsRunModel getRsRunModel() { return rsRunModel; }
 
+	
 	/**
-	 * Called from DbUpdateThread after a new list has been merged to the display.
-	 * Check to make sure that active RS (if there is one) is still in the list.
-	 * @param seList the new list just read from the database.
+	 * Called from DbUpdateThread periodically when a new update has been
+	 * read from the database. Merge the info into the model and update
+	 * the screen in the Swing thread.
+	 * @param seList
 	 */
-	public void checkActiveRS()
+	public synchronized void updateFromDb(ArrayList<ScheduleEntry> seList)
+	{
+		routingModel.merge(seList);
+
+		final int selectedRSIdx = routingModel.indexOf(selectedRS);
+		if (selectedRSIdx == -1)
+		{
+			// Either there is no selection, or a previous selection was removed
+			// from the database.
+			selectedRS = null;
+			selectedRun = null;
+		}
+
+		SwingUtilities.invokeLater(
+			new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					inDbUpdate = true;
+					routingModel.updated();
+					if (selectedRSIdx != -1 && selectedRSIdx != routingTable.getSelectedRow())
+					{
+						routingTable.setRowSelectionInterval(selectedRSIdx, selectedRSIdx);
+					}
+					inDbUpdate = false;
+				}
+			});
+	}
+	
+	/**
+	 * Called from DbUpdateThread after it reads a new history for the selected RS.
+	 */
+	public synchronized void updateRunHistory()
 	{
 		if (selectedRS == null)
+		{
 			return;
-		for(RSBean bean : routingModel.getBeans())
-			if (selectedRS == bean)
-				return;
-		// Fell through means that the selected RS no longer exists in database.
-		rsRunModel.setActiveRS(selectedRS = null);
-		eventsPanel.clear();
+		}
+
+		// There may be a new run and the selection may not be the same row.
+		int selectedRunIdx = -1;
+		if (selectedRun != null)
+		{
+			for(int idx = 0; idx < selectedRS.getRunHistory().size(); idx++)
+			{
+				if (selectedRun.getRunStart().equals(
+					selectedRS.getRunHistory().get(idx).getRunStart()))
+				{
+					selectedRunIdx = idx;
+					break;
+				}
+			}
+		}
+		
+		final int sri = selectedRunIdx;
+		
+		SwingUtilities.invokeLater(
+			new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					inDbUpdate = true;
+					rsRunModel.updated();
+					if (sri != -1 && sri != rsRunTable.getSelectedRow())
+					{
+						rsRunTable.setRowSelectionInterval(sri, sri);
+						if (selectedRun.getRunStop() == null)
+							fillEventsFor(selectedRun);
+					}
+					inDbUpdate = false;
+				}
+			});
 	}
 
 	public RSBean getSelectedRS()
 	{
 		return selectedRS;
 	}
+
+	public void setDefaults()
+	{
+		SwingUtilities.invokeLater(
+			new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					outerPane.setDividerLocation(.4);
+					innerPane.setDividerLocation(.5);
+				}
+			});
+
+	}
+
+	public ScheduleEntryStatus getSelectedSES()
+	{
+		return selectedRun;
+	}
+
 }
 

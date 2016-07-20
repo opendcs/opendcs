@@ -28,7 +28,7 @@ public class RoutingMonitor extends TsdbAppTemplate
 	@Override
 	protected void runApp() throws Exception
 	{
-		frame = new RoutingMonitorFrame();
+		frame = new RoutingMonitorFrame(this);
 		dbPollThread = new DbPollThread(this);
 		frame.setDbPollThread(dbPollThread);
 		ImageIcon titleIcon = new ImageIcon(
@@ -43,6 +43,8 @@ public class RoutingMonitor extends TsdbAppTemplate
 				close();
 			}
 		});
+		frame.setDefaults();
+		
 		noExitAfterRunApp = true;
 		dbPollThread.start();
 	}
@@ -54,7 +56,7 @@ public class RoutingMonitor extends TsdbAppTemplate
 
 	public TimeSeriesDb getTsdb() { return theDb; }
 
-	private void close()
+	public void close()
 	{
 		dbPollThread.shutdown();
 		if (frame != null)
@@ -69,7 +71,8 @@ public class RoutingMonitor extends TsdbAppTemplate
 		DecodesInterface.setGUI(true);
 		RoutingMonitor guiApp = new RoutingMonitor();
 		try
-		{			
+		{
+			guiApp.setExitOnClose(true);
 			guiApp.execute(args);
 		} 
 		catch (Exception ex)

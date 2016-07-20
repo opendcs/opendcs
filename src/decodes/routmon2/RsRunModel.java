@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TimeZone;
 
+import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
 import decodes.db.ScheduleEntryStatus;
@@ -60,16 +61,27 @@ public class RsRunModel extends AbstractTableModel
 		case 1: return ses.getRunStop() == null ? "-" : sdf.format(ses.getRunStop());
 		case 2: return "" + ses.getNumMessages() + "/" + ses.getNumPlatforms() + "/" + ses.getNumDecodesErrors();
 		case 3: return ses.getLastMessageTime() == null ? "-" : sdf.format(ses.getLastMessageTime());
-		case 4: return ses.getRunStatus();
+		case 4: return getStatus(ses);
 		case 5: return ses.getLastSource() == null ? "-" : ses.getLastSource();
 		case 6: return ses.getLastConsumer() == null ? "-" : ses.getLastConsumer();
 		default: return "";
 		}
 	}
 
+	private String getStatus(ScheduleEntryStatus ses)
+	{
+		// Check for crash
+		if (ses.getRunStop() == null && ses.getLastModified() != null 
+		 && System.currentTimeMillis()-ses.getLastModified().getTime() > 5*60000L)
+			return "Stopped";
+		else if (ses.getRunStop() != null && ses.getRunStatus().equalsIgnoreCase("running"))
+			return "Stopped";
+		else
+			return ses.getRunStatus();
+	}
+
 	public void setActiveRS(RSBean activeRS)
 	{
-System.out.println("RsRunModel.setActiveRS(" + activeRS.getRsName()+ ")");
 		this.activeRS = activeRS;
 		this.fireTableDataChanged();
 	}
@@ -80,7 +92,17 @@ System.out.println("RsRunModel.setActiveRS(" + activeRS.getRsName()+ ")");
 
 	public void updated()
 	{
-		this.fireTableDataChanged();
+		fireTableDataChanged();
+	}
+
+	public int indexOf(ScheduleEntryStatus selectedSES)
+	{
+		if (activeRS == null)
+			return -1;
+		for(int idx = 0; idx < activeRS.getRunHistory().size(); idx++)
+			if (activeRS.getRunHistory().get(idx) == selectedSES)
+				return idx;
+		return -1;
 	}
 
 }

@@ -84,7 +84,7 @@ public class RSBean
 		this.scheduleEntry = scheduleEntry;
 	}
 
-	public void merge(ArrayList<ScheduleEntryStatus> statusList)
+	public void setRunHistory(ArrayList<ScheduleEntryStatus> statusList)
 	{
 		runHistory = statusList;
 	}

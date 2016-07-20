@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1  2016/06/27 15:15:41  mmaloney
+ * Initial checkin.
+ *
  * Revision 1.4  2016/06/07 22:03:51  mmaloney
  * Numeric sort on app ID in proc monitor.
  *
@@ -56,6 +59,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
 import decodes.db.ScheduleEntry;
@@ -167,7 +171,7 @@ class RoutingTableModel extends AbstractTableModel
 	 * fireTableDataChanged event.
 	 * @param seList the new list from the database.
 	 */
-	public synchronized void merge(ArrayList<ScheduleEntry> seList)
+	public synchronized int merge(ArrayList<ScheduleEntry> seList)
 	{
 		int numChanges = 0;
 		for(RSBean bean : beans)
@@ -189,6 +193,7 @@ class RoutingTableModel extends AbstractTableModel
 				}
 			// Fell through means this is a new Sched Entry that I don't yet have.
 			beans.add(new RSBean(se));
+			numChanges++;
 		}
 		// Any beans not checked are no longer in the database. Remove from list.
 		for(Iterator<RSBean> beanit = beans.iterator(); beanit.hasNext(); )
@@ -200,14 +205,30 @@ class RoutingTableModel extends AbstractTableModel
 				numChanges++;
 			}
 		}
-		
-		if (numChanges > 0)
-			this.fireTableDataChanged();
+		return numChanges;
+	}
+	
+	/**
+	 * Call from swing thread
+	 */
+	public void updated()
+	{
+		fireTableDataChanged();
 	}
 
 	public ArrayList<RSBean> getBeans()
 	{
 		return beans;
+	}
+
+	public int indexOf(RSBean selectedRS)
+	{
+		if (selectedRS == null)
+			return -1;
+		for(int idx = 0; idx < beans.size(); idx++)
+			if (beans.get(idx) == selectedRS)
+				return idx;
+		return -1;
 	}	
 }
 

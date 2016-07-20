@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1  2016/06/27 15:15:40  mmaloney
+ * Initial checkin.
+ *
  * Revision 1.3  2015/06/04 21:37:39  mmaloney
  * Added control buttons to process monitor GUI.
  *
@@ -37,6 +40,7 @@
  */
 package decodes.routmon2;
 
+import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.util.ArrayList;
@@ -61,13 +65,11 @@ public class DbPollThread
 	private boolean _shutdown = false;
 	public static final long updateInterval = 5000L;
 	private long lastUpdate;
-	RoutingTableModel routingModel = null;
 	RsRunModel rsRunModel = null;
 
 	public DbPollThread(RoutingMonitor routmon)
 	{
 		this.routingMonitor = routmon;
-		routingModel = routingMonitor.getFrame().getRoutingModel();
 		rsRunModel = routingMonitor.getFrame().getRsRunModel();
 	}
 	
@@ -83,13 +85,12 @@ public class DbPollThread
 		{
 			if (System.currentTimeMillis() - lastUpdate > updateInterval)
 			{
-System.out.println("Updating...");
 				ScheduleEntryDAI seDAO = decodes.db.Database.getDb().getDbIo().makeScheduleEntryDAO();
 				try
 				{
+
 					ArrayList<ScheduleEntry> seList = seDAO.listScheduleEntries(null);
-					routingModel.merge(seList);
-					routingMonitor.getFrame().checkActiveRS();
+					routingMonitor.getFrame().updateFromDb(seList);
 					
 					RSBean selectedRS = routingMonitor.getFrame().getSelectedRS();
 					if (selectedRS != null)
@@ -97,13 +98,14 @@ System.out.println("Updating...");
 						// Poll the database for any new 'runs' of the selected RS.
 						ArrayList<ScheduleEntryStatus> statusList = 
 							seDAO.readScheduleStatus(selectedRS.getScheduleEntry());
-						selectedRS.merge(statusList);
-						rsRunModel.updated();
+
+						selectedRS.setRunHistory(statusList);
+						routingMonitor.getFrame().updateRunHistory();
 					}
-					
 				}
 				catch(DbIoException ex)
 				{
+					Logger.instance().warning("Error reading schedule info: " + ex);
 				}
 				finally
 				{
@@ -112,7 +114,7 @@ System.out.println("Updating...");
 				lastUpdate = System.currentTimeMillis();
 			}
 
-			try { sleep(1000L); } catch(InterruptedException ex) {}
+			try { sleep(500L); } catch(InterruptedException ex) {}
 		}
 	}
 
