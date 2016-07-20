@@ -32,8 +32,7 @@ public class DataTypeSelectDialog extends GuiDialog
 	BorderLayout borderLayout3 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
 	JTable dtListTable;
-
-
+	public static boolean isHdb = false;
 	boolean okPressed = false;
 	int selectedIndex = -1;
 	String header[];
@@ -80,7 +79,7 @@ public class DataTypeSelectDialog extends GuiDialog
         	dtSelectPanel.add(jScrollPane1, BorderLayout.CENTER);
 
 			SortingListTableModel tabmod = 
-				new DTListTableModel(header, dataTypes);
+				new DTListTableModel(header, dataTypes, isHdb);
 			int widths[] = new int[header.length];
 			for(int i=0; i< header.length; i++)
 				widths[i] = 100 / header.length;
@@ -184,18 +183,20 @@ class DTListTableModel
 
 	int sortedBy = -1;
 	int columns, rows;
+	private boolean isHdb = false;
 
-	DTListTableModel(String[] header, ArrayList<String[]> dataTypes)
+	DTListTableModel(String[] header, ArrayList<String[]> dataTypes, boolean isHdb)
 	{
 		this.header = header;
 		columns = header.length;
 		this.dataTypes = dataTypes;
 		rows = dataTypes.size();
+		this.isHdb = isHdb;
 	}
 
 	public void sortByColumn(int c)
 	{
-		Collections.sort(dataTypes, new DTListComparator(c));
+		Collections.sort(dataTypes, new DTListComparator(c, isHdb));
 		sortedBy = c;
 		fireTableDataChanged();
 	}
@@ -235,10 +236,13 @@ class DTListTableModel
 class DTListComparator implements Comparator
 {
 	int column;
+	boolean isHdb = false;
 
-	public DTListComparator(int column)
+	public DTListComparator(int column, boolean isHdb)
 	{
 		this.column = column;
+		this.isHdb = isHdb;
+//System.out.println("DTListComparator column=" + column + ", isHdb=" + isHdb);
 	}
 
 	public int compare(Object ob1, Object ob2)
@@ -247,6 +251,18 @@ class DTListComparator implements Comparator
 			return 0;
 		String r1[] = (String[])ob1;
 		String r2[] = (String[])ob2;
+		if (column == 0 && isHdb)
+		{
+			try
+			{
+				return Integer.parseInt(r1[0]) - Integer.parseInt(r2[0]);
+			}
+			catch(Exception ex)
+			{
+//System.out.println("numeric compare failed ob1='" + r1[0] + "', ob2='" + r2[0] + "'");
+			} // Fall through and compare strings
+		}
+
 		return r1[column].compareTo(r2[column]);
 	}
 

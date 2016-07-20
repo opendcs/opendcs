@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/08/29 18:19:16  mmaloney
+ * For XML import, handle case where existing entry doesn't have a DbKey.
+ *
  * Revision 1.2  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -177,6 +180,18 @@ public class DataTypeDAO
 				}
 			
 				dt0.assertEquivalence(dt1);
+			}
+			
+			if (db.isHdb())
+			{
+				q = "select datatype_id, datatype_common_name from hdb_datatype";
+				rs = doQuery(q);
+				while(rs != null && rs.next())
+				{
+					DataType dt = dts.getById(DbKey.createDbKey(rs, 1));
+					if (dt != null)
+						dt.setDisplayName(rs.getString(2));
+				}
 			}
 		}
 		catch(SQLException ex)

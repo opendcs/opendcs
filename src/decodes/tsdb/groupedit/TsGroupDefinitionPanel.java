@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2016/04/22 14:42:53  mmaloney
+ * Code cleanup.
+ *
  * Revision 1.4  2015/10/22 14:04:55  mmaloney
  * Clean up debug: Old code was saying no match for site even when it did find match.
  *
@@ -111,6 +114,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.tsdb.compedit.DataTypeSelectDialog;
 import decodes.tsdb.groupedit.TsGroupListPanel;
 import decodes.util.DecodesSettings;
 import decodes.gui.SortingListTableModel;
@@ -174,7 +178,7 @@ public class TsGroupDefinitionPanel
 	
 	private ArrayList<Site> knownSites = new ArrayList<Site>();
 	private ArrayList<DataType> dataTypeList = new ArrayList<DataType>();
-	private String[] dataTypeArray = null;
+//	private String[] dataTypeArray = null;
 	private String[] intervalArray = null;
 	private String[] durationArray = null;
 	private String[] paramTypes = null;
@@ -242,10 +246,12 @@ public class TsGroupDefinitionPanel
 				if (dt.getStandard().equalsIgnoreCase(prefDtStd))
 					dataTypeList.add(dt);
 			}
-			dataTypeArray = new String[dataTypeList.size()];
-			for(int i=0; i<dataTypeList.size(); i++)
-				dataTypeArray[i] = dataTypeList.get(i).getCode();
-			Arrays.sort(dataTypeArray);
+			
+//			
+//			dataTypeArray = new String[dataTypeList.size()];
+//			for(int i=0; i<dataTypeList.size(); i++)
+//				dataTypeArray[i] = dataTypeList.get(i).getCode();
+//			Arrays.sort(dataTypeArray);
 			
 			IntervalDAI intervalDAO = theTsDb.makeIntervalDAO();
 			try
@@ -1510,10 +1516,22 @@ public class TsGroupDefinitionPanel
 		}
 		else if (keyStr.equalsIgnoreCase("datatype") || keyStr.equalsIgnoreCase("param"))
 		{
-			String label = "Enter " + keyStr + ":";
-			selection = (String)JOptionPane.showInputDialog(this, 
-				label, label, JOptionPane.PLAIN_MESSAGE, null,
-				dataTypeArray, null);
+			ArrayList<String[]> dlgData = new ArrayList<String[]>();
+			dlgData.add(new String[]{"DataType Code", "Name"});
+			for(DataType dt : this.dataTypeList)
+				dlgData.add(new String[]{ dt.getCode(), dt.getDisplayName()});
+			DataTypeSelectDialog.isHdb = theTsDb.isHdb();
+//System.out.println("isHdb=" + DataTypeSelectDialog.isHdb);
+			DataTypeSelectDialog dlg = new DataTypeSelectDialog(this.parent, null, dlgData);
+			parent.launchDialog(dlg);
+			String[] dtSelection = dlg.getSelection();
+			if (dtSelection != null)
+				selection = dtSelection[0];
+			
+//			String label = "Enter " + keyStr + ":";
+//			selection = (String)JOptionPane.showInputDialog(this, 
+//				label, label, JOptionPane.PLAIN_MESSAGE, null,
+//				dataTypeArray, null);
 		}
 		else if (keyStr.equalsIgnoreCase("Interval"))
 		{
