@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.5  2016/01/27 22:11:22  mmaloney
+* Added compEditList method.
+*
 * Revision 1.4  2014/09/30 13:32:15  mmaloney
 * removed season_id
 *
@@ -665,11 +668,28 @@ Logger.instance().debug3("getComputationById: after rs2comp, groupId = " + comp.
 				TsGroup group = groupComp.getGroup();
 
 				if (group == null) // Means comp had an invalid group ID
+				{
+					Logger.instance().warning("Computation ID=" + compId + " has invalid group ID=" 
+						+ groupComp.getGroupId() + " -- skipped.");
 					continue;
+				}
+				
+				// If no TS-specific filtering is done, there's no need to expand.
+				if (DbKey.isNull(filter.getSiteId()) && DbKey.isNull(filter.getDataTypeId())
+				 && filter.getIntervalCode() == null)
+				{
+					if (filter.passes(groupComp))
+						ret.add(
+							new ComputationInList(groupComp.getKey(), groupComp.getName(),
+								groupComp.getAlgorithmId(), groupComp.getAppId(),
+								groupComp.isEnabled(), groupComp.getComment()));
+					continue;
+				}
+				
 				// Group object may be shared by multiple comps. Only expand it once.
 				if (!group.getIsExpanded())
 					db.expandTsGroup(group);
-
+				
 				for(TimeSeriesIdentifier tsid : group.getExpandedList())
 					try 
 					{
