@@ -535,6 +535,8 @@ public class LrgsDataSource extends DataSourceExec
 		{
 			try 
 			{
+				if (lddsClient == null)
+					throw new DataSourceEndException("Aborted.");
 				dcpMsg = lddsClient.getDcpMsg(timeout); 
 			}
 			catch(ServerError se)
@@ -572,6 +574,10 @@ public class LrgsDataSource extends DataSourceExec
 						"Server Error on LRGS data source '"
 						+ dbDataSource.getName() + "': " + se);
 				}
+			}
+			catch(DataSourceEndException ex)
+			{
+				throw ex;
 			}
 			catch(Exception ex) // ProtocolError or IOException
 			{
