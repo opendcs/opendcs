@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2016/06/27 15:14:37  mmaloney
+*  Numerous updates for 6.2 testing.
+*
 *  Revision 1.4  2016/06/07 21:51:27  mmaloney
 *  Added makeSiteDAO. Cleaned up imports.
 *
@@ -1027,40 +1030,40 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		}
 	}
 
-	/**
-	 * @param dataTypeStandard
-	 * @return
-	 */
-	public String[] getDataTypesByStandard(String dataTypeStandard)
-	  throws DbIoException 
-	{
-		String q = "select datatype_id, datatype_common_name from hdb_datatype "
-			+ "order by datatype_id";
-		try
-		{
-			ArrayList<String> dts = new ArrayList<String>();
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
-			{
-				StringBuilder sb = new StringBuilder(rs.getString(1));
-				sb.append(' ');
-				while(sb.length() < 7)
-					sb.append(' ');
-				sb.append(rs.getString(2));
-				dts.add(sb.toString());
-			}
-			String ret[] = new String[dts.size()];
-			for(int i=0; i<ret.length; i++)
-				ret[i] = dts.get(i);
-			return ret;
-		}
-		catch(Exception ex)
-		{
-			System.err.println(ex.toString());
-			ex.printStackTrace(System.err);
-			throw new DbIoException("Error listing data types: " + ex);
-		}
-	}
+//	/**
+//	 * @param dataTypeStandard
+//	 * @return
+//	 */
+//	public String[] getDataTypesByStandard(String dataTypeStandard)
+//	  throws DbIoException 
+//	{
+//		String q = "select datatype_id, datatype_common_name from hdb_datatype "
+//			+ "order by datatype_id";
+//		try
+//		{
+//			ArrayList<String> dts = new ArrayList<String>();
+//			ResultSet rs = doQuery(q);
+//			while (rs != null && rs.next())
+//			{
+//				StringBuilder sb = new StringBuilder(rs.getString(1));
+//				sb.append(' ');
+//				while(sb.length() < 7)
+//					sb.append(' ');
+//				sb.append(rs.getString(2));
+//				dts.add(sb.toString());
+//			}
+//			String ret[] = new String[dts.size()];
+//			for(int i=0; i<ret.length; i++)
+//				ret[i] = dts.get(i);
+//			return ret;
+//		}
+//		catch(Exception ex)
+//		{
+//			System.err.println(ex.toString());
+//			ex.printStackTrace(System.err);
+//			throw new DbIoException("Error listing data types: " + ex);
+//		}
+//	}
 	
 	/**
 	 * @return a full date, including time information.
