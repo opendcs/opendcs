@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2016/01/27 22:06:16  mmaloney
+*  Optimizations for filter.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -299,7 +302,6 @@ public class ComputationsListPanel extends ListPanel
 	{
 		Logger.instance().debug1("ComputationListPanel.doRefresh() ------------");
 		ComputationDAI computationDAO = tsdb.makeComputationDAO();
-//		LoadingAppDAI loadingAppDao = tsdb.makeLoadingAppDAO();
 		
 		CompFilter compFilter = tsdb.getCompFilter();
 		
