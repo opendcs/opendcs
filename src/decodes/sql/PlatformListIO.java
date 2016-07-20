@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.11  2015/11/12 15:21:30  mmaloney
+ * Uncommented the line in update() to set siteID. Why was this ever commented out???
+ *
  * Revision 1.10  2015/07/18 15:01:28  mmaloney
  * Delete DACQ_EVENT records before deleting the parent PLATFORM record.
  *
@@ -685,7 +688,15 @@ public class PlatformListIO extends SqlDbObjIo
 
 		q = q + " WHERE ID = " + p.getId();
 
-		executeUpdate(q);
+		try { executeUpdate(q); }
+		catch(Exception ex)
+		{
+			if (ex.toString().toLowerCase().contains("unique"))
+			{
+				Logger.instance().warning("Cannot update platform " + p.getDisplayName() + ": " + ex);
+				return;
+			}
+		}
 
 		// Now update the PlatformSensor and PlatformSensorProperty
 		// records.
@@ -747,7 +758,15 @@ public class PlatformListIO extends SqlDbObjIo
 
 		q += ")";
 
-		executeUpdate(q);
+		try { executeUpdate(q); }
+		catch(Exception ex)
+		{
+			if (ex.toString().toLowerCase().contains("unique"))
+			{
+				Logger.instance().warning("Cannot write platform " + p.getDisplayName() + " to database: " + ex);
+				return;
+			}
+		}
 
 		// Write the PlatformSensor and PlatformSensorProperty entities
 		insertPlatformSensors(p);
