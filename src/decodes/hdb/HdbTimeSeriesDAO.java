@@ -73,7 +73,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
 		throws DbIoException, NoSuchObjectException
 	{
-info("getTimeSeriesIdentifier for '" + uniqueString + "'");
+//info("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		HdbTsId htsid = new HdbTsId(uniqueString);
 		String tsSiteName = htsid.getSiteName();
 		DbKey siteId = siteDAO.lookupSiteID(tsSiteName);

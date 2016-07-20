@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.23  2013/05/28 13:14:04  mmaloney
  * ILEXPROJECTS-147 bug fix. Must also check interval when comparing to parm.
  *
@@ -474,14 +477,14 @@ public class HdbTsId implements TimeSeriesIdentifier
 	@Override
 	public void setDisplayName(String nm)
 	{
-Logger.instance().info("Set display name to '" + nm + "'");
+//Logger.instance().info("Set display name to '" + nm + "'");
 		displayName = nm;
 	}
 	
 	@Override
 	public void checkValid() throws BadTimeSeriesException
 	{
-Logger.instance().info("HdbTsId.checkValid");
+//Logger.instance().info("HdbTsId.checkValid");
 		if (site == null)
 			throw new BadTimeSeriesException("Site unassigned");
 		if (dataType == null)
