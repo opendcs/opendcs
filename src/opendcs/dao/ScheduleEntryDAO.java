@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2016/02/04 19:00:15  mmaloney
+ * SQL bug fix where it wasn't calling rs.next().
+ *
  * Revision 1.6  2015/04/14 18:21:39  mmaloney
  * Prevent schedule entry statuses of more than 24 chars.
  *
@@ -383,6 +386,8 @@ public class ScheduleEntryDAO
 				+ "num_messages = " + seStatus.getNumMessages() + ", "
 				+ "num_decode_errors = " + seStatus.getNumDecodesErrors() + ", "
 				+ "num_platforms = " + seStatus.getNumPlatforms() + ", "
+				+ "last_source = " + sqlString(seStatus.getLastSource()) + ", "
+				+ "last_consumer = " + sqlString(seStatus.getLastConsumer()) + ", "
 				+ "last_modified = " + db.sqlDate(seStatus.getLastModified())
 				+ " where schedule_entry_status_id = " + seStatus.getKey();
 			doModify(q);
