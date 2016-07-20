@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2015/03/19 15:23:14  mmaloney
+* punch list
+*
 * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 * OPENDCS 6.0 Initial Checkin
 *
@@ -62,10 +65,10 @@ package decodes.sql;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.Vector;
 
 import ilex.util.Logger;
-
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseObject;
 import decodes.db.DataSource;
@@ -112,68 +115,50 @@ public class DataSourceListIO extends SqlDbObjIo
 
 		_dsList = dsList;
 
+		HashMap<DbKey, DataSource> id2ds = new HashMap<DbKey, DataSource>();
 		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT id, name, dataSourceType, dataSourceArg " +
-			"FROM DataSource"
-		);
-
-		if (rs != null)
+		try
 		{
-			while (rs.next())
+			ResultSet rs = stmt.executeQuery("SELECT id, name, dataSourceType, dataSourceArg "
+				+ "FROM DataSource");
+
+			while (rs != null && rs.next())
 			{
-				DbKey id = DbKey.createDbKey(rs, 1);
-
-				// See if we've already gotten this object:
-				if (_dsList.getById(id) != null)
-					continue;
-
-				setNewDataSource(id, rs);
+				DataSource ds = rs2ds(rs);
+				id2ds.put(ds.getKey(), ds);
 			}
-		}
-		stmt.close();
 
-		// Now read and store the DataSourceGroupMembers table.
-		readDSGroupMembers();
-	}
+			rs = stmt.executeQuery("SELECT groupId, sequenceNum, memberId FROM DataSourceGroupMember");
 
-	/**
-	* Read and store the DataSourceGroupMembers table.
-	*/
-	public void readDSGroupMembers()
-		throws DatabaseException, SQLException
-	{
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT groupId, sequenceNum, memberId " +
-			"FROM DataSourceGroupMember"
-		);
-
-		if (rs != null) {
-			while (rs.next()) {
+			while (rs != null && rs.next())
+			{
 				DbKey groupId = DbKey.createDbKey(rs, 1);
 				int seqNum = rs.getInt(2);
 				DbKey memberId = DbKey.createDbKey(rs, 3);
 
-				DataSource group = _dsList.getById(groupId);
+				DataSource group = id2ds.get(groupId);
 				if (group == null)
 				{
-					Logger.instance().warning("Parent groupId=" + groupId
-						+ " does not refer to a valid data source group!");
+					Logger.instance().warning(
+						"Parent groupId=" + groupId + " does not refer to a valid data source group!");
 					continue;
 				}
-				DataSource member = _dsList.getById(memberId);
+				DataSource member = id2ds.get(memberId);
 				if (member == null)
 				{
 					Logger.instance().warning(
-						"Data source child groupId=" + memberId
-						+ " does not refer to a valid group!");
+						"Data source child groupId=" + memberId + " does not refer to a valid group!");
 					continue;
 				}
 				group.addGroupMember(seqNum, member);
 			}
 		}
-		stmt.close();
+		finally
+		{
+			stmt.close();
+		}
+		for(DataSource ds : id2ds.values())
+			dsList.add(ds);
 	}
 
 	/**
@@ -218,8 +203,9 @@ public class DataSourceListIO extends SqlDbObjIo
 				throw new DatabaseException(
 					"No DataSource found with id " + id);
 
-			DataSource ret = setNewDataSource(id, rs);
-			resolveGroupMembers(ret, id);
+			DataSource ret = rs2ds(rs);
+			_dsList.add(ret);
+			resolveGroupMembers(ret);
 			return ret;
 		}
 		catch (SQLException e)
@@ -233,29 +219,12 @@ public class DataSourceListIO extends SqlDbObjIo
 		}
 	}
 
-	/**
-	* Create a new DataSource object from a record in the SQL database
-	* table (the ResultSet).  This then adds the new object to the various
-	* containers.
-	* <p>
-	*   Note that this doesn't read the group members, for those DataSources
-	*   that are groups.  This leaves that for the calling function to
-	*   perform.  Reason:  when we're reading the entire DataSource table,
-	*   this method is called once for each DataSource object.  It will be
-	*   much more efficient, in that case, to resolve all the
-	*   group members at once after the DataSource objects have been
-	*   created.
-	* </p>
-	* @param id the database ID
-	* @param rs the JDBC result set
-	* @return the new DataSource object.
-	*/
-	private DataSource setNewDataSource(DbKey id, ResultSet rs)
+	private DataSource rs2ds(ResultSet rs)
 		throws DatabaseException, SQLException
 	{
+		DbKey id = DbKey.createDbKey(rs, 1);
 		String name = rs.getString(2);
 		String type = rs.getString(3);
-		//String type = _dstLookup.get(rs.getInt(3));
 		String arg = rs.getString(4);
 
 //System.out.println("Creating new data source name=" + name + ", type=" + type);
@@ -263,7 +232,6 @@ public class DataSourceListIO extends SqlDbObjIo
 		ds.setId(id);
 		ds.dataSourceArg = arg;
 
-		_dsList.add(ds);
 		return ds;
 	}
 
@@ -273,18 +241,18 @@ public class DataSourceListIO extends SqlDbObjIo
 	* @param ds the DataSource
 	* @param id the database ID
 	*/
-	private void resolveGroupMembers(DataSource ds, DbKey id)
+	private void resolveGroupMembers(DataSource ds)
 		throws DatabaseException, SQLException
 	{
 		if (!ds.isGroupType()) return;
-
+		
 		Statement stmt = null;
 		try
 		{
 			stmt = createStatement();
 			ResultSet rs = stmt.executeQuery(
 				"SELECT groupId, sequenceNum, memberId " +
-				"FROM DataSourceGroupMember WHERE GroupId = " + id
+				"FROM DataSourceGroupMember WHERE GroupId = " + ds.getKey()
 				+ " order by sequenceNum");
 
 			while (rs != null && rs.next())
