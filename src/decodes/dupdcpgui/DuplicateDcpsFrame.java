@@ -34,48 +34,36 @@ import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
 
 /**
- * This class creates all SWING components for the Duplicate
- * DCP GUI.
- * 
- *
+ * This class creates all SWING components for the Duplicate DCP GUI.
  */
-public class DuplicateDcpsListFrame extends TopFrame
+public class DuplicateDcpsFrame extends TopFrame
 {
 	public String module = "DuplicateDcpsListFrame";
-	private DuplicateDcpsListTableModel dupDcpsTableModel;
+	private DuplicateDcpsTableModel dupDcpsTableModel;
 	private SortingListTable dupDcpsListTable;
 	private JEnumCellEditor controllingDistCombo;
-	private ArrayList<String> groupNames;
+//	private ArrayList<String> groupNames;
 //	private HashMap<DcpAddress,ControllingDistrict> controllingDistList;
 	private static boolean infoSaved;
 	private String frameTitle;
 	private String infoMesage;
 	private String saveButtonLabel;
 	private String quitButtonLabel;
-	public String corpsDcpNameColumn;
-	public String goesAddrColumn;
-	public String corpsDescriptionColumn;
-	public String duplicatedInColumn;
-	public String controllingDistColumn;
-	public String nwsCodeColumn;
-	public String pdtOwnerColumn;
-	public String pdtDescColumn;
-	public String nwsDescColumn;
 	private DuplicateIo dupIo;
+	private DuplicateDcpsGUI mainObj = null;
 	
 	/** Constructor */
-	public DuplicateDcpsListFrame(ArrayList<String> groupNames)
+	public DuplicateDcpsFrame(DuplicateDcpsGUI parent)
 	{
+		this.mainObj = parent;
 		infoSaved = true;
 		setAllLabels();
-		this.groupNames = groupNames;
-		String groupsForCombo[] = getGroupNamesForCombo(groupNames);
+		String groupsForCombo[] = getGroupNamesForCombo(parent.getGroups());
 		controllingDistCombo = new JEnumCellEditor(groupsForCombo);
 		dupIo = new DuplicateIo(null, null);
 		dupIo.readControllingDist();
 		dupDcpsTableModel = 
-			new DuplicateDcpsListTableModel(this, groupNames,
-				dupIo.getHashMap());
+			new DuplicateDcpsTableModel(this, parent.getGroups(), dupIo.getHashMap());
 		dupDcpsListTable = new SortingListTable(dupDcpsTableModel, 
 						new int[] {98, 90, 95, 95, 85, 115, 270, 260, 260});
 		dupDcpsListTable.getTableHeader().setReorderingAllowed(false);
@@ -97,6 +85,7 @@ public class DuplicateDcpsListFrame extends TopFrame
 				doClose();
 			}
 		});
+		pack();
 	}
 	/** Create all SWING components */
 	private void jbInit()
@@ -171,30 +160,18 @@ public class DuplicateDcpsListFrame extends TopFrame
 	 * 					MVP-RIVERGAGES-DAS  
 	 * For the GUI Combo box we want to display only the district name
 	 * in this case "MVP".
-	 * This method will create an array of string containing all these
-	 * district names.
-	 * 
-	 * @param groupNames
-	 * @return
 	 */
-	private String[] getGroupNamesForCombo(ArrayList<String> groupNames)
+	private String[] getGroupNamesForCombo(ArrayList<NetworkList> groups)
 	{
-		//This code can be re-factored to read the groups from the dbhub dir
-		//instead of just extracting out the Districts from the network list
-		//names found on the dcpmon.conf file.
-		//Note: Since the combine-from-hub script uses the RIVERGAGES-DAS
-		//convention too, it is ok for now
-		String retString[] = new String[groupNames.size()+1];
+		String retString[] = new String[groups.size()+1];
 		int x=0;
-		for(String name : groupNames)
-		{	//Find out if we have RIVERGAGES-DAS
-			String tempN = name;
-			int indx = name.indexOf(DuplicateDcpsList.GROUP_DELIMITER_NAME);
+		for(NetworkList nl : groups)
+		{
+			String name = nl.name;
+			int indx = name.indexOf(DuplicateDcpsGUI.GROUP_DELIMITER_NAME);
 			if (indx != -1)
-			{
-				tempN = name.substring(0,indx);	
-			}
-			retString[x] = tempN;
+				name = name.substring(0,indx);	
+			retString[x] = name;
 			x++;
 		}
 		//Add the Unresolved value to the combo box
@@ -225,7 +202,7 @@ public class DuplicateDcpsListFrame extends TopFrame
 		//Get all rows from the table
 		HashMap<DcpAddress,ControllingDistrict> cdList = 
 			dupIo.getControlDistList();
-		Vector<DuplicateDcp> duplicateTableList = dupDcpsTableModel.getList();
+		ArrayList<DuplicateDcp> duplicateTableList = dupDcpsTableModel.getList();
 		
 		if (duplicateTableList == null)
 			return;
@@ -348,20 +325,15 @@ public class DuplicateDcpsListFrame extends TopFrame
 				"select the district that " + "'owns' the DCP.";
 		saveButtonLabel = "Save";
 		quitButtonLabel = "Quit";
-		corpsDcpNameColumn = "Corps DCP Name";
-		goesAddrColumn = "GOES Address";
-		corpsDescriptionColumn = "Corps Description";
-		duplicatedInColumn = "Duplicated In";
-		controllingDistColumn = "Control Office";
-		nwsCodeColumn = "NWSHB5 Code";
-		pdtOwnerColumn = "PDT Owner";
-		pdtDescColumn = "PDT Description";
-		nwsDescColumn = "NWSHB5 Description";
 	}
 	
 	/** Flag to keep track when user changed something */
 	public static void setInfoSaved(boolean infoSaved)
 	{
-		DuplicateDcpsListFrame.infoSaved = infoSaved;
+		DuplicateDcpsFrame.infoSaved = infoSaved;
+	}
+	public DuplicateDcpsGUI getMainObj()
+	{
+		return mainObj;
 	}
 }

@@ -194,7 +194,7 @@ public class DuplicateIo
 	{
 		String tempN = networkListName;
 		int indx = networkListName.indexOf(
-			DuplicateDcpsList.GROUP_DELIMITER_NAME);
+			DuplicateDcpsGUI.GROUP_DELIMITER_NAME);
 		if (indx != -1)
 		{
 			tempN = networkListName.substring(0,indx);	

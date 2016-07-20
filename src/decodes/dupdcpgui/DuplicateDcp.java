@@ -8,7 +8,8 @@ import lrgs.common.DcpAddress;
  */
 public class DuplicateDcp
 {
-	private String dcpName;//Corps DcpName
+	/** Corps DCP Name */
+	private String dcpName;
 	private DcpAddress dcpAddress;//Dcp Address
 	private String description;//Corps Description
 	private String duplicatedIn;//Shows all Districts were is duplicated
