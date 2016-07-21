@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.14  2016/06/07 22:04:35  mmaloney
+*  Added DB_HDB constant.
+*
 *  Revision 1.13  2015/11/12 15:26:15  mmaloney
 *  Added DecodesSetting screeningUnitSystem.
 *
@@ -382,6 +385,9 @@ public class DecodesSettings
 
 	public String screeningUnitSystem = "English"; // SI or English
 	
+	public boolean showRoutingMonitor = true;
+	public boolean showPlatformMonitor = true;
+	
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
@@ -500,6 +506,10 @@ public class DecodesSettings
 			"Show the Test Computations button on the button panel"),
 		new PropertySpec("showAlgorithmEditor", PropertySpec.BOOLEAN,
 			"Show the Algorithms Editor button on the button panel"),
+		new PropertySpec("showRoutingMonitor", PropertySpec.BOOLEAN,
+			"Show the Routing Monitor button on the button panel"),
+		new PropertySpec("showPlatformMonitor", PropertySpec.BOOLEAN,
+			"Show the Platform Monitor button on the button panel"),
 		new PropertySpec("datchkConfigFile", PropertySpec.FILENAME,
 			"File containing CWMS Datchk Validation configuration"),
 		new PropertySpec("routingMonitorUrl", PropertySpec.STRING,

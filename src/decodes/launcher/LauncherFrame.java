@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.8  2015/07/17 13:28:07  mmaloney
+ * Added showComputationEditor boolean.
+ *
  * Revision 1.7  2015/05/21 13:26:14  mmaloney
  * RC08
  *
@@ -99,12 +102,13 @@ import lrgs.gui.DecodesInterface;
 import lrgs.gui.MessageBrowser;
 import lrgs.nledit.NetlistEditFrame;
 import lrgs.rtstat.RtStat;
-
 import decodes.db.Platform;
 import decodes.dbeditor.DbEditorFrame;
 import decodes.gui.TopFrame;
+import decodes.platstat.PlatformMonitor;
 import decodes.platwiz.Frame1;
 import decodes.platwiz.PlatformWizard;
+import decodes.routmon2.RoutingMonitor;
 import decodes.tsdb.algoedit.AlgorithmWizard;
 import decodes.tsdb.compedit.CAPEdit;
 import decodes.tsdb.comprungui.RunComputationsFrame;
@@ -128,7 +132,7 @@ public class LauncherFrame extends JFrame
 	JPanel fullPanel = new JPanel();
 	GridBagLayout fullLayout = new GridBagLayout();
 
-	JPanel dcstoolButtonPanel = new JPanel();
+	JPanel decodesButtonPanel = new JPanel();
 	GridLayout dcstoolLayout = new GridLayout();
 	JButton lrgsStatButton = new JButton();
 	TitledBorder dcstoolButtonBorder;
@@ -147,6 +151,8 @@ public class LauncherFrame extends JFrame
 	JButton runcompButton = new JButton();
 	private JButton procstatButton = new JButton();
 	JButton algoeditButton = new JButton();
+	private JButton routmonButton = new JButton();
+	private JButton platmonButton = new JButton();
 
 	boolean exitOnClose;
 	DbEditorFrame dbEditorFrame;
@@ -155,7 +161,6 @@ public class LauncherFrame extends JFrame
 	WindowAdapter browserReaper;
 	NetlistEditFrame netlistEditFrame;
 	WindowAdapter netlistEditReaper;
-	private TopFrame routMonFrame;
 	WindowAdapter routMonReaper;
 	Runnable afterDecodesInit;
 	InitDecodesFrame initDecodesFrame;
@@ -186,6 +191,9 @@ public class LauncherFrame extends JFrame
 	private String installDir;
 	TopFrame toolkitSetupFrame = null;
 	WindowAdapter setupFrameReaper;
+	private TopFrame platmonFrame = null, routmonFrame = null;
+	private WindowAdapter platmonReaper = null, routmonReaper = null;
+
 
 	public LauncherFrame()
 	{
@@ -193,7 +201,6 @@ public class LauncherFrame extends JFrame
 		dbEditorFrame = null;
 		browserFrame = null;
 		netlistEditFrame = null;
-		routMonFrame = null;
 		afterDecodesInit = null;
 		initDecodesFrame = null;
 		groupEditFrame = null;
@@ -243,6 +250,13 @@ public class LauncherFrame extends JFrame
 			ImageIcon setupIcon = new ImageIcon(installDir
 					+ File.separator + "icons" + File.separator
 					+ "setup48x48.gif");
+			ImageIcon platmonIcon = new ImageIcon(installDir
+				+ File.separator + "icons" + File.separator
+				+ "platmonIcon.png");
+			ImageIcon routmonIcon = new ImageIcon(installDir
+				+ File.separator + "icons" + File.separator
+				+ "routmonIcon.png");
+
 			
 			lrgsStatButton.setIcon(lrgsStatIcon);
 			lrgsStatButton.setHorizontalAlignment(SwingConstants.CENTER);
@@ -266,6 +280,12 @@ public class LauncherFrame extends JFrame
 			toolkitConfigButton.setIcon(setupIcon);
 			toolkitConfigButton.setHorizontalAlignment(SwingConstants.CENTER);
 			toolkitConfigButton.setBackground(Color.white);
+			platmonButton.setIcon(platmonIcon);;
+			platmonButton.setHorizontalAlignment(SwingConstants.CENTER);
+			platmonButton.setBackground(Color.white);
+			routmonButton.setIcon(routmonIcon);;
+			routmonButton.setHorizontalAlignment(SwingConstants.CENTER);
+			routmonButton.setBackground(Color.white);
 
 			setTitle(DecodesVersion.getAbbr() + " " + DecodesVersion.getVersion());
 			// setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -278,64 +298,39 @@ public class LauncherFrame extends JFrame
 				{
 					String msg = null;
 					if (dbEditorFrame != null)
-						msg = LoadResourceBundle
-							.sprintf(
-								labels
-									.getString("LauncherFrame.windowClosingMsg"),
-								labels
-									.getString("LauncherFrame.DECODESDBEditorButton"));
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+							labels.getString("LauncherFrame.DECODESDBEditorButton"));
 					else if (netlistEditFrame != null)
-						msg = LoadResourceBundle
-							.sprintf(
-								labels
-									.getString("LauncherFrame.windowClosingMsg"),
-								labels
-									.getString("LauncherFrame.networkListMaintButton"));
-					else if (routMonFrame != null)
-						msg = LoadResourceBundle
-							.sprintf(
-								labels
-									.getString("LauncherFrame.windowClosingMsg"),
-								labels
-									.getString("LauncherFrame.retrievalProcessesButton"));
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+							labels.getString("LauncherFrame.networkListMaintButton"));
 					else if (groupEditFrame != null)
-						msg = LoadResourceBundle.sprintf(
-							labels.getString("LauncherFrame.windowClosingMsg"),
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
 							labels.getString("LauncherFrame.timeSeriesButton"));
 					else if (tsDbGrpEditorFrame != null)
-						msg = LoadResourceBundle.sprintf(
-							labels.getString("LauncherFrame.windowClosingMsg"),
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
 							labels.getString("LauncherFrame.timeSeriesButton"));
 					else if (tseditFrame != null)
-						msg = LoadResourceBundle
-							.sprintf(
-								labels
-									.getString("LauncherFrame.windowClosingMsg"),
-								labels
-									.getString("LauncherFrame.limitStatusButton"));
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+							labels.getString("LauncherFrame.limitStatusButton"));
 					else if (runComputationsFrame != null)
-						msg = LoadResourceBundle
-							.sprintf(
-								labels
-									.getString("LauncherFrame.windowClosingMsg"),
-								labels
-									.getString("LauncherFrame.testComputationsButton"));
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+							labels.getString("LauncherFrame.testComputationsButton"));
 					else if (compEditFrame != null)
-						msg = LoadResourceBundle.sprintf(labels
-							.getString("LauncherFrame.windowClosingMsg"),
-							labels
-								.getString("LauncherFrame.computationsButton"));
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+							labels.getString("LauncherFrame.computationsButton"));
 					else if (algorithmWizFrame != null)
-						msg = LoadResourceBundle.sprintf(
-							labels.getString("LauncherFrame.windowClosingMsg"),
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
 							labels.getString("LauncherFrame.algorithmsButton"));
 					else if (platformWizFrame != null)
-						msg = LoadResourceBundle
-							.sprintf(
-								labels
-									.getString("LauncherFrame.windowClosingMsg"),
-								labels
-									.getString("LauncherFrame.platformWizardButton"));
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+							labels.getString("LauncherFrame.platformWizardButton"));
+					else if (platmonFrame != null)
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+							labels.getString("LauncherFrame.platmonButton"));
+					else if (routmonFrame != null)
+						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+							labels.getString("LauncherFrame.routmonButton"));
+
 					if (msg != null)
 					{
 						JOptionPane.showMessageDialog(null,
@@ -382,15 +377,6 @@ public class LauncherFrame extends JFrame
 					netlistEditFrame = null;
 					Logger.instance().log(Logger.E_DEBUG1,
 						"Network List Editor closed");
-				}
-			};
-			routMonReaper = new WindowAdapter()
-			{
-				public void windowClosed(WindowEvent e)
-				{
-					routMonFrame = null;
-					Logger.instance().debug1(
-						"Retrieval Process Mon & Ctrl screen closed");
 				}
 			};
 			tsEditorReaper = new WindowAdapter()
@@ -489,6 +475,26 @@ public class LauncherFrame extends JFrame
 					Logger.instance().debug1("LRGS Stat closed");
 				}
 			};
+			
+			routmonReaper = new WindowAdapter()
+			{
+				public void windowClosed(WindowEvent e)
+				{
+					routmonFrame = null;
+					Logger.instance().log(Logger.E_DEBUG1, "Routing Monitor closed");
+				}
+			};
+			platmonReaper = new WindowAdapter()
+			{
+				public void windowClosed(WindowEvent e)
+				{
+					platmonFrame = null;
+					Logger.instance().log(Logger.E_DEBUG1, "Platform Monitor closed");
+				}
+			};
+
+			
+			
 			ImageIcon tkIcon = new ImageIcon(
 				ResourceFactory.instance().getIconPath());
 			setIconImage(tkIcon.getImage());
@@ -549,12 +555,14 @@ public class LauncherFrame extends JFrame
 
 		dcstoolButtonBorder = new TitledBorder(BorderFactory.createEtchedBorder(Color.white, new Color(148,
 			145, 140)), labels.getString("LauncherFrame.dcsToolKitCompTitle"));
-		dcstoolButtonPanel.setLayout(dcstoolLayout);
+		decodesButtonPanel.setLayout(dcstoolLayout);
 		int rows = 4 + (DecodesSettings.instance().showPlatformWizard ? 1 : 0)
-			+ (DecodesSettings.instance().showNetlistEditor ? 1 : 0);
+			+ (DecodesSettings.instance().showNetlistEditor ? 1 : 0)
+			+ (DecodesSettings.instance().showPlatformMonitor ? 1 : 0)
+			+ (DecodesSettings.instance().showRoutingMonitor ? 1 : 0);
 		dcstoolLayout.setRows(rows);
 		dcstoolLayout.setColumns(1);
-		dcstoolButtonPanel.setBorder(dcstoolButtonBorder);
+		decodesButtonPanel.setBorder(dcstoolButtonBorder);
 
 		lrgsStatButton.setText(labels.getString("LauncherFrame.lrgsStatButton"));
 		lrgsStatButton.addActionListener(new java.awt.event.ActionListener()
@@ -596,6 +604,25 @@ public class LauncherFrame extends JFrame
 				platwizButtonButtonPressed();
 			}
 		});
+		
+		platmonButton.setText(labels.getString("LauncherFrame.platmonButton"));
+		platmonButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				platmonButtonPressed();
+			}
+		});
+		routmonButton.setText(labels.getString("LauncherFrame.routmonButton"));
+		routmonButton.addActionListener(new java.awt.event.ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				routmonButtonPressed();
+			}
+		});
+
+		
 		toolkitConfigButton.setText(labels.getString("LauncherFrame.DCSToolkitSetupButton"));
 		toolkitConfigButton.addActionListener(new java.awt.event.ActionListener()
 		{
@@ -605,17 +632,22 @@ public class LauncherFrame extends JFrame
 			}
 		});
 
-		dcstoolButtonPanel.add(lrgsStatButton, null);
-		dcstoolButtonPanel.add(browserButton, null);
+		decodesButtonPanel.add(lrgsStatButton, null);
+		decodesButtonPanel.add(browserButton, null);
 
 		// Don't add unless showNetlistButton is true
 		if (DecodesSettings.instance().showNetlistEditor)
-			dcstoolButtonPanel.add(netlistButton, null);
-		dcstoolButtonPanel.add(dbeditButton, null);
+			decodesButtonPanel.add(netlistButton, null);
+		decodesButtonPanel.add(dbeditButton, null);
 		if (DecodesSettings.instance().showPlatformWizard)
-			dcstoolButtonPanel.add(platwizButton, null);
+			decodesButtonPanel.add(platwizButton, null);
+		
+		if (DecodesSettings.instance().showPlatformMonitor)
+			decodesButtonPanel.add(platmonButton, null);
+		if (DecodesSettings.instance().showRoutingMonitor)
+			decodesButtonPanel.add(routmonButton, null);
 
-		dcstoolButtonPanel.add(toolkitConfigButton, null);
+		decodesButtonPanel.add(toolkitConfigButton, null);
 
 		String borderString = labels.getString("LauncherFrame.hydroMetCompTitle");
 		if (tsdbType == TsdbType.CWMS)
@@ -733,7 +765,7 @@ public class LauncherFrame extends JFrame
 			tsdbButtonPanel.add(algoeditButton, null);
 
 		fullPanel.setLayout(fullLayout);
-		fullPanel.add(dcstoolButtonPanel, new GridBagConstraints(0, 0, 1, 1, .5, .5,
+		fullPanel.add(decodesButtonPanel, new GridBagConstraints(0, 0, 1, 1, .5, .5,
 			GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
 		// Verify if user install the Tempest Tsdb components
 		if (tsdbType != TsdbType.NONE)
@@ -745,35 +777,6 @@ public class LauncherFrame extends JFrame
 		setupSaved();
 	}
 
-	void retProcButton_actionPerformed(ActionEvent e)
-	{
-		if (routMonFrame != null)
-		{
-			routMonFrame.toFront();
-			return;
-		}
-		try
-		{
-			String cmd = DecodesSettings.instance().browserCmd;
-			if (cmd == null)
-			{
-				if (System.getProperty("os.name").toLowerCase().startsWith("win"))
-					cmd = "rundll32 url.dll,FileProtocolHandler";
-				else if (System.getProperty("os.name").toLowerCase().startsWith("mac"))
-					cmd = "open";
-				else
-					cmd = "firefox";
-			}
-			String url = EnvExpander.expand(DecodesSettings.instance().routingMonitorUrl);
-			cmd = cmd + " " + url;
-			ProcWaiterThread.runBackground(cmd, "Retrieval and Decoding");
-		}
-		catch (Exception ex)
-		{
-			Logger.instance().log(Logger.E_FAILURE,
-				"Cannot initialize DECODES: '" + ex);
-		}
-	}
 
 	void lrgsStatButton_actionPerformed(ActionEvent e)
 	{
@@ -1281,6 +1284,110 @@ public class LauncherFrame extends JFrame
 		}
 	}
 
+	protected void routmonButtonPressed()
+	{
+		if (routmonFrame != null)
+		{
+			routmonFrame.toFront();
+			return;
+		}
+
+		// DB init in progress!
+		if (afterDecodesInit != null)
+			return;
+
+		try
+		{
+			afterDecodesInit = new Runnable()
+			{
+				public void run()
+				{
+					
+					RoutingMonitor routmon = new RoutingMonitor();
+					try
+					{
+						routmon.execute(compArgs);
+						routmonFrame = routmon.getFrame();
+						if (routmonFrame != null)
+						{
+							routmon.setExitOnClose(false);
+							routmonFrame.addWindowListener(routmonReaper);
+						}
+					}
+					catch(Exception ex)
+					{
+						routmonFrame = null;
+						String msg = LoadResourceBundle.sprintf(
+							labels.getString("LauncherFrame.cannotLaunch"),
+							labels.getString("LauncherFrame.routmonButton")) + ex;
+						Logger.instance().warning(msg);
+						System.err.println(msg);
+						ex.printStackTrace();
+						showError(msg);
+					}
+				}
+			};
+			completeDecodesInit();
+		}
+		catch (DecodesException ex)
+		{
+			Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+		}
+	}
+
+	protected void platmonButtonPressed()
+	{
+		if (platmonFrame != null)
+		{
+			platmonFrame.toFront();
+			return;
+		}
+
+		// DB init in progress!
+		if (afterDecodesInit != null)
+			return;
+
+		try
+		{
+			afterDecodesInit = new Runnable()
+			{
+				public void run()
+				{
+					
+					PlatformMonitor platmon = new PlatformMonitor();
+					try
+					{
+						platmon.execute(compArgs);
+						platmonFrame = platmon.getFrame();
+						if (platmonFrame != null)
+						{
+							platmon.setExitOnClose(false);
+							platmonFrame.addWindowListener(platmonReaper);
+						}
+					}
+					catch(Exception ex)
+					{
+						platmonFrame = null;
+						String msg = LoadResourceBundle.sprintf(
+							labels.getString("LauncherFrame.cannotLaunch"),
+							labels.getString("LauncherFrame.platmonButton")) + ex;
+						Logger.instance().warning(msg);
+						System.err.println(msg);
+						ex.printStackTrace();
+						showError(msg);
+					}
+				}
+			};
+			completeDecodesInit();
+		}
+		catch (DecodesException ex)
+		{
+			Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+		}
+	}
+
+	
+	
 	private void runcompButtonPressed()
 	{
 		if (runComputationsFrame != null)

@@ -10,7 +10,6 @@ import ilex.util.Logger;
 import lrgs.gui.DecodesInterface;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
-import decodes.tsdb.procmonitor.ProcessMonitorFrame;
 
 public class RoutingMonitor extends TsdbAppTemplate
 {
