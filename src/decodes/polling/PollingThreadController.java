@@ -27,13 +27,10 @@ import ilex.util.Logger;
 import java.util.ArrayList;
 import java.util.Date;
 
-import opendcs.dai.PlatformStatusDAI;
-import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.PlatformStatus;
 import decodes.db.TransportMedium;
 import decodes.routing.DacqEventLogger;
-import decodes.tsdb.DbIoException;
 
 public class PollingThreadController
 	extends Thread
@@ -71,6 +68,7 @@ public class PollingThreadController
 	private String saveSessionFile = null;
 	
 	private DacqEventLogger dacqEventLogger = null;
+	private int numPorts = 10;
 	
 	
 	/** PollingDataSource creates the controller */
@@ -83,7 +81,9 @@ public class PollingThreadController
 		this.portPool = portPool;
 		
 		// In a modem pool, the max # of threads will be limited by available ports
-		int numPorts = portPool.getNumPorts();
+		// In a TCP client pool, the max # of client threads to start.
+		// In a listening socket, the max # of clients to accept.
+		this.numPorts = portPool.getNumPorts();
 	}
 
 	@Override

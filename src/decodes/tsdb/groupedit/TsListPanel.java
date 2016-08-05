@@ -2,13 +2,10 @@ package decodes.tsdb.groupedit;
 
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
-import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.util.ResourceBundle;
 
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -16,12 +13,10 @@ import javax.swing.SwingConstants;
 
 import opendcs.dai.TimeSeriesDAI;
 
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsdbDatabaseVersion;
 
 /**
  * Displays a sorting-list of TimeSeries Data Descriptor objects in the
