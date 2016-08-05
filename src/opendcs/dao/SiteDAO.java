@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.7  2016/06/07 21:28:25  mmaloney
+* fillCache made public to allow it to be called from ts DAO.
+*
 * Revision 1.6  2015/07/17 13:19:23  mmaloney
 * Guard against null/blank site name.
 *
@@ -428,14 +431,6 @@ public class SiteDAO
 		String desc = newSite.getDescription();
 		if (desc == null)
 			desc = "";
-		if (DecodesSettings.instance().hdbSiteDescriptions && desc.indexOf("\n") == -1)
-		{
-			String sn = newSite.getDisplayName();
-			if (desc == null)
-				desc = sn + "\n";
-			else
-				desc = sn + "\n" + desc;
-		}
 		if (desc.length() > 800)
 			desc = desc.substring(0,799);
 
@@ -539,15 +534,6 @@ public class SiteDAO
 		s.getDatabase().siteList.addSite(s);
 
 		String desc = s.getDescription();
-		if (DecodesSettings.instance().hdbSiteDescriptions
-		 && (desc == null || desc.indexOf("\n") == -1))
-		{
-			String sn = s.getDisplayName();
-			if (desc == null)
-				desc = sn + "\n";
-			else
-				desc = sn + "\n" + desc;
-		}
 		if (desc != null && desc.length() > 800)
 			desc = desc.substring(0,799);
 
