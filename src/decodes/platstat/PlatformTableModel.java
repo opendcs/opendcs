@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1  2016/07/20 15:40:12  mmaloney
+ * First platstat impl GUI.
+ *
  */
 package decodes.platstat;
 
@@ -26,6 +29,7 @@ import decodes.db.Platform;
 import decodes.db.PlatformStatus;
 import decodes.db.ScheduleEntry;
 import decodes.gui.SortingListTableModel;
+import decodes.sql.DbKey;
 
 @SuppressWarnings("serial")
 class PlatformTableModel extends AbstractTableModel
@@ -102,7 +106,6 @@ class PlatformTableModel extends AbstractTableModel
 	 */
 	public synchronized int merge(ArrayList<PlatformStatus> list)
 	{
-Logger.instance().debug3("merge");
 		int numChanges = 0;
 		for(PlatformStatus bean : beans)
 		{
@@ -117,6 +120,11 @@ Logger.instance().debug3("merge");
 				}
 				else
 					bean.setSiteName("null");
+			}
+			
+			if (!DbKey.isNull(bean.getLastScheduleEntryStatusId()))
+			{
+				
 			}
 		}
 		
@@ -197,9 +205,7 @@ class PSColumnizer
 		case 3: return rsb.getLastMessageTime() == null ? "" : sdf.format(rsb.getLastMessageTime());
 		case 4: return rsb.getLastFailureCodes() == null ? "" : rsb.getLastFailureCodes();
 		case 5: return rsb.getLastErrorTime() == null ? "" : sdf.format(rsb.getLastErrorTime());
-		case 6: return "rs-name";
-		//TODO Modify PlatformStatus to store rs name. If not set, lookup through se id, then store it.
-		//TODO
+		case 6: return rsb.getLastRoutingSpecName() == null ? "" : rsb.getLastRoutingSpecName();
 		default: return "";
 		}
 	}
@@ -219,8 +225,34 @@ class PSComparator implements Comparator<PlatformStatus>
 	@Override
 	public int compare(PlatformStatus rs1, PlatformStatus rs2)
 	{
-		return TextUtil.strCompareIgnoreCase(
-			columnizer.getColumn(rs1, sortColumn),
-			columnizer.getColumn(rs2, sortColumn));
+		int r = strcmp(columnizer.getColumn(rs1, sortColumn), columnizer.getColumn(rs2, sortColumn));
+		if (r != 0)
+			return r;
+		// Sort column is equal for 2 records, use secondary sort sitename/designator, which must be unique.
+		r = strcmp(columnizer.getColumn(rs1, 0), columnizer.getColumn(rs2, 0));
+		if (r != 0)
+			return r;
+		return strcmp(columnizer.getColumn(rs1, 1), columnizer.getColumn(rs2, 1));
+	}
+	
+	/**
+	 * Do a case INsensitive compare, but always sort blanks to the end.
+	 * @param s1
+	 * @param s2
+	 * @return
+	 */
+	private int strcmp(String s1, String s2)
+	{
+		if (s1.length() == 0)
+		{
+			if (s2.length() == 0)
+				return 0;
+			else
+				return 1;
+		}
+		else if (s2.length() == 0)
+			return -1;
+		else
+			return TextUtil.strCompareIgnoreCase(s1, s2);
 	}
 }

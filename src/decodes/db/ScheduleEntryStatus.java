@@ -141,7 +141,9 @@ public class ScheduleEntryStatus
 
 	public void setLastMessageTime(Date lastMessageTime)
 	{
-		this.lastMessageTime = lastMessageTime;
+		this.lastMessageTime = 
+			lastMessageTime == null || lastMessageTime.getTime() == 0L ? null:
+			lastMessageTime;
 	}
 
 	public String getHostname()

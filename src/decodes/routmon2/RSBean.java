@@ -10,6 +10,7 @@ public class RSBean
 {
 	private ScheduleEntry scheduleEntry = null;
 	private boolean checked = true;
+	private boolean modified = true;
 	
 	// Always kept sorted in reverse time order by run start.
 	private ArrayList<ScheduleEntryStatus> runHistory = new ArrayList<ScheduleEntryStatus>();
@@ -87,6 +88,16 @@ public class RSBean
 	public void setRunHistory(ArrayList<ScheduleEntryStatus> statusList)
 	{
 		runHistory = statusList;
+	}
+
+	public boolean isModified()
+	{
+		return modified;
+	}
+
+	public void setModified(boolean modified)
+	{
+		this.modified = modified;
 	}
 
 	

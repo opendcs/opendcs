@@ -4,13 +4,23 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1  2016/07/20 15:40:12  mmaloney
+ * First platstat impl GUI.
+ *
  *
  */
 package decodes.platstat;
 
-import ilex.util.Logger;
+import java.util.ArrayList;
+import java.util.HashMap;
 
+import ilex.util.Logger;
 import opendcs.dai.PlatformStatusDAI;
+import opendcs.dai.ScheduleEntryDAI;
+import decodes.db.PlatformStatus;
+import decodes.db.ScheduleEntry;
+import decodes.db.ScheduleEntryStatus;
+import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
 /**
@@ -43,10 +53,27 @@ public class DbPollThread
 			if (System.currentTimeMillis() - lastUpdate > updateInterval)
 			{
 				PlatformStatusDAI psDAO = decodes.db.Database.getDb().getDbIo().makePlatformStatusDAO();
+				ScheduleEntryDAI seDAO = decodes.db.Database.getDb().getDbIo().makeScheduleEntryDAO();
 				
 				try
 				{
-					platformMonitor.getFrame().updateFromDb(psDAO.listPlatformStatus());
+					ArrayList<ScheduleEntry> seList = seDAO.listScheduleEntries(null);
+					HashMap<DbKey, String> ses2rsName = new HashMap<DbKey, String>();
+					for(ScheduleEntry se : seList)
+					{
+						ScheduleEntryStatus ses = seDAO.getLastScheduleStatusFor(se);
+						if (ses != null)
+						{
+							se.setLastScheduleEntryStatusId(ses.getKey());
+							ses2rsName.put(ses.getKey(), se.getRoutingSpecName() +
+								(se.getName().toLowerCase().endsWith("manual") ? " (manual)" : ""));
+						}
+					}
+					
+					ArrayList<PlatformStatus> psList = psDAO.listPlatformStatus();
+					for(PlatformStatus ps : psList)
+						ps.setLastRoutingSpecName(ses2rsName.get(ps.getLastScheduleEntryStatusId()));
+					platformMonitor.getFrame().updateFromDb(psList);
 				}
 				catch(DbIoException ex)
 				{
@@ -55,6 +82,7 @@ public class DbPollThread
 				finally
 				{
 					psDAO.close();
+					seDAO.close();
 				}
 				lastUpdate = System.currentTimeMillis();
 			}

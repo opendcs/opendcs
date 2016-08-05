@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  2016/07/20 15:40:12  mmaloney
+ * First platstat impl GUI.
+ *
  */
 package decodes.platstat;
 
@@ -20,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
+
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -35,6 +39,7 @@ import opendcs.dai.DacqEventDAI;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.PlatformStatus;
+import decodes.db.ScheduleEntry;
 import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
 import decodes.polling.DacqEvent;
@@ -243,6 +248,8 @@ public class PlatformMonitorFrame
 	 * read from the database. Merge the info into the model and update
 	 * the screen in the Swing thread.
 	 * @param psList
+	 * @param seList 
+	 * @param seList 
 	 */
 	public synchronized void updateFromDb(ArrayList<PlatformStatus> psList)
 	{

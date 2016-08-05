@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2016/07/20 15:40:53  mmaloney
+ * First routmon impl.
+ *
  * Revision 1.1  2016/06/27 15:15:40  mmaloney
  * Initial checkin.
  *
@@ -90,18 +93,23 @@ public class DbPollThread
 				{
 
 					ArrayList<ScheduleEntry> seList = seDAO.listScheduleEntries(null);
-					routingMonitor.getFrame().updateFromDb(seList);
-					
-					RSBean selectedRS = routingMonitor.getFrame().getSelectedRS();
-					if (selectedRS != null)
-					{
-						// Poll the database for any new 'runs' of the selected RS.
-						ArrayList<ScheduleEntryStatus> statusList = 
-							seDAO.readScheduleStatus(selectedRS.getScheduleEntry());
+					// readScheduleStatus(null) returns list of ALL SES's in the database.
+					ArrayList<ScheduleEntryStatus> statusList = seDAO.readScheduleStatus(null);
 
-						selectedRS.setRunHistory(statusList);
-						routingMonitor.getFrame().updateRunHistory();
-					}
+					routingMonitor.getFrame().updateFromDb(seList, statusList);
+					
+//					RSBean selectedRS = routingMonitor.getFrame().getSelectedRS();
+					
+					
+//					if (selectedRS != null)
+//					{
+//						// Poll the database for any new 'runs' of the selected RS.
+//						ArrayList<ScheduleEntryStatus> statusList = 
+//							seDAO.readScheduleStatus(selectedRS.getScheduleEntry());
+//
+//						selectedRS.setRunHistory(statusList);
+//						routingMonitor.getFrame().updateRunHistory();
+//					}
 				}
 				catch(DbIoException ex)
 				{

@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2016/07/20 15:40:54  mmaloney
+ * First routmon impl.
+ *
  * Revision 1.1  2016/06/27 15:15:41  mmaloney
  * Initial checkin.
  *
@@ -132,6 +135,7 @@ public class RoutingMonitorFrame
 	private DbPollThread dbPollThread;
 	private RoutingMonitor parent = null;
 	private boolean inDbUpdate = false;
+	private boolean firstDbUpdate = true;
 	
 	/**
 	 * Constructor
@@ -311,6 +315,8 @@ public class RoutingMonitorFrame
 						System.exit(0);
 				}
 			});
+		
+		
 	}
 
 	public synchronized void addEvent(String event)
@@ -375,11 +381,13 @@ public class RoutingMonitorFrame
 	 * Called from DbUpdateThread periodically when a new update has been
 	 * read from the database. Merge the info into the model and update
 	 * the screen in the Swing thread.
-	 * @param seList
+	 * @param seList Fresh list of all schedule entries in the database
+	 * @param seStatuses Fresh list of all SE statuses in the database
 	 */
-	public synchronized void updateFromDb(ArrayList<ScheduleEntry> seList)
+	public synchronized void updateFromDb(ArrayList<ScheduleEntry> seList, 
+		ArrayList<ScheduleEntryStatus> seStatuses)
 	{
-		routingModel.merge(seList);
+		routingModel.merge(seList, seStatuses);
 
 		final int selectedRSIdx = routingModel.indexOf(selectedRS);
 		if (selectedRSIdx == -1)
@@ -397,7 +405,6 @@ public class RoutingMonitorFrame
 				public void run()
 				{
 					inDbUpdate = true;
-					routingModel.updated();
 					if (selectedRSIdx != -1 && selectedRSIdx != routingTable.getSelectedRow())
 					{
 						routingTable.setRowSelectionInterval(selectedRSIdx, selectedRSIdx);
@@ -405,6 +412,18 @@ public class RoutingMonitorFrame
 					inDbUpdate = false;
 				}
 			});
+
+		updateRunHistory();
+		
+		if (firstDbUpdate )
+		{
+			SwingUtilities.invokeLater(
+				new Runnable()
+				{
+					public void run(){ setDefaults(); }
+				});
+			firstDbUpdate = false;
+		}
 	}
 	
 	/**
@@ -412,8 +431,11 @@ public class RoutingMonitorFrame
 	 */
 	public synchronized void updateRunHistory()
 	{
+		
+//System.out.println("RMF.updateRunHistory()");
 		if (selectedRS == null)
 		{
+//System.out.println("    selectedRS is null");
 			return;
 		}
 

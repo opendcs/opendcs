@@ -55,6 +55,8 @@ public class ScheduleEntry extends IdDatabaseObject
 	/** When read from XML, this is the routing spec name */
 	private String routingSpecName = null;
 	
+	private DbKey lastScheduleEntryStatusId = DbKey.NullKey;
+	
 	/**
 	 * Constructor for SQL where the ID is the key
 	 * @param id the key
@@ -316,6 +318,16 @@ public class ScheduleEntry extends IdDatabaseObject
 			+ " runInterval='" + runInterval + "'"
 			+ " enabled=" + enabled
 			+ " lastModified=" + lastModified;
+	}
+
+	public DbKey getLastScheduleEntryStatusId()
+	{
+		return lastScheduleEntryStatusId;
+	}
+
+	public void setLastScheduleEntryStatusId(DbKey lastScheduleEntryStatusId)
+	{
+		this.lastScheduleEntryStatusId = lastScheduleEntryStatusId;
 	}
 
 }

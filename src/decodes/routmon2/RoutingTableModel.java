@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2016/07/20 15:40:53  mmaloney
+ * First routmon impl.
+ *
  * Revision 1.1  2016/06/27 15:15:41  mmaloney
  * Initial checkin.
  *
@@ -63,6 +66,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
 import decodes.db.ScheduleEntry;
+import decodes.db.ScheduleEntryStatus;
 import decodes.gui.SortingListTableModel;
 
 @SuppressWarnings("serial")
@@ -171,12 +175,17 @@ class RoutingTableModel extends AbstractTableModel
 	 * fireTableDataChanged event.
 	 * @param seList the new list from the database.
 	 */
-	public synchronized int merge(ArrayList<ScheduleEntry> seList)
+	public synchronized int merge(ArrayList<ScheduleEntry> seList,
+		ArrayList<ScheduleEntryStatus> seStatuses)
 	{
 		int numChanges = 0;
 		for(RSBean bean : beans)
+		{
 			bean.setChecked(false);
-	  nextSchedEntry:
+			bean.setModified(false);
+		}
+
+	nextSchedEntry:
 		for(int seIdx = 0; seIdx < seList.size(); seIdx++)
 		{
 			ScheduleEntry se = seList.get(seIdx);
@@ -188,6 +197,7 @@ class RoutingTableModel extends AbstractTableModel
 					{
 						numChanges++;
 						bean.setScheduleEntry(se);
+						bean.setModified(true);
 					}
 					continue nextSchedEntry;
 				}
@@ -195,6 +205,44 @@ class RoutingTableModel extends AbstractTableModel
 			beans.add(new RSBean(se));
 			numChanges++;
 		}
+		
+//System.out.println("Retrieved " + seStatuses.size() + " statuses.");
+	nextStatus:
+		for(ScheduleEntryStatus ses : seStatuses)
+		{
+//System.out.println("...Status for SE " + ses.getScheduleEntryName() 
+//+ " starting at " + ses.getRunStart() + " with LMT=" + ses.getLastModified());
+			for(RSBean bean : beans)
+			{
+//System.out.println("......Checking against bean for '" + bean.getScheduleEntry().getName() + "'");
+				if (ses.getScheduleEntryName().equalsIgnoreCase(bean.getScheduleEntry().getName()))
+				{
+//System.out.println(".........Match, bean already has " + bean.getRunHistory().size() + " runs.");
+					for(int idx = 0; idx < bean.getRunHistory().size(); idx++)
+					{
+						ScheduleEntryStatus beanSes = bean.getRunHistory().get(idx);
+//System.out.println("............run["+ idx + "] start=" + beanSes.getRunStart() 
+//+ ", LMT=" + beanSes.getLastModified());
+						if (ses.getRunStart().equals(beanSes.getRunStart()))
+						{
+							if (ses.getLastModified().after(beanSes.getLastModified()))
+							{
+//System.out.println("...............Doing Update");
+								bean.getRunHistory().set(idx, ses);
+								bean.setModified(true);
+								numChanges++;
+							}
+							continue nextStatus;
+						}
+					}
+//System.out.println("...............Fell through, adding");
+					// Fell through. This is a new run
+					bean.getRunHistory().add(0, ses);
+					continue nextStatus;
+				}
+			}
+		}
+		
 		// Any beans not checked are no longer in the database. Remove from list.
 		for(Iterator<RSBean> beanit = beans.iterator(); beanit.hasNext(); )
 		{
@@ -205,16 +253,38 @@ class RoutingTableModel extends AbstractTableModel
 				numChanges++;
 			}
 		}
+		
+		if (numChanges > 0)
+		{
+			SwingUtilities.invokeLater(
+				new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						fireTableDataChanged();
+					}
+				});
+
+		}
+		
+//System.out.println("RTM.merge: after doing merge...");
+//for(RSBean bean : beans)
+//{
+//System.out.println("bean " + bean.getRsName() + " has " + bean.getRunHistory().size() + " runs.");
+//}
+		
 		return numChanges;
 	}
 	
-	/**
-	 * Call from swing thread
-	 */
-	public void updated()
-	{
-		fireTableDataChanged();
-	}
+//	/**
+//	 * Call from swing thread
+//	 */
+//	public void updated()
+//	{
+//System.out.println("RTM.updated");
+//		fireTableDataChanged();
+//	}
 
 	public ArrayList<RSBean> getBeans()
 	{
@@ -245,7 +315,8 @@ class RSColumnizer
 		switch(col)
 		{
 		case 0: return new Boolean(rsb.isEnabled());
-		case 1: return rsb.getRsName();
+		case 1: return rsb.getScheduleEntry().getName().toLowerCase().endsWith("manual")
+					? (rsb.getRsName() + " (manual)") : rsb.getRsName();
 		case 2: return rsb.getAppName();
 		case 3: return rsb.getInterval();
 		case 4: 

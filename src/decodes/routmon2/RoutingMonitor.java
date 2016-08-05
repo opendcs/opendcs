@@ -42,7 +42,6 @@ public class RoutingMonitor extends TsdbAppTemplate
 				close();
 			}
 		});
-		frame.setDefaults();
 		
 		noExitAfterRunApp = true;
 		dbPollThread.start();

@@ -45,10 +45,14 @@ public class PlatformStatus
 	/** For displays, the DAO will retrieve designator and set it here. */
 	private String designator = null;
 	
+	/** For displays, the DAO will retrieve RS name and set it here. */
+	private String lastRoutingSpecName = null;
+	
 	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	static { sdf.setTimeZone(TimeZone.getTimeZone("UTC")); }
 	
 	private transient boolean checked = false;
+
 	
 	public PlatformStatus(DbKey platformId)
 	{
@@ -273,6 +277,16 @@ public class PlatformStatus
 		if (designator != null && designator.length() > 0)
 			r = r + "-" + designator;
 		return r;
+	}
+
+	public String getLastRoutingSpecName()
+	{
+		return lastRoutingSpecName;
+	}
+
+	public void setLastRoutingSpecName(String lastRoutingSpecName)
+	{
+		this.lastRoutingSpecName = lastRoutingSpecName;
 	}
 	
 }
