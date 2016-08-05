@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2016/07/20 15:48:44  mmaloney
+ * update last source and consumer. It wasn't doing that before.
+ *
  * Revision 1.7  2016/02/04 19:00:15  mmaloney
  * SQL bug fix where it wasn't calling rs.next().
  *
@@ -57,10 +60,14 @@ public class ScheduleEntryDAO
 		+ "a.run_interval, a.enabled, a.last_modified, c.name";
 	private static String seTables = "schedule_entry a, routingspec c";
 	private static String seJoinClause = "a.routingspec_id = c.id";
-	private static String sesColumns = "schedule_entry_status_id, "
-		+ "schedule_entry_id, run_start_time, last_message_time, "
-		+ "run_complete_time, hostname, run_status, num_messages, "
-		+ "num_decode_errors, num_platforms, last_source, last_consumer, last_modified";
+	private static String sesColumns = "a.schedule_entry_status_id, "
+		+ "a.schedule_entry_id, a.run_start_time, a.last_message_time, "
+		+ "a.run_complete_time, a.hostname, a.run_status, a.num_messages, "
+		+ "a.num_decode_errors, a.num_platforms, a.last_source, a.last_consumer, "
+		+ "a.last_modified, b.name";
+	private static String sesTables = "schedule_entry_status a, schedule_entry b";
+	private static String sesJoinClause = "a.schedule_entry_id = b.schedule_entry_id";
+	
 	private LoadingAppDAI loadingAppDAO = null;
 
 	public ScheduleEntryDAO(DatabaseConnectionOwner tsdb)
@@ -297,10 +304,10 @@ public class ScheduleEntryDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 			return ret;
 
-		String q = "select " + sesColumns + " from schedule_entry_status";
+		String q = "select " + sesColumns + " from " + sesTables + " where " + sesJoinClause;
 		if (scheduleEntry != null)
-			q = q + " where schedule_entry_id = " + scheduleEntry.getKey();
-		q = q + " order by run_start_time desc";
+			q = q + " and a.schedule_entry_id = " + scheduleEntry.getKey();
+		q = q + " order by a.run_start_time desc";
 		
 		ResultSet rs = doQuery(q);
 		try
@@ -340,6 +347,7 @@ public class ScheduleEntryDAO
 		ses.setLastSource(rs.getString(11));
 		ses.setLastConsumer(rs.getString(12));
 		ses.setLastModified(db.getFullDate(rs, 13));
+		ses.setScheduleEntryName(rs.getString(14));
 	}
 
 
@@ -455,9 +463,9 @@ public class ScheduleEntryDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 			return null;
 		
-		String q = "select " + sesColumns + " from schedule_entry_status"
-			+ " where schedule_entry_id = " + scheduleEntry.getKey()
-			+ " and last_modified = "
+		String q = "select " + sesColumns + " from " + sesTables + " where " + sesJoinClause;
+		q = q + " and a.schedule_entry_id = " + scheduleEntry.getKey()
+			+ " and a.last_modified = "
 			+ "(select max(last_modified) from schedule_entry_status "
 			+ " where schedule_entry_id = " + scheduleEntry.getKey() + ")";
 		
