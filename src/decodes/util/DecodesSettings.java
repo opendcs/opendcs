@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.15  2016/07/21 18:13:17  mmaloney
+*  Added Platform Monitor and Routing Monitor buttons to launcher.
+*
 *  Revision 1.14  2016/06/07 22:04:35  mmaloney
 *  Added DB_HDB constant.
 *
@@ -242,7 +245,7 @@ public class DecodesSettings
 	/** Provide default designator ( <device-id>-<seqno> for new platforms ) */
 	public boolean setPlatformDesignatorName=false;
 
-	/** Set to true if the 1st line of site description contains long name. */
+	/** @deprecated Set to true if the 1st line of site description contains long name. */
 	public boolean hdbSiteDescriptions = false;
 
 	/** Language for internationalization */
@@ -387,6 +390,8 @@ public class DecodesSettings
 	
 	public boolean showRoutingMonitor = true;
 	public boolean showPlatformMonitor = true;
+	
+	public int cwmsVersionOverride = 0;
 	
 	//===============================================================================
 	
@@ -541,7 +546,7 @@ public class DecodesSettings
 			" then do attempt to retry by using FAIL_TIME in the tasklist records " +
 			"to retry up to maxComputationRetries set above"),
 		new PropertySpec("defaultMaxDecimals", PropertySpec.INT,
-			"Default max decimals if no presentation element is found"),
+			"(default=4) Default max decimals if no presentation element is found"),
 		new PropertySpec("platformListDesignatorCol", PropertySpec.BOOLEAN,
 			"if TRUE, then include a column for Designator in the Platform List"
 			+ " of the DECODES Database Editor."),
@@ -606,7 +611,11 @@ public class DecodesSettings
 			+ " That is, 2 hex digits each for the RGB values."),
 		new PropertySpec("screeningUnitSystem", 
 			PropertySpec.JAVA_ENUM + "decodes.util.UnitSystem",
-			"Unit system to use for limit values in screening editor and execution")
+			"Unit system to use for limit values in screening editor and execution"),
+		new PropertySpec("cwmsVersionOverride", PropertySpec.INT,
+			"In some versions of CWMS, the automated tests to detect version do not work."
+			+ " If this is the case, set this variable which will override the automated"
+			+ "tests. For version 3 and above, office privileges are checked.")
 	};
 	
 	/**

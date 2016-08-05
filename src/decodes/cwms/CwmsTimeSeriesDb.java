@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.13  2016/04/22 14:46:51  mmaloney
+*  remove debug.
+*
 *  Revision 1.12  2016/03/24 19:00:45  mmaloney
 *  Refactor: Have expandSDI return the TimeSeriesID that it uses. This saves the caller from
 *  having to re-look it up. Needed for PythonAlgorithm.
@@ -1891,6 +1894,9 @@ for(CTimeSeries ts : allts)
 
 	public static int determineCwmsSchemaVersion(Connection con, int tsdbVersion)
 	{
+		if (DecodesSettings.instance().cwmsVersionOverride == 3)
+			return CWMS_V_3_0;
+		
 		String q = "select count(*) from all_synonyms where owner='PUBLIC' " +
 			"and SYNONYM_NAME = 'CWMS_ENV'";
 		ResultSet rs = null;
