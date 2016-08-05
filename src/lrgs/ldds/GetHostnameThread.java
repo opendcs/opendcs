@@ -3,7 +3,7 @@
  */
 package lrgs.ldds;
 
-import hec.util.TextUtil;
+import ilex.util.TextUtil;
 import ilex.util.Logger;
 
 import java.net.Inet4Address;
@@ -98,7 +98,7 @@ public class GetHostnameThread
 	public synchronized void enqueue(LddsThread lt)
 	{
 		String lim = LrgsConfig.instance().getMiscProp("localIpMask");
-		if (!TextUtil.equalsIgnoreCase(localIpMask, lim))
+		if (!TextUtil.strEqualIgnoreCase(localIpMask, lim))
 			setLocalIpMask(lim);
 		
 		if (localIpAddr != 0)
