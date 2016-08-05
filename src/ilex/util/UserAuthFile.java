@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.3  2014/11/19 16:13:22  mmaloney
+*  Added constructor taking File object.
+*
 *  Revision 1.2  2014/07/03 12:25:41  mmaloney
 *  Bug fix: use authFile.getAbsoluteFile().getParentFile(). That way it should never be null.
 *
@@ -64,8 +67,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
 import java.io.FileInputStream;
-
-import hec.io.Console;
 import ilex.util.AuthException;
 import ilex.util.DesEncrypter;
 
