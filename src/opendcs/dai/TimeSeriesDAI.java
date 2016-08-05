@@ -8,7 +8,6 @@ import java.util.Date;
 
 import opendcs.dao.DbObjectCache;
 
-import decodes.cwms.CwmsTsId;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
