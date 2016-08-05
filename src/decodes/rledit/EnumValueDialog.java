@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2014/09/25 18:10:00  mmaloney
+*  Added Seasons Enum with Editor.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -29,12 +32,15 @@
 */
 package decodes.rledit;
 
-import hec.util.TextUtil;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 
 import javax.swing.*;
+
 import java.awt.*;
+
 import javax.swing.border.*;
+
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
@@ -232,7 +238,7 @@ public class EnumValueDialog extends JDialog
 			myEV.setExecClassName(v);
 		}
 		v = optionsField.getText();
-		if (!TextUtil.equals(v, myEV.getEditClassName()))
+		if (!TextUtil.strEqual(v, myEV.getEditClassName()))
 		{
 			_wasChanged = true;
 			myEV.setEditClassName(v);

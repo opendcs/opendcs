@@ -1,6 +1,6 @@
 package decodes.tsdb;
 
-import hec.util.TextUtil;
+import ilex.util.TextUtil;
 import ilex.util.Logger;
 
 /**
@@ -54,6 +54,6 @@ Logger.instance().debug1("DbCompAlgorithmScript.addToScript, after adding, text=
 		if (!(rhs instanceof DbCompAlgorithmScript))
 			return false;
 		DbCompAlgorithmScript rhss = (DbCompAlgorithmScript)rhs;
-		return scriptType == rhss.scriptType && TextUtil.equals(text, rhss.text);
+		return scriptType == rhss.scriptType && TextUtil.strEqual(text, rhss.text);
 	}
 }
