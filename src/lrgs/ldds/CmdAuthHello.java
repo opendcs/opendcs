@@ -219,7 +219,7 @@ public class CmdAuthHello extends LddsCommand
 			ldds.statLogger.incrBadPasswords();
 			String msg = DdsServer.module + 
 				" Rejecting connection from user '" + username 
-				+ "' -- bad password used from clent " + ldds.getClientName();
+				+ "' -- bad password used from client " + ldds.getClientName();
 			Logger.instance().warning(msg);
 			
 			// If this is the 3rd consecutive bad password, suspend account for 30 sec.
@@ -255,7 +255,7 @@ public class CmdAuthHello extends LddsCommand
 				ldds.statLogger.incrBadPasswords();
 				String msg = DdsServer.module + 
 					" Rejecting connection from user '" + username 
-					+ "' -- bad password used from clent " + ldds.getClientName();
+					+ "' -- bad password used from client " + ldds.getClientName();
 				Logger.instance().warning(msg);
 				throw new LddsRequestException("Server requires SHA-256.", LrgsErrorCode.DDDSAUTHFAILED, true);
 			}
