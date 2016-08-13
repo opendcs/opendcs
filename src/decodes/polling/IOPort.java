@@ -24,6 +24,7 @@ package decodes.polling;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 
 import decodes.db.TransportMedium;
 
@@ -49,6 +50,9 @@ public class IOPort
 	private PollingThread pollingThread = null;
 	private String portName = null;
 	
+	/** Used for listening socket clients. */
+	private Socket socket = null;
+	
 	public IOPort(PortPool portPool, int portNum, Dialer dialer)
 	{
 		this.portPool = portPool;
@@ -69,7 +73,8 @@ public class IOPort
 		pollingThread.debug2("IOPort.connect() -- calling portPool.configPort");
 		portPool.configPort(this, tm);
 		pollingThread.debug2("IOPort.connect() -- calling dialer.connect");
-		dialer.connect(this, tm, this.pollingThread);
+		if (dialer != null)
+			dialer.connect(this, tm, this.pollingThread);
 		dialerConnected = true;
 	}
 	
@@ -128,5 +133,15 @@ public class IOPort
 	public void setPortName(String portName)
 	{
 		this.portName = portName;
+	}
+
+	public Socket getSocket()
+	{
+		return socket;
+	}
+
+	public void setSocket(Socket socket)
+	{
+		this.socket = socket;
 	}
 }

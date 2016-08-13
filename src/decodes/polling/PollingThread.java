@@ -87,7 +87,9 @@ public class PollingThread
 		this.parent = parent;
 		this.dataSource = dataSource;
 		this.transportMedium = transportMedium;
-		if (transportMedium.platform != null)
+		if (transportMedium == null)
+			module = "Listen";
+		else if (transportMedium.platform != null)
 		{
 			module = "Poll(" + transportMedium.platform.getSiteName(false) + ")";
 			String pps = transportMedium.platform.getProperty("pollPriority");

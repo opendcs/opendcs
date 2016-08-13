@@ -98,9 +98,19 @@ public class PollingDataSource extends DataSourceExec
 		new PropertySpec("minBacklogHours", PropertySpec.INT,
 			"Default = 2. Normally the poll will retrieve data back to the last time that data was "
 			+ "retrieved for each station, plus 1 hour. This property ensures that at least a certain"
-			+ " number of hours is polled.")
+			+ " number of hours is polled."),
+		new PropertySpec("authenticateClient", PropertySpec.STRING,
+			"for Listening port types, if clients are required to athenticate to the server"
+			+ ", then this property specifies how. Choices are 'none' and 'password=prompt=value'."
+			+ " That is, the literal word 'password' followed by =, then the prompt to send to the client,"
+			+ " then =, then the password value required from a client. "
+			+ " Example: password=\\r\\npw? =ToPsEcReT"),
+		new PropertySpec("listeningPort", PropertySpec.INT, "if portType = TcpListen, set this"
+			+ " property to the TCP listening port. If not set, the default is 16050.")
 		
 	};
+	
+	private String authenticateClient = null;
 	
 	private PollingThreadController controller = null;
 	private PortPool portPool = null;
@@ -230,7 +240,10 @@ public class PollingDataSource extends DataSourceExec
 		}
 
 		// Construct the PollingThreadController with the list
-		controller = new PollingThreadController(this, aggTMList, portPool);
+		if (portPool instanceof ListeningPortPool)
+			controller = new ListeningThreadController(this, aggTMList, (ListeningPortPool)portPool);
+		else
+			controller = new PollingThreadController(this, aggTMList, portPool);
 		
 		String s = PropertiesUtil.getIgnoreCase(aggProps, "pollNumTries");
 		if (s != null && s.trim().length() > 0)
@@ -267,6 +280,8 @@ public class PollingDataSource extends DataSourceExec
 		
 		if (routingSpecThread != null && routingSpecThread.getMyExec() != null)
 			controller.setDacqEventLogger(routingSpecThread.getMyExec().getDacqEventLogger());
+		
+		authenticateClient = PropertiesUtil.getIgnoreCase(aggProps, "authenticateClient");
 		
 		controller.start();
 	}
@@ -381,6 +396,11 @@ public class PollingDataSource extends DataSourceExec
 	public PollingThreadController getController()
 	{
 		return controller;
+	}
+
+	public String getAuthenticateClient()
+	{
+		return authenticateClient;
 	}
 
 	

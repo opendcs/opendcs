@@ -35,40 +35,40 @@ import decodes.routing.DacqEventLogger;
 public class PollingThreadController
 	extends Thread
 {
-	public static final String module = "PollingThreadController";
+	public static String module = "PollingThreadController";
 	
-	private PollingDataSource dataSource;
+	protected PollingDataSource dataSource;
 	
 	/** The pool manages the ports that this controls. */
-	private PortPool portPool;
+	protected PortPool portPool;
 	
 	/** Complete list of transport media to poll */
-	private ArrayList<TransportMedium> aggTMList = new ArrayList<TransportMedium>();
+	protected ArrayList<TransportMedium> aggTMList = new ArrayList<TransportMedium>();
 	
 	/** The active threads currently being managed */
-	private ArrayList<PollingThread> threads = new ArrayList<PollingThread>();
+	protected ArrayList<PollingThread> threads = new ArrayList<PollingThread>();
 
 	/** The current index in the aggTMList */
-	private int lastPTidx = 0;
+	protected int lastPTidx = 0;
 	
-	private boolean _shutdown = false;
+	protected boolean _shutdown = false;
 	
-	private static final long PAUSE_MSEC = 500L;
+	protected static final long PAUSE_MSEC = 500L;
 
 	// no thread should take > 10 min -- probably hung
-	private static final long THREAD_MAX_RUN_TIME = 600000L;
+	protected static final long THREAD_MAX_RUN_TIME = 600000L;
 	
-	private int successfullPolls = 0, failedPolls = 0;
+	protected int successfullPolls = 0, failedPolls = 0;
 	
-	private int pollNumTries = 5;
+	protected int pollNumTries = 5;
 	
-	private int maxBacklogHours = 48;
-	private int minBacklogHours = 2;
+	protected int maxBacklogHours = 48;
+	protected int minBacklogHours = 2;
 	
-	private String saveSessionFile = null;
+	protected String saveSessionFile = null;
 	
-	private DacqEventLogger dacqEventLogger = null;
-	private int numPorts = 10;
+	protected DacqEventLogger dacqEventLogger = null;
+	protected int numPorts = 10;
 	
 	
 	/** PollingDataSource creates the controller */
@@ -217,7 +217,7 @@ public class PollingThreadController
 		dataSource.pollingComplete();
 	}
 	
-	private void checkDeadThreads()
+	protected void checkDeadThreads()
 	{
 		for(PollingThread pt : threads)
 			if (pt.getState() == PollingThreadState.Running
@@ -230,7 +230,6 @@ public class PollingThreadController
 				pt.setState(PollingThreadState.Failed);
 				pollComplete(pt);
 			}
-		
 	}
 
 	private PollingThread getNextWaitingThread()
@@ -316,7 +315,7 @@ public class PollingThreadController
 	 * @param threadState
 	 * @return the number of threads with a matching state.
 	 */
-	private int countThreads(PollingThreadState threadState)
+	protected int countThreads(PollingThreadState threadState)
 	{
 		int n = 0;
 		for(PollingThread pt : threads)
@@ -368,6 +367,11 @@ public class PollingThreadController
 	public DacqEventLogger getDacqEventLogger()
 	{
 		return dacqEventLogger;
+	}
+
+	public PollingDataSource getDataSource()
+	{
+		return dataSource;
 	}
 
 }
