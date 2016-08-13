@@ -129,7 +129,7 @@ public class FileLogger extends Logger
 				rotate();
 			}
 		}
-		catch(IOException ex)
+		catch(Exception ex)
 		{
 			System.err.println("Error rotating log: " + ex);
 		}
