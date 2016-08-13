@@ -12,6 +12,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.14  2016/08/05 14:43:37  mmaloney
+*  cwmsVersionOverride to account for the fact that on some versions of CWMS there is no
+*  reliable programmatic way to determine CWMS 2.1 vs CWMS 3.
+*
 *  Revision 1.13  2016/04/22 14:46:51  mmaloney
 *  remove debug.
 *
@@ -1894,8 +1898,11 @@ for(CTimeSeries ts : allts)
 
 	public static int determineCwmsSchemaVersion(Connection con, int tsdbVersion)
 	{
-		if (DecodesSettings.instance().cwmsVersionOverride == 3)
-			return CWMS_V_3_0;
+		if (DecodesSettings.instance().cwmsVersionOverride == 2)
+		{
+			Logger.instance().info("cwmsVersionOverride==2");
+			return CWMS_V_2_1;
+		}
 		
 		String q = "select count(*) from all_synonyms where owner='PUBLIC' " +
 			"and SYNONYM_NAME = 'CWMS_ENV'";
