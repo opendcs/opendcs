@@ -2,6 +2,9 @@
  *  $Id$
  *
  *  $Log$
+ *  Revision 1.3  2015/01/14 17:22:51  mmaloney
+ *  Polling implementation
+ *
  *  Revision 1.2  2015/01/06 16:09:32  mmaloney
  *  First cut of Polling Modules
  *
@@ -552,10 +555,13 @@ public class TransportMediaEditDialog extends GuiDialog
 //			transmitIntervalCombo.setEnabled(true);
 //			preambleCombo.setEnabled(true);
 		}
-		else if (tmType.toLowerCase().equals("polled-tcp"))
+		else if (tmType.toLowerCase().equals("polled-tcp") || tmType.toLowerCase().equals("incoming-tcp"))
 		{
 			typeSpecificParamsPanel.add(previousSpecialParamsPanel = polledTcpParamsPanel, BorderLayout.CENTER);
-			mediumIdLabel.setText(dbeditLabels.getString("TransportMediaEditDialog.HostPort"));
+			mediumIdLabel.setText(
+				tmType.toLowerCase().equals("polled-tcp") ?
+					dbeditLabels.getString("TransportMediaEditDialog.HostPort") :
+					dbeditLabels.getString("TransportMediaEditDialog.LoggerId")	);
 			polledTcpUserName.setEnabled(polledTcpDoLoginCheck.isSelected());
 			polledTcpPassword.setEnabled(polledTcpDoLoginCheck.isSelected());
 		}
@@ -642,7 +648,7 @@ public class TransportMediaEditDialog extends GuiDialog
 		myTM.scriptName = decodesScriptCombo.getSelection();
 
 		String tmType = (String) mediumTypeCombo.getSelectedItem();
-		if (tmType.toLowerCase().equals("polled-tcp"))
+		if (tmType.toLowerCase().equals("polled-tcp") || tmType.toLowerCase().equals("incoming-tcp"))
 		{
 			String s = loggerTypeTcpCombo.getSelection();
 			myTM.setLoggerType(s == null || s.trim().length()==0 ? null : s);

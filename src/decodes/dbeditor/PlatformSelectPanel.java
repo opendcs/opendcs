@@ -234,7 +234,8 @@ class PlatformSelectTableModel extends AbstractTableModel
 				  || platform.getTransportMedium(Constants.medium_GoesRD) != null))
 			 || (mediumType.equalsIgnoreCase("poll")
 				 && (platform.getTransportMedium("polled-modem") != null
-				  || platform.getTransportMedium("polled-tcp") != null)))
+				  || platform.getTransportMedium("polled-tcp") != null
+				  || platform.getTransportMedium("incoming-tcp") != null)))
 				platformList.add(platform);
 		}
 		this.sortByColumn(0);
