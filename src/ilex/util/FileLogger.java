@@ -169,11 +169,6 @@ public class FileLogger extends Logger
 			output = new PrintStream(fos, true);
 			fileChan = fos.getChannel();
 		}
-		catch(FileNotFoundException e)
-		{
-			System.err.println("Cannot open log file '" + filename + "': " + e);
-			close();
-		}
 		catch(IOException ex)
 		{
 			System.err.println("IOException trying to open log file '" 
