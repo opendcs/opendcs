@@ -342,7 +342,7 @@ public class LrgsDatabase
 	 * @return a full date, including time information.
 	 */
 	public Date getFullDate(ResultSet rs, int column)
-{
+	{
 		String ds = "";
 		try
 		{
@@ -356,8 +356,6 @@ public class LrgsDatabase
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning(
-					"Error parsing date '" + ds + "': " + ex);
 				java.sql.Timestamp ts = rs.getTimestamp(column, resultSetCalendar);
 				if (rs.wasNull())
 					return null;
@@ -373,6 +371,11 @@ public class LrgsDatabase
 			Logger.instance().warning("Error retrieving date/time: " + ex2);
 			return null;
 		}
+	}
+	
+	private boolean isOracle()
+	{
+		return dbUrl != null && dbUrl.toLowerCase().contains("oracle");
 	}
 
 	/**
@@ -418,6 +421,18 @@ public class LrgsDatabase
 				"Cannot initialize key generator from class '"
 				+ keyGeneratorClass + "' :"
 				+ ex.toString());
+		}
+		
+		if (isOracle())
+		{
+			String q = "alter session set nls_timestamp_format = 'YYYY-MM-DD HH24:MI:SS'";
+			doQuery(q);
+			readDateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			dateFmt = new SimpleDateFormat("''yyyy-MM-dd HH:mm:ss''");
+			Logger.instance().info("dateFmtSpec=" + dateFmt.toPattern() + ", current time="
+				+ dateFmt.format(new Date()));
+			readDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+			dateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 		}
 		
 		// Read the Information from the lrgs_database table and
