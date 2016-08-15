@@ -1,3 +1,15 @@
+/*
+*  This software was written by Cove Software, LLC, under
+*  contract to the federal government. You are free to copy and use this
+*  source code for your own purposes, except that no part of the information
+*  contained in this file may be claimed to be proprietary.
+*
+*  Except for specific contractual terms between COVE and the federal 
+*  government, this source code is provided completely without warranty.
+*  For more information contact: info@covesw.com
+*  
+*  Copyright 2016 U.S. Government.
+*/
 package decodes.polling;
 
 import ilex.util.AsciiUtil;
