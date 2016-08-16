@@ -84,6 +84,7 @@ public class CmdUser extends LddsCommand
 		roles = st.hasMoreTokens() ? st.nextToken() : null;
 		
 		propAssigns = getPropAssigns(args);
+		
 //System.out.println("CmdUser args='" + args + "' propAssigns='" + propAssigns + "'");
 //System.out.println("CmdUser subcmd='" + subcmd + "', user='" + username
 //+ "' encAuth='" + encAuth + "' roles='" + roles + ", props='" + propAssigns+ "'");
@@ -438,7 +439,7 @@ public class CmdUser extends LddsCommand
 			try
 			{
 				String sks = ByteUtil.toHexString(ldds.user.getSessionKey());
-//Logger.instance().info("Session Key: " + sks);
+//System.out.println("Session Key: " + sks);
 				DesEncrypter de = new DesEncrypter(sks);
 //System.out.println("    set: encrypted: " + encAuth);
 				newAuth = de.decrypt(encAuth); 
@@ -458,7 +459,7 @@ public class CmdUser extends LddsCommand
 			PasswordFileEntry pfe = pf.getEntryByName(username);
 			if (pfe == null)
 			{
-//Logger.instance().info("CmdUser.set no PFE for '" + username + "'");
+//System.out.println("CmdUser.set no PFE for '" + username + "'");
 				// New user! If pw specified, create new pw file entry.
 				try 
 				{
@@ -479,7 +480,7 @@ public class CmdUser extends LddsCommand
 			{
 				pfe.setShaPassword(ByteUtil.fromHexString(newAuth));
 				pfe.setChanged(true);
-//Logger.instance().info("CmdUser.set set auth to '" + newAuth + "'");
+//System.out.println("CmdUser.set set auth to '" + newAuth + "'");
 			}
 
 			// If this is an admin, set the roles specified.
@@ -496,7 +497,7 @@ public class CmdUser extends LddsCommand
 			if (ldds.user.isAdmin && userProps != null)
 			{
 				boolean isSuspended = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(userProps, "suspended"));
-//Logger.instance().info("CmdUser.set() suspended=" + isSuspended);
+//System.out.println("CmdUser.set() suspended=" + isSuspended);
 				LddsUser user = new LddsUser(username, userRoot.getPath());
 				user.suspendUntil(isSuspended ? LddsUser.permSuspendTime : null);
 				PropertiesUtil.rmIgnoreCase(userProps, "suspended");
@@ -517,7 +518,7 @@ public class CmdUser extends LddsCommand
 						else
 							userProps.setProperty(adminProps[idx], val);
 					}
-//Logger.instance().info("CmdUser.set() Setting props to '" + PropertiesUtil.props2string(userProps));					
+//System.out.println("CmdUser.set() Setting props to '" + PropertiesUtil.props2string(userProps));					
 				pfe.setProperties(userProps);
 				pfe.setChanged(true);
 			}
@@ -570,6 +571,8 @@ public class CmdUser extends LddsCommand
 			encAuth = encPw;
 			roles = null;
 			propAssigns = null;
+			if (oldPfe.isLocal())
+				propAssigns = "local=true";
 			fromSetPw = true;
 			set(ldds);
 		}

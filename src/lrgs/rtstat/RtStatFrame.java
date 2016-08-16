@@ -193,6 +193,7 @@ public class RtStatFrame
 					setFieldsFromHostSelection(hostCombo, 
 						connectionList, portField, userField, passwordField);
 					passwordCheck.setSelected(passwordField.getText().length() > 0);
+					passwordField.setEnabled(passwordField.getText().length() > 0);
 				}
 			});
 		loadConnectionsField(hostCombo, connectionList, connectedHostName);
