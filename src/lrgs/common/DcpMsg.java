@@ -206,30 +206,42 @@ public class DcpMsg
 	  @param offset in data where this message starts
 	  @param size number of data bytes in this message
 	*/
-	public void set(byte data[], int size, int offset)
+	private void set(byte data[], int size, int offset)
 	{
-		if (isGoesMessage() 
-		 && (size > MAX_DATA_LENGTH || size < 0))
+//MJM 20160831 Not sure what this code was for. Should never be called with < 0
+//		if (isGoesMessage() 
+//		 && (size > MAX_DATA_LENGTH || size < 0))
+//		{
+//			Logger.instance().warning("Cannot set DcpMsg data, invalid size="
+//				+ size + ", attempting to parse length from header.");
+//
+//			byte ml[] = ArrayUtil.getField(data, offset + 32, 5);
+//			if (ml == null)
+//			{
+//				Logger.instance().warning("Parse failed setting empty msg.");
+//				size = 0;
+//			}
+//			else
+//			{
+//				try 
+//				{
+//					size = 37 + Integer.parseInt(new String(ml));
+//					Logger.instance().warning("Parsed msg length = " + size);
+//				}
+//				catch(NumberFormatException ex)
+//				{
+//					Logger.instance().warning("Parse failed setting empty msg.");
+//					size = 0;
+//				}
+//			}
+//		}
+//MJM 20160831 replaced with the following, simply truncate to max data len if too big.
+//Do this regardless of type.
+		if (size > MAX_DATA_LENGTH)
 		{
-			Logger.instance().warning("Cannot set DcpMsg data, invalid size="
-				+ size + ", attempting to parse length from header.");
-
-			byte ml[] = ArrayUtil.getField(data, offset + 32, 5);
-			if (ml == null)
-			{
-				Logger.instance().warning("Parse failed setting empty msg.");
-				size = 0;
-			}
-			try 
-			{
-				size = 37 + Integer.parseInt(new String(ml));
-				Logger.instance().warning("Parsed msg length = " + size);
-			}
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Parse failed setting empty msg.");
-				size = 0;
-			}
+			Logger.instance().warning("DcpMsg too big (" + size + "). Truncated to max len="  
+				+ MAX_DATA_LENGTH); 
+			ArrayUtil.getField(data, 0, size = MAX_DATA_LENGTH);
 		}
 		byte[] buf  = new byte[size];
 		for(int i = 0; i<size; i++)
