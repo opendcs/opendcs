@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2008/09/05 13:17:23  mjmaloney
 *  LRGS 7 dev
 *
@@ -24,10 +27,11 @@
 package lrgs.lrgsmon;
 
 import java.io.*;
+
 import org.xml.sax.SAXException;
 
 import ilex.util.Logger;
-
+import lrgs.ldds.DdsVersion;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ServerError;
 import lrgs.ldds.ProtocolError;
@@ -128,8 +132,8 @@ public class LrgsMonThread
 			return;
 		}
 
-		info("Connected to " + lddsClient.getName() + ", protocol version "
-			+ lddsClient.getServerProtoVersion());
+		info("Connected to " + lddsClient.getName() + ", my client protocol version="
+			+ DdsVersion.DdsVersionNum);
 
 		try
 		{
