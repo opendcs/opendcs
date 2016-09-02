@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2015/04/02 18:19:19  mmaloney
+*  Added debugs.
+*
 *  Revision 1.2  2014/12/11 20:35:55  mmaloney
 *  dev
 *
@@ -193,6 +196,12 @@ public class DdsRecvSettings
 			 && decodes.db.Database.getDb() != null)
 			{
 				decodesProduction = true;
+				continue;
+			}
+			if (nga.getNetlistName().toLowerCase().startsWith("source="))
+			{
+				// Not a network list. A kludge to set searchcrit source.
+				// Leave as-is.
 				continue;
 			}
 			Logger.instance().info(module + " Looking for netlist '" +

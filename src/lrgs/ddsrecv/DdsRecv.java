@@ -22,6 +22,7 @@ import java.util.Iterator;
 import lrgs.archive.MsgArchive;
 import lrgs.common.BadConfigException;
 import lrgs.common.DcpMsg;
+import lrgs.common.DcpMsgFlag;
 import lrgs.common.NetworkList;
 import lrgs.common.SearchCriteria;
 import lrgs.lrgsmain.LrgsConfig;
@@ -288,21 +289,25 @@ public class DdsRecv extends Thread implements LrgsInputInterface
 		{
 			searchCrit.setLrgsSince(IDateFormat.time_t2string((int) (lastMsgRecvTime / 1000L) - 60));
 			for (NetlistGroupAssoc nga : ddsRecvSettings.getNetlistGroupAssociations())
-			// for (NetworkList netlist : ddsRecvSettings.networkLists)
 			{
-				String netListFileName = nga.getNetworkList().makeFileName();
 				String netlistGroup = nga.getGroupName();
 
-				if (isSecondary)
-				{ // add networklists to secondary group
-
-					if (netlistGroup.equalsIgnoreCase("secondary") || netlistGroup.equalsIgnoreCase("both"))
-						searchCrit.addNetworkList(nga.getNetworkList().makeFileName());
-				}
-				else
-				// add networklists to primary group
+				if (netlistGroup.equalsIgnoreCase("both")
+				 || (isSecondary && netlistGroup.equalsIgnoreCase("secondary"))
+				 || (!isSecondary && netlistGroup.equalsIgnoreCase("primary")))
 				{
-					if (netlistGroup.equalsIgnoreCase("primary") || netlistGroup.equalsIgnoreCase("both"))
+					if (nga.getNetlistName().toLowerCase().startsWith("source=")
+					 && nga.getNetlistName().length() > 7)
+					{
+						String t = nga.getNetlistName().substring(7);
+						int tn = DcpMsgFlag.sourceName2Value(t);
+						if (tn != -1)
+							searchCrit.addSource(tn);
+						else
+							Logger.instance().warning(module + " invalid source specified '"
+								+ nga.getNetlistName() + "'");
+					}
+					else if (nga.getNetworkList() != null)
 						searchCrit.addNetworkList(nga.getNetworkList().makeFileName());
 				}
 			}

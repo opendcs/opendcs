@@ -370,15 +370,15 @@ public class DdsRecvConnection
 	{
 		DdsRecvSettings settings = DdsRecvSettings.instance();
 		for(NetlistGroupAssoc nga : settings.getNetlistGroupAssociations())
-//		for(NetworkList netlist : settings.networkLists)
 		{
 			if (!TextUtil.strEqualIgnoreCase(nga.getGroupName(), group))
 				continue;
 			if (nga.getNetworkList() == null)
 			{
-				Logger.instance().warning(DdsRecv.module +
-					" No network list found for group=" + nga.getGroupName()
-					+ " list='" + nga.getNetlistName() + "' -- ignored.");
+				if (!nga.getNetlistName().toLowerCase().startsWith("source="))
+					Logger.instance().warning(DdsRecv.module +
+						" No network list found for group=" + nga.getGroupName()
+						+ " list='" + nga.getNetlistName() + "' -- ignored.");
 				continue;
 			}
 			try
