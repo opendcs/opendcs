@@ -8,13 +8,12 @@ import java.util.*;
 import java.text.SimpleDateFormat;
 
 import decodes.util.DecodesSettings;
-
+import decodes.util.DecodesVersion;
 import ilex.util.Logger;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
 import ilex.util.TextUtil;
 import ilex.cmdline.*;
-
 import lrgs.statusxml.LrgsStatusSnapshotExt;
 
 /**
@@ -109,6 +108,9 @@ public class LrgsMonitor
 		// This parses all args & sets up the logger & debug level.
 		LrgsMonCmdLineArgs cmdLineArgs = new LrgsMonCmdLineArgs();
 		cmdLineArgs.parseArgs(args);
+		
+		Logger.instance().info("LRGS Monitor Starting, OpenDCS Version "
+			+ DecodesVersion.startupTag());
 
 		// Instantiate & run my monitor.
 		LrgsMonitor mymonitor=new LrgsMonitor(
