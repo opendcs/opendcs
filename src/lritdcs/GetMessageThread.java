@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.4  2014/08/22 17:23:10  mmaloney
+* 6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 * Revision 1.3  2014/05/30 13:15:35  mmaloney
 * dev
 *
@@ -500,10 +503,13 @@ public class GetMessageThread
 			if (host1 != null && user1 != null)
 			{
 				DataSource dbds = new DataSource("dds1", "lrgs");
+				String pw = tryGetPassword(user1);
 				dbds.dataSourceArg =
 					"hostname=" + host1 + ", "
 					+ "port=" + port1 + ", "
 					+ "user=" + user1;
+				if (pw != null)
+					dbds.dataSourceArg = dbds.dataSourceArg + ", password=" + pw;
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}
@@ -511,10 +517,13 @@ public class GetMessageThread
 			if (host2 != null && user2 != null)
 			{
 				DataSource dbds = new DataSource("dds2", "lrgs");
+				String pw = tryGetPassword(user2);
 				dbds.dataSourceArg =
 					"hostname=" + host2 + ", "
 					+ "port=" + port2 + ", "
 					+ "user=" + user2;
+				if (pw != null)
+					dbds.dataSourceArg = dbds.dataSourceArg + ", password=" + pw;
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}
@@ -522,10 +531,13 @@ public class GetMessageThread
 			if (host3 != null && user3 != null)
 			{
 				DataSource dbds = new DataSource("dds3", "lrgs");
+				String pw = tryGetPassword(user3);
 				dbds.dataSourceArg =
 					"hostname=" + host3 + ", "
 					+ "port=" + port3 + ", "
 					+ "user=" + user3;
+				if (pw != null)
+					dbds.dataSourceArg = dbds.dataSourceArg + ", password=" + pw;
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}
@@ -564,6 +576,28 @@ public class GetMessageThread
 		catch(DataSourceException ex)
 		{
 			throw new DataSourceInitException(ex.toString());
+		}
+	}
+	
+	private String tryGetPassword(String username)
+	{
+		File authFile = new File(username + ".auth");
+		if (!authFile.canRead())
+		{
+			Logger.instance().debug1(authFile.getPath() + " does not exist.");
+			return null;
+		}
+		try
+		{
+			UserAuthFile uaf = new UserAuthFile(authFile);
+			uaf.read();
+			Logger.instance().debug1("Read password from " + authFile.getPath());
+			return uaf.getPassword();
+		}
+		catch(Exception ex)
+		{
+			Logger.instance().warning("Error reading auth file '" + authFile.getPath() + "': " + ex);
+			return null;
 		}
 	}
 }
