@@ -169,7 +169,8 @@ public class WebAbstractDataSource
 		{
 			DataSource dsrec = new DataSource("absWebReader", "web");
 			currentWebDs = (WebDataSource)dsrec.makeDelegate();
-			currentWebDs.processDataSource(); 
+			currentWebDs.processDataSource();
+			currentWebDs.setAllowNullPlatform(this.getAllowNullPlatform());
 		}
 		catch(InvalidDatabaseException ex) 
 		{
