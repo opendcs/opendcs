@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.3  2008/11/20 18:49:45  mjmaloney
 *  merge from usgs mods
 *
@@ -19,10 +22,10 @@
 package lrgs.lddc;
 
 import java.io.*;
+
 import ilex.util.*;
 import ilex.net.*;
 import ilex.cmdline.*;
-
 import lrgs.common.*;
 import lrgs.ldds.LddsParams;
 import lrgs.ldds.ProtocolError;
@@ -47,6 +50,9 @@ public class UsbrDrotFeed extends GetDcpMessages
 		Logger.instance().log(Logger.E_INFORMATION,
 			"Constructing client to " + usbrHost + ":" + usbrPort);
 		drotFeed = new BasicClient(usbrHost, usbrPort);
+		String passwd = passwordArg.getValue();
+		if (passwd != null && passwd.length() > 0)
+			setPassword(passwd);
 	}
 
 	/**
@@ -181,6 +187,9 @@ Logger.instance().log(Logger.E_DEBUG1, "UsbrDrotFeed.outputMessage");
 		usbrSettings.addToken(logArg);
 		usbrSettings.addToken(usbrHostArg);
 		usbrSettings.addToken(usbrPortArg);
+		passwordArg = new StringToken(
+			"w", "Password for auth connect", "", TokenOptions.optSwitch, "");
+		usbrSettings.addToken(passwordArg); //Inherited from GetDcpMessages
 	}
 
 	public static void main(String args[]) 
