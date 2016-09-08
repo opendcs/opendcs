@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.11  2016/05/05 15:51:03  mmaloney
+*  Added tooltip help for AggregateTimeOffset property.
+*
 *  Revision 1.10  2016/03/24 19:15:01  mmaloney
 *  Some refactoring to support Python. Also, the Mike Neilson fix for doubly-closed
 *  aggregate periods to prevent endless loop.
@@ -281,8 +284,14 @@ public abstract class AW_AlgorithmBase
 		for(String propName : getPropertyNames())
 			setCompProperty(cls, propName);
 				
-		initAWAlgorithm();
-
+		try { initAWAlgorithm(); }
+		catch(DbCompException ex) { throw ex; }
+		catch(Exception ex)
+		{
+			String msg = "Error initializing algorithm: " + ex;
+			warning(msg);
+			throw new DbCompException(msg);
+		}
 		// MJM 6/27/2010 - This has to be done after the concrete initAWAlgorithm
 		// so that _awAlgoType is set correctly:
 		
