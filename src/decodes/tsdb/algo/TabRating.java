@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2015/01/15 19:25:46  mmaloney
+ * RC01
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -112,8 +115,9 @@ public class TabRating
 	public boolean exceedUpperBound = false;
 	public String tableNameSuffix = ".tab";
 	String interp = "log"; // possibilities are log and linear
+	public String nametype = "";
 	public String _propertyNames[] = { "exceedLowerBound", "tableDir", "tableName", 
-			"exceedUpperBound", "tableNameSuffix", "interp" };
+			"exceedUpperBound", "tableNameSuffix", "interp", "nametype" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -142,7 +146,10 @@ public class TabRating
 		// Find the name for the input parameter.
 		if (tableName.length() == 0)
 		{
-			tableName = getSiteName("indep");
+			if (nametype != null && nametype.length() > 0)
+				tableName = getSiteName("indep", nametype);
+			else // No name type specified, use the siteNameTypePreference from Decodes Settings.
+				tableName = getSiteName("indep");
 			if (tableName == null)
 				throw new DbCompException("No site name for independent "
 					+ "variable with SDI=" + getSDI("indep"));
