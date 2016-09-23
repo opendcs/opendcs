@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.7  2016/03/24 19:12:14  mmaloney
+*  Refactoring for Python.
+*
 *  Revision 1.6  2016/01/27 22:02:08  mmaloney
 *  Fix for CWMS-7386 that occurs when MISSING=PREV used in conjunction with
 *  automatic deltas.
@@ -1288,7 +1291,8 @@ Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTi
 					{
 						if (varSec - prevSec > maxMissingTimeForFill)
 						{
-							warning("Missing time exceeded for role " + role);
+							warning("Missing time exceeded for role " + role
+								+ ", max=" + maxMissingTimeForFill + " secconds.");
 							continue nextBaseTime;
 						}
 
@@ -1296,7 +1300,8 @@ Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTi
 						 && (varSec-prevSec) / intvSecs 
 							> maxMissingValuesForFill)
 						{
-							warning("Missing time exceeded for role " + role);
+							warning("Missing time exceeded for role " + role
+								+ ", max=" + maxMissingTimeForFill + " secconds.");
 							continue nextBaseTime;
 						}
 
@@ -1321,7 +1326,9 @@ Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTi
 				
 						if (nextSec - prevSec > maxMissingTimeForFill)
 						{
-							warning("Missing time exceeded for role " + role);
+							warning("Missing time exceeded for role " + role
+								+ ", prevSec=" + prevSec + ", nextSec=" + nextSec
+								+ ", max=" + maxMissingTimeForFill + " secconds.");
 							continue nextBaseTime;
 						}
 
@@ -1329,7 +1336,11 @@ Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTi
 						 && (nextSec - prevSec) / intvSecs 
 							> maxMissingValuesForFill)
 						{
-							warning("Missing time exceeded for role " + role);
+							warning("Missing time exceeded for role " + role
+								+ ", prevSec=" + prevSec + ", nextSec=" + nextSec
+								+ ", intvSecs=" + intvSecs
+								+ ", max=" + maxMissingValuesForFill + " secconds.");
+
 							continue nextBaseTime;
 						}
 
