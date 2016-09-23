@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2010/08/17 04:39:05  gchen
 *  Fix the bug with using the logarithmic algorithm when one of two rating table points has zero values.
 *
@@ -25,6 +28,8 @@
 *
 */
 package decodes.comp;
+
+import ilex.util.Logger;
 
 import java.text.NumberFormat;
 import java.text.DecimalFormat;
@@ -100,16 +105,21 @@ public class LogInterp
 //Detect if there exists any overflow for (x1,y1) and (x2,y2) and
 //use linear algorithm if overFlowFlag is set as true.
 		overflowFlag = false;
-		if ((y1 <= 0) || (y2 <= 0) || (x1-off <= 0) || (x2-off <= 0)) {
+//		if ((y1 <= 0) || (y2 <= 0) || (x1-off <= 0) || (x2-off <= 0)) 
+		if ((y1 <= 0) || (y2 <= 0) || (x1 <= 0) || (x2 <= 0)) 
+		{
 			overflowFlag = true;
 		}
+Logger.instance().debug3("LogInterp(x1=" + x1 + ", y1=" + y1 + ", x2=" + x2 + ", y2=" 
++ y2 + " overflow=" + overflowFlag);
 
 		// Do as much computation as possible up front.
-		if (overflowFlag) {  //Using linear algorithm
+		if (overflowFlag) 
+		{
 			ly1 = y1;
 			rangeY = y2 - ly1;
-			lx1 = x1-off;
-			rangeX = x2-off - lx1;
+			lx1 = x1;
+			rangeX = x2 - lx1;
 		}
 		else {								//Using logarithmic algorithm
 			ly1 = Math.log(y1);
@@ -125,15 +135,21 @@ public class LogInterp
 	*/
 	public double getY(double x)
 	{
-    if (rangeX == 0) {
-    	System.out.println("Error: rangeX = 0. Check if the rating table file has the same value for x.");
-    	return -999999;
-    }
-		if (overflowFlag) {
-			return (ly1 + ((rangeY * (x-off) - lx1)) / rangeX);
+		if (rangeX == 0)
+		{
+			System.out.println("Error: rangeX = 0. Check if the rating table file has the same value for x.");
+			return -999999;
 		}
-		else {
-			return Math.exp(ly1 + (rangeY * (Math.log(x-off) - lx1)) / rangeX);
+		if (overflowFlag)
+		{
+//Logger.instance().debug3("getY overflow: ly1=" + ly1 + ", rangeY=" + rangeY + ", x=" + x + ", off=" + off
+//+ ", lx1=" + lx1 + ", rangeX=" + rangeX);
+			return ly1 + rangeY * ((x - lx1) / rangeX);
+		}
+		else
+		{
+//Logger.instance().debug3("getY: ly1=" + ly1 + ", rangeY=" + rangeY + ", x=" + x + ", log of=" + (x-off) + ", off=" + off + ", rangeX=" + rangeX);
+			return Math.exp(ly1 + (rangeY * (Math.log(x - off) - lx1)) / rangeX);
 		}
 	}
 

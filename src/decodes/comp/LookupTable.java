@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2016/03/24 18:59:20  mmaloney
+*  Refactor to have LookupTable implement HasLookupTable to facilitate Python Algorithm.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -48,6 +51,7 @@
 package decodes.comp;
 
 import decodes.comp.TableBoundsException;
+import ilex.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -175,11 +179,12 @@ public class LookupTable
 		// BinarySearch finds exact match or the insertion point.
 		int idx = Collections.binarySearch(points, new RatingPoint(indep, 0));
 
+//Logger.instance().debug3("binary search returned idx=" + idx + " for indep=" + indep);
 		if (idx >= 0) // exact match found.
 			return ((RatingPoint)points.get(idx)).dep;
 
 		idx = -(idx + 1);  // Convert negative index into insertion point.
-
+//Logger.instance().debug3("after convert negative idx=" + idx);
 		if (idx == 0 && !exceedLowerBound)
 			throw new TableBoundsException("Value " + indep 
 				+ " below all table values.");
@@ -187,10 +192,10 @@ public class LookupTable
 			throw new TableBoundsException("Value " + indep 
 				+ " above all table values.");
 
-
 		// Insertion point is 1st value > then indep, backup 1 to get lower.
 		if (idx > 0)
 			idx--;
+//Logger.instance().debug3("table point below indep is idx=" + idx);
 
 		if (lookupType == INTERP_TRUNC)
 		{
@@ -232,6 +237,7 @@ public class LookupTable
 		}
 		else if (lookupType == INTERP_LOG)
 		{
+//Logger.instance().debug3("interp idx=" + idx + ", lastIdx=" + lastTableIdx);
 			if (logInterp == null || idx != lastTableIdx)
 			{
 				lastTableIdx = idx;
@@ -240,19 +246,7 @@ public class LookupTable
 					idx--;
 				p0 = (RatingPoint)points.get(idx);
 				p1 = (RatingPoint)points.get(idx + 1);
-				if (p0.indep < 0 || p0.dep < 0)
-				{
-					// Can't do log of negative numbers. Revert to linear.
-					lookupType = INTERP_LINEAR;
-					double ret = lookup(indep);
-					lookupType = INTERP_LOG;
-					return ret;
-				}
 					
-if (debug)
-System.out.println("LogInterp(" + p0.indep + " -> " + p0.dep
-+ ", " + p1.indep + " -> " + p1.dep + " xoffset=" + xOffset);
-
 				logInterp = new LogInterp(p0.indep, p0.dep, p1.indep, p1.dep, xOffset);
 			}
 			return logInterp.getY(indep);
