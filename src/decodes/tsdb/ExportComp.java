@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.2  2015/03/19 18:05:07  mmaloney
+*  Set DecodesInterface.silent
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -316,10 +319,8 @@ public class ExportComp
 				  metadata.add(tsGrp);
 			}
 			
-System.err.println("Making CompXio object...");
 			CompXio cx = new CompXio("ExportComp", theDb);
 			String fn = xmlFileArg.getValue(0);
-System.err.println("Calling write file to " + fn);
 			cx.writeFile(metadata, fn);
 		}
 		catch(Exception ex)
