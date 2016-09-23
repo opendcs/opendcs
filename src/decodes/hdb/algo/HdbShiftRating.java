@@ -16,6 +16,7 @@ import decodes.sql.DbKey;
 
 //AW:IMPORTS
 import decodes.tsdb.RatingStatus;
+import decodes.util.PropertySpec;
 import decodes.hdb.HDBRatingTable;
 //AW:IMPORTS_END
 
@@ -66,8 +67,27 @@ public class HdbShiftRating
 	public double singleShift = 0;
 	public boolean variableShift = false;
 	public String shiftTableType = "Stage Shift";
-	String _propertyNames[] = { "variableShift", "singleShift", "shiftTableType" };
+	public String lookupTableType = "Stage Flow";
+	String _propertyNames[] = { "variableShift", "singleShift", "shiftTableType", "lookupTableType" };
 //AW:PROPERTIES_END
+	
+	private PropertySpec shiftRatingPropertySpecs[] = 
+	{
+		new PropertySpec("singleShift", PropertySpec.NUMBER,
+			"(default=0) If variableShift==false, then this number provides a constant shift for all lookups."),
+		new PropertySpec("variableShift", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to use a separate shift table rather than the constant."),
+		new PropertySpec("shiftTableType", PropertySpec.STRING,
+			"(default=\"StageShift\") This is used as the HDB_TABLE type for the variable shifts."),
+		new PropertySpec("lookupTableType", PropertySpec.STRING,
+			"(default=\"Stage Flow\") This is used as the HDB_TABLE type for the actual rating.")
+	};
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return shiftRatingPropertySpecs;
+	}
+
 
 	// Allow javac to generate a no-args constructor.
 
@@ -88,12 +108,10 @@ public class HdbShiftRating
 // this line was moded by M. Bogner March 2013 for the 5.3 CP upgrade project
 // because the surrogate keys in the CP were changed to an object
 		DbKey indep_sdi = getSDI("indep");
-		debug3("Constructing Shift and Rating tables for sdi " +
-				indep_sdi
-				);
+		debug3("Constructing Shift and Rating tables for sdi " + indep_sdi);
 		//default non extrapolation of lookups is fine here.
 		ShiftTable = new HDBRatingTable(tsdb,shiftTableType,indep_sdi);
-		RatingTable = new HDBRatingTable(tsdb,"Stage Flow",indep_sdi);
+		RatingTable = new HDBRatingTable(tsdb,lookupTableType,indep_sdi);
 //AW:USERINIT_END
 	}
 	
