@@ -19,7 +19,9 @@ import decodes.tsdb.VarFlags;
 
 //AW:IMPORTS
 import decodes.tsdb.RatingStatus;
+import decodes.util.PropertySpec;
 import decodes.hdb.HDBRatingTable;
+
 import java.util.Date;
 //AW:IMPORTS_END
 
@@ -54,6 +56,24 @@ public class HdbRating
 
 //AW:LOCALVARS
 	HDBRatingTable ratingTable = null;
+	private PropertySpec ratingPropertySpecs[] = 
+	{
+		new PropertySpec("exceedLowerBound", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to allow rating to interpolate below the lowest table value."),
+		new PropertySpec("exceedUpperBound", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to allow rating to interpolate above the highest table value."),
+		new PropertySpec("ratingType", PropertySpec.STRING,
+			"(default=\"Shift Adjusted Stage Flow\") This is used as the HDB_TABLE type for the rating."),
+		new PropertySpec("applyShifts", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to use a add the 'shift' property value before table lookup."),
+		new PropertySpec("shift", PropertySpec.NUMBER,
+			"(default=0) Constant shift for all lookups.")
+	};
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return ratingPropertySpecs;
+	}
 
 //AW:LOCALVARS_END
 
@@ -71,6 +91,7 @@ public class HdbRating
 	String _propertyNames[] = { "exceedLowerBound", "ratingType", "exceedUpperBound", "applyShifts", "shift" };
 //AW:PROPERTIES_END
 
+	
 	// Allow javac to generate a no-args constructor.
 
 	/**
