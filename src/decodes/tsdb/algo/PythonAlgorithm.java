@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2016/04/22 14:28:49  mmaloney
+ * Parse AlgorithmType from Init Script before executing.
+ *
  * Revision 1.2  2016/03/24 19:16:06  mmaloney
  * Added for Python Algorithm
  *
@@ -240,14 +243,21 @@ public class PythonAlgorithm
 	public void firstBeforeTimeSlices()
 		throws DbCompException
 	{
-		// Python algorithms must manage their own MISSING actions.
-		if (tracer == null)
-			for(String roleName : this.getInputNames())
-			{
-				ParmRef parmRef = this.getParmRef(roleName);
-				parmRef.setMissingAction(MissingAction.IGNORE);
-debug3("Missing action for '" + roleName + "' set to " + parmRef.missingAction);
-			}
+		// Python algorithms have special behavior for MISSING actions.
+		// The default missing action for python should be IGNORE. This allows a multi-step
+		// computation to run when intermediate products do not yet exist. The algorithm
+		// can use the isPresent method to control execution of dependent blocks of code.
+		// So, set the Missing Action to ignore unless there is an explicit property setting
+		// to something else.
+		for(String roleName : this.getInputNames())
+		{
+			ParmRef parmRef = this.getParmRef(roleName);
+			
+			String missingPropval = comp.getProperty(roleName + "_MISSING");
+				if (missingPropval == null)
+					parmRef.setMissingAction(MissingAction.IGNORE);
+debug3("Missing action for '" + roleName + "' now set to " + parmRef.missingAction);
+		}
 		
 		// Instantiate the PythonInterpreter
 		debug3("... Creating PythonInterpreter");
