@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.8  2015/05/14 13:52:18  mmaloney
+*  RC08 prep
+*
 *  Revision 1.7  2015/02/06 18:56:59  mmaloney
 *  Added appMinDebugLevel
 *
@@ -345,6 +348,11 @@ public abstract class TsdbAppTemplate
 	public void tryConnect()
 		throws BadConnectException
 	{
+		if (theDb.isConnected())
+		{
+			warning("Closing connection before reconnect.");
+			theDb.closeConnection();
+		}
 		Properties credentials = new Properties();
 		String nm = appNameArg.getValue();
 		if (!DecodesInterface.isGUI() || !theDb.isCwms())
