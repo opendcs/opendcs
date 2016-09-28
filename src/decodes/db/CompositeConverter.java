@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2015/07/17 13:24:22  mmaloney
+*  When building composite converter, use equals() method when comparing EU abbrevs.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -140,7 +143,7 @@ public class CompositeConverter extends UnitConverter
 			+ to);
 
 		resetSearchedFlags();
-		Stack callStack = new Stack();
+		Stack<UnitConverter> callStack = new Stack<UnitConverter>();
 		Vector solutions = new Vector();
 		recursiveSearch(from, to, callStack, solutions);
 		UnitConverter best = null;
@@ -159,7 +162,7 @@ public class CompositeConverter extends UnitConverter
 	}
 
 	private static void recursiveSearch(EngineeringUnit from, 
-		EngineeringUnit to, Stack callStack, Vector solutions)
+		EngineeringUnit to, Stack<UnitConverter> callStack, Vector solutions)
 	{
 		from.cnvtSearched = true;
 
@@ -173,8 +176,7 @@ public class CompositeConverter extends UnitConverter
 			{
 				callStack.push(uc);
 				CompositeConverter cc = new CompositeConverter(
-					((UnitConverter)callStack.elementAt(0)).getFrom(),
-					to, new Vector(callStack));
+					(callStack.elementAt(0)).getFrom(), to, new Vector(callStack));
 				solutions.add(cc);
 				callStack.pop();
 				return;
@@ -198,11 +200,18 @@ public class CompositeConverter extends UnitConverter
 
 	private static void resetSearchedFlags()
 	{
-		for(Iterator it = Database.getDb().engineeringUnitList.iterator();
+		for(Iterator<EngineeringUnit> it = Database.getDb().engineeringUnitList.iterator();
 			it.hasNext(); )
 		{
-			EngineeringUnit eu = (EngineeringUnit)it.next();
+			EngineeringUnit eu = it.next();
 			eu.cnvtSearched = false;
 		}
+   		for (Iterator<UnitConverter> it = Database.getDb().unitConverterSet.iteratorExec();
+   			it.hasNext(); )
+   		{
+   			UnitConverter uc = it.next();
+            uc.getFrom().cnvtSearched = false;
+            uc.getTo().cnvtSearched = false;
+   		}
 	}
 }
