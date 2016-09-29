@@ -1,6 +1,21 @@
+/*
+ * $Id$
+ * 
+ * $Log$
+ * 
+ * This software was written by Cove Software, LLC ("COVE") under contract 
+ * to the United States Government. 
+ * 
+ * No warranty is provided or implied other than specific contractual terms
+ * between COVE and the U.S. Government
+ * 
+ * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * All rights reserved.
+ */
 package decodes.cwms.rating;
 
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
@@ -12,43 +27,49 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 
+import opendcs.dao.DaoBase;
 import decodes.cwms.BadRatingException;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbDao;
-
 import hec.data.RatingException;
 import hec.data.cwmsRating.AbstractRating;
 import hec.data.cwmsRating.RatingSet;
 
 
-public class CwmsRatingDao extends TsdbDao
+public class CwmsRatingDao extends DaoBase
 {
 	public static final String module = "CwmsRatingDao";
 	public static final String cwms_v_rating_columns =
 		"RATING_CODE, RATING_ID, EFFECTIVE_DATE, CREATE_DATE, ACTIVE_FLAG";
+	public static final String numPointsQ = "select count(*) from cwms_v_rating_values a, "
+		+ "cwms_v_rating b where a.RATING_CODE = b.RATING_CODE and upper(b.RATING_ID) = ";
 	
 	private String officeId = null;
 	
 	class RatingWrapper
 	{
 		Date timeLoaded = null;
+		int numPoints = -1;
 		Date lastTimeUsed = null;
 		RatingSet ratingSet = null;
-		RatingWrapper(Date timeLoaded, RatingSet ratingSet, Date lastTimeUsed)
+		RatingWrapper(Date timeLoaded, RatingSet ratingSet, Date lastTimeUsed, int numPoints)
 		{
 			this.timeLoaded = timeLoaded;
 			this.ratingSet = ratingSet;
 			this.lastTimeUsed = lastTimeUsed;
+			this.numPoints = numPoints;
 		}
 	}
 	static HashMap<String, RatingWrapper> ratingCache = new HashMap<String, RatingWrapper>();
 	public static final int MAX_CACHED = 400;
+	// Ratings older than this in the cache are discarded.
+	private long MAX_AGE_MSEC = 9 * 3600000L;
 	
 	public CwmsRatingDao(CwmsTimeSeriesDb tsdb)
 	{
-		super(tsdb);
+		super(tsdb, "CwmsRatingDao");
 		officeId = tsdb.getDbOfficeId();
 	}
 	
@@ -61,8 +82,8 @@ public class CwmsRatingDao extends TsdbDao
 		throws SQLException, BadRatingException
 	{
 		return new CwmsRatingRef(DbKey.createDbKey(rs, 1), officeId,
-			rs.getString(2), tsdb.getFullDate(rs, 3),
-			tsdb.getFullDate(rs, 4), tsdb.getBoolean(rs, 5));
+			rs.getString(2), db.getFullDate(rs, 3),
+			db.getFullDate(rs, 4), TextUtil.str2boolean(rs.getString(5)));
 	}
 	
 	/**
@@ -75,17 +96,17 @@ public class CwmsRatingDao extends TsdbDao
 	List<CwmsRatingRef> listRatings(String locationId)
 		throws DbIoException
 	{
-		String officeId = ((CwmsTimeSeriesDb)tsdb).getDbOfficeId();
+		String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
 		String q = "select distinct " + cwms_v_rating_columns
 			+ " from CWMS_V_RATING"
-			+ " where upper(OFFICE_ID) = " + tsdb.sqlString(officeId.toUpperCase());
+			+ " where upper(OFFICE_ID) = " + sqlString(officeId.toUpperCase());
 		if (locationId != null)
-			q = q + " and upper(LOCATION_ID) = " + tsdb.sqlString(locationId.toUpperCase());
+			q = q + " and upper(LOCATION_ID) = " + sqlString(locationId.toUpperCase());
 		
 		ArrayList<CwmsRatingRef> ret = new ArrayList<CwmsRatingRef>();
 
 		ResultSet rs;
-		rs = tsdb.doQuery(q);
+		rs = doQuery(q);
 		try
 		{
 			while(rs != null && rs.next())
@@ -96,7 +117,7 @@ public class CwmsRatingDao extends TsdbDao
 				}
 				catch(BadRatingException ex)
 				{
-					tsdb.warning("Bad Rating: " + ex + " -- skipped.");
+					warning("Bad Rating: " + ex + " -- skipped.");
 				}
 			}
 		}
@@ -114,8 +135,8 @@ public class CwmsRatingDao extends TsdbDao
 	public void deleteRating(CwmsRatingRef crr)
 		throws RatingException
 	{
-		RatingSet ratingSet = RatingSet.fromDatabase(tsdb.getConnection(), 
-			((CwmsTimeSeriesDb)tsdb).getDbOfficeId(),
+		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), 
+			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 			crr.getRatingSpecId());
 		if(ratingSet.getRatingCount() <= 1)
 		{
@@ -134,7 +155,7 @@ public class CwmsRatingDao extends TsdbDao
 		String doing = "prepare call";
 		try
 		{
-			cstmt = tsdb.getConnection().prepareCall(q);
+			cstmt = db.getConnection().prepareCall(q);
 			doing = "set params for";
 			cstmt.setString(1, crr.getRatingSpecId());
 			cstmt.setString(2, sdf.format(crr.getEffectiveDate()));
@@ -166,7 +187,7 @@ public class CwmsRatingDao extends TsdbDao
 		String doing = "prepare call";
 		try
 		{
-			cstmt = tsdb.getConnection().prepareCall(q);
+			cstmt = db.getConnection().prepareCall(q);
 			doing = "set params for";
 			cstmt.setString(1, crr.getRatingSpecId()); 
 			cstmt.setString(2, crr.getOfficeId());
@@ -194,7 +215,7 @@ public class CwmsRatingDao extends TsdbDao
 	public String toXmlString(CwmsRatingRef crr, boolean allInSpec)
 		throws RatingException
 	{
-		String officeId = ((CwmsTimeSeriesDb)tsdb).getDbOfficeId();
+//		String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
 		String specId = crr.getRatingSpecId();
 		RatingSet ratingSet = getRatingSet(specId);
 		if (!allInSpec)
@@ -264,7 +285,7 @@ public class CwmsRatingDao extends TsdbDao
 		}
 
 		Logger.instance().debug3(module + " calling storeToDatabase");
-		newSet.storeToDatabase(tsdb.getConnection(), true);
+		newSet.storeToDatabase(db.getConnection(), true);
 	}
 	
 	public RatingSet getRatingSet(String specId)
@@ -272,19 +293,20 @@ public class CwmsRatingDao extends TsdbDao
 	{
 		// Internally use specId all in upper case.
 		String ucSpecId = specId.toUpperCase();
-		String officeId = ((CwmsTimeSeriesDb)tsdb).getDbOfficeId();
+		String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
 		
 		RatingWrapper rw = ratingCache.get(ucSpecId);
 		if (rw != null)
 		{
-			// If it's in cache and hasn't been modified in DB, just return it.
-			Date lastUpdate = getRatingLastUpdateTime(specId);
-			if (lastUpdate != null && rw.timeLoaded.after(lastUpdate))
+			// If # points has not changed and not too old in the cache, use it.
+			int numPoints = getNumRatingPoints(ucSpecId);
+			if (numPoints == rw.numPoints
+			 && System.currentTimeMillis() - rw.timeLoaded.getTime() < MAX_AGE_MSEC)
 			{
 				rw.lastTimeUsed = new Date();
 				Logger.instance().debug3(module + " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
-					+ rw.timeLoaded);
+					+ rw.timeLoaded + ", and has a total of " + numPoints + " rating points.");
 				return rw.ratingSet;
 			}
 		}
@@ -310,49 +332,57 @@ public class CwmsRatingDao extends TsdbDao
 				ratingCache.remove(oldestSpec);
 			}
 		}
-		
+
+		int numPoints = getNumRatingPoints(ucSpecId);
+		if (numPoints == 0)
+			throw new RatingException("Rating set '" + specId + "' has no rating points.");
+
 		Logger.instance().debug3(module + " calling RatingSet.fromDatabase with officeId=" 
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
 //RatingSet.setAlwaysAllowUnsafe(false);
-		RatingSet ratingSet = RatingSet.fromDatabase(tsdb.getConnection(),
+		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(),
 			officeId, specId);
-		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
+
+		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded, numPoints));
+		
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
 		return ratingSet;
 	}
-	
-	/**
-	 * Query the database to determine the last time a rating was created
-	 * for this spec.
-	 * @param specId the spec ID
-	 * @return the date/time of the last rating object for this spec.
-	 */
-	public Date getRatingLastUpdateTime(String specId)
-	{
-		String q = "select max(create_date) from cwms_v_rating where rating_id = "
-			+ tsdb.sqlString(specId);
-		
-		try
-		{
-			ResultSet rs = tsdb.doQuery(q);
-			if (rs != null && rs.next())
-				return tsdb.getFullDate(rs, 1);
-			Logger.instance().warning(module + " No results in getRatingLastUpdateTime for '"
-				+ specId + "'");
-		}
-		catch (Exception ex)
-		{
-			String msg = module + " Error in getRatingLastUpdateTime for '"
-				+ specId + "': " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-		}
-		return null;
-	}
+
+//	Note: create_date does not change when a rating is modified.
+//  This logic was replaced by using # rating points to detect change.
+//	/**
+//	 * Query the database to determine the last time a rating was created
+//	 * for this spec.
+//	 * @param specId the spec ID
+//	 * @return the date/time of the last rating object for this spec.
+//	 */
+//	private Date getRatingLastUpdateTime(String specId)
+//	{
+//		String q = "select max(create_date) from cwms_v_rating where rating_id = "
+//			+ sqlString(specId);
+//		
+//		try
+//		{
+//			ResultSet rs = doQuery(q);
+//			if (rs != null && rs.next())
+//				return db.getFullDate(rs, 1);
+//			Logger.instance().warning(module + " No results in getRatingLastUpdateTime for '"
+//				+ specId + "'");
+//		}
+//		catch (Exception ex)
+//		{
+//			String msg = module + " Error in getRatingLastUpdateTime for '"
+//				+ specId + "': " + ex;
+//			Logger.instance().warning(msg);
+//			System.err.println(msg);
+//			ex.printStackTrace(System.err);
+//		}
+//		return null;
+//	}
 	
 	/**
 	 * As per Mike Perryman's email 1/11/16, the 'from' time for fromDatabase must be the
@@ -364,11 +394,11 @@ public class CwmsRatingDao extends TsdbDao
 	{
 		String q = "select cwms_util.to_millis(max(effective_date)) "
 			+ "  from cwms_v_rating "
-			+ " where lower(rating_id) = " + tsdb.sqlString(ratingId)
+			+ " where lower(rating_id) = " + sqlString(ratingId)
 			+ "   and effective_date <= cwms_util.to_timestamp(" + dataTime + ")";
 		try
 		{
-			ResultSet rs = tsdb.doQuery(q);
+			ResultSet rs = doQuery(q);
 			if (!rs.next())
 				return -1L;
 			return rs.getLong(1);
@@ -378,6 +408,29 @@ public class CwmsRatingDao extends TsdbDao
 			Logger.instance().warning(module + " getEffectiveDateFor(" + ratingId
 				+ ", " + dataTime + ": " + ex);
 			return -1;
+		}
+	}
+	
+	/**
+	 * Used as a check to detect rating changes.
+	 * @param ratingId
+	 * @return
+	 */
+	private int getNumRatingPoints(String ratingId)
+	{
+		String q = numPointsQ + sqlString(ratingId);
+		try
+		{
+			
+			ResultSet rs = doQuery(q);
+			if (!rs.next())
+				return 0;
+			return rs.getInt(1);
+		}
+		catch (Exception ex)
+		{
+			warning("Cannot determine number of rating points q=" + q);
+			return 0;
 		}
 	}
 

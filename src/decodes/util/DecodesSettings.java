@@ -2,6 +2,10 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.16  2016/08/05 14:45:20  mmaloney
+*  cwmsVersionOverride to account for the fact that on some versions of CWMS there is no
+*  reliable programmatic way to determine CWMS 2.1 vs CWMS 3.
+*
 *  Revision 1.15  2016/07/21 18:13:17  mmaloney
 *  Added Platform Monitor and Routing Monitor buttons to launcher.
 *
@@ -622,7 +626,7 @@ public class DecodesSettings
 	 * Default constructor.  This initializes all of the settings
 	 * to their defaults.
 	 */
-	private DecodesSettings()
+	public DecodesSettings()
 	{
 	}
 

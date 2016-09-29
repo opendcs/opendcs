@@ -1,12 +1,21 @@
 /**
  * $Id$
  * 
- * Open Source Software
- * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.4  2013/03/21 18:27:40  mmaloney
  * DbKey Implementation
  *
+ * This software was written by Cove Software, LLC ("COVE") under contract 
+ * to the United States Government. 
+ * 
+ * No warranty is provided or implied other than specific contractual terms
+ * between COVE and the U.S. Government
+ * 
+ * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * All rights reserved.
  */
 package decodes.cwms.rating;
 

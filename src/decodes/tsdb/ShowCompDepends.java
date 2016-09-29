@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2016/09/23 15:56:20  mmaloney
+ * Add -f appname argument.
+ *
  * Revision 1.5  2016/06/07 22:00:51  mmaloney
  * Refactoring for efficiency, particularly with HDB.
  *
@@ -138,7 +141,7 @@ public class ShowCompDepends extends TsdbAppTemplate
 		db.siteList.read();
 	}
 
-	private void info(String x)
+	public void info(String x)
 	{
 		Logger.instance().info("ShowCompDepends: " + x);
 	}

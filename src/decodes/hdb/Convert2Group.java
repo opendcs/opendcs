@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.2  2014/08/22 17:23:09  mmaloney
+*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -258,7 +261,7 @@ public class Convert2Group
 			reportPS.print("    ");
 		reportPS.println(msg);
 	}
-	private void info(String x)
+	public void info(String x)
 	{
 		Logger.instance().info(compName + " " + x);
 	}

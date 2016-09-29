@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2016/01/13 15:15:04  mmaloney
+ * rating retrieval
+ *
  * Revision 1.5  2015/07/14 17:53:54  mmaloney
  * Added 'useDepLocation' property with default=false.
  * Set to true to use the dep param location for building rating spec.
@@ -43,7 +46,14 @@
  * Revision 1.1  2012/11/09 21:06:20  mmaloney
  * Checked in Rating Algorithms.
  *
- *
+ * This software was written by Cove Software, LLC ("COVE") under contract 
+ * to the United States Government. 
+ * 
+ * No warranty is provided or implied other than specific contractual terms
+ * between COVE and the U.S. Government
+ * 
+ * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * All rights reserved.
  */
 package decodes.cwms.rating;
 

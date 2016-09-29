@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2016/01/27 21:37:09  mmaloney
+*  schedule_entry_status and dacq_event have their own sequences.
+*
 *  Revision 1.2  2015/12/02 21:13:12  mmaloney
 *  Overload new reset() method to do nothing. CWMS sequence is never reset.
 *
@@ -23,6 +26,14 @@
 *  Revision 1.1  2011/09/20 15:56:50  mmaloney
 *  created - gang to finish.
 *
+ * This software was written by Cove Software, LLC ("COVE") under contract 
+ * to the United States Government. 
+ * 
+ * No warranty is provided or implied other than specific contractual terms
+ * between COVE and the U.S. Government
+ * 
+ * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * All rights reserved.
 */
 package decodes.cwms;
 

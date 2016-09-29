@@ -1,9 +1,10 @@
 /**
  * $Id$
  * 
- * Open Source Software
- * 
  * $Log$
+ * Revision 1.2  2015/10/26 12:49:24  mmaloney
+ * compareTo method must compare TSID not public name.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -38,6 +39,14 @@
  * Revision 1.9  2011/02/02 20:42:28  mmaloney
  * bug fixes
  *
+ * This software was written by Cove Software, LLC ("COVE") under contract 
+ * to the United States Government. 
+ * 
+ * No warranty is provided or implied other than specific contractual terms
+ * between COVE and the U.S. Government
+ * 
+ * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * All rights reserved.
  */
 package decodes.cwms;
 

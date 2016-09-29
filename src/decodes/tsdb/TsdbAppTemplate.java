@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.9  2016/09/28 15:14:04  mmaloney
+*  Fail safe code for daemons to close before attempting to reconnect.
+*
 *  Revision 1.8  2015/05/14 13:52:18  mmaloney
 *  RC08 prep
 *
@@ -43,9 +46,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
+import opendcs.dai.LoadingAppDAI;
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.util.StderrLogger;
 import ilex.util.UserAuthFile;
 import ilex.util.AuthException;
@@ -375,6 +380,32 @@ public abstract class TsdbAppTemplate
 		// Leave the property set empty.
 		
 		appId = theDb.connect(nm, credentials);
+		
+		// CWMS-8979 Allow settings in the database to override values in user.properties.
+		String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
+		if (settingsApp != null)
+		{
+			info("Overriding Decodes Settings with properties in Process Record '" + settingsApp + "'");
+			LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+			try
+			{
+				CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+				PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+			}
+			catch (DbIoException ex)
+			{
+				warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+			}
+			catch (NoSuchObjectException ex)
+			{
+				warning("Cannot load settings from non-existent app '" + settingsApp + "': " + ex);
+			}
+			finally
+			{
+				loadingAppDAO.close();
+			}
+			
+		}
 	}
 
 	/**
@@ -418,6 +449,15 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 		theDb = null;
 	}
 	
+	/**
+	 * Convenience method to log warning with app name prefix.
+	 * @param msg the message
+	 */
+	public void info(String msg)
+	{
+		Logger.instance().info(appNameArg.getValue() + " " + msg);
+	}
+
 	/**
 	 * Convenience method to log warning with app name prefix.
 	 * @param msg the message

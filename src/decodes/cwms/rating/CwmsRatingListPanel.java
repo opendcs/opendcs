@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.6  2012/11/12 18:59:48  mmaloney
  * refresh after delete
  *
@@ -20,7 +23,15 @@
  *
  * Revision 1.1  2012/10/30 01:59:27  mmaloney
  * First cut of rating GUI.
- *
+ * 
+ * This software was written by Cove Software, LLC ("COVE") under contract 
+ * to the United States Government. 
+ * 
+ * No warranty is provided or implied other than specific contractual terms
+ * between COVE and the U.S. Government
+ * 
+ * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * All rights reserved.
  */
 package decodes.cwms.rating;
 

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2016/06/07 22:02:17  mmaloney
+ * app name defaults to "utility" this is necessary for HDB.
+ *
  * Revision 1.5  2015/05/14 13:52:18  mmaloney
  * RC08 prep
  *
@@ -398,7 +401,7 @@ ex2.printStackTrace();
 		app.execute(args);
 	}
 	
-	private void info(String msg)
+	public void info(String msg)
 	{
 		Logger.instance().info(module + " " + msg);
 	}

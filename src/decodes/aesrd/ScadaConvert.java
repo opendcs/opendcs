@@ -565,7 +565,7 @@ public class ScadaConvert
 		theApp.execute(args);
 	}
 
-	private void info(String msg)
+	public void info(String msg)
 	{
 		Logger.instance().info(module + " " + msg);
 	}

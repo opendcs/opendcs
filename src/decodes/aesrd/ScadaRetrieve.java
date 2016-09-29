@@ -825,7 +825,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		theApp.execute(args);
 	}
 
-	private void info(String msg)
+	public void info(String msg)
 	{
 		Logger.instance().info(module + " " + msg);
 	}

@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.4  2016/06/27 15:27:05  mmaloney
+*  Have to read data types as part of decodes init.
+*
 *  Revision 1.3  2014/12/19 19:24:58  mmaloney
 *  Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
 *
@@ -356,10 +359,6 @@ public class CpCompDependsUpdater
 		app.execute(args);
 	}
 
-	private void info(String x)
-	{
-		Logger.instance().info("CompDependsUpdater(" + appId + "): " + x);
-	}
 	private void debug(String x)
 	{
 		Logger.instance().debug3("CompDependsUpdater(" + appId + "): " + x);

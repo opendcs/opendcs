@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2016/06/07 21:27:29  mmaloney
+ * fillCache made public to allow it to be called from ts DAO.
+ *
  * Revision 1.8  2016/01/27 21:38:52  mmaloney
  * Removed unneeded debugs.
  *
@@ -26,6 +29,14 @@
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
+ * This software was written by Cove Software, LLC ("COVE") under contract 
+ * to the United States Government. 
+ * 
+ * No warranty is provided or implied other than specific contractual terms
+ * between COVE and the U.S. Government
+ * 
+ * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * All rights reserved.
  */
 package decodes.cwms;
 

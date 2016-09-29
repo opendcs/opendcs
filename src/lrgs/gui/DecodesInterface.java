@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.10  2015/07/28 16:33:28  mmaloney
+*  Removed obsolete files.
+*
 *  Revision 1.9  2015/01/24 13:51:59  mmaloney
 *  Preload configs before platforms in initializeForDecoding(). Otherwise, each platform read has to read the config individually, which is MUCH slower.
 *
@@ -484,6 +487,7 @@ public class DecodesInterface
 	 */
 	public static void shutdownDecodes()
 	{
+		Logger.instance().info("Shutting down Decodes Connection.");
 		Database db = Database.getDb();
 		if (db != null)
 		{
