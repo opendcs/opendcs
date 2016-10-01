@@ -185,9 +185,11 @@ public class DecodesDbEditor
 		db.networkListList.read();
 		//db.eqTableList.read();
 		System.out.println("Database initialized.");
+		
+		
 
-		fixObjectReferences(db);
-
+//		fixObjectReferences(db);
+//
 		//This flag is used to turn on or off some of the pop ups - specially
 		//the ones on the Decoding Scripts
 		String onOffPopUps = turnOnOffPopUps.getValue();
@@ -207,55 +209,55 @@ public class DecodesDbEditor
 		return theFrame;
 	}
 
-	/**
-	 * Establishes and/or consolidates object references depending on the
-	 * type of database interface that was used.
-	 * @deprecated this method currently does nothing.
-	 */
-	private static void fixObjectReferences(Database db)
-	{
-		if (db.getDbIo().getDatabaseType().equalsIgnoreCase("SQL"))
-		{
-			// TODO - for SQL may need to use key relations to establish
-			// references
-			return;
-		}
-		else // XML database
-		{
-			// Platform objects contain a copy of configurations. Replace
-			// these with references to the configs stored in the config
-			// list.
-			// While doing this, update the platform counts in the configs.
-/*
-			for(Iterator it = db.platformList.iterator(); it.hasNext(); )
-			{
-				// If config in platform has same name as a config in the
-				// list, replace the platform's copy with the one in the
-				// list. Else, add the platform's config to the list.
-				Platform p = (Platform)it.next();
-				PlatformConfig pc = p.platformConfig;
-				if (pc != null)
-				{
-					PlatformConfig listpc =
-						db.platformConfigList.get(pc.configName);
-					if (listpc != null)
-					{
-//System.out.println("# Script from Platform's pc = " + pc.decodesScripts.size());
-//System.out.println("# Script from PlatformConfig rec = " + listpc.decodesScripts.size());
-
-						p.platformConfig = listpc;
-						listpc.numPlatformsUsing++;
-					}
-					else
-					{
-						db.platformConfigList.add(pc);
-						pc.numPlatformsUsing = 1;
-					}
-				}
-			}
-*/
-		}
-
-
-	}
+//	/**
+//	 * Establishes and/or consolidates object references depending on the
+//	 * type of database interface that was used.
+//	 * @deprecated this method currently does nothing.
+//	 */
+//	private static void fixObjectReferences(Database db)
+//	{
+//		if (db.getDbIo().getDatabaseType().equalsIgnoreCase("SQL"))
+//		{
+//			// TODO - for SQL may need to use key relations to establish
+//			// references
+//			return;
+//		}
+//		else // XML database
+//		{
+//			// Platform objects contain a copy of configurations. Replace
+//			// these with references to the configs stored in the config
+//			// list.
+//			// While doing this, update the platform counts in the configs.
+///*
+//			for(Iterator it = db.platformList.iterator(); it.hasNext(); )
+//			{
+//				// If config in platform has same name as a config in the
+//				// list, replace the platform's copy with the one in the
+//				// list. Else, add the platform's config to the list.
+//				Platform p = (Platform)it.next();
+//				PlatformConfig pc = p.platformConfig;
+//				if (pc != null)
+//				{
+//					PlatformConfig listpc =
+//						db.platformConfigList.get(pc.configName);
+//					if (listpc != null)
+//					{
+////System.out.println("# Script from Platform's pc = " + pc.decodesScripts.size());
+////System.out.println("# Script from PlatformConfig rec = " + listpc.decodesScripts.size());
+//
+//						p.platformConfig = listpc;
+//						listpc.numPlatformsUsing++;
+//					}
+//					else
+//					{
+//						db.platformConfigList.add(pc);
+//						pc.numPlatformsUsing = 1;
+//					}
+//				}
+//			}
+//*/
+//		}
+//
+//
+//	}
 }
