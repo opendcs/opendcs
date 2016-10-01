@@ -4,6 +4,10 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.8  2016/03/24 19:08:18  mmaloney
+ * Refactor: Have expandSDI return the TimeSeriesID that it uses. This saves the caller from
+ * having to re-look it up. Needed for PythonAlgorithm.
+ *
  * Revision 1.7  2015/11/12 15:22:13  mmaloney
  * Added makeScreeningDAO method.
  *
@@ -85,10 +89,12 @@ import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
 import ilex.util.Counter;
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.util.UserAuthFile;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;

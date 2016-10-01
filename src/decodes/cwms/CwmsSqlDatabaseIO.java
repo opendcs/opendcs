@@ -20,19 +20,22 @@ import java.util.ArrayList;
 import java.util.TimeZone;
 
 import opendcs.dai.IntervalDAI;
+import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.opentsdb.OpenTsdbIntervalDAO;
-
 import lrgs.gui.DecodesInterface;
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
-
 import decodes.db.*;
 import decodes.sql.DbKey;
 import decodes.sql.SqlDatabaseIO;
 import decodes.sql.SqlDbObjIo;
+import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.DecodesSettings;
 
@@ -289,6 +292,34 @@ officePrivileges.size());
 			" Connected to DECODES CWMS " + cwmsSchemaVersion 
 			+ " Database " + sqlDbLocation + " as user " + _dbUser
 			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + dbOfficeCode + ")");
+		
+		// CWMS-8979 Allow settings in the database to override values in user.properties.
+		String settingsApp = System.getProperty("SETTINGS");
+		if (settingsApp != null)
+		{
+			Logger.instance().info("SqlDatabaseIO Overriding Decodes Settings with properties in "
+				+ "Process Record '" + settingsApp + "'");
+			LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
+			try
+			{
+				CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+				PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+			}
+			catch (DbIoException ex)
+			{
+				Logger.instance().warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+			}
+			catch (NoSuchObjectException ex)
+			{
+				Logger.instance().warning("Cannot load settings from non-existent app '" 
+					+ settingsApp + "': " + ex);
+			}
+			finally
+			{
+				loadingAppDAO.close();
+			}
+		}
+
 	}
 
 	/** @return 'CWMS'. */
