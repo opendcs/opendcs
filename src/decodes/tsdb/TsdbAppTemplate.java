@@ -4,6 +4,11 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.10  2016/09/29 18:54:37  mmaloney
+*  CWMS-8979 Allow Database Process Record to override decodes.properties and
+*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
+*  name of a process record. Properties assigned to the app will override the file(s).
+*
 *  Revision 1.9  2016/09/28 15:14:04  mmaloney
 *  Fail safe code for daemons to close before attempting to reconnect.
 *
@@ -404,7 +409,6 @@ public abstract class TsdbAppTemplate
 			{
 				loadingAppDAO.close();
 			}
-			
 		}
 	}
 
