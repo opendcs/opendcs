@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2014/05/30 13:15:34  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/28 13:09:29  mmaloney
 *  dev
 *
@@ -186,7 +189,7 @@ public class SocketStreamDataSource extends DataSourceExec
 	{
 		Logger.instance().log(Logger.E_DEBUG1, 
 			"SocketStreamDataSource.processDataSource '" + dbDataSource.getName() 
-			+ "', args='" +dbDataSource.dataSourceArg+"'");
+			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 	}
 
 

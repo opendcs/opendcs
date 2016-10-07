@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.3  2014/10/02 14:26:58  mmaloney
+*  Use properties owner
+*
 *  Revision 1.2  2014/09/17 18:42:44  mmaloney
 *  Show PropSpecs
 *
@@ -102,9 +105,9 @@ public class SourceEditPanel extends DbEditorTab
  			origObject = ob;
 			theObject = origObject.copy();
 			setTopObject(origObject);
-			if (theObject.dataSourceArg == null)
-				theObject.dataSourceArg = "";
-			theProperties = PropertiesUtil.string2props(theObject.dataSourceArg);
+			if (theObject.getDataSourceArg() == null)
+				theObject.setDataSourceArg("");
+			theProperties = PropertiesUtil.string2props(theObject.getDataSourceArg());
 			propertiesEditPanel = new PropertiesEditPanel(theProperties);
 			groupMemberListModel = new GroupMemberListModel(theObject);
 			groupMemberList = new JList(groupMemberListModel);
@@ -148,7 +151,7 @@ public class SourceEditPanel extends DbEditorTab
 		theObject.setName(nameField.getText());
 		theObject.dataSourceType = (String)sourceTypeCombo.getSelectedItem();
 		propertiesEditPanel.saveChanges();
-		theObject.dataSourceArg = PropertiesUtil.props2string(theProperties);
+		theObject.setDataSourceArg(PropertiesUtil.props2string(theProperties));
 	}
 
 	/** Initializes GUI components */

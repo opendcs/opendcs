@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.3  2016/07/20 15:41:39  mmaloney
+* Simplify & refactoring.
+*
 * Revision 1.2  2015/03/19 15:23:14  mmaloney
 * punch list
 *
@@ -230,7 +233,7 @@ public class DataSourceListIO extends SqlDbObjIo
 //System.out.println("Creating new data source name=" + name + ", type=" + type);
 		DataSource ds = new DataSource(name, type);
 		ds.setId(id);
-		ds.dataSourceArg = arg;
+		ds.setDataSourceArg(arg);
 
 		return ds;
 	}
@@ -312,7 +315,7 @@ public class DataSourceListIO extends SqlDbObjIo
 			"Name = " + sqlReqString(ds.getName()) + ", " +
 			"dataSourceType = " +
 			sqlReqString(ds.dataSourceType) + ", " +
-			"dataSourceArg = " + escapeString(ds.dataSourceArg) + " " +
+			"dataSourceArg = " + escapeString(ds.getDataSourceArg()) + " " +
 		   "WHERE ID = " + ds.getId();
 //					   sqlReqEnumValId(_dstLookup, ds.dataSourceType) + ", " +
 		executeUpdate(q);
@@ -340,7 +343,7 @@ public class DataSourceListIO extends SqlDbObjIo
 			id + ", " +
 			sqlReqString(ds.getName()) + ", " +
 			sqlReqString(ds.dataSourceType) + ", " +
-			escapeString(ds.dataSourceArg) +
+			escapeString(ds.getDataSourceArg()) +
 			 ")";
 		executeUpdate(q);
 

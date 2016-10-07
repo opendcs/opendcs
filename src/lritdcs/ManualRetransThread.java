@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.3  2014/05/30 13:15:35  mmaloney
+* dev
+*
 * Revision 1.2  2014/05/28 13:09:31  mmaloney
 * dev
 *
@@ -336,10 +339,9 @@ public class ManualRetransThread
 			if (host1 != null && user1 != null)
 			{
 				DataSource dbds = new DataSource("dds1", "lrgs");
-				dbds.dataSourceArg =
-					"hostname=" + host1 + ", "
-					+ "port=" + port1 + ", "
-					+ "user=" + user1;
+				dbds.setDataSourceArg("hostname=" + host1 + ", "
+				+ "port=" + port1 + ", "
+				+ "user=" + user1);
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}
@@ -347,10 +349,9 @@ public class ManualRetransThread
 			if (host2 != null && user2 != null)
 			{
 				DataSource dbds = new DataSource("dds2", "lrgs");
-				dbds.dataSourceArg =
-					"hostname=" + host2 + ", "
-					+ "port=" + port2 + ", "
-					+ "user=" + user2;
+				dbds.setDataSourceArg("hostname=" + host2 + ", "
+				+ "port=" + port2 + ", "
+				+ "user=" + user2);
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}
@@ -358,10 +359,9 @@ public class ManualRetransThread
 			if (host3 != null && user3 != null)
 			{
 				DataSource dbds = new DataSource("dds3", "lrgs");
-				dbds.dataSourceArg =
-					"hostname=" + host3 + ", "
-					+ "port=" + port3 + ", "
-					+ "user=" + user3;
+				dbds.setDataSourceArg("hostname=" + host3 + ", "
+				+ "port=" + port3 + ", "
+				+ "user=" + user3);
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}

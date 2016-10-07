@@ -7,11 +7,12 @@ import decodes.datasource.DataSourceExec;
 import decodes.datasource.DataSourceException;
 import decodes.datasource.RawMessage;
 import decodes.sql.DbKey;
-
 import ilex.util.TextUtil;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Vector;
 import java.util.Iterator;
 import java.util.Properties;
@@ -35,7 +36,7 @@ public class DataSource extends IdDatabaseObject
 	public String dataSourceType;
 
 	/** Data source arg will vary depending on the type */
-	public String dataSourceArg;
+	private String dataSourceArg;
 
 	/**
 	* This is a reference to the other DataSource objects that belong to
@@ -58,6 +59,8 @@ public class DataSource extends IdDatabaseObject
 	*/
 	public int numUsedBy;
 
+	private transient String dataSourceArgDisplay = null;
+	
 	/**
 	* Constructor.
 	*/
@@ -67,7 +70,7 @@ public class DataSource extends IdDatabaseObject
 
 		setName(null);
 		dataSourceType = null;
-		dataSourceArg = null;
+		setDataSourceArg(null);
 		groupMembers = new Vector<DataSource>();
 		arguments = null;
 		numUsedBy = 0;
@@ -127,14 +130,14 @@ public class DataSource extends IdDatabaseObject
 		try { ret.setId(getId()); }
 		catch(DatabaseException ex) {} // won't happen.
 
-		ret.dataSourceArg = dataSourceArg;
+		ret.setDataSourceArg(dataSourceArg);
 		int i = 0;
 		for(Iterator<DataSource> it = groupMembers.iterator(); it.hasNext(); )
 			ret.addGroupMember(i++, it.next());
-		if (dataSourceArg == null || TextUtil.isAllWhitespace(dataSourceArg))
+		if (getDataSourceArg() == null || TextUtil.isAllWhitespace(getDataSourceArg()))
 			ret.arguments = new Properties();
 		else
-			ret.arguments = PropertiesUtil.string2props(dataSourceArg);
+			ret.arguments = PropertiesUtil.string2props(getDataSourceArg());
 		ret._isPrepared = false;
 		ret.numUsedBy = numUsedBy;
 		return ret;
@@ -155,12 +158,12 @@ public class DataSource extends IdDatabaseObject
 			return false;
 		if (!dataSourceType.equalsIgnoreCase(ds.dataSourceType))
 			return false;
-		if (ds.dataSourceArg == null)
-			ds.dataSourceArg = "";
-		if (this.dataSourceArg == null)
-			dataSourceArg = "";
-		Properties p1 = PropertiesUtil.string2props(dataSourceArg.toLowerCase());
-		Properties p2 = PropertiesUtil.string2props(ds.dataSourceArg.toLowerCase());
+		if (ds.getDataSourceArg() == null)
+			ds.setDataSourceArg("");
+		if (this.getDataSourceArg() == null)
+			setDataSourceArg("");
+		Properties p1 = PropertiesUtil.string2props(getDataSourceArg().toLowerCase());
+		Properties p2 = PropertiesUtil.string2props(ds.getDataSourceArg().toLowerCase());
 		if (!PropertiesUtil.propertiesEqual(p1, p2))
 			return false;
 		if (groupMembers.size() != ds.groupMembers.size())
@@ -283,7 +286,7 @@ public class DataSource extends IdDatabaseObject
 	{
 		// Parse arguments from string into Properties object. This is simply
 		// a convenience for the executable classes.
-		arguments = PropertiesUtil.string2props(dataSourceArg);
+		arguments = PropertiesUtil.string2props(getDataSourceArg());
 	}
 
 	/**
@@ -399,5 +402,49 @@ public class DataSource extends IdDatabaseObject
 	{
 		return arguments;
 	}
+
+	public String getDataSourceArg()
+	{
+		return dataSourceArg;
+	}
+
+	public void setDataSourceArg(String dataSourceArg)
+	{
+		this.dataSourceArg = dataSourceArg;
+		dataSourceArgDisplay = null;
+		if (dataSourceArg != null && dataSourceArg.trim().length() > 0)
+		{
+			Properties props = PropertiesUtil.string2props(dataSourceArg);
+			if (props == null)
+				return;
+			ArrayList<String> names = new ArrayList<String>();
+			for(Object k : props.keySet())
+				names.add((String)k);
+			if (names.size() == 0)
+				return;
+			Collections.sort(names);
+			StringBuilder sb = new StringBuilder();
+			for(String n : names)
+			{
+				if (sb.length() > 0)
+					sb.append(", ");
+				if (n.equalsIgnoreCase("password"))
+					sb.append("password=****");
+				else
+					sb.append(n + "=" + props.getProperty(n));
+			}
+			dataSourceArgDisplay = sb.toString();
+		}
+	}
+	
+	/**
+	 * Process the data source arge for a list display, don't show delimiters and passwords.
+	 * @return the data source arg formatted for a list display.
+	 */
+	public String getDataSourceArgDisplay()
+	{
+		return dataSourceArgDisplay;
+	}
+
 }
 

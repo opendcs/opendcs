@@ -121,7 +121,7 @@ public class LrgsDataSource extends DataSourceExec
 	{
 		log(Logger.E_DEBUG1, 
 			"processDataSource for LrgsDataSource for '" + dbDataSource.getName() 
-			+ "', args='" +dbDataSource.dataSourceArg+"'");
+			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 
 		// host defaults to ds name, will probably be overridden by property.
 		host = dbDataSource.getName();

@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2014/10/02 18:21:42  mmaloney
+*  FTP Data Source to handle multiple file names.
+*
 *  Revision 1.2  2014/09/17 18:42:01  mmaloney
 *  Implement FTP Data Source, Clean up Other Modules.
 *
@@ -123,7 +126,7 @@ public class FileDataSource
 		super.processDataSource();
 		Logger.instance().log(Logger.E_DEBUG1,
 			"FileDataSource.processDataSource for '" + getName()
-			+ "', args='" +dbDataSource.dataSourceArg+"'");
+			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 		filename = null;
 		//mediumId = null;
 		//mediumType = null;

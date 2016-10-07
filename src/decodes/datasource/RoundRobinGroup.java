@@ -79,7 +79,7 @@ public class RoundRobinGroup
 	{
 		Logger.instance().log(Logger.E_DEBUG1, 
 			"Initializing RoundRobinGroup for '" + dbDataSource.getName() 
-			+ "', args='" +dbDataSource.dataSourceArg+"'");
+			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 
 		// This is a data-source-group, call prepareForExec() for all members
 		for(Iterator it = dbDataSource.groupMembers.iterator(); it.hasNext(); )

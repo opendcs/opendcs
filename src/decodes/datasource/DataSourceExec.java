@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.6  2015/02/06 19:05:29  mmaloney
+*  added getRoutingSpecThread() method.
+*
 *  Revision 1.5  2015/01/06 16:09:31  mmaloney
 *  First cut of Polling Modules
 *
@@ -268,14 +271,22 @@ public abstract class DataSourceExec
 	{
 		for(TransportMedium tm : p.transportMedia) 
 		{
-  			// If this is a GOES msg, but not a GOES TM, skip it.
-			if (chan != -1
-			 && !(tm.getMediumType().equalsIgnoreCase(Constants.medium_GoesST)
-			     || tm.getMediumType().equalsIgnoreCase(Constants.medium_GoesRD)
-			     || tm.getMediumType().equalsIgnoreCase(Constants.medium_Goes)))
+			if (!tmid.equalsIgnoreCase(tm.getMediumId()))
 				continue;
 
-			if (!tmid.equalsIgnoreCase(tm.getMediumId()))
+			// If this is a GOES msg, but not a GOES TM, skip it.
+			if (chan != -1) // means GOES
+			{
+				if (!(tm.getMediumType().equalsIgnoreCase(Constants.medium_GoesST)
+			       || tm.getMediumType().equalsIgnoreCase(Constants.medium_GoesRD)
+			       || tm.getMediumType().equalsIgnoreCase(Constants.medium_Goes)))
+				continue;
+			}
+			
+			// For non-goes, if a medium type is specified in the data source
+			// it needs to match the one in the TM.
+			String mt = getMediumType();
+			if (mt != null && !mt.equalsIgnoreCase(tm.getMediumType()))
 				continue;
 
 			/*
@@ -366,6 +377,11 @@ public abstract class DataSourceExec
 	public RoutingSpecThread getRoutingSpecThread()
 	{
 		return routingSpecThread;
+	}
+	
+	public String getMediumType()
+	{
+		return null;
 	}
 }
 

@@ -137,7 +137,7 @@ public class FtpDataSource
 	{
 		Logger.instance().log(Logger.E_DEBUG3, 
 			module + ".processDataSource '" + getName() 
-			+ "', args='" +dbDataSource.dataSourceArg+"'");
+			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 	}
 
 	@Override

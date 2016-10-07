@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.5  2016/09/02 18:26:32  mmaloney
+* Use <username>.auth to send password to data source if file exists.
+*
 * Revision 1.4  2014/08/22 17:23:10  mmaloney
 * 6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -504,12 +507,11 @@ public class GetMessageThread
 			{
 				DataSource dbds = new DataSource("dds1", "lrgs");
 				String pw = tryGetPassword(user1);
-				dbds.dataSourceArg =
-					"hostname=" + host1 + ", "
-					+ "port=" + port1 + ", "
-					+ "user=" + user1;
+				dbds.setDataSourceArg("hostname=" + host1 + ", "
+				+ "port=" + port1 + ", "
+				+ "user=" + user1);
 				if (pw != null)
-					dbds.dataSourceArg = dbds.dataSourceArg + ", password=" + pw;
+					dbds.setDataSourceArg(dbds.getDataSourceArg() + ", password=" + pw);
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}
@@ -518,12 +520,11 @@ public class GetMessageThread
 			{
 				DataSource dbds = new DataSource("dds2", "lrgs");
 				String pw = tryGetPassword(user2);
-				dbds.dataSourceArg =
-					"hostname=" + host2 + ", "
-					+ "port=" + port2 + ", "
-					+ "user=" + user2;
+				dbds.setDataSourceArg("hostname=" + host2 + ", "
+				+ "port=" + port2 + ", "
+				+ "user=" + user2);
 				if (pw != null)
-					dbds.dataSourceArg = dbds.dataSourceArg + ", password=" + pw;
+					dbds.setDataSourceArg(dbds.getDataSourceArg() + ", password=" + pw);
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}
@@ -532,12 +533,11 @@ public class GetMessageThread
 			{
 				DataSource dbds = new DataSource("dds3", "lrgs");
 				String pw = tryGetPassword(user3);
-				dbds.dataSourceArg =
-					"hostname=" + host3 + ", "
-					+ "port=" + port3 + ", "
-					+ "user=" + user3;
+				dbds.setDataSourceArg("hostname=" + host3 + ", "
+				+ "port=" + port3 + ", "
+				+ "user=" + user3);
 				if (pw != null)
-					dbds.dataSourceArg = dbds.dataSourceArg + ", password=" + pw;
+					dbds.setDataSourceArg(dbds.getDataSourceArg() + ", password=" + pw);
 
 				groupDbDs.addGroupMember(numMembers++, dbds);
 			}

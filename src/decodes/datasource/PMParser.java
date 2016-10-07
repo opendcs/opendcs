@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2014/10/02 14:31:05  mmaloney
+*  Encapsulated execClassName
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -206,6 +209,12 @@ public abstract class PMParser
 			ret.setProperties(new Properties());
 			return ret;
 		}
+		else if (headerType.equalsIgnoreCase("idstart"))
+		{
+			IdStartPMParser ret = new IdStartPMParser();
+			return ret;
+		}
+
 
 		Object obj = parsers.get(headerType);
 		if (obj != null)

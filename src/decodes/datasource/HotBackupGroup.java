@@ -82,7 +82,7 @@ public class HotBackupGroup
 	{
 		Logger.instance().log(Logger.E_DEBUG1, 
 			"Initializing HotBackupGroup for '" + dbDataSource.getName() 
-			+ "', args='" +dbDataSource.dataSourceArg+"'");
+			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 
 		// This is a data-source-group, call prepareForExec() for all members
 		for(Iterator it = dbDataSource.groupMembers.iterator(); it.hasNext(); )

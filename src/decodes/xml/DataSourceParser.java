@@ -173,7 +173,7 @@ Logger.instance().debug3("Referenced existing member data source '" + ds.getName
 		switch(tag)
 		{
 		case argTag:
-			dataSource.dataSourceArg = str;
+			dataSource.setDataSourceArg(str);
 			break;
 		}
 	}
@@ -189,8 +189,8 @@ Logger.instance().debug3("Referenced existing member data source '" + ds.getName
 			XmlDbTags.name_at, dataSource.getName(),
 			XmlDbTags.type_at, dataSource.dataSourceType);
 
-		if (dataSource.dataSourceArg != null)
-			xos.writeElement(XmlDbTags.DataSourceArg_el, dataSource.dataSourceArg);
+		if (dataSource.getDataSourceArg() != null)
+			xos.writeElement(XmlDbTags.DataSourceArg_el, dataSource.getDataSourceArg());
 
 		int n = dataSource.groupMembers.size();
 		for(int i=0; i<n; i++)

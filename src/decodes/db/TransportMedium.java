@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.6  2015/02/06 18:27:09  mmaloney
+*  The HashMap key should be upper case so that search is case insensitive.
+*
 *  Revision 1.5  2015/01/14 17:22:51  mmaloney
 *  Polling implementation
 *
@@ -201,7 +204,7 @@ public class TransportMedium extends DatabaseObject
 		else if (mediumType.equalsIgnoreCase("Modem"))
 			sb = new StringBuffer("modem-");
 		else
-			sb = new StringBuffer("utm-"); // utm = Unknown Transport Medium
+			sb = new StringBuffer(mediumType + "-");
 
 		sb.append(mediumId);
 		for(int i=0; i<sb.length(); i++)

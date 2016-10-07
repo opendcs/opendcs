@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/03/21 18:27:40  mmaloney
 *  DbKey Implementation
 *
@@ -367,7 +370,7 @@ class DataSourceListTableModel extends AbstractTableModel
 		case 1:
 			return ds.dataSourceType == null ? "" : ds.dataSourceType;
 		case 2:
-			return ds.dataSourceArg == null ? "" : ds.dataSourceArg;
+			return ds.getDataSourceArgDisplay() == null ? "" : ds.getDataSourceArgDisplay();
 		case 3:
 			return "" + ds.numUsedBy;
 		default: return "";

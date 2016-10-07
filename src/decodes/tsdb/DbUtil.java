@@ -12,6 +12,8 @@ package decodes.tsdb;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -161,11 +163,76 @@ public class DbUtil extends TsdbAppTemplate
 				bparamCmd(tokens);
 			}
 		};
+	private CmdLine selectCmd = 
+		new CmdLine("select", " -- An arbitrary database select statement.")
+		{
+			public void execute(String[] tokens)
+			{
+				selectCmd(tokens);
+			}
+		};
 
 
 	public DbUtil()
 	{
 		super("util.log");
+	}
+
+	protected void selectCmd(String[] tokens)
+	{
+		StringBuilder sb = new StringBuilder();
+		for(String t : tokens)
+			sb.append(t + " ");
+		try
+		{
+			Statement st = theDb.getConnection().createStatement();
+			String q = sb.toString();
+			System.out.println("Executing: " + q);
+			ResultSet rs = st.executeQuery(q);
+			ArrayList<String[]> rows = new ArrayList<String[]>();
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int numCols = rsmd.getColumnCount();
+			String[] header = new String[numCols];
+			int[] colWidth = new int[numCols];
+			for(int i=0; i<numCols; i++)
+			{	
+				header[i] = rsmd.getColumnName(i+1);
+				colWidth[i] = header[i].length();
+			}
+			while(rs.next())
+			{
+				String[] row = new String[numCols];
+				for(int c = 0; c<numCols; c++)
+				{
+					row[c] = rs.getString(c+1);
+					if (row[c] == null)
+						row[c] = "null";
+					if (row[c].length() > colWidth[c])
+						colWidth[c] = row[c].length();
+				}
+				rows.add(row);
+			}
+			System.out.println("Result has " + rows.size() + " rows.");
+			System.out.print("| ");
+			for(int c = 0; c<numCols; c++)
+				System.out.print(" " + 
+					TextUtil.setLengthLeftJustify(header[c], colWidth[c]) + " |");
+			System.out.println("");
+			for(String[] row : rows)
+			{
+				System.out.print("| ");
+				for(int c = 0; c<numCols; c++)
+					System.out.print(" " +
+						TextUtil.setLengthLeftJustify(row[c], colWidth[c]) + " |");
+				System.out.println("");
+			}
+		}
+		catch (SQLException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 
 	protected void bparamCmd(String[] tokens)
@@ -264,7 +331,8 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(genSchedEventsCmd);
 		cmdLineProc.addCmd(versionCmd);
 		cmdLineProc.addCmd(bparamCmd);
-		
+		cmdLineProc.addCmd(selectCmd);
+
 		cmdLineProc.addHelpAndQuitCommands();
 		
 		cmdLineProc.prompt = "cmd: ";

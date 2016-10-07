@@ -586,7 +586,8 @@ public class RoutingSpecThread
 			p = rm.getPlatform(); 
 			tm = rm.getTransportMedium();
 			log(Logger.E_DEBUG3, "Message is for platform '" + p.makeFileName() 
-				+ "' with transport medium '" + tm.makeFileName() + "'");
+				+ "' with transport medium '" + tm.makeFileName() + "' and script '"
+				+ tm.scriptName + "'");
 
 			// Make sure this platform is prepared for execution.
 			if (!p.isPrepared())
@@ -1577,21 +1578,21 @@ public class RoutingSpecThread
 			StringTokenizer st = new StringTokenizer(ds," :");
 			String host = st.nextToken();
 			mainThread.explicitDataSource = new DataSource("exp:" + host, "lrgs");
-			mainThread.explicitDataSource.dataSourceArg = "hostname=" + host;
+			mainThread.explicitDataSource.setDataSourceArg("hostname=" + host);
 			if (st.hasMoreTokens())
 			{
 				String port = st.nextToken();
-				mainThread.explicitDataSource.dataSourceArg += (", port=" + port);
+				mainThread.explicitDataSource.setDataSourceArg(mainThread.explicitDataSource.getDataSourceArg() + (", port=" + port));
 			}
 
 			String user = "decodes";
 			if (st.hasMoreTokens())
 				user = st.nextToken();
-			mainThread.explicitDataSource.dataSourceArg += (", username=" + user);
+			mainThread.explicitDataSource.setDataSourceArg(mainThread.explicitDataSource.getDataSourceArg() + (", username=" + user));
 			if (st.hasMoreTokens())
 			{
 				String pw = st.nextToken();
-				mainThread.explicitDataSource.dataSourceArg += (", password=" + pw);
+				mainThread.explicitDataSource.setDataSourceArg(mainThread.explicitDataSource.getDataSourceArg() + (", password=" + pw));
 			}
 		}
 		

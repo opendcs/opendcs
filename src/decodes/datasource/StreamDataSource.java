@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.5  2014/10/02 18:21:42  mmaloney
+*  FTP Data Source to handle multiple file names.
+*
 *  Revision 1.4  2014/09/17 18:42:01  mmaloney
 *  Implement FTP Data Source, Clean up Other Modules.
 *
@@ -128,7 +131,6 @@ import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
 import ilex.var.NoConversionException;
 import ilex.var.Variable;
-
 import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.Constants;
@@ -139,7 +141,6 @@ import decodes.db.NetworkListEntry;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.DatabaseException;
 import decodes.util.PropertySpec;
-
 import lrgs.common.DcpMsg;
 
 /**
@@ -318,7 +319,7 @@ public abstract class StreamDataSource extends DataSourceExec
 	{
 		Logger.instance().log(Logger.E_DEBUG3, 
 			"StreamDataSource.processDataSource '" + getName() 
-			+ "', args='" +dbDataSource.dataSourceArg+"'");
+			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 	}
 
 
@@ -485,7 +486,7 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 					+ "' Header Length Unknown -- endDelimiter required!");
 		}
 		
-		pmp.setProperties(routingSpecProps);
+		pmp.setProperties(allProps);
 
 		// Call subclass method to open the stream
 		inputStream = open();
@@ -838,8 +839,11 @@ Logger.instance().debug3("Reading " + len + " bytes of msg data after header.");
 				{
 Logger.instance().debug3("No end delim, looking for next start delim '"
 + new String(startDelimiter) + "'");
+//TODO Here It is finding the start delimiter of the next message but
+//TODO it is not pushing it back.
 					len = readToDelimiter(startDelimiter, msgbuf, true);
 					justGotStartDelim = true;
+					
 					Logger.instance().log(Logger.E_DEBUG3,
 						"StreamDataSource '" + getName() 
 						+ "' read " + len + " bytes & then got startDelimiter.");
@@ -921,6 +925,7 @@ Logger.instance().debug3("StreamDS reset 7");
 	protected void checkForMessageStart()
 		throws IOException, DataSourceException
 	{
+Logger.instance().debug3("checkForMessageStart()");
 		if (shefMode)
 		{
 			checkForShefStart();
@@ -958,7 +963,9 @@ Logger.instance().debug3("StreamDS reset 7");
 
 		if (justGotStartDelim)
 		{
+Logger.instance().debug3("Already had start delimiter.");
 			justGotStartDelim = false;
+			huntMode = false;
 			return;
 		}
 
@@ -1160,7 +1167,7 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 						delimFound = true;
 						Logger.instance().log(Logger.E_DEBUG3, 
 							"Stream '" + getName() 
-							+ "' found end delimiter.");
+							+ "' found delimiter '" + AsciiUtil.bin2ascii(delim) + "'");
 					}
 				}
 			}
@@ -1262,6 +1269,12 @@ Logger.instance().debug3("StreamDataSource added PM '" + GoesPMParser.FILE_NAME
 	public PropertySpec[] getSupportedProps()
 	{
 		return PropertiesUtil.combineSpecs(super.getSupportedProps(), SDSprops);
+	}
+
+	@Override
+	public String getMediumType()
+	{
+		return mediumType;
 	}
 
 
