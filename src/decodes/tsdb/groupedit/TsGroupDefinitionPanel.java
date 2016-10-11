@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2016/07/20 15:45:46  mmaloney
+ * Special code for HDB to show data type common names.
+ *
  * Revision 1.5  2016/04/22 14:42:53  mmaloney
  * Code cleanup.
  *
@@ -65,25 +68,21 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
@@ -94,6 +93,7 @@ import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
+import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DataType;
@@ -113,6 +113,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
+import decodes.tsdb.TsGroupMemberType;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.compedit.DataTypeSelectDialog;
 import decodes.tsdb.groupedit.TsGroupListPanel;
@@ -406,35 +407,35 @@ public class TsGroupDefinitionPanel
 		
 		northPanel.add(groupIdLabel, new GridBagConstraints(0, 0, 1, 1, 0.0,
 				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(10, 30, 0, 0), 2, 5));
+				new Insets(7, 30, 0, 0), 2, 5));
 		northPanel.add(groupIdTextField, new GridBagConstraints(1, 0, 1, 1,
 				1.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, 
-				new Insets(10, 0, 0, 1), 62, 5));
+				new Insets(7, 0, 0, 1), 62, 5));
 		northPanel.add(groupNameLabel, new GridBagConstraints(0, 1, 1, 1, 0.0,
 				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(5, 30, 0, 0), 2, 5));
+				new Insets(3, 30, 0, 0), 2, 5));
 		northPanel.add(groupNameTextField, new GridBagConstraints(1, 1, 1, 1,
 				1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(5, 0, 0, 1), 62, 5));
+				GridBagConstraints.HORIZONTAL, new Insets(3, 0, 0, 1), 62, 5));
 		northPanel.add(renameButton, new GridBagConstraints(2, 1, 1, 1, 0.0,
 				0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(5, 20, 0, 300), 0, 0));
+				new Insets(3, 20, 0, 300), 0, 0));
 		northPanel.add(groupTypeLabel, new GridBagConstraints(0, 2, 1, 1, 0.0,
 				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(5, 30, 0, 0), 2, 5));
+				new Insets(3, 30, 0, 0), 2, 5));
 		northPanel.add(groupTypeComboBox, new GridBagConstraints(1, 2, 1, 1,
 				1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(5, 0, 0, 1), 62, 5));
+				GridBagConstraints.HORIZONTAL, new Insets(3, 0, 0, 1), 62, 5));
 		northPanel.add(newTypeButton, new GridBagConstraints(2, 2, 1, 1, 0.0,
 				0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(5, 20, 0, 300), 0, 0));
+				new Insets(3, 20, 0, 300), 0, 0));
 		northPanel.add(descriptionLabel, new GridBagConstraints(0, 3, 1, 1,
 				0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(5, 30, 0, 0), 2, 5));
+				new Insets(3, 30, 0, 0), 2, 5));
 		northPanel.add(descJScrollPane, new GridBagConstraints(1, 3, 2, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(5, 0, 0, 110), 62, 25));
+				new Insets(3, 0, 0, 110), 62, 25));
 	}
 	
 	private void initCenterPanel()
@@ -499,7 +500,7 @@ public class TsGroupDefinitionPanel
 				new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 						GridBagConstraints.NORTH,
 						GridBagConstraints.HORIZONTAL,
-						new Insets(5, 12, 2, 12), 16, 0));
+						new Insets(3, 12, 2, 12), 16, 0));
 	}
 
 	/**
@@ -559,19 +560,19 @@ public class TsGroupDefinitionPanel
 		subGroupMembersPanel.add(addIncludedSubgroupMemberButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 12, 2, 12), 55, 0));
+				new Insets(1, 12, 1, 12), 55, 0));
 		subGroupMembersPanel.add(addExcludedSubgroupMemberButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 12, 2, 12), 55, 0));
+				new Insets(1, 12, 1, 12), 55, 0));
 		subGroupMembersPanel.add(addIntersectedSubgroupMemberButton,
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 12, 2, 12), 55, 0));
+				new Insets(1, 12, 1, 12), 55, 0));
 		subGroupMembersPanel.add(deleteSubgroupMemberButton,
 			new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 12, 2, 12), 55, 0));
+				new Insets(1, 12, 1, 12), 55, 0));
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -617,7 +618,7 @@ public class TsGroupDefinitionPanel
 			buttonPanel.add(button,
 				new GridBagConstraints(x, y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-					new Insets(5, 10, 5, 10), 0, 0));
+					new Insets(2, 10, 2, 10), 0, 0));
 		}
 
 		//Initialize the buttons and their events
@@ -635,7 +636,7 @@ public class TsGroupDefinitionPanel
 		buttonPanel.add(deleteButton,
 			new GridBagConstraints(0, (tsIdParts.length+1)/2, 2, 1, 0.0, 1.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
-				new Insets(5, 10, 5, 10), 0, 0));
+				new Insets(2, 10, 2, 10), 0, 0));
 	}
 
 	/**
@@ -815,7 +816,9 @@ public class TsGroupDefinitionPanel
 			String label = sp.first;
 			String value = sp.second;
 			
-			if (label.equalsIgnoreCase("site") || label.equalsIgnoreCase("location"))
+			if (label.equalsIgnoreCase("site"))
+//MJM In old code location=site, in new code can location contain a wildcard??
+//				|| label.equalsIgnoreCase("location"))
 			{
 				boolean found = false;
 				for(Site st: knownSites)
@@ -826,7 +829,9 @@ public class TsGroupDefinitionPanel
 						break;
 					}
 				if (!found)
+				{
 					Logger.instance().warning("No match for sitename '" + value + "' -- ignored.");
+				}
 			}
 			else if (label.equalsIgnoreCase("datatype") || label.equalsIgnoreCase("param"))
 			{
@@ -1472,19 +1477,18 @@ public class TsGroupDefinitionPanel
 
 	private void deleteQueryParam()
 	{
-		int idx = queryTable.getSelectedRow();
-//		int idx = queryList.getSelectedIndex();
-		if (idx == -1)
+		int rows[] = queryTable.getSelectedRows();
+		if (rows == null || rows.length == 0)
 			return;
-		queryModel.deleteItemAt(idx);
-//		queryListModel.remove(idx);
+		for(int idx = rows.length-1; idx >= 0; idx--)
+			queryModel.deleteItemAt(rows[idx]);
 	}
 
 	@SuppressWarnings("unchecked")
 	private void addQueryParam(String keyStr)
 	{
 		String selection = null;
-		if (keyStr.equalsIgnoreCase("site") || keyStr.equalsIgnoreCase("location"))
+		if (keyStr.equalsIgnoreCase("site"))
 		{
 			if (siteSelectDlg == null)
 			{
@@ -1514,7 +1518,23 @@ public class TsGroupDefinitionPanel
 //					queryListModel.addElement(listItem);
 			}
 		}
-		else if (keyStr.equalsIgnoreCase("datatype") || keyStr.equalsIgnoreCase("param"))
+		else if (keyStr.equalsIgnoreCase("location"))
+		{
+			// CWMS Location Selection
+			LocSelectDialog locSelectDialog = new LocSelectDialog(this.parent, (CwmsTimeSeriesDb)theTsDb,
+				SelectionMode.GroupEdit);
+			parent.launchDialog(locSelectDialog);
+			if (!locSelectDialog.isCancelled())
+			{
+				StringPair result = locSelectDialog.getResult();
+				if (result != null)
+				{
+System.out.println("Result of dialog: q='" + result.first +"', v='" + result.second + "'");
+					queryModel.addItem(result.first, result.second);
+				}
+			}
+		}
+		else if (keyStr.equalsIgnoreCase("datatype"))
 		{
 			ArrayList<String[]> dlgData = new ArrayList<String[]>();
 			dlgData.add(new String[]{"DataType Code", "Name"});
@@ -1523,6 +1543,7 @@ public class TsGroupDefinitionPanel
 			DataTypeSelectDialog.isHdb = theTsDb.isHdb();
 //System.out.println("isHdb=" + DataTypeSelectDialog.isHdb);
 			DataTypeSelectDialog dlg = new DataTypeSelectDialog(this.parent, null, dlgData);
+			dlg.allowMultipleSelection(false);
 			parent.launchDialog(dlg);
 			String[] dtSelection = dlg.getSelection();
 			if (dtSelection != null)
@@ -1533,29 +1554,53 @@ public class TsGroupDefinitionPanel
 //				label, label, JOptionPane.PLAIN_MESSAGE, null,
 //				dataTypeArray, null);
 		}
-		else if (keyStr.equalsIgnoreCase("Interval"))
+		else if (keyStr.equalsIgnoreCase("param"))
+		{
+			// CWMS Param Selection
+			ParamSelectDialog paramSelectDialog = new ParamSelectDialog(this.parent, (CwmsTimeSeriesDb)theTsDb,
+				SelectionMode.GroupEdit);
+			parent.launchDialog(paramSelectDialog);
+			if (!paramSelectDialog.isCancelled())
+			{
+				StringPair result = paramSelectDialog.getResult();
+				if (result != null)
+					queryModel.addItem(result.first, result.second);
+			}
+		}
+		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.Interval.toString()))
 		{
 			selection = (String)JOptionPane.showInputDialog(this, 
 				enterIntervalLabel, enterIntervalLabel, JOptionPane.PLAIN_MESSAGE, null, 
 				intervalArray, null);
 		}
-		else if (keyStr.equalsIgnoreCase("ParamType"))
+		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.ParamType.toString()))
 		{
 			selection = (String)JOptionPane.showInputDialog(this, enterParamTypeLabel,
 				enterParamTypeLabel, JOptionPane.PLAIN_MESSAGE, null, 
 				paramTypes, null);
 		}
-		else if (keyStr.equalsIgnoreCase("Duration"))
+		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.Duration.toString()))
 		{
 			selection = (String)JOptionPane.showInputDialog(this, enterDurationLabel,
 				enterDurationLabel, JOptionPane.PLAIN_MESSAGE, null, 
 				durationArray, null);
 		}
-		else if (keyStr.equalsIgnoreCase("Version"))
+		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.Version.toString()))
 		{
-			selection = (String)JOptionPane.showInputDialog(this, enterVersionLabel,
-				enterVersionLabel, JOptionPane.PLAIN_MESSAGE, null, 
-				versionArray, null);
+//			selection = (String)JOptionPane.showInputDialog(this, enterVersionLabel,
+//				enterVersionLabel, JOptionPane.PLAIN_MESSAGE, null, 
+//				versionArray, null);
+			
+			// CWMS Param Selection
+			VersionSelectDialog versionSelectDialog = new VersionSelectDialog(this.parent, (CwmsTimeSeriesDb)theTsDb,
+				SelectionMode.GroupEdit);
+			parent.launchDialog(versionSelectDialog);
+			if (!versionSelectDialog.isCancelled())
+			{
+				StringPair result = versionSelectDialog.getResult();
+				if (result != null)
+					queryModel.addItem(result.first, result.second);
+			}
 		}
 		else if (keyStr.equalsIgnoreCase(HdbTsId.TABSEL_PART))
 		{
