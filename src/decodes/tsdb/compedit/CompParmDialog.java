@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2016/06/27 15:41:00  mmaloney
+ * Improve wording for data type prompt.
+ *
  * Revision 1.3  2015/04/14 18:19:51  mmaloney
  * Fixed GUI issues with selecting Sites.
  *
@@ -106,7 +109,7 @@ import java.util.TimeZone;
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
-
+import ilex.util.StringPair;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.EngineeringUnit;
@@ -126,6 +129,10 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.algo.RoleTypes;
+import decodes.tsdb.groupedit.LocSelectDialog;
+import decodes.tsdb.groupedit.ParamSelectDialog;
+import decodes.tsdb.groupedit.SelectionMode;
+import decodes.tsdb.groupedit.VersionSelectDialog;
 import decodes.util.DecodesSettings;
 import decodes.cwms.CwmsTimeSeriesDb;
 
@@ -147,8 +154,7 @@ public class CompParmDialog extends GuiDialog
 	private JButton siteSelectButton = new JButton(
 		ceResources.getString("CompParmDialog.SelectButton"));
 	private JTextField dataTypeField = new JTextField();
-	private JButton dataTypeLookupButton = new JButton(
-		ceResources.getString("CompParmDialog.LookupButton"));
+	private JButton selectTsButton = new JButton("Time Series Lookup");
 	private JComboBox intervalCombo = new JComboBox();
 	private JComboBox tabselCombo = new JComboBox(new String[] {"R_", "M_"});
 	private JTextField deltaTField = new JTextField();
@@ -184,8 +190,15 @@ public class CompParmDialog extends GuiDialog
 			CAPEdit.instance().compeditDescriptions
 				.getString("CompParmDialog.CompParm"), true);
 		theDb = CAPEdit.instance().theDb;
-		siteSelectDialog = new SiteSelectDialog(this);
-		siteSelectDialog.setSiteSelectPanel(siteSelectPanel);
+		
+		if (theDb.isCwms())
+		{
+		}
+		else
+		{
+			siteSelectDialog = new SiteSelectDialog(this);
+			siteSelectDialog.setSiteSelectPanel(siteSelectPanel);
+		}
 
 		try
 		{
@@ -244,18 +257,24 @@ public class CompParmDialog extends GuiDialog
 	/** Fills the GUI components with values from the object being edited. */
 	void fillValues()
 	{
+//System.out.println("fillValues loc='" + theParm.getLocSpec() 
+//+ "', parm='" + theParm.getParamSpec() + "', + ver='" + theParm.getVersion() + "'");
 		compNameField.setText(compName);
 		roleNameField.setText(theParm.getRoleName());
 		
 		SiteName sn = theParm.getSiteName();
 		siteField.setText(sn != null ? sn.getNameValue() : "");
-		if (sn != null)
+		if (sn != null && !theDb.isCwms())
 			siteSelectDialog.getSiteSelectPanel().setSelection(sn);
+		if (sn == null && theDb.isCwms())
+			siteField.setText(theParm.getLocSpec());
 		siteField.setEnabled(true);
 		siteSelectButton.setEnabled(true);
 
 		DataType dt = theParm.getDataType();
 		dataTypeField.setText(dt != null ? dt.getCode() : "");
+		if (dt == null && theDb.isCwms())
+			dataTypeField.setText(theParm.getParamSpec());
 
 		String intvCode = theParm.getInterval();
 		if (intvCode == null || intvCode.length() == 0)
@@ -407,25 +426,47 @@ public class CompParmDialog extends GuiDialog
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 5, 4, 15), 0, 0));
 		
+		// Time Series Lookup Button
+		fieldEntryPanel.add(selectTsButton,
+			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(4, 5, 4, 15), 0, 0));
+		
+		
 		// Data Type or Param
 		label = ceResources.getString("CompParmDialog.DataType");
 		if (theDb.isCwms())
 			label = "Param:";
 		fieldEntryPanel.add(new JLabel(label),
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
 		fieldEntryPanel.add(dataTypeField, 
-			new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0, 
+			new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0, 
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
-		fieldEntryPanel.add(dataTypeLookupButton,
-			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(4, 5, 4, 15), 0, 0));
+		
+		if (theDb.isCwms())
+		{
+			JButton paramSelectButton = new JButton("Select");
+			paramSelectButton.addActionListener(
+				new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						paramSelectButtonPressed();
+					}
+				});
+			fieldEntryPanel.add(paramSelectButton,
+				new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+					new Insets(4, 5, 4, 15), 0, 0));
+		}
+		
 
 		// For CWMS, Param Type
-		int Y = 2;
+		int Y = 3;
 		if (theDb.isCwms())
 		{
 			fieldEntryPanel.add(new JLabel("Param Type:"),
@@ -476,9 +517,25 @@ public class CompParmDialog extends GuiDialog
 				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
+			
+			JButton versionSelectButton = new JButton("Select");
+			versionSelectButton.addActionListener(
+				new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						versionSelectButtonPressed();
+					}
+				});
+			fieldEntryPanel.add(versionSelectButton,
+				new GridBagConstraints(2, Y, 1, 1, 0.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+					new Insets(4, 5, 4, 15), 0, 0));
+			
 			Y++;
 		}
-		else // HDB & Tempest, Table Selector
+		else // HDB Table Selector
 		{
         	label = theDb.getTableSelectorLabel() + ":";
 	        fieldEntryPanel.add(
@@ -568,12 +625,12 @@ public class CompParmDialog extends GuiDialog
 		siteField.setToolTipText(
 			ceResources.getString("CompParmDialog.SiteFieldToolTip"));
 		dataTypeField.setToolTipText("Type data type code or press Lookup for list.");
-		dataTypeLookupButton.addActionListener(
+		selectTsButton.addActionListener(
 			new java.awt.event.ActionListener()
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					dataTypeLookupButtonPressed();
+					selectTsButtonPressed();
 				}
 			});
 		unitsButton.addActionListener(
@@ -588,6 +645,35 @@ public class CompParmDialog extends GuiDialog
 		getContentPane().add(outerPanel);
 	}
 
+	protected void versionSelectButtonPressed()
+	{
+		VersionSelectDialog versionSelectDialog = 
+			new VersionSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
+				parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
+		versionSelectDialog.setCurrentValue(versionField.getText());
+		launchDialog(versionSelectDialog);
+		if (!versionSelectDialog.isCancelled())
+		{
+			StringPair result = versionSelectDialog.getResult();
+			versionField.setText(result.second);
+		}
+	}
+
+	protected void paramSelectButtonPressed()
+	{
+		ParamSelectDialog paramSelectDialog = 
+			new ParamSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
+				parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
+		paramSelectDialog.setCurrentValue(dataTypeField.getText());
+
+		launchDialog(paramSelectDialog);
+		if (!paramSelectDialog.isCancelled())
+		{
+			StringPair result = paramSelectDialog.getResult();
+			dataTypeField.setText(result.second);
+		}
+	}
+
 	/**
 	 * Called when the OK button is pressed.
 	 */
@@ -595,12 +681,14 @@ public class CompParmDialog extends GuiDialog
 	{
 		okPressed = true;
 
+		// Validate the fields
 		try
 		{
 			DbKey siteId = Constants.undefinedId;
 			Site site = null;
 			String siteName = siteField.getText().trim();
-			if (siteName.length() > 0)
+			if (siteName.length() > 0
+			 && !siteName.contains("*-") && !siteName.contains("-*"))
 			{
 				siteId = theDb.lookupSiteID(siteName);
 				if (siteId == Constants.undefinedId)
@@ -622,7 +710,8 @@ public class CompParmDialog extends GuiDialog
 
 			String dtcode = dataTypeField.getText().trim();
 			DataType dt = null;
-			if (dtcode.length() > 0)
+			if (dtcode.length() > 0
+			 && !dtcode.contains("*-") && !dtcode.contains("-*"))
 			{
 				dt = theDb.lookupDataType(dtcode);
 				if (dt == null)
@@ -687,6 +776,8 @@ public class CompParmDialog extends GuiDialog
 				}
 				
 				tabSel = paramType + "." + duration + "." + version;
+				if (parent.hasGroupInput())
+					tabSel = tabSel + "." + siteName + "." + dtcode;
 			}
 			else
 			{
@@ -753,6 +844,7 @@ public class CompParmDialog extends GuiDialog
 			theParm.setInterval(interval);
 			DbKey dtid = dt == null ? Constants.undefinedId : dt.getId();
 			theParm.setDataTypeId(dtid);
+System.out.println("Setting tabsel='" + tabSel + "'");
 			theParm.setTableSelector(tabSel);
 			theParm.setDeltaT(deltaT);
 			theParm.setDeltaTUnits(deltaTUnits);
@@ -792,7 +884,9 @@ public class CompParmDialog extends GuiDialog
 
 			if (parent.hasGroupInput())
 			{
-				theParm.setSiteDataTypeId(Constants.undefinedId);
+				// Why do the following? It is reasonable to have a group comp
+				// that has one or more parms hard-coded to specific time series.
+//				theParm.setSiteDataTypeId(Constants.undefinedId);
 			}
 			else
 			{
@@ -883,17 +977,34 @@ Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : s
 
 	private void siteSelectButtonPressed()
 	{
-		launchDialog(siteSelectDialog);
-		Site site = siteSelectDialog.getSelectedSite();
-		if (site != null)
+		if (theDb.isCwms())
 		{
-			SiteName sn = site.getPreferredName();
-			if (sn != null)
-				siteField.setText(sn.getNameValue());
+			LocSelectDialog locSelectDialog = new LocSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
+				parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
+
+			locSelectDialog.setCurrentValue(siteField.getText());
+			launchDialog(locSelectDialog);
+			if (!locSelectDialog.isCancelled())
+			{
+				StringPair result = locSelectDialog.getResult();
+				if (result != null)
+					siteField.setText(result.second);
+			}
+		}
+		else
+		{
+			launchDialog(siteSelectDialog);
+			Site site = siteSelectDialog.getSelectedSite();
+			if (site != null)
+			{
+				SiteName sn = site.getPreferredName();
+				if (sn != null)
+					siteField.setText(sn.getNameValue());
+			}
 		}
 	}
 
-	private void dataTypeLookupButtonPressed()
+	private void selectTsButtonPressed()
 	{
 		String siteName = siteField.getText().trim();
 		DbKey siteId = Constants.undefinedId;
@@ -928,6 +1039,7 @@ Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : s
 		}
 		DataTypeSelectDialog dlg = new DataTypeSelectDialog(this, siteName,
 			dataTypes);
+		dlg.allowMultipleSelection(false);
 		launchDialog(dlg);
 		String dtinfo[] = dlg.getSelection();
 		if (dtinfo != null)

@@ -11,6 +11,11 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2015/07/27 18:38:00  mmaloney
+*  When re-applying algorithm, don't delete properties where the algorithm
+*  property has an asterisk. E.g. algoprop="ex_*", don't delete anything that starts
+*  with "ex_".
+*
 *  Revision 1.3  2015/06/04 21:43:22  mmaloney
 *  Some refactoring to allow ProcessEditPanel under new Proc Monitor GUI
 *
@@ -1115,9 +1120,11 @@ public class ComputationsEditPanel
 			new CompParmDialog(dcp.isInput(), siteSelectPanel);
 		compParmDialog.setInfo(this, r, nameField.getText().trim(), dcp);
 		CAPEdit.instance().getFrame().launchDialog(compParmDialog);
+//System.out.println("after dlg close, tabsel='" + dcp.getTableSelector() + "', locspec='"
+//+dcp.getLocSpec() + "', paramspec='" + dcp.getParamSpec() + "', ver='" + dcp.getVersion() + "'");
 		if (compParmDialog.okPressed)
 		{
-			if (!dcp.getSiteDataTypeId().isNull())
+			if (!DbKey.isNull(dcp.getSiteDataTypeId()))
 			{
 				int n = compParmTableModel.getRowCount();
 				for(int i=0; i<n; i++)
@@ -1125,7 +1132,7 @@ public class ComputationsEditPanel
 					DbCompParm otherParm = 
 						(DbCompParm)compParmTableModel.getRowObject(i);
 					if (otherParm != dcp
-					 && otherParm.getSiteDataTypeId().isNull())
+					 && DbKey.isNull(otherParm.getSiteDataTypeId()))
 					{
 						otherParm.setInterval(dcp.getInterval());
 					}
@@ -1404,14 +1411,17 @@ class CompParmTableModel
 		case 1:
 		  {
 			SiteName sn = compParm.getSiteName();
+//if(tsdb.isCwms())System.out.println("locspec='" + compParm.getLocSpec() + "'");
 			return sn != null ? sn.getNameValue() :
-				parent.hasGroupInput() ? "<var>" : "";
+				parent.hasGroupInput() ? 
+				(tsdb.isCwms() && compParm.getLocSpec().length() > 0 ? compParm.getLocSpec() : "<var>") : "";
 		  }
 		case 2:
 		  {
 			DataType dt = compParm.getDataType();
 			if (dt == null)
-				return parent.hasGroupInput() ? "<var>" : "";
+				return parent.hasGroupInput() ? 
+					(tsdb.isCwms() && compParm.getParamSpec().length() > 0 ? compParm.getParamSpec() : "<var>") : "";
 			else
 				return dt.getCode();
 		  }

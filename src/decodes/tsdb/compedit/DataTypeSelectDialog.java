@@ -172,6 +172,13 @@ public class DataTypeSelectDialog extends GuiDialog
 			return null;
 		return dataTypes.get(selectedIndex);
 	}
+	
+	public void allowMultipleSelection(boolean tf)
+	{
+		dtListTable.setSelectionMode(
+			tf ? ListSelectionModel.MULTIPLE_INTERVAL_SELECTION :
+				 ListSelectionModel.SINGLE_SELECTION);
+	}
 }
 
 class DTListTableModel 
