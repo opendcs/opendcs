@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.7  2016/10/14 18:25:19  mmaloney
+*  Added debug
+*
 *  Revision 1.6  2016/10/07 14:49:24  mmaloney
 *  Updates for Web Report for Gail Monds, LRD.
 *
@@ -615,6 +618,8 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 		{
 			p = Database.getDb().platformList.getPlatform(
 				pmp.getMediumType(), ret.getMediumId(), ret.getTimeStamp());
+//TODO MJM Remove the following
+Logger.instance().debug3("Stream Data Source made assoc to platform '" + p.makeFileName() + "'");
 		}
 		catch(DatabaseException e)
 		{ 
@@ -635,6 +640,8 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 			TransportMedium tm = resolveTransportMedium(p, ret.getMediumId(), 
 				chan, oldChannelRanges);
 			ret.setTransportMedium(tm);
+//TODO MJM Remove the following
+Logger.instance().debug3("Stream Data Source set TM to " + tm.toString());
 
 		}
 		else // Couldn't find platform using TM
@@ -746,6 +753,8 @@ Logger.instance().debug3("StreamDS reset 3");
 					ret.setMediumId(mediumId);
 				if (savedFileName != null)
 					ret.setPM(GoesPMParser.FILE_NAME, new Variable(savedFileName));
+//TODO MJM remove the following
+Logger.instance().debug3("StreamDS calling parsePerformanceMeasurements");
 				try { pmp.parsePerformanceMeasurements(ret); }
 				catch(HeaderParseException e)
 				{
