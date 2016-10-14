@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.10  2016/04/15 19:27:59  mmaloney
+*  Fixed null ptr bug.
+*
 *  Revision 1.9  2015/12/31 17:19:54  mmaloney
 *  dev
 *
@@ -722,6 +725,13 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 			Platform ob = it.next();
 Logger.instance().debug3("merging platform " + ob.getDisplayName());
 			Platform oldSiteDesigMatch = null;
+			
+			if (ob.getSite() == null)
+			{
+				warning("Skipping platform with ID=" + ob.getId() + " in the XML input file because "
+					+ "it has no associated site.");
+				continue;
+			}
 
 			// See if a matching old site exists
 			Site oldSite = theDb.siteList.getSite(ob.getSite().getPreferredName());
