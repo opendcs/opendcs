@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.22  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -40,6 +43,8 @@ public class ImportComp
 	private StringToken xmlFileArgs;
 	private BooleanToken createTimeSeries;
 	private SiteDAI siteDAO = null;
+	private BooleanToken noOverwriteArg = new BooleanToken("o", 
+		"Do not overwrite records with matching name.", "", TokenOptions.optSwitch, false);
 
 	//=======================================================================
 	/**
@@ -56,6 +61,7 @@ public class ImportComp
 		createTimeSeries = new BooleanToken("C", "create parms as needed",
 			"", TokenOptions.optSwitch, false);
 		cmdLineArgs.addToken(createTimeSeries);
+		cmdLineArgs.addToken(noOverwriteArg);
 
 		xmlFileArgs = new StringToken("", "xml-file",
 			"", TokenOptions.optArgument | TokenOptions.optMultiple|
@@ -105,7 +111,6 @@ public class ImportComp
 				if (tsGrpsList != null)
 					for (TsGroup g : tsGrpsList)
 					{
-						Logger.instance().info("Importing group '" + g.getGroupName() + "'");
 						// Lookup the time series unique string
 						lookupObject(g, LookupObjectType.TsUniqStr);
 		
@@ -120,11 +125,20 @@ public class ImportComp
 						// Write each TS group into the DB
 						try
 						{
-							TsGroup existingGrp = theDb.getTsGroupByName(g
-								.getGroupName());
+							TsGroup existingGrp = theDb.getTsGroupByName(g.getGroupName());
 							if (existingGrp != null)
+							{
+								if (noOverwriteArg.getValue())
+								{
+									Logger.instance().info("Skipping group '" + g.getGroupName() 
+										+ "' because a group with that name already exists in your database.");
+
+									continue;
+								}
 								g.setGroupId(existingGrp.getGroupId());
+							}
 		
+							Logger.instance().info("Importing group '" + g.getGroupName() + "'");
 							theDb.writeTsGroup(g);
 						}
 						catch (DbIoException E)
@@ -142,13 +156,24 @@ public class ImportComp
 						if (mdobj instanceof CompAppInfo)
 						{
 							CompAppInfo cai = (CompAppInfo)mdobj;
+							if (noOverwriteArg.getValue())
+							{
+								try 
+								{
+									loadingAppDao.getComputationApp(cai.getAppName());
+									// If it doesn't throw NoSuchObject, that means it exists.
+									Logger.instance().info("Skipping process '" + cai.getAppName() 
+										+ "' because a process with that name already exists in your database.");
+									continue;
+								}
+								catch(NoSuchObjectException ex) {}
+							}
 							Logger.instance().info("Importing process '" + cai.getAppName() + "'");
-							loadingAppDao.writeComputationApp((CompAppInfo)mdobj);
+							loadingAppDao.writeComputationApp(cai);
 						}
 						else if (mdobj instanceof DbComputation)
 						{
 							DbComputation comp = (DbComputation)mdobj;
-							Logger.instance().info("Importing computation '" + comp.getName() + "'");
 							for(Iterator<DbCompParm> dcpi = comp.getParms();
 								dcpi.hasNext(); )
 							{
@@ -220,13 +245,42 @@ public class ImportComp
 							//Get the TS group ID
 							String tsGrpName = comp.getGroupName();
 							if (tsGrpName != null)
-							  comp.setGroupId(theDb.getTsGroupByName(tsGrpName).getGroupId()); 
+							  comp.setGroupId(theDb.getTsGroupByName(tsGrpName).getGroupId());
 							
+							if (noOverwriteArg.getValue())
+							{
+								try
+								{
+									computationDAO.getComputationByName(comp.getName());
+									// If it doesn't throw NoSuchObject, that means it exists.
+									Logger.instance().info("Skipping computation '" + comp.getName() 
+										+ "' because a computation with that name already exists in your database.");
+									continue;
+								}
+								catch(NoSuchObjectException ex) {}
+							}
+							
+							Logger.instance().info("Importing computation '" + comp.getName() + "'");
 							computationDAO.writeComputation(comp);
 						}
 						else if (mdobj instanceof DbCompAlgorithm)
 						{
-							algorithmDao.writeAlgorithm((DbCompAlgorithm)mdobj);
+							DbCompAlgorithm algo = (DbCompAlgorithm)mdobj;
+							if (noOverwriteArg.getValue())
+							{
+								try
+								{
+									algorithmDao.getAlgorithmId(algo.getName());
+									// If it doesn't throw NoSuchObject, that means it exists.
+									Logger.instance().info("Skipping algorithm '" + algo.getName() 
+										+ "' because an algorithm with that name already exists in your database.");
+									continue;
+								}
+								catch(NoSuchObjectException ex) {}
+							}
+
+							Logger.instance().info("Importing algorithm '" + algo.getName() + "'");
+							algorithmDao.writeAlgorithm(algo);
 						}
 					}
 					catch(DbIoException ex)
