@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.7  2016/10/07 14:49:24  mmaloney
+*  Updates for Web Report for Gail Monds, LRD.
+*
 *  Revision 1.6  2015/02/06 19:05:29  mmaloney
 *  added getRoutingSpecThread() method.
 *
@@ -269,6 +272,8 @@ public abstract class DataSourceExec
 	protected TransportMedium resolveTransportMedium(Platform p,
 		String tmid, int chan, boolean oldChannelRanges)
 	{
+//TODO MJM Remove the following:
+Logger.instance().debug3("DataSourceExec.resolveTM: p='" + p.makeFileName() + "', tmid=" + tmid + ", chan=" + chan);
 		for(TransportMedium tm : p.transportMedia) 
 		{
 			if (!tmid.equalsIgnoreCase(tm.getMediumId()))
@@ -282,13 +287,14 @@ public abstract class DataSourceExec
 			       || tm.getMediumType().equalsIgnoreCase(Constants.medium_Goes)))
 				continue;
 			}
-			
-			// For non-goes, if a medium type is specified in the data source
-			// it needs to match the one in the TM.
-			String mt = getMediumType();
-			if (mt != null && !mt.equalsIgnoreCase(tm.getMediumType()))
-				continue;
-
+			else
+			{
+				// For non-goes, if a medium type is specified in the data source
+				// it needs to match the one in the TM.
+				String mt = getMediumType();
+				if (mt != null && !mt.equalsIgnoreCase(tm.getMediumType()))
+					continue;
+			}
 			/*
 			  IF
 				no channel to check,
