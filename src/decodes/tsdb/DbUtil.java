@@ -171,6 +171,15 @@ public class DbUtil extends TsdbAppTemplate
 				selectCmd(tokens);
 			}
 		};
+	private CmdLine hdbRatingCmd = 
+		new CmdLine("hdbRating", " -- Install a test rating in HDB.")
+		{
+			public void execute(String[] tokens)
+			{
+				hdbRatingCmd(tokens);
+			}
+		};
+
 
 
 	public DbUtil()
@@ -178,15 +187,68 @@ public class DbUtil extends TsdbAppTemplate
 		super("util.log");
 	}
 
+	protected void hdbRatingCmd(String[] tokens)
+	{
+		String q = "select a.site_datatype_id from hdb_site_datatype a, hdb_site b "
+			+ "where a.site_id = b.site_id and b.site_common_name = 'TESTSITE1' "
+			+ "and a.datatype_id = 65";
+		Statement st = null;
+		try
+		{
+			st = theDb.getConnection().createStatement();
+			ResultSet rs = st.executeQuery(q);
+			if (!rs.next())
+			{
+				System.out.println("Statement '" + q + "' did not return any results.");
+				return;
+			}
+			DbKey sdi = DbKey.createDbKey(rs, 1);
+			rs.close();
+			q = "{ call RATINGS.create_site_rating(" + sdi + ", 'Stage Flow', null, null, 7, 'test rating') }";
+			st.executeUpdate(q);
+			q = "select rating_id from ref_site_rating where indep_site_datatype_id = " + sdi;
+			rs = st.executeQuery(q);
+			if (!rs.next())
+			{
+				System.out.println("Statement '" + q + "' did not return any results.");
+				return;
+			}
+			DbKey ratingId = DbKey.createDbKey(rs, 1);
+			rs.close();
+			
+			double indep[] = { .0001, 1.0, 2.0, 3.0, 4.0, 5.0 };
+			double dep[]   = { 1., 10., 100., 1000., 10000., 100000. };
+			for(int i = 0; i<indep.length; i++)
+			{
+				q = "{ call RATINGS.modify_rating_point(" + ratingId + ", " + indep[i] + ", " + dep[i] + ") }";
+				st.executeUpdate(q);
+			}
+		}
+		catch(Exception ex)
+		{
+			System.err.println("Execption in '" + q + "': " + ex);
+			ex.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				st.close();
+			}
+			catch(Exception ex) {}
+		}
+	}
+
 	protected void selectCmd(String[] tokens)
 	{
 		StringBuilder sb = new StringBuilder();
 		for(String t : tokens)
 			sb.append(t + " ");
+		String q = "";
 		try
 		{
 			Statement st = theDb.getConnection().createStatement();
-			String q = sb.toString();
+			q = sb.toString();
 			System.out.println("Executing: " + q);
 			ResultSet rs = st.executeQuery(q);
 			ArrayList<String[]> rows = new ArrayList<String[]>();
@@ -227,10 +289,10 @@ public class DbUtil extends TsdbAppTemplate
 				System.out.println("");
 			}
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println("Error in '" + q + "': " + ex);
+			ex.printStackTrace();
 		}
 		
 	}
@@ -332,7 +394,8 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(versionCmd);
 		cmdLineProc.addCmd(bparamCmd);
 		cmdLineProc.addCmd(selectCmd);
-
+		cmdLineProc.addCmd(hdbRatingCmd);
+		
 		cmdLineProc.addHelpAndQuitCommands();
 		
 		cmdLineProc.prompt = "cmd: ";
