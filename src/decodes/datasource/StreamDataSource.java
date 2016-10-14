@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.8  2016/10/14 18:37:09  mmaloney
+*  dev
+*
 *  Revision 1.7  2016/10/14 18:25:19  mmaloney
 *  Added debug
 *
@@ -618,8 +621,6 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 		{
 			p = Database.getDb().platformList.getPlatform(
 				pmp.getMediumType(), ret.getMediumId(), ret.getTimeStamp());
-//TODO MJM Remove the following
-Logger.instance().debug3("Stream Data Source made assoc to platform '" + p.makeFileName() + "'");
 		}
 		catch(DatabaseException e)
 		{ 
@@ -640,9 +641,6 @@ Logger.instance().debug3("Stream Data Source made assoc to platform '" + p.makeF
 			TransportMedium tm = resolveTransportMedium(p, ret.getMediumId(), 
 				chan, oldChannelRanges);
 			ret.setTransportMedium(tm);
-//TODO MJM Remove the following
-Logger.instance().debug3("Stream Data Source set TM to " + tm.toString());
-
 		}
 		else // Couldn't find platform using TM
 		{
@@ -753,8 +751,6 @@ Logger.instance().debug3("StreamDS reset 3");
 					ret.setMediumId(mediumId);
 				if (savedFileName != null)
 					ret.setPM(GoesPMParser.FILE_NAME, new Variable(savedFileName));
-//TODO MJM remove the following
-Logger.instance().debug3("StreamDS calling parsePerformanceMeasurements");
 				try { pmp.parsePerformanceMeasurements(ret); }
 				catch(HeaderParseException e)
 				{
@@ -852,8 +848,6 @@ Logger.instance().debug3("Reading " + len + " bytes of msg data after header.");
 				{
 Logger.instance().debug3("No end delim, looking for next start delim '"
 + new String(startDelimiter) + "'");
-//TODO Here It is finding the start delimiter of the next message but
-//TODO it is not pushing it back.
 					len = readToDelimiter(startDelimiter, msgbuf, true);
 					justGotStartDelim = true;
 					

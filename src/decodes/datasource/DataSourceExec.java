@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.8  2016/10/14 18:50:03  mmaloney
+*  dev
+*
 *  Revision 1.7  2016/10/07 14:49:24  mmaloney
 *  Updates for Web Report for Gail Monds, LRD.
 *
@@ -272,8 +275,6 @@ public abstract class DataSourceExec
 	protected TransportMedium resolveTransportMedium(Platform p,
 		String tmid, int chan, boolean oldChannelRanges)
 	{
-//TODO MJM Remove the following:
-Logger.instance().debug3("DataSourceExec.resolveTM: p='" + p.makeFileName() + "', tmid=" + tmid + ", chan=" + chan);
 		for(TransportMedium tm : p.transportMedia) 
 		{
 			if (!tmid.equalsIgnoreCase(tm.getMediumId()))
