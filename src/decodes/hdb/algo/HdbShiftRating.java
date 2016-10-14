@@ -54,7 +54,7 @@ public class HdbShiftRating
 //AW:LOCALVARS
 	HDBRatingTable ShiftTable = null;
 	HDBRatingTable RatingTable = null;
-
+	private boolean firstCall = true;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -102,16 +102,6 @@ public class HdbShiftRating
 //AW:INIT_END
 
 //AW:USERINIT
-		// Find the name for the input parameter.
-// this int cast was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
-//		int indep_sdi = (int) getSDI("indep");
-// this line was moded by M. Bogner March 2013 for the 5.3 CP upgrade project
-// because the surrogate keys in the CP were changed to an object
-		DbKey indep_sdi = getSDI("indep");
-		debug3("Constructing Shift and Rating tables for sdi " + indep_sdi);
-		//default non extrapolation of lookups is fine here.
-		ShiftTable = new HDBRatingTable(tsdb,shiftTableType,indep_sdi);
-		RatingTable = new HDBRatingTable(tsdb,lookupTableType,indep_sdi);
 //AW:USERINIT_END
 	}
 	
@@ -122,6 +112,21 @@ public class HdbShiftRating
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
+		if (firstCall)
+		{
+			// Find the name for the input parameter.
+			// this int cast was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
+//					int indep_sdi = (int) getSDI("indep");
+			// this line was moded by M. Bogner March 2013 for the 5.3 CP upgrade project
+			// because the surrogate keys in the CP were changed to an object
+			DbKey indep_sdi = getSDI("indep");
+			debug3("Constructing Shift and Rating tables for sdi " + indep_sdi);
+			//default non extrapolation of lookups is fine here.
+			ShiftTable = new HDBRatingTable(tsdb,shiftTableType,indep_sdi);
+			RatingTable = new HDBRatingTable(tsdb,lookupTableType,indep_sdi);
+
+			firstCall = false;
+		}
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		//TODO: fix updates of rating table detection,

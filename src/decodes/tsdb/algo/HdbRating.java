@@ -74,6 +74,7 @@ public class HdbRating
 	{
 		return ratingPropertySpecs;
 	}
+	private boolean firstCall = true;
 
 //AW:LOCALVARS_END
 
@@ -105,13 +106,6 @@ public class HdbRating
 //AW:INIT_END
 
 //AW:USERINIT
-		// Find the name for the input parameter.
-		DbKey indep_sdi = getSDI("indep");
-		debug3("Constructing HDB rating for '" + ratingType + "' sdi " +
-				indep_sdi);
-		ratingTable = new HDBRatingTable(tsdb,ratingType,indep_sdi);
-		ratingTable.setExceedLowerBound(exceedLowerBound);
-		ratingTable.setExceedUpperBound(exceedUpperBound);
 //AW:USERINIT_END
 	}
 	
@@ -122,6 +116,18 @@ public class HdbRating
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
+		if (firstCall)
+		{
+			// Find the name for the input parameter.
+			DbKey indep_sdi = getSDI("indep");
+			debug3("Constructing HDB rating for '" + ratingType + "' sdi " +
+					indep_sdi);
+			ratingTable = new HDBRatingTable(tsdb,ratingType,indep_sdi);
+			ratingTable.setExceedLowerBound(exceedLowerBound);
+			ratingTable.setExceedUpperBound(exceedUpperBound);
+
+			firstCall = false;
+		}
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		//TODO: fix updates of rating table detection

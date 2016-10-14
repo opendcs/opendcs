@@ -38,6 +38,7 @@ public class HdbACAPSRating
 	HDBRatingTable A0RatingTable = null;
 	HDBRatingTable A1RatingTable = null;
 	HDBRatingTable A2RatingTable = null;
+	private boolean firstCall = true;
 
 //AW:LOCALVARS_END
 
@@ -66,16 +67,6 @@ public class HdbACAPSRating
 //AW:INIT_END
 
 //AW:USERINIT
-		// Find the name for the input parameter.
-		
-		// All surragate keys are now stored in DbKey objects.
-		DbKey elev_sdi = getSDI("elevation");
-		debug3("Constructing ACAPS ratings for sdi " +
-				elev_sdi);
-//default non extrapolation of lookups is fine here.
-		A0RatingTable = new HDBRatingTable(tsdb,"ACAPS A0",elev_sdi);
-		A1RatingTable = new HDBRatingTable(tsdb,"ACAPS A1",elev_sdi);
-		A2RatingTable = new HDBRatingTable(tsdb,"ACAPS A2",elev_sdi);
 //AW:USERINIT_END
 	}
 	
@@ -86,6 +77,19 @@ public class HdbACAPSRating
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
+		if (firstCall)
+		{
+			// Find the name for the input parameter.
+			DbKey elev_sdi = getSDI("elevation");
+			debug3("Constructing ACAPS ratings for sdi " +
+					elev_sdi);
+	//default non extrapolation of lookups is fine here.
+			A0RatingTable = new HDBRatingTable(tsdb,"ACAPS A0",elev_sdi);
+			A1RatingTable = new HDBRatingTable(tsdb,"ACAPS A1",elev_sdi);
+			A2RatingTable = new HDBRatingTable(tsdb,"ACAPS A2",elev_sdi);
+
+			firstCall = false;
+		}
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		//TODO: fix updates of rating table detection

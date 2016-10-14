@@ -76,7 +76,7 @@ public class GLDAEvap
 	HDBRatingTable streamRatingTable = null;
 	HDBRatingTable terraceRatingTable = null;
 	GregorianCalendar cal = new GregorianCalendar();
-
+	private boolean firstCall = true;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -118,16 +118,6 @@ public class GLDAEvap
 //AW:INIT_END
 
 //AW:USERINIT
-		// Find the name for the input parameter.
-// Cast to int was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
-// Cast to int was moded by M. Bogner March 2013 for the 5.3 CP upgrade project
-// because the surrogate keys where changed to a dbkey object 
-		//int elev_sdi = (int) getSDI("elev").getValue();
-		DbKey elev_sdi = getSDI("elev");
-		debug3("Constructing HDB ratings for evap ratings");
-		riverRatingTable = new HDBRatingTable(tsdb,"Lake Powell River Area",elev_sdi);
-		streamRatingTable = new HDBRatingTable(tsdb,"Lake Powell Streamside Area",elev_sdi);
-		terraceRatingTable = new HDBRatingTable(tsdb,"Lake Powell Terrace Area",elev_sdi);
 		
 //AW:USERINIT_END
 	}
@@ -141,6 +131,22 @@ public class GLDAEvap
 //AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
+		if (firstCall)
+		{
+			firstCall = false;
+			
+			// Find the name for the input parameter.
+			// Cast to int was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
+			// Cast to int was moded by M. Bogner March 2013 for the 5.3 CP upgrade project
+			// because the surrogate keys where changed to a dbkey object 
+			//int elev_sdi = (int) getSDI("elev").getValue();
+			DbKey elev_sdi = getSDI("elev");
+			debug3("Constructing HDB ratings for evap ratings");
+			riverRatingTable = new HDBRatingTable(tsdb,"Lake Powell River Area",elev_sdi);
+			streamRatingTable = new HDBRatingTable(tsdb,"Lake Powell Streamside Area",elev_sdi);
+			terraceRatingTable = new HDBRatingTable(tsdb,"Lake Powell Terrace Area",elev_sdi);
+
+		}
 //AW:BEFORE_TIMESLICES_END
 	}
 
