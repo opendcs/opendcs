@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.6  2016/10/07 14:49:24  mmaloney
+*  Updates for Web Report for Gail Monds, LRD.
+*
 *  Revision 1.5  2014/10/02 18:21:42  mmaloney
 *  FTP Data Source to handle multiple file names.
 *
@@ -462,7 +465,8 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 				(endDelimiter != null ? AsciiUtil.bin2ascii(endDelimiter)
 				: "null") 
 			+ "', shefMode=" + shefMode
-			+ ", parityCheck=" + parityCheck);
+			+ ", parityCheck=" + parityCheck
+			+ ", header type=" + (pmp==null?"none":pmp.getHeaderType()));
 
 		// Construct aggregate network list.
 		myNetworkList = new NetworkList();
