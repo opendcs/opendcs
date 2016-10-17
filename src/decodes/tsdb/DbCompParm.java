@@ -75,6 +75,12 @@ public class DbCompParm
 	/** OPENDCS6.0 allows Site association in DbCompParm directly */
 	private DbKey siteId = Constants.undefinedId;
 	
+	private String parsedParamType = "";
+	private String parsedDuration = "";
+	private String parsedVersion = "";
+	private String parsedLocSpec = "";
+	private String parsedParamSpec = "";
+	
 	
 	public String getUnitsAbbr()
 	{
@@ -101,9 +107,7 @@ public class DbCompParm
 	{
 		this.algoRoleName = algoRoleName;
 		this.interval = interval;
-		tableSelector = tsel;
-		if (tableSelector == null)
-			tableSelector = "";
+		setTableSelector(tsel);
 		this.deltaT = deltaT;
 		this.algoParmType = null;
 		this.modelId = Constants.undefinedIntKey;
@@ -116,7 +120,7 @@ public class DbCompParm
 	{
 		this.algoRoleName = rhs.algoRoleName;
 		this.interval = rhs.interval;
-		this.tableSelector = rhs.tableSelector;
+		this.setTableSelector(rhs.tableSelector);
 		this.deltaT = rhs.deltaT;
 		this.algoParmType = rhs.algoParmType;
 		this.modelId = rhs.modelId;
@@ -212,7 +216,20 @@ public class DbCompParm
 	 */
 	public void setTableSelector(String x)
 	{
+		parsedParamType = parsedDuration = parsedVersion = parsedLocSpec = parsedParamSpec = "";
+
 		tableSelector = x == null ? "" : x;
+		String parsed[] = tableSelector.split("\\.");
+		if (parsed != null && parsed.length >= 3)
+		{
+			parsedParamType = parsed[0];
+			parsedDuration = parsed[1];
+			parsedVersion = parsed[2];
+			if (parsed.length >= 4)
+				parsedLocSpec = parsed[3];
+			if (parsed.length >= 5)
+				parsedParamSpec = parsed[4];
+		}
 	}
 
 	/**
@@ -382,12 +399,7 @@ public class DbCompParm
      */
     public String getParamType()
     {
-    	if (tableSelector == null)
-    		return "";
-    	int idx = tableSelector.indexOf('.');
-    	if (idx == -1)
-    		return tableSelector;
-    	return tableSelector.substring(0, idx);
+    	return parsedParamType;
     }
     
 	/**
@@ -396,15 +408,7 @@ public class DbCompParm
      */
     public String getDuration()
     {
-    	if (tableSelector == null)
-    		return "";
-    	int idx = tableSelector.indexOf('.');
-    	if (idx == -1)
-    		return tableSelector;
-    	int lidx = tableSelector.lastIndexOf('.');
-    	if (lidx == -1)
-    		return tableSelector.substring(idx+1);
-    	return tableSelector.substring(idx+1, lidx);
+    	return parsedDuration;
     }
 
    
@@ -412,15 +416,23 @@ public class DbCompParm
 	 * In CWMS, table-selector is ParamType.Duration.Version
      * @return the version
      */
-   public String getVersion()
-    {
-    	if (tableSelector == null)
-    		return null;
-    	int lidx = tableSelector.lastIndexOf('.');
-    	if (lidx == -1)
-    		return "";
-    	return tableSelector.substring(lidx+1);
-    }
+	public String getVersion()
+	{
+		return parsedVersion;
+	}
+	
+	/**
+	 * In CWMS LocSpec is 4th field of Table Selector
+	 * @return
+	 */
+	public String getLocSpec() { return parsedLocSpec; }
+	
+	/**
+	 * In CWMS ParamSpec is 5th field of Table Selector
+	 * @return
+	 */
+	public String getParamSpec() { return parsedParamSpec; }
+
 
 	public String getDeltaTUnits()
 	{

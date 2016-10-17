@@ -7,6 +7,9 @@
 *  contained in this file may be claimed to be proprietary.
 *
 * $Log$
+* Revision 1.2  2016/04/22 14:39:40  mmaloney
+* Guard against same subgroup being added multiple times.
+*
 * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 * OPENDCS 6.0 Initial Checkin
 *
@@ -332,11 +335,6 @@ public class TsGroup
 		return false;
 	}
 
-	public void addIntervalCode(String intervalCode)
-	{
-		addOtherMember("Interval", intervalCode);
-	}
-
 	/**
 	 * Return a non-persistent set of interval codes in this group.
 	 * Changes to the returned collection are not saved!
@@ -344,33 +342,7 @@ public class TsGroup
 	 */
 	public ArrayList<String> getIntervalCodeList()
 	{
-		return getOtherMembers("Interval");
-	}
-
-	/** 
-	 * Adds a "StatisticsCode" member to the group
-	 */
-	public void addStatisticsCode(String statisticsCode)
-	{
-		addOtherMember("StatisticsCode", statisticsCode);
-	}
-
-	/**
-	 * Return a non-persistent set of statistics codes in this group.
-	 * Changes to the returned collection are not saved!
-	 * @return a non-persistent set of statistics codes in this group. 
-	 */
-	public ArrayList<String> getStatisticsCodeList()
-	{
-		return getOtherMembers("StatisticsCode");
-	}
-
-	/** 
-	 * Adds a "ParamType" member to the group
-	 */
-	public void addParamType(String paramType)
-	{
-		addOtherMember("ParamType", paramType);
+		return getOtherMembers(TsGroupMemberType.Interval.toString());
 	}
 
 	/**
@@ -380,15 +352,7 @@ public class TsGroup
 	 */
 	public ArrayList<String> getParamTypeList()
 	{
-		return getOtherMembers("ParamType");
-	}
-
-	/** 
-	 * Adds a "Duration" member to the group
-	 */
-	public void addDuration(String duration)
-	{
-		addOtherMember("Duration", duration);
+		return getOtherMembers(TsGroupMemberType.ParamType.toString());
 	}
 
 	/**
@@ -398,15 +362,7 @@ public class TsGroup
 	 */
 	public ArrayList<String> getDurationList()
 	{
-		return getOtherMembers("Duration");
-	}
-
-	/** 
-	 * Adds a "Version" member to the group
-	 */
-	public void addVersion(String version)
-	{
-		addOtherMember("Version", version);
+		return getOtherMembers(TsGroupMemberType.Duration.toString());
 	}
 
 	/**
@@ -416,7 +372,7 @@ public class TsGroup
 	 */
 	public ArrayList<String> getVersionList()
 	{
-		return getOtherMembers("Version");
+		return getOtherMembers(TsGroupMemberType.Version.toString());
 	}
 
 	/**

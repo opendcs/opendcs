@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.3  2014/12/19 19:26:56  mmaloney
+* Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
+*
 * Revision 1.2  2014/07/03 12:53:41  mmaloney
 * debug improvements.
 *
@@ -137,31 +140,12 @@ public class TsGroupDAO
 			while(rs != null && rs.next())
 				group.addDataTypeId(DbKey.createDbKey(rs, 1));
 
-			if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_6)
-			{
-				// Now read the interval-code list.
-				q = "SELECT interval_code from tsdb_group_member_interval "
-					+ "WHERE group_id = " + group.getGroupId();
-				rs = doQuery(q);
-				while(rs != null && rs.next())
-					group.addIntervalCode(rs.getString(1));
-	
-				// Now read the statistics-code list.
-				q = "SELECT statistics_code from tsdb_group_member_statcode "
-					+ "WHERE group_id = " + group.getGroupId();
-				rs = doQuery(q);
-				while(rs != null && rs.next())
-					group.addStatisticsCode(rs.getString(1));
-			}
-			else // defined with tsdb_group_member_other
-			{
-				q = "select member_type, member_value from "
-				  + "tsdb_group_member_other where group_id = "
-				  + group.getGroupId();
-				rs = doQuery(q);
-				while(rs != null && rs.next())
-					group.addOtherMember(rs.getString(1), rs.getString(2));
-			}
+			q = "select member_type, member_value from "
+			  + "tsdb_group_member_other where group_id = "
+			  + group.getGroupId();
+			rs = doQuery(q);
+			while(rs != null && rs.next())
+				group.addOtherMember(rs.getString(1), rs.getString(2));
 
 			// Now get the sub-groups.
 			q = "SELECT a.group_id, a.group_name, a.group_type, a.group_description ";
@@ -355,40 +339,15 @@ public class TsGroupDAO
 			doModify(q);
 		}
 
-		if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_6)
+		q = "DELETE from tsdb_group_member_other where group_id = " 
+			+ groupId;
+		doModify(q);
+		for (TsGroupMember tgm : group.getOtherMembers())
 		{
-			q = "DELETE from tsdb_group_member_interval where group_id = " 
-				+ groupId;
+			q = "INSERT INTO tsdb_group_member_other values("
+				+ groupId + ", " + sqlString(tgm.getMemberType())
+				+ ", " + sqlString(tgm.getMemberValue()) + ")";
 			doModify(q);
-			for(String X : group.getIntervalCodeList())
-			{
-				q = "INSERT INTO tsdb_group_member_interval values("
-					+ groupId + ", " + sqlString(X) + ")";
-				doModify(q);
-			}
-	
-			q = "DELETE from tsdb_group_member_statcode where group_id = " 
-				+ groupId;
-			doModify(q);
-			for(String X : group.getStatisticsCodeList())
-			{
-				q = "INSERT INTO tsdb_group_member_statcode values("
-					+ groupId + ", " + sqlString(X) + ")";
-				doModify(q);
-			}
-		}
-		else // version >= 6
-		{
-			q = "DELETE from tsdb_group_member_other where group_id = " 
-				+ groupId;
-			doModify(q);
-			for (TsGroupMember tgm : group.getOtherMembers())
-			{
-				q = "INSERT INTO tsdb_group_member_other values("
-					+ groupId + ", " + sqlString(tgm.getMemberType())
-					+ ", " + sqlString(tgm.getMemberValue()) + ")";
-				doModify(q);
-			}
 		}
 
 //		db.commit();
@@ -418,22 +377,9 @@ public class TsGroupDAO
 			q = "DELETE from tsdb_group_member_dt where group_id = " + groupId;
 			doModify(q);
 
-			
-			if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_6)
-			{
-				q = "DELETE from tsdb_group_member_interval where group_id = " 
-					+ groupId;
-				doModify(q);
-				q = "DELETE from tsdb_group_member_statcode where group_id = " 
-					+ groupId;
-				doModify(q);
-			}
-			else // version >= 6
-			{
-				q = "DELETE from tsdb_group_member_other where group_id = " 
-					+ groupId;
-				doModify(q);
-			}
+			q = "DELETE from tsdb_group_member_other where group_id = " 
+				+ groupId;
+			doModify(q);
 
 			//Delete ts Group
 			q = "DELETE from tsdb_group WHERE group_id = " + groupId;

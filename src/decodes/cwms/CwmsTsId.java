@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2016/09/29 18:54:36  mmaloney
+ * CWMS-8979 Allow Database Process Record to override decodes.properties and
+ * user.properties setting. Command line arg -Dsettings=appName, where appName is the
+ * name of a process record. Properties assigned to the app will override the file(s).
+ *
  * Revision 1.2  2015/10/26 12:49:24  mmaloney
  * compareTo method must compare TSID not public name.
  *
@@ -106,6 +111,9 @@ public class CwmsTsId
 	private Interval intervalOb = null;
 	
 	private Site site = null;
+	
+	private String baseLoc = null, subLoc = null, baseParam = null, subParam = null, 
+		baseVersion = null, subVersion = null;
 
 	/** used for caching */
 	private long readTime = 0L;
@@ -131,15 +139,15 @@ public class CwmsTsId
 	public CwmsTsId(DbKey tsCode, String path, DataType dataType, 
 			String description, boolean versionFlag, int intervalUtcOffset,
 			String storageUnits)
-		{
-			this.tsCode = tsCode;
-			setUniqueString(path);
-			this.dataType = dataType;
-			this.description = description;
-			this.versionFlag = versionFlag;
-			this.intervalUtcOffset = intervalUtcOffset;
-			this.storageUnits = storageUnits;
-		}
+	{
+		this.tsCode = tsCode;
+		setUniqueString(path);
+		this.dataType = dataType;
+		this.description = description;
+		this.versionFlag = versionFlag;
+		this.intervalUtcOffset = intervalUtcOffset;
+		this.storageUnits = storageUnits;
+	}
 	
 	@Override
 	public TimeSeriesIdentifier copyNoKey()
@@ -172,7 +180,7 @@ public class CwmsTsId
 //Logger.instance().debug3("CwmsTsId.setUniqueString str='" + uniqueId+ "': #parts=" + parts.length);
 //for(int i=0; i<parts.length; i++)Logger.instance().debug3("part[" + i + "]='" + parts[i] + "'");
 		if (parts.length > 0)
-			siteName = parts[0];
+			setLocation(parts[0]);
 		if (parts.length > 1)
 			setParam(parts[1]);
 		if (parts.length > 2)
@@ -182,7 +190,7 @@ public class CwmsTsId
 		if (parts.length > 4)
 			duration = parts[4];
 		if (parts.length > 5)
-			version = parts[5];
+			setVersion(parts[5]);
 	}
 
 	/** The key in CWMS is the ts_code */
@@ -256,7 +264,7 @@ public class CwmsTsId
 		else if (part.equalsIgnoreCase("duration"))
 			duration = value;
 		else if (part.equalsIgnoreCase("version"))
-			version = value;
+			setVersion(value);
 		else
 			Logger.instance().warning("CwmsTsId setPart " + part 
 				+ ": invalid part");
@@ -370,16 +378,41 @@ Logger.instance().debug3("TS " + getUniqueString() + ", setting displayName='" +
 		intervalOb = IntervalCodes.getInterval(intv);
 	}
 	
-	private void setLocation(String loc)
+	private void setLocation(String v)
 	{
-		siteName = loc;
+		siteName = v;
+		
+		int hyphen = v.indexOf('-');
+		if (hyphen <= 0)
+		{
+			baseLoc = v;
+			subLoc = null;
+		}
+		else
+		{
+			baseLoc = v.substring(0, hyphen);
+			subLoc = v.length() > hyphen+1 ? v.substring(hyphen+1) : null;
+		}
+
 	}
 	
-	private void setParam(String param)
+	private void setParam(String v)
 	{
-		if (dataType != null && dataType.getCode().equals(param))
+		if (dataType != null && dataType.getCode().equals(v))
 			return;
-		dataType = DataType.getDataType(Constants.datatype_CWMS, param);
+		dataType = DataType.getDataType(Constants.datatype_CWMS, v);
+		
+		int hyphen = v.indexOf('-');
+		if (hyphen <= 0)
+		{
+			baseParam = v;
+			subParam = null;
+		}
+		else
+		{
+			baseParam = v.substring(0, hyphen);
+			subParam = v.length() > hyphen+1 ? v.substring(hyphen+1) : null;
+		}
 	}
 
 	public boolean getVersionFlag()
@@ -416,7 +449,7 @@ Logger.instance().debug3("TS " + getUniqueString() + ", setting displayName='" +
 	@Override
 	public void setSiteName(String siteName)
 	{
-		this.siteName = siteName;
+		setLocation(siteName);
 	}
 
 
@@ -609,4 +642,50 @@ Logger.instance().debug3("TS " + getUniqueString() + ", setting displayName='" +
 	public String getStatisticsCode() { return paramType; }
 	
 	public String getVersion() { return version; }
+	
+	public void setVersion(String v)
+	{
+		version = v;
+		int hyphen = v.indexOf('-');
+		if (hyphen <= 0)
+		{
+			baseVersion = v;
+			subVersion = null;
+		}
+		else
+		{
+			baseVersion = v.substring(0, hyphen);
+			subVersion = v.length() > hyphen+1 ? v.substring(hyphen+1) : null;
+		}
+	}
+
+	public String getBaseLoc()
+	{
+		return baseLoc;
+	}
+
+	public String getSubLoc()
+	{
+		return subLoc;
+	}
+
+	public String getBaseParam()
+	{
+		return baseParam;
+	}
+
+	public String getSubParam()
+	{
+		return subParam;
+	}
+
+	public String getBaseVersion()
+	{
+		return baseVersion;
+	}
+
+	public String getSubVersion()
+	{
+		return subVersion;
+	}
 }
