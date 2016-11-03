@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.13  2016/06/07 21:30:49  mmaloney
+ * Reload site cache when refreshing TSID cache. Otherwise, location records are read
+ * one-at-a-time.
+ *
  * Revision 1.12  2016/05/06 14:45:14  mmaloney
  * Never use CWMS_V_TSV_DQU.
  *
@@ -77,7 +81,6 @@ import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.VarFlags;
-import decodes.util.DecodesSettings;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
@@ -97,6 +100,12 @@ public class CwmsTimeSeriesDAO
 	protected DataTypeDAI dataTypeDAO = null;
 	private String dbOfficeId = null;
 	private static boolean noUnitConv = false;
+	private static long lastCacheReload = 0L;
+	private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
+			+ "a.UNIT_ID, a.PARAMETER_ID, c.PUBLIC_NAME, a.TS_CODE, a.LOCATION_CODE, "
+			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a, CWMS_V_LOC c";
+	private String cwmsTsidJoinClause = "a.LOCATION_CODE = c.LOCATION_CODE "
+		+ " AND c.UNIT_SYSTEM = 'SI'";
 
 	protected CwmsTimeSeriesDAO(DatabaseConnectionOwner tsdb, String dbOfficeId)
 	{
@@ -119,7 +128,7 @@ public class CwmsTimeSeriesDAO
 		
 		if (ret != null)
 		{
-			debug3("Received ts_code=" + key + ", id='" + ret.getUniqueString() + "' from cache.");
+			debug3(module + " Received ts_code=" + key + ", id='" + ret.getUniqueString() + "' from cache.");
 			return ret;
 		}
 		else
@@ -127,13 +136,9 @@ public class CwmsTimeSeriesDAO
 			debug3("Not in cache ts_code=" + key);
 		}
 	
-		String q = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
-			+ "a.UNIT_ID, a.PARAMETER_ID, c.PUBLIC_NAME, a.TS_CODE, a.LOCATION_CODE, "
-			+ "a.LOCATION_ID "
-			+ "FROM CWMS_V_TS_ID a, CWMS_V_LOC c "
+		String q = cwmsTsidQueryBase
 			+ " WHERE a.TS_CODE = " + key
-			+ " AND a.LOCATION_CODE = c.LOCATION_CODE "
-			+ " AND c.UNIT_SYSTEM = 'SI'";
+			+ " AND " + cwmsTsidJoinClause;
 		// Don't need to add DB_OFFICE_ID because TS_CODE is unique.
 		
 		try
@@ -162,6 +167,12 @@ public class CwmsTimeSeriesDAO
 	private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType)
 		throws SQLException, DbIoException, NoSuchObjectException
 	{
+//		private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
+//			+ "a.UNIT_ID, a.PARAMETER_ID, c.PUBLIC_NAME, a.TS_CODE, a.LOCATION_CODE, "
+//			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a, CWMS_V_LOC c";
+
+		
+		
 		DbKey key = DbKey.createDbKey(rs, 7);
 		String desc = rs.getString(1);
 		String param = rs.getString(5);
@@ -169,7 +180,7 @@ public class CwmsTimeSeriesDAO
 		DataType dt = 
 			DataType.getDataType(Constants.datatype_CWMS, param);
 		
-		CwmsTsId ret = new CwmsTsId(key, rs.getString(1), dt, 
+		CwmsTsId ret = new CwmsTsId(key, desc, dt, 
 			desc, TextUtil.str2boolean(rs.getString(2)),
 			rs.getInt(3), rs.getString(4));
 		
@@ -181,15 +192,10 @@ public class CwmsTimeSeriesDAO
 		site.addName(new SiteName(site, Constants.snt_CWMS, rs.getString(9)));
 		site.setDescription(publicSiteName);
 		ret.setSite(site);
+		ret.setActive(TextUtil.str2boolean(rs.getString(10)));
 	
 		if (decodes.db.Database.getDb().getDbIo().getDatabaseType().equalsIgnoreCase("XML"))
 			return ret;
-		
-		
-		// TODO: Check to see if lastModified is available in the view. If so, get it
-		// and call ret.setLastModified()
-		// TODO: Get active flag and call ret.setActive()
-
 	
 		if (createDataType && dt.getId() == Constants.undefinedId)
 		{
@@ -801,7 +807,6 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		{
 			TimedVariable tv = ts.sampleAt(i);
 			int qc = CwmsFlags.flag2CwmsQualityCode(tv.getFlags());
-			boolean deleting = false;
 
 			if (noOverwrite)
 			{
@@ -815,7 +820,6 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 					continue;
 				if (VarFlags.mustDelete(tv))
 				{
-					deleting = true;
 					qc = 5; // As per HEC direction. SCREENED | MISSING.
 				}
 				else if (!VarFlags.mustWrite(tv))
@@ -977,29 +981,37 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries()
 		throws DbIoException
 	{
-		reloadTsIdCache();
+		// MJM 20161025 don't reload more if already done within threshold.
+		if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
+			reloadTsIdCache();
+		
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
 		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
 			ret.add(tsidit.next());
 		return ret;
 	}
 	
+	@Override
+	public ArrayList<TimeSeriesIdentifier> listTimeSeries(boolean forceRefresh)
+		throws DbIoException
+	{
+		if (forceRefresh)
+			lastCacheReload = 0L;
+		return listTimeSeries();
+	}
+	
 	
 	@Override
 	public void reloadTsIdCache() throws DbIoException
 	{
+		debug1("reloadTsIdCache()");
 		// Each TSID will need a site, so prefill the site cache to prevent
 		// it from doing individual reads for each site.
 		siteDAO.fillCache();
 		
-		String q = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
-			+ "a.UNIT_ID, a.PARAMETER_ID, c.PUBLIC_NAME, a.TS_CODE, a.LOCATION_CODE, "
-			+ "a.LOCATION_ID "
-			+ "FROM CWMS_V_TS_ID a, CWMS_V_LOC c "
-			+ " WHERE a.LOCATION_CODE = c.LOCATION_CODE "
-			+ " AND c.UNIT_SYSTEM = 'SI' ";
-//		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
-			q = q + "and upper(a.DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
+		String q = cwmsTsidQueryBase
+			+ " WHERE " + cwmsTsidJoinClause 
+			+ " and upper(a.DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
 
 		try
 		{
@@ -1014,11 +1026,13 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 					warning("Error creating Cwms TSID for key=" + rs.getInt(1) 
 						+ ": " + ex + " -- skipped.");
 				}
+			debug1("After fill, cache has " + cache.size() + " TSIDs.");
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("CwmsTimeSeriesDb.reloadTsIdCache: " + ex);
 		}
+		lastCacheReload = System.currentTimeMillis();
 	}
 
 	@Override

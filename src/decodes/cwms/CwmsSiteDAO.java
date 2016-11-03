@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2016/09/29 18:54:36  mmaloney
+ * CWMS-8979 Allow Database Process Record to override decodes.properties and
+ * user.properties setting. Command line arg -Dsettings=appName, where appName is the
+ * name of a process record. Properties assigned to the app will override the file(s).
+ *
  * Revision 1.9  2016/06/07 21:27:29  mmaloney
  * fillCache made public to allow it to be called from ts DAO.
  *
@@ -434,10 +439,6 @@ ex.printStackTrace(System.err);
 					}
 				String nameType = rs.getString(2);
 				String nameValue = rs.getString(3);
-if (nameValue.toUpperCase().startsWith("FCNE"))
-{
-	Logger.instance().info("Read site name: " + nameType + ":" + nameValue + " key=" + key);
-}
 				if (site == null)
 				{
 					warning("SiteName for id=" + key + " (" + nameType + ":"

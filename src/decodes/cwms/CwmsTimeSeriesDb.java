@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.15  2016/08/13 17:40:31  mmaloney
+*  DecodesSetting.cwmsVersionOverride to bypass Cwms 3 office privilege checks.
+*
 *  Revision 1.14  2016/08/05 14:43:37  mmaloney
 *  cwmsVersionOverride to account for the fact that on some versions of CWMS there is no
 *  reliable programmatic way to determine CWMS 2.1 vs CWMS 3.
@@ -1508,24 +1511,6 @@ for(CTimeSeries ts : allts)
 		return CwmsTsId.tsIdParts;
 	}
 
-	/**
-	 * Recursively expand groups to find all data-descriptors under the 
-	 * specified group. This method would be called by report-generator
-	 * programs that are given a group and must process all time-series
-	 * contained within it or within its sub-groups.
-	 * @param tsGroup the top-level group to expand
-	 * @return list of all data-descriptors under this group or sub-groups
-	 */
-	@Override
-	public ArrayList<TimeSeriesIdentifier> expandTsGroup(TsGroup tsGroup)
-		throws DbIoException
-	{
-		if (cwmsGroupHelper == null)
-			cwmsGroupHelper = new CwmsGroupHelper(this);
-		cwmsGroupHelper.expandTsGroupDescriptors(tsGroup);
-		return tsGroup.getExpandedList();
-	}
-
 	@Override
 	public TimeSeriesIdentifier transformTsidByCompParm(
 			TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
@@ -1747,21 +1732,6 @@ for(CTimeSeries ts : allts)
 		
 	}
 	
-// CWMS-3010 Don't overload this method. The base class does the write and then
-// recursively re-evaluates any computations that depend on this group.
-//	/**
-//	 * Writes a group to the database.
-//	 * @param group the group
-//	 */
-//	public void writeTsGroup(TsGroup group)
-//		throws DbIoException
-//	{
-//		if (groupHelper == null)
-//			groupHelper = new GroupHelper(this);
-//
-//		groupHelper.writeTsGroup(group);
-//	}
-
 	@Override
 	public TimeSeriesIdentifier makeEmptyTsId()
 	{
@@ -1826,26 +1796,8 @@ for(CTimeSeries ts : allts)
 				catch(Exception ex) {}
 			}
 		}
-		
 	}
 	
-	/**
-	 * Default implementation does nothing. Tasklist queuing must be handled
-	 * by the underlying subclass.
-	 */
-	public void useTasklistQueue(TasklistQueueFile tqf, int thresholdHours)
-	{
-//		this.tasklistQueueFile = tqf;
-//		this.tasklistQueueThresholdHours = thresholdHours;
-	}
-	
-	public void closeTasklistQueue()
-	{
-//		if (tasklistQueueFile != null)
-//			tasklistQueueFile.close();
-//		tasklistQueueFile = null;
-	}
-
 	/**
 	 * Use database-specific flag definitions to determine whether the
 	 * passed variable should be considered 'questionable'.
@@ -2010,9 +1962,16 @@ for(CTimeSeries ts : allts)
 		return baseParam;
 	}
 
+	@Override
 	public ScreeningDAI makeScreeningDAO() 
 		throws DbIoException
 	{
 		return new ScreeningDAO(this);
+	}
+	
+	@Override
+	public GroupHelper makeGroupHelper()
+	{
+		return new CwmsGroupHelper(this);
 	}
 }

@@ -8,6 +8,9 @@
 * Open Source Software
 * 
 * $Log$
+* Revision 1.2  2016/04/22 14:46:21  mmaloney
+* Fix subgroup evaluation. Make it true recursion.
+*
 * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 * OPENDCS 6.0 Initial Checkin
 *
@@ -48,18 +51,17 @@
 */
 package decodes.cwms;
 
-import ilex.util.TextUtil;
+import ilex.util.Logger;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.GroupHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 
@@ -67,266 +69,354 @@ import decodes.tsdb.TsGroup;
 This class is a helper to the TempestTsdb for reading & writing groups.
 */
 public class CwmsGroupHelper
+	extends GroupHelper
 {
-	private CwmsTimeSeriesDb tsdb;
-	
-	
+	private boolean justPrimed = false;
+	private ArrayList<Pattern> subLocPatterns = new ArrayList<Pattern>();
+	private static String regexSpecial = "<([{\\^-=$!|]})?+.>";
+	private static String module = "CwmsGroupHelper";
+	private ArrayList<Pattern> subParamPatterns = new ArrayList<Pattern>();
+	private ArrayList<Pattern> subVersionPatterns = new ArrayList<Pattern>();
+
 
 	public CwmsGroupHelper(CwmsTimeSeriesDb tsdb)
 	{
-		this.tsdb = tsdb;
+		super(tsdb);
+tsdb.debug1("CwmsGroupHelper ctor");
 	}
 	
-	@SuppressWarnings("serial")
-	class TsIdSet extends TreeSet<TimeSeriesIdentifier>
+	@Override
+	protected void prepareForExpand(TsGroup tsGroup) throws DbIoException
 	{
-		TsIdSet()
+tsdb.debug1("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
+		justPrimed = true;
+		// Create and compile the regex objects for subloc, subparam, and subversion.
+		subLocPatterns.clear();
+		ArrayList<String> subLocs = tsGroup.getOtherMembers("SubLocation");
+		for(String subLoc : subLocs)
 		{
-			super(
-				new Comparator<TimeSeriesIdentifier>()
-				{
-					public int compare(TimeSeriesIdentifier dd1, TimeSeriesIdentifier dd2)
-					{
-						long diff = dd1.getKey().getValue() - dd2.getKey().getValue();
-						return diff < 0L ? -1 : diff > 0L ? 1 : 0;
-					}
-					public boolean equals(Object obj) { return false; }
-				});
-		}
-	}
-
-	/**
-	 * Recursively expand groups to find all ts_ids under the 
-	 * specified group. This method would be called by report-generator
-	 * programs that are given a group and must process all time-series
-	 * contained within it or within its sub-groups.
-	 * @param tsGroup the top-level group to expand
-	 * @return list of all data-descriptors under this group or sub-groups
-	 */
-	public void expandTsGroupDescriptors(TsGroup tsGroup)
-		throws DbIoException
-	{
-		tsdb.debug("CwmsGroupHelper.expandTsGroupDescriptors group '" + tsGroup.getGroupName() + "'");
-		tsGroup.clearExpandedList();
-
-		ArrayList<DbKey> idsDone = new ArrayList<DbKey>();
-		TsIdSet tsIdSet = doExpandTsGroup(tsGroup, idsDone);
-		
-		for(TimeSeriesIdentifier dd : tsIdSet)
-			tsGroup.addToExpandedList(dd);
-		
-		tsGroup.setIsExpanded(true);
-	}
-
-	private TsIdSet doExpandTsGroup(TsGroup tsGroup, ArrayList<DbKey> idsDone)
-		throws DbIoException
-	{
-//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName());
-
-		TsIdSet tsIdSet = new TsIdSet();
-		
-		// There may be dups & circular references in the hierarchy.
-		// Only process each group once.
-		for(DbKey id : idsDone)
-			if (id.equals(tsGroup.getGroupId()))
-			{
-//try { throw new Exception(""); } catch(Exception ex) { ex.printStackTrace(); }
-				tsIdSet.addAll(tsGroup.getExpandedList());
-				return tsIdSet;
-			}
-
-		idsDone.add(tsGroup.getGroupId());
-		if (!tsGroup.isTransient())
-			// transient groups are built programmatically -- not in DB.
-			// So if this is transient, leave it alone.
-			tsdb.readTsGroupMembers(tsGroup);
-
-		// Add explicitly included DDs to the list.
-		for(TimeSeriesIdentifier tsid : tsGroup.getTsMemberList())
-			tsIdSet.add(tsid);
-
-		// Convert data type IDs to a list of string 'params'
-		ArrayList<String> params = new ArrayList<String>();
-		for(DbKey dtId : tsGroup.getDataTypeIdList())
-		{
-			DataType dt = DataType.getDataType(dtId);
-			if (dt != null)
-			  params.add(dt.getCode());
-		}
-
-		// Now read time-series determined by site, data-type, interval,
-		// and statcode lists.
-		ArrayList<DbKey> siteIds = tsGroup.getSiteIdList();
-		ArrayList<String> paramTypes = tsGroup.getOtherMembers("ParamType");
-		ArrayList<String> intervals = tsGroup.getOtherMembers("Interval");
-		ArrayList<String> durations = tsGroup.getOtherMembers("Duration");
-		ArrayList<String> versions = tsGroup.getOtherMembers("Version");
-		if (siteIds.size() > 0 || params.size() > 0 || paramTypes.size() > 0
-		 || intervals.size() > 0 || durations.size() > 0 || versions.size() > 0)
-		{
-			StringBuilder where = new StringBuilder();
-			where.append("where a.db_office_code = a.db_office_code ");
-			if (siteIds.size() > 0)
-			{
-				where.append(" and a.location_code in(");
-				int n = 0;
-				for(DbKey X : siteIds)
-				{
-					if (n++ > 0)
-						where.append(", ");
-					where.append(X);
-				}
-				where.append(") ");
-			}
-
-			if (params.size() > 0)
-			{
-				where.append(" and upper(a.parameter_id) in(");
-				int n = 0;
-				for(String X : params)
-				{
-					if (n++ > 0)
-						where.append(", ");
-					where.append(tsdb.sqlString(X.toUpperCase()));
-				}
-				where.append(") ");
-			}
-
-			if (paramTypes.size() > 0)
-			{
-				where.append(" and upper(a.parameter_type_id) in(");
-				int n = 0;
-				for(String X : paramTypes)
-				{
-					if (n++ > 0)
-						where.append(", ");
-					where.append(tsdb.sqlString(X.toUpperCase()));
-				}
-				where.append(") ");
-			}
-
-			if (intervals.size() > 0)
-			{
-				where.append(" and upper(a.interval_id) in(");
-				int n = 0;
-				for(String X : intervals)
-				{
-					if (n++ > 0)
-						where.append(", ");
-					where.append(tsdb.sqlString(X.toUpperCase()));
-				}
-				where.append(") ");
-			}
-
-			if (durations.size() > 0)
-			{
-				where.append(" and upper(a.duration_id) in(");
-				int n = 0;
-				for(String X : durations)
-				{
-					if (n++ > 0)
-						where.append(", ");
-					where.append(tsdb.sqlString(X.toUpperCase()));
-				}
-				where.append(") ");
-			}
-
-			if (versions.size() > 0)
-			{
-				where.append(" and upper(a.version_id) in(");
-				int n = 0;
-				for(String X : versions)
-				{
-					if (n++ > 0)
-						where.append(", ");
-					where.append(tsdb.sqlString(X.toUpperCase()));
-				}
-				where.append(") ");
-			}
-			
-			String q = "SELECT distinct a.TS_CODE, a.CWMS_TS_ID, a.VERSION_FLAG, "
-				+ "a.INTERVAL_UTC_OFFSET, a.UNIT_ID, a.PARAMETER_ID, "
-				+ "b.id, c.PUBLIC_NAME "
-				+ "FROM CWMS_V_TS_ID a, DataType b, CWMS_V_LOC c " 
-				+ where.toString()
-				+ " and UPPER(a.parameter_id) = UPPER(b.code) "
-				+ " and b.standard = " + tsdb.sqlString(Constants.datatype_CWMS)
-				+ " and a.LOCATION_CODE = c.LOCATION_CODE "
-				+ " and upper(a.DB_OFFICE_ID) = " + tsdb.sqlString(tsdb.getDbOfficeId());
-			
+			String pat = makePatternString("SubLocation", subLoc);
 			try
 			{
-				tsdb.debug("Expanding Group: " + q);
-				ResultSet rs = tsdb.doQuery(q);
-				while (rs != null && rs.next())
-				{
-					String param = rs.getString(6);
-					DataType dt = DataType.getDataType(
-						Constants.datatype_CWMS, param, DbKey.createDbKey(rs, 7));
-					String desc = param + " at " + rs.getString(8);
-					
-					CwmsTsId cti = new CwmsTsId(DbKey.createDbKey(rs, 1), 
-						rs.getString(2), dt, desc,
-						TextUtil.str2boolean(rs.getString(3)),
-						rs.getInt(4), rs.getString(5));
-					cti.setDisplayName(desc);
-					tsIdSet.add(cti);
-				}
+				subLocPatterns.add(Pattern.compile(pat));
 			}
-			catch(SQLException ex)
+			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning("Error reading group members with query '"
-					+ q + "': " + ex);
+				tsdb.warning(module + " cannot compile subloc '" + subLoc 
+					+ "', pattern='" + pat + "': " + ex);
 			}
 		}
 		
-		tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-			+ " component check eresulted in " + tsIdSet.size() + " time series.");
-
-
-//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-//	+ " has " + tsGroup.getIncludedSubGroups().size() + " included subgroups.");
-		for(TsGroup inclGroup : tsGroup.getIncludedSubGroups())
+		subParamPatterns.clear();
+		ArrayList<String> subPars = tsGroup.getOtherMembers("SubParam");
+		for(String subPar : subPars)
 		{
-			TreeSet<TimeSeriesIdentifier> addedTsids = doExpandTsGroup(inclGroup, idsDone);
-			tsIdSet.addAll(addedTsids);
+			String pat = makePatternString("SubParam", subPar);
+			try
+			{
+				subParamPatterns.add(Pattern.compile(pat));
+			}
+			catch(PatternSyntaxException ex)
+			{
+				tsdb.warning(module + " cannot compile subparam '" + subPar 
+					+ "', pattern='" + pat + "': " + ex);
+			}
 		}
-//		tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-//			+ " after inclusions there are " + tsIdSet.size() + " time series.");
-//
-//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-//	+ " has " + tsGroup.getExcludedSubGroups().size() + " excluded subgroups.");
-
-		
-		for(TsGroup exclGroup : tsGroup.getExcludedSubGroups())
-		{
-			TreeSet<TimeSeriesIdentifier> exclTsids = doExpandTsGroup(exclGroup, idsDone);
-			tsIdSet.removeAll(exclTsids);
-		}
-//		tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-//			+ " after exclusions there are " + tsIdSet.size() + " time series.");
-//		
-//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-//	+ " has " + tsGroup.getIntersectedGroups().size() + " intersected subgroups.");
 
 		
 		
-		for(TsGroup intsGroup : tsGroup.getIntersectedGroups())
+		subVersionPatterns.clear();
+		ArrayList<String> subVers = tsGroup.getOtherMembers("SubVersion");
+		for(String subVer : subVers)
 		{
-			tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-				+ " processing intersecting group " + intsGroup.getGroupName());
-			TreeSet<TimeSeriesIdentifier> intsTsids = doExpandTsGroup(intsGroup, idsDone);
-//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-//	+ " Intersecting group " + intsGroup.getGroupName() + " has " + intsTsids.size() + " tsids.");
-
-			tsIdSet.retainAll(intsTsids);
-//tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-//	+ " after retainAll, this group has " + tsIdSet.size() + " tsids.");
+			String pat = makePatternString("SubVersion", subVer);
+			try
+			{
+				subVersionPatterns.add(Pattern.compile(pat));
+			}
+			catch(PatternSyntaxException ex)
+			{
+				tsdb.warning(module + " cannot compile subversion '" + subVer 
+					+ "', pattern='" + pat + "': " + ex);
+			}
 		}
-		tsdb.debug("CwmsGroupHelper.doExpandTsGroup " + tsGroup.getGroupName()
-			+ " after intersections there are " + tsIdSet.size() + " time series.");
-		return tsIdSet;
+	}
+	
+	/**
+	 * Convert the subpart string provided by the user into a string suitable for a
+	 * Java Pattern class. This involves converting asterisk into the pattern
+	 * "[^-]+", meaning one or more occurances of a non-hyphen character. Other
+	 * special characters are escaped.
+	 * Also, normal alpha chars are converted to upper case so we can do a case insensitive
+	 * compare.
+	 * @param subpart the subpart specified by the user
+	 * @return the string suitable for a Java pattern matcher
+	 */
+	private String makePatternString(String label, String subpart)
+	{
+		StringBuilder sb = new StringBuilder("^");
+		for(int idx = 0; idx < subpart.length(); idx++)
+		{
+			char c = subpart.charAt(idx);
+			if (c == '*')
+				sb.append("[^-]+");
+			else if (regexSpecial.indexOf(c) >= 0)
+				sb.append("\\" + c);
+			else if (Character.isLowerCase(c))
+				sb.append(Character.toUpperCase(c));
+			else
+				sb.append(c);
+		}
+		sb.append("$");
+Logger.instance().debug1("\t" + label + " input='" + subpart + "' converted='" + sb.toString() + "'");
+		
+		return sb.toString();
 	}
 
+	@Override
+	protected boolean passesParts(TsGroup tsGroup, TimeSeriesIdentifier tsid)
+	{
+		// In order to pass the 'parts', there must be at least one match.
+		// I.e., an empty group definition contains nothing.
+		int matches = 0;
+
+		ArrayList<DbKey> siteIds = tsGroup.getSiteIdList();
+		if (justPrimed)
+		{
+			tsdb.debug1("CwmsGroupHelper.passesParts: Group=" + tsGroup.getGroupName() 
+				+ ", #sites=" + siteIds.size() + ", tsidSiteId=" 
+				+ (tsid.getSite() == null ? "null" : 
+					("ID=" + tsid.getSite().getId() + ", " + tsid.getSite().getPreferredName().getNameValue())));
+for(DbKey sid : siteIds)
+	tsdb.debug1("    siteID=" + sid);
+			justPrimed = false;
+		}
+		if (siteIds.size() > 0)
+		{
+			boolean passedSite = false;
+			for(DbKey siteId : siteIds)
+				if (tsid.getSite() != null && siteId.equals(tsid.getSite().getId()))
+				{
+					passedSite = true;
+					break;
+				}
+			if (!passedSite)
+				return false;
+			matches++;
+		}
+		
+		CwmsTsId ctsid = (CwmsTsId)tsid;
+
+		ArrayList<DbKey> dtIds = tsGroup.getDataTypeIdList();
+		if (dtIds.size() > 0)
+		{
+			boolean passedDT = false;
+			for(DbKey dtId : dtIds)
+				if (tsid.getDataTypeId() != null && dtId.equals(tsid.getDataTypeId()))
+				{
+					passedDT = true;
+					break;
+				}
+			// Extra check for Param: There may be multiple data types with the
+			// same code for legacy reasons.
+			if (!passedDT)
+			{
+				DataType tsidDt = ctsid.getDataType();
+				if (tsidDt != null)
+					for(DbKey dtId : dtIds)
+					{
+						DataType dt = DataType.getDataType(dtId);
+						if (dt != null && dt.getCode().equalsIgnoreCase(tsidDt.getCode()))
+						{
+							passedDT = true;
+						}
+					}
+			}
 	
+			if (!passedDT)
+				return false;
+			matches++;
+		}
+		
+		
+		ArrayList<String> paramTypes = tsGroup.getOtherMembers("ParamType");
+		if (paramTypes.size() > 0)
+		{
+			boolean passedPT = false;
+			for(String paramType : paramTypes)
+				if (ctsid.getParamType() != null && paramType.equalsIgnoreCase(ctsid.getParamType()))
+				{
+					passedPT = true;
+					break;
+				}
+			if (!passedPT)
+				return false;
+			matches++;
+		}
+
+		ArrayList<String> intervals = tsGroup.getOtherMembers("Interval");
+		if (intervals.size() > 0)
+		{
+			boolean passedIntv = false;
+			for(String interval : intervals)
+				if (ctsid.getInterval() != null && interval.equalsIgnoreCase(ctsid.getInterval()))
+				{
+					passedIntv = true;
+					break;
+				}
+			if (!passedIntv)
+				return false;
+			matches++;
+		}
+
+		ArrayList<String> durations = tsGroup.getOtherMembers("Duration");
+		if (durations.size() > 0)
+		{
+			boolean passedDur = false;
+			for(String dur : durations)
+				if (ctsid.getDuration() != null && dur.equalsIgnoreCase(ctsid.getDuration()))
+				{
+					passedDur = true;
+					break;
+				}
+			if (!passedDur)
+				return false;
+			matches++;
+		}
+
+		ArrayList<String> versions = tsGroup.getOtherMembers("Version");
+		if (versions.size() > 0)
+		{
+			boolean passedVer = false;
+			for(String ver : versions)
+				if (ctsid.getVersion() != null && ver.equalsIgnoreCase(ctsid.getVersion()))
+				{
+					passedVer = true;
+					break;
+				}
+			if (!passedVer)
+				return false;
+			matches++;
+		}
+		
+		ArrayList<String> baseLocs = tsGroup.getOtherMembers("BaseLocation");
+		if (baseLocs.size() > 0)
+		{
+			boolean passed = false;
+			for(String bl : baseLocs)
+				if (ctsid.getBaseLoc() != null && bl.equalsIgnoreCase(ctsid.getBaseLoc()))
+				{
+					passed = true;
+					break;
+				}
+			if (!passed)
+				return false;
+			matches++;
+		}
+
+		// Subloc uses regex to handle wildcards
+		if (subLocPatterns.size() > 0)
+		{			
+			boolean passed = false;
+			String tsidSubLoc = ctsid.getSubLoc();
+			if (tsidSubLoc != null && tsidSubLoc.length() > 0)
+			{
+				tsidSubLoc = tsidSubLoc.toUpperCase();
+				for(Pattern slp : subLocPatterns)
+				{
+					Matcher m = slp.matcher(tsidSubLoc);
+					if (m.matches())
+					{
+						passed = true;
+						break;
+					}
+				}
+			}
+			if (!passed)
+				return false;
+			matches++;
+		}
+		
+		ArrayList<String> baseParams = tsGroup.getOtherMembers("BaseParam");
+		if (baseParams.size() > 0)
+		{
+			boolean passed = false;
+			for(String bp : baseParams)
+				if (ctsid.getBaseParam() != null && bp.equalsIgnoreCase(ctsid.getBaseParam()))
+				{
+					passed = true;
+					break;
+				}
+			if (!passed)
+				return false;
+			matches++;
+		}
+
+		// SubParam uses regex to handle wildcards
+		if (subParamPatterns.size() > 0)
+		{			
+			boolean passed = false;
+			String tsidSub = ctsid.getSubParam();
+			if (tsidSub != null && tsidSub.length() > 0)
+			{
+				tsidSub = tsidSub.toUpperCase();
+				for(Pattern sp : subParamPatterns)
+				{
+					Matcher m = sp.matcher(tsidSub);
+					if (m.matches())
+					{
+						passed = true;
+						break;
+					}
+				}
+			}
+			if (!passed)
+				return false;
+			matches++;
+		}
+
+		ArrayList<String> baseVersions = tsGroup.getOtherMembers("BaseVersion");
+		if (baseVersions.size() > 0)
+		{
+			boolean passed = false;
+			for(String bv : baseVersions)
+				if (ctsid.getBaseVersion() != null && bv.equalsIgnoreCase(ctsid.getBaseVersion()))
+				{
+					passed = true;
+					break;
+				}
+			if (!passed)
+				return false;
+			matches++;
+		}
+		
+		
+		// SubVersion uses regex to handle wildcards
+		if (subVersionPatterns.size() > 0)
+		{			
+			boolean passed = false;
+			String tsidSub = ctsid.getSubVersion();
+			if (tsidSub != null && tsidSub.length() > 0)
+			{
+				tsidSub = tsidSub.toUpperCase();
+				for(Pattern sp : subVersionPatterns)
+				{
+					Matcher m = sp.matcher(tsidSub);
+					if (m.matches())
+					{
+						passed = true;
+						break;
+					}
+				}
+			}
+			if (!passed)
+				return false;
+			matches++;
+		}
+
+
+		// Passed all the checks.
+		return matches > 0;
+	}
+
 }
