@@ -17,7 +17,6 @@ import java.util.Iterator;
 import java.util.TimeZone;
 
 import oracle.jdbc.OracleCallableStatement;
-
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Site;
@@ -904,12 +903,25 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries()
 		throws DbIoException
 	{
-		reloadTsIdCache();
+		// MJM 20161025 don't reload more if already done within threshold.
+		if (System.currentTimeMillis() - lastCacheRefresh > cacheReloadMS)
+			reloadTsIdCache();
+		
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
 		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
 			ret.add(tsidit.next());
 		return ret;
 	}
+	
+	@Override
+	public ArrayList<TimeSeriesIdentifier> listTimeSeries(boolean forceRefresh)
+		throws DbIoException
+	{
+		if (forceRefresh)
+			lastCacheRefresh = 0L;
+		return listTimeSeries();
+	}
+
 
 	@Override
 	public synchronized void reloadTsIdCache() throws DbIoException
@@ -955,9 +967,6 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		if (doFullLoad)
 			lastCacheLoad = lastCacheRefresh;
 
-//		cache.clear();
-			
-			
 		try
 		{
 			ResultSet rs = doQuery(q);
