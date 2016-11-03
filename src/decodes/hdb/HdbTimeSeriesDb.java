@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2016/07/20 15:37:03  mmaloney
+*  Remove getDataTypesByStandard.
+*
 *  Revision 1.5  2016/06/27 15:14:37  mmaloney
 *  Numerous updates for 6.2 testing.
 *
@@ -880,19 +883,6 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 		return HdbTsId.tsIdParts;
 	}
 
-	
-	public ArrayList<TimeSeriesIdentifier> expandTsGroup(TsGroup tsGroup)
-		throws DbIoException
-	{
-		TsGroupCache tsGroupCache = new TsGroupCache(this.makeTimeSeriesDAO());
-		ArrayList<DbKey> grpIdsDone = new ArrayList<DbKey>();
-		tsGroupCache.add(tsGroup);
-		tsGroupCache.evalGroup(tsGroup, grpIdsDone);
-		tsGroup.setIsExpanded(true);
-		return tsGroup.getExpandedList();
-	}
-
-
 	@Override
 	public TimeSeriesIdentifier transformTsidByCompParm(
 			TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
@@ -1404,5 +1394,9 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		return new HdbSiteDAO(this);
 	}
 
-
+	@Override
+	public GroupHelper makeGroupHelper()
+	{
+		return new HdbGroupHelper(this);
+	}
 }
