@@ -181,7 +181,6 @@ public class DbUtil extends TsdbAppTemplate
 		};
 
 
-
 	public DbUtil()
 	{
 		super("util.log");
@@ -528,7 +527,7 @@ public class DbUtil extends TsdbAppTemplate
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 		try
 		{
-			ArrayList<TimeSeriesIdentifier> tslist = timeSeriesDAO.listTimeSeries();
+			ArrayList<TimeSeriesIdentifier> tslist = timeSeriesDAO.listTimeSeries(true);
 			Collections.sort(tslist, 
 				new Comparator<TimeSeriesIdentifier>()
 				{

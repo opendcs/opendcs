@@ -22,6 +22,12 @@ import decodes.tsdb.TimeSeriesIdentifier;
 public interface TimeSeriesDAI
 {
 	/**
+	 * When calling the listTimeSeries() method, don't reload the cache
+	 * if it has already been done within this time.
+	 */
+	public static final long cacheReloadMS = 300000L;
+	
+	/**
 	 * Each Database Implementation has some kind of unique string that
 	 * can represent a time-series. This method uses that string to look
 	 * up the time-series meta data.
@@ -173,6 +179,14 @@ public interface TimeSeriesDAI
 	 * @throws DbIoException on error
 	 */
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries()
+		throws DbIoException;
+
+	/**
+	 * @return a list of all time series defined in the database.
+	 * @param forceRefresh if true, force cache clear and reload before returning list.
+	 * @throws DbIoException on error
+	 */
+	public ArrayList<TimeSeriesIdentifier> listTimeSeries(boolean forceRefresh)
 		throws DbIoException;
 
 	/**

@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.7  2016/06/27 15:29:01  mmaloney
+*  Code cleanup.
+*
 *  Revision 1.6  2015/11/12 15:22:46  mmaloney
 *  Added makeScreeningDAO method.
 *
@@ -2033,23 +2036,23 @@ public abstract class TimeSeriesDb
 
 	}
 
-	/**
-	 * Reads the members of an individual group.
-	 * @param group the group
-	 */
-	public void readTsGroupMembers(TsGroup group)
-		throws DbIoException
-	{
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			tsGroupDAO.readTsGroupMembers(group);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-	}
+//	/**
+//	 * Reads the members of an individual group.
+//	 * @param group the group
+//	 */
+//	public void readTsGroupMembers(TsGroup group)
+//		throws DbIoException
+//	{
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			tsGroupDAO.readTsGroupMembers(group);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//	}
 
 	/**
 	 * @return number of computations that are using the passed group ID.
@@ -2423,20 +2426,6 @@ public abstract class TimeSeriesDb
 	}
 	
 	/**
-	 * Default implementation does nothing. Tasklist queuing must be handled
-	 * by the underlying subclass.
-	 */
-	public void useTasklistQueue(TasklistQueueFile tqf, int thresholdHours)
-	{
-	}
-	/**
-	 * Closes the tasklist queue if one is being used. Default impl here does nothing.
-	 */
-	public void closeTasklistQueue()
-	{
-	}
-	
-	/**
 	 * Use database-specific flag definitions to determine whether the
 	 * passed variable should be considered 'questionable'.
 	 * @param v the variable whose flags to check
@@ -2629,4 +2618,18 @@ public abstract class TimeSeriesDb
 		return null;
 	}
 	
+	public GroupHelper makeGroupHelper()
+	{
+		return null;
+	}
+	
+	@Override
+	public ArrayList<TimeSeriesIdentifier> expandTsGroup(TsGroup tsGroup)
+		throws DbIoException
+	{
+		GroupHelper groupHelper = this.makeGroupHelper();
+		groupHelper.expandTsGroup(tsGroup);
+		return tsGroup.getExpandedList();
+	}
+
 }

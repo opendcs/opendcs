@@ -9,6 +9,11 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.3  2016/09/29 18:54:35  mmaloney
+*  CWMS-8979 Allow Database Process Record to override decodes.properties and
+*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
+*  name of a process record. Properties assigned to the app will override the file(s).
+*
 *  Revision 1.2  2014/08/22 17:23:09  mmaloney
 *  6.1 Schema Mods and Initial DCP Monitor Implementation
 *
@@ -80,16 +85,14 @@ import java.util.List;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
-
+import opendcs.dai.TsGroupDAI;
 import lrgs.gui.DecodesInterface;
-
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CompMetaData;
@@ -100,10 +103,10 @@ import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.GroupHelper;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
-import decodes.tsdb.TsGroupCache;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 import decodes.tsdb.xml.CompXio;
@@ -113,14 +116,15 @@ import decodes.db.Constants;
 
 
 /**
-This is the main class for the daemon that updates CP_COMP_DEPENDS.
+This is the main class for the utility that converts non-group computations
+to group computations.
 */
 public class Convert2Group
 	extends TsdbAppTemplate
 {
 	// Local caches for computations, groups, cp_comp_depends:
 	private ArrayList<DbComputation> compCache = new ArrayList<DbComputation>();
-	private TsGroupCache tsGroupCache = null;
+	private GroupHelper groupHelper = null;
 	private BooleanToken testMode = new BooleanToken("T", "Report Only - no DB changes.",
 		"", TokenOptions.optSwitch, false);
 	private StringToken disposeOption = new StringToken("X", "'delete' or 'disable'",
@@ -190,8 +194,8 @@ public class Convert2Group
 		report("============== Convert2Group Starting " + (new Date())
 			+ " =============");
 		
-		tsGroupCache = new TsGroupCache(theDb.makeTimeSeriesDAO());
-		tsGroupCache.setGroupCacheDumpDir(null); // Do not dump groups tofile.
+		groupHelper = theDb.makeGroupHelper();
+		groupHelper.setGroupCacheDumpDir(null); // Do not dump groups tofile.
 
 		String s = disposeOption.getValue();
 		if (s.equalsIgnoreCase("delete"))
@@ -275,6 +279,7 @@ public class Convert2Group
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		try
 		{
 			info("Refreshing TSID Cache...");
@@ -309,13 +314,11 @@ public class Convert2Group
 			ResultSet rs = theDb.doQuery(q);
 			while(rs != null && rs.next())
 				grpIds.add(DbKey.createDbKey(rs, 1));
-					
-			tsGroupCache.clear();
-			for(DbKey groupId : grpIds)
-				tsGroupCache.add(theDb.getTsGroupById(groupId));
+				
+			tsGroupDAO.fillCache();
 
 			info("Expanding Groups in Cache...");
-			tsGroupCache.evalAll();
+			groupHelper.evalAll();
 		}
 		catch (Exception ex)
 		{
@@ -326,6 +329,7 @@ public class Convert2Group
 		}
 		finally
 		{
+			tsGroupDAO.close();
 			timeSeriesDAO.close();
 			loadingAppDao.close();
 			computationDAO.close();
@@ -341,6 +345,7 @@ public class Convert2Group
 		throws DbIoException
 	{
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
+		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		
 		// Fetch the computation from my cache.
 		DbComputation groupComp = getCompFromCache(compId);
@@ -450,7 +455,7 @@ public class Convert2Group
 			compGroup.setGroupName("comp-" + compId + "-group");
 			compGroup.setGroupType("comp-select");
 			compGroup.setDescription("Special group for " + compName);
-			compGroup.addSubGroup(tsGroupCache.getGroupFromCache(groupComp.getGroupId()), 'A');	
+			compGroup.addSubGroup(tsGroupDAO.getTsGroupById(groupComp.getGroupId()), 'A');	
 			compGroup.addSubGroup(toExclude, 'S');
 			report("Creating new group '" + compGroup.getGroupName() + "' just for this computation.");
 			report("The new group will include the original group and exclude the above TSIDs");
@@ -518,6 +523,7 @@ public class Convert2Group
 		if (!testMode.getValue())
 			computationDAO.writeComputation(groupComp);
 		
+		tsGroupDAO.close();
 		computationDAO.close();
 	}
 
@@ -535,7 +541,9 @@ public class Convert2Group
 		ArrayList<DbComputation> ret = new ArrayList<DbComputation>();
 		
 		// If not a group comp just add the completely-specified parms.
-		TsGroup grp = tsGroupCache.getGroupFromCache(groupComp.getGroupId());
+		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+		TsGroup grp = tsGroupDAO.getTsGroupById(groupComp.getGroupId());
+		tsGroupDAO.close();
 		if (grp == null)
 		{
 			warning("Invalid group ID + " + groupComp.getGroupId() + ": no matching group -- skipped.");

@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.4  2016/10/17 17:52:24  mmaloney
+* Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
+*
 * Revision 1.3  2014/12/19 19:26:56  mmaloney
 * Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
 *
@@ -20,13 +23,16 @@
 */
 package opendcs.dao;
 
+import hec.util.TextUtil;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
-
+import opendcs.dao.DbObjectCache.CacheIterator;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
@@ -44,19 +50,28 @@ public class TsGroupDAO
 {
 	protected String GroupAttributes = 
 		"group_id, group_name, group_type, group_description";
+	private static long lastCacheFill = 0L;
+	public static long cacheTimeLimit = 15 * 60 * 1000L;
+	protected static DbObjectCache<TsGroup> cache = new DbObjectCache<TsGroup>(cacheTimeLimit, false);
 
 	public TsGroupDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "TsGroupDAO");
 	}
 
-	protected static DbObjectCache<TsGroup> cache = new DbObjectCache<TsGroup>(15 * 60 * 1000L, false);
-	
 	public synchronized TsGroup getTsGroupById(DbKey groupId)
 		throws DbIoException
 	{
-		TsGroup ret = cache.getByKey(groupId);
-		if (ret != null)
+		return getTsGroupById(groupId, false);
+	}
+	
+	@Override
+	public TsGroup getTsGroupById(DbKey groupId, boolean forceDbRead)
+		throws DbIoException
+	{
+		TsGroup ret = null;
+		
+		if (!forceDbRead && (ret = cache.getByKey(groupId)) != null)
 			return ret;
 		
 		String q = "SELECT " + GroupAttributes + " FROM tsdb_group "
@@ -72,7 +87,10 @@ public class TsGroupDAO
 				return ret;
 			}
 			else
+			{
+				cache.remove(groupId);
 				return null;
+			}
 		}
 		catch(Exception ex)
 		{
@@ -80,6 +98,7 @@ public class TsGroupDAO
 				"getTsGroupById: Cannot get group for id=" + groupId + ": "+ex);
 		}
 	}
+
 
 	/**
 	 * Called with result set with 4 columns: ID, name, type, description
@@ -187,23 +206,19 @@ public class TsGroupDAO
 	public ArrayList<TsGroup> getTsGroupList(String groupType)
 		throws DbIoException
 	{
+		if (System.currentTimeMillis() - lastCacheFill > cacheTimeLimit)
+			fillCache();
+		
 		ArrayList<TsGroup> ret = new ArrayList<TsGroup>();
-		String q = "SELECT " + GroupAttributes + " FROM tsdb_group";
-		if (groupType != null && groupType.length() > 0)
-			q = q + " WHERE group_type = " + sqlString(groupType);
 
-		try
+		for(Iterator<TsGroup> ci = cache.iterator(); ci.hasNext();)
 		{
-			ResultSet rs = doQuery(q);
-			while(rs != null && rs.next())
-				ret.add(rs2group(rs));
-			return ret;
+			TsGroup g = ci.next();
+			if (groupType == null || groupType.length() == 0
+			 || TextUtil.equalsIgnoreCase(groupType, g.getGroupType()))
+				ret.add(g);
 		}
-		catch(SQLException ex)
-		{
-			throw new DbIoException(
-				"getTsGroupList: Cannot list groups: " + ex);
-		}
+		return ret;
 	}
 
 	@Override
@@ -237,13 +252,6 @@ public class TsGroupDAO
 	{
 		DbKey groupId = group.getGroupId();
 		String q = "";
-//		int dbOfficeCode = group.getDbOfficeCode();
-//		if (dbOfficeCode == Constants.undefinedId
-//		 && tsdb.isCwms())
-//		{
-//			dbOfficeCode = ((CwmsTimeSeriesDb)tsdb).getDbOfficeCode();
-//		}
-//		
 		if (groupId.isNull())
 		{
 			groupId = getKey("tsdb_group");
@@ -254,8 +262,6 @@ public class TsGroupDAO
 				+ sqlString(group.getGroupName()) + ", "
 				+ sqlString(group.getGroupType()) + ", "
 				+ sqlString(group.getDescription());
-//			if (tsdb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
-//				q = q + ", " + dbOfficeCode;
 			q = q + ")";
 		}
 		else
@@ -264,8 +270,6 @@ public class TsGroupDAO
 			+ "group_name = " + sqlString(group.getGroupName()) + ", "
 			+ "group_type = " + sqlString(group.getGroupType()) + ", "
 			+ "group_description = " + sqlString(group.getDescription());
-//			if (tsdb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
-//				q = q + ", db_office_code = " + dbOfficeCode;
 			q = q + " WHERE group_id = " + groupId;
 		}
 		doModify(q);
@@ -289,7 +293,6 @@ public class TsGroupDAO
 		String grp_grp_columns = "parent_group_id, child_group_id";
 		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
 			grp_grp_columns += ", include_group";
-//System.out.println("# included = " + group.getIncludedSubGroups().size());
 		for(TsGroup tg : group.getIncludedSubGroups())
 		{
 			q = "INSERT INTO tsdb_group_member_group("
@@ -300,7 +303,6 @@ public class TsGroupDAO
 			q = q + ")";
 			doModify(q);
 		}
-//System.out.println("# excluded = " + group.getExcludedSubGroups().size());
 		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
 			for(TsGroup tg : group.getExcludedSubGroups())
 			{
@@ -349,8 +351,8 @@ public class TsGroupDAO
 				+ ", " + sqlString(tgm.getMemberValue()) + ")";
 			doModify(q);
 		}
-
-//		db.commit();
+		
+		cache.put(group);
 	}
 
 	@Override
@@ -417,6 +419,91 @@ public class TsGroupDAO
 		super.close();
 	}
 	
+	public void fillCache() 
+		throws DbIoException
+	{
+		String q = "";
+
+		cache.clear();
+		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
+		try
+		{
+			q = "SELECT " + GroupAttributes + " FROM tsdb_group";
+			ResultSet rs = doQuery(q);
+			while(rs != null && rs.next())
+				cache.put(rs2group(rs));
+			
+			q = "select group_id, ts_id from tsdb_group_member_ts";
+			rs = doQuery(q);
+			while(rs != null && rs.next())
+			{
+				DbKey groupId = DbKey.createDbKey(rs, 1);
+				TsGroup group = cache.getByKey(groupId);
+				DbKey dataId = DbKey.createDbKey(rs, 2);
+				try { group.addTsMember(timeSeriesDAO.getTimeSeriesIdentifier(dataId)); }
+				catch(NoSuchObjectException ex)
+				{
+					warning("tsdb_group id=" + group.getGroupId()
+						+ " contains invalid ts member with data_id="
+						+ dataId + " -- ignored.");
+				}
+			}
+
+			// Now read the site list.
+			q = "SELECT group_id, site_id from tsdb_group_member_site";
+			rs = doQuery(q);
+			while(rs != null && rs.next())
+			{
+				DbKey groupId = DbKey.createDbKey(rs, 1);
+				TsGroup group = cache.getByKey(groupId);
+				group.addSiteId(DbKey.createDbKey(rs, 2));
+			}
+
+			// Now read the data-type list.
+			q = "SELECT group_id, data_type_id from tsdb_group_member_dt";
+			rs = doQuery(q);
+			while(rs != null && rs.next())
+			{
+				DbKey groupId = DbKey.createDbKey(rs, 1);
+				TsGroup group = cache.getByKey(groupId);
+				group.addDataTypeId(DbKey.createDbKey(rs, 2));
+			}
+
+			q = "select group_id, member_type, member_value from tsdb_group_member_other";
+			rs = doQuery(q);
+			while(rs != null && rs.next())
+			{
+				DbKey groupId = DbKey.createDbKey(rs, 1);
+				TsGroup group = cache.getByKey(groupId);
+				group.addOtherMember(rs.getString(2), rs.getString(3));
+			}
+
+			q = "select parent_group_id, child_group_id, include_group from tsdb_group_member_group";
+			rs = doQuery(q);
+			while(rs != null && rs.next())
+			{
+				DbKey parentGroupId = DbKey.createDbKey(rs, 1);
+				TsGroup parentGroup = cache.getByKey(parentGroupId);
+				DbKey childGroupId = DbKey.createDbKey(rs, 2);
+				TsGroup childGroup = cache.getByKey(childGroupId);
+				char combine = 'A';
+				String s = rs.getString(3);
+				if (s != null && s.length() > 0)
+					combine = s.charAt(0);
+				parentGroup.addSubGroup(childGroup, combine);
+			}
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("TsGroupDAO.fillCache: Error in query '" + q + "': " + ex);
+		}
+		finally
+		{
+			timeSeriesDAO.close();
+		}
+		lastCacheFill = System.currentTimeMillis();
+	}
+
 }
 
 

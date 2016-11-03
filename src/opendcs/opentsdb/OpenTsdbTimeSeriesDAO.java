@@ -53,6 +53,8 @@ public class OpenTsdbTimeSeriesDAO
 	protected Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	protected NumberFormat suffixFmt = NumberFormat.getIntegerInstance();
 	private static final String ts_columns = "sample_time, ts_value, flags, source_id";
+	private long lastCacheReload = 0L;
+
 	
 	public static final long MSEC_PER_UTC_DAY = 24 * 3600 * 1000L;
 
@@ -960,11 +962,22 @@ public class OpenTsdbTimeSeriesDAO
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries()
 		throws DbIoException
 	{
-		reloadTsIdCache();
+		// MJM 20161025 don't reload more if already done within threshold.
+		if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
+			reloadTsIdCache();
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
 		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
 			ret.add(tsidit.next());
 		return ret;
+	}
+	
+	@Override
+	public ArrayList<TimeSeriesIdentifier> listTimeSeries(boolean forceRefresh)
+		throws DbIoException
+	{
+		if (forceRefresh)
+			lastCacheReload = 0L;
+		return listTimeSeries();
 	}
 	
 	@Override
@@ -996,6 +1009,7 @@ public class OpenTsdbTimeSeriesDAO
 			throw new DbIoException(
 				"Error reading TS_SPEC table: " + ex);
 		}
+		lastCacheReload = System.currentTimeMillis();
 	}
 
 	@Override

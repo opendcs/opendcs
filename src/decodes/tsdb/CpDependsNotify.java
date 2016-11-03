@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.5  2013/03/21 18:27:39  mmaloney
  * DbKey Implementation
  *
@@ -50,9 +53,9 @@ public class CpDependsNotify
 	public static final char TS_MODIFIED  = 'M';
 	/** Sent from trigger when a Time Series is deleted */
 	public static final char TS_DELETED   = 'D';
-	/** Sent from trigger when a computation is modified */
+	/** Sent from trigger when a computation is created, modified, or deleted */
 	public static final char CMP_MODIFIED = 'C';
-	/** Sent from trigger when a time-series group is modified */
+	/** Sent from trigger when an existing time-series group is modified or deleted. */
 	public static final char GRP_MODIFIED = 'G';
 	/** Sent from external app to cause full re-evaluation of CP_COMP_DEPENDS */
 	public static final char FULL_EVAL    = 'F';

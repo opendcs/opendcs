@@ -9,6 +9,11 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.5  2016/09/29 18:54:37  mmaloney
+*  CWMS-8979 Allow Database Process Record to override decodes.properties and
+*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
+*  name of a process record. Properties assigned to the app will override the file(s).
+*
 *  Revision 1.4  2016/06/27 15:27:05  mmaloney
 *  Have to read data types as part of decodes init.
 *
@@ -31,7 +36,6 @@
 package decodes.tsdb;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -39,29 +43,27 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.TimeZone;
 import java.net.InetAddress;
 
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dai.TsGroupDAI;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.QueueLogger;
-import ilex.util.TeeLogger;
-import ilex.var.TimedVariable;
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
+import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.hdb.HdbTsId;
+import decodes.hdb.HdbGroupHelper;
 
 
 /**
@@ -89,7 +91,7 @@ public class CpCompDependsUpdater
 	// Local caches for computations, groups, cp_comp_depends:
 	private ArrayList<DbComputation> enabledCompCache = new ArrayList<DbComputation>();
 
-	private TsGroupCache tsGroupCache = null;;
+	private GroupHelper groupHelper = null;
 	
 	private HashSet<CpCompDependsRecord> cpCompDependsCache = new HashSet<CpCompDependsRecord>();
 	private HashSet<CpCompDependsRecord> toAdd = new HashSet<CpCompDependsRecord>();
@@ -97,6 +99,9 @@ public class CpCompDependsUpdater
 		"", TokenOptions.optSwitch, false);
 	private StringToken groupCacheDump = new StringToken("G", "Dump group evaluations",
 		"", TokenOptions.optSwitch, null);
+	private BooleanToken fullEvalOnly = new BooleanToken("O", "Full Eval Only -- then quit.",
+		"", TokenOptions.optSwitch, false);
+
 	private boolean fullEvalDone = false;
 	private Date notifyTime = new Date();
 	private boolean doingFullEval = false;
@@ -110,6 +115,9 @@ public class CpCompDependsUpdater
 		super("compdepends.log");
 		myLock = null;
 		shutdownFlag = false;
+		
+		// Tell base class to reconnect gracefully if database goes down.
+		surviveDatabaseBounce = true;
 	}
 
 	/** @return the application ID. */
@@ -121,6 +129,7 @@ public class CpCompDependsUpdater
 		appNameArg.setDefaultValue("compdepends");
 		cmdLineArgs.addToken(fullEvalOnStartup);
 		cmdLineArgs.addToken(groupCacheDump);
+		cmdLineArgs.addToken(fullEvalOnly);
 	}
 
 	/**
@@ -152,11 +161,15 @@ public class CpCompDependsUpdater
 		throws LockBusyException, DbIoException, NoSuchObjectException
 	{
 		initialize();
-		Logger.instance().info("============== CpCompDependsUpdater appName=" + getAppName() 
-			+", appId=" + appId + " Starting ==============");
+		
+		String msg = "============== CpCompDependsUpdater appName=" + getAppName() 
+			+", appId=" + appId;
+		if (theDb.isCwms())
+			msg = msg + ", officeID=" + ((CwmsTimeSeriesDb)theDb).getDbOfficeId();
+		Logger.instance().info(msg + " Starting ==============");
 		
 		timeSeriesDAO = theDb.makeTimeSeriesDAO();
-		tsGroupCache = new TsGroupCache(timeSeriesDAO);
+		groupHelper = theDb.makeGroupHelper();
 
 		String dir = groupCacheDump.getValue();
 		if (dir != null && dir.length() > 0)
@@ -170,49 +183,12 @@ public class CpCompDependsUpdater
 					+ "'. -- Will not dump group cache.");
 				dumpDir = null;
 			}
-			tsGroupCache.setGroupCacheDumpDir(dumpDir);
+			groupHelper.setGroupCacheDumpDir(dumpDir);
 		}
 		CpDependsNotify prevNotify = null;
+		String action="";
 		while(!shutdownFlag)
 		{
-			if (theDb == null)
-			{
-				try 
-				{
-					createDatabase();
-					timeSeriesDAO = theDb.makeTimeSeriesDAO();
-					tsGroupCache = new TsGroupCache(timeSeriesDAO);
-				}
-				catch(Exception ex)
-				{
-					Logger.instance().fatal("Cannot create database interface: "
-						+ ex);
-					shutdownFlag = true;
-					continue;
-				}
-			}
-
-			// If not connected, attempt to connect, wait 10 sec between tries.
-			if (!theDb.isConnected())
-			{
-				try
-				{
-					lastCacheRefresh = 0L; // force cache refresh
-					tryConnect();
-				}
-				catch(BadConnectException ex)
-				{
-					warning("Connect failed: " + ex);
-					closeDb();
-					try { Thread.sleep(10000L); }
-					catch(InterruptedException ex2) {}
-					continue;
-				}
-				// New connection, need to obtain new lock & load resolver.
-				myLock = null;
-			}
-			String action="";
-
 			LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 			try
 			{
@@ -226,7 +202,7 @@ public class CpCompDependsUpdater
 					loadingAppDAO.checkCompProcLock(myLock);
 				}
 				
-				if (fullEvalOnStartup.getValue() && !fullEvalDone)
+				if ((fullEvalOnStartup.getValue() || fullEvalOnly.getValue()) && !fullEvalDone)
 				{
 					info("Doing one-time full evaluation on startup");
 					CpDependsNotify ccdn = new CpDependsNotify();
@@ -234,6 +210,11 @@ public class CpCompDependsUpdater
 					ccdn.setDateTimeLoaded(new Date());
 					processNotify(ccdn);
 					fullEvalDone = true;
+					if (fullEvalOnly.getValue())
+					{
+						shutdownFlag = true;
+						break;
+					}
 				}
 
 				// Just to be safe, once per hour, reload all caches.
@@ -272,16 +253,24 @@ public class CpCompDependsUpdater
 			catch(DbIoException ex)
 			{
 				warning("Database Error while " + action + ": " + ex);
-				timeSeriesDAO.close();
-				theDb.closeConnection();
+				shutdownFlag = true;
+				databaseFailed = true;
+			}
+			catch(Exception ex)
+			{
+				msg = "Unexpected exception while " + action + ": " + ex;
+				warning(msg);
+				System.err.println(msg);
+				ex.printStackTrace(System.err);
+				shutdownFlag = true;
+				databaseFailed = true;
 			}
 			finally
 			{
 				loadingAppDAO.close();
 			}
 		}
-		theDb.closeConnection();
-		System.exit(0);
+		closeDb();
 	}
 
 	/** Initialization phase -- any error is fatal. */
@@ -334,8 +323,6 @@ public class CpCompDependsUpdater
 		{
 			loadingAppDao.close();
 		}
-
-
 	}
 	
 	public void initDecodes()
@@ -377,6 +364,7 @@ public class CpCompDependsUpdater
 	{
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
+		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		try
 		{
 			info("Refreshing TSID Cache...");
@@ -395,39 +383,14 @@ public class CpCompDependsUpdater
 				enabledCompCache.add(comp);
 			}
 			
-//			// Note: This daemon processes comps for all app IDs.
-//			List<String> compNames = loadingAppDao.listComputationsByApplicationId(
-//				Constants.undefinedId, true);
-//			for(String nm : compNames)
-//			{
-//				try
-//				{
-//					DbComputation comp = computationDAO.getComputationByName(nm);
-//					expandComputationInputs(comp);
-//					enabledCompCache.add(comp);
-//				}
-//				catch (NoSuchObjectException ex)
-//				{
-//					warning("Computation '" + nm 
-//						+ "' could not be read: " + ex);
-//				}
-//			}
 			info("After loading, " + enabledCompCache.size()
 				+ " computations in cache.");
 
 			info("Refreshing Group Cache...");
-			String q = "SELECT GROUP_ID FROM TSDB_GROUP";
-			ArrayList<DbKey> grpIds = new ArrayList<DbKey>();
-			ResultSet rs = theDb.doQuery(q);
-			while(rs != null && rs.next())
-				grpIds.add(DbKey.createDbKey(rs, 1));
-					
-			tsGroupCache.clear();
-			for(DbKey groupId : grpIds)
-				tsGroupCache.add(theDb.getTsGroupById(groupId));
+			tsGroupDAO.fillCache();
 
 			info("Expanding Groups in Cache...");
-			tsGroupCache.evalAll();
+			groupHelper.evalAll();
 			
 			info("Reloading CP_COMP_DEPENDS Cache...");
 			reloadCpCompDependsCache();
@@ -441,6 +404,7 @@ public class CpCompDependsUpdater
 		}
 		finally
 		{
+			tsGroupDAO.close();
 			loadingAppDao.close();
 			computationDAO.close();
 		}
@@ -490,6 +454,7 @@ public class CpCompDependsUpdater
 	private boolean tsCreated(DbKey tsKey)
 	{
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		try
 		{
 			TimeSeriesIdentifier tsid = null;
@@ -504,7 +469,7 @@ public class CpCompDependsUpdater
 			dumpTsidCache();
 
 			// Adjust the groups in my cache which may include this new time series.
-			tsGroupCache.checkGroupMembership(tsid);
+			groupHelper.checkGroupMembership(tsid);
 
 			// Determine computations that will use this new TS as input
 			toAdd.clear();
@@ -529,7 +494,13 @@ public class CpCompDependsUpdater
 					// Go through the expanded list of TSIDs in the group. Transform each
 					// one by the input parms. If it then matches the passed tsid, then
 					// this computation is a dependency.
-					TsGroup grp = tsGroupCache.getGroupFromCache(comp.getGroupId());
+					TsGroup grp = tsGroupDAO.getTsGroupById(comp.getGroupId());
+					if (grp == null)
+					{
+						warning("Computation ID=" + comp.getId() + " '" + comp.getName() 
+							+ "' has an invalid group ID. Skipping.");
+						continue;
+					}
 				nextTsid:
 					for(TimeSeriesIdentifier grpTsid : grp.getExpandedList())
 					{
@@ -563,6 +534,7 @@ public class CpCompDependsUpdater
 		}
 		finally
 		{
+			tsGroupDAO.close();
 			timeSeriesDAO.close();
 		}
 	}
@@ -575,72 +547,77 @@ public class CpCompDependsUpdater
 	 */
 	private boolean tsDeleted(DbKey tsKey)
 	{
-		TimeSeriesIdentifier tsidRemoved = timeSeriesDAO.getCache().getByKey(tsKey);
-		if (tsidRemoved != null)
-			timeSeriesDAO.getCache().remove(tsKey);
-		dumpTsidCache();
-		
-		// Remove this key from all groups
-		for(TsGroup grp : tsGroupCache.getList())
+		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+		String q = "";
+		try
 		{
-			boolean wasMember = false;
-			for(Iterator<TimeSeriesIdentifier> tsidit = 
-				grp.getExpandedList().iterator(); tsidit.hasNext(); )
-			{
-				TimeSeriesIdentifier tsid = tsidit.next();
-				if (tsid.getKey() == tsKey)
-				{
-					tsidit.remove();
-					wasMember = true;
-					break;
-				}
-			}
+			TimeSeriesIdentifier tsidRemoved = timeSeriesDAO.getCache().getByKey(tsKey);
+			if (tsidRemoved != null)
+				timeSeriesDAO.getCache().remove(tsKey);
+			dumpTsidCache();
 			
-			// If this was an explicit member of a group, remove the TSDB_GROUP_MEMBER_TS record
-			if (wasMember)
-				for(TimeSeriesIdentifier tsid : grp.getTsMemberList())
+			// Remove this key from all groups
+			for(TsGroup grp : tsGroupDAO.getTsGroupList(null))
+			{
+				if (!grp.getIsExpanded()) // may have timed out in the cache and reread from db.
+					groupHelper.expandTsGroup(grp);
+				
+				boolean wasMember = false;
+				for(Iterator<TimeSeriesIdentifier> tsidit = 
+					grp.getExpandedList().iterator(); tsidit.hasNext(); )
 				{
+					TimeSeriesIdentifier tsid = tsidit.next();
 					if (tsid.getKey() == tsKey)
 					{
-						grp.getTsMemberList().remove(tsid);
-						String q = "delete from TSDB_GROUP_MEMBER_TS where "
-							+ "GROUP_ID = " + grp.getGroupId()
-							+ " and "
-							+ (theDb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-							+ " = " + tsKey;
-						try
-						{
-							theDb.doModify(q);
-						}
-						catch (DbIoException ex)
-						{
-							String msg = "tsDeleted Error in query '" + q + "': " + ex;
-							System.err.print(msg);
-							ex.printStackTrace();
-						}
+						tsidit.remove();
+						wasMember = true;
 						break;
 					}
 				}
-		}
-		
-		// Remove this key from all comp-dependencies
-		for(Iterator<CpCompDependsRecord> compDependsIt = cpCompDependsCache.iterator();
-			compDependsIt.hasNext(); )
-		{
-			CpCompDependsRecord compDepends = compDependsIt.next();
-			if (compDepends.getTsKey() == tsKey)
-			{
-				// Remove this record from the CpCompDepends cache.
-				compDependsIt.remove();
-				computationTsDeleted(compDepends, tsidRemoved);
+				
+				// If this was an explicit member of a group, remove the TSDB_GROUP_MEMBER_TS record
+				if (wasMember)
+					for(TimeSeriesIdentifier tsid : grp.getTsMemberList())
+					{
+						if (tsid.getKey() == tsKey)
+						{
+							grp.getTsMemberList().remove(tsid);
+							q = "delete from TSDB_GROUP_MEMBER_TS where "
+								+ "GROUP_ID = " + grp.getGroupId()
+								+ " and "
+								+ (theDb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+								+ " = " + tsKey;
+							try
+							{
+								theDb.doModify(q);
+							}
+							catch (DbIoException ex)
+							{
+								String msg = "tsDeleted Error in query '" + q + "': " + ex;
+								System.err.print(msg);
+								ex.printStackTrace();
+							}
+							break;
+						}
+					}
 			}
-		}
+			
+			// Remove this key from all comp-dependencies
+			for(Iterator<CpCompDependsRecord> compDependsIt = cpCompDependsCache.iterator();
+				compDependsIt.hasNext(); )
+			{
+				CpCompDependsRecord compDepends = compDependsIt.next();
+				if (compDepends.getTsKey() == tsKey)
+				{
+					// Remove this record from the CpCompDepends cache.
+					compDependsIt.remove();
+					computationTsDeleted(compDepends, tsidRemoved);
+				}
+			}
+	
+			// Delete from cp_comp_depends table any tupple with this ts_id.
+			q = "delete from CP_COMP_DEPENDS " + "where TS_ID = " + tsKey;
 
-		// Delete from cp_comp_depends table any tupple with this ts_id.
-		String q = "delete from CP_COMP_DEPENDS "
-			+ "where TS_ID = " + tsKey;
-		try
-		{
 			theDb.doModify(q);
 			return true;
 		}
@@ -650,6 +627,10 @@ public class CpCompDependsUpdater
 			System.err.print(msg);
 			ex.printStackTrace();
 			return false;
+		}
+		finally
+		{
+			tsGroupDAO.close();
 		}
 	}
 
@@ -802,8 +783,24 @@ public class CpCompDependsUpdater
 			info("comp is enabled for appID=" + comp.getAppId());
 			// If not a group comp just add the completely-specified parms.
 			TsGroup grp = null;
-			if (comp.getGroupId() != Constants.undefinedId)
-				grp = tsGroupCache.getGroupFromCache(comp.getGroupId());
+			if (!DbKey.isNull(comp.getGroupId()))
+			{
+				TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+				try
+				{
+					grp = tsGroupDAO.getTsGroupById(comp.getGroupId());
+				}
+				catch (DbIoException ex)
+				{
+					warning("Computation ID=" + comp.getId() + " '" + comp.getName()
+						+ "' uses invalid groupID=" + comp.getGroupId() + ". Ignoring.");
+					return;
+				}
+				finally
+				{
+					tsGroupDAO.close();
+				}
+			}
 			if (grp == null)
 			{
 				info("NOT a group comp");
@@ -896,12 +893,13 @@ public class CpCompDependsUpdater
 	{
 		info("groupModified(" + groupId + ")");
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
+		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		try
 		{
 			TsGroup newGrp = null;
 			try
 			{
-				newGrp = theDb.getTsGroupById(groupId);
+				newGrp = tsGroupDAO.getTsGroupById(groupId, true);
 			}
 			catch (DbIoException ex)
 			{
@@ -918,25 +916,20 @@ public class CpCompDependsUpdater
 			{
 	info("groupModified " + newGrp.getGroupId() + ":" + newGrp.getGroupName()
 	+ " numSites=" + newGrp.getSiteIdList().size());
-				tsGroupCache.add(newGrp);
 				info("Group " + newGrp.getGroupId() + ":" + newGrp.getGroupName()
 					+ " Added/Replaced in cache, numSites=" + newGrp.getSiteIdList().size());
-				
-				ArrayList<DbKey> grpIdsDone = new ArrayList<DbKey>();
-	
-				// This method recurses down into any subgroups (in/ex-cluded or intersected).
-				tsGroupCache.evalGroup(newGrp, grpIdsDone);
+
+				groupHelper.expandTsGroup(newGrp);
 			}
 			else // Group was deleted.
 			{
 				info("groupModified(" + groupId + ") -- not in DB. Assuming group was deleted.");
-				tsGroupCache.removeById(groupId);
 			}
 	
 			// Any group that includes/excludes/intersects THIS group needs to have
 			// its expanded list re-evaluated. I.e. "parent" groups.
 			ArrayList<DbKey> affectedGroupIds = new ArrayList<DbKey>();
-			tsGroupCache.evaluateParents(groupId, affectedGroupIds);
+			groupHelper.evaluateParents(groupId, affectedGroupIds);
 	
 			// affectedGroupIds is now a list of all groups that may have had their
 			// expanded list modified by the current operation.
@@ -950,7 +943,7 @@ public class CpCompDependsUpdater
 				 && affectedGroupIds.contains(comp.getGroupId()))
 				{
 					// This computation is affected!
-					TsGroup grp = tsGroupCache.getGroupFromCache(comp.getGroupId());
+					TsGroup grp = tsGroupDAO.getTsGroupById(comp.getGroupId());
 					if (grp == null) // means group was deleted
 					{
 						comp.setEnabled(false);
@@ -998,8 +991,13 @@ public class CpCompDependsUpdater
 				}
 			}
 		}
+		catch(DbIoException ex)
+		{
+			warning("groupModified groupID=" + groupId + ": " + ex);
+		}
 		finally
 		{
+			tsGroupDAO.close();
 			computationDAO.close();
 		}
 		return true;
@@ -1226,7 +1224,7 @@ info(q);
 	
 	private void dumpTsidCache()
 	{
-		File dir = tsGroupCache.getGroupCacheDumpDir();
+		File dir = groupHelper.getGroupCacheDumpDir();
 		if (dir != null)
 		{
 			File f = new File(dir, "tsids");

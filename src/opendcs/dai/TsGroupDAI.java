@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  */
 package opendcs.dai;
 
@@ -26,6 +29,16 @@ public interface TsGroupDAI
 	 */
 	public TsGroup getTsGroupById(DbKey groupId)
 		throws DbIoException;
+	
+	/**
+	 * Return a TsGroup by its surrogate key ID, or null if no such group.
+	 * @param groupId the surrogate key
+	 * @param forceDbRead if true then read from DB and not from cache.
+	 * @return a TsGroup by its surrogate key ID, or null if no such group.
+	 */
+	public TsGroup getTsGroupById(DbKey groupId, boolean forceDbRead)
+		throws DbIoException;
+
 	
 	/**
 	 * Lists the Time Series Groups.
@@ -73,4 +86,11 @@ public interface TsGroupDAI
 	 * Closes any resources opened by the DAO
 	 */
 	public void close();
+	
+	/**
+	 * Fill cache with all groups.
+	 */
+	public void fillCache()
+		throws DbIoException;
+
 }
