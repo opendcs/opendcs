@@ -76,6 +76,8 @@ public class ParamSelectDialog
 		this.cwmsDb = cwmsDb;
 		this.selectionMode = selectionMode;
 		guiInit();
+		trackChanges("ParamSelectDialog");
+
 		cancelled = false;
 	}
 

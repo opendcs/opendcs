@@ -75,6 +75,8 @@ public class VersionSelectDialog
 		this.cwmsDb = cwmsDb;
 		this.selectionMode = selectionMode;
 		guiInit();
+		trackChanges("VersionSelectDialog");
+
 		cancelled = false;
 	}
 

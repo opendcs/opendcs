@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2015/10/26 12:46:35  mmaloney
+ * Added setSelectedTS method
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -23,21 +26,15 @@ package decodes.tsdb.groupedit;
 import ilex.util.LoadResourceBundle;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ResourceBundle;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
-import javax.swing.border.TitledBorder;
 
+import decodes.gui.GuiDialog;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
@@ -48,7 +45,7 @@ Dialog for selecting one or more Data Descriptor.
 Used by the TsGroupDefinitionPanel.
 */
 @SuppressWarnings("serial")
-public class TimeSeriesSelectDialog extends JDialog
+public class TimeSeriesSelectDialog extends GuiDialog
 {
 	private JPanel panel1 = new JPanel();
 	private JPanel jPanel1 = new JPanel();
@@ -66,7 +63,6 @@ public class TimeSeriesSelectDialog extends JDialog
 	private boolean cancelled;
 	
 	//Labels for internationalization
-	private String dialogTitle;
 	private String panelTitle;
 	
 	/** Constructs new TsDataDescriptorSelectDialog */
@@ -74,6 +70,7 @@ public class TimeSeriesSelectDialog extends JDialog
 	{
 	  	super(TsDbGrpEditorFrame.instance(), "", true);
 	  	init(tsdbIn, fillAll);
+	  	super.trackChanges("TimeSeriesSelectDialog");
 	}
 	
 	public void setTimeSeriesList(Collection<TimeSeriesIdentifier> ddsIn)
@@ -108,8 +105,6 @@ public class TimeSeriesSelectDialog extends JDialog
 			"decodes/resources/generic",
 			DecodesSettings.instance().language);
 
-		dialogTitle = 
-			groupResources.getString("TsDataDescriptorSelectDialog.dialogTitle");
 		panelTitle = 
 			groupResources.getString("TsDataDescriptorSelectDialog.panelTitle");
 		selectButton.setText(genericResources.getString("select"));

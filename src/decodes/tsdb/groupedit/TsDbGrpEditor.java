@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/08/22 17:23:10  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -188,7 +191,8 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 	public static void main(String[] args)
 	{
 		//Create the GUI Application
-		DecodesInterface.setGUI(true);
+//TODO MJM Uncomment the following before release.
+//		DecodesInterface.setGUI(true);
 		TsDbGrpEditor guiApp = new TsDbGrpEditor();
 		try
 		{			

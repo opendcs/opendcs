@@ -75,6 +75,7 @@ public class LocSelectDialog
 		this.cwmsDb = cwmsDb;
 		this.selectionMode = selectionMode;
 		guiInit();
+		trackChanges("LocSelectDialog");
 		cancelled = false;
 	}
 
@@ -118,11 +119,7 @@ public class LocSelectDialog
 		getContentPane().add(overallPanel);
 		
 		model = new LocTableModel(this);
-		locationTable = 
-			new SortingListTable(model, model.colWidths)
-			{
-			
-			};
+		locationTable = new SortingListTable(model, model.colWidths);
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.getViewport().add(locationTable);
 		listPanel.add(scrollPane, BorderLayout.CENTER);
@@ -187,7 +184,10 @@ public class LocSelectDialog
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 1), 0, 0));
 		
-		locationTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		locationTable.getSelectionModel().setSelectionMode(
+			selectionMode == SelectionMode.GroupEdit ? ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+				: ListSelectionModel.SINGLE_SELECTION);
+		
 		if (selectionMode == SelectionMode.CompEditNoGroup)
 		{
 			baseRadio.setEnabled(false);
@@ -207,6 +207,13 @@ public class LocSelectDialog
 		if (inSelectionMade)
 			return;
 		inSelectionMade = true;
+		
+		if (selectionMode == SelectionMode.GroupEdit)
+		{
+			locationTable.getSelectionModel().setSelectionMode(
+				subRadio.isSelected() ? ListSelectionModel.SINGLE_SELECTION
+					: ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		}
 		
 		int r = locationTable.getSelectedRow();
 		if (r >= 0)
@@ -304,6 +311,34 @@ public class LocSelectDialog
 		if (value.length() == 0)
 			return null;
 		return new StringPair(label, value);
+	}
+	
+	public ArrayList<StringPair> getResults()
+	{
+		ArrayList<StringPair> ret = new ArrayList<StringPair>();
+		
+		int rows[] = locationTable.getSelectedRows();
+		if (rows == null || rows.length == 0)
+			return ret;
+		
+		TsGroupMemberType tgmt = fullRadio.isSelected() ? TsGroupMemberType.Location
+			: baseRadio.isSelected() ? TsGroupMemberType.BaseLocation 
+			: TsGroupMemberType.SubLocation;
+		
+		for(int row : rows)
+		{
+			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)model.getRowObject(row);
+			switch(tgmt)
+			{
+			case BaseLocation: ret.add(new StringPair(tgmt.toString(), spec.getBase())); break;
+			case SubLocation: ret.add(new StringPair(tgmt.toString(), spec.getSub())); break;
+			case Location:
+			default:
+				ret.add(new StringPair(tgmt.toString(), spec.getFull())); break;
+			}
+		}
+		
+		return ret;
 	}
 	
 	public void setCurrentValue(String value)
