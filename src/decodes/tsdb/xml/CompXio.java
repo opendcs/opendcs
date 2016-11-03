@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.4  2016/03/24 19:22:56  mmaloney
+*  Added support for algorithm scripts.
+*
 *  Revision 1.3  2015/05/14 13:52:18  mmaloney
 *  RC08 prep
 *
@@ -947,13 +950,13 @@ public class CompXio
 		if (tsgrp == null) { return; }
 
 		//Expand the group members for each TS group
-		try
-		{
-			theDb.readTsGroupMembers(tsgrp);
-		}
-		catch (Exception E) {
-			System.out.println(E.toString());
-		}
+//		try
+//		{
+//			theDb.readTsGroupMembers(tsgrp);
+//		}
+//		catch (Exception E) {
+//			System.out.println(E.toString());
+//		}
 		
 		//Write the group elements for each TS group
 		xos.startElement(CompXioTags.tsGroup, CompXioTags.name, tsgrp.getGroupName());
