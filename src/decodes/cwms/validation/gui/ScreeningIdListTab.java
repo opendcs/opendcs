@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.1  2015/11/12 15:12:38  mmaloney
+ * Initial release.
+ *
  */
 package decodes.cwms.validation.gui;
 
@@ -267,7 +270,7 @@ public class ScreeningIdListTab extends JPanel
 		TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();
 		try
 		{
-			allTsids = tsDAO.listTimeSeries();
+			allTsids = tsDAO.listTimeSeries(true);
 		}
 		catch (DbIoException ex)
 		{
