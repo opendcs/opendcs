@@ -3,15 +3,7 @@
 */
 package decodes.datasource;
 
-import java.util.HashMap;
 import java.util.Date;
-import java.util.Calendar;
-import java.text.ParsePosition;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
-import ilex.util.ArrayUtil;
-import ilex.util.ByteUtil;
 import ilex.var.Variable;
 
 import decodes.db.Constants;
