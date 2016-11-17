@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.9  2016/10/14 19:02:30  mmaloney
+*  dev
+*
 *  Revision 1.8  2016/10/14 18:37:09  mmaloney
 *  dev
 *
@@ -381,9 +384,6 @@ public abstract class StreamDataSource extends DataSourceExec
 
 			name = name.trim().toLowerCase();
 
-//			Logger.instance().log(Logger.E_DEBUG1, 
-//				"Processing property name='" + name + "', value='"+value + "'");
-
 			boolean processed = true;
 			if (name.equals("lengthadj"))
 			{
@@ -424,7 +424,10 @@ public abstract class StreamDataSource extends DataSourceExec
 			else if (name.equals("onemessagefile"))
 				oneMessageFile = TextUtil.str2boolean(value.trim());
 			else if (name.equals("mediumid"))
+			{
 				mediumId = EnvExpander.expand(value.trim());
+
+			}
 			else if (name.equals("filenametimestamp"))
 				fileNameTimeStamp = value.trim();
 			else if (name.equals("filenamedelimiter") && value != null)
@@ -434,7 +437,6 @@ public abstract class StreamDataSource extends DataSourceExec
 			else if (name.equalsIgnoreCase("filename"))
 			{
 				savedFileName = value.trim();
-Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 			}
 			else if (name.equalsIgnoreCase("paritycheck")
 				  || name.equalsIgnoreCase("parity"))
@@ -619,6 +621,7 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 		Platform p = null;
 		try
 		{
+
 			p = Database.getDb().platformList.getPlatform(
 				pmp.getMediumType(), ret.getMediumId(), ret.getTimeStamp());
 		}
@@ -636,8 +639,10 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 		if (p != null)
 		{
 			ret.setPlatform(p);
-
 			// Use the base class resolver to find exact matching TM.
+			if ((mediumType == null || mediumType.equalsIgnoreCase("noheader")) 
+				&& pmp.getMediumType() != null)
+				mediumType = pmp.getMediumType();
 			TransportMedium tm = resolveTransportMedium(p, ret.getMediumId(), 
 				chan, oldChannelRanges);
 			ret.setTransportMedium(tm);
@@ -733,7 +738,6 @@ Logger.instance().debug3("StreamDataSource savedFileName=" + savedFileName);
 					  + "), will try again later.");
 					if (!tryAgainOnEOF())
 						throw new DataSourceEndException("Stream EOF.");
-Logger.instance().debug3("StreamDS reset 3");
 
 					inputStream.reset();
 					try { Thread.sleep(50L); }
@@ -748,7 +752,9 @@ Logger.instance().debug3("StreamDS reset 3");
 
 				// If mediumId supplied as property, set before parsing header.
 				if (mediumId != null)
+				{
 					ret.setMediumId(mediumId);
+				}
 				if (savedFileName != null)
 					ret.setPM(GoesPMParser.FILE_NAME, new Variable(savedFileName));
 				try { pmp.parsePerformanceMeasurements(ret); }
@@ -759,7 +765,6 @@ Logger.instance().debug3("StreamDS reset 3");
 						+ new String(header) + "': " + e.getMessage() 
 						+ " -- skipping to next delimiter.");
 					huntMode = true;
-Logger.instance().debug3("StreamDS reset 4");
 
 					inputStream.reset();
 					return null;
@@ -775,7 +780,6 @@ Logger.instance().debug3("StreamDS reset 4");
 						"StreamDataSource '" + getName() 
 						+ "', scan found invalid message length, skipping.");
 					huntMode = true;
-Logger.instance().debug3("StreamDS reset 5");
 
 					inputStream.reset();
 					return null;
@@ -791,7 +795,6 @@ Logger.instance().debug3("StreamDS reset 5");
 				ret.data = ArrayUtil.resize(ret.data, header.length + len);
 
 				// Read all message data (allow 5 sec for it all to arrive.)
-Logger.instance().debug3("Reading " + len + " bytes of msg data after header.");
 				long start = System.currentTimeMillis();
 				n = 0;
 				while(n < len)
@@ -846,8 +849,6 @@ Logger.instance().debug3("Reading " + len + " bytes of msg data after header.");
 				}
 				else // No end delim. Scan to next start delim, then push it back.
 				{
-Logger.instance().debug3("No end delim, looking for next start delim '"
-+ new String(startDelimiter) + "'");
 					len = readToDelimiter(startDelimiter, msgbuf, true);
 					justGotStartDelim = true;
 					
@@ -865,7 +866,6 @@ Logger.instance().debug3("No end delim, looking for next start delim '"
 						"StreamDataSource Failed frame message after "
 						+ msgbuf.length 
 						+ " bytes -- skipping to next delimiter.");
-Logger.instance().debug3("StreamDS reset 6");
 //					inputStream.reset();
 					return null;
 				}
@@ -970,13 +970,12 @@ Logger.instance().debug3("checkForMessageStart()");
 
 		if (justGotStartDelim)
 		{
-Logger.instance().debug3("Already had start delimiter.");
 			justGotStartDelim = false;
 			huntMode = false;
 			return;
 		}
 
-		Logger.instance().log(Logger.E_DEBUG3, "Hunting for start delimiter...");
+//		Logger.instance().log(Logger.E_DEBUG3, "Hunting for start delimiter...");
 
 		inputStream.mark(64);
 		byte[] delimTest = new byte[startDelimiter.length];
@@ -990,7 +989,6 @@ Logger.instance().debug3("Already had start delimiter.");
 				throw new DataSourceEndException("Stream EOF.");
 			}
 			// Reset stream, pause & try again later.
-Logger.instance().debug3("StreamDS reset 8");
 			inputStream.reset();
 			try { Thread.sleep(50L); }
 			catch(InterruptedException e) {}
@@ -1001,10 +999,8 @@ Logger.instance().debug3("StreamDS reset 8");
 			for(i=0; i<startDelimiter.length; i++)
 				if (startDelimiter[i] != delimTest[i])
 				{
-Logger.instance().debug3("StreamDS reset 9");
 					inputStream.reset();
 					int c = inputStream.read();  // throw away 1 byte
-Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 					
 					skipped++;
 					if (skipped % 100 == 0)
@@ -1109,8 +1105,6 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 		byte[] delimTest = new byte[delim.length];
 		
 		int buflen = 0;
-//Logger.instance().debug3("StreamDS.readToDelimiter delim='"
-//+ new String(delim) + "', delim.length=" + delim.length + ", buf.length=" + buf.length);
 		try
 		{
 			while(!delimFound)
@@ -1119,9 +1113,6 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 				inputStream.mark(80);
 				int n = inputStream.read(delimTest, 0, delim.length);
 				
-//Logger.instance().debug3("StreamDS.readToDelimiter read " + n + " chars, delimTest='"
-//+ new String(delimTest, 0, n) + "'");
-
 				if (n < 0) // End of Stream reached
 				{
 					throw new DataSourceEndException("Input Stream Closed.");
@@ -1132,7 +1123,6 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 						// something like a socket. Wait and try again later
 					{
 						// Reset stream, pause & try again later.
-//Logger.instance().debug3("StreamDS reset 1");
 						inputStream.reset();
 						try { Thread.sleep(50L); }
 						catch(InterruptedException e) {}
@@ -1154,7 +1144,6 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 					for(i=0; i<delim.length; i++)
 						if (delim[i] != delimTest[i])
 						{
-//Logger.instance().debug3("StreamDS reset 2");
 							inputStream.reset();
 							int x = inputStream.read();  // throw away 1 byte
 							if (buf != null)
@@ -1164,7 +1153,6 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 								buf[buflen] = (byte)x;
 							}
 							buflen++;
-//Logger.instance().debug3("StreamDS added char '" + (char)x + "' to buf, buflen=" + buflen);
 							break;
 						}
 	
@@ -1241,7 +1229,10 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 
 		// If mediumId supplied as property, set before parsing header.
 		if (mediumId != null)
+		{
 			ret.setMediumId(mediumId);
+			ret.setPM(GoesPMParser.DCP_ADDRESS, new Variable(mediumId));
+		}
 
 		try 
 		{
@@ -1250,8 +1241,6 @@ Logger.instance().debug3(" threw away '" + (char)c + "' val=" + c);
 				if (savedFileName != null)
 				{
 					ret.setPM(GoesPMParser.FILE_NAME, new Variable(savedFileName));
-Logger.instance().debug3("StreamDataSource added PM '" + GoesPMParser.FILE_NAME
-+ "' with value '" + ret.getPM(GoesPMParser.FILE_NAME) + "'");
 				}
 			    pmp.parsePerformanceMeasurements(ret);
 			}
@@ -1283,6 +1272,4 @@ Logger.instance().debug3("StreamDataSource added PM '" + GoesPMParser.FILE_NAME
 	{
 		return mediumType;
 	}
-
-
 }
