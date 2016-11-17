@@ -601,7 +601,9 @@ public class LrgsDataSource extends DataSourceExec
 				if (++numTries <= retries)
 					continue;
 
-				close();
+//MJM Don't close, becuase this removes the data source from HotBackGroups
+//memory, which causes null ptr.
+//				close();
 				lastError = System.currentTimeMillis();
 				throw new DataSourceException("Timeout (" + timeout 
 					+ " seconds) on LRGS data source '"+dbDataSource.getName()+"'");
