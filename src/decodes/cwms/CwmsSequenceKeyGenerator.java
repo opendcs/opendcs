@@ -2,6 +2,11 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.4  2016/09/29 18:54:35  mmaloney
+*  CWMS-8979 Allow Database Process Record to override decodes.properties and
+*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
+*  name of a process record. Properties assigned to the app will override the file(s).
+*
 *  Revision 1.3  2016/01/27 21:37:09  mmaloney
 *  schedule_entry_status and dacq_event have their own sequences.
 *
@@ -88,6 +93,9 @@ public class CwmsSequenceKeyGenerator
 		if (decodesDatabaseVersion >= DecodesDatabaseVersion.DECODES_DB_13
 		 && (tableName.equalsIgnoreCase("SCHEDULE_ENTRY_STATUS")
 			 || tableName.equalsIgnoreCase("DACQ_EVENT")))
+			seqname = tableName + "IdSeq";
+		
+		if (tableName.equalsIgnoreCase("CP_DEPENDS_NOTIFY"))
 			seqname = tableName + "IdSeq";
 		
 		String q = "SELECT " + seqname + ".nextval from dual";

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.14  2016/11/03 18:59:41  mmaloney
+ * Implement wildcard evaluation for groups.
+ *
  * Revision 1.13  2016/06/07 21:30:49  mmaloney
  * Reload site cache when refreshing TSID cache. Otherwise, location records are read
  * one-at-a-time.
@@ -119,6 +122,16 @@ public class CwmsTimeSeriesDAO
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
 		throws DbIoException, NoSuchObjectException
 	{
+		if (DbKey.isNull(key))
+		{
+			try { throw new NoSuchObjectException("Request for TSID with null ts_code"); }
+			catch(NoSuchObjectException ex)
+			{
+				System.err.println(ex);
+				ex.printStackTrace(System.err);
+			}
+		}
+		
 		if (firstCall)
 		{
 			reloadTsIdCache();

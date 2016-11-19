@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.16  2016/11/03 18:59:40  mmaloney
+*  Implement wildcard evaluation for groups.
+*
 *  Revision 1.15  2016/08/13 17:40:31  mmaloney
 *  DecodesSetting.cwmsVersionOverride to bypass Cwms 3 office privilege checks.
 *
@@ -1010,6 +1013,9 @@ public class CwmsTimeSeriesDb
 	public TimeSeriesIdentifier expandSDI(DbCompParm parm)
 		throws DbIoException, NoSuchObjectException
 	{
+		if (DbKey.isNull(parm.getSiteDataTypeId()))
+			throw new NoSuchObjectException("Null ts_code in parm");
+		
 		TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
 		try
 		{
@@ -1579,7 +1585,6 @@ for(CTimeSeries ts : allts)
 
 	/**
 	 * Overloaded from base class, transform the TSID unique string.
-	 * DOES NO DATABASE IO.
 	 * @param tsidRet the time-series id to transform
 	 * @param parm the templeat db comp parameter
 	 * @return true if changes were made.
@@ -1588,6 +1593,10 @@ for(CTimeSeries ts : allts)
 		DbCompParm parm)
 	{
 		boolean transformed = false;
+		if (!(tsidRet instanceof CwmsTsId))
+			return false;
+		CwmsTsId ctsid = (CwmsTsId) tsidRet;
+		
 		SiteName sn = parm.getSiteName();
 		if (sn != null)
 		{
@@ -1609,12 +1618,56 @@ for(CTimeSeries ts : allts)
 				siteDAO.close();
 			}
 		}
+		else if (this.tsdbVersion >= TsdbDatabaseVersion.VERSION_14
+			  && parm.getLocSpec() != null && parm.getLocSpec().length() > 0)
+		{
+			String morphed = morph(ctsid.getSiteName(), parm.getLocSpec());
+			if (morphed == null)
+				debug2("Unable to morph site name '" + ctsid.getSiteName() + "' with loc spec '"
+					+ parm.getLocSpec() + "'");
+			else
+			{
+				tsidRet.setSite(null);
+				tsidRet.setSiteName("");
+				SiteDAI siteDAO = makeSiteDAO();
+				try
+				{
+					DbKey siteId = siteDAO.lookupSiteID(morphed);
+					if (!DbKey.isNull(siteId))
+						tsidRet.setSite(siteDAO.getSiteById(siteId));
+				}
+				catch (Exception ex)
+				{
+					Logger.instance().warning("Cannot get site for sitename " + morphed + ": " + ex);
+				}
+				finally
+				{
+					siteDAO.close();
+				}
+				transformed = true;
+			}
+		}
 		DataType dt = parm.getDataType();
 		if (dt != null)
 		{
 			tsidRet.setDataType(dt);
 			transformed = true;
 		}
+		else if (this.tsdbVersion >= TsdbDatabaseVersion.VERSION_14
+			  && parm.getParamSpec() != null && parm.getParamSpec().length() > 0)
+		{
+			String morphed = morph(ctsid.getPart("param"), parm.getParamSpec());
+			if (morphed == null)
+				debug2("Unable to morph param '" + ctsid.getPart("param") + "' with param spec '"
+					+ parm.getParamSpec() + "'");
+			else
+			{
+				tsidRet.setDataType(null);
+				tsidRet.setDataType(DataType.getDataType(Constants.datatype_CWMS, morphed));
+				transformed = true;
+			}
+		}
+
 		String s = parm.getParamType();
 		if (s != null && s.trim().length() > 0)
 		{
@@ -1636,10 +1689,66 @@ for(CTimeSeries ts : allts)
 		s = parm.getVersion();
 		if (s != null && s.trim().length() > 0)
 		{
-			tsidRet.setPart("Version", s);
+			if (s.contains("*"))
+			{
+				String morphed = morph(ctsid.getPart("version"), s);
+				if (morphed == null)
+					debug2("Unable to morph param '" + ctsid.getPart("version") 
+						+ "' with version spec '" + s + "'");
+				else
+				{
+					ctsid.setVersion(morphed);
+					transformed = true;
+				}
+			}
+			else
+				tsidRet.setPart("Version", s);
 			transformed = true;
 		}
 		return transformed;
+	}
+	
+	/**
+	 * For version 6.3, morph the tsid part by the computation param part.
+	 * @param tsidComponent The component from the TSID
+	 * @param parmComponent The component in the comp parm, which may contain wildcards.
+	 * @return the tsid component masked by the parm component, or null if can't match.
+	 */
+	private String morph(String tsidComponent, String parmComponent)
+	{
+		// Examples:
+		// tsid: A-B-C   parm: D-*-F   result: D-B-F
+		// tsid: A-B     parm: *-E-F   result: A-E-F
+		// tsid: A-B-C   parm: D-*     result: D-B
+		// tsid: A       parm: D-*     result: null
+		
+		// Check for a partial location specification (OpenDCS 6.3)
+		String tps[] = tsidComponent.split("-");
+		String pps[] = parmComponent.split("-");
+		StringBuilder sb = new StringBuilder();
+		for(int idx = 0; idx < pps.length; )
+		{
+			if (pps[idx].equals("*"))
+			{
+				if (idx >= tps.length)
+					return null;
+				else
+					sb.append(tps[idx]);
+			}
+			else
+				sb.append(pps[idx]);
+			if (++idx < pps.length)
+				sb.append("-");
+		}
+		return sb.toString();
+		
+		/*
+		 * Note: the table_selector in cp_comp_ts_parm will be empty for a component that is 
+		 * completely undefined. The syntax is ParamType.Duration.Version[.SiteSpec.ParmSpec],
+		 * So "Total.1Hour." means that Version is undefined and shows as <var> in the gui.
+		 * This is different from "Total.1Hour.Something-*". Meaning that the first part of
+		 * the subversion can be anything.
+		 */
 	}
 	
 	
@@ -1674,7 +1783,6 @@ for(CTimeSeries ts : allts)
 		throws DbIoException
 	{
 		ArrayList<String> ret = new ArrayList<String>();
-		// TODO: Replace this with a call to the CATALOG function for Param Types
 		String q = "select distinct parameter_type_id FROM CWMS_V_TS_ID"
 			+ " WHERE upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
 
