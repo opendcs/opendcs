@@ -57,6 +57,19 @@ create or replace package cwms_ccp authid current_user as
   procedure start_check_callback_proc_job
   ;
 
+  function get_computation_ts_members(
+    p_computation_id  integer,
+    p_inout_flag      varchar2,
+    p_db_office_code  integer)
+    return sys_refcursor
+  ;
+
+  function get_group_ts_members(
+    p_group_id        integer,
+    p_db_office_code  integer)
+    return sys_refcursor
+  ;
+
   /*
      define the ccp notify computation callback procedure
      that is used in CWMS_TS.(UN)REGISTER_TS_CALLBACK
@@ -296,6 +309,524 @@ create or replace package body cwms_ccp as
     end if;
   end start_check_callback_proc_job;
 
+
+  /*
+    This ccp notify computation callback procedure is used to figure out
+    that, if any cwms TS data record is created, modified, or deleted,
+    a computation notification record will be added to ccp task list table.
+  */
+  function build_comp_condition (
+    p_comp_arg        in varchar2,
+    p_comp_arg_type   in varchar2)
+  return varchar2
+  is
+    l_query_str varchar2(1000);
+  begin
+    l_query_str := '';
+    if p_comp_arg <> '*'
+    then
+      case upper(p_comp_arg_type)
+        when 'PARAM' then
+          l_query_str := ' and parameter_id = '''||rtrim(p_comp_arg)||''' ';
+        when 'PARAMTYPE' then
+          l_query_str := ' and parameter_type_id = '''||rtrim(p_comp_arg)||''' ';
+        when 'INTERVAL' then
+          l_query_str := ' and interval_id = '''||rtrim(p_comp_arg)||''' ';
+        when 'DURATION' then
+          l_query_str := ' and duration_id = '''||rtrim(p_comp_arg)||''' ';
+        when 'VERSION' then
+          l_query_str := ' and version_id = '''||rtrim(p_comp_arg)||''' ';
+        else
+          l_query_str := '';
+      end case;
+    end if;
+
+    return l_query_str;
+  end build_comp_condition;
+
+  function get_group_condition_query (
+    p_group_id        in integer,
+    p_group_op        in varchar2)
+  return varchar2
+  is
+    l_group_op        varchar2(10);
+    l_query_str       varchar2(5000);
+    l_query_str1      varchar2(1000);
+    l_query_str2      varchar2(1000);
+    l_query_str3      varchar2(1000);
+    l_query_str4      varchar2(1000);
+  begin
+    l_query_str := null;
+
+    case upper(nvl(p_group_op, ' '))
+      when 'A' then
+        l_group_op := ' in ';
+      when 'S' then
+        l_group_op := ' not in ';
+      when 'I' then
+        l_group_op := ' in ';
+      else
+        l_group_op := ' in ';
+    end case;
+
+    /* Get the location condition */
+    l_query_str1 := null;
+    for rr in
+      (select distinct b.location_id
+        from tsdb_group_member_site a, cwms_v_loc b
+        where a.group_id = p_group_id and a.site_id = b.location_code
+      )
+    loop
+      if (l_query_str1 is null)
+      then
+        l_query_str1 := ''''||rr.location_id||'''';
+      else
+        l_query_str1 := l_query_str1||','''||rr.location_id||'''';
+      end if;
+    end loop; /* end of for rr loop */
+    if (l_query_str1 is not null)
+    then
+      if (l_query_str is null)
+      then
+        l_query_str := 'location_id'||l_group_op||'('||l_query_str1||') ';
+      else
+        l_query_str := l_query_str||'and location_id'||l_group_op||'('||l_query_str1||') ';
+      end if;
+    end if;
+
+    /* Get the param condition */
+    l_query_str1 := null;
+    for rr in
+      (select b.code from tsdb_group_member_dt a, datatype b
+        where a.group_id = p_group_id and upper(b.standard) = 'CWMS'
+          and a.data_type_id = b.id
+      )
+    loop
+      if (l_query_str1 is null)
+      then
+        l_query_str1 := ''''||rr.code||'''';
+      else
+        l_query_str1 := l_query_str1||','''||rr.code||'''';
+      end if;
+    end loop; /* end of for rr loop */
+    if (l_query_str1 is not null)
+    then
+      if (l_query_str is null)
+      then
+        l_query_str := 'parameter_id'||l_group_op||'('||l_query_str1||') ';
+      else
+        l_query_str := l_query_str||'and parameter_id'||l_group_op||'('||l_query_str1||') ';
+      end if;
+    end if;
+
+    /* Get the param_type, interval, duration, and version conditions */
+    l_query_str1 := null;
+    l_query_str2 := null;
+    l_query_str3 := null;
+    l_query_str4 := null;
+    for rr in
+      (select member_type, member_value from tsdb_group_member_other
+        where group_id = p_group_id
+      )
+    loop
+      case upper(rr.member_type)
+        when 'PARAMTYPE' then
+          if (l_query_str1 is null)
+          then
+            l_query_str1 := ''''||rr.member_value||'''';
+          else
+            l_query_str1 := l_query_str1||','''||rr.member_value||'''';
+          end if;
+        when 'INTERVAL' then
+          if (l_query_str2 is null)
+          then
+            l_query_str2 := ''''||rr.member_value||'''';
+          else
+            l_query_str2 := l_query_str2||','''||rr.member_value||'''';
+          end if;
+        when 'DURATION' then
+          if (l_query_str3 is null)
+          then
+            l_query_str3 := ''''||rr.member_value||'''';
+          else
+            l_query_str3 := l_query_str3||','''||rr.member_value||'''';
+          end if;
+        when 'VERSION' then
+          if (l_query_str4 is null)
+          then
+            l_query_str4 := ''''||rr.member_value||'''';
+          else
+            l_query_str4 := l_query_str4||','''||rr.member_value||'''';
+          end if;
+        else
+          continue;
+      end case;
+    end loop; /* end of for rr loop */
+    if (l_query_str1 is not null)
+    then
+      if (l_query_str is null)
+      then
+        l_query_str := 'parameter_type_id'||l_group_op||'('||l_query_str1||') ';
+      else
+        l_query_str := l_query_str||'and parameter_type_id'||l_group_op||'('||l_query_str1||') ';
+      end if;
+    end if;
+    if (l_query_str2 is not null)
+    then
+      if (l_query_str is null)
+      then
+        l_query_str := 'interval_id'||l_group_op||'('||l_query_str2||') ';
+      else
+        l_query_str := l_query_str||'and interval_id'||l_group_op||'('||l_query_str2||') ';
+      end if;
+    end if;
+    if (l_query_str3 is not null)
+    then
+      if (l_query_str is null)
+      then
+        l_query_str := 'duration_id'||l_group_op||'('||l_query_str3||') ';
+      else
+        l_query_str := l_query_str||'and duration_id'||l_group_op||'('||l_query_str3||') ';
+      end if;
+    end if;
+    if (l_query_str4 is not null)
+    then
+      if (l_query_str is null)
+      then
+        l_query_str := 'version_id'||l_group_op||'('||l_query_str4||') ';
+      else
+        l_query_str := l_query_str||'and version_id'||l_group_op||'('||l_query_str4||') ';
+      end if;
+    end if;
+
+    return l_query_str;
+  end get_group_condition_query;
+
+  -- This function builds the query conditions defined in a computation
+  function build_comp_condition_query (
+    p_param           in varchar2,
+    p_paramtype       in varchar2,
+    p_interval        in varchar2,
+    p_duration        in varchar2,
+    p_version         in varchar2)
+  return varchar2
+  is
+    l_sql_txt         varchar2(5000);
+  begin
+    l_sql_txt := '';
+
+    l_sql_txt := rtrim(l_sql_txt) ||
+                 rtrim(build_comp_condition(p_comp_arg       => p_param,
+                                            p_comp_arg_type  => 'PARAM'));
+    l_sql_txt := rtrim(l_sql_txt) ||
+                 rtrim(build_comp_condition(p_comp_arg       => p_paramtype,
+                                            p_comp_arg_type  => 'PARAMTYPE'));
+    l_sql_txt := rtrim(l_sql_txt) ||
+                 rtrim(build_comp_condition(p_comp_arg       => p_interval,
+                                            p_comp_arg_type  => 'INTERVAL'));
+    l_sql_txt := rtrim(l_sql_txt) ||
+                 rtrim(build_comp_condition(p_comp_arg       => p_duration,
+                                            p_comp_arg_type  => 'DURATION'));
+    l_sql_txt := rtrim(l_sql_txt) ||
+                 rtrim(build_comp_condition(p_comp_arg       => p_version,
+                                            p_comp_arg_type  => 'VERSION'));
+    return l_sql_txt;
+  end build_comp_condition_query;
+
+  -- This function builds the query conditions defined in a TS group
+  function build_group_condition_query(
+    p_parent_group_id  in integer,
+    p_parent_group_str in varchar2)
+    return varchar2
+  is
+    l_group_str        varchar2(1000);
+    l_group_str_a      varchar2(1000);
+    l_group_str_s      varchar2(1000);
+    l_group_str_i      varchar2(1000);
+    l_return_str       varchar2(5000);
+  begin
+    l_return_str     := null;
+    l_group_str      := null;
+    l_group_str_a    := null;
+    l_group_str_s    := null;
+    l_group_str_i    := null;
+
+    -- return null if no parent group id
+    if (p_parent_group_id is null)
+    then
+      return l_return_str;
+    end if;
+
+    -- get all child groups under the same parent group id
+    for rr in
+      (select parent_group_id, child_group_id, include_group
+         from tsdb_group_member_group where parent_group_id = p_parent_group_id
+      )
+    loop
+      l_group_str := get_group_condition_query(rr.child_group_id, rr.include_group);
+
+      l_return_str := build_group_condition_query(rr.child_group_id, l_group_str);
+      if (l_return_str is null)    /* when a subgroup is a leaf */
+      then
+        case upper(rr.include_group)
+          when 'A' then
+            if (l_group_str_a is null)
+            then
+              l_group_str_a := l_group_str;
+            else
+              l_group_str_a := l_group_str_a ||' or '||l_group_str;
+            end if;
+          when 'S' then
+            if (l_group_str_s is null)
+            then
+              l_group_str_s := l_group_str;
+            else
+              l_group_str_s := l_group_str_s ||' and '||l_group_str;
+            end if;
+          when 'I' then
+            if (l_group_str_i is null)
+            then
+              l_group_str_i := l_group_str;
+            else
+              l_group_str_i := l_group_str_i ||' and '||l_group_str;
+            end if;
+        end case;
+      else                         /* when a subgroup is not a leaf */
+        case upper(rr.include_group)
+          when 'A' then
+            if (l_group_str_a is null)
+            then
+              l_group_str_a := l_return_str;
+            else
+              l_group_str_a := l_group_str_a ||' or '||l_return_str;
+            end if;
+          when 'S' then
+            if (l_group_str_s is null)
+            then
+              l_group_str_s := l_return_str;
+            else
+              l_group_str_s := l_group_str_s ||' and '||l_return_str;
+            end if;
+          when 'I' then
+            if (l_group_str_i is null)
+            then
+              l_group_str_i := l_return_str;
+            else
+              l_group_str_i := l_group_str_i ||' and '||l_return_str;
+            end if;
+        end case;
+      end if;
+    end loop; /* end of for rr ... loop */
+
+    /* build the return query string */
+    l_return_str := null;
+    if (p_parent_group_str is not null)
+    then
+      l_return_str := '('||p_parent_group_str||')';
+    end if;
+    if (l_group_str_a is not null)
+    then
+      if (l_return_str is null)
+      then
+        l_return_str := l_group_str_a;
+      else
+        l_return_str := '('||l_return_str||' or '||l_group_str_a||')';
+      end if;
+    end if;
+    if (l_group_str_s is not null)
+    then
+      if (l_return_str is null)
+      then
+        l_return_str := l_group_str_s;
+      else
+        l_return_str := l_return_str||' and '||l_group_str_s;
+      end if;
+    end if;
+    if (l_group_str_i is not null)
+    then
+      if (l_return_str is null)
+      then
+        l_return_str := l_group_str_i;
+      else
+        l_return_str := l_return_str||' and ('||l_group_str_i||')';
+      end if;
+    end if;
+    if l_return_str is not null
+    then
+      l_return_str := '('||l_return_str||')';
+    end if;
+
+    return l_return_str;
+  end build_group_condition_query;
+
+  -- retrieve all ts_id members defined in a computation
+  function get_computation_ts_members(
+    p_computation_id  integer,
+    p_inout_flag      varchar2,
+    p_db_office_code  integer)
+    return sys_refcursor
+  is
+    l_sql_text        varchar2(5000);
+    l_qry_cursor      sys_refcursor;
+  begin
+    l_sql_text := null;
+
+    /* retrieve all input ts id members defined in a computation or its TS group */
+    if upper(p_inout_flag) = 'IN' then
+      /* for the computation without a TS group */
+      for r1 in
+        (select cc.computation_id,ctp.site_datatype_id
+           from cp_computation cc, cp_comp_ts_parm ctp,cp_algo_ts_parm atp
+           where cc.computation_id = p_computation_id and upper(cc.enabled) = 'Y'
+             and nvl(cc.group_id, -1) = -1 and lower(atp.parm_type) like 'i%'
+             and ctp.computation_id = cc.computation_id and atp.algorithm_id = cc.algorithm_id
+             and atp.algo_role_name = ctp.algo_role_name
+        )
+      loop
+        l_sql_text := 'select cwms_ts_id from cwms_v_ts_id '||
+                      'where db_office_code = '||rtrim(to_char(p_db_office_code))||
+                      ' and ts_code = '||to_char(r1.site_datatype_id);
+
+        dbms_output.put_line(l_sql_text);
+
+        open l_qry_cursor for l_sql_text;
+        return l_qry_cursor;
+      end loop;
+
+      /* for the computation with a TS group */
+      for r1 in
+        (select cc.computation_id,cc.group_id,tgp.db_office_code,ctp.site_datatype_id,
+           nvl((select distinct dt.code from datatype dt where dt.id = ctp.datatype_id), '*') param,
+           nvl(regexp_substr(ctp.table_selector,'[^.]*'), '*') param_type,
+           nvl(ctp.interval_abbr, '*') interval,
+           nvl(trim('.' from regexp_substr(ctp.table_selector, '(\.[[:alnum:]]\.)')), '*') duration,
+           nvl(regexp_substr(ctp.table_selector,'[^.]*$'), '*') version
+           from cp_computation cc, cp_comp_ts_parm ctp,cp_algo_ts_parm atp,tsdb_group tgp
+           where cc.computation_id = p_computation_id and upper(cc.enabled) = 'Y'
+           and nvl(cc.group_id, -1) <> -1 and lower(atp.parm_type) like 'i%'
+           and ctp.computation_id = cc.computation_id and atp.algorithm_id = cc.algorithm_id
+           and atp.algo_role_name = ctp.algo_role_name and tgp.group_id = cc.group_id
+        )
+      loop
+        /* Build a sql query with all conditions in a computation */
+        l_sql_text := 'select cwms_ts_id from cwms_v_ts_id '||
+                      'where db_office_code = '||rtrim(to_char(r1.db_office_code));
+
+        /* Add the query conditions defined in a computation */
+        l_sql_text := rtrim(l_sql_text)||
+                      rtrim(build_comp_condition_query(p_param     => r1.param,
+                                                       p_paramtype => r1.param_type,
+                                                       p_interval  => r1.interval,
+                                                       p_duration  => r1.duration,
+                                                       p_version   => r1.version));
+
+        /* Add the query conditions defined in a TS group with its subgroups */
+        l_sql_text := rtrim(l_sql_text)||' and '||
+                      rtrim(build_group_condition_query(r1.group_id, get_group_condition_query(r1.group_id, '')))||
+                      ' order by location_id';
+
+        dbms_output.put_line(l_sql_text);
+
+        open l_qry_cursor for l_sql_text;
+        return l_qry_cursor;
+      end loop;
+
+      l_sql_text := 'select cwms_ts_id from cwms_v_ts_id '||
+                    'where db_office_code = -1';
+      open l_qry_cursor for l_sql_text;
+      return l_qry_cursor;
+    elsif upper(p_inout_flag) = 'OUT' then
+      /* for the computation without a TS group */
+      for r1 in
+        (select cc.computation_id,ctp.site_datatype_id
+           from cp_computation cc, cp_comp_ts_parm ctp,cp_algo_ts_parm atp
+           where cc.computation_id = p_computation_id and upper(cc.enabled) = 'Y'
+             and nvl(cc.group_id, -1) = -1 and lower(atp.parm_type) not like 'i%'
+             and ctp.computation_id = cc.computation_id
+             and atp.algorithm_id = cc.algorithm_id
+             and atp.algo_role_name = ctp.algo_role_name
+        )
+      loop
+        l_sql_text := 'select cwms_ts_id from cwms_v_ts_id '||
+                      'where db_office_code = '||rtrim(to_char(p_db_office_code))||
+                      ' and ts_code = '||to_char(r1.site_datatype_id);
+
+        dbms_output.put_line(l_sql_text);
+
+        open l_qry_cursor for l_sql_text;
+        return l_qry_cursor;
+      end loop;
+
+      /* for the computation with a TS group */
+      for r1 in
+        (select cc.computation_id,cc.group_id,tgp.db_office_code,ctp.site_datatype_id,
+           nvl((select distinct dt.code from datatype dt where dt.id = ctp.datatype_id), '*') param,
+           nvl(regexp_substr(ctp.table_selector,'[^.]*'), '*') param_type,
+           nvl(ctp.interval_abbr, '*') interval,
+           nvl(trim('.' from regexp_substr(ctp.table_selector, '(\.[[:alnum:]]\.)')), '*') duration,
+           nvl(regexp_substr(ctp.table_selector,'[^.]*$'), '*') version
+           from cp_computation cc, cp_comp_ts_parm ctp,cp_algo_ts_parm atp,tsdb_group tgp
+           where cc.computation_id = p_computation_id and upper(cc.enabled) = 'Y'
+           and nvl(cc.group_id, -1) <> -1 and lower(atp.parm_type) not like 'i%'
+           and ctp.computation_id = cc.computation_id and atp.algorithm_id = cc.algorithm_id
+           and atp.algo_role_name = ctp.algo_role_name and tgp.group_id = cc.group_id
+        )
+      loop
+        /* Build a sql query with all conditions in a computation */
+        l_sql_text := 'select cwms_ts_id from cwms_v_ts_id '||
+                      'where db_office_code = '||rtrim(to_char(r1.db_office_code));
+
+        /* Add the query conditions defined in a computation */
+        l_sql_text := rtrim(l_sql_text)||
+                      rtrim(build_comp_condition_query(p_param     => r1.param,
+                                                       p_paramtype => r1.param_type,
+                                                       p_interval  => r1.interval,
+                                                       p_duration  => r1.duration,
+                                                       p_version   => r1.version));
+
+        /* Add the query conditions defined in a TS group with its subgroups */
+        l_sql_text := rtrim(l_sql_text)||' and '||
+                      rtrim(build_group_condition_query(r1.group_id, get_group_condition_query(r1.group_id, '')))||
+                      ' order by location_id';
+
+        dbms_output.put_line(l_sql_text);
+
+        open l_qry_cursor for l_sql_text;
+        return l_qry_cursor;
+      end loop;
+
+      l_sql_text := 'select cwms_ts_id from cwms_v_ts_id '||
+                    'where db_office_code = -1';
+      open l_qry_cursor for l_sql_text;
+      return l_qry_cursor;
+    else
+      l_sql_text := 'select cwms_ts_id from cwms_v_ts_id '||
+                    'where db_office_code = -1';
+      open l_qry_cursor for l_sql_text;
+      return l_qry_cursor;
+    end if;
+  end get_computation_ts_members;
+
+  -- retrieve all ts_id members defined in a TS group
+  function get_group_ts_members(
+    p_group_id        integer,
+    p_db_office_code  integer)
+    return sys_refcursor
+  is
+    l_sql_text      varchar2(5000);
+    l_qry_cursor    sys_refcursor;
+  begin
+    l_sql_text := 'select cwms_ts_id from cwms_v_ts_id '||
+                  'where db_office_code = '||to_char(p_db_office_code)||' and '||
+                  rtrim(build_group_condition_query(p_group_id, get_group_condition_query(p_group_id, '')));
+
+    dbms_output.put_line(l_sql_text);
+
+    open l_qry_cursor for l_sql_text;
+
+    return l_qry_cursor;
+  end get_group_ts_members;
+
   -------------------------------------------------------------------------
   -- notify the ts data stored
   -------------------------------------------------------------------------
@@ -353,10 +884,62 @@ create or replace package body cwms_ccp as
     p_tsid            in varchar2,
     p_ts_code         in integer)
   is
+    l_rec_count       number;
+    l_level_count     number;
+    l_sql_txt         varchar2(20000);
   begin
-    insert into cp_depends_notify(record_num, event_type, key, date_time_loaded)
-        values(cp_depends_notifyidseq.nextval, 'T', p_ts_code, SYSDATE);
-    commit;
+    /* Search all computations with TS groups */
+    for r1 in
+      (select cc.computation_id,cc.group_id,tgp.db_office_code,ctp.site_datatype_id,
+         nvl((select distinct dt.code from datatype dt where dt.id = ctp.datatype_id), '*') param,
+         nvl(regexp_substr(ctp.table_selector,'[^.]*'), '*') param_type,
+         nvl(ctp.interval_abbr, '*') interval,
+         nvl(trim('.' from regexp_substr(ctp.table_selector, '(\.[[:alnum:]]\.)')), '*') duration,
+         nvl(regexp_substr(ctp.table_selector,'[^.]*$'), '*') version
+         from cp_computation cc, cp_comp_ts_parm ctp,cp_algo_ts_parm atp,tsdb_group tgp
+         where upper(cc.enabled) = 'Y' and nvl(cc.group_id, -1) <> -1 and lower(atp.parm_type) like 'i%'
+         and ctp.computation_id = cc.computation_id and atp.algorithm_id = cc.algorithm_id
+         and atp.algo_role_name = ctp.algo_role_name and tgp.group_id = cc.group_id
+      )
+    loop
+      /* Build a sql query with all conditions in a computation */
+      l_sql_txt := 'select count(*) into :1 from cwms_v_ts_id '||
+        'where db_office_code = '||rtrim(to_char(r1.db_office_code))||' ';
+
+      /* Add the query conditions defined in a computation */
+      l_sql_txt := rtrim(l_sql_txt)||
+                   rtrim(build_comp_condition_query(p_param     => r1.param,
+                                                    p_paramtype => r1.param_type,
+                                                    p_interval  => r1.interval,
+                                                    p_duration  => r1.duration,
+                                                    p_version   => r1.version));
+
+      /* Add the query condition for new ts_id */
+      l_sql_txt := rtrim(l_sql_txt)||' and cwms_ts_id in('''||p_tsid||''') ';
+
+      /* Add the query conditions defined in a TS group with its subgroups */
+      l_sql_txt := rtrim(l_sql_txt)||' and '||
+                   rtrim(build_group_condition_query(r1.group_id, get_group_condition_query(r1.group_id, '')));
+
+      /* Make an executable query block */
+      l_sql_txt := 'begin '||rtrim(l_sql_txt)||'; end;';
+
+      dbms_output.put_line('Computation ID: '||r1.computation_id||' Group ID: '||r1.group_id);
+      dbms_output.put_line(l_sql_txt);
+
+      execute immediate l_sql_txt using out l_rec_count;
+
+      /* Add an entry in the cp_comp_depends table if the new ts_id is the member defined in a computation and its group */
+      if l_rec_count > 0
+      then
+        dbms_output.put_line('Computation_ID: '||r1.computation_id||' TS_Code: '||p_ts_code);
+
+        delete from cp_comp_depends where computation_id = r1.computation_id and ts_id = p_ts_code;
+        insert into cp_comp_depends(computation_id,ts_id) values(r1.computation_id, p_ts_code);
+        commit;
+      end if;
+
+    end loop;   /* end of for r1 loop */
   end notify_tscreated;
 
   -------------------------------------------------------------------------
@@ -367,8 +950,15 @@ create or replace package body cwms_ccp as
     p_ts_code         in integer)
   is
   begin
-    insert into cp_depends_notify(record_num, event_type, key, date_time_loaded)
-        values(cp_depends_notifyidseq.nextval, 'D', p_ts_code, SYSDATE);
+    delete from cp_comp_depends where ts_id = p_ts_code;
+    update cp_computation set enabled = 'N' where computation_id in(
+      select distinct computation_id from cp_comp_ts_parm where site_datatype_id = p_ts_code);
+    update cp_comp_ts_parm set site_datatype_id = -1,
+                               interval_abbr = null,
+                               table_selector = '..',
+                               datatype_id = -1
+      where site_datatype_id = p_ts_code;
+    delete from tsdb_group_member_ts where ts_id = p_ts_code;
     commit;
   end notify_tsdeleted;
 
@@ -419,7 +1009,7 @@ create or replace package body cwms_ccp as
   end notify_tsdatadeleted;
 
   -------------------------------------------------------------------------
-  -- notify the ts code deleted -- NOT SUPPORTED
+  -- notify the ts code deleted
   -------------------------------------------------------------------------
   procedure notify_tscodechanged(
     p_tsid            in varchar2,
@@ -427,6 +1017,23 @@ create or replace package body cwms_ccp as
     p_ts_code_old     in integer)
   is
   begin
+    for r2 in
+      (select distinct cc.loading_application_id
+         from cp_comp_depends cd, cp_computation cc
+         where cd.ts_id = p_ts_code_old and cc.enabled = 'Y'
+           and cc.loading_application_id is not null and cd.computation_id = cc.computation_id
+      )
+    loop
+      insert into cp_comp_tasklist(record_num,loading_application_id,site_datatype_id,
+        model_run_id,date_time_loaded,start_date_time,delete_flag,flags)
+      values(cp_comp_tasklistidseq.nextval,r2.loading_application_id,p_ts_code_old,
+        p_ts_code,sysdate,sysdate,'U',0);
+    end loop; /* end of for r2 loop */
+
+    update cp_comp_depends set ts_id = p_ts_code where ts_id = p_ts_code_old;
+    update cp_comp_ts_parm set site_datatype_id = p_ts_code where site_datatype_id = p_ts_code_old;
+    update tsdb_group_member_ts set ts_id = p_ts_code where ts_id = p_ts_code_old;
+    commit;
   end notify_tscodechanged;
 
   -------------------------------------------------------------------------
@@ -437,10 +1044,90 @@ create or replace package body cwms_ccp as
     p_tsid_new        in varchar2,
     p_ts_code         in integer)
   is
+    l_rec_count       number;
+    l_level_count     number;
+    l_sql_txt         varchar2(20000);
+    l_interval        varchar2(50);
+    l_param           varchar2(50);
+    l_table_selector  varchar2(100);
+    l_datatype_id     number;
   begin
-    insert into cp_depends_notify(record_num, event_type, key, date_time_loaded)
-        values(cp_depends_notifyidseq.nextval, 'M', p_ts_code, SYSDATE);
-    commit;
+    /* Search all computations without TS groups */
+    l_param := regexp_substr(p_tsid_new, '[^.]+', 1, 2);
+    l_interval := regexp_substr(p_tsid_new, '[^.]+', 1, 4);
+    l_table_selector := regexp_substr(p_tsid_new, '[^.]+', 1, 3)||'.'||
+                        regexp_substr(p_tsid_new, '[^.]+', 1, 5)||'.'||
+                        regexp_substr(p_tsid_new, '[^.]+', 1, 6);
+    select distinct dt.id into l_datatype_id from datatype dt where dt.code = l_param;
+
+    for r1 in
+      (select ctp.computation_id,ctp.algo_role_name,ctp.datatype_id from cp_comp_ts_parm ctp
+         where ctp.site_datatype_id = p_ts_code and ctp.computation_id in(
+           select computation_id from cp_computation
+           where upper(enabled) = 'Y' and nvl(group_id, -1) = -1)
+      )
+    loop
+      update cp_comp_ts_parm set interval_abbr = l_interval,
+          table_selector = l_table_selector,datatype_id = nvl(l_datatype_id, r1.datatype_id)
+        where computation_id = r1.computation_id and algo_role_name = r1.algo_role_name
+          and site_datatype_id = p_ts_code;
+      commit;
+    end loop;   /* end of for r1 loop */
+
+    /* Search all computations with TS groups */
+    for r1 in
+      (select cc.computation_id,cc.group_id,tgp.db_office_code,ctp.site_datatype_id,
+         nvl((select distinct dt.code from datatype dt where dt.id = ctp.datatype_id), '*') param,
+         nvl(regexp_substr(ctp.table_selector,'[^.]*'), '*') param_type,
+         nvl(ctp.interval_abbr, '*') interval,
+         nvl(trim('.' from regexp_substr(ctp.table_selector, '(\.[[:alnum:]]\.)')), '*') duration,
+         nvl(regexp_substr(ctp.table_selector,'[^.]*$'), '*') version
+         from cp_computation cc, cp_comp_ts_parm ctp,cp_algo_ts_parm atp,tsdb_group tgp
+         where cc.enabled = 'Y' and nvl(cc.group_id, -1) <> -1 and atp.parm_type like 'i%'
+         and ctp.computation_id = cc.computation_id and atp.algorithm_id = cc.algorithm_id
+         and atp.algo_role_name = ctp.algo_role_name and tgp.group_id = cc.group_id
+      )
+    loop
+      /* Build a sql query with all conditions in a computation */
+      l_sql_txt := 'select count(*) into :1 from cwms_v_ts_id '||
+        'where db_office_code = '||to_char(r1.db_office_code)||' ';
+
+      /* Add the query conditions defined in a computation */
+      l_sql_txt := rtrim(l_sql_txt)||
+                   rtrim(build_comp_condition_query(p_param     => r1.param,
+                                                    p_paramtype => r1.param_type,
+                                                    p_interval  => r1.interval,
+                                                    p_duration  => r1.duration,
+                                                    p_version   => r1.version));
+
+      /* Add the query condition for new ts_id */
+      l_sql_txt := rtrim(l_sql_txt)||' and cwms_ts_id in('''||p_tsid_new||''') ';
+
+      /* Add the query conditions defined in a TS group with its subgroups */
+      l_sql_txt := rtrim(l_sql_txt)||' and '||
+                   rtrim(build_group_condition_query(r1.group_id, get_group_condition_query(r1.group_id, '')));
+
+      /* Make an executable query block */
+      l_sql_txt := 'begin '||l_sql_txt||'; end;';
+
+      dbms_output.put_line('Computation ID: '||r1.computation_id||' Group ID: '||r1.group_id);
+      dbms_output.put_line(l_sql_txt);
+
+      execute immediate l_sql_txt using out l_rec_count;
+
+      /* Add an entry in the cp_comp_depends table if the new ts_id is
+         the member defined in a computation and its group; otherwise, remove it. */
+      delete from cp_comp_depends where computation_id = r1.computation_id and ts_id = p_ts_code;
+      if l_rec_count > 0
+      then
+        dbms_output.put_line('Computation_ID: '||r1.computation_id||' TS_Code: '||p_ts_code);
+
+        insert into cp_comp_depends(computation_id,ts_id) values(r1.computation_id, p_ts_code);
+        commit;
+      end if;
+
+    end loop;   /* end of for r1 loop */
+
   end notify_tsrenamed;
 
 
