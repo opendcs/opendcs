@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.6  2016/07/20 15:47:30  mmaloney
+* Optimizations.
+*
 * Revision 1.5  2016/01/27 22:11:22  mmaloney
 * Added compEditList method.
 *
@@ -152,7 +155,8 @@ public class ComputationDAO
 			}
 			
 			// Note the parms rely on the algorithms being in place. So get them now.
-			q = "select * from CP_COMP_TS_PARM";
+			q = "select a.* from CP_COMP_TS_PARM a, CP_COMPUTATION b "
+				+ "where a.COMPUTATION_ID = b.COMPUTATION_ID";
 			rs = doQuery(q);
 			n = 0;
 			while(rs.next())
@@ -924,12 +928,25 @@ Logger.instance().debug3("getComputationById: after rs2comp, groupId = " + comp.
 				doModify(q);
 			}
 
-			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5 && db.isCwms())
+			if (db.isCwms())
 			{
-				CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-				try { compDependsDAO.writeCompDepends(comp); }
-				finally { compDependsDAO.close(); }
+				// CWMS DB 14 uses the Comp Depends Updater Daemon. So send a NOTIFY.
+				if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
+				{
+					q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+						+ "values(cp_depends_notifyidseq.nextval, 'C', "
+						+ comp.getKey() + ", " + db.sqlDate(new Date()) + ")";
+					doModify(q);
+				}
+				// Older versions the GUI must update dependencies directly.
+				else if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5)
+				{
+					CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
+					try { compDependsDAO.writeCompDepends(comp); }
+					finally { compDependsDAO.close(); }
+				}
 			}
+			// Note HDB does the notifications via Trigger, so no need to do anything.
 		}
 		catch(DbIoException ex)
 		{

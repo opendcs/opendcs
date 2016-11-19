@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2016/03/24 19:21:07  mmaloney
+ * Support for algo scripts.
+ *
  * Revision 1.4  2016/01/27 22:12:10  mmaloney
  * When reading the complete list, get the params and props in one go rather than
  * individually.
@@ -134,7 +137,8 @@ public class AlgorithmDAO
 				ret.add(algo);
 			}
 	
-			q = "select * from CP_ALGO_TS_PARM";
+			q = "select a.* from CP_ALGO_TS_PARM a, CP_ALGORITHM b "
+				+ "where a.ALGORITHM_ID = b.ALGORITHM_ID";
 			rs = doQuery(q);
 			while(rs.next())
 			{

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/07/03 12:53:40  mmaloney
+ * debug improvements.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -214,8 +217,8 @@ public class PropertiesSqlDao
 						n++;
 						continue nextProp;
 					}
-				warning("Table '" + tableName + "' has property with key=" + key 
-					+ " and no matching object in list.");
+				//warning("Table '" + tableName + "' has property with key=" + key 
+				//	+ " and no matching object in list.");
 			}
 			return n;
 		}
