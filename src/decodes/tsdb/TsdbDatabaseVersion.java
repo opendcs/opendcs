@@ -101,5 +101,15 @@ public class TsdbDatabaseVersion
 	public static final int VERSION_13 = 13;
 	public static final String VERSION_13_DTK = "OpenDCS 6.2 RC01";
 
+	/**
+	 * Version 14 schema corresponds to OpenDCS 6.3
+	 * - For CWMS the DAOs that write computations and groups need to enqueue
+	 *   an appropriate CP_DEPENDS_NOTIFY message for the CompDepend Updater daemon.
+	 *   	 * - For CWMS, add db_office_code to cp_comp_depends, cp_comp_depends_scratchpad,
+	 *   and cp_depends_notify
+	 * - For CWMS, add cp_depends_notifyseq
+	 */
+	public static final int VERSION_14 = 14;
+	public static final String VERSION_14_DTK = "OpenDCS 6.3";
 
 }

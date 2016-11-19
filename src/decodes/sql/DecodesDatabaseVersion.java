@@ -79,6 +79,14 @@ public class DecodesDatabaseVersion
 	 */
 	public static final int DECODES_DB_13 = 13;
 
-	// Future schema changes should define DECODES_DB_14
+	/**
+	 * Version 14 schema corresponds to OpenDCS 6.3
+	 * - For CWMS, add db_office_code to cp_comp_depends, cp_comp_depends_scratchpad,
+	 *   and cp_depends_notify
+	 * - For CWMS, add cp_depends_notifyseq
+	 */
+	public static final int DECODES_DB_14 = 14;
+
+	// Future schema changes should define DECODES_DB_15
 	
 }
