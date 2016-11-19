@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.5  2016/11/03 19:08:38  mmaloney
+* Refactoring for group evaluation to make HDB work the same way as CWMS.
+*
 * Revision 1.4  2016/10/17 17:52:24  mmaloney
 * Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
 *
@@ -28,6 +31,7 @@ import hec.util.TextUtil;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -353,6 +357,15 @@ public class TsGroupDAO
 		}
 		
 		cache.put(group);
+		
+		if (db.isCwms() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
+		{
+			q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+				+ "values(cp_depends_notifyidseq.nextval, 'G', "
+				+ groupId + ", " + db.sqlDate(new Date()) + ")";
+			doModify(q);
+		}
+		// Note: HDB does notification in trigger.
 	}
 
 	@Override
