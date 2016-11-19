@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.6  2016/11/03 19:03:56  mmaloney
+*  Refactoring for group evaluation to make HDB work the same way as CWMS.
+*
 *  Revision 1.5  2016/09/29 18:54:37  mmaloney
 *  CWMS-8979 Allow Database Process Record to override decodes.properties and
 *  user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -63,7 +66,6 @@ import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.hdb.HdbTsId;
-import decodes.hdb.HdbGroupHelper;
 
 
 /**
@@ -870,9 +872,9 @@ public class CpCompDependsUpdater
 						TimeSeriesIdentifier tmpTsid = tsid.copyNoKey();
 						info("Triggering ts=" + tmpTsid.getUniqueString());
 						theDb.transformUniqueString(tmpTsid, parm);
+						info("After transform, param ID='" + tmpTsid.getUniqueString() + "'");
 						TimeSeriesIdentifier parmTsid = 
 							timeSeriesDAO.getCache().getByUniqueName(tmpTsid.getUniqueString());
-						info("After transform, param ID='" + tmpTsid.getUniqueString() + "'");
 						// If the transformed TSID exists, it is a dependency.
 						if (parmTsid != null)
 							addCompDepends(parmTsid.getKey(), comp.getId());
@@ -1022,8 +1024,8 @@ public class CpCompDependsUpdater
 			clearScratchpad();
 			for(CpCompDependsRecord ccd : toAdd)
 			{
-				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD VALUES("
-				  + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
+				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
+					+ " VALUES(" + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
 info(q);
 				theDb.doModify(q);
 			}
@@ -1101,8 +1103,8 @@ info(q);
 			// Insert all the toAdd records into the scratchpad
 			for(CpCompDependsRecord ccd : toAdd)
 			{
-				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD VALUES("
-				  + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
+				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
+					+ " VALUES(" + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
 info(q);
 				theDb.doModify(q);
 			}
