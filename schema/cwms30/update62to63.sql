@@ -25,6 +25,7 @@ set define on
 -- cp_comp_depends into it.
 -------------------------------------------------------------------
 
+DROP PUBLIC SYNONYM CP_COMP_DEPENDS_SCRATCHPAD;
 DROP TABLE CP_COMP_DEPENDS_SCRATCHPAD;
 CREATE TABLE CP_COMP_DEPENDS_SCRATCHPAD
 (
@@ -33,6 +34,8 @@ CREATE TABLE CP_COMP_DEPENDS_SCRATCHPAD
 	db_office_code integer default &dflt_office_code,
     PRIMARY KEY (TS_ID, COMPUTATION_ID, db_office_code)
 ) &TBL_SPACE_SPEC;
+
+CREATE PUBLIC SYNONYM CP_COMP_DEPENDS_SCRATCHPAD FOR CCP.CP_COMP_DEPENDS_SCRATCHPAD;
 
 ALTER TABLE CP_COMP_DEPENDS_SCRATCHPAD
     ADD CONSTRAINT CP_COMP_DEPENDS_SCRATCHPAD_FK
@@ -49,6 +52,7 @@ INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD
 -- Recreate CP_COMP_DEPENDS with db_office_code and then copy saved
 -- records back in. Then clear the scratchpad.
 -------------------------------------------------------------------
+DROP PUBLIC SYNONYM CP_COMP_DEPENDS;
 DROP TABLE CP_COMP_DEPENDS;
 CREATE TABLE CP_COMP_DEPENDS
 (
@@ -57,6 +61,8 @@ CREATE TABLE CP_COMP_DEPENDS
 	db_office_code integer default &dflt_office_code,
     PRIMARY KEY (TS_ID, COMPUTATION_ID, db_office_code)
 ) &TBL_SPACE_SPEC;
+
+CREATE PUBLIC SYNONYM CP_COMP_DEPENDS FOR CCP.CP_COMP_DEPENDS;
 
 ALTER TABLE CP_COMP_DEPENDS
     ADD CONSTRAINT CP_COMP_DEPENDS_FK
@@ -70,6 +76,7 @@ DELETE FROM CP_COMP_DEPENDS_SCRATCHPAD;
 -------------------------------------------------------------------
 -- Recreate notify table with db_office_code.
 -------------------------------------------------------------------
+DROP PUBLIC SYNONYM CP_DEPENDS_NOTIFY;
 DROP TABLE CP_DEPENDS_NOTIFY;
 CREATE TABLE CP_DEPENDS_NOTIFY
 (
@@ -81,9 +88,14 @@ CREATE TABLE CP_DEPENDS_NOTIFY
     PRIMARY KEY (RECORD_NUM, db_office_code)
 ) &TBL_SPACE_SPEC;
 
+CREATE PUBLIC SYNONYM CP_DEPENDS_NOTIFY FOR CCP.CP_DEPENDS_NOTIFY;
+
 DELETE FROM CP_DEPENDS_NOTIFY;
 
+DROP PUBLIC SYNONYM CP_DEPENDS_NOTIFYIDSEQ;
+DROP SEQUENCE CP_DEPENDS_NOTIFYIDSEQ;
 CREATE SEQUENCE CP_DEPENDS_NOTIFYIDSEQ MINVALUE 1 START WITH 1 MAXVALUE 2000000000 NOCACHE CYCLE;
+CREATE PUBLIC SYNONYM CP_DEPENDS_NOTIFYIDSEQ FOR CCP.CP_DEPENDS_NOTIFYIDSEQ;
 
 -----------------------------------------------------------------
 -- Finally, update the database version numbers in the database
