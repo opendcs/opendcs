@@ -429,6 +429,10 @@ create or replace package body cwms_ccp as
     p_ts_code_old     in integer)
   is
   begin
+    insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
+        values(cp_depends_notifyidseq.nextval, 'H', p_ts_code, SYSDATE, 
+			(select db_office_code from cwms_v_ts_id where ts_code = p_ts_code));
+    commit;
   end notify_tscodechanged;
 
   -------------------------------------------------------------------------
