@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.7  2016/11/19 16:00:48  mmaloney
+*  Minor updates for CWMS.
+*
 *  Revision 1.6  2016/11/03 19:03:56  mmaloney
 *  Refactoring for group evaluation to make HDB work the same way as CWMS.
 *
@@ -445,6 +448,9 @@ public class CpCompDependsUpdater
 		case CpDependsNotify.FULL_EVAL:
 			success = fullEval();
 			break;
+		case CpDependsNotify.TS_CODE_CHANGED:
+			Logger.instance().warning("Received TS_CODE_CHANGE notification for (new) code="
+				+ ccdn.getKey() + " -- Not supported.");
 		}
 		if (success)
 			done++;

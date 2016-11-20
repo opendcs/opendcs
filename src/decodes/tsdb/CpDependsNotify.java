@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2016/11/03 19:03:56  mmaloney
+ * Refactoring for group evaluation to make HDB work the same way as CWMS.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -53,6 +56,8 @@ public class CpDependsNotify
 	public static final char TS_MODIFIED  = 'M';
 	/** Sent from trigger when a Time Series is deleted */
 	public static final char TS_DELETED   = 'D';
+	/** CWMS Only - TS_CODE changed for time series */
+	public static final char TS_CODE_CHANGED = 'H';
 	/** Sent from trigger when a computation is created, modified, or deleted */
 	public static final char CMP_MODIFIED = 'C';
 	/** Sent from trigger when an existing time-series group is modified or deleted. */
