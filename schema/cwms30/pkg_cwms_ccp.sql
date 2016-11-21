@@ -725,7 +725,9 @@ create or replace package body cwms_ccp as
               cwms_msg.log_db_message(
                 'notify_for_comp',
                 cwms_msg.msg_level_normal,
-                'Error in processing messages: '
+                'Error in processing message: '
+                ||l_msgtype
+                ||'/'
                 ||l_comment);
           end; /* end of exception */
 
