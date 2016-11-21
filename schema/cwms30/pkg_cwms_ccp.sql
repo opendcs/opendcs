@@ -364,7 +364,6 @@ create or replace package body cwms_ccp as
   -- notify the ts code deleted
   -------------------------------------------------------------------------
   procedure notify_tsdeleted (
-    p_tsid            in varchar2,
     p_ts_code         in integer)
   is
   begin
@@ -550,7 +549,6 @@ create or replace package body cwms_ccp as
             -----------------------------------------------------------------
             l_msgtype        := get_string(l_message, l_msgid, 'type', l_msgtype_len);
             l_office_id      := get_string(l_message, l_msgid, 'office_id', l_office_id_len);
-            l_tsid           := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
             l_enqueue_millis := l_message.get_long(l_msgid, 'millis');
             l_enqueue_time   := &CWMS_SCHEMA..cwms_util.to_timestamp(l_enqueue_millis);
             l_queue_delay    := &CWMS_SCHEMA..cwms_util.to_millis(l_dequeue_time) - l_enqueue_millis;
@@ -559,6 +557,7 @@ create or replace package body cwms_ccp as
             -----------------------------------------------------------------
             case l_msgtype
               when 'TSDataStored' then
+                l_tsid         := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
                 l_store_rule   := get_string(l_message, l_msgid, 'store_rule', l_store_rule_len);
 
                 l_ts_code      := l_message.get_long(l_msgid, 'ts_code');
@@ -591,6 +590,7 @@ create or replace package body cwms_ccp as
                   p_enqueue_time    => l_enqueue_time);
 
               when 'TSDataDeleted' then
+                l_tsid         := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
                 l_ts_code      := l_message.get_long(l_msgid, 'ts_code');
                 l_start_millis := l_message.get_long(l_msgid, 'start_time');
                 l_end_millis   := l_message.get_long(l_msgid, 'end_time');
@@ -612,6 +612,7 @@ create or replace package body cwms_ccp as
                   p_version_date    => l_version_date);
 
               when 'TSCreated' then
+                l_tsid         := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
                 l_ts_code      := l_message.get_long(l_msgid, 'ts_code');
                 l_start_millis := null;
                 l_end_millis   := null;
@@ -632,10 +633,10 @@ create or replace package body cwms_ccp as
                 l_comment      := null;
 
                 notify_tsdeleted(
-                  p_tsid            => l_tsid,
                   p_ts_code         => l_ts_code);
 
               when 'TSCodeChanged' then
+                l_tsid         := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
                 l_start_millis := null;
                 l_end_millis   := null;
                 l_start_time   := null;
@@ -650,6 +651,7 @@ create or replace package body cwms_ccp as
                   p_ts_code_old     => l_ts_code_old);
 
               when 'TSRenamed' then
+                l_tsid         := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
                 l_ts_code      := l_message.get_long(l_msgid, 'ts_code');
                 l_start_millis := null;
                 l_end_millis   := null;
