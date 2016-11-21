@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.15  2016/11/19 15:58:02  mmaloney
+ * Support wildcards
+ *
  * Revision 1.14  2016/11/03 18:59:41  mmaloney
  * Implement wildcard evaluation for groups.
  *
@@ -966,6 +969,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		try
 		{
 			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(db.getConnection());
+			debug1("Deleting TSID '" + tsid.getUniqueString() + "' from office ID=" + dbOfficeId);
 			cwmsTsJdbc.deleteAll(dbOfficeId, tsid.getUniqueString());
 			cache.remove(tsid.getKey());
 			refreshTsView();

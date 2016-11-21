@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2016/11/03 19:08:06  mmaloney
+ * Implement new Location, Param, and Version dialogs for CWMS.
+ *
  * Revision 1.2  2015/10/26 12:46:35  mmaloney
  * Added setSelectedTS method
  *
@@ -84,7 +87,7 @@ public class TimeSeriesSelectDialog extends GuiDialog
 		setAllLabels();
 		ddSelectPanel = new TsListSelectPanel(tsDb, true, fillAll);
 		if (fillAll)
-			ddSelectPanel.refreshDataDescriptorList();
+			ddSelectPanel.refreshTSIDList();
         try {
             jbInit();
 			getRootPane().setDefaultButton(selectButton);
@@ -150,7 +153,7 @@ public class TimeSeriesSelectDialog extends GuiDialog
 	*/
     void selectButton_actionPerformed(ActionEvent e)
 	{
-    	dd = ddSelectPanel.getSelectedDataDescriptor();
+    	dd = ddSelectPanel.getSelectedTSID();
 		closeDlg();
     }
 
@@ -184,7 +187,7 @@ public class TimeSeriesSelectDialog extends GuiDialog
 	{
 		if (cancelled)
 			return new TimeSeriesIdentifier[0];
-		return ddSelectPanel.getSelectedDataDescriptors();
+		return ddSelectPanel.getSelectedTSIDs();
 	}
 	
 	public void setSelectedTS(TimeSeriesIdentifier tsid)
@@ -203,7 +206,7 @@ public class TimeSeriesSelectDialog extends GuiDialog
 	
 	public void refresh()
 	{
-		ddSelectPanel.refreshDataDescriptorList();
+		ddSelectPanel.refreshTSIDList();
 	}
 	
 	public void clearSelection()

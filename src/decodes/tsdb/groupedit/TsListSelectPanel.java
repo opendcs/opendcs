@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.4  2016/01/27 22:07:59  mmaloney
+ * Debugs for weird error involving inconsistent compare for sort.
+ *
  * Revision 1.3  2015/11/18 14:13:17  mmaloney
  * Bug fix: Make the TsIdColumnCaparator be consistent.
  *
@@ -56,8 +59,6 @@ import decodes.tsdb.TimeSeriesIdentifier;
 
 /**
  * Displays a sorting-list of TimeSeries objects in the database.
- * Used by the TsListPanel class, the TsGroupDefinitionPanel class
- * and the TsDataDescriptorSelectDialog class.
  */
 @SuppressWarnings("serial")
 public class TsListSelectPanel extends JPanel
@@ -107,42 +108,42 @@ public class TsListSelectPanel extends JPanel
 
 	/**
 	 * This method will do two things:
-	 * 			Add a new data descriptor to the list if obj does not exists
-	 * -or- Modify a data descriptor obj if already in the list
+	 * 			Add a new TSID to the list if obj does not exists
+	 * -or- Modify a TSID obj if already in the list
 	 * 
 	 * @param newdd
 	 *            the new object
 	 */
-	public void modifyDataDescriptorList(TimeSeriesIdentifier olddd, 
+	public void modifyTSIDList(TimeSeriesIdentifier olddd, 
 			TimeSeriesIdentifier newdd)
 	{
-		model.modifyDataDescriptorList(olddd, newdd);
+		model.modifyTSIDList(olddd, newdd);
 	}
 
 	/**
-	 * @return the currently-selected data descriptor, or null if none selected
+	 * @return the currently-selected TSID, or null if none selected
 	 */
-	public TimeSeriesIdentifier getSelectedDataDescriptor()
+	public TimeSeriesIdentifier getSelectedTSID()
 	{
 		int r = tsIdListTable.getSelectedRow();
 		if (r == -1)
 			return null;
-		return model.getDataDescriptorAt(r);
+		return model.getTSIDAt(r);
 	}
 
 	/**
-	 * @return all currently-selected data descriptors, or empty array if none.
+	 * @return all currently-selected TSIDs, or empty array if none.
 	 */
-	public TimeSeriesIdentifier[] getSelectedDataDescriptors()
+	public TimeSeriesIdentifier[] getSelectedTSIDs()
 	{
 		int idx[] = tsIdListTable.getSelectedRows();
 		TimeSeriesIdentifier ret[] = new TimeSeriesIdentifier[idx.length];
 		for (int i = 0; i < idx.length; i++)
-			ret[i] = model.getDataDescriptorAt(idx[i]);
+			ret[i] = model.getTSIDAt(idx[i]);
 		return ret;
 	}
 
-	public void refreshDataDescriptorList()
+	public void refreshTSIDList()
 	{
 		model.refresh();
 	}
@@ -154,28 +155,25 @@ public class TsListSelectPanel extends JPanel
 	}
 
 	/**
-	 * Deletes the specified Data Descriptor from the list.
+	 * Deletes the specified TSID from the list.
 	 * 
-	 * @param ob
-	 *            the object to delete.
+	 * @param ob the object to delete.
 	 */
-	public void deleteDataDescriptor(TimeSeriesIdentifier ob)
+	public void deleteTSID(TimeSeriesIdentifier ob)
 	{
-		model.deleteDataDescriptor(ob);
+		model.deleteTSID(ob);
 	}
 
 	/**
-	 * Delete Data Descriptors of the given array list
+	 * Delete TSID of the given array list
 	 * 
-	 * @param dds
-	 *            list of Data descriptors to delete
+	 * @param dds list of TSIDs to delete
 	 */
-	//public void deleteDataDescriptors(ArrayList<DataDescriptor> dds)
-	public void deleteDataDescriptors(TimeSeriesIdentifier[] dds)
+	public void deleteTSIDs(TimeSeriesIdentifier[] dds)
 	{
 		for (TimeSeriesIdentifier dd : dds)
 		{
-			deleteDataDescriptor(dd);
+			deleteTSID(dd);
 		}
 	}
 	
@@ -211,7 +209,7 @@ public class TsListSelectPanel extends JPanel
 	
 	public void setTimeSeriesList(Collection<TimeSeriesIdentifier> ddsIn)
 	{
-		model.setDataDescriptorListFromTsGroup(ddsIn);
+		model.setTSIDListFromTsGroup(ddsIn);
 	}
 	public void addTsDd(TimeSeriesIdentifier tsDdToAdd)
 	{
@@ -223,14 +221,14 @@ public class TsListSelectPanel extends JPanel
 		return tsIdListTable.getSelectedRows();
 	}
 	
-	public TimeSeriesIdentifier getDataDescriptorAt(int index)
+	public TimeSeriesIdentifier getTSIDAt(int index)
 	{
-		return model.getDataDescriptorAt(index);
+		return model.getTSIDAt(index);
 	}
 	
-	public ArrayList<TimeSeriesIdentifier> getAllDataDescriptorsInList()
+	public ArrayList<TimeSeriesIdentifier> getAllTSIDsInList()
 	{
-		return model.getTsDataDescriptorsInList();
+		return model.getTsIdsInList();
 	}
 
 	public int getSelectedRowCount()
@@ -255,9 +253,9 @@ public class TsListSelectPanel extends JPanel
 }
 
 /**
- * The DataDescriptorSelectTableModel class is used as the table model 
+ * The TsIdSelectTableModel class is used as the table model 
  * for SortingListTable derived from JTable. This class allows to fetch
- * the data descriptor info into the table and provides methods to access
+ * the TSID info into the table and provides methods to access
  * the table data set from the table object.
  */
 @SuppressWarnings("serial")
@@ -298,7 +296,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 		columnNames[parts.length+1] = "Description";
 		columnWidths[parts.length+1] = 25;
 		
-		module = "DataDescriptorSelectTableModel";
+		module = "TSIDSelectTableModel";
 		this.theTsDb = theTsDb;
 		
 		if (preloadAll)
@@ -339,7 +337,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 	}
 	
 	/**
-	 * Refresh the list with the time series data descriptors 
+	 * Refresh the list with the time series IDs 
 	 * from the database.
 	 */
 	public void refresh()
@@ -350,11 +348,11 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 	}
 
 	/**
-	 * Get the time series data descriptors from the table list
+	 * Get the time series IDs from the table list
 	 * 
 	 * @return ArrayList<TimeSeriesIdentifier>
 	 */
-	public ArrayList<TimeSeriesIdentifier> getTsDataDescriptorsInList()
+	public ArrayList<TimeSeriesIdentifier> getTsIdsInList()
 	{
 		ArrayList<TimeSeriesIdentifier> dds = new ArrayList<TimeSeriesIdentifier>();
 		for(TimeSeriesIdentifier vecItem: tsidList)
@@ -367,7 +365,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 	 * we set the Time Series group members from the TsGroup obj.
 	 * @param groupList
 	 */
-	public void setDataDescriptorListFromTsGroup(
+	public void setTSIDListFromTsGroup(
 		Collection<TimeSeriesIdentifier> ddsIn)
 	{
 		tsidList.clear();
@@ -378,7 +376,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 	
 	
 	/**
-	 * Find out if we have a Data Descriptor with the given name and
+	 * Find out if we have a TSID with the given name and
 	 * param name on the list.
 	 */	
 	public boolean ddExistsInList(String siteNameIn, String paramNameIn)
@@ -433,7 +431,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 		return false;
 	}
 	
-	public void modifyDataDescriptorList(TimeSeriesIdentifier olddd, 
+	public void modifyTSIDList(TimeSeriesIdentifier olddd, 
 			TimeSeriesIdentifier newdd)
 	{
 		int ddIndex = tsidList.indexOf(olddd); 
@@ -451,7 +449,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 
 	/**
 	 * This method is used from the TsGroupDefinitionPanel when
-	 * adding new time series data descriptor group member.
+	 * adding new time series ID group member.
 	 * 
 	 * @param tsDdToAdd
 	 */
@@ -470,13 +468,13 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 		fireTableDataChanged();
 	}
 	
-	public void deleteDataDescriptorAt(int index)
+	public void deleteTSIDAt(int index)
 	{
 		TimeSeriesIdentifier dd = tsidList.get(index);
-		deleteDataDescriptor(dd);
+		deleteTSID(dd);
 	}
 
-	public void deleteDataDescriptor(TimeSeriesIdentifier ddObj)
+	public void deleteTSID(TimeSeriesIdentifier ddObj)
 	{
 		int ddIndex = tsidList.indexOf(ddObj); 
 		if (ddIndex != -1)
@@ -487,7 +485,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 		fireTableDataChanged();
 	}
 
-	public TimeSeriesIdentifier getDataDescriptorAt(int r)
+	public TimeSeriesIdentifier getTSIDAt(int r)
 	{
 		return (TimeSeriesIdentifier) getRowObject(r);
 	}
@@ -515,7 +513,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 	public Object getValueAt(int r, int c)
 	{
 		return TsIdSelectColumnizer.getColumn(
-			getDataDescriptorAt(r), c);
+			getTSIDAt(r), c);
 	}
 
 	public Object getRowObject(int r)
@@ -546,7 +544,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 }
 
 /**
- * Helper class to retrieve TimeSeries Data Descriptor fields by column number.
+ * Helper class to retrieve TimeSeries ID fields by column number.
  * Used for displaying values in the table and for sorting.
  */
 class TsIdSelectColumnizer
@@ -580,22 +578,32 @@ class TsIdColumnComparator implements Comparator<TimeSeriesIdentifier>
 		this.col = col;
 	}
 
-	public int compare(TimeSeriesIdentifier d1, TimeSeriesIdentifier d2)
+	public int compare(TimeSeriesIdentifier tsid1, TimeSeriesIdentifier tsid2)
 	{
-		lastd1 = d1;
-		lastd2 = d2;
+		lastd1 = tsid1;
+		lastd2 = tsid2;
 		
-		if (d1 == d2)
+		if (tsid1 == tsid2)
 			return 0;
 		
 		if (col == 0)// sort integers ascendingly
-			return compIds(d1, d2);
-		String s1 = TsIdSelectColumnizer.getColumn(d1, col).trim();
-		String s2 = TsIdSelectColumnizer.getColumn(d2, col).trim();
+			return compIds(tsid1, tsid2);
+		String s1 = TsIdSelectColumnizer.getColumn(tsid1, col).trim();
+		String s2 = TsIdSelectColumnizer.getColumn(tsid2, col).trim();
 		int ret = s1.compareToIgnoreCase(s2);
 		if (ret != 0)
 			return ret;
-		return compIds(d1, d2);
+		
+		// The selected column is the same in both tsids.
+		// Try string sort of entire tsid
+		s1 = tsid1.getUniqueString();
+		s2 = tsid2.getUniqueString();
+		ret = s1.compareToIgnoreCase(s2);
+		if (ret != 0)
+			return ret;
+
+		// Last resort, sort by surrogate keys, which must be different.
+		return compIds(tsid1, tsid2);
 	}
 	
 	int compIds(TimeSeriesIdentifier d1, TimeSeriesIdentifier d2)

@@ -2,9 +2,9 @@ package decodes.tsdb.groupedit;
 
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
+import ilex.util.Logger;
 
 import java.awt.BorderLayout;
-import java.util.ResourceBundle;
 
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -12,7 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import opendcs.dai.TimeSeriesDAI;
-
 import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.DbIoException;
@@ -22,47 +21,33 @@ import decodes.tsdb.TimeSeriesIdentifier;
  * Displays a sorting-list of TimeSeries Data Descriptor objects in the
  * database.
  */
-public class TsListPanel extends JPanel implements TsListControllers
+@SuppressWarnings("serial")
+public class TsListPanel 
+	extends JPanel implements TsListControllers
 {
-	// Titles, Labels defined here for internationalization
 	private String listTitle = "Time Series List";
-//	private String openErrorMsg;
-//	private String openErrorMsgEx;
-//	private String deleteErrorMsg;
-	private String editTabOpenError
-		= "There is an editor tab open for this time-series. Close first.";
-//	private String deleteConfirmMsg;
-//	private String deleteConfirmMsg2;
-//	private String tabNameUnknown;
-//	private String deleteTsValMsg1;
-//	private String deleteTsValMsg2;
-//	private String alarmDeleteMsg;
 	
 	private BorderLayout borderLayout = new BorderLayout();
 	private TsListControlsPanel controlsPanel;
 	private JLabel jLabel1 = new JLabel();
 	private TsListSelectPanel tsListSelectPanel;
-//	private TsDbEditorFrame parent;
-	private ResourceBundle labelDescriptions;
 	private String module = "TsListPanel";
 	
 	private TimeSeriesDb theDb = null;
-	private TopFrame myFrame;
+	private TsListFrame myFrame;
 	
 	/** Constructor. */
-	public TsListPanel(TopFrame myFrame, TimeSeriesDb theDb)
+	public TsListPanel(TsListFrame myFrame, TimeSeriesDb theDb)
 	{
 		this.myFrame = myFrame;
 		this.theDb = theDb;
 		tsListSelectPanel = new TsListSelectPanel(theDb, true, true);
 		tsListSelectPanel.setMultipleSelection(true);
-//		parent = null;
 		controlsPanel = new TsListControlsPanel(this);
-//		labelDescriptions = labelDescriptionsIn;
 
 		try
 		{
-			jbInit();
+			guiInit();
 		}
 		catch (Exception ex)
 		{
@@ -70,19 +55,8 @@ public class TsListPanel extends JPanel implements TsListControllers
 		}
 	}
 
-	/**
-	 * Sets the parent frame object. Each list panel needs to know this.
-	 * 
-	 * @param parent
-	 *            the TsDbEditorFrame
-	 */
-//	public void setParent(TsDbEditorFrame parent)
-//	{
-//		this.parent = parent;
-//	}
-
 	/** Initializes GUI components. */
-	private void jbInit() throws Exception
+	private void guiInit() throws Exception
 	{
 		this.setLayout(borderLayout);
 		jLabel1.setHorizontalAlignment(SwingConstants.CENTER);
@@ -114,7 +88,7 @@ public class TsListPanel extends JPanel implements TsListControllers
 	public void deletePressed()
 	{
 		final TimeSeriesIdentifier tsids[] = 
-			tsListSelectPanel.getSelectedDataDescriptors();
+			tsListSelectPanel.getSelectedTSIDs();
 
 		if (tsids == null || tsids.length == 0)
 			return;
@@ -150,7 +124,9 @@ public class TsListPanel extends JPanel implements TsListControllers
 							// or an alarm assertion.
 							try
 							{
-								dlg.addToProgress("Deleting " + tsid.getUniqueString());
+								String msg = "Deleting " + tsid.getUniqueString();
+								Logger.instance().debug1(msg);
+								dlg.addToProgress(msg);
 								timeSeriesDAO.deleteTimeSeries(tsid);
 							}
 							catch (DbIoException ex)
@@ -180,37 +156,6 @@ public class TsListPanel extends JPanel implements TsListControllers
 	/** Called when the 'Refresh' button is pressed. */
 	public void refresh()
 	{
-		tsListSelectPanel.refreshDataDescriptorList();
+		tsListSelectPanel.refreshTSIDList();
 	}
-
-	
-	/**
-	 * Verify is the given site name and param name combination
-	 * exists in the current list or not
-	 * 
-	 * @param siteName
-	 * @param paramName
-	 * @return true if the site name and paramName combination
-	 * exitst in the list, false otherwise
-	 */
-//	public boolean ddExistsInList(String siteName, String paramName)
-//	{
-//		return tsListSelectPanel.ddExistsInList(siteName, paramName);
-//	}
-	
-	/**
-	 * Make sure we do not have this combination in the DB already.
-	 * 
-	 * @param siteId
-	 * @param dataTypeId
-	 * @param intervalCode
-	 * @param statisticsCode
-	 * @return true if found a record with the save values, false othewise.
-	 */
-//	public boolean verifyConstraints(int siteId, int dataTypeId, 
-//							String intervalCode, String statisticsCode)
-//	{
-//		return tsListSelectPanel.verifyConstraints(siteId, dataTypeId, 
-//												intervalCode, statisticsCode);
-//	}
 }

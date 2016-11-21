@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2016/11/03 19:08:05  mmaloney
+ * Implement new Location, Param, and Version dialogs for CWMS.
+ *
  * Revision 1.7  2016/10/11 17:40:36  mmaloney
  * Final GUI Prototype
  *
@@ -784,7 +787,7 @@ public class TsGroupDefinitionPanel
 		// Get description
 		tempGroup.setDescription((descriptionTextArea.getText()).trim());
 		// Get time series members
-		for(TimeSeriesIdentifier dd: tsListSelectPanel.getAllDataDescriptorsInList())
+		for(TimeSeriesIdentifier dd: tsListSelectPanel.getAllTSIDsInList())
 		{	
 			tempGroup.addTsMember(dd);
 		}
@@ -999,10 +1002,10 @@ public class TsGroupDefinitionPanel
 		int rows[] = tsListSelectPanel.getSelectedRows();
 		TimeSeriesIdentifier obs[] = new TimeSeriesIdentifier[nrows];
 		for (int i = 0; i < nrows; i++)
-			obs[i] = tsListSelectPanel.getDataDescriptorAt(rows[i]);
+			obs[i] = tsListSelectPanel.getTSIDAt(rows[i]);
 
 		for (int i = 0; i < nrows; i++)
-			tsListSelectPanel.deleteDataDescriptor(obs[i]);
+			tsListSelectPanel.deleteTSID(obs[i]);
 	}
 
 	/**

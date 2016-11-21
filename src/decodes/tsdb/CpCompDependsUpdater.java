@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.8  2016/11/20 17:23:09  mmaloney
+*  Minor updates for CWMS.
+*
 *  Revision 1.7  2016/11/19 16:00:48  mmaloney
 *  Minor updates for CWMS.
 *
@@ -473,7 +476,7 @@ public class CpCompDependsUpdater
 					+ tsKey + " which does not exist in the DB -- assuming deleted.");
 				return tsDeleted(tsKey);
 			}
-			// Note: the get method above will automaticall add it to the cache.
+			// Note: the get method above will automatically add it to the cache.
 			dumpTsidCache();
 
 			// Adjust the groups in my cache which may include this new time series.
