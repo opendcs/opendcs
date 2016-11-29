@@ -220,11 +220,14 @@ public class DbCompParm
 
 		tableSelector = x == null ? "" : x;
 		String parsed[] = tableSelector.split("\\.");
-		if (parsed != null && parsed.length >= 3)
+		if (parsed != null)
 		{
-			parsedParamType = parsed[0];
-			parsedDuration = parsed[1];
-			parsedVersion = parsed[2];
+			if (parsed.length >= 1)
+				parsedParamType = parsed[0];
+			if (parsed.length >= 2)
+				parsedDuration = parsed[1];
+			if (parsed.length >= 3)
+				parsedVersion = parsed[2];
 			if (parsed.length >= 4)
 				parsedLocSpec = parsed[3];
 			if (parsed.length >= 5)
