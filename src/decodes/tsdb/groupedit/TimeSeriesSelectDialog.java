@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2016/11/21 16:04:03  mmaloney
+ * Code Cleanup.
+ *
  * Revision 1.3  2016/11/03 19:08:06  mmaloney
  * Implement new Location, Param, and Version dialogs for CWMS.
  *
@@ -38,6 +41,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 
 import decodes.gui.GuiDialog;
+import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
@@ -68,10 +72,18 @@ public class TimeSeriesSelectDialog extends GuiDialog
 	//Labels for internationalization
 	private String panelTitle;
 	
-	/** Constructs new TsDataDescriptorSelectDialog */
-	public TimeSeriesSelectDialog(TimeSeriesDb tsdbIn, boolean fillAll)
+	/** Constructs new TsDataDescriptorSelectDialog 
+	 * @param parent TODO*/
+	public TimeSeriesSelectDialog(TimeSeriesDb tsdbIn, boolean fillAll, TopFrame parent)
 	{
-	  	super(TsDbGrpEditorFrame.instance(), "", true);
+	  	super(parent, "", true);
+	  	init(tsdbIn, fillAll);
+	  	super.trackChanges("TimeSeriesSelectDialog");
+	}
+	
+	public TimeSeriesSelectDialog(TimeSeriesDb tsdbIn, boolean fillAll, GuiDialog parent)
+	{
+		super(parent, "", true);
 	  	init(tsdbIn, fillAll);
 	  	super.trackChanges("TimeSeriesSelectDialog");
 	}

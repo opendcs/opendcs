@@ -93,7 +93,7 @@ public class TsDbGrpListPanel
 		{
 			jbInit();
 			timeSeriesSelectDialog = new TimeSeriesSelectDialog(
-				TsdbAppTemplate.theDb, true);
+				TsdbAppTemplate.theDb, true, parent);
 			timeSeriesSelectDialog.setMultipleSelection(true);
 
 		} catch (Exception ex)

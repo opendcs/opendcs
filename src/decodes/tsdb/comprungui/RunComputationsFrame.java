@@ -930,7 +930,7 @@ public class RunComputationsFrame extends TopFrame
 						+ " members.");
 				}
 				
-				TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(theDb, false);
+				TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(theDb, false, this);
 				dlg.setMultipleSelection(true);
 Logger.instance().debug3("Setting selection list with " + transformedTsids.size() + " entries.");
 				dlg.setTimeSeriesList(transformedTsids);
