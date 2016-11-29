@@ -364,12 +364,15 @@ create or replace package body cwms_ccp as
   -- notify the ts code deleted
   -------------------------------------------------------------------------
   procedure notify_tsdeleted (
-    p_ts_code         in integer)
+    p_ts_code       in integer,
+    p_office_id     in varchar2)
   is
+    l_office_cd   integer;
   begin
+    l_office_cd := &CWMS_SCHEMA..cwms_util.get_db_office_code (p_office_id);
+
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
-        values(cp_depends_notifyidseq.nextval, 'D', p_ts_code, SYSDATE, 
-			(select db_office_code from cwms_v_ts_id where ts_code = p_ts_code));
+      values(cp_depends_notifyidseq.nextval, 'D', p_ts_code, SYSDATE, l_office_cd);
     commit;
   end notify_tsdeleted;
 
@@ -552,6 +555,7 @@ create or replace package body cwms_ccp as
             l_enqueue_millis := l_message.get_long(l_msgid, 'millis');
             l_enqueue_time   := &CWMS_SCHEMA..cwms_util.to_timestamp(l_enqueue_millis);
             l_queue_delay    := &CWMS_SCHEMA..cwms_util.to_millis(l_dequeue_time) - l_enqueue_millis;
+            l_comment  := 'Starting Case';
             -----------------------------------------------------------------
             -- operate on the message based on its type
             -----------------------------------------------------------------
@@ -630,10 +634,13 @@ create or replace package body cwms_ccp as
                 l_end_millis   := null;
                 l_start_time   := null;
                 l_end_time     := null;
-                l_comment      := null;
 
+                l_comment      := 'calling notify_tsdelete with ts_code='||l_ts_code
+			||',office_id='||l_office_id;
+                
                 notify_tsdeleted(
-                  p_ts_code         => l_ts_code);
+                  p_ts_code => l_ts_code,
+                  p_office_id => l_office_id);
 
               when 'TSCodeChanged' then
                 l_tsid         := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
@@ -806,7 +813,7 @@ CREATE PUBLIC SYNONYM cwms_ccp FOR &CCP_SCHEMA..cwms_ccp;
 begin
   -- in 'addCcpUser.sql' we registered user CCP in the default office.
   -- This is a kludge: TS API requires caller to be registered in an office.
-  &CWMS_SCHEMA..cwms_env.set_session_office_id('&DEFAULT_OFFICE_ID');
+--  &CWMS_SCHEMA..cwms_env.set_session_office_id('&DEFAULT_OFFICE_ID');
   &CCP_SCHEMA..cwms_ccp.reload_callback_proc(
     'CCP_SUBSCRIBER');
 
