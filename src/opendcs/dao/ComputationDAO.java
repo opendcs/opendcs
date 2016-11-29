@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.7  2016/11/19 15:55:51  mmaloney
+* Join PARM records with parent records to bring in implicit VPD filter in CWMS.
+*
 * Revision 1.6  2016/07/20 15:47:30  mmaloney
 * Optimizations.
 *
@@ -184,6 +187,7 @@ public class ComputationDAO
 						try { db.expandSDI(parm); }
 						catch (NoSuchObjectException e) {}
 			}
+			debug1("fillCache finished, " + compCache.size() + " computations cached.");
 		}
 		catch(Exception ex)
 		{
@@ -212,7 +216,6 @@ public class ComputationDAO
 			if (rs.next())
 			{
 				DbComputation comp = rs2comp(rs);
-Logger.instance().debug3("getComputationById: after rs2comp, groupId = " + comp.getGroupId());
 				if (!comp.getAlgorithmId().isNull())
 				{
 					try
@@ -989,12 +992,23 @@ Logger.instance().debug3("getComputationById: after rs2comp, groupId = " + comp.
 		q = "delete from CP_COMPUTATION where COMPUTATION_ID = "+id;
 		doModify(q);
 		
-		// Remove the CP_COMP_DEPENDS records & re-add.
-		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5 && db.isCwms())
+		if (db.isCwms())
 		{
-			CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-			try { compDependsDAO.deleteCompDependsForCompId(id); }
-			finally { compDependsDAO.close(); }
+			// CWMS DB 14 uses the Comp Depends Updater Daemon. So send a NOTIFY.
+			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
+			{
+				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+					+ "values(cp_depends_notifyidseq.nextval, 'C', "
+					+ id + ", " + db.sqlDate(new Date()) + ")";
+				doModify(q);
+			}
+			// Older versions the GUI must update dependencies directly.
+			else if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5)
+			{
+				CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
+				try { compDependsDAO.deleteCompDependsForCompId(id); }
+				finally { compDependsDAO.close(); }
+			}
 		}
 	}
 
