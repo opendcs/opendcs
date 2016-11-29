@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.17  2016/11/19 15:58:02  mmaloney
+*  Support wildcards
+*
 *  Revision 1.16  2016/11/03 18:59:40  mmaloney
 *  Implement wildcard evaluation for groups.
 *
@@ -1602,50 +1605,57 @@ for(CTimeSeries ts : allts)
 		{
 			tsidRet.setSiteName(sn.getNameValue());
 			transformed = true;
-			// Also lookup the site and set the ID and site object.
-			SiteDAI siteDAO = makeSiteDAO();
-			try
+			if (sn.site != null)
+				tsidRet.setSite(sn.site);
+			else
 			{
-				DbKey siteId = siteDAO.lookupSiteID(sn);
-				tsidRet.setSite(siteDAO.getSiteById(siteId));
-			}
-			catch (Exception ex)
-			{
-				Logger.instance().warning("Cannot get site for sitename " + sn + ": " + ex);
-			}
-			finally
-			{
-				siteDAO.close();
+				// Also lookup the site and set the ID and site object.
+				SiteDAI siteDAO = makeSiteDAO();
+				try
+				{
+					
+					DbKey siteId = siteDAO.lookupSiteID(sn);
+					tsidRet.setSite(siteDAO.getSiteById(siteId));
+				}
+				catch (Exception ex)
+				{
+					Logger.instance().warning("Cannot get site for sitename " + sn + ": " + ex);
+				}
+				finally
+				{
+					siteDAO.close();
+				}
 			}
 		}
 		else if (this.tsdbVersion >= TsdbDatabaseVersion.VERSION_14
 			  && parm.getLocSpec() != null && parm.getLocSpec().length() > 0)
 		{
 			String morphed = morph(ctsid.getSiteName(), parm.getLocSpec());
+			debug2("TSID site name '" + ctsid.getSiteName() + "' with loc spec '"
+				+ parm.getLocSpec() + "' morphed to '" + morphed + "'");
 			if (morphed == null)
-				debug2("Unable to morph site name '" + ctsid.getSiteName() + "' with loc spec '"
-					+ parm.getLocSpec() + "'");
-			else
+				morphed = parm.getLocSpec();
+			tsidRet.setSite(null);
+			tsidRet.setSiteName("");
+			SiteDAI siteDAO = makeSiteDAO();
+			try
 			{
-				tsidRet.setSite(null);
-				tsidRet.setSiteName("");
-				SiteDAI siteDAO = makeSiteDAO();
-				try
+				DbKey siteId = siteDAO.lookupSiteID(morphed);
+				if (!DbKey.isNull(siteId))
 				{
-					DbKey siteId = siteDAO.lookupSiteID(morphed);
-					if (!DbKey.isNull(siteId))
-						tsidRet.setSite(siteDAO.getSiteById(siteId));
+					tsidRet.setSite(siteDAO.getSiteById(siteId));
+					tsidRet.setSiteName(morphed);
 				}
-				catch (Exception ex)
-				{
-					Logger.instance().warning("Cannot get site for sitename " + morphed + ": " + ex);
-				}
-				finally
-				{
-					siteDAO.close();
-				}
-				transformed = true;
 			}
+			catch (Exception ex)
+			{
+				Logger.instance().warning("Cannot get site for sitename " + morphed + ": " + ex);
+			}
+			finally
+			{
+				siteDAO.close();
+			}
+			transformed = true;
 		}
 		DataType dt = parm.getDataType();
 		if (dt != null)
