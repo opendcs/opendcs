@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2016/11/03 19:08:05  mmaloney
+ * Implement new Location, Param, and Version dialogs for CWMS.
+ *
  * Revision 1.2  2014/08/22 17:23:10  mmaloney
  * 6.1 Schema Mods and Initial DCP Monitor Implementation
  *
@@ -190,9 +193,7 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 	/** Main method */
 	public static void main(String[] args)
 	{
-		//Create the GUI Application
-//TODO MJM Uncomment the following before release.
-//		DecodesInterface.setGUI(true);
+		DecodesInterface.setGUI(true);
 		TsDbGrpEditor guiApp = new TsDbGrpEditor();
 		try
 		{			
