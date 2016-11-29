@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.5  2016/11/21 16:04:03  mmaloney
+ * Code Cleanup.
+ *
  * Revision 1.4  2016/01/27 22:07:59  mmaloney
  * Debugs for weird error involving inconsistent compare for sort.
  *
@@ -312,7 +315,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 		try
 		{
 			//Fetch the time series identifiers for the tsDb
-			tsidList = timeSeriesDAO.listTimeSeries();
+			tsidList = timeSeriesDAO.listTimeSeries(true);
 			
 			if (tsidList == null)
 			{
