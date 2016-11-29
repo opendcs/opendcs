@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.2  2016/11/03 18:58:48  mmaloney
+ * Force reload when assessing TSIDs.
+ *
  * Revision 1.1  2015/11/12 15:12:38  mmaloney
  * Initial release.
  *
@@ -168,7 +171,7 @@ public class ScreeningIdListTab extends JPanel
 		}
 		
 		Screening scr = (Screening)model.getRowObject(screeningIdTable.getSelectedRow());
-		TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(frame.getTheDb(), false);
+		TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(frame.getTheDb(), false, frame);
 		TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();
 		try
 		{

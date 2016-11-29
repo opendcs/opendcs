@@ -237,7 +237,7 @@ public class PyParamSetDialog extends GuiDialog
 		if (timeSeriesSelectDialog == null)
 		{
 			timeSeriesSelectDialog = new TimeSeriesSelectDialog(
-				TsdbAppTemplate.theDb, true);
+				TsdbAppTemplate.theDb, true, this);
 			timeSeriesSelectDialog.setMultipleSelection(false);
 		}
 		if (pps.tsid != null)
