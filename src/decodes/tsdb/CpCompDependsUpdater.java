@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.9  2016/11/21 16:04:03  mmaloney
+*  Code Cleanup.
+*
 *  Revision 1.8  2016/11/20 17:23:09  mmaloney
 *  Minor updates for CWMS.
 *
@@ -64,6 +67,7 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import ilex.var.TimedVariable;
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
@@ -459,11 +463,12 @@ public class CpCompDependsUpdater
 			done++;
 		else
 			errs++;
-		Logger.instance().debug1("End of nofity processing, success=" + success); 
+		Logger.instance().debug1("End of notify processing, success=" + success); 
 	}
 	
 	private boolean tsCreated(DbKey tsKey)
 	{
+		info("Received TS_CREATED message for TS Key=" + tsKey);
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		try
@@ -480,6 +485,7 @@ public class CpCompDependsUpdater
 			dumpTsidCache();
 
 			// Adjust the groups in my cache which may include this new time series.
+			debug("tsCreated - checking group memebership for " + tsid.getUniqueString());
 			groupHelper.checkGroupMembership(tsid);
 
 			// Determine computations that will use this new TS as input
@@ -531,8 +537,39 @@ public class CpCompDependsUpdater
 					}
 				}
 			}
-
+			
+			int n = toAdd.size();
 			writeToAdd2Db(Constants.undefinedId);
+			debug("" + n + " computations will be triggered by this new time series.");
+			
+			// If the new TS triggers one or more computations, there may be new values
+			// written before the dependency was created above. Re-write the data
+			// for these values because the trigger (or queue handler for CWMS) would have
+			// missed them.
+			if (n > 0)
+			{
+				try
+				{
+					CTimeSeries cts = theDb.makeTimeSeries(tsid);
+					timeSeriesDAO.fillTimeSeries(cts, null, null);
+					timeSeriesDAO.saveTimeSeries(cts);
+				}
+				catch (NoSuchObjectException ex)
+				{
+					warning("Bad TSID received in create notification: " + tsid.getUniqueString());
+				}
+				catch (BadTimeSeriesException ex)
+				{
+					warning("Error reading data for new time series '" + tsid.getUniqueString()
+						+ "': " + ex);
+				}
+				catch(DbIoException ex)
+				{
+					warning("Error rewriting time series data for '" + tsid.getUniqueString()
+						+ "': " + ex);
+				}
+			}
+
 			return true;
 		}
 		catch (DbIoException ex)
