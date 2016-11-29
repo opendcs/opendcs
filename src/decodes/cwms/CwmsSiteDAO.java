@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2016/11/03 18:59:41  mmaloney
+ * Implement wildcard evaluation for groups.
+ *
  * Revision 1.10  2016/09/29 18:54:36  mmaloney
  * CWMS-8979 Allow Database Process Record to override decodes.properties and
  * user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -66,6 +69,7 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.DecodesSettings;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.DbObjectCache.CacheIterator;
 import opendcs.dao.SiteDAO;
 
 /**
@@ -404,7 +408,7 @@ ex.printStackTrace(System.err);
 	public void fillCache()
 		throws DbIoException
 	{
-		Logger.instance().debug3("CwmsSiteDAO.fillCache()");
+		debug3("CwmsSiteDAO.fillCache()");
 
 		ArrayList<Site> siteList = new ArrayList<Site>();
 		int nNames = 0;
@@ -465,14 +469,20 @@ ex.printStackTrace(System.err);
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
 		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
-for(Iterator<Site> sit = cache.iterator(); sit.hasNext(); )
-{
-Site st = sit.next();
-SiteName cwmsName = st.getName(Constants.snt_CWMS);
-if (cwmsName != null && cwmsName.getNameValue().toUpperCase().startsWith("FCNE"))
- Logger.instance().info("From cache: " + cwmsName.getNameValue() + ", key=" + st.getKey());
-}
 	}
 
-
+	@Override
+	public synchronized DbKey lookupSiteID(final String nameValue)
+		throws DbIoException
+	{
+		// This will search cache and db for CWMS location name.
+		SiteName sn = new SiteName(null, Constants.snt_CWMS, nameValue);
+		DbKey siteId = lookupSiteID(sn);
+		if (siteId != null)
+			return siteId;
+		
+		// If that fails, the super class will search for any matching value
+		// in the SITENAME table.
+		return super.lookupSiteID(nameValue);
+	}
 }
