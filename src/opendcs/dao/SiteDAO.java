@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.8  2016/08/05 14:49:26  mmaloney
+* No longer put HDB site name in the description field.
+*
 * Revision 1.7  2016/06/07 21:28:25  mmaloney
 * fillCache made public to allow it to be called from ts DAO.
 *
@@ -62,7 +65,7 @@ public class SiteDAO
 	extends DaoBase 
 	implements SiteDAI
 {
-	protected static DbObjectCache<Site> cache = new DbObjectCache<Site>(15 * 60 * 1000L, false);
+	protected static DbObjectCache<Site> cache = new DbObjectCache<Site>(30 * 60 * 1000L, false);
 
 	public String siteAttributes = 
 		"id, latitude, longitude, nearestCity, state, "
@@ -245,6 +248,8 @@ public class SiteDAO
 	public void fillCache()
 		throws DbIoException
 	{
+		debug3("(Generic)SiteDAO.fillCache()");
+
 		HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
 //		ArrayList<Site> siteList = new ArrayList<Site>();
 		int nNames = 0;
