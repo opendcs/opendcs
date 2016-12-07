@@ -670,6 +670,14 @@ public class LrgsMain
 		throws IOException
 	{
 		cmdLineArgs.parseArgs(args);
+		
+		/** 
+		 * Using lock files as an IPC mechanism (for status GUI) is unreliable in windoze.
+		 * Tell server lock never to exit as a result of lock file I/O error.
+		 */
+		if (cmdLineArgs.windowsSvcArg.getValue())
+			ServerLock.setWindowsService(true);
+		
 		Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
 		LrgsMain lm = new LrgsMain();
 		lm.run();

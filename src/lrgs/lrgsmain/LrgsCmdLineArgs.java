@@ -36,6 +36,9 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	public static final String progname = "lrgs";
 	QueueLogger qLogger;
 	SequenceFileLogger fLogger;
+	BooleanToken windowsSvcArg = new BooleanToken("w", "Run as Windows Service", "", 
+		TokenOptions.optSwitch, false);
+
 
 	public LrgsCmdLineArgs()
 	{
@@ -63,6 +66,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 			TokenOptions.optSwitch, 5);
 		addToken(numOldLogs_arg);
 		addToken(lockArg);
+		addToken(windowsSvcArg);
 
 		qLogger = null;
 		fLogger = null;
