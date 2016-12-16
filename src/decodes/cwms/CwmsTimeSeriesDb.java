@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.18  2016/11/29 00:56:02  mmaloney
+*  Mods to transformUniqueString to handle wildcards.
+*
 *  Revision 1.17  2016/11/19 15:58:02  mmaloney
 *  Support wildcards
 *
@@ -1529,6 +1532,7 @@ for(CTimeSeries ts : allts)
 		if (tsid == null)
 			tsid = makeEmptyTsId();
 
+		String origString = tsid.getUniqueString();
 		TimeSeriesIdentifier tsidRet = tsid.copyNoKey();
 		boolean transformed = transformUniqueString(tsidRet, parm);
 //Site tssite = tsidRet.getSite();
@@ -1537,8 +1541,8 @@ for(CTimeSeries ts : allts)
 		if (transformed)
 		{
 			String uniqueString = tsidRet.getUniqueString();
-			debug3("CwmsTimeSeriesDb.transformTsid new string='"
-				+ uniqueString);
+			debug3("CwmsTimeSeriesDb.transformTsid origString='" + origString + "', new string='"
+				+ uniqueString + "', parm=" + parm);
 			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
 
 			try 
