@@ -345,7 +345,11 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 		if (rereadRsBeforeExec)
 		{
 			Logger.instance().info("ScheduleEntryExecutive.makeThread -- rereading Routing Spec.");
-			try { rs.read(); }
+			try
+			{
+				rs.read();
+				rs.prepareForExec();
+			}
 			catch (DatabaseException ex)
 			{
 				dacqEventLogger.info("ScheduleEntryExec.makeThread: "
