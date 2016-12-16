@@ -321,6 +321,8 @@ public class RoutingSpec
 	public void read()
 		throws DatabaseException
 	{
+		networkLists.clear();
+		networkListNames.clear();
 		myDatabase.getDbIo().readRoutingSpec(this);
 	}
 
