@@ -1,5 +1,7 @@
 package opendcs.dai;
 
+import java.util.ArrayList;
+
 import decodes.sql.DbKey;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
@@ -37,6 +39,16 @@ public interface CompDependsDAI
 	 * @throws DbIoException
 	 */
 	public void deleteCompDependsForCompId(DbKey compId)
+		throws DbIoException;
+
+	/**
+	 * Find all TSIDs that can serve as triggers for the passed computation.
+	 * @param comp The computation in question
+	 * @return list of TSIDs with CP_COMP_DEPENDS records indicating that they
+	 * are triggers for the computation
+	 * @throws DbIoException
+	 */
+	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbComputation comp)
 		throws DbIoException;
 
 	/**

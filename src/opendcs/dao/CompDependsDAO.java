@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/12/19 19:26:57  mmaloney
+ * Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
+ *
  * Revision 1.2  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -19,11 +22,15 @@ package opendcs.dao;
 
 import ilex.util.Logger;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
@@ -202,11 +209,48 @@ debug3("Total dds for dependencies=" + dataIds.size());
 			+ compId;
 		doModify(q);
 	}
-
+	
 	public void close()
 	{
 		super.close();
 		algorithmDAO.close();
 		tsGroupDAO.close();
+	}
+
+	@Override
+	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbComputation comp)
+		throws DbIoException
+	{
+		String q = "SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
+			+ "WHERE COMPUTATION_ID = " + comp.getId();
+		ResultSet rs = doQuery(q);
+		
+		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
+		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
+		try
+		{
+			while(rs.next())
+			{
+				DbKey tsKey = DbKey.createDbKey(rs, 1);
+				try
+				{
+					ret.add(timeSeriesDAO.getTimeSeriesIdentifier(tsKey));
+				}
+				catch (NoSuchObjectException e)
+				{
+					warning("Bogus Time Series Key " + tsKey + " in CP_COMP_DEPENDS "
+						+ "for computation " + comp.getKey() + ":" + comp.getName());
+				}
+			}
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Error executing '" + q + "': " + ex);
+		}
+		finally
+		{
+			timeSeriesDAO.close();
+		}
+		return ret;
 	}
 }
