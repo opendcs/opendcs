@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2014/11/19 16:12:28  mmaloney
+*  removed debugs.
+*
 *  Revision 1.2  2014/10/07 12:49:20  mmaloney
 *  added getFileBytes
 *
@@ -161,8 +164,15 @@ public class FileUtil
 		
 		while((len = in.read(buffer)) >= 0 && elapsed < timeout)
 		{
-			out.write(buffer, 0, len);
-			total += len;
+			if (len > 0)
+			{
+				out.write(buffer, 0, len);
+				total += len;
+			}
+			else // read returned 0, pause before trying again
+			{
+				try { Thread.sleep(100L); } catch(InterruptedException ex) {}
+			}
 			elapsed = System.currentTimeMillis() - start_time;
 		}
 	}
