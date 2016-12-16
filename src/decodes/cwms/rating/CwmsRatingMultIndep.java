@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2016/09/29 18:54:36  mmaloney
+ * CWMS-8979 Allow Database Process Record to override decodes.properties and
+ * user.properties setting. Command line arg -Dsettings=appName, where appName is the
+ * name of a process record. Properties assigned to the app will override the file(s).
+ *
  * Revision 1.6  2016/01/13 15:15:04  mmaloney
  * rating retrieval
  *
@@ -275,11 +280,12 @@ public class CwmsRatingMultIndep
 	public String indep8_MISSING = "ignore";
 	public String indep9_MISSING = "ignore";
 	public boolean useDepLocation = false;
+	public String locationOverride = "";
 
 	public String _propertyNames[] = { "templateVersion", "specVersion",
 		"indep1_MISSING", "indep2_MISSING", "indep3_MISSING", "indep4_MISSING", "indep5_MISSING",
 		"indep6_MISSING", "indep7_MISSING", "indep8_MISSING", "indep9_MISSING", 
-		"useDepLocation" };
+		"useDepLocation", "locationOverride" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -317,6 +323,8 @@ public class CwmsRatingMultIndep
 			else
 				specLocation = depSiteName.getNameValue();
 		}
+		else if (locationOverride != null && locationOverride.length() > 0)
+			specLocation = locationOverride;
 		
 		specId = specLocation
 			+ "." + specId + ";" + depParmRef.compParm.getDataType().getCode() + "."
