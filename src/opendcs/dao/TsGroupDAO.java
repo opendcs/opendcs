@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.7  2016/12/16 14:30:54  mmaloney
+* Moved code to adjust comp dependencies when a group is modified to the DAO.
+*
 * Revision 1.6  2016/11/19 15:56:30  mmaloney
 * Generate a NOTIFY record on saving a group if CWMS and version >= 14.
 *
@@ -541,7 +544,7 @@ public class TsGroupDAO
 		}
 
 		q = "UPDATE CP_COMPUTATION SET ENABLED = 'N', GROUP_ID = NULL,"
-			+ " DATE_TIME_MODIFIED = " + db.sqlDate(new Date())
+			+ " DATE_TIME_LOADED = " + db.sqlDate(new Date())
 			+ " WHERE GROUP_ID = " + deletedGroupId;
 		doModify(q);
 		
