@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.8  2016/09/23 15:57:21  mmaloney
+*  Improve warning messages when MISSING values cannot be recovered because time is too long. The new messages show the relevant limit values.
+*
 *  Revision 1.7  2016/03/24 19:12:14  mmaloney
 *  Refactoring for Python.
 *
@@ -1292,7 +1295,8 @@ Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTi
 						if (varSec - prevSec > maxMissingTimeForFill)
 						{
 							warning("Missing time exceeded for role " + role
-								+ ", max=" + maxMissingTimeForFill + " secconds.");
+								+ ", max=" + maxMissingTimeForFill + " seconds, "
+								+ "delta=" + (varSec - prevSec));
 							continue nextBaseTime;
 						}
 
@@ -1300,8 +1304,9 @@ Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTi
 						 && (varSec-prevSec) / intvSecs 
 							> maxMissingValuesForFill)
 						{
-							warning("Missing time exceeded for role " + role
-								+ ", max=" + maxMissingTimeForFill + " secconds.");
+							warning("Missing number exceeded for role " + role
+								+ ", max#=" + maxMissingValuesForFill
+								+ ", deltaT=" + (varSec-prevSec) + ", intvSecs=" + intvSecs);
 							continue nextBaseTime;
 						}
 
