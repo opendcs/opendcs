@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.6  2016/11/19 15:56:30  mmaloney
+* Generate a NOTIFY record on saving a group if CWMS and version >= 14.
+*
 * Revision 1.5  2016/11/03 19:08:38  mmaloney
 * Refactoring for group evaluation to make HDB work the same way as CWMS.
 *
@@ -37,6 +40,7 @@ import java.util.Iterator;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.DbObjectCache.CacheIterator;
+import decodes.db.Constants;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
@@ -372,36 +376,32 @@ public class TsGroupDAO
 	public void deleteTsGroup(DbKey groupId)
 		throws DbIoException
 	{
-		if (groupId != null && !groupId.isNull())
-		{
-			String q;
-			//First delete all time-series member links.
-			q = "DELETE from tsdb_group_member_ts WHERE group_id = " + groupId;
-			doModify(q);
+		if (DbKey.isNull(groupId))
+			return;
+		
+		removeDependenciesFor(groupId);
+
+		//First delete all time-series member links.
+		String q = "DELETE from tsdb_group_member_ts WHERE group_id = " + groupId;
+		doModify(q);
 			
-			//Delete sub-group associations, also delete any Group link
-			//that has this group id
-			q = "DELETE from tsdb_group_member_group "
-				+ "WHERE parent_group_id = " + groupId
-				+ " OR child_group_id = "  + groupId;
-			doModify(q);
+		//Delete sub-group associations, also delete any Group link
+		//that has this group id
+		q = "DELETE from tsdb_group_member_group "
+			+ "WHERE parent_group_id = " + groupId
+			+ " OR child_group_id = "  + groupId;
+		doModify(q);
 			
-			q = "DELETE from tsdb_group_member_site where group_id = " 
-				+ groupId;
-			doModify(q);
-			q = "DELETE from tsdb_group_member_dt where group_id = " + groupId;
-			doModify(q);
+		q = "DELETE from tsdb_group_member_site where group_id = " + groupId;
+		doModify(q);
+		q = "DELETE from tsdb_group_member_dt where group_id = " + groupId;
+		doModify(q);
 
-			q = "DELETE from tsdb_group_member_other where group_id = " 
-				+ groupId;
-			doModify(q);
+		q = "DELETE from tsdb_group_member_other where group_id = " + groupId;
+		doModify(q);
 
-			//Delete ts Group
-			q = "DELETE from tsdb_group WHERE group_id = " + groupId;
-			doModify(q);
-
-//			db.commit();
-		}
+		q = "DELETE from tsdb_group WHERE group_id = " + groupId;
+		doModify(q);
 	}
 
 	@Override
@@ -515,6 +515,81 @@ public class TsGroupDAO
 			timeSeriesDAO.close();
 		}
 		lastCacheFill = System.currentTimeMillis();
+	}
+
+	@Override
+	public void removeDependenciesFor(DbKey deletedGroupId) 
+		throws DbIoException
+	{
+		if (DbKey.isNull(deletedGroupId))
+			return;
+		
+		// Disable any computation that uses this group directly and null the reference
+		String q = "SELECT COMPUTATION_ID FROM CP_COMPUTATION WHERE GROUP_ID = " + deletedGroupId;
+		ResultSet rs = doQuery(q);
+		ArrayList<DbKey> comps2disable = new ArrayList<DbKey>();
+		try
+		{
+			while(rs.next())
+				comps2disable.add(DbKey.createDbKey(rs, 1));
+		}
+		catch (SQLException ex)
+		{
+			String msg = " Error listing comps that use group " + deletedGroupId + ": " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+
+		q = "UPDATE CP_COMPUTATION SET ENABLED = 'N', GROUP_ID = NULL,"
+			+ " DATE_TIME_MODIFIED = " + db.sqlDate(new Date())
+			+ " WHERE GROUP_ID = " + deletedGroupId;
+		doModify(q);
+		
+		// Make a list of any group that uses this group as a child.
+		q = "SELECT DISTINCT PARENT_GROUP_ID FROM TSDB_GROUP_MEMBER_GROUP "
+			+ "WHERE CHILD_GROUP_ID = " + deletedGroupId;
+		ArrayList<DbKey> modifiedGroupIds = new ArrayList<DbKey>();
+		try
+		{
+			while(rs.next())
+				modifiedGroupIds.add(DbKey.createDbKey(rs, 1));
+		}
+		catch (SQLException ex)
+		{
+			String msg = " Error listing groups that use group " + deletedGroupId + ": " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+
+		// Remove the child references to this group from the affected groups.
+		q = "DELETE FROM TSDB_GROUP_MEMBER_GROUP WHERE CHILD_GROUP_ID = " + deletedGroupId;
+		doModify(q);
+
+		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14 && !db.isHdb())
+		{
+			// Enqueue "comp modified" notifications for all the now-disabled computations.
+			for(DbKey compId : comps2disable)
+			{
+				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+					+ "values(cp_depends_notifyidseq.nextval, 'C', "
+					+ compId + ", " + db.sqlDate(new Date()) + ")";
+				doModify(q);
+			}
+
+			// Enqueue "group modified" notifications for groups in the hash set.
+			// This will let the comp depends updater manage the computations.
+			for(DbKey groupId : modifiedGroupIds)
+			{
+				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+					+ "values(cp_depends_notifyidseq.nextval, 'G', "
+					+ groupId + ", " + db.sqlDate(new Date()) + ")";
+				doModify(q);
+			}
+		}
+		
+		// Reread any modified groups to keep cache up to date.
+		for(DbKey groupId : modifiedGroupIds)
+			getTsGroupById(groupId, true);
 	}
 
 }

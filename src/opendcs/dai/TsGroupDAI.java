@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2016/11/03 19:08:38  mmaloney
+ * Refactoring for group evaluation to make HDB work the same way as CWMS.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -91,6 +94,16 @@ public interface TsGroupDAI
 	 * Fill cache with all groups.
 	 */
 	public void fillCache()
+		throws DbIoException;
+
+	/**
+	 * Removes any computation dependencies for the group. That is computations
+	 * that use the group, or that use a group that uses this group somewhere
+	 * in its hierarchy.
+	 * @param group
+	 * @throws DbIoException
+	 */
+	public void removeDependenciesFor(DbKey deletedGroupId)
 		throws DbIoException;
 
 }
