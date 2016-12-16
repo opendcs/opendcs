@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.10  2016/11/29 00:57:14  mmaloney
+*  Implement wildcards for CWMS.
+*
 *  Revision 1.9  2016/11/21 16:04:03  mmaloney
 *  Code Cleanup.
 *
@@ -972,6 +975,7 @@ public class CpCompDependsUpdater
 			else // Group was deleted.
 			{
 				info("groupModified(" + groupId + ") -- not in DB. Assuming group was deleted.");
+				// Note: call to getTsGroupById above will have removed it from the cache.
 			}
 	
 			// Any group that includes/excludes/intersects THIS group needs to have
