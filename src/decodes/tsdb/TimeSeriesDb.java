@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.8  2016/11/03 19:03:56  mmaloney
+*  Refactoring for group evaluation to make HDB work the same way as CWMS.
+*
 *  Revision 1.7  2016/06/27 15:29:01  mmaloney
 *  Code cleanup.
 *
@@ -1966,95 +1969,6 @@ public abstract class TimeSeriesDb
 	}
 
 	/**
-	 * Deletes a group from the database.
-	 * @param groupId the group id to delete
-	 */
-	public void deleteTsGroup(DbKey groupId)
-		throws DbIoException
-	{
-		if (groupId == null || groupId.isNull())
-			return;
-
-		// If previously existed and is used by any comps, then we have
-		// to re-evalute the computation dependencies with the deleted group
-		// definition.
-		if (groupId != Constants.undefinedId)
-		{
-			String q = tsdbVersion < TsdbDatabaseVersion.VERSION_6
-				? "SELECT DISTINCT COMPUTATION_ID FROM CP_COMP_TS_PARM "
-				: "SELECT COMPUTATION_ID FROM CP_COMPUTATION ";
-			q = q + " where group_id = " + groupId;
-					
-			try
-			{
-				int numDependentComps = 0;
-				ResultSet rs = doQuery(q);
-				StringBuilder whereClause = new StringBuilder("where computation_id in(");
-				while (rs.next())
-				{
-					whereClause.append("" + rs.getInt(1) + ",");
-					numDependentComps++;
-				}
-				whereClause.deleteCharAt(whereClause.length()-1);
-				whereClause.append(")");
-				if (numDependentComps > 0)
-				{
-					q = tsdbVersion < 6
-						? ("UPDATE CP_COMP_TS_PARM SET GROUP_ID = ")
-						: ("UPDATE CP_COMPUTATION SET GROUP_ID = ");
-					q = q + Constants.undefinedId + " " + whereClause.toString();
-					doModify(q);
-					q = "UPDATE CP_COMPUTATION SET ENABLED = 'N' " 
-						+ whereClause.toString();
-					doModify(q);
-					if (!isHdb())
-					{
-						q = "DELETE FROM CP_COMP_DEPENDS " + whereClause.toString();
-						doModify(q);
-					}
-				}
-
-				TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-				try
-				{
-					tsGroupDAO.deleteTsGroup(groupId);
-				}
-				finally
-				{
-					tsGroupDAO.close();
-				}
-
-				commit();
-			}
-			catch(SQLException ex)
-			{
-				String msg = " Error deleting ts group & dependencies: " + ex;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-		}
-
-	}
-
-//	/**
-//	 * Reads the members of an individual group.
-//	 * @param group the group
-//	 */
-//	public void readTsGroupMembers(TsGroup group)
-//		throws DbIoException
-//	{
-//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-//		try
-//		{
-//			tsGroupDAO.readTsGroupMembers(group);
-//		}
-//		finally
-//		{
-//			tsGroupDAO.close();
-//		}
-//	}
-
-	/**
 	 * @return number of computations that are using the passed group ID.
 	 */
 	public int countCompsUsingGroup(DbKey groupId)
@@ -2225,6 +2139,8 @@ public abstract class TimeSeriesDb
 		return ret;
 	}
 
+// TODO MJM Consider moving the following into CompDependsDAO.
+	
 	/**
 	 * Passed a time series with valid meta data (tsid).
 	 * Determine the computations that depend on this time series.

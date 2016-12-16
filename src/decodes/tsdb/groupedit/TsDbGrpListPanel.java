@@ -9,13 +9,13 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 
+import opendcs.dai.TsGroupDAI;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsGroup;
 import decodes.util.DecodesSettings;
-
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 
@@ -238,20 +238,21 @@ public class TsDbGrpListPanel
 		if (ok == JOptionPane.YES_OPTION)
 		{
 			// Remove from Database
+			TsGroupDAI tsGroupDAO = tsDb.makeTsGroupDAO();
 			try
 			{
-				if (tsDb != null)
-				{
-					tsDb.deleteTsGroup(tsGroup.getGroupId());
-				} else
-					Logger.instance().failure(
-							module + " The TsDb obj is null.");
-			} catch (DbIoException ex)
+				tsGroupDAO.deleteTsGroup(tsGroup.getGroupId());
+			} 
+			catch (DbIoException ex)
 			{
 				Logger.instance().failure(
 						module + " Can not delete Ts Group from "
 								+ "the Database " + ex.getMessage());
 				TopFrame.instance().showError(ex.toString());
+			}
+			finally
+			{
+				tsGroupDAO.close();
 			}
 			// Remove from Ts Group List
 			tsGroupsListSelectPanel.deleteTsGroup(tsGroup);
