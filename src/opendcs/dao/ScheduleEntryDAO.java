@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2016/12/21 20:28:21  mmaloney
+ * bugswat
+ *
  * Revision 1.10  2016/12/21 19:42:23  mmaloney
  * Last Src can only hold 32 chars. If string is longer, truncate it.
  *
@@ -371,7 +374,10 @@ public class ScheduleEntryDAO
 		seStatus.setLastModified(new Date());
 		String lastSrc = seStatus.getLastSource();
 		if (lastSrc != null && lastSrc.length() > 31)
-			lastSrc = lastSrc.substring(0, 31);
+			lastSrc = lastSrc.substring(lastSrc.length()-31);
+		String lastCon = seStatus.getLastConsumer();
+		if (lastCon != null && lastCon.length() > 31)
+			lastCon = lastCon.substring(lastCon.length()-31);
 		if (seStatus.getKey().isNull())
 		{
 			seStatus.forceSetId(getKey("schedule_entry_status"));
@@ -387,7 +393,7 @@ public class ScheduleEntryDAO
 				+ seStatus.getNumDecodesErrors() + ", "
 				+ seStatus.getNumPlatforms() + ", "
 				+ sqlString(lastSrc) + ", "
-				+ sqlString(seStatus.getLastConsumer()) + ", "
+				+ sqlString(lastCon) + ", "
 				+ db.sqlDate(seStatus.getLastModified()) + ")";
 			doModify(q);
 		}
@@ -404,7 +410,7 @@ public class ScheduleEntryDAO
 				+ "num_decode_errors = " + seStatus.getNumDecodesErrors() + ", "
 				+ "num_platforms = " + seStatus.getNumPlatforms() + ", "
 				+ "last_source = " + sqlString(lastSrc) + ", "
-				+ "last_consumer = " + sqlString(seStatus.getLastConsumer()) + ", "
+				+ "last_consumer = " + sqlString(lastCon) + ", "
 				+ "last_modified = " + db.sqlDate(seStatus.getLastModified())
 				+ " where schedule_entry_status_id = " + seStatus.getKey();
 			doModify(q);
