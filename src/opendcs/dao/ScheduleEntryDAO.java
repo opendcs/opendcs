@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2016/12/21 19:42:23  mmaloney
+ * Last Src can only hold 32 chars. If string is longer, truncate it.
+ *
  * Revision 1.9  2016/08/05 14:48:16  mmaloney
  * Updates for Session Status GUI.
  *
@@ -367,7 +370,7 @@ public class ScheduleEntryDAO
 
 		seStatus.setLastModified(new Date());
 		String lastSrc = seStatus.getLastSource();
-		if (lastSrc.length() > 31)
+		if (lastSrc != null && lastSrc.length() > 31)
 			lastSrc = lastSrc.substring(0, 31);
 		if (seStatus.getKey().isNull())
 		{
