@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2016/08/05 14:48:16  mmaloney
+ * Updates for Session Status GUI.
+ *
  * Revision 1.8  2016/07/20 15:48:44  mmaloney
  * update last source and consumer. It wasn't doing that before.
  *
@@ -363,6 +366,9 @@ public class ScheduleEntryDAO
 			seStatus.setRunStatus(seStatus.getRunStatus().substring(0,24));
 
 		seStatus.setLastModified(new Date());
+		String lastSrc = seStatus.getLastSource();
+		if (lastSrc.length() > 31)
+			lastSrc = lastSrc.substring(0, 31);
 		if (seStatus.getKey().isNull())
 		{
 			seStatus.forceSetId(getKey("schedule_entry_status"));
@@ -377,7 +383,7 @@ public class ScheduleEntryDAO
 				+ seStatus.getNumMessages() + ", "
 				+ seStatus.getNumDecodesErrors() + ", "
 				+ seStatus.getNumPlatforms() + ", "
-				+ sqlString(seStatus.getLastSource()) + ", "
+				+ sqlString(lastSrc) + ", "
 				+ sqlString(seStatus.getLastConsumer()) + ", "
 				+ db.sqlDate(seStatus.getLastModified()) + ")";
 			doModify(q);
@@ -394,7 +400,7 @@ public class ScheduleEntryDAO
 				+ "num_messages = " + seStatus.getNumMessages() + ", "
 				+ "num_decode_errors = " + seStatus.getNumDecodesErrors() + ", "
 				+ "num_platforms = " + seStatus.getNumPlatforms() + ", "
-				+ "last_source = " + sqlString(seStatus.getLastSource()) + ", "
+				+ "last_source = " + sqlString(lastSrc) + ", "
 				+ "last_consumer = " + sqlString(seStatus.getLastConsumer()) + ", "
 				+ "last_modified = " + db.sqlDate(seStatus.getLastModified())
 				+ " where schedule_entry_status_id = " + seStatus.getKey();
