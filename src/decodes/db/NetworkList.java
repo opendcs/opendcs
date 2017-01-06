@@ -4,6 +4,7 @@
 package decodes.db;
 
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 
 import java.io.File;
 import java.util.Collection;
@@ -360,17 +361,49 @@ public class NetworkList extends IdDatabaseObject
 	 */
 	public boolean contains(Platform p)
 	{
-		TransportMedium ptm = p.getTransportMedium(transportMediumType);
-		if (ptm == null)
-			return false;
-		String pmi = ptm.getMediumId();
-		for(Iterator<NetworkListEntry> nleit = iterator(); nleit.hasNext(); )
-		{
-			NetworkListEntry nle = nleit.next();
-			if (pmi.equalsIgnoreCase(nle.getTransportId()))
-				return true;
+		return getEntry(p) != null;
+//		TransportMedium ptm = p.getTransportMedium(transportMediumType);
+//		if (ptm == null)
+//			return false;
+//		String pmi = ptm.getMediumId();
+//		for(Iterator<NetworkListEntry> nleit = iterator(); nleit.hasNext(); )
+//		{
+//			NetworkListEntry nle = nleit.next();
+//			if (pmi.equalsIgnoreCase(nle.getTransportId()))
+//				return true;
+//		}
+//		return false;
+	}
+	
+	/**
+	 * If this list contains an entry matching a transport medium in the passed
+	 * platform, return it. Otherwise return null.
+	 * @param p the platform
+	 * @return the matching entry or null if none found.
+	 */
+	public NetworkListEntry getEntry(Platform p)
+	{
+		TransportMedium platTM = null;
+		if (this.transportMediumType == null)
+			platTM = p.transportMedia.size() == 0 ? null : p.transportMedia.firstElement();
+		else
+		{		
+			boolean _isGoes = isGoes();
+			for(Iterator<TransportMedium> tmit = p.getTransportMedia(); tmit.hasNext(); )
+			{
+				TransportMedium _tm = tmit.next();
+				if ((_isGoes && _tm.isGoes())
+				 || transportMediumType.equalsIgnoreCase(_tm.getMediumType()))
+				{
+					platTM = _tm;
+					break;
+				}
+			}
 		}
-		return false;
+		if (platTM == null)
+			return null;
+		
+		return getEntry(platTM.getMediumId());
 	}
 	
 	public boolean contains(TransportMedium tm)

@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.8  2016/12/16 14:49:16  mmaloney
+* TYPO
+*
 * Revision 1.7  2016/12/16 14:30:54  mmaloney
 * Moved code to adjust comp dependencies when a group is modified to the DAO.
 *
@@ -449,7 +452,9 @@ public class TsGroupDAO
 			while(rs != null && rs.next())
 				cache.put(rs2group(rs));
 			
-			q = "select group_id, ts_id from tsdb_group_member_ts";
+			q = "select group_id, "
+				+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+				+ " from tsdb_group_member_ts";
 			rs = doQuery(q);
 			while(rs != null && rs.next())
 			{

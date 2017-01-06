@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
 
+import lrgs.common.DcpAddress;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
@@ -60,6 +61,15 @@ public class PlatformExport
 		TokenOptions.optSwitch, "");
 	static StringToken platNameFileArg = new StringToken("p", "File of Platform Names", "",
 		TokenOptions.optSwitch, "");
+	/**
+	 * When set, if a platform's site doesn't already have a 'dcpmon' name type,
+	 * then copy the name from the network list to a new name with type 'dcpmon.
+	 * Each USACE district controls its own netlist, so this will get the preferred name for
+	 * the distrcit.
+	 */
+	static BooleanToken dcpmonNameArg = new BooleanToken("M", "Copy Preferred name to 'dcpmon' name", 
+		"", TokenOptions.optSwitch, false);
+
 
 	static
 	{
@@ -73,6 +83,7 @@ public class PlatformExport
 		cmdLineArgs.addToken(platOwnerArg);
 		cmdLineArgs.addToken(lrgsnl);
 		cmdLineArgs.addToken(platNameFileArg);
+		cmdLineArgs.addToken(dcpmonNameArg);
 	}
 
 
@@ -142,6 +153,8 @@ public class PlatformExport
 					+ "' doesn't exist, so accepting all platform dates.");
 		}
 
+		lrgs.common.NetworkList lrgsNetlist = null;
+		
 		if (allArg.getValue())
 		{
 			platforms = db.platformList.getPlatformVector();
@@ -154,12 +167,11 @@ public class PlatformExport
 			platforms = new Vector<Platform>();
 			if (lrgsnl.getValue() != null && !lrgsnl.getValue().equals(""))
 			{
-				lrgs.common.NetworkList lnl =
-					new lrgs.common.NetworkList(new File(lrgsnl.getValue()));
-				if (lnl != null)
+				lrgsNetlist = new lrgs.common.NetworkList(new File(lrgsnl.getValue()));
+				if (lrgsNetlist != null)
 				{
 					//Copy legacy netlist data into DECODES network list.
-					for(Iterator it = lnl.iterator(); it.hasNext(); )
+					for(Iterator it = lrgsNetlist.iterator(); it.hasNext(); )
 					{
 						lrgs.common.NetworkListItem lnli =
 							(lrgs.common.NetworkListItem)it.next();
@@ -210,9 +222,9 @@ public class PlatformExport
 						continue;
 					}
 		
-					for(Iterator it = nl.iterator(); it.hasNext(); )
+					for(Iterator<NetworkListEntry> it = nl.iterator(); it.hasNext(); )
 					{
-						NetworkListEntry nle = (NetworkListEntry)it.next();
+						NetworkListEntry nle = it.next();
 
 						Platform p = db.platformList.getPlatform(
 						nl.transportMediumType, nle.transportId, new Date());
@@ -294,8 +306,7 @@ public class PlatformExport
 				File pnf = new File(pnfArg);
 				if (!pnf.canRead())
 				{
-					System.err.println("Cannot read platform list from '"
-						+ pnfArg + "'");
+					System.err.println("Cannot read platform list from '" + pnfArg + "'");
 					System.exit(1);
 				}
 				LineNumberReader lnr = new LineNumberReader(
@@ -343,7 +354,7 @@ public class PlatformExport
 
 		String newOwner = platOwnerArg.getValue();
 		if (newOwner.length() == 0) newOwner = null;
-
+		
 		XmlOutputStream xos = new XmlOutputStream(System.out,
 			XmlDbTags.Database_el);
 		xos.writeXmlHeader();
@@ -355,6 +366,48 @@ public class PlatformExport
 			p.read();   // Read all platform data from the database
 			if (newOwner != null)
 				p.setAgency(newOwner);
+			
+			// MJM 20170106 The following code handles the -M argument. This is added
+			// for MVR DCP Monitor. If no "dcpmon" name  is present, one is added
+			// from the network list.
+			Site psite = p.getSite();
+			SiteName dcpmonName = psite == null ? null : psite.getName("dcpmon");
+			if (psite != null && dcpmonNameArg.getValue() && dcpmonName == null)
+			{
+				for(int i = 0; i < netlistArg.NumberOfValues(); i++)
+				{
+					String nlName = netlistArg.getValue(i);
+					if (nlName == null || nlName.length() == 0)
+						continue;
+
+					NetworkList nl = db.networkListList.find(nlName);
+					if (nl == null)
+						continue;
+					
+					NetworkListEntry nle = nl.getEntry(p);
+					if (nle != null && nle.getPlatformName() != null && nle.getPlatformName().length() > 0)
+					{
+						psite.addName(dcpmonName = new SiteName(psite, "dcpmon", nle.getPlatformName()));
+						break;
+					}
+				}
+				if (dcpmonName == null && lrgsNetlist != null && p.getTransportMedium(Constants.medium_GoesST) != null)
+				{
+					DcpAddress dcpAddr = new DcpAddress(p.getTransportMedium(Constants.medium_GoesST).getMediumId());
+					for(Iterator<lrgs.common.NetworkListItem> nliit = lrgsNetlist.iterator(); nliit.hasNext(); )
+					{
+						lrgs.common.NetworkListItem lnli = nliit.next();
+						if (lnli.addr.equals(dcpAddr))
+						{
+							psite.addName(dcpmonName = new SiteName(psite, "dcpmon", lnli.name));
+							break;
+						}
+//else System.err.println("   Not equal to dcpaddr '" + lnli.addr + "'");
+					}
+//if (dcpmonName == null) System.err.println("dcp addr '" + dcpAddr + "' not in netlist.");
+				}
+			}
+			
 			PlatformParser pp = new PlatformParser(p);
 			pp.writeXml(xos);
 			

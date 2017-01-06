@@ -69,18 +69,20 @@ public class GenerateToimportNL
 			{
 				String districtName = 
 					DuplicateIo.parseDistrictName(nl.getDisplayName());
-				for(Iterator it = nl.iterator(); it.hasNext(); )
+				for(Iterator<NetworkListEntry> it = nl.iterator(); it.hasNext(); )
 				{
 					//select all dcps that are 
 					//not in the controlling dist list
-					NetworkListEntry nle = (NetworkListEntry)it.next();
+					NetworkListEntry nle = it.next();
 					if (nle != null)
 					{	//Get the dcp address
 						String dcpAddress = nle.transportId;
 						//address:name description:type
 						if (!ctrlDistOk)
 						{	//no controlling district list found
-							nlBuffer.append(dcpAddress +"\n");
+							nlBuffer.append(dcpAddress
+								+ ":" + (nle.getPlatformName() != null ? nle.getPlatformName() : "")
+								+"\n");
 						}
 						else
 						{	//add dcp if it is not in the control list
@@ -89,7 +91,9 @@ public class GenerateToimportNL
 									new DcpAddress(dcpAddress));
 							if (cd == null 
 							 || cd.getDistrict().equalsIgnoreCase(districtName))
-								nlBuffer.append(dcpAddress +"\n");
+								nlBuffer.append(dcpAddress 
+									+ ":" + (nle.getPlatformName() != null ? nle.getPlatformName() : "")
+									+"\n");
 						}
 					}
 				}

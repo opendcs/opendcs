@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.7  2013/08/18 19:49:37  mmaloney
  * Added clear button for compedit selection.
  *
@@ -267,12 +270,6 @@ public class TsGroupListPanel extends JPanel
 		return model.tsGroupExistsInList(groupName);
 	}
 	
-	public void setTsGroupListFromTsGroup(ArrayList<TsGroup> groupList)
-	{
-		model.setTsGroupListFromTsGroup(groupList);
-	}
-	
-	
 	public void addSubgroups(ArrayList<TsGroup> groupList)
 	{
 		model.addSubgroups(groupList);
@@ -329,10 +326,10 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 {
 	private static String[] columnNames;
 	private TsGroupListPanel panel;
-	private Vector<TsGroup> vec;
+	private ArrayList<TsGroup> theGroupList = new ArrayList<TsGroup>();
 	private int sortColumn = -1;
 	private String module;
-	private ArrayList<TsGroup> tsGroupList;
+//	private ArrayList<TsGroup> tsGroupList;
 
 	public TsGroupsSelectTableModel(TsGroupListPanel panel)
 	{
@@ -380,34 +377,15 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 				groupResources.getString(
 					"TsGroupsListSelectPanel.descriptionColumnLabel");
 		}
-
-		// Get the DB object
-		vec = null;
-		tsGroupList = new ArrayList<TsGroup>();
-		vec = new Vector<TsGroup>(tsGroupList);
 	}
 
 	public void setTsGroupListFromDb()
 	{
-		vec = null;
-		tsGroupList = getTsGroupListFromDb();
-		vec = new Vector<TsGroup>(tsGroupList);
+		theGroupList = getTsGroupListFromDb();
 		sortByColumn(0);
 	}
 
-	/**
-	 * This method is used from the TsGroupDefinition so that
-	 * we set the sub group members from the TsGroup obj.
-	 * @param groupList
-	 */
-	public void setTsGroupListFromTsGroup(ArrayList<TsGroup> groupList)
-	{
-		vec.clear();
-		vec.addAll(groupList);
-		sortByColumn(0);
-		fireTableDataChanged();
-	}
-	
+//TODO Is the following method necessary?
 	/**
 	 * This method is used from the TsGroupDefinition so that
 	 * we add the included sub group members from the TsGroup obj.
@@ -430,16 +408,16 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 	 */
 	public void addTsGroup(TsGroup tsGroupToAdd)
 	{
-		for(Iterator it = vec.iterator(); it.hasNext(); )
+		for(Iterator<TsGroup> it = theGroupList.iterator(); it.hasNext(); )
 		{
-			TsGroup group = (TsGroup)it.next();
+			TsGroup group = it.next();
 			if (tsGroupToAdd.getGroupId() == group.getGroupId())
 			{
 				it.remove();
 				break;
 			}
 		}
-		vec.add(tsGroupToAdd);
+		theGroupList.add(tsGroupToAdd);
 		fireTableDataChanged();
 	}
 	
@@ -481,7 +459,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 		if (groupNameIn != null)
 		{
 			String groupName = groupNameIn.trim();
-			for (TsGroup group : vec)
+			for (TsGroup group : theGroupList)
 			{
 				String groupNameonList = group.getGroupName();
 				if (groupNameonList != null)
@@ -495,54 +473,51 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 
 	void modifyTsGroupList(TsGroup oldG, TsGroup newG)
 	{
-		int gIndex = vec.indexOf(oldG);
+		int gIndex = theGroupList.indexOf(oldG);
 		if (gIndex != -1)
 		{
-			vec.set(gIndex, newG);
+			theGroupList.set(gIndex, newG);
 		} else
 		{
-			vec.add(newG);
+			theGroupList.add(newG);
 		}
 		//reSort();
 		fireTableDataChanged();
 	}
 
+	//TODO the model shouldn't be doing database IO. The client should do this.
 	public void refresh()
 	{
-		tsGroupList = getTsGroupListFromDb();
-		vec.clear();
-		vec.addAll(tsGroupList);
+		theGroupList.clear();
+		theGroupList.addAll(getTsGroupListFromDb());
 		reSort();
 		fireTableDataChanged();
 	}
 
+	//TODO Where is this used from, and why?
 	public ArrayList<TsGroup> getAllTsGroupsInList()
-	//public void getAllTsGroupsInList(TsGroup tsGroup)
 	{
-		ArrayList<TsGroup> tsGroups;
-		tsGroups = new ArrayList<TsGroup>();
-		for(Iterator<TsGroup> it = vec.iterator(); it.hasNext(); )
-		{
-			TsGroup group = it.next();
-			tsGroups.add(group);
-			//tsGroup.addSubGroupMember(group);
-		}
-		return tsGroups;
+		ArrayList<TsGroup> ret;
+		ret = new ArrayList<TsGroup>();
+		ret.addAll(theGroupList);
+		return ret;
 	}
 	
 	void deleteTsGroupAt(int index)
 	{
-		TsGroup tsGroup = (TsGroup) vec.elementAt(index);
-		deleteTsGroup(tsGroup);
+		if (index >= 0 && index < theGroupList.size())
+		{
+			theGroupList.remove(index);
+			fireTableDataChanged();
+		}
 	}
 
+	//TODO Why does the client need the following. It should always delete by index.
 	void deleteTsGroup(TsGroup tsGObj)
 	{
-		int ddIndex = vec.indexOf(tsGObj);
+		int ddIndex = theGroupList.indexOf(tsGObj);
 		if (ddIndex != -1)
-		{
-			vec.remove(ddIndex);
-		}
+			theGroupList.remove(ddIndex);
 		fireTableDataChanged();
 	}
 
@@ -563,7 +538,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 
 	public int getRowCount()
 	{
-		return vec.size();
+		return theGroupList.size();
 	}
 
 	public TsGroup getTsGroupAt(int r)
@@ -578,13 +553,13 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 
 	public Object getRowObject(int r)
 	{
-		return vec.elementAt(r);
+		return theGroupList.get(r);
 	}
 
 	public void sortByColumn(int c)
 	{
 		sortColumn = c;
-		Collections.sort(vec, new TsGroupsColumnComparator(c));
+		Collections.sort(theGroupList, new TsGroupsColumnComparator(c));
 	}
 
 	public void reSort()
