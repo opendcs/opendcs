@@ -8,6 +8,9 @@
 * Open Source Software
 * 
 * $Log$
+* Revision 1.3  2016/11/03 18:59:41  mmaloney
+* Implement wildcard evaluation for groups.
+*
 * Revision 1.2  2016/04/22 14:46:21  mmaloney
 * Fix subgroup evaluation. Make it true recursion.
 *
@@ -72,23 +75,29 @@ public class CwmsGroupHelper
 	extends GroupHelper
 {
 	private boolean justPrimed = false;
-	private ArrayList<Pattern> subLocPatterns = new ArrayList<Pattern>();
 	private static String regexSpecial = "<([{\\^-=$!|]})?+.>";
 	private static String module = "CwmsGroupHelper";
+	private ArrayList<Pattern> subLocPatterns = new ArrayList<Pattern>();
 	private ArrayList<Pattern> subParamPatterns = new ArrayList<Pattern>();
 	private ArrayList<Pattern> subVersionPatterns = new ArrayList<Pattern>();
+	private ArrayList<Pattern> baseLocPatterns = new ArrayList<Pattern>();
+	private ArrayList<Pattern> baseParamPatterns = new ArrayList<Pattern>();
+	private ArrayList<Pattern> baseVersionPatterns = new ArrayList<Pattern>();
+	private ArrayList<Pattern> fullLocPatterns = new ArrayList<Pattern>();
+	private ArrayList<Pattern> fullParamPatterns = new ArrayList<Pattern>();
+	private ArrayList<Pattern> fullVersionPatterns = new ArrayList<Pattern>();
 
 
 	public CwmsGroupHelper(CwmsTimeSeriesDb tsdb)
 	{
 		super(tsdb);
-tsdb.debug1("CwmsGroupHelper ctor");
+//tsdb.debug1("CwmsGroupHelper ctor");
 	}
 	
 	@Override
 	protected void prepareForExpand(TsGroup tsGroup) throws DbIoException
 	{
-tsdb.debug1("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
+//tsdb.debug1("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
 		justPrimed = true;
 		// Create and compile the regex objects for subloc, subparam, and subversion.
 		subLocPatterns.clear();
@@ -107,6 +116,40 @@ tsdb.debug1("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
 			}
 		}
 		
+		baseLocPatterns.clear();
+		ArrayList<String> baseLocs = tsGroup.getOtherMembers("BaseLocation");
+		for(String baseLoc : baseLocs)
+		{
+			String pat = makePatternString("BaseLocation", baseLoc);
+			try
+			{
+				baseLocPatterns.add(Pattern.compile(pat));
+			}
+			catch(PatternSyntaxException ex)
+			{
+				tsdb.warning(module + " cannot compile baseloc '" + baseLoc 
+					+ "', pattern='" + pat + "': " + ex);
+			}
+		}
+		
+		fullLocPatterns.clear();
+		ArrayList<String> fullLocs = tsGroup.getOtherMembers("Location");
+		for(String fullLoc : fullLocs)
+		{
+			String pat = makePatternString("FullLocation", fullLoc);
+			try
+			{
+				fullLocPatterns.add(Pattern.compile(pat));
+			}
+			catch(PatternSyntaxException ex)
+			{
+				tsdb.warning(module + " cannot compile fullloc '" + fullLoc 
+					+ "', pattern='" + pat + "': " + ex);
+			}
+		}
+
+
+		
 		subParamPatterns.clear();
 		ArrayList<String> subPars = tsGroup.getOtherMembers("SubParam");
 		for(String subPar : subPars)
@@ -123,8 +166,38 @@ tsdb.debug1("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
 			}
 		}
 
+		baseParamPatterns.clear();
+		ArrayList<String> basePars = tsGroup.getOtherMembers("BaseParam");
+		for(String basePar : basePars)
+		{
+			String pat = makePatternString("BaseParam", basePar);
+			try
+			{
+				baseParamPatterns.add(Pattern.compile(pat));
+			}
+			catch(PatternSyntaxException ex)
+			{
+				tsdb.warning(module + " cannot compile baseparam '" + basePar 
+					+ "', pattern='" + pat + "': " + ex);
+			}
+		}
 		
-		
+		fullParamPatterns.clear();
+		ArrayList<String> fullPars = tsGroup.getOtherMembers("Param");
+		for(String fullPar : fullPars)
+		{
+			String pat = makePatternString("FullParam", fullPar);
+			try
+			{
+				fullParamPatterns.add(Pattern.compile(pat));
+			}
+			catch(PatternSyntaxException ex)
+			{
+				tsdb.warning(module + " cannot compile fullparam '" + fullPar 
+					+ "', pattern='" + pat + "': " + ex);
+			}
+		}
+
 		subVersionPatterns.clear();
 		ArrayList<String> subVers = tsGroup.getOtherMembers("SubVersion");
 		for(String subVer : subVers)
@@ -137,6 +210,38 @@ tsdb.debug1("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
 			catch(PatternSyntaxException ex)
 			{
 				tsdb.warning(module + " cannot compile subversion '" + subVer 
+					+ "', pattern='" + pat + "': " + ex);
+			}
+		}
+		
+		baseVersionPatterns.clear();
+		ArrayList<String> baseVers = tsGroup.getOtherMembers("BaseVersion");
+		for(String baseVer : baseVers)
+		{
+			String pat = makePatternString("BaseVersion", baseVer);
+			try
+			{
+				baseVersionPatterns.add(Pattern.compile(pat));
+			}
+			catch(PatternSyntaxException ex)
+			{
+				tsdb.warning(module + " cannot compile baseversion '" + baseVer 
+					+ "', pattern='" + pat + "': " + ex);
+			}
+		}
+		
+		fullVersionPatterns.clear();
+		ArrayList<String> fullVers = tsGroup.getOtherMembers("Version");
+		for(String fullVer : fullVers)
+		{
+			String pat = makePatternString("FullVersion", fullVer);
+			try
+			{
+				fullVersionPatterns.add(Pattern.compile(pat));
+			}
+			catch(PatternSyntaxException ex)
+			{
+				tsdb.warning(module + " cannot compile fullversion '" + fullVer 
 					+ "', pattern='" + pat + "': " + ex);
 			}
 		}
@@ -168,7 +273,6 @@ tsdb.debug1("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
 				sb.append(c);
 		}
 		sb.append("$");
-Logger.instance().debug1("\t" + label + " input='" + subpart + "' converted='" + sb.toString() + "'");
 		
 		return sb.toString();
 	}
@@ -187,11 +291,14 @@ Logger.instance().debug1("\t" + label + " input='" + subpart + "' converted='" +
 				+ ", #sites=" + siteIds.size() + ", tsidSiteId=" 
 				+ (tsid.getSite() == null ? "null" : 
 					("ID=" + tsid.getSite().getId() + ", " + tsid.getSite().getPreferredName().getNameValue())));
-for(DbKey sid : siteIds)
-	tsdb.debug1("    siteID=" + sid);
 			justPrimed = false;
 		}
-		if (siteIds.size() > 0)
+
+		CwmsTsId ctsid = (CwmsTsId)tsid;
+
+		// User could enter an actual site plus another site with wildcard, then
+		// I would have one actual siteId and one pattern.
+		if (siteIds.size() > 0 || fullLocPatterns.size() > 0)
 		{
 			boolean passedSite = false;
 			for(DbKey siteId : siteIds)
@@ -201,14 +308,30 @@ for(DbKey sid : siteIds)
 					break;
 				}
 			if (!passedSite)
+			{
+				String tsidfullLoc = ctsid.getPart("location");
+				if (tsidfullLoc != null && tsidfullLoc.length() > 0)
+				{
+					tsidfullLoc = tsidfullLoc.toUpperCase();
+					for(Pattern slp : fullLocPatterns)
+					{
+						Matcher m = slp.matcher(tsidfullLoc);
+						if (m.matches())
+						{
+							passedSite = true;
+							break;
+						}
+					}
+				}
+			}
+			
+			if (!passedSite)
 				return false;
 			matches++;
 		}
-		
-		CwmsTsId ctsid = (CwmsTsId)tsid;
 
 		ArrayList<DbKey> dtIds = tsGroup.getDataTypeIdList();
-		if (dtIds.size() > 0)
+		if (dtIds.size() > 0 || fullParamPatterns.size() > 0)
 		{
 			boolean passedDT = false;
 			for(DbKey dtId : dtIds)
@@ -229,8 +352,28 @@ for(DbKey sid : siteIds)
 						if (dt != null && dt.getCode().equalsIgnoreCase(tsidDt.getCode()))
 						{
 							passedDT = true;
+							break;
 						}
 					}
+				
+				if (!passedDT && fullParamPatterns.size() > 0)
+				{
+					// fullParam can use regex to handle wildcards
+					String tsidfull = ctsid.getPart("param");
+					if (tsidfull != null && tsidfull.length() > 0)
+					{
+						tsidfull = tsidfull.toUpperCase();
+						for(Pattern sp : fullParamPatterns)
+						{
+							Matcher m = sp.matcher(tsidfull);
+							if (m.matches())
+							{
+								passedDT = true;
+								break;
+							}
+						}
+					}
+				}
 			}
 	
 			if (!passedDT)
@@ -284,36 +427,6 @@ for(DbKey sid : siteIds)
 			matches++;
 		}
 
-		ArrayList<String> versions = tsGroup.getOtherMembers("Version");
-		if (versions.size() > 0)
-		{
-			boolean passedVer = false;
-			for(String ver : versions)
-				if (ctsid.getVersion() != null && ver.equalsIgnoreCase(ctsid.getVersion()))
-				{
-					passedVer = true;
-					break;
-				}
-			if (!passedVer)
-				return false;
-			matches++;
-		}
-		
-		ArrayList<String> baseLocs = tsGroup.getOtherMembers("BaseLocation");
-		if (baseLocs.size() > 0)
-		{
-			boolean passed = false;
-			for(String bl : baseLocs)
-				if (ctsid.getBaseLoc() != null && bl.equalsIgnoreCase(ctsid.getBaseLoc()))
-				{
-					passed = true;
-					break;
-				}
-			if (!passed)
-				return false;
-			matches++;
-		}
-
 		// Subloc uses regex to handle wildcards
 		if (subLocPatterns.size() > 0)
 		{			
@@ -337,16 +450,24 @@ for(DbKey sid : siteIds)
 			matches++;
 		}
 		
-		ArrayList<String> baseParams = tsGroup.getOtherMembers("BaseParam");
-		if (baseParams.size() > 0)
-		{
+		// baseloc uses regex to handle wildcards
+		if (baseLocPatterns.size() > 0)
+		{			
 			boolean passed = false;
-			for(String bp : baseParams)
-				if (ctsid.getBaseParam() != null && bp.equalsIgnoreCase(ctsid.getBaseParam()))
+			String tsidbaseLoc = ctsid.getBaseLoc();
+			if (tsidbaseLoc != null && tsidbaseLoc.length() > 0)
+			{
+				tsidbaseLoc = tsidbaseLoc.toUpperCase();
+				for(Pattern slp : baseLocPatterns)
 				{
-					passed = true;
-					break;
+					Matcher m = slp.matcher(tsidbaseLoc);
+					if (m.matches())
+					{
+						passed = true;
+						break;
+					}
 				}
+			}
 			if (!passed)
 				return false;
 			matches++;
@@ -374,22 +495,29 @@ for(DbKey sid : siteIds)
 				return false;
 			matches++;
 		}
-
-		ArrayList<String> baseVersions = tsGroup.getOtherMembers("BaseVersion");
-		if (baseVersions.size() > 0)
-		{
+		
+		// baseParam uses regex to handle wildcards
+		if (baseParamPatterns.size() > 0)
+		{			
 			boolean passed = false;
-			for(String bv : baseVersions)
-				if (ctsid.getBaseVersion() != null && bv.equalsIgnoreCase(ctsid.getBaseVersion()))
+			String tsidbase = ctsid.getBaseParam();
+			if (tsidbase != null && tsidbase.length() > 0)
+			{
+				tsidbase = tsidbase.toUpperCase();
+				for(Pattern sp : baseParamPatterns)
 				{
-					passed = true;
-					break;
+					Matcher m = sp.matcher(tsidbase);
+					if (m.matches())
+					{
+						passed = true;
+						break;
+					}
 				}
+			}
 			if (!passed)
 				return false;
 			matches++;
 		}
-		
 		
 		// SubVersion uses regex to handle wildcards
 		if (subVersionPatterns.size() > 0)
@@ -413,9 +541,54 @@ for(DbKey sid : siteIds)
 				return false;
 			matches++;
 		}
+		
+		// baseVersion uses regex to handle wildcards
+		if (baseVersionPatterns.size() > 0)
+		{			
+			boolean passed = false;
+			String tsidbase = ctsid.getBaseVersion();
+			if (tsidbase != null && tsidbase.length() > 0)
+			{
+				tsidbase = tsidbase.toUpperCase();
+				for(Pattern sp : baseVersionPatterns)
+				{
+					Matcher m = sp.matcher(tsidbase);
+					if (m.matches())
+					{
+						passed = true;
+						break;
+					}
+				}
+			}
+			if (!passed)
+				return false;
+			matches++;
+		}
 
+		// fullVersion uses regex to handle wildcards
+		if (fullVersionPatterns.size() > 0)
+		{			
+			boolean passed = false;
+			String tsidfull = ctsid.getVersion();
+			if (tsidfull != null && tsidfull.length() > 0)
+			{
+				tsidfull = tsidfull.toUpperCase();
+				for(Pattern sp : fullVersionPatterns)
+				{
+					Matcher m = sp.matcher(tsidfull);
+					if (m.matches())
+					{
+						passed = true;
+						break;
+					}
+				}
+			}
+			if (!passed)
+				return false;
+			matches++;
+		}
 
-		// Passed all the checks.
+		// Passed all the checks and at least one was specified
 		return matches > 0;
 	}
 

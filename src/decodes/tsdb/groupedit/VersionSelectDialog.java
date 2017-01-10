@@ -310,6 +310,17 @@ public class VersionSelectDialog
 			return null;
 		return new StringPair(label, value);
 	}
+	
+	public void setResult(StringPair r)
+	{
+		if (r.first.toLowerCase().startsWith("base"))
+			baseRadio.setSelected(true);
+		else if (r.first.toLowerCase().startsWith("sub"))
+			subRadio.setSelected(true);
+		else
+			fullRadio.setSelected(true);
+		resultField.setText(r.second);
+	}
 
 	public void setCurrentValue(String value)
 	{

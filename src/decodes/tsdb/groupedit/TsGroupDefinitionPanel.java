@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2016/11/21 16:04:03  mmaloney
+ * Code Cleanup.
+ *
  * Revision 1.8  2016/11/03 19:08:05  mmaloney
  * Implement new Location, Param, and Version dialogs for CWMS.
  *
@@ -73,6 +76,8 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -605,6 +610,21 @@ public class TsGroupDefinitionPanel
 		
 		queryTable = new SortingListTable(queryModel, QuerySelectorTableModel.colWidths);
 		
+		//==============
+		//TODO Here
+		
+		queryTable.addMouseListener(
+			new MouseAdapter()
+			{
+				public void mouseClicked(MouseEvent e)
+				{
+					if (e.getClickCount() == 2)
+						modifyQueryParam();
+				}
+			});
+
+//		=================
+		
 //		listPane.getViewport().add(queryList, null);
 		listPane.getViewport().add(queryTable, null);
 
@@ -805,26 +825,17 @@ public class TsGroupDefinitionPanel
 				String label = sp.first;
 				String value = sp.second;
 				
-				if (label.equalsIgnoreCase("site") || label.equalsIgnoreCase("location"))
+				if (label.equalsIgnoreCase("site") 
+				 || (label.equalsIgnoreCase("location") && !value.contains("*")))
 				{
-//					boolean found = false;
-//					for(Site st: knownSites)
-//						if (st.hasNameValue(sp.second))
-//						{
-//							tempGroup.addSiteId(st.getId());
-//							found = true;
-//							break;
-//						}
-//					if (!found)
-//					{
-						DbKey siteId = siteDAO.lookupSiteID(sp.second);
-						if (siteId != null)
-							tempGroup.addSiteId(siteId);
-						else
-							Logger.instance().warning("No match for sitename '" + value + "' -- ignored.");
-//					}
+					DbKey siteId = siteDAO.lookupSiteID(sp.second);
+					if (siteId != null)
+						tempGroup.addSiteId(siteId);
+					else
+						Logger.instance().warning("No match for sitename '" + value + "' -- ignored.");
 				}
-				else if (label.equalsIgnoreCase("datatype") || label.equalsIgnoreCase("param"))
+				else if (label.equalsIgnoreCase("datatype") 
+					  || (label.equalsIgnoreCase("param") && !value.contains("*")))
 				{
 					boolean found = false;
 					for(DataType dt : dataTypeList)
@@ -1606,6 +1617,66 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 //				queryListModel.addElement(listItem);
 		}
 	}
+	protected void modifyQueryParam()
+	{
+		// TODO Auto-generated method stub
+		//TODO
+		int r = queryTable.getSelectedRow();
+		if (r == -1)
+			return;
+		StringPair query = (StringPair)queryModel.getRowObject(r);
+		if (query == null)
+			return;
+		String keyStr = query.first;
+		if (keyStr.toLowerCase().contains("location"))
+		{
+			// CWMS Location Selection
+			LocSelectDialog locSelectDialog = new LocSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+				SelectionMode.GroupEdit);
+			locSelectDialog.setResult(query);
+			
+			parent.launchDialog(locSelectDialog);
+			if (!locSelectDialog.isCancelled())
+			{
+				StringPair result = locSelectDialog.getResult();
+				if (result != null)
+					queryModel.setValueAt(r, result);
+			}
+		}
+		else if (keyStr.toLowerCase().endsWith("param"))
+		{
+			// CWMS Param Selection
+			ParamSelectDialog paramSelectDialog = new ParamSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+				SelectionMode.GroupEdit);
+			paramSelectDialog.setResult(query);
+			parent.launchDialog(paramSelectDialog);
+			if (!paramSelectDialog.isCancelled())
+			{
+				StringPair result = paramSelectDialog.getResult();
+				if (result != null)
+					queryModel.setValueAt(r, result);
+			}
+		}
+		else if (keyStr.toLowerCase().contains("version"))
+		{
+			// CWMS Param Selection
+			VersionSelectDialog versionSelectDialog = new VersionSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+				SelectionMode.GroupEdit);
+			versionSelectDialog.setResult(query);
+			parent.launchDialog(versionSelectDialog);
+			if (!versionSelectDialog.isCancelled())
+			{
+				StringPair result = versionSelectDialog.getResult();
+				if (result != null)
+					queryModel.setValueAt(r, result);
+			}
+		}
+		else
+			return;
+		
+	}
+
+
 
 	public void setTimeSeriesSelectDialog(
 			TimeSeriesSelectDialog timeSeriesSelectDialog)
@@ -1735,6 +1806,12 @@ class QuerySelectorTableModel
 	public Object getRowObject(int row)
 	{
 		return row >= 0 && row < items.size() ? items.get(row) : null;
+	}
+	
+	public void setValueAt(int row, StringPair v)
+	{
+		items.set(row, v);
+		fireTableDataChanged();
 	}
 	
 	void clear()
