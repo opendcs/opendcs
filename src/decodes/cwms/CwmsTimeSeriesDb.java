@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.19  2016/12/16 14:20:27  mmaloney
+*  Enhanced resolver to allow triggering from a time series with unrelated location.
+*
 *  Revision 1.18  2016/11/29 00:56:02  mmaloney
 *  Mods to transformUniqueString to handle wildcards.
 *
@@ -1733,8 +1736,9 @@ for(CTimeSeries ts : allts)
 		// Examples:
 		// tsid: A-B-C   parm: D-*-F   result: D-B-F
 		// tsid: A-B     parm: *-E-F   result: A-E-F
-		// tsid: A-B-C   parm: D-*     result: D-B
+		// tsid: A-B-C   parm: D-*     result: D-B-C
 		// tsid: A       parm: D-*     result: null
+		// tsid: A-B-C   parm: *-D     result: A-D
 		
 		// Check for a partial location specification (OpenDCS 6.3)
 		String tps[] = tsidComponent.split("-");
@@ -1747,7 +1751,15 @@ for(CTimeSeries ts : allts)
 				if (idx >= tps.length)
 					return null;
 				else
-					sb.append(tps[idx]);
+				{
+					if (idx == pps.length - 1)
+					{
+						for(int tidx = idx; tidx < tps.length; tidx++)
+							sb.append(tps[tidx] + (tidx < tps.length-1 ? "-" : ""));
+					}
+					else
+						sb.append(tps[idx]);
+				}
 			}
 			else
 				sb.append(pps[idx]);
