@@ -4,21 +4,18 @@
 package decodes.dbeditor;
 
 import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.table.*;
-import javax.xml.crypto.Data;
 
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
-
 import decodes.gui.*;
 import decodes.db.*;
 import decodes.util.DecodesSettings;
@@ -26,6 +23,7 @@ import decodes.util.DecodesSettings;
 /**
 Displays a sorting-list of Platform objects in the database.
 */
+@SuppressWarnings("serial")
 public class PlatformSelectPanel extends JPanel
 {
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
@@ -55,7 +53,6 @@ public class PlatformSelectPanel extends JPanel
 						parentDialog.openPressed();
 					else if (parentPanel != null)
 						parentPanel.openPressed();
-//	       			((PlatformListPanel)PlatformSelectPanel.this.getParent()).openPressed();
 				}
 			}
 		} );

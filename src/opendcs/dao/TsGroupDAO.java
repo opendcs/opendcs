@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.9  2017/01/06 16:42:10  mmaloney
+* Misc Bug Fixes
+*
 * Revision 1.8  2016/12/16 14:49:16  mmaloney
 * TYPO
 *
@@ -45,8 +48,6 @@ import java.util.Iterator;
 
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
-import opendcs.dao.DbObjectCache.CacheIterator;
-import decodes.db.Constants;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
@@ -534,8 +535,8 @@ public class TsGroupDAO
 		
 		// Disable any computation that uses this group directly and null the reference
 		String q = "SELECT COMPUTATION_ID FROM CP_COMPUTATION WHERE GROUP_ID = " + deletedGroupId;
-		ResultSet rs = doQuery(q);
 		ArrayList<DbKey> comps2disable = new ArrayList<DbKey>();
+		ResultSet rs = doQuery(q);
 		try
 		{
 			while(rs.next())
@@ -547,7 +548,7 @@ public class TsGroupDAO
 			warning(msg);
 			throw new DbIoException(msg);
 		}
-
+		
 		q = "UPDATE CP_COMPUTATION SET ENABLED = 'N', GROUP_ID = NULL,"
 			+ " DATE_TIME_LOADED = " + db.sqlDate(new Date())
 			+ " WHERE GROUP_ID = " + deletedGroupId;
