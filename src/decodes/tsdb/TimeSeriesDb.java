@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.9  2016/12/16 14:36:04  mmaloney
+*  Moved code to adjust comp dependencies when a group is modified to the DAO.
+*
 *  Revision 1.8  2016/11/03 19:03:56  mmaloney
 *  Refactoring for group evaluation to make HDB work the same way as CWMS.
 *
@@ -2543,7 +2546,9 @@ public abstract class TimeSeriesDb
 	public ArrayList<TimeSeriesIdentifier> expandTsGroup(TsGroup tsGroup)
 		throws DbIoException
 	{
-		GroupHelper groupHelper = this.makeGroupHelper();
+		GroupHelper groupHelper = makeGroupHelper();
+		if (groupHelper == null)
+			return new ArrayList<TimeSeriesIdentifier>();
 		groupHelper.expandTsGroup(tsGroup);
 		return tsGroup.getExpandedList();
 	}
