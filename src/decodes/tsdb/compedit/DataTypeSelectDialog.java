@@ -17,19 +17,10 @@ import decodes.gui.*;
 
 public class DataTypeSelectDialog extends GuiDialog
 {
-    JPanel panel1 = new JPanel();
-    JPanel jPanel1 = new JPanel();
-    FlowLayout flowLayout1 = new FlowLayout();
     JButton selectButton = new JButton();
     JButton cancelButton = new JButton();
 
-    BorderLayout borderLayout1 = new BorderLayout();
-    JPanel jPanel2 = new JPanel();
-    BorderLayout borderLayout2 = new BorderLayout();
-    TitledBorder titledBorder1;
 	JPanel dtSelectPanel = new JPanel();
-    Border border1;
-	BorderLayout borderLayout3 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
 	JTable dtListTable;
 	public static boolean isHdb = false;
@@ -73,9 +64,10 @@ public class DataTypeSelectDialog extends GuiDialog
         try 
 		{
             jbInit();
+            pack();
 			
-			dtSelectPanel.setLayout(borderLayout3);
-			jScrollPane1.setPreferredSize(new Dimension(453, 300));
+			dtSelectPanel.setLayout(new BorderLayout());
+//			jScrollPane1.setMinimumSize(new Dimension(453, 300));
         	dtSelectPanel.add(jScrollPane1, BorderLayout.CENTER);
 
 			SortingListTableModel tabmod = 
@@ -98,13 +90,8 @@ public class DataTypeSelectDialog extends GuiDialog
 	/** Initializes GUI components */
     void jbInit() throws Exception 
 	{
-        titledBorder1 = new TitledBorder(
-			BorderFactory.createLineBorder(new Color(153, 153, 153),2),
-			"Select Data Type");
-        border1 = BorderFactory.createCompoundBorder(titledBorder1,
-			BorderFactory.createEmptyBorder(5,5,5,5));
-        panel1.setLayout(borderLayout1);
-        jPanel1.setLayout(flowLayout1);
+        JPanel overallPanel = new JPanel(new BorderLayout());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 35, 10));
         selectButton.setText(CAPEdit.instance().genericDescriptions
         		.getString("select"));
         selectButton.addActionListener(
@@ -125,17 +112,16 @@ public class DataTypeSelectDialog extends GuiDialog
 					cancelButtonPressed(); 
 				}
         	});
+        buttonPanel.add(selectButton, null);
+        buttonPanel.add(cancelButton, null);
 
-        flowLayout1.setHgap(35);
-        flowLayout1.setVgap(10);
-        jPanel2.setLayout(borderLayout2);
-        jPanel2.setBorder(border1);
-        getContentPane().add(panel1);
-        panel1.add(jPanel1, BorderLayout.SOUTH);
-        jPanel1.add(selectButton, null);
-        jPanel1.add(cancelButton, null);
-        panel1.add(jPanel2, BorderLayout.CENTER);
-        jPanel2.add(dtSelectPanel, BorderLayout.NORTH);
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBorder(new TitledBorder("Matching Time Series for site '" + siteName + "'"));
+        tablePanel.add(dtSelectPanel, BorderLayout.CENTER);
+
+        overallPanel.add(buttonPanel, BorderLayout.SOUTH);
+        overallPanel.add(tablePanel, BorderLayout.CENTER);
+        getContentPane().add(overallPanel);
     }
 
 	/**

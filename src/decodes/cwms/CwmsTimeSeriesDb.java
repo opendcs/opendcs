@@ -12,6 +12,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.20  2017/01/10 21:46:11  mmaloney
+*  Enhanced wildcard processing for CWMS as per punchlist for comp-depends project
+*  for NWP.
+*
 *  Revision 1.19  2016/12/16 14:20:27  mmaloney
 *  Enhanced resolver to allow triggering from a time series with unrelated location.
 *
@@ -1049,15 +1053,11 @@ public class CwmsTimeSeriesDb
 	}
 
 	/**
-	 * Used to present user with a list of valid datatypes 
-	 * for a given site. Returns 2-dimensional array of Strings suitable
-	 * for populating a table from which the user can select.
-	 * The first row of the table (i.e. r[0]) must contain the column
-	 * header strings.
-	 * MJM - For CWMS we show all 5 path components for the site.
-	 * @param siteId the ID of the site
-	 * @return 2-dimensional array of strings, containing data types.
+	 * For CWMS we show all 5 path components for the site.
+	 * 
+	 * {@inheritDoc}
 	 */
+	@Override
 	public ArrayList<String[]> getDataTypesForSite(DbKey siteId)
 		throws DbIoException
 	{

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2016/10/11 19:03:55  mmaloney
+ * Final GUI Prototype
+ *
  * Revision 1.4  2016/06/27 15:41:00  mmaloney
  * Improve wording for data type prompt.
  *
@@ -103,6 +106,7 @@ import opendcs.dai.SiteDAI;
 
 import java.util.Calendar;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 
@@ -127,6 +131,7 @@ import decodes.tsdb.MissingAction;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.algo.RoleTypes;
 import decodes.tsdb.groupedit.LocSelectDialog;
@@ -1007,16 +1012,53 @@ Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : s
 	private void selectTsButtonPressed()
 	{
 		String siteName = siteField.getText().trim();
+		if (siteName.length() == 0)
+		{
+			showError("Enter a Site/Location name to lookup time series.");
+			return;
+		}
 		DbKey siteId = Constants.undefinedId;
 		ArrayList<String[]> dataTypes;
 		SiteDAI siteDAO = theDb.makeSiteDAO();
 		try
 		{
-//			if (siteName.length() > 0 && !parent.hasGroupInput())
-			if (siteName.length() > 0) // Don't restrict this feature to non-group comps!
+			siteId = siteDAO.lookupSiteID(siteName);
+			if (DbKey.isNull(siteId))
 			{
-				siteId = siteDAO.lookupSiteID(siteName);
-				if (siteId == Constants.undefinedId)
+				if (theDb.isCwms() && siteName.contains("*"))
+				{
+					TsGroup tmpGroup = new TsGroup();
+					tmpGroup.setGroupName("tmp");
+					tmpGroup.setTransient();
+					tmpGroup.addOtherMember("location", siteName);
+					ArrayList<TimeSeriesIdentifier> tslist = theDb.expandTsGroup(tmpGroup);
+					if (tslist.size() == 0)
+					{
+						showError("No time series match site spec '" + siteName + "'");
+						return;
+					}
+					dataTypes = new ArrayList<String[]>();
+					
+					String tsIdParts[] = theDb.getTsIdParts();
+					String hdr[] = new String[tsIdParts.length-1];
+					for(int idx=1; idx < tsIdParts.length; idx++)
+						hdr[idx-1] = tsIdParts[idx];
+					dataTypes.add(hdr);
+					HashSet<String> inList = new HashSet<String>();
+					for(TimeSeriesIdentifier tsid : tslist)
+					{
+						String tsidstr=tsid.getUniqueString();
+						tsidstr = tsidstr.substring(tsidstr.indexOf('.'));
+						if (inList.add(tsidstr))
+						{
+							String row[] = new String[hdr.length];
+							for(int idx=0; idx < hdr.length; idx++)
+								row[idx] = tsid.getPart(hdr[idx]);
+							dataTypes.add(row);
+						}
+					}
+				}
+				else
 				{
 					showError(LoadResourceBundle.sprintf(ceResources
 						.getString("CompParmDialog.LookupButtonError2"),
@@ -1024,8 +1066,8 @@ Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : s
 					return;
 				}
 			}
-
-			dataTypes = theDb.getDataTypesForSite(siteId);
+			else
+				dataTypes = theDb.getDataTypesForSite(siteId);
 		}
 		catch (Exception ex)
 		{
