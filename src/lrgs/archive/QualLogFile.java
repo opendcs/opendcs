@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2015/04/02 18:27:04  mmaloney
+*  Store & retrieve EDL file statistics.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -186,8 +189,8 @@ public class QualLogFile
 				edlIdx = i;
 		}
 
-//		Logger.instance().debug1("Reading quality log, domsatIdx=" + domsatIdx
-//			+ ", ddsIdx=" + ddsIdx + ", drgsIdx=" + drgsIdx);
+Logger.instance().info("Reading quality log, domsatIdx=" + domsatIdx
+	+ ", ddsIdx=" + ddsIdx + ", drgsIdx=" + drgsIdx + ", edlIdx=" + edlIdx);
 
 		// We only are interested in last 24 hours.
 		long cutoff = (System.currentTimeMillis() / 3600000L) * 3600000L;
@@ -295,6 +298,8 @@ public class QualLogFile
 				{
 					lsse.downlinkQMs[edlIdx].dl_qual[h].containsData = true;
 					lsse.downlinkQMs[edlIdx].dl_qual[h].numGood += qle.edlCount;
+//Logger.instance().info("QualLogFile found EDL count for hour=" + h + ", v=" + qle.edlCount
+//+ ", tally now=" + lsse.downlinkQMs[edlIdx].dl_qual[h].numGood);
 				}
 			}
 		}

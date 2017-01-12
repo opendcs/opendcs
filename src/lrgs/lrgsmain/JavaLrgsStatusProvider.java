@@ -274,6 +274,8 @@ public class JavaLrgsStatusProvider
 					drgsRecvMainSlotNum = i;
 				else if (dl.type == LrgsInputInterface.DL_NETWORKDCP)
 					networkDcpMainSlotNum = i;
+//				else if (dl.type == LrgsInputInterface.DL_EDL)
+//					edlSlotNum = i;
 				
 				dl.group = lii.getGroup(); 
 			}

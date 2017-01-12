@@ -463,7 +463,22 @@ public class LrgsMain
 		// Initialize the DRGS Receive Module.
 		drgsRecv = new DrgsRecv(this, msgArchive);
 		addInput(drgsRecv);
-
+		
+		// EDL Input Interface watches hot directories for EDL files.
+		if (cfg.edlIngestEnable)
+		{
+			EdlInputInterface edlII = new EdlInputInterface(this);
+			try
+			{
+				edlII.initLrgsInput();
+				addInput(edlII);
+			}
+			catch (LrgsInputException ex)
+			{
+				Logger.instance().failure("Cannot start EdlInputInterface: " + ex);
+			}
+		}
+		
 		// We have to initialize the quality log so that the DDS receiver
 		// picks up where it left off.
 		statusProvider.initQualityLog();
@@ -512,21 +527,6 @@ public class LrgsMain
 			DapsDqmInterface ddi = new DapsDqmInterface(statusProvider);
 			statusProvider.setDqmInterface(ddi);
 			ddi.start();
-		}
-		
-		// EDL Input Interface watches hot directories for EDL files.
-		if (cfg.edlIngestEnable)
-		{
-			EdlInputInterface edlII = new EdlInputInterface(this);
-			try
-			{
-				edlII.initLrgsInput();
-				addInput(edlII);
-			}
-			catch (LrgsInputException ex)
-			{
-				Logger.instance().failure("Cannot start EdlInputInterface: " + ex);
-			}
 		}
 		
 		// Config allows addition of additional input interfaces as follows:
