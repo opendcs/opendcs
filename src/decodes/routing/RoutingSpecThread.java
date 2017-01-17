@@ -251,18 +251,6 @@ public class RoutingSpecThread
 		long lastUp2DateCheck = System.currentTimeMillis();
 		//long lastStatusWrite = System.currentTimeMillis();
 
-		if (rs.enableEquations)
-		{
-			compProcessor = new ComputationProcessor();
-			try { compProcessor.init(compConfigFile, rs); }
-			catch(decodes.comp.BadConfigException ex)
-			{
-				log(Logger.E_WARNING,
-					"Cannot configure computation processor: " + ex);
-				compProcessor = null;
-			}
-		}
-		
 		if (usgsSummaryFile != null && usgsSummaryFile.length() > 0)
 		{
 			try
