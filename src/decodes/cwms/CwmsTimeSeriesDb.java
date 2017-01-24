@@ -12,6 +12,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.21  2017/01/11 14:09:14  mmaloney
+*  CompEdit CompParmDialog Lookup time Series should allow wildcards in the site name
+*  for CWMS.
+*
 *  Revision 1.20  2017/01/10 21:46:11  mmaloney
 *  Enhanced wildcard processing for CWMS as per punchlist for comp-depends project
 *  for NWP.
@@ -1731,7 +1735,7 @@ for(CTimeSeries ts : allts)
 	 * @param parmComponent The component in the comp parm, which may contain wildcards.
 	 * @return the tsid component masked by the parm component, or null if can't match.
 	 */
-	private String morph(String tsidComponent, String parmComponent)
+	public String morph(String tsidComponent, String parmComponent)
 	{
 		// Examples:
 		// tsid: A-B-C   parm: D-*-F   result: D-B-F
