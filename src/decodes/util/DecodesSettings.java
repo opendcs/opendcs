@@ -2,6 +2,11 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.17  2016/09/29 18:54:37  mmaloney
+*  CWMS-8979 Allow Database Process Record to override decodes.properties and
+*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
+*  name of a process record. Properties assigned to the app will override the file(s).
+*
 *  Revision 1.16  2016/08/05 14:45:20  mmaloney
 *  cwmsVersionOverride to account for the fact that on some versions of CWMS there is no
 *  reliable programmatic way to determine CWMS 2.1 vs CWMS 3.
@@ -400,6 +405,7 @@ public class DecodesSettings
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
+	public int tsidFetchSize = 0;
 	
 	public boolean isLoaded() { return _isLoaded; }
 
@@ -619,7 +625,11 @@ public class DecodesSettings
 		new PropertySpec("cwmsVersionOverride", PropertySpec.INT,
 			"In some versions of CWMS, the automated tests to detect version do not work."
 			+ " If this is the case, set this variable which will override the automated"
-			+ "tests. For version 3 and above, office privileges are checked.")
+			+ "tests. For version 3 and above, office privileges are checked."),
+		new PropertySpec("tsidFetchSize", PropertySpec.INT,
+			"(default=0, meaning to use the JDBC default) For databases with many thousand TSIDs,"
+			+ " increasing the fetch size can speed up application initialization.")
+
 	};
 	
 	/**

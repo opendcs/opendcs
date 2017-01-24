@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2016/11/29 00:53:23  mmaloney
+ * Overload lookupSiteID
+ *
  * Revision 1.11  2016/11/03 18:59:41  mmaloney
  * Implement wildcard evaluation for groups.
  *
@@ -412,9 +415,16 @@ ex.printStackTrace(System.err);
 
 		ArrayList<Site> siteList = new ArrayList<Site>();
 		int nNames = 0;
+		
+		
 		String q = buildSiteQuery(Constants.undefinedId);
 		try
 		{
+			int origFetchSize = getFetchSize();
+			int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
+			if (tsidFetchSize > 0)
+				setFetchSize(tsidFetchSize); 
+
 			ResultSet rs = doQuery(q);
 			while (rs != null && rs.next())
 			{
@@ -431,6 +441,9 @@ ex.printStackTrace(System.err);
 				q = q + " and upper(b.DB_OFFICE_ID) = " + sqlString(officeId);
 			
 			rs = doQuery(q);
+
+			setFetchSize(origFetchSize);
+
 			while (rs != null && rs.next())
 			{
 				DbKey key = DbKey.createDbKey(rs, 1);

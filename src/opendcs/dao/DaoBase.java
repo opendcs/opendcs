@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2014/07/03 12:53:41  mmaloney
+ * debug improvements.
+ *
  * Revision 1.2  2014/07/03 12:46:41  mmaloney
  * Make 'module' protected so that subclasses can change it.
  *
@@ -41,6 +44,7 @@ public class DaoBase
 	private ResultSet queryResults1 = null;
 	private Statement queryStmt2 = null;
 	private ResultSet queryResults2 = null;
+	private int fetchSize = 0;
 
 	protected String module;
 	
@@ -96,7 +100,14 @@ public class DaoBase
 		{
 			if (queryStmt1 == null)
 				queryStmt1 = db.getConnection().createStatement();
+			if (fetchSize > 0)
+				queryStmt1.setFetchSize(fetchSize);
 			debug3("Query1 '" + q + "'");
+			
+if (this instanceof decodes.cwms.CwmsTimeSeriesDAO
+ || this instanceof decodes.cwms.CwmsSiteDAO)
+debug1("Fetch size=" + queryStmt1.getFetchSize());
+
 			return queryResults1 = queryStmt1.executeQuery(q);
 		}
 		catch(SQLException ex)
@@ -256,5 +267,15 @@ public class DaoBase
 	public boolean checkCachedObjectOK(CachableDbObject ob)
 	{
 		return true;
+	}
+
+	public int getFetchSize()
+	{
+		return fetchSize;
+	}
+
+	public void setFetchSize(int fetchSize)
+	{
+		this.fetchSize = fetchSize;
 	}
 }

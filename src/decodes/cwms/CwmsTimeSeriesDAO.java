@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.16  2016/11/21 16:04:04  mmaloney
+ * Code Cleanup.
+ *
  * Revision 1.15  2016/11/19 15:58:02  mmaloney
  * Support wildcards
  *
@@ -71,7 +74,6 @@ import java.util.Date;
 import java.util.Iterator;
 
 import cwmsdb.CwmsTsJdbc;
-
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Site;
@@ -87,6 +89,7 @@ import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.VarFlags;
+import decodes.util.DecodesSettings;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
@@ -101,17 +104,17 @@ public class CwmsTimeSeriesDAO
 {
 	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
 		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
-	private static boolean firstCall = true;
+//	private static boolean firstCall = true;
 	protected SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	private String dbOfficeId = null;
 	private static boolean noUnitConv = false;
 	private static long lastCacheReload = 0L;
 	private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
-			+ "a.UNIT_ID, a.PARAMETER_ID, c.PUBLIC_NAME, a.TS_CODE, a.LOCATION_CODE, "
-			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a, CWMS_V_LOC c";
-	private String cwmsTsidJoinClause = "a.LOCATION_CODE = c.LOCATION_CODE "
-		+ " AND c.UNIT_SYSTEM = 'SI'";
+			+ "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
+			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a";
+//	private String cwmsTsidJoinClause = "a.LOCATION_CODE = c.LOCATION_CODE "
+//		+ " AND c.UNIT_SYSTEM = 'SI'";
 
 	protected CwmsTimeSeriesDAO(DatabaseConnectionOwner tsdb, String dbOfficeId)
 	{
@@ -135,11 +138,8 @@ public class CwmsTimeSeriesDAO
 			}
 		}
 		
-		if (firstCall)
-		{
+		if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
 			reloadTsIdCache();
-			firstCall = false;
-		}
 		CwmsTsId ret = (CwmsTsId)cache.getByKey(key);
 		
 		if (ret != null)
@@ -153,8 +153,8 @@ public class CwmsTimeSeriesDAO
 		}
 	
 		String q = cwmsTsidQueryBase
-			+ " WHERE a.TS_CODE = " + key
-			+ " AND " + cwmsTsidJoinClause;
+			+ " WHERE a.TS_CODE = " + key;
+//			+ " AND " + cwmsTsidJoinClause;
 		// Don't need to add DB_OFFICE_ID because TS_CODE is unique.
 		
 		try
@@ -184,7 +184,7 @@ public class CwmsTimeSeriesDAO
 		throws SQLException, DbIoException, NoSuchObjectException
 	{
 //		private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
-//			+ "a.UNIT_ID, a.PARAMETER_ID, c.PUBLIC_NAME, a.TS_CODE, a.LOCATION_CODE, "
+//			+ "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
 //			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a, CWMS_V_LOC c";
 
 		
@@ -192,7 +192,7 @@ public class CwmsTimeSeriesDAO
 		DbKey key = DbKey.createDbKey(rs, 7);
 		String desc = rs.getString(1);
 		String param = rs.getString(5);
-		String publicSiteName = rs.getString(6);
+//		String publicSiteName = rs.getString(6);
 		DataType dt = 
 			DataType.getDataType(Constants.datatype_CWMS, param);
 		
@@ -200,14 +200,15 @@ public class CwmsTimeSeriesDAO
 			desc, TextUtil.str2boolean(rs.getString(2)),
 			rs.getInt(3), rs.getString(4));
 		
-		ret.setSiteDisplayName(publicSiteName);
-		ret.setDescription(param + " at " + publicSiteName);
 		
 		DbKey siteId = DbKey.createDbKey(rs, 8);
 		Site site = siteDAO.getSiteById(siteId);
 		site.addName(new SiteName(site, Constants.snt_CWMS, rs.getString(9)));
-		site.setDescription(publicSiteName);
 		ret.setSite(site);
+		
+		ret.setSiteDisplayName(site.getPublicName());
+		ret.setDescription(param + " at " + site.getPublicName());
+		
 		ret.setActive(TextUtil.str2boolean(rs.getString(10)));
 	
 		if (decodes.db.Database.getDb().getDbIo().getDatabaseType().equalsIgnoreCase("XML"))
@@ -239,11 +240,8 @@ public class CwmsTimeSeriesDAO
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
 		throws DbIoException, NoSuchObjectException
 	{
-		if (firstCall)
-		{
+		if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
 			reloadTsIdCache();
-			firstCall = false;
-		}
 
 		int paren = uniqueString.lastIndexOf('(');
 		String displayName = null;
@@ -1022,17 +1020,23 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 	public void reloadTsIdCache() throws DbIoException
 	{
 		debug1("reloadTsIdCache()");
+		
 		// Each TSID will need a site, so prefill the site cache to prevent
 		// it from doing individual reads for each site.
-		siteDAO.fillCache();
+//		siteDAO.fillCache();
 		
 		String q = cwmsTsidQueryBase
-			+ " WHERE " + cwmsTsidJoinClause 
-			+ " and upper(a.DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
+			+ " WHERE upper(a.DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
 
 		try
 		{
+			int origFetchSize = getFetchSize();
+			int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
+			if (tsidFetchSize > 0)
+				setFetchSize(tsidFetchSize); 
 			ResultSet rs = doQuery(q);
+			setFetchSize(origFetchSize);
+			
 			while (rs != null && rs.next())
 				try
 				{
