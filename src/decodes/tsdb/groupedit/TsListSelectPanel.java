@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.6  2016/11/29 01:15:47  mmaloney
+ * Refactor listTimeSeries to make refresh explicit.
+ *
  * Revision 1.5  2016/11/21 16:04:03  mmaloney
  * Code Cleanup.
  *
@@ -315,7 +318,7 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 		try
 		{
 			//Fetch the time series identifiers for the tsDb
-			tsidList = timeSeriesDAO.listTimeSeries(true);
+			tsidList = timeSeriesDAO.listTimeSeries(false);
 			
 			if (tsidList == null)
 			{

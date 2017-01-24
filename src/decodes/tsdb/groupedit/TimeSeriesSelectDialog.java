@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2016/11/29 01:13:21  mmaloney
+ * Refactor TimeSeriesSelectDialog.
+ *
  * Revision 1.4  2016/11/21 16:04:03  mmaloney
  * Code Cleanup.
  *
@@ -98,8 +101,6 @@ public class TimeSeriesSelectDialog extends GuiDialog
 		dd = null;
 		setAllLabels();
 		ddSelectPanel = new TsListSelectPanel(tsDb, true, fillAll);
-		if (fillAll)
-			ddSelectPanel.refreshTSIDList();
         try {
             jbInit();
 			getRootPane().setDefaultButton(selectButton);
