@@ -77,6 +77,22 @@ public class PlatformList extends DatabaseObject
 			}
 		}
 	}
+	
+	private void refillCurrentPlatformMap()
+	{
+		currentPlatformMap.clear();
+		for(Platform plat : platformVec)
+		{
+			if (plat.expiration == null)
+			{
+				for(Iterator<TransportMedium> tmit = plat.getTransportMedia(); tmit.hasNext(); )
+				{
+					TransportMedium tm = tmit.next();
+					currentPlatformMap.put(tm.getTmKey(), plat);
+				}
+			}
+		}
+	}
 
 	
 	/** 
@@ -544,6 +560,7 @@ public class PlatformList extends DatabaseObject
 			myDatabase.siteList.read();
 		myDatabase.getDbIo().readPlatformList(this);
 		listWasRead = true;
+		refillCurrentPlatformMap();
 //System.out.println("Read Platform List: " + size() + " entries.");
 	}
 
