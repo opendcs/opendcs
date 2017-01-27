@@ -81,6 +81,7 @@ public class PlatformList extends DatabaseObject
 	private void refillCurrentPlatformMap()
 	{
 		currentPlatformMap.clear();
+		int tms = 0;
 		for(Platform plat : platformVec)
 		{
 			if (plat.expiration == null)
@@ -88,10 +89,15 @@ public class PlatformList extends DatabaseObject
 				for(Iterator<TransportMedium> tmit = plat.getTransportMedia(); tmit.hasNext(); )
 				{
 					TransportMedium tm = tmit.next();
-					currentPlatformMap.put(tm.getTmKey(), plat);
+					String key = tm.getTmKey();
+					currentPlatformMap.put(key, plat);
+if (tm.getMediumId().equalsIgnoreCase("CE5E7ABA"))
+	Logger.instance().info("Added tm map for " + key);
+					tms++;
 				}
 			}
 		}
+Logger.instance().debug3("" + tms + " TMs processed, map size=" + currentPlatformMap.size());
 	}
 
 	

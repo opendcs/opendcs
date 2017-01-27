@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.12  2016/07/20 15:42:55  mmaloney
+ * Catch exceptions that violate uniqueness constraing on site,designator.
+ *
  * Revision 1.11  2015/11/12 15:21:30  mmaloney
  * Uncommented the line in update() to set siteID. Why was this ever commented out???
  *
@@ -213,6 +216,7 @@ public class PlatformListIO extends SqlDbObjIo
 				 "LastModifyTime, Expiration " +
 				 "FROM Platform");
 
+		debug3("Executing query '" + q + "'");
 		ResultSet rs = stmt.executeQuery(q);
 
 		if (rs != null) {
@@ -275,6 +279,7 @@ public class PlatformListIO extends SqlDbObjIo
 	{
 		Statement stmt = createStatement();
 		String q = "select " + getTmColumns() + " from TransportMedium ";
+		debug3("Executing query '" + q + "'");
 		ResultSet rs = stmt.executeQuery(q);
 		while (rs != null && rs.next()) 
 		{
