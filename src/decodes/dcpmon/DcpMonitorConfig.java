@@ -3,6 +3,7 @@
 */
 package decodes.dcpmon;
 
+import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.io.File;
@@ -106,9 +107,6 @@ public class DcpMonitorConfig
 	
 	public int statusErrorThreshold = 3600 * 4;
 	
-	/** @deprecated */
-	public String nlNamePrefix = "";
-	
 	/** For web service components, we need a singleton */
 	private static DcpMonitorConfig _instance = new DcpMonitorConfig();
 	public static DcpMonitorConfig instance() { return _instance; }
@@ -117,7 +115,6 @@ public class DcpMonitorConfig
 	public DcpMonitorConfig()
 	{
 		dcpmonNameType = "dcpmon";
-//		nlNamePrefix = "DCPMonDONOTMODIFY-";
 	}
 
 	/**
@@ -129,6 +126,7 @@ public class DcpMonitorConfig
 		PropertiesUtil.loadFromProps(this, props, ignorePfx);
 		this.rawProps = props;
 		lastLoadTime = System.currentTimeMillis();
+Logger.instance().info("DcpMonitorConfig.loadFromProperties: dcpmonNameType='" + dcpmonNameType + "'");
 	}
 
 	/**
