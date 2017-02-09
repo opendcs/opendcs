@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.5  2015/06/04 21:38:17  mmaloney
+*  Added enum_ApplicationType
+*
 *  Revision 1.4  2015/01/06 16:09:31  mmaloney
 *  First cut of Polling Modules
 *
@@ -101,6 +104,8 @@ public class Constants
 	public static final String medium_METAR  = "metar";
 	public static final String medium_SutronCSV = "sutron_logger_csv";
 	public static final String medium_Eumetsat = "EUMETSAT";
+	public static final String medium_PolledModem = "polled-modem";
+	public static final String medium_PolledTcp = "polled-tcp";
 
 	// Selected values from the Enum "ContactMedium"
 	public static final String contMedium_IRIDIUM = "iridium";
