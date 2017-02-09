@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.13  2017/01/27 20:47:58  mmaloney
+ * Debugs on resolving name type.
+ *
  * Revision 1.12  2016/07/20 15:42:55  mmaloney
  * Catch exceptions that violate uniqueness constraing on site,designator.
  *
@@ -81,6 +84,7 @@ import decodes.db.TransportMedium;
 import decodes.db.Site;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.util.DecodesSettings;
 
 /**
  * This handles the I/O of the PlatformList object and some of its
@@ -120,6 +124,9 @@ public class PlatformListIO extends SqlDbObjIo
 
 	private String coltpl;
 	private String tmColumns = null;
+	
+	/** Set by the dbimport program to facilitate autoDeleteOnImport at MVR. */
+	public static boolean isDbImport = false;
 	
 	protected String getTmColumns()
 	{
@@ -698,7 +705,36 @@ public class PlatformListIO extends SqlDbObjIo
 		{
 			if (ex.toString().toLowerCase().contains("unique"))
 			{
-				Logger.instance().warning("Cannot update platform " + p.getDisplayName() + ": " + ex);
+				// This means a different platform exists with the (siteid,designator)
+				// in the above update.
+				if (isDbImport && DecodesSettings.instance().autoDeleteOnImport)
+				{
+					q = "select id from platform where siteid = " + 
+						sqlOptHasId(p.getSite()) + " and platformdesignator "
+						+ (p.getPlatformDesignator() == null || p.getPlatformDesignator().length()==0
+						  ? "is null" : ("= " + sqlString(p.getPlatformDesignator())));
+					Statement stmt = createStatement();
+					ResultSet rs = stmt.executeQuery(q);
+					DbKey pid = Constants.undefinedId;
+					if (rs != null && rs.next())
+					{
+						info("Imported platform clashes with old platform ID=" + pid 
+							+ " -- deleting old platform.");
+						pid = DbKey.createDbKey(rs, 1);
+						rs.close();
+						stmt.close();
+						Platform oldPlat = new Platform(pid);
+						delete(oldPlat);
+						// Now recursively (but only 1 level) try again.
+						isDbImport = false;
+						update(p);
+						isDbImport = true;
+					}
+					else
+						warning("Cannot update platform because of unknown clash: " + ex);
+				}
+				else
+					warning("Cannot update platform " + p.getDisplayName() + ": " + ex);
 				return;
 			}
 		}

@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.11  2016/10/14 14:03:20  mmaloney
+*  DbImport null ptr bug fix if XML file has a Platform record with no Site block. Now it will issue a warning and ignore the bad platform.
+*
 *  Revision 1.10  2016/04/15 19:27:59  mmaloney
 *  Fixed null ptr bug.
 *
@@ -66,6 +69,7 @@ import ilex.util.StderrLogger;
 import ilex.util.TeeLogger;
 import ilex.cmdline.*;
 import decodes.sql.DbKey;
+import decodes.sql.PlatformListIO;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
@@ -281,6 +285,8 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 					System.exit(1);
 			}
 		}
+		
+		PlatformListIO.isDbImport = true;
 	}
 
 	/** 
