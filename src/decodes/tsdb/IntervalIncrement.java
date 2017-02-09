@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.7  2012/10/31 15:15:58  mmaloney
  * Remove unneeded imports.
  *
@@ -200,6 +203,23 @@ public class IntervalIncrement
     	return calConstant == Calendar.HOUR_OF_DAY
     	 || calConstant == Calendar.SECOND
     	 || calConstant == Calendar.MINUTE;
+    }
+    
+    public long toMsec()
+    {
+    	switch(calConstant)
+    	{
+    	case Calendar.MILLISECOND: return count;
+    	case Calendar.SECOND: return count * 1000L;
+    	case Calendar.MINUTE: return count * 60000L;
+    	case Calendar.HOUR: return count * 3600000L;
+    	case Calendar.DAY_OF_MONTH:
+    	case Calendar.DAY_OF_WEEK:
+    	case Calendar.DAY_OF_YEAR: return count * 3600000L * 24;
+    	case Calendar.YEAR: return count * 3600000L * 24 * 365;
+    	}
+
+    	return count;
     }
     
     public static void main(String []args)
