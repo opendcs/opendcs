@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.18  2017/01/24 15:37:49  mmaloney
+*  CWMS-10060 added support for DecodesSettings.tsidFetchSize
+*
 *  Revision 1.17  2016/09/29 18:54:37  mmaloney
 *  CWMS-8979 Allow Database Process Record to override decodes.properties and
 *  user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -402,6 +405,14 @@ public class DecodesSettings
 	
 	public int cwmsVersionOverride = 0;
 	
+	public String pakBusTableDefDir = "$DCSTOOL_USERDIR/pakbus";
+	public String pakBusMaxTableDefAge = "48 hours";
+	public int pakBusSecurityCode = 8894;
+	public String pakBusTableName = "Hourly";
+	public int pakBusMaxBaudRate = 19200;
+
+	public boolean autoDeleteOnImport = false;
+	
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
@@ -628,8 +639,26 @@ public class DecodesSettings
 			+ "tests. For version 3 and above, office privileges are checked."),
 		new PropertySpec("tsidFetchSize", PropertySpec.INT,
 			"(default=0, meaning to use the JDBC default) For databases with many thousand TSIDs,"
-			+ " increasing the fetch size can speed up application initialization.")
-
+			+ " increasing the fetch size can speed up application initialization."),
+			
+		new PropertySpec("pakBusTableDefDir", PropertySpec.DIRECTORY,
+			"Directory where PakBus stations table-definitions are cached."),
+		new PropertySpec("pakBusMaxTableDefAge", PropertySpec.STRING,
+			"(format: N units, e.g. 48 hours) will poll a station for its table defs at least"
+			+ "this often."),
+		new PropertySpec("pakBusSecurityCode", PropertySpec.INT,
+			"Default security code sent to remote loggers. Can be overridden by "
+			+ "platform property of the same name."),
+		new PropertySpec("pakBusTableName", PropertySpec.STRING,
+			"Comma-separated list of tables to poll from PakBus stations. Can be overridden"
+			+ " by platform property of the same name."),
+		new PropertySpec("pakBusMaxBaudRate", PropertySpec.INT,
+			"Maximum baud rate to use for modem-based pakbus stations. Can be overridden"
+			+ " by platform property of the same name."),
+			
+		new PropertySpec("autoDeleteOnImport", PropertySpec.BOOLEAN,
+			"(default=false) If TRUE, then dbimport will automatically delete platforms with matching"
+			+ " site & designator when a clash occurs with an imported platform.")
 	};
 	
 	/**
