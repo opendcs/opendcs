@@ -2,6 +2,9 @@
  *  $Id$
  *
  *  $Log$
+ *  Revision 1.4  2016/08/13 17:44:00  mmaloney
+ *  Incoming-Tcp transport Medium type.
+ *
  *  Revision 1.3  2015/01/14 17:22:51  mmaloney
  *  Polling implementation
  *
@@ -555,7 +558,8 @@ public class TransportMediaEditDialog extends GuiDialog
 //			transmitIntervalCombo.setEnabled(true);
 //			preambleCombo.setEnabled(true);
 		}
-		else if (tmType.toLowerCase().equals("polled-tcp") || tmType.toLowerCase().equals("incoming-tcp"))
+		else if (tmType.toLowerCase().equals(Constants.medium_PolledTcp)
+			  || tmType.toLowerCase().equals("incoming-tcp"))
 		{
 			typeSpecificParamsPanel.add(previousSpecialParamsPanel = polledTcpParamsPanel, BorderLayout.CENTER);
 			mediumIdLabel.setText(
@@ -565,7 +569,7 @@ public class TransportMediaEditDialog extends GuiDialog
 			polledTcpUserName.setEnabled(polledTcpDoLoginCheck.isSelected());
 			polledTcpPassword.setEnabled(polledTcpDoLoginCheck.isSelected());
 		}
-		else if (tmType.toLowerCase().equals("polled-modem"))
+		else if (tmType.toLowerCase().equals(Constants.medium_PolledModem))
 		{
 			typeSpecificParamsPanel.add(previousSpecialParamsPanel = polledModemParamsPanel, BorderLayout.CENTER);
 			mediumIdLabel.setText(dbeditLabels.getString("TransportMediaEditDialog.Telnum"));
