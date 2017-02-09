@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2016/12/16 14:22:01  mmaloney
+ * Added locationOverride property.
+ *
  * Revision 1.7  2016/09/29 18:54:36  mmaloney
  * CWMS-8979 Allow Database Process Record to override decodes.properties and
  * user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -323,8 +326,14 @@ public class CwmsRatingMultIndep
 			else
 				specLocation = depSiteName.getNameValue();
 		}
-		else if (locationOverride != null && locationOverride.length() > 0)
-			specLocation = locationOverride;
+		
+		if (locationOverride != null && locationOverride.length() > 0)
+		{
+			if (locationOverride.contains("*"))
+				specLocation = ((CwmsTimeSeriesDb)this.tsdb).morph(specLocation, locationOverride);
+			else
+				specLocation = locationOverride;
+		}
 		
 		specId = specLocation
 			+ "." + specId + ";" + depParmRef.compParm.getDataType().getCode() + "."
