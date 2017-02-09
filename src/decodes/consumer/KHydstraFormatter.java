@@ -1,12 +1,17 @@
+/*
+*  $Id$
+*
+*  Author: Michael Maloney
+*  
+*  $Log$
+*/
 
 package decodes.consumer;
 
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
-import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
