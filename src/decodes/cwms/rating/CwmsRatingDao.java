@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2016/09/29 18:54:37  mmaloney
+ * CWMS-8979 Allow Database Process Record to override decodes.properties and
+ * user.properties setting. Command line arg -Dsettings=appName, where appName is the
+ * name of a process record. Properties assigned to the app will override the file(s).
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract 
  * to the United States Government. 
@@ -32,7 +37,6 @@ import decodes.cwms.BadRatingException;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.TsdbDao;
 import hec.data.RatingException;
 import hec.data.cwmsRating.AbstractRating;
 import hec.data.cwmsRating.RatingSet;
@@ -43,23 +47,27 @@ public class CwmsRatingDao extends DaoBase
 	public static final String module = "CwmsRatingDao";
 	public static final String cwms_v_rating_columns =
 		"RATING_CODE, RATING_ID, EFFECTIVE_DATE, CREATE_DATE, ACTIVE_FLAG";
-	public static final String numPointsQ = "select count(*) from cwms_v_rating_values a, "
-		+ "cwms_v_rating b where a.RATING_CODE = b.RATING_CODE and upper(b.RATING_ID) = ";
+	
+	// Suggested by Mike Perryman as a quick way to detect change:
+	public static final String ratCheckQ = 
+		"select greatest(max(effective_date), max(create_date)) "
+		+ "from cwms_v_rating where upper(rating_id) = ";
 	
 	private String officeId = null;
 	
 	class RatingWrapper
 	{
 		Date timeLoaded = null;
-		int numPoints = -1;
+		String check = null;
 		Date lastTimeUsed = null;
 		RatingSet ratingSet = null;
-		RatingWrapper(Date timeLoaded, RatingSet ratingSet, Date lastTimeUsed, int numPoints)
+		RatingWrapper(Date timeLoaded, RatingSet ratingSet, Date lastTimeUsed, 
+			String check)
 		{
 			this.timeLoaded = timeLoaded;
 			this.ratingSet = ratingSet;
 			this.lastTimeUsed = lastTimeUsed;
-			this.numPoints = numPoints;
+			this.check = check;
 		}
 	}
 	static HashMap<String, RatingWrapper> ratingCache = new HashMap<String, RatingWrapper>();
@@ -299,14 +307,14 @@ public class CwmsRatingDao extends DaoBase
 		if (rw != null)
 		{
 			// If # points has not changed and not too old in the cache, use it.
-			int numPoints = getNumRatingPoints(ucSpecId);
-			if (numPoints == rw.numPoints
+			String rcheck = getRatingCheck(ucSpecId);
+			if (TextUtil.strEqual(rcheck, rw.check)
 			 && System.currentTimeMillis() - rw.timeLoaded.getTime() < MAX_AGE_MSEC)
 			{
 				rw.lastTimeUsed = new Date();
 				Logger.instance().debug3(module + " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
-					+ rw.timeLoaded + ", and has a total of " + numPoints + " rating points.");
+					+ rw.timeLoaded);
 				return rw.ratingSet;
 			}
 		}
@@ -333,9 +341,7 @@ public class CwmsRatingDao extends DaoBase
 			}
 		}
 
-		int numPoints = getNumRatingPoints(ucSpecId);
-		if (numPoints == 0)
-			throw new RatingException("Rating set '" + specId + "' has no rating points.");
+		String rcheck = getRatingCheck(ucSpecId);
 
 		Logger.instance().debug3(module + " calling RatingSet.fromDatabase with officeId=" 
 			+ officeId + " and spec '" + specId + "'");
@@ -344,71 +350,12 @@ public class CwmsRatingDao extends DaoBase
 		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(),
 			officeId, specId);
 
-		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded, numPoints));
+		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded, rcheck));
 		
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
 		return ratingSet;
-	}
-
-//	Note: create_date does not change when a rating is modified.
-//  This logic was replaced by using # rating points to detect change.
-//	/**
-//	 * Query the database to determine the last time a rating was created
-//	 * for this spec.
-//	 * @param specId the spec ID
-//	 * @return the date/time of the last rating object for this spec.
-//	 */
-//	private Date getRatingLastUpdateTime(String specId)
-//	{
-//		String q = "select max(create_date) from cwms_v_rating where rating_id = "
-//			+ sqlString(specId);
-//		
-//		try
-//		{
-//			ResultSet rs = doQuery(q);
-//			if (rs != null && rs.next())
-//				return db.getFullDate(rs, 1);
-//			Logger.instance().warning(module + " No results in getRatingLastUpdateTime for '"
-//				+ specId + "'");
-//		}
-//		catch (Exception ex)
-//		{
-//			String msg = module + " Error in getRatingLastUpdateTime for '"
-//				+ specId + "': " + ex;
-//			Logger.instance().warning(msg);
-//			System.err.println(msg);
-//			ex.printStackTrace(System.err);
-//		}
-//		return null;
-//	}
-	
-	/**
-	 * As per Mike Perryman's email 1/11/16, the 'from' time for fromDatabase must be the
-	 * actual earliest effective date that I want. This method retrieves that.
-	 * @param dataTime the Java msec time of the data
-	 * @return the Java msec time of the effective date of the rating.
-	 */
-	private long getEffectiveDateFor(String ratingId, long dataTime)
-	{
-		String q = "select cwms_util.to_millis(max(effective_date)) "
-			+ "  from cwms_v_rating "
-			+ " where lower(rating_id) = " + sqlString(ratingId)
-			+ "   and effective_date <= cwms_util.to_timestamp(" + dataTime + ")";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			if (!rs.next())
-				return -1L;
-			return rs.getLong(1);
-		}
-		catch (Exception ex)
-		{
-			Logger.instance().warning(module + " getEffectiveDateFor(" + ratingId
-				+ ", " + dataTime + ": " + ex);
-			return -1;
-		}
 	}
 	
 	/**
@@ -416,23 +363,20 @@ public class CwmsRatingDao extends DaoBase
 	 * @param ratingId
 	 * @return
 	 */
-	private int getNumRatingPoints(String ratingId)
+	private String getRatingCheck(String ratingId)
 	{
-		String q = numPointsQ + sqlString(ratingId);
+		String q = ratCheckQ + sqlString(ratingId);
 		try
 		{
-			
 			ResultSet rs = doQuery(q);
 			if (!rs.next())
-				return 0;
-			return rs.getInt(1);
+				return null;
+			return rs.getString(1);
 		}
 		catch (Exception ex)
 		{
-			warning("Cannot determine number of rating points q=" + q);
-			return 0;
+			warning("Cannot get rating check, q=" + q);
+			return null;
 		}
 	}
-
-	
 }
