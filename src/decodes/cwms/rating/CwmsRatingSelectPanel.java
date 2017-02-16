@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2017/02/16 14:41:26  mmaloney
+ * Close CwmsRatingDao in final block.
+ *
  * Revision 1.2  2016/09/29 18:54:36  mmaloney
  * CWMS-8979 Allow Database Process Record to override decodes.properties and
  * user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -188,7 +191,15 @@ class CwmsRatingTableModel extends AbstractTableModel implements
 	{
 		cwmsRatings.clear();
 		List<CwmsRatingRef> cr;
-		cr = crd.listRatings(null);
+		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)theTsDb);
+		try
+		{
+			cr = crd.listRatings(null);
+		}
+		finally
+		{
+			crd.close();
+		}
 		for(CwmsRatingRef crr : cr)
 			cwmsRatings.add(crr);
 		int maxIndep = 0;
