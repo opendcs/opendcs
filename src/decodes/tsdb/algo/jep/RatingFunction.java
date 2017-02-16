@@ -94,9 +94,9 @@ public class RatingFunction
 		}
 
 		String what = "reading rating";
+		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)ctx.getTsdb());
 		try
 		{
-			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)ctx.getTsdb());
 			RatingSet ratingSet = crd.getRatingSet(specId);
 			what = "performing rating";
 			inStack.push(new Double(ratingSet.rateOne(valueSet, tsbt.getTime())));
@@ -104,6 +104,10 @@ public class RatingFunction
 		catch (RatingException ex)
 		{
 			throw new ParseException("Error " + what + " for '" + specId + "': " + ex);
+		}
+		finally
+		{
+			crd.close();
 		}
 	}
 }

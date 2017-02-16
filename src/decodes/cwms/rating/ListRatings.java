@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2016/09/29 18:54:36  mmaloney
+ * CWMS-8979 Allow Database Process Record to override decodes.properties and
+ * user.properties setting. Command line arg -Dsettings=appName, where appName is the
+ * name of a process record. Properties assigned to the app will override the file(s).
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract 
  * to the United States Government. 
@@ -35,7 +40,14 @@ public class ListRatings extends TsdbAppTemplate
 		throws Exception
 	{
 		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)theDb);
-		List<CwmsRatingRef> ratings = crd.listRatings(null);
+		try
+		{
+			List<CwmsRatingRef> ratings = crd.listRatings(null);
+		}
+		finally
+		{
+			crd.close();
+		}
 		for(CwmsRatingRef crr : ratings)
 			System.out.println(crr.toString());
 	}

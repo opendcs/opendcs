@@ -2,6 +2,11 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2016/09/29 18:54:36  mmaloney
+* CWMS-8979 Allow Database Process Record to override decodes.properties and
+* user.properties setting. Command line arg -Dsettings=appName, where appName is the
+* name of a process record. Properties assigned to the app will override the file(s).
+*
 * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 * OPENDCS 6.0 Initial Checkin
 *
@@ -69,9 +74,9 @@ public class CwmsRatingExport
 	protected void runApp()
 		throws Exception
 	{
+		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)theDb);
 		try
 		{
-			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)theDb);
 			String oid = officeIdArg.getValue().trim();
 			if (oid != null && oid.length() > 0)
 				crd.setOfficeId(oid);
@@ -85,6 +90,10 @@ public class CwmsRatingExport
 			Logger.instance().failure(ex.toString());
 			System.err.println(ex.toString());
 			ex.printStackTrace(System.err);
+		}
+		finally
+		{
+			crd.close();
 		}
 	}
 	

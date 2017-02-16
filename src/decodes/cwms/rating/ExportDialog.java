@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.5  2013/03/28 19:19:32  mmaloney
  * User temp files are now placed under DCSTOOL_USERDIR which may be different
  * from DCSTOOL_HOME on linux/unix multi-user installations.
@@ -195,10 +198,10 @@ public class ExportDialog extends GuiDialog
 				return;
 		}
 		FileWriter fw = null;
+		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 		try
 		{
 			fw = new FileWriter(f);
-			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 			String s = crd.toXmlString(cwmsRatingRef, allRelatedRadio.isSelected());
 			fw.write(s);
 		}
@@ -211,6 +214,7 @@ public class ExportDialog extends GuiDialog
 			if (fw != null)
 				try { fw.close(); }
 				catch(Exception ex) {}
+			crd.close();
 		}
 	}
 

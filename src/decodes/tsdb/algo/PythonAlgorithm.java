@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2016/09/23 15:59:14  mmaloney
+ * Only set MISSING to IGNORE if not explicitely set to something else.
+ *
  * Revision 1.3  2016/04/22 14:28:49  mmaloney
  * Parse AlgorithmType from Init Script before executing.
  *
@@ -1113,15 +1116,19 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		// NOTE: indeps is already an array of doubles. I can pass
 		// it directly to the rateOne function.
 		
+		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 		try
 		{
-			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 			RatingSet ratingSet = crd.getRatingSet(specId);
 			return ratingSet.rateOne(indeps, _timeSliceBaseTime.getTime());
 		}
 		catch (RatingException ex)
 		{
 			throw new NoValueException("rating(" + specId + ") failed: " + ex);
+		}
+		finally
+		{
+			crd.close();
 		}
 	}
 	

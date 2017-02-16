@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2016/09/29 18:54:37  mmaloney
+ * CWMS-8979 Allow Database Process Record to override decodes.properties and
+ * user.properties setting. Command line arg -Dsettings=appName, where appName is the
+ * name of a process record. Properties assigned to the app will override the file(s).
+ *
  * Revision 1.8  2016/01/13 15:15:37  mmaloney
  * rating retrieval
  *
@@ -173,9 +178,9 @@ public class CwmsRatingSingleIndep
 			+ templateVersion + "." + specVersion;
 			
 		// Retrieve the RatingSet object
+		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 		try
 		{
-			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 			Date earliestBaseTime = baseTimes.first();
 //debug3("Will do rating for the following " + baseTimes.size() + " base times:");
 //for(Date baseTime : baseTimes)
@@ -213,6 +218,10 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 		catch (RatingException ex)
 		{
 			throw new DbCompException("Cannot read rating for '" + specId + "': " + ex);
+		}
+		finally
+		{
+			crd.close();
 		}
 
 		indepTimes.clear();

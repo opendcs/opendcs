@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2017/02/09 17:23:42  mmaloney
+ * Allow locationOverride to contain wildcards.
+ *
  * Revision 1.8  2016/12/16 14:22:01  mmaloney
  * Added locationOverride property.
  *
@@ -340,9 +343,9 @@ public class CwmsRatingMultIndep
 			+ templateVersion + "." + specVersion;
 
 		// Retrieve the RatingSet object
+		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 		try
 		{
-			CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 			Date earliestBaseTime = baseTimes.first();
 			if (earliestBaseTime == null)
 				earliestBaseTime = new Date();
@@ -385,6 +388,10 @@ public class CwmsRatingMultIndep
 		catch (RatingException ex)
 		{
 			throw new DbCompException("Cannot read rating for '" + specId + "': " + ex);
+		}
+		finally
+		{
+			crd.close();
 		}
 
 		indepTimes.clear();
