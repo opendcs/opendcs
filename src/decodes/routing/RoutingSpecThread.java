@@ -5,8 +5,10 @@ package decodes.routing;
 
 import java.util.*;
 import java.io.*;
+import java.net.InetAddress;
 
 import opendcs.dai.DacqEventDAI;
+import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import lrgs.common.DcpMsg;
@@ -19,7 +21,13 @@ import decodes.polling.PollingDataSource;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
+import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.CompEventSvr;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.LockBusyException;
+import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TsdbAppTemplate;
+import decodes.tsdb.TsdbCompLock;
 import decodes.util.*;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecoderException;
@@ -151,6 +159,11 @@ public class RoutingSpecThread
 	private boolean updatePlatformStatus = true;
 	
 	private Runnable shutdownHook = null;
+	
+	/** Used only by rs command (this.main), and only if no -k is specified
+	 * AND a process record exists with the same name as the routing spec.
+	 */
+	private TsdbCompLock myLock = null;
 	
 	/**
 	 * Constructs an empty, uninitialized RoutingSpecThread.
@@ -284,6 +297,49 @@ public class RoutingSpecThread
 		PlatformStatusDAI platformStatusDAO = 
 			updatePlatformStatus ? Database.getDb().getDbIo().makePlatformStatusDAO() : null;
 
+		if (myLock != null)
+		{
+			// MJM 20170220 Added TsdbCompLock capability. The main() method, will
+			// create a lock if: 1.) No [-k lockfile] is specified, 2.) There is a
+			// process record matching the rs name, and 3.) the process' monitor flag
+			// is true.
+			new Thread()
+			{
+				long lastLockCheck = System.currentTimeMillis();
+				public void run()
+				{
+					while (!done)
+					{
+						if (System.currentTimeMillis() - lastLockCheck > 5000L)
+						{
+							LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO();
+							myLock.setStatus(myStatus.getStats());
+							try { loadingAppDAO.checkCompProcLock(myLock); }
+							catch (LockBusyException ex)
+							{
+								Logger.instance().info("Database Lock removed -- exiting: " + ex);
+								shutdown();
+								currentStatus = "Lock Removed";
+								return;
+							}
+							catch (DbIoException ex)
+							{
+								Logger.instance().failure("Error checking database lock: " + ex);
+							}
+							finally
+							{
+								loadingAppDAO.close();
+							}
+							lastLockCheck = System.currentTimeMillis();
+						}
+						try{ sleep(500L); } catch(InterruptedException ex) {}
+					}
+				}
+			}.start();
+
+			
+		}
+		
 		while(!done)
 		{
 			myExec.setSubsystem(null);
@@ -306,6 +362,9 @@ public class RoutingSpecThread
 					continue;
 				}
 			}
+			
+
+			
 			// MJM 20041027 Added the following check:
 			// Every 10 minutes, re-read platform list to see if any platforms
 			// have been added.
@@ -1401,7 +1460,7 @@ public class RoutingSpecThread
 		if (!routmonDir.isDirectory())
 			routmonDir.mkdirs();
 
-		String name = rsArg.getValue();
+		String rsName = rsArg.getValue();
 
 		/*
 		  If user did not explicitely supply a log file, create
@@ -1410,8 +1469,8 @@ public class RoutingSpecThread
 		Logger oldLogger = Logger.instance();
 		if (cmdLineArgs.getLogFile() == defaultLogFile)
 		{
-			String logFile = routmonDir + "/" + name.toLowerCase() + ".log";
-			Logger.setLogger(new FileLogger("rs:"+name, logFile));
+			String logFile = routmonDir + "/" + rsName.toLowerCase() + ".log";
+			Logger.setLogger(new FileLogger("rs:"+rsName, logFile));
 			Logger.instance().setMinLogPriority(oldLogger.getMinLogPriority());
 			Logger.instance().setProcName(oldLogger.getProcName());
 		}
@@ -1481,10 +1540,10 @@ public class RoutingSpecThread
 		db.presentationGroupList.read();
 		db.routingSpecList.read();
 		
-		RoutingSpec rs = db.routingSpecList.find(name);
+		RoutingSpec rs = db.routingSpecList.find(rsName);
 		if (rs == null)
 			throw new DecodesException(
-				"No such routing spec '" + name + "' in database");
+				"No such routing spec '" + rsName + "' in database");
 		
 		String s = rs.getProperty("debugLevel");
 		if (s == null && Logger.instance().getMinLogPriority() < Logger.E_INFORMATION)
@@ -1541,7 +1600,7 @@ public class RoutingSpecThread
 
 		// Set status monitor file.
 		String statmonFile = settings.routingStatusDir
-			+ File.separator + name + ".stat";
+			+ File.separator + rsName + ".stat";
 		s = statmonArg.getValue().trim();
 		if (s.equals("-"))
 			statmonFile = null;
@@ -1587,6 +1646,79 @@ public class RoutingSpecThread
 		// Set rs.explicitConsumerDir from -F command line arg here.
 		if (dirConsumerArg.getValue() != null && dirConsumerArg.getValue().trim().length() > 0)
 			mainThread.explicitConsumerDir = EnvExpander.expand(dirConsumerArg.getValue()).trim();
+		
+		// Establish a TSDB Comp Lock if 1.) No -k arg on command line, 2.) a proc record
+		// exists that matches the RS name with type 'routingspec', 
+		// and 3.) the proc's monitor flag is true.
+		if (lockpath == null || lockpath.trim().length() == 0)
+		{
+			LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO();
+			CompAppInfo rsProcRecord = null;
+			try
+			{
+				try { rsProcRecord = loadingAppDAO.getComputationApp(rsName); }
+				catch (NoSuchObjectException e) { rsProcRecord = null; }
+				if (rsProcRecord != null
+				 && TextUtil.strEqualIgnoreCase(rsProcRecord.getProperty("appType"), "routingspec")
+				 && TextUtil.str2boolean(rsProcRecord.getProperty("monitor")))
+				{
+					// Create a TSDB_COMP_PROC_LOCK record
+					//=====================================================
+					int pid = TsdbAppTemplate.determinePID();
+					
+					String hostname = "unknown";
+					try { hostname = InetAddress.getLocalHost().getHostName(); }
+					catch(Exception e) 
+					{
+						try { hostname = InetAddress.getLocalHost().toString(); }
+						catch(Exception ex) { hostname = "unknown"; }
+					}
+	
+					mainThread.myLock = loadingAppDAO.obtainCompProcLock(rsProcRecord, pid, hostname);
+					// Also check EventPort property and open listening socket if set.
+					String eventPortS = rsProcRecord.getProperty("EventPort");
+					if (eventPortS != null)
+					{
+						try 
+						{
+							int evtPort = Integer.parseInt(eventPortS.trim());
+							CompEventSvr compEventSvr = new CompEventSvr(evtPort);
+							compEventSvr.startup();
+						}
+						catch(NumberFormatException ex)
+						{
+							Logger.instance().warning("Routing Spec " + rsName
+								+ ": Bad EventPort property '" + eventPortS
+								+ "' must be integer. -- ignored.");
+						}
+						catch(IOException ex)
+						{
+							Logger.instance().failure(
+								"Cannot create Event server: " + ex
+								+ " -- no events available to external clients.");
+						}
+					}
+				}
+else
+{
+if (rsProcRecord == null) System.out.println("No proc record.");
+else System.out.println("appType=" + rsProcRecord.getProperty("appType")
+	+ ", monitor=" + rsProcRecord.getProperty("monitor"));
+}
+					
+			}
+			catch (LockBusyException ex)
+			{
+				Logger.instance().failure("Routing Spec not started: database lock for process '" 
+					+ rsName + "' is busy: " + ex);
+				Database.getDb().getDbIo().close();
+				System.exit(0);
+			}
+			finally
+			{
+				loadingAppDAO.close();
+			}
+		}
 
 		mainThread.start();
 	}
