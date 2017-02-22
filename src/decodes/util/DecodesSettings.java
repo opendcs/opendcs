@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.19  2017/02/09 17:27:02  mmaloney
+*  Added pakbus settings.
+*
 *  Revision 1.18  2017/01/24 15:37:49  mmaloney
 *  CWMS-10060 added support for DecodesSettings.tsidFetchSize
 *
@@ -406,7 +409,7 @@ public class DecodesSettings
 	public int cwmsVersionOverride = 0;
 	
 	public String pakBusTableDefDir = "$DCSTOOL_USERDIR/pakbus";
-	public String pakBusMaxTableDefAge = "48 hours";
+	public String pakBusMaxTableDefAge = "hour*48";
 	public int pakBusSecurityCode = 8894;
 	public String pakBusTableName = "Hourly";
 	public int pakBusMaxBaudRate = 19200;
