@@ -1699,12 +1699,12 @@ public class RoutingSpecThread
 						}
 					}
 				}
-else
-{
-if (rsProcRecord == null) System.out.println("No proc record.");
-else System.out.println("appType=" + rsProcRecord.getProperty("appType")
-	+ ", monitor=" + rsProcRecord.getProperty("monitor"));
-}
+//else
+//{
+//if (rsProcRecord == null) System.out.println("No proc record.");
+//else System.out.println("appType=" + rsProcRecord.getProperty("appType")
+//	+ ", monitor=" + rsProcRecord.getProperty("monitor"));
+//}
 					
 			}
 			catch (LockBusyException ex)
