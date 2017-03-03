@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.4  2016/06/07 22:03:51  mmaloney
+ * Numeric sort on app ID in proc monitor.
+ *
  * Revision 1.3  2015/06/04 21:37:40  mmaloney
  * Added control buttons to process monitor GUI.
  *
@@ -64,9 +67,9 @@ class ProcStatTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
 	String[] colnames =
-		{ "App ID", "App Name", "Host", "PID", "Heartbeat (UTC)", "Status", "Events?" };
+		{ "App ID", "App Name", "App Type", "Host", "PID", "Heartbeat (UTC)", "Status", "Events?" };
 	int [] widths =
-		{ 8, 20, 12, 8, 22, 22, 8 };
+		{ 8, 15, 15, 12, 8, 17, 17, 8 };
 	private int sortColumn = 0;
 	private ArrayList<AppInfoStatus> apps = new ArrayList<AppInfoStatus>();
 	private AppColumnizer columnizer = new AppColumnizer();
@@ -90,11 +93,11 @@ class ProcStatTableModel extends AbstractTableModel
 
 	public boolean isCellEditable(int row, int col)
 	{
-		return col == 6;
+		return col == 7;
 	}
 	public void setValueAt(Object value, int row, int col)
 	{
-		if (col != 6)
+		if (col != 7)
 			return;
 		try { getAppAt(row).setRetrieveEvents((Boolean)value); }
 		catch(ProcMonitorException ex)
@@ -106,7 +109,7 @@ class ProcStatTableModel extends AbstractTableModel
 	
 	public Class getColumnClass(int col)
 	{
-		return col == 6 ? Boolean.class : String.class;
+		return col == 7 ? Boolean.class : String.class;
 	}
 	
 	@Override
@@ -229,11 +232,12 @@ class AppColumnizer
 		case 0: 
 			return app.getAppId() == null || app.getAppId().isNull() ? "N/A" : app.getAppId().toString();
 		case 1: return app.getCompAppInfo().getAppName();
-		case 2: return lock != null ? lock.getHost() : "N/A";
-		case 3: return lock != null ? ("" + lock.getPID()) : "N/A";
-		case 4: return lock != null ? sdf.format(lock.getHeartbeat()) : "~";
-		case 5: return lock != null ? app.getCompLock().getStatus() : "Not Running";
-		case 6: return app.getRetrieveEvents();
+		case 2: return app.getCompAppInfo().getAppType();
+		case 3: return lock != null ? lock.getHost() : "N/A";
+		case 4: return lock != null ? ("" + lock.getPID()) : "N/A";
+		case 5: return lock != null ? sdf.format(lock.getHeartbeat()) : "~";
+		case 6: return lock != null ? app.getCompLock().getStatus() : "Not Running";
+		case 7: return app.getRetrieveEvents();
 		default: return "";
 		}
 	}
