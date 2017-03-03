@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2017/02/09 17:26:42  mmaloney
+ * Added toMsec method.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -212,7 +215,9 @@ public class IntervalIncrement
     	case Calendar.MILLISECOND: return count;
     	case Calendar.SECOND: return count * 1000L;
     	case Calendar.MINUTE: return count * 60000L;
-    	case Calendar.HOUR: return count * 3600000L;
+    	case Calendar.HOUR: 
+    	case Calendar.HOUR_OF_DAY: 
+    		return count * 3600000L;
     	case Calendar.DAY_OF_MONTH:
     	case Calendar.DAY_OF_WEEK:
     	case Calendar.DAY_OF_YEAR: return count * 3600000L * 24;
