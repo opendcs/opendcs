@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.7  2016/10/07 14:49:25  mmaloney
+*  Updates for Web Report for Gail Monds, LRD.
+*
 *  Revision 1.6  2015/02/06 18:27:09  mmaloney
 *  The HashMap key should be upper case so that search is case insensitive.
 *
@@ -574,6 +577,16 @@ public class TransportMedium extends DatabaseObject
 	public String toString()
 	{
 		return mediumType + ":" + mediumId;
+	}
+	
+	public String getSelector()
+	{
+		if (TextUtil.startsWithIgnoreCase(mediumType, "goes"))
+			return "chan=" + channelNum;
+		else if (TextUtil.startsWithIgnoreCase(mediumType, "poll"))
+			return "loggerType=" + loggerType;
+		else
+			return "";
 	}
 	
 }
