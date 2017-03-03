@@ -40,6 +40,7 @@ import javax.swing.text.DefaultCaret;
 
 import opendcs.dai.PlatformStatusDAI;
 import decodes.consumer.DirectoryConsumer;
+import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.PlatformStatus;
@@ -306,7 +307,6 @@ public class PollGUI extends TsdbAppTemplate
 		}
 		else
 			theFrame.showError("No output from last poll attempt.");
-		// TODO Auto-generated method stub
 		Logger.instance().info("viewData pressed");
 	
 	}
@@ -390,14 +390,30 @@ public class PollGUI extends TsdbAppTemplate
 		DefaultCaret df = (DefaultCaret)sessionLogArea.getCaret();
 		df.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
-		RoutingSpec rs = Database.getDb().routingSpecList.find(
-			DecodesSettings.instance().pollRoutingTemplate);
+		boolean isModem = true;
+		for(TransportMedium tm : selectedPlatform.transportMedia)
+			if (tm.getMediumType().equalsIgnoreCase(Constants.medium_PolledModem))
+			{
+				isModem = true;
+				break;
+			}
+			else if (tm.getMediumType().equalsIgnoreCase(Constants.medium_PolledTcp))
+			{
+				isModem = false;
+				break;
+			}
+		
+		String rsName = isModem ? DecodesSettings.instance().pollRoutingTemplate :
+			DecodesSettings.instance().pollTcpTemplate;
+		
+		RoutingSpec rs = Database.getDb().routingSpecList.find(rsName);
 		if (rs == null)
 		{
-			theFrame.showError("No routing spec named '"
-				+ DecodesSettings.instance().pollRoutingTemplate 
-				+ "' in database. This is needed as a template."
-				+ " Check the DECODES Setting for pollRoutingTemplate.");
+			theFrame.showError("No routing spec named '" + rsName 
+				+ "' in database. This is needed as a template for "
+				+ (isModem ? "Modem" : "TCP/Cellular")
+				+ " platforms. Check the DECODES Setting for "
+				+ (isModem ? "pollRoutingTemplate" : "pollTcpTemplate"));
 			return;
 		}
 		
