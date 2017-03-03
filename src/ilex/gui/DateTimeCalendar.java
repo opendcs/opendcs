@@ -104,10 +104,10 @@ public class DateTimeCalendar extends JPanel
 		Date dateFCalendar = dateCalendar.getDate();
 		Date dateTimeSpinner = timeSpinner.getTime();
 
+//System.out.println("dtc.getDate fromCal=" + dateFCalendar + ", fromTime=" + dateTimeSpinner);
 		if (dateFCalendar == null || dateTimeSpinner == null)
-		{
 			return null;
-		}
+
 		// Need to construct a new Date Obj with the date from
 		// DateCalendar and time from TimeSpinner, and return the
 		// new date object
@@ -116,6 +116,7 @@ public class DateTimeCalendar extends JPanel
 		Calendar tempCal1 = new GregorianCalendar();
 		tempCal1.setTimeZone(tzObj);
 		tempCal1.setTime(dateFCalendar);
+//System.out.println("dtc.getDate tempCal1=" + tempCal1.getTime());
 		
 		//Get the Date obj from Time Spinner and extract out the 
 		//time values (hour, minutest, seconds)
@@ -123,6 +124,7 @@ public class DateTimeCalendar extends JPanel
 		//tempCal2.setTimeZone(TimeZone.getDefault());
 		tempCal2.setTimeZone(tzObj);
 		tempCal2.setTime(dateTimeSpinner);
+//System.out.println("dtc.getDate tempCal2=" + tempCal2.getTime());
 				
 		//Get the components of the time
 		int hour24 = tempCal2.get(Calendar.HOUR_OF_DAY); // 0..23
@@ -134,10 +136,14 @@ public class DateTimeCalendar extends JPanel
 		tempCal1.set(Calendar.HOUR_OF_DAY, hour24);
 		tempCal1.set(Calendar.MINUTE, min);
 		tempCal1.set(Calendar.SECOND, sec);
+//System.out.println("after setting time values: tempCal1=" + tempCal1.getTime());
 		
 		tempCal1.setTimeZone(tzObj);
+		
+//System.out.println("after setting TZ, tempCal1=" + tempCal1.getTime());
 
 		Date returnDate = new Date(tempCal1.getTimeInMillis());
+//System.out.println("Returning " + returnDate);
 		
 		// Return Date obj
 		return returnDate;
