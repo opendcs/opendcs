@@ -70,7 +70,7 @@ public class DbUpdate extends TsdbAppTemplate
 			lnr.close();
 		}
 
-		if (theDb.getDecodesDatabaseVersion() == DecodesDatabaseVersion.DECODES_DB_10)
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 		{
 			System.out.println("TSDB Database is currently " + theDb.getTsdbVersion());
 			System.out.println("DECODES Database is currently " + theDb.getDecodesDatabaseVersion());
