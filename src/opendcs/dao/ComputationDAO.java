@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.8  2016/11/29 01:19:07  mmaloney
+* Refactoring.
+*
 * Revision 1.7  2016/11/19 15:55:51  mmaloney
 * Join PARM records with parent records to bring in implicit VPD filter in CWMS.
 *
@@ -989,8 +992,6 @@ public class ComputationDAO
 		doModify(q);
 		q = "delete from CP_COMP_PROPERTY where COMPUTATION_ID = " + id;
 		doModify(q);
-		q = "delete from CP_COMPUTATION where COMPUTATION_ID = "+id;
-		doModify(q);
 		
 		if (db.isCwms())
 		{
@@ -1010,6 +1011,11 @@ public class ComputationDAO
 				finally { compDependsDAO.close(); }
 			}
 		}
+		
+		// Pre 14 version defined CP_COMP_DEPENDS.COMPUTATION_ID as a foreign
+		// key. So this must be done after the above.
+		q = "delete from CP_COMPUTATION where COMPUTATION_ID = "+id;
+		doModify(q);
 	}
 
 	@Override
