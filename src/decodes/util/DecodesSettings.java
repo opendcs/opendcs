@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.20  2017/02/22 23:30:58  mmaloney
+*  pakBusMxTableDefAge = hours*48
+*
 *  Revision 1.19  2017/02/09 17:27:02  mmaloney
 *  Added pakbus settings.
 *
@@ -306,7 +309,7 @@ public class DecodesSettings
 	public String CwmsOfficeId = "";
 	
 	/** Set to true to allow DECODES to write CWMS Location records */
-	public boolean writeCwmsLocations = true;
+	public boolean writeCwmsLocations = false;
 	
 	/** Show the Platform Wizard button on the button panel */
 	public boolean showPlatformWizard = false;
@@ -379,6 +382,7 @@ public class DecodesSettings
 	public String pollScriptDir = "$HOME/SHARED/dacq/poll-scripts";
 	public String pollMessageDir = "$HOME/SHARED/dacq/edl-done";
 	public String pollRoutingTemplate = "PollGuiTemplate";
+	public String pollTcpTemplate = "PollTcpTemplate";
 	
 	public boolean rememberScreenPosition = true;
 	
@@ -582,7 +586,9 @@ public class DecodesSettings
 		new PropertySpec("pollMessageDir", PropertySpec.DIRECTORY,
 			"The directory to open message files after a GUI poll."),
 		new PropertySpec("pollRoutingTemplate", PropertySpec.STRING,
-			"Name of the routing spec that PollGUI uses as a template."),
+			"Name of the routing spec that PollGUI uses for Modem Platforms"),
+		new PropertySpec("pollTcpTemplate", PropertySpec.STRING,
+			"Name of the routing spec that PollGUI uses for TCP Platforms"),
 		new PropertySpec("rememberScreenPosition", PropertySpec.BOOLEAN,
 			"Remember position and size of GUI screens when they are moved."),
 		new PropertySpec("decodeScriptColor1", PropertySpec.STRING,
