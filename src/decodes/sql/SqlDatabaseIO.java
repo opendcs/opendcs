@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.9  2016/10/01 14:59:56  mmaloney
+ * CWMS-8979 Allow DecodesSettings params in database to override the file(s).
+ *
  * Revision 1.8  2016/03/24 19:08:18  mmaloney
  * Refactor: Have expandSDI return the TimeSeriesID that it uses. This saves the caller from
  * having to re-look it up. Needed for PythonAlgorithm.
@@ -1087,7 +1090,7 @@ public class SqlDatabaseIO
 			_engineeringUnitIO.write(top);
 			UnitConverterSet ucs = top.getDatabase().unitConverterSet;
 			_unitConverterIO.write(ucs);
-			commit();
+//			commit();
 		}
 		catch (SQLException e) 
 		{
@@ -1897,24 +1900,25 @@ public class SqlDatabaseIO
 	public void commit()
 		throws SQLException
 	{
-		Connection con = getConnection();
-		if (con != null)
-		{
-			con.commit();
-			try { con.clearWarnings(); }
-			catch(SQLException ex) {}
-		}
+		// MJM 2017/03/03 Everything is now auto commit.
+//		Connection con = getConnection();
+//		if (con != null)
+//		{
+//			con.commit();
+//			try { con.clearWarnings(); }
+//			catch(SQLException ex) {}
+//		}
 	}
 	public void rollback()
 		throws SQLException
 	{
-		Connection con = getConnection();
-		if (con != null)
-		{
-			con.rollback();
-			try { con.clearWarnings(); }
-			catch(SQLException ex) {}
-		}
+//		Connection con = getConnection();
+//		if (con != null)
+//		{
+//			con.rollback();
+//			try { con.clearWarnings(); }
+//			catch(SQLException ex) {}
+//		}
 	}
 
 	public boolean commitAfterSelectStatus()
