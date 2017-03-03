@@ -114,6 +114,15 @@ public class CompAppInfo
 	 * @param nm the Name
 	 */
 	public void setAppName(String nm) { appName = nm; }
+	
+	/**
+	 * @return appType property value if one is defined, or blank string if not.
+	 */
+	public String getAppType()
+	{
+		String ret = getProperty("appType");
+		return ret != null ? ret : "";
+	}
 
 	/** @return the comment */
 	public String getComment() { return comment; }
