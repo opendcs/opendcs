@@ -4,6 +4,11 @@
  *  Open Source Software
  *  
  *  $Log$
+ *  Revision 1.5  2015/04/15 19:59:46  mmaloney
+ *  Fixed synchronization bugs when the same data sets are being processed by multiple
+ *  routing specs at the same time. Example is multiple real-time routing specs with same
+ *  network lists. They will all receive and decode the same data together.
+ *
  *  Revision 1.4  2015/03/19 18:02:03  mmaloney
  *  Fixed caching of lists so that when platform is committed, the in-memory lists are updated.
  *
@@ -1037,7 +1042,7 @@ class TransportListTableModel extends AbstractTableModel
 		PlatformEditPanel.genericLabels.getString("type"),
 		PlatformEditPanel.genericLabels.getString("ID"),
 		PlatformEditPanel.dbeditLabels.getString("PlatformEditPanel.scriptName"),
-		PlatformEditPanel.genericLabels.getString("channel")
+		PlatformEditPanel.genericLabels.getString("Selector")
 	};
 	private Vector media;
 
@@ -1078,8 +1083,7 @@ class TransportListTableModel extends AbstractTableModel
 		case 2:
 			return tm.scriptName == null ? "" : tm.scriptName;
 		case 3:
-			return tm.channelNum != Constants.undefinedIntKey ? ("" + tm.channelNum)
-					: "";
+			return tm.getSelector();
 		default:
 			return "";
 		}
