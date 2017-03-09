@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2017/02/15 15:09:48  mmaloney
+ * Fixed rating check as per Mike Perryman's email 2/14/17
+ *
  * Revision 1.6  2016/09/29 18:54:37  mmaloney
  * CWMS-8979 Allow Database Process Record to override decodes.properties and
  * user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -48,32 +51,42 @@ public class CwmsRatingDao extends DaoBase
 	public static final String cwms_v_rating_columns =
 		"RATING_CODE, RATING_ID, EFFECTIVE_DATE, CREATE_DATE, ACTIVE_FLAG";
 	
-	// Suggested by Mike Perryman as a quick way to detect change:
-	public static final String ratCheckQ = 
-		"select greatest(max(effective_date), max(create_date)) "
-		+ "from cwms_v_rating where upper(rating_id) = ";
+//	// Suggested by Mike Perryman as a quick way to detect change:
+//	public static final String ratCheckQ = 
+//		"select greatest(max(effective_date), max(create_date)) "
+//		+ "from cwms_v_rating where upper(rating_id) = ";
 	
 	private String officeId = null;
 	
 	class RatingWrapper
 	{
 		Date timeLoaded = null;
-		String check = null;
+//		String check = null;
 		Date lastTimeUsed = null;
 		RatingSet ratingSet = null;
-		RatingWrapper(Date timeLoaded, RatingSet ratingSet, Date lastTimeUsed, 
-			String check)
+		RatingWrapper(Date timeLoaded, RatingSet ratingSet, Date lastTimeUsed)
+//			String check)
 		{
 			this.timeLoaded = timeLoaded;
 			this.ratingSet = ratingSet;
 			this.lastTimeUsed = lastTimeUsed;
-			this.check = check;
+//			this.check = check;
 		}
 	}
 	static HashMap<String, RatingWrapper> ratingCache = new HashMap<String, RatingWrapper>();
 	public static final int MAX_CACHED = 400;
 	// Ratings older than this in the cache are discarded.
 	private long MAX_AGE_MSEC = 9 * 3600000L;
+	
+	
+	static
+	{
+		// Mike Perryman's email on March 1, 2017 - Rating API now has a reference mode
+		// whereby the rating calculations are done on the database side and no (huge)
+		// rating table have to be actually loaded. Thus use the reference mode and also
+		// remove the 'check for update' operation.
+		System.setProperty("hec.data.cwmsRating.RatingSet.databaseLoadMethod", "reference");
+	}
 	
 	public CwmsRatingDao(CwmsTimeSeriesDb tsdb)
 	{
@@ -307,12 +320,14 @@ public class CwmsRatingDao extends DaoBase
 		if (rw != null)
 		{
 			// If # points has not changed and not too old in the cache, use it.
-			String rcheck = getRatingCheck(ucSpecId);
-			if (TextUtil.strEqual(rcheck, rw.check)
-			 && System.currentTimeMillis() - rw.timeLoaded.getTime() < MAX_AGE_MSEC)
+//			String rcheck = getRatingCheck(ucSpecId);
+//			if (TextUtil.strEqual(rcheck, rw.check)
+
+			if (System.currentTimeMillis() - rw.timeLoaded.getTime() < MAX_AGE_MSEC)
 			{
 				rw.lastTimeUsed = new Date();
-				Logger.instance().debug3(module + " retrieving rating spec from cache with officeId="
+				Logger.instance().debug3(module 
+					+ " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
 					+ rw.timeLoaded);
 				return rw.ratingSet;
@@ -341,16 +356,16 @@ public class CwmsRatingDao extends DaoBase
 			}
 		}
 
-		String rcheck = getRatingCheck(ucSpecId);
+//		String rcheck = getRatingCheck(ucSpecId);
 
 		Logger.instance().debug3(module + " calling RatingSet.fromDatabase with officeId=" 
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
 //RatingSet.setAlwaysAllowUnsafe(false);
-		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(),
-			officeId, specId);
+		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), officeId, specId);
 
-		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded, rcheck));
+		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
+		//, rcheck));
 		
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
@@ -363,20 +378,22 @@ public class CwmsRatingDao extends DaoBase
 	 * @param ratingId
 	 * @return
 	 */
-	private String getRatingCheck(String ratingId)
-	{
-		String q = ratCheckQ + sqlString(ratingId);
-		try
-		{
-			ResultSet rs = doQuery(q);
-			if (!rs.next())
-				return null;
-			return rs.getString(1);
-		}
-		catch (Exception ex)
-		{
-			warning("Cannot get rating check, q=" + q);
-			return null;
-		}
-	}
+// MJM - this is not used since 3/1/17 because we are no using the 'reference'
+// mode for accessing rating tables.
+//	private String getRatingCheck(String ratingId)
+//	{
+//		String q = ratCheckQ + sqlString(ratingId);
+//		try
+//		{
+//			ResultSet rs = doQuery(q);
+//			if (!rs.next())
+//				return null;
+//			return rs.getString(1);
+//		}
+//		catch (Exception ex)
+//		{
+//			warning("Cannot get rating check, q=" + q);
+//			return null;
+//		}
+//	}
 }
