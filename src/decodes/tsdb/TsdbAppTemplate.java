@@ -4,6 +4,11 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.11  2016/10/01 15:00:41  mmaloney
+*  CWMS-8979 Allow Database Process Record to override decodes.properties and
+*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
+*  name of a process record. Properties assigned to the app will override the file(s).
+*
 *  Revision 1.10  2016/09/29 18:54:37  mmaloney
 *  CWMS-8979 Allow Database Process Record to override decodes.properties and
 *  user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -217,7 +222,9 @@ public abstract class TsdbAppTemplate
 			catch(BadConnectException ex)
 			{
 				warning("Cannot connect to TSDB: " + ex);
-				databaseFailed = true;
+				// CWMS-10402 don't keep trying if the failure was because the
+				// app name is invalid.
+				databaseFailed = !ex.toString().contains("Cannot determine app ID");
 				continue;
 			}
 			// Note: App must handle its own exceptions, detect database failure
