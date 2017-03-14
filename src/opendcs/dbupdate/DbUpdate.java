@@ -201,19 +201,62 @@ public class DbUpdate extends TsdbAppTemplate
 			sql("DROP TABLE CP_COMPOSITE_MEMBER");
 
 		}
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_14)
+		{
+			// Only CWMS changes were made for 14 and the update is handled by a script.
+		}
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_15)
+		{
+			sql("DELETE FROM DACQ_EVENT");
+			if (!theDb.isOracle()) // I.E. PostgreSQL
+			{
+				// NetworkListEntry now has columns PLATFORM_NAME and DESCRIPTION
+				sql("ALTER TABLE DACQ_EVENT ADD COLUMN LOADING_APPLICATION_ID INT");
+				sql("ALTER TABLE DACQ_EVENT ADD FOREIGN KEY (LOADING_APPLICATION_ID) "
+					+ "REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) "
+					+ "ON UPDATE RESTRICT ON DELETE RESTRICT");
+				sql("CREATE SEQUENCE ALARM_GROUPIdSeq");
+				sql("CREATE SEQUENCE ALARM_DEFIdSeq");
+			}
+			else // Oracle
+			{
+				sql("ALTER TABLE DACQ_EVENT ADD LOADING_APPLICATION_ID INT");
+				sql("ALTER TABLE DACQ_EVENT ADD CONSTRAINT DACQ_EVENT_FKLA "
+					+ "FOREIGN KEY (LOADING_APPLICATION_ID) REFERENCES "
+					+ "HDB_LOADING_APPLICATION(LOADING_APPLICATION_ID)");
+				sql("CREATE SEQUENCE ALARM_GROUPIdSeq nocache");
+				sql("CREATE SEQUENCE ALARM_DEFIdSeq nocache");
+			}
+			if (!theDb.isCwms() && !theDb.isHdb())
+			{
+				SQLReader sqlReader = new SQLReader(schemaDir + "/alarm.sql");
+				ArrayList<String> queries = sqlReader.createQueries();
+				for(String q : queries)
+				{
+					if (tableSpaceSpec != null)
+					{
+						// Oracle will have a table space definition that we need to substitute.
+						int tblSpecIdx = q.indexOf("&TBL_SPACE_SPEC");
+						if (tblSpecIdx != -1)
+							q = q.substring(0, tblSpecIdx) + tableSpaceSpec;
+					}
+					sql(q);
+				}
+			}
+		}
 
 		// Update DECODES Database Version
 		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " 
-			+ DecodesDatabaseVersion.DECODES_DB_13);
-		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_13, "");
+			+ DecodesDatabaseVersion.DECODES_DB_15);
+		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_15, "");
 		((SqlDatabaseIO)Database.getDb().getDbIo()).setDecodesDatabaseVersion(
-			DecodesDatabaseVersion.DECODES_DB_13, "");
+			DecodesDatabaseVersion.DECODES_DB_15, "");
 		// Update TSDB_DATABASE_VERSION.
 		String desc = "Updated on " + new Date();
 		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " 
-			+ TsdbDatabaseVersion.VERSION_13
+			+ TsdbDatabaseVersion.VERSION_15
 			+ ", DESCRIPTION = '" + desc + "'");
-		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_13, desc);
+		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_15, desc);
 		
 		// Rewrite the netlists with the changes.
 		Database.getDb().networkListList.write();

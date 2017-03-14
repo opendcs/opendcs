@@ -68,9 +68,9 @@ echo >> combined.sql
 echo "-- Set Version Numbers" >> combined.sql
 now=`date`
 echo 'delete from DecodesDatabaseVersion; ' >> combined.sql
-echo "insert into DecodesDatabaseVersion values(13, 'Installed $now');" >> combined.sql
+echo "insert into DecodesDatabaseVersion values(15, 'Installed $now');" >> combined.sql
 echo 'delete from tsdb_database_version; ' >> combined.sql
-echo "insert into tsdb_database_version values(13, 'Installed $now');" >> combined.sql
+echo "insert into tsdb_database_version values(15, 'Installed $now');" >> combined.sql
 echo "spool off" >>combined.sql
 echo "exit;" >> combined.sql
 
