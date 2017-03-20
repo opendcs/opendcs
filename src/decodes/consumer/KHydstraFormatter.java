@@ -4,10 +4,14 @@
 *  Author: Michael Maloney
 *  
 *  $Log$
+*  Revision 1.5  2017/02/09 17:22:42  mmaloney
+*  Added CVS Header.
+*
 */
 
 package decodes.consumer;
 
+import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
@@ -31,27 +35,29 @@ import decodes.db.TransportMedium;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
+import decodes.util.PropertySpec;
 
 /**
   This class formats decoded data in a format that can be processed
-  by the KHydstra system.  The format is a fixed-field format defined
-  as follows:
-
-     01-15   USGS station number
-     16-22   Hydstra Data Type Code
-               (Defined by new date type   :  Hydstra-code )
-     23-37   Date and time (yyyyMMddHHmmss)
-     38-40   Hydstra Quality Code
-               (default -1 )
-     41-42   Data Trans Code
-       		(Defined by  sensor property:  HydstraTransCode )
-     43-46	Maximum accepatable gap between points
-     		(Default - 0)
+  by the KHydstra system.
+  3/20/2017 - Hydstra has a variation called "self identifying" which
+  causes additional columns to be included.
  */
 public class KHydstraFormatter extends OutputFormatter
 {
 	private String delimiter;
 	private SimpleDateFormat KHydstraDateFormat;
+	private boolean selfIdent = false;
+	
+	protected PropertySpec ofPropSpecs[] = 
+	{
+		new PropertySpec("delimiter", PropertySpec.STRING, 
+			"(default=comma) delimiter between columns."),
+		new PropertySpec("selfIdent", PropertySpec.BOOLEAN,
+			"(default=false) set to true to add addition columns for Hydstra "
+			+ "'self identifying' format.")
+	};
+
 
 	/** default constructor */
 	protected KHydstraFormatter()
@@ -75,9 +81,13 @@ public class KHydstraFormatter extends OutputFormatter
 			PresentationGroup presGrp, Properties rsProps)
 	throws OutputFormatterException
 	{
-		String d = (String)rsProps.get("delimiter");
+		String d = PropertiesUtil.getIgnoreCase(rsProps, "delimiter");
 		if (d != null)
 			delimiter = d;
+		String s = PropertiesUtil.getIgnoreCase(rsProps, "selfIdent");
+		if (s != null)
+			selfIdent = TextUtil.str2boolean(s);
+		
 		Calendar cal = Calendar.getInstance(tz);
 		KHydstraDateFormat.setCalendar(cal);
 	}
@@ -132,20 +142,16 @@ public class KHydstraFormatter extends OutputFormatter
 			String stationName = sn.getNameValue().toUpperCase();
 			String siteName =sensor.getSensorSiteName();
 							
-				if (siteName != null)
-					stationName = siteName;
-			
-				//site id may contain only upper case letters, digits and underscore characters.
-				// replace any other occurrence with '_'
-				for(int i = 0;i<stationName.length();i++)
-				{
-
-					if(!Character.isLetterOrDigit(stationName.charAt(i)))
-					{
-						stationName = stationName.replace(stationName.charAt(i), '_');
-					}
-				}
-			
+			if (siteName != null)
+				stationName = siteName;
+		
+			//site id may contain only upper case letters, digits and underscore characters.
+			// replace any other occurrence with '_'
+			for(int i = 0;i<stationName.length();i++)
+				if(!Character.isLetterOrDigit(stationName.charAt(i)))
+					stationName = stationName.replace(stationName.charAt(i), '_');
+			if (!selfIdent)
+				stationName = TextUtil.setLengthLeftJustify(stationName, 15);
 				
 			EngineeringUnit eu = ts.getEU();
 
@@ -165,46 +171,59 @@ public class KHydstraFormatter extends OutputFormatter
 					continue;
 
 				sb.setLength(0);
-				sb.append(TextUtil.setLengthLeftJustify(stationName, 15));
+				if (selfIdent)
+					sb.append("#V2" + delimiter);
+				
+				sb.append(stationName + delimiter);
+				
+				if (selfIdent)
+					sb.append(delimiter); // placeholder for data source
 
+				sb.append(selfIdent ? hydstraCode : TextUtil.setLengthRightJustify(hydstraCode, 7));
 				sb.append(delimiter);
-				sb.append(TextUtil.setLengthRightJustify(hydstraCode, 7));
 
-				sb.append(delimiter);
 				sb.append(KHydstraDateFormat.format(tv.getTime()));
-
 				sb.append(delimiter);		
-				 NumberFormat nf = NumberFormat.getNumberInstance(new Locale("en_US")) ;				
-			     nf.setGroupingUsed(false) ;     // don't group by threes
-			     nf.setMaximumFractionDigits(3) ;
-			     nf.setMinimumFractionDigits(3) ;			  
-			     String s="";
-				try {
-					s = nf.format(tv.getDoubleValue());
-				} catch (Exception e) {
-					throw new OutputFormatterException(e.toString());
-				} 
-				sb.append(TextUtil.setLengthRightJustify(s, 10));
 
-				sb.append(delimiter);
-				sb.append(TextUtil.setLengthRightJustify("1", 3));
+				NumberFormat nf = NumberFormat.getNumberInstance(new Locale("en_US"));
+				nf.setGroupingUsed(false); // don't group by threes
+				nf.setMaximumFractionDigits(3);
+				nf.setMinimumFractionDigits(3);
+				String s = "";
+				try
+				{
+					s = nf.format(tv.getDoubleValue());
+				}
+				catch (Exception e)
+				{
+					throw new OutputFormatterException(e.toString());
+				}
+				sb.append(TextUtil.setLengthRightJustify(s, 10) + delimiter);
+				
+				String qualcode = selfIdent ? "1" : "  1";
+				sb.append(qualcode + delimiter);
 
 				String datatransCode = sensor.getProperty("HydstraTransCode");
 				if(datatransCode==null)
 					datatransCode="1";
-				sb.append(delimiter);
-				sb.append(TextUtil.setLengthRightJustify(datatransCode, 2));
+				sb.append(TextUtil.setLengthRightJustify(datatransCode, 2) + delimiter);
 
 				String HydstraMaxGap = sensor.getProperty("HydstraMaxGap");
 				if(HydstraMaxGap==null)
 					HydstraMaxGap="0";
-				
-				sb.append(delimiter);
 				sb.append(TextUtil.setLengthRightJustify(HydstraMaxGap, 4));
+
+				if (selfIdent)
+				{
+					boolean decum = TextUtil.str2boolean(sensor.getProperty("HydstraDecum"));
+					sb.append(delimiter + (decum ? "DECUM" : ""));
+				}
 				consumer.println(sb.toString());
 			}
 		}
 		consumer.endMessage();
 	}
+
+
 }
 
