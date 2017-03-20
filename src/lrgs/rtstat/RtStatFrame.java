@@ -1297,6 +1297,10 @@ public class RtStatFrame
 			lrgsConfigDialog = new LrgsConfigDialog(this,
 				labels.getString(
 				"RtStatFrame.lrgsConfigTitle") + connectedHostName);
+		else
+			lrgsConfigDialog.setTitle(labels.getString(
+				"RtStatFrame.lrgsConfigTitle") + connectedHostName);
+		
 		lrgsConfigDialog.setDdsClientIf(this);
 		lrgsConfigDialog.clear();
 		try { getConfigurations(); }
