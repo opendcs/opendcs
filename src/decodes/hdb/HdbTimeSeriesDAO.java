@@ -1017,7 +1017,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 				throw new NoSuchObjectException("Cannot create Time Series: no data type!");
 			
 			sdi = hdbDb.lookupSDI(siteId, dt.getCode());
-			if (sdi == Constants.undefinedId)
+			if (DbKey.isNull(sdi))
 			{
 				// Create the SDI here
 				String q = "insert into hdb_site_datatype values("

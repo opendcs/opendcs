@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.7  2016/11/03 19:03:05  mmaloney
+*  Remove expandTsGroup. This is now done with a helper class.
+*
 *  Revision 1.6  2016/07/20 15:37:03  mmaloney
 *  Remove getDataTypesByStandard.
 *
@@ -412,7 +415,7 @@ public class HdbTimeSeriesDb
 				String mq = "INSERT into HDB_SITE_DATATYPE values("
 					+ siteId + ", " + dataTypeCode + ", 0)";
 				doModify(mq);
-				commit();
+				//commit();
 			}
 			rs = doQuery(q);
 			if (rs.next())
@@ -428,7 +431,8 @@ public class HdbTimeSeriesDb
 			String msg= "Error getting SDI from siteId=" + siteId
 				+ ", dtCode='" + dataTypeCode + "': " + ex;
 			logger.warning(msg);
-			throw new DbIoException(msg);
+			return DbKey.NullKey;
+			//throw new DbIoException(msg);
 		}
 	}
 	
