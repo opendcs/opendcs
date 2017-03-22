@@ -1022,7 +1022,12 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 				// Create the SDI here
 				String q = "insert into hdb_site_datatype values("
 					+ siteId + ", " + dt.getCode() + ", 0";
-				doModify(q);
+				try { doModify(q); }
+				catch(Exception ex)
+				{
+					throw new BadTimeSeriesException("Cannot create time series for " 
+						+ tsid.getUniqueString());
+				}
 				sdi = hdbDb.lookupSDI(siteId, dt.getCode());
 				if (sdi == Constants.undefinedId)
 					throw new NoSuchObjectException("Cannot create SDI with siteId="
