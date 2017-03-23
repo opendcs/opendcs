@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.9  2016/11/29 01:17:42  mmaloney
+* Increase cache time to 1 hour. Add debugs.
+*
 * Revision 1.8  2016/08/05 14:49:26  mmaloney
 * No longer put HDB site name in the description field.
 *
@@ -280,7 +283,8 @@ public class SiteDAO
 //					}
 				if (site == null)
 				{
-					warning("SiteName for id=" + key + ", but no matching site.");
+					if (!db.isHdb()) // For some crazy reason, HDB has lots of orphan site names.
+						warning("SiteName for id=" + key + ", but no matching site.");
 					continue;
 				}
 				SiteName sn = new SiteName(site, rs.getString(2), rs.getString(3));
