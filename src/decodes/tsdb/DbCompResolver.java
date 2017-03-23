@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2016/12/16 14:35:45  mmaloney
+*  Enhanced resolver to allow triggering from a time series with unrelated location.
+*
 *  Revision 1.3  2016/04/22 14:41:09  mmaloney
 *  in pythonWrote, only allow a single unique (tsid,compid) tupple.
 *
@@ -78,7 +81,7 @@ public class DbCompResolver
 						+ "#comps = " + trigger.getDependentCompIds().size());
 					for(DbKey compId : trigger.getDependentCompIds())
 					{
-						Logger.instance().debug1(module + "\t\tdependent compId=" + compId);
+						Logger.instance().debug3(module + "\t\tdependent compId=" + compId);
 						if (isInPythonWrittenQueue(compId, trigger.getTimeSeriesIdentifier().getKey()))
 						{
 							Logger.instance().debug3(module + 
