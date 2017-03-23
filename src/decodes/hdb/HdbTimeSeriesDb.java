@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.8  2017/03/22 19:33:05  mmaloney
+*  Throw BadTimeSeriesException when can't create time series. It's probably due to running on a read-only HDB.
+*
 *  Revision 1.7  2016/11/03 19:03:05  mmaloney
 *  Remove expandTsGroup. This is now done with a helper class.
 *
@@ -426,7 +429,7 @@ public class HdbTimeSeriesDb
 			}
 			return Constants.undefinedId;
 		}
-		catch(SQLException ex)
+		catch(Exception ex)
 		{
 			String msg= "Error getting SDI from siteId=" + siteId
 				+ ", dtCode='" + dataTypeCode + "': " + ex;
