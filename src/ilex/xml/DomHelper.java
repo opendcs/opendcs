@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2008/09/05 12:55:05  mjmaloney
 *  Handle null & untrimmed strings in getIntegerContent
 *
@@ -255,6 +258,31 @@ public abstract class DomHelper
 		}
 	}
 
+	/**
+	* Gets the content of this node and converts to an integer.
+	* If not a number, prints log message and returns default value.
+	* @param node the Node
+	* @param defaultValue default value used if parse error
+	* @param mod module name
+	* @return integer content
+	*/
+	public static long getLongIntContent( Node node, long defaultValue, String mod )
+	{
+		String s = getTextContent(node);
+		if (s == null)
+			return defaultValue;
+		try { return Long.parseLong(s.trim()); }
+		catch(NumberFormatException ex)
+		{
+			Logger.instance().log(Logger.E_WARNING,
+				mod + ": Excpected integer for '" + node.getNodeName()
+				+ "', using default of " + defaultValue);
+			return defaultValue;
+		}
+	}
+
+	
+	
 	/**
 	* Gets the content of this node and converts to a boolean.
 	* Strings starting with y, Y, t, T, or have a value "on" will return true.
