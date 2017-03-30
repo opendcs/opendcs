@@ -87,6 +87,13 @@ public class DecodesDatabaseVersion
 	 */
 	public static final int DECODES_DB_14 = 14;
 
-	// Future schema changes should define DECODES_DB_15
+	/**
+	 * Version 15 schema corresponds to OpenDCS 6.4
+	 * - Add column loading_application_id to dacq_event for all versions.
+	 * - Added Azul Alarm tables.
+	 */
+	public static final int DECODES_DB_15 = 15;
+	
+	// Future schema changes should define DECODES_DB_16
 	
 }
