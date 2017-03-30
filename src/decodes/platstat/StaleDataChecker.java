@@ -18,6 +18,7 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.NetworkList;
@@ -54,6 +55,7 @@ public class StaleDataChecker
 	private ArrayList<String> netlistNames = new ArrayList<String>();
 	private ArrayList<NetworkList> loadedLists = new ArrayList<NetworkList>();
 	private SimpleDateFormat sdf = new SimpleDateFormat("ddMMM HH:mm");
+	private CompEventSvr compEventSvr = null;
 
 	private PropertySpec propSpecs[] = 
 	{
@@ -93,30 +95,21 @@ public class StaleDataChecker
 		{
 			appInfo = loadingAppDao.getComputationApp(appId);
 			
-			// Look for EventPort and EventPriority properties. If found,
-			String evtPorts = appInfo.getProperty("EventPort");
-			if (evtPorts != null)
+			// If this process can be monitored, start an Event Server.
+			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
 				try 
 				{
-					int evtPort = Integer.parseInt(evtPorts.trim());
-					CompEventSvr compEventSvr = new CompEventSvr(evtPort);
+					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
-				}
-				catch(NumberFormatException ex)
-				{
-					Logger.instance().warning("App Name " + appInfo.getAppName()
-						+ ": Bad EventPort property '" + evtPorts
-						+ "' must be integer. -- ignored.");
 				}
 				catch(IOException ex)
 				{
-					Logger.instance().failure(
-						"Cannot create Event server: " + ex
+					failure("Cannot create Event server: " + ex
 						+ " -- no events available to external clients.");
 				}
 			}
-
+			
 			String hostname = "unknown";
 			try { hostname = InetAddress.getLocalHost().getHostName(); }
 			catch(Exception e) { hostname = "unknown"; }

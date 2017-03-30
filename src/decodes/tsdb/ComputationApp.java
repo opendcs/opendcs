@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.7  2016/06/27 15:26:37  mmaloney
+*  Have to read data types as part of decodes init.
+*
 *  Revision 1.6  2016/04/22 14:38:40  mmaloney
 *  Skip resolving and saving results if the tasklist set is empty.
 *
@@ -64,6 +67,7 @@ import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
@@ -326,30 +330,21 @@ public class ComputationApp
 			// Construct the resolver & load it.
 			resolver = new DbCompResolver(theDb);
 			
-			// Look for EventPort and EventPriority properties. If found,
-			String evtPorts = appInfo.getProperty("EventPort");
-			if (compEventSvr == null && evtPorts != null)
+			// If this process can be monitored, start an Event Server.
+			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
 				try 
 				{
-					evtPort = Integer.parseInt(evtPorts.trim());
-					compEventSvr = new CompEventSvr(evtPort);
+					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
-				}
-				catch(NumberFormatException ex)
-				{
-					Logger.instance().warning("App Name " + getAppName()
-						+ ": Bad EventPort property '" + evtPorts
-						+ "' must be integer. -- ignored.");
 				}
 				catch(IOException ex)
 				{
-					Logger.instance().failure(
-						"Cannot create Event server: " + ex
+					failure("Cannot create Event server: " + ex
 						+ " -- no events available to external clients.");
 				}
 			}
-			
+
 			try { myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname); }
 			catch(LockBusyException ex)
 			{

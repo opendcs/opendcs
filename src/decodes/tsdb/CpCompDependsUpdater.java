@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.11  2016/12/16 14:35:45  mmaloney
+*  Enhanced resolver to allow triggering from a time series with unrelated location.
+*
 *  Revision 1.10  2016/11/29 00:57:14  mmaloney
 *  Implement wildcards for CWMS.
 *
@@ -70,6 +73,7 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
@@ -121,6 +125,8 @@ public class CpCompDependsUpdater
 	private Date notifyTime = new Date();
 	private boolean doingFullEval = false;
 	private TimeSeriesDAI timeSeriesDAO = null;
+	
+	private CompEventSvr compEventSvr = null;
 
 	/**
 	 * Constructor called from main method after parsing arguments.
@@ -299,27 +305,18 @@ public class CpCompDependsUpdater
 
 			try { hostname = InetAddress.getLocalHost().getHostName(); }
 			catch(Exception e) { hostname = "unknown"; }
-
-			// Look for EventPort and EventPriority properties. If found,
-			String evtPorts = appInfo.getProperty("EventPort");
-			if (evtPorts != null)
+			
+			// If this process can be monitored, start an Event Server.
+			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
 				try 
 				{
-					evtPort = Integer.parseInt(evtPorts.trim());
-					CompEventSvr compEventSvr = new CompEventSvr(evtPort);
+					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
-				}
-				catch(NumberFormatException ex)
-				{
-					Logger.instance().warning("App Name " + getAppName()
-						+ ": Bad EventPort property '" + evtPorts
-						+ "' must be integer. -- ignored.");
 				}
 				catch(IOException ex)
 				{
-					Logger.instance().failure(
-						"Cannot create Event server: " + ex
+					failure("Cannot create Event server: " + ex
 						+ " -- no events available to external clients.");
 				}
 			}

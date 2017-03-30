@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2016/02/23 19:26:39  mmaloney
+ * -w arg to support operation as a windows service.
+ *
  * Revision 1.11  2016/02/04 18:47:32  mmaloney
  * Ignore "-manual" schedule entries.
  *
@@ -52,6 +55,7 @@ import ilex.util.PassThruLogger;
 import ilex.util.PropertiesUtil;
 import ilex.util.ServerLock;
 import ilex.util.StderrLogger;
+import ilex.util.TextUtil;
 import ilex.util.ThreadLogger;
 
 import java.io.IOException;
@@ -104,7 +108,6 @@ public class RoutingScheduler
 	protected boolean shutdownFlag = false;
 
 	protected String hostname = null;
-	private int evtPort = -1;
 	
 	/*** Purge entries older than this many days */
 	public long purgeBeforeDays = 30;
@@ -303,21 +306,13 @@ public class RoutingScheduler
 			}
 			loadConfig(appInfo.getProperties());
 
-			// Look for EventPort and EventPriority properties. If found,
-			String evtPorts = appInfo.getProperty("EventPort");
-			if (compEventSvr == null && evtPorts != null)
+			// If this process can be monitored, start an Event Server.
+			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
 				try 
 				{
-					evtPort = Integer.parseInt(evtPorts.trim());
-					CompEventSvr compEventSvr = new CompEventSvr(evtPort);
+					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
-				}
-				catch(NumberFormatException ex)
-				{
-					Logger.instance().warning("App Name " + getAppName()
-						+ ": Bad EventPort property '" + evtPorts
-						+ "' must be integer. -- ignored.");
 				}
 				catch(IOException ex)
 				{
@@ -326,7 +321,7 @@ public class RoutingScheduler
 						+ " -- no events available to external clients.");
 				}
 			}
-
+			
 			if (loadingAppDao.supportsLocks())
 			{
 				try { myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname); }
@@ -336,6 +331,8 @@ public class RoutingScheduler
 					Logger.instance().fatal(getAppName() + " runAppInit: lock busy: " + ex);
 				}
 			}
+
+
 		}
 		catch(NoSuchObjectException ex)
 		{

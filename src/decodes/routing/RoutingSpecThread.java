@@ -1675,28 +1675,18 @@ public class RoutingSpecThread
 					}
 	
 					mainThread.myLock = loadingAppDAO.obtainCompProcLock(rsProcRecord, pid, hostname);
-					// Also check EventPort property and open listening socket if set.
-					String eventPortS = rsProcRecord.getProperty("EventPort");
-					if (eventPortS != null)
+					
+					// If this process can be monitored, start an Event Server.
+					try 
 					{
-						try 
-						{
-							int evtPort = Integer.parseInt(eventPortS.trim());
-							CompEventSvr compEventSvr = new CompEventSvr(evtPort);
-							compEventSvr.startup();
-						}
-						catch(NumberFormatException ex)
-						{
-							Logger.instance().warning("Routing Spec " + rsName
-								+ ": Bad EventPort property '" + eventPortS
-								+ "' must be integer. -- ignored.");
-						}
-						catch(IOException ex)
-						{
-							Logger.instance().failure(
-								"Cannot create Event server: " + ex
-								+ " -- no events available to external clients.");
-						}
+						CompEventSvr compEventSvr = new CompEventSvr(
+							TsdbAppTemplate.determineEventPort(rsProcRecord));
+						compEventSvr.startup();
+					}
+					catch(IOException ex)
+					{
+						Logger.instance().failure("Cannot create Event server: " + ex
+							+ " -- no events available to external clients.");
 					}
 				}
 //else

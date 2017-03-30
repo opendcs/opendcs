@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.12  2017/03/14 18:54:35  mmaloney
+*  CWMS-10402 Don't retry connect if failure is due to invalid app name.
+*
 *  Revision 1.11  2016/10/01 15:00:41  mmaloney
 *  CWMS-8979 Allow Database Process Record to override decodes.properties and
 *  user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -51,9 +54,6 @@
 */
 package decodes.tsdb;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Properties;
 
 import opendcs.dai.LoadingAppDAI;
@@ -62,17 +62,13 @@ import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.StderrLogger;
+import ilex.util.TextUtil;
 import ilex.util.UserAuthFile;
-import ilex.util.AuthException;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesVersion;
 import decodes.util.PropertySpec;
-import decodes.tsdb.*;
 import decodes.sql.DbKey;
-import decodes.sql.SqlDatabaseIO;
-import decodes.db.Database;
-import decodes.db.DatabaseIO;
 import decodes.util.DecodesException;
 import decodes.util.PropertiesOwner;
 import lrgs.gui.DecodesInterface;
@@ -118,7 +114,7 @@ public abstract class TsdbAppTemplate
 
 	/** The application ID determined when connecting to the database. */
 	public DbKey appId;
-
+	
 	/**
 	 * Subclass can set this to true to cause application to restart if
 	 * the execute method exits due to database going down.
@@ -393,29 +389,32 @@ public abstract class TsdbAppTemplate
 		
 		appId = theDb.connect(nm, credentials);
 		
-		// CWMS-8979 Allow settings in the database to override values in user.properties.
-		String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
-		if (settingsApp != null)
+		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+		try
 		{
-			info("Overriding Decodes Settings with properties in Process Record '" + settingsApp + "'");
-			LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
-			try
+			// CWMS-8979 Allow settings in the database to override values in user.properties.
+			String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
+			if (settingsApp != null)
 			{
-				CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
-				PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+				info("Overriding Decodes Settings with properties in Process Record '" + settingsApp + "'");
+				try
+				{
+					CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+					PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+				}
+				catch (DbIoException ex)
+				{
+					warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+				}
+				catch (NoSuchObjectException ex)
+				{
+					warning("Cannot load settings from non-existent app '" + settingsApp + "': " + ex);
+				}
 			}
-			catch (DbIoException ex)
-			{
-				warning("Cannot load settings from app '" + settingsApp + "': " + ex);
-			}
-			catch (NoSuchObjectException ex)
-			{
-				warning("Cannot load settings from non-existent app '" + settingsApp + "': " + ex);
-			}
-			finally
-			{
-				loadingAppDAO.close();
-			}
+		}
+		finally
+		{
+			loadingAppDAO.close();
 		}
 	}
 
@@ -511,6 +510,25 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 			}
 		}
 		return -1;
+	}
+	
+	public static int determineEventPort(CompAppInfo appInfo)
+	{
+		int evtPort = -1;
+		// Legacy: If EventPort is specified, use it.
+		String evtPorts = appInfo.getProperty("EventPort");
+		if (evtPorts != null)
+		{
+			try { evtPort = Integer.parseInt(evtPorts.trim()); }
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning("Bad EventPort property '" + evtPorts
+					+ "' must be integer -- will derive from PID");
+			}
+		}
+		if (evtPort == -1)
+			evtPort = 20000 + (determinePID() % 10000);
+		return evtPort;
 	}
 	
 

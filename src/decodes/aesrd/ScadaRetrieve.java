@@ -26,6 +26,7 @@ import ilex.util.Logger;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -117,6 +118,7 @@ public class ScadaRetrieve
 	private long DISPLAY_INTERVAL_MS = 1800 * 1000L; // half hour
 	private NumberFormat numberFormat = NumberFormat.getNumberInstance();
 	private boolean haveLock = false;
+	private CompEventSvr compEventSvr = null;
 
 	private PropertySpec propSpecs[] = 
 	{
@@ -554,26 +556,17 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		{
 			appInfo = loadingAppDao.getComputationApp(appId);
 			
-			// Look for EventPort and EventPriority properties. If found,
-			String evtPorts = appInfo.getProperty("EventPort");
-			if (evtPorts != null)
+			// If this process can be monitored, start an Event Server.
+			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
 				try 
 				{
-					int evtPort = Integer.parseInt(evtPorts.trim());
-					CompEventSvr compEventSvr = new CompEventSvr(evtPort);
+					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
-				}
-				catch(NumberFormatException ex)
-				{
-					Logger.instance().warning("App Name " + appInfo.getAppName()
-						+ ": Bad EventPort property '" + evtPorts
-						+ "' must be integer. -- ignored.");
 				}
 				catch(IOException ex)
 				{
-					Logger.instance().failure(
-						"Cannot create Event server: " + ex
+					failure("Cannot create Event server: " + ex
 						+ " -- no events available to external clients.");
 				}
 			}
