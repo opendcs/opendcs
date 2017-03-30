@@ -99,6 +99,8 @@ public class ScheduleEntryExecutive
 			dacqEventLogger = new DacqEventLogger(parent.origLogger);
 			dacqEventLogger.setDacqEventDAO(parent.getDacqEventDAO());
 		}
+		if (parent != null)
+			dacqEventLogger.setAppId(parent.appId);
 	}
 	
 private long lastDebug = 0L;

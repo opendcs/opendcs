@@ -14,6 +14,7 @@ public class DacqEventLogger
 	private DbKey platformId = DbKey.NullKey;
 	private String subsystem = null;
 	private DacqEventDAI dacqEventDAO = null;
+	private DbKey appId = DbKey.NullKey;
 
 	public DacqEventLogger(Logger parent)
 	{
@@ -31,7 +32,8 @@ public class DacqEventLogger
 	@Override
 	public void doLog(int priority, String text)
 	{
-		parent.doLog(priority, text);
+		if (parent != null)
+			parent.doLog(priority, text);
 		if (priority < Logger.E_INFORMATION || dacqEventDAO == null)
 			return;
 		DacqEvent evt = new DacqEvent();
@@ -39,6 +41,8 @@ public class DacqEventLogger
 		evt.setSubsystem(subsystem);
 		evt.setEventPriority(priority);
 		evt.setEventText(text);
+		evt.setAppId(appId);
+		
 		writeDacqEvent(evt);
 	}
 	
@@ -84,6 +88,11 @@ public class DacqEventLogger
 	public DacqEventDAI getDacqEventDAO()
 	{
 		return dacqEventDAO;
+	}
+
+	public void setAppId(DbKey appId)
+	{
+		this.appId = appId;
 	}
 
 }
