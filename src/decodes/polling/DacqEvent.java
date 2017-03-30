@@ -42,8 +42,18 @@ public class DacqEvent
 	private String subsystem = null;
 	private Date msgRecvTime = null;
 	private String eventText = null;
+	private DbKey appId = DbKey.NullKey;
 	private static SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss");
 	static { sdf.setTimeZone(TimeZone.getTimeZone("UTC")); }
+	
+	private transient String evtTimeStr = null, msgTimeStr = null;
+	
+	public static void setTimeFormat(String fmt, String tzid)
+	{
+		sdf = new SimpleDateFormat(fmt);
+		if (tzid != null)
+			sdf.setTimeZone(TimeZone.getTimeZone(tzid));
+	}
 	
 	public DacqEvent()
 	{
@@ -149,10 +159,32 @@ public class DacqEvent
 	
 	public String getTimeStr()
 	{
+		if (evtTimeStr != null)
+			return evtTimeStr;
 		synchronized(sdf)
 		{
-			return sdf.format(eventTime);
+			return evtTimeStr = sdf.format(eventTime);
 		}
+	}
+	
+	public String getMsgTimeStr()
+	{
+		if (msgTimeStr != null)
+			return msgTimeStr;
+		
+		if (msgRecvTime == null)
+			return "";
+		synchronized(sdf) { return msgTimeStr = sdf.format(msgRecvTime); }
+	}
+
+	public DbKey getAppId()
+	{
+		return appId;
+	}
+
+	public void setAppId(DbKey appId)
+	{
+		this.appId = appId;
 	}
 
 }
