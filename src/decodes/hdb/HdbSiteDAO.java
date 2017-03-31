@@ -170,7 +170,7 @@ public class HdbSiteDAO extends SiteDAO
 	public synchronized DbKey lookupSiteID( final SiteName siteName )
 		throws DbIoException
 	{
-		String q = buildSiteNameQuery(null) 
+		String q = basicSiteNameQuery(null) 
 			+ " AND lower(b.EXT_SITE_CODE_SYS_NAME) = " + sqlString(siteName.getNameType().toLowerCase())
 			+ " AND a.PRIMARY_SITE_CODE = " + sqlString(siteName.getNameValue());
 		try
@@ -189,14 +189,21 @@ public class HdbSiteDAO extends SiteDAO
 
 	}
 	
-	@Override
-	protected String buildSiteNameQuery(Site site)
+	private String basicSiteNameQuery(Site site)
 	{
 		String r = "SELECT " + siteNameAttributes 
 			+ " FROM " + siteNameTable
 			+ " WHERE " + siteNameJoin;
 		if (site != null)
 			r = r + " AND " + siteNameKey + " = " + site.getKey();
+		return r;
+
+	}
+	
+	@Override
+	protected String buildSiteNameQuery(Site site)
+	{
+		String r = basicSiteNameQuery(site);
 		r = r + " order by b.EXT_SITE_CODE_SYS_NAME, a.PRIMARY_SITE_CODE";
 		return r;
 	}
