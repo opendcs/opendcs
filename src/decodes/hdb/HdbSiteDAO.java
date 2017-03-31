@@ -54,8 +54,12 @@ public class HdbSiteDAO extends SiteDAO
 		{
 			synchronized(siteName2ExtSysId)
 			{
-				String q = "select ext_site_code_sys_name, ext_site_code_sys_id "
-					+ " from hdb_ext_site_code_sys";
+				String q = "select b.ext_site_code_sys_name, b.ext_site_code_sys_id "
+					+ "from hdb_ext_site_code_sys b, enum e, enumvalue ev "
+					+ "where b.EXT_SITE_CODE_SYS_NAME = ev.ENUMVALUE "
+					+ "and e.ID = ev.ENUMID "
+					+ "and lower(e.NAME) = 'sitenametype'";
+				
 				try
 				{
 					ResultSet rs = doQuery(q);
