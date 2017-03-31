@@ -21,8 +21,9 @@ import opendcs.dao.SiteDAO;
 public class HdbSiteDAO extends SiteDAO
 {
 	private String joinClause = null, filterClause = null;
-	private String siteNameTable = "HDB_EXT_SITE_CODE a, HDB_EXT_SITE_CODE_SYS b";
-	private String siteNameJoin = "a.EXT_SITE_CODE_SYS_ID = b.EXT_SITE_CODE_SYS_ID";
+	private String siteNameTable = "HDB_EXT_SITE_CODE a, HDB_EXT_SITE_CODE_SYS b, enum e, enumvalue ev";
+	private String siteNameJoin = "a.EXT_SITE_CODE_SYS_ID = b.EXT_SITE_CODE_SYS_ID "
+		+ "AND b.EXT_SITE_CODE_SYS_NAME = ev.ENUMVALUE and e.ID = ev.ENUMID and lower(e.NAME) = 'sitenametype'";
 	private String siteNameKey = "a.HDB_SITE_ID";
 	
 	private static HashMap<String, DbKey> siteName2ExtSysId = new HashMap<String, DbKey>();
@@ -196,6 +197,7 @@ public class HdbSiteDAO extends SiteDAO
 			+ " WHERE " + siteNameJoin;
 		if (site != null)
 			r = r + " AND " + siteNameKey + " = " + site.getKey();
+		r = r + " order by b.EXT_SITE_CODE_SYS_NAME, a.PRIMARY_SITE_CODE";
 		return r;
 	}
 

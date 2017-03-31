@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.10  2017/03/23 16:08:04  mmaloney
+* HDB has many orphan site names - so no warning on this.
+*
 * Revision 1.9  2016/11/29 01:17:42  mmaloney
 * Increase cache time to 1 hour. Add debugs.
 *
@@ -265,29 +268,43 @@ public class SiteDAO
 				Site site = new Site();
 				resultSet2Site(site, rs);
 				siteHash.put(site.getKey(), site);
-//				siteList.add(site);
 				// Can't put in cache because names are not yet known
 			}
 
 			q = buildSiteNameQuery(null);
 			rs = doQuery(q);
+			String prevNameType="", prevNameValue="";
+			DbKey prevId = DbKey.NullKey;
 			while (rs != null && rs.next())
 			{
 				DbKey key = DbKey.createDbKey(rs, 1);
 				Site site = siteHash.get(key);
-//				for(Site s : siteList)
-//					if (key.equals(s.getKey()))
-//					{
-//						site = s;
-//						break;
-//					}
+				
 				if (site == null)
 				{
 					if (!db.isHdb()) // For some crazy reason, HDB has lots of orphan site names.
 						warning("SiteName for id=" + key + ", but no matching site.");
 					continue;
 				}
-				SiteName sn = new SiteName(site, rs.getString(2), rs.getString(3));
+				
+				// There is an issue in HDB with multiple identical site names pointing to different sites.
+				// The HDB site name query orders results by type,value.
+				String nameType = rs.getString(2);
+				String nameValue = rs.getString(3);
+				if (prevNameType.equalsIgnoreCase(nameType) && prevNameValue.equalsIgnoreCase(nameValue))
+				{
+					warning("SiteName for id=" + key + " with nametype=" + nameType + " and nameValue="
+						+ nameValue + " is a duplicate to a name to a different site with id="
+							+ prevId + ". Discarding the name for " + key);
+				}
+				else
+				{
+					prevNameType = nameType;
+					prevNameValue = nameValue;
+					prevId = key;
+				}
+				
+				SiteName sn = new SiteName(site, nameType, nameValue);
 				sn.setUsgsDbno(rs.getString(4));
 				sn.setAgencyCode(rs.getString(5));
 				site.addName(sn);
