@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.12  2017/02/09 17:25:49  mmaloney
+*  Property to allow MVR to overwrite on a clash when importing.
+*
 *  Revision 1.11  2016/10/14 14:03:20  mmaloney
 *  DbImport null ptr bug fix if XML file has a Platform record with no Site block. Now it will issue a warning and ignore the bad platform.
 *
@@ -821,6 +824,7 @@ Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") +
 						newObjects.add(oldTmMatch);
 					}
 					newObjects.add(ob);
+Logger.instance().debug1("Added platform '" + ob.makeFileName() + "' with id=" + ob.getId() + " to newObjects list.");
 					writePlatformList = true;
 				}
 				else
@@ -1376,15 +1380,13 @@ Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") +
 				//End code added Oct 17, 2007
 				try 
 				{
-					ob.write();
+					p.write();
 				}
 				catch (DatabaseException ex)
 				{
-					Platform p2 = (Platform)ob;
 					Logger.instance().log(Logger.E_FAILURE, 
-							"Could not import platform " +
-							p2.makeFileName() + ", " +
-							ex.getMessage());
+							"Could not import platform '" +
+							p.makeFileName() + "' with id=" + p.getId() + ": " + ex);
 				}
 			}
 		}
