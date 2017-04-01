@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.15  2017/04/01 16:04:04  mmaloney
+*  HDB Platform Import Troubleshooting.
+*
 *  Revision 1.14  2017/04/01 15:21:27  mmaloney
 *  HDB Platform Import Troubleshooting.
 *
@@ -774,7 +777,8 @@ Logger.instance().debug3("    Looking for match to TM " + tm.toString() + " with
 //				{
 					oldTmMatch = theDb.platformList.findPlatform(
 						tm.getMediumType(), tm.getMediumId(), d);
-Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") + "found.");
+Logger.instance().debug3("        - Match was "
++ (oldTmMatch==null ? "not found." : ("found with id="+oldTmMatch.getId())));
 //				}
 //				catch(DatabaseException ex) { oldTmMatch = null; }
 			}
