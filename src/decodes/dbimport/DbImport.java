@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.14  2017/04/01 15:21:27  mmaloney
+*  HDB Platform Import Troubleshooting.
+*
 *  Revision 1.13  2017/04/01 13:15:53  mmaloney
 *  HDB Platform Import Troubleshooting.
 *
@@ -804,17 +807,20 @@ Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") +
 				// use cases 1, 2, and 3: There was a match for (site,desig)
 				if (!keepOld)
 				{
-					info("Overwriting "
-						+ oldSiteDesigMatch.getObjectType() + " '" + ob.makeFileName()+"'");
+					info("Overwriting Platform '" + ob.makeFileName()+"'");
 
 					DbKey oldId = oldSiteDesigMatch.getId();
 					theDb.platformList.removePlatform(oldSiteDesigMatch);
 					ob.clearId();
 					try { ob.setId(oldId); } catch(Exception e) {}
+					info("set platform ID to match existing ID=" + oldId);
 					theDb.platformList.add(ob);
 					
 					if (oldTmMatch != null && oldTmMatch != oldSiteDesigMatch)
 					{
+						warning("New platform '" + ob.makeFileName() + "' has TM that matches a different "
+							+"existing platform '" + oldTmMatch.makeFileName() + "' with id=" + oldTmMatch.getId()
+							+ " -- will remove TM from platform " + oldTmMatch.getId());
 						// use case 3 The Transport Media matched a different platform than (site,desig)
 						// Need to cause the old offending TMs to be removed, before the new platform is written.
 						for(Iterator<TransportMedium> tmit = ob.getTransportMedia(); tmit.hasNext(); )
@@ -824,11 +830,12 @@ Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") +
 							if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
 								tmit.remove();
 						}
+						
 						newObjects.add(oldTmMatch);
 					}
 					newObjects.add(ob);
 Logger.instance().debug1("Added platform '" + ob.makeFileName() + "' with id=" + ob.getId() 
-+ " and siteid=" +(ob.getSite()==null?"null":ob.getSite().getId())
++ " and siteid=" +(ob.getSite()==null?"<nullsite!>":ob.getSite().getId())
 	+ " to newObjects list.");
 					writePlatformList = true;
 				}
