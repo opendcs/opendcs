@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.13  2017/04/01 13:15:53  mmaloney
+*  HDB Platform Import Troubleshooting.
+*
 *  Revision 1.12  2017/02/09 17:25:49  mmaloney
 *  Property to allow MVR to overwrite on a clash when importing.
 *
@@ -824,7 +827,9 @@ Logger.instance().debug3("        - Match was " + (oldTmMatch==null?"not ":"") +
 						newObjects.add(oldTmMatch);
 					}
 					newObjects.add(ob);
-Logger.instance().debug1("Added platform '" + ob.makeFileName() + "' with id=" + ob.getId() + " to newObjects list.");
+Logger.instance().debug1("Added platform '" + ob.makeFileName() + "' with id=" + ob.getId() 
++ " and siteid=" +(ob.getSite()==null?"null":ob.getSite().getId())
+	+ " to newObjects list.");
 					writePlatformList = true;
 				}
 				else
@@ -1327,6 +1332,14 @@ Logger.instance().debug1("Added platform '" + ob.makeFileName() + "' with id=" +
 			
 		}
 
+debug(1, "Before writing sites...");
+for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
+{
+IdDatabaseObject ob = it.next();
+if (ob instanceof Platform)
+	debug(1, "Platform in list: " + ((Platform)ob).makeFileName());
+}
+
 		// Then Sites
 		debug(2, "Writing modified Sites");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
@@ -1349,6 +1362,15 @@ Logger.instance().debug1("Added platform '" + ob.makeFileName() + "' with id=" +
 				}
 			}
 		}
+		
+debug(1, "After writing sites...");
+for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
+{
+IdDatabaseObject ob = it.next();
+if (ob instanceof Platform)
+	debug(1, "Platform in list: " + ((Platform)ob).makeFileName());
+}
+
 
 		// Then Platforms
 		debug(2, "Writing modified Platforms");
@@ -1364,6 +1386,7 @@ Logger.instance().debug1("Added platform '" + ob.makeFileName() + "' with id=" +
 			if (ob instanceof Platform)
 			{
 				Platform p = (Platform)ob;
+Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' with id=" + p.getId());
 				if (newOwner != null)
 					p.setAgency(newOwner);
 				if ((p.getPlatformDesignator() == null || p.getPlatformDesignator().trim().length() == 0)
