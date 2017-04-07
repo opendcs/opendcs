@@ -102,4 +102,33 @@ public interface DacqEventDAI
 	public void deleteEventsForPlatform(DbKey platformId)
 		throws DbIoException;
 
+	/**
+	 * Find first event ID after a given time.
+	 * @param since the time
+	 * @return first event ID after since time, or DbKey.NullKey if null.
+	 */
+	public DbKey getFirstIdAfter(Date since)
+		throws DbIoException;
+	
+	/**
+	 * Read all events with event time >= the specified time.
+	 * @param since the time or null to read all events
+	 * @param evtList the array into which events are placed.
+	 * @return the number of events placed into the passed array.
+	 * @throws DbIoException
+	 */
+	public int readEventsAfter(Date since, ArrayList<DacqEvent> evtList)
+		throws DbIoException;
+	
+	/**
+	 * Read all events with event ID > the specified ID.
+	 * @param eventId the ID
+	 * @param evtList the array into which events are placed.
+	 * @return the number of events placed into the passed array.
+	 * @throws DbIoException
+	 */
+	public int readEventsAfter(DbKey eventId, ArrayList<DacqEvent> evtList)
+		throws DbIoException;
+
+
 }

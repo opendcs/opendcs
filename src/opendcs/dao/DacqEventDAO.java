@@ -19,12 +19,15 @@ public class DacqEventDAO
 {
 	public static final String module = "DacqEventDAO";
 	public static final String tableName = "DACQ_EVENT";
-	public static final String columns = "DACQ_EVENT_ID, SCHEDULE_ENTRY_STATUS_ID, PLATFORM_ID, EVENT_TIME, "
+	public static final String columnsBase = "DACQ_EVENT_ID, SCHEDULE_ENTRY_STATUS_ID, PLATFORM_ID, EVENT_TIME, "
 		+ "EVENT_PRIORITY, SUBSYSTEM, MSG_RECV_TIME, EVENT_TEXT";
+	public static String columns = columnsBase;
 
 	public DacqEventDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, module);
+		if (tsdb.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+			columns = columnsBase + ", LOADING_APPLICATION_ID";
 	}
 
 	@Override
@@ -48,8 +51,11 @@ public class DacqEventDAO
 			+ evt.getEventPriority() + ", "
 			+ sqlString(evt.getSubsystem()) + ", "
 			+ db.sqlDate(evt.getMsgRecvTime()) + ", "
-			+ sqlString(txt)
-			+ ")";
+			+ sqlString(txt);
+		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+			q = q + ", " + evt.getAppId();
+		
+		q = q + ")";
 		
 		// NOTE: Cannot use doModify(q) because it will log the statement, which will cause
 		// an endless loop.
@@ -137,6 +143,8 @@ public class DacqEventDAO
 		evt.setSubsystem(rs.getString(6));
 		evt.setMsgRecvTime(db.getFullDate(rs, 7));
 		evt.setEventText(rs.getString(8));
+		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+			evt.setAppId(DbKey.createDbKey(rs, 9));
 
 		return evt;
 	}
@@ -178,5 +186,44 @@ public class DacqEventDAO
 	{
 		String q = "DELETE FROM " + tableName + " WHERE PLATFORM_ID =" + platformId;
 		doModify(q);
+	}
+	
+	@Override
+	public DbKey getFirstIdAfter(Date since)
+			throws DbIoException
+	{
+		String q = "SELECT min(DACQ_EVENT_ID) from " + tableName
+			+ " WHERE EVENT_TIME > " + db.sqlDate(since);
+		ResultSet rs = doQuery(q);
+		try
+		{
+			if (rs.next())
+				return DbKey.createDbKey(rs, 1);
+			else
+				return DbKey.NullKey;
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException(module + " getFirstIdAfter() Cannot execute query '"
+				+ q + "': " + ex);
+		}
+	}
+
+	@Override
+	public int readEventsAfter(Date since, ArrayList<DacqEvent> evtList) throws DbIoException
+	{
+		String q = "SELECT " + columns + " FROM " + tableName;
+		if (since != null)
+			q = q + " WHERE EVENT_TIME >= " + db.sqlDate(since);
+		q = q + " order by DACQ_EVENT_ID";
+		return queryForEvents(q, evtList);
+	}
+
+	@Override
+	public int readEventsAfter(DbKey eventId, ArrayList<DacqEvent> evtList) throws DbIoException
+	{
+		String q = "SELECT " + columns + " FROM " + tableName
+			+ " WHERE DACQ_EVENT_ID > " + eventId + " order by DACQ_EVENT_ID";
+		return queryForEvents(q, evtList);
 	}
 }
