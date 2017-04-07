@@ -35,6 +35,9 @@ public class DbUpdate extends TsdbAppTemplate
 		System.out.println("Init done.");
 		Database.getDb().networkListList.read();
 
+		System.out.println("TSDB Database is currently " + theDb.getTsdbVersion());
+		System.out.println("DECODES Database is currently " + theDb.getDecodesDatabaseVersion());
+
 		if (theDb.getTsdbVersion() < TsdbDatabaseVersion.VERSION_9)
 		{
 			System.out.println("This utility cannot be used on database versions before" +
@@ -72,9 +75,8 @@ public class DbUpdate extends TsdbAppTemplate
 
 		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 		{
-			System.out.println("TSDB Database is currently " + theDb.getTsdbVersion());
-			System.out.println("DECODES Database is currently " + theDb.getDecodesDatabaseVersion());
-			
+			System.out.println("");
+			System.out.println("Updating to Database Version 11.");
 
 			if (!theDb.isCwms()) // CWMS doesn't support DCP Monitor Schema
 			{
@@ -162,6 +164,9 @@ public class DbUpdate extends TsdbAppTemplate
 		
 		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_12)
 		{
+			System.out.println("");
+			System.out.println("Updating to Database Version 12.");
+
 			if (theDb.isOracle())
 				sql("ALTER TABLE NETWORKLISTENTRY MODIFY PLATFORM_NAME VARCHAR2(64)");
 			else
@@ -170,6 +175,9 @@ public class DbUpdate extends TsdbAppTemplate
 		
 		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_13)
 		{
+			System.out.println("");
+			System.out.println("Updating to Database Version 13.");
+
 			SQLReader sqlReader = new SQLReader(schemaDir + "/opendcs.sql");
 			ArrayList<String> queries = sqlReader.createQueries();
 			for(String q : queries)
@@ -207,6 +215,9 @@ public class DbUpdate extends TsdbAppTemplate
 		}
 		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_15)
 		{
+			System.out.println("");
+			System.out.println("Updating to Database Version 15.");
+
 			sql("DELETE FROM DACQ_EVENT");
 			if (!theDb.isOracle()) // I.E. PostgreSQL
 			{
