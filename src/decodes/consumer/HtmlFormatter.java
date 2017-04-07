@@ -453,6 +453,37 @@ public class HtmlFormatter extends OutputFormatter
 	private void writeRaw(DecodedMessage msg, XmlOutputStream xos)
 		throws IOException, OutputFormatterException
 	{
+		// MJM 20170407 improvements to rendering raw message added.
+		String msgStr = new String(msg.getRawMessage().getData());
+		int newlines=0, longestSpan=0, span=0;
+		for(int idx = 0; idx < msgStr.length(); idx++)
+		{
+			char c = msgStr.charAt(idx);
+			if (Character.isWhitespace(c))
+			{
+				if (span > longestSpan)
+					longestSpan = span;
+				span = 0;
+				if (c == '\n' || c == '\r') 
+					newlines++;
+			}
+			else
+				span++;
+		}
+		if (span > longestSpan)
+			longestSpan = span;
+
+		// Long messages with no whitespace, e.g. pseudobinary. Add space separators.
+		boolean usePre = false;
+		if (longestSpan > 80)
+			msgStr = wrapString(msgStr);
+		else if (newlines > 2)
+			// Preserve line breaks in formatted ascii messages like RAWS data.
+			usePre = true;
+		// Else DON'T use <pre> because it disables word wrapping.
+Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + newlines + ", longestSpan=" + longestSpan
+	+ ", usePre=" + usePre);
+		
 		xos.writeElement("h3", "Raw Data:");
 		StringPair sp3[] = new StringPair[3];
 		sp3[0] = new StringPair("cellpadding", "4");
@@ -465,10 +496,9 @@ public class HtmlFormatter extends OutputFormatter
 		xos.startElement("tr");
 			xos.startElement("td");
 			xos.startElement("big");
-			xos.startElement("pre");
-			xos.writeLiteral(
-				wrapString(new String(msg.getRawMessage().getData())));
-			xos.endElement("pre");
+			if (usePre) xos.startElement("pre");
+			xos.writeLiteral(wrapString(msgStr));
+			if (usePre) xos.endElement("pre");
 			xos.endElement("big");
 			xos.endElement("td");
 		xos.endElement("tr");
@@ -654,7 +684,7 @@ public class HtmlFormatter extends OutputFormatter
 	 * be one very long line with no whitespace. We insert spaces after 80
 	 * characters if needed.
 	 */
-	private String wrapString(String ins)
+	public static String wrapString(String ins)
 	{
 		StringBuffer sb = new StringBuffer(ins);
 		int length = ins.length();
