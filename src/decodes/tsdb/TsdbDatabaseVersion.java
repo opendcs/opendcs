@@ -111,5 +111,12 @@ public class TsdbDatabaseVersion
 	 */
 	public static final int VERSION_14 = 14;
 	public static final String VERSION_14_DTK = "OpenDCS 6.3";
-
+	
+	/**
+	 * Version 15 schema corresponds to OpenDCS 6.4
+	 * 	 * - Add column loading_application_id to dacq_event for all versions.
+	 * - Added Azul Alarm tables.
+	 */
+	public static final int VERSION_15 = 15;
+	public static final String VERSION_15_DTK = "OpenDCS 6.4";
 }
