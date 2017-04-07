@@ -24,7 +24,7 @@ import ilex.var.NoConversionException;
 //AW:JAVADOC
 /**
 Dis-aggregates by spreading out the input values to the outputs in various
-ways (fill, interpolate, split).
+ways (fill, split).
 The interval of the input should always be equal to, or longer than, the output.
 Example: Input is daily, output is hour. 24 output values are written covering
 the period of each input.
@@ -32,7 +32,6 @@ The 'method' property determines how each output period is determined:
 <ul>
   <li>fill (default) - Each output is the same as the input covering the period.
       </li>
-  <li>interp - Determine the output by interpolating between input values</li>
   <li>split - Divide the input equally between the outputs for the period.</li>
 </ul>
  */
