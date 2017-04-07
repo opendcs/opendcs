@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:04  cvs
 *  Added legacy code to repository
 *
@@ -89,6 +92,7 @@ public class RoutingDirMonitor extends DirectoryMonitorThread
 	 */
 	public void processFile(File myfile)
 	{
+		Logger.instance().debug3("Processing '" + myfile.getPath() + "'");
 		try { parent.setStatus(load(myfile), myfile.lastModified()); }
 		catch(BadStatusFile ex)
 		{

@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2013/03/28 17:29:09  mmaloney
 *  Refactoring for user-customizable decodes properties.
 *
@@ -126,6 +129,9 @@ public class RoutingMonitor
 	{
 		// This parses all args & sets up the logger & debug level.
 		cmdLineArgs.parseArgs(args);
+		
+Logger.instance().info("Just parsed args, minPriority=" + Logger.instance().getMinLogPriority());
+Logger.instance().debug1("starting");
 
 		// Instantiate my monitor.
 		RoutingMonitor mymonitor=new RoutingMonitor();
