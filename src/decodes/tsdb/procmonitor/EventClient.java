@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2015/06/04 21:37:39  mmaloney
+ * Added control buttons to process monitor GUI.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -56,6 +59,7 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 
 import ilex.net.BasicClient;
+import ilex.util.Logger;
 
 public class EventClient
 	extends BasicClient
@@ -94,15 +98,24 @@ public class EventClient
 				try
 				{
 					setHost(appInfoStatus.getCompLock().getHost());
+					int port = -1;
 					String eps = appInfoStatus.getCompAppInfo().getProperty("EventPort");
-					if (eps == null)
-						throw new Exception("No 'EventPort' property. Cannot connect.");
-					try { setPort(Integer.parseInt(eps)); }
-					catch(NumberFormatException ex)
+					if (eps != null) // Legacy: If an EventPort property exists, honor it.
 					{
-						throw new Exception("Bad EventPort property '" + eps
-							+ "' -- should be integer.");
+						try { port = Integer.parseInt(eps); }
+						catch(NumberFormatException ex)
+						{
+							Logger.instance().warning("EventClient: Bad EventPort property '" + eps
+								+ "' -- should be integer. Ignored. Will try PID.");
+							port = -1;
+						}
 					}
+					if (port == -1) // No EventPort property. Try deriving from PID.
+					{
+						port = 20000 + (appInfoStatus.getCompLock().getPID() % 10000);
+					}
+					
+					setPort(port);
 					connect();
 					reader = new BufferedReader(new InputStreamReader(this.input));
 				}
