@@ -14,6 +14,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import lrgs.archive.XmitWindow;
+import decodes.consumer.HtmlFormatter;
 import decodes.db.Constants;
 import decodes.sql.DbKey;
 import ilex.util.ArrayUtil;
@@ -998,9 +999,42 @@ public class DcpMsg
 		synchronized(bvFormat) { return bvFormat.format(battVolt); }
 	}
 	
+	/**
+	 * This method is used by the Html formatter and the DCP Monitor JSF code to
+	 * print a block of data for display on an HTML page.
+	 * @return
+	 */
 	public String getDataStr()
 	{
-		return new String(getData());
+		// MJM 20170407 improvements to rendering raw message added.
+		String msgStr = new String(getData());
+		int newlines=0, longestSpan=0, span=0;
+		for(int idx = 0; idx < msgStr.length(); idx++)
+		{
+			char c = msgStr.charAt(idx);
+			if (Character.isWhitespace(c))
+			{
+				if (span > longestSpan)
+					longestSpan = span;
+				span = 0;
+				if (c == '\n' || c == '\r') 
+					newlines++;
+			}
+			else
+				span++;
+		}
+		if (span > longestSpan)
+			longestSpan = span;
+
+		// Long messages with no whitespace, e.g. pseudobinary. Add space separators.
+		if (longestSpan > 80)
+			msgStr = HtmlFormatter.wrapString(msgStr);
+		else if (newlines > 2)
+			// Preserve line breaks in formatted ascii messages like RAWS data.
+			msgStr = "<pre>" + msgStr + "</pre>";
+Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + newlines + ", longestSpan=" + longestSpan);
+
+		return msgStr;
 	}
 	
 	public String getSource()
