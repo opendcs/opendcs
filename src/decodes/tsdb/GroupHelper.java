@@ -79,7 +79,6 @@ public abstract class GroupHelper
 		throws DbIoException
 	{
 		tsdb.debug("GroupHelper.expandTsGroup group '" + tsGroup.getGroupName() + "'");
-		prepareForExpand(tsGroup);
 		
 		tsGroup.clearExpandedList();
 
@@ -128,10 +127,9 @@ public abstract class GroupHelper
 			}
 
 		groupIdsDone.add(grp.getGroupId());
-//		if (!grp.isTransient())
-//			// transient groups are built programmatically -- not in DB.
-//			// So if this is transient, leave it alone.
-//			tsdb.readTsGroupMembers(grp);
+		
+		/** Some implementations (CWMS) have to compile regex's etc., before expanding. */
+		prepareForExpand(grp);
 
 		tsdb.debug1("Evaluating group '" + grp.getGroupName() + "'");
 
@@ -143,9 +141,13 @@ public abstract class GroupHelper
 		TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 		try
 		{
-			for(TimeSeriesIdentifier tsid : timeSeriesDAO.listTimeSeries())
+			ArrayList<TimeSeriesIdentifier> cachedTsids = timeSeriesDAO.listTimeSeries();
+			tsdb.debug2("...cached TSID list has " + cachedTsids.size() + " TSIDs.");
+			for(TimeSeriesIdentifier tsid : cachedTsids)
 				if (passesParts(grp, tsid))
 					tsIdSet.add(tsid);
+			tsdb.debug2("...after passesParts loop '" + grp.getGroupName() + "' has "
+				+ tsIdSet.size() + " TSIDs.");
 		}
 		finally
 		{
@@ -169,6 +171,9 @@ public abstract class GroupHelper
 			TreeSet<TimeSeriesIdentifier> intsTsids = doExpandTsGroup(intsGroup, groupIdsDone);
 			tsIdSet.retainAll(intsTsids);
 		}
+		
+		tsdb.debug1("Evaluated group '" + grp.getGroupName() + "' has "
+			+ tsIdSet.size() + " TSIDs.");
 		
 		return tsIdSet;
 	}

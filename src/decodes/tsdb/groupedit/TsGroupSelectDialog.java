@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.8  2013/08/18 19:49:37  mmaloney
  * Added clear button for compedit selection.
  *
@@ -106,8 +109,7 @@ public class TsGroupSelectDialog
 			DecodesSettings.instance().language);
 
 		group = null;
-		groupsSelectPanel = 
-			new TsGroupListPanel(TsdbAppTemplate.theDb, this, false, this);
+		groupsSelectPanel = new TsGroupListPanel(TsdbAppTemplate.theDb, this, this);
 		
 		groupsSelectPanel.setTsGroupListFromDb();
 		

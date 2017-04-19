@@ -7,6 +7,9 @@
 *  contained in this file may be claimed to be proprietary.
 *
 * $Log$
+* Revision 1.3  2016/10/17 17:51:49  mmaloney
+* Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
+*
 * Revision 1.2  2016/04/22 14:39:40  mmaloney
 * Guard against same subgroup being added multiple times.
 *
@@ -113,9 +116,6 @@ public class TsGroup
 	private ArrayList<TimeSeriesIdentifier> expandedList = 
 		new ArrayList<TimeSeriesIdentifier>();
 	
-	// Used in GUI to track how a sub-group is included.
-	private transient String inclusion = "Included";
-
 	/**
 	 * Default Constructor makes an empty group.
 	 */
@@ -408,20 +408,11 @@ public class TsGroup
 		Logger.instance().debug3("TsGroup.addSubGroup(" + subGroupMember.getGroupName()
 			+ ", " + combine + ") this group=" + this.groupName);
 		if (combine == 'S' || combine == 'F')
-		{
-			subGroupMember.setInclusion("Subtract");
 			excludeGroups.add(subGroupMember);
-		}
 		else if (combine == 'I')
-		{
-			subGroupMember.setInclusion("Intersect");
 			intersectedGroups.add(subGroupMember);
-		}
 		else
-		{
-			subGroupMember.setInclusion("Add");
 			includeGroups.add(subGroupMember);
-		}
 	}
 
 	/**
@@ -650,22 +641,6 @@ public class TsGroup
 		return groupName;
 	}
 
-	/**
-	 * @return the inclusion
-	 */
-	public String getInclusion()
-	{
-		return inclusion;
-	}
-
-	/**
-	 * @param inclusion the inclusion to set
-	 */
-	public void setInclusion(String inclusion)
-	{
-		this.inclusion = inclusion;
-	}
-	
 	/**
 	 * Determine if theGroup exists in the subgroup list
 	 * 

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2017/01/06 16:42:10  mmaloney
+ * Misc Bug Fixes
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -82,31 +85,26 @@ public class TsGroupListPanel extends JPanel
 	private TsGroupsSelectTableModel model;
 	//Time Series DB
 	TimeSeriesDb theTsDb;
-	//Miscellaneous
-	protected boolean inclusionOption = false; //true if inclusion column is used in TS group table
 	//Titles, Labels defined here for internationalization
 	private GroupSelector ctrlPanel = null;
 
 	/** Constructor. */
-	public TsGroupListPanel(TimeSeriesDb theTsDb, GuiDialog dialogOwner, boolean inclusionOption,
-		GroupSelector ctrlPanel)
+	public TsGroupListPanel(TimeSeriesDb theTsDb, GuiDialog dialogOwner, GroupSelector ctrlPanel)
 	{
-		this(theTsDb, dialogOwner, null, inclusionOption, ctrlPanel);
+		this(theTsDb, dialogOwner, null, ctrlPanel);
 	}
 
-	public TsGroupListPanel(TimeSeriesDb theTsDb, TopFrame frameOwner, boolean inclusionOption,
-		GroupSelector ctrlPanel)
+	public TsGroupListPanel(TimeSeriesDb theTsDb, TopFrame frameOwner, GroupSelector ctrlPanel)
 	{
-		this(theTsDb, null, frameOwner, inclusionOption, ctrlPanel);
+		this(theTsDb, null, frameOwner, ctrlPanel);
 	}
 
 	private TsGroupListPanel(TimeSeriesDb theTsDb, GuiDialog dialogOwner,
-		TopFrame frameOwner, boolean inclusionOption, GroupSelector ctrlPanel)
+		TopFrame frameOwner, GroupSelector ctrlPanel)
 	{
 		this.theTsDb = theTsDb;
 		this.dialogOwner = dialogOwner;
 		this.frameOwner = frameOwner;
-		this.inclusionOption = inclusionOption;
 		this.ctrlPanel = ctrlPanel;
 
 		try
@@ -125,17 +123,7 @@ public class TsGroupListPanel extends JPanel
 		//Initialize components for jScrollPane and tsGroupsListTable
 		jScrollPane = new JScrollPane();
 		model = new TsGroupsSelectTableModel(this);
-		if (inclusionOption == false)
-		{
-			tsGroupsListTable = new SortingListTable(
-				model, 
-				new int[] { 17, 22, 24, 48 });// { 10, 22, 31, 48 }
-		} else
-		{
-			tsGroupsListTable = new SortingListTable(
-				model, 
-				new int[] { 17, 22, 24, 48, 20 });// { 10, 22, 31, 48 }
-		}
+		tsGroupsListTable = new SortingListTable(model, new int[] { 17, 22, 24, 48 });
 		tsGroupsListTable.getSelectionModel().setSelectionMode(
 				ListSelectionModel.SINGLE_SELECTION);
 		setMultipleSelection(false);
@@ -314,9 +302,9 @@ public class TsGroupListPanel extends JPanel
 			dialogOwner.showError(msg);
 	}
 	
-	public void setIncludeOption(boolean inclusionOption)
+	public TsGroupsSelectTableModel getModel()
 	{
-	  this.inclusionOption = inclusionOption;
+		return model;
 	}
 }
 
@@ -341,42 +329,20 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 			"decodes/resources/groupedit",
 			DecodesSettings.instance().language);
 
-		if (panel.inclusionOption == false)
-		{
-			columnNames = new String[4];
-			
-			columnNames[0] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.groupIdColumnLabel");
-			columnNames[1] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.nameColumnLabel");
-			columnNames[2] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.typeColumnLabel");
-			columnNames[3] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.descriptionColumnLabel");
-		} else
-		{
-			columnNames = new String[5];
-			
-			columnNames[0] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.groupIdColumnLabel");
-			columnNames[1] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.nameColumnLabel");
-			columnNames[2] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.typeColumnLabel");
-			columnNames[4] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.inclusionColumnLabel");
-			columnNames[3] = 
-				groupResources.getString(
-					"TsGroupsListSelectPanel.descriptionColumnLabel");
-		}
+		columnNames = new String[4];
+		
+		columnNames[0] = 
+			groupResources.getString(
+				"TsGroupsListSelectPanel.groupIdColumnLabel");
+		columnNames[1] = 
+			groupResources.getString(
+				"TsGroupsListSelectPanel.nameColumnLabel");
+		columnNames[2] = 
+			groupResources.getString(
+				"TsGroupsListSelectPanel.typeColumnLabel");
+		columnNames[3] = 
+			groupResources.getString(
+				"TsGroupsListSelectPanel.descriptionColumnLabel");
 	}
 
 	public void setTsGroupListFromDb()
@@ -418,6 +384,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 			}
 		}
 		theGroupList.add(tsGroupToAdd);
+		reSort();
 		fireTableDataChanged();
 	}
 	
@@ -568,6 +535,41 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 			sortByColumn(sortColumn);
 	}
 
+	public void replaceTsGroup(TsGroup modifiedGroup)
+	{
+		for(Iterator<TsGroup> it = theGroupList.iterator(); it.hasNext(); )
+		{
+			TsGroup group = it.next();
+			if (modifiedGroup.getGroupId().equals(group.getGroupId()))
+			{
+				it.remove();
+				continue;
+			}
+			
+			for(Iterator<TsGroup> subit = group.getIncludedSubGroups().iterator(); subit.hasNext(); )
+			{
+				TsGroup subgroup = subit.next();
+				if (subgroup.getGroupId().equals(modifiedGroup.getGroupId()))
+					group.addSubGroup(modifiedGroup, 'A');
+			}
+			for(Iterator<TsGroup> subit = group.getExcludedSubGroups().iterator(); subit.hasNext(); )
+			{
+				TsGroup subgroup = subit.next();
+				if (subgroup.getGroupId().equals(modifiedGroup.getGroupId()))
+					group.addSubGroup(modifiedGroup, 'S');
+			}
+			for(Iterator<TsGroup> subit = group.getIntersectedGroups().iterator(); subit.hasNext(); )
+			{
+				TsGroup subgroup = subit.next();
+				if (subgroup.getGroupId().equals(modifiedGroup.getGroupId()))
+					group.addSubGroup(modifiedGroup, 'I');
+			}
+		}
+		theGroupList.add(modifiedGroup);
+		reSort();
+		fireTableDataChanged();
+	}
+
 }
 
 /**
@@ -578,8 +580,8 @@ class TsGroupsSelectColumnizer
 {
 	static String getColumn(TsGroup tsGroup, String colName, ResourceBundle groupResources)
 	{
-    if (tsGroup == null || colName == null || colName.isEmpty())
-    	return "";
+	    if (tsGroup == null || colName == null || colName.isEmpty())
+	    	return "";
     
 		if (colName.equalsIgnoreCase(groupResources.
 				getString("TsGroupsListSelectPanel.groupIdColumnLabel")))
@@ -590,9 +592,6 @@ class TsGroupsSelectColumnizer
 		else if (colName.equalsIgnoreCase(groupResources.
 				getString("TsGroupsListSelectPanel.typeColumnLabel")))
 			return tsGroup.getGroupType() == null ? "" : tsGroup.getGroupType();
-		else if (colName.equalsIgnoreCase(groupResources.
-				getString("TsGroupsListSelectPanel.inclusionColumnLabel")))
-			return tsGroup.getInclusion() == null ? "" : tsGroup.getInclusion();
 		else if (colName.equalsIgnoreCase(groupResources.
 				getString("TsGroupsListSelectPanel.descriptionColumnLabel")))
 			return tsGroup.getDescription() == null ? "" : getFirstLine(tsGroup.getDescription());
@@ -624,13 +623,6 @@ class TsGroupsSelectColumnizer
 			{
 				return tsGroup.getGroupType() == null ? "" : tsGroup
 						.getGroupType();
-			} else
-				return "";
-		case 4: // Inclusion
-			if (tsGroup != null)
-			{
-				return tsGroup.getInclusion() == null ? ""
-						: tsGroup.getInclusion();
 			} else
 				return "";
 		case 3: // Description

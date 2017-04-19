@@ -1,6 +1,7 @@
 package decodes.tsdb.groupedit;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.util.ResourceBundle;
 
 import javax.swing.JLabel;
@@ -120,7 +121,7 @@ public class TsDbGrpListPanel
 		listLabel = new JLabel(listTitle, SwingConstants.CENTER);
 		controlsPanel = new TsListControlsPanel(this);
 		tsGroupsListSelectPanel = new TsGroupListPanel(
-			TsdbAppTemplate.theDb, TopFrame.instance(), false, this);
+			TsdbAppTemplate.theDb, TopFrame.instance(), this);
 		tsGroupsListSelectPanel.setTsGroupListFromDb();
 		
 		//Setup the layout
@@ -302,6 +303,8 @@ public class TsDbGrpListPanel
 			groupTab.setTimeSeriesSelectDialog(timeSeriesSelectDialog);
 			theGrpTabbedPanel.add(groupTabName, groupTab);
 			theGrpTabbedPanel.setSelectedComponent(groupTab);
+			groupTab.setGroupListModel(tsGroupsListSelectPanel.getModel());
+			groupTab.setParentListPanel(this);
 		}
 		return groupTab;
 	}
@@ -329,5 +332,32 @@ public class TsDbGrpListPanel
 	public boolean tsGroupExistsInList(String groupName)
 	{
 		return tsGroupsListSelectPanel.tsGroupExistsInList(groupName);
+	}
+
+	/**
+	 * Called when a group is modified and saved to the database by the definition
+	 * panel. Need to go through any other open definition panels that might have
+	 * this group as a subgroup.
+	 * @param savedGroup the group just modified and saved.
+	 */
+	public void updateSubGroups(TsGroup savedGroup)
+	{
+		// Go through all open group tabs.
+		JTabbedPane theGrpTabbedPanel = parent.getTsGroupsListTabbedPane();
+		for(int idx = 0; idx < theGrpTabbedPanel.getComponentCount(); idx++)
+		{
+			Component tp = theGrpTabbedPanel.getComponentAt(idx);
+			if (tp instanceof TsGroupDefinitionPanel)
+			{
+				// If this is NOT the panel for the just-saved group
+				TsGroupDefinitionPanel defPanel = (TsGroupDefinitionPanel)tp;
+				if (!defPanel.getEditedGroup().getGroupId().equals(savedGroup.getGroupId()))
+				{
+					defPanel.replaceSubGroup(savedGroup);
+				}
+			}
+		}
+
+
 	}
 }

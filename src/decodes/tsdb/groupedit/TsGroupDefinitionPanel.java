@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2017/01/10 21:11:35  mmaloney
+ * Enhanced wildcard processing for CWMS as per punchlist for comp-depends project
+ * for NWP.
+ *
  * Revision 1.9  2016/11/21 16:04:03  mmaloney
  * Code Cleanup.
  *
@@ -79,6 +83,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -86,7 +91,6 @@ import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -94,6 +98,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
@@ -129,7 +134,6 @@ import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsGroupMemberType;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.compedit.DataTypeSelectDialog;
-import decodes.tsdb.groupedit.TsGroupListPanel;
 import decodes.util.DecodesSettings;
 import decodes.gui.SortingListTableModel;
 
@@ -170,14 +174,8 @@ public class TsGroupDefinitionPanel
 	private JButton deleteTimeSeriesMemberButton;
 	/*	Subgroup members */
 	private JPanel subGroupMembersPanel;
-	private JButton addIncludedSubgroupMemberButton;
-	private JButton addExcludedSubgroupMemberButton;
-	private JButton addIntersectedSubgroupMemberButton;
-	private JButton deleteSubgroupMemberButton;
 	/*	Other group members */
 	private JPanel queryPanel;
-//	private DefaultListModel queryListModel;
-//	private JList queryList;
 	
 	//Time Series DB
 	private TimeSeriesDb tsdb;
@@ -192,7 +190,10 @@ public class TsGroupDefinitionPanel
 	/** The local copy being edited. */
 	private TsGroup editedGroup;
 
-	private TsGroupListPanel tsGroupsListSelectPanel;
+	private SubGroupTableModel subgroupModel = new SubGroupTableModel();
+	private SortingListTable subgroupTable = new SortingListTable(subgroupModel,
+		SubGroupTableModel.colwidth);
+	
 	private TsListSelectPanel tsListSelectPanel;
 	
 //	private ArrayList<Site> knownSites = new ArrayList<Site>();
@@ -201,7 +202,6 @@ public class TsGroupDefinitionPanel
 	private String[] intervalArray = null;
 	private String[] durationArray = null;
 	private String[] paramTypes = null;
-	private String[] versionArray = null;
 
 	private static SiteSelectDialog siteSelectDlg = null;
 	
@@ -222,19 +222,15 @@ public class TsGroupDefinitionPanel
 	private String enterIntervalLabel;
 	private String enterParamTypeLabel;
 	private String enterDurationLabel;
-	private String enterVersionLabel;
 	private String saveChangesLabel;
 	private String tsDeleteMsg;
-	private String groupDeleteMsg;
-	private String groupDeleteConfMsg1;
-	private String groupDeleteConfMsg2;
 	private String groupNameEmptyMsg;
 	private String groupTEmptyMsg;
-	private String addIncludedSubgroupButtonLabel;
-	private String addExcludedSubgroupButtonLabel;
 	private TimeSeriesSelectDialog timeSeriesSelectDialog = null;
 	private QuerySelectorTableModel queryModel = new QuerySelectorTableModel();
 	private SortingListTable queryTable = null;
+	private TsGroupsSelectTableModel parentGroupListModel = null;
+	private TsDbGrpListPanel parentListPanel = null;
 	
 	public TsGroupDefinitionPanel()
 	{	
@@ -283,7 +279,6 @@ public class TsGroupDefinitionPanel
 				intervalDAO.close();
 			}
 			paramTypes = tsdb.getParamTypes();
-			versionArray = tsdb.getValidPartChoices("version");
 		}
 		catch (Exception ex)
 		{
@@ -343,25 +338,13 @@ public class TsGroupDefinitionPanel
 			.getString("TsGroupDefinitionPanel.enterParamTypeLabel");
 		enterDurationLabel = groupResources
 			.getString("TsGroupDefinitionPanel.enterDurationLabel");
-		enterVersionLabel = groupResources
-			.getString("TsGroupDefinitionPanel.enterVersionLabel");
 		saveChangesLabel = genericResources.getString("saveChanges");
 		tsDeleteMsg = groupResources
 					.getString("TsGroupDefinitionPanel.tsDeleteMsg");
-		groupDeleteMsg = groupResources
-						.getString("TsGroupDefinitionPanel.groupDeleteMsg");
-		groupDeleteConfMsg1 = groupResources
-					.getString("TsGroupDefinitionPanel.groupDeleteConfMsg1");
-		groupDeleteConfMsg2 = groupResources
-					.getString("TsGroupDefinitionPanel.groupDeleteConfMsg2");
 		groupNameEmptyMsg = groupResources
 					.getString("TsGroupDefinitionPanel.groupNameEmptyMsg");
 		groupTEmptyMsg = groupResources
 					.getString("TsGroupDefinitionPanel.groupTEmptyMsg");
-		addIncludedSubgroupButtonLabel = groupResources
-					.getString("TsGroupDefinitionPanel.addIncludedSubgroupButtonLabel");
-		addExcludedSubgroupButtonLabel = groupResources
-					.getString("TsGroupDefinitionPanel.addExcludedSubgroupButtonLabel");
 	}
 	
 	/** Initialize GUI components */
@@ -530,64 +513,69 @@ public class TsGroupDefinitionPanel
 		subGroupMembersPanel.setBorder(new TitledBorder(
 				BorderFactory.createEtchedBorder(Color.white, new Color(148, 145, 140)),
 				subGroupMembersTitleLabelStr));
-		tsGroupsListSelectPanel = new TsGroupListPanel(tsdb, parent, true, this);
-		tsGroupsListSelectPanel.setMultipleSelection(true);
 		
-		addIncludedSubgroupMemberButton = new JButton(addIncludedSubgroupButtonLabel);
-		addExcludedSubgroupMemberButton = new JButton(addExcludedSubgroupButtonLabel);
-		addIntersectedSubgroupMemberButton = new JButton("Intersect SubGroup");
-		deleteSubgroupMemberButton = new JButton(deleteButtonLabelStr);
-		
-		addIncludedSubgroupMemberButton
-			.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				addIncludedSubgroupMemberButton_actionPerformed(e);
-			}
-		});
-		addExcludedSubgroupMemberButton
-			.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				addExcludedSubgroupMemberButton_actionPerformed(e);
-			}
-		});
-		addIntersectedSubgroupMemberButton.addActionListener(
+		JPanel subgroupPanel = new JPanel(new BorderLayout());
+		JScrollPane subgroupScrollPane = new JScrollPane(
+			subgroupTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		subgroupTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		subgroupPanel.add(subgroupScrollPane, BorderLayout.CENTER);
+
+		JButton addSGButton = new JButton("Add SubGroup");
+		addSGButton.addActionListener(
 			new java.awt.event.ActionListener()
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					addIntersectedSubgroupMemberButton_actionPerformed(e);
+					addSubgroupPressed();
 				}
 			});
-		deleteSubgroupMemberButton
-			.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
+		JButton subtractSGButton = new JButton("Subtract SubGroup");
+		subtractSGButton.addActionListener(
+			new java.awt.event.ActionListener()
 			{
-				deleteSubgroupPressed();
-			}
-		});
+				public void actionPerformed(ActionEvent e)
+				{
+					subtractSubgroupPressed();
+				}
+			});
+		
+		JButton intersectSubgroupButton = new JButton("Intersect SubGroup");
+		intersectSubgroupButton.addActionListener(
+			new java.awt.event.ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					intersectSubgroupPressed();
+				}
+			});
+		JButton deleteSubgroupButton = new JButton("Delete");
+		deleteSubgroupButton.addActionListener(
+			new java.awt.event.ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					deleteSubgroupPressed();
+				}
+			});
 
-		subGroupMembersPanel.add(tsGroupsListSelectPanel,
+		subGroupMembersPanel.add(subgroupPanel,
 			new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(4, 5, 4, 5), 0, 0));
-		subGroupMembersPanel.add(addIncludedSubgroupMemberButton,
+		subGroupMembersPanel.add(addSGButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 12, 1, 12), 55, 0));
-		subGroupMembersPanel.add(addExcludedSubgroupMemberButton,
+		subGroupMembersPanel.add(subtractSGButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 12, 1, 12), 55, 0));
-		subGroupMembersPanel.add(addIntersectedSubgroupMemberButton,
+		subGroupMembersPanel.add(intersectSubgroupButton,
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 12, 1, 12), 55, 0));
-		subGroupMembersPanel.add(deleteSubgroupMemberButton,
+		subGroupMembersPanel.add(deleteSubgroupButton,
 			new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 12, 1, 12), 55, 0));
@@ -713,9 +701,12 @@ public class TsGroupDefinitionPanel
 			ddlist.add(tsid);
 		tsListSelectPanel.setTimeSeriesList(ddlist);
 		
-		tsGroupsListSelectPanel.addSubgroups(editedGroup.getIncludedSubGroups());
-		tsGroupsListSelectPanel.addSubgroups(editedGroup.getExcludedSubGroups());
-		tsGroupsListSelectPanel.addSubgroups(editedGroup.getIntersectedGroups());
+		for(TsGroup g : editedGroup.getIncludedSubGroups())
+			subgroupModel.add(g, "Add");
+		for(TsGroup g : editedGroup.getExcludedSubGroups())
+			subgroupModel.add(g, "Subtract");
+		for(TsGroup g : editedGroup.getIntersectedGroups())
+			subgroupModel.add(g, "Intersect");
 
 		//Load other group members from the TsDB
 		queryModel.clear();
@@ -812,9 +803,6 @@ public class TsGroupDefinitionPanel
 			tempGroup.addTsMember(dd);
 		}
 
-		// Get sub group members
-		for(TsGroup g : tsGroupsListSelectPanel.getAllTsGroupsInList())
-			tempGroup.addSubGroup(g, g.getInclusion().charAt(0));
 
 		//Feed other group members to the TsDb
 		SiteDAI siteDAO = tsdb.makeSiteDAO();
@@ -862,6 +850,28 @@ public class TsGroupDefinitionPanel
 		{
 			siteDAO.close();
 		}
+		
+		TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO();
+		try
+		{
+			for(SubGroupReference ref : subgroupModel.subgroups)
+			{
+				TsGroup subgroup = tsGroupDAO.getTsGroupById(ref.groupId);
+				if (subgroup != null)
+					tempGroup.addSubGroup(subgroup, 
+						ref.combine.equalsIgnoreCase("Intersect") ? 'I' :
+						ref.combine.equalsIgnoreCase("Subtract") ? 'S' : 'A');
+			}
+		}
+		catch (DbIoException ex)
+		{
+			Logger.instance().warning(module + " Error finding subgroup: " + ex);
+		}
+		finally
+		{
+			tsGroupDAO.close();
+		}
+		
 		editedGroup = tempGroup;
 		return true;
 	}
@@ -1021,16 +1031,12 @@ public class TsGroupDefinitionPanel
 
 	/**
 	 * User Presses Sub Group Members Add button
-	 * 
-	 * @param e
-	 *            ActionEvent
 	 */
-	public void addIncludedSubgroupMemberButton_actionPerformed(ActionEvent e)
+	public void addSubgroupPressed()
 	{
-		TsGroupSelectDialog dlg = 
-			new TsGroupSelectDialog(TopFrame.instance());
+		TsGroupSelectDialog dlg = new TsGroupSelectDialog(parent);
 		dlg.setMultipleSelection(false);
-		TopFrame.instance().launchDialog(dlg);
+		parent.launchDialog(dlg);
 		
 		TsGroup selectedGrps[] = dlg.getSelectedTsGroups();
 		if (selectedGrps.length == 0)
@@ -1040,31 +1046,22 @@ public class TsGroupDefinitionPanel
 		{
 			if (g.getGroupName().equals(editedGroup.getGroupName()))
 			{
-				String msgStr = "Group "+editedGroup.getGroupName()+" cannot add itself as a subgroup, ignore it!";
+				String msgStr = "Group " + editedGroup.getGroupName()
+					+" cannot add itself as a subgroup!";
 				JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msgStr, 60),
 						subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
 				continue;
 			}
 			
-			if (editedGroup.hasSubgroup(g))
-			{
-				String msgStr = "Group "+g.getGroupName()+" is already in the subgroup list, ignore it!";
-				JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msgStr, 60),
-						subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
-				continue;
-			}
-			g.setInclusion("Add");
-			tsGroupsListSelectPanel.addTsGroup(g);
+//			g.setInclusion("Add");
+			subgroupModel.add(g, "Add");
 		}
 	}
 
 	/**
 	 * User Presses Sub Group Members Add button
-	 * 
-	 * @param e
-	 *            ActionEvent
 	 */
-	public void addExcludedSubgroupMemberButton_actionPerformed(ActionEvent e)
+	public void subtractSubgroupPressed()
 	{
 		TsGroupSelectDialog dlg = 
 			new TsGroupSelectDialog(TopFrame.instance());
@@ -1079,26 +1076,19 @@ public class TsGroupDefinitionPanel
 		{
 			if (g.getGroupName().equals(editedGroup.getGroupName()))
 			{
-				String msgStr = "Group "+editedGroup.getGroupName()+" cannot add itself as a subgroup, ignore it!";
+				String msgStr = "Group "+editedGroup.getGroupName()
+					+ " cannot add itself as a subgroup!";
 				JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msgStr, 60),
-						subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
-				continue;
-			}
-			
-			if (editedGroup.hasSubgroup(g))
-			{
-				String msgStr = "Group "+g.getGroupName()+" is already in the subgroup list, ignore it!";
-				JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msgStr, 60),
-						subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
+					subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
 				continue;
 			}
 
-			g.setInclusion("Subtract");
-			tsGroupsListSelectPanel.addTsGroup(g);
+//			g.setInclusion("Subtract");
+			subgroupModel.add(g, "Subtract");
 		}
 	}
 	
-	private void addIntersectedSubgroupMemberButton_actionPerformed(ActionEvent e)
+	private void intersectSubgroupPressed()
 	{
 		TsGroupSelectDialog dlg = 
 			new TsGroupSelectDialog(TopFrame.instance());
@@ -1113,22 +1103,15 @@ public class TsGroupDefinitionPanel
 		{
 			if (g.getGroupName().equals(editedGroup.getGroupName()))
 			{
-				String msgStr = "Group "+editedGroup.getGroupName()+" cannot add itself as a subgroup, ignore it!";
+				String msgStr = "Group "+editedGroup.getGroupName()
+					+ " cannot add itself as a subgroup!";
 				JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msgStr, 60),
 						subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
 				continue;
 			}
 			
-			if (editedGroup.hasSubgroup(g))
-			{
-				String msgStr = "Group "+g.getGroupName()+" is already in the subgroup list, ignore it!";
-				JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msgStr, 60),
-						subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
-				continue;
-			}
-
-			g.setInclusion("Intersect");
-			tsGroupsListSelectPanel.addTsGroup(g);
+//			g.setInclusion("Intersect");
+			subgroupModel.add(g, "Intersect");
 		}
 		
 	}
@@ -1142,19 +1125,13 @@ public class TsGroupDefinitionPanel
 	public void deleteSubgroupPressed()
 	{
 		// Find out how many Data Descriptors were selected
-		int nrows = tsGroupsListSelectPanel.getSelectedRowCount();
-		if (nrows == 0)
-		{
-			TopFrame.instance().showError(groupDeleteMsg);
+		int rows[] = this.subgroupTable.getSelectedRows();
+		if (rows == null || rows.length == 0)
 			return;
-		}
-		int rows[] = tsGroupsListSelectPanel.getSelectedRows();
-		TsGroup obs[] = new TsGroup[nrows];
-		for (int i = 0; i < nrows; i++)
-			obs[i] = tsGroupsListSelectPanel.getTsGroupAt(rows[i]);
-
-		for (int i = 0; i < nrows; i++)
-			tsGroupsListSelectPanel.deleteTsGroup(obs[i]);
+		
+		Arrays.sort(rows);
+		for (int i = rows.length-1; i >= 0; i--)
+			this.subgroupModel.removeAt(rows[i]);
 	}
 
 	/**
@@ -1448,6 +1425,12 @@ public class TsGroupDefinitionPanel
 				en.replaceValue(ev.getValue(), ev.getDescription(), ev.getExecClassName(), "");
 				Database.getDb().enumList.write();
 			}
+			
+			// MJM CWMS-10609 Replace the group in the model with the new one.
+			parentGroupListModel.replaceTsGroup(editedGroup);
+			
+			// Update the table models of subgroups in any open tabs besides this one.
+			parentListPanel.updateSubGroups(editedGroup);
 		} 
 		catch (DbIoException ex)
 		{
@@ -1705,6 +1688,41 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 	@Override
 	public void groupSelected()
 	{
+	}
+
+	public void setGroupListModel(TsGroupsSelectTableModel model)
+	{
+		parentGroupListModel = model;
+	}
+
+	public void setParentListPanel(TsDbGrpListPanel tsDbGrpListPanel)
+	{
+		parentListPanel  = tsDbGrpListPanel;
+	}
+
+	public TsGroup getEditedGroup()
+	{
+		return editedGroup;
+	}
+
+	/**
+	 * If the passed just-savedGroup is a sub-group to the one being edited
+	 * in this panel, replace it in the model.
+	 * @param savedGroup
+	 */
+	public void replaceSubGroup(TsGroup savedGroup)
+	{
+		for(int idx = 0; idx < subgroupModel.getRowCount(); idx++)
+		{
+			SubGroupReference ref = subgroupModel.subgroups.get(idx);
+			if (savedGroup.getGroupId().equals(ref.groupId))
+			{
+				ref.groupName = savedGroup.getGroupName();
+				ref.groupType = savedGroup.getGroupType();
+				ref.groupDesc = savedGroup.getDescription();
+				break;
+			}
+		}
 	}
 
 }

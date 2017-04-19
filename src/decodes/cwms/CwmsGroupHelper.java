@@ -8,6 +8,10 @@
 * Open Source Software
 * 
 * $Log$
+* Revision 1.4  2017/01/10 21:14:43  mmaloney
+* Enhanced wildcard processing for CWMS as per punchlist for comp-depends project
+* for NWP.
+*
 * Revision 1.3  2016/11/03 18:59:41  mmaloney
 * Implement wildcard evaluation for groups.
 *
@@ -91,13 +95,12 @@ public class CwmsGroupHelper
 	public CwmsGroupHelper(CwmsTimeSeriesDb tsdb)
 	{
 		super(tsdb);
-//tsdb.debug1("CwmsGroupHelper ctor");
 	}
 	
 	@Override
 	protected void prepareForExpand(TsGroup tsGroup) throws DbIoException
 	{
-//tsdb.debug1("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
+		tsdb.debug2("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
 		justPrimed = true;
 		// Create and compile the regex objects for subloc, subparam, and subversion.
 		subLocPatterns.clear();
@@ -190,6 +193,7 @@ public class CwmsGroupHelper
 			try
 			{
 				fullParamPatterns.add(Pattern.compile(pat));
+				tsdb.debug2("   Added FullParam pattern '" + pat + "'");
 			}
 			catch(PatternSyntaxException ex)
 			{
@@ -238,6 +242,7 @@ public class CwmsGroupHelper
 			try
 			{
 				fullVersionPatterns.add(Pattern.compile(pat));
+				tsdb.debug2("   Added FullVersion pattern '" + pat + "'");
 			}
 			catch(PatternSyntaxException ex)
 			{
@@ -287,7 +292,7 @@ public class CwmsGroupHelper
 		ArrayList<DbKey> siteIds = tsGroup.getSiteIdList();
 		if (justPrimed)
 		{
-			tsdb.debug1("CwmsGroupHelper.passesParts: Group=" + tsGroup.getGroupName() 
+			tsdb.debug2("CwmsGroupHelper.passesParts: Group=" + tsGroup.getGroupName() 
 				+ ", #sites=" + siteIds.size() + ", tsidSiteId=" 
 				+ (tsid.getSite() == null ? "null" : 
 					("ID=" + tsid.getSite().getId() + ", " + tsid.getSite().getPreferredName().getNameValue())));
