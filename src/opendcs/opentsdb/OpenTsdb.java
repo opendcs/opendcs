@@ -1,18 +1,11 @@
 package opendcs.opentsdb;
 
-import ilex.util.Logger;
-import ilex.var.TimedVariable;
-
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Properties;
-
-import lrgs.gui.DecodesInterface;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -21,18 +14,14 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.XmitRecordDAO;
 
-import decodes.cwms.CwmsGuiLogin;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -79,30 +68,6 @@ public class OpenTsdb extends TimeSeriesDb
 		String password = credentials.getProperty("password");
 		DecodesSettings settings = DecodesSettings.instance();
 
-		// If this is a GUI, ask user for username & password.
-		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
-//		if (DecodesInterface.isGUI())
-//		{
-//			try 
-//			{
-//				if (!cgl.isLoginSuccess())
-//				{
-//					cgl.doLogin(null);
-//					if (!cgl.isLoginSuccess()) // user hit cancel
-//						throw new BadConnectException("Login aborted by user.");
-//
-//				}
-//				
-//				username = cgl.getUserName();
-//				password = new String(cgl.getPassword());
-//			}
-//			catch(Exception ex)
-//			{
-//				throw new BadConnectException(
-//					"Cannot display login dialog: " + ex);
-//			}
-//		}
-
 		LoadingAppDAI loadingAppDAO = null;
 		try
 		{
@@ -141,69 +106,21 @@ public class OpenTsdb extends TimeSeriesDb
 	public void setParmSDI(DbCompParm parm, DbKey siteId, String dtcode)
 		throws DbIoException, NoSuchObjectException
 	{
-		// TODO Auto-generated method stub
-
+		// Stub - Not implemented.
 	}
 
 	@Override
 	public TimeSeriesIdentifier expandSDI(DbCompParm parm) throws DbIoException,
 		NoSuchObjectException
 	{
-		TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
-		try
-		{
-			TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(
-				parm.getSiteDataTypeId());
-			parm.setSite(tsid.getSite());
-			parm.setDataType(tsid.getDataType());
-			return tsid;
-		}
-		finally
-		{
-			timeSeriesDAO.close();
-		}
+		throw new NoSuchObjectException("OpenTsdb.expandSDI not implemented.");
 	}
-
-	@Override
-	public int fillTimeSeries(CTimeSeries ts, Date from, Date until,
-		boolean include_lower, boolean include_upper, boolean overwriteExisting)
-		throws DbIoException, BadTimeSeriesException
-	{
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int fillTimeSeries(CTimeSeries ts, Collection<Date> queryTimes)
-		throws DbIoException, BadTimeSeriesException
-	{
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public TimedVariable getPreviousValue(CTimeSeries ts, Date refTime)
-		throws DbIoException, BadTimeSeriesException
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public TimedVariable getNextValue(CTimeSeries ts, Date refTime)
-		throws DbIoException, BadTimeSeriesException
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
 
 	@Override
 	public DataCollection getNewDataSince(DbKey applicationId, Date sinceTime)
 		throws DbIoException
 	{
-		// TODO Auto-generated method stub
+		// Stub - Not implemented.
 		return null;
 	}
 
