@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.10  2017/01/10 21:15:27  mmaloney
+*  Guard against null ptr.
+*
 *  Revision 1.9  2016/12/16 14:36:04  mmaloney
 *  Moved code to adjust comp dependencies when a group is modified to the DAO.
 *
@@ -1159,100 +1162,7 @@ public abstract class TimeSeriesDb
 		}
 	}
 
-	/**
-	 * @return a list of all computation names defined in the database.
-	 * @throws DbIoException on Database IO error.
-	 */
-	public List<String> listComputations( )
-		throws DbIoException
-	{
-		String q = "select COMPUTATION_NAME from CP_COMPUTATION";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			ArrayList<String> ret = new ArrayList<String>();
-			while(rs.next())
-				ret.add(rs.getString(1));
-			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error listing computations: " + ex;
-			logger.warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
 	
-	/**
-	 * @return a list of computation names defined in the database.
-	 * thats has an id in the passed inlist
-	 * @throws DbIoException on Database IO error.
-	 */
-	public List<String> ComputationsIn(String inList)
-		throws DbIoException
-	{
-		String q = "select COMPUTATION_NAME from CP_COMPUTATION";
-		String w = "";
-		if (inList.length() != 0 && inList.indexOf(":") == -1)
-		{
-			w = " where computation_id in (" +
-			inList  + ")";
-			q = q + w;	
-		}
-		else if (inList.length() != 0 && inList.indexOf(":") != -1)
-		{
-			int i = inList.indexOf(":");
-			w = " where computation_id between " +
-			inList.substring(0,i)  + " and "
-			+ inList.substring(i+1);
-			q = q + w;	
-		}
-		try
-		{
-			ResultSet rs = doQuery(q);
-			ArrayList<String> ret = new ArrayList<String>();
-			while(rs.next())
-				ret.add(rs.getString(1));
-			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error listing computations: " + ex;
-			logger.warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
-	
-	/**
-	 * Return a list of all computations that use the specified algorithm.
-	 * @param algorithmName the algorithm name
-	 * @return a list of all computations that use the specified algorithm.
-	 * @throws DbIoException on Database IO error.
-	 */
-	public List<String> listComputationsByAlgorithm(String algorithmName)
-		throws DbIoException
-	{
-		String q = 
-			"select COMPUTATION_NAME from CP_COMPUTATION, CP_ALGORITHM "
-		  + "where CP_COMPUTATION.ALGORITHM_ID = CP_ALGORITHM.ALGORITHM_ID "
-		  + "and CP_ALGORITHM.ALGORITHM_NAME = '" + algorithmName + "'";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			ArrayList<String> ret = new ArrayList<String>();
-			while(rs.next())
-				ret.add(rs.getString(1));
-			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error listing computations: " + ex;
-			logger.warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
-	
-
 	/**
 	 * @return a list of names of all algorithms defined in thie database.
 	 * @throws DbIoException on Database IO error.
@@ -1261,38 +1171,6 @@ public abstract class TimeSeriesDb
 		throws DbIoException
 	{
 		String q = "select ALGORITHM_NAME from CP_ALGORITHM";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			ArrayList<String> ret = new ArrayList<String>();
-			while(rs.next())
-				ret.add(rs.getString(1));
-			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error listing algorithms: " + ex;
-			logger.warning(msg);	
-			throw new DbIoException(msg);
-		}
-	}
-
-	/**
-	 * @return an in list of names of algorithms defined in the database.
-	 * @throws DbIoException on Database IO error.
-	 */
-	public List<String> AlgorithmsIn(String inList)
-		throws DbIoException
-	{
-		String q = "select ALGORITHM_NAME from CP_ALGORITHM";
-                String w = "";
-                if (inList.length() != 0 )
-                {
-                        w = " where algorithm_id in (" +
-                        inList  + ")";
-                        q = q + w;
-                }
-
 		try
 		{
 			ResultSet rs = doQuery(q);
@@ -1353,61 +1231,6 @@ public abstract class TimeSeriesDb
 	}
 	
 
-//	/**
-//	 * Deletes a computation with the specified computation ID.
-//	 * Does nothing if no such computation exists.
-//	 * @param id the computation ID
-//	 * @throws DbIoException on Database IO error.
-//	 * @throws ConstraintException if this comp cannot be deleted because
-//	 *  other records in the DB (like data) depend on it.
-//	 */
-//	public void deleteComputation(DbKey id)
-//		throws DbIoException, ConstraintException
-//	{
-//		String q = "delete from CP_COMP_TS_PARM where COMPUTATION_ID = " + id;
-//		doModify(q);
-//		q = "delete from CP_COMP_PROPERTY where COMPUTATION_ID = " + id;
-//		doModify(q);
-//		q = "delete from CP_COMPUTATION where COMPUTATION_ID = "+id;
-//		doModify(q);
-//		
-//		// Remove the CP_COMP_DEPENDS records & re-add.
-//		if (tsdbVersion >= 5 && !isHdb())
-//		{
-//			deleteCompDependsForCompId(id);
-//		}
-//		
-//		commit();
-//	}
-
-	/**
-	 * Given a computation name, return the unique ID.
-	 * @param name the name
-	 * @return the id
-	 * @throws NoSuchObjectException if no match found
-	 */
-	public DbKey getComputationId(String name)
-		throws DbIoException, NoSuchObjectException
-	{
-		String q = "select COMPUTATION_ID from CP_COMPUTATION "
-			+ "where COMPUTATION_NAME = '" + name + "'";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			if (rs.next())
-				return DbKey.createDbKey(rs, 1);
-			throw new NoSuchObjectException("No computation for name '" + name 
-				+ "'");
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error getting computation ID for name '" 
-				+ name + "': " + ex;
-			logger.failure(msg);
-			throw new DbIoException(msg);
-		}
-	}
-	
 	/**
 	 * Sets the model run id for subsequent write operations of modeled data.
 	 * This default implementation simply sets a protected internal integer.
