@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2015/12/02 21:20:59  mmaloney
+ * Added read method for the new XmitRecSpec bean.
+ *
  * Revision 1.10  2015/07/27 18:47:05  mmaloney
  * Don't save xmit records where message time is more than 1/2 hour in the future.
  *
@@ -281,49 +284,6 @@ public class XmitRecordDAO
 			throw new DbIoException(ex.toString());
 		}
 	}
-
-	
-
-//	/**
-//	 * This method inserts a timestamp into a prepared statement for writing/selecting the db.
-//	 * @param ps the prepared statement
-//	 * @param column the column number
-//	 * @param msecTime long value representing msec since the epoch
-//	 * @throws SQLException 
-//	 */
-//	protected void setPrepStatementTimestamp(PreparedStatement ps, int column, long msecTime) 
-//		throws SQLException
-//	{
-//		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9)
-//			ps.setLong(column, msecTime);
-//		else
-//		{
-//			if (msecTime == 0L)
-//				ps.setNull(column, Types.TIMESTAMP);
-//			else
-//				ps.setTimestamp(column, new Timestamp(msecTime), resultSetCalendar);
-//		}
-//	}
-	
-//	/**
-//	 * @return msec time from the XmitRecord prepared statement.
-//	 */
-//	protected long getResultSetTimestamp(ResultSet rs, int column)
-//		throws SQLException
-//	{
-//		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9)
-//		{
-//			Date d = db.getFullDate(rs, column);
-//			return d == null ? 0L : d.getTime();
-//		}
-//		
-//		java.sql.Timestamp ts = rs.getTimestamp(column, resultSetCalendar);
-//		if (rs.wasNull())
-//			return 0L;
-//		else
-//			return ts.getTime();
-//	}
-
 	
 	@Override
 	public Date getLatestTimeStamp(int dayNum) 
