@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.3  2016/09/23 15:54:58  mmaloney
+*  Remove stderr debugs.
+*
 *  Revision 1.2  2015/03/19 18:05:07  mmaloney
 *  Set DecodesInterface.silent
 *
@@ -40,7 +43,6 @@
 */
 package decodes.tsdb;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -49,22 +51,16 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import lrgs.gui.DecodesInterface;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import ilex.cmdline.*;
-import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.StderrLogger;
-import ilex.util.UserAuthFile;
 import decodes.db.Constants;
-import decodes.util.AppMessages;
 import decodes.util.CmdLineArgs;
 import decodes.tsdb.xml.*;
-import decodes.tsdb.test.TestProg;
 
 /**
 This is the Export program to write an xml file of comp meta data.
@@ -74,7 +70,7 @@ public class ExportComp
 {
 	private StringToken xmlFileArg;
 	private StringToken controlFileArg;
-	private String outputFile = null;;
+//	private String outputFile = null;;
 	
 	private ArrayList<String> ctrlFileAlgo = new ArrayList<String>();
 	private ArrayList<String> ctrlFileComp = new ArrayList<String>();
@@ -105,7 +101,6 @@ public class ExportComp
 	 */
 	public void runApp( )
 	{
-		Properties props = cmdLineArgs.getCmdLineProps();
 		boolean haveControlFile = false;
 		if (controlFileArg.getValue() != null
 		 && controlFileArg.getValue().length() > 0)
@@ -134,90 +129,32 @@ public class ExportComp
 			ArrayList<CompMetaData> metadata = new ArrayList<CompMetaData>();
 	
 			// now go get the applications data
-			String inList = null;
-			inList = props.getProperty("apps");
-			List<CompAppInfo> applist = null; 
-			if (inList == null || inList.length() == 0)
-			{
-				System.err.println("Creating FULL apps lists.");
-				applist = loadingAppDao.listComputationApps(false);
-			}
-			else
-			{
-				System.err.println("Creating limited list apps.");
-				applist = loadingAppDao.ComputationAppsIn(inList);
-			}
+			List<CompAppInfo> applist = loadingAppDao.listComputationApps(false);
 			for(CompAppInfo cai : applist)
 			{
-				if (haveControlFile
-				 && !ctrlFileProc.contains(cai.getAppName().toLowerCase()))
+				if (haveControlFile && !ctrlFileProc.contains(cai.getAppName().toLowerCase()))
 					continue;
 				metadata.add(cai);
 			}
 	
 			// now get the algorithms  data
-			inList = props.getProperty("algs");
-			List<String> algolist = null; 
-			if (inList == null || inList.length() == 0)
+			ArrayList<DbCompAlgorithm> algolist = algorithmDao.listAlgorithms();
+			for(DbCompAlgorithm algo : algolist)
 			{
-				System.err.println("Creating FULL algo list.");
-				algolist = theDb.listAlgorithms();
-			}
-			else
-			{
-				System.err.println("Creating limited algos.");
-				algolist = theDb.AlgorithmsIn(inList);
-			}
-
-			for(String algoname : algolist)
-			{
-				if (haveControlFile 
-				 && !ctrlFileAlgo.contains(algoname.toLowerCase()))
+				if (haveControlFile && !ctrlFileAlgo.contains(algo.getName().toLowerCase()))
 					continue;
-				DbCompAlgorithm algo = algorithmDao.getAlgorithm(algoname);
 				metadata.add(algo);
 			}
 
 			// now get the computations
-			inList = props.getProperty("comps");
-			//System.out.println("the inlist: " + inList); 
-			List<String> compList = null;
-			if (inList == null || inList.length() == 0)
-			{
-				System.err.println("Creating FULL comp list.");
-				compList = theDb.listComputations();
-			}
-			else if (inList.indexOf("|") > -1) // had multilist entry
-			{
-				System.err.println("Creating multi-limited comps.");
-				StringTokenizer st = new StringTokenizer(inList,"|"); 
-				String tstring = null;
-				while (st.hasMoreTokens())
-				{
-					List<String> tmpList = null;
-					tstring = st.nextToken();
-				//System.err.println("TSTRING: "+ tstring);
-					tmpList = theDb.ComputationsIn(tstring);
-					if (compList == null) compList = tmpList;
-					else for(String tname : tmpList) compList.add(tname);
-				}
-			}
-			else //just had one multilist entry
-			{
-				System.err.println("Creating limited comps.");
-				compList = theDb.ComputationsIn(inList);
-			}
-			//System.err.println("Final List:  " + compList);
+			ArrayList<DbComputation> compList = computationDAO.listCompsForGUI(new CompFilter());
 			
 			//Load the computations into the metadata
 			ArrayList<TsGroup> tsGrpList = new ArrayList<TsGroup>(); 
-			for(String compname : compList)
+			for(DbComputation comp : compList)
 			{
-				if (haveControlFile 
-				 && !ctrlFileComp.contains(compname.toLowerCase()))
+				if (haveControlFile && !ctrlFileComp.contains(comp.getName().toLowerCase()))
 					continue;
-
-				DbComputation comp = computationDAO.getComputationByName(compname);
 
 				// Each parm has an SDI. Prior to export, I need to expand
 				// this into DataType objects.
