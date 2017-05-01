@@ -214,6 +214,14 @@ public interface TimeSeriesDAI
 	public DbKey createTimeSeries(TimeSeriesIdentifier tsid)
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException;
 
+	/**
+	 * Called from HDB when filling time slice values. This will effect subsequent
+	 * calls to the fill methods so that data is retrieved that is within the
+	 * specified times + or - roundSec/2
+	 * @param roundSec
+	 */
+	public void setRoundSec(int roundSec);
+	
 	
 	/**
 	 * Closes any resources opened by the DAO

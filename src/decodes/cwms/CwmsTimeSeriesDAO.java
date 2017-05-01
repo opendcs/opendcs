@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.17  2017/01/24 15:36:27  mmaloney
+ * CWMS-10060 added support for DecodesSettings.tsidFetchSize
+ *
  * Revision 1.16  2016/11/21 16:04:04  mmaloney
  * Code Cleanup.
  *
@@ -1159,6 +1162,13 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 	public static void setNoUnitConv(boolean noUnitConv)
 	{
 		CwmsTimeSeriesDAO.noUnitConv = noUnitConv;
+	}
+
+	@Override
+	public void setRoundSec(int roundSec)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 
 
