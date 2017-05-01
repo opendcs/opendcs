@@ -102,77 +102,100 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		throws DbCompException
 	{
 //AW:TIMESLICE
-	   SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
-           String new_equation = equation.replaceAll("<<INPUT","<<input");
-           String tsbt_time = "to_date('" + sdf.format(_timeSliceBaseTime) + "','dd-mon-yyyy HH24:mi')";
-	   new_equation = new_equation.replaceAll("<<tsbt>>",tsbt_time);
-	   if (!isMissing(input1))
-	     new_equation = new_equation.replaceAll("<<input1>>",(new Double(input1)).toString());
-	   if (!isMissing(input2))
-	     new_equation = new_equation.replaceAll("<<input2>>",(new Double(input2)).toString());
-	   if (!isMissing(input3))
-	     new_equation = new_equation.replaceAll("<<input3>>",(new Double(input3)).toString());
-	   if (!isMissing(input4))
-	     new_equation = new_equation.replaceAll("<<input4>>",(new Double(input4)).toString());
-	   if (!isMissing(input5))
-	     new_equation = new_equation.replaceAll("<<input5>>",(new Double(input5)).toString());
-debug3("doAWTimeSlice input1=" + input1 +", input2=" + input2);
+		SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
+		String new_equation = equation.replaceAll("<<INPUT", "<<input");
+		String tsbt_time = "to_date('" + sdf.format(_timeSliceBaseTime) + "','dd-mon-yyyy HH24:mi')";
+		new_equation = new_equation.replaceAll("<<tsbt>>", tsbt_time);
+		
+		// MJM 2017-04-30 replace with "null" if missing.
+		// Note: if we get to here and value is missing, it means that missing action = ignore.
+		String repl = !isMissing(input1) ? (new Double(input1)).toString() : "null";
+		new_equation = new_equation.replaceAll("<<input1>>", repl);
 
-	   /* THis modification done by M. Bogner 30-SEP-2011 */
-           /* need to reset the set output flag must be done for each time series  */     
-	   do_setoutput = true;
-	   // now if any needed values are missing then don't set the output
-           if (isMissing(input1) && !input1_MISSING.equalsIgnoreCase("ignore")) do_setoutput = false;
-           if (isMissing(input2) && !input2_MISSING.equalsIgnoreCase("ignore")) do_setoutput = false;
-           if (isMissing(input3) && !input3_MISSING.equalsIgnoreCase("ignore")) do_setoutput = false;
-           if (isMissing(input4) && !input4_MISSING.equalsIgnoreCase("ignore")) do_setoutput = false;
-           if (isMissing(input5) && !input5_MISSING.equalsIgnoreCase("ignore")) do_setoutput = false;
+		repl = !isMissing(input2) ? (new Double(input2)).toString() : "null";
+		new_equation = new_equation.replaceAll("<<input2>>", repl);
+		
+		repl = !isMissing(input3) ? (new Double(input3)).toString() : "null";
+		new_equation = new_equation.replaceAll("<<input3>>", repl);
+		
+		repl = !isMissing(input4) ? (new Double(input4)).toString() : "null";
+		new_equation = new_equation.replaceAll("<<input4>>", repl);
+		
+		repl = !isMissing(input5) ? (new Double(input5)).toString() : "null";
+		new_equation = new_equation.replaceAll("<<input5>>", repl);
+		
+		debug3("doAWTimeSlice input1=" + input1 + ", input2=" + input2);
 
-	   if (do_setoutput)
-//           Then continue with evaluation the equation
-           {
-             // get the connection and a few other classes so we can do some sql
-             conn = tsdb.getConnection();
-             DBAccess db = new DBAccess(conn);
-             DataObject dbobj = new DataObject();
-             String dt_fmt = "dd-MMM-yyyy HH:mm";
+		/* THis modification done by M. Bogner 30-SEP-2011 */
+		/* need to reset the set output flag must be done for each time series */
+		do_setoutput = true;
+		
+		// MJM: The following doesn't hurt, but if any needed values are still
+		// missing, we wouldn't get to this point.
+		
+		// now if any needed values are missing then don't set the output
+		if (isMissing(input1) && !input1_MISSING.equalsIgnoreCase("ignore"))
+			do_setoutput = false;
+		if (isMissing(input2) && !input2_MISSING.equalsIgnoreCase("ignore"))
+			do_setoutput = false;
+		if (isMissing(input3) && !input3_MISSING.equalsIgnoreCase("ignore"))
+			do_setoutput = false;
+		if (isMissing(input4) && !input4_MISSING.equalsIgnoreCase("ignore"))
+			do_setoutput = false;
+		if (isMissing(input5) && !input5_MISSING.equalsIgnoreCase("ignore"))
+			do_setoutput = false;
 
-             String status = null;
-             String query = "select " + new_equation + " result_value from dual";
-             // now do the query for all the needed data
-             status = db.performQuery(query,dbobj);
-             debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+		if (do_setoutput)
+		// Then continue with evaluation the equation
+		{
+			// get the connection and a few other classes so we can do some sql
+			conn = tsdb.getConnection();
+			DBAccess db = new DBAccess(conn);
+			DataObject dbobj = new DataObject();
+			String dt_fmt = "dd-MMM-yyyy HH:mm";
 
-             // see if there was an error
-             if (status.startsWith("ERROR"))
-             {
-               warning(" EquationSolver:  FAILED due to following oracle error");
-               warning(" EquationSolver: " +  status);
-               return;
-             }
-//
-             if (((String)dbobj.get("result_value")).length() == 0)
-	     {
-		 do_setoutput = false;;
-                 warning(" EquationSolver:  "+ comp.getName() + " : " + query + "  Query FAILED due to NULL Equation result. ");
-	     }
-	     else
-	     {
-               Double result_value = new Double(dbobj.get("result_value").toString());
-               //
-               /* added to allow users to automatically set the Validation column  */
-               if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
-               setOutput(output,result_value);
-	     }
-           }
-//
-           //  delete any existing value if this calculation failed
-           if (!do_setoutput)
-           {
-             deleteOutput(output);
-           }
+			String status = null;
+			String query = "select " + new_equation + " result_value from dual";
+			// now do the query for all the needed data
+			status = db.performQuery(query, dbobj);
+			debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
 
-//AW:TIMESLICE_END
+			// see if there was an error
+			if (status.startsWith("ERROR"))
+			{
+				warning(" EquationSolver:  FAILED due to following oracle error");
+				warning(" EquationSolver: " + status);
+				return;
+			}
+			//
+			if (((String) dbobj.get("result_value")).length() == 0)
+			{
+				do_setoutput = false;
+				;
+				warning(" EquationSolver:  " + comp.getName() + " : " + query
+					+ "  Query FAILED due to NULL Equation result. ");
+			}
+			else
+			{
+				Double result_value = new Double(dbobj.get("result_value").toString());
+				//
+				/*
+				 * added to allow users to automatically set the Validation
+				 * column
+				 */
+				if (validation_flag.length() > 0)
+					setHdbValidationFlag(output, validation_flag.charAt(1));
+				setOutput(output, result_value);
+			}
+		}
+		//
+		// delete any existing value if this calculation failed
+		if (!do_setoutput)
+		{
+			deleteOutput(output);
+		}
+
+		//AW:TIMESLICE_END
 	}
 
 	/**
