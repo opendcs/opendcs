@@ -193,6 +193,53 @@ public class HdbSiteDAO extends SiteDAO
 
 	}
 	
+	@Override
+	public synchronized DbKey lookupSiteID(final String nameValue)
+		throws DbIoException
+	{
+		// The 'uniqueName' in the cache will be the preferred site name type
+		Site site = cache.getByUniqueName(nameValue);
+		if (site != null)
+			return site.getKey();
+
+		// If not found, search the cache for any name match
+		site = cache.search(
+			new Comparable<Site>()
+			{
+				@Override
+				public int compareTo(Site ob)
+				{
+					for(SiteName sn : ob.getNameArray())
+						if (sn.getNameValue().equalsIgnoreCase(nameValue))
+							return 0;
+					// Note: DbObjectCache.search does a linear search, not a binary search.
+					// So always returning -1 meaning 'no match' is okay.
+					return -1;
+				}
+			});
+		if (site != null)
+			return site.getKey();
+
+		
+		// Finally search the database for a SiteName with matching value.
+		String q = basicSiteNameQuery(null);
+		q = q + " and lower(a.PRIMARY_SITE_CODE) = " + sqlString(nameValue.toLowerCase());
+		try
+		{
+			ResultSet rs = doQuery(q);
+			if (rs.next())
+				return DbKey.createDbKey(rs, 1);
+			return Constants.undefinedId;
+		}
+		catch(SQLException ex)
+		{
+			String msg = "lookupSiteId(str) - Error in query '" 
+				+ q + "': " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+	}
+
 	private String basicSiteNameQuery(Site site)
 	{
 		String r = "SELECT " + siteNameAttributes 

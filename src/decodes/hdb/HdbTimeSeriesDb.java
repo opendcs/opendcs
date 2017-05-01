@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.9  2017/03/23 16:06:00  mmaloney
+*  Throw BadTimeSeriesException when can't create time series. It's probably due to running on a read-only HDB.
+*
 *  Revision 1.8  2017/03/22 19:33:05  mmaloney
 *  Throw BadTimeSeriesException when can't create time series. It's probably due to running on a read-only HDB.
 *
@@ -251,51 +254,6 @@ public class HdbTimeSeriesDb
 		}
 		
 		return appId;
-	}
-
-	/**
-	 * Given a site name value, return the database's surrogate key ID.
-	 * The database should attempt to find a name with the preferred type
-	 * defined in cfg.siteNameStandard. If that fails, it should look for
-	 * a match with other name types.
-	 * @param nameValue the site name
-	 * @return the site-ID to the passed name, or undefinedId if not found.
-	 * @throws DbIoException on Database IO error.
-	 */
-	public DbKey lookupSiteID(String nameValue)
-		throws DbIoException
-	{
-		SiteName siteName = new SiteName(null, DecodesSettings.instance().siteNameTypePreference, 
-			nameValue);
-		DbKey siteId = lookupSiteID(siteName);
-		if (siteId != Constants.undefinedId)
-			return siteId;
-
-		String q = "select unique nametype from sitename";
-		ArrayList<String> nameTypes = new ArrayList<String>();
-		ResultSet rs = doQuery(q);
-		try
-		{
-			while(rs.next())
-			{
-				String nt = rs.getString(1);
-				if (nt != null && !nt.equals(DecodesSettings.instance().siteNameTypePreference))
-					nameTypes.add(nt);
-			}
-		}
-		catch(SQLException ex)
-		{
-			throw new DbIoException("lookupSiteID: " + ex);
-		}
-
-		for(String nt : nameTypes)
-		{
-			siteName = new SiteName(null, nt, nameValue);
-			siteId = lookupSiteID(siteName);
-			if (siteId != Constants.undefinedId)
-				return siteId;
-		}
-		return Constants.undefinedId;
 	}
 
 	/**

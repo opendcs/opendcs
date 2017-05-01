@@ -55,6 +55,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	private static final long CACHE_RELOAD_INTERVAL = 3600000L;
 	private static long lastCacheRefresh = 0L;
 	private static final long CACHE_REFRESH_OVERLAP = 120000L;
+	private int roundSec = 0;
 
 	protected HdbTimeSeriesDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -948,13 +949,14 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 
 		// MJM 2016/1/8 Join with SITE rather than SITENAME. The latter has an inconsistency
 		// in the view which is causing it to get "invisible" sites in a foreign district.
+		// MJM 2017/04/28 SITE and SITENAME views are now gone.
 		String q = "SELECT a.ts_id, a.site_datatype_id, a.interval, a.table_selector, a.model_id, "
 				+ "b.SITE_ID, b.DATATYPE_ID, d.UNIT_COMMON_NAME "
-				+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, SITE e "
+				+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, HDB_SITE e "
 				+ " WHERE a.site_datatype_id = b.site_datatype_id "
 				+ " AND b.DATATYPE_ID = c.DATATYPE_ID "
 				+ " and c.UNIT_ID = d.UNIT_ID"
-                + " and b.SITE_ID = e.ID";
+                + " and b.SITE_ID = e.SITE_ID";
 		
 		// MJM 2016/1/8 Added this block of code to minimize reloading the entire cache.
 		boolean doFullLoad = System.currentTimeMillis() - lastCacheLoad > CACHE_RELOAD_INTERVAL;
@@ -1066,5 +1068,11 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			+ hdbTsId.modelId + ", null)";
 		doModify(q);
 		return hdbDb.lookupTsIdKey(hdbTsId);
+	}
+
+	@Override
+	public void setRoundSec(int roundSec)
+	{
+		this.roundSec = roundSec;
 	}
 }
