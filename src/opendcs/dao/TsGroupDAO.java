@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.11  2017/04/04 21:22:04  mmaloney
+* CWMS-10515 Null Ptr.
+*
 * Revision 1.10  2017/01/10 21:16:30  mmaloney
 * Code cleanup.
 *
@@ -47,7 +50,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Stack;
 
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
@@ -71,6 +76,9 @@ public class TsGroupDAO
 	private static long lastCacheFill = 0L;
 	public static long cacheTimeLimit = 15 * 60 * 1000L;
 	protected static DbObjectCache<TsGroup> cache = new DbObjectCache<TsGroup>(cacheTimeLimit, false);
+	
+	// Used to guard against endless loop in subgroup associations.
+	private Stack<DbKey> loopGuard = new Stack<DbKey>();
 
 	public TsGroupDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -90,7 +98,11 @@ public class TsGroupDAO
 		TsGroup ret = null;
 		
 		if (!forceDbRead && (ret = cache.getByKey(groupId)) != null)
+		{
+debug2("Returning FROM CACHE group id " + ret.getGroupId() + " - " + ret.getGroupName());
 			return ret;
+		}
+else debug2("READING FROM DATABASE group id " + groupId);
 		
 		String q = "SELECT " + GroupAttributes + " FROM tsdb_group "
 			+ "WHERE group_id = " + groupId;
@@ -100,7 +112,10 @@ public class TsGroupDAO
 			if (rs != null && rs.next())
 			{
 				ret = rs2group(rs);
+
+				loopGuard.push(groupId);
 				readTsGroupMembers(ret);
+				loopGuard.pop();
 				cache.put(ret);
 				return ret;
 			}
@@ -135,7 +150,6 @@ public class TsGroupDAO
 		return ret;
 	}
 	
-	@Override
 	public void readTsGroupMembers(TsGroup group)
 		throws DbIoException
 	{
@@ -185,26 +199,35 @@ public class TsGroupDAO
 				group.addOtherMember(rs.getString(1), rs.getString(2));
 
 			// Now get the sub-groups.
-			q = "SELECT a.group_id, a.group_name, a.group_type, a.group_description ";
-			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
-				q = q + ", b.include_group";
-			q = q + " FROM tsdb_group a, tsdb_group_member_group b "
-				+ "WHERE b.parent_group_id = "
-					+ group.getGroupId()
-				+ " AND b.child_group_id = a.group_id";
+			q = "SELECT child_group_id, include_group from tsdb_group_member_group "
+				+ "where parent_group_id = " + group.getGroupId();
+			
 			rs = doQuery(q);
 			while(rs != null && rs.next())
 			{
-				TsGroup child = this.rs2group(rs);
-				// before v6, all child groups were added.
-				char combine = 'A';
-				if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
+				DbKey childId = DbKey.createDbKey(rs, 1);
+				String s = rs.getString(2);
+				char combine = (s != null && s.length() > 0) ? s.charAt(0) : 'A';
+				
+				if (loopGuard.contains(childId))
 				{
-					String s = rs.getString(5);
-					if (s != null && s.length() > 0)
-						combine = s.charAt(0);
+					warning("Group (id=" + group.getGroupId() + ") " + group.getGroupName()
+						+ " -- has sub group ID=" + childId 
+						+ " Circular reference detected -- Ignored.");
+					continue;
 				}
-				group.addSubGroup(child, combine);
+
+//				boolean wasCalled = calledFromReadMembers;
+//				calledFromReadMembers = true;
+				TsGroup child = getTsGroupById(childId);
+//				calledFromReadMembers = wasCalled;
+				
+				if (child != null)
+					group.addSubGroup(child, combine);
+				else
+					warning("Group (id=" + group.getGroupId() + ") " + group.getGroupName()
+						+ " -- has sub group ID=" + childId 
+						+ " that doesn't exist in database. -- Ignored.");
 			}
 		}
 		catch(SQLException ex)
@@ -243,17 +266,13 @@ public class TsGroupDAO
 	public TsGroup getTsGroupByName(String grpName)
 		throws DbIoException
 	{
-		String q = "SELECT " + GroupAttributes + " FROM tsdb_group "
-			+ "WHERE group_name = " + sqlString(grpName);
+		String q = "SELECT group_id FROM tsdb_group "
+			+ "WHERE lower(group_name) = " + sqlString(grpName.toLowerCase());
 		try
 		{
 			ResultSet rs = doQuery(q);
 			if (rs != null && rs.next())
-			{
-				TsGroup ret = rs2group(rs);
-				readTsGroupMembers(ret);
-				return ret;
-			}
+				return getTsGroupById(DbKey.createDbKey(rs, 1));
 			else
 				return null;
 		}
