@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.12  2017/03/30 21:07:27  mmaloney
+*  Refactor CompEventServer to use PID if monitor==true.
+*
 *  Revision 1.11  2016/12/16 14:35:45  mmaloney
 *  Enhanced resolver to allow triggering from a time series with unrelated location.
 *
@@ -897,35 +900,35 @@ public class CpCompDependsUpdater
 				// For each time series in the expanded list
 				for(TimeSeriesIdentifier tsid : grp.getExpandedList())
 				{
-					info("Checking group tsid=" + tsid.getUniqueString());
+					Logger.instance().debug3("Checking group tsid=" + tsid.getUniqueString());
 					// for each input parm
 					for(Iterator<DbCompParm> parmit = comp.getParms();
 							parmit.hasNext(); )
 					{
 						DbCompParm parm = parmit.next();
-						info("  parm '" + parm.getRoleName() + "'");
+						Logger.instance().debug3("  parm '" + parm.getRoleName() + "'");
 						if (!parm.isInput())
 						{
-							info("     - Not an input. Skipping.");
+							Logger.instance().debug3("     - Not an input. Skipping.");
 							continue;
 						}
 						// Transform the group TSID by the parm
-						info("Checking input parm " + parm.getRoleName()
+						Logger.instance().debug3("Checking input parm " + parm.getRoleName()
 							+ " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
 							+ " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
 							+ " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
 							+ " siteName=" + parm.getSiteName());
 						TimeSeriesIdentifier tmpTsid = tsid.copyNoKey();
-						info("Triggering ts=" + tmpTsid.getUniqueString());
+						Logger.instance().debug3("Triggering ts=" + tmpTsid.getUniqueString());
 						theDb.transformUniqueString(tmpTsid, parm);
-						info("After transform, param ID='" + tmpTsid.getUniqueString() + "'");
+						Logger.instance().debug3("After transform, param ID='" + tmpTsid.getUniqueString() + "'");
 						TimeSeriesIdentifier parmTsid = 
 							timeSeriesDAO.getCache().getByUniqueName(tmpTsid.getUniqueString());
 						// If the transformed TSID exists, it is a dependency.
 						if (parmTsid != null)
 							addCompDepends(parmTsid.getKey(), comp.getId());
 						else
-							info("TS " + tmpTsid.getUniqueString() + " not in cache.");
+							Logger.instance().debug3("TS " + tmpTsid.getUniqueString() + " not in cache.");
 					}
 				}
 			}
