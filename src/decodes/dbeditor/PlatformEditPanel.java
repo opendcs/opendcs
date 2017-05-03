@@ -4,6 +4,9 @@
  *  Open Source Software
  *  
  *  $Log$
+ *  Revision 1.6  2017/03/03 19:11:34  mmaloney
+ *  Changed 'Channel' to more generic 'Selector' so that it is meaningful for EDLs.
+ *
  *  Revision 1.5  2015/04/15 19:59:46  mmaloney
  *  Fixed synchronization bugs when the same data sets are being processed by multiple
  *  routing specs at the same time. Example is multiple real-time routing specs with same
@@ -1042,7 +1045,7 @@ class TransportListTableModel extends AbstractTableModel
 		PlatformEditPanel.genericLabels.getString("type"),
 		PlatformEditPanel.genericLabels.getString("ID"),
 		PlatformEditPanel.dbeditLabels.getString("PlatformEditPanel.scriptName"),
-		PlatformEditPanel.genericLabels.getString("Selector")
+		PlatformEditPanel.genericLabels.getString("selector")
 	};
 	private Vector media;
 
