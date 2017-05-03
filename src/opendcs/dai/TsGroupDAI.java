@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2016/12/16 14:30:54  mmaloney
+ * Moved code to adjust comp dependencies when a group is modified to the DAO.
+ *
  * Revision 1.2  2016/11/03 19:08:38  mmaloney
  * Refactoring for group evaluation to make HDB work the same way as CWMS.
  *
@@ -66,13 +69,6 @@ public interface TsGroupDAI
 	public void writeTsGroup(TsGroup group)
 		throws DbIoException;
 
-	/**
-	 * Reads the members of an individual group.
-	 * @param group the group
-	 */
-	public void readTsGroupMembers(TsGroup group)
-		throws DbIoException;
-	
 	/**
 	 * Delete a Ts Group.
 	 * @param groupId the surrogate key of the group
