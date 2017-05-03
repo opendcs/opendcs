@@ -8,6 +8,9 @@
 * Open Source Software
 * 
 * $Log$
+* Revision 1.6  2017/04/27 21:01:55  mmaloney
+* Combine full/base/sub location/param/version with logical OR.
+*
 * Revision 1.5  2017/04/19 19:23:35  mmaloney
 * CWMS-10609 nested group evaluation in group editor bugfix.
 *
@@ -81,9 +84,10 @@ This class is a helper to the TempestTsdb for reading & writing groups.
 public class CwmsGroupHelper
 	extends GroupHelper
 {
-	private boolean justPrimed = false;
+//	private boolean justPrimed = false;
 	private static String regexSpecial = "<([{\\^-=$!|]})?+.>";
 	private static String module = "CwmsGroupHelper";
+	
 	private ArrayList<Pattern> subLocPatterns = new ArrayList<Pattern>();
 	private ArrayList<Pattern> subParamPatterns = new ArrayList<Pattern>();
 	private ArrayList<Pattern> subVersionPatterns = new ArrayList<Pattern>();
@@ -103,8 +107,9 @@ public class CwmsGroupHelper
 	@Override
 	protected void prepareForExpand(TsGroup tsGroup) throws DbIoException
 	{
-		tsdb.debug2("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName());
-		justPrimed = true;
+		tsdb.debug2("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName()
+			+ ", num SubParam specs: " + tsGroup.getOtherMembers("SubParam").size());
+//		justPrimed = true;
 		// Create and compile the regex objects for subloc, subparam, and subversion.
 		subLocPatterns.clear();
 		ArrayList<String> subLocs = tsGroup.getOtherMembers("SubLocation");
@@ -154,8 +159,6 @@ public class CwmsGroupHelper
 			}
 		}
 
-
-		
 		subParamPatterns.clear();
 		ArrayList<String> subPars = tsGroup.getOtherMembers("SubParam");
 		for(String subPar : subPars)
@@ -164,6 +167,7 @@ public class CwmsGroupHelper
 			try
 			{
 				subParamPatterns.add(Pattern.compile(pat));
+				tsdb.debug2("   Added SubParam pattern '" + pat + "'");
 			}
 			catch(PatternSyntaxException ex)
 			{
@@ -180,6 +184,7 @@ public class CwmsGroupHelper
 			try
 			{
 				baseParamPatterns.add(Pattern.compile(pat));
+				tsdb.debug2("   Added BaseParam pattern '" + pat + "'");
 			}
 			catch(PatternSyntaxException ex)
 			{
@@ -293,14 +298,14 @@ public class CwmsGroupHelper
 		int matches = 0;
 
 		ArrayList<DbKey> siteIds = tsGroup.getSiteIdList();
-		if (justPrimed)
-		{
-			tsdb.debug2("CwmsGroupHelper.passesParts: Group=" + tsGroup.getGroupName() 
-				+ ", #sites=" + siteIds.size() + ", tsidSiteId=" 
-				+ (tsid.getSite() == null ? "null" : 
-					("ID=" + tsid.getSite().getId() + ", " + tsid.getSite().getPreferredName().getNameValue())));
-			justPrimed = false;
-		}
+//		if (justPrimed)
+//		{
+//			tsdb.debug2("CwmsGroupHelper.passesParts: Group=" + tsGroup.getGroupName() 
+//				+ ", #sites=" + siteIds.size() + ", tsidSiteId=" 
+//				+ (tsid.getSite() == null ? "null" : 
+//					("ID=" + tsid.getSite().getId() + ", " + tsid.getSite().getPreferredName().getNameValue())));
+//			justPrimed = false;
+//		}
 
 		CwmsTsId ctsid = (CwmsTsId)tsid;
 
