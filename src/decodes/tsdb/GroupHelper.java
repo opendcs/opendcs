@@ -115,6 +115,7 @@ public abstract class GroupHelper
 	protected TsIdSet doExpandTsGroup(TsGroup grp, ArrayList<DbKey> groupIdsDone)
 		throws DbIoException
 	{
+		tsdb.debug1("doExpandTsGroup '" + grp.getGroupName() + "'");
 		TsIdSet tsIdSet = new TsIdSet();
 		
 		// There may be dups & circular references in the hierarchy.
@@ -130,8 +131,6 @@ public abstract class GroupHelper
 		
 		/** Some implementations (CWMS) have to compile regex's etc., before expanding. */
 		prepareForExpand(grp);
-
-		tsdb.debug1("Evaluating group '" + grp.getGroupName() + "'");
 
 		// Add the explicitely named tsid members
 		for(TimeSeriesIdentifier tsid : grp.getTsMemberList())
