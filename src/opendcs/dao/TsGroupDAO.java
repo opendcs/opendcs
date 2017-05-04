@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.12  2017/05/03 16:59:46  mmaloney
+* Guard against circular references when reading sub groups.
+*
 * Revision 1.11  2017/04/04 21:22:04  mmaloney
 * CWMS-10515 Null Ptr.
 *
@@ -202,13 +205,24 @@ else debug2("READING FROM DATABASE group id " + groupId);
 			q = "SELECT child_group_id, include_group from tsdb_group_member_group "
 				+ "where parent_group_id = " + group.getGroupId();
 			
+			class ChildGroup 
+			{
+				DbKey gid; char combine;
+				public ChildGroup(DbKey gid, char combine)
+				{
+					this.gid = gid;
+					this.combine = combine;
+				}
+			}
+			ArrayList<ChildGroup> children = new ArrayList<ChildGroup>();
+			
+			// Have to read first then recurse. Otherwise ResultSet gets closed in recursion.
 			rs = doQuery(q);
 			while(rs != null && rs.next())
 			{
 				DbKey childId = DbKey.createDbKey(rs, 1);
 				String s = rs.getString(2);
 				char combine = (s != null && s.length() > 0) ? s.charAt(0) : 'A';
-				
 				if (loopGuard.contains(childId))
 				{
 					warning("Group (id=" + group.getGroupId() + ") " + group.getGroupName()
@@ -217,16 +231,18 @@ else debug2("READING FROM DATABASE group id " + groupId);
 					continue;
 				}
 
-//				boolean wasCalled = calledFromReadMembers;
-//				calledFromReadMembers = true;
-				TsGroup child = getTsGroupById(childId);
-//				calledFromReadMembers = wasCalled;
+				children.add(new ChildGroup(childId, combine));
+			}
+			
+			for(ChildGroup cg : children)
+			{
+				TsGroup child = getTsGroupById(cg.gid);
 				
 				if (child != null)
-					group.addSubGroup(child, combine);
+					group.addSubGroup(child, cg.combine);
 				else
 					warning("Group (id=" + group.getGroupId() + ") " + group.getGroupName()
-						+ " -- has sub group ID=" + childId 
+						+ " -- has sub group ID=" + cg.gid 
 						+ " that doesn't exist in database. -- Ignored.");
 			}
 		}
