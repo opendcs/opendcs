@@ -111,7 +111,9 @@ public class Lrit2DamsNtConfig
 	public void checkConfig()
 		throws IOException
 	{
-		if (propFile.exists() && propFile.lastModified() > lastLoadTime)
+		if (!propFile.canRead())
+			throw new IOException("Config file '" + propFile.getPath() + "' does not exist or is unreadable.");
+		if (propFile.lastModified() > lastLoadTime)
 			load();
 	}
 
