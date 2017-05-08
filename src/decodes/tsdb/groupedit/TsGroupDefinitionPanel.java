@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2017/04/19 19:27:45  mmaloney
+ * CWMS-10609 nested group evaluation in group editor bugfix.
+ *
  * Revision 1.10  2017/01/10 21:11:35  mmaloney
  * Enhanced wildcard processing for CWMS as per punchlist for comp-depends project
  * for NWP.
@@ -806,6 +809,7 @@ public class TsGroupDefinitionPanel
 
 		//Feed other group members to the TsDb
 		SiteDAI siteDAO = tsdb.makeSiteDAO();
+		DataType dt = null;
 		try
 		{
 			for(StringPair sp : queryModel.items)
@@ -822,21 +826,11 @@ public class TsGroupDefinitionPanel
 					else
 						Logger.instance().warning("No match for sitename '" + value + "' -- ignored.");
 				}
-				else if (label.equalsIgnoreCase("datatype") 
+				else if ((label.equalsIgnoreCase("datatype") 
 					  || (label.equalsIgnoreCase("param") && !value.contains("*")))
+					  && (dt = lookupDataType(value)) != null)
 				{
-					boolean found = false;
-					for(DataType dt : dataTypeList)
-					{
-						if (dt.getCode().equalsIgnoreCase(value))
-						{
-							tempGroup.addDataTypeId(dt.getId());
-							found = true;
-							break;
-						}
-					}
-					if (!found)
-						Logger.instance().warning("No match for param/datatype '" + value + "' -- ignored.");
+					tempGroup.addDataTypeId(dt.getId());
 				}
 				else 
 					tempGroup.addOtherMember(label, value);
@@ -875,6 +869,15 @@ public class TsGroupDefinitionPanel
 		editedGroup = tempGroup;
 		return true;
 	}
+
+	private DataType lookupDataType(String value)
+	{
+		for(DataType dt : dataTypeList)
+			if (dt.getCode().equalsIgnoreCase(value))
+				return dt;
+		return null;
+	}
+
 
 	/**
 	 * User Presses Rename button
