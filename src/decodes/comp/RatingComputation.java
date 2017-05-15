@@ -151,7 +151,9 @@ public class RatingComputation
 			{
 				Logger.instance().warning(
 					"Skipping rating computation because sample time is"
-					+ " outside the rating time range.");
+					+ " outside the rating time range. Sample Time=" +d
+					+ ", RatingStart=" + beginTime
+					+ ", RatingEnd=" + endTime);
 				continue;
 			}
 			try
