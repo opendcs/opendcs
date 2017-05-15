@@ -6,7 +6,6 @@ package decodes.comp;
 import decodes.comp.RatingTableReader;
 import decodes.comp.RatingComputation;
 import decodes.comp.ComputationParseException;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
@@ -14,6 +13,7 @@ import ilex.util.EnvExpander;
 import java.io.LineNumberReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.text.SimpleDateFormat;
@@ -284,11 +284,16 @@ public class RdbRatingReader implements RatingTableReader
 					TimeZone.getTimeZone("UTC"));
 				if (tz != null)
 					bedf.setTimeZone(tz);
-				try { rc.setEndTime(bedf.parse(ts)); }
-				catch(ParseException ex)
+				if (ts.startsWith("----"))
+					rc.setEndTime(new Date(Long.MAX_VALUE));
+				else
 				{
-					parseWarning("Invalid end time format '" + ts
-						+ "' -- begin time ignored.");
+					try { rc.setEndTime(bedf.parse(ts)); }
+					catch(ParseException ex)
+					{
+						parseWarning("Invalid end time format '" + ts
+							+ "' -- begin time ignored.");
+					}
 				}
 			}
 		}
