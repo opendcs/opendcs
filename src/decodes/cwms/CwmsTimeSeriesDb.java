@@ -12,6 +12,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.22  2017/01/24 15:48:18  mmaloney
+*  CWMS-9908 allow locationOverride to contain wildcard * char. Use same rules
+*  as in the location part of the parameter mask.
+*
 *  Revision 1.21  2017/01/11 14:09:14  mmaloney
 *  CompEdit CompParmDialog Lookup time Series should allow wildcards in the site name
 *  for CWMS.
@@ -582,7 +586,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import lrgs.gui.DecodesInterface;
 import cwmsdb.CwmsSecJdbc;
-import cwmsdb.CwmsCatJdbc;
+//import cwmsdb.CwmsCatJdbc;
 import oracle.jdbc.OraclePreparedStatement;
 import ilex.util.Logger;
 import ilex.util.StringPair;
@@ -1850,25 +1854,25 @@ for(CTimeSeries ts : allts)
 		return super.getValidPartChoices(part);
 	}
 	
-	public void printCat()
-	{
-		try
-		{
-			CwmsCatJdbc cwmsCatJdbc = new CwmsCatJdbc(getConnection());
-
-			ResultSet rs = cwmsCatJdbc.catTsId(dbOfficeId, null, null, null, null, null);
-			while(rs != null && rs.next())
-			{
-				System.out.println(rs.getString(2).trim() + ", active=" + rs.getString(5));
-			}
-		}
-		catch(Exception ex)
-		{
-			System.err.println("Error: " + ex);
-			ex.printStackTrace(System.err);
-		}
-		
-	}
+//	public void printCat()
+//	{
+//		try
+//		{
+//			CwmsCatJdbc cwmsCatJdbc = new CwmsCatJdbc(getConnection());
+//
+//			ResultSet rs = cwmsCatJdbc.catTsId(dbOfficeId, null, null, null, null, null);
+//			while(rs != null && rs.next())
+//			{
+//				System.out.println(rs.getString(2).trim() + ", active=" + rs.getString(5));
+//			}
+//		}
+//		catch(Exception ex)
+//		{
+//			System.err.println("Error: " + ex);
+//			ex.printStackTrace(System.err);
+//		}
+//		
+//	}
 	
 	@Override
 	public TimeSeriesIdentifier makeEmptyTsId()
