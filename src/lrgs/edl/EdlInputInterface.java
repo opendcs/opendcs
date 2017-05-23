@@ -22,6 +22,8 @@
  */
 package lrgs.edl;
 
+import java.util.Date;
+
 import ilex.util.Logger;
 import lrgs.common.DcpMsg;
 import lrgs.lrgsmain.LrgsConfig;
@@ -46,6 +48,11 @@ public class EdlInputInterface
 	private boolean _shutdown = false;
 	private long lastConfigCheck = 0L;
 	private int count = 0;
+	
+	private long enableTime = System.currentTimeMillis();
+	private long lastStatusTime = 0L;
+	private int numLastHour = 0, numThisHour = 0;
+
 	
 	public EdlInputInterface(LrgsMain lrgsMain)
 	{
@@ -93,6 +100,7 @@ Logger.instance().debug3("EDL Ingest config check last="+lastConfigCheck + ", lo
 	{
 		dcpMsg.setSequenceNum(count++);
 		lrgsMain.msgArchive.archiveMsg(dcpMsg, this);
+		numThisHour++;
 	}
 	
 	@Override
@@ -143,6 +151,7 @@ Logger.instance().info("EDL Ingest initializing.");
 			monitorThread = new EdlMonitorThread(this);
 			monitorThread.start();
 			statusStr = "Enabled";
+			enableTime = System.currentTimeMillis();
 		}
 		else
 		{
@@ -153,6 +162,7 @@ Logger.instance().info("EDL Ingest initializing.");
 			}
 			monitorThread = null;
 			statusStr = "Disabled";
+			enableTime = 0L;
 		}
 	}
 
@@ -180,9 +190,43 @@ Logger.instance().info("EDL Ingest initializing.");
 		return statusCode;
 	}
 
+	private static final long MS_PER_HR = 3600*1000L;
+	
 	@Override
 	public String getStatus()
 	{
+		long now = System.currentTimeMillis();
+		if (now/MS_PER_HR > lastStatusTime/MS_PER_HR)  // Hour just changed
+		{
+			String s = "edlMinHourly";
+Logger.instance().debug3("Looking for property '" + s + "'");
+			int minHourly = LrgsConfig.instance().edlMinHourly;
+			if (minHourly > 0                          // Feature Enabled
+			 && enableTime != 0L                       // Currently Enabled
+			 && (now - enableTime > 3*MS_PER_HR))      // Have been up for at least 3 hours
+			{
+				if (numThisHour < minHourly)
+				{
+					Logger.instance().warning(getInputName()
+						+ " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
+						+ " number of messages received=" + numThisHour 
+						+ " which is under minimum threshold of " + minHourly);
+				}
+				if (numThisHour < (numLastHour/2))
+				{
+					Logger.instance().warning(getInputName()
+						+ " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
+						+ " number of messages received=" + numThisHour 
+						+ " which is under half previous hour's total of " + numLastHour);
+				}
+			}
+
+			// Rollover the counts.
+			numLastHour = numThisHour;
+			numThisHour = 0;
+		}
+		
+		lastStatusTime = now;
 		return statusStr;
 	}
 

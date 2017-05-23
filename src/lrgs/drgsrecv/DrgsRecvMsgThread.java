@@ -28,7 +28,6 @@ import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import ilex.util.FileLogger;
-import ilex.util.TextUtil;
 
 import lrgs.archive.MsgArchive;
 import lrgs.common.DcpAddress;
@@ -39,12 +38,10 @@ import lrgs.lrgsmain.LrgsMain;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputException;
 import lrgs.lrgsmain.LrgsInputInterface;
-import lrgs.networkdcp.NetworkDcpStatusList;
 import lrgs.db.LrgsConstants;
 import lrgs.db.LrgsDatabaseThread;
 import lrgs.db.Outage;
 
-import decodes.util.ChannelMap;
 
 /**
 Handles interaction with a single DRGS message thread.
@@ -127,6 +124,9 @@ public class DrgsRecvMsgThread
 	public boolean noChannelFile = false;
 	public String module = DrgsRecv.module;
 	protected long connectRetryDelay = 10000L;
+	protected long lastConnectTime = 0L, lastStatusTime = 0L;
+	protected int numThisHour = 0, numLastHour = 0;
+
 
 	/**
 	  Constructor.
@@ -393,7 +393,8 @@ Logger.instance().info(module + " " + myName + " starting"
 		startIndex = 0;
 		noneIndex = 0;
 		workingMsg = null;
-		lastResponseTime = System.currentTimeMillis();
+		lastResponseTime = lastConnectTime = System.currentTimeMillis();
+		numThisHour = numLastHour = 0;
 
 		// If we had a channel outage in effect, tag its end time and drop it.
 		if (channelOutage != null)
@@ -438,6 +439,7 @@ Logger.instance().info(module + " " + myName + " starting"
 					workingMsg = null;
 					if (ret != null)
 						ret.setOrigAddress(new DcpAddress(new String(origAddr)));
+					numThisHour++;
 					return ret;
 				}
 			}
@@ -449,6 +451,7 @@ Logger.instance().info(module + " " + myName + " starting"
 					DcpMsg ret = workingMsg;
 					workingMsg = null;
 					ret.setOrigAddress(new DcpAddress(new String(origAddr)));
+					numThisHour++;
 					return ret;
 				}
 			}
@@ -907,16 +910,16 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	}
 
 
-	/** This method is for debug only, dumps the message to System.out. */
-	private void dumpMsg(DcpMsg msg)
-	{
-		java.io.PrintStream out = System.out;
-		out.println("--------------------");
-		out.println("flag = 0x" + Integer.toHexString(msg.flagbits));
-		out.println("time = " + 
-			IDateFormat.toString(msg.getLocalReceiveTime(), false));
-		out.println(msg.toString() + "\n\n");
-	}
+//	/** This method is for debug only, dumps the message to System.out. */
+//	private void dumpMsg(DcpMsg msg)
+//	{
+//		java.io.PrintStream out = System.out;
+//		out.println("--------------------");
+//		out.println("flag = 0x" + Integer.toHexString(msg.flagbits));
+//		out.println("time = " + 
+//			IDateFormat.toString(msg.getLocalReceiveTime(), false));
+//		out.println(msg.toString() + "\n\n");
+//	}
 
 	//=================================================================
 	// The following methods are from the LrgsInputInterface interface
@@ -1014,12 +1017,54 @@ log(Logger.E_DEBUG2, 0, "Got term CRLF, entering CARRIERTIMES_STATE");
 	{
 		return DL_STRSTAT;
 	}
+	
+	
+	private static final long MS_PER_HR = 3600*1000L;
 
 	/**
 	 * @return a short string description of the current status.
 	 */
 	public String getStatus()
 	{
+		long now = System.currentTimeMillis();
+		
+		if (now/MS_PER_HR > lastStatusTime/MS_PER_HR)  // Hour just changed
+		{
+			String s = 
+				(this instanceof lrgs.lrit.LritDamsNtReceiver) ? "lritMinHourly" : "drgsMinHourly";
+				
+Logger.instance().debug3("Looking for property '" + s + "'");
+
+			int minHourly = 
+				(this instanceof lrgs.lrit.LritDamsNtReceiver) ? 
+					LrgsConfig.instance().lritMinHourly : LrgsConfig.instance().drgsMinHourly;
+			if (minHourly > 0                               // Feature Enabled
+			 && isConnected()
+			 && (now - lastConnectTime > 3*MS_PER_HR))      // Have been up for at least 3 hours
+			{
+				if (numThisHour < minHourly)
+				{
+					Logger.instance().warning(module + " " + getInputName()
+						+ " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
+						+ " number of messages received=" + numThisHour 
+						+ " which is under minimum threshold of " + minHourly);
+				}
+				if (numThisHour < (numLastHour/2))
+				{
+					Logger.instance().warning(module + " " + getInputName()
+						+ " for hour ending " + new Date((now / MS_PER_HR) * MS_PER_HR)
+						+ " number of messages received=" + numThisHour 
+						+ " which is under half previous hour's total of " + numLastHour);
+				}
+			}
+
+			// Rollover the counts.
+			numLastHour = numThisHour;
+			numThisHour = 0;
+		}
+		
+		
+		lastStatusTime = now;
 		return status;
 	}
 
