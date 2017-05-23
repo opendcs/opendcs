@@ -1,5 +1,7 @@
 package decodes.routing;
 
+import java.util.Date;
+
 import opendcs.dai.DacqEventDAI;
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
@@ -15,6 +17,7 @@ public class DacqEventLogger
 	private String subsystem = null;
 	private DacqEventDAI dacqEventDAO = null;
 	private DbKey appId = DbKey.NullKey;
+	private Date msgStart = null;
 
 	public DacqEventLogger(Logger parent)
 	{
@@ -42,6 +45,7 @@ public class DacqEventLogger
 		evt.setEventPriority(priority);
 		evt.setEventText(text);
 		evt.setAppId(appId);
+		evt.setMsgRecvTime(msgStart);
 		
 		writeDacqEvent(evt);
 	}
@@ -93,6 +97,11 @@ public class DacqEventLogger
 	public void setAppId(DbKey appId)
 	{
 		this.appId = appId;
+	}
+
+	public void setMsgStart(Date timeStamp)
+	{
+		msgStart = timeStamp;
 	}
 
 }

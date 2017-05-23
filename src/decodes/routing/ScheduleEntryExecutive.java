@@ -570,6 +570,12 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 		}
 	}
 	
+	public void setMessageStart(Date timeStamp)
+	{
+		dacqEventLogger.setMsgStart(timeStamp);
+	}
+
+	
 	public void setSubsystem(String subsystem)
 	{
 		dacqEventLogger.setSubsystem(subsystem);
@@ -594,4 +600,5 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 	{
 		return lastDcpMsg;
 	}
+
 }

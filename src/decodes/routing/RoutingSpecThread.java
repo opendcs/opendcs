@@ -474,6 +474,7 @@ public class RoutingSpecThread
 			lastMsgReceiveMsec = System.currentTimeMillis();
 
 			myExec.setPlatform(rm.getPlatformOrNull());
+			myExec.setMessageStart(rm.getTimeStamp());
 
 			if (rawArchive != null)
 			{
@@ -564,6 +565,8 @@ public class RoutingSpecThread
 				
 			}
 			myExec.setPlatform(null);
+			myExec.setMessageStart(null);
+
 			currentStatus = "Running";
 		}
 
