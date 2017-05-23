@@ -21,6 +21,8 @@ import java.util.TimeZone;
 import java.util.Properties;
 import java.net.InetAddress;
 
+import opendcs.dai.DacqEventDAI;
+import opendcs.dai.LoadingAppDAI;
 import ilex.util.Logger;
 import ilex.util.ServerLock;
 import ilex.util.ServerLockable;
@@ -49,7 +51,13 @@ import lrgs.db.LrgsDatabaseThread;
 import lrgs.edl.EdlInputInterface;
 import lrgs.noaaportrecv.NoaaportRecv;
 import lrgs.networkdcp.NetworkDcpRecv;
+import decodes.db.Database;
 import decodes.db.DatabaseException;
+import decodes.routing.DacqEventLogger;
+import decodes.sql.SqlDatabaseIO;
+import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
@@ -123,7 +131,10 @@ public class LrgsMain
 	
 	/** The DDS Receive Module, used for secondary group. */
 	private DdsRecv ddsRecv2;
-	
+
+	/** To use is writeDacqEvents = true in configuration */
+	private DacqEventLogger dacqEventLogger = null;
+
 	
 
 	/** Constructor. */
@@ -317,6 +328,40 @@ public class LrgsMain
 				// network lists <all> and <production>, we have to load the
 				// platform lists too:
 				DecodesInterface.initializeForDecoding();
+				
+				if (cfg.getMiscBooleanProperty("writeDacqEvents", false)
+				 && (Database.getDb().getDbIo() instanceof SqlDatabaseIO))
+				{
+					// Create the DacqEvent Logger and make it the primary logger.
+					SqlDatabaseIO sqlDbio = (SqlDatabaseIO)Database.getDb().getDbIo();
+					DacqEventDAI dacqEventDAO = sqlDbio.makeDacqEventDAO();
+					dacqEventLogger = new DacqEventLogger(Logger.instance());
+					dacqEventLogger.setDacqEventDAO(dacqEventDAO);
+					
+					LoadingAppDAI appDAO = sqlDbio.makeLoadingAppDAO();
+					try
+					{
+						CompAppInfo appInfo = appDAO.getComputationApp("LRGS");
+						if (appInfo != null)
+							dacqEventLogger.setAppId(appInfo.getAppId());
+					}
+					catch (DbIoException ex)
+					{
+						Logger.instance().warning(module + " Cannot read application ID: " + ex);
+					}
+					catch (NoSuchObjectException ex)
+					{
+						Logger.instance().warning(module + " No such application 'LRGS': " + ex
+							+ " -- Please create in Processes GUI.");
+					}
+					finally
+					{
+						appDAO.close();
+					}
+
+					Logger.setLogger(dacqEventLogger);
+				}
+				
 			}
 			catch(DecodesException ex)
 			{
