@@ -258,6 +258,18 @@ public class LrgsConfig
 	/** Max age of an LRIT message in seconds. Messages older than this are discarded. */
 	public int lritMaxMsgAgeSec = 7200;
 	
+	/** Set to positive integer to enable minimum hourly checking on LRIT */
+	public int lritMinHourly = 0;
+	
+	/** Set to positive integer to enable minimum hourly checking on DDS Recv */
+	public int ddsMinHourly = 0;
+	
+	/** Set to positive integer to enable minimum hourly checking on EDL */
+	public int edlMinHourly = 0;
+
+	/** Set to positive integer to enable minimum hourly checking on DRGS */
+	public int drgsMinHourly = 0;
+
 	public static final boolean def_noaaportEnabled = false;
 	public static final int def_noaaportPort = 18000;
 	public static final String def_archiveDir = ".";
@@ -328,6 +340,11 @@ public class LrgsConfig
 		new PropertySpec("restrictEventsToAdmin", PropertySpec.BOOLEAN,
 			"(default=false) Set to true to disallow events to non-adminstrators "
 			+ "on the rtstat display."),
+			
+		new PropertySpec("writeDacqEvents", PropertySpec.BOOLEAN,
+			"(default=false) if loadDecodes is also true, this means to create DACQ_EVENT "
+			+ "entries in the database for INFO and higher-priority events."),
+		
 //		new PropertySpec("storeXmitRecords", PropertySpec.BOOLEAN,
 //			"Set to true to store XMIT Records (i.e. the DCP Monitor Function) (NOT IMPLEMENTED)")
 	};

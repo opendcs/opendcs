@@ -37,6 +37,7 @@ public class LritCfgPanel
 	private JTextField timeoutField = new JTextField();
 	private JTextField maxAgeSecField = new JTextField();
 	private GuiDialog parent = null;
+	private JTextField minHourlyField = new JTextField(9);
 
 	public LritCfgPanel(GuiDialog parent)
 	{
@@ -112,14 +113,22 @@ public class LritCfgPanel
 				new Insets(3, 0, 3, 30), 50, 0));
 		
 		add(new JLabel(RtStat.getLabels().getString("LritPanel.maxage")),
-			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.5,
+			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(3, 25, 3, 1), 0, 0));
+		add(maxAgeSecField,
+			new GridBagConstraints(1, 6, 1, 1, 0.5, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(3, 0, 3, 30), 50, 0));
+
+		add(new JLabel(RtStat.getLabels().getString("minHourly")),
+			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.5,
 				GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
-
-		add(maxAgeSecField,
-			new GridBagConstraints(1, 6, 1, 1, 0.5, 0.5,
+		add(minHourlyField,
+			new GridBagConstraints(1, 7, 1, 1, 0.5, 0.5,
 				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
-				new Insets(3, 0, 3, 30), 50, 0));
+				new Insets(3, 0, 3, 30), 0, 0));
 	}
 
 	@Override
@@ -132,6 +141,8 @@ public class LritCfgPanel
 		srcField.setText(conf.lritSrcCode);
 		timeoutField.setText("" + conf.lritTimeout);
 		maxAgeSecField.setText("" + conf.lritMaxMsgAgeSec);
+		minHourlyField.setText(
+			conf.lritMinHourly > 0 ? ("" + conf.lritMinHourly) : "");
 		this.conf = conf;
 	}
 	
@@ -140,6 +151,8 @@ public class LritCfgPanel
 		if (conf == null)
 			return false;
 		
+		int minHourly = getMinHourly();
+		
 		boolean ret = enableCheck.isSelected() != conf.enableLritRecv
 		 || !TextUtil.strEqual(hostField.getText().trim(), conf.lritHostName)
 		 || !TextUtil.strEqual(portField.getText().trim(), ""+conf.lritPort)
@@ -147,6 +160,7 @@ public class LritCfgPanel
 		 || !TextUtil.strEqual(srcField.getText().trim(), conf.lritSrcCode)
 		 || !TextUtil.strEqual(timeoutField.getText().trim(), ""+conf.lritTimeout)
 		 || !TextUtil.strEqual(maxAgeSecField.getText().trim(), ""+conf.lritMaxMsgAgeSec)
+		 || minHourly != conf.lritMinHourly
 		;
 		return ret;
 	}
@@ -186,6 +200,24 @@ public class LritCfgPanel
 				+ "' -- set to default of 7200 seconds");
 			conf.lritTimeout = 7200;
 		}
+		conf.lritMinHourly = getMinHourly();
 	}
+	
+	private int getMinHourly()
+	{
+		String s = minHourlyField.getText().trim();
+		if (s.length() == 0)
+			return 0;
+		try
+		{
+			return Integer.parseInt(s);
+		}
+		catch(NumberFormatException ex)
+		{
+			Logger.instance().warning("EDL Minimum Hourly field must be an integer.");
+			return 0;
+		}
+	}
+
 
 }

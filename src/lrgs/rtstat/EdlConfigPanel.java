@@ -22,14 +22,19 @@
  */
 package lrgs.rtstat;
 
+import ilex.util.Logger;
+
 import java.awt.GridBagLayout;
+
 import javax.swing.JPanel;
 import javax.swing.BorderFactory;
 import javax.swing.border.TitledBorder;
+
 import java.awt.Font;
 import java.awt.Color;
 
 import javax.swing.JCheckBox;
+
 import java.awt.GridBagConstraints;
 
 import javax.swing.JLabel;
@@ -40,7 +45,6 @@ import java.util.ResourceBundle;
 
 import decodes.gui.GuiDialog;
 import decodes.gui.TopFrame;
-
 import lrgs.lrgsmain.LrgsConfig;
 
 public class EdlConfigPanel 
@@ -57,6 +61,7 @@ public class EdlConfigPanel
 	public LrgsConfig lrgsConfig = null;
 	private static ResourceBundle genericLabels = RtStat.getGenericLabels();
 	private static ResourceBundle rtstatLabels = RtStat.getLabels();
+	private JTextField minHourlyField = new JTextField(9);
 
 	public String getLabel()
 	{
@@ -116,8 +121,18 @@ public class EdlConfigPanel
 			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 15), 20, 0));
+		
+		add(new JLabel(rtstatLabels.getString("minHourly")),
+			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(5, 30, 5, 3), 0, 0));
+		add(minHourlyField,
+			new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(5, 0, 5, 15), 20, 0));
+
 		add(new JLabel(" "),
-			new GridBagConstraints(0, 5, 2, 1, 0.0, 0.5,
+			new GridBagConstraints(0, 6, 2, 1, 0.0, 0.5,
 				GridBagConstraints.NORTH, GridBagConstraints.NONE,
 				new Insets(5, 30, 5, 3), 0, 0));
 
@@ -134,18 +149,41 @@ public class EdlConfigPanel
 			tmp.edlFilenameSuffix != null ? tmp.edlFilenameSuffix : "");
 		doneDirText.setText(
 			tmp.edlDoneDirectory != null ? tmp.edlDoneDirectory : "");
+		minHourlyField.setText(
+			tmp.edlMinHourly > 0 ? ("" + tmp.edlMinHourly) : "");
+		
 		lrgsConfig = tmp;
+		
+	}
+	
+	private int getMinHourly()
+	{
+		String s = minHourlyField.getText().trim();
+		if (s.length() == 0)
+			return 0;
+		try
+		{
+			return Integer.parseInt(s);
+		}
+		catch(NumberFormatException ex)
+		{
+			Logger.instance().warning("EDL Minimum Hourly field must be an integer.");
+			return 0;
+		}
 	}
 	
 	public boolean hasChanged()
 	{
 		if (lrgsConfig == null)
 			return false;
+		int minHourly = getMinHourly();
+
 		if (enableCheckBox.isSelected() != lrgsConfig.edlIngestEnable
 		 || recursiveCheckBox.isSelected() != lrgsConfig.edlIngestRecursive
 		 || !stringSame(ingestDirText.getText(), lrgsConfig.edlIngestDirectory)
 		 || !stringSame(filenameSuffixText.getText(), lrgsConfig.edlFilenameSuffix)
-		 || !stringSame(doneDirText.getText(), lrgsConfig.edlDoneDirectory))
+		 || !stringSame(doneDirText.getText(), lrgsConfig.edlDoneDirectory)
+		 || minHourly != lrgsConfig.edlMinHourly)
 			return true;
 		return false;
 	}
@@ -170,6 +208,8 @@ public class EdlConfigPanel
 	{
 		if(lrgsConfig == null)
 			return;
+		
+		lrgsConfig.edlMinHourly = getMinHourly();
 		lrgsConfig.edlIngestEnable = enableCheckBox.isSelected();
 		lrgsConfig.edlIngestRecursive = recursiveCheckBox.isSelected();
 		lrgsConfig.edlIngestDirectory = ingestDirText.getText().trim();

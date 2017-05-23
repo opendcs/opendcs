@@ -98,7 +98,7 @@ public class LrgsConfigDialog extends GuiDialog
 	private JTextField localStatusFileField = null;
 	private JTextField statusPeriodField = null;
 	private JTextField sharedNetlistDirectoryField = null;
-	private JTextField ddsTimeoutField = new JTextField();
+	private JTextField ddsTimeoutField = new JTextField(9);
 	private JLabel preference1Label = null;
 	private JLabel preference2Label = null;
 	private JLabel preference3Label = null;
@@ -197,6 +197,8 @@ public class LrgsConfigDialog extends GuiDialog
 	private IridiumCfgPanel iridiumCfgTab = null;
 	private LritCfgPanel lritCfgPanel = null;
 	private EdlConfigPanel edlConfigPanel = null;
+	private JTextField ddsMinHourlyField = new JTextField(9);
+	private JTextField drgsMinHourlyField = new JTextField(9);
 	
 	public LrgsConfigDialog(JFrame parent, String title)
 	{
@@ -241,6 +243,8 @@ public class LrgsConfigDialog extends GuiDialog
 		sqlDriverField.setText("");
 		sqlKeyField.setText("");
 		ddsTimeoutField.setText("");
+		ddsMinHourlyField.setText("");
+		drgsMinHourlyField.setText("");
 		pdtValidationCheck.setSelected(false);
 		pdtUrlField.setText("");
 		cdtUrlField.setText("");
@@ -372,6 +376,8 @@ public class LrgsConfigDialog extends GuiDialog
 //			recoveryCombo.setSelectedIndex(0);
 		enableDDSReceiveCheck.setSelected(lrgsConfig.enableDdsRecv);
 		ddsTimeoutField.setText("" + ddsSettings.timeout);
+		ddsMinHourlyField.setText(
+			lrgsConfig.ddsMinHourly > 0 ? ("" + lrgsConfig.ddsMinHourly) : "");
 
 		for(NetlistGroupAssoc nga : ddsSettings.getNetlistGroupAssociations())
 		{
@@ -384,6 +390,8 @@ public class LrgsConfigDialog extends GuiDialog
 		// DRGS Tab
 		drgsTableModel.setContents(drgsSettings);
 		enableDRGSCheck.setSelected(lrgsConfig.enableDrgsRecv);
+		drgsMinHourlyField.setText(
+			lrgsConfig.drgsMinHourly > 0 ? ("" + lrgsConfig.drgsMinHourly) : "");
 
 		// Network DCP Tab
 		networkDcpCfgPanel.setContents(networkDcpSettings,
@@ -749,6 +757,23 @@ public class LrgsConfigDialog extends GuiDialog
 				ddsSettings.timeout = iv;
 				changed = true;
 			}
+			
+			fieldName = "DDS Min Hourly";
+			iv = getIntFieldValue(ddsMinHourlyField, 0);
+			if (lrgsConfig.ddsMinHourly != iv)
+			{
+				lrgsConfig.ddsMinHourly = iv;
+				changed = true;
+			}
+			
+			fieldName = "DRGS Min Hourly";
+			iv = getIntFieldValue(drgsMinHourlyField, 0);
+			if (lrgsConfig.drgsMinHourly != iv)
+			{
+				lrgsConfig.drgsMinHourly = iv;
+				changed = true;
+			}
+
 
 			// On the DRGS Tab
 			bv = enableDRGSCheck.isSelected();
@@ -1799,25 +1824,14 @@ public class LrgsConfigDialog extends GuiDialog
 	 * 	
 	 * @return javax.swing.JPanel	
 	 */
-	private JPanel getRecoverPanel() {
-		if (recoverPanel == null) {
-			recoveryLabel = new JLabel();
-			recoveryLabel.setText(labels.getString(
-					"LrgsConfigDialog.recoveryStrategy"));
-
-			recoverPanel = new JPanel();
-			recoverPanel.setLayout(new GridBagLayout());
+	private JPanel getRecoverPanel() 
+	{
+		if (recoverPanel == null) 
+		{
+			recoverPanel = new JPanel(new GridBagLayout());
 			recoverPanel.setBorder(BorderFactory.createTitledBorder(null, 
 				labels.getString(
 					"LrgsConfigDialog.LRGSDDSBackupTitle"), TitledBorder.CENTER, TitledBorder.BELOW_TOP, new Font("Dialog", Font.BOLD, 14), new Color(51, 51, 51)));
-//			recoverPanel.add(recoveryLabel,
-//				new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
-//					GridBagConstraints.EAST, GridBagConstraints.NONE,
-//					new Insets(10, 10, 4, 2), 0, 0));
-//			recoverPanel.add(getRecoveryCombo(),
-//				new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-//					GridBagConstraints.WEST, GridBagConstraints.NONE,
-//					new Insets(10, 0, 4, 10), 100, 0));
 			recoverPanel.add(new JLabel(genericLabels.getString("timeout")),
 				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -1825,9 +1839,18 @@ public class LrgsConfigDialog extends GuiDialog
 			recoverPanel.add(ddsTimeoutField,
 				new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
-					new Insets(10, 0, 4, 10), 100, 0));
+					new Insets(10, 0, 4, 10), 0, 0));
+			recoverPanel.add(new JLabel(labels.getString("minHourly")),
+				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(4, 10, 4, 2), 0, 0));
+			recoverPanel.add(ddsMinHourlyField,
+				new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE,
+					new Insets(4, 0, 4, 10), 0, 0));
+			
 			recoverPanel.add(getEnableDDSReceiveCheck(), 
-				new GridBagConstraints(0, 2, 2, 1, 0.0, 0.0,
+				new GridBagConstraints(0, 3, 2, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(0, 40, 0, 0), 0, 0));
 		}
@@ -2552,26 +2575,32 @@ public class LrgsConfigDialog extends GuiDialog
 	{
 		if (drgsTablePanel == null) 
 		{
-			GridBagConstraints drgsEnableCheckGBC = 
-				new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0, 
+			drgsTablePanel = new JPanel(new GridBagLayout());
+			
+			drgsTablePanel.add(new JLabel(labels.getString("minHourly")),
+				new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(10, 10, 2, 0), 0, 0));
+			drgsTablePanel.add(drgsMinHourlyField,
+				new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, 
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
-					new Insets(10, 10, 2, 0), 0, 0);  
+					new Insets(10, 1, 2, 10), 0, 0));
 
-			GridBagConstraints tableGBC = 
-				new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0, 
+			drgsTablePanel.add(getEnableDRGSCheck(), 
+				new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0, 
+					GridBagConstraints.WEST, GridBagConstraints.NONE,
+					new Insets(4, 10, 2, 10), 0, 0));
+				
+			drgsTablePanel.add(getConnectionsScrollPane(), 
+				new GridBagConstraints(0, 2, 2, 1, 1.0, 1.0, 
 					GridBagConstraints.WEST, GridBagConstraints.BOTH,
-					new Insets(5, 5, 5, 5), 0, 0);  
+					new Insets(5, 5, 5, 5), 0, 0));  
 
-			GridBagConstraints buttonGBC = 
-				new GridBagConstraints(2, 1, 1, 1, 0.0, 1.0, 
+				
+			drgsTablePanel.add(getDrgsButtonPanel(), 
+				new GridBagConstraints(2, 2, 1, 1, 0.0, 1.0, 
 					GridBagConstraints.NORTH, GridBagConstraints.NONE,
-					new Insets(5, 5, 5, 5), 0, 0);  
-
-			drgsTablePanel = new JPanel();
-			drgsTablePanel.setLayout(new GridBagLayout());
-			drgsTablePanel.add(getEnableDRGSCheck(), drgsEnableCheckGBC);
-			drgsTablePanel.add(getConnectionsScrollPane(), tableGBC);
-			drgsTablePanel.add(getDrgsButtonPanel(), buttonGBC);
+					new Insets(5, 5, 5, 5), 0, 0));
 		}
 		return drgsTablePanel;
 	}
