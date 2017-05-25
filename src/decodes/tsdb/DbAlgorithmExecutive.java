@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.9  2016/12/16 14:37:45  mmaloney
+*  Improved debugs on exceeding max time for missing.
+*
 *  Revision 1.8  2016/09/23 15:57:21  mmaloney
 *  Improve warning messages when MISSING values cannot be recovered because time is too long. The new messages show the relevant limit values.
 *
@@ -1131,7 +1134,10 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 		TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 		try
 		{
-			if (timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, qt, qt) == 0)
+			// MJM 20170525 Need to apply round sec to retrieval.
+			Date lower = new Date(qt.getTime() - (roundSec*1000L / 2));
+			Date upper = new Date(qt.getTime() + (roundSec*1000L / 2) - 1);
+			if (timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, lower, upper) == 0)
 				debug1("Cannot retrieve '" + parmRef.role + "' for time "
 					+ tsdb.sqlDate(qt) + ": data not int DB.");
 		}
@@ -1154,31 +1160,37 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 	private boolean tryRangeQuery(ParmRef parmRef, TreeSet<Date> queryTimes)
 		throws DbIoException
 	{
-		String intcode = parmRef.compParm.getInterval();
-		if (IntervalCodes.int_instant.equalsIgnoreCase(intcode)
-		 || IntervalCodes.int_unit.equalsIgnoreCase(intcode))
-			return false;
-
-		// 'Nearly contiguous means no more that 2 intervals in any gap.
-		int intsec = IntervalCodes.getIntervalSeconds(intcode);
-		long lastSec = 0L;
-		for(Date d : queryTimes)
-		{
-			long sec = d.getTime() / 1000L;
-			if (lastSec != 0 
-			 && sec - lastSec > intsec*2)
-				return false;
-			lastSec = sec;
-		}
+		// MJM 20170525 the IN clause won't work because it doesn't apply the 
+		// roundSec fudge factor -- It only looks for exact time matches.
+		// Therefor this method ALWAYS tries the range, and always returns true.
+		
+//		String intcode = parmRef.compParm.getInterval();
+//		if (IntervalCodes.int_instant.equalsIgnoreCase(intcode)
+//		 || IntervalCodes.int_unit.equalsIgnoreCase(intcode))
+//			return false;
+//
+//		// 'Nearly contiguous' means no more that 2 intervals in any gap.
+//		int intsec = IntervalCodes.getIntervalSeconds(intcode);
+//		long lastSec = 0L;
+//		for(Date d : queryTimes)
+//		{
+//			long sec = d.getTime() / 1000L;
+//			if (lastSec != 0 
+//			 && sec - lastSec > intsec*2)
+//				return false;
+//			lastSec = sec;
+//		}
 
 		TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 		try
 		{
-			if (timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, queryTimes.first(), 
-				queryTimes.last()) == 0)
-				debug1("Cannot retrieve '" + parmRef.role + "' for times "
-					+ tsdb.sqlDate(queryTimes.first()) + " thru "
-					+ tsdb.sqlDate(queryTimes.last()) + ": data not int DB.");
+			// MJM 20170525 Need to apply round sec to retrieval.
+			Date lower = new Date(queryTimes.first().getTime() - (roundSec*1000L / 2));
+			Date upper = new Date(queryTimes.last().getTime() + (roundSec*1000L / 2) - 1);
+
+			int n = timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, lower, upper);
+			debug1("Retrieved " + n + " values for role '" + parmRef.role + "' for times "
+					+ debugSdf.format(lower) + " thru " + debugSdf.format(upper));
 			return true;
 		}
 		catch(BadTimeSeriesException ex)

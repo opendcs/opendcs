@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.22  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -293,7 +296,12 @@ public class CTimeSeries
 			int sect = (int)(tv.getTime().getTime() / 1000L);
 			int dt = sect - (int)sec;
 //Logger.instance().info("findWithin sect=" + sect + ", dt=" + dt);
-			if (-fudge <= dt && dt <= fudge)
+			
+			// 20170525 Changed second clause below from "dt <= fudge" to "dt < fudge".
+			// This will prevent a value from being considered part of two different time slices.
+			// Example roundSec=60, so fudge=30. If sec=12:00:00 we want to accept 11:59:30...12:00:29
+			// because 12:00:30 would be considered part of the 12:01 timeslice.
+			if (-fudge <= dt && dt < fudge)
 				return tv;
 		}
 		return null;
