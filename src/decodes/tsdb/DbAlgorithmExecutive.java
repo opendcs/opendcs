@@ -11,6 +11,11 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.10  2017/05/25 21:18:45  mmaloney
+*  In DbAlgorithmExecutive, apply roundSec when searching for values in database.
+*  In CTimeSeries.findWithin, the upperbound should be t+fudge/2-1.
+*  See comments in code dated 20170525.
+*
 *  Revision 1.9  2016/12/16 14:37:45  mmaloney
 *  Improved debugs on exceeding max time for missing.
 *
@@ -1651,7 +1656,11 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	public TimeSeriesIdentifier getParmTsId(String role)
 	{
 		ParmRef pr = getParmRef(role);
-		if (pr == null || pr.timeSeries == null)
+		if (pr == null)
+			return null;
+		if (pr.tsid != null)
+			return pr.tsid;
+		if (pr.timeSeries == null)
 			return null;
 		return pr.timeSeries.getTimeSeriesIdentifier();
 	}
