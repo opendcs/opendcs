@@ -56,6 +56,17 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	private static long lastCacheRefresh = 0L;
 	private static final long CACHE_REFRESH_OVERLAP = 120000L;
 	private int roundSec = 0;
+	
+	private String tsidQuery = 
+		"SELECT a.ts_id, a.site_datatype_id, a.interval, a.table_selector, a.model_id, "
+		+ "b.SITE_ID, b.DATATYPE_ID, d.UNIT_COMMON_NAME, e.site_common_name, c.datatype_common_name "
+		+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, HDB_SITE e ";
+	private String tsidJoinClause =
+		  " WHERE a.site_datatype_id = b.site_datatype_id "
+		+ " AND b.DATATYPE_ID = c.DATATYPE_ID "
+		+ " and c.UNIT_ID = d.UNIT_ID"
+        + " and b.SITE_ID = e.SITE_ID";
+
 
 	protected HdbTimeSeriesDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -73,7 +84,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
 		throws DbIoException, NoSuchObjectException
 	{
-//info("getTimeSeriesIdentifier for '" + uniqueString + "'");
+debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		HdbTsId htsid = new HdbTsId(uniqueString);
 		String tsSiteName = htsid.getSiteName();
 		DbKey siteId = siteDAO.lookupSiteID(tsSiteName);
@@ -88,6 +99,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			throw new NoSuchObjectException("No SDI for '" + uniqueString + "'");
 		htsid.setSdi(sdi);
 		String tabsel = htsid.getPart(HdbTsId.TABSEL_PART);
+		if (tabsel == null)
+			tabsel = "R_";
 		String q = "SELECT TS_ID "
 			+ "FROM CP_TS_ID "
 			+ "WHERE SITE_DATATYPE_ID = " + htsid.getSdi()
@@ -123,15 +136,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
 			throws DbIoException, NoSuchObjectException
 	{
-		String q = "SELECT a.ts_id, a.site_datatype_id, a.interval, "
-			+ "a.table_selector, a.model_id, "
-			+ "b.SITE_ID, b.DATATYPE_ID, "
-			+ "d.UNIT_COMMON_NAME "
-			+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d "
-			+ " WHERE ts_id = " + key
-			+ " AND a.site_datatype_id = b.site_datatype_id "
-			+ " AND b.DATATYPE_ID = c.DATATYPE_ID "
-			+ " and c.UNIT_ID = d.UNIT_ID";
+		String q = tsidQuery + tsidJoinClause + " and a.ts_id = " + key;
 			
 		try
 		{
@@ -185,9 +190,9 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		tsid.setDataType(dt);
 		tsid.setStorageUnits(rs.getString(8));
 	
-// Don't do this, HdbTsId supplies its own default display name.
-//		tsid.setDisplayName(dt.getCode() + " at " + site.getDisplayName());
-		tsid.setDescription(tsid.getDisplayName());
+		String siteCommonName = rs.getString(9);
+		String dtCommonName = rs.getString(10);
+		tsid.setDescription(dtCommonName + " at " + siteCommonName);
 
 		return tsid;
 	}
@@ -931,33 +936,8 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		// it from doing individual reads for each site.
 		siteDAO.fillCache();
 
-        //
-        // this query modified 13-March-2013 by M. Bogner to add the sitename view into the query to
-        // assure that only TS_IDs are selected that have a record in sitename.  An error was noted
-        // where the CP failed because no corresponding SITENAME records existed for a CP_TS_ID record 
-        // in databases where the sitename view is limited by db_site_code for master and slave HDB databases
-        //
-//		String q = "SELECT a.ts_id, a.site_datatype_id, a.interval, "
-//			+ "a.table_selector, a.model_id, "
-//			+ "b.SITE_ID, b.DATATYPE_ID, "
-//			+ "d.UNIT_COMMON_NAME "
-//			+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, SITENAME e "
-//			+ " WHERE a.site_datatype_id = b.site_datatype_id "
-//			+ " AND b.DATATYPE_ID = c.DATATYPE_ID "
-//			+ " and c.UNIT_ID = d.UNIT_ID"
-//            + " and b.SITE_ID = e.SITEID";
-
-		// MJM 2016/1/8 Join with SITE rather than SITENAME. The latter has an inconsistency
-		// in the view which is causing it to get "invisible" sites in a foreign district.
-		// MJM 2017/04/28 SITE and SITENAME views are now gone.
-		String q = "SELECT a.ts_id, a.site_datatype_id, a.interval, a.table_selector, a.model_id, "
-				+ "b.SITE_ID, b.DATATYPE_ID, d.UNIT_COMMON_NAME "
-				+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, HDB_SITE e "
-				+ " WHERE a.site_datatype_id = b.site_datatype_id "
-				+ " AND b.DATATYPE_ID = c.DATATYPE_ID "
-				+ " and c.UNIT_ID = d.UNIT_ID"
-                + " and b.SITE_ID = e.SITE_ID";
-		
+		String q = tsidQuery + tsidJoinClause;
+			
 		// MJM 2016/1/8 Added this block of code to minimize reloading the entire cache.
 		boolean doFullLoad = System.currentTimeMillis() - lastCacheLoad > CACHE_RELOAD_INTERVAL;
 		debug3("reloadTsIdCache doFullLoad=" + doFullLoad + ", lastCacheLoad=" + new Date(lastCacheLoad)
