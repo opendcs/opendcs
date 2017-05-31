@@ -142,6 +142,7 @@ public abstract class GroupHelper
 		{
 			ArrayList<TimeSeriesIdentifier> cachedTsids = timeSeriesDAO.listTimeSeries();
 			tsdb.debug2("...cached TSID list has " + cachedTsids.size() + " TSIDs.");
+			tsdb.debug2("...group has " + grp.getDataTypeIdList().size() + " datatypes.");
 			for(TimeSeriesIdentifier tsid : cachedTsids)
 				if (passesParts(grp, tsid))
 					tsIdSet.add(tsid);
