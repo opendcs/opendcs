@@ -183,13 +183,15 @@ public class RunComputationsFrame extends TopFrame
 		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
 		this.setContentPane(mycontent);
 		this.setTitle(frameTitle);
-		this.setSize(750,825);//800
+		this.trackChanges("runcomps");
+//		this.setSize(750,825);//800
 		mycontent.add(listPanel());
 		mycontent.add(timePanel());
 		mycontent.add(getChart());
 		mycontent.add(getTable());
 		mycontent.add(closePanel());
-
+		pack();
+		
 		//Default operation is to do nothing when user hits 'X' in
 		// upper right to close the window. We will catch the closing
 		// event and do the same thing as if user had hit close.
