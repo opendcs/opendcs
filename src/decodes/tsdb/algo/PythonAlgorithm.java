@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2017/02/16 14:42:04  mmaloney
+ * Close CwmsRatingDao in final block.
+ *
  * Revision 1.4  2016/09/23 15:59:14  mmaloney
  * Only set MISSING to IGNORE if not explicitely set to something else.
  *
@@ -38,8 +41,6 @@ import opendcs.dai.TimeSeriesDAI;
 
 import org.python.util.PythonInterpreter;
 
-import hec.data.RatingException;
-import hec.data.cwmsRating.RatingSet;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -54,7 +55,6 @@ import decodes.comp.TabRatingReader;
 import decodes.comp.TableBoundsException;
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTimeSeriesDb;
-import decodes.cwms.rating.CwmsRatingDao;
 import decodes.cwms.validation.DatchkReader;
 import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.ScreeningCriteria;
@@ -62,6 +62,7 @@ import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.TsidScreeningAssignment;
 import decodes.db.Constants;
 import decodes.db.Site;
+import decodes.hdb.HdbFlags;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithmScript;
@@ -342,8 +343,8 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				debug1("No time series assigned to role " + parm.getRoleName());
 				debug1("parmRef for '" + parm.getRoleName() + "' " + 
 					(parmRef.timeSeries == null ? "HAS NO TIME SERIES." : "HAS A TIME SERIES"));
-				if (parmRef.timeSeries!= null)
-					debug1("... TSID for time series is " + parmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString());
+//				if (parmRef.timeSeries!= null)
+//					debug1("... TSID for time series is " + parmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString());
 			}
 		}
 		
@@ -543,7 +544,11 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	public boolean isPresent(Variable v)
 	{
 		int f = v.getFlags();
-		return (f & (IFlags.IS_MISSING | VarFlags.TO_DELETE | CwmsFlags.VALIDITY_MISSING)) == 0;
+		if ((f & (IFlags.IS_MISSING | VarFlags.TO_DELETE)) != 0)
+			return false;
+		if (tsdb.isCwms())
+			return (f & CwmsFlags.VALIDITY_MISSING) != 0;
+		return true;
 	}
 
 	/**
@@ -564,9 +569,11 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if (nv == null)
 			return false;
 		int f = nv.getFlags();
-		if (!tsdb.isCwms())
-			return false;
-		return (f & CwmsFlags.VALIDITY_QUESTIONABLE) != 0;
+		if (tsdb.isCwms())
+			return (f & CwmsFlags.VALIDITY_QUESTIONABLE) != 0;
+		else if (tsdb.isHdb())
+			return HdbFlags.isQuestionable(f);
+		else return false;
 	}
 
 	
@@ -595,7 +602,11 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		int f = v.getFlags();
 		if (!tsdb.isCwms())
 			return false;
-		return (f & CwmsFlags.VALIDITY_REJECTED) != 0;
+		if (tsdb.isCwms())
+			return (f & CwmsFlags.VALIDITY_REJECTED) != 0;
+		else if (tsdb.isHdb())
+			return HdbFlags.isRejected(f);
+		return false;
 	}
 
 	/**
@@ -616,12 +627,18 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if (nv == null)
 			return false;
 		int f = nv.getFlags();
-		if (!tsdb.isCwms())
+		
+		if (tsdb.isCwms())
+		{
+			return (f & (CwmsFlags.VALIDITY_REJECTED | CwmsFlags.VALIDITY_QUESTIONABLE
+				| IFlags.IS_MISSING | VarFlags.TO_DELETE)) == 0;
+		}
+		else if (tsdb.isHdb())
+		{
+			return HdbFlags.isGoodQuality(f);
+		}
+		else
 			return false;
-		boolean ret = (f & (CwmsFlags.VALIDITY_REJECTED | CwmsFlags.VALIDITY_QUESTIONABLE
-			| IFlags.IS_MISSING | VarFlags.TO_DELETE)) == 0;
-		debug1("    ... returning " + ret);
-		return ret;
 	}
 	
 	/**
@@ -1102,6 +1119,13 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		}
 	}
 	
+	/**
+	 * Attempts rating from table in the time series database
+	 * @param specId
+	 * @param indeps
+	 * @return
+	 * @throws NoValueException
+	 */
 	public double rating(String specId, double... indeps)
 		throws NoValueException
 	{
@@ -1112,23 +1136,13 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if (tracer != null)
 			return 100.0;
 
-		// int nIndeps = indeps.length;
-		// NOTE: indeps is already an array of doubles. I can pass
-		// it directly to the rateOne function.
-		
-		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 		try
 		{
-			RatingSet ratingSet = crd.getRatingSet(specId);
-			return ratingSet.rateOne(indeps, _timeSliceBaseTime.getTime());
+			return tsdb.rating(specId, _timeSliceBaseTime, indeps);
 		}
-		catch (RatingException ex)
+		catch(Exception ex)
 		{
 			throw new NoValueException("rating(" + specId + ") failed: " + ex);
-		}
-		finally
-		{
-			crd.close();
 		}
 	}
 	
