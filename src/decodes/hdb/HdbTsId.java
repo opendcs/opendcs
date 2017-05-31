@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2016/07/20 15:38:51  mmaloney
+ * Remove unneeded debug.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -172,7 +175,7 @@ public class HdbTsId implements TimeSeriesIdentifier
 	public static final String SITE_PART = "Site";
 	public static final String DATATYPE_PART = "DataType";
 	public static final String INTERVAL_PART = "Interval";
-	public static final String TABSEL_PART = "Real/Modeled";
+	public static final String TABSEL_PART = "TableSelector";
 	public static final String MODELID_PART = "ModelId";
 	public static final String MODELRUNID_PART = "ModelRunId"; // only used for output programs
 
