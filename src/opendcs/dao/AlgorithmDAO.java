@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2016/11/19 15:55:51  mmaloney
+ * Join PARM records with parent records to bring in implicit VPD filter in CWMS.
+ *
  * Revision 1.5  2016/03/24 19:21:07  mmaloney
  * Support for algo scripts.
  *
@@ -383,6 +386,10 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType
 			q = "delete from CP_ALGO_TS_PARM where ALGORITHM_ID = " + id;
 			doModify(q);
 			propertiesSqlDao.deleteProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", id);
+			
+			q = "delete from CP_ALGO_SCRIPT where ALGORITHM_ID = " + id;
+			doModify(q);
+
 			q = "delete from CP_ALGORITHM where ALGORITHM_ID = " + id;
 			doModify(q);
 		}
