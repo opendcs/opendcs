@@ -38,7 +38,6 @@ public class HdbFlags
 	public static final char HDB_FAILED_VALIDATION        = 'F';
 	public static final char HDB_VALIDATED                = 'V';
 
- 
 	public static final int HDBF_DERIVATION_MASK          = 0x0000FF00;
 
 	public static final int HDBF_VALUE_QC_MASK            = 0x00000300;
@@ -52,6 +51,9 @@ public class HdbFlags
 	public static final int HDBF_EOP_WINDOW_EXCEEDED      = 0x00002000;
 	public static final int HDBF_ESTIMATED                = 0x00004000;
 	public static final int HDBF_MISSING_SAMPLES_EXCEEDED = 0x00008000;
+	
+	
+
 
 	// Characters for the String code in HDB DERIVATION Flag
 	public static final char HDB_ESTIMATED                = 'e';
@@ -196,4 +198,20 @@ public class HdbFlags
 		
 		return ret;
 	}
+	
+	public static final boolean isGoodQuality(int f)
+	{
+		return !isRejected(f) && !isQuestionable(f);
+	}
+
+	public static final boolean isRejected(int f)
+	{
+		return (f & HDBF_VALIDATION_MASK) == HDBF_FAILED_VALIDATION;
+	}
+
+	public static final boolean isQuestionable(int f)
+	{
+		return (f & HDBF_VALUE_QC_MASK) != 0;
+	}
+
 }
