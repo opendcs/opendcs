@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.10  2017/05/01 19:23:26  mmaloney
+*  Remove all references to SITE and SITENAME. In HDB these don't exist.
+*
 *  Revision 1.9  2017/03/23 16:06:00  mmaloney
 *  Throw BadTimeSeriesException when can't create time series. It's probably due to running on a read-only HDB.
 *
@@ -103,6 +106,8 @@ public class HdbTimeSeriesDb
 	
 //	private NumberFormat valueFmt = NumberFormat.getNumberInstance();
 	private OraclePreparedStatement insertTasklist = null;
+	
+	private ArrayList<HdbDataType> hdbDataTypes = null;
 
 
 	/**
@@ -331,8 +336,22 @@ public class HdbTimeSeriesDb
 				Constants.datatype_HDB, "" + hsdi.getDatatypeId());
 		parm.setDataType(dt);
 		
-		//TODO Get the HdbTsId
-		return null;
+		TimeSeriesDAI hdbtsdao = this.makeTimeSeriesDAO();
+		try
+		{
+			String tsidstr = "" + hsdi.getSiteId() + "." + hsdi.getDatatypeId() + "."
+				+ parm.getInterval() + "." + parm.getTableSelector();
+			if (parm.getTableSelector().toLowerCase().contains("m"))
+				tsidstr = tsidstr + "." + parm.getModelId();
+			TimeSeriesIdentifier tsid = hdbtsdao.getTimeSeriesIdentifier(tsidstr);
+			if (tsid == null)
+				warning("Cannot find TSID for '" + tsidstr + "'");
+			return tsid;
+		}
+		finally
+		{
+			hdbtsdao.close();
+		}
 	}
 
 	
@@ -1363,5 +1382,31 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 	public GroupHelper makeGroupHelper()
 	{
 		return new HdbGroupHelper(this);
+	}
+
+	public ArrayList<HdbDataType> getHdbDataTypes()
+	{
+		if (hdbDataTypes == null)
+		{
+			hdbDataTypes = new ArrayList<HdbDataType>();
+			String q = "select a.datatype_id, a.datatype_common_name, b.unit_common_name "
+				+ "FROM HDB_DATATYPE a, HDB_UNIT b where a.unit_id = b.unit_id "
+				+ "order by a.datatype_id";
+			try
+			{
+				ResultSet rs = this.doQuery(q);
+				while(rs.next())
+				{
+					HdbDataType hdt = new HdbDataType(DbKey.createDbKey(rs, 1), 
+						rs.getString(2), rs.getString(3));
+					hdbDataTypes.add(hdt);
+				}
+			}
+			catch (Exception ex)
+			{
+				warning("Cannot read HDB Data Types with query '" + q + ": " + ex);
+			}
+		}
+		return hdbDataTypes;
 	}
 }
