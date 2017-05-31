@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.11  2017/04/27 21:04:06  mmaloney
+*  Removed obsolete methods.
+*
 *  Revision 1.10  2017/01/10 21:15:27  mmaloney
 *  Guard against null ptr.
 *
@@ -2375,5 +2378,19 @@ public abstract class TimeSeriesDb
 		groupHelper.expandTsGroup(tsGroup);
 		return tsGroup.getExpandedList();
 	}
-
+	
+	/**
+	 * Perform a database-specific rating. This method should be overloaded by concrete
+	 * database class if the database supports rating.
+	 * @param specId unique string that identifies the rating table in the database
+	 * @param indeps array of independent parameters
+	 * @return the output of the rating
+	 * @throws DbCompException if no such rating or other problem with retrieving the rating.
+	 * @throws RangeException if any of the indep values are outside the rating range
+	 */
+	public double rating(String specId, Date timeStamp, double... indeps)
+		throws DbCompException, RangeException
+	{
+		throw new DbCompException("Rating not supported in this database.");
+	}
 }

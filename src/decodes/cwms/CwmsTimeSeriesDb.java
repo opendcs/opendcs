@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.23  2017/05/17 20:43:29  mmaloney
+*  Remove ref to CwmsCatJdbc
+*
 *  Revision 1.22  2017/01/24 15:48:18  mmaloney
 *  CWMS-9908 allow locationOverride to contain wildcard * char. Use same rules
 *  as in the location part of the parameter mask.
@@ -588,12 +591,15 @@ import lrgs.gui.DecodesInterface;
 import cwmsdb.CwmsSecJdbc;
 //import cwmsdb.CwmsCatJdbc;
 import oracle.jdbc.OraclePreparedStatement;
+import hec.data.RatingException;
+import hec.data.cwmsRating.RatingSet;
 import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
+import decodes.cwms.rating.CwmsRatingDao;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.ScreeningDAO;
 import decodes.db.Constants;
@@ -2116,4 +2122,29 @@ for(CTimeSeries ts : allts)
 	{
 		return new CwmsGroupHelper(this);
 	}
+	
+	@Override
+	public double rating(String specId, Date timeStamp, double... indeps)
+		throws DbCompException, RangeException
+	{
+		// int nIndeps = indeps.length;
+		// NOTE: indeps is already an array of doubles. I can pass
+		// it directly to the rateOne function.
+		
+		CwmsRatingDao crd = new CwmsRatingDao(this);
+		try
+		{
+			RatingSet ratingSet = crd.getRatingSet(specId);
+			return ratingSet.rateOne(indeps, timeStamp.getTime());
+		}
+		catch (RatingException ex)
+		{
+			throw new RangeException("rating(" + specId + ") failed: " + ex);
+		}
+		finally
+		{
+			crd.close();
+		}
+	}
+	
 }
