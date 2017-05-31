@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2016/10/11 19:03:55  mmaloney
+*  Final GUI Prototype
+*
 *  Revision 1.4  2015/07/27 18:38:00  mmaloney
 *  When re-applying algorithm, don't delete properties where the algorithm
 *  property has an asterisk. E.g. algoprop="ex_*", don't delete anything that starts
@@ -124,7 +127,7 @@ public class ComputationsEditPanel
 	private String appStrings[];
 	private Properties propCopy = null;
 	private boolean runCompGUIUp = false;
-	private RunComputationsFrame rcframe;
+	private RunComputationsFrame rcframe = null;
 	ResourceBundle ceResources = null;
 	ResourceBundle genResources = null;
 	private Properties hiddenProps = new Properties();
@@ -150,7 +153,6 @@ public class ComputationsEditPanel
 	private JComboBox untilNowPlusCombo = new JComboBox(
 		new String[] { "4 hour", "8 hours", "1 day" });
 	private JLabel untilNowExpl = new JLabel();
-	
 	
 	public ComputationsEditPanel()
 	{
@@ -1195,16 +1197,14 @@ public class ComputationsEditPanel
 	{
 		if (runCompGUIUp == false)
 		{
-			rcframe = new RunComputationsFrame(false);
-			if (rcframe != null)
-			{
-				rcframe.setVisible(true);
-				rcframe.setDb(CAPEdit.instance().theDb);
-				rcframe.setParent(this);
-				rcframe.setTitle(CAPEdit.instance().compeditDescriptions
-	    		.getString("ComputationsEditPanel.RunCompTitle") + nameField.getText());
-				runCompGUIUp = true;	
-			}
+			if (rcframe == null)
+				rcframe = new RunComputationsFrame(false);
+			rcframe.setVisible(true);
+			rcframe.setDb(CAPEdit.instance().theDb);
+			rcframe.setParent(this);
+			rcframe.setTitle(CAPEdit.instance().compeditDescriptions
+				.getString("ComputationsEditPanel.RunCompTitle") + nameField.getText());
+			runCompGUIUp = true;	
 		}
 		else
 		{

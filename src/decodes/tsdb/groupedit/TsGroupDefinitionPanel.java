@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2017/05/08 12:34:53  mmaloney
+ * For CWMS, TSIDs may contain param values that CCP does not have in its DataType
+ * table. If this is the case, save as an other "param" value.
+ *
  * Revision 1.11  2017/04/19 19:27:45  mmaloney
  * CWMS-10609 nested group evaluation in group editor bugfix.
  *
@@ -127,6 +131,8 @@ import decodes.dbeditor.SiteSelectDialog;
 import decodes.gui.EnumComboBox;
 import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
+import decodes.hdb.HdbDataType;
+import decodes.hdb.HdbTimeSeriesDb;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
@@ -738,19 +744,38 @@ public class TsGroupDefinitionPanel
 					+ siteId + ": " + ex);
 			}
 		}
-		for(DbKey dtId: editedGroup.getDataTypeIdList())
+		
+		if (tsdb.isHdb())
 		{
-			try
+			ArrayList<HdbDataType> hdts = ((HdbTimeSeriesDb)tsdb).getHdbDataTypes();
+			for(DbKey dtId: editedGroup.getDataTypeIdList())
 			{
-				DataType dt = DataType.getDataType(dtId);
-				// DataType or Param is always the 2nd part of the TSID
-				queryModel.items.add(new StringPair(tsIdParts[1], dt.getCode()));
-//				queryListModel.addElement(tsIdParts[1] + ": " + dt.getCode());
+				HdbDataType hdt = null;
+				for (HdbDataType thdt : hdts)
+					if (dtId.equals(thdt.getDataTypeId()))
+					{
+						hdt = thdt;
+						break;
+					}
+				queryModel.items.add(new StringPair("DataType",
+					dtId.toString() + (hdt==null 
+						? "" : " (" + hdt.getName() + ")")));
 			}
-			catch(Exception ex)
+		}
+		else // cwms
+		{
+			for(DbKey dtId: editedGroup.getDataTypeIdList())
 			{
-				Logger.instance().warning("Cannot read datatype with id=" 
-					+ dtId + ": " + ex);
+				try
+				{
+					DataType dt = DataType.getDataType(dtId);
+					queryModel.items.add(new StringPair(tsIdParts[1], dt.getCode()));
+				}
+				catch(Exception ex)
+				{
+					Logger.instance().warning("Cannot read datatype with id=" 
+						+ dtId + ": " + ex);
+				}
 			}
 		}
 		for(TsGroupMember member : editedGroup.getOtherMembers())
@@ -826,9 +851,27 @@ public class TsGroupDefinitionPanel
 					else
 						Logger.instance().warning("No match for sitename '" + value + "' -- ignored.");
 				}
-				else if ((label.equalsIgnoreCase("datatype") 
-					  || (label.equalsIgnoreCase("param") && !value.contains("*")))
-					  && (dt = lookupDataType(value)) != null)
+				else if (tsdb.isHdb() && label.equalsIgnoreCase("datatype"))
+				{
+					int paren = value.indexOf('(');
+					if (paren > 0)
+						value = value.substring(0, paren).trim();
+					try
+					{
+						tempGroup.addDataTypeId(DbKey.createDbKey(Long.parseLong(value.trim())));
+					}
+					catch(NumberFormatException ex)
+					{
+						if ((dt = lookupDataType(value)) != null)
+							tempGroup.addDataTypeId(dt.getId());
+						else
+							Logger.instance().warning("Unrecognized data type '" 
+								+ value + "' -- ignored.");
+					}
+				}
+				else if (label.equalsIgnoreCase("param") 
+					&& !value.contains("*")
+					&& (dt = lookupDataType(value)) != null)
 				{
 					tempGroup.addDataTypeId(dt.getId());
 				}
@@ -1516,23 +1559,15 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 		}
 		else if (keyStr.equalsIgnoreCase("datatype"))
 		{
-			ArrayList<String[]> dlgData = new ArrayList<String[]>();
-			dlgData.add(new String[]{"DataType Code", "Name"});
-			for(DataType dt : this.dataTypeList)
-				dlgData.add(new String[]{ dt.getCode(), dt.getDisplayName()});
-			DataTypeSelectDialog.isHdb = tsdb.isHdb();
-//System.out.println("isHdb=" + DataTypeSelectDialog.isHdb);
-			DataTypeSelectDialog dlg = new DataTypeSelectDialog(this.parent, null, dlgData);
-			dlg.allowMultipleSelection(false);
-			parent.launchDialog(dlg);
-			String[] dtSelection = dlg.getSelection();
-			if (dtSelection != null)
-				selection = dtSelection[0];
+			if (!tsdb.isHdb())
+				return;
 			
-//			String label = "Enter " + keyStr + ":";
-//			selection = (String)JOptionPane.showInputDialog(this, 
-//				label, label, JOptionPane.PLAIN_MESSAGE, null,
-//				dataTypeArray, null);
+			HdbDatatypeSelectDialog dlg = new HdbDatatypeSelectDialog(parent, (HdbTimeSeriesDb)tsdb);
+			
+			parent.launchDialog(dlg);
+			StringPair sel = dlg.getResult();
+			if (sel != null)
+				selection = sel.first + " (" + sel.second + ")";
 		}
 		else if (keyStr.equalsIgnoreCase("param"))
 		{

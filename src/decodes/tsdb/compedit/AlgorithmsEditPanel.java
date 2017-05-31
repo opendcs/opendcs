@@ -266,7 +266,7 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 						initProps.getProperty(propName));
 					ps.setDynamic(true);
 					dynamicPropSpecs.put(algoPropName.toUpperCase(), ps);
-System.out.println("Made new dynamicPropSpec: name=" + ps.getName() + ", desc=" + ps.getDescription());
+//System.out.println("Made new dynamicPropSpec: name=" + ps.getName() + ", desc=" + ps.getDescription());
 				}
 			}
 		}
@@ -538,10 +538,8 @@ System.out.println("Made new dynamicPropSpec: name=" + ps.getName() + ", desc=" 
 				script = new DbCompAlgorithmScript(ob, ScriptType.ToolTip);
 				ob.putScript(script);
 				for(PropertySpec ps : dynamicPropSpecs.values())
-				{
 					script.addToText(ps.getName()+".tooltip=" + ps.getDescription()	+ "\n");
-				}
-				System.out.println("AlgoEdit.save: ttscript:\n" + script.getText());
+//				System.out.println("AlgoEdit.save: ttscript:\n" + script.getText());
 			}
 		}
 	}
@@ -796,8 +794,8 @@ System.out.println("Made new dynamicPropSpec: name=" + ps.getName() + ", desc=" 
 	{
 		PropertySpec propSpec = dynamicPropSpecs.get(propName.toUpperCase());
 
-System.out.println("AlgorithmsEditPanel.setDynPropDesc: " + propName 
-+ " '" + description + "' propSpec is " + (propSpec==null?"new.":"existing."));
+//System.out.println("AlgorithmsEditPanel.setDynPropDesc: " + propName 
+//+ " '" + description + "' propSpec is " + (propSpec==null?"new.":"existing."));
 		if (propSpec != null)
 		{
 			if (description == null)
@@ -814,9 +812,9 @@ System.out.println("AlgorithmsEditPanel.setDynPropDesc: " + propName
 			ps.setDynamic(true);
 			String pnuc = propName.toUpperCase();
 			dynamicPropSpecs.put(pnuc, ps);
-System.out.println("After put, there are " + dynamicPropSpecs.values().size() + " dynamic props.");
-for(String key : dynamicPropSpecs.keySet())
-	System.out.println("\t'" + key + "'");
+//System.out.println("After put, there are " + dynamicPropSpecs.values().size() + " dynamic props.");
+//for(String key : dynamicPropSpecs.keySet())
+//	System.out.println("\t'" + key + "'");
 		}
 	}
 

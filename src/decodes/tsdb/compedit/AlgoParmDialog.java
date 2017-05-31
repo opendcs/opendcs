@@ -27,10 +27,9 @@ public class AlgoParmDialog extends GuiDialog
 
     private JPanel outerPanel = new JPanel();
 	private BorderLayout outerLayout = new BorderLayout();
-    private JPanel northPanel = new JPanel();
-    private FlowLayout northPanelLayout = new FlowLayout();
+    private JPanel northPanel = new JPanel(new FlowLayout());
     private JLabel algoNameLabel;
-    private JTextField algoNameField = new JTextField();
+    private JTextField algoNameField = new JTextField(30);
     private TitledBorder northBorder;
 
     private JPanel southButtonPanel = new JPanel();
@@ -84,6 +83,7 @@ public class AlgoParmDialog extends GuiDialog
             jbInit();
 			pack();
 			fillValues();
+			parmNameField.requestFocus();
 			getRootPane().setDefaultButton(okButton);
         }
         catch(Exception ex) {
@@ -118,10 +118,8 @@ public class AlgoParmDialog extends GuiDialog
 
         northBorder = new TitledBorder(
 			BorderFactory.createLineBorder(new Color(153, 153, 153),2),"");
-        northPanel.setLayout(northPanelLayout);
         northPanel.setBorder(northBorder);
 
-        algoNameField.setPreferredSize(new Dimension(130, 21));
         algoNameField.setEditable(false);
         northPanel.add(algoNameLabel, null);
         northPanel.add(algoNameField, null);

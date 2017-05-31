@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2017/01/11 14:09:14  mmaloney
+ * CompEdit CompParmDialog Lookup time Series should allow wildcards in the site name
+ * for CWMS.
+ *
  * Revision 1.5  2016/10/11 19:03:55  mmaloney
  * Final GUI Prototype
  *
@@ -122,6 +126,7 @@ import decodes.db.Site;
 import decodes.dbeditor.SiteSelectDialog;
 import decodes.dbeditor.SiteSelectPanel;
 import decodes.gui.*;
+import decodes.hdb.HdbTimeSeriesDb;
 import decodes.sql.DbKey;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbCompParm;
@@ -134,6 +139,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.algo.RoleTypes;
+import decodes.tsdb.groupedit.HdbDatatypeSelectDialog;
 import decodes.tsdb.groupedit.LocSelectDialog;
 import decodes.tsdb.groupedit.ParamSelectDialog;
 import decodes.tsdb.groupedit.SelectionMode;
@@ -451,7 +457,7 @@ public class CompParmDialog extends GuiDialog
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		
-		if (theDb.isCwms())
+		if (theDb.isCwms() || theDb.isHdb())
 		{
 			JButton paramSelectButton = new JButton("Select");
 			paramSelectButton.addActionListener(
@@ -666,16 +672,28 @@ public class CompParmDialog extends GuiDialog
 
 	protected void paramSelectButtonPressed()
 	{
-		ParamSelectDialog paramSelectDialog = 
-			new ParamSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
-				parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
-		paramSelectDialog.setCurrentValue(dataTypeField.getText());
-
-		launchDialog(paramSelectDialog);
-		if (!paramSelectDialog.isCancelled())
+		if (theDb.isCwms())
 		{
-			StringPair result = paramSelectDialog.getResult();
-			dataTypeField.setText(result.second);
+			ParamSelectDialog paramSelectDialog = 
+				new ParamSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
+					parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
+			paramSelectDialog.setCurrentValue(dataTypeField.getText());
+	
+			launchDialog(paramSelectDialog);
+			if (!paramSelectDialog.isCancelled())
+			{
+				StringPair result = paramSelectDialog.getResult();
+				dataTypeField.setText(result.second);
+			}
+		}
+		else if (theDb.isHdb())
+		{
+			HdbDatatypeSelectDialog dlg = new HdbDatatypeSelectDialog(parent.topFrame, 
+				(HdbTimeSeriesDb)theDb);
+			dlg.setCurrentValue(dataTypeField.getText());
+			launchDialog(dlg);
+			StringPair result = dlg.getResult();
+			dataTypeField.setText(result.first);
 		}
 	}
 
