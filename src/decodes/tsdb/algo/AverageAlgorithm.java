@@ -118,8 +118,7 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 					+ negativeReplacement);
 				ave = negativeReplacement;
 			}
-			else
-				setOutput(average, ave);
+			setOutput(average, ave);
 		}
 		else 
 		{
