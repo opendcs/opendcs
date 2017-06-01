@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2017/05/31 21:29:58  mmaloney
+ * Refactoring for HDB.
+ *
  * Revision 1.5  2017/02/16 14:42:04  mmaloney
  * Close CwmsRatingDao in final block.
  *
@@ -342,7 +345,8 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			{
 				debug1("No time series assigned to role " + parm.getRoleName());
 				debug1("parmRef for '" + parm.getRoleName() + "' " + 
-					(parmRef.timeSeries == null ? "HAS NO TIME SERIES." : "HAS A TIME SERIES"));
+					(parmRef == null || parmRef.timeSeries == null ?
+						"HAS NO TIME SERIES." : "HAS A TIME SERIES"));
 //				if (parmRef.timeSeries!= null)
 //					debug1("... TSID for time series is " + parmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString());
 			}
