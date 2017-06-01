@@ -113,7 +113,11 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			
 			// Added for HDB issue 386
 			if (ave < 0.0 && negativeReplacement != Double.NEGATIVE_INFINITY)
+			{
+				debug1("Computed average=" + ave + ", will use negativeReplacement="
+					+ negativeReplacement);
 				ave = negativeReplacement;
+			}
 			else
 				setOutput(average, ave);
 		}
