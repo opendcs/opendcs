@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.2  2016/10/14 14:44:49  mmaloney
+*  CWMS-9541 Added -o option to compimport, meaning to NOT overwrite exising objects with the same name.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -206,19 +209,22 @@ public class ImportComp
 									}
 									catch(NoSuchObjectException ex)
 									{
-										Logger.instance().info("Time Series for parm '"
+										info("Time Series for parm '"
 											+ parm.getRoleName() + "' doesn't exiist: " + ex);
-										// get preferred name if one is provided.
-										String nm = comp.getProperty(
-											parm.getRoleName() + "_tsname");
-										if (createTimeSeries.getValue())
+										if (!createTimeSeries.getValue())
 										{
-											TimeSeriesIdentifier tsid =
-												theDb.transformTsidByCompParm(null, parm, 
-													true, true, nm);
-										}
-										else
+											warning("... and the -C (create TS) flag was not used.");
 											throw ex;
+										}
+									}
+									// get preferred name if one is provided.
+									String nm = comp.getProperty(
+										parm.getRoleName() + "_tsname");
+									if (createTimeSeries.getValue())
+									{
+										TimeSeriesIdentifier tsid =
+											theDb.transformTsidByCompParm(null, parm, 
+												true, true, nm);
 									}
 								}
 								catch(NoSuchObjectException ex)
