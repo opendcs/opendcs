@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2017/06/01 14:49:16  mmaloney
+ * Guard against null ptr bug in parmRef.
+ *
  * Revision 1.6  2017/05/31 21:29:58  mmaloney
  * Refactoring for HDB.
  *
@@ -551,7 +554,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if ((f & (IFlags.IS_MISSING | VarFlags.TO_DELETE)) != 0)
 			return false;
 		if (tsdb.isCwms())
-			return (f & CwmsFlags.VALIDITY_MISSING) != 0;
+			return (f & CwmsFlags.VALIDITY_MISSING) == 0;
 		return true;
 	}
 
@@ -930,9 +933,16 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
+		{
+debug3("... no named variable for '" + rolename + "' in this timeslice.");
 			return 0;
+		}
 		if (!isPresent(nv))
+		{
+debug3("... variable for '" + rolename + "' NOT PRESENT in this timeslice. flags=0x" + 
+Integer.toHexString(nv.getFlags()));
 			return nv.getFlags();
+		}
 
 		ParmRef parmRef = getParmRef(rolename);
 		TimeSeriesIdentifier tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
@@ -941,6 +951,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			warning("screening(" + rolename + ") -- no time series assigned to this role.");
 			return nv.getFlags();
 		}
+debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		
 		Screening screening = cwmsScreenings.get(tsid.getUniqueString());
 		if (screening == null)
@@ -949,6 +960,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			try
 			{
 				screeningDAO = ((CwmsTimeSeriesDb)tsdb).makeScreeningDAO();
+				debug3("Attempting to read screening for TSID '" + tsid.getUniqueString() + "'");
 				TsidScreeningAssignment tsa = screeningDAO.getScreeningForTS(tsid);
 				screening = tsa != null && tsa.isActive() ? tsa.getScreening() : null;
 				if (screening != null)
