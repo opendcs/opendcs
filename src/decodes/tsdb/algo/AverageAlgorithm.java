@@ -37,7 +37,8 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 
 //AW:PROPERTIES
 	long minSamplesNeeded = 1;
-	String _propertyNames[] = { "minSamplesNeeded" };
+	double negativeReplacement = Double.NEGATIVE_INFINITY;
+	String _propertyNames[] = { "minSamplesNeeded", "negativeReplacement" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -106,8 +107,16 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 //		debug2("AverageAlgorithm:afterTimeSlices, count=" + count);
 //debug1("AverageAlgorithm:afterTimeSlices, per begin="
 //+ debugSdf.format(_aggregatePeriodBegin) + ", end=" + debugSdf.format(_aggregatePeriodEnd));
-		if (count >= minSamplesNeeded)
-			setOutput(average, tally / (double)count);
+		if (count >= minSamplesNeeded && count > 0)
+		{
+			double ave = tally / (double)count;
+			
+			// Added for HDB issue 386
+			if (ave < 0.0 && negativeReplacement != Double.NEGATIVE_INFINITY)
+				ave = negativeReplacement;
+			else
+				setOutput(average, ave);
+		}
 		else 
 		{
 			warning("Do not have minimum # samples (" + minSamplesNeeded
