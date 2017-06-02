@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.2  2015/09/17 17:44:56  mmaloney
+ * CWMS Screening I/O and Algorithm
+ *
  * Revision 1.1  2015/09/10 21:18:08  mmaloney
  * Development on Screening
  *
@@ -97,25 +100,25 @@ public class ScreeningImport
 		curFile = null;
 		
 		// Printout list of what will be imported
-		System.out.println("The following screenings will be imported:");
-		for(Screening s : screenings)
-		{
-			System.out.println("\t" + s.getScreeningName());
-			if (!noTsidsToken.getValue())
-			{
-				System.out.println("\t...For time series:");
-				ArrayList<String> tsidList = screeningName2TsidMap.get(s.getScreeningName());
-				if (tsidList == null)
-					System.out.println("\t\t(none)");
-				else for(String tsid : tsidList)
-					System.out.println("\t\t" + tsid);
-			}
-		}
-		if (totalWarnings > 0)
-			System.out.println("NOTE: There were " + totalWarnings + " in reading the screening files.");
-		
 		if (!yesToken.getValue())
 		{
+			System.out.println("The following screenings will be imported:");
+			for(Screening s : screenings)
+			{
+				System.out.println("\t" + s.getScreeningName());
+				if (!noTsidsToken.getValue())
+				{
+					System.out.println("\t...For time series:");
+					ArrayList<String> tsidList = screeningName2TsidMap.get(s.getScreeningName());
+					if (tsidList == null)
+						System.out.println("\t\t(none)");
+					else for(String tsid : tsidList)
+						System.out.println("\t\t" + tsid);
+				}
+			}
+			if (totalWarnings > 0)
+				System.out.println("NOTE: There were " + totalWarnings + " in reading the screening files.");
+		
 			System.out.print("OK to continue? (y/n)");
 			System.out.flush();
 			String line = System.console().readLine();
