@@ -11,6 +11,7 @@ package decodes.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -20,6 +21,7 @@ import lrgs.common.DcpMsgFlag;
 import lrgs.ldds.PasswordChecker;
 import decodes.decoder.FunctionList;
 import decodes.gui.TopFrame;
+import decodes.launcher.LauncherAction;
 import decodes.tsdb.groupedit.TsDbGrpEditor;
 import decodes.util.DecodesVersion;
 import ilex.util.EnvExpander;
@@ -108,6 +110,11 @@ public class ResourceFactory
 	}
 	
 	public PasswordChecker getPasswordChecker()
+	{
+		return null;
+	}
+	
+	public ArrayList<LauncherAction> getDacqLauncherActions()
 	{
 		return null;
 	}

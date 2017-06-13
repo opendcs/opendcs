@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.9  2016/07/21 18:13:17  mmaloney
+ * Added Platform Monitor and Routing Monitor buttons to launcher.
+ *
  * Revision 1.8  2015/07/17 13:28:07  mmaloney
  * Added showComputationEditor boolean.
  *
@@ -556,10 +559,13 @@ public class LauncherFrame extends JFrame
 		dcstoolButtonBorder = new TitledBorder(BorderFactory.createEtchedBorder(Color.white, new Color(148,
 			145, 140)), labels.getString("LauncherFrame.dcsToolKitCompTitle"));
 		decodesButtonPanel.setLayout(dcstoolLayout);
+		ArrayList<LauncherAction> dacqLauncherActions = ResourceFactory.instance().getDacqLauncherActions();
 		int rows = 4 + (DecodesSettings.instance().showPlatformWizard ? 1 : 0)
 			+ (DecodesSettings.instance().showNetlistEditor ? 1 : 0)
 			+ (DecodesSettings.instance().showPlatformMonitor ? 1 : 0)
 			+ (DecodesSettings.instance().showRoutingMonitor ? 1 : 0);
+		if (dacqLauncherActions != null)
+			rows += dacqLauncherActions.size();
 		dcstoolLayout.setRows(rows);
 		dcstoolLayout.setColumns(1);
 		decodesButtonPanel.setBorder(dcstoolButtonBorder);
@@ -646,6 +652,25 @@ public class LauncherFrame extends JFrame
 			decodesButtonPanel.add(platmonButton, null);
 		if (DecodesSettings.instance().showRoutingMonitor)
 			decodesButtonPanel.add(routmonButton, null);
+		
+		if (dacqLauncherActions != null)
+			for(final LauncherAction action : dacqLauncherActions)
+			{
+				action.setLauncherFrame(this);
+				JButton b = new JButton();
+				b.setIcon(action.getImageIcon());
+				b.setText(action.getButtonLabel());
+				b.addActionListener(
+					new java.awt.event.ActionListener()
+					{
+						@Override
+						public void actionPerformed(ActionEvent e)
+						{
+							action.buttonPressed();
+						}
+					});
+				decodesButtonPanel.add(b, null);
+			}
 
 		decodesButtonPanel.add(toolkitConfigButton, null);
 

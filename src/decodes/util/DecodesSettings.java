@@ -2,6 +2,10 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.21  2017/03/03 19:18:59  mmaloney
+*  Added pollTcpTemplate.
+*  writeCwmsLocations now defaults to false.
+*
 *  Revision 1.20  2017/02/22 23:30:58  mmaloney
 *  pakBusMxTableDefAge = hours*48
 *
@@ -420,6 +424,10 @@ public class DecodesSettings
 
 	public boolean autoDeleteOnImport = false;
 	
+	public boolean showEventMonitor = false;
+	public boolean showAlarmEditor = false;
+
+	
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
@@ -543,6 +551,10 @@ public class DecodesSettings
 			"Show the Routing Monitor button on the button panel"),
 		new PropertySpec("showPlatformMonitor", PropertySpec.BOOLEAN,
 			"Show the Platform Monitor button on the button panel"),
+		new PropertySpec("showEventmMonitor", PropertySpec.BOOLEAN,
+			"Show the Event Monitor button on the button panel"),
+		new PropertySpec("showAlarmEditor", PropertySpec.BOOLEAN,
+			"Show the Alarm Editor button on the button panel"),
 		new PropertySpec("datchkConfigFile", PropertySpec.FILENAME,
 			"File containing CWMS Datchk Validation configuration"),
 		new PropertySpec("routingMonitorUrl", PropertySpec.STRING,
