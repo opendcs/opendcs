@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.10  2017/06/13 20:02:33  mmaloney
+ * dev
+ *
  * Revision 1.9  2016/07/21 18:13:17  mmaloney
  * Added Platform Monitor and Routing Monitor buttons to launcher.
  *
@@ -88,7 +91,6 @@ import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
-import ilex.util.ProcWaiterThread;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -263,32 +265,24 @@ public class LauncherFrame extends JFrame
 			
 			lrgsStatButton.setIcon(lrgsStatIcon);
 			lrgsStatButton.setHorizontalAlignment(SwingConstants.CENTER);
-			lrgsStatButton.setBackground(Color.white);
 			
 			browserButton.setIcon(browserIcon);
 			browserButton.setHorizontalAlignment(SwingConstants.CENTER);
-			browserButton.setBackground(Color.white);
 			netlistButton.setIcon(netlistIcon);
 			netlistButton.setHorizontalAlignment(SwingConstants.CENTER);
-			netlistButton.setBackground(Color.white);
 			dbeditButton.setIcon(dbeditIcon);
 			dbeditButton.setHorizontalAlignment(SwingConstants.CENTER);
-			dbeditButton.setBackground(Color.white);
 			// platwizButton.setIcon(wizIcon);
 			platwizButton.setText(labels
 				.getString("LauncherFrame.platformWizardButton"));
 			platwizButton.setIcon(platwizIcon);
 			platwizButton.setHorizontalAlignment(SwingConstants.CENTER);
-			platwizButton.setBackground(Color.white);
 			toolkitConfigButton.setIcon(setupIcon);
 			toolkitConfigButton.setHorizontalAlignment(SwingConstants.CENTER);
-			toolkitConfigButton.setBackground(Color.white);
 			platmonButton.setIcon(platmonIcon);;
 			platmonButton.setHorizontalAlignment(SwingConstants.CENTER);
-			platmonButton.setBackground(Color.white);
 			routmonButton.setIcon(routmonIcon);;
 			routmonButton.setHorizontalAlignment(SwingConstants.CENTER);
-			routmonButton.setBackground(Color.white);
 
 			setTitle(DecodesVersion.getAbbr() + " " + DecodesVersion.getVersion());
 			// setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -699,7 +693,6 @@ public class LauncherFrame extends JFrame
 			+ "tsedit48x48.gif"));
 		tseditButton.setText("Time Series");
 		tseditButton.setHorizontalAlignment(SwingConstants.CENTER);
-		tseditButton.setBackground(Color.white);
 		tseditButton.addActionListener(new java.awt.event.ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -715,7 +708,6 @@ public class LauncherFrame extends JFrame
 			+ "groups48x48.png"));
 		groupEditButton.setText("Time Series Groups");
 		groupEditButton.setHorizontalAlignment(SwingConstants.CENTER);
-		groupEditButton.setBackground(Color.white);
 		groupEditButton.addActionListener(new java.awt.event.ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -731,7 +723,6 @@ public class LauncherFrame extends JFrame
 			+ "compedit48x48.gif"));
 		compeditButton.setText(labels.getString("LauncherFrame.computationsButton"));
 		compeditButton.setHorizontalAlignment(SwingConstants.CENTER);
-		compeditButton.setBackground(Color.white);
 		compeditButton.addActionListener(new java.awt.event.ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -747,7 +738,6 @@ public class LauncherFrame extends JFrame
 			+ "runcomp48x48.gif"));
 		runcompButton.setText(labels.getString("LauncherFrame.testComputationsButton"));
 		runcompButton.setHorizontalAlignment(SwingConstants.CENTER);
-		runcompButton.setBackground(Color.white);
 		runcompButton.addActionListener(new java.awt.event.ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -763,7 +753,6 @@ public class LauncherFrame extends JFrame
 			+ "procstat48x48.gif"));
 		procstatButton.setText(labels.getString("LauncherFrame.processStatusButton"));
 		procstatButton.setHorizontalAlignment(SwingConstants.CENTER);
-		procstatButton.setBackground(Color.white);
 		procstatButton.addActionListener(new java.awt.event.ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -778,7 +767,6 @@ public class LauncherFrame extends JFrame
 			+ "algoedit48x48.gif"));
 		algoeditButton.setText(labels.getString("LauncherFrame.algorithmsButton"));
 		algoeditButton.setHorizontalAlignment(SwingConstants.CENTER);
-		algoeditButton.setBackground(Color.white);
 		algoeditButton.addActionListener(new java.awt.event.ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)

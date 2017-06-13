@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.22  2017/06/13 20:02:05  mmaloney
+*  dev
+*
 *  Revision 1.21  2017/03/03 19:18:59  mmaloney
 *  Added pollTcpTemplate.
 *  writeCwmsLocations now defaults to false.
@@ -551,7 +554,7 @@ public class DecodesSettings
 			"Show the Routing Monitor button on the button panel"),
 		new PropertySpec("showPlatformMonitor", PropertySpec.BOOLEAN,
 			"Show the Platform Monitor button on the button panel"),
-		new PropertySpec("showEventmMonitor", PropertySpec.BOOLEAN,
+		new PropertySpec("showEventMonitor", PropertySpec.BOOLEAN,
 			"Show the Event Monitor button on the button panel"),
 		new PropertySpec("showAlarmEditor", PropertySpec.BOOLEAN,
 			"Show the Alarm Editor button on the button panel"),
