@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.16  2017/04/01 16:11:21  mmaloney
+*  HDB Platform Import Troubleshooting.
+*
 *  Revision 1.15  2017/04/01 16:04:04  mmaloney
 *  HDB Platform Import Troubleshooting.
 *
@@ -1488,6 +1491,32 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 				}
 			}
 		}
+		
+		debug(2, "Writing Processes.");
+		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
+		{
+			IdDatabaseObject ob = it.next();
+			if (ob instanceof CompAppInfo)
+			{
+				try	
+				{
+					debug(3, "Writing " + ob.getObjectType());
+					ob.write();
+				}
+				catch (NullPointerException ex) 
+				{
+					System.err.println("Error writing " 
+						+ ob.getObjectType() + ": " + ex);
+					ex.printStackTrace(System.err);
+				}
+				catch (DatabaseException ex)
+				{
+					Logger.instance().log(Logger.E_FAILURE, 
+							"Could not import other modified objs " +
+							ex.getMessage());
+				}
+			}
+		}
 
 		// Then anything else...
 		debug(2, "Writing other modified objects.");
@@ -1499,7 +1528,8 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 				  || ob instanceof Site
 				  || ob instanceof Platform
 				  || ob instanceof DataSource
-				  || ob instanceof RoutingSpec))
+				  || ob instanceof RoutingSpec
+				  || ob instanceof CompAppInfo))
 			{
 				if (ob != null)
 				{
