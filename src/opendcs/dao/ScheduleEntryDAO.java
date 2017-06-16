@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2016/12/21 23:42:15  mmaloney
+ * bugswat
+ *
  * Revision 1.11  2016/12/21 20:28:21  mmaloney
  * bugswat
  *
@@ -243,6 +246,29 @@ public class ScheduleEntryDAO
 					"writeScheduleEntry Error in query '" + q + "': " + ex);
 			}
 		}
+		
+		if (scheduleEntry.getLoadingAppId().isNull()
+		 && scheduleEntry.getLoadingAppName() != null
+		 && scheduleEntry.getLoadingAppName().length() > 0)
+		{
+			String q = "select loading_application_id from "
+				+ "hdb_loading_application where upper(loading_application_name) = "
+				+ sqlString(scheduleEntry.getLoadingAppName().toUpperCase());
+			ResultSet rs = doQuery(q);
+			try
+			{
+				if (rs != null && rs.next())
+				{
+					scheduleEntry.setLoadingAppId(DbKey.createDbKey(rs, 1));
+				}
+			}
+			catch (SQLException ex)
+			{
+				throw new DbIoException(
+					"writeScheduleEntry Error in query '" + q + "': " + ex);
+			}
+		}
+
 
 		scheduleEntry.setLastModified(new Date());
 		// It might be an import from an xml file. If no key, try to lookup from name.
