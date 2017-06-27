@@ -76,9 +76,12 @@ public class EdlMonitorThread
 		
 		doneDir = null;
 		if (LrgsConfig.instance().edlDoneDirectory != null
-		 && LrgsConfig.instance().edlDoneDirectory.trim().length() > 0);
+		 && LrgsConfig.instance().edlDoneDirectory.trim().length() > 0)
 		{
-			doneDir = new File(EnvExpander.expand(LrgsConfig.instance().edlDoneDirectory));
+			String exp = EnvExpander.expand(LrgsConfig.instance().edlDoneDirectory.trim());
+			Logger.instance().info(module + " configuring with edlDoneDirecgtory='" +
+				LrgsConfig.instance().edlDoneDirectory + "' expanded='" + exp + "'");
+			doneDir = new File(exp);
 			if (!doneDir.isDirectory())
 				doneDir.mkdirs();
 		}
