@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2017/04/07 19:27:11  mmaloney
+*  Add debugs.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -68,6 +71,7 @@ public class RoutingDirMonitor extends DirectoryMonitorThread
 	private Properties load(File myfile)
 	{
 		FileInputStream mystream = null;
+		
 		try
 		{
 			mystream = new FileInputStream(myfile);
@@ -81,6 +85,12 @@ public class RoutingDirMonitor extends DirectoryMonitorThread
 				"Cannot read properties file '" + myfile.getPath()
 				+ "': " + ex + ", -- ignoring");
 			return null;
+		}
+		finally
+		{
+			if (mystream != null)
+				try { mystream.close(); } catch(Exception ex) {}
+
 		}
 	}
 	
