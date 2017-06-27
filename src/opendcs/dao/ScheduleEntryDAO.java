@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.13  2017/06/16 15:33:18  mmaloney
+ * To handle import from XML, when writing, if loading app ID is null but the name is not,
+ * lookup the ID from the name.
+ *
  * Revision 1.12  2016/12/21 23:42:15  mmaloney
  * bugswat
  *
@@ -225,7 +229,10 @@ public class ScheduleEntryDAO
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 			return;
-		
+
+debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEntry.getRoutingSpecId()
++ ", rsname='" + scheduleEntry.getRoutingSpecName() + "', appID=" + scheduleEntry.getLoadingAppId()
++ ", appName='" + scheduleEntry.getLoadingAppName() + "'");
 		if (scheduleEntry.getRoutingSpecId().isNull()
 		 && scheduleEntry.getRoutingSpecName() != null
 		 && scheduleEntry.getRoutingSpecName().length() > 0)
