@@ -8,6 +8,7 @@ import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
+import decodes.util.PropertySpec;
 
 //AW:JAVADOC
 /**
@@ -27,6 +28,11 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:LOCALVARS
 	double tally;
 	int count;
+	PropertySpec specs[] = 
+	{
+		new PropertySpec("negativeReplacement", PropertySpec.NUMBER, 
+			"(no default) If set, and output would be negative, then replace with the number supplied.")
+	};
 
 //AW:LOCALVARS_END
 
@@ -154,4 +160,11 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	{
 		return _propertyNames;
 	}
+	
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return specs;
+	}
+
 }
