@@ -335,21 +335,30 @@ public class ConfigListIO extends SqlDbObjIo
 	public PlatformConfig readConfig(DbKey id)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = createStatement();
+		Statement stmt = null;
 		
-		String q = "SELECT id, name, description, equipmentId " +
-				   "FROM PlatformConfig WHERE ID = " + id;
+		try
+		{
+			stmt = createStatement();
 		
-		debug3("Executing '" + q + "'");
-		ResultSet rs = stmt.executeQuery(q);
-
-		if (rs == null || !rs.next())
-			throw new DatabaseException(
-				"No PlatformConfig found with ID " + id);
-
-		PlatformConfig ret = putConfig(id, rs);
-		stmt.close();
-		return ret;
+			String q = "SELECT id, name, description, equipmentId " +
+					   "FROM PlatformConfig WHERE ID = " + id;
+			
+			debug3("Executing '" + q + "'");
+			ResultSet rs = stmt.executeQuery(q);
+	
+			if (rs == null || !rs.next())
+				throw new DatabaseException(
+					"No PlatformConfig found with ID " + id);
+	
+			PlatformConfig ret = putConfig(id, rs);
+			return ret;
+		}
+		finally
+		{
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
+		}
 	}
 
 
@@ -407,6 +416,7 @@ public class ConfigListIO extends SqlDbObjIo
 			"SELECT Name from PlatformConfig where Name = "+
 							sqlString(pc.configName);
 		Statement stmt = createStatement();
+		debug3("Executing '" + q + "'");
 		ResultSet rs = stmt.executeQuery(q);
 		if (rs == null || !rs.next()) {
 			q =
@@ -421,6 +431,7 @@ public class ConfigListIO extends SqlDbObjIo
 			  "EquipmentID = " + sqlOptHasId(pc.equipmentModel) + " " +
 			"WHERE id = " + pc.getId();
 		}
+		stmt.close();
 		executeUpdate(q); 
 
 		// Now update the ConfigSensors.  Take the easy road, and first
@@ -464,7 +475,6 @@ public class ConfigListIO extends SqlDbObjIo
 		q =
 			"SELECT name FROM PlatformConfig where name like "
 			+ sqlReqString(prefix+"%");
-		stmt = createStatement();
     	rs = stmt.executeQuery(q);
     	while(rs != null && rs.next())
 		{
