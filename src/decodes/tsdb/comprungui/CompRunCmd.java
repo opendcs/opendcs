@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2017/07/06 19:06:22  mmaloney
+ * Created.
+ *
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract 
  * to the United States Government. 
@@ -66,7 +69,7 @@ public class CompRunCmd extends TsdbAppTemplate
 		TokenOptions.optSwitch|TokenOptions.optMultiple, null);
 	private StringToken groupIdToken = new StringToken("g", "Group ID", "", 
 		TokenOptions.optSwitch|TokenOptions.optMultiple, null);
-	private StringToken compIdToken = new StringToken("c", "Computation ID(s)", "",
+	private StringToken compIdToken = new StringToken("C", "Computation ID(s)", "",
 		TokenOptions.optSwitch|TokenOptions.optMultiple, null);
 	private StringToken ctrlFileToken = new StringToken("f", "Control File", "", 
 		TokenOptions.optSwitch, null);
