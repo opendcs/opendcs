@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2017/07/06 20:31:45  mmaloney
+ * dev
+ *
  * Revision 1.3  2017/07/06 20:28:42  mmaloney
  * dev
  *
@@ -85,7 +88,7 @@ public class CompRunCmd extends TsdbAppTemplate
 		TokenOptions.optSwitch, null);
 	private StringToken outputFmtToken = new StringToken("o", "Output Format", "",
 		TokenOptions.optSwitch, null);
-	private StringToken presGrpToken = new StringToken("P", "Presentation Group", "",
+	private StringToken presGrpToken = new StringToken("R", "Presentation Group", "",
 		TokenOptions.optSwitch, null);
 	private BooleanToken quietToken = new BooleanToken("q", "Quiet - no prompts or stats.", "",
 		TokenOptions.optSwitch, false);
