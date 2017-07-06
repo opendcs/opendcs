@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2017/07/06 20:28:42  mmaloney
+ * dev
+ *
  * Revision 1.2  2017/07/06 20:23:59  mmaloney
  * Changed -c to -C for computation IDs.
  *
@@ -330,7 +333,6 @@ public class CompRunCmd extends TsdbAppTemplate
 		cmdLineArgs.addToken(compIdToken);
 		cmdLineArgs.addToken(tsidToken);
 		cmdLineArgs.addToken(groupIdToken);
-		cmdLineArgs.addToken(ctrlFileToken);
 		cmdLineArgs.addToken(sinceToken);
 		cmdLineArgs.addToken(untilToken);
 		cmdLineArgs.addToken(outputFmtToken);
