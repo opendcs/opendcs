@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2017/07/06 20:23:59  mmaloney
+ * Changed -c to -C for computation IDs.
+ *
  * Revision 1.1  2017/07/06 19:06:22  mmaloney
  * Created.
  *
@@ -65,9 +68,9 @@ import decodes.util.CmdLineArgs;
 public class CompRunCmd extends TsdbAppTemplate
 {
 	private String dateSpec = "YYYY/MM/dd-HH:mm:ss";
-	private StringToken tsidToken = new StringToken("t", "TSID(s)", "", 
+	private StringToken tsidToken = new StringToken("T", "TSID(s)", "", 
 		TokenOptions.optSwitch|TokenOptions.optMultiple, null);
-	private StringToken groupIdToken = new StringToken("g", "Group ID", "", 
+	private StringToken groupIdToken = new StringToken("G", "Group ID", "", 
 		TokenOptions.optSwitch|TokenOptions.optMultiple, null);
 	private StringToken compIdToken = new StringToken("C", "Computation ID(s)", "",
 		TokenOptions.optSwitch|TokenOptions.optMultiple, null);
