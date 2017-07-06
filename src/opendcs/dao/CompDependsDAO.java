@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2016/12/16 14:31:30  mmaloney
+ * Added getTriggersFor method.
+ *
  * Revision 1.3  2014/12/19 19:26:57  mmaloney
  * Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
  *
@@ -250,6 +253,43 @@ debug3("Total dds for dependencies=" + dataIds.size());
 		finally
 		{
 			timeSeriesDAO.close();
+		}
+		return ret;
+	}
+
+	@Override
+	public ArrayList<DbKey> getCompIdsFor(ArrayList<TimeSeriesIdentifier> tsids, DbKey appId)
+		throws DbIoException
+	{
+		ArrayList<DbKey> ret = new ArrayList<DbKey>();
+		
+		StringBuilder inClause = new StringBuilder(" in (");
+		int n = 0;
+		for (TimeSeriesIdentifier tsid : tsids)
+		{
+			if (n++ > 0)
+				inClause.append(", ");
+			inClause.append(tsid.getKey().toString());
+		}
+		inClause.append(")");
+		if (n == 0)
+			return ret;
+		
+		String q = "select a.computation_id from cp_comp_depends a, cp_computation b"
+			+ " where a.computation_id = b.computation_id"
+			+ " and a." + cpCompDepends_col1 + inClause.toString();
+		if (!DbKey.isNull(appId))
+			q = q + " and b.loading_application_id = " + appId;
+			
+		try
+		{
+			ResultSet rs = doQuery(q);
+			while (rs.next())
+				ret.add(DbKey.createDbKey(rs, 1));
+		}
+		catch(Exception ex)
+		{
+			warning("getCompIdsFor() error in query '" + q + "': " + ex);
 		}
 		return ret;
 	}

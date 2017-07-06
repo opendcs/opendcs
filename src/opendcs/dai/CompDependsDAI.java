@@ -50,6 +50,17 @@ public interface CompDependsDAI
 	 */
 	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbComputation comp)
 		throws DbIoException;
+	
+	/**
+	 * Find all computations that would be triggered by the passed set of TSIDs. If appId
+	 * is not a NullKey, then also filter the computation list by the app ID.
+	 * @param tsids The list of time series IDs
+	 * @param appId Optional appId to filter list by
+	 * @return list of dependent computations
+	 * @throws DbIoException
+	 */
+	public ArrayList<DbKey> getCompIdsFor(ArrayList<TimeSeriesIdentifier> tsids, DbKey appId)
+		throws DbIoException;
 
 	/**
 	 * Closes any resources opened by the DAO
