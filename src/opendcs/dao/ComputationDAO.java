@@ -2,6 +2,10 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.9  2017/03/03 19:21:33  mmaloney
+* Bugfix - it was trying to delete CP_COMPUTATION record before CP_COMP_DEPENDS
+* record, which in pre DB 14 version is defined as a foreign key.
+*
 * Revision 1.8  2016/11/29 01:19:07  mmaloney
 * Refactoring.
 *
@@ -550,18 +554,27 @@ public class ComputationDAO
 		String q = "select " + columns + " from " + tables;
 		if (where.length() > 0)
 			q = q + " where " + where.toString();
+		q = q + " order by cmp.computation_id";
 		try
 		{
 			debug3("Getting NON-group comps with query '" + q + "'");
 			ResultSet rs = doQuery(q);
 			int n = 0;
+			DbKey lastCompId = DbKey.NullKey;
 			while(rs.next())
 			{
+				// A computation may have multiple params that pass the filter.
+				// Only add a given computation to the list once.
+				DbKey compId = DbKey.createDbKey(rs, 1);
+				if (compId.equals(lastCompId))
+					continue;
+				
 				ret.add(
-					new ComputationInList(DbKey.createDbKey(rs, 1), rs.getString(2),
+					new ComputationInList(compId, rs.getString(2),
 						DbKey.createDbKey(rs, 3), DbKey.createDbKey(rs, 5), 
 						TextUtil.str2boolean(rs.getString(6)), rs.getString(4)));
 				n++;
+				lastCompId = compId;
 			}
 			debug3("" + n + " non-group computations retrieved.");
 		}
