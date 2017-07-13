@@ -85,6 +85,34 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		throws DbIoException, NoSuchObjectException
 	{
 debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
+
+
+		int paren = uniqueString.lastIndexOf('(');
+		String displayName = null;
+		if (paren > 0 && uniqueString.trim().endsWith(")"))
+		{
+			displayName = uniqueString.substring(paren+1);
+			uniqueString = uniqueString.substring(0,  paren);
+			int endParen = displayName.indexOf(')');
+			if (endParen > 0)
+				displayName = displayName.substring(0,  endParen);
+			debug3("using display name '" + displayName + "', unique str='" + uniqueString + "'");
+		}
+
+		HdbTsId ret = (HdbTsId)cache.getByUniqueName(uniqueString);
+		if (ret != null)
+		{
+			if (displayName != null)
+			{
+				debug3("Setting display name to '" + displayName + "'");
+				ret.setDisplayName(displayName);
+			}
+			return ret;
+		}
+		else
+			debug3("cache does not have '" + uniqueString + "'");
+
+
 		HdbTsId htsid = new HdbTsId(uniqueString);
 		String tsSiteName = htsid.getSiteName();
 		DbKey siteId = siteDAO.lookupSiteID(tsSiteName);
@@ -125,7 +153,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			throw new NoSuchObjectException("Cannot get TS_ID for '"
 				+ htsid.getUniqueString() + "'");
 		}
-		HdbTsId ret = (HdbTsId)getTimeSeriesIdentifier(htsid.getKey());
+		ret = (HdbTsId)getTimeSeriesIdentifier(htsid.getKey());
 		// Preserve the modelRunId if it was set in the uniqueString. Also the display name.
 		ret.modelRunId = htsid.modelRunId;
 		ret.setDisplayName(htsid.getDisplayName());
