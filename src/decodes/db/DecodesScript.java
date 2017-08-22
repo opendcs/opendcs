@@ -16,6 +16,7 @@ import decodes.util.DecodesSettings;
 import ilex.util.Logger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Vector;
 import java.util.Iterator;
 
@@ -66,6 +67,12 @@ public class DecodesScript extends IdDatabaseObject
 	
 	/** if (trackDecoding) then this will store decoded samples after execution. */
 	private ArrayList<DecodedSample> decodedSamples = null;
+	
+	/**
+	 * New for 6.4, allows a script to call setMissing(xyz) to specify a special symbol
+	 * to signify a missing value. Example Campbell CX3000 sometimes uses 6998.
+	 */
+	private HashSet<String> missingSymbols = new HashSet<String>();
 	
 	/**
 	 * Constructor
@@ -312,6 +319,7 @@ public class DecodesScript extends IdDatabaseObject
 		}
 		if (execFmt != null)
 			execFmt.prepareForExec();
+		
 		_prepared = true;
 	}
 
@@ -462,5 +470,22 @@ public class DecodesScript extends IdDatabaseObject
 		if (idx < 0 || scriptType.length() <= idx+1)
 			return null;
 		return scriptType.substring(idx+1);
+	}
+	
+	public void addMissing(String symbol)
+	{
+		missingSymbols.add(symbol);
+	}
+	
+	public boolean isMissingSymbol(String symbol)
+	{
+//Logger.instance().debug3("script.isMissingSymbol '" + symbol + "' checking against " + missingSymbols.size()
+//	+ " defined symbols.");
+		return missingSymbols.contains(symbol);
+//		for(String s : missingSymbols)
+//			if (s.equals(symbol))
+//				return true;
+//else Logger.instance().debug3("   doesn't equal '" + s + "'");
+//		return false;
 	}
 }
