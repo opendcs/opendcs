@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2017/02/16 14:41:26  mmaloney
+ * Close CwmsRatingDao in final block.
+ *
  * Revision 1.9  2016/09/29 18:54:37  mmaloney
  * CWMS-8979 Allow Database Process Record to override decodes.properties and
  * user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -77,7 +80,6 @@ import decodes.db.SiteName;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.CTimeSeries;
@@ -93,6 +95,7 @@ import java.util.ArrayList;
 
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
+import decodes.util.TSUtil;
 
 //AW:JAVADOC
 /**
@@ -202,7 +205,7 @@ public class CwmsRatingSingleIndep
 				debug1(module + " Converting indep units for time series " 
 					+ indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
 					+ indepParmRef.timeSeries.getUnitsAbbr() + " to " + punits[0]);
-				TimeSeriesHelper.convertUnits(indepParmRef.timeSeries, punits[0]);
+				TSUtil.convertUnits(indepParmRef.timeSeries, punits[0]);
 			}
 			// Likewise for the dependent param:
 			if (punits.length > 1 && punits[1] != null
@@ -212,7 +215,7 @@ public class CwmsRatingSingleIndep
 debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 				debug1(module + " Converting dep units from "
 					+ depParmRef.timeSeries.getUnitsAbbr() + " to " + punits[1]);
-				TimeSeriesHelper.convertUnits(depParmRef.timeSeries, punits[1]);
+				TSUtil.convertUnits(depParmRef.timeSeries, punits[1]);
 			}
 		}
 		catch (RatingException ex)

@@ -8,6 +8,9 @@
 * Open Source Software
 * 
 * $Log$
+* Revision 1.7  2017/05/03 17:04:14  mmaloney
+* Improved debugs.
+*
 * Revision 1.6  2017/04/27 21:01:55  mmaloney
 * Combine full/base/sub location/param/version with logical OR.
 *
@@ -78,9 +81,6 @@ import decodes.tsdb.GroupHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 
-/**
-This class is a helper to the TempestTsdb for reading & writing groups.
-*/
 public class CwmsGroupHelper
 	extends GroupHelper
 {

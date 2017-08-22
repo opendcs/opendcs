@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.6  2016/02/29 22:14:07  mmaloney
+ * Removed nuisance debugs.
+ *
  * Revision 1.5  2015/11/12 15:17:12  mmaloney
  * Added HEC headers.
  *
@@ -29,7 +32,6 @@ import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
-import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 
@@ -43,6 +45,7 @@ import decodes.db.Site;
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
 import decodes.util.PropertySpec;
+import decodes.util.TSUtil;
 
 //AW:JAVADOC
 /**
@@ -231,7 +234,7 @@ public class ScreeningAlgorithm
 		 && TextUtil.strCompareIgnoreCase(euAbbr, inputParm.timeSeries.getUnitsAbbr()) != 0)
 		{
 			// Need to convert the input param into the proper units.
-			TimeSeriesHelper.convertUnits(inputParm.timeSeries, euAbbr);
+			TSUtil.convertUnits(inputParm.timeSeries, euAbbr);
 			
 			// Also, if there is an output, make sure its units match the input.
 			setOutputUnitsAbbr("output", euAbbr);

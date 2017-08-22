@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2017/02/16 14:41:26  mmaloney
+ * Close CwmsRatingDao in final block.
+ *
  * Revision 1.9  2017/02/09 17:23:42  mmaloney
  * Allow locationOverride to contain wildcards.
  *
@@ -80,7 +83,6 @@ import decodes.db.SiteName;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.CTimeSeries;
@@ -96,6 +98,7 @@ import java.util.ArrayList;
 
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
+import decodes.util.TSUtil;
 
 //AW:JAVADOC
 /**
@@ -370,7 +373,7 @@ public class CwmsRatingMultIndep
 					debug1(module + " Converting " + pname + " units for time series " 
 						+ indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
 						+ indepParmRef.timeSeries.getUnitsAbbr() + " to " + punits[pidx]);
-					TimeSeriesHelper.convertUnits(indepParmRef.timeSeries, punits[pidx]);
+					TSUtil.convertUnits(indepParmRef.timeSeries, punits[pidx]);
 				}
 			}
 			
@@ -381,7 +384,7 @@ public class CwmsRatingMultIndep
 			{
 				debug1(module + " Converting dep units from "
 					+ depParmRef.timeSeries.getUnitsAbbr() + " to " + punits[punits.length-1]);
-				TimeSeriesHelper.convertUnits(depParmRef.timeSeries, punits[punits.length-1]);
+				TSUtil.convertUnits(depParmRef.timeSeries, punits[punits.length-1]);
 			}
 
 		}

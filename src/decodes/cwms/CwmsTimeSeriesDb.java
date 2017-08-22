@@ -12,6 +12,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.24  2017/05/31 21:18:40  mmaloney
+*  Added rating method to the TSDB object in order to remove dependencies to CWMS
+*  from PythonAlgorithm.
+*
 *  Revision 1.23  2017/05/17 20:43:29  mmaloney
 *  Remove ref to CwmsCatJdbc
 *
@@ -176,8 +180,6 @@
 *  Enhance a new feature to allow to use the maxComputationRetries property 
 *  to limit the number of retries for those failed computations. There will 
 *  be unlimited retries if maxComputationRetires=0.
-*
-*  This feature will apply to Tempest DB, CWMS, and HDB.
 *
 *  Revision 1.143  2012/11/13 15:14:49  mmaloney
 *  dev
@@ -439,8 +441,6 @@
 *
 *  Revision 1.62  2011/02/07 18:34:34  mmaloney
 *  Got rid of PgTimeSeriesDb intermediate class.
-*  TempestTsdb now extends TimeSeriesDb directly.
-*
 *  Revision 1.61  2011/02/03 20:00:23  mmaloney
 *  Time Series Group Editor Mods
 *
