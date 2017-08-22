@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.9  2017/02/20 19:41:51  mmaloney
+*  The TsdbCompLock code has been moved to RoutingSpecThread.main and run.
+*
 *  Revision 1.8  2015/05/14 13:52:19  mmaloney
 *  RC08 prep
 *
@@ -64,7 +67,6 @@ import java.util.Properties;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
-
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
 import decodes.datasource.RawMessage;
@@ -90,10 +92,10 @@ import decodes.tsdb.CompEventSvr;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbCompLock;
+import decodes.util.TSUtil;
 
 /**
  CwmsConsumer writes data to the CWMS Oracle Database.
@@ -502,7 +504,7 @@ public class CwmsConsumer extends DataConsumer
 				+ tsid.getPart("Version");
 	
 	
-			CTimeSeries cts = TimeSeriesHelper.convert2CTimeSeries(
+			CTimeSeries cts = TSUtil.convert2CTimeSeries(
 				ts,                    // the DECODES Time Series
 				tsid.getKey(),         // ts_code
 				tabSel,                // CWMS tabse is paramtype.duration.version

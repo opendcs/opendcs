@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.6  2017/02/09 17:24:27  mmaloney
+*  added polled-modem and polled-tcp medium types.
+*
 *  Revision 1.5  2015/06/04 21:38:17  mmaloney
 *  Added enum_ApplicationType
 *
@@ -102,7 +105,6 @@ public class Constants
 	public static final String medium_NETDCP = "netdcp";
 	public static final String medium_SHEF   = "shef";
 	public static final String medium_METAR  = "metar";
-	public static final String medium_SutronCSV = "sutron_logger_csv";
 	public static final String medium_Eumetsat = "EUMETSAT";
 	public static final String medium_PolledModem = "polled-modem";
 	public static final String medium_PolledTcp = "polled-tcp";

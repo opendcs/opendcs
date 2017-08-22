@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.18  2017/05/01 19:28:07  mmaloney
+ * Added setRoundSec() method to enable fuzzy retrievals to fill in missing data.
+ * This is not yet implemented.
+ *
  * Revision 1.17  2017/01/24 15:36:27  mmaloney
  * CWMS-10060 added support for DecodesSettings.tsidFetchSize
  *
@@ -88,11 +92,11 @@ import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
+import decodes.util.TSUtil;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
@@ -708,7 +712,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				+ unitsAbbr + "' require units '" + tsId.getStorageUnits() + "'");
 			if (!unitsAbbr.equalsIgnoreCase(tsId.getStorageUnits()))
 			{
-				TimeSeriesHelper.convertUnits(ts, tsId.getStorageUnits());
+				TSUtil.convertUnits(ts, tsId.getStorageUnits());
 				unitsAbbr = tsId.getStorageUnits();
 			}
 		}

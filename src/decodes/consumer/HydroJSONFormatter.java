@@ -32,7 +32,7 @@ import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
-import decodes.tsdb.DecodesSensorAdapter;
+import decodes.util.DecodesSensorCnvt;
 import decodes.util.DecodesSettings;
 
 /**
@@ -188,8 +188,8 @@ public class HydroJSONFormatter extends OutputFormatter
 				// If this is from OutputTs, we will have read real CWMS tsids
 				// from the database. Use these
 				String tsid = null;
-				if (ts.getSensor() instanceof DecodesSensorAdapter)
-					tsid = ((DecodesSensorAdapter)ts.getSensor()).getDbTsId();
+				if (ts.getSensor() instanceof DecodesSensorCnvt)
+					tsid = ((DecodesSensorCnvt)ts.getSensor()).getDbTsId();
 				// Otherwise (this is from DECODES) construct using same rules as CwmsConsumer.
 				if (tsid == null)
 					tsid = cwmsConsumer.createTimeSeriesDesc(ts, site);

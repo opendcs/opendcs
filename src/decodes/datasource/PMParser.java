@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2016/10/07 14:49:24  mmaloney
+*  Updates for Web Report for Gail Monds, LRD.
+*
 *  Revision 1.2  2014/10/02 14:31:05  mmaloney
 *  Encapsulated execClassName
 *
@@ -186,10 +189,6 @@ public abstract class PMParser
 		else if (headerType.equalsIgnoreCase("metar") )
 		{
 			return new MetarPMParser();
-		}
-		else if (headerType.equalsIgnoreCase("sutron_logger_csv"))
-		{
-			return new SutronLoggerCsvPMParser();
 		}
 		else if (headerType.equalsIgnoreCase("eumetsat"))
 		{
