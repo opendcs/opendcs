@@ -7,6 +7,9 @@
 *  contained in this file may be claimed to be proprietary.
 *
 * $Log$
+* Revision 1.4  2017/04/19 19:29:05  mmaloney
+* CWMS-10609 nested group evaluation in group editor bugfix.
+*
 * Revision 1.3  2016/10/17 17:51:49  mmaloney
 * Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
 *
@@ -523,7 +526,6 @@ public class TsGroup
 
 	/** 
 	 * Called after group expanded and then made more restrictive.
-	 * This is done by the 'RefineGroup' elements in Tempest Web.
 	 * Go through current list of DataDescriptors and delete the ones that
 	 * are no longer in the group.
 	 */
@@ -614,10 +616,6 @@ public class TsGroup
 		}
 	}
 
-	/**
-	 * For tempest web, we allow a group to be refined, by adding site names.
-	 * @param sitename the site name in the form "type-value"
-	 */
 	public void addSiteName(String sitename)
 	{
 		siteNameList.add(sitename);

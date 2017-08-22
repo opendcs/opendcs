@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2017/07/06 19:06:54  mmaloney
+ * New method to support comp exec command.
+ *
  * Revision 1.4  2016/12/16 14:31:30  mmaloney
  * Added getTriggersFor method.
  *
@@ -28,6 +31,7 @@ import ilex.util.Logger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -258,7 +262,7 @@ debug3("Total dds for dependencies=" + dataIds.size());
 	}
 
 	@Override
-	public ArrayList<DbKey> getCompIdsFor(ArrayList<TimeSeriesIdentifier> tsids, DbKey appId)
+	public ArrayList<DbKey> getCompIdsFor(Collection<TimeSeriesIdentifier> tsids, DbKey appId)
 		throws DbIoException
 	{
 		ArrayList<DbKey> ret = new ArrayList<DbKey>();

@@ -199,7 +199,6 @@ public class TsDbGrpListPanel
 	public void deletePressed()
 	{
 		TsGroup tsGroup = tsGroupsListSelectPanel.getSelectedTsGroup();
-//		TempestTsdb tsDb = TsDbEditorFrame.getTsDb();
 		TimeSeriesDb tsDb = TsdbAppTemplate.theDb;
 
 		if (tsGroup == null)

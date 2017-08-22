@@ -7,6 +7,9 @@
  * contained in this file may be claimed to be proprietary.
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.11  2013/03/21 18:27:39  mmaloney
  * DbKey Implementation
  *
@@ -51,7 +54,7 @@ import decodes.sql.DbKey;
 
 /**
  * Encapsulates a unique identifier to a time-series in the database.
- * Implementations exist for Tempest, HDB, and CWMS.
+ * Implementations exist for HDB, and CWMS.
  */
 public interface TimeSeriesIdentifier
 	extends Comparable<TimeSeriesIdentifier>, CachableDbObject

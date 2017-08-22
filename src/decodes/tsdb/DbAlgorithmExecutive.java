@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.11  2017/05/31 21:27:18  mmaloney
+*  Improvement to getParmTsId
+*
 *  Revision 1.10  2017/05/25 21:18:45  mmaloney
 *  In DbAlgorithmExecutive, apply roundSec when searching for values in database.
 *  In CTimeSeries.findWithin, the upperbound should be t+fudge/2-1.
@@ -71,14 +74,12 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import opendcs.dai.TimeSeriesDAI;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariableList;
 import ilex.var.NoConversionException;
 import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
-
 import decodes.db.Constants;
 import decodes.db.EngineeringUnit;
 import decodes.db.Site;
@@ -87,6 +88,7 @@ import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
+import decodes.util.TSUtil;
 
 /**
  * This is the base class for all computational algorithms.
@@ -525,7 +527,7 @@ Logger.instance().debug3("addTsToParmRef: propName='" + propName + "' neededEU='
 			debug3("role='" + role + "', old units='" + tsEU + "' neededEU='" + neededEU + "'");
 			if (tsEU != null && !tsEU.equals("unknown")
 			 && !neededEU.equalsIgnoreCase(tsEU))
-				TimeSeriesHelper.convertUnits(ref.timeSeries, neededEU);
+				TSUtil.convertUnits(ref.timeSeries, neededEU);
 			
 			// Note: Even if we did no conversion, still set the units abbreviation.
 			ref.timeSeries.setUnitsAbbr(neededEU);
@@ -1740,7 +1742,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	/**
 	 * Returns the site datatype id (SDI) of the param assigned to a role.
 	 * Note: For HDB the SDI is not the surrogate key for the time series.
-	 * For Tempest and CWMS, SDI and time series key are the same.
+	 * For CWMS, SDI and time series key are the same.
 	 * @param rolename the role
 	 * @return the numeric site datatype id for a role, or -1 if unassigned.
 	 */
@@ -1844,7 +1846,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 			// old bad code:
 			// ref.timeSeries.setUnitsAbbr(unitsAbbr);
 			// Correct code:
-			TimeSeriesHelper.convertUnits(ref.timeSeries, unitsAbbr);
+			TSUtil.convertUnits(ref.timeSeries, unitsAbbr);
 		}
 	}
 

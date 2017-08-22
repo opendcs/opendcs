@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.11  2013/03/21 18:27:39  mmaloney
 *  DbKey Implementation
 *
@@ -64,9 +67,9 @@ public class DataCollection
 	{
 		for(CTimeSeries ts : tseries)
 		{
-			// For tempest and CWMS, the SDI is a unique key to a time-series.
+			// For CWMS, the SDI is a unique key to a time-series.
 			// so don't worry about matching interval, selector, and model run.
-			if (TimeSeriesDb.sdiIsUnique)		// For Tempest and CWMS DB
+			if (TimeSeriesDb.sdiIsUnique)
 			{
 			  if (ts.getSDI().equals(sdi)) 
 				  return ts;

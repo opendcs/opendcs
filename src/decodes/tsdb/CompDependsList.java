@@ -2,74 +2,52 @@
  * $Id$
  * 
  * $Log$
- * Revision 1.6  2016/09/23 15:56:20  mmaloney
- * Add -f appname argument.
- *
- * Revision 1.5  2016/06/07 22:00:51  mmaloney
- * Refactoring for efficiency, particularly with HDB.
- *
- * Revision 1.4  2014/10/07 13:03:35  mmaloney
- * dev
- *
  * 
- * Copyright 2007 Ilex Engineering, Inc. - All Rights Reserved.
- * No part of this file may be duplicated in either hard-copy or electronic
- * form without specific written permission.
+ * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 */
 package decodes.tsdb;
 
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.List;
-
-import opendcs.dai.CompDependsDAI;
-import opendcs.dai.ComputationDAI;
-import opendcs.dai.LoadingAppDAI;
-import opendcs.dai.TimeSeriesDAI;
-import lrgs.gui.DecodesInterface;
-import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
-import decodes.db.Constants;
+import ilex.cmdline.StringToken;
 import decodes.db.Database;
 import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
+import lrgs.gui.DecodesInterface;
 
 
 /**
-Troubleshooting utility to print the current CP_COMP_DEPENDS table
-in 6 comma-delimited columns the following format:
-TS_Key(int)   "TS_ID(Unique String)"  COMPUTATION_ID(int) "comp name" Loading_App_Id(int) "Loading App Name"
+Print list of computation dependencies.
 */
-public class ShowCompDepends extends TsdbAppTemplate
+public class CompDependsList 
+	extends TsdbAppTemplate
 {
 	/** Application name - used to determine LOADING_APPLICATION_ID. */
 	protected StringToken appFilterArg  = new StringToken("f", "Application-Name (for filter)", "",
 		TokenOptions.optSwitch, "");;
 
-	public ShowCompDepends()
+	/** No args ctor */
+	public CompDependsList()
 	{
-		super(null);
-	}
-
-	/**
-	 * Overrides to add test-specific arguments.
-	 */
-	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
-	{
-		cmdLineArgs.addToken(appFilterArg);
+		super("util.log");
+		DecodesInterface.silent = true;
 	}
 
 	public static void main(String args[])
 		throws Exception
 	{
-		TsdbAppTemplate tp = new ShowCompDepends();
-		DecodesInterface.silent = true;
-		tp.execute(args);
+		new CompDependsList().execute(args);
 	}
 
+	@Override
+	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
+	{
+		cmdLineArgs.addToken(appFilterArg);
+	}
+
+	@Override
 	protected void runApp()
 		throws Exception
 	{
@@ -141,12 +119,4 @@ public class ShowCompDepends extends TsdbAppTemplate
 		db.siteList.read();
 	}
 
-	public void info(String x)
-	{
-		Logger.instance().info("ShowCompDepends: " + x);
-	}
-	private void debug(String x)
-	{
-		Logger.instance().debug3("ShowCompDepends: " + x);
-	}
 }

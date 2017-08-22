@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2016/07/20 15:43:56  mmaloney
+*  remove unneeded loading app dao.
+*
 *  Revision 1.2  2016/01/27 22:06:16  mmaloney
 *  Optimizations for filter.
 *
@@ -56,7 +59,6 @@ import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
-
 import ilex.util.*;
 import decodes.db.Constants;
 import decodes.gui.SortingListTable;
@@ -303,7 +305,7 @@ public class ComputationsListPanel extends ListPanel
 		Logger.instance().debug1("ComputationListPanel.doRefresh() ------------");
 		ComputationDAI computationDAO = tsdb.makeComputationDAO();
 		
-		CompFilter compFilter = tsdb.getCompFilter();
+		CompFilter compFilter = new CompFilter();
 		
 		compFilter.setFilterLowIds(filterLowIds);
 		filterPanel.setFilterParams(compFilter, tsdb);
@@ -312,75 +314,6 @@ public class ComputationsListPanel extends ListPanel
 			// MJM 6.2 moves filtering into the DAO.
 			ArrayList<ComputationInList> displayComps = computationDAO.compEditList(compFilter);
 			
-// Old 6.1 code			
-//			ArrayList<AlgorithmInList> algorithms = tsdb.listAlgorithmsForGui();
-//			ArrayList<CompAppInfo> apps = loadingAppDao.listComputationApps(true);
-//			ArrayList<DbComputation> comps = computationDAO.listCompsForGUI(compFilter);
-//			
-//			for(Iterator<DbComputation> compit = comps.iterator(); compit.hasNext(); )
-//			{
-//				DbComputation comp = compit.next();
-//				TsGroup group = comp.getGroup();
-//
-//				boolean passes = false;
-//				if (group == null) // Single, non-group comp?
-//					passes = compFilter.passes(comp);
-//				else if (!compFilter.hasParamConditions())
-//					passes = true;
-//				else // group computation
-//				{	
-//					// Group object may be shared by multiple comps. Only expand it once.
-//					if (!group.getIsExpanded())
-//						tsdb.expandTsGroup(group);
-//
-//					ArrayList<DbComputation> expandedGroupComps = new ArrayList<DbComputation>();
-//					
-//					for(TimeSeriesIdentifier tsid : group.getExpandedList())
-//						try 
-//						{
-//							expandedGroupComps.add(
-//								DbCompResolver.makeConcrete(tsdb, tsid, comp, false));
-//						}
-//						catch(NoSuchObjectException ex)
-//						{
-//							Logger.instance().debug1("Cannot expand comp(" + comp.getId()
-//								+ ") " + comp.getName() + ": " + ex);
-//						}
-//
-//					if (expandedGroupComps.size() == 0) 
-//						// No expansions succeeded. Check the abstract comp.
-//						passes = compFilter.passes(comp);
-//					else
-//						for(DbComputation exComp : expandedGroupComps)
-//							if (passes = compFilter.passes(exComp))
-//								break;
-//				}
-//				if (!passes)
-//					compit.remove();
-//			}
-//			
-//			ArrayList<ComputationInList> displayComps = new ArrayList<ComputationInList>();
-//			for(DbComputation comp : comps)
-//				displayComps.add(
-//					new ComputationInList(comp.getId(), comp.getName(),
-//						comp.getAlgorithmId(), comp.getAppId(), comp.isEnabled(), 
-//						comp.getComment()));
-//
-//			for(ComputationInList cil : displayComps)
-//			{
-//				for(AlgorithmInList algo : algorithms)
-//					if (cil.getAlgorithmId() == algo.getAlgorithmId())
-//					{
-//						cil.setAlgorithmName(algo.getAlgorithmName());
-//						break;
-//					}
-//				for(CompAppInfo app : apps)
-//					if (cil.getProcessId() == app.getAppId())
-//					{
-//						cil.setProcessName(app.getAppName());
-//						break;
-//					}
-//			}
 			compListTableModel.setContents(displayComps);
 			if (compListTableModel.sortedBy != -1)
 				compListTableModel.sortByColumn(compListTableModel.sortedBy);
@@ -394,7 +327,6 @@ public class ComputationsListPanel extends ListPanel
 		}
 		finally
 		{
-//			loadingAppDao.close();
 			computationDAO.close();
 		}
 
@@ -424,6 +356,7 @@ public class ComputationsListPanel extends ListPanel
 	}
 }
 
+@SuppressWarnings("serial")
 class ComputationsListPanelTableModel extends AbstractTableModel 
 	implements SortingListTableModel 
 {
@@ -441,7 +374,7 @@ class ComputationsListPanelTableModel extends AbstractTableModel
 		ComputationsListPanel.compLabels.getString(
 			"ComputationsFilterPanel.TableColumn4"),
 		ComputationsListPanel.compLabels.getString(
-			"ComputationsFilterPanel.TableColumn5"), 
+			"ComputationsFilterPanel.TableColumn5"),
 		ComputationsListPanel.compLabels.getString(
 			"ComputationsFilterPanel.TableColumn6")
 	};

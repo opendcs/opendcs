@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.6  2013/07/12 11:50:53  mmaloney
  * Added tasklist queue stuff.
  *
@@ -30,7 +33,6 @@ public class TasklistRec
 	private Date versionDate = null;
 	private long qualityCode = 0;
 	
-	// Tempest-specific fields
 	private int sourceId = Constants.undefinedIntKey;
 	
 	// MJM flags are really the same as qualityCode. Modify the get/set methods to
@@ -43,7 +45,7 @@ public class TasklistRec
 	private int modelRunId = Constants.undefinedIntKey;
 	
 	/**
-	 * This is the constructor for a Tempest tasklist record.
+	 * This is the constructor for a tasklist record.
 	 * @param recordNum
 	 * @param sdi
 	 * @param value

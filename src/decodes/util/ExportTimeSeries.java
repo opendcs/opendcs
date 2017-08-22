@@ -3,11 +3,9 @@
  * 
  * $Log$
  * 
- * Copyright 2007 Ilex Engineering, Inc. - All Rights Reserved.
- * No part of this file may be duplicated in either hard-copy or electronic
- * form without specific written permission.
+ * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 */
-package decodes.tsdb;
+package decodes.util;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -22,11 +20,9 @@ import java.util.TimeZone;
 
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
-
 import ilex.cmdline.*;
 import ilex.util.Logger;
 import ilex.var.Variable;
-
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
 import decodes.consumer.PipeConsumer;
@@ -46,102 +42,81 @@ import decodes.decoder.DecodedMessage;
 import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
 import decodes.sql.DbKey;
-import decodes.util.CmdLineArgs;
+import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TsdbAppTemplate;
 
-/**
-Outputs a time series in a DECODES format.
-Can be used as part of another app to write data to a stream, or stand-alone
-command-line.
-
-Main Command Line Args include:
-	-F DECODES Format Name (from the enumeration)
-	-S Since-Time
-	-U Until-Time
-	-Z Time Zone (defaults to tz specified for database)
-	-G Presentation Group (default=none)
-	-D (from base class) any number of properties to set. See docs on the
-	   output formatter you select for which properties are appropriate.
-	-I transportID (many formatters need a platform association. Provide
-	   the transport ID of the platform that owns the output data. The ID
-	   should be of the form [mediumType:]mediumId. If [mediumType:] is
-	   omitted, then goes is assumed.
-	-L [id|name] specifies how time-series are specified (either ID or NAME)
-
-Following the options are any number of data IDs.
-*/
-public class OutputTs
+public class ExportTimeSeries
 	extends TsdbAppTemplate
 {
-	private StringToken formatterArg = null;
-	private StringToken sinceArg = null;
-	private StringToken untilArg = null;
-	private StringToken outArg = null;
-	private StringToken presentationArg = null;
-	private StringToken tzArg = null;
-	private StringToken transportIdArg = null;
-	private OutputFormatter outputFormatter = null;
+	private StringToken sinceArg = new StringToken("S", "Since Time dd-MMM-yyyy/HH:mm", "", TokenOptions.optSwitch, "");
+	private StringToken untilArg = new StringToken("U", "Until Time dd-MMM-yyyy/HH:mm", "", TokenOptions.optSwitch, "");
+	private StringToken fmtArg = new StringToken("F", "OutputFormat", "", TokenOptions.optSwitch, "Human-Readable");
+	private StringToken presArg = new StringToken("G", "PresentationGroup", "", TokenOptions.optSwitch, "");
+	private StringToken timezoneArg = new StringToken("Z", "Time Zone", "", TokenOptions.optSwitch, "UTC");
+	private StringToken transportIdArg = new StringToken("I", "TransportID", "", TokenOptions.optSwitch, "");
+	private StringToken lookupTypeArg = new StringToken("L", "Lookup Type", "", TokenOptions.optSwitch, "id");
+	private StringToken outArg = new StringToken("", "time-series-IDs", "", 
+		TokenOptions.optArgument|TokenOptions.optRequired |TokenOptions.optMultiple, "");
+	
 	private static TimeZone tz = null;
+
+	
+	private OutputFormatter outputFormatter = null;
+	private static SimpleDateFormat timeSdf = null;
+	private static SimpleDateFormat dateSdf = null;
 	private PresentationGroup presGroup = null;
 	private Properties props = new Properties();
 	private DataConsumer consumer = null;
-	private static SimpleDateFormat timeSdf = null;
-	private static SimpleDateFormat dateSdf = null;
 	private final static long MS_PER_DAY = 3600 * 24 * 1000L;
-	private StringToken lookupTypeArg;
+	
 
-
-	public OutputTs()
+	public ExportTimeSeries()
 	{
 		super("util.log");
 		setSilent(true);
 	}
 
-	/** For cmdline version, adds argument specifications. */
+	public static void main(String args[])
+		throws Exception
+	{
+		new ExportTimeSeries().execute(args);
+	}
+
+	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
-		formatterArg = new StringToken("F", "OutputFormat", "", 
-			TokenOptions.optSwitch, "Human-Readable");
-		cmdLineArgs.addToken(formatterArg);
-		sinceArg = new StringToken("S", "Since Time dd-MMM-yyyy/HH:mm", "", 
-			TokenOptions.optSwitch, "");
 		cmdLineArgs.addToken(sinceArg);
-		untilArg = new StringToken("U", "Until Time dd-MMM-yyyy/HH:mm", "", 
-			TokenOptions.optSwitch, "");
 		cmdLineArgs.addToken(untilArg);
-		tzArg = new StringToken("Z", "Time Zone", "", 
-			TokenOptions.optSwitch, "UTC");
-		cmdLineArgs.addToken(tzArg);
-		presentationArg = new StringToken("G", "PresentationGroup", "", 
-			TokenOptions.optSwitch, "");
-		cmdLineArgs.addToken(presentationArg);
-		transportIdArg = new StringToken("I", "TransportID", "", 
-			TokenOptions.optSwitch, "");
-		cmdLineArgs.addToken(transportIdArg);
-		lookupTypeArg = new StringToken("L", "Lookup Type", "", TokenOptions.optSwitch, "id");
+		cmdLineArgs.addToken(fmtArg);
+		cmdLineArgs.addToken(timezoneArg);
 		cmdLineArgs.addToken(lookupTypeArg);
-
-		outArg = new StringToken("", "time-series-IDs", "", 
-			TokenOptions.optArgument|TokenOptions.optRequired
-			|TokenOptions.optMultiple, "");
+		cmdLineArgs.addToken(presArg);
+		cmdLineArgs.addToken(transportIdArg);
 		cmdLineArgs.addToken(outArg);
 	}
 
-	protected void runApp()
-		throws Exception
+	@Override
+	protected void runApp() 
+		throws OutputFormatterException, DataConsumerException, 
+		DbIoException, BadTimeSeriesException, NoSuchObjectException, 
+		UnknownPlatformException, IOException 
 	{
-		setTimeZone(TimeZone.getTimeZone(tzArg.getValue()));
+		tz = TimeZone.getTimeZone(timezoneArg.getValue());
 
-		String pgName = presentationArg.getValue();
+		String pgName = presArg.getValue();
 		if (pgName != null && pgName.length() > 0)
 			setPresentationGroup(pgName);
 
-		setProperties(cmdLineArgs.getCmdLineProps());
+		this.props = cmdLineArgs.getCmdLineProps();
 
-		setOutputFormatter(formatterArg.getValue());
-		
 		consumer = new PipeConsumer();
 		consumer.open("", props);
-
+		outputFormatter = OutputFormatter.makeOutputFormatter(
+			fmtArg.getValue(), tz, presGroup, props);
+		
 		String s = sinceArg.getValue().trim();
 		Date since = convert2Date(s, false);
 		
@@ -156,9 +131,7 @@ public class OutputTs
 			try
 			{
 				CTimeSeries ts = theDb.makeTimeSeries(outTS);
-theDb.debug3("outputts, after makeTimeSeries dn='" + ts.getDisplayName() + "'");
 				timeSeriesDAO.fillTimeSeries(ts, since, until);
-theDb.debug3("outputts, after fillTimeSeries dn='" + ts.getDisplayName() + "'");
 				ctss.add(ts);
 			}
 			catch(NoSuchObjectException ex)
@@ -195,8 +168,6 @@ theDb.debug3("outputts, after fillTimeSeries dn='" + ts.getDisplayName() + "'");
 			else
 				p = Database.getDb().platformList.findPlatform(ttype, tidArg, now);
 		}
-//System.out.println("Platform for ttype='" + ttype + "' id='" + tidArg
-//+ "' = " + (p == null ? "null" : p.getDisplayName()));
 
 		byte[] dummyData = new byte[0];
 		RawMessage rawMsg = new RawMessage(dummyData);
@@ -208,23 +179,8 @@ theDb.debug3("outputts, after fillTimeSeries dn='" + ts.getDisplayName() + "'");
 		rawMsg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(0L));
 		
 		outputTimeSeries(rawMsg, ctss);
-	}
-
-
-	/**
-	 * Create the formatter for output. You should call setTimeZone,
-	 * setPresentationGroup and setProperties before calling this method.
-	 */
-	public void setOutputFormatter(String formatterName)
-		throws OutputFormatterException
-	{
-		outputFormatter = OutputFormatter.makeOutputFormatter(
-			formatterName, tz, presGroup, props);
-	}
-
-	public static void setTimeZone(TimeZone _tz)
-	{
-		tz = _tz;
+		
+		outputFormatter.shutdown();
 	}
 
 	public void setPresentationGroup(String groupName)
@@ -243,19 +199,14 @@ theDb.debug3("outputts, after fillTimeSeries dn='" + ts.getDisplayName() + "'");
 		}
 	}
 
-	public void setProperties(Properties props)
-	{
-		this.props = props;
-	}
-
-	public void outputTimeSeries(RawMessage rawMsg, Collection<CTimeSeries> ctss)
+	private void outputTimeSeries(RawMessage rawMsg, Collection<CTimeSeries> ctss)
 		throws OutputFormatterException, IOException,
 		DataConsumerException, UnknownPlatformException
 	{
 		DecodedMessage decmsg = new DecodedMessage(rawMsg);
 		for(CTimeSeries cts : ctss)
 		{
-			TimeSeries ts = TimeSeriesHelper.convert2DecodesTimeSeries(cts);
+			TimeSeries ts = TSUtil.convert2DecodesTimeSeries(cts);
 			Sensor sensor = ts.getSensor();
 			boolean toAdd = true;
 			if (presGroup != null)
@@ -280,30 +231,6 @@ theDb.debug3("outputts, after fillTimeSeries dn='" + ts.getDisplayName() + "'");
 		}
 		
 		outputFormatter.formatMessage(decmsg, consumer);
-	}
-
-	public void setConsumer(DataConsumer consumer)
-	{
-		this.consumer = consumer;
-	}
-
-	public void finalize()
-	{
-		shutdown();
-	}
-
-	public void shutdown()
-	{
-		if (outputFormatter != null)
-		{
-			outputFormatter.shutdown();
-			outputFormatter = null;
-		}
-		if (consumer != null)
-		{
-			consumer.close();
-			consumer = null;
-		}
 	}
 
 	public static Date convert2Date(String s, boolean isTo)
@@ -378,10 +305,4 @@ theDb.debug3("outputts, after fillTimeSeries dn='" + ts.getDisplayName() + "'");
 		}
 	}
 	
-	public static void main(String args[])
-		throws Exception
-	{
-		OutputTs tp = new OutputTs();
-		tp.execute(args);
-	}
 }

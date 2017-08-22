@@ -8,6 +8,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.6  2012/09/17 20:32:16  mmaloney
 *  dev
 *
@@ -96,7 +99,7 @@ public class TimeSeriesTable extends JTable
 			TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
 			String tsName = tsid != null ? tsid.getUniqueString() : cts.getDisplayName();
 			ColumnGroup input = 
-				new ColumnGroup(RunComputationsFrame.inputLabel + tsName);
+				new ColumnGroup(CompRunGuiFrame.inputLabel + tsName);
 			cm.getColumn((pos)*3+1).setMinWidth(30);
 			input.add(cm.getColumn((pos)*3+1));
 			cm.getColumn((pos)*3+2).setMinWidth(30);
@@ -115,7 +118,7 @@ public class TimeSeriesTable extends JTable
 			String tsName = tsid != null ? tsid.getUniqueString() : cts.getDisplayName();
 
 			ColumnGroup output = 
-						new ColumnGroup(RunComputationsFrame.outputLabel + tsName);
+						new ColumnGroup(CompRunGuiFrame.outputLabel + tsName);
 
 			//add columns  from outputs to column group and set minimum size
 			cm.getColumn((pos)*3+1).setMinWidth(30);
@@ -301,7 +304,7 @@ class TimeSeriesTableModel extends AbstractTableModel implements TableModel
 	{
 		if(column==0)
 		{
-			return RunComputationsFrame.dateTimeColumnLabel;
+			return CompRunGuiFrame.dateTimeColumnLabel;
 		}
 		int index = (column - 1)/3;
 		switch ((column-1)%3)

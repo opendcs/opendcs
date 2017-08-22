@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2017/05/31 21:32:13  mmaloney
+*  GUI improvements for HDB
+*
 *  Revision 1.5  2016/10/11 19:03:55  mmaloney
 *  Final GUI Prototype
 *
@@ -93,7 +96,7 @@ import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.TsdbDateFormat;
 import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.comprungui.RunComputationsFrame;
+import decodes.tsdb.comprungui.CompRunGuiFrame;
 import decodes.tsdb.groupedit.TsGroupSelectDialog;
 import decodes.util.DecodesSettings;
 
@@ -127,7 +130,7 @@ public class ComputationsEditPanel
 	private String appStrings[];
 	private Properties propCopy = null;
 	private boolean runCompGUIUp = false;
-	private RunComputationsFrame rcframe = null;
+	private CompRunGuiFrame rcframe = null;
 	ResourceBundle ceResources = null;
 	ResourceBundle genResources = null;
 	private Properties hiddenProps = new Properties();
@@ -1198,7 +1201,7 @@ public class ComputationsEditPanel
 		if (runCompGUIUp == false)
 		{
 			if (rcframe == null)
-				rcframe = new RunComputationsFrame(false);
+				rcframe = new CompRunGuiFrame(false);
 			rcframe.setVisible(true);
 			rcframe.setDb(CAPEdit.instance().theDb);
 			rcframe.setParent(this);

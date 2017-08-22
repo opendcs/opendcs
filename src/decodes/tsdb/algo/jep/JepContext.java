@@ -22,10 +22,10 @@ import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AW_AlgorithmBase;
+import decodes.util.TSUtil;
 
 /**
  * JepContext provides a link to the database and the algorithm.
@@ -229,7 +229,7 @@ public class JepContext
 		 && TextUtil.strCompareIgnoreCase(euAbbr, inputParm.timeSeries.getUnitsAbbr()) != 0)
 		{
 			// Need to convert the input param into the proper units.
-			TimeSeriesHelper.convertUnits(inputParm.timeSeries, euAbbr);
+			TSUtil.convertUnits(inputParm.timeSeries, euAbbr);
 		}
 	}
 }

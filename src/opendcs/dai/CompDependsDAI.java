@@ -1,6 +1,7 @@
 package opendcs.dai;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbComputation;
@@ -59,7 +60,7 @@ public interface CompDependsDAI
 	 * @return list of dependent computations
 	 * @throws DbIoException
 	 */
-	public ArrayList<DbKey> getCompIdsFor(ArrayList<TimeSeriesIdentifier> tsids, DbKey appId)
+	public ArrayList<DbKey> getCompIdsFor(Collection<TimeSeriesIdentifier> tsids, DbKey appId)
 		throws DbIoException;
 
 	/**

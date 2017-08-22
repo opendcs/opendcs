@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.2  2016/06/27 15:26:03  mmaloney
+ * Added ability to filter by Enabled flag. Code cleanup.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -18,8 +21,6 @@
  *
  */
 package decodes.tsdb;
-
-import ilex.util.Logger;
 
 import java.util.Iterator;
 import decodes.db.Constants;
@@ -43,6 +44,7 @@ public class CompFilter
 	protected boolean filterLowIds = false;
 	static public boolean doIntervalCheck = true;
 	protected boolean enabledOnly = false;
+	protected DbKey groupId = DbKey.NullKey;
 	
 	/**
 	 * Return true if this filter includes checks on computation parameters
@@ -72,6 +74,8 @@ public class CompFilter
 		if (filterLowIds)
 			sb.append("filterLowIds=" + filterLowIds + " ");
 		sb.append("doIntervalCheck=" + doIntervalCheck + " ");
+		if (!DbKey.isNull(groupId))
+			sb.append("groupId=" + groupId + " ");
 
 		return sb.toString();
 	}
@@ -160,16 +164,14 @@ public class CompFilter
 				}
 			}
 			if (!passes)
-			{
-//Logger.instance().debug3("CompFilter: DataType Failed for comp " + dbComp.getId() + ", " + dbComp.getName());
 				return false;
-			}
 		}
 		
 		if (enabledOnly && !dbComp.isEnabled())
 			return false;
-
-//Logger.instance().debug3("CompFilter: PASSES comp " + dbComp.getId() + ", " + dbComp.getName());
+		
+		if (!DbKey.isNull(groupId) && !groupId.equals(dbComp.getGroupId()))
+			return false;
 		return true;
 	}
 
@@ -228,5 +230,15 @@ public class CompFilter
 	public void setEnabledOnly(boolean enabledOnly)
 	{
 		this.enabledOnly = enabledOnly;
+	}
+
+	public void setGroupId(DbKey groupId)
+	{
+		this.groupId = groupId;
+	}
+
+	public DbKey getGroupId()
+	{
+		return groupId;
 	}
 }

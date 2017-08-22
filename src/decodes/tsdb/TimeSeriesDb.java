@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.12  2017/05/31 21:20:31  mmaloney
+*  Added rating method to the TSDB object in order to remove dependencies to CWMS
+*  from PythonAlgorithm.
+*
 *  Revision 1.11  2017/04/27 21:04:06  mmaloney
 *  Removed obsolete methods.
 *
@@ -86,7 +90,7 @@
 *  Revision 1.120  2013/02/20 15:07:24  gchen
 *  Enhance a new feature to allow to use the maxComputationRetries property to limit the number of retries for those failed computations. There will be unlimited retries if maxComputationRetires=0.
 *
-*  This feature will apply to Tempest DB, CWMS, and HDB.
+*  This feature will apply to CWMS, and HDB.
 *
 *  Revision 1.119  2012/11/28 23:00:31  mmaloney
 *  Added javadoc
@@ -245,8 +249,7 @@
 *  added getMediumIdForPlatform
 *
 *  Revision 1.69  2011/10/05 17:07:40  mmaloney
-*  moved determineTsdbVersion to this base-class setConnection method. This fixes a bug
-*  in TempestWeb where the version had not been set.
+*  moved determineTsdbVersion to this base-class setConnection method. 
 *
 *  Revision 1.68  2011/06/16 14:06:55  mmaloney
 *  move doQuery2 to base class
@@ -278,7 +281,6 @@
 *
 *  Revision 1.59  2011/02/07 18:34:34  mmaloney
 *  Got rid of PgTimeSeriesDb intermediate class.
-*  TempestTsdb now extends TimeSeriesDb directly.
 *
 *  Revision 1.58  2011/02/02 20:42:11  mmaloney
 *  Implement getValidPartChoices for group editor.
@@ -1385,14 +1387,6 @@ public abstract class TimeSeriesDb
 	/** Given int flags value, return char revision codes. */
 	public abstract String flags2RevisionCodes(int flags);
 	
-	/** Creates and return the CompFilter class used in the
-	 * Comp Edit Db Computation List. This CompFilter is used to filter
-	 * the Db Computations that will show up in the list */
-	public CompFilter getCompFilter()
-	{
-		return new CompFilter();
-	}
-
 	public int getDataSourceId(DbKey appId, DbComputation comp)
 		throws DbIoException
 	{

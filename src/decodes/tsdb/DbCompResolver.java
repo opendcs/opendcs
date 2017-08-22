@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2017/03/23 16:06:54  mmaloney
+*  downgrade debug
+*
 *  Revision 1.4  2016/12/16 14:35:45  mmaloney
 *  Enhanced resolver to allow triggering from a time series with unrelated location.
 *
@@ -30,6 +33,7 @@
 package decodes.tsdb;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Vector;
@@ -298,7 +302,7 @@ Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName(
 	 * @param comp the concrete cloned computation
 	 * @return the computation in the list if exact match is found
 	 */
-	private DbComputation searchResults(Vector<DbComputation> results, DbComputation comp)
+	private DbComputation searchResults(Collection<DbComputation> results, DbComputation comp)
 	{
 		for(DbComputation tc : results)
 		{
@@ -336,29 +340,33 @@ Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName(
 		return null;
 	}
 	
-	private void addToResults(Vector<DbComputation> results, DbComputation comp, CTimeSeries trigger)
+	public void addToResults(Collection<DbComputation> results, DbComputation comp, CTimeSeries trigger)
 	{
 		DbComputation already = searchResults(results, comp);
 		if (already != null)
-			already.getTriggeringRecNums().addAll(trigger.getTaskListRecNums());
+		{
+			if (trigger != null)
+				already.getTriggeringRecNums().addAll(trigger.getTaskListRecNums());
+		}
 		else // newly added computation
 		{
-			comp.getTriggeringRecNums().addAll(trigger.getTaskListRecNums());
+			if (trigger != null)
+				comp.getTriggeringRecNums().addAll(trigger.getTaskListRecNums());
 			results.add(comp);
 		}
 	}
 
-	private DbCompParm getFirstInput(DbComputation comp)
-	{
-		for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext();)
-		{
-			DbCompParm dcp = parmit.next();
-			if (dcp.isInput() && !dcp.getSiteDataTypeId().isNull())
-				return dcp;
-		}
-		// Shouldn't happen, the parm will have at least one input defined.
-		return null;
-	}
+//	private DbCompParm getFirstInput(DbComputation comp)
+//	{
+//		for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext();)
+//		{
+//			DbCompParm dcp = parmit.next();
+//			if (dcp.isInput() && !dcp.getSiteDataTypeId().isNull())
+//				return dcp;
+//		}
+//		// Shouldn't happen, the parm will have at least one input defined.
+//		return null;
+//	}
 	
 	/**
 	 * Returns true if the two comps represent the same clone. Used in the above

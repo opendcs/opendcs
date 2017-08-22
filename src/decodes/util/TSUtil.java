@@ -2,43 +2,39 @@
  * $Id$
  * 
  * $Log$
- * Revision 1.4  2014/10/07 13:04:56  mmaloney
- * dev
- *
  * 
- * Copyright 2007 Ilex Engineering, Inc. - All Rights Reserved.
- * No part of this file may be duplicated in either hard-copy or electronic
- * form without specific written permission.
+ * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 */
-package decodes.tsdb;
+package decodes.util;
 
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
-
 import decodes.db.Database;
 import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
 import decodes.decoder.TimeSeries;
 import decodes.sql.DbKey;
-import decodes.util.DecodesException;
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.IntervalCodes;
+import decodes.tsdb.VarFlags;
 
-/**
-Methods for manipulating CTimeSeries and DECODES TimeSeries objects.
-*/
-public class TimeSeriesHelper
+public class TSUtil
 {
-	/**
-	 * DECODES TimeSeries requires a sensor number that is supposed to be
-	 * unique within a platform. When we convert a TSDB CTimeSeries to a 
-	 * DECODES time series, just give it the next sequence value.
-	 */
-	private static int sensorNumberSequence = 0;
+	// Assign decodes sensor #s to ascending sequence.
+	private static int seqSensorNum = 0;
 	
 	/**
-	 * Converts a DECODES TimeSeries into a TSDB CTimeSeries.
+	 * Convert a DECODES ts to a TSDB CTimeSeries.
+	 * @param ts the decodes ts
+	 * @param sdi the site-datatype-id
+	 * @param tableSelector
+	 * @param interval
+	 * @param mustWrite
+	 * @param sourceId
+	 * @return
 	 */
 	public static CTimeSeries convert2CTimeSeries(TimeSeries ts, DbKey sdi, 
 		String tableSelector, String interval, boolean mustWrite, int sourceId)
@@ -73,34 +69,14 @@ public class TimeSeriesHelper
 	}
 
 	/**
-	 * Converts a TSDB CTimeSeries object into a DECODES TimeSeries.
-	 */
-	public static TimeSeries convert2DecodesTimeSeries(CTimeSeries cts)
-	{
-		TimeSeries ts = new TimeSeries(sensorNumberSequence++);
-		ts.setUnits(cts.getUnitsAbbr());
-		ts.setTimeInterval(IntervalCodes.getIntervalSeconds(cts.getInterval()));
-		ts.setSensor(new DecodesSensorAdapter(cts));
-
-		int n=cts.size();
-		for(int i=0; i<n; i++)
-		{
-			ts.addSample(cts.sampleAt(i));
-		}
-		return ts;
-	}
-
-	/**
-	 * Converts time series values when the CTimeSeries eng units
-	 * does not match with the Data Descriptor eng units
-	 * 
-	 * @param cts Time Series values
-	 * @param newUnits units from Data Descriptor
+	 * Convert units of a CTimeSeries.
+	 * Does nothing if units already match.
+	 * @param cts the CTimeSeries
+	 * @param newUnits the required units
 	 */
 	public static void convertUnits(CTimeSeries cts, String newUnits)
 	{
-		if (TextUtil.strEqualIgnoreCase(cts.getUnitsAbbr(), newUnits)
-		 || newUnits == null)
+		if (TextUtil.strEqualIgnoreCase(cts.getUnitsAbbr(), newUnits) || newUnits == null)
 			return;
 		if (cts.getUnitsAbbr() == null)
 		{
@@ -108,10 +84,8 @@ public class TimeSeriesHelper
 			return;
 		}
 
-		EngineeringUnit euOld =	EngineeringUnit.getEngineeringUnit(
-			cts.getUnitsAbbr());
-		EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(
-			newUnits);
+		EngineeringUnit euOld =	EngineeringUnit.getEngineeringUnit(cts.getUnitsAbbr());
+		EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(newUnits);
 		UnitConverter converter = null;
 		converter = Database.getDb().unitConverterSet.get(euOld, euNew);
 		if (converter == null)
@@ -150,4 +124,23 @@ public class TimeSeriesHelper
 		cts.setUnitsAbbr(newUnits);
 	}
 
+	/**
+	 * Convert CTimeSeries to DECODES ts
+	 * @param cts
+	 * @return
+	 */
+	public static TimeSeries convert2DecodesTimeSeries(CTimeSeries cts)
+	{
+		TimeSeries ts = new TimeSeries(seqSensorNum++);
+		ts.setUnits(cts.getUnitsAbbr());
+		ts.setTimeInterval(IntervalCodes.getIntervalSeconds(cts.getInterval()));
+		ts.setSensor(new DecodesSensorCnvt(cts));
+
+		int n=cts.size();
+		for(int i=0; i<n; i++)
+		{
+			ts.addSample(cts.sampleAt(i));
+		}
+		return ts;
+	}
 }

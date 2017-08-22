@@ -23,7 +23,7 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 	static BooleanToken NoCompFilterToken
 		= new BooleanToken("L", "Disable Computation List filter (default=on)",
 			"", TokenOptions.optSwitch, false);
-	RunComputationsFrame myframe;
+	CompRunGuiFrame myframe;
 	
 	/** Constructor */
 	public RunComputationsFrameTester()
@@ -38,7 +38,7 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 	{
 		getMyLabelDescriptions();
 		
-		myframe = new RunComputationsFrame(true);
+		myframe = new CompRunGuiFrame(true);
 		myframe.setRunCompFrametester(this);
 		myframe.setVisible(true);
 		myframe.setDb(this.theDb);
@@ -88,7 +88,7 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 	 * Get the RunComputationsFrame
 	 * @return runComputationFrame
 	 */
-	public RunComputationsFrame getFrame() 
+	public CompRunGuiFrame getFrame() 
 	{ 
 		return myframe; 
 	}

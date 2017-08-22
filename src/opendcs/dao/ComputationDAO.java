@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.10  2017/07/13 20:57:47  mmaloney
+* HDB-397, when listing for GUI, only add a single copy of each computation.
+*
 * Revision 1.9  2017/03/03 19:21:33  mmaloney
 * Bugfix - it was trying to delete CP_COMPUTATION record before CP_COMP_DEPENDS
 * record, which in pre DB 14 version is defined as a foreign key.
@@ -358,7 +361,7 @@ public class ComputationDAO
 			dcp.setDataTypeId(dtid);
 			dcp.setDataType(DataType.getDataType(dtid));
 			
-			/* Legacy: First Tempest implementation had groupd_id in the parm. */
+			/* Legacy: First implementation had groupd_id in the parm. */
 			if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_6)
 				comp.setGroupId(DbKey.createDbKey(rs, 9));
 		}
@@ -519,6 +522,7 @@ public class ComputationDAO
 		// Build the query for NON group comps.
 		if (where.length() > 0)
 			where.append(" and ");
+		
 		where.append("(cmp.group_id is null or cmp.group_id = -1)");
 		if (!DbKey.isNull(filter.getSiteId())
 		 || !DbKey.isNull(filter.getDataTypeId())
@@ -551,42 +555,50 @@ public class ComputationDAO
 		}
 	
 		// Get all non-group computations via where clause using all filter
-		String q = "select " + columns + " from " + tables;
-		if (where.length() > 0)
-			q = q + " where " + where.toString();
-		q = q + " order by cmp.computation_id";
-		try
+		if (DbKey.isNull(filter.getGroupId()))
 		{
-			debug3("Getting NON-group comps with query '" + q + "'");
-			ResultSet rs = doQuery(q);
-			int n = 0;
-			DbKey lastCompId = DbKey.NullKey;
-			while(rs.next())
+			String q = "select " + columns + " from " + tables;
+			if (where.length() > 0)
+				q = q + " where " + where.toString();
+			q = q + " order by cmp.computation_id";
+			try
 			{
-				// A computation may have multiple params that pass the filter.
-				// Only add a given computation to the list once.
-				DbKey compId = DbKey.createDbKey(rs, 1);
-				if (compId.equals(lastCompId))
-					continue;
-				
-				ret.add(
-					new ComputationInList(compId, rs.getString(2),
-						DbKey.createDbKey(rs, 3), DbKey.createDbKey(rs, 5), 
-						TextUtil.str2boolean(rs.getString(6)), rs.getString(4)));
-				n++;
-				lastCompId = compId;
+				debug3("Getting NON-group comps with query '" + q + "'");
+				ResultSet rs = doQuery(q);
+				int n = 0;
+				DbKey lastCompId = DbKey.NullKey;
+				while(rs.next())
+				{
+					// A computation may have multiple params that pass the filter.
+					// Only add a given computation to the list once.
+					DbKey compId = DbKey.createDbKey(rs, 1);
+					if (compId.equals(lastCompId))
+						continue;
+					
+					ret.add(
+						new ComputationInList(compId, rs.getString(2),
+							DbKey.createDbKey(rs, 3), DbKey.createDbKey(rs, 5), 
+							TextUtil.str2boolean(rs.getString(6)), rs.getString(4)));
+					n++;
+					lastCompId = compId;
+				}
+				debug3("" + n + " non-group computations retrieved.");
 			}
-			debug3("" + n + " non-group computations retrieved.");
-		}
-		catch(Exception ex)
-		{
-			throw new DbIoException("CompuationDao.compEditList(): Error in query '" + q + "': " + ex);
+			catch(Exception ex)
+			{
+				throw new DbIoException("CompuationDao.compEditList(): Error in query '" + q + "': " + ex);
+			}
 		}
 		
 
 		// Now get all group comps completely. The number should be small.
-		q = "select " + compTableColumns + " from CP_COMPUTATION "
-			+ "where (GROUP_ID is not null and GROUP_ID != -1) ";
+		String q = "select " + compTableColumns + " from CP_COMPUTATION "
+			+ "where ";
+		if (DbKey.isNull(filter.getGroupId())) // accept any comp with a group
+			q = q + " (GROUP_ID is not null and GROUP_ID != -1) ";
+		else // specific group is requested
+			q = q + " GROUP_ID = " + filter.getGroupId() + " ";
+			
 		if (groupWhere.length() > 0)
 			q = q + " and " + groupWhere.toString();
 

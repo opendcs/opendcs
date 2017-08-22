@@ -11,6 +11,9 @@
  *  For more information contact: info@ilexeng.com
  *
  *  $Log$
+ *  Revision 1.3  2014/05/30 13:15:35  mmaloney
+ *  dev
+ *
  *  Revision 1.2  2014/05/28 13:09:31  mmaloney
  *  dev
  *
@@ -71,12 +74,10 @@ import java.util.Iterator;
 import java.util.Properties;
 
 import opendcs.dai.TimeSeriesDAI;
-
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.UserAuthFile;
-
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.decoder.DecodedMessage;
@@ -90,12 +91,12 @@ import decodes.db.TransportMedium;
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
 import decodes.util.DecodesSettings;
+import decodes.util.TSUtil;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesHelper;
 
 /**
  * HdbConsumer writes data to the USBR Hydrologic Database.
@@ -248,7 +249,7 @@ public class HdbConsumer extends DataConsumer
 					continue;
 				}
 				
-				CTimeSeries cts = TimeSeriesHelper.convert2CTimeSeries(
+				CTimeSeries cts = TSUtil.convert2CTimeSeries(
 					ts,                    // the DECODES Time Series
 					hdbTsId.getSdi(),      // unique Time Series key
 					hdbTsId.getPart(HdbTsId.TABSEL_PART), // "R_" or "M_"

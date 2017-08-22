@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2017/07/06 20:32:59  mmaloney
+ * dev
+ *
  * Revision 1.4  2017/07/06 20:31:45  mmaloney
  * dev
  *
@@ -34,8 +37,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Properties;
 import java.util.TimeZone;
 
 import opendcs.dai.CompDependsDAI;
@@ -49,6 +53,7 @@ import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
+import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import decodes.consumer.DataConsumerException;
 import decodes.consumer.OutputFormatter;
@@ -61,19 +66,21 @@ import decodes.db.DataPresentation;
 import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.PresentationGroup;
+import decodes.db.TransportMedium;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
 import decodes.util.CmdLineArgs;
+import decodes.util.TSUtil;
 
 /**
  * This class is the main for the Test Computations Frame. 
  */
-public class CompRunCmd extends TsdbAppTemplate
+public class CompExec extends TsdbAppTemplate
 {
-	private String dateSpec = "YYYY/MM/dd-HH:mm:ss";
+	private String dateSpec = "yyyy/MM/dd-HH:mm:ss";
 	private StringToken tsidToken = new StringToken("T", "TSID(s)", "", 
 		TokenOptions.optSwitch|TokenOptions.optMultiple, null);
 	private StringToken groupIdToken = new StringToken("G", "Group ID", "", 
@@ -95,7 +102,7 @@ public class CompRunCmd extends TsdbAppTemplate
 	private StringToken tzArg = new StringToken("Z", "Time Zone", "", 
 		TokenOptions.optSwitch, "UTC");
 
-	private ArrayList<TimeSeriesIdentifier> tsids = new ArrayList<TimeSeriesIdentifier>();
+	private HashSet<TimeSeriesIdentifier> tsids = new HashSet<TimeSeriesIdentifier>();
 	private ArrayList<DbComputation> specifiedComps = new ArrayList<DbComputation>();
 	private Date since = null, until = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat(dateSpec);
@@ -105,9 +112,10 @@ public class CompRunCmd extends TsdbAppTemplate
 	private PresentationGroup presGrp = null;
 	private OutputFormatter outputFormatter = null;
 	private CompDependsDAI compDependsDAO = null;
+	private CpCompDependsUpdater compDependsUpdater = null;
 
 	/** Constructor */
-	public CompRunCmd()
+	public CompExec()
 	{
 		super(null);
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -115,7 +123,7 @@ public class CompRunCmd extends TsdbAppTemplate
 	
 	/** Runs the GUI */
 	public void runApp()
-		throws DbIoException
+		throws Exception
 	{
 		timeSeriesDAO = theDb.makeTimeSeriesDAO();
 		computationDAO = theDb.makeComputationDAO();
@@ -126,13 +134,16 @@ public class CompRunCmd extends TsdbAppTemplate
 		if (ctrlFileToken.getValue() != null)
 			readControlFile(ctrlFileToken.getValue());
 		for(int idx = 0; idx < tsidToken.NumberOfValues(); idx++)
-			loadTsid(tsidToken.getValue(idx));
+			if (tsidToken.getValue(idx) != null)
+				loadTsid(tsidToken.getValue(idx));
 
 		for(int idx = 0; idx < groupIdToken.NumberOfValues(); idx++)
-			loadGroup(groupIdToken.getValue(idx));
+			if (groupIdToken.getValue(idx) != null)
+				loadGroup(groupIdToken.getValue(idx));
 
 		for(int idx = 0; idx < compIdToken.NumberOfValues(); idx++)
-			loadComp(compIdToken.getValue(idx));
+			if (compIdToken.getValue(idx) != null)
+				loadComp(compIdToken.getValue(idx));
 		
 		if (sinceToken.getValue() != null)
 		{
@@ -189,6 +200,9 @@ public class CompRunCmd extends TsdbAppTemplate
 
 		}
 		
+		info("" + specifiedComps.size() + " computations and "+ tsids.size()
+			+ " time series IDs supplied.");
+		
 		// Now all arguments are read either from cmd line or control file.
 		if (tsids.size() == 0 && specifiedComps.size() == 0)
 		{
@@ -198,8 +212,24 @@ public class CompRunCmd extends TsdbAppTemplate
 		else if (specifiedComps.size() > 0 && tsids.size() == 0)
 		{
 			// Comps but no TSIDs are specified. Find all possible inputs for the named comps.
+			info("Comps but no TSIDs supplied, will use all possible triggers.");
 			for(DbComputation comp : specifiedComps)
-				tsids.addAll(compDependsDAO.getTriggersFor(comp));
+			{
+				comp.setEnabled(true);
+				tsids.addAll(computeTriggersFor(comp));
+			}
+			info("After evaluating triggers, we have " + tsids.size() + " TSIDs.");
+		}
+		else if (specifiedComps.size() == 0 && tsids.size() > 0)
+		{
+			// Determine the possible enabled computations for the specified TSIDs
+			// use CP_COMP_DEPENDS.
+			for(DbKey compId : compDependsDAO.getCompIdsFor(tsids, DbKey.NullKey))
+				specifiedComps.add(computationDAO.getComputationById(compId));
+		}
+		else
+		{
+			// both comps and TSIDs are specified. Nothing to do.
 		}
 		
 		compDependsDAO.close();
@@ -210,7 +240,6 @@ public class CompRunCmd extends TsdbAppTemplate
 		DataCollection theData = new DataCollection();
 		
 		// Sort so that, as we go through the TSIDs, it's easy to detect duplicates.
-		Collections.sort(tsids);
 		TimeSeriesIdentifier lastTsid = null;
 		for(TimeSeriesIdentifier tsid : tsids)
 		{
@@ -220,7 +249,14 @@ public class CompRunCmd extends TsdbAppTemplate
 			try
 			{
 				cts = timeSeriesDAO.makeTimeSeries(tsid);
-				timeSeriesDAO.fillTimeSeries(cts, since, until);
+				int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
+				info("Read tsid '" + tsid.getUniqueString() + "' since="
+					+ (since==null ? "null" : sdf.format(since)) + ", until="
+					+ (until==null ? "null" : sdf.format(until))
+					+ ", result=" + n + " values.");
+				// Set the flag so that every value read is treated as a trigger.
+				for(int idx = 0; idx < n; idx++)
+					VarFlags.setWasAdded(cts.sampleAt(idx));
 				theData.addTimeSeries(cts);
 			}
 			catch (Exception ex)
@@ -236,17 +272,30 @@ public class CompRunCmd extends TsdbAppTemplate
 		// The resolver will make concrete clones and provide a complete list of all computations
 		// that are possible with the given input data. It will also remove dups.
 		DbCompResolver resolver = new DbCompResolver(theDb);
-		DbComputation[] resolved = resolver.resolve(theData);
+//		DbComputation[] resolved = resolver.resolve(theData);
 
 		// If comps were specified on cmd line or ctrl file, filter the list by the specified ones.
 		ArrayList<DbComputation> toRun = new ArrayList<DbComputation>();
-		for(DbComputation comp2run : resolved)
+		for(DbComputation comp : specifiedComps)
 		{
+			if (comp.hasGroupInput())
+			{
+				for (TimeSeriesIdentifier tsid : computeTriggersFor(comp))
+				{
+					DbComputation concrete = DbCompResolver.makeConcrete(theDb, tsid, comp, false);
+					if (concrete != null)
+						// The resolver's addToResults method gets rid of duplicates.
+						resolver.addToResults(toRun, concrete, null);
+				}
+			}
+			else // non-group comp, no need to make concrete.
+				toRun.add(comp);
+			
 			if (specifiedComps.size() > 0)
 			{
 				boolean found = false;
 				for(DbComputation specifiedComp : specifiedComps)
-					if (specifiedComp.getKey().equals(comp2run))
+					if (specifiedComp.getKey().equals(comp))
 					{
 						found = true;
 						break;
@@ -254,7 +303,7 @@ public class CompRunCmd extends TsdbAppTemplate
 				if (!found)
 					continue;
 			}
-			toRun.add(comp2run);
+			toRun.add(comp);
 		}
 		
 		if (!quietToken.getValue())
@@ -269,12 +318,14 @@ public class CompRunCmd extends TsdbAppTemplate
 			if (x == null || !(x.toLowerCase().startsWith("y")))
 				System.exit(0);
 		}
+else System.err.println("quietmode=true");
 		
 		// Execute the computations
 		for(DbComputation comp2run : toRun)
 		{
 			try
 			{
+				info("Executing computation " + comp2run.getName());
 				comp2run.prepareForExec(theDb);
 				comp2run.apply(theData, theDb);
 			}
@@ -292,6 +343,9 @@ public class CompRunCmd extends TsdbAppTemplate
 			RawMessage rawMsg = new RawMessage(dummyData);
 			rawMsg.setPlatform(null);
 			rawMsg.setTransportMedium(null);
+			String ttype="site";
+			String tidArg="unknown";
+			rawMsg.setTransportMedium(new TransportMedium(null, ttype, tidArg));
 			rawMsg.setTimeStamp(new Date());
 			rawMsg.setHeaderLength(0);
 			rawMsg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(new Date()));
@@ -311,17 +365,57 @@ public class CompRunCmd extends TsdbAppTemplate
 		else // Else write directly to database.
 		{
 			for(CTimeSeries cts : theData.getAllTimeSeries())
-				if (cts.hasAddedOrDeleted())
+			{
+				int numChanges = 0;
+				Date earliest=null, latest=null;
+				for(int idx = 0; idx < cts.size(); idx++)
 				{
+					TimedVariable tv = cts.sampleAt(idx);
+					if (VarFlags.mustWrite(tv) || VarFlags.mustDelete(tv))
+					{
+						numChanges++;
+						if (earliest == null)
+							earliest = tv.getTime();
+						latest = tv.getTime();
+					}
+				}
+				
+				if (numChanges > 0)
+				{
+					String s = "Writing " + numChanges + " values for time series " 
+						+ cts.getTimeSeriesIdentifier().getUniqueString()
+						+ ", earliest=" + sdf.format(earliest) + ", latest=" + sdf.format(latest);
+					info(s);
+					if (!quietToken.getValue())
+						System.out.println(s);
 					try { timeSeriesDAO.saveTimeSeries(cts); }
 					catch(BadTimeSeriesException ex)
 					{
 						warning("Cannot save time series '" + cts.getTimeSeriesIdentifier() + "': " + ex);
 					}
 				}
-
+			}
 		}
 		timeSeriesDAO.close();
+	}
+	
+	private ArrayList<TimeSeriesIdentifier> computeTriggersFor(DbComputation comp)
+		throws Exception
+	{
+		if (compDependsUpdater == null)
+		{
+			compDependsUpdater = 
+				new CpCompDependsUpdater()
+				{
+					protected void writeToAdd2Db(DbKey compId2Delete) {}
+				};
+		}
+		compDependsUpdater.evalComp(comp);
+		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
+		for(CpCompDependsRecord ccdr : compDependsUpdater.getToAdd())
+			ret.add(timeSeriesDAO.getTimeSeriesIdentifier(ccdr.getTsKey()));
+		
+		return ret;
 	}
 	
 	
@@ -343,14 +437,15 @@ public class CompRunCmd extends TsdbAppTemplate
 		cmdLineArgs.addToken(tzArg);
 		cmdLineArgs.addToken(quietToken);
 
-		appNameArg.setDefaultValue("comprun");
+		appNameArg.setDefaultValue("utility");
 	}
 	
 	/** Main method. Used when running from the rumcomp script */
 	public static void main(String[] args)
 	{
-		DecodesInterface.setGUI(true);
-		CompRunCmd app = new CompRunCmd();
+		DecodesInterface.setGUI(false);
+		DecodesInterface.silent = true;
+		CompExec app = new CompExec();
 		try{ app.execute(args); }
 		catch(Exception ex)
 		{
@@ -496,7 +591,7 @@ public class CompRunCmd extends TsdbAppTemplate
 		DecodedMessage decmsg = new DecodedMessage(rawMsg);
 		for(CTimeSeries cts : ctss)
 		{
-			TimeSeries ts = TimeSeriesHelper.convert2DecodesTimeSeries(cts);
+			TimeSeries ts = TSUtil.convert2DecodesTimeSeries(cts);
 			Sensor sensor = ts.getSensor();
 			boolean toAdd = true;
 			if (presGrp != null)
@@ -520,7 +615,9 @@ public class CompRunCmd extends TsdbAppTemplate
 				decmsg.addTimeSeries(ts);
 		}
 		
-		outputFormatter.formatMessage(decmsg, new PipeConsumer());
+		PipeConsumer pipeConsumer = new PipeConsumer();
+		pipeConsumer.open("", new Properties());
+		outputFormatter.formatMessage(decmsg, pipeConsumer);
 	}
 
 }

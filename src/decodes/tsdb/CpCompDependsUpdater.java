@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.13  2017/05/03 17:02:30  mmaloney
+*  Downgrade nuisance debugs.
+*
 *  Revision 1.12  2017/03/30 21:07:27  mmaloney
 *  Refactor CompEventServer to use PID if monitor==true.
 *
@@ -824,7 +827,7 @@ public class CpCompDependsUpdater
 	}
 
 	/** Called with an enabled computation */
-	private void evalComp(DbComputation comp)
+	public void evalComp(DbComputation comp)
 	{
 		info("Evaluating dependencies for comp " + comp.getId() + " " + comp.getName());
 		if (!doingFullEval)
@@ -861,7 +864,7 @@ public class CpCompDependsUpdater
 					DbCompParm parm = parmit.next();
 					if (!parm.isInput())
 						continue;
-					// short-cut: for CWMS and Tempest, the SDI in the parm _is_
+					// short-cut: for CWMS, the SDI in the parm _is_
 					// the time-series ID. so we don't have to look it up.
 					DbKey tsKey = Constants.undefinedId;
 					DataType dt = parm.getDataType();
@@ -1057,6 +1060,7 @@ public class CpCompDependsUpdater
 
 	private boolean fullEval()
 	{
+		info("fullEval()");
 		refreshCaches();
 		
 		// Set the doingFullEval flag which tells evalComp to simply
@@ -1112,12 +1116,11 @@ info(q);
 		return null;
 	}
 	
-	private void addCompDepends(DbKey tsKey, DbKey compId)
+	protected void addCompDepends(DbKey tsKey, DbKey compId)
 	{
 		CpCompDependsRecord rec = new CpCompDependsRecord(tsKey, compId);
 debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAdd.size());
 		toAdd.add(rec);
-debug("   after, toAdd.size=" + toAdd.size());
 	}
 	
 	private void clearScratchpad()
@@ -1137,7 +1140,7 @@ debug("   after, toAdd.size=" + toAdd.size());
 		}
 		
 	}
-	private void writeToAdd2Db(DbKey compId2Delete)
+	protected void writeToAdd2Db(DbKey compId2Delete)
 		throws DbIoException
 	{
 		if (toAdd.size() == 0)
@@ -1299,6 +1302,11 @@ info(q);
 					try { pw.close(); } catch(Exception ex) {}
 			}
 		}
+	}
+
+	public HashSet<CpCompDependsRecord> getToAdd()
+	{
+		return toAdd;
 	}
 
 }

@@ -19,7 +19,7 @@ public class TsdbDatabaseVersion
 	public static final int VERSION_4 = 4;
 
 	// Version 5:
-	// - Supports groups in tempest only. Several new tables.
+	// - Supports groups. Several new tables.
 	public static final int VERSION_5 = 5;
 	
 	/**
@@ -50,7 +50,6 @@ public class TsdbDatabaseVersion
 	 * - New table CP_COMP_DEPENDS_SCRATCHPAD for use by the new Java
 	 *   daemon to keep CP_COMP_DEPENDS up to date.
 	 * - For HDB DATATYPE_ID and DELTA_T_UNITS are added to CP_COMP_TS_PARM
-	 *   (tempest already had this update at an earlier version)
 	 * - New table CP_DEPENDS_NOTIFY for the new daemon
 	 * - New HDB Table CP_TS_ID
 	 * - CP_COMP_TS_PARM now has SITE_ID for future development.

@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.11  2017/03/31 16:21:20  mmaloney
+* Fix for duplicate site names.
+*
 * Revision 1.10  2017/03/23 16:08:04  mmaloney
 * HDB has many orphan site names - so no warning on this.
 *
@@ -64,9 +67,6 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.util.DecodesSettings;
 
-/**
-This class is a helper to the TempestTsdb for reading & writing sites & names.
-*/
 public class SiteDAO
 	extends DaoBase 
 	implements SiteDAI

@@ -27,11 +27,11 @@ import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesHelper;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
+import decodes.util.TSUtil;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -595,7 +595,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		{
 			debug3("Saving " + tsid.getUniqueString() + ", from cp units="
 				+ ts.getUnitsAbbr() + ", required=" + tsid.getStorageUnits());
-			TimeSeriesHelper.convertUnits(ts, tsid.getStorageUnits());
+			TSUtil.convertUnits(ts, tsid.getStorageUnits());
 		}
 
 		// If at least one sample is marked TO_WRITE, call doSave.

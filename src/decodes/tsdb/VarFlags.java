@@ -11,11 +11,14 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2015/08/31 00:37:39  mmaloney
+*  Added mask definition
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
 *  Revision 1.2  2010/08/20 19:19:31  mmaloney
-*  Code to handle NO-OVERWRITE feature in Tempest and CWMS.
+*  Code to handle NO-OVERWRITE feature in CWMS.
 *
 *  Revision 1.1  2008/04/04 18:21:06  cvs
 *  Added legacy code to repository

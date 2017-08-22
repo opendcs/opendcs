@@ -15,8 +15,6 @@ import java.util.TimeZone;
 
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
-
-
 import ilex.cmdline.IntegerToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
@@ -39,6 +37,7 @@ import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
+import decodes.util.TSUtil;
 
 public class CompTest extends TsdbAppTemplate
 {
@@ -142,7 +141,7 @@ public class CompTest extends TsdbAppTemplate
 		DecodedMessage decmsg = new DecodedMessage(rawMsg);
 		for(CTimeSeries cts : ctss)
 		{
-			TimeSeries ts = TimeSeriesHelper.convert2DecodesTimeSeries(cts);
+			TimeSeries ts = TSUtil.convert2DecodesTimeSeries(cts);
 			Sensor sensor = ts.getSensor();
 			boolean toAdd = true;
 			if (presGroup != null)

@@ -1,6 +1,12 @@
-/**
+/*
+ * Open source software by Cove Software, LLC.
+ * Prepared under contract to the U.S. Government.
+ * Copyright 2014 United States Government, U.S. Geological Survey
  * 
- */
+ * $Id$
+ * 
+ * $Log$
+*/
 package lrgs.iridiumsbd;
 
 /**

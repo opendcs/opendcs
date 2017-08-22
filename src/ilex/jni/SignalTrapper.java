@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2008/10/14 12:04:39  mjmaloney
 *  dev
 *
@@ -30,8 +33,12 @@
 */
 package ilex.jni;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.ListIterator;
+
 import ilex.util.Logger;
 
 /**
@@ -125,10 +132,45 @@ public class SignalTrapper
 
 	static // Static initializer to load native library
 	{
-		String libname = "ilexjni." + OsSuffix.getOsSuffix();
+		String libname = "ilexjni." + getOsSuffix();
 		Logger.instance().info("Loading native library " + libname);
 		System.loadLibrary(libname);
 	}
+	
+	public static String getOsSuffix()
+	{
+		String osn = System.getProperty("os.name");
+		if (osn == null)
+			return "unknown";
+		osn = osn.toLowerCase();
+		if (osn.startsWith("win"))
+			return "win";
+		else if (osn.startsWith("sunos"))
+			return "sol10";
+		try
+		{
+			Process uname = Runtime.getRuntime().exec("uname -rp");
+			InputStreamReader isr = new InputStreamReader(
+				uname.getInputStream());
+			BufferedReader bis = new BufferedReader(isr);
+			String line = bis.readLine();
+
+			// RHEL3 is Kernel version 2.4.xxxxx
+			if (line.startsWith("2.4")) 
+				return "el3.32";
+			int bits = 32;
+			String n = System.getProperty("sun.arch.data.model");
+			if (n != null && n.contains("64"))
+				bits = 64;
+			int rhelVersion = line.contains("el5") ? 5 : 4;
+			return "el" + rhelVersion + "." + bits;
+		}
+		catch(IOException ex)
+		{
+			return "unknown";
+		}
+	}
+
 }
 
 class HandlerMapEntry

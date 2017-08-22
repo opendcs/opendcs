@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.13  2017/05/04 12:19:12  mmaloney
+* Fixed recursion bug.
+*
 * Revision 1.12  2017/05/03 16:59:46  mmaloney
 * Guard against circular references when reading sub groups.
 *
@@ -67,9 +70,6 @@ import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsdbDatabaseVersion;
 
-/**
-This class is a helper to the TempestTsdb for reading & writing sites & names.
-*/
 public class TsGroupDAO
 	extends DaoBase 
 	implements TsGroupDAI

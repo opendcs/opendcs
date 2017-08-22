@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.1  2012/10/06 12:21:21  mmaloney
 * Created.
 *
@@ -32,8 +35,8 @@ import decodes.util.CmdLineArgs;
 Disable all computations for a given loading application.
 This is used by regression tests so that a single test can be
 run at a time.
-In HDB a simple SQL statement suffices for this. For CWMS and 
-Tempest, it must be done here from Java so that the CP_COMP_DEPENDS
+In HDB a simple SQL statement suffices for this. For CWMS 
+it must be done here from Java so that the CP_COMP_DEPENDS
 gets updated properly.
 This program also clears the cp_comp_tasklist of any outstanding records
 for the specified application ID.
