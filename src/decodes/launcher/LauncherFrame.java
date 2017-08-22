@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.11  2017/06/13 20:19:32  mmaloney
+ * dev
+ *
  * Revision 1.10  2017/06/13 20:02:33  mmaloney
  * dev
  *
@@ -116,7 +119,7 @@ import decodes.platwiz.PlatformWizard;
 import decodes.routmon2.RoutingMonitor;
 import decodes.tsdb.algoedit.AlgorithmWizard;
 import decodes.tsdb.compedit.CAPEdit;
-import decodes.tsdb.comprungui.RunComputationsFrame;
+import decodes.tsdb.comprungui.CompRunGuiFrame;
 import decodes.tsdb.comprungui.RunComputationsFrameTester;
 import decodes.tsdb.groupedit.TsDbGrpEditorFrame;
 import decodes.tsdb.groupedit.TsListMain;
@@ -176,7 +179,7 @@ public class LauncherFrame extends JFrame
 	WindowAdapter logViewerReaper;
 	TopFrame tseditFrame;// Limit Status Button
 	WindowAdapter tseditReaper;
-	RunComputationsFrame runComputationsFrame;// Test Computations Button
+	CompRunGuiFrame runComputationsFrame;// Test Computations Button
 	WindowAdapter runComputationsReaper;
 	TopFrame compEditFrame;// Computations Button
 	WindowAdapter compEditReaper;
@@ -780,7 +783,6 @@ public class LauncherFrame extends JFrame
 		fullPanel.setLayout(fullLayout);
 		fullPanel.add(decodesButtonPanel, new GridBagConstraints(0, 0, 1, 1, .5, .5,
 			GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
-		// Verify if user install the Tempest Tsdb components
 		if (tsdbType != TsdbType.NONE)
 		{
 			fullPanel.add(tsdbButtonPanel, new GridBagConstraints(0, 1, 1, 1, .5, .5,

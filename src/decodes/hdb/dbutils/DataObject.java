@@ -2,8 +2,12 @@
 package decodes.hdb.dbutils;
 
 // include all necessary imports here
-import java.io.*;
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Properties;
 
 
 /**  Public class DataObject is intended to hold in a hashtable hash 
@@ -69,6 +73,7 @@ public class DataObject
     
       // put the uppercase of the _key String and the value into the has table
       hash.put(_key.toUpperCase(), _value);
+//System.out.println("Adding key '" + _key.toUpperCase() + "' with value=" + _value);
     }  // end of put method
 
 

@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.23  2017/06/13 20:19:32  mmaloney
+*  dev
+*
 *  Revision 1.22  2017/06/13 20:02:05  mmaloney
 *  dev
 *
@@ -89,8 +92,6 @@
 *
 *  Revision 1.27  2013/02/20 15:07:24  gchen
 *  Enhance a new feature to allow to use the maxComputationRetries property to limit the number of retries for those failed computations. There will be unlimited retries if maxComputationRetires=0.
-*
-*  This feature will apply to Tempest DB, CWMS, and HDB.
 *
 *  Revision 1.26  2012/12/12 16:04:42  mmaloney
 *  default data source changed from drot to cdadata.

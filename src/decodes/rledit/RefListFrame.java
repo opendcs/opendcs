@@ -337,39 +337,9 @@ public class RefListFrame extends JFrame
 		deleteDTEButton.setText(labels.getString("RefListFrame.deleteEquiv"));
 		deleteDTEButton.addActionListener(new RefListFrame_deleteDTEButton_actionAdapter(this));
 		undoDeleteDTEButton.setEnabled(false);
-//		undoDeleteDTEButton.setMaximumSize(new Dimension(122, 23));
-//		undoDeleteDTEButton.setMinimumSize(new Dimension(122, 23));
-//		undoDeleteDTEButton.setPreferredSize(new Dimension(122, 23));
 		undoDeleteDTEButton.setText(labels.getString("RefListFrame.undoDelete"));
 		undoDeleteDTEButton.addActionListener(new RefListFrame_undoDeleteDTEButton_actionAdapter(this));
 
-//MJM commented this out -- can't refer to sutron in open-source
-//		swcTable.setLayout(borderLayout6);
-//		swcTable.setDebugGraphicsOptions(0);
-//		jPanel6.setLayout(gridBagLayout5);
-//		addSWCButton.setMaximumSize(new Dimension(122, 23));
-//		addSWCButton.setMinimumSize(new Dimension(122, 23));
-//		addSWCButton.setPreferredSize(new Dimension(122, 23));
-//		addSWCButton.setText("Add");
-//		addSWCButton.addActionListener(new RefListFrame_addSWCButton_actionAdapter(this));
-//		editSWCButton.setMaximumSize(new Dimension(122, 23));
-//		editSWCButton.setMinimumSize(new Dimension(122, 23));
-//		editSWCButton.setPreferredSize(new Dimension(122, 23));
-////		editSWCButton.setMargin(new Insets(2, 14, 2, 14));
-//		editSWCButton.setText("Edit");
-//		editSWCButton.addActionListener(new RefListFrame_editSWCButton_actionAdapter(this));
-//		deleteSWCButton.setMaximumSize(new Dimension(122, 23));
-//		deleteSWCButton.setMinimumSize(new Dimension(122, 23));
-//		deleteSWCButton.setPreferredSize(new Dimension(122, 23));
-//		deleteSWCButton.setText("Delete");
-//		deleteSWCButton.addActionListener(new RefListFrame_deleteSWCButton_actionAdapter(this));
-//		undoDeleteSWCButton.setEnabled(false);
-////		undoDeleteSWCButton.setMaximumSize(new Dimension(122, 23));
-////		undoDeleteSWCButton.setMinimumSize(new Dimension(122, 23));
-////		undoDeleteSWCButton.setPreferredSize(new Dimension(122, 23));
-//		undoDeleteSWCButton.setText("Undo Delete");
-//		undoDeleteSWCButton.addActionListener(new RefListFrame_undoDeleteSWCButton_actionAdapter(this));
-		
 		contentPane.setFont(new java.awt.Font("Dialog", 0, 14));
 	EuCnvtTab.setBorder(BorderFactory.createEmptyBorder());
 	jMenuFile.add(mi_saveToDb);
@@ -1534,51 +1504,6 @@ class RefListFrame_deleteDTEButton_actionAdapter implements java.awt.event.Actio
 		adaptee.deleteDTEButton_actionPerformed(e);
 	}
 }
-
-//MJM commented this out -- can't refer to sutron in open-source
-//class RefListFrame_addSWCButton_actionAdapter implements java.awt.event.ActionListener {
-//	RefListFrame adaptee;
-//
-//	RefListFrame_addSWCButton_actionAdapter(RefListFrame adaptee) {
-//		this.adaptee = adaptee;
-//	}
-//	public void actionPerformed(ActionEvent e) {
-//		adaptee.addSWCButton_actionPerformed(e);
-//	}
-//}
-//
-//class RefListFrame_editSWCButton_actionAdapter implements java.awt.event.ActionListener {
-//	RefListFrame adaptee;
-//
-//	RefListFrame_editSWCButton_actionAdapter(RefListFrame adaptee) {
-//		this.adaptee = adaptee;
-//	}
-//	public void actionPerformed(ActionEvent e) {
-//		adaptee.editSWCButton_actionPerformed(e);
-//	}
-//}
-//
-//class RefListFrame_undoDeleteSWCButton_actionAdapter implements java.awt.event.ActionListener {
-//	RefListFrame adaptee;
-//
-//	RefListFrame_undoDeleteSWCButton_actionAdapter(RefListFrame adaptee) {
-//		this.adaptee = adaptee;
-//	}
-//	public void actionPerformed(ActionEvent e) {
-//		adaptee.undoDeleteSWCButton_actionPerformed(e);
-//	}
-//}
-//
-//class RefListFrame_deleteSWCButton_actionAdapter implements java.awt.event.ActionListener {
-//	RefListFrame adaptee;
-//
-//	RefListFrame_deleteSWCButton_actionAdapter(RefListFrame adaptee) {
-//		this.adaptee = adaptee;
-//	}
-//	public void actionPerformed(ActionEvent e) {
-//		adaptee.deleteSWCButton_actionPerformed(e);
-//	}
-//}
 
 class RefListFrame_mi_saveToDb_actionAdapter implements java.awt.event.ActionListener {
 	RefListFrame adaptee;

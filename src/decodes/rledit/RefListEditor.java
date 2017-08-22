@@ -2,6 +2,9 @@
 *	$Id$
 *
 *	$Log$
+*	Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*	OPENDCS 6.0 Initial Checkin
+*	
 *	Revision 1.6  2013/06/26 14:01:08  mmaloney
 *	RefListEditor IS a GUI.
 *	
@@ -164,10 +167,6 @@ public class RefListEditor
 		db.dataTypeSet.read();
 		db.engineeringUnitList.read();
 		
-//MJM commented this out -- can't refer to sutron in open-source
-//		db.clientList.read();
-
-		//System.out.println(db.clientList);
 		new RefListEditor();
 	}
 }
