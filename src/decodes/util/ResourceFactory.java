@@ -73,6 +73,7 @@ public class ResourceFactory
 		FunctionList.addFunction(new decodes.decoder.Nos6Min());
 		FunctionList.addFunction(new decodes.decoder.NosHourly());
 		FunctionList.addFunction(new decodes.decoder.ShefProcess());
+		FunctionList.addFunction(new decodes.decoder.SetMissingFunction());
 	}
 
 	public JDialog getAboutDialog(JFrame parent, String appAbbr, String appName)
