@@ -3,6 +3,8 @@
 */
 package decodes.decoder;
 
+import decodes.db.DecodesScript;
+
 /**
 This is an abstract base class for all decodes operations.
 */
@@ -61,8 +63,9 @@ public abstract class DecodesFunction
 	/** 
 	 * Each function must parse its own arguments. The value passed is
 	 * everything inside the parens after the function name.
+	 * @param script TODO
 	 */
-	public abstract void setArguments(String argString)
+	public abstract void setArguments(String argString, DecodesScript script)
 		throws ScriptFormatException;
 }
 

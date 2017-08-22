@@ -129,7 +129,7 @@ public class CsvFunction
 	}
 
 	@Override
-	public void setArguments(String argString) throws ScriptFormatException
+	public void setArguments(String argString, DecodesScript script) throws ScriptFormatException
 	{
 		argList = argString;
 		StringTokenizer st = new StringTokenizer(argString, ",");

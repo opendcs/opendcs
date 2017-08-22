@@ -325,34 +325,30 @@ class FieldOperation extends DecodesOperation
 			if (field_type.equals("s")) // Sensor Field
 			{
 				Variable v;
+				String s = new String(field).trim();
+
 				try
 				{
-					v = numberParser.parseDataValue(field);
-					Logger.instance().debug3("field parsed to '" + v + "'");
-				}
-				catch(FieldParseException ex)
-				{
-					// Check for special missing data filler "////"
-					// Also, '???' can be used as a filler.
-					// If this is present, just skip this sample & continue.
-					String s = new String(field).trim();
-					if(isZformat && s!=null && s.equalsIgnoreCase(""))
-						s = "//";
-					if (s.startsWith("//") 
-					 || s.startsWith("??")
-					 || s.startsWith("---")
-					 || s.equalsIgnoreCase("M"))
+					if (isMissingSymbol(s))
 					{
 						v = new Variable("m");
 						v.setFlags(v.getFlags() | IFlags.IS_MISSING);
+						Logger.instance().debug3("found missing symbol '" + s + "'");
 					}
 					else
 					{
-						Logger.instance().debug1("Field Parse Exception: "
-							+ ex.getMessage());
-						v = new Variable("e");
-						v.setFlags(v.getFlags() | IFlags.IS_ERROR);
+						v = numberParser.parseDataValue(field);
+						Logger.instance().debug3("field parsed to '" + v + "'");
 					}
+				}
+				catch(FieldParseException ex)
+				{
+					if(isZformat && s!=null && s.equalsIgnoreCase(""))
+						s = "//";
+					Logger.instance().debug1("Field Parse Exception: "
+						+ ex.getMessage());
+					v = new Variable("e");
+					v.setFlags(v.getFlags() | IFlags.IS_ERROR);
 				}
 				if (!supressOutput)
 				{
@@ -891,6 +887,19 @@ Logger.instance().debug3("After M field with month=" + m + ", day=" + d + ", day
 		rts.setHour(h);
 		rts.setMinute(m);
 		rts.setSecond(s);
+	}
+	
+	/**
+	 * @param s the field data
+	 * @return true if the field data represents a placeholder for a missing value.
+	 */
+	private boolean isMissingSymbol(String s)
+	{
+		return s.startsWith("//") 
+		 || s.startsWith("??")
+		 || s.startsWith("---")
+		 || s.equalsIgnoreCase("M")
+		 || decodesScript.isMissingSymbol(s);
 	}
 
 	public static void main(String args[])

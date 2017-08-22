@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2014/05/28 13:09:26  mmaloney
+* dev
+*
 * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 * OPENDCS 6.0 Initial Checkin
 *
@@ -22,6 +25,7 @@ import java.util.Date;
 
 import ilex.util.Logger;
 import ilex.var.Variable;
+import decodes.db.DecodesScript;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
 import decodes.decoder.DataOperations;
@@ -49,7 +53,7 @@ public class Nos6Min
 	/**
 	 * No arguments expected for NOS 6 Min
 	 */
-	public void setArguments(String argString)
+	public void setArguments(String argString, DecodesScript script)
 	{
 	}
 	

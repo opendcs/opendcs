@@ -130,7 +130,7 @@ public class FormatStatementTokenizer
 				if (func != null)
 				{
 					func.setRepetitions(repetitions);
-					func.setArguments(args);
+					func.setArguments(args, myScript);
 					ret = func;
 				}
 				else

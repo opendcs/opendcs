@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/05/28 13:09:27  mmaloney
+ * dev
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -16,6 +19,7 @@ import java.util.StringTokenizer;
 import ilex.util.ByteUtil;
 import ilex.util.Logger;
 import ilex.var.Variable;
+import decodes.db.DecodesScript;
 import decodes.decoder.DataOperations;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecodesFunction;
@@ -55,7 +59,7 @@ public class OttFunction
 	public String getFuncName() { return "ott"; }
 
 	@Override
-	public void setArguments(String sensorList)
+	public void setArguments(String sensorList, DecodesScript script)
 	{
 		// Argument must be a space, tab, or comma-separated list of
 		// DECODES sensor numbers. 'x' means to not process this sensor.

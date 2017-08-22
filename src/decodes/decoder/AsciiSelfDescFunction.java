@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import decodes.datasource.RawMessage;
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.DecodesScript;
 import decodes.util.DecodesSettings;
 
 /**
@@ -349,7 +350,7 @@ public class AsciiSelfDescFunction
 	 * </ul>
 	 */
 	@Override
-	public void setArguments(String argString) 
+	public void setArguments(String argString, DecodesScript script) 
 		throws ScriptFormatException
 	{
 		StringTokenizer st = new StringTokenizer(argString, ",");
