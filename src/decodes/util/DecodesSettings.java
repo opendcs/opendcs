@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.24  2017/08/22 19:48:39  mmaloney
+*  Improve comments
+*
 *  Revision 1.23  2017/06/13 20:19:32  mmaloney
 *  dev
 *
@@ -759,6 +762,7 @@ public class DecodesSettings
 		}
 		PropertiesUtil.loadFromProps(this, props2load);
 		setDbTypeCode();
+		editDatabaseLocation = EnvExpander.expand(editDatabaseLocation);
 	}
 
 	
