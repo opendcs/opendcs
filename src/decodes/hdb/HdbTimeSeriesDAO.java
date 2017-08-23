@@ -156,7 +156,12 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		ret = (HdbTsId)getTimeSeriesIdentifier(htsid.getKey());
 		// Preserve the modelRunId if it was set in the uniqueString. Also the display name.
 		ret.modelRunId = htsid.modelRunId;
-		ret.setDisplayName(htsid.getDisplayName());
+		if (displayName != null)
+		{
+			debug3("Setting display name to '" + displayName + "'");
+			ret.setDisplayName(displayName);
+		}
+
 		return ret;
 	}
 
