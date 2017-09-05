@@ -141,7 +141,6 @@ public class ResWtCompute
         int resj_old = _reservoir._resj_old;
         int resj = _reservoir.getResj();        
         
-System.out.println( currentTime + " resj, resj_old " + resj + "  " + resj_old );        
         avg_rhow = 0.0;
         total_vol = 0.0;
         sum_energy_in = 0.0;
@@ -478,7 +477,8 @@ System.out.println( currentTime + " resj, resj_old " + resj + "  " + resj_old );
                                 "\nrhow(resj) =" + rhow[resj] +
                                 "\nzarea(resj) =" + zarea[resj] +                                
                                 "\nu_H2O_star =" + u_H2O_star +                                
-                                "\ndelT =" + delT ;    
+                                "\ndelT =" + delT ;   
+						Logger.getLogger(ResWtCompute.class.getName()).log(Level.SEVERE, msg);
                         System.out.println(msg);
                         
                         return false;
@@ -642,7 +642,7 @@ System.out.println( currentTime + " resj, resj_old " + resj + "  " + resj_old );
         if ( b[0] == 0. )
         {
             //TODO error message system (throw exception?)
-            System.out.println( " tridag: rewrite equations");
+			Logger.getLogger(ResWtCompute.class.getName()).log(Level.SEVERE, "tridag: rewrite equations");
             return false;
         }
         // If this happens then you should rewrite your equations as a set of order N - 1, with u2
@@ -658,7 +658,7 @@ System.out.println( currentTime + " resj, resj_old " + resj + "  " + resj_old );
             if ( bet == 0.0 )
             {
                 //TODO error message system (throw exception?)
-                System.out.println( " tridag failed");  // !Algorithm fails; see below.
+                Logger.getLogger(ResWtCompute.class.getName()).log(Level.SEVERE, " tridag failed");  // !Algorithm fails; see below.
                 return false;             
             }
             u[j]=(r[j]-a[j]*u[j-1])/bet;

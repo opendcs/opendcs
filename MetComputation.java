@@ -6,6 +6,8 @@
 package usace.rowcps.computation.resevap;
 
 import hec.heclib.util.HecTime;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import rma.util.RMAConst;
 
 /**
@@ -16,6 +18,7 @@ import rma.util.RMAConst;
  */
 public class MetComputation
 {
+	private static final Logger LOGGER = Logger.getLogger(MetComputation.class.getName());
 	/** input meteorological data */
     EvapMetData _metData;
     
@@ -72,25 +75,25 @@ public class MetComputation
         if ( !RMAConst.isValidValue(windSpeed) )
         {
             String msg = "Wind speed missing or bad " + currentTime;
-            System.out.println( msg );
+			LOGGER.log(Level.SEVERE, msg );
             missingMetData = true;
         }
         if ( !RMAConst.isValidValue(airTemp) )
         {
             String msg = "Air temp missing or bad " + currentTime;
-            System.out.println( msg );
+            LOGGER.log(Level.SEVERE, msg );
             missingMetData = true;
         }
         if ( !RMAConst.isValidValue(relHumidity) )
         {
             String msg = "RH missing or bad " + currentTime;
-            System.out.println( msg );
+            LOGGER.log(Level.SEVERE, msg );
             missingMetData = true;
         }
         if ( !RMAConst.isValidValue(airPressure) )
         {
             String msg = "PRESSURE missing or bad " + currentTime;
-            System.out.println( msg );
+            LOGGER.log(Level.SEVERE, msg );
             missingMetData = true;
         }
 
@@ -117,13 +120,13 @@ public class MetComputation
                 int ic1 = ic+1;
                 String msg = " Cover (" + ic1 + ") missing or bad"
                         + currentTime;
-                System.out.println( msg );    
+                LOGGER.log(Level.SEVERE, msg );    
             }
             if ( !RMAConst.isValidValue(cld.height) )
             {
                 String heightStr = cld.getTypeName();
                 String msg = heightStr + " missing or bad " + currentTime;
-                System.out.println( msg );    
+                LOGGER.log(Level.SEVERE, msg );    
             }
         }
         
