@@ -8,6 +8,9 @@
  * Copyright 2017 U.S. Government.
  *
  * $Log$
+ * Revision 1.1  2017/06/27 13:44:33  mmaloney
+ * Added for 6.4
+ *
  */
 package decodes.eventmon;
 
@@ -220,7 +223,7 @@ public class DacqEventTableModel extends AbstractTableModel
 	
 	public DacqEvent getEvtAt(int row)
 	{
-		return (DacqEvent)getRowObject(row);
+		return events.get(row);
 	}
 
 	public ArrayList<CompAppInfo> getAllApps()
