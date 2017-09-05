@@ -165,6 +165,8 @@ public class RoutingSpecThread
 	 */
 	private TsdbCompLock myLock = null;
 	
+	CompAppInfo rsProcRecord = null;
+	
 	/**
 	 * Constructs an empty, uninitialized RoutingSpecThread.
 	 */
@@ -1656,14 +1658,15 @@ public class RoutingSpecThread
 		if (lockpath == null || lockpath.trim().length() == 0)
 		{
 			LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO();
-			CompAppInfo rsProcRecord = null;
 			try
 			{
-				try { rsProcRecord = loadingAppDAO.getComputationApp(rsName); }
-				catch (NoSuchObjectException e) { rsProcRecord = null; }
-				if (rsProcRecord != null
-				 && TextUtil.strEqualIgnoreCase(rsProcRecord.getProperty("appType"), "routingspec")
-				 && TextUtil.str2boolean(rsProcRecord.getProperty("monitor")))
+				try { mainThread.rsProcRecord = loadingAppDAO.getComputationApp(rsName); }
+				catch (NoSuchObjectException e) { mainThread.rsProcRecord = null; }
+				if (mainThread.rsProcRecord != null
+				 && TextUtil.strEqualIgnoreCase(
+					 mainThread.rsProcRecord.getProperty("appType"), "routingspec")
+				 && TextUtil.str2boolean(
+					 mainThread.rsProcRecord.getProperty("monitor")))
 				{
 					// Create a TSDB_COMP_PROC_LOCK record
 					//=====================================================
@@ -1677,13 +1680,15 @@ public class RoutingSpecThread
 						catch(Exception ex) { hostname = "unknown"; }
 					}
 	
-					mainThread.myLock = loadingAppDAO.obtainCompProcLock(rsProcRecord, pid, hostname);
+					mainThread.myLock = loadingAppDAO.obtainCompProcLock(
+						mainThread.rsProcRecord, pid, hostname);
 					
 					// If this process can be monitored, start an Event Server.
 					try 
 					{
 						CompEventSvr compEventSvr = new CompEventSvr(
-							TsdbAppTemplate.determineEventPort(rsProcRecord));
+							TsdbAppTemplate.determineEventPort(
+								mainThread.rsProcRecord));
 						compEventSvr.startup();
 					}
 					catch(IOException ex)
@@ -1901,6 +1906,11 @@ public class RoutingSpecThread
 	public void setShutdownHook(Runnable shutdownHook)
 	{
 		this.shutdownHook = shutdownHook;
+	}
+
+	public CompAppInfo getRsProcRecord()
+	{
+		return rsProcRecord;
 	}
 }
 

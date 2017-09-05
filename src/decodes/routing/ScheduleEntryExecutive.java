@@ -82,6 +82,10 @@ public class ScheduleEntryExecutive
 				SqlDatabaseIO sqlDbio = (SqlDatabaseIO)Database.getDb().getDbIo();
 				DacqEventDAI dacqEventDAO = sqlDbio.makeDacqEventDAO();
 				dacqEventLogger.setDacqEventDAO(dacqEventDAO);
+				
+				// If rs thread has an app ID, set it in the logger.
+				if (seThread != null && seThread.rsProcRecord != null)
+					dacqEventLogger.setAppId(seThread.rsProcRecord.getAppId());
 			}
 			// Else this is an XML database, no actual DACQ Event Logging
 			
