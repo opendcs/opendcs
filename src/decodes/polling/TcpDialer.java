@@ -62,6 +62,9 @@ public class TcpDialer extends Dialer
 					+ "' -- expected port number after colon.", false);
 			}
 		}
+		String msg = "Opening socket to host " + host + " port " + port;
+		pollingThread.debug2(msg);
+		pollingThread.annotate(msg);
 		basicClient = new BasicClient(host, port);
 		try
 		{
@@ -69,11 +72,13 @@ public class TcpDialer extends Dialer
 		}
 		catch (IOException ex)
 		{
-			throw new DialException("Cannot connect to '" + tm.getMediumId() + "': " + ex,
-				true);
+			msg = "Cannot connect to '" + tm.getMediumId() + "': " + ex;
+			pollingThread.annotate(msg);
+			throw new DialException(msg, true);
 		}
 		ioPort.setIn(basicClient.getInputStream());
 		ioPort.setOut(basicClient.getOutputStream());
+		pollingThread.annotate("Connect successfull");
 	}
 
 	@Override

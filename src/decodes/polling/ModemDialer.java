@@ -118,7 +118,7 @@ public class ModemDialer
 				what = module + " sending '" + AsciiUtil.bin2ascii(dialstr.getBytes()) + "' to modem on port "
 					+ ioPort.getPortNum();
 				msg = what + ", will wait " + ConnectWaitSec + " sec for CONNECT.";
-				Logger.instance().debug1(msg);
+				pollingThread.debug1(msg);
 				pollingThread.annotate(msg);
 				ioPort.getOut().write(dialstr.getBytes());
 				if (!streamReader.wait(ConnectWaitSec, CONNECT))
