@@ -13,3 +13,5 @@ Instructions for updating HDB from 6.3 to 6.4:
 
 1. Execute the DDL script decodes63to64.sql as the DECODES_OWNER.
 
+2. Execute the DDL script cp63to64.sql as the CP_OWNER.
+
