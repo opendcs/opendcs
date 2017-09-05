@@ -8,8 +8,6 @@ package usace.rowcps.computation.resevap;
 import hec.data.ParameterType;
 import hec.data.Units;
 import hec.data.UnitsConversionException;
-import hec.data.tx.DescriptionTx;
-import hec.heclib.dss.DSSPathname;
 import hec.heclib.util.HecTime;
 import hec.heclib.util.Heclib;
 import hec.hecmath.HecMathException;
@@ -21,16 +19,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import rma.util.RMAConst;
-import rma.util.RMAIO;
 
 /**
  * Program to estimate evaporation from reservoirs
@@ -683,9 +678,7 @@ public class ResEvap
     		// need to set to dss type INST-VAL for transformTimeSeries to work
     		//tsMath.getContainer().type = "INST-VAL";
     		tsMath.getContainer().type = "PER-CUM";
-    		System.out.println( tsMath.toString() );
     		tsAcc = (TimeSeriesMath)tsMath.transformTimeSeries("1DAY", "", "ACC", false);
-    		System.out.println( tsAcc.toString() );
     	}
 
         catch ( HecMathException hme )

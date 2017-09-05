@@ -5,12 +5,8 @@
  */
 package usace.rowcps.computation.resevap;
 
-import hec.data.Parameter;
 import hec.data.Units;
 import hec.data.UnitsConversionException;
-import hec.data.rating.ParameterValues;
-import hec.data.rating.RatingInput;
-import hec.data.rating.RatingOutput;
 import hec.heclib.util.HecTime;
 import hec.io.TimeSeriesContainer;
 
@@ -21,6 +17,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import rma.util.RMAConst;
 
@@ -32,6 +30,7 @@ import rma.util.RMAConst;
  */
 public class EvapReservoir
 {
+	private static final Logger LOGGER = Logger.getLogger(EvapReservoir.class.getName());
     public static final int MAX_RES_AREAS = 50000;
     public static final int NLAYERS = 1000;
     public static final double FT_TO_M = 0.3048;
@@ -235,8 +234,7 @@ public class EvapReservoir
         }
         catch (IOException e)
         {
-            System.out.println("Exception:  Error Reading bc file " + e.getMessage());
-            e.printStackTrace(System.out);
+			LOGGER.log(Level.SEVERE, "Exception:  Error Reading bc file ",  e);
             return false;
         }
         
@@ -250,19 +248,19 @@ public class EvapReservoir
                 String[] parts = line.split(":");
                 if ( parts != null && parts.length == 2 )
                 {
-                    if ( parts[0].toUpperCase().indexOf("RESERVOIR") >= 0 )
+                    if ( parts[0].toUpperCase().contains("RESERVOIR") )
                     {
                         _name = parts[1];
                     }
-                    else if ( parts[0].toUpperCase().indexOf("METRIC") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("METRIC") )
                     {
                         _isEnglish = false;
                     }
-                    else if ( parts[0].toUpperCase().indexOf("DEWPOINT") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("DEWPOINT") )
                     {
                         _isDewpoint = true;
                     }
-                    else if ( parts[0].toUpperCase().indexOf("SECCHI") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("SECCHI") )
                     {
                         _secchiDepth = Double.parseDouble( parts[1]);
                         if ( _isEnglish )
@@ -271,28 +269,29 @@ public class EvapReservoir
                         }
                         _attenuationConst =  1.70/_secchiDepth;
                     }
-                    else if ( parts[0].toUpperCase().indexOf("ZERO ELEV") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("ZERO ELEV") )
                     {
                         _zeroElevaton = Double.parseDouble( parts[1]);
                     }
-                    else if ( parts[0].toUpperCase().indexOf("LAT") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("LAT") )
                     {
                         _lat = Double.parseDouble( parts[1]);
                     }
-                    else if ( parts[0].toUpperCase().indexOf("LONG") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("LONG") )
                     {
                         double lon = Double.parseDouble( parts[1]);
                         _long = Math.abs(lon);
                     }
-                    else if ( parts[0].toUpperCase().indexOf("GMT") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("GMT") )
                     {
                         _gmtOffset = Double.parseDouble( parts[1]);
                     }
-                    else if ( parts[0].toUpperCase().indexOf("ELEV") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("ELEV") )
                     {
                         _elev = Double.parseDouble( parts[1]);
                     }
-                    else if ( parts[0].toUpperCase().indexOf("INSTRUMENT HEIGHT") >= 0 )
+                    else if ( parts[0].toUpperCase()
+							.contains("INSTRUMENT HEIGHT") )
                     {
                         _instrumentHeight = Double.parseDouble( parts[1]);
                         _ru = _instrumentHeight;
@@ -300,7 +299,7 @@ public class EvapReservoir
                         _rq = _instrumentHeight;
                     }
                     
-                    else if ( parts[0].toUpperCase().indexOf("SURFACE AREA") >= 0 )
+                    else if ( parts[0].toUpperCase().contains("SURFACE AREA") )
                     {
                         double npairs = Double.parseDouble(parts[1]);
                         _nSurfArea = (int)npairs;
