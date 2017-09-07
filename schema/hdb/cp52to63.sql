@@ -143,7 +143,7 @@ values (
 /* now update parent table's date_time_loaded for sql statements issued on this table */
   hdb_utilities.touch_cp_computation(:old.computation_id);
 end;
-
+/
 
 DROP VIEW SITE_TO_DECODES_NAME_VIEW;
 DROP VIEW SITE_TO_DECODES_SITE_VIEW;
