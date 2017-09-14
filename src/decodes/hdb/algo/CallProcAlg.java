@@ -125,7 +125,7 @@ debug3("doAWTimeSlice input1=" + input1 +", input2=" + input2);
              DataObject dbobj = new DataObject();
              String dt_fmt = "dd-MMM-yyyy HH:mm";
              // now do the procedure call with all the needed data
-             db.performCall(new_proccall,dbobj);
+             db.callProc(new_proccall,dbobj);
              debug3(" Proc Call  STRING:" + new_proccall + "   DBOBJ: " + dbobj.toString() );
 	    }
 
