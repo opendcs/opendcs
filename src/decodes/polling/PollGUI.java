@@ -51,6 +51,7 @@ import decodes.gui.TopFrame;
 import decodes.routing.RoutingSpecThread;
 import decodes.routing.ScheduleEntryExecutive;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 
 public class PollGUI extends TsdbAppTemplate
@@ -94,6 +95,13 @@ public class PollGUI extends TsdbAppTemplate
 		epqt.start();
 		theFrame.setVisible(true);
 	}
+	
+	@Override
+	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
+	{
+		appNameArg.setDefaultValue("PollGUI");
+	}
+
 
 	public static void main(String[] args)
 		throws Exception
@@ -354,7 +362,6 @@ public class PollGUI extends TsdbAppTemplate
 
 	protected void selectStation()
 	{
-		System.out.println("selectStation pressed");
 		PlatformSelectDialog dlg = new PlatformSelectDialog(theFrame, "poll");
 		dlg.setMultipleSelection(false);
 		theFrame.launchDialog(dlg);
@@ -449,6 +456,8 @@ public class PollGUI extends TsdbAppTemplate
 
 			// Set a static arg in PollingThread to tell it to use stdout as session logger.
 			PollingThread.staticSessionLogger = sessionLogPrintStream;
+Logger.instance().debug3("set PollingThread.staticSessionLogger" + 
+(sessionLogPrintStream==null?" TO NULL!!" : ""));
 
 			// Start the routing spec thread to do the work.
 			noExitAfterRunApp = true;

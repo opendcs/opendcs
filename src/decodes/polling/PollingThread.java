@@ -112,6 +112,7 @@ public class PollingThread
 	@Override
 	public void run()
 	{
+		debug1("PollingThread starting.");
 		threadStart = new Date();
 		numTries++;
 		terminatingException = null;
@@ -259,7 +260,8 @@ public class PollingThread
 				pollSessionLogger = null;
 			}
 		}
-
+		else
+			debug1("Not saving session file.");
 	}
 	
 	private void makeProtocol()
@@ -349,6 +351,7 @@ public class PollingThread
 	public void setSaveSessionFile(String saveSessionFile)
 	{
 		this.saveSessionFile = saveSessionFile;
+Logger.instance().debug3("setSaveSessionFile(" + saveSessionFile + ")");
 	}
 
 	public void setState(PollingThreadState state)
@@ -403,6 +406,7 @@ public class PollingThread
 	{
 		if (pollSessionLogger != null)
 			pollSessionLogger.annotate(msg);
+		else debug3("annotate(" + msg + ") pollSessionLogger is null.");
 	}
 
 	public String getModule()
