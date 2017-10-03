@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2015/06/04 21:43:22  mmaloney
+*  Some refactoring to allow ProcessEditPanel under new Proc Monitor GUI
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -213,7 +216,7 @@ public class ProcessesListPanel extends ListPanel
 			CompAppInfo app = (CompAppInfo)procTableModel.getRowObject(r);
 			loadingAppDao.deleteComputationApp(app);
 		}
-		catch (DbIoException e)
+		catch (Exception e)
 		{
 			CAPEdit.instance().getFrame().showError(
 				CAPEdit.instance().compeditDescriptions

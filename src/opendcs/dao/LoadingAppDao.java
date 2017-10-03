@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2015/05/14 13:52:18  mmaloney
+ * RC08 prep
+ *
  * Revision 1.5  2015/03/19 18:08:00  mmaloney
  * null ptr protection.
  *
@@ -44,7 +47,6 @@ import java.util.TimeZone;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
-
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.db.DbEnum;
@@ -53,10 +55,13 @@ import decodes.db.EnumValue;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
+import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.util.DecodesSettings;
 
 /**
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
@@ -376,18 +381,60 @@ public class LoadingAppDao
 	
 	@Override
 	public void deleteComputationApp(CompAppInfo app)
-		throws DbIoException
+		throws DbIoException, ConstraintException
 	{
 		// TODO - check for dependencies in computations and schedule entries.
 		// Don't allow deleting if any comps or se's depend on this app.
+		String q = "";
 		try
 		{
-			String q = "delete from REF_LOADING_APPLICATION_PROP "
+			q = "select count(*) from CP_COMPUTATION where LOADING_APPLICATION_ID = "
+				+ app.getKey();
+			ResultSet rs = doQuery(q);
+			if (rs.next())
+			{
+				int num = rs.getInt(1);
+				if (num > 0)
+					throw new ConstraintException("Cannot delete application '" + app.getAppName()
+						+ "' with id=" + app.getKey() + " because " + num + " computations are "
+							+ "assigned to it.");
+			}
+			q = "select count(*) from SCHEDULE_ENTRY where LOADING_APPLICATION_ID = "
+				+ app.getKey();
+			rs = doQuery(q);
+			if (rs.next())
+			{
+				int num = rs.getInt(1);
+				if (num > 0)
+					throw new ConstraintException("Cannot delete application '" + app.getAppName()
+						+ "' with id=" + app.getKey() + " because " + num + " schedule entries are "
+							+ "assigned to it.");
+			}			
+			q = "delete from REF_LOADING_APPLICATION_PROP "
 				+ "where LOADING_APPLICATION_ID = " + app.getKey();
 			doModify(q);
+			q = "delete from DACQ_EVENT where LOADING_APPLICATION_ID = " + app.getKey();
+			doModify(q);
+			q = "delete from cp_comp_proc_lock where LOADING_APPLICATION_ID = " + app.getKey();
+			doModify(q);
+			if (DecodesSettings.instance().editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB
+			 && this.db.getDecodesDatabaseVersion() >= TsdbDatabaseVersion.VERSION_15)
+			{
+				q = "delete from ALARM_DEF where LOADING_APPLICATION_ID = " + app.getKey();
+				doModify(q);
+				q = "delete from PROCESS_MONITOR where LOADING_APPLICATION_ID = " + app.getKey();
+				doModify(q);
+			}
 			q = "delete from HDB_LOADING_APPLICATION "
 				+ "where LOADING_APPLICATION_ID = " + app.getKey();
 			doModify(q);
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error in query '" + q + "': " + ex;
+			warning(msg);
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
 		}
 		catch(DbIoException ex)
 		{

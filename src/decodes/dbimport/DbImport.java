@@ -4,6 +4,10 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.17  2017/06/16 15:32:14  mmaloney
+*  In write() method, loading apps must be written before schedule entries to guarantee that
+*  each has a valid ID.
+*
 *  Revision 1.16  2017/04/01 16:11:21  mmaloney
 *  HDB Platform Import Troubleshooting.
 *
@@ -87,6 +91,7 @@ import decodes.sql.DbKey;
 import decodes.sql.PlatformListIO;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbIoException;
 import decodes.util.*;
 import decodes.cwms.CwmsSqlDatabaseIO;
@@ -397,7 +402,17 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 		try
 		{
 			for(CompAppInfo cai : theDb.loadingAppList)
-				loadingAppDAO.deleteComputationApp(cai);
+			{
+				try
+				{
+					loadingAppDAO.deleteComputationApp(cai);
+				}
+				catch (ConstraintException ex)
+				{
+					warning("Cannot delete app '" + cai.getAppName() + "': " + ex);
+				}
+				
+			}
 		}
 		catch (DbIoException ex)
 		{

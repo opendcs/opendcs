@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/06/02 00:23:18  mmaloney
+ * Add getLastModified method.
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -14,6 +17,7 @@ import java.util.List;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
@@ -91,7 +95,7 @@ public interface LoadingAppDAI
 	 * Caller is responsible to check to make sure it's OK to do this.
 	 */
 	public void deleteComputationApp(CompAppInfo app)
-		throws DbIoException;
+		throws DbIoException, ConstraintException;
 
 	/**
 	 * Called by a comp proc to obtain the lock for 
