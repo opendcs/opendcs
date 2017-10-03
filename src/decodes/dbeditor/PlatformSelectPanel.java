@@ -451,7 +451,13 @@ class PlatformColumnComparator implements Comparator<Platform>
 	{
 		if (p1 == p2)
 			return 0;
-		return columnizer.getColumn(p1, col).compareToIgnoreCase(
+		int r = columnizer.getColumn(p1, col).compareToIgnoreCase(
 			columnizer.getColumn(p2, col));
+		if (r != 0)
+			return r;
+		// Selected column is the same, secondary sort by platform name
+		// which is supposed to be unique.
+		return columnizer.getColumn(p1, 0).compareToIgnoreCase(
+			columnizer.getColumn(p2, 0));
 	}
 }
