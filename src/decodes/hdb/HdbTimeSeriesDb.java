@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.11  2017/05/31 21:25:04  mmaloney
+*  Fill HdbDataType cache.
+*  Implement expandSDI.
+*
 *  Revision 1.10  2017/05/01 19:23:26  mmaloney
 *  Remove all references to SITE and SITENAME. In HDB these don't exist.
 *
@@ -505,13 +509,18 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 	 * @see decodes.tsdb.TimeSeriesDb#getCoeff(int, java.lang.String, java.lang.String, java.util.Date)
 	 */
 	public double getCoeff(DbKey sdi, String ts, String interval, Date date)
-		throws DbIoException
+		throws DbIoException, DbCompException
 	{
 		double coeff = 0.0;
 		int statIndex;
 		GregorianCalendar cal = new GregorianCalendar();
 		cal.setTime(date);
 		
+		if (interval == null)
+			throw new DbCompException("Trying to get coefficient for SDI=" + sdi + ", with null interval.");
+		if (ts == null)
+			throw new DbCompException("Trying to get coefficient for SDI=" + sdi + ", with null table selector.");
+	
 		//ugly dependency on interval names not changing
 		if (interval.equalsIgnoreCase("day")) 
 		{

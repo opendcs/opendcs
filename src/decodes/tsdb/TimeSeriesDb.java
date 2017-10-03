@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.13  2017/08/22 19:56:39  mmaloney
+*  Refactor
+*
 *  Revision 1.12  2017/05/31 21:20:31  mmaloney
 *  Added rating method to the TSDB object in order to remove dependencies to CWMS
 *  from PythonAlgorithm.
@@ -1301,10 +1304,11 @@ public abstract class TimeSeriesDb
 	 * @param interval the interval
 	 * @param date the date of interest
 	 * @return the value of the coefficient
+	 * @throws DbCompException 
 	 */
 	public double getCoeff(DbKey sdi, String ts, String interval, 
 		Date date)
-		throws DbIoException
+		throws DbIoException, DbCompException
 	{
 		throw new DbIoException("Method getCoeff not implemented.");
 	}

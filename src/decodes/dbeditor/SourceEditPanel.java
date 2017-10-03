@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.4  2016/10/07 14:49:25  mmaloney
+*  Updates for Web Report for Gail Monds, LRD.
+*
 *  Revision 1.3  2014/10/02 14:26:58  mmaloney
 *  Use properties owner
 *
@@ -81,19 +84,6 @@ public class SourceEditPanel extends DbEditorTab
 
 	ArrayList<DatabaseObject> affectedItems = null;
 
-	/** No-args constructor for JBuilder. */
-	public SourceEditPanel()
-	{
-		try {
-			propertiesEditPanel = new PropertiesEditPanel(new Properties());
-			propertiesEditPanel.setOwnerFrame(getParentFrame());
-			jbInit();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
-	}
-
 	/**
 	  Construct new panel to edit specified object.
 	  @param ob the object to edit in this panel.
@@ -109,6 +99,8 @@ public class SourceEditPanel extends DbEditorTab
 				theObject.setDataSourceArg("");
 			theProperties = PropertiesUtil.string2props(theObject.getDataSourceArg());
 			propertiesEditPanel = new PropertiesEditPanel(theProperties);
+			propertiesEditPanel.setOwnerFrame(getParentFrame());
+
 			groupMemberListModel = new GroupMemberListModel(theObject);
 			groupMemberList = new JList(groupMemberListModel);
 			jbInit();

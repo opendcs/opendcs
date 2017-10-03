@@ -221,4 +221,5 @@ public class OpenTsdb extends TimeSeriesDb
 	{
 		return new ScheduleEntryDAO(this);
 	}
+	
 }
