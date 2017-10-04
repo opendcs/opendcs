@@ -394,7 +394,7 @@ Logger.instance().debug3("setSaveSessionFile(" + saveSessionFile + ")");
 			evt.setPlatformId(transportMedium.platform.getId());
 			evt.setSubsystem("Polling");
 			evt.setEventPriority(Logger.E_FAILURE);
-			evt.setEventText(msg);
+			evt.setEventText(module + " " + msg);
 			dacqEventLogger.writeDacqEvent(evt);
 		}
 	}

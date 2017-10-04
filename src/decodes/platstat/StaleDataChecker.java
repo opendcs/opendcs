@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import opendcs.dai.DacqEventDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import ilex.cmdline.StringToken;
@@ -26,6 +27,7 @@ import decodes.db.NetworkListEntry;
 import decodes.db.Platform;
 import decodes.db.PlatformList;
 import decodes.db.PlatformStatus;
+import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompEventSvr;
@@ -268,12 +270,21 @@ public class StaleDataChecker
 		 && (lastMsg == null || lastError.after(lastMsg)))
 			return;
 		
-		platstat.setAnnotation("Stale: No data in more than " + maxAgeHours + " hours.");
+		String msg = "Stale: No data in more than " + maxAgeHours + " hours.";
+		platstat.setAnnotation(msg);
 		platstat.setLastErrorTime(new Date());
 		PlatformStatusDAI platformStatusDAO = theDb.makePlatformStatusDAO();
+		DacqEventDAI eventDAO = theDb.makeDacqEventDAO();
 		try
 		{
 			platformStatusDAO.writePlatformStatus(platstat);
+			DacqEvent evt = new DacqEvent();
+			evt.setAppId(appId);
+			evt.setEventPriority(Logger.E_FAILURE);
+			evt.setEventText(msg);
+			evt.setEventTime(new Date());
+			evt.setPlatformId(plat.getId());
+			eventDAO.writeEvent(evt);
 		}
 		catch (DbIoException ex)
 		{
@@ -281,6 +292,7 @@ public class StaleDataChecker
 		}
 		finally
 		{
+			eventDAO.close();
 			platformStatusDAO.close();
 		}
 
