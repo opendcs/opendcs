@@ -89,6 +89,10 @@ public class DacqEventDAO
 
 		String q = "DELETE FROM " + tableName + " WHERE EVENT_TIME < " + db.sqlDate(cutoff);
 		doModify(q);
+		q = "UPDATE PLATFORM_STATUS set LAST_ERROR_TIME = null "
+			+ "where LAST_ERROR_TIME < " + db.sqlDate(cutoff);
+		try { doModify(q); }
+		catch(Exception ex) {}
 	}
 
 	@Override
