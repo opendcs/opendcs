@@ -2,6 +2,11 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2016/09/29 18:54:37  mmaloney
+ * CWMS-8979 Allow Database Process Record to override decodes.properties and
+ * user.properties setting. Command line arg -Dsettings=appName, where appName is the
+ * name of a process record. Properties assigned to the app will override the file(s).
+ *
  * Revision 1.6  2016/06/07 22:02:17  mmaloney
  * app name defaults to "utility" this is necessary for HDB.
  *
@@ -375,7 +380,14 @@ ex2.printStackTrace();
 		}
 		if (x.length > 2)
 		{
-			try { tv.setFlags(Integer.parseInt(x[2].trim())); }
+			String flags = x[2].trim();
+			try
+			{
+				if (TextUtil.startsWithIgnoreCase(flags, "0x"))
+					tv.setFlags(Integer.parseInt(flags.substring(2), 16));
+				else
+					tv.setFlags(Integer.parseInt(flags));
+			}
 			catch(Exception ex)
 			{
 				warning("Unparsable flags field '" + x[0] + "' -- flags assumed to be 0.");

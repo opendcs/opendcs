@@ -4,6 +4,9 @@
  * Copyright 2017 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.1  2017/10/10 17:58:02  mmaloney
+ * Created.
+ *
  */
 package decodes.consumer;
 
@@ -43,7 +46,7 @@ public class TsdbFormatter extends OutputFormatter
 		if (s != null)
 			timeFormat = s;
 		sdf = new SimpleDateFormat(timeFormat);
-		
+		sdf.setTimeZone(tz);
 	}
 
 	@Override
@@ -89,7 +92,8 @@ public class TsdbFormatter extends OutputFormatter
 					continue;
 				
 				consumer.println(sdf.format(tv.getTime()) + "," +
-					ts.formattedSampleAt(idx) + "," + tv.getFlags());
+					ts.formattedSampleAt(idx) + ",0x" + 
+					Integer.toHexString(tv.getFlags()));
 			}
 		}
 		

@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.4  2017/10/10 17:58:33  mmaloney
+*  Added support for TsdbFormatter
+*
 *  Revision 1.3  2015/03/19 13:13:53  mmaloney
 *  Base class method dataSourceCaughtUp() does nothing. It allows certain formatters
 *  & consumers to flush buffers when LRGS Data Source is caught up and is now acting
@@ -161,25 +164,28 @@ public abstract class OutputFormatter
 			if (myType == null)
 			{
 				if (type.equalsIgnoreCase("tsdb"))
-					return new TsdbFormatter();
-				
-				throw new OutputFormatterException(
-					"Cannot prepare output formatter: "
-					+ "No Output Formatter Enumeration Value for '" + type+"'");
+					ret =  new TsdbFormatter();
+				else
+					throw new OutputFormatterException(
+						"Cannot prepare output formatter: "
+						+ "No Output Formatter Enumeration Value for '" + type+"'");
 			}
 
 			// Instantiate a concrete data source to delegate to.
-			try
+			if (ret == null)
 			{
-				Class myClass = myType.getExecClass();
-				ret = (OutputFormatter)myClass.newInstance();
-			}
-			catch(Exception e)
-			{
-				throw new OutputFormatterException(
-					"Cannot prepare output formatter :"
-					+ "Cannot instantiate an output formatter of type '" +type
-					+ "': " + e.toString());
+				try
+				{
+					Class myClass = myType.getExecClass();
+					ret = (OutputFormatter)myClass.newInstance();
+				}
+				catch(Exception e)
+				{
+					throw new OutputFormatterException(
+						"Cannot prepare output formatter :"
+						+ "Cannot instantiate an output formatter of type '" +type
+						+ "': " + e.toString());
+				}
 			}
 		}
 		else // use the NullFormatter
