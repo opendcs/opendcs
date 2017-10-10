@@ -1,3 +1,10 @@
+/**
+ * $Id$
+ * 
+ * Copyright 2017 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+ * 
+ * $Log$
+ */
 package decodes.consumer;
 
 import ilex.util.Logger;

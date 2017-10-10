@@ -4,6 +4,11 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2015/03/19 13:13:53  mmaloney
+*  Base class method dataSourceCaughtUp() does nothing. It allows certain formatters
+*  & consumers to flush buffers when LRGS Data Source is caught up and is now acting
+*  in real time.
+*
 *  Revision 1.2  2014/05/28 13:09:27  mmaloney
 *  dev
 *
@@ -154,9 +159,14 @@ public abstract class OutputFormatter
 		{
 			EnumValue myType = types.findEnumValue(type);
 			if (myType == null)
+			{
+				if (type.equalsIgnoreCase("tsdb"))
+					return new TsdbFormatter();
+				
 				throw new OutputFormatterException(
 					"Cannot prepare output formatter: "
 					+ "No Output Formatter Enumeration Value for '" + type+"'");
+			}
 
 			// Instantiate a concrete data source to delegate to.
 			try
