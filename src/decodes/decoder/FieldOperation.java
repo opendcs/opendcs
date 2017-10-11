@@ -898,7 +898,7 @@ Logger.instance().debug3("After M field with month=" + m + ", day=" + d + ", day
 		return s.startsWith("//") 
 		 || s.startsWith("??")
 		 || s.startsWith("---")
-		 || s.equalsIgnoreCase("M")
+		 || (s.equalsIgnoreCase("M") && data_type == NumberParser.ASCII_FMT)
 		 || decodesScript.isMissingSymbol(s);
 	}
 
