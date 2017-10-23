@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.14  2017/08/22 19:56:39  mmaloney
+*  Refactor
+*
 *  Revision 1.13  2017/05/03 17:02:30  mmaloney
 *  Downgrade nuisance debugs.
 *
@@ -1170,6 +1173,14 @@ info(q);
 info(q);
 				theDb.doModify(q);
 			}
+			
+			// Just in case, delete any records from the scratchpad that are already
+			// in compdepends:
+			q = "delete from cp_comp_depends_scratchpad sp "
+				+ "where exists(select * from cp_comp_depends cd where cd.computation_id = sp.computation_id "
+				+ "and cd.ts_id = sp.ts_id)";
+			theDb.doModify(q);
+			
 			// Copy the scratchpad to the cp_comp_depends table
 			q = "INSERT INTO CP_COMP_DEPENDS SELECT * FROM CP_COMP_DEPENDS_SCRATCHPAD";
 info(q);
