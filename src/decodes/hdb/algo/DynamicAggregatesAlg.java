@@ -10,6 +10,10 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
 
 
+
+
+
+
 //AW:IMPORTS
 // Place an import statements you need here.
 import java.util.TimeZone;
@@ -32,6 +36,7 @@ import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
 import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
+import decodes.util.PropertySpec;
 //import decodes.tsdb.DbCompConfig;
 import decodes.hdb.dbutils.RBASEUtils;
 //AW:IMPORTS_END
@@ -75,6 +80,25 @@ public class DynamicAggregatesAlg
 	int total_count;
 	long mvr_count;
 	long mvd_count;
+	
+	PropertySpec specs[] = 
+	{
+		new PropertySpec("aggregate_name", PropertySpec.STRING,
+			"(required) The name of the Oracle aggregate function."),
+		new PropertySpec("min_values_required", PropertySpec.INT, 
+			"(default=1) No output produced if fewer than this many inputs in the aggregate period."),
+		new PropertySpec("min_values_desired", PropertySpec.INT, 
+			"(default=0) If fewer than this many inputs in the period, output flagged as a partial calculation."),
+		new PropertySpec("partial_calculations", PropertySpec.BOOLEAN, 
+			"(default=false) If true, then partial calcs are accepted but flagged as 'T' (temporary)."),
+		new PropertySpec("no_rounding", PropertySpec.BOOLEAN, 
+			"(default=false) If true, then no rounding is done on the output value."),
+		new PropertySpec("validation_flag", PropertySpec.STRING,
+			"(empty) Always set this validation flag in the output."),
+		new PropertySpec("negativeReplacement", PropertySpec.NUMBER, 
+			"(no default) If set, and output would be negative, then replace with the number supplied.")
+	};
+
 
 //AW:LOCALVARS_END
 
@@ -89,9 +113,11 @@ public class DynamicAggregatesAlg
 	public long min_values_required = 1;
 	public long min_values_desired = 0;
 	public String aggregate_name = "NONE";
-        public String validation_flag = "";
+    public String validation_flag = "";
+	double negativeReplacement = Double.NEGATIVE_INFINITY;
+
 	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired", "aggregate_name",
-	"validation_flag","no_rounding" };
+	"validation_flag","no_rounding", "negativeReplacement" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -343,38 +369,56 @@ public class DynamicAggregatesAlg
 		}
 //
 		// set the output if all is successful and set the flags appropriately
-		if (do_setoutput) 
-		  {
-		   	debug3( "  MVRI: " + mvr_count + "  MVD: " + mvd_count + " dso:" + do_setoutput);
-		   	debug3("  ICP: " + is_current_period  + "TotalCount: " + total_count);
-			if (total_count < mvd_count) flags = flags + "n";
+		if (do_setoutput)
+		{
+			debug3("  MVRI: " + mvr_count + "  MVD: " + mvd_count + " dso:" + do_setoutput);
+			debug3("  ICP: " + is_current_period + "TotalCount: " + total_count);
+			if (total_count < mvd_count)
+				flags = flags + "n";
 			if (is_current_period && total_count < mvr_count)
-			//  now we have a partial calculation, so do what needs to be done for partials
+			// now we have a partial calculation, so do what needs to be done
+			// for partials
 			{
-			  setHdbValidationFlag(output,'T');
-                          // call the RBASEUtils merge method to add a "seed record" to cp_historic_computations table
-//  The code modified the SDI from the getSDI method due to a change in int to long primitive type
-// This code modified by M. Bogner August 2012 for the 3.0 CP upgrade project
-// This code modified by M. Bogner March 2013 for the 5.2 CP upgrade project where the surrogate keys modified to an object
-                           int tempSDI = (int) getSDI("input").getValue();
-                           
-			  rbu.merge_cp_hist_calc( (int) comp.getAppId().getValue(),tempSDI,input_interval,_aggregatePeriodBegin,
-			  _aggregatePeriodEnd,"dd-MM-yyyy HH:mm",tsdb.getWriteModelRunId(),table_selector);
-			} 
+				setHdbValidationFlag(output, 'T');
+				// call the RBASEUtils merge method to add a "seed record" to
+				// cp_historic_computations table
+				// The code modified the SDI from the getSDI method due to a
+				// change in int to long primitive type
+				// This code modified by M. Bogner August 2012 for the 3.0 CP
+				// upgrade project
+				// This code modified by M. Bogner March 2013 for the 5.2 CP
+				// upgrade project where the surrogate keys modified to an
+				// object
+				int tempSDI = (int) getSDI("input").getValue();
+
+				rbu.merge_cp_hist_calc((int) comp.getAppId().getValue(), tempSDI, input_interval,
+					_aggregatePeriodBegin, _aggregatePeriodEnd, "dd-MM-yyyy HH:mm",
+					tsdb.getWriteModelRunId(), table_selector);
+			}
 			Double value_out = new Double(dbobj.get("result").toString());
 			debug3("FLAGS: " + flags);
-			if (flags != null)setHdbDerivationFlag(output,flags);
+			if (flags != null)
+				setHdbDerivationFlag(output, flags);
 			//
-                        /* added to allow users to automatically set the Validation column  */
-                        if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
-			setOutput(output,value_out);
-		  }
-		//  delete any existing value if this calculation failed
-		if (!do_setoutput)
-		  {
-			deleteOutput(output);
-		  }
+			/* added to allow users to automatically set the Validation column */
+			if (validation_flag.length() > 0)
+				setHdbValidationFlag(output, validation_flag.charAt(1));
+			
+			// Added for HDB issue 386
+			if (value_out < 0.0 && negativeReplacement != Double.NEGATIVE_INFINITY)
+			{
+				debug1("Computed aggregate=" + value_out + ", will use negativeReplacement="
+					+ negativeReplacement);
+				value_out = negativeReplacement;
+			}
 
+			setOutput(output, value_out);
+		}
+		// delete any existing value if this calculation failed
+		if (!do_setoutput)
+		{
+			deleteOutput(output);
+		}
 
 
 
@@ -405,4 +449,11 @@ public class DynamicAggregatesAlg
 	{
 		return _propertyNames;
 	}
+	
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return specs;
+	}
+
 }
