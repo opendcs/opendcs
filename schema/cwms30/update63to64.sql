@@ -40,7 +40,7 @@ CREATE TABLE DACQ_EVENT
     -- If this is related to a message, this holds the message's local_recv_time.
     MSG_RECV_TIME DATE,
 	EVENT_TEXT VARCHAR2(256) NOT NULL,
-    LOADING_APPLICATION_ID NUMBER(18) NOT NULL,
+    LOADING_APPLICATION_ID NUMBER(18),
 	db_office_code integer default &dflt_office_code,
 	PRIMARY KEY (DACQ_EVENT_ID)
 ) &TBL_SPACE_SPEC;
@@ -69,7 +69,8 @@ CREATE INDEX EVT_SCHED_IDX ON DACQ_EVENT (SCHEDULE_ENTRY_STATUS_ID);
 CREATE INDEX EVT_TIME_IDX ON DACQ_EVENT (EVENT_TIME);
 
 DROP SEQUENCE DACQ_EVENTIDSEQ;
-CREATE SEQUENCE DACQ_EVENTIDSEQ as NUMBER(18) MINVALUE 1 START WITH 1 NOCACHE;
+CREATE SEQUENCE DACQ_EVENTIDSEQ MINVALUE 1 START WITH 1 NOCACHE;
+
 
 -----------------------------------------------------------------
 -- Finally, update the database version numbers in the database
