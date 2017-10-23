@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2017/08/22 19:32:37  mmaloney
+ * Improve comments
+ *
  * Revision 1.10  2017/02/16 14:41:26  mmaloney
  * Close CwmsRatingDao in final block.
  *
@@ -300,6 +303,8 @@ debug3("RatingSet.rate: input=" + vals[i] + ", output=" + ratedValue + ", at tim
 				String msg = "RatingException for spec '" + specId + "' value " + vals[i]
 					+ " at time " + debugSdf.format(d) + ": " + ex;
 				warning(msg);
+				if (Logger.instance().getLogOutput() != null)
+					ex.printStackTrace(Logger.instance().getLogOutput());
 			}
 		}
 		

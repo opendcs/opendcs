@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2017/08/22 19:32:16  mmaloney
+ * Improve comments
+ *
  * Revision 1.10  2017/02/16 14:41:26  mmaloney
  * Close CwmsRatingDao in final block.
  *
@@ -473,6 +476,8 @@ public class CwmsRatingMultIndep
 		catch (RatingException ex)
 		{
 			warning("Rating failure specId='" + specId + "': " + ex);
+			if (Logger.instance().getLogOutput() != null)
+				ex.printStackTrace(Logger.instance().getLogOutput());
 		}
 //AW:TIMESLICE_END
 	}
