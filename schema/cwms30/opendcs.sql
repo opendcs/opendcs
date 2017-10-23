@@ -222,7 +222,7 @@ CREATE TABLE DACQ_EVENT
     -- If this is related to a message, this holds the message's local_recv_time.
     MSG_RECV_TIME DATE,
 	EVENT_TEXT VARCHAR2(256) NOT NULL,
-    LOADING_APPLICATION_ID NUMBER(18) NOT NULL,
+    LOADING_APPLICATION_ID NUMBER(18),
 	db_office_code integer default &dflt_office_code,
 	PRIMARY KEY (DACQ_EVENT_ID)
 ) &TBL_SPACE_SPEC;
@@ -794,7 +794,6 @@ CREATE TABLE TRANSPORTMEDIUM
 	DOLOGIN VARCHAR2(5),
 	USERNAME VARCHAR2(32),
 	PASSWORD VARCHAR2(32),
-
 	db_office_code integer default &dflt_office_code,
 	PRIMARY KEY (PLATFORMID, MEDIUMTYPE)
 ) &TBL_SPACE_SPEC;
