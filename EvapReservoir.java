@@ -422,8 +422,8 @@ public class EvapReservoir
         }
         catch (IOException e)
         {
-            System.out.println("Exception:  Error Reading intial water temperature file " + e.getMessage());
-            e.printStackTrace(System.out);
+			Logger.getLogger(EvapReservoir.class.getName()).log(Level.SEVERE,
+																"Exception:  Error Reading intial water temperature file", e);
             return false;
         }
         // parse the text
@@ -587,8 +587,7 @@ public class EvapReservoir
         int nResBottom = -1;
         for ( int i = 0; i<_nSurfArea; i++ )
         {
-        	
-System.out.println( "i, surfA, nResBottom  " + i + ", " + nResBottom  + ", " +  _surfA[i]);             	
+        	Logger.getLogger(EvapReservoir.class.getName()).log(Level.FINE, "i, surfA, nResBottom  " + i + ", " + nResBottom  + ", " +  _surfA[i]);
             if (_surfA[i] > 0.) 
             {
                 if ( i == 0 )
@@ -628,15 +627,14 @@ System.out.println( "i, surfA, nResBottom  " + i + ", " + nResBottom  + ", " +  
         if ( depth <= 0. )
         {
             String msg = "Water Elev less than Reservoir Bottom Elevation";
-            System.out.println( msg );
+			Logger.getLogger(EvapReservoir.class.getName()).log(Level.WARNING, msg);
             return false;
         }
 
         // save in global variables
         _depth = depth;
         _nResBottom = nResBottom;
-
-System.out.println( "nResBottom  " + _nResBottom + ", " + _nSurfArea );        
+		Logger.getLogger(EvapReservoir.class.getName()).log(Level.FINE, "nResBottom  {0}, {1}", new Object[]{_nResBottom, _nSurfArea});
         // compute surface area
         double surfArea = intArea(_elev);
         _surfArea = surfArea/(1000.*1000.);
@@ -694,7 +692,7 @@ System.out.println( "nResBottom  " + _nResBottom + ", " + _nSurfArea );
         int resj = j-1;
         
         // Put last step at bottom
-System.out.println( " resj,  depth, wsel " + resj + "  "  + _depth + "  "  + wsel);
+		Logger.getLogger(EvapReservoir.class.getName()).log(Level.FINE, " resj,  depth, wsel {0}  {1}  {2}", new Object[]{resj, _depth, wsel});
    
         if ( zdx[resj] < _depth )
         {
