@@ -479,7 +479,6 @@ public class ResWtCompute
                                 "\nu_H2O_star =" + u_H2O_star +                                
                                 "\ndelT =" + delT ;   
 						Logger.getLogger(ResWtCompute.class.getName()).log(Level.SEVERE, msg);
-                        System.out.println(msg);
                         
                         return false;
                     }
