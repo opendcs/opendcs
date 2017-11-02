@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.3  2017/06/02 14:32:02  mmaloney
+ * If yesOption is used, also supress all stdout.
+ *
  * Revision 1.2  2015/09/17 17:44:56  mmaloney
  * CWMS Screening I/O and Algorithm
  *
@@ -28,6 +31,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
+import lrgs.gui.DecodesInterface;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.tsdb.DbIoException;
@@ -77,6 +81,7 @@ public class ScreeningImport
 		cmdLineArgs.addToken(noTsidsToken);
 		cmdLineArgs.addToken(yesToken);
 		cmdLineArgs.addToken(fileNameToken);
+		DecodesInterface.silent = true;
 	}
 	
 	@Override
@@ -89,7 +94,10 @@ public class ScreeningImport
 		{
 			numWarnings = 0;
 			curFile = fileNameToken.getValue(idx);
-			System.out.println("Reading file " + curFile);
+			if (!yesToken.getValue())
+				System.out.println("Reading file " + curFile);
+			else
+				Logger.instance().info("Reading file " + curFile);
 			readFile(curFile);
 			if (numWarnings > 0)
 			{
