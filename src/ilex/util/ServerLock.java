@@ -303,19 +303,33 @@ public class ServerLock implements Runnable
 		}
 
 		ServerLock mylock = new ServerLock(args[0]);
-		if (mylock.obtainLock() == false)
-		{
-			System.out.println("Lock '" + args[0] + "' is in use.");
-			System.exit(0);
-		}
-		mylock.releaseOnExit();
-		System.out.println("I have the lock '" + args[0] + "'.");
-		for(int i=0; i<90; i++)
-		{
-			System.out.println("test " + i);
-			try { Thread.sleep(1000L); }
-			catch (InterruptedException e) {}
-		}
+		boolean t = mylock.isLocked(true);
+		System.out.println("locked=" + t);
+		System.out.println("lock msec=" + mylock.lastLockMsec + ", or "
+			+ new Date(mylock.lastLockMsec));
+
+//		if (mylock.obtainLock() == false)
+//		{
+//			System.out.println("Lock '" + args[0] + "' is in use.");
+//			System.out.println("lock msec=" + mylock.lastLockMsec + ", or "
+//				+ new Date(mylock.lastLockMsec));
+//			System.exit(0);
+//		}
+//		
+//		if (mylock.lastLockMsec > 0L)
+//		{
+//			System.out.println("Lock file exists but is too old.");
+//			System.out.println("lock msec=" + mylock.lastLockMsec + ", or "
+//				+ new Date(mylock.lastLockMsec));
+//		}
+//		mylock.releaseOnExit();
+//		System.out.println("I have the lock '" + args[0] + "'.");
+//		for(int i=0; i<90; i++)
+//		{
+//			System.out.println("test " + i);
+//			try { Thread.sleep(1000L); }
+//			catch (InterruptedException e) {}
+//		}
 		System.exit(0);
 	}
 
