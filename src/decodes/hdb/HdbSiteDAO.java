@@ -197,10 +197,12 @@ public class HdbSiteDAO extends SiteDAO
 	public synchronized DbKey lookupSiteID(final String nameValue)
 		throws DbIoException
 	{
+debug3("HdbSiteDAO.lookupSiteID(" + nameValue + ") cache has " + cache.size() + " sites.");
 		// The 'uniqueName' in the cache will be the preferred site name type
 		Site site = cache.getByUniqueName(nameValue);
 		if (site != null)
 			return site.getKey();
+debug3("HdbSiteDAO.lookupSiteID -- no match to any unique primary site name in cache.");
 
 		// If not found, search the cache for any name match
 		site = cache.search(
@@ -219,7 +221,25 @@ public class HdbSiteDAO extends SiteDAO
 			});
 		if (site != null)
 			return site.getKey();
+debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 
+		// HDB Users often use surrogate key as a site name.
+		try
+		{
+			long key = Long.parseLong(nameValue);
+			DbKey dbKey = DbKey.createDbKey(key);
+			site = getSiteById(dbKey);
+			if (site != null)
+				return dbKey;
+		}
+		catch(NumberFormatException ex)
+		{
+			debug3("lookupSiteID name value '" + nameValue + "' is not a site ID.");
+		}
+		catch (NoSuchObjectException e)
+		{
+		}
+		debug3("lookupSiteID name value '" + nameValue + "' is does not match any site ID.");
 		
 		// Finally search the database for a SiteName with matching value.
 		String q = basicSiteNameQuery(null);
