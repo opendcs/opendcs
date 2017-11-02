@@ -896,7 +896,7 @@ Logger.instance().debug3("After M field with month=" + m + ", day=" + d + ", day
 	private boolean isMissingSymbol(String s)
 	{
 		return s.startsWith("//") 
-		 || s.startsWith("??")
+		 || (s.startsWith("??") && data_type == NumberParser.ASCII_FMT)
 		 || s.startsWith("---")
 		 || (s.equalsIgnoreCase("M") && data_type == NumberParser.ASCII_FMT)
 		 || decodesScript.isMissingSymbol(s);
