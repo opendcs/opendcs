@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2017/05/31 21:32:13  mmaloney
+ * GUI improvements for HDB
+ *
  * Revision 1.6  2017/01/11 14:09:14  mmaloney
  * CompEdit CompParmDialog Lookup time Series should allow wildcards in the site name
  * for CWMS.
@@ -693,7 +696,8 @@ public class CompParmDialog extends GuiDialog
 			dlg.setCurrentValue(dataTypeField.getText());
 			launchDialog(dlg);
 			StringPair result = dlg.getResult();
-			dataTypeField.setText(result.first);
+			if (result != null)
+				dataTypeField.setText(result.first);
 		}
 	}
 
@@ -716,9 +720,8 @@ public class CompParmDialog extends GuiDialog
 				siteId = theDb.lookupSiteID(siteName);
 				if (siteId == Constants.undefinedId)
 				{
-					showError(ceResources.getString("CompParmDialog.OKError4")
-							+ siteName
-							+ ceResources.getString("CompParmDialog.OKError5"));
+					showError(LoadResourceBundle.sprintf(
+						ceResources.getString("CompParmDialog.InvalidSite"), siteName));
 					return;
 				}
 				else
