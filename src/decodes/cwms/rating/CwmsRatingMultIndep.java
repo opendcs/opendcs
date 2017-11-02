@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2017/10/23 13:36:01  mmaloney
+ * Log stack trace on rating exceptions.
+ *
  * Revision 1.11  2017/08/22 19:32:16  mmaloney
  * Improve comments
  *
@@ -74,6 +77,7 @@
  */
 package decodes.cwms.rating;
 
+import java.io.PrintStream;
 import java.util.Date;
 
 import ilex.util.EnvExpander;
@@ -96,6 +100,7 @@ import ilex.var.TimedVariable;
 //AW:IMPORTS
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import hec.lang.Const;
 
 import java.util.ArrayList;
 
@@ -133,18 +138,21 @@ public class CwmsRatingMultIndep
 	Date beginTime = null;
 	Date endTime = null;
 	ArrayList<Long> indepTimes = new ArrayList<Long>();
-	ArrayList<Double> indep1Values = new ArrayList<Double>();
-	ArrayList<Double> indep2Values = null;
-	ArrayList<Double> indep3Values = null;
-	ArrayList<Double> indep4Values = null;
-	ArrayList<Double> indep5Values = null;
-	ArrayList<Double> indep6Values = null;
-	ArrayList<Double> indep7Values = null;
-	ArrayList<Double> indep8Values = null;
-	ArrayList<Double> indep9Values = null;
+//	ArrayList<Double> indep1Values = new ArrayList<Double>();
+//	ArrayList<Double> indep2Values = null;
+//	ArrayList<Double> indep3Values = null;
+//	ArrayList<Double> indep4Values = null;
+//	ArrayList<Double> indep5Values = null;
+//	ArrayList<Double> indep6Values = null;
+//	ArrayList<Double> indep7Values = null;
+//	ArrayList<Double> indep8Values = null;
+//	ArrayList<Double> indep9Values = null;
 	int numIndeps = 1;
 	String specId = "";
 	String indep1SiteName = null;
+
+	private ArrayList<ArrayList<Double>> valueSetsA = null;
+
 	
 	private String buildIndepSpec()
 		throws DbCompException
@@ -170,7 +178,7 @@ public class CwmsRatingMultIndep
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		indep2Values = new ArrayList<Double>();
+//		indep2Values = new ArrayList<Double>();
 		numIndeps = 2;
 		
 		parmRef = getParmRef("indep3");
@@ -183,7 +191,7 @@ public class CwmsRatingMultIndep
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		indep3Values = new ArrayList<Double>();
+//		indep3Values = new ArrayList<Double>();
 		numIndeps = 3;
 
 		parmRef = getParmRef("indep4");
@@ -197,7 +205,7 @@ public class CwmsRatingMultIndep
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		indep4Values = new ArrayList<Double>();
+//		indep4Values = new ArrayList<Double>();
 		numIndeps = 4;
 
 		parmRef = getParmRef("indep5");
@@ -211,7 +219,7 @@ public class CwmsRatingMultIndep
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		indep5Values = new ArrayList<Double>();
+//		indep5Values = new ArrayList<Double>();
 		numIndeps = 5;
 
 		parmRef = getParmRef("indep6");
@@ -225,7 +233,7 @@ public class CwmsRatingMultIndep
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		indep6Values = new ArrayList<Double>();
+//		indep6Values = new ArrayList<Double>();
 		numIndeps = 6;
 
 		parmRef = getParmRef("indep7");
@@ -239,7 +247,7 @@ public class CwmsRatingMultIndep
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		indep7Values = new ArrayList<Double>();
+//		indep7Values = new ArrayList<Double>();
 		numIndeps = 7;
 
 		parmRef = getParmRef("indep8");
@@ -253,7 +261,7 @@ public class CwmsRatingMultIndep
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		indep8Values = new ArrayList<Double>();
+//		indep8Values = new ArrayList<Double>();
 		numIndeps = 8;
 
 		parmRef = getParmRef("indep9");
@@ -267,7 +275,7 @@ public class CwmsRatingMultIndep
 		}
 		tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		indepSpecId = indepSpecId + "," + tsid.getDataType().getCode();
-		indep9Values = new ArrayList<Double>();
+//		indep9Values = new ArrayList<Double>();
 		numIndeps = 9;
 
 		return indepSpecId;
@@ -401,23 +409,31 @@ public class CwmsRatingMultIndep
 		}
 
 		indepTimes.clear();
-		indep1Values.clear();
-		if (indep2Values != null)
-			indep2Values.clear();
-		if (indep3Values != null)
-			indep3Values.clear();
-		if (indep4Values != null)
-			indep4Values.clear();
-		if (indep5Values != null)
-			indep5Values.clear();
-		if (indep6Values != null)
-			indep6Values.clear();
-		if (indep7Values != null)
-			indep7Values.clear();
-		if (indep8Values != null)
-			indep8Values.clear();
-		if (indep9Values != null)
-			indep9Values.clear();
+//		indep1Values.clear();
+//		if (indep2Values != null)
+//			indep2Values.clear();
+//		if (indep3Values != null)
+//			indep3Values.clear();
+//		if (indep4Values != null)
+//			indep4Values.clear();
+//		if (indep5Values != null)
+//			indep5Values.clear();
+//		if (indep6Values != null)
+//			indep6Values.clear();
+//		if (indep7Values != null)
+//			indep7Values.clear();
+//		if (indep8Values != null)
+//			indep8Values.clear();
+//		if (indep9Values != null)
+//			indep9Values.clear();
+
+		// MJM 2017 10/31 Array list of indeps, for each indep and arraylist of values.
+		valueSetsA = new ArrayList<ArrayList<Double>>();
+		for(int idx = 0; idx < numIndeps; idx++)
+			valueSetsA.add(new ArrayList<Double>());
+		
+
+		
 //AW:BEFORE_TIMESLICES_END
 	}
 
@@ -450,36 +466,54 @@ public class CwmsRatingMultIndep
 		 || (numIndeps >= 9 && isMissing("indep9") && indep9_MISSING.equalsIgnoreCase("fail")))
 			return;
 
-		double valueSet[] = new double[numIndeps];
-		valueSet[0] = indep1;
-		if (numIndeps >= 2) valueSet[1] = indep2;
-		if (numIndeps >= 3) valueSet[2] = indep3;
-		if (numIndeps >= 4) valueSet[3] = indep4;
-		if (numIndeps >= 5) valueSet[4] = indep5;
-		if (numIndeps >= 6) valueSet[5] = indep6;
-		if (numIndeps >= 7) valueSet[6] = indep7;
-		if (numIndeps >= 8) valueSet[7] = indep8;
-		if (numIndeps >= 9) valueSet[8] = indep9;
-		try
-		{
-			double output = ratingSet.rateOne(valueSet, _timeSliceBaseTime.getTime());
-			setOutput(dep, output);
-			if (Logger.instance().getMinLogPriority() == Logger.E_DEBUG3)
-			{
-				StringBuilder sb = new StringBuilder();
-				for(int i=0; i<numIndeps; i++)
-					sb.append((i>0?", ":"") + "i" + (i+1) + "=" + valueSet[i]);
-				sb.append(" -- output=" + output);
-				debug3(sb.toString());
-			}
-		}
-		catch (RatingException ex)
-		{
-			warning("Rating failure specId='" + specId + "': " + ex);
-			if (Logger.instance().getLogOutput() != null)
-				ex.printStackTrace(Logger.instance().getLogOutput());
-		}
-//AW:TIMESLICE_END
+		// MJM 10/31/2017 Modified to save values and do array rating in after method.
+		indepTimes.add(_timeSliceBaseTime.getTime());
+		valueSetsA.get(0).add(indep1);
+		if (numIndeps >= 2) valueSetsA.get(1).add(indep2);
+		if (numIndeps >= 3) valueSetsA.get(2).add(indep3);
+		if (numIndeps >= 4) valueSetsA.get(3).add(indep4);
+		if (numIndeps >= 5) valueSetsA.get(4).add(indep5);
+		if (numIndeps >= 6) valueSetsA.get(5).add(indep6);
+		if (numIndeps >= 7) valueSetsA.get(6).add(indep7);
+		if (numIndeps >= 8) valueSetsA.get(7).add(indep8);
+		if (numIndeps >= 9) valueSetsA.get(8).add(indep9);
+		
+		
+		
+//		double valueSet[] = new double[numIndeps];
+//		valueSet[0] = indep1;
+//		if (numIndeps >= 2) valueSet[1] = indep2;
+//		if (numIndeps >= 3) valueSet[2] = indep3;
+//		if (numIndeps >= 4) valueSet[3] = indep4;
+//		if (numIndeps >= 5) valueSet[4] = indep5;
+//		if (numIndeps >= 6) valueSet[5] = indep6;
+//		if (numIndeps >= 7) valueSet[6] = indep7;
+//		if (numIndeps >= 8) valueSet[7] = indep8;
+//		if (numIndeps >= 9) valueSet[8] = indep9;
+		
+		
+		
+		
+//		try
+//		{
+//			double output = ratingSet.rateOne(valueSet, _timeSliceBaseTime.getTime());
+//			setOutput(dep, output);
+//			if (Logger.instance().getMinLogPriority() == Logger.E_DEBUG3)
+//			{
+//				StringBuilder sb = new StringBuilder();
+//				for(int i=0; i<numIndeps; i++)
+//					sb.append((i>0?", ":"") + "i" + (i+1) + "=" + valueSet[i]);
+//				sb.append(" -- output=" + output);
+//				debug3(sb.toString());
+//			}
+//		}
+//		catch (RatingException ex)
+//		{
+//			warning("Rating failure specId='" + specId + "': " + ex);
+//			if (Logger.instance().getLogOutput() != null)
+//				ex.printStackTrace(Logger.instance().getLogOutput());
+//		}
+////AW:TIMESLICE_END
 	}
 
 	/**
@@ -488,6 +522,49 @@ public class CwmsRatingMultIndep
 	protected void afterTimeSlices()
 	{
 //AW:AFTER_TIMESLICES
+		
+		// Convert nested ArrayLists to double[TIMES][VALUES].
+		// Note that the dimensions are reversed from the nested array lists.
+		double[][] valueSets = new double[indepTimes.size()][numIndeps];
+		for(int valIdx = 0; valIdx < indepTimes.size(); valIdx++)
+			for(int indepIdx = 0; indepIdx < numIndeps; indepIdx++)
+				valueSets[valIdx][indepIdx] = valueSetsA.get(indepIdx).get(valIdx);
+		
+		long valueTimes[] = new long[indepTimes.size()];
+		for(int valIdx = 0; valIdx < indepTimes.size(); valIdx++)
+			valueTimes[valIdx] = indepTimes.get(valIdx);
+		
+		try
+		{
+			debug1("Calling rate with " + valueSets.length + " inputs and " 
+				+ valueTimes.length + " values each.");
+			double depVals[] = ratingSet.rate(valueSets, valueTimes);
+			
+			for(int i=0; i<depVals.length; i++)
+			{
+				if (depVals[i] != Const.UNDEFINED_DOUBLE)
+					setOutput(dep, depVals[i], new Date(valueTimes[i]));
+				else
+					warning("ValueSet at time " + debugSdf.format(new Date(valueTimes[i]))
+						+ " could not be rated (most likely reason is that it is outside table bounds.)");
+			}
+		}
+		catch(Exception ex)
+		{
+			String msg = "Rating failure: " + ex;
+			warning(msg);
+			PrintStream out = Logger.instance().getLogOutput();
+			if (out == null)
+				out = System.err;
+			ex.printStackTrace(out);
+			Throwable cause = ex.getCause();
+			if (cause != null)
+			{
+				warning("...cause: " + cause);
+				cause.printStackTrace(out);
+			}
+		}
+
 //AW:AFTER_TIMESLICES_END
 	}
 

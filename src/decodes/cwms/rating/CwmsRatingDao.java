@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2017/03/09 21:38:23  mmaloney
+ * Don't attempt to detect change in a rating set in the database.
+ * Set the databaseLookupMode to reference.
+ *
  * Revision 1.7  2017/02/15 15:09:48  mmaloney
  * Fixed rating check as per Mike Perryman's email 2/14/17
  *
@@ -79,19 +83,26 @@ public class CwmsRatingDao extends DaoBase
 	private long MAX_AGE_MSEC = 9 * 3600000L;
 	
 	
-	static
-	{
-		// Mike Perryman's email on March 1, 2017 - Rating API now has a reference mode
-		// whereby the rating calculations are done on the database side and no (huge)
-		// rating table have to be actually loaded. Thus use the reference mode and also
-		// remove the 'check for update' operation.
-		System.setProperty("hec.data.cwmsRating.RatingSet.databaseLoadMethod", "reference");
-	}
-	
+//	static
+//	{
+//		// Mike Perryman's email on March 1, 2017 - Rating API now has a reference mode
+//		// whereby the rating calculations are done on the database side and no (huge)
+//		// rating table have to be actually loaded. Thus use the reference mode and also
+//		// remove the 'check for update' operation.
+//		System.setProperty("hec.data.cwmsRating.RatingSet.databaseLoadMethod", "reference");
+//	}
+//	
 	public CwmsRatingDao(CwmsTimeSeriesDb tsdb)
 	{
 		super(tsdb, "CwmsRatingDao");
 		officeId = tsdb.getDbOfficeId();
+		setUseReference(true);
+	}
+
+	public void setUseReference(boolean useReference)
+	{
+		System.setProperty("hec.data.cwmsRating.RatingSet.databaseLoadMethod", 
+			useReference ? "reference" : "eager");
 	}
 	
 	public void setOfficeId(String oid)

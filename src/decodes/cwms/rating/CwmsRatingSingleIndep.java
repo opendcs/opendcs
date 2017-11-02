@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2017/10/23 13:36:28  mmaloney
+ * Log stack trace on rating exceptions.
+ *
  * Revision 1.11  2017/08/22 19:32:37  mmaloney
  * Improve comments
  *
@@ -71,6 +74,7 @@
  */
 package decodes.cwms.rating;
 
+import java.io.PrintStream;
 import java.util.Date;
 
 import ilex.util.EnvExpander;
@@ -93,6 +97,7 @@ import ilex.var.TimedVariable;
 //AW:IMPORTS
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import hec.lang.Const;
 
 import java.util.ArrayList;
 
@@ -272,41 +277,70 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 			vals[i] = indepValues.get(i);
 		}
 
-//		try
-//		{
-//			debug1("Calling rate with " + times.length + " times/values");
-//			double depVals[] = ratingSet.rate(times, vals);
-//			
-//			for(int i=0; i<times.length; i++)
-//				setOutput(dep, depVals[i], new Date(times[i]));
-//		}
-//		catch(Exception ex)
-//		{
-//			String msg = "Rating failure: " + ex;
-//			warning(msg);
-//		}
-		
-		// The rate method will arrays will throw RatingException if ANY
-		// values are out of range and produce no result. Therefore I must
-		// rate each value individually.
-		for(int i=0; i<times.length; i++)
+		// Note:
+		// There is a 'method' variable in each RatingSpec in the database that controls
+		// the rating behavior independently for above range, below range, and within range
+		// but no exact matching value. E.g.:
+		//	<in-range-method>LINEAR</in-range-method>
+		//	<out-range-low-method>ERROR</out-range-low-method>
+		//	<out-range-high-method>ERROR</out-range-high-method>
+		// Consequently, always use the array type rating method and let the database
+		// determine what happens.
+		// If NULL is the method then the dep output wil be set to Const.UNDEFINED_DOUBLE
+
+		try
 		{
-			Date d = new Date(times[i]);
-			try
+			debug1("Calling rate with " + times.length + " times/values");
+			double depVals[] = ratingSet.rate(times, vals);
+			
+			for(int i=0; i<times.length; i++)
 			{
-				double ratedValue = ratingSet.rate(vals[i], times[i]);
-debug3("RatingSet.rate: input=" + vals[i] + ", output=" + ratedValue + ", at time " + debugSdf.format(d));
-				setOutput(dep, ratedValue, d);
-			}
-			catch(RatingException ex)
-			{
-				String msg = "RatingException for spec '" + specId + "' value " + vals[i]
-					+ " at time " + debugSdf.format(d) + ": " + ex;
-				warning(msg);
-				if (Logger.instance().getLogOutput() != null)
-					ex.printStackTrace(Logger.instance().getLogOutput());
+				if (depVals[i] != Const.UNDEFINED_DOUBLE)
+					setOutput(dep, depVals[i], new Date(times[i]));
+				else
+					warning("Value " + vals[i] + " at time " + debugSdf.format(new Date(times[i]))
+						+ " could not be rated (most likely reason is that it is outside table bounds.)");
 			}
 		}
+		catch(Exception ex)
+		{
+			String msg = "Rating failure: " + ex;
+			warning(msg);
+			PrintStream out = Logger.instance().getLogOutput();
+			if (out == null)
+				out = System.err;
+			ex.printStackTrace(out);
+			Throwable cause = ex.getCause();
+			if (cause != null)
+			{
+				warning("...cause: " + cause);
+				cause.printStackTrace(out);
+			}
+		}
+		
+		
+		
+//		// The rate method will arrays will throw RatingException if ANY
+//		// values are out of range and produce no result. Therefore I must
+//		// rate each value individually.
+//		for(int i=0; i<times.length; i++)
+//		{
+//			Date d = new Date(times[i]);
+//			try
+//			{
+//				double ratedValue = ratingSet.rate(vals[i], times[i]);
+//debug3("RatingSet.rate: input=" + vals[i] + ", output=" + ratedValue + ", at time " + debugSdf.format(d));
+//				setOutput(dep, ratedValue, d);
+//			}
+//			catch(RatingException ex)
+//			{
+//				String msg = "RatingException for spec '" + specId + "' value " + vals[i]
+//					+ " at time " + debugSdf.format(d) + ": " + ex;
+//				warning(msg);
+//				if (Logger.instance().getLogOutput() != null)
+//					ex.printStackTrace(Logger.instance().getLogOutput());
+//			}
+//		}
 		
 //AW:AFTER_TIMESLICES_END
 	}
