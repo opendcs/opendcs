@@ -1,3 +1,12 @@
+/**
+ * $Id$
+ * 
+ * Copyright 2017 United States Government.
+ * This software was written by Cove Software, LLC (COVE) under contract to the U.S. Government.
+ * No warranty is provided except for the specific contract terms between COVE and the Government.
+ * 
+ * $Log$
+ */
 package decodes.tsdb.algo;
 
 import java.util.Date;
