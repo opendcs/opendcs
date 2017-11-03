@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.12  2016/09/08 21:02:52  mmaloney
+*  Wrap call to initAlgorithm so that an unexpected exception won't kill compproc.
+*
 *  Revision 1.11  2016/05/05 15:51:03  mmaloney
 *  Added tooltip help for AggregateTimeOffset property.
 *
@@ -96,6 +99,7 @@ import java.util.TreeSet;
 
 import ilex.util.Logger;
 import ilex.util.TextUtil;
+import ilex.var.IFlags;
 import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
@@ -111,6 +115,7 @@ import decodes.tsdb.VarFlags;
 import decodes.tsdb.ParmRef;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
+import decodes.cwms.CwmsFlags;
 import decodes.hdb.HdbFlags;
 
 /**
@@ -1676,4 +1681,54 @@ ex.printStackTrace(System.err);
 	{
 		return false;
 	}
+	
+	
+	/**
+	 * Return true if the named param has a value in the current timeslice
+	 * and that value is flagged as good quality. That is, it is not flagged
+	 * as questionable, rejected, missing, or to-delete.
+	 * This method only works for CWMS.
+	 * @param rolename
+	 * @return
+	 */
+	public boolean isGoodQuality(String rolename)
+	{
+//		debug1("isGoodQuality(" + rolename + ")");
+
+		NamedVariable nv = _timeSliceVars.findByName(rolename);
+		if (nv == null)
+			return false;
+		int f = nv.getFlags();
+		
+		if (tsdb.isCwms())
+		{
+			return (f & (CwmsFlags.VALIDITY_REJECTED | CwmsFlags.VALIDITY_QUESTIONABLE
+				| IFlags.IS_MISSING | VarFlags.TO_DELETE)) == 0;
+		}
+		else if (tsdb.isHdb())
+		{
+			return HdbFlags.isGoodQuality(f);
+		}
+		else
+			return false;
+	}
+	
+	/**
+	 * Return true if the named param is a triggering value for this computation
+	 * at the current time slice.
+	 * @return
+	 */
+	public boolean isTrigger(String rolename)
+	{
+//		debug1("isTrigger(" + rolename + ")");
+		NamedVariable nv = _timeSliceVars.findByName(rolename);
+		if (nv == null)
+			return false;
+		int f = nv.getFlags();
+		boolean ret = (f & VarFlags.DB_ADDED) != 0;
+//		debug1("    ... returning " + ret);
+		return ret;
+	}
+
+
 }
