@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="PeriodToDate">
+    <Comment>
+Output is the accumulation of the input from the start of the period.
+This is an Aggregating algorithm. Unlike most aggregating algorithms,
+the aggregate period must be set by property rather than implied by
+the period of the output.
+The output param, 'periodToDate', must have the same interval as the 
+input.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.PeriodToDate</ExecClass>
+    <AlgoProperty name="goodQualityOnly">true</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="periodToDate">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>
