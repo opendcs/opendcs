@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.12  2017/08/22 19:56:40  mmaloney
+*  Refactor
+*
 *  Revision 1.11  2017/05/31 21:27:18  mmaloney
 *  Improvement to getParmTsId
 *
@@ -511,8 +514,13 @@ debug3("DbAlgorithmExec.apply()");
 			}
 		}
 		else
+		{
 			debug1("addTsToParmRef: Mapping existing time series for " 
 				+ ref.getDescription() + " num samples = " + ref.timeSeries.size());
+			if (ref.timeSeries.size() > 0)
+				for(int idx=0; idx < ref.timeSeries.size() && idx < 32; idx++)
+					debug3("    [" + idx + "] " + ref.timeSeries.sampleAt(idx).toString());
+		}
 
 		if (isOutput)
 			ref.timeSeries.setComputationId(comp.getId());
@@ -520,7 +528,7 @@ debug3("DbAlgorithmExec.apply()");
 		// Make sure params are in the correct units.
 		String propName = ref.role + "_EU";
 		String neededEU = comp.getProperty(propName);
-Logger.instance().debug3("addTsToParmRef: propName='" + propName + "' neededEU='" + neededEU + "'");
+		Logger.instance().debug3("addTsToParmRef: propName='" + propName + "' neededEU='" + neededEU + "'");
 		if (neededEU != null)
 		{
 			String tsEU = ref.timeSeries.getUnitsAbbr();
@@ -575,8 +583,8 @@ Logger.instance().debug3("addTsToParmRef: propName='" + propName + "' neededEU='
 				Date paramTime = parmRef.compParm.baseTimeToParamTime(bd, aggCal);
 				if (parmRef.timeSeries.findWithin(paramTime, roundSec/2) == null)
 				{
-debug3("getAllInputData: role=" + role + ", baseTime=" 
-+ debugSdf.format(bd) + ", paramTime=" + debugSdf.format(paramTime) + ", nsamps=" + parmRef.timeSeries.size());
+//debug3("getAllInputData: role=" + role + ", baseTime=" 
+//+ debugSdf.format(bd) + ", paramTime=" + debugSdf.format(paramTime) + ", nsamps=" + parmRef.timeSeries.size());
 					queryTimes.add(paramTime);
 				}
 			}
@@ -1169,7 +1177,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 	{
 		// MJM 20170525 the IN clause won't work because it doesn't apply the 
 		// roundSec fudge factor -- It only looks for exact time matches.
-		// Therefor this method ALWAYS tries the range, and always returns true.
+		// Therefore this method ALWAYS tries the range, and always returns true.
 		
 //		String intcode = parmRef.compParm.getInterval();
 //		if (IntervalCodes.int_instant.equalsIgnoreCase(intcode)
@@ -1193,9 +1201,10 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 		{
 			// MJM 20170525 Need to apply round sec to retrieval.
 			Date lower = new Date(queryTimes.first().getTime() - (roundSec*1000L / 2));
-			Date upper = new Date(queryTimes.last().getTime() + (roundSec*1000L / 2) - 1);
+			Date upper = new Date(queryTimes.last().getTime()  + (roundSec*1000L / 2));
 
-			int n = timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, lower, upper);
+			//timeSeriesDAO.fillTimeSeries(ts, from, until, include_lower, include_upper, overwriteExisting)
+			int n = timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, lower, upper, false, true, false);
 			debug1("Retrieved " + n + " values for role '" + parmRef.role + "' for times "
 					+ debugSdf.format(lower) + " thru " + debugSdf.format(upper));
 			return true;
@@ -1299,12 +1308,12 @@ debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
 					TimedVariable prevTv = parmRef.timeSeries.findPrev(varSec);
 					if (prevTv == null)
 					{
-Logger.instance().debug3("... no previous value, skipping.");
+//Logger.instance().debug3("... no previous value, skipping.");
 						// Can't compute non-ignored param. Skip slice.
 						continue nextBaseTime;
 					}
 					int prevSec = (int)(prevTv.getTime().getTime() / 1000L);
-Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTime()) + " : " + prevTv.getStringValue());
+//Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTime()) + " : " + prevTv.getStringValue());
 
 					int intvSecs = IntervalCodes.getIntervalSeconds(
 						parmRef.compParm.getInterval());

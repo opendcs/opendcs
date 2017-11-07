@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.13  2017/11/03 19:20:44  mmaloney
+*  Added isTrigger() and isGoodQuality methods.
+*
 *  Revision 1.12  2016/09/08 21:02:52  mmaloney
 *  Wrap call to initAlgorithm so that an unexpected exception won't kill compproc.
 *
@@ -466,8 +469,8 @@ public abstract class AW_AlgorithmBase
 		throws DbCompException, DbIoException
 	{
 		debugSdf.setTimeZone(TimeZone.getTimeZone(aggregateTimeZone));
-		debug3("Setting aggregate TimeZone to '" + aggregateTimeZone + "'"
-			+ " current time=" + debugSdf.format(new Date()));
+//		debug3("Setting aggregate TimeZone to '" + aggregateTimeZone + "'"
+//			+ " current time=" + debugSdf.format(new Date()));
 
 		int defLogPriority = Logger.instance().getMinLogPriority();
 		if (debugLevel != 0)
@@ -686,10 +689,14 @@ public abstract class AW_AlgorithmBase
 		long orig = baseTime.getTime();
 		long upper = lower;
 
-		debug3("determineAggregatePeriod baseTime=" + debugSdf.format(baseTime));
 		
 		// int[2] containing Calendar constant and increment
 		IntervalIncrement calIncr = IntervalCodes.getIntervalCalIncr(interval);
+
+		debug3("determineAggregatePeriod baseTime=" + debugSdf.format(baseTime)
+			+ ", interval=" + interval
+			+ ", aggLowerBoundClosed=" + this.aggLowerBoundClosed
+			+ ", aggUpperBoundClosed=" + this.aggUpperBoundClosed);
 //if (calIncr != null)
 //debug2("determineAggPeriod baseTime=" + debugSdf.format(baseTime) + ", interval="+calIncr);
 
@@ -726,6 +733,7 @@ public abstract class AW_AlgorithmBase
 		}
 		else if (aggPeriodInterval != null)
 		{
+			debug3("... running aggregate, aggPeriodInterval set to '" + aggPeriodInterval + "'");
 			// This is a 'running' average, not based on the output
 			// parameter interval.
 			aggCal.setTime(baseTime);
