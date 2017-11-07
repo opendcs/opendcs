@@ -38,6 +38,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
+import opendcs.dao.DbObjectCache.CacheIterator;
 
 public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 {
@@ -109,8 +110,6 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			}
 			return ret;
 		}
-		else
-			debug3("cache does not have '" + uniqueString + "'");
 
 
 		HdbTsId htsid = new HdbTsId(uniqueString);
@@ -121,20 +120,33 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 				throw new NoSuchObjectException("No hdb site with name '"
 					+ tsSiteName + "'");
 		}
-		htsid.setSite(siteDAO.getSiteById(siteId));
 		DbKey sdi = ((HdbTimeSeriesDb)db).lookupSDI(siteId, htsid.getDataType().getCode());
 		if (sdi == Constants.undefinedId)
 			throw new NoSuchObjectException("No SDI for '" + uniqueString + "'");
+		htsid.setSite(siteDAO.getSiteById(siteId));
 		htsid.setSdi(sdi);
-		String tabsel = htsid.getPart(HdbTsId.TABSEL_PART);
-		if (tabsel == null)
-			tabsel = "R_";
+		if (htsid.getTableSelector() == null)
+			htsid.setTableSelector("R_");
+		
+		// Unique name in cache may be from a different site name type, so
+		// now re-search the cache with the site datatype ID.
+		for(CacheIterator cit = cache.iterator(); cit.hasNext(); )
+		{
+			HdbTsId tsid = (HdbTsId)cit.next();
+			if (sdi.equals(tsid.getSdi()) 
+			 && tsid.getInterval().equalsIgnoreCase(htsid.getInterval())
+			 && tsid.getTableSelector().equalsIgnoreCase(htsid.getTableSelector()))
+			 	return tsid;
+		}
+		
+		debug3("cache does not have '" + uniqueString + "'");
+
 		String q = "SELECT TS_ID "
 			+ "FROM CP_TS_ID "
 			+ "WHERE SITE_DATATYPE_ID = " + htsid.getSdi()
 			+ " AND LOWER(INTERVAL) = " + sqlString(htsid.getInterval().toLowerCase())
-			+ " AND TABLE_SELECTOR = " + sqlString(tabsel);
-		if (tabsel.equalsIgnoreCase("M_"))
+			+ " AND TABLE_SELECTOR = " + sqlString(htsid.getTableSelector());
+		if (htsid.getTableSelector().equalsIgnoreCase("M_"))
 			q = q + " AND MODEL_ID = " + htsid.getPart(HdbTsId.MODELID_PART);
 		try
 		{
