@@ -6,6 +6,9 @@
  * No warranty is provided except for the specific contract terms between COVE and the Government.
  * 
  * $Log$
+ * Revision 1.1  2017/11/03 19:20:10  mmaloney
+ * Created for HDB 312.
+ *
  */
 package decodes.tsdb.algo;
 
@@ -51,8 +54,6 @@ public class PeriodToDate
 	boolean firstTriggerSeen = false;
 	private PropertySpec ratingPropertySpecs[] = 
 	{
-		new PropertySpec("aggPeriodInterval", PropertySpec.STRING,
-			"(default=Year) Determines the aggregate period for accumulation."),
 		new PropertySpec("goodQualityOnly", PropertySpec.BOOLEAN,
 			"(default=false) Only include good quality values in the calculation.")
 	};
@@ -67,7 +68,8 @@ public class PeriodToDate
 
 //AW:OUTPUTS
 	public NamedVariable periodToDate = new NamedVariable("periodToDate", 0);
-	String _outputNames[] = { "periodToDate" };
+	public NamedVariable determineAggPeriod = new NamedVariable("determineAggPeriod", 0);
+	String _outputNames[] = { "periodToDate", "determineAggPeriod" };
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
@@ -85,6 +87,7 @@ public class PeriodToDate
 	{
 //AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
+		_aggPeriodVarRoleName = "determineAggPeriod";
 //AW:INIT_END
 
 //AW:USERINIT
