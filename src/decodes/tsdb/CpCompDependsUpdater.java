@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.15  2017/10/23 13:37:57  mmaloney
+*  As a fail-safe, delete from scratchpad any records that already exist in comp depends.
+*
 *  Revision 1.14  2017/08/22 19:56:39  mmaloney
 *  Refactor
 *
@@ -900,6 +903,19 @@ public class CpCompDependsUpdater
 			}
 			else // it is a group computation
 			{
+				// The cached version may have been too old and a fresh copy read from the DB.
+				// If so, it needs to be expanded before use.
+				if (!grp.getIsExpanded())
+				{
+					try { groupHelper.expandTsGroup(grp); }
+					catch(DbIoException ex)
+					{
+						failure("Cannot evaluate group ID=" + grp.getKey() + " '" + grp.getGroupName()
+							+ "': " + ex);
+						failure("...Therefore cannot evaluation computation '" + comp.getName() + "'");
+						return;
+					}
+				}
 				info("IS a group comp with group " + grp.getGroupId() + " " + grp.getGroupName()
 					+ " numExpandedMembers: " + grp.getExpandedList().size());
 
