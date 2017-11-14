@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.26  2017/11/14 20:46:48  mmaloney
+*  Handle out of range ratings that return Const.UNDEFINED_DOUBLE.
+*
 *  Revision 1.25  2017/08/22 19:31:18  mmaloney
 *  Improve comments
 *
@@ -2146,7 +2149,9 @@ for(CTimeSeries ts : allts)
 				for(double x : indeps)
 					sb.append(x + ",");
 				sb.deleteCharAt(sb.length()-1);
-				throw new RangeException("Input values (" + sb.toString() + ") outside rating range.");
+				String msg = "Input values (" + sb.toString() + ") outside rating range.";
+				warning(msg);
+				throw new RangeException(msg);
 			}
 			return d;
 		}
