@@ -2,6 +2,7 @@ package decodes.tsdb.algo.jep;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import hec.lang.Const;
 import ilex.util.Logger;
 
 import java.util.Date;
@@ -99,7 +100,10 @@ public class RatingFunction
 		{
 			RatingSet ratingSet = crd.getRatingSet(specId);
 			what = "performing rating";
-			inStack.push(new Double(ratingSet.rateOne(valueSet, tsbt.getTime())));
+			double d = ratingSet.rateOne(valueSet, tsbt.getTime());
+			if (d == Const.UNDEFINED_DOUBLE)
+				throw new RatingException("input value(s) outside rating bounds.");
+			inStack.push(new Double(d));
 		}
 		catch (RatingException ex)
 		{

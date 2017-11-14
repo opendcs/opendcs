@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.25  2017/08/22 19:31:18  mmaloney
+*  Improve comments
+*
 *  Revision 1.24  2017/05/31 21:18:40  mmaloney
 *  Added rating method to the TSDB object in order to remove dependencies to CWMS
 *  from PythonAlgorithm.
@@ -593,6 +596,7 @@ import cwmsdb.CwmsSecJdbc;
 import oracle.jdbc.OraclePreparedStatement;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import hec.lang.Const;
 import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
@@ -2135,7 +2139,16 @@ for(CTimeSeries ts : allts)
 		try
 		{
 			RatingSet ratingSet = crd.getRatingSet(specId);
-			return ratingSet.rateOne(indeps, timeStamp.getTime());
+			double d = ratingSet.rateOne(indeps, timeStamp.getTime());
+			if (d == Const.UNDEFINED_DOUBLE)
+			{
+				StringBuilder sb = new StringBuilder();
+				for(double x : indeps)
+					sb.append(x + ",");
+				sb.deleteCharAt(sb.length()-1);
+				throw new RangeException("Input values (" + sb.toString() + ") outside rating range.");
+			}
+			return d;
 		}
 		catch (RatingException ex)
 		{
