@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.14  2017/08/22 19:58:40  mmaloney
+* Refactor
+*
 * Revision 1.13  2017/05/04 12:19:12  mmaloney
 * Fixed recursion bug.
 *
@@ -77,7 +80,7 @@ public class TsGroupDAO
 	protected String GroupAttributes = 
 		"group_id, group_name, group_type, group_description";
 	private static long lastCacheFill = 0L;
-	public static long cacheTimeLimit = 15 * 60 * 1000L;
+	public static long cacheTimeLimit = 20 * 60 * 1000L;
 	protected static DbObjectCache<TsGroup> cache = new DbObjectCache<TsGroup>(cacheTimeLimit, false);
 	
 	// Used to guard against endless loop in subgroup associations.
