@@ -290,14 +290,25 @@ public class ScheduleEntry extends IdDatabaseObject
 				return false;
 			}
 		}
+		
+		// Start times are the same. If null, it means continuous, which means interval and TZ are moot.
+		// So only compare these fields if there is a start time.
+		if (startTime != null)
+		{
+			if (!TextUtil.strEqual(timezone, se.timezone)
+			 || !TextUtil.strEqual(runInterval, se.runInterval))
+			{
+				Logger.instance().debug1("tz or runInt different this=" + toString() + "\n rhs="
+					+ rhs.toString());
+				return false;
+			}
+		}
 
-		if (!TextUtil.strEqual(timezone, se.timezone)
-		 || !TextUtil.strEqual(runInterval, se.runInterval)
-		 || enabled != se.enabled
+		if (enabled != se.enabled
 		 || !TextUtil.strEqual(loadingAppName, se.loadingAppName)
 		 || !TextUtil.strEqual(routingSpecName, se.routingSpecName))
 		{
-			Logger.instance().debug1("tz, runInt, enab, appName or rsName different this=" + toString() + "\n rhs="
+			Logger.instance().debug1("enab, appName or rsName different this=" + toString() + "\n rhs="
 				+ rhs.toString());
 			return false;
 		}
