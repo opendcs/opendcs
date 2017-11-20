@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.3  2016/08/05 14:53:36  mmaloney
+ * Station and Routing Status GUI updates.
+ *
  * Revision 1.2  2016/07/20 15:40:53  mmaloney
  * First routmon impl.
  *
@@ -237,7 +240,12 @@ class RoutingTableModel extends AbstractTableModel
 					}
 //System.out.println("...............Fell through, adding");
 					// Fell through. This is a new run
-					bean.getRunHistory().add(0, ses);
+					int insertPoint = 0;
+					for(; insertPoint < bean.getRunHistory().size(); insertPoint++)
+						if (ses.getLastModified().after(bean.getRunHistory().get(insertPoint).getLastModified()))
+							break;
+					
+//					bean.getRunHistory().add(insertPoint, ses);
 					continue nextStatus;
 				}
 			}

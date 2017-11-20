@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.3  2016/08/05 14:53:36  mmaloney
+ * Station and Routing Status GUI updates.
+ *
  * Revision 1.2  2016/07/20 15:40:54  mmaloney
  * First routmon impl.
  *
@@ -253,8 +256,8 @@ public class RoutingMonitorFrame
 				evtList.clear();
 				selectedRun = ses;
 				rsRunLabel.setText(
-					LoadResourceBundle.sprintf(procmonLabels.getString("runEventsHeader"), 
-					selectedRS.getRsName(), evtTimeSdf.format(selectedRun.getRunStart())));
+					LoadResourceBundle.sprintf(procmonLabels.getString("rsRunPanelHeader"), 
+					selectedRS.getRsName()));
 				runEventsLabel.setText(
 					LoadResourceBundle.sprintf(procmonLabels.getString("runEventsHeader"), 
 						selectedRS.getRsName(), evtTimeSdf.format(selectedRun.getRunStart())));
