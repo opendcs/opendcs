@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2015/02/06 19:04:39  mmaloney
+*  POLL STOP should set message time.
+*
 *  Revision 1.2  2015/01/06 16:09:31  mmaloney
 *  First cut of Polling Modules
 *
@@ -364,7 +367,7 @@ public class EdlPMParser extends PMParser
 			{
 				msg.setPM(END_TIME_STAMP, new Variable(endTimeSdf.parse(endTime)));
 			}
-			catch (ParseException ex)
+			catch (Exception ex)
 			{
 				Logger.instance().log(Logger.E_FAILURE, "Unparsable end time '" + endTime + "': Ignored.");
 			}
