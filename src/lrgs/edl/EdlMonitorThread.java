@@ -133,7 +133,13 @@ public class EdlMonitorThread
 			RawMessage rawMsg = new RawMessage(fileBytes, fileBytes.length);
 			pmParser.parsePerformanceMeasurements(rawMsg);
 			
-			DcpMsg msg = new DcpMsg(fileBytes, fileBytes.length, 0);
+			DcpMsg msg = new DcpMsg(
+				DcpMsgFlag.MSG_PRESENT
+				| DcpMsgFlag.SRC_NETDCP
+	            | DcpMsgFlag.HAS_CARRIER_TIMES
+				| DcpMsgFlag.MSG_TYPE_NETDCP
+	            | DcpMsgFlag.MSG_NO_SEQNUM,
+				fileBytes, fileBytes.length, 0);
 			Date now = new Date();
 			msg.setLocalReceiveTime(now);
 			
@@ -162,13 +168,7 @@ public class EdlMonitorThread
 					+ "' setting in header.");
 			msg.setDcpAddress(new DcpAddress(stationVar.toString()));
 			msg.setFailureCode('G'); // should there be anything else?
-			msg.setFlagbits(
-				DcpMsgFlag.MSG_PRESENT
-				| DcpMsgFlag.SRC_NETDCP
-	            | DcpMsgFlag.HAS_CARRIER_TIMES
-				| DcpMsgFlag.MSG_TYPE_NETDCP
-	            | DcpMsgFlag.MSG_NO_SEQNUM);
-;
+
 			msg.setHeaderLength(pmParser.getHeaderLength());
 			parent.saveMessage(msg);
 		}

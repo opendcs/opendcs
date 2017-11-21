@@ -338,7 +338,13 @@ public class PollScriptProtocol
 			byte[] capturedData = streamReader.getCapturedData();
 			baos.write(capturedData);
 			byte[] msgdata = baos.toByteArray();
-			DcpMsg ret = new DcpMsg(msgdata, msgdata.length, 0);
+			DcpMsg ret = new DcpMsg(
+				DcpMsgFlag.MSG_PRESENT
+				| DcpMsgFlag.SRC_NETDCP
+	            | DcpMsgFlag.HAS_CARRIER_TIMES
+				| DcpMsgFlag.MSG_TYPE_NETDCP
+	            | DcpMsgFlag.MSG_NO_SEQNUM,
+				msgdata, msgdata.length, 0);
 			ret.setLocalReceiveTime(recvTime);
 			ret.setXmitTime(recvTime);
 			ret.setCarrierStart(sessionStart);
@@ -346,12 +352,6 @@ public class PollScriptProtocol
 			ret.setDcpAddress(new DcpAddress(tm.getMediumId()));
 			ret.setFailureCode('G');
 			
-			ret.setFlagbits(
-				DcpMsgFlag.MSG_PRESENT
-				| DcpMsgFlag.SRC_NETDCP
-	            | DcpMsgFlag.HAS_CARRIER_TIMES
-				| DcpMsgFlag.MSG_TYPE_NETDCP
-	            | DcpMsgFlag.MSG_NO_SEQNUM);
 			ret.setHeaderLength(msgdata.length - capturedData.length);
 			pollingThread.debug2("getData() returning message.");
 
