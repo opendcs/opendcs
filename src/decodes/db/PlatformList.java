@@ -30,6 +30,8 @@ public class PlatformList extends DatabaseObject
 	private IdRecordList pidList = new IdRecordList("Platform");
 	
 	private boolean listWasRead = false;
+	
+	private long lastReadTime = 0L;
 
 	/** No-arg constructor.  */
 	public PlatformList()
@@ -559,9 +561,10 @@ Logger.instance().debug3("" + tms + " TMs processed, map size=" + currentPlatfor
 	/**
 	* Read the entire list of Platforms from the database.
 	*/
-	public void read()
+	public synchronized void read()
 		throws DatabaseException
 	{
+		lastReadTime = System.currentTimeMillis();
 		if (!myDatabase.siteList.wasRead())
 			myDatabase.siteList.read();
 		myDatabase.getDbIo().readPlatformList(this);
@@ -593,6 +596,11 @@ Logger.instance().debug3("" + tms + " TMs processed, map size=" + currentPlatfor
 		platformVec.clear();
 		pidList.clear();
 		currentPlatformMap.clear();
+	}
+
+	public long getLastReadTime()
+	{
+		return lastReadTime;
 	}
 }
 

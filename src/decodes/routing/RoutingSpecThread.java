@@ -209,8 +209,6 @@ public class RoutingSpecThread
 		explicitDataSource = null;
 		processGoodMsgCheck = false;
 
-		// Assume platlist was read once on start-up.
-		lastPlatlistRead = System.currentTimeMillis();
 		rs.setProperty("RoutingSpec.name", rs.getName());
 	}
 
@@ -370,7 +368,7 @@ public class RoutingSpecThread
 			// MJM 20041027 Added the following check:
 			// Every 10 minutes, re-read platform list to see if any platforms
 			// have been added.
-			if (now - lastPlatlistRead > 10*60000L)
+			if (now - Database.getDb().platformList.getLastReadTime() > 10*60000L)
 			{
 				myExec.setSubsystem("platlist");
 				try { Database.getDb().platformList.read(); }
@@ -379,7 +377,6 @@ public class RoutingSpecThread
 					Logger.instance().failure(
 						"Could not refresh platform list: " + ex);
 				}
-				lastPlatlistRead = System.currentTimeMillis();
 			}
 			
 			if (purgeOldEvents && now - myExec.getLastEventsPurge() > 3600000L) // every hour, or on first run
