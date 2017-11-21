@@ -159,6 +159,23 @@ public class DcpMsg
 		set(data, size, offset);
 	}
 	
+	/** 
+	  The above constructor assumes message type is GOES (a 0 in the
+	  type-bits of the flag). This causes problems in the set() method
+	  because it tries to parse the DCP address.
+	  This constructor should be used by non-GOES data sources.
+	  @param flagbits the flag bits indicating message type other than GOES.
+	  @param data the data bytes
+	  @param offset in data where this message starts
+	  @param size number of data bytes in this message
+	*/
+	public DcpMsg(int flagbits, byte data[], int size, int offset)
+	{
+		this();
+		this.setFlagbits(flagbits);
+		set(data, size, offset);
+	}
+
 	/**
 	  @return the entire length of the data, including header.
 	*/
