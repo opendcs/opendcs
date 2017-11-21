@@ -26,6 +26,7 @@ import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Date;
 
 import decodes.db.TransportMedium;
@@ -84,13 +85,18 @@ public class ModemDialer
 		streamReader.start();
 		String what = "sending initial CRs";
 		boolean portError = true;
+		
+		OutputStream outs = ioPort.getOut();
+		if (outs == null)
+			throw new DialException(module + " No OutputStream.", false);
+		
 		try
 		{
-			ioPort.getOut().write(EOL.getBytes());
-			ioPort.getOut().flush();
+			outs.write(EOL.getBytes());
+			outs.flush();
 			try { Thread.sleep(500L); } catch(InterruptedException ex) {}
-			ioPort.getOut().write(EOL.getBytes());
-			ioPort.getOut().flush();
+			outs.write(EOL.getBytes());
+			outs.flush();
 			try { Thread.sleep(500L); } catch(InterruptedException ex) {}
 			
 			streamReader.flushBacklog();
@@ -100,8 +106,8 @@ public class ModemDialer
 			pollingThread.debug2(msg);
 			pollingThread.annotate(msg);
 			what = msg;
-			ioPort.getOut().write(init.getBytes());
-			ioPort.getOut().flush();
+			outs.write(init.getBytes());
+			outs.flush();
 			if (!streamReader.wait(AtWaitSec, OK))
 			{
 				what = "waiting for response to init string from modem";
@@ -120,7 +126,7 @@ public class ModemDialer
 				msg = what + ", will wait " + ConnectWaitSec + " sec for CONNECT.";
 				pollingThread.debug1(msg);
 				pollingThread.annotate(msg);
-				ioPort.getOut().write(dialstr.getBytes());
+				outs.write(dialstr.getBytes());
 				if (!streamReader.wait(ConnectWaitSec, CONNECT))
 				{
 					msg = module + " No answer from station at " + tm.getMediumId();

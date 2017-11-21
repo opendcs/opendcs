@@ -27,6 +27,7 @@ import ilex.util.EnvExpander;
 import ilex.util.Logger;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class PollScriptXmitCmd extends PollScriptCommand
 {
@@ -43,6 +44,12 @@ public class PollScriptXmitCmd extends PollScriptCommand
 	public void execute() 
 		throws ProtocolException
 	{
+		if (owner.getIoPort() == null)
+			throw new ProtocolException(module + " No IoPort.");
+		OutputStream outs = owner.getIoPort().getOut();
+		if (outs == null)
+			throw new ProtocolException(module + " No OutputStream.");
+		
 		byte []data = null;
 		try
 		{
@@ -51,7 +58,7 @@ public class PollScriptXmitCmd extends PollScriptCommand
 			
 			// Convert to binary to handle escape sequences like \r \n and \002.
 			data = AsciiUtil.ascii2bin(estr);
-			owner.getIoPort().getOut().write(data);
+			outs.write(data);
 			
 			// The session logger gets the evaluated data, but converted back to String object.
 			String strdata = new String(data);
