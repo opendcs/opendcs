@@ -1,5 +1,7 @@
 package decodes.tsdb;
 
+import ilex.util.Logger;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -307,6 +309,18 @@ public abstract class GroupHelper
 	protected boolean checkMembership(TsGroup grp, TimeSeriesIdentifier tsid,
 		ArrayList<DbKey> grpIdsDone)
 	{
+		/** Some implementations (CWMS) have to compile regex's etc., before expanding. */
+		try { prepareForExpand(grp); }
+		catch(Exception ex)
+		{
+			Logger.instance().warning("Cannot prepare group '" + grp.getGroupName() + "' for expansion: " + ex);
+		}
+
+boolean testmode = tsid.getUniqueString().contains("ombined-raw") 
+&& grp.getGroupName().equalsIgnoreCase("lrgs-raw");
+if (testmode) Logger.instance().debug2("checkMembership(grp=" + grp.getGroupName() + ", tsid="
++ tsid.getUniqueString());
+
 		// There may be dups & circular references in the hierarchy.
 		// Only process each group once.
 		for(DbKey id : grpIdsDone)
@@ -322,18 +336,23 @@ public abstract class GroupHelper
 			 || tsid.getUniqueString().equalsIgnoreCase(explicitTsid.getUniqueString()))
 			{
 				passes = true;
+if (testmode) Logger.instance().debug2("... PASSES because explicit member!");
 				break;
 			}
 		
 		// Check the parts
 		if (!passes)
+		{
 			passes = passesParts(grp, tsid);
+if (testmode && passes) Logger.instance().debug2("... PASSES because passesParts!");
+		}
 		
 		// Check the sub-groups.
 		for(TsGroup included : grp.getIncludedSubGroups())
 			if (checkMembership(included, tsid, grpIdsDone))
 			{
 				passes = true;
+if (testmode) Logger.instance().debug2("... PASSES because in INCLUDED sub group " + included.getGroupName()+"!");
 				break;
 			}
 		for(TsGroup excluded : grp.getExcludedSubGroups())

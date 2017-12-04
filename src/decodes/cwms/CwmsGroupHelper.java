@@ -8,6 +8,9 @@
 * Open Source Software
 * 
 * $Log$
+* Revision 1.8  2017/08/22 19:29:49  mmaloney
+* Improve comments
+*
 * Revision 1.7  2017/05/03 17:04:14  mmaloney
 * Improved debugs.
 *
@@ -298,16 +301,11 @@ public class CwmsGroupHelper
 		int matches = 0;
 
 		ArrayList<DbKey> siteIds = tsGroup.getSiteIdList();
-//		if (justPrimed)
-//		{
-//			tsdb.debug2("CwmsGroupHelper.passesParts: Group=" + tsGroup.getGroupName() 
-//				+ ", #sites=" + siteIds.size() + ", tsidSiteId=" 
-//				+ (tsid.getSite() == null ? "null" : 
-//					("ID=" + tsid.getSite().getId() + ", " + tsid.getSite().getPreferredName().getNameValue())));
-//			justPrimed = false;
-//		}
 
 		CwmsTsId ctsid = (CwmsTsId)tsid;
+boolean testmode = ctsid.getVersion().equalsIgnoreCase("Combined-raw");
+if (testmode) Logger.instance().debug2("TESTMODE for group=" 
++ tsGroup.getGroupName() + ", tsid=" + tsid.getUniqueString());
 
 		// User could enter an actual site plus another site with wildcard, then
 		// I would have one actual siteId and one pattern.
@@ -390,6 +388,7 @@ public class CwmsGroupHelper
 				return false; // None of the ways of referencing a location match.
 			matches++;
 		}
+if (testmode) Logger.instance().debug2("...passed location filter.");
 
 		ArrayList<DbKey> dtIds = tsGroup.getDataTypeIdList();
 		if (dtIds.size() > 0                 // Full data type (CWMS Param) specified
@@ -479,6 +478,7 @@ public class CwmsGroupHelper
 			matches++;
 		}
 		
+if (testmode) Logger.instance().debug2("...passed param filter.");
 		
 		ArrayList<String> paramTypes = tsGroup.getOtherMembers("ParamType");
 		if (paramTypes.size() > 0)
@@ -495,6 +495,8 @@ public class CwmsGroupHelper
 			matches++;
 		}
 
+if (testmode) Logger.instance().debug2("...passed paramtype filter.");
+
 		ArrayList<String> intervals = tsGroup.getOtherMembers("Interval");
 		if (intervals.size() > 0)
 		{
@@ -509,6 +511,8 @@ public class CwmsGroupHelper
 				return false;
 			matches++;
 		}
+		
+if (testmode) Logger.instance().debug2("...passed interval filter.");
 
 		ArrayList<String> durations = tsGroup.getOtherMembers("Duration");
 		if (durations.size() > 0)
@@ -524,6 +528,12 @@ public class CwmsGroupHelper
 				return false;
 			matches++;
 		}
+		
+if (testmode) Logger.instance().debug2("...passed duration filter.");
+
+if (testmode) Logger.instance().debug2("...numFull=" + fullVersionPatterns.size()
+	+ ", numsub=" + subVersionPatterns.size() + ", numbase=" + baseVersionPatterns.size());
+
 
 		if (fullVersionPatterns.size() > 0
 		 || subVersionPatterns.size() > 0
@@ -544,6 +554,9 @@ public class CwmsGroupHelper
 						if (m.matches())
 						{
 							versionPassed = true;
+if (testmode)
+Logger.instance().debug2("TSID '" + ctsid.getUniqueString() + "' passes full version filter in group "
+	+ tsGroup.getGroupName() + " regex='" + sp.toString() + "'");
 							break;
 						}
 					}
@@ -562,6 +575,10 @@ public class CwmsGroupHelper
 						if (m.matches())
 						{
 							versionPassed = true;
+if (testmode)
+	Logger.instance().debug2("TSID '" + ctsid.getUniqueString() + "' passes sub version filter in group "
+		+ tsGroup.getGroupName() + " regex='" + sp.toString() + "'");
+
 							break;
 						}
 					}
@@ -580,13 +597,18 @@ public class CwmsGroupHelper
 						if (m.matches())
 						{
 							versionPassed = true;
+if (testmode)
+	Logger.instance().debug2("TSID '" + ctsid.getUniqueString() + "' passes base version filter in group "
+		+ tsGroup.getGroupName() + " regex='" + sp.toString() + "'");
+
 							break;
 						}
 					}
 				}
 			}
 
-			
+if (testmode) Logger.instance().debug2("Result of version filter=" + versionPassed);
+
 			if (!versionPassed)
 				return false;
 			matches++;

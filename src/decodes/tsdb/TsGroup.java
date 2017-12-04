@@ -7,6 +7,9 @@
 *  contained in this file may be claimed to be proprietary.
 *
 * $Log$
+* Revision 1.5  2017/08/22 19:56:39  mmaloney
+* Refactor
+*
 * Revision 1.4  2017/04/19 19:29:05  mmaloney
 * CWMS-10609 nested group evaluation in group editor bugfix.
 *
@@ -388,24 +391,24 @@ public class TsGroup
 	public void addSubGroup(TsGroup subGroupMember, char combine)
 	{
 		// MJM 2016 04/18 a group can only be in one of the lists and only once.
-		for(Iterator<TsGroup> git = excludeGroups.iterator(); git.hasNext(); )
-		{
-			TsGroup grp = git.next();
-			if (grp.getKey().equals(subGroupMember.getKey()))
-				git.remove();
-		}
-		for(Iterator<TsGroup> git = intersectedGroups.iterator(); git.hasNext(); )
-		{
-			TsGroup grp = git.next();
-			if (grp.getKey().equals(subGroupMember.getKey()))
-				git.remove();
-		}
-		for(Iterator<TsGroup> git = includeGroups.iterator(); git.hasNext(); )
-		{
-			TsGroup grp = git.next();
-			if (grp.getKey().equals(subGroupMember.getKey()))
-				git.remove();
-		}
+//		for(Iterator<TsGroup> git = excludeGroups.iterator(); git.hasNext(); )
+//		{
+//			TsGroup grp = git.next();
+//			if (grp.getKey().equals(subGroupMember.getKey()))
+//				git.remove();
+//		}
+//		for(Iterator<TsGroup> git = intersectedGroups.iterator(); git.hasNext(); )
+//		{
+//			TsGroup grp = git.next();
+//			if (grp.getKey().equals(subGroupMember.getKey()))
+//				git.remove();
+//		}
+//		for(Iterator<TsGroup> git = includeGroups.iterator(); git.hasNext(); )
+//		{
+//			TsGroup grp = git.next();
+//			if (grp.getKey().equals(subGroupMember.getKey()))
+//				git.remove();
+//		}
 		
 		combine = Character.toUpperCase(combine);
 		Logger.instance().debug3("TsGroup.addSubGroup(" + subGroupMember.getGroupName()

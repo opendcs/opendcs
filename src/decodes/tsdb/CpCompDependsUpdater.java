@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.16  2017/11/14 16:07:25  mmaloney
+*  When evaluating a group comp, if group was NOT read from the cache, evaluate it before use.
+*
 *  Revision 1.15  2017/10/23 13:37:57  mmaloney
 *  As a fail-safe, delete from scratchpad any records that already exist in comp depends.
 *
@@ -497,15 +500,19 @@ public class CpCompDependsUpdater
 			dumpTsidCache();
 
 			// Adjust the groups in my cache which may include this new time series.
-			debug("tsCreated - checking group memebership for " + tsid.getUniqueString());
+			Logger.instance().debug2("tsCreated - checking group memebership for " + tsid.getUniqueString());
 			groupHelper.checkGroupMembership(tsid);
 
 			// Determine computations that will use this new TS as input
 			toAdd.clear();
 			for(DbComputation comp : enabledCompCache)
 			{
+				if (!comp.isEnabled())
+					continue;
+				
 				if (comp.getGroupId() == Constants.undefinedId)
 				{
+					Logger.instance().debug2("Considering non-group comp " + comp.getId() + ": " + comp.getName());
 					for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext(); )
 					{
 						DbCompParm parm = parmit.next();
@@ -523,6 +530,7 @@ public class CpCompDependsUpdater
 					// Go through the expanded list of TSIDs in the group. Transform each
 					// one by the input parms. If it then matches the passed tsid, then
 					// this computation is a dependency.
+
 					TsGroup grp = tsGroupDAO.getTsGroupById(comp.getGroupId());
 					if (grp == null)
 					{
@@ -530,9 +538,15 @@ public class CpCompDependsUpdater
 							+ "' has an invalid group ID. Skipping.");
 						continue;
 					}
+					Logger.instance().debug2("Considering group comp " + comp.getId() + ": " + comp.getName()
+						+ " which uses group " + grp.getGroupId() + " " + grp.getGroupName()
+						+ " with " + grp.getExpandedList().size() + " tsids in the expanded list.");
+
 				nextTsid:
 					for(TimeSeriesIdentifier grpTsid : grp.getExpandedList())
 					{
+						Logger.instance().debug2(" ... Trying group tsid " + grpTsid.getKey() + " "
+							+ grpTsid.getUniqueString());
 						for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext(); )
 						{
 							DbCompParm parm = parmit.next();
@@ -542,6 +556,7 @@ public class CpCompDependsUpdater
 							theDb.transformUniqueString(grpTsidCopy, parm);
 							if (tsid.getUniqueString().equalsIgnoreCase(grpTsidCopy.getUniqueString()))
 							{
+								Logger.instance().debug2(" ... MATCH: After morphing tsid=" + tsid.getUniqueString());
 								addCompDepends(tsid.getKey(), comp.getId());
 								break nextTsid;
 							}

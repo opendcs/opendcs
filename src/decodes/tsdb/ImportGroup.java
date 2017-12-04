@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dai.TsGroupDAI;
 import decodes.db.Constants;
 import decodes.sql.DbKey;
 import decodes.tsdb.xml.CompXio;
@@ -290,6 +291,8 @@ public class ImportGroup extends TsdbAppTemplate
 	protected void runApp() throws Exception
 	{
 		siteDAO = theDb.makeSiteDAO();
+		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+		
 		CompXio cx = new CompXio("ImportGroup", theDb);
 		for(int i=0; i<xmlFileArgs.NumberOfValues(); i++) {
       //Read the metadata from XML file
@@ -335,7 +338,7 @@ public class ImportGroup extends TsdbAppTemplate
 	
 					//Write each TS group into the DB 
 					try {
-						theDb.writeTsGroup(g);
+						groupDAO.writeTsGroup(g);
 					}
 					catch(DbIoException E) {
 						incompleteFlag = true;
@@ -352,6 +355,7 @@ public class ImportGroup extends TsdbAppTemplate
 				displayMessage(AppMessages.util_FailImpTSGroup, E.toString(), AppMessages.ShowMode._error);
 			}
 		}
+		groupDAO.close();
 		siteDAO.close();
 	}
 

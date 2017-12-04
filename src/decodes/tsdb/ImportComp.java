@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.3  2017/06/01 14:46:34  mmaloney
+*  Bugfix for HDB. Wasn't creating CP_TS_ID entry for individual (non group) computations.
+*
 *  Revision 1.2  2016/10/14 14:44:49  mmaloney
 *  CWMS-9541 Added -o option to compimport, meaning to NOT overwrite exising objects with the same name.
 *
@@ -24,11 +27,10 @@ import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dai.TsGroupDAI;
 import opendcs.dao.AlgorithmDAO;
-
 import ilex.cmdline.*;
 import ilex.util.Logger;
-
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.SiteName;
@@ -81,6 +83,7 @@ public class ImportComp
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		AlgorithmDAI algorithmDao = theDb.makeAlgorithmDAO();
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
+		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
 
 		try
 		{
@@ -142,7 +145,7 @@ public class ImportComp
 							}
 		
 							Logger.instance().info("Importing group '" + g.getGroupName() + "'");
-							theDb.writeTsGroup(g);
+							groupDAO.writeTsGroup(g);
 						}
 						catch (DbIoException E)
 						{
@@ -302,6 +305,7 @@ public class ImportComp
 		}
 		finally
 		{
+			groupDAO.close();
 			siteDAO.close();
 			algorithmDao.close();
 			loadingAppDao.close();
