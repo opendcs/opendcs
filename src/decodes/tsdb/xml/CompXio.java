@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.5  2016/11/03 19:07:16  mmaloney
+*  Don't reread group members. The cache already has complete groups.
+*
 *  Revision 1.4  2016/03/24 19:22:56  mmaloney
 *  Added support for algorithm scripts.
 *
@@ -33,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+
+import opendcs.dai.TsGroupDAI;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -88,7 +93,7 @@ public class CompXio
 	public ArrayList<CompMetaData> readFile(String filename)
 		throws DbXmlException
 	{
-//System.out.println("CompXio.readFile(" + filename + ")");
+		Logger.instance().info("CompXio.readFile(" + filename + ")");
 		this.filename = filename;
 		Document doc;
 		try
@@ -542,12 +547,20 @@ public class CompXio
 		}
 		
 		// Load TsGroup to theDb
-		if (tsGrp.getGroupId() == Constants.undefinedId) {
-			try {
-				theDb.writeTsGroup(tsGrp);
+		if (tsGrp.getGroupId() == Constants.undefinedId) 
+		{
+			TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+			try 
+			{
+				groupDAO.writeTsGroup(tsGrp);
 			}
-			catch (Exception E) {
+			catch (Exception E) 
+			{
 				System.out.println(E.toString());
+			}
+			finally
+			{
+				groupDAO.close();
 			}
 		}
 
