@@ -1447,6 +1447,10 @@ public class RoutingSpecThread
 		throws DecodesException, IOException, DbIoException
 	{
 		Logger.setLogger(new StderrLogger("RoutingSpecThread"));
+		
+		// MJM 20171206 set to false to allow command line args to override settings
+		// in the routing spec.
+		ScheduleEntryExecutive.setRereadRsBeforeExec(false);
 
 		// Parse command line arguments.
 		try { cmdLineArgs.parseArgs(args); }
