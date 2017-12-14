@@ -11,9 +11,11 @@ import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 
+import decodes.util.PropertySpec;
 //AW:IMPORTS
 import decodes.hdb.dbutils.*;
 import decodes.hdb.HdbFlags;
+
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 
@@ -42,8 +44,22 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:INPUTS_END
 
 //AW:LOCALVARS
-        boolean do_setoutput = true;
-        Connection conn = null;
+    boolean do_setoutput = true;
+    Connection conn = null;
+
+    private PropertySpec[] esaProps = 
+    {
+    	new PropertySpec("equation", PropertySpec.LONGSTRING, 
+    		"The database equation to execute at each time slice"),
+    	new PropertySpec("validation_flag", PropertySpec.STRING, 
+    		"If set, output values will be flagged with this flag.")
+    };
+
+    @Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return esaProps;
+	}
 
 //AW:LOCALVARS_END
 
@@ -53,15 +69,15 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-	public String input1_MISSING = "ignore";
-	public String input2_MISSING = "ignore";
-	public String input3_MISSING = "ignore";
-	public String input4_MISSING = "ignore";
-	public String input5_MISSING = "ignore";
-        public String validation_flag = "";
-        public String equation = "";
+//	public String input1_MISSING = "ignore";
+//	public String input2_MISSING = "ignore";
+//	public String input3_MISSING = "ignore";
+//	public String input4_MISSING = "ignore";
+//	public String input5_MISSING = "ignore";
+    public String validation_flag = "";
+    public String equation = "";
  
-	String _propertyNames[] = { "equation", "input1_MISSING", "input2_MISSING", "input3_MISSING", "input4_MISSING", "input5_MISSING", "validation_flag" };
+	String _propertyNames[] = { "equation", "validation_flag" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -134,16 +150,16 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		// missing, we wouldn't get to this point.
 		
 		// now if any needed values are missing then don't set the output
-		if (isMissing(input1) && !input1_MISSING.equalsIgnoreCase("ignore"))
-			do_setoutput = false;
-		if (isMissing(input2) && !input2_MISSING.equalsIgnoreCase("ignore"))
-			do_setoutput = false;
-		if (isMissing(input3) && !input3_MISSING.equalsIgnoreCase("ignore"))
-			do_setoutput = false;
-		if (isMissing(input4) && !input4_MISSING.equalsIgnoreCase("ignore"))
-			do_setoutput = false;
-		if (isMissing(input5) && !input5_MISSING.equalsIgnoreCase("ignore"))
-			do_setoutput = false;
+//		if (isMissing(input1) && !input1_MISSING.equalsIgnoreCase("ignore"))
+//			do_setoutput = false;
+//		if (isMissing(input2) && !input2_MISSING.equalsIgnoreCase("ignore"))
+//			do_setoutput = false;
+//		if (isMissing(input3) && !input3_MISSING.equalsIgnoreCase("ignore"))
+//			do_setoutput = false;
+//		if (isMissing(input4) && !input4_MISSING.equalsIgnoreCase("ignore"))
+//			do_setoutput = false;
+//		if (isMissing(input5) && !input5_MISSING.equalsIgnoreCase("ignore"))
+//			do_setoutput = false;
 
 		if (do_setoutput)
 		// Then continue with evaluation the equation
