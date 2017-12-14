@@ -232,11 +232,27 @@ public class PropertyEditDialog
 				JComboBox jcb = new JComboBox(enumValues);
 				valueField = jcb;
 			}
+			else if (propSpec.getType().equals(PropertySpec.LONGSTRING))
+			{
+				JTextArea ta = new JTextArea(3, 30);
+				ta.setLineWrap(true);
+				ta.setWrapStyleWord(true);
+				valueField = ta;
+			}
 		}
 
-		centerPropPanel.add(valueField, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
-			GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-			new Insets(5, 0, 5, 10), 0, 0));
+		if (valueField instanceof JTextArea)
+		{
+			JScrollPane sp = new JScrollPane(valueField, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+			centerPropPanel.add(sp, new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(5, 0, 5, 10), 0, 0));
+		}
+		else
+			centerPropPanel.add(valueField, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(5, 0, 5, 10), 0, 0));
 		mainPanel.add(centerPropPanel, BorderLayout.CENTER);
 
 		if (propSpec != null && propSpec.getDescription() != null)
@@ -400,6 +416,8 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 			return new String(((JPasswordField) valueField).getPassword());
 		else if (valueField instanceof JTextField)
 			return ((JTextField)valueField).getText();
+		else if (valueField instanceof JTextArea)
+			return ((JTextArea)valueField).getText();
 		else if (valueField instanceof JComboBox)
 			return ((JComboBox)valueField).getSelectedItem().toString();
 		else return "";
@@ -409,6 +427,8 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 	{
 		if (valueField instanceof JTextField)
 			((JTextField)valueField).setText(value);
+		else if (valueField instanceof JTextArea)
+			((JTextArea)valueField).setText(value);
 		else if (propSpec != null && propSpec.getType() == PropertySpec.BOOLEAN)
 		{
 			JComboBox trueFalseCombo = (JComboBox)valueField;
