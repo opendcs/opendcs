@@ -181,11 +181,23 @@ public class PollingDataSource extends DataSourceExec
 			if (TextUtil.startsWithIgnoreCase(propName, "sc:DCP_NAME"))
 			{
 				Platform p = Database.getDb().platformList.getByFileName(value);
+				if (!p.isComplete())
+					try
+					{
+						p.read();
+					}
+					catch (DatabaseException e)
+					{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				if (p != null)
 					for (TransportMedium tm : p.transportMedia)
 						if (tm.getMediumType().toLowerCase().startsWith("polled"))
 						{
 							aggTMList.add(tm);
+							Logger.instance().debug1(module + " sc:DCP_NAME='" + value + "', plat id="
+								+ p.getId() + ", pakBusTableName='" + p.getProperty("pakBusTableName") + "'");
 							break;
 						}
 			}
