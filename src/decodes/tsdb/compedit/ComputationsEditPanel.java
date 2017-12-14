@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.7  2017/08/22 19:57:22  mmaloney
+*  Refactor
+*
 *  Revision 1.6  2017/05/31 21:32:13  mmaloney
 *  GUI improvements for HDB
 *
@@ -86,6 +89,7 @@ import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
+import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompParm;
@@ -96,6 +100,7 @@ import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.TsdbDateFormat;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.algo.AW_AlgorithmBase;
 import decodes.tsdb.comprungui.CompRunGuiFrame;
 import decodes.tsdb.groupedit.TsGroupSelectDialog;
 import decodes.util.DecodesSettings;
@@ -333,6 +338,7 @@ public class ComputationsEditPanel
 		}
 		
 		propertiesPanel.setProperties(propCopy);
+		setPropertiesPanelOwner();
 
 		String s;
 		Date d = editedObject.getValidStart();
@@ -1070,7 +1076,32 @@ public class ComputationsEditPanel
 				}
 			}
 			propertiesPanel.setProperties(propCopy);
+			setPropertiesPanelOwner();
+
 			propertiesPanel.redrawTable();
+		}
+	}
+	
+	private void setPropertiesPanelOwner()
+	{
+		if (currentAlgorithm == null)
+			return;
+		try
+		{
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			String clsName = currentAlgorithm.getExecClass();
+			Logger.instance().debug3("Instantiating new algo exec '" + clsName + "'");
+			Class<?> cls = cl.loadClass(clsName);
+			DbAlgorithmExecutive executive = (DbAlgorithmExecutive)cls.newInstance();
+			if (executive instanceof AW_AlgorithmBase)
+			{
+				((AW_AlgorithmBase)executive).initForGUI();
+				propertiesPanel.setPropertiesOwner((AW_AlgorithmBase)executive);
+			}
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
 		}
 	}
 	

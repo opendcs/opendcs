@@ -44,6 +44,7 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ScriptType;
 import decodes.tsdb.algo.AWAlgoType;
+import decodes.tsdb.algo.AW_AlgorithmBase;
 import decodes.tsdb.algo.RoleTypes;
 import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
@@ -238,8 +239,12 @@ public class AlgorithmsEditPanel
 				+ clsName + "'");
 			Class<?> cls = cl.loadClass(clsName);
 			DbAlgorithmExecutive executive = (DbAlgorithmExecutive)cls.newInstance();
-			if (executive instanceof PropertiesOwner)
+			if (executive instanceof AW_AlgorithmBase)
+			{
+				// Algorithm type set in initAWAlgorithm, this is needed to get correct property specs.
+				((AW_AlgorithmBase)executive).initForGUI();
 				staticPropSpecs = ((PropertiesOwner) executive).getSupportedProps();
+			}
 		}
 		catch(Exception ex)
 		{
