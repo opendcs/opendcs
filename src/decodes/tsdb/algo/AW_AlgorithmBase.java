@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.14  2017/11/07 20:27:09  mmaloney
+*  Improved debugs.
+*
 *  Revision 1.13  2017/11/03 19:20:44  mmaloney
 *  Added isTrigger() and isGoodQuality methods.
 *
@@ -197,16 +200,6 @@ public abstract class AW_AlgorithmBase
 	
 	private PropertySpec basePropertySpecs[] = 
 	{
-		new PropertySpec("aggUpperBoundClosed", PropertySpec.BOOLEAN,
-			"True to include end of period in aggregate"),
-		new PropertySpec("aggLowerBoundClosed", PropertySpec.BOOLEAN,
-			"True to include beginning of period in aggregate"),
-		new PropertySpec("aggregateTimeZone", PropertySpec.TIMEZONE,
-			"Java time zone for evaluating aggregate periods"),
-		new PropertySpec("noAggregateFill", PropertySpec.BOOLEAN,
-			"Set to false to disable filling aggregate periods before algo execution"),
-		new PropertySpec("aggPeriodInterval", PropertySpec.STRING, 
-			"Aggregate Period Interval"), 
 		new PropertySpec("interpDeltas", PropertySpec.BOOLEAN,
 			"True to allow interpolation when computing deltas"),
 		new PropertySpec("maxInterpIntervals", PropertySpec.INT,
@@ -217,10 +210,22 @@ public abstract class AW_AlgorithmBase
 			"When filling regular interval missing input data, do not fill more than this many intervals."),
 		new PropertySpec("maxMissingTimeForFill", PropertySpec.INT,
 			"When filling missing input data, fail if the missing gap is more than this many seconds."),
+	};
+	private PropertySpec aggAlgoPropertySpecs[] = 
+	{
+		new PropertySpec("aggUpperBoundClosed", PropertySpec.BOOLEAN,
+			"True to include end of period in aggregate"),
+		new PropertySpec("aggLowerBoundClosed", PropertySpec.BOOLEAN,
+			"True to include beginning of period in aggregate"),
+		new PropertySpec("aggregateTimeZone", PropertySpec.TIMEZONE,
+			"Java time zone for evaluating aggregate periods"),
+		new PropertySpec("noAggregateFill", PropertySpec.BOOLEAN,
+			"Set to false to disable filling aggregate periods before algo execution"),
+		new PropertySpec("aggPeriodInterval", PropertySpec.STRING, 
+			"Aggregate Period Interval"), 
 		new PropertySpec("aggregateTimeOffset", PropertySpec.STRING, 
 			"e.g. '8 hours', '1 day'. If supplied it is added to the output time of an aggregate."
-			+ " An example would be to center an average within its period."), 
-		
+			+ " An example would be to center an average within its period.")
 	};
 	private PropertySpec allprops[] = null;
 	
@@ -236,6 +241,12 @@ public abstract class AW_AlgorithmBase
 	public AW_AlgorithmBase()
 	{
 		super();
+	}
+	
+	public void initForGUI()
+	{
+		try { initAWAlgorithm(); }
+		catch(Exception ex) {}
 	}
 
 	/**
@@ -1673,11 +1684,17 @@ ex.printStackTrace(System.err);
 			for(int i=0; i<propNames.length; i++)
 				algoProps[i] = new PropertySpec(propNames[i], PropertySpec.STRING, "");
 		}
-		allprops = new PropertySpec[basePropertySpecs.length + algoProps.length];
+		allprops = new PropertySpec[basePropertySpecs.length +
+		    (_awAlgoType == AWAlgoType.TIME_SLICE ? 0 : aggAlgoPropertySpecs.length)
+		    + algoProps.length];
+		int idx = 0;
 		for(int i=0; i<basePropertySpecs.length; i++)
-			allprops[i] = basePropertySpecs[i];
+			allprops[idx++] = basePropertySpecs[i];
+		if (_awAlgoType != AWAlgoType.TIME_SLICE)
+			for(int i=0; i<aggAlgoPropertySpecs.length; i++)
+				allprops[idx++] = aggAlgoPropertySpecs[i];
 		for(int i=0; i < algoProps.length; i++)
-			allprops[i + basePropertySpecs.length] = algoProps[i];
+			allprops[idx++] = algoProps[i];
 		return allprops;
 	}
 
