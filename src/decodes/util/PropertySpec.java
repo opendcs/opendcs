@@ -52,6 +52,9 @@ public class PropertySpec
 	/** A Java enum property type will be E:<fullEnumClassPath> */
 	public static final String JAVA_ENUM = "E:";
 	
+	/** A long string property that should be displayed in a multi-line TextArea */
+	public static final String LONGSTRING = "l";
+	
 	private boolean dynamic = false;
 	
 	public PropertySpec(String name, String type, String description)
