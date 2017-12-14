@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.8  2017/03/30 21:07:18  mmaloney
+*  Refactor CompEventServer to use PID if monitor==true.
+*
 *  Revision 1.7  2016/06/27 15:26:37  mmaloney
 *  Have to read data types as part of decodes init.
 *
@@ -187,12 +190,13 @@ public class ComputationApp
 		long lastDataTime = System.currentTimeMillis();
 		long lastLockCheck = 0L;
 
-		while(!shutdownFlag)
+		String action="starting";
+		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+
+		try
 		{
-			String action="";
-			TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-			LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
-			try
+			while(!shutdownFlag)
 			{
 				long now = System.currentTimeMillis();
 
@@ -282,33 +286,33 @@ public class ComputationApp
 					theDb.releaseNewData(data);
 					lastDataTime = System.currentTimeMillis();
 				}
+				try { Thread.sleep(1000L); }
+				catch(InterruptedException ex) {}
 			}
-			catch(LockBusyException ex)
-			{
-				Logger.instance().fatal("No Lock - Application exiting: " + ex);
-				shutdownFlag = true;
-			}
-			catch(DbIoException ex)
-			{
-				warning("Database Error while " + action + ": " + ex);
-				shutdownFlag = true;
-				databaseFailed = true;
-			}
-			catch(Exception ex)
-			{
-				String msg = "Unexpected exception while " + action + ": " + ex;
-				warning(msg);
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
-				shutdownFlag = true;
-			}
-			finally
-			{
-				timeSeriesDAO.close();
-				loadingAppDAO.close();
-			}
-			try { Thread.sleep(1000L); }
-			catch(InterruptedException ex) {}
+		}
+		catch(LockBusyException ex)
+		{
+			Logger.instance().fatal("No Lock - Application exiting: " + ex);
+			shutdownFlag = true;
+		}
+		catch(DbIoException ex)
+		{
+			warning("Database Error while " + action + ": " + ex);
+			shutdownFlag = true;
+			databaseFailed = true;
+		}
+		catch(Exception ex)
+		{
+			String msg = "Unexpected exception while " + action + ": " + ex;
+			warning(msg);
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
+			shutdownFlag = true;
+		}
+		finally
+		{
+			timeSeriesDAO.close();
+			loadingAppDAO.close();
 		}
 		resolver = null;
 		Logger.instance().debug1("runApp() exiting.");
