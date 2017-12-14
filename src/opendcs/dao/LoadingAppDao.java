@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2017/10/03 12:34:13  mmaloney
+ * Handle constraint exceptions
+ *
  * Revision 1.6  2015/05/14 13:52:18  mmaloney
  * RC08 prep
  *
@@ -652,7 +655,7 @@ public class LoadingAppDao
 	public void close()
 	{
 		if (lockCheckStmt != null)
-			try { lockCheckStmt.close(); }
+			try { lockCheckStmt.close(); lockCheckStmt = null; }
 			catch(Exception ex) {}
 		super.close();
 	}
