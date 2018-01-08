@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.13  2017/11/07 20:26:11  mmaloney
+*  Improved debugs.
+*
 *  Revision 1.12  2017/08/22 19:56:40  mmaloney
 *  Refactor
 *
@@ -290,18 +293,25 @@ public abstract class DbAlgorithmExecutive
 					effectiveEnd = new Date();
 				else
 				{
+					int sign = 1;
 					int idx = s.indexOf('+');
+					if (idx >= 0)
+						sign = 1;
+					else if ((idx = s.indexOf('-')) >= 0)
+						sign = -1;
+					
 					if (idx == -1 || idx == s.length()-1)
 						warning("Invalid EffectiveEnd property '" + s + "' -- ignored.");
 					else
 					{
+					
 						s = s.substring(idx+1).trim();
 						try
 						{
 							IntervalIncrement [] iia = IntervalIncrement.parseMult(s);
 							IntervalIncrement ii = iia[0];
 							aggCal.setTime(new Date());
-							aggCal.add(ii.getCalConstant(), ii.getCount());
+							aggCal.add(ii.getCalConstant(), ii.getCount() * sign);
 							effectiveEnd = aggCal.getTime();
 						}
 						catch(Exception ex)

@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.8  2017/12/14 16:51:29  mmaloney
+*  Use PropertySpec in property dialogs.
+*
 *  Revision 1.7  2017/08/22 19:57:22  mmaloney
 *  Refactor
 *
@@ -153,13 +156,17 @@ public class ComputationsEditPanel
 		new String[] { "4 hour", "8 hours", "1 day" });
 	
 	private JComboBox untilMethodCombo = new JComboBox(
-		new String[] {"No limit", "Now", "Now +", "Calendar" });
+		new String[] {"No limit", "Now", "Now +", "Calendar", "Now -" });
 	private JPanel untilContentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
 	private DateTimeCalendar untilDateTimeCal = null;
 	private JPanel untilNowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
 	private JPanel untilNowPlusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
 	private JComboBox untilNowPlusCombo = new JComboBox(
 		new String[] { "4 hour", "8 hours", "1 day" });
+	private JPanel untilNowMinusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+	private JComboBox untilNowMinusCombo = new JComboBox(
+		new String[] { "4 hour", "8 hours", "1 day" });
+
 	private JLabel untilNowExpl = new JLabel();
 	
 	public ComputationsEditPanel()
@@ -368,7 +375,13 @@ public class ComputationsEditPanel
 		{
 			if (s.trim().equalsIgnoreCase("now"))
 				untilMethodCombo.setSelectedIndex(1);
-			else
+			else if (s.contains("-"))
+			{
+				untilMethodCombo.setSelectedIndex(4);
+				int idx = s.indexOf('-');
+				untilNowMinusCombo.setSelectedItem(s.substring(idx+1).trim());
+			}
+			else // now +
 			{
 				untilMethodCombo.setSelectedIndex(2);
 				int idx = s.indexOf('+');
@@ -676,6 +689,9 @@ public class ComputationsEditPanel
 				}
 			});
 		
+		untilNowMinusCombo.setEditable(true);
+		untilNowMinusPanel.add(untilNowMinusCombo);
+		
 		inputPanel.add(untilMethodCombo,
 			new GridBagConstraints(5, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, 
@@ -872,6 +888,10 @@ public class ComputationsEditPanel
 		case 3: // Calendar
 			ob.setValidEnd(untilDateTimeCal.getDate());
 			PropertiesUtil.rmIgnoreCase(hiddenProps, "EffectiveEnd");
+			break;
+		case 4: // now - N interval
+			ob.setValidEnd(null);
+			hiddenProps.setProperty("EffectiveEnd", "now - " + untilNowMinusCombo.getSelectedItem());
 			break;
 		}
 		
@@ -1312,6 +1332,9 @@ public class ComputationsEditPanel
 			break;
 		case 3: // Calendar
 			untilContentPanel.add(untilDateTimeCal);
+			break;
+		case 4: // now -
+			untilContentPanel.add(untilNowMinusPanel);
 			break;
 		}
 		// Force panel to repaint itself.
