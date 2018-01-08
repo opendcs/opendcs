@@ -1,26 +1,27 @@
 package ilex.gui;
 
 import javax.swing.JPanel;
-import java.awt.GridBagConstraints;
-import javax.swing.JComponent;
-import java.awt.GridBagLayout;
-import javax.swing.JLabel;
-import java.awt.Dimension;
 
-import com.toedter.calendar.IDateEditor;
+import java.awt.GridBagConstraints;
+
+import javax.swing.JComponent;
+
+import java.awt.GridBagLayout;
+
+import javax.swing.JLabel;
+
 import com.toedter.calendar.JDateChooser;
 
 import java.util.Date;
 import java.awt.*;
+
 import javax.swing.*;
+
 import java.util.Locale;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
-import java.awt.event.ActionEvent;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
 import java.text.DateFormat;
@@ -33,11 +34,11 @@ import java.text.DateFormat;
  * When the user clicks on the icon a calendar window will come up. The user
  * will select a date from the calendar window.
  */
+@SuppressWarnings("serial")
 public class DateCalendar extends JPanel
 {
-	private GridBagLayout dateGridbag = new GridBagLayout();
 	private String dateLabel = "";
-	private JComponent dateComponent;
+	private JDateChooser dateComponent;
 	private GridBagLayout gridBagLayoutMain = new GridBagLayout();
 	public JLabel textLabel = new JLabel();
 	public JTextFieldDateEditor textFieldEditor ;
@@ -71,6 +72,8 @@ public class DateCalendar extends JPanel
 	
 		textFieldEditor = new JTextFieldDateEditor(tzObj);
 		
+//System.out.println("creating JDateChooser with dateToSet='" + dateToSet + "' dateformatString='" + dateFormatString
+//	+ "'");
 		dateComponent = new JDateChooser(dateToSet, dateFormatString, 
 										textFieldEditor);
 		//((JDateChooser) dateComponent).setTimeZone(tzObj);//no need for this
@@ -90,10 +93,6 @@ public class DateCalendar extends JPanel
 		this.setLayout(gridBagLayoutMain);
 		textLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 		textLabel.setText(dateLabel + ": ");
-
-//		datePanel.setLayout(datePanelBorderLayout);
-//		datePanel.setPreferredSize(new Dimension(30, 20));
-//		datePanel.add(dateComponent, BorderLayout.CENTER);
 
 		this.add(textLabel, new GridBagConstraints(0, 0, 1, 1, 0.5, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL, 
@@ -123,7 +122,11 @@ public class DateCalendar extends JPanel
 	public Date getDate()
 	{
 		if (dateComponent != null)
-			return ((JDateChooser) dateComponent).getDate();
+		{
+			Date r = dateComponent.getDate();
+//System.out.println("DateCalendar.getDate returning " + r);
+			return r;
+		}
 		else
 			return null;
 	}

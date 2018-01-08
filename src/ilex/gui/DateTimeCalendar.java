@@ -2,8 +2,6 @@ package ilex.gui;
 
 import javax.swing.*;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -21,9 +19,11 @@ import java.awt.event.WindowEvent;
 @SuppressWarnings("serial")
 public class DateTimeCalendar extends JPanel
 {
+	public static final long MS_PER_DAY = 24 * 3600 * 1000L;
+	public static final String defaultTZ = "EST5EDT";
+
 	private DateCalendar dateCalendar = null;
 	private TimeSpinner timeSpinner;
-	private Date dateToSet = null;
 	private TimeZone tzObj;
 	private FlowLayout panelLayout = new FlowLayout(
 		FlowLayout.CENTER, 4, 0);
@@ -39,37 +39,41 @@ public class DateTimeCalendar extends JPanel
 	 * 						If null, default to today's date at 00:00:00
 	 * @param dateFormatString String - format for JCalendar Date text field 
 	 * 									Deafult format: MMM d,yyyy
-	 * @param timeZoneStr String - the timezone java id, Default is UTC
+	 * @param timeZoneStr String - the timezone java id, Default is defaultTZ above
 	 */
 	public DateTimeCalendar(String text, 
 							Date dateIn, 
 							String dateFormatString,
 							String timeZoneStr)
 	{
+//System.out.println("dtc('" + text + "', " + dateIn + ", " + dateFormatString + ", " + timeZoneStr + ")");
 		String dateLabel = text;
 		if (dateLabel == null)
 			dateLabel = "";
-		dateToSet = dateIn;
-		if (dateToSet == null)
-		{
-			dateToSet = new Date();//default time to 00:00:00
-			long MS_PER_DAY1 = 86400000; //1 day = 86400000 milliseconds
-			long timeInMs1 = dateToSet.getTime();
-			timeInMs1 = (timeInMs1/MS_PER_DAY1) * MS_PER_DAY1;
-			// Set hour to 00:00:00 				
-			dateToSet.setTime(timeInMs1);
-		}
+		
+		// Default TZ to UTC if not supplied.
 		if (timeZoneStr == null || timeZoneStr.equals(""))
-		{
-			tzObj = TimeZone.getTimeZone("UTC");
-		}
+			tzObj = TimeZone.getTimeZone(defaultTZ);
 		else
-		{
 			tzObj = TimeZone.getTimeZone(timeZoneStr);	
+
+		
+		// Default to noon in current day in whatever tz was specified
+		if (dateIn == null)
+		{	
+			dateIn = new Date();
+			Calendar cal = Calendar.getInstance();
+			cal.setTimeZone(tzObj);
+			cal.setTime(dateIn);
+			cal.set(Calendar.HOUR_OF_DAY, 12);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			dateIn = cal.getTime();
 		}
+		
 		dateCalendar = 
-			new DateCalendar(text, dateToSet, dateFormatString, tzObj);
-		timeSpinner = new TimeSpinner(dateToSet);
+			new DateCalendar(text, dateIn, dateFormatString, tzObj);
+		timeSpinner = new TimeSpinner(dateIn);
 		//Need to set timezone, pass it as a parameter
 		timeSpinner.setTimeZone(tzObj);
 		
@@ -84,11 +88,7 @@ public class DateTimeCalendar extends JPanel
 
 	private void jbInit() throws Exception
 	{
-//		timeSpinner.setPreferredSize(new Dimension(85, 30));
 		this.setLayout(panelLayout);
-//		dateCalendar.setPreferredSize(new Dimension(175, 20));
-//		this.setMinimumSize(new Dimension(275, 45));
-//		this.setPreferredSize(new Dimension(275, 45));
 		this.add(dateCalendar);
 		this.add(timeSpinner);
 	}
@@ -171,40 +171,7 @@ public class DateTimeCalendar extends JPanel
 	
 	public static void main(String[] args)
 	{
-		//args: label, date string, timezone
-		
-		
-		Date startTime1 = null;
-		TimeZone tz = TimeZone.getTimeZone("UTC");
-		SimpleDateFormat dateFmt;
-		dateFmt = new SimpleDateFormat("yyy-MM-dd HH:mm:ss");
-		dateFmt.setTimeZone(tz);		
-		try
-		{
-			startTime1 = dateFmt.parse("2007-01-01 09:01:10");
-		} catch (ParseException e1)
-		{
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		Date todaysDate = new Date(); //Default to today's Date
-		long MS_PER_DAY1 = 86400000; //1 day = 86400000 milliseconds
-		long timeInMs1 = todaysDate.getTime();
-		timeInMs1 = (timeInMs1/MS_PER_DAY1) * MS_PER_DAY1;
-		// Set hour to 00:00:00 				
-		todaysDate.setTime(timeInMs1);
-		SimpleDateFormat df1 = 
-			new SimpleDateFormat("MM/dd/yyyy HH:mm:ss Z");
-		
-		df1.setTimeZone(TimeZone.getTimeZone("UTC"));
-		//df1.setTimeZone(TimeZone.getTimeZone("EST5EDT"));
-		System.out.println("Date to be sent to JCalendar= " +
-				df1.format(todaysDate));
-				
-		final DateTimeCalendar datetimecalendar =           //"EST5EDT"
-			new DateTimeCalendar("From" ,null , null, null);
-		datetimecalendar.setDate(todaysDate);
+		final DateTimeCalendar datetimecalendar = new DateTimeCalendar("Test" , new Date() , null, null);
 		Frame testFrame = new Frame();
 
 		testFrame.setVisible(true);
@@ -219,23 +186,8 @@ public class DateTimeCalendar extends JPanel
 		{
 			public void windowClosing(WindowEvent e)
 			{
-				//System.out.println("Date merge = " + 
-				//		datetimecalendar.getDate());				
-				SimpleDateFormat df = 
-					new SimpleDateFormat("MM/dd/yyyy HH:mm:ss Z");
-				
-				df.setTimeZone(TimeZone.getTimeZone("UTC"));
-				System.out.println("Date merge = " +
-						df.format(datetimecalendar.getDate()));
-				
-				//another dummy test reset the calendar
-				Date retDate = new Date(); //Default to today's Date
-	            long MS_PER_DAY = 86400000; //1 day = 86400000 milliseconds
-	            long timeInMs = retDate.getTime();//set time to 23:59:59
-	            timeInMs = (timeInMs/MS_PER_DAY) * MS_PER_DAY;
-                timeInMs = timeInMs + MS_PER_DAY -1;
-                retDate.setTime(timeInMs);
-				datetimecalendar.setDate(retDate);
+				System.out.println("Date merge = " + datetimecalendar.getDate());
+				System.out.println("");
 			}
 		});
 			
