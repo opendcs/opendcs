@@ -42,8 +42,8 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-	long minSamplesNeeded = 1;
-	double negativeReplacement = Double.NEGATIVE_INFINITY;
+	public long minSamplesNeeded = 1;
+	public double negativeReplacement = Double.NEGATIVE_INFINITY;
 	String _propertyNames[] = { "minSamplesNeeded", "negativeReplacement" };
 //AW:PROPERTIES_END
 
