@@ -114,7 +114,7 @@ public class DynamicAggregatesAlg
 	public long min_values_desired = 0;
 	public String aggregate_name = "NONE";
     public String validation_flag = "";
-	double negativeReplacement = Double.NEGATIVE_INFINITY;
+	public double negativeReplacement = Double.NEGATIVE_INFINITY;
 
 	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired", "aggregate_name",
 	"validation_flag","no_rounding", "negativeReplacement" };
