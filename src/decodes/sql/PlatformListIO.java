@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.14  2017/02/09 17:26:08  mmaloney
+ * Property to allow MVR to overwrite on a clash when importing.
+ *
  * Revision 1.13  2017/01/27 20:47:58  mmaloney
  * Debugs on resolving name type.
  *
@@ -943,6 +946,8 @@ public class PlatformListIO extends SqlDbObjIo
 			warning("Skipping null transport medium");
 			return;
 		}
+		
+		medId = medId.trim();
 
 		String q = "insert into transportmedium(" + getTmColumns() + ") values (";
 		q = q +
