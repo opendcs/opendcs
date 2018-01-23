@@ -157,6 +157,8 @@ public class Client extends CmdLineProcessor
 						{
 							System.out.println("Message Received: " + 
 								msg.getSeqFileName());
+							System.out.println("flags=0x" + Integer.toHexString(msg.getFlagbits())
+								+ ", xmit time=" + msg.getXmitTime());
 							System.out.println(msg.toString());
 						}
 					}

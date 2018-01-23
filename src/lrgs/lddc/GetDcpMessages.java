@@ -266,7 +266,7 @@ public class GetDcpMessages extends Thread
 			{
 				System.out.println("localReceiveTime=" 
 					+ msg.getLocalReceiveTime());
-				System.out.println("Flag=" + msg.flagbits 
+				System.out.println("Flag=0x" + Integer.toHexString(msg.flagbits) 
 					+ ",   sequenceNum=" + msg.getSequenceNum() 
 					+ ",   filterCode=" + (int)msg.mergeFilterCode);
 				System.out.println("baud=" + msg.getBaud() 
