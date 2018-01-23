@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2017/11/02 20:46:21  mmaloney
+ * Improve error message and fix potential HDB null ptr bug.
+ *
  * Revision 1.7  2017/05/31 21:32:13  mmaloney
  * GUI improvements for HDB
  *
@@ -910,9 +913,9 @@ System.out.println("Setting tabsel='" + tabSel + "'");
 
 			if (parent.hasGroupInput())
 			{
-				// Why do the following? It is reasonable to have a group comp
-				// that has one or more parms hard-coded to specific time series.
-//				theParm.setSiteDataTypeId(Constants.undefinedId);
+				// HDB Issue 483, must clear out a possible SDI that was there before.
+				if(theDb.isHdb() && (site == null || dt == null))
+					theParm.setSiteDataTypeId(Constants.undefinedId);
 			}
 			else
 			{
@@ -952,8 +955,8 @@ System.out.println("Setting tabsel='" + tabSel + "'");
 								true,    // Create if doesn't exist
 								true,    // Do modify parm
 								nm);     // display name
-SiteName sn = theParm.getSiteName();
-Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : sn.getNameValue()));
+//SiteName sn = theParm.getSiteName();
+//Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : sn.getNameValue()));
 						}
 						catch (Exception exi)
 						{
