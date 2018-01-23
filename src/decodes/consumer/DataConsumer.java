@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2014/05/30 13:15:34  mmaloney
+*  dev
+*
 *  Revision 1.2  2014/05/28 13:09:29  mmaloney
 *  dev
 *
@@ -65,15 +68,19 @@ package decodes.consumer;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.io.OutputStream;
+
 import decodes.datasource.RawMessage;
 import decodes.decoder.DecodedMessage;
 import decodes.db.*;
 import decodes.routing.RoutingSpecThread;
+import decodes.util.PropertiesOwner;
+import decodes.util.PropertySpec;
 
 /**
   This abstract class defines the interface for all DECODES data consumers.
 */
 public abstract class DataConsumer
+	implements PropertiesOwner
 {
 	protected TimeZone tz;
 	
@@ -208,7 +215,22 @@ public abstract class DataConsumer
 	{
 		return "Argument";
 	}
+	
+	protected PropertySpec dcPropSpecs[] = 
+	{
+	};
 
 
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return dcPropSpecs;
+	}
+	
+	@Override
+	public boolean additionalPropsAllowed()
+	{
+		return false;
+	}
 }
 
