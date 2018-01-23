@@ -104,7 +104,7 @@ public class DcpMonitorConsumer
 	public void startMessage(DecodedMessage msg)
 		throws DataConsumerException
 	{
-Logger.instance().debug3("DcpMonitorConsumer.startMessage() msg=" + msg.getRawMessage().getOrigDcpMsg().getHeader());
+
 		RawMessage rawMsg = null;
 		Date xmitTime = null;
 		DcpMsg dcpMsg = null;
@@ -120,6 +120,9 @@ Logger.instance().debug3("DcpMonitorConsumer.startMessage() msg=" + msg.getRawMe
 					"rawMsg without DcpMsg ignored. " + "Medium ID=" + rawMsg.getMediumId());
 				return;
 			}
+			Logger.instance().debug3("DcpMonitorConsumer.startMessage() hdr=" + dcpMsg.getHeader()
+				+ ", flags=0x" + Integer.toHexString(dcpMsg.getFlagbits()));
+		
 			
 			lastTimeStamp = xmitTime = dcpMsg.getXmitTime();
 			if (xmitTime == null)
