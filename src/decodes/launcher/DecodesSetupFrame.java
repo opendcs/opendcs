@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.3  2015/05/21 13:26:14  mmaloney
+ * RC08
+ *
  * Revision 1.2  2014/05/22 12:15:21  mmaloney
  * Call Launcher Frame's setupSaved after saving config so it can adjust if necessary.
  *
@@ -194,7 +197,7 @@ public class DecodesSetupFrame
 		
 		// For owner, DCSTOOL_USERDIR == DCSTOOL_HOME
 		String propFile = settings.isToolkitOwner() ?
-			EnvExpander.expand("$DCSTOOL_HOME/decodes.properties")
+			LauncherFrame.cmdLineArgs.getPropertiesFile()
 			: EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
 		try
 		{
@@ -219,8 +222,7 @@ public class DecodesSetupFrame
 
 	void populateDecodesPropsTab()
 	{
-		String propFile = 
-			EnvExpander.expand("$DECODES_INSTALL_DIR/decodes.properties");
+		String propFile = LauncherFrame.cmdLineArgs.getPropertiesFile();
 		DecodesSettings settings = DecodesSettings.instance();
 		Properties props = new Properties();
 		try
