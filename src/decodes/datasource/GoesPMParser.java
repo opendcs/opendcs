@@ -72,7 +72,7 @@ public class GoesPMParser extends PMParser
 		// Make sure first 8 bytes are hex digits
 		for(int i=0; i<8; i++)
 			if (ByteUtil.fromHexChar((char)data[i]) == -1)
-				throw new HeaderParseException("Invalid DCP Address");
+				throw new HeaderParseException("Invalid GOES DCP Address");
 		String dcpAddr = new String(data, 0, 8);
 		dcpAddr = dcpAddr.toUpperCase();
 		msg.setPM(DCP_ADDRESS, new Variable(dcpAddr));

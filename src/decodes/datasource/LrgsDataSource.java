@@ -620,6 +620,9 @@ public class LrgsDataSource extends DataSourceExec
 					+ ", flags=0x" + Integer.toHexString(dcpMsg.flagbits));
 		}
 
+//Logger.instance().debug1("LrgsDataSource processing hdr='" + dcpMsg.getHeader() + "', flags=0x" 
+//	+ Integer.toHexString(dcpMsg.getFlagbits()));
+
 		// Parse the message & establish platform linkage.
 		try
 		{
@@ -677,7 +680,8 @@ public class LrgsDataSource extends DataSourceExec
 		{
 			log(Logger.E_FAILURE, 
 				"Could not parse message header for '"
-				+ new String(dcpMsg.getData(), 0, 20) + "': " + e);
+				+ new String(dcpMsg.getData(), 0, 20) + "' flags=0x"
+				+ Integer.toHexString(dcpMsg.getFlagbits()) + ": " + e);
 			throw e;
 		}
 		catch(NoConversionException e) 
