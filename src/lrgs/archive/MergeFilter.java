@@ -337,7 +337,7 @@ public class MergeFilter
 	{
 		// Iridium uses MOMSN (Mobile-Originated Msg Sequence Num),
 		// which is guaranteed to be the same, regardless of ground system.
-		if (DcpMsgFlag.isIridium(newMsg.flagbits)
+		if (newMsg.isIridium()
 		 && newMsg.getSequenceNum() == storedIdx.getSequenceNum())
 			return true;
 		

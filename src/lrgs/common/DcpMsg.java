@@ -796,7 +796,7 @@ public class DcpMsg
     public void setSessionStatus(int sessionStatus)
     {
     	this.sessionStatus = sessionStatus;
-    	if (DcpMsgFlag.isIridium(flagbits))
+    	if (isIridium())
     		setFailureCode(sessionStatus <= 2 ? 'G' : '?');
 
     }
@@ -1058,7 +1058,7 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 	{
 		if (DcpMsgFlag.isGOES(flagbits))
 			return "GOES";
-		else if (DcpMsgFlag.isIridium(flagbits))
+		else if (isIridium())
 			return "Iridium";
 		LineNumberReader lnr = new LineNumberReader(new InputStreamReader(
 			new ByteArrayInputStream(data)));
@@ -1075,5 +1075,11 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 		catch (IOException e) { /* Won't happen */ }
 		finally { try { lnr.close(); } catch(Exception ex) {} }
 		return "";
+	}
+	
+	public boolean isIridium()
+	{
+		return DcpMsgFlag.isIridium(flagbits)
+			|| (data[0] == (byte)'I' && data[1] == (byte)'D' && data[2] == (byte)'=');
 	}
 }
