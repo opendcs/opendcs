@@ -568,6 +568,11 @@ public class RoutingSpecThread
 
 			currentStatus = "Running";
 		}
+		if (platformStatusDAO != null)
+		{
+			platformStatusDAO.close();
+			platformStatusDAO = null;
+		}
 
 		quit();
 	}
