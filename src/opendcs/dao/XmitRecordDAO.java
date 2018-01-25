@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2017/04/27 21:09:01  mmaloney
+ * Remove dead code that was commented out.
+ *
  * Revision 1.11  2015/12/02 21:20:59  mmaloney
  * Added read method for the new XmitRecSpec bean.
  *
@@ -300,7 +303,7 @@ public class XmitRecordDAO
 		try
 		{
 			if (rs != null && rs.next())
-				return db.getFullDate(rs, 1);
+				return getFullDate(rs, 1);
 			else
 				return null;
 		}
@@ -1046,6 +1049,30 @@ Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
 		}
 
 		return ret;
+	}
+	
+	
+	/**
+	* In xmit record tables, date/times are represented as long integer.
+	 * @param rs
+	 * @param column
+	 * @return
+	 */
+	private Date getFullDate(ResultSet rs, int column)
+	{
+		// In OpenTSDB, date/times are stored as long integer
+		try
+		{
+			long t = rs.getLong(column);
+			if (rs.wasNull())
+				return null;
+			return new Date(t);
+		}
+		catch (SQLException ex)
+		{
+			warning("Cannot convert date!");
+			return null;
+		}
 	}
 
 	
