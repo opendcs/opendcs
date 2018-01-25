@@ -15,6 +15,12 @@ import decodes.tsdb.DbIoException;
 public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 {
 
+	public OpenTsdbSqlDbIO()
+		throws DatabaseException
+	{
+		this(null);
+	}
+
 	public OpenTsdbSqlDbIO(String location)
 		throws DatabaseException
 	{
