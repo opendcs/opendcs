@@ -10,6 +10,7 @@ import javax.swing.table.*;
 
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.Comparator;
@@ -189,6 +190,7 @@ class PlatformSelectTableModel extends AbstractTableModel
 //	private Vector vec;
 	private ArrayList<Platform> platformList = new ArrayList<Platform>();
 	private int sortColumn = -1;
+	String mediumType = null;
 
 	static String colNamesNoDesig[] = 
 	{
@@ -217,18 +219,23 @@ class PlatformSelectTableModel extends AbstractTableModel
 		? new int[] { 18, 6, 6, 20, 20,10, 30 } : new int[] { 22, 6, 20, 20,10, 33 };
 
 
-	public PlatformSelectTableModel(PlatformSelectPanel panel, String mediumType)
+	public PlatformSelectTableModel(PlatformSelectPanel panel, String medTyp)
 	{
 		super();
+		this.mediumType = medTyp;
 		this.panel = panel;
-		columnizer = new PlatformSelectColumnizer();		
+		columnizer = new PlatformSelectColumnizer(mediumType);
 		for(Platform platform : Database.getDb().platformList.getPlatformVector())
 		{
+			// NOTE: Medium Type NULL means display all platforms. 
 			if (mediumType == null 
+				 // Direct match for specified TM type
 			 || platform.getTransportMedium(mediumType) != null
+			     // If any GOES type then only display GOES platforms.
 			 || (mediumType.equalsIgnoreCase(Constants.medium_Goes)
 				 && (platform.getTransportMedium(Constants.medium_GoesST) != null
 				  || platform.getTransportMedium(Constants.medium_GoesRD) != null))
+				  // If MT='Poll', display any polling-type platform.
 			 || (mediumType.equalsIgnoreCase("poll")
 				 && (platform.getTransportMedium("polled-modem") != null
 				  || platform.getTransportMedium("polled-tcp") != null
@@ -243,7 +250,7 @@ class PlatformSelectTableModel extends AbstractTableModel
 		super();
 		this.panel = panel;
 		this.site = site;
-		columnizer = new PlatformSelectColumnizer();
+		columnizer = new PlatformSelectColumnizer(null);
 		Vector fvec = Database.getDb().platformList.getPlatformVector();
 		Platform p = null;
 		Vector tvec = (Vector)fvec.clone();
@@ -361,8 +368,26 @@ class PlatformSelectTableModel extends AbstractTableModel
 class PlatformSelectColumnizer
 {
 	private boolean desig = DecodesSettings.instance().platformListDesignatorCol;
+	String mediumType = null;
+	boolean isGOES = false, isPoll = false;
+	
+	public PlatformSelectColumnizer(String mediumType)
+	{
+		this.mediumType = mediumType;
+		if (mediumType != null)
+		{
+			isGOES = mediumType.equalsIgnoreCase(Constants.medium_Goes)
+				|| mediumType.equalsIgnoreCase(Constants.medium_GoesST)
+				|| mediumType.equalsIgnoreCase(Constants.medium_GoesRD);
+			isPoll = mediumType.equalsIgnoreCase("poll")
+				|| mediumType.equalsIgnoreCase("polled-modem")
+				|| mediumType.equalsIgnoreCase("polled-tcp")
+				|| mediumType.equalsIgnoreCase("incoming-tcp");
+		}
+//System.out.println("psc mt=" + mediumType + ", isGOES=" + isGOES + ", isPoll=" + isPoll);
+	}
 
-	String getColumn(Platform p, int c)
+	public String getColumn(Platform p, int c)
 	{
 		switch(c)
 		{
@@ -392,12 +417,12 @@ class PlatformSelectColumnizer
 				if (desig)
 					return p.agency == null ? "" : p.agency;
 				else
-					return p.getPreferredTransportId();
+					return getTM(p);
 			}
 			case 3: // Transport-ID or Config
 			{
 				if (desig)
-					return p.getPreferredTransportId();
+					return getTM(p);
 				else
 					return p.getConfigName();
 			}
@@ -433,6 +458,37 @@ class PlatformSelectColumnizer
 			default:
 				return "";
 		}
+	}
+	
+	private String getTM(Platform p)
+	{
+		if (mediumType == null)
+			return p.getPreferredTransportId();
+		
+		TransportMedium tm = p.getTransportMedium(mediumType);
+		if (tm != null)
+			return tm.getMediumId();
+		
+//System.out.println("getTM mt='" + mediumType + "' but no TM of that type.");
+//for(Iterator<TransportMedium> tmit = p.getTransportMedia(); tmit.hasNext(); )
+//{
+//	tm = tmit.next();
+//	System.out.println(tm.getMediumType() + ":" + tm.getMediumId());
+//}
+		
+		// If  GOES type display any GOES TM.
+		if (isGOES
+		 && ((tm = p.getTransportMedium(Constants.medium_GoesST)) != null
+		  || (tm = p.getTransportMedium(Constants.medium_GoesRD)) != null))
+			return tm.getMediumId();
+		
+		if (isPoll
+			 && ((tm = p.getTransportMedium(Constants.medium_PolledModem)) != null
+			  || (tm = p.getTransportMedium(Constants.medium_PolledTcp)) != null
+			  || (tm = p.getTransportMedium("incoming-tcp")) != null))
+				return tm.getMediumId();
+
+		return p.getPreferredTransportId();
 	}
 }
 
