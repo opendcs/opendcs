@@ -2,6 +2,10 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.4  2015/11/12 15:19:23  mmaloney
+*  Added PropertySpec entries with tooltip for all props.
+*  Added new siteNameType property.
+*
 *  Revision 1.3  2014/05/30 13:15:34  mmaloney
 *  dev
 *
@@ -311,6 +315,7 @@ public class ShefFormatter extends OutputFormatter
 			TimeSeries ts = (TimeSeries)it.next();
 			if (ts.size() == 0)
 				continue;
+			
 
 			Sensor sensor = ts.getSensor();
 			String platformName;
@@ -343,17 +348,45 @@ public class ShefFormatter extends OutputFormatter
 				shefCode = scb.toString();
 			}
 
-			String recordingInt = "" + sensor.getRecordingInterval();
+			ts.sort();
+
+			
+			//TODO
+			// determine whether to do .A or .E
+			// if sensor.recordingMode is F (fixed) and there are no gaps in the data, I can do .E
+			// otherwise I have to do .A
+			boolean doDotA = true;
+			if (!dotAOnly
+			 && sensor.getRecordingMode() == Constants.recordingModeFixed
+			 && sensor.getRecordingInterval() > 0)
+			{
+				int sz = ts.size();
+				long lastSecTime = 0L;
+				doDotA = false;
+				for(int i=0; i<sz; i++)
+				{
+					TimedVariable tv = ts.sampleAt(i);
+					long secTime = tv.getTime().getTime() / 1000L;
+					
+					if (lastSecTime != 0L
+					 && (secTime - lastSecTime != sensor.getRecordingInterval()))
+					{
+						doDotA = true;
+						break;
+					}
+					lastSecTime = secTime;
+				}
+			}
+			
+//			String recordingInt = "" + sensor.getRecordingInterval();
 
 			String unitsId = " /DUE ";
 			if (eu != null && eu.family != null
 			 && eu.family.equalsIgnoreCase(Constants.unitFamilyMetric))
 				unitsId = " /DUS ";
 
-			if (!dotAOnly && platformType == 'I') // output .E ?
+			if (!doDotA) // Do .E
 			{
-				ts.sort();
-
 				sb.setLength(0);
 				sb.append(".E ");
 				sb.append(platformName);
@@ -384,7 +417,6 @@ public class ShefFormatter extends OutputFormatter
 						sb.append("/+");
 					else
 						sb.append("/" + formatValue(tv, dt));
-						//sb.append("/" + ts.formattedSampleAt(i).trim());
 				}
 				sb.append(" : ");
 				sb.append(sensor.getName());
