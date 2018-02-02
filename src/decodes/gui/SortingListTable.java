@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:03  cvs
 *  Added legacy code to repository
 *
@@ -25,8 +28,10 @@
 */
 package decodes.gui;
 
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
 import javax.swing.*;
 import javax.swing.table.*;
 
@@ -130,6 +135,17 @@ public class SortingListTable extends JTable
 		}
 		
 		super.paint(g);
+	}
+	
+	@Override
+	public void setFont(Font font)
+	{
+		super.setFont(font);
+		int fontSize = getFont().getSize();
+		if (fontSize > 13)
+			setRowHeight(fontSize + 4);
+		else
+			setRowHeight(16);
 	}
 
 	/**
