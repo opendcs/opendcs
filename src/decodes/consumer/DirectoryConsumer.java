@@ -60,6 +60,8 @@ public class DirectoryConsumer extends DataConsumer
 	
 	/** So apps like poll and PollGUI can retrieve last file written */
 	private File lastOutFile = null;
+	
+	private int sequenceNum = 1;
 
 	/** No-args constructor required */
 	public DirectoryConsumer()
@@ -152,6 +154,8 @@ public class DirectoryConsumer extends DataConsumer
 		catch(UnknownPlatformException e) 
 		{
 		}
+		
+		props.setProperty("SEQUENCE", "" + (sequenceNum++));
 
 		try
 		{
@@ -162,6 +166,7 @@ public class DirectoryConsumer extends DataConsumer
 			if ( currentFileName == null || !appendToCurrentFile )
 			{
 				Date d = rm.getTimeStamp();
+//Logger.instance().info("DirConsumer: template='" + filenameTemplate + "', props=" + PropertiesUtil.props2string(props));
 				currentFileName = EnvExpander.expand(filenameTemplate, props, d);
 			}
 
