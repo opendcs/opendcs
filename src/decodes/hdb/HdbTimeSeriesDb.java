@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.12  2017/10/03 12:32:09  mmaloney
+*  Code cleanup
+*
 *  Revision 1.11  2017/05/31 21:25:04  mmaloney
 *  Fill HdbDataType cache.
 *  Implement expandSDI.
@@ -112,6 +115,8 @@ public class HdbTimeSeriesDb
 	private OraclePreparedStatement insertTasklist = null;
 	
 	private ArrayList<HdbDataType> hdbDataTypes = null;
+	
+	private ArrayList<HdbObjectType> hdbObjectTypes = null; 
 
 
 	/**
@@ -1418,4 +1423,33 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		}
 		return hdbDataTypes;
 	}
+	
+	public ArrayList<HdbObjectType> getHdbObjectTypes()
+	{
+		if (hdbObjectTypes == null)
+		{
+			hdbObjectTypes = new ArrayList<HdbObjectType>();
+			String q = "select a.objecttype_id, a.objecttype_name, a.objecttype_tag, a.objecttype_parent_order "
+				+ "FROM HDB_OBJECTTYPE a "
+				+ "order by a.objecttype_id";
+			try
+			{
+				ResultSet rs = this.doQuery(q);
+				while(rs.next())
+				{
+					HdbObjectType hot = new HdbObjectType(DbKey.createDbKey(rs, 1), 
+						rs.getString(2), rs.getString(3), rs.getInt(4));
+					hdbObjectTypes.add(hot);
+				}
+			}
+			catch (Exception ex)
+			{
+				warning("Cannot read HDB Object Types with query '" + q + ": " + ex);
+			}
+		}
+		return hdbObjectTypes;
+	}
+
+	
+	
 }
