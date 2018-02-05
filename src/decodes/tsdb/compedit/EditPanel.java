@@ -56,7 +56,7 @@ public abstract class EditPanel extends JPanel
 		commitButton.setText(CAPEdit.instance().genericDescriptions
         		.getString("commit"));
 		commitButton.setName("commitButton");
-		commitButton.setPreferredSize(new java.awt.Dimension(100,25));
+//		commitButton.setPreferredSize(new java.awt.Dimension(100,25));
 		commitButton.addActionListener(
 			new java.awt.event.ActionListener()
 			{
@@ -73,7 +73,7 @@ public abstract class EditPanel extends JPanel
 		JButton closeButton = new JButton();
 		closeButton.setText(CAPEdit.instance().genericDescriptions
         		.getString("close"));
-		closeButton.setPreferredSize(new java.awt.Dimension(100,25));
+//		closeButton.setPreferredSize(new java.awt.Dimension(100,25));
 		closeButton.setName("closeButton");
 		closeButton.addActionListener(
 			new java.awt.event.ActionListener()
