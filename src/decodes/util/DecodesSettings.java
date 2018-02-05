@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.25  2017/08/23 14:13:16  mmaloney
+*  Fix inconsistency with editDatabaseLocation between decodes.properties and user.properties.
+*
 *  Revision 1.24  2017/08/22 19:48:39  mmaloney
 *  Improve comments
 *
@@ -433,6 +436,8 @@ public class DecodesSettings
 	
 	public boolean showEventMonitor = false;
 	public boolean showAlarmEditor = false;
+	
+	public int fontAdjust = 0;
 
 	
 	//===============================================================================
@@ -686,7 +691,11 @@ public class DecodesSettings
 			
 		new PropertySpec("autoDeleteOnImport", PropertySpec.BOOLEAN,
 			"(default=false) If TRUE, then dbimport will automatically delete platforms with matching"
-			+ " site & designator when a clash occurs with an imported platform.")
+			+ " site & designator when a clash occurs with an imported platform."),
+			
+		new PropertySpec("fontAdjust", PropertySpec.INT,
+			"(default=0) Set to positive number to increase default font size, or negative number to decrease.")
+
 	};
 	
 	/**

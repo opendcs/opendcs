@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2016/01/27 22:09:12  mmaloney
+*  Get rid of error message when "decodes.properties" doesn't exist in a shared implementation for CWMS.
+*
 *  Revision 1.2  2014/06/27 20:33:49  mmaloney
 *  Bug fix: Catch any exception, not just IOException.
 *
@@ -84,6 +87,7 @@ package decodes.util;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
+import java.util.Map;
 import java.util.Properties;
 
 import ilex.cmdline.*;
@@ -295,6 +299,22 @@ public class CmdLineArgs
 			}
 			System.setProperty(name.toUpperCase(), value);
 			cmdLineProps.setProperty(name, value);
+		}
+		
+		if (DecodesSettings.instance().fontAdjust != 0)
+		{
+			for (Map.Entry<Object, Object> entry : javax.swing.UIManager.getDefaults().entrySet()) 
+			{
+			    Object key = entry.getKey();
+			    Object value = javax.swing.UIManager.get(key);
+			    if (value != null && value instanceof javax.swing.plaf.FontUIResource)
+			    {
+			        javax.swing.plaf.FontUIResource fr=(javax.swing.plaf.FontUIResource)value;
+			        javax.swing.plaf.FontUIResource f = new javax.swing.plaf.FontUIResource(fr.getFamily(), 
+			        	fr.getStyle(), fr.getSize() + DecodesSettings.instance().fontAdjust);
+			        javax.swing.UIManager.put(key, f);
+			    }
+			}
 		}
 	}
 
