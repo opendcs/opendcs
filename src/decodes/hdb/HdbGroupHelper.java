@@ -7,6 +7,9 @@
 *  contained in this file may be claimed to be proprietary.
 *  
 *  $Log$
+*  Revision 1.1  2016/11/03 19:00:36  mmaloney
+*  Refactoring for group evaluation to make HDB work the same way as CWMS.
+*
 *  Revision 1.2  2016/06/27 15:30:11  mmaloney
 *  Removed nuisance INFO and DEBUGs
 *
@@ -99,7 +102,7 @@ public class HdbGroupHelper
 				{
 					thisPartSpecified = true;
 					String tsidVal = tsid.getPart(parts[pi]);
-					if (tgm.getMemberValue().equalsIgnoreCase(tsidVal))
+					if (tsidVal != null && tgm.getMemberValue().equalsIgnoreCase(tsidVal))
 					{
 						found = true;
 						matches++;
@@ -110,6 +113,37 @@ public class HdbGroupHelper
 			if (thisPartSpecified && !found)
 				return false;
 		}
+		
+		// MJM 2/2/2018 check for ObjectType match
+		boolean objectTypeSpecified = false;
+		boolean objectTypeFound = false;
+		String tsidObjectType = tsid.getSite() == null ? null : tsid.getSite().getLocationType();
+//System.out.println("Comparing TSID " + tsid.getUniqueString() + " objectType='" + tsidObjectType + "'");
+
+		if (tsidObjectType != null && tsidObjectType.trim().length() > 0)
+		{
+
+			ArrayList<TsGroupMember> otherParts = grp.getOtherMembers();
+			for(TsGroupMember tgm : otherParts)
+			{
+				if (tgm.getMemberType().equalsIgnoreCase("ObjectType"))
+				{
+//System.out.println("Comparing with group objecttype '" + tgm.getMemberValue() + "'");
+					objectTypeSpecified = true;
+					if (tsidObjectType.equalsIgnoreCase(tgm.getMemberValue()))
+					{
+//System.out.println("   MATCH");
+						objectTypeFound = true;
+						matches++;
+						break;
+					}
+				}
+			}
+		}
+		if (objectTypeSpecified && !objectTypeFound)
+			return false;
+		
+		
 		// If at least one part matched, then this tsid passes.
 		return matches > 0;
 	}
