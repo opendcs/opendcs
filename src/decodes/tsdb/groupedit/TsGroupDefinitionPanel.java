@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.13  2017/05/31 21:34:27  mmaloney
+ * GUI improvements for HDB
+ *
  * Revision 1.12  2017/05/08 12:34:53  mmaloney
  * For CWMS, TSIDs may contain param values that CCP does not have in its DataType
  * table. If this is the case, save as an other "param" value.
@@ -132,6 +135,7 @@ import decodes.gui.EnumComboBox;
 import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
 import decodes.hdb.HdbDataType;
+import decodes.hdb.HdbObjectType;
 import decodes.hdb.HdbTimeSeriesDb;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
@@ -647,6 +651,23 @@ public class TsGroupDefinitionPanel
 			int y = idx / 2;
 			buttonPanel.add(button,
 				new GridBagConstraints(x, y, 1, 1, 0.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+					new Insets(2, 10, 2, 10), 0, 0));
+		}
+		if (tsdb.isHdb())
+		{
+			final String tag = "ObjectType";
+			JButton button = new JButton(tag);
+			button.addActionListener(
+				new java.awt.event.ActionListener()
+				{
+					public void actionPerformed(ActionEvent e)
+					{
+						addQueryParam(tag);
+					}
+				});
+			buttonPanel.add(button,
+				new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 10, 2, 10), 0, 0));
 		}
@@ -1627,6 +1648,17 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 		else if (keyStr.equalsIgnoreCase(HdbTsId.MODELID_PART))
 		{
 			selection = (String)JOptionPane.showInputDialog(this, "Enter " + keyStr + ":");
+		}
+		else if (keyStr.equalsIgnoreCase("ObjectType"))
+		{
+			ArrayList<HdbObjectType> hots = ((HdbTimeSeriesDb)tsdb).getHdbObjectTypes();
+			String hotnames[] = new String[hots.size()];
+			for(int idx = 0; idx < hotnames.length; idx++)
+				hotnames[idx] = hots.get(idx).getName();
+			
+			selection = (String)JOptionPane.showInputDialog(this, 
+				"Select Object Type:", "Select Object Type", JOptionPane.PLAIN_MESSAGE, null, 
+				hotnames, null);
 		}
 		
 		// selection may be set from above, or it may be null if user cancelled.
