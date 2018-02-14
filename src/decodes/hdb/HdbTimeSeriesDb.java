@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.13  2018/02/05 15:51:32  mmaloney
+*  Added cache of HDB Object Types
+*
 *  Revision 1.12  2017/10/03 12:32:09  mmaloney
 *  Code cleanup
 *
@@ -612,18 +615,8 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 			return "" + c;
 	}
 
-	/**
-	 * Returns an DataCollection containing zero or more TimeSeries,
-	 * containing all data added or deleted since the specified time.
-	 *
-	 * @param applicationId used to lookup & save the since time.
-	 * @param sinceTime time to retrieve data since.
-	 * @return an IDataCollection containing several ITimeSeries
-	 * representing all data added to the database since the
-	 * specified date (inclusive).
-	 * @throws DbIoException on Database IO error.
-	 */
-	public DataCollection getNewDataSince(DbKey applicationId, Date sinceTime)
+	@Override
+	public DataCollection getNewData(DbKey applicationId)
 		throws DbIoException
 	{
 		// Reload the TSID cache every hour.
@@ -647,9 +640,6 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 
 		q = "select " + attrList + " from CP_COMP_TASKLIST "
 		  + "where LOADING_APPLICATION_ID = " + applicationId + " and rownum < 10000 ";
-
-		if (sinceTime != null)
-			q = q + " and START_DATE_TIME > " + sqlDate(sinceTime);
 
 		if (tsdbVersion >= 4)
 			q = q + " and (FAIL_TIME is null OR "

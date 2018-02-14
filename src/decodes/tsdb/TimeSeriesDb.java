@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.14  2017/10/03 12:33:20  mmaloney
+*  Code cleanup
+*
 *  Revision 1.13  2017/08/22 19:56:39  mmaloney
 *  Refactor
 *
@@ -1093,25 +1096,9 @@ public abstract class TimeSeriesDb
 	 * @return DataCollection with newly added or deleted values.
 	 * @throws DbIoException on Database IO error.
 	 */
-	public DataCollection getNewData( DbKey applicationId )
-		throws DbIoException
-	{
-		return getNewDataSince(applicationId, null);
-	}
-	
-	/**
-	 * Similar to getNewData, this method allows caller to explicitly
-	 * specify a since time.
-	 * @param applicationId used to lookup & save the since time.
-	 * @return an IDataCollection containing several ITimeSeries
-	 * representing all data added to the database since the
-	 * specified date (inclusive).
-	 * @throws DbIoException on Database IO error.
-	 */
-	public abstract DataCollection getNewDataSince( DbKey applicationId, 
-		Date sinceTime)
+	public abstract DataCollection getNewData( DbKey applicationId )
 		throws DbIoException;
-
+	
 	/**
 	 * Releases triggers associated with the new data in the passed collection.
 	 * The implementation may use information contained in the collection's

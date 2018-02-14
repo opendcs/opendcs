@@ -117,7 +117,7 @@ public class OpenTsdb extends TimeSeriesDb
 	}
 
 	@Override
-	public DataCollection getNewDataSince(DbKey applicationId, Date sinceTime)
+	public DataCollection getNewData(DbKey applicationId)
 		throws DbIoException
 	{
 		// Stub - Not implemented.

@@ -7,6 +7,12 @@ import decodes.sql.SqlDatabaseIO;
 
 public class HdbSqlDatabaseIO extends SqlDatabaseIO
 {
+	public HdbSqlDatabaseIO()
+		throws DatabaseException
+	{
+		this(null);
+	}
+	
 	public HdbSqlDatabaseIO(String sqlDbLocation)
 		throws DatabaseException
 	{
