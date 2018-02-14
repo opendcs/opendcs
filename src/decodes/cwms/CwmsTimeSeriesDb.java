@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.27  2017/11/14 21:50:11  mmaloney
+*  Handle out of range ratings that return Const.UNDEFINED_DOUBLE.
+*
 *  Revision 1.26  2017/11/14 20:46:48  mmaloney
 *  Handle out of range ratings that return Const.UNDEFINED_DOUBLE.
 *
@@ -635,20 +638,11 @@ public class CwmsTimeSeriesDb
 	private DbKey dbOfficeCode = Constants.undefinedId;
 	private String dbOfficePrivilege = null;
 
-//	private SimpleDateFormat rwdf;
-//	private OraclePreparedStatement storeTsStmt = null;
-//	private TasklistQueueFile tasklistQueueFile = null;
-//	private int tasklistQueueThresholdHours = 8;
-//	private int numTasklistQueueErrors = 0;
-
-
 	private String[] currentlyUsedVersions = { "" };
 	GregorianCalendar saveTsCal = new GregorianCalendar(
 		TimeZone.getTimeZone("UTC"));
 	
 	CwmsGroupHelper cwmsGroupHelper = null;
-//	private long lastTaskListRecords = 0L;
-//	private long taskListTimeoutMillisec = 300000L;
 	
 	public boolean requireCcpTables = true;
 	
@@ -661,6 +655,8 @@ public class CwmsTimeSeriesDb
 	private String jdbcOracleDriver = null;
 	
 	private BaseParam baseParam = new BaseParam();
+	private OraclePreparedStatement getMinStmt = null, getTaskListStmt;
+	String getMinStmtQuery = null, getTaskListStmtQuery = null;
 	
 	
 	/**
@@ -1182,7 +1178,8 @@ public class CwmsTimeSeriesDb
 	 * not only what the new data is, but what computations depend on it.
 	 * The dependent computation IDs are stored inside each CTimeSeries.
 	 */
-	public DataCollection getNewDataSince(DbKey applicationId, Date sinceTime)
+	@Override
+	public DataCollection getNewData(DbKey applicationId)
 		throws DbIoException
 	{
 		// Reload the TSID cache every hour.
@@ -1196,28 +1193,47 @@ public class CwmsTimeSeriesDb
 
 		DataCollection dataCollection = new DataCollection();
 
-		String failTimeClause =
-			" and (a.FAIL_TIME is null OR "
-			+ "SYSDATE - to_date("
-				+ "to_char(a.FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
-				+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
-		//MJM: If retries are disallowed, just set the clause to nothing.
-		if (!DecodesSettings.instance().retryFailedComputations)
-			failTimeClause = "";
-		
-		String q = "select min(a.record_num) from cp_comp_tasklist a "
-			+ "where a.LOADING_APPLICATION_ID = " + applicationId
-			+ failTimeClause;
+		// MJM 2/14/18 - From Dave Portin. Original failTimeClause was:
+		//		" and (a.FAIL_TIME is null OR "
+		//		+ "SYSDATE - to_date("
+		//		+ "to_char(a.FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
+		//		+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
 
 		int minRecNum = -1;
 		try
 		{
-			ResultSet rs = doQuery(q);
+			if (getMinStmt == null)
+			{
+				// 1st query gets min record num so that I can do a range query afterward.
+				String failTimeClause =
+					DecodesSettings.instance().retryFailedComputations
+					? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
+					: "";
+	
+				getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
+					+ "where a.LOADING_APPLICATION_ID = " + applicationId
+					+ failTimeClause;
+				getMinStmt = (OraclePreparedStatement)conn.prepareStatement(getMinStmtQuery);
+	
+				// 2nd query gets tasklist recs within record_num range.
+				getTaskListStmtQuery = 
+					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, ROUND(a.VALUE,8), a.START_DATE_TIME, "
+					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
+					+ "from CP_COMP_TASKLIST a "
+					+ "where a.LOADING_APPLICATION_ID = " + applicationId
+					+ " and a.record_num between :1 /* minRecNum */ and :2 /* maxRecNum */"
+					+ failTimeClause
+					+ " ORDER BY a.RECORD_NUM";
+				getTaskListStmt = (OraclePreparedStatement)conn.prepareStatement(getTaskListStmtQuery);
+			}
+
+			debug3("Executing prepared stmt '" + getMinStmtQuery + "'");
+			ResultSet rs = getMinStmt.executeQuery();
+			
 			if (rs == null || !rs.next())
 			{
 				debug1("No new data for appId=" + applicationId);
-				// DON'T return here. Need to check the tasklist queue file below!
-				// return dataCollection;
+				return dataCollection;
 			}
 			else
 				minRecNum = rs.getInt(1);
@@ -1225,8 +1241,7 @@ public class CwmsTimeSeriesDb
 			{
 				debug1("No new data for appId=" + applicationId);
 				minRecNum = -1;
-				// DON'T return here. Need to check the tasklist queue file below!
-				// return dataCollection;
+				return dataCollection;
 			}
 		}
 		catch(SQLException ex)
@@ -1236,53 +1251,39 @@ public class CwmsTimeSeriesDb
 		}
 
 		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
-		int numWrittenToTasklistQueue = 0;
 		ArrayList<Integer> badRecs = new ArrayList<Integer>();
 		TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO();
 		try
 		{
-			if (minRecNum != -1)
+			getTaskListStmt.setInt(1, minRecNum);
+
+			int maxRecNum = minRecNum + 10000;
+			if (maxRecNum < minRecNum)
 			{
-				// MJM: It's very important to NOT join the tasklist to other
-				// tables in this query. Otherwise, the join could fail, leaving
-				// records in the tasklist.
-				q = "select a.RECORD_NUM, a.SITE_DATATYPE_ID, ROUND(a.VALUE,8), a.START_DATE_TIME, "
-				  + "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
-				  + "from CP_COMP_TASKLIST a "
-				  + "where a.LOADING_APPLICATION_ID = " + applicationId;
-		
-				int maxRecNum = minRecNum + 10000;
-				if (maxRecNum < minRecNum)
-				{
-					// The 32-bit integer wrapped around. Set to max possible int.
-					maxRecNum = Integer.MAX_VALUE;
-				}
-		
-				if (sinceTime != null)
-					q = q + " AND a.START_DATE_TIME > " + sqlDate(sinceTime);
-				else
-					q = q + " and a.record_num between " + minRecNum + " and " + maxRecNum;
-		
-				q = q + failTimeClause;
-		
-				q = q + " ORDER BY a.RECORD_NUM";
+				// The 32-bit integer wrapped around. Set to max possible int.
+				maxRecNum = Integer.MAX_VALUE;
+			}
 			
-				ResultSet rs = doQuery(q);
-				while (rs.next())
+			getTaskListStmt.setInt(2, maxRecNum);
+
+			debug3("Executing '" + getTaskListStmtQuery + "' with min=" + minRecNum 
+				+ " and max=" + maxRecNum);
+			ResultSet rs = getTaskListStmt.executeQuery();
+			while (rs.next())
+			{
+				// Extract the info needed from the result set row.
+				int recordNum = rs.getInt(1);
+				DbKey sdi = DbKey.createDbKey(rs, 2);
+				double value = rs.getDouble(3);
+				boolean valueWasNull = rs.wasNull();
+				Date timeStamp = getFullDate(rs, 4);
+				String df = rs.getString(5);
+				char c = df.toLowerCase().charAt(0);
+				boolean deleted = false;
+				if (c == 'u')
 				{
-					// Extract the info needed from the result set row.
-					int recordNum = rs.getInt(1);
-					DbKey sdi = DbKey.createDbKey(rs, 2);
-					double value = rs.getDouble(3);
-					boolean valueWasNull = rs.wasNull();
-					Date timeStamp = getFullDate(rs, 4);
-					String df = rs.getString(5);
-					char c = df.toLowerCase().charAt(0);
-					boolean deleted = false;
-					if (c == 'u')
-					{
-						// msg handler will send this when he gets
-						// TsCodeChanged. It tells me to update my cache.
+					// msg handler will send this when he gets
+					// TsCodeChanged. It tells me to update my cache.
 						TimeSeriesIdentifier tsid = timeSeriesDAO.getCache().getByKey(sdi);
 						if (tsid != null)
 						{
@@ -1300,84 +1301,19 @@ public class CwmsTimeSeriesDb
 					Date versionDate = getFullDate(rs, 7);
 					BigDecimal qc = rs.getBigDecimal(8);
 					long qualityCode = qc == null ? 0 : qc.longValue();
-Logger.instance().debug3("Tasklist rec: sdi=" + sdi + ", valueWasNull="+valueWasNull
-+", deleteFlag=" + df + ", qualityCode=" + qc + ", qc from getLong=" + rs.getLong(8));
-					
-					TasklistRec rec = new TasklistRec(recordNum, sdi, value,
-						valueWasNull, timeStamp, deleted,
-						unitsAbbr, versionDate, qualityCode);
-//					lastTaskListRecords = System.currentTimeMillis();
-	
-//					// If we are using a tasklist queue for records older than a threshold,
-//					// and this record is older than the threshold, then add this to the queue file.
-//					if (tasklistQueueFile != null
-//					 && System.currentTimeMillis() - timeStamp.getTime() > 
-//						tasklistQueueThresholdHours * 3600000L)
-//					{
-//						try
-//						{
-//							tasklistQueueFile.writeRec(rec);
-//							numWrittenToTasklistQueue++;
-//							// Add recnum to badRecs list so it will be deleted right away from
-//							// CP_COMP_TASKLIST.
-//							badRecs.add(rec.getRecordNum());
-//							continue; // skip adding to the 'tasklistRecs' array below
-//						}
-//						catch (IOException ex)
-//						{
-//							if (++numTasklistQueueErrors > 10)
-//							{
-//								warning("Disabling tasklist queue -- too many errors.");
-//								tasklistQueueFile.close();
-//								tasklistQueueFile = null;
-//							}
-//							else
-//							{
-//								String msg = "Error writing to tasklist queue file: " + ex;
-//								warning(msg);
-//								System.err.println(msg);
-//								ex.printStackTrace(System.err);
-//							}
-//							// On exception in the queue, fall through & process the record now.
-//						}
-//					}
-					tasklistRecs.add(rec);
-				}
+				
+				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
+					valueWasNull, timeStamp, deleted,
+					unitsAbbr, versionDate, qualityCode);
+				tasklistRecs.add(rec);
 			}
-			if (numWrittenToTasklistQueue > 0)
-				debug1("Num written to tasklist queue: " + numWrittenToTasklistQueue);
-			
+
 			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
 			
 			// Process the real-time records collected above.
 			for(TasklistRec rec : tasklistRecs)
 				processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
 			
-//			if (tasklistRecs.isEmpty()          // No realtime recs
-//			 && tasklistQueueFile != null       // We are using a queue file
-//			 && numWrittenToTasklistQueue == 0) // No tasklists read into the queue
-//			{
-//				int n = 0;
-//				TasklistRec rec = null;
-//				try
-//				{
-//					while((rec = tasklistQueueFile.readRec()) != null && n++ < 1000)
-//					{
-//						processTasklistEntry(rec, dataCollection, null, null, applicationId);
-//					}
-//
-//					// Note -- pass badRecs and rrhandle as null to tell process method that we don't 
-//					// want to save the record num for later deletion, because it came out of the
-//					// queue and the record is already gone from the database.
-//					debug1("Extracted and processed " + n + " records from tasklist queue.");
-//				}
-//				catch(IOException ex)
-//				{
-//					warning("Error reading tasklist queue: " + ex);
-//					++numTasklistQueueErrors;
-//				}
-//			}
-
 			dataCollection.setTasklistHandle(rrhandle);
 			
 			// Delete the bad tasklist recs, 250 at a time.
@@ -1395,7 +1331,7 @@ Logger.instance().debug3("Tasklist rec: sdi=" + sdi + ", valueWasNull="+valueWas
 						inList.append(", ");
 					inList.append(badRecs.get(x).toString());
 				}
-				q = "delete from CP_COMP_TASKLIST "
+				String q = "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM IN (" + inList.toString() + ")";
 				doModify(q);
 				commit();
@@ -1403,10 +1339,16 @@ Logger.instance().debug3("Tasklist rec: sdi=" + sdi + ", valueWasNull="+valueWas
 					badRecs.remove(0);
 			}
 			
-List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
-debug3("getNewData, returning " + allts.size() + " TimeSeries.");
-for(CTimeSeries ts : allts)
-  debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " " + ts.size() + " values.");
+			// Show each tasklist entry in the log if we're at debug level 3
+			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
+			{
+				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
+				debug3("getNewData, returning " + allts.size() + " TimeSeries.");
+				for(CTimeSeries ts : allts)
+					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " " 
+						+ ts.size() + " values.");
+			}
+			
 			return dataCollection;
 		}
 		catch(SQLException ex)
@@ -2164,5 +2106,26 @@ for(CTimeSeries ts : allts)
 			crd.close();
 		}
 	}
+
+	@Override
+	public void closeConnection()
+	{
+		// Close prepared statements
+		if (getMinStmt != null)
+		{
+			try { getMinStmt.close(); }
+			catch(Exception ex) {}
+			getMinStmt = null;
+		}
+		if (getTaskListStmt != null)
+		{
+			try { getTaskListStmt.close(); }
+			catch(Exception ex) {}
+			getTaskListStmt = null;
+		}
+		
+		super.closeConnection();
+	}
+
 	
 }
