@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.15  2018/02/14 17:03:49  mmaloney
+*  Refactor: Get rid of the 'getNewDataSince()' method because it was unused.
+*
 *  Revision 1.14  2017/10/03 12:33:20  mmaloney
 *  Code cleanup
 *
@@ -517,6 +520,15 @@ public abstract class TimeSeriesDb
 	private OracleDateParser oracleDateParser = null;
 	protected String databaseTimezone = "UTC";
 	protected boolean _isOracle = false;
+	
+	/** 
+	 * Set by the reclaimTasklistSec Computation App Property.
+	 * Default=0, meaning that the feature is disabled.
+	 */
+	protected int reclaimTasklistSec = 0;
+	
+	// If reclaimTasklistSec > 0, this is the time the reclaim was last done.
+	protected long lastReclaimMsec = 0L;
 	
 	/**
 	 * Lazy initialization, called at the first time a date or timestamp
@@ -1155,6 +1167,29 @@ public abstract class TimeSeriesDb
 				commit();
 			}
 		}
+	}
+	
+	/**
+	 * Called when allowed by properties and when the tasklist is empty.
+	 * Enabled by Decodes Setting reclaimTasklistSec. The default is 0 meaning
+	 * to never reclaim the tasklist. If set to a positive number of seconds,
+	 * then compproc will attempt to reclaim space this often, and only when the
+	 * tasklist is empty.
+	 */
+	public void reclaimTasklistSpace()
+		throws DbIoException
+	{
+		if (isOracle() 
+		 && reclaimTasklistSec > 0
+		 && System.currentTimeMillis() - lastReclaimMsec > (reclaimTasklistSec*1000L))
+		{
+			 lastReclaimMsec = System.currentTimeMillis();
+			 debug1("Relaiming unused CP_COMP_TASKLIST space...");
+			 doQuery("ALTER TABLE cp_comp_tasklist ENABLE ROW MOVEMENT");
+			 doQuery("ALTER TABLE cp_comp_tasklist SHRINK SPACE CASCADE");
+			 doQuery("ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT");
+		}
+		// Unnecessary for PostgreSQL because auto-vacuum should be on
 	}
 
 	
