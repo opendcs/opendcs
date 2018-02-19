@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.12  2017/08/22 19:58:40  mmaloney
+* Refactor
+*
 * Revision 1.11  2017/03/31 16:21:20  mmaloney
 * Fix for duplicate site names.
 *
@@ -71,7 +74,9 @@ public class SiteDAO
 	extends DaoBase 
 	implements SiteDAI
 {
-	protected static DbObjectCache<Site> cache = new DbObjectCache<Site>(30 * 60 * 1000L, false);
+	// MJM Increased from 30 min to 3 hours for 6.4 RC08
+	public static final long CACHE_MAX_AGE = 3 * 60 * 60 * 1000L;
+	protected static DbObjectCache<Site> cache = new DbObjectCache<Site>(CACHE_MAX_AGE, false);
 
 	public String siteAttributes = 
 		"id, latitude, longitude, nearestCity, state, "
