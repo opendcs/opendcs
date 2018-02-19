@@ -11,6 +11,11 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.10  2018/02/19 15:49:41  mmaloney
+*  Do periodic cache maintenance every 2 hours.
+*  Only pause for 1 sec in the main loop if the data collection was empty.
+*  (otherwise read the next batch of data immediately).
+*
 *  Revision 1.9  2017/12/14 17:06:27  mmaloney
 *  Refactor so that LoadingAppDAO and TimeSeriesDAO are not recreated for each time through the loop.
 *
@@ -117,7 +122,11 @@ public class ComputationApp
 		new PropertySpec("monitor", PropertySpec.BOOLEAN,
 			"Set to true to allow monitoring from the GUI."),
 		new PropertySpec("EventPort", PropertySpec.INT,
-			"Open listening socket on this port to serve out app events.")
+			"Open listening socket on this port to serve out app events."),
+		new PropertySpec("reclaimTasklistSec", PropertySpec.INT,
+			"(default=0) if set to a positive # of seconds, then when the tasklist is "
+			+ "empty and this # of seconds has elapsed, shrink the allocated space for the "
+			+ "tasklist back to something reasonable (Oracle only).")
 	};
 
 	
@@ -392,6 +401,20 @@ public class ComputationApp
 				shutdownFlag = true;
 				Logger.instance().fatal(getAppName() + " runAppInit: lock busy: " + ex);
 			}
+			
+			// MJM 6.4 RC08 reclaimTasklistSec
+			String s = appInfo.getProperty("reclaimTasklistSec");
+			if (s != null)
+			{
+				try { theDb.reclaimTasklistSec = Integer.parseInt(s.trim()); }
+				catch(NumberFormatException ex)
+				{
+					warning("Bad app property 'reclaimTasklistSec' -- should be integer -- ignored: " + ex);
+					theDb.reclaimTasklistSec = 0;
+				}
+			}
+			else
+				theDb.reclaimTasklistSec = 0;
 		}
 		catch(NoSuchObjectException ex)
 		{

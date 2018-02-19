@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.14  2018/02/14 17:03:31  mmaloney
+*  Refactor: Get rid of the 'getNewDataSince()' method because it was unused.
+*
 *  Revision 1.13  2018/02/05 15:51:32  mmaloney
 *  Added cache of HDB Object Types
 *
@@ -689,6 +692,12 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 					new TasklistRec(recordNum, sdi, value,
 						timeStamp, deleted,
 						flags, interval, tabsel, modelRunId));
+			}
+			
+			if (tasklistRecs.size() == 0)
+			{
+				// MJM 6.4 RC08 this means tasklist is likely empty.
+				reclaimTasklistSpace();
 			}
 			
 			ArrayList<Integer> badRecs = new ArrayList<Integer>();

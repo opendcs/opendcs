@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.28  2018/02/14 17:02:37  mmaloney
+*  CWMS-11849 Use prepared statement for the 2 queries that read the tasklist.
+*
 *  Revision 1.27  2017/11/14 21:50:11  mmaloney
 *  Handle out of range ratings that return Const.UNDEFINED_DOUBLE.
 *
@@ -1233,6 +1236,7 @@ public class CwmsTimeSeriesDb
 			if (rs == null || !rs.next())
 			{
 				debug1("No new data for appId=" + applicationId);
+				reclaimTasklistSpace();
 				return dataCollection;
 			}
 			else
@@ -1241,6 +1245,7 @@ public class CwmsTimeSeriesDb
 			{
 				debug1("No new data for appId=" + applicationId);
 				minRecNum = -1;
+				reclaimTasklistSpace();
 				return dataCollection;
 			}
 		}
@@ -1480,7 +1485,7 @@ public class CwmsTimeSeriesDb
 				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
 		}
 	}
-
+	
 	public boolean isCwms() { return true; }
 
 	@Override
