@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.9  2017/12/14 17:06:27  mmaloney
+*  Refactor so that LoadingAppDAO and TimeSeriesDAO are not recreated for each time through the loop.
+*
 *  Revision 1.8  2017/03/30 21:07:18  mmaloney
 *  Refactor CompEventServer to use PID if monitor==true.
 *
@@ -64,6 +67,7 @@ import java.util.List;
 import java.net.InetAddress;
 
 import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
@@ -189,6 +193,7 @@ public class ComputationApp
 
 		long lastDataTime = System.currentTimeMillis();
 		long lastLockCheck = 0L;
+		long lastCacheMaintenance = System.currentTimeMillis();
 
 		String action="starting";
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
@@ -206,6 +211,12 @@ public class ComputationApp
 					setAppStatus("Cmps: " + compsTried + "/" + compErrors);
 					loadingAppDAO.checkCompProcLock(myLock);
 					lastLockCheck = now;
+				}
+				
+				if (now - lastCacheMaintenance > 3600 * 2 * 1000L)
+				{
+					lastCacheMaintenance = now;
+					doCacheMaintenance();
 				}
 				
 				action = "Getting new data";
@@ -286,8 +297,12 @@ public class ComputationApp
 					theDb.releaseNewData(data);
 					lastDataTime = System.currentTimeMillis();
 				}
-				try { Thread.sleep(1000L); }
-				catch(InterruptedException ex) {}
+				else // MJM 6.4 RC08 Only sleep if data was empty.
+				{
+					try { Thread.sleep(1000L); }
+					catch(InterruptedException ex) {}
+				}
+				
 			}
 		}
 		catch(LockBusyException ex)
@@ -316,6 +331,28 @@ public class ComputationApp
 		}
 		resolver = null;
 		Logger.instance().debug1("runApp() exiting.");
+	}
+
+	/**
+	 * MJM Added for 6.4 RC08 to refresh site cache every 2 hours.
+	 */
+	private void doCacheMaintenance()
+	{
+		info("Doing Periodic Cache Maintenance ...");
+		SiteDAI siteDAO = theDb.makeSiteDAO();
+		try
+		{
+			siteDAO.fillCache();
+		}
+		catch (DbIoException ex)
+		{
+			warning("Error filling site cache: " + ex);
+		}
+		finally
+		{
+			siteDAO.close();
+		}
+		
 	}
 
 	/**
