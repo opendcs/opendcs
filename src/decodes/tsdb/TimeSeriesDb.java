@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.16  2018/02/19 15:51:35  mmaloney
+*  Added code for Oracle to reclaim tasklist space.
+*
 *  Revision 1.15  2018/02/14 17:03:49  mmaloney
 *  Refactor: Get rid of the 'getNewDataSince()' method because it was unused.
 *
@@ -1128,7 +1131,7 @@ public abstract class TimeSeriesDb
 			String q = "delete from CP_COMP_TASKLIST "
 			  + "where RECORD_NUM IN (" + rrh.getRecNumList(250) + ")";
 			doModify(q);
-			commit();
+//			commit();
 		}
 
 		int maxRetries = DecodesSettings.instance().maxComputationRetries;
@@ -1772,7 +1775,7 @@ public abstract class TimeSeriesDb
 					}
 					catch(NoSuchObjectException ex) {}
 				}
-				commit();
+//				commit();
 			}
 			catch(SQLException ex)
 			{
@@ -1888,7 +1891,7 @@ public abstract class TimeSeriesDb
 			computationDAO.close();
 			compDependsDAO.close();
 		}
-		commit();
+//		commit();
 	}
 
 	

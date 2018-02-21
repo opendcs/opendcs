@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.30  2018/02/21 14:33:03  mmaloney
+*  Set autocommit true always.
+*
 *  Revision 1.29  2018/02/19 16:22:30  mmaloney
 *  Attempt to reclaim tasklist space if tasklist is empty and feature is enabled.
 *
@@ -1349,7 +1352,7 @@ public class CwmsTimeSeriesDb
 				String q = "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM IN (" + inList.toString() + ")";
 				doModify(q);
-				commit();
+//				commit();
 				for(int i=0; i<x; i++)
 					badRecs.remove(0);
 			}

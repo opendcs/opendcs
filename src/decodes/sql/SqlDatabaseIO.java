@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.10  2017/03/03 19:14:01  mmaloney
+ * Remove commit() code. Now just a stub. Everything now is autocommit.
+ *
  * Revision 1.9  2016/10/01 14:59:56  mmaloney
  * CWMS-8979 Allow DecodesSettings params in database to override the file(s).
  *
@@ -441,21 +444,28 @@ public class SqlDatabaseIO
 			}
 		}
 
-		if (DecodesSettings.instance().autoCommit != null
-		 && DecodesSettings.instance().autoCommit.length() > 0)
+		// MJM 2018-2/21 Force autoCommit on.
+		try { ret.setAutoCommit(true);}
+		catch(SQLException ex)
 		{
-			boolean autoCommit = TextUtil.str2boolean(
-				DecodesSettings.instance().autoCommit);
-			Logger.instance().debug1("Setting SQL AutoCommit Option to "
-				+ autoCommit);
-			try { ret.setAutoCommit(autoCommit); }
-			catch(SQLException ex)
-			{
-				Logger.instance().warning("Cannot set SQL AutoCommit to "
-					+ autoCommit + " -- will proceed with default setting: "
-					+ ex);
-			}
+			Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
 		}
+
+//		if (DecodesSettings.instance().autoCommit != null
+//		 && DecodesSettings.instance().autoCommit.length() > 0)
+//		{
+//			boolean autoCommit = TextUtil.str2boolean(
+//				DecodesSettings.instance().autoCommit);
+//			Logger.instance().debug1("Setting SQL AutoCommit Option to "
+//				+ autoCommit);
+//			try { ret.setAutoCommit(autoCommit); }
+//			catch(SQLException ex)
+//			{
+//				Logger.instance().warning("Cannot set SQL AutoCommit to "
+//					+ autoCommit + " -- will proceed with default setting: "
+//					+ ex);
+//			}
+//		}
 		if (threadCon)
 			connectionMap.put(Thread.currentThread(), ret);
 		else

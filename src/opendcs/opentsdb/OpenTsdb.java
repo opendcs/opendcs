@@ -1,5 +1,7 @@
 package opendcs.opentsdb;
 
+import ilex.util.Logger;
+
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +15,6 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.XmitRecordDAO;
-
 import decodes.cwms.CwmsTsId;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
@@ -79,7 +80,14 @@ public class OpenTsdb extends TimeSeriesDb
 					settings.editDatabaseLocation, username, password));
 		
 			setupKeyGenerator();
-			
+
+			// MJM 2018-2/21 Force autoCommit on.
+			try { getConnection().setAutoCommit(true); }
+			catch(SQLException ex)
+			{
+				Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
+			}
+
 			postConnectInit(appName);
 			OpenTsdbSettings.instance().setFromProperties(props);
 			

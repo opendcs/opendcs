@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.16  2018/02/21 14:33:03  mmaloney
+*  Set autocommit true always.
+*
 *  Revision 1.15  2018/02/19 16:23:03  mmaloney
 *  Attempt to reclaim tasklist space if tasklist is empty and feature is enabled.
 *
@@ -755,7 +758,7 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 				q = "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM IN (" + inList.toString() + ")";
 				doModify(q);
-				commit();
+//				commit();
 				for(int i=0; i<x; i++)
 					badRecs.remove(0);
 			}
