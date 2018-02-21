@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.15  2018/02/19 16:23:03  mmaloney
+*  Attempt to reclaim tasklist space if tasklist is empty and feature is enabled.
+*
 *  Revision 1.14  2018/02/14 17:03:31  mmaloney
 *  Refactor: Get rid of the 'getNewDataSince()' method because it was unused.
 *
@@ -232,6 +235,13 @@ public class HdbTimeSeriesDb
 			q = "ALTER SESSION SET nls_timestamp_tz_format = 'yyyy-mm-dd hh24:mi:ss'";
 			info(q);
 			st.execute(q);
+			
+			// MJM 2018-2/21 Force autoCommit on.
+			try { ocon.setAutoCommit(true);}
+			catch(SQLException ex)
+			{
+				Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
+			}
 
 			writeDateFmt = new SimpleDateFormat(
 				"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");

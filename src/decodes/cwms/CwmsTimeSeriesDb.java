@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.29  2018/02/19 16:22:30  mmaloney
+*  Attempt to reclaim tasklist space if tasklist is empty and feature is enabled.
+*
 *  Revision 1.28  2018/02/14 17:02:37  mmaloney
 *  CWMS-11849 Use prepared statement for the 2 queries that read the tasklist.
 *
@@ -864,6 +867,13 @@ public class CwmsTimeSeriesDb
 				warning("Error executing '" + q + "':" + ex);
 			}
 
+		}
+		
+		// MJM 2018-2/21 Force autoCommit on.
+		try { getConnection().setAutoCommit(true);}
+		catch(SQLException ex)
+		{
+			Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
 		}
 
 		Logger.instance().info(module + 
