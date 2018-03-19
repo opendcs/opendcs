@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.4  2017/08/22 19:33:46  mmaloney
+*  Refactor
+*
 *  Revision 1.3  2016/10/07 14:49:24  mmaloney
 *  Updates for Web Report for Gail Monds, LRD.
 *
@@ -203,8 +206,9 @@ public abstract class PMParser
 			ret.timezone = "MST";
 			ret.datacol = 4;
 			ret.delim = ",";
-			ret.mediumType = Constants.medium_EDL;
+//			ret.mediumType = Constants.medium_EDL;
 			ret.headerType = "tau";
+			ret.mediumType = "tau";
 			ret.setProperties(new Properties());
 			return ret;
 		}
