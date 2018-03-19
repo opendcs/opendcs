@@ -89,9 +89,9 @@ public class DcpMsg
 
 	/** 
 	 * Max length that can be stored. The upper limit is based on:
-	 * - 5 digit length field in DDS imposes limit to 99999
+	 * - 5 digit length field in DDS imposes limit to 99800
 	 */
-	public static final int MAX_DATA_LENGTH = 99999;
+	public static final int MAX_DATA_LENGTH = 99800;
 	
 	/** transient storage for DRGS interface. Original address is NOT saved. */
 	private DcpAddress origAddress = null;
