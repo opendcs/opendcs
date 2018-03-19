@@ -4,6 +4,9 @@
  * Copyright 2017 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.4  2017/10/10 17:58:33  mmaloney
+ * Added support for TsdbFormatter
+ *
  */
 package decodes.consumer;
 
@@ -68,6 +71,7 @@ public class HydroJSONFormatter extends OutputFormatter
 		if (s != null)
 			timeFormat = s;
 		strftime = new Strftime(timeFormat);
+		strftime.setTimeZone(tz);
 		
 		s = PropertiesUtil.getIgnoreCase(rsProps, "siteNameTypePreference");
 		if (s != null)
