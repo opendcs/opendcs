@@ -60,7 +60,10 @@ extends BasicServer
 		final MITMLogger mitmLogger = new MITMLogger(fname, printHexArg.getValue());
 		
 		// Use Basic Client to open a socket to the designated remote server.
-		final BasicClient dest = new BasicClient(connectHostArg.getValue(), connectPortArg.getValue());
+		final BasicClient dest = 
+			new BasicClient(connectHostArg.getValue(), connectPortArg.getValue());
+		System.out.println("Connecting to " + connectHostArg.getValue() 
+			+ ":" + connectPortArg.getValue());
 		dest.connect();
 		
 		// Start thread that connects initSock.in to destSock.out with prefix ">>"
@@ -85,7 +88,7 @@ extends BasicServer
 				@Override
 				protected void serviceClient()
 				{
-					if (!idCon.isAlive() && !diCon.isAlive())
+					if (!idCon.isAlive() || !diCon.isAlive())
 					{
 						disconnect();
 						dest.disconnect();

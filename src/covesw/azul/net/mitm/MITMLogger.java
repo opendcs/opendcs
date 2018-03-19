@@ -18,6 +18,7 @@ public class MITMLogger
 	{
 		this.printHex = printHex;
 		pw = new PrintWriter(logName);
+		System.out.println("New MITMLogger writing to '" + logName + "'");
 	}
 	
 	public synchronized void log(String pfx, byte data[], int length)

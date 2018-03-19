@@ -3,20 +3,22 @@ package covesw.azul.net.mitm;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class MITMConnector 
 	extends Thread
 {
-	private BufferedInputStream from;
-	private BufferedOutputStream to;
+	private InputStream from;
+	private OutputStream to;
 	private String pfx;
 	private byte buf[] = new byte[1024];
 	boolean shutdown = false;
 	MITMConnector mate = null;
 	MITMLogger logger = null;
 	
-	public MITMConnector(String pfx, BufferedInputStream from,
-		BufferedOutputStream to, MITMLogger logger)
+	public MITMConnector(String pfx, InputStream from,
+		OutputStream to, MITMLogger logger)
 	{
 		this.from = from;
 		this.to = to;
