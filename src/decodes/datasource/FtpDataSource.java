@@ -2,6 +2,8 @@ package decodes.datasource;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
+import org.apache.commons.net.ftp.FTPSClient;
 import org.apache.commons.net.ftp.FTPConnectionClosedException;
 
 import ilex.util.EnvExpander;
@@ -59,11 +61,13 @@ public class FtpDataSource
 			"use FTP active mode."),
 		new PropertySpec("nameIsMediumId", PropertySpec.BOOLEAN,
 			"Use with OneMessageFile=true if the downloaded filename is to be treated as a medium ID"
-			+ " in order to link this data with a platform.")
+			+ " in order to link this data with a platform."),
+		new PropertySpec("ftps", PropertySpec.BOOLEAN, "(default=false) Use Secure FTP."),
+
 	};
 	
 	private String host = null;
-	private int port = 21;
+	private int port = -1;
 	private String username = "anon";
 	private String password = null;
 	private String remoteDir = "";
@@ -80,6 +84,7 @@ public class FtpDataSource
 	private String mySince=null, myUntil=null;
 	private Vector<NetworkList> myNetworkLists;
 	private File currentFile = null;
+	private boolean ftps = false;
 	
 	public boolean setProperty(String name, String value)
 	{
@@ -111,6 +116,8 @@ public class FtpDataSource
 			ftpActiveMode = TextUtil.str2boolean(value);
 		else if (name.equalsIgnoreCase("filenames"))
 			filenames = value;
+		else if (name.equalsIgnoreCase("ftps"))
+			ftps = TextUtil.str2boolean(value);
 		return true;
 	}		
 	
@@ -184,7 +191,8 @@ public class FtpDataSource
 			throw new DataSourceException("Missing required 'password' property.");
 		
 		// Next download the file using FTP client.
-		FTPClient ftpClient = new FTPClient();
+		FTPClient ftpClient = ftps ? new FTPSClient() : new FTPClient();
+		Logger.instance().debug1("FTP client class is '" + ftpClient.getClass().getName() + "'");
 		String remote = remoteDir;
 		if (remote.length() > 0 && !remote.endsWith("/"))
 			remote += "/";
@@ -202,7 +210,19 @@ public class FtpDataSource
 			
 		try
 		{
-			ftpClient.connect(host, port);
+			if (port == -1) // no port specified, use default for either ftp or ftps
+				ftpClient.connect(host);
+			else // a custom port has been specified
+				ftpClient.connect(host, port);
+		
+// BCH ftps Server returns a 'malformed' reply.
+//			Logger.instance().debug3("Connected, checking reply code.");
+//			// It is recommended to check the reply code.
+//			int reply = ftpClient.getReplyCode();
+//			if (!FTPReply.isPositiveCompletion(reply))
+//				throw new IOException("Unsuccessful reply code from client: " + reply);
+			
+			Logger.instance().debug3("Logging in with username='" + username + "' and pw='" + password + "'");
 			ftpClient.login(username, password);
 			if (ftpActiveMode)
 				ftpClient.enterLocalActiveMode();
@@ -213,6 +233,10 @@ public class FtpDataSource
 		}
 		catch(Exception ex)
 		{
+			if (ftpClient.isConnected())
+			{
+				try { ftpClient.disconnect(); } catch(Exception x) {}
+			}
 			throw new DataSourceException(module + 
 				" Error connecting to FTP host '" + host 
 				+ "' port=" + port + ", remote='" + remote + "': " + ex);
