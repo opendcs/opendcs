@@ -23,5 +23,7 @@
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/sqljruntime12.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/passay-1.1.0.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jython.jar"/>
+	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/commons-net-3.3.jar"/>
+	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/sshd-core-1.7.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
