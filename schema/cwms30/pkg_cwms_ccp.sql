@@ -304,7 +304,7 @@ create or replace package body cwms_ccp as
     p_ts_code         in integer,
     p_start_time      in timestamp,
     p_end_time        in timestamp,
-    p_enqueue_time    in timestamp)
+    p_store_time      in timestamp)
   is
     c_timestamp_fmt   constant varchar2(32) := 'yyyy/mm/dd hh24:mi:ss';
     l_delete_flag     varchar2(1);
@@ -326,7 +326,7 @@ create or replace package body cwms_ccp as
       for r1 in
         (select date_time,value,quality_code from cwms_v_tsv
            where ts_code = p_ts_code and date_time between l_start_time and l_end_time
-             and p_enqueue_time >= data_entry_date
+             and data_entry_date = p_store_time
         )
       loop
         l_delete_flag := 'N';
@@ -496,6 +496,7 @@ create or replace package body cwms_ccp as
     l_dequeue_time        timestamp;
     l_start_time          timestamp;
     l_end_time            timestamp;
+    l_store_time          timestamp;
     l_deleted_time        integer;
     l_version_date        integer;
     ----------------------------------------------------
@@ -572,6 +573,7 @@ create or replace package body cwms_ccp as
 
                 l_start_time   := &CWMS_SCHEMA..cwms_util.to_timestamp(l_start_millis);
                 l_end_time     := &CWMS_SCHEMA..cwms_util.to_timestamp(l_end_millis);
+                l_store_time   := &CWMS_SCHEMA..cwms_util.to_timestamp(l_store_millis);
                 l_comment      := 'start time= '||l_start_time||
                                   ', end time= '||l_end_time;
 
@@ -591,7 +593,7 @@ create or replace package body cwms_ccp as
                   p_ts_code         => l_ts_code,
                   p_start_time      => l_start_time,
                   p_end_time        => l_end_time,
-                  p_enqueue_time    => l_enqueue_time);
+                  p_store_time      => l_store_time);
 
               when 'TSDataDeleted' then
                 l_tsid         := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
