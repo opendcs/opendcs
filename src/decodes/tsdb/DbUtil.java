@@ -164,13 +164,30 @@ public class DbUtil extends TsdbAppTemplate
 			}
 		};
 	private CmdLine selectCmd = 
-		new CmdLine("select", " -- An arbitrary database select statement.")
+		new CmdLine("select", " -- An arbitrary database SELECT statement.")
 		{
 			public void execute(String[] tokens)
 			{
 				selectCmd(tokens);
 			}
 		};
+	private CmdLine alterCmd = 
+		new CmdLine("alter", " -- An arbitrary database ALTER statement.")
+		{
+			public void execute(String[] tokens)
+			{
+				updateCmd(tokens);
+			}
+		};
+	private CmdLine updateCmd = 
+		new CmdLine("update", " -- An arbitrary database UPDATE statement.")
+		{
+			public void execute(String[] tokens)
+			{
+				updateCmd(tokens);
+			}
+		};
+
 	private CmdLine hdbRatingCmd = 
 		new CmdLine("hdbRating", " -- Install a test rating in HDB.")
 		{
@@ -293,7 +310,27 @@ public class DbUtil extends TsdbAppTemplate
 			System.err.println("Error in '" + q + "': " + ex);
 			ex.printStackTrace();
 		}
-		
+	}
+	
+	protected void updateCmd(String[] tokens)
+	{
+		StringBuilder sb = new StringBuilder();
+		for(String t : tokens)
+			sb.append(t + " ");
+		String q = "";
+		try
+		{
+			Statement st = theDb.getConnection().createStatement();
+			q = sb.toString();
+			System.out.println("Executing: " + q);
+			int rows = st.executeUpdate(q);
+			System.out.println("" + rows + " rows update.");
+		}
+		catch (SQLException ex)
+		{
+			System.err.println("Error in '" + q + "': " + ex);
+			ex.printStackTrace();
+		}
 	}
 
 	protected void bparamCmd(String[] tokens)
