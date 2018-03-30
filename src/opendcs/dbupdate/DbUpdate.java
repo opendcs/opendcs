@@ -327,6 +327,6 @@ public class DbUpdate extends TsdbAppTemplate
 
 		String nm = appNameArg.getValue();
 		Logger.instance().info("Connecting to TSDB as user '" + username + "'");
-		appId = theDb.connect(nm, props);
+		setAppId(theDb.connect(nm, props));
 	}
 }

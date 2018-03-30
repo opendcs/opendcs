@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.13  2017/03/30 21:08:27  mmaloney
+*  Refactor CompEventServer to use PID if monitor==true.
+*
 *  Revision 1.12  2017/03/14 18:54:35  mmaloney
 *  CWMS-10402 Don't retry connect if failure is due to invalid app name.
 *
@@ -113,7 +116,7 @@ public abstract class TsdbAppTemplate
 	public static TimeSeriesDb theDb = null;
 
 	/** The application ID determined when connecting to the database. */
-	public DbKey appId;
+	private DbKey appId = DbKey.NullKey;
 	
 	/**
 	 * Subclass can set this to true to cause application to restart if
@@ -141,6 +144,8 @@ public abstract class TsdbAppTemplate
 	
 	protected int appDebugMinPriority = Logger.E_INFORMATION;
 	
+	protected static TsdbAppTemplate appInstance = null;
+	
 	
 	/**
 	 * Base class constructor. Pass it the default name of the log file.
@@ -162,6 +167,8 @@ public abstract class TsdbAppTemplate
 		cmdLineArgs.addToken(testModeArg);
 		cmdLineArgs.addToken(modelRunArg);
 		cmdLineArgs.addToken(appNameArg);
+		if (appInstance == null)
+			appInstance = this;
 	}
 
 	/**
@@ -387,7 +394,7 @@ public abstract class TsdbAppTemplate
 		// Else this is a CWMS GUI -- user will be prompted for credentials
 		// Leave the property set empty.
 		
-		appId = theDb.connect(nm, credentials);
+		setAppId(theDb.connect(nm, credentials));
 		
 		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 		try
@@ -555,6 +562,21 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 	public int getAppDebugMinPriority()
 	{
 		return appDebugMinPriority;
+	}
+
+	public DbKey getAppId()
+	{
+		return appId;
+	}
+
+	public void setAppId(DbKey appId)
+	{
+		this.appId = appId;
+	}
+
+	public static TsdbAppTemplate getAppInstance()
+	{
+		return appInstance;
 	}
 
 }

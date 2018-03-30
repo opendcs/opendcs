@@ -8,6 +8,9 @@
  * Copyright 2017 U.S. Government.
  *
  * $Log$
+ * Revision 1.2  2017/09/05 18:35:33  mmaloney
+ * dev
+ *
  * Revision 1.1  2017/06/27 13:44:33  mmaloney
  * Added for 6.4
  *
@@ -168,6 +171,8 @@ public class DacqEventTableModel extends AbstractTableModel
 	private String getAppName(DbKey appId)
 	{
 		CompAppInfo app = appMap.get(appId);
+if (app == null) System.out.println("No app with id=" + appId);
+else System.out.println("retrieved appId=" + appId + " '" +app.getAppName() + "'");
 		return app == null ? "" : app.getAppName();
 	}
 	

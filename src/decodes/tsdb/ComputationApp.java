@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.11  2018/02/19 16:23:57  mmaloney
+*  Attempt to reclaim tasklist space if tasklist is empty and feature is enabled.
+*
 *  Revision 1.10  2018/02/19 15:49:41  mmaloney
 *  Do periodic cache maintenance every 2 hours.
 *  Only pause for 1 sec in the main loop if the data collection was empty.
@@ -229,7 +232,7 @@ public class ComputationApp
 				}
 				
 				action = "Getting new data";
-				DataCollection data = theDb.getNewData(appId);
+				DataCollection data = theDb.getNewData(getAppId());
 				
 				// In Regression Test Mode, exit after 5 sec of idle
 				if (!data.isEmpty())
@@ -375,7 +378,7 @@ public class ComputationApp
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try
 		{
-			appInfo = loadingAppDao.getComputationApp(appId);
+			appInfo = loadingAppDao.getComputationApp(getAppId());
 
 			// Construct the resolver & load it.
 			resolver = new DbCompResolver(theDb);

@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2017/08/22 19:56:39  mmaloney
+* Refactor
+*
 * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 * OPENDCS 6.0 Initial Checkin
 *
@@ -64,7 +67,7 @@ public class DisableComps
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
 		
-		List<String> compNames = loadingAppDao.listComputationsByApplicationId(appId, true);
+		List<String> compNames = loadingAppDao.listComputationsByApplicationId(getAppId(), true);
 		loadingAppDao.close();
 		for(String compName : compNames)
 		{
@@ -77,17 +80,17 @@ public class DisableComps
 		}
 		// Just to make sure ...
 		String q = "update cp_computation set enabled = 'N' "
-			+ "where loading_application_id = " + appId;
+			+ "where loading_application_id = " + getAppId();
 		theDb.doModify(q);
 
 		// And just to be thorough ...
 		q = "delete from cp_comp_depends where computation_id in ("
 			+ "select computation_id from cp_computation where loading_application_id = "
-			+ appId + ")";
+			+ getAppId() + ")";
 		theDb.doModify(q);
 
 		// Now delete any stray tasklist entries.
-		q = "delete from cp_comp_tasklist where loading_application_id = " + appId;
+		q = "delete from cp_comp_tasklist where loading_application_id = " + getAppId();
 		theDb.doModify(q);
 		computationDAO.close();
 

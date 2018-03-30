@@ -95,7 +95,7 @@ public class StaleDataChecker
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try
 		{
-			appInfo = loadingAppDao.getComputationApp(appId);
+			appInfo = loadingAppDao.getComputationApp(getAppId());
 			
 			// If this process can be monitored, start an Event Server.
 			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
@@ -279,7 +279,7 @@ public class StaleDataChecker
 		{
 			platformStatusDAO.writePlatformStatus(platstat);
 			DacqEvent evt = new DacqEvent();
-			evt.setAppId(appId);
+			evt.setAppId(getAppId());
 			evt.setEventPriority(Logger.E_FAILURE);
 			evt.setEventText(msg);
 			evt.setEventTime(new Date());

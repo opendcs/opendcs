@@ -6,6 +6,7 @@ import opendcs.dai.DacqEventDAI;
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.TsdbAppTemplate;
 import ilex.util.Logger;
 
 public class DacqEventLogger 
@@ -25,6 +26,8 @@ public class DacqEventLogger
 		this.parent = parent;
 		if (parent != null)
 			this.setMinLogPriority(parent.getMinLogPriority());
+		if (TsdbAppTemplate.getAppInstance() != null)
+			appId = TsdbAppTemplate.getAppInstance().getAppId();
 	}
 
 	@Override

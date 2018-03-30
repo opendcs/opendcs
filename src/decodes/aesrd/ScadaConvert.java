@@ -159,7 +159,7 @@ public class ScadaConvert
 				try
 				{
 					loadingAppDao.checkCompProcLock(myLock);
-					appInfo = loadingAppDao.getComputationApp(appId);
+					appInfo = loadingAppDao.getComputationApp(getAppId());
 				}
 				catch (LockBusyException ex)
 				{
@@ -394,7 +394,7 @@ public class ScadaConvert
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try
 		{
-			appInfo = loadingAppDao.getComputationApp(appId);
+			appInfo = loadingAppDao.getComputationApp(getAppId());
 			
 			
 			// If this process can be monitored, start an Event Server.

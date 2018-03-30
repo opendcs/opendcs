@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.2  2012/08/29 14:20:22  mmaloney
 * refactor silent mode.
 *
@@ -52,7 +55,7 @@ public class DeleteTriggers
 	protected void runApp()
 		throws Exception
 	{
-		String q = "delete from cp_comp_tasklist where loading_application_id = " + appId;
+		String q = "delete from cp_comp_tasklist where loading_application_id = " + getAppId();
 		theDb.doModify(q);
 	}
 

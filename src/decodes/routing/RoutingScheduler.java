@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.13  2017/03/30 21:04:44  mmaloney
+ * Refactor CompEventServer to use PID if monitor==true.
+ *
  * Revision 1.12  2016/02/23 19:26:39  mmaloney
  * -w arg to support operation as a windows service.
  *
@@ -295,7 +298,7 @@ public class RoutingScheduler
 
 		try
 		{
-			appId = loadingAppDao.lookupAppId(appNameArg.getValue());
+			setAppId(loadingAppDao.lookupAppId(appNameArg.getValue()));
 			appInfo = loadingAppDao.getComputationApp(appNameArg.getValue());
 			if (!appInfo.canRunLocally())
 			{

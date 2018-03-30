@@ -9,6 +9,12 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.17  2017/12/04 18:57:36  mmaloney
+*  CWMS-10012 fixed CWMS problem that could sometimes result in circular dependencies
+*  for group computations when a new Time Series was created. When compdepends
+*  daemon evaluates the 'T' notification, it needs to prepare each CwmsGroupHelper for
+*  expansion so that the regular expressions exist.
+*
 *  Revision 1.16  2017/11/14 16:07:25  mmaloney
 *  When evaluating a group comp, if group was NOT read from the cache, evaluate it before use.
 *
@@ -199,7 +205,7 @@ public class CpCompDependsUpdater
 		initialize();
 		
 		String msg = "============== CpCompDependsUpdater appName=" + getAppName() 
-			+", appId=" + appId;
+			+", appId=" + getAppId();
 		if (theDb.isCwms())
 			msg = msg + ", officeID=" + ((CwmsTimeSeriesDb)theDb).getDbOfficeId();
 		Logger.instance().info(msg + " Starting ==============");
@@ -316,7 +322,7 @@ public class CpCompDependsUpdater
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try
 		{
-			appInfo = loadingAppDao.getComputationApp(appId);
+			appInfo = loadingAppDao.getComputationApp(getAppId());
 
 			try { hostname = InetAddress.getLocalHost().getHostName(); }
 			catch(Exception e) { hostname = "unknown"; }
@@ -375,7 +381,7 @@ public class CpCompDependsUpdater
 
 	private void debug(String x)
 	{
-		Logger.instance().debug3("CompDependsUpdater(" + appId + "): " + x);
+		Logger.instance().debug3("CompDependsUpdater(" + getAppId() + "): " + x);
 	}
 
 	/**

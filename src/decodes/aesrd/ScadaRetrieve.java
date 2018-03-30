@@ -219,7 +219,7 @@ public class ScadaRetrieve
 				{
 					myLock.setStatus("goodQueries=" + goodQueries + ", numErrors=" + numErrors);
 					loadingAppDao.checkCompProcLock(myLock);
-					appInfo = loadingAppDao.getComputationApp(appId);
+					appInfo = loadingAppDao.getComputationApp(getAppId());
 				}
 				catch (LockBusyException ex)
 				{
@@ -554,7 +554,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try
 		{
-			appInfo = loadingAppDao.getComputationApp(appId);
+			appInfo = loadingAppDao.getComputationApp(getAppId());
 			
 			// If this process can be monitored, start an Event Server.
 			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
@@ -607,7 +607,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		info("Loading configuration");
 		
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
-		try { appInfo = loadingAppDao.getComputationApp(appId); }
+		try { appInfo = loadingAppDao.getComputationApp(getAppId()); }
 		catch(Exception ex)
 		{
 			warning("Cannot read application info: " + ex);

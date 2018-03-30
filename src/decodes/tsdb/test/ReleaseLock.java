@@ -21,7 +21,7 @@ public class ReleaseLock
 	protected void runApp()
 		throws Exception
 	{
-		if (appId == Constants.undefinedId)
+		if (getAppId() == Constants.undefinedId)
 		{
 			System.err.println(
 				"-a <appName> argument required -- No action taken!");
@@ -35,7 +35,7 @@ public class ReleaseLock
 			List<TsdbCompLock> locks = loadingAppDAO.getAllCompProcLocks();
 			Logger.instance().info("" + locks.size() + " Locks Retrieved.");
 			for(TsdbCompLock lock : locks)
-				if (lock.getAppId() == appId)
+				if (lock.getAppId() == getAppId())
 				{
 					loadingAppDAO.releaseCompProcLock(lock);
 					break;

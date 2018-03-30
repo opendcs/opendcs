@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2015/12/02 21:16:28  mmaloney
+ * Numerous improvements for retrieval for the Oriole page. Addition of XmitRecSpec
+ * bean with just the info required by Oriole.
+ *
  * Revision 1.11  2015/07/27 18:34:06  mmaloney
  * Fixed ignoreInvalidAddr feature and fine-tuned the start time.
  *
@@ -332,7 +336,7 @@ public class DcpMonitor
 			rtScheduleEntry = new ScheduleEntry("dcpmon-realtime");
 			info("Creating new schedule entry '" + rtScheduleEntry.getName() + "'");
 		}
-		rtScheduleEntry.setLoadingAppId(appId);
+		rtScheduleEntry.setLoadingAppId(getAppId());
 		rtScheduleEntry.setRoutingSpecId(rtRoutingSpec.getId());
 		rtScheduleEntry.setStartTime(null); // null start time means real-time schedule entry.
 		rtScheduleEntry.setEnabled(true);
@@ -379,7 +383,7 @@ public class DcpMonitor
 				recScheduleEntry = new ScheduleEntry("dcpmon-recover");
 				info("Creating new schedule entry '" + recScheduleEntry.getName() + "'");
 			}
-			recScheduleEntry.setLoadingAppId(appId);
+			recScheduleEntry.setLoadingAppId(getAppId());
 			recScheduleEntry.setRoutingSpecId(recRoutingSpec.getId());
 			recScheduleEntry.setStartTime(new Date()); // start time means run once.
 			recScheduleEntry.setEnabled(true);

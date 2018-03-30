@@ -84,8 +84,11 @@ public class ScheduleEntryExecutive
 				dacqEventLogger.setDacqEventDAO(dacqEventDAO);
 				
 				// If rs thread has an app ID, set it in the logger.
-				if (seThread != null && seThread.rsProcRecord != null)
+				if (seThread != null && seThread.rsProcRecord != null 
+					&& !DbKey.isNull(seThread.rsProcRecord.getAppId()))
+				{
 					dacqEventLogger.setAppId(seThread.rsProcRecord.getAppId());
+				}
 			}
 			// Else this is an XML database, no actual DACQ Event Logging
 			
@@ -103,8 +106,6 @@ public class ScheduleEntryExecutive
 			dacqEventLogger = new DacqEventLogger(parent.origLogger);
 			dacqEventLogger.setDacqEventDAO(parent.getDacqEventDAO());
 		}
-		if (parent != null)
-			dacqEventLogger.setAppId(parent.appId);
 	}
 	
 private long lastDebug = 0L;
