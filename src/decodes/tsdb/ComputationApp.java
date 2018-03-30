@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.12  2018/03/30 14:13:32  mmaloney
+*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
+*
 *  Revision 1.11  2018/02/19 16:23:57  mmaloney
 *  Attempt to reclaim tasklist space if tasklist is empty and feature is enabled.
 *
@@ -83,7 +86,6 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
@@ -109,7 +111,7 @@ public class ComputationApp
 	private String hostname;
 	private int compsTried = 0;
 	private int compErrors = 0;
-	private int evtPort = -1;
+//	private int evtPort = -1;
 	
 	private BooleanToken regressionTestModeArg = new BooleanToken("T", "Regression Test Mode",
 		"", TokenOptions.optSwitch, false);
@@ -144,9 +146,6 @@ public class ComputationApp
 		shutdownFlag = false;
 	}
 
-	/** @return the application ID. */
-	public DbKey getAppId() { return appId; }
-
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		cmdLineArgs.addToken(regressionTestModeArg);
@@ -167,12 +166,6 @@ public class ComputationApp
 			DecodesSettings.instance().CwmsOfficeId = officeIdArg.getValue();
 	}
 
-
-	/**
-	 * Sets the application ID. 
-	 * @param id the ID.
-	 */
-	public void setAppId(DbKey id) { this.appId = id; }
 
 	/** @return the application name. */
 	public String getAppName() 

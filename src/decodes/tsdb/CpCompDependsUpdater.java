@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.18  2018/03/30 14:13:32  mmaloney
+*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
+*
 *  Revision 1.17  2017/12/04 18:57:36  mmaloney
 *  CWMS-10012 fixed CWMS problem that could sometimes result in circular dependencies
 *  for group computations when a new Time Series was created. When compdepends
@@ -95,7 +98,6 @@ import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-import ilex.var.TimedVariable;
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
@@ -120,7 +122,7 @@ public class CpCompDependsUpdater
 	
 	private boolean shutdownFlag;
 	private String hostname;
-	private int evtPort = 0;
+//	private int evtPort = 0;
 	private long lastCacheRefresh = 0L;
 
 	/** Number of notifications successfully processed */
@@ -162,9 +164,6 @@ public class CpCompDependsUpdater
 		surviveDatabaseBounce = true;
 	}
 
-	/** @return the application ID. */
-	public DbKey getAppId() { return appId; }
-
 	/** Sets default app name (and log file) to compdepends */
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
@@ -173,12 +172,6 @@ public class CpCompDependsUpdater
 		cmdLineArgs.addToken(groupCacheDump);
 		cmdLineArgs.addToken(fullEvalOnly);
 	}
-
-	/**
-	 * Sets the application ID. 
-	 * @param id the ID.
-	 */
-	public void setAppId(DbKey id) { this.appId = id; }
 
 	/** @return the application name. */
 	public String getAppName() 

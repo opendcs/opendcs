@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.4  2016/11/03 19:01:21  mmaloney
+*  Refactoring for group evaluation to make HDB work the same way as CWMS.
+*
 *  Revision 1.3  2016/09/29 18:54:35  mmaloney
 *  CWMS-8979 Allow Database Process Record to override decodes.properties and
 *  user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -149,9 +152,6 @@ public class Convert2Group
 	{
 		super("convert2group.log");
 	}
-
-	/** @return the application ID. */
-	public DbKey getAppId() { return appId; }
 
 	/** Sets default app name (and log file) to compdepends */
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
