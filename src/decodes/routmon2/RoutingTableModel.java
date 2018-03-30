@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.5  2017/11/21 14:39:45  mmaloney
+ * For equals() don't compare interval or time zone if continuous is selected.
+ *
  * Revision 1.4  2017/11/20 19:26:52  mmaloney
  * Fix 2 bugs: Selecting RS Run was messing up the panel header. RS Runs in the middle panel were not sorted in descending last-modify-time order like they should have been.
  *
@@ -347,7 +350,9 @@ class RSColumnizer
 	public String getColumnString(RSBean rsb, int col)
 	{
 		Object obj = getColumnObject(rsb, col);
-		if (obj instanceof String)
+		if (obj == null)
+			return "";
+		else if (obj instanceof String)
 			return (String)obj;
 		else
 			return obj.toString();

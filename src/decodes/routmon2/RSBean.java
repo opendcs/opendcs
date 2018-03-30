@@ -32,12 +32,14 @@ public class RSBean
 	
 	public String getAppName()
 	{
-		return scheduleEntry == null ? "" : scheduleEntry.getLoadingAppName();
+		return scheduleEntry == null ? "" : 
+			(scheduleEntry.getLoadingAppName() == null ? "" : scheduleEntry.getLoadingAppName());
 	}
 	
 	public String getInterval()
 	{
-		return scheduleEntry == null ? "" : scheduleEntry.getRunInterval();
+		return scheduleEntry == null ? "" : 
+			(scheduleEntry.getRunInterval() == null ? "" : scheduleEntry.getRunInterval());
 	}
 
 	public Date getLastActivityTime()
