@@ -8,6 +8,9 @@
  * Copyright 2017 U.S. Government.
  *
  * $Log$
+ * Revision 1.3  2018/03/30 14:13:32  mmaloney
+ * Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
+ *
  * Revision 1.2  2017/09/05 18:35:33  mmaloney
  * dev
  *
@@ -171,8 +174,8 @@ public class DacqEventTableModel extends AbstractTableModel
 	private String getAppName(DbKey appId)
 	{
 		CompAppInfo app = appMap.get(appId);
-if (app == null) System.out.println("No app with id=" + appId);
-else System.out.println("retrieved appId=" + appId + " '" +app.getAppName() + "'");
+//if (app == null) System.out.println("No app with id=" + appId);
+//else System.out.println("retrieved appId=" + appId + " '" +app.getAppName() + "'");
 		return app == null ? "" : app.getAppName();
 	}
 	
