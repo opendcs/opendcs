@@ -430,6 +430,8 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(versionCmd);
 		cmdLineProc.addCmd(bparamCmd);
 		cmdLineProc.addCmd(selectCmd);
+		cmdLineProc.addCmd(alterCmd);
+		cmdLineProc.addCmd(updateCmd);
 		cmdLineProc.addCmd(hdbRatingCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
