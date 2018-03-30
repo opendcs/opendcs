@@ -2,6 +2,11 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.7  2015/04/15 19:59:48  mmaloney
+*  Fixed synchronization bugs when the same data sets are being processed by multiple
+*  routing specs at the same time. Example is multiple real-time routing specs with same
+*  network lists. They will all receive and decode the same data together.
+*
 *  Revision 1.6  2015/04/14 18:57:13  mmaloney
 *  Fixed concurrent modification exception when searching for platform by tm key.
 *
@@ -348,6 +353,8 @@ public class Platform
 			tm = getTransportMedium(Constants.medium_GoesRD);
 		if (tm == null)
 			tm = getTransportMedium(Constants.medium_IRIDIUM);
+		if (tm == null && transportMedia.size() > 0)
+			tm = transportMedia.get(0);
 		if (tm == null)
 			return null;
 		return tm.getMediumId();
