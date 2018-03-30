@@ -31,6 +31,7 @@ public abstract class LoggerProtocol
 {
 	protected PollSessionLogger pollSessionLogger = null;
 	protected PollingThread pollingThread = null;
+	protected Exception abnormalShutdown = null;
 
 	public LoggerProtocol()
 	{
@@ -91,6 +92,23 @@ public abstract class LoggerProtocol
 			pollSessionLogger.annotate(msg);
 	}
 	
-	public abstract void setAbnormalShutdown(Exception abnormalShutdown);
+	public void setAbnormalShutdown(Exception abnormalShutdown)
+	{
+		this.abnormalShutdown = abnormalShutdown;
+	}
+	
+	public Exception getAbnormalShutdown()
+	{
+		return abnormalShutdown;
+	}
+	
+	/**
+	 * If a partial message was received in a session that threw ProtocolException,
+	 * then return it. Otherwise return null.
+	 */
+	public DcpMsg getPartialData()
+	{
+		return null;
+	}
 
 }

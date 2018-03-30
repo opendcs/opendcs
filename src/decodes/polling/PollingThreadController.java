@@ -117,7 +117,9 @@ public class PollingThreadController
 					+ p.getProcessSeason().getName() + "'");
 				continue;
 			}
-			threads.add(new PollingThread(this, dataSource, aggTMList.get(idx)));
+			PollingThread pt = new PollingThread(this, dataSource, aggTMList.get(idx));
+			pt.setMaxTries(pollNumTries);
+			threads.add(pt);
 		}
 		if (threads.size() == 0)
 		{

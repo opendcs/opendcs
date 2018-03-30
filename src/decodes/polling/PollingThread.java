@@ -66,7 +66,11 @@ public class PollingThread
 	
 	private PollingThreadState state = PollingThreadState.Waiting;
 	
+	/** Number of attempts so far */
 	private int numTries = 0;
+	
+	/** Can be set by controller if multiple tries are allowed. */
+	private int maxTries = 1;
 	
 	private boolean _shutdown = false;
 	
@@ -179,8 +183,16 @@ public class PollingThread
 				}
 			}
 			
-			protocol.goodbye(ioPort, transportMedium);
-			exitState = PollingThreadState.Success;
+			if (protocol.getAbnormalShutdown() != null)
+			{
+				warning("Abnormal protocol shutdown: " + protocol.getAbnormalShutdown());
+				exitState = PollingThreadState.Failed;
+			}
+			else
+			{
+				protocol.goodbye(ioPort, transportMedium);
+				exitState = PollingThreadState.Success;
+			}
 		}
 		catch (DialException ex)
 		{
@@ -230,7 +242,28 @@ public class PollingThread
 			pollSessionLogger = null;
 		}
 		
-		debug2("writing final platform status for " + transportMedium);		
+		// If failed and num tries expired and there was a protocol.
+		if (exitState == PollingThreadState.Failed
+		 && protocol != null
+		 && numTries == maxTries)
+		{
+			DcpMsg dcpMsg = protocol.getPartialData();
+			if (dcpMsg != null)
+			{
+				warning("Protocol failed after " + maxTries + " attempts, but there is a partial "
+					+ "message of length " + dcpMsg.getData().length + ".");
+				RawMessage ret = new RawMessage(dcpMsg.getData());
+				ret.setOrigDcpMsg(dcpMsg);
+				ret.setPlatform(transportMedium.platform);
+				ret.setTimeStamp(dcpMsg.getXmitTime());
+				dataSource.enqueueMsg(ret);
+				platformStatus.setLastMessageTime(new Date());
+				platformStatus.setLastFailureCodes("" + dcpMsg.getFailureCode());
+				platformStatus.setAnnotation("PartialMsg");
+			}
+		}
+		
+		debug2("Writing platform status for " + transportMedium);		
 		dataSource.writePlatformStatus(platformStatus, transportMedium);
 		
 		// Parent will be calling getState(). Make sure the RS doesn't prematurely
@@ -432,6 +465,11 @@ Logger.instance().debug3("setSaveSessionFile(" + saveSessionFile + ")");
 	public void setThreadStart(Date threadStart)
 	{
 		this.threadStart = threadStart;
+	}
+
+	public void setMaxTries(int maxTries)
+	{
+		this.maxTries = maxTries;
 	}
 	
 }

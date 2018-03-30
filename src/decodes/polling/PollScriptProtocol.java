@@ -24,6 +24,7 @@ package decodes.polling;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
+import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -57,7 +58,6 @@ public class PollScriptProtocol
 	private ArrayList<PollScriptCommand> script = new ArrayList<PollScriptCommand>();
 	protected StreamReader streamReader = null;
 	protected IOPort ioPort = null;
-	protected Exception abnormalShutdown = null;
 	protected PollingDataSource dataSource = null;
 	protected Properties properties = new Properties();
 	protected Date start = null;
@@ -65,6 +65,8 @@ public class PollScriptProtocol
 	protected boolean _inputClosed = false;
 	private int scriptIdx = 0;
 	private File scriptFile = null;
+	private byte partialCapturedData[] = null;
+	private Date partialSessionStart = null, partialSessionEnd = null;
 
 	public PollScriptProtocol()
 	{
@@ -311,10 +313,39 @@ public class PollScriptProtocol
 		Date sessionStart = new Date();
 		pollingThread.debug2("getData() session starting at " + sessionStart);
 
-		executeScript(port, since);
-		if (abnormalShutdown != null)
-			return null;
+		ProtocolException toThrow = null;
+		try { executeScript(port, since); }
+		catch (ProtocolException pe) { toThrow = pe; }
+		
+		byte capturedData[] = streamReader.getCapturedData();
 		Date sessionEnd = new Date();
+
+		// If session unsuccessful ...
+		if (toThrow != null || abnormalShutdown != null)
+		{
+			pollingThread.info("toThrow=" + toThrow + ", abnormalShutdown=" + abnormalShutdown
+				+ ", there " + (capturedData == null ? "is NO" : "IS") + " captured data.");
+
+			// If there was a partial captured message, save the best one out of all attempts.
+			if (capturedData != null &&
+				(partialCapturedData == null || capturedData.length > partialCapturedData.length))
+			{
+				partialCapturedData = capturedData;
+				partialSessionStart = sessionStart;
+				partialSessionEnd = sessionEnd;
+			}
+			
+			if (toThrow != null)
+				throw toThrow;
+			else // abnormalShutdown != null
+				return null;
+		}
+
+		return wrapCapturedData(capturedData, sessionStart, sessionEnd, tm);
+	}
+	
+	private DcpMsg wrapCapturedData(byte []data, Date sessionStart, Date sessionEnd, TransportMedium tm)
+	{
 		pollingThread.debug2("getData() session finished at " + sessionEnd);
 
 		// Build DcpMsg from info in tm and captured data.
@@ -326,14 +357,13 @@ public class PollScriptProtocol
 
 		try
 		{
-			Date recvTime = sessionEnd;
 			String station = tm.platform.getSiteName(false);
 			baos.write(
 				 ("//STATION " + station + "\n"
 				+ "//SOURCE " + tm.getLoggerType() + "\n"
 				+ "//DEVICE END TIME " + sdf.format(sessionStart) + "\n"
 				+ "//POLL START " + sdf.format(sessionStart) + "\n"
-				+ "//POLL STOP " + sdf.format(recvTime) + "\n"
+				+ "//POLL STOP " + sdf.format(sessionEnd) + "\n"
 				).getBytes());
 			byte[] capturedData = streamReader.getCapturedData();
 			baos.write(capturedData);
@@ -345,10 +375,10 @@ public class PollScriptProtocol
 				| DcpMsgFlag.MSG_TYPE_NETDCP
 	            | DcpMsgFlag.MSG_NO_SEQNUM,
 				msgdata, msgdata.length, 0);
-			ret.setLocalReceiveTime(recvTime);
-			ret.setXmitTime(recvTime);
+			ret.setLocalReceiveTime(sessionEnd);
+			ret.setXmitTime(sessionEnd);
 			ret.setCarrierStart(sessionStart);
-			ret.setCarrierStop(recvTime);
+			ret.setCarrierStop(sessionEnd);
 			ret.setDcpAddress(new DcpAddress(tm.getMediumId()));
 			ret.setFailureCode('G');
 			
@@ -360,17 +390,17 @@ public class PollScriptProtocol
 		catch (IOException ex)
 		{
 			// Won't happen for byte array OS
-			String msg = module + "U nexpected error in PollScriptProtocol.getData(): " + ex;
-			pollingThread.failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			throw new ProtocolException(msg);
+			String msg = module + "Unexpected error in PollScriptProtocol.getData(): " + ex;
+			Logger.instance().failure(msg);
 		}
 		finally
 		{
 			try {baos.close();} catch(Exception ex){}
 		}
+
+		return null;
 	}
+	
 
 	@Override
 	public void goodbye(IOPort port, TransportMedium tm)
@@ -456,9 +486,14 @@ public class PollScriptProtocol
 	public String getScriptFileName() { return scriptFile == null ? "(null)" : scriptFile.getName(); }
 
 	@Override
-	public void setAbnormalShutdown(Exception abnormalShutdown)
+	public DcpMsg getPartialData()
 	{
-		this.abnormalShutdown = abnormalShutdown;
+		if (partialCapturedData != null)
+			return wrapCapturedData(partialCapturedData, partialSessionStart, 
+				partialSessionEnd, transportMedium);
+		else
+			return null;
 	}
+
 
 }
