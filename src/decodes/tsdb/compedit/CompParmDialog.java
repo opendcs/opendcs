@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2018/01/23 14:55:54  mmaloney
+ * HDB 483 Cnvt single comp to group, bug--wasn't removing SDI.
+ *
  * Revision 1.8  2017/11/02 20:46:21  mmaloney
  * Improve error message and fix potential HDB null ptr bug.
  *
@@ -937,10 +940,10 @@ System.out.println("Setting tabsel='" + tabSel + "'");
 				catch (NoSuchObjectException ex)
 				{
 					String algoParmType = theParm.getAlgoParmType();
-					boolean isOutput = algoParmType != null
-							&& algoParmType.toLowerCase().startsWith("o");
+					boolean canCreate = theDb.isHdb()
+						|| (algoParmType != null && algoParmType.toLowerCase().startsWith("o"));
 
-					if (isOutput && JOptionPane.showConfirmDialog(this, 
+					if (canCreate && JOptionPane.showConfirmDialog(this, 
 						 ceResources.getString("CompParmDialog.DoesntExist"))
 						 == JOptionPane.YES_OPTION)
 					{
