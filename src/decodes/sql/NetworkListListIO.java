@@ -4,6 +4,9 @@
  * Open Source Software
  *
  * $Log$
+ * Revision 1.5  2015/06/04 21:41:10  mmaloney
+ * If DB Version < 12 truncate platform name to 24 chars.
+ *
  * Revision 1.4  2014/08/29 18:22:50  mmaloney
  * 6.1 Schema Mods
  *
@@ -315,20 +318,33 @@ public class NetworkListListIO extends SqlDbObjIo
 	public NetworkList readNetworkList(DbKey id)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = createStatement();
+		if (DbKey.isNull(id))
+			throw new DatabaseException("NetworkList cannot have null key.");
 		
-		String q = "SELECT * FROM NetworkList WHERE id = " + id;
+		Statement stmt = null;
+		ResultSet rs = null;
+		NetworkList nList = null;
 		
-		ResultSet rs = stmt.executeQuery( q );
-
-		if (rs == null || !rs.next())
-			throw new DatabaseException(
-				"No NetworkList found with ID " + id);
-
-		NetworkList nList = putNetworkList(id, rs);
-		stmt.close();
-
+		try
+		{
+			stmt = createStatement();
+			String q = "SELECT * FROM NetworkList WHERE id = " + id;
+			rs = stmt.executeQuery( q );
+			if (rs == null || !rs.next())
+				throw new DatabaseException(
+					"No NetworkList found with ID " + id);
+	
+			nList = putNetworkList(id, rs);
+		}
+		finally
+		{
+			if (rs != null)
+				try { rs.close(); } catch(Exception ex) {}
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
+		}
 		readNetworkListEntries(nList);
+		
 
 		return nList;
 	}
@@ -343,27 +359,34 @@ public class NetworkListListIO extends SqlDbObjIo
 	{
 		initDb(nl);
 		DbKey id = nl.getId();
-		if (id.isNull())
+		if (DbKey.isNull(id))
 		{
 			id = name2id(nl.name);    // will throw if unsuccessfull
 			nl.setId(id);
 		}
 
-		Statement stmt = createStatement();
-		
-		String q = "SELECT * FROM NetworkList WHERE id = " + id;
-
-		Logger.instance().log(Logger.E_DEBUG1,
-			"Executing '" + q + "' to read netlist '" + nl.name + "'");
-		ResultSet rs = stmt.executeQuery(q);
-
-		if (rs == null || !rs.next())
-			throw new DatabaseException(
-				"No NetworkList found with ID " + id);
-
-		populateNetworkList(nl, rs);
-
-		stmt.close();
+		Statement stmt = null;
+		try
+		{
+			stmt = createStatement();
+			
+			String q = "SELECT * FROM NetworkList WHERE id = " + id;
+	
+			Logger.instance().log(Logger.E_DEBUG1,
+				"Executing '" + q + "' to read netlist '" + nl.name + "'");
+			ResultSet rs = stmt.executeQuery(q);
+	
+			if (rs == null || !rs.next())
+				throw new DatabaseException(
+					"No NetworkList found with ID " + id);
+	
+			populateNetworkList(nl, rs);
+		}
+		finally
+		{
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
+		}
 
 		readNetworkListEntries(nl);
 	}
@@ -401,60 +424,72 @@ public class NetworkListListIO extends SqlDbObjIo
 	private void readNetworkListEntries(NetworkList nl)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = createStatement();
-		String nle_attributes = "networkListId, transportId";
-		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
-			nle_attributes += ", platform_name, description";
+		Statement stmt = null;
+		ResultSet rs_nle = null;
 		
-		String q = "SELECT " + nle_attributes
-			     + " FROM NetworkListEntry where NetworkListId = "
-			     + nl.getId();
-
-		ResultSet rs_nle = stmt.executeQuery(q);
-
-		while (rs_nle != null && rs_nle.next())
+		try
 		{
-			String transportId = rs_nle.getString(2);
-
-			NetworkListEntry nle = new NetworkListEntry(nl, transportId);
-			// DB Version 11 has name and description in each Netlist Entry.
+			stmt = createStatement();
+			String nle_attributes = "networkListId, transportId";
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
-			{
-				nle.setPlatformName(rs_nle.getString(3));
-				nle.setDescription(rs_nle.getString(4));
-			}
-			else
-			{
-				Platform p = _platformList.getPlatform(nl.transportMediumType, 
-					transportId);
+				nle_attributes += ", platform_name, description";
+			
+			String q = "SELECT " + nle_attributes
+				     + " FROM NetworkListEntry where NetworkListId = "
+				     + nl.getId();
 	
-				if (p != null)
+			rs_nle = stmt.executeQuery(q);
+	
+			while (rs_nle != null && rs_nle.next())
+			{
+				String transportId = rs_nle.getString(2);
+	
+				NetworkListEntry nle = new NetworkListEntry(nl, transportId);
+				// DB Version 11 has name and description in each Netlist Entry.
+				if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
 				{
-					//Find the right site name for this network list site
-					//name type preference
-					Site pSite = p.getSite();
-					if (pSite != null)
-					{	//FIRST - see if it can find a site name for this type
-						SiteName sn = pSite.getName(nl.siteNameTypePref);
-						if (sn != null)
-							nle.setPlatformName(sn.getNameValue());
+					nle.setPlatformName(rs_nle.getString(3));
+					nle.setDescription(rs_nle.getString(4));
+				}
+				else
+				{
+					Platform p = _platformList.getPlatform(nl.transportMediumType, 
+						transportId);
+		
+					if (p != null)
+					{
+						//Find the right site name for this network list site
+						//name type preference
+						Site pSite = p.getSite();
+						if (pSite != null)
+						{	//FIRST - see if it can find a site name for this type
+							SiteName sn = pSite.getName(nl.siteNameTypePref);
+							if (sn != null)
+								nle.setPlatformName(sn.getNameValue());
+							else
+							{
+								nle.setPlatformName(p.getSiteName(false));
+							}
+						}
 						else
 						{
 							nle.setPlatformName(p.getSiteName(false));
 						}
+						
+						nle.setDescription(p.description);
 					}
-					else
-					{
-						nle.setPlatformName(p.getSiteName(false));
-					}
-					
-					nle.setDescription(p.description);
 				}
+	
+				nl.addEntry(nle);
 			}
-
-			nl.addEntry(nle);
 		}
-		stmt.close();
+		finally
+		{
+			if (rs_nle != null)
+				try { rs_nle.close(); } catch(Exception ex) {}
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
+		}
 	}
 
 	/**

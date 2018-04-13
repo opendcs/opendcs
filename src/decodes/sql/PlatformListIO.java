@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.15  2018/01/18 16:11:32  mmaloney
+ * Trim transport medium ID before writing.
+ *
  * Revision 1.14  2017/02/09 17:26:08  mmaloney
  * Property to allow MVR to overwrite on a clash when importing.
  *
@@ -1193,11 +1196,11 @@ public class PlatformListIO extends SqlDbObjIo
 	public Date getLMT(Platform p)
 		throws DatabaseException
 	{
+		Statement stmt = null;
 		try
 		{
-			Statement stmt = createStatement();
-			String q = 
-				"SELECT lastModifyTime FROM Platform WHERE id = " + p.getId();
+			stmt = createStatement();
+			String q = "SELECT lastModifyTime FROM Platform WHERE id = " + p.getId();
 			ResultSet rs = stmt.executeQuery(q);
 
 			// Should be only 1 record returned.
@@ -1208,7 +1211,7 @@ public class PlatformListIO extends SqlDbObjIo
 			}
 
 			Date ret = getTimeStamp(rs, 1, (Date)null);
-			stmt.close();
+			
 			return ret;
 		}
 		catch(SQLException ex)
@@ -1216,6 +1219,11 @@ public class PlatformListIO extends SqlDbObjIo
 			warning("SQL Error reading LMT for platform ID " + p.getId()
 				+ ": " + ex);
 			return null;
+		}
+		finally
+		{
+			if (stmt != null)
+				try { stmt.close(); } catch(Exception ex) {}
 		}
 	}
 	
