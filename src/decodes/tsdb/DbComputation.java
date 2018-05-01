@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2014/10/07 12:41:25  mmaloney
+*  removed SeasonID
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -106,7 +109,7 @@ public class DbComputation
 	private int modelRunId;
 	
 	/** Assigned when computation is initialized for exec. */
-	private int dataSourceId = Constants.undefinedIntKey;
+	private DbKey dataSourceId = DbKey.NullKey;
 
 //	/** Indicates this is a transient generated computation for a group. */
 //	private boolean _isTransient = false;
@@ -149,7 +152,6 @@ public class DbComputation
 		algorithmId = Constants.undefinedId;
 		algorithmName = null;
 		modelRunId = Constants.undefinedIntKey;
-		dataSourceId = Constants.undefinedIntKey;
 		triggeringRecNums = new HashSet<Integer>();
 		groupId = Constants.undefinedId;
 		group = null;
@@ -590,7 +592,7 @@ public class DbComputation
 		this.algorithmId = algorithmId;		
 	}
 
-	public int getDataSourceId() { return dataSourceId; }
+	public DbKey getDataSourceId() { return dataSourceId; }
 
 	public void shutdown()
 	{

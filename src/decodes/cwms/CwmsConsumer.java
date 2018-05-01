@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.10  2017/08/22 19:29:15  mmaloney
+*  Refactor
+*
 *  Revision 1.9  2017/02/20 19:41:51  mmaloney
 *  The TsdbCompLock code has been moved to RoutingSpecThread.main and run.
 *
@@ -510,7 +513,7 @@ public class CwmsConsumer extends DataConsumer
 				tabSel,                // CWMS tabse is paramtype.duration.version
 				tsid.getInterval(), 
 				true,                  // mustWrite flag (we want to write all values in the TS
-				Constants.undefinedIntKey);// sourceId not used in CWMS
+				DbKey.NullKey);        // sourceId not used in CWMS
 	
 			try
 			{
