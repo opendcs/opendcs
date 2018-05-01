@@ -211,6 +211,8 @@ public class RoutingSpecThread
 
 		rs.setProperty("RoutingSpec.name", rs.getName());
 	}
+	
+	public RoutingSpec getRoutingSpec() { return rs; }
 
 	/** 
 	  Sets the status monitor file to the passed filename.
