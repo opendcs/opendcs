@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.19  2017/08/22 19:30:12  mmaloney
+ * Refactor
+ *
  * Revision 1.18  2017/05/01 19:28:07  mmaloney
  * Added setRoundSec() method to enable fuzzy retrievals to fill in missing data.
  * This is not yet implemented.
@@ -1169,12 +1172,9 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 	}
 
 	@Override
-	public void setRoundSec(int roundSec)
+	public void setAppModule(String module)
 	{
-		// TODO Auto-generated method stub
-		
+		// Do nothing. CWMS doesn't use modules.
 	}
-
-
 
 }
