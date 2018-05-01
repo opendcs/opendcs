@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2017/08/22 19:50:07  mmaloney
+ * Refactor
+ *
  * 
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 */
@@ -37,7 +40,7 @@ public class TSUtil
 	 * @return
 	 */
 	public static CTimeSeries convert2CTimeSeries(TimeSeries ts, DbKey sdi, 
-		String tableSelector, String interval, boolean mustWrite, int sourceId)
+		String tableSelector, String interval, boolean mustWrite, DbKey sourceId)
 	{
 		CTimeSeries ret = new CTimeSeries(sdi, interval, tableSelector);
 		int n = ts.size();

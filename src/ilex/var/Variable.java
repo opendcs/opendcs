@@ -14,6 +14,8 @@ package ilex.var;
 
 import java.util.Date;
 
+import decodes.sql.DbKey;
+
 /**
 * Class Variable provides a common interface for all of the concrete
 * variable classes of specific type. It also contains the functions for
@@ -41,7 +43,7 @@ public class Variable implements IVariable, IFlags
 	public static int defaultFlags = 0;
 
 	/** App may use this to track the source of each variable. */
-	private int sourceId;
+	private DbKey sourceId = DbKey.NullKey;
 
 	/**
 	* Constructs a default (integer) Variable with a zero flag.
@@ -50,7 +52,6 @@ public class Variable implements IVariable, IFlags
 	{
 		flags = defaultFlags;
 		delegate = new LongDelegate(0L);
-		sourceId = -1;
 	}
 
 	/**
@@ -945,12 +946,12 @@ public class Variable implements IVariable, IFlags
 	 * Sets the source ID for this variable.
 	 * @param sourceId the source ID
 	 */
-	public void setSourceId(int sourceId) { this.sourceId = sourceId; }
+	public void setSourceId(DbKey sourceId) { this.sourceId = sourceId; }
 
 	/**
 	 * @return the source ID for this variable (-1 means not set).
 	 */
-	public int getSourceId() { return sourceId; }
+	public DbKey getSourceId() { return sourceId; }
 	
 	/**
 	 * @return true if this variable holds a number
