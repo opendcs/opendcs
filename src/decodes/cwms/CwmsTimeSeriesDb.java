@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.31  2018/02/21 14:34:19  mmaloney
+*  Set autocommit true always.
+*
 *  Revision 1.30  2018/02/21 14:33:03  mmaloney
 *  Set autocommit true always.
 *
@@ -1138,33 +1141,10 @@ public class CwmsTimeSeriesDb
 	{
 	}
 
-	/**
-	 * Returns the modelID for a given modelRunId.
-	 * @param modelRunId the model run ID
-	 * @return the modelID for a given modelRunId, or -1 if not found.
-	 */
-	public int findModelId(int modelRunId)
-		throws DbIoException
-	{
-		// Model IDs not used in CWMS.
-		return Constants.undefinedIntKey;
-	}
-
-	/**
-	 * Returns the maximum valid run-id for the specified model.
-	 * @param modelId the ID of the model
-	 * @return the maximum valid run-id for the specified model.
-	 */
-	public int findMaxModelRunId(int modelId)
-		throws DbIoException
-	{
-		// Model IDs not used in CWMS.
-		return Constants.undefinedIntKey;
-	}
-
 	/** @return label to use for 'limit' column in tables. */
 	public String getLimitLabel() { return "Qual Code"; }
 
+	@Override
 	public String flags2LimitCodes(int flags)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -1184,11 +1164,6 @@ public class CwmsTimeSeriesDb
 	/** @return label to use for 'revision' column in tables. */
 	public String getRevisionLabel() { return ""; }
 
-	public String flags2RevisionCodes(int flags)
-	{
-		return null;
-	}
-	
 	/**
 	 * TSDB version 5 & above use a join with CP_COMP_DEPENDS to determine
 	 * not only what the new data is, but what computations depend on it.
