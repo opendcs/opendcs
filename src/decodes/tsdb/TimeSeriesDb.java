@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.17  2018/02/21 14:34:19  mmaloney
+*  Set autocommit true always.
+*
 *  Revision 1.16  2018/02/19 15:51:35  mmaloney
 *  Added code for Oracle to reclaim tasklist space.
 *
@@ -1305,21 +1308,19 @@ public abstract class TimeSeriesDb
 		throws ConstraintException, DbIoException;
 
 	/**
-	 * Returns the modelID for a given modelRunId.
-	 * @param modelRunId the model run ID
-	 * @return the modelID for a given modelRunId.
-	 */
-	public abstract int findModelId(int modelRunId)
-		throws DbIoException;
-
-	/**
 	 * Returns the maximum valid run-id for the specified model.
+	 * This is only used in HDB. Base class always returns -1.
 	 * @param modelId the ID of the model
 	 * @return the maximum valid run-id for the specified model.
 	 */
-	public abstract int findMaxModelRunId(int modelId)
-		throws DbIoException;
+	public int findMaxModelRunId(int modelId)
+		throws DbIoException
+	{
+		return Constants.undefinedIntKey;
+	}
 
+	
+	
 	/**
 	 * Finds the correct coefficient stored in the database for a specific set
 	 * of sdi, table selector, interval, and date. Assumes Oct 1 as beginning 
@@ -1407,19 +1408,30 @@ public abstract class TimeSeriesDb
 	/** @return label to use for 'limit' column in tables. */
 	public String getLimitLabel() { return "Lim"; }
 
-	/** Given int flags value, return char limit codes. */
-	public abstract String flags2LimitCodes(int flags);
+	/**
+	 * @return character representation of limit status represented in the flag bits.
+	 */
+	public String flags2LimitCodes(int flags)
+	{
+		return "";
+	}
 	
 	/** @return label to use for 'revision' column in tables. */
 	public String getRevisionLabel() { return "Rev"; }
 
-	/** Given int flags value, return char revision codes. */
-	public abstract String flags2RevisionCodes(int flags);
+	/** 
+	 * @return string representation of revision status represented in the flag bits.
+	 */
+	public String flags2RevisionCodes(int flags)
+	{
+		return null;
+	}
+
 	
-	public int getDataSourceId(DbKey appId, DbComputation comp)
+	public DbKey getDataSourceId(DbKey appId, DbComputation comp)
 		throws DbIoException
 	{
-		return 0;
+		return DbKey.NullKey;
 	}
 
 	/** @return the Time Series Database Version */
