@@ -118,4 +118,12 @@ public class TsdbDatabaseVersion
 	 */
 	public static final int VERSION_15 = 15;
 	public static final String VERSION_15_DTK = "OpenDCS 6.4";
+	
+	/**
+	 * Version 16 schema corresponds to OpenDCS 6.5
+	 * - See DecodesDatabaseVersion.java for details.
+	 */
+	public static final int VERSION_16 = 16;
+	public static final String VERSION_16_DTK = "OpenDCS 6.5";
+
 }

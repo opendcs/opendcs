@@ -6,10 +6,13 @@ import ilex.util.Logger;
 import java.io.Console;
 import java.io.FileReader;
 import java.io.LineNumberReader;
+import java.sql.ResultSet;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 
+import opendcs.opentsdb.OpenTsdb;
 import decodes.db.Database;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
@@ -255,19 +258,85 @@ public class DbUpdate extends TsdbAppTemplate
 				}
 			}
 		}
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_16)
+		{
+			System.out.println("");
+			System.out.println("Updating to Database Version 16.");
+			if (theDb instanceof OpenTsdb)
+			{
+				// version 16 contains many updates for OpenTSDB
+				
+				if (theDb.isOracle())
+					sql("CREATE SEQUENCE TS_SPECIdSeq nocache");
+				else
+					sql("CREATE SEQUENCE TS_SPECIdSeq");
+			
+				sql("DROP TABLE TSDB_DATA_SOURCE CASCADE");
+				SQLReader sqlReader = new SQLReader(schemaDir + "/opendcs.sql");
+				ArrayList<String> queries = sqlReader.createQueries();
+				for(String q : queries)
+					if (q.contains("TSDB_DATA_SOURCE"))
+					{
+						if (tableSpaceSpec != null)
+						{
+							// Oracle will have a table space definition that we need to substitute.
+							int tblSpecIdx = q.indexOf("&TBL_SPACE_SPEC");
+							if (tblSpecIdx != -1 && tableSpaceSpec != null)
+								q = q.substring(0, tblSpecIdx) + tableSpaceSpec;
+						}
+						sql(q);
+					}
+				if (theDb.isOracle())
+					sql("CREATE SEQUENCE TSDB_DATA_SOURCEIdSeq nocache");
+				else
+					sql("CREATE SEQUENCE TSDB_DATA_SOURCEIdSeq");
+
+			
+				// Add data_entry_time to string and number data tables
+				String cs = theDb.isOracle() ? "" : "COLUMN ";
+				String dt = theDb.isOracle() ? "NUMBER(19)" : "BIGINT";
+				NumberFormat suffixFmt = NumberFormat.getIntegerInstance();
+				suffixFmt.setMinimumIntegerDigits(4);
+				suffixFmt.setGroupingUsed(false);
+				ResultSet rs = theDb.doQuery("select max(TABLE_NUM) from STORAGE_TABLE_LIST");
+				if (rs.next())
+				{
+					int max = rs.getInt(1);
+					for(int tn = 0; tn <= max; tn++)
+					{
+						String suffix = suffixFmt.format(tn);
+						sql("ALTER TABLE TS_NUM_" + suffix + " ADD "
+							+ cs + "DATA_ENTRY_TIME " + dt + " NOT NULL");
+						sql("ALTER TABLE TS_STRING_" + suffix + " ADD "
+							+ cs + "DATA_ENTRY_TIME " + dt + " NOT NULL");
+						String s = "CREATE INDEX TS_NUM_" + suffix + "_ENTRY_IDX ON TS_NUM_" + suffix 
+							+ "(DATA_ENTRY_TIME)";
+						if (tableSpaceSpec != null)
+							s = s + " " + tableSpaceSpec;
+						sql(s);
+						s = "CREATE INDEX TS_STRING_" + suffix + "_ENTRY_IDX ON TS_STRING_" + suffix 
+							+ "(DATA_ENTRY_TIME)";
+						if (tableSpaceSpec != null)
+							s = s + " " + tableSpaceSpec;
+						sql(s);
+	
+					}
+				}
+			}
+		}
 
 		// Update DECODES Database Version
 		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " 
-			+ DecodesDatabaseVersion.DECODES_DB_15);
-		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_15, "");
+			+ DecodesDatabaseVersion.DECODES_DB_16);
+		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_16, "");
 		((SqlDatabaseIO)Database.getDb().getDbIo()).setDecodesDatabaseVersion(
-			DecodesDatabaseVersion.DECODES_DB_15, "");
+			DecodesDatabaseVersion.DECODES_DB_16, "");
 		// Update TSDB_DATABASE_VERSION.
 		String desc = "Updated on " + new Date();
 		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " 
-			+ TsdbDatabaseVersion.VERSION_15
+			+ TsdbDatabaseVersion.VERSION_16
 			+ ", DESCRIPTION = '" + desc + "'");
-		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_15, desc);
+		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_16, desc);
 		
 		// Rewrite the netlists with the changes.
 		Database.getDb().networkListList.write();

@@ -95,6 +95,17 @@ public class DecodesDatabaseVersion
 	 */
 	public static final int DECODES_DB_15 = 15;
 	
-	// Future schema changes should define DECODES_DB_16
+	/**
+	 * Version 15 schema corresponds to OpenDCS 6.5 - Changes for OpenTSDB
+	 * - Add ts_specidseq (affects OpenTSDB Only)
+	 * - tsdb_data_source redefined with 3 columns: id, appId, and module.
+	 * - Added foreign keys (source_id) from tsdb data tables (both string and num)
+	 * - Added foreign key (source_id) from cp_comp_tasklist
+	 * - Added data_entry_time to tsdb data tables (both string and num)
+	 * - Added separate index on data_entry_time to all data tables.
+	 */
+	public static final int DECODES_DB_16 = 16;
+
+	// Future schema changes should define DECODES_DB_17
 	
 }
