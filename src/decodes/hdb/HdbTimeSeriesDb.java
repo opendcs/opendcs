@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.17  2018/02/21 14:34:19  mmaloney
+*  Set autocommit true always.
+*
 *  Revision 1.16  2018/02/21 14:33:03  mmaloney
 *  Set autocommit true always.
 *
@@ -619,9 +622,10 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 		return HdbFlags.flag2HdbDerivation(flags);
 	}
 
-	/** @return label to use for 'revision' column in tables. */
+	@Override
 	public String getRevisionLabel() { return "Val"; }
 
+	@Override
 	public String flags2RevisionCodes(int flags)
 	{
 		char c = HdbFlags.flag2HdbValidation(flags);

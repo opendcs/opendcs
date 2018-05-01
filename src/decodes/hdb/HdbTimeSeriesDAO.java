@@ -56,7 +56,6 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	private static final long CACHE_RELOAD_INTERVAL = 3600000L;
 	private static long lastCacheRefresh = 0L;
 	private static final long CACHE_REFRESH_OVERLAP = 120000L;
-	private int roundSec = 0;
 	
 	private String tsidQuery = 
 		"SELECT a.ts_id, a.site_datatype_id, a.interval, a.table_selector, a.model_id, "
@@ -1094,10 +1093,12 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		doModify(q);
 		return hdbDb.lookupTsIdKey(hdbTsId);
 	}
-
+	
 	@Override
-	public void setRoundSec(int roundSec)
+	public void setAppModule(String module)
 	{
-		this.roundSec = roundSec;
+		// Do nothing. HDB doesn't use modules.
 	}
+
+
 }

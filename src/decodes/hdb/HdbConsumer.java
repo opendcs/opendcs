@@ -11,6 +11,9 @@
  *  For more information contact: info@ilexeng.com
  *
  *  $Log$
+ *  Revision 1.4  2017/08/22 19:51:03  mmaloney
+ *  Refactor
+ *
  *  Revision 1.3  2014/05/30 13:15:35  mmaloney
  *  dev
  *
@@ -92,6 +95,7 @@ import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
+import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
@@ -255,7 +259,7 @@ public class HdbConsumer extends DataConsumer
 					hdbTsId.getPart(HdbTsId.TABSEL_PART), // "R_" or "M_"
 					hdbTsId.getInterval(), 
 					true,                  // mustWrite flag (we want to write all values in the TS
-					Constants.undefinedIntKey);// sourceId not used in HDB
+					DbKey.NullKey);        // sourceId not used in HDB
 				cts.setTimeSeriesIdentifier(hdbTsId);
 	
 				try
