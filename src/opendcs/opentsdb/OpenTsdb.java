@@ -13,8 +13,10 @@ import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.XmitRecordDAO;
+import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTsId;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
@@ -31,6 +33,14 @@ import decodes.util.DecodesSettings;
 
 public class OpenTsdb extends TimeSeriesDb
 {
+	private String jdbcOracleDriver = null;
+	private String databaseLocation = null;
+	
+	public OpenTsdb()
+	{
+		super();
+	}
+	
 	@Override
 	public Date getFullDate(ResultSet rs, int column)
 	{
@@ -65,14 +75,20 @@ public class OpenTsdb extends TimeSeriesDb
 	public DbKey connect(String appName, Properties credentials)
 		throws BadConnectException
 	{
+		DecodesSettings settings = DecodesSettings.instance();
+		
+		String driverClass = this.jdbcOracleDriver != null ? this.jdbcOracleDriver :
+			DecodesSettings.instance().jdbcDriverClass;
+		String dbUri = this.databaseLocation != null ? this.databaseLocation :
+			DecodesSettings.instance().editDatabaseLocation;
+
+		
 		String username = credentials.getProperty("username");
 		String password = credentials.getProperty("password");
-		DecodesSettings settings = DecodesSettings.instance();
 
-		LoadingAppDAI loadingAppDAO = null;
 		try
 		{
-			Class.forName(settings.jdbcDriverClass);
+			Class.forName(driverClass);
 		
 			// setConnection will also get the TSDB Version Info and read tsdb_properties
 			setConnection(
@@ -103,11 +119,6 @@ public class OpenTsdb extends TimeSeriesDb
 			conn = null;
 			throw new BadConnectException(msg);
 		}
-		finally
-		{
-			if (loadingAppDAO != null)
-				loadingAppDAO.close();
-		}
 	}
 
 	@Override
@@ -121,7 +132,19 @@ public class OpenTsdb extends TimeSeriesDb
 	public TimeSeriesIdentifier expandSDI(DbCompParm parm) throws DbIoException,
 		NoSuchObjectException
 	{
-		throw new NoSuchObjectException("OpenTsdb.expandSDI not implemented.");
+		TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
+		try
+		{
+			TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(
+				parm.getSiteDataTypeId());
+			parm.setSite(tsid.getSite());
+			parm.setDataType(tsid.getDataType());
+			return tsid;
+		}
+		finally
+		{
+			timeSeriesDAO.close();
+		}
 	}
 
 	@Override
@@ -141,38 +164,10 @@ public class OpenTsdb extends TimeSeriesDb
 	}
 
 	@Override
-	public int findModelId(int modelRunId) throws DbIoException
-	{
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int findMaxModelRunId(int modelId) throws DbIoException
-	{
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public String flags2LimitCodes(int flags)
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String flags2RevisionCodes(int flags)
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public String[] getTsIdParts()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		// OpenTSDB uses CWMS TSID Structure
+		return CwmsTsId.tsIdParts;
 	}
 
 	@Override
@@ -215,7 +210,7 @@ public class OpenTsdb extends TimeSeriesDb
 	@Override
 	public TimeSeriesDAI makeTimeSeriesDAO()
 	{
-		return null;
+		return new OpenTimeSeriesDAO(this);
 	}
 
 	@Override
@@ -229,5 +224,33 @@ public class OpenTsdb extends TimeSeriesDb
 	{
 		return new ScheduleEntryDAO(this);
 	}
+	
+	@Override
+	public String flags2LimitCodes(int flags)
+	{
+		StringBuilder sb = new StringBuilder();
+		if ((flags & CwmsFlags.SCREENED) != 0)
+		{
+			sb.append('S');
+			if ((flags & CwmsFlags.VALIDITY_MISSING) != 0)
+				sb.append('M');
+			if ((flags & CwmsFlags.VALIDITY_REJECTED) != 0)
+				sb.append('R');
+			if ((flags & CwmsFlags.VALIDITY_QUESTIONABLE) != 0)
+				sb.append('Q');
+		}
+		return sb.toString();
+	}
+
+	public void setJdbcOracleDriver(String jdbcOracleDriver)
+	{
+		this.jdbcOracleDriver = jdbcOracleDriver;
+	}
+
+	public void setDatabaseLocation(String databaseLocation)
+	{
+		this.databaseLocation = databaseLocation;
+	}
+
 	
 }
