@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2016/10/17 17:49:38  mmaloney
+ * Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
+ *
  * Revision 1.3  2016/09/29 18:54:36  mmaloney
  * CWMS-8979 Allow Database Process Record to override decodes.properties and
  * user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -105,7 +108,7 @@ public class CwmsTsId
 	private boolean allowDstOffsetVariation = false;
 
 	/** In OpenTSDB, this determines what to do when an UTC Offset Error is detected. */
-	private OffsetErrorAction offsetErrorAction = null;
+	private OffsetErrorAction offsetErrorAction = OffsetErrorAction.IGNORE;
 	
 	/** The interval Object from the database */
 	private Interval intervalOb = null;
