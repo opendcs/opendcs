@@ -539,9 +539,8 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 
 		if (selectedConsumer != null)
 		{
-//TODO uncomment after implementing DataConsumer as property owner
-//			for(PropertySpec ps : selectedConsumer.getSupportedProps())
-//				propSpecs.add(ps);
+			for(PropertySpec ps : selectedConsumer.getSupportedProps())
+				propSpecs.add(ps);
 		}
 		
 		combinedProps = new PropertySpec[propSpecs.size()];
