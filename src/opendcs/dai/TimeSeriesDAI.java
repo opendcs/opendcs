@@ -215,17 +215,16 @@ public interface TimeSeriesDAI
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException;
 
 	/**
-	 * Called from HDB when filling time slice values. This will effect subsequent
-	 * calls to the fill methods so that data is retrieved that is within the
-	 * specified times + or - roundSec/2
-	 * @param roundSec
-	 */
-	public void setRoundSec(int roundSec);
-	
-	
-	/**
 	 * Closes any resources opened by the DAO
 	 */
 	public void close();
+	
+	/**
+	 * Some databases annotate which module writes data to the database.
+	 * For CP, this should be the computation name.
+	 * For DECODES, this should be routing spec name.
+	 * @param module a string module name saved as part of the tsdb data source.
+	 */
+	public void setAppModule(String module);
 
 }
