@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.4  2018/01/23 14:49:15  mmaloney
+*  DataConsumer now a PropertiesOwner.
+*
 *  Revision 1.3  2014/05/30 13:15:34  mmaloney
 *  dev
 *
@@ -213,7 +216,7 @@ public abstract class DataConsumer
 	 */
 	public String getArgLabel()
 	{
-		return "Argument";
+		return "Argument:";
 	}
 	
 	protected PropertySpec dcPropSpecs[] = 
