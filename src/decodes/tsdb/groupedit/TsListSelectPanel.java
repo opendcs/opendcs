@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.7  2017/01/24 15:37:32  mmaloney
+ * CWMS-10060 Remove redundant filling of TSID and Location caches.
+ *
  * Revision 1.6  2016/11/29 01:15:47  mmaloney
  * Refactor listTimeSeries to make refresh explicit.
  *
@@ -48,6 +51,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -55,7 +59,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.TimeSeriesDAI;
-
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.gui.TopFrame;
@@ -256,6 +259,33 @@ public class TsListSelectPanel extends JPanel
 				return;
 			}
 	}
+	
+	/**
+	 * Build and return an array of distinct TSID components.
+	 * @param part the column name, corresponding to the TSID component
+	 * @return the list of distinct parts.
+	 */
+	public Collection<String> getDistinctPart(String part)
+	{
+		TreeSet<String> ret = new TreeSet<String>();
+		
+		int column=-1;
+		for(int c = 0; c < model.columnNames.length; c++)
+			if (part.equalsIgnoreCase(model.columnNames[c]))
+			{
+				column = c;
+				break;
+			}
+		if (column >= 0)
+			for(TimeSeriesIdentifier tsid : model.tsidList)
+			{
+				String s = TsIdSelectColumnizer.getColumn(tsid, column);
+				if (s != null && s.length() > 0)
+					ret.add(s);
+			}
+		
+		return ret;
+	}
 }
 
 /**
@@ -270,12 +300,12 @@ class TsIdSelectTableModel extends AbstractTableModel implements
 {
 	private String module;
 	private TimeSeriesDb theTsDb;
-	private String[] columnNames;
+	String[] columnNames;
 	int[] columnWidths;
 	
 	private int sortColumn = -1;
 	
-	private ArrayList<TimeSeriesIdentifier> tsidList;
+	ArrayList<TimeSeriesIdentifier> tsidList;
 
 	/**
 	 * This constructor is used when calling TsListSelectPanel

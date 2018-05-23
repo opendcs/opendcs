@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.18  2018/05/01 17:40:47  mmaloney
+*  Implement model run and flags2string stuff here so it doesn't have to be implemented by a
+*  stub in cwms.
+*
 *  Revision 1.17  2018/02/21 14:34:19  mmaloney
 *  Set autocommit true always.
 *
@@ -488,7 +492,7 @@ public abstract class TimeSeriesDb
 	protected SimpleDateFormat readDateFmt = null;
 
 	/** Used to generate new surrogate keys. */
-	protected KeyGenerator keyGenerator;
+	public KeyGenerator keyGenerator;
 
 	/** The TSDB database version and description
 	 * comes from tsdb_database_version table */
@@ -1911,6 +1915,15 @@ public abstract class TimeSeriesDb
 	
 	public boolean isCwms() { return false; }
 	public boolean isHdb() { return false; }
+	public boolean isOpenTSDB() { return false; }
+
+	
+	public ArrayList<String> listParamTypes()
+		throws DbIoException
+	{
+		return new ArrayList<String>();
+	}
+
 
 	/**
 	 * @param dataTypeStandard
@@ -2427,5 +2440,11 @@ public abstract class TimeSeriesDb
 		throws DbCompException, RangeException
 	{
 		throw new DbCompException("Rating not supported in this database.");
+	}
+
+	public ArrayList<String> listVersions()
+		throws DbIoException
+	{
+		return new ArrayList<String>();
 	}
 }

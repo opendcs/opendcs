@@ -4,12 +4,16 @@
  * Copyright 2017 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.5  2018/03/19 19:24:33  mmaloney
+ * Bugfix: wasn't honoring tz in the routing spec.
+ *
  * Revision 1.4  2017/10/10 17:58:33  mmaloney
  * Added support for TsdbFormatter
  *
  */
 package decodes.consumer;
 
+import ilex.util.Location;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.Strftime;
@@ -19,6 +23,7 @@ import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -139,31 +144,55 @@ public class HydroJSONFormatter extends OutputFormatter
 				sn = site.getNameAt(0);
 			consumer.println(indent + "\"" + sn.getNameValue() + "\": {");
 			
-			String publicName = site.getPublicName();
-			if (publicName == null)
-				publicName = "";
-			consumer.println(indent+indent + "\"name\": \"" + publicName + "\",");
-			
-			consumer.println(indent+indent + "\"responsibility\": \"" + officeId + "\",");
+			consumer.println(indent+indent + "\"HUC\": \"\",");
+			consumer.println(indent+indent + "\"active_flag\": \"T\",");
 			
 			// coordinates block
 			String lat = site.latitude;
 			if (lat == null || lat.trim().length() == 0)
-				lat = "null";
+				lat = "";
+			else if (lat.contains(":"))
+			{
+				try
+				{
+					double d = Location.parseLatitude(lat);
+					lat = "" + d;
+				}
+				catch(NumberFormatException ex)
+				{
+					consumer.routingSpecThread.log(Logger.E_WARNING, "Site " + sn
+						+ " -- cannot parse latitude '" + lat + "' to double -- set latitude to empty.");
+					lat = "";
+				}
+			}
 			String lon = site.longitude;
 			if (lon == null || lon.trim().length() == 0)
-				lon = "null";
+				lon = "";
+			else if (lon.contains(":"))
+			{
+				try
+				{
+					double d = Location.parseLongitude(lon);
+					lon = "" + d;
+				}
+				catch(NumberFormatException ex)
+				{
+					consumer.routingSpecThread.log(Logger.E_WARNING, "Site " + sn
+						+ " -- cannot parse longitude '" + lon + "' to double -- set longitude to empty.");
+					lat = "";
+				}
+
+			}
+			
 			String datum = site.getProperty("horizontal_datum");
 			if (datum == null)
 				datum = "";
 			consumer.println(indent+indent + "\"coordinates\": {");
 			consumer.println(indent+indent+indent + "\"latitude\": " + lat + ",");
 			consumer.println(indent+indent+indent + "\"longitude\": " + lon + ",");
-			consumer.println(indent+indent+indent + "\"datum\": \"" + datum + "\",");
+			consumer.println(indent+indent+indent + "\"datum\": \"" + datum + "\"");
 			consumer.println(indent+indent + "},");
-			
-			consumer.println(indent+indent + "\"HUC\": \"\"");
-			
+
 			// elevation block
 			String elev = "" + site.getElevation();
 			if (elev == null || elev.trim().length() == 0)
@@ -172,28 +201,56 @@ public class HydroJSONFormatter extends OutputFormatter
 			if (datum == null)
 				datum = "";
 			consumer.println(indent+indent + "\"elevation\": {");
-			consumer.println(indent+indent+indent + "\"value\": " + elev + ",");
 			consumer.println(indent+indent+indent + "\"accuracy\": 0.0,");
 			consumer.println(indent+indent+indent + "\"datum\": \"" + datum + "\",");
 			consumer.println(indent+indent+indent + "\"method\": \"\",");
+			consumer.println(indent+indent+indent + "\"value\": " + elev);
 			consumer.println(indent+indent + "},");
-
-			consumer.println(indent+indent + "\"timezone\": \"" + tz.getID() + "\"");
-			consumer.println(indent+indent + "\"tz_offset\": " + (tz.getRawOffset()/3600000.));
-			consumer.println(indent+indent + "\"active_flag\": \"T\"");
-			
+		
 			String locType = site.getProperty("location_type");
 			if (locType == null)
 				locType = "";
 			consumer.println(indent+indent + "\"location_type\": \"" + locType + "\",");
+			String publicName = site.getPublicName();
+			if (publicName == null)
+				publicName = "";
+			consumer.println(indent+indent + "\"name\": \"" + publicName + "\",");
+			
+			consumer.println(indent+indent + "\"responsibility\": \"" + officeId + "\",");
+			
+			consumer.println(indent+indent + "\"time_format\": \"" + timeFormat + "\",");
+//			consumer.println(indent+indent + "\"tz_offset\": " + (tz.getRawOffset()/3600000.));
+			
 			
 			consumer.println(indent+indent + "\"timeseries\": {");
+			ArrayList<TimeSeries> ts2process = new ArrayList<TimeSeries>();
 			for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
 			{
 				TimeSeries ts = tsit.next();
 				if (ts.size() == 0)
 					continue;
-				
+				String tsid = null;
+				if (ts.getSensor() instanceof DecodesSensorCnvt)
+					tsid = ((DecodesSensorCnvt)ts.getSensor()).getDbTsId();
+				// Otherwise (this is from DECODES) construct using same rules as CwmsConsumer.
+				if (tsid == null)
+					tsid = cwmsConsumer.createTimeSeriesDesc(ts, site);
+				if (tsid == null)
+				{
+					consumer.routingSpecThread.log(Logger.E_WARNING, "Cannot make CWMS TSID for sensor["
+						+ ts.getSensorNumber() + "] '" + ts.getSensorName() + "' -- Make sure CWMS param is"
+						+ " defined.");
+					continue;
+				}
+
+				ts2process.add(ts);
+			}
+
+			
+			
+			for(int tsIdx = 0; tsIdx < ts2process.size(); tsIdx ++)
+			{
+				TimeSeries ts = ts2process.get(tsIdx);
 				ts.sort();
 				
 				// If this is from OutputTs, we will have read real CWMS tsids
@@ -271,7 +328,7 @@ public class HydroJSONFormatter extends OutputFormatter
 					+ (endTime==null?"null": ("\"" + formatTime(endTime) + "\"")));
 	
 				consumer.println(indent+indent+indent + "}"
-					+ (tsit.hasNext() ? "," : ""));
+					+ (tsIdx < ts2process.size()-1 ? "," : ""));
 			}
 
 			

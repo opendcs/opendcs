@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.32  2018/05/01 17:34:13  mmaloney
+*  Code cleanup
+*
 *  Revision 1.31  2018/02/21 14:34:19  mmaloney
 *  Set autocommit true always.
 *
@@ -1761,6 +1764,7 @@ public class CwmsTimeSeriesDb
 		return retStr;
 	}
 	
+	@Override
 	public ArrayList<String> listParamTypes()
 		throws DbIoException
 	{
@@ -2120,5 +2124,24 @@ public class CwmsTimeSeriesDb
 		super.closeConnection();
 	}
 
-	
+	@Override
+	public ArrayList<String> listVersions()
+		throws DbIoException
+	{
+		ArrayList<String> ret = new ArrayList<String>();
+		String q = "select distinct version_id from cwms_v_ts_id order by version_id;";
+
+		ResultSet rs = doQuery(q);
+		try
+		{
+			while (rs != null && rs.next())
+				ret.add(rs.getString(1));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("CwmsTimeSeriesDb.listVersions: " + ex);
+		}
+
+		return ret;
+	}
 }

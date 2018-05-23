@@ -44,6 +44,14 @@ public class TimedVariable extends Variable
 		timeStamp = new Date(0L);
 		lineNum = 0;
 	}
+	
+	/** Convenience constructor. Most often used this way. */
+	public TimedVariable(Date t, double v, int f)
+	{
+		super(v);
+		timeStamp = t;
+		setFlags(f);
+	}
 
 	/**
 	* Copy constructor.

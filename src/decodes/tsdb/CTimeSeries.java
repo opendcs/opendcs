@@ -11,6 +11,11 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2017/05/25 21:18:45  mmaloney
+*  In DbAlgorithmExecutive, apply roundSec when searching for values in database.
+*  In CTimeSeries.findWithin, the upperbound should be t+fudge/2-1.
+*  See comments in code dated 20170525.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -627,7 +632,7 @@ public class CTimeSeries
 	public void setTimeSeriesIdentifier(TimeSeriesIdentifier timeSeriesIdentifier)
 	{
 		this.timeSeriesIdentifier = timeSeriesIdentifier;
-		if (unitsAbbr == null)
+		if (unitsAbbr == null || unitsAbbr.trim().length() == 0 || unitsAbbr.trim().equalsIgnoreCase("unknown"))
 			unitsAbbr = this.timeSeriesIdentifier.getStorageUnits();
 	}
 

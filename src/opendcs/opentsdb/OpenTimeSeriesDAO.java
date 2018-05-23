@@ -4,6 +4,9 @@
 * Copyright 2017 Cove Software, LLC. All Rights Reserved.
 * 
 * $Log$
+* Revision 1.1  2018/05/01 17:49:45  mmaloney
+* First working OpenTSDB Consumer
+*
 *
 */
 package opendcs.opentsdb;
@@ -61,7 +64,7 @@ public class OpenTimeSeriesDAO
 	protected SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	protected Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-	protected NumberFormat suffixFmt = NumberFormat.getIntegerInstance();
+	NumberFormat suffixFmt = NumberFormat.getIntegerInstance();
 	private static final String ts_columns = "sample_time, ts_value, flags, source_id";
 	private long lastCacheReload = 0L;
 	private DbKey appId = DbKey.NullKey;
@@ -378,7 +381,7 @@ public class OpenTimeSeriesDAO
 		}
 		
 		UnitConverter unitConverter = null;
-		if (ctsid.getStorageType() == 'N'
+		if (ctsid.getStorageType() == OpenTsdb.TABLE_TYPE_NUMERIC
 		 && ts.getUnitsAbbr() != null
 		 && !ts.getUnitsAbbr().equalsIgnoreCase(ctsid.getStorageUnits()))
 			unitConverter = Database.getDb().unitConverterSet.get(
@@ -573,6 +576,7 @@ public class OpenTimeSeriesDAO
 		// Determine if samples already exist at these time stamps.
 		CTimeSeries alreadyInDb = 
 			new CTimeSeries(ts.getSDI(), ts.getInterval(), ts.getTableSelector());
+		alreadyInDb.setTimeSeriesIdentifier(ctsid);
 		fillTimeSeries(alreadyInDb, times);
 		alreadyInDb.sort();
 		
@@ -711,6 +715,28 @@ public class OpenTimeSeriesDAO
 		doModify(q);
 		doModify("delete from ts_property where ts_id = " + ctsid.getKey());
 		doModify("delete from ts_spec where ts_id = " + ctsid.getKey());
+		
+		q = "select num_ts_present, est_annual_values from storage_table_list "
+			+ "where table_num = " + ctsid.getStorageTable();
+		ResultSet rs = doQuery(q);
+		try
+		{
+			if (rs != null && rs.next())
+			{
+				int num = rs.getInt(1);
+				int estValues = rs.getInt(2);
+				num--;
+				estValues -= interval2estAnnualValues(ctsid.getIntervalOb());
+				q = "update storage_table_list set num_ts_present = " + num
+					+ ", est_annual_values = " + estValues
+					+ " where table_num = "+ ctsid.getStorageTable();
+				doModify(q);
+			}
+		}
+		catch(SQLException ex)
+		{
+			warning("Error in query '" + q + "': " + ex);
+		}
 	}
 
 	@Override
@@ -920,6 +946,13 @@ public class OpenTimeSeriesDAO
 			+ suffixFmt.format(tableNum);
 	}
 	
+	/**
+	 * Allocates a storage table for the passed TSID. Updates the storage table
+	 * stats and the ts_spec for this TSID.
+	 * @param tsid
+	 * @return
+	 * @throws DbIoException
+	 */
 	private int allocateTable(CwmsTsId tsid)
 		throws DbIoException
 	{
@@ -938,20 +971,18 @@ public class OpenTimeSeriesDAO
 				int estAnnualValues = rs.getInt(4);
 				numTsPresent++;
 				Interval intv = tsid.getIntervalOb();
-				estAnnualValues +=
-					intv.getCalConstant() == Calendar.YEAR ? 1 :
-					intv.getCalConstant() == Calendar.MONTH ? 12/intv.getCalMultiplier() :
-					intv.getCalConstant() == Calendar.WEEK_OF_YEAR ? 52/intv.getCalMultiplier() :
-					intv.getCalConstant() == Calendar.DAY_OF_MONTH ? 365/intv.getCalMultiplier() :
-					intv.getCalConstant() == Calendar.HOUR_OF_DAY ? (365*24)/intv.getCalMultiplier() :
-					intv.getCalConstant() == Calendar.MINUTE ? (365*24*60)/intv.getCalMultiplier() :
-					1;
+				estAnnualValues += interval2estAnnualValues(intv);
 				q = "update storage_table_list set num_ts_present = " + numTsPresent
 					+ ", est_annual_values = " + estAnnualValues
 					+ " where storage_type = '" + tsid.getStorageType() + "' "
 					+ " and table_num = " + tableNum;
 				doModify(q);
 				tsid.setStorageTable(tableNum);
+				
+				q = "update ts_spec set storage_table = " + tableNum
+					+ " where ts_id = " + tsid.getKey();
+				doModify(q);
+				
 				return tableNum;
 			}
 			else
@@ -961,6 +992,18 @@ public class OpenTimeSeriesDAO
 		{
 			throw new DbIoException(ex.getMessage());
 		}
+	}
+	
+	public static int interval2estAnnualValues(Interval intv)
+	{
+		return
+			intv.getCalConstant() == Calendar.YEAR ? 1 :
+			intv.getCalConstant() == Calendar.MONTH ? 12/intv.getCalMultiplier() :
+			intv.getCalConstant() == Calendar.WEEK_OF_YEAR ? 52/intv.getCalMultiplier() :
+			intv.getCalConstant() == Calendar.DAY_OF_MONTH ? 365/intv.getCalMultiplier() :
+			intv.getCalConstant() == Calendar.HOUR_OF_DAY ? (365*24)/intv.getCalMultiplier() :
+			intv.getCalConstant() == Calendar.MINUTE ? (365*24*60)/intv.getCalMultiplier() :
+			1;
 	}
 	
 	private TimedVariable rs2tv(ResultSet rs, CwmsTsId ctsid, UnitConverter unitConverter) 
@@ -1106,9 +1149,9 @@ public class OpenTimeSeriesDAO
 		}
 		
 		
-		DbKey key = this.getKey("TS_SPEC");
+		ctsid.setKey(getKey("TS_SPEC"));
 		String q = "insert into TS_SPEC(" + ts_spec_columns + ") values ("
-			+ key + ", "
+			+ ctsid.getKey() + ", "
 			+ siteId + ", "
 			+ dataTypeId + ", "
 			+ sqlString(ctsid.getStatisticsCode()) + ", "
@@ -1126,7 +1169,7 @@ public class OpenTimeSeriesDAO
 			+ sqlString(ctsid.getOffsetErrorAction().toString())
 			+ ")";
 		doModify(q);
-		return key;
+		return ctsid.getKey();
 	}
 	
 	@Override
@@ -1174,6 +1217,32 @@ public class OpenTimeSeriesDAO
 				throw new DbIoException("Exception in query '" + q + "': " + ex);
 			}
 		}
+		return ret;
+	}
+	
+	public ArrayList<StorageTableSpec> getTableSpecs(char storageType)
+		throws DbIoException
+	{
+		ArrayList<StorageTableSpec> ret = new ArrayList<StorageTableSpec>();
+		String q = "select table_num, num_ts_present, est_annual_values "
+			+ "from storage_table_list where storage_type = " + sqlString("" + storageType);
+		ResultSet rs = doQuery(q);
+		try
+		{
+			while(rs.next())
+			{
+				StorageTableSpec spec = new StorageTableSpec(storageType);
+				spec.setTableNum(rs.getInt(1));
+				spec.setNumTsPresent(rs.getInt(2));
+				spec.setEstAnnualValues(rs.getInt(3));
+				ret.add(spec);
+			}
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("Exception in query '" + q + "': " + ex);
+		}
+
 		return ret;
 	}
 }

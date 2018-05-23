@@ -36,6 +36,9 @@ public class OpenTsdb extends TimeSeriesDb
 	private String jdbcOracleDriver = null;
 	private String databaseLocation = null;
 	
+	public static final char TABLE_TYPE_NUMERIC = 'N';
+	public static final char TABLE_TYPE_STRING = 'S';
+
 	public OpenTsdb()
 	{
 		super();
@@ -252,5 +255,60 @@ public class OpenTsdb extends TimeSeriesDb
 		this.databaseLocation = databaseLocation;
 	}
 
+	@Override
+	public boolean isOpenTSDB() { return true; }
+	
+	@Override
+	public ArrayList<String> listParamTypes()
+		throws DbIoException
+	{
+		ArrayList<String> ret = new ArrayList<String>();
+		String q = "select distinct statistics_code FROM TS_SPEC";
+
+		ResultSet rs = doQuery(q);
+		try
+		{
+			while (rs != null && rs.next())
+				ret.add(rs.getString(1));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("OpenTsdb.listParamTypes: " + ex);
+		}
+
+		// MJM - these are the ones we know about for sure:
+		if (!ret.contains("Inst"))
+			ret.add("Inst");
+		if (!ret.contains("Ave"))
+			ret.add("Ave");
+		if (!ret.contains("Max"))
+			ret.add("Max");
+		if (!ret.contains("Min"))
+			ret.add("Min");
+		if (!ret.contains("Total"))
+			ret.add("Total");
+		return ret;
+	}
+
+	@Override
+	public ArrayList<String> listVersions()
+		throws DbIoException
+	{
+		ArrayList<String> ret = new ArrayList<String>();
+		String q = "select distinct ts_version FROM TS_SPEC order by ts_version";
+
+		ResultSet rs = doQuery(q);
+		try
+		{
+			while (rs != null && rs.next())
+				ret.add(rs.getString(1));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("OpenTsdb.listVersions: " + ex);
+		}
+
+		return ret;
+	}
 	
 }

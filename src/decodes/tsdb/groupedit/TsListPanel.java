@@ -5,6 +5,7 @@ import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 
 import java.awt.BorderLayout;
+import java.util.Collection;
 
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -81,7 +82,18 @@ public class TsListPanel
 	/** Called when the 'New' button is pressed. */
 	public void newPressed()
 	{
-		myFrame.showError("New not implemented.");
+		TsListNewDialog dlg = new TsListNewDialog(myFrame, this, theDb);
+		
+		// If a TSID is selected, use it to 'seed' the dialog.
+		TimeSeriesIdentifier tsids[] = tsListSelectPanel.getSelectedTSIDs();
+		if (tsids != null && tsids.length > 0)
+			dlg.fillValues(tsids[0]);
+		myFrame.launchDialog(dlg);
+		
+		if (dlg.okPressed)
+		{
+			tsListSelectPanel.addTsDd(dlg.getTsidCreated());
+		}
 	}
 
 	/** Called when the 'Delete' button is pressed. */
@@ -157,5 +169,10 @@ public class TsListPanel
 	public void refresh()
 	{
 		tsListSelectPanel.refreshTSIDList();
+	}
+	
+	public Collection<String> getDistinctPart(String part)
+	{
+		return tsListSelectPanel.getDistinctPart(part);
 	}
 }

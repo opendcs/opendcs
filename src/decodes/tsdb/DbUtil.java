@@ -579,7 +579,7 @@ public class DbUtil extends TsdbAppTemplate
 			for(TimeSeriesIdentifier tsid : tslist)
 				if (tokens.length == 1 
 				 || tsid.getUniqueString().toUpperCase().contains(tokens[1].toUpperCase()))
-					System.out.println(tsid.getUniqueString());
+					System.out.println(tsid.getUniqueString() + ", units=" + tsid.getStorageUnits());
 		}
 		catch (DbIoException ex)
 		{

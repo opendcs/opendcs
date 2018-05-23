@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2017/03/03 19:15:57  mmaloney
+ * toMsec() to handle HOUR_OF_DAY.
+ *
  * Revision 1.2  2017/02/09 17:26:42  mmaloney
  * Added toMsec method.
  *
@@ -225,6 +228,63 @@ public class IntervalIncrement
     	}
 
     	return count;
+    }
+    
+    /**
+     * Parse a multi-interval ISO 8601 period.
+     * @param s
+     * @return
+     */
+    public static IntervalIncrement[] parseIso8601(String s)
+    {
+		ArrayList<IntervalIncrement> aii = new ArrayList<IntervalIncrement>();
+		
+		boolean doingTime = false;
+		int count = 0;
+		for(int idx = 0; idx < s.length(); idx++)
+		{
+			char c = s.charAt(idx);
+			if (Character.isDigit(c))
+			{
+				int start = idx++;
+				while(idx < s.length() && Character.isDigit(s.charAt(idx)))
+					idx++;
+				count = Integer.parseInt(s.substring(start, idx));
+				idx--;
+			}
+			else switch(c)
+			{
+			case 'P': break; // Start of Period indicator -- skip
+			case 'Y':
+				if (count != 0)
+					aii.add(new IntervalIncrement(Calendar.YEAR, count));
+				break;
+			case 'M':
+				if (count != 0)
+					aii.add(new IntervalIncrement(doingTime ? Calendar.MINUTE : Calendar.MONTH, count));
+				break;
+			case 'W':
+				if (count != 0)
+					aii.add(new IntervalIncrement(Calendar.WEEK_OF_YEAR, count));
+				break;
+			case 'D':
+				if (count != 0)
+					aii.add(new IntervalIncrement(Calendar.DAY_OF_MONTH, count));
+				break;
+			case 'T':
+				doingTime = true;
+				break;
+			case 'H':
+				if (count != 0)
+					aii.add(new IntervalIncrement(Calendar.HOUR_OF_DAY, count));
+				break;
+			case 'S':
+				if (count != 0)
+					aii.add(new IntervalIncrement(Calendar.SECOND, count));
+				break;
+			}
+		}
+		return aii.toArray(new IntervalIncrement[aii.size()]);
     }
     
     public static void main(String []args)
