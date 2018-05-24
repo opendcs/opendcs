@@ -4,6 +4,9 @@
 * Copyright 2017 Cove Software, LLC. All Rights Reserved.
 * 
 * $Log$
+* Revision 1.2  2018/05/23 19:58:44  mmaloney
+* OpenTSDB Initial Release
+*
 * Revision 1.1  2018/05/01 17:49:45  mmaloney
 * First working OpenTSDB Consumer
 *
@@ -1178,6 +1181,11 @@ public class OpenTimeSeriesDAO
 		this.appModule = module;
 	}
 	
+	/**
+	 * Returns the TsDataSource for this application.
+	 * @return
+	 * @throws DbIoException
+	 */
 	public TsDataSource getTsDataSource()
 		throws DbIoException
 	
@@ -1217,6 +1225,39 @@ public class OpenTimeSeriesDAO
 				throw new DbIoException("Exception in query '" + q + "': " + ex);
 			}
 		}
+		return ret;
+	}
+	
+	/**
+	 * Return a list of all data sources defined in the database.
+	 * @return
+	 */
+	public ArrayList<TsDataSource> listDataSources()
+		throws DbIoException
+	{
+		ArrayList<TsDataSource> ret = new ArrayList<TsDataSource>();
+		
+		String q = "select a.SOURCE_ID, a.LOADING_APPLICATION_ID, a.MODULE, "
+			+ "b.LOADING_APPLICATION_NAME "
+			+ "from TSDB_DATA_SOURCE a, HDB_LOADING_APPLICATION b "
+			+ "where a.LOADING_APPLICATION_ID = b.LOADING_APPLICATION_ID";
+		
+		try
+		{
+			ResultSet rs = doQuery(q);
+			while(rs != null && rs.next())
+			{
+				TsDataSource tds = new TsDataSource(DbKey.createDbKey(rs, 1), 
+					DbKey.createDbKey(rs, 2), rs.getString(3));
+				tds.setAppName(rs.getString(4));
+				ret.add(tds);
+			}
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Error listing TSDB_DATA_SOURCE: " + ex);
+		}
+		
 		return ret;
 	}
 	

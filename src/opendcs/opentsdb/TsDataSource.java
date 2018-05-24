@@ -11,6 +11,7 @@ public class TsDataSource
 	private DbKey sourceId = DbKey.NullKey;
 	private DbKey appId = DbKey.NullKey;
 	private String appModule = null;
+	private String appName = null;
 	
 
 	public TsDataSource(DbKey sourceId, DbKey appId, String appModule)
@@ -54,5 +55,15 @@ public class TsDataSource
 	public void setAppModule(String appModule)
 	{
 		this.appModule = appModule;
+	}
+
+	public String getAppName()
+	{
+		return appName;
+	}
+
+	public void setAppName(String appName)
+	{
+		this.appName = appName;
 	}
 }
