@@ -79,6 +79,8 @@ public class MessageArchiveRetriever
 	private int ddsVersionNum = 5;
 	private String ddsVersion = "" + ddsVersionNum;
 	
+	private boolean goodOnly = false;
+	
 	/**
 	 * Constructor.
 	 */
@@ -114,7 +116,12 @@ public class MessageArchiveRetriever
 		if (ddsVersionNum < 10 
 		 && DcpMsgFlag.isIridium(mie.getFlagbits()))
 			return false;
-
+		
+		// Added in OpenDCS 6.5
+		if (goodOnly && DcpMsgFlag.isGOES(mie.getFlagbits()) && mie.getFailureCode() != 'G')
+			return false;
+//Logger.instance().info("passes: goodOnly=" + goodOnly + ", isGOES=" + DcpMsgFlag.isGOES(mie.getFlagbits()) 
+//+ ", failCode=" + mie.getFailureCode());
 		return testCriteria(mie);
 	}
 	
@@ -409,5 +416,11 @@ public class MessageArchiveRetriever
 		{
 			Logger.instance().warning("Invalid DDS Version '" + version + "'");
 		}
+	}
+
+	public void setGoodOnly(boolean goodOnly)
+	{
+//Logger.instance().info("MessageArchiveRetriever.setGoodOnly(" + goodOnly + ")");
+		this.goodOnly = goodOnly;
 	}	
 }

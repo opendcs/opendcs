@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2016/02/29 22:22:02  mmaloney
+*  Encapsulate 'name'.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -167,6 +170,7 @@ if (user == null) System.err.println("JLddsThread: makeDcpMsgSrc, user is null!"
 		MessageArchiveRetriever ret = 
 			new MessageArchiveRetriever(msgArchive, attachedProcess);
 		ret.setForceAscending(user.getDisableBackLinkSearch());
+		ret.setGoodOnly(user.isGoodOnly());
 		return ret;
 	}
 

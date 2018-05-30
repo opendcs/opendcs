@@ -65,6 +65,8 @@ public class EditUserDialog
 	private JTextField dcpLimitField = null;
 	private JCheckBox forceAscendingCheck = null;
 	private JCheckBox isLocalCheck = new JCheckBox();
+	private JCheckBox goodOnlyCheck = null;
+
 	
 	private JTextField fnameField = new JTextField();
 	private JTextField lnameField = new JTextField();
@@ -88,8 +90,8 @@ public class EditUserDialog
 		propertiesBorder = 
 			new TitledBorder(BorderFactory.createEtchedBorder(Color.white,
 				new Color(30, 30, 30)), genericLabels.getString("properties"));
-		forceAscendingCheck = new JCheckBox(
-				labels.getString("EditUserDialog.forceAscending"));
+		forceAscendingCheck = new JCheckBox(labels.getString("EditUserDialog.forceAscending"));
+		goodOnlyCheck = new JCheckBox("Good Only");
 		try
 		{
 			//setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -372,6 +374,7 @@ public class EditUserDialog
 			ddsUser.desc = null;
 
 		ddsUser.forceAscending = forceAscendingCheck.isSelected();
+		ddsUser.goodOnly = goodOnlyCheck.isSelected();
 		
 		ddsUser.isLocal = isLocalCheck.isSelected();
 		
@@ -411,6 +414,8 @@ public class EditUserDialog
 		ddsPermCheck.setSelected(ddsUser.hasPerm("dds"));
 		adminCheck.setSelected(ddsUser.hasPerm("admin"));
 		forceAscendingCheck.setSelected(ddsUser.forceAscending);
+//System.out.println("EditUserDialog.set goodOnly=" + ddsUser.goodOnly);
+		goodOnlyCheck.setSelected(ddsUser.goodOnly);
 		isLocalCheck.setSelected(ddsUser.isLocal);
 		isLocalCheck.setEnabled(modUserName);
 		suspendedCheck.setSelected(ddsUser.isSuspended());
@@ -481,7 +486,7 @@ public class EditUserDialog
 		if (restrictionsPanel == null) 
 		{
 			GridLayout gridLayout = new GridLayout();
-			gridLayout.setRows(3);
+			gridLayout.setRows(4);
 			gridLayout.setColumns(1);
 			restrictionsPanel = new JPanel();
 			restrictionsPanel.setLayout(gridLayout);
@@ -489,7 +494,9 @@ public class EditUserDialog
 			restrictionsPanel.add(getIpPanel(), null);
 			restrictionsPanel.add(getDcpLimitPanel(), null);
 			forceAscendingCheck.setSelected(false);
+			goodOnlyCheck.setSelected(false);
 			restrictionsPanel.add(forceAscendingCheck, null);
+			restrictionsPanel.add(goodOnlyCheck, null);
 		}
 		return restrictionsPanel;
 	}

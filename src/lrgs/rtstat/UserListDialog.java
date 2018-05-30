@@ -222,7 +222,9 @@ public class UserListDialog
 		}
 		DdsUser ddsUserOrig = (DdsUser)tableModel.getRowObject(r);
 		DdsUser ddsUserCopy = new DdsUser(ddsUserOrig);
+//System.out.println("UserListDialog.editButtonPressed orig.goodOnly=" + ddsUserOrig.goodOnly + ", copy.goodOnly=" + ddsUserCopy.goodOnly);
 		editUserDialog.set(host, ddsUserCopy, false);
+
 		boolean done = false;
 		int tries = 0;
 		while(!done && tries++ < 5)
