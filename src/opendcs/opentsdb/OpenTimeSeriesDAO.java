@@ -4,6 +4,9 @@
 * Copyright 2017 Cove Software, LLC. All Rights Reserved.
 * 
 * $Log$
+* Revision 1.3  2018/05/24 14:35:41  mmaloney
+* Updated for 6.5 RC01
+*
 * Revision 1.2  2018/05/23 19:58:44  mmaloney
 * OpenTSDB Initial Release
 *
@@ -1110,20 +1113,20 @@ public class OpenTimeSeriesDAO
 		{
 			siteId = siteDAO.lookupSiteID(tsid.getSiteName());
 			if (siteId.isNull())
-				throw new NoSuchObjectException("No such site for tsid '" + tsid + "'");
+				throw new NoSuchObjectException("No such site for tsid '" + tsid.getUniqueString() + "'");
 			tsid.setSite(siteDAO.getSiteById(siteId));
 		}
 		DataType dataType = ctsid.getDataType();
 		DbKey dataTypeId = dataType.getId();
 		if (dataTypeId.isNull())
-			throw new NoSuchObjectException("No such datatype for tsid '" + tsid + "'");
+			throw new NoSuchObjectException("No such datatype for tsid '" + tsid.getUniqueString() + "'");
 		Interval interval = ctsid.getIntervalOb();
 		if (interval == null)
-			throw new NoSuchObjectException("Invalid interval in tsid '" + tsid + "'");
+			throw new NoSuchObjectException("Invalid interval in tsid '" + tsid.getUniqueString() + "'");
 		DbKey intervalId = interval.getKey();
 		Interval duration = IntervalList.instance().getByName(ctsid.getDuration());
 		if (duration == null)
-			throw new NoSuchObjectException("Invalid duration in tsid '" + tsid + "'");
+			throw new NoSuchObjectException("Invalid duration in tsid '" + tsid.getUniqueString() + "'");
 		DbKey durationId = duration.getKey();
 		String storageUnits = ctsid.getStorageUnits();
 		if (storageUnits == null)

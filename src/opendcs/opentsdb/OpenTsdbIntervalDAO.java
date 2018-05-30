@@ -47,6 +47,11 @@ public class OpenTsdbIntervalDAO
 					rs.getString(2), calconst, rs.getInt(4));
 				IntervalList.instance().add(intv);
 			}
+			
+			// "0" needs to be a built-in interval because it's used often for duration.
+			if (IntervalList.instance().getByName("0") == null)
+				IntervalList.instance().add(
+					new Interval(DbKey.NullKey, "0", Calendar.MINUTE, 0));
 		}
 		catch (Exception ex)
 		{
