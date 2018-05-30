@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2017/06/01 18:19:01  mmaloney
+ * Fixed cwms logic bug in isPresent.
+ *
  * Revision 1.7  2017/06/01 14:49:16  mmaloney
  * Guard against null ptr bug in parmRef.
  *
@@ -398,6 +401,8 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		throws DbCompException
 	{
 //AW:TIMESLICE
+		setTSBT();
+		
 		// The setTimeSliceInput method below was called by AW_AlgorithmBase
 		// to put all the slice values into the python interpreter.
 		// Now execute the script.
@@ -505,6 +510,13 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		debug3("Executing:\n" + expr);
 		this.pythonIntepreter.exec(expr);
 		
+	}
+	
+	private void setTSBT()
+	{
+		String expr = "tsbt = " + ((double)this._timeSliceBaseTime.getTime() / 1000.0);
+		debug3("Executing:\n" + expr);
+		this.pythonIntepreter.exec(expr);
 	}
 	
 	public void setOutput(String rolename, double value)
