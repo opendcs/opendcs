@@ -99,8 +99,6 @@ public class AlgorithmsEditPanel
 	private String addParmErr1;
 	private String deleteParamErr1;
 	private String deleteParamPrompt1;
-	private String editParamErr1;
-	private String editParamErr2;
 	
 	private JButton pythonButton = new JButton("Python");
 	private ExecClassSelectDialog execSelectDialog = null;
@@ -730,7 +728,7 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 		int r = algoParmTable.getSelectedRow();
 		if (r == -1)
 		{
-			showError(editParamErr1);
+			showError("Select row, then press Edit.");
 			return;
 		}
 		DbAlgoParm dap = (DbAlgoParm)algoParmTableModel.getRowObject(r);
@@ -742,7 +740,7 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 		{
 			if (algoParmTableModel.getByName(dapcopy.getRoleName(), r) != null)
 			{
-				showError(editParamErr2);
+				showError("Parameter '" + dapcopy.getRoleName() + "' not found.");
 				return;
 			}
 			dap.setRoleName(dapcopy.getRoleName());
