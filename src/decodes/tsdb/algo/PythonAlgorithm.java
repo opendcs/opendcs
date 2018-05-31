@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2018/05/30 20:23:38  mmaloney
+ * Add "tsbt" time slice base time to name space for time slice scripts.
+ *
  * Revision 1.8  2017/06/01 18:19:01  mmaloney
  * Fixed cwms logic bug in isPresent.
  *
@@ -265,6 +268,8 @@ public class PythonAlgorithm
 		for(String roleName : this.getInputNames())
 		{
 			ParmRef parmRef = this.getParmRef(roleName);
+			if (parmRef == null)
+				continue;
 			
 			String missingPropval = comp.getProperty(roleName + "_MISSING");
 				if (missingPropval == null)
@@ -331,7 +336,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				sb.append(role + " = AlgoParm('" + tsid.getUniqueString() + "')" + linesep);
 				for(String part : tsid.getParts())
 					sb.append(role + "." + part.toLowerCase() + " = '" + tsid.getPart(part) + "'" + linesep);
-				if (tsdb.isCwms())
+				if (tsdb.isCwms() || tsdb.isOpenTSDB())
 				{
 					// Add baselocation, sublocation, baseparam, subparam, baseversion, subversion
 					for(String partname : new String[]{ "location", "param", "version" })
@@ -349,10 +354,12 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			}
 			else
 			{
+				sb.append(role + " = AlgoParm('undefined')" + linesep);
 				debug1("No time series assigned to role " + parm.getRoleName());
 				debug1("parmRef for '" + parm.getRoleName() + "' " + 
 					(parmRef == null || parmRef.timeSeries == null ?
 						"HAS NO TIME SERIES." : "HAS A TIME SERIES"));
+				
 //				if (parmRef.timeSeries!= null)
 //					debug1("... TSID for time series is " + parmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString());
 			}
