@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.1  2018/05/01 17:49:45  mmaloney
+*  First working OpenTSDB Consumer
+*
 */
 package opendcs.opentsdb;
 
@@ -360,7 +363,12 @@ public class OpenTsdbConsumer extends DataConsumer
 				Logger.instance().info(module + " No time series for '" + tsidStr
 					+ "' -- will attempt to create.");
 				tsid = new CwmsTsId();
-				try { tsid.setUniqueString(tsidStr); }
+				try 
+				{
+					tsid.setUniqueString(tsidStr);
+					tsid.setStorageUnits(ts.getUnits());
+					tsid.setDescription(tsid.getSiteName() + " - " + tsid.getPart("Param") + " (created by DECODES)");
+				}
 				catch(BadTimeSeriesException ex2)
 				{
 					Logger.instance().warning(module + " Cannot create time series -- bad path '"
