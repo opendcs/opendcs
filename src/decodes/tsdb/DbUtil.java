@@ -25,6 +25,7 @@ import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.cwms.CwmsTsId;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.Platform;
@@ -579,7 +580,16 @@ public class DbUtil extends TsdbAppTemplate
 			for(TimeSeriesIdentifier tsid : tslist)
 				if (tokens.length == 1 
 				 || tsid.getUniqueString().toUpperCase().contains(tokens[1].toUpperCase()))
-					System.out.println(tsid.getUniqueString() + ", units=" + tsid.getStorageUnits());
+				{
+					String m = tsid.getUniqueString() + ", units=" + tsid.getStorageUnits();
+					if (theDb.isOpenTSDB())
+					{
+						CwmsTsId ctsid = (CwmsTsId)tsid;
+						m = m + ", table=" + ctsid.getStorageTable() + ", active=" + ctsid.isActive()
+							+ ", desc='" + ctsid.getDescription() + "'";
+					}
+					System.out.println(m);
+				}
 		}
 		catch (DbIoException ex)
 		{
