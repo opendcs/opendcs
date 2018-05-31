@@ -2,6 +2,9 @@
  * $I$
  * 
  * $Log$
+ * Revision 1.1  2018/05/23 19:59:02  mmaloney
+ * OpenTSDB Initial Release
+ *
  */
 package decodes.tsdb.groupedit;
 
@@ -69,11 +72,7 @@ import decodes.cwms.CwmsTsId;
 @SuppressWarnings("serial")
 public class TsListNewDialog extends GuiDialog
 {
-//	private JPanel outerPanel = new JPanel();
-//	private JTextField compNameField = new JTextField();
-//	private JTextField roleNameField = new JTextField();
 	private JButton okButton = new JButton();
-//	private JButton cancelButton = new JButton();
 	private JTextField parmTypeField = new JTextField();
 	private JTextField siteField = new JTextField();
 	private JButton siteSelectButton = new JButton(
@@ -306,7 +305,6 @@ public class TsListNewDialog extends GuiDialog
 				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
-			
 			JButton versionSelectButton = new JButton("Select");
 			versionSelectButton.addActionListener(
 				new ActionListener()
@@ -321,8 +319,31 @@ public class TsListNewDialog extends GuiDialog
 				new GridBagConstraints(2, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 5, 4, 15), 0, 0));
-			
 			Y++;
+			
+			if (theDb.isOpenTSDB())
+			{
+				fieldEntryPanel.add(new JLabel("Storage Units:"),
+					new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+						GridBagConstraints.EAST, GridBagConstraints.NONE,
+						new Insets(4, 15, 4, 2), 0, 0));
+				fieldEntryPanel.add(unitsField, 
+					new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+						GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+						new Insets(4, 0, 4, 10), 0, 0));
+				fieldEntryPanel.add(unitsButton,
+					new GridBagConstraints(2, Y, 1, 1, 0.0, 0.0, 
+						GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+						new Insets(4, 5, 4, 15), 0, 0));
+				unitsButton.addActionListener(
+					new java.awt.event.ActionListener()
+					{
+						public void actionPerformed(ActionEvent e)
+						{
+							unitsButtonPressed();
+						}
+					});
+			}
 		}
 		else // HDB Table Selector
 		{
@@ -510,6 +531,17 @@ public class TsListNewDialog extends GuiDialog
 		tsid.setSite(site);
 		tsid.setDataType(dt);
 		tsid.setInterval(interval);
+		if (theDb.isOpenTSDB())
+		{
+			String units = unitsField.getText().trim();
+			if (units.length() == 0)
+			{
+				showError("Please select storage units for the new time series.");
+				return;
+			}
+			tsid.setStorageUnits(units);
+		}
+		
 		
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
@@ -576,5 +608,15 @@ public class TsListNewDialog extends GuiDialog
 	{
 		return tsidCreated;
 	}
+	
+	private void unitsButtonPressed()
+	{
+		EUSelectDialog dlg = new EUSelectDialog(this);
+		launchDialog(dlg);
+		EngineeringUnit eu = dlg.getSelection();
+		if (eu != null)
+			unitsField.setText(eu.abbr);
+	}
+
 
 }
