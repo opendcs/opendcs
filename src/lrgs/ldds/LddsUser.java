@@ -46,6 +46,9 @@ public class LddsUser
 	/** True if this user has disabled backward linked-list search */
 	private boolean disableBackLinkSearch = false;
 	
+	/** True if this user should only be sent good quality messages */
+	private boolean goodOnly = false;
+	
 	/** True if this is a local user in .lrgs.passwd.local */
 	private boolean local = false;
 
@@ -229,5 +232,16 @@ public class LddsUser
 				try { dos.close(); }
 				catch (Exception ex) {}
 		}
+	}
+
+	public boolean isGoodOnly()
+	{
+		return goodOnly;
+	}
+
+	public void setGoodOnly(boolean goodOnly)
+	{
+//Logger.instance().info("User '" + name + "', setting goodOnly=" + goodOnly);
+		this.goodOnly = goodOnly;
 	}
 }

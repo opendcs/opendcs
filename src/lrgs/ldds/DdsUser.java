@@ -45,6 +45,8 @@ public class DdsUser
 	private String email = null;
 	private String  tel = null;
 	private boolean suspended = false;
+	/** If true, then deliver only good quality messages to this user. */
+	public boolean goodOnly = false;
 
 	/** Constructor */
 	public DdsUser()
@@ -88,6 +90,7 @@ public class DdsUser
 		this.email = rhs.email;
 		this.tel = rhs.tel;
 		this.suspended = rhs.suspended;
+		this.goodOnly = rhs.goodOnly;
 	}
 	
 	public boolean isAdmin()
@@ -173,6 +176,8 @@ public class DdsUser
 			props.setProperty("tel", tel);
 		if (suspended)
 			props.setProperty("suspended", "true");
+		if (goodOnly)
+			props.setProperty("goodOnly", "true");
 		
 		return PropertiesUtil.props2string(props);
 	}
@@ -187,7 +192,6 @@ public class DdsUser
 	{
 		hasPassword = false;
 		perms = null;
-
 		StringTokenizer st = new StringTokenizer(userSpec);
 		if (!st.hasMoreTokens())
 			throw new BadConfigException("Invalid user spec '" + userSpec
@@ -243,6 +247,9 @@ public class DdsUser
 		email = PropertiesUtil.getIgnoreCase(props, "email");
 		tel = PropertiesUtil.getIgnoreCase(props, "tel");
 		suspended = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "suspended"));
+		goodOnly = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "goodOnly"));	
+//System.out.println("DdsUser.fromString: " + userSpec + ", goodOnly=" + goodOnly);
+
 //System.out.println("fromString, after parse, username=" + userName + ", suspended=" + suspended);
 	}
 

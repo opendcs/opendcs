@@ -140,6 +140,9 @@ public class CmdHello extends LddsCommand
 				x = pfe.getProperty("forceAscending");
 			if (x != null)
 				user.setDisableBackLinkSearch(TextUtil.str2boolean(x));
+			x = pfe.getProperty("goodOnly");
+			if (x != null)
+				user.setGoodOnly(TextUtil.str2boolean(x));
 		}
 		
 		// Callback to thread to attach to LRGS as this user.

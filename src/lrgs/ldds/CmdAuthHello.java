@@ -309,9 +309,21 @@ public class CmdAuthHello extends LddsCommand
 			// Can't happen if we got this far!
 		}
 		
+		String x = pfe.getProperty("disableBackLinkSearch");
+		if (x == null)
+			x = pfe.getProperty("forceAscending");
+		if (x != null)
+			user.setDisableBackLinkSearch(TextUtil.str2boolean(x));
+		x = pfe.getProperty("goodOnly");
+//Logger.instance().info("User '" + ldds.getClientName() + "' goodOnly=" + x);
+		if (x != null)
+			user.setGoodOnly(TextUtil.str2boolean(x));
+
 		// Callback to thread to attach to LRGS as this user.
 		ldds.attachLrgs(user);
 
+		getDcpLimit(pfe, ldds);
+		
 		// OpenDCS 6.2 NOAA enhancements for suspending an account.
 		if (user.isSuspended())
 		{
@@ -319,13 +331,6 @@ public class CmdAuthHello extends LddsCommand
 			throw new LddsRequestException("Account suspended.", LrgsErrorCode.DDDSAUTHFAILED, true);
 		}
 
-		String x = pfe.getProperty("disableBackLinkSearch");
-		if (x == null)
-			x = pfe.getProperty("forceAscending");
-		if (x != null)
-			user.setDisableBackLinkSearch(TextUtil.str2boolean(x));
-
-		getDcpLimit(pfe, ldds);
 
 		// Echo AuthHELLO with username and proto version as an acknowledgement.
 		LddsMessage msg = new LddsMessage(LddsMessage.IdAuthHello, 
