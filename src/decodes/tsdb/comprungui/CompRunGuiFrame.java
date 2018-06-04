@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2017/08/22 19:57:35  mmaloney
+ * Refactor
+ *
  * 
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  */
@@ -534,6 +537,10 @@ public class CompRunGuiFrame extends TopFrame
 		for (int i = 0; i < tsIn.size(); i++)
 		{
 			TimedVariable tv = tsIn.sampleAt(i);
+			
+			// Don't plot values flagged for deletion.
+			if (tv == null || VarFlags.mustDelete(tv))
+				continue;
 			try
 			{ // get flag and verify if value rejected, if rejected
 				// do not plot it

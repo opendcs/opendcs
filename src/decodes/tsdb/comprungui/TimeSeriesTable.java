@@ -8,6 +8,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2017/08/22 19:57:35  mmaloney
+*  Refactor
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -49,6 +52,7 @@ import javax.swing.table.TableModel;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 
 @SuppressWarnings("serial")
@@ -190,6 +194,9 @@ class TimeSeriesTableModel extends AbstractTableModel implements TableModel
 				TimedVariable tv = cts.sampleAt(i);
 				if (tv == null)
 					break;
+				// Don't display values that are flagged for deletion.
+				if (VarFlags.mustDelete(tv))
+					continue;
 				Date d = tv.getTime();
 				if (!allTimes.contains(d))
 					allTimes.add(d);
@@ -203,6 +210,9 @@ class TimeSeriesTableModel extends AbstractTableModel implements TableModel
 				TimedVariable tv = cts.sampleAt(i);
 				if (tv == null)
 					break;
+				// Don't display values that are flagged for deletion.
+				if (VarFlags.mustDelete(tv))
+					continue;
 				Date d = tv.getTime();
 				if (!allTimes.contains(d))
 					allTimes.add(d);
@@ -257,7 +267,7 @@ class TimeSeriesTableModel extends AbstractTableModel implements TableModel
 			inputs.get(tsIndex) : 
 			outputs.get(tsIndex - inputs.size());
 		TimedVariable tv = cts.findWithin(d.getTime()/1000L, 1);
-		if (tv == null)
+		if (tv == null || VarFlags.mustDelete(tv))
 			return "";
 
 		switch ((column-1)%3)
