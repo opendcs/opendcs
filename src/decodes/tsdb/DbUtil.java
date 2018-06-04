@@ -24,6 +24,9 @@ import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.opentsdb.OpenTimeSeriesDAO;
+import opendcs.opentsdb.OpenTsdb;
+import opendcs.opentsdb.StorageTableSpec;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 import decodes.db.Database;
@@ -198,10 +201,72 @@ public class DbUtil extends TsdbAppTemplate
 			}
 		};
 
+	private CmdLine tsdbStatsCmd = 
+		new CmdLine("tsdbStats", " -- Display statistics on OpenTSDB Storage Tables.")
+		{
+			public void execute(String[] tokens)
+			{
+				tsdbStats(tokens);
+			}
+		};
+
 
 	public DbUtil()
 	{
 		super("util.log");
+	}
+
+	protected void tsdbStats(String[] tokens)
+	{
+		if (!theDb.isOpenTSDB())
+		{
+			System.out.println("This command is only available on OpenTSDB.");
+			return;
+		}
+		
+		OpenTimeSeriesDAO tsdao = (OpenTimeSeriesDAO)theDb.makeTimeSeriesDAO();
+		try
+		{
+			ArrayList<StorageTableSpec> specs = tsdao.getTableSpecs(OpenTsdb.TABLE_TYPE_NUMERIC);
+			ArrayList<TimeSeriesIdentifier> tsids = tsdao.listTimeSeries();
+			
+			System.out.println("" + specs.size() + " storage tables found:");
+			for(StorageTableSpec spec : specs)
+			{
+				String tableName = "TS_NUM_" + tsdao.suffixFmt.format(spec.getTableNum());
+				String q = "select count(*) from " + tableName;
+				ResultSet rs = theDb.doQuery(q);
+				int totalValues = rs.next() ? rs.getInt(1) : 0;
+
+				System.out.println("" + spec.getTableNum() + ": numTimeSeries=" 
+					+ spec.getNumTsPresent() + ", estAnnualValues=" + spec.getEstAnnualValues()
+					+ ", currentTotalValues=" + totalValues);
+				for(TimeSeriesIdentifier tsid : tsids)
+				{
+					CwmsTsId ctsid = (CwmsTsId)tsid;
+					if (ctsid.getStorageTable() == spec.getTableNum())
+					{
+						q = "select count(*) from " + tableName + " where TS_ID = " + ctsid.getKey();
+						rs = theDb.doQuery(q);
+						System.out.println("    key=" + tsid.getKey() + ", "
+							+ tsid.getUniqueString() + ", numValues="
+							+ (rs.next() ? rs.getInt(1) : 0)
+							+ ", TSID last modified on " + ctsid.getLastModified());
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally
+		{
+			tsdao.close();
+		}
+		
+		
 	}
 
 	protected void hdbRatingCmd(String[] tokens)
@@ -434,6 +499,7 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(alterCmd);
 		cmdLineProc.addCmd(updateCmd);
 		cmdLineProc.addCmd(hdbRatingCmd);
+		cmdLineProc.addCmd(tsdbStatsCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		
