@@ -14,7 +14,7 @@ public class OpenTsdbSettings
 {
 	private static OpenTsdbSettings _instance = null;
 	
-	/** Allow the UTC Offset of time series to vary by an our over DST change. */
+	/** Allow the UTC Offset of time series to vary by an hour over DST change. */
 	public boolean allowDstOffsetVariation = true;
 	
 	public OffsetErrorAction offsetErrorActionEnum = OffsetErrorAction.ROUND;

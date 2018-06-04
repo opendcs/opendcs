@@ -1,5 +1,7 @@
 package opendcs.opentsdb;
 
+import ilex.util.Logger;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Calendar;
@@ -8,7 +10,6 @@ import decodes.db.IntervalList;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
-
 import opendcs.dai.IntervalDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
@@ -49,9 +50,11 @@ public class OpenTsdbIntervalDAO
 			}
 			
 			// "0" needs to be a built-in interval because it's used often for duration.
-			if (IntervalList.instance().getByName("0") == null)
-				IntervalList.instance().add(
-					new Interval(DbKey.NullKey, "0", Calendar.MINUTE, 0));
+			Interval zeroInt = IntervalList.instance().getByName("0");
+			if (zeroInt == null)
+				Logger.instance().warning("After loading intervals, there is no '0' interval!");
+			else
+				Logger.instance().info("After loading intervals, '0' interval has key=" + zeroInt.getKey());
 		}
 		catch (Exception ex)
 		{

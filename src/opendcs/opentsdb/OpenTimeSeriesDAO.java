@@ -4,6 +4,9 @@
 * Copyright 2017 Cove Software, LLC. All Rights Reserved.
 * 
 * $Log$
+* Revision 1.4  2018/05/30 18:50:36  mmaloney
+* Updated for 6.5 RC01
+*
 * Revision 1.3  2018/05/24 14:35:41  mmaloney
 * Updated for 6.5 RC01
 *
@@ -17,6 +20,7 @@
 */
 package opendcs.opentsdb;
 
+import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -70,7 +74,7 @@ public class OpenTimeSeriesDAO
 	protected SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	protected Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-	NumberFormat suffixFmt = NumberFormat.getIntegerInstance();
+	public NumberFormat suffixFmt = NumberFormat.getIntegerInstance();
 	private static final String ts_columns = "sample_time, ts_value, flags, source_id";
 	private long lastCacheReload = 0L;
 	private DbKey appId = DbKey.NullKey;
@@ -1003,6 +1007,7 @@ public class OpenTimeSeriesDAO
 	public static int interval2estAnnualValues(Interval intv)
 	{
 		return
+			intv.getCalMultiplier() == 0 ? (365*24) :
 			intv.getCalConstant() == Calendar.YEAR ? 1 :
 			intv.getCalConstant() == Calendar.MONTH ? 12/intv.getCalMultiplier() :
 			intv.getCalConstant() == Calendar.WEEK_OF_YEAR ? 52/intv.getCalMultiplier() :
@@ -1120,10 +1125,11 @@ public class OpenTimeSeriesDAO
 		DbKey dataTypeId = dataType.getId();
 		if (dataTypeId.isNull())
 			throw new NoSuchObjectException("No such datatype for tsid '" + tsid.getUniqueString() + "'");
-		Interval interval = ctsid.getIntervalOb();
+		Interval interval = IntervalList.instance().getByName(ctsid.getInterval());
 		if (interval == null)
 			throw new NoSuchObjectException("Invalid interval in tsid '" + tsid.getUniqueString() + "'");
 		DbKey intervalId = interval.getKey();
+Logger.instance().info("OpenTSDBDAO.createTimeSeries interval = '" + interval.getName() + "', key=" + intervalId);
 		Interval duration = IntervalList.instance().getByName(ctsid.getDuration());
 		if (duration == null)
 			throw new NoSuchObjectException("Invalid duration in tsid '" + tsid.getUniqueString() + "'");
@@ -1269,7 +1275,8 @@ public class OpenTimeSeriesDAO
 	{
 		ArrayList<StorageTableSpec> ret = new ArrayList<StorageTableSpec>();
 		String q = "select table_num, num_ts_present, est_annual_values "
-			+ "from storage_table_list where storage_type = " + sqlString("" + storageType);
+			+ "from storage_table_list where storage_type = " + sqlString("" + storageType)
+			+ " order by table_num";
 		ResultSet rs = doQuery(q);
 		try
 		{
