@@ -409,7 +409,23 @@ public class PresentationGroup extends IdDatabaseObject
 		for (DataPresentation dp : dataPresentations)
 			if (dp.getDataType().equals(dt))
 				return dp;
+		
+		// MJM OpenDCS 6.5 For CWMS, try to match Base Param only.
+		int idx = -1;
+		if (dt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS)
+		 && (idx = dt.getCode().indexOf('-')) > 0)
+		{
+			DataType paseParam = DataType.getDataType(Constants.datatype_CWMS, dt.getCode().substring(0, idx));
+			for (DataPresentation dp : dataPresentations)
+				if (dp.getDataType().equals(paseParam))
+					return dp;
+		}
 
+		// Recursively search parent groups.
+		if (parent != null)
+			return parent.findDataPresentation(dt);
+
+		// No luck, use overall default.
 		if (defaultPresentation == null)
 			initDefaultPresentation();
 		return defaultPresentation;
@@ -428,6 +444,18 @@ public class PresentationGroup extends IdDatabaseObject
 					return dp;
 			}
 		}
+		
+		// MJM OpenDCS 6.5 For CWMS, try to match Base Param only.
+		int idx = -1;
+		DataType dt = sensor.getDataType(Constants.datatype_CWMS);
+		if (dt != null && (idx = dt.getCode().indexOf('-')) > 0)
+		{
+			DataType paseParam = DataType.getDataType(Constants.datatype_CWMS, dt.getCode().substring(0, idx));
+			for (DataPresentation dp : dataPresentations)
+				if (dp.getDataType().equals(paseParam))
+					return dp;
+		}
+
 		if (parent != null)
 			return parent.findDataPresentation(sensor);
 
