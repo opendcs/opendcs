@@ -368,11 +368,12 @@ public class DynamicAggregatesAlg
 		  do_setoutput = false; 
 		}
 //
+		debug3("  MVRI: " + mvr_count + "  MVD: " + mvd_count + " do_setoutput:" + do_setoutput);
+		debug3("  ICP: " + is_current_period + "TotalCount: " + total_count);
+
 		// set the output if all is successful and set the flags appropriately
 		if (do_setoutput)
 		{
-			debug3("  MVRI: " + mvr_count + "  MVD: " + mvd_count + " dso:" + do_setoutput);
-			debug3("  ICP: " + is_current_period + "TotalCount: " + total_count);
 			if (total_count < mvd_count)
 				flags = flags + "n";
 			if (is_current_period && total_count < mvr_count)
@@ -411,12 +412,13 @@ public class DynamicAggregatesAlg
 					+ negativeReplacement);
 				value_out = negativeReplacement;
 			}
-
+info("Setting output for agg period starting " + debugSdf.format(this._aggregatePeriodBegin));
 			setOutput(output, value_out);
 		}
 		// delete any existing value if this calculation failed
 		if (!do_setoutput)
 		{
+info("Deleting output for agg period starting " + debugSdf.format(this._aggregatePeriodBegin));
 			deleteOutput(output);
 		}
 
