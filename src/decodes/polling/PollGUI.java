@@ -42,6 +42,7 @@ import opendcs.dai.PlatformStatusDAI;
 import decodes.consumer.DirectoryConsumer;
 import decodes.db.Constants;
 import decodes.db.Database;
+import decodes.db.DatabaseIO;
 import decodes.db.Platform;
 import decodes.db.PlatformStatus;
 import decodes.db.RoutingSpec;
@@ -50,6 +51,7 @@ import decodes.dbeditor.PlatformSelectDialog;
 import decodes.gui.TopFrame;
 import decodes.routing.RoutingSpecThread;
 import decodes.routing.ScheduleEntryExecutive;
+import decodes.tsdb.BadConnectException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
@@ -73,6 +75,7 @@ public class PollGUI extends TsdbAppTemplate
 	private RoutingSpecThread routingSpecThread = null;
 	private File lastOutFile = null;
 	private JFileChooser saveSessionFileChooser = new JFileChooser(EnvExpander.expand("$DCSTOOL_HOME"));
+	private DatabaseIO decodesDbIo = null;
 
 
 	
@@ -84,6 +87,7 @@ public class PollGUI extends TsdbAppTemplate
 	@Override
 	protected void runApp() throws Exception
 	{
+		decodesDbIo = Database.getDb().getDbIo();
 		makeFrame();
 		noExitAfterRunApp = true;
 		int minPri = Logger.instance().getMinLogPriority();
@@ -430,7 +434,7 @@ public class PollGUI extends TsdbAppTemplate
 			Logger.instance().getMinLogPriority() == Logger.E_DEBUG3 ? "3" : "0");
 		
 		// Retrieve up station status and set rs.sinceTime to last poll time.
-		PlatformStatusDAI platformStatusDAO = theDb.makePlatformStatusDAO();
+		PlatformStatusDAI platformStatusDAO = decodesDbIo.makePlatformStatusDAO();
 		try
 		{
 			PlatformStatus platStat = platformStatusDAO.readPlatformStatus(selectedPlatform.getId());
@@ -507,6 +511,20 @@ Logger.instance().debug3("set PollingThread.staticSessionLogger" +
 		startPollButton.setEnabled(true);
 		selectStationButton.setEnabled(true);
 		pollingInProgress = false;
+	}
+	
+	/** Override createDatabase to not do anything. PollGUI does not use TSDB. */
+	@Override
+	public synchronized void createDatabase()
+		throws ClassNotFoundException,
+		InstantiationException, IllegalAccessException
+	{
+	}
+	
+	@Override
+	public void tryConnect()
+		throws BadConnectException
+	{
 	}
 }
 
