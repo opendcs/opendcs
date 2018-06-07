@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2017/10/03 12:33:42  mmaloney
+*  Handle constraint exceptions
+*
 *  Revision 1.2  2015/06/04 21:43:22  mmaloney
 *  Some refactoring to allow ProcessEditPanel under new Proc Monitor GUI
 *
@@ -29,12 +32,15 @@
 */
 package decodes.tsdb.compedit;
 
+import ilex.util.Logger;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ArrayList;
@@ -216,11 +222,14 @@ public class ProcessesListPanel extends ListPanel
 			CompAppInfo app = (CompAppInfo)procTableModel.getRowObject(r);
 			loadingAppDao.deleteComputationApp(app);
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
 			CAPEdit.instance().getFrame().showError(
-				CAPEdit.instance().compeditDescriptions
-				.getString("ProcessListPanel.DeleteError"));
+				"Error attempting to delete process: " + ex);
+			Logger.instance().warning("Error attempting to delete process: " + ex);
+			PrintStream ps = Logger.instance().getLogOutput();
+			if (ps != null)
+				ex.printStackTrace(ps);
 		}
 		finally
 		{
