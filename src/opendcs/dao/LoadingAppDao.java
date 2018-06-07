@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2017/12/14 16:50:45  mmaloney
+ * In close() guard against multiple statement close calls.
+ *
  * Revision 1.7  2017/10/03 12:34:13  mmaloney
  * Handle constraint exceptions
  *
@@ -416,8 +419,13 @@ public class LoadingAppDao
 			q = "delete from REF_LOADING_APPLICATION_PROP "
 				+ "where LOADING_APPLICATION_ID = " + app.getKey();
 			doModify(q);
-			q = "delete from DACQ_EVENT where LOADING_APPLICATION_ID = " + app.getKey();
-			doModify(q);
+			
+			// LOADING_APPLICATION_ID column doesn't exist in old versions of DACQ_EVENT.
+			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+			{
+				q = "delete from DACQ_EVENT where LOADING_APPLICATION_ID = " + app.getKey();
+				doModify(q);
+			}
 			q = "delete from cp_comp_proc_lock where LOADING_APPLICATION_ID = " + app.getKey();
 			doModify(q);
 			if (DecodesSettings.instance().editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB
