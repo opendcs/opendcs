@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2018/05/31 18:44:19  mmaloney
+ * Allow optional parameters.
+ *
  * Revision 1.9  2018/05/30 20:23:38  mmaloney
  * Add "tsbt" time slice base time to name space for time slice scripts.
  *
@@ -498,7 +501,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if (nv == null || nv.getStringValue().trim().length() == 0 
 			|| nv.getStringValue().equalsIgnoreCase("NA")
 			|| (nv.getFlags() & (IFlags.IS_ERROR|IFlags.IS_ERROR|CwmsFlags.VALIDITY_MISSING)) != 0)
-			expr = varName + ".value = 'NV'" + linesep
+			expr = varName + ".value = 0.0" + linesep
 				+  varName + ".qual = 0x40000000" + linesep;
 		else
 		{
@@ -510,7 +513,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			}
 			catch(NoConversionException ex)
 			{
-				expr = varName + ".value = 'NV'" + linesep
+				expr = varName + ".value = 0.0" + linesep
 					+  varName + ".qual = 0x40000000" + linesep;
 			}
 		}
