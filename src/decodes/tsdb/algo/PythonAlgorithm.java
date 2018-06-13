@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2018/06/13 19:00:02  mmaloney
+ * Can't use 'NV' for missing values because can't mix strings and doubles. The expressions
+ * won't compile.
+ *
  * Revision 1.10  2018/05/31 18:44:19  mmaloney
  * Allow optional parameters.
  *
@@ -566,7 +570,10 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
+		{
+			debug3("isPresent(" + rolename + ") - no variable in timeslice - returning false");
 			return false;
+		}
 		return isPresent(nv);
 	}
 	
@@ -574,9 +581,13 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	{
 		int f = v.getFlags();
 		if ((f & (IFlags.IS_MISSING | VarFlags.TO_DELETE)) != 0)
+		{
+			debug3("isPresent - Flags indicate missing or deleted -- returning false.");
 			return false;
+		}
 		if (tsdb.isCwms())
 			return (f & CwmsFlags.VALIDITY_MISSING) == 0;
+		debug3("isPresent - returning TRUE");
 		return true;
 	}
 
