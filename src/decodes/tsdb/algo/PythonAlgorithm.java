@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2018/06/13 19:17:41  mmaloney
+ * dev
+ *
  * Revision 1.11  2018/06/13 19:00:02  mmaloney
  * Can't use 'NV' for missing values because can't mix strings and doubles. The expressions
  * won't compile.
@@ -397,6 +400,10 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				}
 			}
 		}
+		
+		// HDB 492, add the computation_id to the python environment
+		if (this.comp != null)
+			sb.append("computation_id=" + this.comp.getId() + linesep);
 		
 		return sb.toString();
 	}
