@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.10  2016/11/17 14:57:24  mmaloney
+*  Cleanup and AESRD NoHeader TM Resolution Fix.
+*
 *  Revision 1.9  2016/10/14 19:02:30  mmaloney
 *  dev
 *
@@ -640,7 +643,7 @@ public abstract class StreamDataSource extends DataSourceExec
 		{
 			ret.setPlatform(p);
 			// Use the base class resolver to find exact matching TM.
-			if ((mediumType == null || mediumType.equalsIgnoreCase("noheader")) 
+			if ((mediumType == null || mediumType.equalsIgnoreCase("noheader") || mediumType.equalsIgnoreCase("idstart")) 
 				&& pmp.getMediumType() != null)
 				mediumType = pmp.getMediumType();
 			TransportMedium tm = resolveTransportMedium(p, ret.getMediumId(), 
