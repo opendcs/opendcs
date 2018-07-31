@@ -6,6 +6,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2014/10/07 12:51:20  mmaloney
+ * Created.
+ *
 */
 package lrgs.iridiumsbd;
 
@@ -170,7 +173,7 @@ public class IridiumSbdInterface
 						}
 					};
 				listenThread.start();
-				recovery(IridiumEvent.CannotListen, "Cannot create listening port " + listenPort);
+				recovery(IridiumEvent.CannotListen, "Listening port created." + listenPort);
 			}
 			catch(Exception ex)
 			{
