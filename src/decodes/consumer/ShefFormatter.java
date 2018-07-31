@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.5  2018/02/02 14:52:14  mmaloney
+*  Attempt .E for non-GOES as long as data is regular interval.
+*
 *  Revision 1.4  2015/11/12 15:19:23  mmaloney
 *  Added PropertySpec entries with tooltip for all props.
 *  Added new siteNameType property.
@@ -256,8 +259,10 @@ public class ShefFormatter extends OutputFormatter
 		siteNameType = DecodesSettings.instance().siteNameTypePreference;
 		s = PropertiesUtil.getIgnoreCase(rsProps, "sitenametype");
 		if (s != null)
+		{
 			siteNameType = s;
-
+			Logger.instance().info("ShefFormatter.init - will use siteNameType=" + siteNameType);
+		}
 	}
 
 	/** Does nothing. */
@@ -300,7 +305,14 @@ public class ShefFormatter extends OutputFormatter
 			Site s = platform.getSite();
 			SiteName sn = s.getName(siteNameType);
 			if (sn == null)
+			{
 				sn = s.getPreferredName();
+				Logger.instance().info("Platform '" + platform.makeFileName() + "' does not have site name "
+					+ "with type '" + siteNameType + "'. Will use " + sn.toString());
+				Logger.instance().debug3("Available site names are:");
+				for(SiteName tsn : s.getNameArray())
+					Logger.instance().debug3("    " + tsn.toString());
+			}
 			platformSiteName = sn.getNameValue();
 		}
 		catch(UnknownPlatformException e)
