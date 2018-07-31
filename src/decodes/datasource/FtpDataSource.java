@@ -2,15 +2,16 @@ package decodes.datasource;
 
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPReply;
+import org.apache.commons.net.ftp.FTPFile;
+import org.apache.commons.net.ftp.FTPFileFilter;
 import org.apache.commons.net.ftp.FTPSClient;
 import org.apache.commons.net.ftp.FTPConnectionClosedException;
 
 import ilex.util.EnvExpander;
+import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-import ilex.var.Variable;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -18,9 +19,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -63,6 +63,10 @@ public class FtpDataSource
 			"Use with OneMessageFile=true if the downloaded filename is to be treated as a medium ID"
 			+ " in order to link this data with a platform."),
 		new PropertySpec("ftps", PropertySpec.BOOLEAN, "(default=false) Use Secure FTP."),
+		new PropertySpec("newerThan", PropertySpec.STRING, 
+			"Either a Date/Time in the format [[[CC]YY] DDD] HH:MM[:SS], "
+			+ "or a string of the form 'now - N incr',"
+			+ " where N is an integer and incr is minutes, hours, or days."),
 
 	};
 	
@@ -85,6 +89,7 @@ public class FtpDataSource
 	private Vector<NetworkList> myNetworkLists;
 	private File currentFile = null;
 	private boolean ftps = false;
+	private String newerThan = null;
 	
 	public boolean setProperty(String name, String value)
 	{
@@ -118,6 +123,8 @@ public class FtpDataSource
 			filenames = value;
 		else if (name.equalsIgnoreCase("ftps"))
 			ftps = TextUtil.str2boolean(value);
+		else if (name.equalsIgnoreCase("newerThan"))
+			newerThan = value.trim();
 		return true;
 	}		
 	
@@ -202,7 +209,7 @@ public class FtpDataSource
 		// split by whitespace* comma
 		String fns[] = filenames.split(" ");
 		Logger.instance().debug3(module + " there are " + fns.length + " filenames in the list:");
-		for(String fn : fns) Logger.instance().debug3(module + "   " + fn);
+		for(String fn : fns) Logger.instance().debug3(module + "   '" + fn + "'");
 		
 		Logger.instance().debug1(module + " Connecting to FTP Server " + host + ":" + port
 			+ " with username=" + username + ", using "
@@ -244,10 +251,66 @@ public class FtpDataSource
 			
 		String local = localDir;
 		if (local == null || local.length() == 0)
-			local = EnvExpander.expand("$DCSTOOL_USERDIR/tmp");
+			local = "$DCSTOOL_USERDIR/tmp";
+		local = EnvExpander.expand(local);
 		File localDirectory = new File(local);
 		if (!localDirectory.isDirectory())
 			localDirectory.mkdirs();
+		
+		if (fns == null || fns.length == 0 
+		 || (fns.length == 1 && fns[0].trim().length() == 0)
+		 || (fns.length == 1 && fns[0].trim().equals("*")))
+		{
+			// get a directory listing and download all files or apply "newerThan" filter.
+			FTPFile[] ftpFiles;
+			try
+			{
+				if (newerThan == null || newerThan.length() == 0)
+					ftpFiles = ftpClient.mlistDir(remoteDir);
+				else
+				{
+					final Date since = IDateFormat.parse(newerThan);
+					ftpFiles = ftpClient.mlistDir(remoteDir,
+						new FTPFileFilter()
+						{
+							@Override
+							public boolean accept(FTPFile f)
+							{
+								if (!f.getTimestamp().getTime().before(since))
+									return true;
+								Logger.instance().debug3(module + " Skipping '" + f.getName() + "' with time="
+									+ f.getTimestamp().getTime());
+								return false;
+							}
+						});
+				}
+				ArrayList<String> fa = new ArrayList<String>();
+				for(int idx = 0; idx < ftpFiles.length; idx++)
+				{
+					String n = ftpFiles[idx].getName();
+					if (n == null || n.equals(".") || n.equals(".."))
+						continue;
+					fa.add(n);
+					Logger.instance().debug3(module + " Will process file '" + n + "'");
+				}
+				fns = new String[fa.size()];
+				fns = fa.toArray(fns);
+			}
+			catch(IllegalArgumentException ex)
+			{
+				String msg = module + " Cannot parse newerThan time '"
+					+ newerThan + "': " + ex;
+				Logger.instance().failure(msg);
+				throw new DataSourceException(msg);
+			}
+			catch(IOException ex)
+			{
+				String msg = module + " Cannot list directory on server '"
+					+ remoteDir + "': " + ex;
+				Logger.instance().failure(msg);
+				throw new DataSourceException(msg);
+			}
+		}
 			
 		for(String filename : fns)
 		{
