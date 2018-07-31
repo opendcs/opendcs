@@ -103,6 +103,7 @@ public class DecodesDatabaseVersion
 	 * - Added foreign key (source_id) from cp_comp_tasklist
 	 * - Added data_entry_time to tsdb data tables (both string and num)
 	 * - Added separate index on data_entry_time to all data tables.
+	 * - Added enabled column for Alarm tables.
 	 */
 	public static final int DECODES_DB_16 = 16;
 
