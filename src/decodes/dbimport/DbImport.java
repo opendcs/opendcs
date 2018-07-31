@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.19  2017/12/04 19:00:00  mmaloney
+*  Code cleanup
+*
 *  Revision 1.18  2017/10/03 12:31:45  mmaloney
 *  Handle constraint exceptions
 *
@@ -222,7 +225,19 @@ public class DbImport
 		dbImport.readXmlFiles();
 		dbImport.dumpDTS("after readXmlFiles");
 Logger.instance().debug3("After readXmlFiles, there are "
-+ Database.getDb().engineeringUnitList.size() + " EUs");
++ dbImport.stageDb.platformList.size() + " platforms to import:");
+for(Iterator<Platform> pit = dbImport.stageDb.platformList.iterator(); pit.hasNext(); )
+{
+	Platform p = pit.next();
+	Logger.instance().debug3("Platform '" + p.makeFileName() + "'");
+	for (PlatformSensor ps : p.platformSensors)
+	{
+		Logger.instance().debug3("   Sensor " + ps.sensorNumber + ": actualSite="
+			+ (ps.site == null ? "null" : ps.site.getPreferredName()));
+	}
+}
+
+
 		dbImport.mergeStageToTheDb();
 		
 		dbImport.dumpDTS("after mergeStageToTheDb");
@@ -779,8 +794,14 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 		for(Iterator<Platform> it = stageDb.platformList.iterator(); it.hasNext(); )
 		{
 			Platform newPlat = it.next();
-Logger.instance().debug3("merging platform " + newPlat.getDisplayName());
-			Platform oldSiteDesigMatch = null;
+Logger.instance().debug3("merging platform '" + newPlat.getDisplayName() + "'");
+for (PlatformSensor ps : newPlat.platformSensors)
+{
+	Logger.instance().debug3("   Sensor " + ps.sensorNumber + ": actualSite="
+		+ (ps.site == null ? "null" : ps.site.getPreferredName()));
+}
+
+
 			
 			if (newPlat.getSite() == null)
 			{
@@ -789,21 +810,27 @@ Logger.instance().debug3("merging platform " + newPlat.getDisplayName());
 				continue;
 			}
 
+			Platform oldPlatformMatch = null;
+
 			// See if a matching old site exists
 			Site oldSite = null;
 			for(SiteName newPlatSiteName : newPlat.getSite().getNameArray())
 				if ((oldSite = theDb.siteList.getSite(newPlatSiteName)) != null)
 					break;
-
 			if (oldSite == null)
 				for(SiteName sn : newPlat.getSite().getNameArray())
 					if ((oldSite = theDb.siteList.getSite(sn)) != null)
 						break;
 Logger.instance().debug3("    site does " + (oldSite==null ? "not " : "") + "exist in old database.");
+
 			// Then find an old platform with matching (site,designator) 
 			if (oldSite != null)
-				oldSiteDesigMatch = theDb.platformList.findPlatform(oldSite, newPlat.getPlatformDesignator());
-Logger.instance().debug3("    Old platform does " + (oldSiteDesigMatch==null?"not ":"") + " exist with matching site/desig.");
+			{
+				oldPlatformMatch = theDb.platformList.findPlatform(oldSite, newPlat.getPlatformDesignator());
+Logger.instance().debug3("    Old platform does " + (oldPlatformMatch==null?"not":"") 
++ " exist with matching site/desig siteId=" + oldSite.getId() + ", sitename=" + oldSite.getPreferredName()
++ ", desig='" + newPlat.getPlatformDesignator() + "'");
+			}
 			
 			// Try to find existing platform with a matching transport id.
 			Platform oldTmMatch = null;
@@ -813,83 +840,94 @@ Logger.instance().debug3("    Old platform does " + (oldSiteDesigMatch==null?"no
 				TransportMedium tm = tmit.next();
 				Date d = newPlat.expiration;
 Logger.instance().debug3("    Looking for match to TM " + tm.toString() + " with expiration " + d);
-				oldTmMatch = theDb.platformList.findPlatform(
-					tm.getMediumType(), tm.getMediumId(), d);
+				oldTmMatch = theDb.platformList.findPlatform(tm.getMediumType(), tm.getMediumId(), d);
 Logger.instance().debug3("        - Match was "
 + (oldTmMatch==null ? "not found." : ("found with id="+oldTmMatch.getId())));
+				oldPlatformMatch = oldTmMatch;
 			}
 			
-			if (oldSiteDesigMatch == null)
+			if (oldPlatformMatch == null)
 			{
 				// use cases 4 & 5: This is a NEW platform.
-				info("Adding new "
-					+ newPlat.getObjectType() + " '" + newPlat.makeFileName() + "'");
+				info("Adding New Platform '" + newPlat.makeFileName() + "'");
 				theDb.platformList.add(newPlat);
 				
-				if (oldTmMatch != null)
-				{
-					// use case 5 No match for (site,desig) but there is a match for TM.
-					// Need to cause the old TMs to be removed from existing platform.
-					for(Iterator<TransportMedium> tmit = newPlat.getTransportMedia(); tmit.hasNext(); )
-					{
-						TransportMedium newTM = tmit.next();
-						TransportMedium oldTM = oldTmMatch.getTransportMedium(newTM.getMediumType());
-						if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
-							tmit.remove();
-					}
-					if (oldTmMatch.transportMedia.size() > 0)
-						newObjects.add(oldTmMatch);
-					else if (!DbKey.isNull(oldTmMatch.getId()))
-						toDelete.add(oldTmMatch);
-				}
+//				if (oldTmMatch != null)
+//				{
+//					info("Match for tm '" + oldTmMatch.toString() + "' -- will remove from old platform with id="
+//						+ oldTmMatch.getId());
+//					// use case 5 No match for (site,desig) but there is a match for TM.
+//					// Need to cause the old TMs to be removed from existing platform.
+//					for(Iterator<TransportMedium> tmit = newPlat.getTransportMedia(); tmit.hasNext(); )
+//					{
+//						TransportMedium newTM = tmit.next();
+//						TransportMedium oldTM = oldTmMatch.getTransportMedium(newTM.getMediumType());
+//						if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
+//							tmit.remove();
+//					}
+//					if (oldTmMatch.transportMedia.size() > 0)
+//						newObjects.add(oldTmMatch);
+//					else if (!DbKey.isNull(oldTmMatch.getId()))
+//						toDelete.add(oldTmMatch);
+//				}
 				newObjects.add(newPlat);
+Logger.instance().debug3("Added new platform '" + newPlat.makeFileName() + "' to newObjects List");
+for (PlatformSensor ps : newPlat.platformSensors)
+{
+	Logger.instance().debug3("   Sensor " + ps.sensorNumber + ": actualSite="
+		+ (ps.site == null ? "null" : ps.site.getPreferredName()));
+}
+
 				writePlatformList = true;
 			}
-			else if (!oldSiteDesigMatch.equals(newPlat))
+			else if (!oldPlatformMatch.equals(newPlat))
 			{
 				// use cases 1, 2, and 3: There was a match for (site,desig)
 				if (!keepOld)
 				{
 					info("Overwriting Platform '" + newPlat.makeFileName()+"'");
 
-					DbKey oldId = oldSiteDesigMatch.getId();
-					theDb.platformList.removePlatform(oldSiteDesigMatch);
+					DbKey oldId = oldPlatformMatch.getId();
+					theDb.platformList.removePlatform(oldPlatformMatch);
 					newPlat.clearId();
 					try { newPlat.setId(oldId); } catch(Exception e) {}
 					info("set platform ID to match existing ID=" + oldId);
 					theDb.platformList.add(newPlat);
 					
-					if (oldTmMatch != null && oldTmMatch != oldSiteDesigMatch)
-					{
-						// Use Case 3
-						warning("New platform '" + newPlat.makeFileName() + "' has TM that matches a different "
-							+"existing platform '" + oldTmMatch.makeFileName() + "' with id=" + oldTmMatch.getId()
-							+ " -- will remove TM from platform " + oldTmMatch.getId());
-						// use case 3 The Transport Media matched a different platform than (site,desig)
-						// Need to cause the old offending TMs to be removed, before the new platform is written.
-						for(Iterator<TransportMedium> tmit = newPlat.getTransportMedia(); tmit.hasNext(); )
-						{
-							TransportMedium newTM = tmit.next();
-							TransportMedium oldTM = oldTmMatch.getTransportMedium(newTM.getMediumType());
-							if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
-								tmit.remove();
-						}
-						
-						if (oldTmMatch.transportMedia.size() > 0)
-							newObjects.add(oldTmMatch);
-						else if (!DbKey.isNull(oldTmMatch.getId()))
-							toDelete.add(oldTmMatch);
-
-					}
+//					if (oldTmMatch != null && oldTmMatch != oldPlatformMatch)
+//					{
+//						// Use Case 3
+//						warning("New platform '" + newPlat.makeFileName() + "' has TM that matches a different "
+//							+"existing platform '" + oldTmMatch.makeFileName() + "' with id=" + oldTmMatch.getId()
+//							+ " -- will remove TM from platform " + oldTmMatch.getId());
+//						// use case 3 The Transport Media matched a different platform than (site,desig)
+//						// Need to cause the old offending TMs to be removed, before the new platform is written.
+//						for(Iterator<TransportMedium> tmit = newPlat.getTransportMedia(); tmit.hasNext(); )
+//						{
+//							TransportMedium newTM = tmit.next();
+//							TransportMedium oldTM = oldTmMatch.getTransportMedium(newTM.getMediumType());
+//							if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
+//								tmit.remove();
+//						}
+//						
+//						if (oldTmMatch.transportMedia.size() > 0)
+//							newObjects.add(oldTmMatch);
+//						else if (!DbKey.isNull(oldTmMatch.getId()))
+//							toDelete.add(oldTmMatch);
+//
+//					}
 					newObjects.add(newPlat);
 Logger.instance().debug1("Added platform '" + newPlat.makeFileName() + "' with id=" + newPlat.getId() 
 + " and siteid=" +(newPlat.getSite()==null?"<nullsite!>":newPlat.getSite().getId())
 	+ " to newObjects list.");
+for(PlatformSensor ps : newPlat.platformSensors)
+	Logger.instance().debug3("   sensor " + ps.sensorNumber + " actualSite="
+		+ (ps.site == null ? "null" : ps.site.getPreferredName()));
 					writePlatformList = true;
 				}
 				else
 					info("Keeping old version of "
-					+oldSiteDesigMatch.getObjectType() + " '" + newPlat.makeFileName() + "'");
+					+oldPlatformMatch.getObjectType() + " '" + newPlat.makeFileName() + "'");
 			}
 		}
 
@@ -1289,7 +1327,10 @@ Logger.instance().debug1("Added platform '" + newPlat.makeFileName() + "' with i
 		for(IdDatabaseObject td : toDelete)
 		{
 			if (td instanceof Platform)
+			{
+				info("Deleting platform " + ((Platform)td).makeFileName());
 				theDb.getDbIo().deletePlatform((Platform)td);	
+			}
 		}
 		
 		// All the new Objects must now have the real database.
@@ -1448,7 +1489,11 @@ if (ob instanceof Platform)
 			{
 				Platform p = (Platform)ob;
 				if (p.transportMedia.size() == 0 || p.getConfig() == null)
+				{
+					info("NOT writing platform " + p.makeFileName()
+						+ (p.transportMedia.size() == 0 ? " it has no TMs" : " it has no config."));
 					continue;
+				}
 				
 Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' with id=" + p.getId());
 				if (newOwner != null)
