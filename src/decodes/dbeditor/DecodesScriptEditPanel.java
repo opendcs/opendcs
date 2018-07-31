@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2016/01/14 19:51:42  mmaloney
+ * Bugfix: Wasn't honoring DecodesSettings.editTZ.
+ *
  * Revision 1.5  2015/04/15 19:59:46  mmaloney
  * Fixed synchronization bugs when the same data sets are being processed by multiple
  * routing specs at the same time. Example is multiple real-time routing specs with same
@@ -205,7 +208,9 @@ public class DecodesScriptEditPanel
 		TableColumn tc = unitConversionTable.getColumnModel().getColumn(3);
 		tc.setCellEditor(new EnumCellEditor(Constants.eucvt_enumName));
 
-		editTZ = java.util.TimeZone.getTimeZone(DecodesSettings.instance().editTimeZone);
+		String tz = DecodesSettings.instance().editTimeZone;
+		if (tz == null) tz = "UTC";
+		editTZ = java.util.TimeZone.getTimeZone(tz);
 		if (editTZ == null)
 			editTZ = java.util.TimeZone.getTimeZone("UTC");
 		decodedDataTableModel.setTZ(editTZ);
@@ -970,7 +975,9 @@ public class DecodesScriptEditPanel
 			}
 			catch (HeaderParseException ex)
 			{
-				tmpMedium.setTimeZone(DecodesSettings.instance().editTimeZone);
+				String tz = DecodesSettings.instance().editTimeZone;
+				if (tz == null) tz = "UTC";
+				tmpMedium.setTimeZone(tz);
 				tmpMedium.setMediumType(Constants.medium_EDL);
 				// Set dummy medium id -- rawMessage must have a medium id set
 				// to avoid
