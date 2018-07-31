@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.13  2018/06/19 13:18:27  mmaloney
+ * In the init script, add computation_id to the python namespace. HDB 492.
+ *
  * Revision 1.12  2018/06/13 19:17:41  mmaloney
  * dev
  *
@@ -587,7 +590,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	public boolean isPresent(Variable v)
 	{
 		int f = v.getFlags();
-		if ((f & (IFlags.IS_MISSING | VarFlags.TO_DELETE)) != 0)
+		if ((f & (IFlags.IS_MISSING | VarFlags.TO_DELETE | VarFlags.DB_DELETED)) != 0)
 		{
 			debug3("isPresent - Flags indicate missing or deleted -- returning false.");
 			return false;
