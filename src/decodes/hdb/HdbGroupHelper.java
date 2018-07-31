@@ -7,6 +7,9 @@
 *  contained in this file may be claimed to be proprietary.
 *  
 *  $Log$
+*  Revision 1.2  2018/02/05 15:50:54  mmaloney
+*  Added ObjectType capability.
+*
 *  Revision 1.1  2016/11/03 19:00:36  mmaloney
 *  Refactoring for group evaluation to make HDB work the same way as CWMS.
 *
@@ -57,20 +60,43 @@ public class HdbGroupHelper
 
 		// Is this tsid's site in the site list?
 		ArrayList<DbKey> siteIds = grp.getSiteIdList();
+		boolean siteFound = false;
 		if (siteIds.size() > 0)
 		{
-			boolean found = false;
 			DbKey tsSiteId = tsid.getSite().getId();
 			for(DbKey siteId : siteIds)
 				if (siteId.equals(tsSiteId))
 				{
-					found = true;
+					siteFound = true;
 					matches++;
 					break;
 				}
-			if (!found)
-				return false; 
 		}
+		
+		// MJM 2/2/2018 check for ObjectType match
+		boolean objectTypeSpecified = false;
+		boolean objectTypeFound = false;
+		String tsidObjectType = tsid.getSite() == null ? null : tsid.getSite().getLocationType();
+
+		if (tsidObjectType != null && tsidObjectType.trim().length() > 0)
+		{
+			ArrayList<TsGroupMember> otherParts = grp.getOtherMembers();
+			for(TsGroupMember tgm : otherParts)
+				if (tgm.getMemberType().equalsIgnoreCase("ObjectType"))
+				{
+					objectTypeSpecified = true;
+					if (tsidObjectType.equalsIgnoreCase(tgm.getMemberValue()))
+					{
+						objectTypeFound = true;
+						matches++;
+						break;
+					}
+				}
+		}
+		
+		if ((siteIds.size() > 0 || objectTypeSpecified)   // Either sites or object types specified
+		 && !siteFound && !objectTypeFound)               // Neither was found
+			return false;
 
 		// Data Types are specified in this group?
 		ArrayList<DbKey> dataTypeIds = grp.getDataTypeIdList();
@@ -113,35 +139,6 @@ public class HdbGroupHelper
 			if (thisPartSpecified && !found)
 				return false;
 		}
-		
-		// MJM 2/2/2018 check for ObjectType match
-		boolean objectTypeSpecified = false;
-		boolean objectTypeFound = false;
-		String tsidObjectType = tsid.getSite() == null ? null : tsid.getSite().getLocationType();
-//System.out.println("Comparing TSID " + tsid.getUniqueString() + " objectType='" + tsidObjectType + "'");
-
-		if (tsidObjectType != null && tsidObjectType.trim().length() > 0)
-		{
-
-			ArrayList<TsGroupMember> otherParts = grp.getOtherMembers();
-			for(TsGroupMember tgm : otherParts)
-			{
-				if (tgm.getMemberType().equalsIgnoreCase("ObjectType"))
-				{
-//System.out.println("Comparing with group objecttype '" + tgm.getMemberValue() + "'");
-					objectTypeSpecified = true;
-					if (tsidObjectType.equalsIgnoreCase(tgm.getMemberValue()))
-					{
-//System.out.println("   MATCH");
-						objectTypeFound = true;
-						matches++;
-						break;
-					}
-				}
-			}
-		}
-		if (objectTypeSpecified && !objectTypeFound)
-			return false;
 		
 		
 		// If at least one part matched, then this tsid passes.
