@@ -35,6 +35,7 @@ public class GoesPMParser extends PMParser
 	public static final String CARRIER_STOP = "CarrierStop";
 	public static final String DOMSAT_TIME = "DomsatTime";
 	public static final String DCP_MSG_FLAGS = "DcpMsgFlags";
+	public static final String GPS_SYNC = "GPS";
 	
 	public static final String SITE_NAME = "SiteName";
 	public static final String SITE_DESC = "SiteDesc";
@@ -189,6 +190,11 @@ public class GoesPMParser extends PMParser
 		catch(Exception e)
 		{
 			// Silently allow failures for above.
+		}
+		if (data.length > 37)
+		{
+			int f = (int)data[37];
+			msg.setPM(GPS_SYNC, new Variable((f & 0x02) == 0 ? 0 : 1));
 		}
 		msg.setMediumId(dcpAddr);
 	}
