@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2016/02/29 22:12:45  mmaloney
+ * Add performance measurements & fix bug where it wasn't initializing the consumer.
+ *
  * Revision 1.3  2014/05/30 13:15:32  mmaloney
  * dev
  *
@@ -230,6 +233,21 @@ public class HydrometDMS3Formatter extends OutputFormatter
 				}
 			}
 			
+			v = msg.getRawMessage().getPM(GoesPMParser.GPS_SYNC);
+			if (v != null)
+			{
+				try
+				{
+					consumer.println(formatValue(msg.getMessageTime(), sn, "GPS", ""+v.getIntValue(), FLAG_GOOD));
+				}
+				catch (NoConversionException e)
+				{
+					Logger.instance().warning("Site " + sn + " has GPS SYNC '" + v.toString() 
+						+ "' that cannot be expressed as an integer.");
+				}
+
+			}
+			
 			consumer.println(formatValue(msg.getMessageTime(), sn, "MSGLEN",
 				valueFormat.format((double)msgData.length), FLAG_GOOD));
 			
@@ -249,6 +267,8 @@ public class HydrometDMS3Formatter extends OutputFormatter
 
 				}
 			}
+			
+			v = msg.getRawMessage().getPM("GPS_SYNC");
 			
 			if (!Pdt.instance().isLoaded())
 			{
