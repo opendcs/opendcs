@@ -47,7 +47,7 @@ public class PlatformExport
 		"", TokenOptions.optSwitch|TokenOptions.optMultiple, "");
 	static StringToken lrgsnl = new StringToken("f", "LRGS Network-List style",
 			"", TokenOptions.optSwitch, "");
-	static StringToken siteArg = new StringToken("s", "Site-Name",
+	static StringToken siteArg = new StringToken("s", "[SiteNameType:]SiteNameValue",
 		"", TokenOptions.optSwitch|TokenOptions.optMultiple, "");
 	static BooleanToken allArg = new BooleanToken("a", "All-Platforms", 
 		"", TokenOptions.optSwitch, false);
@@ -251,18 +251,29 @@ public class PlatformExport
 				String s = siteArg.getValue(i);
 				if (s.length() == 0)
 					continue;
+				
+				String nameType = settings.siteNameTypePreference;
+				String nameValue = s;
+				
+				int colon = s.indexOf(':');
+				if (colon > 0)
+				{
+					nameType = s.substring(0,colon);
+					nameValue = s.substring(colon+1);
+				}
 
-				SiteName sn = new SiteName(null, 
-					settings.siteNameTypePreference, s);
+				SiteName sn = new SiteName(null, nameType, nameValue);
 				Site site = db.siteList.getSite(sn);
 
 				// find site 's'
 				if (site == null)
 				{
 					lg.log(Logger.E_FAILURE,
-						"No such site '" + s + "' -- skipped.");
+						"No such site with name type '" + nameType + "' and nameValue '" + nameValue + "' -- skipped.");
 					continue;
 				}
+				Logger.instance().debug3("Found site with nameType '" + nameType + "' and name value '"
+					+ nameValue + "' with ID=" + site.getId());
 				Vector<Platform> pvec = db.platformList.getPlatforms(site);
 
 				if (pvec.size() == 0)
