@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.26  2018/02/05 15:54:33  mmaloney
+*  Add fontAdjust feature to increase/decrease font sizes throughout the GUI.
+*
 *  Revision 1.25  2017/08/23 14:13:16  mmaloney
 *  Fix inconsistency with editDatabaseLocation between decodes.properties and user.properties.
 *
@@ -233,7 +236,7 @@ public class DecodesSettings
 	public String transportMediumTypePreference = Constants.medium_GoesST;
 
 	/** Timezone to use in Script Edit Dialog in db editor. */
-	public String editTimeZone;
+	public String editTimeZone = "UTC";
 
 	/** Name of default DataSource entry for retrieving sample messages */
 	public String defaultDataSource = "cdadata.wcda.noaa.gov";
