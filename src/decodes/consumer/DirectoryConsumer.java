@@ -13,12 +13,12 @@ import ilex.util.FileUtil;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
-
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.datasource.GoesPMParser;
 import decodes.decoder.DecodedMessage;
 import decodes.db.*;
+import decodes.util.PropertySpec;
 
 /**
 DirectoryConsumer sends data to files in a named directory. 
@@ -62,6 +62,15 @@ public class DirectoryConsumer extends DataConsumer
 	private File lastOutFile = null;
 	
 	private int sequenceNum = 1;
+	
+	PropertySpec[] myspecs = new PropertySpec[]
+	{
+		new PropertySpec("filenameTemplate", PropertySpec.STRING, 
+			"Template for building filename."),
+		new PropertySpec("tmpdir", PropertySpec.STRING, 
+			"Temporary directory for building file before moving to final location."),
+
+	};
 
 	/** No-args constructor required */
 	public DirectoryConsumer()
@@ -90,10 +99,14 @@ public class DirectoryConsumer extends DataConsumer
 		if (!directory.isDirectory())
 			directory.mkdirs();
 
-		filenameTemplate = PropertiesUtil.getIgnoreCase(props, "filename");
+		filenameTemplate = PropertiesUtil.getIgnoreCase(props, "filenameTemplate");
 		if (filenameTemplate == null)
-			filenameTemplate = 
-				"$SITENAME-$DATE(" + Constants.suffixDateFormat_fmt + ")";
+		{
+			filenameTemplate = PropertiesUtil.getIgnoreCase(props, "filename");
+			if (filenameTemplate == null)
+				filenameTemplate = "$SITENAME-$DATE(" + Constants.suffixDateFormat_fmt + ")";
+		}
+		Logger.instance().debug3("DirectoryConsumer filenameTemplate='" + filenameTemplate + "'");
 
 		String tmpdirname = PropertiesUtil.getIgnoreCase(props, "tmpdir");
 		if (tmpdirname != null)
@@ -258,6 +271,13 @@ public class DirectoryConsumer extends DataConsumer
 	{
 		return lastOutFile;
 	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return myspecs;
+	}
+
 
 }
 
