@@ -62,9 +62,10 @@ public class CsvPMParser extends PMParser
 
 	public void setProperties(Properties props)
 	{
-//		PropertiesUtil.loadFromProps(this, props);
+		PropertiesUtil.loadFromProps(this, props);
 		sdf = new SimpleDateFormat(datetimefmt);
 		sdf.setTimeZone(TimeZone.getTimeZone(timezone));
+		Logger.instance().debug1("CsvPMParser delim='" + delim + "'");
 	}
 
 	/**
