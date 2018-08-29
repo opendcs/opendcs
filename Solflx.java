@@ -34,7 +34,7 @@ public class Solflx
      *   3. Lowest layer
      *   4. Smoke/fog (Not used in this model)
      */
-    public static final double[][] r1 =
+    private static final double[][] R1 =
     {
         { .12395,.15325,.15946,.27436 },
         {  -.34765,-.39620,-.42185,-.43132 },
@@ -50,7 +50,7 @@ public class Solflx
      *  3. As/Ac (denoted as cloud type 3)
      *  4. Low cloud (denoted as cloud type 4 or 5)   
      */
-    public static final double[][] r2 =
+    private static final double[][] R2 =
     {
         { .25674,.42111,.61394,.69143 },
         { -.18077,-.04002,-.01469,-.14419 },
@@ -66,7 +66,7 @@ public class Solflx
      *   3. Lowest layer
      *   4. Smoke/fog (Not used in this model)
      */
-    public static final double[][] t1 =
+    private static final double[][] T1 =
     {
         { .76977,.69318,.68679,.55336 },
         { .49407,.68227,.71012,.61511 },
@@ -82,7 +82,7 @@ public class Solflx
      *  3. As/Ac (denoted as cloud type 3)
      *  4. Low cloud (denoted as cloud type 4 or 5)   
      */
-    public static final double[][] t2 =
+    private static final double[][] T2 =
     {
         { .63547,.43562,.23865,.15785 },
         { .35229,.26094,.20143,.32410 },
@@ -98,7 +98,7 @@ public class Solflx
      *  3. As/Ac (denoted as cloud type 3)
      *  4. Low cloud (denoted as cloud type 4 or 5)   
      */    
-    public static final double[][] wtx =
+    private static final double[][] WTX =
     {
         { 0.675,1.552,1.429,1.512 },
         { -3.432,-1.957,-1.207,-1.176 },
@@ -166,7 +166,6 @@ public class Solflx
             // surface for each hour. In the future this should be
             // modified to account for a sloping surface.  The direct and diffuse
             // components are handled differently for sloping surfaces.
-            sdown = 0.0;
             int jday = doy;
             insol(jday, cloudCover, cosz.d);
             
@@ -184,7 +183,6 @@ public class Solflx
      * @param jday
      * @param cloudCover
      * @param cosz
-     * @param sdown 
      */
     public void insol ( int jday, CloudCover[] cloudCover,
             double cosz )
@@ -202,7 +200,6 @@ public class Solflx
         int j, ll;
 
         // initialize sdown
-        sdowne = 0.0;
         
         // calculate cosine of zenith angle
         
@@ -258,8 +255,8 @@ public class Solflx
             if ( jj != 0 )
             {
                 j = jj-1;
-                wgt = wtx[0][j]+wtx[1][j]*cosz+wtx[2][j]*fr +wtx[3][j]*cosz*fr
-                       +wtx[4][j]*coszsq+wtx[5][j]*fr*fr;
+                wgt = WTX[0][j]+WTX[1][j]*cosz+WTX[2][j]*fr +WTX[3][j]*cosz*fr
+                       +WTX[4][j]*coszsq+WTX[5][j]*fr*fr;
                 wgt = wgt*fr;
             
                 if (fr < 0.05) wgt = 0.0;
@@ -267,20 +264,20 @@ public class Solflx
                 
                 if ( wgt > 0.0 )
                 {
-                    rcld = r2[0][j] + r2[1][j]*cosz + r2[2][j]*coszsq
-                            + r2[3][j]*coszcube;
-                    tcld = t2[0][j] + t2[1][j]*cosz + t2[2][j]*coszsq
-                            + t2[3][j]*coszcube;
+                    rcld = R2[0][j] + R2[1][j]*cosz + R2[2][j]*coszsq
+                            + R2[3][j]*coszcube;
+                    tcld = T2[0][j] + T2[1][j]*cosz + T2[2][j]*coszsq
+                            + T2[3][j]*coszcube;
                 }
             }
             
             // Compute reflectivity and transmitivity for each layer
             if ( wgt < 1. )
             {
-                rclr = r1[0][ll] + r1[1][ll]*cosz + r1[2][ll]*coszsq
-                            + r1[3][ll]*coszcube;
-                tclr = t1[0][ll] + t1[1][ll]*cosz + t1[2][ll]*coszsq
-                            + t1[3][ll]*coszcube;               
+                rclr = R1[0][ll] + R1[1][ll]*cosz + R1[2][ll]*coszsq
+                            + R1[3][ll]*coszcube;
+                tclr = T1[0][ll] + T1[1][ll]*cosz + T1[2][ll]*coszsq
+                            + T1[3][ll]*coszcube;               
             }
             
             rk[i] = wgt*rcld + (1.-wgt)*rclr;

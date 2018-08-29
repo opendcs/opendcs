@@ -16,41 +16,41 @@ import rma.util.RMAConst;
 public class Dnirflx
 {
     
-    public static final double[][] coef11 =
+    private static final double[][] COEF11 =
     {
         { 1.05 , 0.6, 5.0, 25.0 },
         {  4.1 , 0.3, 4.0, 25.0 },
         {  7.  , 1.5, 3.0, 30.0 }
     };
     
-    public static final double[][] coef12 =
+    private static final double[][] COEF12 =
     {
         { 1.05 , 0.6, 1.5, 25.0 },
         {  4.1 , 2.0, 1.7, 25.0 },
         {  7.  , 1.5, 3.0, 30.0 }
     };
    
-    public static final double[][] coef21 =
+    private static final double[][] COEF21 =
     {
         { 1.15, 0.45, 5.0, 25.0 },
         {  4.1 , 2.0, 1.7, 25.0 },
         {  7.  , 1.5, 3.0, 30.0 }
     };
     
-    public static final double[][] coef22 =
+    private static final double[][] COEF22 =
     {
         { 1.15,  0.6, 1.5, 25.0 },
         {  4.4,  1.2, 3.0, 25.0 },
         {  7.  , 1.5, 3.0, 30.0 }
     };
     
-    public static double[][][][] coef = new double[2][2][3][4];
+    private static final double[][][][] COEF = new double[2][2][3][4];
     static 
     {
-        coef[0][0] = coef11;
-        coef[0][1] = coef12;
-        coef[1][0] = coef21;
-        coef[1][1] = coef22;
+        COEF[0][0] = COEF11;
+        COEF[0][1] = COEF12;
+        COEF[1][0] = COEF21;
+        COEF[1][1] = COEF22;
     }
     
     public Dnirflx()
@@ -139,10 +139,10 @@ public class Dnirflx
         // if ( lcldbse == mflag && lcld != 0.0 ) 
         if ( !RMAConst.isValidValue(lcldbse) && lcld != 0.0 ) 
         {
-            a = coef[isean][ilat][0][0];            
-            b = coef[isean][ilat][0][1];            
-            c = coef[isean][ilat][0][2];            
-            d = coef[isean][ilat][0][3];  
+            a = COEF[isean][ilat][0][0];            
+            b = COEF[isean][ilat][0][1];            
+            c = COEF[isean][ilat][0][2];            
+            d = COEF[isean][ilat][0][3];  
             zlcld = a - b*(1.0 - Math.abs(Math.cos(c*(lat - d))));
         }
         else
@@ -153,10 +153,10 @@ public class Dnirflx
         //if ( mcldbse == mflag && mcld != 0.0 ) 
         if ( !RMAConst.isValidValue(mcldbse) && mcld != 0.0 ) 
         {
-            a = coef[isean][ilat][1][0];            
-            b = coef[isean][ilat][1][1];            
-            c = coef[isean][ilat][1][2];            
-            d = coef[isean][ilat][1][3];  
+            a = COEF[isean][ilat][1][0];            
+            b = COEF[isean][ilat][1][1];            
+            c = COEF[isean][ilat][1][2];            
+            d = COEF[isean][ilat][1][3];  
             zmcld = a - b*(1.0 - Math.abs(Math.cos(c*(lat - d))));
         }
         else
@@ -167,10 +167,10 @@ public class Dnirflx
         //if ( hcldbse == mflag && hcld != 0.0 ) 
         if ( !RMAConst.isValidValue(hcldbse) && hcld != 0.0 ) 
         {
-            a = coef[isean][ilat][2][0];            
-            b = coef[isean][ilat][2][1];            
-            c = coef[isean][ilat][2][2];            
-            d = coef[isean][ilat][2][3];  
+            a = COEF[isean][ilat][2][0];            
+            b = COEF[isean][ilat][2][1];            
+            c = COEF[isean][ilat][2][2];            
+            d = COEF[isean][ilat][2][3];  
             zhcld = a - b*(1.0 - Math.abs(Math.cos(c*(lat - d))));
         }
         else
@@ -220,6 +220,8 @@ public class Dnirflx
      * 
      *         ematm=1.24*[ea/Ta(K)]^(1/7)
      * 
+	 * @param airTemp
+	 * @param relH
      * @return 
      */
     public static double emisatm(double airTemp, double relH)
