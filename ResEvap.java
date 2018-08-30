@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import rma.util.RMAConst;
 
@@ -430,7 +432,8 @@ public class ResEvap
 		    {
 
 		    }
-		    ec.printStackTrace();
+			Logger.getLogger(ResEvap.class.getName()).log(Level.SEVERE, "Error within computation",
+														  ec);
 	    	throw new ResEvapException (ec);
 		}
 
