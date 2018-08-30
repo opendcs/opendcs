@@ -216,9 +216,8 @@ public class EvapReservoir
         int icnt = 0;
             
         // read and store the lines from the text file.
-        try
+        try(BufferedReader in = new BufferedReader( new FileReader( textFile ) ))
         {
-            BufferedReader in = new BufferedReader( new FileReader( textFile ) );
             String line;
            
             line = in.readLine();
@@ -229,8 +228,6 @@ public class EvapReservoir
                     inputLines.add( line );
                     line = in.readLine();
             }
-
-            in.close();
         }
         catch (IOException e)
         {
@@ -404,9 +401,8 @@ public class EvapReservoir
         int icnt = 0;
             
         // read and store the lines from the text file.
-        try
+        try(BufferedReader in = new BufferedReader( new FileReader( textFile ) ))
         {
-            BufferedReader in = new BufferedReader( new FileReader( textFile ) );
             String line;
            
             line = in.readLine();
@@ -417,8 +413,6 @@ public class EvapReservoir
                     inputLines.add( line );
                     line = in.readLine();
             }
-
-            in.close();
         }
         catch (IOException e)
         {
