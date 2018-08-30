@@ -618,10 +618,15 @@ public class ResWtCompute
             }
             totalpvol = totalpvol + zrhow*zvol[j];                 
         }
-
-        zout = total/totalpvol;
-        
-        return zout;
+		if(totalpvol != 0.0)
+		{
+			zout = total/totalpvol;
+			return zout;
+		}
+        else
+		{
+			return 0.0;
+		}
     }
         
         
