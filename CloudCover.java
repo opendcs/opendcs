@@ -18,9 +18,9 @@ public class CloudCover
     
     // these are the default cloud cover values
     // set in solflx.f
-    public static double MISSING_VALUE_LOW = 0.54;
-    public static double MISSING_VALUE_MED = 0.0;
-    public static double MISSING_VALUE_HI = 0.0;
+    private static final double MISSING_VALUE_LOW = 0.54;
+    private static final double MISSING_VALUE_MED = 0.0;
+    private static final double MISSING_VALUE_HI = 0.0;
    
     public enum CloudHeightType
     {
