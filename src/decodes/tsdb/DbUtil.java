@@ -209,6 +209,15 @@ public class DbUtil extends TsdbAppTemplate
 				tsdbStats(tokens);
 			}
 		};
+	private CmdLine parmMorphCmd = 
+		new CmdLine("parmMorph", " <Location> <mask> -- apply mask to location and show result.")
+		{
+			public void execute(String[] tokens)
+			{
+				parmMorph(tokens);
+			}
+		};
+
 
 
 	public DbUtil()
@@ -216,6 +225,21 @@ public class DbUtil extends TsdbAppTemplate
 		super("util.log");
 	}
 
+	protected void parmMorph(String[] tokens)
+	{
+		if (tokens.length < 3)
+		{
+			System.out.println("2 params required.");
+			return;
+		}
+		String loc = tokens[1];
+		String mask = tokens[2];
+		String result = CwmsTimeSeriesDb.morph(loc, mask);
+		System.out.println("loc='" + loc + "', mask='" + mask + "', result='" + result + "'");
+	}
+
+	
+	
 	protected void tsdbStats(String[] tokens)
 	{
 		if (!theDb.isOpenTSDB())
@@ -500,6 +524,7 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(updateCmd);
 		cmdLineProc.addCmd(hdbRatingCmd);
 		cmdLineProc.addCmd(tsdbStatsCmd);
+		cmdLineProc.addCmd(parmMorphCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		
