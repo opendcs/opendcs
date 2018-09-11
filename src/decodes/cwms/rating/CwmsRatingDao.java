@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2017/11/02 20:44:24  mmaloney
+ * Cwms Rating perform multiple points at the same time.
+ *
  * Revision 1.8  2017/03/09 21:38:23  mmaloney
  * Don't attempt to detect change in a rating set in the database.
  * Set the databaseLookupMode to reference.
@@ -313,7 +316,7 @@ public class CwmsRatingDao extends DaoBase
 		{
 			Logger.instance().warning(module + " Cannot read rating for spec ID '"
 				+ specId + "': " + ex);
-			Logger.instance().info(module + " New rating " + specId);
+			throw ex;
 		}
 
 		Logger.instance().debug3(module + " calling storeToDatabase");
