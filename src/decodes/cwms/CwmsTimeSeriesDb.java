@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.33  2018/05/23 19:59:01  mmaloney
+*  OpenTSDB Initial Release
+*
 *  Revision 1.32  2018/05/01 17:34:13  mmaloney
 *  Code cleanup
 *
@@ -1690,7 +1693,7 @@ public class CwmsTimeSeriesDb
 	 * @param parmComponent The component in the comp parm, which may contain wildcards.
 	 * @return the tsid component masked by the parm component, or null if can't match.
 	 */
-	public String morph(String tsidComponent, String parmComponent)
+	public static String morph(String tsidComponent, String parmComponent)
 	{
 		// Examples:
 		// tsid: A-B-C   parm: D-*-F   result: D-B-F
@@ -1698,6 +1701,7 @@ public class CwmsTimeSeriesDb
 		// tsid: A-B-C   parm: D-*     result: D-B-C
 		// tsid: A       parm: D-*     result: null
 		// tsid: A-B-C   parm: *-D     result: A-D
+		// tsid: A-B     parm: *-      result: A
 		
 		// Check for a partial location specification (OpenDCS 6.3)
 		String tps[] = tsidComponent.split("-");
@@ -1711,7 +1715,10 @@ public class CwmsTimeSeriesDb
 					return null;
 				else
 				{
-					if (idx == pps.length - 1)
+					// A trailing asterisk in the mask means copy in rest of tsid.
+					// However a trailing hyphen means lop off the rest of tsid.
+					if (idx == pps.length - 1
+					 && !parmComponent.endsWith("-"))
 					{
 						for(int tidx = idx; tidx < tps.length; tidx++)
 							sb.append(tps[tidx] + (tidx < tps.length-1 ? "-" : ""));
