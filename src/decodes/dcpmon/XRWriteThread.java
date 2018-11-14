@@ -70,7 +70,7 @@ public class XRWriteThread extends Thread
 		}
 	}
 	/** The queue */
-	private ConcurrentLinkedQueue<XRWrapper> q;
+	private ConcurrentLinkedQueue<XRWrapper> q = new ConcurrentLinkedQueue<XRWrapper>();
 
 	/** shutdown flag */
 	private boolean _shutdown;
@@ -78,9 +78,6 @@ public class XRWriteThread extends Thread
 	public XRWriteThread()
 	{
 		dcpMonitor = DcpMonitor.instance();
-		DatabaseConnectionOwner dbo = (DatabaseConnectionOwner)Database.getDb().getDbIo();
-		xmitRecordDao = dbo.makeXmitRecordDao(31);
-		q = new ConcurrentLinkedQueue<XRWrapper>();
 		_shutdown = false;
 	}
 
@@ -198,6 +195,9 @@ int dCallNum = 0;
 	public void run()
 	{
 		dcpMonitor.info(module + " started.");
+		DatabaseConnectionOwner dbo = (DatabaseConnectionOwner)Database.getDb().getDbIo();
+		xmitRecordDao = dbo.makeXmitRecordDao(31);
+		xmitRecordDao.setNumDaysStorage(DcpMonitorConfig.instance().numDaysStorage);
 		while(!_shutdown)
 		{
 			try { sleep(1000L); } catch(InterruptedException ex) {}
