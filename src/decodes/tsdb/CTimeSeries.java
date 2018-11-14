@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2018/05/23 19:59:01  mmaloney
+*  OpenTSDB Initial Release
+*
 *  Revision 1.2  2017/05/25 21:18:45  mmaloney
 *  In DbAlgorithmExecutive, apply roundSec when searching for values in database.
 *  In CTimeSeries.findWithin, the upperbound should be t+fudge/2-1.
@@ -341,6 +344,11 @@ public class CTimeSeries
 			}
 		}
 		return false;
+	}
+	
+	public void deleteAll()
+	{
+		vars.clear();
 	}
 
 	/**
