@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.3  2018/05/01 17:39:26  mmaloney
+*  sourceId is now a DbKey
+*
 *  Revision 1.2  2014/10/07 12:41:25  mmaloney
 *  removed SeasonID
 *
@@ -129,6 +132,9 @@ public class DbComputation
 	public TimeSeriesIdentifier triggeringTsid = null;
 	
 	boolean isReloaded =false;
+	
+	/** For timed computations, compproc will use this transient field to track when to run. */
+	private transient Date nextRunTime = null;
 
 	/**
 	 * Constructor. 
@@ -410,7 +416,7 @@ public class DbComputation
 	 * from the database -- caller should remove it from its list.
 	 */
 	public void prepareForExec( TimeSeriesDb tsdb )
-		throws DbCompException, DbIoException, NoSuchObjectException
+		throws DbCompException, DbIoException
 	{
 		if (algorithm == null)
 			throw new DbCompException("Cannot prepare computation '" + name
@@ -422,8 +428,7 @@ public class DbComputation
 			{
 				ClassLoader cl = Thread.currentThread().getContextClassLoader();
 				String clsName = algorithm.getExecClass();
-				Logger.instance().debug3("Instantiating new algo exec '"
-					+ clsName + "'");
+				Logger.instance().debug3("Instantiating new algo exec '" + clsName + "'");
 				Class cls = cl.loadClass(clsName);
 				executive = (DbAlgorithmExecutive)cls.newInstance();
 				executive.init(this, tsdb);
@@ -432,13 +437,16 @@ public class DbComputation
 			catch(DbCompException ex)
 			{
 				executive = null;
+				String msg = "Cannot prepare computation '"	+ name + "' with algo exec class '"
+					+ algorithm.getExecClass() + "': " + ex;
+				Logger.instance().warning(msg);
 				throw ex;
 			}
 			catch(Exception ex)
 			{
 				executive = null;
-				String msg = "Cannot prepare computation '"
-					+ name + "': " + ex;
+				String msg = "Cannot prepare computation '"	+ name + "' with algo exec class '"
+					+ algorithm.getExecClass() + "': " + ex;
 				System.err.println(msg);
 				ex.printStackTrace();
 				throw new DbCompException(msg);
@@ -692,5 +700,24 @@ public class DbComputation
 	public String getUniqueName()
 	{
 		return getName();
+	}
+
+	/**
+	 * If this is a timed computation, compproc uses nextRunTime to track when to next
+	 * run the computation. This is a transient field. (not stored in db)
+	 * @return The next run time or null if this is not a timed computation.
+	 */
+	public Date getNextRunTime()
+	{
+		return nextRunTime;
+	}
+
+	/**
+	 * CompProc uses this to track when to next run a timed (non-triggered) computation.
+	 * @param nextRunTime
+	 */
+	public void setNextRunTime(Date nextRunTime)
+	{
+		this.nextRunTime = nextRunTime;
 	}
 }
