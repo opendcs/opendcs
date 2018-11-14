@@ -4,6 +4,9 @@
 *  Author: Michael Maloney
 *  
 *  $Log$
+*  Revision 1.6  2017/03/20 18:14:28  mmaloney
+*  Added new selfIdent property.
+*
 *  Revision 1.5  2017/02/09 17:22:42  mmaloney
 *  Added CVS Header.
 *
@@ -48,6 +51,7 @@ public class KHydstraFormatter extends OutputFormatter
 	private String delimiter;
 	private SimpleDateFormat KHydstraDateFormat;
 	private boolean selfIdent = false;
+	private int qualcode = 1;
 	
 	protected PropertySpec ofPropSpecs[] = 
 	{
@@ -55,7 +59,9 @@ public class KHydstraFormatter extends OutputFormatter
 			"(default=comma) delimiter between columns."),
 		new PropertySpec("selfIdent", PropertySpec.BOOLEAN,
 			"(default=false) set to true to add addition columns for Hydstra "
-			+ "'self identifying' format.")
+			+ "'self identifying' format."),
+		new PropertySpec("qualcode", PropertySpec.INT,
+			"(default=1) quality code used in Hydstra output format.")
 	};
 
 
@@ -87,6 +93,16 @@ public class KHydstraFormatter extends OutputFormatter
 		String s = PropertiesUtil.getIgnoreCase(rsProps, "selfIdent");
 		if (s != null)
 			selfIdent = TextUtil.str2boolean(s);
+		s = PropertiesUtil.getIgnoreCase(rsProps, "qualcode");
+		if (s != null)
+		{
+			try { qualcode = Integer.parseInt(s.trim()); }
+			catch(NumberFormatException ex)
+			{
+				logger.warning("Invalid qualcode propertyp '" + s + "' -- ignored. Usinge default=1");
+				qualcode = 1;
+			}
+		}
 		
 		Calendar cal = Calendar.getInstance(tz);
 		KHydstraDateFormat.setCalendar(cal);
@@ -200,8 +216,8 @@ public class KHydstraFormatter extends OutputFormatter
 				}
 				sb.append(TextUtil.setLengthRightJustify(s, 10) + delimiter);
 				
-				String qualcode = selfIdent ? "1" : "  1";
-				sb.append(qualcode + delimiter);
+				String sQualcode = selfIdent ? ("" + qualcode) : ("  " + qualcode);
+				sb.append(sQualcode + delimiter);
 
 				String datatransCode = sensor.getProperty("HydstraTransCode");
 				if(datatransCode==null)
