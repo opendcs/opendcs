@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.13  2018/03/30 14:57:11  mmaloney
+*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
+*
 *  Revision 1.12  2018/03/30 14:13:32  mmaloney
 *  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
 *
@@ -74,22 +77,36 @@
 package decodes.tsdb;
 
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.TimeZone;
 import java.net.InetAddress;
 
+import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dai.TsGroupDAI;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
+import ilex.var.TimedVariable;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
+import decodes.sql.DbKey;
+
 
 /**
 ComputationApp is the main module for the background comp processor.
@@ -119,6 +136,10 @@ public class ComputationApp
 		"O", "OfficeID", "", TokenOptions.optSwitch, "");
 	private CompEventSvr compEventSvr = null;
 	
+	private ArrayList<DbComputation> timedComps = new ArrayList<DbComputation>();
+	private int checkTimedCompsSec = 600;
+	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+	
 	private static ComputationApp _instance = null;
 	public static ComputationApp instance() { return _instance; }
 	
@@ -131,7 +152,10 @@ public class ComputationApp
 		new PropertySpec("reclaimTasklistSec", PropertySpec.INT,
 			"(default=0) if set to a positive # of seconds, then when the tasklist is "
 			+ "empty and this # of seconds has elapsed, shrink the allocated space for the "
-			+ "tasklist back to something reasonable (Oracle only).")
+			+ "tasklist back to something reasonable (Oracle only)."),
+		new PropertySpec("checkTimedCompsSec", PropertySpec.INT,
+			"(default=600, or 10 minutes) check for changes to timed computations "
+			+ "every this number of seconds.")
 	};
 
 	
@@ -199,10 +223,16 @@ public class ComputationApp
 		long lastDataTime = System.currentTimeMillis();
 		long lastLockCheck = 0L;
 		long lastCacheMaintenance = System.currentTimeMillis();
+		long lastTimedCompCheck = 0L;
 
 		String action="starting";
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+		
+		TimeZone dbtz = TimeZone.getTimeZone(theDb.databaseTimezone);
+		Calendar timedCompCal = Calendar.getInstance();
+		timedCompCal.setTimeZone(dbtz);
 
 		try
 		{
@@ -224,11 +254,67 @@ public class ComputationApp
 					doCacheMaintenance();
 				}
 				
-				action = "Getting new data";
-				DataCollection data = theDb.getNewData(getAppId());
+				if (now - lastTimedCompCheck > checkTimedCompsSec * 1000L) 
+				{
+					checkTimedCompList(now, timedCompCal);
+					lastTimedCompCheck = now;
+				}
 				
+				// Check to see if it's time to run any timed computations.
+				action = "Running timed computations";
+				DataCollection dataCollection = null;
+				int numTimed = 0;
+				for(Iterator<DbComputation> tcit = timedComps.iterator(); tcit.hasNext(); )
+				{
+					DbComputation tc = tcit.next();
+					if (now >= tc.getNextRunTime().getTime())
+					{
+						if (dataCollection == null)
+							dataCollection = new DataCollection();
+						executeTimedComp(tc, timedCompCal, dataCollection, timeSeriesDAO, tsGroupDAO);
+						numTimed++;
+						Date nextRun = computeNextRunTime(
+							tc.getProperty("timedCompInterval"),
+							tc.getProperty("timedCompOffset"), timedCompCal, 
+							new Date(now + 1000L));
+						if (nextRun == null)
+						{
+							warning("Cannot compute nextRun for computation "
+								+ tc.getId() + ": " + tc.getName()
+								+ " with interval '" + tc.getProperty("timedCompInterval") + "'"
+								+ " -- is this no longer a timed computation?");
+							tcit.remove();
+						}
+						else
+						{
+							tc.setNextRunTime(nextRun);
+							Logger.instance().debug3("Computation " + tc.getKey() + ":" + tc.getName()
+								+ " scheduled for " + debugSdf.format(nextRun));
+						}
+					}
+				}
+				if (numTimed > 0)
+				{
+					action = "Saving timed results";
+					List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
+Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
+
+					for(CTimeSeries cts : tsList)
+					{
+						try { timeSeriesDAO.saveTimeSeries(cts); }
+						catch(BadTimeSeriesException ex)
+						{
+							warning("Cannot save time series " + cts.getNameString()
+								+ ": " + ex);
+						}
+					}
+
+				}
+
+				action = "Getting new data";
+				dataCollection = theDb.getNewData(getAppId());
 				// In Regression Test Mode, exit after 5 sec of idle
-				if (!data.isEmpty())
+				if (!dataCollection.isEmpty())
 					lastDataTime = System.currentTimeMillis();
 				else if (regressionTestModeArg.getValue()
 				 && System.currentTimeMillis() - lastDataTime > 10000L)
@@ -237,11 +323,12 @@ public class ComputationApp
 					shutdownFlag = true;
 					loadingAppDAO.releaseCompProcLock(myLock);
 				}
+				
 
-				if (!data.isEmpty())
+				if (!dataCollection.isEmpty())
 				{
 					action = "Resolving computations";
-					DbComputation comps[] = resolver.resolve(data);
+					DbComputation comps[] = resolver.resolve(dataCollection);
 	
 					action = "Applying computations";
 					for(DbComputation comp : comps)
@@ -252,13 +339,7 @@ public class ComputationApp
 						try
 						{
 							comp.prepareForExec(theDb);
-							comp.apply(data, theDb);
-						}
-						catch(NoSuchObjectException ex)
-						{
-							compErrors++;
-							warning("Computation '" + comp.getName()
-								+ "removed from DB: " + ex);
+							comp.apply(dataCollection, theDb);
 						}
 						catch(DbCompException ex)
 						{
@@ -267,7 +348,7 @@ public class ComputationApp
 							warning(msg);
 							compErrors++;
 							for(Integer rn : comp.getTriggeringRecNums())
-								 data.getTasklistHandle().markComputationFailed(rn);
+								 dataCollection.getTasklistHandle().markComputationFailed(rn);
 						}
 						catch(Exception ex)
 						{
@@ -278,7 +359,7 @@ public class ComputationApp
 							System.err.println(msg);
 							ex.printStackTrace(System.err);
 							for(Integer rn : comp.getTriggeringRecNums())
-								 data.getTasklistHandle().markComputationFailed(rn);
+								 dataCollection.getTasklistHandle().markComputationFailed(rn);
 						}
 						comp.getTriggeringRecNums().clear();
 						Logger.instance().debug1("End of computation '" 
@@ -286,7 +367,7 @@ public class ComputationApp
 					}
 	
 					action = "Saving results";
-					List<CTimeSeries> tsList = data.getAllTimeSeries();
+					List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
 	Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 					for(CTimeSeries ts : tsList)
 					{
@@ -299,7 +380,7 @@ public class ComputationApp
 					}
 	
 					action = "Releasing new data";
-					theDb.releaseNewData(data);
+					theDb.releaseNewData(dataCollection);
 					lastDataTime = System.currentTimeMillis();
 				}
 				else // MJM 6.4 RC08 Only sleep if data was empty.
@@ -331,12 +412,14 @@ public class ComputationApp
 		}
 		finally
 		{
+			tsGroupDAO.close();
 			timeSeriesDAO.close();
 			loadingAppDAO.close();
 		}
 		resolver = null;
 		Logger.instance().debug1("runApp() exiting.");
 	}
+
 
 	/**
 	 * MJM Added for 6.4 RC08 to refresh site cache every 2 hours.
@@ -368,6 +451,7 @@ public class ComputationApp
 	 */
 	private void runAppInit()
 	{
+		debugSdf.setTimeZone(TimeZone.getTimeZone(theDb.databaseTimezone));
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try
 		{
@@ -411,6 +495,19 @@ public class ComputationApp
 			}
 			else
 				theDb.reclaimTasklistSec = 0;
+			
+			// MJM 6.5 RC03 checkTimedCompsSec
+			s = appInfo.getProperty("checkTimedCompsSec");
+			if (s != null)
+			{
+				try { checkTimedCompsSec = Integer.parseInt(s.trim()); }
+				catch(NumberFormatException ex)
+				{
+					warning("Bad checkTimedCompsSec property '" + s 
+						+ "' -- should be integer number of seconds -- will use default of 600.");
+					checkTimedCompsSec = 600;
+				}
+			}
 		}
 		catch(NoSuchObjectException ex)
 		{
@@ -471,6 +568,339 @@ public class ComputationApp
 	{
 		return resolver;
 	}
-
+	
+	/**
+	 * For timed computations, compproc uses this to figure out the next time that
+	 * a computation should be run.
+	 * @param timedCompInterval
+	 * @param timedCompOffset
+	 * @return
+	 */
+	public static Date computeNextRunTime(String timedCompInterval, String timedCompOffset,
+		Calendar cal, Date now)
+	{
+		if (timedCompInterval == null || timedCompInterval.trim().length() == 0)
+			return null;
+		if (timedCompOffset != null && timedCompOffset.trim().length() == 0)
+			timedCompOffset = null;
+		
+		
+		IntervalIncrement intv = IntervalIncrement.parse(timedCompInterval);
+		if (intv == null)
+		{
+			Logger.instance().warning("Cannot parse timedCompInterval '" + timedCompInterval + "'");
+			return null;
+		}
+		
+		cal.setTime(now);
+		
+		switch(intv.getCalConstant())
+		{
+		case Calendar.YEAR:
+			if (intv.getCount() > 1)
+				cal.set(Calendar.YEAR, 
+					(cal.get(Calendar.YEAR) / intv.getCount()) * intv.getCount());
+			cal.set(Calendar.MONTH, 0);
+			cal.set(Calendar.DAY_OF_MONTH, 1);
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+			break;
+		case Calendar.MONTH:
+			if (intv.getCount() > 1)
+				cal.set(Calendar.MONTH, 
+					(cal.get(Calendar.MONTH) / intv.getCount()) * intv.getCount());
+			cal.set(Calendar.DAY_OF_MONTH, 1);
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+			break;
+		case Calendar.DAY_OF_MONTH:
+			if (intv.getCount() > 1)
+				cal.set(Calendar.DAY_OF_MONTH, 
+					((cal.get(Calendar.DAY_OF_MONTH)-1) / intv.getCount()) * intv.getCount() + 1);
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+			break;
+		case Calendar.HOUR_OF_DAY:
+			if (intv.getCount() > 1)
+				cal.set(Calendar.HOUR_OF_DAY, 
+					(cal.get(Calendar.HOUR_OF_DAY) / intv.getCount()) * intv.getCount());
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+			break;
+		case Calendar.MINUTE:
+			if (intv.getCount() > 1)
+				cal.set(Calendar.MINUTE, 
+					(cal.get(Calendar.MINUTE) / intv.getCount()) * intv.getCount());
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+		}
+		
+		IntervalIncrement offs = timedCompOffset == null ? null : IntervalIncrement.parse(timedCompOffset);
+		if (offs != null)
+			cal.add(offs.getCalConstant(), offs.getCount());
+		
+		while (!cal.getTime().after(now))
+			cal.add(intv.getCalConstant(), intv.getCount());
+		
+		// Note: assumes that constant for MONTH < DAY_OF_MONTH < HOUR_OF_DAY ... SECOND
+		return cal.getTime();
+	}
+	
+	/**
+	 * Called periodically to maintain the list of timed computations. Compare what's in the 
+	 * database to what's in my list now. (Re)Load any computations needed. Delete any that
+	 * are no longer needed. Compute each computations next run time based on 'now'.
+	 * @param now The current time.
+	 */
+	private void checkTimedCompList(long now, Calendar timedCompCal)
+	{
+		String q = 
+			"select * from "
+			+ "(select cmp.computation_id, cmp.date_time_loaded "
+				+ "from cp_comp_property cprop, cp_computation cmp "
+				+ "where cprop.computation_id = cmp.computation_id "
+				+ "and lower(prop_name) = 'timedcompinterval'"
+				+ "and cmp.loading_application_id = " + getAppId() + ") q1"
+			+ " union "
+			+ "(select cmp.computation_id, cmp.date_time_loaded "
+				+ "from cp_computation cmp, cp_algorithm alg, cp_algo_property aprop "
+				+ "where cmp.algorithm_id = alg.algorithm_id and alg.algorithm_id = aprop.algorithm_id "
+				+ "and lower(aprop.prop_name) = 'timedcompinterval'"
+				+ "and cmp.loading_application_id = " + getAppId() + ")";
+		ResultSet rs = null;
+		HashMap<DbKey,Date> timedCompsLMT = new HashMap<DbKey,Date>();
+		try
+		{
+			rs = theDb.doQuery(q);
+			while(rs.next())
+				timedCompsLMT.put(DbKey.createDbKey(rs, 1), theDb.getFullDate(rs, 2));
+			Logger.instance().debug3("" + timedCompsLMT.size() + " timed computations found for this process.");
+		}
+		catch (Exception ex)
+		{
+			warning("Error reading timed computation IDs: " + ex.toString());
+			return;
+		}
+		finally
+		{
+			if (rs != null)
+				try { rs.close(); } catch(Exception ex) {}
+		}
+		HashSet<DbKey> checkedComps = new HashSet<DbKey>();
+		ComputationDAI compDAO = theDb.makeComputationDAO();
+		try
+		{
+			Date nowd = new Date(now);
+			for(DbKey compId : timedCompsLMT.keySet())
+			{
+				DbComputation match = null;
+				for(DbComputation tc : timedComps)
+					if (tc.getKey().equals(compId))
+					{
+						match = tc;
+						break;
+					}
+				
+				// If I don't yet have this comp, or if it has been modified since I loaded it ...
+				if (match == null || match.getLastModified().before(timedCompsLMT.get(compId)))
+				{
+					// If a match was found, remove the old copy from the list.
+					if (match != null)
+						timedComps.remove(match);
+					try
+					{
+						DbComputation comp = compDAO.getComputationById(compId);
+						Date nrt = computeNextRunTime(comp.getProperty("timedCompInterval"),
+							comp.getProperty("timedCompOffset"), timedCompCal, nowd);
+						if (nrt != null)
+							comp.setNextRunTime(nrt);
+						timedComps.add(comp);
+						Logger.instance().debug3("Computation " + comp.getKey() + ":" + comp.getName()
+							+ " scheduled for " + debugSdf.format(nrt));
+					}
+					catch (Exception ex)
+					{
+						warning("Error retrieving timed computation: " + ex + " -- skipped.");
+					}
+				}
+				checkedComps.add(compId);
+			}
+		}
+		finally
+		{
+			compDAO.close();
+		}
+		// Now, any "unchecked" computation in my list has been deleted or is no longer timed.
+		for(Iterator<DbComputation> cit = timedComps.iterator(); cit.hasNext(); )
+		{
+			DbComputation tc = cit.next();
+			if (!checkedComps.contains(tc.getKey()))
+			{
+				info("Computation " + tc.getId() + "'" + tc.getName() 
+					+ "' has either been deleted or is no longer timed. Ceasing timed execution of it.");
+				cit.remove();
+			}
+		}
+	}
+	
+	/**
+	 * Called from main loop
+	 * @param tc
+	 */
+	private void executeTimedComp(DbComputation tc, Calendar timedCompCal, DataCollection dataCollection,
+		TimeSeriesDAI timeSeriesDAO, TsGroupDAI tsGroupDAO)
+		throws DbIoException
+	{
+		// Compute since & until: previous run time to current run time
+		Date until = tc.getNextRunTime();
+		timedCompCal.setTime(until);
+		IntervalIncrement inc = IntervalIncrement.parse(tc.getProperty("timedCompInterval"));
+		if (inc == null)
+			return;
+		timedCompCal.add(inc.getCalConstant(), -inc.getCount());
+		Date since = timedCompCal.getTime();
+		Logger.instance().debug1("Executing comp '" + tc.getName() + "' over time period "
+			+ debugSdf.format(since) + " to " + debugSdf.format(until));
+		
+		if (!DbKey.isNull(tc.getGroupId()))
+		{
+			// This is a group computation. The strategy is to expand the group and then
+			// apply every TSID member to the computation's parameter's masks. If all 
+			// input parms are either defined in the db or can be ignored, then I can
+			// execute the concrete computation built from the TSID.
+			// Caveat: At least one parm must be defined.
+			TsGroup grp = tsGroupDAO.getTsGroupById(tc.getGroupId());
+			if (!grp.getIsExpanded())
+				theDb.expandTsGroup(grp);
+			ArrayList<DbComputation> executeList = new ArrayList<DbComputation>();
+			
+		  nextGroupTSID:
+			for(TimeSeriesIdentifier tsid : grp.getExpandedList())
+			{
+				int numInputsDefined = 0;
+				for (DbCompParm parm : tc.getParmList())
+				{
+					Logger.instance().debug3("  parm '" + parm.getRoleName() + "'");
+					if (!parm.isInput())
+					{
+						Logger.instance().debug3("     - Not an input. Skipping.");
+						continue;
+					}
+					
+					// Transform the group TSID by the parm
+					Logger.instance().debug3("Checking input parm " + parm.getRoleName()
+						+ " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
+						+ " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
+						+ " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
+						+ " siteName=" + parm.getSiteName());
+					TimeSeriesIdentifier tmpTsid = tsid.copyNoKey();
+					Logger.instance().debug3("group tsid=" + tmpTsid.getUniqueString());
+					theDb.transformUniqueString(tmpTsid, parm);
+					Logger.instance().debug3("After transform, param TSID='" + tmpTsid.getUniqueString() + "'");
+					TimeSeriesIdentifier parmTsid = 
+						timeSeriesDAO.getCache().getByUniqueName(tmpTsid.getUniqueString());
+					MissingAction ma = MissingAction.fromString(tc.getProperty(parm.getRoleName() + "_MISSING"));
+					// If the transformed TSID exists in the DB, I can execute.
+					if (parmTsid != null)  // Transformed TSID exists in the database
+						numInputsDefined++;
+					else if (ma != MissingAction.IGNORE) // algorithm requires it to be undefined.
+					{
+						// This input parm does not exist and it can't be ignored.
+						// Therefore cannot execute this clone.
+						Logger.instance().debug3("===> TSID '" + tmpTsid.getUniqueString() + "' not defined in db and "
+							+ "MissingAction=" + ma + ", therefore cannot execute this clone.");
+						continue nextGroupTSID;
+					}
+				}
+				if (numInputsDefined == 0)
+				{
+					Logger.instance().debug3("===> There are NO input TSIDs defined. Cannot execute this clone.");
+					continue nextGroupTSID;
+				}
+				// ELSE I can execute this clone. Make it concrete and add it to the execute list.
+				try
+				{
+					// Use the resolver's method to avoid duplicates (multiple TSIDs in the group that 
+					// result in the same set of computation params.)
+					DbComputation concreteClone = DbCompResolver.makeConcrete(theDb, tsid, tc, true);
+					resolver.addToResults(executeList, concreteClone, null);
+				}
+				catch (NoSuchObjectException ex)
+				{
+					warning("Could not make concrete computation: " + ex);
+				}
+			}
+			for(DbComputation concreteClone : executeList)
+				executeSingleComp(concreteClone, since, until, dataCollection, timeSeriesDAO);
+		}
+		else // Not a group computation, just execute.
+			executeSingleComp(tc, since, until, dataCollection, timeSeriesDAO);
+		
+	}
+	
+	private void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection,
+		TimeSeriesDAI timeSeriesDAO)
+		throws DbIoException
+	{
+		// Make a data collection with inputs filled from ... until
+		ParmRef parmRef = null;
+		try
+		{
+			// The prepare method maps all input parms
+			tc.prepareForExec(theDb);
+			for(DbCompParm parm : tc.getParmList())
+			{
+				if (!parm.isInput())
+					continue;
+				// 'prepare' method doesn't actually create the CTimeSeries. Do that now.
+				tc.getExecutive().setDc(dataCollection);
+				tc.getExecutive().addTsToParmRef(parm.getRoleName(), false);
+				parmRef = tc.getExecutive().getParmRef(parm.getRoleName());
+				CTimeSeries cts = parmRef.timeSeries;
+				
+				// Read values between previous and this run. Then flag them as DB_ADDED
+				// Thus, they will be treated as triggers by the computation.
+				int numRead = timeSeriesDAO.fillTimeSeries(cts, since, until, true, true, false);
+				if (numRead > 0)
+				{
+					for(int idx = 0; idx < cts.size(); idx++)
+					{
+						TimedVariable tv = cts.sampleAt(idx);
+						if (!tv.getTime().before(since) && !tv.getTime().after(until))
+							VarFlags.setWasAdded(tv);
+					}
+					if (dataCollection.getTimeSeriesByUniqueSdi(cts.getTimeSeriesIdentifier().getKey()) == null)
+						try { dataCollection.addTimeSeries(cts); }
+						catch (DuplicateTimeSeriesException ex)
+						{
+							ex.printStackTrace(); // Should not happen! We checked first.
+						}
+				}
+			}
+			
+			tc.apply(dataCollection, theDb);
+		}
+		catch (DbCompException ex)
+		{
+			warning("Cannot initialize computation " + tc.getName() + ": " + ex);
+		}
+		catch (BadTimeSeriesException ex)
+		{
+			String msg = "Error in running computation " + tc.getKey() + ":" + tc.getName() + " -- ";
+			msg = msg + "No such input time series for parm '" + parmRef.role + "'";
+			if (parmRef.tsid == null) 
+				msg = msg + " -- No TSID assigned.";
+			else
+				msg = msg + " -- TSID '" + parmRef.tsid.getUniqueString() + "' does not exist in db.";
+			warning(msg);
+		}
+	}
 }
 
