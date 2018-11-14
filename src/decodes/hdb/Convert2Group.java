@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.5  2018/03/30 14:59:19  mmaloney
+*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
+*
 *  Revision 1.4  2016/11/03 19:01:21  mmaloney
 *  Refactoring for group evaluation to make HDB work the same way as CWMS.
 *
@@ -798,11 +801,6 @@ public class Convert2Group
 		catch (DbCompException ex)
 		{
 			warning("Cannot initialize computation: " + ex);
-			return false;
-		}
-		catch (NoSuchObjectException ex)
-		{
-			warning("Comp references unknown algorithm: " + ex);
 			return false;
 		}
 	}
