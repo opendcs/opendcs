@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.13  2018/01/25 21:50:28  mmaloney
+ * Use local getFullDate function that assumes dates are stored as long int.
+ *
  * Revision 1.12  2017/04/27 21:09:01  mmaloney
  * Remove dead code that was commented out.
  *
@@ -83,6 +86,7 @@ public class XmitRecordDAO
 	extends DaoBase implements XmitRecordDAI
 {
 	public static final String module = "XmitRecordDao";
+	protected static int numDaysStorage=5;
 	
 	/** Maps day numbers to xmit-rec table suffixes. */
 	class XmitDayMapEntry
@@ -235,6 +239,10 @@ public class XmitRecordDAO
 				+ " WHERE table_suffix = " + sqlString(firstFree.suffix);
 			Logger.instance().debug2("getDcpXmitSuffix: " + q);
 			doModify(q);
+			
+			// MJM 20181113 Go through map and discard too-old days
+			deleteOldTableData();
+			
 			return firstFree.suffix;
 		}
 
@@ -260,6 +268,21 @@ public class XmitRecordDAO
 			+ " WHERE table_suffix = " + sqlString(oldestDay.suffix);
 		doModify(q);
 		return oldestDay.suffix;
+	}
+	
+	public void deleteOldTableData()
+		throws DbIoException
+	{
+		info("deleteOldTableData ...");
+		
+		int today = msecToDay(System.currentTimeMillis());
+		for(XmitDayMapEntry xdme : dayNumSuffixMap)
+			if (xdme.dayNum != -1 && today - xdme.dayNum > numDaysStorage)
+			{
+				String suffix = getDcpXmitSuffix(xdme.dayNum, false);
+				info("Clearing data for day number " + xdme.dayNum + ", suffix=" + suffix);
+				clearTable(suffix);
+			}
 	}
 
 	/**
@@ -961,15 +984,6 @@ Logger.instance().debug1("XmitRecordDAO.rs2XmitRecord read a partial message: da
 	}
 
 	@Override
-	public void deleteDcpXmitsBefore(int dayNum) throws DbIoException
-	{
-		for(XmitDayMapEntry xdme : dayNumSuffixMap)
-			if (xdme.dayNum < dayNum)
-				clearTable(xdme.suffix);
-		loadDayNumSuffixMap();
-	}
-	
-	@Override
 	public Date getLastLocalRecvTime() throws DbIoException
 	{
 		loadDayNumSuffixMap();
@@ -1072,6 +1086,24 @@ Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
 		{
 			warning("Cannot convert date!");
 			return null;
+		}
+	}
+
+	@Override
+	public void setNumDaysStorage(int numDaysStorage)
+	{
+		XmitRecordDAO.numDaysStorage = numDaysStorage;
+		try
+		{
+			if (dayNumSuffixMapLoadedMsec == 0L)
+				this.loadDayNumSuffixMap();
+			deleteOldTableData();
+		}
+		catch(DbIoException ex)
+		{
+			warning("Error deleting old data: " + ex);
+			System.err.println("Error deleting old data: " + ex);
+			ex.printStackTrace();
 		}
 	}
 

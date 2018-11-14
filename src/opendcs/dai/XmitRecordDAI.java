@@ -98,14 +98,6 @@ public interface XmitRecordDAI
 		throws DbIoException;
 	
 	/**
-	 * Delete all transmissions before the specified day number.
-	 * Requires the DCP Monitor Extensions to the Time Series Database.
-	 * @param dayNum the day number (Jan 1, 1970 was day 0).
-	 */
-	public void deleteDcpXmitsBefore(int dayNum)
-		throws DbIoException;
-
-	/**
 	 * Given a day number, return the suffix of the table for that day.
 	 * @param dayNum Day number. Day 0 = Jan 1, 1970
 	 * @param doAllocate true to allocate a table for this day if one currently does not exist
@@ -157,5 +149,7 @@ public interface XmitRecordDAI
 	 */
 	public ArrayList<XmitRecSpec> readSince(int dayNum, long lastRecId)
 		throws DbIoException;
+	
+	public void setNumDaysStorage(int numDaysStorage);
 
 }
