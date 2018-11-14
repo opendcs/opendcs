@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.15  2017/12/14 17:05:46  mmaloney
+*  Split out aggregate properties so that algo and comp editor can only show aggregate
+*  properties for aggregate-type algorithms.
+*
 *  Revision 1.14  2017/11/07 20:27:09  mmaloney
 *  Improved debugs.
 *
@@ -111,6 +115,7 @@ import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import ilex.var.NoConversionException;
 import decodes.sql.DbKey;
+import decodes.tsdb.ComputationApp;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
@@ -210,6 +215,11 @@ public abstract class AW_AlgorithmBase
 			"When filling regular interval missing input data, do not fill more than this many intervals."),
 		new PropertySpec("maxMissingTimeForFill", PropertySpec.INT,
 			"When filling missing input data, fail if the missing gap is more than this many seconds."),
+		new PropertySpec("timedCompInterval",PropertySpec.STRING,
+			"Set for timed computations that are NOT triggered by inputs. e.g. '1 hour'"),
+		new PropertySpec("timedCompOffset", PropertySpec.STRING,
+			"(default=no offset) an optional offset after the regular interval for timed computations."
+			+ " e.g. '13 minutes'")
 	};
 	private PropertySpec aggAlgoPropertySpecs[] = 
 	{
@@ -1147,6 +1157,15 @@ public abstract class AW_AlgorithmBase
 		// We also set ...
 		//    TO_WRITE bit, causing it to be written back to DB.
 		v.setFlags( (v.getFlags()&(~mask)) | bits | VarFlags.TO_WRITE );
+		
+		// CWMS-13771 Use the python repeat guard for validation comps to
+		// prevent re-running the same computation.
+		ParmRef parmRef = this.getParmRef(name);
+		ComputationApp app = ComputationApp.instance();
+		if (app != null)
+			app.getResolver().pythonWrote(comp.getId(), 
+				parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
+
 	}
 
 	protected void clearInputFlagBits(String name, int bits)
