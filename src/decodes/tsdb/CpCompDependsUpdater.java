@@ -9,6 +9,9 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.19  2018/03/30 15:00:37  mmaloney
+*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
+*
 *  Revision 1.18  2018/03/30 14:13:32  mmaloney
 *  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
 *
@@ -777,7 +780,18 @@ public class CpCompDependsUpdater
 		{
 			comp = computationDAO.getComputationById(compId);
 			if (comp != null)
-				expandComputationInputs(comp);
+			{
+				// MJM 20181029 if a Timed computation, then don't compute any inputs
+				if (comp.getProperty("timedCompInterval") != null)
+				{
+					// remove any dependencies for this comp ID
+					// setting comp to null will cause this to happen below
+					comp = null;
+					info("This is a timed computation. No dependencies will be created.");
+				}
+				else // interval==null means normal triggered comp.
+					expandComputationInputs(comp);
+			}
 		}
 		catch (DbIoException ex)
 		{
@@ -801,8 +815,7 @@ public class CpCompDependsUpdater
 		}
 		
 		// Remove old copy of this computation from cached set of computations
-		for(Iterator<DbComputation> compit = enabledCompCache.iterator();
-			compit.hasNext(); )
+		for(Iterator<DbComputation> compit = enabledCompCache.iterator(); compit.hasNext(); )
 		{
 			DbComputation rcomp = compit.next();
 			if (rcomp.getId().equals(compId))
@@ -814,8 +827,7 @@ public class CpCompDependsUpdater
 		}
 		
 		// Remove all old dependencies for this computation.
-		for(Iterator<CpCompDependsRecord> ccdit = cpCompDependsCache.iterator();
-			ccdit.hasNext(); )
+		for(Iterator<CpCompDependsRecord> ccdit = cpCompDependsCache.iterator(); ccdit.hasNext(); )
 		{
 			CpCompDependsRecord ccd = ccdit.next();
 			if (ccd.getCompId().equals(compId))
@@ -1300,8 +1312,7 @@ info(q);
 		throws DbIoException
 	{
 		// Input parameters must have the SDI's expanded
-		for(Iterator<DbCompParm> parmit = comp.getParms();
-			parmit.hasNext(); )
+		for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext(); )
 		{
 			DbCompParm parm = parmit.next();
 			if (parm.isInput() && parm.getSiteId() == Constants.undefinedId)
