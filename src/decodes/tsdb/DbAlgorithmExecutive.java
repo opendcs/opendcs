@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.14  2018/01/08 19:34:00  mmaloney
+*  Implement the "Now -" option for computation effective end.
+*
 *  Revision 1.13  2017/11/07 20:26:11  mmaloney
 *  Improved debugs.
 *
@@ -453,7 +456,7 @@ debug3("DbAlgorithmExec.apply()");
 		parmMap.put(role, parmRef);
 	}
 
-	private void addTsToParmRef(String role, boolean isOutput)
+	public void addTsToParmRef(String role, boolean isOutput)
 	{
 		// Some params may be optional and not defined in a computation.
 		ParmRef ref = getParmRef(role);
@@ -1894,6 +1897,11 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	}
 	
 	public DataCollection getDataCollection() { return dc; }
+
+	public void setDc(DataCollection dc)
+	{
+		this.dc = dc;
+	}
 	
 	/**
 	 * Often, especially when filling an aggregate period, we already
