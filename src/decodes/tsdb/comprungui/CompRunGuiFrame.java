@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2018/06/04 19:23:38  mmaloney
+ * HDB issue where deleted values were being displayed on table and graph.
+ *
  * Revision 1.1  2017/08/22 19:57:35  mmaloney
  * Refactor
  *
@@ -982,12 +985,6 @@ public class CompRunGuiFrame extends TopFrame
 			catch (DbIoException e)
 			{
 				showError(module + " DbIOException in " + "runButtonPressed() " + e.getMessage());
-				continue;
-			}
-			catch (NoSuchObjectException e)
-			{
-				// e.printStackTrace();
-				showError(module + " NoSuchObjectException in " + "runButtonPressed() " + e.getMessage());
 				continue;
 			}
 
