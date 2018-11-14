@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2017/08/22 19:56:38  mmaloney
+*  Refactor
+*
 *  Revision 1.5  2017/03/23 16:06:54  mmaloney
 *  downgrade debug
 *
@@ -42,7 +45,6 @@ import java.util.Iterator;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import ilex.util.Logger;
-import ilex.util.TextUtil;
 import decodes.sql.DbKey;
 
 /**
