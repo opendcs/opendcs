@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.34  2018/09/11 21:32:16  mmaloney
+*  Modify morph() method to allow a way to create a mask that specifies to lop off the remainder of a parameter.
+*
 *  Revision 1.33  2018/05/23 19:59:01  mmaloney
 *  OpenTSDB Initial Release
 *
@@ -615,11 +618,14 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import lrgs.gui.DecodesInterface;
-import cwmsdb.CwmsSecJdbc;
-//import cwmsdb.CwmsCatJdbc;
-import oracle.jdbc.OraclePreparedStatement;
+
+import java.sql.PreparedStatement;
+
+import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import hec.db.cwms.CwmsSecurityDao;
 import hec.lang.Const;
 import ilex.util.Logger;
 import ilex.util.StringPair;
@@ -673,7 +679,7 @@ public class CwmsTimeSeriesDb
 	private String jdbcOracleDriver = null;
 	
 	private BaseParam baseParam = new BaseParam();
-	private OraclePreparedStatement getMinStmt = null, getTaskListStmt;
+	private PreparedStatement getMinStmt = null, getTaskListStmt;
 	String getMinStmtQuery = null, getTaskListStmtQuery = null;
 	
 	
@@ -918,12 +924,16 @@ public class CwmsTimeSeriesDb
 		int cwmsSchemaVersion)
 		throws SQLException
 	{
+		
+		CwmsDbSec dbSec = CwmsDbServiceLookup.buildCwmsDb(CwmsDbSec.class, conn);
+		ResultSet rs = dbSec.getAssignedPrivGroups(conn, null);
+		
 		ArrayList<StringPair> ret = new ArrayList<StringPair>();
-		CwmsSecJdbc cwmsSec = new CwmsSecJdbc(conn);
+//		
+//		CwmsSecJdbc cwmsSec = new CwmsSecJdbc(conn);
 		// 4/8/13 phone call with Pete Morris - call with Null. and the columns returned are:
 		// username, user_db_office_id, db_office_id, user_group_type, user_group_owner, user_group_id,
 		// is_member, user_group_desc
-		ResultSet rs = cwmsSec.getAssignedPrivGroups(null);
 		while(rs != null && rs.next())
 		{
 			String username = rs.getString(1);
@@ -1210,7 +1220,7 @@ public class CwmsTimeSeriesDb
 				getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
 					+ "where a.LOADING_APPLICATION_ID = " + applicationId
 					+ failTimeClause;
-				getMinStmt = (OraclePreparedStatement)conn.prepareStatement(getMinStmtQuery);
+				getMinStmt = conn.prepareStatement(getMinStmtQuery);
 	
 				// 2nd query gets tasklist recs within record_num range.
 				getTaskListStmtQuery = 
@@ -1221,7 +1231,7 @@ public class CwmsTimeSeriesDb
 					+ " and a.record_num between :1 /* minRecNum */ and :2 /* maxRecNum */"
 					+ failTimeClause
 					+ " ORDER BY a.RECORD_NUM";
-				getTaskListStmt = (OraclePreparedStatement)conn.prepareStatement(getTaskListStmtQuery);
+				getTaskListStmt = conn.prepareStatement(getTaskListStmtQuery);
 			}
 
 			debug3("Executing prepared stmt '" + getMinStmtQuery + "'");
@@ -1849,7 +1859,7 @@ public class CwmsTimeSeriesDb
 		throws DbIoException
 	{
 		String errMsg = null;
-		OraclePreparedStatement storeProcStmt = null;
+		PreparedStatement storeProcStmt = null;
 		
 		try
 		{
@@ -1863,7 +1873,7 @@ public class CwmsTimeSeriesDb
 				q = 
 					"begin cwms_ccp_vpd.set_ccp_session_ctx(" +
 					":1 /* office code */, :2 /* priv level*/, :3 /* officeId */); end;";
-				storeProcStmt  = (OraclePreparedStatement)conn.prepareStatement(q);
+				storeProcStmt  = conn.prepareStatement(q);
 				storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
 				storeProcStmt.setInt(2, privLevel);
 				storeProcStmt.setString(3, dbOfficeId);
@@ -1875,7 +1885,7 @@ public class CwmsTimeSeriesDb
 			else
 			{
 				q = "begin cwms_ccp_vpd.set_session_office_id(:1  /*Office ID */ ); end;"; 
-				storeProcStmt  = (OraclePreparedStatement)conn.prepareStatement(q);
+				storeProcStmt  = conn.prepareStatement(q);
 				storeProcStmt.setString(1, dbOfficeId);
 				Logger.instance().debug1("Executing '" + q + "' with "
 					+ "dbOfficeId='" + dbOfficeId + "'");

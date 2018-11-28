@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.13  2017/01/24 15:36:27  mmaloney
+ * CWMS-10060 added support for DecodesSettings.tsidFetchSize
+ *
  * Revision 1.12  2016/11/29 00:53:23  mmaloney
  * Overload lookupSiteID
  *
@@ -72,8 +75,9 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.DecodesSettings;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.dao.DbObjectCache.CacheIterator;
 import opendcs.dao.SiteDAO;
+import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
 /**
  * Data Access Object for CWMS Sites
@@ -241,17 +245,17 @@ public class CwmsSiteDAO extends SiteDAO
 			{
 				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue() 
 					+ "' with officeId=" + officeId);
-				cwmsdb.CwmsLocJdbc cwmsLocJdbc = new cwmsdb.CwmsLocJdbc(db.getConnection());
-
+				CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, db.getConnection());
+				
 				if (newSite.country == null || newSite.country.trim().length() == 0
 				 || newSite.country.trim().toLowerCase().startsWith("us"))
-					newSite.country = "US"; // picky picky picky
+					newSite.country = "US"; // required
 				
 				// MJM for release 5.3 use the new improved version of store
 				// This allows us to save country and nearest city.
-Logger.instance().debug3("CwmsSiteDAO.writeSite calling cwmsLocJdbc.store ... delev=" + delev
-+ ", elevUnits = " + newSite.getElevationUnits());
-				cwmsLocJdbc.store(officeId, 
+				cwmsDbLoc.store(
+					db.getConnection(),
+					officeId, 
 					cwmsName.getNameValue(), 
 					state, 
 					(String)null,               // countyName
@@ -375,14 +379,15 @@ ex.printStackTrace(System.err);
 			
 			q = "Deleting location_id '" + cwmsName.getNameValue();
 			Logger.instance().info(q);
-			cwmsdb.CwmsLocJdbc cwmsLocJdbc = new cwmsdb.CwmsLocJdbc(db.getConnection());
-			cwmsLocJdbc.delete(officeId, cwmsName.getNameValue());
-			cache.remove(location_code);
 
 			q = "delete from sitename where siteid = " + site.getId();
 			doModify(q);
 			q = "DELETE FROM SITE_PROPERTY WHERE site_id = " + site.getId();
 			doModify(q);
+
+			CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, db.getConnection());
+			cwmsDbLoc.delete(db.getConnection(), officeId, cwmsName.getNameValue());
+			cache.remove(location_code);
 		}
 		catch(SQLException ex)
 		{

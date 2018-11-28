@@ -12,6 +12,7 @@
  */
 package decodes.cwms;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -167,8 +168,7 @@ public class CwmsSqlDatabaseIO
 
 		try
 		{
-			oracle.jdbc.OracleConnection ocon = (oracle.jdbc.OracleConnection)getConnection();
-			ocon.setSessionTimeZone("GMT");
+			Connection ocon = getConnection();
 
 			st = getConnection().createStatement();
 			

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.20  2018/05/01 17:33:20  mmaloney
+ * Added setAppModule
+ *
  * Revision 1.19  2017/08/22 19:30:12  mmaloney
  * Refactor
  *
@@ -83,7 +86,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 
-import cwmsdb.CwmsTsJdbc;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Site;
@@ -107,6 +109,8 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
+import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
 public class CwmsTimeSeriesDAO 
 	extends DaoBase 
@@ -730,7 +734,9 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		// We use the RMA Java interface to write to DB
 		try
 		{
-			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(db.getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
+
+//			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(db.getConnection());
 			
 			ArrayList<Long> msecArray = new ArrayList<Long>();
 			ArrayList<Double> valueArray = new ArrayList<Double>();
@@ -763,7 +769,9 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				debug1(" Calling store for ts_id="
 					+ path + ", office='" + dbOfficeId 
 					+ "' with " + num2write + " values, units=" + ts.getUnitsAbbr());
-				cwmsTsJdbc.store(dbOfficeId, path, ts.getUnitsAbbr(), times, values,
+				cwmsDbTs.store(
+					db.getConnection(),
+					dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_ALL, 
 					overrideProtection, versionDate);
 			}
@@ -791,7 +799,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				debug1(" Calling store (no overwrite) for ts_id="
 						+ path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
 
-				cwmsTsJdbc.store(dbOfficeId, path, ts.getUnitsAbbr(), times, values,
+				cwmsDbTs.store(db.getConnection(), dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
 					overrideProtection, versionDate);
 			}
@@ -976,9 +984,9 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		}
 		try
 		{
-			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(db.getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
 			debug1("Deleting TSID '" + tsid.getUniqueString() + "' from office ID=" + dbOfficeId);
-			cwmsTsJdbc.deleteAll(dbOfficeId, tsid.getUniqueString());
+			cwmsDbTs.deleteAll(db.getConnection(), dbOfficeId, tsid.getUniqueString());
 			cache.remove(tsid.getKey());
 			refreshTsView();
 		}
@@ -1080,38 +1088,23 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		String path = tsid.getUniqueString();
 		try
 		{
-			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(db.getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
 			int utcOffset = 
 				IntervalCodes.getIntervalSeconds(tsid.getInterval()) == 0 ?
 				HecConstants.NO_UTC_OFFSET : HecConstants.UNDEFINED_UTC_OFFSET;
 			DbKey tsKey = Constants.undefinedId;
 
-			// CWMS 2.2 = TSDB Database Version 8. Less than this is CWMS v2.1
-			if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_8)
-			{
-				@SuppressWarnings("deprecation")
-				int tsCode = cwmsTsJdbc.createTsCode(dbOfficeId,
-					path,   // 6-part path name 
-					utcOffset, // utcOfficeMinutes 
-					null,   // intervalForward
-					null,   // intervalBackward
-					false,  // versionFlag
-					true);  // active
-				tsKey = DbKey.createDbKey((long)tsCode);
-			}
-			else // CWMS 2.2 or later
-			{
 Logger.instance().debug3("createTsCodeBigInteger(" + path + ")");
-				BigInteger tsCode = cwmsTsJdbc.createTsCodeBigInteger(dbOfficeId,
-					path,   // 6-part path name 
-					utcOffset, // utcOfficeMinutes 
-					null,   // intervalForward
-					null,   // intervalBackward
-					false,  // versionFlag
-					true);  // active
+			BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(db.getConnection(),
+				dbOfficeId,
+				path,   // 6-part path name 
+				utcOffset, // utcOfficeMinutes 
+				null,   // intervalForward
+				null,   // intervalBackward
+				false,  // versionFlag
+				true);  // active
 				tsKey = DbKey.createDbKey(tsCode.longValue());
 Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
-			}
 			tsid.setKey(tsKey);
 			
 			refreshTsView();

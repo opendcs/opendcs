@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.8  2016/03/09 16:46:50  mmaloney
+ * CWMS-7822 It was trying to save Double Negative/Positive infinity for ROC checks.
+ *
  * Revision 1.7  2016/02/29 22:16:46  mmaloney
  * Bug fix -- on update it was not saving the new description.
  *
@@ -22,12 +25,13 @@ import ilex.util.TextUtil;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.math.BigDecimal;
 
-import oracle.sql.CHAR;
-import oracle.sql.NUMBER;
-import cwmsdb.OracleTypeMap;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.validation.AbsCheck;
 import decodes.cwms.validation.ConstCheck;
@@ -35,16 +39,6 @@ import decodes.cwms.validation.DurCheckPeriod;
 import decodes.cwms.validation.RocPerHourCheck;
 import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.ScreeningCriteria;
-import decodes.cwms.validation.db.CwmsScreeningDbIo;
-import decodes.cwms.validation.db.CwmsTsIdArray;
-import decodes.cwms.validation.db.CwmsTsIdType;
-import decodes.cwms.validation.db.ScreenAssignArray;
-import decodes.cwms.validation.db.ScreenAssignType;
-import decodes.cwms.validation.db.ScreenControlType;
-import decodes.cwms.validation.db.ScreenCritArray;
-import decodes.cwms.validation.db.ScreenCritType;
-import decodes.cwms.validation.db.ScreenDurMagArray;
-import decodes.cwms.validation.db.ScreenDurMagType;
 import decodes.db.NoConversionException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
@@ -55,6 +49,12 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
+import usace.cwms.db.dao.ifc.vt.CwmsDbVt;
+import usace.cwms.db.dao.ifc.vt.ScreenAssignT;
+import usace.cwms.db.dao.ifc.vt.ScreenCritType;
+import usace.cwms.db.dao.ifc.vt.ScreenDurMagType;
+import usace.cwms.db.dao.ifc.vt.ScreeningControlT;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
 /**
  * This DAO translates between normal Java types and the Oracle-specific types
@@ -97,14 +97,13 @@ public class ScreeningDAO
 	public static final String durMagColumns = "SCREENING_CODE, SEASON_START_DAY, SEASON_START_MONTH, "
 		+ "DUR_MAG_DURATION_ID, REJECT_LO, REJECT_HI, QUESTION_LO, QUESTION_HI";
 	
-	/** The jpub-generated dbio object for screening */
-	private CwmsScreeningDbIo csdbio = null;
+	private CwmsDbVt csdbio = null;
 
 	public ScreeningDAO(DatabaseConnectionOwner tsdb)
 		throws DbIoException
 	{
 		super(tsdb, module);
-		try { csdbio = new CwmsScreeningDbIo(db.getConnection()); }
+		try { csdbio = CwmsDbServiceLookup.buildCwmsDb(CwmsDbVt.class, tsdb.getConnection()); }
 		catch(Exception ex)
 		{
 			String msg = module + " cannot create CwmsScreeningDbIo: " + ex;
@@ -138,9 +137,9 @@ public class ScreeningDAO
 		try
 		{
 			String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
-			CHAR P_SCREENING_ID = OracleTypeMap.buildChar(screening.getScreeningName());
-			CHAR P_DB_OFFICE_ID = OracleTypeMap.buildChar(officeId);
-			CHAR P_SCREENING_ID_DESC = OracleTypeMap.buildChar(screening.getScreeningDesc());
+			String P_SCREENING_ID = screening.getScreeningName();
+			String P_DB_OFFICE_ID = officeId;
+			String P_SCREENING_ID_DESC = screening.getScreeningDesc();
 
 			// If it still does not have a key, create the screening id and assign a surrogate key.
 			if (DbKey.isNull(screening.getScreeningCode()))
@@ -149,15 +148,16 @@ public class ScreeningDAO
 					throw new DbIoException(module + " invalid screeningId '" + screening.getScreeningName()
 						+ "' must be a string of 16 chars or less");
 				
-				CHAR P_PARAMETER_ID = OracleTypeMap.buildChar(screening.getParamId());
-				CHAR P_PARAMETER_TYPE_ID = OracleTypeMap.buildChar(screening.getParamTypeId());
-				CHAR P_DURATION_ID = OracleTypeMap.buildChar(screening.getDurationId());
+				String P_PARAMETER_ID = screening.getParamId();
+				String P_PARAMETER_TYPE_ID = screening.getParamTypeId();
+				String P_DURATION_ID = screening.getDurationId();
 				
 				Logger.instance().info("Creating screening '" + screening.getScreeningName() + "' param="
 					+ screening.getParamId() + ", paramType=" + screening.getParamTypeId() + ", dur="
 					+ screening.getDurationId() + ", officeId=" + officeId);
 //System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER_ID);
-				csdbio.createScreeningId(P_SCREENING_ID, P_SCREENING_ID_DESC, P_PARAMETER_ID,
+				csdbio.createScreeningId(db.getConnection(),
+					P_SCREENING_ID, P_SCREENING_ID_DESC, P_PARAMETER_ID,
 					P_PARAMETER_TYPE_ID, P_DURATION_ID, P_DB_OFFICE_ID);
 				
 				screening.setScreeningCode(getKeyForId(screening.getScreeningName()));
@@ -171,7 +171,8 @@ public class ScreeningDAO
 			{
 				Logger.instance().info("Screening already exists with key=" + screening.getScreeningCode()
 					+ ", updating description.");
-				csdbio.updateScreeningIdDesc(P_SCREENING_ID, P_SCREENING_ID_DESC, P_DB_OFFICE_ID);
+				csdbio.updateScreeningIdDesc(db.getConnection(),
+					P_SCREENING_ID, P_SCREENING_ID_DESC, P_DB_OFFICE_ID);
 			}
 			
 			// Translate the CCP's array list of ScreeningCriteria into an Oracle ScreenCritArray
@@ -198,18 +199,18 @@ public class ScreeningDAO
 					if (oracleDurMagType == null)
 					{
 						oracleDurMagType = new ScreenDurMagType();
-						oracleDurMagType.setDurationId(OracleTypeMap.buildChar(cpDCP.getDuration()));
+						oracleDurMagType.setDurationId(cpDCP.getDuration());
 						season_oracleDurMag.put(cpDCP.getDuration(), oracleDurMagType);
 					}
 					if (cpDCP.getFlag() == 'Q')
 					{
-						oracleDurMagType.setQuestionLo(new NUMBER(cpDCP.getLow()));
-						oracleDurMagType.setQuestionHi(new NUMBER(cpDCP.getHigh()));
+						oracleDurMagType.setQuestionLo(BigDecimal.valueOf(cpDCP.getLow()));
+						oracleDurMagType.setQuestionHi(BigDecimal.valueOf(cpDCP.getHigh()));
 					}
 					else if (cpDCP.getFlag() == 'R')
 					{
-						oracleDurMagType.setRejectLo(new NUMBER(cpDCP.getLow()));
-						oracleDurMagType.setRejectHi(new NUMBER(cpDCP.getHigh()));
+						oracleDurMagType.setRejectLo(BigDecimal.valueOf(cpDCP.getLow()));
+						oracleDurMagType.setRejectHi(BigDecimal.valueOf(cpDCP.getHigh()));
 					}
 				}
 				
@@ -228,49 +229,50 @@ public class ScreeningDAO
 				info("Preparing crit with season " + startMonth + "/" + startDay);
 
 				oracleScreenCrit[critIdx] = new ScreenCritType(
-					new NUMBER(startDay),
-					new NUMBER(startMonth),
-					rAbsCheck == null ? null : rAbsCheck.getLow() == Double.NEGATIVE_INFINITY ? null : new NUMBER(rAbsCheck.getLow()),
-					rAbsCheck == null ? null : rAbsCheck.getHigh() == Double.POSITIVE_INFINITY ? null : new NUMBER(rAbsCheck.getHigh()),
-					qAbsCheck == null ? null : qAbsCheck.getLow() == Double.NEGATIVE_INFINITY ? null : new NUMBER(qAbsCheck.getLow()),
-					qAbsCheck == null ? null : qAbsCheck.getHigh() == Double.POSITIVE_INFINITY ? null : new NUMBER(qAbsCheck.getHigh()),
-					rRocCheck == null ? null : rRocCheck.getRise() == Double.POSITIVE_INFINITY ? null : new NUMBER(rRocCheck.getRise()),
-					rRocCheck == null ? null : rRocCheck.getFall() == Double.NEGATIVE_INFINITY ? null : new NUMBER(rRocCheck.getFall()),
-					qRocCheck == null ? null : qRocCheck.getRise() == Double.POSITIVE_INFINITY ? null : new NUMBER(qRocCheck.getRise()),
-					qRocCheck == null ? null : qRocCheck.getFall() == Double.NEGATIVE_INFINITY ? null : new NUMBER(qRocCheck.getFall()),
+					BigDecimal.valueOf(startDay),
+					BigDecimal.valueOf(startMonth),
+					rAbsCheck == null ? null : rAbsCheck.getLow() == Double.NEGATIVE_INFINITY ? null : BigDecimal.valueOf(rAbsCheck.getLow()),
+					rAbsCheck == null ? null : rAbsCheck.getHigh() == Double.POSITIVE_INFINITY ? null : BigDecimal.valueOf(rAbsCheck.getHigh()),
+					qAbsCheck == null ? null : qAbsCheck.getLow() == Double.NEGATIVE_INFINITY ? null : BigDecimal.valueOf(qAbsCheck.getLow()),
+					qAbsCheck == null ? null : qAbsCheck.getHigh() == Double.POSITIVE_INFINITY ? null : BigDecimal.valueOf(qAbsCheck.getHigh()),
+					rRocCheck == null ? null : rRocCheck.getRise() == Double.POSITIVE_INFINITY ? null : BigDecimal.valueOf(rRocCheck.getRise()),
+					rRocCheck == null ? null : rRocCheck.getFall() == Double.NEGATIVE_INFINITY ? null : BigDecimal.valueOf(rRocCheck.getFall()),
+					qRocCheck == null ? null : qRocCheck.getRise() == Double.POSITIVE_INFINITY ? null : BigDecimal.valueOf(qRocCheck.getRise()),
+					qRocCheck == null ? null : qRocCheck.getFall() == Double.NEGATIVE_INFINITY ? null : BigDecimal.valueOf(qRocCheck.getFall()),
 						
-					rConstCheck == null ? null : OracleTypeMap.buildChar(rConstCheck.getDuration()),
-					rConstCheck == null ? null : new NUMBER(rConstCheck.getMinToCheck()),
-					rConstCheck == null ? null : new NUMBER(rConstCheck.getTolerance()),
-					rConstCheck == null ? null : new NUMBER(rConstCheck.getAllowedMissing()),
+					rConstCheck == null ? null : rConstCheck.getDuration(),
+					rConstCheck == null ? null : BigDecimal.valueOf(rConstCheck.getMinToCheck()),
+					rConstCheck == null ? null : BigDecimal.valueOf(rConstCheck.getTolerance()),
+					rConstCheck == null ? null : BigDecimal.valueOf(rConstCheck.getAllowedMissing()),
 	
-					qConstCheck == null ? null : OracleTypeMap.buildChar(qConstCheck.getDuration()),
-					qConstCheck == null ? null : new NUMBER(qConstCheck.getMinToCheck()),
-					qConstCheck == null ? null : new NUMBER(qConstCheck.getTolerance()),
-					qConstCheck == null ? null : new NUMBER(qConstCheck.getAllowedMissing()),
+					qConstCheck == null ? null : qConstCheck.getDuration(),
+					qConstCheck == null ? null : BigDecimal.valueOf(qConstCheck.getMinToCheck()),
+					qConstCheck == null ? null : BigDecimal.valueOf(qConstCheck.getTolerance()),
+					qConstCheck == null ? null : BigDecimal.valueOf(qConstCheck.getAllowedMissing()),
 						
-					OracleTypeMap.buildChar(cpCrit.getEstimateExpression()),
-					new ScreenDurMagArray(oracleDurMagTypeArray)
+					cpCrit.getEstimateExpression(),
+					Arrays.asList(oracleDurMagTypeArray)
 				);
 			}
-			ScreenCritArray oracleScreenCritArray = new ScreenCritArray(oracleScreenCrit);
 			
-			ScreenControlType screenControlType = new ScreenControlType(
-				OracleTypeMap.buildChar(screening.isRangeActive() ? "T" : "F"),
-				OracleTypeMap.buildChar(screening.isRocActive() ? "T" : "F"),
-				OracleTypeMap.buildChar(screening.isConstActive() ? "T" : "F"),
-				OracleTypeMap.buildChar(screening.isDurMagActive() ? "T" : "F"));
+			List<ScreenCritType> oracleScreenCritArray = Arrays.asList(oracleScreenCrit);
+			
+			ScreeningControlT screenControlType = new ScreeningControlT(
+				screening.isRangeActive() ? "T" : "F",
+				screening.isRocActive() ? "T" : "F",
+				screening.isConstActive() ? "T" : "F",
+				screening.isDurMagActive() ? "T" : "F");
 			
 			info("Calling storeScreeningCriteria with " + oracleScreenCrit.length + " seasons.");
-			csdbio.storeScreeningCriteria(
+			csdbio.storeScreeningCriteria(db.getConnection(),
 				P_SCREENING_ID,
-				OracleTypeMap.buildChar(screening.getCheckUnitsAbbr()),
 				oracleScreenCritArray,
-				OracleTypeMap.buildChar("1Hour"),
+				"1Hour",
 				screenControlType,
-				OracleTypeMap.buildChar("DELETE INSERT"),
-				OracleTypeMap.buildChar("T"),
-				P_DB_OFFICE_ID);
+				"DELETE INSERT",
+				true,
+				P_DB_OFFICE_ID,
+				screening.getCheckUnitsAbbr());
 		}
 		catch(SQLException ex)
 		{
@@ -289,13 +291,13 @@ public class ScreeningDAO
 	{
 		try
 		{
-			csdbio.deleteScreeningId(
-				OracleTypeMap.buildChar(screening.getScreeningName()),
-				OracleTypeMap.buildChar(screening.getParamId()),
-				OracleTypeMap.buildChar(screening.getParamTypeId()),
-				OracleTypeMap.buildChar(screening.getDurationId()),
-				OracleTypeMap.buildChar("T"),
-				OracleTypeMap.buildChar(((CwmsTimeSeriesDb)db).getDbOfficeId()));
+			csdbio.deleteScreeningId(db.getConnection(),
+				screening.getScreeningName(),
+				screening.getParamId(),
+				screening.getParamTypeId(),
+				screening.getDurationId(),
+				true,
+				((CwmsTimeSeriesDb)db).getDbOfficeId());
 		}
 		catch (SQLException ex)
 		{
@@ -746,9 +748,9 @@ public class ScreeningDAO
 	{
 		try
 		{
-			CHAR P_SCREENING_ID = OracleTypeMap.buildChar(screeningId);
-			NUMBER P_DB_OFFICE_CODE = new NUMBER(((CwmsTimeSeriesDb)db).getDbOfficeCode().getValue());
-			NUMBER O_RET = csdbio.getScreeningCode(P_SCREENING_ID, P_DB_OFFICE_CODE);
+			String P_SCREENING_ID = screeningId;
+			long P_DB_OFFICE_CODE = ((CwmsTimeSeriesDb)db).getDbOfficeCode().getValue();
+			BigDecimal O_RET = csdbio.getScreeningCode(db.getConnection(), P_SCREENING_ID, (double)P_DB_OFFICE_CODE);
 			return O_RET == null ? DbKey.NullKey : DbKey.createDbKey(O_RET.longValue());
 		}
 		catch (SQLException ex)
@@ -863,12 +865,12 @@ public class ScreeningDAO
 		
 		try
 		{
-			ScreenAssignType sata[] = new ScreenAssignType[1];
-			sata[0] = new ScreenAssignType(OracleTypeMap.buildChar(tsid.getUniqueString()),
-				OracleTypeMap.buildChar("T"), null);
-			ScreenAssignArray saa = new ScreenAssignArray(sata);
-			csdbio.assignScreeningId(OracleTypeMap.buildChar(screening.getScreeningName()),
-				saa, OracleTypeMap.buildChar(((CwmsTimeSeriesDb)db).getDbOfficeId()));
+			List<ScreenAssignT> screenAssignTS = Collections.singletonList(
+				new ScreenAssignT(tsid.getUniqueString(), true, null));
+			
+			csdbio.assignScreeningId(db.getConnection(),
+				screening.getScreeningName(),
+				screenAssignTS, ((CwmsTimeSeriesDb)db).getDbOfficeId());
 		}
 		catch (SQLException ex)
 		{
@@ -883,15 +885,13 @@ public class ScreeningDAO
 	@Override
 	public void unassignScreening(Screening screening, TimeSeriesIdentifier tsid) throws DbIoException
 	{
-		CwmsTsIdType ctit[] = new CwmsTsIdType[1];
 		try
 		{
-			ctit[0] = (tsid != null) ? 
-				new CwmsTsIdType(OracleTypeMap.buildChar(tsid.getUniqueString())) : null;
-			CwmsTsIdArray ctia = new CwmsTsIdArray(ctit);
-			csdbio.unassignScreeningId(OracleTypeMap.buildChar(screening.getScreeningName()), 
-				ctia, OracleTypeMap.buildChar(tsid != null ? "F" : "T"), 
-				OracleTypeMap.buildChar(((CwmsTimeSeriesDb)db).getDbOfficeId()));
+			csdbio.unassignScreeningId(db.getConnection(),
+				screening.getScreeningName(),
+				Collections.singletonList(tsid != null ? tsid.getUniqueString() : null),
+				tsid == null, 
+				((CwmsTimeSeriesDb)db).getDbOfficeId());
 		}
 		catch (SQLException ex)
 		{
@@ -904,9 +904,10 @@ public class ScreeningDAO
 	{
 		try
 		{
-			csdbio.renameScreeningId(OracleTypeMap.buildChar(oldId), 
-				OracleTypeMap.buildChar(newId), 
-				OracleTypeMap.buildChar(((CwmsTimeSeriesDb)db).getDbOfficeId()));
+			csdbio.renameScreeningId(db.getConnection(),
+				oldId, 
+				newId, 
+				((CwmsTimeSeriesDb)db).getDbOfficeId());
 		}
 		catch (SQLException ex)
 		{
@@ -921,9 +922,10 @@ public class ScreeningDAO
 		
 		try
 		{
-			csdbio.updateScreeningIdDesc(OracleTypeMap.buildChar(screeningId), 
-				OracleTypeMap.buildChar(desc), 
-				OracleTypeMap.buildChar(((CwmsTimeSeriesDb)db).getDbOfficeId()));
+			csdbio.updateScreeningIdDesc(db.getConnection(),
+				screeningId, 
+				desc, 
+				((CwmsTimeSeriesDb)db).getDbOfficeId());
 		}
 		catch (SQLException ex)
 		{
