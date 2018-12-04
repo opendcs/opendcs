@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.35  2018/11/28 21:18:48  mmaloney
+*  CWMS JOOQ Migration Mods
+*
 *  Revision 1.34  2018/09/11 21:32:16  mmaloney
 *  Modify morph() method to allow a way to create a mask that specifies to lop off the remainder of a parameter.
 *
@@ -625,7 +628,6 @@ import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.db.cwms.CwmsSecurityDao;
 import hec.lang.Const;
 import ilex.util.Logger;
 import ilex.util.StringPair;
