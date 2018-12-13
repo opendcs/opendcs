@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.3  2018/12/13 17:54:55  mmaloney
+ * dev
+ *
  * Revision 1.2  2018/12/13 16:22:17  mmaloney
  * dev
  *
@@ -115,7 +118,7 @@ public class JavaLoggerAdapter extends Handler
 		
 		String cname = JavaLoggerAdapter.class.getName();
 		java.util.logging.Logger myLogger = java.util.logging.Logger.getLogger(cname);
-		myLogger.setLevel(Level.ALL);
+		myLogger.setLevel(Level.FINEST);
 		myLogger.log(Level.SEVERE, "SEVERE for cname=" + cname);
 		myLogger.log(Level.WARNING, "WARNING for cname=" + cname);
 		myLogger.log(Level.INFO, "INFO for cname=" + cname);
