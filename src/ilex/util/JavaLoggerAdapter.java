@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.4  2018/12/13 18:00:58  mmaloney
+ * dev
+ *
  * Revision 1.3  2018/12/13 17:54:55  mmaloney
  * dev
  *
@@ -23,6 +26,7 @@
  */
 package ilex.util;
 
+import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -42,7 +46,7 @@ public class JavaLoggerAdapter extends Handler
 		java.util.logging.Logger.getLogger(globalName);
 	private static ilex.util.Logger ilexLogger = null;
 	private static final JavaLoggerAdapter _instance = new JavaLoggerAdapter();
-	private static SimpleFormatter simpleFormatter = null;
+	private static Formatter myFormatter = null;
 	private static boolean initialized = false;
 	
 	/** Singleton access only */
@@ -65,15 +69,20 @@ public class JavaLoggerAdapter extends Handler
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
 		jLogger.addHandler(_instance);
 		LogManager.getLogManager().getLogger(globalName).setLevel(Level.ALL);
+		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
+		if (rootLogger != null)
+			rootLogger.setLevel(Level.ALL);
+		else
+			System.err.println("No 'root' logger.");
 	}
 
 	@Override
 	public void publish(LogRecord record)
 	{
-		if (simpleFormatter == null)
-			simpleFormatter = new SimpleFormatter();
+		if (myFormatter == null)
+			myFormatter = new JavaLoggerFormatter();
 		
-		ilexLogger.log(mapPriority(record), simpleFormatter.format(record));
+		ilexLogger.log(mapPriority(record), myFormatter.format(record));
 	}
 	
 	private int mapPriority(LogRecord record)
@@ -113,8 +122,10 @@ public class JavaLoggerAdapter extends Handler
 		
 		java.util.logging.Logger globalLogger = 
 			java.util.logging.Logger.getLogger(java.util.logging.Logger.GLOBAL_LOGGER_NAME);
+		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
 		
 		globalLogger.log(Level.INFO, "INFO message sent to java global logger.");
+		rootLogger.log(Level.INFO, "INFO message sent to java root logger.");
 		
 		String cname = JavaLoggerAdapter.class.getName();
 		java.util.logging.Logger myLogger = java.util.logging.Logger.getLogger(cname);
@@ -128,10 +139,16 @@ public class JavaLoggerAdapter extends Handler
 		myLogger.log(Level.FINEST, "FINEST for cname=" + cname);
 		Logger.instance().debug3("Direct DEBUG_3 message to IlexLogger.");
 		globalLogger.log(Level.FINEST, "FINEST to global logger.");
-		
-
-		// TODO Auto-generated method stub
-
 	}
+}
 
+class JavaLoggerFormatter
+	extends Formatter
+{
+	@Override
+	public String format(LogRecord record)
+	{
+		return record.getLoggerName() + ": " + record.getMessage();
+	}
+	
 }
