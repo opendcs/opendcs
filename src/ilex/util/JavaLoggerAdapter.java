@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.6  2018/12/13 22:53:12  mmaloney
+ * dev
+ *
  * Revision 1.5  2018/12/13 22:36:29  mmaloney
  * dev
  *
@@ -69,7 +72,7 @@ public class JavaLoggerAdapter extends Handler
 		initialized = true;
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
 		
-System.err.println("\nConfiguring globalLogger");
+//System.err.println("\nConfiguring globalLogger");
 		java.util.logging.Logger globalLogger = LogManager.getLogManager().getLogger(globalName);
 		Handler handlers[] = globalLogger.getHandlers();
 		if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
@@ -77,7 +80,7 @@ System.err.println("\nConfiguring globalLogger");
 		globalLogger.addHandler(instance());
 		globalLogger.setLevel(Level.ALL);
 		
-System.err.println("\nConfiguring rootLogger");
+//System.err.println("\nConfiguring rootLogger");
 		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
 		if (rootLogger == null)
 			System.err.println("rootLogger is null.");
@@ -117,15 +120,13 @@ System.err.println("\nConfiguring rootLogger");
 	@Override
 	public void flush()
 	{
-		// TODO Auto-generated method stub
-
+		// Nothing to do
 	}
 
 	@Override
 	public void close() throws SecurityException
 	{
-		// TODO Auto-generated method stub
-
+		// Nothing to do
 	}
 
 	public static void main(String[] args)
@@ -137,11 +138,8 @@ System.err.println("\nConfiguring rootLogger");
 		
 		Logger.instance().info("After initialize -- message direct to Ilex Logger.");
 		
-		java.util.logging.Logger globalLogger = 
-			java.util.logging.Logger.getLogger(java.util.logging.Logger.GLOBAL_LOGGER_NAME);
 		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
 		
-		globalLogger.log(Level.INFO, "INFO message sent to java global logger.");
 		rootLogger.log(Level.INFO, "INFO message sent to java root logger.");
 		
 		String cname = JavaLoggerAdapter.class.getName();
@@ -155,7 +153,6 @@ System.err.println("\nConfiguring rootLogger");
 		myLogger.log(Level.FINER, "FINER for cname=" + cname);
 		myLogger.log(Level.FINEST, "FINEST for cname=" + cname);
 		Logger.instance().debug3("Direct DEBUG_3 message to IlexLogger.");
-		globalLogger.log(Level.FINEST, "FINEST to global logger.");
 	}
 }
 
@@ -165,7 +162,7 @@ class JavaLoggerFormatter
 	@Override
 	public String format(LogRecord record)
 	{
-System.err.println("\nFormatter loggername='" + record.getLoggerName() + "', msg='" + record.getMessage() + "'");
+//System.err.println("\nFormatter loggername='" + record.getLoggerName() + "', msg='" + record.getMessage() + "'");
 		return record.getLoggerName() + ": " + record.getMessage();
 	}
 	
