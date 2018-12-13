@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.2  2018/12/13 16:22:17  mmaloney
+ * dev
+ *
  * Revision 1.1  2018/12/13 15:55:46  mmaloney
  * Created.
  *
@@ -56,9 +59,9 @@ public class JavaLoggerAdapter extends Handler
 		if (initialized)
 			return;
 		initialized = true;
-		LogManager.getLogManager().getLogger(globalName).setLevel(Level.ALL);
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
 		jLogger.addHandler(_instance);
+		LogManager.getLogManager().getLogger(globalName).setLevel(Level.ALL);
 	}
 
 	@Override
@@ -112,6 +115,7 @@ public class JavaLoggerAdapter extends Handler
 		
 		String cname = JavaLoggerAdapter.class.getName();
 		java.util.logging.Logger myLogger = java.util.logging.Logger.getLogger(cname);
+		myLogger.setLevel(Level.ALL);
 		myLogger.log(Level.SEVERE, "SEVERE for cname=" + cname);
 		myLogger.log(Level.WARNING, "WARNING for cname=" + cname);
 		myLogger.log(Level.INFO, "INFO for cname=" + cname);
