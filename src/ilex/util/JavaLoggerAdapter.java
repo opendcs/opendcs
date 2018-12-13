@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.5  2018/12/13 22:36:29  mmaloney
+ * dev
+ *
  * Revision 1.4  2018/12/13 18:00:58  mmaloney
  * dev
  *
@@ -26,12 +29,12 @@
  */
 package ilex.util;
 
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.LogManager;
-import java.util.logging.SimpleFormatter;
 
 /**
  * This class is an adapter to make the log messages from libraries that use 
@@ -42,8 +45,6 @@ import java.util.logging.SimpleFormatter;
 public class JavaLoggerAdapter extends Handler
 {
 	private final static String globalName = java.util.logging.Logger.GLOBAL_LOGGER_NAME;
-	private final static java.util.logging.Logger jLogger = 
-		java.util.logging.Logger.getLogger(globalName);
 	private static ilex.util.Logger ilexLogger = null;
 	private static final JavaLoggerAdapter _instance = new JavaLoggerAdapter();
 	private static Formatter myFormatter = null;
@@ -67,13 +68,29 @@ public class JavaLoggerAdapter extends Handler
 			return;
 		initialized = true;
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
-		jLogger.addHandler(_instance);
-		LogManager.getLogManager().getLogger(globalName).setLevel(Level.ALL);
+		
+System.err.println("\nConfiguring globalLogger");
+		java.util.logging.Logger globalLogger = LogManager.getLogManager().getLogger(globalName);
+		Handler handlers[] = globalLogger.getHandlers();
+		if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
+			globalLogger.removeHandler(handlers[0]);
+		globalLogger.addHandler(instance());
+		globalLogger.setLevel(Level.ALL);
+		
+System.err.println("\nConfiguring rootLogger");
 		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
-		if (rootLogger != null)
-			rootLogger.setLevel(Level.ALL);
+		if (rootLogger == null)
+			System.err.println("rootLogger is null.");
+		else if (rootLogger == globalLogger)
+			System.err.println("rootLogger is the same as globalLogger.");
 		else
-			System.err.println("No 'root' logger.");
+		{
+			handlers = rootLogger.getHandlers();
+			if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
+				rootLogger.removeHandler(handlers[0]);
+			rootLogger.addHandler(instance());
+			rootLogger.setLevel(Level.ALL);
+		}
 	}
 
 	@Override
@@ -148,6 +165,7 @@ class JavaLoggerFormatter
 	@Override
 	public String format(LogRecord record)
 	{
+System.err.println("\nFormatter loggername='" + record.getLoggerName() + "', msg='" + record.getMessage() + "'");
 		return record.getLoggerName() + ": " + record.getMessage();
 	}
 	
