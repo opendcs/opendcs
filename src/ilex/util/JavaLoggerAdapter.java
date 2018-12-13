@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.1  2018/12/13 15:55:46  mmaloney
+ * Created.
+ *
  */
 package ilex.util;
 
@@ -116,6 +119,8 @@ public class JavaLoggerAdapter extends Handler
 		myLogger.log(Level.FINE, "FINE for cname=" + cname);
 		myLogger.log(Level.FINER, "FINER for cname=" + cname);
 		myLogger.log(Level.FINEST, "FINEST for cname=" + cname);
+		Logger.instance().debug3("Direct DEBUG_3 message to IlexLogger.");
+		globalLogger.log(Level.FINEST, "FINEST to global logger.");
 		
 
 		// TODO Auto-generated method stub
