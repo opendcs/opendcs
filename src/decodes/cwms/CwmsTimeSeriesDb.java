@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.37  2018/12/05 20:17:11  mmaloney
+*  Use new connection pool to obtain connection.
+*
 *  Revision 1.36  2018/12/04 21:46:34  mmaloney
 *  Removed unneeded import.
 *
@@ -635,6 +638,7 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.lang.Const;
+import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
@@ -707,6 +711,44 @@ public class CwmsTimeSeriesDb
 
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
+		JavaLoggerAdapter.initialize(Logger.instance());
+	}
+	
+	public static CwmsConnectionInfo getDbConnection(String dbUri, String username, String password, String dbOfficeId)
+		throws BadConnectException
+	{
+		CwmsConnectionInfo ret = new CwmsConnectionInfo();
+		
+		// Make a call to the new connection pool here.
+		ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);
+		CwmsDbConnectionPool connectionPool = CwmsDbConnectionPool.getInstance();
+		try
+		{
+			ret.setConnection(connectionPool.getConnection(loginInfo));
+		}
+		catch (SQLException ex)
+		{
+			if (ret.getConnection() != null)
+				try { CwmsDbConnectionPool.close(ret.getConnection()); } catch(Exception ex2) {}
+			ret.setConnection(null);
+			String msg = "Cannot get CWMS connection for user'" + username
+				+ "', officeId='" + dbOfficeId + "': " + ex;
+			Logger.instance().failure(msg);
+			throw new BadConnectException(msg);
+		}
+		
+		// MJM 2018-2/21 Force autoCommit on.
+		try { ret.getConnection().setAutoCommit(true);}
+		catch(SQLException ex)
+		{
+			Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
+		}
+
+		// After connection set the context for VPD to work.
+		ret.setDbOfficeCode(officeId2code(ret.getConnection(), dbOfficeId));
+
+		
+		return ret;
 	}
 
 	/**
@@ -721,10 +763,7 @@ public class CwmsTimeSeriesDb
 	public DbKey connect( String appName, Properties credentials )
 		throws BadConnectException
 	{
-//		String driverClass = this.jdbcOracleDriver != null ? this.jdbcOracleDriver :
-//			DecodesSettings.instance().jdbcDriverClass;
-		String dbUri = this.dbUri != null ? this.dbUri :
-			DecodesSettings.instance().editDatabaseLocation;
+		String dbUri = this.dbUri != null ? this.dbUri : DecodesSettings.instance().editDatabaseLocation;
 		
 		String username = credentials.getProperty("username");
 		String password = credentials.getProperty("password");
@@ -739,9 +778,7 @@ public class CwmsTimeSeriesDb
 					cgl.doLogin(null);
 					if (!cgl.isLoginSuccess()) // user hit cancel
 						throw new BadConnectException("Login aborted by user.");
-
 				}
-				
 				username = cgl.getUserName();
 				password = new String(cgl.getPassword());
 			}
@@ -751,7 +788,6 @@ public class CwmsTimeSeriesDb
 					"Cannot display login dialog: " + ex);
 			}
 		}
-		
 	
 // MJM 2018-12-05 New RMA/HEC libraries require obtaining a connection from the pool
 // The JDBC Connection cannot be constructed directly.
@@ -777,34 +813,17 @@ public class CwmsTimeSeriesDb
 		// be known before getting a connection from the pool. Therefore I cannot set
 		// it dynamically from the database or from user selection.
 		dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
-
-		// Make a call to the new connection pool here.
-		ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);
-		CwmsDbConnectionPool connectionPool = CwmsDbConnectionPool.getInstance();
+		
 		try
 		{
-			setConnection(connectionPool.getConnection(loginInfo));
+			CwmsConnectionInfo conInfo = getDbConnection(dbUri, username, password, dbOfficeId);
+			this.setConnection(conInfo.getConnection());
 		}
-		catch (SQLException ex)
+		catch(BadConnectException ex)
 		{
-			closeConnection();
-			String msg = "Cannot get CWMS connection for user'" + username
-				+ "', officeId='" + dbOfficeId + "': " + ex;
-			failure(msg);
 			cgl.setLoginSuccess(false);
-			throw new BadConnectException(msg);
-		}
-		
-		// MJM 2018-2/21 Force autoCommit on.
-		try { getConnection().setAutoCommit(true);}
-		catch(SQLException ex)
-		{
-			Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
 		}
 
-		
-		// After connection set the context for VPD to work.
-		dbOfficeCode = officeId2code(conn, dbOfficeId);
 
 // MJM 2018-12-05 as per recent interaction with RMA, the connection timezone will always
 // be UTC and I should not set it.
