@@ -26,6 +26,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.opentsdb.OpenTsdbIntervalDAO;
 import lrgs.gui.DecodesInterface;
+import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.StringPair;
@@ -117,6 +118,8 @@ public class CwmsSqlDatabaseIO
 		// Oracle 11g requires that backslashes NOT be escaped in SQL strings.
 		SqlDbObjIo.escapeBackslash = false;
 		_isOracle = true;
+		
+		JavaLoggerAdapter.initialize(Logger.instance());
 	}
 
 	/**
