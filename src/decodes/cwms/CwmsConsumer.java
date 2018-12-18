@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.11  2018/05/01 17:35:26  mmaloney
+*  sourceId is now a DbKey
+*
 *  Revision 1.10  2017/08/22 19:29:15  mmaloney
 *  Refactor
 *
@@ -219,99 +222,15 @@ public class CwmsConsumer extends DataConsumer
 		}
 		
 		// Get the Oracle Data Source & open a connection.
-		LoadingAppDAI loadingAppDAO = null;
 		try
 		{
 			cwmsTsdb = new CwmsTimeSeriesDb();
 			cwmsTsdb.requireCcpTables = false;
-			if (cwmsCfg.DbUri != null)
-				cwmsTsdb.setDbUri(cwmsCfg.DbUri);
-			if (cwmsCfg.jdbcOracleDriver != null)
-				cwmsTsdb.setJdbcOracleDriver(cwmsCfg.jdbcOracleDriver);
+			cwmsTsdb.setDbUri(cwmsCfg.getDbUri());
 			
 			DbKey appId = cwmsTsdb.connect("decodes", credentials);
-//			loadingAppDAO = cwmsTsdb.makeLoadingAppDAO();
-//			
-//			CompAppInfo myAppInfo = null;
-//			String processName = null;
-//			try
-//			{
-//				processName = PropertiesUtil.getIgnoreCase(props, "RoutingSpec.name");
-//				if (processName == null)
-//					processName = "decodes";
-//				else
-//				{
-//					ArrayList<CompAppInfo> apps = loadingAppDAO.listComputationApps(false);
-//					for(CompAppInfo cai : apps)
-//					{
-//						if (cai.getAppName().equalsIgnoreCase(processName))
-//						{
-//							appId = cai.getAppId();
-//							myAppInfo = cai;
-//							break;
-//						}
-//					}
-//
-//				}
-//				
-//				// MJM 20170220 Don't do this. RS will get its own lock.
-//				if (myAppInfo == null)
-//					Logger.instance().info("No Loading App '" + processName
-//						+ "' -- proceeding without lock.");
-//				else
-//				{
-//					
-//					int pid = TsdbAppTemplate.determinePID();
-//					
-//					String hostname = "unknown";
-//					try { hostname = InetAddress.getLocalHost().getHostName(); }
-//					catch(Exception e) { hostname = "unknown"; }
-//	
-//					myLock = loadingAppDAO.obtainCompProcLock(myAppInfo, pid, hostname);
-//					String eventPortS = PropertiesUtil.getIgnoreCase(props, "EventPort");
-//					if (eventPortS == null)
-//						eventPortS = myAppInfo.getProperty("EventPort");
-//					if (eventPortS != null)
-//					{
-//						try 
-//						{
-//							int evtPort = Integer.parseInt(eventPortS.trim());
-//							CompEventSvr compEventSvr = new CompEventSvr(evtPort);
-//							compEventSvr.startup();
-//						}
-//						catch(NumberFormatException ex)
-//						{
-//							Logger.instance().warning("Routing Spec " + processName
-//								+ ": Bad EventPort property '" + eventPortS
-//								+ "' must be integer. -- ignored.");
-//						}
-//						catch(IOException ex)
-//						{
-//							Logger.instance().failure(
-//								"Cannot create Event server: " + ex
-//								+ " -- no events available to external clients.");
-//						}
-//					}
-//				}
-//			}
-//			catch (DbIoException dbio)
-//			{
-//				String msg = "Error getting lock: " + dbio;
-//				System.err.println(msg);
-//				dbio.printStackTrace(System.err);
-//				throw new DataConsumerException(msg);
-//			}
-//			catch(LockBusyException lbe)
-//			{
-//				if (!processName.equals("decodes"))
-//				{
-//					Logger.instance().fatal("Lock for process '"
-//						+ processName + "' already taken. Exiting.");
-//					throw new DataConsumerException("Lock already taken.");
-//				}
-//				else
-//					myLock = null;
-//			}
+			Logger.instance().info(module + " Connected to CWMS database at "
+				+ cwmsCfg.getDbUri() + " as user " + credentials.getProperty("username"));
 		}
 		catch (BadConnectException ex)
 		{
@@ -319,11 +238,6 @@ public class CwmsConsumer extends DataConsumer
 			Logger.instance().fatal(msg);
 			throw new DataConsumerException(msg);
 		}
-//		finally
-//		{
-//			if (loadingAppDAO != null)
-//				loadingAppDAO.close();
-//		}
 
 		// Open and load the SHEF to CWMS Param properties file. This file
 		// contains all the mapping needed to convert from Shef codes to 

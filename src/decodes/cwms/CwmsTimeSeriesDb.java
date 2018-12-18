@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.38  2018/12/17 16:11:18  mmaloney
+*  jOOQ Mods
+*
 *  Revision 1.37  2018/12/05 20:17:11  mmaloney
 *  Use new connection pool to obtain connection.
 *
@@ -615,7 +618,6 @@ import java.util.Iterator;
 import java.util.GregorianCalendar;
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -668,11 +670,8 @@ data.
 public class CwmsTimeSeriesDb
 	extends TimeSeriesDb
 {
-//	private String[] creds = { "username", "password" };
-
 	private String dbOfficeId = null;
 	private DbKey dbOfficeCode = Constants.undefinedId;
-	private String dbOfficePrivilege = null;
 
 	private String[] currentlyUsedVersions = { "" };
 	GregorianCalendar saveTsCal = new GregorianCalendar(
@@ -682,13 +681,7 @@ public class CwmsTimeSeriesDb
 	
 	public boolean requireCcpTables = true;
 	
-	public static final int CWMS_V_2_1 = 21;
-	public static final int CWMS_V_2_2 = 22;
-	public static final int CWMS_V_3_0 = 30;
-	private int cwmsSchemaVersion = 0;
-	
 	private String dbUri = null;
-	private String jdbcOracleDriver = null;
 	
 	private BaseParam baseParam = new BaseParam();
 	private PreparedStatement getMinStmt = null, getTaskListStmt;
@@ -719,7 +712,7 @@ public class CwmsTimeSeriesDb
 	{
 		CwmsConnectionInfo ret = new CwmsConnectionInfo();
 		
-		// Make a call to the new connection pool here.
+		// Make a call to the new connection pool.
 		ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);
 		CwmsDbConnectionPool connectionPool = CwmsDbConnectionPool.getInstance();
 		try
@@ -746,7 +739,53 @@ public class CwmsTimeSeriesDb
 
 		// After connection set the context for VPD to work.
 		ret.setDbOfficeCode(officeId2code(ret.getConnection(), dbOfficeId));
-
+		
+		ArrayList<StringPair> officePrivileges = null;
+		String dbOfficePrivilege = null;
+		try
+		{
+			officePrivileges = determinePrivilegedOfficeIds(ret.getConnection());
+			// MJM 2018-12-05 now determine the highest privilege level that this user has in 
+			// the specified office ID:
+			
+			for(StringPair op : officePrivileges)
+			{
+				String priv = op.second.toLowerCase();
+				if (TextUtil.strEqualIgnoreCase(op.first, dbOfficeId) && priv.startsWith("ccp"))
+				{
+					if (priv.contains("mgr"))
+					{
+						dbOfficePrivilege = op.second;
+						break;
+					}
+					else if (priv.contains("proc"))
+					{
+						if (dbOfficePrivilege == null || !dbOfficePrivilege.toLowerCase().contains("mgr"))
+							dbOfficePrivilege = op.second;
+					}
+					else if (dbOfficePrivilege == null)
+						dbOfficePrivilege = op.second;
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			String msg = "Cannot determine privileged office IDs: " + ex;
+			Logger.instance().failure(msg);
+			throw new BadConnectException(msg);
+		}
+		try
+		{
+			setCtxDbOfficeId(ret.getConnection(), dbOfficeId, ret.getDbOfficeCode(), dbOfficePrivilege);
+		}
+		catch (Exception ex)
+		{
+			String msg = "Cannot set VPD context username/officeId username='" + username
+				+ "', officeId='" + dbOfficeId + "'";
+			Logger.instance().failure(msg);
+			try { CwmsDbConnectionPool.close(ret.getConnection()); } catch(Exception ex2) {}
+			throw new BadConnectException(msg);
+		}
 		
 		return ret;
 	}
@@ -789,185 +828,33 @@ public class CwmsTimeSeriesDb
 			}
 		}
 	
-// MJM 2018-12-05 New RMA/HEC libraries require obtaining a connection from the pool
-// The JDBC Connection cannot be constructed directly.
-//		try 
-//		{
-//			debug3("Getting class for '" + driverClass + "'");
-//			Class.forName(driverClass);
-//			debug3("Using DriverManager to connect as user '" + username + "'");
-//			conn = DriverManager.getConnection(dbUri, username, password);
-//			debug3("Connection established.");
-//		}
-//		catch (Exception ex) 
-//		{
-//			conn = null;
-//			cgl.setLoginSuccess(false);
-//			throw new BadConnectException(
-//				"Error getting JDBC connection using driver '"
-//				+ driverClass + "' to database at '" + dbUri
-//				+ "' for user '" + username + "': " + ex.toString());
-//		}
-		
 		// MJM 2018-12-05 The new HEC/RMA connection facility requires that office ID
 		// be known before getting a connection from the pool. Therefore I cannot set
 		// it dynamically from the database or from user selection.
 		dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
 		
+		// CWMS is Always GMT.
+		DecodesSettings.instance().sqlTimeZone = "GMT";
+
 		try
 		{
 			CwmsConnectionInfo conInfo = getDbConnection(dbUri, username, password, dbOfficeId);
-			this.setConnection(conInfo.getConnection());
+			setConnection(conInfo.getConnection());
+			postConnectInit(appName);
+			cgl.setLoginSuccess(true);
 		}
 		catch(BadConnectException ex)
 		{
-			cgl.setLoginSuccess(false);
-		}
-
-
-// MJM 2018-12-05 as per recent interaction with RMA, the connection timezone will always
-// be UTC and I should not set it.
-//		String q = "ALTER SESSION SET time_zone = "
-//			+ sqlString(DecodesSettings.instance().sqlTimeZone);
-//		Statement st = null;
-//		ResultSet rs = null;
-//		try
-//		{
-//			debug3("setting session tz with '" + q + "'");
-//			st = conn.createStatement();
-//			st.execute(q);
-//			st.close();
-//		}
-//		catch(SQLException ex)
-//		{
-//			String msg = "Error in SQL Statement '" + q + "': " + ex;
-//			cgl.setLoginSuccess(false);
-//			failure(msg);
-//		}
-		
-		// CWMS is Always GMT.
-		DecodesSettings.instance().sqlTimeZone = "GMT";
-		determineTsdbVersion();
-
-		cwmsSchemaVersion = determineCwmsSchemaVersion(getConnection(), tsdbVersion);
-		
-		// MJM 2018-12-05 See note above about new connection facility requiring that office
-		// ID be known prior to obtaining a connection.
-//		if (cwmsSchemaVersion >= CWMS_V_2_2)
-//		{
-//			Logger.instance().debug1(
-//				"Connected to CWMS " + cwmsSchemaVersion + " database. Will set office ID context.");
-//			dbOfficeId = null;
-			ArrayList<StringPair> officePrivileges = null;
-			try
-			{
-				officePrivileges = determinePrivilegedOfficeIds(getConnection(), cwmsSchemaVersion);
-				// MJM 2018-12-05 now determine the highest privilege level that this user has in 
-				// the specified office ID:
-				dbOfficePrivilege = null;
-				for(StringPair op : officePrivileges)
-				{
-					String priv = op.second.toLowerCase();
-					if (TextUtil.strEqualIgnoreCase(op.first, dbOfficeId) && priv.startsWith("ccp"))
-					{
-						if (priv.contains("mgr"))
-						{
-							dbOfficePrivilege = op.second;
-							break;
-						}
-						else if (priv.contains("proc"))
-						{
-							if (dbOfficePrivilege == null || !dbOfficePrivilege.toLowerCase().contains("mgr"))
-								dbOfficePrivilege = op.second;
-						}
-						else if (dbOfficePrivilege == null)
-							dbOfficePrivilege = op.second;
-					}
-				}
-			}
-			catch (SQLException ex)
-			{
-				String msg = "Cannot determine privileged office IDs: " + ex;
-				failure(msg);
-				cgl.setLoginSuccess(false);
-				throw new BadConnectException(msg);
-			}
-//			// Make sure office  matches for case with one of the privileged
-//			for(StringPair op : officePrivileges)
-//				if (TextUtil.strEqualIgnoreCase(op.first, DecodesSettings.instance().CwmsOfficeId))
-//				{
-//					dbOfficeId = op.first;
-//					dbOfficePrivilege = op.second;
-//					break;
-//				}
-//			// If GUI, allow user to select from the privileged offices
-//			if (DecodesInterface.isGUI() && officePrivileges.size() > 0)
-//			{
-//				if (!cgl.isOfficeIdSelected())
-//					cgl.selectOfficeId(null, officePrivileges, dbOfficeId);
-//				dbOfficeId = cgl.getDbOfficeId();
-//				dbOfficePrivilege = cgl.getDbOfficePrivilege();
-//			}
-//			else if (officePrivileges.size() > 0 && dbOfficeId == null)
-//			{
-//				// Not a GUI and not selected in properties.
-//				dbOfficeId = officePrivileges.get(0).first;
-//				dbOfficePrivilege = officePrivileges.get(0).second;
-//			}
-//
-//			if (dbOfficeId == null)
-//			{
-//				cgl.setLoginSuccess(false);
-//				throw new BadConnectException("No office ID with any CCP Privilege!");
-//			}
-//			dbOfficeCode = officeId2code(getConnection(), dbOfficeId);
-//			try
-//			{
-//				setCtxDbOfficeId(getConnection(), dbOfficeId,
-//					dbOfficeCode, dbOfficePrivilege, tsdbVersion);
-//			}
-//			catch (Exception ex)
-//			{
-//				closeConnection();
-//				String msg = "Cannot set username/officeId username='" + username
-//					+ "', officeId='" + dbOfficeId + "'";
-//				failure(msg);
-//				cgl.setLoginSuccess(false);
-//				throw new BadConnectException(msg);
-//			}
-//			try
-//			{
-//				baseParam.load(this);
-//			}
-//			catch (Exception ex)
-//			{
-//				String msg = "Cannot load baseParam Units Map: " + ex;
-//				failure(msg);
-//			}
-//		}
-//		else // CWMS 2.1 or earlier
-//		{
-//			dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
-//			dbOfficeCode = officeId2code(conn, dbOfficeId);
-//		}
-
-		try
-		{
-			setCtxDbOfficeId(getConnection(), dbOfficeId, dbOfficeCode, dbOfficePrivilege, tsdbVersion);
-		}
-		catch (Exception e)
-		{
-			closeConnection();
-			String msg = "Cannot set VPD context username/officeId username='" + username
-				+ "', officeId='" + dbOfficeId + "'";
+			String msg = "Cannot connect to database: " + ex;
 			failure(msg);
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
 			cgl.setLoginSuccess(false);
-			throw new BadConnectException(msg);
+			if (getConnection() != null)
+				closeConnection();
 		}
-
-		postConnectInit(appName);
 		
-		keyGenerator = new CwmsSequenceKeyGenerator(cwmsSchemaVersion, getDecodesDatabaseVersion());
+		keyGenerator = new CwmsSequenceKeyGenerator(getDecodesDatabaseVersion());
 
 		ResultSet rs = null;
 		String q = "";
@@ -989,12 +876,10 @@ public class CwmsTimeSeriesDb
 			{
 				warning("Error executing '" + q + "':" + ex);
 			}
-
 		}
 		
 		Logger.instance().info(module + 
-			" Connected to DECODES CWMS " + cwmsSchemaVersion 
-			+ " Database " + dbUri + " as user " + username
+			" Connected to DECODES CWMS Database " + dbUri + " as user " + username
 			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + dbOfficeCode + ")");
 
 		cgl.setLoginSuccess(true);
@@ -1018,8 +903,7 @@ public class CwmsTimeSeriesDb
 	 * @return array of string pairs: officeId,Privilege
 	 * @throws SQLException
 	 */
-	public static ArrayList<StringPair> determinePrivilegedOfficeIds(Connection conn, 
-		int cwmsSchemaVersion)
+	public static ArrayList<StringPair> determinePrivilegedOfficeIds(Connection conn)
 		throws SQLException
 	{
 		
@@ -1037,16 +921,16 @@ public class CwmsTimeSeriesDb
 			String username = rs.getString(1);
 			String db_office_id = null;
 			String user_group_id = null;
-			if (cwmsSchemaVersion <= CWMS_V_2_2)
-			{
-				db_office_id = rs.getString(3);
-				user_group_id = rs.getString(6);
-			}
-			else // CWMS 3.0 or later
-			{
+//			if (cwmsSchemaVersion <= CWMS_V_2_2)
+//			{
+//				db_office_id = rs.getString(3);
+//				user_group_id = rs.getString(6);
+//			}
+//			else // CWMS 3.0 or later
+//			{
 				db_office_id = rs.getString(2);
 				user_group_id = rs.getString(5);
-			}
+//			}
 //			String user_db_office_id = rs.getString(2);
 //			String user_group_type = rs.getString(4);
 //			String user_group_owner = rs.getString(5);
@@ -1953,7 +1837,7 @@ public class CwmsTimeSeriesDb
 	 * @throws DbIoException 
 	 */
 	public static void setCtxDbOfficeId(Connection conn, String dbOfficeId,
-		DbKey dbOfficeCode, String dbOfficePrivilege, int tsdbVersion)
+		DbKey dbOfficeCode, String dbOfficePrivilege)
 		throws DbIoException
 	{
 		String errMsg = null;
@@ -1962,32 +1846,21 @@ public class CwmsTimeSeriesDb
 		try
 		{
 			String q = null;
-			if (tsdbVersion >= TsdbDatabaseVersion.VERSION_9)
-			{
-				int privLevel = 
-					dbOfficeId == null ? 0 :
-					dbOfficePrivilege.toUpperCase().contains("MGR") ? 1 :
-					dbOfficePrivilege.toUpperCase().contains("PROC") ? 2 : 3;
-				q = 
-					"begin cwms_ccp_vpd.set_ccp_session_ctx(" +
-					":1 /* office code */, :2 /* priv level*/, :3 /* officeId */); end;";
-				storeProcStmt  = conn.prepareStatement(q);
-				storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
-				storeProcStmt.setInt(2, privLevel);
-				storeProcStmt.setString(3, dbOfficeId);
-				Logger.instance().debug1("Executing '" + q + "' with "
-					+ "dbOfficeCode=" + dbOfficeCode
-					+ ", privLevel=" + privLevel
-					+ ", dbOfficeId='" + dbOfficeId + "'");
-			}
-			else
-			{
-				q = "begin cwms_ccp_vpd.set_session_office_id(:1  /*Office ID */ ); end;"; 
-				storeProcStmt  = conn.prepareStatement(q);
-				storeProcStmt.setString(1, dbOfficeId);
-				Logger.instance().debug1("Executing '" + q + "' with "
-					+ "dbOfficeId='" + dbOfficeId + "'");
-			}
+			int privLevel = 
+				dbOfficeId == null ? 0 :
+				dbOfficePrivilege.toUpperCase().contains("MGR") ? 1 :
+				dbOfficePrivilege.toUpperCase().contains("PROC") ? 2 : 3;
+			q = 
+				"begin cwms_ccp_vpd.set_ccp_session_ctx(" +
+				":1 /* office code */, :2 /* priv level*/, :3 /* officeId */); end;";
+			storeProcStmt  = conn.prepareStatement(q);
+			storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
+			storeProcStmt.setInt(2, privLevel);
+			storeProcStmt.setString(3, dbOfficeId);
+			Logger.instance().debug1("Executing '" + q + "' with "
+				+ "dbOfficeCode=" + dbOfficeCode
+				+ ", privLevel=" + privLevel
+				+ ", dbOfficeId='" + dbOfficeId + "'");
 			storeProcStmt.execute();
 			conn.commit();
 		}
@@ -2057,58 +1930,52 @@ public class CwmsTimeSeriesDb
 		return null;
 	}
 
-	public static int determineCwmsSchemaVersion(Connection con, int tsdbVersion)
-	{
-		if (DecodesSettings.instance().cwmsVersionOverride == 2)
-		{
-			Logger.instance().info("cwmsVersionOverride==2");
-			return CWMS_V_2_1;
-		}
-		
-		String q = "select count(*) from all_synonyms where owner='PUBLIC' " +
-			"and SYNONYM_NAME = 'CWMS_ENV'";
-		ResultSet rs = null;
-		Statement stmt = null;
-		try
-        {
-			stmt = con.createStatement();
-			rs = stmt.executeQuery(q);
-			if (rs.next())
-			{
-				int count = rs.getInt(1);
-				if (count == 0)
-					return CWMS_V_2_1;
-				Logger.instance().debug3("Response to '" + q + "' is " + count
-					+ ", tsdbVersion=" + tsdbVersion);
-				if (tsdbVersion <= TsdbDatabaseVersion.VERSION_8)
-				{
-					return CWMS_V_2_2;
-				}
-				else
-					return CWMS_V_3_0;
-			}
-			Logger.instance().warning("Cannot determine CWMS Version. No results to query '"
-				+ q + "' -- assuming 3.0");
-			return CWMS_V_3_0;
-		}
-		catch (Exception ex)
-		{
-			Logger.instance().warning("Error Determing Schema Version: " + ex
-			+ " -- assuming 3.0");
-			return CWMS_V_3_0;
-		}
-		finally
-		{
-			if (rs != null)
-			{
-				try { rs.close(); } catch(Exception ex) {}
-			}
-			if (stmt != null)
-			{
-				try { stmt.close(); } catch(Exception ex) {}
-			}
-		}
-	}
+//	public static int determineCwmsSchemaVersion(Connection con, int tsdbVersion)
+//	{
+//		if (DecodesSettings.instance().cwmsVersionOverride == 2)
+//		{
+//			Logger.instance().info("cwmsVersionOverride==2");
+//			return CWMS_V_2_1;
+//		}
+//		
+//		String q = "select count(*) from all_synonyms where owner='PUBLIC' " +
+//			"and SYNONYM_NAME = 'CWMS_ENV'";
+//		ResultSet rs = null;
+//		Statement stmt = null;
+//		try
+//        {
+//			stmt = con.createStatement();
+//			rs = stmt.executeQuery(q);
+//			if (rs.next())
+//			{
+//				int count = rs.getInt(1);
+//				if (count == 0)
+//					return CWMS_V_2_1;
+//				Logger.instance().debug3("Response to '" + q + "' is " + count);
+//				return CWMS_V_3_0;
+//			}
+//			Logger.instance().warning("Cannot determine CWMS Version. No results to query '"
+//				+ q + "' -- assuming 3.0");
+//			return CWMS_V_3_0;
+//		}
+//		catch (Exception ex)
+//		{
+//			Logger.instance().warning("Error Determing Schema Version: " + ex
+//			+ " -- assuming 3.0");
+//			return CWMS_V_3_0;
+//		}
+//		finally
+//		{
+//			if (rs != null)
+//			{
+//				try { rs.close(); } catch(Exception ex) {}
+//			}
+//			if (stmt != null)
+//			{
+//				try { stmt.close(); } catch(Exception ex) {}
+//			}
+//		}
+//	}
 	
 	/**
 	 * Converts a CWMS String Office ID to the numeric office Code.
@@ -2146,19 +2013,9 @@ public class CwmsTimeSeriesDb
 		}
 	}
 
-	public int getCwmsSchemaVersion()
-	{
-		return cwmsSchemaVersion;
-	}
-
 	public void setDbUri(String dbUri)
 	{
 		this.dbUri = dbUri;
-	}
-
-	public void setJdbcOracleDriver(String jdbcOracleDriver)
-	{
-		this.jdbcOracleDriver = jdbcOracleDriver;
 	}
 
 	public DbKey getDbOfficeCode()
@@ -2236,8 +2093,22 @@ public class CwmsTimeSeriesDb
 			getTaskListStmt = null;
 		}
 		
-		//TODO return the connection to the CWMS connection pool. Do not close directly.
-		super.closeConnection();
+		// Return the connection to the CWMS connection pool. Do not close directly.
+		doCloseConnection(getConnection());
+	}
+	
+	public static void doCloseConnection(Connection con)
+	{
+		// Return connection to CWMS connection pool.
+		try
+		{
+			CwmsDbConnectionPool.close(con);
+		}
+		catch (Exception ex)
+		{
+			Logger.instance().warning("Exception closing CWmS connection: " + ex);
+		}
+
 	}
 
 	@Override

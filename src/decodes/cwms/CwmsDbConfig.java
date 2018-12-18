@@ -23,7 +23,7 @@ import decodes.util.DecodesSettings;
 public class CwmsDbConfig
 {
 	/** URI containing host:portnumber:SID  (tnsName value) */
-	public String DbUri;
+	private String DbUri;
 
 	/** Path plus Name of file containing encrypted username & password */
 	public String DbAuthFile;

@@ -12,33 +12,29 @@
  */
 package decodes.cwms;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.TimeZone;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.opentsdb.OpenTsdbIntervalDAO;
 import lrgs.gui.DecodesInterface;
 import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
-import ilex.util.StringPair;
-import ilex.util.TextUtil;
+import ilex.util.UserAuthFile;
 import decodes.db.*;
 import decodes.sql.DbKey;
 import decodes.sql.SqlDatabaseIO;
 import decodes.sql.SqlDbObjIo;
+import decodes.tsdb.BadConnectException;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
 /**
@@ -55,12 +51,8 @@ public class CwmsSqlDatabaseIO
 	 * filters the records that are visible.
 	 */
 	private String dbOfficeId = null;
-	private String dbOfficePrivilege = null;
 	private DbKey dbOfficeCode = Constants.undefinedId;
-
-	
 	private String sqlDbLocation = null;
-	private int cwmsSchemaVersion = CwmsTimeSeriesDb.CWMS_V_2_1;
 	
 	/**
  	* Constructor.  The argument is the "location" of the
@@ -78,17 +70,18 @@ public class CwmsSqlDatabaseIO
 		
         writeDateFmt = new SimpleDateFormat(
 			"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
-		String tz = DecodesSettings.instance().sqlTimeZone;
-		if (tz == null)
-			tz = "GMT"; // default to GMT. CWMS 2.0 and later alway use GMT.
-        writeDateFmt.setTimeZone(TimeZone.getTimeZone(tz));
+		DecodesSettings.instance().sqlTimeZone = "GMT";
+        writeDateFmt.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
 		
 		this.sqlDbLocation = sqlDbLocation;
+
+		// Adapter to forward CWMS library log messages to OpenDCS log file.
+		JavaLoggerAdapter.initialize(Logger.instance());
 		
 		connectToDatabase(sqlDbLocation);
 
 		// The key generator is always for Oracle.
-		keyGenerator = new CwmsSequenceKeyGenerator(cwmsSchemaVersion, getDecodesDatabaseVersion());
+		keyGenerator = new CwmsSequenceKeyGenerator(getDecodesDatabaseVersion());
 		
 		/* 
 		 * Oracle does not require a COMMIT after each block of nested SELECTs.
@@ -97,10 +90,8 @@ public class CwmsSqlDatabaseIO
 		commitAfterSelect = false;
 
 		// Likewise we need a special platform IO to do office ID filtering.
-		_platformListIO = 	new CwmsPlatformListIO(this, _configListIO, 
-			_equipmentModelListIO, _decodesScriptIO);
+		_platformListIO = new CwmsPlatformListIO(this, _configListIO, _equipmentModelListIO, _decodesScriptIO);
 
-		
 		// Make sure the CWMS name type enumeration exists.
 		DbEnum nameTypeList = Database.getDb().enumList.getEnum(
 			Constants.enum_SiteName);
@@ -109,8 +100,7 @@ public class CwmsSqlDatabaseIO
 		{
 			try
 			{
-				nameTypeList.addValue(
-					Constants.snt_CWMS, "CWMS Site Names", null, null);
+				nameTypeList.addValue(Constants.snt_CWMS, "CWMS Site Names", null, null);
 			}
 			catch(Exception ex) {}
 		}
@@ -118,8 +108,6 @@ public class CwmsSqlDatabaseIO
 		// Oracle 11g requires that backslashes NOT be escaped in SQL strings.
 		SqlDbObjIo.escapeBackslash = false;
 		_isOracle = true;
-		
-		JavaLoggerAdapter.initialize(Logger.instance());
 	}
 
 	/**
@@ -133,6 +121,9 @@ public class CwmsSqlDatabaseIO
 		if (sqlDbLocation == null || sqlDbLocation.trim().length() == 0)
 			return;
 
+		String username = null;
+		String password = null;
+
 		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
 		if (DecodesInterface.isGUI())
 		{
@@ -144,9 +135,8 @@ public class CwmsSqlDatabaseIO
 					if (!cgl.isLoginSuccess()) // user hit cancel
 						throw new DatabaseException("Login aborted by user.");
 				}
-				super.connectToDatabase(sqlDbLocation, cgl.getUserName(),
-					new String(cgl.getPassword()));
-				cgl.setLoginSuccess(true);
+				username = cgl.getUserName();
+				password = new String(cgl.getPassword());
 			}
 			catch(DatabaseException ex)
 			{
@@ -162,17 +152,49 @@ public class CwmsSqlDatabaseIO
 		else // Non-GUI can try auth file mechanism.
 		{
 			Logger.instance().info("This is not a GUI app.");
-			super.connectToDatabase(sqlDbLocation);
+			
+			// Retrieve username and password for database
+			String authFileName = DecodesSettings.instance().DbAuthFile;
+			UserAuthFile authFile = new UserAuthFile(authFileName);
+			try { authFile.read(); }
+			catch(Exception ex)
+			{
+				String msg = "Cannot read username and password from '"
+					+ authFileName + "' (run setDecodesUser first): " + ex;
+				System.err.println(msg);
+				Logger.instance().log(Logger.E_FATAL, msg);
+				throw new DatabaseConnectException(msg);
+			}
+
+			username = authFile.getUsername();
+			password = authFile.getPassword();
 		}
+		
+		try
+		{
+			CwmsConnectionInfo conInfo = 
+				CwmsTimeSeriesDb.getDbConnection(sqlDbLocation, username, password, dbOfficeId);
+			setConnection(conInfo.getConnection());
+			TimeSeriesDb.readVersionInfo(this);
+			cgl.setLoginSuccess(true);
+		}
+		catch(BadConnectException ex)
+		{
+			String msg = "Cannot connect to database: " + ex;
+			Logger.instance().failure(msg);
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
+			cgl.setLoginSuccess(false);
+			if (getConnection() != null)
+				CwmsTimeSeriesDb.doCloseConnection(getConnection());
+		}
+		
+		keyGenerator = new CwmsSequenceKeyGenerator(getDecodesDatabaseVersion());
 
 		String q = null;
 		Statement st = null;
-		int tsdbVersion = TsdbDatabaseVersion.VERSION_2;  // earliest possible value.
-
 		try
 		{
-			Connection ocon = getConnection();
-
 			st = getConnection().createStatement();
 			
 			// Hard-code date & timestamp format for reads. Always use GMT.
@@ -192,14 +214,7 @@ public class CwmsSqlDatabaseIO
 			Logger.instance().info(q);
 			st.execute(q);
 			
-			q = "SELECT * FROM tsdb_database_version";
-			ResultSet rs = st.executeQuery(q);
-			if (rs != null && rs.next())
-			{
-				tsdbVersion = rs.getInt(1);
-			}
 			Logger.instance().info("DECODES IF Connected to TSDB Version " + tsdbVersion);
-
 		}
 		catch(SQLException ex)
 		{
@@ -212,88 +227,9 @@ public class CwmsSqlDatabaseIO
 			try { st.close(); } catch(Exception ex) {}
 		}
 
-		cwmsSchemaVersion = CwmsTimeSeriesDb.determineCwmsSchemaVersion(getConnection(),
-			tsdbVersion);
-		// CWMS 2.2 = Tsdb Version 8
-		if (cwmsSchemaVersion >= CwmsTimeSeriesDb.CWMS_V_2_2)
-		{
-			Logger.instance().debug1(
-				"Connected to CWMS " + cwmsSchemaVersion + " database. Will set office ID context.");
-
-			dbOfficeId = null;
-			ArrayList<StringPair> officePrivileges = null;
-			try
-			{
-				officePrivileges = CwmsTimeSeriesDb.determinePrivilegedOfficeIds(
-					getConnection(), cwmsSchemaVersion);
-			}
-			catch (SQLException ex)
-			{
-				String msg = "Cannot determine privileged office IDs: " + ex;
-				Logger.instance().failure(module + " " + msg);
-				cgl.setLoginSuccess(false);
-				close();
-				throw new DatabaseException(msg);
-			}
-			// Make sure office  matches for case with one of the privileged
-			for(StringPair op : officePrivileges)
-				if (TextUtil.strEqualIgnoreCase(op.first, DecodesSettings.instance().CwmsOfficeId))
-				{
-					dbOfficeId = op.first;
-					dbOfficePrivilege = op.second;
-					break;
-				}
-Logger.instance().debug3("isGUI=" + DecodesInterface.isGUI()+ ", #OfficePrivileges=" +
-officePrivileges.size());
-			// If GUI, allow user to select from the privileged offices
-			if (DecodesInterface.isGUI() && officePrivileges.size() > 0)
-			{
-				if (!cgl.isOfficeIdSelected())
-					cgl.selectOfficeId(null, officePrivileges, dbOfficeId);
-				dbOfficeId = cgl.getDbOfficeId();
-				dbOfficePrivilege = cgl.getDbOfficePrivilege();
-			}
-			else if (officePrivileges.size() > 0 && dbOfficeId == null)
-			{
-				// Not a GUI and not selected in properties.
-				dbOfficeId = officePrivileges.get(0).first;
-				dbOfficePrivilege = officePrivileges.get(0).second;
-			}
-			if (dbOfficeId == null)
-			{
-				close();
-				cgl.setLoginSuccess(false);
-				throw new DatabaseException("No office ID with any CCP Privilege!");
-			}
-			
-			dbOfficeCode = CwmsTimeSeriesDb.officeId2code(getConnection(), dbOfficeId);
-			try
-			{
-				CwmsTimeSeriesDb.setCtxDbOfficeId(getConnection(), dbOfficeId,
-					dbOfficeCode, dbOfficePrivilege, tsdbVersion);
-			}
-			catch (Exception ex)
-			{
-				close();
-				String msg = "Cannot set username/officeId username='" + _dbUser
-					+ "', officeId='" + dbOfficeId + "' " + ex.getMessage();
-				Logger.instance().failure(module + " " + msg);
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
-				cgl.setLoginSuccess(false);
-				throw new DatabaseException(msg);
-			}
-		}
-		else // CWMS 2.1 or earlier
-		{
-			dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
-			dbOfficeCode = CwmsTimeSeriesDb.officeId2code(getConnection(), dbOfficeId);
-		}
-		
 		cgl.setLoginSuccess(true);
 		Logger.instance().info(module + 
-			" Connected to DECODES CWMS " + cwmsSchemaVersion 
-			+ " Database " + sqlDbLocation + " as user " + _dbUser
+			" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
 			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + dbOfficeCode + ")");
 		
 		// CWMS-8979 Allow settings in the database to override values in user.properties.
@@ -322,7 +258,6 @@ officePrivileges.size());
 				loadingAppDAO.close();
 			}
 		}
-
 	}
 
 	/** @return 'CWMS'. */

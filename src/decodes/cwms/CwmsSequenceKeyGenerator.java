@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.5  2016/11/19 15:58:02  mmaloney
+*  Support wildcards
+*
 *  Revision 1.4  2016/09/29 18:54:35  mmaloney
 *  CWMS-8979 Allow Database Process Record to override decodes.properties and
 *  user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -64,13 +67,11 @@ This implementation will work with Version 5 or Version 6 database.
 public class CwmsSequenceKeyGenerator
 	implements KeyGenerator
 {
-	private int cwmsSchemaVersion = CwmsTimeSeriesDb.CWMS_V_2_2;
 	private int decodesDatabaseVersion = 0;
 	
 	/** Default constructor. */
-	public CwmsSequenceKeyGenerator(int v, int decodesDatabaseVersion)
+	public CwmsSequenceKeyGenerator(int decodesDatabaseVersion)
 	{
-		cwmsSchemaVersion = v;
 		this.decodesDatabaseVersion = decodesDatabaseVersion;
 	}
 	
@@ -85,8 +86,7 @@ public class CwmsSequenceKeyGenerator
 	public DbKey getKey(String tableName, Connection conn)
 		throws DatabaseException
 	{
-		String seqname = cwmsSchemaVersion <= CwmsTimeSeriesDb.CWMS_V_2_2
-			? "ccp.ccp_seq" : "cwms_20.cwms_seq";
+		String seqname = "cwms_20.cwms_seq";
 		
 		// DB 13 is DECODES 6.2 or later. Use table-specific sequences for
 		// high-volume records so we don't overrun CWMS_SEQ.
