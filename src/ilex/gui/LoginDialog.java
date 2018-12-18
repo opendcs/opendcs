@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2016/02/23 19:32:52  mmaloney
+*  Added a confirm field to facilitate password changes.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -241,7 +244,7 @@ public class LoginDialog extends GuiDialog
 	/**
 	 * @return the user name entered in the dialog.
 	 */
-	public String getName( )
+	public String getUserName( )
 	{
 		return usernameField.getText();
 	}

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2016/06/07 21:54:00  mmaloney
+ * Added HDB selection to Settings GUI.
+ *
  * Revision 1.2  2014/05/27 12:56:36  mmaloney
  * cleanup
  *
@@ -267,7 +270,7 @@ public class DecodesPropsPanel extends JPanel
 			try
 			{
 				Logger.instance().info("Writing encrypted daemon password to '" + afn + "'");
-				uaf.write(dlg.getName(), new String(dlg.getPassword()));
+				uaf.write(dlg.getUserName(), new String(dlg.getPassword()));
 			}
 			catch(Exception ex)
 			{
