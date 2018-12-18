@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.40  2018/12/18 16:15:06  mmaloney
+*  Only capture specific loggers, otherwise you get tons of messages from X.
+*
 *  Revision 1.39  2018/12/18 15:21:02  mmaloney
 *  Updates for jOOQ
 *
@@ -714,6 +717,9 @@ public class CwmsTimeSeriesDb
 	public static CwmsConnectionInfo getDbConnection(String dbUri, String username, String password, String dbOfficeId)
 		throws BadConnectException
 	{
+		if (dbOfficeId == null)
+			dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
+		
 		CwmsConnectionInfo ret = new CwmsConnectionInfo();
 		
 		// Make a call to the new connection pool.
