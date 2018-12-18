@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.19  2018/05/23 19:59:01  mmaloney
+*  OpenTSDB Initial Release
+*
 *  Revision 1.18  2018/05/01 17:40:47  mmaloney
 *  Implement model run and flags2string stuff here so it doesn't have to be implemented by a
 *  stub in cwms.
@@ -576,7 +579,7 @@ public abstract class TimeSeriesDb
 	public void setConnection(Connection conn)
 	{
 		this.conn = conn;
-		determineTsdbVersion();
+		determineTsdbVersion(getConnection(), this);
 	}
 
 	public KeyGenerator getKeyGenerator() { return keyGenerator; }
@@ -858,8 +861,8 @@ public abstract class TimeSeriesDb
 	public void postConnectInit(String appName)
 		throws BadConnectException
 	{
-		determineTsdbVersion();
-
+		determineTsdbVersion(getConnection(), this);
+		
 		// If an application name is provided, lookup the ID.
 		if (appName != null && appName.trim().length() > 0)
 		{	
@@ -1478,15 +1481,15 @@ public abstract class TimeSeriesDb
 		return eu;
 	}
 	
-	public void determineTsdbVersion()
+	public static void determineTsdbVersion(Connection con, TimeSeriesDb tsdb)
 	{
 		try
 		{
-			DatabaseMetaData metaData = getConnection().getMetaData();
+			DatabaseMetaData metaData = con.getMetaData();
 			String dbName = metaData.getDatabaseProductName();
 			Logger.instance().info("Connected to database server: "
 				+ dbName + " " + metaData.getDatabaseProductVersion());
-			_isOracle = dbName.toLowerCase().contains("oracle");
+			tsdb._isOracle = dbName.toLowerCase().contains("oracle");
 		}
 		catch (SQLException ex)
 		{
@@ -1498,23 +1501,23 @@ public abstract class TimeSeriesDb
 		TimeZone tz = TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone);
 		String writeFmt = DecodesSettings.instance().sqlDateFormat;
 		String readFmt = DecodesSettings.instance().SqlReadDateFormat;
-		if (_isOracle)
+		if (tsdb._isOracle)
 		{
-			oracleDateParser = new OracleDateParser(tz);
+			tsdb.oracleDateParser = new OracleDateParser(tz);
 			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
 			readFmt = "yyyy-MM-dd HH:mm:ss";
 		}
-		writeDateFmt = new SimpleDateFormat(writeFmt);
-		writeDateFmt.setTimeZone(tz);
-		readDateFmt = new SimpleDateFormat(readFmt);
-		readDateFmt.setTimeZone(tz);
-		readCal = Calendar.getInstance(tz);
+		tsdb.writeDateFmt = new SimpleDateFormat(writeFmt);
+		tsdb.writeDateFmt.setTimeZone(tz);
+		tsdb.readDateFmt = new SimpleDateFormat(readFmt);
+		tsdb.readDateFmt.setTimeZone(tz);
+		tsdb.readCal = Calendar.getInstance(tz);
 
-		SqlDatabaseIO.readVersionInfo(this);
-		readVersionInfo(this);
-		info("Connected to TSDB Version " + tsdbVersion + ", Description: " + tsdbDescription);
-		readTsdbProperties();
-		cpCompDepends_col1 = isHdb() || tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
+		SqlDatabaseIO.readVersionInfo(tsdb);
+		readVersionInfo(tsdb);
+		tsdb.info("Connected to TSDB Version " + tsdb.tsdbVersion + ", Description: " + tsdb.tsdbDescription);
+		tsdb.readTsdbProperties();
+		tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
 			? "TS_ID" : "SITE_DATATYPE_ID";
 		
 	}
