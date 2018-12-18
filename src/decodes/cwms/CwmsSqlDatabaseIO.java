@@ -145,8 +145,10 @@ public class CwmsSqlDatabaseIO
 			}
 			catch(Exception ex)
 			{
-				throw new DatabaseException(
-					"Cannot display login dialog: " + ex);
+				String msg = "Cannot display login dialog: " + ex;
+				System.err.println(msg);
+				ex.printStackTrace(System.err);
+				throw new DatabaseException(msg);
 			}
 		}
 		else // Non-GUI can try auth file mechanism.
