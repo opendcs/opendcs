@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.7  2018/12/13 23:00:47  mmaloney
+ * dev
+ *
  * Revision 1.6  2018/12/13 22:53:12  mmaloney
  * dev
  *
@@ -64,8 +67,10 @@ public class JavaLoggerAdapter extends Handler
 	 * Initialize the java.util.logging facility to funnel messages into the passed
 	 * OpenDCS Logger.
 	 * @param ilexLogger The OpenDCS Logger that will receive messages.
+	 * @param forwardGlobal set to true to forward the global logger.
+	 * @param paths a list of root level logger paths to forward. Use the empty string "" to forward all.
 	 */
-	public static void initialize(ilex.util.Logger ilexLogger)
+	public static void initialize(ilex.util.Logger ilexLogger, boolean forwardGlobal, String ... paths)
 	{
 		if (initialized)
 			return;
@@ -74,25 +79,31 @@ public class JavaLoggerAdapter extends Handler
 		
 //System.err.println("\nConfiguring globalLogger");
 		java.util.logging.Logger globalLogger = LogManager.getLogManager().getLogger(globalName);
-		Handler handlers[] = globalLogger.getHandlers();
-		if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
-			globalLogger.removeHandler(handlers[0]);
-		globalLogger.addHandler(instance());
-		globalLogger.setLevel(Level.ALL);
+		if (forwardGlobal)
+		{
+			Handler handlers[] = globalLogger.getHandlers();
+			if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
+				globalLogger.removeHandler(handlers[0]);
+			globalLogger.addHandler(instance());
+			globalLogger.setLevel(Level.ALL);
+		}
 		
 //System.err.println("\nConfiguring rootLogger");
-		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
-		if (rootLogger == null)
-			System.err.println("rootLogger is null.");
-		else if (rootLogger == globalLogger)
-			System.err.println("rootLogger is the same as globalLogger.");
-		else
+		for(String path : paths)
 		{
-			handlers = rootLogger.getHandlers();
-			if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
-				rootLogger.removeHandler(handlers[0]);
-			rootLogger.addHandler(instance());
-			rootLogger.setLevel(Level.ALL);
+			java.util.logging.Logger logger = java.util.logging.Logger.getLogger(path);
+			if (logger == null)
+				System.err.println("logger is null for path '" + path + "'.");
+			else if (logger == globalLogger)
+				continue;
+			else
+			{
+				Handler handlers[] = logger.getHandlers();
+				if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
+					logger.removeHandler(handlers[0]);
+				logger.addHandler(instance());
+				logger.setLevel(Level.ALL);
+			}
 		}
 	}
 
@@ -134,7 +145,7 @@ public class JavaLoggerAdapter extends Handler
 		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		Logger.instance().info("Before initialize -- message direct to Ilex Logger.");
 		
-		JavaLoggerAdapter.initialize(Logger.instance());
+		JavaLoggerAdapter.initialize(Logger.instance(), true, "");
 		
 		Logger.instance().info("After initialize -- message direct to Ilex Logger.");
 		

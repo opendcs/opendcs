@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.39  2018/12/18 15:21:02  mmaloney
+*  Updates for jOOQ
+*
 *  Revision 1.38  2018/12/17 16:11:18  mmaloney
 *  jOOQ Mods
 *
@@ -704,7 +707,8 @@ public class CwmsTimeSeriesDb
 
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
-		JavaLoggerAdapter.initialize(Logger.instance());
+		JavaLoggerAdapter.initialize(Logger.instance(), false, "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
+			"org.jooq");
 	}
 	
 	public static CwmsConnectionInfo getDbConnection(String dbUri, String username, String password, String dbOfficeId)

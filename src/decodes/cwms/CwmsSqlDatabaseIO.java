@@ -76,7 +76,8 @@ public class CwmsSqlDatabaseIO
 		this.sqlDbLocation = sqlDbLocation;
 
 		// Adapter to forward CWMS library log messages to OpenDCS log file.
-		JavaLoggerAdapter.initialize(Logger.instance());
+		JavaLoggerAdapter.initialize(Logger.instance(), false, "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
+			"org.jooq");
 		
 		connectToDatabase(sqlDbLocation);
 
