@@ -28,9 +28,6 @@ public class CwmsDbConfig
 	/** Path plus Name of file containing encrypted username & password */
 	public String DbAuthFile;
 
-	/** Full package/class name for JDBC Driver */
-	public String jdbcOracleDriver;
-	
 	/** The Cwms Time Series descriptor version default value */
 	public String cwmsVersion;
 	
@@ -53,7 +50,6 @@ public class CwmsDbConfig
 	{	
 		DbUri = null;
 		DbAuthFile = "$DCSTOOL_USERDIR/.decodes.auth";
-		jdbcOracleDriver = "oracle.jdbc.driver.OracleDriver"; //"jdbc:oracle:thin:@";
 		timeZone = "GMT";
 		cwmsOfficeId = null;
 		cwmsVersion = "raw";
@@ -100,7 +96,7 @@ public class CwmsDbConfig
 	public String getDbUri()
 	{
 		DecodesSettings ds = DecodesSettings.instance();
-		if (DbUri == null && ds.editDatabaseTypeCode == ds.DB_CWMS)
+		if (DbUri == null && ds.editDatabaseTypeCode == DecodesSettings.DB_CWMS)
 			return ds.editDatabaseLocation;
 
 		return DbUri;
@@ -110,26 +106,17 @@ public class CwmsDbConfig
 	public String getDbAuthFile()
 	{
 		DecodesSettings ds = DecodesSettings.instance();
-		if (DbAuthFile == null && ds.editDatabaseTypeCode == ds.DB_CWMS)
+		if (DbAuthFile == null && ds.editDatabaseTypeCode == DecodesSettings.DB_CWMS)
 			return ds.DbAuthFile;
 
 		return DbAuthFile;
 	}
 
-	/** Full package/class name for JDBC Driver */
-	public String getJdbcOracleDriver()
-	{
-		DecodesSettings ds = DecodesSettings.instance();
-		if (jdbcOracleDriver == null && ds.editDatabaseTypeCode == ds.DB_CWMS)
-			return ds.jdbcDriverClass;
-		return jdbcOracleDriver;
-	}
-	
 	/** The Cwms Time Series default timezone */
 	public String getTimeZone()
 	{
 		DecodesSettings ds = DecodesSettings.instance();
-		if (ds.editDatabaseTypeCode == ds.DB_CWMS)
+		if (ds.editDatabaseTypeCode == DecodesSettings.DB_CWMS)
 			return ds.sqlTimeZone;
 		return timeZone;
 	}
@@ -156,7 +143,6 @@ public class CwmsDbConfig
 	{
 		DbUri = cwmsDbIo.getSqlDbLocation();
 		DbAuthFile = DecodesSettings.instance().DbAuthFile;
-		jdbcOracleDriver = DecodesSettings.instance().jdbcDriverClass;
 		cwmsOfficeId = cwmsDbIo.getOfficeId();
 		timeZone = "UTC";
 	}

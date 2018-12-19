@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+ * OPENDCS 6.0 Initial Checkin
+ *
  * Revision 1.21  2013/03/21 18:27:39  mmaloney
  * DbKey Implementation
  *
@@ -65,7 +68,7 @@ public class SqlDbObjIo
 		String writeFmt, readFmt;
 		if (_dbio.isOracle())
 		{
-			oracleDateParser = new OracleDateParser(TimeZone.getTimeZone(_dbio.databaseTimeZone));
+			oracleDateParser = _dbio.makeOracleDateParser(TimeZone.getTimeZone(_dbio.databaseTimeZone));
 			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
 			readFmt = "yyyy-MM-dd HH:mm:ss";
 		}

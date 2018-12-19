@@ -32,7 +32,8 @@ public class Lrit2DamsNtConfig
 	public String filePrefix = null;
 
 	/** suffix for DCS files, if set, all others will be ignored. default=".dcs" */
-	public String fileSuffix = ".dcs";
+//	public String fileSuffix = ".dcs";
+	public String fileSuffix = ".lrit"; // MJM 2018-12-18 Latest Dartcom XRIT names the files with .lrit
 
 	/** Port to listen on for DAMS-NT message connections (required) */
 	public int msgListenPort = -1;

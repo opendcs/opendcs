@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.11  2018/02/21 14:33:03  mmaloney
+ * Set autocommit true always.
+ *
  * Revision 1.10  2017/03/03 19:14:01  mmaloney
  * Remove commit() code. Now just a stub. Everything now is autocommit.
  *
@@ -221,7 +224,7 @@ public class SqlDatabaseIO
 	HashMap<Thread, Connection> connectionMap = new HashMap<Thread, Connection>();
 
 	/** Kludge for Oracle DATE data types - the database time zone: */
-	String databaseTimeZone = "UTC";
+	protected String databaseTimeZone = "UTC";
 
 	protected boolean _isOracle = false;
 
@@ -479,7 +482,7 @@ public class SqlDatabaseIO
 		}
 	}
 
-	private void setDBDatetimeFormat()
+	protected void setDBDatetimeFormat()
 		throws SQLException
 	{
 		String q = null;
@@ -488,7 +491,7 @@ public class SqlDatabaseIO
 		{
 			if (_isOracle)
 			{
-				oracle.jdbc.OracleConnection ocon = (oracle.jdbc.OracleConnection)getConnection();
+				
 				stmnt = getConnection().createStatement();
 
 				q = "SELECT PARAM_VALUE FROM REF_DB_PARAMETER WHERE PARAM_NAME = 'TIME_ZONE'";
@@ -513,7 +516,6 @@ public class SqlDatabaseIO
 					try { rs.close(); } catch(Exception ex) {}
 					rs = null;
 				}
-				ocon.setSessionTimeZone(databaseTimeZone);
 
 				stmnt = getConnection().createStatement();
 				q = "ALTER SESSION SET TIME_ZONE = '" + databaseTimeZone + "'";
@@ -562,7 +564,7 @@ public class SqlDatabaseIO
 		String readFmt = DecodesSettings.instance().SqlReadDateFormat;
 		if (_isOracle)
 		{
-			oracleDateParser = new OracleDateParser(tz);
+			oracleDateParser = makeOracleDateParser(tz);
 			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
 			readFmt = "yyyy-MM-dd HH:mm:ss";
 		}
@@ -2273,5 +2275,11 @@ public class SqlDatabaseIO
 		// This is a CWMS thing. Base class returns null.
 		return null;
 	}
+	
+	public OracleDateParser makeOracleDateParser(TimeZone tz)
+	{
+		return new OracleDateParser(tz);
+	}
+
 
 }

@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.18  2018/05/01 17:38:54  mmaloney
+*  Code cleanup of base classes.
+*
 *  Revision 1.17  2018/02/21 14:34:19  mmaloney
 *  Set autocommit true always.
 *
@@ -1034,41 +1037,6 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		}
 	}
 
-//	/**
-//	 * @param dataTypeStandard
-//	 * @return
-//	 */
-//	public String[] getDataTypesByStandard(String dataTypeStandard)
-//	  throws DbIoException 
-//	{
-//		String q = "select datatype_id, datatype_common_name from hdb_datatype "
-//			+ "order by datatype_id";
-//		try
-//		{
-//			ArrayList<String> dts = new ArrayList<String>();
-//			ResultSet rs = doQuery(q);
-//			while (rs != null && rs.next())
-//			{
-//				StringBuilder sb = new StringBuilder(rs.getString(1));
-//				sb.append(' ');
-//				while(sb.length() < 7)
-//					sb.append(' ');
-//				sb.append(rs.getString(2));
-//				dts.add(sb.toString());
-//			}
-//			String ret[] = new String[dts.size()];
-//			for(int i=0; i<ret.length; i++)
-//				ret[i] = dts.get(i);
-//			return ret;
-//		}
-//		catch(Exception ex)
-//		{
-//			System.err.println(ex.toString());
-//			ex.printStackTrace(System.err);
-//			throw new DbIoException("Error listing data types: " + ex);
-//		}
-//	}
-	
 	/**
 	 * @return a full date, including time information.
 	 */
@@ -1076,7 +1044,7 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 	{
 		if (oracleDateParser == null)
 		{
-			oracleDateParser = new OracleDateParser(TimeZone.getTimeZone(databaseTimezone));
+			oracleDateParser = makeOracleDateParser(TimeZone.getTimeZone(databaseTimezone));
 		}
 		Date ret = oracleDateParser.getTimeStamp(rs, column);
 		if (ret == null)
@@ -1342,7 +1310,9 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 					warning("writeTasklistRecord with non-numeric tv: " + tv);
 					continue;
 				}
-				insertTasklist.setDATE(6, oracleDateParser.toDATE(tv.getTime()));
+				
+				insertTasklist.setDATE(6, 
+					((HdbOracleDateParser)oracleDateParser).toDATE(tv.getTime()));
 				insertTasklist.setString(8, "" + HdbFlags.flag2HdbValidation(tv.getFlags()));
 				insertTasklist.setString(9, HdbFlags.flag2HdbDerivation(tv.getFlags()));
 				debug1("inserting tasklist for " + hdbTsId.getUniqueString()
@@ -1466,6 +1436,11 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		return hdbObjectTypes;
 	}
 
-	
+	@Override
+	public OracleDateParser makeOracleDateParser(TimeZone tz)
+	{
+		return new HdbOracleDateParser(tz);
+	}
+
 	
 }

@@ -11,6 +11,10 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.20  2018/12/18 15:22:14  mmaloney
+*  determineTsdbVersion refactored as a static method to allow it to be called
+*  from SqlDatabaseIO.
+*
 *  Revision 1.19  2018/05/23 19:59:01  mmaloney
 *  OpenTSDB Initial Release
 *
@@ -1503,7 +1507,7 @@ public abstract class TimeSeriesDb
 		String readFmt = DecodesSettings.instance().SqlReadDateFormat;
 		if (tsdb._isOracle)
 		{
-			tsdb.oracleDateParser = new OracleDateParser(tz);
+			tsdb.oracleDateParser = tsdb.makeOracleDateParser(tz);
 			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
 			readFmt = "yyyy-MM-dd HH:mm:ss";
 		}
@@ -1520,6 +1524,11 @@ public abstract class TimeSeriesDb
 		tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
 			? "TS_ID" : "SITE_DATATYPE_ID";
 		
+	}
+	
+	public OracleDateParser makeOracleDateParser(TimeZone tz)
+	{
+		return new OracleDateParser(tz);
 	}
 	
 	public static void readVersionInfo(DatabaseConnectionOwner dco)

@@ -834,10 +834,11 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 						debug3("   Deleting " + idstr
 							+ " at start=" + db.getLogDateFormat().format(startTime)
 							+ " end=" + db.getLogDateFormat().format(endTime));
+						HdbTimeSeriesDb hdb = (HdbTimeSeriesDb)db;
 						oracle.sql.DATE startd = 
-							((HdbTimeSeriesDb)db).getOracleDateParser().toDATE(startTime);
+							((HdbOracleDateParser)hdb.getOracleDateParser()).toDATE(startTime);
 						oracle.sql.DATE endd = 
-							((HdbTimeSeriesDb)db).getOracleDateParser().toDATE(endTime);
+							((HdbOracleDateParser)hdb.getOracleDateParser()).toDATE(endTime);
 						
 //						StringBuilder sb = new StringBuilder();
 //						for(byte b : startd.getBytes())

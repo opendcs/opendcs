@@ -1,4 +1,4 @@
-package decodes.sql;
+package decodes.hdb;
 
 import ilex.util.Logger;
 
@@ -11,6 +11,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import decodes.sql.OracleDateParser;
+import oracle.jdbc.OracleResultSet;
+import oracle.sql.DATE;
 
 /**
  * Oracle DATE objects are commonly used to store timestamp info.
@@ -37,67 +40,62 @@ import java.util.TimeZone;
  * 
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class OracleDateParser
+public class HdbOracleDateParser
+	extends OracleDateParser
 {
-	protected static String module = "OracleDateParser";
-	protected Calendar cal;
-	protected SimpleDateFormat oracleTimestampZFmt = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss.0 z");
-	protected SimpleDateFormat oracleTimestampNoZFmt = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss.0");
-
-	public OracleDateParser(TimeZone tz)
+	
+	public HdbOracleDateParser(TimeZone tz)
 	{
-		cal = Calendar.getInstance(tz);
-		oracleTimestampNoZFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+		super(tz);
+		module = "HdbOracleDateParser";
 	}
 	
-	protected Date parseNoZ(String s)
-		throws ParseException
+	private Date convertDATE(DATE oracleDate)
 	{
-		// Count number of spaces in str and remember position of last one.
-		s = s.trim();
-		int nSpaces = 0;
-		int lastSpace = -1;
-		for(int i=0; i<s.length(); i++)
-			if (s.charAt(i) == ' ')
-			{
-				nSpaces++;
-				lastSpace = i;
-			}
-		if (nSpaces != 2)
-			throw new ParseException("Not in No-Z Format 'yyyy-MM-dd HH.mm.ss.0 -H:m", 0);
-		Date d = oracleTimestampNoZFmt.parse(s.substring(0, lastSpace));
-		String hs = s.substring(lastSpace+1);
-		int colon = hs.indexOf(':');
-		if (colon > 0)
-		{
-			try
-			{
-				int hr = Integer.parseInt(hs.substring(0, colon));
-				return new Date(d.getTime() - (hr * 3600000L));
-			}
-			catch(Exception ex)
-			{
-				throw new ParseException(ex.getMessage(), lastSpace+1);
-			}
-		}
-		else
-			return d;
+		byte []db = oracleDate.getBytes();
+		if (db.length < 7)
+			return null;
+		int yearByte = (int)db[1] & 0xff; // avoid sign extension!
+		
+		cal.clear();
+		cal.set(Calendar.YEAR, ((int)db[0] - 100)*100 + (yearByte - 100));
+		cal.set(Calendar.MONTH, (int)db[2] - 1);
+		cal.set(Calendar.DAY_OF_MONTH, (int)db[3]);
+		cal.set(Calendar.HOUR_OF_DAY, (int)db[4] - 1);
+		cal.set(Calendar.MINUTE, (int)db[5] - 1);
+		cal.set(Calendar.SECOND, (int)db[6] - 1);
+		Date ret = cal.getTime();
+//		Logger.instance().debug3(module + " Oracle DATE Bytes for "
+//			+ cal.getTimeZone().getID() + ": "
+//			+ (int)db[0] + " "
+//			+ yearByte + " "
+//			+ (int)db[2] + " "
+//			+ (int)db[3] + " "
+//			+ (int)db[4] + " "
+//			+ (int)db[5] + " "
+//			+ (int)db[6] + " date=" + ret);
+		return ret;
 	}
 	
 	public Date getTimeStamp(ResultSet rs, int column)
 	{
 		String s;
 		ResultSetMetaData metaData = null;
+		String sqlDataType = null;
 		String columnName = null;
 		try
 		{
 			metaData = rs.getMetaData();
+			sqlDataType = metaData.getColumnTypeName(column);
 			s = rs.getString(column);
 			columnName = metaData.getColumnName(column);
 //Logger.instance().debug3(module + " column " + columnName + " sqlType='" + sqlDataType
 //+ "' string value='" + s + "'");
 			if (s == null || rs.wasNull())
 				return null;
+			
+			if (sqlDataType.equals("DATE"))
+				return convertDATE(((OracleResultSet)rs).getDATE(column));
 		}
 		catch (SQLException ex)
 		{
@@ -146,4 +144,22 @@ public class OracleDateParser
 		}
 	}
 	
+	/**
+	 * Convert a Java Date object into an Oracle DATE in the database time zone.
+	 * @param d the Java date object
+	 * @return the Oracle DATE in the database time zone.
+	 */
+	public DATE toDATE(Date d)
+	{
+		byte b[] = new byte[7];
+		cal.setTime(d);
+		b[0] = (byte)((cal.get(Calendar.YEAR) / 100) + 100);
+		b[1] = (byte)((cal.get(Calendar.YEAR) % 100) + 100);
+		b[2] = (byte)(cal.get(Calendar.MONTH) + 1);
+		b[3] = (byte)cal.get(Calendar.DAY_OF_MONTH);
+		b[4] = (byte)(cal.get(Calendar.HOUR_OF_DAY) + 1);
+		b[5] = (byte)(cal.get(Calendar.MINUTE) + 1);
+		b[6] = (byte)(cal.get(Calendar.SECOND) + 1);
+		return new DATE(b);
+	}
 }

@@ -1,8 +1,12 @@
 package decodes.hdb;
 
+import java.sql.SQLException;
+import java.util.TimeZone;
+
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.SiteDAI;
 import decodes.db.DatabaseException;
+import decodes.sql.OracleDateParser;
 import decodes.sql.SqlDatabaseIO;
 
 public class HdbSqlDatabaseIO extends SqlDatabaseIO
@@ -34,6 +38,21 @@ public class HdbSqlDatabaseIO extends SqlDatabaseIO
 	public SiteDAI makeSiteDAO()
 	{
 		return new HdbSiteDAO(this);
+	}
+
+	@Override
+	protected void setDBDatetimeFormat()
+		throws SQLException
+	{
+		super.setDBDatetimeFormat();
+		oracle.jdbc.OracleConnection ocon = (oracle.jdbc.OracleConnection)getConnection();
+		ocon.setSessionTimeZone(databaseTimeZone);
+	}
+	
+	@Override
+	public OracleDateParser makeOracleDateParser(TimeZone tz)
+	{
+		return new HdbOracleDateParser(tz);
 	}
 
 }
