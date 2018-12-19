@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.8  2018/12/18 16:14:50  mmaloney
+ * Only capture specific loggers, otherwise you get tons of messages from X.
+ *
  * Revision 1.7  2018/12/13 23:00:47  mmaloney
  * dev
  *
@@ -173,8 +176,18 @@ class JavaLoggerFormatter
 	@Override
 	public String format(LogRecord record)
 	{
-//System.err.println("\nFormatter loggername='" + record.getLoggerName() + "', msg='" + record.getMessage() + "'");
-		return record.getLoggerName() + ": " + record.getMessage();
+    	String msg = record.getMessage();
+        try 
+        {
+            Object parameters[] = record.getParameters();
+            if ((parameters != null && parameters.length > 0)
+             &&    (msg.indexOf("{0") >= 0 || msg.indexOf("{1") >=0 
+                 || msg.indexOf("{2") >= 0 || msg.indexOf("{3") >=0))
+            {
+            	msg = java.text.MessageFormat.format(msg, parameters);
+            }
+        } catch (Exception ex) { msg = record.getMessage(); }
+		
+		return record.getLoggerName() + ": " + msg;
 	}
-	
 }
