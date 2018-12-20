@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.42  2018/12/20 15:52:21  mmaloney
+*  dev
+*
 *  Revision 1.41  2018/12/18 20:48:52  mmaloney
 *  dev
 *
@@ -726,6 +729,7 @@ public class CwmsTimeSeriesDb
 		CwmsConnectionInfo ret = new CwmsConnectionInfo();
 		
 		// Make a call to the new connection pool.
+		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
 		ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);
 		CwmsDbConnectionPool connectionPool = CwmsDbConnectionPool.getInstance();
 		try
@@ -744,7 +748,6 @@ public class CwmsTimeSeriesDb
 		}
 		
 		// MJM 2018-2/21 Force autoCommit on.
-		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
 		try{ ret.getConnection().setAutoCommit(true); }
 		catch(SQLException ex)
 		{
