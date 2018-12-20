@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.9  2018/12/19 15:43:05  mmaloney
+ * Format message with parameters if any are present.
+ *
  * Revision 1.8  2018/12/18 16:14:50  mmaloney
  * Only capture specific loggers, otherwise you get tons of messages from X.
  *
@@ -188,6 +191,10 @@ class JavaLoggerFormatter
             }
         } catch (Exception ex) { msg = record.getMessage(); }
 		
+        Throwable t = record.getThrown();
+        if (t != null)
+        	msg = msg + " (" + t.toString() + ")";
+        
 		return record.getLoggerName() + ": " + msg;
 	}
 }
