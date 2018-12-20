@@ -177,6 +177,7 @@ public class CwmsSqlDatabaseIO
 		{
 			CwmsConnectionInfo conInfo = 
 				CwmsTimeSeriesDb.getDbConnection(sqlDbLocation, username, password, dbOfficeId);
+			this.dbOfficeCode = conInfo.getDbOfficeCode();
 			setConnection(conInfo.getConnection());
 			TimeSeriesDb.readVersionInfo(this);
 			cgl.setLoginSuccess(true);

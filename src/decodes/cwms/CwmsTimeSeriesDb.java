@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.41  2018/12/18 20:48:52  mmaloney
+*  dev
+*
 *  Revision 1.40  2018/12/18 16:15:06  mmaloney
 *  Only capture specific loggers, otherwise you get tons of messages from X.
 *
@@ -741,7 +744,8 @@ public class CwmsTimeSeriesDb
 		}
 		
 		// MJM 2018-2/21 Force autoCommit on.
-		try { ret.getConnection().setAutoCommit(true);}
+		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
+		try{ ret.getConnection().setAutoCommit(true); }
 		catch(SQLException ex)
 		{
 			Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
@@ -850,6 +854,7 @@ public class CwmsTimeSeriesDb
 		{
 			CwmsConnectionInfo conInfo = getDbConnection(dbUri, username, password, dbOfficeId);
 			setConnection(conInfo.getConnection());
+			this.dbOfficeCode = conInfo.getDbOfficeCode();
 			postConnectInit(appName);
 			cgl.setLoginSuccess(true);
 		}
