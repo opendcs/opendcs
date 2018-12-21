@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.44  2018/12/21 17:00:45  mmaloney
+*  dev
+*
 *  Revision 1.43  2018/12/20 21:25:11  mmaloney
 *  dev
 *
@@ -1902,6 +1905,8 @@ public class CwmsTimeSeriesDb
 		{
 			errMsg = "Error setting VPD context for '" + dbOfficeId + "': " + ex;
 			Logger.instance().failure(errMsg);
+			System.err.println(errMsg);
+			ex.printStackTrace(System.err);
 			throw new DbIoException(errMsg);
 		}
 		finally
