@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.45  2018/12/21 17:09:01  mmaloney
+*  dev
+*
 *  Revision 1.44  2018/12/21 17:00:45  mmaloney
 *  dev
 *
@@ -635,10 +638,12 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.GregorianCalendar;
 import java.math.BigDecimal;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.TimeZone;
 
 import opendcs.dai.DataTypeDAI;
@@ -735,7 +740,7 @@ public class CwmsTimeSeriesDb
 		CwmsConnectionInfo ret = new CwmsConnectionInfo();
 		
 		// Make a call to the new connection pool.
-		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
+//		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
 		ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);
 		CwmsDbConnectionPool connectionPool = CwmsDbConnectionPool.getInstance();
 		try
@@ -1865,7 +1870,8 @@ public class CwmsTimeSeriesDb
 		throws DbIoException
 	{
 		String errMsg = null;
-		PreparedStatement storeProcStmt = null, testStmt = null;
+		PreparedStatement storeProcStmt = null;
+		CallableStatement testStmt = null;
 		
 		try
 		{
@@ -1888,17 +1894,16 @@ public class CwmsTimeSeriesDb
 			storeProcStmt.execute();
 //			conn.commit();
 			
-			
-			q = "begin cwms_ccp_vpd.get_pred_session_office_code_v(" +
-				":1 /* schema */, :2 /* table*/); end;";
-			testStmt = conn.prepareStatement(q);
-			testStmt.setString(1, "CCP");
-			testStmt.setString(2, "PLATFORMCONFIG");
-			Logger.instance().info("Executing '" + q + "' with "
+			q = "{ ? = call cwms_ccp_vpd.get_pred_session_office_code_v(?, ?) }";
+			testStmt = conn.prepareCall(q);
+			testStmt.registerOutParameter(1, Types.VARCHAR);
+			testStmt.setString(2, "CC");
+			testStmt.setString(3, "PLATFORMCONFIG");
+			Logger.instance().info("Calling '" + q + "' with "
 				+ "schema=CCP and table=PLATFORMCONFIG");
 			testStmt.execute();
-			ResultSet rs = testStmt.getResultSet();
-			Logger.instance().info("Predicate for table PLATFORMCONFIG is '" + rs.getString(1) + "'");
+			String pred = testStmt.getString(1);
+			Logger.instance().info("Predicate for table PLATFORMCONFIG is '" + pred + "'");
 			
 		}
 		catch (SQLException ex)
