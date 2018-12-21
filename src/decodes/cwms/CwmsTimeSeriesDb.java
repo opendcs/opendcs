@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.43  2018/12/20 21:25:11  mmaloney
+*  dev
+*
 *  Revision 1.42  2018/12/20 15:52:21  mmaloney
 *  dev
 *
@@ -1859,7 +1862,7 @@ public class CwmsTimeSeriesDb
 		throws DbIoException
 	{
 		String errMsg = null;
-		PreparedStatement storeProcStmt = null;
+		PreparedStatement storeProcStmt = null, testStmt = null;
 		
 		try
 		{
@@ -1880,7 +1883,20 @@ public class CwmsTimeSeriesDb
 				+ ", privLevel=" + privLevel
 				+ ", dbOfficeId='" + dbOfficeId + "'");
 			storeProcStmt.execute();
-			conn.commit();
+//			conn.commit();
+			
+			
+			q = "begin cwms_ccp_vpd.get_pred_session_office_code_v(" +
+				":1 /* schema */, :2 /* table*/); end;";
+			testStmt = conn.prepareStatement(q);
+			testStmt.setString(1, "CCP");
+			testStmt.setString(2, "PLATFORMCONFIG");
+			Logger.instance().info("Executing '" + q + "' with "
+				+ "schema=CCP and table=PLATFORMCONFIG");
+			testStmt.execute();
+			ResultSet rs = testStmt.getResultSet();
+			Logger.instance().info("Predicate for table PLATFORMCONFIG is '" + rs.getString(1) + "'");
+			
 		}
 		catch (SQLException ex)
 		{
@@ -1893,6 +1909,11 @@ public class CwmsTimeSeriesDb
 			if (storeProcStmt != null)
 			{
 				try { storeProcStmt.close(); }
+				catch(Exception ex) {}
+			}
+			if (testStmt != null)
+			{
+				try { testStmt.close(); }
 				catch(Exception ex) {}
 			}
 		}
