@@ -122,7 +122,14 @@ public class CwmsSqlDatabaseIO
 		if (sqlDbLocation == null || sqlDbLocation.trim().length() == 0)
 			return;
 
-		String username = null;
+		// MJM 2018-12-05 The new HEC/RMA connection facility requires that office ID
+		// be known before getting a connection from the pool. Therefore I cannot set
+		// it dynamically from the database or from user selection.
+		dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
+		
+		// CWMS is Always GMT.
+		DecodesSettings.instance().sqlTimeZone = "GMT";
+
 		String password = null;
 
 		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
@@ -136,7 +143,7 @@ public class CwmsSqlDatabaseIO
 					if (!cgl.isLoginSuccess()) // user hit cancel
 						throw new DatabaseException("Login aborted by user.");
 				}
-				username = cgl.getUserName();
+				_dbUser = cgl.getUserName();
 				password = new String(cgl.getPassword());
 			}
 			catch(DatabaseException ex)
@@ -169,14 +176,14 @@ public class CwmsSqlDatabaseIO
 				throw new DatabaseConnectException(msg);
 			}
 
-			username = authFile.getUsername();
+			_dbUser = authFile.getUsername();
 			password = authFile.getPassword();
 		}
 		
 		try
 		{
 			CwmsConnectionInfo conInfo = 
-				CwmsTimeSeriesDb.getDbConnection(sqlDbLocation, username, password, dbOfficeId);
+				CwmsTimeSeriesDb.getDbConnection(sqlDbLocation, _dbUser, password, dbOfficeId);
 			this.dbOfficeCode = conInfo.getDbOfficeCode();
 			setConnection(conInfo.getConnection());
 			TimeSeriesDb.readVersionInfo(this);
