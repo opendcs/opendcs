@@ -200,6 +200,8 @@ public class CwmsSqlDatabaseIO
 				CwmsTimeSeriesDb.doCloseConnection(getConnection());
 		}
 		
+		readVersionInfo(this);
+		
 		keyGenerator = new CwmsSequenceKeyGenerator(getDecodesDatabaseVersion());
 
 		String q = null;
