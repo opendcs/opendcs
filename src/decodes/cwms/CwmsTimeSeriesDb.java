@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.46  2018/12/21 17:26:21  mmaloney
+*  dev
+*
 *  Revision 1.45  2018/12/21 17:09:01  mmaloney
 *  dev
 *
@@ -1883,7 +1886,7 @@ public class CwmsTimeSeriesDb
 			q = 
 				"begin cwms_ccp_vpd.set_ccp_session_ctx(" +
 				":1 /* office code */, :2 /* priv level*/, :3 /* officeId */); end;";
-			storeProcStmt  = conn.prepareStatement(q);
+			storeProcStmt  = conn.prepareCall(q);
 			storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
 			storeProcStmt.setInt(2, privLevel);
 			storeProcStmt.setString(3, dbOfficeId);
