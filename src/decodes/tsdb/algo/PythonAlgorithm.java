@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.14  2018/07/31 16:59:47  mmaloney
+ * isPresent also returns false on Deleted data.
+ *
  * Revision 1.13  2018/06/19 13:18:27  mmaloney
  * In the init script, add computation_id to the python namespace. HDB 492.
  *
@@ -88,10 +91,12 @@ import decodes.cwms.validation.dao.TsidScreeningAssignment;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.hdb.HdbFlags;
+import decodes.sql.DbKey;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithmScript;
 import decodes.tsdb.DbCompException;
+import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
@@ -349,6 +354,15 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				sb.append(role + " = AlgoParm('" + tsid.getUniqueString() + "')" + linesep);
 				for(String part : tsid.getParts())
 					sb.append(role + "." + part.toLowerCase() + " = '" + tsid.getPart(part) + "'" + linesep);
+				
+				// MJM 20180104 add .tsid and .sdi
+				sb.append(role + ".tskey = " + (DbKey.isNull(tsid.getKey()) ? -1 : tsid.getKey()) + linesep);
+				DbCompParm compParm = comp.getParm(role);
+				sb.append(role + "sdi = " + 
+					(compParm != null && !DbKey.isNull(compParm.getSiteDataTypeId()) ? 
+						compParm.getSiteDataTypeId() : -1)
+					+ linesep);
+				
 				if (tsdb.isCwms() || tsdb.isOpenTSDB())
 				{
 					// Add baselocation, sublocation, baseparam, subparam, baseversion, subversion
