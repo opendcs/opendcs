@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.14  2018/11/14 15:48:36  mmaloney
+*  OpenDCS 6.5 RC03 Support for Timed Computations.
+*
 *  Revision 1.13  2018/03/30 14:57:11  mmaloney
 *  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
 *
@@ -831,6 +834,13 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 					// result in the same set of computation params.)
 					DbComputation concreteClone = DbCompResolver.makeConcrete(theDb, tsid, tc, true);
 					resolver.addToResults(executeList, concreteClone, null);
+					
+					// Special case for timed GroupAdder. Only create a single clone. It will expand its
+					// own group.
+					if (concreteClone.getAlgorithm() != null
+					 && concreteClone.getAlgorithm().getExecClass() != null
+					 && concreteClone.getAlgorithm().getExecClass().equals("decodes.tsdb.algo.GroupAdder"))
+						break;
 				}
 				catch (NoSuchObjectException ex)
 				{
