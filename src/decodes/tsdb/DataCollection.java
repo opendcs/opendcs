@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.2  2017/08/22 19:56:40  mmaloney
+*  Refactor
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -96,6 +99,17 @@ public class DataCollection
 			  if (ts.getSDI().equals(sdi))
 				  return ts;
 		return null;
+	}
+	
+	public CTimeSeries getTimeSeriesByTsidKey(TimeSeriesIdentifier tsid)
+	{
+		for(CTimeSeries ts : tseries)
+			  if (ts.getTimeSeriesIdentifier() != null
+			   && !DbKey.isNull(ts.getTimeSeriesIdentifier().getKey())
+			   && ts.getTimeSeriesIdentifier().getKey().equals(tsid.getKey()))
+				  return ts;
+		return null;
+
 	}
 
 	/**
