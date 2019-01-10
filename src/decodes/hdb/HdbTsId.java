@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2017/05/31 21:25:46  mmaloney
+ * Changed TABSEL_PART back to Table Selector
+ *
  * Revision 1.2  2016/07/20 15:38:51  mmaloney
  * Remove unneeded debug.
  *
@@ -570,6 +573,7 @@ public class HdbTsId implements TimeSeriesIdentifier
 		return true;
 	}
 	
+	@Override
 	public boolean equals(Object rhs)
 	{
 		boolean ret = false;
@@ -588,4 +592,11 @@ Logger.instance().info("HdbTsId.equals: this='" + getUniqueString() + "' rhs='"
 	{
 		return getUniqueString();
 	}
+	
+	@Override
+	public String toString() { return this.getUniqueString(); }
+	
+	@Override
+	public int hashCode() { return toString().hashCode(); }
+
 }

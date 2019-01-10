@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.5  2018/05/01 17:35:01  mmaloney
+ * init offsetErrorAction to IGNORE.
+ *
  * Revision 1.4  2016/10/17 17:49:38  mmaloney
  * Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
  *
@@ -691,4 +694,10 @@ Logger.instance().debug3("TS " + getUniqueString() + ", setting displayName='" +
 	{
 		return subVersion;
 	}
+	
+	@Override
+	public String toString() { return this.getUniqueString(); }
+	
+	@Override
+	public int hashCode() { return toString().hashCode(); }
 }
