@@ -22,7 +22,6 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import lrgs.gui.DecodesInterface;
-import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.UserAuthFile;
@@ -75,10 +74,6 @@ public class CwmsSqlDatabaseIO
 		
 		this.sqlDbLocation = sqlDbLocation;
 
-		// Adapter to forward CWMS library log messages to OpenDCS log file.
-		JavaLoggerAdapter.initialize(Logger.instance(), false, "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
-			"org.jooq");
-		
 		connectToDatabase(sqlDbLocation);
 
 		// The key generator is always for Oracle.

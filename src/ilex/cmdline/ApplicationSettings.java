@@ -5,6 +5,7 @@ package ilex.cmdline;
 
 import java.util.TimeZone;
 
+import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
 
 /* 
@@ -101,6 +102,8 @@ public class ApplicationSettings
 		setEnvironmentValues(); 
 		parseInternal();
 		Logger.instance().setTimeZone(TimeZone.getTimeZone(getLtzArg()));
+		JavaLoggerAdapter.initialize(Logger.instance(), false, "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
+			"org.jooq");
 	} 
   
 	/**
