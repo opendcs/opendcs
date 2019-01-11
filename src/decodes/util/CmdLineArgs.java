@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.4  2018/02/05 15:54:34  mmaloney
+*  Add fontAdjust feature to increase/decrease font sizes throughout the GUI.
+*
 *  Revision 1.3  2016/01/27 22:09:12  mmaloney
 *  Get rid of error message when "decodes.properties" doesn't exist in a shared implementation for CWMS.
 *
@@ -92,6 +95,7 @@ import java.util.Properties;
 
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
+import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
 import ilex.util.FileLogger;
 
@@ -316,6 +320,10 @@ public class CmdLineArgs
 			    }
 			}
 		}
+		
+		JavaLoggerAdapter.initialize(Logger.instance(), false, "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
+			"org.jooq");
+System.err.println("Forwarded log adapter.");
 	}
 
 	/** @return DECODES Properties file name */

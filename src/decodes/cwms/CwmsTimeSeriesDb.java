@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.47  2019/01/03 15:04:55  mmaloney
+*  changed prepareStatement to prepareCall
+*
 *  Revision 1.46  2018/12/21 17:26:21  mmaloney
 *  dev
 *
@@ -666,7 +669,6 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.lang.Const;
-import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
@@ -730,8 +732,6 @@ public class CwmsTimeSeriesDb
 
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
-		JavaLoggerAdapter.initialize(Logger.instance(), false, "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
-			"org.jooq");
 	}
 	
 	public static CwmsConnectionInfo getDbConnection(String dbUri, String username, String password, String dbOfficeId)
