@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.5  2019/01/11 14:43:16  mmaloney
+*  Move JavaLoggerAdapter to ApplicationSettings
+*
 *  Revision 1.4  2018/02/05 15:54:34  mmaloney
 *  Add fontAdjust feature to increase/decrease font sizes throughout the GUI.
 *
@@ -323,7 +326,6 @@ public class CmdLineArgs
 		
 		JavaLoggerAdapter.initialize(Logger.instance(), false, "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
 			"org.jooq");
-System.err.println("Forwarded log adapter.");
 	}
 
 	/** @return DECODES Properties file name */
