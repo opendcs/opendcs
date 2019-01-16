@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.9  2018/11/28 21:18:48  mmaloney
+ * CWMS JOOQ Migration Mods
+ *
  * Revision 1.8  2016/03/09 16:46:50  mmaloney
  * CWMS-7822 It was trying to save Double Negative/Positive infinity for ROC checks.
  *
@@ -30,6 +33,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.io.PrintStream;
 import java.math.BigDecimal;
 
 import decodes.cwms.CwmsTimeSeriesDb;
@@ -878,6 +882,12 @@ public class ScreeningDAO
 				+ screening.getScreeningName() + "' to tsid '" + tsid.getUniqueString() + " with activeFlag="
 				+ active + ": " + ex;
 			warning(msg);
+			PrintStream ps = Logger.instance().getLogOutput();
+			if (ps != null)
+			{
+				ps.println("Cause is: " + ex);
+				ex.printStackTrace(ps);
+			}
 			throw new DbIoException(msg);
 		}
 	}
