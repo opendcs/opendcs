@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.12  2019/01/17 20:04:49  mmaloney
+ * dev
+ *
  * Revision 1.11  2019/01/17 20:00:17  mmaloney
  * dev
  *
@@ -124,8 +127,12 @@ public class JavaLoggerAdapter extends Handler
 	{
 		if (myFormatter == null)
 			myFormatter = new JavaLoggerFormatter();
+		String s = myFormatter.format(record);
+if (record.getLoggerName().contains("ConnectionPersistenceManager")
+ || record.getLoggerName().contains("AbstractCwmsDbDao"))
+	System.err.println("JavaLoggerAdapter '" + s + "'");
 		
-		ilexLogger.log(mapPriority(record), myFormatter.format(record));
+		ilexLogger.log(mapPriority(record), s);
 	}
 	
 	private int mapPriority(LogRecord record)
