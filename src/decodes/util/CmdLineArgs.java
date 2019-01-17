@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.6  2019/01/15 19:41:19  mmaloney
+*  Remove debug
+*
 *  Revision 1.5  2019/01/11 14:43:16  mmaloney
 *  Move JavaLoggerAdapter to ApplicationSettings
 *
@@ -323,7 +326,7 @@ public class CmdLineArgs
 			    }
 			}
 		}
-		
+System.err.println("Forwarding javax.logging to ilex log.");
 		JavaLoggerAdapter.initialize(Logger.instance(), false, "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
 			"org.jooq");
 	}
