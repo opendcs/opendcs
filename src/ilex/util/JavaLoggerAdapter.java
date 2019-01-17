@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.11  2019/01/17 20:00:17  mmaloney
+ * dev
+ *
  * Revision 1.10  2018/12/20 20:44:45  mmaloney
  * Add throwable info if one is present.
  *
@@ -199,7 +202,7 @@ class JavaLoggerFormatter
         	msg = msg + " (" + t.toString() + ")";
         
         String ret = record.getLoggerName() + ": " + msg;
-System.err.println("JavaLoggerFormatter returning '" + ret + "'");
+//System.err.println("JavaLoggerFormatter returning '" + ret + "'");
 		return ret;
 	}
 }
