@@ -35,6 +35,12 @@ public class PyTest
 			+ "" + linesep;
 		System.out.println("Executing script:" + linesep + script);
 		interp.exec(script);
+		
+		System.out.println();
+		System.out.println("Setting pi in environment with full double precision.");
+		interp.set("value", new PyFloat(Math.PI));
+		System.out.println("Printing value of pi from Python:");
+		interp.exec("print value");
 	}
 	
 	public static int get123()

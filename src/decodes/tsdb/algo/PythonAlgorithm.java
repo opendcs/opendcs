@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.15  2019/01/04 15:01:34  mmaloney
+ * Added rolename.tskey, and for HDB, rolename.sdi
+ *
  * Revision 1.14  2018/07/31 16:59:47  mmaloney
  * isPresent also returns false on Deleted data.
  *
@@ -67,6 +70,7 @@ import java.util.TreeSet;
 
 import opendcs.dai.TimeSeriesDAI;
 
+import org.python.core.PyFloat;
 import org.python.util.PythonInterpreter;
 
 import ilex.util.EnvExpander;
@@ -536,8 +540,10 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			try
 			{
 				expr = 
-					varName + ".value = " + pyNumFmt.format(nv.getDoubleValue()) + linesep
-				  + varName + ".qual = 0x" + Integer.toHexString(nv.getFlags()) + linesep;
+//					varName + ".value = " + pyNumFmt.format(nv.getDoubleValue()) + linesep +
+				  varName + ".qual = 0x" + Integer.toHexString(nv.getFlags()) + linesep;
+				// MJM 20190116 set value into Python name space with full double precision
+				this.pythonIntepreter.set(varName + ".value", new PyFloat(nv.getDoubleValue()));
 			}
 			catch(NoConversionException ex)
 			{
