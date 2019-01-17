@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.10  2018/12/20 20:44:45  mmaloney
+ * Add throwable info if one is present.
+ *
  * Revision 1.9  2018/12/19 15:43:05  mmaloney
  * Format message with parameters if any are present.
  *
@@ -195,6 +198,8 @@ class JavaLoggerFormatter
         if (t != null)
         	msg = msg + " (" + t.toString() + ")";
         
-		return record.getLoggerName() + ": " + msg;
+        String ret = record.getLoggerName() + ": " + msg;
+System.err.println("JavaLoggerFormatter returning '" + ret + "'");
+		return ret;
 	}
 }
