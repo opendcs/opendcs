@@ -1,1 +1,0 @@
-This directory contains JAR files required for the jOOQ implementation in CWMS 3.2.
