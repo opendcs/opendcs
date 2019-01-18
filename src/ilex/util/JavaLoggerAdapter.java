@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.14  2019/01/18 15:43:17  mmaloney
+ * dev
+ *
  * Revision 1.13  2019/01/17 20:32:27  mmaloney
  * dev
  *
@@ -110,7 +113,6 @@ public class JavaLoggerAdapter extends Handler
 			globalLogger.setLevel(Level.ALL);
 		}
 		
-//System.err.println("\nConfiguring rootLogger");
 		for(String path : paths)
 		{
 			java.util.logging.Logger logger = java.util.logging.Logger.getLogger(path);
@@ -124,6 +126,7 @@ public class JavaLoggerAdapter extends Handler
 				while (handlers != null && handlers.length > 0)
 				{
 					//&& handlers[0] instanceof ConsoleHandler)
+System.err.println("Path '" + path + "': Removing " + handlers[0].getClass().getName());
 					logger.removeHandler(handlers[0]);
 					handlers = logger.getHandlers();
 				}
