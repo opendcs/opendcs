@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.13  2019/01/18 16:01:10  mmaloney
+*  dev
+*
 *  Revision 1.12  2019/01/18 15:58:26  mmaloney
 *  dev
 *
@@ -344,7 +347,7 @@ public class CmdLineArgs
 			    }
 			}
 		}
-System.err.println("Forwarding javax.logging to ilex log.");
+		Logger.instance().debug1("Forwarding javax.logging to ilex log.");
 		JavaLoggerAdapter.initialize(Logger.instance(), true, "", "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
 			"org.jooq", "usace.cwms.db.jooq.util");
 	}

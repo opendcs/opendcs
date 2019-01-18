@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.16  2019/01/18 15:53:45  mmaloney
+ * dev
+ *
  * Revision 1.15  2019/01/18 15:49:43  mmaloney
  * dev
  *
@@ -101,7 +104,6 @@ public class JavaLoggerAdapter extends Handler
 		initialized = true;
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
 		
-//System.err.println("\nConfiguring globalLogger");
 		java.util.logging.Logger globalLogger = LogManager.getLogManager().getLogger(globalName);
 		if (forwardGlobal)
 		{
@@ -120,18 +122,18 @@ public class JavaLoggerAdapter extends Handler
 		{
 			java.util.logging.Logger logger = java.util.logging.Logger.getLogger(path);
 			if (logger == null)
-				System.err.println("logger is null for path '" + path + "'.");
+				Logger.instance().debug3("logger is null for path '" + path + "'.");
 			else if (logger == globalLogger)
 				continue;
 			else
 			{
 				Handler handlers[] = logger.getHandlers();
 				if (handlers == null || handlers.length == 0)
-System.err.println("Path '" + path + "' No loggers present.");
+					Logger.instance().debug3("Path '" + path + "' No loggers present.");
 				while (handlers != null && handlers.length > 0)
 				{
 					//&& handlers[0] instanceof ConsoleHandler)
-System.err.println("Path '" + path + "': Removing " + handlers[0].getClass().getName());
+					Logger.instance().debug3("Path '" + path + "': Removing " + handlers[0].getClass().getName());
 					logger.removeHandler(handlers[0]);
 					handlers = logger.getHandlers();
 				}
@@ -147,9 +149,9 @@ System.err.println("Path '" + path + "': Removing " + handlers[0].getClass().get
 		if (myFormatter == null)
 			myFormatter = new JavaLoggerFormatter();
 		String s = myFormatter.format(record);
-if (record.getLoggerName().contains("ConnectionPersistenceManager")
- || record.getLoggerName().contains("AbstractCwmsDbDao"))
-	System.err.println("JavaLoggerAdapter '" + s + "'");
+//if (record.getLoggerName().contains("ConnectionPersistenceManager")
+// || record.getLoggerName().contains("AbstractCwmsDbDao"))
+//	System.err.println("JavaLoggerAdapter '" + s + "'");
 		
 		ilexLogger.log(mapPriority(record), s);
 	}
