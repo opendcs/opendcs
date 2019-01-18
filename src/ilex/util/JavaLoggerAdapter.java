@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.13  2019/01/17 20:32:27  mmaloney
+ * dev
+ *
  * Revision 1.12  2019/01/17 20:04:49  mmaloney
  * dev
  *
@@ -97,8 +100,12 @@ public class JavaLoggerAdapter extends Handler
 		if (forwardGlobal)
 		{
 			Handler handlers[] = globalLogger.getHandlers();
-			if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
+			while (handlers != null && handlers.length > 0)
+			{
+				//&& handlers[0] instanceof ConsoleHandler)
 				globalLogger.removeHandler(handlers[0]);
+				handlers = globalLogger.getHandlers();
+			}
 			globalLogger.addHandler(instance());
 			globalLogger.setLevel(Level.ALL);
 		}
@@ -114,8 +121,12 @@ public class JavaLoggerAdapter extends Handler
 			else
 			{
 				Handler handlers[] = logger.getHandlers();
-				if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler)
+				while (handlers != null && handlers.length > 0)
+				{
+					//&& handlers[0] instanceof ConsoleHandler)
 					logger.removeHandler(handlers[0]);
+					handlers = logger.getHandlers();
+				}
 				logger.addHandler(instance());
 				logger.setLevel(Level.ALL);
 			}
