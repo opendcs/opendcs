@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.15  2019/01/18 15:49:43  mmaloney
+ * dev
+ *
  * Revision 1.14  2019/01/18 15:43:17  mmaloney
  * dev
  *
@@ -123,6 +126,8 @@ public class JavaLoggerAdapter extends Handler
 			else
 			{
 				Handler handlers[] = logger.getHandlers();
+				if (handlers == null || handlers.length == 0)
+System.err.println("Path '" + path + "' No loggers present.");
 				while (handlers != null && handlers.length > 0)
 				{
 					//&& handlers[0] instanceof ConsoleHandler)
