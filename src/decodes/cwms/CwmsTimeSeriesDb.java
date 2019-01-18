@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.48  2019/01/11 14:39:17  mmaloney
+*  Move JavaLoggerAdapter to ApplicationSettings
+*
 *  Revision 1.47  2019/01/03 15:04:55  mmaloney
 *  changed prepareStatement to prepareCall
 *
@@ -920,12 +923,21 @@ public class CwmsTimeSeriesDb
 		{
 			hec.data.Units.getAvailableUnits();
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
-			Logger.instance().warning(module + " Exception in hec.data.Units.getAvailableUnits: "
-				+ ex);
+			Logger.instance().warning(module + " Exception in hec.data.Units.getAvailableUnits: " + ex);
 		}
-		
+
+		try
+		{
+			baseParam.load(this);
+		}
+		catch (Exception ex)
+		{
+			String msg = "Cannot load baseParam Units Map: " + ex;
+			failure(msg);
+		}
+
 		return appId;
 	}
 	
