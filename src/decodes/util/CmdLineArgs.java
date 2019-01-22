@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.14  2019/01/18 16:10:27  mmaloney
+*  dev
+*
 *  Revision 1.13  2019/01/18 16:01:10  mmaloney
 *  dev
 *
@@ -141,6 +144,8 @@ public class CmdLineArgs
 	private String propFile;
 	/** Application Define argument (-D) */
 	private StringToken define_arg;
+	private BooleanToken forwardLogArg;
+	
 
 
 	//No filter option token.
@@ -174,8 +179,11 @@ public class CmdLineArgs
 //				"Disable Computation List filter (default=on)", "",
 //				TokenOptions.optSwitch, "true");
 //		addToken(NoCompFilterToken);
+		forwardLogArg = new BooleanToken("FL", "Forward javax.logging logger to application log.", "",
+			TokenOptions.optSwitch, false);
 		addToken(log_arg);
 		addToken(define_arg);
+		addToken(forwardLogArg);
 		cmdLineProps = new Properties();
 
     }
@@ -347,9 +355,13 @@ public class CmdLineArgs
 			    }
 			}
 		}
-		Logger.instance().debug1("Forwarding javax.logging to ilex log.");
-		JavaLoggerAdapter.initialize(Logger.instance(), true, "", "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
-			"org.jooq", "usace.cwms.db.jooq.util");
+		if (forwardLogArg.getValue())
+		{
+			Logger.instance().debug1("Forwarding javax.logging to ilex log.");
+			JavaLoggerAdapter.initialize(Logger.instance(), true, "", 
+				"usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
+				"org.jooq", "usace.cwms.db.jooq.util");
+		}
 	}
 
 	/** @return DECODES Properties file name */
