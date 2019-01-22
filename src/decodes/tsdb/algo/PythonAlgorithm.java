@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.16  2019/01/17 15:24:39  mmaloney
+ * HDB 646 Set variable with full double precision into Python namespace.
+ *
  * Revision 1.15  2019/01/04 15:01:34  mmaloney
  * Added rolename.tskey, and for HDB, rolename.sdi
  *
@@ -700,8 +703,11 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		
 		if (tsdb.isCwms())
 		{
-			return (f & (CwmsFlags.VALIDITY_REJECTED | CwmsFlags.VALIDITY_QUESTIONABLE
-				| IFlags.IS_MISSING | VarFlags.TO_DELETE)) == 0;
+			boolean r = (f & 
+				(CwmsFlags.VALIDITY_REJECTED | CwmsFlags.VALIDITY_QUESTIONABLE
+					| IFlags.IS_MISSING | VarFlags.TO_DELETE)) == 0;
+			debug3("   checking cwms flag value " + Integer.toHexString(f) + " and returning " + r);
+			return r;
 		}
 		else if (tsdb.isHdb())
 		{

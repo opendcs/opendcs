@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.13  2019/01/22 15:46:32  mmaloney
+ * Set the RatingSet db connection. New requirement for 3.2
+ *
  * Revision 1.12  2019/01/22 14:34:20  mmaloney
  * dev
  *
@@ -390,7 +393,7 @@ public class CwmsRatingDao extends DaoBase
 
 //		String rcheck = getRatingCheck(ucSpecId);
 
-		Logger.instance().debug3(module + " calling RatingSet.fromDatabase with officeId=" 
+		Logger.instance().debug3(module + " constructing RatingSet with officeId=" 
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
 //RatingSet.setAlwaysAllowUnsafe(false);
