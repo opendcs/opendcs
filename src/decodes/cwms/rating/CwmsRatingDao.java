@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2018/09/11 21:33:45  mmaloney
+ * CWMS-13483 Catch RatingException in GUI when ID doesn't exist.
+ *
  * Revision 1.9  2017/11/02 20:44:24  mmaloney
  * Cwms Rating perform multiple points at the same time.
  *
@@ -170,9 +173,14 @@ public class CwmsRatingDao extends DaoBase
 	public void deleteRating(CwmsRatingRef crr)
 		throws RatingException
 	{
-		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), 
+//		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), 
+//			((CwmsTimeSeriesDb)db).getDbOfficeId(),
+//			crr.getRatingSpecId());
+
+		RatingSet ratingSet = new RatingSet(db.getConnection(), 
 			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 			crr.getRatingSpecId());
+		
 		if(ratingSet.getRatingCount() <= 1)
 		{
 			deleteRatingSpec(crr);
@@ -376,7 +384,8 @@ public class CwmsRatingDao extends DaoBase
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
 //RatingSet.setAlwaysAllowUnsafe(false);
-		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), officeId, specId);
+//		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), officeId, specId);
+		RatingSet ratingSet = new RatingSet(db.getConnection(), officeId, specId);
 
 		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
 		//, rcheck));
