@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2019/01/22 13:03:29  mmaloney
+ * dev
+ *
  * Revision 1.10  2018/09/11 21:33:45  mmaloney
  * CWMS-13483 Catch RatingException in GUI when ID doesn't exist.
  *
@@ -177,9 +180,12 @@ public class CwmsRatingDao extends DaoBase
 //			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 //			crr.getRatingSpecId());
 
-		RatingSet ratingSet = new RatingSet(db.getConnection(), 
+		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE,
+			db.getConnection(), 
 			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 			crr.getRatingSpecId());
+		
+		
 		
 		if(ratingSet.getRatingCount() <= 1)
 		{
@@ -385,7 +391,8 @@ public class CwmsRatingDao extends DaoBase
 		Date timeLoaded = new Date();
 //RatingSet.setAlwaysAllowUnsafe(false);
 //		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), officeId, specId);
-		RatingSet ratingSet = new RatingSet(db.getConnection(), officeId, specId);
+		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE, 
+			db.getConnection(), officeId, specId);
 
 		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
 		//, rcheck));
