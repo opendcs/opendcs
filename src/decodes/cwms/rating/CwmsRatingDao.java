@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2019/01/22 14:34:20  mmaloney
+ * dev
+ *
  * Revision 1.11  2019/01/22 13:03:29  mmaloney
  * dev
  *
@@ -358,6 +361,7 @@ public class CwmsRatingDao extends DaoBase
 					+ " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
 					+ rw.timeLoaded);
+				rw.ratingSet.setDatabaseConnection(db.getConnection());
 				return rw.ratingSet;
 			}
 		}
@@ -400,6 +404,7 @@ public class CwmsRatingDao extends DaoBase
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
+		ratingSet.setDatabaseConnection(db.getConnection());
 		return ratingSet;
 	}
 	
