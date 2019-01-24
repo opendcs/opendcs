@@ -53,7 +53,9 @@ public class GroupAdder
 
 //AW:OUTPUTS
 	public NamedVariable sum = new NamedVariable("sum", 0);
-	String _outputNames[] = { "sum" };
+	public NamedVariable count = new NamedVariable("count", 0);
+	public NamedVariable average = new NamedVariable("average", 0);
+	String _outputNames[] = { "sum", "count", "average" };
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
@@ -224,6 +226,10 @@ public class GroupAdder
 				debug1("" + numSummed + " values summed from group " + group.getGroupName()
 					+ " at time " + debugSdf.format(timeSlice));
 				this.setOutput(sum, _sum, timeSlice);
+				if (isAssigned("count"))
+					setOutput(count, numSummed, timeSlice);
+				if (isAssigned("average"))
+					setOutput(average, _sum / (double)numSummed, timeSlice);
 			}
 			else
 				warning("No values found for group " + group.getGroupName()
