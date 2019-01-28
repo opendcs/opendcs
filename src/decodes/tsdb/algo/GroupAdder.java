@@ -121,12 +121,15 @@ public class GroupAdder
 		ts2sum.clear();
 		ComputationDAI computationDAO = tsdb.makeComputationDAO();
 		MissingAction missingAction = MissingAction.IGNORE;
+		String maskUnits = null;
 		
 		try
 		{
 			DbComputation origComp = computationDAO.getComputationById(comp.getId());
 			DbCompParm maskParm = origComp.getParm("mask");
 			missingAction = MissingAction.fromString(origComp.getProperty("mask_MISSING"));
+			maskUnits = maskParm.getUnitsAbbr();
+debug3("maskParm.units = " + maskUnits);
 			
 			// Use a set to make sure I don't duplicate any TSIDs after masking.
 			HashSet<TimeSeriesIdentifier> transformedTsids = new HashSet<TimeSeriesIdentifier>();
@@ -146,6 +149,8 @@ public class GroupAdder
 					CTimeSeries cts = dc.getTimeSeriesByTsidKey(transformedTsid);
 					if (cts == null)
 						cts = tsdb.makeTimeSeries(transformedTsid);
+					if (maskUnits != null)
+						cts.setUnitsAbbr(maskUnits);
 					ts2sum.add(cts);
 				}
 				catch (Exception ex)
@@ -184,6 +189,7 @@ for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
 				continue;
 			}
 		}
+		
 debug3("After fill ...");
 for(CTimeSeries cts : ts2sum)
 {
