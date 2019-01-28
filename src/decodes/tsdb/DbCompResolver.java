@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.7  2018/11/14 15:51:39  mmaloney
+*  Remove unneeded imports.
+*
 *  Revision 1.6  2017/08/22 19:56:38  mmaloney
 *  Refactor
 *
@@ -381,6 +384,11 @@ Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName(
 	{
 		if (!comp1.getId().equals(comp2.getId()))
 			return false;
+		
+		// Special case for GroupAdder algorithm. It expands a single param be the
+		// entire group in the algorithm. So all instances of the same compid are the same.
+		if (comp1.getAlgorithm().getExecClass().contains("GroupAdder"))
+			return true;
 		
 		// make sure all the input parms are the same.
 		for(Iterator<DbCompParm> parmit = comp1.getParms(); parmit.hasNext();)
