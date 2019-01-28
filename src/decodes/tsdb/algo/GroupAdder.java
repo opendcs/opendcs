@@ -23,6 +23,7 @@ import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.util.TSUtil;
 
 //AW:IMPORTS
 // Place an import statements you need here.
@@ -149,8 +150,7 @@ debug3("maskParm.units = " + maskUnits);
 					CTimeSeries cts = dc.getTimeSeriesByTsidKey(transformedTsid);
 					if (cts == null)
 						cts = tsdb.makeTimeSeries(transformedTsid);
-					if (maskUnits != null)
-						cts.setUnitsAbbr(maskUnits);
+					TSUtil.convertUnits(cts, maskUnits);
 					ts2sum.add(cts);
 				}
 				catch (Exception ex)
