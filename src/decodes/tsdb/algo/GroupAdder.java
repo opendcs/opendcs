@@ -167,8 +167,11 @@ public class GroupAdder
 			throw new DbCompException("After applying mask, there are no time series to sum.");
 		
 		// Fill in the CTimeSeries objects with all the potential data I'll need.
+debug3("Prior to fill ...");
 		for(CTimeSeries cts : ts2sum)
 		{
+debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr());
+for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
 			try
 			{
 				tsdb.fillTimeSeries(cts, baseTimes.first(), baseTimes.last(), true, true, false);
@@ -181,6 +184,12 @@ public class GroupAdder
 				continue;
 			}
 		}
+debug3("After fill ...");
+for(CTimeSeries cts : ts2sum)
+{
+debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr());
+for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
+}
 		
 	  nextTimeSlice:
 		for(Date timeSlice : baseTimes)
