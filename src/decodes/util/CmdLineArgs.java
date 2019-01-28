@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.15  2019/01/22 19:36:34  mmaloney
+*  Added -FL argument to forward the java.logging logger.
+*
 *  Revision 1.14  2019/01/18 16:10:27  mmaloney
 *  dev
 *
@@ -355,13 +358,12 @@ public class CmdLineArgs
 			    }
 			}
 		}
-		if (forwardLogArg.getValue())
-		{
-			Logger.instance().debug1("Forwarding javax.logging to ilex log.");
-			JavaLoggerAdapter.initialize(Logger.instance(), true, "", 
-				"usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
-				"org.jooq", "usace.cwms.db.jooq.util");
-		}
+		
+		// This will forward log messages for the CWMS JOOQ Interface to the Ilex Logger.
+		Logger.instance().debug1("Forwarding javax.logging to ilex log.");
+		JavaLoggerAdapter.initialize(Logger.instance(), forwardLogArg.getValue(), "", 
+			"usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
+			"org.jooq", "usace.cwms.db.jooq.util");
 	}
 
 	/** @return DECODES Properties file name */

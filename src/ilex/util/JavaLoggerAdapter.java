@@ -11,6 +11,9 @@
  * permissions and limitations under the License.
  * 
  * $Log$
+ * Revision 1.17  2019/01/18 16:10:27  mmaloney
+ * dev
+ *
  * Revision 1.16  2019/01/18 15:53:45  mmaloney
  * dev
  *
@@ -82,6 +85,7 @@ public class JavaLoggerAdapter extends Handler
 	private static final JavaLoggerAdapter _instance = new JavaLoggerAdapter();
 	private static Formatter myFormatter = null;
 	private static boolean initialized = false;
+	private static boolean doForward = true;
 	
 	/** Singleton access only */
 	public static JavaLoggerAdapter instance() { return _instance; }
@@ -94,29 +98,27 @@ public class JavaLoggerAdapter extends Handler
 	 * Initialize the java.util.logging facility to funnel messages into the passed
 	 * OpenDCS Logger.
 	 * @param ilexLogger The OpenDCS Logger that will receive messages.
-	 * @param forwardGlobal set to true to forward the global logger.
+	 * @param _doForward set to true to forward log messages, false to squelch them.
 	 * @param paths a list of root level logger paths to forward. Use the empty string "" to forward all.
 	 */
-	public static void initialize(ilex.util.Logger ilexLogger, boolean forwardGlobal, String ... paths)
+	public static void initialize(ilex.util.Logger ilexLogger, boolean _doForward, String ... paths)
 	{
 		if (initialized)
 			return;
 		initialized = true;
+		doForward = _doForward;
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
 		
 		java.util.logging.Logger globalLogger = LogManager.getLogManager().getLogger(globalName);
-		if (forwardGlobal)
+		Handler handlers[] = globalLogger.getHandlers();
+		while (handlers != null && handlers.length > 0)
 		{
-			Handler handlers[] = globalLogger.getHandlers();
-			while (handlers != null && handlers.length > 0)
-			{
-				//&& handlers[0] instanceof ConsoleHandler)
-				globalLogger.removeHandler(handlers[0]);
-				handlers = globalLogger.getHandlers();
-			}
-			globalLogger.addHandler(instance());
-			globalLogger.setLevel(Level.ALL);
+			//&& handlers[0] instanceof ConsoleHandler)
+			globalLogger.removeHandler(handlers[0]);
+			handlers = globalLogger.getHandlers();
 		}
+		globalLogger.addHandler(instance());
+		globalLogger.setLevel(Level.ALL);
 		
 		for(String path : paths)
 		{
@@ -127,7 +129,7 @@ public class JavaLoggerAdapter extends Handler
 				continue;
 			else
 			{
-				Handler handlers[] = logger.getHandlers();
+				handlers = logger.getHandlers();
 				if (handlers == null || handlers.length == 0)
 					Logger.instance().debug3("Path '" + path + "' No loggers present.");
 				while (handlers != null && handlers.length > 0)
@@ -146,6 +148,8 @@ public class JavaLoggerAdapter extends Handler
 	@Override
 	public void publish(LogRecord record)
 	{
+		if (!doForward)
+			return;
 		if (myFormatter == null)
 			myFormatter = new JavaLoggerFormatter();
 		String s = myFormatter.format(record);
