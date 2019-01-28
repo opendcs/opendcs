@@ -129,7 +129,8 @@ public class GroupAdder
 			DbComputation origComp = computationDAO.getComputationById(comp.getId());
 			DbCompParm maskParm = origComp.getParm("mask");
 			missingAction = MissingAction.fromString(origComp.getProperty("mask_MISSING"));
-			maskUnits = maskParm.getUnitsAbbr();
+			
+			maskUnits = origComp.getProperty("mask_EU");
 debug3("maskParm.units = " + maskUnits);
 			
 			// Use a set to make sure I don't duplicate any TSIDs after masking.
