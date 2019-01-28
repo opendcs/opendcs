@@ -85,10 +85,12 @@ public class FileConsumer extends DataConsumer
 	  @param props routing spec properties.
 	  @throws DataConsumerException if the consumer could not be initialized.
 	*/
-	public void open(String consumerArg, Properties props)
+	public void open(String consumerArg, Properties rsProps)
 		throws DataConsumerException
 	{
-		this.props = props;
+		this.props = new Properties();
+		PropertiesUtil.copyProps(this.props, System.getProperties());
+		PropertiesUtil.copyProps(this.props, rsProps);
 		String fn = EnvExpander.expand(consumerArg, props);
 		this.filename = fn;
 		try
