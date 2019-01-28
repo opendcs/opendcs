@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2018/04/09 14:54:30  mmaloney
+ * For HDB allow input parms to not previously exist. Ask user to create.
+ *
  * Revision 1.9  2018/01/23 14:55:54  mmaloney
  * HDB 483 Cnvt single comp to group, bug--wasn't removing SDI.
  *
@@ -876,7 +879,7 @@ public class CompParmDialog extends GuiDialog
 			theParm.setInterval(interval);
 			DbKey dtid = dt == null ? Constants.undefinedId : dt.getId();
 			theParm.setDataTypeId(dtid);
-System.out.println("Setting tabsel='" + tabSel + "'");
+//System.out.println("Setting tabsel='" + tabSel + "'");
 			theParm.setTableSelector(tabSel);
 			theParm.setDeltaT(deltaT);
 			theParm.setDeltaTUnits(deltaTUnits);
