@@ -187,15 +187,20 @@ public class GroupAdder
 		{
 			double _sum = 0.0;
 			int numSummed = 0;
+debug3("base time " + debugSdf.format(timeSlice));
 			for (CTimeSeries cts : ts2sum)
 			{
+
 				TimedVariable tv = cts.findWithin(timeSlice, roundSec);
+
 				if (tv == null)
 				{
 					switch(missingAction)
 					{
-					case CLOSEST: tv = cts.findClosest(timeSlice.getTime()/1000L); break;
-					case PREV: tv = cts.findPrev(timeSlice); break;
+					case CLOSEST:
+						tv = cts.findClosest(timeSlice.getTime()/1000L); break;
+					case PREV: 
+						tv = cts.findPrev(timeSlice); break;
 					case NEXT: tv = cts.findNext(timeSlice); break;
 					case INTERP: tv = cts.findInterp(timeSlice.getTime()/1000L); break;
 					case FAIL:
@@ -208,12 +213,35 @@ public class GroupAdder
 							+ "' because no value at " + debugSdf.format(timeSlice));
 						continue;
 					}
+try
+{
+	debug3("    " + cts.getTimeSeriesIdentifier() + " missing -- action=" + missingAction 
+	+ ", result=" + tv.getDoubleValue());
+}
+catch (NoConversionException e)
+{
+	// TODO Auto-generated catch block
+	e.printStackTrace();
+}
 				}
+else
+{
+	try
+	{
+		debug3("    " + cts.getTimeSeriesIdentifier() + " value present=" + tv.getDoubleValue());
+	}
+	catch (NoConversionException e)
+	{
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+}
 				if (tv != null)
 					try
 					{
 						_sum += tv.getDoubleValue();
 						numSummed++;
+debug3("   after count=" + numSummed + ", sum=" + _sum);
 					}
 					catch (NoConversionException e)
 					{
