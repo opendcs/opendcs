@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2017/01/24 15:38:08  mmaloney
+ * CWMS-10060 added support for DecodesSettings.tsidFetchSize
+ *
  * Revision 1.3  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
@@ -104,9 +107,9 @@ public class DaoBase
 				queryStmt1.setFetchSize(fetchSize);
 			debug3("Query1 '" + q + "'");
 			
-if (this instanceof decodes.cwms.CwmsTimeSeriesDAO
- || this instanceof decodes.cwms.CwmsSiteDAO)
-debug1("Fetch size=" + queryStmt1.getFetchSize());
+//if (this instanceof decodes.cwms.CwmsTimeSeriesDAO
+// || this instanceof decodes.cwms.CwmsSiteDAO)
+//debug1("Fetch size=" + queryStmt1.getFetchSize());
 
 			return queryResults1 = queryStmt1.executeQuery(q);
 		}
