@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.18  2019/01/29 16:45:17  mmaloney
+ * dev
+ *
  * Revision 1.17  2019/01/22 21:29:43  mmaloney
  * dev
  *
@@ -545,11 +548,13 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		{
 			try
 			{
+//vvvvv
 				expr = 
-//					varName + ".value = " + pyNumFmt.format(nv.getDoubleValue()) + linesep +
+					varName + ".value = " + pyNumFmt.format(nv.getDoubleValue()) + linesep +
+//^^^^^
 				  varName + ".qual = 0x" + Integer.toHexString(nv.getFlags()) + linesep;
 				// MJM 20190116 set value into Python name space with full double precision
-				this.pythonIntepreter.set(varName + ".value", new PyFloat(nv.getDoubleValue()));
+//Not Working?				this.pythonIntepreter.set(varName + ".value", new PyFloat(nv.getDoubleValue()));
 			}
 			catch(NoConversionException ex)
 			{
