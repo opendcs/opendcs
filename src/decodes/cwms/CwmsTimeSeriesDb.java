@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.49  2019/01/18 15:06:48  mmaloney
+*  dev
+*
 *  Revision 1.48  2019/01/11 14:39:17  mmaloney
 *  Move JavaLoggerAdapter to ApplicationSettings
 *
@@ -2132,7 +2135,10 @@ public class CwmsTimeSeriesDb
 		}
 		catch (RatingException ex)
 		{
-			throw new RangeException("rating(" + specId + ") failed: " + ex);
+			String msg = "rating(" + specId + ") failed: " + ex;
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
+			throw new RangeException(msg);
 		}
 		finally
 		{

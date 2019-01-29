@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.17  2019/01/22 21:29:43  mmaloney
+ * dev
+ *
  * Revision 1.16  2019/01/17 15:24:39  mmaloney
  * HDB 646 Set variable with full double precision into Python namespace.
  *
@@ -1217,6 +1220,8 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		StringBuilder sb = new StringBuilder("rating(" + specId + ", with " + indeps.length + " independents" + "):");
 		for(double d : indeps)
 			sb.append(" " + d);
+System.err.println("Python rating function: "+ sb.toString());
+
 		debug1(sb.toString());
 		if (tracer != null)
 			return 100.0;
