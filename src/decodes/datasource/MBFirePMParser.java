@@ -58,6 +58,9 @@ public class MBFirePMParser extends PMParser
 		byte data[] = msg.getData();
 		StringBuilder idbuf = new StringBuilder();
 		int idx = 0;
+		for(; idx < data.length && (char)data[idx] == ' '; idx++);
+		if (idx >= data.length)
+			throw new HeaderParseException("Header completely blank");
 		for(; idx<data.length && (char)data[idx] != ' '; idx++)
 			idbuf.append((char)data[idx]);
 		String ids = idbuf.toString();
