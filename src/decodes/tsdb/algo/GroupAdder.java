@@ -131,7 +131,6 @@ public class GroupAdder
 			missingAction = MissingAction.fromString(origComp.getProperty("mask_MISSING"));
 			
 			maskUnits = origComp.getProperty("mask_EU");
-debug3("maskParm.units = " + maskUnits);
 			
 			// Use a set to make sure I don't duplicate any TSIDs after masking.
 			HashSet<TimeSeriesIdentifier> transformedTsids = new HashSet<TimeSeriesIdentifier>();
@@ -173,11 +172,11 @@ debug3("maskParm.units = " + maskUnits);
 			throw new DbCompException("After applying mask, there are no time series to sum.");
 		
 		// Fill in the CTimeSeries objects with all the potential data I'll need.
-debug3("Prior to fill ...");
+//debug3("Prior to fill ...");
 		for(CTimeSeries cts : ts2sum)
 		{
-debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr());
-for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
+//debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr());
+//for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
 			try
 			{
 				tsdb.fillTimeSeries(cts, baseTimes.first(), baseTimes.last(), true, true, false);
@@ -191,19 +190,19 @@ for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
 			}
 		}
 		
-debug3("After fill ...");
-for(CTimeSeries cts : ts2sum)
-{
-debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr());
-for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
-}
+//debug3("After fill ...");
+//for(CTimeSeries cts : ts2sum)
+//{
+//debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr());
+//for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
+//}
 		
 	  nextTimeSlice:
 		for(Date timeSlice : baseTimes)
 		{
 			double _sum = 0.0;
 			int numSummed = 0;
-debug3("base time " + debugSdf.format(timeSlice));
+//debug3("base time " + debugSdf.format(timeSlice));
 			for (CTimeSeries cts : ts2sum)
 			{
 
@@ -229,35 +228,35 @@ debug3("base time " + debugSdf.format(timeSlice));
 							+ "' because no value at " + debugSdf.format(timeSlice));
 						continue;
 					}
-try
-{
-	debug3("    " + cts.getTimeSeriesIdentifier() + " missing -- action=" + missingAction 
-	+ ", result=" + tv.getDoubleValue());
-}
-catch (NoConversionException e)
-{
-	// TODO Auto-generated catch block
-	e.printStackTrace();
-}
+//try
+//{
+//	debug3("    " + cts.getTimeSeriesIdentifier() + " missing -- action=" + missingAction 
+//	+ ", result=" + tv.getDoubleValue());
+//}
+//catch (NoConversionException e)
+//{
+//	// Auto-generated catch block
+//	e.printStackTrace();
+//}
 				}
-else
-{
-	try
-	{
-		debug3("    " + cts.getTimeSeriesIdentifier() + " value present=" + tv.getDoubleValue());
-	}
-	catch (NoConversionException e)
-	{
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-}
+//else
+//{
+//	try
+//	{
+//		debug3("    " + cts.getTimeSeriesIdentifier() + " value present=" + tv.getDoubleValue());
+//	}
+//	catch (NoConversionException e)
+//	{
+//		// Auto-generated catch block
+//		e.printStackTrace();
+//	}
+//}
 				if (tv != null)
 					try
 					{
 						_sum += tv.getDoubleValue();
 						numSummed++;
-debug3("   after count=" + numSummed + ", sum=" + _sum);
+//debug3("   after count=" + numSummed + ", sum=" + _sum);
 					}
 					catch (NoConversionException e)
 					{
