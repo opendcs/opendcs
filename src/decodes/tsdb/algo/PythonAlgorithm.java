@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.19  2019/01/29 19:03:54  mmaloney
+ * dev
+ *
  * Revision 1.18  2019/01/29 16:45:17  mmaloney
  * dev
  *
@@ -548,13 +551,12 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		{
 			try
 			{
-//vvvvv
-				expr = 
-					varName + ".value = " + pyNumFmt.format(nv.getDoubleValue()) + linesep +
-//^^^^^
-				  varName + ".qual = 0x" + Integer.toHexString(nv.getFlags()) + linesep;
 				// MJM 20190116 set value into Python name space with full double precision
-//Not Working?				this.pythonIntepreter.set(varName + ".value", new PyFloat(nv.getDoubleValue()));
+				// Note setting name.value directly from set() does NOT work. Use intermediate variable.
+				this.pythonIntepreter.set("___x___", new PyFloat(nv.getDoubleValue()));
+				expr = 
+					varName + ".value = ___x___" + linesep +
+					varName + ".qual = 0x" + Integer.toHexString(nv.getFlags()) + linesep;
 			}
 			catch(NoConversionException ex)
 			{
@@ -1225,7 +1227,6 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		StringBuilder sb = new StringBuilder("rating(" + specId + ", with " + indeps.length + " independents" + "):");
 		for(double d : indeps)
 			sb.append(" " + d);
-System.err.println("Python rating function: "+ sb.toString());
 
 		debug1(sb.toString());
 		if (tracer != null)
