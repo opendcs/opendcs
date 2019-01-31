@@ -10,10 +10,12 @@ from decodes.tsdb import NoValueException
 # so that it is availabe to Python:
 algo = PythonAlgorithm.getRunningInstance()
 algo.debug1('Retrieved Running PythonAlgorithm Instance in Python')
+missingValue=-9000000000000.
+missingLimit=-8999999999900.
 
 # define the algorithm parameter class
 class AlgoParm:
-	def __init__(self, tsid, value='NV', qual=0x40000000):
+	def __init__(self, tsid, value=missingValue, qual=0x40000000):
 		self.tsid = tsid
 		self.value = value
 		self.qual = qual
@@ -35,7 +37,7 @@ def debug3(msg):
 
 def setOutput(rolename, value):
 	globals()[rolename].value = value
-	if value == 'NV':
+	if value < missingLimit:
 		return
 	algo.setOutput(rolename, value)
 
@@ -70,7 +72,7 @@ def setQual(rolename, qual):
 def setOutputAndQual(rolename, value, qual):
 	globals()[rolename].value = value
 	globals()[rolename].qual = qual
-	if value == 'NV':
+	if value < missingLimit:
 		return
 	algo.setOutputAndQual(rolename, value, qual)
 
@@ -82,21 +84,21 @@ def changeSince(rolename, duration):
 
 def rating(specId, *indep):
 	for v in indep:
-		if v == 'NV':
+		if v < missingLimit:
 			warning('Rating failed: One of the indeps is not present.')
-			return 'NV'
+			return missingValue
 	return algo.rating(specId, indep)
 
 def rdbrating(tabfile, indep):
-	if indep == 'NV':
+	if indep < missingLimit:
 		warning('RDB Rating failed: indep is not present.')
-		return 'NV'
+		return missingValue
 	return algo.rdbrating(tabfile, indep)
 
 def tabrating(tabfile, indep):
-	if indep == 'NV':
+	if indep == missingLimit:
 		warning('TAB Rating failed: indep is not present.')
-		return 'NV'
+		return missingValue
 	return algo.tabrating(tabfile, indep)
 
 def abortComp(msg):

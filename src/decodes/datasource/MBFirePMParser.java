@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Calendar;
+import java.util.Properties;
 import java.util.TimeZone;
 import java.text.ParsePosition;
 import java.text.ParseException;
@@ -16,7 +17,6 @@ import ilex.util.ArrayUtil;
 import ilex.util.ByteUtil;
 import ilex.util.Logger;
 import ilex.var.Variable;
-
 import decodes.db.Constants;
 
 /**
@@ -46,7 +46,7 @@ public class MBFirePMParser extends PMParser
 	{
 		Logger.instance().debug3("MBFirePMParser ctor");
 		dateFormat = new SimpleDateFormat(dateFmtStr);
-		java.util.TimeZone jtz=java.util.TimeZone.getTimeZone("UTC");
+		java.util.TimeZone jtz=java.util.TimeZone.getTimeZone("GMT-06:00");
 		dateFormat.setCalendar(Calendar.getInstance(jtz));
 	}
 
@@ -126,6 +126,20 @@ Logger.instance().debug3("MBFirePMP: msg len = " + datalen);
 	public boolean containsExplicitLength()
 	{
 		return false;
+	}
+	
+	@Override
+	public void setProperties(Properties rsProps)
+	{
+		String s = rsProps.getProperty("webtz");
+		if (s != null)
+		{
+			TimeZone tz = TimeZone.getTimeZone(s);
+			if (tz == null)
+				Logger.instance().warning("MBFirePMParser invalid webtz property '" + s + "' -- using GMT-06:00.");
+			else
+				dateFormat.setTimeZone(tz);
+		}
 	}
 }
 

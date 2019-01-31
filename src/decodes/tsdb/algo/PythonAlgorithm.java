@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.20  2019/01/29 20:28:58  mmaloney
+ * dev
+ *
  * Revision 1.19  2019/01/29 19:03:54  mmaloney
  * dev
  *
@@ -167,6 +170,8 @@ public class PythonAlgorithm
 	private HashMap<String, LookupTable> filename2table = new HashMap<String, LookupTable>();
 	private LookupTable errorTable = new LookupTable();
 	private NumberFormat pyNumFmt = NumberFormat.getNumberInstance();
+	private double missingValue = -9000000000000.;
+	private double missingLimit = -8999999999900.;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -545,7 +550,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if (nv == null || nv.getStringValue().trim().length() == 0 
 			|| nv.getStringValue().equalsIgnoreCase("NA")
 			|| (nv.getFlags() & (IFlags.IS_ERROR|IFlags.IS_ERROR|CwmsFlags.VALIDITY_MISSING)) != 0)
-			expr = varName + ".value = 0.0" + linesep
+			expr = varName + ".value = " + missingValue + linesep
 				+  varName + ".qual = 0x40000000" + linesep;
 		else
 		{
@@ -560,7 +565,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			}
 			catch(NoConversionException ex)
 			{
-				expr = varName + ".value = 0.0" + linesep
+				expr = varName + ".value = " + missingValue + linesep
 					+  varName + ".qual = 0x40000000" + linesep;
 			}
 		}
@@ -582,12 +587,18 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if (tracer != null)
 			return;
 		NamedVariable nv = new NamedVariable(rolename, value);
-
+		
 		// Don't overwrite a triggering value:
 		if (VarFlags.wasAdded(nv))
 			return;
 
 		int f = nv.getFlags();
+		if (value < missingLimit)
+		{
+			value = 0.0;
+			f |= IFlags.IS_MISSING;
+		}
+
 		if ((f & IFlags.IS_MISSING) != 0)
 			nv.setFlags(f & (~IFlags.IS_MISSING));
 		this.setOutput(nv, value);
@@ -628,6 +639,16 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			debug3("isPresent - Flags indicate missing or deleted -- returning false.");
 			return false;
 		}
+		try
+		{
+			double value = v.getDoubleValue();
+			if (value < missingLimit)
+				return true;
+		}
+		catch (NoConversionException e)
+		{
+		}
+		
 		if (tsdb.isCwms())
 			return (f & CwmsFlags.VALIDITY_MISSING) == 0;
 		debug3("isPresent - returning TRUE");
@@ -710,6 +731,15 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if (nv == null)
 			return false;
 		int f = nv.getFlags();
+		try
+		{
+			double value = nv.getDoubleValue();
+			if (value < missingLimit)
+				return false;
+		}
+		catch (NoConversionException e)
+		{
+		}
 		
 		if (tsdb.isCwms())
 		{
@@ -1112,6 +1142,9 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		debug1("setOutputAndQual(" + rolename + ", " + value + ", 0x" + Integer.toHexString(qual) + ")");
 		if (tracer != null)
 			return;
+		
+		if (value < missingLimit)
+			qual |= IFlags.IS_MISSING;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
@@ -1176,7 +1209,7 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 				if (tsdb.fillTimeSeries(parmRef.timeSeries, qd) == 1)
 					tv = parmRef.timeSeries.findWithin(needed, roundSec);
 				
-				if (tv == null)
+				if (tv == null || !isPresent(tv))
 				{
 					TimedVariable prev = tsdb.getPreviousValue(parmRef.timeSeries, needed);
 					TimedVariable next = tsdb.getNextValue(parmRef.timeSeries, needed);
