@@ -55,6 +55,7 @@ public class MBFirePMParser extends PMParser
 	public void parsePerformanceMeasurements(RawMessage msg)
 		throws HeaderParseException
 	{
+Logger.instance().info("MBFirePMP: parsePMs");;
 		byte data[] = msg.getData();
 		StringBuilder idbuf = new StringBuilder();
 		int idx = 0;

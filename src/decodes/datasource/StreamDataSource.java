@@ -6,6 +6,9 @@
 *	of data.
 *
 *  $Log$
+*  Revision 1.11  2018/07/31 17:04:52  mmaloney
+*  dev
+*
 *  Revision 1.10  2016/11/17 14:57:24  mmaloney
 *  Cleanup and AESRD NoHeader TM Resolution Fix.
 *
@@ -681,7 +684,9 @@ public abstract class StreamDataSource extends DataSourceExec
 			msgbufLen = 0;
 			while(huntMode)
 				checkForMessageStart();
+Logger.instance().info("StreamDS.scanFM - Have start, shefMode=" + shefMode);
 
+			
 			if (shefMode)
 			{
 				huntMode = true;
@@ -724,6 +729,7 @@ public abstract class StreamDataSource extends DataSourceExec
 
 			int headerLength = pmp.getHeaderLength();
 
+Logger.instance().info("StreamDS.scanFM - Have start, containsExplicitLength=" + pmp.containsExplicitLength());
 			if (pmp.containsExplicitLength())
 			{
 				inputStream.mark(headerLength + 64);
@@ -841,6 +847,8 @@ public abstract class StreamDataSource extends DataSourceExec
 			}
 			else // No explicit length in header: we have to use endDelimiter.
 			{
+Logger.instance().debug1("StreamDS.scanFM no explicit length, hunt for end delim '"
++ AsciiUtil.bin2ascii(endDelimiter) + "'");
 				int len = 0;
 				if (endDelimiter != null && endDelimiter.length > 0)
 				{
@@ -935,7 +943,9 @@ Logger.instance().debug3("StreamDS reset 7");
 	protected void checkForMessageStart()
 		throws IOException, DataSourceException
 	{
-Logger.instance().debug3("checkForMessageStart()");
+Logger.instance().debug3("checkForMessageStart() shefMode=" + shefMode + ", startDelim="
++ (startDelimiter==null?"null":AsciiUtil.bin2ascii(startDelimiter))
++ ", startDelimLength=" + (startDelimiter==null?0:startDelimiter.length));
 		if (shefMode)
 		{
 			checkForShefStart();
@@ -978,7 +988,7 @@ Logger.instance().debug3("checkForMessageStart()");
 			return;
 		}
 
-//		Logger.instance().log(Logger.E_DEBUG3, "Hunting for start delimiter...");
+Logger.instance().log(Logger.E_DEBUG3, "Hunting for start delimiter...");
 
 		inputStream.mark(64);
 		byte[] delimTest = new byte[startDelimiter.length];
@@ -998,6 +1008,7 @@ Logger.instance().debug3("checkForMessageStart()");
 		}
 		else // read correct # of bytes
 		{
+Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 			int i;
 			for(i=0; i<startDelimiter.length; i++)
 				if (startDelimiter[i] != delimTest[i])
@@ -1028,7 +1039,7 @@ Logger.instance().debug3("checkForMessageStart()");
 			Logger.instance().log(
 				skipped > 4 ? Logger.E_WARNING : Logger.E_DEBUG1, 
 				"Stream '" + getName() + "' " 
-				+ skipped + " bytes skipped before delim was found.");
+				+ skipped + " bytes skipped. huntMode=" + huntMode);
 
 	}
 
