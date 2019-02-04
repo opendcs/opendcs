@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.15  2019/02/04 20:46:31  mmaloney
+ * Switch BACK to the fromDatabase method for reading RatingSet objects (!).
+ *
  * Revision 1.14  2019/01/22 21:29:43  mmaloney
  * dev
  *
@@ -337,7 +340,7 @@ public class CwmsRatingDao extends DaoBase
 		{
 			Logger.instance().warning(module + " Cannot read rating for spec ID '"
 				+ specId + "': " + ex);
-			throw ex;
+//			throw ex;
 		}
 
 		Logger.instance().debug3(module + " calling storeToDatabase");
