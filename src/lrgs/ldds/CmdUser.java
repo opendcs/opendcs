@@ -256,7 +256,9 @@ public class CmdUser extends LddsCommand
 	
 	private void addUserToBuffer(PasswordFileEntry pfe, StringBuilder sb, boolean local)
 	{
-		sb.append(pfe.getUsername() + " + ");
+		sb.append(pfe.getUsername());
+		sb.append(" " + (pfe.isPasswordAssigned() ? "+ " : "- ") );
+
 		String roles[] = pfe.getRoles();
 		if (roles == null || roles.length == 0)
 			sb.append("-");
