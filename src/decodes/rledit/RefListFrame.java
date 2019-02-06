@@ -875,7 +875,7 @@ public class RefListFrame extends JFrame
 			}
 
 			eu = EngineeringUnit.getEngineeringUnit(abbr);
-			eu.setName(dlg.getName());
+			eu.setName(dlg.getEUName());
 			eu.family = dlg.getFamily();
 			eu.measures = dlg.getMeasures();
 			unitsChanged = true;
@@ -927,7 +927,7 @@ public class RefListFrame extends JFrame
 
 			eul.remove(eu);  // Remove hash entry for old abbr & name.
 			eu.abbr = abbr;
-			eu.setName(dlg.getName());
+			eu.setName(dlg.getEUName());
 			eu.family = dlg.getFamily();
 			eu.measures = dlg.getMeasures();
 			eul.add(eu);     // Re-add with correct hash entries.
