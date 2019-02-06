@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:04  cvs
 *  Added legacy code to repository
 *
@@ -224,7 +227,7 @@ public class EUDialog extends JDialog
 	{
 		return isOK 
 			&& (!getAbbr().equals(initAbbr)
-			||  !getName().equals(initName)
+			||  !getEUName().equals(initName)
 			||  !getFamily().equals(initFamily)
 			||  !getMeasures().equals(initMeasures));
 	}
@@ -236,7 +239,7 @@ public class EUDialog extends JDialog
 	}
 
 	/** @return the EU name. */
-	public String getName()
+	public String getEUName()
 	{
 		return nameField.getText().trim();
 	}
