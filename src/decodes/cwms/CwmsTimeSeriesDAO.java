@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.22  2019/02/19 13:00:49  mmaloney
+ * Add Michael Neilson's improvement for CWMS-14213
+ *
  * Revision 1.21  2018/11/28 21:18:49  mmaloney
  * CWMS JOOQ Migration Mods
  *
@@ -1065,7 +1068,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				}
 				catch (NoSuchObjectException ex)
 				{
-					warning("Error creating Cwms TSID for key=" + rs.getInt(1) 
+					warning("Error creating Cwms TSID for key=" + rs.getLong(1) 
 						+ ": " + ex.getLocalizedMessage() + " -- skipped.");
 				}
 			debug1("After fill, cache has " + cache.size() + " TSIDs.");
