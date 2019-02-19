@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.50  2019/01/29 16:45:17  mmaloney
+*  dev
+*
 *  Revision 1.49  2019/01/18 15:06:48  mmaloney
 *  dev
 *
@@ -1257,9 +1260,9 @@ public class CwmsTimeSeriesDb
 					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
 					+ "from CP_COMP_TASKLIST a "
 					+ "where a.LOADING_APPLICATION_ID = " + applicationId
-					+ " and a.record_num between :1 /* minRecNum */ and :2 /* maxRecNum */"
+					+ " and ROWNUM < 20000"
 					+ failTimeClause
-					+ " ORDER BY a.RECORD_NUM";
+					+ " ORDER BY a.site_datatype_id, a.start_date_time";
 				getTaskListStmt = conn.prepareStatement(getTaskListStmtQuery);
 			}
 
@@ -1293,19 +1296,18 @@ public class CwmsTimeSeriesDb
 		TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO();
 		try
 		{
-			getTaskListStmt.setInt(1, minRecNum);
+//			getTaskListStmt.setInt(1, minRecNum);
+//
+//			int maxRecNum = minRecNum + 10000;
+//			if (maxRecNum < minRecNum)
+//			{
+//				// The 32-bit integer wrapped around. Set to max possible int.
+//				maxRecNum = Integer.MAX_VALUE;
+//			}
+//			
+//			getTaskListStmt.setInt(2, maxRecNum);
 
-			int maxRecNum = minRecNum + 10000;
-			if (maxRecNum < minRecNum)
-			{
-				// The 32-bit integer wrapped around. Set to max possible int.
-				maxRecNum = Integer.MAX_VALUE;
-			}
-			
-			getTaskListStmt.setInt(2, maxRecNum);
-
-			debug3("Executing '" + getTaskListStmtQuery + "' with min=" + minRecNum 
-				+ " and max=" + maxRecNum);
+			debug3("Executing '" + getTaskListStmtQuery + "'");
 			ResultSet rs = getTaskListStmt.executeQuery();
 			while (rs.next())
 			{

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.21  2018/11/28 21:18:49  mmaloney
+ * CWMS JOOQ Migration Mods
+ *
  * Revision 1.20  2018/05/01 17:33:20  mmaloney
  * Added setAppModule
  *
@@ -1063,7 +1066,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				catch (NoSuchObjectException ex)
 				{
 					warning("Error creating Cwms TSID for key=" + rs.getInt(1) 
-						+ ": " + ex + " -- skipped.");
+						+ ": " + ex.getLocalizedMessage() + " -- skipped.");
 				}
 			debug1("After fill, cache has " + cache.size() + " TSIDs.");
 		}
