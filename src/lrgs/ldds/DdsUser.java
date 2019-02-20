@@ -190,6 +190,7 @@ public class DdsUser
 	public void fromString(String userSpec)
 		throws BadConfigException
 	{
+//System.out.println("userSpec='" + userSpec + "'");
 		hasPassword = false;
 		perms = null;
 		StringTokenizer st = new StringTokenizer(userSpec);
