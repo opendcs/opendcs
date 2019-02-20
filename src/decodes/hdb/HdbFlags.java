@@ -56,7 +56,7 @@ public class HdbFlags
 
 
 	// Characters for the String code in HDB DERIVATION Flag
-	public static final char HDB_ESTIMATED                = 'e';
+	public static final char HDB_ESTIMATED                = 'E';
 	public static final char HDB_HIGH_RANGE_EXCEEDED      = '+';
 	public static final char HDB_LOW_RANGE_EXCEEDED       = '-';
 	public static final char HDB_EOP_WINDOW_EXCEEDED      = 'w';
