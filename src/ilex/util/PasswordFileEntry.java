@@ -499,4 +499,14 @@ public class PasswordFileEntry
 	{
 		this.lastModified = lastModified;
 	}
+	
+	public boolean isPasswordAssigned()
+	{
+		if (ShaPassword == null)
+			return false;
+		for(int idx = 0; idx < ShaPassword.length; idx++)
+			if (ShaPassword[idx] != 0)
+				return true;
+		return false;
+	}
 }
