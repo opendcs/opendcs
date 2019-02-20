@@ -4,6 +4,9 @@
 * $State$
 *
 * $Log$
+* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+* OPENDCS 6.0 Initial Checkin
+*
 * Revision 1.3  2013/03/21 18:27:39  mmaloney
 * DbKey Implementation
 *
@@ -329,9 +332,6 @@ public class EquipmentModelListIO extends SqlDbObjIo
 	{
 		DbKey id = eqm.getId();
 
-		String q = "DELETE FROM EquipmentModel WHERE ID = " + id;
-		executeUpdate(q);
-
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
 		try { propsDao.deleteProperties("EquipmentProperty", "EquipmentID", eqm.getId()); }
 		catch (DbIoException e)
@@ -342,6 +342,9 @@ public class EquipmentModelListIO extends SqlDbObjIo
 		{
 			propsDao.close();
 		}
+		
+		String q = "DELETE FROM EquipmentModel WHERE ID = " + id;
+		executeUpdate(q);
 	}
 
 	DbKey name2id(String name)
