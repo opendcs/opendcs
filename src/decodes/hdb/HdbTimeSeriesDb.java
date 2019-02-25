@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.19  2018/12/19 19:56:30  mmaloney
+*  Remove references to classes in oracle.jdbc and oracle.sql, except in HDB branch.
+*
 *  Revision 1.18  2018/05/01 17:38:54  mmaloney
 *  Code cleanup of base classes.
 *
@@ -342,50 +345,58 @@ public class HdbTimeSeriesDb
 		parm.setSiteDataTypeId(sdi);
 	}
 
-
-	/**
-	 * Given a computation parameter containing an SDI read from the SQL database,
-	 * expand it into all known datatype and site names. Store these back into
-	 * the passed object.
-	 * @param parm the computation parameter
-	 */
+	@Override
 	public TimeSeriesIdentifier expandSDI(DbCompParm parm)
 		throws DbIoException, NoSuchObjectException
 	{
 		DbKey sdi = parm.getSiteDataTypeId();
-		if (sdi.isNull())
-			throw new NoSuchObjectException("Cannot expand sdi with value "
-				+ sdi);
-//		debug3("HdbTimeSeriesDb.expandSDI for sdi=" + sdi);
+		DbKey siteId = parm.getSiteId();
+		DbKey datatypeId = parm.getDataTypeId();
 		
-		HdbSiteDatatype hsdi = getHSDI(sdi);
-		if (hsdi == null)
-			throw new NoSuchObjectException(
-				"No such site-datatype with SDI=" + sdi);
-		parm.setSite(getSiteById(hsdi.getSiteId()));
+//Logger.instance().debug1("HdbTimeSeriesDb.expandSDI sdi=" + sdi + ", siteId=" + siteId + ", datatypeId=" + datatypeId);
 		
-		DataType dt = DataType.getDataType(hsdi.getDatatypeId());
-		if (dt == null)
-			dt = DataType.getDataType(
-				Constants.datatype_HDB, "" + hsdi.getDatatypeId());
-		parm.setDataType(dt);
-		
-		TimeSeriesDAI hdbtsdao = this.makeTimeSeriesDAO();
-		try
+		if (!DbKey.isNull(sdi))
 		{
-			String tsidstr = "" + hsdi.getSiteId() + "." + hsdi.getDatatypeId() + "."
+			HdbSiteDatatype hsdi = getHSDI(sdi);
+			if (hsdi == null)
+				throw new NoSuchObjectException("No such site-datatype with SDI=" + sdi);
+			siteId = hsdi.getSiteId();
+			datatypeId = hsdi.getDatatypeId();
+//Logger.instance().debug1("HdbTimeSeriesDb.expandSDI derived from sdi, siteId=" + siteId + ", dtid=" + datatypeId);
+		}
+		parm.setSite(getSiteById(siteId));
+//Logger.instance().debug1("HdbTimeSeriesDb.expandSDI after getSiteById, siteId=" + siteId);
+		
+		if (!DbKey.isNull(datatypeId))
+		{
+			DataType dt = DataType.getDataType(datatypeId);
+			if (dt == null)
+				dt = DataType.getDataType(Constants.datatype_HDB, "" + datatypeId);
+			parm.setDataType(dt);
+		}
+		TimeSeriesIdentifier tsid = null;
+		
+		if (!DbKey.isNull(siteId) && !DbKey.isNull(datatypeId) && parm.getInterval() != null)
+		{
+			String tsidstr = "" + siteId + "." + datatypeId + "."
 				+ parm.getInterval() + "." + parm.getTableSelector();
 			if (parm.getTableSelector().toLowerCase().contains("m"))
 				tsidstr = tsidstr + "." + parm.getModelId();
-			TimeSeriesIdentifier tsid = hdbtsdao.getTimeSeriesIdentifier(tsidstr);
-			if (tsid == null)
-				warning("Cannot find TSID for '" + tsidstr + "'");
-			return tsid;
+			TimeSeriesDAI hdbtsdao = this.makeTimeSeriesDAO();
+			try
+			{
+				tsid = hdbtsdao.getTimeSeriesIdentifier(tsidstr);
+			}
+			catch(NoSuchObjectException ex)
+			{
+				warning("Invalid tsidstr '" + tsidstr + "': " + ex);
+			}
+			finally
+			{
+				hdbtsdao.close();
+			}
 		}
-		finally
-		{
-			hdbtsdao.close();
-		}
+		return tsid;
 	}
 
 	

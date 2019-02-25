@@ -18,6 +18,7 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.XmitRecordDAO;
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTsId;
+import decodes.db.DataType;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
@@ -135,19 +136,34 @@ public class OpenTsdb extends TimeSeriesDb
 	public TimeSeriesIdentifier expandSDI(DbCompParm parm) throws DbIoException,
 		NoSuchObjectException
 	{
+		DbKey sdi = parm.getSiteDataTypeId();
+		DbKey siteId = parm.getSiteId();
+		DbKey datatypeId = parm.getDataTypeId();
+
 		TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
+		TimeSeriesIdentifier tsid = null;
 		try
 		{
-			TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(
-				parm.getSiteDataTypeId());
-			parm.setSite(tsid.getSite());
-			parm.setDataType(tsid.getDataType());
-			return tsid;
+			if (!DbKey.isNull(sdi))
+			{
+				tsid = timeSeriesDAO.getTimeSeriesIdentifier(parm.getSiteDataTypeId());
+				parm.setSite(tsid.getSite());
+				parm.setDataType(tsid.getDataType());
+			}
+			else
+			{
+				if (!DbKey.isNull(siteId))
+					parm.setSite(this.getSiteById(siteId));
+				if (!DbKey.isNull(datatypeId))
+					parm.setDataType(DataType.getDataType(datatypeId));
+			}
 		}
 		finally
 		{
 			timeSeriesDAO.close();
 		}
+
+		return tsid;
 	}
 
 	@Override

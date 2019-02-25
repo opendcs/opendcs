@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.11  2019/01/28 14:44:23  mmaloney
+ * Remove stdout debug.
+ *
  * Revision 1.10  2018/04/09 14:54:30  mmaloney
  * For HDB allow input parms to not previously exist. Ask user to create.
  *
@@ -469,8 +472,8 @@ public class CompParmDialog extends GuiDialog
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		
-		if (theDb.isCwms() || theDb.isHdb())
-		{
+//		if (theDb.isCwms() || theDb.isHdb())
+//		{
 			JButton paramSelectButton = new JButton("Select");
 			paramSelectButton.addActionListener(
 				new ActionListener()
@@ -485,19 +488,19 @@ public class CompParmDialog extends GuiDialog
 				new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 5, 4, 15), 0, 0));
-		}
+//		}
 		
 
 		// For CWMS, Param Type
 		int Y = 3;
-		if (theDb.isCwms())
+		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 			fieldEntryPanel.add(new JLabel("Param Type:"),
 				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 			paramTypeCombo.setEditable(true);
-			for(String pt : ((CwmsTimeSeriesDb)theDb).listParamTypes())
+			for(String pt : theDb.listParamTypes())
 				paramTypeCombo.addItem(pt);
 			fieldEntryPanel.add(paramTypeCombo, 
 				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
@@ -519,7 +522,7 @@ public class CompParmDialog extends GuiDialog
 		Y++;
 
 		// For CWMS, Param Type, Duration & Version
-		if (theDb.isCwms())
+		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 			fieldEntryPanel.add(new JLabel("Duration:"),
 				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
@@ -684,7 +687,7 @@ public class CompParmDialog extends GuiDialog
 
 	protected void paramSelectButtonPressed()
 	{
-		if (theDb.isCwms())
+		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 			ParamSelectDialog paramSelectDialog = 
 				new ParamSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
@@ -764,9 +767,11 @@ public class CompParmDialog extends GuiDialog
 			else
 			{
 				// no data type and there IS a group on this comp.
-				if (siteId != Constants.undefinedId)
+				if (siteId != Constants.undefinedId
+				 && theDb.getTsdbVersion() < TsdbDatabaseVersion.VERSION_9)
 				{
-					showError("Cannot specify site without data type!");
+					// Pre version 9 there was no independent SITE_ID in cp_comp_ts_parm.
+					showError("Cannot specify site without data type in pre version 9 db!");
 					return;
 				}
 			}

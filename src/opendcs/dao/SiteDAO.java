@@ -2,6 +2,11 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.13  2018/02/19 16:25:03  mmaloney
+* Do periodic cache maintenance every 2 hours.
+* Only pause for 1 sec in the main loop if the data collection was empty.
+* (otherwise read the next batch of data immediately).
+*
 * Revision 1.12  2017/08/22 19:58:40  mmaloney
 * Refactor
 *
@@ -106,6 +111,9 @@ public class SiteDAO
 	public synchronized Site getSiteById(DbKey id)
 		throws DbIoException, NoSuchObjectException
 	{
+		if (DbKey.isNull(id))
+			return null;
+		
 		if (cache.size() == 0)
 			fillCache();
 

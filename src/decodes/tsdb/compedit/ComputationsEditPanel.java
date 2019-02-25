@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.9  2018/01/08 19:33:15  mmaloney
+*  Implement the "Now -" option for computation effective end.
+*
 *  Revision 1.8  2017/12/14 16:51:29  mmaloney
 *  Use PropertySpec in property dialogs.
 *
@@ -85,6 +88,7 @@ import ilex.util.PropertiesUtil;
 import ilex.util.LoadResourceBundle;
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.dbeditor.SiteSelectPanel;
 import decodes.gui.PropertiesEditPanel;
@@ -421,9 +425,16 @@ public class ComputationsEditPanel
 			if (dap != null)
 				dcp.setAlgoParmType(dap.getParmType());
 			
-			if (!dcp.getSiteDataTypeId().isNull())
-			{
-				try { CAPEdit.instance().theDb.expandSDI(dcp); }
+//MJM I need to expand even if no SDI so that siteId --> Site and datatypeId -->DataType
+// objects get set in the parm.
+//			if (!dcp.getSiteDataTypeId().isNull())
+//			{
+Logger.instance().debug1("before expand " + dcp.getRoleName() + " dcp.sdi=" + dcp.getSiteDataTypeId() + ", siteId=" + dcp.getSiteId() + ", dtId=" + dcp.getDataTypeId());
+				try 
+				{
+					CAPEdit.instance().theDb.expandSDI(dcp);
+Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ", siteId=" + dcp.getSiteId() + ", dtId=" + dcp.getDataTypeId());
+				}
 				catch(Exception ex)
 				{
 					showError(CAPEdit.instance().compeditDescriptions
@@ -432,7 +443,7 @@ public class ComputationsEditPanel
 				    		.getString("ComputationsEditPanel.ExpandError") + ex);
 					ex.printStackTrace(System.err);
 				}
-			}
+//			}
 		}
 	
 		compParmTableModel.fill(editedObject);
@@ -1467,6 +1478,10 @@ class CompParmTableModel
 			return compParm.getRoleName();
 		case 1:
 		  {
+DbKey siteId = compParm.getSiteId();
+Site site = compParm.getSite();
+System.out.println("getNlColumn: dcp site is " + (site != null ? "NOT null" : "null") + ", siteId=" + siteId);
+
 			SiteName sn = compParm.getSiteName();
 //if(tsdb.isCwms())System.out.println("locspec='" + compParm.getLocSpec() + "'");
 			return sn != null ? sn.getNameValue() :

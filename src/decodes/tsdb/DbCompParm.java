@@ -59,7 +59,7 @@ public class DbCompParm
 	private int modelId;
 
 	/** For variable-site output parameters */
-	private DbKey dataTypeId;
+	private DbKey dataTypeId = DbKey.NullKey;
 
 	private String deltaTUnits = null;
 	
@@ -73,7 +73,7 @@ public class DbCompParm
 	private DataType dataType = null;
 	
 	/** OPENDCS6.0 allows Site association in DbCompParm directly */
-	private DbKey siteId = Constants.undefinedId;
+	private DbKey siteId = DbKey.NullKey;
 	
 	private String parsedParamType = "";
 	private String parsedDuration = "";
@@ -516,6 +516,11 @@ public class DbCompParm
 		}
 		aggCal.add(incr, deltaT * -1);
 		return aggCal.getTime();
+	}
+
+	public Site getSite()
+	{
+		return site;
 	}
 
 }

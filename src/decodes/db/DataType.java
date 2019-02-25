@@ -141,6 +141,8 @@ public class DataType extends IdDatabaseObject
 	 */
 	public static synchronized DataType getDataType(DbKey id)
 	{
+		if (DbKey.isNull(id))
+			return null;
 		if (Database.getDb() == null)
 			return null;
 		DataTypeSet dts = Database.getDb().dataTypeSet;

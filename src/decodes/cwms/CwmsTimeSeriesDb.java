@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.51  2019/02/19 13:00:49  mmaloney
+*  Add Michael Neilson's improvement for CWMS-14213
+*
 *  Revision 1.50  2019/01/29 16:45:17  mmaloney
 *  dev
 *
@@ -1101,31 +1104,38 @@ public class CwmsTimeSeriesDb
 		}
 	}
 
-	/**
-	 * Given a SiteDatatype object containing an SDI read from the SQL database,
-	 * expand it into all known datatype and site names. Store these back into
-	 * the passed object.
-	 * @param siteDatatype the association between sdi, names, & datatypes
-	 */
+	@Override
 	public TimeSeriesIdentifier expandSDI(DbCompParm parm)
 		throws DbIoException, NoSuchObjectException
 	{
-		if (DbKey.isNull(parm.getSiteDataTypeId()))
-			throw new NoSuchObjectException("Null ts_code in parm");
-		
+		DbKey sdi = parm.getSiteDataTypeId();
+		DbKey siteId = parm.getSiteId();
+		DbKey datatypeId = parm.getDataTypeId();
+
 		TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
+		TimeSeriesIdentifier tsid = null;
 		try
 		{
-			TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(
-				parm.getSiteDataTypeId());
-			parm.setSite(tsid.getSite());
-			parm.setDataType(tsid.getDataType());
-			return tsid;
+			if (!DbKey.isNull(sdi))
+			{
+				tsid = timeSeriesDAO.getTimeSeriesIdentifier(parm.getSiteDataTypeId());
+				parm.setSite(tsid.getSite());
+				parm.setDataType(tsid.getDataType());
+			}
+			else
+			{
+				if (!DbKey.isNull(siteId))
+					parm.setSite(this.getSiteById(siteId));
+				if (!DbKey.isNull(datatypeId))
+					parm.setDataType(DataType.getDataType(datatypeId));
+			}
 		}
 		finally
 		{
 			timeSeriesDAO.close();
 		}
+
+		return tsid;
 	}
 	
 	/**

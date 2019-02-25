@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.6  2016/03/24 19:22:17  mmaloney
+ * Refactoring for Python.
+ *
  * Revision 1.5  2015/11/12 15:27:31  mmaloney
  * Added makeScreeningDAO.
  *
@@ -200,11 +203,12 @@ public interface DatabaseConnectionOwner
 	public TimeSeriesDAI makeTimeSeriesDAO();
 
 	/**
-	 * Given a DbCompParm object containing an SDI read from the SQL database,
-	 * expand it into all known datatype and site names. Store these back into
-	 * the parameter object.
+	 * Given a DbCompParm object containing an SDI and possibly a siteId
+	 * and/or datatypeId, expand it into site and datatype objects.
+	 * Store these back into  the parameter object.
 	 * @param siteDatatype the object to expand
 	 * @return TimeSeries Identifier is one can be identified, otherwise, null.
+	 * @throws NoSuchObjectException if an SDI is present but it is invalid.
 	 */
 	public TimeSeriesIdentifier expandSDI(DbCompParm parm)
 		throws DbIoException, NoSuchObjectException;
