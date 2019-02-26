@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.20  2019/02/25 20:02:55  mmaloney
+*  HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
+*
 *  Revision 1.19  2018/12/19 19:56:30  mmaloney
 *  Remove references to classes in oracle.jdbc and oracle.sql, except in HDB branch.
 *
@@ -365,7 +368,9 @@ public class HdbTimeSeriesDb
 //Logger.instance().debug1("HdbTimeSeriesDb.expandSDI derived from sdi, siteId=" + siteId + ", dtid=" + datatypeId);
 		}
 		parm.setSite(getSiteById(siteId));
-//Logger.instance().debug1("HdbTimeSeriesDb.expandSDI after getSiteById, siteId=" + siteId);
+Logger.instance().debug1("HdbTimeSeriesDb.expandSDI after getSiteById, siteId=" + siteId
+	+ ", sitename=" + 
+	(parm.getSite().getPreferredName() != null ? parm.getSite().getPreferredName().getNameValue() : "(none)"));
 		
 		if (!DbKey.isNull(datatypeId))
 		{
@@ -1194,7 +1199,7 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		}
 	}
 	
-	private void fillHdbSdiCache()
+	public void fillHdbSdiCache()
 		throws DbIoException
 	{
 		String q = "select SITE_DATATYPE_ID, SITE_ID, DATATYPE_ID from HDB_SITE_DATATYPE";

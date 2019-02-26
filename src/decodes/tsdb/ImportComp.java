@@ -4,6 +4,12 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.4  2017/12/04 18:57:35  mmaloney
+*  CWMS-10012 fixed CWMS problem that could sometimes result in circular dependencies
+*  for group computations when a new Time Series was created. When compdepends
+*  daemon evaluates the 'T' notification, it needs to prepare each CwmsGroupHelper for
+*  expansion so that the regular expressions exist.
+*
 *  Revision 1.3  2017/06/01 14:46:34  mmaloney
 *  Bugfix for HDB. Wasn't creating CP_TS_ID entry for individual (non group) computations.
 *
@@ -239,16 +245,19 @@ public class ImportComp
 									Logger.instance().warning(msg);
 									System.out.println(msg);
 									ex.printStackTrace();
-								}
+							}
 								catch(BadTimeSeriesException ex)
 								{
-									String msg = "Computation '"
-										+ comp.getName() + "' problem resolving "
-										+ "parameter " + parm.getRoleName()
-										+ ": " + ex;
-									Logger.instance().warning(msg);
-									System.out.println(msg);
-									ex.printStackTrace();
+									if (!comp.hasGroupInput())
+									{
+										String msg = "Non-Group Computation '"
+											+ comp.getName() + "' problem resolving "
+											+ "parameter " + parm.getRoleName()
+											+ ": " + ex;
+										Logger.instance().warning(msg);
+										System.out.println(msg);
+										ex.printStackTrace();
+									}
 								}
 							}
 							//Get the TS group ID

@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.14  2019/02/25 20:02:55  mmaloney
+* HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
+*
 * Revision 1.13  2018/02/19 16:25:03  mmaloney
 * Do periodic cache maintenance every 2 hours.
 * Only pause for 1 sec in the main loop if the data collection was empty.
@@ -92,6 +95,7 @@ public class SiteDAO
 	protected String siteTableKeyColumn = "id";
 	
 	protected PropertiesSqlDao propsDao = null;
+	protected long lastCacheFillMsec = 0L;
 	
 	public SiteDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -339,6 +343,7 @@ public class SiteDAO
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
 		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
+		lastCacheFillMsec = System.currentTimeMillis();
 	}
 	
 	protected String buildSiteNameQuery(Site site)
@@ -672,6 +677,11 @@ public class SiteDAO
 	{
 		super.close();
 		propsDao.close();
+	}
+
+	public long getLastCacheFillMsec()
+	{
+		return lastCacheFillMsec;
 	}
 }
 

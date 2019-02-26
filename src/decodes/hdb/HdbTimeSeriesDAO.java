@@ -979,7 +979,8 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 	{
 		// Each TSID will need a site, so prefill the site cache to prevent
 		// it from doing individual reads for each site.
-		siteDAO.fillCache();
+		if (System.currentTimeMillis() - siteDAO.getLastCacheFillMsec() > 60000L * 10)
+			siteDAO.fillCache();
 
 		String q = tsidQuery + tsidJoinClause;
 			

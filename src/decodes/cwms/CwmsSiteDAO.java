@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.14  2018/11/28 21:18:48  mmaloney
+ * CWMS JOOQ Migration Mods
+ *
  * Revision 1.13  2017/01/24 15:36:27  mmaloney
  * CWMS-10060 added support for DecodesSettings.tsidFetchSize
  *
@@ -487,6 +490,7 @@ ex.printStackTrace(System.err);
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
 		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
+		lastCacheFillMsec = System.currentTimeMillis();
 	}
 
 	@Override

@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.7  2017/08/22 19:34:42  mmaloney
+*  Refactor
+*
 *  Revision 1.6  2017/02/09 17:24:27  mmaloney
 *  added polled-modem and polled-tcp medium types.
 *
@@ -74,7 +77,7 @@ import decodes.sql.DbKey;
 public class Constants
 {
 //	public static final int undefinedId = -1;  // Unassigned numeric ID values
-	public static final DbKey undefinedId = DbKey.createDbKey(-1L);
+	public static final DbKey undefinedId = DbKey.NullKey;
 	
 	// ModelRunId and ModelId will remain integers for HDB.
 	public static final int undefinedIntKey = -1;

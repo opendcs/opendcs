@@ -197,12 +197,10 @@ public class HdbSiteDAO extends SiteDAO
 	public synchronized DbKey lookupSiteID(final String nameValue)
 		throws DbIoException
 	{
-debug3("HdbSiteDAO.lookupSiteID(" + nameValue + ") cache has " + cache.size() + " sites.");
 		// The 'uniqueName' in the cache will be the preferred site name type
 		Site site = cache.getByUniqueName(nameValue);
 		if (site != null)
 			return site.getKey();
-debug3("HdbSiteDAO.lookupSiteID -- no match to any unique primary site name in cache.");
 
 		// If not found, search the cache for any name match
 		site = cache.search(

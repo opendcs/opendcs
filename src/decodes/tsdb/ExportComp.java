@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.4  2017/04/27 21:07:32  mmaloney
+*  Update to use DAOs rather than the obsolete methods in TimeSeriesDb.
+*
 *  Revision 1.3  2016/09/23 15:54:58  mmaloney
 *  Remove stderr debugs.
 *
@@ -56,9 +59,12 @@ import lrgs.gui.DecodesInterface;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.SiteDAI;
+import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.*;
 import ilex.util.Logger;
 import decodes.db.Constants;
+import decodes.hdb.HdbTimeSeriesDb;
 import decodes.util.CmdLineArgs;
 import decodes.tsdb.xml.*;
 
@@ -101,6 +107,25 @@ public class ExportComp
 	 */
 	public void runApp( )
 	{
+		TimeSeriesDAI tsdao = theDb.makeTimeSeriesDAO();
+		try
+		{
+			tsdao.reloadTsIdCache();
+			if (theDb instanceof HdbTimeSeriesDb)
+				((HdbTimeSeriesDb)theDb).fillHdbSdiCache();
+		}
+		catch (DbIoException ex)
+		{
+			String msg = "Cannot load TSIDs: " + ex;
+			Logger.instance().fatal(msg);
+			System.err.println(msg);
+			return;
+		}
+		finally
+		{
+			tsdao.close();
+		}
+		
 		boolean haveControlFile = false;
 		if (controlFileArg.getValue() != null
 		 && controlFileArg.getValue().length() > 0)
@@ -114,7 +139,7 @@ public class ExportComp
 			{
 				String msg = "Cannot read control file '" 
 					+ controlFileArg.getValue() + "': " + ex;
-				Logger.instance().warning(msg);
+				Logger.instance().fatal(msg);
 				System.err.println(msg);
 				return;
 			}
@@ -161,8 +186,10 @@ public class ExportComp
 				for(Iterator<DbCompParm> pit = comp.getParms(); pit.hasNext();)
 				{
 					DbCompParm dcp = pit.next();
-					if (dcp.getSiteDataTypeId() != Constants.undefinedId)
-					{
+					// NOTE: expandSDI even if SDI is null site and dt may be specified independently
+					// for group computations.
+//					if (dcp.getSiteDataTypeId() != Constants.undefinedId)
+//					{
 						try { theDb.expandSDI(dcp); }
 						catch(NoSuchObjectException ex)
 						{
@@ -171,7 +198,7 @@ public class ExportComp
 								+ " has been removed, setting comp parm to undefined.");
 							dcp.setSiteDataTypeId(Constants.undefinedId);
 						}
-					}
+//					}
 				}
 				
 				//Get the TS group name for each computation and

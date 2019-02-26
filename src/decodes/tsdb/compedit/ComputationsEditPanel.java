@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.10  2019/02/25 20:02:55  mmaloney
+*  HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
+*
 *  Revision 1.9  2018/01/08 19:33:15  mmaloney
 *  Implement the "Now -" option for computation effective end.
 *
@@ -1478,10 +1481,6 @@ class CompParmTableModel
 			return compParm.getRoleName();
 		case 1:
 		  {
-DbKey siteId = compParm.getSiteId();
-Site site = compParm.getSite();
-System.out.println("getNlColumn: dcp site is " + (site != null ? "NOT null" : "null") + ", siteId=" + siteId);
-
 			SiteName sn = compParm.getSiteName();
 //if(tsdb.isCwms())System.out.println("locspec='" + compParm.getLocSpec() + "'");
 			return sn != null ? sn.getNameValue() :

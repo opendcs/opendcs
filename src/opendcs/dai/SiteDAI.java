@@ -93,5 +93,11 @@ public interface SiteDAI
 	 */
 	public void fillCache()
 		throws DbIoException;
+	
+	/**
+	 * @return the msec time that the cache was last filled, or 0 if never.
+	 */
+	public long getLastCacheFillMsec();
+
 
 }

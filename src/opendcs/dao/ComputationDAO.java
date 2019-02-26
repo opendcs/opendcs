@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.11  2017/08/22 19:58:40  mmaloney
+* Refactor
+*
 * Revision 1.10  2017/07/13 20:57:47  mmaloney
 * HDB-397, when listing for GUI, only add a single copy of each computation.
 *
@@ -340,6 +343,8 @@ public class ComputationDAO
 	{
 		String role = rs.getString(2);
 		DbKey sdi = DbKey.createDbKey(rs, 3);
+		if (sdi.getValue() == -1)
+			sdi = DbKey.NullKey;
 		String intvl = rs.getString(4);
 		String tabsel = rs.getString(5);
 		int dt = rs.getInt(6);
@@ -901,11 +906,15 @@ public class ComputationDAO
 			for(Iterator<DbCompParm> it = comp.getParms(); it.hasNext(); )
 			{
 				DbCompParm dcp = it.next();
+				
+				// NOTE The HDB CP_COMP_TS_PARM_ARCHIVE table does not allow null in SDI, use -1.
+				String sdiValue = "" + 
+					(db.isHdb() && DbKey.isNull(dcp.getSiteDataTypeId()) ? -1 : dcp.getSiteDataTypeId());
+				
 				q = "INSERT INTO CP_COMP_TS_PARM VALUES ("
 					+ id + ", "
-					+ sqlString(dcp.getRoleName()) + ", " 
-					+ (dcp.getSiteDataTypeId().isNull() ? "-1" : dcp.getSiteDataTypeId())
-						+ ", "
+					+ sqlString(dcp.getRoleName()) + ", "
+					+ sdiValue + ", "
 					+ sqlString(dcp.getInterval()) + ", " 
 					+ sqlString(dcp.getTableSelector()) + ", " 
 					+ dcp.getDeltaT() + ", "

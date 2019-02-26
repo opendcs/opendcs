@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2018/11/14 15:52:48  mmaloney
+*  Added transient nextRunTime attribute with accessor methods. Needed for timed computations.
+*
 *  Revision 1.3  2018/05/01 17:39:26  mmaloney
 *  sourceId is now a DbKey
 *
@@ -613,7 +616,7 @@ public class DbComputation
 	 */
 	public boolean hasGroupInput()
 	{
-		return groupId != Constants.undefinedId;
+		return !DbKey.isNull(groupId);
 	}
 	
 //	public boolean isTransient() { return _isTransient; }
