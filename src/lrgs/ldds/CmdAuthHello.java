@@ -150,7 +150,7 @@ public class CmdAuthHello extends LddsCommand
 		{
 			Logger.instance().warning(DdsServer.module +
 				" Received AuthHello with clockdiff = " + (diff/1000L)
-				+ " seconds from client " + ldds.getClientName());
+				+ " seconds from client " + username + "@" + ldds.getHostName());
 			throw new LddsRequestException(toString()
 				+ ", time stamp difference too large ("
 				+ (diff/1000L) + " seconds)",
@@ -163,7 +163,7 @@ public class CmdAuthHello extends LddsCommand
 		{
 			Logger.instance().warning(DdsServer.module +
 				" Received AuthHello with bad username '" + username
-				+ "' from client " + ldds.getClientName());
+				+ "' from host " + ldds.getHostName());
 			ldds.myStats.setSuccessCode(ldds.myStats.SC_BAD_USERNAME);
 			ldds.statLogger.incrBadUsernames();
 			ex.setHangup(true);
