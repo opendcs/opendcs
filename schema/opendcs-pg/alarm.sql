@@ -1,7 +1,6 @@
 
 /* Drop Indexes */
 
-DROP INDEX IF EXISTS LIMIT_SET_SDI_UNIQUE;
 DROP INDEX IF EXISTS AS_LAST_MODIFIED;
 
 
@@ -279,8 +278,6 @@ ALTER TABLE ALARM_EVENT
 
 /* Create Indexes */
 
--- Ensure that site/datatype/season combo is unique
-CREATE INDEX LIMIT_SET_SDI_UNIQUE ON ALARM_LIMIT_SET USING BTREE (season_name);
 -- For compproc to quickly detect any changes.
 CREATE INDEX AS_LAST_MODIFIED ON ALARM_SCREENING USING BTREE (LAST_MODIFIED);
 
