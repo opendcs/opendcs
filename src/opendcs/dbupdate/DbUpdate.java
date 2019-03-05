@@ -324,19 +324,24 @@ public class DbUpdate extends TsdbAppTemplate
 				}
 			}
 		}
+		
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_17)
+		{
+			System.out.println("");
+			System.out.println("Updating to Database Version 16.");
+
+		}
 
 		// Update DECODES Database Version
-		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " 
-			+ DecodesDatabaseVersion.DECODES_DB_16);
-		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_16, "");
+		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " + DecodesDatabaseVersion.DECODES_DB_17);
+		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_17, "");
 		((SqlDatabaseIO)Database.getDb().getDbIo()).setDecodesDatabaseVersion(
-			DecodesDatabaseVersion.DECODES_DB_16, "");
+			DecodesDatabaseVersion.DECODES_DB_17, "");
 		// Update TSDB_DATABASE_VERSION.
 		String desc = "Updated on " + new Date();
-		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " 
-			+ TsdbDatabaseVersion.VERSION_16
+		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " + TsdbDatabaseVersion.VERSION_17
 			+ ", DESCRIPTION = '" + desc + "'");
-		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_16, desc);
+		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_17, desc);
 		
 		// Rewrite the netlists with the changes.
 		Database.getDb().networkListList.write();

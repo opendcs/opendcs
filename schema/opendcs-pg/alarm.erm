@@ -12,7 +12,7 @@
 	<category_index>0</category_index>
 	<zoom>1.0</zoom>
 	<x>0</x>
-	<y>0</y>
+	<y>20</y>
 	<default_color>
 		<r>128</r>
 		<g>128</g>
@@ -110,6 +110,24 @@
 			<free_layout>false</free_layout>
 			<show_referred_tables>false</show_referred_tables>
 			<categories>
+				<category>
+					<id>9</id>
+					<height>75</height>
+					<width>120</width>
+						<font_name></font_name>
+						<font_size>9</font_size>
+					<x>143</x>
+					<y>451</y>
+					<color>
+						<r>128</r>
+						<g>128</g>
+						<b>192</b>
+					</color>
+					<connections>
+					</connections>
+					<name>Category</name>
+					<selected>true</selected>
+				</category>
 			</categories>
 		</category_settings>
 		<translation_settings>
@@ -134,7 +152,7 @@
 			</connections>
 			<display>false</display>
 			<creation_date>2017-02-03 08:35:02</creation_date>
-			<updated_date>2019-03-04 14:13:34</updated_date>
+			<updated_date>2019-03-04 20:04:46</updated_date>
 			<model_property>
 				<name>Project Name</name>
 				<value></value>
@@ -4736,19 +4754,6 @@
 				</normal_column>
 			</columns>
 			<indexes>
-				<inidex>
-					<full_text>false</full_text>
-					<non_unique>true</non_unique>
-					<name>LIMIT_SET_SDI_UNIQUE</name>
-					<type>BTREE</type>
-					<description>Ensure that site/datatype/season combo is unique</description>
-					<columns>
-						<column>
-							<id>55</id>
-							<desc>false</desc>
-						</column>
-					</columns>
-				</inidex>
 			</indexes>
 			<complex_unique_key_list>
 				<complex_unique_key>

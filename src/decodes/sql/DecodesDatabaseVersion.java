@@ -107,6 +107,22 @@ public class DecodesDatabaseVersion
 	 */
 	public static final int DECODES_DB_16 = 16;
 
-	// Future schema changes should define DECODES_DB_17
+	/**
+	 * Version 16 schema corresponds to OpenDCS 6.6 - March, 2019
+	 * - CWMS VPD to use CWMS_ENV to store office id & code rather than CCP_ENV.
+	 * - Alarm Tables Added:
+	 * 		ALARM_GROUP
+	 * 		EMAIL_ADDR
+	 * 		FILE_MONITOR
+	 * 		PROCESS_MONITOR
+	 * 		ALARM_EVENT
+	 * 		ALARM_SCREENING
+	 * 		ALARM_LIMIT_SET
+	 * 		ALARM_CURRENT
+	 * 		ALARM_HISTORY
+	 */
+	public static final int DECODES_DB_17 = 17;
+
+	// Future schema changes should define DECODES_DB_18
 	
 }
