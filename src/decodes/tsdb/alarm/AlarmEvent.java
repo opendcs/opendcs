@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:00  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.4  2017/05/17 20:36:25  mmaloney
  * First working version.
  *
@@ -24,16 +27,16 @@ import decodes.sql.DbKey;
 import ilex.util.Logger;
 
 /**
- * Holds a list of patterns to be matched that define alarms coming
+ * Holds a pattern to be matched that define alarms coming
  * from a process. If an event from the process matches one of these
  * patterns, the daemon will generate an alarm with the specified 
  * priority.
  * 
  * @author mmaloney
  */
-public class AlarmDefinition
+public class AlarmEvent
 {
-	private DbKey alarmDefId = DbKey.NullKey;
+	private DbKey alarmEventId = DbKey.NullKey;
 	
 	/** Note: -1 means match any priority */
 	private int priority = Logger.E_WARNING;
@@ -42,14 +45,14 @@ public class AlarmDefinition
 	
 	private transient Pattern rxPattern = null;
 	
-	public AlarmDefinition(DbKey alarmDefId)
+	public AlarmEvent(DbKey alarmEventId)
 	{
-		this.alarmDefId = alarmDefId;
+		this.alarmEventId = alarmEventId;
 	}
 	
-	public AlarmDefinition copy()
+	public AlarmEvent copy()
 	{
-		AlarmDefinition ret = new AlarmDefinition(this.alarmDefId);
+		AlarmEvent ret = new AlarmEvent(this.alarmEventId);
 		ret.priority = this.priority;
 		ret.pattern = this.pattern;
 		
@@ -71,14 +74,14 @@ public class AlarmDefinition
 		return pattern;
 	}
 
-	public DbKey getAlarmDefId()
+	public DbKey getAlarmEventId()
 	{
-		return alarmDefId;
+		return alarmEventId;
 	}
 
-	public void setAlarmDefId(DbKey alarmDefId)
+	public void setAlarmEventId(DbKey alarmEventId)
 	{
-		this.alarmDefId = alarmDefId;
+		this.alarmEventId = alarmEventId;
 	}
 
 	/**
@@ -90,7 +93,7 @@ public class AlarmDefinition
 	 */
 	public boolean matches(DacqEvent evt)
 	{
-Logger.instance().debug2("AlarmDefinition.matches() myPriority=" + priority + ", evt priority=" 
+Logger.instance().debug2("AlarmEvent.matches() myPriority=" + priority + ", evt priority=" 
 + evt.getEventPriority() + ", pattern='" + pattern + "'");
 
 		if (priority != evt.getEventPriority())
@@ -107,7 +110,7 @@ Logger.instance().debug2("AlarmDefinition.matches() myPriority=" + priority + ",
 			catch(PatternSyntaxException ex)
 			{
 				Logger.instance().warning("Invalid regular expression '"
-					+ pattern + "': " + ex + " -- this alarm definition is invalid.");
+					+ pattern + "': " + ex + " -- this alarm event definition is invalid.");
 				rxPattern = null;
 				return false;
 			}

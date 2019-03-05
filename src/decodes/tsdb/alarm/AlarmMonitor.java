@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:00  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.7  2018/03/30 14:55:00  mmaloney
  * Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
  *
@@ -370,7 +373,7 @@ public class AlarmMonitor
 			for(AlarmGroup group : alarmConfig.getGroups())
 				for(ProcessMonitor procmon : group.getProcessMonitors())
 					if (procmon.isEnabled())
-						for(AlarmDefinition def : procmon.defs)
+						for(AlarmEvent def : procmon.defs)
 							if (def.matches(event))
 								generateAlarm(group, procmon, def, event);
 		}
@@ -560,7 +563,7 @@ public class AlarmMonitor
 		}
 	}
 	
-	private void generateAlarm(AlarmGroup group, ProcessMonitor procmon, AlarmDefinition def,
+	private void generateAlarm(AlarmGroup group, ProcessMonitor procmon, AlarmEvent def,
 		DacqEvent event)
 	{
 		StringBuilder sb = new StringBuilder();

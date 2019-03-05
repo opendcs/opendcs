@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:01  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.5  2018/03/23 20:12:20  mmaloney
  * Added 'Enabled' flag for process and file monitors.
  *
@@ -33,7 +36,7 @@ import ilex.util.TextUtil;
 import ilex.xml.DomHelper;
 import ilex.xml.XmlOutputStream;
 import decodes.sql.DbKey;
-import decodes.tsdb.alarm.AlarmDefinition;
+import decodes.tsdb.alarm.AlarmEvent;
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.EmailAddr;
 import decodes.tsdb.alarm.FileMonitor;
@@ -166,7 +169,7 @@ public class AlarmXio
 						continue;
 					}
 					
-					AlarmDefinition def = new AlarmDefinition(DbKey.NullKey);
+					AlarmEvent def = new AlarmEvent(DbKey.NullKey);
 					
 					def.setPriority(getPriorityElement(alarmDefElem, AlarmXioTags.AlarmDef));
 					String patt = DomHelper.getTextContent(alarmDefElem);
@@ -369,7 +372,7 @@ public class AlarmXio
 		{
 			xos.startElement(AlarmXioTags.ProcessMonitor, AlarmXioTags.name, pm.getProcName());
 			xos.writeElement(AlarmXioTags.enabled, "" + pm.isEnabled());
-			for(AlarmDefinition def : pm.getDefs())
+			for(AlarmEvent def : pm.getDefs())
 			{
 				xos.writeElement(AlarmXioTags.AlarmDef, AlarmXioTags.priority, 
 					priority2string(def.getPriority()), def.getPattern());

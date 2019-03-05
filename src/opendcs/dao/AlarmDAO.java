@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:02  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.5  2018/03/23 20:12:19  mmaloney
  * Added 'Enabled' flag for process and file monitors.
  *
@@ -28,10 +31,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.alarm.AlarmConfig;
-import decodes.tsdb.alarm.AlarmDefinition;
+import decodes.tsdb.alarm.AlarmEvent;
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.EmailAddr;
 import decodes.tsdb.alarm.FileMonitor;
@@ -51,8 +55,13 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		+ "MAX_FILES, MAX_FILES_HINT, MAX_LMT, MAX_LMT_HINT, ALARM_ON_DELETE, "
 		+ "ON_DELETE_HINT, MAX_SIZE, MAX_SIZE_HINT, ALARM_ON_EXISTS, "
 		+ "ON_EXISTS_HINT, ENABLED";
+	// For DB Version < 17
 	private static String alarmDefColumns = "ALARM_DEF_ID, ALARM_GROUP_ID, "
 		+ "LOADING_APPLICATION_ID, PRIORITY, PATTERN";
+	// For Db Version >= 17
+	private static String alarmEventColumns = "ALARM_EVENT_ID, ALARM_GROUP_ID, "
+			+ "LOADING_APPLICATION_ID, PRIORITY, PATTERN";
+
 
 	/**
 	 * @param tsdb
@@ -186,13 +195,19 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			
 			for(ProcessMonitor pm : grp.getProcessMonitors())
 			{
-				q = "select " + alarmDefColumns + " from ALARM_DEF where "
+				q = "select " 
+					+ (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_17 
+						? alarmDefColumns : alarmEventColumns)
+					+ " from "
+					+ (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_17 
+							? "ALARM_DEF" : "ALARM_EVENT")
+					+ " where "
 					+ "ALARM_GROUP_ID = " + grp.getAlarmGroupId()
 					+ " and LOADING_APPLICATION_ID = " + pm.getAppId();
 				rs = doQuery(q);
 				while(rs.next())
 				{
-					AlarmDefinition def = new AlarmDefinition(DbKey.createDbKey(rs, 1));
+					AlarmEvent def = new AlarmEvent(DbKey.createDbKey(rs, 1));
 					def.setPriority(rs.getInt(4));
 					def.setPattern(rs.getString(5));
 					pm.getDefs().add(def);
@@ -301,12 +316,15 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 				+ grp.getAlarmGroupId() + ", " + pm.getAppId() + ", " + sqlBoolean(pm.isEnabled()) + ")";
 			doModify(q);
 
-			for(AlarmDefinition def : pm.getDefs())
+			for(AlarmEvent def : pm.getDefs())
 			{
-				if (DbKey.isNull(def.getAlarmDefId()))
-					def.setAlarmDefId(getKey("ALARM_DEF"));
-				q = "insert into ALARM_DEF(" + alarmDefColumns + ") values ("
-					+ def.getAlarmDefId() + ", "
+				if (DbKey.isNull(def.getAlarmEventId()))
+					def.setAlarmEventId(getKey("ALARM_DEF"));
+				q = "insert into "
+					+ (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_17 
+						? "ALARM_DEF" : "ALARM_EVENT")
+					+ "(" + alarmDefColumns + ") values ("
+					+ def.getAlarmEventId() + ", "
 					+ grp.getAlarmGroupId() + ", "
 					+ pm.getAppId() + ", "
 					+ def.getPriority() + ", "

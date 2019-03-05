@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:00  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.5  2018/03/23 20:12:20  mmaloney
  * Added 'Enabled' flag for process and file monitors.
  *
@@ -37,7 +40,7 @@ public class ProcessMonitor
 	/** The application ID of the process being monitored. */
 	private DbKey appId = DbKey.NullKey;
 	
-	ArrayList<AlarmDefinition> defs = new ArrayList<AlarmDefinition>();
+	ArrayList<AlarmEvent> defs = new ArrayList<AlarmEvent>();
 	
 	private boolean enabled = true;
 	
@@ -61,7 +64,7 @@ public class ProcessMonitor
 	{
 		ProcessMonitor ret = new ProcessMonitor(this.appId);
 		ret.appInfo = this.appInfo;
-		for(AlarmDefinition ad : defs)
+		for(AlarmEvent ad : defs)
 			ret.getDefs().add(ad.copy());
 		return ret;
 	}
@@ -84,7 +87,7 @@ public class ProcessMonitor
 		return appId;
 	}
 
-	public ArrayList<AlarmDefinition> getDefs()
+	public ArrayList<AlarmEvent> getDefs()
 	{
 		return defs;
 	}
@@ -115,7 +118,7 @@ public class ProcessMonitor
 	private void makeSummary()
 	{
 		StringBuilder sb = new StringBuilder();
-		for(AlarmDefinition def : defs)
+		for(AlarmEvent def : defs)
 		{
 			if (sb.length() > 0)
 				sb.append(", ");

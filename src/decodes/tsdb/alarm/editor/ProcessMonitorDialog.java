@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:52:59  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.3  2018/03/23 20:12:20  mmaloney
  * Added 'Enabled' flag for process and file monitors.
  *
@@ -51,7 +54,7 @@ import decodes.gui.SortingListTableModel;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.alarm.AlarmDefinition;
+import decodes.tsdb.alarm.AlarmEvent;
 import decodes.tsdb.alarm.ProcessMonitor;
 
 
@@ -325,7 +328,7 @@ public class ProcessMonitorDialog
 				boolean isNewDef = idx >= theProcMon.getDefs().size();
 				if (isNewDef)
 				{
-					AlarmDefinition def = new AlarmDefinition(DbKey.NullKey);
+					AlarmEvent def = new AlarmEvent(DbKey.NullKey);
 					def.setPriority(str2pri(sp.first));
 					def.setPattern(sp.second);
 					theProcMon.getDefs().add(def);
@@ -333,7 +336,7 @@ public class ProcessMonitorDialog
 				}
 				else // Existing definition
 				{
-					AlarmDefinition def = theProcMon.getDefs().get(idx);
+					AlarmEvent def = theProcMon.getDefs().get(idx);
 					int pri =  str2pri(sp.first);
 					if (def.getPriority() != pri || !TextUtil.strEqual(def.getPattern(), sp.second))
 					{
@@ -394,7 +397,7 @@ implements SortingListTableModel
 	
 	public void set(ProcessMonitor pm)
 	{
-		for(AlarmDefinition def : pm.getDefs())
+		for(AlarmEvent def : pm.getDefs())
 		{
 			int p = def.getPriority();
 			String priority = (p >= 0 && p < Logger.priorityName.length) ? 

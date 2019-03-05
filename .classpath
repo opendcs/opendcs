@@ -23,5 +23,6 @@
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/commons-net-3.3.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/sshd-core-1.7.0.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/hecDbCore-v3.2-dev.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/javax.mail.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
