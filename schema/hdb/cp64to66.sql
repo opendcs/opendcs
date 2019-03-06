@@ -1,3 +1,47 @@
+--------------------------------------------------------------------------
+-- This script updates CP tables from an USBR HDB 6.4 CCP Schema to 
+-- OpenDCS 6.6 Schema.
+--
+-- Important!!! This script should be executed as schema user that owns the CP tables.
+-- Also: Edit the file defines.sql before executing this script and make 
+-- sure CP_OWNER is set correctly.
+-- Execute this script in the same directory that contains defines.sql
+--------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+-- This software was written by Cove Software, LLC ("COVE") under contract 
+-- to the United States Government. 
+-- No warranty is provided or implied other than specific contractual terms
+-- between COVE and the U.S. Government
+-- 
+-- Copyright 2019 U.S. Government.
+-----------------------------------------------------------------------------
+set echo on
+spool combined.log
+    
+whenever sqlerror continue
+set define on
+@@defines.sql
+
+----------- snip
+--undefine TBL_SPACE_SPEC;
+--define TBL_SPACE_SPEC = 'tablespace HDB_DATA'
+--
+--undefine IDX_TBL_SPACE_SPEC;
+--define IDX_TBL_SPACE_SPEC = 'tablespace HDB_IDX'
+--
+--define DECODES_OWNER;
+--define DECODES_OWNER = 'DECODES'
+--
+--undefine CP_OWNER;
+--define CP_OWNER = 'ECODBA'
+----------- snip
+
+
+-- CP_COMP_TS_PARM.SITE_DATATYPE_ID is nullable, modify archive table to match:
+ALTER TABLE CP_COMP_TS_PARM_ARCHIVE MODIFY (SITE_DATATYPE_ID NULL);
+
+
 ------------------------------------------------------------------------------
 -- OpenDCS Alarm Tables for Oracle
 ------------------------------------------------------------------------------
@@ -23,14 +67,12 @@ CREATE TABLE ALARM_EVENT
 	PATTERN varchar2(256)
 ) &TBL_SPACE_SPEC;
 
-
 CREATE TABLE ALARM_GROUP
 (
 	ALARM_GROUP_ID INT NOT NULL UNIQUE,
 	ALARM_GROUP_NAME VARCHAR2(32) NOT NULL UNIQUE,
 	LAST_MODIFIED NUMBER(19) NOT NULL
 ) &TBL_SPACE_SPEC;
-
 
 CREATE TABLE ALARM_HISTORY
 (
@@ -45,7 +87,6 @@ CREATE TABLE ALARM_HISTORY
     CANCELLED_BY varchar2(32),
     PRIMARY KEY (TS_ID, LIMIT_SET_ID, ASSERT_TIME)
 ) &TBL_SPACE_SPEC;
-
 
 CREATE TABLE ALARM_LIMIT_SET
 (
@@ -90,14 +131,12 @@ CREATE TABLE ALARM_SCREENING
 	CONSTRAINT AS_SDI_START_UNIQUE UNIQUE(SITE_ID, DATATYPE_ID, START_DATE_TIME)
 ) &TBL_SPACE_SPEC;
 
-
 CREATE TABLE EMAIL_ADDR
 (
 	ALARM_GROUP_ID INT NOT NULL,
 	ADDR VARCHAR2(256) NOT NULL,
 	PRIMARY KEY (ALARM_GROUP_ID, ADDR)
 ) &TBL_SPACE_SPEC;
-
 
 CREATE TABLE FILE_MONITOR
 (
@@ -119,7 +158,6 @@ CREATE TABLE FILE_MONITOR
 	PRIMARY KEY (ALARM_GROUP_ID, PATH)
 ) &TBL_SPACE_SPEC;
 
-
 CREATE TABLE PROCESS_MONITOR
 (
 	ALARM_GROUP_ID INT NOT NULL,
@@ -127,7 +165,6 @@ CREATE TABLE PROCESS_MONITOR
 	ENABLED VARCHAR2(5),
 	PRIMARY KEY (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
 ) &TBL_SPACE_SPEC;
-
 
 
 ALTER TABLE PROCESS_MONITOR
@@ -157,14 +194,11 @@ ALTER TABLE ALARM_EVENT
 	REFERENCES PROCESS_MONITOR (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
 ;
 
------------------------------
--- Manually Added:
 ALTER TABLE PROCESS_MONITOR
 	ADD CONSTRAINT PROCESS_MONITOR_FKLA
 	FOREIGN KEY (LOADING_APPLICATION_ID)
 	REFERENCES HDB_LOADING_APPLICATION(LOADING_APPLICATION_ID)
 ;
------------------------------
 
 ALTER TABLE ALARM_SCREENING
     ADD CONSTRAINT ALARM_SCREENING_FKAGI
@@ -192,5 +226,14 @@ ALTER TABLE ALARM_LIMIT_SET
     REFERENCES ALARM_SCREENING (SCREENING_ID)
 ;
 
-CREATE INDEX AS_LAST_MODIFIED ON ALARM_SCREENING (LAST_MODIFIED);
 
+CREATE INDEX AS_LAST_MODIFIED ON ALARM_SCREENING (LAST_MODIFIED) &IDX_TBL_SPACE_SPEC;
+
+delete from tsdb_database_version;
+insert into tsdb_database_version values(16, 'OPENDCS 6.6');
+
+delete from decodesdatabaseversion;
+insert into decodesdatabaseversion values(16, 'OPENDCS 6.6');
+
+spool off
+exit;
