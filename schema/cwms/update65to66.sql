@@ -20,6 +20,7 @@ whenever sqlerror continue
 set define on
 @@defines.sql
 
+@@alarm.sql
 
 -----------------------------------------------------------------
 -- Finally, update the database version numbers in the database

@@ -45,14 +45,15 @@ echo "Creating combined schema file ..." >>$LOG
 echo "Creating combined schema file ..."
 cp combined_hdr.sql combined.sql
 cat opendcs.sql >> combined.sql
+cat alarm.sql >> combined.sql
 cat sequences.sql >>combined.sql
 echo >> combined.sql
 echo "-- Set Version Numbers" >> combined.sql
 now=`date`
 echo 'delete from DecodesDatabaseVersion; ' >> combined.sql
-echo "insert into DecodesDatabaseVersion values(15, 'Installed $now');" >> combined.sql
+echo "insert into DecodesDatabaseVersion values(17, 'Installed $now');" >> combined.sql
 echo 'delete from tsdb_database_version; ' >> combined.sql
-echo "insert into tsdb_database_version values(15, 'Installed $now');" >> combined.sql
+echo "insert into tsdb_database_version values(17, 'Installed $now');" >> combined.sql
 echo "spool off" >>combined.sql
 echo "exit;" >> combined.sql
 
