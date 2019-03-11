@@ -323,24 +323,33 @@ create or replace package body cwms_ccp as
            and cc.loading_application_id is not null and cd.computation_id = cc.computation_id
       )
     loop
-      for r1 in
-        (select date_time,value,quality_code from cwms_v_tsv
-           where ts_code = p_ts_code and date_time between l_start_time and l_end_time
-             and data_entry_date = p_store_time
-        )
-      loop
-        l_delete_flag := 'N';
-        if (r1.quality_code = 5) then
-          l_delete_flag := 'Y';
-        end if;
-
-        insert into cp_comp_tasklist(record_num,loading_application_id,
-          site_datatype_id,date_time_loaded,start_date_time,value,
-          unit_id,delete_flag,quality_code,flags)
-        values(cp_comp_tasklistidseq.nextval,r2.loading_application_id,
-          p_ts_code,sysdate,r1.date_time,nvl(r1.value,0),l_unit_id,
-          l_delete_flag,r1.quality_code,r1.quality_code);
-      end loop; /* end of for r1 loop */
+      insert into cp_comp_tasklist
+      (  record_num,
+         loading_application_id,
+         site_datatype_id,
+         date_time_loaded,
+         start_date_time,
+         value,
+         unit_id,
+         delete_flag,
+         quality_code,
+         flags)
+      select
+         cp_comp_tasklistidseq.nextval,
+         r2.loading_application_id,
+         p_ts_code,
+         sysdate,
+         r1.date_time,
+         nvl(r1.value,0),
+         l_unit_id,
+         decode (r1.quality_code,5,'Y','N') delete_flag,
+         r1.quality_code,
+         r1.quality_code
+      from cwms_v_tsv r1
+      where ts_code = p_ts_code 
+        and date_time  >=  l_start_time  and date_time  <   l_end_time
+        and end_date   >=  l_start_time  and start_date <   l_end_time
+        and p_enqueue_time >= data_entry_date;
     end loop;   /* end of for r2 loop */
 
     commit;
@@ -826,7 +835,8 @@ end;
 ---------------------------------------------------------------------------
 -- Create the context, package, and triger for multipe-offices
 ---------------------------------------------------------------------------
-create or replace context CCPENV using cwms_ccp_vpd;
+-- MJM 20190307 As per HEC, use CWMS_ENV, not CCPENV
+-- create or replace context CCPENV using cwms_ccp_vpd;
 
 create or replace package cwms_ccp_vpd authid current_user as
   procedure set_ccp_session_ctx(
@@ -853,7 +863,7 @@ end cwms_ccp_vpd;
 /
 
 create or replace package body cwms_ccp_vpd as
-  k_ccp_env                 varchar2(20) := 'CCPENV';
+  k_ccp_env                 varchar2(20) := 'CWMS_ENV';
   k_ccp_office_code         varchar2(20) := 'CCP_OFFICE_CODE';
   k_ccp_priv_level          varchar2(20) := 'CCP_PRIV_LEVEL';
 
@@ -884,7 +894,8 @@ create or replace package body cwms_ccp_vpd as
     if l_ccp_priv_level < 0 or l_ccp_priv_level > 3 then
       l_ccp_priv_level := 4;
     end if;
-    DBMS_SESSION.SET_CONTEXT(k_ccp_env, k_ccp_priv_level, p_ccp_priv_level);
+-- MJM 20190317 priv level will now be set by set_session_office_id
+--  DBMS_SESSION.SET_CONTEXT(k_ccp_env, k_ccp_priv_level, p_ccp_priv_level);
     if p_db_office_code is not null then
       DBMS_SESSION.SET_CONTEXT(k_ccp_env, k_ccp_office_code, p_db_office_code);
     end if;

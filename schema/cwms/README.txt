@@ -45,19 +45,13 @@ Last Modified $Date$
 
    Exit from sqlplus.
 
-8. A few items must be done as user CWMS_20. Run sqlplus as user CWMS_20
-   and then execute:
-        @cwmsAdmin.sql
-
-   Exit from sqlplus.
-
-9. Now run the script:
+8. Now run the script:
         installCCP.sh
    This script will use the defines you set to install the CCP and DECODES
    components under the CCP schema. It runs sqlplus several times, executing
    various SQL scripts from this directory.
 
-10. DECODES template. At the end of the installCCP.sh script, take note of the
+9. DECODES template. At the end of the installCCP.sh script, take note of the
     choices for creating the DECODES template. This must be done for each
     district that will be using this CWMS database.
 
