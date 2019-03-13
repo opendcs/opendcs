@@ -304,7 +304,8 @@ create or replace package body cwms_ccp as
     p_ts_code         in integer,
     p_start_time      in timestamp,
     p_end_time        in timestamp,
-    p_store_time      in timestamp)
+    p_store_time      in timestamp,
+    p_enqueue_time    in timestamp)
   is
     c_timestamp_fmt   constant varchar2(32) := 'yyyy/mm/dd hh24:mi:ss';
     l_delete_flag     varchar2(1);
@@ -602,7 +603,8 @@ create or replace package body cwms_ccp as
                   p_ts_code         => l_ts_code,
                   p_start_time      => l_start_time,
                   p_end_time        => l_end_time,
-                  p_store_time      => l_store_time);
+                  p_store_time      => l_store_time,
+                  p_enqueue_time    => l_enqueue_time);
 
               when 'TSDataDeleted' then
                 l_tsid         := get_string(l_message, l_msgid, 'ts_id', l_tsid_len);
@@ -917,7 +919,7 @@ create or replace package body cwms_ccp_vpd as
     l_pred := '1 = 0';
 
     -- This is required by the queue handler
-    if upper(k_session_user_name) in ('&DBSUPER')
+    if upper(k_session_user_name) in ('CWMS_20')
     then
       l_pred := '1 = 1';
     elsif upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
@@ -961,7 +963,7 @@ create or replace package body cwms_ccp_vpd as
     l_pred := '1 = 0';
 
     -- This is required by the queue handler
-    if upper(k_session_user_name) in ('&DBSUPER')
+    if upper(k_session_user_name) in ('CWMS_20')
     then
       l_pred := '1 = 1';
     elsif upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')

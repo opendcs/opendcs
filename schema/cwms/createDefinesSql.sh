@@ -48,8 +48,6 @@ echo "undefine TBL_SPACE_DIR;" >>defines.sql
 echo "define TBL_SPACE_DIR = $TBL_SPACE_DIR;" >>defines.sql
 echo "undefine TBL_SPACE_DATA;" >>defines.sql
 echo "define TBL_SPACE_DATA = $TBL_SPACE_DATA;" >>defines.sql
-echo "undefine TBL_SPACE_TEMP;" >>defines.sql
-echo "define TBL_SPACE_TEMP = $TBL_SPACE_TEMP;" >>defines.sql
 echo "undefine TBL_SPACE_SPEC;" >>defines.sql
 echo "define TBL_SPACE_SPEC = 'tablespace $TBL_SPACE_DATA'" >>defines.sql
 echo "undefine CCP_SCHEMA;" >>defines.sql
@@ -57,7 +55,7 @@ echo "define CCP_SCHEMA = $CCP_SCHEMA;" >>defines.sql
 echo "undefine CCP_PASSWD;" >>defines.sql
 echo "define CCP_PASSWD = $CCP_PASSWD;" >>defines.sql
 echo "define CWMS_SCHEMA = $CWMS_SCHEMA;" >>defines.sql
-echo "define dflt_office_code = sys_context('CCPENV','CCP_OFFICE_CODE');" >>defines.sql
+echo "define dflt_office_code = sys_context('CWMS_ENV','CCP_OFFICE_CODE');" >>defines.sql
 echo "define DEFAULT_OFFICE_ID = '$DEFAULT_OFFICE_ID'" >> defines.sql
 
 echo "The file 'defines.sql' has been created. You may now continue the installation."

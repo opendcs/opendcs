@@ -57,7 +57,7 @@ begin
       policy_name         => 'plcy_cwms_ccp_office_u',
       function_schema     => '&CCP_SCHEMA',
       policy_function     => 'cwms_ccp_vpd.get_pred_session_office_code_u',
-      statement_types     => 'insert, update, delete'
+      statement_types     => 'update, delete'
     );
 
   end loop;

@@ -18,11 +18,11 @@ export DB_TNSNAME=Enter DB SID Here
 # Oracle tablespace name and temporary tablespace name
 export TBL_SPACE_DIR=/export/home/oracle/app/oracle/oradata/CDB1/$DB_TNSNAME
 export TBL_SPACE_DATA=CCP_DATA
-export TBL_SPACE_TEMP=CCP_TEMP
 
 # CCP Schema Owner Account and Password
 export CCP_SCHEMA=CCP
 export CCP_PASSWD=Enter DB User CCP Password Here
+export CWMS_SCHEMA=CWMS_20
 
 # The following will be used by VPD code.
 export DEFAULT_OFFICE_ID=SWT
