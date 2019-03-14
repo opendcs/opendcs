@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.14  2018/03/30 14:13:32  mmaloney
+ * Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
+ *
  * Revision 1.13  2017/03/30 21:04:44  mmaloney
  * Refactor CompEventServer to use PID if monitor==true.
  *
@@ -238,8 +241,14 @@ public class RoutingScheduler
 				if (now - lastOldStatusPurge >= (oldStatusPurgeInterval*1000L))
 				{
 					action = "Purging old status";
-					scheduleEntryDAO.deleteScheduleStatusBefore(appInfo,
-						new Date(System.currentTimeMillis() - purgeBeforeDays*MSEC_PER_DAY));
+					// MJM 20190314 ignore errors purging old status.
+					// It was throwing a foreign key exception to DACQ_EVENT at AEP.
+					try
+					{
+						scheduleEntryDAO.deleteScheduleStatusBefore(appInfo,
+							new Date(System.currentTimeMillis() - purgeBeforeDays*MSEC_PER_DAY));
+					}
+					catch(Exception ex) {}
 					lastOldStatusPurge = now;
 				}
 				
