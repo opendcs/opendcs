@@ -866,7 +866,8 @@ end cwms_ccp_vpd;
 
 create or replace package body cwms_ccp_vpd as
   k_ccp_env                 varchar2(20) := 'CWMS_ENV';
-  k_ccp_office_code         varchar2(20) := 'CCP_OFFICE_CODE';
+--  k_ccp_office_code         varchar2(20) := 'CCP_OFFICE_CODE';
+  k_ccp_office_id           varchar2(20) := 'SESSION_OFFICE_ID';
   k_ccp_priv_level          varchar2(20) := 'CCP_PRIV_LEVEL';
 
   k_session_user_name       varchar2(20) := SYS_CONTEXT('USERENV', 'SESSION_USER');
@@ -889,18 +890,8 @@ create or replace package body cwms_ccp_vpd as
     p_db_office_id    varchar2 default null
   )
   is
-    l_ccp_priv_level integer;
   begin
     CWMS_ENV.SET_SESSION_OFFICE_ID (p_db_office_id);
-    l_ccp_priv_level := p_ccp_priv_level;
-    if l_ccp_priv_level < 0 or l_ccp_priv_level > 3 then
-      l_ccp_priv_level := 4;
-    end if;
--- MJM 20190317 priv level will now be set by set_session_office_id
---  DBMS_SESSION.SET_CONTEXT(k_ccp_env, k_ccp_priv_level, p_ccp_priv_level);
-    if p_db_office_code is not null then
-      DBMS_SESSION.SET_CONTEXT(k_ccp_env, k_ccp_office_code, p_db_office_code);
-    end if;
   end set_ccp_session_ctx;
 
 
@@ -916,13 +907,13 @@ create or replace package body cwms_ccp_vpd as
     l_session_ccp_office_code integer := null;
     l_ccp_priv_level  integer := 4;
   begin
+	l_session_ccp_office_code := (select office_code from cwms_v_office 
+		where office_id = SYS_CONTEXT(k_ccp_env, k_ccp_office_id)); 
+
     l_pred := '1 = 0';
 
     -- This is required by the queue handler
-    if upper(k_session_user_name) in ('CWMS_20')
-    then
-      l_pred := '1 = 1';
-    elsif upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
+    if upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
     then
       l_pred := '1 = 1';
     else
@@ -962,11 +953,11 @@ create or replace package body cwms_ccp_vpd as
   begin
     l_pred := '1 = 0';
 
+	l_session_ccp_office_code := (select office_code from cwms_v_office 
+		where office_id = SYS_CONTEXT(k_ccp_env, k_ccp_office_id)); 
+
     -- This is required by the queue handler
-    if upper(k_session_user_name) in ('CWMS_20')
-    then
-      l_pred := '1 = 1';
-    elsif upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
+    if upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
     then
       l_pred := '1 = 1';
     else
@@ -981,14 +972,12 @@ create or replace package body cwms_ccp_vpd as
         l_pred := '1 = 1';
       -- manager
       elsif l_ccp_priv_level = 1 then
-        l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code);
         l_pred := 'db_office_code = '||l_session_ccp_office_code;
       -- process can modify specific tables
       elsif l_ccp_priv_level = 2 then
         if upper(p_table) in ('CP_COMP_PROC_LOCK', 'CP_COMP_TASKLIST', 
           'CP_COMP_DEPENDS', 'CP_COMP_DEPENDS_SCRATCHPAD')
         then
-          l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code);
           l_pred := 'db_office_code = '||l_session_ccp_office_code;
         else
           raise_application_error(-20100, 'CCP Process cannot modify this table');
