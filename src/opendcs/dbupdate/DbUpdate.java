@@ -331,14 +331,15 @@ public class DbUpdate extends TsdbAppTemplate
 			System.out.println("Updating to Database Version 17.");
 			sql("ALTER TABLE ALARM_DEF RENAME TO ALARM_EVENT");
 			sql("ALTER TABLE ALARM_EVENT RENAME COLUMN ALARM_DEF_ID TO ALARM_EVENT_ID");
+			sql("ALTER SEQUENCE ALARM_DEFIdSeq RENAME TO ALARM_EVENTIdSeq");
 			
 			SQLReader sqlReader = new SQLReader(schemaDir + "/alarm.sql");
 			ArrayList<String> queries = sqlReader.createQueries();
 			for(String q : queries)
 				if (q.toUpperCase().contains("TABLE ALARM_CURRENT")
 				 || q.toUpperCase().contains("TABLE ALARM_HISTORY")
-				 || q.toUpperCase().contains("TABLE ALARM_LIMIT_SET")
-				 || q.toUpperCase().contains("TABLE ALARM_SCREENING")
+				 || q.toUpperCase().contains("ALARM_LIMIT_SET")
+				 || q.toUpperCase().contains("ALARM_SCREENING")
 				 || q.toUpperCase().contains("AS_LAST_MODIFIED"))
 					sql(q);
 		}
