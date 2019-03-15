@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.52  2019/02/25 20:02:55  mmaloney
+*  HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
+*
 *  Revision 1.51  2019/02/19 13:00:49  mmaloney
 *  Add Michael Neilson's improvement for CWMS-14213
 *
@@ -767,7 +770,7 @@ public class CwmsTimeSeriesDb
 			if (ret.getConnection() != null)
 				try { CwmsDbConnectionPool.close(ret.getConnection()); } catch(Exception ex2) {}
 			ret.setConnection(null);
-			String msg = "Cannot get CWMS connection for user'" + username
+			String msg = "Cannot get CWMS connection for user '" + username
 				+ "', officeId='" + dbOfficeId + "': " + ex;
 			Logger.instance().failure(msg);
 			throw new BadConnectException(msg);
@@ -790,10 +793,11 @@ public class CwmsTimeSeriesDb
 			officePrivileges = determinePrivilegedOfficeIds(ret.getConnection());
 			// MJM 2018-12-05 now determine the highest privilege level that this user has in 
 			// the specified office ID:
-			
+Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			for(StringPair op : officePrivileges)
 			{
 				String priv = op.second.toLowerCase();
+Logger.instance().debug3("Privilege: " + op);
 				if (TextUtil.strEqualIgnoreCase(op.first, dbOfficeId) && priv.startsWith("ccp"))
 				{
 					if (priv.contains("mgr"))
@@ -1899,6 +1903,7 @@ public class CwmsTimeSeriesDb
 		DbKey dbOfficeCode, String dbOfficePrivilege)
 		throws DbIoException
 	{
+//TODO No need to pass this method office code or privilege level. SQL code fixgures that out.
 		String errMsg = null;
 		PreparedStatement storeProcStmt = null;
 		CallableStatement testStmt = null;
