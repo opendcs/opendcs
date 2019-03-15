@@ -431,7 +431,7 @@ public class DecodesScript extends IdDatabaseObject
 			catch(EndlessLoopException ex )
 			{
 				Logger.instance().log(Logger.E_WARNING,
-						"Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated.");
+						"Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated: " + ex);
 				throw new DecoderException("Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated.");
 			}
 			// All other decoding exception will cause failure.
