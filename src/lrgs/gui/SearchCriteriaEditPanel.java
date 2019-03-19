@@ -4,6 +4,9 @@
 *  Open Source Software written by Cove Software, LLC
 *  
 *  $Log$
+*  Revision 1.4  2016/04/15 19:31:22  mmaloney
+*  LRGS Server List sorted by access time, most-recent-first.
+*
 *  Revision 1.3  2015/03/19 18:07:18  mmaloney
 *  Removed modemDCP check.
 *
@@ -1362,6 +1365,21 @@ public class SearchCriteriaEditPanel
 		sinceFileTimeBrowsButton.setEnabled(isLrgsType);
 		clearAllTypesButton.setEnabled(isLrgsType);
 		selectAllTypesButton.setEnabled(isLrgsType);
+	}
+	
+	/**
+	 * Some data sources use since/until but not other LRGS selections.
+	 */
+	public void enableSinceUntil()
+	{
+		sinceMethodCombo.setEnabled(true);
+		sinceNowMinusCombo.setEnabled(true);
+		sinceDateTime .setEnabled(true);
+		sinceFileTimeField.setEnabled(true);
+		untilMethodCombo.setEnabled(true);
+		untilNowMinusCombo.setEnabled(true);
+		untilDateTime.setEnabled(true);
+		applyToCombo.setSelectedIndex(0);
 	}
 }
 
