@@ -849,4 +849,11 @@ public class LrgsDataSource extends DataSourceExec
 	{
 		return true;
 	}
+	
+	@Override
+	public boolean supportsTimeRanges()
+	{
+		return true;
+	}
+	
 }
