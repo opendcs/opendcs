@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.6  2016/02/04 18:51:01  mmaloney
+*  Improved debugs.
+*
 *  Revision 1.5  2015/04/15 19:59:47  mmaloney
 *  Fixed synchronization bugs when the same data sets are being processed by multiple
 *  routing specs at the same time. Example is multiple real-time routing specs with same
@@ -247,8 +250,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	protected InputStream getInputStream( String dir, String name ) throws IOException
 	{
 		String fn = makePath(dir, name);
-		Logger.instance().log(Logger.E_DEBUG1,
-			"XmlDatabaseIO: Opening '" + fn + "'");
+		Logger.instance().debug3("XmlDatabaseIO: Opening '" + fn + "'");
 		return new FileInputStream(fn);
 	}
 
