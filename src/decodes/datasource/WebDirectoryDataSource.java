@@ -109,16 +109,7 @@ public class WebDirectoryDataSource extends DataSourceExec
 			if (directoryUrl == null)
 				throw new DataSourceException(module + ": missing required 'directoryUrl' property.");
 		}
-		String s = PropertiesUtil.getIgnoreCase(rsProps, "urlTries");
-		if (s != null)
-		{
-			try { urlTries = Integer.parseInt(s.trim()); }
-			catch(Exception ex)
-			{
-				Logger.instance().warning(module + ": bad urlTries property '" + s + "' (must be integer) "
-					+ "-- will use default of " + urlTries);
-			}
-		}
+		String s;
 		if ((s = PropertiesUtil.getIgnoreCase(rsProps, "urlFieldDelimiter")) != null)
 		{
 			urlFieldDelimiter = s;
