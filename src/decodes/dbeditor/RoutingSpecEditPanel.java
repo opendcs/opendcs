@@ -554,6 +554,8 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 			&& (currentDataSource instanceof LrgsDataSource
 				|| currentDataSource instanceof HotBackupGroup);
 		scEditPanel.setIsLrgs(isLrgsType);
+		if (!isLrgsType && currentDataSource.supportsTimeRanges())
+			scEditPanel.enableSinceUntil();
 	}
 
 	@SuppressWarnings("rawtypes")
