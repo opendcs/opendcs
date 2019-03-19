@@ -4,6 +4,9 @@
 *  Open Source Software
 *
 *  $Log$
+*  Revision 1.9  2016/10/14 19:02:18  mmaloney
+*  dev
+*
 *  Revision 1.8  2016/10/14 18:50:03  mmaloney
 *  dev
 *
@@ -389,6 +392,11 @@ public abstract class DataSourceExec
 	public String getMediumType()
 	{
 		return null;
+	}
+	
+	public boolean supportsTimeRanges()
+	{
+		return false;
 	}
 }
 
