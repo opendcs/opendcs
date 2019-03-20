@@ -25,7 +25,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 //AW:JAVADOC
 /**
 Project an input value by copying it forward in time for the specified number of intervals.
-
+If NumIntervals <= 0, then project forward until the next input value or until NOW.
  */
 //AW:JAVADOC_END
 public class FillForward
@@ -152,11 +152,36 @@ public class FillForward
 		aggCal.setTime(aggPeriod.getEnd());
 		IntervalIncrement outputIncr = IntervalCodes.getIntervalCalIncr(
 			outputParmRef.compParm.getInterval());
-		for(int i = 0; i<NumIntervals; i++)
+		if (NumIntervals > 0)
+			for(int i = 0; i<NumIntervals; i++)
+			{
+				Date outputTime = aggCal.getTime();
+				setOutput(output, latestInputValue, outputTime);
+				aggCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
+			}
+		else
 		{
-			Date outputTime = aggCal.getTime();
-			setOutput(output, latestInputValue, outputTime);
-			aggCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
+			// Set endTime from next input after latestTimeSlice, or NOW if none.
+			Date endTime = new Date();
+			ParmRef inputParmRef = getParmRef("input");
+			try
+			{
+				TimedVariable tv = tsdb.getNextValue(inputParmRef.timeSeries, latestTimeSlice);
+				if (tv != null)
+					endTime = tv.getTime();
+			}
+			catch (Exception ex)
+			{
+				warning("Can't read next input value: " + ex);
+			}
+
+			// Loop until end time exceeded.
+			Date outputTime = null;
+			while (!(outputTime = aggCal.getTime()).after(endTime))
+			{
+				setOutput(output, latestInputValue, outputTime);
+				aggCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
+			}
 		}
 //AW:AFTER_TIMESLICES_END
 	}
