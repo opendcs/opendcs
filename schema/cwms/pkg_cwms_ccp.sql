@@ -866,7 +866,7 @@ end cwms_ccp_vpd;
 
 create or replace package body cwms_ccp_vpd as
   k_ccp_env                 varchar2(20) := 'CWMS_ENV';
---  k_ccp_office_code         varchar2(20) := 'CCP_OFFICE_CODE';
+  k_ccp_office_code         varchar2(20) := 'SESSION_OFFICE_CODE';
   k_ccp_office_id           varchar2(20) := 'SESSION_OFFICE_ID';
   k_ccp_priv_level          varchar2(20) := 'CCP_PRIV_LEVEL';
 
@@ -907,10 +907,9 @@ create or replace package body cwms_ccp_vpd as
     l_session_ccp_office_code integer := null;
     l_ccp_priv_level  integer := 4;
   begin
-	l_session_ccp_office_code := (select office_code from cwms_v_office 
-		where office_id = SYS_CONTEXT(k_ccp_env, k_ccp_office_id)); 
-
     l_pred := '1 = 0';
+
+	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
 
     -- This is required by the queue handler
     if upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
@@ -926,7 +925,6 @@ create or replace package body cwms_ccp_vpd as
       if l_ccp_priv_level = 0 then
         l_pred := '1 = 1';
       elsif l_ccp_priv_level >= 1 and l_ccp_priv_level <= 3 then
-        l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code);
         l_pred := 'db_office_code = '||l_session_ccp_office_code;
       else
         l_pred := '1 = 0';
@@ -953,8 +951,7 @@ create or replace package body cwms_ccp_vpd as
   begin
     l_pred := '1 = 0';
 
-	l_session_ccp_office_code := (select office_code from cwms_v_office 
-		where office_id = SYS_CONTEXT(k_ccp_env, k_ccp_office_id)); 
+	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
 
     -- This is required by the queue handler
     if upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
