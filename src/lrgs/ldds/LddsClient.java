@@ -964,8 +964,6 @@ public class LddsClient extends BasicClient
 		DcpMsg ret = new DcpMsg(msg.MsgData, msg.MsgLength-40, 40);
 		ret.flagbits = DcpMsgFlag.MSG_PRESENT |  DcpMsgFlag.SRC_DDS
 			| DcpMsgFlag.MSG_NO_SEQNUM;
-		// Turn off FORCE save. Messages received from DDS are never FORCE_SAVE.
-		ret.setFlagbits(ret.getFlagbits() & (~DcpMsgFlag.FORCE_SAVE));
 
 		// Get sequence filename from first 40 bytes of message.
 		ret.setSeqFileName(ByteUtil.getCString(msg.MsgData, 0));
@@ -1386,9 +1384,6 @@ public class LddsClient extends BasicClient
 			dcpMsg.flagbits = DcpMsgFlag.MSG_PRESENT |  DcpMsgFlag.SRC_DDS
 				| DcpMsgFlag.MSG_NO_SEQNUM;
 			
-			// Turn off FORCE save. Messages received from DDS are never FORCE_SAVE.
-			dcpMsg.setFlagbits(dcpMsg.getFlagbits() & (~DcpMsgFlag.FORCE_SAVE));
-
 			v.add(dcpMsg);
 
 			//Logger.instance().debug3(module + 
