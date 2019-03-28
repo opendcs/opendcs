@@ -28,7 +28,7 @@ public class DcpMsgFlag
 	public static final int SRC_IRIDIUM       = 0x0018;
 	public static final int SRC_OTHER         = 0x001C;
 
-	public static final int FORCE_SAVE        = 0x0020;
+	public static final int UNDEFINED_1       = 0x0020;
 	
 	/** Message does NOT have _DOMSAT_ sequence num */
 	public static final int MSG_NO_SEQNUM     = 0x0040;
@@ -76,6 +76,30 @@ public class DcpMsgFlag
 	
 	// Indicates a binary message that has detected errors
 	public static final int HAS_BINARY_ERRORS        = 0x00040000;
+	
+	// Platform Type is either CS1  or CS2
+	public static final int PLATFORM_TYPE_MASK       = 0x00080000;
+	public static final int PLATFORM_TYPE_CS1        = 0x00000000;
+	public static final int PLATFORM_TYPE_CS2        = 0x00080000;
+	
+	// No EOT was detected on this message
+	public static final int NO_EOT                   = 0x00100000;
+	
+	public static final int ARM_UNCORRECTABLE_ADDR   = 0x00200000;
+	
+	public static final int ARM_ADDR_NOT_IN_PDT      = 0x00400000;
+	
+	public static final int ARM_PDT_INCOMPLETE       = 0x00800000;
+	
+	// Message overlaps its PDT window
+	public static final int ARM_TIMING_ERROR         = 0x01000000;
+
+	// Message completely outside its timing window
+	public static final int ARM_UNEXPECTED_MSG       = 0x02000000;
+
+	// GOES message received on wrong channel
+	public static final int ARM_WRONG_CHANNEL        = 0x04000000;
+
 	
 	/** Revision number for interpreting flag bits */
 	static public int myFlagRev = 0x4b;
@@ -129,7 +153,7 @@ public class DcpMsgFlag
 		case SRC_NETDCP: return "NETDCP";
 		case SRC_DRGS: return "DRGS";
 		case SRC_NOAAPORT: return "NOAAPORT";
-		case SRC_LRIT: return "LRIT";
+		case SRC_LRIT: return "HRIT";
 		case SRC_OTHER: return "OTHER";
 		case SRC_DDS: return "DDS";
 		case SRC_IRIDIUM: return "IRIDIUM";
@@ -151,6 +175,7 @@ public class DcpMsgFlag
 		if (nm.equalsIgnoreCase("DRGS")) return SRC_DRGS;
 		if (nm.equalsIgnoreCase("NOAAPORT")) return SRC_NOAAPORT;
 		if (nm.equalsIgnoreCase("LRIT")) return SRC_LRIT;
+		if (nm.equalsIgnoreCase("HRIT")) return SRC_LRIT;
 		if (nm.equalsIgnoreCase("DDS")) return SRC_DDS;
 		if (nm.equalsIgnoreCase("IRIDIUM")) return SRC_IRIDIUM;
 		if (nm.equalsIgnoreCase("OTHER")) return SRC_OTHER;
