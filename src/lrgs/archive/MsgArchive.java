@@ -543,10 +543,7 @@ public class MsgArchive
 		IndexPtr origPtr = new IndexPtr(0, 0, 0, 0, 0);
 		int domsatTT = 0;
 
-		if ((msg.getFlagbits() & DcpMsgFlag.FORCE_SAVE) == 0)
-			mergeResult = mergeFilter.getMergeResult(msg, lastPtr, origPtr);
-		else // FORCE_SAVE was turned on. Turn it off in the archived copy.
-			msg.setFlagbits(msg.getFlagbits() & (~DcpMsgFlag.FORCE_SAVE));
+		mergeResult = mergeFilter.getMergeResult(msg, lastPtr, origPtr);
 		
 		msg.mergeFilterCode = mergeFilter.lastCode;
 		domsatTT = msg.getDomsatTime() == null ? 0
