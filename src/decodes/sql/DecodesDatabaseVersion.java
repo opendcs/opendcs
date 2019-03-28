@@ -96,7 +96,7 @@ public class DecodesDatabaseVersion
 	public static final int DECODES_DB_15 = 15;
 	
 	/**
-	 * Version 15 schema corresponds to OpenDCS 6.5 - Changes for OpenTSDB
+	 * Version 16 schema corresponds to OpenDCS 6.5 - Changes for OpenTSDB
 	 * - Add ts_specidseq (affects OpenTSDB Only)
 	 * - tsdb_data_source redefined with 3 columns: id, appId, and module.
 	 * - Added foreign keys (source_id) from tsdb data tables (both string and num)
@@ -108,7 +108,7 @@ public class DecodesDatabaseVersion
 	public static final int DECODES_DB_16 = 16;
 
 	/**
-	 * Version 16 schema corresponds to OpenDCS 6.6 - March, 2019
+	 * Version 17 schema corresponds to OpenDCS 6.6 - March, 2019
 	 * - CWMS VPD to use CWMS_ENV to store office id & code rather than CCP_ENV.
 	 * - Alarm Tables Added:
 	 * 		ALARM_GROUP
