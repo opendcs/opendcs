@@ -68,6 +68,9 @@ public class ExtBlockXmlParser
 	public static final String mtmsmElem = "MTMSM";
 	public static final String cdrRefElem = "CDR_Reference";
 	public static final String sessionStatusElem = "SessionStatus";
+	public static final String goesSignalStrength = "SignalStrength";
+	public static final String goesFreqOffset = "FreqOffset";
+	public static final String goesGoodPhasePct = "GoodPhasePct";
 	
 	private boolean writeLocalTime = true;
 	
@@ -348,6 +351,21 @@ public class ExtBlockXmlParser
 				int ss = DomHelper.getIntegerContent(child, -1, module);
 				msg.setSessionStatus(ss);
 			}
+			else if (nn.equalsIgnoreCase(goesSignalStrength))
+			{
+				double d = DomHelper.getDoubleContent(child, 0.0, module);
+				msg.setGoesSignalStrength(d);
+			}
+			else if (nn.equalsIgnoreCase(goesFreqOffset))
+			{
+				double d = DomHelper.getDoubleContent(child, 0.0, module);
+				msg.setGoesFreqOffset(d);
+			}
+			else if (nn.equalsIgnoreCase(goesGoodPhasePct))
+			{
+				double d = DomHelper.getDoubleContent(child, 0.0, module);
+				msg.setGoesGoodPhasePct(d);
+			}
 			else
 				Logger.instance().debug1(module + " Unexpected node '" 
 					+ nn + "' in DcpMsg element with value '"
@@ -427,6 +445,12 @@ public class ExtBlockXmlParser
 				xos.writeElement(CarrierStopElem, formatDate(t));
 			if (msg.getBaud() != 0)
 				xos.writeElement(BaudElem, "" + msg.getBaud());
+			if (msg.getGoesGoodPhasePct() > .1)
+				xos.writeElement(goesGoodPhasePct,  "" + msg.getGoesGoodPhasePct());
+			if (msg.getGoesFreqOffset() > .1 || msg.getGoesFreqOffset() < -.1)
+				xos.writeElement(goesFreqOffset,  "" + msg.getGoesFreqOffset());
+			if (msg.getGoesSignalStrength() > .1)
+				xos.writeElement(goesSignalStrength,  "" + msg.getGoesSignalStrength());
 		}
 		else if (DcpMsgFlag.isIridium(msg.flagbits))
 		{
