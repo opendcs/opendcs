@@ -118,6 +118,11 @@ public class DcpMsg
 	/** When read from DCP Mon database, this indicates the table it was read from */
 	private int dayNumber = 0;
 	
+	// New fields added for OpenDCS 6.6 LRGS HRIT and DAMS-NT
+	private double goesSignalStrength = 0.;
+	private double goesFreqOffset = 0.;
+	private double goesGoodPhasePct = 0.;
+	
 	private static SimpleDateFormat timeSdfSec = new SimpleDateFormat("HH:mm:ss");
 	private static SimpleDateFormat timeSdfMS = new SimpleDateFormat("HH:mm:ss.SSS");
 	static NumberFormat bvFormat = NumberFormat.getNumberInstance();
@@ -1082,4 +1087,35 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 		return DcpMsgFlag.isIridium(flagbits)
 			|| (data[0] == (byte)'I' && data[1] == (byte)'D' && data[2] == (byte)'=');
 	}
+	
+	public double getGoesSignalStrength()
+	{
+		return goesSignalStrength;
+	}
+
+	public void setGoesSignalStrength(double goesSignalStrength)
+	{
+		this.goesSignalStrength = goesSignalStrength;
+	}
+
+	public double getGoesFreqOffset()
+	{
+		return goesFreqOffset;
+	}
+
+	public void setGoesFreqOffset(double goesFreqOffset)
+	{
+		this.goesFreqOffset = goesFreqOffset;
+	}
+
+	public double getGoesGoodPhasePct()
+	{
+		return goesGoodPhasePct;
+	}
+
+	public void setGoesGoodPhasePct(double goesGoodPhasePct)
+	{
+		this.goesGoodPhasePct = goesGoodPhasePct;
+	}
+
 }
