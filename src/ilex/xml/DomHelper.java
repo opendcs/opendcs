@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.2  2017/03/24 11:58:46  mmaloney
+*  Added getLongIntContent()
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -256,6 +259,22 @@ public abstract class DomHelper
 				+ "', using default of " + defaultValue);
 			return defaultValue;
 		}
+	}
+	
+	public static double getDoubleContent(Node node, double defaultValue, String mod)
+	{
+		String s = getTextContent(node);
+		if (s == null)
+			return defaultValue;
+		try { return Double.parseDouble(s.trim()); }
+		catch(NumberFormatException ex)
+		{
+			Logger.instance().log(Logger.E_WARNING,
+				mod + ": Excpected double for '" + node.getNodeName()
+				+ "', using default of " + defaultValue);
+			return defaultValue;
+		}
+
 	}
 
 	/**
