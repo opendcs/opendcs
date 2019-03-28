@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.4  2012/11/12 19:14:05  mmaloney
 *  CWMS uses 't' to mean true.
 *
@@ -307,6 +310,19 @@ public class TextUtil
 				return s1.equals(s2);
 		}
       */
+	}
+	
+	/**
+	 * Compare strings, but consider null the same as an empty string.
+	 * @param s1
+	 * @param s2
+	 * @return
+	 */
+	public static boolean strEqualNE(String s1, String s2)
+	{
+		if (s1 == null) s1 = "";
+		if (s2 == null) s2 = "";
+		return strEqual(s1, s2);
 	}
 
 	/**
