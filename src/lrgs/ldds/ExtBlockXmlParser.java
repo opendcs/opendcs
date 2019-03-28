@@ -71,6 +71,7 @@ public class ExtBlockXmlParser
 	public static final String goesSignalStrength = "SignalStrength";
 	public static final String goesFreqOffset = "FreqOffset";
 	public static final String goesGoodPhasePct = "GoodPhasePct";
+	public static final String goesPhaseNoise = "PhaseNoise";
 	
 	private boolean writeLocalTime = true;
 	
@@ -366,6 +367,11 @@ public class ExtBlockXmlParser
 				double d = DomHelper.getDoubleContent(child, 0.0, module);
 				msg.setGoesGoodPhasePct(d);
 			}
+			else if (nn.equalsIgnoreCase(goesPhaseNoise))
+			{
+				double d = DomHelper.getDoubleContent(child, 0.0, module);
+				msg.setGoesPhaseNoise(d);
+			}
 			else
 				Logger.instance().debug1(module + " Unexpected node '" 
 					+ nn + "' in DcpMsg element with value '"
@@ -451,6 +457,8 @@ public class ExtBlockXmlParser
 				xos.writeElement(goesFreqOffset,  "" + msg.getGoesFreqOffset());
 			if (msg.getGoesSignalStrength() > .1)
 				xos.writeElement(goesSignalStrength,  "" + msg.getGoesSignalStrength());
+			if (msg.getGoesPhaseNoise() >= .01)
+				xos.writeElement(goesPhaseNoise, "" + msg.getGoesPhaseNoise());
 		}
 		else if (DcpMsgFlag.isIridium(msg.flagbits))
 		{

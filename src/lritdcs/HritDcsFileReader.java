@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1  2019/03/28 13:24:42  mmaloney
+*  Mods to support the new HRIT file format.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -369,6 +372,7 @@ public class HritDcsFileReader
 			case 3: modIndex = 'L'; break;
 			}
 			noisex100 &= 0xFFF;
+			
 			// 1 byte binary good phase x 2
 			double goodPhasePct = (image[blkStart + 32] & 0xff) / 2.0;
 			
@@ -476,6 +480,7 @@ public class HritDcsFileReader
 				ret.setGoesFreqOffset(freqOffx10 / 10.);
 				ret.setGoesSignalStrength(sigx10 / 10.);
 				ret.setGoesGoodPhasePct(goodPhasePct);
+				ret.setGoesPhaseNoise(noisex100 / 100.);
 				baos.close();
 			}
 			catch (IOException ex)
