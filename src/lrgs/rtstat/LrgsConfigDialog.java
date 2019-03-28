@@ -196,6 +196,7 @@ public class LrgsConfigDialog extends GuiDialog
 	private JCheckBox acceptDomsatARMsCheck = new JCheckBox();
 	private IridiumCfgPanel iridiumCfgTab = null;
 	private LritCfgPanel lritCfgPanel = null;
+	private HritFileCfgPanel hritFileCfgPanel = null;
 	private EdlConfigPanel edlConfigPanel = null;
 	private JTextField ddsMinHourlyField = new JTextField(9);
 	private JTextField drgsMinHourlyField = new JTextField(9);
@@ -341,6 +342,7 @@ public class LrgsConfigDialog extends GuiDialog
 		noaaConfigTab.fillFields(lrgsConfig);
 		iridiumCfgTab.fillFields(lrgsConfig);
 		lritCfgPanel.fillFields(lrgsConfig);
+		hritFileCfgPanel.fillFields(lrgsConfig);
 		edlConfigPanel.fillFields(lrgsConfig);
 		
 		miscPanel.setProperties(lrgsConfig.getOtherProps());
@@ -907,6 +909,8 @@ public class LrgsConfigDialog extends GuiDialog
 			tabbedPane.addTab(iridiumCfgTab.getLabel(), iridiumCfgTab);
 			lritCfgPanel = new LritCfgPanel(this);
 			tabbedPane.addTab(lritCfgPanel.getLabel(), lritCfgPanel);
+			hritFileCfgPanel = new HritFileCfgPanel(this);
+			tabbedPane.addTab(hritFileCfgPanel.getLabel(), hritFileCfgPanel);
 			edlConfigPanel = new EdlConfigPanel(this);
 			tabbedPane.addTab(edlConfigPanel.getLabel(), edlConfigPanel);
 			
@@ -2983,6 +2987,11 @@ public class LrgsConfigDialog extends GuiDialog
 			{
 				extraChanges = true;
 				lritCfgPanel.saveChanges();
+			}
+			if (hritFileCfgPanel.hasChanged())
+			{
+				extraChanges = true;
+				hritFileCfgPanel.saveChanges();
 			}
 			if (edlConfigPanel.hasChanged())
 			{

@@ -269,6 +269,15 @@ public class LrgsConfig
 
 	/** Set to positive integer to enable minimum hourly checking on DRGS */
 	public int drgsMinHourly = 0;
+	
+	public boolean hritFileEnabled = false;
+	public String hritInputDir = null;
+	public String hritFilePrefix = null;
+	public String hritFileSuffix = null;
+	public String hritSourceCode = "HR";
+	public String hritDoneDir = null;
+	public int hritTimeoutSec = 120;
+	public int hritFileMaxAgeSec = 7200;
 
 	public static final boolean def_noaaportEnabled = false;
 	public static final int def_noaaportPort = 18000;

@@ -455,13 +455,20 @@ public class LrgsMain
 
 		if (cfg.enableLritRecv)
 		{
-			Logger.instance().info("Enabling DAMS-NT LRIT Receiver");
+			Logger.instance().info("Enabling DAMS-NT HRIT Receiver");
 			LritDamsNtReceiver ldnr = new LritDamsNtReceiver(msgArchive, this);
 			ldnr.configure(null);
 			addInput(ldnr);
 		}
 		else
 			Logger.instance().info("LRIT is not enabled.");
+		
+		if (cfg.hritFileEnabled)
+		{
+			Logger.instance().info("Enabling HRIT-File Receiver");
+			HritFileInterface hfi = new HritFileInterface(this, msgArchive);
+			addInput(hfi);
+		}
 		
 		if (cfg.iridiumEnabled)
 		{
@@ -489,18 +496,11 @@ public class LrgsMain
 		}
 
 		// Initialize & Start the DDS Receiver Module
-		// MJM OpenDCS 6.2 does not support Outage Recovery
-//		if (cfg.recoverOutages)
-//			ddsRecv = new OutageDdsRecv(this, msgArchive);
-//		else
-			ddsRecv = new DdsRecv(this, msgArchive);
+		ddsRecv = new DdsRecv(this, msgArchive);
 		addInput(ddsRecv);
 		
 		// Initialize & Start the DDS Receiver Module for secondary group
-//		if (cfg.recoverOutages)
-//			ddsRecv2 = new OutageDdsRecv(this, msgArchive);
-//		else
-			ddsRecv2 = new DdsRecv(this, msgArchive);
+		ddsRecv2 = new DdsRecv(this, msgArchive);
 		
 		ddsRecv2.setSecondary(true);
 		addInput(ddsRecv2);

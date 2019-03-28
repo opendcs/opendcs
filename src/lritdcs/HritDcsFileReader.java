@@ -1,6 +1,3 @@
-// ABANDONED -- OBSOLETE -- DO NOT USE
-
-
 /*
 *  $Id$
 *
@@ -55,13 +52,12 @@ import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
 
-public class LritDcsFileReader
-	implements LritFileReaderIF
+public class HritDcsFileReader
 {
-	boolean lritHeader;
+	public static String module = "HritFileReader";
 	byte image[];
 	File file;
-	int currentOffset;
+	int currentOffset = 0;
 	int fileStartOffset;
 	String origFileName;
 	private static final int PRIMARY_TYPE = 0;
@@ -71,97 +67,101 @@ public class LritDcsFileReader
 	private boolean hritFileType = true;
 	private DcpMsg dummyMsg = new DcpMsg();
 
-	public LritDcsFileReader(String filename, boolean lritHeader)
+	public HritDcsFileReader(String filename, boolean lritHeader)
 	{
-		this.lritHeader = lritHeader;
 		file = new File(filename);
-		currentOffset = 64;
 		ctimeFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
-	@Override
 	public void load()
-		throws IOException, BadMessageException
+		throws IOException, HritException
 	{
 		FileInputStream fis = new FileInputStream(file);
 		int len = (int)file.length();
 		if (len < 64)
-			throw new IOException("Invalid LRIT DCS file length=" + len);
+			throw new HritException("Incomplete CCSDS File Header, length=" + len, 
+				HritException.ErrorCode.INCOMPLETE_FILE);
+		
 		image = new byte[len];
 		fis.read(image);
 		fis.close();
-		if (lritHeader)
+		int htype = (int)image[0];
+		int hlen = ByteUtil.getInt2_BigEndian(image, 1);
+		int ftype = (int)image[3] & 0xff;
+		if (htype != PRIMARY_TYPE || hlen != PRIMARY_LENGTH)
 		{
-			int htype = (int)image[0];
-			int hlen = ByteUtil.getInt2_BigEndian(image, 1);
-			int ftype = (int)image[3] & 0xff;
-			if (htype != PRIMARY_TYPE || hlen != PRIMARY_LENGTH)
-			{
-				throw new BadMessageException(
-					"Invalid LRIT File Header: headerType=" + htype 
-					+ ", headerLen=" + hlen);
-			}
-			else if (ftype != DCS_FILE_TYPE)
-			{
-				throw new BadMessageException(
-					"LRIT File Header with non-DCS file type ("
-					+ DCS_FILE_TYPE + "), fileType='" + ftype + "'");
-			}
-			fileStartOffset = ByteUtil.getInt4_BigEndian(image, 4);
-
-			//System.out.println("Valid LRIT Header, total header length = "
-			//	+ fileStartOffset);
+			throw new HritException(
+				"Invalid LRIT File Header: headerType=" + htype 
+				+ ", headerLen=" + hlen, HritException.ErrorCode.WRONG_FILE_TYPE);
 		}
-		else
-			fileStartOffset = 0;
+		else if (ftype != DCS_FILE_TYPE)
+		{
+			throw new HritException(
+				"LRIT File Header with non-DCS file type ("
+				+ DCS_FILE_TYPE + "), fileType='" + ftype + "'",
+				HritException.ErrorCode.WRONG_FILE_TYPE);
+		}
+		fileStartOffset = ByteUtil.getInt4_BigEndian(image, 4);
+
+		Logger.instance().debug1(module + " Read valid LRIT Header, total header length = "
+			+ fileStartOffset);
 	}
 
-	@Override
-	public boolean checkHeader()
+	/**
+	 * Check the various header lengths and CRCs
+	 * 
+	 * @throws HritException with error code if header does not pass the checks.
+	 */
+	public void checkHeader()
+		throws HritException
 	{
 		if (image.length-fileStartOffset < 64)
-			return false;
+			throw new HritException("Incomplete HRIT-DCS File Header, length="
+				+ (image.length-fileStartOffset), 
+				HritException.ErrorCode.INCOMPLETE_FILE);
 		
+		// Check the CRC at the end of the file header.
 		CRC32 crc32 = new CRC32();
 		crc32.reset();
 		crc32.update(image, fileStartOffset, 60);
+		int headerCRC = ByteUtil.getInt4_LittleEndian(image, fileStartOffset+60);
+		if (headerCRC != (int)crc32.getValue())
+			throw new HritException("Header CRC Failed, computed=" + crc32.getValue()
+				+ ", in file=" + headerCRC, HritException.ErrorCode.BAD_FILE_CRC);
 
-		hritFileType = this.getType().equals("DCSH");
-System.out.println("hritFileType=" + hritFileType);
-		int fileCRC = ByteUtil.getInt4_LittleEndian(image, fileStartOffset+60);
-		return fileCRC == (int)crc32.getValue();
-	}
-
-	@Override
-	public boolean checkLength()
-	{
-		if (image.length-fileStartOffset < 64)
-			return false;
+		// The type string in the header must be either DCSD or DCSH
+		String t = this.getType().trim();
+		if (!t.equals("DCSH") && !t.equals("DCSD"))
+			throw new HritException("Unrecognized type in LRIT DCP Header '" + t + "'",
+				HritException.ErrorCode.WRONG_FILE_TYPE);
+		hritFileType = t.equals("DCSH");
+		
+		// Check the length field inside the HRIT DCS Header
 		String s = new String(image, fileStartOffset+32, 8).trim();
-		try { return Long.parseLong(s) == (image.length - fileStartOffset); }
+		try 
+		{
+			long expectedFileLen = Long.parseLong(s);
+			if (expectedFileLen > (image.length - fileStartOffset))
+				throw new HritException("Invalid length in HRIT DCS Header, Expected Length="
+					+ expectedFileLen + ", actual len=" + (image.length - fileStartOffset),
+					HritException.ErrorCode.INCOMPLETE_FILE);
+			
+		}
 		catch (NumberFormatException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"LRIT File '" + origFileName() + "' invalid length field '"
-				+ s + "'");
-			return false;
+			throw new HritException("Invalid file length in HRIT DCS Header '" + s + "'",
+				HritException.ErrorCode.BAD_HEADER);
 		}
-	}
 
-	@Override
-	public boolean checkCRC()
-	{
-		CRC32 crc32 = new CRC32();
 		crc32.reset();
-
-		crc32.update(image, fileStartOffset, 
-			image.length - fileStartOffset - 4);
-
+		crc32.update(image, fileStartOffset, image.length - fileStartOffset - 4);
 		int fileCRC = ByteUtil.getInt4_LittleEndian(image, image.length-4);
 		int computedCRC = (int)crc32.getValue();
-System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC) 
-+ ", computedCRC=" + Integer.toHexString(computedCRC));
-		return fileCRC == computedCRC;
+		if (fileCRC != computedCRC)
+			throw new HritException("File CRC Failed, computed=" + computedCRC
+			+ ", in file=" + headerCRC, HritException.ErrorCode.BAD_FILE_CRC);
+		
+		currentOffset = fileStartOffset + 64;
 	}
 
 	public String origFileName()
@@ -187,7 +187,6 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 
 	public void listMessages(PrintStream out)
 	{
-		currentOffset = fileStartOffset + 64;
 		DcpMsg msg;
 		try
 		{
@@ -213,7 +212,6 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 		}
 	}
 
-	@Override
 	public DcpMsg getNextMsg()
 		throws IOException
 	{
@@ -305,6 +303,22 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 		DcpMsg ret = dummyMsg;
 		int blkId = image[currentOffset];
 		int blkLen = ByteUtil.getInt2_LittleEndian(image, currentOffset+1);
+		if (blkLen < 8)
+		{
+			Logger.instance().warning(module + " File '" + file.getName() 
+				+ "' has invalid block with too-short length=" + blkLen
+				+ " at file offset " + currentOffset + " -- aborting file.");
+			return null;
+		}
+		if (currentOffset + blkLen > file.length() - 2)
+		{
+			Logger.instance().warning(module + " File '" + file.getName() 
+				+ "' has invalid block with too-long length=" + blkLen
+				+ " at file offset " + currentOffset + ", with file size=" + file.length()
+				+ " -- aborting file.");
+			return null;
+		}
+	
 		
 		CRC16 crc16 = new CRC16();
 		crc16.reset();
@@ -318,12 +332,6 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 			  + (((int)image[currentOffset+4] & 0xff) << 8)
 			  + (((int)image[currentOffset+5] & 0xff) << 16);
 
-		
-//System.out.println("BLK ID=" + blkId + ", blkLen=" + blkLen
-//	+ ", crcInFile=0x" + Integer.toHexString(crcInFile)
-//	+ ", crcCOmputed=0x" + Integer.toHexString(crcComputed)
-//	+ ", seqNum=" + seqNum);
-		
 		int blkStart = currentOffset;
 		currentOffset += blkLen;
 		
@@ -361,8 +369,6 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 			case 3: modIndex = 'L'; break;
 			}
 			noisex100 &= 0xFFF;
-//System.out.println("modIndexCode=" + modIndexCode + ", charcode=" + modIndex + ", noisex100=0x" + 
-//Integer.toHexString(noisex100));
 			// 1 byte binary good phase x 2
 			double goodPhasePct = (image[blkStart + 32] & 0xff) / 2.0;
 			
@@ -382,8 +388,6 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 			byte sourceCode[] = new byte[2];
 			sourceCode[0] = image[blkStart + 35];
 			sourceCode[1] = image[blkStart + 36];
-//System.out.println("srcCode=" + new String(sourceCode) + ", 0x" 
-//+ Integer.toHexString((int)sourceCode[0]) + " 0x" + Integer.toHexString((int)sourceCode[1]));
 			
 			// Ignore bytes 37 & 38 = secondary source code
 			// 2 char secondary source (TBD)
@@ -414,13 +418,11 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 				byte c = n >= 10 ? (byte)'A' : (byte)('0' + n);
 				baos.write(c);
 
-//System.out.println("freqOffx10=" + freqOffx10 + ", sign=" + sign + ", 50hz units=" + n);
 
 				baos.write((byte)modIndex);
 				byte q = goodPhasePct >= 85. ? (byte)'N'
 					   : goodPhasePct >= 75. ? (byte)'F' : (byte)'P';
 				baos.write((byte)q);
-//System.out.println("goodPhasePct=" + goodPhasePct + ", code=" + q);
 				numfmt.setMinimumIntegerDigits(3);
 				numfmt.setMaximumIntegerDigits(3);
 				baos.write(numfmt.format(chan).getBytes());
@@ -432,17 +434,13 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 				baos.write(numfmt.format(msglen).getBytes());
 				
 				// Copy message data and strip parity.
-//System.out.println("msglen=" + msglen + ", data: ");
 				for(int idx = 0; idx < msglen; idx++)
 				{
 					int b = image[blkStart+39+idx] & 0x7f;
-//System.out.print(" " + Integer.toHexString(b));
 					baos.write(b);
 				}
-//System.out.println("");
 
 				byte msgdata[] = baos.toByteArray();
-//System.out.println("msgdata len=" + msgdata.length + ": " + new String(msgdata));
 				ret = new DcpMsg(msgdata, msglen+37, 0);
 				ret.setCarrierStart(carrierStart);
 				ret.setXmitTime(carrierStart);
@@ -488,13 +486,14 @@ System.out.println("fileCRC=0x" + Integer.toHexString(fileCRC)
 		}
 		else if (blkId == 2) // Missing Message Block
 		{
-System.out.println("Skipping MISSING MESSAGE block.");
+			Logger.instance().debug2("Skipping MISSING MESSAGE block.");
 			//TODO Future: Handle missing message blocks.
 		}
 		else
 		{
-System.out.println("Invalid block type " + blkId);
-			Logger.instance().warning("Invalid block type " + blkId + ", should be 1 for msg or 2 for MM.");
+			Logger.instance().warning("Invalid block type " + blkId);
+			Logger.instance().warning("Invalid block type " + blkId 
+				+ ", should be 1 for msg or 2 for MM.");
 		}
 		
 		return ret;
@@ -524,8 +523,6 @@ System.out.println("Invalid block type " + blkId);
 		cal.set(Calendar.SECOND, ss);
 		cal.set(Calendar.MILLISECOND, ms);
 		return cal.getTime();
-		
-				
 	}
 	
 	
@@ -543,49 +540,23 @@ System.out.println("Invalid block type " + blkId);
 	}
 
 	public static void main(String args[])
+		throws Exception
 	{
 		cmdLineArgs.parseArgs(args);
-
-		if (args.length == 0)
-		{
-			System.out.println("Usage: <progname> [files...]");
-			System.exit(1);
-		}
 
 		for(int i=0; i<filesArg.NumberOfValues(); i++)
 		{
 			String fname = filesArg.getValue(i);
 
-			LritDcsFileReader ldfr = 
-				new LritDcsFileReader(fname, lritHeaderArg.getValue());
-			try { ldfr.load(); }
-			catch(IOException ex)
-			{
-				System.err.println("Cannot load '" + args[i] + "': " + ex);
-				continue;
-			}
-			catch(BadMessageException ex)
-			{
-				System.err.println("Bad LRIT Header in '" 
-					+ args[i] + "': " + ex);
-				continue;
-			}
-
-			if (ldfr.checkHeader() == false)
-				System.out.println("Header check failed.\n");
-			else if (ldfr.checkLength() == false)
-				System.out.println("Length check failed.\n");
-			else if (ldfr.checkCRC() == false)
-				System.out.println("CRC check failed.\n");
-			System.out.println("Original File Name: '" + ldfr.origFileName() + "'");
-			System.out.println("\tSource = '" + ldfr.getSource() + "'");
-			System.out.println("\tType = '" + ldfr.getType() + "'");
-			ldfr.listMessages(System.out);
+			HritDcsFileReader hdfr = 
+				new HritDcsFileReader(fname, lritHeaderArg.getValue());
+			hdfr.load();
+			hdfr.checkHeader();
+			
+			System.out.println("Original File Name: '" + hdfr.origFileName() + "'");
+			System.out.println("\tSource = '" + hdfr.getSource() + "'");
+			System.out.println("\tType = '" + hdfr.getType() + "'");
+			hdfr.listMessages(System.out);
 		}
-	}
-
-	@Override
-	public void close()
-	{
 	}
 }

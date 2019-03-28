@@ -1,7 +1,7 @@
 /**
  * $Id$
  * 
- * Open Source Software by Cove Software, LLC
+ * Copyright U.S. Government 2019
  */
 package lrgs.rtstat;
 
@@ -24,29 +24,30 @@ import lrgs.rtstat.LrgsConfigPanel;
 import lrgs.rtstat.RtStat;
 
 @SuppressWarnings("serial")
-public class LritCfgPanel 
+public class HritFileCfgPanel 
 	extends JPanel
 	implements LrgsConfigPanel
 {
 	private LrgsConfig conf = null;
 	private JCheckBox enableCheck = null;
-	private JTextField hostField = new JTextField();
-	private JTextField portField = new JTextField();
-	private JTextField syncPatternField = new JTextField();
+	private JTextField inputDirField = new JTextField();
+	private JTextField filenamePrefixField = new JTextField();
+	private JTextField filenameSuffixField = new JTextField();
 	private JTextField srcField = new JTextField();
 	private JTextField timeoutField = new JTextField();
 	private JTextField maxAgeSecField = new JTextField();
+	private JTextField doneDirField = new JTextField(9);
+	
 	private GuiDialog parent = null;
-	private JTextField minHourlyField = new JTextField(9);
 
-	public LritCfgPanel(GuiDialog parent)
+	public HritFileCfgPanel(GuiDialog parent)
 	{
 		jbinit();
 		this.parent = parent;
 	}
 
 	@Override
-	public String getLabel() { return "HRIT-DAMSNT"; }
+	public String getLabel() { return "HRIT-File"; }
 	
 	private void jbinit()
 	{
@@ -62,45 +63,45 @@ public class LritCfgPanel
 				GridBagConstraints.SOUTHWEST, GridBagConstraints.NONE,
 				new Insets(3, 0, 3, 15), 0, 0));
 		
-		add(new JLabel(RtStat.getLabels().getString("LritPanel.hostname")),
+		add(new JLabel(RtStat.getLabels().getString("HritFilePanel.inputDir")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
 
-		add(hostField,
+		add(inputDirField,
 			new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(3, 0, 3, 0), 80, 0));
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(3, 0, 3, 30), 80, 0));
 
-		add(new JLabel(RtStat.getLabels().getString("LritPanel.port")),
+		add(new JLabel(RtStat.getLabels().getString("HritFilePanel.prefix")),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
 		
-		add(portField,
+		add(filenamePrefixField,
 			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(3, 0, 3, 0), 30, 0));
+				new Insets(3, 0, 3, 0), 40, 0));
 		
-		add(new JLabel(RtStat.getLabels().getString("LritPanel.syncpatt")),
+		add(new JLabel(RtStat.getLabels().getString("HritFilePanel.suffix")),
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
 		
-		add(syncPatternField,
+		add(filenameSuffixField,
 			new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(5, 0, 5, 30), 0, 0));
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(3, 0, 3, 30), 40, 0));
 
-		add(new JLabel(RtStat.getLabels().getString("LritPanel.srccode")),
+		add(new JLabel(RtStat.getLabels().getString("HritFilePanel.srcCode")),
 			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
 
 		add(srcField,
 			new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(3, 0, 3, 30), 0, 0));
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(3, 0, 3, 30), 40, 0));
 		
 		add(new JLabel(RtStat.getGenericLabels().getString("timeout")),
 			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
@@ -110,39 +111,40 @@ public class LritCfgPanel
 		add(timeoutField,
 			new GridBagConstraints(1, 5, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(3, 0, 3, 30), 50, 0));
+				new Insets(3, 0, 3, 30), 40, 0));
 		
-		add(new JLabel(RtStat.getLabels().getString("LritPanel.maxage")),
+		add(new JLabel(RtStat.getLabels().getString("HritFilePanel.fileMaxAge")),
 			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
+		
 		add(maxAgeSecField,
 			new GridBagConstraints(1, 6, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(3, 0, 3, 30), 50, 0));
+				new Insets(3, 0, 3, 30), 40, 0));
 
-		add(new JLabel(RtStat.getLabels().getString("minHourly")),
+		add(new JLabel(RtStat.getLabels().getString("HritFilePanel.doneDir")),
 			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.5,
 				GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
-		add(minHourlyField,
+		add(doneDirField,
 			new GridBagConstraints(1, 7, 1, 1, 0.5, 0.5,
-				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
+				GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 30), 0, 0));
 	}
 
 	@Override
 	public void fillFields(LrgsConfig conf)
 	{
-		enableCheck.setSelected(conf.enableLritRecv);
-		hostField.setText(conf.lritHostName);
-		portField.setText("" + conf.lritPort);
-		syncPatternField.setText(conf.lritDamsNtStartPattern);
-		srcField.setText(conf.lritSrcCode);
-		timeoutField.setText("" + conf.lritTimeout);
-		maxAgeSecField.setText("" + conf.lritMaxMsgAgeSec);
-		minHourlyField.setText(
-			conf.lritMinHourly > 0 ? ("" + conf.lritMinHourly) : "");
+		enableCheck.setSelected(conf.hritFileEnabled);
+		inputDirField.setText(conf.hritInputDir == null ? "" : conf.hritInputDir);
+		filenamePrefixField.setText(conf.hritFilePrefix == null ? "" : conf.hritFilePrefix);
+		filenameSuffixField.setText(conf.hritFileSuffix == null ? "" : conf.hritFileSuffix);
+		srcField.setText(conf.hritSourceCode);
+		timeoutField.setText("" + conf.hritTimeoutSec);
+		maxAgeSecField.setText("" + conf.hritFileMaxAgeSec);
+		doneDirField.setText(conf.hritDoneDir == null ? "" : conf.hritDoneDir);
+		
 		this.conf = conf;
 	}
 	
@@ -151,73 +153,49 @@ public class LritCfgPanel
 		if (conf == null)
 			return false;
 		
-		int minHourly = getMinHourly();
-		
-		boolean ret = enableCheck.isSelected() != conf.enableLritRecv
-		 || !TextUtil.strEqual(hostField.getText().trim(), conf.lritHostName)
-		 || !TextUtil.strEqual(portField.getText().trim(), ""+conf.lritPort)
-		 || !TextUtil.strEqual(syncPatternField.getText().trim(), conf.lritDamsNtStartPattern)
+		return enableCheck.isSelected() != conf.hritFileEnabled
+		 || !TextUtil.strEqual(inputDirField.getText().trim(), conf.hritInputDir)
+		 || !TextUtil.strEqualNE(filenamePrefixField.getText().trim(), conf.hritInputDir)
+		 || !TextUtil.strEqualNE(filenameSuffixField.getText().trim(), conf.hritFileSuffix)
 		 || !TextUtil.strEqual(srcField.getText().trim(), conf.lritSrcCode)
 		 || !TextUtil.strEqual(timeoutField.getText().trim(), ""+conf.lritTimeout)
 		 || !TextUtil.strEqual(maxAgeSecField.getText().trim(), ""+conf.lritMaxMsgAgeSec)
-		 || minHourly != conf.lritMinHourly
+		 || !TextUtil.strEqualNE(doneDirField.getText().trim(), conf.hritDoneDir)
 		;
-		return ret;
 	}
 	
 	public void saveChanges()
 	{
 		if (conf == null)
 			return;
-		conf.enableLritRecv = enableCheck.isSelected();
-		conf.lritHostName = hostField.getText().trim();
-		if (portField.getText().trim().length() > 0)
-		{
-			try
-			{
-				conf.lritPort = Integer.parseInt(portField.getText().trim());
-				if (conf.lritPort <= 0) throw new Exception ("Negative port number");
-			}
-			catch(Exception ex)
-			{
-				Logger.instance().warning("Invalid LRIT DAMS-NT Port " + portField.getText()
-					+ " -- must be a positive integer. Using default of 17010");
-			}
-		}
-		conf.lritDamsNtStartPattern = syncPatternField.getText().trim();
-		conf.lritSrcCode = srcField.getText().trim();
-		try { conf.lritTimeout = Integer.parseInt(timeoutField.getText().trim()); }
+		conf.hritFileEnabled = enableCheck.isSelected();
+		conf.hritInputDir = inputDirField.getText().trim();
+		conf.hritFilePrefix = filenamePrefixField.getText().trim();
+		if (conf.hritFilePrefix.length() == 0)
+			conf.hritFilePrefix = null;
+		conf.hritFileSuffix = filenameSuffixField.getText().trim();
+		if (conf.hritFileSuffix.length() == 0)
+			conf.hritFileSuffix = null;
+		conf.hritSourceCode = srcField.getText().trim();
+
+		try { conf.hritTimeoutSec = Integer.parseInt(timeoutField.getText().trim()); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Invalid lrit timeout '" + timeoutField.getText()
+			Logger.instance().warning("Invalid HRIT timeout '" + timeoutField.getText()
 				+ "' -- set to default of 120 seconds");
-			conf.lritTimeout = 120;
+			conf.hritTimeoutSec = 120;
 		}
-		try { conf.lritMaxMsgAgeSec = Integer.parseInt(maxAgeSecField.getText().trim()); }
+		try { conf.hritFileMaxAgeSec = Integer.parseInt(maxAgeSecField.getText().trim()); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Invalid lrit max age (seconds) '" + timeoutField.getText()
+			Logger.instance().warning("Invalid File max age (seconds) '" + timeoutField.getText()
 				+ "' -- set to default of 7200 seconds");
-			conf.lritTimeout = 7200;
+			conf.hritFileMaxAgeSec = 7200;
 		}
-		conf.lritMinHourly = getMinHourly();
-	}
-	
-	private int getMinHourly()
-	{
-		String s = minHourlyField.getText().trim();
-		if (s.length() == 0)
-			return 0;
-		try
-		{
-			return Integer.parseInt(s);
-		}
-		catch(NumberFormatException ex)
-		{
-			Logger.instance().warning("EDL Minimum Hourly field must be an integer.");
-			return 0;
-		}
-	}
+		
+		conf.hritDoneDir = doneDirField.getText().trim();
+		if (conf.hritDoneDir.length() == 0)
+			conf.hritDoneDir = null;
 
-
+	}
 }
