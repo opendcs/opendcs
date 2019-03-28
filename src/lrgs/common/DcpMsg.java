@@ -122,6 +122,7 @@ public class DcpMsg
 	private double goesSignalStrength = 0.;
 	private double goesFreqOffset = 0.;
 	private double goesGoodPhasePct = 0.;
+	private double goesPhaseNoise = 0.;
 	
 	private static SimpleDateFormat timeSdfSec = new SimpleDateFormat("HH:mm:ss");
 	private static SimpleDateFormat timeSdfMS = new SimpleDateFormat("HH:mm:ss.SSS");
@@ -1117,5 +1118,16 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 	{
 		this.goesGoodPhasePct = goesGoodPhasePct;
 	}
+
+	public double getGoesPhaseNoise()
+	{
+		return goesPhaseNoise;
+	}
+
+	public void setGoesPhaseNoise(double goesPhaseNoise)
+	{
+		this.goesPhaseNoise = goesPhaseNoise;
+	}
+
 
 }

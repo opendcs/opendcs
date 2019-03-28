@@ -10,6 +10,7 @@ public class DamsNt
 	public static final int BIT_ERRORS     = 0x04;
 	public static final int NO_EOT         = 0x08;
 	public static final int CARRIER_TIMES  = 0x10;
+	public static final int EXTENDED_QUAL  = 0x20;
 
 	public static final int ANY_ERROR =
 		(PARITY_ERR + BIT_ERRORS + NO_EOT);

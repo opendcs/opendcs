@@ -60,6 +60,8 @@ public class DrgsRecv
 
 	/** Event number meaning message too old. */
 	public static final int EVT_MSG_TOO_OLD = 7;
+	
+	public static final int EVT_BAD_EXT_QUAL = 8;
 
 	/** We check for config changes this often. */
 	private static final long cfgCheckTime = 30000L;

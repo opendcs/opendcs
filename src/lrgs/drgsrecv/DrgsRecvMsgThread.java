@@ -71,6 +71,7 @@ public class DrgsRecvMsgThread
 	public static final int MSGDATA_STATE = 2;
 	public static final int TERMCRLF_STATE = 3;
 	public static final int CARRIERTIMES_STATE = 4;
+	public static final int EXTENDED_QUAL_STATE = 5;
 	private int state;
 
 	// Private scratch-pad variables:
@@ -100,8 +101,11 @@ public class DrgsRecvMsgThread
 	protected SimpleDateFormat debugDateFmt;
 
 	private boolean msgHasCarrierTimes;
+	private boolean msgHasExtendedQual;
 	private boolean isBinaryMsg;
 	private byte[] carrierBuf = new byte[31];
+	private byte[] extQualBuf = new byte[120];
+	private int extQualIdx = 0;
 
 	private Outage channelOutage;
 
@@ -446,7 +450,7 @@ Logger.instance().info(module + " " + myName + " starting"
 			if (state == CARRIERTIMES_STATE)
 			{
 				stateComplete = carrierTimesState();
-				if (stateComplete)
+				if (stateComplete && !msgHasExtendedQual)
 				{
 					DcpMsg ret = workingMsg;
 					workingMsg = null;
@@ -454,6 +458,15 @@ Logger.instance().info(module + " " + myName + " starting"
 					numThisHour++;
 					return ret;
 				}
+			}
+			if (state == EXTENDED_QUAL_STATE)
+			{
+				stateComplete = extendedQualState();
+				DcpMsg ret = workingMsg;
+				workingMsg = null;
+				ret.setOrigAddress(new DcpAddress(new String(origAddr)));
+				numThisHour++;
+				return ret;
 			}
 		}
 		return null;
@@ -665,6 +678,7 @@ log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 		int f = (ByteUtil.fromHexChar((char)buf[32]) << 4)
 			   + ByteUtil.fromHexChar((char)buf[33]);
 		msgHasCarrierTimes = (f & DamsNt.CARRIER_TIMES) != 0;
+		msgHasExtendedQual = (f & DamsNt.EXTENDED_QUAL) != 0;
 		isBinaryMsg = (f & DamsNt.BINARY_MSG) != 0;
 
 		// Both bits 0 and 3 have to be clear
@@ -825,9 +839,101 @@ log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 			workingMsg.setCarrierStart(sd);
 			workingMsg.setCarrierStop(ed);
 		}
-		state = HUNT_STATE;
+		state = msgHasExtendedQual ? EXTENDED_QUAL_STATE : HUNT_STATE;
+		extQualIdx = 0;
 		return true;
 	}
+	
+	private boolean extendedQualState() 
+		throws IOException
+	{
+		// Scan ahead to see if we have a complete line. If not, return false.
+		int n = input.available();
+		int c = 0;
+		for(int idx = 0; idx < n && extQualIdx < extQualBuf.length; idx++)
+		{
+			c = input.read();
+			if (c == '\n')
+				break;
+			if (c != '\r')
+				extQualBuf[extQualIdx++] = (byte)c;
+		}
+		
+		if (c == '\n') // means we have a complete line.
+		{
+			// Parse it.
+			String line = new String(extQualBuf, 0, extQualIdx);
+			String values[] = line.split(" ");
+			String field = "slvl";
+			try
+			{
+				field = "slvl";
+				if (values.length >= 1)
+					workingMsg.setGoesSignalStrength(Double.parseDouble(values[0]));
+				field = "phns";
+				if (values.length >= 2)
+					workingMsg.setGoesPhaseNoise(Double.parseDouble(values[1]));
+				field = "gdph";
+				if (values.length >= 3)
+					workingMsg.setGoesGoodPhasePct(Double.parseDouble(values[2]));
+				field = "freq";
+				if (values.length >= 4)
+					workingMsg.setGoesFreqOffset(Double.parseDouble(values[3]));
+				field = "type";
+				if (values.length >= 5)
+				{
+					int typ = Integer.parseInt(values[4]);
+					int f = 
+						typ == 0 ? (DcpMsgFlag.BAUD_100|DcpMsgFlag.PLATFORM_TYPE_CS1) :
+						typ == 1 ? (DcpMsgFlag.BAUD_300|DcpMsgFlag.PLATFORM_TYPE_CS1) :
+						typ == 2 ? (DcpMsgFlag.BAUD_300|DcpMsgFlag.PLATFORM_TYPE_CS2) :
+							       (DcpMsgFlag.BAUD_UNKNOWN|DcpMsgFlag.PLATFORM_TYPE_CS1);
+					workingMsg.flagbits =
+						(workingMsg.flagbits & ~(DcpMsgFlag.BAUD_MASK|DcpMsgFlag.PLATFORM_TYPE_MASK))
+						| f;
+				}
+				field = "armf";
+				if (values.length >= 6)
+				{
+					int armFlags = Integer.parseInt(values[5], 16);
+					if ((armFlags & 0x01) != 0)
+						workingMsg.flagbits |= DcpMsgFlag.ADDR_CORRECTED;
+					if ((armFlags & 0x02) != 0)
+						workingMsg.flagbits |= DcpMsgFlag.ARM_UNCORRECTABLE_ADDR;
+					if ((armFlags & 0x04) != 0)
+						workingMsg.flagbits |= DcpMsgFlag.ARM_ADDR_NOT_IN_PDT;
+					if ((armFlags & 0x08) != 0)
+						workingMsg.flagbits |= DcpMsgFlag.ARM_PDT_INCOMPLETE;
+					if ((armFlags & 0x10) != 0)
+						workingMsg.flagbits |= DcpMsgFlag.ARM_TIMING_ERROR;
+					if ((armFlags & 0x20) != 0)
+						workingMsg.flagbits |= DcpMsgFlag.ARM_UNEXPECTED_MSG;
+					if ((armFlags & 0x40) != 0)
+						workingMsg.flagbits |= DcpMsgFlag.ARM_WRONG_CHANNEL;
+				}
+			}
+			catch(NumberFormatException ex)
+			{
+				Logger.instance().warning(module + " Bad DAMS-NT extended quality line '" + line 
+					+ "' in the " + field + " field: " + ex);
+			}
+			state = HUNT_STATE;
+			extQualIdx = 0;
+			return true;
+		}
+		else if (extQualIdx >= extQualBuf.length)
+		{
+			// Line too long. Issue warning and go into hunt mode
+			Logger.instance().warning(module + " Extended quality line too long. Skipping.");
+			state = HUNT_STATE;
+			extQualIdx = 0;
+			return true;
+		}
+		else // don't have a complete line yet. Stay in same state.
+			return false;
+	}
+
+
 	
 	/**
  	* A SimpleDateFormat object is not thread-safe and must be in a 
