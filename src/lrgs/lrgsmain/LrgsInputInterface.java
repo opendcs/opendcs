@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2015/01/06 16:09:31  mmaloney
+*  First cut of Polling Modules
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -137,7 +140,7 @@ public interface LrgsInputInterface
 	public static final String DL_DDSMAIN_TYPESTR = "DDS-MAIN";
 
 	/** Type Name for LRIT */
-	public static final String DL_LRIT_TYPESTR = "LRIT";
+	public static final String DL_LRIT_TYPESTR = "HRIT";
 
 	/** Type Name for DDSCON */
 	public static final String DL_DDSCON_TYPESTR = "DDSCON";
