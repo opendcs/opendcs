@@ -9,6 +9,7 @@ import java.util.TimeZone;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.SimpleDateFormat;
 
 /**
  * The DateTimeCalendar is a wrapper around the DateCalendar and the
@@ -20,13 +21,14 @@ import java.awt.event.WindowEvent;
 public class DateTimeCalendar extends JPanel
 {
 	public static final long MS_PER_DAY = 24 * 3600 * 1000L;
-	public static final String defaultTZ = "EST5EDT";
+	public static final String defaultTZ = "UTC";
 
 	private DateCalendar dateCalendar = null;
 	private TimeSpinner timeSpinner;
 	private TimeZone tzObj;
 	private FlowLayout panelLayout = new FlowLayout(
 		FlowLayout.CENTER, 4, 0);
+	private SimpleDateFormat sdf;
 	
 	/**
 	 * Construct a Calendar - Time Panel. It allows you to select a 
@@ -37,27 +39,28 @@ public class DateTimeCalendar extends JPanel
 	 * 				It should be provided. Default is no label
 	 * @param dateIn Date - default date for DateCalendar and time Spinner 
 	 * 						If null, default to today's date at 00:00:00
-	 * @param dateFormatString String - format for JCalendar Date text field 
+	 * @param dateFmt String - format for JCalendar Date text field 
 	 * 									Deafult format: MMM d,yyyy
-	 * @param timeZoneStr String - the timezone java id, Default is defaultTZ above
+	 * @param tzid String - the timezone java id, Default is defaultTZ above
 	 */
-	public DateTimeCalendar(String text, 
-							Date dateIn, 
-							String dateFormatString,
-							String timeZoneStr)
+	public DateTimeCalendar(String text, Date dateIn, String dateFmt, String tzid)
 	{
-//System.out.println("dtc('" + text + "', " + dateIn + ", " + dateFormatString + ", " + timeZoneStr + ")");
 		String dateLabel = text;
 		if (dateLabel == null)
 			dateLabel = "";
 		
 		// Default TZ to UTC if not supplied.
-		if (timeZoneStr == null || timeZoneStr.equals(""))
+		if (tzid == null || tzid.equals(""))
 			tzObj = TimeZone.getTimeZone(defaultTZ);
 		else
-			tzObj = TimeZone.getTimeZone(timeZoneStr);	
+			tzObj = TimeZone.getTimeZone(tzid);	
 
+		sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+		sdf.setTimeZone(tzObj);
 		
+//System.out.println("DateTimeCalendar('" + text + "', " + sdf.format(dateIn) + ", " 
+//+ dateFmt + ", " + tzid + ")");
+
 		// Default to noon in current day in whatever tz was specified
 		if (dateIn == null)
 		{	
@@ -71,16 +74,15 @@ public class DateTimeCalendar extends JPanel
 			dateIn = cal.getTime();
 		}
 		
-		dateCalendar = 
-			new DateCalendar(text, dateIn, dateFormatString, tzObj);
+		dateCalendar = new DateCalendar(text, dateIn, dateFmt, tzObj);
 		timeSpinner = new TimeSpinner(dateIn);
-		//Need to set timezone, pass it as a parameter
 		timeSpinner.setTimeZone(tzObj);
 		
 		try
 		{
 			jbInit();
-		} catch (Exception ex)
+		} 
+		catch (Exception ex)
 		{
 			ex.printStackTrace();
 		}
@@ -102,55 +104,27 @@ public class DateTimeCalendar extends JPanel
 	{
 		// Get date from DateCalendar and date from TimeSpinner
 		Date dateFCalendar = dateCalendar.getDate();
-		Date dateTimeSpinner = timeSpinner.getTime();
 
-//System.out.println("dtc.getDate fromCal=" + dateFCalendar + ", fromTime=" + dateTimeSpinner);
-		if (dateFCalendar == null || dateTimeSpinner == null)
+//System.out.println("dtc.getDate fromCal=" + sdf.format(dateFCalendar));
+		if (dateFCalendar == null)
 			return null;
 
-		// Need to construct a new Date Obj with the date from
-		// DateCalendar and time from TimeSpinner, and return the
-		// new date object
-
-		//tempCal1 holds the Date obj from the DateCalendar class
-		Calendar tempCal1 = new GregorianCalendar();
+		Calendar tempCal1 = Calendar.getInstance();
 		tempCal1.setTimeZone(tzObj);
 		tempCal1.setTime(dateFCalendar);
-//System.out.println("dtc.getDate tempCal1=" + tempCal1.getTime());
+//System.out.println("dtc.getDate tempCal1=" + sdf.format(tempCal1.getTime()));
+		timeSpinner.updateCalendar(tempCal1);
 		
-		//Get the Date obj from Time Spinner and extract out the 
-		//time values (hour, minutest, seconds)
-		Calendar tempCal2 = new GregorianCalendar();
-		//tempCal2.setTimeZone(TimeZone.getDefault());
-		tempCal2.setTimeZone(tzObj);
-		tempCal2.setTime(dateTimeSpinner);
-//System.out.println("dtc.getDate tempCal2=" + tempCal2.getTime());
-				
-		//Get the components of the time
-		int hour24 = tempCal2.get(Calendar.HOUR_OF_DAY); // 0..23
-		int min = tempCal2.get(Calendar.MINUTE); // 0..59
-		int sec = tempCal2.get(Calendar.SECOND); // 0..59
-
-		//Set the hour, min, sec of the Date obj that we are going to 
-		//return
-		tempCal1.set(Calendar.HOUR_OF_DAY, hour24);
-		tempCal1.set(Calendar.MINUTE, min);
-		tempCal1.set(Calendar.SECOND, sec);
-//System.out.println("after setting time values: tempCal1=" + tempCal1.getTime());
-		
-		tempCal1.setTimeZone(tzObj);
-		
-//System.out.println("after setting TZ, tempCal1=" + tempCal1.getTime());
-
-		Date returnDate = new Date(tempCal1.getTimeInMillis());
-//System.out.println("Returning " + returnDate);
+		Date ret = tempCal1.getTime();
+//System.out.println("after setting time values: tempCal1=" + sdf.format(ret));
 		
 		// Return Date obj
-		return returnDate;
+		return ret;
 	}
 
 	public void setDate(Date dateIn)
 	{
+//System.out.println("dtc.setDate(" + sdf.format(dateIn));
 		//Set DateCalendar with the date and TimeSpinner 
 		//with the time, DateCalendar has a setDate()
 		//TimeSpinner has a setTime()
@@ -171,7 +145,18 @@ public class DateTimeCalendar extends JPanel
 	
 	public static void main(String[] args)
 	{
-		final DateTimeCalendar datetimecalendar = new DateTimeCalendar("Test" , new Date() , null, null);
+		final DateTimeCalendar datetimecalendar = new DateTimeCalendar("(UTC)" , new Date() , "dd/MMM/yyyy", "UTC");
+
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+		cal.setTime(new Date());
+		cal.set(Calendar.HOUR_OF_DAY, 12);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.add(Calendar.DAY_OF_MONTH, -1);
+		datetimecalendar.setDate(cal.getTime());
+
+		
 		Frame testFrame = new Frame();
 
 		testFrame.setVisible(true);

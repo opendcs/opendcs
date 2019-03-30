@@ -45,10 +45,6 @@ public class JTextFieldDateEditor extends JFormattedTextField
 	protected DateUtil dateUtil;
 	private boolean isMaskVisible;
 	private boolean ignoreDatePatternChange;
-	private int hours;
-	private int minutes;
-	private int seconds;
-	private int millis;
 	private Calendar calendar;
 	private TimeZone timeZone;
 	
@@ -58,7 +54,7 @@ public class JTextFieldDateEditor extends JFormattedTextField
 	 **/	
 	public JTextFieldDateEditor(TimeZone tzObjIn) 
 	{		
-		this(false, null, null, ' ', tzObjIn);
+		this(false, "yyyy/MM/dd", null, ' ', tzObjIn);
 	}
 
 	public JTextFieldDateEditor(String datePattern, String maskPattern, 
@@ -70,10 +66,14 @@ public class JTextFieldDateEditor extends JFormattedTextField
 	public JTextFieldDateEditor(boolean showMask, String datePattern, 
 					String maskPattern, char placeholder, TimeZone tzObjIn) 
 	{
-		timeZone = tzObjIn;
-		dateFormatter = 
-			(SimpleDateFormat) DateFormat.getDateInstance(DateFormat.MEDIUM);
+		timeZone = tzObjIn == null ? TimeZone.getTimeZone("UTC") : tzObjIn;
+		if (datePattern == null)
+			datePattern = "yyyy/MM/dd";
+		
+		dateFormatter = new SimpleDateFormat(datePattern);
 		dateFormatter.setLenient(false);
+		dateFormatter.setTimeZone(timeZone);
+		
 		setDateFormatString(datePattern);
 		if (datePattern != null) {
 			ignoreDatePatternChange = true;
@@ -107,15 +107,26 @@ public class JTextFieldDateEditor extends JFormattedTextField
 	 * 
 	 * @see com.toedter.calendar.IDateEditor#getDate()
 	 */
-	public Date getDate() {
-		try {
-			calendar.setTime(dateFormatter.parse(getText()));
-			calendar.set(Calendar.HOUR_OF_DAY, hours);
-			calendar.set(Calendar.MINUTE, minutes);
-			calendar.set(Calendar.SECOND, seconds);
-			calendar.set(Calendar.MILLISECOND, millis);
+	public Date getDate() 
+	{
+		try 
+		{
+			String t = getText();
+			
+			// This will set my calendar object associated with the formatter.
+			dateFormatter.parse(getText());
+			
+			// Set to noon to handle most time zones.
+			calendar.set(Calendar.HOUR_OF_DAY, 12);
+			calendar.set(Calendar.MINUTE, 0);
+			calendar.set(Calendar.SECOND, 0);
+			
 			date = calendar.getTime();
-		} catch (ParseException e) {
+//System.out.println("jtfde.getDate text='" + t + "' ret=" + date);
+			return date;
+		}
+		catch (ParseException e)
+		{
 			date = null;
 		}
 		return date;
@@ -147,13 +158,17 @@ public class JTextFieldDateEditor extends JFormattedTextField
 			setText("");
 		} else 
 		{
+//System.out.println("jtfde setDate(" + date + ")");
 			calendar.setTime(date);
-			hours = calendar.get(Calendar.HOUR_OF_DAY);
-			minutes = calendar.get(Calendar.MINUTE);
-			seconds = calendar.get(Calendar.SECOND);
-			millis = calendar.get(Calendar.MILLISECOND);
-			//Josue Added
-			calendar.setTimeZone(timeZone);
+			calendar.set(Calendar.HOUR_OF_DAY, 12);
+//System.out.println("JTextFieldDateEditor setDate - calendar after setTime=" + calendar.getTime());
+//			hours = calendar.get(Calendar.HOUR_OF_DAY);
+//			minutes = calendar.get(Calendar.MINUTE);
+//			seconds = calendar.get(Calendar.SECOND);
+//			millis = calendar.get(Calendar.MILLISECOND);
+//			//Josue Added
+//			calendar.setTimeZone(timeZone);
+//System.out.println("JTextFieldDateEditor setDate - calendar after setting fields=" + calendar.getTime());
 
 			String formattedDate = dateFormatter.format(date);
 
@@ -179,7 +194,9 @@ public class JTextFieldDateEditor extends JFormattedTextField
 	 * @see com.toedter.calendar.
 	 * IDateEditor#setDateFormatString(java.lang.String)
 	 */
-	public void setDateFormatString(String dateFormatString) {
+	public void setDateFormatString(String dateFormatString)
+	{
+//System.out.println("setDateFormatString(" + dateFormatString + ")");
 		if (ignoreDatePatternChange) {
 			return;
 		}

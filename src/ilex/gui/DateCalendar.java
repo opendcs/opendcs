@@ -44,44 +44,42 @@ public class DateCalendar extends JPanel
 	public JTextFieldDateEditor textFieldEditor ;
 	//private JPanel datePanel = new JPanel();
 	//private BorderLayout datePanelBorderLayout = new BorderLayout();
+	private SimpleDateFormat sdf;
 
 	/**
 	 * Constructor for DateCalendar.
 	 * 
-	 * @param dateLabelIn
+	 * @param label
 	 *            String label to identified this DateCalendar. Ex. From
 	 * @param dateIn
 	 *            Date default for DateCalendar
-	 * @param dateFormatString
+	 * @param dateFmt
 	 *            String format for date
 	 * @param timezone object
 	 */
-	public DateCalendar(String dateLabelIn, Date dateIn, 
-						String dateFormatString, 
-						TimeZone tzObjIn)
+	public DateCalendar(String label, Date dateIn, String dateFmt, TimeZone tzObj)
 	{		 
-		dateLabel = dateLabelIn;
+		dateLabel = label;
 		if (dateLabel == null)
 			dateLabel = "";
-		Date dateToSet = dateIn;
-		if (dateToSet == null)
-			dateToSet = new Date();
-		TimeZone tzObj = tzObjIn;
+		if (dateIn == null)
+			dateIn = new Date();
 		if (tzObj == null)
 			tzObj = TimeZone.getTimeZone("UTC");
 	
-		textFieldEditor = new JTextFieldDateEditor(tzObj);
+		sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+		sdf.setTimeZone(tzObj);
+
+		textFieldEditor = new JTextFieldDateEditor(false, dateFmt, null, ' ', tzObj);
 		
-//System.out.println("creating JDateChooser with dateToSet='" + dateToSet + "' dateformatString='" + dateFormatString
-//	+ "'");
-		dateComponent = new JDateChooser(dateToSet, dateFormatString, 
-										textFieldEditor);
-		//((JDateChooser) dateComponent).setTimeZone(tzObj);//no need for this
+//System.out.println("DateCalendar ctor creating JDateChooser with date='" + sdf.format(dateIn) + "'"); 
+		dateComponent = new JDateChooser(dateIn, dateFmt, textFieldEditor);
 		
 		try
 		{
 			jbInit();
-		} catch (Exception ex)
+		} 
+		catch (Exception ex)
 		{
 			ex.printStackTrace();
 		}
@@ -124,7 +122,7 @@ public class DateCalendar extends JPanel
 		if (dateComponent != null)
 		{
 			Date r = dateComponent.getDate();
-//System.out.println("DateCalendar.getDate returning " + r);
+//System.out.println("DateCalendar.getDate returning " + sdf.format(r));
 			return r;
 		}
 		else
@@ -139,8 +137,11 @@ public class DateCalendar extends JPanel
 	 */
 	public void setDate(Date dateIn)
 	{
+		Calendar cal = Calendar.getInstance();
+		cal.set(Calendar.HOUR_OF_DAY, 12);
+//System.out.println("DateCalendar.setDate to " + sdf.format(dateIn));
 		if (dateComponent != null)
-			((JDateChooser) dateComponent).setDate(dateIn);
+			dateComponent.setDate(dateIn);
 	}
 
 	/**
@@ -170,10 +171,11 @@ public class DateCalendar extends JPanel
 
 		testFrame.setVisible(true);
 		final DateCalendar dateCalendarFrom = new DateCalendar("From", null,
-				null, TimeZone.getTimeZone("UTC"));
+				"dd/MMM/yyyy", TimeZone.getTimeZone("UTC"));
 
-		Date testDate = dateCalendarFrom.getDate();
-		System.out.println("date from JCalendar= " + testDate);
+		Date now = new Date();
+		System.out.println("Setting to " + now);
+		dateCalendarFrom.setDate(now);
 
 		testFrame.add(dateCalendarFrom.getDateCalendarPanel());
 		java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit()
@@ -181,72 +183,15 @@ public class DateCalendar extends JPanel
 		testFrame.setSize(new java.awt.Dimension(200, 100));
 		testFrame.setLocation((screenSize.width - 826) / 2,
 				(screenSize.height - 709) / 2);
-		// ========= TEST Calendar
-		Calendar cal2 = new GregorianCalendar();
-		cal2.setTime(testDate);
-		// Get the components of the time
-		int hour12 = cal2.get(Calendar.HOUR); // 0..11
-		int hour24 = cal2.get(Calendar.HOUR_OF_DAY); // 0..23
-		int min = cal2.get(Calendar.MINUTE); // 0..59
-		int sec = cal2.get(Calendar.SECOND); // 0..59
-
-		System.out.println("hour12 local= " + hour12);
-		System.out.println("hour24 local = " + hour24);
-		System.out.println("min local = " + min);
-		System.out.println("sec local = " + sec);
-
-		// Get the current hour-of-day at GMT
-
-		cal2.setTimeZone(TimeZone.getTimeZone("UTC"));
-		int hour24b = cal2.get(Calendar.HOUR_OF_DAY); // 0..23
-		System.out.println("hour24 in UTC= " + hour24b);
-
-		// Get time in milliseconds
-		System.out.println("time in milli = " + cal2.getTimeInMillis());
-		Date utcDate = new Date(cal2.getTimeInMillis());
-		System.out.println("date obj set with cal2.getTimeInMillis =  "
-				+ utcDate);
 
 		testFrame.addWindowListener(new WindowAdapter()
 		{
 			public void windowClosing(WindowEvent e)
 			{
 				Date testDate1 = dateCalendarFrom.getDate();
-				System.out.println("date from JCalendar= " + testDate1);
-				Calendar cal3 = new GregorianCalendar();
-				cal3.setTime(testDate1);
-				// Get the components of the time
-				int hour12 = cal3.get(Calendar.HOUR); // 0..11
-				int hour24 = cal3.get(Calendar.HOUR_OF_DAY); // 0..23
-				int min = cal3.get(Calendar.MINUTE); // 0..59
-				int sec = cal3.get(Calendar.SECOND); // 0..59
-
-				System.out.println("hour12 local= " + hour12);
-				System.out.println("hour24 local = " + hour24);
-				System.out.println("min local = " + min);
-				System.out.println("sec local = " + sec);
-
-				// Get the current hour-of-day at GMT
-
-				cal3.setTimeZone(TimeZone.getTimeZone("UTC"));
-				int hour24b = cal3.get(Calendar.HOUR_OF_DAY); // 0..23
-				System.out.println("hour24 in UTC= " + hour24b);
-
-				// Get time in milliseconds
-				System.out.println("time in milli =" + cal3.getTimeInMillis());
-				Date utcDate = new Date(cal3.getTimeInMillis());
-				System.out.println("date obj set with cal3.getTimeInMillis =  "
-						+ utcDate);
-
-				DateFormat dateFormat = 
-					new SimpleDateFormat("yyyyMMdd HHmmss");
+				DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 				dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-				// try
-				// {
-				// Date retDate = dateFormat.parse(utcDate);
-				// }
-				// catch (ParseException ex) {}
-
+				System.out.println("date from JCalendar= " + dateFormat.format(testDate1));
 			}
 		});
 		testFrame.setVisible(true);
