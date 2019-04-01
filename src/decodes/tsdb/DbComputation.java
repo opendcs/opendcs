@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2019/02/26 17:16:44  mmaloney
+*  HDB 660
+*
 *  Revision 1.4  2018/11/14 15:52:48  mmaloney
 *  Added transient nextRunTime attribute with accessor methods. Needed for timed computations.
 *
@@ -616,7 +619,9 @@ public class DbComputation
 	 */
 	public boolean hasGroupInput()
 	{
-		return !DbKey.isNull(groupId);
+		// CompImport may be importing a group that doesn't yet have an ID
+		// so also check the name and group object.
+		return !DbKey.isNull(groupId) || (group != null || groupName != null);
 	}
 	
 //	public boolean isTransient() { return _isTransient; }

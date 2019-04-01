@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.5  2019/02/26 17:16:44  mmaloney
+*  HDB 660
+*
 *  Revision 1.4  2017/12/04 18:57:35  mmaloney
 *  CWMS-10012 fixed CWMS problem that could sometimes result in circular dependencies
 *  for group computations when a new Time Series was created. When compdepends
@@ -245,7 +248,7 @@ public class ImportComp
 									Logger.instance().warning(msg);
 									System.out.println(msg);
 									ex.printStackTrace();
-							}
+								}
 								catch(BadTimeSeriesException ex)
 								{
 									if (!comp.hasGroupInput())
