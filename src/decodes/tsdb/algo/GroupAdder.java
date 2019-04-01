@@ -190,12 +190,10 @@ public class GroupAdder
 			}
 		}
 		
-//debug3("After fill ...");
-//for(CTimeSeries cts : ts2sum)
-//{
-//debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr());
-//for(int idx=0; idx < cts.size(); idx++) debug3("        " + cts.sampleAt(idx));
-//}
+debug3("After fill ...");
+for(CTimeSeries cts : ts2sum)
+debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr()
+ + ", num samples=" + cts.size());
 		
 	  nextTimeSlice:
 		for(Date timeSlice : baseTimes)
