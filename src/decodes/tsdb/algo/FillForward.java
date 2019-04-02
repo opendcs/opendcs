@@ -48,8 +48,8 @@ public class FillForward
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-	public long NumIntervals = 4;
-	String _propertyNames[] = { "NumIntervals" };
+	public long numIntervals = 4;
+	String _propertyNames[] = { "numIntervals" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -111,15 +111,15 @@ public class FillForward
 			return;
 		
 		// Make sure that latestTimeSlice is the latest input in the database.
+		TimedVariable nextInput = null;
 		try
 		{
-			TimedVariable tv;
-			tv = tsdb.getNextValue(getParmRef("input").timeSeries, latestTimeSlice);
-			if (tv != null)
+			nextInput = tsdb.getNextValue(getParmRef("input").timeSeries, latestTimeSlice);
+			if (nextInput != null && numIntervals > 0)
 			{
 				debug1("Exiting because there is data after latest time slice: "
 					+ "latest seen this run=" + debugSdf.format(latestTimeSlice)
-					+ ", latest in DB=" + debugSdf.format(tv.getTime()));
+					+ ", latest in DB=" + debugSdf.format(nextInput.getTime()));
 				return;
 			}
 		}
@@ -152,8 +152,8 @@ public class FillForward
 		aggCal.setTime(aggPeriod.getEnd());
 		IntervalIncrement outputIncr = IntervalCodes.getIntervalCalIncr(
 			outputParmRef.compParm.getInterval());
-		if (NumIntervals > 0)
-			for(int i = 0; i<NumIntervals; i++)
+		if (numIntervals > 0)
+			for(int i = 0; i<numIntervals; i++)
 			{
 				Date outputTime = aggCal.getTime();
 				setOutput(output, latestInputValue, outputTime);
@@ -166,18 +166,23 @@ public class FillForward
 			ParmRef inputParmRef = getParmRef("input");
 			try
 			{
+				debug1("Looking for next input after " + debugSdf.format(latestTimeSlice));
 				TimedVariable tv = tsdb.getNextValue(inputParmRef.timeSeries, latestTimeSlice);
 				if (tv != null)
 					endTime = tv.getTime();
+				else
+					debug1("none found!");
 			}
 			catch (Exception ex)
 			{
 				warning("Can't read next input value: " + ex);
 			}
+			
+			debug1("endTime for fill is " + debugSdf.format(endTime));
 
 			// Loop until end time exceeded.
 			Date outputTime = null;
-			while (!(outputTime = aggCal.getTime()).after(endTime))
+			while ((outputTime = aggCal.getTime()).before(endTime))
 			{
 				setOutput(output, latestInputValue, outputTime);
 				aggCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
