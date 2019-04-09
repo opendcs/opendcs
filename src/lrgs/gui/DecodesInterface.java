@@ -2,6 +2,11 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.11  2016/09/29 18:54:37  mmaloney
+*  CWMS-8979 Allow Database Process Record to override decodes.properties and
+*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
+*  name of a process record. Properties assigned to the app will override the file(s).
+*
 *  Revision 1.10  2015/07/28 16:33:28  mmaloney
 *  Removed obsolete files.
 *
@@ -50,9 +55,11 @@
 */
 package lrgs.gui;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.Properties;
 
+import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.datasource.LrgsDataSource;
@@ -437,6 +444,10 @@ public class DecodesInterface
 
 	public static boolean isGUI() 
 	{
+//TODO TEST CODE, REMOVE FOR PRODUCTION
+File f = new File(EnvExpander.expand("$DCSTOOL_USERDIR/guiloginbypass"));
+if (f.exists()) return false;
+
 		return isGUI;
 	}
 
