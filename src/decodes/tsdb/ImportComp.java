@@ -4,6 +4,9 @@
 *  Open Source Software
 *  
 *  $Log$
+*  Revision 1.6  2019/04/01 23:31:11  mmaloney
+*  Handle case where creating an input fails for a group comp that's being imported.
+*
 *  Revision 1.5  2019/02/26 17:16:44  mmaloney
 *  HDB 660
 *
@@ -222,7 +225,7 @@ public class ImportComp
 									catch(NoSuchObjectException ex)
 									{
 										info("Time Series for parm '"
-											+ parm.getRoleName() + "' doesn't exiist: " + ex);
+											+ parm.getRoleName() + "' doesn't exist: " + ex);
 										if (!createTimeSeries.getValue())
 										{
 											warning("... and the -C (create TS) flag was not used.");
