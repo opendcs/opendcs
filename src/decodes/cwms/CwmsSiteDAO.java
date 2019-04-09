@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.15  2019/02/26 17:16:44  mmaloney
+ * HDB 660
+ *
  * Revision 1.14  2018/11/28 21:18:48  mmaloney
  * CWMS JOOQ Migration Mods
  *
@@ -290,11 +293,28 @@ public class CwmsSiteDAO extends SiteDAO
 		{
 			String msg = "Error in CwmsLocJdbc.store for site '"
 				+ cwmsName.getNameValue() + "': " + ex;
-			warning(msg);
-System.err.println("lat=" + dlat + ", lon=" + dlon + ", elev=" + delev);
-System.err.println(msg);
-ex.printStackTrace(System.err);
-//			return;
+			failure(msg);
+			msg = 
+				"cwmsDbLoc.store failed for officeId=" + officeId
+				+ ", cwmsName=" + cwmsName.getNameValue()
+				+ ", state=" + state
+				+ ", tz=" + tz
+				+ ", locType=" + newSite.getProperty("location_type")
+				+ ", lat=" + dlat 
+				+ ", lon=" + dlon 
+				+ ", elev=" + delev
+				+ ", vertDatum=" + newSite.getProperty("vertical_datum")
+				+ ", horzDatum=" + newSite.getProperty("horizontal_datum")
+				+ ", pubName=" + newSite.getPublicName()
+				+ ", longName=" + newSite.getBriefDescription()
+				+ ", desc=" + newSite.getDescription()
+				+ ", nearestCity=" + newSite.nearestCity;
+			failure(msg);
+			if (Logger.instance().getLogOutput() != null)
+			{
+				failure("STACK TRACE FOLLOWS:");
+				ex.printStackTrace(Logger.instance().getLogOutput());
+			}
 		}
 		
 		// If this was a newly saved site, have to look up its new ID.
