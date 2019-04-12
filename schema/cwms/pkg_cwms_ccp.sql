@@ -319,7 +319,7 @@ create or replace package body cwms_ccp as
     for r2 in
       (select distinct cc.loading_application_id
          from cp_comp_depends cd, cp_computation cc
-         where cd.ts_id = p_ts_code and cc.enabled = 'Y'
+         where cd.ts_id = p_ts_code
            and cc.loading_application_id is not null and cd.computation_id = cc.computation_id
       )
     loop
@@ -910,7 +910,7 @@ create or replace package body cwms_ccp_vpd as
 	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
 
     -- This is required by the queue handler
-    if upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
+    if upper(k_session_user_name) in ('SYS', '&CCP_SCHEMA', '&CWMS_SCHEMA')
     then
       l_pred := '1 = 1';
     else
@@ -952,7 +952,7 @@ create or replace package body cwms_ccp_vpd as
 	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
 
     -- This is required by the queue handler
-    if upper(k_session_user_name) in ('&CCP_SCHEMA', '&CWMS_SCHEMA')
+    if upper(k_session_user_name) in ('SYS', '&CCP_SCHEMA', '&CWMS_SCHEMA')
     then
       l_pred := '1 = 1';
     else
