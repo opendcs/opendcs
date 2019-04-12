@@ -255,7 +255,6 @@ create or replace package body cwms_ccp as
       dbms_output.put ('Dropping existing job ' || l_job_id || '...');
       dbms_scheduler.drop_job (l_job_id);
 
-      /* verify if it has been dropped */
       if job_count = 0
       then
         dbms_output.put_line ('done.');
@@ -347,10 +346,9 @@ create or replace package body cwms_ccp as
          r1.quality_code,
          r1.quality_code
       from cwms_v_tsv r1
-      where ts_code = p_ts_code 
-        and date_time  >=  l_start_time  and date_time  <   l_end_time
-        and end_date   >=  l_start_time  and start_date <   l_end_time
-        and p_enqueue_time >= data_entry_date;
+      where r1.ts_code = p_ts_code 
+        and r1.date_time >= l_start_time and r1.date_time <= l_end_time
+        and r1.data_entry_date <= p_enqueue_time;
     end loop;   /* end of for r2 loop */
 
     commit;
