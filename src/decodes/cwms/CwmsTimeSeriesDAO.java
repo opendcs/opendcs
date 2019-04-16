@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.23  2019/02/19 13:03:52  mmaloney
+ * getInt --> getLong
+ *
  * Revision 1.22  2019/02/19 13:00:49  mmaloney
  * Add Michael Neilson's improvement for CWMS-14213
  *
@@ -87,10 +90,12 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.TimeZone;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -886,33 +891,67 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 
 
 	@Override
-	public void deleteTimeSeriesRange(CTimeSeries ts, Date from, Date until)
+	public void deleteTimeSeriesRange(CTimeSeries cts, Date from, Date until)
 		throws DbIoException, BadTimeSeriesException
 	{
 		if (from == null || until == null)
 			return;
 		
-		// For CWMS Comps, there are no physical deletes, so first we read, then
-		// we set the MISSING flag, then we store.
-		int n = fillTimeSeries(ts, from, until, true, true, true);
-		if (n == 0)
-			return;
-		
-		int sz = ts.size();
-		int num2delete = 0;
-		for(int i=0; i<sz; i++)
+		if (!cts.isExpanded())
 		{
-			TimedVariable tv = ts.sampleAt(i);
-			Date d = tv.getTime();
-			if (d.compareTo(from) >= 0 && d.compareTo(until) <= 0)
-			{
-				VarFlags.setToDelete(tv);
-				num2delete++;
-			}
+			fillTimeSeriesMetadata(cts); // may throw BadTimeSeriesException
+			cts.setIsExpanded();
+		}
+
+		String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		try
+		{
+			debug1("Calling deleteTs for tsid '"
+				+ tsid + "' for date range: "
+				+ sdf.format(from) + " to " + sdf.format(until));
+			
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
+			cwmsDbTs.deleteTs(db.getConnection(), tsid,
+				"F",                       // do not delete protected data
+				from, until, true, true,   // date range inclusive on both ends
+				null,                      // version date
+				null,                      // NavigableSet<Date> use to delete specific dates
+				true,                      // use latest version if version date is null (which it is)
+				1,                         // item mask. 1 means delete values only
+				dbOfficeId);
+		}
+		catch(SQLException ex)
+		{
+			warning("deleteTimeSeriesRange - Error in CwmsDbTs.deleteTs for tsid '"
+				+ tsid + "' from " + sdf.format(from) + " to " + sdf.format(until) + ": " + ex);
+			PrintStream ps = Logger.instance().getLogOutput();
+			if (ps != null)
+				ex.printStackTrace(ps);
 		}
 		
-		if (num2delete > 0)
-			saveTimeSeries(ts);
+//		// For CWMS Comps, there are no physical deletes, so first we read, then
+//		// we set the MISSING flag, then we store.
+//		int n = fillTimeSeries(cts, from, until, true, true, true);
+//		if (n == 0)
+//			return;
+//		
+//		int sz = cts.size();
+//		int num2delete = 0;
+//		for(int i=0; i<sz; i++)
+//		{
+//			TimedVariable tv = cts.sampleAt(i);
+//			Date d = tv.getTime();
+//			if (d.compareTo(from) >= 0 && d.compareTo(until) <= 0)
+//			{
+//				VarFlags.setToDelete(tv);
+//				num2delete++;
+//			}
+//		}
+//		
+//		if (num2delete > 0)
+//			saveTimeSeries(cts);
 	}
 
 	@Override
