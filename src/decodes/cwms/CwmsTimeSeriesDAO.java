@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.24  2019/04/16 20:46:04  mmaloney
+ * Changed deleteTimeSeriesRange to actually delete the values with the new API function.
+ *
  * Revision 1.23  2019/02/19 13:03:52  mmaloney
  * getInt --> getLong
  *
@@ -913,14 +916,13 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				+ sdf.format(from) + " to " + sdf.format(until));
 			
 			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
-			cwmsDbTs.deleteTs(db.getConnection(), tsid,
-				"F",                       // do not delete protected data
+			cwmsDbTs.deleteTs(db.getConnection(), dbOfficeId, tsid,
 				from, until, true, true,   // date range inclusive on both ends
 				null,                      // version date
 				null,                      // NavigableSet<Date> use to delete specific dates
 				true,                      // use latest version if version date is null (which it is)
 				1,                         // item mask. 1 means delete values only
-				dbOfficeId);
+				"F");                      // Override Protection, F=do not delete protected data.
 		}
 		catch(SQLException ex)
 		{
