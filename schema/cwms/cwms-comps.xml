@@ -523,4 +523,18 @@ Uses the CWMS API provided by HEC to
     </AlgoParm>
   </Algorithm>
 
+  <Algorithm name="CwmsScreening">
+    <Comment>
+        CWMS Validation with CWMS Screening Records
+    </Comment>
+    <ExecClass>decodes.cwms.validation.CwmsScreeningAlgorithm</ExecClass>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+
 </CompMetaData>

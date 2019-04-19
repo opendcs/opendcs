@@ -43,7 +43,7 @@ bin/dbimport -r -l $LOG -d3 $DCSTOOL_HOME/edit-db/datatype/DataTypeEquivalenceLi
 echo "Importing SHEF English and CWMS Presentation Groups ..."
 bin/dbimport -r -l $LOG -d3 $DCSTOOL_HOME/edit-db/presentation/*.xml
 
-echo "Importing CWMS-Specific Computations..."
+echo "Importing CWMS-Specific DECODES records..."
 bin/dbimport -r -l $LOG -d3 $cwd/cwms-import.xml
 
 echo "Importing CWMS information..."
