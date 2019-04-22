@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.10  2019/01/16 15:31:19  mmaloney
+ * test
+ *
  * Revision 1.9  2018/11/28 21:18:48  mmaloney
  * CWMS JOOQ Migration Mods
  *
@@ -793,6 +796,8 @@ public class ScreeningDAO
 			cal.set(Calendar.SECOND, 0);
 			cal.set(Calendar.MILLISECOND, 0);
 		}
+Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month 
++ ", calendar day=" + cal.get(Calendar.DAY_OF_MONTH) + ", cal.mon=" + cal.get(Calendar.MONTH));
 		return cal;
 	}
 
