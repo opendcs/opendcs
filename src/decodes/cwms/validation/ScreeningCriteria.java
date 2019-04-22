@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.10  2016/03/24 19:02:49  mmaloney
+ * Refactoring for Python.
+ *
  * Revision 1.9  2016/03/09 16:44:59  mmaloney
  * Improved Debug.
  *
@@ -715,6 +718,10 @@ public class ScreeningCriteria
 			seasonStart = Calendar.getInstance();
 		seasonStart.set(Calendar.MONTH, monthConst);
 		seasonStart.set(Calendar.DAY_OF_MONTH, day);
+		seasonStart.set(Calendar.HOUR, 0);
+		seasonStart.set(Calendar.MINUTE, 0);
+		seasonStart.set(Calendar.SECOND, 0);
+		seasonStart.set(Calendar.MILLISECOND, 0);
 	}
 
 	/**

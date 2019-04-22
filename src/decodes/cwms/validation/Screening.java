@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.9  2019/04/22 18:13:53  mmaloney
+ * dev
+ *
  * Revision 1.8  2019/04/22 17:42:12  mmaloney
  * dev
  *
@@ -198,14 +201,13 @@ public class Screening
 			return criteriaSeasons.get(0);
 		
 		// There are multiple seasons, sorted in ascending order
-		GregorianCalendar gc = new GregorianCalendar();
-		gc.setTimeZone(criteriaSeasons.get(0).getSeasonStart().getTimeZone());
-		gc.setTime(d);
-		ScreeningCriteria prevSeason = criteriaSeasons.get(
-			criteriaSeasons.size()-1);
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(criteriaSeasons.get(0).getSeasonStart().getTimeZone());
+		cal.setTime(d);
+		ScreeningCriteria prevSeason = criteriaSeasons.get(criteriaSeasons.size()-1);
 		for(ScreeningCriteria sc : criteriaSeasons)
 		{
-			if (before(gc, sc.getSeasonStart()))
+			if (before(cal, sc.getSeasonStart()))
 				return prevSeason;
 			prevSeason = sc;
 		}
@@ -326,6 +328,10 @@ public class Screening
 			// MJM Note: Changing the calendar tz may change the day/month. Have to reset.
 			cal.set(Calendar.MONTH, month);
 			cal.set(Calendar.DAY_OF_MONTH, day);
+			cal.set(Calendar.HOUR, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
 		}
 	}
 
