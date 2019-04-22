@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.7  2017/08/22 19:33:02  mmaloney
+ * Improve comments
+ *
  * Revision 1.6  2016/02/29 22:14:07  mmaloney
  * Removed nuisance debugs.
  *
@@ -13,6 +16,7 @@
  */
 package decodes.cwms.validation;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -239,6 +243,21 @@ public class ScreeningAlgorithm
 			// Also, if there is an output, make sure its units match the input.
 			setOutputUnitsAbbr("output", euAbbr);
 		}
+		
+		if (screening.getCriteriaSeasons() != null)
+		{
+			debug1("There are " + screening.getCriteriaSeasons().size() + " seasons in the screening:");
+			for(ScreeningCriteria sc : screening.getCriteriaSeasons())
+			{
+				debug1("    " + 
+					(sc.getSeasonStart() == null ? "<all year>" : 
+						(sc.getSeasonStart().get(Calendar.MONTH) + "/" 
+						 + sc.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
+						 + sc.getSeasonStart().getTimeZone().getID())));
+			}
+		}
+			
+		
 //AW:BEFORE_TIMESLICES_END
 	}
 
@@ -258,6 +277,12 @@ public class ScreeningAlgorithm
 //AW:TIMESLICE
 		ScreeningCriteria crit = 
 			screening != null ? screening.findForDate(_timeSliceBaseTime) : null;
+		debug1("Time Slice " + debugSdf.format(_timeSliceBaseTime) + " selected screening season start="
+			+ (crit.getSeasonStart() == null ? "<all year>" : 
+				(crit.getSeasonStart().get(Calendar.MONTH) + "/" 
+				 + crit.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
+				 + crit.getSeasonStart().getTimeZone().getID())));
+
 		if (crit == null)
 		{
 			warning("No criteria for time=" + debugSdf.format(_timeSliceBaseTime));
