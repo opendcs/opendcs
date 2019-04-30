@@ -152,4 +152,6 @@ public interface XmitRecordDAI
 	
 	public void setNumDaysStorage(int numDaysStorage);
 
+	public void deleteOldTableData() throws DbIoException;
+
 }

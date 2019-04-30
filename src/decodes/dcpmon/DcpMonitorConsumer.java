@@ -242,9 +242,11 @@ public class DcpMonitorConsumer
 		}
 		catch(NullPointerException ex)
 		{
-			System.err.println(module + 
+			
+			Logger.instance().failure(module + 
 				" NullPointerException in DcpMonitor Consumer: " + ex);
-			ex.printStackTrace();
+			if (Logger.instance().getLogOutput() != null)
+				ex.printStackTrace(Logger.instance().getLogOutput());
 			return;
 		}
 	}

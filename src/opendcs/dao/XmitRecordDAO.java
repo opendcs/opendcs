@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.14  2018/11/14 16:03:58  mmaloney
+ * Bug Fix - it wasn't deleting records for day tables beyond the threshold.
+ *
  * Revision 1.13  2018/01/25 21:50:28  mmaloney
  * Use local getFullDate function that assumes dates are stored as long int.
  *
@@ -240,8 +243,8 @@ public class XmitRecordDAO
 			Logger.instance().debug2("getDcpXmitSuffix: " + q);
 			doModify(q);
 			
-			// MJM 20181113 Go through map and discard too-old days
-			deleteOldTableData();
+//			// MJM 20181113 Go through map and discard too-old days
+//			deleteOldTableData();
 			
 			return firstFree.suffix;
 		}

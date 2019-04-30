@@ -195,13 +195,32 @@ int dCallNum = 0;
 	public void run()
 	{
 		dcpMonitor.info(module + " started.");
+		
 		DatabaseConnectionOwner dbo = (DatabaseConnectionOwner)Database.getDb().getDbIo();
 		xmitRecordDao = dbo.makeXmitRecordDao(31);
+		
+		// 4/30/19 setNumDaysStorage will call deleteOldTableData. After that, call delete periodically.
 		xmitRecordDao.setNumDaysStorage(DcpMonitorConfig.instance().numDaysStorage);
+		long lastDeleteOld = System.currentTimeMillis();
+
 		while(!_shutdown)
 		{
 			try { sleep(1000L); } catch(InterruptedException ex) {}
 			processQueue();
+			
+			if (System.currentTimeMillis() - lastDeleteOld > MS_PER_DAY)
+				try
+				{
+					xmitRecordDao.deleteOldTableData();
+				}
+				catch (DbIoException ex)
+				{
+					Logger.instance().failure("Exception in deleteOldTableData: " + ex);
+					if (Logger.instance().getLogOutput() != null)
+					{
+						ex.printStackTrace(Logger.instance().getLogOutput());
+					}
+				}
 		}
 		xmitRecordDao.close();
 		dcpMonitor.info(module + " exiting.");
