@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.10  2019/04/22 21:26:34  mmaloney
+ * dev
+ *
  * Revision 1.9  2019/04/22 18:13:53  mmaloney
  * dev
  *
@@ -322,16 +325,18 @@ public class Screening
 		for(ScreeningCriteria crit : criteriaSeasons)
 		{
 			Calendar cal = crit.getSeasonStart();
-			int month = cal.get(Calendar.MONTH), day = cal.get(Calendar.DAY_OF_MONTH);
 			if (cal != null)
+			{
+				int month = cal.get(Calendar.MONTH), day = cal.get(Calendar.DAY_OF_MONTH);
 				cal.setTimeZone(tz);
-			// MJM Note: Changing the calendar tz may change the day/month. Have to reset.
-			cal.set(Calendar.MONTH, month);
-			cal.set(Calendar.DAY_OF_MONTH, day);
-			cal.set(Calendar.HOUR, 0);
-			cal.set(Calendar.MINUTE, 0);
-			cal.set(Calendar.SECOND, 0);
-			cal.set(Calendar.MILLISECOND, 0);
+				// MJM Note: Changing the calendar tz may change the day/month. Have to reset.
+				cal.set(Calendar.MONTH, month);
+				cal.set(Calendar.DAY_OF_MONTH, day);
+				cal.set(Calendar.HOUR, 0);
+				cal.set(Calendar.MINUTE, 0);
+				cal.set(Calendar.SECOND, 0);
+				cal.set(Calendar.MILLISECOND, 0);
+			}
 		}
 	}
 
