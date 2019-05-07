@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.8  2017/10/10 18:25:03  mmaloney
+ * Added support for TsdbFormatter
+ *
  * Revision 1.7  2016/09/29 18:54:37  mmaloney
  * CWMS-8979 Allow Database Process Record to override decodes.properties and
  * user.properties setting. Command line arg -Dsettings=appName, where appName is the
@@ -65,7 +68,9 @@ import java.util.TimeZone;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import decodes.cwms.CwmsTimeSeriesDAO;
+import decodes.db.Constants;
 import decodes.db.Site;
+import decodes.db.SiteName;
 import decodes.hdb.HdbTsId;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
@@ -243,6 +248,12 @@ public class TsImport extends TsdbAppTemplate
 				{
 					tsid.setUniqueString(tsidStr);
 					Site site = theDb.getSiteById(siteDAO.lookupSiteID(tsid.getSiteName()));
+					if (site == null)
+					{
+						site = new Site();
+						site.addName(new SiteName(site, Constants.snt_CWMS, tsid.getSiteName()));
+						siteDAO.writeSite(site);
+					}
 					tsid.setSite(site);
 					info("Calling createTimeSeries");
 					timeSeriesDAO.createTimeSeries(tsid);
