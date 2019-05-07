@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.25  2019/04/16 21:03:55  mmaloney
+ * Changed deleteTimeSeriesRange to actually delete the values with the new API function.
+ *
  * Revision 1.24  2019/04/16 20:46:04  mmaloney
  * Changed deleteTimeSeriesRange to actually delete the values with the new API function.
  *
@@ -1132,6 +1135,20 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException
 	{
 		tsid.checkValid();
+		Site site = tsid.getSite();
+		if (site == null)
+		{
+			String sn = tsid.getSiteName();
+			if (sn == null || sn.trim().length() == 0)
+				throw new BadTimeSeriesException("TSID '" + tsid.getUniqueString() 
+					+ "' has no location part.");
+			DbKey siteID = siteDAO.lookupSiteID(sn);
+			if (DbKey.isNull(siteID))
+			{
+				throw new NoSuchObjectException("TSID '" + tsid.getUniqueString()
+					+ "' cannot find location '" + sn + "' in this database.");
+			}
+		}
 		String path = tsid.getUniqueString();
 		try
 		{
