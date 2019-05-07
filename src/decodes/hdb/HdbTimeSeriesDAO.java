@@ -287,6 +287,9 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 	private DbKey lookupTsId(DbKey sdi, String interval, String tabsel, int modelId)
 		throws DbIoException, NoSuchObjectException
 	{
+		if (DbKey.isNull(sdi) || interval == null || tabsel == null)
+			throw new NoSuchObjectException(module + ".lookupTsId invalid time series sdi="
+				+ sdi + ", interval=" + interval + ", tabsel=" + tabsel);
 		String q = "select ts_id from cp_ts_id "
 			+ "where site_datatype_id = " + sdi
 			+ " and lower(interval) = " + sqlString(interval.toLowerCase())
