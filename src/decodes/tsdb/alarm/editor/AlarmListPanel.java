@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:52:59  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.2  2017/05/18 12:29:00  mmaloney
  * Code cleanup. Remove System.out debugs.
  *
@@ -303,7 +306,7 @@ class AlarmGroupListTableModel extends AbstractTableModel
 		
 		try
 		{
-			alarmDAO.delete(grp.getAlarmGroupId());
+			alarmDAO.deleteAlarmGroup(grp.getAlarmGroupId());
 		}
 		catch (DbIoException ex)
 		{

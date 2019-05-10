@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:01  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.3  2017/03/30 20:55:20  mmaloney
  * Alarm and Event monitoring capabilities for 6.4 added.
  *
@@ -13,10 +16,17 @@
  */
 package opendcs.dai;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import decodes.sql.DbKey;
+import decodes.tsdb.BadScreeningException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.alarm.AlarmConfig;
 import decodes.tsdb.alarm.AlarmGroup;
+import decodes.tsdb.alarm.AlarmLimitSet;
+import decodes.tsdb.alarm.AlarmScreening;
 
 /**
  * Methods for reading/writing alarm definitions in the database.
@@ -59,7 +69,7 @@ public interface AlarmDAI
 	 * @throws DbIoException
 	 * @return true if a matching group was found and deleted, false if no match.
 	 */
-	public boolean delete(DbKey groupID)
+	public boolean deleteAlarmGroup(DbKey groupID)
 		throws DbIoException;
 	
 	/**
@@ -71,7 +81,50 @@ public interface AlarmDAI
 	public DbKey groupName2id(String groupName)
 		throws DbIoException;
 
+	/**
+	 * Search the cache for an alarm screenings for the specified site, datatype.
+	 * Returned list will be sorted by start_date_time
+	 * @param siteId
+	 * @param datatypeId
+	 * @return matching screening if found, null if not.
+	 * @throws DbIoException
+	 */
+	public List<AlarmScreening> getScreenings(DbKey siteId, DbKey datatypeId)
+		throws DbIoException;
+	
+	/**
+	 * Writes (either insert or update) a screening to the database.
+	 * @param as
+	 * @throws DbIoException
+	 */
+	public void writeScreening(AlarmScreening as)
+		throws DbIoException, BadScreeningException;
+	
+	public void writeLimitSet(AlarmLimitSet als)
+		throws DbIoException;
+	
+	/**
+	 * Deletes a screening, all of its limit sets and any alarm assertions
+	 * associated with those limit sets.
+	 * @param screeningId
+	 * @throws DbIoException on sql error
+	 */
+	public void deleteScreening(DbKey screeningId)
+		throws DbIoException;
+	
+	/**
+	 * Deletes a limit set and any current or historical alarm assertions associated
+	 * with it.
+	 * @param limitSetId
+	 * @throws DbIoException
+	 */
+	public void deleteLimitSet(DbKey limitSetId)
+		throws DbIoException;
 	
 	/** Closes any resources opened by the DAO. */
 	public void close();
+	
+	/** Fills the cache and returns all screenings in the db */
+	public ArrayList<AlarmScreening> getAllScreenings()
+		throws DbIoException;
 }

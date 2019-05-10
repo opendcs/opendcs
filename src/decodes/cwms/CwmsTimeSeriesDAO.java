@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.26  2019/05/07 18:20:11  mmaloney
+ * In createTSID, make sure location exists before attempting to create.
+ *
  * Revision 1.25  2019/04/16 21:03:55  mmaloney
  * Changed deleteTimeSeriesRange to actually delete the values with the new API function.
  *
@@ -963,7 +966,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 	public void fillTimeSeriesMetadata(CTimeSeries ts) throws DbIoException,
 		BadTimeSeriesException
 	{
-		debug3("fillTimeSeriesMetadata " + ts.getBriefDescription());
+		debug3("fillTimeSeriesMetadata sdi=" + ts.getSDI());
 		try
 		{
 			DbKey ts_code = ts.getSDI();

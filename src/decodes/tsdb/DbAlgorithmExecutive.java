@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.15  2018/11/14 15:50:26  mmaloney
+*  Make addTsToParmRef public. Needed for timed computations.
+*
 *  Revision 1.14  2018/01/08 19:34:00  mmaloney
 *  Implement the "Now -" option for computation effective end.
 *
@@ -1215,7 +1218,8 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 			// MJM 20170525 Need to apply round sec to retrieval.
 			Date lower = new Date(queryTimes.first().getTime() - (roundSec*1000L / 2));
 			Date upper = new Date(queryTimes.last().getTime()  + (roundSec*1000L / 2));
-
+debug3("tryRangeQuery role=" + parmRef.role + ", tsid="
++(parmRef.tsid==null?"null":parmRef.tsid.getUniqueString()));
 			//timeSeriesDAO.fillTimeSeries(ts, from, until, include_lower, include_upper, overwriteExisting)
 			int n = timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, lower, upper, false, true, false);
 			debug1("Retrieved " + n + " values for role '" + parmRef.role + "' for times "

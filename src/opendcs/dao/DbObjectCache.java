@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2015/07/17 13:18:38  mmaloney
+ * Don't allow blank unique name in cache.
+ *
  * Revision 1.3  2015/04/14 18:24:42  mmaloney
  * Improved comments.
  *
@@ -22,6 +25,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import ilex.util.Logger;
 import decodes.sql.DbKey;
 
 /**
@@ -35,6 +39,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 {
 	private long maxAge = 3600000L; // # ms. If older than this, object is removed from cache.
 	private boolean nameIsCaseSensitive = false;
+	public boolean testMode = false;
 	
 	class ObjWrapper
 	{
@@ -71,6 +76,8 @@ public class DbObjectCache<DBT extends CachableDbObject>
 		String un = dbObj.getUniqueName();
 		if (un == null || un.trim().length() == 0)
 			return;
+//if (testMode) Logger.instance().info("Adding key=" + dbObj.getKey() + " name=" + dbObj.getUniqueName() +
+//" to map with " + keyObjMap.size() + " elements.");
 		ObjWrapper ow = new ObjWrapper(dbObj);
 		keyObjMap.put(dbObj.getKey(), ow);
 		
@@ -99,10 +106,18 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	public DBT getByKey(DbKey key)
 	{
 		ObjWrapper ow = keyObjMap.get(key);
+
 		if (ow == null)
-			return null;
-		if (System.currentTimeMillis() - ow.timeLoaded > maxAge)
 		{
+//if (testMode) Logger.instance().info("getByKey(" + key + ") object not in map.");
+			return null;
+		}
+//if (testMode) Logger.instance().info("getByKey(" + key + ") object in map with timeLoaded = " + ow.timeLoaded); 
+		long now = System.currentTimeMillis();
+		if (now - ow.timeLoaded > maxAge)
+		{
+//if (testMode) Logger.instance().info("getByKey(" + key + ") maxAge " + maxAge + " exceeded age="
+//+ (now - ow.timeLoaded));
 			remove(key);
 			return null;
 		}

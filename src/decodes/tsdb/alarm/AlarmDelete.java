@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:00  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.1  2017/03/30 20:55:20  mmaloney
  * Alarm and Event monitoring capabilities for 6.4 added.
  *
@@ -68,7 +71,7 @@ public class AlarmDelete
 			if (DbKey.isNull(alarmId))
 				System.err.println("No such group named '" + grpName + "'");
 			else
-				alarmDAO.delete(alarmId);
+				alarmDAO.deleteAlarmGroup(alarmId);
 		}
 		finally
 		{

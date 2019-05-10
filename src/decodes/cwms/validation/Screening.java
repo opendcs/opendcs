@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.11  2019/05/07 13:17:50  mmaloney
+ * dev
+ *
  * Revision 1.10  2019/04/22 21:26:34  mmaloney
  * dev
  *
@@ -62,8 +65,7 @@ public class Screening
 	/** The units that the checks are done in */
 	private String checkUnitsAbbr = null;
 	
-	ArrayList<ScreeningCriteria> criteriaSeasons = 
-		new ArrayList<ScreeningCriteria>();
+	ArrayList<ScreeningCriteria> criteriaSeasons = new ArrayList<ScreeningCriteria>();
 	
 	/** When read from CWMS database, paramId will always be present */
 	private String paramId = null;

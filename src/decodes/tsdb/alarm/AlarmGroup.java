@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:01  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.4  2017/05/17 20:36:26  mmaloney
  * First working version.
  *
@@ -27,7 +30,7 @@ import decodes.sql.DbKey;
 public class AlarmGroup
 {
 	private DbKey alarmGroupId = DbKey.NullKey;
-	private String name = null;
+	private String alarmGroupName = null;
 	private long lastModifiedMsec = 0L;
 	private ArrayList<EmailAddr> emailAddrs = new ArrayList<EmailAddr>();
 	private ArrayList<FileMonitor> fileMonitors = new ArrayList<FileMonitor>();
@@ -45,7 +48,7 @@ public class AlarmGroup
 	public AlarmGroup noIdCopy()
 	{
 		AlarmGroup ret = new AlarmGroup(DbKey.NullKey);
-		ret.name = this.name;
+		ret.alarmGroupName = this.alarmGroupName;
 		for(EmailAddr ea : this.emailAddrs)
 			ret.getEmailAddrs().add(new EmailAddr(ea.getAddr()));
 		for(FileMonitor fm : this.fileMonitors)
@@ -68,12 +71,12 @@ public class AlarmGroup
 
 	public String getName()
 	{
-		return name;
+		return alarmGroupName;
 	}
 
 	public void setName(String name)
 	{
-		this.name = name;
+		this.alarmGroupName = name;
 	}
 
 	public long getLastModifiedMsec()

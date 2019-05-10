@@ -12,6 +12,8 @@ import java.util.TimeZone;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import lrgs.common.DcpMsgFlag;
+import lritdcs.HritDcsFileReader;
+import lritdcs.HritException;
 import lritdcs.LritDcsFileReader;
 import lritdcs.recv.LritDcsDirMonitor;
 
@@ -158,17 +160,21 @@ public class Lrit2DamsNt
 			return;
 		}
 		
-		LritDcsFileReader ldfr = new LritDcsFileReader(file.getPath(), 
+		HritDcsFileReader ldfr = new HritDcsFileReader(file.getPath(), 
 			config.fileHeaderType == LritDcsDirMonitor.HEADER_TYPE_DOM6);
 	
 		try
 		{
 			ldfr.load();
+			ldfr.checkHeader();
+		}
+		catch(HritException ex)
+		{
+			warning("Error reading HRIT file '" + file.getName() + "': " + ex);
+			return;
 		}
 		catch(Exception ex)
 		{
-			warning(
-				"Bad file '" + file.getName() + "': " + ex);
 			if (ageMsec > 60000L)
 			{
 				doneFile(file);
@@ -178,29 +184,6 @@ public class Lrit2DamsNt
 			return;
 		}
 
-		if (!ldfr.checkLength())
-		{
-			info("File '" + file.getPath() + "' failed checkLength, not completed");
-			if (ageMsec > 120000L)
-			{
-				warning("File '" + file.getPath() + "' timed out.");
-				doneFile(file);
-			}
-			return;
-		}
-		else if (!ldfr.checkCRC())
-		{
-			if (!config.goodFilesOnly)
-				warning("File '" + file.getPath() 
-					+ "' CRC failed. Will attempt to process anyway.");
-			else
-			{
-				warning("File '" + file.getPath() 
-					+ "' CRC failed. Will discard file.");
-				doneFile(file);
-				return;
-			}
-		}
 
 		DcpMsg msg;
 		try
@@ -214,6 +197,10 @@ public class Lrit2DamsNt
 		catch(Exception ex)
 		{
 			warning("Error reading file '" + file.getPath() + "': " + ex);
+			if (Logger.instance().getLogOutput() != null)
+			{
+				ex.printStackTrace(Logger.instance().getLogOutput());
+			}
 		}
 		
 		doneFile(file);
