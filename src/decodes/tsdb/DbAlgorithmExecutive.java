@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.16  2019/05/10 18:35:26  mmaloney
+*  dev
+*
 *  Revision 1.15  2018/11/14 15:50:26  mmaloney
 *  Make addTsToParmRef public. Needed for timed computations.
 *
@@ -588,9 +591,9 @@ debug3("DbAlgorithmExec.apply()");
 		for(String role : getInputNames())
 		{
 			ParmRef parmRef = parmMap.get(role);
-			if (parmRef == null)
+			if (parmRef == null || parmRef.tsid == null)
 			{
-//				debug2("Skipping unassigned role '" + role + "'");
+				debug2("Skipping unassigned role '" + role + "'");
 				continue;
 			}
 			TreeSet<Date> queryTimes = new TreeSet<Date>();
