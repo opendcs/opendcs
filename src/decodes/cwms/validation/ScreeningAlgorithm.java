@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.8  2019/04/22 13:51:41  mmaloney
+ * Added debug
+ *
  * Revision 1.7  2017/08/22 19:33:02  mmaloney
  * Improve comments
  *
@@ -191,7 +194,7 @@ public class ScreeningAlgorithm
 			TimedVariable tv = inputParm.timeSeries.sampleAt(idx);
 			if (VarFlags.wasAdded(tv))
 			{
-				ScreeningCriteria crit = screening.findForDate(tv.getTime());
+				ScreeningCriteria crit = screening.findForDate(tv.getTime(), aggTZ);
 				Site site = inputTsid.getSite();
 				if (site != null && site.timeZoneAbbr != null && site.timeZoneAbbr.length() > 0)
 				{
@@ -276,7 +279,7 @@ public class ScreeningAlgorithm
 	{
 //AW:TIMESLICE
 		ScreeningCriteria crit = 
-			screening != null ? screening.findForDate(_timeSliceBaseTime) : null;
+			screening != null ? screening.findForDate(_timeSliceBaseTime, aggTZ) : null;
 		debug1("Time Slice " + debugSdf.format(_timeSliceBaseTime) + " selected screening season start="
 			+ (crit.getSeasonStart() == null ? "<all year>" : 
 				(crit.getSeasonStart().get(Calendar.MONTH) + "/" 

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.21  2019/01/31 18:46:30  mmaloney
+ * Using -9 trillion as missing value for python.
+ *
  * Revision 1.20  2019/01/29 20:28:58  mmaloney
  * dev
  *
@@ -926,7 +929,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	private void doScreening(Screening screening, NamedVariable nv, ParmRef parmRef)
 	{
 		ScreeningCriteria crit = screening.findForDate(
-			parmRef.compParm.baseTimeToParamTime(_timeSliceBaseTime, aggCal));
+			parmRef.compParm.baseTimeToParamTime(_timeSliceBaseTime, aggCal), aggTZ);
 		if (crit == null)
 		{
 			warning("No criteria for time=" + debugSdf.format(_timeSliceBaseTime));
@@ -963,7 +966,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			TimedVariable tv = parmRef.timeSeries.sampleAt(idx);
 			if (VarFlags.wasAdded(tv))
 			{
-				ScreeningCriteria crit = screening.findForDate(tv.getTime());
+				ScreeningCriteria crit = screening.findForDate(tv.getTime(), aggTZ);
 				Site site = tsid.getSite();
 				if (site != null && site.timeZoneAbbr != null && site.timeZoneAbbr.length() > 0)
 				{

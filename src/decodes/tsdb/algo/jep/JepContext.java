@@ -188,7 +188,7 @@ public class JepContext
 			TimedVariable tv = inputParm.timeSeries.sampleAt(idx);
 			if (VarFlags.wasAdded(tv))
 			{
-				ScreeningCriteria crit = screening.findForDate(tv.getTime());
+				ScreeningCriteria crit = screening.findForDate(tv.getTime(), TimeZone.getTimeZone("UTC"));
 				if (crit == null || crit == prevcrit)
 					continue;
 				crit.fillTimesNeeded(inputParm.timeSeries, needed, algo.aggCal, algo);

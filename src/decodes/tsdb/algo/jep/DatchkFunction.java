@@ -5,6 +5,7 @@ import ilex.var.TimedVariable;
 
 import java.util.Date;
 import java.util.Stack;
+import java.util.TimeZone;
 
 import org.nfunk.jep.ParseException;
 import org.nfunk.jep.function.PostfixMathCommand;
@@ -83,7 +84,7 @@ public class DatchkFunction
 				double value = tv.getDoubleValue();
 				ctx.initForScreening(name, screening);
 				
-				ScreeningCriteria crit = screening.findForDate(tsbt);
+				ScreeningCriteria crit = screening.findForDate(tsbt, TimeZone.getTimeZone("UTC"));
 				if (crit == null)
 				{
 					ctx.getAlgo().debug1(funcName + "(" + name + ") tsid=" + inputTsid.getUniqueString() 

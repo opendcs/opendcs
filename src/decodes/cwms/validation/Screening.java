@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.12  2019/05/10 18:35:26  mmaloney
+ * dev
+ *
  * Revision 1.11  2019/05/07 13:17:50  mmaloney
  * dev
  *
@@ -196,7 +199,7 @@ public class Screening
 		return false;
 	}
 
-	public ScreeningCriteria findForDate(Date d)
+	public ScreeningCriteria findForDate(Date d, TimeZone tz)
 	{
 		if (criteriaSeasons.size() == 0)
 			return null;
@@ -207,18 +210,28 @@ public class Screening
 		
 		// There are multiple seasons, sorted in ascending order
 		Calendar cal = Calendar.getInstance();
-		cal.setTimeZone(criteriaSeasons.get(0).getSeasonStart().getTimeZone());
+		cal.setTimeZone(tz);
 		cal.setTime(d);
+		int month = cal.get(Calendar.MONTH);
+		int day = cal.get(Calendar.DAY_OF_MONTH);
+		
 		ScreeningCriteria prevSeason = criteriaSeasons.get(criteriaSeasons.size()-1);
 		for(ScreeningCriteria sc : criteriaSeasons)
 		{
-			if (before(cal, sc.getSeasonStart()))
+			Calendar scCal = sc.getSeasonStart();
+			boolean isBefore =
+				month < scCal.get(Calendar.MONTH)
+				|| (month == scCal.get(Calendar.MONTH) && day < scCal.get(Calendar.DAY_OF_MONTH));
+				
+			if (isBefore)
 				return prevSeason;
 			prevSeason = sc;
 		}
 		// Fell through means all seasons are before this date, return last one.
 		return criteriaSeasons.get(criteriaSeasons.size()-1);
 	}
+	
+	
 
 	public void setScreeningCode(DbKey screeningCode)
 	{
