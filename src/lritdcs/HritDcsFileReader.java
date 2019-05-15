@@ -2,24 +2,12 @@
 *  $Id$
 *
 *  $Log$
-*  Revision 1.1  2019/03/28 13:24:42  mmaloney
+*  Revision 1.2  2019/03/28 19:53:49  mmaloney
 *  Mods to support the new HRIT file format.
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.5  2011/09/10 10:24:00  mmaloney
-*  Implement EUMETSAT LRIT File Capability.
-*
-*  Revision 1.4  2011/02/23 20:35:37  mmaloney
-*  got rid of output to stdout.
-*
-*  Revision 1.3  2009/10/12 15:04:51  mjmaloney
-*  Added flag bytes and carrier times to LRIT File.
-*
-*  Revision 1.2  2009/10/09 14:52:26  mjmaloney
-*  Added flag bytes and carrier times to LRIT File.
-*
+*  Revision 1.1  2019/03/28 13:24:42  mmaloney
+*  Mods to support the new HRIT file format.
+*  
 *  Revision 1.1  2008/04/04 18:21:16  cvs
 *  Added legacy code to repository
 *
