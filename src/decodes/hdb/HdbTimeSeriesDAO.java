@@ -288,8 +288,12 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		throws DbIoException, NoSuchObjectException
 	{
 		if (DbKey.isNull(sdi) || interval == null || tabsel == null)
-			throw new NoSuchObjectException(module + ".lookupTsId invalid time series sdi="
-				+ sdi + ", interval=" + interval + ", tabsel=" + tabsel);
+		{
+			String msg = module + ".lookupTsId invalid time series sdi="
+				+ sdi + ", interval=" + interval + ", tabsel=" + tabsel;
+			warning(msg);
+			throw new NoSuchObjectException(msg);
+		}
 		String q = "select ts_id from cp_ts_id "
 			+ "where site_datatype_id = " + sdi
 			+ " and lower(interval) = " + sqlString(interval.toLowerCase())
@@ -607,7 +611,9 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			}
 			catch (NoSuchObjectException ex)
 			{
-				warning("saveTimeSeries: Cannot lookup tsid: " + ex);
+				warning("saveTimeSeries: TSID=" 
+					+ (ts.getTimeSeriesIdentifier()==null?"null":ts.getTimeSeriesIdentifier().getUniqueString())
+					+ " Cannot lookup tsid: " + ex);
 			}
 		}
 		if (tsid != null)
@@ -615,6 +621,11 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			debug3("Saving " + tsid.getUniqueString() + ", from cp units="
 				+ ts.getUnitsAbbr() + ", required=" + tsid.getStorageUnits());
 			TSUtil.convertUnits(ts, tsid.getStorageUnits());
+		}
+		else
+		{
+			warning("saveTimeSeries: Cannot save with null tsid.");
+			return;
 		}
 
 		// If at least one sample is marked TO_WRITE, call doSave.

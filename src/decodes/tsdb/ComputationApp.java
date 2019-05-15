@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.15  2019/01/10 16:02:28  mmaloney
+*  Special case for cloning when the algorithm is GroupAdder.
+*
 *  Revision 1.14  2018/11/14 15:48:36  mmaloney
 *  OpenDCS 6.5 RC03 Support for Timed Computations.
 *
@@ -375,7 +378,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 					for(CTimeSeries ts : tsList)
 					{
 						try { timeSeriesDAO.saveTimeSeries(ts); }
-						catch(BadTimeSeriesException ex)
+						catch(Exception ex)
 						{
 							warning("Cannot save time series " + ts.getNameString()
 								+ ": " + ex);
