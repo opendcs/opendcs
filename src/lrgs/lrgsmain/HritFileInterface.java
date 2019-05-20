@@ -9,6 +9,9 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  * 
  * $Log$
+ * Revision 1.1  2019/03/28 13:25:14  mmaloney
+ * Mods to support the new HRIT file format.
+ *
  */
 package lrgs.lrgsmain;
 
@@ -45,6 +48,10 @@ public class HritFileInterface
 	private long lastMsgRecvd = 0L;
 	private int dataSrcId = -1;
 	private boolean enabled = false;
+	private boolean ccsdsHeaderPresent = true;
+	
+	public static final char FILE_HEADER_DOMAIN6 = '6'; // Means CCSDS Header is present
+	public static final char FILE_HEADER_NONE = 'N';    // Means no CCSDS Header
 	
 	private class RetryEntry
 	{
@@ -148,6 +155,7 @@ public class HritFileInterface
 			addDirectory(idir);
 		}
 		enableLrgsInput(cfg.hritFileEnabled);
+		this.ccsdsHeaderPresent = cfg.lritHeaderType == FILE_HEADER_DOMAIN6;
 		
 		lastConfigMsec = System.currentTimeMillis();
 	}
@@ -228,7 +236,9 @@ public class HritFileInterface
 		}
 	
 		Logger.instance().debug1(module + " processing file '" + file.getPath() + "'");
-		HritDcsFileReader reader = new HritDcsFileReader(file.getPath(), true);
+		
+		HritDcsFileReader reader = new HritDcsFileReader(file.getPath(), ccsdsHeaderPresent);
+		
 		try
 		{
 			reader.load();

@@ -19,6 +19,7 @@ import javax.swing.JTextField;
 import decodes.gui.GuiDialog;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
+import lrgs.lrgsmain.HritFileInterface;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.rtstat.LrgsConfigPanel;
 import lrgs.rtstat.RtStat;
@@ -37,6 +38,7 @@ public class HritFileCfgPanel
 	private JTextField timeoutField = new JTextField();
 	private JTextField maxAgeSecField = new JTextField();
 	private JTextField doneDirField = new JTextField(9);
+	private JCheckBox ccsdsHeaderCheck = new JCheckBox("CCSDS Header Present");
 	
 	private GuiDialog parent = null;
 
@@ -117,18 +119,22 @@ public class HritFileCfgPanel
 			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
-		
 		add(maxAgeSecField,
 			new GridBagConstraints(1, 6, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(3, 0, 3, 30), 40, 0));
+		
+		add(ccsdsHeaderCheck,
+			new GridBagConstraints(1, 7, 1, 1, 0.5, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(3, 0, 3, 30), 40, 0));
 
 		add(new JLabel(RtStat.getLabels().getString("HritFilePanel.doneDir")),
-			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.5,
+			new GridBagConstraints(0, 8, 1, 1, 0.0, 0.5,
 				GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 				new Insets(3, 25, 3, 1), 0, 0));
 		add(doneDirField,
-			new GridBagConstraints(1, 7, 1, 1, 0.5, 0.5,
+			new GridBagConstraints(1, 8, 1, 1, 0.5, 0.5,
 				GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 30), 0, 0));
 	}
@@ -144,6 +150,7 @@ public class HritFileCfgPanel
 		timeoutField.setText("" + conf.hritTimeoutSec);
 		maxAgeSecField.setText("" + conf.hritFileMaxAgeSec);
 		doneDirField.setText(conf.hritDoneDir == null ? "" : conf.hritDoneDir);
+		ccsdsHeaderCheck.setSelected(conf.lritHeaderType == lrgs.lrgsmain.HritFileInterface.FILE_HEADER_DOMAIN6);
 		
 		this.conf = conf;
 	}
@@ -161,6 +168,8 @@ public class HritFileCfgPanel
 		 || !TextUtil.strEqual(timeoutField.getText().trim(), ""+conf.lritTimeout)
 		 || !TextUtil.strEqual(maxAgeSecField.getText().trim(), ""+conf.lritMaxMsgAgeSec)
 		 || !TextUtil.strEqualNE(doneDirField.getText().trim(), conf.hritDoneDir)
+		 || ccsdsHeaderCheck.isSelected() !=
+		 		(conf.lritHeaderType == HritFileInterface.FILE_HEADER_DOMAIN6)
 		;
 	}
 	
@@ -196,6 +205,8 @@ public class HritFileCfgPanel
 		conf.hritDoneDir = doneDirField.getText().trim();
 		if (conf.hritDoneDir.length() == 0)
 			conf.hritDoneDir = null;
-
+		
+		conf.lritHeaderType = (ccsdsHeaderCheck.isSelected() ? HritFileInterface.FILE_HEADER_DOMAIN6 
+				: HritFileInterface.FILE_HEADER_NONE);
 	}
 }
