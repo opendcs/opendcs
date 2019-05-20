@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.3  2019/05/15 22:24:25  mmaloney
+*  cleanup
+*
 *  Revision 1.2  2019/03/28 19:53:49  mmaloney
 *  Mods to support the new HRIT file format.
 *
@@ -57,11 +60,13 @@ public class HritDcsFileReader
 	private SimpleDateFormat ctimeFmt = new SimpleDateFormat("yyDDDHHmmssSSS");
 	private boolean hritFileType = true;
 	private DcpMsg dummyMsg = new DcpMsg();
+	private boolean ccsdsHeader = false;
 
-	public HritDcsFileReader(String filename, boolean lritHeader)
+	public HritDcsFileReader(String filename, boolean ccsdsHeader)
 	{
 		file = new File(filename);
 		ctimeFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+		this.ccsdsHeader = ccsdsHeader;
 	}
 
 	public void load()
@@ -70,32 +75,37 @@ public class HritDcsFileReader
 		FileInputStream fis = new FileInputStream(file);
 		int len = (int)file.length();
 		if (len < 64)
-			throw new HritException("Incomplete CCSDS File Header, length=" + len, 
+			throw new HritException("Incomplete File Header, length=" + len, 
 				HritException.ErrorCode.INCOMPLETE_FILE);
 		
 		image = new byte[len];
 		fis.read(image);
 		fis.close();
-		int htype = (int)image[0];
-		int hlen = ByteUtil.getInt2_BigEndian(image, 1);
-		int ftype = (int)image[3] & 0xff;
-		if (htype != PRIMARY_TYPE || hlen != PRIMARY_LENGTH)
+		
+		if (ccsdsHeader)
 		{
-			throw new HritException(
-				"Invalid LRIT File Header: headerType=" + htype 
-				+ ", headerLen=" + hlen, HritException.ErrorCode.WRONG_FILE_TYPE);
+			int htype = (int)image[0];
+			int hlen = ByteUtil.getInt2_BigEndian(image, 1);
+			int ftype = (int)image[3] & 0xff;
+			if (htype != PRIMARY_TYPE || hlen != PRIMARY_LENGTH)
+			{
+				throw new HritException(
+					"Invalid LRIT File Header: headerType=" + htype 
+					+ ", headerLen=" + hlen, HritException.ErrorCode.WRONG_FILE_TYPE);
+			}
+			else if (ftype != DCS_FILE_TYPE)
+			{
+				throw new HritException(
+					"LRIT File Header with non-DCS file type ("
+					+ DCS_FILE_TYPE + "), fileType='" + ftype + "'",
+					HritException.ErrorCode.WRONG_FILE_TYPE);
+			}
+			fileStartOffset = ByteUtil.getInt4_BigEndian(image, 4);
+			Logger.instance().debug1(module + " Read valid CCSDS Header, total header length = "
+					+ fileStartOffset);
 		}
-		else if (ftype != DCS_FILE_TYPE)
-		{
-			throw new HritException(
-				"LRIT File Header with non-DCS file type ("
-				+ DCS_FILE_TYPE + "), fileType='" + ftype + "'",
-				HritException.ErrorCode.WRONG_FILE_TYPE);
-		}
-		fileStartOffset = ByteUtil.getInt4_BigEndian(image, 4);
-
-		Logger.instance().debug1(module + " Read valid LRIT Header, total header length = "
-			+ fileStartOffset);
+		else
+			fileStartOffset = 0;
 	}
 
 	/**
@@ -522,7 +532,7 @@ public class HritDcsFileReader
 
 	private static ApplicationSettings cmdLineArgs = new ApplicationSettings();
 	static BooleanToken lritHeaderArg = new BooleanToken(
-		"h", "Check LRIT Headers", "", TokenOptions.optSwitch, false);
+		"h", "File contains CCSDS header.", "", TokenOptions.optSwitch, false);
 	static StringToken filesArg = new StringToken("", "Input Files", "",
 		TokenOptions.optArgument|TokenOptions.optMultiple
 			|TokenOptions.optRequired, "");
