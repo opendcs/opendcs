@@ -102,7 +102,7 @@ public class DcpMsgFlag
 
 	
 	/** Revision number for interpreting flag bits */
-	static public int myFlagRev = 0x4b;
+	static public int myFlagRev = 0x4a;
 
 	
 	/** @return true if message is GOES */
