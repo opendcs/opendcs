@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.2  2019/05/10 18:35:26  mmaloney
+ * dev
+ *
  * Revision 1.1  2019/03/05 14:53:01  mmaloney
  * Checked in partial implementation of Alarm classes.
  *
@@ -63,7 +66,7 @@ public class AlarmXioTags
 	public static final String stuckDuration = "stuckDuration";
 	public static final String stuckTolerance = "stuckTolerance";
 	public static final String stuckMinToCheck = "stuckMinToCheck";
-	public static final String stuckMaxGap = "stuckMinToCheck";
+	public static final String stuckMaxGap = "stuckMaxGap";
 	public static final String rocInterval = "rocInterval";
 	public static final String rejectRocHigh = "rejectRocHigh";
 	public static final String criticalRocHigh = "criticalRocHigh";
