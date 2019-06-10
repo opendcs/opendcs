@@ -41,6 +41,7 @@ import decodes.gui.GuiDialog;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroupMemberType;
 
@@ -56,7 +57,7 @@ public class ParamSelectDialog
 	private boolean cancelled;
 	private SortingListTable paramTable = null;
 	private ParamTableModel model = null;
-	CwmsTimeSeriesDb cwmsDb;
+	TimeSeriesDb cwmsDb;
 	private JRadioButton fullRadio = new JRadioButton("Full Param");
 	private JRadioButton baseRadio = new JRadioButton("Base Param");
 	private JRadioButton subRadio = new JRadioButton("Sub Param");
@@ -69,7 +70,7 @@ public class ParamSelectDialog
 	private SelectionMode selectionMode = SelectionMode.GroupEdit;
 
 
-	public ParamSelectDialog(JFrame owner, CwmsTimeSeriesDb cwmsDb, SelectionMode selectionMode)
+	public ParamSelectDialog(JFrame owner, TimeSeriesDb cwmsDb, SelectionMode selectionMode)
 	{
 		super(owner, "Param Specification", true);
 		this.owner = owner;
