@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.12  2019/02/25 20:02:55  mmaloney
+ * HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
+ *
  * Revision 1.11  2019/01/28 14:44:23  mmaloney
  * Remove stdout debug.
  *
@@ -687,7 +690,7 @@ public class CompParmDialog extends GuiDialog
 
 	protected void paramSelectButtonPressed()
 	{
-		if (theDb.isCwms() || theDb.isOpenTSDB())
+		if (theDb.isCwms())
 		{
 			ParamSelectDialog paramSelectDialog = 
 				new ParamSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
@@ -710,6 +713,12 @@ public class CompParmDialog extends GuiDialog
 			StringPair result = dlg.getResult();
 			if (result != null)
 				dataTypeField.setText(result.first);
+		}
+		else if (theDb.isOpenTSDB())
+		{
+			String s = JOptionPane.showInputDialog(this, "Enter Data Type:");
+			if (s != null)
+				dataTypeField.setText(s);
 		}
 	}
 
