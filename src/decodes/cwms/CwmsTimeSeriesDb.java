@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.53  2019/03/15 11:58:54  mmaloney
+*  dev
+*
 *  Revision 1.52  2019/02/25 20:02:55  mmaloney
 *  HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
 *
@@ -2218,4 +2221,26 @@ Logger.instance().debug3("Privilege: " + op);
 
 		return ret;
 	}
+	
+	@Override
+	public String getStorageUnitsForDataType(DataType dt)
+	{
+		String cwmsParam = null;
+		if (dt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS))
+			cwmsParam = dt.getCode();
+		else
+		{
+			DataType equiv = dt.findEquivalent(Constants.datatype_CWMS);
+			if (equiv == null)
+				return null;
+			cwmsParam = equiv.getCode();
+		}
+		
+		// Truncate to just base param
+		int hyphen = cwmsParam.indexOf('-');
+		if (hyphen > 0)
+			cwmsParam = cwmsParam.substring(0, hyphen);
+		return baseParam.getStoreUnits4Param(cwmsParam);
+	}
+
 }

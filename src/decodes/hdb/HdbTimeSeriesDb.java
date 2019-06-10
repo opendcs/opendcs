@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.21  2019/02/26 17:16:44  mmaloney
+*  HDB 660
+*
 *  Revision 1.20  2019/02/25 20:02:55  mmaloney
 *  HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
 *
@@ -1458,5 +1461,17 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		return new HdbOracleDateParser(tz);
 	}
 
-	
+	@Override
+	public String getStorageUnitsForDataType(DataType dt)
+	{
+		if (!dt.getStandard().equalsIgnoreCase(Constants.datatype_HDB))
+			dt = dt.findEquivalent(Constants.datatype_HDB);
+		if (dt == null)
+			return null;
+		
+		for(HdbDataType hdt : getHdbDataTypes())
+			if (hdt.getDataTypeId().equals(dt.getId()))
+				return hdt.getUnitsAbbr();
+		return null;
+	}
 }
