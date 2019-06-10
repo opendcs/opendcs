@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.21  2018/12/19 19:56:30  mmaloney
+*  Remove references to classes in oracle.jdbc and oracle.sql, except in HDB branch.
+*
 *  Revision 1.20  2018/12/18 15:22:14  mmaloney
 *  determineTsdbVersion refactored as a static method to allow it to be called
 *  from SqlDatabaseIO.
@@ -408,6 +411,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
@@ -422,6 +426,7 @@ import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import opendcs.dao.AlarmDAO;
 import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.ComputationDAO;
@@ -2458,5 +2463,23 @@ public abstract class TimeSeriesDb
 		throws DbIoException
 	{
 		return new ArrayList<String>();
+	}
+	
+	@Override
+	public AlarmDAI makeAlarmDAO()
+	{
+		return new AlarmDAO(this);
+	}
+	
+	/**
+	 * Given a datatype, return the default storage units for that data type
+	 * in this database. CWMS and HDB implement this differently. The default
+	 * impl here always returns null.
+	 * @param dt the data type
+	 * @return storage units abbreviation or null if it can't be determined.
+	 */
+	public String getStorageUnitsForDataType(DataType dt)
+	{
+		return null;
 	}
 }
