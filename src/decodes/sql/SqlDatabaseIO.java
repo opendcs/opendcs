@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.12  2018/12/19 19:56:30  mmaloney
+ * Remove references to classes in oracle.jdbc and oracle.sql, except in HDB branch.
+ *
  * Revision 1.11  2018/02/21 14:33:03  mmaloney
  * Set autocommit true always.
  *
@@ -66,6 +69,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.TimeZone;
 
+import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
@@ -82,6 +86,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
+import opendcs.dao.AlarmDAO;
 import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.ComputationDAO;
 import opendcs.dao.DacqEventDAO;
@@ -2279,6 +2284,12 @@ public class SqlDatabaseIO
 	public OracleDateParser makeOracleDateParser(TimeZone tz)
 	{
 		return new OracleDateParser(tz);
+	}
+
+	@Override
+	public AlarmDAI makeAlarmDAO()
+	{
+		return new AlarmDAO(this);
 	}
 
 
