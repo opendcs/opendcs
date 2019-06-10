@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.7  2019/02/25 20:02:55  mmaloney
+ * HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
+ *
  * Revision 1.6  2016/03/24 19:22:17  mmaloney
  * Refactoring for Python.
  *
@@ -33,6 +36,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
@@ -300,5 +304,7 @@ public interface DatabaseConnectionOwner
 	
 	public ScreeningDAI makeScreeningDAO() 
 		throws DbIoException;
+	
+	public AlarmDAI makeAlarmDAO();
 
 }
