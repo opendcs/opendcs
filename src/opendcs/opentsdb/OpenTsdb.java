@@ -18,7 +18,10 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.XmitRecordDAO;
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTsId;
+import decodes.db.DataPresentation;
 import decodes.db.DataType;
+import decodes.db.Database;
+import decodes.db.PresentationGroup;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
@@ -326,5 +329,16 @@ public class OpenTsdb extends TimeSeriesDb
 
 		return ret;
 	}
+	
+	public String getStorageUnitsForDataType(DataType dt)
+	{
+		PresentationGroup pg = Database.getDb().presentationGroupList.find(
+			DecodesSettings.instance().tsdbStoragePresGrp);
+		if (pg == null)
+			return null;
+		DataPresentation dp = pg.findDataPresentation(dt);
+		return dp == null ? null : dp.getUnitsAbbr();
+	}
+
 	
 }
