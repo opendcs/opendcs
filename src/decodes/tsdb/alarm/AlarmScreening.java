@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2019/05/10 18:35:25  mmaloney
+ * dev
+ *
  */
 package decodes.tsdb.alarm;
 
@@ -11,6 +14,7 @@ import java.util.Date;
 import decodes.db.DataType;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
+import ilex.util.TextUtil;
 import opendcs.dao.CachableDbObject;
 
 /**
@@ -199,4 +203,95 @@ public class AlarmScreening
 	{
 		this.groupName = groupName;
 	}
+
+	/**
+	 * Copies the GUI-editable fields from the passed screening object into THIS object,
+	 * including the subordinate LimitSets.
+	 * Does not change screening ID.
+	 * @param scrn
+	 */
+	public void copyFrom(AlarmScreening scrn)
+	{
+		this.screeningName = scrn.screeningName;
+		this.siteId = scrn.siteId;
+		this.datatypeId = scrn.datatypeId;
+		this.startDateTime = scrn.startDateTime;
+		this.lastModified = scrn.lastModified;
+		this.enabled = scrn.enabled;
+		this.alarmGroupId = scrn.alarmGroupId;
+		this.description = scrn.description;
+		
+		this.siteNames.clear();
+		for(SiteName sn : scrn.siteNames)
+			this.siteNames.add(sn);
+
+		this.timeLoaded = scrn.timeLoaded;
+		this.dataType = scrn.dataType;
+		this.groupName = scrn.groupName;
+
+		limitSets.clear();
+		for(AlarmLimitSet als : scrn.limitSets)
+		{
+			AlarmLimitSet cp = new AlarmLimitSet();
+			cp.copyFrom(als);
+			limitSets.add(cp);
+		}
+	}
+	
+	@Override
+	public boolean equals(Object rhs)
+	{
+		if (this == rhs)
+			return true;
+		if (!(rhs instanceof AlarmScreening))
+			return false;
+		AlarmScreening s2 = (AlarmScreening)rhs;
+		
+		if (!TextUtil.strEqual(screeningName, s2.screeningName))
+			return false;
+//System.out.println("se1");
+		if (!siteId.equals(s2.siteId))
+			return false;
+
+		if (!datatypeId.equals(s2.datatypeId))
+			return false;
+		
+		if (!TextUtil.dateEqual(startDateTime, s2.startDateTime))
+			return false;
+
+		// Skip lastModified
+		
+//System.out.println("se2");
+		if (enabled != s2.enabled)
+			return false;
+
+		if (!alarmGroupId.equals(s2.alarmGroupId))
+			return false;
+		
+		if (!TextUtil.strEqual(description, s2.description))
+			return false;
+		
+		if (this.limitSets.size() != s2.getLimitSets().size())
+			return false;
+
+//System.out.println("se3");
+
+		for(AlarmLimitSet thisls : this.limitSets)
+		{
+			boolean found = false;
+			for(AlarmLimitSet s2ls : s2.getLimitSets())
+				if (TextUtil.strEqual(thisls.getSeasonName(), s2ls.getSeasonName()))
+				{
+					found = true;
+					if (!thisls.equals(s2ls))
+						return false;
+					break;
+				}
+			if (!found)
+				return false;
+		}
+
+		return true;
+	}
+	
 }

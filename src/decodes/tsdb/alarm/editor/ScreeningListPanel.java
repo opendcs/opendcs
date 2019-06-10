@@ -1,24 +1,4 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:52:59  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:57  mmaloney
- * First working version.
- *
- */
 package decodes.tsdb.alarm.editor;
-
-import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
-import ilex.util.TextUtil;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -29,9 +9,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
+import java.util.Iterator;
 import java.util.TimeZone;
 
 import javax.swing.JButton;
@@ -40,25 +21,34 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 
-import opendcs.dao.AlarmDAO;
+import decodes.db.Site;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.sql.DbKey;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.alarm.AlarmConfig;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.alarm.AlarmGroup;
+import decodes.tsdb.alarm.AlarmLimitSet;
+import decodes.tsdb.alarm.AlarmScreening;
 import decodes.util.DecodesSettings;
+import ilex.util.LoadResourceBundle;
+import ilex.util.Logger;
+import ilex.util.TextUtil;
+import opendcs.dai.AlarmDAI;
+import opendcs.dai.DataTypeDAI;
+import opendcs.dai.SiteDAI;
+import opendcs.dao.AlarmDAO;
 
 @SuppressWarnings("serial")
-public class AlarmListPanel
-	extends JPanel
+public class ScreeningListPanel extends JPanel
 {
 	AlarmEditFrame parentFrame = null;
-	private SortingListTable alarmGroupTable = null;
-	private AlarmGroupListTableModel model = null;
+	private SortingListTable screeningTable = null;
+	private ScreeningListTableModel model = null;
 
-	public AlarmListPanel(AlarmEditFrame parent)
+
+	public ScreeningListPanel(AlarmEditFrame parent)
 	{
 		super(new BorderLayout());
 		this.parentFrame = parent;
@@ -68,9 +58,9 @@ public class AlarmListPanel
 	
 	private void guiInit()
 	{
-		model = new AlarmGroupListTableModel(this);
-		alarmGroupTable = new SortingListTable(model, model.widths);
-		JScrollPane scrollPane = new JScrollPane(alarmGroupTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+		model = new ScreeningListTableModel(this);
+		screeningTable = new SortingListTable(model, model.widths);
+		JScrollPane scrollPane = new JScrollPane(screeningTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		this.add(scrollPane, BorderLayout.CENTER);
 		
@@ -153,7 +143,7 @@ public class AlarmListPanel
 				new Insets(4, 4, 4, 10), 0, 0));
 		
 		
-		alarmGroupTable.addMouseListener(
+		screeningTable.addMouseListener(
 			new MouseAdapter()
 			{
 				public void mouseClicked(MouseEvent e)
@@ -164,13 +154,12 @@ public class AlarmListPanel
 					}
 				}
 			});
-
 	}
 	
 	
 	protected void deletePressed()
 	{
-		int row = alarmGroupTable.getSelectedRow();
+		int row = screeningTable.getSelectedRow();
 		if (row == -1)
 		{
 			parentFrame.showError(
@@ -179,9 +168,9 @@ public class AlarmListPanel
 			return;
 		}
 
-		AlarmGroup grp = model.getGroupAt(row);
+		AlarmScreening scrn = model.getScreeningAt(row);
 		
-		if (parentFrame.isBeingEdited(grp))
+		if (parentFrame.isBeingEdited(scrn))
 		{
 			parentFrame.showError(parentFrame.eventmonLabels.getString("isBeingEdited"));
 			return;
@@ -190,18 +179,17 @@ public class AlarmListPanel
 		int choice = parentFrame.showConfirm(parentFrame.genericLabels.getString("confirm"),
 			LoadResourceBundle.sprintf(
 				parentFrame.genericLabels.getString("confirmDelete"), 
-				parentFrame.eventmonLabels.getString("alarmGroup")), 
+				parentFrame.eventmonLabels.getString("screening")), 
 				JOptionPane.YES_NO_OPTION);
 		if (choice != JOptionPane.YES_OPTION)
 			return;
 		
-		model.delete(grp);
-		model.reload();
+		model.delete(row);
 	}
 
 	protected void copyPressed()
 	{
-		int row = alarmGroupTable.getSelectedRow();
+		int row = screeningTable.getSelectedRow();
 		if (row == -1)
 		{
 			parentFrame.showError(
@@ -213,26 +201,27 @@ public class AlarmListPanel
 		if (name == null)
 			return;
 		
-		AlarmGroup grp = model.getGroupAt(row);
-		AlarmGroup copy = grp.noIdCopy();
-		copy.setName(name);
+		AlarmScreening scrn = model.getScreeningAt(row);
+		AlarmScreening copy = new AlarmScreening();
+		copy.copyFrom(scrn);
+		for(AlarmLimitSet als : copy.getLimitSets())
+			als.setLimitSetId(DbKey.NullKey);
 		
-		parentFrame.editAlarmGroup(copy);
+		copy.setScreeningName(name);
+		
+		parentFrame.editAlarmScreening(copy);
 	}
 	
-	
-	
-
 	protected void newPressed()
 	{
 		String name = askUniqueName();
 		if (name == null)
 			return;
 		
-		AlarmGroup grp = new AlarmGroup(DbKey.NullKey);
-		grp.setName(name);
+		AlarmScreening scrn = new AlarmScreening();
+		scrn.setScreeningName(name);
 
-		parentFrame.editAlarmGroup(grp);
+		parentFrame.editAlarmScreening(scrn);
 	}
 	
 	/**
@@ -244,14 +233,14 @@ public class AlarmListPanel
 	String askUniqueName()
 	{
 		String name = JOptionPane.showInputDialog(parentFrame,
-			parentFrame.eventmonLabels.getString("enterGroupName"));
+			parentFrame.eventmonLabels.getString("enterScreeningName"));
 		if (name == null || name.trim().length() == 0)
 			return null;
 		
-		for(AlarmGroup grp : model.getAlarmConfig().getGroups())
-			if (grp.getName().equalsIgnoreCase(name))
+		for(AlarmScreening scrn : model.screenings)
+			if (scrn.getScreeningName().equalsIgnoreCase(name))
 			{
-				parentFrame.showError(parentFrame.eventmonLabels.getString("groupAlreadyExists"));
+				parentFrame.showError(parentFrame.eventmonLabels.getString("screeningAlreadyExists"));
 				return null;
 			}
 		return name;
@@ -259,7 +248,7 @@ public class AlarmListPanel
 
 	protected void openPressed()
 	{
-		int row = alarmGroupTable.getSelectedRow();
+		int row = screeningTable.getSelectedRow();
 		if (row == -1)
 		{
 			parentFrame.showError(
@@ -267,50 +256,68 @@ public class AlarmListPanel
 				+ " " + parentFrame.genericLabels.getString("new") + ".");
 			return;
 		}
-		AlarmGroup grp = model.getGroupAt(row);
-		parentFrame.editAlarmGroup(grp);
+		AlarmScreening scrn = model.getScreeningAt(row);
+		parentFrame.editAlarmScreening(scrn);
 	}
 
 	protected void refreshPressed()
 	{
 		model.reload();
 	}
-
+	
+	public boolean nameExists(String screeningName)
+	{
+		for(AlarmScreening scrn : model.screenings)
+			if (scrn.getScreeningName().equalsIgnoreCase(screeningName))
+				return true;
+		return false;
+	}
 }
 
 @SuppressWarnings("serial")
-class AlarmGroupListTableModel extends AbstractTableModel
+class ScreeningListTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
-	String[] colnames = new String[3];
-	int [] widths = { 15, 60, 25 };
+	String[] colnames = new String[6];
+	int [] widths = { 8, 22, 15, 15, 20, 20 };
 	private int sortColumn = 0;
-	private AlarmConfig alarmConfig = new AlarmConfig();
-	private AlarmListPanel parentPanel = null;
+	ArrayList<AlarmScreening> screenings = new ArrayList<AlarmScreening>();
+//	private AlarmConfig alarmConfig = new AlarmConfig();
+	private ScreeningListPanel parentPanel = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
-	public AlarmGroupListTableModel(AlarmListPanel parentPanel)
+	public ScreeningListTableModel(ScreeningListPanel parentPanel)
 	{
 		this.parentPanel = parentPanel;
 		colnames[0] = parentPanel.parentFrame.genericLabels.getString("ID");
 		colnames[1] = parentPanel.parentFrame.genericLabels.getString("name");
-		colnames[2] = parentPanel.parentFrame.genericLabels.getString("lastMod") + " "
+		colnames[2] = parentPanel.parentFrame.genericLabels.getString("dataType");
+		colnames[3] = parentPanel.parentFrame.genericLabels.getString("site");
+		colnames[4] = parentPanel.parentFrame.eventmonLabels.getString("alarmGroup");
+		colnames[5] = parentPanel.parentFrame.genericLabels.getString("lastMod") + " "
 			+ DecodesSettings.instance().guiTimeZone;
 		sdf.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().guiTimeZone));
 	}
 
-	public void delete(AlarmGroup grp)
+	public void delete(int row)
 	{
+		if (row < 0 || row >= screenings.size())
+			return;
+		
+		AlarmScreening scrn = screenings.get(row);
 		SqlDatabaseIO sqldbio = (SqlDatabaseIO)decodes.db.Database.getDb().getDbIo();
 		AlarmDAO alarmDAO = new AlarmDAO(sqldbio);
 		
 		try
 		{
-			alarmDAO.deleteAlarmGroup(grp.getAlarmGroupId());
+			
+			alarmDAO.deleteScreening(scrn.getScreeningId());
+			screenings.remove(row);
+			fireTableDataChanged();
 		}
 		catch (DbIoException ex)
 		{
-			parentPanel.parentFrame.showError("Cannot delete alarm group: " + ex);
+			parentPanel.parentFrame.showError("Cannot delete alarm screening: " + ex);
 		}
 		finally
 		{
@@ -321,23 +328,62 @@ class AlarmGroupListTableModel extends AbstractTableModel
 	public void reload()
 	{
 		SqlDatabaseIO sqldbio = (SqlDatabaseIO)decodes.db.Database.getDb().getDbIo();
-		AlarmDAO alarmDAO = new AlarmDAO(sqldbio);
+		AlarmDAI alarmDAO = sqldbio.makeAlarmDAO();
+		SiteDAI siteDAO = sqldbio.makeSiteDAO();
 		
 		try
 		{
-			alarmDAO.check(alarmConfig);
+			ArrayList<AlarmScreening> tscrns = alarmDAO.getAllScreenings();
+			for(AlarmScreening tscrn : tscrns)
+			{
+				if (!DbKey.isNull(tscrn.getSiteId()))
+				{
+					Site site = null;
+					try { site = siteDAO.getSiteById(tscrn.getSiteId()); }
+					catch (NoSuchObjectException ex)
+					{
+						Logger.instance().warning("Screening with id=" + tscrn.getKey() + " '"
+							+ tscrn.getScreeningName() + "' has invalid site ID=" + tscrn.getSiteId()
+							+ " -- will set to null.");
+						tscrn.setSiteId(DbKey.NullKey);
+						site = null;
+					}
+					if (site != null)
+						tscrn.getSiteNames().add(site.getPreferredName());
+				}
+				
+				if (!DbKey.isNull(tscrn.getDatatypeId()))
+					tscrn.setDataType(decodes.db.Database.getDb().dataTypeSet.getById(tscrn.getDatatypeId()));
+				
+				if (!DbKey.isNull(tscrn.getAlarmGroupId()))
+				{
+					AlarmGroup grp = parentPanel.parentFrame.groupListPanel.getGroupById(tscrn.getAlarmGroupId());
+					if (grp != null)
+						tscrn.setGroupName(grp.getName());
+				}
+			}
+			
+			// Remove anything with null key == a new screening not yet saved.
+			for(Iterator<AlarmScreening> scrit = screenings.iterator(); scrit.hasNext(); )
+			{
+				AlarmScreening scrn = scrit.next();
+				if (!DbKey.isNull(scrn.getScreeningId()))
+					scrit.remove();
+			}
+			// Now add in all the existing screenings
+			screenings.addAll(tscrns);
+			
+			// TODO what about if a screening has an edit panel and is open. Changes will be lost.
+
 			sortByColumn(sortColumn);
-			Logger.instance().debug1("After reload there are " + alarmConfig.getGroups().size() + " groups.");
-for(AlarmGroup grp : alarmConfig.getGroups())
-Logger.instance().debug1("ID=" + grp.getAlarmGroupId() + ", " + grp.getName() 
-+ ", " + new Date(grp.getLastModifiedMsec()));
 		}
 		catch (DbIoException ex)
 		{
-			parentPanel.parentFrame.showError("Cannot read alarm config: " + ex);
+			parentPanel.parentFrame.showError("Cannot read screenings: " + ex);
 		}
 		finally
 		{
+			siteDAO.close();
 			alarmDAO.close();
 		}
 	}
@@ -356,28 +402,31 @@ Logger.instance().debug1("ID=" + grp.getAlarmGroupId() + ", " + grp.getName()
 	@Override
 	public int getRowCount()
 	{
-		return alarmConfig.getGroups().size();
+		return screenings.size();
 	}
 
 	@Override
 	public Object getValueAt(int row, int col)
 	{
-		return getColumnValue(getGroupAt(row), col);
+		return getColumnValue(getScreeningAt(row), col);
 	}
 	
-	public AlarmGroup getGroupAt(int row)
+	public AlarmScreening getScreeningAt(int row)
 	{
-		return (AlarmGroup)getRowObject(row);
+		return (AlarmScreening)getRowObject(row);
 	}
 
 
-	public String getColumnValue(AlarmGroup grp, int col)
+	public String getColumnValue(AlarmScreening scrn, int col)
 	{
 		switch(col)
 		{
-		case 0: return grp.getAlarmGroupId().toString();
-		case 1: return grp.getName();
-		case 2: return sdf.format(new Date(grp.getLastModifiedMsec()));
+		case 0: return scrn.getScreeningId().toString();
+		case 1: return scrn.getScreeningName();
+		case 2: return scrn.getDataType() == null ? "null" : scrn.getDataType().getCode();
+		case 3: return scrn.getSiteNames().size()==0 ? "(none)" : scrn.getSiteNames().get(1).getNameValue();
+		case 4: return scrn.getGroupName() == null ? "" : scrn.getGroupName();
+		case 5: return sdf.format(scrn.getLastModified());
 		default: return "";
 		}
 	}
@@ -386,36 +435,32 @@ Logger.instance().debug1("ID=" + grp.getAlarmGroupId() + ", " + grp.getName()
 	public synchronized void sortByColumn(int column)
 	{
 		this.sortColumn = column;
-		Collections.sort(alarmConfig.getGroups(), new GroupComparator(sortColumn, this));
+		Collections.sort(screenings, new ScreeningComparator(sortColumn, this));
 		fireTableDataChanged();
 	}
 
 	@Override
 	public Object getRowObject(int row)
 	{
-		return alarmConfig.getGroups().get(row);
+		return screenings.get(row);
 	}
 
-	public AlarmConfig getAlarmConfig()
-	{
-		return alarmConfig;
-	}
 }
 
 
-class GroupComparator implements Comparator<AlarmGroup>
+class ScreeningComparator implements Comparator<AlarmScreening>
 {
 	private int sortColumn = 0;
-	private AlarmGroupListTableModel model = null;
+	private ScreeningListTableModel model = null;
 	
-	GroupComparator(int sortColumn, AlarmGroupListTableModel model)
+	ScreeningComparator(int sortColumn, ScreeningListTableModel model)
 	{
 		this.sortColumn = sortColumn;
 		this.model = model;
 	}
 	
 	@Override
-	public int compare(AlarmGroup evt1, AlarmGroup evt2)
+	public int compare(AlarmScreening evt1, AlarmScreening evt2)
 	{
 		return TextUtil.strCompareIgnoreCase(
 			model.getColumnValue(evt1, sortColumn),

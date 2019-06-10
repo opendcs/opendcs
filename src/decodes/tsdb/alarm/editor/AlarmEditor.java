@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:52:59  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.2  2017/06/13 16:35:15  mmaloney
  * Added getFrame method to support launcher.
  *
@@ -96,16 +99,4 @@ public class AlarmEditor
 
 	public TimeSeriesDb getTsdb() { return theDb; }
 	
-	@Override
-	public void createDatabase()
-	{
-		// No need for TSDB interface.
-	}
-	
-	@Override
-	public void tryConnect()
-	{
-		// Likewise, don't connect to the TSDB. Just DECODES DB.
-	}
-
 }

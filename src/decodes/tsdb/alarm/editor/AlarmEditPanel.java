@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:52:59  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.3  2018/03/23 20:12:20  mmaloney
  * Added 'Enabled' flag for process and file monitors.
  *
@@ -365,7 +368,7 @@ public class AlarmEditPanel
 	
 	protected void changeNamePressed()
 	{
-		String name = parentFrame.listPanel.askUniqueName();
+		String name = parentFrame.groupListPanel.askUniqueName();
 		if (name == null)
 			return;
 		
@@ -549,7 +552,7 @@ public class AlarmEditPanel
 				commitPressed();
 		}
 		parentFrame.closeEditPanel(this);
-		parentFrame.listPanel.refreshPressed();
+		parentFrame.groupListPanel.refreshPressed();
 	}
 
 	protected void commitPressed()
