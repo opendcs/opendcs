@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.3  2019/05/10 18:35:25  mmaloney
+ * dev
+ *
  * Revision 1.2  2019/03/05 20:48:09  mmaloney
  * Support new table names for ALARM
  *
@@ -615,13 +618,11 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		if (DbKey.isNull(as.getScreeningId()))
 			as.setScreeningId(screeningName2Id(as.getScreeningName(), as.getStartDateTime()));
 		
+		Date now = new Date();
 		AlarmScreening oldas = null;
 		if (!DbKey.isNull(as.getScreeningId())
 		 && (oldas = readAlarmScreening(as.getScreeningId())) != null)
 		{
-			Date now = new Date();
-			as.setLastModified(now); // Always update LMT.
-			
 			StringBuilder qb = new StringBuilder("update alarm_screening set ");
 			
 			qb.append("last_modified = " + now.getTime());
@@ -655,7 +656,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 				+ ", " + as.getDatatypeId()
 				+ ", " + (as.getStartDateTime()==null ? "null" 
 						: (""+as.getStartDateTime().getTime()))
-				+ ", " + System.currentTimeMillis()
+				+ ", " + now.getTime()
 				+ ", " + sqlBoolean(as.isEnabled())
 				+ ", " + as.getAlarmGroupId()
 				+ ", " + sqlString(as.getDescription())
@@ -663,21 +664,29 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			doModify(q);
 		}
 		
-//DbKey k = as.getKey();
+		as.setLastModified(now); // Always update LMT.
+		
 		Logger.instance().debug1(module + " adding screening id=" + as.getKey()
 			+ " '" + as.getUniqueName() + "' to cache.");
 		screeningCache.put(as);
 		
-//AlarmScreening t = screeningCache.getByKey(k);
-//Logger.instance().debug1(module + " retrieve " + k + " from cache: " 
-//+ (t == null ? "null" : t.getScreeningName()));
-
+		ArrayList<DbKey> limitSetIds = new ArrayList<DbKey>();
 		for(AlarmLimitSet als : as.getLimitSets())
 		{
 			// If this is new screening, set the screening_id in limit set to match new ID
 			als.setScreeningId(as.getScreeningId());
 			writeLimitSet(als);
+			limitSetIds.add(als.getLimitSetId());
 		}
+		
+		// Now there may have been old limit sets that are no longer in the screening and
+		// we should delete them. Delete any limit set that I didn't just write.
+		String q = "delete from alarm_limit_set where screening_id = " + as.getScreeningId()
+			+ " and limit_set_id not in (";
+		for(int idx = 0; idx < limitSetIds.size(); idx++)
+			q = q + (idx > 0 ? ", " : "") + limitSetIds.get(idx);
+		q = q + ")";
+		doModify(q);
 	}
 	
 	// compare two dates and allow for null
