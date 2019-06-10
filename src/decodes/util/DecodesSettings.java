@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.27  2018/07/31 17:01:17  mmaloney
+*  editTimeZone defaults to "UTC".
+*
 *  Revision 1.26  2018/02/05 15:54:33  mmaloney
 *  Add fontAdjust feature to increase/decrease font sizes throughout the GUI.
 *
@@ -441,6 +444,7 @@ public class DecodesSettings
 	public boolean showAlarmEditor = false;
 	
 	public int fontAdjust = 0;
+	public String tsdbStoragePresGrp = "CWMS-English";
 
 	
 	//===============================================================================
@@ -691,14 +695,13 @@ public class DecodesSettings
 		new PropertySpec("pakBusMaxBaudRate", PropertySpec.INT,
 			"Maximum baud rate to use for modem-based pakbus stations. Can be overridden"
 			+ " by platform property of the same name."),
-			
 		new PropertySpec("autoDeleteOnImport", PropertySpec.BOOLEAN,
 			"(default=false) If TRUE, then dbimport will automatically delete platforms with matching"
 			+ " site & designator when a clash occurs with an imported platform."),
-			
 		new PropertySpec("fontAdjust", PropertySpec.INT,
-			"(default=0) Set to positive number to increase default font size, or negative number to decrease.")
-
+			"(default=0) Set to positive number to increase default font size, or negative number to decrease."),
+		new PropertySpec("tsdbStoragePresGrp", PropertySpec.STRING,
+			"(default=CWMS-English) Presentation Group used to determine time series database storage units")
 	};
 	
 	/**
