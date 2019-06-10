@@ -1039,6 +1039,9 @@ public class RtStatFrame
 		}
 		Collections.sort(hosts);
 		int selected = -1;
+//MJM Added: to put a black selection in the start of the list.
+		hostCombo.addItem("");
+		
 		for(int i = 0; i<hosts.size(); i++)
 		{
 			ht x = hosts.get(i);
@@ -1060,7 +1063,11 @@ public class RtStatFrame
 	{
 		String host = (String)hostCombo.getSelectedItem();
 		if (host == null || host.length() == 0)
+		{
+			userField.setText("");
+			passwordField.setText("");
 			return;
+		}
 		String hl = connectionList.getProperty(host);
 		if (hl == null || hl.length() == 0)
 		{
