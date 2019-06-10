@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.2  2019/03/28 13:00:11  mmaloney
+*  Added strEqualNE - consider null string the same as blank string.
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -86,6 +89,7 @@
 */
 package ilex.util;
 
+import java.util.Date;
 import java.util.Vector;
 import java.text.*;
 
@@ -311,6 +315,24 @@ public class TextUtil
 		}
       */
 	}
+	
+	public static boolean dateEqual(Date d1, Date d2)
+	{
+		if (d1 == null)
+		{
+			if (d2 == null)
+				return true;
+			else
+				return false;
+		}
+		else // d1 != null
+		{
+			if (d2 == null)
+				return false;
+			else
+				return d1.equals(d2);
+		}
+ 	}
 	
 	/**
 	 * Compare strings, but consider null the same as an empty string.
