@@ -299,31 +299,42 @@ public class LrgsMain
 		{
 			try
 			{
-				String propFile = EnvExpander.expand(
-					"$DECODES_INSTALL_DIR/decodes.properties");
-				Logger.instance().info("Loading DECODES Database from '" + propFile + "'");
-				
-				//Load the decodes.properties
-				DecodesSettings settings = DecodesSettings.instance();
-				if (!settings.isLoaded())
+				// MJM 6/13/2019 LRGS should try to initialize from user.properties first.
+				String userPath = EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
+				String homePath = EnvExpander.expand("$DCSTOOL_HOME/decodes.properties");
+				File propFile = new File(userPath);
+				if (!propFile.canRead())
+					propFile = new File(homePath);
+				if (!propFile.canRead())
 				{
-					Properties props = new Properties();
-					try
+					Logger.instance().failure("loadDecodes=true, but neither '" + userPath + "' nor '" + homePath
+						+ "' is readable. Proceeding with default DECODES settings.");
+				}
+				else
+				{
+					//Load the decodes.properties
+					DecodesSettings settings = DecodesSettings.instance();
+					if (!settings.isLoaded())
 					{
-						FileInputStream fis = new FileInputStream(propFile);
-						props.load(fis);
-						fis.close();
+						Logger.instance().info("Loading DECODES settings from '" + propFile.getPath() + "'");
+						Properties props = new Properties();
+						try
+						{
+							FileInputStream fis = new FileInputStream(propFile);
+							props.load(fis);
+							fis.close();
+						}
+						catch(Exception e)
+						{
+							Logger.instance().log(Logger.E_FAILURE,
+								"Cannot open DECODES Properties File '"+propFile.getPath()+"': "+e);
+						}
+						settings.loadFromProperties(props);
 					}
-					catch(Exception e)
-					{
-						Logger.instance().log(Logger.E_FAILURE,
-							"Cannot open DECODES Properties File '"+propFile+"': "+e);
-					}
-					settings.loadFromProperties(props);
 				}
 				
 				DecodesInterface.silent = true;
-				DecodesInterface.initDecodes(propFile);
+				DecodesInterface.initDecodes(propFile.getPath());
 				// MJM 9/25/2008 - In order for DDS Receive to be able to use
 				// network lists <all> and <production>, we have to load the
 				// platform lists too:
