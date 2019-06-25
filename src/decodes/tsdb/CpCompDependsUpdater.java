@@ -9,6 +9,10 @@
 *  This source code is provided completely without warranty.
 *  
 *  $Log$
+*  Revision 1.20  2018/11/14 14:54:17  mmaloney
+*  6.5RC03 implements timed computations. If the timedCompInterval property is set,
+*  then don't create any dependencies for this computation.
+*
 *  Revision 1.19  2018/03/30 15:00:37  mmaloney
 *  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
 *
@@ -408,6 +412,9 @@ public class CpCompDependsUpdater
 			ArrayList<DbComputation> comps = computationDAO.listCompsForGUI(enabledOnly);
 			for(DbComputation comp : comps)
 			{
+				// Skip timed computations.
+				if (comp.getProperty("timedCompInterval") != null)
+					continue;
 				expandComputationInputs(comp);
 				enabledCompCache.add(comp);
 			}
@@ -509,7 +516,8 @@ public class CpCompDependsUpdater
 			toAdd.clear();
 			for(DbComputation comp : enabledCompCache)
 			{
-				if (!comp.isEnabled())
+				// Either not enabled or a timed computation
+				if (!comp.isEnabled() || comp.getProperty("timedCompInterval") != null)
 					continue;
 				
 				if (comp.getGroupId() == Constants.undefinedId)
@@ -864,7 +872,8 @@ public class CpCompDependsUpdater
 		info("Evaluating dependencies for comp " + comp.getId() + " " + comp.getName());
 		if (!doingFullEval)
 			toAdd.clear();
-		if (comp.isEnabled())
+		
+		if (comp.isEnabled() && comp.getProperty("timedCompInterval") == null)
 		{
 			info("comp is enabled for appID=" + comp.getAppId());
 			// If not a group comp just add the completely-specified parms.
@@ -1039,6 +1048,9 @@ public class CpCompDependsUpdater
 			for(Iterator<DbComputation> compit = enabledCompCache.iterator(); compit.hasNext();)
 			{
 				DbComputation comp = compit.next();
+				if (!comp.isEnabled() || comp.getProperty("timedCompInterval") != null)
+					continue;
+				
 				if (comp.getGroupId() != Constants.undefinedId
 				 && affectedGroupIds.contains(comp.getGroupId()))
 				{
