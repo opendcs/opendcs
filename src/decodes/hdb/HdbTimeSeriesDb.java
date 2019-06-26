@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.22  2019/06/10 19:23:22  mmaloney
+*  Added getStorageUnitsForDataType
+*
 *  Revision 1.21  2019/02/26 17:16:44  mmaloney
 *  HDB 660
 *
@@ -987,12 +990,28 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		return tsidRet;
 	}
 	
-	public boolean transformUniqueString(TimeSeriesIdentifier tsidRet,
-		DbCompParm parm)
+	public boolean transformUniqueString(TimeSeriesIdentifier tsidRet, DbCompParm parm)
 	{
-//info("transformUniqueString() before tsid=" + tsidRet.getUniqueString());
-		boolean transformed = false;
+		if (parm.getSiteName() == null
+		 && (!DbKey.isNull(parm.getSiteDataTypeId()) || !DbKey.isNull(parm.getSiteId())))
+		{
+			try
+			{
+				expandSDI(parm);
+			}
+			catch (Exception ex)
+			{
+				debug3(module + ".transformUniqueString error in expandSDI: " + ex);
+			}
+		}
+		
 		SiteName sn = parm.getSiteName();
+		if (sn == null && !DbKey.isNull(parm.getSiteId()))
+			sn = new SiteName(null, "HDB", "" + parm.getSiteId());
+		
+debug3("transformUniqueString() before tsid=" + tsidRet.getUniqueString()
++ ", parm.getSiteName=" + (sn==null ? "null" : sn.toString()) + ", parm.siteId=" + parm.getSiteId());
+		boolean transformed = false;
 		if (sn != null)
 		{
 			tsidRet.setSiteName(sn.getNameValue());
@@ -1026,7 +1045,7 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		{
 			tsidRet.setPart(HdbTsId.MODELID_PART, ""+mid);
 		}
-//info("transformUniqueString() after tsid=" + tsidRet.getUniqueString());
+debug3("transformUniqueString() after tsid=" + tsidRet.getUniqueString());
 		return transformed;
 	}
 
@@ -1474,4 +1493,11 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 				return hdt.getUnitsAbbr();
 		return null;
 	}
+	
+	@Override
+	public String flags2display(int flags)
+	{
+		return HdbFlags.flag2HdbDerivation(flags);
+	}
+
 }
