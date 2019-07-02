@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.22  2019/06/10 19:25:45  mmaloney
+*  Added makeAlarmDAO() and getStorageUnitsFor DataType (stub) methods.
+*
 *  Revision 1.21  2018/12/19 19:56:30  mmaloney
 *  Remove references to classes in oracle.jdbc and oracle.sql, except in HDB branch.
 *
@@ -2481,5 +2484,17 @@ public abstract class TimeSeriesDb
 	public String getStorageUnitsForDataType(DataType dt)
 	{
 		return null;
+	}
+	
+	/**
+	 * Convert a time series flag value into a character representation. Flag bits
+	 * are defined differently in the underlying databases.
+	 * @param flags the integer flag of a time series value
+	 * @return A string representation for display
+	 */
+	public String flags2display(int flags)
+	{
+		// Base class does nothing.
+		return "";
 	}
 }
