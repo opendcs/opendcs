@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2014/08/22 17:23:10  mmaloney
+ * 6.1 Schema Mods and Initial DCP Monitor Implementation
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -40,7 +43,7 @@ import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
-
+import decodes.db.Database;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesException;
@@ -131,6 +134,7 @@ public class TsListMain extends TsdbAppTemplate
 			return;
 		DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
 		DecodesInterface.readSiteList();
+		Database.getDb().dataTypeSet.read();
 	}
 	
 	public TsListFrame getFrame() { return tsListFrame; }
