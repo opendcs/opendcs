@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.4  2019/06/10 19:37:33  mmaloney
+ * Added Screening I/O
+ *
  * Revision 1.3  2019/05/10 18:35:25  mmaloney
  * dev
  *
@@ -35,15 +38,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.BadScreeningException;
-import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.alarm.Alarm;
 import decodes.tsdb.alarm.AlarmConfig;
 import decodes.tsdb.alarm.AlarmEvent;
 import decodes.tsdb.alarm.AlarmGroup;
@@ -54,6 +57,7 @@ import decodes.tsdb.alarm.FileMonitor;
 import decodes.tsdb.alarm.ProcessMonitor;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.TimeSeriesDAI;
 
 /**
  * Implements AlarmDAI for reading/writing from SQL database.
@@ -61,6 +65,7 @@ import opendcs.dai.LoadingAppDAI;
  */
 public class AlarmDAO extends DaoBase implements AlarmDAI
 {
+	private static String module = "AlarmDAO";
 	private static String grpColumns = "ALARM_GROUP_ID, ALARM_GROUP_NAME, "
 		+ "LAST_MODIFIED";
 	private static String fileMonColumns = "ALARM_GROUP_ID, PATH, PRIORITY, "
@@ -81,6 +86,12 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		+ "roc_interval, reject_roc_high, critical_roc_high, "
 		+ "warning_roc_high, warning_roc_low, critical_roc_low, reject_roc_low, "
 		+ "missing_period, missing_interval, missing_max_values, hint_text";
+	private static String alarmCurrentColumns = 
+		"ts_id, limit_set_id, assert_time, data_value, data_time, alarm_flags, message, "
+		+ "last_notification_sent";
+	private static String alarmHistoryColumns = 
+			"ts_id, limit_set_id, assert_time, data_value, data_time, alarm_flags, message, "
+			+ "end_time, cancelled_by";
 
 	// Objects in cache never expire (a million hours), but cache is reloaded periodically
 	protected static DbObjectCache<AlarmScreening> screeningCache = 
@@ -429,13 +440,14 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 
 
 	@Override
-	public List<AlarmScreening> getScreenings(DbKey siteId, DbKey datatypeId)
+	public ArrayList<AlarmScreening> getScreenings(DbKey siteId, DbKey datatypeId)
 		throws DbIoException
 	{
 		if (System.currentTimeMillis() - lastCacheLoadMsec >= CACHE_RELOAD_MSEC)
 			fillScreeningCache();
 		
-		if (DbKey.isNull(siteId) || DbKey.isNull(datatypeId))
+		// siteId may be null (for default screening at any site) but datatype may not be null.
+		if (DbKey.isNull(datatypeId))
 			return null;
 		
 		ArrayList<AlarmScreening> ret = new ArrayList<AlarmScreening>();
@@ -537,14 +549,6 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		AlarmLimitSet als = new AlarmLimitSet();
 		als.setLimitSetId(DbKey.createDbKey(rs, 1));
 		als.setScreeningId(DbKey.createDbKey(rs, 2));
-//		AlarmScreening as = screeningCache.getByKey(als.getScreeningId());
-//		if (as == null)
-//		{
-//			warning("ALARM_LIMIT_SET with LIMIT_SET_ID="
-//				+ als.getLimitSetId() + " refers to non-existent screening ID="
-//				+ als.getScreeningId() + " -- ignored.");
-//			return null;
-//		}
 		als.setSeasonName(rs.getString(3));
 		double d = rs.getDouble(4);
 		if (!rs.wasNull())
@@ -1042,6 +1046,165 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		return ret;
 	}
 	
+	@Override
+	public void refreshCurrentAlarms(HashMap<DbKey, Alarm> alarmMap)
+		throws DbIoException
+	{
+		for(Alarm alarm : alarmMap.values())
+			alarm.setChecked(false);
+		
+		String q = "select " + alarmCurrentColumns + " from alarm_current";
+		ArrayList<Alarm> needsFilling = new ArrayList<Alarm>();
+		ResultSet rs = doQuery(q);
+		TimeSeriesDAI tsDAO = this.db.makeTimeSeriesDAO();
+		try
+		{
+			while(rs != null && rs.next())
+			{
+				DbKey tsKey = DbKey.createDbKey(rs, 1);
+				Alarm alarm = alarmMap.get(tsKey);
+
+				if (alarm == null) // alarm is new?
+				{
+					alarm = new Alarm();
+					alarm.setTsidKey(tsKey);
+					alarmMap.put(alarm.getTsidKey(), alarm);
+					needsFilling.add(alarm);
+				}
+				else // alarm exists in the map
+				{
+					long assertTimeMs = rs.getLong(3);
+					if (assertTimeMs < alarm.getLastDbSyncMs())
+						continue; // already up to date
+				}
+				
+				alarm.setAssertTime(new Date(rs.getLong(3)));
+				alarm.setChecked(true);
+				DbKey limitSetId = DbKey.createDbKey(rs, 2);
+				if (!limitSetId.equals(alarm.getLimitSetId()))
+				{
+					alarm.setLimitSetId(limitSetId);
+					alarm.setLimitSet(null);
+					needsFilling.add(alarm);
+				}
+				alarm.setDataValue(rs.getDouble(4));
+				alarm.setDataTime(new Date(rs.getLong(5)));
+				alarm.setAlarmFlags(rs.getInt(6));
+				alarm.setMessage(rs.getString(7));
+				alarm.setLastNotificationTime(new Date(rs.getLong(8)));
+			}
+			
+			
+			q = "[filling limit set and tsids]";
+			for(Alarm alarm : needsFilling)
+			{
+				// Fill in the Limit Set and the TSID.
+				alarm.setLimitSet(readLimitSet(alarm.getLimitSetId()));
+				try { alarm.setTsid(tsDAO.getTimeSeriesIdentifier(alarm.getTsidKey())); }
+				catch(NoSuchObjectException ex)
+				{
+					warning("Invalid TsIdKey=" + alarm.getTsidKey() + " -- alarm will be removed.");
+					deleteCurrentAlarm(alarm.getTsidKey());
+					alarm.setChecked(false);
+				}
+			}
+			
+			// After the above, any alarm that is not 'checked' must have been deleted from the DB.
+			ArrayList<DbKey> toDelete = new ArrayList<DbKey>();
+			for (Alarm alarm : alarmMap.values())
+				if (!alarm.isChecked())
+					toDelete.add(alarm.getTsidKey());
+			for(DbKey tsIdKey : toDelete)
+				alarmMap.remove(tsIdKey);
+
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("readAlarmScreening error in query '" + q + "': " + ex);
+		}
+		finally
+		{
+			tsDAO.close();
+		}
+	}
+	
+//	private Alarm rs2alarm(ResultSet rs)
+//		throws SQLException
+//	{
+//		DbKey tsKey = DbKey.createDbKey(rs, 1);
+//		Alarm alarm = new Alarm();
+//		alarm.setTsidKey(tsKey);
+//		alarm.setAssertTime(new Date(rs.getLong(3)));
+//		alarm.setLimitSetId(DbKey.createDbKey(rs, 2));
+//		alarm.setDataValue(rs.getDouble(4));
+//		alarm.setDataTime(new Date(rs.getLong(5)));
+//		alarm.setAlarmFlags(rs.getInt(6));
+//		alarm.setMessage(rs.getString(7));
+//		alarm.setLastNotificationTime(new Date(rs.getLong(8)));
+//
+//		return alarm;
+//	}
+
+	@Override
+	public void deleteCurrentAlarm(DbKey tsidKey) 
+		throws DbIoException
+	{
+		String q = "delete from ALARM_CURRENT where ts_id = " + tsidKey;
+		doModify(q);
+	}
+
+
+	@Override
+	public void moveToHistory(Alarm alarm)
+	{
+		String q = "insert into alarm_history(" + alarmHistoryColumns + ") values ("
+			+ alarm.getTsidKey() + ", "
+			+ alarm.getLimitSetId() + ", "
+			+ alarm.getAssertTime().getTime() + ", "
+			+ alarm.getDataValue() + ", "
+			+ alarm.getDataTime().getTime() + ", "
+			+ alarm.getAlarmFlags() + ", "
+			+ sqlString(alarm.getMessage()) + ", "
+			+ alarm.getEndTime().getTime() + ", "
+			+ sqlString(alarm.getCancelledBy())
+			+ ")";
+		try
+		{
+			doModify(q);
+			deleteCurrentAlarm(alarm.getTsidKey());
+		}
+		catch (DbIoException ex)
+		{
+			Logger.instance().warning(module + " Error writing alarm for tskey=" + alarm.getTsidKey()
+				+ " at time " + alarm.getAssertTime() + ": " + ex);
+		}
+	}
+	
+	@Override
+	public void writeToCurrent(Alarm alarm)
+	{
+		String q = "delete from alarm_current where ts_id = " + alarm.getTsidKey();
+		try
+		{
+			doModify(q);
+			
+			q = "insert into alarm_current(" + alarmCurrentColumns + ") values ("
+					+ alarm.getTsidKey() + ", "
+					+ alarm.getLimitSetId() + ", "
+					+ alarm.getAssertTime().getTime() + ", "
+					+ alarm.getDataValue() + ", "
+					+ alarm.getDataTime().getTime() + ", "
+					+ alarm.getAlarmFlags() + ", "
+					+ sqlString(alarm.getMessage())
+					+ ")";
+			doModify(q);
+		}
+		catch (DbIoException ex)
+		{
+			Logger.instance().warning(module + " Error writing current alarm for tskey=" + alarm.getTsidKey()
+				+ " at time " + alarm.getAssertTime() + ": " + ex);
+		}
+	}
 	
 
 }

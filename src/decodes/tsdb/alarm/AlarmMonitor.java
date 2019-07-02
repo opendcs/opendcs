@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.2  2019/03/05 20:46:51  mmaloney
+ * Support new table names for ALARM
+ *
  * Revision 1.1  2019/03/05 14:53:00  mmaloney
  * Checked in partial implementation of Alarm classes.
  *
@@ -232,7 +235,8 @@ public class AlarmMonitor
 			loadingAppDao.close();
 		}
 
-		alarmMailer = new AlarmMailer(this);
+		alarmMailer = new AlarmMailer();
+		alarmMailer.configure(appInfo.getProperties());
 
 		File lastEvtIdFile = new File(EnvExpander.expand("$DCSTOOL_USERDIR/last-alarm"));
 		try

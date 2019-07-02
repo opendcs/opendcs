@@ -16,7 +16,6 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.XmitRecordDAO;
-import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTsId;
 import decodes.db.DataPresentation;
 import decodes.db.DataType;
@@ -251,16 +250,16 @@ public class OpenTsdb extends TimeSeriesDb
 	public String flags2LimitCodes(int flags)
 	{
 		StringBuilder sb = new StringBuilder();
-		if ((flags & CwmsFlags.SCREENED) != 0)
-		{
-			sb.append('S');
-			if ((flags & CwmsFlags.VALIDITY_MISSING) != 0)
-				sb.append('M');
-			if ((flags & CwmsFlags.VALIDITY_REJECTED) != 0)
-				sb.append('R');
-			if ((flags & CwmsFlags.VALIDITY_QUESTIONABLE) != 0)
-				sb.append('Q');
-		}
+//		if ((flags & CwmsFlags.SCREENED) != 0)
+//		{
+//			sb.append('S');
+//			if ((flags & CwmsFlags.VALIDITY_MISSING) != 0)
+//				sb.append('M');
+//			if ((flags & CwmsFlags.VALIDITY_REJECTED) != 0)
+//				sb.append('R');
+//			if ((flags & CwmsFlags.VALIDITY_QUESTIONABLE) != 0)
+//				sb.append('Q');
+//		}
 		return sb.toString();
 	}
 
@@ -340,5 +339,10 @@ public class OpenTsdb extends TimeSeriesDb
 		return dp == null ? null : dp.getUnitsAbbr();
 	}
 
-	
+	@Override
+	public String flags2display(int flags)
+	{
+		return OpenTsdbFlags.flags2screeningString(flags);
+	}
+
 }

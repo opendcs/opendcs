@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.2  2019/05/10 18:35:26  mmaloney
+ * dev
+ *
  * Revision 1.1  2019/03/05 14:53:01  mmaloney
  * Checked in partial implementation of Alarm classes.
  *
@@ -17,12 +20,12 @@
 package opendcs.dai;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.BadScreeningException;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.alarm.Alarm;
 import decodes.tsdb.alarm.AlarmConfig;
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.AlarmLimitSet;
@@ -89,7 +92,7 @@ public interface AlarmDAI
 	 * @return matching screening if found, null if not.
 	 * @throws DbIoException
 	 */
-	public List<AlarmScreening> getScreenings(DbKey siteId, DbKey datatypeId)
+	public ArrayList<AlarmScreening> getScreenings(DbKey siteId, DbKey datatypeId)
 		throws DbIoException;
 	
 	/**
@@ -127,4 +130,15 @@ public interface AlarmDAI
 	/** Fills the cache and returns all screenings in the db */
 	public ArrayList<AlarmScreening> getAllScreenings()
 		throws DbIoException;
+
+	/** Refresh the map: load with new, update existing, delete obsolete 
+	 * @throws DbIoException */
+	void refreshCurrentAlarms(HashMap<DbKey, Alarm> alarmMap) throws DbIoException;
+
+	void deleteCurrentAlarm(DbKey tsidKey)
+		throws DbIoException;
+	
+	void moveToHistory(Alarm alarm);
+
+	void writeToCurrent(Alarm alarm);
 }

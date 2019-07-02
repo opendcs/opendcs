@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/03/05 14:53:01  mmaloney
+ * Checked in partial implementation of Alarm classes.
+ *
  * Revision 1.4  2017/10/03 19:10:35  mmaloney
  * bug fix
  *
@@ -29,63 +32,84 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.alarm.AlarmGroup;
-import decodes.tsdb.alarm.AlarmMonitor;
 import decodes.tsdb.alarm.EmailAddr;
 
 public class AlarmMailer
 {
+	private static final String module = "AlarmMailer";
 	private Session session = null;
 	private String fromAddr = null;
 	private String fromName = null;
-	private AlarmMonitor parent = null;
+	private Properties mailProps = null;
 	
-	public AlarmMailer(AlarmMonitor parent)
-		throws MailerException 
+	/**
+	 * The following properties should be supplied:
+	 * <ul>
+	 *   <li>mail.smtp.auth - true/false</li>
+	 *   <li>mail.smtp.starttls.enable - true/false</li>
+	 *   <li>mail.smtp.host - hostname or IP addr of mail server</li>
+	 *   <li>mail.smtp.port - default=587</li>
+	 *   <li>smtp.username</li>
+	 *   <li>smtp.password</li>
+	 *   <li>fromAddr - email address for the header FROM field</li>
+	 *   <li>fromName</li>
+	 *  </ul> 
+	 *   
+	 * @param props
+	 * @throws MailerException
+	 */
+	public AlarmMailer()
 	{
-		this.parent = parent;
-		Properties props = new Properties();
-		CompAppInfo appInfo = parent.getAppInfo();
-		
-		String s = appInfo.getProperty("mail.smtp.auth");
-		props.put("mail.smtp.auth", s != null ? s : "true");
-		
-		s = appInfo.getProperty("mail.smtp.starttls.enable");
-		props.put("mail.smtp.starttls.enable", s != null ? s : "true");
-		
-		s = appInfo.getProperty("mail.smtp.host");
+	}
+	
+	/**
+	 * 
+	 * @param props
+	 * @throws MailerException on an unrecoverable config error.
+	 */
+	public synchronized void configure(Properties props)
+		throws MailerException
+	{
+		// Set defaults for missing props.
+		String s = PropertiesUtil.getIgnoreCase(props, "mail.smtp.auth");
 		if (s == null)
-			throw new MailerException("Application " + appInfo.getAppName() 
-				+ " missing required mail.smtp.host property.");
-		props.put("mail.smtp.host", s);
+			props.put("mail.smtp.auth", "false");
 		
-		s = appInfo.getProperty("mail.smtp.port");
-		props.put("mail.smtp.port", s != null ? s : "587");
+		s = PropertiesUtil.getIgnoreCase(props, "mail.smtp.starttls.enable");
+		if (s == null)
+			props.put("mail.smtp.starttls.enable", "false");
 		
-		final String username = appInfo.getProperty("smtp.username");
-//		if (username == null)
-//			throw new MailerException("Application " + appInfo.getAppName() 
-//				+ " missing required smtp.username property.");
+		s = PropertiesUtil.getIgnoreCase(props, "mail.smtp.host");
+		if (s == null)
+			throw new MailerException("Missing required mail.smtp.host property.");
 		
-		final String password = appInfo.getProperty("smtp.password");
-//		if (password == null)
-//			throw new MailerException("Application " + appInfo.getAppName() 
-//				+ " missing required smtp.password property.");
+		s = PropertiesUtil.getIgnoreCase(props, "mail.smtp.port");
+		if (s == null)
+			props.put("mail.smtp.port", "587");
 		
-		fromAddr = appInfo.getProperty("fromAddr");
+		
+		fromAddr = PropertiesUtil.getIgnoreCase(props, "fromAddr");
 		if (fromAddr == null)
-			throw new MailerException("Application " + appInfo.getAppName() 
-				+ " missing required fromAddr property.");
+			throw new MailerException("Missing required fromAddr property.");
 
-		fromName = appInfo.getProperty("fromName");
+		fromName = PropertiesUtil.getIgnoreCase(props, "fromName");
 		if (fromName == null)
-			throw new MailerException("Application " + appInfo.getAppName() 
-				+ " missing required fromName property.");
-
+			throw new MailerException("Missing required fromName property.");
+		
+		// Save props and force next call to send() to re-establish the session.
+		mailProps = props;
+		session = null;
+	}
+	
+	private void makeSession()
+	{
+		final String username = PropertiesUtil.getIgnoreCase(mailProps, "smtp.username");
+		final String password = PropertiesUtil.getIgnoreCase(mailProps, "smtp.password");
+		
 		if (username != null && password != null)
 		{
-			session = Session.getInstance(props,
+			session = Session.getInstance(mailProps,
 				new javax.mail.Authenticator() 
 				{
 					protected PasswordAuthentication getPasswordAuthentication()
@@ -93,24 +117,27 @@ public class AlarmMailer
 						return new PasswordAuthentication(username, password);
 					}
 				});
-			parent.info("Created AlarmMailer with props: '" 
-				+ PropertiesUtil.props2string(props)
+			Logger.instance().debug1(module + " Created AlarmMailer with props: '" 
+				+ PropertiesUtil.props2string(mailProps)
 				+ "' and username=" + username);
 		}
 		else
 		{
-			session = Session.getDefaultInstance(props);
-			parent.info("Created unauthenticaed mailer with props: '"
-				+ PropertiesUtil.props2string(props) + "'");
+			session = Session.getDefaultInstance(mailProps);
+			Logger.instance().info(module + " Created unauthenticaed mailer with props: '"
+				+ PropertiesUtil.props2string(mailProps) + "'");
 		}
 	}
 
-	public void send(AlarmGroup group, ArrayList<String> messages)
+	public synchronized void send(AlarmGroup group, ArrayList<String> messages)
 		throws MailerException
 	{
+		if (session == null)
+			makeSession();
+		
 		if (group.getEmailAddrs().size() == 0)
 		{
-			Logger.instance().warning("Cannot send alarms for group "
+			Logger.instance().warning(module + " Cannot send alarms for group "
 				+ group.getName() + " -- email list empty.");
 			return;
 		}
@@ -137,7 +164,7 @@ public class AlarmMailer
 			String emailText = sb.toString();
 			message.setText(emailText);
 			Transport.send(message);
-			parent.info("Sent email with text: " + emailText);
+			Logger.instance().info(module + " Sent email with text: " + emailText);
  
 		}
 		catch (Exception ex) 
