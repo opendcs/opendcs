@@ -12,6 +12,7 @@
 */
 package decodes.hdb;
 
+import java.util.StringTokenizer;
 
 public class HdbFlags 
 {
@@ -52,9 +53,6 @@ public class HdbFlags
 	public static final int HDBF_ESTIMATED                = 0x00004000;
 	public static final int HDBF_MISSING_SAMPLES_EXCEEDED = 0x00008000;
 	
-	
-
-
 	// Characters for the String code in HDB DERIVATION Flag
 	public static final char HDB_ESTIMATED                = 'E';
 	public static final char HDB_HIGH_RANGE_EXCEEDED      = '+';
@@ -65,6 +63,41 @@ public class HdbFlags
 	public static final char HDB_RATE_OF_CHANGE_EXCEEDED  = '^';
 	public static final char HDB_NO_CHANGE_LIMIT_EXCEEDED = '~';
 	
+	// The value was successfully screened.
+	public static final int SCREENED                      = 0x00010000;
+
+	// Apply this mask and compare to SCR_VALUE_xxx definitions to obtain result
+	public static final int SCR_VALUE_MASK         = 0x000E0000;
+	public static final int SCR_VALUE_GOOD                = 0x00000000;
+	public static final int SCR_VALUE_REJECT_HIGH         = 0x00020000;
+	public static final int SCR_VALUE_CRITICAL_HIGH       = 0x00040000;
+	public static final int SCR_VALUE_WARNING_HIGH        = 0x00060000;
+	public static final int SCR_VALUE_WARNING_LOW         = 0x00080000;
+	public static final int SCR_VALUE_CRITICAL_LOW        = 0x000A0000;
+	public static final int SCR_VALUE_REJECT_LOW          = 0x000C0000;
+	
+	// Apply this mask and compare to SCR_ROC_xxx definitions to obtain result
+	public static final int SCR_ROC_MASK           = 0x00700000;
+	public static final int SCR_ROC_GOOD                  = 0x00000000;
+	public static final int SCR_ROC_REJECT_HIGH           = 0x00100000;
+	public static final int SCR_ROC_CRITICAL_HIGH         = 0x00200000;
+	public static final int SCR_ROC_WARNING_HIGH          = 0x00300000;
+	public static final int SCR_ROC_WARNING_LOW           = 0x00400000;
+	public static final int SCR_ROC_CRITICAL_LOW          = 0x00500000;
+	public static final int SCR_ROC_REJECT_LOW            = 0x00600000;
+	
+	public static final int SCR_STUCK_SENSOR_DETECTED     = 0x00800000;
+
+	// The following is NOT stored in data values, but used by the
+	// alarm system only
+	public static final int SCR_MISSING_VALUES_EXCEEDED   = 0x01000000;
+		
+	// All screening faults, 0 means value good, no faults detected
+	public static final int SCREENING_FAULTS = SCR_VALUE_MASK 
+			| SCR_ROC_MASK | SCR_STUCK_SENSOR_DETECTED | SCR_MISSING_VALUES_EXCEEDED;
+	// All bits used in screening:
+	public static final int SCREENING_MASK = SCREENED | SCREENING_FAULTS; 
+
 	/** Used internally by Var methods, defined in ilex.util.IFlags.java *
 	public static final int RESERVED_ILEX_IFLAGS          = 0xF0000000;
 	
@@ -127,6 +160,10 @@ public class HdbFlags
 			sb.append(HDB_MISSING_SAMPLES_EXCEEDED); 
 		if ((flag & HDBF_FAILED_VALIDATION) != 0)
 			sb.append(HDB_FAILED_VALIDATION); 
+		
+		String scr = flags2screeningString(flag);
+		if (scr != null && scr.length() > 0)
+			sb.append(scr);
 		
 		String ret = sb.toString();
 		return ret.length() > 0 ? ret : null;
@@ -196,6 +233,8 @@ public class HdbFlags
 				break;
 			}
 		
+		ret |= screening2flags(der);
+		
 		return ret;
 	}
 	
@@ -212,6 +251,162 @@ public class HdbFlags
 	public static final boolean isQuestionable(int f)
 	{
 		return (f & HDBF_VALUE_QC_MASK) != 0;
+	}
+	
+	/**
+	 * Convert an integer containing bit flags into a string of the form
+	 * S(conditions), where 'conditions' is a string representation of the
+	 * asserted screening conditions.
+	 * @param flags integer flag word
+	 * @return string representation of screening conditions
+	 */
+	public static String flags2screeningString(int flags)
+	{
+		if ((flags & SCREENED) == 0)
+			return null;
+		StringBuilder sb = new StringBuilder("S(");
+		String val = null;
+		boolean notOk = false;
+		switch(flags & SCR_VALUE_MASK)
+		{
+		case SCR_VALUE_GOOD: break;
+		case SCR_VALUE_REJECT_HIGH:   val = "R+"; break;
+		case SCR_VALUE_CRITICAL_HIGH: val = "++"; break;
+		case SCR_VALUE_WARNING_HIGH:  val = "+"; break;
+		case SCR_VALUE_WARNING_LOW:   val = "-"; break;
+		case SCR_VALUE_CRITICAL_LOW:  val = "--"; break;
+		case SCR_VALUE_REJECT_LOW:    val = "R-"; break;
+		}
+		if (val != null)
+		{
+			sb.append(val);
+			notOk = true;
+		}
+		
+		String roc = null;
+		switch(flags & SCR_ROC_MASK)
+		{
+		case SCR_ROC_GOOD: break;
+		case SCR_ROC_REJECT_HIGH:   roc = "R^"; break;
+		case SCR_ROC_CRITICAL_HIGH: roc = "^^"; break;
+		case SCR_ROC_WARNING_HIGH:  roc = "^"; break;
+		case SCR_ROC_WARNING_LOW:   roc = "v"; break;
+		case SCR_ROC_CRITICAL_LOW:  roc = "vv"; break;
+		case SCR_ROC_REJECT_LOW:    roc = "Rv"; break;
+		}
+		if (roc != null)
+		{
+			sb.append((notOk ? " " : "") + roc);
+			notOk = true;
+		}
+
+		if ((flags & SCR_STUCK_SENSOR_DETECTED) != 0)
+		{
+			sb.append((notOk ? " " : "") + "~");
+			notOk = true;
+		}
+		
+		if ((flags & SCR_MISSING_VALUES_EXCEEDED) != 0)
+		{
+			sb.append((notOk ? " " : "") + "m");
+			notOk = true;
+		}
+
+		sb.append(")");
+		return sb.toString();
+	}
+	
+	/**
+	 * Accept a string in the form S(conditions) and convert it to an
+	 * integer containing corresponding bit representation of the screening
+	 * conditions asserted.
+	 * <p/>
+	 * This method can be used for individual condition codes or for the entire coded string
+	 * caontained within S(...)
+	 * @param scr The "data_flag" string stored in HDB.
+	 * @return integer containing corresponding bits.
+	 */
+	public static final int screening2flags(String scr)
+	{
+		if (scr == null)
+			return 0;
+		
+		int start = scr.indexOf("S(");
+		if (start < 0 || start+2 >= scr.length())
+			return 0; // No screening definitions here
+		
+		scr = scr.substring(start+2);
+		int end = scr.indexOf(")");
+		if (end > 0)
+			scr = scr.substring(0, end);
+		
+		int ret = SCREENED;
+		StringTokenizer st = new StringTokenizer(scr);
+		while(st.hasMoreTokens())
+		{
+			String tok = st.nextToken();
+			if      (tok.equalsIgnoreCase("R+")) ret |= SCR_VALUE_REJECT_HIGH;
+			else if (tok.equalsIgnoreCase("++")) ret |= SCR_VALUE_CRITICAL_HIGH;
+			else if (tok.equalsIgnoreCase("+"))  ret |= SCR_VALUE_WARNING_HIGH;
+			else if (tok.equalsIgnoreCase("R-")) ret |= SCR_VALUE_REJECT_LOW;
+			else if (tok.equalsIgnoreCase("--")) ret |= SCR_VALUE_CRITICAL_LOW;
+			else if (tok.equalsIgnoreCase("-"))  ret |= SCR_VALUE_WARNING_LOW;
+			
+			else if (tok.equalsIgnoreCase("R^")) ret |= SCR_ROC_REJECT_HIGH;
+			else if (tok.equalsIgnoreCase("^^")) ret |= SCR_ROC_CRITICAL_HIGH;
+			else if (tok.equalsIgnoreCase("^"))  ret |= SCR_ROC_WARNING_HIGH;
+			else if (tok.equalsIgnoreCase("Rv")) ret |= SCR_ROC_REJECT_LOW;
+			else if (tok.equalsIgnoreCase("vv")) ret |= SCR_ROC_CRITICAL_LOW;
+			else if (tok.equalsIgnoreCase("v"))  ret |= SCR_ROC_WARNING_LOW;
+			
+			else if (tok.equalsIgnoreCase("~"))  ret |= SCR_STUCK_SENSOR_DETECTED;
+			else if (tok.equalsIgnoreCase("m"))  ret |= SCR_MISSING_VALUES_EXCEEDED;
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Convert an integer containing bit flags into a string containing a full
+	 * explanation of the flags.
+	 * @param flags integer flag word
+	 * @return string explaining screening conditions
+	 */
+	public static String flags2explanation(int flags)
+	{
+		if ((flags & SCREENED) == 0 || (flags&SCREENING_FAULTS) == 0)
+			return "";
+		
+		StringBuilder sb = new StringBuilder();
+		switch(flags & SCR_VALUE_MASK)
+		{
+		case SCR_VALUE_GOOD: break;
+		case SCR_VALUE_REJECT_HIGH:   sb.append("VALUE_REJECT_HIGH "); break;
+		case SCR_VALUE_CRITICAL_HIGH: sb.append("VALUE_CRITICAL_HIGH "); break;
+		case SCR_VALUE_WARNING_HIGH:  sb.append("VALUE_WARNING_HIGH "); break;
+		case SCR_VALUE_WARNING_LOW:   sb.append("VALUE_WARNING_LOW "); break;
+		case SCR_VALUE_CRITICAL_LOW:  sb.append("VALUE_CRITICAL_LOW "); break;
+		case SCR_VALUE_REJECT_LOW:    sb.append("VALUE_REJECT_LOW "); break;
+		}
+		
+		switch(flags & SCR_ROC_MASK)
+		{
+		case SCR_ROC_GOOD: break;
+		case SCR_ROC_REJECT_HIGH:   sb.append("ROC_REJECT_HIGH "); break;
+		case SCR_ROC_CRITICAL_HIGH: sb.append("ROC_CRITICAL_HIGH "); break;
+		case SCR_ROC_WARNING_HIGH:  sb.append("ROC_WARNING_HIGH "); break;
+		case SCR_ROC_WARNING_LOW:   sb.append("ROC_WARNING_LOW "); break;
+		case SCR_ROC_CRITICAL_LOW:  sb.append("ROC_CRITICAL_LOW "); break;
+		case SCR_ROC_REJECT_LOW:    sb.append("ROC_REJECT_LOW "); break;
+		}
+
+		if ((flags & SCR_STUCK_SENSOR_DETECTED) != 0)
+			sb.append("STUCK ");
+		
+		if ((flags & SCR_MISSING_VALUES_EXCEEDED) != 0)
+			sb.append("MISSING ");
+
+		return sb.toString();
 	}
 
 }

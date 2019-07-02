@@ -1,6 +1,7 @@
 package decodes.hdb;
 
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
@@ -341,14 +342,19 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		if (!include_lower) lower_check = " > ";
 		if (!include_upper) upper_check = " < ";
 		String table = ts.getTableSelector() + ts.getInterval();
+		
+		String tabsel = ts.getTableSelector();
+		boolean isModeled = tabsel != null && TextUtil.startsWithIgnoreCase(ts.getTableSelector(), "M");
+		
 		String fields = "START_DATE_TIME, VALUE";
+		if (!isModeled)
+			fields = fields + ", DERIVATION_FLAGS"; // Get derivation flags for REAL data only
+		
 		String q = "select " + fields + " from " + table 
 			+ " where SITE_DATATYPE_ID = " + ts.getSDI()
 			+ " and START_DATE_TIME " + lower_check  + db.sqlDate(from)
 			+ " and START_DATE_TIME " + upper_check + db.sqlDate(until);
-		String tabsel = ts.getTableSelector();
-		if (tabsel != null && tabsel.length() > 0
-		 && tabsel.toLowerCase().charAt(0) == 'm')
+		if (isModeled)
 		{
 			if (ts.getModelRunId() == Constants.undefinedIntKey)
 			{
@@ -388,6 +394,12 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 					}
 				}
 				tv.setTime(timeStamp);
+				if (!isModeled)
+				{
+					String sf = rs.getString(3);
+					if (sf != null)
+						tv.setFlags(HdbFlags.screening2flags(sf));
+				}
 				ts.addSample(tv);
 				numAdded++;
 			}
