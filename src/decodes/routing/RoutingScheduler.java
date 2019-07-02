@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.15  2019/03/14 19:12:56  mmaloney
+ * Ignore DbIoException while purging old status.
+ *
  * Revision 1.14  2018/03/30 14:13:32  mmaloney
  * Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
  *
@@ -57,7 +60,6 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.PassThruLogger;
 import ilex.util.PropertiesUtil;
 import ilex.util.ServerLock;
 import ilex.util.StderrLogger;
@@ -78,7 +80,6 @@ import lrgs.gui.DecodesInterface;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.ScheduleEntry;
-import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompEventSvr;
@@ -245,8 +246,11 @@ public class RoutingScheduler
 					// It was throwing a foreign key exception to DACQ_EVENT at AEP.
 					try
 					{
-						scheduleEntryDAO.deleteScheduleStatusBefore(appInfo,
-							new Date(System.currentTimeMillis() - purgeBeforeDays*MSEC_PER_DAY));
+						Date purgeDate = new Date(System.currentTimeMillis() - purgeBeforeDays*MSEC_PER_DAY);
+						
+						if (dacqEventDAO != null)
+							dacqEventDAO.deleteBefore(purgeDate);
+						scheduleEntryDAO.deleteScheduleStatusBefore(appInfo, purgeDate);
 					}
 					catch(Exception ex) {}
 					lastOldStatusPurge = now;
