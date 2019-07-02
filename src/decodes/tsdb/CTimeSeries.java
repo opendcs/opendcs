@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.4  2018/11/14 15:49:12  mmaloney
+*  Added deleteAll method.
+*
 *  Revision 1.3  2018/05/23 19:59:01  mmaloney
 *  OpenTSDB Initial Release
 *
@@ -451,6 +454,19 @@ public class CTimeSeries
 			return vars.get(idx);
 		else
 			return null;
+	}
+	
+	/**
+	 * 
+	 * @param ref
+	 * @return index of first value after or equal to the reference date, or -1 if none.
+	 */
+	public int findNextIdx(Date ref)
+	{
+		for(int idx = 0; idx < vars.size(); idx++)
+			if (!vars.get(idx).getTime().before(ref))
+				return idx;
+		return -1;
 	}
 
 	/**
