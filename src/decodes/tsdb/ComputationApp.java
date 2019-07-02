@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.16  2019/05/15 22:27:31  mmaloney
+*  HDB 681 null ptr fix
+*
 *  Revision 1.15  2019/01/10 16:02:28  mmaloney
 *  Special case for cloning when the algorithm is GroupAdder.
 *
@@ -257,7 +260,7 @@ public class ComputationApp
 				if (now - lastCacheMaintenance > 3600 * 2 * 1000L)
 				{
 					lastCacheMaintenance = now;
-					doCacheMaintenance();
+					refillSiteCache();
 				}
 				
 				if (now - lastTimedCompCheck > checkTimedCompsSec * 1000L) 
@@ -430,7 +433,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 	/**
 	 * MJM Added for 6.4 RC08 to refresh site cache every 2 hours.
 	 */
-	private void doCacheMaintenance()
+	private void refillSiteCache()
 	{
 		info("Doing Periodic Cache Maintenance ...");
 		SiteDAI siteDAO = theDb.makeSiteDAO();
@@ -816,7 +819,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 					// If the transformed TSID exists in the DB, I can execute.
 					if (parmTsid != null)  // Transformed TSID exists in the database
 						numInputsDefined++;
-					else if (ma != MissingAction.IGNORE) // algorithm requires it to be undefined.
+					else if (ma != MissingAction.IGNORE) // algorithm requires it to be defined.
 					{
 						// This input parm does not exist and it can't be ignored.
 						// Therefore cannot execute this clone.
