@@ -47,7 +47,7 @@ import org.lobobrowser.html.test.SimpleUserAgentContext;
 
 
 /**
- * Designed for MB Hydro use of the d.weatheroffice.gc.ca web site.
+ * Designed for MB Hydro use of the dd.weatheroffice.gc.ca web site.
  * Provide a directory URL with embedded times in it. Build the URL and list the files
  * contained in the directory. Parse the file names for mediumIDs I'm interested in.
  * File names also contain the message time stamp.
