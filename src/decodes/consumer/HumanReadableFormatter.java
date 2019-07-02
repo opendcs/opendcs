@@ -6,22 +6,27 @@ package decodes.consumer;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Date;
-import java.util.Calendar;
 import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 
 import ilex.var.TimedVariable;
+import opendcs.opentsdb.OpenTsdbFlags;
 import ilex.util.TextUtil;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import decodes.cwms.CwmsFlags;
-import decodes.db.*;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
-import decodes.decoder.Sensor;
+import decodes.hdb.HdbFlags;
+import decodes.sql.SqlDatabaseIO;
 import decodes.datasource.RawMessage;
-import decodes.datasource.UnknownPlatformException;
+import decodes.db.Constants;
+import decodes.db.DataType;
+import decodes.db.Database;
+import decodes.db.DatabaseIO;
+import decodes.db.Platform;
+import decodes.db.PresentationGroup;
 import decodes.util.DecodesSettings;
 
 /**
@@ -46,7 +51,7 @@ public class HumanReadableFormatter extends OutputFormatter
 //		Constants.datatype_SHEF;
 	private boolean displayEmpty;
 	private ArrayList<Column> columns;
-	boolean cwmsflags = false;
+	boolean showflags = false;
 	boolean includeSensorNum = false;
 
 	/** default constructor */
@@ -92,8 +97,10 @@ public class HumanReadableFormatter extends OutputFormatter
 			displayEmpty = TextUtil.str2boolean(s);
 		
 		s = PropertiesUtil.getIgnoreCase(rsProps, "cwmsflags");
+		if (s == null)
+			s = PropertiesUtil.getIgnoreCase(rsProps, "showflags");
 		if (s != null)
-			cwmsflags = TextUtil.str2boolean(s);
+			showflags = TextUtil.str2boolean(s);
 
 		s = PropertiesUtil.getIgnoreCase(rsProps, "includeSensorNum");
 		if (s != null)
@@ -125,24 +132,23 @@ public class HumanReadableFormatter extends OutputFormatter
 		{
 			Platform p = rawmsg.getPlatform();
 			consumer.println("");
-			String name = rawmsg.getPlatform().makeFileName();
+			String name = p.makeFileName();
 			if ( ! name.equals("dummy") )
-				consumer.println("Message for Platform " 
-					+ rawmsg.getPlatform().makeFileName());
+				consumer.println("Message for Platform " + p.makeFileName());
 		}
 		catch(Exception e) {}
 
 
 		// Construct column array.
-		int numColumns = 0;
-		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); it.next())
-			numColumns++;
+//		int numColumns = 0;
+//		for(Iterator<TimeSeries> it = msg.getAllTimeSeries(); it.hasNext(); it.next())
+//			numColumns++;
 		columns = new ArrayList<Column>();
 
 		int i=0;
-		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
+		for(Iterator<TimeSeries> it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
-			TimeSeries ts = (TimeSeries)it.next();
+			TimeSeries ts = it.next();
 			if (!displayEmpty && ts.size() == 0)
 				continue;
 			columns.add(new Column(ts));
@@ -302,10 +308,14 @@ public class HumanReadableFormatter extends OutputFormatter
 
 			dotPos = -1;
 			for(int i=0; i<timeSeries.size(); i++)
-//			for(Iterator it = timeSeries.formattedSamplesIterator(); 
-//				it.hasNext(); )
 			{
+				TimedVariable tv = timeSeries.sampleAt(i);
 				String s = timeSeries.formattedSampleAt(i);
+				if (showflags)
+				{
+					s = s + " " + flags2display(tv.getFlags());
+				}
+
 //				String s = (String)it.next();
 				if (s.length() > colWidth)
 					colWidth = s.length();
@@ -363,10 +373,10 @@ public class HumanReadableFormatter extends OutputFormatter
 						sb.deleteCharAt(sb.length() - 1);
 				}
 			}
-			if (cwmsflags)
+			if (showflags)
 			{
 				sb.append(' ');
-				sb.append(CwmsFlags.flags2Display(tv.getFlags()));
+				sb.append(flags2display(tv.getFlags()));
 			}
 			while(sb.length() < colWidth-2)
 				sb.append(' ');
@@ -374,6 +384,24 @@ public class HumanReadableFormatter extends OutputFormatter
 			s = sb.toString();
 			return s;
 		}
+	}
+	
+	private String flags2display(int flags)
+	{
+		DatabaseIO dbio = Database.getDb().getDbIo();
+		if (dbio == null || !(dbio instanceof SqlDatabaseIO))
+			return "";
+		SqlDatabaseIO sqldbio = (SqlDatabaseIO)dbio;
+		String ret = null;
+		if (sqldbio.isCwms())
+			ret = CwmsFlags.flags2Display(flags);
+		else if (sqldbio.isHdb())
+			ret = HdbFlags.flag2HdbDerivation(flags);
+		else
+			ret = OpenTsdbFlags.flags2screeningString(flags);
+		if (ret == null)
+			ret = "";
+		return ret;
 	}
 }
 
