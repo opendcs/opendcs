@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.54  2019/06/10 19:22:17  mmaloney
+*  Added getStorageUnitsForDataType
+*
 *  Revision 1.53  2019/03/15 11:58:54  mmaloney
 *  dev
 *
@@ -2241,6 +2244,12 @@ Logger.instance().debug3("Privilege: " + op);
 		if (hyphen > 0)
 			cwmsParam = cwmsParam.substring(0, hyphen);
 		return baseParam.getStoreUnits4Param(cwmsParam);
+	}
+	
+	@Override
+	public String flags2display(int flags)
+	{
+		return CwmsFlags.flags2Display(flags);
 	}
 
 }
