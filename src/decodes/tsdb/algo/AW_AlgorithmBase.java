@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.16  2018/11/14 15:58:48  mmaloney
+*  Added support for timedCompInterval and timedCompOffset properties.
+*
 *  Revision 1.15  2017/12/14 17:05:46  mmaloney
 *  Split out aggregate properties so that algo and comp editor can only show aggregate
 *  properties for aggregate-type algorithms.
@@ -219,7 +222,11 @@ public abstract class AW_AlgorithmBase
 			"Set for timed computations that are NOT triggered by inputs. e.g. '1 hour'"),
 		new PropertySpec("timedCompOffset", PropertySpec.STRING,
 			"(default=no offset) an optional offset after the regular interval for timed computations."
-			+ " e.g. '13 minutes'")
+			+ " e.g. '13 minutes'"),
+		new PropertySpec("timedCompDataSince",PropertySpec.STRING,
+			"Control data window SINCE time for timed computations e.g. '150 minutes'."),
+		new PropertySpec("timedCompDataUntil",PropertySpec.STRING,
+			"Control data window UNTIL time for timed computations e.g. '15 minutes'.")		
 	};
 	private PropertySpec aggAlgoPropertySpecs[] = 
 	{
