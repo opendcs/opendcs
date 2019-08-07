@@ -26,5 +26,12 @@ do
 	echo >> $OUTPUT
 done
 
+grep -ih "create sequence " $1 | sed -e "s/CREATE SEQUENCE //" | sed -e "s/;//" | sort>/tmp/seq-list
+for SEQ in `cat /tmp/seq-list`
+do
+	echo "ALTER SEQUENCE $SEQ OWNER TO \"OTSDB_ADMIN\";" >> $OUTPUT
+	echo "GRANT USAGE, SELECT ON SEQUENCE $SEQ TO \"OTSDB_USER\";" >>$OUTPUT
+done
+
 rm /tmp/table-list
 

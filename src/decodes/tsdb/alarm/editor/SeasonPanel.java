@@ -8,7 +8,9 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -19,6 +21,7 @@ import javax.swing.border.TitledBorder;
 
 import decodes.decoder.Season;
 import decodes.tsdb.BadScreeningException;
+import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.alarm.AlarmLimitSet;
 import opendcs.dai.IntervalDAI;
@@ -78,7 +81,18 @@ public class SeasonPanel extends JPanel
 		IntervalDAI intervalDAO = parentFrame.getTsDb().makeIntervalDAO();
 		try
 		{
-			dbIntervalArray = intervalDAO.getValidDurationCodes();
+			dbIntervalArray = intervalDAO.getValidIntervalCodes();
+			ArrayList<String> nonZeroIntervals = new ArrayList<String>();
+			for(Iterator<String> iit = nonZeroIntervals.iterator(); iit.hasNext(); )
+			{
+				String intvs = iit.next();
+				int sec = IntervalCodes.getIntervalSeconds(intvs);
+				if (sec == 0)
+					iit.remove();
+			}
+			dbIntervalArray = new String[nonZeroIntervals.size()];
+			for(int idx = 0; idx < dbIntervalArray.length; idx++)
+				dbIntervalArray[idx] = nonZeroIntervals.get(idx);
 			missingTSIntervalCombo = new JComboBox(dbIntervalArray);
 		}
 		catch(Exception ex)
@@ -298,7 +312,7 @@ public class SeasonPanel extends JPanel
 
 		missingDataPanel.setBorder(new TitledBorder(parentFrame.eventmonLabels.getString("missingData")));
 		
-		missingDataPanel.add(new JLabel(parentFrame.eventmonLabels.getString("checkEvery")+":"),
+		missingDataPanel.add(new JLabel(parentFrame.eventmonLabels.getString("checkPeriod")+":"),
 			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 5, 1, 1), 0, 0));

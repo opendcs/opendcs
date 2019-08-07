@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2019/06/10 19:26:31  mmaloney
+ * Added Screenings to Alarm Editor
+ *
  * Revision 1.1  2019/05/10 18:35:25  mmaloney
  * dev
  *
@@ -74,6 +77,7 @@ public class AlarmLimitSet
 	
 	/** set in prepareForExec() */
 	private transient Season season = null;
+	private transient boolean prepared = false;
 
 
 	public AlarmLimitSet()
@@ -393,11 +397,12 @@ public class AlarmLimitSet
 					}
 				}
 			}
-			else
+			else if (!seasonName.toLowerCase().contains("default"))
 				Logger.instance().warning("AlarmLimitSet with id=" + getLimitSetId() 
 					+ " season '" + this.getSeasonName()
 					+ "' cannot be resolved -- there is no Seasons enumeration in this database.");
 		}
+		prepared = true;
 	}
 
 
@@ -521,6 +526,12 @@ public class AlarmLimitSet
 			return false;
 		
 		return true;
+	}
+
+
+	public boolean isPrepared()
+	{
+		return prepared;
 	}
 	
 }

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2019/07/02 13:48:03  mmaloney
+ * 6.6RC04 First working Alarm Implementation
+ *
  */
 package decodes.tsdb.alarm;
 
@@ -69,28 +72,28 @@ public class AlarmScreeningAlgorithm
 		new PropertySpec("noOutputOnReject", PropertySpec.BOOLEAN, "(default=false) "
 			+ "If true and the value is REJECTED, then do not write output param at all. "),
 		
-		new PropertySpec("mail.smtp.auth", PropertySpec.BOOLEAN, "(default=false) "
-			+ "If true then authenticate when connecting to mail server."),
-		new PropertySpec("mail.smtp.starttls.enable", PropertySpec.BOOLEAN, "(default=false) "
-			+ "Use TLS for a secure connection to the mail server."),
-		new PropertySpec("mail.smtp.host", PropertySpec.HOSTNAME, "(required) "
-			+ "Host name or IP address of the mail server."),
-		new PropertySpec("mail.smtp.port", PropertySpec.INT, "(default=587) "
-			+ "Port number for connecting to the mail server"),
-		new PropertySpec("smtp.username", PropertySpec.STRING, 
-			"User name for authenticating to the mail server"),
-		new PropertySpec("smtp.password", PropertySpec.STRING, 
-			"Password for authenticating to the mail server"),
-		new PropertySpec("fromAddr", PropertySpec.STRING, 
-			"Email address for the 'from' field of the header"),
-		new PropertySpec("fromName", PropertySpec.STRING, 
-			"Name for the 'from' field of the header"),
-	
-		new PropertySpec("resendSeconds", PropertySpec.INT, "(default=86400) "
-			+ "Resend email for existing alarms if they remain asserted this long. "
-			+ "(-1 to disable resend)"),
-		new PropertySpec("notifyMaxAgeDays", PropertySpec.INT, "(default=30) "
-			+ "Do not send email notifications for data older than this.")
+// MJM These properties are set in the Loading Application (Process) record:		
+//		new PropertySpec("mail.smtp.auth", PropertySpec.BOOLEAN, "(default=false) "
+//			+ "If true then authenticate when connecting to mail server."),
+//		new PropertySpec("mail.smtp.starttls.enable", PropertySpec.BOOLEAN, "(default=false) "
+//			+ "Use TLS for a secure connection to the mail server."),
+//		new PropertySpec("mail.smtp.host", PropertySpec.HOSTNAME, "(required) "
+//			+ "Host name or IP address of the mail server."),
+//		new PropertySpec("mail.smtp.port", PropertySpec.INT, "(default=587) "
+//			+ "Port number for connecting to the mail server"),
+//		new PropertySpec("smtp.username", PropertySpec.STRING, 
+//			"User name for authenticating to the mail server"),
+//		new PropertySpec("smtp.password", PropertySpec.STRING, 
+//			"Password for authenticating to the mail server"),
+//		new PropertySpec("fromAddr", PropertySpec.STRING, 
+//			"Email address for the 'from' field of the header"),
+//		new PropertySpec("fromName", PropertySpec.STRING, 
+//			"Name for the 'from' field of the header"),
+//		new PropertySpec("resendSeconds", PropertySpec.INT, "(default=86400) "
+//			+ "Resend email for existing alarms if they remain asserted this long. "
+//			+ "(-1 to disable resend)"),
+//		new PropertySpec("notifyMaxAgeDays", PropertySpec.INT, "(default=30) "
+//			+ "Do not send email notifications for data older than this.")
 	};
 	
 	@Override
@@ -99,7 +102,7 @@ public class AlarmScreeningAlgorithm
 		return algoPropSpecs;
 	}
 	
-	private void getAlarmScreenings(TimeSeriesIdentifier inputTsid)
+	public void getAlarmScreenings(TimeSeriesIdentifier inputTsid)
 		throws DbCompException
 	{
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
@@ -125,9 +128,9 @@ public class AlarmScreeningAlgorithm
 				{
 					for(int idx = 0; 
 						idx < genScr.size() 
-						&& noSiteScreenings
-						   || (genScr.get(idx).getStartDateTime() == null
-						       || genScr.get(idx).getStartDateTime().before(earliestTrigger))
+						&& (noSiteScreenings
+						    || (genScr.get(idx).getStartDateTime() == null
+						       || genScr.get(idx).getStartDateTime().before(earliestTrigger)))
 							; idx++)
 					{
 						screenings.add(idx, genScr.get(idx));
@@ -161,7 +164,7 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 	 * @param t the time
 	 * @return true if a screening and limit set was found. False if not.
 	 */
-	private boolean initScreeningAndLimitSet(Date t)
+	public boolean initScreeningAndLimitSet(Date t)
 	{
 		tScreening = null;
 		tLimitSet = null;
@@ -183,9 +186,15 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		
 		// Now find the limit set within the screening.
 		for(AlarmLimitSet als : tScreening.getLimitSets())
+			if (!als.isPrepared())
+				als.prepareForExec();
+		
+		for(AlarmLimitSet als : tScreening.getLimitSets())
 		{
 			if (als.getSeason() == null) // This is the default (non-seasonal) limit set?
+			{	
 				tLimitSet = als;
+			}
 			else if (als.getSeason().isInSeason(t))
 			{
 				tLimitSet = als;
@@ -237,6 +246,16 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 //AW:USERINIT_END
 	}
 	
+	public TimeSeriesIdentifier initInputParmRef()
+		throws DbCompException
+	{
+		inputParm = getParmRef("input");
+		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
+		if (inputTsid == null)
+			throw new DbCompException("No input time-series identifier!");
+		return inputTsid;
+	}
+	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -244,12 +263,7 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
-
-		// Find the Screening record
-		inputParm = getParmRef("input");
-		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
-		if (inputTsid == null)
-			throw new DbCompException("No input time-series identifier!");
+		TimeSeriesIdentifier inputTsid = initInputParmRef();
 		
 		// Determine if input and output refer to the same time series.
 		ParmRef outputParm = getParmRef("output");
@@ -282,12 +296,6 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		_inputIsOutput = inputTsid.getKey() == outputTsid.getKey();
 		info("_inputIsOutput=" + _inputIsOutput);
 
-		getAlarmScreenings(inputTsid); // will throw DbCompException if it fails.
-		
-		// Find the first and last values in the time series that are triggers.
-		// Then prefetch data needed for ROC and stuck sensor alarms.
-		Date fetchFrom = null;
-		earliestTrigger = latestTrigger = null;
 		for(int idx = 0; idx < inputParm.timeSeries.size(); idx++)
 		{
 			TimedVariable tv = inputParm.timeSeries.sampleAt(idx);
@@ -299,6 +307,25 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 			}
 			else
 				continue;
+		}
+		if (earliestTrigger == null)
+			throw new DbCompException("triggered for input tsid '" + inputTsid.getUniqueString()
+			+ "' but no input trigger values.");
+		getAlarmScreenings(inputTsid); // will throw DbCompException if it fails.
+		if (screenings.size() == 0)
+			throw new DbCompException("no applicable screenings for tsid '" + inputTsid.getUniqueString()
+				+ " between triggers " + debugSdf.format(earliestTrigger) + " and " + debugSdf.format(latestTrigger));
+		
+		debug1("Triggers: earliest=" + debugSdf.format(earliestTrigger) + ", latest=" + debugSdf.format(latestTrigger)
+			+ ", retrieved " + screenings.size() + " screenings.");
+		
+		// Find the first and last values in the time series that are triggers.
+		// Then prefetch data needed for ROC and stuck sensor alarms.
+		Date fetchFrom = null;
+		earliestTrigger = latestTrigger = null;
+		for(int idx = 0; idx < inputParm.timeSeries.size(); idx++)
+		{
+			TimedVariable tv = inputParm.timeSeries.sampleAt(idx);
 			
 			if (!initScreeningAndLimitSet(tv.getTime()))
 				continue;
@@ -334,9 +361,6 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 				}
 			}
 		}
-		if (earliestTrigger == null)
-			throw new DbCompException("triggered for input tsid '" + inputTsid.getUniqueString()
-			+ "' but no input trigger values.");
 		
 		// If we need historical data, fetch it, but don't overwrite existing data in the TS object.
 		if (fetchFrom != null)
@@ -408,8 +432,11 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		{
 			// Use the interval to determine an actual time period, then fetch time series
 			// data if necessary and compute a delta.
-			IntervalIncrement rocII = IntervalIncrement.parse(tLimitSet.getStuckDuration());
+			IntervalIncrement rocII = IntervalIncrement.parse(tLimitSet.getRocInterval());
 			TimedVariable startOfPeriod = null;
+debug1("ROC interval=" + tLimitSet.getRocInterval() + " parsed to "
++ (rocII==null ? "ERROR" : (""+rocII.getCount() + " const=" + rocII.getCalConstant())));
+
 			if (rocII != null)
 			{
 				aggCal.setTime(t);
@@ -418,11 +445,11 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 					count = -count;
 				aggCal.add(rocII.getCalConstant(), count);
 				Date from = aggCal.getTime();
-
 				startOfPeriod = inputParm.timeSeries.findInterp(from.getTime()/1000L);
+				double prev = 0.0;
 				if (startOfPeriod != null)
 				{
-					try { delta = input - startOfPeriod.getDoubleValue(); }
+					try { delta = input - (prev=startOfPeriod.getDoubleValue()); }
 					catch(Exception ex)
 					{
 						warning("Cannot do ROC check because startOfPeriod had non-numeric value: " 
@@ -430,7 +457,9 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 						startOfPeriod = null;
 					}
 				}
-				
+else debug1("\tvalue at start of period not found.");
+debug1("ROC check prev=" + debugSdf.format(from) + " " + prev + ", delta=" + delta + ", high limits r/c/w="
++ tLimitSet.getRejectRocHigh() + "/" + tLimitSet.getCriticalRocHigh() + "/" + tLimitSet.getWarningRocHigh());
 				if (startOfPeriod != null)
 				{
 					// Check the ROC limits
@@ -565,6 +594,16 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 	public String[] getPropertyNames()
 	{
 		return _propertyNames;
+	}
+
+	public AlarmLimitSet gettLimitSet()
+	{
+		return tLimitSet;
+	}
+
+	public AlarmScreening gettScreening()
+	{
+		return tScreening;
 	}
 	
 }

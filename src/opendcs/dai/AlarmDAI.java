@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.3  2019/07/02 13:50:19  mmaloney
+ * 6.6RC04 First working Alarm Implementation
+ *
  * Revision 1.2  2019/05/10 18:35:26  mmaloney
  * dev
  *
@@ -20,11 +23,13 @@
 package opendcs.dai;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.BadScreeningException;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.alarm.Alarm;
 import decodes.tsdb.alarm.AlarmConfig;
 import decodes.tsdb.alarm.AlarmGroup;
@@ -130,15 +135,37 @@ public interface AlarmDAI
 	/** Fills the cache and returns all screenings in the db */
 	public ArrayList<AlarmScreening> getAllScreenings()
 		throws DbIoException;
+	
+	/** Retrieve a screening by its ID */
+	public AlarmScreening getScreening(DbKey screeningId)
+		throws DbIoException;
 
 	/** Refresh the map: load with new, update existing, delete obsolete 
 	 * @throws DbIoException */
-	void refreshCurrentAlarms(HashMap<DbKey, Alarm> alarmMap) throws DbIoException;
+	public void refreshCurrentAlarms(HashMap<DbKey, Alarm> alarmMap) throws DbIoException;
 
-	void deleteCurrentAlarm(DbKey tsidKey)
+	public void deleteCurrentAlarm(DbKey tsidKey)
 		throws DbIoException;
 	
-	void moveToHistory(Alarm alarm);
+	public void moveToHistory(Alarm alarm);
 
-	void writeToCurrent(Alarm alarm);
+	public void writeToCurrent(Alarm alarm);
+
+	/**
+	 * Read records from ALARM_HISTORY table.
+	 * @param tsids list of TSIDs to retrieve alarms for. If empty, retrieve all
+	 * @return
+	 * @throws DbIoException
+	 */
+	public ArrayList<Alarm> readAlarmHistory(ArrayList<TimeSeriesIdentifier> tsids) throws DbIoException;
+
+	/**
+	 * Delete any alarms with the given TSID within a time range from the history table.
+	 * @param tsidKey Required - the key of the time series identifier
+	 * @param since delete alarms since this time, null means no lower bound
+	 * @param until delete alarms until this time, null means no upper bound
+	 * @throws DbIoException
+	 */
+	public void deleteHistoryAlarms(DbKey tsidKey, Date since, Date until)
+		throws DbIoException;
 }

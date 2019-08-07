@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2019/07/02 13:48:03  mmaloney
+ * 6.6RC04 First working Alarm Implementation
+ *
  */
 package decodes.tsdb.alarm;
 
@@ -394,6 +397,7 @@ public class AlarmManager
 				if (currentAlarm != null)
 				{
 					// The alarm is now cleared. Move the record to ALARM_HISTORY.
+					// The following also cancels any previous MISSING alarms. Good.
 					action = "moving old alarm to history";
 					currentAlarms.remove(tsid.getKey());
 					currentAlarm.setEndTime(now);
@@ -401,7 +405,7 @@ public class AlarmManager
 					
 					if (!DbKey.isNull(scrn.getAlarmGroupId()))
 					{
-						// If a group is used, queue a message indicating that the alarm is cleared
+						// If a group is used, queue a message indicating that the alarm is cleared.
 						String msg = "Value " + numFmt.format(value) + " at time " + sdf.format(t)
 							+ " back within limits. All alarms cancelled.";
 						msgQ.add(
@@ -481,13 +485,11 @@ public class AlarmManager
 				sb.append(".");
 				
 				// If a group is used, queue for an email message.
+				// This will cancel any previous MISSING assertion. Good!
 				action = "enqueuing alarm for email";
 				String alarmMsg = sb.toString();
 				if (!DbKey.isNull(scrn.getAlarmGroupId()))
-				{
-					currentAlarm.setLastNotificationTime(now);
 					msgQ.add(new AlarmMsg(scrn.getAlarmGroupId(), tsid, now, limitSet.getHintText(), alarmMsg));
-				}
 				
 				// Write the alarm to my cache and the database current_alarm table.
 				action = "finalizing alarm message";
@@ -506,6 +508,9 @@ public class AlarmManager
 				currentAlarm.setDataTime(t);
 				currentAlarm.setAlarmFlags(scrFlags);
 				currentAlarm.setMessage(alarmMsg);
+				if (!DbKey.isNull(scrn.getAlarmGroupId()))
+					currentAlarm.setLastNotificationTime(now);
+
 				action = "writing message to alarm_current table";
 				alarmDAO.writeToCurrent(currentAlarm);
 			}
@@ -522,6 +527,70 @@ public class AlarmManager
 			alarmDAO.close();
 		}
 		
+	}
+	
+	public void missingCheckResults(TimeSeriesIdentifier tsid, Date chkTime, int numReceived, int numExpected,
+		AlarmScreening scrn, AlarmLimitSet limitSet)
+	{
+		Alarm currentAlarm = currentAlarms.get(tsid.getKey());
+		boolean isMissing = numExpected - numReceived > limitSet.getMaxMissingValues();
+		
+		if (!isMissing)
+		{
+			// MISSING alarms will be cancelled in the 'checkAlarms' method above when new
+			// data is received for the TSID. So there's no need to do anything here.
+			return;
+		}
+		
+		// Alarm assertions only go forward in time.
+		if (currentAlarm != null && chkTime.before(currentAlarm.getDataTime()))
+			return;
+		if (currentAlarm == null 
+		 && System.currentTimeMillis()-chkTime.getTime() > (notifyMaxAgeDays * MS_PER_DAY))
+			return;
+
+		String missingMsg =
+			"Missing data for " + tsid.getUniqueString() + " at time " + sdf.format(chkTime)
+			+ ": expected at least " + numExpected + " values in the past "
+			+ limitSet.getMissingPeriod() + " but received " + numReceived;
+
+		if (currentAlarm == null)
+		{
+			// This is a new alarm condition
+			currentAlarm = new Alarm();
+			currentAlarm.setTsid(tsid);
+			currentAlarm.setTsidKey(tsid.getKey());
+			currentAlarm.setLimitSet(limitSet);
+			currentAlarm.setLimitSetId(limitSet.getLimitSetId());
+			currentAlarm.setAssertTime(chkTime);
+			// There is no data value or data time to set!
+			currentAlarm.setAlarmFlags(HdbFlags.SCR_MISSING_VALUES_EXCEEDED);
+			currentAlarm.setMessage(missingMsg);
+			// No end time
+			// No cancelledBy
+			currentAlarms.put(tsid.getKey(), currentAlarm);
+		}
+		else // There is already an existing alarm assertion for this tsid.
+		{
+			if ((currentAlarm.getAlarmFlags() & HdbFlags.SCR_MISSING_VALUES_EXCEEDED) != 0)
+				// missing alarm already asserted: do nothing.
+				return;
+			else
+			{
+				currentAlarm.setAlarmFlags(currentAlarm.getAlarmFlags() | HdbFlags.SCR_MISSING_VALUES_EXCEEDED);
+				currentAlarm.setMessage(currentAlarm.getMessage() + "\n" + missingMsg);
+				// fall through to enqueue an alarm message
+			}
+		}
+
+		// Update/Assert the alarm in the database
+		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
+		try { alarmDAO.writeToCurrent(currentAlarm); }
+		finally { alarmDAO.close(); }
+
+		// Enqueue a message for the background thread to send via email.
+		msgQ.add(new AlarmMsg(scrn.getAlarmGroupId(), tsid, chkTime, limitSet.getHintText(), 
+			currentAlarm.getMessage()));
 	}
 	
 	private void refreshCurrentAlarms() 

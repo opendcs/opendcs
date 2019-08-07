@@ -424,7 +424,7 @@ class ScreeningListTableModel extends AbstractTableModel
 		case 0: return scrn.getScreeningId().toString();
 		case 1: return scrn.getScreeningName();
 		case 2: return scrn.getDataType() == null ? "null" : scrn.getDataType().getCode();
-		case 3: return scrn.getSiteNames().size()==0 ? "(none)" : scrn.getSiteNames().get(1).getNameValue();
+		case 3: return scrn.getSiteNames().size()==0 ? "(none)" : scrn.getSiteNames().get(0).getNameValue();
 		case 4: return scrn.getGroupName() == null ? "" : scrn.getGroupName();
 		case 5: return sdf.format(scrn.getLastModified());
 		default: return "";

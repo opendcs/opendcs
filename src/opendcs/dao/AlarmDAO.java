@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.5  2019/07/02 13:50:32  mmaloney
+ * 6.6RC04 First working Alarm Implementation
+ *
  * Revision 1.4  2019/06/10 19:37:33  mmaloney
  * Added Screening I/O
  *
@@ -46,6 +49,7 @@ import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.BadScreeningException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.alarm.Alarm;
 import decodes.tsdb.alarm.AlarmConfig;
 import decodes.tsdb.alarm.AlarmEvent;
@@ -98,6 +102,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			new DbObjectCache<AlarmScreening>(Long.MAX_VALUE, false);
 	private long lastCacheLoadMsec = 0L;
 	private static final long CACHE_RELOAD_MSEC = 1 * 60 * 60 * 1000L;
+	private boolean noTsAlarms = false;
 
 	/**
 	 * @param tsdb
@@ -105,11 +110,16 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	public AlarmDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "AlarmDAO");
-		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_17)
+		int dbver = db.getDecodesDatabaseVersion();
+		
+		// Prior to DB version 17, the alarm_event table had a different definition and
+		// there were no time series alarms.
+		if (dbver < DecodesDatabaseVersion.DECODES_DB_17)
 		{
 			alarmEventTable = "ALARM_DEF";
 			alarmEventColumns = "ALARM_DEF_ID, ALARM_GROUP_ID, "
 				+ "LOADING_APPLICATION_ID, PRIORITY, PATTERN";
+			noTsAlarms = true;
 		}
 		screeningCache.testMode = true;
 	}
@@ -443,6 +453,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	public ArrayList<AlarmScreening> getScreenings(DbKey siteId, DbKey datatypeId)
 		throws DbIoException
 	{
+		if (noTsAlarms)
+			return null;
+		
 		if (System.currentTimeMillis() - lastCacheLoadMsec >= CACHE_RELOAD_MSEC)
 			fillScreeningCache();
 		
@@ -472,6 +485,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	private void fillScreeningCache()
 		throws DbIoException
 	{
+		if (noTsAlarms)
+			return;
+		
 		screeningCache.clear();
 		
 		// Read all of the screening objects
@@ -613,6 +629,8 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	public void writeScreening(AlarmScreening as)
 		throws DbIoException, BadScreeningException
 	{
+		if (noTsAlarms)
+			throw new BadScreeningException("This database does not support time series alarms.");
 		if (DbKey.isNull(as.getDatatypeId()))
 			throw new BadScreeningException("Datatype cannot be null.");
 		
@@ -705,6 +723,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	public void writeLimitSet(AlarmLimitSet als)
 		throws DbIoException
 	{
+		if (noTsAlarms)
+			return;
+
 		String q = "";
 		try
 		{
@@ -1050,6 +1071,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	public void refreshCurrentAlarms(HashMap<DbKey, Alarm> alarmMap)
 		throws DbIoException
 	{
+		if (noTsAlarms)
+			return;
+		
 		for(Alarm alarm : alarmMap.values())
 			alarm.setChecked(false);
 		
@@ -1128,28 +1152,29 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		}
 	}
 	
-//	private Alarm rs2alarm(ResultSet rs)
-//		throws SQLException
-//	{
-//		DbKey tsKey = DbKey.createDbKey(rs, 1);
-//		Alarm alarm = new Alarm();
-//		alarm.setTsidKey(tsKey);
-//		alarm.setAssertTime(new Date(rs.getLong(3)));
-//		alarm.setLimitSetId(DbKey.createDbKey(rs, 2));
-//		alarm.setDataValue(rs.getDouble(4));
-//		alarm.setDataTime(new Date(rs.getLong(5)));
-//		alarm.setAlarmFlags(rs.getInt(6));
-//		alarm.setMessage(rs.getString(7));
-//		alarm.setLastNotificationTime(new Date(rs.getLong(8)));
-//
-//		return alarm;
-//	}
-
 	@Override
 	public void deleteCurrentAlarm(DbKey tsidKey) 
 		throws DbIoException
 	{
+		if (noTsAlarms)
+			return;
+		
 		String q = "delete from ALARM_CURRENT where ts_id = " + tsidKey;
+		doModify(q);
+	}
+	
+	@Override
+	public void deleteHistoryAlarms(DbKey tsidKey, Date since, Date until) 
+		throws DbIoException
+	{
+		if (noTsAlarms)
+			return;
+
+		String q = "delete from ALARM_HISTORY where ts_id = " + tsidKey;
+		if (since != null)
+			q = q + " and data_time >= " + since.getTime();
+		if (until != null)
+			q = q + " and data_time <= " + until.getTime();
 		doModify(q);
 	}
 
@@ -1157,6 +1182,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	@Override
 	public void moveToHistory(Alarm alarm)
 	{
+		if (noTsAlarms)
+			return;
+
 		String q = "insert into alarm_history(" + alarmHistoryColumns + ") values ("
 			+ alarm.getTsidKey() + ", "
 			+ alarm.getLimitSetId() + ", "
@@ -1183,6 +1211,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	@Override
 	public void writeToCurrent(Alarm alarm)
 	{
+		if (noTsAlarms)
+			return;
+
 		String q = "delete from alarm_current where ts_id = " + alarm.getTsidKey();
 		try
 		{
@@ -1204,6 +1235,92 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			Logger.instance().warning(module + " Error writing current alarm for tskey=" + alarm.getTsidKey()
 				+ " at time " + alarm.getAssertTime() + ": " + ex);
 		}
+	}
+	
+	@Override
+	public ArrayList<Alarm> readAlarmHistory(ArrayList<TimeSeriesIdentifier> tsids)
+		throws DbIoException
+	{
+		if (noTsAlarms)
+			throw new DbIoException("This database does not support time series alarms.");
+
+		fillScreeningCache();
+		ArrayList<Alarm> ret = new ArrayList<Alarm>();
+		
+		String q = "select " + alarmHistoryColumns + " from ALARM_HISTORY";
+		if (tsids.size() > 0)
+		{
+			q = q + " where TSID in (";
+			for(int idx = 0; idx < tsids.size(); idx++)
+				q = q + tsids.get(idx).getKey() + (idx < tsids.size() -1 ? ", " : "");
+			q = q + ")";
+		}
+		ResultSet rs = doQuery(q);
+		TimeSeriesDAI tsDAO = db.makeTimeSeriesDAO();
+		try
+		{
+			while(rs.next())
+			{
+				Alarm alarm = new Alarm();
+				alarm.setTsidKey(DbKey.createDbKey(rs, 1));
+				try
+				{
+					alarm.setTsid(tsDAO.getTimeSeriesIdentifier(alarm.getTsidKey()));
+				}
+				catch (NoSuchObjectException e)
+				{
+					warning("Alarm for TS_ID key=" + alarm.getTsidKey() + " but no time series identifier. Skipped.");
+					continue;
+				}
+				alarm.setLimitSetId(DbKey.createDbKey(rs, 2));
+				alarm.setLimitSet(findLimitSet(alarm.getLimitSetId()));
+				alarm.setAssertTime(new Date(rs.getLong(3)));
+				alarm.setDataValue(rs.getDouble(4));
+				alarm.setDataTime(new Date(rs.getLong(5)));
+				alarm.setAlarmFlags(rs.getInt(6));
+				alarm.setMessage(rs.getString(7));
+				alarm.setEndTime(new Date(rs.getLong(8)));
+				alarm.setCancelledBy(rs.getString(9));
+				ret.add(alarm);
+			}
+		}
+		catch (SQLException ex)
+		{
+			String msg = "Error reading alarms with query '" + q + "': " + ex;
+			failure(msg);
+			if (Logger.instance().getLogOutput() != null)
+				ex.printStackTrace(Logger.instance().getLogOutput());
+			throw new DbIoException(msg);
+		}
+		finally
+		{
+			tsDAO.close();
+		}
+		
+		return ret;
+	}
+
+	// Search for a limit set ID that's already in the cache.
+	private AlarmLimitSet findLimitSet(DbKey limitSetId)
+	{
+		for(Iterator<AlarmScreening> scit = screeningCache.iterator(); scit.hasNext(); )
+		{
+			AlarmScreening as = scit.next();
+			for(AlarmLimitSet als : as.getLimitSets())
+				if (als.getLimitSetId().equals(limitSetId))
+					return als;
+		}
+		return null;
+	}
+
+
+	@Override
+	public AlarmScreening getScreening(DbKey screeningId) throws DbIoException
+	{
+		if (System.currentTimeMillis() - lastCacheLoadMsec >= CACHE_RELOAD_MSEC)
+			fillScreeningCache();
+
+		return screeningCache.getByKey(screeningId);
 	}
 	
 

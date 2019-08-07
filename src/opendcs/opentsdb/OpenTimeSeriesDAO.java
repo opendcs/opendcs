@@ -4,6 +4,9 @@
 * Copyright 2017 Cove Software, LLC. All Rights Reserved.
 * 
 * $Log$
+* Revision 1.5  2018/06/04 19:20:59  mmaloney
+* 6.5 release
+*
 * Revision 1.4  2018/05/30 18:50:36  mmaloney
 * Updated for 6.5 RC01
 *
@@ -55,6 +58,7 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.util.TSUtil;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
+import opendcs.dai.AlarmDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -694,6 +698,21 @@ public class OpenTimeSeriesDAO
 	public void deleteTimeSeriesRange(CTimeSeries ts, Date from, Date until)
 		throws DbIoException, BadTimeSeriesException
 	{
+		AlarmDAI alarmDAO = db.makeAlarmDAO();
+		try
+		{
+			alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey());
+			alarmDAO.deleteHistoryAlarms(ts.getTimeSeriesIdentifier().getKey(), from, until);
+		}
+		catch(Exception ex)
+		{
+			warning("deleteTimeSeries error deleting alarm records: " + ex);
+		}
+		finally
+		{
+			alarmDAO.close();
+		}
+	
 		CwmsTsId ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
 		if (ctsid == null)
 		{
@@ -717,6 +736,21 @@ public class OpenTimeSeriesDAO
 	public void deleteTimeSeries(TimeSeriesIdentifier tsid)
 		throws DbIoException
 	{
+		AlarmDAI alarmDAO = db.makeAlarmDAO();
+		try
+		{
+			alarmDAO.deleteCurrentAlarm(tsid.getKey());
+			alarmDAO.deleteHistoryAlarms(tsid.getKey(), null, null);
+		}
+		catch(Exception ex)
+		{
+			warning("deleteTimeSeries error deleting alarm records: " + ex);
+		}
+		finally
+		{
+			alarmDAO.close();
+		}
+
 		CwmsTsId ctsid = (CwmsTsId)tsid;
 		String tableName = makeDataTableName(ctsid);
 		String q = "delete from " + tableName

@@ -11,6 +11,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -42,6 +43,7 @@ import decodes.decoder.Season;
 import decodes.hdb.HdbTimeSeriesDb;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadScreeningException;
+import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.AlarmLimitSet;
@@ -52,6 +54,7 @@ import decodes.tsdb.groupedit.LocSelectDialog;
 import decodes.tsdb.groupedit.ParamSelectDialog;
 import decodes.tsdb.groupedit.SelectionMode;
 import decodes.util.DecodesSettings;
+import ilex.gui.DateTimeCalendar;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import opendcs.dai.AlarmDAI;
@@ -72,6 +75,8 @@ public class ScreeningEditPanel
 	private JTextArea descArea = new JTextArea("", 4, 60);
 	private JTextField screeningIdField = new JTextField(5);
 	private JTextField lastModifiedField = new JTextField(19);
+	private JCheckBox startTimeCheck = new JCheckBox();
+	private DateTimeCalendar startDateTimeCal = null;
 	private String prevDatatypeValue = "";
 	Season defaultSeason = new Season();
 	
@@ -80,7 +85,18 @@ public class ScreeningEditPanel
 	{
 		super(new BorderLayout());
 		this.parentFrame = parentFrame;
-		sdf.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().guiTimeZone));
+		
+		TimeZone guiTimeZone = TimeZone.getTimeZone(DecodesSettings.instance().guiTimeZone);
+		sdf.setTimeZone(guiTimeZone);
+		
+		Calendar cal = Calendar.getInstance(guiTimeZone);
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+
+		startDateTimeCal = new DateTimeCalendar("("+guiTimeZone.getID()+")", cal.getTime(), "dd/MMM/yyyy", 
+			guiTimeZone.getID());
+		
 		defaultSeason.setAbbr("(default)");
 		guiInit();
 	}
@@ -240,39 +256,60 @@ public class ScreeningEditPanel
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 2, 1, 5), 0, 0));
 
-		// LINE 4 & 5: Text Area for Description. On right, Database ID and Last Modified
+		// LINE 4: Effective Start Date/Time widget
+		startTimeCheck.setText("Effective Start:");
+		startTimeCheck.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					startTimeChecked();
+				}
+			});
+
+		north.add(startTimeCheck,
+			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(1, 10, 1, 0), 0, 0));
+		north.add(startDateTimeCal,
+			new GridBagConstraints(1, 3, 2, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(1, 0, 1, 2), 0, 0));
+	
+		// LINE 5 & 6: Text Area for Description. On right, Database ID and Last Modified
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.getViewport().add(descArea);
 		scrollPane.setBorder(new TitledBorder(parentFrame.genericLabels.getString("description")));
 		descArea.setWrapStyleWord(true);
 		descArea.setLineWrap(true);
 		north.add(scrollPane,
-			new GridBagConstraints(0, 3, 4, 3, 1.0, 0.0,
+			new GridBagConstraints(0, 4, 4, 3, 1.0, 0.0,
 				GridBagConstraints.NORTH, GridBagConstraints.BOTH,
 				new Insets(1, 5, 1, 5), 0, 0));
 
 		north.add(new JLabel("ID:"),
-				new GridBagConstraints(4, 3, 1, 1, 0.0, 0.0,
+				new GridBagConstraints(4, 4, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(1, 10, 1, 2), 0, 0));
 		north.add(screeningIdField,
-				new GridBagConstraints(5, 3, 1, 1, 0.3, 0.0,
+				new GridBagConstraints(5, 4, 1, 1, 0.3, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(1, 1, 1, 5), 0, 0));
 		screeningIdField.setEditable(false);
 
 		north.add(new JLabel(parentFrame.genericLabels.getString("lastMod") + ":"),
-				new GridBagConstraints(4, 4, 1, 1, 0.0, 0.0,
+				new GridBagConstraints(4, 5, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(1, 5, 1, 2), 0, 0));
 		north.add(lastModifiedField,
-				new GridBagConstraints(5, 4, 1, 1, 0.3, 0.0,
+				new GridBagConstraints(5, 5, 1, 1, 0.3, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(1, 1, 1, 5), 0, 0));
 		lastModifiedField.setEditable(false);
 		
 		north.add(new JLabel(""),
-			new GridBagConstraints(5, 5, 1, 1, 0.0, 1.0,
+			new GridBagConstraints(5, 6, 1, 1, 0.0, 1.0,
 					GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH,
 					new Insets(2, 2, 1, 5), 0, 0));
 
@@ -359,6 +396,14 @@ public class ScreeningEditPanel
 	}
 
 	
+	protected void startTimeChecked()
+	{
+		// TODO Auto-generated method stub
+		startDateTimeCal.setEnabled(startTimeCheck.isSelected());
+			
+	}
+
+
 	protected void datatypeEntered()
 	{
 		// TODO Auto-generated method stub
@@ -447,6 +492,11 @@ public class ScreeningEditPanel
 		prevDatatypeValue = datatypeField.getText();
 		emailGroupField.setText(screening.getGroupName());
 		enabledCheck.setSelected(screening.isEnabled());
+		Date sdt = screening.getStartDateTime();
+		if (sdt != null)
+			startDateTimeCal.setDate(sdt);
+		startTimeCheck.setSelected(sdt != null);
+		startTimeChecked();
 		
 		ArrayList<SiteName> sns = screening.getSiteNames();
 		if (sns.size() == 0)
@@ -712,6 +762,19 @@ public class ScreeningEditPanel
 			scrn.setSiteId(DbKey.NullKey);
 			scrn.getSiteNames().clear();
 		}
+		else
+		{
+			try
+			{
+				scrn.setSiteId(parentFrame.parentTsdbApp.getTsdb().lookupSiteID(s));
+				
+			}
+			catch (DbIoException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		
 		s = emailGroupField.getText().trim();
 		if (s.length() == 0)
@@ -731,6 +794,8 @@ public class ScreeningEditPanel
 		
 		s = descArea.getText().trim();
 		scrn.setDescription(s.length() == 0 ? null : s);
+		
+		scrn.setStartDateTime(startTimeCheck.isSelected() ? startDateTimeCal.getDate() : null);
 		
 		scrn.getLimitSets().clear();
 		for(int idx = 0; idx < seasonsPane.getComponentCount(); idx++)
@@ -768,6 +833,10 @@ public class ScreeningEditPanel
 		try
 		{
 			alarmDAO.writeScreening(scrn);
+			screeningIdField.setText("" + scrn.getScreeningId());
+			Date lmt = scrn.getLastModified();
+			lastModifiedField.setText(lmt == null ? "" : sdf.format(lmt));
+			parentFrame.screeningListPanel.refreshPressed();
 		}
 		catch(Exception ex)
 		{
