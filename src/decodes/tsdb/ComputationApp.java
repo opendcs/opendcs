@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.17  2019/07/02 13:57:14  mmaloney
+*  Rename method for clarity.
+*
 *  Revision 1.16  2019/05/15 22:27:31  mmaloney
 *  HDB 681 null ptr fix
 *
@@ -90,6 +93,8 @@ import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -115,6 +120,10 @@ import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
 import decodes.sql.DbKey;
+import decodes.tsdb.alarm.AlarmLimitSet;
+import decodes.tsdb.alarm.AlarmManager;
+import decodes.tsdb.alarm.AlarmScreening;
+import decodes.tsdb.alarm.AlarmScreeningAlgorithm;
 
 
 /**
@@ -166,7 +175,37 @@ public class ComputationApp
 			"(default=600, or 10 minutes) check for changes to timed computations "
 			+ "every this number of seconds.")
 	};
+	
+	/**
+	 * Holds info about Screening computations that do a Missing Check
+	 */
+	private class MissingCheck
+	{
+		TimeSeriesIdentifier tsid;
+		long nextRunMsec;
+		DbComputation comp;
+		AlarmScreening screening;
+		AlarmLimitSet limitSet;
+		boolean checked = false;
+		Date lastModifiedInDb = null;
 
+		public MissingCheck(TimeSeriesIdentifier tsid, long nextRunMsec, DbComputation comp, AlarmScreening screening,
+				AlarmLimitSet limitSet, Date lastModifiedInDb)
+		{
+			super();
+			this.tsid = tsid;
+			this.nextRunMsec = nextRunMsec;
+			this.comp = comp;
+			this.screening = screening;
+			this.limitSet = limitSet;
+			this.lastModifiedInDb = lastModifiedInDb;
+		}
+	}
+	
+	ArrayList<MissingCheck> missingChecks = new ArrayList<MissingCheck>();
+	private long lastMissingCheckMsec = 0L;
+
+	private Calendar timedCompCal;
 	
 	/**
 	 * Constructor called from main method after parsing arguments.
@@ -240,7 +279,7 @@ public class ComputationApp
 		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		
 		TimeZone dbtz = TimeZone.getTimeZone(theDb.databaseTimezone);
-		Calendar timedCompCal = Calendar.getInstance();
+		timedCompCal = Calendar.getInstance();
 		timedCompCal.setTimeZone(dbtz);
 
 		try
@@ -397,7 +436,18 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 					try { Thread.sleep(1000L); }
 					catch(InterruptedException ex) {}
 				}
-				
+	
+				now = System.currentTimeMillis();
+				int idx = 0;
+				for(; idx < missingChecks.size() && now > missingChecks.get(idx).nextRunMsec; idx++)
+					doMissingCheck(missingChecks.get(idx), timeSeriesDAO);
+				if (idx > 0)
+					sortMissingChecks();
+				if (now - lastMissingCheckMsec > 600L * 1000L) // ten minutes
+				{
+					checkMissingChecks(timeSeriesDAO, tsGroupDAO);
+					lastMissingCheckMsec = now;
+				}
 			}
 		}
 		catch(LockBusyException ex)
@@ -462,6 +512,8 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 	{
 		debugSdf.setTimeZone(TimeZone.getTimeZone(theDb.databaseTimezone));
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
+		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
+		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
 		try
 		{
 			appInfo = loadingAppDao.getComputationApp(getAppId());
@@ -517,6 +569,11 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 					checkTimedCompsSec = 600;
 				}
 			}
+			
+			missingChecks.clear();
+			checkMissingChecks(tsDAO, groupDAO);
+			lastMissingCheckMsec = System.currentTimeMillis();
+			
 		}
 		catch(NoSuchObjectException ex)
 		{
@@ -533,6 +590,8 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 		}
 		finally
 		{
+			groupDAO.close();
+			tsDAO.close();
 			loadingAppDao.close();
 		}
 	}
@@ -770,95 +829,200 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 		// Compute since & until: previous run time to current run time
 		Date until = tc.getNextRunTime();
 		timedCompCal.setTime(until);
-		IntervalIncrement inc = IntervalIncrement.parse(tc.getProperty("timedCompInterval"));
+		
+		// Since is controlled by timedCompDataSince property, or, if not defined, by timedCompInterval.
+		String incS = tc.getProperty("timedCompDataSince");
+		if (incS == null || incS.trim().length() == 0)
+			incS = tc.getProperty("timedCompInterval");
+		IntervalIncrement inc = IntervalIncrement.parse(incS);
 		if (inc == null)
 			return;
+		if (inc.getCount() < 0)
+			inc.setCount(-inc.getCount());
 		timedCompCal.add(inc.getCalConstant(), -inc.getCount());
 		Date since = timedCompCal.getTime();
+		
+		// Until is controlled by timedCompDataUntil property, defaults to this execution time.
+		incS = tc.getProperty("timedCompDataUntil");
+		if (incS != null && incS.trim().length() > 0 && (inc = IntervalIncrement.parse(incS)) != null)
+		{
+			if (inc.getCount() < 0)
+				inc.setCount(-inc.getCount());
+			timedCompCal.setTime(until);
+			timedCompCal.add(inc.getCalConstant(), -inc.getCount());
+			until = timedCompCal.getTime();
+		}
+		
 		Logger.instance().debug1("Executing comp '" + tc.getName() + "' over time period "
 			+ debugSdf.format(since) + " to " + debugSdf.format(until));
 		
 		if (!DbKey.isNull(tc.getGroupId()))
 		{
-			// This is a group computation. The strategy is to expand the group and then
-			// apply every TSID member to the computation's parameter's masks. If all 
-			// input parms are either defined in the db or can be ignored, then I can
-			// execute the concrete computation built from the TSID.
-			// Caveat: At least one parm must be defined.
-			TsGroup grp = tsGroupDAO.getTsGroupById(tc.getGroupId());
-			if (!grp.getIsExpanded())
-				theDb.expandTsGroup(grp);
-			ArrayList<DbComputation> executeList = new ArrayList<DbComputation>();
+			ArrayList<DbComputation> executeList = expandForGroup(tc, timeSeriesDAO, tsGroupDAO);
 			
-		  nextGroupTSID:
-			for(TimeSeriesIdentifier tsid : grp.getExpandedList())
-			{
-				int numInputsDefined = 0;
-				for (DbCompParm parm : tc.getParmList())
-				{
-					Logger.instance().debug3("  parm '" + parm.getRoleName() + "'");
-					if (!parm.isInput())
-					{
-						Logger.instance().debug3("     - Not an input. Skipping.");
-						continue;
-					}
-					
-					// Transform the group TSID by the parm
-					Logger.instance().debug3("Checking input parm " + parm.getRoleName()
-						+ " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
-						+ " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
-						+ " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
-						+ " siteName=" + parm.getSiteName());
-					TimeSeriesIdentifier tmpTsid = tsid.copyNoKey();
-					Logger.instance().debug3("group tsid=" + tmpTsid.getUniqueString());
-					theDb.transformUniqueString(tmpTsid, parm);
-					Logger.instance().debug3("After transform, param TSID='" + tmpTsid.getUniqueString() + "'");
-					TimeSeriesIdentifier parmTsid = 
-						timeSeriesDAO.getCache().getByUniqueName(tmpTsid.getUniqueString());
-					MissingAction ma = MissingAction.fromString(tc.getProperty(parm.getRoleName() + "_MISSING"));
-					// If the transformed TSID exists in the DB, I can execute.
-					if (parmTsid != null)  // Transformed TSID exists in the database
-						numInputsDefined++;
-					else if (ma != MissingAction.IGNORE) // algorithm requires it to be defined.
-					{
-						// This input parm does not exist and it can't be ignored.
-						// Therefore cannot execute this clone.
-						Logger.instance().debug3("===> TSID '" + tmpTsid.getUniqueString() + "' not defined in db and "
-							+ "MissingAction=" + ma + ", therefore cannot execute this clone.");
-						continue nextGroupTSID;
-					}
-				}
-				if (numInputsDefined == 0)
-				{
-					Logger.instance().debug3("===> There are NO input TSIDs defined. Cannot execute this clone.");
-					continue nextGroupTSID;
-				}
-				// ELSE I can execute this clone. Make it concrete and add it to the execute list.
-				try
-				{
-					// Use the resolver's method to avoid duplicates (multiple TSIDs in the group that 
-					// result in the same set of computation params.)
-					DbComputation concreteClone = DbCompResolver.makeConcrete(theDb, tsid, tc, true);
-					resolver.addToResults(executeList, concreteClone, null);
-					
-					// Special case for timed GroupAdder. Only create a single clone. It will expand its
-					// own group.
-					if (concreteClone.getAlgorithm() != null
-					 && concreteClone.getAlgorithm().getExecClass() != null
-					 && concreteClone.getAlgorithm().getExecClass().equals("decodes.tsdb.algo.GroupAdder"))
-						break;
-				}
-				catch (NoSuchObjectException ex)
-				{
-					warning("Could not make concrete computation: " + ex);
-				}
-			}
+//			// This is a group computation. The strategy is to expand the group and then
+//			// apply every TSID member to the computation's parameter's masks. If all 
+//			// input parms are either defined in the db or can be ignored, then I can
+//			// execute the concrete computation built from the TSID.
+//			// Caveat: At least one parm must be defined.
+//			TsGroup grp = tsGroupDAO.getTsGroupById(tc.getGroupId());
+//			if (!grp.getIsExpanded())
+//				theDb.expandTsGroup(grp);
+//			ArrayList<DbComputation> executeList = new ArrayList<DbComputation>();
+//			
+//		  nextGroupTSID:
+//			for(TimeSeriesIdentifier tsid : grp.getExpandedList())
+//			{
+//				int numInputsDefined = 0;
+//				for (DbCompParm parm : tc.getParmList())
+//				{
+//					Logger.instance().debug3("  parm '" + parm.getRoleName() + "'");
+//					if (!parm.isInput())
+//					{
+//						Logger.instance().debug3("     - Not an input. Skipping.");
+//						continue;
+//					}
+//					
+//					// Transform the group TSID by the parm
+//					Logger.instance().debug3("Checking input parm " + parm.getRoleName()
+//						+ " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
+//						+ " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
+//						+ " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
+//						+ " siteName=" + parm.getSiteName());
+//					TimeSeriesIdentifier tmpTsid = tsid.copyNoKey();
+//					Logger.instance().debug3("group tsid=" + tmpTsid.getUniqueString());
+//					theDb.transformUniqueString(tmpTsid, parm);
+//					Logger.instance().debug3("After transform, param TSID='" + tmpTsid.getUniqueString() + "'");
+//					TimeSeriesIdentifier parmTsid = 
+//						timeSeriesDAO.getCache().getByUniqueName(tmpTsid.getUniqueString());
+//					MissingAction ma = MissingAction.fromString(tc.getProperty(parm.getRoleName() + "_MISSING"));
+//					// If the transformed TSID exists in the DB, I can execute.
+//					if (parmTsid != null)  // Transformed TSID exists in the database
+//						numInputsDefined++;
+//					else if (ma != MissingAction.IGNORE) // algorithm requires it to be defined.
+//					{
+//						// This input parm does not exist and it can't be ignored.
+//						// Therefore cannot execute this clone.
+//						Logger.instance().debug3("===> TSID '" + tmpTsid.getUniqueString() + "' not defined in db and "
+//							+ "MissingAction=" + ma + ", therefore cannot execute this clone.");
+//						continue nextGroupTSID;
+//					}
+//				}
+//				if (numInputsDefined == 0)
+//				{
+//					Logger.instance().debug3("===> There are NO input TSIDs defined. Cannot execute this clone.");
+//					continue nextGroupTSID;
+//				}
+//				// ELSE I can execute this clone. Make it concrete and add it to the execute list.
+//				try
+//				{
+//					// Use the resolver's method to avoid duplicates (multiple TSIDs in the group that 
+//					// result in the same set of computation params.)
+//					DbComputation concreteClone = DbCompResolver.makeConcrete(theDb, tsid, tc, true);
+//					resolver.addToResults(executeList, concreteClone, null);
+//					
+//					// Special case for timed GroupAdder. Only create a single clone. It will expand its
+//					// own group.
+//					if (concreteClone.getAlgorithm() != null
+//					 && concreteClone.getAlgorithm().getExecClass() != null
+//					 && concreteClone.getAlgorithm().getExecClass().equals("decodes.tsdb.algo.GroupAdder"))
+//						break;
+//				}
+//				catch (NoSuchObjectException ex)
+//				{
+//					warning("Could not make concrete computation: " + ex);
+//				}
+//			}
 			for(DbComputation concreteClone : executeList)
 				executeSingleComp(concreteClone, since, until, dataCollection, timeSeriesDAO);
 		}
 		else // Not a group computation, just execute.
 			executeSingleComp(tc, since, until, dataCollection, timeSeriesDAO);
 		
+	}
+	
+	private ArrayList<DbComputation> expandForGroup(DbComputation tc, TimeSeriesDAI timeSeriesDAO, TsGroupDAI tsGroupDAO)
+		throws DbIoException
+	{
+		ArrayList<DbComputation> executeList = new ArrayList<DbComputation>();
+
+		// This is a group computation. The strategy is to expand the group and then
+		// apply every TSID member to the computation's parameter's masks. If all 
+		// input parms are either defined in the db or can be ignored, then I can
+		// execute the concrete computation built from the TSID.
+		// Caveat: At least one parm must be defined.
+		TsGroup grp = tsGroupDAO.getTsGroupById(tc.getGroupId());
+		if (grp == null)
+			return executeList;
+			
+		if (!grp.getIsExpanded())
+			theDb.expandTsGroup(grp);
+		
+	  nextGroupTSID:
+		for(TimeSeriesIdentifier tsid : grp.getExpandedList())
+		{
+			int numInputsDefined = 0;
+			for (DbCompParm parm : tc.getParmList())
+			{
+				Logger.instance().debug3("  parm '" + parm.getRoleName() + "'");
+				if (!parm.isInput())
+				{
+					Logger.instance().debug3("     - Not an input. Skipping.");
+					continue;
+				}
+				
+				// Transform the group TSID by the parm
+				Logger.instance().debug3("Checking input parm " + parm.getRoleName()
+					+ " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
+					+ " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
+					+ " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
+					+ " siteName=" + parm.getSiteName());
+				TimeSeriesIdentifier tmpTsid = tsid.copyNoKey();
+				Logger.instance().debug3("group tsid=" + tmpTsid.getUniqueString());
+				theDb.transformUniqueString(tmpTsid, parm);
+				Logger.instance().debug3("After transform, param TSID='" + tmpTsid.getUniqueString() + "'");
+				TimeSeriesIdentifier parmTsid = 
+					timeSeriesDAO.getCache().getByUniqueName(tmpTsid.getUniqueString());
+				MissingAction ma = MissingAction.fromString(tc.getProperty(parm.getRoleName() + "_MISSING"));
+				// If the transformed TSID exists in the DB, I can execute.
+				if (parmTsid != null)  // Transformed TSID exists in the database
+					numInputsDefined++;
+				else if (ma != MissingAction.IGNORE) // algorithm requires it to be defined.
+				{
+					// This input parm does not exist and it can't be ignored.
+					// Therefore cannot execute this clone.
+					Logger.instance().debug3("===> TSID '" + tmpTsid.getUniqueString() + "' not defined in db and "
+						+ "MissingAction=" + ma + ", therefore cannot execute this clone.");
+					continue nextGroupTSID;
+				}
+			}
+			if (numInputsDefined == 0)
+			{
+				Logger.instance().debug3("===> There are NO input TSIDs defined. Cannot execute this clone.");
+				continue nextGroupTSID;
+			}
+			// ELSE I can execute this clone. Make it concrete and add it to the execute list.
+			try
+			{
+				// Use the resolver's method to avoid duplicates (multiple TSIDs in the group that 
+				// result in the same set of computation params.)
+				DbComputation concreteClone = DbCompResolver.makeConcrete(theDb, tsid, tc, true);
+				resolver.addToResults(executeList, concreteClone, null);
+				
+				// Special case for timed GroupAdder. Only create a single clone. It will expand its
+				// own group.
+				if (concreteClone.getAlgorithm() != null
+				 && concreteClone.getAlgorithm().getExecClass() != null
+				 && concreteClone.getAlgorithm().getExecClass().equals("decodes.tsdb.algo.GroupAdder"))
+					break;
+			}
+			catch (NoSuchObjectException ex)
+			{
+				warning("Could not make concrete computation: " + ex);
+			}
+		}
+
+		return executeList;
 	}
 	
 	private void executeSingleComp(DbComputation tc, Date since, Date until, DataCollection dataCollection,
@@ -918,5 +1082,242 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 			warning(msg);
 		}
 	}
+	
+	
+	private void checkMissingChecks(TimeSeriesDAI timeSeriesDAO, TsGroupDAI tsGroupDAO)
+	{
+		Date now = new Date();
+		for(MissingCheck mc : missingChecks)
+			mc.checked = false;
+		ComputationDAI compDAO = theDb.makeComputationDAO();
+		try
+		{
+			// Use a filter to get all screening comps from the DAO's cache for this app.
+			CompFilter filter = new CompFilter();
+			filter.setExecClassName("decodes.tsdb.alarm.AlarmScreeningAlgorithm");
+			filter.setProcessId(getAppId());
+			ArrayList<DbComputation> screeningComps = compDAO.listCompsForGUI(filter);
+
+			for(DbComputation comp : screeningComps)
+			{
+				// If it's a group comp, expand it.
+				if (!DbKey.isNull(comp.getGroupId()))
+				{
+					ArrayList<DbComputation> expanded = expandForGroup(comp, timeSeriesDAO, tsGroupDAO);
+					for(DbComputation ecomp : expanded)
+					{
+						try
+						{
+							doCMC(ecomp, now);
+						}
+						catch(DbCompException ex)
+						{
+							Logger.instance().warning("CMC: Error in group comp: " + ex);
+							continue;
+						}
+					}
+				}
+				else // single comp
+				{
+					try
+					{
+						doCMC(comp, now);
+					}
+					catch (DbCompException ex)
+					{
+						Logger.instance().warning("CMC: Error in group comp: " + ex);
+						continue;
+					}
+				}
+			}
+			
+			// A computation or group may have been changed such that an existing check no longer
+			// exists. Remove these.
+			for(Iterator<MissingCheck> mcit = missingChecks.iterator(); mcit.hasNext(); )
+				if (!mcit.next().checked)
+					mcit.remove();
+			
+			sortMissingChecks();
+			Logger.instance().info("CMC: There are " + missingChecks.size() + " missing checks.");
+			if (missingChecks.size() > 0)
+				Logger.instance().info("CMC: The next missing check scheduled for " 
+					+ debugSdf.format(new Date(missingChecks.get(0).nextRunMsec)));
+		}
+		catch (DbIoException ex)
+		{
+			Logger.instance().warning("CMC: Error checking for missing checks: " + ex);
+			if (Logger.instance().getLogOutput() != null)
+				ex.printStackTrace(Logger.instance().getLogOutput());
+		}
+		finally
+		{
+			compDAO.close();
+		}
+	}
+	
+	private void sortMissingChecks()
+	{
+		Collections.sort(missingChecks,
+			new Comparator<MissingCheck>()
+			{
+				@Override
+				public int compare(MissingCheck o1, MissingCheck o2)
+				{
+					if (o1.nextRunMsec < o2.nextRunMsec)
+						return -1;
+					else if (o1.nextRunMsec > o2.nextRunMsec)
+						return 1;
+					
+					return 0;
+				}
+			});
+	}
+	
+	private void doCMC(DbComputation ecomp, Date now) 
+		throws DbCompException, DbIoException
+	{
+		ecomp.prepareForExec(theDb);
+		AlarmScreeningAlgorithm exec = (AlarmScreeningAlgorithm)ecomp.getExecutive();
+		TimeSeriesIdentifier tsid = exec.initInputParmRef();
+		
+		// If there's already a missing check for this TSID in my cache, get it for update.
+		MissingCheck cmpMissingChk = null;
+		for(MissingCheck mc : missingChecks)
+			if (mc.tsid.getKey().equals(tsid.getKey()))
+			{
+				cmpMissingChk = mc;
+				break;
+			}
+
+		exec.getAlarmScreenings(tsid);
+		if (!exec.initScreeningAndLimitSet(now))
+		{
+			// There is no limit set for this time!
+			// remove from array if there is one.
+			if (cmpMissingChk != null)
+				missingChecks.remove(cmpMissingChk);
+			return;
+		}
+		
+		// If I already have missing check and there are no changes to the screening, just bail.
+		AlarmScreening screening = exec.gettScreening();
+		if (cmpMissingChk != null && !cmpMissingChk.lastModifiedInDb.before(screening.getLastModified()))
+			return;
+		
+		AlarmLimitSet limitSet = exec.gettLimitSet();
+		String mIntv = limitSet.getMissingInterval();
+		String mPer = limitSet.getMissingPeriod();
+		if (mIntv == null || mIntv.trim().length() == 0 || mPer == null || mPer.trim().length() == 0)
+		{
+			// The limit set does not do a Missing Check
+			// remove from array if there is one.
+			if (cmpMissingChk != null)
+				missingChecks.remove(cmpMissingChk);
+			return;
+		}
+		if (!TextUtil.strEqualIgnoreCase(mIntv, tsid.getInterval()))
+		{
+			// This check is for a different interval than the computation's input param.
+			if (cmpMissingChk != null)
+				missingChecks.remove(cmpMissingChk);
+			return;
+		}
+
+		// If I get to here, it's either a new missing check or a check for a screening that has
+		// been modified in the database.
+		
+		long nextRunMsec = computeNextRun(now, mIntv);
+Logger.instance().debug3("doCMC missing check next run time will be " + debugSdf.format(new Date(nextRunMsec)));
+		
+		if (cmpMissingChk == null)
+		{
+			cmpMissingChk = new MissingCheck(tsid, nextRunMsec, ecomp, 
+				exec.gettScreening(), exec.gettLimitSet(), screening.getLastModified());
+			missingChecks.add(cmpMissingChk);
+		}
+		else
+		{
+			cmpMissingChk.nextRunMsec = nextRunMsec;
+			cmpMissingChk.comp = ecomp;
+			cmpMissingChk.screening = exec.gettScreening();
+			cmpMissingChk.limitSet = exec.gettLimitSet();
+			cmpMissingChk.lastModifiedInDb = screening.getLastModified();
+		}
+		cmpMissingChk.checked = true;
+
+	}
+	
+	private long computeNextRun(Date now, String mIntv)
+	{
+		mIntv = mIntv.trim();
+		timedCompCal.setTime(now);
+		IntervalIncrement ii = IntervalIncrement.parse(mIntv);
+Logger.instance().debug3("doCMC missing check interval='" + mIntv + "' IntervalIncrement=" + ii);
+		switch(ii.getCalConstant())
+		{
+		case Calendar.YEAR:
+			timedCompCal.set(Calendar.MONTH, 0);
+			// fall through...
+		case Calendar.MONTH:
+			timedCompCal.set(Calendar.DAY_OF_MONTH, 1);
+			// fall through...
+		case Calendar.DAY_OF_YEAR:
+		case Calendar.DAY_OF_MONTH:
+			timedCompCal.set(Calendar.HOUR_OF_DAY, 0);
+			// fall through...
+		case Calendar.HOUR_OF_DAY:
+			timedCompCal.set(Calendar.MINUTE, 0);
+			// fall through
+		case Calendar.MINUTE:
+			timedCompCal.set(Calendar.SECOND, 0);
+			timedCompCal.set(Calendar.MILLISECOND, 0);
+		}
+		timedCompCal.add(ii.getCalConstant(), ii.getCount());
+		return timedCompCal.getTimeInMillis(); 
+	}
+	
+	private void doMissingCheck(MissingCheck chk, TimeSeriesDAI tsDAO)
+		throws DbIoException
+	{
+		try
+		{
+			CTimeSeries cts = tsDAO.makeTimeSeries(chk.tsid);
+			Date until = new Date(chk.nextRunMsec);
+			timedCompCal.setTime(until);
+			IntervalIncrement periodII = IntervalIncrement.parse(chk.limitSet.getMissingPeriod());
+			if (periodII.getCount() < 0)
+				periodII.setCount(periodII.getCount() * -1);
+			timedCompCal.add(periodII.getCalConstant(), -periodII.getCount());
+			Date from = timedCompCal.getTime();
+			Logger.instance().info("Checking for missing data for " + chk.tsid.getUniqueString() 
+				+ " from " + debugSdf.format(from) + " to " + debugSdf.format(until));
+			int numValues = tsDAO.fillTimeSeries(cts, from, until, true, true, false);
+			
+			IntervalIncrement intvII = IntervalIncrement.parse(chk.limitSet.getMissingInterval());
+			if (intvII.getCount() < 0)
+				intvII.setCount(intvII.getCount()*-1);
+			int numExpected = 0;
+			while(!timedCompCal.after(until))
+			{
+				numExpected++;
+				timedCompCal.add(intvII.getCalConstant(), intvII.getCount());
+			}
+			
+			AlarmManager.instance(theDb).missingCheckResults(chk.tsid, until, numValues, numExpected, 
+				chk.screening, chk.limitSet);
+			chk.nextRunMsec = computeNextRun(new Date(), chk.limitSet.getMissingInterval());
+		}
+		catch (NoSuchObjectException ex)
+		{
+			Logger.instance().warning("doMissingCheck for TSID=" + chk.tsid.getUniqueString() + ": " + ex);
+		}
+		catch (BadTimeSeriesException ex)
+		{
+			Logger.instance().warning("doMissingCheck for TSID=" + chk.tsid.getUniqueString() + ": " + ex);
+		}
+		
+	}
+
+
 }
 
