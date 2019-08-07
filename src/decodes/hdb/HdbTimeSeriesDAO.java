@@ -33,6 +33,7 @@ import decodes.tsdb.VarFlags;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
+import opendcs.dai.AlarmDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -908,6 +909,21 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 	public void deleteTimeSeriesRange(CTimeSeries ts, Date from, Date until)
 		throws DbIoException, BadTimeSeriesException
 	{
+		AlarmDAI alarmDAO = db.makeAlarmDAO();
+		try
+		{
+			alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey());
+			alarmDAO.deleteHistoryAlarms(ts.getTimeSeriesIdentifier().getKey(), from, until);
+		}
+		catch(Exception ex)
+		{
+			warning("deleteTimeSeries error deleting alarm records: " + ex);
+		}
+		finally
+		{
+			alarmDAO.close();
+		}
+	
 		int n = fillTimeSeries(ts, from, until, true, true, true);
 		if (n == 0)
 			return;
@@ -920,14 +936,27 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			if (d.compareTo(from) >= 0 && d.compareTo(until) <= 0)
 				VarFlags.setToDelete(tv);
 		}
-		
-		doDelete(ts);
 	}
 	
 	@Override
 	public void deleteTimeSeries(TimeSeriesIdentifier tsid)
 		throws DbIoException
 	{
+		AlarmDAI alarmDAO = db.makeAlarmDAO();
+		try
+		{
+			alarmDAO.deleteCurrentAlarm(tsid.getKey());
+			alarmDAO.deleteHistoryAlarms(tsid.getKey(), null, null);
+		}
+		catch(Exception ex)
+		{
+			warning("deleteTimeSeries error deleting alarm records: " + ex);
+		}
+		finally
+		{
+			alarmDAO.close();
+		}
+		
 		try
 		{
 			deleteTimeSeriesRange(makeTimeSeries(tsid), new Date(0L), new Date());
