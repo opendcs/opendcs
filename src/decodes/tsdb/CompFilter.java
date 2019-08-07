@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.3  2017/08/22 19:56:39  mmaloney
+ * Refactor
+ *
  * Revision 1.2  2016/06/27 15:26:03  mmaloney
  * Added ability to filter by Enabled flag. Code cleanup.
  *
@@ -26,6 +29,7 @@ import java.util.Iterator;
 import decodes.db.Constants;
 import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
+import ilex.util.TextUtil;
 
 /**
  * A filter used by the Comp Edit GUI. This filter is used
@@ -45,6 +49,7 @@ public class CompFilter
 	static public boolean doIntervalCheck = true;
 	protected boolean enabledOnly = false;
 	protected DbKey groupId = DbKey.NullKey;
+	protected String execClassName = null;
 	
 	/**
 	 * Return true if this filter includes checks on computation parameters
@@ -172,6 +177,14 @@ public class CompFilter
 		
 		if (!DbKey.isNull(groupId) && !groupId.equals(dbComp.getGroupId()))
 			return false;
+		
+		if (execClassName != null)
+		{
+			if (dbComp.getAlgorithm() == null
+			 || !TextUtil.strEqual(execClassName, dbComp.getAlgorithm().getExecClass()))
+				return false;
+		}
+		
 		return true;
 	}
 
@@ -240,5 +253,15 @@ public class CompFilter
 	public DbKey getGroupId()
 	{
 		return groupId;
+	}
+
+	public String getExecClassName()
+	{
+		return execClassName;
+	}
+
+	public void setExecClassName(String execClassName)
+	{
+		this.execClassName = execClassName;
 	}
 }
