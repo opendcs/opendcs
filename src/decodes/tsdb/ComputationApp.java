@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.18  2019/08/07 14:18:35  mmaloney
+*  Added Missing Checks
+*
 *  Revision 1.17  2019/07/02 13:57:14  mmaloney
 *  Rename method for clarity.
 *
@@ -173,7 +176,32 @@ public class ComputationApp
 			+ "tasklist back to something reasonable (Oracle only)."),
 		new PropertySpec("checkTimedCompsSec", PropertySpec.INT,
 			"(default=600, or 10 minutes) check for changes to timed computations "
-			+ "every this number of seconds.")
+			+ "every this number of seconds."),
+		
+		new PropertySpec("mail.smtp.auth", PropertySpec.BOOLEAN, "(default=false) "
+			+ "If true then authenticate when connecting to mail server."),
+		new PropertySpec("mail.smtp.starttls.enable", PropertySpec.BOOLEAN, "(default=false) "
+			+ "Use TLS for a secure connection to the mail server."),
+		new PropertySpec("mail.smtp.host", PropertySpec.HOSTNAME, "(required) "
+			+ "Host name or IP address of the mail server."),
+		new PropertySpec("mail.smtp.port", PropertySpec.INT, "(default=587) "
+			+ "Port number for connecting to the mail server"),
+		new PropertySpec("smtp.username", PropertySpec.STRING, 
+			"User name for authenticating to the mail server"),
+		new PropertySpec("smtp.password", PropertySpec.STRING, 
+			"Password for authenticating to the mail server"),
+		new PropertySpec("fromAddr", PropertySpec.STRING, 
+			"Email address for the 'from' field of the header"),
+		new PropertySpec("fromName", PropertySpec.STRING, 
+			"Name for the 'from' field of the header"),
+		new PropertySpec("resendSeconds", PropertySpec.INT, "(default=86400) "
+			+ "Resend email for existing alarms if they remain asserted this long. "
+			+ "(-1 to disable resend)"),
+		new PropertySpec("notifyMaxAgeDays", PropertySpec.INT, "(default=30) "
+			+ "Do not send email notifications for data older than this."),
+
+		
+		
 	};
 	
 	/**
