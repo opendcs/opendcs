@@ -83,12 +83,12 @@ public class SeasonPanel extends JPanel
 		{
 			dbIntervalArray = intervalDAO.getValidIntervalCodes();
 			ArrayList<String> nonZeroIntervals = new ArrayList<String>();
-			for(Iterator<String> iit = nonZeroIntervals.iterator(); iit.hasNext(); )
+			for(int idx = 0; idx < dbIntervalArray.length; idx++)
 			{
-				String intvs = iit.next();
+				String intvs = dbIntervalArray[idx];
 				int sec = IntervalCodes.getIntervalSeconds(intvs);
-				if (sec == 0)
-					iit.remove();
+				if (sec > 0)
+					nonZeroIntervals.add(intvs);
 			}
 			dbIntervalArray = new String[nonZeroIntervals.size()];
 			for(int idx = 0; idx < dbIntervalArray.length; idx++)
