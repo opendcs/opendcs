@@ -226,7 +226,9 @@ public class TimeSeries
 		int msgSecOfDay = (int)((msec / 1000L) % (24 * 60 * 60));
 		msec -= (msgSecOfDay * 1000L);
 		int sod = sensor.getTimeOfFirstSample();
-		if (sod > msgSecOfDay)
+		
+		//MJM The following was >, it should be >= !!!
+		if (sod >= msgSecOfDay)
 		{
 			// Most recent sample was at the end of yesterday.
 			sod -= interval; // now negative
