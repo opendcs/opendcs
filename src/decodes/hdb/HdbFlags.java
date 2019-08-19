@@ -245,7 +245,19 @@ public class HdbFlags
 
 	public static final boolean isRejected(int f)
 	{
-		return (f & HDBF_VALIDATION_MASK) == HDBF_FAILED_VALIDATION;
+		if ((f & HDBF_VALIDATION_MASK) == HDBF_FAILED_VALIDATION)
+			return true;
+		
+		if ((f & SCREENED) != 0)
+		{
+			if ((f & SCR_VALUE_MASK) == SCR_VALUE_REJECT_HIGH
+			 || (f & SCR_VALUE_MASK) == SCR_VALUE_REJECT_LOW
+			 || (f & SCR_ROC_MASK) == SCR_ROC_REJECT_HIGH
+			 || (f & SCR_ROC_MASK) == SCR_ROC_REJECT_LOW)
+				return true;
+		}
+		
+		return false;
 	}
 
 	public static final boolean isQuestionable(int f)
