@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.22  2019/05/13 15:06:39  mmaloney
+ * Fixed time zones in screening season selection.
+ *
  * Revision 1.21  2019/01/31 18:46:30  mmaloney
  * Using -9 trillion as missing value for python.
  *
@@ -646,7 +649,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		{
 			double value = v.getDoubleValue();
 			if (value < missingLimit)
-				return true;
+				return false;
 		}
 		catch (NoConversionException e)
 		{
