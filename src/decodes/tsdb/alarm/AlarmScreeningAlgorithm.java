@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2019/08/07 14:18:58  mmaloney
+ * 6.6 RC04
+ *
  * Revision 1.1  2019/07/02 13:48:03  mmaloney
  * 6.6RC04 First working Alarm Implementation
  *
@@ -70,30 +73,7 @@ public class AlarmScreeningAlgorithm
 		new PropertySpec("setInputFlags", PropertySpec.BOOLEAN, "(default=false) "
 			+ "Set to true to set quality flags on the input parameter."),
 		new PropertySpec("noOutputOnReject", PropertySpec.BOOLEAN, "(default=false) "
-			+ "If true and the value is REJECTED, then do not write output param at all. "),
-		
-// MJM These properties are set in the Loading Application (Process) record:		
-//		new PropertySpec("mail.smtp.auth", PropertySpec.BOOLEAN, "(default=false) "
-//			+ "If true then authenticate when connecting to mail server."),
-//		new PropertySpec("mail.smtp.starttls.enable", PropertySpec.BOOLEAN, "(default=false) "
-//			+ "Use TLS for a secure connection to the mail server."),
-//		new PropertySpec("mail.smtp.host", PropertySpec.HOSTNAME, "(required) "
-//			+ "Host name or IP address of the mail server."),
-//		new PropertySpec("mail.smtp.port", PropertySpec.INT, "(default=587) "
-//			+ "Port number for connecting to the mail server"),
-//		new PropertySpec("smtp.username", PropertySpec.STRING, 
-//			"User name for authenticating to the mail server"),
-//		new PropertySpec("smtp.password", PropertySpec.STRING, 
-//			"Password for authenticating to the mail server"),
-//		new PropertySpec("fromAddr", PropertySpec.STRING, 
-//			"Email address for the 'from' field of the header"),
-//		new PropertySpec("fromName", PropertySpec.STRING, 
-//			"Name for the 'from' field of the header"),
-//		new PropertySpec("resendSeconds", PropertySpec.INT, "(default=86400) "
-//			+ "Resend email for existing alarms if they remain asserted this long. "
-//			+ "(-1 to disable resend)"),
-//		new PropertySpec("notifyMaxAgeDays", PropertySpec.INT, "(default=30) "
-//			+ "Do not send email notifications for data older than this.")
+			+ "If true and the value is REJECTED, then do not write output param at all. ")
 	};
 	
 	@Override
@@ -267,33 +247,39 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		
 		// Determine if input and output refer to the same time series.
 		ParmRef outputParm = getParmRef("output");
-		TimeSeriesIdentifier outputTsid = outputParm.timeSeries.getTimeSeriesIdentifier();
-		if (outputTsid == null)
+		TimeSeriesIdentifier outputTsid = null;
+		if (outputParm != null)
 		{
-			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
-			try
-			{
-				timeSeriesDAO.fillTimeSeriesMetadata(outputParm.timeSeries);
-			}
-			catch (Exception ex)
-			{
-				throw new DbCompException("No output tsid and can't retrieve: " + ex);
-			}
-			finally
-			{
-				timeSeriesDAO.close();
-			}
 			outputTsid = outputParm.timeSeries.getTimeSeriesIdentifier();
 			if (outputTsid == null)
 			{
-				// Allow no output
-				_noOutput = true;
-				info("No output time-series -- will generate alarms "
-					+ (setInputFlags ? "and set input flags." : "only."));
+				TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+				try
+				{
+					timeSeriesDAO.fillTimeSeriesMetadata(outputParm.timeSeries);
+				}
+				catch (Exception ex)
+				{
+					throw new DbCompException("No output tsid and can't retrieve: " + ex);
+				}
+				finally
+				{
+					timeSeriesDAO.close();
+				}
+				outputTsid = outputParm.timeSeries.getTimeSeriesIdentifier();
+				if (outputTsid == null)
+				{
+					// Allow no output
+					_noOutput = true;
+					info("No output time-series -- will generate alarms "
+						+ (setInputFlags ? "and set input flags." : "only."));
+				}
 			}
 		}
+		else
+			_noOutput = true;
 
-		_inputIsOutput = inputTsid.getKey() == outputTsid.getKey();
+		_inputIsOutput = _noOutput || inputTsid.getKey() == outputTsid.getKey();
 		info("_inputIsOutput=" + _inputIsOutput);
 
 		for(int idx = 0; idx < inputParm.timeSeries.size(); idx++)
@@ -537,6 +523,9 @@ debug1("ROC check prev=" + debugSdf.format(from) + " " + prev + ", delta=" + del
 		// If there is an output that is different from the input
 		if (!_noOutput && !_inputIsOutput)
 		{
+Logger.instance().info("output different from input, noOutputOnReject=" + noOutputOnReject 
++ ", flags=0x" + Integer.toHexString(flags) + ", isRejected=" + HdbFlags.isRejected(flags)
++ ", noOverwrite=" + noOverwrite);
 			if (!(noOutputOnReject && HdbFlags.isRejected(flags)))
 			{
 				if (noOverwrite)
