@@ -29,10 +29,11 @@ import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
 import lrgs.gui.DecodesInterface;
-
+import decodes.db.Site;
 import decodes.gui.TopFrame;
 import decodes.tsdb.*;
 import decodes.util.CmdLineArgs;
+import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 
 
@@ -314,4 +315,15 @@ public class CAPEdit
 		processesLabel = compeditDescriptions.getString("CAPEdit.Processes");
 		titleLabel = compeditDescriptions.getString("CAPEdit.Title");
 	}
+	
+	@Override
+	public void initDecodes()
+		throws DecodesException
+	{
+		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
+		System.out.println("Sites ");
+		Site.explicitList = true;
+		decodes.db.Database.getDb().siteList.read();
+	}
+
 }
