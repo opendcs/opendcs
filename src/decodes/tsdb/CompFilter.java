@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.4  2019/08/07 14:18:22  mmaloney
+ * Add execClassName to possible criteria
+ *
  * Revision 1.3  2017/08/22 19:56:39  mmaloney
  * Refactor
  *
@@ -263,5 +266,10 @@ public class CompFilter
 	public void setExecClassName(String execClassName)
 	{
 		this.execClassName = execClassName;
+	}
+
+	public boolean isEnabledOnly()
+	{
+		return enabledOnly;
 	}
 }
