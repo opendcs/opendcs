@@ -936,6 +936,8 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			if (d.compareTo(from) >= 0 && d.compareTo(until) <= 0)
 				VarFlags.setToDelete(tv);
 		}
+		
+		doDelete(ts);
 	}
 	
 	@Override
