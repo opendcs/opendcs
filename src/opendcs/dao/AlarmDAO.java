@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.6  2019/08/07 14:19:44  mmaloney
+ * 6.6 RC04
+ *
  * Revision 1.5  2019/07/02 13:50:32  mmaloney
  * 6.6RC04 First working Alarm Implementation
  *
@@ -512,6 +515,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		// Read all of the limit sets and assign to screening objects
 		q = "select " + alarmLimitSetColumns + " from alarm_limit_set";
 		rs = doQuery(q);
+		int nls = 0;
 		try
 		{
 			while (rs.next())
@@ -525,6 +529,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 						+ als.getScreeningId() + " -- ignored.");
 				}
 				as.addLimitSet(als);
+				nls++;
 			}
 		}
 		catch (SQLException ex)
@@ -533,6 +538,8 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			tt.initCause(ex);
 			throw tt;
 		}
+		
+		debug1("fillScreeningCache: Loaded " + screeningCache.size() + " screenings containing " + nls + " limit sets.");
 	}
 	
 	private void rs2AlarmScreening(ResultSet rs, AlarmScreening as)
@@ -1226,7 +1233,8 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 					+ alarm.getDataValue() + ", "
 					+ alarm.getDataTime().getTime() + ", "
 					+ alarm.getAlarmFlags() + ", "
-					+ sqlString(alarm.getMessage())
+					+ sqlString(alarm.getMessage()) + ", "
+					+ null // last notify time will be updated after notification sent.
 					+ ")";
 			doModify(q);
 		}
@@ -1250,7 +1258,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		String q = "select " + alarmHistoryColumns + " from ALARM_HISTORY";
 		if (tsids.size() > 0)
 		{
-			q = q + " where TSID in (";
+			q = q + " where TS_ID in (";
 			for(int idx = 0; idx < tsids.size(); idx++)
 				q = q + tsids.get(idx).getKey() + (idx < tsids.size() -1 ? ", " : "");
 			q = q + ")";
