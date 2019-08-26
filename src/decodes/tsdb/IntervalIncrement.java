@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2018/05/23 19:59:01  mmaloney
+ * OpenTSDB Initial Release
+ *
  * Revision 1.3  2017/03/03 19:15:57  mmaloney
  * toMsec() to handle HOUR_OF_DAY.
  *
@@ -60,6 +63,12 @@ public class IntervalIncrement
 	 */
 	public static IntervalIncrement parse(String s)
 	{
+		if (s == null)
+		{
+			Logger.instance().warning("IntervalIncrement.parse called with null	-- using 1 hour");
+			return ONE_HOUR;
+		}
+		
 		try
 		{
 			IntervalIncrement [] iia = parseMult(s);
@@ -67,7 +76,7 @@ public class IntervalIncrement
 		}
 		catch(NoSuchObjectException ex)
 		{
-			Logger.instance().warning("Invalid Interval: " + ex.getMessage()
+			Logger.instance().warning("IntervalIncrement.parse Invalid Interval: " + ex.getMessage()
 				+ " -- using 1 hour");
 			return ONE_HOUR;
 		}
