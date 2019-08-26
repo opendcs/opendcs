@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2019/08/07 14:18:58  mmaloney
+ * 6.6 RC04
+ *
  * Revision 1.1  2017/08/22 19:49:55  mmaloney
  * Refactor
  *
@@ -120,20 +123,20 @@ public class ShowAlarms
 						}
 					if (!found)
 						continue;
-					AlarmScreening scrn =
-						al.getLimitSet() == null ? null : alarmDAO.getScreening(al.getLimitSet().getScreeningId());
-					System.out.println(al.getTsid().getUniqueString() + ", "
-						+ (scrn == null ? "null" : scrn.getScreeningName()) + ", "
-						+ (al.getLimitSet() == null ? "null" : 
-							al.getLimitSet().getSeasonName() == null ? "default" :
-							al.getLimitSet().getSeasonName()) + ", "
-						+ sdf.format(al.getAssertTime()) + ", "
-						+ nf.format(al.getDataValue()) + ", "
-						+ sdf.format(al.getDataTime()) + ", "
-						+ "0x" + Integer.toHexString(al.getAlarmFlags()) + ", "
-						+ al.getMessage() + ", "
-						+ (al.getLastNotificationTime() == null ? "never" : sdf.format(al.getLastNotificationTime())));
 				}
+				AlarmScreening scrn =
+					al.getLimitSet() == null ? null : alarmDAO.getScreening(al.getLimitSet().getScreeningId());
+				System.out.println(al.getTsid().getUniqueString() + ", "
+					+ (scrn == null ? "null" : scrn.getScreeningName()) + ", "
+					+ (al.getLimitSet() == null ? "null" : 
+						al.getLimitSet().getSeasonName() == null ? "default" :
+						al.getLimitSet().getSeasonName()) + ", "
+					+ sdf.format(al.getAssertTime()) + ", "
+					+ nf.format(al.getDataValue()) + ", "
+					+ sdf.format(al.getDataTime()) + ", "
+					+ "0x" + Integer.toHexString(al.getAlarmFlags()) + ", "
+					+ al.getMessage() + ", "
+					+ (al.getLastNotificationTime() == null ? "never" : sdf.format(al.getLastNotificationTime())));
 			}
 			
 			if (alarmHistory.size() > 0)
@@ -157,6 +160,7 @@ public class ShowAlarms
 							continue;
 						}
 					}
+					
 					AlarmScreening scrn =
 						al.getLimitSet() == null ? null : alarmDAO.getScreening(al.getLimitSet().getScreeningId());
 					System.out.println(al.getTsid().getUniqueString() + ", "

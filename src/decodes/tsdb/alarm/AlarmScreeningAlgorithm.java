@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2019/08/19 14:55:33  mmaloney
+ * Permit undefined output param. Move mail server props to ComputationApp
+ *
  * Revision 1.2  2019/08/07 14:18:58  mmaloney
  * 6.6 RC04
  *
@@ -87,11 +90,26 @@ public class AlarmScreeningAlgorithm
 	{
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
 		
+		// May be called from ComputationApp.doCMC to check Missing Computations. In this case
+		// there will be no earliest Trigger. Since missing checks are always done based on 'now',
+		// set earliestTrigger to now
+		if (earliestTrigger == null)
+			earliestTrigger = new Date();
+
+		debug2("getAlarmScreenings inputTsid=" + inputTsid.getUniqueString() 
+			+ " earliestTrigger=" + debugSdf.format(earliestTrigger));
 		try
 		{
 			screenings = alarmDAO.getScreenings(inputTsid.getSite().getId(), inputTsid.getDataTypeId());
 			if (screenings == null)
 				throw new DbCompException("Invalid TSID for screening '" + inputTsid.getUniqueString() + "'");
+debug3("\tAlarmDAO returned " + screenings.size() + " matches for site & datatype. ");
+for(int idx=0; idx<screenings.size(); idx++)
+{
+	AlarmScreening als = screenings.get(idx);
+	debug3("\t\t" + idx + ": " + als.getScreeningName() + " siteid=" + als.getSiteId() + ", dtid=" + als.getDatatypeId() 
+	+ ", start=" + (als.getStartDateTime() == null ? "null" : debugSdf.format(als.getStartDateTime())) );
+}
 			
 			// If there are no site-specific screenings, OR if the earliest input is before the 
 			// site specific screenings, look for a generic one with siteId==nullkey.
@@ -99,11 +117,13 @@ public class AlarmScreeningAlgorithm
 			 || (screenings.get(0).getStartDateTime() != null 
 			       && earliestTrigger.before(screenings.get(0).getStartDateTime())))
 			{
+debug3("Looking for generic screenings");
 				boolean noSiteScreenings = screenings.size() == 0;
 				
 				// Need to look for generic screening
 				ArrayList<AlarmScreening> genScr = 
 					alarmDAO.getScreenings(DbKey.NullKey, inputTsid.getDataTypeId());
+debug3("DAO returned " + genScr.size() + " generic screenings");
 				if (genScr != null && genScr.size() > 0)
 				{
 					for(int idx = 0; 
@@ -113,6 +133,7 @@ public class AlarmScreeningAlgorithm
 						       || genScr.get(idx).getStartDateTime().before(earliestTrigger)))
 							; idx++)
 					{
+
 						screenings.add(idx, genScr.get(idx));
 					}
 				}
@@ -226,16 +247,6 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 //AW:USERINIT_END
 	}
 	
-	public TimeSeriesIdentifier initInputParmRef()
-		throws DbCompException
-	{
-		inputParm = getParmRef("input");
-		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
-		if (inputTsid == null)
-			throw new DbCompException("No input time-series identifier!");
-		return inputTsid;
-	}
-	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -243,7 +254,10 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
-		TimeSeriesIdentifier inputTsid = initInputParmRef();
+		inputParm = getParmRef("input");
+		TimeSeriesIdentifier inputTsid = getParmTsId("input");
+		if (inputTsid == null)
+			throw new DbCompException("'input' param has no TSID.");
 		
 		// Determine if input and output refer to the same time series.
 		ParmRef outputParm = getParmRef("output");
@@ -282,6 +296,8 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		_inputIsOutput = _noOutput || inputTsid.getKey() == outputTsid.getKey();
 		info("_inputIsOutput=" + _inputIsOutput);
 
+		// Find the first and last values in the time series that are triggers.
+		earliestTrigger = null;
 		for(int idx = 0; idx < inputParm.timeSeries.size(); idx++)
 		{
 			TimedVariable tv = inputParm.timeSeries.sampleAt(idx);
@@ -297,6 +313,7 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		if (earliestTrigger == null)
 			throw new DbCompException("triggered for input tsid '" + inputTsid.getUniqueString()
 			+ "' but no input trigger values.");
+		
 		getAlarmScreenings(inputTsid); // will throw DbCompException if it fails.
 		if (screenings.size() == 0)
 			throw new DbCompException("no applicable screenings for tsid '" + inputTsid.getUniqueString()
@@ -305,17 +322,19 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		debug1("Triggers: earliest=" + debugSdf.format(earliestTrigger) + ", latest=" + debugSdf.format(latestTrigger)
 			+ ", retrieved " + screenings.size() + " screenings.");
 		
-		// Find the first and last values in the time series that are triggers.
-		// Then prefetch data needed for ROC and stuck sensor alarms.
+		// Prefetch data needed for ROC and stuck sensor alarms.
+debug3("beforeTimeSlices, expanding for ROC & Stuck Pre-Fetch...");
 		Date fetchFrom = null;
-		earliestTrigger = latestTrigger = null;
 		for(int idx = 0; idx < inputParm.timeSeries.size(); idx++)
 		{
 			TimedVariable tv = inputParm.timeSeries.sampleAt(idx);
+			if (!VarFlags.wasAdded(tv))
+				continue;
 			
 			if (!initScreeningAndLimitSet(tv.getTime()))
 				continue;
-			
+debug3("\tFor t=" + debugSdf.format(tv.getTime()) + " getStuckDuration='" + tLimitSet.getStuckDuration()
++ "' hasRocLimits=" + tLimitSet.hasRocLimits());			
 			if (tLimitSet.getStuckDuration() != null)
 			{
 				IntervalIncrement stuckDurII = IntervalIncrement.parse(tLimitSet.getStuckDuration());
@@ -331,9 +350,10 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 						fetchFrom = t;
 				}
 			}
-			if (tLimitSet.getRocInterval() != null)
+			
+			if (tLimitSet.hasRocLimits())
 			{
-				IntervalIncrement rocII = IntervalIncrement.parse(tLimitSet.getStuckDuration());
+				IntervalIncrement rocII = IntervalIncrement.parse(tLimitSet.getRocInterval());
 				if (rocII != null)
 				{
 					aggCal.setTime(tv.getTime());
@@ -345,6 +365,9 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 					if (fetchFrom == null || t.before(fetchFrom))
 						fetchFrom = t;
 				}
+				else
+					warning("Unparsable ROC Interval '" + tLimitSet.getRocInterval() 
+						+ "' -- no ROC limits can be checked.");
 			}
 		}
 		
@@ -353,7 +376,8 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 		{
 			try
 			{
-				tsdb.fillTimeSeries(inputParm.timeSeries, fetchFrom, latestTrigger, true, false, false);
+				int n = tsdb.fillTimeSeries(inputParm.timeSeries, fetchFrom, latestTrigger, true, false, false);
+				debug3("beforeTimeSlices: " + n + " values prefetched for ROC and stuck sensor checks.");
 			}
 			catch (Exception ex)
 			{

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2019/08/07 14:18:57  mmaloney
+ * 6.6 RC04
+ *
  * Revision 1.2  2019/06/10 19:26:31  mmaloney
  * Added Screenings to Alarm Editor
  *
@@ -10,6 +13,8 @@
  *
  */
 package decodes.tsdb.alarm;
+
+import java.util.Iterator;
 
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -398,9 +403,17 @@ public class AlarmLimitSet
 				}
 			}
 			else if (!seasonName.toLowerCase().contains("default"))
+			{
 				Logger.instance().warning("AlarmLimitSet with id=" + getLimitSetId() 
-					+ " season '" + this.getSeasonName()
+					+ " season '" + seasonName
 					+ "' cannot be resolved -- there is no Seasons enumeration in this database.");
+Logger.instance().warning("" + Database.getDb().enumList.size() + " ENUMs include: ");
+for(Iterator<DbEnum> enit = Database.getDb().enumList.iterator(); enit.hasNext(); )
+{
+	DbEnum dbe = enit.next();
+	Logger.instance().warning("\t" + dbe.enumName + ", # members=" + dbe.size());
+}
+			}
 		}
 		prepared = true;
 	}
@@ -532,6 +545,23 @@ public class AlarmLimitSet
 	public boolean isPrepared()
 	{
 		return prepared;
+	}
+
+
+	public boolean hasRocLimits()
+	{
+		if (rocInterval == null || rocInterval.trim().length() == 0)
+			return false;
+		
+		if (rejectRocHigh == UNASSIGNED_LIMIT
+		 && criticalRocHigh == UNASSIGNED_LIMIT
+		 && warningRocHigh == UNASSIGNED_LIMIT
+		 && warningRocLow == UNASSIGNED_LIMIT
+		 && criticalRocLow == UNASSIGNED_LIMIT
+		 && rejectRocLow == UNASSIGNED_LIMIT)
+			return false;
+
+		return true;
 	}
 	
 }

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2019/08/07 14:18:58  mmaloney
+ * 6.6 RC04
+ *
  * Revision 1.1  2019/07/02 13:48:03  mmaloney
  * 6.6RC04 First working Alarm Implementation
  *
@@ -31,10 +34,9 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.alarm.mail.AlarmMailer;
 import decodes.tsdb.alarm.mail.MailerException;
-import decodes.util.DecodesSettings;
-import hec.util.TextUtil;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.LoadingAppDAI;
 
@@ -90,8 +92,10 @@ public class AlarmManager
 	{
 		if (_instance == null)
 			_instance = new AlarmManager(tsdb);
-		
-		if (System.currentTimeMillis() - _instance.lastMailerConfig > MAILER_CONFIG_MS)
+	
+		long now = System.currentTimeMillis();
+Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _instance.lastMailerConfig);
+		if (now - _instance.lastMailerConfig > MAILER_CONFIG_MS)
 		{
 			_instance.configureMailer();
 			_instance.lastMailerConfig = System.currentTimeMillis();
@@ -103,7 +107,7 @@ public class AlarmManager
 	private AlarmManager(TimeSeriesDb tsdb)
 	{
 		this.tsdb = tsdb;
-		sdf.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().guiTimeZone));
+		sdf.setTimeZone(TimeZone.getTimeZone(tsdb.getDatabaseTimezone()));
 		numFmt.setGroupingUsed(false);
 		numFmt.setMaximumFractionDigits(5);
 		
@@ -118,6 +122,7 @@ public class AlarmManager
 	 */
 	private void configureMailer()
 	{
+Logger.instance().debug3("AlarmManager.configureMailer");
 		LoadingAppDAI loadingAppDAO = tsdb.makeLoadingAppDAO();
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
 		CompAppInfo cai = null;
@@ -262,6 +267,7 @@ public class AlarmManager
 		if (toSend.size() == 0)
 			return;
 		
+Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSend.size() + " alarms.");
 		// Sort by Group ID, TSID, and then assertTime
 		Collections.sort(toSend,
 			new Comparator<AlarmMsg>()
@@ -313,7 +319,7 @@ public class AlarmManager
 			}
 			
 			// We could traverse multiple limit sets over time with different 'hint's.
-			if (!TextUtil.equals(lastHint, am.hint) && am.hint != null)
+			if (!TextUtil.strEqual(lastHint, am.hint) && am.hint != null)
 			{
 				sb.append(am.hint + lineSep);
 				lastHint = am.hint;
@@ -330,6 +336,7 @@ public class AlarmManager
 	 */
 	private void sendEmail(DbKey groupId, String msg)
 	{
+Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled + " msg=" + msg);
 		if (!mailerEnabled)
 			return;
 		
@@ -489,7 +496,10 @@ public class AlarmManager
 				action = "enqueuing alarm for email";
 				String alarmMsg = sb.toString();
 				if (!DbKey.isNull(scrn.getAlarmGroupId()))
+				{
+Logger.instance().debug3("AlarmManager, group is not null, enqueuing alarm for email '" + alarmMsg + "'");
 					msgQ.add(new AlarmMsg(scrn.getAlarmGroupId(), tsid, now, limitSet.getHintText(), alarmMsg));
+				}
 				
 				// Write the alarm to my cache and the database current_alarm table.
 				action = "finalizing alarm message";
@@ -534,7 +544,8 @@ public class AlarmManager
 	{
 		Alarm currentAlarm = currentAlarms.get(tsid.getKey());
 		boolean isMissing = numExpected - numReceived > limitSet.getMaxMissingValues();
-		
+Logger.instance().debug3("AlarmManager.missingCheckResults tsid='" + tsid.getUniqueString() + "' chkTime="
++ sdf.format(chkTime) + ", numReceived=" + numReceived + ", numExpected=" + numExpected + ", isMissing=" + isMissing);
 		if (!isMissing)
 		{
 			// MISSING alarms will be cancelled in the 'checkAlarms' method above when new
