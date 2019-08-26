@@ -278,8 +278,8 @@ public class ScreeningListPanel extends JPanel
 class ScreeningListTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
-	String[] colnames = new String[6];
-	int [] widths = { 8, 22, 15, 15, 20, 20 };
+	String[] colnames = new String[7];
+	int [] widths = { 8, 18, 12, 15, 15, 16, 16 };
 	private int sortColumn = 0;
 	ArrayList<AlarmScreening> screenings = new ArrayList<AlarmScreening>();
 //	private AlarmConfig alarmConfig = new AlarmConfig();
@@ -294,7 +294,8 @@ class ScreeningListTableModel extends AbstractTableModel
 		colnames[2] = parentPanel.parentFrame.genericLabels.getString("dataType");
 		colnames[3] = parentPanel.parentFrame.genericLabels.getString("site");
 		colnames[4] = parentPanel.parentFrame.eventmonLabels.getString("alarmGroup");
-		colnames[5] = parentPanel.parentFrame.genericLabels.getString("lastMod") + " "
+		colnames[5] = parentPanel.parentFrame.eventmonLabels.getString("effectiveDate");
+		colnames[6] = parentPanel.parentFrame.genericLabels.getString("lastMod") + " "
 			+ DecodesSettings.instance().guiTimeZone;
 		sdf.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().guiTimeZone));
 	}
@@ -426,7 +427,8 @@ class ScreeningListTableModel extends AbstractTableModel
 		case 2: return scrn.getDataType() == null ? "null" : scrn.getDataType().getCode();
 		case 3: return scrn.getSiteNames().size()==0 ? "(none)" : scrn.getSiteNames().get(0).getNameValue();
 		case 4: return scrn.getGroupName() == null ? "" : scrn.getGroupName();
-		case 5: return sdf.format(scrn.getLastModified());
+		case 5: return scrn.getStartDateTime() == null ? " " : sdf.format(scrn.getStartDateTime());
+		case 6: return sdf.format(scrn.getLastModified());
 		default: return "";
 		}
 	}
