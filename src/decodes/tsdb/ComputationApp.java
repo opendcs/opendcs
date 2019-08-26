@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.19  2019/08/19 14:54:30  mmaloney
+*  Added mail server settings to standard compproc properties list.
+*
 *  Revision 1.18  2019/08/07 14:18:35  mmaloney
 *  Added Missing Checks
 *
@@ -111,6 +114,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import opendcs.opentsdb.Interval;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
@@ -292,6 +296,11 @@ public class ComputationApp
 		Logger.instance().debug1("runApp starting");
 		_instance = this;
 		shutdownFlag = false;
+		
+		TimeZone dbtz = TimeZone.getTimeZone(theDb.databaseTimezone);
+		timedCompCal = Calendar.getInstance();
+		timedCompCal.setTimeZone(dbtz);
+		
 		runAppInit();
 		Logger.instance().debug1("runAppInit done, shutdownFlag=" + shutdownFlag 
 			+ ", surviveDatabaseBounce=" + surviveDatabaseBounce);
@@ -306,10 +315,6 @@ public class ComputationApp
 		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		
-		TimeZone dbtz = TimeZone.getTimeZone(theDb.databaseTimezone);
-		timedCompCal = Calendar.getInstance();
-		timedCompCal.setTimeZone(dbtz);
-
 		try
 		{
 			while(!shutdownFlag)
@@ -631,6 +636,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 		if (DecodesInterface.isInitialized())
 			return;
 		DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
+		decodes.db.Database.getDb().enumList.read();
 		decodes.db.Database.getDb().dataTypeSet.read();
 	}
 
@@ -1126,6 +1132,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 			filter.setProcessId(getAppId());
 			ArrayList<DbComputation> screeningComps = compDAO.listCompsForGUI(filter);
 
+Logger.instance().debug3("checkMissingChecks there are " + screeningComps.size() + " screening computations.");
 			for(DbComputation comp : screeningComps)
 			{
 				// If it's a group comp, expand it.
@@ -1168,8 +1175,9 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 			sortMissingChecks();
 			Logger.instance().info("CMC: There are " + missingChecks.size() + " missing checks.");
 			if (missingChecks.size() > 0)
-				Logger.instance().info("CMC: The next missing check scheduled for " 
-					+ debugSdf.format(new Date(missingChecks.get(0).nextRunMsec)));
+				Logger.instance().info("CMC: The next missing check scheduled for "
+					+ Logger.instance().formatTime(new Date(missingChecks.get(0).nextRunMsec))
+					+ " " + Logger.instance().getTz().getID());
 		}
 		catch (DbIoException ex)
 		{
@@ -1204,9 +1212,12 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 	private void doCMC(DbComputation ecomp, Date now) 
 		throws DbCompException, DbIoException
 	{
+Logger.instance().debug3("doCMC screeing comp '" + ecomp.getName() + "' date=" + now);
 		ecomp.prepareForExec(theDb);
 		AlarmScreeningAlgorithm exec = (AlarmScreeningAlgorithm)ecomp.getExecutive();
-		TimeSeriesIdentifier tsid = exec.initInputParmRef();
+		TimeSeriesIdentifier tsid = exec.getParmTsId("input");
+		if (tsid == null)
+			throw new DbCompException("doCMC: input has no TSID.");
 		
 		// If there's already a missing check for this TSID in my cache, get it for update.
 		MissingCheck cmpMissingChk = null;
@@ -1230,7 +1241,11 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 		// If I already have missing check and there are no changes to the screening, just bail.
 		AlarmScreening screening = exec.gettScreening();
 		if (cmpMissingChk != null && !cmpMissingChk.lastModifiedInDb.before(screening.getLastModified()))
+		{
+Logger.instance().debug3("doCMC screening already in DB with no changes.");
+			cmpMissingChk.checked = true;
 			return;
+		}
 		
 		AlarmLimitSet limitSet = exec.gettLimitSet();
 		String mIntv = limitSet.getMissingInterval();
@@ -1279,9 +1294,11 @@ Logger.instance().debug3("doCMC missing check next run time will be " + debugSdf
 	{
 		mIntv = mIntv.trim();
 		timedCompCal.setTime(now);
-		IntervalIncrement ii = IntervalIncrement.parse(mIntv);
-Logger.instance().debug3("doCMC missing check interval='" + mIntv + "' IntervalIncrement=" + ii);
-		switch(ii.getCalConstant())
+		
+		Interval intv = IntervalCodes.getInterval(mIntv);
+Logger.instance().debug3("doCMC missing check interval='" + mIntv
++ ", const=" + intv.getCalConstant() + ", mult=" + intv.getCalMultiplier());
+		switch(intv.getCalConstant())
 		{
 		case Calendar.YEAR:
 			timedCompCal.set(Calendar.MONTH, 0);
@@ -1300,7 +1317,7 @@ Logger.instance().debug3("doCMC missing check interval='" + mIntv + "' IntervalI
 			timedCompCal.set(Calendar.SECOND, 0);
 			timedCompCal.set(Calendar.MILLISECOND, 0);
 		}
-		timedCompCal.add(ii.getCalConstant(), ii.getCount());
+		timedCompCal.add(intv.getCalConstant(), intv.getCalMultiplier());
 		return timedCompCal.getTimeInMillis(); 
 	}
 	
@@ -1321,14 +1338,19 @@ Logger.instance().debug3("doCMC missing check interval='" + mIntv + "' IntervalI
 				+ " from " + debugSdf.format(from) + " to " + debugSdf.format(until));
 			int numValues = tsDAO.fillTimeSeries(cts, from, until, true, true, false);
 			
-			IntervalIncrement intvII = IntervalIncrement.parse(chk.limitSet.getMissingInterval());
-			if (intvII.getCount() < 0)
-				intvII.setCount(intvII.getCount()*-1);
+			Interval intv = IntervalCodes.getInterval(chk.limitSet.getMissingInterval());
+			if (intv.getCalMultiplier() == 0)
+			{
+				warning("doMissingCheck -- Cannot do missing check on zero interval: tsid='"
+					+ chk.tsid.getUniqueString() + "', screening '" + chk.screening.getScreeningName() + "'");
+				return;
+			}
+			
 			int numExpected = 0;
-			while(!timedCompCal.after(until))
+			while(!timedCompCal.getTime().after(until))
 			{
 				numExpected++;
-				timedCompCal.add(intvII.getCalConstant(), intvII.getCount());
+				timedCompCal.add(intv.getCalConstant(), intv.getCalMultiplier());
 			}
 			
 			AlarmManager.instance(theDb).missingCheckResults(chk.tsid, until, numValues, numExpected, 
