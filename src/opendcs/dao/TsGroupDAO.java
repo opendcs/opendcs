@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.15  2017/11/14 16:08:05  mmaloney
+* Increase cache limit to 20 min.
+*
 * Revision 1.14  2017/08/22 19:58:40  mmaloney
 * Refactor
 *
@@ -105,10 +108,10 @@ public class TsGroupDAO
 		
 		if (!forceDbRead && (ret = cache.getByKey(groupId)) != null)
 		{
-debug2("Returning FROM CACHE group id " + ret.getGroupId() + " - " + ret.getGroupName());
+//debug2("Returning FROM CACHE group id " + ret.getGroupId() + " - " + ret.getGroupName());
 			return ret;
 		}
-else debug2("READING FROM DATABASE group id " + groupId);
+//else debug2("READING FROM DATABASE group id " + groupId);
 		
 		String q = "SELECT " + GroupAttributes + " FROM tsdb_group "
 			+ "WHERE group_id = " + groupId;

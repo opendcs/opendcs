@@ -11,6 +11,9 @@
 *  For more information contact: tempest@sutron.com
 *  
 *  $Log$
+*  Revision 1.3  2016/03/24 19:13:17  mmaloney
+*  Added Script stuff used by Python.
+*
 *  Revision 1.2  2016/01/27 22:02:52  mmaloney
 *  Implement CacheableHasProperties
 *
@@ -254,20 +257,20 @@ public class DbCompAlgorithm
 		 || !TextUtil.strEqual(execClass, rhs.execClass)
 		 || !TextUtil.strEqual(comment, rhs.comment))
 		{
-Logger.instance().debug1("Algorithm '" + name + "' equalsNoId 1"
-+ "("+name +","+execClass+","+comment+") != ("+rhs.name+","+rhs.execClass+","+rhs.comment+")");
+//Logger.instance().debug1("Algorithm '" + name + "' equalsNoId 1"
+//+ "("+name +","+execClass+","+comment+") != ("+rhs.name+","+rhs.execClass+","+rhs.comment+")");
 			return false;
 		}
 		if (!PropertiesUtil.propertiesEqual(props, rhs.props))
 		{
-Logger.instance().debug1("Algorithm '" + name + "' equalsNoId props: '"
-+ PropertiesUtil.props2string(props) + "' != '" + PropertiesUtil.props2string(rhs.props) + "'");
+//Logger.instance().debug1("Algorithm '" + name + "' equalsNoId props: '"
+//+ PropertiesUtil.props2string(props) + "' != '" + PropertiesUtil.props2string(rhs.props) + "'");
 			return false;
 		}
 
 		if (parms.size() != rhs.parms.size())
 		{
-Logger.instance().debug1("Algorithm '" + name + "' Different number of parms: "+parms.size() + "," + rhs.parms.size());
+//Logger.instance().debug1("Algorithm '" + name + "' Different number of parms: "+parms.size() + "," + rhs.parms.size());
 			return false;
 		}
 		for(int i=0; i<parms.size(); i++)
@@ -277,15 +280,15 @@ Logger.instance().debug1("Algorithm '" + name + "' Different number of parms: "+
 			if (!TextUtil.strEqual(p1.getRoleName(), p2.getRoleName())
 			 || !TextUtil.strEqual(p1.getParmType(), p2.getParmType()))
 			{
-Logger.instance().debug1("Algorithm '" + name + "' param[" + i + "] differs role("
-+ p1.getRoleName() + ","+ p2.getRoleName() + ") type("
-+ p1.getParmType() + ","+ p2.getParmType() + ")");
+//Logger.instance().debug1("Algorithm '" + name + "' param[" + i + "] differs role("
+//+ p1.getRoleName() + ","+ p2.getRoleName() + ") type("
+//+ p1.getParmType() + ","+ p2.getParmType() + ")");
 				return false;
 			}
 		}
 		if (!this.algoScripts.equals(rhs.algoScripts))
 		{
-Logger.instance().debug1("Algorithm '" + name + "' algo scripts differ.");
+//Logger.instance().debug1("Algorithm '" + name + "' algo scripts differ.");
 			return false;
 		}
 		return true;
@@ -320,15 +323,15 @@ Logger.instance().debug1("Algorithm '" + name + "' algo scripts differ.");
 	 */
 	public void putScript(DbCompAlgorithmScript script)
 	{
-Logger.instance().debug1("DbCompAlgorithm " + name + ": Adding script " + script.getScriptType()
-+ " with text '" + script.getText() + "'");
+//Logger.instance().debug1("DbCompAlgorithm " + name + ": Adding script " + script.getScriptType()
+//+ " with text '" + script.getText() + "'");
 		algoScripts.put(script.getScriptType(), script);
-Logger.instance().debug1("DbCompAlgorithm after put, this algo has " + getScripts().size() + " scripts.");
+//Logger.instance().debug1("DbCompAlgorithm after put, this algo has " + getScripts().size() + " scripts.");
 	}
 	
 	public void clearScripts()
 	{
-Logger.instance().debug1("DbCompAlgorithm.clearScripts()");
+//Logger.instance().debug1("DbCompAlgorithm.clearScripts()");
 		algoScripts.clear();
 	}
 	

@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.9  2018/06/07 13:10:51  mmaloney
+ * Bug fix: Check db version before deleting from DACQ_EVENT.
+ *
  * Revision 1.8  2017/12/14 16:50:45  mmaloney
  * In close() guard against multiple statement close calls.
  *
@@ -567,7 +570,7 @@ public class LoadingAppDao
 		throws LockBusyException, DbIoException
 	{
 		TsdbCompLock tlock;
-		Logger.instance().debug3("Checking lock for appID=" + lock.getAppId());
+//		Logger.instance().debug3("Checking lock for appID=" + lock.getAppId());
 		try
 		{
 			// Retrieve the lock for this process.

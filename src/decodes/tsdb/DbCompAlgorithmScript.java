@@ -28,7 +28,7 @@ public class DbCompAlgorithmScript
 			text = block;
 		else
 			text = text + block;
-Logger.instance().debug1("DbCompAlgorithmScript.addToScript, after adding, text='" + text + "'");
+//Logger.instance().debug1("DbCompAlgorithmScript.addToScript, after adding, text='" + text + "'");
 	}
 
 	public ScriptType getScriptType()
