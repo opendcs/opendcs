@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 
+import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import opendcs.opentsdb.OpenTsdbFlags;
 import ilex.util.TextUtil;
@@ -51,7 +52,7 @@ public class HumanReadableFormatter extends OutputFormatter
 //		Constants.datatype_SHEF;
 	private boolean displayEmpty;
 	private ArrayList<Column> columns;
-	boolean showflags = false;
+	boolean showFlags = false;
 	boolean includeSensorNum = false;
 
 	/** default constructor */
@@ -100,7 +101,7 @@ public class HumanReadableFormatter extends OutputFormatter
 		if (s == null)
 			s = PropertiesUtil.getIgnoreCase(rsProps, "showflags");
 		if (s != null)
-			showflags = TextUtil.str2boolean(s);
+			showFlags = TextUtil.str2boolean(s);
 
 		s = PropertiesUtil.getIgnoreCase(rsProps, "includeSensorNum");
 		if (s != null)
@@ -127,7 +128,7 @@ public class HumanReadableFormatter extends OutputFormatter
 
 		StringBuffer sb = new StringBuffer();
 		RawMessage rawmsg = msg.getRawMessage();
-
+Logger.instance().debug3("HRF.formatMessage showFlags=" + showFlags);
 		try 
 		{
 			Platform p = rawmsg.getPlatform();
@@ -266,12 +267,15 @@ public class HumanReadableFormatter extends OutputFormatter
 		String euAbbr;
 		int dotPos;
 		String siteName;
+		int flagWidth;
+		int dataWidth = 0;
 
 		Column(TimeSeries ts)
 		{
 			timeSeries = ts;
 			curSampleNum = 0;
 			colWidth = 0;
+			flagWidth = 0;
 			siteName = ts.getSensor().getSensorSiteName();
 
 			sensorName = ts.getSensor().getName();
@@ -307,30 +311,33 @@ public class HumanReadableFormatter extends OutputFormatter
 				colWidth = siteName.length();
 
 			dotPos = -1;
+			
+Logger.instance().debug3("Column ctor: ts size=" + timeSeries.size());
 			for(int i=0; i<timeSeries.size(); i++)
 			{
 				TimedVariable tv = timeSeries.sampleAt(i);
-				String s = timeSeries.formattedSampleAt(i);
-				if (showflags)
-				{
-					s = s + " " + flags2display(tv.getFlags());
-				}
-
-//				String s = (String)it.next();
-				if (s.length() > colWidth)
-					colWidth = s.length();
-				int dp = s.indexOf('.');
+				String v = timeSeries.formattedSampleAt(i);
+				v = v.trim();
+				if (v.length() > dataWidth)
+					dataWidth = v.length();
+				int dp = v.indexOf('.');
 				if (dp == -1)
-				{
-					String trimmed = s.trim();
-					if (trimmed.length() > 0 && !Character.isDigit(trimmed.charAt(0)))
-						dp = 0;
-					else
-						dp = s.length();
-				}
+					dp = v.length();
 				if (dp > dotPos)
 					dotPos = dp;
+				
+				if (showFlags)
+				{
+					String f = flags2display(tv.getFlags());
+					if (f.length() > flagWidth)
+						flagWidth = f.length();
+				}
+
+				int cw = dataWidth + flagWidth + (flagWidth > 0 ? 1 : 0);
+				if (cw > colWidth)
+					colWidth = cw;
 			}
+Logger.instance().debug3("colWidth=" + colWidth + ", dotPos=" + dotPos + ", dataWidth=" + dataWidth + ", flagWidth=" + flagWidth);
 			StringBuffer sb = new StringBuffer();
 			for(int i=0; i<colWidth; i++)
 				sb.append(' ');
@@ -359,11 +366,11 @@ public class HumanReadableFormatter extends OutputFormatter
 			if (curSampleNum >= timeSeries.size())
 				return blankSample;
 			TimedVariable tv = timeSeries.sampleAt(curSampleNum);
-			String s = timeSeries.formattedSampleAt(curSampleNum++);
-			int dp = s.indexOf('.');
+			String val = timeSeries.formattedSampleAt(curSampleNum++);
+			int dp = val.indexOf('.');
 			if (dp == -1)
-				dp = s.length();
-			StringBuffer sb = new StringBuffer(s);
+				dp = val.length();
+			StringBuffer sb = new StringBuffer(val);
 			if (dp < dotPos)
 			{
 				while(dp++ < dotPos)
@@ -373,16 +380,18 @@ public class HumanReadableFormatter extends OutputFormatter
 						sb.deleteCharAt(sb.length() - 1);
 				}
 			}
-			if (showflags)
+			if (showFlags)
 			{
+				while(sb.length() < dataWidth)
+					sb.append(' ');
 				sb.append(' ');
 				sb.append(flags2display(tv.getFlags()));
 			}
 			while(sb.length() < colWidth-2)
 				sb.append(' ');
 			
-			s = sb.toString();
-			return s;
+			val = sb.toString();
+			return val;
 		}
 	}
 	
