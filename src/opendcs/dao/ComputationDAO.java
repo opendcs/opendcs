@@ -2,6 +2,9 @@
 * $Id$
 * 
 * $Log$
+* Revision 1.12  2019/02/26 17:16:44  mmaloney
+* HDB 660
+*
 * Revision 1.11  2017/08/22 19:58:40  mmaloney
 * Refactor
 *
@@ -484,6 +487,14 @@ public class ComputationDAO
 
 			DbKey algoId = filter.getAlgoId();
 			if (!algoId.isNull() && !algoId.equals(comp.getAlgorithmId()))
+				continue;
+			
+			if (filter.isEnabledOnly() && !comp.isEnabled())
+				continue;
+			
+			if (filter.getExecClassName() != null
+			 && comp.getAlgorithm() != null
+			 && !TextUtil.strEqual(filter.getExecClassName(), comp.getAlgorithm().getExecClass()))
 				continue;
 
 			ret.add(comp);
