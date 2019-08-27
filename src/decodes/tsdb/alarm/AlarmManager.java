@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2019/08/26 20:49:52  mmaloney
+ * Alarm Implementations.
+ *
  * Revision 1.2  2019/08/07 14:18:58  mmaloney
  * 6.6 RC04
  *
@@ -386,12 +389,6 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 		// Alarm records only store screening bits, not all of the other data flags.
 		int scrFlags = flags & HdbFlags.SCREENING_MASK;
 
-		// Alarm assertions only go forward in time.
-		if (currentAlarm != null && t.before(currentAlarm.getDataTime()))
-			return;
-		if (currentAlarm == null 
-		 && System.currentTimeMillis()-t.getTime() > (notifyMaxAgeDays * MS_PER_DAY))
-			return;
 		
 		String action = "";
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
@@ -399,6 +396,26 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 		Date now = new Date();
 		try
 		{
+			// Alarm assertions only go forward in time.
+			if (currentAlarm != null)
+			{
+				if (t.before(currentAlarm.getDataTime()))
+				return;
+			}
+			else // no current alarm assertion
+			{
+				// Don't alarm on values before an existing historical alarm.
+				action = "checking last historical alarm date";
+				Date lastHist = alarmDAO.lastHistoryAlarmTime(tsid);
+				if (lastHist != null && t.before(lastHist))
+					return;
+				
+				// Don't alarm on values older than the threshold.
+				if (currentAlarm == null 
+				 && System.currentTimeMillis()-t.getTime() > (notifyMaxAgeDays * MS_PER_DAY))
+					return;
+			}
+			
 			if (scrFlags == HdbFlags.SCREENED) // This means there are no faults asserted.
 			{
 				if (currentAlarm != null)
@@ -407,7 +424,7 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 					// The following also cancels any previous MISSING alarms. Good.
 					action = "moving old alarm to history";
 					currentAlarms.remove(tsid.getKey());
-					currentAlarm.setEndTime(now);
+					currentAlarm.setEndTime(t);  // END_TIME is the date/time of the value that cancelled the alarm.
 					alarmDAO.moveToHistory(currentAlarm);
 					
 					if (!DbKey.isNull(scrn.getAlarmGroupId()))
