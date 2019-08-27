@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.7  2019/08/26 20:51:04  mmaloney
+ * bug fix in writeToCurrent
+ *
  * Revision 1.6  2019/08/07 14:19:44  mmaloney
  * 6.6 RC04
  *
@@ -1122,7 +1125,8 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 				alarm.setDataTime(new Date(rs.getLong(5)));
 				alarm.setAlarmFlags(rs.getInt(6));
 				alarm.setMessage(rs.getString(7));
-				alarm.setLastNotificationTime(new Date(rs.getLong(8)));
+				long msec = rs.getLong(8);
+				alarm.setLastNotificationTime(rs.wasNull() ? null : new Date(msec));
 			}
 			
 			
@@ -1329,6 +1333,25 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			fillScreeningCache();
 
 		return screeningCache.getByKey(screeningId);
+	}
+
+
+	@Override
+	public Date lastHistoryAlarmTime(TimeSeriesIdentifier tsid)
+		throws DbIoException
+	{
+		String q = "select max(end_time) from alarm_history where ts_id = " + tsid.getKey();
+		ResultSet rs = doQuery(q);
+		try
+		{
+			if (!rs.next())
+				return null;
+			return new Date(rs.getLong(1));
+		}
+		catch(Exception ex)
+		{
+			throw new DbIoException("Error in query '" + q + "'");
+		}
 	}
 	
 

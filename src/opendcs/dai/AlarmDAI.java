@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.4  2019/08/07 14:19:30  mmaloney
+ * 6.6 RC04
+ *
  * Revision 1.3  2019/07/02 13:50:19  mmaloney
  * 6.6RC04 First working Alarm Implementation
  *
@@ -167,5 +170,13 @@ public interface AlarmDAI
 	 * @throws DbIoException
 	 */
 	public void deleteHistoryAlarms(DbKey tsidKey, Date since, Date until)
+		throws DbIoException;
+
+	/**
+	 * @param tsid
+	 * @return The end_time of the last historical alarm for this TSID, or null if no alarms.
+	 * @throws DbIoException 
+	 */
+	public Date lastHistoryAlarmTime(TimeSeriesIdentifier tsid)
 		throws DbIoException;
 }

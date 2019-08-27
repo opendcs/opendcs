@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.2  2019/08/26 20:49:52  mmaloney
+ * Alarm Implementations.
+ *
  * Revision 1.1  2019/08/07 14:18:58  mmaloney
  * 6.6 RC04
  *
@@ -17,6 +20,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.TimeZone;
 
@@ -24,6 +29,7 @@ import opendcs.dai.AlarmDAI;
 import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.*;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import lrgs.gui.DecodesInterface;
 import decodes.db.Database;
 import decodes.db.Site;
@@ -98,6 +104,23 @@ public class ShowAlarms
 				timeSeriesDAO.close();
 			}
 		}
+		
+		class AlarmComparator
+			implements Comparator<Alarm> 
+		{
+			/**
+			 * For sorting by TSID alphabetically and then by data time (descending).
+			 */
+			public int compare(Alarm a1, Alarm a2)
+			{
+				int r = TextUtil.strCompareIgnoreCase(a1.getTsid().getUniqueString(), a2.getTsid().getUniqueString());
+				if (r != 0)
+					return r;
+				long rl = a1.getDataTime().getTime() - a2.getDataTime().getTime();
+				return rl < 0 ? 1 : rl > 0 ? -1 : 0; // by date descending
+			}
+		};
+		AlarmComparator alarmComparator = new AlarmComparator();
 
 		AlarmDAI alarmDAO = theDb.makeAlarmDAO();
 		try
@@ -110,7 +133,10 @@ public class ShowAlarms
 			System.out.println();
 			System.out.println("Current Alarms (" + alarmMap.values().size() + "):");
 			System.out.println("tsid,screening,season,assertion,value,data_time,flags,msg,last_notify");
-			for(Alarm al : alarmMap.values())
+			
+			ArrayList<Alarm> curAlarms = new ArrayList<Alarm>(alarmMap.values());
+			Collections.sort(curAlarms, alarmComparator);
+			for(Alarm al : curAlarms)
 			{
 				if (tsids.size() > 0)
 				{
@@ -138,7 +164,9 @@ public class ShowAlarms
 					+ al.getMessage() + ", "
 					+ (al.getLastNotificationTime() == null ? "never" : sdf.format(al.getLastNotificationTime())));
 			}
-			
+
+			System.out.println();
+			Collections.sort(alarmHistory, alarmComparator);
 			if (alarmHistory.size() > 0)
 			{
 				System.out.println("Historical Alarms (" + alarmHistory.size() + "):");
