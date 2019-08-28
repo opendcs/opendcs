@@ -731,7 +731,8 @@ log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 			  DcpMsgFlag.MSG_PRESENT
 			| DcpMsgFlag.SRC_DRGS 
 			| DcpMsgFlag.MSG_NO_SEQNUM
-			| DcpMsgFlag.HAS_CARRIER_TIMES;
+			| DcpMsgFlag.HAS_CARRIER_TIMES
+			| getMsgTypeFlag();
 		ret.setData(domsatData);
 		if (isBinaryMsg)
 			ret.flagbits |= DcpMsgFlag.BINARY_MSG;
@@ -763,6 +764,11 @@ log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 			computeCarrierTimes(ret);
 
 		return ret;
+	}
+	
+	protected int getMsgTypeFlag()
+	{
+		return DcpMsgFlag.MSG_TYPE_GOES;
 	}
 
 	/**

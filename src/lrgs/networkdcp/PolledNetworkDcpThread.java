@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import lrgs.archive.MsgArchive;
 import lrgs.common.DcpMsg;
+import lrgs.common.DcpMsgFlag;
 import lrgs.drgs.DrgsConnectCfg;
 import lrgs.drgsrecv.DrgsRecv;
 import lrgs.drgsrecv.DrgsRecvMsgThread;
@@ -174,4 +175,11 @@ public class PolledNetworkDcpThread
 	{
 		return LrgsInputInterface.DL_NETDCPPOLL;
 	}
+	
+	@Override
+	protected int getMsgTypeFlag()
+	{
+		return DcpMsgFlag.MSG_TYPE_NETDCP;
+	}
+
 }
