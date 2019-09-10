@@ -4,6 +4,9 @@
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * 
  * $Log$
+ * Revision 1.9  2019/05/13 15:06:39  mmaloney
+ * Fixed time zones in screening season selection.
+ *
  * Revision 1.8  2019/04/22 13:51:41  mmaloney
  * Added debug
  *
@@ -280,12 +283,6 @@ public class ScreeningAlgorithm
 //AW:TIMESLICE
 		ScreeningCriteria crit = 
 			screening != null ? screening.findForDate(_timeSliceBaseTime, aggTZ) : null;
-		debug1("Time Slice " + debugSdf.format(_timeSliceBaseTime) + " selected screening season start="
-			+ (crit.getSeasonStart() == null ? "<all year>" : 
-				(crit.getSeasonStart().get(Calendar.MONTH) + "/" 
-				 + crit.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
-				 + crit.getSeasonStart().getTimeZone().getID())));
-
 		if (crit == null)
 		{
 			warning("No criteria for time=" + debugSdf.format(_timeSliceBaseTime));
@@ -310,6 +307,12 @@ public class ScreeningAlgorithm
 			info("Writing output flags=0x" + Integer.toHexString(output.getFlags()));
 			return;
 		}
+		
+		debug1("Time Slice " + debugSdf.format(_timeSliceBaseTime) + " selected screening season start="
+			+ (crit.getSeasonStart() == null ? "<all year>" : (crit.getSeasonStart().get(Calendar.MONTH) + "/" 
+			 + crit.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
+			 + crit.getSeasonStart().getTimeZone().getID())));
+		
 		ParmRef inputParm = getParmRef("input");
 
 		crit.executeChecks(dc, inputParm.timeSeries, _timeSliceBaseTime, output, this);
