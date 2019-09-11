@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.16  2019/02/04 21:19:17  mmaloney
+ * Don't use reference ratings for import/export and edit functions.
+ *
  * Revision 1.15  2019/02/04 20:46:31  mmaloney
  * Switch BACK to the fromDatabase method for reading RatingSet objects (!).
  *
@@ -368,7 +371,7 @@ public class CwmsRatingDao extends DaoBase
 					+ " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
 					+ rw.timeLoaded);
-//				rw.ratingSet.setDatabaseConnection(db.getConnection());
+				rw.ratingSet.setDatabaseConnection(db.getConnection());
 				return rw.ratingSet;
 			}
 		}
@@ -411,7 +414,7 @@ public class CwmsRatingDao extends DaoBase
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
-//		ratingSet.setDatabaseConnection(db.getConnection());
+		ratingSet.setDatabaseConnection(db.getConnection());
 		return ratingSet;
 	}
 	
