@@ -115,6 +115,9 @@ public class FillForward
 			throw new DbCompException(msg);
 		}
 		
+		debug3("outputIntv=" + outputIntvs + ", firstTrig=" + debugSdf.format(firstTrig)
+			+ ", lastTrig=" + debugSdf.format(lastTrig));
+		
 //AW:BEFORE_TIMESLICES_END
 	}
 
@@ -133,11 +136,9 @@ public class FillForward
 	{
 //AW:TIMESLICE
 		TimedVariable nextInput = inputTS.findNext(_timeSliceBaseTime);
+		Date fillEndTime = nextInput == null ? new Date() : nextInput.getTime();
 		
-		// Fill to the next output or specified number of intervals, whichever comes first.
-		
-		//========================================
-		// Find the first _output_ time >= that time.
+		// Fill to the next output or now or specified number of intervals, whichever comes first.
 		
 		// Strategy is to use the existing aggregate period logic
 		// where the "aggregate period" is simply the output interval.
@@ -157,7 +158,11 @@ public class FillForward
 		for(; numIntervals == 0 || numFill < numIntervals; numFill++)
 		{
 			Date outputTime = aggCal.getTime();
-			if (!outputTime.before(nextInput.getTime()))
+			
+debug3("numFill=" + numFill + ", outputTime=" + debugSdf.format(outputTime) + ", fillEndTime="
++ debugSdf.format(fillEndTime));
+
+			if (!outputTime.before(fillEndTime))
 				break;
 			
 			setOutput(output, input, outputTime);
