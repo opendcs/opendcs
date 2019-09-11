@@ -16,6 +16,7 @@ import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
+import opendcs.opentsdb.Interval;
 import decodes.tsdb.TimeSeriesIdentifier;
 
 //AW:IMPORTS
@@ -38,8 +39,9 @@ public class FillForward
 
 //AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
-	Date latestTimeSlice = null;
-	double latestInputValue = 0.0;
+	private CTimeSeries inputTS = null;
+	private Interval outputIntv = null;
+	private String outputIntvs = null;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -76,7 +78,43 @@ public class FillForward
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
-		latestTimeSlice = null;
+		
+		// Validation
+		inputTS = getParmRef("input").timeSeries;
+		if (inputTS.size() == 0)
+			return;
+		
+		outputIntvs = getParmRef("output").compParm.getInterval();
+		outputIntv = IntervalCodes.getInterval(outputIntvs);
+		if (IntervalCodes.getIntervalSeconds(outputIntvs) == 0 || outputIntv.getCalMultiplier() == 0)
+			throw new DbCompException("Output interval may not be 0 length.");
+
+		// Prefill input time series with all values from first trig to last trig and
+		// then the next value after last trig.
+		Date firstTrig = null, lastTrig = null;
+		for(int idx = 0; idx < inputTS.size(); idx++)
+		{
+			TimedVariable tv = inputTS.sampleAt(idx);
+			if (VarFlags.wasAdded(tv) || VarFlags.mustWrite(tv))
+			{
+				if (firstTrig == null)
+					firstTrig = tv.getTime();
+				lastTrig = tv.getTime();
+			}
+		}
+		
+		try
+		{
+			tsdb.fillTimeSeries(inputTS, firstTrig, lastTrig, false, false, false);
+			tsdb.getNextValue(inputTS, lastTrig);
+		}
+		catch (Exception ex)
+		{
+			String msg = "Cannot fill time series for input: " + ex;
+			warning(msg);
+			throw new DbCompException(msg);
+		}
+		
 //AW:BEFORE_TIMESLICES_END
 	}
 
@@ -94,9 +132,39 @@ public class FillForward
 		throws DbCompException
 	{
 //AW:TIMESLICE
-		latestTimeSlice = new Date(_timeSliceBaseTime.getTime());
-		latestInputValue = input;
-		// Enter code to be executed at each time-slice.
+		TimedVariable nextInput = inputTS.findNext(_timeSliceBaseTime);
+		
+		// Fill to the next output or specified number of intervals, whichever comes first.
+		
+		//========================================
+		// Find the first _output_ time >= that time.
+		
+		// Strategy is to use the existing aggregate period logic
+		// where the "aggregate period" is simply the output interval.
+		// Find the start of the "aggregate period" that
+		// contains the latest input time, with bounds set to (...]
+		// Now I am guaranteed that agg period END will be => the latest input time.
+		// This also automatically takes the aggregate time zone and offset into
+		// consideration.
+		aggLowerBoundClosed = false;
+		aggUpperBoundClosed = true;
+		AggregatePeriod aggPeriod = determineAggPeriod(_timeSliceBaseTime, outputIntvs);
+
+		// Loop forward specified number of increments.
+		aggCal.setTime(aggPeriod.getEnd());
+
+		int numFill = 0;
+		for(; numIntervals == 0 || numFill < numIntervals; numFill++)
+		{
+			Date outputTime = aggCal.getTime();
+			if (!outputTime.before(nextInput.getTime()))
+				break;
+			
+			setOutput(output, input, outputTime);
+			aggCal.add(outputIntv.getCalConstant(), outputIntv.getCalMultiplier());
+		}
+		debug1("" + numFill + " values filled.");
+		
 //AW:TIMESLICE_END
 	}
 
@@ -107,87 +175,6 @@ public class FillForward
 		throws DbCompException
 	{
 //AW:AFTER_TIMESLICES
-		if (latestTimeSlice == null)
-			return;
-		
-		// Make sure that latestTimeSlice is the latest input in the database.
-		TimedVariable nextInput = null;
-		try
-		{
-			nextInput = tsdb.getNextValue(getParmRef("input").timeSeries, latestTimeSlice);
-			if (nextInput != null && numIntervals > 0)
-			{
-				debug1("Exiting because there is data after latest time slice: "
-					+ "latest seen this run=" + debugSdf.format(latestTimeSlice)
-					+ ", latest in DB=" + debugSdf.format(nextInput.getTime()));
-				return;
-			}
-		}
-		catch (Exception ex)
-		{
-			String msg = "Error reading latest TV from DB: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			warning(msg);
-			throw new DbCompException(msg);
-		}
-		
-		// latestTimeSlice is the last _input_ time in the data.
-		// Find the first _output_ time >= that time.
-		
-		// Strategy is to use the existing aggregate period logic
-		// where the "aggregate period" is simply the output interval.
-		// Find the start of the "aggregate period" that
-		// contains the latest input time, with bounds set to (...]
-		// Now I am guaranteed that agg period END will be => the latest input time.
-		// This also automatically takes the aggregate time zone and offset into
-		// consideration.
-		ParmRef outputParmRef = getParmRef("output");
-		aggLowerBoundClosed = false;
-		aggUpperBoundClosed = true;
-		AggregatePeriod aggPeriod = determineAggPeriod(latestTimeSlice, 
-			outputParmRef.compParm.getInterval());
-
-		// Loop forward specified number of increments.
-		aggCal.setTime(aggPeriod.getEnd());
-		IntervalIncrement outputIncr = IntervalCodes.getIntervalCalIncr(
-			outputParmRef.compParm.getInterval());
-		if (numIntervals > 0)
-			for(int i = 0; i<numIntervals; i++)
-			{
-				Date outputTime = aggCal.getTime();
-				setOutput(output, latestInputValue, outputTime);
-				aggCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
-			}
-		else
-		{
-			// Set endTime from next input after latestTimeSlice, or NOW if none.
-			Date endTime = new Date();
-			ParmRef inputParmRef = getParmRef("input");
-			try
-			{
-				debug1("Looking for next input after " + debugSdf.format(latestTimeSlice));
-				TimedVariable tv = tsdb.getNextValue(inputParmRef.timeSeries, latestTimeSlice);
-				if (tv != null)
-					endTime = tv.getTime();
-				else
-					debug1("none found!");
-			}
-			catch (Exception ex)
-			{
-				warning("Can't read next input value: " + ex);
-			}
-			
-			debug1("endTime for fill is " + debugSdf.format(endTime));
-
-			// Loop until end time exceeded.
-			Date outputTime = null;
-			while ((outputTime = aggCal.getTime()).before(endTime))
-			{
-				setOutput(output, latestInputValue, outputTime);
-				aggCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
-			}
-		}
 //AW:AFTER_TIMESLICES_END
 	}
 
