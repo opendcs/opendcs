@@ -105,8 +105,13 @@ public class FillForward
 		
 		try
 		{
-			tsdb.fillTimeSeries(inputTS, firstTrig, lastTrig, false, false, false);
-			tsdb.getNextValue(inputTS, lastTrig);
+			if (!firstTrig.equals(lastTrig))
+				tsdb.fillTimeSeries(inputTS, firstTrig, lastTrig, false, false, false);
+			else
+				debug1("Skipping fill because only one trigger.");
+			TimedVariable tv = tsdb.getNextValue(inputTS, lastTrig);
+			if (tv != null)
+				debug1("Retrieved nextval " + tv);
 		}
 		catch (Exception ex)
 		{
@@ -136,6 +141,10 @@ public class FillForward
 	{
 //AW:TIMESLICE
 		TimedVariable nextInput = inputTS.findNext(_timeSliceBaseTime);
+		if (nextInput != null)
+			debug1("timeSlice=" + debugSdf.format(_timeSliceBaseTime) 
+				+ ", next=" + debugSdf.format(nextInput.getTime()));
+			
 		Date fillEndTime = nextInput == null ? new Date() : nextInput.getTime();
 		
 		// Fill to the next output or now or specified number of intervals, whichever comes first.
