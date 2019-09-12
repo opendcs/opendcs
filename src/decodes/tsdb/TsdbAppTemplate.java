@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.14  2018/03/30 14:13:32  mmaloney
+*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
+*
 *  Revision 1.13  2017/03/30 21:08:27  mmaloney
 *  Refactor CompEventServer to use PID if monitor==true.
 *
@@ -577,6 +580,11 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 	public static TsdbAppTemplate getAppInstance()
 	{
 		return appInstance;
+	}
+
+	public CmdLineArgs getCmdLineArgs()
+	{
+		return cmdLineArgs;
 	}
 
 }
