@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.5  2019/07/02 13:57:59  mmaloney
+*  Added findNextIdx method.
+*
 *  Revision 1.4  2018/11/14 15:49:12  mmaloney
 *  Added deleteAll method.
 *
@@ -395,7 +398,7 @@ public class CTimeSeries
 	 */
 	public TimedVariable findPrev(long sec)
 	{
-		return findPrev(new Date((sec + 1)*1000L));
+		return findPrev(new Date(sec*1000L));
 	}
 	
 	/**
@@ -429,7 +432,7 @@ public class CTimeSeries
 	 */
 	public TimedVariable findNext(long sec)
 	{
-		return findNext(new Date((sec + 1)*1000L));
+		return findNext(new Date(sec*1000L));
 	}
 	
 	/**
@@ -450,6 +453,9 @@ public class CTimeSeries
 
 		if (idx < 0)
 			idx = (-idx) - 1;
+		else // the exact time was found. Increment to the next value
+			idx++;
+		
 		if (idx < sz)
 			return vars.get(idx);
 		else
