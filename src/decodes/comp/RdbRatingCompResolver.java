@@ -71,7 +71,7 @@ public class RdbRatingCompResolver
 	@Override
 	public Computation[] resolve( IDataCollection msg )
 	{
-		Vector v = new Vector();
+		Vector<Computation> v = new Vector<Computation>();
 		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
 			ITimeSeries ts = (ITimeSeries)it.next();
@@ -83,6 +83,8 @@ public class RdbRatingCompResolver
 				RdbRatingReader rrr = new RdbRatingReader(rdbf.getPath());
 				RatingComputation rc = new RatingComputation(rrr);
 				String sh = ts.getProperty("RdbShef");
+				if (sh == null)
+					sh = ts.getProperty("DepShefCode");
 				if (sh != null)
 					rc.setProperty("DepShefCode", sh);
 				sh = ts.getProperty("ExceedBounds");
@@ -93,7 +95,28 @@ public class RdbRatingCompResolver
 				}
 				rc.setIndepSensorNum(ts.getSensorId());
 				rc.setApplyShifts(false);
-				rc.setDepSensorNum(findFreeSensorNum(msg));
+				
+				int depSensorNumber = -1;
+				sh = ts.getProperty("depSensorNumber");
+				if (sh != null)
+				{
+					String mediumId = this.getPlatformContext(msg);
+					try
+					{
+						depSensorNumber = Integer.parseInt(sh);
+					}
+					catch(NumberFormatException ex)
+					{
+						Logger.instance().warning("Platform " + mediumId + " RDB Rating computation for sensor "
+							+ ts.getSensorId() + " has invalid 'depSensorNumber' property '" + sh 
+							+ "' -- ignoring computation.");
+						return null;
+					}
+				}
+				else
+					depSensorNumber = findFreeSensorNum(msg);
+				rc.setDepSensorNum(depSensorNumber);
+
 				try 
 				{
 					rc.read();

@@ -2,6 +2,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.2  2008/08/09 21:50:56  mjmaloney
 *  dev
 *
@@ -93,7 +96,7 @@ public class TabRatingCompResolver
 	*/
 	public Computation[] resolve( IDataCollection msg )
 	{
-		Vector v = new Vector();
+		Vector<Computation> v = new Vector<Computation>();
 		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
 			ITimeSeries ts = (ITimeSeries)it.next();
@@ -104,8 +107,11 @@ public class TabRatingCompResolver
 				TabRatingReader rr = new TabRatingReader(f.getPath());
 				RatingComputation rc = new RatingComputation(rr);
 				String sh = ts.getProperty("TabShef");
+				if (sh == null)
+					sh = ts.getProperty("DepShefCode");
 				if (sh != null)
 					rc.setProperty("DepShefCode", sh);
+				
 				sh = ts.getProperty("TabName");
 				if (sh != null)
 					rc.setProperty("DepName", sh);
@@ -120,7 +126,28 @@ public class TabRatingCompResolver
 				}
 				rc.setIndepSensorNum(ts.getSensorId());
 				rc.setApplyShifts(false);
-				rc.setDepSensorNum(findFreeSensorNum(msg));
+				
+				int depSensorNumber = -1;
+				sh = ts.getProperty("depSensorNumber");
+				if (sh != null)
+				{
+					try
+					{
+						depSensorNumber = Integer.parseInt(sh);
+					}
+					catch(NumberFormatException ex)
+					{
+						String mediumId = this.getPlatformContext(msg);
+						Logger.instance().warning("Platform " + mediumId + " RDB Rating computation for sensor "
+							+ ts.getSensorId() + " has invalid 'depSensorNumber' property '" + sh 
+							+ "' -- ignoring computation.");
+						return null;
+					}
+				}
+				else
+					depSensorNumber = findFreeSensorNum(msg);
+				rc.setDepSensorNum(depSensorNumber);
+				
 				try 
 				{
 					rc.read();

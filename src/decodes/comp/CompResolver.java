@@ -5,6 +5,9 @@
 *  $Id$
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:20:59  cvs
 *  Added legacy code to repository
 *
@@ -30,7 +33,9 @@
 package decodes.comp;
 
 import decodes.comp.Computation;
+import decodes.datasource.RawMessage;
 import decodes.db.RoutingSpec;
+import decodes.decoder.DecodedMessage;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
@@ -165,5 +170,21 @@ public abstract class CompResolver
 	public void shutdown()
 	{
 		// base class does nothing
+	}
+	
+	/**
+	 * Return platform medium ID if one is assigned.
+	 * @param msg
+	 * @return
+	 */
+	public String getPlatformContext(IDataCollection msg)
+	{
+		if (!(msg instanceof DecodedMessage))
+			return "Unknown_Context";
+		DecodedMessage dmsg = (DecodedMessage)msg;
+		if (dmsg.getRawMessage() == null)
+			return "Unknown_DCP";
+		RawMessage rmsg = dmsg.getRawMessage();
+		return rmsg.getMediumId();
 	}
 }

@@ -99,8 +99,11 @@ public class AreaRatingCompResolver
 
 				rc = new AreaComputation(arr);
 				String sh = ts.getProperty("DischargeShef");
+				if (sh == null)
+					sh = ts.getProperty("DepShefCode");
 				if (sh != null)
 					rc.setProperty("DepShefCode", sh);
+				
 				sh = ts.getProperty("DischargeName");
 				if (sh != null)
 					rc.setProperty("DepName", sh);
@@ -111,7 +114,28 @@ public class AreaRatingCompResolver
 			
 				rc.setIndepSensorNum(ts.getSensorId());
 				rc.setApplyShifts(false);
-				rc.setDepSensorNum(findFreeSensorNum(msg));
+				
+				int depSensorNumber = -1;
+				sh = ts.getProperty("depSensorNumber");
+				if (sh != null)
+				{
+					try
+					{
+						depSensorNumber = Integer.parseInt(sh);
+					}
+					catch(NumberFormatException ex)
+					{
+						String mediumId = this.getPlatformContext(msg);
+						Logger.instance().warning("Platform " + mediumId + " RDB Rating computation for sensor "
+							+ ts.getSensorId() + " has invalid 'depSensorNumber' property '" + sh 
+							+ "' -- ignoring computation.");
+						return null;
+					}
+				}
+				else
+					depSensorNumber = findFreeSensorNum(msg);
+				rc.setDepSensorNum(depSensorNumber);
+
 				try 
 				{
 					rc.read();

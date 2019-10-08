@@ -5,6 +5,7 @@ package decodes.comp;
 
 import decodes.comp.Computation;
 import decodes.comp.RatingTableReader;
+import decodes.cwms.CwmsConstants;
 import decodes.comp.LookupTable;
 import decodes.comp.ComputationParseException;
 import java.util.Enumeration;
@@ -118,8 +119,16 @@ public class RatingComputation
 		if (name == null)
 			name = "anon";
 
-		ITimeSeries depTs = msg.newTimeSeries(depSensorNum, name);
-		Logger.instance().debug3("Created dep sensor " + depSensorNum + ": " + name);
+		ITimeSeries depTs = msg.getITimeSeries(depSensorNum);
+		if (depTs != null)
+		{
+			name = depTs.getSensorName();
+		}
+		else
+		{
+			depTs = msg.newTimeSeries(depSensorNum, name);
+			Logger.instance().debug3("Created dep sensor " + depSensorNum + ": " + name);
+		}
 		depTs.setDataOrder(indepTs.getDataOrder());
 		depTs.setPeriodicity(indepTs.getRecordingMode(), 
 			indepTs.getTimeOfFirstSample(), indepTs.getTimeInterval());
@@ -129,6 +138,9 @@ public class RatingComputation
 		s = getProperty("DepShefCode");
 		if (s != null)
 			depTs.addDataType("SHEF-PE", s);
+//		s = getProperty("depCwmsParam");
+//		if (s != null)
+//			depTs.addDataType(CwmsConstants.CWMS_DATA_TYPE, s);
 
 /////// THIS IS THE ONLY HOLE
 //		ps.site = indepSensor.getSensorSite();
