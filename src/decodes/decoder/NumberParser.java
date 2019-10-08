@@ -3,12 +3,12 @@
 */
 package decodes.decoder;
 
+import ilex.var.Variable;
+
 import java.text.DecimalFormat;
 
-import ilex.var.Variable;
-import ilex.var.NoConversionException;
-import ilex.util.Logger;
 import ilex.util.PseudoBinary;
+import ilex.var.NoConversionException;
 
 /**
 This class handles the parsing of numbers from the raw data. It knows
@@ -50,6 +50,10 @@ public class NumberParser
 	public static final char BIN_SIGNED_LSB          = 'f';
 	/** Pure binary Unsigned MSB-first */
 	public static final char BIN_UNSIGNED_LSB        = 'g';
+	/** Pseudobinary Aton message */
+	public static final char PBINARY_ATON 			 = 'n';
+	/** Pseudobinary Sontek message */
+	public static final char PBINARY_SONTEK			 = 'k';
 	
 	/** default constructor */
 	public NumberParser()
@@ -79,7 +83,9 @@ public class NumberParser
 		 && type != BIN_SIGNED_MSB
 		 && type != BIN_UNSIGNED_MSB
 		 && type != BIN_SIGNED_LSB
-		 && type != BIN_UNSIGNED_LSB)
+		 && type != BIN_UNSIGNED_LSB
+		 && type != PBINARY_ATON
+		 && type != PBINARY_SONTEK)
 			throw new ScriptFormatException(
 				"Unknown field data-type '" + type + "'");
 		dataType = type;
@@ -150,6 +156,14 @@ public class NumberParser
 		case BIN_SIGNED_LSB:
 		case BIN_UNSIGNED_LSB:
 			return parsePureBinary(field);
+			
+		case PBINARY_ATON:
+			return parseAtonString(field);
+		
+		case PBINARY_SONTEK:
+			return parseSontekString(field);
+		
+
 		
 		default:
 			throw new FieldParseException("Unknown data type '" + dataType
@@ -472,6 +486,423 @@ public class NumberParser
 
 		return new Variable((double)ival * factor1);
 	}
+	
+	private Variable parseAtonString(byte[] field)
+			throws FieldParseException
+	{
+		String result = "";
+		int fieldIndex = 0;
+		DecimalFormat dFormat = new DecimalFormat("0.000");
+		//first 10 characters are type and id 
+		for(fieldIndex=0; fieldIndex<11;fieldIndex++)
+		{
+			if(fieldIndex>2)
+				result += (char)field[fieldIndex];
+		}
+		//if(field[charCount]=='-')
+			result += "\n";
+		String strResult = "";
+		for(fieldIndex = 12; fieldIndex < 24; fieldIndex++)
+		{
+			String temp = "";
+			temp += (char)field[fieldIndex];
+			temp += (char)field[++fieldIndex];
+
+			int number = PseudoBinary.decodePB(temp, false);
+			strResult = number+"";
+			if(strResult.length()<2)
+				strResult = "0" + strResult;
+			
+			result += strResult + " ";
+		}
+		
+		for(fieldIndex = 24; fieldIndex < 30; fieldIndex++)
+		{
+			String temp = "";
+			temp += (char)field[fieldIndex];
+			temp += (char)field[++fieldIndex];
+			temp += (char)field[++fieldIndex];
+
+			int number = PseudoBinary.decodePB(temp, false);
+			strResult = number+"";
+			String zeros = "";
+			if(strResult.length()<9)
+				for(int i = strResult.length(); i<8; i++)
+					zeros += "0";
+			strResult = zeros + strResult;
+			if(fieldIndex!=29)
+				result += strResult + " ";
+			else
+				result += strResult;
+		}
+		
+		for(fieldIndex = 30; fieldIndex < 51; fieldIndex++)
+		{
+			String temp = "";
+			temp += (char)field[fieldIndex];
+			temp += (char)field[++fieldIndex];
+			if(fieldIndex+1==34 || fieldIndex+1==47 || fieldIndex+1==50)
+				temp += (char)field[++fieldIndex];
+			int number = PseudoBinary.decodePB(temp, true);
+			double dnum;
+			
+			if(fieldIndex == 31 || fieldIndex == 34 || fieldIndex == 36 || fieldIndex == 38 || fieldIndex == 40)
+			{
+				dnum = number*0.1;
+				strResult = dFormat.format(dnum);
+				
+				//remove extra digits or fill in with blanks
+				if(fieldIndex==34 && strResult.length()<7)
+				{
+					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;
+				}
+				else if(fieldIndex==34 && strResult.length()>7)
+				{
+					strResult = strResult.substring(0,7);
+				}
+				else if(strResult.length()<7)
+				{
+					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;
+				}
+				else if(strResult.length()>7)
+				{
+					strResult = strResult.substring(0,7);
+				}
+				//remove trailing zeros or decimal point
+				if(strResult.contains("."))
+				{
+					if( strResult.charAt(strResult.length()-1)=='0')
+					{
+						strResult = strResult.replace("0", "");
+						strResult = " " + strResult;
+					}
+					if(strResult.indexOf('.')==(strResult.length()-1))
+					{
+						strResult = strResult.replace(".","");
+						strResult = " " + strResult;
+					}
+				}
+			}
+			else if(fieldIndex == 42)
+			{
+				dnum = number*0.001;
+				strResult = dFormat.format(dnum);
+				//remove extra digits or fill in with blanks
+				if(strResult.length()<8)
+				{
+					strResult = String.format("%"+(8-strResult.length())+"s", "")+strResult;
+				}
+				else if(strResult.length()>8)
+				{
+					strResult = strResult.substring(0,8);
+				}
+			}
+			else if(fieldIndex == 44)
+			{
+				DecimalFormat df = new DecimalFormat("0.00");
+				dnum = number*0.01;
+				strResult = df.format(dnum);
+				
+				//remove extra digits or fill in with blanks
+				if(strResult.length()<7)
+				{
+					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;	
+				}
+				else if(strResult.length()>7)
+				{
+					strResult = strResult.substring(0,6);
+				}
+			}
+			else 
+			{
+				dnum = number;
+				strResult = dnum+"";
+				//remove extra digits or fill in with blanks
+				if(strResult.length()<6)
+				{
+					strResult = String.format("%"+(6-strResult.length())+"s", "")+strResult;
+				}
+				else if(strResult.length()>6)
+				{
+					strResult = strResult.substring(0,6);
+				}
+				//remove trailing zeros or decimal point
+				if(strResult.contains("."))
+				{
+					if( strResult.charAt(strResult.length()-1)=='0')
+					{
+						strResult = strResult.replace("0", "");
+						strResult = " " + strResult;
+					}
+					if(strResult.indexOf('.')==(strResult.length()-1))
+					{
+						strResult = strResult.replace(".","");
+						strResult = " " + strResult;
+					}
+				}
+			}
+			result += strResult;// + " ";
+		}
+		result = result + "\n";
+		
+		//processing data
+		for(fieldIndex = 52; fieldIndex < field.length-1; fieldIndex++)
+		{
+			for(int i = 0; i < 6; i++)
+			{
+				if(fieldIndex>field.length-2)
+					break;
+				String temp = "";
+				
+				temp += (char)field[fieldIndex++];
+				temp += (char)field[fieldIndex++];
+				
+				//the first three values in each bin/line are 
+				//represented by three bytes of pseudo-binary
+				if(i==0 || i==1 || i==2 && fieldIndex < field.length-1)
+				{
+					temp += (char)field[fieldIndex++];
+				}
+				int number = PseudoBinary.decodePB(temp, true);
+				
+				double dnum = 0.000;
+				String blank = "";
+				if(i==0 || i==1 || i==2)
+				{
+					dnum = number*0.001;
+					strResult = dnum + "";
+					strResult = dFormat.format(dnum);
+					
+					for(int j = strResult.length(); j<8; j++)
+						blank += " ";
+					strResult = blank + strResult; 
+				}
+				else 
+				{
+					dnum = number;
+					strResult = dnum + "";
+					if(strResult.equalsIgnoreCase("0.0"))
+						strResult = "0.000";
+					for(int j = strResult.length(); j<6; j++)
+						blank += " ";
+					strResult = blank + strResult; 
+				}				
+				result += strResult;// + " ";
+			}
+			result = result + "\n";
+		}
+		return new Variable(result);
+	}
+
+		
+	private Variable parseSontekString(byte[] field)
+			throws FieldParseException
+	{
+//		String result = "";
+		StringBuilder result = new StringBuilder();
+		int pos = 0;
+//		DecimalFormat dFormat = new DecimalFormat("0.000");
+		//first 10 characters are type and id 
+		for(pos=0; pos<11;pos++)
+		{
+			if(pos>2)
+				result.append((char)field[pos]);
+		}
+		
+		//skip flag
+		pos++;
+		
+		result.append("\n");
+		String intString = "";
+		
+		String pbChar = "";
+		String blank = "";
+		
+		//first two bytes of the first header
+		pbChar += (char)field[pos];
+		pbChar += (char)field[++pos];
+
+		int n = (int)PseudoBinary.decodePB(pbChar, false);
+		intString = n+"";
+		for(int j = intString.length(); j<4; j++)
+			blank += " ";
+		intString = blank + intString; 
+		result.append(intString);
+		pbChar = "";
+		
+		//not encoded chars of the first header
+		for(int i = 0; i < 5; i++)
+		{
+			pbChar += (char)field[++pos];
+		}
+		result.append("       " + pbChar);
+		
+		//the rest of the first header
+		for(pos = 19; pos < 41; pos++)
+		{
+			String temp = "";
+			temp += (char)field[pos];
+			temp += (char)field[++pos];
+			
+			int number = (int)PseudoBinary.decodePB(temp, false);
+			intString = number+"";
+			blank="";
+			if(pos==20)
+				for(int j = intString.length(); j<12; j++)
+					blank += " ";
+			if(pos==22)
+				for(int j = intString.length(); j<5; j++)
+					blank += " ";
+			if(pos==24||pos==26||pos==28||pos==30||pos==32)
+				for(int j = intString.length(); j<3; j++)
+					blank += " ";
+			if(pos>32)
+				for(int j = intString.length(); j<2; j++)
+					blank += " ";
+			intString = blank + intString; 
+			result.append(intString);
+		}
+		result.append("\n");
+		
+		//skip header flag and process second header
+		for(pos = 42; pos < 52; pos++)
+		{
+			String temp = "";
+			temp += (char)field[pos];
+			temp += (char)field[++pos];
+			
+			int number = (int)PseudoBinary.decodePB(temp, false);
+			
+			intString = number+"";
+			blank="";
+			
+			for(int j = intString.length(); j<6; j++)
+				blank += " ";
+			intString = blank + intString; 
+			result.append(intString);
+		}
+		result.append("\n");
+		
+		//skip flag and process third header
+		for(pos = 53; pos < 80; pos++)
+		{
+			String temp = "";
+			temp += (char)field[pos];
+			temp += (char)field[++pos];
+			if(pos>59 && pos<66 || pos>71)
+				temp+= (char)field[++pos];
+			int number=0;
+			if(pos == 56 || pos == 58)
+				number = PseudoBinary.decodePB(temp, true);
+			else
+				number = PseudoBinary.decodePB(temp, false);
+			intString = number+"";
+			blank="";
+			
+			for(int j = intString.length(); j<7; j++)
+				blank += " ";
+			intString = blank + intString; 
+			result.append(intString);
+		}
+		
+		result.append("\n");
+		
+		//skip flag and process fourth header
+		for(pos = 81; pos < 113; pos++)
+		{
+			String temp = "";
+			temp += (char)field[pos];
+			temp += (char)field[++pos];
+			
+			int number = PseudoBinary.decodePB(temp, false);
+			intString = number+"";
+			blank="";
+			
+			for(int j = intString.length(); j<4; j++)
+				blank += " ";
+			intString = blank + intString; 
+			result.append(intString);
+		}
+		
+		//data processing 
+		boolean firstCell = true;
+		int velocityLen = 2;
+		for(pos = 113; pos < field.length-2; pos++) // incr here gobbles the plus sign
+		{
+			result.append("\n");
+			
+			if (firstCell)
+			{
+				// Count # of chars to the next '+'
+				int idx = 0;
+				for(; idx < 17 && (char)field[pos + ++idx] != '+'; );
+//					System.out.println("\t" + (char)field[pos + idx]);
+//				System.out.println("celLen = " + idx);
+				if (idx == 14)
+					velocityLen = 2;
+				else if (idx == 16)
+					velocityLen = 3;
+				firstCell = false;
+			}
+//System.out.println("velocityLen=" + velocityLen);
+			
+			// Cell #
+			String bin = "";
+			bin += (char)field[++pos];
+			
+			int b = PseudoBinary.decodePB(bin, false);
+			
+			bin = b +"";
+			if(bin.length()==1)
+				bin = "  " + bin;
+			else
+				bin = " " + bin;
+			result.append(bin);
+			
+			// Each cell has: velocity 1, velocity 2, std dev 1, std dev 2, amp 1, amp 2
+			
+			// Get the 2 velocity measurements
+			for(int i = 0; i < 2; i++)
+			{
+				if(pos>field.length-3)
+					break;
+
+				String pb = "";
+				for(int x = 0; x<velocityLen; x++)
+					pb = pb + (char)field[++pos];
+				int vel = PseudoBinary.decodePB(pb, true);
+				String vels = "" + vel;
+				for(int x = 0; x < 7 - vels.length(); x++)
+					result.append(' ');
+				result.append(vels);
+			}
+
+			// get the 2 std devs and 2 amplitudes (aka echo intensity).
+			for(int i = 0; i<4; i++)
+			{
+				if(pos>field.length-3)
+					break;
+				
+				String temp = "";
+				temp += (char)field[++pos];
+				temp += (char)field[++pos];
+				
+				int number = PseudoBinary.decodePB(temp, true);
+				intString = number+"";
+				blank="";
+				if(i<2)
+				for(int j = intString.length(); j<7; j++)
+					blank += " ";
+				else
+					for(int j = intString.length(); j<4; j++)
+						blank += " ";
+				intString = blank + intString;
+				result.append(intString);
+			}
+		}
+		return new Variable(result.toString());
+	} 
+
 	
 	// Test main
 	public static void main(String args[])
