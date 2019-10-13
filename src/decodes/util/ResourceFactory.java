@@ -21,6 +21,7 @@ import lrgs.common.DcpMsgFlag;
 import lrgs.ldds.PasswordChecker;
 import decodes.decoder.FunctionList;
 import decodes.gui.TopFrame;
+import decodes.launcher.AlarmEditLauncherAction;
 import decodes.launcher.EventMonLauncherAction;
 import decodes.launcher.LauncherAction;
 import decodes.tsdb.groupedit.TsDbGrpEditor;
@@ -120,9 +121,10 @@ public class ResourceFactory
 	{
 		ArrayList<LauncherAction> ret = new ArrayList<LauncherAction>();
 		if (DecodesSettings.instance().showEventMonitor)
-		{
 			ret.add(new EventMonLauncherAction());
-		}
+		if (DecodesSettings.instance().showAlarmEditor)
+			ret.add(new AlarmEditLauncherAction());
+
 		return ret;
 	}
 }
