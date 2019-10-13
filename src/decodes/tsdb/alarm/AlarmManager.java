@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.4  2019/08/27 20:14:40  mmaloney
+ * Make sure alarms always go forward in time.
+ *
  * Revision 1.3  2019/08/26 20:49:52  mmaloney
  * Alarm Implementations.
  *
@@ -26,7 +29,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.python.icu.text.NumberFormat;
+import java.text.NumberFormat;
 
 import decodes.hdb.HdbFlags;
 import decodes.sql.DbKey;
@@ -297,18 +300,16 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 		for(Iterator<AlarmMsg> amit = toSend.iterator(); amit.hasNext(); )
 		{
 			AlarmMsg am = amit.next();
-			if (!am.groupId.equals(lastGrpId) || !amit.hasNext())
+			
+			// Starting a new group? Send the message already buffered for the last group.
+			if (!am.groupId.equals(lastGrpId))
 			{
-				if (!DbKey.isNull(lastGrpId))
+				if (!DbKey.isNull(lastGrpId) && sb.length() > 0) // i.e. not the first time through the loop.
 				{
-					String msg = sb.toString();
-					if (msg.length() > 0)
-					{
-						sendEmail(am.groupId, msg);
-						lastTsIdKey = DbKey.NullKey;
-						lastHint = null;
-						sb.setLength(0);
-					}
+					sendEmail(lastGrpId, sb.toString());
+					lastTsIdKey = DbKey.NullKey;
+					lastHint = null;
+					sb.setLength(0);
 				}
 				lastGrpId = am.groupId;
 			}
@@ -330,6 +331,11 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 
 			sb.append(am.msg + lineSep);
 		}
+		
+		// Now send the last group in the buffer.
+		if (sb.length() > 0)
+			sendEmail(lastGrpId, sb.toString());
+		
 	}
 
 	/**
