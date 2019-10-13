@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.16  2019/01/28 14:43:16  mmaloney
+*  Default action is to squelch all javax.logging messages.
+*
 *  Revision 1.15  2019/01/22 19:36:34  mmaloney
 *  Added -FL argument to forward the java.logging logger.
 *
@@ -149,7 +152,9 @@ public class CmdLineArgs
 	private StringToken define_arg;
 	private BooleanToken forwardLogArg;
 	
-
+	// Used by parent programs that spawn multiple apps. The parent sets this to
+	// tell parseArgs to skip the logger and properties initialization.
+	private boolean noInit = false;
 
 	//No filter option token.
 	public StringToken NoCompFilterToken;
@@ -224,6 +229,41 @@ public class CmdLineArgs
 	public void parseArgs(String args[])
 	{
 		super.parseArgs(args);
+		
+		/*
+		  The user can set system properties on the command line with multiple
+		  -Dname=value arguments. The following puts each setting into
+		  System.properties so that they are available globally.
+	
+		  Each 'name' is converted to upper case before putting in the
+		  properties set. So retrieve the property by upper-case name only.
+		*/
+		for(int i=0; i<define_arg.NumberOfValues(); i++)
+		{
+			String arg = define_arg.getValue(i).trim();
+			if (arg == null || arg.length() == 0)
+				continue;
+			int idx = arg.indexOf('=');
+			if (idx == -1 || arg.length() <= idx+1)
+			{
+				System.err.println("Invalid define '" + arg + "' -- should be "
+					+ "in the form name=value.");
+				System.exit(1);
+			}
+			String name = arg.substring(0,idx).trim();
+			String value = arg.substring(idx+1).trim();
+			if (name.length() == 0 || value.length() == 0)
+			{
+				System.err.println("Invalid define name='" + name
+					+ "', value='" + value + "'");
+				System.exit(1);
+			}
+			System.setProperty(name.toUpperCase(), value);
+			cmdLineProps.setProperty(name, value);
+		}
+		
+		if (noInit)
+			return;
 
 		// If log-file specified, open it.
 		String fn = getLogFile();
@@ -311,37 +351,6 @@ public class CmdLineArgs
 				dl == 1 ? Logger.E_DEBUG1 :
 				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
 
-		/*
-		  The user can set system properties on the command line with multiple
-		  -Dname=value arguments. The following puts each setting into
-		  System.properties so that they are available globally.
-	
-		  Each 'name' is converted to upper case before putting in the
-		  properties set. So retrieve the property by upper-case name only.
-		*/
-		for(int i=0; i<define_arg.NumberOfValues(); i++)
-		{
-			String arg = define_arg.getValue(i).trim();
-			if (arg == null || arg.length() == 0)
-				continue;
-			int idx = arg.indexOf('=');
-			if (idx == -1 || arg.length() <= idx+1)
-			{
-				System.err.println("Invalid define '" + arg + "' -- should be "
-					+ "in the form name=value.");
-				System.exit(1);
-			}
-			String name = arg.substring(0,idx).trim();
-			String value = arg.substring(idx+1).trim();
-			if (name.length() == 0 || value.length() == 0)
-			{
-				System.err.println("Invalid define name='" + name
-					+ "', value='" + value + "'");
-				System.exit(1);
-			}
-			System.setProperty(name.toUpperCase(), value);
-			cmdLineProps.setProperty(name, value);
-		}
 		
 		if (DecodesSettings.instance().fontAdjust != 0)
 		{
@@ -373,4 +382,9 @@ public class CmdLineArgs
 	}
 
 	public Properties getCmdLineProps() { return cmdLineProps; }
+
+	public void setNoInit(boolean noInit)
+	{
+		this.noInit = noInit;
+	}
 }
