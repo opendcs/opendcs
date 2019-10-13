@@ -5,7 +5,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.python.icu.text.NumberFormat;
+import java.text.NumberFormat;
 
 /**
  * Generates test data for regression tests as a sine wave with a period of 1 day.

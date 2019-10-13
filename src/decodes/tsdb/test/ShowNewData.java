@@ -3,6 +3,7 @@
 */
 package decodes.tsdb.test;
 
+import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -20,6 +21,8 @@ Reads data from the tasklist table.
 */
 public class ShowNewData extends TestProg
 {
+	private PrintStream out = System.out;
+	
 	public ShowNewData()
 	{
 		super(null);
@@ -35,15 +38,15 @@ public class ShowNewData extends TestProg
 	protected void runTest()
 		throws Exception
 	{
-		System.out.println("Getting new data for app ID=" + appId);
+		out.println("Getting new data for app ID=" + appId);
 //		while(true)
 //		{
 			DataCollection dc = theDb.getNewData(appId);
 			List<CTimeSeries> tsl = dc.getAllTimeSeries();
 			for(CTimeSeries ts : tsl)
 			{
-				System.out.println("");
-				System.out.println("Time Series  SDI="
+				out.println("");
+				out.println("Time Series  SDI="
 					+ ts.getSDI() 
 					+ " tabsel=" + ts.getTableSelector()
 					+ " interval=" + ts.getInterval()
@@ -55,15 +58,15 @@ public class ShowNewData extends TestProg
 					for(Iterator<SiteName> snit = tsid.getSite().getNames(); snit.hasNext(); )
 					{
 						SiteName sn = snit.next();
-						System.out.println("Site Name: " + sn);
+						out.println("Site Name: " + sn);
 					}
 				DataType dt = tsid.getDataType();
-				System.out.println("Data Type: " + dt);
-				System.out.println("Number of values: " + ts.size());
+				out.println("Data Type: " + dt);
+				out.println("Number of values: " + ts.size());
 				for(int i=0; i<ts.size(); i++)
 				{
 					TimedVariable tv = ts.sampleAt(i);
-					System.out.println(
+					out.println(
 						(VarFlags.wasAdded(tv) ? "Add: " :
 						 VarFlags.wasDeleted(tv) ? "Del: " : "???: ")
 						+ tv.toString());
@@ -73,8 +76,8 @@ public class ShowNewData extends TestProg
 			try 
 			{
 				Thread.sleep(1000L); 
-				System.out.print(".");
-				System.out.flush();
+				out.print(".");
+				out.flush();
 			}
 			catch(InterruptedException ex) {}
 //		}
@@ -94,5 +97,10 @@ public class ShowNewData extends TestProg
 			ret.setModelRunId(modid);
 		}
 		return ret;
+	}
+
+	public void setOut(PrintStream out)
+	{
+		this.out = out;
 	}
 }

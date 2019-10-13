@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.5  2013/03/21 18:27:40  mmaloney
 *  DbKey Implementation
 *
@@ -124,7 +127,7 @@ public abstract class TestProg
 	protected void parseArgs(String args[])
 		throws Exception
 	{
-		Logger.setLogger(new StderrLogger(appNameArg.getValue()));
+//		Logger.setLogger(new StderrLogger(appNameArg.getValue()));
 
 		// Parse command line arguments.
 		try { cmdLineArgs.parseArgs(args); }
@@ -221,5 +224,10 @@ public abstract class TestProg
 //		System.out.print("Site, "); System.out.flush();
 //		decodesDb.siteList.read();
 //		System.out.println();
+	}
+
+	public CmdLineArgs getCmdLineArgs()
+	{
+		return cmdLineArgs;
 	}
 }
