@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.3  2015/12/02 21:19:11  mmaloney
+*  Added reset() method for DCP monitor. When it starts a new day, it wants to reset the sequence.
+*
 *  Revision 1.2  2015/03/19 15:23:14  mmaloney
 *  punch list
 *
@@ -129,7 +132,7 @@ public class OracleSequenceKeyGenerator
 		DbKey curval = getKey(tableName, conn);
 		
 		String seqname = tableName.trim() + "IdSeq";
-		String q = "alter sequence " + seqname + " increment by -" + (curval.getValue()-1);
+		String q = "alter sequence " + seqname + " increment by -" + (curval.getValue()-2);
 		Statement stmt = null;
 		try
 		{
