@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.8  2019/08/27 20:15:19  mmaloney
+ * Show null last update as "none".
+ *
  * Revision 1.7  2019/08/26 20:51:04  mmaloney
  * bug fix in writeToCurrent
  *
@@ -311,7 +314,8 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		{
 			q = "update ALARM_GROUP set "
 				+ "ALARM_GROUP_NAME = " + sqlString(grp.getName())
-				+ ", LAST_MODIFIED = " + grp.getLastModifiedMsec();
+				+ ", LAST_MODIFIED = " + grp.getLastModifiedMsec()
+				+ "WHERE alarm_group_id = " + grp.getAlarmGroupId();
 			doModify(q);
 			
 			// Delete file monitors, email addresses, and process monitors.
