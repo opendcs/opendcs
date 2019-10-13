@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.12  2017/08/22 19:53:58  mmaloney
+ * Improve comments
+ *
  * Revision 1.11  2017/06/13 20:19:32  mmaloney
  * dev
  *
@@ -779,7 +782,7 @@ public class LauncherFrame extends JFrame
 		});
 		if (DecodesSettings.instance().showAlgorithmEditor)
 			tsdbButtonPanel.add(algoeditButton, null);
-
+		
 		fullPanel.setLayout(fullLayout);
 		fullPanel.add(decodesButtonPanel, new GridBagConstraints(0, 0, 1, 1, .5, .5,
 			GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
