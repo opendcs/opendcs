@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.1  2019/06/10 19:27:50  mmaloney
+ * Added Screenings to Alarm Editor
+ *
  * Revision 1.2  2019/05/10 18:35:26  mmaloney
  * dev
  *
@@ -268,7 +271,7 @@ public class GroupListPanel
 		{
 			parentFrame.showError(
 				parentFrame.eventmonLabels.getString("alarmEdit.selectFirst")
-				+ " " + parentFrame.genericLabels.getString("new") + ".");
+				+ " " + parentFrame.genericLabels.getString("open") + ".");
 			return;
 		}
 		AlarmGroup grp = model.getGroupAt(row);
