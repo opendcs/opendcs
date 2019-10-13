@@ -74,14 +74,21 @@ public class PseudoBinary
 	
 	public static int decodePB(String pb, boolean signed)
 	{
+		return decodePB(pb, signed, 0, pb.length());
+	}
+
+	public static int decodePB(String pb, boolean signed, int offset, int length)
+	{
+		if (length > offset + pb.length())
+			length = pb.length() - offset;
+		
 		int result = 0;
 		int sign = 1;
 
-		byte[] field = new byte[pb.length()];
-		for(int i = 0; i<pb.length(); i++ )
-		{
-			field[i] = (byte)pb.charAt(i);
-		}
+		byte[] field = new byte[length];
+		for(int i = 0; i<length; i++ )
+			field[i] = (byte)pb.charAt(offset + i);
+		
 		if (signed)  // signed integer
 		{
 			int c = (int)field[0];
