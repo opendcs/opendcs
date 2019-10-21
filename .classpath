@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/Library/Java/JavaVirtualMachines/jdk1.7.0_45.jdk/Contents/Home/lib/tools.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/hec.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/hecData.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/heclib.jar"/>
@@ -22,7 +25,6 @@
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jython.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/commons-net-3.3.jar"/>
 	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/sshd-core-1.7.0.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/hecDbCore-v3.2-dev.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/javax.mail.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
