@@ -13,6 +13,11 @@ then
 fi
 . defines.sh
 
+echo -n "Running createDb.sh at " >$LOG
+date >> $LOG
+echo >> $LOG
+
+echo "====================" >>$LOG
 # If you need a table space, define it here. then comment out the 
 # non tablespace version of createdb below and uncomment the other one.
 # TABLESPACE=pg_default
@@ -61,17 +66,19 @@ echo "Will create $NUM_TABLES numeric tables and $STRING_TABLES string tables. (
 read x
 
 echo "Defining Roles ..."
-psql -q -U $DBSUPER -h $DBHOST -f group_roles.sql
+echo "Defining Roles ..." >>$LOG
+psql -q -U $DBSUPER -h $DBHOST -f group_roles.sql >>$LOG
 
 echo "Creating database user $DBUSER ..."
-createuser -U $DBSUPER -S -E -d -r -l -i -h $DBHOST $DBUSER
-psql -q -U $DBSUPER -h $DBHOST -c "ALTER USER $DBUSER WITH PASSWORD '$PASSWD'"
-psql -q -U $DBSUPER -h $DBHOST -c "GRANT \"OTSDB_ADMIN\" TO $DBUSER"
+echo "Creating database user $DBUSER ..." >>$LOG
+createuser -U $DBSUPER -S -E -d -r -l -i -h $DBHOST $DBUSER >>$LOG 2>&1
+psql -q -U $DBSUPER -h $DBHOST -c "ALTER USER $DBUSER WITH PASSWORD '$PASSWD'" >>$LOG 2>&1
+psql -q -U $DBSUPER -h $DBHOST -c "GRANT \"OTSDB_ADMIN\" TO $DBUSER" >>$LOG 2>&1
 
 export PGPASSWORD="$PASSWD"
 echo "Creating database as user $DBUSER (you will be prompted for password) ..."
 # Non-tablespace:
-createdb -U $DBUSER -h $DBHOST $DBNAME
+createdb -U $DBUSER -h $DBHOST $DBNAME >>$LOG 2>&1
 
 # For tablespace, uncomment the following line and comment the above one:
 # createdb -U $DBUSER -h $DBHOST -D $TABLESPACE $DBNAME
@@ -90,9 +97,9 @@ echo "Setting Version Numbers ..."
 echo >> combined.sql
 echo "-- Set Version Numbers" >> combined.sql
 echo 'delete from DecodesDatabaseVersion; ' >> combined.sql
-echo "insert into DecodesDatabaseVersion values(15, '');" >> combined.sql
+echo "insert into DecodesDatabaseVersion values(17, '');" >> combined.sql
 echo 'delete from tsdb_database_version; ' >> combined.sql
-echo "insert into tsdb_database_version values(15, '');" >> combined.sql
+echo "insert into tsdb_database_version values(17, '');" >> combined.sql
 
 for n in `seq 1 $NUM_TABLES`
 do
@@ -105,17 +112,17 @@ do
 done
 
 echo "Creating schema as user $DBUSER (you will be prompted for password) ..."
-psql -U $DBUSER -h $DBHOST -d $DBNAME -f combined.sql
+psql -U $DBUSER -h $DBHOST -d $DBNAME -f combined.sql >>$LOG 2>&1
 
 echo "Importing Enumerations from edit-db ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/enum/*.xml
+$DH/bin/dbimport -l $LOG -r $DH/edit-db/enum/*.xml >>$LOG 2>&1
 echo "Importing Standard Engineering Units and Conversions from edit-db ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/eu/EngineeringUnitList.xml
+$DH/bin/dbimport -l $LOG -r $DH/edit-db/eu/EngineeringUnitList.xml >>$LOG 2>&1
 echo "Importing Standard Data Types from edit-db ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/datatype/DataTypeEquivalenceList.xml
+$DH/bin/dbimport -l $LOG -r $DH/edit-db/datatype/DataTypeEquivalenceList.xml >>$LOG 2>&1
 echo "Importing Presentation Groups ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/presentation/*.xml
+$DH/bin/dbimport -l $LOG -r $DH/edit-db/presentation/*.xml >>$LOG 2>&1
 echo "Importing standard computation apps and algorithms ..."
-$DH/bin/compimport -l $LOG $DH/imports/comp-standard/*.xml
+$DH/bin/compimport -l $LOG $DH/imports/comp-standard/*.xml >>$LOG 2>&1
 echo "Importing DECODES loading apps ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/loading-app/*.xml
+$DH/bin/dbimport -l $LOG -r $DH/edit-db/loading-app/*.xml >>$LOG 2>&1
