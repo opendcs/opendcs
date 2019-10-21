@@ -50,11 +50,11 @@ public class OpenTsdbIntervalDAO
 			}
 			
 			// "0" needs to be a built-in interval because it's used often for duration.
-			Interval zeroInt = IntervalList.instance().getByName("0");
-			if (zeroInt == null)
-				Logger.instance().warning("After loading intervals, there is no '0' interval!");
-			else
-				Logger.instance().info("After loading intervals, '0' interval has key=" + zeroInt.getKey());
+//			Interval zeroInt = IntervalList.instance().getByName("0");
+//			if (zeroInt == null)
+//				Logger.instance().warning("After loading intervals, there is no '0' interval!");
+//			else
+//				Logger.instance().info("After loading intervals, '0' interval has key=" + zeroInt.getKey());
 		}
 		catch (Exception ex)
 		{
