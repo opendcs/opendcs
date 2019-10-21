@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2016/02/23 19:37:01  mmaloney
+*  Support 'synonyms'. Refactoring to support I/O from sockets for PwSshd.
+*
 *  Revision 1.2  2014/12/11 20:32:27  mmaloney
 *  Make last read inputLine available to commands.
 *
@@ -93,6 +96,8 @@ public class CmdLineProcessor
 	protected ArrayList<CmdLine> myCmdList = new ArrayList<CmdLine>();
 	
 	protected HashMap<String,CmdLine> synonyms = new HashMap<String,CmdLine>();
+	
+	protected HashMap<String, String> assignments = new HashMap<String, String>();
 
 
 	/**
@@ -222,6 +227,18 @@ public class CmdLineProcessor
 					n++;
 					continue Get_Next_Command;
 				}
+				
+				// Support assignments name=value and store them in the hashmap.
+				int eqIdx = inputLine.indexOf('=');
+				if (eqIdx > 0)
+				{
+					String name = inputLine.substring(0, eqIdx);
+					if (++eqIdx < inputLine.length())
+						assignments.put(name, inputLine.substring(eqIdx));
+					else
+						assignments.remove(name);
+				}
+				
 				unrecognizedCmd(tokens);
 			}
 		}
