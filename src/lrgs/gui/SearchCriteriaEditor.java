@@ -22,7 +22,6 @@ import ilex.util.IDateFormat;
 import ilex.util.FileExceptionList;
 import ilex.util.LoadResourceBundle;
 import ilex.util.TextUtil;
-import ilex.corba.ClientAppSettings;
 
 import lrgs.common.*;
 
