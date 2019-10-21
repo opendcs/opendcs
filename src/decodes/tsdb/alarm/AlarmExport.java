@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.2  2019/05/10 18:35:26  mmaloney
+ * dev
+ *
  * Revision 1.1  2019/03/05 14:53:01  mmaloney
  * Checked in partial implementation of Alarm classes.
  *
@@ -25,6 +28,7 @@ import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
+import ilex.util.TextUtil;
 import decodes.db.DataType;
 import decodes.db.Site;
 import decodes.sql.DbKey;
@@ -32,7 +36,6 @@ import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.alarm.xml.AlarmXio;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
-import hec.util.TextUtil;
 
 /**
  * Export named alarm group to XML file. Writes to stdout.
@@ -109,7 +112,7 @@ public class AlarmExport
 			
 			boolean found = false;
 			for(int idx = 0; idx < grpNameArg.NumberOfValues(); idx++)
-				if (TextUtil.equalsIgnoreCase(grp.getName(), grpNameArg.getValue(idx)))
+				if (TextUtil.strEqualIgnoreCase(grp.getName(), grpNameArg.getValue(idx)))
 				{
 					found = true;
 					break;

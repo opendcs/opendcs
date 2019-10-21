@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.2  2019/06/10 19:27:49  mmaloney
+ * Added Screenings to Alarm Editor
+ *
  * Revision 1.1  2019/03/05 14:52:59  mmaloney
  * Checked in partial implementation of Alarm classes.
  *
@@ -17,6 +20,7 @@
 package decodes.tsdb.alarm.editor;
 
 import ilex.util.LoadResourceBundle;
+import ilex.util.TextUtil;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -36,7 +40,6 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.AlarmScreening;
 import decodes.util.DecodesSettings;
-import hec.util.TextUtil;
 
 
 /**
@@ -204,7 +207,7 @@ public class AlarmEditFrame
 			ScreeningEditPanel sep = (ScreeningEditPanel)x;
 			if (sep.getScreening() == null)
 				continue;
-			if (TextUtil.equals(scrn.getScreeningName(), sep.getScreening().getScreeningName()))
+			if (TextUtil.strEqual(scrn.getScreeningName(), sep.getScreening().getScreeningName()))
 				return true;
 		}
 		return false;
@@ -220,7 +223,7 @@ public class AlarmEditFrame
 			ScreeningEditPanel sep = (ScreeningEditPanel)x;
 			if (sep.getScreening() == null)
 				continue;
-			if (TextUtil.equals(scrn.getScreeningName(), sep.getScreening().getScreeningName()))
+			if (TextUtil.strEqual(scrn.getScreeningName(), sep.getScreening().getScreeningName()))
 			{
 				screeningsTab.setSelectedComponent(sep);
 				return;

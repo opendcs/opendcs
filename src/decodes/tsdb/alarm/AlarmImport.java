@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.2  2019/05/10 18:35:25  mmaloney
+ * dev
+ *
  * Revision 1.1  2019/03/05 14:53:00  mmaloney
  * Checked in partial implementation of Alarm classes.
  *
@@ -24,6 +27,7 @@ import lrgs.gui.DecodesInterface;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
@@ -33,7 +37,6 @@ import decodes.tsdb.alarm.xml.AlarmFile;
 import decodes.tsdb.alarm.xml.AlarmXio;
 import decodes.tsdb.xml.DbXmlException;
 import decodes.util.CmdLineArgs;
-import hec.util.TextUtil;
 
 public class AlarmImport
 	extends TsdbAppTemplate
@@ -130,7 +133,7 @@ public class AlarmImport
 						{
 							// It could be one of the groups from the same file, written above.
 							for(AlarmGroup grp : alarmFile.getGroups())
-								if (TextUtil.equals(scrn.getGroupName(), grp.getName()))
+								if (TextUtil.strEqual(scrn.getGroupName(), grp.getName()))
 								{
 									scrn.setAlarmGroupId(grp.getAlarmGroupId());
 									break;
