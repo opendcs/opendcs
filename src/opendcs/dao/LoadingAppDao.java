@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.10  2019/08/26 20:52:19  mmaloney
+ * Removed unneeded debugs.
+ *
  * Revision 1.9  2018/06/07 13:10:51  mmaloney
  * Bug fix: Check db version before deleting from DACQ_EVENT.
  *
@@ -432,9 +435,12 @@ public class LoadingAppDao
 			q = "delete from cp_comp_proc_lock where LOADING_APPLICATION_ID = " + app.getKey();
 			doModify(q);
 			if (DecodesSettings.instance().editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB
-			 && this.db.getDecodesDatabaseVersion() >= TsdbDatabaseVersion.VERSION_15)
+			 && db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
 			{
-				q = "delete from ALARM_DEF where LOADING_APPLICATION_ID = " + app.getKey();
+				q = "delete from "
+					+ (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_17 ? "ALARM_EVENT"
+						: "ALARM_DEF")
+					+ " where LOADING_APPLICATION_ID = " + app.getKey();
 				doModify(q);
 				q = "delete from PROCESS_MONITOR where LOADING_APPLICATION_ID = " + app.getKey();
 				doModify(q);
