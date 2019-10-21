@@ -10,8 +10,10 @@
  */
 package decodes.tsdb.test;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -45,11 +47,15 @@ import decodes.polling.DacqEvent;
 import decodes.polling.DeviceStatus;
 import decodes.sql.DbKey;
 import decodes.sql.SqlDatabaseIO;
+import decodes.tsdb.ComputationApp;
 import decodes.tsdb.DeleteTs;
 import decodes.tsdb.DisableComps;
+import decodes.tsdb.ImportComp;
+import decodes.tsdb.TsImport;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
+import decodes.util.ExportTimeSeries;
 import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
 import ilex.util.Logger;
@@ -241,9 +247,51 @@ public class TestRunner extends TsdbAppTemplate
 			}
 		};
 	
+	private CmdLine compImportCmd =
+		new CmdLine("compimport", "Import computation records from XML.")
+		{
+			@Override
+			public void execute(String[] tokens)
+				throws IOException, EOFException
+			{
+				compImport(tokens);
+			}
 		
+		};
 		
+	private CmdLine importTsCmd =
+		new CmdLine("importts", "Import time series data.")
+		{
+			@Override
+			public void execute(String[] tokens)
+				throws IOException, EOFException
+			{
+				importTs(tokens);
+			}		
+		};
 		
+	private CmdLine outputTsCmd =
+		new CmdLine("outputts", "Output time series data.")
+		{
+			@Override
+			public void execute(String[] tokens)
+				throws IOException, EOFException
+			{
+				outputTs(tokens);
+			}		
+		};
+
+	private CmdLine compprocCmd =
+		new CmdLine("compproc", "Run computation processor")
+		{
+			@Override
+			public void execute(String[] tokens)
+				throws IOException, EOFException
+			{
+				compproc(tokens);
+			}		
+		};
+
 		
 	public TestRunner()
 	{
@@ -265,6 +313,10 @@ public class TestRunner extends TsdbAppTemplate
 		cmdLineProc.addCmd(presgroupCmd);
 		cmdLineProc.addCmd(disablecompsCmd);
 		cmdLineProc.addCmd(deletetsCmd);
+		cmdLineProc.addCmd(flushtriggersCmd);
+		cmdLineProc.addCmd(compImportCmd);
+		cmdLineProc.addCmd(importTsCmd);
+		cmdLineProc.addCmd(outputTsCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		
@@ -348,19 +400,111 @@ public class TestRunner extends TsdbAppTemplate
 				
 			};
 				
-			subApp.setOut(Logger.instance().getLogOutput());
-			subApp.getCmdLineArgs().setNoInit(true);
-			try
-			{
-				subApp.execute(tokens);
-			}
-			catch (Exception e)
-			{
-				System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
-				e.printStackTrace(System.err);
-			}
+		subApp.setOut(Logger.instance().getLogOutput());
+		subApp.getCmdLineArgs().setNoInit(true);
+		try
+		{
+			subApp.execute(tokens);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
+			e.printStackTrace(System.err);
+		}
 	}
 
+	protected void compImport(String[] tokens) 
+	{
+		ImportComp subApp = 
+			new ImportComp()
+			{
+				@Override
+				public void createDatabase() {}		
+			};
+					
+		subApp.getCmdLineArgs().setNoInit(true);
+		try
+		{
+			subApp.execute(tokens);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
+			e.printStackTrace(System.err);
+		}
+	}
+
+	protected void importTs(String[] tokens)
+	{
+		TsImport subApp = 
+			new TsImport()
+			{
+				@Override
+				public void createDatabase() {}			
+			};
+						
+		subApp.getCmdLineArgs().setNoInit(true);
+		try
+		{
+			subApp.execute(tokens);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
+			e.printStackTrace(System.err);
+		}
+	}
+
+	protected void outputTs(String[] tokens)
+	{
+		ExportTimeSeries subApp = new ExportTimeSeries()
+		{
+			@Override
+			public void createDatabase()
+			{
+			}
+		};
+
+		subApp.getCmdLineArgs().setNoInit(true);
+		try
+		{
+			subApp.execute(tokens);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
+			e.printStackTrace(System.err);
+		}
+	}
+
+	protected void compproc(String[] tokens)
+	{
+		ComputationApp subApp = new ComputationApp()
+		{
+			@Override
+			public void createDatabase()
+			{
+			}
+		};
+
+		subApp.getCmdLineArgs().setNoInit(true);
+		try
+		{
+			subApp.execute(tokens);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
+			e.printStackTrace(System.err);
+		}
+
+	}
+
+	//TODO
+
+	//TODO Decide what to do about assignments. Were do they get expanded?
 	
+	//TODO Decide what to do about compproc and the test mode argument.
+
 
 }
