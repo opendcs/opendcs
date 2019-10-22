@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.14  2019/10/22 12:39:39  mmaloney
+ * Pass launcher args to launcher actions.
+ *
  * Revision 1.13  2019/10/13 19:24:47  mmaloney
  * Prototypes for multi-profile launcher
  *
@@ -209,8 +212,9 @@ public class LauncherFrame extends JFrame
 	private WindowAdapter platmonReaper = null, routmonReaper = null;
 
 
-	public LauncherFrame()
+	public LauncherFrame(String args[])
 	{
+		myArgs = args;
 		exitOnClose = true;
 		dbEditorFrame = null;
 		browserFrame = null;
@@ -1054,23 +1058,20 @@ public class LauncherFrame extends JFrame
 
 		labels = getLabels();
 
-		LauncherFrame frame = new LauncherFrame();
-
-		// compArgs is used as argument only to Computaions and Test Computaions
-		// gui.
-		frame.compArgs = args;
-
-		// myArgs is used as argument for all gui's launched though DCSToolkit.
-		// It does not contain -L.
-
+		// Make a copy of the args minus special launcher args to pass to sub programs.
 		ArrayList<String> argsArray = new ArrayList<String>();
 		for (int i = 0; i < args.length; i++)
 		{
 			if (!args[i].equals("-L"))
 				argsArray.add(args[i]);
 		}
-		frame.myArgs = new String[argsArray.size()];
-		argsArray.toArray(frame.myArgs);
+		String argsCopy[] = new String[argsArray.size()];
+		argsArray.toArray(argsCopy);
+		LauncherFrame frame = new LauncherFrame(argsCopy);
+	
+		// compArgs is used as argument only to Computations and Test Computations
+		// gui.
+		frame.compArgs = args;
 
 		frame.setExitOnClose(true);
 
