@@ -7,6 +7,8 @@ package decodes.datasource;
 
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.SCPClient;
+import ch.ethz.ssh2.SFTPv3Client;
+import ch.ethz.ssh2.SFTPv3FileHandle;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -54,7 +56,7 @@ public class ScpDataSource
 		new PropertySpec("nameIsMediumId", PropertySpec.BOOLEAN,
 			"Use with OneMessageFile=true if the downloaded filename is to be treated as a medium ID"
 			+ " in order to link this data with a platform."),
-
+		new PropertySpec("useSftp", PropertySpec.BOOLEAN, "Use SFTP rather than SCP.")
 	};
 	
 	private String host = null;
@@ -72,6 +74,7 @@ public class ScpDataSource
 	private String mySince=null, myUntil=null;
 	private Vector<NetworkList> myNetworkLists;
 	private File currentFile = null;
+	private boolean useSftp = false;
 	
 	public boolean setProperty(String name, String value)
 	{
@@ -96,6 +99,8 @@ public class ScpDataSource
 			localDir = value;
 		else if (name.equalsIgnoreCase("filenames"))
 			filenames = value;
+		else if (name.equalsIgnoreCase("useSftp"))
+			useSftp = TextUtil.str2boolean(value);
 		return true;
 	}		
 	
@@ -161,6 +166,7 @@ public class ScpDataSource
 		throws DataSourceException
 	{
 		SCPClient cli = null;
+		SFTPv3Client sftpCli = null;
 		Connection conn = new Connection(host, port);
 		
 		try
@@ -171,7 +177,10 @@ public class ScpDataSource
 			boolean isAuthenticated = conn.authenticateWithPassword(username, password);
 			if (!isAuthenticated)
 				throw new DataSourceException(module + " SSH authentication failed (bad password)");
-			cli = new SCPClient(conn);
+			if (!useSftp)
+				cli = new SCPClient(conn);
+			else
+				sftpCli = new SFTPv3Client(conn);
 		}
 		catch(IOException ex)
 		{
@@ -179,31 +188,62 @@ public class ScpDataSource
 			throw new DataSourceException(module + " cannot connect to " + host + ":" + port 
 				+ " and/or authenticate: " + ex);
 		}
-
+		
 		String fns[] = filenames.split(" ");
 		downloadedFiles.clear();
 		Logger.instance().debug3(module + " there are " + fns.length + " filenames in the list:");
+	
 		for(String filename : fns)
 		{
+			SFTPv3FileHandle handle = null;
+			OutputStream os = null;
 			try
 			{
 				File localFile = new File(localDir, filename);
-				OutputStream os = new FileOutputStream(localFile);
-				String remoteFile = remoteDir
-					+ (remoteDir.length() == 0 ? "" : "/")
-					+ filename;
-				cli.get(remoteFile, os);
-				os.flush();
-				os.close();
-				downloadedFiles.add(localFile);
+				os = new FileOutputStream(localFile);
+	
+				if (useSftp)
+				{
+					handle = sftpCli.openFileRO(filename);
+					byte buf[] = new byte[1024];
+					
+					long offset = 0L;
+					int len = 0;
+					int totalLen = 0;
+					while((len = sftpCli.read(handle, offset, buf, 0, buf.length)) != -1)
+					{
+						os.write(buf, 0, len);
+						totalLen += len;
+					}
+					sftpCli.closeFile(handle);
+					Logger.instance().debug1(module + " SFTP Downloaded file '" + filename + "' len=" + totalLen);
+				}
+				else // default uses SCP.
+				{
+					String remoteFile = remoteDir
+						+ (remoteDir.length() == 0 ? "" : "/")
+						+ filename;
+					cli.get(remoteFile, os);
+					downloadedFiles.add(localFile);
+				}
 			}
-			catch(IOException ex)
+			catch(Exception ex)
 			{
-				Logger.instance().warning(module + " Error downloading file '" + filename + "':" + ex);
-			}
+				Logger.instance().warning(module + " Error downloading file '" + filename 
+					+ "' useSftp=" + useSftp + ": " + ex);
 
+			}
+			finally
+			{
+				if (os != null)
+					try { os.flush(); os.close(); } catch(Exception ex) {}
+				if (handle != null)
+					try { sftpCli.closeFile(handle); } catch(Exception ex) {}
+			}
 		}
 
+		if (sftpCli != null)
+			sftpCli.close();
 		conn.close();
 	}
 	
