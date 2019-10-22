@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.13  2019/10/13 19:24:47  mmaloney
+ * Prototypes for multi-profile launcher
+ *
  * Revision 1.12  2017/08/22 19:53:58  mmaloney
  * Improve comments
  *
@@ -657,6 +660,7 @@ public class LauncherFrame extends JFrame
 			for(final LauncherAction action : dacqLauncherActions)
 			{
 				action.setLauncherFrame(this);
+				action.setLauncherArgs(myArgs);
 				JButton b = new JButton();
 				b.setIcon(action.getImageIcon());
 				b.setText(action.getButtonLabel());

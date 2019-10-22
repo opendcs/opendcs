@@ -4,6 +4,9 @@
  * Copyright 2017 U.S. Government
  * 
  * $Log$
+ * Revision 1.1  2017/06/13 20:02:33  mmaloney
+ * dev
+ *
  */
 package decodes.launcher;
 
@@ -27,6 +30,8 @@ public abstract class LauncherAction
 	private JFrame visibleFrame = null;
 
 	private LauncherFrame launcherFrame = null;
+	
+	protected String launcherArgs[] = {};
 
 
 	protected LauncherAction(String buttonLabel, ImageIcon imageIcon)
@@ -108,5 +113,10 @@ public abstract class LauncherAction
  	{
  		Logger.instance().debug1(buttonLabel + " window closed.");
  		visibleFrame = null;
+ 	}
+ 	
+ 	public void setLauncherArgs(String launcherArgs[])
+ 	{
+ 		this.launcherArgs = launcherArgs;
  	}
 }

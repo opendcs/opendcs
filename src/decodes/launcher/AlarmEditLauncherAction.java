@@ -8,6 +8,9 @@
  * Copyright 2019 U.S. Government.
  *
  * $Log$
+ * Revision 1.1  2019/10/13 19:24:46  mmaloney
+ * Prototypes for multi-profile launcher
+ *
  */
 package decodes.launcher;
 
@@ -36,7 +39,7 @@ public class AlarmEditLauncherAction
 		try
 		{
 			alarmEdit.setExitOnClose(false);
-			alarmEdit.runApp();
+			alarmEdit.execute(launcherArgs);
 			return alarmEdit.getFrame();
 		}
 		catch (Exception ex)
