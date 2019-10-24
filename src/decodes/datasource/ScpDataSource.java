@@ -230,6 +230,7 @@ public class ScpDataSource
 					while((len = sftpCli.read(handle, offset, buf, 0, buf.length)) != -1)
 					{
 						os.write(buf, 0, len);
+						offset += len;
 						totalLen += len;
 					}
 					sftpCli.closeFile(handle);
