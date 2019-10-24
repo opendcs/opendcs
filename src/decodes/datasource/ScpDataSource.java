@@ -165,28 +165,39 @@ public class ScpDataSource
 	private void downloadFiles()
 		throws DataSourceException
 	{
-		SCPClient cli = null;
+		SCPClient scpCli = null;
 		SFTPv3Client sftpCli = null;
 		Connection conn = new Connection(host, port);
 		
+		String action = " connecting to SSH server " + host + ":" + port;
 		try
 		{
-			Logger.instance().debug1(module + " Connecting to SSH Server " + host + ":" + port
-				+ " with username=" + username);
+			Logger.instance().debug1(module + action);
 			conn.connect();
+			action = " authenticating as user '" + username + "'";
 			boolean isAuthenticated = conn.authenticateWithPassword(username, password);
 			if (!isAuthenticated)
 				throw new DataSourceException(module + " SSH authentication failed (bad password)");
+			Logger.instance().debug1(module + " Password authentication successfull.");
+			
 			if (!useSftp)
-				cli = new SCPClient(conn);
+			{
+				action = " building SCPSclient";
+				Logger.instance().debug1(module + action);
+				scpCli = new SCPClient(conn);
+			}
 			else
+			{	
+				action = " building SFTPv3Client";
+				Logger.instance().debug1(module + action);
 				sftpCli = new SFTPv3Client(conn);
+			}
 		}
-		catch(IOException ex)
+		catch(Exception ex)
 		{
 			try { conn.close(); } catch(Exception ex2) {}
-			throw new DataSourceException(module + " cannot connect to " + host + ":" + port 
-				+ " and/or authenticate: " + ex);
+			throw new DataSourceException(module + " Error while" + action 
+				+ " server=" + host + ":" + port + ", username=" + username + ": " + ex);
 		}
 		
 		String fns[] = filenames.split(" ");
@@ -200,16 +211,22 @@ public class ScpDataSource
 			try
 			{
 				File localFile = new File(localDir, filename);
+				action = " opening output file '" + localFile.getPath() + "'";
+				Logger.instance().debug1(module + action);
 				os = new FileOutputStream(localFile);
 	
 				if (useSftp)
 				{
+					action = " SFTP opening read-only file '" + filename + "' on server";
+					Logger.instance().debug1(module + action);
 					handle = sftpCli.openFileRO(filename);
 					byte buf[] = new byte[1024];
 					
 					long offset = 0L;
 					int len = 0;
 					int totalLen = 0;
+					action = " SFTP reading data from remote file";
+					Logger.instance().debug1(module + action);
 					while((len = sftpCli.read(handle, offset, buf, 0, buf.length)) != -1)
 					{
 						os.write(buf, 0, len);
@@ -217,21 +234,22 @@ public class ScpDataSource
 					}
 					sftpCli.closeFile(handle);
 					Logger.instance().debug1(module + " SFTP Downloaded file '" + filename + "' len=" + totalLen);
+					downloadedFiles.add(localFile);
 				}
 				else // default uses SCP.
 				{
+					action = " SCP downloading remote file '" + remotefile + "'";
 					String remoteFile = remoteDir
 						+ (remoteDir.length() == 0 ? "" : "/")
 						+ filename;
-					cli.get(remoteFile, os);
+					Logger.instance().debug1(module + action);
+					scpCli.get(remoteFile, os);
 					downloadedFiles.add(localFile);
 				}
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning(module + " Error downloading file '" + filename 
-					+ "' useSftp=" + useSftp + ": " + ex);
-
+				Logger.instance().warning(module + " Error while" + action + ": " + ex);
 			}
 			finally
 			{
