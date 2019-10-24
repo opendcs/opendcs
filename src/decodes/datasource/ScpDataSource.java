@@ -238,10 +238,10 @@ public class ScpDataSource
 				}
 				else // default uses SCP.
 				{
-					action = " SCP downloading remote file '" + remotefile + "'";
 					String remoteFile = remoteDir
 						+ (remoteDir.length() == 0 ? "" : "/")
 						+ filename;
+					action = " SCP downloading remote file '" + remoteFile + "'";
 					Logger.instance().debug1(module + action);
 					scpCli.get(remoteFile, os);
 					downloadedFiles.add(localFile);
