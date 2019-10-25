@@ -220,6 +220,11 @@ public class SftpDataSource
 			Logger.instance().debug1(module + action);
 			session.connect();
 			
+			action = " configuring session";
+			Properties config = new Properties();
+			config.put("StrictHostKeyChecking", "no");
+			session.setConfig(config);
+			
 			action = " getting SFTP channel";
 			Logger.instance().debug1(module + action);
 			chanSftp = (ChannelSftp)session.openChannel("sftp");
@@ -287,9 +292,9 @@ public class SftpDataSource
 		}
 		finally
 		{
-			if (!chanSftp.isConnected())
+			if (chanSftp != null && chanSftp.isConnected())
 				chanSftp.disconnect();
-			if (session.isConnected())
+			if (session != null && session.isConnected())
 				session.disconnect();
 		}
 		
