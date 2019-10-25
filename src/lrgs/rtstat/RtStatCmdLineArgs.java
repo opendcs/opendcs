@@ -25,6 +25,7 @@ public class RtStatCmdLineArgs
 	private StringToken hostArg;
 	private StringToken userArg;
 	private StringToken lrgsMonUrlArg;
+	private StringToken logFileArg;
 
     public RtStatCmdLineArgs()
 	{
@@ -49,6 +50,9 @@ public class RtStatCmdLineArgs
 			"URL pointing to LRGS Monitor Web Application", 
 			"", TokenOptions.optSwitch, "");
 		addToken(lrgsMonUrlArg);
+		logFileArg = new StringToken( "l", "logfile name", 
+			"", TokenOptions.optSwitch, "");
+		addToken(logFileArg);
     }
 
 	/**

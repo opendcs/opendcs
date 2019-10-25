@@ -4,6 +4,9 @@
  * Copyright 2017 U.S. Government
  * 
  * $Log$
+ * Revision 1.2  2019/10/22 12:39:39  mmaloney
+ * Pass launcher args to launcher actions.
+ *
  * Revision 1.1  2017/06/13 20:02:33  mmaloney
  * dev
  *
@@ -32,7 +35,14 @@ public abstract class LauncherAction
 	private LauncherFrame launcherFrame = null;
 	
 	protected String launcherArgs[] = {};
+	
+	protected String tag = "";
 
+
+	public String getTag()
+	{
+		return tag;
+	}
 
 	protected LauncherAction(String buttonLabel, ImageIcon imageIcon)
 	{

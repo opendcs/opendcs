@@ -8,6 +8,9 @@
  * Copyright 2017 U.S. Government.
  *
  * $Log$
+ * Revision 1.1  2017/06/27 13:44:47  mmaloney
+ * Added for 6.4
+ *
  */
 package decodes.launcher;
 
@@ -26,6 +29,7 @@ public class EventMonLauncherAction
 	{
 		super("Event Monitor", 
 			new ImageIcon(EnvExpander.expand("$DCSTOOL_HOME/icons/important48x48.png")));
+		tag = "eventmon";
 	}
 	
 	@Override

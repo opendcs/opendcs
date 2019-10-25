@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.15  2019/10/22 13:16:41  mmaloney
+ * dev
+ *
  * Revision 1.14  2019/10/22 12:39:39  mmaloney
  * Pass launcher args to launcher actions.
  *
@@ -91,12 +94,19 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.StringTokenizer;
 
 import ilex.cmdline.BooleanToken;
+import ilex.cmdline.IntegerToken;
 import ilex.cmdline.TokenOptions;
 import ilex.gui.GuiApp;
 import ilex.util.AsciiUtil;
@@ -145,7 +155,7 @@ public class LauncherFrame extends JFrame
 {
 	private static ResourceBundle labels = null;
 	String myArgs[] = null;
-	String compArgs[] = null;
+//	String compArgs[] = null;
 	JPanel fullPanel = new JPanel();
 	GridBagLayout fullLayout = new GridBagLayout();
 
@@ -566,7 +576,7 @@ public class LauncherFrame extends JFrame
 		dcstoolButtonBorder = new TitledBorder(BorderFactory.createEtchedBorder(Color.white, new Color(148,
 			145, 140)), labels.getString("LauncherFrame.dcsToolKitCompTitle"));
 		decodesButtonPanel.setLayout(dcstoolLayout);
-		ArrayList<LauncherAction> dacqLauncherActions = ResourceFactory.instance().getDacqLauncherActions();
+		dacqLauncherActions = ResourceFactory.instance().getDacqLauncherActions();
 		int rows = 4 + (DecodesSettings.instance().showPlatformWizard ? 1 : 0)
 			+ (DecodesSettings.instance().showNetlistEditor ? 1 : 0)
 			+ (DecodesSettings.instance().showPlatformMonitor ? 1 : 0)
@@ -582,7 +592,7 @@ public class LauncherFrame extends JFrame
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				lrgsStatButton_actionPerformed(e);
+				rtstatButtonPressed();
 			}
 		});
 
@@ -591,7 +601,7 @@ public class LauncherFrame extends JFrame
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				browserButton_actionPerformed(e);
+				msgaccessButtonPressed();
 			}
 		});
 		netlistButton.setText(labels.getString("LauncherFrame.networkListMaintButton"));
@@ -599,7 +609,7 @@ public class LauncherFrame extends JFrame
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				netlistButton_actionPerformed(e);
+				nleditButtonPressed();
 			}
 		});
 		dbeditButton.setText(labels.getString("LauncherFrame.DECODESDBEditorButton"));
@@ -614,7 +624,7 @@ public class LauncherFrame extends JFrame
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				platwizButtonButtonPressed();
+				platwizButtonPressed();
 			}
 		});
 		
@@ -804,7 +814,7 @@ public class LauncherFrame extends JFrame
 	}
 
 
-	void lrgsStatButton_actionPerformed(ActionEvent e)
+	void rtstatButtonPressed()
 	{
 		if (lrgsStatFrame != null)
 		{
@@ -827,7 +837,7 @@ public class LauncherFrame extends JFrame
 	}
 
 	
-	void browserButton_actionPerformed(ActionEvent e)
+	void msgaccessButtonPressed()
 	{
 		if (browserFrame != null)
 		{
@@ -864,7 +874,7 @@ public class LauncherFrame extends JFrame
 		}
 	}
 
-	void netlistButton_actionPerformed(ActionEvent e)
+	void nleditButtonPressed()
 	{
 		if (netlistEditFrame != null)
 		{
@@ -1029,6 +1039,7 @@ public class LauncherFrame extends JFrame
 	}
 
 	static CmdLineArgs cmdLineArgs = new CmdLineArgs(true, "gui.log");
+	private ArrayList<LauncherAction> dacqLauncherActions;
 
 	public static void main(String[] args)
 	{
@@ -1040,6 +1051,12 @@ public class LauncherFrame extends JFrame
 		justPrintVersionToken = new BooleanToken("V", "Print Version and Exit",
 			"", TokenOptions.optSwitch, false);
 		cmdLineArgs.addToken(justPrintVersionToken);
+		
+		IntegerToken profilePortToken = new IntegerToken("pp",
+				"When running as ProfileLauncher this is the control port to connect to", "",
+				TokenOptions.optSwitch, -1);
+		cmdLineArgs.addToken(profilePortToken);
+		
 		cmdLineArgs.parseArgs(args);
 		if (justPrintVersionToken.getValue())
 		{
@@ -1060,10 +1077,22 @@ public class LauncherFrame extends JFrame
 
 		// Make a copy of the args minus special launcher args to pass to sub programs.
 		ArrayList<String> argsArray = new ArrayList<String>();
+		boolean skipNext = false;
 		for (int i = 0; i < args.length; i++)
 		{
-			if (!args[i].equals("-L"))
+			if (skipNext)
+				skipNext = false;
+			else if (args[i].equals("-L"))
+				;
+			else if (args[i].startsWith("-pp"))
+			{
+				if (args[i].length()==3)
+					skipNext = true;
+			}
+			else
+			{
 				argsArray.add(args[i]);
+			}
 		}
 		String argsCopy[] = new String[argsArray.size()];
 		argsArray.toArray(argsCopy);
@@ -1071,7 +1100,7 @@ public class LauncherFrame extends JFrame
 	
 		// compArgs is used as argument only to Computations and Test Computations
 		// gui.
-		frame.compArgs = args;
+//		frame.compArgs = args;
 
 		frame.setExitOnClose(true);
 
@@ -1104,7 +1133,21 @@ public class LauncherFrame extends JFrame
 		
 		DecodesInterface.maintainGoesPdt();
 		
-		frame.setVisible(true);
+		if (profilePortToken.getValue() == -1)
+			frame.setVisible(true);
+		else
+		{
+			try
+			{
+				frame.runProfileManager(profilePortToken.getValue());
+			}
+			catch (Exception ex)
+			{
+				System.err.println("Abnormal exit: " + ex);
+				ex.printStackTrace(System.err);
+				System.exit(1);
+			}
+		}
 	}
 
 	public static ResourceBundle getLabels()
@@ -1277,7 +1320,7 @@ public class LauncherFrame extends JFrame
 					CAPEdit compEdit = new CAPEdit();
 					try
 					{
-						compEdit.execute(compArgs);
+						compEdit.execute(myArgs);
 						compEditFrame = compEdit.getFrame();
 						if (compEditFrame != null)
 						{
@@ -1329,7 +1372,7 @@ public class LauncherFrame extends JFrame
 					RoutingMonitor routmon = new RoutingMonitor();
 					try
 					{
-						routmon.execute(compArgs);
+						routmon.execute(myArgs);
 						routmonFrame = routmon.getFrame();
 						if (routmonFrame != null)
 						{
@@ -1380,7 +1423,7 @@ public class LauncherFrame extends JFrame
 					PlatformMonitor platmon = new PlatformMonitor();
 					try
 					{
-						platmon.execute(compArgs);
+						platmon.execute(myArgs);
 						platmonFrame = platmon.getFrame();
 						if (platmonFrame != null)
 						{
@@ -1432,7 +1475,7 @@ public class LauncherFrame extends JFrame
 					try
 					{
 						RunComputationsFrameTester runComputations = new RunComputationsFrameTester();
-						runComputations.execute(compArgs);
+						runComputations.execute(myArgs);
 
 						runComputationsFrame = runComputations.getFrame();
 
@@ -1486,7 +1529,7 @@ public class LauncherFrame extends JFrame
 					try
 					{
 						ProcessMonitor procMon = new ProcessMonitor();
-						procMon.execute(compArgs);
+						procMon.execute(myArgs);
 						procMonFrame = procMon.getFrame();
 						if (procMonFrame != null)
 						{
@@ -1549,7 +1592,7 @@ public class LauncherFrame extends JFrame
 		}
 	}
 
-	private void platwizButtonButtonPressed()
+	private void platwizButtonPressed()
 	{
 		if (platformWizFrame != null)
 		{
@@ -1614,5 +1657,132 @@ public class LauncherFrame extends JFrame
 			showError(msg);
 		}
 	}
+
+	class Reply { String reply = null; }
+	
+	/**
+	 * When running as a slave profile manager, this method is called instead of making the 
+	 * frame visible. It connects to the master launcher on the specified port and accepts 
+	 * commands of the form:
+	 *     num cmd arg\n
+	 * where num is an incrementing index number.
+	 * After executing the command a reply is sent back to the master with the index number.
+	 * Called with port=0 for testing in a terminal window.
+	 * @param port The TCP port to connect to on localhost or 0 to accept commands from stdin
+	 */
+	private void runProfileManager(int port)
+		throws Exception
+	{
+		InputStream inp = System.in;
+		PrintStream outp = System.out;
+		
+		if (port > 0)
+		{
+			// TODO Connect to the specified port on localhost and set inp.
+			// TODO use basic client
+		}
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(inp));
+		String line;
+		while((line = br.readLine()) != null)
+		{
+			String words[] = line.split(" ");
+			if (words.length < 2)
+				continue;
+			
+			String cmdnum = words[0];
+			final String cmd = words[1];
+			final String arg = words.length > 2 ? words[2] : "";
+			
+			if (cmd.equalsIgnoreCase("kill"))
+			{
+				Logger.instance().info("Exiting due to kill command.");
+				break;
+			}
+
+			
+			// Anything GUI-related (button pushes, frame changes, etc.) must be done in the swing thread.
+			final Reply reply = new Reply();
+			
+			SwingUtilities.invokeLater(
+				new Runnable()
+				{
+					public void run()
+					{
+						if (cmd.equalsIgnoreCase("status"))
+						{
+							reply.reply = "status good";
+						}
+						else if (cmd.equalsIgnoreCase("start"))
+						{
+							// start <buttonName>: act as if named button were pressed
+							boolean found = true;
+							if (arg.equalsIgnoreCase("groupedit"))
+								groupEditButtonPressed();
+							else if (arg.equalsIgnoreCase("rtstat"))
+								rtstatButtonPressed();
+							else if (arg.equalsIgnoreCase("msgaccess"))
+								msgaccessButtonPressed();
+							else if (arg.equalsIgnoreCase("dbedit"))
+								dbeditButtonPressed();
+							else if (arg.equalsIgnoreCase("platmon"))
+								platmonButtonPressed();
+							else if (arg.equalsIgnoreCase("routmon"))
+								routmonButtonPressed();
+							else if (arg.equalsIgnoreCase("setup"))
+								setupPressed();
+							else if (arg.equalsIgnoreCase("nledit"))
+								nleditButtonPressed();
+							else if (arg.equalsIgnoreCase("platwiz"))
+								platwizButtonPressed();
+							else if (arg.equalsIgnoreCase("compedit"))
+								compeditButtonPressed();
+							else if (arg.equalsIgnoreCase("tsedit"))
+								tseditButtonPressed();
+							else if (arg.equalsIgnoreCase("runcomp"))
+								runcompButtonPressed();
+							else if (arg.equalsIgnoreCase("procstat"))
+								procstatButtonPressed();
+							else if (arg.equalsIgnoreCase("algoedit"))
+								algoeditButtonPressed();
+							else
+								found = false;
+							if (dacqLauncherActions != null)
+								for(LauncherAction action : dacqLauncherActions)
+									if (action.getTag().equals(arg))
+									{
+										action.launchFrame();
+										found = true;
+									}
+							if (found)
+								reply.reply = cmd + " " + arg;
+							else
+								reply.reply = "error: no such app '" + arg + "'";
+						}
+						else if (cmd.equalsIgnoreCase("exit"))
+						{
+							//TODO set reply based on whether any unsaved apps are open.
+							reply.reply = "exit";
+						}
+						else
+						{
+							reply.reply = "error: Unknown command '" + cmd + "' -- ignored.";
+						}
+					}
+				});
+			
+			// Allow up to 10 seconds for command to complete.
+			while(reply.reply == null)
+				try { Thread.sleep(250L); } catch(InterruptedException ex) {}
+			outp.println(cmdnum + " " + (reply.reply == null ? "error: no reply" : reply.reply));
+			
+			//TODO should the replies contain the profile name?
+			
+		}
+		System.exit(0);
+		
+	}
+	
+
 
 }

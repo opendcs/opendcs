@@ -8,6 +8,9 @@
  * Copyright 2019 U.S. Government.
  *
  * $Log$
+ * Revision 1.2  2019/10/22 12:39:39  mmaloney
+ * Pass launcher args to launcher actions.
+ *
  * Revision 1.1  2019/10/13 19:24:46  mmaloney
  * Prototypes for multi-profile launcher
  *
@@ -29,6 +32,7 @@ public class AlarmEditLauncherAction
 	{
 		super("Alarm Editor", 
 			new ImageIcon(EnvExpander.expand("$DCSTOOL_HOME/icons/alarms48x48.gif")));
+		tag = "alarmedit";
 	}
 	
 	@Override

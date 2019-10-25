@@ -6,4 +6,5 @@ module testxml
 	requires java.desktop;
 	requires java.rmi;
 	requires java.management;
+	requires ganymed.ssh2.build210;
 }

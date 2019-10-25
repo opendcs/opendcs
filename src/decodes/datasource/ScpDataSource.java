@@ -195,6 +195,10 @@ public class ScpDataSource
 		}
 		catch(Exception ex)
 		{
+			Logger.instance().failure(module + " Error while " + action + ": " + ex);
+			if (Logger.instance().getLogOutput() != null)
+				ex.printStackTrace(Logger.instance().getLogOutput());
+
 			try { conn.close(); } catch(Exception ex2) {}
 			throw new DataSourceException(module + " Error while" + action 
 				+ " server=" + host + ":" + port + ", username=" + username + ": " + ex);
@@ -251,6 +255,8 @@ public class ScpDataSource
 			catch(Exception ex)
 			{
 				Logger.instance().warning(module + " Error while" + action + ": " + ex);
+				if (Logger.instance().getLogOutput() != null)
+					ex.printStackTrace(Logger.instance().getLogOutput());
 			}
 			finally
 			{
