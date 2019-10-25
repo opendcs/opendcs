@@ -206,6 +206,7 @@ public class SftpDataSource
 		try
 		{
 			Logger.instance().debug1(module + action);
+			JSch.setConfig("StrictHostKeyChecking", "no");
 			jsch = new JSch();
 			
 			action = " getting Session";
