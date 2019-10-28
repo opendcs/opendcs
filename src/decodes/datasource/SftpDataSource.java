@@ -27,7 +27,7 @@ public class SftpDataSource
 		new PropertySpec("host", PropertySpec.HOSTNAME,
 			"FTP Data Source: Host name or IP Address of FTP Server"),
 		new PropertySpec("port", PropertySpec.INT,
-			"FTP Data Source: Listening port on FTP Server (default = 21)"),
+			"FTP Data Source: Listening port on FTP Server (default = 22)"),
 		new PropertySpec("username", PropertySpec.STRING,
 			"FTP Data Source: User name with which to connect to FTP server"),
 		new PropertySpec("password", PropertySpec.STRING,
@@ -42,14 +42,14 @@ public class SftpDataSource
 			"Required Space-separated list of files to download from server"),
 		new PropertySpec("deleteFromServer", PropertySpec.BOOLEAN,
 			"FTP Data Source: (default=false) Set to true to delete file from server "
-			+ "after retrieval. (May be disallowed on some servers.)"),
-		new PropertySpec("nameIsMediumId", PropertySpec.BOOLEAN,
-			"Use with OneMessageFile=true if the downloaded filename is to be treated as a medium ID"
-			+ " in order to link this data with a platform."),
-		new PropertySpec("newerThan", PropertySpec.STRING, 
-			"Either a Date/Time in the format [[[CC]YY] DDD] HH:MM[:SS], "
-			+ "or a string of the form 'now - N incr',"
-			+ " where N is an integer and incr is minutes, hours, or days.")
+			+ "after retrieval. (May be disallowed on some servers.)")
+//		new PropertySpec("nameIsMediumId", PropertySpec.BOOLEAN,
+//			"Use with OneMessageFile=true if the downloaded filename is to be treated as a medium ID"
+//			+ " in order to link this data with a platform."),
+//		new PropertySpec("newerThan", PropertySpec.STRING, 
+//			"Either a Date/Time in the format [[[CC]YY] DDD] HH:MM[:SS], "
+//			+ "or a string of the form 'now - N incr',"
+//			+ " where N is an integer and incr is minutes, hours, or days.")
 	};
 	
 	private String host = null;
