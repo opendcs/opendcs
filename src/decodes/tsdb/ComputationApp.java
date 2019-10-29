@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.20  2019/08/26 20:46:22  mmaloney
+*  Implement missing alarm checks.
+*
 *  Revision 1.19  2019/08/19 14:54:30  mmaloney
 *  Added mail server settings to standard compproc properties list.
 *
@@ -1126,10 +1129,11 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 		ComputationDAI compDAO = theDb.makeComputationDAO();
 		try
 		{
-			// Use a filter to get all screening comps from the DAO's cache for this app.
+			// Use a filter to get all enabled screening comps from the DAO's cache for this app.
 			CompFilter filter = new CompFilter();
 			filter.setExecClassName("decodes.tsdb.alarm.AlarmScreeningAlgorithm");
 			filter.setProcessId(getAppId());
+			filter.setEnabledOnly(true);
 			ArrayList<DbComputation> screeningComps = compDAO.listCompsForGUI(filter);
 
 Logger.instance().debug3("checkMissingChecks there are " + screeningComps.size() + " screening computations.");
