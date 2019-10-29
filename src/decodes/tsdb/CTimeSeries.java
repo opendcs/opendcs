@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.6  2019/09/12 11:59:15  mmaloney
+*  Fixed bug in findNext. If the time was present in the TS, it was returning it, not the next.
+*
 *  Revision 1.5  2019/07/02 13:57:59  mmaloney
 *  Added findNextIdx method.
 *
@@ -310,6 +313,8 @@ public class CTimeSeries
 			int sect = (int)(tv.getTime().getTime() / 1000L);
 			int dt = sect - (int)sec;
 //Logger.instance().info("findWithin sect=" + sect + ", dt=" + dt);
+			if (dt == 0)
+				return tv;
 			
 			// 20170525 Changed second clause below from "dt <= fudge" to "dt < fudge".
 			// This will prevent a value from being considered part of two different time slices.
@@ -496,6 +501,7 @@ public class CTimeSeries
 		long prevSec = (prev.getTime().getTime() / 1000L);
 		long nextSec = (next.getTime().getTime() / 1000L);
 		long timeRange = nextSec - prevSec;
+Logger.instance().debug3("findInterp(sec=" + sec + ") prevSec=" + prevSec + ", nextSec=" + nextSec);
 		if (timeRange == 0)
 			return null;
 
