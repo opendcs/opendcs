@@ -4,6 +4,9 @@
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
  * $Log$
+ * Revision 1.9  2019/10/13 19:33:25  mmaloney
+ * Fix update statement that was missing where clause for alarm_group_id
+ *
  * Revision 1.8  2019/08/27 20:15:19  mmaloney
  * Show null last update as "none".
  *
@@ -1234,12 +1237,15 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 		{
 			doModify(q);
 			
+			// Data Time can be null if this is an alarm on missing values.
+			String dataTime = alarm.getDataTime() == null ? "NULL" : (""+alarm.getDataTime().getTime());
+			
 			q = "insert into alarm_current(" + alarmCurrentColumns + ") values ("
 					+ alarm.getTsidKey() + ", "
 					+ alarm.getLimitSetId() + ", "
 					+ alarm.getAssertTime().getTime() + ", "
 					+ alarm.getDataValue() + ", "
-					+ alarm.getDataTime().getTime() + ", "
+					+ dataTime + ", "
 					+ alarm.getAlarmFlags() + ", "
 					+ sqlString(alarm.getMessage()) + ", "
 					+ null // last notify time will be updated after notification sent.
