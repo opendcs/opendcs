@@ -4,7 +4,10 @@
 package decodes.gui;
 
 import java.awt.Point;
+import java.awt.BorderLayout;
+import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -13,15 +16,21 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Properties;
 
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.border.BevelBorder;
 
 import decodes.dbeditor.DbEditorFrame;
 import decodes.platwiz.PlatformWizard;
+import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 import ilex.util.EnvExpander;
@@ -40,6 +49,12 @@ public class TopFrame extends JFrame
 	private File changeTrackFile = null;
 	private boolean trackingChanges = false;
 	private Properties locSizeProps = null;
+	private JPanel appContentPane = null;
+	private Container jframeContentPane = null;
+
+	private JPanel statusPanel = null;
+	JLabel dbNameLabel = null, dbStatusLabel = null;
+	public static String profileName = null;
 
 	/** 
 	  Constructor sets the singleton instance on first call. 
@@ -51,7 +66,68 @@ public class TopFrame extends JFrame
 		ImageIcon tkIcon = new ImageIcon(
 			ResourceFactory.instance().getIconPath());
 		setIconImage(tkIcon.getImage());
+		
+		appContentPane = new JPanel(new BorderLayout());
+
+		jframeContentPane = super.getContentPane();
+		jframeContentPane.setLayout(new BorderLayout());
+		jframeContentPane.add(appContentPane, BorderLayout.CENTER);
+		
+		statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 1));
+		statusPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
+		jframeContentPane.add(statusPanel, BorderLayout.SOUTH);
+//		statusPanel.setPreferredSize(new Dimension(this.getWidth(), 16));
+//		statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
+		
+		statusPanel.add(dbNameLabel = new JLabel());
+		statusPanel.add(dbStatusLabel = new JLabel());
+		setStatusBar();
     }
+    
+	/**
+	 * Return the pane for applications to use.
+	 */
+	@Override
+	public Container getContentPane()
+	{
+		return appContentPane;
+	}
+
+	public void setStatusBar()
+	{
+		final String dbName = 
+			(profileName != null ? ("(Profile " + profileName + ") ") : "")
+			+ DecodesSettings.instance().editDatabaseType + " "
+			+ DecodesSettings.instance().editDatabaseLocation;
+		
+		String s = "(Not initialized)";
+		if (DecodesSettings.instance().editDatabaseTypeCode == DecodesSettings.DB_XML)
+			s = "";
+		else
+		{
+			decodes.db.Database db = decodes.db.Database.getDb();
+			if (db != null)
+			{
+				decodes.db.DatabaseIO dbio = db.getDbIo();
+				if (dbio == null)
+					s = "(Not Open)";
+				if (dbio instanceof SqlDatabaseIO)
+					s = ((SqlDatabaseIO)dbio).getConnection() != null ? "(Connected)" : "(Not Connected)";
+			}
+		}
+
+		final String statusText = s;
+		SwingUtilities.invokeLater(
+			new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					dbNameLabel.setText(dbName);
+					dbStatusLabel.setText(statusText);
+				}
+			});
+	}
 
 	/** 
 	  The constructor MUST be called prior to calling this method. Since
@@ -173,9 +249,9 @@ public class TopFrame extends JFrame
 					"Cannot track GUI size & location changes because '"
 					+ tmpDir.getPath() + "' does not exist and cannot be created.");
 			}
-		changeTrackFile = new File(
-			EnvExpander.expand("$DCSTOOL_USERDIR/" + frameTitle));
-		changeTrackFile = new File(tmpDir, frameTitle + ".loc");
+		String name = (TopFrame.profileName == null ? "" : (TopFrame.profileName+"-"))
+			+ frameTitle + ".loc";
+		changeTrackFile = new File(tmpDir, name);
 		
 		locSizeProps = new Properties();
 		Point curLoc = getLocation();
@@ -206,8 +282,15 @@ public class TopFrame extends JFrame
 		}
 		else
 		{
-			locSizeProps.setProperty("x", ""+curLoc.x);
-			locSizeProps.setProperty("y", ""+curLoc.y);
+			int offsetX=0, offsetY=0;
+		
+			if (TopFrame.profileName != null)
+			{
+				offsetX = 15;
+				offsetY = 15;
+			}
+			locSizeProps.setProperty("x", ""+(curLoc.x+offsetX));
+			locSizeProps.setProperty("y", ""+(curLoc.y+offsetY));
 			locSizeProps.setProperty("w", ""+curSize.width);
 			locSizeProps.setProperty("h", ""+curSize.height);
 		}
@@ -257,5 +340,25 @@ public class TopFrame extends JFrame
 		}
 	}
 
+	@Override
+	public void setTitle(String title)
+	{
+		String profileName = DecodesSettings.instance().getProfileName();
+		if (profileName != null)
+			title = title + " (" + profileName + ")";
+		super.setTitle(title);
+	}
+	
+	/**
+	 * Used by Launcher to determine if it's ok to close an app's frame.
+	 * Each app should overload, check for open elements that have changes that need
+	 * to be saved, and if any, bring this frame to the fore and issue a warning.
+	 * Default implementation here always returns true. 
+	 * @return false if there are unsaved edits, true if closing does no harm.
+	 */
+	public boolean canClose()
+	{
+		return true;
+	}
 	
 }
