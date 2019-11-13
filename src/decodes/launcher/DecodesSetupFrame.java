@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.4  2018/01/23 14:53:04  mmaloney
+ * Get properties file location from CmdLineArgs so it supports -P option.
+ *
  * Revision 1.3  2015/05/21 13:26:14  mmaloney
  * RC08
  *
@@ -33,6 +36,7 @@ import java.awt.*;
 import javax.swing.*;
 
 import java.awt.event.*;
+import java.util.Date;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.io.*;
@@ -195,13 +199,16 @@ public class DecodesSetupFrame
 		
 		settings.saveToProps(props);
 		
-		// For owner, DCSTOOL_USERDIR == DCSTOOL_HOME
-		String propFile = settings.isToolkitOwner() ?
-			LauncherFrame.cmdLineArgs.getPropertiesFile()
-			: EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
+		File propFile = settings.getSourceFile();
+		
+//		// For owner, DCSTOOL_USERDIR == DCSTOOL_HOME
+//		String propFile = settings.isToolkitOwner() ?
+//			LauncherFrame.cmdLineArgs.getPropertiesFile()
+//			: EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
 		try
 		{
 			FileOutputStream fos = new FileOutputStream(propFile);
+			Logger.instance().info("Saving DECODES Settings to '" + propFile.getPath() + "'");
 			props.store(fos, "OPENDCS Toolkit Settings");
 			fos.close();
 		}
@@ -222,7 +229,8 @@ public class DecodesSetupFrame
 
 	void populateDecodesPropsTab()
 	{
-		String propFile = LauncherFrame.cmdLineArgs.getPropertiesFile();
+		String propFileName = LauncherFrame.cmdLineArgs.getPropertiesFile();
+		File propFile = new File(propFileName);
 		DecodesSettings settings = DecodesSettings.instance();
 		Properties props = new Properties();
 		try
@@ -234,25 +242,30 @@ public class DecodesSetupFrame
 		catch (IOException ex)
 		{
 			Logger.instance().failure(
-				"Cannot open DECODES Properties File '" + propFile + "': " + ex);
+				"Cannot open DECODES Properties File '" + propFileName + "': " + ex);
 		}
 		settings.loadFromProperties(props);
+		settings.setSourceFile(propFile);
 		
-		if (!settings.isToolkitOwner())
+		
+		if (!settings.isToolkitOwner() && !propFileName.contains(".profile"))
 		{
 			props.clear();
-			propFile = EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
+			propFileName = EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
+			propFile = new File(propFileName);
 			try
 			{
 				FileInputStream fis = new FileInputStream(propFile);
 				props.load(fis);
 				fis.close();
 				settings.loadFromUserProperties(props);
+				settings.setLastModified(new Date(propFile.lastModified()));
+				settings.setSourceFile(propFile);
 			}
 			catch (IOException ex)
 			{
 				Logger.instance().debug1(
-					"No User-Specific Properties File '" + propFile + "': " + ex);
+					"No User-Specific Properties File '" + propFileName + "': " + ex);
 			}
 		}
 		

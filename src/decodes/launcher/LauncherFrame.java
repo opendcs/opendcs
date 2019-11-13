@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.16  2019/10/25 15:15:19  mmaloney
+ * dev
+ *
  * Revision 1.15  2019/10/22 13:16:41  mmaloney
  * dev
  *
@@ -92,32 +95,42 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.IntegerToken;
 import ilex.cmdline.TokenOptions;
 import ilex.gui.GuiApp;
+import ilex.net.BasicClient;
+import ilex.net.BasicServer;
+import ilex.net.BasicSvrThread;
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
+import ilex.util.ProcWaiterCallback;
+import ilex.util.ProcWaiterThread;
+import ilex.util.TextUtil;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -140,7 +153,6 @@ import decodes.tsdb.algoedit.AlgorithmWizard;
 import decodes.tsdb.compedit.CAPEdit;
 import decodes.tsdb.comprungui.CompRunGuiFrame;
 import decodes.tsdb.comprungui.RunComputationsFrameTester;
-import decodes.tsdb.groupedit.TsDbGrpEditorFrame;
 import decodes.tsdb.groupedit.TsListMain;
 import decodes.tsdb.procmonitor.ProcessMonitor;
 import decodes.util.DecodesException;
@@ -151,7 +163,9 @@ import decodes.util.CmdLineArgs;
 
 
 @SuppressWarnings("serial")
-public class LauncherFrame extends JFrame
+public class LauncherFrame 
+	extends JFrame
+	implements ProcWaiterCallback
 {
 	private static ResourceBundle labels = null;
 	String myArgs[] = null;
@@ -192,9 +206,9 @@ public class LauncherFrame extends JFrame
 	Runnable afterDecodesInit;
 	InitDecodesFrame initDecodesFrame;
 	TopFrame groupEditFrame;// Time Series Button
-	TsDbGrpEditorFrame tsDbGrpEditorFrame; // Time Series Groups Button
+//	private TsDbGrpEditorFrame tsDbGrpEditorFrame; // Time Series Groups Button
 	JFrame procMonFrame;// Process Status Button
-	WindowAdapter tsEditorReaper;
+	WindowAdapter tsGroupReaper;
 	WindowAdapter logViewerReaper;
 	TopFrame tseditFrame;// Limit Status Button
 	WindowAdapter tseditReaper;
@@ -220,6 +234,13 @@ public class LauncherFrame extends JFrame
 	WindowAdapter setupFrameReaper;
 	private TopFrame platmonFrame = null, routmonFrame = null;
 	private WindowAdapter platmonReaper = null, routmonReaper = null;
+	private String selectedProfile = null;
+	private JComboBox profileCombo = null;
+	private JPanel profPanel = null;
+	private boolean profilesShown = false;
+	BasicServer profileLauncherServer = null;
+	private WindowAdapter profileMgrReaper = null;
+	private ProfileManagerFrame profileMgrFrame = null;
 
 
 	public LauncherFrame(String args[])
@@ -232,7 +253,7 @@ public class LauncherFrame extends JFrame
 		afterDecodesInit = null;
 		initDecodesFrame = null;
 		groupEditFrame = null;
-		tsDbGrpEditorFrame = null;
+//		tsDbGrpEditorFrame = null;
 		procMonFrame = null;
 		tseditFrame = null;
 		runComputationsFrame = null;
@@ -316,41 +337,7 @@ public class LauncherFrame extends JFrame
 			{
 				public void windowClosing(WindowEvent e)
 				{
-					String msg = null;
-					if (dbEditorFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.DECODESDBEditorButton"));
-					else if (netlistEditFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.networkListMaintButton"));
-					else if (groupEditFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.timeSeriesButton"));
-					else if (tsDbGrpEditorFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.timeSeriesButton"));
-					else if (tseditFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.limitStatusButton"));
-					else if (runComputationsFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.testComputationsButton"));
-					else if (compEditFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.computationsButton"));
-					else if (algorithmWizFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.algorithmsButton"));
-					else if (platformWizFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.platformWizardButton"));
-					else if (platmonFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.platmonButton"));
-					else if (routmonFrame != null)
-						msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-							labels.getString("LauncherFrame.routmonButton"));
-
+					String msg = canClose();
 					if (msg != null)
 					{
 						JOptionPane.showMessageDialog(null,
@@ -358,7 +345,31 @@ public class LauncherFrame extends JFrame
 							JOptionPane.ERROR_MESSAGE);
 						return;
 					}
-
+					
+					// Now see if any subordinate profile launchers need to stay open
+					// If a server exists, then at least one profile launcher was started.
+					if (profileLauncherServer != null)
+					{
+						for(Object connobj : profileLauncherServer.getAllSvrThreads())
+						{
+							ProfileLauncherConn plc = (ProfileLauncherConn)connobj;
+							plc.sendCmd("exit");
+							if (!plc.isExitOk())
+							{
+								msg = "Launcher for profile '"
+										+ plc.getProfileName() + "' has a window open.";
+								Logger.instance().warning(msg);
+								// The offending frame itself must bring itself to the fore and
+								// issue an error message.
+//								JOptionPane.showMessageDialog(null,
+//									AsciiUtil.wrapString(msg, 60), "Error!",
+//									JOptionPane.ERROR_MESSAGE);
+								return;
+							}
+						}
+						
+					}
+					
 					myframe.cleanupBeforeExit();
 					System.exit(0);
 				}
@@ -399,12 +410,12 @@ public class LauncherFrame extends JFrame
 						"Network List Editor closed");
 				}
 			};
-			tsEditorReaper = new WindowAdapter()
+			tsGroupReaper = new WindowAdapter()
 			{
 				public void windowClosed(WindowEvent e)
 				{
 					groupEditFrame = null;
-					tsDbGrpEditorFrame = null;
+//					tsDbGrpEditorFrame = null;
 					
 					if (tsdbType == TsdbType.CWMS
 					 || tsdbType == TsdbType.HDB)
@@ -512,8 +523,16 @@ public class LauncherFrame extends JFrame
 					Logger.instance().log(Logger.E_DEBUG1, "Platform Monitor closed");
 				}
 			};
-
-			
+			profileMgrReaper = new WindowAdapter()
+			{
+				public void windowClosed(WindowEvent e)
+				{
+					profileMgrFrame = null;
+					Logger.instance().log(Logger.E_DEBUG1,
+						"ProfileManager screen closed");
+					checkForProfiles();
+				}
+			};
 			
 			ImageIcon tkIcon = new ImageIcon(
 				ResourceFactory.instance().getIconPath());
@@ -525,6 +544,79 @@ public class LauncherFrame extends JFrame
 		{
 			e.printStackTrace();
 		}
+	}
+	
+	public String canClose()
+	{
+		String msg = null;
+
+		if (dbEditorFrame != null && !dbEditorFrame.canClose())
+		{
+			dbEditorFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.DECODESDBEditorButton"));
+		}
+		else if (netlistEditFrame != null && !netlistEditFrame.okToAbandon())
+		{
+			netlistEditFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.networkListMaintButton"));
+		}
+		else if (groupEditFrame != null && !groupEditFrame.canClose())
+		{
+			groupEditFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.timeSeriesButton"));
+		}
+//		else if (tsDbGrpEditorFrame != null && !tsDbGrpEditorFrame.canClose())
+//		{
+//			tsDbGrpEditorFrame.toFront();
+//			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+//				labels.getString("LauncherFrame.timeSeriesButton"));
+//		}
+		else if (tseditFrame != null && !tseditFrame.canClose())
+		{
+			tseditFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.limitStatusButton"));
+		}
+		else if (runComputationsFrame != null && !runComputationsFrame.canClose())
+		{
+			runComputationsFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.testComputationsButton"));
+		}
+		else if (compEditFrame != null && !compEditFrame.canClose())
+		{
+			compEditFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.computationsButton"));
+		}
+		else if (algorithmWizFrame != null && !algorithmWizFrame.canClose())
+		{
+			algorithmWizFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.algorithmsButton"));
+		}
+		else if (platformWizFrame != null && !platformWizFrame.canClose())
+		{
+			platformWizFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.platformWizardButton"));
+		}
+		else if (platmonFrame != null && !platmonFrame.canClose())
+		{
+			platmonFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.platmonButton"));
+		}
+		else if (routmonFrame != null && !routmonFrame.canClose())
+		{
+			routmonFrame.toFront();
+			msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
+				labels.getString("LauncherFrame.routmonButton"));
+		}
+		return msg;
 	}
 
 	public void cleanupBeforeExit()
@@ -802,12 +894,12 @@ public class LauncherFrame extends JFrame
 			tsdbButtonPanel.add(algoeditButton, null);
 		
 		fullPanel.setLayout(fullLayout);
-		fullPanel.add(decodesButtonPanel, new GridBagConstraints(0, 0, 1, 1, .5, .5,
-			GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
+		fullPanel.add(decodesButtonPanel, new GridBagConstraints(0, 1, 1, 1, .5, .5,
+			GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
 		if (tsdbType != TsdbType.NONE)
 		{
-			fullPanel.add(tsdbButtonPanel, new GridBagConstraints(0, 1, 1, 1, .5, .5,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
+			fullPanel.add(tsdbButtonPanel, new GridBagConstraints(0, 2, 1, 1, .5, .5,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
 		}
 		contentPane.add(fullPanel, BorderLayout.CENTER);
 		setupSaved();
@@ -816,6 +908,13 @@ public class LauncherFrame extends JFrame
 
 	void rtstatButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start rtstat");
+			return;
+		}
+
 		if (lrgsStatFrame != null)
 		{
 			lrgsStatFrame.toFront();
@@ -839,6 +938,13 @@ public class LauncherFrame extends JFrame
 	
 	void msgaccessButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start msgaccess");
+			return;
+		}
+
 		if (browserFrame != null)
 		{
 			browserFrame.toFront();
@@ -892,6 +998,13 @@ public class LauncherFrame extends JFrame
 
 	void dbeditButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start dbedit");
+			return;
+		}
+
 		if (dbEditorFrame != null)
 		{
 			dbEditorFrame.toFront();
@@ -926,6 +1039,13 @@ public class LauncherFrame extends JFrame
 
 	void setupPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start setup");
+			return;
+		}
+
 		if (toolkitSetupFrame != null)
 		{
 			toolkitSetupFrame.toFront();
@@ -1134,12 +1254,15 @@ public class LauncherFrame extends JFrame
 		DecodesInterface.maintainGoesPdt();
 		
 		if (profilePortToken.getValue() == -1)
+		{
+			frame.checkForProfiles();
 			frame.setVisible(true);
+		}
 		else
 		{
 			try
 			{
-				frame.runProfileManager(profilePortToken.getValue());
+				frame.runProfileLauncher(profilePortToken.getValue());
 			}
 			catch (Exception ex)
 			{
@@ -1200,6 +1323,12 @@ public class LauncherFrame extends JFrame
 	// Time Series Button
 	private void groupEditButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start groupedit");
+			return;
+		}
 		if (groupEditFrame != null)
 		{
 			groupEditFrame.toFront();
@@ -1222,7 +1351,7 @@ public class LauncherFrame extends JFrame
 						if (groupEditFrame != null)
 						{
 							groupEditFrame.setExitOnClose(false);
-							groupEditFrame.addWindowListener(tsEditorReaper);
+							groupEditFrame.addWindowListener(tsGroupReaper);
 						}
 					}
 					catch (Exception ex)
@@ -1249,6 +1378,13 @@ public class LauncherFrame extends JFrame
 	
 	protected void tseditButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start tsedit");
+			return;
+		}
+
 		if (tseditFrame != null)
 		{
 			tseditFrame.toFront();
@@ -1301,6 +1437,13 @@ public class LauncherFrame extends JFrame
 
 	private void compeditButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start compedit");
+			return;
+		}
+
 		if (compEditFrame != null)
 		{
 			compEditFrame.toFront();
@@ -1352,6 +1495,13 @@ public class LauncherFrame extends JFrame
 
 	protected void routmonButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start routmon");
+			return;
+		}
+
 		if (routmonFrame != null)
 		{
 			routmonFrame.toFront();
@@ -1403,6 +1553,13 @@ public class LauncherFrame extends JFrame
 
 	protected void platmonButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start platmon");
+			return;
+		}
+
 		if (platmonFrame != null)
 		{
 			platmonFrame.toFront();
@@ -1456,6 +1613,13 @@ public class LauncherFrame extends JFrame
 	
 	private void runcompButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start runcomp");
+			return;
+		}
+
 		if (runComputationsFrame != null)
 		{
 			runComputationsFrame.toFront();
@@ -1510,6 +1674,13 @@ public class LauncherFrame extends JFrame
 
 	private void procstatButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start procstat");
+			return;
+		}
+
 		if (procMonFrame != null)
 		{
 			procMonFrame.toFront();
@@ -1561,11 +1732,19 @@ public class LauncherFrame extends JFrame
 
 	private void algoeditButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start algoedit");
+			return;
+		}
+
 		if (algorithmWizFrame != null)
 		{
 			algorithmWizFrame.toFront();
 			return;
 		}
+		
 
 		try
 		{
@@ -1594,6 +1773,13 @@ public class LauncherFrame extends JFrame
 
 	private void platwizButtonPressed()
 	{
+		String profileName = getSelectedProfile();
+		if (profileName != null)
+		{
+			sendToProfileLauncher(profileName, "start platwiz");
+			return;
+		}
+
 		if (platformWizFrame != null)
 		{
 			platformWizFrame.toFront();
@@ -1670,119 +1856,398 @@ public class LauncherFrame extends JFrame
 	 * Called with port=0 for testing in a terminal window.
 	 * @param port The TCP port to connect to on localhost or 0 to accept commands from stdin
 	 */
-	private void runProfileManager(int port)
+	private void runProfileLauncher(int port)
 		throws Exception
 	{
 		InputStream inp = System.in;
 		PrintStream outp = System.out;
+		BasicClient client = null;
+		
+		String profileName = cmdLineArgs.getPropertiesFile();
+		if (profileName == null || profileName.trim().length() == 0)
+			throw new Exception("Missing properties file on cmd line");
+		profileName = profileName.trim();
+		int idx = profileName.lastIndexOf('.');
+		if (idx > 0)
+			profileName = profileName.substring(0, idx);
+		Logger.instance().info("======== Launcher Starting for profile '" + profileName + "'");
 		
 		if (port > 0)
 		{
-			// TODO Connect to the specified port on localhost and set inp.
-			// TODO use basic client
+			client = new BasicClient("localhost", port);
+			try
+			{ 
+				client.connect();
+				inp = client.getInputStream();
+				outp = new PrintStream(client.getOutputStream());
+				outp.println(profileName);
+			}
+			catch(IOException ex)
+			{
+				Logger.instance().failure("Cannot connect to localhost:" + port + " " + ex);
+				throw ex;
+			}
 		}
 		
-		BufferedReader br = new BufferedReader(new InputStreamReader(inp));
-		String line;
-		while((line = br.readLine()) != null)
+		try
 		{
-			String words[] = line.split(" ");
-			if (words.length < 2)
-				continue;
-			
-			String cmdnum = words[0];
-			final String cmd = words[1];
-			final String arg = words.length > 2 ? words[2] : "";
-			
-			if (cmd.equalsIgnoreCase("kill"))
+			BufferedReader br = new BufferedReader(new InputStreamReader(inp));
+			String line;
+			while((line = br.readLine()) != null)
 			{
-				Logger.instance().info("Exiting due to kill command.");
-				break;
-			}
-
-			
-			// Anything GUI-related (button pushes, frame changes, etc.) must be done in the swing thread.
-			final Reply reply = new Reply();
-			
-			SwingUtilities.invokeLater(
-				new Runnable()
+				String words[] = line.split(" ");
+				if (words.length < 2)
+					continue;
+				
+				String cmdnum = words[0];
+				final String cmd = words[1];
+				final String arg = words.length > 2 ? words[2] : "";
+				
+				if (cmd.equalsIgnoreCase("kill"))
 				{
-					public void run()
+					Logger.instance().info("Exiting due to kill command.");
+					break;
+				}
+				
+				// Anything GUI-related (button pushes, frame changes, etc.) must be done in the swing thread.
+				final Reply reply = new Reply();
+				
+				SwingUtilities.invokeLater(
+					new Runnable()
 					{
-						if (cmd.equalsIgnoreCase("status"))
+						public void run()
 						{
-							reply.reply = "status good";
-						}
-						else if (cmd.equalsIgnoreCase("start"))
-						{
-							// start <buttonName>: act as if named button were pressed
-							boolean found = true;
-							if (arg.equalsIgnoreCase("groupedit"))
-								groupEditButtonPressed();
-							else if (arg.equalsIgnoreCase("rtstat"))
-								rtstatButtonPressed();
-							else if (arg.equalsIgnoreCase("msgaccess"))
-								msgaccessButtonPressed();
-							else if (arg.equalsIgnoreCase("dbedit"))
-								dbeditButtonPressed();
-							else if (arg.equalsIgnoreCase("platmon"))
-								platmonButtonPressed();
-							else if (arg.equalsIgnoreCase("routmon"))
-								routmonButtonPressed();
-							else if (arg.equalsIgnoreCase("setup"))
-								setupPressed();
-							else if (arg.equalsIgnoreCase("nledit"))
-								nleditButtonPressed();
-							else if (arg.equalsIgnoreCase("platwiz"))
-								platwizButtonPressed();
-							else if (arg.equalsIgnoreCase("compedit"))
-								compeditButtonPressed();
-							else if (arg.equalsIgnoreCase("tsedit"))
-								tseditButtonPressed();
-							else if (arg.equalsIgnoreCase("runcomp"))
-								runcompButtonPressed();
-							else if (arg.equalsIgnoreCase("procstat"))
-								procstatButtonPressed();
-							else if (arg.equalsIgnoreCase("algoedit"))
-								algoeditButtonPressed();
+							if (cmd.equalsIgnoreCase("status"))
+							{
+								reply.reply = "status good";
+							}
+							else if (cmd.equalsIgnoreCase("start"))
+							{
+								// start <buttonName>: act as if named button were pressed
+								boolean found = true;
+								if (arg.equalsIgnoreCase("groupedit"))
+									groupEditButtonPressed();
+								else if (arg.equalsIgnoreCase("rtstat"))
+									rtstatButtonPressed();
+								else if (arg.equalsIgnoreCase("msgaccess"))
+									msgaccessButtonPressed();
+								else if (arg.equalsIgnoreCase("dbedit"))
+									dbeditButtonPressed();
+								else if (arg.equalsIgnoreCase("platmon"))
+									platmonButtonPressed();
+								else if (arg.equalsIgnoreCase("routmon"))
+									routmonButtonPressed();
+								else if (arg.equalsIgnoreCase("setup"))
+									setupPressed();
+								else if (arg.equalsIgnoreCase("nledit"))
+									nleditButtonPressed();
+								else if (arg.equalsIgnoreCase("platwiz"))
+									platwizButtonPressed();
+								else if (arg.equalsIgnoreCase("compedit"))
+									compeditButtonPressed();
+								else if (arg.equalsIgnoreCase("tsedit"))
+									tseditButtonPressed();
+								else if (arg.equalsIgnoreCase("runcomp"))
+									runcompButtonPressed();
+								else if (arg.equalsIgnoreCase("procstat"))
+									procstatButtonPressed();
+								else if (arg.equalsIgnoreCase("algoedit"))
+									algoeditButtonPressed();
+								else
+									found = false;
+								if (dacqLauncherActions != null)
+									for(LauncherAction action : dacqLauncherActions)
+										if (action.getTag().equals(arg))
+										{
+											action.launchFrame();
+											found = true;
+										}
+								if (found)
+									reply.reply = cmd + " " + arg;
+								else
+									reply.reply = "error: no such app '" + arg + "'";
+							}
+							else if (cmd.equalsIgnoreCase("exit"))
+							{
+								String msg = canClose();
+								if (msg != null)
+									reply.reply = "error: " + msg;
+								else
+									reply.reply = "exit";
+							}
 							else
-								found = false;
-							if (dacqLauncherActions != null)
-								for(LauncherAction action : dacqLauncherActions)
-									if (action.getTag().equals(arg))
-									{
-										action.launchFrame();
-										found = true;
-									}
-							if (found)
-								reply.reply = cmd + " " + arg;
-							else
-								reply.reply = "error: no such app '" + arg + "'";
+							{
+								reply.reply = "error: Unknown command '" + cmd + "' -- ignored.";
+							}
 						}
-						else if (cmd.equalsIgnoreCase("exit"))
-						{
-							//TODO set reply based on whether any unsaved apps are open.
-							reply.reply = "exit";
-						}
-						else
-						{
-							reply.reply = "error: Unknown command '" + cmd + "' -- ignored.";
-						}
-					}
-				});
-			
-			// Allow up to 10 seconds for command to complete.
-			while(reply.reply == null)
-				try { Thread.sleep(250L); } catch(InterruptedException ex) {}
-			outp.println(cmdnum + " " + (reply.reply == null ? "error: no reply" : reply.reply));
-			
-			//TODO should the replies contain the profile name?
-			
+					});
+				
+				// Allow up to 10 seconds for command to complete.
+				while(reply.reply == null)
+					try { Thread.sleep(250L); } catch(InterruptedException ex) {}
+				outp.println(cmdnum + " " + (reply.reply == null ? "error: no reply" : reply.reply));
+			}
+		}
+		finally
+		{
+			if (client != null)
+				client.disconnect();
 		}
 		System.exit(0);
 		
 	}
 	
+	static String[] getProfileList()
+	{
+		File userDir = new File(EnvExpander.expand("$DCSTOOL_USERDIR"));
+		File [] profileList = userDir.listFiles(
+			new FilenameFilter()
+			{
+				@Override
+				public boolean accept(File dir, String name)
+				{
+					// TODO Auto-generated method stub
+					return TextUtil.endsWithIgnoreCase(name, ".profile");
+				}
+			});
+		String [] names = new String[profileList.length + 1];
+		names[0] = "(default)";
+		for(int idx = 0; idx<profileList.length; idx++)
+		{
+			String n = profileList[idx].getName();
+			names[idx+1] = n.substring(0, n.indexOf(".profile"));
+		}
+		return names;
+	}
 
+	private void checkForProfiles()
+	{
+
+		if (profPanel == null)
+		{
+			profPanel = new JPanel(new GridBagLayout());
+			profPanel.add(new JLabel("Profile:"),
+				new GridBagConstraints(0, 0, 1, 1, 0, 0,
+					GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 0), 0, 0));
+			profileCombo = new JComboBox();
+			profPanel.add(profileCombo,
+				new GridBagConstraints(1, 0, 1, 1, .5, 0,
+					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 2, 2), 10, 0));
+			JButton profMgrButton = new JButton("...");
+			profPanel.add(profMgrButton,
+				new GridBagConstraints(2, 0, 1, 1, 0, 0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+			profMgrButton.addActionListener(
+				new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						startProfileManager();
+					}
+				});
+		}
+		
+		String [] profileNames = getProfileList();
+		if (profileNames != null && profileNames.length > 1)
+		{
+			profileCombo.removeAllItems();
+			for(String item : profileNames)
+				profileCombo.addItem(item);
+			
+			if (!profilesShown)
+			{
+				fullPanel.add(profPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, .1,
+					GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
+				fullPanel.getIgnoreRepaint();
+				profilesShown = true;
+			}
+		}
+		else // only 1 "default" profile
+		{
+System.out.println("Only 1 profile. Removing panel.");
+			// No harm done if profPanel is currently not displayed.
+			fullPanel.remove(profPanel);
+			fullPanel.repaint();
+System.out.println("Removed.");
+			profilesShown = false;
+		}
+		
+	}
+
+	protected void startProfileManager()
+	{
+		if (profileMgrFrame != null)
+		{
+			profileMgrFrame.toFront();
+			return;
+		}
+		
+		try
+		{
+			ProfileManager profileMgr = new ProfileManager();
+			profileMgr.setExitOnClose(false);
+			profileMgr.execute(myArgs);
+			profileMgrFrame = profileMgr.getFrame();
+			if (profileMgrFrame != null)
+			{
+				profileMgrFrame.setExitOnClose(false);
+				profileMgrFrame.addWindowListener(profileMgrReaper);
+			}
+		}
+		catch (Exception ex)
+		{
+			profileMgrFrame = null;
+			String msg = LoadResourceBundle.sprintf(
+				labels.getString("LauncherFrame.cannotLaunch"),
+				"Profile Manager") + ex;
+			Logger.instance().warning(msg);
+			System.err.println(msg);
+			ex.printStackTrace();
+			showError(msg);
+		}
+	}
+
+	/**
+	 * @return null if default profile is in effect, otherwise, the selected profile name.
+	 */
+	public String getSelectedProfile()
+	{
+		if (profileCombo == null || profileCombo.getSelectedIndex() == 0)
+			return null;
+		return (String)profileCombo.getSelectedItem();
+	}
+	
+	
+
+	/**
+	 * Send the command to the child launcher for the named profile.
+	 * If the server is not yet running, start it listening on specifed port.
+	 * If there is no child launcher for this profile, spawn the process and wait
+	 * for it to connect.
+	 * @param profileName the profile name
+	 * @param cmd the command to send
+	 */
+	void sendToProfileLauncher(String profileName, String cmd)
+	{
+		final int listenPort = DecodesSettings.instance().profileLauncherPort;
+		if (profileLauncherServer == null)
+		{
+			final LauncherFrame launcherFrame = this;
+			try
+			{
+				Logger.instance().info("Opening listening socket for launchers on port " + listenPort);
+				profileLauncherServer = 
+					new BasicServer(listenPort)
+//					new BasicServer(listenPort, InetAddress.getLocalHost())
+					{
+						protected BasicSvrThread newSvrThread( Socket sock ) 
+							throws IOException
+							{
+								Logger.instance().info("New client connected on port " + listenPort);
+								return new ProfileLauncherConn(this, sock, launcherFrame);
+							}
+					};
+				// Call listen in a separate thread.
+				(new Thread()
+				{
+					public void run()
+					{
+						try
+						{
+							profileLauncherServer.listen();
+						}
+						catch (IOException ex)
+						{
+							String msg = "Cannot start server listening thread on port "
+								+ listenPort + ": " + ex;
+							Logger.instance().failure(msg);
+							profileLauncherServer = null;
+							launcherFrame.showError(msg);
+						}
+					}
+				}).start();
+				Logger.instance().info("Success -- listening socket open on " + listenPort);
+			}
+			catch (IOException ex)
+			{
+				String msg = "Cannot open listening socket on port " + listenPort + ": " + ex;
+				Logger.instance().failure(msg);
+				showError(msg);
+				profileLauncherServer = null;
+				return;
+			}
+		}
+		
+		// Look through the matching connections for the specified profile.
+		ProfileLauncherConn conn = searchForConn(profileName);
+		if (conn == null)
+		{
+			// Use ilex.util.ProcWaiterThread to spawn the child launcher process.
+			String launchCmd = EnvExpander.expand("$DCSTOOL_HOME/bin/launcher_start");
+			launchCmd = launchCmd.replace('/', File.separatorChar);
+			launchCmd = launchCmd.replace('\\', File.separatorChar);
+			if (File.separatorChar == '\\')
+				launchCmd = launchCmd + ".bat";
+			launchCmd = launchCmd + " -pp " + listenPort + " -P " + profileName + ".profile"
+				+ " -l " + "launcher-" + profileName + ".log -d1";
+			try
+			{
+				Logger.instance().info("No launcher exists for profile '" + profileName
+					+ "' -- launching command '" + launchCmd + "'");
+				ProcWaiterThread.runBackground(launchCmd, "launch-" + profileName, this, profileName);
+			}
+			catch (IOException ex)
+			{
+				String msg = "Cannot execute command '" + launchCmd + "': " + ex;
+				Logger.instance().failure(msg);
+				showError(msg);
+				return;
+			}
+			
+			// Wait up to 10 sec for the process to start and connect to us.
+			long start = System.currentTimeMillis();
+			while(conn == null && System.currentTimeMillis() - start < 10000L)
+			{
+				if ((conn = searchForConn(profileName)) == null)
+					try { Thread.sleep(200L); } catch(InterruptedException ex) {}
+			}
+			if (conn == null)
+			{
+				String msg = "Launcher with cmd '" + launchCmd + "' failed to connect after 10 sec.";
+				Logger.instance().failure(msg);
+				showError(msg);
+				return;
+			}
+		}
+		conn.sendCmd(cmd);
+	}
+	
+	private ProfileLauncherConn searchForConn(String profileName)
+	{
+		for(Object connobj : profileLauncherServer.getAllSvrThreads())
+			if (TextUtil.strEqualIgnoreCase(
+				((ProfileLauncherConn)connobj).getProfileName(), profileName))
+				return (ProfileLauncherConn)connobj;
+		return null;
+	}
+
+	/**
+	 * This method is called from ProcWaiterThread if a subordinate launcher exits.
+	 */
+	@Override
+	public void procFinished(String procName, Object obj, int exitStatus)
+	{
+		// Subordinate launcher processes are not supposed to end, ever.
+		Logger.instance().failure("Subordinate " + procName + " exited with status=" + exitStatus);
+
+		// Make sure the ProfileLauncherConn is removed from the server.
+		String profileName = (String)obj;
+		ProfileLauncherConn conn = searchForConn(profileName);
+		if (conn != null)
+			conn.disconnect();
+	}
+	
+	//TODO verify that subordinate launcher processes do not survive the launcher going down.
 
 }
