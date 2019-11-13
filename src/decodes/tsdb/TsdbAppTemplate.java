@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.15  2019/09/12 12:56:05  mmaloney
+*  Added getCmdLineArgs
+*
 *  Revision 1.14  2018/03/30 14:13:32  mmaloney
 *  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
 *
@@ -68,7 +71,6 @@ import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.StderrLogger;
-import ilex.util.TextUtil;
 import ilex.util.UserAuthFile;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
