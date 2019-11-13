@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.17  2019/10/13 19:30:53  mmaloney
+*  Added noInit arg to allow multiple apps to start within a single JVM.
+*
 *  Revision 1.16  2019/01/28 14:43:16  mmaloney
 *  Default action is to squelch all javax.logging messages.
 *
@@ -126,13 +129,16 @@ package decodes.util;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
+import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
+import decodes.gui.TopFrame;
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
 import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import ilex.util.FileLogger;
 
 /**
@@ -147,7 +153,7 @@ public class CmdLineArgs
 	/** Log file argument (-l) */
 	protected StringToken log_arg;
 	/** properties file argument (-P) */
-	private String propFile;
+	private String propFileName;
 	/** Application Define argument (-D) */
 	private StringToken define_arg;
 	private BooleanToken forwardLogArg;
@@ -278,44 +284,73 @@ public class CmdLineArgs
 			}
 		}
 
-		/*
-		  Legacy script compatibility:
-			Old scripts supply -P arg for decodes.properties file.
-			New ones put DECODES_INSTALL_DIR in system props, and assume that
-			the properties file resides there.
-		
-			if -P arg supplied use it, else look in install dir.
-		*/
-		propFile = super.getPropertiesFile();
-		if (propFile == null || propFile.length() == 0)
+		DecodesSettings settings = DecodesSettings.instance();
+
+		// if -P arg supplied, use it, else look in install dir.
+		propFileName = super.getPropertiesFile();
+		boolean profileUsed = false;
+		if (propFileName != null && propFileName.length() > 0)
 		{
-			// Get DECODES_INSTALL_DIR from system properties & look there.
-			String installDir = System.getProperty("DECODES_INSTALL_DIR");			
-			if (installDir != null)
-				propFile = installDir + File.separator + "decodes.properties";
+			File propFile = new File(propFileName);
+			if (!propFile.canRead())
+			{
+				Logger.instance().failure("Invalid properties file '" + propFileName + "' -- file not readable.");
+				// TODO throw something
+			}
+			
+			String profileName = propFileName;
+			int dotPropIdx = profileName.indexOf(".profile");
+			if (dotPropIdx > 0)
+			{
+				profileName = profileName.substring(0, dotPropIdx);
+				TopFrame.profileName = profileName;
+				profileUsed = true;
+			}
+			int lastSlashIdx = profileName.lastIndexOf('/');
+			if (lastSlashIdx == -1)
+				lastSlashIdx = profileName.lastIndexOf('\\');
+			if (lastSlashIdx > 0 && lastSlashIdx < profileName.length() - 1)
+				profileName = profileName.substring(lastSlashIdx+1);
+			if (!profileName.equalsIgnoreCase("user") && !profileName.equalsIgnoreCase("decodes"))
+				settings.setProfileName(profileName);
+		}
+		else // No -P using default name.
+		{
+			String userDir = System.getProperty("DCSTOOL_USERDIR");
+			String installDir = System.getProperty("DCSTOOL_HOME");
+			
+			if (userDir != null && !TextUtil.strEqual(userDir, installDir))
+				propFileName = EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
+			else
+				propFileName = EnvExpander.expand("$DCSTOOL_HOME/decodes.properties");
+
+			if (!((new File(propFileName)).canRead()))
+			{
+				Logger.instance().failure("No -P arg supplied and cannot read default settings file '"
+					+ propFileName + "'");
+				//TODO throw something
+			}
 		}
 
 		//Load the decodes.properties
-		DecodesSettings settings = DecodesSettings.instance();
-		File userProps = new File(EnvExpander.expand("$DCSTOOL_USERDIR/user.properties"));
 		if (!settings.isLoaded())
 		{
 			Properties props = new Properties();
+			File propFile = new File(propFileName);
 			try
 			{
+				
 				FileInputStream fis = new FileInputStream(propFile);
 				props.load(fis);
 				fis.close();
 			}
-			catch(Exception e)
+			catch(Exception ex)
 			{
-				// MJM if user props exists, this is not an error.
-				if (!userProps.canRead())
-					Logger.instance().failure(
-						"CmdLineArgs:parseArgs " +
-						"Cannot open DECODES Properties File '"+propFile+"': "+e);
+				Logger.instance().failure("Cannot load decodes properties from '" + propFileName + "': " + ex);
 			}
 			settings.loadFromProperties(props);
+			settings.setLastModified(new Date(propFile.lastModified()));
+			settings.setSourceFile(propFile);
 		}
 		
 		// Userdir is needed to support multi-user installations under unix/linux.
@@ -325,22 +360,24 @@ public class CmdLineArgs
 		if (userDir == null)
 			System.setProperty("DCSTOOL_USERDIR", System.getProperty("DCSTOOL_HOME"));
 		
-		if (!settings.isToolkitOwner())
+		if (!settings.isToolkitOwner() && !profileUsed)
 		{
 			Properties props = new Properties();
 			try
 			{
-				FileInputStream fis = new FileInputStream(
-					EnvExpander.expand("$DCSTOOL_USERDIR/user.properties"));
+				File propFile = new File(EnvExpander.expand("$DCSTOOL_USERDIR/user.properties"));
+				FileInputStream fis = new FileInputStream(propFile);
 				props.load(fis);
 				fis.close();
 				settings.loadFromUserProperties(props);
+				settings.setLastModified(new Date(propFile.lastModified()));
+				settings.setSourceFile(propFile);
 			}
 			catch(IOException e)
 			{
 				Logger.instance().debug1(
 				"CmdLineArgs:parseArgs " +
-				"Cannot open User Properties File '"+propFile+"': "+e);
+				"Cannot open User Properties File '"+propFileName+"': "+e);
 			}
 		}
 		
@@ -373,12 +410,14 @@ public class CmdLineArgs
 		JavaLoggerAdapter.initialize(Logger.instance(), forwardLogArg.getValue(), "", 
 			"usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
 			"org.jooq", "usace.cwms.db.jooq.util");
+		
+Logger.instance().info("After parseArgs, DecodesSettings src file=" + DecodesSettings.instance().getSourceFile().getPath());
 	}
 
 	/** @return DECODES Properties file name */
 	public String getPropertiesFile()
 	{
-		return propFile;
+		return propFileName;
 	}
 
 	public Properties getCmdLineProps() { return cmdLineProps; }

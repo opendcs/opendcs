@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.28  2019/06/10 19:34:25  mmaloney
+*  Added tsdbStoragePresGrp
+*
 *  Revision 1.27  2018/07/31 17:01:17  mmaloney
 *  editTimeZone defaults to "UTC".
 *
@@ -134,6 +137,8 @@
 package decodes.util;
 
 import java.util.Properties;
+import java.io.File;
+import java.util.Date;
 import java.util.Enumeration;
 
 import ilex.util.Logger;
@@ -446,13 +451,18 @@ public class DecodesSettings
 	public int fontAdjust = 0;
 	public String tsdbStoragePresGrp = "CWMS-English";
 
+	public int profileLauncherPort = 16109;
 	
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
+	private Date lastModified = null;
 	public int tsidFetchSize = 0;
 	
 	public boolean isLoaded() { return _isLoaded; }
+	private String profileName = null;
+	private File sourceFile = null;
+	
 
 	private static PropertySpec propSpecs[] =
 	{
@@ -701,7 +711,9 @@ public class DecodesSettings
 		new PropertySpec("fontAdjust", PropertySpec.INT,
 			"(default=0) Set to positive number to increase default font size, or negative number to decrease."),
 		new PropertySpec("tsdbStoragePresGrp", PropertySpec.STRING,
-			"(default=CWMS-English) Presentation Group used to determine time series database storage units")
+			"(default=CWMS-English) Presentation Group used to determine time series database storage units"),
+		new PropertySpec("profileLauncherPort", PropertySpec.INT,
+			"For multi-profile launcher, parent laucher listens on this port."),
 	};
 	
 	/**
@@ -828,6 +840,37 @@ public class DecodesSettings
 	public boolean additionalPropsAllowed()
 	{
 		return false;
+	}
+
+	public String getProfileName()
+	{
+		return profileName;
+	}
+
+	public void setProfileName(String profileName)
+	{
+		this.profileName = profileName;
+	}
+
+	public Date getLastModified()
+	{
+		return lastModified;
+	}
+
+	public void setLastModified(Date lastModified)
+	{
+		this.lastModified = lastModified;
+	}
+
+	public File getSourceFile()
+	{
+		return sourceFile;
+	}
+
+	public void setSourceFile(File sourceFile)
+	{
+Logger.instance().info("Set DecodesSettings source=" + sourceFile.getPath());
+		this.sourceFile = sourceFile;
 	}
 }
 
