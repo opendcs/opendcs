@@ -319,6 +319,21 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 	/**File | Exit action performed*/
 	public void jMenuFileExit_actionPerformed(ActionEvent e) 
 	{
+		if (canClose())
+		{
+			if (exitOnClose)
+			{
+				Database db = Database.getDb();
+				db.getDbIo().close();
+				System.exit(0);
+			}
+			else
+				dispose();
+		}
+	}
+	
+	public boolean canClose()
+	{
 		DbEditorTab openEd;
 		if ((openEd = sitesTabbedPane.findFirstOpenEditor()) != null)
 		{
@@ -363,17 +378,23 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 
 		if (openEd != null)
 		{
-			showError(
-				dbeditLabels.getString("dbedit.errmsgPleaseClose"));
-		}
-		else if (exitOnClose) 
-		{
-			Database db = Database.getDb();
-			db.getDbIo().close();
-			System.exit(0);
+			SwingUtilities.invokeLater(
+				new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						toFront();
+						repaint();
+						showError(dbeditLabels.getString("dbedit.errmsgPleaseClose"));
+					}
+					
+				});
+			return false;
 		}
 		else
-			dispose();
+			return true;
+		
 	}
 
 	/**Help | About action performed
