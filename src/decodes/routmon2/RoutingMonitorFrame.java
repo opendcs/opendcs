@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.4  2017/11/20 19:26:52  mmaloney
+ * Fix 2 bugs: Selecting RS Run was messing up the panel header. RS Runs in the middle panel were not sorted in descending last-modify-time order like they should have been.
+ *
  * Revision 1.3  2016/08/05 14:53:36  mmaloney
  * Station and Routing Status GUI updates.
  *
@@ -470,7 +473,7 @@ public class RoutingMonitorFrame
 					if (sri != -1 && sri != rsRunTable.getSelectedRow())
 					{
 						rsRunTable.setRowSelectionInterval(sri, sri);
-						if (selectedRun.getRunStop() == null)
+						if (selectedRun != null && selectedRun.getRunStop() == null)
 							fillEventsFor(selectedRun);
 					}
 					inDbUpdate = false;
