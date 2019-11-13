@@ -441,7 +441,7 @@ public class NetlistEditFrame extends JFrame {
 		networkListTable.insertAfter();
     }
 
-	boolean okToAbandon()
+	public boolean okToAbandon()
 	{
 		if (!networkListTable.isModified())
 			return true;
