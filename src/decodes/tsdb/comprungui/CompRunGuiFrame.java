@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.3  2018/11/14 15:59:56  mmaloney
+ * Remove obsolete catch block.
+ *
  * Revision 1.2  2018/06/04 19:23:38  mmaloney
  * HDB issue where deleted values were being displayed on table and graph.
  *
@@ -176,9 +179,10 @@ public class CompRunGuiFrame extends TopFrame
 		fromDTCal = new DateTimeCalendar(fromLabel, null, "dd MMM yyyy", timeZoneStr);
 		toDTCal = new DateTimeCalendar(toLabel, tempDate, "dd MMM yyyy", timeZoneStr);
 
-		JPanel mycontent = new JPanel();
+//		JPanel mycontent = new JPanel();
+		JPanel mycontent = (JPanel)this.getContentPane();
 		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
-		this.setContentPane(mycontent);
+//		this.setContentPane(mycontent);
 		this.setTitle(labels.getString("RunComputationsFrame.frameTitle"));
 		this.trackChanges("runcomps");
 		// this.setSize(750,825);//800

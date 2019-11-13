@@ -124,7 +124,8 @@ public class CAPEdit
 			topFrame.setSize(new java.awt.Dimension(900,740));
 			topFrame.setTitle(titleLabel);
 			//topFrame.setDefaultCloseOperation(topFrame.EXIT_ON_CLOSE);
-			topFrame.setContentPane(getJContentPane());
+//			topFrame.setContentPane(getJContentPane());
+			getJContentPane();
 			topFrame.setDefaultCloseOperation(
 									WindowConstants.DO_NOTHING_ON_CLOSE);
 			topFrame.addWindowListener(new WindowAdapter()
@@ -168,9 +169,11 @@ public class CAPEdit
 	 * 	
 	 * @return javax.swing.JPanel	
 	 */
-	private JPanel getJContentPane() {
+	private JPanel getJContentPane() 
+	{
 		if (jContentPane == null) {
-			jContentPane = new JPanel();
+			jContentPane = (JPanel)topFrame.getContentPane();
+//			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
 			jContentPane.add(getMainTab(), java.awt.BorderLayout.CENTER);
 		}
@@ -203,7 +206,8 @@ public class CAPEdit
 	 * 	
 	 * @return javax.swing.JPanel	
 	 */
-	private JPanel getComputationsPanel() {
+	private JPanel getComputationsPanel()
+	{
 		if (computationsPanel == null) {
 			computationsPanel = new JPanel();
 			computationsPanel.setLayout(new BorderLayout());
@@ -236,6 +240,7 @@ public class CAPEdit
 		if (computationsTab == null) 
 		{
 			computationsTab = new JTabbedPane();
+			
 			computationsListPanel = 
 				new ComputationsListPanel(theDb, 
 					!noCompFilterToken.getValue(), false, topFrame);
