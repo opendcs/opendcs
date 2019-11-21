@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.17  2019/05/10 18:53:52  mmaloney
+*  dev
+*
 *  Revision 1.16  2019/05/10 18:35:26  mmaloney
 *  dev
 *
@@ -538,7 +541,11 @@ debug3("DbAlgorithmExec.apply()");
 				+ ref.getDescription() + " num samples = " + ref.timeSeries.size());
 			if (ref.timeSeries.size() > 0)
 				for(int idx=0; idx < ref.timeSeries.size() && idx < 32; idx++)
-					debug3("    [" + idx + "] " + ref.timeSeries.sampleAt(idx).toString());
+				{
+					TimedVariable tv = ref.timeSeries.sampleAt(idx);
+					debug3("    [" + idx + "] " + tv.toString()
+						+ " 0x" + Integer.toHexString(tv.getFlags()));
+				}
 		}
 
 		if (isOutput)
