@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.23  2019/08/19 15:00:13  mmaloney
+ * Bugfix. isPresent, in certain circumstances, was returning true when it should have returned false.
+ *
  * Revision 1.22  2019/05/13 15:06:39  mmaloney
  * Fixed time zones in screening season selection.
  *
@@ -553,18 +556,28 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	public void setTimeSliceInput(String varName, NamedVariable nv)
 	{
 		String expr = null;
+		int f = nv.getFlags();
+		
 		if (nv == null || nv.getStringValue().trim().length() == 0 
 			|| nv.getStringValue().equalsIgnoreCase("NA")
-			|| (nv.getFlags() & (IFlags.IS_ERROR|IFlags.IS_ERROR|CwmsFlags.VALIDITY_MISSING)) != 0)
+			|| (f & (IFlags.IS_ERROR|IFlags.IS_MISSING)) != 0
+			|| (tsdb.isCwms() && (f & CwmsFlags.VALIDITY_MISSING) != 0)
+			|| (tsdb.isHdb() && HdbFlags.isRejected(f)))
+		{
 			expr = varName + ".value = " + missingValue + linesep
 				+  varName + ".qual = 0x40000000" + linesep;
+			debug3("setTimeSliceInput(" + varName + ") value is considered missing. Orig value="
+				+ (nv==null?"null":nv.getStringValue()) + ", flags=0x" + f);
+		}
 		else
 		{
 			try
 			{
 				// MJM 20190116 set value into Python name space with full double precision
 				// Note setting name.value directly from set() does NOT work. Use intermediate variable.
-				this.pythonIntepreter.set("___x___", new PyFloat(nv.getDoubleValue()));
+				double d = nv.getDoubleValue();
+				debug3("setTimeSliceInput(" + varName + ") setting ___x___ = " + d);
+				this.pythonIntepreter.set("___x___", new PyFloat(d));
 				expr = 
 					varName + ".value = ___x___" + linesep +
 					varName + ".qual = 0x" + Integer.toHexString(nv.getFlags()) + linesep;
