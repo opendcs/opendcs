@@ -7,7 +7,7 @@ echo -n "-- created on " > $OUTPUT
 date >> $OUTPUT
 
 grep -ih "create table " $1 | sed -e "s/CREATE TABLE //" | sort>/tmp/table-list
-dos2unix /tmp/table-list
+#dos2unix /tmp/table-list
 
 for TABLE in `cat /tmp/table-list`
 do
