@@ -2,6 +2,10 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.24  2019/11/21 19:41:05  mmaloney
+ * setTimeSliceInput() differentiate between flag conditions for CWMS and HDB.
+ * Improved debugs.
+ *
  * Revision 1.23  2019/08/19 15:00:13  mmaloney
  * Bugfix. isPresent, in certain circumstances, was returning true when it should have returned false.
  *
@@ -556,18 +560,17 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	public void setTimeSliceInput(String varName, NamedVariable nv)
 	{
 		String expr = null;
-		int f = nv.getFlags();
 		
 		if (nv == null || nv.getStringValue().trim().length() == 0 
 			|| nv.getStringValue().equalsIgnoreCase("NA")
-			|| (f & (IFlags.IS_ERROR|IFlags.IS_MISSING)) != 0
-			|| (tsdb.isCwms() && (f & CwmsFlags.VALIDITY_MISSING) != 0)
-			|| (tsdb.isHdb() && HdbFlags.isRejected(f)))
+			|| (nv.getFlags() & (IFlags.IS_ERROR|IFlags.IS_MISSING)) != 0
+			|| (tsdb.isCwms() && (nv.getFlags() & CwmsFlags.VALIDITY_MISSING) != 0)
+			|| (tsdb.isHdb() && HdbFlags.isRejected(nv.getFlags())))
 		{
 			expr = varName + ".value = " + missingValue + linesep
 				+  varName + ".qual = 0x40000000" + linesep;
 			debug3("setTimeSliceInput(" + varName + ") value is considered missing. Orig value="
-				+ (nv==null?"null":nv.getStringValue()) + ", flags=0x" + f);
+				+ (nv==null?"null":nv.getStringValue()) + ", flags=0x" + nv.getFlags());
 		}
 		else
 		{
