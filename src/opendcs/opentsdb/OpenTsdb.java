@@ -12,15 +12,20 @@ import java.util.Properties;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
+import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.XmitRecordDAO;
+import decodes.cwms.CwmsGroupHelper;
+import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
+import decodes.db.Constants;
 import decodes.db.DataPresentation;
 import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.db.PresentationGroup;
+import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
@@ -28,10 +33,12 @@ import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.GroupHelper;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
+import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.DecodesSettings;
 
 public class OpenTsdb extends TimeSeriesDb
@@ -45,6 +52,7 @@ public class OpenTsdb extends TimeSeriesDb
 	public OpenTsdb()
 	{
 		super();
+		module = "OpenTsdb";
 	}
 	
 	@Override
@@ -98,8 +106,7 @@ public class OpenTsdb extends TimeSeriesDb
 		
 			// setConnection will also get the TSDB Version Info and read tsdb_properties
 			setConnection(
-				DriverManager.getConnection(
-					settings.editDatabaseLocation, username, password));
+				DriverManager.getConnection(dbUri, username, password));
 		
 			setupKeyGenerator();
 
@@ -138,6 +145,7 @@ public class OpenTsdb extends TimeSeriesDb
 	public TimeSeriesIdentifier expandSDI(DbCompParm parm) throws DbIoException,
 		NoSuchObjectException
 	{
+		// In OpenTSDB, the SDI is the surrogate key to a unique time series.
 		DbKey sdi = parm.getSiteDataTypeId();
 		DbKey siteId = parm.getSiteId();
 		DbKey datatypeId = parm.getDataTypeId();
@@ -148,12 +156,13 @@ public class OpenTsdb extends TimeSeriesDb
 		{
 			if (!DbKey.isNull(sdi))
 			{
-				tsid = timeSeriesDAO.getTimeSeriesIdentifier(parm.getSiteDataTypeId());
+				tsid = timeSeriesDAO.getTimeSeriesIdentifier(sdi);
 				parm.setSite(tsid.getSite());
 				parm.setDataType(tsid.getDataType());
 			}
 			else
 			{
+				// Some comp-parms are only partially specified by site and/or datatype.
 				if (!DbKey.isNull(siteId))
 					parm.setSite(this.getSiteById(siteId));
 				if (!DbKey.isNull(datatypeId))
@@ -198,30 +207,196 @@ public class OpenTsdb extends TimeSeriesDb
 	}
 
 	@Override
-	public ArrayList<TimeSeriesIdentifier> expandTsGroup(TsGroup tsGroup)
-		throws DbIoException
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public TimeSeriesIdentifier transformTsidByCompParm(
 		TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
 		boolean fillInParm, String timeSeriesDisplayName) throws DbIoException,
 		NoSuchObjectException, BadTimeSeriesException
 	{
-		// TODO Auto-generated method stub
-		return null;
+		if (tsid == null)
+			tsid = makeEmptyTsId();
+
+		String origString = tsid.getUniqueString();
+		TimeSeriesIdentifier tsidRet = tsid.copyNoKey();
+		boolean transformed = transformUniqueString(tsidRet, parm);
+
+		if (transformed)
+		{
+			String uniqueString = tsidRet.getUniqueString();
+			debug3(module + " origString='" + origString + "', new string='"
+				+ uniqueString + "', parm=" + parm);
+			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
+
+			try 
+			{
+				tsidRet = timeSeriesDAO.getTimeSeriesIdentifier(uniqueString);
+				debug3(module + " time series '" + uniqueString + "' exists OK.");
+			}
+			catch(NoSuchObjectException ex)
+			{
+				if (createTS)
+				{
+					if (timeSeriesDisplayName != null)
+						tsidRet.setDisplayName(timeSeriesDisplayName);
+					timeSeriesDAO.createTimeSeries(tsidRet);
+					fillInParm = true;
+				}
+				else
+				{
+					debug3(module + " no such time series '" + uniqueString + "'");
+					return null;
+				}
+			}
+			finally
+			{
+				timeSeriesDAO.close();
+			}
+		}
+		else
+			tsidRet = tsid;
+		
+		if (fillInParm)
+		{
+			parm.setSiteDataTypeId(tsidRet.getKey());
+			parm.setInterval(tsidRet.getInterval());
+			parm.setTableSelector(
+				tsidRet.getPart("ParamType") + "."
+				+ tsidRet.getPart("Duration") + "."
+				+ tsidRet.getPart("Version"));
+			parm.setDataType(tsidRet.getDataType());
+			parm.setSite(tsidRet.getSite());
+		}
+
+		return tsidRet;
 	}
 
 	@Override
 	public boolean transformUniqueString(TimeSeriesIdentifier tsidRet,
 		DbCompParm parm)
 	{
-		// TODO Auto-generated method stub
-		return false;
+		boolean transformed = false;
+		if (!(tsidRet instanceof CwmsTsId))
+			return false;
+		CwmsTsId ctsid = (CwmsTsId) tsidRet;
+		
+		SiteName parmSiteName = parm.getSiteName();
+		if (parmSiteName != null)
+		{
+			tsidRet.setSiteName(parmSiteName.getNameValue());
+			transformed = true;
+			if (parmSiteName.site != null)
+				tsidRet.setSite(parmSiteName.site);
+			else
+			{
+				// Also lookup the site and set the ID and site object.
+				SiteDAI siteDAO = makeSiteDAO();
+				try
+				{
+					DbKey siteId = siteDAO.lookupSiteID(parmSiteName);
+					tsidRet.setSite(siteDAO.getSiteById(siteId));
+				}
+				catch (Exception ex)
+				{
+					Logger.instance().warning("Cannot get site for sitename " + parmSiteName + ": " + ex);
+				}
+				finally
+				{
+					siteDAO.close();
+				}
+			}
+		}
+		else if (this.tsdbVersion >= TsdbDatabaseVersion.VERSION_14
+			  && parm.getLocSpec() != null && parm.getLocSpec().length() > 0)
+		{
+			String morphed = CwmsTimeSeriesDb.morph(ctsid.getSiteName(), parm.getLocSpec());
+			debug2("TSID site name '" + ctsid.getSiteName() + "' with loc spec '"
+				+ parm.getLocSpec() + "' morphed to '" + morphed + "'");
+			if (morphed == null)
+				morphed = parm.getLocSpec();
+			tsidRet.setSite(null);
+			tsidRet.setSiteName("");
+			SiteDAI siteDAO = makeSiteDAO();
+			try
+			{
+				DbKey siteId = siteDAO.lookupSiteID(morphed);
+				if (!DbKey.isNull(siteId))
+				{
+					tsidRet.setSite(siteDAO.getSiteById(siteId));
+					tsidRet.setSiteName(morphed);
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.instance().warning("Cannot get site for morphed sitename " 
+					+ morphed + ": " + ex);
+			}
+			finally
+			{
+				siteDAO.close();
+			}
+			transformed = true;
+		}
+		DataType dt = parm.getDataType();
+		if (dt != null)
+		{
+			tsidRet.setDataType(dt);
+			transformed = true;
+		}
+		else if (this.tsdbVersion >= TsdbDatabaseVersion.VERSION_14
+			  && parm.getParamSpec() != null && parm.getParamSpec().length() > 0)
+		{
+			String morphed = CwmsTimeSeriesDb.morph(ctsid.getPart("param"), parm.getParamSpec());
+			if (morphed == null)
+				debug2("Unable to morph param '" + ctsid.getPart("param") + "' with param spec '"
+					+ parm.getParamSpec() + "'");
+			else
+			{
+				tsidRet.setDataType(null);
+				tsidRet.setDataType(DataType.getDataType(Constants.datatype_CWMS, morphed));
+				transformed = true;
+			}
+		}
+
+		String s = parm.getParamType();
+		if (s != null && s.trim().length() > 0)
+		{
+			tsidRet.setPart("ParamType", s);
+			transformed = true;
+		}
+		s = parm.getInterval();
+		if (s != null && s.trim().length() > 0)
+		{
+			tsidRet.setPart("Interval", s);
+			transformed = true;
+		}
+		s = parm.getDuration();
+		if (s != null && s.trim().length() > 0)
+		{
+			tsidRet.setPart("Duration", s);
+			transformed = true;
+		}
+		s = parm.getVersion();
+		if (s != null && s.trim().length() > 0)
+		{
+			if (s.contains("*"))
+			{
+				String morphed = CwmsTimeSeriesDb.morph(ctsid.getPart("version"), s);
+				if (morphed == null)
+					debug2("Unable to morph param '" + ctsid.getPart("version") 
+						+ "' with version spec '" + s + "'");
+				else
+				{
+					ctsid.setVersion(morphed);
+					transformed = true;
+				}
+			}
+			else
+				tsidRet.setPart("Version", s);
+			transformed = true;
+		}
+		return transformed;
 	}
+	
+	
 	
 	public XmitRecordDAO makeXmitRecordDao(int maxDays)
 	{
@@ -250,6 +425,7 @@ public class OpenTsdb extends TimeSeriesDb
 	public String flags2LimitCodes(int flags)
 	{
 		StringBuilder sb = new StringBuilder();
+		// OpenTSDB differs from CWMS in the flag integer word bit definitions.
 //		if ((flags & CwmsFlags.SCREENED) != 0)
 //		{
 //			sb.append('S');
@@ -344,5 +520,12 @@ public class OpenTsdb extends TimeSeriesDb
 	{
 		return OpenTsdbFlags.flags2screeningString(flags);
 	}
+	
+	@Override
+	public GroupHelper makeGroupHelper()
+	{
+		return new CwmsGroupHelper(this);
+	}
+
 
 }

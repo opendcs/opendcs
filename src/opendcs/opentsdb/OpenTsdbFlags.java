@@ -43,7 +43,6 @@ public class OpenTsdbFlags
 
 	public OpenTsdbFlags()
 	{
-		// TODO Auto-generated constructor stub
 	}
 
 	/**

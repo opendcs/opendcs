@@ -29,11 +29,8 @@ public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 	}
 
 	@Override
-	public void connectToDatabase(String sqlDbLocation, String user,
-		String pw, boolean threadCon)
-		throws DatabaseException
+	protected void postConnectInit()
 	{
-		super.connectToDatabase(sqlDbLocation, user, pw, threadCon);
 		IntervalDAI intervalDAO = makeIntervalDAO();
 		try { intervalDAO.loadAllIntervals(); }
 		catch (DbIoException ex)

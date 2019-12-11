@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.2  2018/05/31 14:14:41  mmaloney
+*  Set storage units when creating new TSID.
+*
 *  Revision 1.1  2018/05/01 17:49:45  mmaloney
 *  First working OpenTSDB Consumer
 *
@@ -149,6 +152,7 @@ public class OpenTsdbConsumer extends DataConsumer
 	public void open(String consumerArg, Properties props)
 		throws DataConsumerException
 	{		
+		Logger.instance().info(module + " initializing.");
 		// Get username & password from Auth file
 		Properties credentials = new Properties();
 		dbAuthFile = PropertiesUtil.getIgnoreCase(props, "dbAuthFile");
@@ -166,7 +170,7 @@ public class OpenTsdbConsumer extends DataConsumer
 		{
 			String msg = module + " Cannot read DB auth from file '" 
 				+ authPath + "': " + ex;
-			Logger.instance().warning(msg);
+			Logger.instance().warning(module + " " + msg);
 		}
 		
 		// Get the Oracle Data Source & open a connection.
