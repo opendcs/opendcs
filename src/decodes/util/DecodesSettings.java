@@ -2,6 +2,9 @@
 *  $Id$
 *  
 *  $Log$
+*  Revision 1.29  2019/11/13 15:21:31  mmaloney
+*  Added multiple profiles feature to launcher.
+*
 *  Revision 1.28  2019/06/10 19:34:25  mmaloney
 *  Added tsdbStoragePresGrp
 *
@@ -203,9 +206,6 @@ public class DecodesSettings
 
 	/** Name of file containing encrypted username & password */
 	public String DbAuthFile = "$DCSTOOL_USERDIR/.decodes.auth";
-
-	/** Time Series Database Class Name */
-	public String dbClassName = "opendcs.opentsdb.OpenTsdb";
 
 	/** Date format to use for parsing dates read from the database. */
 	public String SqlReadDateFormat = "yyyy-MM-dd HH:mm:ss";
@@ -453,6 +453,8 @@ public class DecodesSettings
 
 	public int profileLauncherPort = 16109;
 	
+	public boolean tryOsDatabaseAuth = false;
+	
 	//===============================================================================
 	
 	private boolean _isLoaded = false;
@@ -481,8 +483,6 @@ public class DecodesSettings
 			"Timezone for date/time stamps in the SQL database"),
 		new PropertySpec("DbAuthFile", PropertySpec.FILENAME,
 			"Name of file containing encrypted username & password"),
-		new PropertySpec("dbClassName", PropertySpec.STRING,
-			"Time Series Database Class Name"),
 		new PropertySpec("SqlReadDateFormat", PropertySpec.STRING,
 			"Date format to use for parsing dates read from the database"),
 		new PropertySpec("aggregateTimeZone", PropertySpec.TIMEZONE,
@@ -714,6 +714,8 @@ public class DecodesSettings
 			"(default=CWMS-English) Presentation Group used to determine time series database storage units"),
 		new PropertySpec("profileLauncherPort", PropertySpec.INT,
 			"For multi-profile launcher, parent laucher listens on this port."),
+		new PropertySpec("tryOsDatabaseAuth", PropertySpec.BOOLEAN,
+			"(default=false) If TRUE, then try to connect to the database using OS (IDENT) authentication."),
 	};
 	
 	/**
@@ -871,6 +873,27 @@ public class DecodesSettings
 	{
 Logger.instance().info("Set DecodesSettings source=" + sourceFile.getPath());
 		this.sourceFile = sourceFile;
+	}
+	
+	/**
+	 * @return the class name corresponding to the db type.
+	 */
+	public String getTsdbClassName()
+	{
+		switch(editDatabaseTypeCode)
+		{
+		case DB_NONE:
+		case DB_XML:
+		case DB_URL:
+		case DB_SQL:
+		case DB_NWIS:
+			return null;
+
+		case DB_CWMS: return "decodes.cwms.CwmsTimeSeriesDb";
+		case DB_HDB: return "decodes.hdb.HdbTimeSeriesDb";
+		case DB_OPENTSDB: return "opendcs.opentsdb.OpenTsdb";
+		}
+		return null;
 	}
 }
 
