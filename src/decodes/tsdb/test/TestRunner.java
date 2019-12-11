@@ -213,7 +213,6 @@ public class TestRunner extends TsdbAppTemplate
 			public void execute(String[] tokens)
 			{
 				disableComps(tokens);
-//				disableComps(trimArgs(tokens));
 			}
 		};
 		
@@ -375,23 +374,6 @@ public class TestRunner extends TsdbAppTemplate
 		}
 	}
 
-	/**
-	 * Removes the arg[0] from the list.
-	 * @param args
-	 * @return
-	 */
-	private String[] trimArgs(String args[])
-	{
-		if (args == null || args.length == 0)
-			return args;
-		
-		String ret[] = new String[args.length - 1];
-		for(int idx = 0; idx < ret.length; idx++)
-			ret[idx] = args[idx+1];
-		
-		return ret;
-	}
-
 	public TestRunner()
 	{
 		super("util.log");
@@ -466,7 +448,7 @@ public class TestRunner extends TsdbAppTemplate
 		subApp.setNoExitAfterRunApp(true);
 		try
 		{
-			tokens = addCannedTokens(tokens, true, false, false, false);
+			tokens = tokens2args(tokens, true, false, false, false);
 			Logger.instance().info("DISABLECOMPS executing with args " + toks2str(tokens));
 			subApp.execute(tokens);
 		}
@@ -492,7 +474,7 @@ public class TestRunner extends TsdbAppTemplate
 		subApp.setNoExitAfterRunApp(true);
 		try
 		{
-			tokens = addCannedTokens(tokens, false, false, false, true);
+			tokens = tokens2args(tokens, false, false, false, true);
 			String[] newtoks = new String[tokens.length + tsids.size()];
 			for(int idx = 0; idx < tokens.length; idx++)
 				newtoks[idx] = tokens[idx];
@@ -540,7 +522,7 @@ public class TestRunner extends TsdbAppTemplate
 		subApp.setNoExitAfterRunApp(true);
 		try
 		{
-			tokens = addCannedTokens(tokens, false, false, false, false);
+			tokens = tokens2args(tokens, false, false, false, false);
 			Logger.instance().info("COMPIMPORT");
 			subApp.execute(tokens);
 		}
@@ -561,7 +543,7 @@ public class TestRunner extends TsdbAppTemplate
 			};
 						
 		subApp.getCmdLineArgs().setNoInit(true);
-		String args[] = addCannedTokens(tokens, false, false, false, false);
+		String args[] = tokens2args(tokens, false, false, false, false);
 		try
 		{
 			subApp.execute(args);
@@ -584,19 +566,9 @@ public class TestRunner extends TsdbAppTemplate
 		};
 
 		subApp.getCmdLineArgs().setNoInit(true);
-		String args[] = addCannedTokens(tokens, false, false, true, false);
+		String args[] = tokens2args(tokens, false, false, true, false);
 		ArrayList<String> sa = new ArrayList<String>();
 		for(String a : args) sa.add(a);
-		if (since != null)
-		{
-			sa.add("-S");
-			sa.add(sdf.format(since));
-		}
-		if (until != null)
-		{
-			sa.add("-U");
-			sa.add(sdf.format(until));
-		}
 		for(String tsid : tsids)
 			sa.add(tsid);
 		args = new String[sa.size()];
@@ -624,7 +596,7 @@ public class TestRunner extends TsdbAppTemplate
 		};
 
 		subApp.getCmdLineArgs().setNoInit(true);
-		String args[] = addCannedTokens(tokens, true, true, false, false);
+		String args[] = tokens2args(tokens, true, true, false, false);
 		
 		try
 		{
@@ -636,7 +608,7 @@ public class TestRunner extends TsdbAppTemplate
 		}
 	}
 	
-	private String[] addCannedTokens(String[] tokens, boolean addAppName, boolean addTestMode,
+	private String[] tokens2args(String[] tokens, boolean addAppName, boolean addTestMode,
 		boolean addPresGrp, boolean addTimes)
 	{
 		boolean testModePresent = false;
@@ -649,6 +621,7 @@ public class TestRunner extends TsdbAppTemplate
 		boolean tzPresent = false;
 		
 		ArrayList<String> args = new ArrayList<String>();
+		
 		for(String tok : tokens)
 		{
 			args.add(tok);
@@ -670,49 +643,52 @@ public class TestRunner extends TsdbAppTemplate
 				tzPresent = true;
 		}
 		
+		// 1st token is program name. Remove it.
+		args.remove(0);
+
 		if (!logFilePresent)
 		{
-			args.add(1, "-l");
-			args.add(2, cmdLineArgs.getLogFile());
+			args.add(0, "-l");
+			args.add(1, cmdLineArgs.getLogFile());
 		}
 		if (!debugLevPresent)
 		{
-			args.add(1, "-d");
-			args.add(2, "" + cmdLineArgs.getDebugLevel());
+			args.add(0, "-d");
+			args.add(1, "" + cmdLineArgs.getDebugLevel());
 
 		}
 		if (addAppName && !appNamePresent)
 		{
-			args.add(1, "-a");
-			args.add(2, "" + appName);
+			args.add(0, "-a");
+			args.add(1, "" + appName);
 		}
 		if (addTestMode && !testModePresent)
-			args.add(1, "-T");
+			args.add(0, "-T");
 		if (addPresGrp && !presGrpPresent && presGrp != null && presGrp.length() > 0)
 		{
-			args.add(1, "-G");
-			args.add(2, presGrp);
+			args.add(0, "-G");
+			args.add(1, presGrp);
 		}
 		if (addTimes && !tzPresent)
 		{
-			args.add(1, "-Z");
-			args.add(2, tz.getID());
+			args.add(0, "-Z");
+			args.add(1, tz.getID());
 		}
 		if (addTimes && !untilPresent && until != null)
 		{
-			args.add(1, "-U");
-			args.add(2, sdf.format(until));
+			args.add(0, "-U");
+			args.add(1, sdf.format(until));
 		}
 		if (addTimes && !sincePresent && since != null)
 		{
-			args.add(1, "-S");
-			args.add(2, sdf.format(since));
+			args.add(0, "-S");
+			args.add(1, sdf.format(since));
 		}
 
 		String ret[] = new String[args.size()];
 		for(int idx = 0; idx < ret.length; idx++)
 			ret[idx] = args.get(idx);
-
+		
 		return ret;
 	}
 	
