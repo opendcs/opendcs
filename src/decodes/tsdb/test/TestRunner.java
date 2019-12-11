@@ -305,7 +305,7 @@ public class TestRunner extends TsdbAppTemplate
 			}
 		};
 
-	private CmdLine debugLevel =
+	private CmdLine debugLevelCmd =
 		new CmdLine("debugLevel", "(0=no debug, 3=most verbose)")
 		{
 			@Override
@@ -314,7 +314,7 @@ public class TestRunner extends TsdbAppTemplate
 			{
 				if (tokens.length != 2)
 				{
-					Logger.instance().warning("Invalid DEBUGLEVEL command -- requires a single integer art.");
+					error("Invalid DEBUGLEVEL command -- requires a single integer art.", null);
 					return;
 				}
 				try
@@ -330,7 +330,7 @@ public class TestRunner extends TsdbAppTemplate
 				}
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().warning("Invalid debug level '" + tokens[1] + "' -- must be 0, 1, 2, or 3");
+					error("Invalid debug level '" + tokens[1] + "' -- must be 0, 1, 2, or 3", null);
 					return;
 				}
 			}
@@ -418,6 +418,7 @@ public class TestRunner extends TsdbAppTemplate
 		cmdLineProc.addCmd(outputTsCmd);
 		cmdLineProc.addCmd(echoCmd);
 		cmdLineProc.addCmd(exitCmd);
+		cmdLineProc.addCmd(debugLevelCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		
@@ -465,8 +466,7 @@ public class TestRunner extends TsdbAppTemplate
 		}
 		catch (Exception e)
 		{
-			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
-			e.printStackTrace(System.err);
+			error("Error executing cmd '" + toks2str(tokens) + "': " + e, e);
 		}
 	}
 	
@@ -514,7 +514,7 @@ public class TestRunner extends TsdbAppTemplate
 		}
 		catch(DbIoException ex)
 		{
-			Logger.instance().warning("Error in flushtriggers: " + ex);
+			error("Error in flushtriggers: " + ex, ex);
 		}
 	}
 
@@ -603,8 +603,7 @@ public class TestRunner extends TsdbAppTemplate
 		}
 		catch (Exception e)
 		{
-			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
-			e.printStackTrace(System.err);
+			error("Error executing cmd '" + tokens[0] + "': " + e, e);
 		}
 	}
 
@@ -627,10 +626,8 @@ public class TestRunner extends TsdbAppTemplate
 		}
 		catch (Exception e)
 		{
-			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
-			e.printStackTrace(System.err);
+			error("Error executing cmd '" + tokens[0] + "': " + e, e);
 		}
-
 	}
 	
 	private String[] addCannedTokens(String[] tokens, boolean addAppName, boolean addTestMode,
@@ -722,5 +719,16 @@ public class TestRunner extends TsdbAppTemplate
 		return sb.toString().trim();
 	}
 
+	private void error(String msg, Throwable ex)
+	{
+		Logger.instance().warning(msg);
+		System.err.println(msg);
+		if (ex != null)
+		{
+			ex.printStackTrace(System.err);
+			if (Logger.instance().getLogOutput() != null)
+				ex.printStackTrace(Logger.instance().getLogOutput());
+		}
+	}
 
 }
