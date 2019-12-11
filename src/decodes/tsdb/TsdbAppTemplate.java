@@ -4,6 +4,9 @@
 *  Open Source Software 
 *  
 *  $Log$
+*  Revision 1.16  2019/11/13 15:14:31  mmaloney
+*  Rm unneeded imports.
+*
 *  Revision 1.15  2019/09/12 12:56:05  mmaloney
 *  Added getCmdLineArgs
 *
@@ -293,7 +296,8 @@ public abstract class TsdbAppTemplate
 	protected void parseArgs(String args[])
 		throws Exception
 	{
-		Logger.setLogger(new StderrLogger(appNameArg.getValue()));
+		if (!cmdLineArgs.isNoInit())
+			Logger.setLogger(new StderrLogger(appNameArg.getValue()));
 
 		// Parse command line arguments.
 		try { cmdLineArgs.parseArgs(args); }
@@ -323,7 +327,8 @@ public abstract class TsdbAppTemplate
 		if (theDb != null)
 			return;
 
-		String className = DecodesSettings.instance().dbClassName;
+//		String className = DecodesSettings.instance().dbClassName;
+		String className = DecodesSettings.instance().getTsdbClassName();
 
 		try
 		{
@@ -587,6 +592,11 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 	public CmdLineArgs getCmdLineArgs()
 	{
 		return cmdLineArgs;
+	}
+
+	public void setNoExitAfterRunApp(boolean noExitAfterRunApp)
+	{
+		this.noExitAfterRunApp = noExitAfterRunApp;
 	}
 
 }
