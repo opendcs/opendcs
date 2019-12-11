@@ -61,6 +61,7 @@ public class TestRunner extends TsdbAppTemplate
 	private String presGrp = null;
 	private BooleanToken interactiveMode = new BooleanToken("i", "Interactive Mode",
 		"", TokenOptions.optSwitch, false);
+	private int debugLevel = 3;
 		
 	private CmdLine tsidsCmd = 
 		new CmdLine("tsids", "[list-of-tsids]")
@@ -325,11 +326,7 @@ public class TestRunner extends TsdbAppTemplate
 					int lev = Integer.parseInt(tokens[1]);
 					if (lev < 0 || lev > 3)
 						lev = 3;
-					Logger.instance().setMinLogPriority(
-						lev == 0 ? Logger.E_INFORMATION :
-						lev == 1 ? Logger.E_DEBUG1 :
-						lev == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-					Logger.instance().info("DEBUGLEVEL set to " + lev);
+					setDebugLevel(lev);
 				}
 				catch(NumberFormatException ex)
 				{
@@ -337,8 +334,17 @@ public class TestRunner extends TsdbAppTemplate
 					return;
 				}
 			}
-
 		};
+		
+	private void setDebugLevel(int lev)
+	{
+		this.debugLevel = lev;
+		Logger.instance().setMinLogPriority(
+			lev == 0 ? Logger.E_INFORMATION :
+			lev == 1 ? Logger.E_DEBUG1 :
+			lev == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
+		Logger.instance().info("DEBUGLEVEL set to " + lev);
+	}
 			
 	private String expand(String ins)
 	{
@@ -385,6 +391,8 @@ public class TestRunner extends TsdbAppTemplate
 	@Override
 	protected void runApp() throws Exception
 	{
+		setDebugLevel(3);
+		
 		if (interactiveMode.getValue())
 			cmdLineProc.prompt = "cmd: ";
 		else // reading from a file -- no prompt
@@ -599,14 +607,13 @@ public class TestRunner extends TsdbAppTemplate
 		ComputationApp subApp = new ComputationApp()
 		{
 			@Override
-			public void createDatabase()
-			{
-			}
+			public void createDatabase() {}
 			@Override
 			public void tryConnect() {}
 
 		};
 
+		subApp.setAppId(this.getAppId());
 		subApp.getCmdLineArgs().setNoInit(true);
 		subApp.setNoExitAfterRunApp(true);
 		String args[] = tokens2args(tokens, true, true, false, false);
@@ -667,7 +674,7 @@ public class TestRunner extends TsdbAppTemplate
 		if (!debugLevPresent)
 		{
 			args.add(0, "-d");
-			args.add(1, "" + cmdLineArgs.getDebugLevel());
+			args.add(1, "" + debugLevel);
 
 		}
 		if (addAppName && !appNamePresent)
