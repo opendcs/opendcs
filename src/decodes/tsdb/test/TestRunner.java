@@ -320,10 +320,13 @@ public class TestRunner extends TsdbAppTemplate
 				try
 				{
 					int lev = Integer.parseInt(tokens[1]);
+					if (lev < 0 || lev > 3)
+						lev = 3;
 					Logger.instance().setMinLogPriority(
 						lev == 0 ? Logger.E_INFORMATION :
 						lev == 1 ? Logger.E_DEBUG1 :
-						lev == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);			
+						lev == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
+					Logger.instance().info("DEBUGLEVEL set to " + lev);
 				}
 				catch(NumberFormatException ex)
 				{
@@ -483,7 +486,7 @@ public class TestRunner extends TsdbAppTemplate
 		subApp.setNoExitAfterRunApp(true);
 		try
 		{
-			tokens = addCannedTokens(tokens, true, false, false, true);
+			tokens = addCannedTokens(tokens, false, false, false, true);
 			String[] newtoks = new String[tokens.length + tsids.size()];
 			for(int idx = 0; idx < tokens.length; idx++)
 				newtoks[idx] = tokens[idx];
@@ -666,41 +669,41 @@ public class TestRunner extends TsdbAppTemplate
 		
 		if (!logFilePresent)
 		{
-			args.add(0, "-l");
-			args.add(1, cmdLineArgs.getLogFile());
+			args.add(1, "-l");
+			args.add(2, cmdLineArgs.getLogFile());
 		}
 		if (!debugLevPresent)
 		{
-			args.add(0, "-d");
-			args.add(1, "" + cmdLineArgs.getDebugLevel());
+			args.add(1, "-d");
+			args.add(2, "" + cmdLineArgs.getDebugLevel());
 
 		}
 		if (addAppName && !appNamePresent)
 		{
-			args.add(0, "-a");
-			args.add(1, "" + appName);
+			args.add(1, "-a");
+			args.add(2, "" + appName);
 		}
 		if (addTestMode && !testModePresent)
-			args.add(0, "-T");
+			args.add(1, "-T");
 		if (addPresGrp && !presGrpPresent && presGrp != null && presGrp.length() > 0)
 		{
-			args.add(0, "-G");
-			args.add(1, presGrp);
+			args.add(1, "-G");
+			args.add(2, presGrp);
 		}
 		if (addTimes && !tzPresent)
 		{
-			args.add("-Z");
-			args.add(tz.getID());
+			args.add(1, "-Z");
+			args.add(2, tz.getID());
 		}
 		if (addTimes && !untilPresent && until != null)
 		{
-			args.add(0, "-U");
-			args.add(1, sdf.format(until));
+			args.add(1, "-U");
+			args.add(2, sdf.format(until));
 		}
 		if (addTimes && !sincePresent && since != null)
 		{
-			args.add(0, "-S");
-			args.add(1, sdf.format(since));
+			args.add(1, "-S");
+			args.add(2, sdf.format(since));
 		}
 
 		String ret[] = new String[args.size()];
