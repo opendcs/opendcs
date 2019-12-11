@@ -12,6 +12,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.55  2019/07/02 13:53:26  mmaloney
+*  Added flags2display
+*
 *  Revision 1.54  2019/06/10 19:22:17  mmaloney
 *  Added getStorageUnitsForDataType
 *
@@ -753,6 +756,7 @@ public class CwmsTimeSeriesDb
 
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
+		module = "CwmsTimeSeriesDb";
 	}
 	
 	public static CwmsConnectionInfo getDbConnection(String dbUri, String username, String password, String dbOfficeId)
