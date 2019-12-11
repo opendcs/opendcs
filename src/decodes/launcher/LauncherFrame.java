@@ -2,6 +2,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.17  2019/11/13 15:11:16  mmaloney
+ * Added multiple profiles feature to launcher.
+ *
  * Revision 1.16  2019/10/25 15:15:19  mmaloney
  * dev
  *
@@ -262,7 +265,7 @@ public class LauncherFrame
 		platformWizFrame = null;
 		alarmsFrame = null;
 		
-		String dbClass = DecodesSettings.instance().dbClassName;
+		String dbClass = DecodesSettings.instance().getTsdbClassName();
 		if (dbClass != null)
 		{
 			if (dbClass.contains("Hdb"))
@@ -2065,11 +2068,9 @@ public class LauncherFrame
 		}
 		else // only 1 "default" profile
 		{
-System.out.println("Only 1 profile. Removing panel.");
 			// No harm done if profPanel is currently not displayed.
 			fullPanel.remove(profPanel);
 			fullPanel.repaint();
-System.out.println("Removed.");
 			profilesShown = false;
 		}
 		
