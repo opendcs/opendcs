@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.25  2019/12/06 14:53:56  mmaloney
+ * Fixed null ptr in setTimeSliceInput
+ *
  * Revision 1.24  2019/11/21 19:41:05  mmaloney
  * setTimeSliceInput() differentiate between flag conditions for CWMS and HDB.
  * Improved debugs.
@@ -570,7 +573,8 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			expr = varName + ".value = " + missingValue + linesep
 				+  varName + ".qual = 0x40000000" + linesep;
 			debug3("setTimeSliceInput(" + varName + ") value is considered missing. Orig value="
-				+ (nv==null?"null":nv.getStringValue()) + ", flags=0x" + nv.getFlags());
+				+ (nv==null?"null":nv.getStringValue()) 
+				+ (nv==null ? "" : (", flags=0x" + nv.getFlags())));
 		}
 		else
 		{
