@@ -540,7 +540,9 @@ public class TestRunner extends TsdbAppTemplate
 			new TsImport()
 			{
 				@Override
-				public void createDatabase() {}			
+				public void createDatabase() {}		
+				@Override
+				public void tryConnect() {}
 			};
 						
 		subApp.getCmdLineArgs().setNoInit(true);
@@ -565,6 +567,8 @@ public class TestRunner extends TsdbAppTemplate
 			public void createDatabase()
 			{
 			}
+			@Override
+			public void tryConnect() {}
 		};
 
 		subApp.getCmdLineArgs().setNoInit(true);
@@ -580,6 +584,7 @@ public class TestRunner extends TsdbAppTemplate
 		
 		try
 		{
+			subApp.setOutputStream(outs);
 			subApp.execute(args);
 		}
 		catch (Exception e)
@@ -596,6 +601,9 @@ public class TestRunner extends TsdbAppTemplate
 			public void createDatabase()
 			{
 			}
+			@Override
+			public void tryConnect() {}
+
 		};
 
 		subApp.getCmdLineArgs().setNoInit(true);
