@@ -4,6 +4,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.18  2019/11/13 15:22:19  mmaloney
+*  Added multiple profiles feature to launcher.
+*
 *  Revision 1.17  2019/10/13 19:30:53  mmaloney
 *  Added noInit arg to allow multiple apps to start within a single JVM.
 *
@@ -425,5 +428,10 @@ Logger.instance().info("After parseArgs, DecodesSettings src file=" + DecodesSet
 	public void setNoInit(boolean noInit)
 	{
 		this.noInit = noInit;
+	}
+
+	public boolean isNoInit()
+	{
+		return noInit;
 	}
 }
