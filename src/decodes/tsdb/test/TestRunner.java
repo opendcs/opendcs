@@ -544,6 +544,7 @@ public class TestRunner extends TsdbAppTemplate
 			};
 						
 		subApp.getCmdLineArgs().setNoInit(true);
+		subApp.setNoExitAfterRunApp(true);
 		String args[] = tokens2args(tokens, false, false, false, false);
 		try
 		{
@@ -567,6 +568,7 @@ public class TestRunner extends TsdbAppTemplate
 		};
 
 		subApp.getCmdLineArgs().setNoInit(true);
+		subApp.setNoExitAfterRunApp(true);
 		String args[] = tokens2args(tokens, false, false, true, false);
 		ArrayList<String> sa = new ArrayList<String>();
 		for(String a : args) sa.add(a);
@@ -597,6 +599,7 @@ public class TestRunner extends TsdbAppTemplate
 		};
 
 		subApp.getCmdLineArgs().setNoInit(true);
+		subApp.setNoExitAfterRunApp(true);
 		String args[] = tokens2args(tokens, true, true, false, false);
 		
 		try
