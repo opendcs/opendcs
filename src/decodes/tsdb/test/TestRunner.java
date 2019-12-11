@@ -75,6 +75,7 @@ public class TestRunner extends TsdbAppTemplate
 			}
 		};
 		
+		
 	private CmdLine tzCmd =
 		new CmdLine("tz", 
 			"[tzid] - set timezone for since & until")
@@ -304,6 +305,34 @@ public class TestRunner extends TsdbAppTemplate
 			}
 		};
 
+	private CmdLine debugLevel =
+		new CmdLine("debugLevel", "(0=no debug, 3=most verbose)")
+		{
+			@Override
+			public void execute(String[] tokens)
+				throws IOException, EOFException
+			{
+				if (tokens.length != 2)
+				{
+					Logger.instance().warning("Invalid DEBUGLEVEL command -- requires a single integer art.");
+					return;
+				}
+				try
+				{
+					int lev = Integer.parseInt(tokens[1]);
+					Logger.instance().setMinLogPriority(
+						lev == 0 ? Logger.E_INFORMATION :
+						lev == 1 ? Logger.E_DEBUG1 :
+						lev == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);			
+				}
+				catch(NumberFormatException ex)
+				{
+					Logger.instance().warning("Invalid debug level '" + tokens[1] + "' -- must be 0, 1, 2, or 3");
+					return;
+				}
+			}
+
+		};
 			
 	private String expand(String ins)
 	{
@@ -637,43 +666,42 @@ public class TestRunner extends TsdbAppTemplate
 		
 		if (!logFilePresent)
 		{
-			args.add("-l");
-			args.add(cmdLineArgs.getLogFile());
+			args.add(0, "-l");
+			args.add(1, cmdLineArgs.getLogFile());
 		}
 		if (!debugLevPresent)
 		{
-			args.add("-d");
-			args.add("" + cmdLineArgs.getDebugLevel());
+			args.add(0, "-d");
+			args.add(1, "" + cmdLineArgs.getDebugLevel());
 
 		}
 		if (addAppName && !appNamePresent)
 		{
-			args.add("-a");
-			args.add("" + appName);
+			args.add(0, "-a");
+			args.add(1, "" + appName);
 		}
 		if (addTestMode && !testModePresent)
-			args.add("-T");
+			args.add(0, "-T");
 		if (addPresGrp && !presGrpPresent && presGrp != null && presGrp.length() > 0)
 		{
-			args.add("-G");
-			args.add(presGrp);
-		}
-		if (addTimes && !sincePresent && since != null)
-		{
-			args.add("-S");
-			args.add(sdf.format(since));
-		}
-		if (addTimes && !untilPresent && until != null)
-		{
-			args.add("-U");
-			args.add(sdf.format(until));
+			args.add(0, "-G");
+			args.add(1, presGrp);
 		}
 		if (addTimes && !tzPresent)
 		{
 			args.add("-Z");
 			args.add(tz.getID());
 		}
-
+		if (addTimes && !untilPresent && until != null)
+		{
+			args.add(0, "-U");
+			args.add(1, sdf.format(until));
+		}
+		if (addTimes && !sincePresent && since != null)
+		{
+			args.add(0, "-S");
+			args.add(1, sdf.format(since));
+		}
 
 		String ret[] = new String[args.size()];
 		for(int idx = 0; idx < ret.length; idx++)
