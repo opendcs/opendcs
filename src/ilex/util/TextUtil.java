@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.3  2019/06/10 19:35:05  mmaloney
+*  Added dateEqual method.
+*
 *  Revision 1.2  2019/03/28 13:00:11  mmaloney
 *  Added strEqualNE - consider null string the same as blank string.
 *
@@ -89,8 +92,11 @@
 */
 package ilex.util;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.text.*;
 
 /**
@@ -799,6 +805,29 @@ public class TextUtil
 			return tmp.substring(0,ci);
 		else
 			return tmp;
+	}
+	
+	/**
+	 * Splits a string into words. Strings within double quotes are a single String
+	 * in the output.
+	 * @param text
+	 * @return
+	 */
+	public static String[] splitQuoted(String text)
+	{
+		ArrayList<String> results = new ArrayList<String>();
+	    String regex = "\"([^\"]*)\"|(\\S+)";
+
+	    Matcher m = Pattern.compile(regex).matcher(text);
+	    while (m.find())
+	    {
+	    	String s = (m.group(1) != null) ? m.group(1) : m.group(2);
+	    	results.add(s);
+	    }
+	    String ret[] = new String[results.size()];
+	    for(int idx = 0; idx < ret.length; idx++)
+	    	ret[idx] = results.get(idx);
+	    return ret;
 	}
 }
 
