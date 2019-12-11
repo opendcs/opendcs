@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *  
 *  $Log$
+*  Revision 1.23  2019/06/26 14:23:09  mmaloney
+*  Issue 706 transformUniqueString expand SDI if it isn't already expanded.
+*
 *  Revision 1.22  2019/06/10 19:23:22  mmaloney
 *  Added getStorageUnitsForDataType
 *
@@ -191,7 +194,22 @@ public class HdbTimeSeriesDb
 		try 
 		{
 			Class.forName(driverClass);
-			conn = DriverManager.getConnection(dbUri, username, password);
+			
+			if (DecodesSettings.instance().tryOsDatabaseAuth)
+			{
+				// 12/3/2019 Empty props will cause OS (IDENT) authentication
+				Properties emptyProps = new Properties();
+				try { conn = DriverManager.getConnection(dbUri, emptyProps); }
+				catch(SQLException ex)
+				{
+					Logger.instance().info(module + " Connection using OS authentication failed. "
+						+ "Will attempt username/password auth.");
+					conn = null;
+				}
+			}
+			
+			if (conn == null)
+				conn = DriverManager.getConnection(dbUri, username, password);
 		}
 		catch (Exception ex) 
 		{

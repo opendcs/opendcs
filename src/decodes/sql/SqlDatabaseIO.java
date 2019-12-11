@@ -4,6 +4,9 @@
  * Open Source Software
  * 
  * $Log$
+ * Revision 1.13  2019/06/10 19:24:41  mmaloney
+ * code cleanup
+ *
  * Revision 1.12  2018/12/19 19:56:30  mmaloney
  * Remove references to classes in oracle.jdbc and oracle.sql, except in HDB branch.
  *
@@ -67,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.TimeZone;
 
 import opendcs.dai.AlarmDAI;
@@ -326,158 +330,66 @@ public class SqlDatabaseIO
 		// Placeholder for connecting from web where connection is from a DataSource.
 		if (sqlDbLocation == null || sqlDbLocation.trim().length() == 0)
 			return;
-		
-		// Retrieve username and password for database
-		String authFileName = DecodesSettings.instance().DbAuthFile;
-		UserAuthFile authFile = new UserAuthFile(authFileName);
-		try { authFile.read(); }
-		catch(Exception ex)
-		{
-			String msg = 
-				"Cannot read username and password from '"
-				+ authFileName + "' (run setDecodesUser first): " + ex;
-			System.err.println(msg);
-			Logger.instance().log(Logger.E_FATAL, msg);
-			throw new DatabaseConnectException(msg);
-//			System.exit(1);
-		}
-
-//		System.out.println("database location !!!!!!>>>>>>>>>>>>> " + sqlDbLocation);
-		connectToDatabase(sqlDbLocation, authFile.getUsername(),
-			authFile.getPassword());
-	}
-	
-	public void connectEditDbForCurrentThread()
-		throws DatabaseException
-	{
-		// Retrieve username and password for database
-		String sqlDbLocation = DecodesSettings.instance().editDatabaseLocation;
-		String authFileName = DecodesSettings.instance().DbAuthFile;
-		UserAuthFile authFile = new UserAuthFile(authFileName);
-		try { authFile.read(); }
-		catch(Exception ex)
-		{
-			String msg = 
-				"Cannot read username and password from '"
-				+ authFileName + "' (run setDecodesUser first): " + ex;
-			System.err.println(msg);
-			Logger.instance().log(Logger.E_FATAL, msg);
-			throw new DatabaseConnectException(msg);
-//			System.exit(1);
-		}
-
-		connectToDatabase(sqlDbLocation, authFile.getUsername(),
-			authFile.getPassword(), true);
-	}
-	
-	/**
-	 * Initialize the database connection using specific username and password.
-	 * @param sqlDbLocation URL (may vary for different DBs)
-	 * @param user the user name
-	 * @param pw the password
-	 */
-	public void connectToDatabase(String sqlDbLocation, String user, String pw)
-		throws DatabaseException
-	{
-		connectToDatabase(sqlDbLocation, user, pw, false);
-	}
-	
-	/**
-	 * Some routing-spec threads (or other threads) can open their own database
-	 * connection. This opens the database and associates it with the current
-	 * (calling) thread. Subsequent database IO done in this thread will use
-	 * the new connection.
-	 * The thread should take care to explicitly call SqlDatabaseIO.close() 
-	 * before exiting, otherwise the connection is left open.
-	 * @throws DatabaseException
-	 */
-	public void reconnectForThread()
-		throws DatabaseException
-	{
-		// Retrieve username and password for database
-		String authFileName = DecodesSettings.instance().DbAuthFile;
-		UserAuthFile authFile = new UserAuthFile(authFileName);
-		try { authFile.read(); }
-		catch(Exception ex)
-		{
-			String msg = 
-				"Cannot read username and password from '"
-				+ authFileName + "' (try running setDecodesUser first): " + ex;
-			System.err.println(msg);
-			Logger.instance().fatal(msg);
-			System.exit(1);
-		}
-
-		connectToDatabase(DecodesSettings.instance().editDatabaseLocation,
-			authFile.getUsername(), authFile.getPassword(), true);
-	}
-	
-	public void connectToDatabase(String sqlDbLocation, String user,
-		String pw, boolean threadCon)
-		throws DatabaseException
-	{
 		_sqlDbLocation = sqlDbLocation;
-		_dbUser = user;
-
-		// Load the DB interface and connect to the DB
+		
 		String driverClass = DecodesSettings.instance().jdbcDriverClass;
-
-		// MJM Try for up to 30 sec to initialize the database because
-		// this might be a service and we need to wait for postgres to init.
-		long startTry = System.currentTimeMillis();
-		Connection ret = null;
-		while(ret == null)
+		// Load the JDBC Driver Class
+		try
 		{
-			try 
-			{
-				Logger.instance().info("Connecting to " + _sqlDbLocation
-					+ " as user '" + user + "'");
-				Class.forName(driverClass);
-				
-				ret = DriverManager.getConnection(_sqlDbLocation, user, pw);
-			}
-			catch (Exception e) 
-			{
-				ret = null;
-		   		if (System.currentTimeMillis() - startTry > 30000L)
-					throw new DatabaseException(
-						"Error getting JDBC connection using driver '"
-						+ driverClass + "' to database at '" + _sqlDbLocation
-						+ "' for user '" + user + "': " + e.toString());
-				else
-				{
-					try { Thread.sleep(5000L); }
-					catch(InterruptedException ex) {}
-				}
-			}
+			Logger.instance().debug3("initializing driver class '" + driverClass + "'");
+			Class.forName(driverClass).newInstance();
+			Logger.instance().debug3("...success.");
+		}
+		catch (Exception ex)
+		{
+			String msg = "Cannot load JDBC driver class '" + driverClass + "': " + ex;
+			Logger.instance().fatal(msg);
+			throw new DatabaseConnectException(msg);
 		}
 
+		// Try to authenticate using OS authentication (IDENT)
+		if (DecodesSettings.instance().tryOsDatabaseAuth)
+		{
+			Properties emptyProps = new Properties();
+			Logger.instance().debug3("Trying OS authentication with location '" + _sqlDbLocation + "'");
+			try
+			{
+				_conn = DriverManager.getConnection(_sqlDbLocation, emptyProps);
+				Logger.instance().debug3("...Success.");
+			}
+			catch(SQLException ex)
+			{
+				Logger.instance().info("SqlDatabaseIO Connection using OS authentication failed. "
+					+ "Will attempt username/password auth. (" + ex + ")");
+				_conn = null;
+			}
+		}
+		
+		if (_conn == null)
+		{
+			// Retrieve username and password for database
+			String authFileName = DecodesSettings.instance().DbAuthFile;
+			UserAuthFile authFile = new UserAuthFile(authFileName);
+			try { authFile.read(); }
+			catch(Exception ex)
+			{
+				String msg = "Cannot read username and password from '"
+					+ authFileName + "' (run setDecodesUser first): " + ex;
+				System.err.println(msg);
+				Logger.instance().log(Logger.E_FATAL, msg);
+				throw new DatabaseConnectException(msg);
+			}
+
+			connectUserPassword(authFile.getUsername(), authFile.getPassword());
+		}
+		
 		// MJM 2018-2/21 Force autoCommit on.
-		try { ret.setAutoCommit(true);}
+		try { _conn.setAutoCommit(true);}
 		catch(SQLException ex)
 		{
 			Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
 		}
 
-//		if (DecodesSettings.instance().autoCommit != null
-//		 && DecodesSettings.instance().autoCommit.length() > 0)
-//		{
-//			boolean autoCommit = TextUtil.str2boolean(
-//				DecodesSettings.instance().autoCommit);
-//			Logger.instance().debug1("Setting SQL AutoCommit Option to "
-//				+ autoCommit);
-//			try { ret.setAutoCommit(autoCommit); }
-//			catch(SQLException ex)
-//			{
-//				Logger.instance().warning("Cannot set SQL AutoCommit to "
-//					+ autoCommit + " -- will proceed with default setting: "
-//					+ ex);
-//			}
-//		}
-		if (threadCon)
-			connectionMap.put(Thread.currentThread(), ret);
-		else
-			_conn = ret;
 		determineVersion();
 		
 		try {
@@ -485,6 +397,56 @@ public class SqlDatabaseIO
 		} catch (SQLException e) {
 			Logger.instance().debug3(e.toString());
 		}
+		
+		postConnectInit();
+	}
+	
+	private void connectUserPassword(String user, String pw)
+		throws DatabaseException
+	{
+		_dbUser = user;
+
+		// MJM Try for up to 30 sec to initialize the database because
+		// this might be a service and we need to wait for postgres to init.
+		long startTry = System.currentTimeMillis();
+		_conn = null;
+		while(_conn == null)
+		{
+			try 
+			{
+				Logger.instance().info("Connecting to " + _sqlDbLocation
+					+ " as user '" + user + "'");
+				
+				_conn = DriverManager.getConnection(_sqlDbLocation, user, pw);
+			}
+			catch (Exception ex) 
+			{
+				_conn = null;
+		   		if (System.currentTimeMillis() - startTry > 30000L)
+					throw new DatabaseException(
+						"Error getting JDBC connection using driver '"
+						+ DecodesSettings.instance().jdbcDriverClass 
+						+ "' to database at '" + _sqlDbLocation
+						+ "' for user '" + user + "': " + ex.toString());
+				else
+				{
+					Logger.instance().debug1("JDBC Connection Failed (will retry): " + ex);
+					try { Thread.sleep(5000L); }
+					catch(InterruptedException ex2) {}
+				}
+			}
+		}
+
+	}
+	
+	/**
+	 * A subclass can override this method to perform initialization tasks after
+	 * a successful database connection.
+	 */
+	protected void postConnectInit()
+		throws DatabaseException
+	{
+		
 	}
 
 	protected void setDBDatetimeFormat()
@@ -697,19 +659,8 @@ public class SqlDatabaseIO
 		try 
 		{
 			commit();
-			Connection toClose = connectionMap.get(Thread.currentThread());
-			boolean threadCon = (toClose != null);
-			if (!threadCon)
-			{
-				Logger.instance().info("Closing shared database connection.");
-				toClose = _conn;
-			}
-			else
-				Logger.instance().info(
-					"Closing thread-specific database connection.");
-			toClose.close();
-			if (threadCon)
-				connectionMap.remove(toClose);
+			Logger.instance().info("Closing  database connection.");
+			_conn.close();
 		}
 		catch (SQLException e) {
 			// ignore; we did our best
@@ -1898,11 +1849,6 @@ public class SqlDatabaseIO
 	*/
 	public Connection getConnection()
 	{
-		Connection ret = connectionMap.get(Thread.currentThread());
-		if (ret != null)
-			return ret;
-		
-		// No thread-specific connection, use the shared one.
 		return _conn;
 	}
 	
