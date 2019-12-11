@@ -8,6 +8,12 @@
 * Open Source Software
 * 
 * $Log$
+* Revision 1.9  2017/12/04 18:58:38  mmaloney
+* CWMS-10012 fixed CWMS problem that could sometimes result in circular dependencies
+* for group computations when a new Time Series was created. When compdepends
+* daemon evaluates the 'T' notification, it needs to prepare each CwmsGroupHelper for
+* expansion so that the regular expressions exist.
+*
 * Revision 1.8  2017/08/22 19:29:49  mmaloney
 * Improve comments
 *
@@ -81,6 +87,7 @@ import decodes.db.DataType;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.GroupHelper;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 
@@ -102,15 +109,16 @@ public class CwmsGroupHelper
 	private ArrayList<Pattern> fullVersionPatterns = new ArrayList<Pattern>();
 
 
-	public CwmsGroupHelper(CwmsTimeSeriesDb tsdb)
+	public CwmsGroupHelper(TimeSeriesDb tsdb)
 	{
 		super(tsdb);
+		module = "CwmsGroupHelper";
 	}
 	
 	@Override
 	protected void prepareForExpand(TsGroup tsGroup) throws DbIoException
 	{
-		tsdb.debug2("CwmsGroupHelper.prepareForExpand group " + tsGroup.getGroupName()
+		tsdb.debug2(module + ".prepareForExpand group " + tsGroup.getGroupName()
 			+ ", num SubParam specs: " + tsGroup.getOtherMembers("SubParam").size());
 //		justPrimed = true;
 		// Create and compile the regex objects for subloc, subparam, and subversion.
