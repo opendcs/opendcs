@@ -2,12 +2,16 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.1  2017/08/22 19:49:55  mmaloney
+ * Refactor
+ *
  * 
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 */
 package decodes.util;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -58,7 +62,7 @@ public class ExportTimeSeries
 	private StringToken timezoneArg = new StringToken("Z", "Time Zone", "", TokenOptions.optSwitch, "UTC");
 	private StringToken transportIdArg = new StringToken("I", "TransportID", "", TokenOptions.optSwitch, "");
 	private StringToken lookupTypeArg = new StringToken("L", "Lookup Type", "", TokenOptions.optSwitch, "id");
-	private StringToken outArg = new StringToken("", "time-series-IDs", "", 
+	private StringToken tsidArg = new StringToken("", "time-series-IDs", "", 
 		TokenOptions.optArgument|TokenOptions.optRequired |TokenOptions.optMultiple, "");
 	
 	private static TimeZone tz = null;
@@ -71,6 +75,7 @@ public class ExportTimeSeries
 	private Properties props = new Properties();
 	private DataConsumer consumer = null;
 	private final static long MS_PER_DAY = 3600 * 24 * 1000L;
+	private PrintStream outputStream = null;
 	
 
 	public ExportTimeSeries()
@@ -95,7 +100,12 @@ public class ExportTimeSeries
 		cmdLineArgs.addToken(lookupTypeArg);
 		cmdLineArgs.addToken(presArg);
 		cmdLineArgs.addToken(transportIdArg);
-		cmdLineArgs.addToken(outArg);
+		cmdLineArgs.addToken(tsidArg);
+	}
+	
+	public void setOutputStream(PrintStream ps)
+	{
+		outputStream = ps;
 	}
 
 	@Override
@@ -114,6 +124,9 @@ public class ExportTimeSeries
 
 		consumer = new PipeConsumer();
 		consumer.open("", props);
+		if (outputStream != null)
+			((PipeConsumer)consumer).setOutputStream(outputStream);
+		
 		outputFormatter = OutputFormatter.makeOutputFormatter(
 			fmtArg.getValue(), tz, presGroup, props);
 		
@@ -124,9 +137,9 @@ public class ExportTimeSeries
 		Date until = convert2Date(s, true);
 
 		ArrayList<CTimeSeries> ctss = new ArrayList<CTimeSeries>();
-		for(int n = outArg.NumberOfValues(), i=0; i<n; i++)
+		for(int n = tsidArg.NumberOfValues(), i=0; i<n; i++)
 		{
-			String outTS = outArg.getValue(i);
+			String outTS = tsidArg.getValue(i);
 			TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 			try
 			{
