@@ -6,6 +6,9 @@
 *  $State$
 *
 *  $Log$
+*  Revision 1.4  2019/10/21 13:47:27  mmaloney
+*  Add assignments for test runner
+*
 *  Revision 1.3  2016/02/23 19:37:01  mmaloney
 *  Support 'synonyms'. Refactoring to support I/O from sockets for PwSshd.
 *
@@ -45,6 +48,7 @@ package ilex.util;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -97,8 +101,9 @@ public class CmdLineProcessor
 	
 	protected HashMap<String,CmdLine> synonyms = new HashMap<String,CmdLine>();
 	
-	protected HashMap<String, String> assignments = new HashMap<String, String>();
+	protected Properties assignments = new Properties(System.getProperties());
 
+	private boolean _shutdown = false;
 
 	/**
 	* Pass the constructor the input stream you want to read commands
@@ -126,13 +131,16 @@ public class CmdLineProcessor
 	/**
 	* Get a line from standard input. Use this low-level routine if
 	* you want to parse the input yourself.
-	* @return next line from InputStream
+	* @return next line from InputStream or null if end of stream
 	*/
 	public String getLine( ) throws IOException
 	{
 		while(true)
 		{
 			String s = input.readLine();
+			if (s == null)
+				return null;
+			
 			currentLine++;
 			if (skipCommentLines && s.startsWith(commentStart))
 				continue; // Read another line
@@ -160,7 +168,7 @@ public class CmdLineProcessor
 	* devides it into white-space separated tokens.
 	* It returns an array containing the tokens.
 	* Override if you want tokenizing done in a special way.
-	* @return array of string tokens
+	* @return array of string tokens or null if end-of-stream
 	*/
 	public String[] getTokens( ) throws IOException
 	{
@@ -200,16 +208,19 @@ public class CmdLineProcessor
 	*/
 	public int processInput( ArrayList<CmdLine> cmdlist ) throws IOException
 	{
+		_shutdown = false;
 		int n = 0;   // Count commands executed
 		try
 		{
 		  Get_Next_Command:
-			while(true)
+			while(!_shutdown)
 			{
 				if (prompt != null)
 					prompt();
 
 				String tokens[] = getTokens();
+				if (tokens == null)
+					break;
 				if (tokens.length == 0)
 					continue;
 				
@@ -234,9 +245,17 @@ public class CmdLineProcessor
 				{
 					String name = inputLine.substring(0, eqIdx);
 					if (++eqIdx < inputLine.length())
-						assignments.put(name, inputLine.substring(eqIdx));
+					{
+						String value = inputLine.substring(eqIdx);
+						value = value.trim();
+						if (value.startsWith("\"") && value.endsWith("\""))
+							value = value.substring(1, value.length() - 1);
+						value = EnvExpander.expand(value, assignments);
+						assignments.put(name, value);
+					}
 					else
 						assignments.remove(name);
+					continue Get_Next_Command;
 				}
 				
 				unrecognizedCmd(tokens);
@@ -349,4 +368,11 @@ public class CmdLineProcessor
 		System.out.print(prompt);
 		System.out.flush();
 	}
+
+	public Properties getAssignments()
+	{
+		return assignments;
+	}
+	
+	public void shutdown() { _shutdown = true; }
 }
