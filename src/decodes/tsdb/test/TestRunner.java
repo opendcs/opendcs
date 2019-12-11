@@ -212,7 +212,8 @@ public class TestRunner extends TsdbAppTemplate
 		{
 			public void execute(String[] tokens)
 			{
-				disableComps(trimArgs(tokens));
+				disableComps(tokens);
+//				disableComps(trimArgs(tokens));
 			}
 		};
 		
@@ -221,7 +222,7 @@ public class TestRunner extends TsdbAppTemplate
 		{
 			public void execute(String[] tokens)
 			{
-				deleteTs(trimArgs(tokens));
+				deleteTs(tokens);
 			}
 		};
 		
@@ -374,6 +375,11 @@ public class TestRunner extends TsdbAppTemplate
 		}
 	}
 
+	/**
+	 * Removes the arg[0] from the list.
+	 * @param args
+	 * @return
+	 */
 	private String[] trimArgs(String args[])
 	{
 		if (args == null || args.length == 0)
