@@ -15,51 +15,30 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
+import java.util.Properties;
 import java.util.TimeZone;
 
-import opendcs.dai.DacqEventDAI;
-import opendcs.dai.DeviceStatusDAI;
-import opendcs.dai.SiteDAI;
-import opendcs.dai.TimeSeriesDAI;
-import opendcs.opentsdb.OpenTimeSeriesDAO;
-import opendcs.opentsdb.OpenTsdb;
-import opendcs.opentsdb.StorageTableSpec;
-import decodes.cwms.CwmsTimeSeriesDb;
-import decodes.cwms.CwmsTsId;
-import decodes.db.Database;
-import decodes.db.DatabaseException;
-import decodes.db.Platform;
-import decodes.db.Site;
-import decodes.db.SiteList;
-import decodes.db.SiteName;
-import decodes.polling.DacqEvent;
-import decodes.polling.DeviceStatus;
-import decodes.sql.DbKey;
-import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.ComputationApp;
+import decodes.tsdb.DataCollection;
+import decodes.tsdb.DbIoException;
 import decodes.tsdb.DeleteTs;
 import decodes.tsdb.DisableComps;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TsImport;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
-import decodes.util.DecodesSettings;
 import decodes.util.ExportTimeSeries;
+import ilex.cmdline.BooleanToken;
+import ilex.cmdline.TokenOptions;
 import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
+import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.TextUtil;
+import opendcs.dai.LoadingAppDAI;
 
 /**
  * General purpose database command-line utility
@@ -69,15 +48,17 @@ import ilex.util.TextUtil;
 public class TestRunner extends TsdbAppTemplate
 {
 	private CmdLineProcessor cmdLineProc = new CmdLineProcessor();
-	private Date since, until;
+	private Date since = null, until = null;
 	private TimeZone tz = TimeZone.getTimeZone("UTC");
 	private ArrayList<String> tsids = new ArrayList<String>();
 	private SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy/HH:mm");
 	private String appName = "compproc_regtest";
 	private String outputName = "output";
-	private PrintStream outs = null;
+	private PrintStream outs = System.out;
 	private String presGrp = null;
-	
+	private BooleanToken interactiveMode = new BooleanToken("i", "Interactive Mode",
+		"", TokenOptions.optSwitch, false);
+		
 	private CmdLine tsidsCmd = 
 		new CmdLine("tsids", "[list-of-tsids]")
 		{
@@ -90,6 +71,7 @@ public class TestRunner extends TsdbAppTemplate
 				}
 				for(int idx=1; idx < tokens.length; idx++)
 					tsids.add(tokens[idx]);
+				Logger.instance().info("TSIDS command, tsid list is now: " + expand("$TSIDS"));
 			}
 		};
 		
@@ -101,13 +83,12 @@ public class TestRunner extends TsdbAppTemplate
 			{
 				tz = TimeZone.getTimeZone(tokens[1]);
 				sdf.setTimeZone(tz);
-				System.out.println("Timezone set to " + tz.getID());
+				Logger.instance().info("TZ Timezone set to " + tz.getID());
 			}
 		};
 		
 	private CmdLine sinceCmd =
-		new CmdLine("since", 
-			"[dd-MMM-yyy/HH:mm] - set since time for test")
+		new CmdLine("since", "[dd-MMM-yyy/HH:mm] - set since time for test")
 		{
 			public void execute(String[] tokens)
 			{
@@ -119,6 +100,7 @@ public class TestRunner extends TsdbAppTemplate
 				try
 				{
 					since = sdf.parse(tokens[1]);
+					Logger.instance().info("SINCE " + tokens[1] + " -- now set to " + sdf.format(since));
 				}
 				catch (ParseException e)
 				{
@@ -141,6 +123,7 @@ public class TestRunner extends TsdbAppTemplate
 				try
 				{
 					until = sdf.parse(tokens[1]);
+					Logger.instance().info("UNTIL " + tokens[1] + " -- now set to " + sdf.format(until));
 				}
 				catch (ParseException e)
 				{
@@ -154,7 +137,7 @@ public class TestRunner extends TsdbAppTemplate
 		{
 			public void execute(String[] tokens)
 			{
-				appName = tokens[1];
+				setAppName(tokens[1]);
 			}
 		};
 		
@@ -167,7 +150,9 @@ public class TestRunner extends TsdbAppTemplate
 				try
 				{
 					int n = Integer.parseInt(tokens[1]);
+					Logger.instance().info("SLEEP " + n);
 					Thread.sleep(n * 1000L);
+					Logger.instance().info("          (sleep complete)");
 				}
 				catch(NumberFormatException ex)
 				{
@@ -190,7 +175,7 @@ public class TestRunner extends TsdbAppTemplate
 				StringBuilder sb = new StringBuilder();
 				for(int idx = 1; idx < tokens.length; idx++)
 					sb.append(tokens[idx] + " ");
-				Logger.instance().info(sb.toString());
+				Logger.instance().info(expand(sb.toString()));
 			}
 		};
 		
@@ -203,6 +188,7 @@ public class TestRunner extends TsdbAppTemplate
 				try
 				{
 					outs = new PrintStream(new File(outputName = tokens[1]));
+					Logger.instance().info("OUTPUT " + tokens[1]);
 				}
 				catch (FileNotFoundException e)
 				{
@@ -225,7 +211,7 @@ public class TestRunner extends TsdbAppTemplate
 		{
 			public void execute(String[] tokens)
 			{
-				disableComps(tokens);
+				disableComps(trimArgs(tokens));
 			}
 		};
 		
@@ -234,7 +220,7 @@ public class TestRunner extends TsdbAppTemplate
 		{
 			public void execute(String[] tokens)
 			{
-				deleteTs(tokens);
+				deleteTs(trimArgs(tokens));
 			}
 		};
 		
@@ -291,8 +277,83 @@ public class TestRunner extends TsdbAppTemplate
 				compproc(tokens);
 			}		
 		};
-
 		
+	private CmdLine echoCmd =
+		new CmdLine("echo", "String containing $var names")
+		{
+			@Override
+			public void execute(String[] tokens)
+				throws IOException, EOFException
+			{
+				int idx = cmdLineProc.inputLine.toLowerCase().indexOf("echo");
+				String line = cmdLineProc.inputLine.substring(idx+5);
+				Logger.instance().info("ECHO " + line);
+				outs.println(expand(line));
+			}		
+		};
+		
+	private CmdLine exitCmd =
+		new CmdLine("exit", "(Terminates the test run)")
+		{
+			@Override
+			public void execute(String[] tokens)
+				throws IOException, EOFException
+			{
+				Logger.instance().info("EXIT");
+				cmdLineProc.shutdown();
+			}
+		};
+
+			
+	private String expand(String ins)
+	{
+		Properties props = new Properties(cmdLineProc.getAssignments());
+		if (tsids.size() > 0)
+		{
+			StringBuilder sb = new StringBuilder();
+			for(String tsid : tsids)
+				sb.append(tsid + " ");
+			String s = sb.toString().trim();
+			props.put("TSIDS", s);
+			props.put("tsids", s);
+		}
+		if (since != null)
+			props.put("SINCE", sdf.format(since));
+		if (until != null)
+			props.put("UNTIL", sdf.format(until));
+		props.put("TZ", tz.getID());
+		props.put("PROC", appName);
+		return EnvExpander.expand(ins, props);
+	}
+	
+	protected void setAppName(String appName)
+	{
+		this.appName = appName;
+		
+		LoadingAppDAI appDao = theDb.makeLoadingAppDAO();
+		try
+		{
+			setAppId(appDao.lookupAppId(appName));
+			Logger.instance().info("PROC set appName to '" + appName + "' appId=" + getAppId());
+		}
+		catch (Exception ex)
+		{
+			Logger.instance().failure("Error looking up PROC name '" + appName + "': " + ex);
+		}
+	}
+
+	private String[] trimArgs(String args[])
+	{
+		if (args == null || args.length == 0)
+			return args;
+		
+		String ret[] = new String[args.length - 1];
+		for(int idx = 0; idx < ret.length; idx++)
+			ret[idx] = args[idx+1];
+		
+		return ret;
+	}
+
 	public TestRunner()
 	{
 		super("util.log");
@@ -301,7 +362,13 @@ public class TestRunner extends TsdbAppTemplate
 	@Override
 	protected void runApp() throws Exception
 	{
-		outs = new PrintStream(new File(outputName));
+		if (interactiveMode.getValue())
+			cmdLineProc.prompt = "cmd: ";
+		else // reading from a file -- no prompt
+		{
+//			outs = new PrintStream(new File(outputName));
+			cmdLineProc.prompt = null;
+		}
 		cmdLineProc.addCmd(tsidsCmd);
 		cmdLineProc.addCmd(tzCmd);
 		cmdLineProc.addCmd(sinceCmd);
@@ -317,10 +384,11 @@ public class TestRunner extends TsdbAppTemplate
 		cmdLineProc.addCmd(compImportCmd);
 		cmdLineProc.addCmd(importTsCmd);
 		cmdLineProc.addCmd(outputTsCmd);
+		cmdLineProc.addCmd(echoCmd);
+		cmdLineProc.addCmd(exitCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		
-		cmdLineProc.prompt = "cmd: ";
 		cmdLineProc.processInput();
 	}
 
@@ -331,13 +399,14 @@ public class TestRunner extends TsdbAppTemplate
 	public static void main(String[] args)
 		throws Exception
 	{
-		TestRunner dbUtil = new TestRunner();
-		dbUtil.execute(args);
+		TestRunner tr = new TestRunner();
+		tr.execute(args);
 	}
 	
 	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
+		cmdLineArgs.addToken(interactiveMode);
 	}
 
 	protected void disableComps(String[] tokens)
@@ -354,8 +423,12 @@ public class TestRunner extends TsdbAppTemplate
 			};
 		
 		subApp.getCmdLineArgs().setNoInit(true);
+		subApp.setAppId(getAppId());
+		subApp.setNoExitAfterRunApp(true);
 		try
 		{
+			tokens = addCannedTokens(tokens, true, false, false, false);
+			Logger.instance().info("DISABLECOMPS executing with args " + toks2str(tokens));
 			subApp.execute(tokens);
 		}
 		catch (Exception e)
@@ -372,15 +445,23 @@ public class TestRunner extends TsdbAppTemplate
 			{
 				@Override
 				public void createDatabase() {}
-				
 				@Override
 				public void tryConnect() {}
-
 			};
 			
 		subApp.getCmdLineArgs().setNoInit(true);
+		subApp.setAppId(getAppId());
+		subApp.setNoExitAfterRunApp(true);
 		try
 		{
+			tokens = addCannedTokens(tokens, true, false, false, true);
+			String[] newtoks = new String[tokens.length + tsids.size()];
+			for(int idx = 0; idx < tokens.length; idx++)
+				newtoks[idx] = tokens[idx];
+			for(int idx = 0; idx < tsids.size(); idx++)
+				newtoks[idx + tokens.length] = tsids.get(idx);
+			tokens = newtoks;
+			Logger.instance().info("DELETETS executing with args " + toks2str(tokens));
 			subApp.execute(tokens);
 		}
 		catch (Exception e)
@@ -392,24 +473,16 @@ public class TestRunner extends TsdbAppTemplate
 	
 	protected void flushtriggers(String[] tokens)
 	{
-		ShowNewData subApp = 
-			new ShowNewData()
-			{
-				@Override
-				public void createDatabase() {}
-				
-			};
-				
-		subApp.setOut(Logger.instance().getLogOutput());
-		subApp.getCmdLineArgs().setNoInit(true);
 		try
 		{
-			subApp.execute(tokens);
+			Logger.instance().info("FLUSHTRIGGERS");
+			DataCollection dc = null;
+			while(!(dc = theDb.getNewData(getAppId())).isEmpty())
+				theDb.releaseNewData(dc);
 		}
-		catch (Exception e)
+		catch(DbIoException ex)
 		{
-			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
-			e.printStackTrace(System.err);
+			Logger.instance().warning("Error in flushtriggers: " + ex);
 		}
 	}
 
@@ -419,12 +492,18 @@ public class TestRunner extends TsdbAppTemplate
 			new ImportComp()
 			{
 				@Override
-				public void createDatabase() {}		
+				public void createDatabase() {}
+				@Override
+				public void tryConnect() {}
 			};
 					
 		subApp.getCmdLineArgs().setNoInit(true);
+		subApp.setAppId(getAppId());
+		subApp.setNoExitAfterRunApp(true);
 		try
 		{
+			tokens = addCannedTokens(tokens, false, false, false, false);
+			Logger.instance().info("COMPIMPORT");
 			subApp.execute(tokens);
 		}
 		catch (Exception e)
@@ -444,9 +523,10 @@ public class TestRunner extends TsdbAppTemplate
 			};
 						
 		subApp.getCmdLineArgs().setNoInit(true);
+		String args[] = addCannedTokens(tokens, false, false, false, false);
 		try
 		{
-			subApp.execute(tokens);
+			subApp.execute(args);
 		}
 		catch (Exception e)
 		{
@@ -466,9 +546,28 @@ public class TestRunner extends TsdbAppTemplate
 		};
 
 		subApp.getCmdLineArgs().setNoInit(true);
+		String args[] = addCannedTokens(tokens, false, false, true, false);
+		ArrayList<String> sa = new ArrayList<String>();
+		for(String a : args) sa.add(a);
+		if (since != null)
+		{
+			sa.add("-S");
+			sa.add(sdf.format(since));
+		}
+		if (until != null)
+		{
+			sa.add("-U");
+			sa.add(sdf.format(until));
+		}
+		for(String tsid : tsids)
+			sa.add(tsid);
+		args = new String[sa.size()];
+		for(int idx = 0; idx < args.length; idx++)
+			args[idx] = sa.get(idx);
+		
 		try
 		{
-			subApp.execute(tokens);
+			subApp.execute(args);
 		}
 		catch (Exception e)
 		{
@@ -488,9 +587,11 @@ public class TestRunner extends TsdbAppTemplate
 		};
 
 		subApp.getCmdLineArgs().setNoInit(true);
+		String args[] = addCannedTokens(tokens, true, true, false, false);
+		
 		try
 		{
-			subApp.execute(tokens);
+			subApp.execute(args);
 		}
 		catch (Exception e)
 		{
@@ -499,12 +600,96 @@ public class TestRunner extends TsdbAppTemplate
 		}
 
 	}
-
-	//TODO
-
-	//TODO Decide what to do about assignments. Were do they get expanded?
 	
-	//TODO Decide what to do about compproc and the test mode argument.
+	private String[] addCannedTokens(String[] tokens, boolean addAppName, boolean addTestMode,
+		boolean addPresGrp, boolean addTimes)
+	{
+		boolean testModePresent = false;
+		boolean appNamePresent = false;
+		boolean debugLevPresent = false;
+		boolean logFilePresent = false;
+		boolean presGrpPresent = false;
+		boolean sincePresent = false;
+		boolean untilPresent = false;
+		boolean tzPresent = false;
+		
+		ArrayList<String> args = new ArrayList<String>();
+		for(String tok : tokens)
+		{
+			args.add(tok);
+			if (tok.startsWith("-l"))
+				logFilePresent = true;
+			if (tok.startsWith("-a"))
+				appNamePresent = true;
+			if (tok.startsWith("-d"))
+				debugLevPresent = true;
+			if (addTestMode && tok.startsWith("-T"))
+				testModePresent = true;
+			if (addPresGrp && tok.startsWith("-G"))
+				presGrpPresent = true;
+			if (addTimes && tok.startsWith("-S"))
+				sincePresent = true;
+			if (addTimes && tok.startsWith("-U"))
+				untilPresent = true;
+			if (addTimes && tok.startsWith("-Z"))
+				tzPresent = true;
+		}
+		
+		if (!logFilePresent)
+		{
+			args.add("-l");
+			args.add(cmdLineArgs.getLogFile());
+		}
+		if (!debugLevPresent)
+		{
+			args.add("-d");
+			args.add("" + cmdLineArgs.getDebugLevel());
+
+		}
+		if (addAppName && !appNamePresent)
+		{
+			args.add("-a");
+			args.add("" + appName);
+		}
+		if (addTestMode && !testModePresent)
+			args.add("-T");
+		if (addPresGrp && !presGrpPresent && presGrp != null && presGrp.length() > 0)
+		{
+			args.add("-G");
+			args.add(presGrp);
+		}
+		if (addTimes && !sincePresent && since != null)
+		{
+			args.add("-S");
+			args.add(sdf.format(since));
+		}
+		if (addTimes && !untilPresent && until != null)
+		{
+			args.add("-U");
+			args.add(sdf.format(until));
+		}
+		if (addTimes && !tzPresent)
+		{
+			args.add("-Z");
+			args.add(tz.getID());
+		}
+
+
+		String ret[] = new String[args.size()];
+		for(int idx = 0; idx < ret.length; idx++)
+			ret[idx] = args.get(idx);
+
+		return ret;
+	}
+	
+	private String toks2str(String[] tokens)
+	{
+		StringBuilder sb = new StringBuilder();
+		for(String tok : tokens)
+			sb.append(tok + " ");
+		
+		return sb.toString().trim();
+	}
 
 
 }

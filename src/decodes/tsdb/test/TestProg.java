@@ -11,6 +11,9 @@
 *  For more information contact: info@ilexeng.com
 *
 *  $Log$
+*  Revision 1.2  2019/10/13 19:29:57  mmaloney
+*  dev
+*
 *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
 *  OPENDCS 6.0 Initial Checkin
 *
@@ -147,7 +150,8 @@ public abstract class TestProg
 	public void createDatabase()
 		throws Exception
 	{
-		String className = DecodesSettings.instance().dbClassName;
+//		String className = DecodesSettings.instance().dbClassName;
+		String className = DecodesSettings.instance().getTsdbClassName();
 		String authFileName = EnvExpander.expand(DecodesSettings.instance().DbAuthFile);
 		try
 		{
