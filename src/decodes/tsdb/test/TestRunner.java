@@ -19,11 +19,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.DataCollection;
+import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.DeleteTs;
 import decodes.tsdb.DisableComps;
@@ -38,6 +40,7 @@ import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 
 /**
@@ -432,29 +435,27 @@ public class TestRunner extends TsdbAppTemplate
 
 	protected void disableComps(String[] tokens)
 	{
-		DisableComps subApp = 
-			new DisableComps()
-			{
-				@Override
-				public void createDatabase() {}
-				
-				@Override
-				public void tryConnect() {}
-
-			};
+		Logger.instance().info("DISABLECOMPS for app ID = " + getAppId());
 		
-		subApp.getCmdLineArgs().setNoInit(true);
-		subApp.setAppId(getAppId());
-		subApp.setNoExitAfterRunApp(true);
 		try
 		{
-			tokens = tokens2args(tokens, true, false, false, false);
-			Logger.instance().info("DISABLECOMPS executing with args " + toks2str(tokens));
-			subApp.execute(tokens);
+			String q = "update cp_computation set enabled = 'N' "
+				+ "where loading_application_id = " + getAppId();
+			theDb.doModify(q);
+	
+			// And just to be thorough ...
+			q = "delete from cp_comp_depends where computation_id in ("
+				+ "select computation_id from cp_computation where loading_application_id = "
+				+ getAppId() + ")";
+			theDb.doModify(q);
+	
+			// Now delete any stray tasklist entries.
+			q = "delete from cp_comp_tasklist where loading_application_id = " + getAppId();
+			theDb.doModify(q);
 		}
-		catch (Exception e)
+		catch(Exception ex)
 		{
-			error("Error executing cmd '" + toks2str(tokens) + "': " + e, e);
+			error("Error in DISABLECOMPS: " + ex, ex);
 		}
 	}
 	
