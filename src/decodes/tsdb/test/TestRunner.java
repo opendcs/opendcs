@@ -410,6 +410,7 @@ public class TestRunner extends TsdbAppTemplate
 		cmdLineProc.addCmd(echoCmd);
 		cmdLineProc.addCmd(exitCmd);
 		cmdLineProc.addCmd(debugLevelCmd);
+		cmdLineProc.addCmd(compprocCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		
