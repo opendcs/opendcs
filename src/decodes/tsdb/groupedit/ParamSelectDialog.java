@@ -35,7 +35,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import opendcs.dai.TimeSeriesDAI;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 import decodes.gui.GuiDialog;
 import decodes.gui.SortingListTable;
@@ -57,7 +56,7 @@ public class ParamSelectDialog
 	private boolean cancelled;
 	private SortingListTable paramTable = null;
 	private ParamTableModel model = null;
-	TimeSeriesDb cwmsDb;
+	TimeSeriesDb tsdb;
 	private JRadioButton fullRadio = new JRadioButton("Full Param");
 	private JRadioButton baseRadio = new JRadioButton("Base Param");
 	private JRadioButton subRadio = new JRadioButton("Sub Param");
@@ -70,11 +69,11 @@ public class ParamSelectDialog
 	private SelectionMode selectionMode = SelectionMode.GroupEdit;
 
 
-	public ParamSelectDialog(JFrame owner, TimeSeriesDb cwmsDb, SelectionMode selectionMode)
+	public ParamSelectDialog(JFrame owner, TimeSeriesDb tsdb, SelectionMode selectionMode)
 	{
 		super(owner, "Param Specification", true);
 		this.owner = owner;
-		this.cwmsDb = cwmsDb;
+		this.tsdb = tsdb;
 		this.selectionMode = selectionMode;
 		guiInit();
 		trackChanges("ParamSelectDialog");
@@ -426,7 +425,7 @@ class ParamTableModel extends javax.swing.table.AbstractTableModel
 	
 	public ParamTableModel(ParamSelectDialog dlg)
 	{
-		TimeSeriesDAI tsDao = dlg.cwmsDb.makeTimeSeriesDAO();
+		TimeSeriesDAI tsDao = dlg.tsdb.makeTimeSeriesDAO();
 		
 		try
 		{

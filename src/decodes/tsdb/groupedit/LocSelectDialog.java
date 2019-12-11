@@ -35,12 +35,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import opendcs.dai.TimeSeriesDAI;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 import decodes.gui.GuiDialog;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroupMemberType;
 
@@ -56,7 +56,7 @@ public class LocSelectDialog
 	private boolean cancelled;
 	private SortingListTable locationTable = null;
 	private LocTableModel model = null;
-	CwmsTimeSeriesDb cwmsDb;
+	TimeSeriesDb tsdb;
 	private JRadioButton fullRadio = new JRadioButton("Full Location");
 	private JRadioButton baseRadio = new JRadioButton("Base Location");
 	private JRadioButton subRadio = new JRadioButton("Sub Location");
@@ -68,11 +68,11 @@ public class LocSelectDialog
 	private SelectionMode selectionMode = SelectionMode.GroupEdit;
 //	private boolean allowBaseSub = true;
 
-	public LocSelectDialog(JFrame owner, CwmsTimeSeriesDb cwmsDb, SelectionMode selectionMode)
+	public LocSelectDialog(JFrame owner, TimeSeriesDb tsdb, SelectionMode selectionMode)
 	{
 		super(owner, "Location Specification", true);
 		this.owner = owner;
-		this.cwmsDb = cwmsDb;
+		this.tsdb = tsdb;
 		this.selectionMode = selectionMode;
 		guiInit();
 		trackChanges("LocSelectDialog");
@@ -455,7 +455,7 @@ class LocTableModel extends javax.swing.table.AbstractTableModel
 	
 	public LocTableModel(LocSelectDialog dlg)
 	{
-		TimeSeriesDAI tsDao = dlg.cwmsDb.makeTimeSeriesDAO();
+		TimeSeriesDAI tsDao = dlg.tsdb.makeTimeSeriesDAO();
 		
 		try
 		{

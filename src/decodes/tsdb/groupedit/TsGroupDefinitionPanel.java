@@ -2,6 +2,9 @@
  * $Id$
  * 
  * $Log$
+ * Revision 1.14  2018/02/05 15:52:39  mmaloney
+ * Added ObjectType filter for USBR HDB.
+ *
  * Revision 1.13  2017/05/31 21:34:27  mmaloney
  * GUI improvements for HDB
  *
@@ -121,7 +124,6 @@ import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DataType;
@@ -146,7 +148,6 @@ import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsGroupMemberType;
 import decodes.tsdb.TsdbAppTemplate;
-import decodes.tsdb.compedit.DataTypeSelectDialog;
 import decodes.util.DecodesSettings;
 import decodes.gui.SortingListTableModel;
 
@@ -594,7 +595,6 @@ public class TsGroupDefinitionPanel
 				new Insets(1, 12, 1, 12), 55, 0));
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void createQueryPanelMembers()
 	{
 		//Initialize the queryPanel and its components except for buttons
@@ -611,9 +611,6 @@ public class TsGroupDefinitionPanel
 		
 		queryTable = new SortingListTable(queryModel, QuerySelectorTableModel.colWidths);
 		
-		//==============
-		//TODO Here
-		
 		queryTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -624,9 +621,6 @@ public class TsGroupDefinitionPanel
 				}
 			});
 
-//		=================
-		
-//		listPane.getViewport().add(queryList, null);
 		listPane.getViewport().add(queryTable, null);
 
 		queryPanel.add(buttonPanel, BorderLayout.EAST);
@@ -1531,7 +1525,6 @@ public class TsGroupDefinitionPanel
 			queryModel.deleteItemAt(rows[idx]);
 	}
 
-	@SuppressWarnings("unchecked")
 	private void addQueryParam(String keyStr)
 	{
 		String selection = null;
@@ -1565,7 +1558,7 @@ public class TsGroupDefinitionPanel
 		else if (keyStr.equalsIgnoreCase("location"))
 		{
 			// CWMS Location Selection
-			LocSelectDialog locSelectDialog = new LocSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+			LocSelectDialog locSelectDialog = new LocSelectDialog(this.parent, tsdb,
 				SelectionMode.GroupEdit);
 			parent.launchDialog(locSelectDialog);
 			if (!locSelectDialog.isCancelled())
@@ -1573,7 +1566,6 @@ public class TsGroupDefinitionPanel
 				StringPair result = locSelectDialog.getResult();
 				if (result != null)
 				{
-System.out.println("Result of dialog: q='" + result.first +"', v='" + result.second + "'");
 					queryModel.addItem(result.first, result.second);
 				}
 			}
@@ -1593,7 +1585,7 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 		else if (keyStr.equalsIgnoreCase("param"))
 		{
 			// CWMS Param Selection
-			ParamSelectDialog paramSelectDialog = new ParamSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+			ParamSelectDialog paramSelectDialog = new ParamSelectDialog(this.parent, tsdb,
 				SelectionMode.GroupEdit);
 			parent.launchDialog(paramSelectDialog);
 			if (!paramSelectDialog.isCancelled())
@@ -1623,12 +1615,8 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 		}
 		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.Version.toString()))
 		{
-//			selection = (String)JOptionPane.showInputDialog(this, enterVersionLabel,
-//				enterVersionLabel, JOptionPane.PLAIN_MESSAGE, null, 
-//				versionArray, null);
-			
 			// CWMS Param Selection
-			VersionSelectDialog versionSelectDialog = new VersionSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+			VersionSelectDialog versionSelectDialog = new VersionSelectDialog(this.parent, tsdb,
 				SelectionMode.GroupEdit);
 			parent.launchDialog(versionSelectDialog);
 			if (!versionSelectDialog.isCancelled())
@@ -1665,15 +1653,10 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 		if (selection != null)
 		{
 			queryModel.addItem(keyStr, selection);
-//			String listItem = keyStr + ": " + selection;
-//			if (!queryListModel.contains(listItem))
-//				queryListModel.addElement(listItem);
 		}
 	}
 	protected void modifyQueryParam()
 	{
-		// TODO Auto-generated method stub
-		//TODO
 		int r = queryTable.getSelectedRow();
 		if (r == -1)
 			return;
@@ -1684,7 +1667,7 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 		if (keyStr.toLowerCase().contains("location"))
 		{
 			// CWMS Location Selection
-			LocSelectDialog locSelectDialog = new LocSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+			LocSelectDialog locSelectDialog = new LocSelectDialog(this.parent, tsdb,
 				SelectionMode.GroupEdit);
 			locSelectDialog.setResult(query);
 			
@@ -1699,7 +1682,7 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 		else if (keyStr.toLowerCase().endsWith("param"))
 		{
 			// CWMS Param Selection
-			ParamSelectDialog paramSelectDialog = new ParamSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+			ParamSelectDialog paramSelectDialog = new ParamSelectDialog(this.parent, tsdb,
 				SelectionMode.GroupEdit);
 			paramSelectDialog.setResult(query);
 			parent.launchDialog(paramSelectDialog);
@@ -1713,7 +1696,7 @@ System.out.println("Result of dialog: q='" + result.first +"', v='" + result.sec
 		else if (keyStr.toLowerCase().contains("version"))
 		{
 			// CWMS Param Selection
-			VersionSelectDialog versionSelectDialog = new VersionSelectDialog(this.parent, (CwmsTimeSeriesDb)tsdb,
+			VersionSelectDialog versionSelectDialog = new VersionSelectDialog(this.parent, tsdb,
 				SelectionMode.GroupEdit);
 			versionSelectDialog.setResult(query);
 			parent.launchDialog(versionSelectDialog);
