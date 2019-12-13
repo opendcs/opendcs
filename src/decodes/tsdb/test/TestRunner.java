@@ -32,6 +32,7 @@ import decodes.tsdb.DisableComps;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TsImport;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.tsdb.alarm.AlarmImport;
 import decodes.util.CmdLineArgs;
 import decodes.util.ExportTimeSeries;
 import ilex.cmdline.BooleanToken;
@@ -39,7 +40,9 @@ import ilex.cmdline.TokenOptions;
 import ilex.util.CmdLine;
 import ilex.util.CmdLineProcessor;
 import ilex.util.EnvExpander;
+import ilex.util.FileUtil;
 import ilex.util.Logger;
+import lrgs.gui.DecodesInterface;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 
@@ -62,6 +65,7 @@ public class TestRunner extends TsdbAppTemplate
 	private BooleanToken interactiveMode = new BooleanToken("i", "Interactive Mode",
 		"", TokenOptions.optSwitch, false);
 	private int debugLevel = 3;
+	private String testname = "test";
 		
 	private CmdLine tsidsCmd = 
 		new CmdLine("tsids", "[list-of-tsids]")
@@ -74,11 +78,25 @@ public class TestRunner extends TsdbAppTemplate
 					return;
 				}
 				for(int idx=1; idx < tokens.length; idx++)
-					tsids.add(tokens[idx]);
+				{
+					String s = expand(tokens[idx]);
+					for(String x : s.split(" "))
+						tsids.add(x);
+				}
 				Logger.instance().info("TSIDS command, tsid list is now: " + expand("$TSIDS"));
 			}
 		};
+	
+	private CmdLine clearTsidsCmd =
+		new CmdLine("cleartsids", "(clears internal list of tsids)")
+		{
+			public void execute(String[] tokens)
+			{
+				tsids.clear();
+				Logger.instance().info("CLEARTSIDS command");
+			}
 		
+		};
 		
 	private CmdLine tzCmd =
 		new CmdLine("tz", 
@@ -250,6 +268,18 @@ public class TestRunner extends TsdbAppTemplate
 		
 		};
 		
+	private CmdLine alarmImportCmd =
+		new CmdLine("alarmimport", "Import computation records from XML.")
+		{
+			@Override
+			public void execute(String[] tokens)
+				throws IOException, EOFException
+			{
+				alarmImport(tokens);
+			}
+		};
+	
+		
 	private CmdLine importTsCmd =
 		new CmdLine("importts", "Import time series data.")
 		{
@@ -291,7 +321,8 @@ public class TestRunner extends TsdbAppTemplate
 				throws IOException, EOFException
 			{
 				int idx = cmdLineProc.inputLine.toLowerCase().indexOf("echo");
-				String line = cmdLineProc.inputLine.substring(idx+5);
+				String line = 
+					cmdLineProc.inputLine.length() < idx + 6 ? "" : cmdLineProc.inputLine.substring(idx+5);
 				Logger.instance().info("ECHO " + line);
 				outs.println(expand(line));
 			}		
@@ -364,6 +395,7 @@ public class TestRunner extends TsdbAppTemplate
 			props.put("UNTIL", sdf.format(until));
 		props.put("TZ", tz.getID());
 		props.put("PROC", appName);
+		props.put("testname", testname);
 		return EnvExpander.expand(ins, props);
 	}
 	
@@ -386,6 +418,7 @@ public class TestRunner extends TsdbAppTemplate
 	public TestRunner()
 	{
 		super("util.log");
+		DecodesInterface.silent = true;
 	}
 
 	@Override
@@ -397,8 +430,10 @@ public class TestRunner extends TsdbAppTemplate
 			cmdLineProc.prompt = "cmd: ";
 		else // reading from a file -- no prompt
 		{
-//			outs = new PrintStream(new File(outputName));
 			cmdLineProc.prompt = null;
+			File title = new File("title");
+			if (title.canRead())
+				testname = FileUtil.getFileContents(title).trim();
 		}
 		cmdLineProc.addCmd(tsidsCmd);
 		cmdLineProc.addCmd(tzCmd);
@@ -419,7 +454,9 @@ public class TestRunner extends TsdbAppTemplate
 		cmdLineProc.addCmd(exitCmd);
 		cmdLineProc.addCmd(debugLevelCmd);
 		cmdLineProc.addCmd(compprocCmd);
-		
+		cmdLineProc.addCmd(clearTsidsCmd);
+		cmdLineProc.addCmd(alarmImportCmd);
+				
 		cmdLineProc.addHelpAndQuitCommands();
 		
 		cmdLineProc.processInput();
@@ -439,6 +476,7 @@ public class TestRunner extends TsdbAppTemplate
 	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
+		appNameArg.setDefaultValue("compproc_regtest");
 		cmdLineArgs.addToken(interactiveMode);
 	}
 
@@ -542,6 +580,33 @@ public class TestRunner extends TsdbAppTemplate
 			e.printStackTrace(System.err);
 		}
 	}
+	
+	protected void alarmImport(String[] tokens)
+	{
+		AlarmImport subApp = 
+			new AlarmImport()
+			{
+				@Override
+				public void createDatabase() {}
+				@Override
+				public void tryConnect() {}
+			};
+						
+		subApp.getCmdLineArgs().setNoInit(true);
+		subApp.setAppId(getAppId());
+		subApp.setNoExitAfterRunApp(true);
+		try
+		{
+			tokens = tokens2args(tokens, false, false, false, false);
+			Logger.instance().info("ALARMIMPORT");
+			subApp.execute(tokens);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error executing cmd '" + tokens[0] + "': " + e);
+			e.printStackTrace(System.err);
+		}
+	}
 
 	protected void importTs(String[] tokens)
 	{
@@ -582,7 +647,7 @@ public class TestRunner extends TsdbAppTemplate
 
 		subApp.getCmdLineArgs().setNoInit(true);
 		subApp.setNoExitAfterRunApp(true);
-		String args[] = tokens2args(tokens, false, false, true, false);
+		String args[] = tokens2args(tokens, false, false, true, true);
 		ArrayList<String> sa = new ArrayList<String>();
 		for(String a : args) sa.add(a);
 		for(String tsid : tsids)
