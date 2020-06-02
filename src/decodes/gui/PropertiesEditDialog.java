@@ -1,9 +1,15 @@
 /*
-*  $Id$
+*  $Id: PropertiesEditDialog.java,v 1.2 2020/01/31 19:37:27 mmaloney Exp $
 *
-*  $State$
+*  $State: Exp $
 *
-*  $Log$
+*  $Log: PropertiesEditDialog.java,v $
+*  Revision 1.2  2020/01/31 19:37:27  mmaloney
+*  Added isOkPressed() so callers can know if ok or cancel was hit.
+*
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2008/04/04 18:21:03  cvs
 *  Added legacy code to repository
 *
@@ -61,6 +67,7 @@ public class PropertiesEditDialog extends JDialog
     FlowLayout flowLayout2 = new FlowLayout();
 
 	String entityName;
+	private boolean okPressed = false;
 
 	/**
 	  Constructor.
@@ -155,6 +162,7 @@ public class PropertiesEditDialog extends JDialog
 	{
 		propertiesEditPanel.saveChanges();
 		closeDlg();
+		okPressed = true;
     }
 
 	/** Closes the dialog.  */
@@ -173,5 +181,10 @@ public class PropertiesEditDialog extends JDialog
 	{
 		closeDlg();
     }
+
+	public boolean isOkPressed()
+	{
+		return okPressed;
+	}
 
 }

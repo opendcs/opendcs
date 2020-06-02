@@ -46,6 +46,9 @@ public class RdbRatingCompResolver
 		new PropertySpec("ExceedBounds", PropertySpec.BOOLEAN, 
 			"Set to true to allow interpolation if independent variable " +
 			"is above or below the table bounds."),
+		new PropertySpec("depSensorNumber", PropertySpec.BOOLEAN, 
+			"Set to the sensor number for the dependent param. If this is not set,"
+			+ "DECODES will create a new sensor with the SHEF code assigned in 'RdbShef'."),
 	};
 	
 	/**

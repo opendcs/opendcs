@@ -1,7 +1,13 @@
 /**
- * $Id$
+ * $Id: CwmsTsId.java,v 1.7 2020/01/31 19:32:13 mmaloney Exp $
  * 
- * $Log$
+ * $Log: CwmsTsId.java,v $
+ * Revision 1.7  2020/01/31 19:32:13  mmaloney
+ * Store Duration object
+ *
+ * Revision 1.6  2019/01/10 16:01:17  mmaloney
+ * Added toString() and hashCode().
+ *
  * Revision 1.5  2018/05/01 17:35:01  mmaloney
  * init offsetErrorAction to IGNORE.
  *
@@ -92,7 +98,7 @@ public class CwmsTsId
 	private String version = null;
 	private String description = null;
 	private boolean versionFlag = false;
-	private int intervalUtcOffset = -1;
+	private Integer utcOffset = null;
 	private String storageUnits = null;
 	private String siteDisplayName = null;
 	public String displayName = null;
@@ -115,6 +121,7 @@ public class CwmsTsId
 	
 	/** The interval Object from the database */
 	private Interval intervalOb = null;
+	private Interval durationOb = null;
 	
 	private Site site = null;
 	
@@ -143,7 +150,7 @@ public class CwmsTsId
 	 * @param storageUnits the storage units for this TS
 	 */
 	public CwmsTsId(DbKey tsCode, String path, DataType dataType, 
-			String description, boolean versionFlag, int intervalUtcOffset,
+			String description, boolean versionFlag, Integer utcOffset,
 			String storageUnits)
 	{
 		this.tsCode = tsCode;
@@ -151,7 +158,7 @@ public class CwmsTsId
 		this.dataType = dataType;
 		this.description = description;
 		this.versionFlag = versionFlag;
-		this.intervalUtcOffset = intervalUtcOffset;
+		this.utcOffset = utcOffset;
 		this.storageUnits = storageUnits;
 	}
 	
@@ -160,7 +167,7 @@ public class CwmsTsId
 	{
 		CwmsTsId ret = new CwmsTsId(Constants.undefinedId,
 			getUniqueString(), dataType, description, versionFlag,
-			intervalUtcOffset, storageUnits);
+			utcOffset, storageUnits);
 		ret.setSite(site);
 		ret.setSiteDisplayName(siteDisplayName);
 //Logger.instance().debug3("CwmsTsId.copyNoKey new path=" + ret.getUniqueString());
@@ -194,7 +201,7 @@ public class CwmsTsId
 		if (parts.length > 3)
 			setInterval(parts[3]);
 		if (parts.length > 4)
-			duration = parts[4];
+			setDuration(parts[4]);
 		if (parts.length > 5)
 			setVersion(parts[5]);
 	}
@@ -260,15 +267,14 @@ public class CwmsTsId
 		if (part.equalsIgnoreCase("location")
 		 || part.equalsIgnoreCase("site"))
 			setLocation(value);
-		else if (part.equalsIgnoreCase("param")
-		 || part.equalsIgnoreCase("datatype"))
+		else if (part.equalsIgnoreCase("param") || part.equalsIgnoreCase("datatype"))
 			setParam(value);
-		else if (part.equalsIgnoreCase("paramtype"))
+		else if (part.equalsIgnoreCase("paramtype") || part.equalsIgnoreCase("statcode"))
 			paramType = value;
 		else if (part.equalsIgnoreCase("interval"))
 			setInterval(value);
 		else if (part.equalsIgnoreCase("duration"))
-			duration = value;
+			setDuration(value);
 		else if (part.equalsIgnoreCase("version"))
 			setVersion(value);
 		else
@@ -285,10 +291,9 @@ public class CwmsTsId
 		if (part.equalsIgnoreCase("location")
 			 || part.equalsIgnoreCase("site"))
 			return siteName;
-		else if (part.equalsIgnoreCase("param")
-			 || part.equalsIgnoreCase("datatype"))
+		else if (part.equalsIgnoreCase("param") || part.equalsIgnoreCase("datatype"))
 			return dataType == null ? "" : dataType.getCode();
-		else if (part.equalsIgnoreCase("paramtype"))
+		else if (part.equalsIgnoreCase("paramtype") || part.equalsIgnoreCase("statcode"))
 			return paramType;
 		else if (part.equalsIgnoreCase("interval"))
 			return interval;
@@ -358,10 +363,14 @@ public class CwmsTsId
 	{
 		return intervalOb;
 	}
+	
+	public Interval getDurationOb()
+	{
+		return durationOb;
+	}
 
 	public void setDisplayName(String nm)
 	{
-Logger.instance().debug3("TS " + getUniqueString() + ", setting displayName='" + nm + "'");
 		this.displayName = nm;
 	}
 
@@ -383,6 +392,13 @@ Logger.instance().debug3("TS " + getUniqueString() + ", setting displayName='" +
 		interval = intv;
 		intervalOb = IntervalCodes.getInterval(intv);
 	}
+	
+	public void setDuration(String dur)
+	{
+		duration = dur;
+		durationOb = IntervalCodes.getInterval(dur);
+	}
+
 	
 	private void setLocation(String v)
 	{
@@ -431,14 +447,14 @@ Logger.instance().debug3("TS " + getUniqueString() + ", setting displayName='" +
 		this.versionFlag = versionFlag;
 	}
 
-	public int getIntervalUtcOffset()
+	public Integer getUtcOffset()
 	{
-		return intervalUtcOffset;
+		return utcOffset;
 	}
 
-	public void setIntervalUtcOffset(int intervalUtcOffset)
+	public void setUtcOffset(Integer utcOffset)
 	{
-		this.intervalUtcOffset = intervalUtcOffset;
+		this.utcOffset = utcOffset;
 	}
 	
 	public DbKey getDataTypeId()

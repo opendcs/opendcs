@@ -1,7 +1,13 @@
 /**
- * $Id$
+ * $Id: CompParmDialog.java,v 1.14 2020/02/14 15:16:27 mmaloney Exp $
  * 
- * $Log$
+ * $Log: CompParmDialog.java,v $
+ * Revision 1.14  2020/02/14 15:16:27  mmaloney
+ * Fixes to Comp Edit for OpenTSDB
+ *
+ * Revision 1.13  2019/06/10 19:30:01  mmaloney
+ * Separate out OpenTSDB from CWMS for datatype selection.
+ *
  * Revision 1.12  2019/02/25 20:02:55  mmaloney
  * HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
  *
@@ -122,7 +128,6 @@ import java.awt.event.*;
 
 import javax.swing.border.*;
 
-import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.SiteDAI;
 
@@ -134,7 +139,6 @@ import java.util.TimeZone;
 
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -163,7 +167,6 @@ import decodes.tsdb.groupedit.ParamSelectDialog;
 import decodes.tsdb.groupedit.SelectionMode;
 import decodes.tsdb.groupedit.VersionSelectDialog;
 import decodes.util.DecodesSettings;
-import decodes.cwms.CwmsTimeSeriesDb;
 
 /**
  * For DCS Toolkit 5.0 we now treat input and output parameters the same way. So
@@ -220,7 +223,7 @@ public class CompParmDialog extends GuiDialog
 				.getString("CompParmDialog.CompParm"), true);
 		theDb = CAPEdit.instance().theDb;
 		
-		if (theDb.isCwms())
+		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 		}
 		else
@@ -293,16 +296,16 @@ public class CompParmDialog extends GuiDialog
 		
 		SiteName sn = theParm.getSiteName();
 		siteField.setText(sn != null ? sn.getNameValue() : "");
-		if (sn != null && !theDb.isCwms())
+		if (sn != null && !theDb.isCwms() && !theDb.isOpenTSDB())
 			siteSelectDialog.getSiteSelectPanel().setSelection(sn);
-		if (sn == null && theDb.isCwms())
+		if (sn == null && (theDb.isCwms() || theDb.isOpenTSDB()))
 			siteField.setText(theParm.getLocSpec());
 		siteField.setEnabled(true);
 		siteSelectButton.setEnabled(true);
 
 		DataType dt = theParm.getDataType();
 		dataTypeField.setText(dt != null ? dt.getCode() : "");
-		if (dt == null && theDb.isCwms())
+		if (dt == null && (theDb.isCwms() || theDb.isOpenTSDB()))
 			dataTypeField.setText(theParm.getParamSpec());
 
 		String intvCode = theParm.getInterval();
@@ -310,10 +313,9 @@ public class CompParmDialog extends GuiDialog
 			intervalCombo.setSelectedIndex(0);
 		else
 			intervalCombo.setSelectedItem(intvCode);
-		if (!theDb.isCwms())
+		if (!theDb.isCwms() && !theDb.isOpenTSDB())
 			tabselCombo.setSelectedItem(theParm.getTableSelector());
-		else
-		// CWMS
+		else // CWMS or OpenTSDB
 		{
 			paramTypeCombo.setSelectedItem(theParm.getParamType());
 			durationCombo.setSelectedItem(theParm.getDuration());
@@ -464,7 +466,7 @@ public class CompParmDialog extends GuiDialog
 		
 		// Data Type or Param
 		label = ceResources.getString("CompParmDialog.DataType");
-		if (theDb.isCwms())
+		if (theDb.isCwms() || theDb.isOpenTSDB())
 			label = "Param:";
 		fieldEntryPanel.add(new JLabel(label),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
@@ -475,24 +477,20 @@ public class CompParmDialog extends GuiDialog
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		
-//		if (theDb.isCwms() || theDb.isHdb())
-//		{
-			JButton paramSelectButton = new JButton("Select");
-			paramSelectButton.addActionListener(
-				new ActionListener()
+		JButton paramSelectButton = new JButton("Select");
+		paramSelectButton.addActionListener(
+			new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
 				{
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						paramSelectButtonPressed();
-					}
-				});
-			fieldEntryPanel.add(paramSelectButton,
-				new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
-					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-					new Insets(4, 5, 4, 15), 0, 0));
-//		}
-		
+					paramSelectButtonPressed();
+				}
+			});
+		fieldEntryPanel.add(paramSelectButton,
+			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(4, 5, 4, 15), 0, 0));
 
 		// For CWMS, Param Type
 		int Y = 3;
@@ -677,7 +675,7 @@ public class CompParmDialog extends GuiDialog
 	protected void versionSelectButtonPressed()
 	{
 		VersionSelectDialog versionSelectDialog = 
-			new VersionSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
+			new VersionSelectDialog(CAPEdit.instance().getFrame(), theDb,
 				parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
 		versionSelectDialog.setCurrentValue(versionField.getText());
 		launchDialog(versionSelectDialog);
@@ -690,10 +688,11 @@ public class CompParmDialog extends GuiDialog
 
 	protected void paramSelectButtonPressed()
 	{
-		if (theDb.isCwms())
+//TODO Can't I do something like the CWMS dialog here?
+		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 			ParamSelectDialog paramSelectDialog = 
-				new ParamSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
+				new ParamSelectDialog(CAPEdit.instance().getFrame(), theDb,
 					parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
 			paramSelectDialog.setCurrentValue(dataTypeField.getText());
 	
@@ -714,12 +713,13 @@ public class CompParmDialog extends GuiDialog
 			if (result != null)
 				dataTypeField.setText(result.first);
 		}
-		else if (theDb.isOpenTSDB())
-		{
-			String s = JOptionPane.showInputDialog(this, "Enter Data Type:");
-			if (s != null)
-				dataTypeField.setText(s);
-		}
+//		else if (theDb.isOpenTSDB())
+//		{
+////TODO get rid of this and use the CWMS code above.
+//			String s = JOptionPane.showInputDialog(this, "Enter Data Type:");
+//			if (s != null)
+//				dataTypeField.setText(s);
+//		}
 	}
 
 	/**
@@ -787,12 +787,13 @@ public class CompParmDialog extends GuiDialog
 			
 			String interval = (String) intervalCombo.getSelectedItem();
 			String tabSel = "";
-			String paramType = theDb.isCwms() ? 
+			String paramType = (theDb.isCwms() || theDb.isOpenTSDB()) ? 
 				(String)paramTypeCombo.getSelectedItem() : null;
-			String duration = theDb.isCwms() ? 
+			String duration = (theDb.isCwms() || theDb.isOpenTSDB()) ? 
 				(String)durationCombo.getSelectedItem() : null;
-			String version = theDb.isCwms() ? versionField.getText().trim() : null;
-			if (theDb.isCwms())
+			String version = (theDb.isCwms() || theDb.isOpenTSDB()) ? 
+				versionField.getText().trim() : null;
+			if (theDb.isCwms() || theDb.isOpenTSDB())
 			{
 				// If algorithm is an aggregate (duration not 0), 
 				// AND timezone honors DST
@@ -1026,9 +1027,9 @@ public class CompParmDialog extends GuiDialog
 
 	private void siteSelectButtonPressed()
 	{
-		if (theDb.isCwms())
+		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
-			LocSelectDialog locSelectDialog = new LocSelectDialog(CAPEdit.instance().getFrame(), (CwmsTimeSeriesDb)theDb,
+			LocSelectDialog locSelectDialog = new LocSelectDialog(CAPEdit.instance().getFrame(), theDb,
 				parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
 
 			locSelectDialog.setCurrentValue(siteField.getText());
@@ -1062,6 +1063,10 @@ public class CompParmDialog extends GuiDialog
 			return;
 		}
 		DbKey siteId = Constants.undefinedId;
+		
+		// TODO 'dataTypes' is a misnomer what I'm building is a list of string arrays:
+		// the first row is the header labels for the select table.
+		// subsequent rows contain the residual fields for time series (minus site).
 		ArrayList<String[]> dataTypes;
 		SiteDAI siteDAO = theDb.makeSiteDAO();
 		try
@@ -1069,7 +1074,7 @@ public class CompParmDialog extends GuiDialog
 			siteId = siteDAO.lookupSiteID(siteName);
 			if (DbKey.isNull(siteId))
 			{
-				if (theDb.isCwms() && siteName.contains("*"))
+				if ((theDb.isCwms() || theDb.isOpenTSDB()) && siteName.contains("*"))
 				{
 					TsGroup tmpGroup = new TsGroup();
 					tmpGroup.setGroupName("tmp");
@@ -1132,7 +1137,7 @@ public class CompParmDialog extends GuiDialog
 		{
 			dataTypeField.setText(dtinfo[0]);
 			intervalCombo.setSelectedItem(dtinfo[2]);
-			if (theDb.isCwms())
+			if (theDb.isCwms() || theDb.isOpenTSDB())
 			{
 				paramTypeCombo.setSelectedItem(dtinfo[1]);
 				durationCombo.setSelectedItem(dtinfo[3]);

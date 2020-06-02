@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: IntervalCodes.java,v 1.3 2020/01/31 19:40:29 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -355,10 +355,13 @@ public class IntervalCodes
 	 */
 	public static Interval getInterval(String name)
 	{
+		Interval ret = dbIntervals.getByName(name);
+		if (ret != null)
+			return ret;
 		for(Interval eintv : builtInIntervals)
 			if (eintv.getName().equalsIgnoreCase(name))
 				return eintv;
-		return dbIntervals.getByName(name);
+		return null;
 	}
 	
 	public static String getCalConstName(int calConst)

@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: CmdAuthHello.java,v 1.10 2020/03/10 16:30:58 mmaloney Exp $
 */
 package lrgs.ldds;
 
@@ -134,8 +134,8 @@ public class CmdAuthHello extends LddsCommand
 		catch(ParseException pe)
 		{
 			Logger.instance().warning(DdsServer.module +
-				" Received AuthHello with invalid time format from client " 
-				+ ldds.getClientName());
+				" Received AuthHello with invalid time format from user "
+				+ username + " at " + ldds.getHostName());
 			throw new LddsRequestException(toString()
 				+ ", invalid time format '" + timestr 
 				+ "', must be YYDDDHHMMSS", 

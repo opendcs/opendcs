@@ -1,7 +1,13 @@
 /*
- * $Id$
+ * $Id: DecodesSensorCnvt.java,v 1.2 2020/02/20 15:30:18 mmaloney Exp $
  * 
- * $Log$
+ * $Log: DecodesSensorCnvt.java,v $
+ * Revision 1.2  2020/02/20 15:30:18  mmaloney
+ * Added getProperty() that checks TSID parts before delegating to super.
+ *
+ * Revision 1.1  2017/08/22 19:49:29  mmaloney
+ * Refactor
+ *
  * 
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 */
@@ -196,5 +202,15 @@ public class DecodesSensorCnvt extends decodes.decoder.Sensor
 	{
 		return cts.getTimeSeriesIdentifier() != null 
 			? cts.getTimeSeriesIdentifier().getUniqueString() : null;
+	}
+	
+	@Override
+	public String getProperty(String name)
+	{
+		// Return time series ID parts as properties.
+		String ret = cts.getTimeSeriesIdentifier().getPart(name);
+		if (ret != null)
+			return ret;
+		return super.getProperty(name);
 	}
 }

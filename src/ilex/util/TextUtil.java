@@ -1,11 +1,17 @@
 /*
-*  $Id$
+*  $Id: TextUtil.java,v 1.5 2020/01/31 19:42:07 mmaloney Exp $
 *
-*  $Source$
+*  $Source: /home/cvs/repo/opendcs/src/ilex/util/TextUtil.java,v $
 *
-*  $State$
+*  $State: Exp $
 *
-*  $Log$
+*  $Log: TextUtil.java,v $
+*  Revision 1.5  2020/01/31 19:42:07  mmaloney
+*  Added intEqual method to compare Integer objects allowing for null.
+*
+*  Revision 1.4  2019/12/11 14:31:52  mmaloney
+*  Added splitQuoted method.
+*
 *  Revision 1.3  2019/06/10 19:35:05  mmaloney
 *  Added dateEqual method.
 *
@@ -340,6 +346,24 @@ public class TextUtil
 		}
  	}
 	
+	public static boolean intEqual(Integer i1, Integer i2)
+	{
+		if (i1 == null)
+		{
+			if (i2 == null)
+				return true;
+			else
+				return false;
+		}
+		else // i1 != null
+		{
+			if (i2 == null)
+				return false;
+			else
+				return i1.equals(i2);
+		}
+ 	}
+
 	/**
 	 * Compare strings, but consider null the same as an empty string.
 	 * @param s1

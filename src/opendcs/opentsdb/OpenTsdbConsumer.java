@@ -1,7 +1,17 @@
 /*
-*  $Id$
+*  $Id: OpenTsdbConsumer.java,v 1.5 2020/02/20 15:32:16 mmaloney Exp $
 *  
-*  $Log$
+*  $Log: OpenTsdbConsumer.java,v $
+*  Revision 1.5  2020/02/20 15:32:16  mmaloney
+*  Use sensor properties, which if this is in ExportTimeSeries, will be delegated to
+*  the TSID, to build the TSID parts.
+*
+*  Revision 1.4  2020/01/31 19:43:18  mmaloney
+*  Several enhancements to complete OpenTSDB.
+*
+*  Revision 1.3  2019/12/11 14:44:20  mmaloney
+*  Partial implementation of OpenTSDB computations
+*
 *  Revision 1.2  2018/05/31 14:14:41  mmaloney
 *  Set storage units when creating new TSID.
 *
@@ -507,8 +517,10 @@ public class OpenTsdbConsumer extends DataConsumer
 		{
 			paramType = ts.getSensor().getProperty(CwmsConstants.CWMS_PARAM_TYPE);
 			if (paramType == null)
-				paramType = CwmsConstants.PARAM_TYPE_INST; // Inst
+				paramType = ts.getSensor().getProperty("paramtype");
 		}
+		if (paramType == null)
+			paramType = CwmsConstants.PARAM_TYPE_INST; // Inst
 		timeSeriesDescriptor.append(paramType);
 		timeSeriesDescriptor.append(".");
 		
@@ -518,13 +530,17 @@ public class OpenTsdbConsumer extends DataConsumer
 		String intervalStr = ts.getSensor().getProperty("cwmsInterval");
 		if (intervalStr == null)
 		{
-			if (ts.getSensor().getRecordingMode() == Constants.recordingModeVariable)
-			{ // If recording mode is Variable (V), set intervalStr to 0;
-				intervalStr = "0";
-			}
-			else
-			{ // Recording mode is Fixed.
-				intervalStr = getIntervalValue(ts.getSensor().getRecordingInterval());
+			intervalStr = ts.getSensor().getProperty("interval");
+			if (intervalStr == null)
+			{
+				if (ts.getSensor().getRecordingMode() == Constants.recordingModeVariable)
+				{ // If recording mode is Variable (V), set intervalStr to 0;
+					intervalStr = "0";
+				}
+				else
+				{ // Recording mode is Fixed.
+					intervalStr = getIntervalValue(ts.getSensor().getRecordingInterval());
+				}
 			}
 		}
 		timeSeriesDescriptor.append(intervalStr);
@@ -534,13 +550,17 @@ public class OpenTsdbConsumer extends DataConsumer
 		String duration = ts.getSensor().getProperty(CwmsConstants.CWMS_DURATION);
 		if (duration == null)
 		{
-			if (paramType.equalsIgnoreCase(CwmsConstants.PARAM_TYPE_INST))
-			{	// if paramType value is Inst set duration to 0
-				duration = "0";
-			}
-			else
-			{	// else set duration to interval value, (see above)
-				duration = intervalStr;
+			duration = ts.getSensor().getProperty("duration");
+			if (duration == null)
+			{
+				if (paramType.equalsIgnoreCase(CwmsConstants.PARAM_TYPE_INST))
+				{	// if paramType value is Inst set duration to 0
+					duration = "0";
+				}
+				else
+				{	// else set duration to interval value, (see above)
+					duration = intervalStr;
+				}
 			}
 		}
 		timeSeriesDescriptor.append(duration);
@@ -548,15 +568,13 @@ public class OpenTsdbConsumer extends DataConsumer
 		
 		// Find Version. "raw" is the default value
 		String tempVersion = ts.getSensor().getProperty(CwmsConstants.CWMS_VERSION);
-		if (tempVersion != null)
-		{	// if user set a CwmsVersion property on a sensor, 
-			// use it and override cwmsVersion value
-			timeSeriesDescriptor.append(tempVersion);
-		}
-		else
+		if (tempVersion == null)
 		{
-			timeSeriesDescriptor.append(cwmsVersion);
+			tempVersion = ts.getSensor().getProperty("version");
+			if (tempVersion == null)
+				tempVersion = cwmsVersion;
 		}
+		timeSeriesDescriptor.append(tempVersion);
 		
 		return timeSeriesDescriptor.toString();
 	}

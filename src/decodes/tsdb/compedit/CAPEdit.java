@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: CAPEdit.java,v 1.7 2020/05/07 13:55:13 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -329,6 +329,7 @@ public class CAPEdit
 		System.out.println("Sites ");
 		Site.explicitList = true;
 		decodes.db.Database.getDb().siteList.read();
+		decodes.db.Database.getDb().presentationGroupList.read();
 	}
 
 }

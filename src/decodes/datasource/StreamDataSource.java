@@ -1,11 +1,17 @@
 /*
-*  $Id$
+*  $Id: StreamDataSource.java,v 1.13 2020/01/31 19:35:10 mmaloney Exp $
 *
 *	StreamDataSource is an abstract class for implementing file & socket
 *	data sources that must read delimited messages from a one-way stream 
 *	of data.
 *
-*  $Log$
+*  $Log: StreamDataSource.java,v $
+*  Revision 1.13  2020/01/31 19:35:10  mmaloney
+*  Improve debugs
+*
+*  Revision 1.12  2019/02/04 20:46:32  mmaloney
+*  Switch BACK to the fromDatabase method for reading RatingSet objects (!).
+*
 *  Revision 1.11  2018/07/31 17:04:52  mmaloney
 *  dev
 *
@@ -698,7 +704,8 @@ Logger.instance().info("StreamDS.scanFM - Have start, shefMode=" + shefMode);
 					// the scanner found the start of the _next_ msg. the prev msg type
 					// gets associated with this message.
 					ret.setPM(ShefPMParser.PM_MESSAGE_TYPE, new Variable(prevShefMsgType));
-	
+Logger.instance().info("StreamDS.scanFM - Have complete SHEF message with buflen=" + msgbufLen
++ " '" + new String(msgbuf, 0, msgbufLen) + "'");
 					try { pmp.parsePerformanceMeasurements(ret); }
 					catch(HeaderParseException e)
 					{
@@ -709,10 +716,12 @@ Logger.instance().info("StreamDS.scanFM - Have start, shefMode=" + shefMode);
 						huntMode = true;
 						return null;
 					}
+Logger.instance().info("StreamDS.scanFM - returning raw message.");
 					return ret;
 				}
 				else // we just got 1st delimiter in the file, need to scan for the next one.
 				{
+Logger.instance().info("StreamDS.scanFM - got start of 1st shef message. Will scan for next.");
 					startOfStream = false;
 					return null;
 				}
@@ -1080,6 +1089,7 @@ Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 			}
 			if (delimNum < shefDelims.length)
 			{
+Logger.instance().debug3("found delim number " + delimNum);
 				// Found a valid delimiter
 				prevShefMsgType = shefMsgType;
 				shefMsgType = shefDelims[delimNum].charAt(2); // E or A

@@ -1,7 +1,13 @@
 /**
- * $Id$
+ * $Id: DatabaseConnectionOwner.java,v 1.9 2020/02/14 15:18:52 mmaloney Exp $
  * 
- * $Log$
+ * $Log: DatabaseConnectionOwner.java,v $
+ * Revision 1.9  2020/02/14 15:18:52  mmaloney
+ * Added stub for isOpenTSDB
+ *
+ * Revision 1.8  2019/06/10 19:38:10  mmaloney
+ * Added makeAlarmDAO()
+ *
  * Revision 1.7  2019/02/25 20:02:55  mmaloney
  * HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
  *
@@ -88,6 +94,8 @@ public interface DatabaseConnectionOwner
 	/** @return true if this is CWMS */
 	public boolean isCwms();
 	
+	/** @return true if this is OpenTSDB */
+	public boolean isOpenTSDB();
 	
 	public KeyGenerator getKeyGenerator();
 	

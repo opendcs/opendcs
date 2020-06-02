@@ -1,7 +1,13 @@
 /*
- * $Id$
+ * $Id: CompDependsList.java,v 1.2 2020/02/14 15:15:06 mmaloney Exp $
  * 
- * $Log$
+ * $Log: CompDependsList.java,v $
+ * Revision 1.2  2020/02/14 15:15:06  mmaloney
+ * Fixes for OpenTSDB
+ *
+ * Revision 1.1  2017/08/22 19:56:38  mmaloney
+ * Refactor
+ *
  * 
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 */
@@ -16,6 +22,7 @@ import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import lrgs.gui.DecodesInterface;
+import opendcs.dai.TimeSeriesDAI;
 
 
 /**
@@ -57,6 +64,7 @@ public class CompDependsList
 		String joins = "a.computation_id = b.computation_id"
 			+ " and b.loading_application_id = c.loading_application_id";
 		
+		TimeSeriesDAI tsDAO = null;
 		
 		if (theDb.isHdb())
 		{
@@ -69,6 +77,11 @@ public class CompDependsList
 			tables = tables + ", cwms_v_ts_id d";
 			joins = joins + " and a.ts_id = d.ts_code";
 			columns = columns + ", d.cwms_ts_id";
+		}
+		else if (theDb.isOpenTSDB())
+		{
+			tsDAO = theDb.makeTimeSeriesDAO();
+			tsDAO.reloadTsIdCache();
 		}
 		
 		if (appFilterArg.getValue().length() > 0)
@@ -101,7 +114,12 @@ public class CompDependsList
 			}
 			else if (theDb.isCwms())
 				tsid = rs.getString(6);
-			
+			else if (theDb.isOpenTSDB())
+			{
+				TimeSeriesIdentifier tmptsid = tsDAO.getTimeSeriesIdentifier(tsKey);
+				if (tmptsid != null)
+					tsid = tmptsid.getUniqueString();
+			}
 			System.out.println("" + tsKey + ",    "
 				+ "\""+tsid+"\"" + ",   "
 				+ compId + ",  " + "\"" + compName + "\"" + ",  "

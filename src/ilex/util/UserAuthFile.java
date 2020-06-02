@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: UserAuthFile.java,v 1.5 2020/04/28 18:18:58 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -10,7 +10,13 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *
-*  $Log$
+*  $Log: UserAuthFile.java,v $
+*  Revision 1.5  2020/04/28 18:18:58  mmaloney
+*  Added -p pwfile feature for USACE NWP
+*
+*  Revision 1.4  2016/08/05 14:46:06  mmaloney
+*  Was using the wrong Console class.
+*
 *  Revision 1.3  2014/11/19 16:13:22  mmaloney
 *  Added constructor taking File object.
 *
@@ -63,10 +69,14 @@
 */
 package ilex.util;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
 import java.io.FileInputStream;
+import java.io.FileReader;
+
+import ilex.cmdline.ApplicationSettings;
 import ilex.util.AuthException;
 import ilex.util.DesEncrypter;
 
@@ -96,7 +106,7 @@ public class UserAuthFile
 	public UserAuthFile()
 	{
 		this(System.getProperty("user.home") 
-			+ System.getProperty("file.separator") + ".db.auth");
+			+ System.getProperty("file.separator") + ".decodes.auth");
 	}
 
 	/** 
@@ -278,26 +288,70 @@ public class UserAuthFile
 	public static void main(String args[])
 		throws Exception
 	{
-		UserAuthFile authFile;
-		if (args.length == 0)
-			authFile = new UserAuthFile();
-		else 
+		UserAuthFile authFile = null;
+		String authFileArg = null;
+		String pwFileArg = null;
+		
+		int n = 0;
+		if (args.length > 0 && args[0].startsWith("-p"))
 		{
-			String fn = 
-				args[0].startsWith("-") ? args[0].substring(1) : args[0];
-			authFile = new UserAuthFile(fn);
+			if (args[0].length() > 2)
+			{
+				pwFileArg = args[0].substring(2);
+				n++;
+			}
+			else
+			{
+				pwFileArg = args[1];
+				n += 2;
+			}
 		}
 
-		if (!args[0].startsWith("-"))
+		authFileArg = n >= args.length ? null : args[n];
+		boolean q = false;
+		
+		if (authFileArg == null)
+			authFile = new UserAuthFile();
+		else if (authFileArg.startsWith("-"))
 		{
-			System.out.print("User Name: ");
-			String user = System.console().readLine();
-			System.out.print("Password: ");
-			String password = new String(System.console().readPassword());
+			q = true;
+			authFileArg = authFileArg.substring(1);
+			authFile = new UserAuthFile(authFileArg);
+		}
+		else
+		{
+			authFile = new UserAuthFile(authFileArg);
+		}
+
+		if (!q)
+		{
+			String user = null, password = null;
+			
+			if (pwFileArg == null)
+			{
+				System.out.print("User Name: ");
+				user = System.console().readLine();
+				System.out.print("Password: ");
+				password = new String(System.console().readPassword());
+			}
+			else
+			{
+				try
+				{
+					BufferedReader br = new BufferedReader(new FileReader(pwFileArg));
+					user = br.readLine();
+					password = br.readLine();
+					br.close();
+				}
+				catch(IOException ex)
+				{
+					System.err.println("Cannot open password file '" + pwFileArg + "': " + ex);
+				}
+			}
 			System.out.println("writing...");
 			authFile.write(user, password);
 		}
-		else
+		else // query only
 		{
 			try { authFile.read(); }
 			catch(Exception ex)

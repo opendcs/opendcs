@@ -1,9 +1,34 @@
 /*
-* $Id$
+* $Id: OpenTimeSeriesDAO.java,v 1.13 2020/05/07 13:51:23 mmaloney Exp $
 *
 * Copyright 2017 Cove Software, LLC. All Rights Reserved.
 * 
-* $Log$
+* $Log: OpenTimeSeriesDAO.java,v $
+* Revision 1.13  2020/05/07 13:51:23  mmaloney
+* Delete dependencies using CompDependsDAO and delete tasklist entries when deleting
+* a time series. Otherwise foreign key violations might happen.
+*
+* Revision 1.12  2020/03/10 16:30:24  mmaloney
+* Updates
+*
+* Revision 1.11  2020/03/02 13:55:24  mmaloney
+* Final bug fixes for OpenTSDB Computations
+*
+* Revision 1.10  2020/02/27 22:11:00  mmaloney
+* Computation testing fixes.
+*
+* Revision 1.9  2020/02/20 17:57:10  mmaloney
+* fix sql error
+*
+* Revision 1.8  2020/02/14 18:13:50  mmaloney
+* comp depends notifications
+*
+* Revision 1.7  2020/01/31 19:43:18  mmaloney
+* Several enhancements to complete OpenTSDB.
+*
+* Revision 1.6  2019/08/07 14:19:57  mmaloney
+* 6.6 RC04
+*
 * Revision 1.5  2018/06/04 19:20:59  mmaloney
 * 6.5 release
 *
@@ -53,12 +78,16 @@ import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.NoValueException;
 import decodes.util.TSUtil;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.VarFlags;
 import opendcs.dai.AlarmDAI;
+import opendcs.dai.CompDependsDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -81,7 +110,7 @@ public class OpenTimeSeriesDAO
 	public NumberFormat suffixFmt = NumberFormat.getIntegerInstance();
 	private static final String ts_columns = "sample_time, ts_value, flags, source_id";
 	private long lastCacheReload = 0L;
-	private DbKey appId = DbKey.NullKey;
+//	private DbKey appId = DbKey.NullKey;
 	private String appModule = null;
 	
 	/** data sources are immutable in the database so no need to refresh them. */
@@ -105,16 +134,31 @@ public class OpenTimeSeriesDAO
 		dataTypeDAO = tsdb.makeDataTypeDAO();
 		suffixFmt.setMinimumIntegerDigits(4);
 		suffixFmt.setGroupingUsed(false);
-		appId = tsdb.getAppId();
+//		appId = tsdb.getAppId();
 	}
 
 	@Override
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
 		throws DbIoException, NoSuchObjectException
 	{
+		int paren = uniqueString.lastIndexOf('(');
+		String displayName = null;
+		if (paren > 0 && uniqueString.trim().endsWith(")"))
+		{
+			displayName = uniqueString.substring(paren+1);
+			uniqueString = uniqueString.substring(0,  paren);
+			int endParen = displayName.indexOf(')');
+			if (endParen > 0)
+				displayName = displayName.substring(0,  endParen);
+		}
+		
 		CwmsTsId tsid = (CwmsTsId)cache.getByUniqueName(uniqueString);
 		if (tsid != null)
+		{
+			if (displayName != null)
+				tsid.setDisplayName(displayName);
 			return tsid;
+		}
 			
 		tsid = new CwmsTsId();
 		tsid.setUniqueString(uniqueString);
@@ -143,7 +187,12 @@ public class OpenTimeSeriesDAO
 		try
 		{
 			if (rs != null && rs.next())
-				return getTimeSeriesIdentifier(DbKey.createDbKey(rs, 1));
+			{
+				TimeSeriesIdentifier ret = getTimeSeriesIdentifier(DbKey.createDbKey(rs, 1));
+				if (displayName != null)
+					ret.setDisplayName(displayName);
+				return ret;
+			}
 			else
 				throw new NoSuchObjectException("No Time Series matching '" + uniqueString + "'");
 		}
@@ -168,7 +217,20 @@ public class OpenTimeSeriesDAO
 		{
 			debug3("Not in cache ts_code=" + key);
 		}
+		
+		return readTSID(key);
+	}
 	
+	/**
+	 * Read from the Database
+	 * @param key
+	 * @return
+	 * @throws DbIoException
+	 * @throws NoSuchObjectException
+	 */
+	private CwmsTsId readTSID(DbKey key)
+		throws DbIoException, NoSuchObjectException
+	{
 		String q = "SELECT " + ts_spec_columns + " from TS_SPEC "
 			+ " where ts_id = " + key;
 		
@@ -178,7 +240,7 @@ public class OpenTimeSeriesDAO
 			ResultSet rs = doQuery(q);
 			if (rs != null && rs.next())
 			{
-				ret = rs2TsId(rs, true);
+				CwmsTsId ret = rs2TsId(rs, true);
 				ret.setReadTime(now);
 				cache.put(ret);
 				return ret;
@@ -220,7 +282,10 @@ public class OpenTimeSeriesDAO
 		String storageType = rs.getString(11);
 		Date lastModified = db.getFullDate(rs, 12);
 		String description = rs.getString(13);
-		int utcOffset = rs.getInt(14);
+		
+		int x = rs.getInt(14);
+		Integer utcOffset = rs.wasNull() || x == -1 ? null : x;
+		
 		boolean allowDstOffsetVariation = TextUtil.str2boolean(rs.getString(15));
 		String s = rs.getString(16);
 		OffsetErrorAction offsetErrorAction = null;
@@ -403,44 +468,51 @@ public class OpenTimeSeriesDAO
 					EngineeringUnit.getEngineeringUnit(ts.getUnitsAbbr()));
 
 		String tableName = makeDataTableName(ctsid);
-		StringBuilder q = new StringBuilder("select " + ts_columns + " from " + tableName
-			+ " where ts_id = " + ctsid.getKey()
-			+ " and sample_time in (");
-		int n = queryTimes.size();
-		int i = 0;
-		for(Date d : queryTimes)
+		
+		int MAX_IN_CLAUSE = 200;
+		String baseQ = "select " + ts_columns + " from " + tableName
+			+ " where ts_id = " + ctsid.getKey() + " and sample_time in (";
+		
+		StringBuilder qb = new StringBuilder(baseQ);
+		int numFilled = 0;
+		int numThisQuery = 0;
+		for(Iterator<Date> dit = queryTimes.iterator(); dit.hasNext();)
 		{
-			q.append(db.sqlDate(d));
-			if (++i < n)
-				q.append(", ");
-			else
-				q.append(")");
-		}
-
-		try
-		{
-			ResultSet rs = doQuery(q.toString());
-			n = 0;
-			while (rs != null && rs.next())
+			Date d = dit.next();
+			qb.append(d.getTime());
+			if (!dit.hasNext() || ++numThisQuery >= MAX_IN_CLAUSE)
 			{
-				TimedVariable tv = rs2tv(rs, ctsid, unitConverter);
-
-				Date d = tv.getTime();
-				if (ts.findWithin(d.getTime() / 1000L, 10) != null)
-					continue;
-
-				ts.addSample(tv);
-				n++;
+				qb.append(")");
+				try
+				{
+					ResultSet rs = doQuery(qb.toString());
+					while (rs != null && rs.next())
+					{
+						TimedVariable tv = rs2tv(rs, ctsid, unitConverter);
+		
+						d = tv.getTime();
+						if (ts.findWithin(d.getTime() / 1000L, 10) != null)
+							continue;
+		
+						ts.addSample(tv);
+						numFilled++;
+					}
+				}
+				catch (SQLException ex)
+				{
+					String msg = "Error getting data for time series="
+							+ ctsid.getUniqueName() + ": " + ex;
+					warning(msg);
+					throw new DbIoException(msg);
+				}
+				
+				numThisQuery = 0;
+				qb = new StringBuilder(baseQ);
 			}
-			return n;
+			else
+				qb.append(",");
 		}
-		catch (SQLException ex)
-		{
-			String msg = "Error getting data for time series="
-					+ ctsid.getUniqueName() + ": " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
-		}
+		return numFilled;
 	}
 
 	@Override
@@ -468,7 +540,7 @@ public class OpenTimeSeriesDAO
 			+ " and sample_time = "
 			+ "(select max(sample_time) from " + tableName
 			+ " where ts_id = " + ctsid.getKey()
-			+ " and sampleTime < " + db.sqlDate(refTime) + " )";
+			+ " and sample_time < " + db.sqlDate(refTime) + " )";
 
 		try
 		{
@@ -517,7 +589,7 @@ public class OpenTimeSeriesDAO
 			+ " and sample_time = "
 			+ "(select min(sample_time) from " + tableName
 			+ " where ts_id = " + ctsid.getKey()
-			+ " and sampleTime > " + db.sqlDate(refTime) + " )";
+			+ " and sample_time > " + db.sqlDate(refTime) + " )";
 
 		try
 		{
@@ -553,6 +625,7 @@ public class OpenTimeSeriesDAO
 		debug3("Saving " + tsid.getUniqueString() + ", from cp units="
 			+ ts.getUnitsAbbr() + ", required=" + tsid.getStorageUnits());
 		TSUtil.convertUnits(ts, tsid.getStorageUnits());
+		debug3("After TSUtil.convertUnits, cts units=" + ts.getUnitsAbbr());
 		
 		String tableName = makeDataTableName(ctsid);
 		
@@ -594,7 +667,13 @@ public class OpenTimeSeriesDAO
 		fillTimeSeries(alreadyInDb, times);
 		alreadyInDb.sort();
 		
-		DbKey daoSourceId = getTsDataSource().getAppId();
+		DbKey daoSourceId = getTsDataSource().getSourceId();
+		if (daoSourceId == null)
+		{
+			String msg = "Cannot determine data source ID.";
+			failure(msg);
+			throw new BadTimeSeriesException(msg);
+		}
 		Date now = new Date();
 
 		// Go through samples in the time series I am supposed to write.
@@ -605,6 +684,9 @@ public class OpenTimeSeriesDAO
 		for (int idx = 0; idx < ts.size(); idx++)
 		{
 			TimedVariable tv2write = ts.sampleAt(idx);
+			if (!(VarFlags.mustWrite(tv2write) || VarFlags.mustDelete(tv2write)))
+				continue;
+			
 			DbKey tvSourceId = tv2write.getSourceId();
 			if (DbKey.isNull(tvSourceId))
 				tvSourceId = daoSourceId;
@@ -758,6 +840,20 @@ public class OpenTimeSeriesDAO
 			+ " and flags & " + CwmsFlags.PROTECTED + " = 0 ";
 		doModify(q);
 		doModify("delete from ts_property where ts_id = " + ctsid.getKey());
+		
+		CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
+		try
+		{
+			compDependsDAO.deleteCompDependsForTsKey(ctsid.getKey());
+		}
+		catch(Exception ex)
+		{
+			warning("deleteTimeSeries error deleting computation dependencies: " + ex);
+		}
+		finally { compDependsDAO.close(); }
+		
+		doModify("delete from cp_comp_tasklist where ts_id = " + ctsid.getKey());
+		
 		doModify("delete from ts_spec where ts_id = " + ctsid.getKey());
 		
 		q = "select num_ts_present, est_annual_values from storage_table_list "
@@ -781,6 +877,13 @@ public class OpenTimeSeriesDAO
 		{
 			warning("Error in query '" + q + "': " + ex);
 		}
+		
+		// Send notify to Cp Comp Depends Updater Daemon
+		q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+			+ "values(" + getKey("cp_depends_notify") 
+			+ ", '" + CpDependsNotify.TS_DELETED + "', " + ctsid.getKey() + ", " + System.currentTimeMillis() + ")";
+		doModify(q);
+
 	}
 
 	@Override
@@ -875,17 +978,21 @@ public class OpenTimeSeriesDAO
 		
 		// if (utcOffset unassigned) update ts_spec and write offset to data
 		// then return true.
-		if (tsid.getIntervalUtcOffset() == -1)
+		if (tsid.getUtcOffset() == null)
 		{
+debug1("Time series " + tsid.getUniqueString() + " setting new UTC Offset = " + offset);
 			String q = "update ts_spec set utc_offset = " + offset;
 			doModify(q);
-			tsid.setIntervalUtcOffset(offset);
+			tsid.setUtcOffset(offset);
 			return true;
 		}
+else
+debug1("Time series " + tsid.getUniqueString() + " already has offset = "
++ tsid.getUtcOffset() + ", new computed offset=" + offset);
 		
 		// Else check against the stored utc offset in seconds.
-		int offsetError = offset - tsid.getIntervalUtcOffset();
-		boolean violation = (offsetError == 0);
+		int offsetError = offset - tsid.getUtcOffset();
+		boolean violation = (offsetError != 0);
 		
 		if (!violation)
 			return true; // UTC Offsets are exactly equal!
@@ -948,7 +1055,7 @@ public class OpenTimeSeriesDAO
 		if (violation)
 		{
 			String msg = "Offset violation in time series '" + tsid.getUniqueName()
-				+ "' stored offset=" + tsid.getIntervalUtcOffset()
+				+ "' stored offset=" + tsid.getUtcOffset()
 				+ ", computed offset=" + offset 
 				+ " at time " + db.getLogDateFormat().format(sample.getTime());
 			
@@ -1156,14 +1263,22 @@ public class OpenTimeSeriesDAO
 			tsid.setSite(siteDAO.getSiteById(siteId));
 		}
 		DataType dataType = ctsid.getDataType();
-		DbKey dataTypeId = dataType.getId();
-		if (dataTypeId.isNull())
-			throw new NoSuchObjectException("No such datatype for tsid '" + tsid.getUniqueString() + "'");
+		if (DbKey.isNull(dataType.getId()))
+		{
+			DataTypeDAI dtDAO = db.makeDataTypeDAO();
+			try
+			{
+				dtDAO.writeDataType(dataType); // write will set the id in the object
+			}
+			finally
+			{
+				dtDAO.close();
+			}
+		}
 		Interval interval = IntervalList.instance().getByName(ctsid.getInterval());
 		if (interval == null)
 			throw new NoSuchObjectException("Invalid interval in tsid '" + tsid.getUniqueString() + "'");
 		DbKey intervalId = interval.getKey();
-Logger.instance().info("OpenTSDBDAO.createTimeSeries interval = '" + interval.getName() + "', key=" + intervalId);
 		Interval duration = IntervalList.instance().getByName(ctsid.getDuration());
 		if (duration == null)
 			throw new NoSuchObjectException("Invalid duration in tsid '" + tsid.getUniqueString() + "'");
@@ -1199,7 +1314,7 @@ Logger.instance().info("OpenTSDBDAO.createTimeSeries interval = '" + interval.ge
 		String q = "insert into TS_SPEC(" + ts_spec_columns + ") values ("
 			+ ctsid.getKey() + ", "
 			+ siteId + ", "
-			+ dataTypeId + ", "
+			+ dataType.getId() + ", "
 			+ sqlString(ctsid.getStatisticsCode()) + ", "
 			+ intervalId + ", "
 			+ durationId + ", "
@@ -1210,11 +1325,18 @@ Logger.instance().info("OpenTSDBDAO.createTimeSeries interval = '" + interval.ge
 			+ "'" + ctsid.getStorageType() + "', "
 			+ db.sqlDate(new Date()) + ", "
 			+ sqlString(ctsid.getDescription()) + ", "
-			+ "-1, " // UTC_OFFSET set on first write
+			+ "null, " // UTC_OFFSET set on first write
 			+ sqlBoolean(ctsid.isAllowDstOffsetVariation()) + ", "
 			+ sqlString(ctsid.getOffsetErrorAction().toString())
 			+ ")";
 		doModify(q);
+		
+		// Send notify to Cp Comp Depends Updater Daemon
+		q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+			+ "values(" + getKey("cp_depends_notify") 
+			+ ", '" + CpDependsNotify.TS_CREATED + "', " + ctsid.getKey() + ", " + System.currentTimeMillis() + ")";
+		doModify(q);
+		
 		return ctsid.getKey();
 	}
 	
@@ -1226,23 +1348,27 @@ Logger.instance().info("OpenTSDBDAO.createTimeSeries interval = '" + interval.ge
 	
 	/**
 	 * Returns the TsDataSource for this application.
-	 * @return
-	 * @throws DbIoException
+	 * @return the TsDataSource object or null if it doesn't exist and can't be created.
+	 * @throws DbIoException on SQL Error
 	 */
 	public TsDataSource getTsDataSource()
 		throws DbIoException
 	
 	{
-		if (DbKey.isNull(appId))
-			throw new DbIoException("Cannot retrieve data source record when appId is null.");
+		if (DbKey.isNull(db.getAppId()))
+		{
+			failure("getTsDataSource() Cannot retrieve data source record when appId is null.");
+			return null;
+		}
 		
-		String key = appId.toString();
+		String key = db.getAppId().toString();
 		if (appModule != null)
 			key = key + "-" + appModule;
 		TsDataSource ret = key2ds.get(key);
 		if (ret == null)
 		{
-			String q = "select SOURCE_ID from TSDB_DATA_SOURCE where LOADING_APPLICATION_ID = " + appId 
+			String q = "select SOURCE_ID from TSDB_DATA_SOURCE where LOADING_APPLICATION_ID = " 
+				+ db.getAppId() 
 				+ " and MODULE " + (appModule == null ? "IS NULL" : ("= " + sqlString(appModule)));
 			ResultSet rs = doQuery2(q);
 			try
@@ -1250,15 +1376,15 @@ Logger.instance().info("OpenTSDBDAO.createTimeSeries interval = '" + interval.ge
 				if (rs != null && rs.next())
 				{
 					DbKey sourceId = DbKey.createDbKey(rs, 1);
-					ret = new TsDataSource(sourceId, appId, appModule);
+					ret = new TsDataSource(sourceId, db.getAppId(), appModule);
 					key2ds.put(key, ret);
 				}
 				else
 				{
 					DbKey sourceId = this.getKey("TSDB_DATA_SOURCE");
-					ret = new TsDataSource(sourceId, appId, appModule);
+					ret = new TsDataSource(sourceId, db.getAppId(), appModule);
 					q = "insert into TSDB_DATA_SOURCE(SOURCE_ID, LOADING_APPLICATION_ID, MODULE) "
-						+ " values(" + sourceId + ", " + appId + ", " + sqlString(appModule) + ")";
+						+ " values(" + sourceId + ", " + db.getAppId() + ", " + sqlString(appModule) + ")";
 					doModify(q);
 					key2ds.put(key, ret);
 				}
@@ -1329,5 +1455,129 @@ Logger.instance().info("OpenTSDBDAO.createTimeSeries interval = '" + interval.ge
 		}
 
 		return ret;
+	}
+
+	@Override
+	public void modifyTSID(TimeSeriesIdentifier tsid)
+			throws DbIoException, NoSuchObjectException, BadTimeSeriesException
+	{
+		if (!(tsid instanceof CwmsTsId))
+			throw new BadTimeSeriesException("OpenTSDB uses CWMS TSIDs");
+		CwmsTsId ctsid = (CwmsTsId)tsid;
+		
+		if (DbKey.isNull(tsid.getKey()))
+			throw new NoSuchObjectException("Cannot modify TSID with no key!");
+		if (tsid.getSite() == null)
+			throw new BadTimeSeriesException("Cannot save TSID without Site!");
+		if (DbKey.isNull(tsid.getDataTypeId()))
+			throw new BadTimeSeriesException("Cannot save TSID without Data Type!");
+		if (ctsid.getParamType() == null || ctsid.getParamType().trim().length() == 0)
+			throw new BadTimeSeriesException("Cannot save TSID without Statistics Code!");
+		if (ctsid.getIntervalOb() == null)
+			throw new BadTimeSeriesException("Cannot save TSID without Interval!");
+		if (ctsid.getDurationOb() == null)
+			throw new BadTimeSeriesException("Cannot save TSID without Duration!");
+		if (ctsid.getVersion() == null || ctsid.getVersion().trim().length() == 0)
+			throw new BadTimeSeriesException("Cannot save TSID without Version!");
+
+
+		String q = "update ts_spec set ";
+		int n = 0;
+		
+		// Read the existing tsid with this key
+		CwmsTsId existing = this.readTSID(tsid.getKey());
+		
+		// Compare each field of the passed tsid with the one in the db
+		// add a set clause to the update statement and increment 'n'.
+		if (!tsid.getSite().getKey().equals(existing.getSite().getKey()))
+		{
+			q = q + (n>0?", ":"") + "site_id = " + tsid.getSite().getKey();
+			n++;
+		}
+		if (!tsid.getDataTypeId().equals(existing.getDataTypeId()))
+		{
+			q = q + (n>0?", ":"") + "datatype_id = " + tsid.getDataTypeId();
+			n++;
+		}
+		if (!ctsid.getParamType().equals(existing.getParamType()))
+		{
+			q = q + (n>0?", ":"") + "statistics_code = " + sqlString(ctsid.getParamType());
+			n++;
+		}
+		if (!ctsid.getIntervalOb().getKey().equals(existing.getIntervalOb().getKey()))
+		{
+			q = q + (n>0?", ":"") + "interval_id = " + ctsid.getIntervalOb().getKey();
+			n++;
+		}
+		if (!ctsid.getDurationOb().getKey().equals(existing.getDurationOb().getKey()))
+		{
+			q = q + (n>0?", ":"") + "duration_id = " + ctsid.getDurationOb().getKey();
+			n++;
+		}
+		if (!ctsid.getVersion().equals(existing.getVersion()))
+		{
+			q = q + (n>0?", ":"") + "ts_version = " + sqlString(ctsid.getVersion());
+			n++;
+		}
+		if (ctsid.isActive() != existing.isActive())
+		{
+			q = q + (n>0?", ":"") + "activeFlag = " + sqlBoolean(ctsid.isActive());
+			n++;
+		}
+		if (!ctsid.getStorageUnits().equals(existing.getStorageUnits()))
+		{
+			q = q + (n>0?", ":"") + "storage_units = " + sqlString(ctsid.getStorageUnits());
+			n++;
+		}
+		if (ctsid.getStorageTable() != existing.getStorageTable())
+		{
+			q = q + (n>0?", ":"") + "storage_table = " + ctsid.getStorageTable();
+			n++;
+		}
+		if (!TextUtil.strEqualNE(ctsid.getDescription(), existing.getDescription()))
+		{
+			String desc = ctsid.getDescription();
+			if (desc != null && desc.trim().length() == 0)
+				desc = null;
+				
+			q = q + (n>0?", ":"") + "description = " + sqlString(desc);
+			n++;
+		}
+		if (!TextUtil.intEqual(ctsid.getUtcOffset(),existing.getUtcOffset()))
+		{
+			q = q + (n>0?", ":"") + "utc_offset = " + ctsid.getUtcOffset();
+			n++;
+		}
+		if (ctsid.isAllowDstOffsetVariation() != existing.isAllowDstOffsetVariation())
+		{
+			q = q + (n>0?", ":"") + "allow_dst_offset_variation = " 
+				+ sqlBoolean(ctsid.isAllowDstOffsetVariation());
+			n++;
+		}
+		if (ctsid.getOffsetErrorAction() != existing.getOffsetErrorAction())
+		{
+			String action = ctsid.getOffsetErrorAction().toString();
+			q = q + (n>0?", ":"") + "offset_error_action = " + sqlString(action);
+			n++;
+		}
+
+		if (n == 0)
+			return; // Nothing has changed.
+		q = q + ", modify_time = " + System.currentTimeMillis();
+		q = q + " where ts_id = " + tsid.getKey();
+		
+		doModify(q);
+		
+		// Now update the cache.
+		cache.remove(tsid.getKey());
+		cache.put(ctsid);
+		
+		// Send notify to Cp Comp Depends Updater Daemon
+		q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+			+ "values(" + getKey("cp_depends_notify") 
+			+ ", '" + CpDependsNotify.TS_MODIFIED + "', " + ctsid.getKey() + ", " + System.currentTimeMillis() + ")";
+		doModify(q);
+
+		
 	}
 }

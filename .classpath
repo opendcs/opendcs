@@ -6,13 +6,8 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/hec.jar"/>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/hecData.jar"/>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/heclib.jar"/>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/cwmsDbDao-v4.0-dev.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/cobra-no-commons.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/xwork-core-2.1.6.jar"/>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/ojdbc8.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/poi-3.0.1-FINAL-20070705.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/lobo.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jcalendar-1.3.2.jar"/>
@@ -23,8 +18,14 @@
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jep-2.4.1.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/passay-1.1.0.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jython.jar"/>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/commons-net-3.3.jar"/>
-	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-luna/opendcs-cove/3rd_party/sshd-core-1.7.0.jar"/>
 	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/javax.mail.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jsch-0.1.55.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/rma.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/commons-net-3.3.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/hec.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/hecData.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/ojdbc8.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/cwmsDbDao-v5.0-dev.jar"/>
+	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/hecDbCore-v4.0-dev.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

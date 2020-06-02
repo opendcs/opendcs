@@ -1,7 +1,13 @@
 /**
- * $Id$
+ * $Id: PythonAlgorithm.java,v 1.27 2020/04/30 15:27:00 mmaloney Exp $
  * 
- * $Log$
+ * $Log: PythonAlgorithm.java,v $
+ * Revision 1.27  2020/04/30 15:27:00  mmaloney
+ * put loading_application_id and computation_id into the python namespace.
+ *
+ * Revision 1.26  2019/12/11 14:42:33  mmaloney
+ * Null Ptr Fixes
+ *
  * Revision 1.25  2019/12/06 14:53:56  mmaloney
  * Fixed null ptr in setTimeSliceInput
  *
@@ -458,6 +464,9 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		// HDB 492, add the computation_id to the python environment
 		if (this.comp != null)
 			sb.append("computation_id=" + this.comp.getId() + linesep);
+		
+		if (tsdb != null && !DbKey.isNull(tsdb.getAppId()))
+			sb.append("loading_application_id=" + tsdb.getAppId() + linesep);
 		
 		return sb.toString();
 	}

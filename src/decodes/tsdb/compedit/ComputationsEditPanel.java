@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: ComputationsEditPanel.java,v 1.12 2020/02/14 15:16:27 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -10,7 +10,13 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *  
-*  $Log$
+*  $Log: ComputationsEditPanel.java,v $
+*  Revision 1.12  2020/02/14 15:16:27  mmaloney
+*  Fixes to Comp Edit for OpenTSDB
+*
+*  Revision 1.11  2019/02/26 17:16:44  mmaloney
+*  HDB 660
+*
 *  Revision 1.10  2019/02/25 20:02:55  mmaloney
 *  HDB 660 Allow Computation Parameter Site and Datatype to be set independently in group comps.
 *
@@ -1485,19 +1491,21 @@ class CompParmTableModel
 //if(tsdb.isCwms())System.out.println("locspec='" + compParm.getLocSpec() + "'");
 			return sn != null ? sn.getNameValue() :
 				parent.hasGroupInput() ? 
-				(tsdb.isCwms() && compParm.getLocSpec().length() > 0 ? compParm.getLocSpec() : "<var>") : "";
+				((tsdb.isCwms()||tsdb.isOpenTSDB()) 
+					&& compParm.getLocSpec().length() > 0 ? compParm.getLocSpec() : "<var>") : "";
 		  }
 		case 2:
 		  {
 			DataType dt = compParm.getDataType();
 			if (dt == null)
 				return parent.hasGroupInput() ? 
-					(tsdb.isCwms() && compParm.getParamSpec().length() > 0 ? compParm.getParamSpec() : "<var>") : "";
+					((tsdb.isCwms()||tsdb.isOpenTSDB()) 
+						&& compParm.getParamSpec().length() > 0 ? compParm.getParamSpec() : "<var>") : "";
 			else
 				return dt.getCode();
 		  }
 		case 3:
-			if (!tsdb.isCwms())
+			if (!tsdb.isCwms() && !tsdb.isOpenTSDB())
 			{
 				String s = compParm.getInterval();
 				if (s == null || s.trim().length() == 0)
@@ -1512,7 +1520,7 @@ class CompParmTableModel
 				return s;
 			}
 		case 4:
-			if (!tsdb.isCwms())
+			if (!tsdb.isCwms() && !tsdb.isOpenTSDB())
 			{
 				String s = compParm.getTableSelector();
 				if (s == null || s.trim().length() == 0)
@@ -1527,7 +1535,7 @@ class CompParmTableModel
 				return s;
 			}
 		case 5:
-			if (tsdb.isCwms())
+			if (tsdb.isCwms() || tsdb.isOpenTSDB())
 			{
 				String s = compParm.getDuration();
 				if (s == null || s.trim().length() == 0)

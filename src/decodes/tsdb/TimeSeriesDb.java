@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: TimeSeriesDb.java,v 1.25 2020/02/14 15:15:40 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -10,7 +10,16 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *  
-*  $Log$
+*  $Log: TimeSeriesDb.java,v $
+*  Revision 1.25  2020/02/14 15:15:40  mmaloney
+*  dev
+*
+*  Revision 1.24  2020/01/31 19:39:15  mmaloney
+*  Added writeTsdbProperties method.
+*
+*  Revision 1.23  2019/07/02 13:58:33  mmaloney
+*  Added flags2display
+*
 *  Revision 1.22  2019/06/10 19:25:45  mmaloney
 *  Added makeAlarmDAO() and getStorageUnitsFor DataType (stub) methods.
 *
@@ -1602,6 +1611,31 @@ public abstract class TimeSeriesDb
 		}
 	}
 	
+	public void writeTsdbProperties(Properties props)
+		throws DbIoException
+	{
+		if (props == null)
+			return;
+
+		for(Object keyo : props.keySet())
+		{
+			String key = (String)keyo;
+			String val = props.getProperty(key);
+			if (val != null)
+				setProperty(key, val);
+			else
+				props.remove(key);
+			String q = "delete from tsdb_property where prop_name = " + sqlString(key);
+			doModify(q);
+			if (val != null)
+			{
+				q = "insert into tsdb_property values(" + sqlString(key) 
+					+ ", " + sqlString(val) + ")";
+				doModify(q);
+			}
+		}
+	}
+	
 	public Site getSiteById(DbKey id)
 		throws DbIoException, NoSuchObjectException
 	{
@@ -1933,8 +1967,13 @@ public abstract class TimeSeriesDb
 	
 	public String getDbUser() { return dbUser; }
 	
+	@Override
 	public boolean isCwms() { return false; }
+	
+	@Override
 	public boolean isHdb() { return false; }
+	
+	@Override
 	public boolean isOpenTSDB() { return false; }
 
 	
@@ -2340,7 +2379,11 @@ public abstract class TimeSeriesDb
 	{
 		return appId;
 	}
-
+	
+	public void setAppId(DbKey appId)
+	{
+		this.appId = appId;
+	}
 
 	/**
 	* Returns an SQL representation of an optional Date / timestamp
@@ -2497,4 +2540,5 @@ public abstract class TimeSeriesDb
 		// Base class does nothing.
 		return "";
 	}
+
 }

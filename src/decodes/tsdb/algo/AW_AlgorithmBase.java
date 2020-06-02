@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: AW_AlgorithmBase.java,v 1.18 2020/02/20 20:47:00 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -10,7 +10,13 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *  
-*  $Log$
+*  $Log: AW_AlgorithmBase.java,v $
+*  Revision 1.18  2020/02/20 20:47:00  mmaloney
+*  in setCompProperty, treat blank property value the same as null.
+*
+*  Revision 1.17  2019/07/17 18:21:31  mmaloney
+*  Added 'timedCompDataSince' and 'timedCompDataUntil' properites to control the data window for timed computations.
+*
 *  Revision 1.16  2018/11/14 15:58:48  mmaloney
 *  Added support for timedCompInterval and timedCompOffset properties.
 *
@@ -413,7 +419,7 @@ public abstract class AW_AlgorithmBase
 	{
 		String propVal = comp.getProperty(propName);		
 		// Kludge for Oracle that can't store an empty string in a not null field.
-		if (propVal == null)
+		if (propVal == null || propVal.trim().length() == 0)
 		{
 			debug1("Received property '" + propName 
 				+ "' with null value -- ignored.");

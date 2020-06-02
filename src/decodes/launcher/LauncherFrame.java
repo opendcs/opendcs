@@ -1,7 +1,13 @@
 /*
- * $Id$
+ * $Id: LauncherFrame.java,v 1.19 2020/04/05 21:18:57 cvs Exp $
  *
- * $Log$
+ * $Log: LauncherFrame.java,v $
+ * Revision 1.19  2020/04/05 21:18:57  cvs
+ * Show processes button even if not a TSDB.
+ *
+ * Revision 1.18  2019/12/11 14:38:02  mmaloney
+ * Removed dbClassName. This now set as a function of database type.
+ *
  * Revision 1.17  2019/11/13 15:11:16  mmaloney
  * Added multiple profiles feature to launcher.
  *
@@ -899,11 +905,11 @@ public class LauncherFrame
 		fullPanel.setLayout(fullLayout);
 		fullPanel.add(decodesButtonPanel, new GridBagConstraints(0, 1, 1, 1, .5, .5,
 			GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
-		if (tsdbType != TsdbType.NONE)
-		{
+//		if (tsdbType != TsdbType.NONE)
+//		{
 			fullPanel.add(tsdbButtonPanel, new GridBagConstraints(0, 2, 1, 1, .5, .5,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
-		}
+//		}
 		contentPane.add(fullPanel, BorderLayout.CENTER);
 		setupSaved();
 	}

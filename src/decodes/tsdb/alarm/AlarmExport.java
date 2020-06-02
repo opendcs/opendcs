@@ -1,9 +1,15 @@
 /*
- * $Id$
+ * $Id: AlarmExport.java,v 1.4 2020/02/27 22:09:38 mmaloney Exp $
  * 
  * Copyright 2017 Cove Software, LLC. All rights reserved.
  * 
- * $Log$
+ * $Log: AlarmExport.java,v $
+ * Revision 1.4  2020/02/27 22:09:38  mmaloney
+ * Bug fix: No args should export everything.
+ *
+ * Revision 1.3  2019/10/21 14:06:36  mmaloney
+ * Fix incorrect dependency on hec library.
+ *
  * Revision 1.2  2019/05/10 18:35:26  mmaloney
  * dev
  *
@@ -106,7 +112,7 @@ public class AlarmExport
 			 || (grpNameArg.NumberOfValues() == 1 && grpNameArg.getValue(0).trim().length() == 0))
 			{
 				groups.add(grp);
-				groupIds.add(grp.getAlarmGroupId());
+//				groupIds.add(grp.getAlarmGroupId());
 				continue;
 			}
 			
@@ -193,6 +199,7 @@ public class AlarmExport
 		// Now go through the screenings and apply the filters.
 		AlarmScreening as = null;
 		AlarmScreening lastScreening = null;
+
 		for(Iterator<AlarmScreening> scrit = screenings.iterator() ; scrit.hasNext(); 
 			lastScreening = as)
 		{

@@ -1,9 +1,12 @@
 /*
-*  $Id$
+*  $Id: CmdLineArgs.java,v 1.19 2019/12/11 14:25:36 mmaloney Exp $
 *
-*  $State$
+*  $State: Exp $
 *
-*  $Log$
+*  $Log: CmdLineArgs.java,v $
+*  Revision 1.19  2019/12/11 14:25:36  mmaloney
+*  added setNoInit to facilitate multiple launcher profiles.
+*
 *  Revision 1.18  2019/11/13 15:22:19  mmaloney
 *  Added multiple profiles feature to launcher.
 *

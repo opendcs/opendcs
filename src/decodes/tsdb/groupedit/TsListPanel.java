@@ -5,6 +5,8 @@ import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 
 import java.awt.BorderLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Collection;
 
 import javax.swing.JLabel;
@@ -13,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import opendcs.dai.TimeSeriesDAI;
+import decodes.cwms.CwmsTsId;
 import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.DbIoException;
@@ -65,6 +68,19 @@ public class TsListPanel
 		this.add(controlsPanel, BorderLayout.SOUTH);
 		this.add(jLabel1, BorderLayout.NORTH);
 		this.add(tsListSelectPanel, BorderLayout.CENTER);
+		
+		tsListSelectPanel.tsIdListTable.addMouseListener(
+			new MouseAdapter()
+			{
+				public void mouseClicked(MouseEvent e)
+				{
+					if (e.getClickCount() == 2)
+					{
+						openPressed();
+					}
+				}
+			});
+
 	}
 
 	/** @return type of entity that this panel edits. */
@@ -76,7 +92,25 @@ public class TsListPanel
 	/** Called when the 'Open' button is pressed. */
 	public void openPressed()
 	{
-		myFrame.showError("Open not implemented.");
+		TimeSeriesIdentifier tsid = tsListSelectPanel.getSelectedTSID();
+		if (tsid == null)
+		{
+			myFrame.showError("Select Time Series ID in list, then press Open.");
+			return;
+		}
+		TimeSeriesDb tsdb = myFrame.getTsDb();
+		if (tsdb.isCwms() || tsdb.isOpenTSDB())
+		{
+			// before constructing a new one. See if this tsid is already being edited.
+			if (!myFrame.makeEditPaneActive(tsid))
+			{
+				TsSpecEditPanel editPanel = new TsSpecEditPanel(myFrame);
+				editPanel.setTsSpec((CwmsTsId)tsid);
+				myFrame.addEditTab(editPanel, "" + tsid.getKey());
+			}
+		}
+		else
+			myFrame.showError("Open not implemented.");
 	}
 
 	/** Called when the 'New' button is pressed. */
@@ -84,15 +118,26 @@ public class TsListPanel
 	{
 		TsListNewDialog dlg = new TsListNewDialog(myFrame, this, theDb);
 		
-		// If a TSID is selected, use it to 'seed' the dialog.
-		TimeSeriesIdentifier tsids[] = tsListSelectPanel.getSelectedTSIDs();
-		if (tsids != null && tsids.length > 0)
-			dlg.fillValues(tsids[0]);
-		myFrame.launchDialog(dlg);
-		
-		if (dlg.okPressed)
+		TimeSeriesDb tsdb = myFrame.getTsDb();
+		if (tsdb.isCwms() || tsdb.isOpenTSDB())
 		{
-			tsListSelectPanel.addTsDd(dlg.getTsidCreated());
+			CwmsTsId tsid = (CwmsTsId)tsdb.makeEmptyTsId();
+			TsSpecEditPanel editPanel = new TsSpecEditPanel(myFrame);
+			editPanel.setTsSpec(tsid);
+			myFrame.addEditTab(editPanel, "new-TSID");
+		}
+		else
+		{
+			// If a TSID is selected, use it to 'seed' the dialog.
+			TimeSeriesIdentifier tsids[] = tsListSelectPanel.getSelectedTSIDs();
+			if (tsids != null && tsids.length > 0)
+				dlg.fillValues(tsids[0]);
+			myFrame.launchDialog(dlg);
+			
+			if (dlg.okPressed)
+			{
+				tsListSelectPanel.addTsDd(dlg.getTsidCreated());
+			}
 		}
 	}
 

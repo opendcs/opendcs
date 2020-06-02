@@ -1,7 +1,13 @@
 /*
-*  $Id$
+*  $Id: DecodesSettings.java,v 1.31 2020/01/31 19:45:13 mmaloney Exp $
 *  
-*  $Log$
+*  $Log: DecodesSettings.java,v $
+*  Revision 1.31  2020/01/31 19:45:13  mmaloney
+*  dev
+*
+*  Revision 1.30  2019/12/11 14:27:29  mmaloney
+*  Removed dbClassName. This now set as a function of database type.
+*
 *  Revision 1.29  2019/11/13 15:21:31  mmaloney
 *  Added multiple profiles feature to launcher.
 *
@@ -449,8 +455,6 @@ public class DecodesSettings
 	public boolean showAlarmEditor = false;
 	
 	public int fontAdjust = 0;
-	public String tsdbStoragePresGrp = "CWMS-English";
-
 	public int profileLauncherPort = 16109;
 	
 	public boolean tryOsDatabaseAuth = false;
@@ -710,8 +714,6 @@ public class DecodesSettings
 			+ " site & designator when a clash occurs with an imported platform."),
 		new PropertySpec("fontAdjust", PropertySpec.INT,
 			"(default=0) Set to positive number to increase default font size, or negative number to decrease."),
-		new PropertySpec("tsdbStoragePresGrp", PropertySpec.STRING,
-			"(default=CWMS-English) Presentation Group used to determine time series database storage units"),
 		new PropertySpec("profileLauncherPort", PropertySpec.INT,
 			"For multi-profile launcher, parent laucher listens on this port."),
 		new PropertySpec("tryOsDatabaseAuth", PropertySpec.BOOLEAN,

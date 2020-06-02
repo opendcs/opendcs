@@ -1,7 +1,13 @@
 /*
- * $Id$
+ * $Id: ExportTimeSeries.java,v 1.3 2020/02/20 15:29:13 mmaloney Exp $
  * 
- * $Log$
+ * $Log: ExportTimeSeries.java,v $
+ * Revision 1.3  2020/02/20 15:29:13  mmaloney
+ * Added all and group options.
+ *
+ * Revision 1.2  2019/12/11 19:05:24  mmaloney
+ * Added setOutputStream method for Test Runner.
+ *
  * Revision 1.1  2017/08/22 19:49:55  mmaloney
  * Refactor
  *
@@ -24,8 +30,10 @@ import java.util.TimeZone;
 
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dai.TsGroupDAI;
 import ilex.cmdline.*;
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import ilex.var.Variable;
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
@@ -50,6 +58,8 @@ import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbAppTemplate;
 
 public class ExportTimeSeries
@@ -62,7 +72,7 @@ public class ExportTimeSeries
 	private StringToken timezoneArg = new StringToken("Z", "Time Zone", "", TokenOptions.optSwitch, "UTC");
 	private StringToken transportIdArg = new StringToken("I", "TransportID", "", TokenOptions.optSwitch, "");
 	private StringToken lookupTypeArg = new StringToken("L", "Lookup Type", "", TokenOptions.optSwitch, "id");
-	private StringToken tsidArg = new StringToken("", "time-series-IDs", "", 
+	private StringToken tsidArg = new StringToken("", "time-series-IDs | all | group:groupname", "", 
 		TokenOptions.optArgument|TokenOptions.optRequired |TokenOptions.optMultiple, "");
 	
 	private static TimeZone tz = null;
@@ -131,31 +141,70 @@ public class ExportTimeSeries
 			fmtArg.getValue(), tz, presGroup, props);
 		
 		String s = sinceArg.getValue().trim();
-		Date since = convert2Date(s, false);
-		
+		Date since = null, until = null;
+		if (s.equalsIgnoreCase("all"))
+			since = new Date(0L);
+		else
+			since = convert2Date(s, false);
+
 		s = untilArg.getValue().trim();
-		Date until = convert2Date(s, true);
+		until = convert2Date(s, true);
 
 		ArrayList<CTimeSeries> ctss = new ArrayList<CTimeSeries>();
+		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
 		for(int n = tsidArg.NumberOfValues(), i=0; i<n; i++)
 		{
 			String outTS = tsidArg.getValue(i);
-			TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-			try
+			if (outTS.equalsIgnoreCase("all"))
 			{
-				CTimeSeries ts = theDb.makeTimeSeries(outTS);
-				timeSeriesDAO.fillTimeSeries(ts, since, until);
-				ctss.add(ts);
+				ArrayList<TimeSeriesIdentifier> tsids = tsDAO.listTimeSeries();
+				for(TimeSeriesIdentifier tsid : tsids)
+				{
+					CTimeSeries ts = theDb.makeTimeSeries(tsid);
+					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+					Logger.instance().info("Read " + nvalues + " values for time series " 
+						+ tsid.getUniqueString());
+					ctss.add(ts);
+				}
+				break; // No need to continue, we have all time series now.
 			}
-			catch(NoSuchObjectException ex)
+			else if (TextUtil.startsWithIgnoreCase(outTS, "group:"))
 			{
-				Logger.instance().warning("No time series for '" + outTS + "': " + ex);
+				String groupName = outTS.substring(6);
+				TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+				TsGroup grp = groupDAO.getTsGroupByName(groupName);
+				groupDAO.close();
+				if (grp == null)
+				{
+					Logger.instance().warning("No such time series group: " + groupName + " -- skipped.");
+					continue;
+				}
+				ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(grp);
+				for(TimeSeriesIdentifier tsid : tsids)
+				{
+					CTimeSeries ts = theDb.makeTimeSeries(tsid);
+					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+					Logger.instance().info("Read " + nvalues + " values for time series " 
+						+ tsid.getUniqueString());
+					ctss.add(ts);
+				}
 			}
-			finally
+			else // Should be a time series ID
 			{
-				timeSeriesDAO.close();
+				try
+				{
+					CTimeSeries ts = theDb.makeTimeSeries(outTS);
+					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+					Logger.instance().info("Read " + nvalues + " values for time series " + outTS);
+					ctss.add(ts);
+				}
+				catch(NoSuchObjectException ex)
+				{
+					Logger.instance().warning("No time series for '" + outTS + "': " + ex);
+				}
 			}
 		}
+		tsDAO.close();
 
 		String tidArg = transportIdArg.getValue();
 		String ttype = "site";

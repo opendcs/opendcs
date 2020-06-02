@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: LrgsApp.java,v 1.7 2020/03/03 15:07:08 mmaloney Exp $
 */
 package lrgs.gui;
 
@@ -15,7 +15,7 @@ public class LrgsApp
 	public static final int majorVersion = 9;
 
 	/** Minor version number */
-	public static final int minorVersion = 3;
+	public static final int minorVersion = 4;
 
 	/** Sub version number */
 	public static final String subVersion = DecodesVersion.getName() + "-" + DecodesVersion.getVersion();

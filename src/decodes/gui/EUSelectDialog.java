@@ -1,7 +1,13 @@
 /*
-*  $Id$
+*  $Id: EUSelectDialog.java,v 1.2 2020/01/31 19:36:48 mmaloney Exp $
 *  
-*  $Log$
+*  $Log: EUSelectDialog.java,v $
+*  Revision 1.2  2020/01/31 19:36:48  mmaloney
+*  Support double-click
+*
+*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
+*  OPENDCS 6.0 Initial Checkin
+*
 *  Revision 1.1  2010/12/09 17:36:00  mmaloney
 *  Created
 *
@@ -88,7 +94,7 @@ public class EUSelectDialog extends GuiDialog
         	{
         		public void actionPerformed(ActionEvent e)
         		{
-        			selectButton_actionPerformed(e);
+        			selectPressed();
         		}
         	});
         JButton cancelButton = new JButton(genericLabels.getString("cancel"));
@@ -117,13 +123,26 @@ public class EUSelectDialog extends GuiDialog
         mainPanel.add(scrollPane, BorderLayout.CENTER);
       
         getContentPane().add(mainPanel);
+        
+        euTable.addMouseListener(
+			new MouseAdapter()
+			{
+				public void mouseClicked(MouseEvent e)
+				{
+					if (e.getClickCount() == 2)
+					{
+						selectPressed();
+					}
+				}
+			});
+
     }
 
 	/**
 	  Called when the Select button is pressed.
 	  @param e ignored.
 	*/
-    void selectButton_actionPerformed(ActionEvent e)
+    void selectPressed()
 	{
     	int idx = euTable.getSelectedRow();
     	if (idx < 0)

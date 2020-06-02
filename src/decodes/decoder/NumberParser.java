@@ -1,5 +1,5 @@
 /*
-*	$Id$
+*	$Id: NumberParser.java,v 1.4 2020/01/31 19:36:08 mmaloney Exp $
 */
 package decodes.decoder;
 
@@ -54,6 +54,9 @@ public class NumberParser
 	public static final char PBINARY_ATON 			 = 'n';
 	/** Pseudobinary Sontek message */
 	public static final char PBINARY_SONTEK			 = 'k';
+	/** Pseudobinary to hex */
+	public static final char PBINARY_HEX 			 = 'r';
+
 	
 	/** default constructor */
 	public NumberParser()
@@ -85,7 +88,8 @@ public class NumberParser
 		 && type != BIN_SIGNED_LSB
 		 && type != BIN_UNSIGNED_LSB
 		 && type != PBINARY_ATON
-		 && type != PBINARY_SONTEK)
+		 && type != PBINARY_SONTEK
+		 && type != PBINARY_HEX)
 			throw new ScriptFormatException(
 				"Unknown field data-type '" + type + "'");
 		dataType = type;
@@ -162,6 +166,9 @@ public class NumberParser
 		
 		case PBINARY_SONTEK:
 			return parseSontekString(field);
+		
+		case PBINARY_HEX:
+			return pseudoBinToHex(field);
 		
 
 		
@@ -903,6 +910,48 @@ public class NumberParser
 		return new Variable(result.toString());
 	} 
 
+	private Variable pseudoBinToHex(byte[] field)
+		throws FieldParseException
+	{
+		long result = 0;
+		String hexResult = "";
+		String hex = "";
+System.out.println("pb: field.length=" + field.length + " '" + new String(field) + "'");
+		for(int i = 0; i<11;i++)
+		{
+			if(i>2)
+				hex += (char)field[i];
+		}
+		hex+="\n";
+		for(int i = 11; i<field.length-1; i++)
+		{
+			int c = (int)field[i];
+			if (c < 0x3F)   // 0x40 is the value of '@'
+				throw new FieldParseException("Illegal character '" 
+					+ c + "' in pseudo binary data field.");
+			result = (long)(c & 0x3f);
+			
+			int ch = (int)field[++i];
+			
+			if (ch < 0x3F)   // 0x40 is the value of '@' 3F == ?
+				throw new FieldParseException("Illegal character '" 
+					+ ch + "' in pseudo binary data field.");
+
+			result <<= 6;
+			result += (long)(ch & 0x3f);	
+	
+			hexResult = Long.toHexString(result);
+			
+			if(hexResult.length() == 2)
+				hexResult = "0" + hexResult;
+			else if(hexResult.length() == 1)
+				hexResult = "00" + hexResult;
+			hex += hexResult;
+		}
+		String s = hex.toUpperCase();
+System.out.println("pb result:\n" + s);
+		return new Variable(s);
+	}
 	
 	// Test main
 	public static void main(String args[])

@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: ComputationApp.java,v 1.22 2020/05/07 13:31:33 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -10,7 +10,14 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *  
-*  $Log$
+*  $Log: ComputationApp.java,v $
+*  Revision 1.22  2020/05/07 13:31:33  mmaloney
+*  Read presentation groups on init. The TS DAOs use these to determine proper units when creating
+*  a new time series.
+*
+*  Revision 1.21  2019/10/29 13:44:17  mmaloney
+*  Only derive missing checks from ENABLED computations for this app.
+*
 *  Revision 1.20  2019/08/26 20:46:22  mmaloney
 *  Implement missing alarm checks.
 *
@@ -641,6 +648,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 		DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
 		decodes.db.Database.getDb().enumList.read();
 		decodes.db.Database.getDb().dataTypeSet.read();
+		decodes.db.Database.getDb().presentationGroupList.read();
 	}
 
 	/**

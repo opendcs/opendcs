@@ -1,7 +1,14 @@
 /**
- * $Id$
+ * $Id: Season.java,v 1.3 2020/02/27 22:06:41 mmaloney Exp $
  * 
- * $Log$
+ * $Log: Season.java,v $
+ * Revision 1.3  2020/02/27 22:06:41  mmaloney
+ * Fixed bug having to do with evaluation 1 digit months. For certain dates it wasn't
+ * evaluating inclusion correctly.
+ *
+ * Revision 1.2  2014/10/02 14:35:46  mmaloney
+ * Conditional Season Processing
+ *
  * Revision 1.1  2014/09/25 18:09:15  mmaloney
  * Added Seasons Enum with Editor.
  *
@@ -60,7 +67,8 @@ public class Season
 		if (modified && tz != null)
 			sdf.setTimeZone(TimeZone.getTimeZone(tz));
 		String test = sdf.format(d);
-		
+//System.out.println("Season(" + abbr + ").isInSeason start='" + start 
+//+ "' end='" + end + "' d=" + d + ", test='" + test + "'");
 		// date/times are all normalized to date format. Do a string compare.
 		if (start.equals(end))
 			// Special case -- season is all year.
@@ -197,6 +205,9 @@ public class Season
 	 */
 	public void setStart(String start)
 	{
+		int slash = start.indexOf('/');
+		if (slash == 1)
+			start = "0" + start;
 		this.start = start;
 		modified = true;
 	}
@@ -213,6 +224,9 @@ public class Season
 	 */
 	public void setEnd(String end)
 	{
+		int slash = end.indexOf('/');
+		if (slash == 1)
+			end = "0" + end;
 		this.end = end;
 		modified = true;
 	}

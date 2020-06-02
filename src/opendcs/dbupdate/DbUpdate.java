@@ -3,7 +3,9 @@ package opendcs.dbupdate;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 
+import java.io.BufferedReader;
 import java.io.Console;
+import java.io.File;
 import java.io.FileReader;
 import java.io.LineNumberReader;
 import java.sql.ResultSet;
@@ -12,7 +14,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 
+import opendcs.opentsdb.OpenTimeSeriesDAO;
 import opendcs.opentsdb.OpenTsdb;
+import opendcs.opentsdb.StorageTableSpec;
 import decodes.db.Database;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
@@ -344,16 +348,71 @@ public class DbUpdate extends TsdbAppTemplate
 					sql(q);
 		}
 
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_67)
+		{
+			if (theDb.isOpenTSDB())
+			{
+				System.out.println("");
+				System.out.println("Updating to Database Version 67.");
+				BufferedReader br = null;
+				try
+				{
+					br = new BufferedReader(new FileReader(new File(schemaDir, "comp_trigger.sql")));
+					String line;
+					StringBuilder q = new StringBuilder();
+					while((line = br.readLine()) != null)
+					{
+						if (line.startsWith("--"))
+							continue;
+						q.append(line + System.getProperty("line.separator"));
+					}
+					// Not sure if I need to lop off the closing semicolon.
+					System.out.println("Executing SQL To Define Trigger Function.");
+					sql(q.toString());
+				}
+				catch(Exception ex)
+				{
+					String msg = "Cannot open comp_trigger.sql file: " + ex;
+					Logger.instance().failure(msg);
+					System.err.println("ERROR: " + msg);
+				}
+				finally
+				{
+					if (br != null)
+						try { br.close(); } catch(Exception ex) {}
+				}
+				System.out.println("Assigning triggers to each numeric data table.");
+
+				OpenTimeSeriesDAO tsDAO = (OpenTimeSeriesDAO)theDb.makeTimeSeriesDAO();
+				ArrayList<StorageTableSpec> specs = tsDAO.getTableSpecs('N');
+				System.out.println("There are " + specs.size() + " numeric tables.");
+				SQLReader sqlReader = new SQLReader(schemaDir + "/data_trig_tmpl.sql");
+				ArrayList<String> queries = sqlReader.createQueries();
+				for(StorageTableSpec spec : specs)
+				{
+					for(String qt : queries)
+					{
+						String suffix = tsDAO.suffixFmt.format(spec.getTableNum());
+						qt = qt.replaceAll("0000", suffix);
+//	System.out.println("suffix='" + suffix + "' q='" + qt + "'");
+						sql(qt);
+					}
+				}
+				tsDAO.close();
+				sql("CREATE SEQUENCE CP_DEPENDS_NOTIFYIdSeq");
+			}
+		}
+		
 		// Update DECODES Database Version
-		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " + DecodesDatabaseVersion.DECODES_DB_17);
-		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_17, "");
+		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " + DecodesDatabaseVersion.DECODES_DB_67);
+		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_67, TsdbDatabaseVersion.VERSION_67_DTK);
 		((SqlDatabaseIO)Database.getDb().getDbIo()).setDecodesDatabaseVersion(
-			DecodesDatabaseVersion.DECODES_DB_17, "");
+			DecodesDatabaseVersion.DECODES_DB_67, TsdbDatabaseVersion.VERSION_67_DTK);
 		// Update TSDB_DATABASE_VERSION.
 		String desc = "Updated on " + new Date();
-		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " + TsdbDatabaseVersion.VERSION_17
+		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " + TsdbDatabaseVersion.VERSION_67
 			+ ", DESCRIPTION = '" + desc + "'");
-		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_17, desc);
+		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_67, desc);
 		
 		// Rewrite the netlists with the changes.
 		Database.getDb().networkListList.write();

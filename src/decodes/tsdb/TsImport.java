@@ -1,7 +1,19 @@
 /**
- * $Id$
+ * $Id: TsImport.java,v 1.12 2020/05/08 13:18:54 mmaloney Exp $
  * 
- * $Log$
+ * $Log: TsImport.java,v $
+ * Revision 1.12  2020/05/08 13:18:54  mmaloney
+ * Handle bad data line better.
+ *
+ * Revision 1.11  2020/05/07 13:54:14  mmaloney
+ * Lazy creation of tsids. This allows more flexibility in setting units.
+ *
+ * Revision 1.10  2020/03/02 13:55:24  mmaloney
+ * Final bug fixes for OpenTSDB Computations
+ *
+ * Revision 1.9  2019/05/07 18:47:06  mmaloney
+ * dev
+ *
  * Revision 1.8  2017/10/10 18:25:03  mmaloney
  * Added support for TsdbFormatter
  *
@@ -61,6 +73,7 @@ package decodes.tsdb;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
+import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TimeZone;
@@ -69,6 +82,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import decodes.cwms.CwmsTimeSeriesDAO;
 import decodes.db.Constants;
+import decodes.db.Database;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.hdb.HdbTsId;
@@ -139,6 +153,7 @@ public class TsImport extends TsdbAppTemplate
 	private CTimeSeries currentTS = null;
 	private SiteDAI siteDAO = null;
 	TimeSeriesDAI timeSeriesDAO = null;
+	private String tsidStr = null;
 
 
 	public TsImport()
@@ -233,45 +248,21 @@ public class TsImport extends TsdbAppTemplate
 		else if (TextUtil.startsWithIgnoreCase(line, "TSID:"))
 		{
 			currentTS = null;
-			String tsidStr = line.substring(5).trim();
+			tsidStr = line.substring(5).trim();
 			if (tsidStr.length() == 0)
 				warning("TSID line with no Time Series Identifier -- ignored.");
-			try
-			{
-				timeSeries.add(currentTS = theDb.makeTimeSeries(tsidStr));
-			}
-			catch (NoSuchObjectException ex)
-			{
-				warning("No existing time series. Will attempt to create.");
-				TimeSeriesIdentifier tsid = theDb.makeEmptyTsId();
-				try
-				{
-					tsid.setUniqueString(tsidStr);
-					Site site = theDb.getSiteById(siteDAO.lookupSiteID(tsid.getSiteName()));
-					if (site == null)
-					{
-						site = new Site();
-						site.addName(new SiteName(site, Constants.snt_CWMS, tsid.getSiteName()));
-						siteDAO.writeSite(site);
-					}
-					tsid.setSite(site);
-					info("Calling createTimeSeries");
-					timeSeriesDAO.createTimeSeries(tsid);
-					info("After createTimeSeries, ts key = " + tsid.getKey());
-					timeSeries.add(currentTS = theDb.makeTimeSeries(tsidStr));
-				}
-				catch(Exception ex2)
-				{
-					warning("No such time series and cannot create for '" + tsidStr + "': " + ex2);
-ex2.printStackTrace();
-					currentTS = null;
-				}
-			}
-			if (currentTS != null && units != null)
-				currentTS.setUnitsAbbr(units);
+		}
+		else if (!Character.isDigit(line.charAt(0)))
+		{
+			warning("File '" + filename + "' line " + lineNum + ": expected data line but got '"
+				+ line + "' -- skipped.");
 		}
 		else
+		{
+			if (currentTS == null)
+				instantiateTsid();
 			processDataLine(line);
+		}
 	}
 
 	/**
@@ -316,48 +307,51 @@ ex2.printStackTrace();
 		else
 			warning("Unrecognized param name '" + paramName + "' -- ignored.");
 	}
-	
-//	private CTimeSeries makeTimeSeries(String x)
-//		throws DbIoException
-//	{
-//		try
-//		{
-//			TimeSeriesIdentifier tsid = theDb.getTimeSeriesIdentifier(x);
-//			long sdi = theDb.isHdb() ? ((HdbTsId)tsid).getSdi() : tsid.getKey();
-//			CTimeSeries ret = new CTimeSeries(sdi, tsid.getInterval(), 
-//				tsid.getTableSelector());
-//			ret.setTimeSeriesIdentifier(tsid);
-//			if (theDb.isHdb())
-//			{
-//				String s = tsid.getPart(HdbTsId.MODELID_PART);
-//				try
-//				{
-//					if (s != null)
-//						ret.setModelId(Integer.parseInt(s));
-//				}
-//				catch(Exception ex)
-//				{
-//					Logger.instance().warning("Bad modelId '" + s + "' -- ignored.");
-//				}
-//				s = tsid.getPart(HdbTsId.MODELRUNID_PART);
-//				try
-//				{
-//					if (s != null)
-//						ret.setModelRunId(Integer.parseInt(s));
-//				}
-//				catch(Exception ex)
-//				{
-//					Logger.instance().warning("Bad modelRunId '" + s + "' -- ignored.");
-//				}
-//			}
-//			return ret;
-//		}
-//		catch(NoSuchObjectException ex)
-//		{
-//			warning("No such time series '" + x + "' -- ignored");
-//			return null;
-//		}
-//	}
+
+	private void instantiateTsid()
+		throws DbIoException
+	{
+		try
+		{
+			timeSeries.add(currentTS = theDb.makeTimeSeries(tsidStr));
+		}
+		catch (NoSuchObjectException ex)
+		{
+			warning("No existing time series. Will attempt to create.");
+			TimeSeriesIdentifier tsid = theDb.makeEmptyTsId();
+			try
+			{
+				tsid.setUniqueString(tsidStr);
+				Site site = theDb.getSiteById(siteDAO.lookupSiteID(tsid.getSiteName()));
+				if (site == null)
+				{
+					site = new Site();
+					site.addName(new SiteName(site, Constants.snt_CWMS, tsid.getSiteName()));
+					siteDAO.writeSite(site);
+				}
+				tsid.setSite(site);
+				if (units != null)
+					tsid.setStorageUnits(units);
+				info("Calling createTimeSeries");
+				timeSeriesDAO.createTimeSeries(tsid);
+				info("After createTimeSeries, ts key = " + tsid.getKey());
+				timeSeries.add(currentTS = theDb.makeTimeSeries(tsidStr));
+			}
+			catch(Exception ex2)
+			{
+				String msg = "No such time series and cannot create for '" + tsidStr + "': " + ex2;
+				failure(msg);
+				PrintStream out = Logger.instance().getLogOutput();
+				if (out != null)
+					ex2.printStackTrace(out);
+				System.err.println(msg);
+				ex2.printStackTrace();
+				currentTS = null;
+			}
+		}
+		if (currentTS != null && units != null)
+			currentTS.setUnitsAbbr(units);
+	}
 	
 	private void processDataLine(String line)
 	{
@@ -414,6 +408,7 @@ ex2.printStackTrace();
 		throws DecodesException
 	{
 		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
+		Database.getDb().presentationGroupList.read();
 	}
 
 	

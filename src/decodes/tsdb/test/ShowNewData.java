@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: ShowNewData.java,v 1.3 2020/02/14 15:16:47 mmaloney Exp $
 */
 package decodes.tsdb.test;
 
@@ -69,7 +69,7 @@ public class ShowNewData extends TestProg
 					out.println(
 						(VarFlags.wasAdded(tv) ? "Add: " :
 						 VarFlags.wasDeleted(tv) ? "Del: " : "???: ")
-						+ tv.toString());
+						+ tv.toString() + " " + tv.getFlags());
 				}
 			}
 			theDb.releaseNewData(dc);

@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: RoutingSpecThread.java,v 1.32 2020/05/01 17:17:09 mmaloney Exp $
 */
 package decodes.routing;
 
@@ -298,6 +298,28 @@ public class RoutingSpecThread
 		statusWriteThread.start();
 		PlatformStatusDAI platformStatusDAO = 
 			updatePlatformStatus ? Database.getDb().getDbIo().makePlatformStatusDAO() : null;
+
+			
+//// Test Code to kill a database connection a specified # of seconds after starting.
+//String s = rs.getProperty("killDbConAfter");
+//if (s != null)
+//{
+//	final int sec = Integer.parseInt(s);
+//	Logger.instance().info("TEST TEST TEST Will kill the db connection after " + sec + " seconds.");
+//	Thread killDbThread = 
+//		new Thread()
+//		{
+//			public void run()
+//			{
+//				long start = System.currentTimeMillis();
+//				while (System.currentTimeMillis() - start < (sec*1000L))
+//					try { sleep(1000L); } catch (InterruptedException ex) {}
+//				Logger.instance().info("TEST TEST TEST killing db con now...");
+//				Database.getDb().getDbIo().close();
+//			}
+//		};
+//	killDbThread.start();
+//}
 
 		if (myLock != null)
 		{

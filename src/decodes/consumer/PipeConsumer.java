@@ -1,9 +1,12 @@
 /*
-*  $Id$
+*  $Id: PipeConsumer.java,v 1.4 2019/12/11 19:04:34 mmaloney Exp $
 *
-*  $State$
+*  $State: Exp $
 *
-*  $Log$
+*  $Log: PipeConsumer.java,v $
+*  Revision 1.4  2019/12/11 19:04:34  mmaloney
+*  Added setOutputStream method for Test Runner.
+*
 *  Revision 1.3  2014/05/30 13:15:32  mmaloney
 *  dev
 *

@@ -123,6 +123,15 @@ public class DecodesDatabaseVersion
 	 */
 	public static final int DECODES_DB_17 = 17;
 
-	// Future schema changes should define DECODES_DB_18
+	/**
+	 * Version 67 schema corresponds to OpenDCS 6.7
+	 * Keep This number in sync with decodes/tsdb/TsdbDatabaseVersion.
+	 * - Defined OpenTSDB Computation Trigger in the sql install files
+	 * - Added OpenTSDB Computation Trigger to opendcs.dbupdate.DbUpdate java code.
+	 * - Added CP_DEPENDS_NOTIFYIdSeq - This was missing in OpenTSDB.
+	 */
+	public static final int DECODES_DB_67 = 67;
+	
+
 	
 }

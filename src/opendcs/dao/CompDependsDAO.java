@@ -1,7 +1,13 @@
 /**
- * $Id$
+ * $Id: CompDependsDAO.java,v 1.7 2020/05/07 13:50:16 mmaloney Exp $
  * 
- * $Log$
+ * $Log: CompDependsDAO.java,v $
+ * Revision 1.7  2020/05/07 13:50:16  mmaloney
+ * Also delete from scratchpad when deleting dependencies.
+ *
+ * Revision 1.6  2017/08/22 19:58:40  mmaloney
+ * Refactor
+ *
  * Revision 1.5  2017/07/06 19:06:54  mmaloney
  * New method to support comp exec command.
  *
@@ -203,6 +209,8 @@ debug3("Total dds for dependencies=" + dataIds.size());
 		String q = "DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = "
 			+ timeSeriesKey;
 		doModify(q);
+		doModify("delete from cp_comp_depends_scratchpad where " + cpCompDepends_col1 + " = " 
+			+ timeSeriesKey);
 	}
 	
 	@Override
@@ -212,9 +220,10 @@ debug3("Total dds for dependencies=" + dataIds.size());
 		if (db.isHdb())
 			return;
 		// Remove the CP_COMP_DEPENDS records & re-add.
-		String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = "
-			+ compId;
+		String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId;
 		doModify(q);
+		
+		doModify("delete from cp_comp_depends_scratchpad where COMPUTATION_ID = " + compId);
 	}
 	
 	public void close()

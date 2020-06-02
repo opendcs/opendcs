@@ -1,7 +1,13 @@
 /*
- * $Id$
+ * $Id: LoadingAppDao.java,v 1.12 2020/02/14 22:27:05 mmaloney Exp $
  * 
- * $Log$
+ * $Log: LoadingAppDao.java,v $
+ * Revision 1.12  2020/02/14 22:27:05  mmaloney
+ * Updates
+ *
+ * Revision 1.11  2019/10/21 14:16:12  mmaloney
+ * Bug Fix. For DB Version 17, it was still attempting to delete from ALARM_DEF.
+ *
  * Revision 1.10  2019/08/26 20:52:19  mmaloney
  * Removed unneeded debugs.
  *
@@ -282,12 +288,16 @@ public class LoadingAppDao
 		DbKey id = app.getAppId();
 		boolean isNew = id.isNull();
 		String q;
+		String appName = app.getAppName();
+		if (appName.length() > 24)
+			appName = appName.substring(0, 24);
+		
 		if (isNew)
 		{
 			// Could be import from XML to overwrite existing algorithm.
 			q = "select LOADING_APPLICATION_ID from HDB_LOADING_APPLICATION"
 			  + " where LOADING_APPLICATION_NAME = " 
-			  + sqlString(app.getAppName());
+			  + sqlString(appName);
 			try
 			{
 				ResultSet rs = doQuery(q);
@@ -322,7 +332,7 @@ public class LoadingAppDao
 					+ "loading_application_name, manual_edit_app, cmmnt"
 					+ ") VALUES("
 					+ id
-					+ ", " + sqlString(app.getAppName())
+					+ ", " + sqlString(appName)
 					+ ", 'N'" 
 					+ ", " + sqlString(app.getComment())
 				    + ")";
@@ -333,7 +343,7 @@ public class LoadingAppDao
 					q = 
 					"select LOADING_APPLICATION_ID from HDB_LOADING_APPLICATION"
 			  		+ " where LOADING_APPLICATION_NAME = " 
-			  		+ sqlString(app.getAppName());
+			  		+ sqlString(appName);
 					try
 					{
 						ResultSet rs = doQuery(q);
@@ -351,7 +361,7 @@ public class LoadingAppDao
 			{
 				String setClause = "";
 				if (!TextUtil.strEqual(app.getAppName(), oldcai.getAppName()))
-					setClause = "LOADING_APPLICATION_NAME = " + sqlString(app.getAppName());
+					setClause = "LOADING_APPLICATION_NAME = " + sqlString(appName);
 				if (!TextUtil.strEqual(app.getComment(), oldcai.getComment()))
 				{
 					if (setClause != "")

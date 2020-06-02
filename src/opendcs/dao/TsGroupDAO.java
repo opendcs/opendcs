@@ -1,7 +1,13 @@
 /*
-* $Id$
+* $Id: TsGroupDAO.java,v 1.17 2020/02/14 15:21:48 mmaloney Exp $
 * 
-* $Log$
+* $Log: TsGroupDAO.java,v $
+* Revision 1.17  2020/02/14 15:21:48  mmaloney
+* Updates for OpenTSDB
+*
+* Revision 1.16  2019/08/26 20:52:50  mmaloney
+* Removed unneeded debugs.
+*
 * Revision 1.15  2017/11/14 16:08:05  mmaloney
 * Increase cache limit to 20 min.
 *
@@ -420,6 +426,14 @@ public class TsGroupDAO
 				+ groupId + ", " + db.sqlDate(new Date()) + ")";
 			doModify(q);
 		}
+		else if (db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67)
+		{
+			// Computations did not exist in OpenTSDB until OpenDCS Version 6.7 = DB Version 67
+			q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+				+ "values(" + getKey("cp_depends_notify") 
+				+ ", 'G', " + groupId + ", " + System.currentTimeMillis() + ")";
+				doModify(q);
+		}
 		// Note: HDB does notification in trigger.
 	}
 
@@ -660,7 +674,7 @@ if (group == null)
 		q = "DELETE FROM TSDB_GROUP_MEMBER_GROUP WHERE CHILD_GROUP_ID = " + deletedGroupId;
 		doModify(q);
 
-		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14 && !db.isHdb())
+		if (db.isCwms() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
 		{
 			// Enqueue "comp modified" notifications for all the now-disabled computations.
 			for(DbKey compId : comps2disable)
@@ -681,7 +695,29 @@ if (group == null)
 				doModify(q);
 			}
 		}
-		
+		else if (db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67)
+		{
+			// Enqueue "comp modified" notifications for all the now-disabled computations.
+			for(DbKey compId : comps2disable)
+			{
+				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+					+ "values(" + getKey("cp_depends_notify") + ", 'C', "
+					+ compId + ", " + System.currentTimeMillis() + ")";
+				doModify(q);
+			}
+
+			// Enqueue "group modified" notifications for groups in the hash set.
+			// This will let the comp depends updater manage the computations.
+			for(DbKey groupId : modifiedGroupIds)
+			{
+				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+					+ "values(" + getKey("cp_depends_notify") + ", 'G', "
+					+ groupId + ", " + System.currentTimeMillis() + ")";
+				doModify(q);
+			}
+		}
+		// Note HDB does notify via trigger.
+
 		// Reread any modified groups to keep cache up to date.
 		for(DbKey groupId : modifiedGroupIds)
 			getTsGroupById(groupId, true);

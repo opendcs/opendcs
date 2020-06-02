@@ -1159,5 +1159,10 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		// Do nothing. HDB doesn't use modules.
 	}
 
-
+	@Override
+	public void modifyTSID(TimeSeriesIdentifier tsid)
+			throws DbIoException, NoSuchObjectException, BadTimeSeriesException
+	{
+		// Not implemented for HDB
+	}
 }

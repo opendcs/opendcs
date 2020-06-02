@@ -1,9 +1,15 @@
 /**
- * $Id$
+ * $Id: TsListSelectPanel.java,v 1.9 2020/01/31 19:41:00 mmaloney Exp $
  * 
  * Open Source Software
  * 
- * $Log$
+ * $Log: TsListSelectPanel.java,v $
+ * Revision 1.9  2020/01/31 19:41:00  mmaloney
+ * Implement new TS Definition Panel for OpenTSDB and CWMS.
+ *
+ * Revision 1.8  2018/05/23 19:59:02  mmaloney
+ * OpenTSDB Initial Release
+ *
  * Revision 1.7  2017/01/24 15:37:32  mmaloney
  * CWMS-10060 Remove redundant filling of TSID and Location caches.
  *
@@ -79,7 +85,7 @@ public class TsListSelectPanel extends JPanel
 	//Panel Components
 	private JScrollPane jScrollPane;
 	private TsIdSelectTableModel model;
-	private SortingListTable tsIdListTable;
+	SortingListTable tsIdListTable;
 
 	/** Constructor. */
 	public TsListSelectPanel(TimeSeriesDb theTsDb, boolean showDescription,

@@ -1,7 +1,13 @@
 /**
- * $Id$
+ * $Id: CwmsTimeSeriesDAO.java,v 1.28 2020/01/31 19:31:44 mmaloney Exp $
  * 
- * $Log$
+ * $Log: CwmsTimeSeriesDAO.java,v $
+ * Revision 1.28  2020/01/31 19:31:44  mmaloney
+ * Store UTC Offset in TSID
+ *
+ * Revision 1.27  2019/05/10 18:35:26  mmaloney
+ * dev
+ *
  * Revision 1.26  2019/05/07 18:20:11  mmaloney
  * In createTSID, make sure location exists before attempting to create.
  *
@@ -230,9 +236,12 @@ public class CwmsTimeSeriesDAO
 		DataType dt = 
 			DataType.getDataType(Constants.datatype_CWMS, param);
 		
+		int x = rs.getInt(3);
+		Integer utcOffset = rs.wasNull() ? null : x;
+		
 		CwmsTsId ret = new CwmsTsId(key, desc, dt, 
 			desc, TextUtil.str2boolean(rs.getString(2)),
-			rs.getInt(3), rs.getString(4));
+			utcOffset, rs.getString(4));
 		
 		
 		DbKey siteId = DbKey.createDbKey(rs, 8);
@@ -1237,4 +1246,10 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 		// Do nothing. CWMS doesn't use modules.
 	}
 
+	@Override
+	public void modifyTSID(TimeSeriesIdentifier tsid)
+			throws DbIoException, NoSuchObjectException, BadTimeSeriesException
+	{
+		// Not implemented for CWMS
+	}
 }

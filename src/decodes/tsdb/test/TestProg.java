@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: TestProg.java,v 1.3 2019/12/11 14:21:13 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -10,7 +10,10 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *
-*  $Log$
+*  $Log: TestProg.java,v $
+*  Revision 1.3  2019/12/11 14:21:13  mmaloney
+*  Test Runner
+*
 *  Revision 1.2  2019/10/13 19:29:57  mmaloney
 *  dev
 *

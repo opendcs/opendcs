@@ -1,5 +1,5 @@
 /*
-* $Id$
+* $Id: CwmsGroupHelper.java,v 1.10 2019/12/11 14:36:19 mmaloney Exp $
 *  This is open-source software written by Sutron Corporation, under
 *  contract to the federal government. You are free to copy and use this
 *  source code for your own purposes, except that no part of the information
@@ -7,7 +7,10 @@
 *
 * Open Source Software
 * 
-* $Log$
+* $Log: CwmsGroupHelper.java,v $
+* Revision 1.10  2019/12/11 14:36:19  mmaloney
+* Don't explicitly require CwmsTimeSeriesDb. This module is also used with OpenTsdb.
+*
 * Revision 1.9  2017/12/04 18:58:38  mmaloney
 * CWMS-10012 fixed CWMS problem that could sometimes result in circular dependencies
 * for group computations when a new Time Series was created. When compdepends

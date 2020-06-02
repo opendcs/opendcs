@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: HdbTimeSeriesDb.java,v 1.25 2020/02/12 15:18:03 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -10,7 +10,13 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *  
-*  $Log$
+*  $Log: HdbTimeSeriesDb.java,v $
+*  Revision 1.25  2020/02/12 15:18:03  mmaloney
+*  Remove unneeded debugs
+*
+*  Revision 1.24  2019/12/11 14:37:10  mmaloney
+*  Support OS authentication for HDB (issue 771)
+*
 *  Revision 1.23  2019/06/26 14:23:09  mmaloney
 *  Issue 706 transformUniqueString expand SDI if it isn't already expanded.
 *
@@ -392,9 +398,9 @@ public class HdbTimeSeriesDb
 //Logger.instance().debug1("HdbTimeSeriesDb.expandSDI derived from sdi, siteId=" + siteId + ", dtid=" + datatypeId);
 		}
 		parm.setSite(getSiteById(siteId));
-Logger.instance().debug1("HdbTimeSeriesDb.expandSDI after getSiteById, siteId=" + siteId
-	+ ", sitename=" + 
-	(parm.getSite().getPreferredName() != null ? parm.getSite().getPreferredName().getNameValue() : "(none)"));
+//Logger.instance().debug1("HdbTimeSeriesDb.expandSDI after getSiteById, siteId=" + siteId
+//	+ ", sitename=" + 
+//	(parm.getSite().getPreferredName() != null ? parm.getSite().getPreferredName().getNameValue() : "(none)"));
 		
 		if (!DbKey.isNull(datatypeId))
 		{
@@ -566,8 +572,8 @@ Logger.instance().debug1("HdbTimeSeriesDb.expandSDI after getSiteById, siteId=" 
 			Logger.instance().warning("findMaxModelRunId: " + ex);
 			r = Constants.undefinedIntKey;
 		}
-Logger.instance().info("findMaxModelRunId(modelId=" + modelId 
-+ ") returning " + r);
+//Logger.instance().info("findMaxModelRunId(modelId=" + modelId 
+//+ ") returning " + r);
 		return r;
 	}
 
@@ -991,7 +997,7 @@ Logger.instance().info("findMaxModelRunId(modelId=" + modelId
 		else
 		{
 			tsidRet = (HdbTsId)tsid;
-debug3("transformTsidByCompParm transform left tsid unchanged");
+//debug3("transformTsidByCompParm transform left tsid unchanged");
 		}
 		
 		
@@ -1027,8 +1033,8 @@ debug3("transformTsidByCompParm transform left tsid unchanged");
 		if (sn == null && !DbKey.isNull(parm.getSiteId()))
 			sn = new SiteName(null, "HDB", "" + parm.getSiteId());
 		
-debug3("transformUniqueString() before tsid=" + tsidRet.getUniqueString()
-+ ", parm.getSiteName=" + (sn==null ? "null" : sn.toString()) + ", parm.siteId=" + parm.getSiteId());
+//debug3("transformUniqueString() before tsid=" + tsidRet.getUniqueString()
+//+ ", parm.getSiteName=" + (sn==null ? "null" : sn.toString()) + ", parm.siteId=" + parm.getSiteId());
 		boolean transformed = false;
 		if (sn != null)
 		{
@@ -1063,7 +1069,7 @@ debug3("transformUniqueString() before tsid=" + tsidRet.getUniqueString()
 		{
 			tsidRet.setPart(HdbTsId.MODELID_PART, ""+mid);
 		}
-debug3("transformUniqueString() after tsid=" + tsidRet.getUniqueString());
+//debug3("transformUniqueString() after tsid=" + tsidRet.getUniqueString());
 		return transformed;
 	}
 
@@ -1098,6 +1104,7 @@ debug3("transformUniqueString() after tsid=" + tsidRet.getUniqueString());
 	 */
 	public Date getFullDate(ResultSet rs, int column)
 	{
+//Logger.instance().debug3("HdbTimeSeriesDb getFullDate");
 		if (oracleDateParser == null)
 		{
 			oracleDateParser = makeOracleDateParser(TimeZone.getTimeZone(databaseTimezone));

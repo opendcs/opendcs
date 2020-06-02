@@ -1,9 +1,15 @@
 /*
- * $Id$
+ * $Id: SqlDatabaseIO.java,v 1.15 2020/02/14 15:13:44 mmaloney Exp $
  * 
  * Open Source Software
  * 
- * $Log$
+ * $Log: SqlDatabaseIO.java,v $
+ * Revision 1.15  2020/02/14 15:13:44  mmaloney
+ * Implement isOpenTSDB
+ *
+ * Revision 1.14  2019/12/11 14:34:02  mmaloney
+ * Support OS authentication for HDB (issue 771)
+ *
  * Revision 1.13  2019/06/10 19:24:41  mmaloney
  * code cleanup
  *
@@ -57,8 +63,10 @@
  */
 package decodes.sql;
 
+import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.*;
+import decodes.hdb.HdbSqlDatabaseIO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -107,12 +115,9 @@ import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
 import ilex.util.Counter;
 import ilex.util.Logger;
-import ilex.util.PropertiesUtil;
-import ilex.util.TextUtil;
 import ilex.util.UserAuthFile;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
@@ -2236,6 +2241,15 @@ public class SqlDatabaseIO
 	public AlarmDAI makeAlarmDAO()
 	{
 		return new AlarmDAO(this);
+	}
+
+	@Override
+	public boolean isOpenTSDB()
+	{
+		if ((this instanceof HdbSqlDatabaseIO) || (this instanceof CwmsSqlDatabaseIO))
+			return false;
+		else
+			return true;
 	}
 
 

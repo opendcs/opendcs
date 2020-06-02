@@ -217,12 +217,64 @@ public class DbUtil extends TsdbAppTemplate
 				parmMorph(tokens);
 			}
 		};
+		
+	private CmdLine getDateCmd =
+		new CmdLine("getDate", " <tablename> <columnname> <whereclause>")
+		{
+			public void execute(String[] tokens)
+			{
+				getDate(tokens);
+			}
+		};
+	
 
 
 
 	public DbUtil()
 	{
 		super("util.log");
+	}
+
+	protected void getDate(String[] tokens)
+	{
+		if (tokens.length < 4)
+		{
+			System.out.println("3 params required.");
+			return;
+		}
+		String table = tokens[1];
+		String column = tokens[2];
+		String where = tokens[3];
+		
+		String q = "select " + column + " from " + table + " where " + where;
+		System.out.println("Executing '" + q + "'");
+		String what = "Executing '" + q + "'";
+		try
+		{
+			
+			ResultSet rs = theDb.doQuery(q);
+			if (!rs.next())
+			{
+				System.out.println("Query returned no rows.");
+				return;
+			}
+			
+			what = "Parsing returned date";
+			Date d = theDb.getFullDate(rs, 1);
+			if (d == null)
+			{
+				System.out.println("getFullDate returned null -- check log.");
+				System.out.println("rs.getString(1): '" + rs.getString(1) + "'");
+			}
+			else
+				System.out.println("Date returned: " + d);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Error while " + what);
+			e.printStackTrace();
+		}
+
 	}
 
 	protected void parmMorph(String[] tokens)
@@ -525,6 +577,7 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(hdbRatingCmd);
 		cmdLineProc.addCmd(tsdbStatsCmd);
 		cmdLineProc.addCmd(parmMorphCmd);
+		cmdLineProc.addCmd(getDateCmd);
 		
 		cmdLineProc.addHelpAndQuitCommands();
 		

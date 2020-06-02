@@ -1,9 +1,15 @@
 /*
- * $Id$
+ * $Id: EngineeringUnitIO.java,v 1.3 2020/02/14 22:27:05 mmaloney Exp $
  *
- * $State$
+ * $State: Exp $
  *
- * $Log$
+ * $Log: EngineeringUnitIO.java,v $
+ * Revision 1.3  2020/02/14 22:27:05  mmaloney
+ * Updates
+ *
+ * Revision 1.2  2014/08/29 18:22:50  mmaloney
+ * 6.1 Schema Mods
+ *
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
  *
@@ -139,6 +145,19 @@ public class EngineeringUnitIO extends SqlDbObjIo
 		for(Iterator<EngineeringUnit> euit = euList.iterator(); euit.hasNext(); )
 		{
 			EngineeringUnit eu = euit.next();
+			String abbr = eu.getAbbr();
+			if (abbr.length() > 24)
+				abbr = abbr.substring(0, 24);
+			String family = eu.getFamily();
+			if (family == null)
+				family = "unknown";
+			else if (family.length() > 24)
+				family = family.substring(0, 24);
+			String measures = eu.getMeasures();
+			if (measures != null && measures.length() > 24)
+				measures = measures.substring(0, 24);
+			
+			
 			EngineeringUnit dbeu = dbList.getByAbbr(eu.getAbbr());
 			if (dbeu != null)
 			{
@@ -146,8 +165,8 @@ public class EngineeringUnitIO extends SqlDbObjIo
 				{
 					String q = "update EngineeringUnit "
 						+ "set name=" + sqlReqString(eu.getName())
-						+ ", family=" + sqlOptString(eu.getFamily())
-						+ ", measures=" + sqlOptString(eu.getMeasures())
+						+ ", family=" + sqlOptString(family)
+						+ ", measures=" + sqlOptString(measures)
 						+ " where lower(unitabbr) = " 
 						+ sqlString(eu.getAbbr().toLowerCase());
 					tryUpdate(q);
@@ -160,10 +179,9 @@ public class EngineeringUnitIO extends SqlDbObjIo
 					" VALUES (" +
 					sqlReqString(eu.abbr) + ", " +
 					sqlReqString(eu.getName()) + ", " +
-					sqlOptString(eu.family) + ", " +
-					sqlOptString(eu.measures)
+					sqlOptString(family) + ", " +
+					sqlOptString(measures)
 					+ ")";
-debug3(q);
 				tryUpdate(q);
 			}
 		}

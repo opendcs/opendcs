@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: PlatformList.java,v 1.11 2020/02/12 15:11:45 mmaloney Exp $
 */
 package decodes.db;
 
@@ -83,7 +83,7 @@ public class PlatformList extends DatabaseObject
 	private void refillCurrentPlatformMap()
 	{
 		currentPlatformMap.clear();
-		int tms = 0;
+//		int tms = 0;
 		for(Platform plat : platformVec)
 		{
 			if (plat.expiration == null)
@@ -93,13 +93,13 @@ public class PlatformList extends DatabaseObject
 					TransportMedium tm = tmit.next();
 					String key = tm.getTmKey();
 					currentPlatformMap.put(key, plat);
-if (tm.getMediumId().equalsIgnoreCase("CE5E7ABA"))
-	Logger.instance().info("Added tm map for " + key);
-					tms++;
+//if (tm.getMediumId().equalsIgnoreCase("CE5E7ABA"))
+//	Logger.instance().info("Added tm map for " + key);
+//					tms++;
 				}
 			}
 		}
-Logger.instance().debug3("" + tms + " TMs processed, map size=" + currentPlatformMap.size());
+//Logger.instance().debug3("" + tms + " TMs processed, map size=" + currentPlatformMap.size());
 	}
 
 	

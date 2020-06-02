@@ -1,7 +1,10 @@
 /**
- * $Id$
+ * $Id: TsGroupDefinitionPanel.java,v 1.15 2019/12/11 14:43:38 mmaloney Exp $
  * 
- * $Log$
+ * $Log: TsGroupDefinitionPanel.java,v $
+ * Revision 1.15  2019/12/11 14:43:38  mmaloney
+ * Don't explicitly require CwmsTimeSeriesDb. This module is also used with OpenTsdb.
+ *
  * Revision 1.14  2018/02/05 15:52:39  mmaloney
  * Added ObjectType filter for USBR HDB.
  *

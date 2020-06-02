@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: DecodesVersion.java,v 1.10 2020/02/14 22:27:05 mmaloney Exp $
 */
 package decodes.util;
 
@@ -17,7 +17,7 @@ public class DecodesVersion
 	private static String abbr = "OPENDCS";
 
 	/** the program version number */
-	private static String version = "6.6 RC" + LrgsBuild.rcNum;
+	private static String version = "6.7 RC" + LrgsBuild.rcNum;
 
 	/** the program date */
 	private static String modifyDate = LrgsBuild.buildDate;

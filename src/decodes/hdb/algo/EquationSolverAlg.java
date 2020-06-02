@@ -140,6 +140,15 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		repl = !isMissing(input5) ? (new Double(input5)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input5>>", repl);
 		
+		if (new_equation.contains("<<loading_application_id>>"))
+			new_equation = new_equation.replaceAll("<<loading_application_id>>", 
+				tsdb.getAppId().toString());
+		if (new_equation.contains("<<computation_id>>"))
+			new_equation = new_equation.replaceAll("<<computation_id>>", comp.getId().toString());
+		if (new_equation.contains("<<algorithm_id>>"))
+			new_equation = new_equation.replaceAll("<<algorithm_id>>", 
+				comp.getAlgorithmId().toString());
+		
 		debug3("doAWTimeSlice input1=" + input1 + ", input2=" + input2);
 
 		/* THis modification done by M. Bogner 30-SEP-2011 */

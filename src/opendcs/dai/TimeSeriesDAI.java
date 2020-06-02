@@ -226,5 +226,14 @@ public interface TimeSeriesDAI
 	 * @param module a string module name saved as part of the tsdb data source.
 	 */
 	public void setAppModule(String module);
-
+	
+	/**
+	 * Added for OpenTSDB - Modify an existing Time Series descriptive info.
+	 * @param tsid
+	 * @throws DbIoException
+	 * @throws NoSuchObjectException
+	 * @throws BadTimeSeriesException
+	 */
+	public void modifyTSID(TimeSeriesIdentifier tsid)
+		throws DbIoException, NoSuchObjectException, BadTimeSeriesException;
 }

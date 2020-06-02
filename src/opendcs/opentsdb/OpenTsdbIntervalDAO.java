@@ -54,11 +54,12 @@ public class OpenTsdbIntervalDAO
 			if (zeroInt == null)
 			{
 				Logger.instance().debug1("After loading intervals, there is no '0' interval. Will add.");
-				Interval intv = new Interval(DbKey.NullKey, "0", Calendar.MINUTE, 0);
-				IntervalList.instance().add(intv);
+				zeroInt = new Interval(DbKey.NullKey, "0", Calendar.MINUTE, 0);
+				writeInterval(zeroInt);
+				// note: writeInterval will add to the list.
 			}
-//			else
-//				Logger.instance().info("After loading intervals, '0' interval has key=" + zeroInt.getKey());
+			else
+				Logger.instance().info("After loading intervals, '0' interval has key=" + zeroInt.getKey());
 		}
 		catch (Exception ex)
 		{

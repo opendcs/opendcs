@@ -1,9 +1,15 @@
 /**
- * $Id$
+ * $Id: DbPollThread.java,v 1.4 2020/02/20 16:11:53 mmaloney Exp $
  * 
  * Open Source Software
  * 
- * $Log$
+ * $Log: DbPollThread.java,v $
+ * Revision 1.4  2020/02/20 16:11:53  mmaloney
+ * null ptr fix.
+ *
+ * Revision 1.3  2015/06/04 21:37:39  mmaloney
+ * Added control buttons to process monitor GUI.
+ *
  * Revision 1.2  2015/05/14 13:52:20  mmaloney
  * RC08 prep
  *
@@ -95,10 +101,13 @@ public class DbPollThread
 						
 						// Get this app from the currently-displayed model.
 						AppInfoStatus appStatus = model.getAppByName(app.getAppName());
-						if (appStatus == null && doMonitor)
+						if (appStatus == null)
 						{
-							model.addApp(app);
-							changed = true;
+							if (doMonitor)
+							{
+								model.addApp(app);
+								changed = true;
+							}
 						}
 						else // already in model.
 						{

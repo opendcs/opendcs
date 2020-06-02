@@ -5,8 +5,8 @@ import ilex.util.Logger;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -48,6 +48,7 @@ public class HdbOracleDateParser
 	{
 		super(tz);
 		module = "HdbOracleDateParser";
+Logger.instance().info("Constructing " + module);
 	}
 	
 	private Date convertDATE(DATE oracleDate)
@@ -89,8 +90,6 @@ public class HdbOracleDateParser
 			sqlDataType = metaData.getColumnTypeName(column);
 			s = rs.getString(column);
 			columnName = metaData.getColumnName(column);
-//Logger.instance().debug3(module + " column " + columnName + " sqlType='" + sqlDataType
-//+ "' string value='" + s + "'");
 			if (s == null || rs.wasNull())
 				return null;
 			
@@ -99,27 +98,32 @@ public class HdbOracleDateParser
 		}
 		catch (SQLException ex)
 		{
-			Logger.instance().warning(module + " Error getting date as string: " + ex);
-			return null;
+			try
+			{
+				Timestamp ts = rs.getTimestamp(column);
+				Date ret = new Date(ts.getTime());
+				return ret;
+			}
+			catch (SQLException e2)
+			{
+				Logger.instance().warning(module + " Error Attempt to get date as String and Timestamp both failed: " + e2);
+				return null;
+			}
 		}
 		try 
 		{
 			Date d = oracleTimestampZFmt.parse(s);
-//			Logger.instance().debug3(module + " Parsed Oracle Timestamp. String='" + s + "', date=" + d);
 			return d;
 		}
 		catch(Exception ex)
 		{
-//			Logger.instance().debug3(module + " Cannot parse oracle date/time with Z format.");
 			try
 			{
 				Date d = parseNoZ(s);
-//				Logger.instance().debug3(module + " Parsed Oracle Timestamp NoZ. String='" + s + "', date=" + d);
 				return d;
 			}
 			catch(ParseException ex2)
 			{
-//				Logger.instance().debug3(module + " Still can't parse with NoZ format.");
 			}
 		}
 		try
@@ -130,8 +134,6 @@ public class HdbOracleDateParser
 			else
 			{
 				Date d = new Date(ts.getTime());
-//Logger.instance().debug3(module + " read as sql.Timestamp: ts='" + ts + "', msec=" + 
-//ts.getTime() + ", date=" + d);
 				return d;
 			}
 		}

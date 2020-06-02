@@ -1,6 +1,6 @@
 /*
 *
-* $Id$
+* $Id: CwmsTimeSeriesDb.java,v 1.57 2020/05/02 12:44:06 mmaloney Exp $
 * 
 *  This is open-source software written by Sutron Corporation, under
 *  contract to the federal government. You are free to copy and use this
@@ -11,7 +11,13 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *  
-*  $Log$
+*  $Log: CwmsTimeSeriesDb.java,v $
+*  Revision 1.57  2020/05/02 12:44:06  mmaloney
+*  Add stack trace on connection failure.
+*
+*  Revision 1.56  2019/12/11 14:35:32  mmaloney
+*  set module in ctor.
+*
 *  Revision 1.55  2019/07/02 13:53:26  mmaloney
 *  Added flags2display
 *
@@ -667,6 +673,7 @@ import java.util.Properties;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.GregorianCalendar;
+import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -783,6 +790,9 @@ public class CwmsTimeSeriesDb
 			String msg = "Cannot get CWMS connection for user '" + username
 				+ "', officeId='" + dbOfficeId + "': " + ex;
 			Logger.instance().failure(msg);
+			PrintStream ps = Logger.instance().getLogOutput();
+			if (ps != null)
+				ex.printStackTrace(ps);
 			throw new BadConnectException(msg);
 		}
 		

@@ -1,7 +1,13 @@
 /*
-*  $Id$
+*  $Id: ChannelMap.java,v 1.4 2020/04/28 17:25:35 mmaloney Exp $
 *
-*  $Log$
+*  $Log: ChannelMap.java,v $
+*  Revision 1.4  2020/04/28 17:25:35  mmaloney
+*  Fix isRandom() -- it was assuming channels above 266 are random. Don't do that.
+*
+*  Revision 1.3  2015/07/27 18:39:32  mmaloney
+*  In the download threads, only have a lock when the file is being actively dowloaded.
+*
 *  Revision 1.2  2015/03/19 17:56:53  mmaloney
 *  If lock is taken, continue to spawn maintenance thread to check for file changes.
 *
@@ -222,7 +228,7 @@ public class ChannelMap
 
 	/**
 	  Return baud rate for a particular channel.
-	  @param chan the channel number (1...266)
+	  @param chan the channel number (1...max)
 	  @return baud rate for a particular channel.
 	*/
 	public int getBaud(int chan)
@@ -246,7 +252,7 @@ public class ChannelMap
 	*/
 	public boolean isRandom(int chan)
 	{
-		return (chan < 0 || chan > 266) ? true : channelTypes[chan] == 'R';
+		return (chan < 0 || chan > channelTypes.length) ? true : channelTypes[chan] == 'R';
 	}
 
 	/**

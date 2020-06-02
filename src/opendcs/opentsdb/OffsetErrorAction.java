@@ -16,5 +16,15 @@ public enum OffsetErrorAction
 {
 	IGNORE, 
 	REJECT, 
-	ROUND
+	ROUND;
+	
+	public static OffsetErrorAction fromString(String s)
+	{
+		if (s.equalsIgnoreCase("REJECT"))
+			return REJECT;
+		else if (s.equalsIgnoreCase("ROUND"))
+			return ROUND;
+		else
+			return IGNORE;
+	}
 }

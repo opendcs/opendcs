@@ -1,7 +1,16 @@
 /*
-* $Id$
+* $Id: ComputationDAO.java,v 1.15 2020/05/07 13:41:54 mmaloney Exp $
 * 
-* $Log$
+* $Log: ComputationDAO.java,v $
+* Revision 1.15  2020/05/07 13:41:54  mmaloney
+* When deleting a computation, first delete it's dependencies using CompDependsDAO.
+*
+* Revision 1.14  2020/02/14 15:18:25  mmaloney
+* Updates for OpenTSDB
+*
+* Revision 1.13  2019/08/26 20:51:47  mmaloney
+* Added checks for enabled and executable class.
+*
 * Revision 1.12  2019/02/26 17:16:44  mmaloney
 * HDB 660
 *
@@ -997,6 +1006,14 @@ public class ComputationDAO
 					finally { compDependsDAO.close(); }
 				}
 			}
+			else if (db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67)
+			{
+				// Computations did not exist in OpenTSDB until OpenDCS Version 6.7 = DB Version 67
+				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+					+ "values(" + getKey("cp_depends_notify") 
+					+ ", 'C', " + comp.getKey() + ", " + System.currentTimeMillis() + ")";
+					doModify(q);
+			}
 			// Note HDB does the notifications via Trigger, so no need to do anything.
 		}
 		catch(DbIoException ex)
@@ -1033,29 +1050,46 @@ public class ComputationDAO
 	public void deleteComputation(DbKey id)
 		throws DbIoException, ConstraintException
 	{
+		// Have to delete the dependencies, otherwise foreign key will prevent comp delete.
+		CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
+		try
+		{
+			compDependsDAO.deleteCompDependsForCompId(id);
+		}
+		finally { compDependsDAO.close(); }
+		
 		String q = "delete from CP_COMP_TS_PARM where COMPUTATION_ID = " + id;
 		doModify(q);
 		q = "delete from CP_COMP_PROPERTY where COMPUTATION_ID = " + id;
 		doModify(q);
 		
-		if (db.isCwms())
-		{
-			// CWMS DB 14 uses the Comp Depends Updater Daemon. So send a NOTIFY.
-			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
-			{
-				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-					+ "values(cp_depends_notifyidseq.nextval, 'C', "
-					+ id + ", " + db.sqlDate(new Date()) + ")";
-				doModify(q);
-			}
-			// Older versions the GUI must update dependencies directly.
-			else if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5)
-			{
-				CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-				try { compDependsDAO.deleteCompDependsForCompId(id); }
-				finally { compDependsDAO.close(); }
-			}
-		}
+//		if (db.isCwms())
+//		{
+//			// CWMS DB 14 uses the Comp Depends Updater Daemon. So send a NOTIFY.
+//			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
+//			{
+//				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+//					+ "values(cp_depends_notifyidseq.nextval, 'C', "
+//					+ id + ", " + db.sqlDate(new Date()) + ")";
+//				doModify(q);
+//			}
+//			// Older versions the GUI must update dependencies directly.
+//			else if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5)
+//			{
+//				CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
+//				try { compDependsDAO.deleteCompDependsForCompId(id); }
+//				finally { compDependsDAO.close(); }
+//			}
+//		}
+//		else if (db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67)
+//		{
+//			// Computations did not exist in OpenTSDB until OpenDCS Version 6.7 = DB Version 67
+//			q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
+//				+ "values(" + getKey("cp_depends_notify") 
+//				+ ", 'C', " + id + ", " + System.currentTimeMillis() + ")";
+//				doModify(q);
+//		}
+
 		
 		// Pre 14 version defined CP_COMP_DEPENDS.COMPUTATION_ID as a foreign
 		// key. So this must be done after the above.

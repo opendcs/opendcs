@@ -1,9 +1,15 @@
 /*
-*  $Id$
+*  $Id: TsdbAppTemplate.java,v 1.18 2020/05/07 13:53:03 mmaloney Exp $
 *  
 *  Open Source Software 
 *  
-*  $Log$
+*  $Log: TsdbAppTemplate.java,v $
+*  Revision 1.18  2020/05/07 13:53:03  mmaloney
+*  app name defaults to "utility"
+*
+*  Revision 1.17  2019/12/11 14:32:44  mmaloney
+*  Allow for noInit to facilitate launcher.
+*
 *  Revision 1.16  2019/11/13 15:14:31  mmaloney
 *  Rm unneeded imports.
 *
@@ -169,8 +175,7 @@ public abstract class TsdbAppTemplate
 			"", TokenOptions.optSwitch, false);
 		modelRunArg = new IntegerToken("m", 
 			"output-model-run-ID", "", TokenOptions.optSwitch, -1); 
-		appNameArg = new StringToken("a", "Application-Name", "",
-			TokenOptions.optSwitch, "");
+		appNameArg = new StringToken("a", "Application-Name", "", TokenOptions.optSwitch, "utility");
 		cmdLineArgs.addToken(cfgFileArg);
 		cmdLineArgs.addToken(testModeArg);
 		cmdLineArgs.addToken(modelRunArg);

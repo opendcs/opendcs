@@ -1,11 +1,14 @@
 /*
-*  $Id$
+*  $Id: CmdLineProcessor.java,v 1.5 2019/12/11 14:30:46 mmaloney Exp $
 *
-*  $Source$
+*  $Source: /home/cvs/repo/opendcs/src/ilex/util/CmdLineProcessor.java,v $
 *
-*  $State$
+*  $State: Exp $
 *
-*  $Log$
+*  $Log: CmdLineProcessor.java,v $
+*  Revision 1.5  2019/12/11 14:30:46  mmaloney
+*  Support assignments with values surrounded by double quote.
+*
 *  Revision 1.4  2019/10/21 13:47:27  mmaloney
 *  Add assignments for test runner
 *

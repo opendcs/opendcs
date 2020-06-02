@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: CpCompDependsUpdater.java,v 1.22 2020/05/07 13:52:17 mmaloney Exp $
 *
 *  This is open-source software written by Cove Software LLC under
 *  contract to the federal government. You are free to copy and use this
@@ -8,7 +8,13 @@
 *
 *  This source code is provided completely without warranty.
 *  
-*  $Log$
+*  $Log: CpCompDependsUpdater.java,v $
+*  Revision 1.22  2020/05/07 13:52:17  mmaloney
+*  Delete the scratchpad after copying to depends table.
+*
+*  Revision 1.21  2019/06/25 17:01:59  mmaloney
+*  HDB 706 For all notifications including full eval, do not create dependencies for timed comps.
+*
 *  Revision 1.20  2018/11/14 14:54:17  mmaloney
 *  6.5RC03 implements timed computations. If the timedCompInterval property is set,
 *  then don't create any dependencies for this computation.
@@ -1238,6 +1244,11 @@ info(q);
 			// Copy the scratchpad to the cp_comp_depends table
 			q = "INSERT INTO CP_COMP_DEPENDS SELECT * FROM CP_COMP_DEPENDS_SCRATCHPAD";
 info(q);
+			theDb.doModify(q);
+			
+			// Finally, clear the scratchpad, otherwise this can leave a foreign key to TS_ID
+			// that may prevent time series from being deleted.
+			q = "delete from cp_comp_depends_scratchpad";
 			theDb.doModify(q);
 			
 //			if (compId2Delete != Constants.undefinedId)

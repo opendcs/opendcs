@@ -1,5 +1,5 @@
 /*
-*  $Id$
+*  $Id: CwmsConsumer.java,v 1.13 2020/01/31 19:30:23 mmaloney Exp $
 *  
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -10,7 +10,13 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *
-*  $Log$
+*  $Log: CwmsConsumer.java,v $
+*  Revision 1.13  2020/01/31 19:30:23  mmaloney
+*  Improve debugs
+*
+*  Revision 1.12  2018/12/18 15:21:02  mmaloney
+*  Updates for jOOQ
+*
 *  Revision 1.11  2018/05/01 17:35:26  mmaloney
 *  sourceId is now a DbKey
 *
@@ -352,8 +358,10 @@ public class CwmsConsumer extends DataConsumer
 		}
 		catch(Exception ex)
 		{
-			String emsg = module + "Error storing TS data: " + ex.getMessage();
+			String emsg = module + "Error storing TS data: " + ex;
 			Logger.instance().warning(emsg);
+			if (Logger.instance().getLogOutput() != null)
+				ex.printStackTrace(Logger.instance().getLogOutput());
 			// It might be a business rule exception, like improper units.
 			// So don't kill the whole routing spec, just go on.
 //			close();

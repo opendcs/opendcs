@@ -1,9 +1,12 @@
 /**
- * $Id$
+ * $Id: PlatformTableModel.java,v 1.2 2016/08/05 14:50:18 mmaloney Exp $
  * 
  * Open Source Software
  * 
- * $Log$
+ * $Log: PlatformTableModel.java,v $
+ * Revision 1.2  2016/08/05 14:50:18  mmaloney
+ * Station and Routing Status GUI updates.
+ *
  * Revision 1.1  2016/07/20 15:40:12  mmaloney
  * First platstat impl GUI.
  *
