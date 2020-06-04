@@ -1,0 +1,7 @@
+<?xml version="1.0" standalone="yes"?>
+<LoadingApplication name="CompProc">
+  <Comment>Executes Computations in the Background</Comment>
+  <AppProperty name="monitor">true</AppProperty>
+  <AppProperty name="apptype">computationprocess</AppProperty>
+  <AppProperty name="startCmd">$DCSTOOL_HOME/bin/compproc</AppProperty>
+</LoadingApplication>

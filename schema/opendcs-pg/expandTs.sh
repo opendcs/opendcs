@@ -18,3 +18,5 @@ do
 	sed -e s/0000/$x/ ts_string_template.sql > tt.sql
 	grep -v '^--' tt.sql >> ts_tables_expanded.sql
 done
+
+rm tt.sql

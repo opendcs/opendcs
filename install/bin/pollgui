@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# GUI to Poll a Modem or TCP Station
+#
+# Usage: pollgui [-d debuglevel] [-l logfile]
+#
+
+#
+# Arguments are passed this way to preserve the grouping. Example. Need to
+# prevents  -S 'now - 1 day' from being passed as 5 separate args.
+#
+cmd="%INSTALL_PATH/bin/decj decodes.polling.PollGUI "
+for a
+do
+	cmd=`echo $cmd \"$a\"`
+done
+eval $cmd

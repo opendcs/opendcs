@@ -1,0 +1,35 @@
+<?xml version="1.0" standalone="yes"?>
+<EnumList>
+  <Enum Name="LoggerType">
+      <EnumValue EnumValue="amasser">
+        <Description>Amasser PDAS 1 and 2</Description>
+        <ExecClass>decodes.polling.PollScriptProtocol</ExecClass>
+        <EditClass>amasser.poll</EditClass>
+      </EnumValue>
+      <EnumValue EnumValue="campbell">
+        <Description>Campbell CR10X</Description>
+        <ExecClass>decodes.polling.PollScriptProtocol</ExecClass>
+        <EditClass>campbell.poll</EditClass>
+      </EnumValue>
+      <EnumValue EnumValue="fts">
+        <Description>Forest Telemetry Systems</Description>
+        <ExecClass>decodes.polling.PollScriptProtocol</ExecClass>
+        <EditClass>fts.poll</EditClass>
+      </EnumValue>
+      <EnumValue EnumValue="h555">
+        <Description>Handar 555</Description>
+        <ExecClass>decodes.polling.PollScriptProtocol</ExecClass>
+        <EditClass>h555.poll</EditClass>
+      </EnumValue>
+      <EnumValue EnumValue="sutron">
+        <Description>Sutron Command-line mode</Description>
+        <ExecClass>decodes.polling.PollScriptProtocol</ExecClass>
+        <EditClass>sutron.poll</EditClass>
+      </EnumValue>
+      <EnumValue EnumValue="vedasii">
+        <Description>Vedas-II</Description>
+        <ExecClass>decodes.polling.PollScriptProtocol</ExecClass>
+        <EditClass>vedasii.poll</EditClass>
+      </EnumValue>
+  </Enum>
+</EnumList>

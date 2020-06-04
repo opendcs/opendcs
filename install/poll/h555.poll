@@ -1,0 +1,12 @@
+#
+# This is the POLL script that talks to a Handar 555 DCP
+#
+
+# No login or commands required. Simply capture everything up until a
+# special termination sequence.
+
+CAPTURE ON
+
+# After all data is sent, DCP will send 'Data complete'
+WAIT 30,"\024\004"|"NO CARRIER"
+CAPTURE OFF

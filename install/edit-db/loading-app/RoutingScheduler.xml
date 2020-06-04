@@ -1,0 +1,7 @@
+<?xml version="1.0" standalone="yes"?>
+<LoadingApplication name="RoutingScheduler">
+  <Comment>Schedules and Executes DECODES Routing Specs</Comment>
+  <AppProperty name="monitor">true</AppProperty>
+  <AppProperty name="apptype">routingscheduler</AppProperty>
+  <AppProperty name="startCmd">$DCSTOOL_HOME/bin/routsched</AppProperty>
+</LoadingApplication>

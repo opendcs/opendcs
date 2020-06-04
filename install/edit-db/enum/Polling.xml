@@ -1,0 +1,23 @@
+<?xml version="1.0" standalone="yes"?>
+
+<!--
+This file contains the additional enumeration values needed for polling via
+TCP and DigiConnect device
+-->
+
+<EnumList>
+  <Enum Name="PortType">
+      <EnumValue EnumValue="digi">
+        <Description>Digi ConnectPort</Description>
+        <ExecClass>decodes.polling.DigiConnectPortPool</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="TcpClient">
+        <Description>TCP Client Port</Description>
+        <ExecClass>decodes.polling.TcpClientPortPool</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="TcpListen">
+        <Description>TCP Listening Socket</Description>
+        <ExecClass>decodes.polling.ListeningPortPool</ExecClass>
+      </EnumValue>
+  </Enum>
+</EnumList>

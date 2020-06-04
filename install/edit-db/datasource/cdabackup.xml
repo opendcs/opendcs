@@ -1,0 +1,4 @@
+<?xml version="1.0" standalone="yes"?>
+<DataSource Name="cdabackup" Type="lrgs">
+  <DataSourceArg>port=16003, hostname=cdabackup.wcda.noaa.gov, username=your_DDS_user_name</DataSourceArg>
+</DataSource>

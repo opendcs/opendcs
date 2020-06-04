@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#
+# This script starts the LRGS Real Time Summary Status GUI
+#
+%INSTALL_PATH/bin/decj lrgs.rtstat.RtSummaryStat $*
+

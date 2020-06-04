@@ -1,0 +1,21 @@
+#
+# This is the TERM script that talks to an Sutron DCP
+#
+
+WAIT 45,"DUMMY"
+XMIT "U"
+WAIT 10,"DUMMY"
+
+STARTFORMAT "MM/dd/yyyy"
+XMIT "D$START\r"
+XMIT "S"
+
+WAITR 12, ">>>"
+
+CAPTURE ON
+XMIT "A"
+
+WAIT 15, ">>>"
+WAIT 10, "DUMMY"
+
+CAPTURE OFF

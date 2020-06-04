@@ -1,0 +1,88 @@
+#!/bin/sh
+
+#
+# Some commands have arguments with embedded spaces. 
+# Need to preserve the # grouping, so enclose every argument in quotes.
+#
+
+# INSTALL_PATH will be replaced with actual DECODES install dir.
+DH=%INSTALL_PATH
+
+# Make sure DCSTOOL_HOME is set
+if [ -z "$DCSTOOL_HOME" ]
+then
+  DCSTOOL_HOME=$DH
+  export DCSTOOL_HOME
+fi
+
+# Make sure DECODES_INSTALL_DIR is set
+if [ -z "$DECODES_INSTALL_DIR" ]
+then
+  DECODES_INSTALL_DIR=$DH
+  export DECODES_INSTALL_DIR
+fi
+
+# Make sure DCSTOOL_USERDIR is set
+if [ -z "$DCSTOOL_USERDIR" ]
+then
+  decj_owner=`ls -l "$0" | awk '{ print $3 }'`
+  if [ "$decj_owner" = "$USER" ]
+  then
+    DCSTOOL_USERDIR=$DCSTOOL_HOME
+  elif [ -d $HOME/opendcs_user ]
+  then
+    DCSTOOL_USERDIR=$HOME/opendcs_user
+  else
+    DCSTOOL_USERDIR=$HOME
+  fi
+fi
+export DCSTOOL_USERDIR
+
+# Build classpath
+CP=$DH/bin/opendcs.jar:
+
+# # For CWMS Installations, add the HEC and RMA Jars.
+# if [ -n "$CWMS_JAR_DIR" -a -d "$CWMS_JAR_DIR" ]
+# then
+#   CP=$CP:$CWMS_JAR_DIR/hec.jar:$CWMS_JAR_DIR/hecData.jar:$CWMS_JAR_DIR/heclib.jar:$CWMS_JAR_DIR/rma.jar:$CWMS_JAR_DIR/lookup.jar
+# fi
+# if [ -n "$CWMS_SYSJAR_DIR" -a -d "$CWMS_SYSJAR_DIR" ]
+# then
+#   CP=$CP:$CWMS_SYSJAR_DIR/jdom.jar:$CWMS_SYSJAR_DIR/jdom-1.0.jar
+# fi
+
+
+if [ ! -z "$CP_SHARED_JAR_DIR" -a -d "$CP_SHARED_JAR_DIR" ]
+then
+  for f in $CP_SHARED_JAR_DIR/*.jar
+  do
+    CP=$CP:$f
+  done
+fi
+
+# If a user-specific 'dep' (dependencies) directory exists, then
+# add all the jars therein to the classpath.
+if [ -d "$DCSTOOL_USERDIR/dep" ]
+then
+  for f in $DCSTOOL_USERDIR/dep/*.jar
+  do
+    CP=$CP:$f
+  done
+fi
+
+# Add the OpenDCS standard 3rd party jars to the classpath
+if [ "$DCSTOOL_USERDIR" != "$DH" ]
+then
+ for f in $DH/dep/*.jar
+ do
+   CP=$CP:$f
+ done
+fi
+
+cmd="java -Xms120m $DECJ_MAXHEAP -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR -Dcwms.db.impl.classpaths=$DCSTOOL_HOME/cwmsDbAPI"
+
+for a
+do
+     cmd=`echo $cmd \"$a\"`
+done
+eval $cmd

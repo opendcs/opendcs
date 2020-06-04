@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# Poll a Modem or TCP Station
+#
+# Usage: poll [-S sincetime] sitename
+#
+
+#
+# Arguments are passed this way to preserve the grouping. Example. Need to
+# prevents  -S 'now - 1 day' from being passed as 5 separate args.
+#
+cmd="%INSTALL_PATH/bin/decj decodes.routing.Poll "
+for a
+do
+	cmd=`echo $cmd \"$a\"`
+done
+eval $cmd

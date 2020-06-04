@@ -1,0 +1,463 @@
+<?xml version="1.0"?>
+
+<!--
+
+This is the ANT build file for OpenDCS 6.7 RC02 and Later.
+The intent is that this will eventually be replaced with a Maven pom.xml.
+
+DO NOT BUILD IN THE SOURCE TREE. Rather follow these instructions:
+
+1. Create a build directory for yourself somewhere outside the source tree.
+
+2. Copy this build.xml file to your build directory.
+
+3. Download the required JAR files and place them in a directory. A good place
+would be a subdirectory under your build directory. See the 'pathelement' items
+below for a list of the required jars.
+
+4. Edit the "Settable Directories" section below so that the ant build
+can find your git source tree and your directory with the downloaded jars.
+    project.dir - set this to the 'opendcs' git working directory
+    thirdpartyjar.dir - set this to the directory containing the downloaded jars.
+    izpack.dir - set this to the location of the IzPack download
+    dcpmon.dir - if you are building DCP Monitor, set this to location of DCPMON
+                 web app source.
+    HydroJSON - if you are building HydroJSON, set this to the location of the
+                HdroJSON web app source.
+
+5. CD to your build directory and run ant here.
+
+-->
+
+
+
+<project name="OPENDCS Toolkit" default="jar" basedir="."
+	xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+	<description>Open DCS</description>
+
+
+	<!-- Settable Directories -->
+	<property name="home.dir" value="/Users/mmaloney"/>
+	<property name="project.dir" value="${home.dir}/git/opendcs"/>
+	<property name="thirdpartyjar.dir" value="${home.dir}/Documents/workspace-2019/opendcs-cove/3rd_party/"/>
+	<property name="izpack.dir" value="${thirdpartyjar.dir}/IzPack-4.3.3"/>
+	<property name="dcpmon.dir" value="${home.dir}/Documents/workspace-2019/dcpmon"/>
+	<property name="hydrojson.dir" value="${home.dir}/Documents/workspace-2019/HydroJSON"/>
+
+	<!-- Directories -->
+	<property name="ant.home" value="/usr/local/ant"/>
+	<property name="src.dir" value="${project.dir}/src"/>
+	<property name="build.dir" value="build"/>
+	<property name="build.classes" value="${build.dir}/classes"/>
+	<property name="build.lib" value="${build.dir}/lib"/>
+	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
+	<property name="cwmsDbAPI.dir" value="${project.dir}/cwmsDbAPI"/>
+	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>
+
+	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
+		<filterchain><striplinebreaks/></filterchain>
+	</loadfile>
+	<echo message="RCNUM=${RCNUM}"/>
+	
+	<taskdef name="izpack" classpath="${izpack.dir}/lib/compiler.jar"
+		classname="com.izforge.izpack.ant.IzPackTask"/>
+
+	<path id="project.class.path">
+		<pathelement path="${build.classes}/"/>
+		<pathelement path="${thirdpartyjar.dir}/ojdbc8.jar"/>
+ 		<pathelement path="${thirdpartyjar.dir}/jcalendar-1.3.2.jar"/>
+	 	<pathelement path="${thirdpartyjar.dir}/jfreechart-1.0.14.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/jcommon-1.0.10.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/poi-3.0.1-FINAL-20070705.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/lobo.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/ext/cobra-no-commons.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/ganymed-ssh2-build210.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/junit-4.8.1.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/hec.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/hecData.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/rma.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/hecDbCore-v4.0-dev.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/cwmsDbDao-v5.0-dev.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/xwork-core-2.1.6.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/commons-net-3.3.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/commons-codec-1.10.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/jep-2.4.1.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/passay-1.1.0.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/jython.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/javax.mail.jar"/>
+		<pathelement path="${thirdpartyjar.dir}/jsch-0.1.55.jar"/>
+		<!-- this line adds result of Maven's artifact:dependencies to the classpath
+		<path refid="dependency.classpath"/>
+		-->
+	</path>
+
+    <!-- old path stuff
+    -->
+
+	<target name="prepare" depends="clean" description="Makes build environment.">
+		<mkdir dir="${build.dir}"/>
+		<mkdir dir="${build.classes}"/>
+		<mkdir dir="${build.lib}"/>
+	</target>
+
+	<target name="clean" description="Removes all generated files.">
+		<delete dir="${build.dir}"/>
+		<delete dir="stage"/>
+		<delete>
+ 			<fileset dir="." includes="opendcs-6-7-RC*-unix-install.tgz"/>
+            <fileset dir="." includes="opendcs-src-6-7-*.tgz"/>
+		</delete>
+		<delete dir="combined-src"/>
+	</target>
+
+	<target name="compile" depends="prepare"
+		description="Compiles all source code.">
+
+		<!-- create build date -->
+		<tstamp>
+			<format property="buildDate" pattern="MMM dd, yyyy"/>
+		</tstamp>
+        <copy file="${src.dir}/lrgs/gui/LrgsBuild.base"
+              tofile="${src.dir}/lrgs/gui/LrgsBuild.java"
+              overwrite="true">
+            <filterset>
+                <filter token="DATE" value="${buildDate}" />
+                <filter token="RCNUM" value="${RCNUM}" />
+            </filterset>
+        </copy>
+
+		<copy todir="${build.classes}/lrgs/nledit">
+			<fileset dir="${src.dir}/lrgs/nledit">
+				<include name="*.gif"/>
+			</fileset>
+		</copy>
+
+		<javac debug="true" destdir="${build.classes}"
+			target="1.6" source="1.6"
+			includeantruntime="true"
+			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
+			<src path="${src.dir}"/>
+			<classpath refid="project.class.path"/>
+		</javac>
+	</target>
+
+	<target name="jar" depends="compile" description="Generates opendcs.jar.">
+
+		<!-- copy the resource files to the build directory. -->
+		<copy todir="${build.classes}/decodes/resources">
+    		<fileset dir="${src.dir}/decodes/resources"/>
+		</copy>
+		<copy todir="${build.classes}/ilex/resources">
+    		<fileset dir="${src.dir}/ilex/resources"/>
+		</copy>
+
+		<!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
+		<copy todir="${build.classes}/decodes/tsdb/algo">
+			<fileset dir="${src.dir}/decodes/tsdb/algo">
+				<include name="AW_AlgorithmTemplate.java"/>
+			</fileset>
+		</copy>
+
+		<jar jarfile="${dist.jar}" 
+		     basedir="${build.classes}"
+			 update="true"/>
+	</target>
+
+	<target name="all" depends="clean,jar"
+		description="Cleans, compiles, and builds the distrubtion Jar file."/>
+
+	<!-- Builds staging area for IzPack Installer -->
+	<target name="stage" depends="jar">
+		<mkdir dir="stage"/>
+		<mkdir dir="stage/doc"/>
+		<mkdir dir="stage/netlist"/>
+		<touch file="stage/netlist/empty.nl"/>
+		<mkdir dir="stage/icons"/>
+		<mkdir dir="stage/bin"/>
+		<mkdir dir="stage/dep"/>
+		<mkdir dir="stage/dep/ext"/>
+		<mkdir dir="stage/dep/Lib"/>
+		<mkdir dir="stage/lib"/>
+		<mkdir dir="stage/examples"/>
+		<mkdir dir="stage/python"/>
+		<mkdir dir="stage/poll"/>
+
+		<!-- build the sample database -->
+		<mkdir dir="stage/edit-db"/>
+		<mkdir dir="stage/edit-db/config"/>
+		<mkdir dir="stage/edit-db/datasource"/>
+		<mkdir dir="stage/edit-db/datatype"/>
+		<mkdir dir="stage/edit-db/enum"/>
+		<mkdir dir="stage/edit-db/equipment"/>
+		<mkdir dir="stage/edit-db/eu"/>
+		<mkdir dir="stage/edit-db/netlist"/>
+		<mkdir dir="stage/edit-db/platform"/>
+		<mkdir dir="stage/edit-db/pm"/>
+		<mkdir dir="stage/edit-db/presentation"/>
+		<mkdir dir="stage/edit-db/routing"/>
+		<mkdir dir="stage/edit-db/site"/>
+		<mkdir dir="stage/schema"/>
+		<mkdir dir="stage/schema/cwms"/>
+		<mkdir dir="stage/schema/hdb"/>
+		<mkdir dir="stage/schema/opendcs-pg"/>
+		<mkdir dir="stage/schema/opendcs-oracle"/>
+
+		<copy todir="stage/edit-db">
+			<fileset dir="${project.dir}/install/edit-db">
+				<include name="**/*.xml"/>
+			</fileset>
+		</copy>
+
+		<copy todir="stage/icons">
+			<fileset dir="${project.dir}/install/icons"/>
+		</copy>
+
+		<copy todir="stage/bin">			
+			<fileset dir="${project.dir}/install/bin"/>
+			<fileset dir="build/lib">
+				<include name="opendcs.jar"/>
+			</fileset>
+		</copy>
+
+		<copy todir="stage/dep">
+			<fileset dir="${thirdpartyjar.dir}">				
+				<exclude name="maven-ant-tasks-2.1.0.jar"/>
+				<exclude name="junit-4.8.1.jar"/>
+				<exclude name="slf4j-api-1.7.13.jar"/>
+				<exclude name="slf4j-nop-1.7.13.jar"/>
+				<exclude name="sshd-core-1.1.0.jar"/>
+			</fileset>
+		</copy>
+		<copy todir="stage/dep" file="${thirdpartyjar.dir}/ojdbc6.jar"/>
+
+		<copy todir="stage/dep/ext">
+			<fileset dir="${thirdpartyextjar.dir}">
+				<include name="*.jar"/>
+			</fileset>
+		</copy>
+		<copy todir="stage/dep/Lib">
+			<fileset dir="${thirdpartyjar.dir}/Lib"/>
+		</copy>
+
+		<copy todir="stage/imports/comp-standard">
+			<fileset dir="${src.dir}/decodes/tsdb/algo">
+				<include name="*.xml"/>
+			</fileset>
+			<fileset dir="${project.dir}/install/imports/comp-standard">
+				<include name="*.xml"/>
+			</fileset>
+		</copy>
+		<copy todir="stage/imports/comp-cwms">
+			<fileset dir="${src.dir}/decodes/cwms/rating">
+				<include name="*.xml"/>
+			</fileset>
+			<fileset dir="${src.dir}/decodes/cwms/validation">
+				<include name="*.xml"/>
+			</fileset>
+			<fileset dir="${src.dir}/decodes/tsdb/algo">
+				<include name="ExpressionParserAlgorithm.xml"/>
+			</fileset>
+		</copy>
+		<copy todir="stage/imports/updates">
+			<fileset dir="${project.dir}/install/imports/updates">
+				<include name="*.xml"/>
+			</fileset>
+		</copy>
+
+		<copy todir="stage">
+			<fileset dir="${project.dir}/izpack">
+				<include name="opendcs-6-7.xml"/>
+				<include name="*.txt"/>
+				<include name="unixOpenDcsShortcutSpec.xml"/>
+				<include name="winOpenDcsShortcutSpec.xml"/>
+			</fileset>
+			<fileset dir="${project.dir}/install">
+				<include name="decodes.properties"/>
+				<include name="computations.conf"/>
+				<include name="LddsConnections"/>
+			</fileset>
+		</copy>
+
+		<copy todir="stage/doc">
+			<fileset dir="${project.dir}/doc">
+				<include name="*.pdf"/>
+				<include name="algorithms.txt"/>
+			</fileset>
+		</copy>
+
+		<copy todir="stage/poll">
+			<fileset dir="${project.dir}/install/poll">
+				<include name="*.poll"/>
+			</fileset>
+		</copy>
+
+		<copy todir="stage">
+			<fileset dir="${project.dir}/install/lrgs">
+				<include name="archive"/>
+				<include name="users"/>
+				<include name="users/lrgsadmin"/>
+				<include name="ddsrecv.conf"/>
+				<include name="drgsconf.xml"/>
+				<include name="drivers"/>
+				<include name="lrgs.conf"/>
+				<include name="netlist"/>
+				<include name=".lrgs.passwd"/>
+				<include name="lrgs.service"/>
+			</fileset>
+		</copy>
+
+		<copy todir="stage/schema/cwms">
+			<fileset dir="${src.dir}/../schema/cwms"/>
+		</copy>
+
+		<copy todir="stage/schema/hdb">
+			<fileset dir="${src.dir}/../schema/hdb"/>
+		</copy>
+
+		<copy todir="stage/schema/opendcs-pg">
+			<fileset dir="${src.dir}/../schema/opendcs-pg"/>
+		</copy>
+
+		<copy todir="stage/schema/opendcs-oracle">
+			<fileset dir="${src.dir}/../schema/opendcs-oracle"/>
+		</copy>
+
+		<copy todir="stage/python">
+			<fileset dir="${src.dir}/../python"/>
+		</copy>
+
+		<mkdir dir="stage/cwmsDbAPI"/>
+		<copy todir="stage/cwmsDbAPI">
+			<fileset dir="${cwmsDbAPI.dir}"/>
+		</copy>
+
+	</target>
+
+	<!-- same as package, but remove libraries not needed by USACE or USBR -->
+	<target name="nonfed" depends="stage">
+		<delete dir="stage/dep/Lib"/>
+		<delete file="stage/dep/jep-2.4.1.jar"/>
+		<delete file="stage/dep/jython.jar"/>
+		<delete file="stage/dep/NWIS.jar"/>
+		<!-- Invokes izpack to build installable package with defaults for CWMS -->
+		<izpack input="${project.dir}/izpack/opendcs-nf-6-7.xml"
+				output="stage/opendcs-nf-6-7-RC${RCNUM}.jar"
+				installerType="standard"
+				basedir="stage"
+				izPackDir="${izpack.dir}"/>
+	</target>
+
+	<!-- same as nonfed, but includes OpenTSDB and computation files -->
+	<target name="opentsdb" depends="stage">
+		<delete file="stage/dep/NWIS.jar"/>
+		<!-- Invokes izpack to build installable package with defaults for CWMS -->
+		<izpack input="${project.dir}/izpack/opendcs-6-7.xml"
+				output="stage/opendcs-ot-6-7-RC${RCNUM}.jar"
+				installerType="standard"
+				basedir="stage"
+				izPackDir="${izpack.dir}"/>
+	</target>
+
+	<target name="cwmstar" depends="stage">
+		<delete file="stage/dep/ojdbc8.jar"/>
+		<delete file="stage/dep/ojdbc6.jar"/>
+		<delete file="stage/dep/NWIS.jar"/>
+		<delete dir="stage/dep/IzPack-4.3.3"/>
+		<delete>
+			<fileset dir="stage/bin" includes="*.bat"/>
+			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
+			<fileset dir="stage" includes="dospath.txt,opendcs-6-7.xml,readme.txt,LddsConnections"/>
+		</delete>
+		<move file="stage/lrgs.conf" tofile="stage/lrgs.conf.sample"/>
+		<move file="stage/ddsrecv.conf" tofile="stage/ddsrecv.conf.sample"/>
+		<move file="stage/decodes.properties" tofile="stage/decodes.properties.sample"/>
+		<move file="stage/drgsconf.xml" tofile="stage/drgsconf.xml.sample"/>
+		<move file="stage/edit-db" tofile="stage/edit-db.init"/>
+		<move file="stage/users" tofile="stage/users.init"/>
+		<replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
+		<tar destfile="opendcs-cwms-6-7-RC${RCNUM}.tgz" compression="gzip">
+			<tarfileset dir="stage">
+				<exclude name="bin/*"/>
+				<exclude name="schema/cwms/createDb.sh"/>
+				<exclude name="schema/cwms/importDecodesTemplate.sh"/>
+				<exclude name="schema/cwms/createDefinesSql.sh"/>
+				<exclude name="schema/cwms/createTableSpaces.sh"/>
+			</tarfileset>
+			<tarfileset dir="stage/bin" filemode="755" prefix="bin"/>
+			<tarfileset file="stage/schema/cwms/createDb.sh" filemode="755" prefix="schema/cwms"/>
+			<tarfileset file="stage/schema/cwms/importDecodesTemplate.sh" filemode="755" prefix="schema/cwms"/>
+			<tarfileset file="stage/schema/cwms/createDefinesSql.sh" filemode="755" prefix="schema/cwms"/>
+			<tarfileset file="stage/schema/cwms/createTableSpaces.sh" filemode="755" prefix="schema/cwms"/>
+
+		</tar>
+	</target>
+
+	<property environment="env"/>
+	<path id="dcpmon.class.path">
+		<pathelement path="${build.classes}/"/>
+		<pathelement path="${env.CATALINA_HOME}/lib/servlet-api.jar"/>
+		<fileset dir="${dcpmon.dir}/WebContent/WEB-INF/lib">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<path id="hydrojson.class.path">
+		<pathelement path="${build.classes}/"/>
+		<pathelement path="${env.CATALINA_HOME}/lib/servlet-api.jar"/>
+		<fileset dir="${hydrojson.dir}/WebContent/WEB-INF/lib">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<target name="dcpmon" depends="jar">
+		
+		<mkdir dir="stage/dcpmon-build"/>
+		<mkdir dir="stage/dcpmon-build/war-distro"/>
+		<copy todir="stage/dcpmon-build/war-distro">
+			<fileset dir="${dcpmon.dir}/WebContent"/>
+		</copy>
+		<mkdir dir="stage/dcpmon-build/war-custom"/>
+		<copy todir="stage/dcpmon-build/war-custom">
+			<fileset dir="${dcpmon.dir}/install/war-custom"/>
+		</copy>
+		<mkdir dir="stage/dcpmon-build/war-distro/WEB-INF/classes"/>
+		<copy todir="stage/dcpmon-build/war-distro/WEB-INF/lib" file="build/lib/opendcs.jar" overwrite="true"/>
+		<javac debug="true" destdir="stage/dcpmon-build/war-distro/WEB-INF/classes"
+			target="1.6" source="1.6">
+			<src path="${dcpmon.dir}/src"/>
+			<classpath refid="dcpmon.class.path"/>
+		</javac>
+		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/makeDcpmon.sh"/>
+		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/README"/>
+		<tar tarfile="stage/dcpmon-build-6-7-${RCNUM}.tgz" 
+			basedir="stage"
+			includes="dcpmon-build/**"
+			compression="gzip"/>
+	</target>
+
+	<target name="hydrojson" depends="jar">
+		
+		<mkdir dir="stage/hydrojson-build"/>
+		<mkdir dir="stage/hydrojson-build/war-distro"/>
+		<copy todir="stage/hydrojson-build/war-distro">
+			<fileset dir="${hydrojson.dir}/WebContent"/>
+		</copy>
+		<mkdir dir="stage/hydrojson-build/war-custom"/>
+		<copy todir="stage/hydrojson-build/war-custom">
+			<fileset dir="${hydrojson.dir}/install/war-custom"/>
+		</copy>
+		<mkdir dir="stage/hydrojson-build/war-distro/WEB-INF/classes"/>
+		<copy todir="stage/hydrojson-build/war-distro/WEB-INF/lib" file="build/lib/opendcs.jar" overwrite="true"/>
+		<javac debug="true" destdir="stage/hydrojson-build/war-distro/WEB-INF/classes"
+			target="1.7" source="1.7">
+			<src path="${hydrojson.dir}/src"/>
+			<classpath refid="hydrojson.class.path"/>
+		</javac>
+		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/makehydrojson.sh"/>
+		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/README"/>
+		<tar tarfile="stage/hydrojson-build-6-7-${RCNUM}.tgz" 
+			basedir="stage"
+			includes="hydrojson-build/**"
+			compression="gzip"/>
+	</target>
+</project>

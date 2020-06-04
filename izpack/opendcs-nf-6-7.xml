@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
+
+<!-- 
+    OPENDCS 6.7 installation file.
+-->
+
+<installation version="1.0">
+
+    <!-- 
+        The info section.
+    -->
+    <info>
+        <appname>OPENDCS</appname>
+        <appversion>Open Data Collection System 6.7</appversion>
+        <authors>
+            <author name="Cove Software, LLC" email="info@covesw.com"/>
+        </authors>
+<!--
+		<run-privileged condition="izpack.windowsinstall.vista|izpack.windowsinstall.7"/>
+-->
+        <url>http://www.covesw.com</url>
+    </info>
+    
+
+    <variables>
+		<variable name="DCSTOOL_HOME" value="$INSTALL_PATH"/>
+		<variable name="DECODES_INSTALL_DIR" value="$INSTALL_PATH"/>
+		<variable name="databasetype" value=""/>
+		<variable name="databaselocation" value=""/>
+		<variable name="editdatabasetype" value=""/>
+		<variable name="editdatabaselocation" value=""/>
+		<variable name="sitenametypepreference" value=""/>
+		<variable name="editoutputformat" value=""/>
+		<variable name="edittimezone" value=""/>
+		<variable name="jdbcdriverclass" value=""/>
+		<variable name="sqlkeygenerator" value=""/>
+    </variables>
+
+    <!-- 
+        The gui preferences indication.
+        Sets the installer window to 640x480. 
+    -->
+    <guiprefs width="720" height="480" resizable="yes"/>
+    
+    <!-- 
+        The locale section.
+        Asks here to include the English and French langpacks.
+    -->
+    <locale>
+        <langpack iso3="eng"/>
+    </locale>
+
+    <!--
+	Add native tags
+    -->
+    <native type="izpack" name="ShellLink_x64.dll">
+	<os family="izpack.windowsinstall.7"/>
+    </native>
+
+    <native type="izpack" name="ShellLink.dll">
+	<os family="windows"/>
+    </native>
+ 
+    <!-- 
+        The resources section.
+        The ids must be these ones if you want to use the LicencePanel 
+		and/or the InfoPanel.
+    -->
+    <resources>
+<!--
+        <res id="Installer.image"  src="icons/dog.gif"/>
+-->
+        <res id="Installer.image"  src="icons/odcs-logo.png"/>
+        <res id="shortcutSpec.xml" src="winOpenDcsShortcutSpec.xml"/>
+        <res id="Unix_shortcutSpec.xml"  src="unixOpenDcsShortcutSpec.xml"/>
+        <res id="Win_shortcutSpec.xml"  src="winOpenDcsShortcutSpec.xml"/>
+        <res id="InfoPanel.info"  src="readme.txt"/>
+        <res id="TargetPanel.dir.windows"  src="dospath.txt"/>
+<!--
+        <res id="LicencePanel.licence"  src="license.txt"/>
+		<res id="ProcessPanel.Spec.xml" src="post-process.xml"/>
+-->
+    </resources>
+    
+    <!-- 
+        The panels section.
+        We indicate here which panels we want to use. 
+		The order will be respected.
+    -->
+    <panels>
+        <panel classname="HelloPanel"/>
+        <panel classname="TargetPanel"/> 
+        <panel classname="PacksPanel"/>
+        <panel classname="InstallPanel"/>
+        <panel classname="ShortcutPanel"/>
+<!--
+		<panel classname="ProcessPanel"/>
+-->
+        <panel classname="FinishPanel"/>
+    </panels>
+    
+    <!-- 
+        The packs section.
+        We specify here our packs.
+    -->
+    <packs>
+        <pack name="OpenDCS Base" required="yes">
+            <description>OPENDCS Java Archive (jar) and scripts necessary for all installations. This will not modify your existing database or configuration files.
+IMPORTANT: For a new installation, you should also select the Template Database.</description>
+	    	<fileset dir="bin" targetdir="$INSTALL_PATH/bin" 
+	    		excludes="*.bat,*.exe" os="unix">
+	    	</fileset>
+	    	<fileset dir="bin" targetdir="$INSTALL_PATH/bin" defaultexcludes="yes" 
+				includes="*.exe,*.sql,*.bat,opendcs.jar" os="windows">
+			</fileset>
+            <file src="icons" targetdir="$INSTALL_PATH"/>
+			<file src="lib" targetdir="$INSTALL_PATH"/>
+            <file src="decodes.properties" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="LddsConnections" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="computations.conf" targetdir="$INSTALL_PATH" override="false"/>
+
+			<fileset dir="dep" targetdir="$INSTALL_PATH/dep"
+				excludes="aspect*,IzPack-4.3.3/**,Lib/**,cwms*,hec*,jython*,metrics*,rma*,ojdbc*">
+			</fileset>
+
+            <executable targetfile="$INSTALL_PATH/bin/decj" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/decj" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/decj.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/decj.bat" os="windows"/>
+            <executable targetfile="$INSTALL_PATH/bin/dbedit" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dbedit" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/dbedit.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dbedit.bat" os="windows"/>
+			<executable targetfile="$INSTALL_PATH/bin/dupdcps_start" stage="never" os="unix"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/dupdcps_start" type="shell" os="unix"/>
+			<executable targetfile="$INSTALL_PATH/bin/dupdcps_start.bat" stage="never" os="windows"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/dupdcps_start.bat" os="windows"/>
+			<executable targetfile="$INSTALL_PATH/bin/generatetoimportnl" stage="never" os="unix"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/generatetoimportnl" type="shell" os="unix"/>
+			<executable targetfile="$INSTALL_PATH/bin/generatetoimportnl.bat" stage="never" os="windows"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/generatetoimportnl.bat" os="windows"/>
+			<executable targetfile="$INSTALL_PATH/bin/drgsrecv" stage="never" os="unix"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/drgsrecv" type="shell" os="unix"/>
+			<executable targetfile="$INSTALL_PATH/bin/drgsrecv.bat" stage="never" os="windows"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/drgsrecv.bat" os="windows"/>
+            <executable targetfile="$INSTALL_PATH/bin/rledit" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/rledit" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/rledit.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/rledit.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/decwiz" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/decwiz" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/decwiz.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/decwiz.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/platwiz" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/platwiz" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/platwiz.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/platwiz.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/dbexport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dbexport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/dbexport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dbexport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/sfwmd-dbimport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/sfwmd-dbimport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/sfwmd-dbimport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/sfwmd-dbimport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/nosimport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/nosimport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/nosimport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/nosimport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/dbimport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dbimport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/dbimport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dbimport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/emitimport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/emitimport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/emitimport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/emitimport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/markproduction" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/markproduction" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/markproduction.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/markproduction.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/msgaccess" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/msgaccess" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/msgaccess.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/msgaccess.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/nl2lrgs" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/nl2lrgs" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/nl2lrgs.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/nl2lrgs.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/platformxref" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/platformxref" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/platformxref.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/platformxref.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/pxport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/pxport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/pxport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/pxport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/rs" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/rs" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/rs.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/rs.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/setDecodesUser" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/setDecodesUser" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/setDecodesUser.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/setDecodesUser.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/hubgui" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/hubgui" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/hubgui.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/hubgui.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/rtstat" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/rtstat" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/rtstat.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/rtstat.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/getDcpMessages" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/getDcpMessages" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/getDcpMessages.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/getDcpMessages.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/launcher_start" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/launcher_start" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/launcher_start.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/launcher_start.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/dcstool_start" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dcstool_start" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/dcstool_start.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dcstool_start.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/editPasswd" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/editPasswd" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/editPasswd.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/editPasswd.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/multistat" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/multistat" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/multistat.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/multistat.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/combine-from-hub.sh" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/combine-from-hub.sh" type="shell" os="unix"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/routsched" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/routsched" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/routsched.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/routsched.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/showPlatformStatus" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showPlatformStatus" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/showPlatformStatus.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showPlatformStatus.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/showScheduleStatus" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showScheduleStatus" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/showScheduleStatus.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showScheduleStatus.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/staleDataChecker" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/staleDataChecker" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/staleDataChecker.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/staleDataChecker.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/dbupdate" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dbupdate" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/dbupdate.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/dbupdate.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/poll" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/poll" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/poll.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/poll.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/pollgui" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/pollgui" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/pollgui.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/pollgui.bat" os="windows"/>
+
+        </pack>
+
+		<pack name="XML Database Template" required="no">
+            <description>Initial Empty Database This is required for a new install. This will not overwrite any existing files.
+			</description>
+
+            <file src="edit-db" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="edit-db/enum" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/enum/EnumList.xml" targetdir="$INSTALL_PATH/edit-db/enum" override="false"/>
+            <file src="edit-db/presentation" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/presentation/SHEF-English.xml" targetdir="$INSTALL_PATH/edit-db/presentation" override="false"/>
+            <file src="edit-db/presentation/CWMS-English.xml" targetdir="$INSTALL_PATH/edit-db/presentation" override="false"/>
+            <file src="edit-db/presentation/CWMS-Metric.xml" targetdir="$INSTALL_PATH/edit-db/presentation" override="false"/>
+            <file src="edit-db/datasource" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/datasource/cdadata.xml" targetdir="$INSTALL_PATH/edit-db/datasource" override="false"/>
+            <file src="edit-db/datasource/cdabackup.xml" targetdir="$INSTALL_PATH/edit-db/datasource" override="false"/>
+            <file src="edit-db/datasource/eddn1.xml" targetdir="$INSTALL_PATH/edit-db/datasource" override="false"/>
+            <file src="edit-db/datasource/eddn2.xml" targetdir="$INSTALL_PATH/edit-db/datasource" override="false"/>
+
+            <file src="edit-db/config" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/datatype" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/datatype/DataTypeEquivalenceList.xml" targetdir="$INSTALL_PATH/edit-db/datatype" override="false"/>
+            <file src="edit-db/equipment" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/eu" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/eu/EngineeringUnitList.xml" targetdir="$INSTALL_PATH/edit-db/eu" override="false"/>
+            <file src="edit-db/netlist" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/platform" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/routing" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/site" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+        </pack>
+
+        <pack name="Docs" required="no" preselected="yes">
+            <description>PDF and HTML Documentation to go in the 'doc' subdirectory.</description>
+            <file src="doc" targetdir="$INSTALL_PATH"/> <!-- Reccursive adding -->
+        </pack>
+
+        <pack name="TSDB Computation Components" required="no" preselected="yes">
+            <description>Time Series and Computation Database Components</description>
+
+			<fileset dir="dep" targetdir="$INSTALL_PATH/dep"
+				includes="Lib/**,jython*">
+			</fileset>
+
+            <executable targetfile="$INSTALL_PATH/bin/algoedit" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/algoedit" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/algoedit.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/algoedit.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/algolist" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/algolist" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/algolist.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/algolist.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/compedit" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compedit" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/compedit.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compedit.bat" os="windows"/>
+
+			<executable targetfile="$INSTALL_PATH/bin/runcomp" stage="never" os="unix"/>
+			<parsable targetfile="$INSTALL_PATH/bin/runcomp" type="shell" os="unix"/>
+			<executable targetfile="$INSTALL_PATH/bin/runcomp.bat" stage="never" os="windows"/>
+			<parsable targetfile="$INSTALL_PATH/bin/runcomp.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/compexport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compexport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/compexport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compexport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/tsgroupexport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/tsgroupexport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/tsgroupexport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/tsgroupexport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/groupedit" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/groupedit" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/groupedit.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/groupedit.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/compimport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compimport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/compimport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compimport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/complist" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/complist" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/complist.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/complist.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/complocklist" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/complocklist" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/complocklist.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/complocklist.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/compnewdata" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compnewdata" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/compnewdata.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compnewdata.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/compproc" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compproc" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/compproc.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compproc.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/compdepends" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compdepends" type="shell" os="unix"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/hdbchangeauth" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/hdbchangeauth" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/hdbchangeauth.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/hdbchangeauth.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/stopcomp" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/stopcomp" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/stopcomp.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/stopcomp.bat" os="windows"/>
+			<executable targetfile="$INSTALL_PATH/bin/outputts" stage="never" os="unix"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/outputts" type="shell" os="unix"/>
+			<executable targetfile="$INSTALL_PATH/bin/outputts.bat" stage="never" os="windows"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/outputts.bat" os="windows"/>
+
+			<executable targetfile="$INSTALL_PATH/bin/deletets" stage="never" os="unix"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/deletets" type="shell" os="unix"/>
+			<executable targetfile="$INSTALL_PATH/bin/deletets.bat" stage="never" os="windows"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/deletets.bat" os="windows"/>
+
+			<executable targetfile="$INSTALL_PATH/bin/importts" stage="never" os="unix"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/importts" type="shell" os="unix"/>
+			<executable targetfile="$INSTALL_PATH/bin/importts.bat" stage="never" os="windows"/>
+			<parsable   targetfile="$INSTALL_PATH/bin/importts.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/showtsgroup" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showtsgroup" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/showtsgroup.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showtsgroup.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/convert2group" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/convert2group" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/convert2group.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/convert2group.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/tslist" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/tslist" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/tslist.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/tslist.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/startCpCompDepends" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/startCpCompDepends" type="shell" os="unix"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/showCompDepends" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showCompDepends" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/showCompDepends.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showCompDepends.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/editRatings" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/editRatings" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/editRatings.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/editRatings.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/listRatings" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/listRatings" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/listRatings.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/listRatings.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/exportRating" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/exportRating" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/exportRating.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/exportRating.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/importRating" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/importRating" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/importRating.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/importRating.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/opendcs_user_init" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/opendcs_user_init" type="shell" os="unix"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/lrit2damsnt" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/lrit2damsnt" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/lrit2damsnt.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/lrit2damsnt.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/compexec" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compexec" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/compexec.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/compexec.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/alarmdelete" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmdelete" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/alarmdelete.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmdelete.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/alarmedit" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmedit" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/alarmedit.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmedit.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/alarmexport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmexport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/alarmexport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmexport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/alarmimport" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmimport" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/alarmimport.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmimport.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/alarmlist" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmlist" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/alarmlist.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmlist.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/alarmmonitor" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmmonitor" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/alarmmonitor.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/alarmmonitor.bat" os="windows"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/showAlarms" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showAlarms" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/showAlarms.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/showAlarms.bat" os="windows"/>
+
+			<fileset dir="imports" targetdir="$INSTALL_PATH/imports"/>
+			<fileset dir="python" targetdir="$INSTALL_PATH/python"/>
+        </pack>
+
+        <pack name="Open Time Series Database Schema and Components" required="no" preselected="yes">
+            <description>Scripts and DDL for building Open TSDB Database</description>
+
+
+		<!-- opendcs-pg -->
+            <file src="schema/opendcs-pg/createDb.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/createDb.sh" stage="never" os="unix"/>
+            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/createDb.sh" type="shell" os="unix"/>
+            <file src="schema/opendcs-pg/dcp_trans_expanded.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/dcp_trans_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/defines.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="false"/>
+            <file src="schema/opendcs-pg/expandTs.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandTs.sh" stage="never" os="unix"/>
+            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandTs.sh" type="shell" os="unix"/>
+            <file src="schema/opendcs-pg/expandXmits.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandXmits.sh" stage="never" os="unix"/>
+            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandXmits.sh" type="shell" os="unix"/>
+            <file src="schema/opendcs-pg/group_roles.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/makePerms.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/opendcs.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/sequences.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/triggers.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/ts_num_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/ts_string_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/alarm.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/comp_trigger.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <file src="schema/opendcs-pg/data_trig_tmpl.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+
+		<!-- opendcs-oracle -->
+            <file src="schema/opendcs-oracle/combined_hdr.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/createDb.sh" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/dcp_trans_expanded.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/dcp_trans_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/defines.sh" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="false"/>
+            <file src="schema/opendcs-oracle/expandTs.sh" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/expandXmits.sh" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/makePerms.sh" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/opendcs.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/roles.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/sequences.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/tablespace.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/ts_num_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/ts_string_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+            <file src="schema/opendcs-oracle/alarm.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>
+
+        </pack>
+
+        <pack name="LRGS" required="no">
+            <description>Open LRGS (Local Readout Ground Station) supplies raw data acquisition functions.</description>
+	    	<fileset dir="archive" targetdir="$INSTALL_PATH"/>
+            <file src="users" targetdir="$INSTALL_PATH"/>
+            <file src="users/lrgsadmin" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="ddsrecv.conf" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="drgsconf.xml" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="drivers" targetdir="$INSTALL_PATH"/>
+            <file src="lrgs.conf" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="netlist" targetdir="$INSTALL_PATH"/>
+            <file src=".lrgs.passwd" targetdir="$INSTALL_PATH" override="false"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/startLRGS" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/startLRGS" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/startLRGS.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/startLRGS.bat" os="windows"/>
+            <executable targetfile="$INSTALL_PATH/bin/elp" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/elp" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/elp-local" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/elp-local" type="shell" os="unix"/>
+
+            <executable targetfile="$INSTALL_PATH/bin/elp.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/elp.bat" type="shell" os="windows"/>
+
+
+            <file src="lrgs.service" targetdir="$INSTALL_PATH" override="false"/>
+            <executable targetfile="$INSTALL_PATH/bin/startLrgsService" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/startLrgsService" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/stopLrgsService" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/stopLrgsService" type="shell" os="unix"/>
+
+		</pack>
+<!--
+        <pack name="WebApps" required="no">
+            <description>Additional Web Applications</description>
+            <file src="webapps" targetdir="$INSTALL_PATH" override="false"/>
+        </pack>
+-->
+
+    </packs>
+</installation>

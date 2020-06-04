@@ -1,0 +1,41 @@
+<?xml version="1.0" standalone="yes"?>
+<EnumList>
+  <Enum Name="ApplicationType">
+      <EnumValue EnumValue="ComputationProcess">
+        <Description>Processes computations in the Background</Description>
+        <ExecClass>decodes.tsdb.ComputationApp</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="RoutingScheduler">
+        <Description>Executes DECODES Routing Specs on a Schedule</Description>
+        <ExecClass>decodes.routing.RoutingScheduler</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="RoutingSpec">
+        <Description>A DECODES Routing Spec</Description>
+        <ExecClass>decodes.routing.RoutingSpecThread</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="LRGS">
+        <Description>LRGS Server Process</Description>
+        <ExecClass>lrgs.lrgsmain.LrgsMain</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="dcpmon">
+        <Description>DCP Monitor</Description>
+        <ExecClass>decodes.dcpmon.DcpMonitor</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="gui">
+        <Description>Interactive User Interface</Description>
+      </EnumValue>
+      <EnumValue EnumValue="utility">
+        <Description>Miscellaneous Utility</Description>
+      </EnumValue>
+      <EnumValue EnumValue="web-display">
+        <Description>Interface for Web Display</Description>
+      </EnumValue>
+      <EnumValue EnumValue="AlbertaScada">
+        <Description>Process to query Alberta Scada SQL database on a schedule</Description>
+      </EnumValue>
+      <EnumValue EnumValue="CompDepends">
+        <Description>Daemon to determine computation dependencies</Description>
+        <ExecClass>decodes.tsdb.CpCompDependsUpdater</ExecClass>
+      </EnumValue>
+  </Enum>
+</EnumList>

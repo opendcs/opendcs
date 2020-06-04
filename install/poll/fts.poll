@@ -1,0 +1,28 @@
+#
+# This is the POLL script that talks to a FTS DCP
+#
+
+# Send CR several times to ensure baud rate set correctly
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+
+XMIT "\r\r\r"
+WAIT 15,">"
+
+CAPTURE ON
+STARTFORMAT "MM/dd/yyyy"
+XMIT "getdatarange $START\r"
+
+# After all data is sent, DCP will send 'Data complete'
+WAIT 35,"complete"
+CAPTURE OFF
+
+XMIT "Bye\r"

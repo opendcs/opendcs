@@ -1,0 +1,88 @@
+<?xml version="1.0" standalone="yes"?>
+<EnumList>
+  <Enum Name="ApplicationType">
+      <EnumValue EnumValue="ComputationProcess">
+        <Description>Processes computations in the Background</Description>
+        <ExecClass>decodes.tsdb.ComputationApp</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="RoutingScheduler">
+        <Description>Executes DECODES Routing Specs on a Schedule</Description>
+        <ExecClass>decodes.routing.RoutingScheduler</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="RoutingSpec">
+        <Description>A DECODES Routing Spec</Description>
+        <ExecClass>decodes.routing.RoutingSpecThread</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="LRGS">
+        <Description>LRGS Server Process</Description>
+        <ExecClass>lrgs.lrgsmain.LrgsMain</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="dcpmon">
+        <Description>DCP Monitor</Description>
+        <ExecClass>decodes.dcpmon.DcpMonitor</ExecClass>
+      </EnumValue>
+      <EnumValue EnumValue="gui">
+        <Description>Interactive User Interface</Description>
+      </EnumValue>
+      <EnumValue EnumValue="utility">
+        <Description>Miscellaneous Utility</Description>
+      </EnumValue>
+      <EnumValue EnumValue="web-display">
+        <Description>Interface for Web Display</Description>
+      </EnumValue>
+      <EnumValue EnumValue="AlbertaScada">
+        <Description>Process to query Alberta Scada SQL database on a schedule</Description>
+      </EnumValue>
+      <EnumValue EnumValue="CompDepends">
+        <Description>Daemon to determine computation dependencies</Description>
+        <ExecClass>decodes.tsdb.CpCompDependsUpdater</ExecClass>
+      </EnumValue>
+  </Enum>
+  <Enum Name="DataSourceType">
+    <EnumValue EnumValue="web">
+      <Description>Download data from a specified URL</Description>
+      <ExecClass>decodes.datasource.WebDataSource</ExecClass>
+	  <SortNumber>6</SortNumber>
+    </EnumValue>
+    <EnumValue EnumValue="abstractweb">
+      <Description>Download data from a URL with Medium ID Substitution</Description>
+      <ExecClass>decodes.datasource.WebAbstractDataSource</ExecClass>
+	  <SortNumber>7</SortNumber>
+    </EnumValue>
+    <EnumValue EnumValue="ftp">
+      <Description>Download data from a FTP Site</Description>
+      <ExecClass>decodes.datasource.FtpDataSource</ExecClass>
+	  <SortNumber>8</SortNumber>
+    </EnumValue>
+  </Enum>
+  <Enum Name="TransportMediumType">
+    <EnumValue EnumValue="other">
+      <Description>Other</Description>
+    </EnumValue>
+  </Enum>
+  <Enum Name="OuputFormat">
+    <EnumValue EnumValue="hydromet-dms3">
+      <ExecClass>decodes.consumer.HydrometDMS3Formatter</ExecClass>
+      <Description>Hydromet DMS 3</Description>
+    </EnumValue>
+    <EnumValue EnumValue="KistersZRXP">
+      <ExecClass>decodes.consumer.KistersFormatter</ExecClass>
+      <Description>Kisters WISKI ZRXP</Description>
+    </EnumValue>
+    <EnumValue EnumValue="hydrojson">
+      <ExecClass>decodes.consumer.HydroJSONFormatter</ExecClass>
+      <Description>HydroJSON Format</Description>
+    </EnumValue>
+    <EnumValue EnumValue="tsimport">
+      <Description>Format for tsimport command</Description>
+      <ExecClass>decodes.consumer.TsImportFormatter</ExecClass>
+      <SortNumber>23</SortNumber>
+    </EnumValue>
+  </Enum>
+  <Enum Name="DataConsumer">
+    <EnumValue EnumValue="socketclient">
+      <ExecClass>decodes.consumer.TcpClientConsumer</ExecClass>
+      <Description>Opens connections to remote server and send data</Description>
+    </EnumValue>
+  </Enum>
+</EnumList>
