@@ -37,15 +37,15 @@ can find your git source tree and your directory with the downloaded jars.
 
 
 	<!-- Settable Directories -->
-	<property name="home.dir" value="/Users/mmaloney"/>
-	<property name="project.dir" value="${home.dir}/git/opendcs"/>
-	<property name="thirdpartyjar.dir" value="${home.dir}/Documents/workspace-2019/opendcs-cove/3rd_party/"/>
+	<property name="home.dir" value="C:\Projects"/>
+	<property name="project.dir" value="${home.dir}/opendcs"/>
+	<property name="thirdpartyjar.dir" value="${home.dir}/opendcs_deps"/>
 	<property name="izpack.dir" value="${thirdpartyjar.dir}/IzPack-4.3.3"/>
-	<property name="dcpmon.dir" value="${home.dir}/Documents/workspace-2019/dcpmon"/>
-	<property name="hydrojson.dir" value="${home.dir}/Documents/workspace-2019/HydroJSON"/>
+	<property name="dcpmon.dir" value="${home.dir}/opendcs_workspace/dcpmon"/>
+	<property name="hydrojson.dir" value="${home.dir}/opendcs_workspace/HydroJSON"/>
 
 	<!-- Directories -->
-	<property name="ant.home" value="/usr/local/ant"/>
+	<property name="ant.home" value="C:/programs/apache-ant-1.10.7-bin"/>
 	<property name="src.dir" value="${project.dir}/src"/>
 	<property name="build.dir" value="build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
@@ -94,13 +94,13 @@ can find your git source tree and your directory with the downloaded jars.
     <!-- old path stuff
     -->
 
-	<target name="prepare" depends="clean" description="Makes build environment.">
+	<target name="prepare" depends="ant_clean" description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
 	</target>
 
-	<target name="clean" description="Removes all generated files.">
+	<target name="ant_clean" description="Removes all generated files.">
 		<delete dir="${build.dir}"/>
 		<delete dir="stage"/>
 		<delete>
@@ -141,7 +141,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 	</target>
 
-	<target name="jar" depends="compile" description="Generates opendcs.jar.">
+	<target name="ant_jar" depends="compile" description="Generates opendcs.jar.">
 
 		<!-- copy the resource files to the build directory. -->
 		<copy todir="${build.classes}/decodes/resources">
@@ -163,11 +163,11 @@ can find your git source tree and your directory with the downloaded jars.
 			 update="true"/>
 	</target>
 
-	<target name="all" depends="clean,jar"
+	<target name="all" depends="ant_clean,ant_jar"
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
 
 	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="jar">
+	<target name="stage" depends="ant_jar">
 		<mkdir dir="stage"/>
 		<mkdir dir="stage/doc"/>
 		<mkdir dir="stage/netlist"/>
@@ -435,7 +435,7 @@ can find your git source tree and your directory with the downloaded jars.
 			compression="gzip"/>
 	</target>
 
-	<target name="hydrojson" depends="jar">
+	<target name="hydrojson" depends="ant_jar">
 		
 		<mkdir dir="stage/hydrojson-build"/>
 		<mkdir dir="stage/hydrojson-build/war-distro"/>

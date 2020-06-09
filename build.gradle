@@ -1,0 +1,46 @@
+plugins {
+    id 'java'
+    id 'jacoco' // code coverage
+}
+
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+
+dependencies {
+    implementation fileTree(dir:'../opendcs_deps',include:['*.jar']);
+    implementation files("${System.getProperty('java.home')}/../lib/tools.jar")
+}
+
+task stage( type: Copy ){
+    dependsOn jar    
+    from('install'){
+        into ""
+    }
+    
+     
+    from("${buildDir}/libs/"){
+        include 'opendcs.jar' 
+        into "bin"        
+    }
+
+    from(configurations.runtimeClasspath){
+        into 'deps'
+    }
+
+    from("configurations.resources"){
+        include "**/*.xml"
+        into 'stage/imports/comps'
+    }
+    
+
+    into("${buildDir}/stage")
+}
+
+
+task cwmstar( type: Tar){
+    dependsOn stage
+}
