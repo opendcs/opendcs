@@ -1,9 +1,14 @@
 plugins {
     id 'java'
+    id 'com.bmuschko.izpack' version "3.0"
     id 'jacoco' // code coverage
 }
+def RCNUM="02"
+def VERSION="6-7-RC${RCNUM}"
 
 
+
+/* dependencies for the application */
 repositories {
     mavenCentral()
     jcenter()
@@ -13,6 +18,7 @@ repositories {
 dependencies {
     implementation fileTree(dir:'../opendcs_deps',include:['*.jar']);
     implementation files("${System.getProperty('java.home')}/../lib/tools.jar")
+    izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'    
 }
 
 task stage( type: Copy ){
@@ -20,27 +26,108 @@ task stage( type: Copy ){
     from('install'){
         into ""
     }
-    
-     
+         
     from("${buildDir}/libs/"){
         include 'opendcs.jar' 
         into "bin"        
     }
 
     from(configurations.runtimeClasspath){
-        into 'deps'
+        into 'dep'
     }
 
-    from("configurations.resources"){
-        include "**/*.xml"
-        into 'stage/imports/comps'
+    def resource_dir = "${projectDir}/src/main/resources"
+
+    from(resource_dir+"/decodes/tsdb/algo"){
+        include "*.xml"
+        into 'imports/comp-standard'
     }
-    
+
+    from(resource_dir+"/decodes/cwms"){
+        include "**/*.xml"
+        into 'imports/comp-cwms'
+    }
+        
+    from("${projectDir}/doc"){
+        include "*.pdf", "algorithms.txt"
+        into "doc"
+    }
+
+    // izpack?
+
+    from("${projectDir}/schema")  {
+        into 'schema'
+    }  
+    from("${projectDir}/python") {
+        into 'python'
+    }
+
+    from("${projectDir}/cwmsDbAPI"){
+        into 'cwmsDbAPI'
+    }   
 
     into("${buildDir}/stage")
+
+    doLast{
+        mkdir "$buildDir/stage/lib"
+        mkdir "$buildDir/stage/edit-db/config"
+        mkdir "$buildDir/stage/edit-db/equipment"
+        mkdir "$buildDir/stage/edit-db/netlist"
+        mkdir "$buildDir/stage/edit-db/platform"
+    }
+}
+
+import org.apache.tools.ant.filters.ReplaceTokens
+
+task processSource(type: Sync ){
+    from sourceSets.main.java
+    inputs.property 'RCNUM', RCNUM
+    filter(ReplaceTokens, tokens: ['RCNUM': RCNUM])
+    into "$buildDir/src"
+}
+
+compileJava {
+    source = processSource.outputs
+}
+
+
+task nonfed {
+    dependsOn stage
+    delete "${buildDir}/stage/dep/jep-2.4.1.jar"
+    delete "${buildDir}/stage/dep/jython.jar"
+    delete "${buildDir}/stage/dep/NWIS.jar"
+
+    // run izpack
+}
+
+task opentsdb(type: com.bmuschko.gradle.izpack.CreateInstallerTask) {
+    dependsOn stage
+    doFirst{
+        delete "${buildDir}/stage/dep/NWIS.jar"
+
+        copy {
+            from ("izpack")
+            into ("$buildDir/stage/")                
+        }
+
+    }
+    
+        baseDir = file("$buildDir/stage")
+        installFile = file("$buildDir/stage/opendcs-6-7.xml")
+        outputFile = file("$buildDir/opendcs-ot-${VERSION}.jar")
+        compression = 'deflate'
+        compressionLevel = 9
+        appProperties = ['app.group': 'cove', 'app.name': 'opendcs', 'app.title': 'OpenDCS',
+                        'app.version': VERSION, 'app.subpath': "OpenDCS-$VERSION"]
+    
 }
 
 
 task cwmstar( type: Tar){
     dependsOn stage
+
+    archiveFileName = "opendcs-cwms-${VERSION}.tgz"
+    compression = Compression.GZIP
+    
+
 }

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="CwmsRatingMultIndep">
+    <Comment>
+      Implements CWMS rating computations.
+Uses the CWMS API provided by HEC to
+      do the rating.
+
+    </Comment>
+    <ExecClass>decodes.cwms.rating.CwmsRatingMultIndep</ExecClass>
+    <AlgoProperty name="indep2_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep9_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep5_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep7_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep3_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="templateVersion">USGS-EXSA</AlgoProperty>
+    <AlgoProperty name="indep6_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep1_MISSING">fail</AlgoProperty>
+    <AlgoProperty name="indep8_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="indep4_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="specVersion">Production</AlgoProperty>
+    <AlgoProperty name="useDepLocation">false</AlgoProperty>
+    <AlgoParm roleName="indep1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="indep2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="indep3">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="indep4">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="indep5">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="indep6">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="indep7">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="indep8">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="indep9">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="dep">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>
