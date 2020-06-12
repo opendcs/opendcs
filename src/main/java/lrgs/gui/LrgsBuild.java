@@ -1,5 +1,5 @@
 /*
-*  $Id: LrgsBuild.base,v 1.1.1.1 2014/05/19 15:28:59 mmaloney Exp $
+*  $Id$
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -19,7 +19,7 @@ package is built.
 */
 public class LrgsBuild
 {
-	public static final String buildDate = "May 11, 2020";
-	public static final String rcNum = "02";
+	public static final String buildDate = "@DATE@";
+	public static final String rcNum = "@RCNUM@";
 }
 
