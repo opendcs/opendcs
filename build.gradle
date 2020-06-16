@@ -5,6 +5,8 @@ plugins {
 }
 def RCNUM="02"
 def VERSION="6-7-RC${RCNUM}"
+def DATE = new Date().format('yyyyMMddHHmmss')
+
 
 
 
@@ -21,12 +23,51 @@ dependencies {
     izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'    
 }
 
+import org.apache.tools.ant.filters.ReplaceTokens
+
+/*https://stackoverflow.com/questions/30038540/replace-token-in-file-before-building-but-keep-token-in-sources
+(Anwser by Aaron)
+
+This does slow down the build somewhat, but it was the cleanest 
+quick way I could find to replace the behavoir.
+There were a log of suggestion to replace modifiing the 
+java with creating a properties file that gets changed.
+ */
+task processSource(type: Sync ){
+    from sourceSets.main.java
+    inputs.property 'RCNUM', RCNUM    
+    inputs.property 'DATE', DATE
+    filter(ReplaceTokens, tokens: ['RCNUM': RCNUM, 'DATE': DATE])
+    into "$buildDir/src"
+}
+
+compileJava {
+    source = processSource.outputs
+}
+
+
 task stage( type: Copy ){
-    dependsOn jar    
+    dependsOn jar 
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE   
     from('install'){
         into ""
+        exclude "lrgs/**", "bin/**"
+    }
+
+    from('install'){
+        into ""
+        include "bin/**"
+        eachFile { details ->
+            if( !details.file.name.endsWith("bat")){
+                details.file.setExecutable(true);
+            }
+        }
     }
          
+    from('install/lrgs'){
+        into ""
+    }
+
     from("${buildDir}/libs/"){
         include 'opendcs.jar' 
         into "bin"        
@@ -66,7 +107,10 @@ task stage( type: Copy ){
         into 'cwmsDbAPI'
     }   
 
+    from("izpack")
     into("${buildDir}/stage")
+
+    
 
     doLast{
         mkdir "$buildDir/stage/lib"
@@ -74,21 +118,13 @@ task stage( type: Copy ){
         mkdir "$buildDir/stage/edit-db/equipment"
         mkdir "$buildDir/stage/edit-db/netlist"
         mkdir "$buildDir/stage/edit-db/platform"
+        mkdir "$buildDir/stage/edit-db/routing"
+        mkdir "$buildDir/stage/edit-db/site"
+        
     }
 }
 
-import org.apache.tools.ant.filters.ReplaceTokens
 
-task processSource(type: Sync ){
-    from sourceSets.main.java
-    inputs.property 'RCNUM', RCNUM
-    filter(ReplaceTokens, tokens: ['RCNUM': RCNUM])
-    into "$buildDir/src"
-}
-
-compileJava {
-    source = processSource.outputs
-}
 
 
 task nonfed {
@@ -104,11 +140,7 @@ task opentsdb(type: com.bmuschko.gradle.izpack.CreateInstallerTask) {
     dependsOn stage
     doFirst{
         delete "${buildDir}/stage/dep/NWIS.jar"
-
-        copy {
-            from ("izpack")
-            into ("$buildDir/stage/")                
-        }
+        
 
     }
     
