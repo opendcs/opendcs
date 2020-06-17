@@ -45,7 +45,7 @@ compileJava {
     source = processSource.outputs
 }
 
-
+import org.apache.tools.ant.filters.*;
 task stage( type: Copy ){
     dependsOn jar 
     duplicatesStrategy = DuplicatesStrategy.INCLUDE   
@@ -56,12 +56,14 @@ task stage( type: Copy ){
 
     from('install'){
         into ""
-        include "bin/**"
-        eachFile { details ->
-            if( !details.file.name.endsWith("bat")){
-                details.file.setExecutable(true);
-            }
-        }
+        include "bin/**bat"                
+    }
+
+    from('install/bin'){
+        into "bin/"        
+        exclude ".*\\.bat"        
+        eachFile { details -> details.file.setExecutable(true) }        
+        filter( FixCrLfFilter.class, eol:FixCrLfFilter.CrLf.newInstance("lf") )
     }
          
     from('install/lrgs'){
