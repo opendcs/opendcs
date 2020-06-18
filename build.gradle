@@ -2,16 +2,27 @@ plugins {
     id 'java'
     id 'com.bmuschko.izpack' version "3.0"
     id 'jacoco' // code coverage
+    id 'maven-publish'
 }
 def RCNUM="02"
 def VERSION="6-7-RC${RCNUM}"
 def DATE = new Date().format('yyyyMMddHHmmss')
 
+version = VERSION
+group = 'covesoftware'
 
-
+build.finalizedBy(publishToMavenLocal) 
+publishing {
+        publications {
+            maven(MavenPublication) {
+                from(components.java)
+            }
+        }
+}
 
 /* dependencies for the application */
 repositories {
+    mavenLocal()
     mavenCentral()
     jcenter()
 }
