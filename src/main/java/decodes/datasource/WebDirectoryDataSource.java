@@ -40,10 +40,10 @@ import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
 
-import org.lobobrowser.html.UserAgentContext;
-import org.lobobrowser.html.parser.DocumentBuilderImpl;
-import org.lobobrowser.html.parser.InputSourceImpl;
-import org.lobobrowser.html.test.SimpleUserAgentContext;
+import org.cobraparser.ua.UserAgentContext;
+import org.cobraparser.html.parser.DocumentBuilderImpl;
+import org.cobraparser.html.parser.InputSourceImpl;
+import org.lobobrowser.request.UserAgentContextImpl;
 
 
 /**
@@ -400,7 +400,7 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 			istrm = urlCon.getInputStream();
 			ireader = new InputStreamReader(istrm);
 			InputSource isrc = new InputSourceImpl(ireader, currentDirUrl);
-			UserAgentContext uaCtx = new SimpleUserAgentContext();
+			UserAgentContext uaCtx = new UserAgentContextImpl(null);
 			DocumentBuilderImpl docBldr = new DocumentBuilderImpl(uaCtx);
 			Document dirDoc = docBldr.parse(isrc);
 			isrc.getClass();
