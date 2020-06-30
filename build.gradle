@@ -216,7 +216,7 @@ task opentsdb(type: com.bmuschko.gradle.izpack.CreateInstallerTask) {
 task cwmstar( type: Tar){
     dependsOn stage
 
-    archiveFileName = "opendcs-cwms-${VERSION}.tgz"
+    archiveFileName = "${buildDir}/opendcs-cwms-${VERSION}.tgz"
     compression = Compression.GZIP
     
 
