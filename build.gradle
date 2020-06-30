@@ -3,6 +3,7 @@ plugins {
     id 'com.bmuschko.izpack' version "3.0"
     id 'jacoco' // code coverage
     id 'maven-publish'
+    id "io.gitlab.jkushmaul.url2maven" version "0.9.2"
 }
 def RCNUM="02"
 def VERSION="6-7-RC${RCNUM}"
@@ -10,6 +11,7 @@ def DATE = new Date().format('yyyyMMddHHmmss')
 
 version = VERSION
 group = 'covesoftware'
+
 
 build.finalizedBy(publishToMavenLocal) 
 publishing {
@@ -25,13 +27,56 @@ repositories {
     mavenLocal()
     mavenCentral()
     jcenter()
+ 
+}
+ 
+task downloadDeps {
+    project.mkdir("${buildDir}/downloaded")
+    def f = new File("${buildDir}/downloaded/Cobra.jar")
+    if(!f.exists()){
+        new URL("https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar").withInputStream{ i -> f.withOutputStream{ it << i }}
+    }    
 }
 
+compileJava.dependsOn downloadDeps
 
-dependencies {
+dependencies {    
+    implementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
+    implementation 'postgresql:postgresql:9.1-901-1.jdbc4'
+    implementation 'asm:asm:3.3'
+    implementation 'cglib:cglib:2.1_3'
+    implementation 'commons-collections:commons-collections:2.1.1'
+    implementation 'commons-logging:commons-logging:1.0.4'
+    implementation 'commons-net:commons-net:3.3'
+    implementation 'dom4j:dom4j:1.6.1'
+    implementation 'ch.ethz.ganymed:ganymed-ssh2:build210'
+    implementation 'org.apache.poi:poi:3.0.1-FINAL'
+    implementation 'com.toedter:jcalendar:1.3.2'
+    implementation 'jfree:jcommon:1.0.12'
+    implementation 'jfree:jfreechart:1.0.13'
+    implementation 'org.python:jython:2.7.1b3'
+    implementation 'com.opensymphony:xwork-core:2.1.6'
+    implementation 'org.jooq:jooq:3.11.2'
+    implementation 'org.lobobrowser:LoboBrowser:1.0.0'            
+    //implementation 'lobobrowser:Cobra:1.0.2@jar' //NOTE fix once lobo gets this up on a artifact repository 
+    implementation fileTree( dir: "${buildDir}/downloaded/", include: "*.jar" )
+    // this was org.nfunk; there appears to have been a change in management        
+    implementation( 'org.scijava:jep:2.4.1' ) {
+        exclude group: "jama", module: "jama"
+        
+    }
+    implementation "gov.nist.math:jama:1.0.2"
+    implementation 'io.dropwizard.metrics:metrics-core:4.1.0-rc2'
+    implementation 'org.passay:passay:1.3.1'
+    implementation 'com.sun.mail:mailapi:1.6.2'
+    implementation 'com.jcraft:jsch:0.1.55'
+
     implementation fileTree(dir:'../opendcs_deps',include:['*.jar']);
     implementation files("${System.getProperty('java.home')}/../lib/tools.jar")
+    
     izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'    
+
+    testRuntimeOnly 'org.junit:junit:4.8.1'
 }
 
 import org.apache.tools.ant.filters.ReplaceTokens
