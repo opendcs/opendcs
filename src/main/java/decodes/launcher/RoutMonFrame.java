@@ -9,7 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import org.lobobrowser.gui.*;
-import org.lobobrowser.main.*;
+import org.lobobrowser.*;
 
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
@@ -36,17 +36,6 @@ public class RoutMonFrame extends TopFrame
 	public RoutMonFrame() 
 		throws Exception 
 	{
-		if (firstCall)
-		{
-			// This optional step initializes logging so only warnings
-			// are printed out.
-			PlatformInit.getInstance().initLogging(false);
-
-			// This step is necessary for extensions to work:
-			PlatformInit.getInstance().init(false, false);
-			
-			firstCall = false;
-		}
 		exitOnClose = false;
 		setTitle("Retrieval and Decoding");
 		
