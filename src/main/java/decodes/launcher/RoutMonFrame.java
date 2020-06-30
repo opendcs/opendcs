@@ -40,20 +40,6 @@ public class RoutMonFrame extends TopFrame
 		setTitle("Retrieval and Decoding");
 		
 		String url = EnvExpander.expand(DecodesSettings.instance().routingMonitorUrl);
-
-//		final BrowserPanel bp = new BrowserPanel();
-//		bp.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.RAISED), "Embedded browser"));
-//		bp.navigate(url);
-//		this.getContentPane().add(bp);
-//		
-//		this.addWindowListener(new java.awt.event.WindowAdapter() {
-//			public void windowClosing(WindowEvent e) {
-//				// This needs to be called in order
-//				// to inform extensions about the
-//				// window closing.
-//				bp.windowClosing();
-//			}
-//		});
 		
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		final TopFrame myframe = this;
