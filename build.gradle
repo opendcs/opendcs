@@ -70,8 +70,10 @@ dependencies {
     implementation 'org.passay:passay:1.3.1'
     implementation 'com.sun.mail:mailapi:1.6.2'
     implementation 'com.jcraft:jsch:0.1.55'
+    implementation 'org.aspectj:aspectjrt:1.8.10'
+    implementation 'org.json:json:20200518'
 
-    implementation fileTree(dir:'../opendcs_deps',include:['*.jar']);
+    implementation fileTree(dir:'cwmsDbApi/', include:'*.jar');
     implementation files("${System.getProperty('java.home')}/../lib/tools.jar")
     
     izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'    
@@ -127,12 +129,14 @@ task stage( type: Copy ){
     }
 
     from("${buildDir}/libs/"){
-        include 'opendcs.jar' 
-        into "bin"        
+        include '*.jar' 
+        into "bin"      
+        rename("opendcs.*",'opendcs.jar')  
     }
 
     from(configurations.runtimeClasspath){
         into 'dep'
+        exclude "tools.jar"
     }
 
     def resource_dir = "${projectDir}/src/main/resources"
@@ -207,7 +211,7 @@ task opentsdb(type: com.bmuschko.gradle.izpack.CreateInstallerTask) {
         outputFile = file("$buildDir/opendcs-ot-${VERSION}.jar")
         compression = 'deflate'
         compressionLevel = 9
-        appProperties = ['app.group': 'cove', 'app.name': 'opendcs', 'app.title': 'OpenDCS',
+        appProperties = ['app.group': "$group", 'app.name': 'opendcs', 'app.title': 'OpenDCS',
                         'app.version': VERSION, 'app.subpath': "OpenDCS-$VERSION"]
     
 }
