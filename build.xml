@@ -35,18 +35,21 @@ can find your git source tree and your directory with the downloaded jars.
 	xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 	<description>Open DCS</description>
 
+	<property environment="env"/>
 
 	<!-- Settable Directories -->
-	<property name="home.dir" value="C:\Projects"/>
-	<property name="project.dir" value="${home.dir}/opendcs"/>
-	<property name="thirdpartyjar.dir" value="${home.dir}/opendcs_deps"/>
-	<property name="izpack.dir" value="${thirdpartyjar.dir}/IzPack-4.3.3"/>
-	<property name="dcpmon.dir" value="${home.dir}/opendcs_workspace/dcpmon"/>
-	<property name="hydrojson.dir" value="${home.dir}/opendcs_workspace/HydroJSON"/>
+	<property name="home.dir" value="${env.HOME}"/>
+	<property name="project.dir" value="${home.dir}/git/opendcs"/>
+	<property name="thirdpartyjar.dir" value="${project.dir}/build/stage/dep"/>
+	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
+	<property name="izpack.dir" value="${workspace.dir}/opendcs-cove/3rd_party/IzPack-4.3.3"/>
+	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
+	<property name="hydrojson.dir" value="${workspace.dir}/HydroJSON"/>
+	<property name="src.dir" value="${project.dir}/src/main/java"/>
+	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
 
 	<!-- Directories -->
-	<property name="ant.home" value="C:/programs/apache-ant-1.10.7-bin"/>
-	<property name="src.dir" value="${project.dir}/src"/>
+	<property name="ant.home" value="/usr/local/ant"/>
 	<property name="build.dir" value="build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
 	<property name="build.lib" value="${build.dir}/lib"/>
@@ -64,43 +67,19 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<path id="project.class.path">
 		<pathelement path="${build.classes}/"/>
-		<pathelement path="${thirdpartyjar.dir}/ojdbc8.jar"/>
- 		<pathelement path="${thirdpartyjar.dir}/jcalendar-1.3.2.jar"/>
-	 	<pathelement path="${thirdpartyjar.dir}/jfreechart-1.0.14.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/jcommon-1.0.10.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/poi-3.0.1-FINAL-20070705.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/lobo.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/ext/cobra-no-commons.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/ganymed-ssh2-build210.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/junit-4.8.1.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/hec.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/hecData.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/rma.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/hecDbCore-v4.0-dev.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/cwmsDbDao-v5.0-dev.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/xwork-core-2.1.6.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/commons-net-3.3.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/commons-codec-1.10.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/jep-2.4.1.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/passay-1.1.0.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/jython.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/javax.mail.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/jsch-0.1.55.jar"/>
-		<!-- this line adds result of Maven's artifact:dependencies to the classpath
-		<path refid="dependency.classpath"/>
-		-->
+		<fileset dir="${thirdpartyjar.dir}">
+			<include name="*.jar"/>
+		</fileset>
+		<pathelement path="${workspace.dir}/opendcs-cove/3rd_party/jep-2.4.1.jar"/>
 	</path>
 
-    <!-- old path stuff
-    -->
-
-	<target name="prepare" depends="ant_clean" description="Makes build environment.">
+	<target name="prepare" depends="clean" description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
 	</target>
 
-	<target name="ant_clean" description="Removes all generated files.">
+	<target name="clean" description="Removes all generated files.">
 		<delete dir="${build.dir}"/>
 		<delete dir="stage"/>
 		<delete>
@@ -117,20 +96,29 @@ can find your git source tree and your directory with the downloaded jars.
 		<tstamp>
 			<format property="buildDate" pattern="MMM dd, yyyy"/>
 		</tstamp>
-        <copy file="${src.dir}/lrgs/gui/LrgsBuild.base"
-              tofile="${src.dir}/lrgs/gui/LrgsBuild.java"
-              overwrite="true">
-            <filterset>
-                <filter token="DATE" value="${buildDate}" />
-                <filter token="RCNUM" value="${RCNUM}" />
-            </filterset>
-        </copy>
 
 		<copy todir="${build.classes}/lrgs/nledit">
 			<fileset dir="${src.dir}/lrgs/nledit">
 				<include name="*.gif"/>
 			</fileset>
 		</copy>
+
+		<delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
+        <copy file="${src.dir}/lrgs/gui/LrgsBuild.java"
+              tofile="${build.classes}/lrgs/gui/LrgsBuild.java"
+              overwrite="true">
+            <filterset>
+                <filter token="DATE" value="${buildDate}" />
+                <filter token="RCNUM" value="${RCNUM}" />
+            </filterset>
+        </copy>
+		<javac debug="true" destdir="${build.classes}"
+			target="1.6" source="1.6"
+			includeantruntime="true"
+			includes="lrgs/gui/LrgsBuild.java">
+			<src path="${build.classes}"/>
+			<classpath refid="project.class.path"/>
+		</javac>
 
 		<javac debug="true" destdir="${build.classes}"
 			target="1.6" source="1.6"
@@ -139,16 +127,18 @@ can find your git source tree and your directory with the downloaded jars.
 			<src path="${src.dir}"/>
 			<classpath refid="project.class.path"/>
 		</javac>
+
+
 	</target>
 
-	<target name="ant_jar" depends="compile" description="Generates opendcs.jar.">
+	<target name="jar" depends="compile" description="Generates opendcs.jar.">
 
 		<!-- copy the resource files to the build directory. -->
 		<copy todir="${build.classes}/decodes/resources">
-    		<fileset dir="${src.dir}/decodes/resources"/>
+    		<fileset dir="${resources.dir}/decodes/resources"/>
 		</copy>
 		<copy todir="${build.classes}/ilex/resources">
-    		<fileset dir="${src.dir}/ilex/resources"/>
+    		<fileset dir="${resources.dir}/ilex/resources"/>
 		</copy>
 
 		<!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
@@ -163,11 +153,11 @@ can find your git source tree and your directory with the downloaded jars.
 			 update="true"/>
 	</target>
 
-	<target name="all" depends="ant_clean,ant_jar"
+	<target name="all" depends="clean,jar"
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
 
 	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="ant_jar">
+	<target name="stage" depends="jar">
 		<mkdir dir="stage"/>
 		<mkdir dir="stage/doc"/>
 		<mkdir dir="stage/netlist"/>
@@ -228,15 +218,15 @@ can find your git source tree and your directory with the downloaded jars.
 				<exclude name="sshd-core-1.1.0.jar"/>
 			</fileset>
 		</copy>
-		<copy todir="stage/dep" file="${thirdpartyjar.dir}/ojdbc6.jar"/>
+		<copy todir="stage/dep" file="${workspace.dir}/opendcs-cove/3rd_party/ojdbc6.jar"/>
 
 		<copy todir="stage/dep/ext">
-			<fileset dir="${thirdpartyextjar.dir}">
+			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/ext">
 				<include name="*.jar"/>
 			</fileset>
 		</copy>
 		<copy todir="stage/dep/Lib">
-			<fileset dir="${thirdpartyjar.dir}/Lib"/>
+			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/Lib"/>
 		</copy>
 
 		<copy todir="stage/imports/comp-standard">
@@ -307,23 +297,23 @@ can find your git source tree and your directory with the downloaded jars.
 		</copy>
 
 		<copy todir="stage/schema/cwms">
-			<fileset dir="${src.dir}/../schema/cwms"/>
+			<fileset dir="${project.dir}/schema/cwms"/>
 		</copy>
 
 		<copy todir="stage/schema/hdb">
-			<fileset dir="${src.dir}/../schema/hdb"/>
+			<fileset dir="${project.dir}/schema/hdb"/>
 		</copy>
 
 		<copy todir="stage/schema/opendcs-pg">
-			<fileset dir="${src.dir}/../schema/opendcs-pg"/>
+			<fileset dir="${project.dir}/schema/opendcs-pg"/>
 		</copy>
 
 		<copy todir="stage/schema/opendcs-oracle">
-			<fileset dir="${src.dir}/../schema/opendcs-oracle"/>
+			<fileset dir="${project.dir}/schema/opendcs-oracle"/>
 		</copy>
 
 		<copy todir="stage/python">
-			<fileset dir="${src.dir}/../python"/>
+			<fileset dir="${project.dir}/python"/>
 		</copy>
 
 		<mkdir dir="stage/cwmsDbAPI"/>
@@ -392,7 +382,6 @@ can find your git source tree and your directory with the downloaded jars.
 		</tar>
 	</target>
 
-	<property environment="env"/>
 	<path id="dcpmon.class.path">
 		<pathelement path="${build.classes}/"/>
 		<pathelement path="${env.CATALINA_HOME}/lib/servlet-api.jar"/>
@@ -435,7 +424,7 @@ can find your git source tree and your directory with the downloaded jars.
 			compression="gzip"/>
 	</target>
 
-	<target name="hydrojson" depends="ant_jar">
+	<target name="hydrojson" depends="jar">
 		
 		<mkdir dir="stage/hydrojson-build"/>
 		<mkdir dir="stage/hydrojson-build/war-distro"/>
