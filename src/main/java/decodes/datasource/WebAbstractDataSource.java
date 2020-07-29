@@ -10,8 +10,6 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
 
-import lrgs.common.LrgsErrorCode;
-import lrgs.common.SearchSyntaxException;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
@@ -101,7 +99,7 @@ public class WebAbstractDataSource
 			String until, Vector<NetworkList> netlists) 
 		throws DataSourceException
 	{
-		Logger.instance().info(module + " initializing ...");
+		log(Logger.E_INFORMATION, module + " initializing ...");
 		PropertiesUtil.copyProps(myProps, rsProps);
 
 		if ((abstractUrl = PropertiesUtil.getIgnoreCase(myProps, "AbstractUrl")) == null)
@@ -160,7 +158,7 @@ public class WebAbstractDataSource
 		if (aggIds.size() == 0)
 		{
 			String msg = module + " init() No medium ids. Will only execute once.";
-			Logger.instance().info(msg);
+			log(Logger.E_INFORMATION, msg);
 		}
 		xportIdx = 0;
 		urlsGenerated = 0;
@@ -174,7 +172,7 @@ public class WebAbstractDataSource
 		}
 		catch(InvalidDatabaseException ex) 
 		{
-			Logger.instance().failure(module + " " + ex);
+			log(Logger.E_INFORMATION, module + " " + ex);
 			throw new DataSourceException(module + " " + ex);
 		}
 	}
@@ -196,7 +194,7 @@ public class WebAbstractDataSource
 			try { return currentWebDs.getRawMessage(); }
 			catch(DataSourceEndException ex)
 			{
-				Logger.instance().info(module
+				log(Logger.E_INFORMATION, module
 					+ " end of '" + currentWebDs.getActiveSource() + "'");
 			}
 		}
@@ -214,13 +212,13 @@ public class WebAbstractDataSource
 			{
 				String msg = module + " cannot open '"
 					+ url + "': " + ex;
-				Logger.instance().warning(msg);
+				log(Logger.E_WARNING, msg);
 			}
 			catch(Exception ex)
 			{
 				String msg = module + " cannot open '"
 					+ url + "': " + ex;
-				Logger.instance().warning(msg);
+				log(Logger.E_WARNING, msg);
 				System.err.println(msg);
 				ex.printStackTrace(System.err);
 			}

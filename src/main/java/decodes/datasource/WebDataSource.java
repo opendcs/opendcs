@@ -5,6 +5,7 @@ package decodes.datasource;
 
 import java.io.BufferedInputStream;
 import java.net.URL;
+import java.net.URLConnection;
 
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
@@ -74,13 +75,17 @@ public class WebDataSource
 	{
 		try
 		{
-			Logger.instance().info(module + " Will open: '" + activeAddr + "'");
-			return new BufferedInputStream((new URL(activeAddr)).openStream());
+			log(Logger.E_INFORMATION, module + " Opening '" + activeAddr + "'");
+			URL url = new URL(activeAddr);
+			URLConnection con = url.openConnection();
+			con.setConnectTimeout(5000);
+			return new BufferedInputStream(con.getInputStream());
 		}
 		catch(Exception ex)
 		{
-			throw new DataSourceException(module + " Open failed on '" + activeAddr
-				+ "': " + ex);
+			String msg = module + " Open failed on '" + activeAddr + "': " + ex;
+			log(Logger.E_WARNING, msg);
+			throw new DataSourceException(msg);
 		}
 	}
 
