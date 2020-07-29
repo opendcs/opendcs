@@ -341,7 +341,7 @@ public abstract class StreamDataSource extends DataSourceExec
 	public void processDataSource()
 		throws InvalidDatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG3, 
+		log(Logger.E_DEBUG3, 
 			"StreamDataSource.processDataSource '" + getName() 
 			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 	}
@@ -372,7 +372,7 @@ public abstract class StreamDataSource extends DataSourceExec
 		Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
+		log(Logger.E_DEBUG1, 
 			"StreamDataSource.init() for '" + getName() + "'");
 
 		// Build a complete property set. Routing Spec props override DS props.
@@ -429,7 +429,7 @@ public abstract class StreamDataSource extends DataSourceExec
 				char c = value.length() > 0 ? value.charAt(0) : 'f';
 				oldChannelRanges = 
 					c == 'y' || c == 'Y' || c == 't' || c == 'T';
-				Logger.instance().log(Logger.E_DEBUG1, 
+				log(Logger.E_DEBUG1, 
 					"Stream Data Source '" + getName() + "' "
 					+ "oldChannelRanges=" + oldChannelRanges);
 			}
@@ -475,7 +475,7 @@ public abstract class StreamDataSource extends DataSourceExec
 			}
 		}
 
-		Logger.instance().log(Logger.E_DEBUG3,
+		log(Logger.E_DEBUG3,
 			"Stream Data Source '" + getName() + "' "
 			+ "lengthAdj=" + lengthAdj + ", "
 			+ "before = '" + 
@@ -553,7 +553,7 @@ public abstract class StreamDataSource extends DataSourceExec
 			}
 			catch(UnknownPlatformException ex)
 			{
-				Logger.instance().warning("Message skipped: " + ex);
+				log(Logger.E_WARNING, "Message skipped: " + ex);
 				ret = null;
 			}
 		} while(ret == null);
@@ -566,7 +566,7 @@ public abstract class StreamDataSource extends DataSourceExec
 			parityCheck.equals("strip") ? 's' : 'n';
 		if (pc != 'n')
 		{
-			Logger.instance().debug3("StreamDataSource parityCheck: " + parityCheck);
+			log(Logger.E_DEBUG3, "StreamDataSource parityCheck: " + parityCheck);
 			for(int idx = ret.getHeaderLength(); idx < ret.data.length; idx++)
 			{
 				int c = ret.data[idx] & 0xff;
@@ -645,7 +645,7 @@ public abstract class StreamDataSource extends DataSourceExec
 				+ new String(ret.getData(), 0, 
 				(ret.getData().length > 19 ? 19 : ret.getData().length))
 				+ "': " + e;
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log(Logger.E_WARNING, msg);
 			p = null;
 		}
 		if (p != null)
@@ -667,7 +667,7 @@ public abstract class StreamDataSource extends DataSourceExec
 				+ " with medium type '" + pmp.getMediumType() + "'";
 			if (chan != Constants.undefinedIntKey)
 				msg += " and channel " + chan;
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log(Logger.E_WARNING, msg);
 			if (!getAllowNullPlatform())
 				throw new UnknownPlatformException(msg);
 		}
@@ -690,7 +690,7 @@ public abstract class StreamDataSource extends DataSourceExec
 			msgbufLen = 0;
 			while(huntMode)
 				checkForMessageStart();
-Logger.instance().info("StreamDS.scanFM - Have start, shefMode=" + shefMode);
+//Logger.instance().info("StreamDS.scanFM - Have start, shefMode=" + shefMode);
 
 			
 			if (shefMode)
@@ -704,24 +704,24 @@ Logger.instance().info("StreamDS.scanFM - Have start, shefMode=" + shefMode);
 					// the scanner found the start of the _next_ msg. the prev msg type
 					// gets associated with this message.
 					ret.setPM(ShefPMParser.PM_MESSAGE_TYPE, new Variable(prevShefMsgType));
-Logger.instance().info("StreamDS.scanFM - Have complete SHEF message with buflen=" + msgbufLen
-+ " '" + new String(msgbuf, 0, msgbufLen) + "'");
+//Logger.instance().info("StreamDS.scanFM - Have complete SHEF message with buflen=" + msgbufLen
+//+ " '" + new String(msgbuf, 0, msgbufLen) + "'");
 					try { pmp.parsePerformanceMeasurements(ret); }
 					catch(HeaderParseException e)
 					{
-						Logger.instance().log(Logger.E_WARNING,
+						log(Logger.E_WARNING,
 							"StreamDataSource (shefMode) Failed to parse header '"
 							+ new String(msgbuf, 0, 10) + "': " + e.toString() 
 							+ " -- skipping to next delimiter.");
 						huntMode = true;
 						return null;
 					}
-Logger.instance().info("StreamDS.scanFM - returning raw message.");
+//Logger.instance().info("StreamDS.scanFM - returning raw message.");
 					return ret;
 				}
 				else // we just got 1st delimiter in the file, need to scan for the next one.
 				{
-Logger.instance().info("StreamDS.scanFM - got start of 1st shef message. Will scan for next.");
+log(Logger.E_DEBUG1, "StreamDS.scanFM - got start of 1st shef message. Will scan for next.");
 					startOfStream = false;
 					return null;
 				}
@@ -738,7 +738,7 @@ Logger.instance().info("StreamDS.scanFM - got start of 1st shef message. Will sc
 
 			int headerLength = pmp.getHeaderLength();
 
-Logger.instance().info("StreamDS.scanFM - Have start, containsExplicitLength=" + pmp.containsExplicitLength());
+log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + pmp.containsExplicitLength());
 			if (pmp.containsExplicitLength())
 			{
 				inputStream.mark(headerLength + 64);
@@ -750,7 +750,7 @@ Logger.instance().info("StreamDS.scanFM - Have start, containsExplicitLength=" +
 				{
 					if (!tryAgainOnEOF())
 						throw new DataSourceEndException("Stream EOF.");
-					Logger.instance().log(Logger.E_DEBUG2,
+					log(Logger.E_DEBUG2,
 					  "StreamDataSource Complete header not ready (only " 
 					  + n + " bytes read, need " + headerLength
 					  + "), will try again later.");
@@ -778,7 +778,7 @@ Logger.instance().info("StreamDS.scanFM - Have start, containsExplicitLength=" +
 				try { pmp.parsePerformanceMeasurements(ret); }
 				catch(HeaderParseException e)
 				{
-					Logger.instance().log(Logger.E_WARNING,
+					log(Logger.E_WARNING,
 						"StreamDataSource Failed to parse header '"
 						+ new String(header) + "': " + e.getMessage() 
 						+ " -- skipping to next delimiter.");
@@ -794,7 +794,7 @@ Logger.instance().info("StreamDS.scanFM - Have start, containsExplicitLength=" +
 				catch(NoConversionException e) {}
 				if (len < 0 || len > MAX_MESSAGE_LENGTH)
 				{
-					Logger.instance().log(Logger.E_WARNING, 
+					log(Logger.E_WARNING, 
 						"StreamDataSource '" + getName() 
 						+ "', scan found invalid message length, skipping.");
 					huntMode = true;
@@ -806,7 +806,7 @@ Logger.instance().info("StreamDS.scanFM - Have start, containsExplicitLength=" +
 				len += lengthAdj;
 				if (len < 0)
 				{
-					Logger.instance().warning("len=" + len + ", lengthAdj=" + lengthAdj
+					log(Logger.E_WARNING, "len=" + len + ", lengthAdj=" + lengthAdj
 						+ ", headerlen=" + header.length + ", file skipped.");
 					throw new DataSourceEndException("Negative msg length, file skipped.");
 				}
@@ -856,14 +856,14 @@ Logger.instance().info("StreamDS.scanFM - Have start, containsExplicitLength=" +
 			}
 			else // No explicit length in header: we have to use endDelimiter.
 			{
-Logger.instance().debug1("StreamDS.scanFM no explicit length, hunt for end delim '"
+log(Logger.E_DEBUG1,"StreamDS.scanFM no explicit length, hunt for end delim '"
 + AsciiUtil.bin2ascii(endDelimiter) + "'");
 				int len = 0;
 				if (endDelimiter != null && endDelimiter.length > 0)
 				{
 					len = readToDelimiter(endDelimiter, msgbuf, false);
 					justGotEndDelimiter = true;
-					Logger.instance().log(Logger.E_DEBUG3,
+					log(Logger.E_DEBUG3,
 						"StreamDataSource '" + getName() 
 						+ "' read " + len + " bytes & then got endDelimiter.");
 				}
@@ -872,7 +872,7 @@ Logger.instance().debug1("StreamDS.scanFM no explicit length, hunt for end delim
 					len = readToDelimiter(startDelimiter, msgbuf, true);
 					justGotStartDelim = true;
 					
-					Logger.instance().log(Logger.E_DEBUG3,
+					log(Logger.E_DEBUG3,
 						"StreamDataSource '" + getName() 
 						+ "' read " + len + " bytes & then got startDelimiter.");
 				}
@@ -882,7 +882,7 @@ Logger.instance().debug1("StreamDS.scanFM no explicit length, hunt for end delim
 
 				if (len <= 0)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
+					log(Logger.E_FAILURE,
 						"StreamDataSource Failed frame message after "
 						+ msgbuf.length 
 						+ " bytes -- skipping to next delimiter.");
@@ -897,7 +897,7 @@ Logger.instance().debug1("StreamDS.scanFM no explicit length, hunt for end delim
 				if (savedFileName != null)
 				{
 					ret.setPM(GoesPMParser.FILE_NAME, new Variable(savedFileName));
-Logger.instance().debug3("StreamDataSource added PM '" + GoesPMParser.FILE_NAME
+log(Logger.E_DEBUG3, "StreamDataSource added PM '" + GoesPMParser.FILE_NAME
 + "' with value '" + ret.getPM(GoesPMParser.FILE_NAME) + "'");
 				}
 
@@ -907,7 +907,7 @@ Logger.instance().debug3("StreamDataSource added PM '" + GoesPMParser.FILE_NAME
 					Logger.instance().log(Logger.E_FAILURE,
 						"StreamDataSource Failed to parse header: "
 						+ e.toString() + " -- skipping to next delimiter.");
-Logger.instance().debug3("StreamDS reset 7");
+log(Logger.E_DEBUG3, "StreamDS reset 7");
 //					inputStream.reset();
 					return null;
 				}
@@ -920,7 +920,7 @@ Logger.instance().debug3("StreamDS reset 7");
 				if (myNetworkList.size() > 0
 				 && myNetworkList.getEntry(addr) == null)
 				{
-					Logger.instance().log(Logger.E_DEBUG2, 
+					log(Logger.E_DEBUG2, 
 						"StreamDataSource '" + getName() 
 						+ "', skipping message from '" + addr
 						+ "' - not in network lists.");
@@ -943,7 +943,7 @@ Logger.instance().debug3("StreamDS reset 7");
 			}
 			String msg = "StreamDataSource '" + getName() 
 				+ "', IO Error: " + ex;
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log(Logger.E_WARNING, msg);
 			throw new DataSourceException(msg);
 		}
 	}
@@ -952,7 +952,7 @@ Logger.instance().debug3("StreamDS reset 7");
 	protected void checkForMessageStart()
 		throws IOException, DataSourceException
 	{
-Logger.instance().debug3("checkForMessageStart() shefMode=" + shefMode + ", startDelim="
+log(Logger.E_DEBUG3, "checkForMessageStart() shefMode=" + shefMode + ", startDelim="
 + (startDelimiter==null?"null":AsciiUtil.bin2ascii(startDelimiter))
 + ", startDelimLength=" + (startDelimiter==null?0:startDelimiter.length));
 		if (shefMode)
@@ -968,7 +968,7 @@ Logger.instance().debug3("checkForMessageStart() shefMode=" + shefMode + ", star
 			// Assume we're in sync if I'm at the start or just read end delim.
 			if (startOfStream || justGotEndDelimiter)
 			{
-				Logger.instance().debug3("StreamDS - No start delim, assuming sync.");
+				log(Logger.E_DEBUG3, "StreamDS - No start delim, assuming sync.");
 				huntMode = false;
 				return;
 			}
@@ -983,7 +983,7 @@ Logger.instance().debug3("checkForMessageStart() shefMode=" + shefMode + ", star
 			}
 			else
 			{
-				Logger.instance().log(Logger.E_DEBUG3, 
+				log(Logger.E_DEBUG3, 
 					"No delimiters, assuming sync");
 				huntMode = false;
 				return;
@@ -997,7 +997,7 @@ Logger.instance().debug3("checkForMessageStart() shefMode=" + shefMode + ", star
 			return;
 		}
 
-Logger.instance().log(Logger.E_DEBUG3, "Hunting for start delimiter...");
+log(Logger.E_DEBUG3, "Hunting for start delimiter...");
 
 		inputStream.mark(64);
 		byte[] delimTest = new byte[startDelimiter.length];
@@ -1017,7 +1017,7 @@ Logger.instance().log(Logger.E_DEBUG3, "Hunting for start delimiter...");
 		}
 		else // read correct # of bytes
 		{
-Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
+//Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 			int i;
 			for(i=0; i<startDelimiter.length; i++)
 				if (startDelimiter[i] != delimTest[i])
@@ -1027,7 +1027,7 @@ Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 					
 					skipped++;
 					if (skipped % 100 == 0)
-						Logger.instance().log(Logger.E_WARNING, 
+						log(Logger.E_WARNING, 
 							"Stream '" + getName() 
 							+ "' skipping lots of data, ("
 							+ skipped + ") bytes -- perhaps "
@@ -1039,13 +1039,13 @@ Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 			{
 				// Fell through, found complete delimiter.
 				huntMode = false;
-				Logger.instance().log(Logger.E_DEBUG3, 
+				log(Logger.E_DEBUG3, 
 					"Stream '" + getName() + "' found delimiter.");
 				inputStream.mark(100);
 			}
 		}
 		if (skipped>0)
-			Logger.instance().log(
+			log(
 				skipped > 4 ? Logger.E_WARNING : Logger.E_DEBUG1, 
 				"Stream '" + getName() + "' " 
 				+ skipped + " bytes skipped. huntMode=" + huntMode);
@@ -1057,7 +1057,7 @@ Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 	{
 		// Delimiter can be one of: \n.E<sp>  \n.ER<sp>  \n.A<sp>  \n.AR<sp>
 		
-		Logger.instance().log(Logger.E_DEBUG3, "Hunting for start of SHEF message...");
+		log(Logger.E_DEBUG3, "Hunting for start of SHEF message...");
 		
 		inputStream.mark(10);
 		byte[] delimTest = new byte[5];   // Max length of delimiter is 5 bytes.
@@ -1067,7 +1067,7 @@ Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 			throw new DataSourceEndException("Stream EOF.");
 		else if (n < 5)
 		{
-			Logger.instance().debug3("Stream only returned " + n + " bytes.");
+			log(Logger.E_DEBUG3, "Stream only returned " + n + " bytes.");
 			for(int i=0; i<n; i++)
 				msgbuf[msgbufLen++] = delimTest[i];
 			huntMode = false;
@@ -1075,7 +1075,7 @@ Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 		}
 		else // got 5 bytes. See if it matches a delimiter.
 		{
-			Logger.instance().debug3("1st byte read '" + (char)delimTest[0] + "'");
+			log(Logger.E_DEBUG3, "1st byte read '" + (char)delimTest[0] + "'");
 			int delimNum = 0;
 			for(; delimNum < shefDelims.length; delimNum++)
 			{
@@ -1089,7 +1089,7 @@ Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
 			}
 			if (delimNum < shefDelims.length)
 			{
-Logger.instance().debug3("found delim number " + delimNum);
+				log(Logger.E_DEBUG3, "found delim number " + delimNum);
 				// Found a valid delimiter
 				prevShefMsgType = shefMsgType;
 				shefMsgType = shefDelims[delimNum].charAt(2); // E or A
@@ -1184,7 +1184,7 @@ Logger.instance().debug3("found delim number " + delimNum);
 					{
 						// Fell through, found complete delimiter.
 						delimFound = true;
-						Logger.instance().log(Logger.E_DEBUG3, 
+						log(Logger.E_DEBUG3, 
 							"Stream '" + getName() 
 							+ "' found delimiter '" + AsciiUtil.bin2ascii(delim) + "'");
 					}
@@ -1194,12 +1194,12 @@ Logger.instance().debug3("found delim number " + delimNum);
 		catch(IOException e)
 		{
 			String msg = "StreamDataSource.readToDelimiter '" + getName() + "': " + e;
-			Logger.instance().warning(msg);
+			log(Logger.E_WARNING, msg);
 			throw new DataSourceException(msg);
 		}
-		Logger.instance().debug3("StreamDS.readToDelimiter, returning buflen=" + buflen);
+		log(Logger.E_DEBUG3, "StreamDS.readToDelimiter, returning buflen=" + buflen);
 		if (buf != null)
-			Logger.instance().debug3("StreamDS buf='" + new String(buf, 0, buflen) + "'");
+			log(Logger.E_DEBUG3, "StreamDS buf='" + new String(buf, 0, buflen) + "'");
 //try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
 		return buflen;
 	}
@@ -1271,7 +1271,7 @@ Logger.instance().debug3("found delim number " + delimNum);
 		}
 		catch(HeaderParseException e)
 		{
-			Logger.instance().log(Logger.E_FAILURE,
+			log(Logger.E_FAILURE,
 				"StreamDataSource Failed to parse header: "
 				+ e.toString() + " -- message file is invalid.");
 			return null;
