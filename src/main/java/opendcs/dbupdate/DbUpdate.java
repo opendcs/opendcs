@@ -234,7 +234,10 @@ public class DbUpdate extends TsdbAppTemplate
 					+ "REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) "
 					+ "ON UPDATE RESTRICT ON DELETE RESTRICT");
 				sql("CREATE SEQUENCE ALARM_GROUPIdSeq");
+				sql("CREATE SEQUENCE ALARM_EVENTIdSeq");
 				sql("CREATE SEQUENCE ALARM_DEFIdSeq");
+				sql("CREATE SEQUENCE ALARM_SCREENINGIdSeq");
+				sql("CREATE SEQUENCE ALARM_LIMIT_SETIdSeq");
 			}
 			else // Oracle
 			{
@@ -244,6 +247,9 @@ public class DbUpdate extends TsdbAppTemplate
 					+ "HDB_LOADING_APPLICATION(LOADING_APPLICATION_ID)");
 				sql("CREATE SEQUENCE ALARM_GROUPIdSeq nocache");
 				sql("CREATE SEQUENCE ALARM_DEFIdSeq nocache");
+				sql("CREATE SEQUENCE ALARM_EVENTIdSeq nocache");
+				sql("CREATE SEQUENCE ALARM_SCREENINGIdSeq nocache");
+				sql("CREATE SEQUENCE ALARM_LIMIT_SETIdSeq nocache");
 			}
 			if (!theDb.isCwms() && !theDb.isHdb())
 			{
@@ -402,17 +408,66 @@ public class DbUpdate extends TsdbAppTemplate
 				sql("CREATE SEQUENCE CP_DEPENDS_NOTIFYIdSeq");
 			}
 		}
+		if (theDb.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_68)
+		{
+			if (theDb.isOpenTSDB())
+			{
+				sql("ALTER TABLE ALARM_CURRENT ADD LOADING_APPLICATION_ID INT");
+				sql("ALTER TABLE ALARM_CURRENT ADD CONSTRAINT AC_APP_FK "
+					+ "FOREIGN KEY (LOADING_APPLICATION_ID) " 
+					+ "REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID)");
+				
+				sql("ALTER TABLE ALARM_HISTORY ADD LOADING_APPLICATION_ID INT");
+				sql("ALTER TABLE ALARM_HISTORY ADD CONSTRAINT AH_APP_FK "
+					+ "FOREIGN KEY (LOADING_APPLICATION_ID) " 
+					+ "REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID)");
+				
+				sql("ALTER TABLE ALARM_SCREENING ADD LOADING_APPLICATION_ID INT");
+				sql("ALTER TABLE ALARM_SCREENING ADD CONSTRAINT AS_APP_FK "
+					+ "FOREIGN KEY (LOADING_APPLICATION_ID) " 
+					+ "REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID)");
+				
+				if (theDb.isOracle())
+				{
+					sql("ALTER TABLE ALARM_CURRENT DROP UNIQUE(TS_ID)");
+					sql("ALTER TABLE ALARM_CURRENT ADD CONSTRAINT AC_PK_UNIQUE UNIQUE(TS_ID, LOADING_APPLICATION_ID)");
+					sql("ALTER TABLE ALARM_HISTORY DROP PRIMARY KEY");
+					sql("ALTER TABLE ALARM_HISTORY ADD CONSTRAINT AH_PK_UNIQUE "
+						+ "UNIQUE(TS_ID, LIMIT_SET_ID, ASSERT_TIME, LOADING_APPLICATION_ID)");
+					sql("ALTER TABLE ALARM_SCREENING DROP CONSTRAINT AS_SDI_START_UNIQUE");
+			
+				}
+				else // postgress
+				{
+					sql("ALTER TABLE ALARM_CURRENT DROP CONSTRAINT ALARM_CURRENT_PKEY");
+					sql("ALTER TABLE ALARM_CURRENT ADD PRIMARY KEY(TS_ID, LOADING_APPLICATION_ID)");
+					sql("ALTER TABLE ALARM_HISTORY DROP CONSTRAINT ALARM_HISTORY_PKEY");
+					sql("ALTER TABLE ALARM_HISTORY ADD "
+						+ "PRIMARY KEY(TS_ID, LIMIT_SET_ID, ASSERT_TIME, LOADING_APPLICATION_ID)");
+					sql("ALTER TABLE ALARM_SCREENING DROP CONSTRAINT "
+						+ "alarm_screening_site_id_datatype_id_start_date_time_key");
+
+				}
+				sql("ALTER TABLE ALARM_SCREENING ADD CONSTRAINT AS_SDI_START_APP_UNIQUE "
+					+ "UNIQUE(SITE_ID, DATATYPE_ID, START_DATE_TIME, LOADING_APPLICATION_ID)");
+			}
+			
+			
+			    
+			
+			
+		}
 		
 		// Update DECODES Database Version
-		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " + DecodesDatabaseVersion.DECODES_DB_67);
-		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_67, TsdbDatabaseVersion.VERSION_67_DTK);
+		sql("UPDATE DECODESDATABASEVERSION SET VERSION_NUM = " + DecodesDatabaseVersion.DECODES_DB_68);
+		theDb.setDecodesDatabaseVersion(DecodesDatabaseVersion.DECODES_DB_67, TsdbDatabaseVersion.VERSION_68_DTK);
 		((SqlDatabaseIO)Database.getDb().getDbIo()).setDecodesDatabaseVersion(
-			DecodesDatabaseVersion.DECODES_DB_67, TsdbDatabaseVersion.VERSION_67_DTK);
+			DecodesDatabaseVersion.DECODES_DB_68, TsdbDatabaseVersion.VERSION_68_DTK);
 		// Update TSDB_DATABASE_VERSION.
 		String desc = "Updated on " + new Date();
-		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " + TsdbDatabaseVersion.VERSION_67
+		sql("UPDATE TSDB_DATABASE_VERSION SET DB_VERSION = " + TsdbDatabaseVersion.VERSION_68
 			+ ", DESCRIPTION = '" + desc + "'");
-		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_67, desc);
+		theDb.setTsdbVersion(TsdbDatabaseVersion.VERSION_68, desc);
 		
 		// Rewrite the netlists with the changes.
 		Database.getDb().networkListList.write();

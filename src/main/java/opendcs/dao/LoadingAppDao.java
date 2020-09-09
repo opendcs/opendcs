@@ -431,10 +431,29 @@ public class LoadingAppDao
 					throw new ConstraintException("Cannot delete application '" + app.getAppName()
 						+ "' with id=" + app.getKey() + " because " + num + " schedule entries are "
 							+ "assigned to it.");
-			}			
+			}
+
+			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_68)
+			{
+				q = "select count(*) from ALARM_SCREENING where LOADING_APPLICATION_ID = " + app.getKey();
+				rs = doQuery(q);
+				if (rs.next())
+				{
+					int num = rs.getInt(1);
+					if (num > 0)
+						throw new ConstraintException("Cannot delete application '" + app.getAppName()
+							+ "' with id=" + app.getKey() + " because " + num + " alarm screenings are "
+							+ "assigned to it.");
+				}	
+			}
+
+			
+			
 			q = "delete from REF_LOADING_APPLICATION_PROP "
 				+ "where LOADING_APPLICATION_ID = " + app.getKey();
 			doModify(q);
+			
+			
 			
 			// LOADING_APPLICATION_ID column doesn't exist in old versions of DACQ_EVENT.
 			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)

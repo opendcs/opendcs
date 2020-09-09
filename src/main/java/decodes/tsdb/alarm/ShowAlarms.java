@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.TimeZone;
 
 import opendcs.dai.AlarmDAI;
+import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.*;
 import ilex.util.Logger;
@@ -35,10 +36,12 @@ import decodes.db.Database;
 import decodes.db.Site;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 
@@ -123,18 +126,27 @@ public class ShowAlarms
 		AlarmComparator alarmComparator = new AlarmComparator();
 
 		AlarmDAI alarmDAO = theDb.makeAlarmDAO();
+		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 		try
 		{
-			HashMap<DbKey, Alarm> alarmMap = new HashMap<DbKey, Alarm>();
-			alarmDAO.refreshCurrentAlarms(alarmMap);
+//			HashMap<DbKey, Alarm> alarmMap = new HashMap<DbKey, Alarm>();
+//			alarmDAO.refreshCurrentAlarms(alarmMap, null);
+			
+			ArrayList<Alarm> curAlarms = alarmDAO.getAllCurrentAlarms();
 			ArrayList<Alarm> alarmHistory = alarmDAO.readAlarmHistory(tsids);
 			
 			System.out.println("All times in " + tz.getID());
 			System.out.println();
-			System.out.println("Current Alarms (" + alarmMap.values().size() + "):");
-			System.out.println("tsid,screening,season,assertion,value,data_time,flags,msg,last_notify");
+			System.out.println("Current Alarms (" + curAlarms.size() + "):");
 			
-			ArrayList<Alarm> curAlarms = new ArrayList<Alarm>(alarmMap.values());
+			boolean incAppId = theDb.tsdbVersion >= TsdbDatabaseVersion.VERSION_68;
+			HashMap<DbKey, CompAppInfo> apps = new HashMap<DbKey, CompAppInfo>();
+			for(CompAppInfo app : loadingAppDAO.listComputationApps(false))
+				apps.put(app.getAppId(), app);
+			
+			System.out.println("tsid,screening,season,assertion,value,data_time,flags,msg,last_notify"
+				+ (incAppId ? ",loading_app" : ""));
+			
 			Collections.sort(curAlarms, alarmComparator);
 			for(Alarm al : curAlarms)
 			{
@@ -152,6 +164,9 @@ public class ShowAlarms
 				}
 				AlarmScreening scrn =
 					al.getLimitSet() == null ? null : alarmDAO.getScreening(al.getLimitSet().getScreeningId());
+				
+				CompAppInfo appInfo = apps.get(scrn.getAppId());
+				
 				System.out.println(al.getTsid().getUniqueString() + ", "
 					+ (scrn == null ? "null" : scrn.getScreeningName()) + ", "
 					+ (al.getLimitSet() == null ? "null" : 
@@ -162,7 +177,9 @@ public class ShowAlarms
 					+ sdf.format(al.getDataTime()) + ", "
 					+ "0x" + Integer.toHexString(al.getAlarmFlags()) + ", "
 					+ al.getMessage() + ", "
-					+ (al.getLastNotificationTime() == null ? "never" : sdf.format(al.getLastNotificationTime())));
+					+ (al.getLastNotificationTime() == null ? "never" : sdf.format(al.getLastNotificationTime()))
+					+ (appInfo != null ? (", " + appInfo.getAppName()) : "")
+					);
 			}
 
 			System.out.println();
@@ -208,6 +225,7 @@ public class ShowAlarms
 		}
 		finally
 		{
+			loadingAppDAO.close();
 			alarmDAO.close();
 		}
 	}

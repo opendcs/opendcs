@@ -1473,6 +1473,14 @@ public class HdbTimeSeriesDb
 		return hdbDataTypes;
 	}
 	
+	public HdbDataType getHdbDataType(DbKey dtid)
+	{
+		for(HdbDataType hdt : hdbDataTypes)
+			if (hdt.getDataTypeId().equals(dtid))
+				return hdt;
+		return null;
+	}
+	
 	public ArrayList<HdbObjectType> getHdbObjectTypes()
 	{
 		if (hdbObjectTypes == null)

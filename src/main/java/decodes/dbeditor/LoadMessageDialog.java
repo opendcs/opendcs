@@ -171,6 +171,8 @@ public class LoadMessageDialog extends GuiDialog
 	/** Fill the LRGS selection combo with my list of LRGS's */
 	private void fillLrgsCombo()
 	{
+		lrgsCombo.removeAllItems();
+
 		for (Iterator<DataSource> it = Database.getDb().dataSourceList.iterator(); it.hasNext();)
 		{
 			DataSource ds = it.next();
@@ -676,6 +678,7 @@ public class LoadMessageDialog extends GuiDialog
 	{
 		resultsArea.setText("");
 		okButton.setEnabled(true);
+		fillLrgsCombo();
 	}
 }
 

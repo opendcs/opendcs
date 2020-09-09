@@ -96,7 +96,10 @@ public class DecodingScriptEditDialog
 			dbeditLabels.getString("DecodingScriptEditDialog.title")
 			+ ": " + ds.platformConfig.configName, true);
 		if (decodingScriptEditPanel == null)
+		{
 			decodingScriptEditPanel = new DecodesScriptEditPanel();
+			decodingScriptEditPanel.setParentDialog(this);
+		}
 
 		setDecodesScript(ds);
 		try 

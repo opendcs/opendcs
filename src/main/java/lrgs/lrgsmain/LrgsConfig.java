@@ -308,7 +308,7 @@ public class LrgsConfig
 	public static final String def_mergePref4 = null;
 	public static final boolean def_enableDomsatRecv = false;
 	public static final int def_domsatTimeout = 60;
-	public static final boolean def_loadDomsat = true;
+	public static final boolean def_loadDomsat = false;
 	public static final boolean def_enableDapsDqm = false;
 	public static final String def_dqmSerialPort = "COM1";
 	public static final String def_domsatClass = "lrgs.domsatrecv.DomsatSangoma";
@@ -442,6 +442,9 @@ public class LrgsConfig
 		is.close();
 
 		PropertiesUtil.loadFromProps(this, props);
+		
+		this.enableDomsatRecv = false;
+		this.loadDomsat = false;
 	}
 
 	/** @return msec time of last configuration load. */

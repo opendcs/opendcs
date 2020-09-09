@@ -33,6 +33,7 @@ public class AlarmEditLauncherAction
 		super("Alarm Editor", 
 			new ImageIcon(EnvExpander.expand("$DCSTOOL_HOME/icons/alarms48x48.gif")));
 		tag = "alarmedit";
+		Logger.instance().info("Instantiating " + tag + " launcher action.");
 	}
 	
 	@Override

@@ -206,16 +206,20 @@ public class OpenTimeSeriesDAO
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
 		throws DbIoException, NoSuchObjectException
 	{
+		if (lastCacheReload == 0L)
+			reloadTsIdCache();
+		
 		TimeSeriesIdentifier ret = cache.getByKey(key);
 		
 		if (ret != null)
 		{
-			debug3("Received ts_code=" + key + ", id='" + ret.getUniqueString() + "' from cache.");
+			debug3("getTimeSeriesIdentifier(ts_code=" + key 
+				+ ") id='" + ret.getUniqueString() + "' from cache.");
 			return ret;
 		}
 		else
 		{
-			debug3("Not in cache ts_code=" + key);
+			debug3("getTimeSeriesIdentifier(ts_code=" + key + ") Not in cache.");
 		}
 		
 		return readTSID(key);
@@ -783,7 +787,7 @@ public class OpenTimeSeriesDAO
 		AlarmDAI alarmDAO = db.makeAlarmDAO();
 		try
 		{
-			alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey());
+			alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey(), null);
 			alarmDAO.deleteHistoryAlarms(ts.getTimeSeriesIdentifier().getKey(), from, until);
 		}
 		catch(Exception ex)
@@ -821,7 +825,7 @@ public class OpenTimeSeriesDAO
 		AlarmDAI alarmDAO = db.makeAlarmDAO();
 		try
 		{
-			alarmDAO.deleteCurrentAlarm(tsid.getKey());
+			alarmDAO.deleteCurrentAlarm(tsid.getKey(), null);
 			alarmDAO.deleteHistoryAlarms(tsid.getKey(), null, null);
 		}
 		catch(Exception ex)

@@ -46,6 +46,9 @@ public class Alarm
 	/** If cancelled, this is the username */
 	private String cancelledBy = null;
 	
+	/** loading_application_id */
+	private DbKey appId = DbKey.NullKey;
+	
 	// Transient values derived from the IDs stored in the database
 	private TimeSeriesIdentifier tsid = null;
 	private AlarmLimitSet limitSet = null;
@@ -168,6 +171,14 @@ public class Alarm
 	public void setChecked(boolean checked)
 	{
 		this.checked = checked;
+	}
+	public DbKey getAppId()
+	{
+		return appId;
+	}
+	public void setAppId(DbKey appId)
+	{
+		this.appId = appId;
 	}
 	
 	

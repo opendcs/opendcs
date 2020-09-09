@@ -150,6 +150,7 @@ public class DecodesScriptEditPanel
 	private int selectedDecodedDataRow = -1;
 	private int selectedDecodedDataCol = -1;
 	private LoadMessageDialog loadMessageDialog = null;
+	private DecodingScriptEditDialog parentDialog = null;
 	
 	boolean decodingDone = false;
 	
@@ -860,7 +861,11 @@ public class DecodesScriptEditPanel
 		}
 		else
 			loadMessageDialog.reset();
-		TopFrame.getDbEditFrame().launchDialog(loadMessageDialog);
+		
+		if (parentDialog != null)
+			parentDialog.launchDialog(loadMessageDialog); // called from dbedit
+		else
+			TopFrame.getDbEditFrame().launchDialog(loadMessageDialog); // called from platwiz
 		decodingDone = false;
 	}
 
@@ -1141,6 +1146,11 @@ public class DecodesScriptEditPanel
 		
 //System.out.println("Highlighted (after headerlen=" + headerLength + ") start=" 
 //+ start + ", len=" + length + ", highlight=" + highlight);
+	}
+
+	public void setParentDialog(DecodingScriptEditDialog parentDialog)
+	{
+		this.parentDialog = parentDialog;
 	}
 }
 

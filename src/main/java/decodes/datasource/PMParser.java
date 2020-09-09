@@ -147,6 +147,10 @@ public abstract class PMParser
 //			parsers.put("goes", pmp);
 			return pmp;
 		}
+		else if (headerType.equalsIgnoreCase("iridium"))
+		{
+			return new IridiumPMParser();
+		}
 		else if (headerType.equalsIgnoreCase("vitel"))
 		{
 			return new VitelDrgsPMParser();

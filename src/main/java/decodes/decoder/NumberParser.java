@@ -7,6 +7,7 @@ import ilex.var.Variable;
 
 import java.text.DecimalFormat;
 
+import ilex.util.Logger;
 import ilex.util.PseudoBinary;
 import ilex.var.NoConversionException;
 
@@ -550,13 +551,15 @@ public class NumberParser
 			temp += (char)field[++fieldIndex];
 			if(fieldIndex+1==34 || fieldIndex+1==47 || fieldIndex+1==50)
 				temp += (char)field[++fieldIndex];
-			int number = PseudoBinary.decodePB(temp, true);
+			boolean signed = fieldIndex != 36 && fieldIndex != 42 && fieldIndex != 44;
+			int number = PseudoBinary.decodePB(temp, signed);
 			double dnum;
 			
 			if(fieldIndex == 31 || fieldIndex == 34 || fieldIndex == 36 || fieldIndex == 38 || fieldIndex == 40)
 			{
 				dnum = number*0.1;
 				strResult = dFormat.format(dnum);
+Logger.instance().info("fieldIndex=" + fieldIndex + ", strResult=" + strResult);
 				
 				//remove extra digits or fill in with blanks
 				if(fieldIndex==34 && strResult.length()<7)
@@ -648,6 +651,7 @@ public class NumberParser
 					}
 				}
 			}
+Logger.instance().info("Final strResult=" + strResult);
 			result += strResult;// + " ";
 		}
 		result = result + "\n";

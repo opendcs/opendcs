@@ -912,7 +912,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		AlarmDAI alarmDAO = db.makeAlarmDAO();
 		try
 		{
-			alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey());
+			alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey(), null);
 			alarmDAO.deleteHistoryAlarms(ts.getTimeSeriesIdentifier().getKey(), from, until);
 		}
 		catch(Exception ex)
@@ -947,7 +947,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		AlarmDAI alarmDAO = db.makeAlarmDAO();
 		try
 		{
-			alarmDAO.deleteCurrentAlarm(tsid.getKey());
+			alarmDAO.deleteCurrentAlarm(tsid.getKey(), null);
 			alarmDAO.deleteHistoryAlarms(tsid.getKey(), null, null);
 		}
 		catch(Exception ex)

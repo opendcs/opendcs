@@ -21,6 +21,7 @@ import lrgs.common.DcpMsgFlag;
 import lrgs.ldds.PasswordChecker;
 import decodes.decoder.FunctionList;
 import decodes.gui.TopFrame;
+import ilex.util.Logger;
 import decodes.launcher.AlarmEditLauncherAction;
 import decodes.launcher.EventMonLauncherAction;
 import decodes.launcher.LauncherAction;
@@ -119,6 +120,7 @@ public class ResourceFactory
 	
 	public ArrayList<LauncherAction> getDacqLauncherActions()
 	{
+Logger.instance().info("getDacqLauncherActions");
 		ArrayList<LauncherAction> ret = new ArrayList<LauncherAction>();
 		if (DecodesSettings.instance().showEventMonitor)
 			ret.add(new EventMonLauncherAction());

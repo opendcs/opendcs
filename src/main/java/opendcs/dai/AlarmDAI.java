@@ -97,10 +97,11 @@ public interface AlarmDAI
 	 * Returned list will be sorted by start_date_time
 	 * @param siteId
 	 * @param datatypeId
+	 * @param appId application for which to fetch screenings.
 	 * @return matching screening if found, null if not.
 	 * @throws DbIoException
 	 */
-	public ArrayList<AlarmScreening> getScreenings(DbKey siteId, DbKey datatypeId)
+	public ArrayList<AlarmScreening> getScreenings(DbKey siteId, DbKey datatypeId, DbKey appId)
 		throws DbIoException;
 	
 	/**
@@ -135,7 +136,7 @@ public interface AlarmDAI
 	/** Closes any resources opened by the DAO. */
 	public void close();
 	
-	/** Fills the cache and returns all screenings in the db */
+	/** Returns all screenings in the db */
 	public ArrayList<AlarmScreening> getAllScreenings()
 		throws DbIoException;
 	
@@ -143,11 +144,30 @@ public interface AlarmDAI
 	public AlarmScreening getScreening(DbKey screeningId)
 		throws DbIoException;
 
-	/** Refresh the map: load with new, update existing, delete obsolete 
-	 * @throws DbIoException */
-	public void refreshCurrentAlarms(HashMap<DbKey, Alarm> alarmMap) throws DbIoException;
+	/** 
+	 * Refresh the map: load with new, update existing, delete obsolete 
+	 * @param appId (required) The Application ID for which to retrieve alarms
+	 * @throws DbIoException 
+	 */
+	public void refreshCurrentAlarms(HashMap<DbKey, Alarm> alarmMap, DbKey appId) throws DbIoException;
+	
+	/**
+	 * Get all current alarm records, regardless of appId. For use by ShowAlarms and
+	 * future GUI to display alarm records.
+	 * @return all current alarm records.
+	 * @throws DbIoException
+	 */
+	public ArrayList<Alarm> getAllCurrentAlarms()
+		throws DbIoException;
 
-	public void deleteCurrentAlarm(DbKey tsidKey)
+	
+	/**
+	 * Delete record(s) from ALARM_CURRENT table.
+	 * @param tsidKey time series key to delete record(s) for
+	 * @param appId There may be multiple current alarms from different apps. If null, delete all.
+	 * @throws DbIoException
+	 */
+	public void deleteCurrentAlarm(DbKey tsidKey, DbKey appId)
 		throws DbIoException;
 	
 	public void moveToHistory(Alarm alarm);

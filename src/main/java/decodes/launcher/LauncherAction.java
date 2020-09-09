@@ -59,7 +59,7 @@ public abstract class LauncherAction
 		String profileName = launcherFrame.getSelectedProfile();
 		if (profileName != null)
 		{
-			launcherFrame.sendToProfileLauncher(profileName, tag);
+			launcherFrame.sendToProfileLauncher(profileName, "start " + tag);
 			return;
 		}
 

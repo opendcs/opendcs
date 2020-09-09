@@ -480,16 +480,19 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 					catch(InterruptedException ex) {}
 				}
 	
-				now = System.currentTimeMillis();
-				int idx = 0;
-				for(; idx < missingChecks.size() && now > missingChecks.get(idx).nextRunMsec; idx++)
-					doMissingCheck(missingChecks.get(idx), timeSeriesDAO);
-				if (idx > 0)
-					sortMissingChecks();
-				if (now - lastMissingCheckMsec > 600L * 1000L) // ten minutes
+				if (!theDb.isCwms())
 				{
-					checkMissingChecks(timeSeriesDAO, tsGroupDAO);
-					lastMissingCheckMsec = now;
+					now = System.currentTimeMillis();
+					int idx = 0;
+					for(; idx < missingChecks.size() && now > missingChecks.get(idx).nextRunMsec; idx++)
+						doMissingCheck(missingChecks.get(idx), timeSeriesDAO);
+					if (idx > 0)
+						sortMissingChecks();
+					if (now - lastMissingCheckMsec > 600L * 1000L) // ten minutes
+					{
+						checkMissingChecks(timeSeriesDAO, tsGroupDAO);
+						lastMissingCheckMsec = now;
+					}
 				}
 			}
 		}
@@ -613,9 +616,12 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 				}
 			}
 			
-			missingChecks.clear();
-			checkMissingChecks(tsDAO, groupDAO);
-			lastMissingCheckMsec = System.currentTimeMillis();
+			if (!theDb.isCwms())
+			{
+				missingChecks.clear();
+				checkMissingChecks(tsDAO, groupDAO);
+				lastMissingCheckMsec = System.currentTimeMillis();
+			}
 			
 		}
 		catch(NoSuchObjectException ex)
@@ -1365,8 +1371,8 @@ Logger.instance().debug3("doCMC missing check interval='" + mIntv
 				timedCompCal.add(intv.getCalConstant(), intv.getCalMultiplier());
 			}
 			
-			AlarmManager.instance(theDb).missingCheckResults(chk.tsid, until, numValues, numExpected, 
-				chk.screening, chk.limitSet);
+			AlarmManager.instance(theDb, theDb.getAppId()).missingCheckResults(
+				chk.tsid, until, numValues, numExpected, chk.screening, chk.limitSet);
 			chk.nextRunMsec = computeNextRun(new Date(), chk.limitSet.getMissingInterval());
 		}
 		catch (NoSuchObjectException ex)

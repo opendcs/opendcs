@@ -270,7 +270,7 @@ public class LauncherFrame
 		algorithmWizFrame = null;
 		platformWizFrame = null;
 		alarmsFrame = null;
-		
+Logger.instance().info("LauncherFrame ctor");		
 		String dbClass = DecodesSettings.instance().getTsdbClassName();
 		if (dbClass != null)
 		{
@@ -289,6 +289,8 @@ public class LauncherFrame
 		installDir = EnvExpander.expand("$DECODES_INSTALL_DIR");
 		try
 		{
+Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
+			dacqLauncherActions = ResourceFactory.instance().getDacqLauncherActions();
 			jbInit();
 			ImageIcon lrgsStatIcon = new ImageIcon(installDir
 					+ File.separator + "icons" + File.separator
@@ -677,7 +679,6 @@ public class LauncherFrame
 		dcstoolButtonBorder = new TitledBorder(BorderFactory.createEtchedBorder(Color.white, new Color(148,
 			145, 140)), labels.getString("LauncherFrame.dcsToolKitCompTitle"));
 		decodesButtonPanel.setLayout(dcstoolLayout);
-		dacqLauncherActions = ResourceFactory.instance().getDacqLauncherActions();
 		int rows = 4 + (DecodesSettings.instance().showPlatformWizard ? 1 : 0)
 			+ (DecodesSettings.instance().showNetlistEditor ? 1 : 0)
 			+ (DecodesSettings.instance().showPlatformMonitor ? 1 : 0)
@@ -1879,17 +1880,27 @@ public class LauncherFrame
 		int idx = profileName.lastIndexOf('.');
 		if (idx > 0)
 			profileName = profileName.substring(0, idx);
-		Logger.instance().info("======== Launcher Starting for profile '" + profileName + "'");
+		Logger.instance().info("======== Launcher Starting for profile '" + profileName + "', "
+			+ "debuglevel=" + Logger.priorityName[Logger.instance().getMinLogPriority()]);
 		
 		if (port > 0)
 		{
 			client = new BasicClient("localhost", port);
+			Logger.instance().info("Connecting to parent launcher at localhost:" + port);
 			try
 			{ 
 				client.connect();
+				Logger.instance().info(".....connect successful.");
 				inp = client.getInputStream();
 				outp = new PrintStream(client.getOutputStream());
-				outp.println(profileName);
+				String pn = profileName;
+				int slash = pn.lastIndexOf('/');
+				if (slash < 0)
+					slash = pn.lastIndexOf('\\');
+				if (slash > 0)
+					pn = pn.substring(slash+1);
+				
+				outp.println(pn);
 			}
 			catch(IOException ex)
 			{
@@ -1911,6 +1922,7 @@ public class LauncherFrame
 				String cmdnum = words[0];
 				final String cmd = words[1];
 				final String arg = words.length > 2 ? words[2] : "";
+Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + arg + "'");				
 				
 				if (cmd.equalsIgnoreCase("kill"))
 				{
@@ -1920,7 +1932,6 @@ public class LauncherFrame
 				
 				// Anything GUI-related (button pushes, frame changes, etc.) must be done in the swing thread.
 				final Reply reply = new Reply();
-				
 				SwingUtilities.invokeLater(
 					new Runnable()
 					{
@@ -1966,11 +1977,13 @@ public class LauncherFrame
 									found = false;
 								if (dacqLauncherActions != null)
 									for(LauncherAction action : dacqLauncherActions)
+{Logger.instance().info("checking action '" + action.getTag() + "' against arg='" + arg + "'");
 										if (action.getTag().equals(arg))
 										{
 											action.launchFrame();
 											found = true;
 										}
+}
 								if (found)
 									reply.reply = cmd + " " + arg;
 								else
@@ -2058,6 +2071,7 @@ public class LauncherFrame
 		}
 		
 		String [] profileNames = getProfileList();
+Logger.instance().debug3("There are " + profileNames.length + " profiles.");
 		if (profileNames != null && profileNames.length > 1)
 		{
 			profileCombo.removeAllItems();

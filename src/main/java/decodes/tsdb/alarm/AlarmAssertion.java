@@ -31,6 +31,7 @@ public class AlarmAssertion
 	private Date lastNotifySent = null;
 	private Date endTime = null;
 	private String cancelledBy = null;
+	private DbKey appId = DbKey.NullKey;
 
 	public AlarmAssertion()
 	{
@@ -134,5 +135,15 @@ public class AlarmAssertion
 	public void setCancelledBy(String cancelledBy)
 	{
 		this.cancelledBy = cancelledBy;
+	}
+
+	public DbKey getAppId()
+	{
+		return appId;
+	}
+
+	public void setAppId(DbKey appId)
+	{
+		this.appId = appId;
 	}
 }

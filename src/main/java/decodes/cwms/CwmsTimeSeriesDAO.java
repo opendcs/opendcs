@@ -227,8 +227,6 @@ public class CwmsTimeSeriesDAO
 //			+ "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
 //			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a, CWMS_V_LOC c";
 
-		
-		
 		DbKey key = DbKey.createDbKey(rs, 7);
 		String desc = rs.getString(1);
 		String param = rs.getString(5);
@@ -245,7 +243,14 @@ public class CwmsTimeSeriesDAO
 		
 		
 		DbKey siteId = DbKey.createDbKey(rs, 8);
-		Site site = siteDAO.getSiteById(siteId);
+		Site site = null;
+		try { site = siteDAO.getSiteById(siteId); }
+		catch(NoSuchObjectException ex)
+		{
+			warning("rs2TsId No such Site for TS_ID '" + desc 
+				+ "' with ts_code=" + key + " and location_code=" + siteId);
+			throw ex;
+		}
 		site.addName(new SiteName(site, Constants.snt_CWMS, rs.getString(9)));
 		ret.setSite(site);
 		
@@ -1124,13 +1129,17 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				}
 				catch (NoSuchObjectException ex)
 				{
-					warning("Error creating Cwms TSID for key=" + rs.getLong(1) 
-						+ ": " + ex.getLocalizedMessage() + " -- skipped.");
+					warning("Error creating Cwms TSID: " + ex
+						+ " -- " + ex.getLocalizedMessage() + " -- skipped.");
 				}
 			debug1("After fill, cache has " + cache.size() + " TSIDs.");
 		}
 		catch (SQLException ex)
 		{
+			String m = "CwmsTimeSeriesDb.reloadTsIdCache: " + ex;
+			failure(m);
+			if (Logger.instance().getLogOutput() != null)
+				ex.printStackTrace(Logger.instance().getLogOutput());
 			throw new DbIoException("CwmsTimeSeriesDb.reloadTsIdCache: " + ex);
 		}
 		lastCacheReload = System.currentTimeMillis();

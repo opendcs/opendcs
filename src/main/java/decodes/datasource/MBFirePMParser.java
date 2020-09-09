@@ -44,7 +44,7 @@ public class MBFirePMParser extends PMParser
 	/** default constructor */
 	public MBFirePMParser()
 	{
-		Logger.instance().debug3("MBFirePMParser ctor");
+//		Logger.instance().debug3("MBFirePMParser ctor");
 		dateFormat = new SimpleDateFormat(dateFmtStr);
 		java.util.TimeZone jtz=java.util.TimeZone.getTimeZone("GMT-06:00");
 		dateFormat.setCalendar(Calendar.getInstance(jtz));
@@ -55,7 +55,7 @@ public class MBFirePMParser extends PMParser
 	public void parsePerformanceMeasurements(RawMessage msg)
 		throws HeaderParseException
 	{
-Logger.instance().info("MBFirePMP: parsePMs");;
+//Logger.instance().info("MBFirePMP: parsePMs");;
 		byte data[] = msg.getData();
 		StringBuilder idbuf = new StringBuilder();
 		int idx = 0;

@@ -429,6 +429,7 @@ public class NetworkListListIO extends SqlDbObjIo
 		
 		try
 		{
+			nl.clear();
 			stmt = createStatement();
 			String nle_attributes = "networkListId, transportId";
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)

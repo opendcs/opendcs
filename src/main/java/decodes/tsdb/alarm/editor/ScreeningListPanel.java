@@ -278,8 +278,8 @@ public class ScreeningListPanel extends JPanel
 class ScreeningListTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
-	String[] colnames = new String[7];
-	int [] widths = { 8, 18, 12, 15, 15, 16, 16 };
+	String[] colnames = new String[8];
+	int [] widths = { 8, 16, 10, 13, 13, 14, 14, 14 };
 	private int sortColumn = 0;
 	ArrayList<AlarmScreening> screenings = new ArrayList<AlarmScreening>();
 //	private AlarmConfig alarmConfig = new AlarmConfig();
@@ -295,7 +295,8 @@ class ScreeningListTableModel extends AbstractTableModel
 		colnames[3] = parentPanel.parentFrame.genericLabels.getString("site");
 		colnames[4] = parentPanel.parentFrame.eventmonLabels.getString("alarmGroup");
 		colnames[5] = parentPanel.parentFrame.eventmonLabels.getString("effectiveDate");
-		colnames[6] = parentPanel.parentFrame.genericLabels.getString("lastMod") + " "
+		colnames[6] = parentPanel.parentFrame.eventmonLabels.getString("loadingApp");
+		colnames[7] = parentPanel.parentFrame.genericLabels.getString("lastMod") + " "
 			+ DecodesSettings.instance().guiTimeZone;
 		sdf.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().guiTimeZone));
 	}
@@ -428,7 +429,8 @@ class ScreeningListTableModel extends AbstractTableModel
 		case 3: return scrn.getSiteNames().size()==0 ? "(none)" : scrn.getSiteNames().get(0).getNameValue();
 		case 4: return scrn.getGroupName() == null ? "" : scrn.getGroupName();
 		case 5: return scrn.getStartDateTime() == null ? " " : sdf.format(scrn.getStartDateTime());
-		case 6: return sdf.format(scrn.getLastModified());
+		case 6: return scrn.getAppInfo() == null ? "" : scrn.getAppInfo().getAppName();
+		case 7: return sdf.format(scrn.getLastModified());
 		default: return "";
 		}
 	}
@@ -464,8 +466,44 @@ class ScreeningComparator implements Comparator<AlarmScreening>
 	@Override
 	public int compare(AlarmScreening evt1, AlarmScreening evt2)
 	{
-		return TextUtil.strCompareIgnoreCase(
+		int ret = TextUtil.strCompareIgnoreCase(
 			model.getColumnValue(evt1, sortColumn),
 			model.getColumnValue(evt2, sortColumn));
+		if (ret != 0)
+			return ret;
+		if (sortColumn == 2) // Data Type
+		{
+			ret = TextUtil.strCompareIgnoreCase(
+				model.getColumnValue(evt1, 3),
+				model.getColumnValue(evt2, 3));     // Site
+			if (ret != 0)
+				return ret;
+			ret = TextUtil.strCompareIgnoreCase(
+					model.getColumnValue(evt1, 6),
+					model.getColumnValue(evt2, 6)); // Comp App
+			if (ret != 0)
+				return ret;
+			return TextUtil.strCompareIgnoreCase(
+					model.getColumnValue(evt1, 5),
+					model.getColumnValue(evt2, 5)); // Effective Date
+		}
+		if (sortColumn == 3) // Site
+		{
+			ret = TextUtil.strCompareIgnoreCase(
+					model.getColumnValue(evt1, 2),
+					model.getColumnValue(evt2, 2)); // Data Type
+				if (ret != 0)
+					return ret;
+			ret = TextUtil.strCompareIgnoreCase(
+					model.getColumnValue(evt1, 6),
+					model.getColumnValue(evt2, 6)); // Comp App
+			if (ret != 0)
+				return ret;
+			return TextUtil.strCompareIgnoreCase(
+					model.getColumnValue(evt1, 5),
+					model.getColumnValue(evt2, 5)); // Effective Date
+
+		}
+		return ret;
 	}
 }

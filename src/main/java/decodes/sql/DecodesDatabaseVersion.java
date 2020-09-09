@@ -133,5 +133,13 @@ public class DecodesDatabaseVersion
 	public static final int DECODES_DB_67 = 67;
 	
 
+	/**
+	 * Version 68 schema corresponds to OpenDCS 6.8
+	 * Keep This number in sync with decodes/tsdb/TsdbDatabaseVersion.
+	 * - Add LOADING_APPLICATION_ID to ALARM_SCREENING and add it to the 
+	 *   CONSTRAINT AS_SDI_START_UNIQUE. Thus There can be multiple site/datatype/start
+	 *   tuples as long as they have different loading applications.
+	 */
+	public static final int DECODES_DB_68 = 68;
 	
 }

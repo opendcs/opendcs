@@ -14,6 +14,7 @@ import java.util.Date;
 import decodes.db.DataType;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
+import decodes.tsdb.CompAppInfo;
 import ilex.util.TextUtil;
 import opendcs.dao.CachableDbObject;
 
@@ -35,6 +36,7 @@ public class AlarmScreening
 	private boolean enabled = true;
 	private DbKey alarmGroupId = DbKey.NullKey;
 	private String description = null;
+	private DbKey appId = DbKey.NullKey;
 
 	/** Child Limit Sets */
 	private ArrayList<AlarmLimitSet> limitSets = new ArrayList<AlarmLimitSet>();
@@ -50,6 +52,11 @@ public class AlarmScreening
 	
 	/** Temporary storage for group name when reading XML, before resolving to alarmGroupId */
 	private String groupName = null;
+	
+	/** Temporary storage for application info, if one is assigned. */
+	private CompAppInfo appInfo = null;
+	/** Temporary storage for application name, if one is assigned. */
+	private String appName = null;
 	
 	public AlarmScreening()
 	{
@@ -292,6 +299,40 @@ public class AlarmScreening
 		}
 
 		return true;
+	}
+
+	public DbKey getAppId()
+	{
+		return appId;
+	}
+
+	public void setAppId(DbKey appId)
+	{
+		this.appId = appId;
+	}
+
+	public CompAppInfo getAppInfo()
+	{
+		return appInfo;
+	}
+
+	public void setAppInfo(CompAppInfo appInfo)
+	{
+		this.appInfo = appInfo;
+		if (appInfo == null)
+			appName = null;
+		else
+			setAppName(appInfo.getAppName());
+	}
+
+	public String getAppName()
+	{
+		return appName;
+	}
+
+	public void setAppName(String appName)
+	{
+		this.appName = appName;
 	}
 	
 }

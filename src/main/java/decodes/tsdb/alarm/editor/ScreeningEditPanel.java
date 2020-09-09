@@ -20,6 +20,7 @@ import java.util.TimeZone;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -43,8 +44,10 @@ import decodes.decoder.Season;
 import decodes.hdb.HdbTimeSeriesDb;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadScreeningException;
+import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.AlarmLimitSet;
 import decodes.tsdb.alarm.AlarmScreening;
@@ -58,6 +61,7 @@ import ilex.gui.DateTimeCalendar;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import opendcs.dai.AlarmDAI;
+import opendcs.dai.LoadingAppDAI;
 
 @SuppressWarnings("serial")
 public class ScreeningEditPanel 
@@ -78,7 +82,13 @@ public class ScreeningEditPanel
 	private JCheckBox startTimeCheck = new JCheckBox();
 	private DateTimeCalendar startDateTimeCal = null;
 	private String prevDatatypeValue = "";
-	Season defaultSeason = new Season();
+	private Season defaultSeason = new Season();
+	private JComboBox appCombo = new JComboBox();
+	private ArrayList<CompAppInfo> compApps = null;
+	private JTabbedPane seasonsPane = new JTabbedPane();
+	private boolean committed = false;
+	private String seasonNames[];
+	private Season seasons[];
 	
 	
 	public ScreeningEditPanel(AlarmEditFrame parentFrame)
@@ -102,11 +112,6 @@ public class ScreeningEditPanel
 	}
 	
 
-	private JTabbedPane seasonsPane = new JTabbedPane();
-	
-	private boolean committed = false;
-	String seasonNames[];
-	Season seasons[];
 
 	
 	private void guiInit()
@@ -276,7 +281,33 @@ public class ScreeningEditPanel
 			new GridBagConstraints(1, 3, 2, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 1, 2), 0, 0));
-	
+		
+		// Fill in the Process combo with list of apps.
+		LoadingAppDAI appDAO = TsdbAppTemplate.theDb.makeLoadingAppDAO();
+		try
+		{
+			compApps = appDAO.listComputationApps(false);
+			appCombo.addItem("<any>");
+			for(int i=0; i<compApps.size(); i++)
+			{
+				CompAppInfo cai = compApps.get(i);
+				appCombo.addItem("" + cai.getAppId() + ": " + cai.getAppName());
+			}
+		}
+		catch (DbIoException e1)
+		{
+			parentFrame.showError("Cannot list computation apps: " + e1);
+			e1.printStackTrace();
+		}
+		north.add(new JLabel("Loading App:"),
+			new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(1, 10, 1, 2), 0, 0));
+		north.add(appCombo,
+			new GridBagConstraints(4, 3, 1, 1, 0.3, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(1, 2, 1, 5), 0, 0));
+
 		// LINE 5 & 6: Text Area for Description. On right, Database ID and Last Modified
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.getViewport().add(descArea);
@@ -522,6 +553,21 @@ public class ScreeningEditPanel
 			seasonPanel.setLimitSet(limitSet);
 			seasonsPane.add(seasonPanel, 
 				limitSet.getSeason() == null ? "default" : limitSet.getSeason().getAbbr());
+		}
+		
+		if (DbKey.isNull(screening.getAppId()))
+			appCombo.setSelectedIndex(0);
+		else
+		{
+			for(int i=0; i < compApps.size(); i++)
+			{
+				CompAppInfo app = compApps.get(i);
+				if (screening.getAppId().equals(app.getAppId()))
+				{
+					appCombo.setSelectedIndex(i+1);
+					break;
+				}
+			}
 		}
 	}
 	
@@ -805,6 +851,16 @@ public class ScreeningEditPanel
 			als.setSeason(scp.getLimitSet().getSeason());
 			scp.fieldsToLimitSet(als);
 			scrn.addLimitSet(als);
+		}
+		
+		int appIdx = appCombo.getSelectedIndex();
+		if (appIdx == 0)
+			scrn.setAppId(DbKey.NullKey);
+		else
+		{
+			CompAppInfo compApp = compApps.get(appIdx - 1);
+			scrn.setAppInfo(compApp);
+			scrn.setAppId(compApp.getAppId());
 		}
 	}
 

@@ -17,7 +17,7 @@ public class DecodesVersion
 	private static String abbr = "OPENDCS";
 
 	/** the program version number */
-	private static String version = "6.7 RC" + LrgsBuild.rcNum;
+	private static String version = "6.8 RC" + LrgsBuild.rcNum;
 
 	/** the program date */
 	private static String modifyDate = LrgsBuild.buildDate;

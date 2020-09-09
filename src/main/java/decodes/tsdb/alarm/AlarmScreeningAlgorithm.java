@@ -76,7 +76,10 @@ public class AlarmScreeningAlgorithm
 		new PropertySpec("setInputFlags", PropertySpec.BOOLEAN, "(default=false) "
 			+ "Set to true to set quality flags on the input parameter."),
 		new PropertySpec("noOutputOnReject", PropertySpec.BOOLEAN, "(default=false) "
-			+ "If true and the value is REJECTED, then do not write output param at all. ")
+			+ "If true and the value is REJECTED, then do not write output param at all. "),
+		new PropertySpec("setDataFlags", PropertySpec.BOOLEAN, "(default=true) "
+			+ "Set to false to prevent this algorithm from saving screening flag results "
+			+ "in each time series value.")
 	};
 	
 	@Override
@@ -100,10 +103,14 @@ public class AlarmScreeningAlgorithm
 			+ " earliestTrigger=" + debugSdf.format(earliestTrigger));
 		try
 		{
-			screenings = alarmDAO.getScreenings(inputTsid.getSite().getId(), inputTsid.getDataTypeId());
+			DbKey siteId = inputTsid.getSite().getId();
+			DbKey dtId = inputTsid.getDataTypeId();
+			screenings = alarmDAO.getScreenings(siteId, dtId, comp.getAppId());
 			if (screenings == null)
 				throw new DbCompException("Invalid TSID for screening '" + inputTsid.getUniqueString() + "'");
-debug3("\tAlarmDAO returned " + screenings.size() + " matches for site & datatype. ");
+debug3("\tAlarmDAO returned " + screenings.size() + 
+	" matches for siteID=" +  siteId + ", dtId=" + dtId + ", appId=" + comp.getAppId());
+
 for(int idx=0; idx<screenings.size(); idx++)
 {
 	AlarmScreening als = screenings.get(idx);
@@ -122,7 +129,7 @@ debug3("Looking for generic screenings");
 				
 				// Need to look for generic screening
 				ArrayList<AlarmScreening> genScr = 
-					alarmDAO.getScreenings(DbKey.NullKey, inputTsid.getDataTypeId());
+					alarmDAO.getScreenings(DbKey.NullKey, inputTsid.getDataTypeId(), comp.getAppId());
 debug3("DAO returned " + genScr.size() + " generic screenings");
 				if (genScr != null && genScr.size() > 0)
 				{
@@ -225,7 +232,8 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 	public boolean noOutputOnReject = false;
 	public boolean noOverwrite = false;
 	public boolean setInputFlags = false;
-	String _propertyNames[] = { "noOutputOnReject", "noOverwrite", "setInputFlags" };
+	public boolean setDataFlags = true;
+	String _propertyNames[] = { "noOutputOnReject", "noOverwrite", "setInputFlags", "setDataFlags" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -537,7 +545,7 @@ debug1("ROC check prev=" + debugSdf.format(from) + " " + prev + ", delta=" + del
 		// If one of:
 		//   - property saying to set the input flags
 		//   - The input and output are the same time series
-		if (setInputFlags || _inputIsOutput)
+		if ((setInputFlags || _inputIsOutput) && setDataFlags)
 		{
 			setInputFlagBits("input", flags, HdbFlags.SCREENING_MASK);
 		}
@@ -554,7 +562,8 @@ Logger.instance().info("output different from input, noOutputOnReject=" + noOutp
 			{
 				if (noOverwrite)
 					flags |= VarFlags.NO_OVERWRITE; // 0x0c
-				output.setFlags(flags);
+				if (setDataFlags)
+					output.setFlags(flags);
 				setOutput(output, input);
 			}
 		}
@@ -566,8 +575,8 @@ Logger.instance().info("output different from input, noOutputOnReject=" + noOutp
 	{
 		//  Hand the alarm assertion (or de-assertion) off to the singleton AlarmManager (TBD)
 		//  AlarmManager maintains a queue of assertions.
-		AlarmManager.instance(tsdb).checkAlarms(inputParm.tsid, tLimitSet, tScreening, 
-			t, value, delta, variance, flags);
+		AlarmManager.instance(tsdb, comp.getAppId()).checkAlarms(
+			inputParm.tsid, tLimitSet, tScreening, t, value, delta, variance, flags);
 	}
 
 	/**

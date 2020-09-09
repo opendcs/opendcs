@@ -92,7 +92,20 @@ public class IDateFormat
 						"Bad date format (no sign) '"+date+"'");
 			}
 			else if (Character.isDigit(tok.charAt(0)))
-				inc = Integer.parseInt(tok);
+			{
+				int x=1;
+				for(; x < tok.length() && Character.isDigit(tok.charAt(x)); x++);
+				if (x < tok.length())
+				{
+					// The user combined inc with units, like "1hour"
+					inc = Integer.parseInt(tok.substring(0,x));
+					units = getTimeUnitValue(tok.substring(x));
+					if (units != 0)
+						offset += (inc * units);
+				}
+				else // increment separate token from units, e.g. "3 hours"
+					inc = Integer.parseInt(tok); 
+			}
 			else if ((units = getTimeUnitValue(tok)) != 0)
 				offset += (inc * units);
 			else
@@ -106,8 +119,13 @@ public class IDateFormat
 	}
 	
 	/**
-	* Parse a string in the form "DDD/HH:MM:SS YY" or "DDD HH:MM:SS YYYY"
-	* or "DDD HH:MM:SS".
+	* Parse a string in one of the the following forms
+	*  YYYY/DDD/HH:MM:SS   (delim between DDD and HH may be space, tab, or slash
+	*  YYYY/DDD/HH:MM      (seconds set to 0)
+	*  DDD/HH:MM:SS        (assume current year)
+	*  DDD/HH:MM
+	*  HH:MM:SS            (assume current day)
+	*  HH:MM
 	* @param date the date string
 	* @return the Date object
 	* @throws IllegalArgumentException on parse error
@@ -413,23 +431,23 @@ public class IDateFormat
 	*/
 	public static void main( String[] args )
 	{
-		int sod = getSecondOfDay(args[0]);
-		System.out.println("Second of day = " + sod + ", " +
-			printSecondOfDay(sod, true) + ", " +
-			printSecondOfDay(sod, false));
-//		TimeZone tz = TimeZone.getTimeZone("UTC");
-//		Calendar cal = Calendar.getInstance(tz);
-//		
-//		for(int i = 0; i < args.length; ++i)
-//		{
-//			Date d = IDateFormat.parse(args[i]);
-//			System.out.println(args[i]+": time_t = " + d.getTime()/1000);
-//			cal.setTime(d);
-//			System.out.println("From calendar: " + cal.get(Calendar.YEAR) + " "
-//				+ cal.get(Calendar.DAY_OF_YEAR) + " " + cal.get(Calendar.HOUR_OF_DAY)
-//				+ ":" + cal.get(Calendar.MINUTE) + ":" + cal.get(Calendar.SECOND));
-//			System.out.println("From IDateFormat: " + IDateFormat.toString(d, false));
-//			System.out.println("From IDateFormat(r): " + IDateFormat.toString(d, true));
-//		}		
+//		int sod = getSecondOfDay(args[0]);
+//		System.out.println("Second of day = " + sod + ", " +
+//			printSecondOfDay(sod, true) + ", " +
+//			printSecondOfDay(sod, false));
+		TimeZone tz = TimeZone.getTimeZone("UTC");
+		Calendar cal = Calendar.getInstance(tz);
+		
+		for(int i = 0; i < args.length; ++i)
+		{
+			Date d = IDateFormat.parse(args[i]);
+			System.out.println(args[i]+": time_t = " + d.getTime()/1000);
+			cal.setTime(d);
+			System.out.println("From calendar: " + cal.get(Calendar.YEAR) + " "
+				+ cal.get(Calendar.DAY_OF_YEAR) + " " + cal.get(Calendar.HOUR_OF_DAY)
+				+ ":" + cal.get(Calendar.MINUTE) + ":" + cal.get(Calendar.SECOND));
+			System.out.println("From IDateFormat: " + IDateFormat.toString(d, false));
+			System.out.println("From IDateFormat(r): " + IDateFormat.toString(d, true));
+		}		
 	}
 }

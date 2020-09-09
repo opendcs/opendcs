@@ -101,6 +101,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.VarFlags;
+import decodes.tsdb.alarm.AlarmManager;
 import decodes.tsdb.compedit.ComputationsEditPanel;
 import decodes.tsdb.compedit.ComputationsListPanel;
 import decodes.tsdb.groupedit.TimeSeriesSelectDialog;
@@ -696,7 +697,8 @@ public class CompRunGuiFrame extends TopFrame
 
 	private void runButtonPressed()
 	{
-
+		AlarmManager.deleteInstance();
+		
 		if (fromDTCal.getDate() == null || toDTCal.getDate() == null)
 			return;
 		Vector<CTimeSeries> inputs = new Vector<CTimeSeries>();

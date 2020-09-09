@@ -78,7 +78,7 @@ public class LrgsConfigDialog extends GuiDialog
 	private JButton cancelButton = null;
 	private JButton applyButton = null;
 	private JPanel archiveConfigTab = null;
-	private JPanel domsatConfigTab = null;
+//	private JPanel domsatConfigTab = null;
 	private JPanel ddsServerConfigTab = null;
 	private JPanel ddsRecvConfigTab = null;
 	private JPanel drgsConfigTab = null;
@@ -107,15 +107,15 @@ public class LrgsConfigDialog extends GuiDialog
 	private JComboBox mergePref2Combo = null;
 	private JComboBox mergePref3Combo = null;
 	private JComboBox mergePref4Combo = null;
-	private JPanel domsatPanel = null;
-	private JCheckBox initializeDOMSATcheck = null;
-	private JLabel domsatHardwareLabel = null;
-	private JCheckBox domsatLinkCheck = null;
-	private JLabel domsatTimeoutLabel = null;
-	private JComboBox domsatHardwareCombo = null;
-	private JTextField domsatTimeoutField = null;
-	private JTextField domsatDpcHost = new JTextField();;
-	private JTextField domsatDpcPort = new JTextField();;
+//	private JPanel domsatPanel = null;
+//	private JCheckBox initializeDOMSATcheck = null;
+//	private JLabel domsatHardwareLabel = null;
+//	private JCheckBox domsatLinkCheck = null;
+//	private JLabel domsatTimeoutLabel = null;
+//	private JComboBox domsatHardwareCombo = null;
+//	private JTextField domsatTimeoutField = null;
+//	private JTextField domsatDpcHost = new JTextField();;
+//	private JTextField domsatDpcPort = new JTextField();;
 	private JTextField ddsListenPortField = null;
 	private JTextField ddsBindAddrField = null;
 	private JTextField ddsMaxClientsField = null;
@@ -180,8 +180,7 @@ public class LrgsConfigDialog extends GuiDialog
 	private JCheckBox goesXmitCheck = new JCheckBox("Save GOES Xmit Records");
 	private JCheckBox requireStrongAuthCheck = new JCheckBox();
 
-	private String mergePrefs[] = { "(unspecified)", "DRGS",
-		"DOMSAT", "DDS-Receive" };
+	private String mergePrefs[] = { "(unspecified)", "DRGS", "HRIT", "DDS-Receive" };
 
 	private LrgsConfig lrgsConfig;  //  @jve:decl-index=0:
 	public DdsRecvSettings ddsSettings;
@@ -193,7 +192,7 @@ public class LrgsConfigDialog extends GuiDialog
 	private DrgsInputSettings networkDcpSettings;
 	private NetworkDcpCfgPanel networkDcpCfgPanel;
 	private JCheckBox preferredGoodCheck = new JCheckBox();
-	private JCheckBox acceptDomsatARMsCheck = new JCheckBox();
+//	private JCheckBox acceptDomsatARMsCheck = new JCheckBox();
 	private IridiumCfgPanel iridiumCfgTab = null;
 	private LritCfgPanel lritCfgPanel = null;
 	private HritFileCfgPanel hritFileCfgPanel = null;
@@ -252,14 +251,14 @@ public class LrgsConfigDialog extends GuiDialog
 		goesXmitCheck.setSelected(false);
 		
 		//Domsat Tab
-		getInitializeDOMSATcheck().setSelected(false);
-		getDomsatHardwareCombo().setSelectedItem(0);
-		getDomsatTimeoutField().setText("");
-		getDomsatLinkCheck().setSelected(false);
-		domsatDpcHost.setText(LrgsConfig.def_dpcHost);
-		domsatDpcPort.setText("" + LrgsConfig.def_dpcPort);
-		chkDpcEnabled();
-		acceptDomsatARMsCheck.setSelected(true);
+//		getInitializeDOMSATcheck().setSelected(false);
+//		getDomsatHardwareCombo().setSelectedItem(0);
+//		getDomsatTimeoutField().setText("");
+//		getDomsatLinkCheck().setSelected(false);
+//		domsatDpcHost.setText(LrgsConfig.def_dpcHost);
+//		domsatDpcPort.setText("" + LrgsConfig.def_dpcPort);
+//		chkDpcEnabled();
+//		acceptDomsatARMsCheck.setSelected(true);
 		
 		//dds server tab
 		getDdsListenPortField().setText("");
@@ -347,18 +346,18 @@ public class LrgsConfigDialog extends GuiDialog
 		
 		miscPanel.setProperties(lrgsConfig.getOtherProps());
 
-		//Domsat Tab
-		getInitializeDOMSATcheck().setSelected(lrgsConfig.loadDomsat);
-		//getDomsatHardwareCombo().setEnabled(lrgsConfig.loadDomsat);
-		getDomsatHardwareCombo().setSelectedItem(lrgsConfig.domsatClass);
-		String s = lrgsConfig.dpcHost;
-		if (s == null) s = "";
-		domsatDpcHost.setText(s);
-		domsatDpcPort.setText("" + lrgsConfig.dpcPort);
-		chkDpcEnabled();
-		getDomsatTimeoutField().setText(String.valueOf(lrgsConfig.domsatTimeout));
-		getDomsatLinkCheck().setSelected(lrgsConfig.enableDomsatRecv);
-		acceptDomsatARMsCheck.setSelected(lrgsConfig.acceptDomsatARMs);
+//		//Domsat Tab
+//		getInitializeDOMSATcheck().setSelected(lrgsConfig.loadDomsat);
+//		//getDomsatHardwareCombo().setEnabled(lrgsConfig.loadDomsat);
+//		getDomsatHardwareCombo().setSelectedItem(lrgsConfig.domsatClass);
+//		String s = lrgsConfig.dpcHost;
+//		if (s == null) s = "";
+//		domsatDpcHost.setText(s);
+//		domsatDpcPort.setText("" + lrgsConfig.dpcPort);
+//		chkDpcEnabled();
+//		getDomsatTimeoutField().setText(String.valueOf(lrgsConfig.domsatTimeout));
+//		getDomsatLinkCheck().setSelected(lrgsConfig.enableDomsatRecv);
+//		acceptDomsatARMsCheck.setSelected(lrgsConfig.acceptDomsatARMs);
 		
 		//dds server tab
 		getDdsListenPortField().setText(String.valueOf(lrgsConfig.ddsListenPort));
@@ -596,65 +595,65 @@ public class LrgsConfigDialog extends GuiDialog
 				changed = true;
 			}
 			
-			// DOMSAT Tab
-			fieldName = "DOMSAT Load";
-			bv = getInitializeDOMSATcheck().isSelected();
-			if (lrgsConfig.loadDomsat != bv)
-			{
-				lrgsConfig.loadDomsat = bv;
-				changed = true;
-			}
-
-			fieldName = "DOMSAT Class";
-			sv = (String)getDomsatHardwareCombo().getSelectedItem();
-			if (!TextUtil.strEqual(lrgsConfig.domsatClass, sv))
-			{
-				lrgsConfig.domsatClass = sv;
-				changed = true;
-			}
-			sv = domsatDpcHost.getText().trim();
-			if (sv.length() == 0)
-				sv = null;
-			if (!TextUtil.strEqual(sv, lrgsConfig.dpcHost))
-			{
-				lrgsConfig.dpcHost = sv;
-				changed = true;
-			}
+//			// DOMSAT Tab
+//			fieldName = "DOMSAT Load";
+//			bv = getInitializeDOMSATcheck().isSelected();
+//			if (lrgsConfig.loadDomsat != bv)
+//			{
+//				lrgsConfig.loadDomsat = bv;
+//				changed = true;
+//			}
+//
+//			fieldName = "DOMSAT Class";
+//			sv = (String)getDomsatHardwareCombo().getSelectedItem();
+//			if (!TextUtil.strEqual(lrgsConfig.domsatClass, sv))
+//			{
+//				lrgsConfig.domsatClass = sv;
+//				changed = true;
+//			}
+//			sv = domsatDpcHost.getText().trim();
+//			if (sv.length() == 0)
+//				sv = null;
+//			if (!TextUtil.strEqual(sv, lrgsConfig.dpcHost))
+//			{
+//				lrgsConfig.dpcHost = sv;
+//				changed = true;
+//			}
 			
-			try
-			{
-				int p = Integer.parseInt(domsatDpcPort.getText().trim());
-				if (p != lrgsConfig.dpcPort)
-				{
-					lrgsConfig.dpcPort = p;
-					changed = true;
-				}
-			}
-			catch(Exception ex) { }
-
-			fieldName = "DOMSAT Enable";
-			bv = getDomsatLinkCheck().isSelected();
-			if (lrgsConfig.enableDomsatRecv != bv)
-			{
-				lrgsConfig.enableDomsatRecv = bv;
-				changed = true;
-			}
-
-			fieldName = "DOMSAT Timeout";
-			iv = getIntFieldValue(getDomsatTimeoutField(), 
-				lrgsConfig.def_domsatTimeout);
-			if (lrgsConfig.domsatTimeout != iv)
-			{
-				lrgsConfig.domsatTimeout = iv;
-				changed = true;
-			}
-			
-			bv = acceptDomsatARMsCheck.isSelected();
-			if (lrgsConfig.acceptDomsatARMs != bv)
-			{
-				lrgsConfig.acceptDomsatARMs = bv;
-				changed = true;
-			}
+//			try
+//			{
+//				int p = Integer.parseInt(domsatDpcPort.getText().trim());
+//				if (p != lrgsConfig.dpcPort)
+//				{
+//					lrgsConfig.dpcPort = p;
+//					changed = true;
+//				}
+//			}
+//			catch(Exception ex) { }
+//
+//			fieldName = "DOMSAT Enable";
+//			bv = getDomsatLinkCheck().isSelected();
+//			if (lrgsConfig.enableDomsatRecv != bv)
+//			{
+//				lrgsConfig.enableDomsatRecv = bv;
+//				changed = true;
+//			}
+//
+//			fieldName = "DOMSAT Timeout";
+//			iv = getIntFieldValue(getDomsatTimeoutField(), 
+//				lrgsConfig.def_domsatTimeout);
+//			if (lrgsConfig.domsatTimeout != iv)
+//			{
+//				lrgsConfig.domsatTimeout = iv;
+//				changed = true;
+//			}
+//			
+//			bv = acceptDomsatARMsCheck.isSelected();
+//			if (lrgsConfig.acceptDomsatARMs != bv)
+//			{
+//				lrgsConfig.acceptDomsatARMs = bv;
+//				changed = true;
+//			}
 
 			// DDS Server Tab
 			fieldName = "DDS Listen Port";
@@ -893,8 +892,8 @@ public class LrgsConfigDialog extends GuiDialog
 			tabbedPane = new JTabbedPane();
 			tabbedPane.addTab(labels.getString("LrgsConfigDialog.archiveTab"),
 					null, getArchiveConfigTab(), null);
-			tabbedPane.addTab(labels.getString("LrgsConfigDialog.DOMSATTab"),
-					null, getDomsatConfigTab(), null);
+//			tabbedPane.addTab(labels.getString("LrgsConfigDialog.DOMSATTab"),
+//					null, getDomsatConfigTab(), null);
 			tabbedPane.addTab(labels.getString("LrgsConfigDialog.DDSServerTab"),
 					null, getDdsServerConfigTab(), null);
 			tabbedPane.addTab(labels.getString("LrgsConfigDialog.DDSReceiveTab"),
@@ -1031,86 +1030,86 @@ public class LrgsConfigDialog extends GuiDialog
 	 * 	
 	 * @return javax.swing.JPanel	
 	 */
-	private JPanel getDomsatConfigTab() 
-	{
-		if (domsatConfigTab == null) 
-		{
-			domsatHardwareLabel = new JLabel();
-			domsatHardwareLabel.setText(labels.getString(
-					"LrgsConfigDialog.DHardwareInterface"));
-
-			domsatTimeoutLabel = new JLabel();
-			domsatTimeoutLabel.setText(labels.getString(
-					"LrgsConfigDialog.DTimeout"));
-
-			domsatConfigTab = new JPanel();
-			domsatConfigTab.setLayout(new GridBagLayout());
-			domsatConfigTab.setBorder(BorderFactory.createTitledBorder(null, 
-				labels.getString("LrgsConfigDialog.DOMSATConfigurationTitle"),
-				TitledBorder.CENTER, 
-				TitledBorder.BELOW_TOP, new Font("Dialog", Font.BOLD, 14), 
-				new Color(51, 51, 51)));
-
-			
-			domsatConfigTab.add(getInitializeDOMSATcheck(), 
-				new GridBagConstraints(0, 0, 2, 1, 0.0, 0.5, 
-					GridBagConstraints.SOUTHWEST, GridBagConstraints.NONE,
-					new Insets(10, 10, 5, 10), 0, 0));
-			domsatConfigTab.add(domsatHardwareLabel, 
-				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
-					GridBagConstraints.EAST, GridBagConstraints.NONE,
-					new Insets(5, 40, 5, 2), 0, 0));
-			domsatConfigTab.add(getDomsatHardwareCombo(), 
-				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
-					GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
-					new Insets(5, 0, 5, 20), 0, 0));
-
-			JLabel dpcHostLabel = new JLabel(
-				labels.getString("LrgsConfigDialog.DOMSATDpcHost"));
-			domsatConfigTab.add(dpcHostLabel,
-				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
-					GridBagConstraints.EAST, GridBagConstraints.NONE,
-					new Insets(5, 40, 5, 2), 0, 0));
-			domsatConfigTab.add(domsatDpcHost, 
-				new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, 
-					GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
-					new Insets(5, 0, 5, 20), 0, 0));
-
-			JLabel dpcPortLabel = new JLabel(
-				labels.getString("LrgsConfigDialog.DOMSATDpcPort"));
-			domsatConfigTab.add(dpcPortLabel,
-				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
-					GridBagConstraints.EAST, GridBagConstraints.NONE,
-					new Insets(5, 40, 5, 2), 0, 0));
-			domsatConfigTab.add(domsatDpcPort, 
-				new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, 
-					GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
-					new Insets(5, 0, 5, 20), 0, 0));
-
-			domsatConfigTab.add(getDomsatLinkCheck(), 
-				new GridBagConstraints(0, 4, 2, 1, 0.0, 0.0, 
-					GridBagConstraints.WEST, GridBagConstraints.NONE,
-					new Insets(10, 10, 5, 10), 0, 0));
-			domsatConfigTab.add(domsatTimeoutLabel, 
-				new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0, 
-					GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
-					new Insets(5, 40, 10, 2), 0, 0));
-			domsatConfigTab.add(getDomsatTimeoutField(), 
-				new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0, 
-					GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
-					new Insets(5, 0, 10, 20), 50, 0));
-			
-			acceptDomsatARMsCheck.setText(
-				labels.getString("LrgsConfigDialog.acceptDomsatARMs"));
-
-			domsatConfigTab.add(acceptDomsatARMsCheck, 
-				new GridBagConstraints(0, 6, 2, 1, 0.0, 0.5, 
-					GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
-					new Insets(10, 10, 5, 10), 0, 0));
-			
-		}
-		return domsatConfigTab;
-	}
+//	private JPanel getDomsatConfigTab() 
+//	{
+//		if (domsatConfigTab == null) 
+//		{
+//			domsatHardwareLabel = new JLabel();
+//			domsatHardwareLabel.setText(labels.getString(
+//					"LrgsConfigDialog.DHardwareInterface"));
+//
+//			domsatTimeoutLabel = new JLabel();
+//			domsatTimeoutLabel.setText(labels.getString(
+//					"LrgsConfigDialog.DTimeout"));
+//
+//			domsatConfigTab = new JPanel();
+//			domsatConfigTab.setLayout(new GridBagLayout());
+//			domsatConfigTab.setBorder(BorderFactory.createTitledBorder(null, 
+//				labels.getString("LrgsConfigDialog.DOMSATConfigurationTitle"),
+//				TitledBorder.CENTER, 
+//				TitledBorder.BELOW_TOP, new Font("Dialog", Font.BOLD, 14), 
+//				new Color(51, 51, 51)));
+//
+//			
+//			domsatConfigTab.add(getInitializeDOMSATcheck(), 
+//				new GridBagConstraints(0, 0, 2, 1, 0.0, 0.5, 
+//					GridBagConstraints.SOUTHWEST, GridBagConstraints.NONE,
+//					new Insets(10, 10, 5, 10), 0, 0));
+//			domsatConfigTab.add(domsatHardwareLabel, 
+//				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+//					GridBagConstraints.EAST, GridBagConstraints.NONE,
+//					new Insets(5, 40, 5, 2), 0, 0));
+//			domsatConfigTab.add(getDomsatHardwareCombo(), 
+//				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
+//					GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
+//					new Insets(5, 0, 5, 20), 0, 0));
+//
+//			JLabel dpcHostLabel = new JLabel(
+//				labels.getString("LrgsConfigDialog.DOMSATDpcHost"));
+//			domsatConfigTab.add(dpcHostLabel,
+//				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+//					GridBagConstraints.EAST, GridBagConstraints.NONE,
+//					new Insets(5, 40, 5, 2), 0, 0));
+//			domsatConfigTab.add(domsatDpcHost, 
+//				new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, 
+//					GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
+//					new Insets(5, 0, 5, 20), 0, 0));
+//
+//			JLabel dpcPortLabel = new JLabel(
+//				labels.getString("LrgsConfigDialog.DOMSATDpcPort"));
+//			domsatConfigTab.add(dpcPortLabel,
+//				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
+//					GridBagConstraints.EAST, GridBagConstraints.NONE,
+//					new Insets(5, 40, 5, 2), 0, 0));
+//			domsatConfigTab.add(domsatDpcPort, 
+//				new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, 
+//					GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
+//					new Insets(5, 0, 5, 20), 0, 0));
+//
+//			domsatConfigTab.add(getDomsatLinkCheck(), 
+//				new GridBagConstraints(0, 4, 2, 1, 0.0, 0.0, 
+//					GridBagConstraints.WEST, GridBagConstraints.NONE,
+//					new Insets(10, 10, 5, 10), 0, 0));
+//			domsatConfigTab.add(domsatTimeoutLabel, 
+//				new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0, 
+//					GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
+//					new Insets(5, 40, 10, 2), 0, 0));
+//			domsatConfigTab.add(getDomsatTimeoutField(), 
+//				new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0, 
+//					GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
+//					new Insets(5, 0, 10, 20), 50, 0));
+//			
+//			acceptDomsatARMsCheck.setText(
+//				labels.getString("LrgsConfigDialog.acceptDomsatARMs"));
+//
+//			domsatConfigTab.add(acceptDomsatARMsCheck, 
+//				new GridBagConstraints(0, 6, 2, 1, 0.0, 0.5, 
+//					GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
+//					new Insets(10, 10, 5, 10), 0, 0));
+//			
+//		}
+//		return domsatConfigTab;
+//	}
 
 	/**
 	 * This method initializes ddsServerConfigTab	
@@ -1667,88 +1666,88 @@ public class LrgsConfigDialog extends GuiDialog
 			mergePref4Combo = new JComboBox();
 			mergePref4Combo.addItem("(unspecified)");
 			mergePref4Combo.addItem("DRGS");
-			mergePref4Combo.addItem("DOMSAT");
+			mergePref4Combo.addItem("HRIT");
 			mergePref4Combo.addItem("DDS Receive");
 		}
 		return mergePref4Combo;
 	}
 
-	/**
-	 * This method initializes initializeDOMSATcheck	
-	 * 	
-	 * @return javax.swing.JCheckBox	
-	 */
-	private JCheckBox getInitializeDOMSATcheck() {
-		if (initializeDOMSATcheck == null) {
-			initializeDOMSATcheck = new JCheckBox();
-			initializeDOMSATcheck.setText(labels.getString(
-					"LrgsConfigDialog.initDOMSATCheckBox"));
-		}
-		return initializeDOMSATcheck;
-	}
+//	/**
+//	 * This method initializes initializeDOMSATcheck	
+//	 * 	
+//	 * @return javax.swing.JCheckBox	
+//	 */
+//	private JCheckBox getInitializeDOMSATcheck() {
+//		if (initializeDOMSATcheck == null) {
+//			initializeDOMSATcheck = new JCheckBox();
+//			initializeDOMSATcheck.setText(labels.getString(
+//					"LrgsConfigDialog.initDOMSATCheckBox"));
+//		}
+//		return initializeDOMSATcheck;
+//	}
 
-	/**
-	 * This method initializes domsatLinkCheck	
-	 * 	
-	 * @return javax.swing.JCheckBox	
-	 */
-	private JCheckBox getDomsatLinkCheck() {
-		if (domsatLinkCheck == null) {
-			domsatLinkCheck = new JCheckBox();
-			domsatLinkCheck.setText(labels.getString(
-					"LrgsConfigDialog.enableDOMSATLink"));
-		}
-		return domsatLinkCheck;
-	}
+//	/**
+//	 * This method initializes domsatLinkCheck	
+//	 * 	
+//	 * @return javax.swing.JCheckBox	
+//	 */
+//	private JCheckBox getDomsatLinkCheck() {
+//		if (domsatLinkCheck == null) {
+//			domsatLinkCheck = new JCheckBox();
+//			domsatLinkCheck.setText(labels.getString(
+//					"LrgsConfigDialog.enableDOMSATLink"));
+//		}
+//		return domsatLinkCheck;
+//	}
 
-	/**
-	 * This method initializes domsatHardwareCombo	
-	 * 	
-	 * @return javax.swing.JComboBox	
-	 */
-	private JComboBox getDomsatHardwareCombo()
-	{
-		if (domsatHardwareCombo == null)
-		{
-			domsatHardwareCombo = new JComboBox();
-			domsatHardwareCombo.addItem("lrgs.domsatrecv.DomsatSangoma");
-			domsatHardwareCombo.addItem("lrgs.domsatrecv.DomsatDpc");
-			domsatHardwareCombo.addItem("lrgs.domsatrecv.DomsatFranklin");
-			
-			domsatHardwareCombo.addActionListener(
-				new java.awt.event.ActionListener() 
-				{
-					public void actionPerformed(java.awt.event.ActionEvent e) 
-					{
-						chkDpcEnabled();
-					}
-				});
-
-		}
-		return domsatHardwareCombo;
-	}
+//	/**
+//	 * This method initializes domsatHardwareCombo	
+//	 * 	
+//	 * @return javax.swing.JComboBox	
+//	 */
+//	private JComboBox getDomsatHardwareCombo()
+//	{
+//		if (domsatHardwareCombo == null)
+//		{
+//			domsatHardwareCombo = new JComboBox();
+//			domsatHardwareCombo.addItem("lrgs.domsatrecv.DomsatSangoma");
+//			domsatHardwareCombo.addItem("lrgs.domsatrecv.DomsatDpc");
+//			domsatHardwareCombo.addItem("lrgs.domsatrecv.DomsatFranklin");
+//			
+//			domsatHardwareCombo.addActionListener(
+//				new java.awt.event.ActionListener() 
+//				{
+//					public void actionPerformed(java.awt.event.ActionEvent e) 
+//					{
+//						chkDpcEnabled();
+//					}
+//				});
+//
+//		}
+//		return domsatHardwareCombo;
+//	}
 	
-	private void chkDpcEnabled()
-	{
-		String cn = (String)domsatHardwareCombo.getSelectedItem();
-		boolean isDpc = 
-			cn != null && cn.equals("lrgs.domsatrecv.DomsatDpc");
-		domsatDpcPort.setEnabled(isDpc);
-		domsatDpcHost.setEnabled(isDpc);
-	}
+//	private void chkDpcEnabled()
+//	{
+//		String cn = (String)domsatHardwareCombo.getSelectedItem();
+//		boolean isDpc = 
+//			cn != null && cn.equals("lrgs.domsatrecv.DomsatDpc");
+//		domsatDpcPort.setEnabled(isDpc);
+//		domsatDpcHost.setEnabled(isDpc);
+//	}
 
-	/**
-	 * This method initializes domsatTimeoutField	
-	 * 	
-	 * @return javax.swing.JTextField	
-	 */
-	private JTextField getDomsatTimeoutField() {
-		if (domsatTimeoutField == null) {
-			domsatTimeoutField = new JTextField();
-		}
-		return domsatTimeoutField;
-	}
-
+//	/**
+//	 * This method initializes domsatTimeoutField	
+//	 * 	
+//	 * @return javax.swing.JTextField	
+//	 */
+//	private JTextField getDomsatTimeoutField() {
+//		if (domsatTimeoutField == null) {
+//			domsatTimeoutField = new JTextField();
+//		}
+//		return domsatTimeoutField;
+//	}
+//
 	/**
 	 * This method initializes ddsListenPortField	
 	 * 	

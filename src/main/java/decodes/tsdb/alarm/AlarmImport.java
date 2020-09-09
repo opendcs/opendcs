@@ -21,6 +21,7 @@ package decodes.tsdb.alarm;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.DataTypeDAI;
+import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.AlarmDAO;
 import lrgs.gui.DecodesInterface;
@@ -28,9 +29,13 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
+
+import java.util.ArrayList;
+
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
+import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.alarm.xml.AlarmFile;
@@ -70,6 +75,18 @@ public class AlarmImport
 	{
 		AlarmDAI alarmDAO = new AlarmDAO(TsdbAppTemplate.theDb);
 		AlarmXio alarmXio = new AlarmXio();
+		LoadingAppDAI appDAO = TsdbAppTemplate.theDb.makeLoadingAppDAO();
+		ArrayList<CompAppInfo> apps = null;
+		try
+		{
+			apps = appDAO.listComputationApps(false);
+		}
+		catch (DbIoException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally { appDAO.close(); }
 		
 		for(int i=0; i<grpFileArg.NumberOfValues(); i++)
 		{
@@ -145,6 +162,17 @@ public class AlarmImport
 								warning("Screening  '" + scrn.getScreeningName() 
 									+ "' assigned to non-existant group '" + scrn.getGroupName() 
 									+ "' -- screening group will be unassigned");
+						}
+						
+						if (scrn.getAppName() != null)
+						{
+							for(CompAppInfo cai : apps)
+								if (scrn.getAppName().equalsIgnoreCase(cai.getAppName()))
+								{
+									scrn.setAppInfo(cai);
+									scrn.setAppId(cai.getAppId());
+									break;
+								}
 						}
 
 						action = "writing screening '" + scrn.getScreeningName() + "'";

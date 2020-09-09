@@ -271,12 +271,15 @@ Logger.instance().debug3(module + "     assigned datatype = " + dataType);
 						+ node.getTextContent() + "': " + ex + " -- ignored.");
 				}
 			}
-			else if (nn.equalsIgnoreCase(AlarmXioTags.lastModified))
+			else if (nn.equalsIgnoreCase(AlarmXioTags.enabled))
 				scrn.setEnabled(TextUtil.str2boolean(node.getTextContent().trim()));
 			else if (nn.equalsIgnoreCase(AlarmXioTags.alarmGroupName))
 				scrn.setGroupName(node.getTextContent().trim());
 			else if (nn.equalsIgnoreCase(AlarmXioTags.desc))
 				scrn.setDescription(node.getTextContent().trim());
+			else if (nn.equalsIgnoreCase(AlarmXioTags.AppName))
+				// Store app name in transient var in screening to be resolved later
+				scrn.setAppName(node.getTextContent().trim());
 			else if (nn.equalsIgnoreCase(AlarmXioTags.AlarmLimitSet))
 			{
 				AlarmLimitSet als = new AlarmLimitSet();
@@ -786,6 +789,8 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 			Date lmt = as.getLastModified();
 			xos.writeElement(AlarmXioTags.lastModified, sdf.format(lmt != null ? lmt : new Date()));
 			xos.writeElement(AlarmXioTags.enabled, "" + as.isEnabled());
+			if (as.getAppInfo() != null)
+				xos.writeElement(AlarmXioTags.AppName, as.getAppInfo().getAppName());
 			
 			if (!DbKey.isNull(as.getAlarmGroupId()))
 			{

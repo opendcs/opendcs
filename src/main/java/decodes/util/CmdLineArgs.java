@@ -300,8 +300,20 @@ public class CmdLineArgs
 			File propFile = new File(propFileName);
 			if (!propFile.canRead())
 			{
-				Logger.instance().failure("Invalid properties file '" + propFileName + "' -- file not readable.");
-				// TODO throw something
+				Logger.instance().warning(
+					"Cannot read properties file '" + propFile.getPath() + 
+					"' will look in DCSTOOL_USERDIR.");
+				propFile = new File(EnvExpander.expand("$DCSTOOL_USERDIR"), propFileName);
+				if (!propFile.canRead())
+				{
+					String msg = "Cannot read properties file '" + propFile.getPath()
+						+ "' -P ARGUMENT PARSING FAILED!";
+					Logger.instance().fatal(msg);
+					System.err.println(msg);
+					throw new IllegalArgumentException(msg);
+				}
+				else
+					propFileName = propFile.getPath();
 			}
 			
 			String profileName = propFileName;

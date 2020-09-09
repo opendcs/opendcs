@@ -48,6 +48,8 @@ public class AlarmXioTags
 
 	// Tags for ALARM_SCREENING
 	public static final String AlarmScreening = "AlarmScreening";
+	public static final String AppName = "AppName";
+	
 	// Note Site and DataType are represented as they are in a computation
 	public static final String startDateTime = "startDateTime";
 	public static final String alarmGroupName = "alarmGroupName";

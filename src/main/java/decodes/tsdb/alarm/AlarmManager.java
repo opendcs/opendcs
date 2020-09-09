@@ -31,7 +31,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java.text.NumberFormat;
 
+import decodes.db.Constants;
+import decodes.db.DataType;
+import decodes.db.Site;
+import decodes.hdb.HdbDataType;
 import decodes.hdb.HdbFlags;
+import decodes.hdb.HdbTsId;
+import decodes.hdb.HdbTimeSeriesDb;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
@@ -70,6 +76,8 @@ public class AlarmManager
 	/** This holds a copy of the ALARM_CURRENT table. It maps TsKey to Alarm */
 	private HashMap<DbKey, Alarm> currentAlarms = new HashMap<DbKey, Alarm>();
 	
+	private DbKey appId = DbKey.NullKey;
+	
 	private long refreshMS = 5 * 60000L;
 	private long checkQueueMS = 60000L;
 	
@@ -94,10 +102,10 @@ public class AlarmManager
 	private ConcurrentLinkedQueue<AlarmMsg> msgQ = new ConcurrentLinkedQueue<AlarmMsg>();
 	
 	
-	public static AlarmManager instance(TimeSeriesDb tsdb)
+	public static AlarmManager instance(TimeSeriesDb tsdb, DbKey appId)
 	{
 		if (_instance == null)
-			_instance = new AlarmManager(tsdb);
+			_instance = new AlarmManager(tsdb, appId);
 	
 		long now = System.currentTimeMillis();
 Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _instance.lastMailerConfig);
@@ -110,17 +118,29 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 		return _instance;
 	}
 	
-	private AlarmManager(TimeSeriesDb tsdb)
+	// MJM 20200831 - Since AlarmManager is specific to an App Id, the GUI must now
+	// delete the instance every time a batch of computations is run, because this new
+	// batch may be for a different app ID.
+	public static void deleteInstance()
+	{
+		if (_instance != null)
+			_instance.shutdown();
+		_instance = null;
+	}
+	
+	private AlarmManager(TimeSeriesDb tsdb, DbKey appId)
 	{
 		this.tsdb = tsdb;
+		this.appId = appId;
 		sdf.setTimeZone(TimeZone.getTimeZone(tsdb.getDatabaseTimezone()));
 		numFmt.setGroupingUsed(false);
 		numFmt.setMaximumFractionDigits(5);
 		
 		alarmConfig = new AlarmConfig();
-
+		
 		// The mailer thread runs in the background.
 		this.start();
+		Logger.instance().debug3(module + ".constructor appId=" + appId);
 	}
 
 	/**
@@ -128,7 +148,7 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 	 */
 	private void configureMailer()
 	{
-Logger.instance().debug3("AlarmManager.configureMailer");
+		Logger.instance().debug3("AlarmManager.configureMailer");
 		LoadingAppDAI loadingAppDAO = tsdb.makeLoadingAppDAO();
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
 		CompAppInfo cai = null;
@@ -208,6 +228,7 @@ Logger.instance().debug3("AlarmManager.configureMailer");
 	 */
 	public void shutdown()
 	{
+		Logger.instance().debug3(module + ".shutdown() appId=" + appId);
 		_shutdown = true;
 		_instance = null;
 	}
@@ -318,7 +339,28 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 			if (!lastTsIdKey.equals(am.tsid.getKey()))
 			{
 				sb.append(lineSep + "TSID: " + am.tsid.getUniqueString() 
-					+ " (" + am.tsid.getKey() + ")" + lineSep);
+					+ " (" + am.tsid.getKey() + ")");
+				
+				// For USBR here add site name and data type name
+				if (am.tsid instanceof HdbTsId)
+				{
+					Site site = am.tsid.getSite();
+					if (site != null && site.getDisplayName() != null)
+						sb.append(" " + site.getDisplayName());
+					
+					// If the datatype standard is not HDB then the TSID above is sufficient.
+					// Else lookup the HDB_DATATYPE common name.
+					DataType dt = am.tsid.getDataType();
+					if (dt.getStandard().equalsIgnoreCase(Constants.datatype_HDB))
+					{
+						HdbDataType hdt = ((HdbTimeSeriesDb)tsdb).getHdbDataType(dt.getId());
+						if (hdt != null && hdt.getName() != null)
+							sb.append(" - " + hdt.getName());
+					}
+				}
+				sb.append(lineSep);
+				
+				
 				lastTsIdKey = am.tsid.getKey();
 			}
 			
@@ -543,6 +585,9 @@ Logger.instance().debug3("AlarmManager, group is not null, enqueuing alarm for e
 				currentAlarm.setMessage(alarmMsg);
 				if (!DbKey.isNull(scrn.getAlarmGroupId()))
 					currentAlarm.setLastNotificationTime(now);
+				
+				
+				//TODO Need to set appId in current alarm before writing.
 
 				action = "writing message to alarm_current table";
 				alarmDAO.writeToCurrent(currentAlarm);
@@ -633,7 +678,7 @@ Logger.instance().debug3("AlarmManager.missingCheckResults tsid='" + tsid.getUni
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
 		try
 		{
-			alarmDAO.refreshCurrentAlarms(currentAlarms);
+			alarmDAO.refreshCurrentAlarms(currentAlarms, TsdbAppTemplate.getAppInstance().getAppId());
 			Logger.instance().debug1(module + " after refresh there are " + currentAlarms.size()
 				+ " currently asserted alarms.");
 		}
@@ -641,5 +686,15 @@ Logger.instance().debug3("AlarmManager.missingCheckResults tsid='" + tsid.getUni
 		{
 			alarmDAO.close();
 		}
+	}
+
+	public DbKey getAppId()
+	{
+		return appId;
+	}
+
+	public void setAppId(DbKey appId)
+	{
+		this.appId = appId;
 	}
 }
