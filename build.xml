@@ -7,15 +7,16 @@ The intent is that this will eventually be replaced with a Maven pom.xml.
 
 DO NOT BUILD IN THE SOURCE TREE. Rather follow these instructions:
 
+0. Do a gradle build in the downloaded source directory from git
+	cd $HOME/git/opendcs     (or wherever it is for you)
+	./gradlew opentsdb
+
 1. Create a build directory for yourself somewhere outside the source tree.
 
-2. Copy this build.xml file to your build directory.
+2. Copy this build.xml file (if changes or needed) or just ln if it's ok as it.
+   It needs to be in your build directory you created in step 1.
 
-3. Download the required JAR files and place them in a directory. A good place
-would be a subdirectory under your build directory. See the 'pathelement' items
-below for a list of the required jars.
-
-4. Edit the "Settable Directories" section below so that the ant build
+3. Edit the "Settable Directories" section below so that the ant build
 can find your git source tree and your directory with the downloaded jars.
     project.dir - set this to the 'opendcs' git working directory
     thirdpartyjar.dir - set this to the directory containing the downloaded jars.
@@ -83,8 +84,8 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete dir="${build.dir}"/>
 		<delete dir="stage"/>
 		<delete>
- 			<fileset dir="." includes="opendcs-6-7-RC*-unix-install.tgz"/>
-            <fileset dir="." includes="opendcs-src-6-7-*.tgz"/>
+ 			<fileset dir="." includes="opendcs-6-8-RC*-unix-install.tgz"/>
+            <fileset dir="." includes="opendcs-src-6-8-*.tgz"/>
 		</delete>
 		<delete dir="combined-src"/>
 	</target>
@@ -256,7 +257,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 		<copy todir="stage">
 			<fileset dir="${project.dir}/izpack">
-				<include name="opendcs-6-7.xml"/>
+				<include name="opendcs-6-8.xml"/>
 				<include name="*.txt"/>
 				<include name="unixOpenDcsShortcutSpec.xml"/>
 				<include name="winOpenDcsShortcutSpec.xml"/>
@@ -330,8 +331,8 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete file="stage/dep/jython.jar"/>
 		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-nf-6-7.xml"
-				output="stage/opendcs-nf-6-7-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
+				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}"/>
@@ -341,8 +342,19 @@ can find your git source tree and your directory with the downloaded jars.
 	<target name="opentsdb" depends="stage">
 		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-6-7.xml"
-				output="stage/opendcs-ot-6-7-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
+				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
+				installerType="standard"
+				basedir="stage"
+				izPackDir="${izpack.dir}"/>
+	</target>
+
+	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
+	<target name="hdb" depends="stage">
+		<delete file="stage/dep/NWIS.jar"/>
+		<!-- Invokes izpack to build installable package with defaults for CWMS -->
+		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
+				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}"/>
@@ -356,7 +368,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
-			<fileset dir="stage" includes="dospath.txt,opendcs-6-7.xml,readme.txt,LddsConnections"/>
+			<fileset dir="stage" includes="dospath.txt,opendcs-6-8.xml,readme.txt,LddsConnections"/>
 		</delete>
 		<move file="stage/lrgs.conf" tofile="stage/lrgs.conf.sample"/>
 		<move file="stage/ddsrecv.conf" tofile="stage/ddsrecv.conf.sample"/>
@@ -365,7 +377,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<move file="stage/edit-db" tofile="stage/edit-db.init"/>
 		<move file="stage/users" tofile="stage/users.init"/>
 		<replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
-		<tar destfile="opendcs-cwms-6-7-RC${RCNUM}.tgz" compression="gzip">
+		<tar destfile="opendcs-cwms-6-8-RC${RCNUM}.tgz" compression="gzip">
 			<tarfileset dir="stage">
 				<exclude name="bin/*"/>
 				<exclude name="schema/cwms/createDb.sh"/>
@@ -418,7 +430,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/makeDcpmon.sh"/>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/README"/>
-		<tar tarfile="stage/dcpmon-build-6-7-${RCNUM}.tgz" 
+		<tar tarfile="stage/dcpmon-build-6-8-${RCNUM}.tgz" 
 			basedir="stage"
 			includes="dcpmon-build/**"
 			compression="gzip"/>
@@ -444,7 +456,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/makehydrojson.sh"/>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/README"/>
-		<tar tarfile="stage/hydrojson-build-6-7-${RCNUM}.tgz" 
+		<tar tarfile="stage/hydrojson-build-6-8-${RCNUM}.tgz" 
 			basedir="stage"
 			includes="hydrojson-build/**"
 			compression="gzip"/>
