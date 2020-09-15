@@ -546,23 +546,43 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 				continue;
 			}
 			
-			for(Iterator<TsGroup> subit = group.getIncludedSubGroups().iterator(); subit.hasNext(); )
+			TsGroup subgroup = null;
+			for(TsGroup sg : group.getIncludedSubGroups())
+				if (sg.getGroupId().equals(modifiedGroup.getGroupId()))
+				{
+					subgroup = sg;
+					break;
+				}
+			if (subgroup != null)
 			{
-				TsGroup subgroup = subit.next();
-				if (subgroup.getGroupId().equals(modifiedGroup.getGroupId()))
-					group.addSubGroup(modifiedGroup, 'A');
+				group.getIncludedSubGroups().remove(subgroup);
+				group.addSubGroup(modifiedGroup, 'A');
 			}
-			for(Iterator<TsGroup> subit = group.getExcludedSubGroups().iterator(); subit.hasNext(); )
+			
+			subgroup = null;
+			for(TsGroup sg : group.getExcludedSubGroups())
+				if (sg.getGroupId().equals(modifiedGroup.getGroupId()))
+				{
+					subgroup = sg;
+					break;
+				}
+			if (subgroup != null)
 			{
-				TsGroup subgroup = subit.next();
-				if (subgroup.getGroupId().equals(modifiedGroup.getGroupId()))
-					group.addSubGroup(modifiedGroup, 'S');
+				group.getExcludedSubGroups().remove(subgroup);
+				group.addSubGroup(modifiedGroup, 'S');
 			}
-			for(Iterator<TsGroup> subit = group.getIntersectedGroups().iterator(); subit.hasNext(); )
+
+			subgroup = null;
+			for(TsGroup sg : group.getIntersectedGroups())
+				if (sg.getGroupId().equals(modifiedGroup.getGroupId()))
+				{
+					subgroup = sg;
+					break;
+				}
+			if (subgroup != null)
 			{
-				TsGroup subgroup = subit.next();
-				if (subgroup.getGroupId().equals(modifiedGroup.getGroupId()))
-					group.addSubGroup(modifiedGroup, 'I');
+				group.getIntersectedGroups().remove(subgroup);
+				group.addSubGroup(modifiedGroup, 'I');
 			}
 		}
 		theGroupList.add(modifiedGroup);
