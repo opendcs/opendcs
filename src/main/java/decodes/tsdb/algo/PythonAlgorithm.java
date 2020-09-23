@@ -93,6 +93,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.sql.Connection;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -1392,7 +1393,9 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		}
 	}
 
-
+	public Connection getConnection(){
+		return tsdb.getConnection();
+	}
 	
 	public void trace(String msg)
 	{
