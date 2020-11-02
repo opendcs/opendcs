@@ -265,6 +265,8 @@ class DcpMsgOutputThread extends Thread
 			catch(Exception e)
 			{
 				String es = "Error initializing DECODES: " + e.toString();
+				System.err.println(es);
+				e.printStackTrace(System.err);
 				try { outs.write(es.getBytes()); }
 				catch(IOException ex) {}
 				return;
