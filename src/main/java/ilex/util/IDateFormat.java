@@ -426,6 +426,20 @@ public class IDateFormat
 	}
 	
 	/**
+	 * Return true if passed time zone ID is valid. False if not.
+	 * @param tz the time zone ID to check.
+	 * @return
+	 */
+	public static boolean isValidTimeZone(String tzid)
+	{
+		String[] validIDs = TimeZone.getAvailableIDs();
+		for (String str : validIDs) 
+			if (str.equalsIgnoreCase(tzid))
+				return true;
+		return false;
+	}
+	
+	/**
 	* Test main.
 	* @param args the args.
 	*/
