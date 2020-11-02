@@ -71,6 +71,7 @@ import java.util.Properties;
 
 import decodes.db.*;
 import decodes.decoder.DecodedMessage;
+import decodes.routing.RoutingSpecThread;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
@@ -81,6 +82,7 @@ public abstract class OutputFormatter
 	implements PropertiesOwner
 {
 	protected Logger logger = Logger.instance();
+	protected RoutingSpecThread rsThread = null;
 	
 	/**
 	* All subclasses must implement a no-arguments constructor because
@@ -134,15 +136,16 @@ public abstract class OutputFormatter
 	/**
 	  Factory method to make a concrete OutputFormatter object.
 	  @param type Enum value specifying type of formatter.
-	  @param tz the time zone to use.
-	  @param presGrp the presentation group for rounding and EU conversions.
-	  @param rsProps routing spec properties
+	 * @param tz the time zone to use.
+	 * @param presGrp the presentation group for rounding and EU conversions.
+	 * @param rsProps routing spec properties
+	 * @param rsThread TODO
 	  @throws OutputFormatterException if unrecognized type or if thrown
 	     by concrete class constructor.
 	*/
 	public static OutputFormatter makeOutputFormatter(
 		String type, java.util.TimeZone tz, PresentationGroup presGrp, 
-		Properties rsProps)
+		Properties rsProps, RoutingSpecThread rsThread)
 		throws OutputFormatterException
 	{
 		if (tz == null)
@@ -191,6 +194,7 @@ public abstract class OutputFormatter
 		else // use the NullFormatter
 			ret = new NullFormatter();
 
+		ret.rsThread = rsThread;
 		if (rsProps != null)
 			ret.initFormatter(type, tz, presGrp, rsProps);
 		return ret;
@@ -247,13 +251,12 @@ public abstract class OutputFormatter
 	}
 	
 	/**
-	 * @return true if additional unnamed props are allowed, falis if only the
+	 * @return true if additional unnamed props are allowed, fail if only the
 	 * ones returned by getSupportedProps are allowed.
 	 */
 	public boolean additionalPropsAllowed()
 	{
 		return true;
 	}
-
 }
 
