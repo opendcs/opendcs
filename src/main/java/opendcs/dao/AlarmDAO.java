@@ -769,11 +769,14 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 		
 		// Now there may have been old limit sets that are no longer in the screening and
 		// we should delete them. Delete any limit set that I didn't just write.
-		String q = "delete from alarm_limit_set where screening_id = " + as.getScreeningId()
-			+ " and limit_set_id not in (";
-		for(int idx = 0; idx < limitSetIds.size(); idx++)
-			q = q + (idx > 0 ? ", " : "") + limitSetIds.get(idx);
-		q = q + ")";
+		String q = "delete from alarm_limit_set where screening_id = " + as.getScreeningId();
+		if (limitSetIds.size() > 0)
+		{
+			q = q + " and limit_set_id not in (";
+			for(int idx = 0; idx < limitSetIds.size(); idx++)
+				q = q + (idx > 0 ? ", " : "") + limitSetIds.get(idx);
+			q = q + ")";
+		}
 		doModify(q);
 	}
 	
