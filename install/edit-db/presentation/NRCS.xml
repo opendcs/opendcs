@@ -1,0 +1,411 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PresentationGroup Name="NRCS">
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TAVG" Name="AIR TEMPERATURE AVERAGE"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TMAX" Name="AIR TEMPERATURE MAXIMUM"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TMIN" Name="AIR TEMPERATURE MINIMUM"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TOBS" Name="AIR TEMPERATURE OBSERVED"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="DIV" Name="DIVERSION FLOW VOLUME OBSERVED"/> 
+    <UnitsAbbr>acre-feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="DIVD" Name="DIVERSION DISCHARGE OBSERVED MEAN"/> 
+    <UnitsAbbr>cfs</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRDOX" Name="DISCHARGE MANUAL/EXTERNAL ADJUSTED MEAN"/> 
+    <UnitsAbbr>cfs</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="PREC" Name="PRECIPITATION ACCUMULATION"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="PRCP" Name="PRECIPITATION INCREMENT"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="PRCPSA" Name="PRECIPITATION INCREMENT â€“ SNOW-ADJUSTED"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="RESC" Name="RESERVOIR STORAGE VOLUME"/> 
+    <UnitsAbbr>acre-feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRDOO" Name="RIVER DISCHARGE OBSERVED MEAN"/> 
+    <UnitsAbbr>cfs</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SNWD" Name="SNOW DEPTH"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WTEQ" Name="SNOW WATER EQUIVALENT"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRVA" Name="STREAM VOLUME ADJUSTED"/> 
+    <UnitsAbbr>acre-feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRVOX" Name="STREAM VOLUME ADJUSTED EXTERNALLY"/> 
+    <UnitsAbbr>acre-feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRVO" Name="STREAM VOLUME OBSERVED"/> 
+    <UnitsAbbr>acre-feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="OI" Name="TELECONNECTION INDEX (also known as OSCILLATION INDEX)"/> 
+    <UnitsAbbr>N/A</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="PRES" Name="BAROMETRIC PRESSURE"/> 
+    <UnitsAbbr>inches of Mercury</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="ETIB" Name="BATTERY-ETI PRECIP GAGE"/> 
+    <UnitsAbbr>volt</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="COND" Name="CONDUCTIVITY"/> 
+    <UnitsAbbr>umho</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="DPTP" Name="DEW POINT TEMPERATURE"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="DIAG" Name="DIAGNOSTICS"/> 
+    <UnitsAbbr>unitless</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="DISO" Name="DISSOLVED OXYGEN"/> 
+    <UnitsAbbr>mgram/l</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="DISP" Name="DISSOLVED OXYGEN - PERCENT SATURATION"/> 
+    <UnitsAbbr>pct</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="HFTV" Name="ENERGY GAIN OR LOSS FROM GROUND"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="EVAP" Name="EVAPORATION"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="FUEL" Name="FUEL MOISTURE"/> 
+    <UnitsAbbr>pct</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="FMTMP" Name="FUEL TEMPERATURE INTERNAL"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TGSV" Name="GROUND SURFACE INTERFACE TEMPERATURE AVERAGE"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TGSX" Name="GROUND SURFACE INTERFACE TEMPERATURE MAXIMUM"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TGSN" Name="GROUND SURFACE INTERFACE TEMPERATURE MINIMUM"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TGSI" Name="GROUND SURFACE INTERFACE TEMPERATURE OBSERVED"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="JDAY" Name="JULIAN DATE"/> 
+    <UnitsAbbr>julian_day</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="NTRDV" Name="NET SOLAR RADIATION AVERAGE"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="NTRDX" Name="NET SOLAR RADIATION MAXIMUM"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="NTRDN" Name="NET SOLAR RADIATION MINIMUM"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="NTRDC" Name="NET SOLAR RADIATION OBSERVED"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="H2OPH" Name="PH"/> 
+    <UnitsAbbr>unitless</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="PARV" Name="PHOTOSYNTHETICALLY ACTIVE RADIATION (PAR) AVERAGE"/> 
+    <UnitsAbbr>micromole/m2/s</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="ETIL" Name="PULSE LINE MONITOR-ETI GUAGE"/> 
+    <UnitsAbbr>volt</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="RDC" Name="REAL DIELECTRIC CONSTANT"/> 
+    <UnitsAbbr>unitless</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="RHUM" Name="RELATIVE HUMIDITY"/> 
+    <UnitsAbbr>pct</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="RHUMV" Name="RELATIVE HUMIDITY AVERAGE"/> 
+    <UnitsAbbr>pct</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="RHENC" Name="RELATIVE HUMIDITY ENCLOSURE"/> 
+    <UnitsAbbr>pct</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="RHUMX" Name="RELATIVE HUMIDITY MAXIMUM"/> 
+    <UnitsAbbr>pct</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="RHUMN" Name="RELATIVE HUMIDITY MINIMUM"/> 
+    <UnitsAbbr>pct</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="REST" Name="RESERVOIR STAGE"/> 
+    <UnitsAbbr>feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SAL" Name="SALINITY"/> 
+    <UnitsAbbr>gram/l</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SNWDV" Name="SNOW DEPTH AVERAGE"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SNWDX" Name="SNOW DEPTH MAXIMUM"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SNWDN" Name="SNOW DEPTH MINIMUM"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SNOW" Name="SNOW FALL"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WTEQV" Name="SNOW WATER EQUIVALENT AVERAGE"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WTEQX" Name="SNOW WATER EQUIVALENT MAXIMUM"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WTEQN" Name="SNOW WATER EQUIVALENT min"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SMV" Name="SOIL MOISTURE BARS AVERAGE"/> 
+    <UnitsAbbr>inches of Mercury</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SMX" Name="SOIL MOISTURE BARS MAXIMUM"/> 
+    <UnitsAbbr>inches of Mercury</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SMN" Name="SOIL MOISTURE BARS MINIMUM"/> 
+    <UnitsAbbr>inches of Mercury</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SMO" Name="SOIL MOISTURE BARS OBSERVED"/> 
+    <UnitsAbbr>inches of Mercury</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SMS" Name="SOIL MOISTURE PERCENT"/> 
+    <UnitsAbbr>pct</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="STV" Name="SOIL TEMPERATURE AVERAGE"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="STX" Name="SOIL TEMPERATURE MAXIMUM"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="STN" Name="SOIL TEMPERATURE MINIMUM"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="STO" Name="SOIL TEMPERATURE OBSERVED"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRAD" Name="SOLAR RADIATION"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRADV" Name="SOLAR RADIATION AVERAGE"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRADX" Name="SOLAR RADIATION MAXIMUM"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRADN" Name="SOLAR RADIATION MINIMUM"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRADT" Name="SOLAR RADIATION TOTAL"/> 
+    <UnitsAbbr>watt/m2</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="LRAD" Name="SOLAR RADIATION/LANGLEY"/> 
+    <UnitsAbbr>langley</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="LRADX" Name="SOLAR RADIATION/LANGLEY MAXIMUM"/> 
+    <UnitsAbbr>langley</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="LRADT" Name="SOLAR RADIATION/LANGLEY TOTAL"/> 
+    <UnitsAbbr>langley</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRMV" Name="STREAM STAGE (GAUGE HEIGHT) AVERAGE"/> 
+    <UnitsAbbr>feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRMX" Name="STREAM STAGE (GAUGE HEIGHT) MAXIMUM"/> 
+    <UnitsAbbr>feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRMN" Name="STREAM STAGE (GAUGE HEIGHT) MINIMUM"/> 
+    <UnitsAbbr>feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SRMO" Name="STREAM STAGE (GAUGE HEIGHT) OBSERVED"/> 
+    <UnitsAbbr>feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="STRV" Name="STRM FLOW AVERAGE"/> 
+    <UnitsAbbr>cfs</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="TURB" Name="TURBIDITY"/> 
+    <UnitsAbbr>ntu</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="RESA" Name="USABLE LAKE STORAGE VOLUME"/> 
+    <UnitsAbbr>acre-feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="PVPV" Name="VAPOR PRESSURE - PARTIAL"/> 
+    <UnitsAbbr>kPa</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="SVPV" Name="VAPOR PRESSURE - SATURATED"/> 
+    <UnitsAbbr>kPa</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WLEVV" Name="WATER LEVEL AVERAGE"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WLEVX" Name="WATER LEVEL MAXIMUM"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WLEVN" Name="WATER LEVEL MINIMUM"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WLEV" Name="WATER LEVEL OBSERVED"/> 
+    <UnitsAbbr>inches</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WTEMP" Name="WATER TEMPERATURE"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WTAVG" Name="WATER TEMPERATURE AVERAGE"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WTMAX" Name="WATER TEMPERATURE MAXIMUM"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WTMIN" Name="WATER TEMPERATURE MINIMUM"/> 
+    <UnitsAbbr>Fahrenheit</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WELL" Name="WELL DEPTH"/> 
+    <UnitsAbbr>feet</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WDIRV" Name="WIND DIRECTION AVERAGE"/> 
+    <UnitsAbbr>degree</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WDIR" Name="WIND DIRECTION OBSERVED"/> 
+    <UnitsAbbr>degree</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WDMVV" Name="WIND MOVEMENT AVERAGE"/> 
+    <UnitsAbbr>mile</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WDMVX" Name="WIND MOVEMENT MAXIMUM"/> 
+    <UnitsAbbr>mile</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WDMVN" Name="WIND MOVEMENT MINIMUM"/> 
+    <UnitsAbbr>mile</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WDMV" Name="WIND MOVEMENT OBSERVED"/> 
+    <UnitsAbbr>mile</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WDMVT" Name="WIND MOVEMENT TOTAL"/> 
+    <UnitsAbbr>mile</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WSPDV" Name="WIND SPEED AVERAGE"/> 
+    <UnitsAbbr>mph</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WSPDX" Name="WIND SPEED MAXIMUM"/> 
+    <UnitsAbbr>mph</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WSPDN" Name="WIND SPEED MINIMUM"/> 
+    <UnitsAbbr>mph</UnitsAbbr>
+  </DataPresentation>
+  <DataPresentation>
+    <DataType Standard="NRCS" Code="WSPD" Name="WIND SPEED OBSERVED"/> 
+    <UnitsAbbr>mph</UnitsAbbr>
+  </DataPresentation>
+</PresentationGroup>

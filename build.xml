@@ -7,18 +7,18 @@ The intent is that this will eventually be replaced with a Maven pom.xml.
 
 DO NOT BUILD IN THE SOURCE TREE. Rather follow these instructions:
 
+0. Do a gradle build in the downloaded source directory from git
+	cd $HOME/git/opendcs     (or wherever it is for you)
+	./gradlew opentsdb
+
 1. Create a build directory for yourself somewhere outside the source tree.
 
-2. Copy this build.xml file to your build directory.
+2. Copy this build.xml file (if changes or needed) or just ln if it's ok as it.
+   It needs to be in your build directory you created in step 1.
 
-3. Download the required JAR files and place them in a directory. A good place
-would be a subdirectory under your build directory. See the 'pathelement' items
-below for a list of the required jars.
-
-4. Edit the "Settable Directories" section below so that the ant build
+3. Edit the "Settable Directories" section below so that the ant build
 can find your git source tree and your directory with the downloaded jars.
     project.dir - set this to the 'opendcs' git working directory
-    thirdpartyjar.dir - set this to the directory containing the downloaded jars.
     izpack.dir - set this to the location of the IzPack download
     dcpmon.dir - if you are building DCP Monitor, set this to location of DCPMON
                  web app source.
@@ -35,24 +35,28 @@ can find your git source tree and your directory with the downloaded jars.
 	xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 	<description>Open DCS</description>
 
+	<property environment="env"/>
 
 	<!-- Settable Directories -->
-	<property name="home.dir" value="/Users/mmaloney"/>
+	<property name="home.dir" value="${env.HOME}"/>
 	<property name="project.dir" value="${home.dir}/git/opendcs"/>
-	<property name="thirdpartyjar.dir" value="${home.dir}/Documents/workspace-2019/opendcs-cove/3rd_party/"/>
-	<property name="izpack.dir" value="${thirdpartyjar.dir}/IzPack-4.3.3"/>
-	<property name="dcpmon.dir" value="${home.dir}/Documents/workspace-2019/dcpmon"/>
-	<property name="hydrojson.dir" value="${home.dir}/Documents/workspace-2019/HydroJSON"/>
+	<property name="thirdpartyjar.dir" value="${project.dir}/build/stage/dep"/>
+	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
+	<property name="izpack.dir" value="${workspace.dir}/opendcs-cove/3rd_party/IzPack-4.3.3"/>
+	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
+	<property name="hydrojson.dir" value="${workspace.dir}/HydroJSON"/>
+	<property name="src.dir" value="${project.dir}/src/main/java"/>
+	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
 
 	<!-- Directories -->
 	<property name="ant.home" value="/usr/local/ant"/>
-	<property name="src.dir" value="${project.dir}/src"/>
 	<property name="build.dir" value="build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
 	<property name="build.lib" value="${build.dir}/lib"/>
 	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
 	<property name="cwmsDbAPI.dir" value="${project.dir}/cwmsDbAPI"/>
 	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>
+	<property name="cwmsSystemJars.dir" value="${project.dir}/cwmsSystemJars"/>
 
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
@@ -64,35 +68,50 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<path id="project.class.path">
 		<pathelement path="${build.classes}/"/>
-		<pathelement path="${thirdpartyjar.dir}/ojdbc8.jar"/>
- 		<pathelement path="${thirdpartyjar.dir}/jcalendar-1.3.2.jar"/>
-	 	<pathelement path="${thirdpartyjar.dir}/jfreechart-1.0.14.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/jcommon-1.0.10.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/poi-3.0.1-FINAL-20070705.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/lobo.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/ext/cobra-no-commons.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/ganymed-ssh2-build210.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/junit-4.8.1.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/hec.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/hecData.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/rma.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/hecDbCore-v4.0-dev.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/cwmsDbDao-v5.0-dev.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/xwork-core-2.1.6.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/commons-net-3.3.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/commons-codec-1.10.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/jep-2.4.1.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/passay-1.1.0.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/jython.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/javax.mail.jar"/>
-		<pathelement path="${thirdpartyjar.dir}/jsch-0.1.55.jar"/>
-		<!-- this line adds result of Maven's artifact:dependencies to the classpath
-		<path refid="dependency.classpath"/>
-		-->
+		<fileset dir="${thirdpartyjar.dir}">
+			<include name="Cobra.jar"/>
+			<include name="LoboBrowser-1.0.0.jar"/>
+			<include name="asm-3.3.jar"/>
+			<include name="aspectjrt-1.8.10.jar"/>
+			<include name="cglib-2.1_3.jar"/>
+			<include name="commons-codec-1.10.jar"/>
+			<include name="commons-collections-2.1.1.jar"/>
+			<include name="commons-logging-1.1.1.jar"/>
+			<include name="commons-net-3.3.jar"/>
+			<include name="ganymed-ssh2-build210.jar"/>
+			<include name="jama-1.0.2.jar"/>
+			<include name="javassist-3.7.ga.jar"/>
+			<include name="jaxb-api-2.3.0.jar"/>
+			<include name="jcalendar-1.3.2.jar"/>
+			<include name="jcommon-1.0.16.jar"/>
+			<include name="jep-2.4.1.jar"/>
+			<include name="jfreechart-1.0.13.jar"/>
+			<include name="jsch-0.1.55.jar"/>
+			<include name="json-20200518.jar"/>
+			<include name="jta-spec-1.0.1.jar"/>
+			<include name="junit-3.8.1.jar"/>
+			<include name="jython-2.7.2.jar"/>
+			<include name="log4j-1.2.13.jar"/>
+			<include name="mailapi-1.6.2.jar"/>
+			<include name="ognl-2.7.3.jar"/>
+			<include name="ojdbc8-19.3.0.0.jar"/>
+			<include name="ons-19.3.0.0.jar"/>
+			<include name="oraclepki-19.3.0.0.jar"/>
+			<include name="osdt_cert-19.3.0.0.jar"/>
+			<include name="osdt_core-19.3.0.0.jar"/>
+			<include name="passay-1.3.1.jar"/>
+			<include name="poi-3.0.1-FINAL.jar"/>
+			<include name="postgresql-9.1-901-1.jdbc4.jar"/>
+			<include name="simplefan-19.3.0.0.jar"/>
+			<include name="spring-test-2.5.6.jar"/>
+			<include name="xml-apis-1.0.b2.jar"/>
+			<include name="xwork-core-2.1.6.jar"/>
+		</fileset>
+		<pathelement path="${workspace.dir}/opendcs-cove/3rd_party/jep-2.4.1.jar"/>
+		<fileset dir="${cwmsSystemJars.dir}">
+			<include name="*.jar"/>
+		</fileset>
 	</path>
-
-    <!-- old path stuff
-    -->
 
 	<target name="prepare" depends="clean" description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
@@ -104,8 +123,8 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete dir="${build.dir}"/>
 		<delete dir="stage"/>
 		<delete>
- 			<fileset dir="." includes="opendcs-6-7-RC*-unix-install.tgz"/>
-            <fileset dir="." includes="opendcs-src-6-7-*.tgz"/>
+ 			<fileset dir="." includes="opendcs-6-8-RC*-unix-install.tgz"/>
+            <fileset dir="." includes="opendcs-src-6-8-*.tgz"/>
 		</delete>
 		<delete dir="combined-src"/>
 	</target>
@@ -117,20 +136,29 @@ can find your git source tree and your directory with the downloaded jars.
 		<tstamp>
 			<format property="buildDate" pattern="MMM dd, yyyy"/>
 		</tstamp>
-        <copy file="${src.dir}/lrgs/gui/LrgsBuild.base"
-              tofile="${src.dir}/lrgs/gui/LrgsBuild.java"
-              overwrite="true">
-            <filterset>
-                <filter token="DATE" value="${buildDate}" />
-                <filter token="RCNUM" value="${RCNUM}" />
-            </filterset>
-        </copy>
 
 		<copy todir="${build.classes}/lrgs/nledit">
 			<fileset dir="${src.dir}/lrgs/nledit">
 				<include name="*.gif"/>
 			</fileset>
 		</copy>
+
+		<delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
+        <copy file="${src.dir}/lrgs/gui/LrgsBuild.java"
+              tofile="${build.classes}/lrgs/gui/LrgsBuild.java"
+              overwrite="true">
+            <filterset>
+                <filter token="DATE" value="${buildDate}" />
+                <filter token="RCNUM" value="${RCNUM}" />
+            </filterset>
+        </copy>
+		<javac debug="true" destdir="${build.classes}"
+			target="1.6" source="1.6"
+			includeantruntime="true"
+			includes="lrgs/gui/LrgsBuild.java">
+			<src path="${build.classes}"/>
+			<classpath refid="project.class.path"/>
+		</javac>
 
 		<javac debug="true" destdir="${build.classes}"
 			target="1.6" source="1.6"
@@ -139,16 +167,18 @@ can find your git source tree and your directory with the downloaded jars.
 			<src path="${src.dir}"/>
 			<classpath refid="project.class.path"/>
 		</javac>
+
+
 	</target>
 
 	<target name="jar" depends="compile" description="Generates opendcs.jar.">
 
 		<!-- copy the resource files to the build directory. -->
 		<copy todir="${build.classes}/decodes/resources">
-    		<fileset dir="${src.dir}/decodes/resources"/>
+    		<fileset dir="${resources.dir}/decodes/resources"/>
 		</copy>
 		<copy todir="${build.classes}/ilex/resources">
-    		<fileset dir="${src.dir}/ilex/resources"/>
+    		<fileset dir="${resources.dir}/ilex/resources"/>
 		</copy>
 
 		<!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
@@ -221,22 +251,57 @@ can find your git source tree and your directory with the downloaded jars.
 
 		<copy todir="stage/dep">
 			<fileset dir="${thirdpartyjar.dir}">				
-				<exclude name="maven-ant-tasks-2.1.0.jar"/>
-				<exclude name="junit-4.8.1.jar"/>
-				<exclude name="slf4j-api-1.7.13.jar"/>
-				<exclude name="slf4j-nop-1.7.13.jar"/>
-				<exclude name="sshd-core-1.1.0.jar"/>
+				<include name="Cobra.jar"/>
+				<include name="LoboBrowser-1.0.0.jar"/>
+				<include name="asm-3.3.jar"/>
+				<include name="aspectjrt-1.8.10.jar"/>
+				<include name="cglib-2.1_3.jar"/>
+				<include name="commons-codec-1.10.jar"/>
+				<include name="commons-collections-2.1.1.jar"/>
+				<include name="commons-logging-1.1.1.jar"/>
+				<include name="commons-net-3.3.jar"/>
+				<include name="ganymed-ssh2-build210.jar"/>
+				<include name="jama-1.0.2.jar"/>
+				<include name="javassist-3.7.ga.jar"/>
+				<include name="jaxb-api-2.3.0.jar"/>
+				<include name="jcalendar-1.3.2.jar"/>
+				<include name="jcommon-1.0.16.jar"/>
+				<include name="jep-2.4.1.jar"/>
+				<include name="jfreechart-1.0.13.jar"/>
+				<include name="jsch-0.1.55.jar"/>
+				<include name="json-20200518.jar"/>
+				<include name="jta-spec-1.0.1.jar"/>
+				<include name="junit-3.8.1.jar"/>
+				<include name="jython-2.7.2.jar"/>
+				<include name="log4j-1.2.13.jar"/>
+				<include name="mailapi-1.6.2.jar"/>
+				<include name="ognl-2.7.3.jar"/>
+				<include name="ojdbc8-19.3.0.0.jar"/>
+				<include name="ons-19.3.0.0.jar"/>
+				<include name="oraclepki-19.3.0.0.jar"/>
+				<include name="osdt_cert-19.3.0.0.jar"/>
+				<include name="osdt_core-19.3.0.0.jar"/>
+				<include name="passay-1.3.1.jar"/>
+				<include name="poi-3.0.1-FINAL.jar"/>
+				<include name="postgresql-9.1-901-1.jdbc4.jar"/>
+				<include name="simplefan-19.3.0.0.jar"/>
+				<include name="spring-test-2.5.6.jar"/>
+				<include name="xml-apis-1.0.b2.jar"/>
+				<include name="xwork-core-2.1.6.jar"/>
+			</fileset>
+			<fileset dir="${cwmsSystemJars.dir}">
+				<include name="*.jar"/>
 			</fileset>
 		</copy>
-		<copy todir="stage/dep" file="${thirdpartyjar.dir}/ojdbc6.jar"/>
+		<copy todir="stage/dep" file="${workspace.dir}/opendcs-cove/3rd_party/ojdbc6.jar"/>
 
 		<copy todir="stage/dep/ext">
-			<fileset dir="${thirdpartyextjar.dir}">
+			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/ext">
 				<include name="*.jar"/>
 			</fileset>
 		</copy>
 		<copy todir="stage/dep/Lib">
-			<fileset dir="${thirdpartyjar.dir}/Lib"/>
+			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/Lib"/>
 		</copy>
 
 		<copy todir="stage/imports/comp-standard">
@@ -266,7 +331,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 		<copy todir="stage">
 			<fileset dir="${project.dir}/izpack">
-				<include name="opendcs-6-7.xml"/>
+				<include name="opendcs-6-8.xml"/>
 				<include name="*.txt"/>
 				<include name="unixOpenDcsShortcutSpec.xml"/>
 				<include name="winOpenDcsShortcutSpec.xml"/>
@@ -307,23 +372,23 @@ can find your git source tree and your directory with the downloaded jars.
 		</copy>
 
 		<copy todir="stage/schema/cwms">
-			<fileset dir="${src.dir}/../schema/cwms"/>
+			<fileset dir="${project.dir}/schema/cwms"/>
 		</copy>
 
 		<copy todir="stage/schema/hdb">
-			<fileset dir="${src.dir}/../schema/hdb"/>
+			<fileset dir="${project.dir}/schema/hdb"/>
 		</copy>
 
 		<copy todir="stage/schema/opendcs-pg">
-			<fileset dir="${src.dir}/../schema/opendcs-pg"/>
+			<fileset dir="${project.dir}/schema/opendcs-pg"/>
 		</copy>
 
 		<copy todir="stage/schema/opendcs-oracle">
-			<fileset dir="${src.dir}/../schema/opendcs-oracle"/>
+			<fileset dir="${project.dir}/schema/opendcs-oracle"/>
 		</copy>
 
 		<copy todir="stage/python">
-			<fileset dir="${src.dir}/../python"/>
+			<fileset dir="${project.dir}/python"/>
 		</copy>
 
 		<mkdir dir="stage/cwmsDbAPI"/>
@@ -340,8 +405,8 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete file="stage/dep/jython.jar"/>
 		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-nf-6-7.xml"
-				output="stage/opendcs-nf-6-7-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
+				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}"/>
@@ -351,8 +416,19 @@ can find your git source tree and your directory with the downloaded jars.
 	<target name="opentsdb" depends="stage">
 		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-6-7.xml"
-				output="stage/opendcs-ot-6-7-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
+				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
+				installerType="standard"
+				basedir="stage"
+				izPackDir="${izpack.dir}"/>
+	</target>
+
+	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
+	<target name="hdb" depends="stage">
+		<delete file="stage/dep/NWIS.jar"/>
+		<!-- Invokes izpack to build installable package with defaults for CWMS -->
+		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
+				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}"/>
@@ -366,7 +442,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
-			<fileset dir="stage" includes="dospath.txt,opendcs-6-7.xml,readme.txt,LddsConnections"/>
+			<fileset dir="stage" includes="dospath.txt,opendcs-6-8.xml,readme.txt,LddsConnections"/>
 		</delete>
 		<move file="stage/lrgs.conf" tofile="stage/lrgs.conf.sample"/>
 		<move file="stage/ddsrecv.conf" tofile="stage/ddsrecv.conf.sample"/>
@@ -375,7 +451,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<move file="stage/edit-db" tofile="stage/edit-db.init"/>
 		<move file="stage/users" tofile="stage/users.init"/>
 		<replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
-		<tar destfile="opendcs-cwms-6-7-RC${RCNUM}.tgz" compression="gzip">
+		<tar destfile="opendcs-cwms-6-8-RC${RCNUM}.tgz" compression="gzip">
 			<tarfileset dir="stage">
 				<exclude name="bin/*"/>
 				<exclude name="schema/cwms/createDb.sh"/>
@@ -392,7 +468,6 @@ can find your git source tree and your directory with the downloaded jars.
 		</tar>
 	</target>
 
-	<property environment="env"/>
 	<path id="dcpmon.class.path">
 		<pathelement path="${build.classes}/"/>
 		<pathelement path="${env.CATALINA_HOME}/lib/servlet-api.jar"/>
@@ -429,7 +504,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/makeDcpmon.sh"/>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/README"/>
-		<tar tarfile="stage/dcpmon-build-6-7-${RCNUM}.tgz" 
+		<tar tarfile="stage/dcpmon-build-6-8-${RCNUM}.tgz" 
 			basedir="stage"
 			includes="dcpmon-build/**"
 			compression="gzip"/>
@@ -455,7 +530,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/makehydrojson.sh"/>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/README"/>
-		<tar tarfile="stage/hydrojson-build-6-7-${RCNUM}.tgz" 
+		<tar tarfile="stage/hydrojson-build-6-8-${RCNUM}.tgz" 
 			basedir="stage"
 			includes="hydrojson-build/**"
 			compression="gzip"/>

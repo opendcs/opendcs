@@ -108,6 +108,7 @@
             <description>OPENDCS Java Archive (jar) and scripts necessary for all installations. This will not modify your existing database or configuration files.
 IMPORTANT: For a new installation, you should also select the Template Database.</description>
 	    	<fileset dir="bin" targetdir="$INSTALL_PATH/bin" 
+			    includes="*,opendcs.jar"
 	    		excludes="*.bat,*.exe" os="unix">
 	    	</fileset>
 	    	<fileset dir="bin" targetdir="$INSTALL_PATH/bin" defaultexcludes="yes" 

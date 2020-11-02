@@ -1,31 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+	<classpathentry kind="src" output="bin/main" path="src/main/java">
 		<attributes>
-			<attribute name="module" value="true"/>
+			<attribute name="gradle_scope" value="main"/>
+			<attribute name="gradle_used_by_scope" value="main,test"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/cobra-no-commons.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/xwork-core-2.1.6.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/poi-3.0.1-FINAL-20070705.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/lobo.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jcalendar-1.3.2.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/ganymed-ssh2-build210.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jfreechart-1.0.14.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jcommon-1.0.10.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/commons-codec-1.10.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jep-2.4.1.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/passay-1.1.0.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jython.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/javax.mail.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/jsch-0.1.55.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/rma.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/commons-net-3.3.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/hec.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/hecData.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/ojdbc8.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/cwmsDbDao-v5.0-dev.jar"/>
-	<classpathentry kind="lib" path="/opendcs-cove/3rd_party/hecDbCore-v4.0-dev.jar"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="src" output="bin/main" path="src/main/resources">
+		<attributes>
+			<attribute name="gradle_scope" value="main"/>
+			<attribute name="gradle_used_by_scope" value="main,test"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="build/stage/dep/Cobra.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/commons-net-3.3.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/ganymed-ssh2-build210.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/hec.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/hecData.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/heclib.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/jcalendar-1.3.2.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/jcommon-1.0.16.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/jfreechart-1.0.13.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/LoboBrowser-1.0.0.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/mailapi-1.6.2.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/passay-1.3.1.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/poi-3.0.1-FINAL.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/xwork-core-2.1.6.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/cwmsDbDao-v5.0-dev.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/ojdbc8-19.3.0.0.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/jsch-0.1.55.jar"/>
+	<classpathentry kind="lib" path="build/stage/dep/jython-2.7.1b3.jar"/>
+	<classpathentry kind="lib" path="/Users/mmaloney/Documents/workspace-2019/opendcs-cove/3rd_party/jep-2.4.1.jar"/>
+	<classpathentry kind="output" path="bin/default"/>
 </classpath>
