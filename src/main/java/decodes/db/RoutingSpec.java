@@ -220,7 +220,7 @@ public class RoutingSpec
 		 || !TextUtil.strEqualIgnoreCase(rs.sinceTime, sinceTime)
 		 || !TextUtil.strEqualIgnoreCase(rs.untilTime, untilTime)
 		 || !TextUtil.strEqualIgnoreCase(rs.consumerType, consumerType)
-		 || !TextUtil.strEqualIgnoreCase(rs.consumerArg, consumerArg)
+		 || !TextUtil.strEqualNE(rs.consumerArg, consumerArg)
 		 || rs.isProduction != isProduction)
 		{
 			return false;
