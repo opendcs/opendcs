@@ -190,7 +190,7 @@ public class CompExec extends TsdbAppTemplate
 			{
 				outputFormatter = OutputFormatter.makeOutputFormatter(
 					outputFmtToken.getValue(), TimeZone.getTimeZone(tzArg.getValue()),
-					presGrp, cmdLineArgs.getCmdLineProps());
+					presGrp, cmdLineArgs.getCmdLineProps(), null);
 			}
 			catch (OutputFormatterException ex)
 			{
