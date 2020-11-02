@@ -379,7 +379,8 @@ public class AlarmLimitSet
 
 	public void prepareForExec()
 	{
-		if (seasonName != null && seasonName.trim().length() > 0)
+		if (seasonName != null && seasonName.trim().length() > 0
+		 && !seasonName.contains("default"))
 		{
 			DbEnum seasonEnum = Database.getDb().enumList.getEnum(Constants.enum_Season);
 			if (seasonEnum != null)
@@ -402,19 +403,14 @@ public class AlarmLimitSet
 					}
 				}
 			}
-			else if (!seasonName.toLowerCase().contains("default"))
+			else
 			{
 				Logger.instance().warning("AlarmLimitSet with id=" + getLimitSetId() 
 					+ " season '" + seasonName
 					+ "' cannot be resolved -- there is no Seasons enumeration in this database.");
-Logger.instance().warning("" + Database.getDb().enumList.size() + " ENUMs include: ");
-for(Iterator<DbEnum> enit = Database.getDb().enumList.iterator(); enit.hasNext(); )
-{
-	DbEnum dbe = enit.next();
-	Logger.instance().warning("\t" + dbe.enumName + ", # members=" + dbe.size());
-}
 			}
 		}
+		// Else either no season name or it's set to the "(default)" season (i.e. all year).
 		prepared = true;
 	}
 
