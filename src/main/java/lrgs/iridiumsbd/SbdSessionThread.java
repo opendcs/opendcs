@@ -207,7 +207,7 @@ public class SbdSessionThread extends BasicSvrThread
 		dcpMsg.setSessionStatus(nextByte());
 		dcpMsg.setSequenceNum((nextByte()<<8) + nextByte());
 		dcpMsg.setMtmsm((nextByte()<<8) + nextByte());
-		long xmitTime = (nextByte() << 24) + (nextByte()<<16) + (nextByte()<<8)
+		long xmitTime = ((long)nextByte() << 24) + (nextByte()<<16) + (nextByte()<<8)
 			+ nextByte();
 		dcpMsg.setXmitTime(new Date(xmitTime * 1000L));
 		parent.debug1("Read IE1 Header, cdrRef=" + dcpMsg.getCdrReference()
