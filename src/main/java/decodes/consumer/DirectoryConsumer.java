@@ -12,6 +12,7 @@ import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
 import ilex.var.Variable;
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -62,6 +63,7 @@ public class DirectoryConsumer extends DataConsumer
 	private File lastOutFile = null;
 	
 	private int sequenceNum = 1;
+	private boolean useSysDate = false;
 	
 	PropertySpec[] myspecs = new PropertySpec[]
 	{
@@ -69,6 +71,8 @@ public class DirectoryConsumer extends DataConsumer
 			"Template for building filename."),
 		new PropertySpec("tmpdir", PropertySpec.STRING, 
 			"Temporary directory for building file before moving to final location."),
+		new PropertySpec("useSysDate", PropertySpec.BOOLEAN,
+			"Set to true to use system time for $DATE in filenameTemplate. Otherwise use msg time.")
 
 	};
 
@@ -116,6 +120,8 @@ public class DirectoryConsumer extends DataConsumer
 				if (!tmpdir.mkdirs())
 					tmpdir = null;
 		}
+		
+		useSysDate = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "useSysDate"));
 	}
 
 	/**
@@ -178,9 +184,13 @@ public class DirectoryConsumer extends DataConsumer
                 "TRANSPORTID = " + props.getProperty("TRANSPORTID") );
 			if ( currentFileName == null || !appendToCurrentFile )
 			{
-				Date d = rm.getTimeStamp();
-//Logger.instance().info("DirConsumer: template='" + filenameTemplate + "', props=" + PropertiesUtil.props2string(props));
-				currentFileName = EnvExpander.expand(filenameTemplate, props, d);
+				if (useSysDate)
+					currentFileName = EnvExpander.expand(filenameTemplate, props);
+				else
+				{
+					Date d = rm.getTimeStamp();
+					currentFileName = EnvExpander.expand(filenameTemplate, props, d);
+				}
 			}
 
 			Logger.instance().debug2( 
