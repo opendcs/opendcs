@@ -42,7 +42,7 @@ public class DataType extends IdDatabaseObject
 	/**
 	 * Display name
 	 */
-	public String displayName = null;
+	private String displayName = null;
 
 	/** This is used during XML output.  */
 	public boolean saved;
