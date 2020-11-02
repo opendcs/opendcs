@@ -32,6 +32,8 @@ import java.util.Enumeration;
 import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.Logger;
+import ilex.util.StringPair;
+
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -86,17 +88,26 @@ public class DataPresentationParser
 	 */
 	public void startElement( XmlHierarchyParser hier, String namespaceURI, String localName, String qname, Attributes atts ) throws SAXException
 	{
+//Logger.instance().info("DPP got startElement for '" + localName + "'");
 		if (localName.equalsIgnoreCase(XmlDbTags.DataType_el))
 		{
 			String st = atts.getValue(XmlDbTags.DataType_standard_at);
+			String cd = atts.getValue(XmlDbTags.DataType_code_at);
+			String nm = atts.getValue(XmlDbTags.name_at);
+//Logger.instance().info("DPP data type st='" + st + "', cd='" + cd + "', nm='" + nm + "'");
 			if (st == null)
 				throw new SAXException(XmlDbTags.DataType_el + " without "
 					+ XmlDbTags.DataType_standard_at +" attribute");
-			String cd = atts.getValue(XmlDbTags.DataType_code_at);
 			if (cd == null)
 				throw new SAXException(XmlDbTags.DataType_el + " without "
 					+ XmlDbTags.DataType_code_at +" attribute");
 			dataPresentation.setDataType(DataType.getDataType(st, cd));
+			if (nm != null)
+			{
+				dataPresentation.getDataType().setDisplayName(nm);
+//Logger.instance().info("DT " + dataPresentation.getDataType() + ", set displayNmae='" + nm
+//+ "', from dt='" + dataPresentation.getDataType().getDisplayName() + "'");
+			}
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.UnitsAbbr_el))
 		{
@@ -215,10 +226,21 @@ public class DataPresentationParser
 
 		if (dataPresentation.getDataType() != null)
 		{
-			xos.startElement(XmlDbTags.DataType_el, 
-				XmlDbTags.DataType_standard_at, 
-					dataPresentation.getDataType().getStandard(),
-				XmlDbTags.DataType_code_at, dataPresentation.getDataType().getCode());
+			String std = dataPresentation.getDataType().getStandard();
+			String cod = dataPresentation.getDataType().getCode();
+			String nm = dataPresentation.getDataType().getDisplayName();
+			if (nm == null)
+				xos.startElement(XmlDbTags.DataType_el, 
+					XmlDbTags.DataType_standard_at, std,
+					XmlDbTags.DataType_code_at, cod);
+			else
+			{
+				StringPair sp[] = new StringPair[3];
+				sp[0] = new StringPair(XmlDbTags.DataType_standard_at, std);
+				sp[1] = new StringPair(XmlDbTags.DataType_code_at, cod);
+				sp[2] = new StringPair(XmlDbTags.name_at, nm);
+				xos.startElement(XmlDbTags.DataType_el, sp);
+			}
 			xos.endElement(XmlDbTags.DataType_el);
 		}
 

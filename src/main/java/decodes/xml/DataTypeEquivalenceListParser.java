@@ -10,6 +10,8 @@ import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
+import ilex.util.StringPair;
+
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -83,6 +85,10 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 				throw new SAXException(XmlDbTags.DataType_el + " without "
 					+ XmlDbTags.DataType_code_at +" attribute");
 			DataType dt = DataType.getDataType(st, cd);
+			
+			String nm = atts.getValue(XmlDbTags.name_at);
+			if (nm != null)
+				dt.setDisplayName(nm);
 
 			if (firstDT == null)
 				firstDT = dt;
@@ -162,16 +168,49 @@ public class DataTypeEquivalenceListParser implements XmlObjectParser, XmlObject
 			 && dt.equivRing != dt)
 			{
 				xos.startElement(XmlDbTags.DataTypeEquivalence_el);
-				xos.writeElement(XmlDbTags.DataType_el,
-					XmlDbTags.DataType_standard_at, dt.getStandard(),
-					XmlDbTags.DataType_code_at, dt.getCode(), (String)null);
+				
+				
+				String std = dt.getStandard();
+				String cod = dt.getCode();
+				String nm = dt.getDisplayName();
+
+				if (nm == null)
+					xos.startElement(XmlDbTags.DataType_el, 
+						XmlDbTags.DataType_standard_at, std,
+						XmlDbTags.DataType_code_at, cod);
+				else
+				{
+					StringPair sp[] = new StringPair[3];
+					sp[0] = new StringPair(XmlDbTags.DataType_standard_at, std);
+					sp[1] = new StringPair(XmlDbTags.DataType_code_at, cod);
+					sp[2] = new StringPair(XmlDbTags.name_at, nm);
+					xos.startElement(XmlDbTags.DataType_el, sp);
+				}
+				xos.endElement(XmlDbTags.DataType_el);
+
 				dt.saved = true;
 				for(DataType dti = dt.equivRing; 
 					dti != null && dti != dt; dti = dti.equivRing)
 				{
-					xos.writeElement(XmlDbTags.DataType_el,
-						XmlDbTags.DataType_standard_at, dti.getStandard(),
-						XmlDbTags.DataType_code_at, dti.getCode(), (String)null);
+					
+					std = dti.getStandard();
+					cod = dti.getCode();
+					nm = dti.getDisplayName();
+
+					if (nm == null)
+						xos.startElement(XmlDbTags.DataType_el, 
+							XmlDbTags.DataType_standard_at, std,
+							XmlDbTags.DataType_code_at, cod);
+					else
+					{
+						StringPair sp[] = new StringPair[3];
+						sp[0] = new StringPair(XmlDbTags.DataType_standard_at, std);
+						sp[1] = new StringPair(XmlDbTags.DataType_code_at, cod);
+						sp[2] = new StringPair(XmlDbTags.name_at, nm);
+						xos.startElement(XmlDbTags.DataType_el, sp);
+					}
+					xos.endElement(XmlDbTags.DataType_el);
+
 					dti.saved = true;
 				}
 				xos.endElement(XmlDbTags.DataTypeEquivalence_el);
