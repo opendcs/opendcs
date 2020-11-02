@@ -62,7 +62,7 @@ public class DataOperations
 		begLineBytePos.add(new Integer(0));
 		settings = DecodesSettings.instance();
 if (data.length >=2)
-Logger.instance().debug1("DataOperations instantiated with length=" + data.length
+Logger.instance().debug3("DataOperations instantiated with length=" + data.length
 + ", last 2 chars = '" + (char)data[data.length-2] + "' '" + (char)data[data.length-1]
 + "'");
 	}
