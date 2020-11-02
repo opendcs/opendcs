@@ -181,7 +181,7 @@ public class CompTest extends TsdbAppTemplate
 		throws OutputFormatterException
 	{
 		outputFormatter = OutputFormatter.makeOutputFormatter(
-			formatterName, tz, null, props);
+			formatterName, tz, null, props, null);
 	}
 	
 	public static Date convert2Date(String s, boolean isTo)
