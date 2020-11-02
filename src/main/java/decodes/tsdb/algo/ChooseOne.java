@@ -30,8 +30,8 @@ import decodes.tsdb.algo.AWAlgoType;
 /**
 Given two inputs, output the best one:
 If only one is present at the time-slice, output it.
-If one is outside the specified upper or lower limit (see properties) output the other.
-If both are acceptable, output the first one.
+Else if input1LowThreshold is defined, output input1 if it is >= the threshold, else input2.
+Else (input1LowThreshold not defined) output higher if (chooseHigher) else the lower.
 Useful in situations where you have redundant sensors.
  */
 //AW:JAVADOC_END
@@ -55,12 +55,15 @@ public class ChooseOne
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-	public double upperLimit = 999999999999.9;
+	public static final double HIGH_DOUBLE = 999999999999.9;
+	public double upperLimit = HIGH_DOUBLE;
 	public double lowerLimit = -999999999999.9;
 	public String input1_MISSING = "IGNORE";
 	public String input2_MISSING = "IGNORE";
 	public boolean chooseHigher = true;
-	String _propertyNames[] = { "upperLimit", "lowerLimit", "input1_MISSING", "input2_MISSING", "chooseHigher" };
+	public double input1LowThreshold = 999999999999.9;
+	String _propertyNames[] = { "upperLimit", "lowerLimit", "input1_MISSING", "input2_MISSING", 
+		"chooseHigher", "input1LowThreshold" };
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -114,8 +117,11 @@ public class ChooseOne
 		boolean no_2 = isMissing(input2) || input2 > upperLimit || input2 < lowerLimit;
 		if (!no_1 && !no_2) // both present?
 		{
-			setOutput(output, 
-				chooseHigher ? Math.max(input1, input2) : Math.min(input1, input2));
+			if (input1LowThreshold < HIGH_DOUBLE)
+				setOutput(output, input1 >= input1LowThreshold ? input1 : input2);
+			else // use chooseHigher to decide
+				setOutput(output, 
+					chooseHigher ? Math.max(input1, input2) : Math.min(input1, input2));
 		}
 		else if (!no_1)
 			setOutput(output, input1);
