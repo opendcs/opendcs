@@ -329,8 +329,6 @@ public class TopLevelParser implements XmlObjectParser
 		String localName, String qname, Attributes atts )
 			throws SAXException
 	{
-		//Logger.instance().log(Logger.E_DEBUG3,
-		//	"TopLevelParser - startElement '" + localName + "'");
 
 		if (localName.equalsIgnoreCase(XmlDbTags.EnumList_el))
 		{
@@ -488,7 +486,6 @@ public class TopLevelParser implements XmlObjectParser
 				top.lastModifyTime = new Date(inputFile.lastModified());
 			else
 				top.lastModifyTime = new Date();
-
 			hier.pushObjectParser(new PresentationGroupParser(top));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.Database_el))
