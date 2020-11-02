@@ -7,6 +7,8 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.ParmRef;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
@@ -15,6 +17,7 @@ import decodes.util.PropertySpec;
 //AW:IMPORTS
 import decodes.hdb.dbutils.*;
 import decodes.hdb.HdbFlags;
+import decodes.hdb.HdbTsId;
 
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
@@ -127,19 +130,94 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		// Note: if we get to here and value is missing, it means that missing action = ignore.
 		String repl = !isMissing(input1) ? (new Double(input1)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input1>>", repl);
-
+		if (!isMissing(input1))
+		{
+			ParmRef pr = this.getParmRef("input1");
+			TimeSeriesIdentifier tsid = pr.tsid;
+			if (tsid != null) // shouldn't happen
+			{
+				HdbTsId hdbTsid = (HdbTsId)tsid;
+				new_equation = new_equation.replaceAll("<<input1_sdi>>", "" + hdbTsid.getSdi());
+				new_equation = new_equation.replaceAll("<<input1_interval>>", hdbTsid.getInterval());
+				new_equation = new_equation.replaceAll("<<input1_modelid>>", 
+					"" + hdbTsid.getModelId());
+				new_equation = new_equation.replaceAll("<<input1_modelrunid>>", 
+						"" + hdbTsid.getModelRunId());
+			}
+		}
 		repl = !isMissing(input2) ? (new Double(input2)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input2>>", repl);
+		if (!isMissing(input2))
+		{
+			ParmRef pr = this.getParmRef("input2");
+			TimeSeriesIdentifier tsid = pr.tsid;
+			if (tsid != null) // shouldn't happen
+			{
+				HdbTsId hdbTsid = (HdbTsId)tsid;
+				new_equation = new_equation.replaceAll("<<input2_sdi>>", "" + hdbTsid.getSdi());
+				new_equation = new_equation.replaceAll("<<input2_interval>>", hdbTsid.getInterval());
+				new_equation = new_equation.replaceAll("<<input2_modelid>>", 
+					"" + hdbTsid.getModelId());
+				new_equation = new_equation.replaceAll("<<input2_modelrunid>>", 
+						"" + hdbTsid.getModelRunId());
+			}
+		}
 		
 		repl = !isMissing(input3) ? (new Double(input3)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input3>>", repl);
+		if (!isMissing(input3))
+		{
+			ParmRef pr = this.getParmRef("input3");
+			TimeSeriesIdentifier tsid = pr.tsid;
+			if (tsid != null) // shouldn't happen
+			{
+				HdbTsId hdbTsid = (HdbTsId)tsid;
+				new_equation = new_equation.replaceAll("<<input3_sdi>>", "" + hdbTsid.getSdi());
+				new_equation = new_equation.replaceAll("<<input3_interval>>", hdbTsid.getInterval());
+				new_equation = new_equation.replaceAll("<<input3_modelid>>", 
+					"" + hdbTsid.getModelId());
+				new_equation = new_equation.replaceAll("<<input3_modelrunid>>", 
+						"" + hdbTsid.getModelRunId());
+			}
+		}
 		
 		repl = !isMissing(input4) ? (new Double(input4)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input4>>", repl);
+		if (!isMissing(input4))
+		{
+			ParmRef pr = this.getParmRef("input4");
+			TimeSeriesIdentifier tsid = pr.tsid;
+			if (tsid != null) // shouldn't happen
+			{
+				HdbTsId hdbTsid = (HdbTsId)tsid;
+				new_equation = new_equation.replaceAll("<<input4_sdi>>", "" + hdbTsid.getSdi());
+				new_equation = new_equation.replaceAll("<<input4_interval>>", hdbTsid.getInterval());
+				new_equation = new_equation.replaceAll("<<input4_modelid>>", 
+					"" + hdbTsid.getModelId());
+				new_equation = new_equation.replaceAll("<<input4_modelrunid>>", 
+						"" + hdbTsid.getModelRunId());
+			}
+		}
+
 		
 		repl = !isMissing(input5) ? (new Double(input5)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input5>>", repl);
-		
+		if (!isMissing(input5))
+		{
+			ParmRef pr = this.getParmRef("input5");
+			TimeSeriesIdentifier tsid = pr.tsid;
+			if (tsid != null) // shouldn't happen
+			{
+				HdbTsId hdbTsid = (HdbTsId)tsid;
+				new_equation = new_equation.replaceAll("<<input5_sdi>>", "" + hdbTsid.getSdi());
+				new_equation = new_equation.replaceAll("<<input5_interval>>", hdbTsid.getInterval());
+				new_equation = new_equation.replaceAll("<<input5_modelid>>", 
+					"" + hdbTsid.getModelId());
+				new_equation = new_equation.replaceAll("<<input5_modelrunid>>", 
+						"" + hdbTsid.getModelRunId());
+			}
+		}
+
 		if (new_equation.contains("<<loading_application_id>>"))
 			new_equation = new_equation.replaceAll("<<loading_application_id>>", 
 				tsdb.getAppId().toString());
