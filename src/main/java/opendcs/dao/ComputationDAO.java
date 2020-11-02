@@ -541,6 +541,12 @@ public class ComputationDAO
 				where.append(" and ");
 			where.append("loading_application_id = " + filter.getProcessId());
 		}
+		if (filter.isEnabledOnly())
+		{
+			if (where.length() > 0)
+				where.append(" and ");
+			where.append("ENABLED = " + sqlBoolean(true));
+		}
 		// Group comp query does not include param fields.
 		String groupWhere = where.toString();
 	
@@ -556,7 +562,7 @@ public class ComputationDAO
 			tables = tables + ", cp_comp_ts_parm prm";
 			where.append(" and cmp.computation_id = prm.computation_id");
 			
-			if (db.isCwms())
+			if (db.isCwms() || db.isOpenTSDB())
 			{
 				// CWMS already has site_id and datatype_id in the fully-defined parms.
 				if (!DbKey.isNull(filter.getSiteId()))
