@@ -486,7 +486,7 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 			try
 			{
 				selectedFormatter = 
-					OutputFormatter.makeOutputFormatter(formatName, null, null, null);
+					OutputFormatter.makeOutputFormatter(formatName, null, null, null, null);
 				outputTimezoneCombo.setEnabled(selectedFormatter.usesTZ());
 				// Update this PropertiesOwner
 				rebuildCombinedProps();
