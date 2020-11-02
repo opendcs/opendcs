@@ -686,7 +686,10 @@ class DataPresentationTableModel
 		case 2:
 			return dp.getUnitsAbbr() == null ? "" : dp.getUnitsAbbr();
 		case 3:
-			return "" + dp.getMaxDecimals();
+		{
+			int md = dp.getMaxDecimals();
+			return md < 0 || md > 10 ? "" : md;
+		}
 		case 4:
 			return dp.getMinValue() == Constants.undefinedDouble ? "" :
 				numFmt.format(dp.getMinValue());
