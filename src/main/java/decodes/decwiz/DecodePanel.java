@@ -478,7 +478,7 @@ public class DecodePanel
 			tzs = tzs.trim();
 			OutputFormatter formatter = OutputFormatter.makeOutputFormatter(
 				fileIdPanel.getSelectedFormat(), TimeZone.getTimeZone(tzs), 
-				null, new Properties());
+				null, new Properties(), null);
 			formatter.formatMessage(decodedMessage, consumer); 
 			decodedDataArea.setText(consumer.getBuffer().toString());
 			try 
