@@ -598,6 +598,12 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 //				// So I just need to record the fact that I saw an EUList File.
 //				euListSeen = true;
 //			}
+			
+//Logger.instance().info("After readXmlFiles...");
+//DataType dt = DataType.getDataType("NRCS", "SRDOX");
+//Logger.instance().info("From DataType.getDatatype: " + dt + ", displayName=" + dt.getDisplayName());
+//dt = stageDb.dataTypeSet.get("NRCS", "SRDOX");
+//Logger.instance().info("From stageDb.dataTypeSet.get: " + dt + ", displayName=" + dt.getDisplayName());
 		}
 
 		/*
@@ -652,9 +658,9 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 	*/
 	private void mergeStageToTheDb()
 	{
-Logger.instance().debug3("mergeStageToTheDb 0: #EUs=" + theDb.engineeringUnitList.size());
-Logger.instance().debug3("the db and stage EU lists are "
-+ (theDb.engineeringUnitList == stageDb.engineeringUnitList ? "" : "NOT") + " the same.");
+//Logger.instance().debug3("mergeStageToTheDb 0: #EUs=" + theDb.engineeringUnitList.size());
+//Logger.instance().debug3("the db and stage EU lists are "
+//+ (theDb.engineeringUnitList == stageDb.engineeringUnitList ? "" : "NOT") + " the same.");
 
 		Database.setDb(theDb);
 		
@@ -688,8 +694,10 @@ Logger.instance().debug3("the db and stage EU lists are "
 		{
 			DataType stageDT = dtit.next();
 			// getDataType will create it in the current database ('theDb')
-			DataType.getDataType(stageDT.getStandard(), stageDT.getCode());
+			DataType newDT = DataType.getDataType(stageDT.getStandard(), stageDT.getCode());
+			newDT.setDisplayName(stageDT.getDisplayName());
 		}
+
 Logger.instance().debug3("mergeStageToTheDb 1: #EUs=" + theDb.engineeringUnitList.size());
 Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineeringUnitList.size());
 
@@ -931,11 +939,13 @@ for(PlatformSensor ps : newPlat.platformSensors)
 			}
 		}
 
+//Logger.instance().info("MJM # staged presgrps: " + stageDb.presentationGroupList.size());
 		for(Iterator<PresentationGroup> it = stageDb.presentationGroupList.iterator(); it.hasNext(); )
 		{
 			PresentationGroup ob = it.next();
+//Logger.instance().info("MJM: merging staged presgrp '" + ob.groupName + "'");
 			PresentationGroup oldOb= theDb.presentationGroupList.find(ob.groupName);
-
+		
 			if (oldOb == null)
 			{
 				info("Adding new " + ob.getObjectType()
