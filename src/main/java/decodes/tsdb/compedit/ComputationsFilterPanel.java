@@ -65,6 +65,7 @@ public class ComputationsFilterPanel extends JPanel
 	private SiteSelectDialog siteSelectDialog = null;
 	private JComboBox groupCombo = null;
 	private ArrayList<TsGroup> groupList;
+	private JCheckBox hideDisabledCheck = null;
 
 	/**
 	 * constructor taking a new database to filter the computations from. if the
@@ -140,6 +141,8 @@ public class ComputationsFilterPanel extends JPanel
 		{
 			tsGroupDAO.close();
 		}
+		
+		hideDisabledCheck = new JCheckBox(compLabels.getString("ComputationsFilterPanel.hideDisabled"));
 
 		this.setLayout(new GridBagLayout());
 
@@ -182,6 +185,10 @@ public class ComputationsFilterPanel extends JPanel
 			GridBagConstraints.HORIZONTAL, new Insets(4, 4, 0, 10), 0, 0));
 		this.add(algorithmBox, new GridBagConstraints(6, 1, 1, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 4, 0, 10), 0, 0));
+		
+		this.add(hideDisabledCheck, new GridBagConstraints(5, 2, 2, 1, 0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 0, 10), 0, 0));
+		
 		this.add(refresh, new GridBagConstraints(5, 3, 2, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 4, 10, 10), 0, 0));
 		TimeSeriesDb theDb;
@@ -319,6 +326,8 @@ public class ComputationsFilterPanel extends JPanel
 			TsGroup grp = groupList.get(groupCombo.getSelectedIndex()-1);
 			compFilter.setGroupId(grp.getGroupId());
 		}
+		
+		compFilter.setEnabledOnly(hideDisabledCheck.isSelected());
 	}
 
 }
