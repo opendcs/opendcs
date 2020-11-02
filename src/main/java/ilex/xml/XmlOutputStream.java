@@ -192,6 +192,8 @@ public class XmlOutputStream
 	*/
 	public void writePCDATA( String data ) throws IOException
 	{
+		if (data == null)
+			return;
 		data = escapeERs(data);
 
 		int pos = currentIndentPosition();
