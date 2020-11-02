@@ -663,6 +663,8 @@ public class SqlDatabaseIO
 	{
 		try 
 		{
+			if (_conn.isClosed())
+				return;
 			commit();
 			Logger.instance().info("Closing  database connection.");
 			_conn.close();
