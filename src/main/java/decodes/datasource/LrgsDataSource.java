@@ -555,6 +555,9 @@ public class LrgsDataSource extends DataSourceExec
 						{
 							throw new DataSourceEndException("Aborted.");
 						}
+						else if (routingSpecThread != null)
+							routingSpecThread.lrgsDataSourceCaughtUp();
+						
 						try { Thread.sleep(1000L); }
 						catch (InterruptedException ie) {}
 						continue;
