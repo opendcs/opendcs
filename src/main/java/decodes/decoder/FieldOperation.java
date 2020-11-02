@@ -6,6 +6,7 @@ package decodes.decoder;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.Date;
 import java.util.TimeZone;
@@ -19,6 +20,7 @@ import ilex.var.Variable;
 import ilex.var.IFlags;
 
 import decodes.db.*;
+import hec.util.TextUtil;
 
 /**
 FieldOperation is a DecodesOperation that extracts and parses a field 
@@ -603,8 +605,44 @@ Logger.instance().log(Logger.E_DEBUG3,
 				else if (c == 'P' || c == 'p')  // PM
 					msg.getTimer().setPM(true);
 			}
+			else if (field_type.equals("tz") )  // Time Zone Field
+			{
+				String sfield = new String(field);
+				String tzid = mapSpecialTz(sfield);
+				if (tzid == null)
+					tzid = sfield;
+				msg.getTimer().setTimeZoneName(tzid);
+Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().getTimeZoneName() + ")");
+			}
 		}
 	}
+	
+	private static HashMap<String, String> specialTzMap = null;
+	
+	private String mapSpecialTz(String tzid)
+	{
+		if (specialTzMap == null)
+		{
+			specialTzMap = new HashMap<String, String>();
+			specialTzMap.put("EDT", "EST5EDT");
+			specialTzMap.put("CDT", "CST6CDT");
+			specialTzMap.put("MDT", "MST7MDT");
+			specialTzMap.put("PDT", "PST8PDT");
+			specialTzMap.put("-0400", "GMT-04:00");
+			specialTzMap.put("-04:00", "GMT-04:00");
+			specialTzMap.put("-0500", "GMT-05:00");
+			specialTzMap.put("-05:00", "GMT-05:00");
+			specialTzMap.put("-0600", "GMT-06:00");
+			specialTzMap.put("-06:00", "GMT-06:00");
+			specialTzMap.put("-0700", "GMT-07:00");
+			specialTzMap.put("-07:00", "GMT-07:00");
+			specialTzMap.put("-0800", "GMT-08:00");
+			specialTzMap.put("-08:00", "GMT-08:00");
+		}
+		return specialTzMap.get(tzid);
+	}
+	
+	
 
 
 	private boolean is_blank(byte f[])

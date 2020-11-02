@@ -9,6 +9,8 @@ import java.util.GregorianCalendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import ilex.util.Logger;
+
 /**
 RecordedTimeStamp is used in the decoding process to set date and time
 components and to retrieve the time values for stamping individual
@@ -117,6 +119,7 @@ public class RecordedTimeStamp
 	*/
 	public void setTimeZoneName(String tzName)
 	{
+Logger.instance().info("settimeZoneName(" + tzName + ")");
 		String tzs = tzName.trim();
 		if ( tzs.matches("GMT[+-].*[MAYN]$") ) {
 			tzs = tzs.substring(0,tzs.length()-1);
