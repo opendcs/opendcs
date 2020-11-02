@@ -64,6 +64,7 @@ import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.datasource.LrgsDataSource;
 import decodes.datasource.RawMessage;
+import decodes.datasource.UnknownPlatformException;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.DbEnum;
@@ -393,7 +394,7 @@ public class DecodesInterface
 		throws Exception
 	{
 		formatter = OutputFormatter.makeOutputFormatter(name, timeZone, presGrp,
-				props);
+				props, null);
 	}
 
 	/**
@@ -411,27 +412,40 @@ public class DecodesInterface
 	public String decodeMessage(DcpMsg msg)
 		throws Exception
 	{
+//TODO handle case where formatter does the decoding, like snotel.
+// In that case there won't be a platform, tm, or script. DecodedMessage is just a wrapper.
+		dataSource.setAllowNullPlatform(!formatter.requiresDecodedMessage());
 		RawMessage rm = dataSource.lrgsMsg2RawMessage(msg);
-		Platform p = rm.getPlatform();
-		TransportMedium tm = rm.getTransportMedium();
-		if (!p.isPrepared())
-			p.prepareForExec();
-		if (!tm.isPrepared())
-			tm.prepareForExec();
-
-		// Get decodes script & use it to decode message.
-		DecodesScript ds = tm.getDecodesScript();
-		if (ds == null)
-			throw new Exception(
-				"Transport medium does not have a DecodesScript");
-
-		DecodedMessage dm = ds.decodeMessage(rm);
-		//Calculates the elevation using the preoffset, scale and offset
-		dm.applyScaleAndOffset();
-
-		// Use presentation group to convert units & format values
-		if (presGrp != null)
-			dm.formatSamples(presGrp);
+		DecodedMessage dm = null;
+		try
+		{
+			Platform p = rm.getPlatform();
+			TransportMedium tm = rm.getTransportMedium();
+			if (!p.isPrepared())
+				p.prepareForExec();
+			if (!tm.isPrepared())
+				tm.prepareForExec();
+	
+			// Get decodes script & use it to decode message.
+			DecodesScript ds = tm.getDecodesScript();
+			if (ds == null)
+				throw new Exception(
+					"Transport medium does not have a DecodesScript");
+	
+			dm = ds.decodeMessage(rm);
+			//Calculates the elevation using the preoffset, scale and offset
+			dm.applyScaleAndOffset();
+	
+			// Use presentation group to convert units & format values
+			if (presGrp != null)
+				dm.formatSamples(presGrp);
+		}
+		catch(UnknownPlatformException ex)
+		{
+			if (formatter.requiresDecodedMessage())
+				throw ex;
+			dm = new DecodedMessage(rm, false);
+		}
 
 		// Use the formatter & consumer to output the message.
 		decodeBuf.delete(0, decodeBuf.length());
