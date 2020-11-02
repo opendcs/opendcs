@@ -73,6 +73,7 @@ public class OracleSequenceKeyGenerator
 	/** Default constructor. */
 	public OracleSequenceKeyGenerator()
 	{
+		Logger.instance().debug1("OracleSequenceKeyGenerator constructor");
 	}
 
 	/**
