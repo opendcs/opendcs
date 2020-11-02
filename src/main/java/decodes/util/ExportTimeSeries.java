@@ -138,7 +138,7 @@ public class ExportTimeSeries
 			((PipeConsumer)consumer).setOutputStream(outputStream);
 		
 		outputFormatter = OutputFormatter.makeOutputFormatter(
-			fmtArg.getValue(), tz, presGroup, props);
+			fmtArg.getValue(), tz, presGroup, props, null);
 		
 		String s = sinceArg.getValue().trim();
 		Date since = null, until = null;
