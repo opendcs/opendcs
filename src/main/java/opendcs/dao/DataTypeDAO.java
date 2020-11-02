@@ -115,7 +115,7 @@ public class DataTypeDAO
 					+ ", " + sqlString(dt.getStandard()) 
 					+ ", " + sqlString(dt.getCode())
 					+ (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10 ? 
-						(", " + sqlString(dt.displayName)) : "")
+						(", " + sqlString(dt.getDisplayName())) : "")
 					+ ")";
 			}
 			else // Update data type
@@ -123,7 +123,7 @@ public class DataTypeDAO
 				q = "UPDATE DataType set standard = " + sqlString(dt.getStandard())
 					+ ", code = " + sqlString(dt.getCode());
 				if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
-					q = q + ", display_name = " + sqlString(dt.displayName);
+					q = q + ", display_name = " + sqlString(dt.getDisplayName());
 				
 				q = q + " where id = " + id;
 			}
