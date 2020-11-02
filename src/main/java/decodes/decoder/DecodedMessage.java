@@ -679,7 +679,8 @@ public class DecodedMessage implements IDataCollection
 		boolean fixedInterval = tint != 0 && tint != -1;
 		long msec = currentTime.getMsec();
 		Date sampTime = new Date(msec);
-		GregorianCalendar cal1 = new GregorianCalendar(currentTime.getCalendar().getTimeZone());
+		TimeZone tz = currentTime.getCalendar().getTimeZone();
+		GregorianCalendar cal1 = new GregorianCalendar(tz);
 		cal1.setTime(sampTime);
 		Logger.instance().debug3(
 			"addSample curTime=" + loggerDateFmt.format(sampTime) + ", status="
