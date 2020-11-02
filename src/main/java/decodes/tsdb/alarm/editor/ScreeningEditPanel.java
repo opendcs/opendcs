@@ -884,6 +884,17 @@ public class ScreeningEditPanel
 			return;
 		}
 		
+		if (DbKey.isNull(scrn.getAppId()))
+		{
+			if (parentFrame.showConfirm("Confirm No App", 
+				"You have not associated this screening with a Loading App."
+				+ " That means it cannot be executed by any computation. You should associate"
+				+ " the screening the the comp-proc application ID that executes the computation."
+				+ " Continue save with no app?", JOptionPane.YES_NO_OPTION)
+					== JOptionPane.NO_OPTION)
+				return;
+		}
+		
 		// Write the screening to the database.
 		AlarmDAI alarmDAO = parentFrame.parentTsdbApp.getTsdb().makeAlarmDAO();
 		try
