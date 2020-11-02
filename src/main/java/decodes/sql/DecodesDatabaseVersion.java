@@ -139,6 +139,8 @@ public class DecodesDatabaseVersion
 	 * - Add LOADING_APPLICATION_ID to ALARM_SCREENING and add it to the 
 	 *   CONSTRAINT AS_SDI_START_UNIQUE. Thus There can be multiple site/datatype/start
 	 *   tuples as long as they have different loading applications.
+	 * - For CWMS, 6.8 also adds separate sequences for each CCP and DECODES table, so
+	 *   that it doesn't use the CWMS_SEQ at all any more.
 	 */
 	public static final int DECODES_DB_68 = 68;
 	
