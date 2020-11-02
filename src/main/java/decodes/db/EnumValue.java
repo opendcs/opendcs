@@ -93,6 +93,9 @@
 
 package decodes.db;
 
+import java.io.Serializable;
+
+
 /**
  * This class stores information about a single value of an enumeration,
  * which is encapsulated by the parent of this object, and Enum.
@@ -102,10 +105,14 @@ package decodes.db;
  *   EnumValue names are always converted to lowercase before being stored.
  * </p>
  */
-public class EnumValue extends DatabaseObject
+public class EnumValue 
+	extends DatabaseObject
+	implements Serializable
 {
+	private static final long serialVersionUID = 9048951608362667339L;
+
 	/** The enum of which this is a member. */
-	private DbEnum dbenum;
+	private transient DbEnum dbenum;
 
 	/** The name this EnumValue. Values are unique within a particular enum. */
 	private String value;
@@ -129,8 +136,8 @@ public class EnumValue extends DatabaseObject
 	public final static int UNDEFINED_SORT_NUMBER = Integer.MAX_VALUE;
 
 	// Links
-	public Class execClass;
-	public Class editClass;
+	public transient Class execClass;
+	public transient Class editClass;
 
 	/**
 	  Constructor setting just parent enum and this value.
