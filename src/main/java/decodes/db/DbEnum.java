@@ -96,6 +96,8 @@ import java.util.*;
 import opendcs.dao.CachableDbObject;
 
 import decodes.sql.DbKey;
+import java.io.Serializable;
+
 
 /**
  * An Enum is a named collection of related values, each of which is
@@ -104,8 +106,10 @@ import decodes.sql.DbKey;
  */
 public class DbEnum 
 	extends IdDatabaseObject
-	implements CachableDbObject
+	implements CachableDbObject, Serializable
 {
+	private static final long serialVersionUID = -7534343805851676281L;
+
 	/** The name of this enumeration. */
 	public String enumName;
 
