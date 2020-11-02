@@ -468,6 +468,7 @@ public class DecodesSettings
 	public boolean isLoaded() { return _isLoaded; }
 	private String profileName = null;
 	private File sourceFile = null;
+	public String snotelSpecFile = null;
 	
 
 	private static PropertySpec propSpecs[] =
@@ -718,6 +719,8 @@ public class DecodesSettings
 			"For multi-profile launcher, parent laucher listens on this port."),
 		new PropertySpec("tryOsDatabaseAuth", PropertySpec.BOOLEAN,
 			"(default=false) If TRUE, then try to connect to the database using OS (IDENT) authentication."),
+		new PropertySpec("snotelSpecFile", PropertySpec.FILENAME,
+			"Name of file containing SNOTEL decoding specs for the SnotelOutputFormatter"),
 	};
 	
 	/**
