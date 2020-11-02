@@ -1000,7 +1000,7 @@ public class RoutingSpecThread
 			
 			formatter = OutputFormatter.makeOutputFormatter(
 				rs.outputFormat, rs.outputTimeZone,
-				presentationGroup, rs.getProperties());
+				presentationGroup, rs.getProperties(), this);
 		}
 		catch(OutputFormatterException e)
 		{
@@ -1462,6 +1462,13 @@ public class RoutingSpecThread
 		cmdLineArgs.addToken(dirConsumerArg);
 		cmdLineArgs.addToken(editDbArg);
 		cmdLineArgs.addToken(rsArg);
+	}
+	
+	/** Kludge for buffering in data source */
+	public void lrgsDataSourceCaughtUp()
+	{
+		if (this.formatter != null)
+			formatter.dataSourceCaughtUp(false);
 	}
 
 
