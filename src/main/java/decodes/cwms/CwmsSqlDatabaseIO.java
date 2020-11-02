@@ -27,6 +27,8 @@ import ilex.util.PropertiesUtil;
 import ilex.util.UserAuthFile;
 import decodes.db.*;
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
+import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.sql.SqlDatabaseIO;
 import decodes.sql.SqlDbObjIo;
 import decodes.tsdb.BadConnectException;
@@ -76,9 +78,6 @@ public class CwmsSqlDatabaseIO
 
 		connectToDatabase(sqlDbLocation);
 
-		// The key generator is always for Oracle.
-		keyGenerator = new CwmsSequenceKeyGenerator(getDecodesDatabaseVersion());
-		
 		/* 
 		 * Oracle does not require a COMMIT after each block of nested SELECTs.
 		 * The following causes the parent class to do this.
@@ -193,11 +192,18 @@ public class CwmsSqlDatabaseIO
 			cgl.setLoginSuccess(false);
 			if (getConnection() != null)
 				CwmsTimeSeriesDb.doCloseConnection(getConnection());
+			throw new DatabaseException(msg);
 		}
 		
 		readVersionInfo(this);
 		
-		keyGenerator = new CwmsSequenceKeyGenerator(getDecodesDatabaseVersion());
+		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
+		// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
+		int decodesDbVersion = getDecodesDatabaseVersion();
+		Logger.instance().info(module + " decodesDbVersion=" + decodesDbVersion);
+		keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
+				new OracleSequenceKeyGenerator() :
+				new CwmsSequenceKeyGenerator(decodesDbVersion);
 
 		String q = null;
 		Statement st = null;

@@ -717,6 +717,8 @@ import decodes.db.SiteName;
 import decodes.db.DataType;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
+import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.*;
 import decodes.util.DecodesSettings;
 
@@ -776,6 +778,7 @@ public class CwmsTimeSeriesDb
 		
 		// Make a call to the new connection pool.
 //		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
+//System.err.println("Connecting to '" + dbUri + "' as '" + username + "' with pw '" + password + "' and office '" + dbOfficeId + "'");
 		ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);
 		CwmsDbConnectionPool connectionPool = CwmsDbConnectionPool.getInstance();
 		try
@@ -788,11 +791,13 @@ public class CwmsTimeSeriesDb
 				try { CwmsDbConnectionPool.close(ret.getConnection()); } catch(Exception ex2) {}
 			ret.setConnection(null);
 			String msg = "Cannot get CWMS connection for user '" + username
-				+ "', officeId='" + dbOfficeId + "': " + ex;
+				+ "', officeId='" + dbOfficeId + "' and dbURI='" + dbUri + ": " + ex;
 			Logger.instance().failure(msg);
 			PrintStream ps = Logger.instance().getLogOutput();
 			if (ps != null)
 				ex.printStackTrace(ps);
+			else
+				ex.printStackTrace(System.err);
 			throw new BadConnectException(msg);
 		}
 		
@@ -838,6 +843,8 @@ Logger.instance().debug3("Privilege: " + op);
 		catch (Exception ex)
 		{
 			String msg = "Cannot determine privileged office IDs: " + ex;
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
 			Logger.instance().failure(msg);
 			throw new BadConnectException(msg);
 		}
@@ -922,7 +929,12 @@ Logger.instance().debug3("Privilege: " + op);
 				closeConnection();
 		}
 		
-		keyGenerator = new CwmsSequenceKeyGenerator(getDecodesDatabaseVersion());
+		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
+		// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
+		int decodesDbVersion = getDecodesDatabaseVersion();
+		keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
+				new OracleSequenceKeyGenerator() :
+				new CwmsSequenceKeyGenerator(decodesDbVersion);
 
 		ResultSet rs = null;
 		String q = "";
