@@ -77,8 +77,10 @@ import opendcs.dai.DacqEventDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import lrgs.gui.DecodesInterface;
+import decodes.comp.ComputationProcessor;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
+import decodes.db.RoutingSpec;
 import decodes.db.ScheduleEntry;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
@@ -199,6 +201,21 @@ public class RoutingScheduler
 		{
 			Logger.instance().warning("Cannot determine hostname, will use 'localhost': " + ex);
 			hostname = "localhost";
+		}
+		
+		// MJM 20201111 Initialize computation processor if arg provided
+		if (cfgFileArg.getValue() != null && cfgFileArg.getValue().length() > 0)
+		{
+			// This is used by SNOTEL to start the config monitor thread.
+			String fn = EnvExpander.expand(cfgFileArg.getValue());
+			RoutingSpec dummy = new RoutingSpec();
+			ComputationProcessor compProcessor = new ComputationProcessor();
+			try { compProcessor.init(fn, dummy); }
+			catch(decodes.comp.BadConfigException ex)
+			{
+				Logger.instance().warning(module + 
+					" Cannot configure computation processor: " + ex);
+			}
 		}
 
 	}
