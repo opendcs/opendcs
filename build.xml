@@ -40,7 +40,7 @@ can find your git source tree and your directory with the downloaded jars.
 	<!-- Settable Directories -->
 	<property name="home.dir" value="${env.HOME}"/>
 	<property name="project.dir" value="${home.dir}/git/opendcs"/>
-	<property name="thirdpartyjar.dir" value="${project.dir}/build/stage/dep"/>
+	<property name="thirdpartyjar.dir" value="dep"/>
 	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
 	<property name="izpack.dir" value="${workspace.dir}/opendcs-cove/3rd_party/IzPack-4.3.3"/>
 	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
