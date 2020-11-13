@@ -170,7 +170,7 @@ public abstract class TsdbAppTemplate
 			logname = "test.log";
 		cmdLineArgs = new CmdLineArgs(false, logname);
 		cfgFileArg = new StringToken("c", "comp-config-file",
-			"", TokenOptions.optSwitch, "$DECODES_INSTALL_DIR/comp.conf"); 
+			"", TokenOptions.optSwitch, ""); 
 		testModeArg = new BooleanToken("t", "test-mode",
 			"", TokenOptions.optSwitch, false);
 		modelRunArg = new IntegerToken("m", 
