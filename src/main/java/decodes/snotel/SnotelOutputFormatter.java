@@ -15,6 +15,7 @@ import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
 import decodes.consumer.OutputFormatter;
 import decodes.consumer.OutputFormatterException;
+import decodes.datasource.RawMessage;
 import decodes.db.Constants;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
@@ -26,6 +27,8 @@ import decodes.decoder.FieldParseException;
 import decodes.decoder.NumberParser;
 import decodes.decoder.ScriptException;
 import decodes.decoder.ScriptFormatException;
+import decodes.routing.RoutingScheduler;
+import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
 import ilex.util.EnvExpander;
@@ -134,7 +137,6 @@ public class SnotelOutputFormatter extends OutputFormatter
 				bufferTimeSec = 0;
 			}
 		}
-		
 	}
 
 	private void loadPlatformSpecs()
@@ -177,6 +179,15 @@ public class SnotelOutputFormatter extends OutputFormatter
 		catch (DataConsumerException ex)
 		{
 			logger.warning("Error shutting down formatter: " + ex);
+		}
+		
+		// Now for history routing spec, move the spec file with a ".done" exception. 
+		// The ConfigMonitor uses the existence of the spec file to tell if one is already
+		// running.
+		if (rsThread.getRoutingSpec().getName().contains("history"))
+		{
+			if (specFile != null)
+				specFile.renameTo(new File(specFile.getPath() + ".done"));
 		}
 	}
 
@@ -230,21 +241,36 @@ public class SnotelOutputFormatter extends OutputFormatter
 
 		if (bufferTimeSec <= 0)
 			theConsumer.startMessage(lastMsg);
-
-		boolean isPB = spec.getDataFormat() == 'B' || spec.getDataFormat() == 'b';
+		boolean ascii = isAscii(msg.getRawMessage());
+		NumberParser numParser = new NumberParser();
+		try { numParser.setDataType(
+			ascii ? NumberParser.ASCII_FMT : NumberParser.CAMPBELL_BINARY_FMT); }
+		catch(ScriptFormatException ex) {} // won't happen
 		
+		if (ascii && spec.getDataFormat() == 'B')
+			throw new OutputFormatterException(module 
+				+ " invalid msg '" + new String(msg.getRawMessage().getData()) + "' -- "
+				+ "spec says new B format but message contains ASCII chars. Msg skipped.");
+
 		try
 		{
 			dops.forwardspace(); // Skip initial DADDS status char in msg.
-			NumberParser numParser = new NumberParser();
-			numParser.setDataType(isPB ? NumberParser.CAMPBELL_BINARY_FMT :
-				NumberParser.ASCII_FMT);
 			
-			for(int hr = 0; hr < spec.getNumHours(); hr++)
+			// for format A, numHours is alwasy 1 and set numChans to big number.
+			int numHours = 1, numChans = 1000;
+			if (spec.getDataFormat() == 'B')
+			{
+				numHours = numParser.parseIntValue(dops.getField(3,  null));
+				numChans = numParser.parseIntValue(dops.getField(3,  null));
+				logger.debug3(module + " new format numHours=" + numHours 
+					+ ", numChans=" + numChans);
+			}
+
+			for(int hr = 0; hr < numHours; hr++)
 			{
 				sb.setLength(0);
 				
-				if (isPB)
+				if (!ascii)
 				{
 					// Pseudobinary includes sample time in first 2 PB fields.
 					byte[] doyField = dops.getField(3, null);
@@ -291,13 +317,13 @@ public class SnotelOutputFormatter extends OutputFormatter
 					+ "," + hhmmSdf.format(cal.getTime()));
 		
 				int chan = 0;
-				for (chan = 0; chan < spec.getNumChannels(); chan++)
+				for (chan = 0; chan < numChans; chan++)
 				{
 					// Decode a data value.
 					byte[] dataField = new byte[0];
 					try
 					{
-						if (isPB)
+						if (!ascii)
 							dataField = dops.getField(3, null);
 						else
 						{
@@ -334,15 +360,14 @@ logger.debug3(module + " msgTime=" + dcpMsg.getXmitTime() + ", tz="
 					addToBuffer(spec.getStationId(), line);
 			}
 		}
+		catch(FieldParseException ex)
+		{
+			logger.warning(module + " bad msg field: " + ex);
+		}
 		catch(EndOfDataException ex)
 		{
 			logger.warning(module + " bad message hour - missing time fields: '" 
 				+ new String(dcpMsg.getData()) + "' -- skipped.");
-		}
-		catch (ScriptFormatException e)
-		{
-			// Shouldn't happen. There is no script.
-			e.printStackTrace();
 		}
 		
 		if (bufferTimeSec <= 0)
@@ -350,6 +375,20 @@ logger.debug3(module + " msgTime=" + dcpMsg.getXmitTime() + ", tz="
 		else if (bufferingStarted > 0L
 			&& (System.currentTimeMillis() - bufferingStarted)/1000L > bufferTimeSec)
 			flushBuffer();
+	}
+	
+	// Scan message for anything out of the pseudobinary range.
+	private boolean isAscii(RawMessage msg)
+	{
+		byte[] msgData = msg.getMessageData();
+		for(int i=1; i<msgData.length-1; i++) // skip first demod status char
+			if (msgData[i] < 63 || msgData[i] > 127)
+			{
+logger.debug1(module + " ASCII MSG: non PB char '" + (char)msgData[i] + "' (" + (int)msgData[i] + ") at position " + i);
+				return true;
+			}
+			
+		return false;
 	}
 	
 	class SnotelPlatformData

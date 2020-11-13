@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.StringTokenizer;
 
 import ilex.util.Logger;
 import ilex.util.StderrLogger;
@@ -51,17 +52,30 @@ public class SnotelPlatformSpecList
 		String line;
 		while ((line = lnr.readLine()) != null)
 		{
+			//MJM 20201110 new format is: stationId|stationName|dcpAddr|formatFlag
 			line = line.trim();
 			if (line.startsWith("#") || line.length() == 0)
 				continue;
+			String delim = ",";
+			if (line.contains("|"))
+				delim = "|";
+//System.out.println("Read line '" + line + "', delim=" + delim);
+
+			String fields[] = new String[4];
+			StringTokenizer st = new StringTokenizer(line, delim);
+			int nt = 0;
+			while(nt < 4 && st.hasMoreTokens())
+				fields[nt++] = st.nextToken();
 			
-			String fields[] = line.split(",");
-			if (fields.length != 6)
+//			String fields[] = line.split(delim);
+//			if (fields.length < 4)
+			if (nt < 4)
 			{
 				logger.warning("Line " + lnr.getLineNumber() + " '" + line
-					+ "' incorrect number of comma-separated fields. 6 required. -- Skipped.");
+					+ "' incorrect number of pipe-separated fields. 4 required. -- Skipped.");
 				continue;
 			}
+//for(int idx=0;idx<fields.length;idx++)System.out.println("fld[" + idx + "]=" + fields[idx]);
 			int stationId = 0;
 			try { stationId = Integer.parseInt(fields[0]); }
 			catch(Exception ex)
@@ -72,38 +86,21 @@ public class SnotelPlatformSpecList
 				
 			}
 			String stationName = fields[1];
+			
 			DcpAddress dcpAddress = new DcpAddress(fields[2].toUpperCase());
 			
-			int numChannels = 0;
-			try { numChannels = Integer.parseInt(fields[3]); }
-			catch(Exception ex)
+			if (fields[3].length() == 0)
 			{
 				logger.warning("Line " + lnr.getLineNumber() + " '" + line
-					+ "' bad number of channels '" + fields[3] 
-					+ "'. Must be integer. -- Skipped.");
+					+ "' missing data format in last field, should be A or B. -- Skipped.");
 				continue;
 			}
-		
-			int numHours = 0;
-			try { numHours = Integer.parseInt(fields[4]); }
-			catch(Exception ex)
-			{
-				logger.warning("Line " + lnr.getLineNumber() + " '" + line
-					+ "' bad number of hours '" + fields[4] 
-					+ "'. Must be integer. -- Skipped.");
-				continue;
-			}
+			char formatFlag = fields[3].charAt(0);
 			
-			if (fields[5].length() == 0)
-			{
-				logger.warning("Line " + lnr.getLineNumber() + " '" + line
-					+ "' missing data format in last field, should be B or A. -- Skipped.");
-				continue;
-			}
-			
-			SnotelPlatformSpec spec = new SnotelPlatformSpec(stationId, 
-				stationName, dcpAddress, numChannels, numHours, fields[5].charAt(0));
+			SnotelPlatformSpec spec = new SnotelPlatformSpec(stationId, stationName, 
+				dcpAddress, formatFlag);
 
+//System.out.println("Adding spec '" + spec + "'");
 			platformSpecs.put(dcpAddress, spec);
 		}
 		
