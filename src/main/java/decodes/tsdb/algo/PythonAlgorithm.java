@@ -405,6 +405,10 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 					(compParm != null && !DbKey.isNull(compParm.getSiteDataTypeId()) ? 
 						compParm.getSiteDataTypeId() : -1)
 					+ linesep);
+				sb.append(role + ".sdi = " + 
+						(compParm != null && !DbKey.isNull(compParm.getSiteDataTypeId()) ? 
+							compParm.getSiteDataTypeId() : -1)
+						+ linesep);
 				
 				if (tsdb.isCwms() || tsdb.isOpenTSDB())
 				{
