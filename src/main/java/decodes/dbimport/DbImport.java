@@ -435,9 +435,14 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 				catch (ConstraintException ex)
 				{
 					warning("Cannot delete app '" + cai.getAppName() + "': " + ex);
-				}
-				
+				}	
 			}
+			// Now recreate the 'utility' application which is required by compimport and
+			// others.
+			CompAppInfo utility = new CompAppInfo();
+			utility.setAppName("utility");
+			utility.setProperty("appType", "utility");
+			loadingAppDAO.writeComputationApp(utility);
 		}
 		catch (DbIoException ex)
 		{
@@ -1198,6 +1203,14 @@ for(PlatformSensor ps : newPlat.platformSensors)
 		
 		for(ScheduleEntry stageSE : stageDb.schedEntryList)
 		{
+			// Don't import manual schedule entries, which are created when someone runs
+			// a routing spec with the 'rs' command.
+			if (stageSE.getName() == null || stageSE.getName().endsWith("-manual"))
+			{
+				info("Skipping manual schedule entry '" + stageSE.getName() + "'");
+				continue;
+			}
+			
 			ScheduleEntry existingSE = null;
 			for(ScheduleEntry x : theDb.schedEntryList)
 			{
@@ -1652,8 +1665,10 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 					catch (DatabaseException ex)
 					{
 						Logger.instance().log(Logger.E_FAILURE, 
-								"Could not import other modified objs " +
-								ex.getMessage());
+							"Could not import other modified objs " +
+							ex.getMessage());
+						if (Logger.instance().getLogOutput() != null)
+							ex.printStackTrace(Logger.instance().getLogOutput());
 					}
 				}
 			}
