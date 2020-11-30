@@ -14,6 +14,8 @@ package lrgs.drgsrecv;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -27,6 +29,7 @@ import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
+import ilex.util.StderrLogger;
 import ilex.util.FileLogger;
 
 import lrgs.archive.MsgArchive;
@@ -450,7 +453,7 @@ Logger.instance().info(module + " " + myName + " starting"
 			if (state == CARRIERTIMES_STATE)
 			{
 				stateComplete = carrierTimesState();
-				if (stateComplete && !msgHasExtendedQual)
+				if (stateComplete && state != EXTENDED_QUAL_STATE)
 				{
 					DcpMsg ret = workingMsg;
 					workingMsg = null;
@@ -461,12 +464,28 @@ Logger.instance().info(module + " " + myName + " starting"
 			}
 			if (state == EXTENDED_QUAL_STATE)
 			{
+				if (workingMsg == null)
+				{
+					Logger.instance().warning("DrgsMsgRcvThread: "
+						+ "internal error: state=EXTENDED_QUAL_STATE but workingMsg=null!");
+					state = HUNT_STATE;
+					return null;
+				}
 				stateComplete = extendedQualState();
-				DcpMsg ret = workingMsg;
-				workingMsg = null;
-				ret.setOrigAddress(new DcpAddress(new String(origAddr)));
-				numThisHour++;
-				return ret;
+				if (stateComplete)
+				{
+					DcpMsg ret = workingMsg;
+					workingMsg = null;
+					try { ret.setOrigAddress(new DcpAddress(new String(origAddr))); }
+					catch(Exception ex)
+					{
+						Logger.instance().warning("DrgsMsgRcvThread: EXTENDED_QUAL_STATE ret is "
+							+ (ret==null?"":"NOT") + " null. stateComplete=" + stateComplete
+							+ ". msgHasExtendedQual=" + msgHasExtendedQual);
+					}
+					numThisHour++;
+					return ret;
+				}
 			}
 		}
 		return null;
@@ -1311,6 +1330,32 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 	public String getGroup() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	/**
+	 * Test main program for parsing data captured from a file.
+	 * @param args
+	 */
+	public static void main(String args[])
+		throws Exception
+	{
+		Logger.setLogger(new StderrLogger("DAMS-NT-Test"));
+		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
+		DrgsRecvMsgThread me = new DrgsRecvMsgThread(null, null);
+		me.testFileInput(args[0]);
+		
+	}
+	
+	private void testFileInput(String filename) throws Exception
+	{
+		this.input = new FileInputStream(filename);
+		DcpMsg msg = null;
+		while((msg = getMsg()) != null)
+		{
+			System.out.println("=====================");
+			System.out.println("Message from " + msg.getDcpAddress());
+			System.out.println("" + new String(msg.getData()));
+		}
 	}
 }
 
