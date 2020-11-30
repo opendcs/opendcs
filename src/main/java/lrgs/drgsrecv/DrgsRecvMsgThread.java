@@ -18,6 +18,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.StringTokenizer;
@@ -102,6 +103,7 @@ public class DrgsRecvMsgThread
 
 	private SimpleDateFormat carrierDateFmt;
 	protected SimpleDateFormat debugDateFmt;
+	protected SimpleDateFormat domsatDateFmt = new SimpleDateFormat("yyDDDHHmmss");
 
 	private boolean msgHasCarrierTimes;
 	private boolean msgHasExtendedQual;
@@ -181,6 +183,7 @@ public class DrgsRecvMsgThread
 		carrierDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 		debugDateFmt = new SimpleDateFormat("yyyy/DDD-HH:mm:ss.SSS");
 		debugDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+		domsatDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
 	/**
@@ -630,8 +633,6 @@ Logger.instance().info(module + " " + myName + " starting"
 			state = HUNT_STATE;
 			return false;
 		}
-log(Logger.E_DEBUG3, 0, "headerState: header='"
-+ new String(headerBuf, 4, 51) + "'");
 		try { workingMsg = parseHeader(headerBuf); }
 		catch(BadHeader ex)
 		{
@@ -672,7 +673,6 @@ log(Logger.E_DEBUG3, 0, "headerState: header='"
 			throw new BadHeader("Invalid message length (" + dataLength
 				+ ") -- message skipped.");
 
-log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 		byte[] domsatData = new byte[37 + dataLength];
 
 		// DCP address
@@ -761,6 +761,22 @@ log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 			origAddr[i] = buf[34+i];
 			if (origAddr[i] != buf[42+i])
 				ret.flagbits |= DcpMsgFlag.ADDR_CORRECTED;
+		}
+		
+		// MJM bug fix for NAE Dams-NT DCPs.
+		if (getMsgTypeFlag() == DcpMsgFlag.MSG_TYPE_NETDCP)
+		{
+			String ts = new String(buf, 15, 11);
+			try
+			{
+				ret.setXmitTime(domsatDateFmt.parse(ts));
+			}
+			catch (ParseException e)
+			{
+				Logger.instance().warning(module + " bad time in msg '" + ts 
+					+ "' -- using current time.");
+				ret.setXmitTime(new Date());
+			}
 		}
 
 		ret.setLocalReceiveTime(new Date());
