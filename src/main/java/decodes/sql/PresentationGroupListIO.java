@@ -25,8 +25,6 @@ import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseObject;
 import decodes.db.DataPresentation;
-import decodes.db.EquipmentModel;
-import decodes.db.EquipmentModelList;
 import decodes.db.PresentationGroup;
 import decodes.db.PresentationGroupList;
 import decodes.db.RoundingRule;
@@ -655,7 +653,20 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		}
 		q = q + ")";
 
-		executeUpdate(q);
+		// MJM 20201126 - Groups that came from XML files may have duplicates. So if the
+		// input fails because it violates "pres_dt_unique" constraint, log a warning but do not
+		// throw an exception.
+		try { executeUpdate(q); }
+		catch(SQLException ex)
+		{
+			if (ex.toString().toLowerCase().contains("pres_dt_unique"))
+			{
+				Logger.instance().warning("Failed to insert duplicate presentation entry "
+					+ " for data type '" + dp.getDataType().toString() + "'");
+			}
+			else
+				throw ex;
+		}
 	}
 
 
