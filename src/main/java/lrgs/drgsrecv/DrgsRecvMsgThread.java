@@ -14,8 +14,11 @@ package lrgs.drgsrecv;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.StringTokenizer;
@@ -27,6 +30,7 @@ import ilex.util.ByteUtil;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
+import ilex.util.StderrLogger;
 import ilex.util.FileLogger;
 
 import lrgs.archive.MsgArchive;
@@ -99,6 +103,7 @@ public class DrgsRecvMsgThread
 
 	private SimpleDateFormat carrierDateFmt;
 	protected SimpleDateFormat debugDateFmt;
+	protected SimpleDateFormat domsatDateFmt = new SimpleDateFormat("yyDDDHHmmss");
 
 	private boolean msgHasCarrierTimes;
 	private boolean msgHasExtendedQual;
@@ -178,6 +183,7 @@ public class DrgsRecvMsgThread
 		carrierDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 		debugDateFmt = new SimpleDateFormat("yyyy/DDD-HH:mm:ss.SSS");
 		debugDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+		domsatDateFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
 	/**
@@ -450,7 +456,7 @@ Logger.instance().info(module + " " + myName + " starting"
 			if (state == CARRIERTIMES_STATE)
 			{
 				stateComplete = carrierTimesState();
-				if (stateComplete && !msgHasExtendedQual)
+				if (stateComplete && state != EXTENDED_QUAL_STATE)
 				{
 					DcpMsg ret = workingMsg;
 					workingMsg = null;
@@ -461,12 +467,28 @@ Logger.instance().info(module + " " + myName + " starting"
 			}
 			if (state == EXTENDED_QUAL_STATE)
 			{
+				if (workingMsg == null)
+				{
+					Logger.instance().warning("DrgsMsgRcvThread: "
+						+ "internal error: state=EXTENDED_QUAL_STATE but workingMsg=null!");
+					state = HUNT_STATE;
+					return null;
+				}
 				stateComplete = extendedQualState();
-				DcpMsg ret = workingMsg;
-				workingMsg = null;
-				ret.setOrigAddress(new DcpAddress(new String(origAddr)));
-				numThisHour++;
-				return ret;
+				if (stateComplete)
+				{
+					DcpMsg ret = workingMsg;
+					workingMsg = null;
+					try { ret.setOrigAddress(new DcpAddress(new String(origAddr))); }
+					catch(Exception ex)
+					{
+						Logger.instance().warning("DrgsMsgRcvThread: EXTENDED_QUAL_STATE ret is "
+							+ (ret==null?"":"NOT") + " null. stateComplete=" + stateComplete
+							+ ". msgHasExtendedQual=" + msgHasExtendedQual);
+					}
+					numThisHour++;
+					return ret;
+				}
 			}
 		}
 		return null;
@@ -611,8 +633,6 @@ Logger.instance().info(module + " " + myName + " starting"
 			state = HUNT_STATE;
 			return false;
 		}
-log(Logger.E_DEBUG3, 0, "headerState: header='"
-+ new String(headerBuf, 4, 51) + "'");
 		try { workingMsg = parseHeader(headerBuf); }
 		catch(BadHeader ex)
 		{
@@ -653,7 +673,6 @@ log(Logger.E_DEBUG3, 0, "headerState: header='"
 			throw new BadHeader("Invalid message length (" + dataLength
 				+ ") -- message skipped.");
 
-log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 		byte[] domsatData = new byte[37 + dataLength];
 
 		// DCP address
@@ -665,6 +684,7 @@ log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 				throw new BadHeader("Non hex-digit in DCP address field '"
 				+ (char)domsatData[i] + "' -- message skipped.");
 		}
+		
 		// Msg Start Time YYDDDHHMMSS
 		for(int i=0; i<11; i++)
 		{
@@ -736,6 +756,7 @@ log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 		ret.setData(domsatData);
 		if (isBinaryMsg)
 			ret.flagbits |= DcpMsgFlag.BINARY_MSG;
+		ret.setFailureCode((char)domsatData[19]);
 
 		for(int i=0; i<8; i++)
 		{
@@ -743,7 +764,26 @@ log(Logger.E_DEBUG3, 0, "parseHeader, dataLength=" + dataLength);
 			if (origAddr[i] != buf[42+i])
 				ret.flagbits |= DcpMsgFlag.ADDR_CORRECTED;
 		}
+		
+		// MJM bug fix for NAE Dams-NT DCPs.
+		if (getMsgTypeFlag() == DcpMsgFlag.MSG_TYPE_NETDCP)
+		{
+			String ts = new String(buf, 15, 11);
+			try
+			{
+				ret.setXmitTime(domsatDateFmt.parse(ts));
+			}
+			catch (ParseException e)
+			{
+				Logger.instance().warning(module + " bad time in msg '" + ts 
+					+ "' -- using current time.");
+				ret.setXmitTime(new Date());
+			}
+		}
 
+		if (ret.getDcpAddress() == null)
+			ret.setDcpAddress(new DcpAddress(new String(domsatData,0,8)));
+		
 		ret.setLocalReceiveTime(new Date());
 		ret.setSeqFileName(null);
 		ret.setDataSourceId(dataSourceId);
@@ -1311,6 +1351,32 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 	public String getGroup() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	/**
+	 * Test main program for parsing data captured from a file.
+	 * @param args
+	 */
+	public static void main(String args[])
+		throws Exception
+	{
+		Logger.setLogger(new StderrLogger("DAMS-NT-Test"));
+		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
+		DrgsRecvMsgThread me = new DrgsRecvMsgThread(null, null);
+		me.testFileInput(args[0]);
+		
+	}
+	
+	private void testFileInput(String filename) throws Exception
+	{
+		this.input = new FileInputStream(filename);
+		DcpMsg msg = null;
+		while((msg = getMsg()) != null)
+		{
+			System.out.println("=====================");
+			System.out.println("Message from " + msg.getDcpAddress());
+			System.out.println("" + new String(msg.getData()));
+		}
 	}
 }
 

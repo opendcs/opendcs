@@ -541,6 +541,8 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandXmits.sh" type="shell" os="unix"/>
             <file src="schema/opendcs-pg/group_roles.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
             <file src="schema/opendcs-pg/makePerms.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/makePerms.sh" stage="never" os="unix"/>
+            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/makePerms.sh" type="shell" os="unix"/>
             <file src="schema/opendcs-pg/opendcs.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
             <file src="schema/opendcs-pg/sequences.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
             <file src="schema/opendcs-pg/triggers.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
