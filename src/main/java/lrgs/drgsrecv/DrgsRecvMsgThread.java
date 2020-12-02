@@ -684,6 +684,7 @@ Logger.instance().info(module + " " + myName + " starting"
 				throw new BadHeader("Non hex-digit in DCP address field '"
 				+ (char)domsatData[i] + "' -- message skipped.");
 		}
+		
 		// Msg Start Time YYDDDHHMMSS
 		for(int i=0; i<11; i++)
 		{
@@ -755,6 +756,7 @@ Logger.instance().info(module + " " + myName + " starting"
 		ret.setData(domsatData);
 		if (isBinaryMsg)
 			ret.flagbits |= DcpMsgFlag.BINARY_MSG;
+		ret.setFailureCode((char)domsatData[19]);
 
 		for(int i=0; i<8; i++)
 		{
@@ -779,6 +781,9 @@ Logger.instance().info(module + " " + myName + " starting"
 			}
 		}
 
+		if (ret.getDcpAddress() == null)
+			ret.setDcpAddress(new DcpAddress(new String(domsatData,0,8)));
+		
 		ret.setLocalReceiveTime(new Date());
 		ret.setSeqFileName(null);
 		ret.setDataSourceId(dataSourceId);
