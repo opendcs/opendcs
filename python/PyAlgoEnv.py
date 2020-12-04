@@ -104,4 +104,6 @@ def tabrating(tabfile, indep):
 def abortComp(msg):
 	algo.abortComp(msg)
 
+def getConnection(msg):
+	return algo.tsdb.getConnection()
 
