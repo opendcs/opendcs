@@ -106,9 +106,9 @@ public class Resample
 			nextInput = inputTS.findNext(lastInputT);
 			if (nextInput == null)
 				nextInput = tsdb.getNextValue(inputTS, lastInputT);
-			debug1("firstInputT=" + debugSdf.format(firstInputT)
-				+ ", prevInputT=" + (prevInput != null ? debugSdf.format(prevInput.getTime()) : " null ")
-				+ ", nextInput=" + debugSdf.format(nextInput.getTime()));
+//			debug1("firstInputT=" + debugSdf.format(firstInputT)
+//				+ ", prevInputT=" + (prevInput != null ? debugSdf.format(prevInput.getTime()) : " null ")
+//				+ ", nextInput=" + debugSdf.format(nextInput.getTime()));
 		}
 		catch(Exception ex)
 		{
