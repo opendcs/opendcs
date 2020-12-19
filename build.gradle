@@ -137,6 +137,7 @@ task stage( type: Copy ){
     from(configurations.runtimeClasspath){
         into 'dep'
         exclude "tools.jar"
+        rename("LoboBrowser-1.0.0.jar","zzzLoboBrowser-1.0.0.jar")
     }
 
     def resource_dir = "${projectDir}/src/main/resources"
