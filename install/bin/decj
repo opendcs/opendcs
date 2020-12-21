@@ -73,7 +73,7 @@ fi
 # Add the OpenDCS standard 3rd party jars to the classpath
 if [ "$DCSTOOL_USERDIR" != "$DH" ]
 then
- for f in $DH/dep/*.jar
+ for f in `ls $DH/dep/*.jar | sort`
  do
    CP=$CP:$f
  done
