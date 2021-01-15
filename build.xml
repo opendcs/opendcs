@@ -250,9 +250,16 @@ can find your git source tree and your directory with the downloaded jars.
 		</copy>
 
 		<copy todir="stage/dep">
+			<mappedresources>
+				<!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
+				<fileset dir="${thirdpartyjar.dir}">
+					<include name="LoboBrowser-1.0.0.jar"/>
+				</fileset>
+				<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>
+			</mappedresources>
 			<fileset dir="${thirdpartyjar.dir}">				
 				<include name="Cobra.jar"/>
-				<include name="LoboBrowser-1.0.0.jar"/>
+				
 				<include name="asm-3.3.jar"/>
 				<include name="aspectjrt-1.8.10.jar"/>
 				<include name="cglib-2.1_3.jar"/>
