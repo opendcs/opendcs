@@ -371,7 +371,7 @@ public class ComputationsEditPanel
 		{
 			sinceMethodCombo.setSelectedIndex(1);
 			int idx = s.indexOf('-');
-			if (idx > s.length()-1)
+			if (idx > 0)
 				sinceNowMinusCombo.setSelectedItem(s.substring(idx+1).trim());
 		}
 		else
@@ -398,7 +398,7 @@ public class ComputationsEditPanel
 			{
 				untilMethodCombo.setSelectedIndex(2);
 				int idx = s.indexOf('+');
-				if (idx > s.length()-1)
+				if (idx > 0)
 					untilNowPlusCombo.setSelectedItem(s.substring(idx+1).trim());
 			}
 		}
