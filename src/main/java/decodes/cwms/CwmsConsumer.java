@@ -74,6 +74,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -358,10 +359,15 @@ public class CwmsConsumer extends DataConsumer
 		}
 		catch(Exception ex)
 		{
-			String emsg = module + "Error storing TS data: " + ex;
+			String emsg = module + " Error storing TS data: " + ex;
 			Logger.instance().warning(emsg);
 			if (Logger.instance().getLogOutput() != null)
 				ex.printStackTrace(Logger.instance().getLogOutput());
+
+			// Also print the message to stderr so it goes to the nohup file.
+			System.err.println("" + new Date());
+			System.err.println(emsg);
+			ex.printStackTrace(System.err);
 			// It might be a business rule exception, like improper units.
 			// So don't kill the whole routing spec, just go on.
 //			close();
