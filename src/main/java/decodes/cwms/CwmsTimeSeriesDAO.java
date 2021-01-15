@@ -180,42 +180,46 @@ public class CwmsTimeSeriesDAO
 		
 		if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
 			reloadTsIdCache();
-		CwmsTsId ret = (CwmsTsId)cache.getByKey(key);
 		
-		if (ret != null)
+		synchronized(cache)
 		{
-			debug3(module + " Received ts_code=" + key + ", id='" + ret.getUniqueString() + "' from cache.");
-			return ret;
-		}
-		else
-		{
-			debug3("Not in cache ts_code=" + key);
-		}
-	
-		String q = cwmsTsidQueryBase
-			+ " WHERE a.TS_CODE = " + key;
-//			+ " AND " + cwmsTsidJoinClause;
-		// Don't need to add DB_OFFICE_ID because TS_CODE is unique.
-		
-		try
-		{
-			long now = System.currentTimeMillis();
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
+			CwmsTsId ret = (CwmsTsId)cache.getByKey(key);
+			
+			if (ret != null)
 			{
-				ret = rs2TsId(rs, true);
-				ret.setReadTime(now);
-				cache.put(ret);
-				
+//				debug3(module + " Received ts_code=" + key + ", id='" + ret.getUniqueString() + "' from cache.");
 				return ret;
 			}
-		}
-		catch(Exception ex)
-		{
-			System.err.println(ex.toString());
-			ex.printStackTrace(System.err);
-			throw new DbIoException(
-				"Error looking up TS Info for TS_CODE=" + key + ": " + ex);
+			else
+			{
+				debug3("Not in cache ts_code=" + key);
+			}
+		
+			String q = cwmsTsidQueryBase
+				+ " WHERE a.TS_CODE = " + key;
+	//			+ " AND " + cwmsTsidJoinClause;
+			// Don't need to add DB_OFFICE_ID because TS_CODE is unique.
+			
+			try
+			{
+				long now = System.currentTimeMillis();
+				ResultSet rs = doQuery(q);
+				if (rs != null && rs.next())
+				{
+					ret = rs2TsId(rs, true);
+					ret.setReadTime(now);
+					cache.put(ret);
+					
+					return ret;
+				}
+			}
+			catch(Exception ex)
+			{
+				System.err.println(ex.toString());
+				ex.printStackTrace(System.err);
+				throw new DbIoException(
+					"Error looking up TS Info for TS_CODE=" + key + ": " + ex);
+			}
 		}
 		throw new NoSuchObjectException("No time-series with ts_code=" + key);
 	}
@@ -304,7 +308,8 @@ debug3("getTimeSeriesIdentifier('" + uniqueString + "')");
 debug3("using display name '" + displayName + "', unique str='" + uniqueString + "'");
 		}
 	
-		TimeSeriesIdentifier ret = cache.getByUniqueName(uniqueString);
+		TimeSeriesIdentifier ret = null;
+		synchronized(cache) { ret = cache.getByUniqueName(uniqueString); }
 		if (ret != null)
 		{
 			if (displayName != null)
@@ -845,6 +850,10 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			PrintStream ps = Logger.instance().getLogOutput();
 			if (ps != null)
 				ex.printStackTrace(ps);
+			else
+				ex.printStackTrace(System.err);
+			if (msg.contains("read from socket") || msg.contains("connection is closed"))
+				throw new DbIoException(msg);
 			// Note: There are so many business rules in CWMS which can
 			// cause the store to fail, so don't throw DBIO.
 //			throw new DbIoException(msg);
@@ -1054,7 +1063,10 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
 			debug1("Deleting TSID '" + tsid.getUniqueString() + "' from office ID=" + dbOfficeId);
 			cwmsDbTs.deleteAll(db.getConnection(), dbOfficeId, tsid.getUniqueString());
-			cache.remove(tsid.getKey());
+			synchronized(cache)
+			{
+				cache.remove(tsid.getKey());
+			}
 			refreshTsView();
 		}
 		catch(Exception ex)
@@ -1086,8 +1098,11 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			reloadTsIdCache();
 		
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
-		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
-			ret.add(tsidit.next());
+		synchronized(cache)
+		{
+			for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
+				ret.add(tsidit.next());
+		}
 		return ret;
 	}
 	
@@ -1122,16 +1137,25 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			ResultSet rs = doQuery(q);
 			setFetchSize(origFetchSize);
 			
+			ArrayList<TimeSeriesIdentifier> tsidList = new ArrayList<TimeSeriesIdentifier>();
+			
 			while (rs != null && rs.next())
 				try
 				{
-					cache.put(rs2TsId(rs, false));
+					tsidList.add(rs2TsId(rs, false));
 				}
 				catch (NoSuchObjectException ex)
 				{
 					warning("Error creating Cwms TSID: " + ex
 						+ " -- " + ex.getLocalizedMessage() + " -- skipped.");
 				}
+			
+			synchronized(cache)
+			{
+				for(TimeSeriesIdentifier tsid: tsidList)
+					cache.put(tsid);
+			}
+			
 			debug1("After fill, cache has " + cache.size() + " TSIDs.");
 		}
 		catch (SQLException ex)
