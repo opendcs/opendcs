@@ -6,9 +6,11 @@ package decodes.decoder;
 import ilex.var.Variable;
 
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 import ilex.util.Logger;
 import ilex.util.PseudoBinary;
+import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 
 /**
@@ -498,165 +500,255 @@ public class NumberParser
 	private Variable parseAtonString(byte[] field)
 			throws FieldParseException
 	{
+Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len=" + field.length);
 		String result = "";
 		int fieldIndex = 0;
 		DecimalFormat dFormat = new DecimalFormat("0.000");
-		//first 10 characters are type and id 
-		for(fieldIndex=0; fieldIndex<11;fieldIndex++)
-		{
-			if(fieldIndex>2)
-				result += (char)field[fieldIndex];
-		}
-		//if(field[charCount]=='-')
-			result += "\n";
-		String strResult = "";
-		for(fieldIndex = 12; fieldIndex < 24; fieldIndex++)
-		{
-			String temp = "";
-			temp += (char)field[fieldIndex];
-			temp += (char)field[++fieldIndex];
-
-			int number = PseudoBinary.decodePB(temp, false);
-			strResult = number+"";
-			if(strResult.length()<2)
-				strResult = "0" + strResult;
-			
-			result += strResult + " ";
-		}
 		
-		for(fieldIndex = 24; fieldIndex < 30; fieldIndex++)
-		{
-			String temp = "";
-			temp += (char)field[fieldIndex];
-			temp += (char)field[++fieldIndex];
-			temp += (char)field[++fieldIndex];
-
-			int number = PseudoBinary.decodePB(temp, false);
-			strResult = number+"";
-			String zeros = "";
-			if(strResult.length()<9)
-				for(int i = strResult.length(); i<8; i++)
-					zeros += "0";
-			strResult = zeros + strResult;
-			if(fieldIndex!=29)
-				result += strResult + " ";
-			else
-				result += strResult;
-		}
+		// ==================================== 
+		// MJM New Header Code:
+		NumberFormat dp1 = NumberFormat.getNumberInstance();
+		dp1.setGroupingUsed(false);
+		dp1.setMinimumFractionDigits(1);
+		NumberFormat dp2 = NumberFormat.getNumberInstance();
+		dp2.setGroupingUsed(false);
+		dp2.setMinimumFractionDigits(2);
+		NumberFormat dp3 = NumberFormat.getNumberInstance();
+		dp3.setGroupingUsed(false);
+		dp3.setMinimumFractionDigits(3);
+		NumberFormat i2 = NumberFormat.getIntegerInstance();
+		i2.setGroupingUsed(false);
+		i2.setMinimumIntegerDigits(2);
+		NumberFormat i8 = NumberFormat.getIntegerInstance();
+		i8.setGroupingUsed(false);
+		i8.setMinimumIntegerDigits(8);
 		
-		for(fieldIndex = 30; fieldIndex < 51; fieldIndex++)
-		{
-			String temp = "";
-			temp += (char)field[fieldIndex];
-			temp += (char)field[++fieldIndex];
-			if(fieldIndex+1==34 || fieldIndex+1==47 || fieldIndex+1==50)
-				temp += (char)field[++fieldIndex];
-			boolean signed = fieldIndex != 36 && fieldIndex != 42 && fieldIndex != 44;
-			int number = PseudoBinary.decodePB(temp, signed);
-			double dnum;
-			
-			if(fieldIndex == 31 || fieldIndex == 34 || fieldIndex == 36 || fieldIndex == 38 || fieldIndex == 40)
-			{
-				dnum = number*0.1;
-				strResult = dFormat.format(dnum);
-Logger.instance().info("fieldIndex=" + fieldIndex + ", strResult=" + strResult);
-				
-				//remove extra digits or fill in with blanks
-				if(fieldIndex==34 && strResult.length()<7)
-				{
-					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;
-				}
-				else if(fieldIndex==34 && strResult.length()>7)
-				{
-					strResult = strResult.substring(0,7);
-				}
-				else if(strResult.length()<7)
-				{
-					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;
-				}
-				else if(strResult.length()>7)
-				{
-					strResult = strResult.substring(0,7);
-				}
-				//remove trailing zeros or decimal point
-				if(strResult.contains("."))
-				{
-					if( strResult.charAt(strResult.length()-1)=='0')
-					{
-						strResult = strResult.replace("0", "");
-						strResult = " " + strResult;
-					}
-					if(strResult.indexOf('.')==(strResult.length()-1))
-					{
-						strResult = strResult.replace(".","");
-						strResult = " " + strResult;
-					}
-				}
-			}
-			else if(fieldIndex == 42)
-			{
-				dnum = number*0.001;
-				strResult = dFormat.format(dnum);
-				//remove extra digits or fill in with blanks
-				if(strResult.length()<8)
-				{
-					strResult = String.format("%"+(8-strResult.length())+"s", "")+strResult;
-				}
-				else if(strResult.length()>8)
-				{
-					strResult = strResult.substring(0,8);
-				}
-			}
-			else if(fieldIndex == 44)
-			{
-				DecimalFormat df = new DecimalFormat("0.00");
-				dnum = number*0.01;
-				strResult = df.format(dnum);
-				
-				//remove extra digits or fill in with blanks
-				if(strResult.length()<7)
-				{
-					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;	
-				}
-				else if(strResult.length()>7)
-				{
-					strResult = strResult.substring(0,6);
-				}
-			}
-			else 
-			{
-				dnum = number;
-				strResult = dnum+"";
-				//remove extra digits or fill in with blanks
-				if(strResult.length()<6)
-				{
-					strResult = String.format("%"+(6-strResult.length())+"s", "")+strResult;
-				}
-				else if(strResult.length()>6)
-				{
-					strResult = strResult.substring(0,6);
-				}
-				//remove trailing zeros or decimal point
-				if(strResult.contains("."))
-				{
-					if( strResult.charAt(strResult.length()-1)=='0')
-					{
-						strResult = strResult.replace("0", "");
-						strResult = " " + strResult;
-					}
-					if(strResult.indexOf('.')==(strResult.length()-1))
-					{
-						strResult = strResult.replace(".","");
-						strResult = " " + strResult;
-					}
-				}
-			}
-Logger.instance().info("Final strResult=" + strResult);
-			result += strResult;// + " ";
-		}
-		result = result + "\n";
+		StringBuilder header = new StringBuilder();
+		for(int idx = 3; idx < 11; idx++)
+			header.append((char)field[idx]);
+		header.append('\n');
+		
+		int x = PseudoBinary.decodePB(new String(field, 12, 2), false); // MM
+		header.append(i2.format(x) + ' ');
+		x = PseudoBinary.decodePB(new String(field, 14, 2), false);     // DD
+		header.append(i2.format(x) + ' ');
+		x = PseudoBinary.decodePB(new String(field, 16, 2), false);     // YYYY
+		header.append(i2.format(x) + ' '); // will always be 4 digits, no need to pad or check
+		x = PseudoBinary.decodePB(new String(field, 18, 2), false);     // HR
+		header.append(i2.format(x) + ' ');
+		x = PseudoBinary.decodePB(new String(field, 20, 2), false);     // MN
+		header.append(i2.format(x) + ' ');
+		x = PseudoBinary.decodePB(new String(field, 22, 2), false);     // SS
+		header.append(i2.format(x) + ' ');
+
+		x = PseudoBinary.decodePB(new String(field, 24, 3), false);     // 8 dig binary #
+		header.append(i8.format(x) + ' ');
+		x = PseudoBinary.decodePB(new String(field, 27, 3), false);     // 8 dig binary #
+		header.append(i8.format(x) + ' ');
+		
+		double d = PseudoBinary.decodePB(new String(field, 30, 2), false) * .1;
+		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
+
+		d = PseudoBinary.decodePB(new String(field, 32, 3), false) * .1;
+		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 6) + ' ');
+
+		d = PseudoBinary.decodePB(new String(field, 35, 2), false) * .1;
+		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
+
+		d = PseudoBinary.decodePB(new String(field, 37, 2), true) * .1;
+		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
+
+		d = PseudoBinary.decodePB(new String(field, 39, 2), true) * .1;
+		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
+		
+		d = PseudoBinary.decodePB(new String(field, 41, 2), false) * .001;
+		header.append(TextUtil.setLengthRightJustify(dp3.format(d), 7) + ' ');
+		
+		d = PseudoBinary.decodePB(new String(field, 43, 2), false) * .01;
+		header.append(TextUtil.setLengthRightJustify(dp2.format(d), 6) + ' ');
+
+		x = PseudoBinary.decodePB(new String(field, 45, 3), false);
+		header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + ' ');
+
+		x = PseudoBinary.decodePB(new String(field, 48, 3), false);
+		header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + '\n');
+
+		Logger.instance().debug1("mike's header '" + header.toString() + "'");
+		result = result + header.toString();
+		// ==================================== 
+
+// Old Inscrutable Sutron Code:
+//		//first 10 characters are type and id 
+//		for(fieldIndex=0; fieldIndex<11;fieldIndex++)
+//		{
+//			if(fieldIndex>2)
+//				result += (char)field[fieldIndex];
+//		}
+//		//if(field[charCount]=='-')
+//			result += "\n";
+//			
+//Logger.instance().debug1("\tafter type & id, result='" + result + "'");
+//		String strResult = "";
+//		for(fieldIndex = 12; fieldIndex < 24; fieldIndex++)
+//		{
+//			String temp = "";
+//			temp += (char)field[fieldIndex];
+//			temp += (char)field[++fieldIndex];
+//
+//			int number = PseudoBinary.decodePB(temp, false);
+//			strResult = number+"";
+//			if(strResult.length()<2)
+//				strResult = "0" + strResult;
+//			
+//			result += strResult + " ";
+//Logger.instance().debug1("aton fld " + fieldIndex + ", num=" + number + ", tostr='" + strResult
+//+ ", total result='" + result + "'");
+//		}
+//		
+//		for(fieldIndex = 24; fieldIndex < 30; fieldIndex++)
+//		{
+//			String temp = "";
+//			temp += (char)field[fieldIndex];
+//			temp += (char)field[++fieldIndex];
+//			temp += (char)field[++fieldIndex];
+//
+//			int number = PseudoBinary.decodePB(temp, false);
+//			strResult = number+"";
+//			String zeros = "";
+//			if(strResult.length()<9)
+//				for(int i = strResult.length(); i<8; i++)
+//					zeros += "0";
+//			strResult = zeros + strResult;
+//			if(fieldIndex!=29)
+//				result += strResult + " ";
+//			else
+//				result += strResult;
+//Logger.instance().debug1("aton fld " + fieldIndex + ", num=" + number + ", tostr='" + strResult
+//		+ ", total result='" + result + "'");
+//		}
+//		
+//		for(fieldIndex = 30; fieldIndex < 51; fieldIndex++)
+//		{
+//			String temp = "";
+//			temp += (char)field[fieldIndex];
+//			temp += (char)field[++fieldIndex];
+//			if(fieldIndex+1==34 || fieldIndex+1==47 || fieldIndex+1==50)
+//				temp += (char)field[++fieldIndex];
+//			boolean signed = fieldIndex != 36 && fieldIndex != 42 && fieldIndex != 44;
+//			int number = PseudoBinary.decodePB(temp, signed);
+//			double dnum;
+//Logger.instance().info("fieldIndex=" + fieldIndex + ", temp='" + temp + "', integer=" + number);
+//			
+//			if(fieldIndex == 31 || fieldIndex == 34 || fieldIndex == 36 || fieldIndex == 38 || fieldIndex == 40)
+//			{
+//				dnum = number*0.1;
+//				String dstr = dp1.format(dnum);
+//				
+////				strResult = dFormat.format(dnum);
+//Logger.instance().info("fieldIndex=" + fieldIndex + ", dstr=" + dstr + ", len=" + strResult.length());
+//
+////				if (fieldIndex == 34)
+////					dstr = TextUtil.setLengthRightJustify(dstr, 7);
+////				else if (fieldIndex == )
+//
+//				//remove extra digits or fill in with blanks
+//				if(fieldIndex==34 && strResult.length()<7)
+//				{
+//					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;
+//Logger.instance().info("   after rm extra digits 1: '" + strResult + "'");
+//				}
+//				else if(fieldIndex==34 && strResult.length()>7)
+//				{
+//					strResult = strResult.substring(0,7);
+//Logger.instance().info("   after rm extra digits 2: '" + strResult + "'");
+//				}
+//				else if(strResult.length()<7)
+//				{
+//					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;
+//				}
+//				else if(strResult.length()>7)
+//				{
+//					strResult = strResult.substring(0,7);
+//				}
+//				//remove trailing zeros or decimal point
+////				if(strResult.contains("."))
+////				{
+////Logger.instance().info("    before rm trail 0 & .: '" + strResult + "'");
+////					while(strResult.endsWith("0"))
+////						strResult = strResult.substring(0, strResult.length() - 1);
+////					strResult = " " + strResult;
+////					
+////					if (strResult.endsWith("."))
+////						strResult = strResult.substring(0, strResult.length() - 1);
+////						
+////Logger.instance().info("     after rm trail 0 & .: '" + strResult + "'");
+////				}
+//			}
+//			else if(fieldIndex == 42)
+//			{
+//				dnum = number*0.001;
+//				strResult = dFormat.format(dnum);
+//				//remove extra digits or fill in with blanks
+//				if(strResult.length()<8)
+//				{
+//					strResult = String.format("%"+(8-strResult.length())+"s", "")+strResult;
+//				}
+//				else if(strResult.length()>8)
+//				{
+//					strResult = strResult.substring(0,8);
+//				}
+//			}
+//			else if(fieldIndex == 44)
+//			{
+//				DecimalFormat df = new DecimalFormat("0.00");
+//				dnum = number*0.01;
+//				strResult = df.format(dnum);
+//				
+//				//remove extra digits or fill in with blanks
+//				if(strResult.length()<7)
+//				{
+//					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;	
+//				}
+//				else if(strResult.length()>7)
+//				{
+//					strResult = strResult.substring(0,6);
+//				}
+//			}
+//			else 
+//			{
+//				dnum = number;
+//				strResult = dnum+"";
+//				//remove extra digits or fill in with blanks
+//				if(strResult.length()<6)
+//				{
+//					strResult = String.format("%"+(6-strResult.length())+"s", "")+strResult;
+//				}
+//				else if(strResult.length()>6)
+//				{
+//					strResult = strResult.substring(0,6);
+//				}
+//				//remove trailing zeros or decimal point
+//				if(strResult.contains("."))
+//				{
+//					if( strResult.charAt(strResult.length()-1)=='0')
+//					{
+//						strResult = strResult.replace("0", "");
+//						strResult = " " + strResult;
+//					}
+//					if(strResult.indexOf('.')==(strResult.length()-1))
+//					{
+//						strResult = strResult.replace(".","");
+//						strResult = " " + strResult;
+//					}
+//				}
+//			}
+//Logger.instance().info("Final strResult=" + strResult);
+//			result += strResult;// + " ";
+//		}
+//		result = result + "\n";
 		
 		//processing data
+		String strResult = "";
 		for(fieldIndex = 52; fieldIndex < field.length-1; fieldIndex++)
 		{
 			for(int i = 0; i < 6; i++)
@@ -920,7 +1012,6 @@ Logger.instance().info("Final strResult=" + strResult);
 		long result = 0;
 		String hexResult = "";
 		String hex = "";
-System.out.println("pb: field.length=" + field.length + " '" + new String(field) + "'");
 		for(int i = 0; i<11;i++)
 		{
 			if(i>2)
@@ -953,7 +1044,6 @@ System.out.println("pb: field.length=" + field.length + " '" + new String(field)
 			hex += hexResult;
 		}
 		String s = hex.toUpperCase();
-System.out.println("pb result:\n" + s);
 		return new Variable(s);
 	}
 	
