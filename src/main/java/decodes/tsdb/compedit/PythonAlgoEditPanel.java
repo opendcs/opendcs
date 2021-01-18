@@ -620,6 +620,7 @@ afterScriptPane.setText("afterScriptPane");
 	/** Called when the parent dialog hits the commit button. */
 	public void saveToObject(DbCompAlgorithm ob)
 	{
+		ob.clearScripts();
 		String text = beforeScriptPane.getText();
 		if (text.length() > 0 && !TextUtil.isAllWhitespace(text))
 		{

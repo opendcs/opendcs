@@ -71,7 +71,7 @@ public class RtStatFrame
 	private JMenuItem fileUserAdmin = new JMenuItem();
 	private JMenuItem fileLrgsConfig = new JMenuItem();
 	private JMenuItem jMenuFileExit = new JMenuItem();
-	private JMenuItem fileOutageMaintenance = new JMenuItem();
+//	private JMenuItem fileOutageMaintenance = new JMenuItem();
 	private JMenuItem fileNetworkLists = new JMenuItem();
 	private JMenu jMenuHelp = new JMenu();
 	private JMenuItem jMenuHelpAbout = new JMenuItem();
@@ -275,16 +275,16 @@ public class RtStatFrame
 					}
 				});
 	
-			fileOutageMaintenance.setText(
-					labels.getString("RtStatFrame.outages"));
-			fileOutageMaintenance.addActionListener(
-				new java.awt.event.ActionListener()
-				{
-		    		public void actionPerformed(ActionEvent e)
-		    		{
-						fileOutageMaintenance_actionPerformed();
-					}
-				});
+//			fileOutageMaintenance.setText(
+//					labels.getString("RtStatFrame.outages"));
+//			fileOutageMaintenance.addActionListener(
+//				new java.awt.event.ActionListener()
+//				{
+//		    		public void actionPerformed(ActionEvent e)
+//		    		{
+//						fileOutageMaintenance_actionPerformed();
+//					}
+//				});
 			fileNetworkLists.setText(
 					labels.getString("RtStatFrame.networkLists"));
 			fileNetworkLists.addActionListener(
@@ -367,7 +367,7 @@ public class RtStatFrame
 		if (canConfig)
 		{
 			jMenuFile.add(fileLrgsConfig);
-			jMenuFile.add(fileOutageMaintenance);
+//			jMenuFile.add(fileOutageMaintenance);
 			jMenuFile.add(fileNetworkLists);
 		}
 		jMenuFile.addSeparator();
@@ -1345,7 +1345,7 @@ public class RtStatFrame
 
 	private void fileNetworkLists_actionPerformed()
 	{
-		if (!client.isAuthenticated())
+		if (client == null || !client.isAuthenticated())
 		{
 			showError(labels.getString(
 				"RtStatFrame.loginAsAdminErr"));

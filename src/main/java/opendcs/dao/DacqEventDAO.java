@@ -22,11 +22,28 @@ public class DacqEventDAO
 	public static final String columnsBase = "DACQ_EVENT_ID, SCHEDULE_ENTRY_STATUS_ID, PLATFORM_ID, EVENT_TIME, "
 		+ "EVENT_PRIORITY, SUBSYSTEM, MSG_RECV_TIME, EVENT_TEXT";
 	public static String columns = columnsBase;
+	private boolean hasAppId = false;
+	
 
 	public DacqEventDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, module);
-		if (tsdb.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+		String q = "select max(LOADING_APPLICATION_ID) from DACQ_EVENT";
+		hasAppId = tsdb.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15;
+		if (hasAppId)
+		{
+			try
+			{
+				doQuery(q);
+			}
+			catch (Exception ex)
+			{
+				warning(module 
+					+ " DB Version is > 15 but DACQ_EVENT does not have LOADING_APPLICATION_ID: " + ex);
+				hasAppId = false;
+			}
+		}
+		if (hasAppId)
 			columns = columnsBase + ", LOADING_APPLICATION_ID";
 	}
 
@@ -52,7 +69,7 @@ public class DacqEventDAO
 			+ sqlString(evt.getSubsystem()) + ", "
 			+ db.sqlDate(evt.getMsgRecvTime()) + ", "
 			+ sqlString(txt);
-		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+		if (hasAppId)
 			q = q + ", " + evt.getAppId();
 		
 		q = q + ")";
@@ -147,7 +164,7 @@ public class DacqEventDAO
 		evt.setSubsystem(rs.getString(6));
 		evt.setMsgRecvTime(db.getFullDate(rs, 7));
 		evt.setEventText(rs.getString(8));
-		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+		if (hasAppId)
 			evt.setAppId(DbKey.createDbKey(rs, 9));
 
 		return evt;
