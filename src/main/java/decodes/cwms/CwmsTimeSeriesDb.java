@@ -688,6 +688,7 @@ import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.DbObjectCache;
 import lrgs.gui.DecodesInterface;
 
 import java.sql.PreparedStatement;
@@ -821,8 +822,24 @@ public class CwmsTimeSeriesDb
 Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			for(StringPair op : officePrivileges)
 			{
+				if (op == null)
+				{
+					Logger.instance().warning("Skipping null privilege string pair!");
+					continue;
+				}
+				if (op.first == null)
+				{
+					Logger.instance().warning("Skipping null op.first privilege string pair!");
+					continue;
+				}
+				if (op.second == null)
+				{
+					Logger.instance().warning("Skipping null op.first privilege string pair!");
+					continue;
+				}
+				Logger.instance().debug3("Privilege: " + op.first + ":" + op.second);
+				
 				String priv = op.second.toLowerCase();
-Logger.instance().debug3("Privilege: " + op);
 				if (TextUtil.strEqualIgnoreCase(op.first, dbOfficeId) && priv.startsWith("ccp"))
 				{
 					if (priv.contains("mgr"))
@@ -1370,23 +1387,27 @@ Logger.instance().debug3("Privilege: " + op);
 				{
 					// msg handler will send this when he gets
 					// TsCodeChanged. It tells me to update my cache.
-						TimeSeriesIdentifier tsid = timeSeriesDAO.getCache().getByKey(sdi);
+					DbObjectCache<TimeSeriesIdentifier> cache = timeSeriesDAO.getCache();
+					synchronized(cache)
+					{
+						TimeSeriesIdentifier tsid = cache.getByKey(sdi);
 						if (tsid != null)
 						{
 							DbKey newCode = DbKey.createDbKey(rs, 9);
-							timeSeriesDAO.getCache().remove(sdi);
+							cache.remove(sdi);
 							tsid.setKey(newCode);
-							timeSeriesDAO.getCache().put(tsid);
+							cache.put(tsid);
 							continue;
 						}
 					}
-					else 
-						deleted = TextUtil.str2boolean(df);
-						
-					String unitsAbbr = rs.getString(6);
-					Date versionDate = getFullDate(rs, 7);
-					BigDecimal qc = rs.getBigDecimal(8);
-					long qualityCode = qc == null ? 0 : qc.longValue();
+				}
+				else 
+					deleted = TextUtil.str2boolean(df);
+					
+				String unitsAbbr = rs.getString(6);
+				Date versionDate = getFullDate(rs, 7);
+				BigDecimal qc = rs.getBigDecimal(8);
+				long qualityCode = qc == null ? 0 : qc.longValue();
 				
 				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
 					valueWasNull, timeStamp, deleted,
