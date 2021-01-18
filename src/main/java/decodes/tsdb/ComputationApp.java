@@ -124,6 +124,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import opendcs.dao.DbObjectCache;
 import opendcs.opentsdb.Interval;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
@@ -1032,8 +1033,14 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 				Logger.instance().debug3("group tsid=" + tmpTsid.getUniqueString());
 				theDb.transformUniqueString(tmpTsid, parm);
 				Logger.instance().debug3("After transform, param TSID='" + tmpTsid.getUniqueString() + "'");
-				TimeSeriesIdentifier parmTsid = 
-					timeSeriesDAO.getCache().getByUniqueName(tmpTsid.getUniqueString());
+
+				DbObjectCache<TimeSeriesIdentifier> cache = timeSeriesDAO.getCache();
+				TimeSeriesIdentifier parmTsid = null;
+				synchronized(cache)
+				{
+					parmTsid =	cache.getByUniqueName(tmpTsid.getUniqueString());
+				}
+
 				MissingAction ma = MissingAction.fromString(tc.getProperty(parm.getRoleName() + "_MISSING"));
 				// If the transformed TSID exists in the DB, I can execute.
 				if (parmTsid != null)  // Transformed TSID exists in the database
