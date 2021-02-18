@@ -119,7 +119,6 @@ public class RecordedTimeStamp
 	*/
 	public void setTimeZoneName(String tzName)
 	{
-Logger.instance().info("settimeZoneName(" + tzName + ")");
 		String tzs = tzName.trim();
 		if ( tzs.matches("GMT[+-].*[MAYN]$") ) {
 			tzs = tzs.substring(0,tzs.length()-1);
