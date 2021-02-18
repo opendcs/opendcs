@@ -25,7 +25,7 @@ public class DuplicateIo
 {
 	private static String module = "DuplicateIo";
 
-	private String mergeDirName = "$DECODES_INSTALL_DIR/dcptoimport";
+	private String mergeDirName = "$DCSTOOL_USERDIR/dcptoimport";
 	private File mergeDir;
 	private String distFileName = "controlling-districts.txt";
 	private File distFile;
