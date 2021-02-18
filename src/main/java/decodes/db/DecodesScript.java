@@ -14,6 +14,7 @@ import decodes.decoder.SwitchFormatException;
 import decodes.decoder.EndlessLoopException;
 import decodes.util.DecodesSettings;
 import ilex.util.Logger;
+import ilex.var.Variable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -73,6 +74,8 @@ public class DecodesScript extends IdDatabaseObject
 	 * to signify a missing value. Example Campbell CX3000 sometimes uses 6998.
 	 */
 	private HashSet<String> missingSymbols = new HashSet<String>();
+	
+	private ArrayList<String> includePMs = null;
 	
 	/**
 	 * Constructor
@@ -269,7 +272,6 @@ public class DecodesScript extends IdDatabaseObject
 	public void prepareForExec()
 		throws IncompleteDatabaseException, InvalidDatabaseException
 	{
-		
 		for(Iterator<ScriptSensor> it = scriptSensors.iterator(); it.hasNext(); )
 		{
 			ScriptSensor ss = it.next();
@@ -436,6 +438,13 @@ public class DecodesScript extends IdDatabaseObject
 			}
 			// All other decoding exception will cause failure.
 		}
+
+		// Added for HDB 934. Routing spec can define property 'includePMs' to cause
+		// performance measurements to be set as sensors. Do it here so that the sensor
+		// interval and offset can be used for proper timing.
+		if (includePMs != null && includePMs.size() > 0)
+			addPMs(decmsg);
+
 		decmsg.finishMessage();
 		decmsg.applyInitialEuConversions();
 		return decmsg;
@@ -488,4 +497,57 @@ public class DecodesScript extends IdDatabaseObject
 //else Logger.instance().debug3("   doesn't equal '" + s + "'");
 //		return false;
 	}
+
+	public void setIncludePMs(ArrayList<String> includePMs)
+	{
+		this.includePMs = includePMs;
+		if (includePMs != null && includePMs.size() == 0)
+			this.includePMs = null;
+if (this.includePMs != null) Logger.instance().debug1("setIncludePMs: includePMs has " 
++ includePMs.size() + " strings. [0]=" + includePMs.get(0));
+	}
+	
+	/**
+	 * Add the PMs as sensor values.
+	 */
+	private void addPMs(DecodedMessage decodedMessage)
+	{
+		RawMessage rm = decodedMessage.getRawMessage();
+		if (rm == null)
+			return;
+		Platform p = null;
+		try { p = rm.getPlatform(); }
+		catch(UnknownPlatformException ex) { return; }
+		if (p == null)
+			return;
+		PlatformConfig pc = p.getConfig();
+		if (pc == null)
+			return;
+	  nextPM:
+		for(String pmname : includePMs)
+		{
+Logger.instance().debug1("addPMs looking for '" + pmname + "'");
+			Variable v = rm.getPM(pmname);
+			if (v == null)
+			{
+				Logger.instance().info(
+					"addPMs: Message for '" + new String(rm.getHeader()) 
+					+ "' does not have requested performance measurement '" + pmname + "' -- ignored.");
+				continue;
+			}
+			for (ConfigSensor cs : pc.getSensorVec())
+			{
+				if (cs.sensorName.equalsIgnoreCase(pmname))
+				{
+					decodedMessage.addSample(cs.sensorNumber, v, 0);
+Logger.instance().debug1("addPM: added pm '" + pmname + "' to sensor " + cs.sensorNumber + " with value '" + v.toString() + "'");
+					continue nextPM;
+				}
+			}
+			// Fell through, no matching sensor:
+			Logger.instance().info("addPMs: The platform config for '" + new String(rm.getHeader()) 
+				+ "' does not have a sensor named '" + pmname + "' -- discarded.");
+		}
+	}
+
 }
