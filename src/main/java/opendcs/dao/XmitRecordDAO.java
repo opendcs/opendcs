@@ -282,7 +282,10 @@ public class XmitRecordDAO
 		for(XmitDayMapEntry xdme : dayNumSuffixMap)
 			if (xdme.dayNum != -1 && today - xdme.dayNum > numDaysStorage)
 			{
-				String suffix = getDcpXmitSuffix(xdme.dayNum, false);
+//				String suffix = getDcpXmitSuffix(xdme.dayNum, false);
+				// MJM 20210213 fix concurrent modification exception.
+				// No need to search the map for the suffix, I have it in my hand.
+				String suffix = xdme.suffix;
 				info("Clearing data for day number " + xdme.dayNum + ", suffix=" + suffix);
 				clearTable(suffix);
 			}
