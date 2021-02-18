@@ -20,6 +20,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 
@@ -27,6 +28,8 @@ import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
 import decodes.gui.*;
 import decodes.db.PlatformConfig;
+import decodes.datasource.GoesPMParser;
+import decodes.datasource.IridiumPMParser;
 import decodes.db.ConfigSensor;
 import decodes.db.ScriptSensor;
 import decodes.db.EquipmentModel;
@@ -829,6 +832,17 @@ public class ConfigEditPanel extends DbEditorTab
 		return null;
 	}
 	
+	private ConfigSensor findSensorByName(String sensorName)
+	{
+		for(Iterator<ConfigSensor> csit = theConfig.getSensors(); csit.hasNext();)
+		{
+			ConfigSensor cs = csit.next();
+			if (cs.sensorName.equalsIgnoreCase(sensorName))
+				return cs;
+		}
+		return null;
+	}
+
 	/**
 	  Called when the Add Performance Measurements button is pressed.
 	  Adds the canned GOES DCP parameters used by USGS.
@@ -836,121 +850,206 @@ public class ConfigEditPanel extends DbEditorTab
 	*/
     void addDcpPmsButton_actionPerformed(ActionEvent e)
 	{
+    	PMSelectDialog dlg = new PMSelectDialog(parent);
+    	parent.launchDialog(dlg);
+    	if (dlg.isCancelled())
+    		return;
+    	ArrayList<String> pmNames = dlg.getResults();
     	int sensorNum = configSensorTableModel.highestSensorNumber() + 1;
-    	if (sensorNum < 101)
-    		sensorNum = 101;
-		ConfigSensor cs = findSensorByCode("72114");
-		if (cs == null)
-		{
-			cs = new ConfigSensor(theConfig, sensorNum++);
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_EPA, "72114"));
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_USGS, "72114"));
-			cs.sensorName = "EIRP(DBM)";
+    	for(String n : pmNames)
+    	{
+    		ConfigSensor cs = this.findSensorByName(n);
+    		if (cs != null)
+    		{
+    			parent.showError("There is already a sensor named '" + n + "' -- cannot add.");
+    			continue;
+    		}
+    		
+    		cs = new ConfigSensor(theConfig, sensorNum++);
+    		cs.sensorName = n;
 			cs.recordingMode = Constants.recordingModeVariable;
-			cs.getProperties().setProperty("StatisticsCode", "00011");
-			theConfig.addSensor(cs);
-		}
-
-		cs = findSensorByCode("72113");
-		if (cs == null)
-		{
-			cs = new ConfigSensor(theConfig, sensorNum++);
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_EPA, "72113"));
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_USGS, "72113"));
-			cs.sensorName = "MOD(db)";
-			cs.recordingMode = Constants.recordingModeVariable;
-			cs.getProperties().setProperty("StatisticsCode", "00011");
-			theConfig.addSensor(cs);
-		}
-
-		cs = findSensorByCode("72115");
-		if (cs == null)
-		{
-			cs = new ConfigSensor(theConfig, sensorNum++);
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_EPA, "72115"));
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_USGS, "72115"));
-			cs.sensorName = "FREQ(hz)";
-			cs.recordingMode = Constants.recordingModeVariable;
-			cs.getProperties().setProperty("StatisticsCode", "00011");
-			theConfig.addSensor(cs);
-		}
-
-		cs = findSensorByCode("72112");
-		if (cs == null)
-		{
-			cs = new ConfigSensor(theConfig, sensorNum++);
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_EPA, "72112"));
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_USGS, "72112"));
-			cs.sensorName = "(S+N)/N";
-			cs.recordingMode = Constants.recordingModeVariable;
-			cs.getProperties().setProperty("StatisticsCode", "00011");
-			theConfig.addSensor(cs);
-		}
-
-		cs = findSensorByCode("72111");
-		if (cs == null)
-		{
-			cs = new ConfigSensor(theConfig, sensorNum++);
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_EPA, "72111"));
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_USGS, "72111"));
-			cs.sensorName = "ER #";
-			cs.recordingMode = Constants.recordingModeVariable;
-			cs.getProperties().setProperty("StatisticsCode", "00011");
-			theConfig.addSensor(cs);
-		}
-
-		cs = findSensorByCode("68229");
-		if (cs == null)
-		{
-			cs = new ConfigSensor(theConfig, sensorNum++);
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_EPA, "68229"));
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_USGS, "68229"));
-			cs.sensorName = "SOURCE";
-			cs.recordingMode = Constants.recordingModeVariable;
-			cs.getProperties().setProperty("StatisticsCode", "00011");
-			theConfig.addSensor(cs);
-		}
-
-		cs = findSensorByCode("72117");
-		if (cs == null)
-		{
-			cs = new ConfigSensor(theConfig, sensorNum++);
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_EPA, "72117"));
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_USGS, "72117"));
-			cs.sensorName = "TIME OFF";
-			cs.recordingMode = Constants.recordingModeVariable;
-			cs.getProperties().setProperty("StatisticsCode", "00011");
-			theConfig.addSensor(cs);
-		}
-
-		cs = findSensorByCode("72116");
-		if (cs == null)
-		{
-			cs = new ConfigSensor(theConfig, sensorNum++);
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_EPA, "72116"));
-			cs.addDataType(
-				DataType.getDataType(Constants.datatype_USGS, "72116"));
-			cs.sensorName = "BAD CHRS";
-			cs.recordingMode = Constants.recordingModeVariable;
-			cs.getProperties().setProperty("StatisticsCode", "00011");
-			theConfig.addSensor(cs);
-		}
-	
+    		if (n.equalsIgnoreCase(GoesPMParser.DCP_ADDRESS))
+    		{
+        		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-DCPAddress"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YA"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.MESSAGE_LENGTH))
+    		{
+           		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Langth-Message"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YL"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.SIGNAL_STRENGTH))
+    		{
+           		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Power-Signal"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YS"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.FAILURE_CODE))
+    		{
+           		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Failure"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YF"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.FREQ_OFFSET))
+    		{
+           		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Freq-Offset"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YO"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.MOD_INDEX))
+    		{
+           		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Ratio-ModIndex"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YI"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.CHANNEL))
+    		{
+        		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Channel"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YC"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.SPACECRAFT))
+    		{
+        		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Spacecraft"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YP"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.BAUD))
+    		{
+           		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Freq-Baud"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YB"));
+    		}
+    		else if (n.equalsIgnoreCase(GoesPMParser.DCP_MSG_FLAGS))
+    		{
+        		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Binary-Flags"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YG"));
+    		}
+    		else if (n.equalsIgnoreCase(IridiumPMParser.LATITUDE))
+    		{
+        		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-Latitude"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YA"));
+    		}
+    		else if (n.equalsIgnoreCase(IridiumPMParser.LONGITUDE))
+    		{
+        		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-Longitude"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YO"));
+    		}
+    		else if (n.equalsIgnoreCase(IridiumPMParser.CEP_RADIUS))
+    		{
+        		cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-CEPRadius"));
+        		cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YR"));
+    		}
+    		theConfig.addSensor(cs);
+    	}
+    	
+//    	int sensorNum = configSensorTableModel.highestSensorNumber() + 1;
+//    	if (sensorNum < 101)
+//    		sensorNum = 101;
+//		ConfigSensor cs = findSensorByCode("72114");
+//		if (cs == null)
+//		{
+//			cs = new ConfigSensor(theConfig, sensorNum++);
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_EPA, "72114"));
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_USGS, "72114"));
+//			cs.sensorName = "EIRP(DBM)";
+//			cs.recordingMode = Constants.recordingModeVariable;
+//			cs.getProperties().setProperty("StatisticsCode", "00011");
+//			theConfig.addSensor(cs);
+//		}
+//
+//		cs = findSensorByCode("72113");
+//		if (cs == null)
+//		{
+//			cs = new ConfigSensor(theConfig, sensorNum++);
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_EPA, "72113"));
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_USGS, "72113"));
+//			cs.sensorName = "MOD(db)";
+//			cs.recordingMode = Constants.recordingModeVariable;
+//			cs.getProperties().setProperty("StatisticsCode", "00011");
+//			theConfig.addSensor(cs);
+//		}
+//
+//		cs = findSensorByCode("72115");
+//		if (cs == null)
+//		{
+//			cs = new ConfigSensor(theConfig, sensorNum++);
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_EPA, "72115"));
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_USGS, "72115"));
+//			cs.sensorName = "FREQ(hz)";
+//			cs.recordingMode = Constants.recordingModeVariable;
+//			cs.getProperties().setProperty("StatisticsCode", "00011");
+//			theConfig.addSensor(cs);
+//		}
+//
+//		cs = findSensorByCode("72112");
+//		if (cs == null)
+//		{
+//			cs = new ConfigSensor(theConfig, sensorNum++);
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_EPA, "72112"));
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_USGS, "72112"));
+//			cs.sensorName = "(S+N)/N";
+//			cs.recordingMode = Constants.recordingModeVariable;
+//			cs.getProperties().setProperty("StatisticsCode", "00011");
+//			theConfig.addSensor(cs);
+//		}
+//
+//		cs = findSensorByCode("72111");
+//		if (cs == null)
+//		{
+//			cs = new ConfigSensor(theConfig, sensorNum++);
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_EPA, "72111"));
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_USGS, "72111"));
+//			cs.sensorName = "ER #";
+//			cs.recordingMode = Constants.recordingModeVariable;
+//			cs.getProperties().setProperty("StatisticsCode", "00011");
+//			theConfig.addSensor(cs);
+//		}
+//
+//		cs = findSensorByCode("68229");
+//		if (cs == null)
+//		{
+//			cs = new ConfigSensor(theConfig, sensorNum++);
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_EPA, "68229"));
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_USGS, "68229"));
+//			cs.sensorName = "SOURCE";
+//			cs.recordingMode = Constants.recordingModeVariable;
+//			cs.getProperties().setProperty("StatisticsCode", "00011");
+//			theConfig.addSensor(cs);
+//		}
+//
+//		cs = findSensorByCode("72117");
+//		if (cs == null)
+//		{
+//			cs = new ConfigSensor(theConfig, sensorNum++);
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_EPA, "72117"));
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_USGS, "72117"));
+//			cs.sensorName = "TIME OFF";
+//			cs.recordingMode = Constants.recordingModeVariable;
+//			cs.getProperties().setProperty("StatisticsCode", "00011");
+//			theConfig.addSensor(cs);
+//		}
+//
+//		cs = findSensorByCode("72116");
+//		if (cs == null)
+//		{
+//			cs = new ConfigSensor(theConfig, sensorNum++);
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_EPA, "72116"));
+//			cs.addDataType(
+//				DataType.getDataType(Constants.datatype_USGS, "72116"));
+//			cs.sensorName = "BAD CHRS";
+//			cs.recordingMode = Constants.recordingModeVariable;
+//			cs.getProperties().setProperty("StatisticsCode", "00011");
+//			theConfig.addSensor(cs);
+//		}
 		validateDecodingScriptSensors();
 		configSensorTableModel.fireTableDataChanged();
     }
