@@ -115,15 +115,21 @@ done
 echo "Creating schema as user $DBUSER (you will be prompted for password) ..."
 psql -U $DBUSER -h $DBHOST -d $DBNAME -f combined.sql >>$LOG 2>&1
 
+EDITDB=$DH/edit-db
+if [ ! -d "$EDITDB" ]
+then
+	EDITDB=$DH/edit-db.init
+fi
+
 echo "Importing Enumerations from edit-db ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/enum/*.xml >>$LOG 2>&1
+$DH/bin/dbimport -l $LOG -r $EDITDB/enum/*.xml >>$LOG 2>&1
 echo "Importing Standard Engineering Units and Conversions from edit-db ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/eu/EngineeringUnitList.xml >>$LOG 2>&1
+$DH/bin/dbimport -l $LOG -r $EDITDB/eu/EngineeringUnitList.xml >>$LOG 2>&1
 echo "Importing Standard Data Types from edit-db ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/datatype/DataTypeEquivalenceList.xml >>$LOG 2>&1
+$DH/bin/dbimport -l $LOG -r $EDITDB/datatype/DataTypeEquivalenceList.xml >>$LOG 2>&1
 echo "Importing Presentation Groups ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/presentation/*.xml >>$LOG 2>&1
+$DH/bin/dbimport -l $LOG -r $EDITDB/presentation/*.xml >>$LOG 2>&1
 echo "Importing standard computation apps and algorithms ..."
-$DH/bin/compimport -l $LOG $DH/imports/comp-standard/*.xml >>$LOG 2>&1
+$DH/bin/compimport -l $LOG $EDITDB/comp-standard/*.xml >>$LOG 2>&1
 echo "Importing DECODES loading apps ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/loading-app/*.xml >>$LOG 2>&1
+$DH/bin/dbimport -l $LOG -r $EDITDB/loading-app/*.xml >>$LOG 2>&1
