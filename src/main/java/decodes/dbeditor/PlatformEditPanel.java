@@ -521,9 +521,9 @@ ConfigSelectController
 		if (inDbEdit)
 			jPanel3.add(isProductionCheck, new GridBagConstraints(0, 2, 2, 1, 0.0, 0.0
 					,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(3, 0, 5, 0), 0, 0));
-		if (inDbEdit)
+		if (inDbEdit && DecodesSettings.instance().showHistoricalVersions)
 			jPanel3.add(makeHistVersionButton, new GridBagConstraints(0, 3, 2, 1, 0.0, 0.0
-					,GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 11, 4, 13), 0, 0));
+				,GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 11, 4, 13), 0, 0));
 		jPanel1.add(jPanel4, new GridBagConstraints(0, 1, 2, 1, 1.0, 1.5
 				,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 0, 0));
 		jPanel4.add(jScrollPane1, BorderLayout.CENTER);
@@ -791,6 +791,32 @@ ConfigSelectController
 	 */
 	public boolean saveChanges()
 	{
+		// MJM 20210217 make sure TM doesn't match an existing non-expired platform.
+		if (thePlatform.expiration == null)
+			for(Iterator<TransportMedium> tmit = thePlatform.getTransportMedia(); tmit.hasNext(); )
+			{
+				TransportMedium tm = tmit.next();
+				String tmType = tm.getMediumType();
+				String tmId = tm.getMediumId();
+				for (Platform p : Database.getDb().platformList.getPlatformVector())
+				{
+					TransportMedium existingTM = p.getTransportMedium(tmType);
+					
+					if (existingTM != null && TextUtil.strEqualIgnoreCase(tmId, existingTM.getMediumId())
+					 && p != origPlatform 
+					 && p.expiration == null)
+					{
+						// This TM matches an existing different platform, and neither this nor
+						// the other platform are historical versions.
+						String m = "Cannot save this platform with transport medium '"
+							+ tmType + ":" + tmId + "' because it matches existing platform "
+							+ p.makeFileName() + ".";
+						parent.showError(m);
+						return false;
+					}
+				}
+			}
+		
 		getDataFromFields();
 
 		// Write the changes out to the database.
