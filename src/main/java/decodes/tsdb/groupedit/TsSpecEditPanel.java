@@ -741,7 +741,7 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 //System.out.println("cm1");
 		if (!TextUtil.strEqual(orig.getDescription(), tmp.getDescription()))
 			return true;
-//System.out.println("cm2");
+//System.out.println("cm2 orig '" + orig.getUniqueString() + "' tmp '" + tmp.getUniqueString() + "'");
 		
 		// This will get all 6 of the TSID fields:
 		if (!TextUtil.strEqual(orig.getUniqueString(), tmp.getUniqueString()))
@@ -1003,7 +1003,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		{
 			boolean found = false;
 			for(int idx = 0; idx < versions.size(); idx++)
-				if (s.equalsIgnoreCase(versions.get(idx)))
+				if (s.equals(versions.get(idx)))
 				{
 					versionCombo.setSelectedIndex(idx);
 					found = true;
