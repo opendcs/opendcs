@@ -114,37 +114,66 @@ public class LrgsMonCmdLineArgs
 	public void parseArgs(String args[])
 	{
 		super.parseArgs(args);
-		//New Code
-		//Load the decodes.properties - this is used ONLY for 
-		//internationalization
-		String propFile;
-		propFile = super.getPropertiesFile();
-		// Get DECODES_INSTALL_DIR from system properties & look there.
-		String installDir = System.getProperty("DECODES_INSTALL_DIR");
-		if (installDir != null)
+		
+		// MJM 20210213 new location for prop file
+		String propFile = super.getPropertiesFile(); // -P cmd line arg
+		FileInputStream fis = null;
+		if (propFile != null)
 		{
-			propFile = 
-				installDir + File.separator + "decodes.properties";
+			try { fis = new FileInputStream(propFile); }
+			catch(Exception ex)
+			{
+				Logger.instance().warning("Cannot find specified DECODES properties file '"
+					+ propFile + "': " + ex);
+				fis = null;
+			}
 		}
-		DecodesSettings settings = DecodesSettings.instance();
-		if (!settings.isLoaded())
+		if (fis == null)
 		{
-			Properties props = new Properties();
-			try
+			propFile = EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
+			try { fis = new FileInputStream(propFile); }
+			catch(Exception ex)
 			{
-				FileInputStream fis = new FileInputStream(propFile);
-				props.load(fis);
-				fis.close();
+				Logger.instance().warning("Cannot find user DECODES properties file '"
+					+ propFile + "': " + ex);
+				fis = null;
 			}
-			catch(IOException e)
-			{
-				Logger.instance().log(Logger.E_WARNING,
-				"LrgsMonCmdLineArgs:parseArgs " +
-				"Cannot open DECODES Properties File '"+propFile+"': "+e);
-			}
-			settings.loadFromProperties(props);
 		}
-		//End new code
+		if (fis == null)
+		{
+			propFile = EnvExpander.expand("$DCSTOOL_HOME/decodes.properties");
+			try { fis = new FileInputStream(propFile); }
+			catch(Exception ex)
+			{
+				Logger.instance().warning("Cannot find default DECODES properties file '"
+					+ propFile + "': " + ex);
+				fis = null;
+			}
+		}
+		if (fis != null)
+		{
+			Logger.instance().info("Loading DECODES properties from '" + propFile + "'");
+			DecodesSettings settings = DecodesSettings.instance();
+			if (!settings.isLoaded())
+			{
+				Properties props = new Properties();
+				try
+				{
+					props.load(fis);
+				}
+				catch(IOException e)
+				{
+					Logger.instance().warning(
+						"LrgsMonCmdLineArgs:parseArgs " +
+						"Cannot open DECODES Properties File '"+propFile+"': "+e);
+				}
+				finally
+				{
+					try { fis.close(); } catch(Exception ex) {}
+				}
+				settings.loadFromProperties(props);
+			}
+		}
 		
 		// If log-file specified, open it.
 		String fn = getLogFile();

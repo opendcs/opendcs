@@ -55,7 +55,8 @@ public class OpenTsdbIntervalDAO
 			{
 				Logger.instance().debug1("After loading intervals, there is no '0' interval. Will add.");
 				zeroInt = new Interval(DbKey.NullKey, "0", Calendar.MINUTE, 0);
-				writeInterval(zeroInt);
+				if (db.getKeyGenerator() != null)
+					writeInterval(zeroInt);
 				// note: writeInterval will add to the list.
 			}
 			else

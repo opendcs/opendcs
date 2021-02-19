@@ -167,6 +167,8 @@ public class RoutingSpecThread
 	
 	CompAppInfo rsProcRecord = null;
 	
+	private ArrayList<String> includePMs = null;
+	
 	/**
 	 * Constructs an empty, uninitialized RoutingSpecThread.
 	 */
@@ -556,8 +558,6 @@ public class RoutingSpecThread
 				try
 				{
 					dm = new DecodedMessage(rm, false);
-					if (rs.usePerformanceMeasurements)
-						addPerformanceMeasurementSensors(dm);
 				}
 				catch(Exception ex)
 				{
@@ -707,10 +707,9 @@ public class RoutingSpecThread
 					}
 				}
 			}
-
+			
+			ds.setIncludePMs(includePMs);
 			DecodedMessage dm = ds.decodeMessage(rm);
-			if (rs.usePerformanceMeasurements)
-				addPerformanceMeasurementSensors(dm);
 
 			dm.applyScaleAndOffset();
 
@@ -827,13 +826,6 @@ public class RoutingSpecThread
 		}		
 	}
 
-	/**
-	 * Stub method. TODO: add the PMs as sensor values.
-	 */
-	protected void addPerformanceMeasurementSensors(
-		DecodedMessage decodedMessage)
-	{
-	}
 
 	protected void closeResources()
 	{
@@ -1125,6 +1117,18 @@ public class RoutingSpecThread
 
 		s = rs.getProperty("updatePlatformStatus");
 		updatePlatformStatus = s == null || s.trim().length() == 0 ? true : TextUtil.str2boolean(s);
+		
+		s = rs.getProperty("includePMs");
+		if (s == null || s.trim().length() == 0)
+			includePMs = null;
+		else
+		{
+			includePMs = new ArrayList<String>();
+			StringTokenizer st = new StringTokenizer(s, ", ");
+			while(st.hasMoreTokens())
+				includePMs.add(st.nextToken());
+log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names parsed.");
+		}
 	}
 
  	/**

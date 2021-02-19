@@ -43,7 +43,7 @@ public class GenerateToimportNL
 	{
 		this.xmlFileStr = xmlFileStr;
 		this.propFile = propFile;
-		dupIo = new DuplicateIo("$DECODES_INSTALL_DIR/dcptoimport",
+		dupIo = new DuplicateIo("$DCSTOOL_USERDIR/dcptoimport",
 			"controlling-districts.txt");
 		createToImportNl(this.xmlFileStr);
 	}
