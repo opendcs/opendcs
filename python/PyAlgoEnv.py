@@ -59,6 +59,9 @@ def isGoodQuality(rolename):
 def runningAverage(rolename, duration, boundaries = '(]'):
 	return algo.runningAverage(rolename, duration, boundaries)
 
+def getAggregateCount():
+	return algo.getAggregateCount()
+
 def datchk(rolename):
 	globals()[rolename].qual = algo.datchk(rolename)
 

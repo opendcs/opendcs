@@ -121,6 +121,10 @@
   This function will throw NoValueException if there are no rolename values within
   the specified duration.
 </func>
+<func name="getAggregateCount" sig="getAggregateCount()">
+  After calling an aggregate function like runningAverage, this method may be called
+  to return the number of values actually included in the aggregate.
+</func>
 <func name="changeSince" sig="changeSince(rolename, duration)">
   Return the change in the specified parameter compared to the historical value at
   the specified duration. Example: changeSince('storage', '6Hours') will return the change

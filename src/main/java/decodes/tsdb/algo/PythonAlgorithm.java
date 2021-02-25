@@ -195,6 +195,7 @@ public class PythonAlgorithm
 	private NumberFormat pyNumFmt = NumberFormat.getNumberInstance();
 	private double missingValue = -9000000000000.;
 	private double missingLimit = -8999999999900.;
+	private int aggregateCount = 0;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -882,6 +883,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 					
 				}
 			}
+			aggregateCount = (int)count;
 			if (count == 0)
 				return 0.0;
 			else
@@ -900,6 +902,8 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			timeSeriesDAO.close();
 		}
 	}
+	
+	public int getAggregateCount() { return aggregateCount; }
 	
 	/**
 	 * Perform the CWMS DATCHK functions on the named variable.
