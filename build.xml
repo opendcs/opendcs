@@ -42,7 +42,7 @@ can find your git source tree and your directory with the downloaded jars.
 	<property name="project.dir" value="${home.dir}/git/opendcs"/>
 	<property name="thirdpartyjar.dir" value="dep"/>
 	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
-	<property name="izpack.dir" value="${workspace.dir}/opendcs-cove/3rd_party/IzPack-4.3.3"/>
+	<property name="izpack.dir" value="${env.IZPACK_HOME}"/>
 	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
 	<property name="hydrojson.dir" value="${workspace.dir}/HydroJSON"/>
 	<property name="src.dir" value="${project.dir}/src/main/java"/>
@@ -63,8 +63,16 @@ can find your git source tree and your directory with the downloaded jars.
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
 	
+	<path id="lib.path">
+		<fileset dir="${izpack.dir}/lib" includes="*.jar"/>
+	</path>
+	<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask"
+		classpathref="lib.path"/>
+
+<!--
 	<taskdef name="izpack" classpath="${izpack.dir}/lib/compiler.jar"
 		classname="com.izforge.izpack.ant.IzPackTask"/>
+-->
 
 	<path id="project.class.path">
 		<pathelement path="${build.classes}/"/>
@@ -207,7 +215,6 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="stage/dep"/>
 		<mkdir dir="stage/dep/ext"/>
 		<mkdir dir="stage/dep/Lib"/>
-		<mkdir dir="stage/lib"/>
 		<mkdir dir="stage/examples"/>
 		<mkdir dir="stage/python"/>
 		<mkdir dir="stage/poll"/>
@@ -222,7 +229,6 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="stage/edit-db/eu"/>
 		<mkdir dir="stage/edit-db/netlist"/>
 		<mkdir dir="stage/edit-db/platform"/>
-		<mkdir dir="stage/edit-db/pm"/>
 		<mkdir dir="stage/edit-db/presentation"/>
 		<mkdir dir="stage/edit-db/routing"/>
 		<mkdir dir="stage/edit-db/site"/>
@@ -241,6 +247,10 @@ can find your git source tree and your directory with the downloaded jars.
 		<copy todir="stage/icons">
 			<fileset dir="${project.dir}/install/icons"/>
 		</copy>
+		<tar destfile="stage/icons.tar.gz" compression="gzip">
+			<tarfileset dir="stage" includes="icons/**">
+			</tarfileset>
+		</tar>
 
 		<copy todir="stage/bin">			
 			<fileset dir="${project.dir}/install/bin"/>
@@ -356,6 +366,11 @@ can find your git source tree and your directory with the downloaded jars.
 				<include name="algorithms.txt"/>
 			</fileset>
 		</copy>
+		<tar destfile="stage/doc.tar.gz" compression="gzip">
+			<tarfileset dir="stage" includes="doc/**">
+			</tarfileset>
+		</tar>
+
 
 		<copy todir="stage/poll">
 			<fileset dir="${project.dir}/install/poll">
@@ -412,7 +427,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete file="stage/dep/jython.jar"/>
 		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
+		<izpack input="${project.dir}/izpack/opendcs-nf-6-8-izp5.xml"
 				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
@@ -423,7 +438,7 @@ can find your git source tree and your directory with the downloaded jars.
 	<target name="opentsdb" depends="stage">
 		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
+		<izpack input="${project.dir}/izpack/opendcs-6-8-izp5.xml"
 				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
@@ -431,14 +446,8 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
-	<target name="hdb" depends="stage">
-		<delete file="stage/dep/NWIS.jar"/>
-		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
-				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
-				installerType="standard"
-				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+	<target name="hdb">
+		<echo message="Separate HDB build is deprecated as of 6.8.RC09. Use opentsdb."/>
 	</target>
 
 	<target name="cwmstar" depends="stage">
@@ -465,6 +474,8 @@ can find your git source tree and your directory with the downloaded jars.
 				<exclude name="schema/cwms/importDecodesTemplate.sh"/>
 				<exclude name="schema/cwms/createDefinesSql.sh"/>
 				<exclude name="schema/cwms/createTableSpaces.sh"/>
+				<exclude name="doc.tar.gz"/>
+				<exclude name="icons.tar.gz"/>
 			</tarfileset>
 			<tarfileset dir="stage/bin" filemode="755" prefix="bin"/>
 			<tarfileset file="stage/schema/cwms/createDb.sh" filemode="755" prefix="schema/cwms"/>
