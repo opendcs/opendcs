@@ -431,7 +431,8 @@ can find your git source tree and your directory with the downloaded jars.
 				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+				izPackDir="${izpack.dir}">
+		</izpack>
 	</target>
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
