@@ -77,8 +77,8 @@
         <res id="TargetPanel.dir.windows"  src="dospath.txt"/>
 <!--
         <res id="LicencePanel.licence"  src="license.txt"/>
-		<res id="ProcessPanel.Spec.xml" src="post-process.xml"/>
 -->
+		<res id="ProcessPanel.Spec.xml" src="post-process.xml"/>
     </resources>
     
     <!-- 
@@ -294,6 +294,8 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <executable targetfile="$INSTALL_PATH/bin/procmon.bat" stage="never" os="windows"/>
             <parsable   targetfile="$INSTALL_PATH/bin/procmon.bat" os="windows"/>
 
+            <executable targetfile="$INSTALL_PATH/bin/postInstallClean.sh" stage="never" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/postInstallClean.bat" stage="never" os="windows"/>
         </pack>
 
 		<pack name="XML Database Template" required="no">
