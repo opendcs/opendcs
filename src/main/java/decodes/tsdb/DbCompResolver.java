@@ -48,6 +48,7 @@ import java.util.Iterator;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import ilex.util.Logger;
+import decodes.db.Constants;
 import decodes.sql.DbKey;
 
 /**
@@ -252,12 +253,20 @@ Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName(
 		try
 		{
 			comp.setUnPrepared(); // will delete the executive
+			Iterator<DbCompParm> parmit;
+			for (parmit = comp.getParms(); parmit.hasNext(); ) {
+				DbCompParm dcp = parmit.next();
+				parmName = dcp.getRoleName();
+				if (dcp.getSiteDataTypeId().compareTo(Constants.undefinedId) != 0 && dcp.getSiteDataTypeId().equals(tsid.getKey()))
+				  throw new NoSuchObjectException("fix parm + " + parmName); 
+			  } 
 
-			for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext(); )
+			for(parmit = comp.getParms(); parmit.hasNext(); )
 			{
 				DbCompParm dcp = parmit.next();
 				parmName = dcp.getRoleName();
 				String nm = comp.getProperty(dcp.getRoleName() + "_tsname");
+				String missing = comp.getProperty(parmName + "_MISSING");
 				TimeSeriesIdentifier parmTsid = 
 					theDb.transformTsidByCompParm(tsid, dcp, 
 						createOutput && dcp.isOutput(),    // Yes create TS if this is an output
@@ -265,7 +274,7 @@ Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName(
 						nm);
 				// Note in the GUI, createOutput==false. Thus if we fail to
 				// transform an output, just leave it undefined.
-				if (parmTsid == null && createOutput)
+				if (parmTsid == null && createOutput && !"ignore".equalsIgnoreCase(missing))
 				{
 					throw new NoSuchObjectException("Cannot resolve parm");
 				}
