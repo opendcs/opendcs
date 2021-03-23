@@ -42,7 +42,7 @@ compileJava.dependsOn downloadDeps
 
 dependencies {    
     implementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
-    implementation 'postgresql:postgresql:9.1-901-1.jdbc4'
+    implementation 'postgresql:postgresql:42.2.14'
     implementation 'asm:asm:3.3'
     implementation 'cglib:cglib:2.1_3'
     implementation 'commons-logging:commons-logging:1.0.4'

@@ -2,6 +2,13 @@
 
 <!-- 
     OPENDCS 6.8 installation file for OPENDCS with IzPack 5
+
+NOTE: Do Not Use!!!
+The problem is that an installer built with IzPack 5 cannot upgrade
+an installation that was made with IzPack 4. In order to do so, you'd
+have to delete the .installerinformation file in the old install, and
+even then it's not well tested.
+Furthermore, There's nothing reallin in IZP5 that's needed at the moment.
 -->
 
 
@@ -28,6 +35,7 @@
     <variables>
 		<variable name="DCSTOOL_HOME" value="$INSTALL_PATH"/>
 		<variable name="DECODES_INSTALL_DIR" value="$INSTALL_PATH"/>
+<!--
 		<variable name="databasetype" value=""/>
 		<variable name="databaselocation" value=""/>
 		<variable name="editdatabasetype" value=""/>
@@ -37,6 +45,7 @@
 		<variable name="edittimezone" value=""/>
 		<variable name="jdbcdriverclass" value=""/>
 		<variable name="sqlkeygenerator" value=""/>
+-->
     </variables>
 
     <!-- 
@@ -78,8 +87,8 @@
         <res id="TargetPanel.dir.windows"  src="dospath.txt"/>
 <!--
         <res id="LicencePanel.licence"  src="license.txt"/>
--->
 		<res id="ProcessPanel.Spec.xml" src="post-process.xml"/>
+-->
     </resources>
     
     <!-- 
@@ -297,8 +306,11 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <executable targetfile="$INSTALL_PATH/bin/procmon.bat" stage="never" os="windows"/>
             <parsable   targetfile="$INSTALL_PATH/bin/procmon.bat" os="windows"/>
 
-            <executable targetfile="$INSTALL_PATH/bin/postInstallClean.sh" stage="never" os="unix"/>
-            <executable targetfile="$INSTALL_PATH/bin/postInstallClean.bat" stage="never" os="windows"/>
+            <executable targetfile="$INSTALL_PATH/bin/postInstall" stage="postinstall" os="unix" keep="true"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/postInstall" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/postInstall.bat" stage="postinstall" os="windows" keep="true"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/postInstall.bat" os="windows"/>
+
         </pack>
 
 		<pack name="XML Database Template" required="no">

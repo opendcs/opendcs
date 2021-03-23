@@ -5,13 +5,11 @@
 	<job name="clean windows">
 		<os family="windows" />
 		<executefile name="$INSTALL_PATH/bin/postInstallClean.bat" workingDir="$INSTALL_PATH">
-			<arg>$INSTALL_PATH</arg>
 		</executefile>
 	</job>
 	<job name="clean unix">
 		<os family="unix" />
 		<executefile name="$INSTALL_PATH/bin/postInstallClean.sh" workingDir="$INSTALL_PATH">
-			<arg>$INSTALL_PATH</arg>
 		</executefile>
 	</job>
 </izpack:processing>

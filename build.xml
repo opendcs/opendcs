@@ -268,7 +268,7 @@ can find your git source tree and your directory with the downloaded jars.
 				<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>
 			</mappedresources>
 			<fileset dir="${thirdpartyjar.dir}">
-				<include name="*.jar"/>
+				<exclude name="LoboBrowser-1.0.0.jar"/>
 			</fileset>
 			<fileset dir="${cwmsSystemJars.dir}">
 				<include name="*.jar"/>
@@ -316,7 +316,6 @@ can find your git source tree and your directory with the downloaded jars.
 				<include name="*.txt"/>
 				<include name="unixOpenDcsShortcutSpec.xml"/>
 				<include name="winOpenDcsShortcutSpec.xml"/>
-				<include name="post-process.xml"/>
 			</fileset>
 			<fileset dir="${project.dir}/install">
 				<include name="decodes.properties"/>
@@ -390,9 +389,8 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete dir="stage/dep/Lib"/>
 		<delete file="stage/dep/jep-2.4.1.jar"/>
 		<delete file="stage/dep/jython.jar"/>
-		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-nf-6-8-izp5.xml"
+		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
 				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
@@ -402,9 +400,8 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
 	<target name="opentsdb" depends="stage">
-		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-6-8-izp5.xml"
+		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
 				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
@@ -413,13 +410,17 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
 	<target name="hdb">
-		<echo message="Separate HDB build is deprecated as of 6.8.RC09. Use opentsdb."/>
+		<!-- Invokes izpack to build installable package with defaults for CWMS -->
+		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
+				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
+				installerType="standard"
+				basedir="stage"
+				izPackDir="${izpack.dir}"/>
 	</target>
 
 	<target name="cwmstar" depends="stage">
 		<delete file="stage/dep/ojdbc8.jar"/>
 		<delete file="stage/dep/ojdbc6.jar"/>
-		<delete file="stage/dep/NWIS.jar"/>
 		<delete dir="stage/dep/IzPack-4.3.3"/>
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
