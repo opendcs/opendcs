@@ -269,7 +269,7 @@ Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName(
 				// transform an output, just leave it undefined.
 				if (parmTsid == null && createOutput && !"ignore".equalsIgnoreCase(missing))
 				{
-					throw new NoSuchObjectException("Cannot resolve parm");
+					throw new NoSuchObjectException("Cannot resolve parm " + parmName);
 				}
 			}
 			return comp;
