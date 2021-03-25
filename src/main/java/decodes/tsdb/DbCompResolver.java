@@ -253,15 +253,8 @@ Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName(
 		try
 		{
 			comp.setUnPrepared(); // will delete the executive
-			Iterator<DbCompParm> parmit;
-			for (parmit = comp.getParms(); parmit.hasNext(); ) {
-				DbCompParm dcp = parmit.next();
-				parmName = dcp.getRoleName();
-				if (dcp.getSiteDataTypeId().compareTo(Constants.undefinedId) != 0 && dcp.getSiteDataTypeId().equals(tsid.getKey()))
-				  throw new NoSuchObjectException("fix parm + " + parmName); 
-			  } 
-
-			for(parmit = comp.getParms(); parmit.hasNext(); )
+	
+			for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext(); )
 			{
 				DbCompParm dcp = parmit.next();
 				parmName = dcp.getRoleName();
