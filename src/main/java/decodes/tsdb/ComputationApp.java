@@ -175,6 +175,8 @@ public class ComputationApp
 	private ArrayList<DbComputation> timedComps = new ArrayList<DbComputation>();
 	private int checkTimedCompsSec = 600;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+
+	private long compRunWaitTime = 1000L;
 	
 	private static ComputationApp _instance = null;
 	public static ComputationApp instance() { return _instance; }
@@ -214,7 +216,9 @@ public class ComputationApp
 			+ "(-1 to disable resend)"),
 		new PropertySpec("notifyMaxAgeDays", PropertySpec.INT, "(default=30) "
 			+ "Do not send email notifications for data older than this."),
-
+		new PropertySpec("compRunWaitTime", PropertySpec.INT,"(default=1000"
+			+ "Amount of time (in milliseconds) when Idle to wait before checking for new data"
+		)
 		
 		
 	};
@@ -477,7 +481,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 				}
 				else // MJM 6.4 RC08 Only sleep if data was empty.
 				{
-					try { Thread.sleep(1000L); }
+					try { Thread.sleep(compRunWaitTime); }
 					catch(InterruptedException ex) {}
 				}
 	
