@@ -378,9 +378,6 @@ can find your git source tree and your directory with the downloaded jars.
 		</copy>
 
 		<mkdir dir="stage/cwmsDbAPI"/>
-		<copy todir="stage/cwmsDbAPI">
-			<fileset dir="${cwmsDbAPI.dir}"/>
-		</copy>
 
 	</target>
 
@@ -388,7 +385,9 @@ can find your git source tree and your directory with the downloaded jars.
 	<target name="nonfed" depends="stage">
 		<delete dir="stage/dep/Lib"/>
 		<delete file="stage/dep/jep-2.4.1.jar"/>
-		<delete file="stage/dep/jython.jar"/>
+		<delete file="stage/dep/jython-2.7.2.jar"/>
+		<delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
+		<delete file="stage/dep/Cobra.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
 				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
