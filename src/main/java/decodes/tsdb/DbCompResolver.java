@@ -155,7 +155,7 @@ public class DbCompResolver
 							CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
 							try
 							{
-								ArrayList<TimeSeriesIdentifier> triggers = compDependsDAO.getTriggersFor(origComp);
+								ArrayList<TimeSeriesIdentifier> triggers = compDependsDAO.getTriggersFor(origComp.getId());
 Logger.instance().debug3(module + triggers.size() + " total triggers found:");
 								int nAdded = 0, nFailed = 0, nInapplicable = 0;
 								for(TimeSeriesIdentifier otherTrig : triggers)

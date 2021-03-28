@@ -15,7 +15,7 @@ public class LrgsApp
 	public static final int majorVersion = 9;
 
 	/** Minor version number */
-	public static final int minorVersion = 4;
+	public static final int minorVersion = 5;
 
 	/** Sub version number */
 	public static final String subVersion = DecodesVersion.getName() + "-" + DecodesVersion.getVersion();

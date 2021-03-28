@@ -234,11 +234,11 @@ debug3("Total dds for dependencies=" + dataIds.size());
 	}
 
 	@Override
-	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbComputation comp)
+	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbKey compID)
 		throws DbIoException
 	{
 		String q = "SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
-			+ "WHERE COMPUTATION_ID = " + comp.getId();
+			+ "WHERE COMPUTATION_ID = " + compID;
 		ResultSet rs = doQuery(q);
 		
 		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
@@ -255,7 +255,7 @@ debug3("Total dds for dependencies=" + dataIds.size());
 				catch (NoSuchObjectException e)
 				{
 					warning("Bogus Time Series Key " + tsKey + " in CP_COMP_DEPENDS "
-						+ "for computation " + comp.getKey() + ":" + comp.getName());
+						+ "for computation " + compID);
 				}
 			}
 		}

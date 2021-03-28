@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<izpack:processing version="5.0"
+  xmlns:izpack="http://izpack.org/schema/processing" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://izpack.org/schema/processing http://izpack.org/schema/5.0/izpack-processing-5.0.xsd">
+	<job name="clean windows">
+		<os family="windows" />
+		<executefile name="$INSTALL_PATH/bin/postInstallClean.bat" workingDir="$INSTALL_PATH">
+		</executefile>
+	</job>
+	<job name="clean unix">
+		<os family="unix" />
+		<executefile name="$INSTALL_PATH/bin/postInstallClean.sh" workingDir="$INSTALL_PATH">
+		</executefile>
+	</job>
+</izpack:processing>
