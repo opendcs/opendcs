@@ -76,7 +76,8 @@ import decodes.util.CmdLineArgs;
 import decodes.util.TSUtil;
 
 /**
- * This class is the main for the Test Computations Frame. 
+ * This class is the "compexec" command line utility for running computations
+ * without the need for triggers.
  */
 public class CompExec extends TsdbAppTemplate
 {
@@ -103,7 +104,8 @@ public class CompExec extends TsdbAppTemplate
 		TokenOptions.optSwitch, "UTC");
 
 	private HashSet<TimeSeriesIdentifier> tsids = new HashSet<TimeSeriesIdentifier>();
-	private ArrayList<DbComputation> specifiedComps = new ArrayList<DbComputation>();
+//	private ArrayList<DbComputation> specifiedComps = new ArrayList<DbComputation>();
+	private HashSet<DbKey> specifiedCompIDs = new HashSet<DbKey>();
 	private Date since = null, until = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat(dateSpec);
 	private TimeSeriesDAI timeSeriesDAO = null;
@@ -112,7 +114,7 @@ public class CompExec extends TsdbAppTemplate
 	private PresentationGroup presGrp = null;
 	private OutputFormatter outputFormatter = null;
 	private CompDependsDAI compDependsDAO = null;
-	private CpCompDependsUpdater compDependsUpdater = null;
+//	private CpCompDependsUpdater compDependsUpdater = null;
 
 	/** Constructor */
 	public CompExec()
@@ -197,58 +199,77 @@ public class CompExec extends TsdbAppTemplate
 				System.err.println("Cannot make output formatter: " + ex);
 				System.exit(1);
 			}
-
 		}
 		
-		info("" + specifiedComps.size() + " computations and "+ tsids.size()
-			+ " time series IDs supplied.");
+		info("" + specifiedCompIDs.size() + " comp IDs and "+ tsids.size()
+			+ " TSIDs supplied -- evaluating.");
 		
 		// Now all arguments are read either from cmd line or control file.
-		if (tsids.size() == 0 && specifiedComps.size() == 0)
+		if (tsids.isEmpty() && specifiedCompIDs.isEmpty())
 		{
 			System.out.println("Nothing to do -- No time series or computations specified.");
 			System.exit(1);
 		}
-		else if (specifiedComps.size() > 0 && tsids.size() == 0)
+		else if (specifiedCompIDs.isEmpty())
 		{
-			// Comps but no TSIDs are specified. Find all possible inputs for the named comps.
-			info("Comps but no TSIDs supplied, will use all possible triggers.");
-			for(DbComputation comp : specifiedComps)
-			{
-				comp.setEnabled(true);
-				tsids.addAll(computeTriggersFor(comp));
-			}
-			info("After evaluating triggers, we have " + tsids.size() + " TSIDs.");
-		}
-		else if (specifiedComps.size() == 0 && tsids.size() > 0)
-		{
+			info("Evaluating comps that need to run for specified TSIDs.");
 			// Determine the possible enabled computations for the specified TSIDs
 			// use CP_COMP_DEPENDS.
 			for(DbKey compId : compDependsDAO.getCompIdsFor(tsids, DbKey.NullKey))
-				specifiedComps.add(computationDAO.getComputationById(compId));
+				specifiedCompIDs.add(compId);
+		}
+		else if (tsids.isEmpty())
+		{
+			// Comps but no TSIDs are specified. Find all possible inputs for the named comps.
+			info("Comps but no TSIDs supplied, will use all possible triggers.");
+			for(DbKey compID : specifiedCompIDs)
+				tsids.addAll(compDependsDAO.getTriggersFor(compID));
+			info("After evaluating triggers, we have " + tsids.size() + " TSIDs.");
 		}
 		else
 		{
 			// both comps and TSIDs are specified. Nothing to do.
 		}
 		
-		compDependsDAO.close();
 		tsGroupDAO.close();
-		computationDAO.close();
+		
+		info("After eval, there are " + tsids.size() + " TSIDs and " + specifiedCompIDs.size() + " comps.");
+		
+		// This will hold list of fully expanded comps to run
+		ArrayList<DbComputation> toRun = new ArrayList<DbComputation>();
 
+		// The resolver will make concrete clones and maintain toRun list of comps.
+		DbCompResolver resolver = new DbCompResolver(theDb);
+		
+		for(DbKey compId : specifiedCompIDs)
+		{
+			DbComputation comp = computationDAO.getComputationById(compId);
+
+			if (comp.hasGroupInput())
+			{
+				for (TimeSeriesIdentifier tsid : compDependsDAO.getTriggersFor(compId))
+				{
+					if (!tsids.contains(tsid))
+						continue;
+
+					DbComputation concrete = DbCompResolver.makeConcrete(theDb, tsid, comp, false);
+					if (concrete != null)
+						// The resolver's addToResults method gets rid of duplicates.
+						resolver.addToResults(toRun, concrete, null);
+				}
+			}
+			else // non-group comp, no need to make concrete.
+				toRun.add(comp);
+		}
+		
 		// Fetch the data for the specified time range for the specified TSIDs.
 		DataCollection theData = new DataCollection();
 		
-		// Sort so that, as we go through the TSIDs, it's easy to detect duplicates.
-		TimeSeriesIdentifier lastTsid = null;
 		for(TimeSeriesIdentifier tsid : tsids)
 		{
-			if (lastTsid != null && lastTsid.equals(tsid))
-				continue;
-			CTimeSeries cts;
 			try
 			{
-				cts = timeSeriesDAO.makeTimeSeries(tsid);
+				CTimeSeries	cts = timeSeriesDAO.makeTimeSeries(tsid);
 				int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
 				info("Read tsid '" + tsid.getUniqueString() + "' since="
 					+ (since==null ? "null" : sdf.format(since)) + ", until="
@@ -266,44 +287,6 @@ public class CompExec extends TsdbAppTemplate
 				System.err.print(msg);
 				ex.printStackTrace(System.err);
 			}
-			lastTsid = tsid;
-		}
-		
-		// The resolver will make concrete clones and provide a complete list of all computations
-		// that are possible with the given input data. It will also remove dups.
-		DbCompResolver resolver = new DbCompResolver(theDb);
-//		DbComputation[] resolved = resolver.resolve(theData);
-
-		// If comps were specified on cmd line or ctrl file, filter the list by the specified ones.
-		ArrayList<DbComputation> toRun = new ArrayList<DbComputation>();
-		for(DbComputation comp : specifiedComps)
-		{
-			if (comp.hasGroupInput())
-			{
-				for (TimeSeriesIdentifier tsid : computeTriggersFor(comp))
-				{
-					DbComputation concrete = DbCompResolver.makeConcrete(theDb, tsid, comp, false);
-					if (concrete != null)
-						// The resolver's addToResults method gets rid of duplicates.
-						resolver.addToResults(toRun, concrete, null);
-				}
-			}
-			else // non-group comp, no need to make concrete.
-				toRun.add(comp);
-			
-			if (specifiedComps.size() > 0)
-			{
-				boolean found = false;
-				for(DbComputation specifiedComp : specifiedComps)
-					if (specifiedComp.getKey().equals(comp))
-					{
-						found = true;
-						break;
-					}
-				if (!found)
-					continue;
-			}
-			toRun.add(comp);
 		}
 		
 		if (!quietToken.getValue())
@@ -312,13 +295,12 @@ public class CompExec extends TsdbAppTemplate
 				+ (since==null ? "anytime" : sdf.format(since))
 				+ ", until="
 				+ (until==null ? "anytime" : sdf.format(until)) + " UTC");
-			System.out.println("# comps=" + specifiedComps.size() + ", # TSIDs=" + tsids.size());
+			System.out.println("# total comps=" + toRun.size() + ", # TSIDs=" + tsids.size());
 			System.out.println("Okay to proceed (y/n)? ");
 			String x = System.console().readLine();
 			if (x == null || !(x.toLowerCase().startsWith("y")))
 				System.exit(0);
 		}
-else System.err.println("quietmode=true");
 		
 		// Execute the computations
 		for(DbComputation comp2run : toRun)
@@ -397,27 +379,10 @@ else System.err.println("quietmode=true");
 			}
 		}
 		timeSeriesDAO.close();
+		compDependsDAO.close();
+		computationDAO.close();
+
 	}
-	
-	private ArrayList<TimeSeriesIdentifier> computeTriggersFor(DbComputation comp)
-		throws Exception
-	{
-		if (compDependsUpdater == null)
-		{
-			compDependsUpdater = 
-				new CpCompDependsUpdater()
-				{
-					protected void writeToAdd2Db(DbKey compId2Delete) {}
-				};
-		}
-		compDependsUpdater.evalComp(comp);
-		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
-		for(CpCompDependsRecord ccdr : compDependsUpdater.getToAdd())
-			ret.add(timeSeriesDAO.getTimeSeriesIdentifier(ccdr.getTsKey()));
-		
-		return ret;
-	}
-	
 	
 	/**
 	 * This method adds a command line argument to allow
@@ -568,13 +533,15 @@ else System.err.println("quietmode=true");
 		try 
 		{
 			DbKey compId = DbKey.createDbKey(Long.parseLong(nameOrId.trim()));
-			specifiedComps.add(computationDAO.getComputationById(compId));
+			specifiedCompIDs.add(compId);
+//			specifiedComps.add(computationDAO.getComputationById(compId));
 		}
 		catch(Exception ex)
 		{
 			try
 			{
-				computationDAO.getComputationByName(nameOrId.trim());
+				specifiedCompIDs.add(computationDAO.getComputationId(nameOrId.trim()));
+//				computationDAO.getComputationByName(nameOrId.trim());
 			}
 			catch (NoSuchObjectException ex2)
 			{

@@ -804,7 +804,10 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		try
 		{
 			// If there is an existing ID with this unique string
-			TimeSeriesIdentifier existingTsid = tsDAO.getTimeSeriesIdentifier(tmpTsid.getUniqueString());
+			TimeSeriesIdentifier existingTsid = null;
+			try { existingTsid = tsDAO.getTimeSeriesIdentifier(tmpTsid.getUniqueString()); }
+			catch(NoSuchObjectException ex) { existingTsid = null; }
+			
 			if (existingTsid != null
 			 // AND either this a new TSID OR it has a different key
 			 && (DbKey.isNull(tsid.getKey())

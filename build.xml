@@ -42,7 +42,7 @@ can find your git source tree and your directory with the downloaded jars.
 	<property name="project.dir" value="${home.dir}/git/opendcs"/>
 	<property name="thirdpartyjar.dir" value="dep"/>
 	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
-	<property name="izpack.dir" value="${workspace.dir}/opendcs-cove/3rd_party/IzPack-4.3.3"/>
+	<property name="izpack.dir" value="${env.IZPACK_HOME}"/>
 	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
 	<property name="hydrojson.dir" value="${workspace.dir}/HydroJSON"/>
 	<property name="src.dir" value="${project.dir}/src/main/java"/>
@@ -63,8 +63,16 @@ can find your git source tree and your directory with the downloaded jars.
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
 	
+	<path id="lib.path">
+		<fileset dir="${izpack.dir}/lib" includes="*.jar"/>
+	</path>
+	<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask"
+		classpathref="lib.path"/>
+
+<!--
 	<taskdef name="izpack" classpath="${izpack.dir}/lib/compiler.jar"
 		classname="com.izforge.izpack.ant.IzPackTask"/>
+-->
 
 	<path id="project.class.path">
 		<pathelement path="${build.classes}/"/>
@@ -100,7 +108,7 @@ can find your git source tree and your directory with the downloaded jars.
 			<include name="osdt_cert-19.3.0.0.jar"/>
 			<include name="osdt_core-19.3.0.0.jar"/>
 			<include name="passay-1.3.1.jar"/>
-			<include name="poi-3.0.1-FINAL.jar"/>
+			<include name="poi-5.0.0.jar"/>
 			<include name="postgresql-9.1-901-1.jdbc4.jar"/>
 			<include name="simplefan-19.3.0.0.jar"/>
 			<include name="spring-test-2.5.6.jar"/>
@@ -207,7 +215,6 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="stage/dep"/>
 		<mkdir dir="stage/dep/ext"/>
 		<mkdir dir="stage/dep/Lib"/>
-		<mkdir dir="stage/lib"/>
 		<mkdir dir="stage/examples"/>
 		<mkdir dir="stage/python"/>
 		<mkdir dir="stage/poll"/>
@@ -222,7 +229,6 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="stage/edit-db/eu"/>
 		<mkdir dir="stage/edit-db/netlist"/>
 		<mkdir dir="stage/edit-db/platform"/>
-		<mkdir dir="stage/edit-db/pm"/>
 		<mkdir dir="stage/edit-db/presentation"/>
 		<mkdir dir="stage/edit-db/routing"/>
 		<mkdir dir="stage/edit-db/site"/>
@@ -241,6 +247,10 @@ can find your git source tree and your directory with the downloaded jars.
 		<copy todir="stage/icons">
 			<fileset dir="${project.dir}/install/icons"/>
 		</copy>
+		<tar destfile="stage/icons.tar.gz" compression="gzip">
+			<tarfileset dir="stage" includes="icons/**">
+			</tarfileset>
+		</tar>
 
 		<copy todir="stage/bin">			
 			<fileset dir="${project.dir}/install/bin"/>
@@ -257,44 +267,8 @@ can find your git source tree and your directory with the downloaded jars.
 				</fileset>
 				<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>
 			</mappedresources>
-			<fileset dir="${thirdpartyjar.dir}">				
-				<include name="Cobra.jar"/>
-				
-				<include name="asm-3.3.jar"/>
-				<include name="aspectjrt-1.8.10.jar"/>
-				<include name="cglib-2.1_3.jar"/>
-				<include name="commons-codec-1.10.jar"/>
-				<include name="commons-collections-2.1.1.jar"/>
-				<include name="commons-logging-1.1.1.jar"/>
-				<include name="commons-net-3.3.jar"/>
-				<include name="ganymed-ssh2-build210.jar"/>
-				<include name="jama-1.0.2.jar"/>
-				<include name="javassist-3.7.ga.jar"/>
-				<include name="jaxb-api-2.3.0.jar"/>
-				<include name="jcalendar-1.3.2.jar"/>
-				<include name="jcommon-1.0.16.jar"/>
-				<include name="jep-2.4.1.jar"/>
-				<include name="jfreechart-1.0.13.jar"/>
-				<include name="jsch-0.1.55.jar"/>
-				<include name="json-20200518.jar"/>
-				<include name="jta-spec-1.0.1.jar"/>
-				<include name="junit-3.8.1.jar"/>
-				<include name="jython-2.7.2.jar"/>
-				<include name="log4j-1.2.13.jar"/>
-				<include name="mailapi-1.6.2.jar"/>
-				<include name="ognl-2.7.3.jar"/>
-				<include name="ojdbc8-19.3.0.0.jar"/>
-				<include name="ons-19.3.0.0.jar"/>
-				<include name="oraclepki-19.3.0.0.jar"/>
-				<include name="osdt_cert-19.3.0.0.jar"/>
-				<include name="osdt_core-19.3.0.0.jar"/>
-				<include name="passay-1.3.1.jar"/>
-				<include name="poi-3.0.1-FINAL.jar"/>
-				<include name="postgresql-9.1-901-1.jdbc4.jar"/>
-				<include name="simplefan-19.3.0.0.jar"/>
-				<include name="spring-test-2.5.6.jar"/>
-				<include name="xml-apis-1.0.b2.jar"/>
-				<include name="xwork-core-2.1.6.jar"/>
+			<fileset dir="${thirdpartyjar.dir}">
+				<exclude name="LoboBrowser-1.0.0.jar"/>
 			</fileset>
 			<fileset dir="${cwmsSystemJars.dir}">
 				<include name="*.jar"/>
@@ -356,6 +330,11 @@ can find your git source tree and your directory with the downloaded jars.
 				<include name="algorithms.txt"/>
 			</fileset>
 		</copy>
+		<tar destfile="stage/doc.tar.gz" compression="gzip">
+			<tarfileset dir="stage" includes="doc/**">
+			</tarfileset>
+		</tar>
+
 
 		<copy todir="stage/poll">
 			<fileset dir="${project.dir}/install/poll">
@@ -399,9 +378,6 @@ can find your git source tree and your directory with the downloaded jars.
 		</copy>
 
 		<mkdir dir="stage/cwmsDbAPI"/>
-		<copy todir="stage/cwmsDbAPI">
-			<fileset dir="${cwmsDbAPI.dir}"/>
-		</copy>
 
 	</target>
 
@@ -409,19 +385,20 @@ can find your git source tree and your directory with the downloaded jars.
 	<target name="nonfed" depends="stage">
 		<delete dir="stage/dep/Lib"/>
 		<delete file="stage/dep/jep-2.4.1.jar"/>
-		<delete file="stage/dep/jython.jar"/>
-		<delete file="stage/dep/NWIS.jar"/>
+		<delete file="stage/dep/jython-2.7.2.jar"/>
+		<delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
+		<delete file="stage/dep/Cobra.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
 				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+				izPackDir="${izpack.dir}">
+		</izpack>
 	</target>
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
 	<target name="opentsdb" depends="stage">
-		<delete file="stage/dep/NWIS.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
 				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
@@ -431,8 +408,7 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
-	<target name="hdb" depends="stage">
-		<delete file="stage/dep/NWIS.jar"/>
+	<target name="hdb">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
 				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
@@ -444,7 +420,6 @@ can find your git source tree and your directory with the downloaded jars.
 	<target name="cwmstar" depends="stage">
 		<delete file="stage/dep/ojdbc8.jar"/>
 		<delete file="stage/dep/ojdbc6.jar"/>
-		<delete file="stage/dep/NWIS.jar"/>
 		<delete dir="stage/dep/IzPack-4.3.3"/>
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
@@ -465,6 +440,8 @@ can find your git source tree and your directory with the downloaded jars.
 				<exclude name="schema/cwms/importDecodesTemplate.sh"/>
 				<exclude name="schema/cwms/createDefinesSql.sh"/>
 				<exclude name="schema/cwms/createTableSpaces.sh"/>
+				<exclude name="doc.tar.gz"/>
+				<exclude name="icons.tar.gz"/>
 			</tarfileset>
 			<tarfileset dir="stage/bin" filemode="755" prefix="bin"/>
 			<tarfileset file="stage/schema/cwms/createDb.sh" filemode="755" prefix="schema/cwms"/>

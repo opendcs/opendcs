@@ -28,6 +28,8 @@ import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.CellType;
 
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
@@ -267,31 +269,31 @@ public class ExcelConsumer extends DataConsumer
 	{	//Create a row for the APart, Rows are 0 based.
 		// Create a cell for the APART = A. position: row 0, column "cell" 0
 		createStringCell(wb, sheet, (short)0, (short)0, 
-									HSSFCellStyle.ALIGN_RIGHT, "A");
+				HorizontalAlignment.RIGHT, "A");
 		//Create a cell for the BPART = B. position: row 1, column "cell" 0
 		createStringCell(wb, sheet, (short)1, (short)0, 
-				HSSFCellStyle.ALIGN_RIGHT, "B");
+				HorizontalAlignment.RIGHT, "B");
 		//Create a cell for the CPART = C. position: row 2, column "cell" 0
 		createStringCell(wb, sheet, (short)2, (short)0, 
-				HSSFCellStyle.ALIGN_RIGHT, "C");
+				HorizontalAlignment.RIGHT, "C");
 		//Create a cell for the EPART = E. position: row 3, column "cell" 0
 		createStringCell(wb, sheet, (short)3, (short)0, 
-				HSSFCellStyle.ALIGN_RIGHT, "E");
+				HorizontalAlignment.RIGHT, "E");
 		//Create a cell for the FPART = F. position: row 4, column "cell" 0
 		createStringCell(wb, sheet, (short)4, (short)0, 
-				HSSFCellStyle.ALIGN_RIGHT, "F");
+				HorizontalAlignment.RIGHT, "F");
 		//Create a cell for the Units. position: row 5, column "cell" 0
 		createStringCell(wb, sheet, (short)5, (short)0, 
-				HSSFCellStyle.ALIGN_RIGHT, "Units");
+				HorizontalAlignment.RIGHT, "Units");
 		//Create a cell for the Type. position: row 6, column "cell" 0
 		createStringCell(wb, sheet, (short)6, (short)0, 
-				HSSFCellStyle.ALIGN_RIGHT, "Type");
+				HorizontalAlignment.RIGHT, "Type");
 		
 		//SET the timezone
 		//TimeZone = As defined in DECODES for this Routing Spec
 		//position row - 2, column "cell" - 1
 		createStringCell(wb, sheet, (short)2, (short)1, 
-				HSSFCellStyle.ALIGN_RIGHT, timeZoneObj.getID());
+				HorizontalAlignment.RIGHT, timeZoneObj.getID());
 		//.getDisplayName());
 		
 		//TODO value for the APART ??? FOR NOW is the first line of 
@@ -300,14 +302,14 @@ public class ExcelConsumer extends DataConsumer
 		//APART - User Defined for each DECODES Site 
 	    //(Can be left blank)
 		createStringCell(wb, sheet, (short)0, (short)1, 
-							HSSFCellStyle.ALIGN_LEFT, aPart);
+				HorizontalAlignment.LEFT, aPart);
 		
 		//TODO value for the EPART ??? FOR NOW is the first line of the
 		//Site description
 		//Row 3 cell 1
 		//EPART = User Defined for each DECODES Site (Can be left blank)
 		createStringCell(wb, sheet, (short)3, (short)1, 
-				HSSFCellStyle.ALIGN_LEFT, ePart);
+				HorizontalAlignment.LEFT, ePart);
 	}
 	
 	/**
@@ -328,27 +330,27 @@ public class ExcelConsumer extends DataConsumer
 			if (columnType.equalsIgnoreCase(SITE_NAME_HEADER_COLUMN))
 			{
 				createStringCell(wb, sheet, rowNum, columnNum, 
-					HSSFCellStyle.ALIGN_RIGHT, col.siteNameCell);
+						HorizontalAlignment.RIGHT, col.siteNameCell);
 			}
 			else if (columnType.equalsIgnoreCase(SENSOR_NAME_HEADER_COLUMN))
 			{
 				createStringCell(wb, sheet, rowNum, columnNum, 
-					HSSFCellStyle.ALIGN_RIGHT, col.sensorName);
+						HorizontalAlignment.RIGHT, col.sensorName);
 			}
 			else if (columnType.equalsIgnoreCase(FPART_VALUES_HEADER_COLUMN))
 			{
 				createStringCell(wb, sheet, rowNum, columnNum, 
-					HSSFCellStyle.ALIGN_RIGHT, col.fPart);
+						HorizontalAlignment.RIGHT, col.fPart);
 			}
 			else if (columnType.equalsIgnoreCase(UNITS_ABBR_HEADER_COLUMN))
 			{
 				createStringCell(wb, sheet, rowNum, columnNum, 
-						HSSFCellStyle.ALIGN_RIGHT, col.euAbbr);
+						HorizontalAlignment.RIGHT, col.euAbbr);
 			}
 			else if (columnType.equalsIgnoreCase(TYPE_VALUES_HEADER_COLUMN))
 			{
 				createStringCell(wb, sheet, rowNum, columnNum, 
-						HSSFCellStyle.ALIGN_RIGHT, col.type);
+						HorizontalAlignment.RIGHT, col.type);
 			}
 			columnNum++;
 		}		
@@ -366,7 +368,7 @@ public class ExcelConsumer extends DataConsumer
      * @param value		the value to set the cell to
      */
 	private void createStringCell(HSSFWorkbook wb, HSSFSheet sheet, 
-			short rowNum, short column, short align, String value)
+			short rowNum, short column, HorizontalAlignment align, String value)
 	{
 		if (value != null)
     		value = value.trim();
@@ -379,7 +381,7 @@ public class ExcelConsumer extends DataConsumer
 	}
     
 	private void createDateCell(HSSFWorkbook wb, HSSFSheet sheet, 
-			short rowNum, short column, short align, Date value)
+			short rowNum, short column, HorizontalAlignment align, Date value)
 	{
 		GregorianCalendar cal;
 		cal = new GregorianCalendar(timeZoneObj);
@@ -394,7 +396,8 @@ public class ExcelConsumer extends DataConsumer
 		HSSFRow row = sheet.createRow(rowNum);
 		HSSFCell cell = row.createCell(column);
 		//cell.setCellValue(value);
-		cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+//		cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+		cell.setCellType(CellType.NUMERIC);
 		cell.setCellValue(cal);
 		HSSFDataFormat format = wb.createDataFormat();
 		//cell.setCellValue(new Date());
@@ -407,7 +410,7 @@ public class ExcelConsumer extends DataConsumer
 	}
 	
 	private void createNumberCell(HSSFWorkbook wb, HSSFSheet sheet, 
-			short rowNum, short column, short align, double value)
+			short rowNum, short column, HorizontalAlignment align, double value)
 	{
 		HSSFRow row = sheet.createRow(rowNum);
 		HSSFCell cell = row.createCell(column);
@@ -421,7 +424,7 @@ public class ExcelConsumer extends DataConsumer
 	}
 	
 	private void createIndexCell(HSSFWorkbook wb, HSSFSheet sheet, 
-			short rowNum, short column, short align, int value)
+			short rowNum, short column, HorizontalAlignment align, int value)
 	{
 		HSSFRow row = sheet.createRow(rowNum);
 		HSSFCell cell = row.createCell(column);
@@ -565,12 +568,12 @@ public class ExcelConsumer extends DataConsumer
 //			createStringCell(wb, sheet, sampleRowNum, sampleColumnNum,
 //					HSSFCellStyle.ALIGN_RIGHT, "" + rowIndex);
 			createIndexCell(wb, sheet, sampleRowNum, sampleColumnNum,
-					HSSFCellStyle.ALIGN_RIGHT, rowIndex);
+					HorizontalAlignment.RIGHT, rowIndex);
 			
 			sampleColumnNum++;
 
 			createStringCell(wb, sheet, sampleRowNum, sampleColumnNum,
-					HSSFCellStyle.ALIGN_RIGHT, dateFormat.format(d));
+					HorizontalAlignment.RIGHT, dateFormat.format(d));
 //			createDateCell(wb, sheet, sampleRowNum, sampleColumnNum,
 //										HSSFCellStyle.ALIGN_RIGHT, d);
 			//dateFormat.
@@ -586,12 +589,12 @@ public class ExcelConsumer extends DataConsumer
 				try {
 					double val = new Double(s).doubleValue();
 					createNumberCell(wb, sheet, sampleRowNum, sampleColumnNum,
-							HSSFCellStyle.ALIGN_RIGHT, val);
+							HorizontalAlignment.RIGHT, val);
 				}
 				catch (NumberFormatException ex)
 				{
 					createStringCell(wb, sheet, sampleRowNum, sampleColumnNum,
-						HSSFCellStyle.ALIGN_RIGHT, "");
+							HorizontalAlignment.RIGHT, "");
 				}
 
 				//sheet.autoSizeColumn((short) sampleColumnNum);
