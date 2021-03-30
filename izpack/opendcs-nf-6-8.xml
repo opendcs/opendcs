@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
 
 <!-- 
-    OPENDCS 6.7 installation file.
+    OPENDCS 6.8 installation file
+	Non-Fed or 'nf' release. Does not include CWMS or HDB packs.
 -->
 
 <installation version="1.0">
@@ -11,13 +12,12 @@
     -->
     <info>
         <appname>OPENDCS</appname>
-        <appversion>Open Data Collection System 6.7</appversion>
+        <appversion>Open Data Collection System 6.8.09</appversion>
         <authors>
             <author name="Cove Software, LLC" email="info@covesw.com"/>
+            <author name="U.S. Army Corps of Engineers" email="Webmaster-HEC@usace.army.mil"/>
+            <author name="U.S. Bureau of Reclamation" email="hdbsupport@precisionwre.com"/>
         </authors>
-<!--
-		<run-privileged condition="izpack.windowsinstall.vista|izpack.windowsinstall.7"/>
--->
         <url>http://www.covesw.com</url>
     </info>
     
@@ -25,15 +25,6 @@
     <variables>
 		<variable name="DCSTOOL_HOME" value="$INSTALL_PATH"/>
 		<variable name="DECODES_INSTALL_DIR" value="$INSTALL_PATH"/>
-		<variable name="databasetype" value=""/>
-		<variable name="databaselocation" value=""/>
-		<variable name="editdatabasetype" value=""/>
-		<variable name="editdatabaselocation" value=""/>
-		<variable name="sitenametypepreference" value=""/>
-		<variable name="editoutputformat" value=""/>
-		<variable name="edittimezone" value=""/>
-		<variable name="jdbcdriverclass" value=""/>
-		<variable name="sqlkeygenerator" value=""/>
     </variables>
 
     <!-- 
@@ -67,19 +58,12 @@
 		and/or the InfoPanel.
     -->
     <resources>
-<!--
-        <res id="Installer.image"  src="icons/dog.gif"/>
--->
         <res id="Installer.image"  src="icons/odcs-logo.png"/>
         <res id="shortcutSpec.xml" src="winOpenDcsShortcutSpec.xml"/>
         <res id="Unix_shortcutSpec.xml"  src="unixOpenDcsShortcutSpec.xml"/>
         <res id="Win_shortcutSpec.xml"  src="winOpenDcsShortcutSpec.xml"/>
         <res id="InfoPanel.info"  src="readme.txt"/>
         <res id="TargetPanel.dir.windows"  src="dospath.txt"/>
-<!--
-        <res id="LicencePanel.licence"  src="license.txt"/>
-		<res id="ProcessPanel.Spec.xml" src="post-process.xml"/>
--->
     </resources>
     
     <!-- 
@@ -93,9 +77,6 @@
         <panel classname="PacksPanel"/>
         <panel classname="InstallPanel"/>
         <panel classname="ShortcutPanel"/>
-<!--
-		<panel classname="ProcessPanel"/>
--->
         <panel classname="FinishPanel"/>
     </panels>
     
@@ -108,19 +89,19 @@
             <description>OPENDCS Java Archive (jar) and scripts necessary for all installations. This will not modify your existing database or configuration files.
 IMPORTANT: For a new installation, you should also select the Template Database.</description>
 	    	<fileset dir="bin" targetdir="$INSTALL_PATH/bin" 
+			    includes="*,opendcs.jar"
 	    		excludes="*.bat,*.exe" os="unix">
 	    	</fileset>
 	    	<fileset dir="bin" targetdir="$INSTALL_PATH/bin" defaultexcludes="yes" 
 				includes="*.exe,*.sql,*.bat,opendcs.jar" os="windows">
 			</fileset>
             <file src="icons" targetdir="$INSTALL_PATH"/>
-			<file src="lib" targetdir="$INSTALL_PATH"/>
             <file src="decodes.properties" targetdir="$INSTALL_PATH" override="false"/>
             <file src="LddsConnections" targetdir="$INSTALL_PATH" override="false"/>
             <file src="computations.conf" targetdir="$INSTALL_PATH" override="false"/>
 
 			<fileset dir="dep" targetdir="$INSTALL_PATH/dep"
-				excludes="aspect*,IzPack-4.3.3/**,Lib/**,cwms*,hec*,jython*,metrics*,rma*,ojdbc*">
+				excludes="aspect*,IzPack-4.3.3/**,Lib/**,cwms*,hec*,jython*,metrics*,rma*,ojdbc*,lookup*,aqapi*,dbiClient*,jooq*,ons*,osdt*,simplefan*,ucp*,xdb*">
 			</fileset>
 
             <executable targetfile="$INSTALL_PATH/bin/decj" stage="never" os="unix"/>
@@ -296,6 +277,11 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <executable targetfile="$INSTALL_PATH/bin/procmon.bat" stage="never" os="windows"/>
             <parsable   targetfile="$INSTALL_PATH/bin/procmon.bat" os="windows"/>
 
+            <executable targetfile="$INSTALL_PATH/bin/postInstall" stage="postinstall" os="unix" keep="true"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/postInstall" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/postInstall.bat" stage="postinstall" os="windows" keep="true"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/postInstall.bat" os="windows"/>
+
         </pack>
 
 		<pack name="XML Database Template" required="no">
@@ -305,10 +291,27 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <file src="edit-db" targetdir="$INSTALL_PATH" override="false"/>
             <file src="edit-db/enum" targetdir="$INSTALL_PATH/edit-db" override="false"/>
             <file src="edit-db/enum/EnumList.xml" targetdir="$INSTALL_PATH/edit-db/enum" override="false"/>
+            <file src="edit-db/enum/ApplicationType.xml" targetdir="$INSTALL_PATH/edit-db/enum" override="false"/>
+            <file src="edit-db/enum/IntervalList.xml" targetdir="$INSTALL_PATH/edit-db/enum" override="false"/>
+            <file src="edit-db/enum/LoggerType.xml" targetdir="$INSTALL_PATH/edit-db/enum" override="false"/>
+            <file src="edit-db/enum/Polling.xml" targetdir="$INSTALL_PATH/edit-db/enum" override="false"/>
+            <file src="edit-db/enum/season.xml" targetdir="$INSTALL_PATH/edit-db/enum" override="false"/>
+
+            <file src="edit-db/loading-app" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/loading-app/AlbertaScada.xml" targetdir="$INSTALL_PATH/edit-db/loading-app" override="false"/>
+            <file src="edit-db/loading-app/CompEdit.xml" targetdir="$INSTALL_PATH/edit-db/loading-app" override="false"/>
+            <file src="edit-db/loading-app/RoutingScheduler.xml" targetdir="$INSTALL_PATH/edit-db/loading-app" override="false"/>
+            <file src="edit-db/loading-app/compdepends.xml" targetdir="$INSTALL_PATH/edit-db/loading-app" override="false"/>
+            <file src="edit-db/loading-app/compproc.xml" targetdir="$INSTALL_PATH/edit-db/loading-app" override="false"/>
+            <file src="edit-db/loading-app/decodes.xml" targetdir="$INSTALL_PATH/edit-db/loading-app" override="false"/>
+            <file src="edit-db/loading-app/util.xml" targetdir="$INSTALL_PATH/edit-db/loading-app" override="false"/>
+
             <file src="edit-db/presentation" targetdir="$INSTALL_PATH/edit-db" override="false"/>
             <file src="edit-db/presentation/SHEF-English.xml" targetdir="$INSTALL_PATH/edit-db/presentation" override="false"/>
             <file src="edit-db/presentation/CWMS-English.xml" targetdir="$INSTALL_PATH/edit-db/presentation" override="false"/>
             <file src="edit-db/presentation/CWMS-Metric.xml" targetdir="$INSTALL_PATH/edit-db/presentation" override="false"/>
+            <file src="edit-db/presentation/NRCS.xml" targetdir="$INSTALL_PATH/edit-db/presentation" override="false"/>
+
             <file src="edit-db/datasource" targetdir="$INSTALL_PATH/edit-db" override="false"/>
             <file src="edit-db/datasource/cdadata.xml" targetdir="$INSTALL_PATH/edit-db/datasource" override="false"/>
             <file src="edit-db/datasource/cdabackup.xml" targetdir="$INSTALL_PATH/edit-db/datasource" override="false"/>
@@ -325,11 +328,14 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <file src="edit-db/platform" targetdir="$INSTALL_PATH/edit-db" override="false"/>
             <file src="edit-db/routing" targetdir="$INSTALL_PATH/edit-db" override="false"/>
             <file src="edit-db/site" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+
+            <file src="edit-db/schedule" targetdir="$INSTALL_PATH/edit-db" override="false"/>
+            <file src="edit-db/schedule/SampleSchedEntry.xml" targetdir="$INSTALL_PATH/edit-db/schedule" override="false"/>
         </pack>
 
         <pack name="Docs" required="no" preselected="yes">
             <description>PDF and HTML Documentation to go in the 'doc' subdirectory.</description>
-            <file src="doc" targetdir="$INSTALL_PATH"/> <!-- Reccursive adding -->
+            <file src="doc" targetdir="$INSTALL_PATH"/>
         </pack>
 
         <pack name="TSDB Computation Components" required="no" preselected="yes">
@@ -540,6 +546,8 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandXmits.sh" type="shell" os="unix"/>
             <file src="schema/opendcs-pg/group_roles.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
             <file src="schema/opendcs-pg/makePerms.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
+            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/makePerms.sh" stage="never" os="unix"/>
+            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/makePerms.sh" type="shell" os="unix"/>
             <file src="schema/opendcs-pg/opendcs.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
             <file src="schema/opendcs-pg/sequences.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
             <file src="schema/opendcs-pg/triggers.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
@@ -572,12 +580,13 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <description>Open LRGS (Local Readout Ground Station) supplies raw data acquisition functions.</description>
 	    	<fileset dir="archive" targetdir="$INSTALL_PATH"/>
             <file src="users" targetdir="$INSTALL_PATH"/>
-            <file src="users/lrgsadmin" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="users/lrgsadmin" targetdir="$INSTALL_PATH/users" override="false"/>
             <file src="ddsrecv.conf" targetdir="$INSTALL_PATH" override="false"/>
             <file src="drgsconf.xml" targetdir="$INSTALL_PATH" override="false"/>
             <file src="drivers" targetdir="$INSTALL_PATH"/>
             <file src="lrgs.conf" targetdir="$INSTALL_PATH" override="false"/>
             <file src="netlist" targetdir="$INSTALL_PATH"/>
+            <file src="netlist/empty.nl" targetdir="$INSTALL_PATH/netlist"/>
             <file src=".lrgs.passwd" targetdir="$INSTALL_PATH" override="false"/>
 
             <executable targetfile="$INSTALL_PATH/bin/startLRGS" stage="never" os="unix"/>

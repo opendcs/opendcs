@@ -44,12 +44,12 @@ public interface CompDependsDAI
 
 	/**
 	 * Find all TSIDs that can serve as triggers for the passed computation.
-	 * @param comp The computation in question
+	 * @param compID The computation in question
 	 * @return list of TSIDs with CP_COMP_DEPENDS records indicating that they
 	 * are triggers for the computation
 	 * @throws DbIoException
 	 */
-	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbComputation comp)
+	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbKey compID)
 		throws DbIoException;
 	
 	/**
