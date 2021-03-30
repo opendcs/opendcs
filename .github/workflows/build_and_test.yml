@@ -1,7 +1,5 @@
 name: OpenDCS initial build and test
-on:
-  pull_request:
-    branches: [master]
+on: [push]    
 
 jobs:
   tests:
