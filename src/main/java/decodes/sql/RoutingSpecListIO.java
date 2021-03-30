@@ -93,11 +93,9 @@ import java.util.Date;
 
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.ScheduleEntryDAI;
-import opendcs.dao.PropertiesSqlDao;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
-import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.DataSource;
 import decodes.db.RoutingSpec;
@@ -343,7 +341,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	* associated with a particular RoutingSpec.  It then adds the
 	* NetworkList names to the list of such names in the RoutingSpec.
 	*/
-	public void read_RS_NL(RoutingSpec routingSpec)
+	private void read_RS_NL(RoutingSpec routingSpec)
 		throws DatabaseException, SQLException
 	{
 		Statement stmt = createStatement();
@@ -391,7 +389,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	/**
 	* Update a pre-existing RoutingSpec in the SQL database.
 	*/
-	public void update(RoutingSpec rs)
+	private void update(RoutingSpec rs)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = rs.getId();
@@ -442,7 +440,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	* records into the RoutingSpecProperty and RoutingSpecNetworkList
 	* tables, as required.
 	*/
-	public void insert(RoutingSpec rs)
+	private void insert(RoutingSpec rs)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = getKey("RoutingSpec");
@@ -494,7 +492,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	* Insert the RoutingSpecNetworkList records corresponding to a new
 	* RoutingSpec.
 	*/
-	public void insert_RS_NL(RoutingSpec rs)
+	private void insert_RS_NL(RoutingSpec rs)
 		throws DatabaseException, SQLException
 	{
 		DbKey rsId = rs.getId();
@@ -567,7 +565,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	* Deletes the RoutingSpecNetworkList records corresponding to a
 	* RoutingSpec.
 	*/
-	public void delete_RS_NL(RoutingSpec rs)
+	private void delete_RS_NL(RoutingSpec rs)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = rs.getId();

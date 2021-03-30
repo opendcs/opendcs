@@ -215,30 +215,30 @@ debug3(q);
 		write(eu, true);
 	}
 
-	/** 
-	  Write a single EngineeringUnit object to the SQL database. 
-	  @param eu the EU
-	  @param deleteFirst true if old object needs to be deleted first
-	*/
-	public void write(EngineeringUnit eu, boolean deleteFirst)
-		throws DatabaseException, SQLException
-	{
-		if (deleteFirst)
-		{
-			String q = "DELETE FROM engineeringunit WHERE unitabbr = "
-				+ sqlReqString(eu.abbr);
-			tryUpdate(q);
-		}
-		
-		String q = "INSERT INTO engineeringunit(UNITABBR,NAME,FAMILY,MEASURES) VALUES (" +
-				sqlReqString(eu.abbr) + ", " +
-				sqlReqString(eu.getName()) + ", " +
-				sqlOptString(eu.family) + ", " +
-				sqlOptString(eu.measures)
-				+ ")";
-
-		executeUpdate(q);
-	}
+//	/** 
+//	  Write a single EngineeringUnit object to the SQL database. 
+//	  @param eu the EU
+//	  @param deleteFirst true if old object needs to be deleted first
+//	*/
+//	public void write(EngineeringUnit eu, boolean deleteFirst)
+//		throws DatabaseException, SQLException
+//	{
+//		if (deleteFirst)
+//		{
+//			String q = "DELETE FROM engineeringunit WHERE unitabbr = "
+//				+ sqlReqString(eu.abbr);
+//			tryUpdate(q);
+//		}
+//		
+//		String q = "INSERT INTO engineeringunit(UNITABBR,NAME,FAMILY,MEASURES) VALUES (" +
+//				sqlReqString(eu.abbr) + ", " +
+//				sqlReqString(eu.getName()) + ", " +
+//				sqlOptString(eu.family) + ", " +
+//				sqlOptString(eu.measures)
+//				+ ")";
+//
+//		executeUpdate(q);
+//	}
 }
 
 

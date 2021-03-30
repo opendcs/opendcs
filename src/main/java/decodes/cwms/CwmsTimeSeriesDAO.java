@@ -102,6 +102,7 @@ import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -110,21 +111,28 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TimeZone;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.Database;
+import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.RecordRangeHandle;
+import decodes.tsdb.TasklistRec;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
@@ -155,6 +163,8 @@ public class CwmsTimeSeriesDAO
 			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a";
 //	private String cwmsTsidJoinClause = "a.LOCATION_CODE = c.LOCATION_CODE "
 //		+ " AND c.UNIT_SYSTEM = 'SI'";
+	private long lastTsidCacheRead = 0L;
+
 
 	protected CwmsTimeSeriesDAO(DatabaseConnectionOwner tsdb, String dbOfficeId)
 	{
@@ -1285,4 +1295,287 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 	{
 		// Not implemented for CWMS
 	}
+	
+	
+	@Override
+	public DataCollection getNewData(DbKey applicationId)
+		throws DbIoException
+	{
+		// Reload the TSID cache every hour.
+		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
+		{
+			lastTsidCacheRead = System.currentTimeMillis();
+			reloadTsIdCache();
+		}
+
+		DataCollection dataCollection = new DataCollection();
+
+		// MJM 2/14/18 - From Dave Portin. Original failTimeClause was:
+		//		" and (a.FAIL_TIME is null OR "
+		//		+ "SYSDATE - to_date("
+		//		+ "to_char(a.FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
+		//		+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
+
+		int minRecNum = -1;
+		
+		String failTimeClause =
+			DecodesSettings.instance().retryFailedComputations
+			? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
+			: "";
+		// 1st query gets min record num so that I can do a range query afterward.
+		String getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
+			+ "where a.LOADING_APPLICATION_ID = " + applicationId
+			+ failTimeClause;
+	
+		// 2nd query gets tasklist recs within record_num range.
+		String getTaskListStmtQuery = 
+			"select a.RECORD_NUM, a.SITE_DATATYPE_ID, ROUND(a.VALUE,8), a.START_DATE_TIME, "
+			+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
+			+ "from CP_COMP_TASKLIST a "
+			+ "where a.LOADING_APPLICATION_ID = " + applicationId
+			+ " and ROWNUM < 20000"
+			+ failTimeClause
+			+ " ORDER BY a.site_datatype_id, a.start_date_time";
+
+		try
+		{
+			ResultSet rs = doQuery(getMinStmtQuery);
+			
+			if (rs == null || !rs.next())
+			{
+				debug1("No new data for appId=" + applicationId);
+				((TimeSeriesDb)db).reclaimTasklistSpace(this);
+				return dataCollection;
+			}
+			else
+				minRecNum = rs.getInt(1);
+			if (rs.wasNull())
+			{
+				debug1("No new data for appId=" + applicationId);
+				minRecNum = -1;
+				((TimeSeriesDb)db).reclaimTasklistSpace(this);
+				return dataCollection;
+			}
+			debug3("minRecNum=" + minRecNum);
+		}
+		catch(SQLException ex)
+		{
+			warning("getNewDataSince: " + ex);
+			return dataCollection;
+		}
+
+		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
+		ArrayList<Integer> badRecs = new ArrayList<Integer>();
+		try
+		{
+			ResultSet rs = doQuery(getTaskListStmtQuery);
+			while (rs.next())
+			{
+				// Extract the info needed from the result set row.
+				int recordNum = rs.getInt(1);
+				DbKey sdi = DbKey.createDbKey(rs, 2);
+				double value = rs.getDouble(3);
+				boolean valueWasNull = rs.wasNull();
+				Date timeStamp = db.getFullDate(rs, 4);
+				String df = rs.getString(5);
+				char c = df.toLowerCase().charAt(0);
+				boolean deleted = false;
+				if (c == 'u')
+				{
+					// msg handler will send this when he gets
+					// TsCodeChanged. It tells me to update my cache.
+					DbObjectCache<TimeSeriesIdentifier> cache = getCache();
+					synchronized(cache)
+					{
+						TimeSeriesIdentifier tsid = cache.getByKey(sdi);
+						if (tsid != null)
+						{
+							DbKey newCode = DbKey.createDbKey(rs, 9);
+							cache.remove(sdi);
+							tsid.setKey(newCode);
+							cache.put(tsid);
+							continue;
+						}
+					}
+				}
+				else 
+					deleted = TextUtil.str2boolean(df);
+					
+				String unitsAbbr = rs.getString(6);
+				Date versionDate = db.getFullDate(rs, 7);
+				BigDecimal qc = rs.getBigDecimal(8);
+				long qualityCode = qc == null ? 0 : qc.longValue();
+				
+				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
+					valueWasNull, timeStamp, deleted,
+					unitsAbbr, versionDate, qualityCode);
+				tasklistRecs.add(rec);
+			}
+
+			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
+			
+			// Process the real-time records collected above.
+			for(TasklistRec rec : tasklistRecs)
+				processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
+			
+			dataCollection.setTasklistHandle(rrhandle);
+			
+			// Delete the bad tasklist recs, 250 at a time.
+			if (badRecs.size() > 0)
+				Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
+					+ " bad tasklist records.");
+			while (badRecs.size() > 0)
+			{
+				StringBuilder inList = new StringBuilder();
+				int n = badRecs.size();
+				int x=0;
+				for(; x<250 && x<n; x++)
+				{
+					if (x > 0)
+						inList.append(", ");
+					inList.append(badRecs.get(x).toString());
+				}
+				String q = "delete from CP_COMP_TASKLIST "
+					+ "where RECORD_NUM IN (" + inList.toString() + ")";
+				doModify(q);
+//				commit();
+				for(int i=0; i<x; i++)
+					badRecs.remove(0);
+			}
+			
+			// Show each tasklist entry in the log if we're at debug level 3
+			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
+			{
+				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
+				debug3("getNewData, returning " + allts.size() + " TimeSeries.");
+				for(CTimeSeries ts : allts)
+					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " " 
+						+ ts.size() + " values.");
+			}
+			
+			return dataCollection;
+		}
+		catch(SQLException ex)
+		{
+			System.err.println("Error reading new data: " + ex);
+			ex.printStackTrace();
+			throw new DbIoException("Error reading new data: " + ex);
+		}
+	}
+
+
+	private void processTasklistEntry(TasklistRec rec,
+		DataCollection dataCollection, RecordRangeHandle rrhandle,
+		ArrayList<Integer> badRecs, DbKey applicationId)
+		throws DbIoException
+	{
+		// Find time series if already in data collection.
+		// If not construct one and add it.
+		CTimeSeries cts = dataCollection.getTimeSeriesByUniqueSdi(rec.getSdi());
+		if (cts == null)
+		{
+			try
+			{
+				TimeSeriesIdentifier tsid = getTimeSeriesIdentifier(rec.getSdi());
+				String tabsel = tsid.getPart("paramtype") + "." + 
+					tsid.getPart("duration") + "." + tsid.getPart("version");
+				cts = new CTimeSeries(rec.getSdi(), tsid.getInterval(),
+					tabsel);
+				cts.setModelRunId(-1);
+				cts.setTimeSeriesIdentifier(tsid);
+				cts.setUnitsAbbr(rec.getUnitsAbbr());
+				if (((TimeSeriesDb)db).fillDependentCompIds(cts, applicationId, this) == 0)
+				{
+					warning("Deleting tasklist rec for '"
+						+ tsid.getUniqueString() 
+						+ "' because no dependent comps.");
+					if (badRecs != null)
+						badRecs.add(rec.getRecordNum());
+					return;
+				}
+
+				try { dataCollection.addTimeSeries(cts); }
+				catch(decodes.tsdb.DuplicateTimeSeriesException ex)
+				{ // won't happen -- already verified it's not there.
+				}
+			}
+			catch(NoSuchObjectException ex)
+			{
+				warning("Deleting tasklist rec for non-existent ts_code "
+					+ rec.getSdi());
+				if (badRecs != null)
+					badRecs.add(rec.getRecordNum());
+				return;
+			}
+		}
+		else
+		{
+			// The time series already existed from a previous tasklist rec in this run.
+			// Make sure this rec's unitsAbbr matches the CTimeSeries.getUnitsAbbr().
+			// If not, convert it to the CTS units.
+			String recUnitsAbbr = rec.getUnitsAbbr();
+			String ctsUnitsAbbr = cts.getUnitsAbbr();
+			if (ctsUnitsAbbr == null) // no units yet assigned?
+				cts.setUnitsAbbr(ctsUnitsAbbr = recUnitsAbbr);
+			else if (recUnitsAbbr == null) // for some reason, this tasklist record doesn't have units
+				recUnitsAbbr = ctsUnitsAbbr;
+			else if (!TextUtil.strEqualIgnoreCase(recUnitsAbbr, ctsUnitsAbbr))
+			{
+				EngineeringUnit euOld =	EngineeringUnit.getEngineeringUnit(recUnitsAbbr);
+				EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(ctsUnitsAbbr);
+
+				UnitConverter converter = Database.getDb().unitConverterSet.get(euOld, euNew);
+				if (converter != null)
+				{
+					try { rec.setValue(converter.convert(rec.getValue())); }
+					catch (Exception ex)
+					{
+						Logger.instance().warning(
+							"Tasklist for '" + cts.getTimeSeriesIdentifier().getUniqueString()
+							+ "' exception converting " + rec.getValue() + " " + rec.getUnitsAbbr()
+							+ " to " + cts.getUnitsAbbr() + ": " + ex
+							+ " -- will use as-is.");
+					}
+				}
+				else
+				{
+					Logger.instance().warning(
+						"Tasklist for '" + cts.getTimeSeriesIdentifier().getUniqueString()
+						+ "' cannot convert " + rec.getValue() + " " + rec.getUnitsAbbr()
+						+ " to " + cts.getUnitsAbbr() + ". -- will use as-is.");
+				}
+			}
+		}
+		if (rrhandle != null)
+			rrhandle.addRecNum(rec.getRecordNum());
+
+		// Construct timed variable with appropriate flags & add it.
+		TimedVariable tv = new TimedVariable(rec.getValue());
+		tv.setTime(rec.getTimeStamp());
+		tv.setFlags(CwmsFlags.cwmsQuality2flag(rec.getQualityCode()));
+		
+		if (!rec.isDeleted() && !rec.isValueWasNull())
+		{
+			VarFlags.setWasAdded(tv);
+			cts.addSample(tv);
+			// Remember which tasklist records are in this timeseries.
+			cts.addTaskListRecNum(rec.getRecordNum());
+			Logger.instance().debug3("Added value " + tv + " to time series "
+				+ cts.getTimeSeriesIdentifier().getUniqueString()
+				+ " flags=0x" + Integer.toHexString(tv.getFlags())
+				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+		}
+		else
+		{
+			VarFlags.setWasDeleted(tv);
+			Logger.instance().warning("Discarding deleted value " + tv.toString()
+				+ " for time series " + cts.getTimeSeriesIdentifier().getUniqueString()
+				+ " flags=0x" + Integer.toHexString(tv.getFlags())
+				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+		}
+	}
+
+	
+	
+	
 }

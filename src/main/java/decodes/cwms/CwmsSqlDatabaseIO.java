@@ -85,7 +85,7 @@ public class CwmsSqlDatabaseIO
 		commitAfterSelect = false;
 
 		// Likewise we need a special platform IO to do office ID filtering.
-		_platformListIO = new CwmsPlatformListIO(this, _configListIO, _equipmentModelListIO, _decodesScriptIO);
+		_platformListIO = new CwmsPlatformListIO(this, _configListIO, _equipmentModelListIO);
 
 		// Make sure the CWMS name type enumeration exists.
 		DbEnum nameTypeList = Database.getDb().enumList.getEnum(

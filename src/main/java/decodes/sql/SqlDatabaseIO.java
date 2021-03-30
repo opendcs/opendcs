@@ -166,18 +166,6 @@ public class SqlDatabaseIO
 	public ConfigListIO _configListIO;
 
 	/**
- 	* This is used to read and write FormatStatement records.
- 	*/
-	FormatStatementIO _formatStatementIO;
-
-
-	/** This reads and writes the DecodesScript table. */
-	protected DecodesScriptIO _decodesScriptIO;
-
-	/** This reads and writes the ScriptSensor and related tables.  */
-	ScriptSensorIO _scriptSensorIO;
-
-	/**
  	* This holds the sql.EquipmentModelListIO object that's used to read
  	* and write the EquipmentModelList.
  	*/
@@ -270,14 +258,9 @@ public class SqlDatabaseIO
 		_engineeringUnitIO = new EngineeringUnitIO(this);
 		_unitConverterIO = new UnitConverterIO(this);
 		_networkListListIO = new NetworkListListIO(this);
-		_formatStatementIO = new FormatStatementIO(this);
-		_scriptSensorIO = new ScriptSensorIO(this, _unitConverterIO);
-		_decodesScriptIO = new DecodesScriptIO(this, _formatStatementIO, 
-			_scriptSensorIO);
-		_configListIO = new ConfigListIO(this, _decodesScriptIO);
+		_configListIO = new ConfigListIO(this, _unitConverterIO);
 		_equipmentModelListIO = new EquipmentModelListIO(this);
-		_platformListIO = new PlatformListIO(this, _configListIO, 
-			_equipmentModelListIO, _decodesScriptIO);
+		_platformListIO = new PlatformListIO(this, _configListIO, _equipmentModelListIO);
 		_dataSourceListIO = new DataSourceListIO(this);
 		_presentationGroupListIO = new PresentationGroupListIO(this);
 		_routingSpecListIO = new RoutingSpecListIO(this,

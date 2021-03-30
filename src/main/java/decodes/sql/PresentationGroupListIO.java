@@ -256,7 +256,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	* @param pg the PresentationGroup
 	* @param pgId the PresentationGroup database ID
 	*/
-	public void readDataPresentations(PresentationGroup pg, DbKey pgId)
+	private void readDataPresentations(PresentationGroup pg, DbKey pgId)
 		throws DatabaseException
 	{
 		try 
@@ -408,7 +408,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	*
 	* @param pg the PresentationGroup
 	*/
-	public void update(PresentationGroup pg)
+	private void update(PresentationGroup pg)
 		throws DatabaseException, SQLException
 	{
 		String q =
@@ -435,7 +435,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	* The DataPresentations might or might not have their ID set.
 	* @param pg the PresentationGroup
 	*/
-	public void deleteAllDataPresentations(PresentationGroup pg)
+	private void deleteAllDataPresentations(PresentationGroup pg)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = pg.getId();
@@ -471,27 +471,27 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		}
 	}
 
-	/**
-	* This deletes a single DataPresentation.  All the RoundingRules
-	* associated with this DataPresentation are also deleted.
-	* The SQL database ID value of the DataPresentation must be set.
-	* @param pg the PresentationGroup
-	*/
-	public void delete(DataPresentation dp)
-		throws DatabaseException, SQLException
-	{
-		DbKey id = dp.getId();
-
-		String q = "DELETE FROM DataPresentation WHERE ID = " + id;
-		executeUpdate(q);
-
-		dp.setId(Constants.undefinedId);
-
-		q = "DELETE FROM RoundingRule " +
-			"WHERE DataPresentationID = " + id;
-		tryUpdate(q);
-	}
-
+//	/**
+//	* This deletes a single DataPresentation.  All the RoundingRules
+//	* associated with this DataPresentation are also deleted.
+//	* The SQL database ID value of the DataPresentation must be set.
+//	* @param pg the PresentationGroup
+//	*/
+//	public void delete(DataPresentation dp)
+//		throws DatabaseException, SQLException
+//	{
+//		DbKey id = dp.getId();
+//
+//		String q = "DELETE FROM DataPresentation WHERE ID = " + id;
+//		executeUpdate(q);
+//
+//		dp.setId(Constants.undefinedId);
+//
+//		q = "DELETE FROM RoundingRule " +
+//			"WHERE DataPresentationID = " + id;
+//		tryUpdate(q);
+//	}
+//
 	/**
 	* Insert a new PresentationGroup into the database.
 	* This assigns the object a new ID number.
@@ -501,7 +501,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	* new.
 	* @param pg the PresentationGroup
 	*/
-	public void insert(PresentationGroup pg)
+	private void insert(PresentationGroup pg)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = getKey("PresentationGroup");
@@ -529,7 +529,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	* This inserts all the DataPresentations of a PresentationGroup.
 	* @param pg the PresentationGroup
 	*/
-	public void insertAllDataPresentations(PresentationGroup pg)
+	private void insertAllDataPresentations(PresentationGroup pg)
 		throws DatabaseException, SQLException
 	{
 		Vector<DataPresentation> v = pg.dataPresentations;
@@ -537,67 +537,67 @@ public class PresentationGroupListIO extends SqlDbObjIo
 			insert(v.get(i));
 	}
 
-	/**
-	* This writes a DataPresentation into the database, when we're not
-	* sure whether it's a new object or not.  Its SQL DB ID is examined,
-	* and if not set, this is considered to be a new object.
-	* Regardless, db must have its myGroup member set to point to its
-	* PresentationGroup parent, and that must not be new.
-	* @param dp the DataPresentation
-	*/
-	public void write(DataPresentation dp)
-		throws DatabaseException, SQLException
-	{
-		if (dp.idIsSet()) update(dp);
-		else insert(dp);
-	}
+//	/**
+//	* This writes a DataPresentation into the database, when we're not
+//	* sure whether it's a new object or not.  Its SQL DB ID is examined,
+//	* and if not set, this is considered to be a new object.
+//	* Regardless, db must have its myGroup member set to point to its
+//	* PresentationGroup parent, and that must not be new.
+//	* @param dp the DataPresentation
+//	*/
+//	public void write(DataPresentation dp)
+//		throws DatabaseException, SQLException
+//	{
+//		if (dp.idIsSet()) update(dp);
+//		else insert(dp);
+//	}
 
-	/**
-	* This updates an existing DataPresentation in the database.
-	* This DataPresentation must also have its myGroup member be a valid
-	* reference to a PresentationGroup, which is not new.
-	* Note that there is no update method for RoundingRules.  When a set
-	* of RoundingRules belonging to a DataPresentation has possibly changed,
-	* this I/O class deletes all of the existing RoundingRules in the
-	* database, and then adds them all back fresh.
-	* @param dp the DataPresentation
-	*/
-	public void update(DataPresentation dp)
-		throws DatabaseException, SQLException
-	{
-		DbKey id = dp.getId();
-		DbKey pgId = dp.getGroup().getId();
-
-		String q =
-			"UPDATE DataPresentation SET " +
-			  "GroupId = " + pgId + ", " +
-			  "DataTypeId = " + dp.getDataType().getId() + ", " +
-			  "UnitAbbr = " + sqlString(dp.getUnitsAbbr());
-//			  "EquipmentID = " + getEqIdStr(dp);
-		int md = dp.getMaxDecimals();
-		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-		{
-			q = q + ", maxDecimals = " + 
-				(md == Integer.MAX_VALUE ? "NULL" : ("" + md));
-			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
-			{
-				q = q + ", MAX_VALUE = " + sqlOptDouble(dp.getMaxValue());
-				q = q + ", MIN_VALUE = " + sqlOptDouble(dp.getMinValue());
-			}
-		}
-
-		q = q + " WHERE ID = " + id;
-		executeUpdate(q);
-
-		// Delete all the existing RoundingRules in the database.
-
-		q = "DELETE FROM RoundingRule WHERE DataPresentationID = " + id;
-		tryUpdate(q);
-
-		// Now insert them all back in
-
-//		insertAllRoundingRules(dp);
-	}
+//	/**
+//	* This updates an existing DataPresentation in the database.
+//	* This DataPresentation must also have its myGroup member be a valid
+//	* reference to a PresentationGroup, which is not new.
+//	* Note that there is no update method for RoundingRules.  When a set
+//	* of RoundingRules belonging to a DataPresentation has possibly changed,
+//	* this I/O class deletes all of the existing RoundingRules in the
+//	* database, and then adds them all back fresh.
+//	* @param dp the DataPresentation
+//	*/
+//	public void update(DataPresentation dp)
+//		throws DatabaseException, SQLException
+//	{
+//		DbKey id = dp.getId();
+//		DbKey pgId = dp.getGroup().getId();
+//
+//		String q =
+//			"UPDATE DataPresentation SET " +
+//			  "GroupId = " + pgId + ", " +
+//			  "DataTypeId = " + dp.getDataType().getId() + ", " +
+//			  "UnitAbbr = " + sqlString(dp.getUnitsAbbr());
+////			  "EquipmentID = " + getEqIdStr(dp);
+//		int md = dp.getMaxDecimals();
+//		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
+//		{
+//			q = q + ", maxDecimals = " + 
+//				(md == Integer.MAX_VALUE ? "NULL" : ("" + md));
+//			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+//			{
+//				q = q + ", MAX_VALUE = " + sqlOptDouble(dp.getMaxValue());
+//				q = q + ", MIN_VALUE = " + sqlOptDouble(dp.getMinValue());
+//			}
+//		}
+//
+//		q = q + " WHERE ID = " + id;
+//		executeUpdate(q);
+//
+//		// Delete all the existing RoundingRules in the database.
+//
+//		q = "DELETE FROM RoundingRule WHERE DataPresentationID = " + id;
+//		tryUpdate(q);
+//
+//		// Now insert them all back in
+//
+////		insertAllRoundingRules(dp);
+//	}
 
 //	/**
 //	* This method inserts all of the RoundingRules belonging to a
@@ -622,7 +622,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	* DataPresentation.
 	* @param dp the DataPresentation
 	*/
-	public void insert(DataPresentation dp)
+	private void insert(DataPresentation dp)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = getKey("DataPresentation");
@@ -670,38 +670,38 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	}
 
 
-	/**
-	* Insert a new RoundingRule into the database.
-	* rr must have a valid DataPresentation as its parent member, and
-	* that parent must not be new (i.e. that DataPresentation must have
-	* its ID set.)
-	* Note that there is no update method for RoundingRules.  When a set
-	* of RoundingRules belonging to a DataPresentation has possibly changed,
-	* this I/O class deletes all of the existing RoundingRules in the
-	* database, and then adds them all back fresh.
-	* @param rr the RoundingRule
-	*/
-	public void insert(RoundingRule rr)
-		throws DatabaseException, SQLException
-	{
-		DbKey dpId = rr.getParent().getId();
-
-		String upperLimit = "" +
-			(rr.getUpperLimit() == Constants.undefinedDouble ?
-				SQL_MAX_DOUBLE : rr.getUpperLimit());
-		
-		String q;
-		if (getDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
-			q = "INSERT INTO RoundingRule VALUES (" +
-			  	dpId + ", " + upperLimit
-			  	+ rr.sigDigits + ", " +
-			  	"100" +
-				")";
-		else // No max decimals in new table def.
-			q = "INSERT INTO RoundingRule VALUES (" +
-			  	dpId + ", " + upperLimit + ", " + rr.sigDigits + ")";
-		executeUpdate(q);
-	}
+//	/**
+//	* Insert a new RoundingRule into the database.
+//	* rr must have a valid DataPresentation as its parent member, and
+//	* that parent must not be new (i.e. that DataPresentation must have
+//	* its ID set.)
+//	* Note that there is no update method for RoundingRules.  When a set
+//	* of RoundingRules belonging to a DataPresentation has possibly changed,
+//	* this I/O class deletes all of the existing RoundingRules in the
+//	* database, and then adds them all back fresh.
+//	* @param rr the RoundingRule
+//	*/
+//	public void insert(RoundingRule rr)
+//		throws DatabaseException, SQLException
+//	{
+//		DbKey dpId = rr.getParent().getId();
+//
+//		String upperLimit = "" +
+//			(rr.getUpperLimit() == Constants.undefinedDouble ?
+//				SQL_MAX_DOUBLE : rr.getUpperLimit());
+//		
+//		String q;
+//		if (getDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
+//			q = "INSERT INTO RoundingRule VALUES (" +
+//			  	dpId + ", " + upperLimit
+//			  	+ rr.sigDigits + ", " +
+//			  	"100" +
+//				")";
+//		else // No max decimals in new table def.
+//			q = "INSERT INTO RoundingRule VALUES (" +
+//			  	dpId + ", " + upperLimit + ", " + rr.sigDigits + ")";
+//		executeUpdate(q);
+//	}
 
 	/**
 	* This computes the SQL string representation of the "InheritsFrom"

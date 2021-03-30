@@ -24,6 +24,7 @@
 package opendcs.dao;
 
 import ilex.util.Logger;
+import opendcs.dai.DaiBase;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,11 +37,14 @@ import decodes.tsdb.DbIoException;
 import decodes.util.DecodesException;
 
 /**
- * Base class for Data Access Objects within OpenDCS
+ * Base class for Data Access Objects within OpenDCS.
+ * This class can also be instantiated directly for executing miscellaneous
+ * queries and modify statements.
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
  */
 public class DaoBase
+	implements DaiBase
 {
 	protected DatabaseConnectionOwner db = null;
 	private Statement queryStmt1 = null;
@@ -56,7 +60,7 @@ public class DaoBase
 	 * @param tsdb the database
 	 * @param module the name of the module for log messages
 	 */
-	protected DaoBase(DatabaseConnectionOwner tsdb, String module)
+	public DaoBase(DatabaseConnectionOwner tsdb, String module)
 	{
 		this.db = tsdb;
 		this.module = module;

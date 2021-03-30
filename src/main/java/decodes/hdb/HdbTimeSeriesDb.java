@@ -513,40 +513,6 @@ public class HdbTimeSeriesDb
 	}
 
 	/**
-	 * Returns the modelID for a given modelRunId.
-	 * @param modelRunId the model run ID
-	 * @return the modelID for a given modelRunId, or -1 if not found.
-	 */
-	public int findModelId(int modelRunId)
-		throws DbIoException
-	{
-		String q = "select MODEL_ID from REF_MODEL_RUN "
-			+ "where MODEL_RUN_ID = " + modelRunId;
-		Statement st = null;
-		try
-		{
-			st = conn.createStatement();
-			ResultSet rs = st.executeQuery(q);
-			if (rs.next())
-			{
-				int r = rs.getInt(1);
-				if (!rs.wasNull())
-					return r;
-			}
-		}
-		catch(SQLException ex)
-		{
-			Logger.instance().warning("findModelId: " + ex);
-		}
-		finally
-		{
-			try { st.close(); }
-			catch(Exception ex) {}
-		}
-		return Constants.undefinedIntKey;
-	}
-
-	/**
 	 * Returns the maximum valid run-id for the specified model.
 	 * @param modelId the ID of the model
 	 * @return the maximum valid run-id for the specified model.
@@ -684,202 +650,149 @@ public class HdbTimeSeriesDb
 			return "" + c;
 	}
 
-	@Override
-	public DataCollection getNewData(DbKey applicationId)
-		throws DbIoException
-	{
-		// Reload the TSID cache every hour.
-		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
-		{
-			lastTsidCacheRead = System.currentTimeMillis();
-			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
-			try { timeSeriesDAO.reloadTsIdCache(); }
-			finally
-			{
-				timeSeriesDAO.close();
-			}
-		}
-		
-		String q = "";
-		String attrList = "RECORD_NUM, SITE_DATATYPE_ID, INTERVAL, "
-			+ "TABLE_SELECTOR, VALUE, START_DATE_TIME, DELETE_FLAG, "
-			+ "MODEL_RUN_ID, VALIDATION, DATA_FLAGS";
-
-		DataCollection dataCollection = new DataCollection();
-
-		q = "select " + attrList + " from CP_COMP_TASKLIST "
-		  + "where LOADING_APPLICATION_ID = " + applicationId + " and rownum < 10000 ";
-
-		if (tsdbVersion >= 4)
-			q = q + " and (FAIL_TIME is null OR "
-				+ "SYSDATE - to_date("
-					+ "to_char(FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
-					+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
-
-//		now add the order by record_num to insure last change wins
-		q = q + " order by record_num";
-
-		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
-		RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
-		try
-		{
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
-			{
-				// Extract the info needed from the result set row.
-				int recordNum = rs.getInt(1);
-				DbKey sdi = DbKey.createDbKey(rs, 2);
-				String interval = rs.getString(3);
-				String tabsel = rs.getString(4);
-				double value = rs.getDouble(5);
-				Date timeStamp = getFullDate(rs, 6);
-				boolean deleted = getBoolean(rs, 7);
-				int modelRunId = rs.getInt(8);
-				if (rs.wasNull())
-					modelRunId = Constants.undefinedIntKey;
-				String valstr = rs.getString(9);
-				char valchar = (rs.wasNull() || valstr.length() == 0) ?
-					HdbFlags.HDB_BLANK_VALIDATION : valstr.charAt(0);
-				String derivation = rs.getString(10);
-				if (rs.wasNull())
-					derivation = "";
-
-				// Convert the HDB derivation, validation & deletion flags into
-				// a single 32-bit integer.
-				int flags = HdbFlags.hdbDerivation2flag(derivation)
-					| HdbFlags.hdbValidation2flag(valchar);
-				if (!deleted)
-					flags |= VarFlags.DB_ADDED;
-				else
-					flags |= VarFlags.DB_DELETED;
-				
-				
-				tasklistRecs.add(
-					new TasklistRec(recordNum, sdi, value,
-						timeStamp, deleted,
-						flags, interval, tabsel, modelRunId));
-			}
-			
-			if (tasklistRecs.size() == 0)
-			{
-				// MJM 6.4 RC08 this means tasklist is likely empty.
-				reclaimTasklistSpace();
-			}
-			
-			ArrayList<Integer> badRecs = new ArrayList<Integer>();
-			for(TasklistRec rec : tasklistRecs)
-			{
-				// Find time series if already in data collection.
-				// If not construct one and add it.
-				CTimeSeries cts = getTimeSeriesFor(dataCollection, 
-					rec.getSdi(), rec.getInterval(), rec.getTableSelector(),
-					rec.getModelRunId(), applicationId);
-				if (cts == null)
-				{
-					badRecs.add(rec.getRecordNum());
-					continue;
-				}
-				
-				// Keep track of record number range seen.
-				rrhandle.addRecNum(rec.getRecordNum());
-
-				// Construct timed variable & add it.
-				TimedVariable tv = new TimedVariable(rec.getValue());
-				tv.setTime(rec.getTimeStamp());
-				tv.setFlags(rec.getFlags());
-				
-				cts.addSample(tv);
-				
-				// Remember which tasklist records are in this timeseries.
-				cts.addTaskListRecNum(rec.getRecordNum());
-			}
-			
-			dataCollection.setTasklistHandle(rrhandle);
-			
-			// Delete the bad tasklist recs, 250 at a time.
-			while (badRecs.size() > 0)
-			{
-				StringBuilder inList = new StringBuilder();
-				int n = badRecs.size();
-				int x=0;
-				for(; x<250 && x<n; x++)
-				{
-					if (x > 0)
-						inList.append(", ");
-					inList.append(badRecs.get(x).toString());
-				}
-				q = "delete from CP_COMP_TASKLIST "
-					+ "where RECORD_NUM IN (" + inList.toString() + ")";
-				doModify(q);
-//				commit();
-				for(int i=0; i<x; i++)
-					badRecs.remove(0);
-			}
-
-			return dataCollection;
-		}
-		catch(SQLException ex)
-		{
-			System.err.println("Error reading new data: " + ex);
-			ex.printStackTrace();
-			throw new DbIoException("Error reading new data: " + ex);
-		}
-	}
-
-
-// This method now replaced by fillTimeSeriesMetadata
-//	public void setTsExtraFields(CTimeSeries ts)
+//	@Override
+//	public DataCollection getNewData(DbKey applicationId)
 //		throws DbIoException
 //	{
+//		// Reload the TSID cache every hour.
+//		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
+//		{
+//			lastTsidCacheRead = System.currentTimeMillis();
+//			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
+//			try { timeSeriesDAO.reloadTsIdCache(); }
+//			finally
+//			{
+//				timeSeriesDAO.close();
+//			}
+//		}
+//		
+//		String q = "";
+//		String attrList = "RECORD_NUM, SITE_DATATYPE_ID, INTERVAL, "
+//			+ "TABLE_SELECTOR, VALUE, START_DATE_TIME, DELETE_FLAG, "
+//			+ "MODEL_RUN_ID, VALIDATION, DATA_FLAGS";
+//
+//		DataCollection dataCollection = new DataCollection();
+//
+//		q = "select " + attrList + " from CP_COMP_TASKLIST "
+//		  + "where LOADING_APPLICATION_ID = " + applicationId + " and rownum < 10000 ";
+//
+//		if (tsdbVersion >= 4)
+//			q = q + " and (FAIL_TIME is null OR "
+//				+ "SYSDATE - to_date("
+//					+ "to_char(FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
+//					+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
+//
+////		now add the order by record_num to insure last change wins
+//		q = q + " order by record_num";
+//
+//		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
+//		RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
 //		try
 //		{
-//			int sdi = ts.getSDI();
-//			SiteDatatype sd = new SiteDatatype(sdi);
-//			expandSDI(sd);
-//
-//			SiteName sn = sd.getSiteName();
-//			DataType dt = sd.getDataType();
-//			int dtId = -1;
-//			int unitId = -1;
-//			String dtName = (dt != null ? dt.getCode() : "unknownType");
-//
-//			String q = "select HDB_DATATYPE.DATATYPE_ID, HDB_DATATYPE.UNIT_ID, "
-//				+ "HDB_DATATYPE.DATATYPE_COMMON_NAME "
-//				+ "from HDB_SITE_DATATYPE, HDB_DATATYPE "
-//				+ "where SITE_DATATYPE_ID = " + sdi
-//		 		+ " and HDB_SITE_DATATYPE.DATATYPE_ID = HDB_DATATYPE.DATATYPE_ID";
 //			ResultSet rs = doQuery(q);
-//			if (rs.next())
+//			while (rs != null && rs.next())
 //			{
-//				dtId = rs.getInt(1);
-//				unitId = rs.getInt(2);
-//				dtName = rs.getString(3);
+//				// Extract the info needed from the result set row.
+//				int recordNum = rs.getInt(1);
+//				DbKey sdi = DbKey.createDbKey(rs, 2);
+//				String interval = rs.getString(3);
+//				String tabsel = rs.getString(4);
+//				double value = rs.getDouble(5);
+//				Date timeStamp = getFullDate(rs, 6);
+//				boolean deleted = getBoolean(rs, 7);
+//				int modelRunId = rs.getInt(8);
+//				if (rs.wasNull())
+//					modelRunId = Constants.undefinedIntKey;
+//				String valstr = rs.getString(9);
+//				char valchar = (rs.wasNull() || valstr.length() == 0) ?
+//					HdbFlags.HDB_BLANK_VALIDATION : valstr.charAt(0);
+//				String derivation = rs.getString(10);
+//				if (rs.wasNull())
+//					derivation = "";
+//
+//				// Convert the HDB derivation, validation & deletion flags into
+//				// a single 32-bit integer.
+//				int flags = HdbFlags.hdbDerivation2flag(derivation)
+//					| HdbFlags.hdbValidation2flag(valchar);
+//				if (!deleted)
+//					flags |= VarFlags.DB_ADDED;
+//				else
+//					flags |= VarFlags.DB_DELETED;
+//				
+//				
+//				tasklistRecs.add(
+//					new TasklistRec(recordNum, sdi, value,
+//						timeStamp, deleted,
+//						flags, interval, tabsel, modelRunId));
+//			}
+//			
+//			if (tasklistRecs.size() == 0)
+//			{
+//				// MJM 6.4 RC08 this means tasklist is likely empty.
+//				reclaimTasklistSpace();
+//			}
+//			
+//			ArrayList<Integer> badRecs = new ArrayList<Integer>();
+//			for(TasklistRec rec : tasklistRecs)
+//			{
+//				// Find time series if already in data collection.
+//				// If not construct one and add it.
+//				CTimeSeries cts = getTimeSeriesFor(dataCollection, 
+//					rec.getSdi(), rec.getInterval(), rec.getTableSelector(),
+//					rec.getModelRunId(), applicationId);
+//				if (cts == null)
+//				{
+//					badRecs.add(rec.getRecordNum());
+//					continue;
+//				}
+//				
+//				// Keep track of record number range seen.
+//				rrhandle.addRecNum(rec.getRecordNum());
+//
+//				// Construct timed variable & add it.
+//				TimedVariable tv = new TimedVariable(rec.getValue());
+//				tv.setTime(rec.getTimeStamp());
+//				tv.setFlags(rec.getFlags());
+//				
+//				cts.addSample(tv);
+//				
+//				// Remember which tasklist records are in this timeseries.
+//				cts.addTaskListRecNum(rec.getRecordNum());
+//			}
+//			
+//			dataCollection.setTasklistHandle(rrhandle);
+//			
+//			// Delete the bad tasklist recs, 250 at a time.
+//			while (badRecs.size() > 0)
+//			{
+//				StringBuilder inList = new StringBuilder();
+//				int n = badRecs.size();
+//				int x=0;
+//				for(; x<250 && x<n; x++)
+//				{
+//					if (x > 0)
+//						inList.append(", ");
+//					inList.append(badRecs.get(x).toString());
+//				}
+//				q = "delete from CP_COMP_TASKLIST "
+//					+ "where RECORD_NUM IN (" + inList.toString() + ")";
+//				doModify(q);
+////				commit();
+//				for(int i=0; i<x; i++)
+//					badRecs.remove(0);
 //			}
 //
-//			// For display name, use "SITE:DATATYPE-INTERVAL"
-//			ts.setDisplayName(
-//				(sn != null ? sn.getNameValue() : "unknownSite")
-//				+ ":" + dtName
-//				+ "-" + ts.getInterval());
-//
-//			q = "select UNIT_COMMON_NAME from HDB_UNIT "
-//				+ "where UNIT_ID = " + unitId;
-//			rs = doQuery(q);
-//			if (rs.next())
-//				ts.setUnitsAbbr(rs.getString(1));
-//		}
-//		catch(NoSuchObjectException ex)
-//		{
-//			Logger.instance().warning("Error expaning SDI: " + ex);
-//			ts.setDisplayName("unknownSite:unknownType-unknownIntv");
-//			ts.setUnitsAbbr("EU??");
+//			return dataCollection;
 //		}
 //		catch(SQLException ex)
 //		{
-//			Logger.instance().warning("Error reading units: " + ex);
-//			ts.setUnitsAbbr("EU??");
+//			System.err.println("Error reading new data: " + ex);
+//			ex.printStackTrace();
+//			throw new DbIoException("Error reading new data: " + ex);
 //		}
 //	}
+
+
 
 	/**
 	 * Used to present user with a list of valid datatypes 
@@ -1153,61 +1066,6 @@ public class HdbTimeSeriesDb
 		}
 	}
 	
-	/**
-	 * Get the CTimeSeries object for the passed parameters. If a match
-	 * is already in dataCollection, return it. Else construct a new one
-	 * and add it to dataCollection.
-	 * @param dataCollection the DataCollection
-	 * @param sdi the site-datatype-id
-	 * @param interval the interval code
-	 * @param tabsel the table selector
-	 * @param modelRunId the model run id.
-	 * @throws NoSuchObjectException 
-	 */
-	private CTimeSeries getTimeSeriesFor(DataCollection dataCollection,
-		DbKey sdi, String interval, String tabsel, int modelRunId, DbKey appId)
-		throws DbIoException
-	{
-		CTimeSeries cts = 
-			dataCollection.getTimeSeries(sdi, interval, tabsel, modelRunId);
-
-		if (cts == null)
-		{
-			cts = new CTimeSeries(sdi, interval, tabsel);
-			cts.setModelRunId(modelRunId);
-			if (modelRunId != Constants.undefinedIntKey
-			 && cts.getModelId() == Constants.undefinedIntKey)
-				cts.setModelId(findModelId(modelRunId));
-
-			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
-			try
-			{
-				DbKey tsKey = lookupTsId(sdi, interval, tabsel, cts.getModelId());
-				TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsKey);
-				cts.setTimeSeriesIdentifier(tsid);
-				cts.setUnitsAbbr(tsid.getStorageUnits());
-				fillDependentCompIds(cts, appId);
-			}
-			catch(NoSuchObjectException ex)
-			{
-				warning("Error reading TSID in getTimeSeriesFor: "
-					+ "sdi=" + sdi + ", interval=" + interval
-					+ ", tabsel=" + tabsel + ", modelId=" + cts.getModelId()
-					+ ": " + ex);
-				return null;
-			}
-			finally
-			{
-				timeSeriesDAO.close();
-			}
-
-			try { dataCollection.addTimeSeries(cts); }
-			catch(decodes.tsdb.DuplicateTimeSeriesException ex)
-			{ // won't happen -- already verified it's not there.
-			}
-		}
-		return cts;
-	}
 
 	@Override
 	public TimeSeriesIdentifier makeEmptyTsId()

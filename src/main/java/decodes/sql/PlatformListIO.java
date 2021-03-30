@@ -121,13 +121,6 @@ public class PlatformListIO extends SqlDbObjIo
 	*/
 	protected EquipmentModelListIO _equipmentModelListIO;
 
-	/**
-	* This is a reference to the DecodesScriptIO object for this
-	* database.  This is used to retrieve DecodesScript objects by their
-	* ID numbers.
-	*/
-	protected DecodesScriptIO _decodesScriptIO;
-
 	private String coltpl;
 	private String tmColumns = null;
 	
@@ -164,15 +157,12 @@ public class PlatformListIO extends SqlDbObjIo
 	*/
 	public PlatformListIO(SqlDatabaseIO dbio,
 						  ConfigListIO configListIO,
-						  EquipmentModelListIO emlIO,
-						  DecodesScriptIO dsIO)
+						  EquipmentModelListIO emlIO)
 	{
 		super(dbio);
 
 		_configListIO = configListIO;
 		_equipmentModelListIO = emlIO;
-		_decodesScriptIO = dsIO;
-
 	}
 
 	private String getColTpl()
@@ -320,7 +310,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* platform/PlatformList.xml file in the XML database.
 	* @param p the Platform
 	*/
-	public void readTransportMedia(Platform p)
+	private void readTransportMedia(Platform p)
 		throws SQLException, DatabaseException
 	{
 		p.transportMedia.clear();
@@ -342,7 +332,7 @@ public class PlatformListIO extends SqlDbObjIo
 	 * @param platform the Platform that owns this TM
 	 * @return the TransportMedium
 	 */
-	protected TransportMedium rs2tm(ResultSet rs, Platform platform)
+	private TransportMedium rs2tm(ResultSet rs, Platform platform)
 		throws SQLException, DatabaseException
 	{
 		String mediumType = rs.getString(2);
@@ -543,7 +533,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* The Platform argument must have had its ID set.
 	* @param p the Platform
 	*/
-	public void readPlatformSensors(Platform p)
+	private void readPlatformSensors(Platform p)
 		throws DatabaseException, SQLException
 	{
 		Statement stmt = createStatement();
@@ -624,7 +614,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* @param ps the PlatformSensor in which to place the properties
 	* @param pid the platform ID
 	*/
-	public void readPSProps(PlatformSensor ps, DbKey pid)
+	private void readPSProps(PlatformSensor ps, DbKey pid)
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
@@ -863,7 +853,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* PlatformSensor object is not empty.
 	* @param p the Platform
 	*/
-	public void insertPlatformSensors(Platform p)
+	private void insertPlatformSensors(Platform p)
 		throws SQLException, DatabaseException
 	{
 		Iterator<PlatformSensor> i = p.getPlatformSensors();
@@ -880,7 +870,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* is not empty.
 	* @param ps the PlatformSensor
 	*/
-	public void insert(PlatformSensor ps)
+	private void insert(PlatformSensor ps)
 		throws SQLException, DatabaseException
 	{
 		if (ps.isEmpty()) return;
@@ -938,7 +928,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* @param platformId the database ID of the platform
 	* @param tm the TransportMedium
 	*/
-	public void insertTransportMedium(DbKey platformId, TransportMedium tm)
+	private void insertTransportMedium(DbKey platformId, TransportMedium tm)
 		throws SQLException, DatabaseException
 	{
 		String medType = tm.getMediumType();
@@ -1050,7 +1040,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* database ID set.
 	* @param p the Platform
 	*/
-	public void deletePlatformSensors(Platform p)
+	private void deletePlatformSensors(Platform p)
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
@@ -1072,7 +1062,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* The Platform must have already had its SQL database ID set.
 	* @param p the Platform
 	*/
-	public void deleteTransportMedia(Platform p)
+	private void deleteTransportMedia(Platform p)
 		throws DatabaseException, SQLException
 	{
 		String q = "DELETE FROM TransportMedium WHERE PlatformId = " + p.getId();

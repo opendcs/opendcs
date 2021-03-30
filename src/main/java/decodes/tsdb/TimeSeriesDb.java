@@ -428,6 +428,7 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
+import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
@@ -546,7 +547,6 @@ public abstract class TimeSeriesDb
 
 	protected String cpCompDepends_col1 = null;
 //	protected TsIdCache tsIdCache = null;
-	protected long lastTsidCacheRead = 0L;
 	protected SimpleDateFormat debugDateFmt = 
 		new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss z");
 
@@ -627,18 +627,6 @@ public abstract class TimeSeriesDb
 	}	
 
 	
-	public DbKey getKey(String tableName)
-		throws DbIoException
-	{
-		try { return keyGenerator.getKey(tableName, conn); }
-		catch(decodes.db.DatabaseException ex)
-		{
-			throw new DbIoException("Cannot generate key for '" + tableName
-				+ "': " + ex);
-		}
-
-	}
-
 	//==================================================================
 	// The following helper-methods may be called or overloaded by the
 	// concrete subclass.
@@ -732,7 +720,6 @@ public abstract class TimeSeriesDb
 
 	/**
 	* Executes an UPDATE or INSERT query.
-	* Thread safe: internally synchronized on the modify-statement.
 	* @param q the query string
 	* @param silent false to print warning on error, true if not.
 	* @throws DatabaseException  if the update fails.
@@ -1131,19 +1118,19 @@ public abstract class TimeSeriesDb
 		}
 	}
 
-	/**
-	 * Returns an DataCollection containing zero or more TimeSeries,
-	 * containing all data added or deleted since the last call of this 
-	 * method by this application ID.
-	 * <p>
-	 * New values are marked with the DB_ADDED flag. Deleted values 
-	 * marked with the DB_DELETED flag.
-	 * @param applicationId used to lookup & save the since time.
-	 * @return DataCollection with newly added or deleted values.
-	 * @throws DbIoException on Database IO error.
-	 */
-	public abstract DataCollection getNewData( DbKey applicationId )
-		throws DbIoException;
+//	/**
+//	 * Returns an DataCollection containing zero or more TimeSeries,
+//	 * containing all data added or deleted since the last call of this 
+//	 * method by this application ID.
+//	 * <p>
+//	 * New values are marked with the DB_ADDED flag. Deleted values 
+//	 * marked with the DB_DELETED flag.
+//	 * @param applicationId used to lookup & save the since time.
+//	 * @return DataCollection with newly added or deleted values.
+//	 * @throws DbIoException on Database IO error.
+//	 */
+//	public abstract DataCollection getNewData( DbKey applicationId )
+//		throws DbIoException;
 	
 	/**
 	 * Releases triggers associated with the new data in the passed collection.
@@ -1210,7 +1197,7 @@ public abstract class TimeSeriesDb
 	 * then compproc will attempt to reclaim space this often, and only when the
 	 * tasklist is empty.
 	 */
-	public void reclaimTasklistSpace()
+	public void reclaimTasklistSpace(TimeSeriesDAI dao)
 		throws DbIoException
 	{
 		if (isOracle() 
@@ -1219,9 +1206,9 @@ public abstract class TimeSeriesDb
 		{
 			 lastReclaimMsec = System.currentTimeMillis();
 			 debug1("Relaiming unused CP_COMP_TASKLIST space...");
-			 doQuery("ALTER TABLE cp_comp_tasklist ENABLE ROW MOVEMENT");
-			 doQuery("ALTER TABLE cp_comp_tasklist SHRINK SPACE CASCADE");
-			 doQuery("ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT");
+			 dao.doQuery("ALTER TABLE cp_comp_tasklist ENABLE ROW MOVEMENT");
+			 dao.doQuery("ALTER TABLE cp_comp_tasklist SHRINK SPACE CASCADE");
+			 dao.doQuery("ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT");
 		}
 		// Unnecessary for PostgreSQL because auto-vacuum should be on
 	}
@@ -1732,163 +1719,163 @@ public abstract class TimeSeriesDb
 	 */
 	public abstract TimeSeriesIdentifier makeEmptyTsId();
 
-	/**
-	 * Lists the Time Series Groups.
-	 * @param groupType type of groups to list, null to list all groups.
-	 * @return ArrayList of un-expanded TS Groups.
-	 */
-	public ArrayList<TsGroup> getTsGroupList(String groupType)
-		throws DbIoException
-	{
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			return tsGroupDAO.getTsGroupList(groupType);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-	}
+//	/**
+//	 * Lists the Time Series Groups.
+//	 * @param groupType type of groups to list, null to list all groups.
+//	 * @return ArrayList of un-expanded TS Groups.
+//	 */
+//	public ArrayList<TsGroup> getTsGroupList(String groupType)
+//		throws DbIoException
+//	{
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			return tsGroupDAO.getTsGroupList(groupType);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//	}
 	
-	/**
-	 * @return a TsGroup by its unique name.
-	 */
-	public TsGroup getTsGroupByName(String grpName)
-		throws DbIoException
-	{
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			return tsGroupDAO.getTsGroupByName(grpName);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-	}
+//	/**
+//	 * @return a TsGroup by its unique name.
+//	 */
+//	public TsGroup getTsGroupByName(String grpName)
+//		throws DbIoException
+//	{
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			return tsGroupDAO.getTsGroupByName(grpName);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//	}
 
-	/**
-	 * @return a TsGroup by its surrogate key.
-	 */
-	public TsGroup getTsGroupById(DbKey id)
-		throws DbIoException
-	{
-		if (id == null || id.isNull())
-			return null;
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			return tsGroupDAO.getTsGroupById(id);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-	}
+//	/**
+//	 * @return a TsGroup by its surrogate key.
+//	 */
+//	public TsGroup getTsGroupById(DbKey id)
+//		throws DbIoException
+//	{
+//		if (id == null || id.isNull())
+//			return null;
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			return tsGroupDAO.getTsGroupById(id);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//	}
 
-	/**
-	 * Writes a group to the database.
-	 * @param group the group
-	 */
-	public void writeTsGroup(TsGroup group)
-		throws DbIoException
-	{
-		// Save ID before write
-		DbKey id = group.getGroupId();
-		
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			tsGroupDAO.writeTsGroup(group);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-
-		// If previously existed and is used by any comps, then we have
-		// to re-evalute the computation dependencies with the new group
-		// definition.
-		if (!id.isNull())
-		{
-			ComputationDAI computationDAO = makeComputationDAO();
-			CompDependsDAI compDependsDAO = makeCompDependsDAO();
-			try
-			{
-				ArrayList<DbKey> affected = new ArrayList<DbKey>();
-				affected.add(id);
-				findAffectedGroups(id, affected);
-
-				StringBuilder whereClause = new StringBuilder("where group_id in (");
-				for(DbKey groupId : affected)
-					whereClause.append("" + groupId + ",");
-				whereClause.deleteCharAt(whereClause.length()-1);
-				whereClause.append(")");
-				
-				String q = tsdbVersion < TsdbDatabaseVersion.VERSION_6
-					? ("SELECT DISTINCT COMPUTATION_ID FROM CP_COMP_TS_PARM "
-						+ whereClause.toString())
-					: ("SELECT COMPUTATION_ID FROM CP_COMPUTATION "
-						+ whereClause.toString());
-				
-				ArrayList<DbKey> compIds = new ArrayList<DbKey>();
-				ResultSet rs = doQuery(q);
-				while (rs.next())
-					compIds.add(DbKey.createDbKey(rs, 1));
-				for(DbKey compId : compIds)
-				{
-					try
-					{
-						DbComputation comp = computationDAO.getComputationById(compId);
-						compDependsDAO.writeCompDepends(comp);
-					}
-					catch(NoSuchObjectException ex) {}
-				}
-//				commit();
-			}
-			catch(SQLException ex)
-			{
-				String msg = " Error setting comp-dependencies: " + ex;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-			finally
-			{
-				computationDAO.close();
-				compDependsDAO.close();
-			}
-		}
-	}
-	
-	/**
-	 * Recursive function to find all of the group IDs that are 'affected' by
-	 * the passed groupId. That is, find groups that either include or exclude
-	 * the passed groupId.
-	 * @param groupId
-	 * @param affectedGroupIds
-	 */
-	private void findAffectedGroups(DbKey groupId, ArrayList<DbKey> affectedGroupIds)
-		throws DbIoException, SQLException
-	{
-		String q = "select parent_group_id from tsdb_group_member_group "
-			+ "where child_group_id = " + groupId;
-		ResultSet rs = doQuery(q);
-		ArrayList<DbKey> tmp = new ArrayList<DbKey>();
-		while (rs.next())
-		{
-			DbKey parentGroupId = DbKey.createDbKey(rs, 1);
-			tmp.add(parentGroupId);
-		}
-		for(DbKey parentGroupId : tmp)
-		{
-			if (!affectedGroupIds.contains(parentGroupId))
-			{
-				affectedGroupIds.add(parentGroupId);
-				findAffectedGroups(parentGroupId, affectedGroupIds);
-			}
-		}
-	}
+//	/**
+//	 * Writes a group to the database.
+//	 * @param group the group
+//	 */
+//	public void writeTsGroup(TsGroup group)
+//		throws DbIoException
+//	{
+//		// Save ID before write
+//		DbKey id = group.getGroupId();
+//		
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			tsGroupDAO.writeTsGroup(group);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//
+//		// If previously existed and is used by any comps, then we have
+//		// to re-evalute the computation dependencies with the new group
+//		// definition.
+//		if (!id.isNull())
+//		{
+//			ComputationDAI computationDAO = makeComputationDAO();
+//			CompDependsDAI compDependsDAO = makeCompDependsDAO();
+//			try
+//			{
+//				ArrayList<DbKey> affected = new ArrayList<DbKey>();
+//				affected.add(id);
+//				findAffectedGroups(id, affected);
+//
+//				StringBuilder whereClause = new StringBuilder("where group_id in (");
+//				for(DbKey groupId : affected)
+//					whereClause.append("" + groupId + ",");
+//				whereClause.deleteCharAt(whereClause.length()-1);
+//				whereClause.append(")");
+//				
+//				String q = tsdbVersion < TsdbDatabaseVersion.VERSION_6
+//					? ("SELECT DISTINCT COMPUTATION_ID FROM CP_COMP_TS_PARM "
+//						+ whereClause.toString())
+//					: ("SELECT COMPUTATION_ID FROM CP_COMPUTATION "
+//						+ whereClause.toString());
+//				
+//				ArrayList<DbKey> compIds = new ArrayList<DbKey>();
+//				ResultSet rs = doQuery(q);
+//				while (rs.next())
+//					compIds.add(DbKey.createDbKey(rs, 1));
+//				for(DbKey compId : compIds)
+//				{
+//					try
+//					{
+//						DbComputation comp = computationDAO.getComputationById(compId);
+//						compDependsDAO.writeCompDepends(comp);
+//					}
+//					catch(NoSuchObjectException ex) {}
+//				}
+////				commit();
+//			}
+//			catch(SQLException ex)
+//			{
+//				String msg = " Error setting comp-dependencies: " + ex;
+//				warning(msg);
+//				throw new DbIoException(msg);
+//			}
+//			finally
+//			{
+//				computationDAO.close();
+//				compDependsDAO.close();
+//			}
+//		}
+//	}
+//	
+//	/**
+//	 * Recursive function to find all of the group IDs that are 'affected' by
+//	 * the passed groupId. That is, find groups that either include or exclude
+//	 * the passed groupId.
+//	 * @param groupId
+//	 * @param affectedGroupIds
+//	 */
+//	private void findAffectedGroups(DbKey groupId, ArrayList<DbKey> affectedGroupIds)
+//		throws DbIoException, SQLException
+//	{
+//		String q = "select parent_group_id from tsdb_group_member_group "
+//			+ "where child_group_id = " + groupId;
+//		ResultSet rs = doQuery(q);
+//		ArrayList<DbKey> tmp = new ArrayList<DbKey>();
+//		while (rs.next())
+//		{
+//			DbKey parentGroupId = DbKey.createDbKey(rs, 1);
+//			tmp.add(parentGroupId);
+//		}
+//		for(DbKey parentGroupId : tmp)
+//		{
+//			if (!affectedGroupIds.contains(parentGroupId))
+//			{
+//				affectedGroupIds.add(parentGroupId);
+//				findAffectedGroups(parentGroupId, affectedGroupIds);
+//			}
+//		}
+//	}
 
 	/**
 	 * @return number of computations that are using the passed group ID.
@@ -2084,7 +2071,7 @@ public abstract class TimeSeriesDb
 	 * @param cts
 	 * @return
 	 */
-	public int fillDependentCompIds(CTimeSeries cts, DbKey loadingAppId)
+	public int fillDependentCompIds(CTimeSeries cts, DbKey loadingAppId, TimeSeriesDAI dao)
 	{
 		cts.getDependentCompIds().clear();
 		String q = "select a.computation_id from cp_comp_depends a, cp_computation b"
@@ -2093,7 +2080,7 @@ public abstract class TimeSeriesDb
 			+ " and b.loading_application_id = " + loadingAppId;
 		try
 		{
-			ResultSet rs = doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			while (rs.next())
 				cts.addDependentCompId(DbKey.createDbKey(rs, 1));
 		}

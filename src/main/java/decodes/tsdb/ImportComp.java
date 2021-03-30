@@ -40,7 +40,6 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
-import opendcs.dao.AlgorithmDAO;
 import ilex.cmdline.*;
 import ilex.util.Logger;
 import decodes.db.Constants;
@@ -130,20 +129,20 @@ public class ImportComp
 					for (TsGroup g : tsGrpsList)
 					{
 						// Lookup the time series unique string
-						lookupObject(g, LookupObjectType.TsUniqStr);
+						lookupObject(g, LookupObjectType.TsUniqStr, groupDAO);
 		
 						// Lookup the site ID
-						lookupObject(g, LookupObjectType.SiteId);
+						lookupObject(g, LookupObjectType.SiteId, groupDAO);
 		
 						// Lookup the subgroup ID
-						lookupObject(g, LookupObjectType.InclSubgrp);
-						lookupObject(g, LookupObjectType.ExclSubgrp);
-						lookupObject(g, LookupObjectType.IntsSubgrp);
+						lookupObject(g, LookupObjectType.InclSubgrp, groupDAO);
+						lookupObject(g, LookupObjectType.ExclSubgrp, groupDAO);
+						lookupObject(g, LookupObjectType.IntsSubgrp, groupDAO);
 		
 						// Write each TS group into the DB
 						try
 						{
-							TsGroup existingGrp = theDb.getTsGroupByName(g.getGroupName());
+							TsGroup existingGrp = groupDAO.getTsGroupByName(g.getGroupName());
 							if (existingGrp != null)
 							{
 								if (noOverwriteArg.getValue())
@@ -269,7 +268,7 @@ public class ImportComp
 							//Get the TS group ID
 							String tsGrpName = comp.getGroupName();
 							if (tsGrpName != null)
-							  comp.setGroupId(theDb.getTsGroupByName(tsGrpName).getGroupId());
+							  comp.setGroupId(groupDAO.getTsGroupByName(tsGrpName).getGroupId());
 							
 							if (noOverwriteArg.getValue())
 							{
@@ -424,7 +423,8 @@ public class ImportComp
 	 *                                              InclSubgrp - included subgroup
 	 *                                              ExclSubgrp - excluded subgroup
 	 */
-	protected void lookupObject(TsGroup tsGrp, LookupObjectType lookupObjType)
+	protected void lookupObject(TsGroup tsGrp, LookupObjectType lookupObjType,
+		TsGroupDAI groupDAO)
 	{
 		ArrayList<Object> objList = new ArrayList<Object>();
 		switch (lookupObjType) {
@@ -486,7 +486,7 @@ public class ImportComp
 					}
 					case InclSubgrp: {
 						msgStr = " subgroup does not exist.";
-						TsGroup objId = theDb.getTsGroupByName(((TsGroup)obj).getGroupName());
+						TsGroup objId = groupDAO.getTsGroupByName(((TsGroup)obj).getGroupName());
 						if (objId != null)
 							((TsGroup)obj).setGroupId(objId.getGroupId());
 						else
@@ -495,7 +495,7 @@ public class ImportComp
 					}
 					case ExclSubgrp: {
 						msgStr = " subgroup does not exist.";
-						TsGroup objId = theDb.getTsGroupByName(((TsGroup)obj).getGroupName());
+						TsGroup objId = groupDAO.getTsGroupByName(((TsGroup)obj).getGroupName());
 						if (objId != null)
 							((TsGroup)obj).setGroupId(objId.getGroupId());
 						else

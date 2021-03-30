@@ -450,7 +450,7 @@ public class Convert2Group
 			}
 			reportIndent--;
 			if (!testMode.getValue())
-				theDb.writeTsGroup(toExclude);
+				tsGroupDAO.writeTsGroup(toExclude);
 			report("");
 			
 			// Create a new TsGroup just for this computation "comp-" + compId + "-group"
@@ -463,7 +463,7 @@ public class Convert2Group
 			report("Creating new group '" + compGroup.getGroupName() + "' just for this computation.");
 			report("The new group will include the original group and exclude the above TSIDs");
 			if (!testMode.getValue())
-				theDb.writeTsGroup(compGroup);
+				tsGroupDAO.writeTsGroup(compGroup);
 			
 			// Change the group computation to use the new group.
 			groupComp.setGroup(compGroup);

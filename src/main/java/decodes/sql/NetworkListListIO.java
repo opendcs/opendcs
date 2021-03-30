@@ -144,7 +144,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	* same Database.
 	* @param db the Database reference
 	*/
-	public void initDb(Database db)
+	private void initDb(Database db)
 	{
 		_platformList = db.platformList;
 		_networkListList = db.networkListList;
@@ -154,7 +154,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	* Initializes this object's links into the Database from a
 	* DatabaseObject.
 	*/
-	public void initDb(DatabaseObject dbObj)
+	private void initDb(DatabaseObject dbObj)
 	{
 		 initDb(dbObj.getDatabase());
 	}
@@ -285,69 +285,69 @@ public class NetworkListListIO extends SqlDbObjIo
 	}
 
 
-	/**
-	* Retrieve a NetworkList by ID number.
-	* If the desired NetworkList is not in memory, this attempts to read it
-	* from the Database.
-	* @param dbObj exists to allow this method to get the correct Database.
-	* @param id the database ID
-	* @throws DatabaseException  if no NetworkList corresponding to the
-	* indicated id number is found.
-	*/
-	public NetworkList getNetworkList(DatabaseObject dbObj, DbKey id)
-		throws DatabaseException, SQLException
-	{
-		initDb(dbObj);
-		NetworkList nl = _networkListList.getById(id);
-		if (nl != null)
-			return nl;
+//	/**
+//	* Retrieve a NetworkList by ID number.
+//	* If the desired NetworkList is not in memory, this attempts to read it
+//	* from the Database.
+//	* @param dbObj exists to allow this method to get the correct Database.
+//	* @param id the database ID
+//	* @throws DatabaseException  if no NetworkList corresponding to the
+//	* indicated id number is found.
+//	*/
+//	public NetworkList getNetworkList(DatabaseObject dbObj, DbKey id)
+//		throws DatabaseException, SQLException
+//	{
+//		initDb(dbObj);
+//		NetworkList nl = _networkListList.getById(id);
+//		if (nl != null)
+//			return nl;
+//
+//		return readNetworkList(id);
+//	}
 
-		return readNetworkList(id);
-	}
-
-	/**
-	* This reads one NetworkList from the database, including all its
-	* ancillary data (NetworkListEntry (and others?)).
-	* If a NetworkList with the
-	* desired ID number is already in memory, this re-reads its data.
-	* This returns a reference to the NetworkList.
-	* @param id the database ID
-	* @throws DatabaseException if no object with the indicated ID exists
-	* in the database.
-	*/
-	public NetworkList readNetworkList(DbKey id)
-		throws DatabaseException, SQLException
-	{
-		if (DbKey.isNull(id))
-			throw new DatabaseException("NetworkList cannot have null key.");
-		
-		Statement stmt = null;
-		ResultSet rs = null;
-		NetworkList nList = null;
-		
-		try
-		{
-			stmt = createStatement();
-			String q = "SELECT * FROM NetworkList WHERE id = " + id;
-			rs = stmt.executeQuery( q );
-			if (rs == null || !rs.next())
-				throw new DatabaseException(
-					"No NetworkList found with ID " + id);
-	
-			nList = putNetworkList(id, rs);
-		}
-		finally
-		{
-			if (rs != null)
-				try { rs.close(); } catch(Exception ex) {}
-			if (stmt != null)
-				try { stmt.close(); } catch(Exception ex) {}
-		}
-		readNetworkListEntries(nList);
-		
-
-		return nList;
-	}
+//	/**
+//	* This reads one NetworkList from the database, including all its
+//	* ancillary data (NetworkListEntry (and others?)).
+//	* If a NetworkList with the
+//	* desired ID number is already in memory, this re-reads its data.
+//	* This returns a reference to the NetworkList.
+//	* @param id the database ID
+//	* @throws DatabaseException if no object with the indicated ID exists
+//	* in the database.
+//	*/
+//	public NetworkList readNetworkList(DbKey id)
+//		throws DatabaseException, SQLException
+//	{
+//		if (DbKey.isNull(id))
+//			throw new DatabaseException("NetworkList cannot have null key.");
+//		
+//		Statement stmt = null;
+//		ResultSet rs = null;
+//		NetworkList nList = null;
+//		
+//		try
+//		{
+//			stmt = createStatement();
+//			String q = "SELECT * FROM NetworkList WHERE id = " + id;
+//			rs = stmt.executeQuery( q );
+//			if (rs == null || !rs.next())
+//				throw new DatabaseException(
+//					"No NetworkList found with ID " + id);
+//	
+//			nList = putNetworkList(id, rs);
+//		}
+//		finally
+//		{
+//			if (rs != null)
+//				try { rs.close(); } catch(Exception ex) {}
+//			if (stmt != null)
+//				try { stmt.close(); } catch(Exception ex) {}
+//		}
+//		readNetworkListEntries(nList);
+//		
+//
+//		return nList;
+//	}
 
 	/**
 	  Reads a network list from the database into the passed object.
@@ -505,7 +505,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	* @param id the database ID
 	* @param rs  the JDBC result set
 	*/
-	public NetworkList putNetworkList(DbKey id, ResultSet rs)
+	private NetworkList putNetworkList(DbKey id, ResultSet rs)
 		throws DatabaseException, SQLException
 	{
 		NetworkList nl = _networkListList.getById(id);
@@ -570,7 +570,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	* Update an already-existing object in the SQL database.
 	* @param nl the network list
 	*/
-	public void update(NetworkList nl)
+	private void update(NetworkList nl)
 		throws DatabaseException, SQLException
 	{
 		String q =
@@ -599,7 +599,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	* Insert a new NetworkList into the SQL database.
 	* @param nl the network list
 	*/
-	public void insert(NetworkList nl)
+	private void insert(NetworkList nl)
 		throws DatabaseException, SQLException
 	{
 		//System.out.println("	  NetworkListListIO.insert(nl)");
@@ -633,7 +633,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	* Inserts all the NetworkListEntry's associated with a NetworkList.
 	* @param nl the network list
 	*/
-	public void insertAllEntries(NetworkList nl)
+	private void insertAllEntries(NetworkList nl)
 		throws DatabaseException, SQLException
 	{
 		for(Iterator<NetworkListEntry> it = nl.iterator(); it.hasNext(); )
@@ -690,7 +690,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	* Deletes all NetworkListEntry's belonging to a NetworkList.
 	* @param nl the network list
 	*/
-	public void deleteEntries(NetworkList nl)
+	private void deleteEntries(NetworkList nl)
 		throws DatabaseException, SQLException
 	{
 		String q = "DELETE FROM NetworkListEntry " +

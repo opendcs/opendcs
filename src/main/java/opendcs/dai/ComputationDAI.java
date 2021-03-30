@@ -26,6 +26,7 @@ import decodes.tsdb.compedit.ComputationInList;
  * @author mmaloney - Mike Maloney, Cove Software, LLC
  */
 public interface ComputationDAI
+	extends DaiBase
 {
 	/**
 	 * Returns the computation with given ID. The computation is filled

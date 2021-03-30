@@ -134,7 +134,7 @@ public class ImportGroup extends TsdbAppTemplate
 	 *                                              InclSubgrp - included subgroup
 	 *                                              ExclSubgrp - excluded subgroup
 	 */
-	protected void lookupObject(TsGroup tsGrp, LookupObjectType lookupObjType)
+	protected void lookupObject(TsGroup tsGrp, LookupObjectType lookupObjType, TsGroupDAI groupDAO)
 	{
 		ArrayList<Object> objList = new ArrayList<Object>();
 		switch (lookupObjType) {
@@ -190,7 +190,7 @@ public class ImportGroup extends TsdbAppTemplate
 					}
 					case InclSubgrp: {
 						msgStr = " subgroup does not exist.";
-						TsGroup objId = theDb.getTsGroupByName(((TsGroup)obj).getGroupName());
+						TsGroup objId = groupDAO.getTsGroupByName(((TsGroup)obj).getGroupName());
 						if (objId != null)
 							((TsGroup)obj).setGroupId(objId.getGroupId());
 						else
@@ -199,7 +199,7 @@ public class ImportGroup extends TsdbAppTemplate
 					}
 					case ExclSubgrp: {
 						msgStr = " subgroup does not exist.";
-						TsGroup objId = theDb.getTsGroupByName(((TsGroup)obj).getGroupName());
+						TsGroup objId = groupDAO.getTsGroupByName(((TsGroup)obj).getGroupName());
 						if (objId != null)
 							((TsGroup)obj).setGroupId(objId.getGroupId());
 						else
@@ -327,14 +327,14 @@ public class ImportGroup extends TsdbAppTemplate
 			try {
 				for(TsGroup g: tsGrpsList) {
 				  //Lookup the time series unique string
-					lookupObject(g, LookupObjectType.TsUniqStr);
+					lookupObject(g, LookupObjectType.TsUniqStr, groupDAO);
 					
 					//Lookup the site ID
-					lookupObject(g, LookupObjectType.SiteId);
+					lookupObject(g, LookupObjectType.SiteId, groupDAO);
 	
 					//Lookup the subgroup ID
-					lookupObject(g, LookupObjectType.InclSubgrp);
-					lookupObject(g, LookupObjectType.ExclSubgrp);
+					lookupObject(g, LookupObjectType.InclSubgrp, groupDAO);
+					lookupObject(g, LookupObjectType.ExclSubgrp, groupDAO);
 	
 					//Write each TS group into the DB 
 					try {

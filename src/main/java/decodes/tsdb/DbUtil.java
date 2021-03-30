@@ -24,6 +24,7 @@ import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.DaoBase;
 import opendcs.opentsdb.OpenTimeSeriesDAO;
 import opendcs.opentsdb.OpenTsdb;
 import opendcs.opentsdb.StorageTableSpec;
@@ -249,10 +250,11 @@ public class DbUtil extends TsdbAppTemplate
 		String q = "select " + column + " from " + table + " where " + where;
 		System.out.println("Executing '" + q + "'");
 		String what = "Executing '" + q + "'";
+		DaoBase dao = new DaoBase(theDb, "DbUtil");
+
 		try
 		{
-			
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			if (!rs.next())
 			{
 				System.out.println("Query returned no rows.");
@@ -274,7 +276,7 @@ public class DbUtil extends TsdbAppTemplate
 			System.err.println("Error while " + what);
 			e.printStackTrace();
 		}
-
+		dao.close();
 	}
 
 	protected void parmMorph(String[] tokens)
@@ -311,7 +313,7 @@ public class DbUtil extends TsdbAppTemplate
 			{
 				String tableName = "TS_NUM_" + tsdao.suffixFmt.format(spec.getTableNum());
 				String q = "select count(*) from " + tableName;
-				ResultSet rs = theDb.doQuery(q);
+				ResultSet rs = tsdao.doQuery(q);
 				int totalValues = rs.next() ? rs.getInt(1) : 0;
 
 				System.out.println("" + spec.getTableNum() + ": numTimeSeries=" 
@@ -323,7 +325,7 @@ public class DbUtil extends TsdbAppTemplate
 					if (ctsid.getStorageTable() == spec.getTableNum())
 					{
 						q = "select count(*) from " + tableName + " where TS_ID = " + ctsid.getKey();
-						rs = theDb.doQuery(q);
+						rs = tsdao.doQuery(q);
 						System.out.println("    key=" + tsid.getKey() + ", "
 							+ tsid.getUniqueString() + ", numValues="
 							+ (rs.next() ? rs.getInt(1) : 0)
@@ -495,9 +497,10 @@ public class DbUtil extends TsdbAppTemplate
 	protected void doTsAliases(String[] tokens)
 	{
 		String q = "select * from cwms_v_ts_id where aliased_item is not null";
+		DaoBase dao = new DaoBase(theDb, "DbUtil");
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			printRS(rs, q);
 		}
 		catch (Exception ex)
@@ -507,21 +510,23 @@ public class DbUtil extends TsdbAppTemplate
 		q = "select * from cwms_v_ts_id2 where aliased_item is not null";
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			printRS(rs, q);
 		}
 		catch (Exception ex)
 		{
 			System.out.println("Query '" + q + "' threw exception: " + ex);
 		}
+		dao.close();
 	}
 
 	protected void doLocAliases(String[] tokens)
 	{
 		String q = "select * from cwms_v_loc where aliased_item is not null";
+		DaoBase dao = new DaoBase(theDb, "DbUtil");
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			printRS(rs, q);
 		}
 		catch (Exception ex)
@@ -531,13 +536,14 @@ public class DbUtil extends TsdbAppTemplate
 		q = "select * from cwms_v_loc2 where aliased_item is not null";
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			printRS(rs, q);
 		}
 		catch (Exception ex)
 		{
 			System.out.println("Query '" + q + "' threw exception: " + ex);
 		}
+		dao.close();
 	}
 
 	private void printRS(ResultSet rs, String q)

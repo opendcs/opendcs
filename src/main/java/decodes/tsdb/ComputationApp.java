@@ -408,7 +408,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 				}
 
 				action = "Getting new data";
-				dataCollection = theDb.getNewData(getAppId());
+				dataCollection = timeSeriesDAO.getNewData(getAppId());
 				// In Regression Test Mode, exit after 5 sec of idle
 				if (!dataCollection.isEmpty())
 					lastDataTime = System.currentTimeMillis();
@@ -800,27 +800,25 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 				+ "and cmp.loading_application_id = " + getAppId() + ")";
 		ResultSet rs = null;
 		HashMap<DbKey,Date> timedCompsLMT = new HashMap<DbKey,Date>();
-		try
-		{
-			rs = theDb.doQuery(q);
-			while(rs.next())
-				timedCompsLMT.put(DbKey.createDbKey(rs, 1), theDb.getFullDate(rs, 2));
-			Logger.instance().debug3("" + timedCompsLMT.size() + " timed computations found for this process.");
-		}
-		catch (Exception ex)
-		{
-			warning("Error reading timed computation IDs: " + ex.toString());
-			return;
-		}
-		finally
-		{
-			if (rs != null)
-				try { rs.close(); } catch(Exception ex) {}
-		}
-		HashSet<DbKey> checkedComps = new HashSet<DbKey>();
 		ComputationDAI compDAO = theDb.makeComputationDAO();
+
+		HashSet<DbKey> checkedComps = new HashSet<DbKey>();
 		try
 		{
+			try
+			{
+				rs = compDAO.doQuery(q);
+				while(rs.next())
+					timedCompsLMT.put(DbKey.createDbKey(rs, 1), theDb.getFullDate(rs, 2));
+				Logger.instance().debug3("" + timedCompsLMT.size() 
+					+ " timed computations found for this process.");
+			}
+			catch (Exception ex)
+			{
+				warning("Error reading timed computation IDs: " + ex.toString());
+				return;
+			}
+	
 			Date nowd = new Date(now);
 			for(DbKey compId : timedCompsLMT.keySet())
 			{

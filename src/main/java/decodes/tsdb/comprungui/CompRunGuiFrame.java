@@ -61,6 +61,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dai.TsGroupDAI;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -775,9 +776,13 @@ public class CompRunGuiFrame extends TopFrame
 				}
 
 				// Read a fresh copy of the group from the DB
-				compGroup = theDb.getTsGroupById(compGroup.getGroupId());
+				TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+				try { compGroup = groupDAO.getTsGroupById(compGroup.getGroupId()); }
+				finally { groupDAO.close(); }
+				
 				// Expand the group and then filter it by the 1st input parm.
 				ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(compGroup);
+				
 
 				// Collect the transformed tsids in a hash set to remove any
 				// duplicates

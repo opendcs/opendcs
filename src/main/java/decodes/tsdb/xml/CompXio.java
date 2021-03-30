@@ -458,115 +458,115 @@ public class CompXio
 		}
 	}
 	
-	/**
-	 * @param comp
-	 * @param elem
-	 */
-	protected void addTsGroup(DbComputation comp, Element elem)
-	{
-		// Find the Group Name
-		String groupName = DomHelper.findAttr(elem, CompXioTags.groupName);
-		if (groupName == null)
-		{
-			Logger.instance().warning(module + ": " + filename
-				+ " " + CompXioTags.tsGroup + " element without " 
-				+ CompXioTags.groupName + " attribute -- ignored.");
-			return;
-		}
-
-		// Declare the tsGrp object
-		TsGroup tsGrp = null;
-		try {
-			tsGrp = theDb.getTsGroupByName(groupName);
-		}
-		catch (Exception E) {
-			System.out.println(E.toString());
-		}
-		if (tsGrp == null) {
-			tsGrp = new TsGroup();
-			tsGrp.setGroupName(groupName);
-		}
-
-		// Reset the parameters of the tsGrp
-		String nodeName;
-		Node childNode;
-		NodeList children = elem.getChildNodes();
-		for(int i=0; children != null && i<children.getLength(); i++)
-		{
-			childNode = children.item(i);
-			if (childNode.getNodeType() == Node.ELEMENT_NODE) {
-				nodeName = childNode.getNodeName();
-
-				if (nodeName.equalsIgnoreCase(CompXioTags.groupType)) {
-					tsGrp.setGroupType(DomHelper.getTextContent(childNode));
-				}
-				else if (nodeName.equalsIgnoreCase(CompXioTags.description)) {
-					tsGrp.setDescription(DomHelper.getTextContent(childNode));
-				}
-//				else if (nodeName.equalsIgnoreCase(CompXioTags.officeId)) {
-//					tsGrp.setDbOfficeId(DomHelper.getTextContent(childNode));
+//	/**
+//	 * @param comp
+//	 * @param elem
+//	 */
+//	protected void addTsGroup(DbComputation comp, Element elem)
+//	{
+//		// Find the Group Name
+//		String groupName = DomHelper.findAttr(elem, CompXioTags.groupName);
+//		if (groupName == null)
+//		{
+//			Logger.instance().warning(module + ": " + filename
+//				+ " " + CompXioTags.tsGroup + " element without " 
+//				+ CompXioTags.groupName + " attribute -- ignored.");
+//			return;
+//		}
+//
+//		// Declare the tsGrp object
+//		TsGroup tsGrp = null;
+//		try {
+//			tsGrp = theDb.getTsGroupByName(groupName);
+//		}
+//		catch (Exception E) {
+//			System.out.println(E.toString());
+//		}
+//		if (tsGrp == null) {
+//			tsGrp = new TsGroup();
+//			tsGrp.setGroupName(groupName);
+//		}
+//
+//		// Reset the parameters of the tsGrp
+//		String nodeName;
+//		Node childNode;
+//		NodeList children = elem.getChildNodes();
+//		for(int i=0; children != null && i<children.getLength(); i++)
+//		{
+//			childNode = children.item(i);
+//			if (childNode.getNodeType() == Node.ELEMENT_NODE) {
+//				nodeName = childNode.getNodeName();
+//
+//				if (nodeName.equalsIgnoreCase(CompXioTags.groupType)) {
+//					tsGrp.setGroupType(DomHelper.getTextContent(childNode));
 //				}
-				else if (nodeName.equalsIgnoreCase(CompXioTags.siteName)) {
-					tsGrp.addSiteName(DomHelper.getTextContent(childNode));
-				}
-				else if (nodeName.equalsIgnoreCase(CompXioTags.dataType)) {
-					boolean foundDataTypeId = false;
-					if (tsGrp.getDataTypeIdList().size() > 0 ) 
-					{
-						for (DbKey j: tsGrp.getDataTypeIdList()) 
-						{
-							DataType dataType = DataType.getDataType(j);
-							if ((dataType.getStandard() == DomHelper.findAttr((Element)childNode, CompXioTags.standard)) &&
-									(dataType.getCode() == DomHelper.findAttr((Element)childNode, CompXioTags.code))) {
-								foundDataTypeId = true;
-								break;
-							}
-						}
-					}
-					if (!foundDataTypeId) {
-						String dataTypeStd = DomHelper.findAttr((Element)childNode, CompXioTags.standard);
-						String dataTypeCod = DomHelper.findAttr((Element)childNode, CompXioTags.code);
-						if (dataTypeCod == null) {
-							dataTypeCod = DomHelper.getTextContent((Element)childNode);
-						}
-						DataType dataType = DataType.getDataType(dataTypeStd, dataTypeCod);
-						
-						tsGrp.addDataTypeId(dataType.getId());
-					}
-				}
-				else if (nodeName.equalsIgnoreCase(CompXioTags.member)) {
-					String memberTyp = DomHelper.findAttr((Element)childNode, CompXioTags.type);
-					String memberVal = DomHelper.findAttr((Element)childNode, CompXioTags.value);
-					if (memberVal == null) {
-						memberVal = DomHelper.getTextContent((Element)childNode);
-					}
-					
-					tsGrp.addOtherMember(memberTyp, memberVal);
-				}
-			}
-		}
-		
-		// Load TsGroup to theDb
-		if (tsGrp.getGroupId() == Constants.undefinedId) 
-		{
-			TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
-			try 
-			{
-				groupDAO.writeTsGroup(tsGrp);
-			}
-			catch (Exception E) 
-			{
-				System.out.println(E.toString());
-			}
-			finally
-			{
-				groupDAO.close();
-			}
-		}
-
-		// Set TsGroup to the computation 
-		comp.setGroup(tsGrp);
-	}
+//				else if (nodeName.equalsIgnoreCase(CompXioTags.description)) {
+//					tsGrp.setDescription(DomHelper.getTextContent(childNode));
+//				}
+////				else if (nodeName.equalsIgnoreCase(CompXioTags.officeId)) {
+////					tsGrp.setDbOfficeId(DomHelper.getTextContent(childNode));
+////				}
+//				else if (nodeName.equalsIgnoreCase(CompXioTags.siteName)) {
+//					tsGrp.addSiteName(DomHelper.getTextContent(childNode));
+//				}
+//				else if (nodeName.equalsIgnoreCase(CompXioTags.dataType)) {
+//					boolean foundDataTypeId = false;
+//					if (tsGrp.getDataTypeIdList().size() > 0 ) 
+//					{
+//						for (DbKey j: tsGrp.getDataTypeIdList()) 
+//						{
+//							DataType dataType = DataType.getDataType(j);
+//							if ((dataType.getStandard() == DomHelper.findAttr((Element)childNode, CompXioTags.standard)) &&
+//									(dataType.getCode() == DomHelper.findAttr((Element)childNode, CompXioTags.code))) {
+//								foundDataTypeId = true;
+//								break;
+//							}
+//						}
+//					}
+//					if (!foundDataTypeId) {
+//						String dataTypeStd = DomHelper.findAttr((Element)childNode, CompXioTags.standard);
+//						String dataTypeCod = DomHelper.findAttr((Element)childNode, CompXioTags.code);
+//						if (dataTypeCod == null) {
+//							dataTypeCod = DomHelper.getTextContent((Element)childNode);
+//						}
+//						DataType dataType = DataType.getDataType(dataTypeStd, dataTypeCod);
+//						
+//						tsGrp.addDataTypeId(dataType.getId());
+//					}
+//				}
+//				else if (nodeName.equalsIgnoreCase(CompXioTags.member)) {
+//					String memberTyp = DomHelper.findAttr((Element)childNode, CompXioTags.type);
+//					String memberVal = DomHelper.findAttr((Element)childNode, CompXioTags.value);
+//					if (memberVal == null) {
+//						memberVal = DomHelper.getTextContent((Element)childNode);
+//					}
+//					
+//					tsGrp.addOtherMember(memberTyp, memberVal);
+//				}
+//			}
+//		}
+//		
+//		// Load TsGroup to theDb
+//		if (tsGrp.getGroupId() == Constants.undefinedId) 
+//		{
+//			TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+//			try 
+//			{
+//				groupDAO.writeTsGroup(tsGrp);
+//			}
+//			catch (Exception E) 
+//			{
+//				System.out.println(E.toString());
+//			}
+//			finally
+//			{
+//				groupDAO.close();
+//			}
+//		}
+//
+//		// Set TsGroup to the computation 
+//		comp.setGroup(tsGrp);
+//	}
 	
 	/**
 	 * @param metadata
@@ -660,10 +660,10 @@ public class CompXio
 
 	private void setGroup(DbComputation comp, String groupName)
 	{
+		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
 		try
 		{
-			comp.setGroup(
-				theDb.getTsGroupByName(groupName));
+			comp.setGroup(groupDAO.getTsGroupByName(groupName));
 			if (comp.getGroup() == null)
 				Logger.instance().warning(module 
 					+ " Unknown group '" + groupName
@@ -674,6 +674,10 @@ public class CompXio
 			theDb.warning(
 				"Database IO Error reading group " + groupName);
 			comp.setGroup(null);
+		}
+		finally
+		{
+			groupDAO.close();
 		}
 
 	}

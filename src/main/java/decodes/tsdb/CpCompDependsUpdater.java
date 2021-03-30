@@ -104,6 +104,7 @@ import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import opendcs.dao.DaoBase;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
@@ -1313,9 +1314,10 @@ info(q);
 		cpCompDependsCache.clear();
 		String q = "SELECT TS_ID, COMPUTATION_ID FROM CP_COMP_DEPENDS";
 		
+		DaoBase dao = new DaoBase(theDb, "CompDependsUpdater");
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			while (rs != null && rs.next())
 			{
 				CpCompDependsRecord rec = new CpCompDependsRecord(
@@ -1327,6 +1329,10 @@ info(q);
 		{
 			warning("Error in query '" + q + "': " + ex);
 			return;
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 	

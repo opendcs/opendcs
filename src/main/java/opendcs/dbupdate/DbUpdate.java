@@ -25,11 +25,14 @@ import decodes.tsdb.BadConnectException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.CmdLineArgs;
+import opendcs.dai.DaiBase;
+import opendcs.dao.DaoBase;
 
 public class DbUpdate extends TsdbAppTemplate
 {
 	private String username = null;
 	private char []password = null;
+	private DaiBase dao = null;
 	
 	public DbUpdate(String logname)
 	{
@@ -39,6 +42,7 @@ public class DbUpdate extends TsdbAppTemplate
 	@Override
 	protected void runApp() throws Exception
 	{
+		dao = new DaoBase(theDb, "DbUpdate");
 		System.out.println("Init done.");
 		Database.getDb().networkListList.read();
 
@@ -308,7 +312,7 @@ public class DbUpdate extends TsdbAppTemplate
 				NumberFormat suffixFmt = NumberFormat.getIntegerInstance();
 				suffixFmt.setMinimumIntegerDigits(4);
 				suffixFmt.setGroupingUsed(false);
-				ResultSet rs = theDb.doQuery("select max(TABLE_NUM) from STORAGE_TABLE_LIST");
+				ResultSet rs = dao.doQuery("select max(TABLE_NUM) from STORAGE_TABLE_LIST");
 				if (rs.next())
 				{
 					int max = rs.getInt(1);
@@ -478,7 +482,7 @@ public class DbUpdate extends TsdbAppTemplate
 		System.out.println("Executing: " + query);
 		try
 		{
-			theDb.doModify(query);
+			dao.doModify(query);
 		}
 		catch (Exception ex)
 		{
