@@ -32,31 +32,41 @@ can find your git source tree and your directory with the downloaded jars.
 
 
 <project name="OPENDCS Toolkit" default="jar" basedir="."
-	xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant">
+	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
+    classpath="lib/maven-resolver-ant-tasks-1.2.1-uber.jar" />
 	<description>Open DCS</description>
+
+	<resolver:pom id="pom" file="pom.xml" />	
+	<resolver:remoterepo id="hec-public" url="https://www.hec.usace.army.mil/nexus/repository/maven-public" type="default" releases="true" snapshots="true"/>	<property name="build.compiler" value="javac1.8"/>
+	<resolver:remoterepos id="resolver.repositories">
+        <resolver:remoterepo refid="central" />
+		<resolver:remoterepo refid="hec-public" />		
+	</resolver:remoterepos>
 
 	<property environment="env"/>
 
 	<!-- Settable Directories -->
 	<property name="home.dir" value="${env.HOME}"/>
-	<property name="project.dir" value="${home.dir}/git/opendcs"/>
-	<property name="thirdpartyjar.dir" value="dep"/>
-	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
-	<property name="izpack.dir" value="${workspace.dir}/opendcs-cove/3rd_party/IzPack-4.3.3"/>
+	<property name="project.dir" value="./"/>
+	<!--<property name="thirdpartyjar.dir" value="dep"/>-->
+	<!--<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>-->
+	
 	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
 	<property name="hydrojson.dir" value="${workspace.dir}/HydroJSON"/>
 	<property name="src.dir" value="${project.dir}/src/main/java"/>
 	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
 
 	<!-- Directories -->
-	<property name="ant.home" value="/usr/local/ant"/>
-	<property name="build.dir" value="build"/>
+	<!--<property name="ant.home" value="/usr/local/ant"/>-->
+	<property name="build.dir" value="${project.dir}/build"/>	
 	<property name="build.classes" value="${build.dir}/classes"/>
 	<property name="build.lib" value="${build.dir}/lib"/>
 	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
-	<property name="cwmsDbAPI.dir" value="${project.dir}/cwmsDbAPI"/>
+	<property name="izpack.dir" value="${build.dir}/izpack/IzPack-4.3.3"/>
+	<!--<property name="cwmsDbAPI.dir" value="${project.dir}/cwmsDbAPI"/>
 	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>
-	<property name="cwmsSystemJars.dir" value="${project.dir}/cwmsSystemJars"/>
+	<property name="cwmsSystemJars.dir" value="${project.dir}/cwmsSystemJars"/>-->
 
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
@@ -66,52 +76,75 @@ can find your git source tree and your directory with the downloaded jars.
 	<taskdef name="izpack" classpath="${izpack.dir}/lib/compiler.jar"
 		classname="com.izforge.izpack.ant.IzPackTask"/>
 
+	<target name="dependencies">
+		<mkdir dir="${build.dir}/dep/ext"/>
+		<get dest="build/dep/ext" verbose="true" ignoreerrors="false" skipexisting="true">
+			<url url="https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar"/>
+		</get>		
+		<resolver:resolve>
+			<resolver:dependencies>
+				<resolver:dependency coords="com.oracle.ojdbc:ojdbc8:19.3.0.0" />
+				<resolver:dependency coords="postgresql:postgresql:9.1-901-1.jdbc4"/>
+				<resolver:dependency coords="asm:asm:3.3"/>
+				<resolver:dependency coords="cglib:cglib:2.1_3"/>
+				<resolver:dependency coords="commons-collections:commons-collections:2.1.1"/>
+				<resolver:dependency coords="commons-logging:commons-logging:1.0.4"/>
+				<resolver:dependency coords="commons-net:commons-net:3.3"/>
+				<resolver:dependency coords="dom4j:dom4j:1.6.1"/>
+				<resolver:dependency coords="ch.ethz.ganymed:ganymed-ssh2:build210"/>
+				<resolver:dependency coords="org.apache.poi:poi:3.0.1-FINAL"/>
+				<resolver:dependency coords="com.toedter:jcalendar:1.3.2"/>
+				<resolver:dependency coords="jfree:jcommon:1.0.12"/>
+				<resolver:dependency coords="jfree:jfreechart:1.0.13"/>
+				<resolver:dependency coords="org.python:jython:2.7.2"/>
+				<resolver:dependency coords="com.opensymphony:xwork-core:2.1.6"/>
+				<resolver:dependency coords="org.jooq:jooq:3.11.2"/>
+				<resolver:dependency coords="org.lobobrowser:LoboBrowser:1.0.0"/>
+				<resolver:dependency coords="org.scijava:jep:2.4.1">
+					<resolver:exclusion coords="jama:jama"/>
+				</resolver:dependency>				
+				<resolver:dependency coords="gov.nist.math:jama:1.0.2"/>
+				<resolver:dependency coords="io.dropwizard.metrics:metrics-core:4.1.0-rc2"/>
+				<resolver:dependency coords="org.passay:passay:1.3.1"/>
+				<resolver:dependency coords="com.sun.mail:mailapi:1.6.2"/>
+				<resolver:dependency coords="com.jcraft:jsch:0.1.55"/>
+				<resolver:dependency coords="org.aspectj:aspectjrt:1.8.10"/>
+				<resolver:dependency coords="org.json:json:20200518"/>
+				
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq:5.2-20210330.143322-2">
+					<resolver:exclusion coords="org.jooq.pro"/>
+					<resolver:exclusion coords="mil.army.usace.hec"/>
+				</resolver:dependency>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq-aspect:5.2-20210330.143023-2">
+					<resolver:exclusion coords="org.jooq.pro"/>
+				</resolver:dependency>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq-generator:5.2-20210330.143337-2">
+					<resolver:exclusion coords="org.jooq.pro"/>
+				</resolver:dependency>
+
+
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-aspects:5.2-20210330.143019-2"/>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-dao:5.2-20210330.143006-2"/>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jdbc:5.2-20210330.143013-2"/>				
+				<resolver:dependency coords="mil.army.usace.hec:hec-core:6.0-20210329.165811-39"/>
+				<resolver:dependency coords="mil.army.usace.hec:hec-data:6.0-20210329.165821-39"/>
+				<resolver:dependency coords="mil.army.usace.hec:hec-lib:6.0-20210329.165828-39"/>
+				<resolver:dependency coords="mil.army.usace.hec:hec-rma:6.0-20210329.165836-37"/>
+			</resolver:dependencies>
+			<path refid="cp.runtime" scopes="compile,runtime,test"/>
+		</resolver:resolve>
+		
+	</target>
+	
 	<path id="project.class.path">
 		<pathelement path="${build.classes}/"/>
-		<fileset dir="${thirdpartyjar.dir}">
-			<include name="Cobra.jar"/>
-			<include name="LoboBrowser-1.0.0.jar"/>
-			<include name="asm-3.3.jar"/>
-			<include name="aspectjrt-1.8.10.jar"/>
-			<include name="cglib-2.1_3.jar"/>
-			<include name="commons-codec-1.10.jar"/>
-			<include name="commons-collections-2.1.1.jar"/>
-			<include name="commons-logging-1.1.1.jar"/>
-			<include name="commons-net-3.3.jar"/>
-			<include name="ganymed-ssh2-build210.jar"/>
-			<include name="jama-1.0.2.jar"/>
-			<include name="javassist-3.7.ga.jar"/>
-			<include name="jaxb-api-2.3.0.jar"/>
-			<include name="jcalendar-1.3.2.jar"/>
-			<include name="jcommon-1.0.16.jar"/>
-			<include name="jep-2.4.1.jar"/>
-			<include name="jfreechart-1.0.13.jar"/>
-			<include name="jsch-0.1.55.jar"/>
-			<include name="json-20200518.jar"/>
-			<include name="jta-spec-1.0.1.jar"/>
-			<include name="junit-3.8.1.jar"/>
-			<include name="jython-2.7.2.jar"/>
-			<include name="log4j-1.2.13.jar"/>
-			<include name="mailapi-1.6.2.jar"/>
-			<include name="ognl-2.7.3.jar"/>
-			<include name="ojdbc8-19.3.0.0.jar"/>
-			<include name="ons-19.3.0.0.jar"/>
-			<include name="oraclepki-19.3.0.0.jar"/>
-			<include name="osdt_cert-19.3.0.0.jar"/>
-			<include name="osdt_core-19.3.0.0.jar"/>
-			<include name="passay-1.3.1.jar"/>
-			<include name="poi-3.0.1-FINAL.jar"/>
-			<include name="postgresql-9.1-901-1.jdbc4.jar"/>
-			<include name="simplefan-19.3.0.0.jar"/>
-			<include name="spring-test-2.5.6.jar"/>
-			<include name="xml-apis-1.0.b2.jar"/>
-			<include name="xwork-core-2.1.6.jar"/>
-		</fileset>
-		<pathelement path="${workspace.dir}/opendcs-cove/3rd_party/jep-2.4.1.jar"/>
-		<fileset dir="${cwmsSystemJars.dir}">
-			<include name="*.jar"/>
-		</fileset>
+		<path refid="cp.runtime"/>
+		<fileset dir="${build.dir}/dep/ext">
+			<include name="*.jar"/>			
+		</fileset>						
 	</path>
+	
+
 
 	<target name="prepare" depends="clean" description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
@@ -129,7 +162,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete dir="combined-src"/>
 	</target>
 
-	<target name="compile" depends="prepare"
+	<target name="compile" depends="prepare,dependencies"
 		description="Compiles all source code.">
 
 		<!-- create build date -->
@@ -152,19 +185,22 @@ can find your git source tree and your directory with the downloaded jars.
                 <filter token="RCNUM" value="${RCNUM}" />
             </filterset>
         </copy>
+		<!--
 		<javac debug="true" destdir="${build.classes}"
 			target="1.6" source="1.6"
 			includeantruntime="true"
 			includes="lrgs/gui/LrgsBuild.java">
 			<src path="${build.classes}"/>
 			<classpath refid="project.class.path"/>
-		</javac>
+		</javac>-->
 
-		<javac debug="true" destdir="${build.classes}"
+		<javac fork="true" debug="true" destdir="${build.classes}"
 			target="1.6" source="1.6"
 			includeantruntime="true"
-			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
+			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**"
+			excludes="lrgs/gui/LrgsBuild.java">
 			<src path="${src.dir}"/>
+			<src path="${build.classes}"/>
 			<classpath refid="project.class.path"/>
 		</javac>
 
@@ -249,67 +285,25 @@ can find your git source tree and your directory with the downloaded jars.
 			</fileset>
 		</copy>
 
-		<copy todir="stage/dep">
-			<mappedresources>
-				<!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
-				<fileset dir="${thirdpartyjar.dir}">
-					<include name="LoboBrowser-1.0.0.jar"/>
-				</fileset>
-				<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>
-			</mappedresources>
-			<fileset dir="${thirdpartyjar.dir}">				
-				<include name="Cobra.jar"/>
+		<copy todir="stage/dep" flatten="false">
+			<!--<mappedresources>
 				
-				<include name="asm-3.3.jar"/>
-				<include name="aspectjrt-1.8.10.jar"/>
-				<include name="cglib-2.1_3.jar"/>
-				<include name="commons-codec-1.10.jar"/>
-				<include name="commons-collections-2.1.1.jar"/>
-				<include name="commons-logging-1.1.1.jar"/>
-				<include name="commons-net-3.3.jar"/>
-				<include name="ganymed-ssh2-build210.jar"/>
-				<include name="jama-1.0.2.jar"/>
-				<include name="javassist-3.7.ga.jar"/>
-				<include name="jaxb-api-2.3.0.jar"/>
-				<include name="jcalendar-1.3.2.jar"/>
-				<include name="jcommon-1.0.16.jar"/>
-				<include name="jep-2.4.1.jar"/>
-				<include name="jfreechart-1.0.13.jar"/>
-				<include name="jsch-0.1.55.jar"/>
-				<include name="json-20200518.jar"/>
-				<include name="jta-spec-1.0.1.jar"/>
-				<include name="junit-3.8.1.jar"/>
-				<include name="jython-2.7.2.jar"/>
-				<include name="log4j-1.2.13.jar"/>
-				<include name="mailapi-1.6.2.jar"/>
-				<include name="ognl-2.7.3.jar"/>
-				<include name="ojdbc8-19.3.0.0.jar"/>
-				<include name="ons-19.3.0.0.jar"/>
-				<include name="oraclepki-19.3.0.0.jar"/>
-				<include name="osdt_cert-19.3.0.0.jar"/>
-				<include name="osdt_core-19.3.0.0.jar"/>
-				<include name="passay-1.3.1.jar"/>
-				<include name="poi-3.0.1-FINAL.jar"/>
-				<include name="postgresql-9.1-901-1.jdbc4.jar"/>
-				<include name="simplefan-19.3.0.0.jar"/>
-				<include name="spring-test-2.5.6.jar"/>
-				<include name="xml-apis-1.0.b2.jar"/>
-				<include name="xwork-core-2.1.6.jar"/>
-			</fileset>
-			<fileset dir="${cwmsSystemJars.dir}">
-				<include name="*.jar"/>
-			</fileset>
-		</copy>
-		<copy todir="stage/dep" file="${workspace.dir}/opendcs-cove/3rd_party/ojdbc6.jar"/>
-
-		<copy todir="stage/dep/ext">
-			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/ext">
-				<include name="*.jar"/>
-			</fileset>
-		</copy>
-		<copy todir="stage/dep/Lib">
-			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/Lib"/>
-		</copy>
+				<path refid="cp.runtime">
+					<include name="LoboBrowser-1.0.0.jar"/>
+				</path>
+				
+			</mappedresources>-->
+			<!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
+			<!--<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>-->
+			<compositemapper>
+				<identitymapper/>
+				<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>
+			</compositemapper>
+			<path>
+				<path refid="project.class.path"/>
+			</path>
+			
+		</copy>				
 
 		<copy todir="stage/imports/comp-standard">
 			<fileset dir="${src.dir}/decodes/tsdb/algo">
@@ -398,10 +392,10 @@ can find your git source tree and your directory with the downloaded jars.
 			<fileset dir="${project.dir}/python"/>
 		</copy>
 
-		<mkdir dir="stage/cwmsDbAPI"/>
+<!--		<mkdir dir="stage/cwmsDbAPI"/>
 		<copy todir="stage/cwmsDbAPI">
 			<fileset dir="${cwmsDbAPI.dir}"/>
-		</copy>
+		</copy>-->
 
 	</target>
 
