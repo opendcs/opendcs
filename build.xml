@@ -21,11 +21,14 @@ The other tasks are less commonly used.
 	<description>Open DCS</description>
 
 	<resolver:pom id="pom" file="pom.xml" />	
-	<resolver:remoterepo id="hec-public" url="https://www.hec.usace.army.mil/nexus/repository/maven-public" type="default" releases="true" snapshots="true"/>	<property name="build.compiler" value="javac1.8"/>
+	<resolver:remoterepo id="hec-public" url="https://www.hec.usace.army.mil/nexus/repository/maven-public" type="default" releases="true" snapshots="true"/>
+	
 	<resolver:remoterepos id="resolver.repositories">
         <resolver:remoterepo refid="central" />
 		<resolver:remoterepo refid="hec-public" />		
 	</resolver:remoterepos>
+
+	<property name="build.compiler" value="javac1.8"/>
 
 	<property environment="env"/>
 
@@ -136,7 +139,7 @@ The other tasks are less commonly used.
 	
 
 
-	<target name="prepare" depends="clean" description="Makes build environment.">
+	<target name="prepare" description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
