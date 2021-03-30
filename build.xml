@@ -71,16 +71,16 @@ can find your git source tree and your directory with the downloaded jars.
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
 	</loadfile>
-	<echo message="RCNUM=${RCNUM}"/>
+	<echo message="RCNUM=${RCNUM}"/>	
 	
-	<taskdef name="izpack" classpath="${izpack.dir}/lib/compiler.jar"
+	<taskdef name="izpack" classpath="${project.dir}/lib/izpack-standalone-compiler-4.3.5.jar"
 		classname="com.izforge.izpack.ant.IzPackTask"/>
 
 	<target name="dependencies">
 		<mkdir dir="${build.dir}/dep/ext"/>
 		<get dest="build/dep/ext" verbose="true" ignoreerrors="false" skipexisting="true">
 			<url url="https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar"/>
-		</get>		
+		</get>				
 		<resolver:resolve>
 			<resolver:dependencies>
 				<resolver:dependency coords="com.oracle.ojdbc:ojdbc8:19.3.0.0" />
@@ -133,7 +133,14 @@ can find your git source tree and your directory with the downloaded jars.
 			</resolver:dependencies>
 			<path refid="cp.runtime" scopes="compile,runtime,test"/>
 		</resolver:resolve>
-		
+		<!--
+		<resolver:resolver>
+			<resolver:dependencies>
+				<resolver:dependency coords="org.codehause.izpack:izpack-standalone-compiler:4.3.5"/>
+				<resolver:dependency coords="org.codehause.izpack:izpack-ant:5.1.3"/>
+			</resolver:dependencies>
+			<path refid="izpack.runtime" scope="compile,runtime"/>
+		</resolver:resolver>-->
 	</target>
 	
 	<path id="project.class.path">
