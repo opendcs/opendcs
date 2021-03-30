@@ -74,10 +74,14 @@ By making a contribution to this project, I certify that:
 
 ## Getting Started
 
-This project is intented to replace what is currently hosted at https://cwms-data.usace.army.mil/cwms-data/
+To get started run the following
 
-Due to the current limits on releasing about database source we don't expect much random contribution. However, we will be moving more of the logic into
-this repository and any help on the formatting code and such will be greatly appreciated.
+    ant compile
+
+This will make sure you can download all of the dependencies and build the project.
+
+At this time JDK 1.8 is required.
+
 
 ### Making Changes
 
@@ -120,5 +124,8 @@ Barring nothing working at all or the code not being related to OpenDCS your con
 
 Before submitting your pull request, you should run the build process locally first to ensure things are working as expected.
 
-We are in the process of improving the build system. Please see the build.xml file for the current recommendations
+run 
 
+    ant opentsdb
+
+to make sure the installer jar can be build.

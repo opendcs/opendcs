@@ -3,29 +3,12 @@
 <!--
 
 This is the ANT build file for OpenDCS 6.7 RC02 and Later.
-The intent is that this will eventually be replaced with a Maven pom.xml.
 
-DO NOT BUILD IN THE SOURCE TREE. Rather follow these instructions:
+The primary task is the "jar" task. This will create the opendcs.jar that contains all of the sub-applciations.
 
-0. Do a gradle build in the downloaded source directory from git
-	cd $HOME/git/opendcs     (or wherever it is for you)
-	./gradlew opentsdb
+The next task is "opentsdb". This will create the OpenDCS installer jar
 
-1. Create a build directory for yourself somewhere outside the source tree.
-
-2. Copy this build.xml file (if changes or needed) or just ln if it's ok as it.
-   It needs to be in your build directory you created in step 1.
-
-3. Edit the "Settable Directories" section below so that the ant build
-can find your git source tree and your directory with the downloaded jars.
-    project.dir - set this to the 'opendcs' git working directory
-    izpack.dir - set this to the location of the IzPack download
-    dcpmon.dir - if you are building DCP Monitor, set this to location of DCPMON
-                 web app source.
-    HydroJSON - if you are building HydroJSON, set this to the location of the
-                HdroJSON web app source.
-
-5. CD to your build directory and run ant here.
+The other tasks are less commonly used.
 
 -->
 
