@@ -492,11 +492,6 @@ public class TsGroupDAO
 	}
 
 
-	public void close()
-	{
-		super.close();
-	}
-	
 	public void fillCache() 
 		throws DbIoException
 	{

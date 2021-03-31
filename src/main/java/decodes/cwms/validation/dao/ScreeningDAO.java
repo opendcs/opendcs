@@ -121,15 +121,15 @@ public class ScreeningDAO
 		}
 	}
 	
-	@Override
-	public void close()
-	{
-		// Note: I do not want to release() or close the connection in csdbio.
-		// Each call to csdbio creates and closes its own Statement, but it should
-		// always use the main database connectionb, and should not close it.
-		
-		super.close();
-	}
+//	@Override
+//	public void close()
+//	{
+//		// Note: I do not want to release() or close the connection in csdbio.
+//		// Each call to csdbio creates and closes its own Statement, but it should
+//		// always use the main database connectionb, and should not close it.
+//		
+//		super.close();
+//	}
 
 	@Override
 	public void writeScreening(Screening screening)

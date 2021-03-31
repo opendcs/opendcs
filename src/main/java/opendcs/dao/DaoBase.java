@@ -76,6 +76,8 @@ public class DaoBase
 		if (queryStmt2 != null)
 			try { queryStmt2.close(); } catch(Exception ex) {}
 		queryStmt1 = queryStmt2 = null;
+		
+		//TODO for pooling: return the connection (if there is one) back to the pool.
 	}
 	
 	public void finalize()

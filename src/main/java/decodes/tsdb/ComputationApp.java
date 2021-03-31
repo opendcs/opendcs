@@ -499,6 +499,12 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 						lastMissingCheckMsec = now;
 					}
 				}
+				
+				// MJM 3/30/2021 For pooling to work, close the DAOs at the end of each
+				// iteration of the loop. This returns any connection objects back to the pool.
+				tsGroupDAO.close();
+				timeSeriesDAO.close();
+				loadingAppDAO.close();
 			}
 		}
 		catch(LockBusyException ex)
