@@ -92,15 +92,20 @@ public class AlgoListTableModel
 	{
 
 		TimeSeriesDb tsdb = CAPEdit.instance().getTimeSeriesDb();
+		AlgorithmDAI algoDao = tsdb.makeAlgorithmDAO();
 		try
 		{
-			myList = tsdb.listAlgorithmsForGui();
+			myList = algoDao.listAlgorithmsForGui();
 		}
 		catch(DbIoException ex)
 		{
 			CAPEdit.instance().getFrame().showError(
 				"Cannot list algorithms: " + ex);
 			myList = new ArrayList<AlgorithmInList>();
+		}
+		finally
+		{
+			algoDao.close();
 		}
 		if (sortedBy != -1)
 			sortByColumn(sortedBy);

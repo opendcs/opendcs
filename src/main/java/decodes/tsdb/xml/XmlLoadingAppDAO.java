@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -307,6 +308,27 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	{
 		// Only used by dcpmon which is not supported in XML database.
 		return null;
+	}
+
+	@Override
+	public ResultSet doQuery(String q) throws DbIoException
+	{
+		// Only implemented for sql
+		return null;
+	}
+
+	@Override
+	public ResultSet doQuery2(String q) throws DbIoException
+	{
+		// Only implemented for sql
+		return null;
+	}
+
+	@Override
+	public int doModify(String q) throws DbIoException
+	{
+		// Only implemented for sql
+		return 0;
 	}
 
 }

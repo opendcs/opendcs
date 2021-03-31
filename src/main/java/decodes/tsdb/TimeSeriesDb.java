@@ -409,7 +409,7 @@ import ilex.var.Variable;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
+//import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -419,7 +419,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -444,6 +443,7 @@ import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.ComputationDAO;
 import opendcs.dao.DacqEventDAO;
+import opendcs.dao.DaoBase;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DeviceStatusDAO;
@@ -454,13 +454,11 @@ import opendcs.dao.PropertiesSqlDao;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import decodes.tsdb.compedit.AlgorithmInList;
 import decodes.util.DecodesSettings;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
-import decodes.db.DatabaseException;
 import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -499,13 +497,11 @@ public abstract class TimeSeriesDb
 	protected Connection conn;
 
 	/** The default statement for queries */
-	private Statement queryStmt;
-	private ResultSet queryResults = null;
-	private Statement queryStmt2;
-
-
-	/** The default statement for modifies */
-	private Statement modStmt;
+//	private Statement queryStmt;
+//	private ResultSet queryResults = null;
+//
+//	/** The default statement for modifies */
+//	private Statement modStmt;
 
 	/** The logger */
 	protected Logger logger;
@@ -579,7 +575,8 @@ public abstract class TimeSeriesDb
 		writeModelRunId = Constants.undefinedIntKey;
 		testMode = false;
 		conn = null;
-		queryStmt = modStmt = queryStmt2 = null;
+//		queryStmt = null;
+//		modStmt = null;
 		logger = Logger.instance();
 		tsdbVersion = 1;
 
@@ -632,151 +629,113 @@ public abstract class TimeSeriesDb
 	// concrete subclass.
 	//==================================================================
 
-	/**
-	 * Does a SQL query with the default static statement & returns the
-	 * result set.
-	 * Warning: this method is not thread and nested-loop safe.
-	 * If you need to do nested queries, you must create a separate
-	 * statement and do the inside query yourself. Likewise, if called
-	 * from multiple threads, an external synchronization mechanism is
-	 * needed.
-	 * @param q the query
-	 * @return the result set
-	 */
-	public ResultSet doQuery(String q)
-		throws DbIoException
-	{
-		if (queryStmt != null)
-		{
-			try { queryStmt.close(); }
-			catch(Exception ex) {}
-			queryStmt = null;
-		}
-		if (queryResults != null)
-		{
-			try { queryResults.close(); }
-			catch(Exception ex) {}
-			queryResults = null;
-		}
-		try
-		{
-			if (conn == null)
-			{
-				String msg = "doQuery() Invalid connection" +
-							" object, conn = " + conn;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-			queryStmt = conn.createStatement();
-			debug3("Query1 '" + q + "'");
-			return queryResults = queryStmt.executeQuery(q);
-		}
-		catch(SQLException ex)
-		{
-			String msg = "SQL Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
-	
-	/** An extra do-query for inside-loop queries. */
-	public ResultSet doQuery2(String q) throws DbIoException
-	{
-		if (queryStmt2 != null)
-		{
-			try
-			{
-				queryStmt2.close();
-			}
-			catch (Exception ex)
-			{
-			}
-			queryStmt2 = null;
-		}
-		try
-		{
-			if (queryStmt2 != null)
-				queryStmt2.close();
-			if (conn == null)
-			{
-				String msg = "doQuery2() Invalid connection"
-						+ " object, conn = " + conn;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-			queryStmt2 = conn.createStatement();
-			Logger.instance().debug3("Query2 '" + q + "'");
-			return queryStmt2.executeQuery(q);
-		}
-		catch (SQLException ex)
-		{
-			String msg = "SQL Error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
-
-
-
-	/**
-	* Executes an UPDATE or INSERT query.
-	* @param q the query string
-	* @param silent false to print warning on error, true if not.
-	* @throws DatabaseException  if the update fails.
-	*/
-	public int doModify(String q, boolean silent)
-		throws DbIoException
-	{
-		try
-		{
-			if (conn == null)
-			{
-				String msg = "TimeSeriesDb doModify() Invalid connection" +
-							" object, conn = " + conn;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-			modStmt = conn.createStatement();
-			if (!q.equals("COMMIT"))
-				logger.debug3("Executing statement '" + q + "'");
-			int numChanged = modStmt.executeUpdate(q);
-			return numChanged;
-// Don't do this. Some queries are OK if they modify nothing.
-//			if (numChanged == 0) 
+//	/**
+//	 * Does a SQL query with the default static statement & returns the
+//	 * result set.
+//	 * Warning: this method is not thread and nested-loop safe.
+//	 * If you need to do nested queries, you must create a separate
+//	 * statement and do the inside query yourself. Likewise, if called
+//	 * from multiple threads, an external synchronization mechanism is
+//	 * needed.
+//	 * @param q the query
+//	 * @return the result set
+//	 */
+//	public ResultSet doQuery(String q)
+//		throws DbIoException
+//	{
+//		if (queryStmt != null)
+//		{
+//			try { queryStmt.close(); }
+//			catch(Exception ex) {}
+//			queryStmt = null;
+//		}
+//		if (queryResults != null)
+//		{
+//			try { queryResults.close(); }
+//			catch(Exception ex) {}
+//			queryResults = null;
+//		}
+//		try
+//		{
+//			if (conn == null)
 //			{
-//				String msg = "Failure in modify query '" + q + "'";
-//				Logger.instance().warning(msg);
+//				String msg = "doQuery() Invalid connection" +
+//							" object, conn = " + conn;
+//				warning(msg);
 //				throw new DbIoException(msg);
 //			}
-		}
-		catch(SQLException ex)
-		{
-			String msg = "SQL Error in modify query '" + q + "': " + ex;
-			if (!silent)
-				warning(msg);
-			throw new DbIoException(msg);
-		}
-		finally
-		{
-			if (modStmt != null)
-			{
-				try { modStmt.close(); }
-				catch(Exception ex) {}
-				modStmt = null;
-			}
-		}
-	}
+//			queryStmt = conn.createStatement();
+//			debug3("Query1 '" + q + "'");
+//			return queryResults = queryStmt.executeQuery(q);
+//		}
+//		catch(SQLException ex)
+//		{
+//			String msg = "SQL Error in query '" + q + "': " + ex;
+//			warning(msg);
+//			throw new DbIoException(msg);
+//		}
+//	}
+//	
 
-	/**
-	 * Execute a modify query.
-	 * Print warning on error.
-	 */
-	public int doModify(String q)
-		throws DbIoException
-	{
-		return doModify(q, false);
-	}
-
+//	/**
+//	* Executes an UPDATE or INSERT query.
+//	* @param q the query string
+//	* @param silent false to print warning on error, true if not.
+//	* @throws DatabaseException  if the update fails.
+//	*/
+//	public int doModify(String q, boolean silent)
+//		throws DbIoException
+//	{
+//		try
+//		{
+//			if (conn == null)
+//			{
+//				String msg = "TimeSeriesDb doModify() Invalid connection" +
+//							" object, conn = " + conn;
+//				warning(msg);
+//				throw new DbIoException(msg);
+//			}
+//			modStmt = conn.createStatement();
+//			if (!q.equals("COMMIT"))
+//				logger.debug3("Executing statement '" + q + "'");
+//			int numChanged = modStmt.executeUpdate(q);
+//			return numChanged;
+//// Don't do this. Some queries are OK if they modify nothing.
+////			if (numChanged == 0) 
+////			{
+////				String msg = "Failure in modify query '" + q + "'";
+////				Logger.instance().warning(msg);
+////				throw new DbIoException(msg);
+////			}
+//		}
+//		catch(SQLException ex)
+//		{
+//			String msg = "SQL Error in modify query '" + q + "': " + ex;
+//			if (!silent)
+//				warning(msg);
+//			throw new DbIoException(msg);
+//		}
+//		finally
+//		{
+//			if (modStmt != null)
+//			{
+//				try { modStmt.close(); }
+//				catch(Exception ex) {}
+//				modStmt = null;
+//			}
+//		}
+//	}
+//
+//	/**
+//	 * Execute a modify query.
+//	 * Print warning on error.
+//	 */
+//	public int doModify(String q)
+//		throws DbIoException
+//	{
+//		return doModify(q, false);
+//	}
+//
 
 	/** @return string representation for a boolean value in this db. */
 	public String sqlBoolean(boolean v)
@@ -806,18 +765,19 @@ public abstract class TimeSeriesDb
 	public void commit()
 		throws DbIoException
 	{
-		try 
-		{
-			conn.commit();
-			conn.clearWarnings(); 
-		}
-		catch(SQLException ex) {}
+		// OPENDCS assumes that autocommit is on. So do nothing here.
+//		try 
+//		{
+//			conn.commit();
+//			conn.clearWarnings(); 
+//		}
+//		catch(SQLException ex) {}
 	}
 
 	public void rollback()
 	{
-		try { doModify("ROLLBACK"); }
-		catch(Exception ex) {}
+//		try { doModify("ROLLBACK"); }
+//		catch(Exception ex) {}
 	}
 
 	/**
@@ -909,18 +869,14 @@ public abstract class TimeSeriesDb
 		info("Closing database connection.");
 		try
 		{
-			if (queryStmt != null)
-				queryStmt.close();
-			if (queryStmt2 != null)
-				queryStmt2.close();
+//			if (queryStmt != null)
+//				queryStmt.close();
 			if (conn != null)
 				conn.close();
 		}
 		catch(Exception ex) {}
 		conn = null;
-		queryStmt = null;
-		queryStmt2 = null;
-//		lockCheckStmt = null;
+//		queryStmt = null;
 	}
 
 	/**
@@ -1138,7 +1094,7 @@ public abstract class TimeSeriesDb
 	 * opaque handle.
 	 * @param dc the data collection to be released.
 	 */
-	public void releaseNewData(DataCollection dc)
+	public void releaseNewData(DataCollection dc, TimeSeriesDAI tsDAO)
 		throws DbIoException
 	{
 		RecordRangeHandle rrh = dc.getTasklistHandle();
@@ -1148,8 +1104,7 @@ public abstract class TimeSeriesDb
 		{
 			String q = "delete from CP_COMP_TASKLIST "
 			  + "where RECORD_NUM IN (" + rrh.getRecNumList(250) + ")";
-			doModify(q);
-//			commit();
+			tsDAO.doModify(q);
 		}
 
 		int maxRetries = DecodesSettings.instance().maxComputationRetries;
@@ -1166,13 +1121,13 @@ public abstract class TimeSeriesDb
 						  + "where RECORD_NUM IN (" + failRecNumList + ") "
 						  + "and ((" + curTimeName + " - DATE_TIME_LOADED) > "
 						  + String.format(maxCompRetryTimeFrmt, maxRetries) + ")";
-				doModify(q);
+				tsDAO.doModify(q);
 				commit();
 				q = "update CP_COMP_TASKLIST set FAIL_TIME = " + curTimeName +
 					" where RECORD_NUM in(" + failRecNumList + ")" + 
 					" and ((" + curTimeName + " - DATE_TIME_LOADED) <= "
 					+ String.format(maxCompRetryTimeFrmt, maxRetries) + ")";
-				doModify(q);
+				tsDAO.doModify(q);
 				commit();
 			} 
 			else
@@ -1184,7 +1139,7 @@ public abstract class TimeSeriesDb
 				  : "DELETE FROM CP_COMP_TASKLIST ";
 				q = q + " WHERE RECORD_NUM IN (" 
 					+ failRecNumList + ")";
-				doModify(q);
+				tsDAO.doModify(q);
 				commit();
 			}
 		}
@@ -1211,74 +1166,6 @@ public abstract class TimeSeriesDb
 			 dao.doQuery("ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT");
 		}
 		// Unnecessary for PostgreSQL because auto-vacuum should be on
-	}
-
-	
-	/**
-	 * @return a list of names of all algorithms defined in thie database.
-	 * @throws DbIoException on Database IO error.
-	 */
-	public List<String> listAlgorithms( )
-		throws DbIoException
-	{
-		String q = "select ALGORITHM_NAME from CP_ALGORITHM";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			ArrayList<String> ret = new ArrayList<String>();
-			while(rs.next())
-				ret.add(rs.getString(1));
-			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error listing algorithms: " + ex;
-			logger.warning(msg);	
-			throw new DbIoException(msg);
-		}
-	}
-
-	public ArrayList<AlgorithmInList> listAlgorithmsForGui()
-		throws DbIoException
-	{
-		String q = "select algorithm_id, algorithm_name, "
-			+ "exec_class, cmmnt "
-			+ "from cp_algorithm";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			ArrayList<AlgorithmInList> ret = new ArrayList<AlgorithmInList>();
-			while(rs != null && rs.next())
-				ret.add(new AlgorithmInList(DbKey.createDbKey(rs, 1), rs.getString(2),
-					rs.getString(3), 0, TextUtil.getFirstLine(rs.getString(4))));
-			
-			q = "select a.algorithm_id, count(1) as CompsUsingAlgo "
-				+ "from cp_algorithm a, cp_computation b "
-				+ "where a.algorithm_id = b.algorithm_id "
-				+ "group by a.algorithm_id";
-			rs = doQuery(q);
-			while(rs != null && rs.next())
-			{
-				DbKey algoId = DbKey.createDbKey(rs, 1);
-				int numCompsUsing = rs.getInt(2);
-				for(AlgorithmInList ail : ret)
-				{
-					if (ail.getAlgorithmId().equals(algoId))
-					{
-						ail.setNumCompsUsing(numCompsUsing);
-						break;
-					}
-				}
-			}
-		
-			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error listing algorithms for GUI: " + ex;
-			logger.warning(msg);	
-			throw new DbIoException(msg);
-		}
 	}
 	
 
@@ -1362,37 +1249,15 @@ public abstract class TimeSeriesDb
 	public DataType lookupDataType(String dtcode)
 		throws DbIoException, NoSuchObjectException
 	{
+		DataTypeDAI dtDao = this.makeDataTypeDAO();
+		
 		try
 		{
-			String q = "SELECT id, standard FROM DataType WHERE upper(code) = " 
-				+ sqlString(dtcode.toUpperCase());
-			DataType pref = null;
-			DataType first = null;
-			
-			ResultSet rs = doQuery2(q);
-			while(rs != null && rs.next())
-			{
-				DbKey id = DbKey.createDbKey(rs, 1);
-				String std = rs.getString(2);
-				DataType dt = DataType.getDataType(std, dtcode, id);
-				if (first == null)
-					first = dt;
-				if (std.equalsIgnoreCase(
-					DecodesSettings.instance().dataTypeStdPreference))
-					pref = dt;
-			}
-			if (pref != null)
-				return pref;
-			else if (first == null)
-				throw new NoSuchObjectException(
-			"No data type with code '"+dtcode+"' exists. "
-			+ " We suggest adding it to one of your presentation groups" +
-			" in the DECODES Database Editor, Presentation tab.");
-			return first;
+			return dtDao.lookupDataType(dtcode);
 		}
-		catch(SQLException ex)
+		finally
 		{
-			throw new DbIoException("lookupDataTypeId: " + ex);
+			dtDao.close();
 		}
 	}
 
@@ -1407,7 +1272,7 @@ public abstract class TimeSeriesDb
 	 * @param siteId the ID of the site
 	 * @return 2-dimensional array of strings, containing data types.
 	 */
-	public ArrayList<String[]> getDataTypesForSite(DbKey siteId)
+	public ArrayList<String[]> getDataTypesForSite(DbKey siteId, DaiBase dao)
 		throws DbIoException
 	{
 		// Default impl here just returns an empty array with 1 column
@@ -1458,37 +1323,6 @@ public abstract class TimeSeriesDb
 		return decodesDatabaseVersion;
 	}
 
-	/**
-	 * Given an EU abbreviation, read the EU object with full name.
-	 */
-	public EngineeringUnit readEngineeringUnit(String abbr)
-		throws DbIoException
-	{
-		EngineeringUnit eu = EngineeringUnit.getEngineeringUnit(abbr);
-		if (eu.getFamily() != null)
-			return eu;
-
-		String q = "SELECT name, family, measures "
-			+ "FROM EngineeringUnit "
-			+ "WHERE unitAbbr = " + sqlString(abbr);
-		try
-		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-			{
-				eu.setName(rs.getString(1));
-				eu.setFamily(rs.getString(2));		
-				eu.setMeasures(rs.getString(3));
-			}
-		}
-		catch(SQLException ex)
-		{
-			String msg = "readEngineeringUnit: " + ex;
-			logger.warning(msg);
-		}
-		return eu;
-	}
-	
 	public static void determineTsdbVersion(Connection con, TimeSeriesDb tsdb)
 	{
 		try
@@ -1524,7 +1358,7 @@ public abstract class TimeSeriesDb
 		SqlDatabaseIO.readVersionInfo(tsdb);
 		readVersionInfo(tsdb);
 		tsdb.info("Connected to TSDB Version " + tsdb.tsdbVersion + ", Description: " + tsdb.tsdbDescription);
-		tsdb.readTsdbProperties();
+		tsdb.readTsdbProperties(con);
 		tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
 			? "TS_ID" : "SITE_DATATYPE_ID";
 		
@@ -1577,12 +1411,16 @@ public abstract class TimeSeriesDb
 		dco.setTsdbVersion(tsdbVersion, tsdbDescription);
 	}
 
-	public void readTsdbProperties()
+	public void readTsdbProperties(Connection con)
 	{
 		String q = "SELECT prop_name, prop_value FROM tsdb_property";
+		Statement stmt = null;
 		try
 		{
-			ResultSet rs = doQuery(q);
+			stmt = con.createStatement();
+			debug3("Query1 '" + q + "'");
+			ResultSet rs = stmt.executeQuery(q);
+
 			while (rs != null && rs.next())
 			{
 				String nm = rs.getString(1);
@@ -1596,6 +1434,10 @@ public abstract class TimeSeriesDb
 				"Cannot read TimeSeries Database properties: " + ex;
 			logger.warning(msg);
 		}
+		finally
+		{
+			if (stmt != null) try { stmt.close(); } catch(Exception ex) {}
+		}
 	}
 	
 	public void writeTsdbProperties(Properties props)
@@ -1604,22 +1446,30 @@ public abstract class TimeSeriesDb
 		if (props == null)
 			return;
 
-		for(Object keyo : props.keySet())
+		DaiBase dao = new DaoBase(this,"writeTsdbProperties");
+		try
 		{
-			String key = (String)keyo;
-			String val = props.getProperty(key);
-			if (val != null)
-				setProperty(key, val);
-			else
-				props.remove(key);
-			String q = "delete from tsdb_property where prop_name = " + sqlString(key);
-			doModify(q);
-			if (val != null)
+			for(Object keyo : props.keySet())
 			{
-				q = "insert into tsdb_property values(" + sqlString(key) 
-					+ ", " + sqlString(val) + ")";
-				doModify(q);
+				String key = (String)keyo;
+				String val = props.getProperty(key);
+				if (val != null)
+					setProperty(key, val);
+				else
+					props.remove(key);
+				String q = "delete from tsdb_property where prop_name = " + sqlString(key);
+				dao.doModify(q);
+				if (val != null)
+				{
+					q = "insert into tsdb_property values(" + sqlString(key) 
+						+ ", " + sqlString(val) + ")";
+					dao.doModify(q);
+				}
 			}
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 	
@@ -1906,52 +1756,6 @@ public abstract class TimeSeriesDb
 		DbCompParm parm);
 
 
-	//TODO: After CWMS uses daemon CompDependsUpdater, remove this method
-	/**
-	 * Rebuilds the entire CP_COMP_DEPENDS table. This is done after database
-	 * upgrades only.
-	 * @throws DbIoException
-	 */
-	public void makeCpCompDepends()
-		throws DbIoException
-	{
-		if (isHdb())
-			return;
-		String q = "DELETE from CP_COMP_DEPENDS";
-		doModify(q);
-
-		q = "SELECT COMPUTATION_ID FROM CP_COMPUTATION where ENABLED = 'Y'";
-		ArrayList<DbKey> compIds = new ArrayList<DbKey>();
-		ResultSet rs = doQuery(q);
-		ComputationDAI computationDAO = makeComputationDAO();
-		CompDependsDAI compDependsDAO = makeCompDependsDAO();
-		try
-		{
-			while (rs.next())
-				compIds.add(DbKey.createDbKey(rs, 1));
-			for(DbKey compId : compIds)
-			{
-				try
-				{
-					DbComputation comp = computationDAO.getComputationById(compId);
-					compDependsDAO.writeCompDepends(comp);
-				}
-				catch(NoSuchObjectException ex) {}
-			}
-		}
-		catch(SQLException ex)
-		{
-			warning("makeCpCompDepends: " + ex);
-		}
-		finally
-		{
-			computationDAO.close();
-			compDependsDAO.close();
-		}
-//		commit();
-	}
-
-	
 	public String getDbUser() { return dbUser; }
 	
 	@Override
@@ -2062,8 +1866,6 @@ public abstract class TimeSeriesDb
 		return ret;
 	}
 
-// TODO MJM Consider moving the following into CompDependsDAO.
-	
 	/**
 	 * Passed a time series with valid meta data (tsid).
 	 * Determine the computations that depend on this time series.
@@ -2117,72 +1919,34 @@ public abstract class TimeSeriesDb
 //		doModify(q);
 //	}
 //	
-	/**
-	 * Return the platform ID of a given type for the specified platform, or null
-	 * if there is none.
-	 * @param platformID the platform ID
-	 * @param mediumType type medium type
-	 * @return
-	 */
-	protected String getMediumIdForPlatform(DbKey platformID, String mediumType)
-	{
-		String q = "select mediumid from transportmedium"
-			+ " where platformId = " + platformID
-			+ " and upper(mediumtype) = " + sqlString(mediumType.toUpperCase());
-		
-		try
-		{
-			ResultSet rs = doQuery2(q);
-			if (rs != null && rs.next())
-				return rs.getString(1);
-			else
-				return null;
-		}
-		catch(Exception ex)
-		{
-			warning("Error getting medium ID for platform " + platformID
-				+ ": " + ex);
-			return null;
-		}
-	}
-	
-	/**
-	 * Get next CP_COMP_DEPENDS_NOTIFY record and remove it from the table.
-	 * @return next CP_COMP_DEPENDS_NOTIFY record or null if none.
-	 */
-	public CpDependsNotify getCpCompDependsNotify()
-	{
-		if (this.tsdbVersion < TsdbDatabaseVersion.VERSION_8)
-			return null;
-		String q = "select RECORD_NUM, EVENT_TYPE, KEY, DATE_TIME_LOADED "
-				 + "from CP_DEPENDS_NOTIFY "
-				 + "where DATE_TIME_LOADED = "
-				 + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-			{
-				CpDependsNotify ret = new CpDependsNotify();
-				ret.setRecordNum(rs.getLong(1));
-				String s = rs.getString(2);
-				if (s != null && s.length() >= 1)
-					ret.setEventType(s.charAt(0));
-				ret.setKey(DbKey.createDbKey(rs, 3));
-				ret.setDateTimeLoaded(getFullDate(rs, 4));
-				
-				doModify("delete from CP_DEPENDS_NOTIFY where RECORD_NUM = " 
-					+ ret.getRecordNum(), true);
-				
-				return ret;
-			}
-		}
-		catch(Exception ex)
-		{
-			warning("Error CpCompDependsNotify: " + ex);
-		}
-		return null;
-	}
+//	/**
+//	 * Return the platform ID of a given type for the specified platform, or null
+//	 * if there is none.
+//	 * @param platformID the platform ID
+//	 * @param mediumType type medium type
+//	 * @return
+//	 */
+//	protected String getMediumIdForPlatform(DbKey platformID, String mediumType)
+//	{
+//		String q = "select mediumid from transportmedium"
+//			+ " where platformId = " + platformID
+//			+ " and upper(mediumtype) = " + sqlString(mediumType.toUpperCase());
+//		
+//		try
+//		{
+//			ResultSet rs = doQuery2(q);
+//			if (rs != null && rs.next())
+//				return rs.getString(1);
+//			else
+//				return null;
+//		}
+//		catch(Exception ex)
+//		{
+//			warning("Error getting medium ID for platform " + platformID
+//				+ ": " + ex);
+//			return null;
+//		}
+//	}
 	
 	/**
 	 * Given a unique time-series identifier string, make a CTimeSeries

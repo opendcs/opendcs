@@ -476,7 +476,7 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 					}
 	
 					action = "Releasing new data";
-					theDb.releaseNewData(dataCollection);
+					theDb.releaseNewData(dataCollection, timeSeriesDAO);
 					lastDataTime = System.currentTimeMillis();
 				}
 				else // MJM 6.4 RC08 Only sleep if data was empty.

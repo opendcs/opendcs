@@ -9,9 +9,6 @@ import java.sql.SQLException;
 
 import decodes.db.DataType;
 import decodes.db.DataTypeSet;
-import decodes.db.DatabaseException;
-import decodes.db.DbEnum;
-import decodes.db.EnumList;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
@@ -21,6 +18,7 @@ import decodes.tsdb.NoSuchObjectException;
  * @author mmaloney Mike Maloney
  */
 public interface DataTypeDAI
+	extends DaiBase
 {
 	/** Read a data type by the surrogate key */
 	public DataType getDataType(DbKey id)

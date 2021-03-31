@@ -12,6 +12,7 @@ import decodes.tsdb.NoSuchObjectException;
  * @author mmaloney - Mike Maloney, Cove Software, LLC
  */
 public interface SiteDAI
+	extends DaiBase
 {
 	/**
 	 * Return the site corresponding to the passed surrogate key. If not found,

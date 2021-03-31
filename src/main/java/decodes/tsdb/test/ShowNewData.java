@@ -74,7 +74,7 @@ public class ShowNewData extends TestProg
 						+ tv.toString() + " " + tv.getFlags());
 				}
 			}
-			theDb.releaseNewData(dc);
+			theDb.releaseNewData(dc, tsDao);
 			try 
 			{
 				Thread.sleep(1000L); 

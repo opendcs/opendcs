@@ -61,6 +61,7 @@ import ilex.gui.DateTimeCalendar;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import opendcs.dai.AlarmDAI;
+import opendcs.dai.DataTypeDAI;
 import opendcs.dai.LoadingAppDAI;
 
 @SuppressWarnings("serial")
@@ -781,26 +782,22 @@ public class ScreeningEditPanel
 		String dtcode = datatypeField.getText().trim();
 		if (dtcode.length() == 0)
 			throw new BadScreeningException("Data Type cannot be blank!");
+		DataTypeDAI dtDao = parentFrame.parentTsdbApp.getTsdb().makeDataTypeDAO();
 		try
 		{
-			scrn.setDataType(parentFrame.parentTsdbApp.getTsdb().lookupDataType(dtcode));
+			scrn.setDataType(dtDao.lookupDataType(dtcode));
+			scrn.setScreeningName(screeningNameField.getText().trim());
+			scrn.setEnabled(enabledCheck.isSelected());
 		}
 		catch (Exception ex)
 		{
 			throw new BadScreeningException("Invalid data type '" + dtcode + "': " + ex);
 		}
+		finally
+		{
+			dtDao.close();
+		}
 		
-		scrn.setScreeningName(screeningNameField.getText().trim());
-		scrn.setEnabled(enabledCheck.isSelected());
-		try
-		{
-			scrn.setDataType(parentFrame.parentTsdbApp.getTsdb().lookupDataType(
-				datatypeField.getText().trim()));
-		}
-		catch (Exception ex)
-		{
-			// Shouldn't happen because Validate is called first.
-		}
 		
 		String s = siteNameField.getText().trim();
 		if (s.length() == 0)

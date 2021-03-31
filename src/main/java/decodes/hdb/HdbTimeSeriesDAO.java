@@ -1157,7 +1157,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			+ sqlString(tsid.getTableSelector()) + ", "
 			+ hdbTsId.modelId + ", null)";
 		doModify(q);
-		return hdbDb.lookupTsIdKey(hdbTsId);
+		return lookupTsIdKey(hdbTsId);
 	}
 	
 	@Override
@@ -1389,6 +1389,30 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		return Constants.undefinedIntKey;
 	}
 
-
+	private DbKey lookupTsIdKey(HdbTsId tsid)
+		throws DbIoException
+	{
+		// Now we have a valid SDI. Lookup the CP_TS_ID
+		String q = "select ts_id from cp_ts_id "
+			+ "where site_datatype_id = " + tsid.getSdi()
+			+ " and lower(interval) = " + sqlString(tsid.getInterval().toLowerCase())
+			+ " and table_selector = " + sqlString(tsid.getTableSelector())
+			+ " and model_id = " + tsid.modelId;
+		ResultSet rs = doQuery(q);
+		try
+		{
+			while(rs != null && rs.next())
+			{
+				DbKey tsId = DbKey.createDbKey(rs, 1);
+				tsid.setKey(tsId);
+				return tsId;
+			}
+			return Constants.undefinedId;
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Error in '" + q + "': " + ex);
+		}
+	}
 	
 }

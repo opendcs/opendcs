@@ -47,6 +47,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
@@ -306,4 +307,40 @@ debug3("Total dds for dependencies=" + dataIds.size());
 		}
 		return ret;
 	}
+	
+	@Override
+	public CpDependsNotify getCpCompDependsNotify()
+	{
+		if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_8)
+			return null;
+		String q = "select RECORD_NUM, EVENT_TYPE, KEY, DATE_TIME_LOADED "
+				 + "from CP_DEPENDS_NOTIFY "
+				 + "where DATE_TIME_LOADED = "
+				 + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
+		try
+		{
+			ResultSet rs = doQuery(q);
+			if (rs != null && rs.next())
+			{
+				CpDependsNotify ret = new CpDependsNotify();
+				ret.setRecordNum(rs.getLong(1));
+				String s = rs.getString(2);
+				if (s != null && s.length() >= 1)
+					ret.setEventType(s.charAt(0));
+				ret.setKey(DbKey.createDbKey(rs, 3));
+				ret.setDateTimeLoaded(db.getFullDate(rs, 4));
+				
+				doModify("delete from CP_DEPENDS_NOTIFY where RECORD_NUM = " 
+					+ ret.getRecordNum());
+				
+				return ret;
+			}
+		}
+		catch(Exception ex)
+		{
+			warning("Error CpCompDependsNotify: " + ex);
+		}
+		return null;
+	}
+
 }

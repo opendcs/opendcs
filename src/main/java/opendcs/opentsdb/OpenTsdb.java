@@ -545,7 +545,7 @@ public class OpenTsdb extends TimeSeriesDb
 	 * {@inheritDoc}
 	 */
 	@Override
-	public ArrayList<String[]> getDataTypesForSite(DbKey siteId)
+	public ArrayList<String[]> getDataTypesForSite(DbKey siteId, DaiBase dao)
 		throws DbIoException
 	{
 		String header[] = new String[5];

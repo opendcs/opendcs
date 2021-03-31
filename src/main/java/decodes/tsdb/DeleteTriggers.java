@@ -23,7 +23,8 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import lrgs.gui.DecodesInterface;
-
+import opendcs.dai.DaiBase;
+import opendcs.dao.DaoBase;
 import ilex.cmdline.*;
 import ilex.util.Logger;
 
@@ -56,7 +57,9 @@ public class DeleteTriggers
 		throws Exception
 	{
 		String q = "delete from cp_comp_tasklist where loading_application_id = " + getAppId();
-		theDb.doModify(q);
+		DaiBase dao = new DaoBase(theDb,"DeleteTriggers");
+		dao.doModify(q);
+		dao.close();
 	}
 
 

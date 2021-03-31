@@ -314,7 +314,7 @@ public class Convert2Group
 			info("Refreshing Group Cache...");
 			String q = "SELECT GROUP_ID FROM TSDB_GROUP";
 			ArrayList<DbKey> grpIds = new ArrayList<DbKey>();
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = loadingAppDao.doQuery(q);
 			while(rs != null && rs.next())
 				grpIds.add(DbKey.createDbKey(rs, 1));
 				

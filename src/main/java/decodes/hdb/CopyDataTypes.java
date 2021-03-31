@@ -3,6 +3,7 @@ package decodes.hdb;
 import java.sql.*;
 import ilex.cmdline.*;
 import ilex.util.TTYEcho;
+import opendcs.dai.DataTypeDAI;
 import decodes.tsdb.*;
 import decodes.util.CmdLineArgs;
 import decodes.tsdb.test.TestProg;
@@ -35,14 +36,22 @@ public class CopyDataTypes extends TestProg
 	{
 		String q = "SELECT DATATYPE_ID from HDB_DATATYPE";
 		
-		ResultSet rs = theDb.doQuery(q);
-		while(rs.next())
+		DataTypeDAI dtDao = theDb.makeDataTypeDAO();
+		try
 		{
-			int id = rs.getInt(1);
-			String iq = "insert into datatype values(" + id + ", "
-				+ theDb.sqlString(CompXioTags.hdb) + ", "
-				+ theDb.sqlString("" + id) + ")";
-			theDb.doModify(iq);
+			ResultSet rs = dtDao.doQuery(q);
+			while(rs.next())
+			{
+				int id = rs.getInt(1);
+				String iq = "insert into datatype values(" + id + ", "
+					+ theDb.sqlString(CompXioTags.hdb) + ", "
+					+ theDb.sqlString("" + id) + ")";
+				dtDao.doModify(iq);
+			}
+		}
+		finally
+		{
+			dtDao.close();
 		}
 	}
 }

@@ -100,7 +100,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.net.InetAddress;
 
+import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.DaiBase;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
@@ -239,6 +241,8 @@ public class CpCompDependsUpdater
 		while(!shutdownFlag)
 		{
 			LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+			CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
+
 			try
 			{
 				// Make sure this process's lock is still valid.
@@ -275,7 +279,7 @@ public class CpCompDependsUpdater
 				}
 				
 				action = "Getting new data";
-				CpDependsNotify ccdn = theDb.getCpCompDependsNotify();
+				CpDependsNotify ccdn = compDependsDAO.getCpCompDependsNotify();
 				if (ccdn != null)
 				{
 					if (prevNotify != null && ccdn.equals(prevNotify))
@@ -316,6 +320,7 @@ public class CpCompDependsUpdater
 			}
 			finally
 			{
+				compDependsDAO.close();
 				loadingAppDAO.close();
 			}
 		}
@@ -681,7 +686,7 @@ public class CpCompDependsUpdater
 								+ " = " + tsKey;
 							try
 							{
-								theDb.doModify(q);
+								tsGroupDAO.doModify(q);
 							}
 							catch (DbIoException ex)
 							{
@@ -710,7 +715,7 @@ public class CpCompDependsUpdater
 			// Delete from cp_comp_depends table any tupple with this ts_id.
 			q = "delete from CP_COMP_DEPENDS " + "where TS_ID = " + tsKey;
 
-			theDb.doModify(q);
+			tsGroupDAO.doModify(q);
 			return true;
 		}
 		catch (DbIoException ex)
@@ -859,14 +864,18 @@ public class CpCompDependsUpdater
 		{
 			// Have to remove comp-depends for the now-disabled or deleted comp.
 			String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId;
-			info(q);
+			DaiBase dao = new DaoBase(theDb, "CompModified");
 			try
 			{
-				theDb.doModify(q);
+				dao.doModify(q);
 			}
 			catch (DbIoException ex)
 			{
 				warning("Error in '" + q + "': " + ex);
+			}
+			finally
+			{
+				dao.close();
 			}
 		}
 
@@ -1102,7 +1111,7 @@ public class CpCompDependsUpdater
 				try
 				{
 					info(q.toString());
-					theDb.doModify(q.toString(), true);
+					tsGroupDAO.doModify(q.toString());
 				}
 				catch (DbIoException ex)
 				{
@@ -1130,6 +1139,7 @@ public class CpCompDependsUpdater
 		// Set the doingFullEval flag which tells evalComp to simply
 		// accumulate results in the scratchpad. Don't merge to CP_COMP_DEPENDS.
 		String q = "clearing scratchpad.";
+		DaiBase dao = new DaoBase(theDb, "fullEval");
 		try
 		{
 			toAdd.clear();
@@ -1139,13 +1149,13 @@ public class CpCompDependsUpdater
 			doingFullEval = false;
 
 			// Insert all the toAdd records into the scratchpad
-			clearScratchpad();
+			clearScratchpad(dao);
 			for(CpCompDependsRecord ccd : toAdd)
 			{
 				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
 					+ " VALUES(" + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
 info(q);
-				theDb.doModify(q);
+				dao.doModify(q);
 			}
 		
 			// The scratchpad is now what we want CP_COMP_DEPENDS to look like.
@@ -1154,12 +1164,12 @@ info(q);
 			+ "where(computation_id, ts_id) in "
 			+ "(select computation_id, ts_id from cp_comp_depends " +
 				"minus select computation_id, ts_id from cp_comp_depends_scratchpad)";
-			theDb.doModify(q, true);
+			dao.doModify(q);
 		
 			q = "insert into cp_comp_depends( computation_id, ts_id) "
 				+ "(select computation_id, ts_id from cp_comp_depends_scratchpad "
 				+ "minus select computation_id, ts_id from cp_comp_depends)";
-			theDb.doModify(q, true);
+			dao.doModify(q);
 			return true;
 		}		
 		catch(DbIoException ex)
@@ -1169,6 +1179,10 @@ info(q);
 			System.err.println(msg);
 			ex.printStackTrace();
 			return false;
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 	
@@ -1187,7 +1201,7 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 		toAdd.add(rec);
 	}
 	
-	private void clearScratchpad()
+	private void clearScratchpad(DaiBase dao)
 		throws DbIoException
 	{
 		// Clear the scratchpad
@@ -1195,7 +1209,7 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 		try
 		{
 			info(q);
-			theDb.doModify(q);
+			dao.doModify(q);
 		}
 		catch (DbIoException ex)
 		{
@@ -1211,19 +1225,19 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 			return;
 
 		// Clear the scratchpad
+		
 		String q = "DELETE FROM CP_COMP_DEPENDS_SCRATCHPAD";
+		DaiBase dao = new DaoBase(theDb, "writeToAdd2Db");
 		try
 		{
-info(q);
-			theDb.doModify(q);
+			dao.doModify(q);
 			
 			// Insert all the toAdd records into the scratchpad
 			for(CpCompDependsRecord ccd : toAdd)
 			{
 				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
 					+ " VALUES(" + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
-info(q);
-				theDb.doModify(q);
+				dao.doModify(q);
 			}
 			
 			//TODO - Ideally, the delete and insert should be done as a transaction.
@@ -1231,8 +1245,7 @@ info(q);
 			if (compId2Delete != Constants.undefinedId)
 			{
 				q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId2Delete;
-info(q);
-				theDb.doModify(q);
+				dao.doModify(q);
 			}
 			
 			// Just in case, delete any records from the scratchpad that are already
@@ -1240,17 +1253,16 @@ info(q);
 			q = "delete from cp_comp_depends_scratchpad sp "
 				+ "where exists(select * from cp_comp_depends cd where cd.computation_id = sp.computation_id "
 				+ "and cd.ts_id = sp.ts_id)";
-			theDb.doModify(q);
+			dao.doModify(q);
 			
 			// Copy the scratchpad to the cp_comp_depends table
 			q = "INSERT INTO CP_COMP_DEPENDS SELECT * FROM CP_COMP_DEPENDS_SCRATCHPAD";
-info(q);
-			theDb.doModify(q);
+			dao.doModify(q);
 			
 			// Finally, clear the scratchpad, otherwise this can leave a foreign key to TS_ID
 			// that may prevent time series from being deleted.
 			q = "delete from cp_comp_depends_scratchpad";
-			theDb.doModify(q);
+			dao.doModify(q);
 			
 //			if (compId2Delete != Constants.undefinedId)
 //				theDb.commit(); // This should terminate the transaction.
@@ -1269,6 +1281,10 @@ info(q);
 		{
 			warning("Error in query '" + q + "': " + ex);
 			throw ex;
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 	

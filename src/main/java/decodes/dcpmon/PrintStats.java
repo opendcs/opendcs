@@ -91,7 +91,7 @@ public class PrintStats extends TsdbAppTemplate
 		ChanHour chanHour[] = new ChanHour[500];
 		for(int i=0; i<500; i++)
 			chanHour[i] = new ChanHour(i);
-		ResultSet rs = theDb.doQuery(q);
+		ResultSet rs = xmitRecordDao.doQuery(q);
 		
 		int utilEast[] = new int[SEC_PER_DAY];
 		int utilWest[] = new int[SEC_PER_DAY];

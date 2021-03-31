@@ -683,11 +683,13 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.TimeZone;
 
+import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.DaoBase;
 import opendcs.dao.DbObjectCache;
 import lrgs.gui.DecodesInterface;
 
@@ -953,16 +955,17 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				new OracleSequenceKeyGenerator() :
 				new CwmsSequenceKeyGenerator(decodesDbVersion);
 
-		ResultSet rs = null;
-		String q = "";
 		if (dbOfficeId != null && dbOfficeId.length() > 0)
 		{
+			ResultSet rs = null;
+			String q = "";
+			DaiBase dao = new DaoBase(this, "Connecting");
 			try
 			{
 				q = "SELECT DISTINCT VERSION_ID FROM CWMS_V_TS_ID "
 					+ "WHERE upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
 				ArrayList<String> versionIds = new ArrayList<String>();
-				rs = doQuery(q);
+				rs = dao.doQuery(q);
 				while(rs != null && rs.next())
 					versionIds.add(rs.getString(1));
 				currentlyUsedVersions = new String[versionIds.size()];
@@ -972,6 +975,10 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			catch(Exception ex)
 			{
 				warning("Error executing '" + q + "':" + ex);
+			}
+			finally
+			{
+				dao.close();
 			}
 		}
 		
@@ -1102,21 +1109,20 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	{
 		debug3("setParmSDI siteId=" + siteId + 
 			", dtcode=" + dtcode);
-		ResultSet rs = null;
 
 		DataType dt = null;
-		try { lookupDataType(dtcode); }
-		catch(NoSuchObjectException ex)
-		{
-			// This combo of CWMS Param-SubParam doesn't exist yet in the
-			// database as a 'datatype' object. Create it.
-			dt = DataType.getDataType(Constants.datatype_CWMS, dtcode);
-			DataTypeDAI dataTypeDao = makeDataTypeDAO();
-			try { dataTypeDao.writeDataType(dt); }
-			finally { dataTypeDao.close(); }
-		}
-		try
-		{
+		DataTypeDAI dataTypeDao = makeDataTypeDAO();
+		try 
+		{ 
+			try { dataTypeDao.lookupDataType(dtcode); }
+			catch(NoSuchObjectException ex)
+			{
+				// This combo of CWMS Param-SubParam doesn't exist yet in the
+				// database as a 'datatype' object. Create it.
+				dt = DataType.getDataType(Constants.datatype_CWMS, dtcode);
+				dataTypeDao.writeDataType(dt);
+			}
+
 			String q = 
 				"SELECT TS_CODE, LOCATION_ID FROM CWMS_V_TS_ID "
 				+ "WHERE LOCATION_CODE = " + siteId
@@ -1129,7 +1135,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				+ " AND PARAMETER_TYPE_ID = " + sqlString(parm.getParamType());
 			// Don't need to select on office id. It is implied by location code.
 
-			rs = doQuery(q);
+			ResultSet rs = dataTypeDao.doQuery(q);
 			if (rs != null && rs.next())
 			{
 				DbKey sdi = DbKey.createDbKey(rs, 1);
@@ -1151,9 +1157,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		finally
 		{
-			if (rs != null) 
-				try { rs.close(); }
-				catch(Exception ex) {}
+			dataTypeDao.close();
 		}
 	}
 
@@ -1205,7 +1209,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	 * {@inheritDoc}
 	 */
 	@Override
-	public ArrayList<String[]> getDataTypesForSite(DbKey siteId)
+	public ArrayList<String[]> getDataTypesForSite(DbKey siteId, DaiBase dao)
 		throws DbIoException
 	{
 		String header[] = new String[5];
@@ -1225,7 +1229,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			+ " order by PARAMETER_ID, PARAMETER_TYPE_ID, INTERVAL_ID";
 		try
 		{
-			ResultSet rs = doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			while(rs.next())
 			{
 				String dtl[] = new String[5];
@@ -1887,15 +1891,20 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		String q = "select distinct parameter_type_id FROM CWMS_V_TS_ID"
 			+ " WHERE upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
 
-		ResultSet rs = doQuery(q);
+		DaiBase dao = new DaoBase(this, "CWMSDB");
 		try
 		{
+			ResultSet rs = dao.doQuery(q);
 			while (rs != null && rs.next())
 				ret.add(rs.getString(1));
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("CwmsTimeSeriesDb.listParamTypes: " + ex);
+		}
+		finally
+		{
+			dao.close();
 		}
 
 		// MJM - these are the ones we know about for sure:
@@ -2258,15 +2267,20 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		ArrayList<String> ret = new ArrayList<String>();
 		String q = "select distinct version_id from cwms_v_ts_id order by version_id;";
 
-		ResultSet rs = doQuery(q);
+		DaiBase dao = new DaoBase(this, "CWMS");
 		try
 		{
+			ResultSet rs = dao.doQuery(q);
 			while (rs != null && rs.next())
-				ret.add(rs.getString(1));
+					ret.add(rs.getString(1));
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("CwmsTimeSeriesDb.listVersions: " + ex);
+		}
+		finally
+		{
+			dao.close();
 		}
 
 		return ret;

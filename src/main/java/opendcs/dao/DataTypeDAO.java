@@ -20,28 +20,22 @@
  */
 package opendcs.dao;
 
-import ilex.util.Logger;
 import ilex.util.Pair;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import opendcs.dai.DataTypeDAI;
 
 import decodes.db.DataType;
 import decodes.db.DataTypeSet;
-import decodes.db.DatabaseException;
-import decodes.db.DbEnum;
-import decodes.db.EnumList;
-import decodes.db.EnumValue;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.util.DecodesSettings;
 
 /**
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
@@ -139,8 +133,40 @@ public class DataTypeDAO
 	public DataType lookupDataType(String dtcode) throws DbIoException,
 		NoSuchObjectException
 	{
-		// TODO Auto-generated method stub
-		return null;
+		try
+		{
+			String q = "SELECT id, standard FROM DataType WHERE upper(code) = " 
+				+ sqlString(dtcode.toUpperCase());
+			DataType pref = null;
+			DataType first = null;
+			
+			ResultSet rs = doQuery2(q);
+			while(rs != null && rs.next())
+			{
+				DbKey id = DbKey.createDbKey(rs, 1);
+				String std = rs.getString(2);
+				DataType dt = DataType.getDataType(std, dtcode, id);
+				if (first == null)
+					first = dt;
+				if (std.equalsIgnoreCase(DecodesSettings.instance().dataTypeStdPreference))
+				{
+					pref = dt;
+					break;
+				}
+			}
+			if (pref != null)
+				return pref;
+			else if (first == null)
+				throw new NoSuchObjectException(
+					"No data type with code '"+dtcode+"' exists. "
+					+ " We suggest adding it to one of your presentation groups" +
+					" in the DECODES Database Editor, Presentation tab.");
+			return first;
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("lookupDataType: " + ex);
+		}
 	}
 
 	@Override

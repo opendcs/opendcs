@@ -15,6 +15,7 @@ import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.compedit.AlgorithmInList;
 
 
 /**
@@ -77,6 +78,17 @@ public interface AlgorithmDAI
 	 */
 	public void deleteAlgorithm(DbKey id)
 		throws DbIoException, ConstraintException;
+
+	/**
+	 * @return a list of algorithm names.
+	 * @throws DbIoException
+	 */
+	public ArrayList<String> listAlgorithmNames()
+			throws DbIoException;
+	
+	/** used for GUIs to display list/table of algorithms */
+	public ArrayList<AlgorithmInList> listAlgorithmsForGui()
+			throws DbIoException;
 
 	
 	/**
