@@ -19,8 +19,9 @@ The other tasks are less commonly used.
 	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
     classpath="lib/maven-resolver-ant-tasks-1.2.1-uber.jar" />
 	<description>Open DCS</description>
-
-	<resolver:pom id="pom" file="pom.xml" />	
+	<!-- I recommend we just put the version here instead of messing with the RCNUM file, but not a huge deal.-->
+	<property name="version.root" value="6.8"/>
+	<resolver:pom id="pom" file="pom.xml" />
 	<resolver:remoterepo id="hec-public" url="https://www.hec.usace.army.mil/nexus/repository/maven-public" type="default" releases="true" snapshots="true"/>
 	
 	<resolver:remoterepos id="resolver.repositories">
@@ -57,7 +58,19 @@ The other tasks are less commonly used.
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
 	</loadfile>
-	<echo message="RCNUM=${RCNUM}"/>	
+	<echo message="RCNUM=${RCNUM}"/>
+	<!-- save a lot of typing during version number updates -->
+	<loadresource property="version.filename">
+		<string>${version.root}-${RCNUM}</string>
+		<filterchain>
+			<tokenfilter>
+				<replacestring from="." to="-"/>
+			</tokenfilter>
+		</filterchain>
+	</loadresource>	
+	<property name="version" value="${version.root}.${RCNUM}"/>
+	<echo message ="Using version ${version.filename} for files"/>
+	<echo message =" and ${version} for everything else"/>
 	
 	<taskdef name="izpack" classpath="${project.dir}/lib/izpack-standalone-compiler-4.3.5.jar"
 		classname="com.izforge.izpack.ant.IzPackTask"/>
@@ -339,7 +352,7 @@ The other tasks are less commonly used.
 
 		<copy todir="stage">
 			<fileset dir="${project.dir}/izpack">
-				<include name="opendcs-6-8.xml"/>
+				<include name="opendcs-install.xml"/>
 				<include name="*.txt"/>
 				<include name="unixOpenDcsShortcutSpec.xml"/>
 				<include name="winOpenDcsShortcutSpec.xml"/>
@@ -406,40 +419,33 @@ The other tasks are less commonly used.
 
 	</target>
 
-	<!-- same as package, but remove libraries not needed by USACE or USBR -->
-	<target name="nonfed" depends="stage">
-		<delete dir="stage/dep/Lib"/>
-		<delete file="stage/dep/jep-2.4.1.jar"/>
-		<delete file="stage/dep/jython-2.7.2.jar"/>
-		<delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
-		<delete file="stage/dep/Cobra.jar"/>
-		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
-				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
-				installerType="standard"
-				basedir="stage"
-				izPackDir="${izpack.dir}">
-		</izpack>
-	</target>
-
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
 	<target name="opentsdb" depends="stage">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
-				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
+		<echo message="hdb.preselect -> ${hdb.preselect}"/>
+		<izpack input="${project.dir}/izpack/opendcs-install.xml"
+				output="stage/opendcs-ot-${version.filename}.jar"
 				installerType="standard"
-				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+				basedir="stage"			
+				izPackDir="${izpack.dir}">
+			<property name="version" value="${version}"/>
+			<property name="hdb.preselect" value="no"/>
+		</izpack>
+
 	</target>
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
 	<target name="hdb">
-		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
-				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
+		<!-- Invokes izpack to build installable package with defaults for HDB -->		
+		<izpack input="${project.dir}/izpack/opendcs-install.xml"
+				output="stage/opendcs-hdb-${version.filename}.jar"
 				installerType="standard"
 				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+				inheritAll="true"
+				izPackDir="${izpack.dir}">
+			<property name="version" value="${version}"/>
+			<property name="hdb.preselect" value="yes"/>			
+		</izpack>
 	</target>
 
 	<target name="cwmstar" depends="stage">
@@ -458,7 +464,7 @@ The other tasks are less commonly used.
 		<move file="stage/edit-db" tofile="stage/edit-db.init"/>
 		<move file="stage/users" tofile="stage/users.init"/>
 		<replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
-		<tar destfile="opendcs-cwms-6-8-RC${RCNUM}.tgz" compression="gzip">
+		<tar destfile="opendcs-cwms-${version.filename}.tgz" compression="gzip">
 			<tarfileset dir="stage">
 				<exclude name="bin/*"/>
 				<exclude name="schema/cwms/createDb.sh"/>
@@ -513,7 +519,7 @@ The other tasks are less commonly used.
 		</javac>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/makeDcpmon.sh"/>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/README"/>
-		<tar tarfile="stage/dcpmon-build-6-8-${RCNUM}.tgz" 
+		<tar tarfile="stage/dcpmon-build-${version.filename}.tgz" 
 			basedir="stage"
 			includes="dcpmon-build/**"
 			compression="gzip"/>
@@ -539,7 +545,7 @@ The other tasks are less commonly used.
 		</javac>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/makehydrojson.sh"/>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/README"/>
-		<tar tarfile="stage/hydrojson-build-6-8-${RCNUM}.tgz" 
+		<tar tarfile="stage/hydrojson-build-${version.filename}.tgz" 
 			basedir="stage"
 			includes="hydrojson-build/**"
 			compression="gzip"/>
