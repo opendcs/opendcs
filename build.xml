@@ -84,7 +84,6 @@ The other tasks are less commonly used.
 				<resolver:dependency coords="jfree:jfreechart:1.0.13"/>
 				<resolver:dependency coords="org.python:jython:2.7.2"/>
 				<resolver:dependency coords="com.opensymphony:xwork-core:2.1.6"/>
-				<resolver:dependency coords="org.jooq:jooq:3.11.2"/>
 				<resolver:dependency coords="org.lobobrowser:LoboBrowser:1.0.0"/>
 				<resolver:dependency coords="org.scijava:jep:2.4.1">
 					<resolver:exclusion coords="jama:jama"/>
@@ -97,27 +96,35 @@ The other tasks are less commonly used.
 				<resolver:dependency coords="org.aspectj:aspectjrt:1.8.10"/>
 				<resolver:dependency coords="org.json:json:20200518"/>				
 				
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq:5.2-20210330.143322-2">
-					<resolver:exclusion coords="org.jooq.pro"/>
-					<resolver:exclusion coords="mil.army.usace.hec"/>
-				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq-aspect:5.2-20210330.143023-2">
-					<resolver:exclusion coords="org.jooq.pro"/>
-				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq-generator:5.2-20210330.143337-2">
-					<resolver:exclusion coords="org.jooq.pro"/>
-				</resolver:dependency>
-
 
 				<resolver:dependency coords="mil.army.usace.hec:cwms-db-aspects:5.2-20210330.143019-2"/>
 				<resolver:dependency coords="mil.army.usace.hec:cwms-db-dao:5.2-20210330.143006-2"/>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jdbc:5.2-20210330.143013-2"/>				
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jdbc:5.2-20210330.143013-2"/>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq-codegen:5.1">
+					<resolver:exclusion coords="org.jooq.pro"/>
+				</resolver:dependency>
+				<resolver:dependency coords="org.jooq.pro:jooq:3.11.2">
+					<resolver:exclusion coords="com.oracle:ojdbc8"/>
+				</resolver:dependency>
 				<resolver:dependency coords="mil.army.usace.hec:hec-core:6.0-20210329.165811-39"/>
 				<resolver:dependency coords="mil.army.usace.hec:hec-data:6.0-20210329.165821-39"/>
 				<resolver:dependency coords="mil.army.usace.hec:hec-lib:6.0-20210329.165828-39"/>
 				<resolver:dependency coords="mil.army.usace.hec:hec-rma:6.0-20210329.165836-37"/>
 			</resolver:dependencies>
 			<path refid="cp.runtime" scopes="compile,runtime,test"/>
+		</resolver:resolve>
+
+		<resolver:resolve>
+			<resolver:dependencies>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq:5.2-20210330.143322-2">
+					<resolver:exclusion coords="org.jooq.pro"/>
+					<resolver:exclusion coords="mil.army.usace.hec"/>
+				</resolver:dependency>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq-aspect:5.2-20210330.143023-2">
+					<resolver:exclusion coords="org.jooq.pro"/>
+				</resolver:dependency>								
+			</resolver:dependencies>
+			<path refid="cp.cwmsDb" scopes="compile,runtime,test"/>
 		</resolver:resolve>
 		<!--
 		<resolver:resolver>
@@ -132,9 +139,10 @@ The other tasks are less commonly used.
 	<path id="project.class.path">
 		<pathelement path="${build.classes}/"/>
 		<path refid="cp.runtime"/>
+		<path refid="cp.cwmsDb"/>
 		<fileset dir="${build.dir}/dep/ext">
-			<include name="*.jar"/>			
-		</fileset>						
+			<include name="*.jar"/>
+		</fileset>
 	</path>
 	
 
@@ -258,6 +266,7 @@ The other tasks are less commonly used.
 		<mkdir dir="stage/schema/hdb"/>
 		<mkdir dir="stage/schema/opendcs-pg"/>
 		<mkdir dir="stage/schema/opendcs-oracle"/>
+		<mkdir dir="stage/cwmsDbAPI"/>
 
 		<copy todir="stage/edit-db">
 			<fileset dir="${project.dir}/install/edit-db">
@@ -295,10 +304,13 @@ The other tasks are less commonly used.
 				<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>
 			</compositemapper>
 			<path>
-				<path refid="project.class.path"/>
+				<path refid="cp.runtime"/>
 			</path>
-			
-		</copy>				
+		</copy>
+
+		<copy todir="stage/cwmsDbAPI" flatten="false">
+			<path refid="cp.cwmsDb"/>
+		</copy>
 
 		<copy todir="stage/imports/comp-standard">
 			<fileset dir="${src.dir}/decodes/tsdb/algo">
@@ -391,12 +403,6 @@ The other tasks are less commonly used.
 		<copy todir="stage/python">
 			<fileset dir="${project.dir}/python"/>
 		</copy>
-
-<!-- TODO:add back in
-		<mkdir dir="stage/cwmsDbAPI"/>
-		<copy todir="stage/cwmsDbAPI">
-			<fileset dir="${cwmsDbAPI.dir}"/>
-		</copy>-->
 
 	</target>
 
