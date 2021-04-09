@@ -577,7 +577,11 @@ IMPORTANT: For a new installation, you should also select the Template Database.
 
 
         <pack name="Corps Water Management System (CWMS) Components" required="no" preselected="no">
-            <description>Schema, Scripts, and Jars for CWMS</description>
+            <description>Schema, Scripts, and Jars for CWMS
+
+                Do not install unless doing work with CWMS, there are extra dependencies that may cause 
+                conflicts you'll likely not want to deal with.
+            </description>
 
 			<fileset dir="dep" targetdir="$INSTALL_PATH/dep"
 				includes="aspect*,cwms*,hec*,metrics*,rma*,ojdbc8*,jdom*,lookup*,aqapi*,dbiClient*,jooq*,ons*,osdt*,simplefan*,ucp*,xdb*">
