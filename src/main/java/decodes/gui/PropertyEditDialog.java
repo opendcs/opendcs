@@ -186,7 +186,9 @@ public class PropertyEditDialog
 				GridBagConstraints.EAST, GridBagConstraints.NONE, 
 				new Insets(5, 10, 5, 2), 0, 0));
 
-		if (name != null && name.toLowerCase().contains("password"))
+		if (name != null 
+		 && name.toLowerCase().contains("password")
+		 && !name.equalsIgnoreCase("passwordCheckerClass"))
 			valueField = new JPasswordField(10);
 		else if (propSpec != null)
 		{

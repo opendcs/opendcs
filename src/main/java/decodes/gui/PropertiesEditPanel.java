@@ -613,6 +613,7 @@ class PropertiesTableModel extends AbstractTableModel
 			return sp.first;
 		if (sp.first != null 
 		 && (sp.first.toLowerCase().contains("password") || sp.first.toLowerCase().contains("passwd"))
+		 && !sp.first.equalsIgnoreCase("passwordCheckerClass")
 		 && sp.second != null && sp.second.length() > 0)
 			return "****";
 		return sp.second;

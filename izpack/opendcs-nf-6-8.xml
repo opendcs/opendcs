@@ -577,7 +577,7 @@ IMPORTANT: For a new installation, you should also select the Template Database.
         </pack>
 
         <pack name="LRGS" required="no">
-            <description>Open LRGS (Local Readout Ground Station) supplies raw data acquisition functions.</description>
+            <description>Open LRGS (Local Readout Ground Station) Data Acquisition Functions.</description>
 	    	<fileset dir="archive" targetdir="$INSTALL_PATH"/>
             <file src="users" targetdir="$INSTALL_PATH"/>
             <file src="users/lrgsadmin" targetdir="$INSTALL_PATH/users" override="false"/>
@@ -601,12 +601,21 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <executable targetfile="$INSTALL_PATH/bin/elp.bat" stage="never" os="windows"/>
             <parsable   targetfile="$INSTALL_PATH/bin/elp.bat" type="shell" os="windows"/>
 
-
             <file src="lrgs.service" targetdir="$INSTALL_PATH" override="false"/>
             <executable targetfile="$INSTALL_PATH/bin/startLrgsService" stage="never" os="unix"/>
             <parsable   targetfile="$INSTALL_PATH/bin/startLrgsService" type="shell" os="unix"/>
             <executable targetfile="$INSTALL_PATH/bin/stopLrgsService" stage="never" os="unix"/>
             <parsable   targetfile="$INSTALL_PATH/bin/stopLrgsService" type="shell" os="unix"/>
+
+            <file src="schema/noaa/createLrgsDb.sh" targetdir="$INSTALL_PATH/schema/noaa" override="true"/>
+            <executable targetfile="$INSTALL_PATH/schema/noaa/createLrgsDb.sh" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/schema/noaa/createLrgsDb.sh" type="shell" os="unix"/>
+            <file src="schema/noaa/createLrgsDb.bat" targetdir="$INSTALL_PATH/schema/noaa" override="true"/>
+            <executable targetfile="$INSTALL_PATH/schema/noaa/createLrgsDb.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/schema/noaa/createLrgsDb.bat" type="shell" os="windows"/>
+            <file src="schema/noaa/createLrgsDb.sql" targetdir="$INSTALL_PATH/schema/noaa" override="true"/>
+            <file src="schema/noaa/createLrgsSequences.sql" targetdir="$INSTALL_PATH/schema/noaa" override="true"/>
+            <file src="schema/noaa/noaapw.words" targetdir="$INSTALL_PATH/schema/noaa" override="false"/>
 
 		</pack>
 <!--
