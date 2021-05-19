@@ -39,7 +39,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<!-- Settable Directories -->
 	<property name="home.dir" value="${env.HOME}"/>
-	<property name="project.dir" value="${home.dir}/git/opendcs"/>
+	<property name="project.dir" value="${home.dir}/Documents/GitHub/opendcs"/>
 	<property name="thirdpartyjar.dir" value="dep"/>
 	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
 	<property name="izpack.dir" value="${env.IZPACK_HOME}"/>
@@ -237,6 +237,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="stage/schema/hdb"/>
 		<mkdir dir="stage/schema/opendcs-pg"/>
 		<mkdir dir="stage/schema/opendcs-oracle"/>
+		<mkdir dir="stage/schema/noaa"/>
 
 		<copy todir="stage/edit-db">
 			<fileset dir="${project.dir}/install/edit-db">
@@ -371,6 +372,10 @@ can find your git source tree and your directory with the downloaded jars.
 
 		<copy todir="stage/schema/opendcs-oracle">
 			<fileset dir="${project.dir}/schema/opendcs-oracle"/>
+		</copy>
+
+		<copy todir="stage/schema/noaa">
+			<fileset dir="${project.dir}/schema/noaa"/>
 		</copy>
 
 		<copy todir="stage/python">

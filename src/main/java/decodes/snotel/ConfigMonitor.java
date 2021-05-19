@@ -67,7 +67,7 @@ public class ConfigMonitor
 	@Override
 	protected void finishedScan()
 	{
-		Logger.instance().debug1(module + ".finishedScan #cfgs=" + cfgFiles.size()
+	Logger.instance().debug1(module + ".finishedScan #cfgs=" + cfgFiles.size()
 			+ ", #rts=" + rtFiles.size() + ", #hst=" + hstFiles.size());
 		
 Logger.instance().debug1(module + " # sched entries=" + Database.getDb().schedEntryList.size());		
@@ -519,7 +519,7 @@ Logger.instance().debug1(module + " reading history file '" + f.getPath() + "'")
 					continue;
 			
 				String fields[] = new String[6];
-				StringTokenizer st = new StringTokenizer(line, "|");
+				StringTokenizer st = new StringTokenizer(line, ",");
 				int nt = 0;
 				while(nt < 6 && st.hasMoreTokens())
 					fields[nt++] = st.nextToken();
@@ -697,4 +697,14 @@ Logger.instance().debug1(module + "setHistoryDir " + historyDir);
 		return null;
 	}
 
+	public static void main(String args[])
+		throws Exception
+	{
+		ConfigMonitor cfgMon = new ConfigMonitor();
+		cfgMon.readHstFile(new File(args[0]));
+		System.out.println("Read " + cfgMon.histQueue.size() + " history requests.");
+		for(HistoryRetrieval hr : cfgMon.histQueue)
+			System.out.println(hr.toString());
+		
+	}
 }
