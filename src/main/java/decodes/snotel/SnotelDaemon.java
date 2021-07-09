@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
+import java.util.TimeZone;
 
 import decodes.util.CmdLineArgs;
+import decodes.util.DecodesVersion;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
@@ -42,9 +45,9 @@ public class SnotelDaemon
 		"Optional Lock File", "", TokenOptions.optSwitch, "");
 
 	private RetrievalThread rtRetrieval = null, hstRetrieval = null;
-	long historyStarted = 0L;
-	int rtSequence = 1;
-
+	private long historyStarted = 0L;
+	private int rtSequence = 1;
+	private long nextRtRun = 0L;
 	
 
 	public SnotelDaemon(String[] args)
@@ -67,6 +70,8 @@ public class SnotelDaemon
 	@Override
 	public void run()
 	{
+		Logger.instance().info("====== SnotelDaemon Starting " + DecodesVersion.getVersion()
+			+ " ======");
 		/** Optional server lock ensures only one instance runs at a time. */
 		String lockpath = lockFileArg.getValue();
 		if (lockpath != null && lockpath.trim().length() > 0)
@@ -93,6 +98,9 @@ public class SnotelDaemon
 
 		loadStatus();
 		checkConfig();
+
+		// Check last run time and determine the next time to start rt retrieval.
+		computeNextRtRun();
 		
 		// Instantiate monitor AFTER reading config, which contains the directory names.
 		controlmMonitor = new ControlmMonitor(this);
@@ -226,18 +234,22 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 	{
 		checkConfig();
 		
-		long curHour = System.currentTimeMillis() / 3600000L;
-		long lastRunHour = snotelStatus.lastRealtimeRun / 3600000L;
-Logger.instance().debug1("scanFinished curHour=" + curHour + ", lastRunHour=" + lastRunHour);
-		if (curHour > lastRunHour)
-			runRealtime();
+		long now = System.currentTimeMillis();
 		
 		String msg = "scanFinished()";
+
 		if (historyInProgress())
 			msg = msg + " History " + hstRetrieval.getSequencNum() + " in progress.";
+
 		if (realtimeInProgress())
 			msg = msg + " RealTime " + rtRetrieval.getSequencNum() + " in progress.";
-		Logger.instance().debug1(msg);
+		else if (now >= nextRtRun)
+		{
+			msg = msg + " RealTime " + rtSequence + " starting.";
+			runRealtime();
+		}
+			
+		Logger.instance().debug2(msg);
 		saveStatus();
 	}
 
@@ -315,6 +327,8 @@ Logger.instance().debug1("scanFinished curHour=" + curHour + ", lastRunHour=" + 
 			Logger.instance().info("RealTime Retrieval Sequence " + rt.getSequencNum()
 				+ " Finished.");
 			rtRetrieval = null;
+			
+			computeNextRtRun();
 		}
 		else if (rt == hstRetrieval)
 		{
@@ -327,6 +341,38 @@ Logger.instance().debug1("scanFinished curHour=" + curHour + ", lastRunHour=" + 
 			Logger.instance().info("Untracked Retrieval Sequence " + rt.getSequencNum()
 				+ " Finished.");
 		}
+	}
+	
+	/**
+	 * Computes the next time to run a real-time retrieval. Assume that it is in the future.
+	 * Called once at startup and then after each rt retrieval thread exits.
+	 */
+	private void computeNextRtRun()
+	{
+		if (snotelConfig.retrievalFreq <= 0)
+		{
+			// RT thread is supposed to always run in real-time. Start it now.
+			Logger.instance().info("retrievalFreq==0. Will start rt immediately.");
+			nextRtRun = System.currentTimeMillis();
+			return;
+		}
+		
+		long now = System.currentTimeMillis();
+		// Make a calendar set to today at midnight.
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(TimeZone.getTimeZone(snotelConfig.outputTZ));
+		cal.setTimeInMillis(now);
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		
+		// Add interval until > now
+		while(cal.getTimeInMillis() <= now)
+			cal.add(Calendar.MINUTE, snotelConfig.retrievalFreq);
+		
+		Logger.instance().info("Next realtime retrieval set for " + cal.getTime());
+		nextRtRun = cal.getTimeInMillis();
 	}
 
 }

@@ -9,6 +9,7 @@ import java.io.LineNumberReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -44,7 +45,7 @@ public class ControlmMonitor
 		this.parent = parent;
 		
 		// Dates in files are always interpreted as PST.
-		sdf.setTimeZone(TimeZone.getTimeZone("GMT-08:00"));
+		sdf.setTimeZone(TimeZone.getTimeZone(parent.getConfig().outputTZ));
 		SnotelConfig conf = parent.getConfig();
 		super.addDirectory(cfgD = new File(EnvExpander.expand(conf.controlmConfigDir)));
 		super.addDirectory(rtD = new File(EnvExpander.expand(conf.controlmRealtimeDir)));
@@ -65,7 +66,7 @@ public class ControlmMonitor
 	@Override
 	protected void finishedScan()
 	{
-		Logger.instance().debug1(module + ".finishedScan #cfgs=" + cfgFiles.size()
+		Logger.instance().debug2(module + ".finishedScan #cfgs=" + cfgFiles.size()
 			+ ", #rts=" + rtFiles.size() + ", #hst=" + hstFiles.size());
 		SnotelConfig conf = parent.getConfig();
 		
@@ -169,9 +170,10 @@ public class ControlmMonitor
 		Logger.instance().info(module + " received config file '" + cfgFile.getPath());
 		
 		Properties props = new Properties();
+		FileInputStream fis = null;
 		try
 		{
-			props.load(new FileInputStream(cfgFile));
+			props.load(fis = new FileInputStream(cfgFile));
 		}
 		catch (IOException ex)
 		{
@@ -179,6 +181,11 @@ public class ControlmMonitor
 				+ cfgFile.getPath() + "' " + ex
 				+ " -- Check that file is readable and that it is a valid Java properties file.");
 			return;
+		}
+		finally
+		{
+			if (fis != null)
+				try { fis.close(); } catch(Exception ex) {}
 		}
 
 		SnotelConfig conf = parent.getConfig();
@@ -193,7 +200,7 @@ public class ControlmMonitor
 	{	
 		if (histQueue.isEmpty())
 		{
-			Logger.instance().debug1(module + " histQueue empty");;
+			Logger.instance().debug2(module + " histQueue empty");;
 			return;
 		}
 		if (parent.historyInProgress())
@@ -273,7 +280,19 @@ public class ControlmMonitor
 					continue;
 				}
 				Date end = null;
-				try { end = sdf.parse(fields[5]); }
+				try 
+				{
+					end = sdf.parse(fields[5]);
+					// 6/2/21 meeting, the end time should include the entire day specified,
+					// so add 23:59:59 to it.
+					Calendar cal = Calendar.getInstance();
+					cal.setTimeZone(TimeZone.getTimeZone(parent.getConfig().outputTZ));
+					cal.setTime(end);
+					cal.set(Calendar.HOUR_OF_DAY, 23);
+					cal.set(Calendar.MINUTE, 59);
+					cal.set(Calendar.SECOND, 59);
+					end = cal.getTime();
+				}
 				catch(ParseException ex)
 				{
 					Logger.instance().warning(module + " "
@@ -283,6 +302,7 @@ public class ControlmMonitor
 				}
 				HistoryRetrieval hr = new HistoryRetrieval(spec, start, end);
 				histQueue.add(hr);
+Logger.instance().debug1("New history retrieval: " + hr);
 			}
 		}
 		catch (IOException ex)
@@ -318,7 +338,7 @@ public class ControlmMonitor
 		long lmt = f.lastModified();
 		if (cfgD.getPath().equals(dir.getPath()))
 		{
-			if (lmt > snotelStatus.configLMT)
+			if (lmt > snotelStatus.configLMT || parent.getConfig().moveToArchive)
 			{
 				cfgFiles.add(f);
 				return true;
@@ -326,7 +346,7 @@ public class ControlmMonitor
 		}
 		else if (rtD.getPath().equals(dir.getPath()))
 		{
-			if (lmt > snotelStatus.realtimeLMT)
+			if (lmt > snotelStatus.realtimeLMT || parent.getConfig().moveToArchive)
 			{
 				rtFiles.add(f);
 				return true;
@@ -334,7 +354,7 @@ public class ControlmMonitor
 		}
 		else if (hstD.getPath().equals(dir.getPath()))
 		{
-			if (lmt > snotelStatus.historyLMT)
+			if (lmt > snotelStatus.historyLMT || parent.getConfig().moveToArchive)
 			{
 				hstFiles.add(f);
 				return true;

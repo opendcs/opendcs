@@ -18,6 +18,7 @@ import decodes.decoder.NumberParser;
 import decodes.decoder.ScriptFormatException;
 import ilex.util.ArrayUtil;
 import ilex.util.EnvExpander;
+import ilex.util.FileUtil;
 import ilex.util.Logger;
 import ilex.var.NoConversionException;
 import ilex.var.Variable;
@@ -30,7 +31,7 @@ import lrgs.ldds.ServerError;
 
 public class RetrievalThread extends Thread
 {
-	private static String module = "RetrievalThread";
+	private String module = "RetrievalThread";
 	private SnotelDaemon parent = null;
 	private SnotelPlatformSpecList specList = null;
 	private String since = null;
@@ -40,13 +41,15 @@ public class RetrievalThread extends Thread
 	private byte[] buffer;
 	private int pos;
 	private PrintWriter curOutput = null;
+	private File curOutputFile = null;
 	private long lastOutputMsec = 0L;
 	private String prefix = "";
 
 	public RetrievalThread(SnotelDaemon parent, SnotelPlatformSpecList specList, 
 		String since, String until, int sequenceNum, String prefix)
 	{
-		super(module);
+		super();
+		this.module = this.module + "-" + prefix;
 		this.parent = parent;
 		this.specList = specList;
 		this.since = since;
@@ -58,9 +61,14 @@ public class RetrievalThread extends Thread
 	@Override
 	public void run()
 	{
+		SnotelConfig conf = parent.getConfig();
+		
 		Logger.instance().info(module + " Starting. Sequence=" + sequencNum + ", "
 			+ specList.getPlatformSpecs().size()
 			+ " platforms in list. since=" + since + ", until=" + until);
+		
+		boolean runRealTime = prefix.equalsIgnoreCase("rt") && conf.retrievalFreq <= 0;
+		
 		if (specList.getPlatformSpecs().isEmpty())
 		{
 			Logger.instance().failure(module + " No platforms in list. Cannot run.");
@@ -68,7 +76,6 @@ public class RetrievalThread extends Thread
 		}
 		
 		ArrayList<HostPort> conlist = new ArrayList<HostPort>();
-		SnotelConfig conf = parent.getConfig();
 		if (conf.lrgsUser == null || conf.lrgsUser.length() == 0)
 		{
 			Logger.instance().failure(module + " Configuration missing lrgsUser. Cannot run.");
@@ -92,7 +99,10 @@ public class RetrievalThread extends Thread
 				try
 				{
 					lddsClient = new LddsClient(con.host, con.port);
+					Logger.instance().debug1(module + " Connecting to " + con.host + ":" + con.port);
 					lddsClient.connect();
+					Logger.instance().debug1(module + " Logging in to " 
+							+ con.host + ":" + con.port + " as user '" + conf.lrgsUser + "'");
 					if (conf.lrgsPassword != null)
 						lddsClient.sendAuthHello(conf.lrgsUser, conf.lrgsPassword);
 					else
@@ -100,19 +110,51 @@ public class RetrievalThread extends Thread
 					
 					SearchCriteria crit = new SearchCriteria();
 					crit.setLrgsSince(since);
-					crit.setLrgsUntil(until);
+					if (!runRealTime)
+						crit.setLrgsUntil(until);
 					for(SnotelPlatformSpec plat : specList.getPlatformSpecs())
 						crit.addDcpAddress(plat.getDcpAddress());
 					
+					Logger.instance().debug1(module + " sending search criteria: " 
+						+ crit.toString());
 					lddsClient.sendSearchCrit(crit);
 					
+					Logger.instance().debug1(module + " retrieving messages.");
 					while(!_shutdown)
 					{
-						DcpMsg msg = lddsClient.getDcpMsg(90);
-						if (msg != null)
+						DcpMsg msg = null;
+						try
 						{
-							outputMessage(msg);
-							numMsgs++;
+							msg = lddsClient.getDcpMsg(90);
+							if (msg != null)
+							{
+								outputMessage(msg);
+								numMsgs++;
+							}
+						}
+						catch (ServerError se)
+						{
+							if (se.Derrno == LrgsErrorCode.DMSGTIMEOUT && runRealTime)
+							{
+Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
+								// This means we're running in realtime and server is waiting for
+								// the next message. Pause and Stay in the loop.
+								try { Thread.sleep(2000L); }
+								catch(InterruptedException ie) {}
+							}
+							else
+								throw se;
+						}
+
+						
+						if (runRealTime)
+						{
+							if (conf.retrievalFreq > 0)
+							{
+								Logger.instance().info(module 
+									+ " was realtime but conf.retrievalFreq is now > 0. Aborting.");
+								break;
+							}
 						}
 					}
 				}
@@ -149,7 +191,6 @@ public class RetrievalThread extends Thread
 					lddsClient.disconnect();
 				}
 			}
-			
 		}
 		finally
 		{
@@ -200,20 +241,22 @@ public class RetrievalThread extends Thread
 		if (curOutput == null)
 		{
 			SimpleDateFormat fileSdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-			File f = new File(EnvExpander.expand(parent.getConfig().outputDir), 
+			curOutputFile = new File(EnvExpander.expand(parent.getConfig().outputTmp), 
 				prefix + "-" + fileSdf.format(new Date()) + ".csv");
 			try
 			{
-				curOutput = new PrintWriter(f);
-				Logger.instance().info(module + " opened output file '" + f.getPath() + "'");
+				curOutput = new PrintWriter(curOutputFile);
+				Logger.instance().info(module + " opened output file '" 
+					+ curOutputFile.getPath() + "'");
 				lastOutputMsec = System.currentTimeMillis();
 			}
 			catch (FileNotFoundException ex)
 			{
 				Logger.instance().failure(module + " cannot create output file '"
-					+ f.getPath() + "': " + ex + " -- message '" + dcpMsg.getHeader()
+					+ curOutputFile.getPath() + "': " + ex + " -- message '" + dcpMsg.getHeader()
 					+ "' skipped.");
 				curOutput = null;
+				curOutputFile = null;
 			}
 		}
 		
@@ -234,7 +277,7 @@ public class RetrievalThread extends Thread
 		{
 			forwardspace(); // Skip initial DADDS status char in msg.
 			
-			// for format A, numHours is alwasy 1 and set numChans to big number.
+			// for format A, numHours is always 1 and set numChans to big number.
 			int numHours = 1, numChans = 1000;
 			if (spec.getDataFormat() == 'B')
 			{
@@ -365,8 +408,30 @@ Logger.instance().debug2(module + " msgTime=" + dcpMsg.getXmitTime() + ", tz="
 	{
 		if (curOutput != null)
 		{
-			try { curOutput.close(); } catch(Exception ex) {}
+			try
+			{
+				curOutput.close();
+				if (curOutputFile.length() > 0)
+				{
+					File outFile = new File(EnvExpander.expand(parent.getConfig().outputDir),
+							curOutputFile.getName());
+					Logger.instance().debug1("Moving '" + curOutputFile.getPath() 
+						+ "' to '" + outFile.getPath() + "'");
+					FileUtil.moveFile(curOutputFile, outFile);
+				}
+				else
+				{
+					Logger.instance().debug1("Deleting empty output file '" 
+						+ curOutputFile.getPath() + "'");
+					curOutputFile.delete();
+				}
+			} 
+			catch(Exception ex)
+			{
+				Logger.instance().warning("Error closing file: " + ex);
+			}
 			curOutput = null;
+			curOutputFile = null;
 		}
 	}
 	
