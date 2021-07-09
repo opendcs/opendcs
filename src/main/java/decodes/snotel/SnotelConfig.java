@@ -32,6 +32,10 @@ public class SnotelConfig
 	public String outputTZ = "GMT-08:00";
 	
 	public boolean moveToArchive = false;
+	
+	public String outputTmp = "$DCSTOOL_USERDIR/tmp";
+	
+	public int retrievalFreq = 60;
 
 	public SnotelConfig()
 	{
