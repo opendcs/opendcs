@@ -662,9 +662,15 @@ public class LrgsDataSource extends DataSourceExec
 		ret.setOrigDcpMsg(dcpMsg);
 		String addrField;
 		int chan;
-		PMParser pmp = DcpMsgFlag.isIridium(dcpMsg.flagbits) ? iridiumPMP 
-			: DcpMsgFlag.isNetDcp(dcpMsg.flagbits)? netdcpPMP
-			: goesPMP;
+		PMParser pmp = null;
+		if (DcpMsgFlag.isIridium(dcpMsg.flagbits))
+			pmp =  iridiumPMP;
+		else if (DcpMsgFlag.isDamsNtDcp(dcpMsg.flagbits))
+			pmp = goesPMP;
+		else if (DcpMsgFlag.isNetDcp(dcpMsg.flagbits))
+			pmp = netdcpPMP;
+		else
+			pmp = goesPMP;
 		
 		try 
 		{

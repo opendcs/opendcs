@@ -135,6 +135,9 @@ public class DcpMsgFlag
 	public static boolean isNetDcp(int f) 
 	{ return (f & MSG_TYPE_MASK) == MSG_TYPE_NETDCP; }
 	
+	public static boolean isDamsNtDcp(int f)
+	{ return isNetDcp(f) && (f & SRC_MASK) == SRC_DRGS; }
+	
 	/**
 	  Get data source name given a flag value.
 	  @param v the flag value.
