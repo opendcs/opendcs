@@ -46,15 +46,7 @@ public class AlarmList
 		/* Add the alarm. */
 		alarmList.add(alarm);
 		if (getNumAlarms() == 1)
-// Already in GUI thread.
-//			SwingUtilities.invokeLater(
-//				new Runnable()
-//			{
-//				public void run()
-//				{
-					setValue(alarm);
-//				}
-//			});
+			setValue(alarm);
 		notifyGui();
 	}
 
