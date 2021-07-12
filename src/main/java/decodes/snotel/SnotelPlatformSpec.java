@@ -75,6 +75,6 @@ public class SnotelPlatformSpec
 	@Override
 	public String toString()
 	{
-		return "" + stationId + "|" + stationName + "|" + dcpAddress + "|" + dataFormat;
+		return "" + stationId + "," + stationName + "," + dcpAddress + "," + dataFormat;
 	}
 }

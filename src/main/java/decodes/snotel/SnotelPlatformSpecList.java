@@ -107,6 +107,11 @@ public class SnotelPlatformSpecList
 		lnr.close();
 	}
 	
+	public void addHistoryRetrieval(HistoryRetrieval hr)
+	{
+		platformSpecs.put(hr.getSpec().getDcpAddress(), hr.getSpec());
+	}
+	
 	/**
 	 * Test main - pass file name on commandline. It reads the file and spits it back out
 	 * to stdout. Any errors are printed to stderr.

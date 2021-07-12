@@ -843,6 +843,8 @@ public class DcpMsg
     {
     	this.headerLength = headerLength;
     }
+    
+    public int getHeaderLength() { return headerLength; }
 
     /**
      * @return database key for this DCP message if it was read from a SQL
