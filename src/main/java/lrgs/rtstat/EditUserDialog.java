@@ -18,6 +18,7 @@ import java.util.StringTokenizer;
 import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 import lrgs.ldds.DdsUser;
+import lrgs.ldds.NoaaPasswordChecker;
 import lrgs.ldds.PasswordChecker;
 import lrgs.lrgsmain.LrgsConfig;
 
@@ -214,24 +215,21 @@ public class EditUserDialog
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(1, 0, 2, 15), 0, 0));
 			
-			final PasswordChecker pc = ResourceFactory.instance().getPasswordChecker();
-			if (pc != null)
-			{
-				JButton genButton = new JButton("Gen Rand");
-				centerPanel.add(genButton,
-					new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
-						GridBagConstraints.WEST, GridBagConstraints.NONE,
-						new Insets(1, 2, 2, 2), 0, 0));
-				genButton.addActionListener(
-					new ActionListener()
+			final PasswordChecker pc = new NoaaPasswordChecker();
+			JButton genButton = new JButton("Gen Rand");
+			centerPanel.add(genButton,
+				new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE,
+					new Insets(1, 2, 2, 2), 0, 0));
+			genButton.addActionListener(
+				new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
 					{
-						@Override
-						public void actionPerformed(ActionEvent e)
-						{
-							ddsPasswordField.setText(pc.generateRandomPassword());
-						}
-					});
-			}
+						ddsPasswordField.setText(pc.generateRandomPassword());
+					}
+				});
 		}
 		else
 		{
