@@ -681,6 +681,7 @@ public abstract class StreamDataSource extends DataSourceExec
 	private RawMessage scanForMessage()
 		throws DataSourceException
 	{
+Logger.instance().debug3("scanForMessage oneMessageFile=" + oneMessageFile + ", mediumId=" + mediumId);
 		if (oneMessageFile)
 			return getEntireFileAsMessage();
 		try
@@ -1254,6 +1255,7 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
 		// If mediumId supplied as property, set before parsing header.
 		if (mediumId != null)
 		{
+Logger.instance().debug1("oneMessageFile=true, mediumId define as '" + mediumId + "'");
 			ret.setMediumId(mediumId);
 			ret.setPM(GoesPMParser.DCP_ADDRESS, new Variable(mediumId));
 		}
