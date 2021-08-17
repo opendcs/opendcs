@@ -212,6 +212,7 @@ Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 				+ " but address is not in the spec list -- skipped.");
 			return;
 		}
+		Logger.instance().debug1(module + " decoding with spec: " + spec);
 
 		initDecoder(dcpMsg);
 		
@@ -283,8 +284,8 @@ Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 			{
 				numHours = numParser.parseIntValue(getField(3,  null));
 				numChans = numParser.parseIntValue(getField(3,  null));
-//				logger.debug2(module + " new format numHours=" + numHours 
-//					+ ", numChans=" + numChans);
+				Logger.instance().debug2(module + " B format numHours=" + numHours 
+					+ ", numChans=" + numChans);
 			}
 
 			for(int hr = 0; hr < numHours; hr++)
@@ -305,6 +306,7 @@ Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 						int hhmm = numParser.parseIntValue(hhmmField);
 						cal.set(Calendar.HOUR_OF_DAY, hhmm/100);
 						cal.set(Calendar.MINUTE, hhmm % 100);
+						cal.set(Calendar.SECOND, 0);
 						Logger.instance().debug1(module + " parsed doy=" + doy + ", hhmm=" + hhmm
 							+ ", resulting time=" + cal.getTime());
 						
