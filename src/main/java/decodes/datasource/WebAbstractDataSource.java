@@ -234,4 +234,11 @@ public class WebAbstractDataSource
 		return PropertiesUtil.combineSpecs(super.getSupportedProps(), 
 			PropertiesUtil.combineSpecs(UTprops, StreamDataSource.SDSprops));
 	}
+	
+	@Override
+	public boolean supportsTimeRanges()
+	{
+		return true;
+	}
+
 }

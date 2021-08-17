@@ -675,23 +675,48 @@ public class LrgsDataSource extends DataSourceExec
 		try 
 		{
 			pmp.parsePerformanceMeasurements(ret); 
-			addrField = 
-				ret.getPM(GoesPMParser.DCP_ADDRESS).getStringValue().toUpperCase();
-			
-			if(pmp.getMediumType().equalsIgnoreCase(Constants.medium_EDL))
-				addrField = 
-					ret.getPM(EdlPMParser.STATION).getStringValue();
-						
-			Variable v = ret.getPM(GoesPMParser.CHANNEL);
-			chan = v == null ? Constants.undefinedIntKey : v.getIntValue();
 		}
 		catch(HeaderParseException e)
 		{
-			log(Logger.E_FAILURE, 
-				"Could not parse message header for '"
-				+ new String(dcpMsg.getData(), 0, 20) + "' flags=0x"
-				+ Integer.toHexString(dcpMsg.getFlagbits()) + ": " + e);
-			throw e;
+			// Kludge for Sutron NetDCPs that are being used by USACE NAE.
+			// The DCPs are retrieved via DAMS-NT over the network. They may also
+			// arrive via DDS from another LRGS.
+			// Thus if we tried netDCP header and it failed, try GOES.
+			String em = e.toString();
+			if (pmp == netdcpPMP)
+			{
+				try 
+				{
+					goesPMP.parsePerformanceMeasurements(ret);
+					em = null; // Success
+				}
+				catch(HeaderParseException e2)
+				{
+					em = em + " (tried netdcp and goes header parsers)";
+				}
+			}
+			if (em != null)
+			{
+				log(Logger.E_FAILURE, 
+					"Could not parse message header for '"
+					+ new String(dcpMsg.getData(), 0, 20) + "' flags=0x"
+					+ Integer.toHexString(dcpMsg.getFlagbits()) + ": " + em);
+				throw e;
+			}
+		}
+		
+		try
+		{
+			addrField = 
+				ret.getPM(GoesPMParser.DCP_ADDRESS).getStringValue().toUpperCase();
+			
+			Variable v;
+			if (pmp.getMediumType().equalsIgnoreCase(Constants.medium_EDL)
+			 && (v = ret.getPM(EdlPMParser.STATION)) != null)
+				addrField = v.getStringValue();
+						
+			v = ret.getPM(GoesPMParser.CHANNEL);
+			chan = v == null ? Constants.undefinedIntKey : v.getIntValue();
 		}
 		catch(NoConversionException e) 
 		{
