@@ -38,7 +38,7 @@ can find your git source tree and your directory with the downloaded jars.
     HydroJSON - if you are building HydroJSON, set this to the location of the
                 HdroJSON web app source.
 
-5. CD to your build directory and run ant here.
+7. CD to your build directory and run ant here.
 
 -->
 
@@ -52,7 +52,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<!-- Settable Directories -->
 	<property name="home.dir" value="${env.HOME}"/>
-	<property name="project.dir" value="${home.dir}/Documents/GitHub/opendcs"/>
+	<property name="project.dir" value="${env.OPENDCS_REPO}"/>
 	<property name="thirdpartyjar.dir" value="dep"/>
 	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
 	<property name="izpack.dir" value="${env.IZPACK_HOME}"/>
