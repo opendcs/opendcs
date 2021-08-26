@@ -19,10 +19,11 @@ This class contains a subset of PDT entries which are necessary to monitor
 and validate the incoming stream of DCP messages.
 @deprecated - use decodes.util.PdtEntry instead.
 */
+@Deprecated
 public class PdtSchedEntry
 	implements Comparable
 {
-	/** 
+	/**
 	 * DCP Address stored as a 32 bit integer.
 	 * Must be cast & masked to an unsigned 32-bit quantity.
 	 */
@@ -39,7 +40,7 @@ public class PdtSchedEntry
 	private short rdChan;
 
 	/**
-	 * Transmit window duration in seconds. 
+	 * Transmit window duration in seconds.
 	 */
 	private short xmitWindow;
 
@@ -58,11 +59,11 @@ public class PdtSchedEntry
 	 * @param dcpAddr DCP Address
 	 * @param stChan Channel for self-timed messages
 	 * @param rdChan Channel for random messages
-	 * @param xmitWindow Transmit window duration in seconds. 
+	 * @param xmitWindow Transmit window duration in seconds.
 	 * @param xmitInterval Transmit interval in seconds.
 	 * @param firstXmit Second of day for first transmission.
 	 */
-	public PdtSchedEntry(long dcpAddr, int stChan, int rdChan, 
+	public PdtSchedEntry(long dcpAddr, int stChan, int rdChan,
 		int xmitWindow, int xmitInterval, int firstXmit)
 	{
 		this.dcpAddr = (int)(dcpAddr & 0xffffffffL);
@@ -90,7 +91,7 @@ public class PdtSchedEntry
 	public int getRdChan() { return (int)rdChan; }
 
 	/**
-	 * @return Transmit window duration in seconds. 
+	 * @return Transmit window duration in seconds.
 	 */
 	public int getXmitWindow() { return xmitWindow; }
 
