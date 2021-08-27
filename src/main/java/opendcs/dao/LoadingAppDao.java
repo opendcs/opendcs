@@ -63,6 +63,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
+
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
 import decodes.db.Constants;
@@ -524,49 +526,70 @@ public class LoadingAppDao
 	public TsdbCompLock obtainCompProcLock(CompAppInfo appInfo, int pid, String host)
 		throws LockBusyException, DbIoException
 	{
-		String q = "SELECT * from CP_COMP_PROC_LOCK WHERE "
-			+ "LOADING_APPLICATION_ID = " + appInfo.getAppId();
-		ResultSet rs = doQuery(q);
+		//ResultSet rs = null; //doQuery(q);
 		TsdbCompLock lock = null;
-		try
+		try( PreparedStatement getLock =
+				db.getConnection().prepareStatement(
+					"SELECT * from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?"
+				);
+		)
 		{
-			if (rs.next() && (lock = rs2lock(rs)) != null)
-			{
-				// Same application is re-connecting? (pid will be same)
-				if (lock.getPID() == pid)
+			getLock.setLong(1,appInfo.getAppId().getValue());
+			try(ResultSet rs = getLock.executeQuery();){
+				if ( rs.next() && (lock = rs2lock(rs)) != null)
 				{
-					// No need to re-create. Update the existing lock.
-					checkCompProcLock(lock);
-					return lock;
-				}
-				if (!lock.isStale())
-				{
-					String msg =
-						"Cannot obtain lock for app ID " + appInfo.getAppId()
-						+ ". Currently owned by PID " + lock.getPID()
-						+ " on host '" + lock.getHost() + "'";
-					fatal(msg);
-					throw new LockBusyException(msg);
+					// Same application is re-connecting? (pid will be same)
+					if (lock.getPID() == pid)
+					{
+						// No need to re-create. Update the existing lock.
+						checkCompProcLock(lock);
+						return lock;
+					}
+					if (!lock.isStale())
+					{
+						String msg =
+							"Cannot obtain lock for app ID " + appInfo.getAppId()
+							+ ". Currently owned by PID " + lock.getPID()
+							+ " on host '" + lock.getHost() + "'";
+						fatal(msg);
+						throw new LockBusyException(msg);
+					}
 				}
 			}
+
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error iterating result set for query '" +
-				q + "': " + ex;
+			String msg = "Obtaining existing lock information: "+ ex;
 			failure(msg);
 		}
 		if (lock != null)
 			releaseCompProcLock(lock);
 		lock = new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting");
-		q = "INSERT INTO CP_COMP_PROC_LOCK VALUES ("
-			+ appInfo.getAppId() + ", " + pid + ", " + sqlString(host) + ", "
-			+ db.sqlDate(lock.getHeartbeat()) + ", " + sqlString(lock.getStatus())
-			+ ")";
-		doModify(q);
-		debug1("Obtained lock for application ID " + appInfo.getAppId());
-		lock.setAppName(appInfo.getAppName());
-		return lock;
+		try( PreparedStatement insertLockInfo =
+			db.getConnection().prepareStatement(
+				"INSERT INTO CP_COMP_PROC_LOCK VALUES ("
+			+ "?,?,?,?,?)"
+			);
+		){
+			insertLockInfo.setLong(1,appInfo.getAppId().getValue());
+			insertLockInfo.setInt(2,pid);
+			insertLockInfo.setString(3,host);
+			insertLockInfo.setDate(4, new java.sql.Date(lock.getHeartbeat().getTime()));
+			insertLockInfo.setString(5,lock.getStatus());
+			insertLockInfo.execute();
+
+			debug1("Obtained lock for application ID " + appInfo.getAppId());
+			lock.setAppName(appInfo.getAppName());
+			return lock;
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error inserting new lock: " + ex;
+			failure(msg);
+			throw new DbIoException(msg);
+		}
+
 	}
 
 	/**
@@ -595,9 +618,17 @@ public class LoadingAppDao
 	@Override
 	public void releaseCompProcLock(TsdbCompLock lock) throws DbIoException
 	{
-		if (lock != null)
-			doModify("DELETE from CP_COMP_PROC_LOCK WHERE "
-				+ "LOADING_APPLICATION_ID = " + lock.getAppId());
+		if (lock != null){
+			try( PreparedStatement deleteLock =
+					db.getConnection().prepareStatement("DELETE from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?");
+			) {
+				deleteLock.setLong(1, lock.getAppId().getValue());
+				deleteLock.execute();
+			} catch(SQLException err ){
+				warning(err.getLocalizedMessage());
+				throw new DbIoException("Failed to delete lock");
+			}
+		}
 	}
 
 	@Override
@@ -717,12 +748,15 @@ public class LoadingAppDao
 	@Override
 	public Date getLastModified(DbKey appId)
 	{
-		String q = "select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
-			+ "where LOADING_APPLICATION_ID = " + appId
-			+ " and PROP_NAME = " + sqlString("LastModified");
-		try
+		try(PreparedStatement getProperties =
+				db.getConnection().prepareStatement("select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
+				+ "where LOADING_APPLICATION_ID = ?"
+				+ " and PROP_NAME = ?" );)
 		{
-			ResultSet rs = doQuery(q);
+			getProperties.setLong(1,appId.getValue());
+			getProperties.setString(2,"LastModified");
+
+			ResultSet rs = getProperties.executeQuery();
 			if(rs.next())
 				return lastModifiedSdf.parse(rs.getString(1));
 		}
