@@ -669,7 +669,7 @@ public class LoadingAppDao
 				updateHeartbeat.setDate(1,new java.sql.Date(lock.getHeartbeat().getTime()));
 				updateHeartbeat.setString(2,lock.getStatus());
 				updateHeartbeat.setLong(3,lock.getAppId().getValue());
-				debug3("HEARTBEAT UPDATE:" + updateHeartbeat.toString());
+				debug3("updating heartbeat");
 				updateHeartbeat.execute();
 /*				String q = "UPDATE CP_COMP_PROC_LOCK SET HEARTBEAT = "
 					+ db.sqlDate(lock.getHeartbeat()) + ", CUR_STATUS = "
