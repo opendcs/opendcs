@@ -1165,7 +1165,7 @@ public abstract class TimeSeriesDb
 
 		// Oracle was providing things in the wrong timestamp using current_timestamp.
 		// TODO: needs to be checked against Postgres
-		String curTime = this.isOracle() ? "sysdate" : "current_timestamp" );
+		String curTime = this.isOracle() ? "sysdate" : "current_timestamp" ;
 		try(
 			PreparedStatement deleteNormal = conn.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
 			PreparedStatement deleteFailedAfterMaxRetries = conn.prepareStatement(
