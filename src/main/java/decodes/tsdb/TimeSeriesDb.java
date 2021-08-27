@@ -1163,18 +1163,24 @@ public abstract class TimeSeriesDb
 		int maxRetries = DecodesSettings.instance().maxComputationRetries;
 		boolean doRetryFailed = DecodesSettings.instance().retryFailedComputations;
 
-
+		// Oracle was providing things in the wrong timestamp using current_timestamp.
+		// TODO: needs to be checked against Postgres
+		String curTime = this.isOracle() ? "sysdate" : "current_timestamp" );
 		try(
 			PreparedStatement deleteNormal = conn.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
 			PreparedStatement deleteFailedAfterMaxRetries = conn.prepareStatement(
 					  "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM = ? " // failRecList
-					+ "and (( current_timestamp - DATE_TIME_LOADED) > " // curTimeName
+					+ "and ((" + curTime + " - DATE_TIME_LOADED) > " // curTimeName
 					+ "INTERVAL '? hour')" ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
 			PreparedStatement updateFailedRetry = conn.prepareStatement(
 				"update CP_COMP_TASKLIST set FAIL_TIME = ? where RECORD_NUM = ? and "
-			+	"((current_timestamp - DATE_TIME_LOADED) <= INTERVAL '? hour')");
-			PreparedStatement updateFailTime = conn.prepareStatement("UPDATE CP_COMP_TASKLIST SET FAIL_TIME = current_timestamp where record_num = ?");
+			+	"( (" + curTime + " - DATE_TIME_LOADED) <= INTERVAL '? hour')");
+			PreparedStatement updateFailTime = conn.prepareStatement(
+				"UPDATE CP_COMP_TASKLIST "
+			+	" SET FAIL_TIME = " + curTime
+			+   " where record_num = ?"
+				);
 
 
 		){
