@@ -1277,122 +1277,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	/** @return label to use for 'revision' column in tables. */
 	public String getRevisionLabel() { return ""; }
 
-	/**
-	 * Releases triggers associated with the new data in the passed collection.
-	 * The implementation may use information contained in the collection's
-	 * opaque handle.
-	 * @param dc the data collection to be released.
-	 */
-
-	@Override
-	public void releaseNewData(DataCollection dc)
-		throws DbIoException
-	{
-		RecordRangeHandle rrh = dc.getTasklistHandle();
-		if (rrh == null)
-			return;
-
-		int maxRetries = DecodesSettings.instance().maxComputationRetries;
-		boolean doRetryFailed = DecodesSettings.instance().retryFailedComputations;
-
-
-		try(
-			PreparedStatement deleteNormal = conn.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
-			PreparedStatement deleteFailedAfterMaxRetries = conn.prepareStatement(
-					  "delete from CP_COMP_TASKLIST "
-					+ "where RECORD_NUM = ? " // failRecList
-					+ "and (( current_timestamp - DATE_TIME_LOADED) > " // curTimeName
-					+ "INTERVAL '? hour')" ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
-			PreparedStatement updateFailedRetry = conn.prepareStatement(
-				"update CP_COMP_TASKLIST set FAIL_TIME = ? where RECORD_NUM = ? and "
-			+	"((current_timestamp - DATE_TIME_LOADED) <= INTERVAL '? hour')");
-			PreparedStatement updateFailTime = conn.prepareStatement("UPDATE CP_COMP_TASKLIST SET FAIL_TIME = current_timestamp where record_num = ?");
-
-
-		){
-			while(rrh.size() > 0)
-			{
-				String []records = rrh.getRecNumList(250).split(",");
-				for( String rec: records ){
-					if( "".equalsIgnoreCase(rec) ) continue;
-					deleteNormal.setLong(1, Long.parseLong(rec.trim()));
-					deleteNormal.addBatch();
-				}
-
-				deleteNormal.executeBatch();
-			}
-
-			while(rrh.getFailedRecnums().size() > 0)
-			{
-				String failRecNumList = rrh.getFailedRecNumList(250);
-				String records[] = failRecNumList.split(",");
-				//Array failRecs = conn.createArrayOf("integer", failRecNumList.split(","));
-				// Add the retry limit for failed computations
-				if (doRetryFailed && maxRetries > 0)
-				{
-					debug3("updating failed records based on retry count");
-					for( String rec: records ){
-						if( "".equalsIgnoreCase(rec) ) continue;
-						deleteFailedAfterMaxRetries.setLong(1,Long.parseLong(rec.trim()));
-						//deleteFailedAfterMaxRetries.setString(2,curTimeName);
-						deleteFailedAfterMaxRetries.setInt(2,maxRetries);
-						deleteFailedAfterMaxRetries.addBatch();
-					}
-					deleteFailedAfterMaxRetries.executeBatch();
-					info("deleted failed recs past retry in (" + failRecNumList +")" );
-					for( String rec: records){
-						if( "".equalsIgnoreCase(rec) ) continue;
-						//updateFailedRetry.setString(1,curTimeName);
-						updateFailedRetry.setLong(1,Long.parseLong(rec.trim()));
-						updateFailedRetry.setInt(2, maxRetries);
-						updateFailedRetry.addBatch();
-
-					}
-					updateFailedRetry.executeBatch();
-					info("updated fail time on (" + failRecNumList + "))" );
-				}
-				else
-				{
-					// DB V5 handles failed computations by setting a FAIL_TIME
-					// on the task list record. Previous version just delete record.
-					if( tsdbVersion >= 4 && doRetryFailed ) {
-						debug3("updating failed records");
-						for( String rec: records ){
-							//updateFailTime.setString(1, curTimeName);
-							updateFailTime.setLong(1, Long.parseLong(rec.trim()));
-							//updateFailTime.setArray(2, failRecs);
-							updateFailTime.execute();
-						}
-						updateFailTime.executeBatch();
-						info("updated fail time on (" + failRecNumList + "))" );
-					} else {
-						for( String rec: records ){
-							if( "".equalsIgnoreCase(rec) ) continue;
-							deleteNormal.setLong(1, Long.parseLong(rec.trim()));
-							deleteNormal.addBatch();
-						}
-
-						deleteNormal.executeBatch();
-						info("deleted failed records: (" +failRecNumList +" )" );
-					}
-					commit();
-				}
-			}
-
-		} catch( SQLException err ){
-					//warning(err.getLocalizedMessage());
-					StringWriter sw = new StringWriter();
-					PrintWriter pw = new PrintWriter(sw);
-					err.printStackTrace(pw);
-					warning("removing items from task list failed:");
-					warning(sw.toString());
-					throw new DbIoException(err.getLocalizedMessage());
-		}
-
-
-
-	}
-
 
 	/**
 	 * TSDB version 5 & above use a join with CP_COMP_DEPENDS to determine
@@ -1403,7 +1287,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	public DataCollection getNewData(DbKey applicationId)
 		throws DbIoException
 	{
-		debug3("CWMS GET NEW DATA");
+
 		// Reload the TSID cache every hour.
 		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
 		{
@@ -1455,7 +1339,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			getMinStmt.setLong(1,applicationId.getValue());
 			getTaskListStmt.setLong(1,applicationId.getValue());
 
-			debug3("Executing prepared stmt2 '" + getMinStmtQuery + "'");
+			debug3("Executing prepared stmt '" + getMinStmtQuery + "'");
 			ResultSet rs = getMinStmt.executeQuery();
 
 			if (rs == null || !rs.next())
