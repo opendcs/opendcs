@@ -463,7 +463,7 @@ public class ComputationDAO
 		Connection conn = db.getConnection();
 		try(
 			PreparedStatement getComp = conn.prepareStatement(
-				"select " + compTableColumns + " from CP_COMPUATION where COMPUTATION_NAME = ?"
+				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_NAME = ?"
 			);
 			PreparedStatement getAppId = db.getConnection().prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
