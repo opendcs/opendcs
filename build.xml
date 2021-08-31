@@ -127,6 +127,7 @@ can find your git source tree and your directory with the downloaded jars.
 			<include name="spring-test-2.5.6.jar"/>
 			<include name="xml-apis-1.0.b2.jar"/>
 			<include name="xwork-core-2.1.6.jar"/>
+			<include name="bmp5-java-sdk.jar"/>
 		</fileset>
 		<fileset dir="${cwmsSystemJars.dir}">
 			<include name="*.jar"/>
