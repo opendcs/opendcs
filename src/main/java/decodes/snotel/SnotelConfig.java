@@ -36,9 +36,21 @@ public class SnotelConfig
 	public String outputTmp = "$DCSTOOL_USERDIR/tmp";
 	
 	public int retrievalFreq = 60;
+	
+	private long lastLoadTime = 0L;
 
 	public SnotelConfig()
 	{
+	}
+
+	public long getLastLoadTime()
+	{
+		return lastLoadTime;
+	}
+
+	public void setLastLoadTime(long lastLoadTime)
+	{
+		this.lastLoadTime = lastLoadTime;
 	}
 
 }
