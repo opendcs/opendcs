@@ -575,7 +575,10 @@ public class LoadingAppDao
 			insertLockInfo.setLong(1,appInfo.getAppId().getValue());
 			insertLockInfo.setInt(2,pid);
 			insertLockInfo.setString(3,host);
-			insertLockInfo.setDate(4, new java.sql.Date(lock.getHeartbeat().getTime()));
+			if( db.isOpenTSDB() )
+				insertLockInfo.setLong(4, lock.getHeartbeat().getTime());
+			else
+				insertLockInfo.setDate(4, new java.sql.Date(lock.getHeartbeat().getTime()));
 			insertLockInfo.setString(5,lock.getStatus());
 			insertLockInfo.execute();
 
@@ -666,7 +669,11 @@ public class LoadingAppDao
 				}
 				lock.setHeartbeat(new Date());
 
-				updateHeartbeat.setDate(1,new java.sql.Date(lock.getHeartbeat().getTime()));
+				if( db.isOpenTSDB() )
+					updateHeartbeat.setLong(1, lock.getHeartbeat().getTime());
+				else
+					updateHeartbeat.setDate(1,new java.sql.Date(lock.getHeartbeat().getTime()));
+
 				updateHeartbeat.setString(2,lock.getStatus());
 				updateHeartbeat.setLong(3,lock.getAppId().getValue());
 				debug3("updating heartbeat");
