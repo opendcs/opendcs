@@ -1,6 +1,6 @@
 /*
 *  $Id: DecodesSettings.java,v 1.31 2020/01/31 19:45:13 mmaloney Exp $
-*  
+*
 *  $Log: DecodesSettings.java,v $
 *  Revision 1.31  2020/01/31 19:45:13  mmaloney
 *  dev
@@ -167,7 +167,7 @@ public class DecodesSettings
 	implements PropertiesOwner
 {
 	private static DecodesSettings _instance = null;
-	
+
 	public enum DbTypes { XML, DECODES_SQL, NWIS, CWMS, HDB, OPENTSDB };
 
 	/** Code meaning NO database (for production only) */
@@ -219,16 +219,16 @@ public class DecodesSettings
 	/** Time zone used for determining aggregate periods in computations. */
 	public String aggregateTimeZone = "UTC";
 
-	/** 
-	 * For SQL Database, this sets the Connection autoCommit option. 
+	/**
+	 * For SQL Database, this sets the Connection autoCommit option.
 	 * Set to true/false. The default is blank, which leaves the connection at
 	 * whatever default is provided by the JDBC driver.
 	 */
 	public String autoCommit = "true";
-	
+
 	/** Default Agency for use in variable expansions */
 	public String agency = "";
-	
+
 	/** Default Location for use in variable expansions */
 	public String location = "";
 
@@ -260,7 +260,7 @@ public class DecodesSettings
 
 	/** Default data type standard, used in DB-editor & some formatters. */
 	public String dataTypeStdPreference = Constants.datatype_SHEF;
-	
+
 	/** Timezone used in Decoding Wizard */
 	public String decwizTimeZone = "UTC";
 
@@ -295,6 +295,7 @@ public class DecodesSettings
 	public boolean setPlatformDesignatorName=false;
 
 	/** @deprecated Set to true if the 1st line of site description contains long name. */
+	@Deprecated
 	public boolean hdbSiteDescriptions = false;
 
 	/** Language for internationalization */
@@ -308,27 +309,27 @@ public class DecodesSettings
 
 	/** Indicates the minimum algorithm id showed in the comp edit algo list */
 	public int minAlgoId = 0;
-	
-	/** Indicates the minimum computation id showed in the comp edit 
+
+	/** Indicates the minimum computation id showed in the comp edit
 	 * computation list */
 	public int minCompId = 0;
-	
+
 	/** Indicates the minimum process id showed in the comp edit process list */
 	public int minProcId = 0;
 
-	/** 
-	 * Max allowable missing values for auto interp/prev/next/closest fill. 
+	/**
+	 * Max allowable missing values for auto interp/prev/next/closest fill.
 	 * This works for values where the interval is not 0 (i.e. not INSTANT).
-	 * The setting here defines the default. It can be overridden by 
+	 * The setting here defines the default. It can be overridden by
 	 * computation/algorithm properties of the same name.
 	 */
 	public int maxMissingValuesForFill = 3;
 
-	/** 
-	 * Max allowable missing time for auto interp/prev/next/closest fill. 
+	/**
+	 * Max allowable missing time for auto interp/prev/next/closest fill.
 	 * This works for any param, including INSTANT. The value is a number
 	 * of seconds.
-	 * The setting here defines the default. It can be overridden by 
+	 * The setting here defines the default. It can be overridden by
 	 * computation/algorithm properties of the same name.
 	 */
 	public int maxMissingTimeForFill = 3600*3;
@@ -338,85 +339,85 @@ public class DecodesSettings
 	 * Normally this is determined by the API based on your login.
 	 */
 	public String CwmsOfficeId = "";
-	
+
 	/** Set to true to allow DECODES to write CWMS Location records */
 	public boolean writeCwmsLocations = false;
-	
+
 	/** Show the Platform Wizard button on the button panel */
 	public boolean showPlatformWizard = false;
-	
+
 	/** Show the legacy network list button on the button panel */
 	public boolean showNetlistEditor = false;
-	
+
 	/** Show the time series list/edit button */
 	public boolean showTimeSeriesEditor = true;
-	
+
 	public boolean showComputationEditor = true;
-	
+
 	/** Show the time series group list/edit button */
 	public boolean showGroupEditor = true;
-	
+
 	/** Show the 'Test Computations' button */
 	public boolean showTestCmputations = true;
-	
+
 	/** Show the 'Algorithms' button on the launcher. */
 	public boolean showAlgorithmEditor = true;
-	
+
 	/** For CWMS Datchk Validation configuration */
 	public String datchkConfigFile = "$DCSTOOL_USERDIR/datchk.cfg";
-	
+
 	/** Routing Monitor URL */
 	public String routingMonitorUrl = "file://$DECODES_INSTALL_DIR/routmon/routmon.html";
-	
+
 	/** Command to start browser */
 	public String browserCmd = null;
-	
+
 	public String pdtLocalFile = "$DCSTOOL_USERDIR/pdt";
 	public String pdtUrl = "https://dcs1.noaa.gov/pdts_compressed.txt";
 	public String cdtLocalFile = "$DCSTOOL_USERDIR/chans_by_baud.txt";
 	public String cdtUrl = "https://dcs1.noaa.gov/chans_by_baud.txt";
 	public String nwsXrefLocalFile = "$DCSTOOL_USERDIR/nwsxref.txt";
 	public String nwsXrefUrl = "http://www.nws.noaa.gov/oh/hads/USGS/ALL_USGS-HADS_SITES.txt";
-	
+
 	/** Set the maximum computation retries for failed records in Task List.
 	 *  0: default, unlimited retries; 1: only retry once for failed comp records; etc */
 	public int maxComputationRetries = 0 ;
-	
+
 	/** Time zone to use in GUI displays */
-	public String guiTimeZone = "UTC"; 
+	public String guiTimeZone = "UTC";
 
 	/** Default setting for computation EffectiveStart. Can be overridden by
 	 * settings within each computation.
 	 */
 	public String CpEffectiveStart = "";
-	
+
 	/**
-	 * If (false) then don't attempt to retry failed computations. 
+	 * If (false) then don't attempt to retry failed computations.
 	 * If (true) then do attempt to retry by using FAIL_TIME in the tasklist
 	 * records to retry up to maxComputationRetries set above.
 	 */
 	public boolean retryFailedComputations = false;
-	
+
 	/**
 	 * Process the minute offset fields when decoding ASCII self-describing messages.
 	 */
 	public boolean asciiSelfDescProcessMOFF = true;
-	
+
 	/** Default max decimals if no presentation element is found */
 	public int defaultMaxDecimals = 4;
-	
+
 	public boolean platformListDesignatorCol = false;
-	
+
 	/** For OpenDCS 6.1, purge data acquisition events after this many days */
 	public int eventPurgeDays = 5;
-	
+
 	public String pollScriptDir = "$HOME/SHARED/dacq/poll-scripts";
 	public String pollMessageDir = "$HOME/SHARED/dacq/edl-done";
 	public String pollRoutingTemplate = "PollGuiTemplate";
 	public String pollTcpTemplate = "PollTcpTemplate";
-	
+
 	public boolean rememberScreenPosition = true;
-	
+
 	public String decodeScriptColor1 = null;
 	public String decodeScriptColor2 = null;
 	public String decodeScriptColor3 = null;
@@ -425,7 +426,7 @@ public class DecodesSettings
 	public String decodeScriptColor6 = null;
 	public String decodeScriptColor7 = null;
 	public String decodeScriptColor8 = null;
-	
+
 	// Python colors
 	public String pyNormalColor      = "0x000000";
 	public String pyKeywordColor     = "0x0000FF";
@@ -437,12 +438,12 @@ public class DecodesSettings
 	public String pyCpFuncColor      = "0x8B4513";
 
 	public String screeningUnitSystem = "English"; // SI or English
-	
+
 	public boolean showRoutingMonitor = true;
 	public boolean showPlatformMonitor = true;
-	
+
 	public int cwmsVersionOverride = 0;
-	
+
 	public String pakBusTableDefDir = "$DCSTOOL_USERDIR/pakbus";
 	public String pakBusMaxTableDefAge = "hour*48";
 	public int pakBusSecurityCode = 8894;
@@ -450,31 +451,31 @@ public class DecodesSettings
 	public int pakBusMaxBaudRate = 19200;
 
 	public boolean autoDeleteOnImport = false;
-	
+
 	public boolean showEventMonitor = false;
 	public boolean showAlarmEditor = false;
-	
+
 	public int fontAdjust = 0;
 	public int profileLauncherPort = 16109;
-	
+
 	public boolean tryOsDatabaseAuth = false;
-	
+
 	//===============================================================================
-	
+
 	private boolean _isLoaded = false;
 	private Date lastModified = null;
 	public int tsidFetchSize = 0;
-	
+
 	public boolean isLoaded() { return _isLoaded; }
 	private String profileName = null;
 	private File sourceFile = null;
 	public String snotelSpecFile = null;
-	
+
 	public boolean showHistoricalVersions = false;
 
 	private static PropertySpec propSpecs[] =
 	{
-//		new PropertySpec("editDatabaseType", 
+//		new PropertySpec("editDatabaseType",
 //			PropertySpec.JAVA_ENUM + "decodes.util.DecodesSettings.DbTypes",
 //			"Database types supported by OPENDCS"),
 //		new PropertySpec("editDatabaseLocation", PropertySpec.STRING,
@@ -686,7 +687,7 @@ public class DecodesSettings
 		new PropertySpec("pyCpFuncColor", PropertySpec.STRING,
 			"Hex color representation for CP Function Names in a python script. Should be 6 digits."
 			+ " That is, 2 hex digits each for the RGB values."),
-		new PropertySpec("screeningUnitSystem", 
+		new PropertySpec("screeningUnitSystem",
 			PropertySpec.JAVA_ENUM + "decodes.util.UnitSystem",
 			"Unit system to use for limit values in screening editor and execution"),
 		new PropertySpec("cwmsVersionOverride", PropertySpec.INT,
@@ -696,7 +697,7 @@ public class DecodesSettings
 		new PropertySpec("tsidFetchSize", PropertySpec.INT,
 			"(default=0, meaning to use the JDBC default) For databases with many thousand TSIDs,"
 			+ " increasing the fetch size can speed up application initialization."),
-			
+
 		new PropertySpec("pakBusTableDefDir", PropertySpec.DIRECTORY,
 			"Directory where PakBus stations table-definitions are cached."),
 		new PropertySpec("pakBusMaxTableDefAge", PropertySpec.STRING,
@@ -725,7 +726,7 @@ public class DecodesSettings
 		new PropertySpec("showHistoricalVersions", PropertySpec.BOOLEAN,
 			"(default=false) If TRUE, show historical platform versions (deprecated feature)"),
 	};
-	
+
 	/**
 	 * Default constructor.  This initializes all of the settings
 	 * to their defaults.
@@ -764,7 +765,7 @@ public class DecodesSettings
 		}
 		_isLoaded = true;
 	}
-	
+
 	private void setDbTypeCode()
 	{
 		if (editDatabaseType.equalsIgnoreCase("xml"))
@@ -802,7 +803,7 @@ public class DecodesSettings
 		editDatabaseLocation = EnvExpander.expand(editDatabaseLocation);
 	}
 
-	
+
 	/**
 	  Saves internal settings into properties.
 	  @param props the Properties object
@@ -830,7 +831,7 @@ public class DecodesSettings
 		props.remove("databaseTypeCode");
 		props.remove("editDatabaseTypeCode");
 	}
-	
+
 	public boolean isToolkitOwner()
 	{
 		return TextUtil.strEqual(EnvExpander.expand("$DCSTOOL_HOME"),
@@ -882,7 +883,7 @@ public class DecodesSettings
 Logger.instance().info("Set DecodesSettings source=" + sourceFile.getPath());
 		this.sourceFile = sourceFile;
 	}
-	
+
 	/**
 	 * @return the class name corresponding to the db type.
 	 */
@@ -904,4 +905,3 @@ Logger.instance().info("Set DecodesSettings source=" + sourceFile.getPath());
 		return null;
 	}
 }
-

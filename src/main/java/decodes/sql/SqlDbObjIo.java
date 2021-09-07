@@ -1,8 +1,8 @@
 /*
  * $Id$
- * 
+ *
  * Open Source Software
- * 
+ *
  * $Log$
  * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
  * OPENDCS 6.0 Initial Checkin
@@ -49,14 +49,14 @@ public class SqlDbObjIo
 
 	/** Used to format timestamps written to the database. */
 	private SimpleDateFormat writeDateFmt = null;
-	
+
 	/** Used to parse dates & timestamps read from the database */
 	private SimpleDateFormat readDateFmt = null;
 
 	private Calendar readCal = null;
-	
+
 	private OracleDateParser oracleDateParser = null;
-	
+
 	/**
 	 * Lazy initialization, called at the first time a date or timestamp
 	 * is needing to be parsed or formatted. Can't do this in the constructor
@@ -81,13 +81,13 @@ public class SqlDbObjIo
 		writeDateFmt = new SimpleDateFormat(writeFmt);
 		writeDateFmt.setTimeZone(TimeZone.getTimeZone(_dbio.databaseTimeZone));
 //		debug3("set writeDateFmt to '" + writeFmt + "' with timezone '" + _dbio.databaseTimeZone + "'");
-		
+
 		readDateFmt = new SimpleDateFormat(readFmt);
 		readDateFmt.setTimeZone(TimeZone.getTimeZone(_dbio.databaseTimeZone));
 		readCal = Calendar.getInstance(TimeZone.getTimeZone(_dbio.databaseTimeZone));
 //		debug3("set readDateFmt to '" + readFmt + "' with timezone '" + _dbio.databaseTimeZone + "'");
 	}
-	
+
 	/**
 	* Construct with a reference to this object's parent.
 	* @param dbio the parent dbio object.
@@ -147,7 +147,7 @@ public class SqlDbObjIo
 		if (arg == null) return "NULL";
 		return sqlReqString(arg);
 	}
-	
+
 	public String sqlOptString(String arg, int maxlen)
 	{
 		if (arg != null && arg.length() > maxlen)
@@ -166,7 +166,7 @@ public class SqlDbObjIo
 		String a = "";
 		int from = 0;
 		int to;
-		while ( (to = arg.indexOf('\'', from)) != -1 ) 
+		while ( (to = arg.indexOf('\'', from)) != -1 )
 		{
 			a += arg.substring(from, to) + "''";
 			from = to + 1;
@@ -222,6 +222,7 @@ public class SqlDbObjIo
 	  @deprecated  for compatibility with Oracle, which doesn't support the
 	  SQL boolean data type.
 	*/
+	@Deprecated
 	public String sqlBool(boolean b)
 	{
 		return b ? "true" : "false";
@@ -299,16 +300,16 @@ public class SqlDbObjIo
 		{
 			stmt = createStatement();
 
-			Logger.instance().log(Logger.E_DEBUG2, 
+			Logger.instance().log(Logger.E_DEBUG2,
 				"Executing update query '" + q + "'");
 			int numChanged = stmt.executeUpdate(q);
-			if (numChanged == 0) 
+			if (numChanged == 0)
 				throw new DatabaseException("Failed to update the " +
 					"SQL database.  The query was \"" + q + "\"");
 		}
 		finally
 		{
-			try { if (stmt != null) stmt.close(); } 
+			try { if (stmt != null) stmt.close(); }
 			catch(Exception x) {}
 		}
 	}
@@ -334,7 +335,7 @@ public class SqlDbObjIo
 	}
 
 	/** @return the database connection. */
-	public Connection connection() 
+	public Connection connection()
 	{
 		return _dbio.getConnection();
 	}
@@ -394,11 +395,11 @@ public class SqlDbObjIo
 	public String escapeString(String s)
 	{
 		if ( s == null ) return("null");
-		
-		//If the SQL database is Oracle, set escapeBackslash = false 
+
+		//If the SQL database is Oracle, set escapeBackslash = false
 		if (_dbio.isOracle())
 			escapeBackslash = false;
-		
+
 		s = sqlReqString(s);
 		if (!escapeBackslash)
 			return s;
@@ -417,7 +418,7 @@ public class SqlDbObjIo
 		}
 		return (escaped ? "E" : "") + ret.toString();
 	}
-	
+
 	/**
 	  Convenience method to generate debug msg.
 	  @param msg the message
