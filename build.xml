@@ -62,7 +62,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<filterchain><striplinebreaks/></filterchain>
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
-	
+
 	<path id="lib.path">
 		<fileset dir="${izpack.dir}/lib" includes="*.jar"/>
 	</path>
@@ -161,7 +161,7 @@ can find your git source tree and your directory with the downloaded jars.
             </filterset>
         </copy>
 		<javac debug="true" destdir="${build.classes}"
-			target="1.6" source="1.6"
+			target="1.8" source="1.8"
 			includeantruntime="true"
 			includes="lrgs/gui/LrgsBuild.java">
 			<src path="${build.classes}"/>
@@ -169,7 +169,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 
 		<javac debug="true" destdir="${build.classes}"
-			target="1.6" source="1.6"
+			target="1.8" source="1.8"
 			includeantruntime="true"
 			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
 			<src path="${src.dir}"/>
@@ -196,7 +196,7 @@ can find your git source tree and your directory with the downloaded jars.
 			</fileset>
 		</copy>
 
-		<jar jarfile="${dist.jar}" 
+		<jar jarfile="${dist.jar}"
 		     basedir="${build.classes}"
 			 update="true"/>
 	</target>
@@ -253,7 +253,7 @@ can find your git source tree and your directory with the downloaded jars.
 			</tarfileset>
 		</tar>
 
-		<copy todir="stage/bin">			
+		<copy todir="stage/bin">
 			<fileset dir="${project.dir}/install/bin"/>
 			<fileset dir="build/lib">
 				<include name="opendcs.jar"/>
@@ -474,7 +474,7 @@ can find your git source tree and your directory with the downloaded jars.
 	</path>
 
 	<target name="dcpmon" depends="jar">
-		
+
 		<mkdir dir="stage/dcpmon-build"/>
 		<mkdir dir="stage/dcpmon-build/war-distro"/>
 		<copy todir="stage/dcpmon-build/war-distro">
@@ -493,14 +493,14 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/makeDcpmon.sh"/>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/README"/>
-		<tar tarfile="stage/dcpmon-build-6-8-${RCNUM}.tgz" 
+		<tar tarfile="stage/dcpmon-build-6-8-${RCNUM}.tgz"
 			basedir="stage"
 			includes="dcpmon-build/**"
 			compression="gzip"/>
 	</target>
 
 	<target name="hydrojson" depends="jar">
-		
+
 		<mkdir dir="stage/hydrojson-build"/>
 		<mkdir dir="stage/hydrojson-build/war-distro"/>
 		<copy todir="stage/hydrojson-build/war-distro">
@@ -519,7 +519,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/makehydrojson.sh"/>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/README"/>
-		<tar tarfile="stage/hydrojson-build-6-8-${RCNUM}.tgz" 
+		<tar tarfile="stage/hydrojson-build-6-8-${RCNUM}.tgz"
 			basedir="stage"
 			includes="hydrojson-build/**"
 			compression="gzip"/>

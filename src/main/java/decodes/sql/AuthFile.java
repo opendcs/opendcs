@@ -31,6 +31,7 @@ so that only the owner has ANY access to it.
 This class provides utilities for reading the current user's authorization file.
 @deprecated Use ilex.util.UserAuthFile("$HOME/.decodes.auth");
 */
+@Deprecated
 class AuthFile
 {
 	/** The file to read */
@@ -43,11 +44,11 @@ class AuthFile
 	/** default constructor */
 	public AuthFile()
 	{
-		this(System.getProperty("user.home") 
+		this(System.getProperty("user.home")
 			+ System.getProperty("file.separator") + ".decodes.auth");
 	}
 
-	/** 
+	/**
 	  Construct with filename.
 	  @param fn the filename
 	*/
@@ -79,7 +80,7 @@ class AuthFile
 		data[63] = (byte)pw.length();
 		for(i=0; i<pw.length(); i++)
 		{
-			int v = (int)password.charAt(i) 
+			int v = (int)password.charAt(i)
 				+ (int)username.charAt(i%username.length());
 			v ^= seed[i%seed.length];
 			data[64+i] = (byte)v;
@@ -103,7 +104,7 @@ class AuthFile
 		FileInputStream fis = new FileInputStream(authFile);
 		fis.read(data);
 		fis.close();
-		
+
 		int i=0;
 		for(i=0; i<63 && data[i] != 0; i++);
 		username = new String(data, 0, i);
