@@ -13,7 +13,7 @@ version = VERSION
 group = 'covesoftware'
 
 
-build.finalizedBy(publishToMavenLocal) 
+build.finalizedBy(publishToMavenLocal)
 publishing {
         publications {
             maven(MavenPublication) {
@@ -27,22 +27,22 @@ repositories {
     mavenLocal()
     mavenCentral()
     jcenter()
- 
+
 }
- 
+
 task downloadDeps {
     project.mkdir("${buildDir}/downloaded")
     def f = new File("${buildDir}/downloaded/Cobra.jar")
     if(!f.exists()){
         new URL("https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar").withInputStream{ i -> f.withOutputStream{ it << i }}
-    }    
+    }
 }
 
 compileJava.dependsOn downloadDeps
 
-dependencies {    
+dependencies {
     implementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
-    implementation 'postgresql:postgresql:42.2.14'
+    implementation 'org.postgresql:postgresql:42.2.23'
     implementation 'asm:asm:3.3'
     implementation 'cglib:cglib:2.1_3'
     implementation 'commons-logging:commons-logging:1.0.4'
@@ -55,14 +55,18 @@ dependencies {
     implementation 'jfree:jfreechart:1.0.13'
     implementation 'org.python:jython:2.7.2'
     implementation 'org.jooq:jooq:3.11.2'
-    implementation 'org.lobobrowser:LoboBrowser:1.0.0'            
-    //implementation 'lobobrowser:Cobra:1.0.2@jar' //NOTE fix once lobo gets this up on a artifact repository 
+    implementation 'org.lobobrowser:LoboBrowser:1.0.0'
+    //implementation 'lobobrowser:Cobra:1.0.2@jar' //NOTE fix once lobo gets this up on a artifact repository
     implementation fileTree( dir: "${buildDir}/downloaded/", include: "*.jar" )
-    // this was org.nfunk; there appears to have been a change in management        
+    // this was org.nfunk; there appears to have been a change in management
     implementation( 'org.scijava:jep:2.4.1' ) {
         exclude group: "jama", module: "jama"
-        
+
     }
+
+    compileOnly fileTree(dir: "$projectDir/cwmsDbApi")
+    compileOnly fileTree(dir: "$projectDir/cwmsSystemJars")
+
     implementation "gov.nist.math:jama:1.0.2"
     implementation 'io.dropwizard.metrics:metrics-core:4.1.0-rc2'
     implementation 'org.passay:passay:1.3.1'
@@ -73,8 +77,8 @@ dependencies {
 
     implementation fileTree(dir:'cwmsDbApi/', include:'*.jar');
     implementation files("${System.getProperty('java.home')}/../lib/tools.jar")
-    
-    izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'    
+
+    izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'
 
     testRuntimeOnly 'org.junit:junit:4.8.1'
 }
@@ -84,14 +88,14 @@ import org.apache.tools.ant.filters.ReplaceTokens
 /*https://stackoverflow.com/questions/30038540/replace-token-in-file-before-building-but-keep-token-in-sources
 (Anwser by Aaron)
 
-This does slow down the build somewhat, but it was the cleanest 
+This does slow down the build somewhat, but it was the cleanest
 quick way I could find to replace the behavoir.
-There were a log of suggestion to replace modifiing the 
+There were a log of suggestion to replace modifiing the
 java with creating a properties file that gets changed.
  */
 task processSource(type: Sync ){
     from sourceSets.main.java
-    inputs.property 'RCNUM', RCNUM    
+    inputs.property 'RCNUM', RCNUM
     inputs.property 'DATE', DATE
     filter(ReplaceTokens, tokens: ['RCNUM': RCNUM, 'DATE': DATE])
     into "$buildDir/src"
@@ -103,8 +107,8 @@ compileJava {
 
 import org.apache.tools.ant.filters.*;
 task stage( type: Copy ){
-    dependsOn jar 
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE   
+    dependsOn jar
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from('install'){
         into ""
         exclude "lrgs/**", "bin/**"
@@ -112,24 +116,24 @@ task stage( type: Copy ){
 
     from('install'){
         into ""
-        include "bin/**bat"                
+        include "bin/**bat"
     }
 
     from('install/bin'){
-        into "bin/"        
-        exclude ".*\\.bat"        
-        eachFile { details -> details.file.setExecutable(true) }        
+        into "bin/"
+        exclude ".*\\.bat"
+        eachFile { details -> details.file.setExecutable(true) }
         filter( FixCrLfFilter.class, eol:FixCrLfFilter.CrLf.newInstance("lf") )
     }
-         
+
     from('install/lrgs'){
         into ""
     }
 
     from("${buildDir}/libs/"){
-        include '*.jar' 
-        into "bin"      
-        rename("opendcs.*",'opendcs.jar')  
+        include '*.jar'
+        into "bin"
+        rename("opendcs.*",'opendcs.jar')
     }
 
     from(configurations.runtimeClasspath){
@@ -149,7 +153,7 @@ task stage( type: Copy ){
         include "**/*.xml"
         into 'imports/comp-cwms'
     }
-        
+
     from("${projectDir}/doc"){
         include "*.pdf", "algorithms.txt"
         into "doc"
@@ -159,19 +163,19 @@ task stage( type: Copy ){
 
     from("${projectDir}/schema")  {
         into 'schema'
-    }  
+    }
     from("${projectDir}/python") {
         into 'python'
     }
 
     from("${projectDir}/cwmsDbAPI"){
         into 'cwmsDbAPI'
-    }   
+    }
 
     from("izpack")
     into("${buildDir}/stage")
 
-    
+
 
     doLast{
         mkdir "$buildDir/stage/lib"
@@ -181,7 +185,7 @@ task stage( type: Copy ){
         mkdir "$buildDir/stage/edit-db/platform"
         mkdir "$buildDir/stage/edit-db/routing"
         mkdir "$buildDir/stage/edit-db/site"
-        
+
     }
 }
 
@@ -201,10 +205,10 @@ task opentsdb(type: com.bmuschko.gradle.izpack.CreateInstallerTask) {
     dependsOn stage
     doFirst{
         delete "${buildDir}/stage/dep/NWIS.jar"
-        
+
 
     }
-    
+
         baseDir = file("$buildDir/stage")
         installFile = file("$buildDir/stage/opendcs-6-7.xml")
         outputFile = file("$buildDir/opendcs-ot-${VERSION}.jar")
@@ -212,7 +216,7 @@ task opentsdb(type: com.bmuschko.gradle.izpack.CreateInstallerTask) {
         compressionLevel = 9
         appProperties = ['app.group': "$group", 'app.name': 'opendcs', 'app.title': 'OpenDCS',
                         'app.version': VERSION, 'app.subpath': "OpenDCS-$VERSION"]
-    
+
 }
 
 
@@ -221,6 +225,6 @@ task cwmstar( type: Tar){
 
     archiveFileName = "${buildDir}/opendcs-cwms-${VERSION}.tgz"
     compression = Compression.GZIP
-    
+
 
 }

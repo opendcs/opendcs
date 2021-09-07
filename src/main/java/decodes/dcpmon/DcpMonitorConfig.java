@@ -59,7 +59,7 @@ public class DcpMonitorConfig
 
 	/** carrier more than this will result in 'C' code. */
 	public long maxCarrierMS = 2500L;
-	
+
 	/** Last time configuration was loaded. */
 	public long lastLoadTime;
 
@@ -67,6 +67,7 @@ public class DcpMonitorConfig
 	private Properties rawProps;
 
 	/** @deprecated */
+	@Deprecated
 	public boolean hadsUse = true;
 
 	public String pdtLocalFile = "/tmp/pdt";
@@ -78,18 +79,18 @@ public class DcpMonitorConfig
 
 	/** Name of merge directory. */
 	public String mergeDir = "$DECODES_INSTALL_DIR/dcptoimport";
-	
+
 	/** File name of the control-district-list file within the merge dir */
 	public String controlDistList = "controlling-districts.txt";
-	
-	/** This is used in particular for the RiverGages group names 
+
+	/** This is used in particular for the RiverGages group names
 	 * This is used to convert from District to an actual group name
 	 * in the dcpmon.conf */
 	public String controlDistSuffix = "-RIVERGAGES-DAS";
-	
+
 	/** This is the dcpmon type */
 	public String dcpmonNameType;
-	
+
 	/**
 	 * This is used to tell the Dcp Monitor that we want to monitor
 	 * all available channels.
@@ -99,18 +100,18 @@ public class DcpMonitorConfig
 
 	/** Set to true to have computations performed when viewing DCP Messages. */
 	public boolean enableComputations = false;
-	
+
 	/** If computations enabled, you must provide a comp config file. */
 	public String compConfig = "$DECODES_INSTALL_DIR/computations.conf";
-	
+
 	public String rtstatUrl = "file:///tmp/lrgsstatus.html";
-	
+
 	public int statusErrorThreshold = 3600 * 4;
-	
+
 	/** For web service components, we need a singleton */
 	private static DcpMonitorConfig _instance = new DcpMonitorConfig();
 	public static DcpMonitorConfig instance() { return _instance; }
-	
+
 	/** Private constructor. Sets default values for all parameters. */
 	public DcpMonitorConfig()
 	{
