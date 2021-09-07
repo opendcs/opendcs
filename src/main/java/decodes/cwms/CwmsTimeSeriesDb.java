@@ -1,16 +1,16 @@
 /*
 *
 * $Id: CwmsTimeSeriesDb.java,v 1.57 2020/05/02 12:44:06 mmaloney Exp $
-* 
+*
 *  This is open-source software written by Sutron Corporation, under
 *  contract to the federal government. You are free to copy and use this
 *  source code for your own purposes, except that no part of the information
 *  contained in this file may be claimed to be proprietary.
 *
-*  Except for specific contractual terms between ILEX and the federal 
+*  Except for specific contractual terms between ILEX and the federal
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
-*  
+*
 *  $Log: CwmsTimeSeriesDb.java,v $
 *  Revision 1.57  2020/05/02 12:44:06  mmaloney
 *  Add stack trace on connection failure.
@@ -276,8 +276,8 @@
 *  DbKey Implementation
 *
 *  Revision 1.144  2013/02/20 15:07:24  gchen
-*  Enhance a new feature to allow to use the maxComputationRetries property 
-*  to limit the number of retries for those failed computations. There will 
+*  Enhance a new feature to allow to use the maxComputationRetries property
+*  to limit the number of retries for those failed computations. There will
 *  be unlimited retries if maxComputationRetires=0.
 *
 *  Revision 1.143  2012/11/13 15:14:49  mmaloney
@@ -674,6 +674,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.GregorianCalendar;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -738,18 +740,18 @@ public class CwmsTimeSeriesDb
 	private String[] currentlyUsedVersions = { "" };
 	GregorianCalendar saveTsCal = new GregorianCalendar(
 		TimeZone.getTimeZone("UTC"));
-	
+
 	CwmsGroupHelper cwmsGroupHelper = null;
-	
+
 	public boolean requireCcpTables = true;
-	
+
 	private String dbUri = null;
-	
+
 	private BaseParam baseParam = new BaseParam();
 	private PreparedStatement getMinStmt = null, getTaskListStmt;
 	String getMinStmtQuery = null, getTaskListStmtQuery = null;
-	
-	
+
+
 	/**
 	 * No args constructor required because this is instantiated from
 	 * the class name.
@@ -757,7 +759,7 @@ public class CwmsTimeSeriesDb
 	public CwmsTimeSeriesDb()
 	{
 		super();
-		
+
 		Site.explicitList = true;
 
 		// CWMS uses ts_code as a unique identifier of a time-series
@@ -768,15 +770,15 @@ public class CwmsTimeSeriesDb
 		maxCompRetryTimeFrmt = "%d*1/24";
 		module = "CwmsTimeSeriesDb";
 	}
-	
+
 	public static CwmsConnectionInfo getDbConnection(String dbUri, String username, String password, String dbOfficeId)
 		throws BadConnectException
 	{
 		if (dbOfficeId == null)
 			dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
-		
+
 		CwmsConnectionInfo ret = new CwmsConnectionInfo();
-		
+
 		// Make a call to the new connection pool.
 //		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
 //System.err.println("Connecting to '" + dbUri + "' as '" + username + "' with pw '" + password + "' and office '" + dbOfficeId + "'");
@@ -801,7 +803,7 @@ public class CwmsTimeSeriesDb
 				ex.printStackTrace(System.err);
 			throw new BadConnectException(msg);
 		}
-		
+
 		// MJM 2018-2/21 Force autoCommit on.
 		try{ ret.getConnection().setAutoCommit(true); }
 		catch(SQLException ex)
@@ -811,13 +813,13 @@ public class CwmsTimeSeriesDb
 
 		// After connection set the context for VPD to work.
 		ret.setDbOfficeCode(officeId2code(ret.getConnection(), dbOfficeId));
-		
+
 		ArrayList<StringPair> officePrivileges = null;
 		String dbOfficePrivilege = null;
 		try
 		{
 			officePrivileges = determinePrivilegedOfficeIds(ret.getConnection());
-			// MJM 2018-12-05 now determine the highest privilege level that this user has in 
+			// MJM 2018-12-05 now determine the highest privilege level that this user has in
 			// the specified office ID:
 Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			for(StringPair op : officePrivileges)
@@ -838,7 +840,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 					continue;
 				}
 				Logger.instance().debug3("Privilege: " + op.first + ":" + op.second);
-				
+
 				String priv = op.second.toLowerCase();
 				if (TextUtil.strEqualIgnoreCase(op.first, dbOfficeId) && priv.startsWith("ccp"))
 				{
@@ -877,12 +879,12 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			try { CwmsDbConnectionPool.close(ret.getConnection()); } catch(Exception ex2) {}
 			throw new BadConnectException(msg);
 		}
-		
+
 		return ret;
 	}
 
 	/**
-	 * Connect this app to the database and return appID. 
+	 * Connect this app to the database and return appID.
 	 * The credentials property set contains username, password,
 	 * etc, for connecting to database.
 	 * @param appName must match an application in the database.
@@ -894,14 +896,14 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		throws BadConnectException
 	{
 		String dbUri = this.dbUri != null ? this.dbUri : DecodesSettings.instance().editDatabaseLocation;
-		
+
 		String username = credentials.getProperty("username");
 		String password = credentials.getProperty("password");
 
 		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
 		if (DecodesInterface.isGUI())
 		{
-			try 
+			try
 			{
 				if (!cgl.isLoginSuccess())
 				{
@@ -918,12 +920,12 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 					"Cannot display login dialog: " + ex);
 			}
 		}
-	
+
 		// MJM 2018-12-05 The new HEC/RMA connection facility requires that office ID
 		// be known before getting a connection from the pool. Therefore I cannot set
 		// it dynamically from the database or from user selection.
 		dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
-		
+
 		// CWMS is Always GMT.
 		DecodesSettings.instance().sqlTimeZone = "GMT";
 
@@ -945,7 +947,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			if (getConnection() != null)
 				closeConnection();
 		}
-		
+
 		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
 		// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
 		int decodesDbVersion = getDecodesDatabaseVersion();
@@ -974,13 +976,13 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				warning("Error executing '" + q + "':" + ex);
 			}
 		}
-		
-		Logger.instance().info(module + 
+
+		Logger.instance().info(module +
 			" Connected to DECODES CWMS Database " + dbUri + " as user " + username
 			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + dbOfficeCode + ")");
 
 		cgl.setLoginSuccess(true);
-		
+
 		try
 		{
 			hec.data.Units.getAvailableUnits();
@@ -1002,8 +1004,8 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 
 		return appId;
 	}
-	
-	
+
+
 	/**
 	 * Fills in the internal list of privileged office IDs.
 	 * @return array of string pairs: officeId,Privilege
@@ -1012,12 +1014,12 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	public static ArrayList<StringPair> determinePrivilegedOfficeIds(Connection conn)
 		throws SQLException
 	{
-		
+
 		CwmsDbSec dbSec = CwmsDbServiceLookup.buildCwmsDb(CwmsDbSec.class, conn);
 		ResultSet rs = dbSec.getAssignedPrivGroups(conn, null);
-		
+
 		ArrayList<StringPair> ret = new ArrayList<StringPair>();
-//		
+//
 //		CwmsSecJdbc cwmsSec = new CwmsSecJdbc(conn);
 		// 4/8/13 phone call with Pete Morris - call with Null. and the columns returned are:
 		// username, user_db_office_id, db_office_id, user_group_type, user_group_owner, user_group_id,
@@ -1052,13 +1054,13 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 //				+ "is_member='" + is_member + "' "
 //				+ "user_group_desc='" + user_group_desc + "'"
 				);
-			
+
 			// We look for groups "CCP Proc", "CCP Mgr", and "CCP Reviewer".
 			// Ignore anything else.
 			String gid = user_group_id.trim();
 			if (!TextUtil.startsWithIgnoreCase(gid, "CCP"))
 				continue;
-			
+
 			// See if we have an existing privilege for this office ID.
 			int existingIdx = 0;
 			String existingPriv = null;
@@ -1100,7 +1102,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	public void setParmSDI(DbCompParm parm, DbKey siteId, String dtcode)
 		throws DbIoException, NoSuchObjectException
 	{
-		debug3("setParmSDI siteId=" + siteId + 
+		debug3("setParmSDI siteId=" + siteId +
 			", dtcode=" + dtcode);
 		ResultSet rs = null;
 
@@ -1117,11 +1119,11 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		try
 		{
-			String q = 
+			String q =
 				"SELECT TS_CODE, LOCATION_ID FROM CWMS_V_TS_ID "
 				+ "WHERE LOCATION_CODE = " + siteId
 				+ " AND TS_ACTIVE_FLAG = 'T'"
-				+ " AND upper(PARAMETER_ID) = " 
+				+ " AND upper(PARAMETER_ID) = "
 						+ sqlString(dtcode.toUpperCase())
 				+ " AND INTERVAL_ID = " + sqlString(parm.getInterval())
 				+ " AND VERSION_ID = " + sqlString(parm.getVersion())
@@ -1151,7 +1153,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		finally
 		{
-			if (rs != null) 
+			if (rs != null)
 				try { rs.close(); }
 				catch(Exception ex) {}
 		}
@@ -1190,7 +1192,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 
 		return tsid;
 	}
-	
+
 	/**
 	 * CWMS TSDB stores ParamType.Duration.Version in the tab selector.
 	 */
@@ -1201,7 +1203,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 
 	/**
 	 * For CWMS we show all 5 path components for the site.
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -1214,7 +1216,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		header[2] = "Interval";
 		header[3] = "Duration";
 		header[4] = "Version";
-		
+
 		ArrayList<String[]> ret = new ArrayList<String[]>();
 		ret.add(header);
 
@@ -1241,12 +1243,12 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		return ret;
 	}
-	
+
 	/**
 	 * Validate the passed information to make sure it represents a valid
 	 * parameter within this database. If not, throw ConstraintException.
 	 */
-	public void validateParm(DbKey siteId, String dtcode, String interval, 
+	public void validateParm(DbKey siteId, String dtcode, String interval,
 		String tabSel, int modelId)
 		throws ConstraintException, DbIoException
 	{
@@ -1275,6 +1277,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	/** @return label to use for 'revision' column in tables. */
 	public String getRevisionLabel() { return ""; }
 
+
 	/**
 	 * TSDB version 5 & above use a join with CP_COMP_DEPENDS to determine
 	 * not only what the new data is, but what computations depend on it.
@@ -1284,6 +1287,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	public DataCollection getNewData(DbKey applicationId)
 		throws DbIoException
 	{
+
 		// Reload the TSID cache every hour.
 		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
 		{
@@ -1311,27 +1315,33 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 					DecodesSettings.instance().retryFailedComputations
 					? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
 					: "";
-	
+
 				getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
-					+ "where a.LOADING_APPLICATION_ID = " + applicationId
+					+ "where a.LOADING_APPLICATION_ID = ? "// + applicationId
 					+ failTimeClause;
 				getMinStmt = conn.prepareStatement(getMinStmtQuery);
-	
+
+
 				// 2nd query gets tasklist recs within record_num range.
-				getTaskListStmtQuery = 
+				getTaskListStmtQuery =
 					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, ROUND(a.VALUE,8), a.START_DATE_TIME, "
 					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
 					+ "from CP_COMP_TASKLIST a "
-					+ "where a.LOADING_APPLICATION_ID = " + applicationId
+					+ "where a.LOADING_APPLICATION_ID = ?" // + applicationId
 					+ " and ROWNUM < 20000"
 					+ failTimeClause
 					+ " ORDER BY a.site_datatype_id, a.start_date_time";
 				getTaskListStmt = conn.prepareStatement(getTaskListStmtQuery);
+
 			}
+
+			// this may seems silly, but it allows Oracle to cache the query and it's plan for all instances
+			getMinStmt.setLong(1,applicationId.getValue());
+			getTaskListStmt.setLong(1,applicationId.getValue());
 
 			debug3("Executing prepared stmt '" + getMinStmtQuery + "'");
 			ResultSet rs = getMinStmt.executeQuery();
-			
+
 			if (rs == null || !rs.next())
 			{
 				debug1("No new data for appId=" + applicationId);
@@ -1367,7 +1377,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 //				// The 32-bit integer wrapped around. Set to max possible int.
 //				maxRecNum = Integer.MAX_VALUE;
 //			}
-//			
+//
 //			getTaskListStmt.setInt(2, maxRecNum);
 
 			debug3("Executing '" + getTaskListStmtQuery + "'");
@@ -1401,14 +1411,14 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 						}
 					}
 				}
-				else 
+				else
 					deleted = TextUtil.str2boolean(df);
-					
+
 				String unitsAbbr = rs.getString(6);
 				Date versionDate = getFullDate(rs, 7);
 				BigDecimal qc = rs.getBigDecimal(8);
 				long qualityCode = qc == null ? 0 : qc.longValue();
-				
+
 				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
 					valueWasNull, timeStamp, deleted,
 					unitsAbbr, versionDate, qualityCode);
@@ -1416,13 +1426,13 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			}
 
 			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
-			
+
 			// Process the real-time records collected above.
 			for(TasklistRec rec : tasklistRecs)
 				processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
-			
+
 			dataCollection.setTasklistHandle(rrhandle);
-			
+
 			// Delete the bad tasklist recs, 250 at a time.
 			if (badRecs.size() > 0)
 				Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
@@ -1445,17 +1455,17 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				for(int i=0; i<x; i++)
 					badRecs.remove(0);
 			}
-			
+
 			// Show each tasklist entry in the log if we're at debug level 3
 			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
 			{
 				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
 				debug3("getNewData, returning " + allts.size() + " TimeSeries.");
 				for(CTimeSeries ts : allts)
-					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " " 
+					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " "
 						+ ts.size() + " values.");
 			}
-			
+
 			return dataCollection;
 		}
 		catch(SQLException ex)
@@ -1484,9 +1494,9 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO();
 			try
 			{
-				TimeSeriesIdentifier tsid = 
+				TimeSeriesIdentifier tsid =
 					timeSeriesDAO.getTimeSeriesIdentifier(rec.getSdi());
-				String tabsel = tsid.getPart("paramtype") + "." + 
+				String tabsel = tsid.getPart("paramtype") + "." +
 					tsid.getPart("duration") + "." + tsid.getPart("version");
 				cts = new CTimeSeries(rec.getSdi(), tsid.getInterval(),
 					tabsel);
@@ -1496,7 +1506,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				if (fillDependentCompIds(cts, applicationId) == 0)
 				{
 					warning("Deleting tasklist rec for '"
-						+ tsid.getUniqueString() 
+						+ tsid.getUniqueString()
 						+ "' because no dependent comps.");
 					if (badRecs != null)
 						badRecs.add(rec.getRecordNum());
@@ -1566,7 +1576,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		TimedVariable tv = new TimedVariable(rec.getValue());
 		tv.setTime(rec.getTimeStamp());
 		tv.setFlags(CwmsFlags.cwmsQuality2flag(rec.getQualityCode()));
-		
+
 		if (!rec.isDeleted() && !rec.isValueWasNull())
 		{
 			VarFlags.setWasAdded(tv);
@@ -1587,7 +1597,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
 		}
 	}
-	
+
 	public boolean isCwms() { return true; }
 
 	@Override
@@ -1618,7 +1628,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				+ uniqueString + "', parm=" + parm);
 			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
 
-			try 
+			try
 			{
 				tsidRet = timeSeriesDAO.getTimeSeriesIdentifier(uniqueString);
 				debug3("CwmsTimeSeriesDb.transformTsid "
@@ -1647,7 +1657,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		else
 			tsidRet = tsid;
-		
+
 		if (fillInParm)
 		{
 			parm.setSiteDataTypeId(tsidRet.getKey());
@@ -1676,7 +1686,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		if (!(tsidRet instanceof CwmsTsId))
 			return false;
 		CwmsTsId ctsid = (CwmsTsId) tsidRet;
-		
+
 		SiteName sn = parm.getSiteName();
 		if (sn != null)
 		{
@@ -1690,7 +1700,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				SiteDAI siteDAO = makeSiteDAO();
 				try
 				{
-					
+
 					DbKey siteId = siteDAO.lookupSiteID(sn);
 					tsidRet.setSite(siteDAO.getSiteById(siteId));
 				}
@@ -1780,7 +1790,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			{
 				String morphed = morph(ctsid.getPart("version"), s);
 				if (morphed == null)
-					debug2("Unable to morph param '" + ctsid.getPart("version") 
+					debug2("Unable to morph param '" + ctsid.getPart("version")
 						+ "' with version spec '" + s + "'");
 				else
 				{
@@ -1794,7 +1804,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		return transformed;
 	}
-	
+
 	/**
 	 * For version 6.3, morph the tsid part by the computation param part.
 	 * @param tsidComponent The component from the TSID
@@ -1810,7 +1820,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		// tsid: A       parm: D-*     result: null
 		// tsid: A-B-C   parm: *-D     result: A-D
 		// tsid: A-B     parm: *-      result: A
-		
+
 		// Check for a partial location specification (OpenDCS 6.3)
 		String tps[] = tsidComponent.split("-");
 		String pps[] = parmComponent.split("-");
@@ -1841,17 +1851,17 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				sb.append("-");
 		}
 		return sb.toString();
-		
+
 		/*
-		 * Note: the table_selector in cp_comp_ts_parm will be empty for a component that is 
+		 * Note: the table_selector in cp_comp_ts_parm will be empty for a component that is
 		 * completely undefined. The syntax is ParamType.Duration.Version[.SiteSpec.ParmSpec],
 		 * So "Total.1Hour." means that Version is undefined and shows as <var> in the gui.
 		 * This is different from "Total.1Hour.Something-*". Meaning that the first part of
 		 * the subversion can be anything.
 		 */
 	}
-	
-	
+
+
 	public String getDbOfficeId()
 	{
 		return dbOfficeId;
@@ -1878,7 +1888,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		return retStr;
 	}
-	
+
 	@Override
 	public ArrayList<String> listParamTypes()
 		throws DbIoException
@@ -1910,9 +1920,9 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		if (!ret.contains("Total"))
 			ret.add("Total");
 		return ret;
-		
+
 	}
-	
+
 	@Override
 	public String[] getValidPartChoices(String part)
 	{
@@ -1920,7 +1930,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			return currentlyUsedVersions;
 		return super.getValidPartChoices(part);
 	}
-	
+
 //	public void printCat()
 //	{
 //		try
@@ -1938,19 +1948,19 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 //			System.err.println("Error: " + ex);
 //			ex.printStackTrace(System.err);
 //		}
-//		
+//
 //	}
-	
+
 	@Override
 	public TimeSeriesIdentifier makeEmptyTsId()
 	{
 		return new CwmsTsId();
 	}
-	
-	
+
+
 	/**
 	 * Reset the VPD context variable with user specified office Id
-	 * @throws DbIoException 
+	 * @throws DbIoException
 	 */
 	public static void setCtxDbOfficeId(Connection conn, String dbOfficeId,
 		DbKey dbOfficeCode, String dbOfficePrivilege)
@@ -1960,15 +1970,15 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		String errMsg = null;
 		PreparedStatement storeProcStmt = null;
 		CallableStatement testStmt = null;
-		
+
 		try
 		{
 			String q = null;
-			int privLevel = 
+			int privLevel =
 				dbOfficeId == null ? 0 :
 				dbOfficePrivilege.toUpperCase().contains("MGR") ? 1 :
 				dbOfficePrivilege.toUpperCase().contains("PROC") ? 2 : 3;
-			q = 
+			q =
 				"begin cwms_ccp_vpd.set_ccp_session_ctx(" +
 				":1 /* office code */, :2 /* priv level*/, :3 /* officeId */); end;";
 			storeProcStmt  = conn.prepareCall(q);
@@ -1981,7 +1991,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				+ ", dbOfficeId='" + dbOfficeId + "'");
 			storeProcStmt.execute();
 //			conn.commit();
-			
+
 			q = "{ ? = call cwms_ccp_vpd.get_pred_session_office_code_v(?, ?) }";
 			testStmt = conn.prepareCall(q);
 			testStmt.registerOutParameter(1, Types.VARCHAR);
@@ -1992,7 +2002,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			testStmt.execute();
 			String pred = testStmt.getString(1);
 			Logger.instance().info("Predicate for table PLATFORMCONFIG is '" + pred + "'");
-			
+
 		}
 		catch (SQLException ex)
 		{
@@ -2016,7 +2026,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			}
 		}
 	}
-	
+
 	/**
 	 * Use database-specific flag definitions to determine whether the
 	 * passed variable should be considered 'questionable'.
@@ -2027,7 +2037,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	{
 		return (v.getFlags() & CwmsFlags.VALIDITY_MASK) == CwmsFlags.VALIDITY_QUESTIONABLE;
 	}
-	
+
 	/**
 	 * Use database-specific flag definitions to set the passed variable
 	 * as 'questionable'.
@@ -2074,7 +2084,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 //			Logger.instance().info("cwmsVersionOverride==2");
 //			return CWMS_V_2_1;
 //		}
-//		
+//
 //		String q = "select count(*) from all_synonyms where owner='PUBLIC' " +
 //			"and SYNONYM_NAME = 'CWMS_ENV'";
 //		ResultSet rs = null;
@@ -2113,7 +2123,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 //			}
 //		}
 //	}
-	
+
 	/**
 	 * Converts a CWMS String Office ID to the numeric office Code.
 	 * @param con the Connection
@@ -2124,7 +2134,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	{
 		String q = "select cwms_util.get_office_code('" +
 				officeId + "') from dual";
-			
+
 		ResultSet rs = null;
 		Statement stmt = null;
 		try
@@ -2139,7 +2149,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
         }
 		catch (Exception ex)
 		{
-			Logger.instance().warning("Error getting office code for id '" 
+			Logger.instance().warning("Error getting office code for id '"
 				+ officeId + "': " + ex);
 			return Constants.undefinedId;
 		}
@@ -2166,18 +2176,18 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	}
 
 	@Override
-	public ScreeningDAI makeScreeningDAO() 
+	public ScreeningDAI makeScreeningDAO()
 		throws DbIoException
 	{
 		return new ScreeningDAO(this);
 	}
-	
+
 	@Override
 	public GroupHelper makeGroupHelper()
 	{
 		return new CwmsGroupHelper(this);
 	}
-	
+
 	@Override
 	public double rating(String specId, Date timeStamp, double... indeps)
 		throws DbCompException, RangeException
@@ -2185,7 +2195,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		// int nIndeps = indeps.length;
 		// NOTE: indeps is already an array of doubles. I can pass
 		// it directly to the rateOne function.
-		
+
 		CwmsRatingDao crd = new CwmsRatingDao(this);
 		try
 		{
@@ -2232,11 +2242,11 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			catch(Exception ex) {}
 			getTaskListStmt = null;
 		}
-		
+
 		// Return the connection to the CWMS connection pool. Do not close directly.
 		doCloseConnection(getConnection());
 	}
-	
+
 	public static void doCloseConnection(Connection con)
 	{
 		// Return connection to CWMS connection pool.
@@ -2271,7 +2281,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 
 		return ret;
 	}
-	
+
 	@Override
 	public String getStorageUnitsForDataType(DataType dt)
 	{
@@ -2285,14 +2295,14 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				return null;
 			cwmsParam = equiv.getCode();
 		}
-		
+
 		// Truncate to just base param
 		int hyphen = cwmsParam.indexOf('-');
 		if (hyphen > 0)
 			cwmsParam = cwmsParam.substring(0, hyphen);
 		return baseParam.getStoreUnits4Param(cwmsParam);
 	}
-	
+
 	@Override
 	public String flags2display(int flags)
 	{

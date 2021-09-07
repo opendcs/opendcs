@@ -117,6 +117,7 @@ public class BasicClient
 	* @param debug debug stream
 	* @deprecated
 	*/
+	@Deprecated
 	public void setDebugStream( PrintStream debug )
 	{
 		this.debug = debug;
@@ -131,7 +132,7 @@ public class BasicClient
 	{
 		if (isConnected())
 			disconnect();
-		
+
 		lastConnectAttempt = System.currentTimeMillis();
 		if (debug != null)
 			debug.println("Connecting to host "
@@ -156,8 +157,8 @@ public class BasicClient
 	*/
 	private static synchronized Socket doConnect( String host, int port ) throws IOException, UnknownHostException
 	{
-		Socket ret = new Socket();				
-		InetSocketAddress iaddr = new InetSocketAddress(host, port);		
+		Socket ret = new Socket();
+		InetSocketAddress iaddr = new InetSocketAddress(host, port);
 		if (iaddr.isUnresolved())
 			throw new UnknownHostException(host);
 		ret.connect(iaddr, 20000);
@@ -174,7 +175,7 @@ public class BasicClient
 	public void disconnect( )
 	{
 Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
-		try 
+		try
 		{
 			try
 			{
@@ -206,7 +207,7 @@ Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
 				Logger.instance().debug1("Error closing socket: "+e.getMessage());
 				e.printStackTrace();
 			}
-			
+
 			if (debug != null)
 				debug.println("Disconnected form host '"
 					+ (host != null ? host : "(unknown)")
@@ -247,7 +248,7 @@ Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
 	*/
 	public boolean isConnected( )
 	{
-		
+
 		return socket != null;
 	}
 
@@ -269,7 +270,7 @@ Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
 	public String getHost( ) { return host; }
 
 	/**
-	* Sets the host name. 
+	* Sets the host name.
 	* If currently connected this does nothing until you dis and re connect.
 	* @param host
 	*/
@@ -295,4 +296,3 @@ Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
 	*/
 	public long getLastConnectAttempt( ) { return lastConnectAttempt; }
 }
-

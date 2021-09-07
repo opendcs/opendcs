@@ -11,10 +11,11 @@ import java.io.LineNumberReader;
 import ilex.util.Logger;
 
 /**
- * 
+ *
  * @author mjmaloney
  * @deprecated use decodes.util.Pdt instead
  */
+@Deprecated
 public class PdtSched
 {
 	private Vector pdtSched;
@@ -38,7 +39,7 @@ public class PdtSched
 		Logger.instance().info("Loading PDT from '" + file.getPath() + "'");
 		Vector oldSched = pdtSched;
 		pdtSched = new Vector();
-		shortLines = badAddresses = badSecondaryChan = badPrimaryChan = 
+		shortLines = badAddresses = badSecondaryChan = badPrimaryChan =
 			badStTimes = 0;
 		try
 		{
@@ -54,16 +55,16 @@ public class PdtSched
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("IO Error reading PDT File '" 
+			Logger.instance().warning("IO Error reading PDT File '"
 				+ file.getPath() + "': " + ex + " -- Old PDT restored.");
 			pdtSched = oldSched;
 			return false;
 		}
 		Collections.sort(pdtSched);
-		Logger.instance().info("Parsed PDT File '" + file.getPath() 
+		Logger.instance().info("Parsed PDT File '" + file.getPath()
 			+ "' good entries=" + pdtSched.size()
-			+ ", shortLines=" + shortLines 
-			+ ", badAddresses=" + badAddresses 
+			+ ", shortLines=" + shortLines
+			+ ", badAddresses=" + badAddresses
 			+ ", badSecondaryChan=" + badSecondaryChan
 			+ ", badPrimaryChan=" + badPrimaryChan
 			+ ", badStTimes=" + badStTimes);
@@ -96,7 +97,7 @@ public class PdtSched
 		String addrs = line.substring(6, 6+8);
 		long addr = -1;
 		try { addr = Long.parseLong(addrs, 16); }
-		catch(NumberFormatException ex) 
+		catch(NumberFormatException ex)
 		{
 			badAddresses++;
 			return null;
@@ -104,12 +105,12 @@ public class PdtSched
 		int stChan = -1;
 		int rdChan = -1;
 		char t = line.charAt(14);
-		try 
+		try
 		{
-			if (t == 'S') 
-				stChan = Integer.parseInt(line.substring(15,15+3)); 
-			else if (t == 'R') 
-				rdChan = Integer.parseInt(line.substring(15,15+3)); 
+			if (t == 'S')
+				stChan = Integer.parseInt(line.substring(15,15+3));
+			else if (t == 'R')
+				rdChan = Integer.parseInt(line.substring(15,15+3));
 		}
 		catch(NumberFormatException ex)
 		{
@@ -117,12 +118,12 @@ public class PdtSched
 			return null;
 		}
 		t = line.charAt(18);
-		try 
+		try
 		{
-			if (t == 'S') 
-				stChan = Integer.parseInt(line.substring(19,19+3)); 
-			else if (t == 'R') 
-				rdChan = Integer.parseInt(line.substring(19,19+3)); 
+			if (t == 'S')
+				stChan = Integer.parseInt(line.substring(19,19+3));
+			else if (t == 'R')
+				rdChan = Integer.parseInt(line.substring(19,19+3));
 		}
 		catch(NumberFormatException ex)
 		{
@@ -149,7 +150,7 @@ public class PdtSched
 				return null;
 			}
 		}
-		return 
+		return
 			new PdtSchedEntry(addr, stChan, rdChan, window, interval, xmitSOD);
 	}
 
