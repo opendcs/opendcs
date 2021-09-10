@@ -44,6 +44,8 @@ public class RetrievalThread extends Thread
 	private File curOutputFile = null;
 	private long lastOutputMsec = 0L;
 	private String prefix = "";
+	private String lastTimeStamp = "";
+	private int seqNum = 1;
 
 	public RetrievalThread(SnotelDaemon parent, SnotelPlatformSpecList specList, 
 		String since, String until, int sequenceNum, String prefix)
@@ -136,25 +138,15 @@ public class RetrievalThread extends Thread
 						{
 							if (se.Derrno == LrgsErrorCode.DMSGTIMEOUT && runRealTime)
 							{
-Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
+								Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 								// This means we're running in realtime and server is waiting for
 								// the next message. Pause and Stay in the loop.
+								flushBuffer();
 								try { Thread.sleep(2000L); }
 								catch(InterruptedException ie) {}
 							}
 							else
 								throw se;
-						}
-
-						
-						if (runRealTime)
-						{
-							if (conf.retrievalFreq > 0)
-							{
-								Logger.instance().info(module 
-									+ " was realtime but conf.retrievalFreq is now > 0. Aborting.");
-								break;
-							}
 						}
 					}
 				}
@@ -201,7 +193,7 @@ Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 	
 	private void outputMessage(DcpMsg dcpMsg)
 	{
-		Logger.instance().info(module + " " + new String(dcpMsg.getData()));
+		Logger.instance().info(module + ".outputMessage: " + new String(dcpMsg.getData()));
 		
 		long curOutputTime = System.currentTimeMillis();
 		
@@ -242,8 +234,19 @@ Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 		if (curOutput == null)
 		{
 			SimpleDateFormat fileSdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-			curOutputFile = new File(EnvExpander.expand(parent.getConfig().outputTmp), 
-				prefix + "-" + fileSdf.format(new Date()) + ".csv");
+			
+			// Use sequence num to guard against 2 files within same second overwriting.
+			Date now = new Date();
+			String ts = fileSdf.format(now);
+			if (lastTimeStamp != null && lastTimeStamp.equals(ts))
+				seqNum++;
+			else
+				seqNum = 1;
+			lastTimeStamp = ts;
+			
+			String fname = prefix + "-" + lastTimeStamp + "-" + seqNum + ".csv";
+			
+			curOutputFile = new File(EnvExpander.expand(parent.getConfig().outputTmp), fname);
 			try
 			{
 				curOutput = new PrintWriter(curOutputFile);
@@ -257,7 +260,6 @@ Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 					+ curOutputFile.getPath() + "': " + ex + " -- message '" + dcpMsg.getHeader()
 					+ "' skipped.");
 				curOutput = null;
-				curOutputFile = null;
 			}
 		}
 		
@@ -272,6 +274,7 @@ Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 			Logger.instance().failure(module 
 				+ " invalid msg '" + new String(dcpMsg.getHeader()) + "' -- "
 				+ "spec says new B format but message contains ASCII chars. Msg skipped.");
+			return;
 		}
 		
 		try
@@ -286,6 +289,18 @@ Logger.instance().debug1(module + " server caught up. pausing 2 sec.");
 				numChans = numParser.parseIntValue(getField(3,  null));
 				Logger.instance().debug2(module + " B format numHours=" + numHours 
 					+ ", numChans=" + numChans);
+				if (numHours < 1 || numHours > 5
+				 || numChans < 1 || numHours*numChans > 375)
+				{
+					Logger.instance().warning(module + " message '" + dcpMsg.getHeader()
+						+ "': Spec says format B but numHours=" + numHours
+						+ " and numChans=" + numChans + " which are impossible values"
+						+ " -- will attempt format A.");
+					numHours = 1;
+					numChans = 1000;
+					pos = 37; // GOES messages always have 37 byte header
+					forwardspace();
+				}
 			}
 
 			for(int hr = 0; hr < numHours; hr++)
@@ -417,7 +432,7 @@ Logger.instance().debug2(module + " msgTime=" + dcpMsg.getXmitTime() + ", tz="
 				{
 					File outFile = new File(EnvExpander.expand(parent.getConfig().outputDir),
 							curOutputFile.getName());
-					Logger.instance().debug1("Moving '" + curOutputFile.getPath() 
+					Logger.instance().info("Moving '" + curOutputFile.getPath() 
 						+ "' to '" + outFile.getPath() + "'");
 					FileUtil.moveFile(curOutputFile, outFile);
 				}
@@ -433,7 +448,6 @@ Logger.instance().debug2(module + " msgTime=" + dcpMsg.getXmitTime() + ", tz="
 				Logger.instance().warning("Error closing file: " + ex);
 			}
 			curOutput = null;
-			curOutputFile = null;
 		}
 	}
 	

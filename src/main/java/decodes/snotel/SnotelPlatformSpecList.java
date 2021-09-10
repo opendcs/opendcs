@@ -20,6 +20,7 @@ public class SnotelPlatformSpecList
 {
 	private HashMap<DcpAddress, SnotelPlatformSpec> platformSpecs
 		= new HashMap<DcpAddress, SnotelPlatformSpec>();
+	private long lastLoadTime = 0L;
 	
 	public SnotelPlatformSpecList()
 	{
@@ -105,6 +106,7 @@ public class SnotelPlatformSpecList
 		}
 		
 		lnr.close();
+		lastLoadTime = System.currentTimeMillis();
 	}
 	
 	public void addHistoryRetrieval(HistoryRetrieval hr)
@@ -125,5 +127,10 @@ public class SnotelPlatformSpecList
 		spsl.loadFile(new File(args[0]), logger);
 		for(SnotelPlatformSpec spec : spsl.getPlatformSpecs())
 			System.out.println(spec.toString());
+	}
+
+	public long getLastLoadTime()
+	{
+		return lastLoadTime;
 	}
 }

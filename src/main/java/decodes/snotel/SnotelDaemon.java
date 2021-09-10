@@ -30,7 +30,6 @@ public class SnotelDaemon
 {
 	public static final String snotelConfigFile = "$DCSTOOL_USERDIR/snotel.conf";
 	private SnotelConfig snotelConfig = new SnotelConfig();
-	private long lastConfigLoad = 0L;
 	
 	public static final String snotelStatusFile = "$DCSTOOL_USERDIR/snotel.stat";
 	private SnotelStatus snotelStatus = new SnotelStatus();
@@ -131,9 +130,10 @@ public class SnotelDaemon
 	public void checkConfig()
 	{
 		File f = new File(EnvExpander.expand(snotelConfigFile));
-		if (f.lastModified() > lastConfigLoad)
+		if (f.lastModified() > snotelConfig.getLastLoadTime())
 		{
-			lastConfigLoad = System.currentTimeMillis();
+			Logger.instance().info("Config '" + f.getPath() + "' was modified. Will reload.");
+			snotelConfig.setLastLoadTime(System.currentTimeMillis());
 			Properties p = new Properties();
 			FileReader fr = null;
 			try
@@ -151,6 +151,21 @@ public class SnotelDaemon
 				if (fr != null)
 					try { fr.close(); } catch(Exception ex) {}
 			}
+			
+			// The configuration has changed. If rt thread is running, interrupt and restart.
+			if (realtimeInProgress())
+				runRealtime();
+		}
+		
+		// Check for true real-time needing to restart because spec file changed.
+		f = new File(EnvExpander.expand(snotelRtStationListFile));
+
+		if (realtimeInProgress()                // Thread is running
+		 && snotelConfig.retrievalFreq <= 0     // true-real-time
+		 && f.lastModified() > snotelStatus.lastRealtimeRun)  // spec changed since thread start
+		{
+			Logger.instance().info("RT Station List changed. Restarting realtime thread.");
+			runRealtime();
 		}
 	}
 	
@@ -160,6 +175,7 @@ public class SnotelDaemon
 		PropertiesUtil.storeInProps(snotelConfig, p, "");
 		FileWriter fw = null;
 		File f = new File(EnvExpander.expand(snotelConfigFile));
+		Logger.instance().info("Saving new configuration into '" + f.getPath() + "'");
 		try
 		{
 			fw = new FileWriter(f);
@@ -256,7 +272,10 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 	public void runRealtime()
 	{
 		if (rtRetrieval != null && rtRetrieval.isAlive())
+		{
 			rtRetrieval.shutdown();
+			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
+		}
 		
 		File f = new File(EnvExpander.expand(snotelRtStationListFile));
 		try
