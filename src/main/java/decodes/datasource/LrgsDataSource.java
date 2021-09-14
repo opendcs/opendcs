@@ -6,7 +6,6 @@ package decodes.datasource;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.Iterator;
-import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.io.File;
 
@@ -139,7 +138,7 @@ public class LrgsDataSource extends DataSourceExec
 	  @throws DataSourceException if the source could not be initialized.
 	*/
 	public void init(Properties routingSpecProps, String since, String until,
-		Vector networkLists)
+		Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{
 		log(Logger.E_DEBUG1, 
@@ -369,7 +368,7 @@ public class LrgsDataSource extends DataSourceExec
 			// Now process network lists explicitely placed in the DECODES
 			// routing spec.
 			log(Logger.E_DEBUG1, "LRGSDS: There are " + networkLists.size() + " netlists explicitly in the RS");
-			for(Iterator it = networkLists.iterator(); it.hasNext(); )
+			for(Iterator<NetworkList> it = networkLists.iterator(); it.hasNext(); )
 			{
 				NetworkList nl = (NetworkList)it.next();
 				if (nl == NetworkList.dummy_all
@@ -687,12 +686,14 @@ public class LrgsDataSource extends DataSourceExec
 			{
 				try 
 				{
+					log(Logger.E_INFORMATION, " Failed to parse NetDCP message with EDL Header parser."
+						+ " Will attempt with GOES.");
 					goesPMP.parsePerformanceMeasurements(ret);
 					em = null; // Success
 				}
 				catch(HeaderParseException e2)
 				{
-					em = em + " (tried netdcp and goes header parsers)";
+					em = "Attempted EDL message with both netdcp and goes header parsers.";
 				}
 			}
 			if (em != null)
@@ -812,14 +813,6 @@ public class LrgsDataSource extends DataSourceExec
 			// Otherwise, let client/server decide based on protoVersion.
 			lddsClient.enableMultiMessageMode(!singleModeOnly);
 
-			// If debugging turned on, tell client interface to make a local log
-//MJM Removed. This method of debugging the stream is now deprecated.
-//			if (Logger.instance().getMinLogPriority() < Logger.E_INFORMATION)
-//			{
-//				FileOutputStream fos = new FileOutputStream("LddsClient.log",
-//					true);
-//				lddsClient.setDebugStream(new PrintStream(fos));
-//			}
 			lddsClient.connect();
 			if (password != null)
 				lddsClient.sendAuthHello(username, password);

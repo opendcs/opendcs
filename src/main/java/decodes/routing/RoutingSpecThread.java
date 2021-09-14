@@ -713,12 +713,6 @@ public class RoutingSpecThread
 
 			dm.applyScaleAndOffset();
 
-			if (compProcessor != null)
-			{
-				myExec.setSubsystem("computation");
-				compProcessor.applyComputations(dm);
-			}
-
 			// If we are to apply min/max (default==true), do it.
 			if (applySensorLimits)
 			{
@@ -733,6 +727,16 @@ public class RoutingSpecThread
 			if (removeRedundantData)
 				dm.removeRedundantData();
 			
+			// MJM 2021/09/10 This block used to be above right after "dm.applyScaleAndOffset()"
+			// It was moved here requested by Art Armour (NWP) so that sensor values that are
+			// omitted by sensor property, out of limits, or redundancy, will not be in-line
+			// rated by the rating computation algorithm.
+			if (compProcessor != null)
+			{
+				myExec.setSubsystem("computation");
+				compProcessor.applyComputations(dm);
+			}
+
 			return dm;
 		}
 		catch(UnknownPlatformException ex)
