@@ -397,6 +397,9 @@ can find your git source tree and your directory with the downloaded jars.
 		</copy>
 
 		<mkdir dir="stage/cwmsDbAPI"/>
+		<copy todir="stage/cwmsDbAPI">
+			<fileset dir="${cwmsDbAPI.dir}"/>
+		</copy>
 
 	</target>
 
