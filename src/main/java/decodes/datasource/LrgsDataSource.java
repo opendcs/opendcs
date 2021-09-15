@@ -688,7 +688,7 @@ public class LrgsDataSource extends DataSourceExec
 				{
 					log(Logger.E_INFORMATION, " Failed to parse NetDCP message with EDL Header parser."
 						+ " Will attempt with GOES.");
-					goesPMP.parsePerformanceMeasurements(ret);
+					(pmp = goesPMP).parsePerformanceMeasurements(ret);
 					em = null; // Success
 				}
 				catch(HeaderParseException e2)
@@ -712,7 +712,7 @@ public class LrgsDataSource extends DataSourceExec
 				ret.getPM(GoesPMParser.DCP_ADDRESS).getStringValue().toUpperCase();
 			
 			Variable v;
-			if (pmp.getMediumType().equalsIgnoreCase(Constants.medium_EDL)
+			if (pmp == netdcpPMP
 			 && (v = ret.getPM(EdlPMParser.STATION)) != null)
 				addrField = v.getStringValue();
 						
