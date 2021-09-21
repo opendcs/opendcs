@@ -419,6 +419,24 @@ debug3("DbAlgorithmExec.apply()");
 		// by another non-modeled input.
 		if (modelId != Constants.undefinedIntKey)
 		{
+			// HDB Issue 994 - They need a way to explicitly set the MRI
+			// in odd cases where they don't want to use the most recent one.
+			String s = comp.getProperty("inputModelRunId");
+			if (s != null)
+			{
+				int mri;
+				try 
+				{
+					mri = Integer.parseInt(s);
+					comp.setModelRunId(mri);
+					return;
+				}
+				catch(NumberFormatException ex)
+				{
+					warning("inputModelRunId is a non-integer -- ignored.");
+					// fall through and set with max
+				}
+			}
 			try { comp.setModelRunId(tsdb.findMaxModelRunId(modelId)); }
 			catch(DbIoException ex)
 			{
