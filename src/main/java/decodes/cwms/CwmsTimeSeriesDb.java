@@ -1324,7 +1324,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 
 				// 2nd query gets tasklist recs within record_num range.
 				getTaskListStmtQuery =
-					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, ROUND(a.VALUE,8), a.START_DATE_TIME, "
+					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
 					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
 					+ "from CP_COMP_TASKLIST a "
 					+ "where a.LOADING_APPLICATION_ID = ?" // + applicationId
