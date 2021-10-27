@@ -45,7 +45,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 
 <project name="OPENDCS Toolkit" default="jar" basedir="."
-	xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant">
 	<description>Open DCS</description>
 
 	<property environment="env"/>
@@ -59,6 +59,7 @@ can find your git source tree and your directory with the downloaded jars.
 	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
 	<property name="hydrojson.dir" value="${workspace.dir}/HydroJSON"/>
 	<property name="src.dir" value="${project.dir}/src/main/java"/>
+	<property name="src.test.dir" value="${project.dir}/src/test/java"/>
 	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
 
 	<!-- Directories -->
@@ -66,10 +67,19 @@ can find your git source tree and your directory with the downloaded jars.
 	<property name="build.dir" value="build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
 	<property name="build.lib" value="${build.dir}/lib"/>
+	<property name="build.test.classes" value="${build.dir}/test-classes"/>
+	<property name="build.test.lib" value="${build.dir}/test-libs"/>
 	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
 	<property name="cwmsDbAPI.dir" value="${project.dir}/cwmsDbAPI"/>
 	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>
 	<property name="cwmsSystemJars.dir" value="${project.dir}/cwmsSystemJars"/>
+
+	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
+		classpath="${project.dir}/lib/maven-resolver-ant-tasks-1.2.1-uber.jar" />
+
+	<resolver:remoterepos id="resolver.repositories">
+        <resolver:remoterepo refid="central" />
+	</resolver:remoterepos>
 
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
@@ -134,6 +144,23 @@ can find your git source tree and your directory with the downloaded jars.
 		</fileset>
 	</path>
 
+	<!-- get test dependencies -->
+	<target name="test.dependencies">
+		<mkdir dir="${junit.libs}/platform"/>
+		<mkdir dir="${junit.libs}/engine"/>
+		<resolver:resolve>
+			<resolver:dependencies>
+				<resolver:dependency coords="org.junit.platform:junit-platform-launcher:1.8.1"/>
+				<resolver:dependency coords="org.junit.platform:junit-platform-engine:1.8.1"/>
+				<resolver:dependency coords="org.junit.platform:junit-platform-commons:1.8.1"/>
+				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-api:5.8.1"/>
+				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-engine:5.8.1"/>
+
+			</resolver:dependencies>
+			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
+		</resolver:resolve>
+	</target>
+
 	<target name="prepare" depends="clean" description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
@@ -189,6 +216,52 @@ can find your git source tree and your directory with the downloaded jars.
 			<classpath refid="project.class.path"/>
 		</javac>
 
+	</target>
+
+	<target name="compile-test" depends="compile,test.dependencies">
+		<mkdir dir="${build.test.classes}"/>
+		<javac debug="true" destdir="${build.test.classes}"
+			target="1.8" source="1.8" includeantruntime="false"
+		>
+			<src path="${src.test.dir}"/>
+			<classpath refid="project.class.path"/>
+			<classpath refid="junit.platform.libs.classpath"/>
+		</javac>
+
+	</target>
+
+	<target name="test" depends="compile-test">
+		<mkdir dir="${build.dir}/test-results"/>
+		<junitlauncher haltOnFailure="true" printSummary="true">
+			<classpath refid="junit.platform.libs.classpath"/>
+			<classpath refid="project.class.path"/>
+			<classpath>
+				<pathelement location="${build.test.classes}"/>
+			</classpath>
+
+			<testclasses outputdir="${build.dir}/test-results">
+				<!-- <fork dir="${build.dir}"/>-->
+				<fileset dir="${build.test.classes}"/>
+				<listener type="legacy-brief" sendSysOut="true"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+			</testclasses>
+		</junitlauncher>
+	</target>
+
+
+	<target name="compile-test" depends="compile">
+		<mkdir dir="${build.testclasses}"/>
+		<javac debug="true" destdir="${build.test.classes}"
+			target="1.8" source="1.8"
+		>
+			<src path="${src.test.dir}"/>
+			<classpath refid="project.class.path"/>
+			<classpath refid="junit..platform.libs.classpath"/>
+		</javac>
+
+	</target>
+
+	<target name="test" depends="compile-test">
 
 	</target>
 
