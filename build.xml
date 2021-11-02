@@ -174,7 +174,7 @@ can find your git source tree and your directory with the downloaded jars.
             </filterset>
         </copy>
 		<javac debug="true" destdir="${build.classes}"
-			target="1.8" source="1.8"
+			target="1.7" source="1.7"
 			includeantruntime="true"
 			includes="lrgs/gui/LrgsBuild.java">
 			<src path="${build.classes}"/>
@@ -182,7 +182,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 
 		<javac debug="true" destdir="${build.classes}"
-			target="1.8" source="1.8"
+			target="1.7" source="1.7"
 			includeantruntime="true"
 			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
 			<src path="${src.dir}"/>
@@ -504,7 +504,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="stage/dcpmon-build/war-distro/WEB-INF/classes"/>
 		<copy todir="stage/dcpmon-build/war-distro/WEB-INF/lib" file="build/lib/opendcs.jar" overwrite="true"/>
 		<javac debug="true" destdir="stage/dcpmon-build/war-distro/WEB-INF/classes"
-			target="1.6" source="1.6">
+			target="1.7" source="1.7">
 			<src path="${dcpmon.dir}/src"/>
 			<classpath refid="dcpmon.class.path"/>
 		</javac>
