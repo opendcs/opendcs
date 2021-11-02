@@ -401,6 +401,11 @@ public class IDateFormat
 		// if (sod < 0 || sod >= 24*60*60)
 		//	throw new IllegalArgumentException(
 		//		"time-of-day out of range (" + sod + ")");
+		
+		//MJM Kludge to allow 24 hrs to print as exactly "24:00"
+		if (sod == 24*3600)
+			return useColons ? "24:00" : "2400";
+		
 		sod %= (24*3600);
 		int h = (int)sod / (60*60);
 		sod -= (h*60*60);
