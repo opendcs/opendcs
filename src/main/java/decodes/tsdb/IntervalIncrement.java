@@ -46,7 +46,7 @@ public class IntervalIncrement
 	
 	// digits followed by a word, optionally separated by spaces
 	private static final Pattern iipattern =
-		Pattern.compile("(\\d+)\\s*([a-zA-Z]+)[\\s,]*");
+		Pattern.compile("(-?\\d+)\\s*([a-zA-Z]+)[\\s,]*");
 
 	public IntervalIncrement(int calConstant, int count)
 	{
