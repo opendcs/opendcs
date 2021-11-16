@@ -249,6 +249,7 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 
+<!--
 	<target name="compile-test" depends="compile">
 		<mkdir dir="${build.testclasses}"/>
 		<javac debug="true" destdir="${build.test.classes}"
@@ -264,6 +265,7 @@ can find your git source tree and your directory with the downloaded jars.
 	<target name="test" depends="compile-test">
 
 	</target>
+-->
 
 	<target name="jar" depends="compile" description="Generates opendcs.jar.">
 

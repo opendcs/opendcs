@@ -903,7 +903,23 @@ public class DecodesScriptEditPanel
 
 		getDataFromFields();
 
-		String s = rawMessagePane.getText();
+//		String s = rawMessagePane.getText();
+		// MJM 2021-11-09 USBR 993 fix highlighting on Windows.
+		// Note: On Windoze, a StyledDocument counts \r\n as a single char. The underlying JTextPane
+		// counts it as 2. Thus I have to get the sample text from the StyledDocument, otherwise
+		// on Windoze the highlighted fields will move 1 char to the right for each line.
+		String s;
+		try
+		{
+			s = rawMessagePane.getStyledDocument().getText(0, rawMessagePane.getStyledDocument().getLength());
+		}
+		catch (BadLocationException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		
 		StringBuilder sb = new StringBuilder(s);
 		for (int i = 0; i < sb.length(); i++)
 		{
@@ -1059,7 +1075,7 @@ public class DecodesScriptEditPanel
 				{
 					Style st = sensorColorStyle[col % sensorColorStyle.length];
 					rawMessagePane.getStyledDocument().setCharacterAttributes(
-						headerLength+rawpos.getStart(), 
+						headerLength+rawpos.getStart(), 	
 						rawpos.getEnd()-rawpos.getStart(), st, false);
 				}
 			}
