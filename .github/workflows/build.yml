@@ -27,4 +27,4 @@ jobs:
           ant test -lib lib/
           ant jar
         env:
-          OPENDCS_REPO: `pwd`
+          OPENDCS_REPO: ${{GITHUB_WORKSPACE}}
