@@ -1,0 +1,30 @@
+name: OpenDCS Build and unit tests
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      platform: [ubuntu-latest,windows-latest,macos-latest]
+    runs-on: ${{matrix.platform}}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: initial setup
+        run: |
+          mkdir $HOME/Documents/workspace-2019
+          curl http://www.covesw.com/download/build/IzPack-4.3.3.tgz --output izpack.tgz
+          curl http://www.covesw.com/download/build/opendcs-dep.tgz --output opendcs-dep.tgz
+          tar -xvzf izpack.tgz -C izpack_home
+          tar -xvzf opendcs-dep.tgz
+      - name: Compile
+        run: |
+          ant test -lib lib/
+          ant jar
+        env:
+          OPENDCS_REPO: `pwd`
