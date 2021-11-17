@@ -18,7 +18,8 @@ jobs:
           java-version: 1.8
       - name: initial setup
         run: |
-          mkdir $HOME/Documents/workspace-2019
+          mkdir -p $HOME/Documents/workspace-2019
+          mkdir izpack_home
           curl http://www.covesw.com/download/build/IzPack-4.3.3.tgz --output izpack.tgz
           curl http://www.covesw.com/download/build/opendcs-dep.tgz --output opendcs-dep.tgz
           tar -xvzf izpack.tgz -C izpack_home
@@ -28,4 +29,4 @@ jobs:
           ant test -lib lib/
           ant jar
         env:
-          OPENDCS_REPO: ${{GITHUB_WORKSPACE}}
+          OPENDCS_REPO: ${GITHUB_WORKSPACE}
