@@ -629,7 +629,7 @@ public abstract class StreamDataSource extends DataSourceExec
 			throw new DataSourceException(
 				"Bad header format (this should never happen)");
 		}
-
+		
 		Platform p = null;
 		try
 		{
@@ -681,6 +681,7 @@ public abstract class StreamDataSource extends DataSourceExec
 	private RawMessage scanForMessage()
 		throws DataSourceException
 	{
+Logger.instance().debug3("scanForMessage oneMessageFile=" + oneMessageFile + ", mediumId=" + mediumId);
 		if (oneMessageFile)
 			return getEntireFileAsMessage();
 		try
@@ -856,8 +857,8 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
 			}
 			else // No explicit length in header: we have to use endDelimiter.
 			{
-log(Logger.E_DEBUG1,"StreamDS.scanFM no explicit length, hunt for end delim '"
-+ AsciiUtil.bin2ascii(endDelimiter) + "'");
+//log(Logger.E_DEBUG1,"StreamDS.scanFM no explicit length, hunt for end delim '"
+//+ AsciiUtil.bin2ascii(endDelimiter) + "'");
 				int len = 0;
 				if (endDelimiter != null && endDelimiter.length > 0)
 				{
@@ -1252,8 +1253,9 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
 		RawMessage ret = new RawMessage(msgbuf, msgbuf.length);
 
 		// If mediumId supplied as property, set before parsing header.
-		if (mediumId != null)
+		if (mediumId != null && mediumType != null)
 		{
+Logger.instance().debug1("oneMessageFile=true, mediumId define as '" + mediumId + "'");
 			ret.setMediumId(mediumId);
 			ret.setPM(GoesPMParser.DCP_ADDRESS, new Variable(mediumId));
 		}

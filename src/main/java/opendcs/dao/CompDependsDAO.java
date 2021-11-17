@@ -1,6 +1,6 @@
 /**
  * $Id: CompDependsDAO.java,v 1.7 2020/05/07 13:50:16 mmaloney Exp $
- * 
+ *
  * $Log: CompDependsDAO.java,v $
  * Revision 1.7  2020/05/07 13:50:16  mmaloney
  * Also delete from scratchpad when deleting dependencies.
@@ -20,13 +20,13 @@
  * Revision 1.2  2014/07/03 12:53:41  mmaloney
  * debug improvements.
  *
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
+ *
+ * This software was written by Cove Software, LLC ("COVE") under contract
+ * to the United States Government.
+ *
  * No warranty is provided or implied other than specific contractual terms
  * between COVE and the U.S. Government
- * 
+ *
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * All rights reserved.
  */
@@ -34,12 +34,16 @@ package opendcs.dao;
 
 import ilex.util.Logger;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import org.h2.command.Prepared;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -68,8 +72,8 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	public CompDependsDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "CompDependsDAO");
-		cpCompDepends_col1 = tsdb.isHdb() 
-			|| tsdb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? 
+		cpCompDepends_col1 = tsdb.isHdb()
+			|| tsdb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ?
 			"TS_ID" : "SITE_DATATYPE_ID";
 		algorithmDAO = tsdb.makeAlgorithmDAO();
 		tsGroupDAO = db.makeTsGroupDAO();
@@ -80,26 +84,53 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		throws DbIoException
 	{
 		DbKey key = tsid.getKey();
-		// Remove any computation dependencies to this time-series.
-		doModify("DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = " 
-			+ key);
-		
-		// Disable any computations that use this time-series as input or
-		// output.
-		String q = "select distinct a.computation_id from "
-			+ "cp_computation a, cp_comp_ts_parm b "
-			+ "where a.computation_id = b.computation_id "
-			+ "and a.enabled = 'Y' "
-			+ "and b.site_datatype_id = " + key;
-		String mq = "update cp_computation set enabled = 'N' "
-			+ "where computation_id in (" + q + ")";
-		doModify(mq);
-		
-		// If this ts is explicitly included in a group, remove it.
-		q = "delete from tsdb_group_member_ts where "
-			+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-			+ " = "+key;
-		doModify(q);
+		Connection conn = db.getConnection();
+		boolean defaultAutoCommit = false;
+		try(
+			PreparedStatement deleteFromDepends = conn.prepareStatement(
+				"DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 +" = ?"
+			);
+			PreparedStatement updateEnabled = conn.prepareStatement(
+				"update cp_computation set enabled = 'N' "
+				+ "where computation_id in ("
+				+ 	"select distinct a.computation_id from "
+				+	 "cp_computation a, cp_comp_ts_parm b "
+				+ 	"where a.computation_id = b.computation_id "
+				+ 	"and a.enabled = 'Y' "
+				+ 	"and b.site_datatype_id = ?"
+				+ ")"
+			);
+			PreparedStatement deleteGroupMembershit = conn.prepareStatement(
+				"delete from tsdb_group_member_ts where "
+				+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+				+ " = ?"
+			);
+		){
+			defaultAutoCommit = conn.getAutoCommit();
+			conn.setAutoCommit(false);
+			// Remove any computation dependencies to this time-series.
+			deleteFromDepends.setLong(1,key.getValue());
+			deleteFromDepends.execute();
+
+			updateEnabled.setLong(1,key.getValue());
+			updateEnabled.execute();
+
+			deleteFromDepends.setLong(1, key.getValue() );
+			deleteFromDepends.execute();
+
+			conn.commit(); // now that all parts of the transaction have gone through we know we're ready.
+		} catch( SQLException err ){
+			throw new DbIoException("failed to remove computations dependencies " + err.getLocalizedMessage());
+		}
+
+		finally {
+			try{
+				conn.setAutoCommit(defaultAutoCommit);
+			} catch( Exception ex ){
+				warning("failed to reset autocommit: " + ex);
+			}
+		}
+
 	}
 
 	@Override
@@ -110,11 +141,11 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		{
 			DbKey compId = comp.getId();
 			debug3("writeCompDepends(" + comp.getName() + ", id=" + compId);
-			
+
 			deleteCompDependsForCompId(compId);
 			if (!comp.isEnabled())
 				return;
-			
+
 			DbCompAlgorithm algo = comp.getAlgorithm();
 			if (algo == null)
 			{
@@ -122,7 +153,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				if (algoName != null)
 					algo = algorithmDAO.getAlgorithm(algoName);
 			}
-			
+
 			// If the computation has a group input, get the group and
 			// expand it.
 			TsGroup tsGroup = null;
@@ -132,7 +163,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				if (tsGroup != null && !tsGroup.getIsExpanded())
 					db.expandTsGroup(tsGroup);
 			}
-		
+
 			// Make a HashSet of all possible ts_id's that can be input to this computation.
 			HashSet<DbKey> dataIds = new HashSet<DbKey>();
 			for(Iterator<DbCompParm> dcpit = comp.getParms(); dcpit.hasNext(); )
@@ -147,7 +178,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				}
 				if (parmType == null || !parmType.startsWith("i"))
 					continue;
-	
+
 				DbKey sdi = dcp.getSiteDataTypeId();
 				// If it has an SDI, it means it is fully defined.
 				if (sdi != null && !sdi.isNull())
@@ -163,7 +194,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 					{
 						try
 						{
-							TimeSeriesIdentifier tsid = 
+							TimeSeriesIdentifier tsid =
 								db.transformTsidByCompParm(grpTsid, dcp, false, false, null);
 							if (tsid != null)
 								dataIds.add(tsid.getKey());
@@ -180,14 +211,23 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				}
 				// Otherwise incomplete definition and no group - skip it.
 			}
-	
-debug3("Total dds for dependencies=" + dataIds.size());
-			for(DbKey dataId : dataIds)
-			{
-				String q = 
-				  "INSERT INTO CP_COMP_DEPENDS(" + cpCompDepends_col1 + ",COMPUTATION_ID) "
-				  + "VALUES(" + dataId + ", " + compId + ")";
-				doModify(q);
+
+			debug3("Total dds for dependencies=" + dataIds.size());
+			Connection conn = db.getConnection();
+			try(
+				PreparedStatement insertDepends = conn.prepareStatement(
+				"INSERT INTO CP_COMP_DEPENDS(" + cpCompDepends_col1 + ",COMPUTATION_ID) "
+					+ "VALUES(?,?)"
+				);
+			){ //NOTE: this may need some tuning for batch size,
+				// fairly simple to do with an on modulus size = 0 executeBatch statement
+				for(DbKey dataId : dataIds)
+				{
+					insertDepends.setLong(1, dataId.getValue() );
+					insertDepends.setLong(2, compId.getValue() );
+					insertDepends.addBatch();
+				}
+				insertDepends.executeBatch();
 			}
 		}
 		catch(Exception ex)
@@ -205,15 +245,15 @@ debug3("Total dds for dependencies=" + dataIds.size());
 	{
 		if (db.isHdb())
 			return;
-		
+
 		// Remove the CP_COMP_DEPENDS records & re-add.
 		String q = "DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = "
 			+ timeSeriesKey;
 		doModify(q);
-		doModify("delete from cp_comp_depends_scratchpad where " + cpCompDepends_col1 + " = " 
+		doModify("delete from cp_comp_depends_scratchpad where " + cpCompDepends_col1 + " = "
 			+ timeSeriesKey);
 	}
-	
+
 	@Override
 	public void deleteCompDependsForCompId(DbKey compId)
 		throws DbIoException
@@ -223,10 +263,10 @@ debug3("Total dds for dependencies=" + dataIds.size());
 		// Remove the CP_COMP_DEPENDS records & re-add.
 		String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId;
 		doModify(q);
-		
+
 		doModify("delete from cp_comp_depends_scratchpad where COMPUTATION_ID = " + compId);
 	}
-	
+
 	public void close()
 	{
 		super.close();
@@ -238,15 +278,19 @@ debug3("Total dds for dependencies=" + dataIds.size());
 	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbKey compID)
 		throws DbIoException
 	{
-		String q = "SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
-			+ "WHERE COMPUTATION_ID = " + compID;
-		ResultSet rs = doQuery(q);
-		
 		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
-		try
+		Connection conn = db.getConnection();
+		try(
+			PreparedStatement getTriggers = conn.prepareStatement(
+				"SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
+				+ "WHERE COMPUTATION_ID = ?"
+			);
+		)
 		{
-			while(rs.next())
+			getTriggers.setLong(1,compID.getValue());
+			try( ResultSet rs = getTriggers.executeQuery(); ){
+				while(rs.next())
 			{
 				DbKey tsKey = DbKey.createDbKey(rs, 1);
 				try
@@ -259,10 +303,12 @@ debug3("Total dds for dependencies=" + dataIds.size());
 						+ "for computation " + compID);
 				}
 			}
+			}
+
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error executing '" + q + "': " + ex);
+			throw new DbIoException("Error executing trigger comp retrieval: " + ex);
 		}
 		finally
 		{
@@ -276,7 +322,7 @@ debug3("Total dds for dependencies=" + dataIds.size());
 		throws DbIoException
 	{
 		ArrayList<DbKey> ret = new ArrayList<DbKey>();
-		
+
 		StringBuilder inClause = new StringBuilder(" in (");
 		int n = 0;
 		for (TimeSeriesIdentifier tsid : tsids)
@@ -288,13 +334,13 @@ debug3("Total dds for dependencies=" + dataIds.size());
 		inClause.append(")");
 		if (n == 0)
 			return ret;
-		
+
 		String q = "select a.computation_id from cp_comp_depends a, cp_computation b"
 			+ " where a.computation_id = b.computation_id"
 			+ " and a." + cpCompDepends_col1 + inClause.toString();
 		if (!DbKey.isNull(appId))
 			q = q + " and b.loading_application_id = " + appId;
-			
+
 		try
 		{
 			ResultSet rs = doQuery(q);

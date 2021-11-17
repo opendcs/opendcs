@@ -7,10 +7,11 @@ import java.util.Iterator;
 import lrgs.common.DcpAddress;
 
 /**
- * 
+ *
  * @author mjmaloney
  * @deprecated We are using decodes.util.Pdt instead.
  */
+@Deprecated
 public class PdtSchedTest
 {
 	public static void main(String args[])
@@ -22,7 +23,7 @@ public class PdtSchedTest
 		{
 			PdtSchedEntry pse = (PdtSchedEntry)it.next();
 			DcpAddress da = new DcpAddress(pse.getDcpAddress());
-			System.out.println(da.toString() 
+			System.out.println(da.toString()
 				+ " ST=" + pse.getStChan() + ", t=" +pse.getFirstXmit()
 				+ ", i=" + pse.getXmitInterval()
 				+ ", w=" + pse.getXmitWindow()

@@ -1,8 +1,8 @@
 /*
  * $Id: SqlDatabaseIO.java,v 1.15 2020/02/14 15:13:44 mmaloney Exp $
- * 
+ *
  * Open Source Software
- * 
+ *
  * $Log: SqlDatabaseIO.java,v $
  * Revision 1.15  2020/02/14 15:13:44  mmaloney
  * Implement isOpenTSDB
@@ -201,7 +201,7 @@ public class SqlDatabaseIO
 
 	/** Bit fields determine options used by this database. */
 	protected String databaseOptions;
-	
+
 	/** TSDB Database Version, if this is a TSDB */
 	protected int tsdbVersion = TsdbDatabaseVersion.VERSION_2;
 
@@ -218,8 +218,8 @@ public class SqlDatabaseIO
 
 	/** User name used to connect to the database. */
 	protected String _dbUser;
-	
-	/** 
+
+	/**
 	 * Routing Spec Threads in certain apps establish their own connection.
 	 * This is necessary to prevent them from interfering with other threads.
 	 */
@@ -237,7 +237,7 @@ public class SqlDatabaseIO
 
 	/** Used to format timestamps read from the database. */
 	protected SimpleDateFormat readDateFmt = null;
-	
+
 	/** Used for log messages */
 	protected SimpleDateFormat debugDateFmt = new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss z");
 
@@ -254,7 +254,7 @@ public class SqlDatabaseIO
 		// by their various constructors.  For example, the PlatformListIO
 		// can't be instantiated until after the ConfigListIO and the
 		// SiteIO objects are created.
-		
+
 		_engineeringUnitIO = new EngineeringUnitIO(this);
 		_unitConverterIO = new UnitConverterIO(this);
 		_networkListListIO = new NetworkListListIO(this);
@@ -281,7 +281,7 @@ public class SqlDatabaseIO
 		throws DatabaseException
 	{
 		this();
-		
+
 		connectToDatabase(sqlDbLocation);
 		keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
 			DecodesSettings.instance().sqlKeyGenerator, _conn);
@@ -297,7 +297,7 @@ public class SqlDatabaseIO
 	* @param keyGenerator the Key Generator to use
 	* @param location the database location string for log messages
 	*/
-	public void useExternalConnection(Connection conn, 
+	public void useExternalConnection(Connection conn,
 		KeyGenerator keyGenerator, String location)
 	{
 		_conn = conn;
@@ -319,7 +319,7 @@ public class SqlDatabaseIO
 		if (sqlDbLocation == null || sqlDbLocation.trim().length() == 0)
 			return;
 		_sqlDbLocation = sqlDbLocation;
-		
+
 		String driverClass = DecodesSettings.instance().jdbcDriverClass;
 		// Load the JDBC Driver Class
 		try
@@ -352,7 +352,7 @@ public class SqlDatabaseIO
 				_conn = null;
 			}
 		}
-		
+
 		if (_conn == null)
 		{
 			// Retrieve username and password for database
@@ -370,7 +370,7 @@ public class SqlDatabaseIO
 
 			connectUserPassword(authFile.getUsername(), authFile.getPassword());
 		}
-		
+
 		// MJM 2018-2/21 Force autoCommit on.
 		try { _conn.setAutoCommit(true);}
 		catch(SQLException ex)
@@ -379,16 +379,16 @@ public class SqlDatabaseIO
 		}
 
 		determineVersion();
-		
+
 		try {
 			setDBDatetimeFormat();
 		} catch (SQLException e) {
 			Logger.instance().debug3(e.toString());
 		}
-		
+
 		postConnectInit();
 	}
-	
+
 	private void connectUserPassword(String user, String pw)
 		throws DatabaseException
 	{
@@ -400,20 +400,20 @@ public class SqlDatabaseIO
 		_conn = null;
 		while(_conn == null)
 		{
-			try 
+			try
 			{
 				Logger.instance().info("Connecting to " + _sqlDbLocation
 					+ " as user '" + user + "'");
-				
+
 				_conn = DriverManager.getConnection(_sqlDbLocation, user, pw);
 			}
-			catch (Exception ex) 
+			catch (Exception ex)
 			{
 				_conn = null;
 		   		if (System.currentTimeMillis() - startTry > 30000L)
 					throw new DatabaseException(
 						"Error getting JDBC connection using driver '"
-						+ DecodesSettings.instance().jdbcDriverClass 
+						+ DecodesSettings.instance().jdbcDriverClass
 						+ "' to database at '" + _sqlDbLocation
 						+ "' for user '" + user + "': " + ex.toString());
 				else
@@ -426,7 +426,7 @@ public class SqlDatabaseIO
 		}
 
 	}
-	
+
 	/**
 	 * A subclass can override this method to perform initialization tasks after
 	 * a successful database connection.
@@ -434,7 +434,7 @@ public class SqlDatabaseIO
 	protected void postConnectInit()
 		throws DatabaseException
 	{
-		
+
 	}
 
 	protected void setDBDatetimeFormat()
@@ -446,14 +446,14 @@ public class SqlDatabaseIO
 		{
 			if (_isOracle)
 			{
-				
+
 				stmnt = getConnection().createStatement();
 
 				q = "SELECT PARAM_VALUE FROM REF_DB_PARAMETER WHERE PARAM_NAME = 'TIME_ZONE'";
 				ResultSet rs = null;
 //				Logger.instance().info(q);
 				try
-				{ 
+				{
 					rs = stmnt.executeQuery(q);
 					if (rs != null && rs.next())
 						databaseTimeZone = rs.getString(1);
@@ -476,11 +476,11 @@ public class SqlDatabaseIO
 				q = "ALTER SESSION SET TIME_ZONE = '" + databaseTimeZone + "'";
 				Logger.instance().debug3(q);
 				stmnt.execute(q);
-	
+
 				q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
 				Logger.instance().debug3(q);
 				stmnt.execute(q);
-				
+
 				q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
 				Logger.instance().debug3(q);
 				stmnt.execute(q);
@@ -492,15 +492,15 @@ public class SqlDatabaseIO
 		}
 		catch(SQLException ex)
 		{
-			
+
 		}
 		finally
 		{
 			if (stmnt != null)
 				try { stmnt.close(); } catch (Exception ex) {}
 		}
-	}	
-	
+	}
+
 	public synchronized void determineVersion()
 	{
 		try
@@ -513,7 +513,7 @@ public class SqlDatabaseIO
 			Logger.instance().warning("SqlDatabaseIO.determineVersion() "
 				+ "Cannot determine Database Product Name: " + ex);
 		}
-		
+
 		TimeZone tz = TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone);
 		String writeFmt = DecodesSettings.instance().sqlDateFormat;
 		String readFmt = DecodesSettings.instance().SqlReadDateFormat;
@@ -532,12 +532,12 @@ public class SqlDatabaseIO
 		readVersionInfo(this);
 		TimeSeriesDb.readVersionInfo(this);
 	}
-	
+
 	public static void readVersionInfo(DatabaseConnectionOwner dco)
 	{
 		/*
 		  Attempt to read the database's version number.
-		  Catch exception. Database version < 6 will not have the version 
+		  Catch exception. Database version < 6 will not have the version
 		  table.
 		*/
 		int databaseVersion = DecodesDatabaseVersion.DECODES_DB_5;  // earliest possible value.
@@ -589,7 +589,7 @@ public class SqlDatabaseIO
 		dco.setDecodesDatabaseVersion(databaseVersion, databaseOptions);
 		Logger.instance().info("Connected to DECODES SQL database version " + databaseVersion);
 	}
-		
+
 	/** @return 'SQL'. */
 	public String getDatabaseType()
 	{
@@ -616,10 +616,11 @@ public class SqlDatabaseIO
 		return databaseOptions;
 	}
 
-	/** 
+	/**
 	  @return true if this database type requires login.
 	  @deprecated This always returns false -- implemented a different way.
 	*/
+	@Deprecated
 	public boolean requiresLogin( )
 	{
 		//System.out.println("SqlDatabaseIO.requiresLogin()");
@@ -644,7 +645,7 @@ public class SqlDatabaseIO
 	*/
 	public void close( )
 	{
-		try 
+		try
 		{
 			if (_conn.isClosed())
 				return;
@@ -670,7 +671,7 @@ public class SqlDatabaseIO
 		{
 			enumSqlDao.readEnumList(top);
 		}
-		catch (DbIoException ex) 
+		catch (DbIoException ex)
 		{
 			throw new DatabaseException(ex.toString());
 		}
@@ -679,7 +680,7 @@ public class SqlDatabaseIO
 			enumSqlDao.close();
 		}
 	}
-	
+
 	public synchronized DbEnum readEnum(String enumName)
 		throws DatabaseException
 	{
@@ -688,7 +689,7 @@ public class SqlDatabaseIO
 		{
 			return enumSqlDao.getEnum(enumName);
 		}
-		catch (DbIoException ex) 
+		catch (DbIoException ex)
 		{
 			throw new DatabaseException(ex.toString());
 		}
@@ -793,13 +794,13 @@ public class SqlDatabaseIO
 	{
 		//System.out.println("  SqlDatabaseIO.readPlatformList()");
 
-		try 
+		try
 		{
 			_platformListIO.read(platformList);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			System.err.println(e);
 			e.printStackTrace(System.err);
@@ -817,13 +818,13 @@ public class SqlDatabaseIO
 	{
 		//System.out.println("  SqlDatabaseIO.readConfigList()");
 
-		try 
+		try
 		{
 			_configListIO.read(pcList);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			System.err.println(e);
 			e.printStackTrace(System.err);
@@ -850,13 +851,13 @@ public class SqlDatabaseIO
 	public synchronized void readEquipmentModelList(EquipmentModelList eml)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_equipmentModelListIO.read(eml);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
@@ -873,13 +874,13 @@ public class SqlDatabaseIO
 	{
 		//System.out.println("  SqlDatabaseIO.readRoutingSpecList()");
 
-		try 
+		try
 		{
 			_routingSpecListIO.read(rsList);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			e.printStackTrace(System.err);
 			throw new DatabaseException(e.toString());
@@ -898,13 +899,13 @@ public class SqlDatabaseIO
 	{
 		//System.out.println("  SqlDatabaseIO.readDataSourceList()");
 
-		try 
+		try
 		{
 			_dataSourceListIO.read(dsList);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
@@ -919,18 +920,18 @@ public class SqlDatabaseIO
 	public synchronized void readNetworkListList(NetworkListList nlList)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_networkListListIO.read(nlList);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
 	}
-	
+
 	/**
 	 * Non-cached method to read the list of network list specs currently
 	 * defined in the database.
@@ -939,19 +940,19 @@ public class SqlDatabaseIO
 	public synchronized ArrayList<NetworkListSpec> getNetlistSpecs()
 		throws DatabaseException
 	{
-		try 
+		try
 		{
-			ArrayList<NetworkListSpec> ret = 
+			ArrayList<NetworkListSpec> ret =
 				_networkListListIO.getNetlistSpecs();
 			if (commitAfterSelect)
 				commit();
 			return ret;
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
-		
+
 	}
 
 
@@ -964,13 +965,13 @@ public class SqlDatabaseIO
 	public synchronized void readPresentationGroupList(PresentationGroupList pgList)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_presentationGroupListIO.read(pgList);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			System.err.println(e);
 			e.printStackTrace(System.err);
@@ -995,7 +996,7 @@ public class SqlDatabaseIO
 		{
 			throw new DatabaseException(ex.getMessage());
 		}
-		finally 
+		finally
 		{
 			dtdao.close();
 			Database.setDb(oldDb);
@@ -1015,7 +1016,7 @@ public class SqlDatabaseIO
 		{
 			throw new DatabaseException(ex.getMessage());
 		}
-		finally 
+		finally
 		{
 			dtdao.close();
 		}
@@ -1043,14 +1044,14 @@ public class SqlDatabaseIO
 		Logger.instance().log(Logger.E_INFORMATION,
 			"Writing engineering unit list.");
 
-		try 
+		try
 		{
 			_engineeringUnitIO.write(top);
 			UnitConverterSet ucs = top.getDatabase().unitConverterSet;
 			_unitConverterIO.write(ucs);
 //			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1134,7 +1135,7 @@ public class SqlDatabaseIO
 			siteDao.close();
 		}
 	}
-	
+
 	public synchronized Site getSiteBySiteName(SiteName sn)
 		throws DatabaseException
 	{
@@ -1169,13 +1170,13 @@ public class SqlDatabaseIO
 	{
 		//System.out.println("SqlDatabaseIO.readPlatform()");
 
-		try 
+		try
 		{
-			_platformListIO.readPlatform(p); 
+			_platformListIO.readPlatform(p);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException ex) 
+		catch (SQLException ex)
 		{
 			System.err.println(ex);
 			ex.printStackTrace();
@@ -1187,7 +1188,7 @@ public class SqlDatabaseIO
 		Date timeStamp)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			DbKey id = _platformListIO.lookupPlatformId(
 				mediumType, mediumId, timeStamp);
@@ -1195,28 +1196,28 @@ public class SqlDatabaseIO
 				commit();
 			return id;
 		}
-		catch (SQLException ex) 
+		catch (SQLException ex)
 		{
 			System.err.println(ex);
 			ex.printStackTrace();
 			throw new DatabaseException(ex.toString());
 		}
 	}
-	
+
 	/** Find a platform ID by site name, and optionally, designator */
-	public synchronized DbKey lookupCurrentPlatformId(SiteName sn, 
+	public synchronized DbKey lookupCurrentPlatformId(SiteName sn,
 		String designator, boolean useDesignator)
 		throws DatabaseException
 	{
-			try 
+			try
 			{
-				DbKey id = _platformListIO.lookupCurrentPlatformId(sn, 
+				DbKey id = _platformListIO.lookupCurrentPlatformId(sn,
 					designator, useDesignator);
 				if (commitAfterSelect)
 					commit();
 				return id;
 			}
-			catch (SQLException ex) 
+			catch (SQLException ex)
 			{
 				System.err.println(ex);
 				ex.printStackTrace();
@@ -1233,12 +1234,12 @@ public class SqlDatabaseIO
 	public synchronized void writePlatform( Platform p )
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_platformListIO.writePlatform(p);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			String msg = e.getMessage();
 			if (!msg.toLowerCase().contains("insufficient priv"))
@@ -1257,8 +1258,8 @@ public class SqlDatabaseIO
 
 	/**
 	  @param p the object to check in the database.
-	  @return Date object representing the last modify time for this 
-	  platform in the database, or null if the platform no longer exists 
+	  @return Date object representing the last modify time for this
+	  platform in the database, or null if the platform no longer exists
 	  in the database.
 	*/
 	public synchronized Date getPlatformLMT(Platform p)
@@ -1297,12 +1298,12 @@ public class SqlDatabaseIO
 	public synchronized void deletePlatform( Platform p )
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_platformListIO.delete(p);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1328,13 +1329,13 @@ public class SqlDatabaseIO
 	public void readConfig(PlatformConfig pc)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_configListIO.readConfig(pc.getId());
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			e.printStackTrace(System.err);
 			throw new DatabaseException(e.toString());
@@ -1351,12 +1352,12 @@ public class SqlDatabaseIO
 	public synchronized void writeConfig(PlatformConfig pc)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_configListIO.write(pc);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			String msg = e.getMessage();
 			if (!msg.toLowerCase().contains("insufficient priv"))
@@ -1382,12 +1383,12 @@ public class SqlDatabaseIO
 	public synchronized void deleteConfig(PlatformConfig pc)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_configListIO.delete(pc);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1420,12 +1421,12 @@ public class SqlDatabaseIO
 	public void writeEquipmentModel(EquipmentModel eqm)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_equipmentModelListIO.write(eqm);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1443,12 +1444,12 @@ public class SqlDatabaseIO
 	public synchronized void deleteEquipmentModel(EquipmentModel eqm)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_equipmentModelListIO.delete(eqm);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1486,12 +1487,12 @@ public class SqlDatabaseIO
 	public synchronized void writePresentationGroup(PresentationGroup pg)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_presentationGroupListIO.write(pg);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1509,12 +1510,12 @@ public class SqlDatabaseIO
 	public synchronized void deletePresentationGroup(PresentationGroup pg)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_presentationGroupListIO.delete(pg);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1527,8 +1528,8 @@ public class SqlDatabaseIO
 
 	/**
 	  @param pg the object to check in the database.
-	  @return Date object representing the last modify time for this 
-	  presentation group in the database, or null if the group no 
+	  @return Date object representing the last modify time for this
+	  presentation group in the database, or null if the group no
 	  longer exists in the database.
 	*/
 	public Date getPresentationGroupLMT(PresentationGroup pg)
@@ -1565,12 +1566,12 @@ public class SqlDatabaseIO
 	public synchronized void writeRoutingSpec(RoutingSpec rs)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_routingSpecListIO.write(rs);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1588,12 +1589,12 @@ public class SqlDatabaseIO
 	public synchronized void deleteRoutingSpec(RoutingSpec rs)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_routingSpecListIO.delete(rs);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1606,8 +1607,8 @@ public class SqlDatabaseIO
 
 	/**
 	  @param rs the object to check in the database.
-	  @return Date object representing the last modify time for this 
-	  routing spec in the database, or null if the routing spec no longer 
+	  @return Date object representing the last modify time for this
+	  routing spec in the database, or null if the routing spec no longer
 	  exists in the database.
 	*/
 	public synchronized Date getRoutingSpecLMT(RoutingSpec rs)
@@ -1636,12 +1637,12 @@ public class SqlDatabaseIO
 	public void writeDataSource(DataSource ds)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_dataSourceListIO.write(ds);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1660,12 +1661,12 @@ public class SqlDatabaseIO
 	public synchronized void deleteDataSource(DataSource ds)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_dataSourceListIO.delete(ds);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1686,13 +1687,13 @@ public class SqlDatabaseIO
 	public synchronized void readNetworkList( NetworkList ob )
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_networkListListIO.readNetworkList(ob);
 			if (commitAfterSelect)
 				commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
@@ -1707,12 +1708,12 @@ public class SqlDatabaseIO
 	public synchronized void writeNetworkList(NetworkList nl)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_networkListListIO.write(nl);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1730,12 +1731,12 @@ public class SqlDatabaseIO
 	public synchronized void deleteNetworkList(NetworkList nl)
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			_networkListListIO.delete(nl);
 			commit();
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			try { rollback(); }
 			catch (SQLException e1)
@@ -1748,8 +1749,8 @@ public class SqlDatabaseIO
 
 	/**
 	  @param nl the object to check in the database.
-	  @return Date object representing the last modify time for this 
-	  network list in the database, or null if the network list no longer 
+	  @return Date object representing the last modify time for this
+	  network list in the database, or null if the network list no longer
 	  exists in the database.
 	*/
 	public synchronized Date getNetworkListLMT(NetworkList nl)
@@ -1757,12 +1758,12 @@ public class SqlDatabaseIO
 	{
 		if (getDecodesDatabaseVersion() >= 6)
 		{
-			try 
+			try
 			{
-				Date d = _networkListListIO.getLMT(nl); 
+				Date d = _networkListListIO.getLMT(nl);
 				if (commitAfterSelect)
 					commit();
-				return d; 
+				return d;
 			}
 			catch(Exception ex)
 			{
@@ -1797,7 +1798,7 @@ public class SqlDatabaseIO
 		{
 			enumSqlDao.writeEnumList(enumList);
 		}
-		catch (DbIoException ex) 
+		catch (DbIoException ex)
 		{
 			throw new DatabaseException(ex.toString());
 		}
@@ -1808,11 +1809,12 @@ public class SqlDatabaseIO
 	}
 
 
-	/** 
+	/**
 	  @deprecated Platform IDs are now assigned with the getKey method
 	  in this class.
 	  @see SqlDatabaseIO#getKey
 	*/
+	@Deprecated
 	public Counter getPlatformIdCounter()
 	{
 		//System.out.println("SqlDatabaseIO.getPlatformIdCounter()");
@@ -1841,7 +1843,7 @@ public class SqlDatabaseIO
 	{
 		return _conn;
 	}
-	
+
 	public void setConnection(Connection conn)
 	{
 		_conn = conn;
@@ -1882,7 +1884,7 @@ public class SqlDatabaseIO
 	{
 		commitAfterSelect=status;
 	}
-	
+
 	/**
 	  Reads  names of NetworkList  from the database.  This uses
 	  the transport id to uniquely identify the networklist containing that transport id
@@ -1892,19 +1894,19 @@ public class SqlDatabaseIO
 	public synchronized ArrayList<String> readNetworkListName( String transportId )
 		throws DatabaseException
 	{
-		try 
+		try
 		{
 			 ArrayList<String> networkListArray=_platformListIO.readNetworKListName(transportId);
 			if (commitAfterSelect)
 				commit();
 			return networkListArray;
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
 	}
-	
+
 //	/**
 //	  Reads  names of NetworkList  from the database.  This uses
 //	  the transport id to uniquely identify the networklist containing that transport id
@@ -1912,7 +1914,7 @@ public class SqlDatabaseIO
 //	  @param transportId the value of transport id contained in network list.
 //	*/
 //	public synchronized void updateTransportId( String oldtransportId, String newTransportId )
-//		
+//
 //	{
 //		try{
 //		_platformListIO.updateTransportId(oldtransportId, newTransportId);
@@ -1922,7 +1924,7 @@ public class SqlDatabaseIO
 //			//System.out.println(ex);
 //			ex.printStackTrace(System.out);
 //		}
-//			catch (SQLException e) 
+//			catch (SQLException e)
 //			{
 //				//System.out.println(e);
 //				e.printStackTrace(System.out);
@@ -1933,18 +1935,18 @@ public class SqlDatabaseIO
 //					e1.printStackTrace(System.err);
 //
 //				}
-//				
+//
 //			}
-//			
+//
 //	}
-	
+
 	public boolean isOracle()
 	{
 		return _isOracle;
 	}
-	
+
 	public boolean isCwms() { return false; }
-	
+
 	@Override
 	public int getTsdbVersion()
 	{
@@ -1981,7 +1983,7 @@ public class SqlDatabaseIO
 	{
 		return new PropertiesSqlDao(this);
 	}
-	
+
 	@Override
 	public DataTypeDAI makeDataTypeDAO()
 	{
@@ -1994,7 +1996,7 @@ public class SqlDatabaseIO
 		{
 			return oracleDateParser.getTimeStamp(rs, column);
 		}
-		try 
+		try
 		{
 			java.sql.Timestamp ts = rs.getTimestamp(column, readCal);
 			if (rs.wasNull())
@@ -2165,7 +2167,7 @@ public class SqlDatabaseIO
 		if (getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
 			return new ScheduleEntryDAO(this);
 		else
-			return null; 
+			return null;
 	// ISSUE: I need to have an xml schedule entry DAO or none at all?
 	// XmlScheduleEntryDAO wants parent to be XmlDatabaseIO.
 	}
@@ -2192,7 +2194,7 @@ public class SqlDatabaseIO
 		if (getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
 			return new PlatformStatusDAO(this);
 		else
-			return null; 
+			return null;
 	}
 
 	@Override
@@ -2200,7 +2202,7 @@ public class SqlDatabaseIO
 	{
 		return new DeviceStatusDAO(this);
 	}
-	
+
 	@Override
 	public DacqEventDAI makeDacqEventDAO()
 	{
@@ -2216,7 +2218,7 @@ public class SqlDatabaseIO
 		// This is a CWMS thing. Base class returns null.
 		return null;
 	}
-	
+
 	public OracleDateParser makeOracleDateParser(TimeZone tz)
 	{
 		return new OracleDateParser(tz);

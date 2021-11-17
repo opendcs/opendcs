@@ -34,4 +34,9 @@ public class HistoryRetrieval
 	{
 		return spec;
 	}
+	
+	public String toString()
+	{
+		return spec.toString() + " start=" + start + ", end=" + end;
+	}
 }

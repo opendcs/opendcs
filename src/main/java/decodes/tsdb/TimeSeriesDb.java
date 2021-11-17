@@ -6,10 +6,10 @@
 *  source code for your own purposes, except that no part of the information
 *  contained in this file may be claimed to be proprietary.
 *
-*  Except for specific contractual terms between ILEX and the federal 
+*  Except for specific contractual terms between ILEX and the federal
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
-*  
+*
 *  $Log: TimeSeriesDb.java,v $
 *  Revision 1.25  2020/02/14 15:15:40  mmaloney
 *  dev
@@ -290,7 +290,7 @@
 *  added getMediumIdForPlatform
 *
 *  Revision 1.69  2011/10/05 17:07:40  mmaloney
-*  moved determineTsdbVersion to this base-class setConnection method. 
+*  moved determineTsdbVersion to this base-class setConnection method.
 *
 *  Revision 1.68  2011/06/16 14:06:55  mmaloney
 *  move doQuery2 to base class
@@ -407,8 +407,11 @@ import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 //import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -480,14 +483,14 @@ public abstract class TimeSeriesDb
 	implements HasProperties, DatabaseConnectionOwner
 {
 	public static String module = "tsdb";
-	
+
 	/** The application ID of the connected program */
 	protected DbKey appId = Constants.undefinedId;
 
 	/** The model run ID currently in use for writing data. */
 	protected int writeModelRunId;
 
-	/** 
+	/**
 	 * Flag indicating test mode: If set no changes should be made
 	 * to the database. Log messages only.
 	 */
@@ -522,8 +525,8 @@ public abstract class TimeSeriesDb
 	/** TSDB description */
 	public String tsdbDescription;
 
-	/** 
-	* Set to true if the SDI is sufficient to specify a unique time series. 
+	/**
+	* Set to true if the SDI is sufficient to specify a unique time series.
 	* For USBR-HDB: false, interval and table selector are also required.
 	* for USACE-CWMS: true - SDI is ts_code, which is unique key.
 	*/
@@ -538,7 +541,7 @@ public abstract class TimeSeriesDb
 	protected String decodesDatabaseOptions = "";
 
 	protected String dbUser = "unknown";
-	
+
 	protected Properties props = new Properties();
 
 	protected String cpCompDepends_col1 = null;
@@ -550,16 +553,16 @@ public abstract class TimeSeriesDb
 	private OracleDateParser oracleDateParser = null;
 	protected String databaseTimezone = "UTC";
 	protected boolean _isOracle = false;
-	
-	/** 
+
+	/**
 	 * Set by the reclaimTasklistSec Computation App Property.
 	 * Default=0, meaning that the feature is disabled.
 	 */
 	protected int reclaimTasklistSec = 0;
-	
+
 	// If reclaimTasklistSec > 0, this is the time the reclaim was last done.
 	protected long lastReclaimMsec = 0L;
-	
+
 	/**
 	 * Lazy initialization, called at the first time a date or timestamp
 	 * is needing to be parsed or formatted. Can't do this in the constructor
@@ -571,7 +574,7 @@ public abstract class TimeSeriesDb
 	public TimeSeriesDb()
 	{
 //		DecodesSettings settings = DecodesSettings.instance();
-		
+
 		writeModelRunId = Constants.undefinedIntKey;
 		testMode = false;
 		conn = null;
@@ -591,7 +594,7 @@ public abstract class TimeSeriesDb
 	public Connection getConnection() { return conn; }
 
 	/**
-	 * Sets the JDBC connection in use by this object. 
+	 * Sets the JDBC connection in use by this object.
 	 * @param conn the connection
 	 */
 	public void setConnection(Connection conn)
@@ -601,7 +604,7 @@ public abstract class TimeSeriesDb
 	}
 
 	public KeyGenerator getKeyGenerator() { return keyGenerator; }
-	
+
 	/**
 	 * Uses the class in DecodesSettings to create a key generator.
 	 * @throws BadConnectException on any error.
@@ -621,9 +624,9 @@ public abstract class TimeSeriesDb
 				"Cannot initialize key generator from class '" + keyGenClass
 					+ "' :" + ex.toString());
 		}
-	}	
+	}
 
-	
+
 	//==================================================================
 	// The following helper-methods may be called or overloaded by the
 	// concrete subclass.
@@ -747,7 +750,7 @@ public abstract class TimeSeriesDb
 	{
 		if (field == null)
 			return "NULL";
-		else 
+		else
 		{
 			// Have to escape any single quotes in the string.
 			if (field.indexOf('\'') >= 0)
@@ -799,16 +802,16 @@ public abstract class TimeSeriesDb
 			return false;
 		}
 	}
-	
+
 
 
 	//===================================================================
-	// The following methods form the main interface for a time series 
+	// The following methods form the main interface for a time series
 	// database. The abstract ones must be overloaded.
 	//===================================================================
 
 	/**
-	 * Connect this app to the database and return appID. 
+	 * Connect this app to the database and return appID.
 	 * The credentials property set contains username, password,
 	 * etc, for connecting to database.
 	 * <p>
@@ -820,8 +823,8 @@ public abstract class TimeSeriesDb
 	 */
 	public abstract DbKey connect( String appName, Properties credentials )
 		throws BadConnectException;
-	
-	
+
+
 	/**
 	 * Provides common post-connect initialization like loading the intervals
 	 * and setting the application ID.
@@ -830,10 +833,10 @@ public abstract class TimeSeriesDb
 		throws BadConnectException
 	{
 		determineTsdbVersion(getConnection(), this);
-		
+
 		// If an application name is provided, lookup the ID.
 		if (appName != null && appName.trim().length() > 0)
-		{	
+		{
 			LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
 			try
 			{
@@ -848,7 +851,7 @@ public abstract class TimeSeriesDb
 				throw new BadConnectException(msg);
 			}
 		}
-		
+
 		// Load the intervals
 		IntervalDAI intervalDAO = this.makeIntervalDAO();
 		try { intervalDAO.loadAllIntervals(); }
@@ -860,7 +863,7 @@ public abstract class TimeSeriesDb
 			ex.printStackTrace(System.err);
 		}
 	}
-	
+
 	/**
 	 * Unconditionally close the connection.
 	 */
@@ -930,7 +933,7 @@ public abstract class TimeSeriesDb
 			siteDao.close();
 		}
 	}
-	
+
 	/**
 	 * Looks up the SDI for and sets it within a DbCompParm.
 	 * Called from GUI when making assignment from site ID & data type.
@@ -941,7 +944,7 @@ public abstract class TimeSeriesDb
 	public abstract void setParmSDI(DbCompParm parm, DbKey siteId, String dtcode)
 		throws DbIoException, NoSuchObjectException;
 
-	
+
 	/**
 	 * Fills a time series with values from the given date range (inclusive).
 	 * Must handle any unit conversions required between the unitsAbbr
@@ -976,7 +979,7 @@ public abstract class TimeSeriesDb
 	 * @param until the upper-bound of the range
 	 * @param include_lower true to include value at the lower-bound time.
 	 * @param include_upper true to include value at the upper-bound time.
-	 * @param overwriteExisting 
+	 * @param overwriteExisting
 	 * @return number of values added to the time series.
 	 * @throws DbIoException on Database IO error.
 	 * @throws BadTimeSeriesException if time series doesn't exist.
@@ -1021,7 +1024,7 @@ public abstract class TimeSeriesDb
 			timeSeriesDAO.close();
 		}
 	}
-	
+
 	/**
 	 * Retrieves the previous value to the specified time and stores it in the
 	 * passed time series. That is the most recent value with a time stamp
@@ -1100,51 +1103,112 @@ public abstract class TimeSeriesDb
 		RecordRangeHandle rrh = dc.getTasklistHandle();
 		if (rrh == null)
 			return;
-		while(rrh.size() > 0)
-		{
-			String q = "delete from CP_COMP_TASKLIST "
-			  + "where RECORD_NUM IN (" + rrh.getRecNumList(250) + ")";
-			tsDAO.doModify(q);
-		}
 
 		int maxRetries = DecodesSettings.instance().maxComputationRetries;
 		boolean doRetryFailed = DecodesSettings.instance().retryFailedComputations;
 
-		while(rrh.getFailedRecnums().size() > 0)
-		{
-			String failRecNumList = rrh.getFailedRecNumList(250);
+		// Oracle was providing things in the wrong timestamp using current_timestamp.
+		// TODO: needs to be checked against Postgres
+		String curTime = this.isOracle() ? "sysdate" : "current_timestamp" ;
+		try(
+			PreparedStatement deleteNormal = conn.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
+			PreparedStatement deleteFailedAfterMaxRetries = conn.prepareStatement(
+					  "delete from CP_COMP_TASKLIST "
+					+ "where RECORD_NUM = ? " // failRecList
+					+ "and ((" + curTime + " - DATE_TIME_LOADED) > " // curTimeName
+					+ "INTERVAL '? hour')" ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
+			PreparedStatement updateFailedRetry = conn.prepareStatement(
+				"update CP_COMP_TASKLIST set FAIL_TIME = ? where RECORD_NUM = ? and "
+			+	"( (" + curTime + " - DATE_TIME_LOADED) <= INTERVAL '? hour')");
+			PreparedStatement updateFailTime = conn.prepareStatement(
+				"UPDATE CP_COMP_TASKLIST "
+			+	" SET FAIL_TIME = " + curTime
+			+   " where record_num = ?"
+				);
 
-			// Add the retry limit for failed computations
-			if (doRetryFailed && maxRetries > 0)
+
+		){
+			while(rrh.size() > 0)
 			{
-				String q = "delete from CP_COMP_TASKLIST "
-						  + "where RECORD_NUM IN (" + failRecNumList + ") "
-						  + "and ((" + curTimeName + " - DATE_TIME_LOADED) > "
-						  + String.format(maxCompRetryTimeFrmt, maxRetries) + ")";
-				tsDAO.doModify(q);
-				commit();
-				q = "update CP_COMP_TASKLIST set FAIL_TIME = " + curTimeName +
-					" where RECORD_NUM in(" + failRecNumList + ")" + 
-					" and ((" + curTimeName + " - DATE_TIME_LOADED) <= "
-					+ String.format(maxCompRetryTimeFrmt, maxRetries) + ")";
-				tsDAO.doModify(q);
-				commit();
-			} 
-			else
-			{
-				// DB V5 handles failed computations by setting a FAIL_TIME
-				// on the task list record. Previous version just delete record.
-				String q = (tsdbVersion >= 4 && doRetryFailed)
-				  ?	("UPDATE CP_COMP_TASKLIST SET FAIL_TIME = " + curTimeName)
-				  : "DELETE FROM CP_COMP_TASKLIST ";
-				q = q + " WHERE RECORD_NUM IN (" 
-					+ failRecNumList + ")";
-				tsDAO.doModify(q);
-				commit();
+				String []records = rrh.getRecNumList(250).split(",");
+				for( String rec: records ){
+					if( "".equalsIgnoreCase(rec) ) continue;
+					deleteNormal.setLong(1, Long.parseLong(rec.trim()));
+					deleteNormal.addBatch();
+				}
+
+				deleteNormal.executeBatch();
 			}
+
+			while(rrh.getFailedRecnums().size() > 0)
+			{
+				String failRecNumList = rrh.getFailedRecNumList(250);
+				String records[] = failRecNumList.split(",");
+				//Array failRecs = conn.createArrayOf("integer", failRecNumList.split(","));
+				// Add the retry limit for failed computations
+				if (doRetryFailed && maxRetries > 0)
+				{
+					debug3("updating failed records based on retry count");
+					for( String rec: records ){
+						if( "".equalsIgnoreCase(rec) ) continue;
+						deleteFailedAfterMaxRetries.setLong(1,Long.parseLong(rec.trim()));
+						//deleteFailedAfterMaxRetries.setString(2,curTimeName);
+						deleteFailedAfterMaxRetries.setInt(2,maxRetries);
+						deleteFailedAfterMaxRetries.addBatch();
+					}
+					deleteFailedAfterMaxRetries.executeBatch();
+					info("deleted failed recs past retry in (" + failRecNumList +")" );
+					for( String rec: records){
+						if( "".equalsIgnoreCase(rec) ) continue;
+						//updateFailedRetry.setString(1,curTimeName);
+						updateFailedRetry.setLong(1,Long.parseLong(rec.trim()));
+						updateFailedRetry.setInt(2, maxRetries);
+						updateFailedRetry.addBatch();
+
+					}
+					updateFailedRetry.executeBatch();
+					info("updated fail time on (" + failRecNumList + "))" );
+				}
+				else
+				{
+					// DB V5 handles failed computations by setting a FAIL_TIME
+					// on the task list record. Previous version just delete record.
+					if( tsdbVersion >= 4 && doRetryFailed ) {
+						debug3("updating failed records");
+						for( String rec: records ){
+							//updateFailTime.setString(1, curTimeName);
+							updateFailTime.setLong(1, Long.parseLong(rec.trim()));
+							//updateFailTime.setArray(2, failRecs);
+							updateFailTime.execute();
+						}
+						updateFailTime.executeBatch();
+						info("updated fail time on (" + failRecNumList + "))" );
+					} else {
+						for( String rec: records ){
+							if( "".equalsIgnoreCase(rec) ) continue;
+							deleteNormal.setLong(1, Long.parseLong(rec.trim()));
+							deleteNormal.addBatch();
+						}
+
+						deleteNormal.executeBatch();
+						info("deleted failed records: (" +failRecNumList +" )" );
+					}
+					commit();
+				}
+
+			}
+
+		} catch( SQLException err ){
+					//warning(err.getLocalizedMessage());
+					StringWriter sw = new StringWriter();
+					PrintWriter pw = new PrintWriter(sw);
+					err.printStackTrace(pw);
+					warning("removing items from task list failed:");
+					warning(sw.toString());
+					throw new DbIoException(err.getLocalizedMessage());
 		}
 	}
-	
+
 	/**
 	 * Called when allowed by properties and when the tasklist is empty.
 	 * Enabled by Decodes Setting reclaimTasklistSec. The default is 0 meaning
@@ -1155,7 +1219,7 @@ public abstract class TimeSeriesDb
 	public void reclaimTasklistSpace(TimeSeriesDAI dao)
 		throws DbIoException
 	{
-		if (isOracle() 
+		if (isOracle()
 		 && reclaimTasklistSec > 0
 		 && System.currentTimeMillis() - lastReclaimMsec > (reclaimTasklistSec*1000L))
 		{
@@ -1167,7 +1231,6 @@ public abstract class TimeSeriesDb
 		}
 		// Unnecessary for PostgreSQL because auto-vacuum should be on
 	}
-	
 
 	/**
 	 * Sets the model run id for subsequent write operations of modeled data.
@@ -1177,7 +1240,7 @@ public abstract class TimeSeriesDb
 	{
 		this.writeModelRunId = modelRunId;
 	}
-	
+
 	@Override
 	public int getWriteModelRunId()
 	{
@@ -1205,7 +1268,7 @@ public abstract class TimeSeriesDb
 	 * Validate the passed information to make sure it represents a valid
 	 * parameter within this database. If not, throw ConstraintException.
 	 */
-	public abstract void validateParm(DbKey siteId, String dtcode, 
+	public abstract void validateParm(DbKey siteId, String dtcode,
 		String interval, String tabSel, int modelId)
 		throws ConstraintException, DbIoException;
 
@@ -1221,26 +1284,26 @@ public abstract class TimeSeriesDb
 		return Constants.undefinedIntKey;
 	}
 
-	
-	
+
+
 	/**
 	 * Finds the correct coefficient stored in the database for a specific set
-	 * of sdi, table selector, interval, and date. Assumes Oct 1 as beginning 
+	 * of sdi, table selector, interval, and date. Assumes Oct 1 as beginning
 	 * of year.
 	 * @param sdi the Site datatype id
 	 * @param ts the table selector
 	 * @param interval the interval
 	 * @param date the date of interest
 	 * @return the value of the coefficient
-	 * @throws DbCompException 
+	 * @throws DbCompException
 	 */
-	public double getCoeff(DbKey sdi, String ts, String interval, 
+	public double getCoeff(DbKey sdi, String ts, String interval,
 		Date date)
 		throws DbIoException, DbCompException
 	{
 		throw new DbIoException("Method getCoeff not implemented.");
 	}
-	
+
 	/**
 	 * Given a data type code of unknown standard, attempt to
 	 * interpret it as an existing data type in the database.
@@ -1262,7 +1325,7 @@ public abstract class TimeSeriesDb
 	}
 
 	/**
-	 * Used to present user with a list of valid datatypes 
+	 * Used to present user with a list of valid datatypes
 	 * for a given site. Returns 2-dimensional array of Strings suitable
 	 * for populating a table from which the user can select.
 	 * The first row of the table (i.e. r[0]) must contain the column
@@ -1277,14 +1340,14 @@ public abstract class TimeSeriesDb
 	{
 		// Default impl here just returns an empty array with 1 column
 		// labeled "Data Type".
-		
+
 		String header[] = new String[1];
 		header[0] = "Data Type";
 		ArrayList<String[]> ret = new ArrayList<String[]>();
 		ret.add(header);
 		return ret;
 	}
-	
+
 	/** @return label to use for 'limit' column in tables. */
 	public String getLimitLabel() { return "Lim"; }
 
@@ -1295,11 +1358,11 @@ public abstract class TimeSeriesDb
 	{
 		return "";
 	}
-	
+
 	/** @return label to use for 'revision' column in tables. */
 	public String getRevisionLabel() { return "Rev"; }
 
-	/** 
+	/**
 	 * @return string representation of revision status represented in the flag bits.
 	 */
 	public String flags2RevisionCodes(int flags)
@@ -1307,7 +1370,7 @@ public abstract class TimeSeriesDb
 		return null;
 	}
 
-	
+
 	public DbKey getDataSourceId(DbKey appId, DbComputation comp)
 		throws DbIoException
 	{
@@ -1335,11 +1398,11 @@ public abstract class TimeSeriesDb
 		}
 		catch (SQLException ex)
 		{
-			String msg = "determineTsdbVersion() " + 
+			String msg = "determineTsdbVersion() " +
 				"Cannot determine Database Product name and/or version: " + ex;
 			Logger.instance().warning(msg);
 		}
-		
+
 		TimeZone tz = TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone);
 		String writeFmt = DecodesSettings.instance().sqlDateFormat;
 		String readFmt = DecodesSettings.instance().SqlReadDateFormat;
@@ -1361,21 +1424,21 @@ public abstract class TimeSeriesDb
 		tsdb.readTsdbProperties(con);
 		tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
 			? "TS_ID" : "SITE_DATATYPE_ID";
-		
+
 	}
-	
+
 	public OracleDateParser makeOracleDateParser(TimeZone tz)
 	{
 		return new OracleDateParser(tz);
 	}
-	
+
 	public static void readVersionInfo(DatabaseConnectionOwner dco)
 	{
 		/*
 		  Attempt to read the database's version number.
 		*/
 		int tsdbVersion = TsdbDatabaseVersion.VERSION_2;  // earliest possible value.
-		String tsdbDescription = "";	
+		String tsdbDescription = "";
 		String q = "SELECT * FROM tsdb_database_version";
 		Statement stmt = null;
 		try
@@ -1395,7 +1458,7 @@ public abstract class TimeSeriesDb
 		}
 		catch(Exception ex)
 		{
-			String msg = "readVersionInfo() " + 
+			String msg = "readVersionInfo() " +
 				"Cannot determine TimeSeries Database version: " + ex;
 			Logger.instance().warning(msg);
 			tsdbVersion = TsdbDatabaseVersion.VERSION_2;  // earliest possible value.
@@ -1430,7 +1493,7 @@ public abstract class TimeSeriesDb
 		}
 		catch(Exception ex)
 		{
-			String msg = "readTsdbProperties() " + 
+			String msg = "readTsdbProperties() " +
 				"Cannot read TimeSeries Database properties: " + ex;
 			logger.warning(msg);
 		}
@@ -1439,7 +1502,7 @@ public abstract class TimeSeriesDb
 			if (stmt != null) try { stmt.close(); } catch(Exception ex) {}
 		}
 	}
-	
+
 	public void writeTsdbProperties(Properties props)
 		throws DbIoException
 	{
@@ -1472,7 +1535,7 @@ public abstract class TimeSeriesDb
 			dao.close();
 		}
 	}
-	
+
 	public Site getSiteById(DbKey id)
 		throws DbIoException, NoSuchObjectException
 	{
@@ -1484,7 +1547,7 @@ public abstract class TimeSeriesDb
 		}
 	}
 
-	/** 
+	/**
 	 * Adds a property to this object's meta-data.
 	 * @param name the property name.
 	 * @param value the property value.
@@ -1516,11 +1579,11 @@ public abstract class TimeSeriesDb
 	/**
 	 * The first string is the label for site/location
 	 * The second string is the label for data type/param
-	 * 
+	 *
 	 * @return
 	 */
 	public abstract String[] getTsIdParts();
-	
+
 	/**
 	 * Removes a property assignment.
 	 * @param name the property name.
@@ -1562,7 +1625,7 @@ public abstract class TimeSeriesDb
 	{
 		Logger.instance().fatal(module + " " + msg);
 	}
-	
+
 	/**
 	 * Construct a new TSID object appropriate for this DB, but do no I/O.
 	 * @return new, empty TSID object.
@@ -1755,19 +1818,18 @@ public abstract class TimeSeriesDb
 	public abstract boolean transformUniqueString(TimeSeriesIdentifier tsidRet,
 		DbCompParm parm);
 
-
 	public String getDbUser() { return dbUser; }
-	
+
 	@Override
 	public boolean isCwms() { return false; }
-	
+
 	@Override
 	public boolean isHdb() { return false; }
-	
+
 	@Override
 	public boolean isOpenTSDB() { return false; }
 
-	
+
 	public ArrayList<String> listParamTypes()
 		throws DbIoException
 	{
@@ -1780,7 +1842,7 @@ public abstract class TimeSeriesDb
 	 * @return
 	 */
 	public String[] getDataTypesByStandard(String dataTypeStandard)
-	  throws DbIoException 
+	  throws DbIoException
 	{
 		ArrayList<String> ret = new ArrayList<String>();
 
@@ -1817,9 +1879,9 @@ public abstract class TimeSeriesDb
 
 		return retString;
 	}
-	
+
 	public String[] getParamTypes() throws DbIoException { return null; }
-	
+
 	/**
 	 * Passed one of the 'part' specifiers of a TimeSeriesIdentifier. If the
 	 * database defines a limited set of valid choices, return the list.
@@ -1892,15 +1954,15 @@ public abstract class TimeSeriesDb
 		}
 		return cts.getDependentCompIds().size();
 	}
-	
+
 //	public void removeTsDependencies(TimeSeriesIdentifier tsid)
 //		throws DbIoException
 //	{
 //		DbKey key = tsid.getKey();
 //		// Remove any computation dependencies to this time-series.
-//		doModify("DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = " 
+//		doModify("DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = "
 //			+ key);
-//		
+//
 //		// Disable any computations that use this time-series as input or
 //		// output.
 //		String q = "select distinct a.computation_id from "
@@ -1911,7 +1973,7 @@ public abstract class TimeSeriesDb
 //		String mq = "update cp_computation set enabled = 'N' "
 //			+ "where computation_id in (" + q + ")";
 //		doModify(mq);
-//		
+//
 //		// If this ts is explicitly included in a group, remove it.
 //		q = "delete from tsdb_group_member_ts where "
 //			+ (getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
@@ -1970,7 +2032,7 @@ public abstract class TimeSeriesDb
 			timeSeriesDAO.close();
 		}
 	}
-	
+
 	/**
 	 * Given a time-series identifier, make a CTimeSeries
 	 * object, populated with meta-data from the database.
@@ -1983,7 +2045,7 @@ public abstract class TimeSeriesDb
 		throws DbIoException, NoSuchObjectException
 	{
 		DbKey sdi = isHdb() ? ((HdbTsId)tsid).getSdi() : tsid.getKey();
-		CTimeSeries ret = new CTimeSeries(sdi, tsid.getInterval(), 
+		CTimeSeries ret = new CTimeSeries(sdi, tsid.getInterval(),
 			tsid.getTableSelector());
 		ret.setTimeSeriesIdentifier(tsid);
 		ret.setDisplayName(tsid.getDisplayName());
@@ -2027,7 +2089,7 @@ public abstract class TimeSeriesDb
 	{
 		warning("writeTasklistRecord not implemented");
 	}
-	
+
 	/**
 	 * Use database-specific flag definitions to determine whether the
 	 * passed variable should be considered 'questionable'.
@@ -2039,7 +2101,7 @@ public abstract class TimeSeriesDb
 		// The base class implementation here always returns false.
 		return false;
 	}
-	
+
 	/**
 	 * Use database-specific flag definitions to set the passed variable
 	 * as 'questionable'.
@@ -2050,13 +2112,13 @@ public abstract class TimeSeriesDb
 		// The base class implementation here does nothing.
 		return;
 	}
-	
+
 	public void setTsdbVersion(int version, String description)
 	{
 		this.tsdbVersion = version;
 		this.tsdbDescription = description;
 	}
-	
+
 	public void setDecodesDatabaseVersion(int version, String options)
 	{
 		this.decodesDatabaseVersion = version;
@@ -2074,25 +2136,25 @@ public abstract class TimeSeriesDb
 	{
 		return new PropertiesSqlDao(this);
 	}
-	
+
 	@Override
 	public DataTypeDAI makeDataTypeDAO()
 	{
 		return new DataTypeDAO(this);
 	}
-	
+
 	public boolean isOracle()
 	{
 		return _isOracle;
 	}
-	
+
 	public Date getFullDate(ResultSet rs, int column)
 	{
 		if (oracleDateParser != null)
 		{
 			return oracleDateParser.getTimeStamp(rs, column);
 		}
-		try 
+		try
 		{
 			java.sql.Timestamp ts = rs.getTimestamp(column, readCal);
 			if (rs.wasNull())
@@ -2118,19 +2180,19 @@ public abstract class TimeSeriesDb
 			}
 		}
 	}
-	
+
 	@Override
 	public String getDatabaseTimezone()
 	{
 		return databaseTimezone;
 	}
-	
+
 	@Override
 	public DbKey getAppId()
 	{
 		return appId;
 	}
-	
+
 	public void setAppId(DbKey appId)
 	{
 		this.appId = appId;
@@ -2154,16 +2216,16 @@ public abstract class TimeSeriesDb
 			return ts;
 		return "'" + ts + "'";
 	}
-	
+
 	@Override
 	public SimpleDateFormat getLogDateFormat() { return debugDateFmt; }
-	
+
 	@Override
 	public SiteDAI makeSiteDAO()
 	{
 		return new SiteDAO(this);
 	}
-	
+
 	public XmitRecordDAO makeXmitRecordDao(int maxDays)
 	{
 		return new XmitRecordDAO(this, maxDays);
@@ -2180,7 +2242,7 @@ public abstract class TimeSeriesDb
 	{
 		return new AlgorithmDAO(this);
 	}
-	
+
 	@Override
 	public TsGroupDAI makeTsGroupDAO()
 	{
@@ -2192,19 +2254,19 @@ public abstract class TimeSeriesDb
 	{
 		return new ComputationDAO(this);
 	}
-	
+
 	@Override
 	public CompDependsDAI makeCompDependsDAO()
 	{
 		return new CompDependsDAO(this);
 	}
-	
+
 	@Override
 	public PlatformStatusDAI makePlatformStatusDAO()
 	{
 		return new PlatformStatusDAO(this);
 	}
-	
+
 	@Override
 	public DeviceStatusDAI makeDeviceStatusDAO()
 	{
@@ -2216,20 +2278,20 @@ public abstract class TimeSeriesDb
 	{
 		return new DacqEventDAO(this);
 	}
-	
+
 	@Override
-	public ScreeningDAI makeScreeningDAO() 
+	public ScreeningDAI makeScreeningDAO()
 		throws DbIoException
 	{
 		// This is a CWMS thing. So Base class returns null.
 		return null;
 	}
-	
+
 	public GroupHelper makeGroupHelper()
 	{
 		return null;
 	}
-	
+
 	@Override
 	public ArrayList<TimeSeriesIdentifier> expandTsGroup(TsGroup tsGroup)
 		throws DbIoException
@@ -2240,7 +2302,7 @@ public abstract class TimeSeriesDb
 		groupHelper.expandTsGroup(tsGroup);
 		return tsGroup.getExpandedList();
 	}
-	
+
 	/**
 	 * Perform a database-specific rating. This method should be overloaded by concrete
 	 * database class if the database supports rating.
@@ -2261,13 +2323,13 @@ public abstract class TimeSeriesDb
 	{
 		return new ArrayList<String>();
 	}
-	
+
 	@Override
 	public AlarmDAI makeAlarmDAO()
 	{
 		return new AlarmDAO(this);
 	}
-	
+
 	/**
 	 * Given a datatype, return the default storage units for that data type
 	 * in this database. CWMS and HDB implement this differently. The default
@@ -2279,7 +2341,7 @@ public abstract class TimeSeriesDb
 	{
 		return null;
 	}
-	
+
 	/**
 	 * Convert a time series flag value into a character representation. Flag bits
 	 * are defined differently in the underlying databases.
