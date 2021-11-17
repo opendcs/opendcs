@@ -26,7 +26,8 @@ jobs:
           tar -xvzf opendcs-dep.tgz
       - name: Compile
         run: |
+          echo "${OPENDCS_REPO}"
           ant test -lib lib/
           ant jar
         env:
-          OPENDCS_REPO: ${GITHUB_WORKSPACE}
+          OPENDCS_REPO: ${{github.workspace}}
