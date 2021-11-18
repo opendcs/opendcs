@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest,windows-latest,macos-latest]
+        platform: [ubuntu-latest,macos-latest]
     runs-on: ${{matrix.platform}}
     steps:
       - uses: actions/checkout@v2
@@ -21,8 +21,8 @@ jobs:
         run: |
           mkdir -p $HOME/Documents/workspace-2019
           mkdir izpack_home
-          curl http://www.covesw.com/download/build/IzPack-4.3.3.tgz --output izpack.tgz
-          curl http://www.covesw.com/download/build/opendcs-dep.tgz --output opendcs-dep.tgz
+          curl http://www.covesw.com/download/build/IzPack-4.3.3.tgz --output izpack.tgz -#
+          curl http://www.covesw.com/download/build/opendcs-dep.tgz --output opendcs-dep.tgz -#
           tar -xzf izpack.tgz -C izpack_home --strip 1
           tar -xzf opendcs-dep.tgz
       - name: Compile
