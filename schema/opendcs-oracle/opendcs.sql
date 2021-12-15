@@ -811,7 +811,7 @@ CREATE TABLE TSDB_DATA_SOURCE
 	-- If computation, this is comp name
 	-- If modeled, this is the model name, etc.
 	MODULE VARCHAR2(120),
-	PRIMARY KEY (SOURCE_ID),
+	PRIMARY KEY (SOURCE_ID)
 ) &TBL_SPACE_SPEC;
 
 
