@@ -149,7 +149,7 @@ public class NetworkDcpCfgPanel
 	
 	private void addPressed()
 	{
-		DrgsConnectCfg cfg = new DrgsConnectCfg(conTable.getRowCount(), "");
+		DrgsConnectCfg cfg = new DrgsConnectCfg(model.findFreeConnectNum(), "");
 		NetworkDcpDialog dlg = new NetworkDcpDialog(parent);
 		dlg.setInfo(cfg);
 		parent.launchDialog(dlg);
@@ -256,6 +256,39 @@ class NetworkDcpTableModel
 	ArrayList<DrgsConnectCfg> cons;
 	boolean modified = false;
 	int sortColumn = 0;
+	
+	public int findFreeConnectNum()
+	{
+		// Sort list by connection #
+		Collections.sort(cons,
+			new Comparator<DrgsConnectCfg>()
+			{
+				@Override
+				public int compare(DrgsConnectCfg o1, DrgsConnectCfg o2)
+				{
+					return o1.connectNum - o2.connectNum;
+				}
+			});
+
+		try
+		{
+			// Look for any gaps in connection #
+			int prev = -1;
+			for(DrgsConnectCfg con : cons)
+			{
+				if (con.connectNum != prev + 1)
+					return prev + 1;
+				prev = con.connectNum;
+			}
+			// No gaps - increment last connectionNum
+			return prev + 1;
+		}
+		finally
+		{
+			// Reorder list back to what it was.
+			sortByColumn(sortColumn);
+		}
+	}
 	
 	public NetworkDcpTableModel()
 	{
