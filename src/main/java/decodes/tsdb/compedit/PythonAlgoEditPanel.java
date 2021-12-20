@@ -95,6 +95,7 @@ import decodes.tsdb.ScriptType;
 //import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.algo.AWAlgoType;
 //import decodes.tsdb.algo.PythonAlgorithm;
+import decodes.util.DecodesSettings;
 
 
 /**
@@ -297,19 +298,19 @@ Logger.instance().debug1("PythonAlgoEditPanel.fillValues script "
 			Style style = beforeScriptPane.addStyle(ptt.name(), null);
 			StyleConstants.setFontFamily(style, "Monospaced");
 			StyleConstants.setFontSize(style, 
-				(fsize = StyleConstants.getFontSize(style) + 1));
+				(fsize = StyleConstants.getFontSize(style) + 1 + DecodesSettings.instance().fontAdjust));
 			StyleConstants.setForeground(style, ptt.getDisplayColor());
 
 			style = timeSliceScriptPane.addStyle(ptt.name(), null);
 			StyleConstants.setFontFamily(style, "Monospaced");
 			StyleConstants.setFontSize(style, 
-				StyleConstants.getFontSize(style) + 1);
+				StyleConstants.getFontSize(style) + 1 + DecodesSettings.instance().fontAdjust);
 			StyleConstants.setForeground(style, ptt.getDisplayColor());
 
 			style = afterScriptPane.addStyle(ptt.name(), null);
 			StyleConstants.setFontFamily(style, "Monospaced");
 			StyleConstants.setFontSize(style, 
-				StyleConstants.getFontSize(style) + 1);
+				StyleConstants.getFontSize(style) + 1 + DecodesSettings.instance().fontAdjust);
 			StyleConstants.setForeground(style, ptt.getDisplayColor());
 		}
 		
