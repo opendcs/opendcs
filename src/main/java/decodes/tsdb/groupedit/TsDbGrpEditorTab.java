@@ -34,13 +34,8 @@ public abstract class TsDbGrpEditorTab extends JPanel
 	*/
 	public void launchDialog(JDialog dlg)
 	{
-		JFrame jf = TopFrame.instance();
-		Point loc = jf.getLocation();
-		Dimension frmSize = jf.getSize();
-		Dimension dlgSize = dlg.getPreferredSize();
-		int x = (frmSize.width - dlgSize.width) / 2 + loc.x;
-		int y = (frmSize.height - dlgSize.height) / 2 + loc.y;
-		dlg.setLocation(x, y);
+		dlg.validate();
+		dlg.setLocationRelativeTo(TopFrame.instance());
 		dlg.setVisible(true);
 	}
 
