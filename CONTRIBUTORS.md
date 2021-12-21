@@ -6,6 +6,8 @@
 
 - Copyright 2012-2019 U.S. Federal Government (in countries where recognized)
 -                     Michael A Neilson (michael.a.neilson@usace.army.mil)
+- Copyright 2021 Resource Management Associates Inc.
+-                    Adam Korynta (adam@rmanet.com)
 - _Add the copyright date, your name, and email address here. (PLEASE KEEP THIS LINE)_
 
 ## Note for U.S. Federal Employees
@@ -23,3 +25,4 @@ Sutron Corporation
 Cove Software, LLC
 Precision Water Resources Engineering
 Xcellious Consulting
+Resource Management Associates
