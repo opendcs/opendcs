@@ -577,19 +577,11 @@ public class StatusDisplayFrame extends JFrame {
 		myPollThread.cmd = "flush all";
 	}
 
-	protected void launchDialog(JDialog dlg) {
+	private void launchDialog(JDialog dlg) {
 		dlg.setModal(true);
-		java.awt.Point loc = this.getLocation();
-		Dimension frmSize = this.getSize();
-		Dimension dlgSize = dlg.getPreferredSize();
-		int x = (frmSize.width - dlgSize.width) / 2 + loc.x;
-		if (x < 0)
-			x = 10;
-		int y = (frmSize.height - dlgSize.height) / 2 + loc.y;
-		if (y < 0)
-			y = 10;
-		dlg.setLocation(x, y);
-		dlg.show();
+		dlg.validate();
+		dlg.setLocationRelativeTo(this);
+		dlg.setVisible(true);
 	}
 
 	public void addEvent(String event, String from) {
