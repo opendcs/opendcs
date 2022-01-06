@@ -122,9 +122,11 @@ public class HDBRatingTable {
 		else try 
 		{
 			q="select effective_start_date_time,effective_end_date_time from ref_site_rating " +
-			"where rating_id = ?";
+			"where rating_id = ? and rating_type_common_name = ? and indep_site_datatype_id = ? ";
 			cstmt = conn.prepareCall(q);
 			cstmt.setInt(1, (int)ratingId.getValue());
+			cstmt.setString(2, ratingType);
+			cstmt.setInt(3, (int)sdi.getValue());
 
 			Boolean result = cstmt.execute();
 			if (!result) {
