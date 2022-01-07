@@ -2239,5 +2239,11 @@ public class SqlDatabaseIO
 			return true;
 	}
 
+	@Override
+	public void freeConnection(Connection conn)
+	{
+		// Base class stub does nothing.
+	}
+
 
 }
