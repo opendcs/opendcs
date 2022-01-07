@@ -104,6 +104,7 @@ import ilex.var.TimedVariable;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -164,6 +165,8 @@ public class CwmsTimeSeriesDAO
 //	private String cwmsTsidJoinClause = "a.LOCATION_CODE = c.LOCATION_CODE "
 //		+ " AND c.UNIT_SYSTEM = 'SI'";
 	private long lastTsidCacheRead = 0L;
+	private PreparedStatement getMinStmt = null, getTaskListStmt;
+    String getMinStmtQuery = null, getTaskListStmtQuery = null;
 
 
 	protected CwmsTimeSeriesDAO(DatabaseConnectionOwner tsdb, String dbOfficeId)
@@ -1296,7 +1299,6 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 		// Not implemented for CWMS
 	}
 	
-	
 	@Override
 	public DataCollection getNewData(DbKey applicationId)
 		throws DbIoException
@@ -1310,37 +1312,42 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 
 		DataCollection dataCollection = new DataCollection();
 
-		// MJM 2/14/18 - From Dave Portin. Original failTimeClause was:
-		//		" and (a.FAIL_TIME is null OR "
-		//		+ "SYSDATE - to_date("
-		//		+ "to_char(a.FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
-		//		+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
-
 		int minRecNum = -1;
-		
-		String failTimeClause =
-			DecodesSettings.instance().retryFailedComputations
-			? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
-			: "";
-		// 1st query gets min record num so that I can do a range query afterward.
-		String getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
-			+ "where a.LOADING_APPLICATION_ID = " + applicationId
-			+ failTimeClause;
-	
-		// 2nd query gets tasklist recs within record_num range.
-		String getTaskListStmtQuery = 
-			"select a.RECORD_NUM, a.SITE_DATATYPE_ID, ROUND(a.VALUE,8), a.START_DATE_TIME, "
-			+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
-			+ "from CP_COMP_TASKLIST a "
-			+ "where a.LOADING_APPLICATION_ID = " + applicationId
-			+ " and ROWNUM < 20000"
-			+ failTimeClause
-			+ " ORDER BY a.site_datatype_id, a.start_date_time";
-
 		try
 		{
-			ResultSet rs = doQuery(getMinStmtQuery);
-			
+			if (getMinStmt == null)
+			{
+				// 1st query gets min record num so that I can do a range query afterward.
+				String failTimeClause =
+					DecodesSettings.instance().retryFailedComputations
+					? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
+					: "";
+
+				getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
+					+ "where a.LOADING_APPLICATION_ID = ? "// + applicationId
+					+ failTimeClause;
+				getMinStmt = getConnection().prepareStatement(getMinStmtQuery);
+
+				// 2nd query gets tasklist recs within record_num range.
+				getTaskListStmtQuery =
+					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
+					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
+					+ "from CP_COMP_TASKLIST a "
+					+ "where a.LOADING_APPLICATION_ID = ?" // + applicationId
+					+ " and ROWNUM < 20000"
+					+ failTimeClause
+					+ " ORDER BY a.site_datatype_id, a.start_date_time";
+				getTaskListStmt = getConnection().prepareStatement(getTaskListStmtQuery);
+
+			}
+
+			// this may seems silly, but it allows Oracle to cache the query and it's plan for all instances
+			getMinStmt.setLong(1,applicationId.getValue());
+			getTaskListStmt.setLong(1,applicationId.getValue());
+
+			debug3("Executing prepared stmt '" + getMinStmtQuery + "'");
+			ResultSet rs = getMinStmt.executeQuery();
+
 			if (rs == null || !rs.next())
 			{
 				debug1("No new data for appId=" + applicationId);
@@ -1356,7 +1363,6 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 				((TimeSeriesDb)db).reclaimTasklistSpace(this);
 				return dataCollection;
 			}
-			debug3("minRecNum=" + minRecNum);
 		}
 		catch(SQLException ex)
 		{
@@ -1368,7 +1374,19 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 		ArrayList<Integer> badRecs = new ArrayList<Integer>();
 		try
 		{
-			ResultSet rs = doQuery(getTaskListStmtQuery);
+			getTaskListStmt.setInt(1, minRecNum);
+
+			int maxRecNum = minRecNum + 10000;
+			if (maxRecNum < minRecNum)
+			{
+				// The 32-bit integer wrapped around. Set to max possible int.
+				maxRecNum = Integer.MAX_VALUE;
+			}
+
+			getTaskListStmt.setInt(2, maxRecNum);
+
+			debug3("Executing '" + getTaskListStmtQuery + "'");
+			ResultSet rs = getTaskListStmt.executeQuery();
 			while (rs.next())
 			{
 				// Extract the info needed from the result set row.
@@ -1398,14 +1416,14 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 						}
 					}
 				}
-				else 
+				else
 					deleted = TextUtil.str2boolean(df);
-					
+
 				String unitsAbbr = rs.getString(6);
 				Date versionDate = db.getFullDate(rs, 7);
 				BigDecimal qc = rs.getBigDecimal(8);
 				long qualityCode = qc == null ? 0 : qc.longValue();
-				
+
 				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
 					valueWasNull, timeStamp, deleted,
 					unitsAbbr, versionDate, qualityCode);
@@ -1413,13 +1431,13 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 			}
 
 			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
-			
+
 			// Process the real-time records collected above.
 			for(TasklistRec rec : tasklistRecs)
 				processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
-			
+
 			dataCollection.setTasklistHandle(rrhandle);
-			
+
 			// Delete the bad tasklist recs, 250 at a time.
 			if (badRecs.size() > 0)
 				Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
@@ -1438,21 +1456,20 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 				String q = "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM IN (" + inList.toString() + ")";
 				doModify(q);
-//				commit();
 				for(int i=0; i<x; i++)
 					badRecs.remove(0);
 			}
-			
+
 			// Show each tasklist entry in the log if we're at debug level 3
 			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
 			{
 				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
 				debug3("getNewData, returning " + allts.size() + " TimeSeries.");
 				for(CTimeSeries ts : allts)
-					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " " 
+					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " "
 						+ ts.size() + " values.");
 			}
-			
+
 			return dataCollection;
 		}
 		catch(SQLException ex)
@@ -1460,6 +1477,9 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 			System.err.println("Error reading new data: " + ex);
 			ex.printStackTrace();
 			throw new DbIoException("Error reading new data: " + ex);
+		}
+		finally
+		{
 		}
 	}
 
@@ -1477,7 +1497,7 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 			try
 			{
 				TimeSeriesIdentifier tsid = getTimeSeriesIdentifier(rec.getSdi());
-				String tabsel = tsid.getPart("paramtype") + "." + 
+				String tabsel = tsid.getPart("paramtype") + "." +
 					tsid.getPart("duration") + "." + tsid.getPart("version");
 				cts = new CTimeSeries(rec.getSdi(), tsid.getInterval(),
 					tabsel);
@@ -1487,7 +1507,7 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 				if (((TimeSeriesDb)db).fillDependentCompIds(cts, applicationId, this) == 0)
 				{
 					warning("Deleting tasklist rec for '"
-						+ tsid.getUniqueString() 
+						+ tsid.getUniqueString()
 						+ "' because no dependent comps.");
 					if (badRecs != null)
 						badRecs.add(rec.getRecordNum());
@@ -1506,6 +1526,9 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 				if (badRecs != null)
 					badRecs.add(rec.getRecordNum());
 				return;
+			}
+			finally
+			{
 			}
 		}
 		else
@@ -1553,7 +1576,7 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 		TimedVariable tv = new TimedVariable(rec.getValue());
 		tv.setTime(rec.getTimeStamp());
 		tv.setFlags(CwmsFlags.cwmsQuality2flag(rec.getQualityCode()));
-		
+
 		if (!rec.isDeleted() && !rec.isValueWasNull())
 		{
 			VarFlags.setWasAdded(tv);
@@ -1575,6 +1598,9 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 		}
 	}
 
+		
+		
+		
 	
 	
 	
