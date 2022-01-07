@@ -18,7 +18,7 @@ public class SnotelPlatformSpec
 	private DcpAddress dcpAddress = null;
 	
 	/**
-	 * B=(signed) pseudobinary, A=ASCII
+	 * A=legacy format, B=new format
 	 */
 	private char dataFormat = 'B';
 	
