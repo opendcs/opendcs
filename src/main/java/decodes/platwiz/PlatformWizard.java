@@ -119,12 +119,8 @@ public class PlatformWizard
 	*/
 	public void launchDialog(JDialog dlg)
 	{
-		Point loc = frame.getLocation();
-		Dimension frmSize = frame.getSize();
-		Dimension dlgSize = dlg.getPreferredSize();
-		int x = (frmSize.width - dlgSize.width) / 2 + loc.x;
-		int y = (frmSize.height - dlgSize.height) / 2 + loc.y;
-		dlg.setLocation(x, y);
+		dlg.validate();
+		dlg.setLocationRelativeTo(frame);
 		dlg.setVisible(true);
 	}
 

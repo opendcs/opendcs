@@ -101,12 +101,8 @@ public class GuiDialog extends JDialog
 	*/
 	public void launchDialog(JDialog dlg)
 	{
-		Point loc = getLocation();
-		Dimension frmSize = getSize();
-		Dimension dlgSize = dlg.getPreferredSize();
-		int x = (frmSize.width - dlgSize.width) / 2 + loc.x;
-		int y = (frmSize.height - dlgSize.height) / 2 + loc.y;
-		dlg.setLocation(x, y);
+		dlg.validate();
+		dlg.setLocationRelativeTo(dlg);
 		dlg.setVisible(true);
 	}
 
@@ -246,6 +242,4 @@ public class GuiDialog extends JDialog
 			changeTrackFile = null;
 		}
 	}
-
-
 }

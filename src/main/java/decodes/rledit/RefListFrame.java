@@ -1239,17 +1239,12 @@ public class RefListFrame extends JFrame
 	  Launches the passed modal dialog at a reasonable position on the screen.
 	  @param dlg the dialog.
 	*/
-	protected void launchDialog(JDialog dlg)
+	private void launchDialog(JDialog dlg)
 	{
 		dlg.setModal(true);
-		java.awt.Point loc = this.getLocation();
-		Dimension frmSize = this.getSize();
-		Dimension dlgSize = dlg.getPreferredSize();
-		int x = (frmSize.width - dlgSize.width) / 2 + loc.x;
-		int y = (frmSize.height - dlgSize.height) / 2 + loc.y;
-		dlg.setLocation(x, y);
+		dlg.validate();
+		dlg.setLocationRelativeTo(this);
 		dlg.setVisible(true);
-		//dlg.show();
 	}
 
 	/**

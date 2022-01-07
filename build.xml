@@ -146,8 +146,8 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<!-- get test dependencies -->
 	<target name="test.dependencies">
-		<mkdir dir="${junit.libs}/platform"/>
-		<mkdir dir="${junit.libs}/engine"/>
+		<mkdir dir="junit.libs/platform"/>
+		<mkdir dir="junit.libs/engine"/>
 		<resolver:resolve>
 			<resolver:dependencies>
 				<resolver:dependency coords="org.junit.platform:junit-platform-launcher:1.8.1"/>
@@ -247,25 +247,6 @@ can find your git source tree and your directory with the downloaded jars.
 			</testclasses>
 		</junitlauncher>
 	</target>
-
-
-<!--
-	<target name="compile-test" depends="compile">
-		<mkdir dir="${build.testclasses}"/>
-		<javac debug="true" destdir="${build.test.classes}"
-			target="1.8" source="1.8"
-		>
-			<src path="${src.test.dir}"/>
-			<classpath refid="project.class.path"/>
-			<classpath refid="junit..platform.libs.classpath"/>
-		</javac>
-
-	</target>
-
-	<target name="test" depends="compile-test">
-
-	</target>
--->
 
 	<target name="jar" depends="compile" description="Generates opendcs.jar.">
 
