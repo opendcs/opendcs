@@ -1954,61 +1954,6 @@ public abstract class TimeSeriesDb
 		}
 		return cts.getDependentCompIds().size();
 	}
-
-//	public void removeTsDependencies(TimeSeriesIdentifier tsid)
-//		throws DbIoException
-//	{
-//		DbKey key = tsid.getKey();
-//		// Remove any computation dependencies to this time-series.
-//		doModify("DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = "
-//			+ key);
-//
-//		// Disable any computations that use this time-series as input or
-//		// output.
-//		String q = "select distinct a.computation_id from "
-//			+ "cp_computation a, cp_comp_ts_parm b "
-//			+ "where a.computation_id = b.computation_id "
-//			+ "and a.enabled = 'Y' "
-//			+ "and b.site_datatype_id = " + key;
-//		String mq = "update cp_computation set enabled = 'N' "
-//			+ "where computation_id in (" + q + ")";
-//		doModify(mq);
-//
-//		// If this ts is explicitly included in a group, remove it.
-//		q = "delete from tsdb_group_member_ts where "
-//			+ (getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-//			+ " = "+key;
-//		doModify(q);
-//	}
-//	
-//	/**
-//	 * Return the platform ID of a given type for the specified platform, or null
-//	 * if there is none.
-//	 * @param platformID the platform ID
-//	 * @param mediumType type medium type
-//	 * @return
-//	 */
-//	protected String getMediumIdForPlatform(DbKey platformID, String mediumType)
-//	{
-//		String q = "select mediumid from transportmedium"
-//			+ " where platformId = " + platformID
-//			+ " and upper(mediumtype) = " + sqlString(mediumType.toUpperCase());
-//		
-//		try
-//		{
-//			ResultSet rs = doQuery2(q);
-//			if (rs != null && rs.next())
-//				return rs.getString(1);
-//			else
-//				return null;
-//		}
-//		catch(Exception ex)
-//		{
-//			warning("Error getting medium ID for platform " + platformID
-//				+ ": " + ex);
-//			return null;
-//		}
-//	}
 	
 	/**
 	 * Given a unique time-series identifier string, make a CTimeSeries
@@ -2075,19 +2020,6 @@ public abstract class TimeSeriesDb
 			}
 		}
 		return ret;
-	}
-
-	/**
-	 * The underlying database subclass should overload this method if it wants
-	 * to implement this capability. The base class implementation logs a warning
-	 * and returns.
-	 * @param tsid The time series identifier.
-	 * @param since write tasklist records that were _loaded_ since this time.
-	 */
-	public void writeTasklistRecords(TimeSeriesIdentifier tsid, Date since)
-		throws NoSuchObjectException, DbIoException, BadTimeSeriesException
-	{
-		warning("writeTasklistRecord not implemented");
 	}
 
 	/**
@@ -2352,6 +2284,13 @@ public abstract class TimeSeriesDb
 	{
 		// Base class does nothing.
 		return "";
+	}
+	
+	
+	@Override
+	public void freeConnection(Connection conn)
+	{
+		
 	}
 
 }
