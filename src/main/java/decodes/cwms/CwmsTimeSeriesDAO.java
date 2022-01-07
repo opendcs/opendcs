@@ -1383,8 +1383,6 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 				maxRecNum = Integer.MAX_VALUE;
 			}
 
-			getTaskListStmt.setInt(2, maxRecNum);
-
 			debug3("Executing '" + getTaskListStmtQuery + "'");
 			ResultSet rs = getTaskListStmt.executeQuery();
 			while (rs.next())
