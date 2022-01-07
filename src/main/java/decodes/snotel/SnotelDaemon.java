@@ -80,7 +80,7 @@ public class SnotelDaemon
 
 			if (mylock.obtainLock() == false)
 			{
-				Logger.instance().failure("Routing Spec not started: lock file busy: " + lockpath);
+				Logger.instance().failure("Snotel Daemon not started: lock file busy: " + lockpath);
 				System.exit(1);
 			}
 			
