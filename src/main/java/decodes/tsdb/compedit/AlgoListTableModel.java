@@ -119,6 +119,11 @@ public class AlgoListTableModel
 
 	public Object getRowObject(int idx) 
 	{
+		return myList.get(idx);
+	}
+	
+	public DbCompAlgorithm getRowAlgorithm(int idx)
+	{
 		TimeSeriesDb tsdb = CAPEdit.instance().getTimeSeriesDb();
 		AlgorithmDAI algorithmDAO = tsdb.makeAlgorithmDAO();
 
@@ -138,7 +143,6 @@ public class AlgoListTableModel
 		{
 			algorithmDAO.close();
 		}
-
 	}
 
 	public int getRowCount() 

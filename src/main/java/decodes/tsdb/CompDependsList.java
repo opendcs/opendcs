@@ -64,7 +64,7 @@ public class CompDependsList
 		String joins = "a.computation_id = b.computation_id"
 			+ " and b.loading_application_id = c.loading_application_id";
 		
-		TimeSeriesDAI tsDAO = null;
+		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
 		
 		if (theDb.isHdb())
 		{
@@ -80,7 +80,6 @@ public class CompDependsList
 		}
 		else if (theDb.isOpenTSDB())
 		{
-			tsDAO = theDb.makeTimeSeriesDAO();
 			tsDAO.reloadTsIdCache();
 		}
 		

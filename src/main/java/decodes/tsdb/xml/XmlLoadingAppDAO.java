@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Date;
@@ -329,6 +330,12 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	{
 		// Only implemented for sql
 		return 0;
+	}
+
+	@Override
+	public void setManualConnection(Connection conn)
+	{
+		// Only implemented for sql
 	}
 
 }

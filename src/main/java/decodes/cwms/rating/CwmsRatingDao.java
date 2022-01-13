@@ -191,12 +191,12 @@ public class CwmsRatingDao extends DaoBase
 	public void deleteRating(CwmsRatingRef crr)
 		throws RatingException
 	{
-		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), 
+		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), 
 			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 			crr.getRatingSpecId());
 
 //		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE,
-//			db.getConnection(), 
+//			getConnection(), 
 //			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 //			crr.getRatingSpecId());
 		
@@ -217,7 +217,7 @@ public class CwmsRatingDao extends DaoBase
 		String doing = "prepare call";
 		try
 		{
-			cstmt = db.getConnection().prepareCall(q);
+			cstmt = getConnection().prepareCall(q);
 			doing = "set params for";
 			cstmt.setString(1, crr.getRatingSpecId());
 			cstmt.setString(2, sdf.format(crr.getEffectiveDate()));
@@ -249,7 +249,7 @@ public class CwmsRatingDao extends DaoBase
 		String doing = "prepare call";
 		try
 		{
-			cstmt = db.getConnection().prepareCall(q);
+			cstmt = getConnection().prepareCall(q);
 			doing = "set params for";
 			cstmt.setString(1, crr.getRatingSpecId()); 
 			cstmt.setString(2, crr.getOfficeId());
@@ -347,7 +347,7 @@ public class CwmsRatingDao extends DaoBase
 		}
 
 		Logger.instance().debug3(module + " calling storeToDatabase");
-		newSet.storeToDatabase(db.getConnection(), true);
+		newSet.storeToDatabase(getConnection(), true);
 	}
 	
 	public RatingSet getRatingSet(String specId)
@@ -371,7 +371,7 @@ public class CwmsRatingDao extends DaoBase
 					+ " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
 					+ rw.timeLoaded);
-				rw.ratingSet.setDatabaseConnection(db.getConnection());
+				rw.ratingSet.setDatabaseConnection(getConnection());
 				return rw.ratingSet;
 			}
 		}
@@ -404,9 +404,9 @@ public class CwmsRatingDao extends DaoBase
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
 //RatingSet.setAlwaysAllowUnsafe(false);
-		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), officeId, specId);
+		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), officeId, specId);
 //		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE, 
-//			db.getConnection(), officeId, specId);
+//			getConnection(), officeId, specId);
 
 		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
 		//, rcheck));
@@ -414,7 +414,7 @@ public class CwmsRatingDao extends DaoBase
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
-		ratingSet.setDatabaseConnection(db.getConnection());
+		ratingSet.setDatabaseConnection(getConnection());
 		return ratingSet;
 	}
 	

@@ -80,11 +80,25 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	}
 
 	@Override
+	public Connection getConnection()
+	{
+		// Overriding getConnection allows lazy connection setting and
+		// ensures subordinate DAOs will use same conn as this object.
+		if (myCon == null)
+		{
+			super.getConnection();
+			algorithmDAO.setManualConnection(myCon);
+			tsGroupDAO.setManualConnection(myCon);
+		}
+		return myCon;
+	}
+	
+	@Override
 	public void removeTsDependencies(TimeSeriesIdentifier tsid)
 		throws DbIoException
 	{
 		DbKey key = tsid.getKey();
-		Connection conn = db.getConnection();
+		Connection conn = getConnection();
 		boolean defaultAutoCommit = false;
 		try(
 			PreparedStatement deleteFromDepends = conn.prepareStatement(
@@ -213,7 +227,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 			}
 
 			debug3("Total dds for dependencies=" + dataIds.size());
-			Connection conn = db.getConnection();
+			Connection conn = getConnection();
 			try(
 				PreparedStatement insertDepends = conn.prepareStatement(
 				"INSERT INTO CP_COMP_DEPENDS(" + cpCompDepends_col1 + ",COMPUTATION_ID) "
@@ -279,8 +293,9 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		throws DbIoException
 	{
 		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
+		timeSeriesDAO.setManualConnection(getConnection());
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
-		Connection conn = db.getConnection();
+		Connection conn = getConnection();
 		try(
 			PreparedStatement getTriggers = conn.prepareStatement(
 				"SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "

@@ -786,9 +786,9 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		// We use the RMA Java interface to write to DB
 		try
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
 
-//			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(db.getConnection());
+//			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(getConnection());
 			
 			ArrayList<Long> msecArray = new ArrayList<Long>();
 			ArrayList<Double> valueArray = new ArrayList<Double>();
@@ -822,7 +822,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 					+ path + ", office='" + dbOfficeId 
 					+ "' with " + num2write + " values, units=" + ts.getUnitsAbbr());
 				cwmsDbTs.store(
-					db.getConnection(),
+					getConnection(),
 					dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_ALL, 
 					overrideProtection, versionDate);
@@ -851,7 +851,7 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				debug1(" Calling store (no overwrite) for ts_id="
 						+ path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
 
-				cwmsDbTs.store(db.getConnection(), dbOfficeId, path, ts.getUnitsAbbr(), times, values,
+				cwmsDbTs.store(getConnection(), dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
 					overrideProtection, versionDate);
 			}
@@ -957,8 +957,8 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				+ tsid + "' for date range: "
 				+ sdf.format(from) + " to " + sdf.format(until));
 			
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
-			cwmsDbTs.deleteTs(db.getConnection(), dbOfficeId, tsid,
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
+			cwmsDbTs.deleteTs(getConnection(), dbOfficeId, tsid,
 				from, until, true, true,   // date range inclusive on both ends
 				null,                      // version date
 				null,                      // NavigableSet<Date> use to delete specific dates
@@ -1073,9 +1073,9 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		}
 		try
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
 			debug1("Deleting TSID '" + tsid.getUniqueString() + "' from office ID=" + dbOfficeId);
-			cwmsDbTs.deleteAll(db.getConnection(), dbOfficeId, tsid.getUniqueString());
+			cwmsDbTs.deleteAll(getConnection(), dbOfficeId, tsid.getUniqueString());
 			synchronized(cache)
 			{
 				cache.remove(tsid.getKey());
@@ -1210,14 +1210,14 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		String path = tsid.getUniqueString();
 		try
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, db.getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
 			int utcOffset = 
 				IntervalCodes.getIntervalSeconds(tsid.getInterval()) == 0 ?
 				HecConstants.NO_UTC_OFFSET : HecConstants.UNDEFINED_UTC_OFFSET;
 			DbKey tsKey = Constants.undefinedId;
 
 Logger.instance().debug3("createTsCodeBigInteger(" + path + ")");
-			BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(db.getConnection(),
+			BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(getConnection(),
 				dbOfficeId,
 				path,   // 6-part path name 
 				utcOffset, // utcOfficeMinutes 
@@ -1596,10 +1596,4 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 		}
 	}
 
-		
-		
-		
-	
-	
-	
 }

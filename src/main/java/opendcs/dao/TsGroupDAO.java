@@ -173,6 +173,7 @@ public class TsGroupDAO
 		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
 		try
 		{
+			timeSeriesDAO.setManualConnection(getConnection());
 			String q = "select * from tsdb_group_member_ts "
 				+ "where group_id = " + group.getGroupId();
 			
@@ -503,6 +504,7 @@ public class TsGroupDAO
 			throw new DbIoException("Can't make timeSeriesDAO!");
 		try
 		{
+			timeSeriesDAO.setManualConnection(getConnection());
 			q = "SELECT " + GroupAttributes + " FROM tsdb_group";
 			ResultSet rs = doQuery(q);
 			while(rs != null && rs.next())

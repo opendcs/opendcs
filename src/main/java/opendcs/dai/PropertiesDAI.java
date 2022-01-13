@@ -10,6 +10,7 @@ import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
 public interface PropertiesDAI
+	extends DaiBase
 {
 	/**
 	 * Write properties to the database

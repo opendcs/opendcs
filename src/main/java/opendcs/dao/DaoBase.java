@@ -53,7 +53,7 @@ public class DaoBase
 	private Statement queryStmt2 = null;
 	private ResultSet queryResults2 = null;
 	private int fetchSize = 0;
-	private Connection myCon = null;
+	protected Connection myCon = null;
 	private boolean conSetManually = false;
 
 	protected String module;
@@ -82,6 +82,11 @@ public class DaoBase
 	{
 		this.db = tsdb;
 		this.module = module;
+		setManualConnection(con);
+	}
+	
+	public void setManualConnection(Connection con)
+	{
 		this.myCon = con;
 		conSetManually = true;
 	}

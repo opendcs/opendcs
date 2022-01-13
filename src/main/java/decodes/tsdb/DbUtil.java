@@ -352,11 +352,12 @@ public class DbUtil extends TsdbAppTemplate
 		String q = "select a.site_datatype_id from hdb_site_datatype a, hdb_site b "
 			+ "where a.site_id = b.site_id and b.site_common_name = 'TESTSITE1' "
 			+ "and a.datatype_id = 65";
-		Statement st = null;
+		DaoBase dao = null;
 		try
 		{
-			st = theDb.getConnection().createStatement();
-			ResultSet rs = st.executeQuery(q);
+			dao = new DaoBase(theDb, "test");
+			
+			ResultSet rs = dao.doQuery(q);
 			if (!rs.next())
 			{
 				System.out.println("Statement '" + q + "' did not return any results.");
@@ -365,9 +366,9 @@ public class DbUtil extends TsdbAppTemplate
 			DbKey sdi = DbKey.createDbKey(rs, 1);
 			rs.close();
 			q = "{ call RATINGS.create_site_rating(" + sdi + ", 'Stage Flow', null, null, 7, 'test rating') }";
-			st.executeUpdate(q);
+			dao.doModify(q);
 			q = "select rating_id from ref_site_rating where indep_site_datatype_id = " + sdi;
-			rs = st.executeQuery(q);
+			rs = dao.doQuery(q);
 			if (!rs.next())
 			{
 				System.out.println("Statement '" + q + "' did not return any results.");
@@ -381,7 +382,7 @@ public class DbUtil extends TsdbAppTemplate
 			for(int i = 0; i<indep.length; i++)
 			{
 				q = "{ call RATINGS.modify_rating_point(" + ratingId + ", " + indep[i] + ", " + dep[i] + ") }";
-				st.executeUpdate(q);
+				dao.doModify(q);
 			}
 		}
 		catch(Exception ex)
@@ -391,11 +392,7 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		finally
 		{
-			try
-			{
-				st.close();
-			}
-			catch(Exception ex) {}
+			dao.close();
 		}
 	}
 
@@ -405,12 +402,16 @@ public class DbUtil extends TsdbAppTemplate
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
+		
+		DaoBase dao = null;
 		try
 		{
-			Statement st = theDb.getConnection().createStatement();
+			dao = new DaoBase(theDb, "test");
 			q = sb.toString();
 			System.out.println("Executing: " + q);
-			ResultSet rs = st.executeQuery(q);
+			
+			ResultSet rs = dao.doQuery(q);
+			
 			ArrayList<String[]> rows = new ArrayList<String[]>();
 			ResultSetMetaData rsmd = rs.getMetaData();
 			int numCols = rsmd.getColumnCount();
@@ -449,10 +450,14 @@ public class DbUtil extends TsdbAppTemplate
 				System.out.println("");
 			}
 		}
-		catch (SQLException ex)
+		catch (Exception ex)
 		{
 			System.err.println("Error in '" + q + "': " + ex);
 			ex.printStackTrace();
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 	
@@ -462,18 +467,23 @@ public class DbUtil extends TsdbAppTemplate
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
+		DaoBase dao = null;
 		try
 		{
-			Statement st = theDb.getConnection().createStatement();
+			dao = new DaoBase(theDb, "test");
 			q = sb.toString();
 			System.out.println("Executing: " + q);
-			int rows = st.executeUpdate(q);
+			int rows = dao.doModify(q);
 			System.out.println("" + rows + " rows update.");
 		}
-		catch (SQLException ex)
+		catch (Exception ex)
 		{
 			System.err.println("Error in '" + q + "': " + ex);
 			ex.printStackTrace();
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 

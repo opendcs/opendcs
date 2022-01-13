@@ -23,6 +23,7 @@ import decodes.tsdb.compedit.AlgorithmInList;
  * @author mmaloney - Mike Maloney, Cove Software, LLC
  */
 public interface AlgorithmDAI
+	extends DaiBase
 {
 	
 	/**

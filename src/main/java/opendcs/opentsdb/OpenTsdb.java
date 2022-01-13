@@ -127,7 +127,7 @@ public class OpenTsdb extends TimeSeriesDb
 				Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
 			}
 
-			postConnectInit(appName);
+			postConnectInit(appName, conn);
 			OpenTsdbSettings.instance().setFromProperties(props);
 			
 			return appId;

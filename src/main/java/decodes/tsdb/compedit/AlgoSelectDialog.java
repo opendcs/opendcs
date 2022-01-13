@@ -181,7 +181,7 @@ class AlgoSelectPanel extends JPanel
 	}
 
 	/**
-	 * @return the currently-selected object, or null if none is selected.
+	 * @return the currently-selected algorithm, or null if none is selected.
 	 */
 	public DbCompAlgorithm getSelection()
 	{
@@ -189,8 +189,7 @@ class AlgoSelectPanel extends JPanel
 		if (r == -1)
 			return null;
 		AlgorithmsListPanel algorithmsListPanel = CAPEdit.instance().algorithmsListPanel;
-		return (DbCompAlgorithm) algorithmsListPanel.algoListTableModel
-			.getRowObject(r);
+		return algorithmsListPanel.algoListTableModel.getRowAlgorithm(r);
 	}
 
 	/**
@@ -206,9 +205,9 @@ class AlgoSelectPanel extends JPanel
 		int n = algorithmsListPanel.algoListTableModel.getRowCount();
 		for (int i = 0; i < n; i++)
 		{
-			DbCompAlgorithm dca = (DbCompAlgorithm) algorithmsListPanel.algoListTableModel
-				.getRowObject(i);
-			if (name.equalsIgnoreCase(dca.getName()))
+			String algoName = (String)algorithmsListPanel.algoListTableModel.getValueAt(i, 1);
+			
+			if (name.equalsIgnoreCase(algoName))
 			{
 				algoListTable.setRowSelectionInterval(i, i);
 				Rectangle rect = algoListTable.getCellRect(i, 0, true);

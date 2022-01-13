@@ -30,7 +30,9 @@ public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 
 	@Override
 	protected void postConnectInit()
+		throws DatabaseException
 	{
+		super.postConnectInit();
 		IntervalDAI intervalDAO = makeIntervalDAO();
 		try { intervalDAO.loadAllIntervals(); }
 		catch (DbIoException ex)

@@ -1,5 +1,6 @@
 package opendcs.dai;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 
 import decodes.tsdb.DbIoException;
@@ -16,5 +17,7 @@ public interface DaiBase
 		throws DbIoException;
 
 	public void close();
+	
+	public void setManualConnection(Connection conn);
 
 }

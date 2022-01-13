@@ -562,6 +562,8 @@ public abstract class TimeSeriesDb
 
 	// If reclaimTasklistSec > 0, this is the time the reclaim was last done.
 	protected long lastReclaimMsec = 0L;
+	
+	private boolean connected = false;
 
 	/**
 	 * Lazy initialization, called at the first time a date or timestamp
@@ -631,114 +633,6 @@ public abstract class TimeSeriesDb
 	// The following helper-methods may be called or overloaded by the
 	// concrete subclass.
 	//==================================================================
-
-//	/**
-//	 * Does a SQL query with the default static statement & returns the
-//	 * result set.
-//	 * Warning: this method is not thread and nested-loop safe.
-//	 * If you need to do nested queries, you must create a separate
-//	 * statement and do the inside query yourself. Likewise, if called
-//	 * from multiple threads, an external synchronization mechanism is
-//	 * needed.
-//	 * @param q the query
-//	 * @return the result set
-//	 */
-//	public ResultSet doQuery(String q)
-//		throws DbIoException
-//	{
-//		if (queryStmt != null)
-//		{
-//			try { queryStmt.close(); }
-//			catch(Exception ex) {}
-//			queryStmt = null;
-//		}
-//		if (queryResults != null)
-//		{
-//			try { queryResults.close(); }
-//			catch(Exception ex) {}
-//			queryResults = null;
-//		}
-//		try
-//		{
-//			if (conn == null)
-//			{
-//				String msg = "doQuery() Invalid connection" +
-//							" object, conn = " + conn;
-//				warning(msg);
-//				throw new DbIoException(msg);
-//			}
-//			queryStmt = conn.createStatement();
-//			debug3("Query1 '" + q + "'");
-//			return queryResults = queryStmt.executeQuery(q);
-//		}
-//		catch(SQLException ex)
-//		{
-//			String msg = "SQL Error in query '" + q + "': " + ex;
-//			warning(msg);
-//			throw new DbIoException(msg);
-//		}
-//	}
-//	
-
-//	/**
-//	* Executes an UPDATE or INSERT query.
-//	* @param q the query string
-//	* @param silent false to print warning on error, true if not.
-//	* @throws DatabaseException  if the update fails.
-//	*/
-//	public int doModify(String q, boolean silent)
-//		throws DbIoException
-//	{
-//		try
-//		{
-//			if (conn == null)
-//			{
-//				String msg = "TimeSeriesDb doModify() Invalid connection" +
-//							" object, conn = " + conn;
-//				warning(msg);
-//				throw new DbIoException(msg);
-//			}
-//			modStmt = conn.createStatement();
-//			if (!q.equals("COMMIT"))
-//				logger.debug3("Executing statement '" + q + "'");
-//			int numChanged = modStmt.executeUpdate(q);
-//			return numChanged;
-//// Don't do this. Some queries are OK if they modify nothing.
-////			if (numChanged == 0) 
-////			{
-////				String msg = "Failure in modify query '" + q + "'";
-////				Logger.instance().warning(msg);
-////				throw new DbIoException(msg);
-////			}
-//		}
-//		catch(SQLException ex)
-//		{
-//			String msg = "SQL Error in modify query '" + q + "': " + ex;
-//			if (!silent)
-//				warning(msg);
-//			throw new DbIoException(msg);
-//		}
-//		finally
-//		{
-//			if (modStmt != null)
-//			{
-//				try { modStmt.close(); }
-//				catch(Exception ex) {}
-//				modStmt = null;
-//			}
-//		}
-//	}
-//
-//	/**
-//	 * Execute a modify query.
-//	 * Print warning on error.
-//	 */
-//	public int doModify(String q)
-//		throws DbIoException
-//	{
-//		return doModify(q, false);
-//	}
-//
 
 	/** @return string representation for a boolean value in this db. */
 	public String sqlBoolean(boolean v)
@@ -829,10 +723,10 @@ public abstract class TimeSeriesDb
 	 * Provides common post-connect initialization like loading the intervals
 	 * and setting the application ID.
 	 */
-	public void postConnectInit(String appName)
+	public void postConnectInit(String appName, Connection conn)
 		throws BadConnectException
 	{
-		determineTsdbVersion(getConnection(), this);
+		determineTsdbVersion(conn, this);
 
 		// If an application name is provided, lookup the ID.
 		if (appName != null && appName.trim().length() > 0)
@@ -862,6 +756,8 @@ public abstract class TimeSeriesDb
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 		}
+		
+		connected = true;
 	}
 
 	/**
@@ -872,14 +768,11 @@ public abstract class TimeSeriesDb
 		info("Closing database connection.");
 		try
 		{
-//			if (queryStmt != null)
-//				queryStmt.close();
 			if (conn != null)
 				conn.close();
 		}
 		catch(Exception ex) {}
 		conn = null;
-//		queryStmt = null;
 	}
 
 	/**
@@ -887,14 +780,7 @@ public abstract class TimeSeriesDb
 	 */
 	public boolean isConnected()
 	{
-		try { return conn != null && !conn.isClosed(); }
-		catch(Exception ex)
-		{
-			warning(
-				"Error testing whether connection closed: " + ex);
-			closeConnection();
-			return false;
-		}
+		return connected;
 	}
 
 	/**
@@ -1418,8 +1304,8 @@ public abstract class TimeSeriesDb
 		tsdb.readDateFmt.setTimeZone(tz);
 		tsdb.readCal = Calendar.getInstance(tz);
 
-		SqlDatabaseIO.readVersionInfo(tsdb);
-		readVersionInfo(tsdb);
+		SqlDatabaseIO.readVersionInfo(tsdb, con);
+		readVersionInfo(tsdb, con);
 		tsdb.info("Connected to TSDB Version " + tsdb.tsdbVersion + ", Description: " + tsdb.tsdbDescription);
 		tsdb.readTsdbProperties(con);
 		tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
@@ -1432,7 +1318,7 @@ public abstract class TimeSeriesDb
 		return new OracleDateParser(tz);
 	}
 
-	public static void readVersionInfo(DatabaseConnectionOwner dco)
+	public static void readVersionInfo(DatabaseConnectionOwner dco, Connection conn)
 	{
 		/*
 		  Attempt to read the database's version number.
@@ -1443,7 +1329,7 @@ public abstract class TimeSeriesDb
 		Statement stmt = null;
 		try
 		{
-			stmt = dco.getConnection().createStatement();
+			stmt = conn.createStatement();
 
 			ResultSet rs = stmt.executeQuery(q);
 			while (rs != null && rs.next())

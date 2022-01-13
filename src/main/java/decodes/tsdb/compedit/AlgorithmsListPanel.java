@@ -121,8 +121,7 @@ public class AlgorithmsListPanel extends ListPanel
 			showError(openErr);
 			return;
 		}
-		DbCompAlgorithm dca = 
-			(DbCompAlgorithm)algoListTableModel.getRowObject(r);
+		DbCompAlgorithm dca = algoListTableModel.getRowAlgorithm(r);
 		openEditTab(dca);
 	}
 
@@ -174,8 +173,7 @@ public class AlgorithmsListPanel extends ListPanel
 			CAPEdit.instance().getFrame().showError(cpyErr1);
 			return;
 		}
-		DbCompAlgorithm dca = 
-			(DbCompAlgorithm)algoListTableModel.getRowObject(r);
+		DbCompAlgorithm dca = algoListTableModel.getRowAlgorithm(r);
 
 	    String newName = JOptionPane.showInputDialog(cpyInput);
 		if (newName == null)
@@ -200,8 +198,7 @@ public class AlgorithmsListPanel extends ListPanel
 				deleteErr1);
 			return;
 		}
-		DbCompAlgorithm dca = 
-			(DbCompAlgorithm)algoListTableModel.getRowObject(r);
+		DbCompAlgorithm dca = algoListTableModel.getRowAlgorithm(r);
 		AlgorithmDAI algorithmDao = CAPEdit.instance().theDb.makeAlgorithmDAO();
 		try
 		{

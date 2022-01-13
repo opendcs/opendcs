@@ -36,6 +36,7 @@ import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.Base64;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -69,7 +70,20 @@ public class AlgorithmDAO
 		super(tsdb, "AlgorithmDao");
 		propertiesSqlDao = new PropertiesSqlDao(tsdb);
 	}
-	
+
+	@Override
+	public Connection getConnection()
+	{
+		// Overriding getConnection allows lazy connection setting and
+		// ensures subordinate DAOs will use same conn as this object.
+		if (myCon == null)
+		{
+			super.getConnection();
+			propertiesSqlDao.setManualConnection(myCon);
+		}
+		return myCon;
+	}
+
 	@Override
 	public DbKey getAlgorithmId(String name)
 		throws DbIoException, NoSuchObjectException

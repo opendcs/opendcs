@@ -102,7 +102,7 @@ public class DataTypeDAO
 			DbKey id = dt.getId();
 			if (id.isNull()) // New data type
 			{
-				id = db.getKeyGenerator().getKey("DataType", db.getConnection());
+				id = db.getKeyGenerator().getKey("DataType", getConnection());
 				dt.setId(id);
 			
 				q = "INSERT INTO DataType(" + columns + ") VALUES(" + id 

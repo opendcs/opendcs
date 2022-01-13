@@ -112,7 +112,7 @@ public class TopFrame extends JFrame
 				if (dbio == null)
 					s = "(Not Open)";
 				if (dbio instanceof SqlDatabaseIO)
-					s = ((SqlDatabaseIO)dbio).getConnection() != null ? "(Connected)" : "(Not Connected)";
+					s = ((SqlDatabaseIO)dbio).isConnected() ? "(Connected)" : "(Not Connected)";
 			}
 		}
 

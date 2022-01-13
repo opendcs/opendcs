@@ -63,6 +63,7 @@
  */
 package decodes.sql;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -75,7 +76,6 @@ import opendcs.dai.DacqEventDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
-import opendcs.dao.PropertiesSqlDao;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -89,7 +89,6 @@ import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 import decodes.db.Site;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
 import decodes.util.DecodesSettings;
 
 /**
@@ -163,6 +162,16 @@ public class PlatformListIO extends SqlDbObjIo
 
 		_configListIO = configListIO;
 		_equipmentModelListIO = emlIO;
+	}
+	
+	@Override
+	public void setConnection(Connection conn)
+	{
+		super.setConnection(conn);
+		
+		// For efficiency, have subordinate dbio's use my connection.
+		_configListIO.setConnection(conn);
+		_equipmentModelListIO.setConnection(conn);
 	}
 
 	private String getColTpl()
@@ -423,19 +432,14 @@ public class PlatformListIO extends SqlDbObjIo
 				// If site was previously loaded, use it.
 				p.setSite(p.getDatabase().siteList.getSiteById(siteId));
 
-				boolean commitAfterSelect = _dbio.commitAfterSelect;
+				SiteDAI siteDAO = _dbio.makeSiteDAO();
+				siteDAO.setManualConnection(connection);
 				try
 				{
-					// Caller will commit after THIS method returns, so don't
-					// have it commit after we read the site.
-					_dbio.commitAfterSelect = false;
-					
-					// Else attempt to read site from database.
 					if (p.getSite() == null)
 					{
-						if (siteId != Constants.undefinedId)
+						if (!DbKey.isNull(siteId))
 						{
-							SiteDAI siteDAO = _dbio.makeSiteDAO();
 							try
 							{
 								p.setSite(siteDAO.getSiteById(siteId));
@@ -447,18 +451,24 @@ public class PlatformListIO extends SqlDbObjIo
 									+ p.getKey() + " has invalid siteID " + siteId);
 								p.setSite(null);
 							}
-							finally
-							{
-								siteDAO.close();
-							}
+						}
+					} 
+					else
+					{
+						try
+						{
+							siteDAO.readSite(p.getSite());
+						}
+						catch (Exception e)
+						{
+							// TODO Auto-generated catch block
+							e.printStackTrace();
 						}
 					}
-					else
-						p.getSite().read();
 				}
 				finally
 				{
-					_dbio.commitAfterSelect = commitAfterSelect;
+					siteDAO.close();
 				}
 			}
 
@@ -484,7 +494,7 @@ public class PlatformListIO extends SqlDbObjIo
 					}
 					// Already in list. Check to see if it's current.
 					else
-						pc.read();
+						_configListIO.readConfig(pc.getId());
 				}
 				finally
 				{
@@ -509,6 +519,7 @@ public class PlatformListIO extends SqlDbObjIo
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
 			{
 				PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+				propsDao.setManualConnection(connection);
 				try { propsDao.readProperties("PlatformProperty", "platformID", p.getId(), 
 					p.getProperties()); }
 				catch (DbIoException e)
@@ -618,6 +629,7 @@ public class PlatformListIO extends SqlDbObjIo
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+		propsDao.setManualConnection(connection);
 		try { propsDao.readProperties("PlatformSensorProperty", "platformID", "SensorNumber",
 			ps.platform.getId(), ps.sensorNumber, ps.getProperties()); }
 		catch (DbIoException e)
@@ -752,6 +764,7 @@ public class PlatformListIO extends SqlDbObjIo
 		if (getDatabaseVersion() >= 6)
 		{
 			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+			propsDao.setManualConnection(connection);
 			
 			try { propsDao.writeProperties("PlatformProperty", "platformId", p.getId(), 
 				p.getProperties()); }
@@ -816,7 +829,8 @@ public class PlatformListIO extends SqlDbObjIo
 		if (getDatabaseVersion() >= 6)
 		{
 			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
-			
+			propsDao.setManualConnection(connection);
+		
 			try { propsDao.writeProperties("PlatformProperty", "platformId", p.getId(), 
 				p.getProperties()); }
 			catch (DbIoException e)
@@ -911,6 +925,7 @@ public class PlatformListIO extends SqlDbObjIo
 		executeUpdate(q);
 
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+		propsDao.setManualConnection(connection);
 		try { propsDao.writeProperties("PlatformSensorProperty", "platformID", "SensorNumber",
 			ps.platform.getId(), ps.sensorNumber, ps.getProperties()); }
 		catch (DbIoException e)
@@ -1005,6 +1020,7 @@ public class PlatformListIO extends SqlDbObjIo
 		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
 		{
 			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+			propsDao.setManualConnection(connection);
 			
 			try { propsDao.deleteProperties("PlatformProperty", "platformId", p.getId()); }
 			catch (DbIoException e)
@@ -1044,6 +1060,7 @@ public class PlatformListIO extends SqlDbObjIo
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+		propsDao.setManualConnection(connection);
 		try { propsDao.deleteProperties("PlatformSensorProperty", "platformID", p.getId()); }
 		catch (DbIoException e)
 		{

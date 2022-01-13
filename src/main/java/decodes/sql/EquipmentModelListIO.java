@@ -45,7 +45,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import opendcs.dai.PropertiesDAI;
-import opendcs.dao.PropertiesSqlDao;
 
 import ilex.util.Logger;
 
@@ -54,6 +53,7 @@ import decodes.db.Database;
 import decodes.db.EquipmentModel;
 import decodes.db.EquipmentModelList;
 import decodes.db.DatabaseException;
+import opendcs.dao.DaoBase;
 import decodes.tsdb.DbIoException;
 
 /**
@@ -177,6 +177,7 @@ public class EquipmentModelListIO extends SqlDbObjIo
 	{
 		EquipmentModel em = null;
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+		((DaoBase)propsDao).setManualConnection(connection());
 
 		try
 		{

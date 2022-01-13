@@ -10,6 +10,7 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
 
 public interface CompDependsDAI
+	extends DaiBase
 {
 	/**
 	 * Removes any CompDepends records that reference the passed TSID

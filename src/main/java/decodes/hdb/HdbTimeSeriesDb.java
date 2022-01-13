@@ -311,7 +311,7 @@ public class HdbTimeSeriesDb
 		readDateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		readDateFmt.setTimeZone(TimeZone.getTimeZone(databaseTimezone));
 
-		this.postConnectInit(appName);
+		this.postConnectInit(appName, conn);
 		
 		try
 		{

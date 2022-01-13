@@ -110,7 +110,7 @@ public class ScreeningDAO
 		throws DbIoException
 	{
 		super(tsdb, module);
-		try { csdbio = CwmsDbServiceLookup.buildCwmsDb(CwmsDbVt.class, tsdb.getConnection()); }
+		try { csdbio = CwmsDbServiceLookup.buildCwmsDb(CwmsDbVt.class, getConnection()); }
 		catch(Exception ex)
 		{
 			String msg = module + " cannot create CwmsScreeningDbIo: " + ex;
@@ -163,7 +163,7 @@ public class ScreeningDAO
 					+ screening.getParamId() + ", paramType=" + screening.getParamTypeId() + ", dur="
 					+ screening.getDurationId() + ", officeId=" + officeId);
 //System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER_ID);
-				csdbio.createScreeningId(db.getConnection(),
+				csdbio.createScreeningId(getConnection(),
 					P_SCREENING_ID, P_SCREENING_ID_DESC, P_PARAMETER_ID,
 					P_PARAMETER_TYPE_ID, P_DURATION_ID, P_DB_OFFICE_ID);
 				
@@ -178,7 +178,7 @@ public class ScreeningDAO
 			{
 				Logger.instance().info("Screening already exists with key=" + screening.getScreeningCode()
 					+ ", updating description.");
-				csdbio.updateScreeningIdDesc(db.getConnection(),
+				csdbio.updateScreeningIdDesc(getConnection(),
 					P_SCREENING_ID, P_SCREENING_ID_DESC, P_DB_OFFICE_ID);
 			}
 			
@@ -271,7 +271,7 @@ public class ScreeningDAO
 				screening.isDurMagActive() ? "T" : "F");
 			
 			info("Calling storeScreeningCriteria with " + oracleScreenCrit.length + " seasons.");
-			csdbio.storeScreeningCriteria(db.getConnection(),
+			csdbio.storeScreeningCriteria(getConnection(),
 				P_SCREENING_ID,
 				oracleScreenCritArray,
 				"1Hour",
@@ -298,7 +298,7 @@ public class ScreeningDAO
 	{
 		try
 		{
-			csdbio.deleteScreeningId(db.getConnection(),
+			csdbio.deleteScreeningId(getConnection(),
 				screening.getScreeningName(),
 				screening.getParamId(),
 				screening.getParamTypeId(),
@@ -757,7 +757,7 @@ public class ScreeningDAO
 		{
 			String P_SCREENING_ID = screeningId;
 			long P_DB_OFFICE_CODE = ((CwmsTimeSeriesDb)db).getDbOfficeCode().getValue();
-			BigDecimal O_RET = csdbio.getScreeningCode(db.getConnection(), P_SCREENING_ID, (double)P_DB_OFFICE_CODE);
+			BigDecimal O_RET = csdbio.getScreeningCode(getConnection(), P_SCREENING_ID, (double)P_DB_OFFICE_CODE);
 			return O_RET == null ? DbKey.NullKey : DbKey.createDbKey(O_RET.longValue());
 		}
 		catch (SQLException ex)
@@ -877,7 +877,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
 			List<ScreenAssignT> screenAssignTS = Collections.singletonList(
 				new ScreenAssignT(tsid.getUniqueString(), true, null));
 			
-			csdbio.assignScreeningId(db.getConnection(),
+			csdbio.assignScreeningId(getConnection(),
 				screening.getScreeningName(),
 				screenAssignTS, ((CwmsTimeSeriesDb)db).getDbOfficeId());
 		}
@@ -902,7 +902,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
 	{
 		try
 		{
-			csdbio.unassignScreeningId(db.getConnection(),
+			csdbio.unassignScreeningId(getConnection(),
 				screening.getScreeningName(),
 				Collections.singletonList(tsid != null ? tsid.getUniqueString() : null),
 				tsid == null, 
@@ -919,7 +919,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
 	{
 		try
 		{
-			csdbio.renameScreeningId(db.getConnection(),
+			csdbio.renameScreeningId(getConnection(),
 				oldId, 
 				newId, 
 				((CwmsTimeSeriesDb)db).getDbOfficeId());
@@ -937,7 +937,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
 		
 		try
 		{
-			csdbio.updateScreeningIdDesc(db.getConnection(),
+			csdbio.updateScreeningIdDesc(getConnection(),
 				screeningId, 
 				desc, 
 				((CwmsTimeSeriesDb)db).getDbOfficeId());

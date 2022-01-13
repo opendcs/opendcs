@@ -3,6 +3,7 @@
 */
 package decodes.sql;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -28,6 +29,7 @@ import decodes.db.ScriptSensor;
 import decodes.db.UnitConverterDb;
 import decodes.db.DataType;
 import decodes.tsdb.DbIoException;
+import opendcs.dao.DaoBase;
 
 /**
 * This class is used to read and write the PlatformConfig objects
@@ -61,6 +63,13 @@ public class ConfigListIO extends SqlDbObjIo
 	{
 		super(dbio);
 		_unitConverterIO = ucio;
+	}
+	
+	@Override
+	public void setConnection(Connection conn)
+	{
+		super.setConnection(conn);
+		_unitConverterIO.setConnection(conn);
 	}
 
 	/**
@@ -508,7 +517,6 @@ public class ConfigListIO extends SqlDbObjIo
 		else
 			pc.configName = newName;
 		insert(pc);
-		_dbio.commit();
 		return pc;
 	}
 	/**
@@ -665,6 +673,7 @@ public class ConfigListIO extends SqlDbObjIo
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propertiesDAO = _dbio.makePropertiesDAO();
+		((DaoBase)propertiesDAO).setManualConnection(connection);
 		try
 		{
 			propertiesDAO.writeProperties("ConfigSensorProperty", "configId", "sensorNumber", 

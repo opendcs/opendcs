@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.ResourceBundle;
 
 import ilex.util.LoadResourceBundle;
+import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.gui.*;
 import decodes.db.PlatformConfig;
@@ -659,6 +660,7 @@ public class ConfigEditPanel extends DbEditorTab
 		// Write the changes out to the database.
 		try
 		{
+Logger.instance().debug1("ConfigEditPanel.saveChanges - writing config.");
 			theConfig.write();
 		}
 		catch(DatabaseException e)
@@ -682,9 +684,13 @@ public class ConfigEditPanel extends DbEditorTab
 				try
 				{
 					if (!p.isComplete())
+{Logger.instance().debug1("ConfigEditPanel.saveChanges - reading platform.");
 						p.read();
-					p.setConfig(theConfig);
+}
+						p.setConfig(theConfig);
+{Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform.");
 					p.write();
+}
 				}
 				catch(DatabaseException e)
 				{
@@ -696,6 +702,8 @@ public class ConfigEditPanel extends DbEditorTab
 				}
 			}
 		}
+Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform list.");
+
 		try { Database.getDb().platformList.write(); }
 		catch(DatabaseException e)
 		{
