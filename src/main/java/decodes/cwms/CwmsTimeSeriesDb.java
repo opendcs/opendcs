@@ -1862,7 +1862,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		throws DbIoException
 	{
 		ArrayList<String> ret = new ArrayList<String>();
-		String q = "select distinct version_id from cwms_v_ts_id order by version_id;";
+		String q = "select distinct version_id from cwms_v_ts_id order by version_id";
 
 		DaiBase dao = new DaoBase(this, "CWMS");
 		try
