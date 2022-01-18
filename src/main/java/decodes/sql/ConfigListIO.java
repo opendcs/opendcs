@@ -435,16 +435,24 @@ public class ConfigListIO extends SqlDbObjIo
 		Statement stmt = createStatement();
 		debug3("Executing '" + q + "'");
 		ResultSet rs = stmt.executeQuery(q);
-		if (rs == null || !rs.next()) {
+		
+		String desc = pc.description;
+		if (desc.length() > 399)
+			desc = desc.substring(0, 399);
+
+		if (rs == null || !rs.next()) 
+		{
 			q =
 				"UPDATE PlatformConfig SET " +
 			  	"Name = " + sqlString(pc.configName) + ", " +
-			  	"Description = " + sqlString(pc.description) + ", " +
+			  	"Description = " + sqlString(desc) + ", " +
 			  	"EquipmentID = " + sqlOptHasId(pc.equipmentModel) + " " +
 				"WHERE id = " + pc.getId();
-		} else {
+		}
+		else
+		{
 			q = "UPDATE PlatformConfig SET " +
-			  "Description = " + sqlString(pc.description) + ", " +
+			  "Description = " + sqlString(desc) + ", " +
 			  "EquipmentID = " + sqlOptHasId(pc.equipmentModel) + " " +
 			"WHERE id = " + pc.getId();
 		}
@@ -529,13 +537,17 @@ public class ConfigListIO extends SqlDbObjIo
 		DbKey id = getKey("PlatformConfig");
 		pc.setId(id);
 		pc.getDatabase().platformConfigList.add(pc);
+		
+		String desc = pc.description;
+		if (desc.length() > 399)
+			desc = desc.substring(0, 399);
 
 		String q =
 			"INSERT INTO PlatformConfig(id, name, description, equipmentid) "
 			+ "VALUES (" +
 			  id + ", " +
 			  sqlString(pc.configName) + ", " +
-			  sqlString(pc.description) + ", " +
+			  sqlString(desc) + ", " +
 			  sqlOptHasId(pc.equipmentModel) +
 			")";
 	

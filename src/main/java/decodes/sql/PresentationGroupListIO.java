@@ -629,6 +629,9 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		dp.setId(id);
 		PresentationGroup pg = dp.getGroup();
 
+		if (dp.getDataType() == null)
+			return;
+		
 		// MJM 5/4/07 - DT may be new. If so, add to Database & get ID.
 		if (dp.getDataType().getId() == Constants.undefinedId)
 			_dbio.writeDataType(dp.getDataType());
