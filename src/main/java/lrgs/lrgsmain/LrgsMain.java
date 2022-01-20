@@ -21,7 +21,6 @@ import java.util.TimeZone;
 import java.util.Properties;
 import java.net.InetAddress;
 
-import opendcs.dai.DacqEventDAI;
 import opendcs.dai.LoadingAppDAI;
 import ilex.util.Logger;
 import ilex.util.ServerLock;
@@ -36,9 +35,7 @@ import lrgs.archive.MsgArchive;
 import lrgs.archive.InvalidArchiveException;
 import lrgs.ddsserver.DdsServer;
 import lrgs.ddsrecv.DdsRecv;
-import lrgs.ddsrecv.OutageDdsRecv;
 import lrgs.drgsrecv.DrgsRecv;
-//import lrgs.domsatrecv.DomsatRecv;
 import lrgs.gui.LrgsApp;
 import lrgs.gui.DecodesInterface;
 import lrgs.iridiumsbd.IridiumSbdInterface;
@@ -163,7 +160,6 @@ public class LrgsMain
 		}
 		catch (DatabaseException e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -345,9 +341,7 @@ public class LrgsMain
 				{
 					// Create the DacqEvent Logger and make it the primary logger.
 					SqlDatabaseIO sqlDbio = (SqlDatabaseIO)Database.getDb().getDbIo();
-					DacqEventDAI dacqEventDAO = sqlDbio.makeDacqEventDAO();
 					dacqEventLogger = new DacqEventLogger(Logger.instance());
-					dacqEventLogger.setDacqEventDAO(dacqEventDAO);
 					
 					LoadingAppDAI appDAO = sqlDbio.makeLoadingAppDAO();
 					try
@@ -566,7 +560,7 @@ public class LrgsMain
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
 			try
 			{
-				Class pccClass = cl.loadClass(pcc);
+				Class<?> pccClass = cl.loadClass(pcc);
 				cfg.setPasswordChecker((PasswordChecker)pccClass.newInstance());
 			}
 			catch (Exception ex)

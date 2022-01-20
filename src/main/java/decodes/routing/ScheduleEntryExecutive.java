@@ -9,7 +9,6 @@ import java.util.TimeZone;
 import lrgs.common.DcpMsg;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
-import opendcs.dai.DacqEventDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -20,7 +19,6 @@ import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
 import decodes.dcpmon.DcpMonitor;
 import decodes.sql.DbKey;
-import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalIncrement;
@@ -79,10 +77,7 @@ public class ScheduleEntryExecutive
 			{
 				// This means that this is a stand-alone rs from command line, the DCPmon
 				// daemon, or some other single-threaded app.
-				SqlDatabaseIO sqlDbio = (SqlDatabaseIO)Database.getDb().getDbIo();
-				DacqEventDAI dacqEventDAO = sqlDbio.makeDacqEventDAO();
-				dacqEventLogger.setDacqEventDAO(dacqEventDAO);
-				
+
 				// If rs thread has an app ID, set it in the logger.
 				if (seThread != null && seThread.rsProcRecord != null 
 					&& !DbKey.isNull(seThread.rsProcRecord.getAppId()))
@@ -104,7 +99,6 @@ public class ScheduleEntryExecutive
 		else // This is a child of RoutingScheduler
 		{
 			dacqEventLogger = new DacqEventLogger(parent.origLogger);
-			dacqEventLogger.setDacqEventDAO(parent.getDacqEventDAO());
 		}
 	}
 	
@@ -330,9 +324,6 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 			shutdownStarted = System.currentTimeMillis();
 			runState = RunState.shutdown;
 		}
-		
-		if (parent == null && dacqEventLogger != null)
-			dacqEventLogger.getDacqEventDAO().close();
 	}
 
 	RoutingSpecThread makeThread()

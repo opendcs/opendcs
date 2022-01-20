@@ -331,7 +331,7 @@ public class CwmsSqlDatabaseIO
 		Connection ret = null;
 		try
 		{
-			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo());
+			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo(), module);
 		}
 		catch (SQLException ex)
 		{

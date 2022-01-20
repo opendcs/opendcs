@@ -34,7 +34,7 @@ public class OracleDbmsSpecificFunctions extends DbmsSpecificFunctions
 	{
 		String q = null;
 
-		DaiBase dao = new DaoBase(theDb, "PgDbmsSpecificFunctions");
+		DaiBase dao = new DaoBase(theDb, "OracleDbmsSpecificFunctions");
 		try
 		{
 			q = "ALTER SESSION SET time_zone = "

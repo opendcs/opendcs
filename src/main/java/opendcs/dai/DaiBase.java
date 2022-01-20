@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import decodes.tsdb.DbIoException;
 
 public interface DaiBase
+	extends AutoCloseable
 {
 	public ResultSet doQuery(String q)
 		throws DbIoException;

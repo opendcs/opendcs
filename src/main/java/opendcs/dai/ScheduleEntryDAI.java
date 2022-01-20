@@ -10,6 +10,7 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 
 public interface ScheduleEntryDAI
+	extends DaiBase
 {
 	/**
 	 * List the schedule entries for a given loading application.

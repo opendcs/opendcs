@@ -31,6 +31,7 @@ import decodes.tsdb.DbIoException;
  * Defines methods for reading and writing data acquisition events.
  */
 public interface DacqEventDAI
+	extends DaiBase
 {
 	/**
 	 * Close the DAO and release any allocated resources.

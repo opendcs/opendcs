@@ -155,10 +155,7 @@ public class AlarmMonitor
 	private void initialize()
 		throws LockBusyException, DbIoException, NoSuchObjectException, MailerException
 	{
-		if (dacqLogger != null)
-			dacqLogger.getDacqEventDAO().close();
 		dacqLogger = new DacqEventLogger(null);
-		dacqLogger.setDacqEventDAO(theDb.makeDacqEventDAO());
 		
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try

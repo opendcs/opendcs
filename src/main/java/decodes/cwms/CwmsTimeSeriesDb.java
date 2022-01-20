@@ -1924,7 +1924,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		Connection ret = null;
 		try
 		{
-			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo());
+			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo(), module);
 		}
 		catch (SQLException ex)
 		{
