@@ -73,16 +73,18 @@ public class HDBRatingTable {
 	public void findRating(Date valueDate)
 	throws DbCompException
 	{
-		String q = "select ratings.find_site_rating('" + ratingType + 
-		"'," + sdi + ", + to_date(?,'DD.MM.YYYY HH24:MI:SS')) from dual";
+		String q = "select ratings.find_site_rating(?,?," +
+		"to_date(?,'DD.MM.YYYY HH24:MI:SS')) from dual";
 		CallableStatement cstmt =  null;
 
 		try
 		{
 			cstmt = conn.prepareCall(q);
+			cstmt.setString(1, ratingType);
+			cstmt.setLong  (2, sdi.getValue());
 			String timestr = "";
 			timestr = rwdf.format(valueDate.getTime());
-			cstmt.setString(1, timestr);
+			cstmt.setString(3, timestr);
 			Boolean result = cstmt.execute();
 			if (!result) {
 				throw new DbCompException("query failed in findRating: " + q);
@@ -122,9 +124,11 @@ public class HDBRatingTable {
 		else try 
 		{
 			q="select effective_start_date_time,effective_end_date_time from ref_site_rating " +
-			"where rating_id = ?";
+			"where rating_id = ? and rating_type_common_name = ? and indep_site_datatype_id = ? ";
 			cstmt = conn.prepareCall(q);
-			cstmt.setInt(1, (int)ratingId.getValue());
+			cstmt.setLong  (1, ratingId.getValue());
+			cstmt.setString(2, ratingType);
+			cstmt.setLong  (3, sdi.getValue());
 
 			Boolean result = cstmt.execute();
 			if (!result) {

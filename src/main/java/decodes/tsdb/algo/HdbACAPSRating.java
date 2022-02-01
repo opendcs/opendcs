@@ -17,6 +17,7 @@ import java.lang.Math;
 
 // Mark: Be sure to import DbKey
 import decodes.sql.DbKey;
+import decodes.util.PropertySpec;
 //AW:IMPORTS_END
 
 //AW:JAVADOC
@@ -24,6 +25,13 @@ import decodes.sql.DbKey;
 Implements the ACAPS rating algorithm from tables in the database.
 Independent value is called "elevation".
 Dependent values are "storage" and "area".
+variableM controls whether the
+constantM value provides the exponent
+or if it is found in a rating table.
+Equations are
+diff=elevation-Y0 from A0 lookup.
+A=round((A1 + M*A2*diff),2)
+S=round((A0 + A1*diff + A2*Math.pow(diff,M)),2)
  */
 //AW:JAVADOC_END
 public class HdbACAPSRating
@@ -38,6 +46,7 @@ public class HdbACAPSRating
 	HDBRatingTable A0RatingTable = null;
 	HDBRatingTable A1RatingTable = null;
 	HDBRatingTable A2RatingTable = null;
+	HDBRatingTable MRatingTable = null;
 	private boolean firstCall = true;
 
 //AW:LOCALVARS_END
@@ -51,8 +60,23 @@ public class HdbACAPSRating
 //AW:PROPERTIES
 	//Makes no sense to handle shifts, or exceedences, since ACAPS
 	//does not work at all when below lowest value, and maximum value is undefined 
-	String _propertyNames[] = { };
+	public double constantM = 2.0;
+	public boolean variableM = false;
+	String _propertyNames[] = { "constantM", "variableM" };
 //AW:PROPERTIES_END
+
+    private PropertySpec ACAPSRatingPropertySpecs[] =
+	{
+		new PropertySpec("constantM", PropertySpec.NUMBER,
+			"(default=2) If variableM==false, then this number provides a constant M exponent for all equations."),
+		new PropertySpec("variableM", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to use a separate M rating table rather than the constant.")
+	};
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return ACAPSRatingPropertySpecs;
+	}
 
 	// Allow javac to generate a no-args constructor.
 
@@ -87,6 +111,7 @@ public class HdbACAPSRating
 			A0RatingTable = new HDBRatingTable(tsdb,"ACAPS A0",elev_sdi);
 			A1RatingTable = new HDBRatingTable(tsdb,"ACAPS A1",elev_sdi);
 			A2RatingTable = new HDBRatingTable(tsdb,"ACAPS A2",elev_sdi);
+			MRatingTable  = new HDBRatingTable(tsdb,"ACAPS M",elev_sdi);
 
 			firstCall = false;
 		}
@@ -96,6 +121,7 @@ public class HdbACAPSRating
 		A0RatingTable.resetRatingId();
 		A1RatingTable.resetRatingId();
 		A2RatingTable.resetRatingId();
+		MRatingTable.resetRatingId();
 //AW:BEFORE_TIMESLICES_END
 	}
 
@@ -125,11 +151,20 @@ public class HdbACAPSRating
 			double A0 = A0rs.dep;
 			double A1 = A1rs.dep;
 			double A2 = A2rs.dep;
+			debug3("Lookup ACAPS results: deltaE: " + diff + " A0: " + A0 + " A1: " + A1 + " A2: " + A2);
+
+			double M = constantM;
+
+			if (variableM) {
+			    RatingStatus MRS = MRatingTable.doRating(elevation,_timeSliceBaseTime);
+			    M = MRS.dep;
+			    debug3("Lookup M result: " + M);
+			}
 
 			//See Documents from Rick Clayton on these equations.
-			double loc_storage = round(A0 + A1*diff + A2*Math.pow(diff,2),0);
+			double loc_storage = round((A0 + A1*diff + A2*Math.pow(diff,M)),2);
 
-			double loc_area = round((A1 + 2*A2*diff),2);
+			double loc_area = round((A1 + M*A2*diff),2);
 
 			setOutput(storage, loc_storage);
 			setOutput(area, loc_area);
