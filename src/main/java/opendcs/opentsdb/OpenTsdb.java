@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -50,13 +51,15 @@ public class OpenTsdb extends TimeSeriesDb
 {
 	private String jdbcOracleDriver = null;
 	private String databaseLocation = null;
-	
+
 	public static final char TABLE_TYPE_NUMERIC = 'N';
 	public static final char TABLE_TYPE_STRING = 'S';
+	private static final long MAX_TIME_GAP_FOR_HISTORICAL = Integer.getInteger("opendcs.opentsdb.max_timegap_historical.days", 7);
 	
 	private PreparedStatement getMinStmt = null, getTaskListStmt;
 	String getMinStmtQuery = null, getTaskListStmtQuery = null;
 
+	private boolean isHistorical = false;
 
 	public OpenTsdb()
 	{
@@ -290,14 +293,21 @@ public class OpenTsdb extends TimeSeriesDb
 			what = "Executing '" + getTaskListStmtQuery + "'";
 			debug3(what);
 			ResultSet rs = getTaskListStmt.executeQuery();
+			Date lastTimestamp = null;
 			while (rs.next())
 			{
 				// Extract the info needed from the result set row.
+				Date timeStamp = new Date(rs.getLong(4));
+				boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
+				if(exceedsMaxTimeGap)
+				{
+					break;
+				}
+				lastTimestamp = timeStamp;
 				int recordNum = rs.getInt(1);
 				DbKey sdi = DbKey.createDbKey(rs, 2);
 				double value = rs.getDouble(3);
 				boolean valueWasNull = rs.wasNull();
-				Date timeStamp = new Date(rs.getLong(4));
 				String df = rs.getString(5);
 				boolean deleted = TextUtil.str2boolean(df);
 				int flags = rs.getInt(6);
@@ -359,6 +369,15 @@ public class OpenTsdb extends TimeSeriesDb
 		{
 			timeSeriesDAO.close();
 		}
+	}
+
+	private boolean exceedsMaxTimeGap(Date lastTimestamp, Date currentTimestamp)
+	{
+		if(isHistorical || lastTimestamp == null || currentTimestamp == null)
+		{
+			return false;
+		}
+		return TimeUnit.MILLISECONDS.toDays(Math.abs(currentTimestamp.getTime() - lastTimestamp.getTime())) > MAX_TIME_GAP_FOR_HISTORICAL;
 	}
 
 
