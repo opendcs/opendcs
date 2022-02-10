@@ -1,5 +1,6 @@
 package decodes.hdb;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.TimeZone;
 
@@ -41,10 +42,10 @@ public class HdbSqlDatabaseIO extends SqlDatabaseIO
 	}
 
 	@Override
-	protected void setDBDatetimeFormat()
+	protected void setDBDatetimeFormat(Connection conn)
 		throws SQLException
 	{
-		super.setDBDatetimeFormat();
+		super.setDBDatetimeFormat(conn);
 		oracle.jdbc.OracleConnection ocon = (oracle.jdbc.OracleConnection)getConnection();
 		ocon.setSessionTimeZone(databaseTimeZone);
 	}
