@@ -722,7 +722,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 
 		try 
 		{
-			cstmt = db.getConnection().prepareCall(q);
+			cstmt = getConnection().prepareCall(q);
 	
 			// Set all the proc-input that are the same for all samples.
 			cstmt.setLong(1, ts.getSDI().getValue());
@@ -819,7 +819,7 @@ Logger.instance().debug1("Saved " + nsaved + " samples.");
 			TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
 		try
 		{
-			cstmt = (OracleCallableStatement)db.getConnection().prepareCall(q);
+			cstmt = (OracleCallableStatement)getConnection().prepareCall(q);
 
 			cstmt.setLong(1, ts.getSDI().getValue());
 			cstmt.setString(4, ts.getInterval()); 
