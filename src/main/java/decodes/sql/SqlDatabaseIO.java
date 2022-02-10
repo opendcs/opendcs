@@ -77,7 +77,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -113,7 +112,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import ilex.util.Counter;
 import ilex.util.Logger;
 import ilex.util.UserAuthFile;
 import decodes.tsdb.BadTimeSeriesException;
@@ -235,6 +233,9 @@ public class SqlDatabaseIO
 	protected SimpleDateFormat debugDateFmt = new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss z");
 	
 	private boolean _isConnected = false;
+	
+	/** Facilitates OPENTSDB and HDB connection pooling. CWMS is handled differently. */
+	private javax.sql.DataSource poolingDataSource = null;
 
 	/**
 	 * Default constructor -- all initialization that doesn't depend on
@@ -354,7 +355,7 @@ public class SqlDatabaseIO
 		determineVersion(_conn);
 
 		try {
-			setDBDatetimeFormat();
+			setDBDatetimeFormat(_conn);
 		} catch (SQLException e) {
 			Logger.instance().debug3(e.toString());
 		}
@@ -410,7 +411,7 @@ public class SqlDatabaseIO
 		_isConnected = true;
 	}
 
-	protected void setDBDatetimeFormat()
+	protected void setDBDatetimeFormat(Connection conn)
 		throws SQLException
 	{
 		String q = null;
@@ -420,7 +421,7 @@ public class SqlDatabaseIO
 			if (_isOracle)
 			{
 
-				stmnt = getConnection().createStatement();
+				stmnt = conn.createStatement();
 
 				q = "SELECT PARAM_VALUE FROM REF_DB_PARAMETER WHERE PARAM_NAME = 'TIME_ZONE'";
 				ResultSet rs = null;
@@ -477,7 +478,7 @@ public class SqlDatabaseIO
 	{
 		try
 		{
-			String productName = getConnection().getMetaData().getDatabaseProductName();
+			String productName = conn.getMetaData().getDatabaseProductName();
 			_isOracle = productName.toLowerCase().contains("oracle");
 		}
 		catch (SQLException ex)
@@ -2076,6 +2077,16 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	@Override
 	public Connection getConnection()
 	{
+		if (poolingDataSource != null)
+			try
+			{
+				return poolingDataSource.getConnection();
+			}
+			catch (SQLException ex)
+			{
+				Logger.instance().warning(
+					"SqlDatabaseIO.getConnection() Cannot get pooled connection: " + ex);
+			}
 		return _conn;
 	}
 
@@ -2395,11 +2406,23 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	@Override
 	public void freeConnection(Connection conn)
 	{
-		// Base class stub does nothing.
+		// If we are pooling, close the connection which puts it back into the pool.
+		if (poolingDataSource != null)
+			try { conn.close(); } catch (Exception ex) {} 
 	}
 
 	public boolean isConnected()
 	{
 		return _isConnected;
+	}
+
+	public javax.sql.DataSource getPoolingDataSource()
+	{
+		return poolingDataSource;
+	}
+
+	public void setPoolingDataSource(javax.sql.DataSource poolingDataSource)
+	{
+		this.poolingDataSource = poolingDataSource;
 	}
 }
