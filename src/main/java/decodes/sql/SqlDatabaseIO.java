@@ -2425,4 +2425,9 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	{
 		this.poolingDataSource = poolingDataSource;
 	}
+
+	public void setKeyGenerator(KeyGenerator keyGenerator)
+	{
+		this.keyGenerator = keyGenerator;
+	}
 }
