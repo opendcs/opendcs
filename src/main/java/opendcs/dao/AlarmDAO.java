@@ -337,7 +337,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			
 			// Delete file monitors, email addresses, and process monitors.
 			// They will be re-inserted below.
-			q = "delete from ALARM_EVENT where alarm_group_id = " + grp.getAlarmGroupId();
+			q = "delete from " + alarmEventTable + " where alarm_group_id = " + grp.getAlarmGroupId();
 			doModify(q);
 			q = "delete from PROCESS_MONITOR where alarm_group_id = " + grp.getAlarmGroupId();
 			doModify(q);
@@ -436,9 +436,6 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			String q = "delete from " + alarmEventTable + " where alarm_group_id = " + groupID;
 			doModify(q);
 			
-			q = "delete from ALARM_EVENT where alarm_group_id = " + groupID;
-			doModify(q);
-
 			q = "delete from PROCESS_MONITOR where alarm_group_id = " + groupID;
 			doModify(q);
 
@@ -1149,9 +1146,11 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 	@Override
 	public ArrayList<AlarmScreening> getAllScreenings() throws DbIoException
 	{
-		fillScreeningCache();
-		
 		ArrayList<AlarmScreening> ret = new ArrayList<AlarmScreening>();
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_17)
+			return ret;
+		
+		fillScreeningCache();
 		for(Iterator<AlarmScreening> scit = screeningCache.iterator(); scit.hasNext(); )
 			ret.add(scit.next());
 
