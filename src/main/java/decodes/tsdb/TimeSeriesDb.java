@@ -731,9 +731,9 @@ public abstract class TimeSeriesDb
 		// If an application name is provided, lookup the ID.
 		if (appName != null && appName.trim().length() > 0)
 		{
-			LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
-			try
+			try(LoadingAppDAI loadingAppDAO = makeLoadingAppDAO())
 			{
+				loadingAppDAO.setManualConnection(conn);
 				appId = loadingAppDAO.lookupAppId(appName);
 				info("Connected to " + module + " with app name '"
 					+ appName + "' appId=" + appId + ", tsdbVersion=" + tsdbVersion);
@@ -747,8 +747,11 @@ public abstract class TimeSeriesDb
 		}
 
 		// Load the intervals
-		IntervalDAI intervalDAO = this.makeIntervalDAO();
-		try { intervalDAO.loadAllIntervals(); }
+		try (IntervalDAI intervalDAO = this.makeIntervalDAO())
+		{
+			intervalDAO.setManualConnection(conn);
+			intervalDAO.loadAllIntervals();
+		}
 		catch(Exception ex)
 		{
 			String msg = "Cannot load intervals: " + ex;
@@ -996,17 +999,18 @@ public abstract class TimeSeriesDb
 		// Oracle was providing things in the wrong timestamp using current_timestamp.
 		// TODO: needs to be checked against Postgres
 		String curTime = this.isOracle() ? "sysdate" : "current_timestamp" ;
+		Connection tcon = getConnection();
 		try(
-			PreparedStatement deleteNormal = conn.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
-			PreparedStatement deleteFailedAfterMaxRetries = conn.prepareStatement(
+			PreparedStatement deleteNormal = tcon.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
+			PreparedStatement deleteFailedAfterMaxRetries = tcon.prepareStatement(
 					  "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM = ? " // failRecList
 					+ "and ((" + curTime + " - DATE_TIME_LOADED) > " // curTimeName
 					+ "INTERVAL '? hour')" ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
-			PreparedStatement updateFailedRetry = conn.prepareStatement(
+			PreparedStatement updateFailedRetry = tcon.prepareStatement(
 				"update CP_COMP_TASKLIST set FAIL_TIME = ? where RECORD_NUM = ? and "
 			+	"( (" + curTime + " - DATE_TIME_LOADED) <= INTERVAL '? hour')");
-			PreparedStatement updateFailTime = conn.prepareStatement(
+			PreparedStatement updateFailTime = tcon.prepareStatement(
 				"UPDATE CP_COMP_TASKLIST "
 			+	" SET FAIL_TIME = " + curTime
 			+   " where record_num = ?"
@@ -1092,6 +1096,11 @@ public abstract class TimeSeriesDb
 					warning("removing items from task list failed:");
 					warning(sw.toString());
 					throw new DbIoException(err.getLocalizedMessage());
+		}
+		finally
+		{
+			if (tcon != null)
+				freeConnection(tcon);
 		}
 	}
 
@@ -1734,12 +1743,9 @@ public abstract class TimeSeriesDb
 
 		String q = "SELECT code FROM DataType where lower(standard) = lower("
 			+ sqlString(dataTypeStandard) + ")";
-		Statement stmt = null;
-		try
+		try (DaoBase dao = new DaoBase(this, "tsdb.getDataTypesByStd"))
 		{
-			stmt = conn.createStatement();
-			debug("getDataTypesByStandard '" + q + "'");
-			ResultSet rs = stmt.executeQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			while (rs != null && rs.next())
 				ret.add(rs.getString(1));
 		}
@@ -1747,10 +1753,6 @@ public abstract class TimeSeriesDb
 		{
 			String msg = "SQL Error in query '" + q + "': " + ex;
 			warning(msg);
-		}
-		finally
-		{
-			try { if (stmt != null) stmt.close(); } catch (Exception ex) {}
 		}
 
 		String retString[] = new String[ret.size()];

@@ -688,6 +688,7 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
+import opendcs.opentsdb.OpenTsdbSettings;
 import lrgs.gui.DecodesInterface;
 
 import java.sql.PreparedStatement;
@@ -931,10 +932,8 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			conInfo = getDbConnection(dbUri, username, password, dbOfficeId);
 			openConnections.add(conInfo.getConnection());
 			
-			//TODO Consider - do I need to set the one-and-only connection. Shuldn't everyone call getConnection()?
-//			setConnection(conInfo.getConnection());
-			
 			postConnectInit(appName, conInfo.getConnection());
+			OpenTsdbSettings.instance().setFromProperties(props);
 			cgl.setLoginSuccess(true);
 		}
 		catch(BadConnectException ex)
@@ -1615,7 +1614,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		DbKey dbOfficeCode, String dbOfficePrivilege)
 		throws DbIoException
 	{
-//TODO No need to pass this method office code or privilege level. SQL code fixgures that out.
 		String errMsg = null;
 		PreparedStatement storeProcStmt = null;
 		CallableStatement testStmt = null;
@@ -1634,10 +1632,10 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
 			storeProcStmt.setInt(2, privLevel);
 			storeProcStmt.setString(3, dbOfficeId);
-			Logger.instance().debug2("Executing '" + q + "' with "
-				+ "dbOfficeCode=" + dbOfficeCode
-				+ ", privLevel=" + privLevel
-				+ ", dbOfficeId='" + dbOfficeId + "'");
+//			Logger.instance().debug2("Executing '" + q + "' with "
+//				+ "dbOfficeCode=" + dbOfficeCode
+//				+ ", privLevel=" + privLevel
+//				+ ", dbOfficeId='" + dbOfficeId + "'");
 			storeProcStmt.execute();
 //			conn.commit();
 
@@ -1646,12 +1644,9 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			testStmt.registerOutParameter(1, Types.VARCHAR);
 			testStmt.setString(2, "CC");
 			testStmt.setString(3, "PLATFORMCONFIG");
-			Logger.instance().debug2("Calling '" + q + "' with "
-				+ "schema=CCP and table=PLATFORMCONFIG");
+//			Logger.instance().debug2("Calling '" + q + "' with "
+//				+ "schema=CCP and table=PLATFORMCONFIG");
 			testStmt.execute();
-			String pred = testStmt.getString(1);
-			Logger.instance().debug2("Predicate for table PLATFORMCONFIG is '" + pred + "'");
-
 		}
 		catch (SQLException ex)
 		{
@@ -1797,12 +1792,15 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		// int nIndeps = indeps.length;
 		// NOTE: indeps is already an array of doubles. I can pass
 		// it directly to the rateOne function.
-
-		CwmsRatingDao crd = new CwmsRatingDao(this);
-		try
+		Connection tc = getConnection();
+		String action = "reading rating";
+		try (CwmsRatingDao crd = new CwmsRatingDao(this))
 		{
+			crd.setManualConnection(tc);
 			RatingSet ratingSet = crd.getRatingSet(specId);
-			double d = ratingSet.rateOne(indeps, timeStamp.getTime());
+			action = "rateOne";
+			double d = ratingSet.rateOne(tc, timeStamp.getTime(), indeps);
+			
 			if (d == Const.UNDEFINED_DOUBLE)
 			{
 				StringBuilder sb = new StringBuilder();
@@ -1817,14 +1815,15 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		catch (RatingException ex)
 		{
-			String msg = "rating(" + specId + ") failed: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "Error while " + action + ", specId=" + specId + ": " + ex;
+			warning(msg);
+			ex.printStackTrace(Logger.instance().getLogOutput() != null 
+				? Logger.instance().getLogOutput() : System.err);
 			throw new RangeException(msg);
 		}
 		finally
 		{
-			crd.close();
+			freeConnection(tc);
 		}
 	}
 
@@ -1917,7 +1916,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		if (conInfo == null || conInfo.getLoginInfo() == null)
 		{
 			failure("CwmsTimeSeriesDb.getConnection -- loginInfo is null! DB not initialized?");
-			// TODO should throw BadConnectException?
 			return null;
 		}
 		
@@ -1937,7 +1935,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			else
 				ex.printStackTrace(System.err);
 			return null;
-			// TODO Should this method throw BadConnectException?
 		}
 
 		// Force autoCommit on.
@@ -1961,23 +1958,26 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			failure(msg);
 			try { CwmsDbConnectionPool.close(ret); } catch(Exception ex2) {}
 			return null;
-			// TODO Should this method throw BadConnectException?
-//			throw new BadConnectException(msg);
 		}
 		
 		// These debug messages will allow us to detect leaks: connections open but never closed:
 		openConnections.add(ret);
 		
-		
-		debug1("getConnection() After allocate there are now " + openConnections.size() + " open connections. "
+		if (OpenTsdbSettings.instance().traceConnections)
+		{
+			debug1("getConnection() After allocate there are now " + openConnections.size() + " open connections. "
 				+ "Called from:");
-StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
-for(int n = 2; n < stk.length; n++) 
-{
-String s = stk[n].toString().toLowerCase();
-if (s.contains("dao") || s.contains("io.")) 
-	Logger.instance().debug1("\t" + n + ": " + stk[n]);
-}
+		
+			StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
+			boolean lastWasDao = true;
+			for(int n = 2; n < stk.length; n++) 
+			{
+				if (lastWasDao)
+					Logger.instance().debug1("\t" + n + ": " + stk[n]);
+				String s = stk[n].toString().toLowerCase();
+				lastWasDao = s.contains("dao") || s.contains("io.");
+			}
+		}
 		
 		return ret;
 	}
@@ -1997,7 +1997,8 @@ if (s.contains("dao") || s.contains("io."))
 				Logger.instance().getLogOutput() : System.err);
 		}
 		
-		debug1("freeConnection() After free there are now " + openConnections.size() + " open connections.");
+		if (OpenTsdbSettings.instance().traceConnections)
+			debug1("freeConnection() After free there are now " + openConnections.size() + " open connections.");
 	}
 		
 	

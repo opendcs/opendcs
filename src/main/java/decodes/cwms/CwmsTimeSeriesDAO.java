@@ -104,6 +104,7 @@ import ilex.var.TimedVariable;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -153,7 +154,6 @@ public class CwmsTimeSeriesDAO
 {
 	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
 		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
-//	private static boolean firstCall = true;
 	protected SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	private String dbOfficeId = null;
@@ -162,10 +162,8 @@ public class CwmsTimeSeriesDAO
 	private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
 			+ "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
 			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a";
-//	private String cwmsTsidJoinClause = "a.LOCATION_CODE = c.LOCATION_CODE "
-//		+ " AND c.UNIT_SYSTEM = 'SI'";
 	private long lastTsidCacheRead = 0L;
-	private PreparedStatement getMinStmt = null, getTaskListStmt;
+	private PreparedStatement getTaskListStmt;
     String getMinStmtQuery = null, getTaskListStmtQuery = null;
 
 
@@ -210,7 +208,6 @@ public class CwmsTimeSeriesDAO
 		
 			String q = cwmsTsidQueryBase
 				+ " WHERE a.TS_CODE = " + key;
-	//			+ " AND " + cwmsTsidJoinClause;
 			// Don't need to add DB_OFFICE_ID because TS_CODE is unique.
 			
 			try
@@ -310,7 +307,6 @@ public class CwmsTimeSeriesDAO
 
 		int paren = uniqueString.lastIndexOf('(');
 		String displayName = null;
-debug3("getTimeSeriesIdentifier('" + uniqueString + "')");
 		if (paren > 0 && uniqueString.trim().endsWith(")"))
 		{
 			displayName = uniqueString.substring(paren+1);
@@ -318,7 +314,6 @@ debug3("getTimeSeriesIdentifier('" + uniqueString + "')");
 			int endParen = displayName.indexOf(')');
 			if (endParen > 0)
 				displayName = displayName.substring(0,  endParen);
-debug3("using display name '" + displayName + "', unique str='" + uniqueString + "'");
 		}
 	
 		TimeSeriesIdentifier ret = null;
@@ -406,7 +401,6 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			fillTimeSeriesMetadata(cts); // may throw BadTimeSeriesException
 			cts.setIsExpanded();
 		}
-//debug3("After fillTimeSeriesMetadata dn='" + cts.getDisplayName() + "'");
 		StringBuffer q = new StringBuffer();
 		q.append("SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
 			+ " WHERE TS_CODE = " + ts_code);
@@ -418,7 +412,6 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 			{
 				tsid = getTimeSeriesIdentifier(ts_code);
 				cts.setTimeSeriesIdentifier(tsid);
-//debug3("After re-getting tsid dn='" + cts.getDisplayName() + "'");
 			}
 			catch(NoSuchObjectException ex)
 			{
@@ -508,17 +501,9 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 		// in the CTimeSeries.
 		UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
-//		String qbase = "select DATE_TIME, ROUND(VALUE,8), QUALITY_CODE "
-//			+ "FROM CWMS_V_TSV_DQU " 
-//			+ "where TS_CODE = " + cts.getSDI()
-//			+ " AND UNIT_ID = " + sqlString(cts.getUnitsAbbr()) + " "
-//			+ " and DATE_TIME IN (";
-		
-		
 		String qbase = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
 			+ " WHERE TS_CODE = " + cts.getSDI()
 			+ " and DATE_TIME IN (";
-
 
 		int datesPerQuery = 300;
 		int start = 0;
@@ -626,20 +611,6 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 						+ CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
 			+	")"
 			+ " AND VALUE IS NOT INFINITE";
-
-//		String q = "select DATE_TIME, ROUND(VALUE,8), QUALITY_CODE "
-//			+ "FROM CWMS_V_TSV_DQU " 
-//			+ "where TS_CODE = " + cts.getSDI()
-//			+ " AND UNIT_ID = " + sqlString(cts.getUnitsAbbr())
-//			+ " and date_time = "
-//			+   "(select max(date_time) from CWMS_V_TSV_DQU "
-//			+   	"where TS_CODE = " + cts.getSDI()
-// 			+   	" and date_time < " + db.sqlDate(refTime)
-//			+ 		" AND VALUE IS NOT NULL "
-//			+ 		" AND BITAND(QUALITY_CODE, " 
-//						+ CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
-//			+	")";
-//		q = q + " AND VALUE IS NOT INFINITE";
 
 		try
 		{
@@ -1216,7 +1187,6 @@ debug3("using display name '" + displayName + "', unique str='" + uniqueString +
 				HecConstants.NO_UTC_OFFSET : HecConstants.UNDEFINED_UTC_OFFSET;
 			DbKey tsKey = Constants.undefinedId;
 
-Logger.instance().debug3("createTsCodeBigInteger(" + path + ")");
 			BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(getConnection(),
 				dbOfficeId,
 				path,   // 6-part path name 
@@ -1226,7 +1196,6 @@ Logger.instance().debug3("createTsCodeBigInteger(" + path + ")");
 				false,  // versionFlag
 				true);  // active
 				tsKey = DbKey.createDbKey(tsCode.longValue());
-Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 			tsid.setKey(tsKey);
 			
 			refreshTsView();
@@ -1312,23 +1281,15 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 
 		DataCollection dataCollection = new DataCollection();
 
-		int minRecNum = -1;
 		try
 		{
-			if (getMinStmt == null)
+			if (getTaskListStmt == null)
 			{
-				// 1st query gets min record num so that I can do a range query afterward.
 				String failTimeClause =
 					DecodesSettings.instance().retryFailedComputations
 					? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
 					: "";
 
-				getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
-					+ "where a.LOADING_APPLICATION_ID = ? "// + applicationId
-					+ failTimeClause;
-				getMinStmt = getConnection().prepareStatement(getMinStmtQuery);
-
-				// 2nd query gets tasklist recs within record_num range.
 				getTaskListStmtQuery =
 					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
 					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
@@ -1338,35 +1299,14 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 					+ failTimeClause
 					+ " ORDER BY a.site_datatype_id, a.start_date_time";
 				getTaskListStmt = getConnection().prepareStatement(getTaskListStmtQuery);
-
 			}
 
-			// this may seems silly, but it allows Oracle to cache the query and it's plan for all instances
-			getMinStmt.setLong(1,applicationId.getValue());
 			getTaskListStmt.setLong(1,applicationId.getValue());
 
-			debug3("Executing prepared stmt '" + getMinStmtQuery + "'");
-			ResultSet rs = getMinStmt.executeQuery();
-
-			if (rs == null || !rs.next())
-			{
-				debug1("No new data for appId=" + applicationId);
-				((TimeSeriesDb)db).reclaimTasklistSpace(this);
-				return dataCollection;
-			}
-			else
-				minRecNum = rs.getInt(1);
-			if (rs.wasNull())
-			{
-				debug1("No new data for appId=" + applicationId);
-				minRecNum = -1;
-				((TimeSeriesDb)db).reclaimTasklistSpace(this);
-				return dataCollection;
-			}
 		}
 		catch(SQLException ex)
 		{
-			warning("getNewDataSince: " + ex);
+			warning("Error preparing tasklist query '" + getTaskListStmtQuery + "': " + ex);
 			return dataCollection;
 		}
 
@@ -1374,16 +1314,7 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 		ArrayList<Integer> badRecs = new ArrayList<Integer>();
 		try
 		{
-			getTaskListStmt.setInt(1, minRecNum);
-
-			int maxRecNum = minRecNum + 10000;
-			if (maxRecNum < minRecNum)
-			{
-				// The 32-bit integer wrapped around. Set to max possible int.
-				maxRecNum = Integer.MAX_VALUE;
-			}
-
-			debug3("Executing '" + getTaskListStmtQuery + "'");
+			debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
 			ResultSet rs = getTaskListStmt.executeQuery();
 			while (rs.next())
 			{
@@ -1595,5 +1526,16 @@ Logger.instance().debug3("createTsCodeBigInteger returned code=" + tsKey);
 				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
 		}
 	}
+	
+	protected Connection getConnection()
+	{
+		// local getConnection() method that saves the connection locally
+		if (myCon == null)
+			myCon = db.getConnection();
+		siteDAO.setManualConnection(myCon);
+		dataTypeDAO.setManualConnection(myCon);
+		return myCon;
+	}
+
 
 }

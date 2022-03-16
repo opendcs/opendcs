@@ -194,9 +194,8 @@ public class HydroJSONFormatter extends OutputFormatter
 			consumer.println(indent+indent + "},");
 
 			// elevation block
-			String elev = "" + site.getElevation();
-			if (elev == null || elev.trim().length() == 0)
-				elev = "null";
+			double e = site.getElevation();
+			String elev = (e == Constants.undefinedDouble) ? "0.0" : ("" + e);
 			datum = site.getProperty("vertical_datum");
 			if (datum == null)
 				datum = "";

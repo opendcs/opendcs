@@ -75,6 +75,7 @@
 package decodes.cwms.rating;
 
 import java.io.PrintStream;
+import java.sql.Connection;
 import java.util.Date;
 
 import ilex.util.EnvExpander;
@@ -288,10 +289,12 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 		// determine what happens.
 		// If NULL is the method then the dep output wil be set to Const.UNDEFINED_DOUBLE
 
+		Connection conn = tsdb.getConnection();
 		try
 		{
 			debug1("Calling rate with " + times.length + " times/values");
-			double depVals[] = ratingSet.rate(times, vals);
+			double depVals[] = ratingSet.rate(conn, times, vals);
+					//ratingSet.rate(times, vals);
 			
 			for(int i=0; i<times.length; i++)
 			{
@@ -316,6 +319,10 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 				warning("...cause: " + cause);
 				cause.printStackTrace(out);
 			}
+		}
+		finally
+		{
+			tsdb.freeConnection(conn);
 		}
 		
 		

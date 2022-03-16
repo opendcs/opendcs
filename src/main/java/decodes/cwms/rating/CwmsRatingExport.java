@@ -77,10 +77,9 @@ public class CwmsRatingExport
 	protected void runApp()
 		throws Exception
 	{
-		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)theDb);
-		crd.setUseReference(false);
-		try
+		try (CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)theDb))
 		{
+			crd.setUseReference(false);
 			String oid = officeIdArg.getValue().trim();
 			if (oid != null && oid.length() > 0)
 				crd.setOfficeId(oid);
@@ -94,10 +93,6 @@ public class CwmsRatingExport
 			Logger.instance().failure(ex.toString());
 			System.err.println(ex.toString());
 			ex.printStackTrace(System.err);
-		}
-		finally
-		{
-			crd.close();
 		}
 	}
 	

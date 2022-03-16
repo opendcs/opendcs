@@ -332,6 +332,7 @@ public class ComputationApp
 		{
 			while(!shutdownFlag)
 			{
+				Logger.instance().debug3("ComputationApp start of main loop.");
 				try(
 					TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 					LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();

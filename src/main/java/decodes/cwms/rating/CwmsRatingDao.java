@@ -53,6 +53,7 @@ package decodes.cwms.rating;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
+import java.io.PrintStream;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -343,6 +344,8 @@ public class CwmsRatingDao extends DaoBase
 		{
 			Logger.instance().warning(module + " Cannot read rating for spec ID '"
 				+ specId + "': " + ex);
+			PrintStream ps = Logger.instance().getLogOutput();
+			ex.printStackTrace(ps != null ? ps : System.err);
 //			throw ex;
 		}
 
@@ -371,7 +374,6 @@ public class CwmsRatingDao extends DaoBase
 					+ " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
 					+ rw.timeLoaded);
-				rw.ratingSet.setDatabaseConnection(getConnection());
 				return rw.ratingSet;
 			}
 		}
@@ -398,47 +400,16 @@ public class CwmsRatingDao extends DaoBase
 			}
 		}
 
-//		String rcheck = getRatingCheck(ucSpecId);
-
 		Logger.instance().debug3(module + " constructing RatingSet with officeId=" 
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
-//RatingSet.setAlwaysAllowUnsafe(false);
 		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), officeId, specId);
-//		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE, 
-//			getConnection(), officeId, specId);
 
 		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
-		//, rcheck));
 		
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
-		ratingSet.setDatabaseConnection(getConnection());
 		return ratingSet;
 	}
-	
-	/**
-	 * Used as a check to detect rating changes.
-	 * @param ratingId
-	 * @return
-	 */
-// MJM - this is not used since 3/1/17 because we are no using the 'reference'
-// mode for accessing rating tables.
-//	private String getRatingCheck(String ratingId)
-//	{
-//		String q = ratCheckQ + sqlString(ratingId);
-//		try
-//		{
-//			ResultSet rs = doQuery(q);
-//			if (!rs.next())
-//				return null;
-//			return rs.getString(1);
-//		}
-//		catch (Exception ex)
-//		{
-//			warning("Cannot get rating check, q=" + q);
-//			return null;
-//		}
-//	}
 }

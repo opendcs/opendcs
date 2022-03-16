@@ -36,7 +36,6 @@ import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.Base64;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -64,24 +63,9 @@ public class AlgorithmDAO
 	extends DaoBase 
 	implements AlgorithmDAI
 {
-	private PropertiesSqlDao propertiesSqlDao = null;
 	public AlgorithmDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "AlgorithmDao");
-		propertiesSqlDao = new PropertiesSqlDao(tsdb);
-	}
-
-	@Override
-	public Connection getConnection()
-	{
-		// Overriding getConnection allows lazy connection setting and
-		// ensures subordinate DAOs will use same conn as this object.
-		if (myCon == null)
-		{
-			super.getConnection();
-			propertiesSqlDao.setManualConnection(myCon);
-		}
-		return myCon;
 	}
 
 	@Override
@@ -142,7 +126,7 @@ public class AlgorithmDAO
 	{
 		ArrayList<DbCompAlgorithm> ret = new ArrayList<DbCompAlgorithm>();
 		String q = "select * from CP_ALGORITHM";
-		try
+		try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
 		{
 			ResultSet rs = doQuery(q);
 			while (rs.next())
@@ -251,9 +235,12 @@ public class AlgorithmDAO
 			String type = rs.getString(3);
 			algo.addParm(new DbAlgoParm(role, type));
 		}
-		
-		propertiesSqlDao.readProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
-			algo.getId(), algo.getProperties());
+
+		try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
+		{
+			propertiesSqlDao.readProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
+				algo.getId(), algo.getProperties());
+		}
 		
 		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
 		{
@@ -337,8 +324,11 @@ Logger.instance().debug1("DAO fill subord: b64='" + b64 + "' scriptData='" + scr
 				doModify(q);
 			}
 			
-			propertiesSqlDao.writeProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
-				id, algo.getProperties());
+			try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
+			{
+				propertiesSqlDao.writeProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
+						id, algo.getProperties());
+			}
 			
 			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
 			{
@@ -401,7 +391,11 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType
 			}
 			q = "delete from CP_ALGO_TS_PARM where ALGORITHM_ID = " + id;
 			doModify(q);
-			propertiesSqlDao.deleteProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", id);
+			
+			try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
+			{
+				propertiesSqlDao.deleteProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", id);
+			}
 			
 			q = "delete from CP_ALGO_SCRIPT where ALGORITHM_ID = " + id;
 			doModify(q);
@@ -421,7 +415,6 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType
 	public void close()
 	{
 		super.close();
-		propertiesSqlDao.close();
 	}
 
 	@Override

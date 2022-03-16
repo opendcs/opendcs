@@ -24,6 +24,7 @@ import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.opentsdb.OpenTsdbSettings;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import lrgs.gui.DecodesInterface;
 import ilex.util.Logger;
@@ -375,17 +376,19 @@ public class CwmsSqlDatabaseIO
 		// These debug messages will allow us to detect leaks: connections open but never closed:
 		openConnections.add(ret);
 
-		Logger.instance().debug1(module + ".getConnection() After allocate there are now " 
-			+ openConnections.size() + " open connections. Called from:");
+		if (OpenTsdbSettings.instance().traceConnections)
+		{
+			Logger.instance().debug1(module + ".getConnection() After allocate there are now " 
+				+ openConnections.size() + " open connections. Called from:");
 		
-StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
-for(int n = 2; n < stk.length; n++) 
-{
-String s = stk[n].toString().toLowerCase();
-if (s.contains("dao") || s.contains("io.")) 
-	Logger.instance().debug1("\t" + n + ": " + stk[n]);
-}
-		
+			StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
+			for(int n = 2; n < stk.length; n++) 
+			{
+				String s = stk[n].toString().toLowerCase();
+				if (s.contains("dao") || s.contains("io.")) 
+					Logger.instance().debug1("\t" + n + ": " + stk[n]);
+			}
+		}		
 		return ret;
 	}
 
@@ -406,8 +409,9 @@ if (s.contains("dao") || s.contains("io."))
 				Logger.instance().getLogOutput() : System.err);
 		}
 		
-		Logger.instance().debug1(module + ".freeConnection() After free there are now " 
-			+ openConnections.size() + " open connections.");
+		if (OpenTsdbSettings.instance().traceConnections)
+			Logger.instance().debug1(module + ".freeConnection() After free there are now " 
+				+ openConnections.size() + " open connections.");
 	}
 
 	
