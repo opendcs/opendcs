@@ -205,13 +205,14 @@ public class ComputationsFilterPanel extends JPanel
 
 		IntervalDAI intervalDAO = theDb.makeIntervalDAO();
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
+		AlgorithmDAI algoDao = theDb.makeAlgorithmDAO();
 		try
 		{
 			for (String obj : intervalDAO.getValidIntervalCodes())
 				intervalBox.addItem(obj);
 			for (CompAppInfo cai : loadingAppDao.listComputationApps(false))
 				processBox.addItem(cai.getAppId() + ": " + cai.getAppName());
-			for (String algoName : theDb.listAlgorithms())
+			for (String algoName : algoDao.listAlgorithmNames())
 				algorithmBox.addItem(algoName);
 		}
 		catch (Exception ex)
@@ -223,6 +224,7 @@ public class ComputationsFilterPanel extends JPanel
 		}
 		finally
 		{
+			algoDao.close();
 			loadingAppDao.close();
 			intervalDAO.close();
 		}

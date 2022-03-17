@@ -26,6 +26,7 @@ import decodes.tsdb.TsGroup;
  * @author mmaloney - Mike Maloney, Cove Software, LLC
  */
 public interface TsGroupDAI
+	extends DaiBase
 {
 	
 	/**

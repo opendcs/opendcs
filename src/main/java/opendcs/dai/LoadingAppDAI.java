@@ -28,6 +28,7 @@ import decodes.tsdb.TsdbCompLock;
  * @author mmaloney - Mike Maloney, Cove Software, LLC
  */
 public interface LoadingAppDAI
+	extends DaiBase
 {
 	/**
 	 * Return a list of computations assigned to a given application.

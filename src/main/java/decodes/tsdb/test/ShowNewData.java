@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import ilex.var.TimedVariable;
-
+import opendcs.dai.TimeSeriesDAI;
 import decodes.db.DataType;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
@@ -41,7 +41,9 @@ public class ShowNewData extends TestProg
 		out.println("Getting new data for app ID=" + appId);
 //		while(true)
 //		{
-			DataCollection dc = theDb.getNewData(appId);
+		TimeSeriesDAI tsDao = theDb.makeTimeSeriesDAO();
+		
+			DataCollection dc = tsDao.getNewData(appId);
 			List<CTimeSeries> tsl = dc.getAllTimeSeries();
 			for(CTimeSeries ts : tsl)
 			{
@@ -72,7 +74,7 @@ public class ShowNewData extends TestProg
 						+ tv.toString() + " " + tv.getFlags());
 				}
 			}
-			theDb.releaseNewData(dc);
+			theDb.releaseNewData(dc, tsDao);
 			try 
 			{
 				Thread.sleep(1000L); 
@@ -81,6 +83,7 @@ public class ShowNewData extends TestProg
 			}
 			catch(InterruptedException ex) {}
 //		}
+		tsDao.close();
 	}
 
 	private static CTimeSeries makeTimeSeries(String x)

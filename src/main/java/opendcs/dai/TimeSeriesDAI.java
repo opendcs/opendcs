@@ -11,6 +11,7 @@ import opendcs.dao.DbObjectCache;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -20,6 +21,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
 public interface TimeSeriesDAI
+	extends DaiBase
 {
 	/**
 	 * When calling the listTimeSeries() method, don't reload the cache
@@ -236,4 +238,19 @@ public interface TimeSeriesDAI
 	 */
 	public void modifyTSID(TimeSeriesIdentifier tsid)
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException;
+	
+	/**
+	 * Returns an DataCollection containing zero or more TimeSeries,
+	 * containing all data added or deleted since the last call of this 
+	 * method by this application ID.
+	 * <p>
+	 * New values are marked with the DB_ADDED flag. Deleted values 
+	 * marked with the DB_DELETED flag.
+	 * @param applicationId used to lookup & save the since time.
+	 * @return DataCollection with newly added or deleted values.
+	 * @throws DbIoException on Database IO error.
+	 */
+	public DataCollection getNewData( DbKey applicationId )
+		throws DbIoException;
+
 }

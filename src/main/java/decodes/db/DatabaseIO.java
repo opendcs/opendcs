@@ -96,24 +96,6 @@ public abstract class DatabaseIO
 	public abstract String getDatabaseName();   // Depends on interface.
 
 
-	//========== Initialization Methods ==========================
-
-	/** @return true if this IO interface requires a login. */
-	public abstract boolean requiresLogin( );
-
-	/**
-	  Attempts to login to this IO interface. Only call if requiresLogin
-	  returns true.
-	  @param user the user name
-	  @param passwd the password
-	  @throws SecurityException if the username/password pair is rejected.
-	*/
-	public abstract void doLogin( String user, String passwd )
-		throws SecurityException;
-
-	/** @return true if the user is currently logged in to the database. */
-	public abstract boolean isLoggedIn();
-
 	//========== Finalization Methods ==========================
 
 	/** Closes the IO interface and releases any internal resources. */
@@ -518,11 +500,6 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
-	  @return Counter that can be used to get IDs for new platforms.
-	*/
-	public abstract Counter getPlatformIdCounter();
-
-	/**
 	  Writes the PlatformList to the database.
 	  @param pl the list to write
 	*/
@@ -550,12 +527,7 @@ public abstract class DatabaseIO
 
 	public abstract Site getSiteBySiteName(SiteName sn)
 		throws DatabaseException;
-	public abstract ArrayList<String> readNetworkListName(String transportId)
-	throws DatabaseException;
 	
-//	public abstract  void updateTransportId( String oldtransportId, String newTransportId )
-//	throws DatabaseException , SQLException;
-//	
 	/**
 	 * Factory method to make a DAO for loading applications
 	 * @return the DAO

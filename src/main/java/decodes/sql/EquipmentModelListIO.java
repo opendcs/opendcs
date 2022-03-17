@@ -45,7 +45,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import opendcs.dai.PropertiesDAI;
-import opendcs.dao.PropertiesSqlDao;
 
 import ilex.util.Logger;
 
@@ -54,6 +53,7 @@ import decodes.db.Database;
 import decodes.db.EquipmentModel;
 import decodes.db.EquipmentModelList;
 import decodes.db.DatabaseException;
+import opendcs.dao.DaoBase;
 import decodes.tsdb.DbIoException;
 
 /**
@@ -177,6 +177,7 @@ public class EquipmentModelListIO extends SqlDbObjIo
 	{
 		EquipmentModel em = null;
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+		((DaoBase)propsDao).setManualConnection(connection());
 
 		try
 		{
@@ -250,7 +251,7 @@ public class EquipmentModelListIO extends SqlDbObjIo
 	* Updates an already-existing Site in the database.
 	* @param eqm the EquipmentModel
 	*/
-	public void update(EquipmentModel eqm)
+	private void update(EquipmentModel eqm)
 		throws DatabaseException, SQLException
 	{
 		String q =
@@ -275,7 +276,7 @@ public class EquipmentModelListIO extends SqlDbObjIo
 	* must not have an SQL Database ID value set already.
 	* @param eqm the EquipmentModel
 	*/
-	public void insert(EquipmentModel eqm)
+	private void insert(EquipmentModel eqm)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = getKey("EquipmentModel");
@@ -302,7 +303,7 @@ public class EquipmentModelListIO extends SqlDbObjIo
 	* This inserts all of the properties associated with an EquipmentModel.
 	* @param eqm the EquipmentModel
 	*/
-	public void insertProperties(EquipmentModel eqm)
+	private void insertProperties(EquipmentModel eqm)
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
@@ -347,7 +348,7 @@ public class EquipmentModelListIO extends SqlDbObjIo
 		executeUpdate(q);
 	}
 
-	DbKey name2id(String name)
+	private DbKey name2id(String name)
 		throws DatabaseException, SQLException
 	{
 		Statement stmt = createStatement();

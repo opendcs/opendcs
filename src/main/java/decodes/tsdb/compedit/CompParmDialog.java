@@ -1116,7 +1116,7 @@ public class CompParmDialog extends GuiDialog
 				}
 			}
 			else
-				dataTypes = theDb.getDataTypesForSite(siteId);
+				dataTypes = theDb.getDataTypesForSite(siteId, siteDAO);
 		}
 		catch (Exception ex)
 		{

@@ -12,10 +12,9 @@
  */
 package decodes.tsdb;
 
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import decodes.util.DecodesSettings;
+import opendcs.dai.DaiBase;
+import opendcs.dao.DaoBase;
 
 /**
  * Implements DBMS-specific functions for Postgres
@@ -34,28 +33,24 @@ public class OracleDbmsSpecificFunctions extends DbmsSpecificFunctions
 		throws DbIoException
 	{
 		String q = null;
-		Statement st = null;
 
+		DaiBase dao = new DaoBase(theDb, "OracleDbmsSpecificFunctions");
 		try
 		{
-			st = theDb.conn.createStatement();
 			q = "ALTER SESSION SET time_zone = "
 				+ theDb.sqlString(DecodesSettings.instance().sqlTimeZone);
 			theDb.debug3("Setting time zone with '" + q + "'");
-			st.execute(q);
+			dao.doModify(q);
 			
 			theDb.debug3("Setting date/timestamp format");
 			q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
-			st.execute(q);
+			dao.doModify(q);
 			q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
-			st.execute(q);
-
-			st.close();
+			dao.doModify(q);
 		}
-		catch(SQLException ex)
+		finally
 		{
-			String msg = "Error in SQL Statement '" + q + "': " + ex;
-			theDb.failure(msg);
+			dao.close();
 		}
 	}
 	

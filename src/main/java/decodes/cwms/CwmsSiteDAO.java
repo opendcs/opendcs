@@ -251,7 +251,7 @@ public class CwmsSiteDAO extends SiteDAO
 			{
 				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue() 
 					+ "' with officeId=" + officeId);
-				CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, db.getConnection());
+				CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, getConnection());
 				
 				if (newSite.country == null || newSite.country.trim().length() == 0
 				 || newSite.country.trim().toLowerCase().startsWith("us"))
@@ -260,7 +260,7 @@ public class CwmsSiteDAO extends SiteDAO
 				// MJM for release 5.3 use the new improved version of store
 				// This allows us to save country and nearest city.
 				cwmsDbLoc.store(
-					db.getConnection(),
+					getConnection(),
 					officeId, 
 					cwmsName.getNameValue(), 
 					state, 
@@ -408,8 +408,8 @@ public class CwmsSiteDAO extends SiteDAO
 			q = "DELETE FROM SITE_PROPERTY WHERE site_id = " + site.getId();
 			doModify(q);
 
-			CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, db.getConnection());
-			cwmsDbLoc.delete(db.getConnection(), officeId, cwmsName.getNameValue());
+			CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, getConnection());
+			cwmsDbLoc.delete(getConnection(), officeId, cwmsName.getNameValue());
 			cache.remove(location_code);
 		}
 		catch(SQLException ex)

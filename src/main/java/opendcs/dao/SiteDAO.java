@@ -59,6 +59,7 @@ package opendcs.dao;
 
 import ilex.util.TextUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -66,6 +67,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
@@ -94,7 +96,7 @@ public class SiteDAO
 	public String siteTableName = "Site";
 	protected String siteTableKeyColumn = "id";
 	
-	protected PropertiesSqlDao propsDao = null;
+	protected PropertiesDAI propsDao = null;
 	protected long lastCacheFillMsec = 0L;
 	
 	public SiteDAO(DatabaseConnectionOwner tsdb)
@@ -110,6 +112,22 @@ public class SiteDAO
 			siteAttributes = siteAttributes + 
 				", active_flag, location_type, modify_time, public_name";
 	}
+	
+	@Override
+	public void setManualConnection(Connection conn)
+	{
+		super.setManualConnection(conn);
+		propsDao.setManualConnection(conn);
+	}
+	
+	@Override
+	public Connection getConnection()
+	{
+		Connection conn = super.getConnection();
+		propsDao.setManualConnection(conn);
+		return conn;
+	}
+
 
 	@Override
 	public synchronized Site getSiteById(DbKey id)

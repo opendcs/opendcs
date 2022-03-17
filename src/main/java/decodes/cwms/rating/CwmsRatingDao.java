@@ -53,6 +53,7 @@ package decodes.cwms.rating;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
+import java.io.PrintStream;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -191,12 +192,12 @@ public class CwmsRatingDao extends DaoBase
 	public void deleteRating(CwmsRatingRef crr)
 		throws RatingException
 	{
-		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), 
+		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), 
 			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 			crr.getRatingSpecId());
 
 //		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE,
-//			db.getConnection(), 
+//			getConnection(), 
 //			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 //			crr.getRatingSpecId());
 		
@@ -217,7 +218,7 @@ public class CwmsRatingDao extends DaoBase
 		String doing = "prepare call";
 		try
 		{
-			cstmt = db.getConnection().prepareCall(q);
+			cstmt = getConnection().prepareCall(q);
 			doing = "set params for";
 			cstmt.setString(1, crr.getRatingSpecId());
 			cstmt.setString(2, sdf.format(crr.getEffectiveDate()));
@@ -249,7 +250,7 @@ public class CwmsRatingDao extends DaoBase
 		String doing = "prepare call";
 		try
 		{
-			cstmt = db.getConnection().prepareCall(q);
+			cstmt = getConnection().prepareCall(q);
 			doing = "set params for";
 			cstmt.setString(1, crr.getRatingSpecId()); 
 			cstmt.setString(2, crr.getOfficeId());
@@ -343,11 +344,13 @@ public class CwmsRatingDao extends DaoBase
 		{
 			Logger.instance().warning(module + " Cannot read rating for spec ID '"
 				+ specId + "': " + ex);
+			PrintStream ps = Logger.instance().getLogOutput();
+			ex.printStackTrace(ps != null ? ps : System.err);
 //			throw ex;
 		}
 
 		Logger.instance().debug3(module + " calling storeToDatabase");
-		newSet.storeToDatabase(db.getConnection(), true);
+		newSet.storeToDatabase(getConnection(), true);
 	}
 	
 	public RatingSet getRatingSet(String specId)
@@ -371,7 +374,6 @@ public class CwmsRatingDao extends DaoBase
 					+ " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
 					+ rw.timeLoaded);
-				rw.ratingSet.setDatabaseConnection(db.getConnection());
 				return rw.ratingSet;
 			}
 		}
@@ -398,47 +400,16 @@ public class CwmsRatingDao extends DaoBase
 			}
 		}
 
-//		String rcheck = getRatingCheck(ucSpecId);
-
 		Logger.instance().debug3(module + " constructing RatingSet with officeId=" 
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
-//RatingSet.setAlwaysAllowUnsafe(false);
-		RatingSet ratingSet = RatingSet.fromDatabase(db.getConnection(), officeId, specId);
-//		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE, 
-//			db.getConnection(), officeId, specId);
+		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), officeId, specId);
 
 		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
-		//, rcheck));
 		
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
 		
-		ratingSet.setDatabaseConnection(db.getConnection());
 		return ratingSet;
 	}
-	
-	/**
-	 * Used as a check to detect rating changes.
-	 * @param ratingId
-	 * @return
-	 */
-// MJM - this is not used since 3/1/17 because we are no using the 'reference'
-// mode for accessing rating tables.
-//	private String getRatingCheck(String ratingId)
-//	{
-//		String q = ratCheckQ + sqlString(ratingId);
-//		try
-//		{
-//			ResultSet rs = doQuery(q);
-//			if (!rs.next())
-//				return null;
-//			return rs.getString(1);
-//		}
-//		catch (Exception ex)
-//		{
-//			warning("Cannot get rating check, q=" + q);
-//			return null;
-//		}
-//	}
 }

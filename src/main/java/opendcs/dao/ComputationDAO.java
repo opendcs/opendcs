@@ -139,6 +139,24 @@ public class ComputationDAO
 			compTableColumnsNoTabName = compTableColumnsNoTabName + ", group_id";
 		}
 	}
+	
+	@Override
+	public Connection getConnection()
+	{
+		// Overriding getConnection allows lazy connection setting and
+		// ensures subordinate DAOs will use same conn as this object.
+		if (myCon == null)
+		{
+			super.getConnection();
+			propsDao.setManualConnection(myCon);
+debug1("Setting manual connection for algorithmDAO");
+			algorithmDAO.setManualConnection(myCon);
+			dataTypeDAO.setManualConnection(myCon);
+			tsGroupDAO.setManualConnection(myCon);
+			loadingAppDAO.setManualConnection(myCon);
+		}
+		return myCon;
+	}
 
 	private void fillCache()
 	{
@@ -234,10 +252,10 @@ public class ComputationDAO
 			return ret;
 
 		try(
-			PreparedStatement getComp = db.getConnection().prepareStatement(
+			PreparedStatement getComp = getConnection().prepareStatement(
 				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_ID = ?"
 			);
-			PreparedStatement getAppId = db.getConnection().prepareStatement(
+			PreparedStatement getAppId = getConnection().prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			);
 		)
@@ -327,7 +345,7 @@ public class ComputationDAO
 	protected void fillCompSubordinates(DbComputation comp)
 		throws SQLException, DbIoException
 	{
-		Connection conn = db.getConnection();
+		Connection conn = getConnection();
 		try(
 			PreparedStatement getParms = conn.prepareStatement(
 				"select * from CP_COMP_TS_PARM where computation_id = ?"
@@ -424,7 +442,7 @@ public class ComputationDAO
 		DbComputation comp = (DbComputation)ob;
 		String q = "select DATE_TIME_LOADED from CP_COMPUTATION "
 			+ " where COMPUTATION_ID = " + comp.getKey();
-		Connection conn = db.getConnection();
+		Connection conn = getConnection();
 		try(
 			PreparedStatement getTimeLoaded = conn.prepareStatement(
 				"select DATE_TIME_LOADED from CP_COMPUTATION where COMPUTATION_ID = ?"
@@ -460,12 +478,12 @@ public class ComputationDAO
 		String q = "select " + compTableColumns
 			+ " from CP_COMPUTATION where COMPUTATION_NAME = '"
 			+ name + "'";
-		Connection conn = db.getConnection();
+		Connection conn = getConnection();
 		try(
 			PreparedStatement getComp = conn.prepareStatement(
 				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_NAME = ?"
 			);
-			PreparedStatement getAppId = db.getConnection().prepareStatement(
+			PreparedStatement getAppId = getConnection().prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			);
 		){
@@ -997,6 +1015,7 @@ public class ComputationDAO
 					if (dt != null && dt.getId() == Constants.undefinedId)
 					{
 						DataTypeDAI dataTypeDao = db.makeDataTypeDAO();
+						dataTypeDao.setManualConnection(getConnection());
 						try { dataTypeDao.writeDataType(dt); }
 						finally { dataTypeDao.close(); }
 						dcp.setDataTypeId(dt.getId());
@@ -1051,6 +1070,7 @@ public class ComputationDAO
 				else if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5)
 				{
 					CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
+					compDependsDAO.setManualConnection(getConnection());
 					try { compDependsDAO.writeCompDepends(comp); }
 					finally { compDependsDAO.close(); }
 				}
@@ -1078,7 +1098,7 @@ public class ComputationDAO
 	{
 		String q = "select COMPUTATION_ID from CP_COMPUTATION "
 			+ "where COMPUTATION_NAME = '" + name + "'";
-		Connection conn = db.getConnection();
+		Connection conn = getConnection();
 		try(
 			PreparedStatement getCompId = conn.prepareStatement(
 				"select COMPUTATION_ID from CP_COMPUTATION where COMPUTATION_NAME = ?"
@@ -1109,7 +1129,7 @@ public class ComputationDAO
 		throws DbIoException, ConstraintException
 	{
 
-		Connection conn = db.getConnection();
+		Connection conn = getConnection();
 		boolean defaultAutoCommit = false;
 
 
@@ -1134,6 +1154,7 @@ public class ComputationDAO
 			conn.setAutoCommit(false);
 				// Have to delete the dependencies, otherwise foreign key will prevent comp delete.
 			CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
+			compDependsDAO.setManualConnection(getConnection());
 			try
 			{
 				compDependsDAO.deleteCompDependsForCompId(id);

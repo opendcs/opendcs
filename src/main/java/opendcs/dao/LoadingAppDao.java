@@ -140,7 +140,8 @@ public class LoadingAppDao
 			+ "(select distinct LOADING_APPLICATION_ID from CP_COMPUTATION)";
 		else
 			q = "select * from HDB_LOADING_APPLICATION";
-		PropertiesDAI propertiesDao = db.makePropertiesDAO();
+		PropertiesDAI propsDao = db.makePropertiesDAO();
+		propsDao.setManualConnection(getConnection());
 		try
 		{
 			ResultSet rs = doQuery(q);
@@ -180,7 +181,7 @@ public class LoadingAppDao
 		}
 		finally
 		{
-			propertiesDao.close();
+			propsDao.close();
 		}
 	}
 
@@ -248,6 +249,7 @@ public class LoadingAppDao
 			+ "from HDB_LOADING_APPLICATION "
 			+ "where LOADING_APPLICATION_ID = " + id;
 		PropertiesDAI propsDao = db.makePropertiesDAO();
+		propsDao.setManualConnection(getConnection());
 		try
 		{
 			ResultSet rs = doQuery(q);
@@ -323,7 +325,8 @@ public class LoadingAppDao
 			}
 		}
 
-		PropertiesDAI propertiesDao = db.makePropertiesDAO();
+		PropertiesDAI propsDao = db.makePropertiesDAO();
+		propsDao.setManualConnection(getConnection());
 
 		try
 		{
@@ -388,7 +391,7 @@ public class LoadingAppDao
 			}
 
 			app.getProperties().setProperty("LastModified", lastModifiedSdf.format(new Date()));
-			propertiesDao.writeProperties("REF_LOADING_APPLICATION_PROP", "LOADING_APPLICATION_ID",
+			propsDao.writeProperties("REF_LOADING_APPLICATION_PROP", "LOADING_APPLICATION_ID",
 				app.getKey(), app.getProperties());
 		}
 		catch(DbIoException ex)
@@ -398,7 +401,7 @@ public class LoadingAppDao
 		}
 		finally
 		{
-			propertiesDao.close();
+			propsDao.close();
 		}
 
 	}
@@ -529,7 +532,7 @@ public class LoadingAppDao
 		//ResultSet rs = null; //doQuery(q);
 		TsdbCompLock lock = null;
 		try( PreparedStatement getLock =
-				db.getConnection().prepareStatement(
+				getConnection().prepareStatement(
 					"SELECT * from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?"
 				);
 		)
@@ -567,7 +570,7 @@ public class LoadingAppDao
 			releaseCompProcLock(lock);
 		lock = new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting");
 		try( PreparedStatement insertLockInfo =
-			db.getConnection().prepareStatement(
+			getConnection().prepareStatement(
 				"INSERT INTO CP_COMP_PROC_LOCK VALUES ("
 			+ "?,?,?,?,?)"
 			);
@@ -623,7 +626,7 @@ public class LoadingAppDao
 	{
 		if (lock != null){
 			try( PreparedStatement deleteLock =
-					db.getConnection().prepareStatement("DELETE from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?");
+				getConnection().prepareStatement("DELETE from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?");
 			) {
 				deleteLock.setLong(1, lock.getAppId().getValue());
 				deleteLock.execute();
@@ -641,7 +644,7 @@ public class LoadingAppDao
 		TsdbCompLock tlock;
 //		Logger.instance().debug3("Checking lock for appID=" + lock.getAppId());
 		try( PreparedStatement updateHeartbeat =
-			db.getConnection().prepareStatement(
+			getConnection().prepareStatement(
 				"UPDATE CP_COMP_PROC_LOCK SET HEARTBEAT = ?, CUR_STATUS = ? WHERE LOADING_APPLICATION_ID = ?"
 			))
 		{
@@ -650,7 +653,7 @@ public class LoadingAppDao
 			{
 				String q = "SELECT * from CP_COMP_PROC_LOCK WHERE "
 					+ "LOADING_APPLICATION_ID = ?";
-				lockCheckStmt = db.getConnection().prepareStatement(q);
+				lockCheckStmt = getConnection().prepareStatement(q);
 			}
 			lockCheckStmt.setLong(1, lock.getAppId().getValue());
 			ResultSet rs = lockCheckStmt.executeQuery();
@@ -756,7 +759,7 @@ public class LoadingAppDao
 	public Date getLastModified(DbKey appId)
 	{
 		try(PreparedStatement getProperties =
-				db.getConnection().prepareStatement("select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
+				getConnection().prepareStatement("select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
 				+ "where LOADING_APPLICATION_ID = ?"
 				+ " and PROP_NAME = ?" );)
 		{

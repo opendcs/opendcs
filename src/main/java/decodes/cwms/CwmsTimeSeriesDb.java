@@ -668,15 +668,11 @@
 package decodes.cwms;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.GregorianCalendar;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -685,12 +681,14 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.TimeZone;
 
+import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
-import opendcs.dao.DbObjectCache;
+import opendcs.dao.DaoBase;
+import opendcs.opentsdb.OpenTsdbSettings;
 import lrgs.gui.DecodesInterface;
 
 import java.sql.PreparedStatement;
@@ -707,18 +705,14 @@ import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
-import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import decodes.cwms.rating.CwmsRatingDao;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.ScreeningDAO;
 import decodes.db.Constants;
-import decodes.db.Database;
-import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.DataType;
-import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.OracleSequenceKeyGenerator;
@@ -735,7 +729,6 @@ public class CwmsTimeSeriesDb
 	extends TimeSeriesDb
 {
 	private String dbOfficeId = null;
-	private DbKey dbOfficeCode = Constants.undefinedId;
 
 	private String[] currentlyUsedVersions = { "" };
 	GregorianCalendar saveTsCal = new GregorianCalendar(
@@ -750,6 +743,10 @@ public class CwmsTimeSeriesDb
 	private BaseParam baseParam = new BaseParam();
 	private PreparedStatement getMinStmt = null, getTaskListStmt;
 	String getMinStmtQuery = null, getTaskListStmtQuery = null;
+	
+	/** Set after first connect, reused by getConnection() called from DAOs */
+	private CwmsConnectionInfo conInfo = null;
+	private ArrayList<Connection> openConnections = new ArrayList<Connection>();
 
 
 	/**
@@ -787,6 +784,7 @@ public class CwmsTimeSeriesDb
 		try
 		{
 			ret.setConnection(connectionPool.getConnection(loginInfo));
+			ret.setLoginInfo(loginInfo);
 		}
 		catch (SQLException ex)
 		{
@@ -815,7 +813,6 @@ public class CwmsTimeSeriesDb
 		ret.setDbOfficeCode(officeId2code(ret.getConnection(), dbOfficeId));
 
 		ArrayList<StringPair> officePrivileges = null;
-		String dbOfficePrivilege = null;
 		try
 		{
 			officePrivileges = determinePrivilegedOfficeIds(ret.getConnection());
@@ -846,16 +843,17 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				{
 					if (priv.contains("mgr"))
 					{
-						dbOfficePrivilege = op.second;
+						ret.setDbOfficePrivilege(op.second);
 						break;
 					}
 					else if (priv.contains("proc"))
 					{
-						if (dbOfficePrivilege == null || !dbOfficePrivilege.toLowerCase().contains("mgr"))
-							dbOfficePrivilege = op.second;
+						if (ret.getDbOfficePrivilege() == null 
+						 || !ret.getDbOfficePrivilege().toLowerCase().contains("mgr"))
+							ret.setDbOfficePrivilege(op.second);
 					}
-					else if (dbOfficePrivilege == null)
-						dbOfficePrivilege = op.second;
+					else if (ret.getDbOfficePrivilege() == null)
+						ret.setDbOfficePrivilege(op.second);
 				}
 			}
 		}
@@ -869,7 +867,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		try
 		{
-			setCtxDbOfficeId(ret.getConnection(), dbOfficeId, ret.getDbOfficeCode(), dbOfficePrivilege);
+			setCtxDbOfficeId(ret.getConnection(), dbOfficeId, ret.getDbOfficeCode(), ret.getDbOfficePrivilege());
 		}
 		catch (Exception ex)
 		{
@@ -931,10 +929,11 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 
 		try
 		{
-			CwmsConnectionInfo conInfo = getDbConnection(dbUri, username, password, dbOfficeId);
-			setConnection(conInfo.getConnection());
-			this.dbOfficeCode = conInfo.getDbOfficeCode();
-			postConnectInit(appName);
+			conInfo = getDbConnection(dbUri, username, password, dbOfficeId);
+			openConnections.add(conInfo.getConnection());
+			
+			postConnectInit(appName, conInfo.getConnection());
+			OpenTsdbSettings.instance().setFromProperties(props);
 			cgl.setLoginSuccess(true);
 		}
 		catch(BadConnectException ex)
@@ -944,8 +943,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 			cgl.setLoginSuccess(false);
-			if (getConnection() != null)
-				closeConnection();
+			closeConnection();
 		}
 
 		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
@@ -955,16 +953,17 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				new OracleSequenceKeyGenerator() :
 				new CwmsSequenceKeyGenerator(decodesDbVersion);
 
-		ResultSet rs = null;
-		String q = "";
 		if (dbOfficeId != null && dbOfficeId.length() > 0)
 		{
+			ResultSet rs = null;
+			String q = "";
+			DaiBase dao = new DaoBase(this, "Connecting");
 			try
 			{
 				q = "SELECT DISTINCT VERSION_ID FROM CWMS_V_TS_ID "
 					+ "WHERE upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
 				ArrayList<String> versionIds = new ArrayList<String>();
-				rs = doQuery(q);
+				rs = dao.doQuery(q);
 				while(rs != null && rs.next())
 					versionIds.add(rs.getString(1));
 				currentlyUsedVersions = new String[versionIds.size()];
@@ -975,11 +974,15 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			{
 				warning("Error executing '" + q + "':" + ex);
 			}
+			finally
+			{
+				dao.close();
+			}
 		}
 
 		Logger.instance().info(module +
 			" Connected to DECODES CWMS Database " + dbUri + " as user " + username
-			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + dbOfficeCode + ")");
+			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + conInfo.getDbOfficeCode() + ")");
 
 		cgl.setLoginSuccess(true);
 
@@ -1002,13 +1005,17 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			failure(msg);
 		}
 
+		// Finally free the initial connection from login.
+		freeConnection(conInfo.getConnection());
+		conInfo.setConnection(null);
+		
 		return appId;
 	}
 
 
 	/**
 	 * Fills in the internal list of privileged office IDs.
-	 * @return array of string pairs: officeId,Privilege
+	 * @return array of string pairs: officeId,Privilege for that office
 	 * @throws SQLException
 	 */
 	public static ArrayList<StringPair> determinePrivilegedOfficeIds(Connection conn)
@@ -1019,40 +1026,19 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		ResultSet rs = dbSec.getAssignedPrivGroups(conn, null);
 
 		ArrayList<StringPair> ret = new ArrayList<StringPair>();
-//
-//		CwmsSecJdbc cwmsSec = new CwmsSecJdbc(conn);
+
 		// 4/8/13 phone call with Pete Morris - call with Null. and the columns returned are:
 		// username, user_db_office_id, db_office_id, user_group_type, user_group_owner, user_group_id,
 		// is_member, user_group_desc
 		while(rs != null && rs.next())
 		{
 			String username = rs.getString(1);
-			String db_office_id = null;
-			String user_group_id = null;
-//			if (cwmsSchemaVersion <= CWMS_V_2_2)
-//			{
-//				db_office_id = rs.getString(3);
-//				user_group_id = rs.getString(6);
-//			}
-//			else // CWMS 3.0 or later
-//			{
-				db_office_id = rs.getString(2);
-				user_group_id = rs.getString(5);
-//			}
-//			String user_db_office_id = rs.getString(2);
-//			String user_group_type = rs.getString(4);
-//			String user_group_owner = rs.getString(5);
-//			String is_member = rs.getString(7);
-//			String user_group_desc = rs.getString(8);
+			String db_office_id = rs.getString(2);
+			String user_group_id = rs.getString(5);
 
 			Logger.instance().debug1("privilegedOfficeId: username='" + username + "' "
-//				+ "user_db_office_id='" + user_db_office_id + "' "
 				+ "db_office_id='" + db_office_id + "' "
-//				+ "user_group_type='" + user_group_type + "' "
-//				+ "user_group_owner='" + user_group_owner + "' "
 				+ "user_group_id='" + user_group_id + "' "
-//				+ "is_member='" + is_member + "' "
-//				+ "user_group_desc='" + user_group_desc + "'"
 				);
 
 			// We look for groups "CCP Proc", "CCP Mgr", and "CCP Reviewer".
@@ -1104,22 +1090,21 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	{
 		debug3("setParmSDI siteId=" + siteId +
 			", dtcode=" + dtcode);
-		ResultSet rs = null;
 
 		DataType dt = null;
-		try { lookupDataType(dtcode); }
-		catch(NoSuchObjectException ex)
-		{
-			// This combo of CWMS Param-SubParam doesn't exist yet in the
-			// database as a 'datatype' object. Create it.
-			dt = DataType.getDataType(Constants.datatype_CWMS, dtcode);
-			DataTypeDAI dataTypeDao = makeDataTypeDAO();
-			try { dataTypeDao.writeDataType(dt); }
-			finally { dataTypeDao.close(); }
-		}
-		try
-		{
-			String q =
+		DataTypeDAI dataTypeDao = makeDataTypeDAO();
+		try 
+		{ 
+			try { dataTypeDao.lookupDataType(dtcode); }
+			catch(NoSuchObjectException ex)
+			{
+				// This combo of CWMS Param-SubParam doesn't exist yet in the
+				// database as a 'datatype' object. Create it.
+				dt = DataType.getDataType(Constants.datatype_CWMS, dtcode);
+				dataTypeDao.writeDataType(dt);
+			}
+
+			String q = 
 				"SELECT TS_CODE, LOCATION_ID FROM CWMS_V_TS_ID "
 				+ "WHERE LOCATION_CODE = " + siteId
 				+ " AND TS_ACTIVE_FLAG = 'T'"
@@ -1131,7 +1116,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				+ " AND PARAMETER_TYPE_ID = " + sqlString(parm.getParamType());
 			// Don't need to select on office id. It is implied by location code.
 
-			rs = doQuery(q);
+			ResultSet rs = dataTypeDao.doQuery(q);
 			if (rs != null && rs.next())
 			{
 				DbKey sdi = DbKey.createDbKey(rs, 1);
@@ -1153,9 +1138,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		finally
 		{
-			if (rs != null)
-				try { rs.close(); }
-				catch(Exception ex) {}
+			dataTypeDao.close();
 		}
 	}
 
@@ -1207,7 +1190,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	 * {@inheritDoc}
 	 */
 	@Override
-	public ArrayList<String[]> getDataTypesForSite(DbKey siteId)
+	public ArrayList<String[]> getDataTypesForSite(DbKey siteId, DaiBase dao)
 		throws DbIoException
 	{
 		String header[] = new String[5];
@@ -1227,7 +1210,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			+ " order by PARAMETER_ID, PARAMETER_TYPE_ID, INTERVAL_ID";
 		try
 		{
-			ResultSet rs = doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			while(rs.next())
 			{
 				String dtl[] = new String[5];
@@ -1277,327 +1260,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	/** @return label to use for 'revision' column in tables. */
 	public String getRevisionLabel() { return ""; }
 
-
-	/**
-	 * TSDB version 5 & above use a join with CP_COMP_DEPENDS to determine
-	 * not only what the new data is, but what computations depend on it.
-	 * The dependent computation IDs are stored inside each CTimeSeries.
-	 */
-	@Override
-	public DataCollection getNewData(DbKey applicationId)
-		throws DbIoException
-	{
-
-		// Reload the TSID cache every hour.
-		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
-		{
-			lastTsidCacheRead = System.currentTimeMillis();
-			TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO();
-			try { timeSeriesDAO.reloadTsIdCache(); }
-			finally { timeSeriesDAO.close(); }
-		}
-
-		DataCollection dataCollection = new DataCollection();
-
-		// MJM 2/14/18 - From Dave Portin. Original failTimeClause was:
-		//		" and (a.FAIL_TIME is null OR "
-		//		+ "SYSDATE - to_date("
-		//		+ "to_char(a.FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
-		//		+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
-
-		int minRecNum = -1;
-		try
-		{
-			if (getMinStmt == null)
-			{
-				// 1st query gets min record num so that I can do a range query afterward.
-				String failTimeClause =
-					DecodesSettings.instance().retryFailedComputations
-					? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
-					: "";
-
-				getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
-					+ "where a.LOADING_APPLICATION_ID = ? "// + applicationId
-					+ failTimeClause;
-				getMinStmt = conn.prepareStatement(getMinStmtQuery);
-
-
-				// 2nd query gets tasklist recs within record_num range.
-				getTaskListStmtQuery =
-					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
-					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
-					+ "from CP_COMP_TASKLIST a "
-					+ "where a.LOADING_APPLICATION_ID = ?" // + applicationId
-					+ " and ROWNUM < 20000"
-					+ failTimeClause
-					+ " ORDER BY a.site_datatype_id, a.start_date_time";
-				getTaskListStmt = conn.prepareStatement(getTaskListStmtQuery);
-
-			}
-
-			// this may seems silly, but it allows Oracle to cache the query and it's plan for all instances
-			getMinStmt.setLong(1,applicationId.getValue());
-			getTaskListStmt.setLong(1,applicationId.getValue());
-
-			debug3("Executing prepared stmt '" + getMinStmtQuery + "'");
-			ResultSet rs = getMinStmt.executeQuery();
-
-			if (rs == null || !rs.next())
-			{
-				debug1("No new data for appId=" + applicationId);
-				reclaimTasklistSpace();
-				return dataCollection;
-			}
-			else
-				minRecNum = rs.getInt(1);
-			if (rs.wasNull())
-			{
-				debug1("No new data for appId=" + applicationId);
-				minRecNum = -1;
-				reclaimTasklistSpace();
-				return dataCollection;
-			}
-		}
-		catch(SQLException ex)
-		{
-			warning("getNewDataSince: " + ex);
-			return dataCollection;
-		}
-
-		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
-		ArrayList<Integer> badRecs = new ArrayList<Integer>();
-		TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO();
-		try
-		{
-//			getTaskListStmt.setInt(1, minRecNum);
-//
-//			int maxRecNum = minRecNum + 10000;
-//			if (maxRecNum < minRecNum)
-//			{
-//				// The 32-bit integer wrapped around. Set to max possible int.
-//				maxRecNum = Integer.MAX_VALUE;
-//			}
-//
-//			getTaskListStmt.setInt(2, maxRecNum);
-
-			debug3("Executing '" + getTaskListStmtQuery + "'");
-			ResultSet rs = getTaskListStmt.executeQuery();
-			while (rs.next())
-			{
-				// Extract the info needed from the result set row.
-				int recordNum = rs.getInt(1);
-				DbKey sdi = DbKey.createDbKey(rs, 2);
-				double value = rs.getDouble(3);
-				boolean valueWasNull = rs.wasNull();
-				Date timeStamp = getFullDate(rs, 4);
-				String df = rs.getString(5);
-				char c = df.toLowerCase().charAt(0);
-				boolean deleted = false;
-				if (c == 'u')
-				{
-					// msg handler will send this when he gets
-					// TsCodeChanged. It tells me to update my cache.
-					DbObjectCache<TimeSeriesIdentifier> cache = timeSeriesDAO.getCache();
-					synchronized(cache)
-					{
-						TimeSeriesIdentifier tsid = cache.getByKey(sdi);
-						if (tsid != null)
-						{
-							DbKey newCode = DbKey.createDbKey(rs, 9);
-							cache.remove(sdi);
-							tsid.setKey(newCode);
-							cache.put(tsid);
-							continue;
-						}
-					}
-				}
-				else
-					deleted = TextUtil.str2boolean(df);
-
-				String unitsAbbr = rs.getString(6);
-				Date versionDate = getFullDate(rs, 7);
-				BigDecimal qc = rs.getBigDecimal(8);
-				long qualityCode = qc == null ? 0 : qc.longValue();
-
-				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
-					valueWasNull, timeStamp, deleted,
-					unitsAbbr, versionDate, qualityCode);
-				tasklistRecs.add(rec);
-			}
-
-			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
-
-			// Process the real-time records collected above.
-			for(TasklistRec rec : tasklistRecs)
-				processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
-
-			dataCollection.setTasklistHandle(rrhandle);
-
-			// Delete the bad tasklist recs, 250 at a time.
-			if (badRecs.size() > 0)
-				Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
-					+ " bad tasklist records.");
-			while (badRecs.size() > 0)
-			{
-				StringBuilder inList = new StringBuilder();
-				int n = badRecs.size();
-				int x=0;
-				for(; x<250 && x<n; x++)
-				{
-					if (x > 0)
-						inList.append(", ");
-					inList.append(badRecs.get(x).toString());
-				}
-				String q = "delete from CP_COMP_TASKLIST "
-					+ "where RECORD_NUM IN (" + inList.toString() + ")";
-				doModify(q);
-//				commit();
-				for(int i=0; i<x; i++)
-					badRecs.remove(0);
-			}
-
-			// Show each tasklist entry in the log if we're at debug level 3
-			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
-			{
-				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
-				debug3("getNewData, returning " + allts.size() + " TimeSeries.");
-				for(CTimeSeries ts : allts)
-					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " "
-						+ ts.size() + " values.");
-			}
-
-			return dataCollection;
-		}
-		catch(SQLException ex)
-		{
-			System.err.println("Error reading new data: " + ex);
-			ex.printStackTrace();
-			throw new DbIoException("Error reading new data: " + ex);
-		}
-		finally
-		{
-			timeSeriesDAO.close();
-		}
-	}
-
-
-	private void processTasklistEntry(TasklistRec rec,
-		DataCollection dataCollection, RecordRangeHandle rrhandle,
-		ArrayList<Integer> badRecs, DbKey applicationId)
-		throws DbIoException
-	{
-		// Find time series if already in data collection.
-		// If not construct one and add it.
-		CTimeSeries cts = dataCollection.getTimeSeriesByUniqueSdi(rec.getSdi());
-		if (cts == null)
-		{
-			TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO();
-			try
-			{
-				TimeSeriesIdentifier tsid =
-					timeSeriesDAO.getTimeSeriesIdentifier(rec.getSdi());
-				String tabsel = tsid.getPart("paramtype") + "." +
-					tsid.getPart("duration") + "." + tsid.getPart("version");
-				cts = new CTimeSeries(rec.getSdi(), tsid.getInterval(),
-					tabsel);
-				cts.setModelRunId(-1);
-				cts.setTimeSeriesIdentifier(tsid);
-				cts.setUnitsAbbr(rec.getUnitsAbbr());
-				if (fillDependentCompIds(cts, applicationId) == 0)
-				{
-					warning("Deleting tasklist rec for '"
-						+ tsid.getUniqueString()
-						+ "' because no dependent comps.");
-					if (badRecs != null)
-						badRecs.add(rec.getRecordNum());
-					return;
-				}
-
-				try { dataCollection.addTimeSeries(cts); }
-				catch(decodes.tsdb.DuplicateTimeSeriesException ex)
-				{ // won't happen -- already verified it's not there.
-				}
-			}
-			catch(NoSuchObjectException ex)
-			{
-				warning("Deleting tasklist rec for non-existent ts_code "
-					+ rec.getSdi());
-				if (badRecs != null)
-					badRecs.add(rec.getRecordNum());
-				return;
-			}
-			finally
-			{
-				timeSeriesDAO.close();
-			}
-		}
-		else
-		{
-			// The time series already existed from a previous tasklist rec in this run.
-			// Make sure this rec's unitsAbbr matches the CTimeSeries.getUnitsAbbr().
-			// If not, convert it to the CTS units.
-			String recUnitsAbbr = rec.getUnitsAbbr();
-			String ctsUnitsAbbr = cts.getUnitsAbbr();
-			if (ctsUnitsAbbr == null) // no units yet assigned?
-				cts.setUnitsAbbr(ctsUnitsAbbr = recUnitsAbbr);
-			else if (recUnitsAbbr == null) // for some reason, this tasklist record doesn't have units
-				recUnitsAbbr = ctsUnitsAbbr;
-			else if (!TextUtil.strEqualIgnoreCase(recUnitsAbbr, ctsUnitsAbbr))
-			{
-				EngineeringUnit euOld =	EngineeringUnit.getEngineeringUnit(recUnitsAbbr);
-				EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(ctsUnitsAbbr);
-
-				UnitConverter converter = Database.getDb().unitConverterSet.get(euOld, euNew);
-				if (converter != null)
-				{
-					try { rec.setValue(converter.convert(rec.getValue())); }
-					catch (Exception ex)
-					{
-						Logger.instance().warning(
-							"Tasklist for '" + cts.getTimeSeriesIdentifier().getUniqueString()
-							+ "' exception converting " + rec.getValue() + " " + rec.getUnitsAbbr()
-							+ " to " + cts.getUnitsAbbr() + ": " + ex
-							+ " -- will use as-is.");
-					}
-				}
-				else
-				{
-					Logger.instance().warning(
-						"Tasklist for '" + cts.getTimeSeriesIdentifier().getUniqueString()
-						+ "' cannot convert " + rec.getValue() + " " + rec.getUnitsAbbr()
-						+ " to " + cts.getUnitsAbbr() + ". -- will use as-is.");
-				}
-			}
-		}
-		if (rrhandle != null)
-			rrhandle.addRecNum(rec.getRecordNum());
-
-		// Construct timed variable with appropriate flags & add it.
-		TimedVariable tv = new TimedVariable(rec.getValue());
-		tv.setTime(rec.getTimeStamp());
-		tv.setFlags(CwmsFlags.cwmsQuality2flag(rec.getQualityCode()));
-
-		if (!rec.isDeleted() && !rec.isValueWasNull())
-		{
-			VarFlags.setWasAdded(tv);
-			cts.addSample(tv);
-			// Remember which tasklist records are in this timeseries.
-			cts.addTaskListRecNum(rec.getRecordNum());
-			Logger.instance().debug3("Added value " + tv + " to time series "
-				+ cts.getTimeSeriesIdentifier().getUniqueString()
-				+ " flags=0x" + Integer.toHexString(tv.getFlags())
-				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
-		}
-		else
-		{
-			VarFlags.setWasDeleted(tv);
-			Logger.instance().warning("Discarding deleted value " + tv.toString()
-				+ " for time series " + cts.getTimeSeriesIdentifier().getUniqueString()
-				+ " flags=0x" + Integer.toHexString(tv.getFlags())
-				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
-		}
-	}
-
+	
 	public boolean isCwms() { return true; }
 
 	@Override
@@ -1897,15 +1560,20 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		String q = "select distinct parameter_type_id FROM CWMS_V_TS_ID"
 			+ " WHERE upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
 
-		ResultSet rs = doQuery(q);
+		DaiBase dao = new DaoBase(this, "CWMSDB");
 		try
 		{
+			ResultSet rs = dao.doQuery(q);
 			while (rs != null && rs.next())
 				ret.add(rs.getString(1));
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("CwmsTimeSeriesDb.listParamTypes: " + ex);
+		}
+		finally
+		{
+			dao.close();
 		}
 
 		// MJM - these are the ones we know about for sure:
@@ -1931,26 +1599,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		return super.getValidPartChoices(part);
 	}
 
-//	public void printCat()
-//	{
-//		try
-//		{
-//			CwmsCatJdbc cwmsCatJdbc = new CwmsCatJdbc(getConnection());
-//
-//			ResultSet rs = cwmsCatJdbc.catTsId(dbOfficeId, null, null, null, null, null);
-//			while(rs != null && rs.next())
-//			{
-//				System.out.println(rs.getString(2).trim() + ", active=" + rs.getString(5));
-//			}
-//		}
-//		catch(Exception ex)
-//		{
-//			System.err.println("Error: " + ex);
-//			ex.printStackTrace(System.err);
-//		}
-//
-//	}
-
 	@Override
 	public TimeSeriesIdentifier makeEmptyTsId()
 	{
@@ -1966,7 +1614,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		DbKey dbOfficeCode, String dbOfficePrivilege)
 		throws DbIoException
 	{
-//TODO No need to pass this method office code or privilege level. SQL code fixgures that out.
 		String errMsg = null;
 		PreparedStatement storeProcStmt = null;
 		CallableStatement testStmt = null;
@@ -1985,10 +1632,10 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
 			storeProcStmt.setInt(2, privLevel);
 			storeProcStmt.setString(3, dbOfficeId);
-			Logger.instance().debug1("Executing '" + q + "' with "
-				+ "dbOfficeCode=" + dbOfficeCode
-				+ ", privLevel=" + privLevel
-				+ ", dbOfficeId='" + dbOfficeId + "'");
+//			Logger.instance().debug2("Executing '" + q + "' with "
+//				+ "dbOfficeCode=" + dbOfficeCode
+//				+ ", privLevel=" + privLevel
+//				+ ", dbOfficeId='" + dbOfficeId + "'");
 			storeProcStmt.execute();
 //			conn.commit();
 
@@ -1997,12 +1644,9 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			testStmt.registerOutParameter(1, Types.VARCHAR);
 			testStmt.setString(2, "CC");
 			testStmt.setString(3, "PLATFORMCONFIG");
-			Logger.instance().info("Calling '" + q + "' with "
-				+ "schema=CCP and table=PLATFORMCONFIG");
+//			Logger.instance().debug2("Calling '" + q + "' with "
+//				+ "schema=CCP and table=PLATFORMCONFIG");
 			testStmt.execute();
-			String pred = testStmt.getString(1);
-			Logger.instance().info("Predicate for table PLATFORMCONFIG is '" + pred + "'");
-
 		}
 		catch (SQLException ex)
 		{
@@ -2077,53 +1721,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		return null;
 	}
 
-//	public static int determineCwmsSchemaVersion(Connection con, int tsdbVersion)
-//	{
-//		if (DecodesSettings.instance().cwmsVersionOverride == 2)
-//		{
-//			Logger.instance().info("cwmsVersionOverride==2");
-//			return CWMS_V_2_1;
-//		}
-//
-//		String q = "select count(*) from all_synonyms where owner='PUBLIC' " +
-//			"and SYNONYM_NAME = 'CWMS_ENV'";
-//		ResultSet rs = null;
-//		Statement stmt = null;
-//		try
-//        {
-//			stmt = con.createStatement();
-//			rs = stmt.executeQuery(q);
-//			if (rs.next())
-//			{
-//				int count = rs.getInt(1);
-//				if (count == 0)
-//					return CWMS_V_2_1;
-//				Logger.instance().debug3("Response to '" + q + "' is " + count);
-//				return CWMS_V_3_0;
-//			}
-//			Logger.instance().warning("Cannot determine CWMS Version. No results to query '"
-//				+ q + "' -- assuming 3.0");
-//			return CWMS_V_3_0;
-//		}
-//		catch (Exception ex)
-//		{
-//			Logger.instance().warning("Error Determing Schema Version: " + ex
-//			+ " -- assuming 3.0");
-//			return CWMS_V_3_0;
-//		}
-//		finally
-//		{
-//			if (rs != null)
-//			{
-//				try { rs.close(); } catch(Exception ex) {}
-//			}
-//			if (stmt != null)
-//			{
-//				try { stmt.close(); } catch(Exception ex) {}
-//			}
-//		}
-//	}
-
 	/**
 	 * Converts a CWMS String Office ID to the numeric office Code.
 	 * @param con the Connection
@@ -2167,7 +1764,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 
 	public DbKey getDbOfficeCode()
 	{
-		return dbOfficeCode;
+		return conInfo.getDbOfficeCode();
 	}
 
 	public BaseParam getBaseParam()
@@ -2195,12 +1792,15 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		// int nIndeps = indeps.length;
 		// NOTE: indeps is already an array of doubles. I can pass
 		// it directly to the rateOne function.
-
-		CwmsRatingDao crd = new CwmsRatingDao(this);
-		try
+		Connection tc = getConnection();
+		String action = "reading rating";
+		try (CwmsRatingDao crd = new CwmsRatingDao(this))
 		{
+			crd.setManualConnection(tc);
 			RatingSet ratingSet = crd.getRatingSet(specId);
-			double d = ratingSet.rateOne(indeps, timeStamp.getTime());
+			action = "rateOne";
+			double d = ratingSet.rateOne(tc, timeStamp.getTime(), indeps);
+			
 			if (d == Const.UNDEFINED_DOUBLE)
 			{
 				StringBuilder sb = new StringBuilder();
@@ -2215,14 +1815,15 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		catch (RatingException ex)
 		{
-			String msg = "rating(" + specId + ") failed: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "Error while " + action + ", specId=" + specId + ": " + ex;
+			warning(msg);
+			ex.printStackTrace(Logger.instance().getLogOutput() != null 
+				? Logger.instance().getLogOutput() : System.err);
 			throw new RangeException(msg);
 		}
 		finally
 		{
-			crd.close();
+			freeConnection(tc);
 		}
 	}
 
@@ -2243,22 +1844,16 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			getTaskListStmt = null;
 		}
 
-		// Return the connection to the CWMS connection pool. Do not close directly.
-		doCloseConnection(getConnection());
-	}
-
-	public static void doCloseConnection(Connection con)
-	{
-		// Return connection to CWMS connection pool.
-		try
+		// If there is a connection, return the connection to the CWMS connection pool. Do not close directly.
+		if (conInfo != null)
 		{
-			CwmsDbConnectionPool.close(con);
+			if (conInfo.getConnection() != null)
+			{
+				freeConnection(conInfo.getConnection());
+				conInfo.setConnection(null);
+			}
+			conInfo = null; // Force re-init if db is reopened.
 		}
-		catch (Exception ex)
-		{
-			Logger.instance().warning("Exception closing CWmS connection: " + ex);
-		}
-
 	}
 
 	@Override
@@ -2266,17 +1861,22 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		throws DbIoException
 	{
 		ArrayList<String> ret = new ArrayList<String>();
-		String q = "select distinct version_id from cwms_v_ts_id order by version_id;";
+		String q = "select distinct version_id from cwms_v_ts_id order by version_id";
 
-		ResultSet rs = doQuery(q);
+		DaiBase dao = new DaoBase(this, "CWMS");
 		try
 		{
+			ResultSet rs = dao.doQuery(q);
 			while (rs != null && rs.next())
-				ret.add(rs.getString(1));
+					ret.add(rs.getString(1));
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("CwmsTimeSeriesDb.listVersions: " + ex);
+		}
+		finally
+		{
+			dao.close();
 		}
 
 		return ret;
@@ -2309,4 +1909,97 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		return CwmsFlags.flags2Display(flags);
 	}
 
+	@Override
+	public Connection getConnection()
+	{
+		// Called from DAOs to get a new connection from the pool.
+		if (conInfo == null || conInfo.getLoginInfo() == null)
+		{
+			failure("CwmsTimeSeriesDb.getConnection -- loginInfo is null! DB not initialized?");
+			return null;
+		}
+		
+		Connection ret = null;
+		try
+		{
+			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo(), module);
+		}
+		catch (SQLException ex)
+		{
+			String msg = "getConnection() Cannot get CWMS connection for user '"
+				+ conInfo.getLoginInfo().getUser() + "' and dbURI '" + conInfo.getLoginInfo().getUrl() + "'";
+			failure(msg);
+			PrintStream ps = Logger.instance().getLogOutput();
+			if (ps != null)
+				ex.printStackTrace(ps);
+			else
+				ex.printStackTrace(System.err);
+			return null;
+		}
+
+		// Force autoCommit on.
+		try{ ret.setAutoCommit(true); }
+		catch(SQLException ex)
+		{
+			warning("getConnection() Cannot set SQL AutoCommit to true: " + ex);
+		}
+
+		try
+		{
+			setCtxDbOfficeId(ret, dbOfficeId, conInfo.getDbOfficeCode(), 
+				conInfo.getDbOfficePrivilege());
+		}
+		catch (Exception ex)
+		{
+			String msg = "getConnection() Cannot set VPD context username/officeId username='" 
+				+ conInfo.getLoginInfo().getUser()
+				+ "', officeId='" + dbOfficeId + "', officeCode=" + conInfo.getDbOfficeCode() + ", priv='"
+				+ conInfo.getDbOfficePrivilege() + "':" + ex;
+			failure(msg);
+			try { CwmsDbConnectionPool.close(ret); } catch(Exception ex2) {}
+			return null;
+		}
+		
+		// These debug messages will allow us to detect leaks: connections open but never closed:
+		openConnections.add(ret);
+		
+		if (OpenTsdbSettings.instance().traceConnections)
+		{
+			debug1("getConnection() After allocate there are now " + openConnections.size() + " open connections. "
+				+ "Called from:");
+		
+			StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
+			boolean lastWasDao = true;
+			for(int n = 2; n < stk.length; n++) 
+			{
+				if (lastWasDao)
+					Logger.instance().debug1("\t" + n + ": " + stk[n]);
+				String s = stk[n].toString().toLowerCase();
+				lastWasDao = s.contains("dao") || s.contains("io.");
+			}
+		}
+		
+		return ret;
+	}
+
+
+	@Override
+	public void freeConnection(Connection con)
+	{
+		if (!openConnections.remove(con))
+			warning("freeConnection() - weird! Passed a connection that wasn't in my open-list.");
+		
+		try { CwmsDbConnectionPool.close(con); }
+		catch(SQLException ex)
+		{
+			warning("freeConnection() Error in CwmsDbConnectionPool.close: " + ex);
+			ex.printStackTrace(Logger.instance().getLogOutput() != null ? 
+				Logger.instance().getLogOutput() : System.err);
+		}
+		
+		if (OpenTsdbSettings.instance().traceConnections)
+			debug1("freeConnection() After free there are now " + openConnections.size() + " open connections.");
+	}
+		
+	
 }

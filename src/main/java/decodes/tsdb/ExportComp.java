@@ -61,6 +61,7 @@ import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dai.TsGroupDAI;
 import ilex.cmdline.*;
 import ilex.util.Logger;
 import decodes.db.Constants;
@@ -148,6 +149,7 @@ public class ExportComp
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		AlgorithmDAI algorithmDao = theDb.makeAlgorithmDAO();
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
+		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
 
 		try
 		{
@@ -207,7 +209,7 @@ public class ExportComp
 				if ((tsGrpName = comp.getGroupName()) != null)
 				{
 					TsGroup tsGrp;
-					if ((tsGrp = theDb.getTsGroupByName(tsGrpName)) != null)
+					if ((tsGrp = groupDAO.getTsGroupByName(tsGrpName)) != null)
 					{
 						tsGrpList.add(tsGrp);
 						for (TsGroup g : tsGrp.getIncludedSubGroups())
@@ -231,7 +233,7 @@ public class ExportComp
 			}
 
 			// Get the TS groups from the DB
-			ArrayList<TsGroup> tmpGrps = theDb.getTsGroupList(null);
+			ArrayList<TsGroup> tmpGrps = groupDAO.getTsGroupList(null);
 		nextTmpGrp:
 			for (TsGroup tmpGrp : tmpGrps)
 			{
@@ -242,7 +244,7 @@ public class ExportComp
 					if (alreadyInList.getGroupName().equalsIgnoreCase(
 						tmpGrp.getGroupName()))
 						continue nextTmpGrp;
-				tmpGrp = theDb.getTsGroupById(tmpGrp.getGroupId());
+				tmpGrp = groupDAO.getTsGroupById(tmpGrp.getGroupId());
 				tsGrpList.add(tmpGrp);
 			nextIncSub:
 				for (TsGroup g : tmpGrp.getIncludedSubGroups())
@@ -296,6 +298,7 @@ public class ExportComp
 		}
 		finally
 		{
+			groupDAO.close();
 			computationDAO.close();
 			algorithmDao.close();
 			loadingAppDao.close();

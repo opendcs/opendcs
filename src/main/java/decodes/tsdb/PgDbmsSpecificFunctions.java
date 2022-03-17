@@ -8,6 +8,9 @@
  */
 package decodes.tsdb;
 
+import opendcs.dai.DaiBase;
+import opendcs.dao.DaoBase;
+
 /**
  * Implements DBMS-specific functions for Postgres
  * @author mmaloney
@@ -25,7 +28,8 @@ public class PgDbmsSpecificFunctions extends DbmsSpecificFunctions
 		throws DbIoException
 	{
 		String q = "SET time zone " + theDb.sqlString(tzName);
-		theDb.doModify(q);
+		DaiBase dao = new DaoBase(theDb, "PgDbmsSpecificFunctions");
+		try { dao.doModify(q); }
+		finally { dao.close(); }
 	}
-
 }

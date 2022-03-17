@@ -84,6 +84,7 @@
 
 package decodes.sql;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -93,17 +94,16 @@ import java.util.Date;
 
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.ScheduleEntryDAI;
-import opendcs.dao.PropertiesSqlDao;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
-import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.DataSource;
 import decodes.db.RoutingSpec;
 import decodes.db.RoutingSpecList;
 import decodes.db.ScheduleEntry;
 import decodes.tsdb.DbIoException;
+import opendcs.dao.DaoBase;
 
 /**
  * This class handles reading and writing the RoutingSpecLists from/to
@@ -113,31 +113,54 @@ import decodes.tsdb.DbIoException;
 public class RoutingSpecListIO extends SqlDbObjIo
 {
 	/**
-	* Transient storage for the RoutingSpecList that's being read or written.
-	*/
-	RoutingSpecList _rsList;
-
-	/**
 	* This is used to look up the ID numbers and names of PresentationGroups
 	*/
-	PresentationGroupListIO _pgListIO;
+	private PresentationGroupListIO _pgListIO;
 
 	/**
 	* This is used to look up NetworkList objects that are associated with
 	* a RoutingSpec.
 	*/
-	NetworkListListIO _nllIO;
+	private NetworkListListIO _nllIO;
+
+	private DataSourceListIO _dslIO;
+	
+	private PropertiesDAI propsDao = null;
 
 
 	/** Constructor. */
 	public RoutingSpecListIO(SqlDatabaseIO dbio,
 							 PresentationGroupListIO pgListIO,
-							 NetworkListListIO nllIO)
+							 NetworkListListIO nllIO,
+							 DataSourceListIO dslIO)
 	{
 		super(dbio);
 		
 		_pgListIO = pgListIO;
 		_nllIO = nllIO;
+		_dslIO = dslIO;
+	}
+	
+	@Override
+	public void setConnection(Connection conn)
+	{
+		super.setConnection(conn);
+		// Have subordinates use my connection.
+		_pgListIO.setConnection(conn);
+		_nllIO.setConnection(conn);
+		_dslIO.setConnection(conn);
+		
+		if (conn != null) // Opening
+		{
+			propsDao = _dbio.makePropertiesDAO();
+			((DaoBase)propsDao).setManualConnection(conn);
+		}
+		else // conn is null: closing
+		{	
+			if (propsDao != null)
+				propsDao.close();
+			propsDao = null;
+		}
 	}
 
 	/**
@@ -149,8 +172,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
 		throws SQLException, DatabaseException
 	{
 		Logger.instance().log(Logger.E_DEBUG1,"Reading RoutingSpecs...");
-
-		_rsList = rsList;
 
 		Statement stmt = createStatement();
 		
@@ -175,8 +196,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 			routingSpec.dataSource = null;
 			try
 			{
-				DataSource ds = _dbio._dataSourceListIO.getDS(
-					rsList, dataSourceId);
+				DataSource ds = _dbio._dataSourceListIO.getDS(rsList, dataSourceId);
 				routingSpec.dataSource = ds;
 			}
 			catch(DatabaseException ex)
@@ -222,16 +242,11 @@ public class RoutingSpecListIO extends SqlDbObjIo
 				TextUtil.str2boolean(resultSet.getString(14));
 
 			// Get the properties associated with this object.
-			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
 			try { propsDao.readProperties("RoutingSpecProperty", "RoutingSpecId", routingSpec.getId(),
 				routingSpec.getProperties()); }
 			catch (DbIoException e)
 			{
 				throw new DatabaseException(e.getMessage());
-			}
-			finally
-			{
-				propsDao.close();
 			}
 
 			// Get the NetworkLits associated with this database.
@@ -312,17 +327,12 @@ public class RoutingSpecListIO extends SqlDbObjIo
 			routingSpec.isProduction = 
 				TextUtil.str2boolean(resultSet.getString(14));
 
-			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
 			routingSpec.getProperties().clear();
 			try { propsDao.readProperties("RoutingSpecProperty", "RoutingSpecId", routingSpec.getId(),
 				routingSpec.getProperties()); }
 			catch (DbIoException e)
 			{
 				throw new DatabaseException(e.getMessage());
-			}
-			finally
-			{
-				propsDao.close();
 			}
 
 			// Get the NetworkLists associated with this database.
@@ -343,7 +353,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	* associated with a particular RoutingSpec.  It then adds the
 	* NetworkList names to the list of such names in the RoutingSpec.
 	*/
-	public void read_RS_NL(RoutingSpec routingSpec)
+	private void read_RS_NL(RoutingSpec routingSpec)
 		throws DatabaseException, SQLException
 	{
 		Statement stmt = createStatement();
@@ -391,7 +401,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	/**
 	* Update a pre-existing RoutingSpec in the SQL database.
 	*/
-	public void update(RoutingSpec rs)
+	private void update(RoutingSpec rs)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = rs.getId();
@@ -420,16 +430,11 @@ public class RoutingSpecListIO extends SqlDbObjIo
 
 		executeUpdate(q);
 
-		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
 		try { propsDao.writeProperties("RoutingSpecProperty", "RoutingSpecId", rs.getId(),
 			rs.getProperties()); }
 		catch (DbIoException e)
 		{
 			throw new DatabaseException(e.getMessage());
-		}
-		finally
-		{
-			propsDao.close();
 		}
 
 		// Update the RoutingSpecNetworkLists
@@ -442,7 +447,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	* records into the RoutingSpecProperty and RoutingSpecNetworkList
 	* tables, as required.
 	*/
-	public void insert(RoutingSpec rs)
+	private void insert(RoutingSpec rs)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = getKey("RoutingSpec");
@@ -476,17 +481,11 @@ public class RoutingSpecListIO extends SqlDbObjIo
 		// Now insert the RoutingSpecNetworkList records
 		insert_RS_NL(rs);
 
-		// Now the properties
-		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
 		try { propsDao.writeProperties("RoutingSpecProperty", "RoutingSpecId", rs.getId(),
 			rs.getProperties()); }
 		catch (DbIoException e)
 		{
 			throw new DatabaseException(e.getMessage());
-		}
-		finally
-		{
-			propsDao.close();
 		}
 	}
 
@@ -494,7 +493,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	* Insert the RoutingSpecNetworkList records corresponding to a new
 	* RoutingSpec.
 	*/
-	public void insert_RS_NL(RoutingSpec rs)
+	private void insert_RS_NL(RoutingSpec rs)
 		throws DatabaseException, SQLException
 	{
 		DbKey rsId = rs.getId();
@@ -532,7 +531,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
 		// Do the related tables first
 		delete_RS_NL(rs);
 
-		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
 		ScheduleEntryDAI seDAO = _dbio.makeScheduleEntryDAO();
 		try
 		{
@@ -553,7 +551,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
 		}
 		finally
 		{
-			propsDao.close();
 			if (seDAO != null)
 				seDAO.close();
 		}
@@ -567,7 +564,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 	* Deletes the RoutingSpecNetworkList records corresponding to a
 	* RoutingSpec.
 	*/
-	public void delete_RS_NL(RoutingSpec rs)
+	private void delete_RS_NL(RoutingSpec rs)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = rs.getId();

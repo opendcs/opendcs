@@ -32,6 +32,7 @@ import decodes.util.CmdLineArgs;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.Logger;
+import opendcs.dai.TsGroupDAI;
 
 /**
  * Create on Dec 22, 2010
@@ -238,7 +239,9 @@ public class ExportGroup extends TsdbAppTemplate
 	@Override
 	protected void runApp() throws Exception
 	{
-		try {
+		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+		try 
+		{
 			ArrayList<CompMetaData> metadata = new ArrayList<CompMetaData>();
 	
 			//Get the TS groups
@@ -257,7 +260,7 @@ public class ExportGroup extends TsdbAppTemplate
 					try
 					{
  						if (aGrpType == null || aGrpType.length() == 0) continue; 
- 						aTsGrpsList = theDb.getTsGroupList(aGrpType);
+ 						aTsGrpsList = groupDAO.getTsGroupList(aGrpType);
  						if (aTsGrpsList == null) continue;
  						for(TsGroup g: aTsGrpsList) tmpTsGrpsList.add(g);
 					}
@@ -281,7 +284,7 @@ public class ExportGroup extends TsdbAppTemplate
 					try
 					{
 						if (aGrpName == null || aGrpName.length() == 0) continue;
-						aTsGrp = theDb.getTsGroupByName(aGrpName);
+						aTsGrp = groupDAO.getTsGroupByName(aGrpName);
  						if (aTsGrp == null) continue;
  						tmpTsGrpsList.add(aTsGrp);
 					}
@@ -298,7 +301,7 @@ public class ExportGroup extends TsdbAppTemplate
 				displayMessage(AppMessages.util_CreateFullTSGroupList);
 				try
 				{
-					tmpTsGrpsList = theDb.getTsGroupList(null);
+					tmpTsGrpsList = groupDAO.getTsGroupList(null);
 				}
 				catch (Exception E)
 				{
@@ -354,6 +357,10 @@ public class ExportGroup extends TsdbAppTemplate
 			displayMessage(AppMessages.util_FailExpTSGroup, AppMessages.ShowMode._error);
 			displayException(ex.toString());
 			ex.printStackTrace();
+		}
+		finally
+		{
+			groupDAO.close();
 		}
 	}
 

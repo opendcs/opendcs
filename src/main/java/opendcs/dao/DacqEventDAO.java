@@ -79,7 +79,7 @@ public class DacqEventDAO
 		Statement modStmt = null;
 		try
 		{
-			modStmt = db.getConnection().createStatement();
+			modStmt = getConnection().createStatement();
 			modStmt.executeUpdate(q);
 		}
 		catch(SQLException ex)

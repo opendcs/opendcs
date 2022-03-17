@@ -124,7 +124,7 @@ public class FileDataSource
 		throws InvalidDatabaseException
 	{
 		super.processDataSource();
-		Logger.instance().log(Logger.E_DEBUG1,
+		Logger.instance().log(Logger.E_DEBUG2,
 			"FileDataSource.processDataSource for '" + getName()
 			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
 		filename = null;

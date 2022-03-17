@@ -9,6 +9,7 @@ package decodes.tsdb;
 
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
+import opendcs.dai.TsGroupDAI;
 import decodes.db.DataType;
 import decodes.db.Site;
 import decodes.sql.DbKey;
@@ -51,7 +52,8 @@ public class TsGroupDisplay
 			System.err.println("Usage: ... groupName");
 			System.exit(1);;
 		}
-		theGroup = theDb.getTsGroupByName(groupName);
+		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+		theGroup = groupDAO.getTsGroupByName(groupName);
 		if (theGroup == null)
 		{
 			System.err.println("No Such Group: " + groupName);
@@ -59,6 +61,7 @@ public class TsGroupDisplay
 		}
 		else
 			displayGroup();
+		groupDAO.close();
 	}
 	
 	private void displayGroup() 

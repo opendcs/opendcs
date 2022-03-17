@@ -24,7 +24,9 @@
 package opendcs.dao;
 
 import ilex.util.Logger;
+import opendcs.dai.DaiBase;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -36,11 +38,14 @@ import decodes.tsdb.DbIoException;
 import decodes.util.DecodesException;
 
 /**
- * Base class for Data Access Objects within OpenDCS
+ * Base class for Data Access Objects within OpenDCS.
+ * This class can also be instantiated directly for executing miscellaneous
+ * queries and modify statements.
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
  */
 public class DaoBase
+	implements DaiBase
 {
 	protected DatabaseConnectionOwner db = null;
 	private Statement queryStmt1 = null;
@@ -48,6 +53,8 @@ public class DaoBase
 	private Statement queryStmt2 = null;
 	private ResultSet queryResults2 = null;
 	private int fetchSize = 0;
+	protected Connection myCon = null;
+	private boolean conSetManually = false;
 
 	protected String module;
 	
@@ -56,11 +63,34 @@ public class DaoBase
 	 * @param tsdb the database
 	 * @param module the name of the module for log messages
 	 */
-	protected DaoBase(DatabaseConnectionOwner tsdb, String module)
+	public DaoBase(DatabaseConnectionOwner tsdb, String module)
 	{
 		this.db = tsdb;
 		this.module = module;
 	}
+	
+	/** 
+	 * Constructor for subordinate DAOs.
+	 * The parent DAO shares its connection with the
+	 * subordinate after creation. Then the subordinate close() will not free
+	 * the connection. For connection pooling systems this can reduce number of
+	 * open connections.
+	 * @param tsdb
+	 * @param module
+	 */
+	public DaoBase(DatabaseConnectionOwner tsdb, String module, Connection con)
+	{
+		this.db = tsdb;
+		this.module = module;
+		setManualConnection(con);
+	}
+	
+	public void setManualConnection(Connection con)
+	{
+		this.myCon = con;
+		conSetManually = true;
+	}
+
 	
 	/**
 	 * Users should close the DAO after using.
@@ -72,11 +102,24 @@ public class DaoBase
 		if (queryStmt2 != null)
 			try { queryStmt2.close(); } catch(Exception ex) {}
 		queryStmt1 = queryStmt2 = null;
+		
+		// for pooling: return the connection (if there is one) back to the pool.
+		if (myCon != null && !conSetManually)
+			db.freeConnection(myCon);
+		myCon = null;
 	}
 	
 	public void finalize()
 	{
 		close();
+	}
+	
+	protected Connection getConnection()
+	{
+		// local getConnection() method that saves the connection locally
+		if (myCon == null)
+			myCon = db.getConnection();
+		return myCon;
 	}
 	
 	/**
@@ -102,7 +145,7 @@ public class DaoBase
 		try
 		{
 			if (queryStmt1 == null)
-				queryStmt1 = db.getConnection().createStatement();
+				queryStmt1 = getConnection().createStatement();
 			if (fetchSize > 0)
 				queryStmt1.setFetchSize(fetchSize);
 			debug3("Query1 '" + q + "'");
@@ -133,7 +176,7 @@ public class DaoBase
 		try
 		{
 			if (queryStmt2 == null)
-				queryStmt2 = db.getConnection().createStatement();
+				queryStmt2 = getConnection().createStatement();
 			debug3("Query2 '" + q + "'");
 			return queryResults2 = queryStmt2.executeQuery(q);
 		}
@@ -160,7 +203,7 @@ public class DaoBase
 		Statement modStmt = null;
 		try
 		{
-			modStmt = db.getConnection().createStatement();
+			modStmt = getConnection().createStatement();
 			debug3("Executing statement '" + q + "'");
 			return modStmt.executeUpdate(q);
 		}
@@ -234,7 +277,7 @@ public class DaoBase
 	public DbKey getKey(String tableName)
 		throws DbIoException
 	{
-		try { return db.getKeyGenerator().getKey(tableName, db.getConnection()); }
+		try { return db.getKeyGenerator().getKey(tableName, getConnection()); }
 		catch(DecodesException ex)
 		{
 			throw new DbIoException(ex.getMessage());

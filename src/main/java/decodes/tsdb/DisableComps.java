@@ -81,17 +81,17 @@ public class DisableComps
 		// Just to make sure ...
 		String q = "update cp_computation set enabled = 'N' "
 			+ "where loading_application_id = " + getAppId();
-		theDb.doModify(q);
+		loadingAppDao.doModify(q);
 
 		// And just to be thorough ...
 		q = "delete from cp_comp_depends where computation_id in ("
 			+ "select computation_id from cp_computation where loading_application_id = "
 			+ getAppId() + ")";
-		theDb.doModify(q);
+		loadingAppDao.doModify(q);
 
 		// Now delete any stray tasklist entries.
 		q = "delete from cp_comp_tasklist where loading_application_id = " + getAppId();
-		theDb.doModify(q);
+		loadingAppDao.doModify(q);
 		computationDAO.close();
 
 	}

@@ -1869,16 +1869,6 @@ e.printStackTrace();
       commitAfterSelect=status;
     }
 
-	/* (non-Javadoc)
-	 * @see decodes.db.DatabaseIO#readNetworkListName(java.lang.String)
-	 */
-	@Override
-	public ArrayList<String> readNetworkListName(String transportId)
-			throws DatabaseException 
-	{
-		return null;
-	}
-
 	@Override
 	public LoadingAppDAI makeLoadingAppDAO()
 	{

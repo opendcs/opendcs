@@ -62,6 +62,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TimeZone;
 
 import decodes.cwms.CwmsFlags;
@@ -79,12 +80,14 @@ import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.CpDependsNotify;
+import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.NoValueException;
+import decodes.tsdb.RecordRangeHandle;
+import decodes.tsdb.TasklistRec;
+import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.tsdb.VarFlags;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -96,6 +99,7 @@ import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
 import opendcs.opentsdb.Interval;
 import opendcs.opentsdb.OffsetErrorAction;
+import decodes.tsdb.TimeSeriesDb;
 
 public class OpenTimeSeriesDAO
 	extends DaoBase
@@ -115,6 +119,9 @@ public class OpenTimeSeriesDAO
 	
 	/** data sources are immutable in the database so no need to refresh them. */
 	private static HashMap<String, TsDataSource> key2ds = new HashMap<String, TsDataSource>();
+	
+	private long lastTsidCacheRead = 0L;
+
 
 	
 	public static final long MSEC_PER_UTC_DAY = 24 * 3600 * 1000L;
@@ -1583,5 +1590,238 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		doModify(q);
 
 		
+	}
+
+	/*
+	 * TSDB version 5 & above use a join with CP_COMP_DEPENDS to determine
+	 * not only what the new data is, but what computations depend on it.
+	 * The dependent computation IDs are stored inside each CTimeSeries.
+	 */
+	
+	
+	@Override
+	public DataCollection getNewData(DbKey applicationId)
+		throws DbIoException
+	{
+		// Reload the TSID cache every hour.
+		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
+		{
+			lastTsidCacheRead = System.currentTimeMillis();
+			reloadTsIdCache();
+		}
+
+		DataCollection dataCollection = new DataCollection();
+
+		// MJM 2/14/18 - From Dave Portin. Original failTimeClause was:
+		//		" and (a.FAIL_TIME is null OR "
+		//		+ "SYSDATE - to_date("
+		//		+ "to_char(a.FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
+		//		+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
+
+		int minRecNum = -1;
+		String what = "Preparing min statement query";
+		String failTimeClause = "";
+		if (DecodesSettings.instance().retryFailedComputations)
+			failTimeClause = " and (a.FAIL_TIME is null OR "
+				+ System.currentTimeMillis() + " -  a.FAIL_TIME >= 3600000)";
+		String getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
+				+ "where a.LOADING_APPLICATION_ID = " + applicationId
+				+ failTimeClause;
+		
+		// 2nd query gets tasklist recs within record_num range.
+		String getTaskListStmtQuery = 
+			"select a.RECORD_NUM, a.TS_ID, a.num_value, a.sample_time, "
+			+ "a.DELETE_FLAG, a.flags "
+			+ "from CP_COMP_TASKLIST a "
+			+ "where a.LOADING_APPLICATION_ID = " + applicationId
+			+ failTimeClause;
+		try
+		{
+			if (db.isOracle())
+			{
+				// ROWNUM needs to be part of where clause before ORDER BY clause
+				getTaskListStmtQuery = getTaskListStmtQuery + " and ROWNUM < 20000"
+					+ " order by a.ts_id, a.sample_time";
+			}
+			else // PostgreSQL
+			{
+				// LIMIT goes after the ORDER BY clause.
+				getTaskListStmtQuery = getTaskListStmtQuery 
+					+ " order by a.ts_id, a.sample_time"
+					+ " limit 20000";
+			}
+			
+			ResultSet rs = doQuery(getMinStmtQuery);
+			
+			if (rs == null || !rs.next())
+			{
+				debug1("No new data for appId=" + applicationId);
+				((TimeSeriesDb)db).reclaimTasklistSpace(this);
+				return dataCollection;
+			}
+			
+			minRecNum = rs.getInt(1);
+			if (rs.wasNull())
+			{
+				debug1("No new data for appId=" + applicationId);
+				minRecNum = -1;
+				((TimeSeriesDb)db).reclaimTasklistSpace(this);
+				return dataCollection;
+			}
+			debug3("minRecNum=" + minRecNum);
+		}
+		catch(SQLException ex)
+		{
+			warning("getNewData error while" + what + ": " + ex);
+			return dataCollection;
+		}
+
+		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
+		ArrayList<Integer> badRecs = new ArrayList<Integer>();
+		try
+		{
+			what = "Executing '" + getTaskListStmtQuery + "'";
+			debug3(what);
+			ResultSet rs = doQuery(getTaskListStmtQuery);
+			while (rs.next())
+			{
+				// Extract the info needed from the result set row.
+				int recordNum = rs.getInt(1);
+				DbKey sdi = DbKey.createDbKey(rs, 2);
+				double value = rs.getDouble(3);
+				boolean valueWasNull = rs.wasNull();
+				Date timeStamp = new Date(rs.getLong(4));
+				String df = rs.getString(5);
+				boolean deleted = TextUtil.str2boolean(df);
+				int flags = rs.getInt(6);
+				
+				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
+					valueWasNull, timeStamp, deleted, null, null, flags);
+				tasklistRecs.add(rec);
+			}
+
+			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
+			
+			// Process the real-time records collected above.
+			for(TasklistRec rec : tasklistRecs)
+				processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
+			
+			dataCollection.setTasklistHandle(rrhandle);
+			
+			// Delete the bad tasklist recs, 250 at a time.
+			if (badRecs.size() > 0)
+				Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
+					+ " bad tasklist records.");
+			while (badRecs.size() > 0)
+			{
+				StringBuilder inList = new StringBuilder();
+				int n = badRecs.size();
+				int x=0;
+				for(; x<250 && x<n; x++)
+				{
+					if (x > 0)
+						inList.append(", ");
+					inList.append(badRecs.get(x).toString());
+				}
+				String q = "delete from CP_COMP_TASKLIST "
+					+ "where RECORD_NUM IN (" + inList.toString() + ")";
+				doModify(q);
+				for(int i=0; i<x; i++)
+					badRecs.remove(0);
+			}
+			
+			// Show each tasklist entry in the log if we're at debug level 3
+			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
+			{
+				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
+				debug3("getNewData, returning " + allts.size() + " TimeSeries.");
+				for(CTimeSeries ts : allts)
+					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " " 
+						+ ts.size() + " values.");
+			}
+			
+			return dataCollection;
+		}
+		catch(SQLException ex)
+		{
+			System.err.println("Error while " + what + ": " + ex);
+			ex.printStackTrace();
+			throw new DbIoException("Error while " + what + ": " + ex);
+		}
+	}
+
+
+	private void processTasklistEntry(TasklistRec rec,
+		DataCollection dataCollection, RecordRangeHandle rrhandle,
+		ArrayList<Integer> badRecs, DbKey applicationId)
+		throws DbIoException
+	{
+		// Find time series if already in data collection.
+		// If not construct one and add it.
+		CTimeSeries cts = dataCollection.getTimeSeriesByUniqueSdi(rec.getSdi());
+		if (cts == null)
+		{
+			try
+			{
+				TimeSeriesIdentifier tsid = getTimeSeriesIdentifier(rec.getSdi());
+				String tabsel = tsid.getPart("paramtype") + "." + 
+					tsid.getPart("duration") + "." + tsid.getPart("version");
+				cts = new CTimeSeries(rec.getSdi(), tsid.getInterval(),
+					tabsel);
+				cts.setModelRunId(-1);
+				cts.setTimeSeriesIdentifier(tsid);
+				
+				// NOTE: In OpenTsdb, tasklist values are always in storage units.
+				cts.setUnitsAbbr(tsid.getStorageUnits());
+				if (((TimeSeriesDb)db).fillDependentCompIds(cts, applicationId, this) == 0)
+				{
+					warning("Deleting tasklist rec for '" + tsid.getUniqueString() 
+						+ "' because no dependent comps.");
+					if (badRecs != null)
+						badRecs.add(rec.getRecordNum());
+					return;
+				}
+
+				try { dataCollection.addTimeSeries(cts); }
+				catch(decodes.tsdb.DuplicateTimeSeriesException ex)
+				{ // won't happen -- already verified it's not there.
+				}
+			}
+			catch(NoSuchObjectException ex)
+			{
+				warning("Deleting tasklist rec for non-existent ts_code "
+					+ rec.getSdi());
+				if (badRecs != null)
+					badRecs.add(rec.getRecordNum());
+				return;
+			}
+		}
+		if (rrhandle != null)
+			rrhandle.addRecNum(rec.getRecordNum());
+
+		// Construct timed variable with appropriate flags & add it.
+		TimedVariable tv = new TimedVariable(rec.getValue());
+		tv.setTime(rec.getTimeStamp());
+		tv.setFlags((int)rec.getQualityCode());
+		
+		if (!rec.isDeleted() && !rec.isValueWasNull())
+		{
+			VarFlags.setWasAdded(tv);
+			cts.addSample(tv);
+			// Remember which tasklist records are in this timeseries.
+			cts.addTaskListRecNum(rec.getRecordNum());
+			debug3("Added value " + tv + " to time series "
+				+ cts.getTimeSeriesIdentifier().getUniqueString()
+				+ " flags=0x" + Integer.toHexString(tv.getFlags())
+				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+		}
+		else
+		{
+			VarFlags.setWasDeleted(tv);
+			warning("Discarding deleted value " + tv.toString()
+				+ " for time series " + cts.getTimeSeriesIdentifier().getUniqueString()
+				+ " flags=0x" + Integer.toHexString(tv.getFlags())
+				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+		}
 	}
 }

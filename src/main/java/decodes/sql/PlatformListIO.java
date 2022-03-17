@@ -63,6 +63,7 @@
  */
 package decodes.sql;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -75,7 +76,6 @@ import opendcs.dai.DacqEventDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
-import opendcs.dao.PropertiesSqlDao;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -89,7 +89,6 @@ import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 import decodes.db.Site;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
 import decodes.util.DecodesSettings;
 
 /**
@@ -120,13 +119,6 @@ public class PlatformListIO extends SqlDbObjIo
 	* ID numbers.
 	*/
 	protected EquipmentModelListIO _equipmentModelListIO;
-
-	/**
-	* This is a reference to the DecodesScriptIO object for this
-	* database.  This is used to retrieve DecodesScript objects by their
-	* ID numbers.
-	*/
-	protected DecodesScriptIO _decodesScriptIO;
 
 	private String coltpl;
 	private String tmColumns = null;
@@ -164,15 +156,22 @@ public class PlatformListIO extends SqlDbObjIo
 	*/
 	public PlatformListIO(SqlDatabaseIO dbio,
 						  ConfigListIO configListIO,
-						  EquipmentModelListIO emlIO,
-						  DecodesScriptIO dsIO)
+						  EquipmentModelListIO emlIO)
 	{
 		super(dbio);
 
 		_configListIO = configListIO;
 		_equipmentModelListIO = emlIO;
-		_decodesScriptIO = dsIO;
-
+	}
+	
+	@Override
+	public void setConnection(Connection conn)
+	{
+		super.setConnection(conn);
+		
+		// For efficiency, have subordinate dbio's use my connection.
+		_configListIO.setConnection(conn);
+		_equipmentModelListIO.setConnection(conn);
 	}
 
 	private String getColTpl()
@@ -320,7 +319,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* platform/PlatformList.xml file in the XML database.
 	* @param p the Platform
 	*/
-	public void readTransportMedia(Platform p)
+	private void readTransportMedia(Platform p)
 		throws SQLException, DatabaseException
 	{
 		p.transportMedia.clear();
@@ -342,7 +341,7 @@ public class PlatformListIO extends SqlDbObjIo
 	 * @param platform the Platform that owns this TM
 	 * @return the TransportMedium
 	 */
-	protected TransportMedium rs2tm(ResultSet rs, Platform platform)
+	private TransportMedium rs2tm(ResultSet rs, Platform platform)
 		throws SQLException, DatabaseException
 	{
 		String mediumType = rs.getString(2);
@@ -433,19 +432,14 @@ public class PlatformListIO extends SqlDbObjIo
 				// If site was previously loaded, use it.
 				p.setSite(p.getDatabase().siteList.getSiteById(siteId));
 
-				boolean commitAfterSelect = _dbio.commitAfterSelect;
+				SiteDAI siteDAO = _dbio.makeSiteDAO();
+				siteDAO.setManualConnection(connection);
 				try
 				{
-					// Caller will commit after THIS method returns, so don't
-					// have it commit after we read the site.
-					_dbio.commitAfterSelect = false;
-					
-					// Else attempt to read site from database.
 					if (p.getSite() == null)
 					{
-						if (siteId != Constants.undefinedId)
+						if (!DbKey.isNull(siteId))
 						{
-							SiteDAI siteDAO = _dbio.makeSiteDAO();
 							try
 							{
 								p.setSite(siteDAO.getSiteById(siteId));
@@ -457,18 +451,24 @@ public class PlatformListIO extends SqlDbObjIo
 									+ p.getKey() + " has invalid siteID " + siteId);
 								p.setSite(null);
 							}
-							finally
-							{
-								siteDAO.close();
-							}
+						}
+					} 
+					else
+					{
+						try
+						{
+							siteDAO.readSite(p.getSite());
+						}
+						catch (Exception e)
+						{
+							// TODO Auto-generated catch block
+							e.printStackTrace();
 						}
 					}
-					else
-						p.getSite().read();
 				}
 				finally
 				{
-					_dbio.commitAfterSelect = commitAfterSelect;
+					siteDAO.close();
 				}
 			}
 
@@ -494,7 +494,7 @@ public class PlatformListIO extends SqlDbObjIo
 					}
 					// Already in list. Check to see if it's current.
 					else
-						pc.read();
+						_configListIO.readConfig(pc.getId());
 				}
 				finally
 				{
@@ -519,6 +519,7 @@ public class PlatformListIO extends SqlDbObjIo
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
 			{
 				PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+				propsDao.setManualConnection(connection);
 				try { propsDao.readProperties("PlatformProperty", "platformID", p.getId(), 
 					p.getProperties()); }
 				catch (DbIoException e)
@@ -543,7 +544,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* The Platform argument must have had its ID set.
 	* @param p the Platform
 	*/
-	public void readPlatformSensors(Platform p)
+	private void readPlatformSensors(Platform p)
 		throws DatabaseException, SQLException
 	{
 		Statement stmt = createStatement();
@@ -624,10 +625,11 @@ public class PlatformListIO extends SqlDbObjIo
 	* @param ps the PlatformSensor in which to place the properties
 	* @param pid the platform ID
 	*/
-	public void readPSProps(PlatformSensor ps, DbKey pid)
+	private void readPSProps(PlatformSensor ps, DbKey pid)
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+		propsDao.setManualConnection(connection);
 		try { propsDao.readProperties("PlatformSensorProperty", "platformID", "SensorNumber",
 			ps.platform.getId(), ps.sensorNumber, ps.getProperties()); }
 		catch (DbIoException e)
@@ -762,6 +764,7 @@ public class PlatformListIO extends SqlDbObjIo
 		if (getDatabaseVersion() >= 6)
 		{
 			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+			propsDao.setManualConnection(connection);
 			
 			try { propsDao.writeProperties("PlatformProperty", "platformId", p.getId(), 
 				p.getProperties()); }
@@ -826,7 +829,8 @@ public class PlatformListIO extends SqlDbObjIo
 		if (getDatabaseVersion() >= 6)
 		{
 			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
-			
+			propsDao.setManualConnection(connection);
+		
 			try { propsDao.writeProperties("PlatformProperty", "platformId", p.getId(), 
 				p.getProperties()); }
 			catch (DbIoException e)
@@ -863,7 +867,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* PlatformSensor object is not empty.
 	* @param p the Platform
 	*/
-	public void insertPlatformSensors(Platform p)
+	private void insertPlatformSensors(Platform p)
 		throws SQLException, DatabaseException
 	{
 		Iterator<PlatformSensor> i = p.getPlatformSensors();
@@ -880,7 +884,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* is not empty.
 	* @param ps the PlatformSensor
 	*/
-	public void insert(PlatformSensor ps)
+	private void insert(PlatformSensor ps)
 		throws SQLException, DatabaseException
 	{
 		if (ps.isEmpty()) return;
@@ -921,6 +925,7 @@ public class PlatformListIO extends SqlDbObjIo
 		executeUpdate(q);
 
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+		propsDao.setManualConnection(connection);
 		try { propsDao.writeProperties("PlatformSensorProperty", "platformID", "SensorNumber",
 			ps.platform.getId(), ps.sensorNumber, ps.getProperties()); }
 		catch (DbIoException e)
@@ -938,7 +943,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* @param platformId the database ID of the platform
 	* @param tm the TransportMedium
 	*/
-	public void insertTransportMedium(DbKey platformId, TransportMedium tm)
+	private void insertTransportMedium(DbKey platformId, TransportMedium tm)
 		throws SQLException, DatabaseException
 	{
 		String medType = tm.getMediumType();
@@ -1015,6 +1020,7 @@ public class PlatformListIO extends SqlDbObjIo
 		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
 		{
 			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+			propsDao.setManualConnection(connection);
 			
 			try { propsDao.deleteProperties("PlatformProperty", "platformId", p.getId()); }
 			catch (DbIoException e)
@@ -1050,10 +1056,11 @@ public class PlatformListIO extends SqlDbObjIo
 	* database ID set.
 	* @param p the Platform
 	*/
-	public void deletePlatformSensors(Platform p)
+	private void deletePlatformSensors(Platform p)
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+		propsDao.setManualConnection(connection);
 		try { propsDao.deleteProperties("PlatformSensorProperty", "platformID", p.getId()); }
 		catch (DbIoException e)
 		{
@@ -1072,7 +1079,7 @@ public class PlatformListIO extends SqlDbObjIo
 	* The Platform must have already had its SQL database ID set.
 	* @param p the Platform
 	*/
-	public void deleteTransportMedia(Platform p)
+	private void deleteTransportMedia(Platform p)
 		throws DatabaseException, SQLException
 	{
 		String q = "DELETE FROM TransportMedium WHERE PlatformId = " + p.getId();

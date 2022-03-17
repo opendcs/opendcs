@@ -78,24 +78,17 @@
 package decodes.cwms.rating;
 
 import java.io.PrintStream;
+import java.sql.Connection;
 import java.util.Date;
 
-import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Constants;
 import decodes.db.SiteName;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ParmRef;
-import ilex.var.TimedVariable;
-
 
 //AW:IMPORTS
 import hec.data.RatingException;
@@ -347,7 +340,7 @@ public class CwmsRatingMultIndep
 		if (locationOverride != null && locationOverride.length() > 0)
 		{
 			if (locationOverride.contains("*"))
-				specLocation = ((CwmsTimeSeriesDb)this.tsdb).morph(specLocation, locationOverride);
+				specLocation = CwmsTimeSeriesDb.morph(specLocation, locationOverride);
 			else
 				specLocation = locationOverride;
 		}
@@ -357,8 +350,7 @@ public class CwmsRatingMultIndep
 			+ templateVersion + "." + specVersion;
 
 		// Retrieve the RatingSet object
-		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
-		try
+		try (CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb))
 		{
 			Date earliestBaseTime = baseTimes.first();
 			if (earliestBaseTime == null)
@@ -401,31 +393,14 @@ public class CwmsRatingMultIndep
 		}
 		catch (RatingException ex)
 		{
-			throw new DbCompException("Cannot read rating for '" + specId + "': " + ex);
-		}
-		finally
-		{
-			crd.close();
+			String m = "Cannot read rating for '" + specId + "': " + ex;
+			warning(m);
+			ex.printStackTrace(Logger.instance().getLogOutput() != null 
+				? Logger.instance().getLogOutput() : System.err);
+			throw new DbCompException(m);
 		}
 
 		indepTimes.clear();
-//		indep1Values.clear();
-//		if (indep2Values != null)
-//			indep2Values.clear();
-//		if (indep3Values != null)
-//			indep3Values.clear();
-//		if (indep4Values != null)
-//			indep4Values.clear();
-//		if (indep5Values != null)
-//			indep5Values.clear();
-//		if (indep6Values != null)
-//			indep6Values.clear();
-//		if (indep7Values != null)
-//			indep7Values.clear();
-//		if (indep8Values != null)
-//			indep8Values.clear();
-//		if (indep9Values != null)
-//			indep9Values.clear();
 
 		// MJM 2017 10/31 Array list of indeps, for each indep and arraylist of values.
 		valueSetsA = new ArrayList<ArrayList<Double>>();
@@ -534,11 +509,13 @@ public class CwmsRatingMultIndep
 		for(int valIdx = 0; valIdx < indepTimes.size(); valIdx++)
 			valueTimes[valIdx] = indepTimes.get(valIdx);
 		
+		Connection conn = tsdb.getConnection();
 		try
 		{
 			debug1("Calling rate with " + valueSets.length + " inputs and " 
 				+ valueTimes.length + " values each.");
-			double depVals[] = ratingSet.rate(valueSets, valueTimes);
+			
+			double depVals[] = ratingSet.rate(conn, valueTimes, valueSets);
 			
 			for(int i=0; i<depVals.length; i++)
 			{
@@ -563,6 +540,10 @@ public class CwmsRatingMultIndep
 				warning("...cause: " + cause);
 				cause.printStackTrace(out);
 			}
+		}
+		finally
+		{
+			tsdb.freeConnection(conn);
 		}
 
 //AW:AFTER_TIMESLICES_END

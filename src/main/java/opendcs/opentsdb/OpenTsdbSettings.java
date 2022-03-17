@@ -28,6 +28,8 @@ public class OpenTsdbSettings
 	/** Name of presentation group that determines storage units */
 	public String storagePresentationGroup = "CWMS-English";
 	
+	public boolean traceConnections = false;
+	
 	private static PropertySpec propSpecs[] =
 	{
 		new PropertySpec("allowDstOffsetVariation", PropertySpec.BOOLEAN,
@@ -36,6 +38,8 @@ public class OpenTsdbSettings
 			"Action when UTC Offset is detected when storing data. One of IGNORE, REJECT, ROUND."),
 		new PropertySpec("storagePresentationGroup", PropertySpec.STRING,
 			"Name of presentation group that determines storage units for each data type."),
+		new PropertySpec("traceConnections", PropertySpec.BOOLEAN,
+			"(default=false) Set to true to enable debugs on database connection management."),
 	};
 	
 	public void setFromProperties(Properties props)
@@ -60,6 +64,7 @@ public class OpenTsdbSettings
 		ret.setProperty("allowDstOffsetVariation", "" + allowDstOffsetVariation);
 		ret.setProperty("offsetErrorAction", offsetErrorAction);
 		ret.setProperty("storagePresentationGroup", storagePresentationGroup);
+		ret.setProperty("traceConnections", "" + traceConnections);
 		return ret;
 	}
 	

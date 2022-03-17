@@ -27,7 +27,6 @@ import decodes.db.PlatformList;
 import decodes.sql.ConfigListIO;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
-import decodes.sql.DecodesScriptIO;
 import decodes.sql.EquipmentModelListIO;
 import decodes.sql.PlatformListIO;
 
@@ -35,9 +34,9 @@ public class CwmsPlatformListIO extends PlatformListIO
 {
 
 	public CwmsPlatformListIO(CwmsSqlDatabaseIO dbio, ConfigListIO configListIO,
-		EquipmentModelListIO emlIO, DecodesScriptIO dsIO)
+		EquipmentModelListIO emlIO)
 	{
-		super(dbio, configListIO, emlIO, dsIO);
+		super(dbio, configListIO, emlIO);
 	}
 
 	public void writePlatform(Platform p)

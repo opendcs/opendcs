@@ -9,6 +9,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -500,7 +502,28 @@ Logger.instance().debug3("Reading entry[" + n + "] at position " + statusFile.ge
 		mostRecentStatus.clear();
 	}
 
+	// The following are only implemented for SQL:
+	
+	@Override
+	public ResultSet doQuery(String q) throws DbIoException
+	{
+		return null;
+	}
 
+	@Override
+	public ResultSet doQuery2(String q) throws DbIoException
+	{
+		return null;
+	}
 
+	@Override
+	public int doModify(String q) throws DbIoException
+	{
+		return 0;
+	}
 
+	@Override
+	public void setManualConnection(Connection conn)
+	{
+	}
 }

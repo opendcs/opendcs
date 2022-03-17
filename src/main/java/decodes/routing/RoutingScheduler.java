@@ -145,11 +145,9 @@ public class RoutingScheduler
 	};
 
 	protected ArrayList<ScheduleEntryExecutive> executives = new ArrayList<ScheduleEntryExecutive>();
-	protected ScheduleEntryDAI scheduleEntryDAO = null;
 	private ThreadLogger appLogger = null;
 	Logger origLogger = null;
 	private CompEventSvr compEventSvr = null;
-	private DacqEventDAI dacqEventDAO = null;
 	
 	public RoutingScheduler()
 	{
@@ -236,8 +234,7 @@ public class RoutingScheduler
 		while(!shutdownFlag)
 		{
 			String action="";
-			LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO();
-			try
+			try (LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO() )
 			{
 				long now = System.currentTimeMillis();
 
@@ -261,15 +258,27 @@ public class RoutingScheduler
 					action = "Purging old status";
 					// MJM 20190314 ignore errors purging old status.
 					// It was throwing a foreign key exception to DACQ_EVENT at AEP.
+					ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
+					DacqEventDAI dacqEventDAO = null;
+					if (Database.getDb().getDbIo() instanceof SqlDatabaseIO)
+						dacqEventDAO = ((SqlDatabaseIO)Database.getDb().getDbIo()).makeDacqEventDAO();
+
 					try
 					{
 						Date purgeDate = new Date(System.currentTimeMillis() - purgeBeforeDays*MSEC_PER_DAY);
-						
 						if (dacqEventDAO != null)
 							dacqEventDAO.deleteBefore(purgeDate);
-						scheduleEntryDAO.deleteScheduleStatusBefore(appInfo, purgeDate);
+						if (scheduleEntryDAO != null)
+							scheduleEntryDAO.deleteScheduleStatusBefore(appInfo, purgeDate);
 					}
 					catch(Exception ex) {}
+					finally
+					{
+						if (scheduleEntryDAO != null)
+							scheduleEntryDAO.close();
+						if (dacqEventDAO != null)
+							dacqEventDAO.close();
+					}
 					lastOldStatusPurge = now;
 				}
 				
@@ -298,10 +307,6 @@ public class RoutingScheduler
 				System.err.println(msg);
 				ex.printStackTrace(System.err);
 				shutdownFlag = true;
-			}
-			finally
-			{
-				loadingAppDAO.close();
 			}
 			try { Thread.sleep(1000L); }
 			catch(InterruptedException ex) {}
@@ -384,18 +389,6 @@ public class RoutingScheduler
 		{
 			loadingAppDao.close();
 		}
-		scheduleEntryDAO = dbio.makeScheduleEntryDAO();
-		if (scheduleEntryDAO == null)
-		{
-			Logger.instance().fatal("App Name " + getAppName() 
-				+ " cannot run routing scheduler -- schedule entries not supported in this database.");
-			System.exit(1);
-		}
-		if (dbio instanceof SqlDatabaseIO)
-		{
-			SqlDatabaseIO sqlDbio = (SqlDatabaseIO)dbio;
-			dacqEventDAO = sqlDbio.makeDacqEventDAO(); // will be null for < db version 10
-		}
 	}
 	
 	protected void loadConfig(Properties properties)
@@ -413,16 +406,6 @@ public class RoutingScheduler
 		executives.clear();
 		try { Thread.sleep(5000L); }
 		catch(InterruptedException ex) {}
-		
-		if (scheduleEntryDAO != null)
-			scheduleEntryDAO.close();
-		scheduleEntryDAO = null;
-		
-		if (dacqEventDAO != null)
-		{
-			dacqEventDAO.close();
-			dacqEventDAO = null;
-		}
 	}
 	
 	public String getAppName()
@@ -435,7 +418,16 @@ public class RoutingScheduler
 		throws DbIoException
 	{
 		// read list of ScheduleEntry's for my loading app.
-		ArrayList<ScheduleEntry> dbEntries = scheduleEntryDAO.listScheduleEntries(appInfo);
+		ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
+		if (scheduleEntryDAO == null)
+			return;
+		ArrayList<ScheduleEntry> dbEntries = null;
+		try { dbEntries = scheduleEntryDAO.listScheduleEntries(appInfo); }
+		finally
+		{
+			scheduleEntryDAO.close();
+		}
+		
 		for(Iterator<ScheduleEntry> seit = dbEntries.iterator(); seit.hasNext(); )
 		{
 			ScheduleEntry se = seit.next();
@@ -601,10 +593,5 @@ public class RoutingScheduler
 	public String getHostname()
 	{
 		return hostname;
-	}
-
-	public DacqEventDAI getDacqEventDAO()
-	{
-		return dacqEventDAO;
 	}
 }

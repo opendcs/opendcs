@@ -77,7 +77,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -113,7 +112,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import ilex.util.Counter;
 import ilex.util.Logger;
 import ilex.util.UserAuthFile;
 import decodes.tsdb.BadTimeSeriesException;
@@ -148,7 +146,7 @@ public class SqlDatabaseIO
 	private Connection _conn = null;
 
 	/** This is used to read and write the EngineeringUnit table. */
-	EngineeringUnitIO _engineeringUnitIO;
+	private EngineeringUnitIO _engineeringUnitIO;
 
 	/** This is used to read and write the UnitConverter table. */
 	UnitConverterIO _unitConverterIO;
@@ -157,25 +155,13 @@ public class SqlDatabaseIO
  	* This holds the sql.NetworkListListIO object that's used to read
  	* and write the NetworkListList.
  	*/
-	NetworkListListIO _networkListListIO;
+	private NetworkListListIO _networkListListIO;
 
 	/**
  	* This holds the sql.ConfigListIO object that's used to read and
  	* write the PlatformConfigList.
  	*/
-	public ConfigListIO _configListIO;
-
-	/**
- 	* This is used to read and write FormatStatement records.
- 	*/
-	FormatStatementIO _formatStatementIO;
-
-
-	/** This reads and writes the DecodesScript table. */
-	protected DecodesScriptIO _decodesScriptIO;
-
-	/** This reads and writes the ScriptSensor and related tables.  */
-	ScriptSensorIO _scriptSensorIO;
+	protected ConfigListIO _configListIO;
 
 	/**
  	* This holds the sql.EquipmentModelListIO object that's used to read
@@ -187,14 +173,13 @@ public class SqlDatabaseIO
  	* This holds the sql.PlatformListIO object that's used to read and
  	* write the PlatformList.
  	*/
-//	protected PlatformListIO _platformListIO;
-	public PlatformListIO _platformListIO;
+	protected PlatformListIO _platformListIO;
 
 	/**
  	* This holds the sql.RoutingSpecListIO object that's used to read and
  	* write the RoutingSpecList.
  	*/
-	RoutingSpecListIO _routingSpecListIO;
+	private RoutingSpecListIO _routingSpecListIO;
 
 	/**
  	* This holds the sql.DataSourceListIO object that's used to read and
@@ -206,7 +191,7 @@ public class SqlDatabaseIO
  	* This holds the sql.PresentationGroupListIO object that's used to read
  	* and write the PresentationGroupList.
  	*/
-	PresentationGroupListIO _presentationGroupListIO;
+	private PresentationGroupListIO _presentationGroupListIO;
 
 	/** DECODES Database Version */
 	protected int databaseVersion;
@@ -231,12 +216,6 @@ public class SqlDatabaseIO
 	/** User name used to connect to the database. */
 	protected String _dbUser;
 
-	/**
-	 * Routing Spec Threads in certain apps establish their own connection.
-	 * This is necessary to prevent them from interfering with other threads.
-	 */
-	HashMap<Thread, Connection> connectionMap = new HashMap<Thread, Connection>();
-
 	/** Kludge for Oracle DATE data types - the database time zone: */
 	protected String databaseTimeZone = "UTC";
 
@@ -252,6 +231,11 @@ public class SqlDatabaseIO
 
 	/** Used for log messages */
 	protected SimpleDateFormat debugDateFmt = new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss z");
+	
+	private boolean _isConnected = false;
+	
+	/** Facilitates OPENTSDB and HDB connection pooling. CWMS is handled differently. */
+	private javax.sql.DataSource poolingDataSource = null;
 
 	/**
 	 * Default constructor -- all initialization that doesn't depend on
@@ -259,8 +243,6 @@ public class SqlDatabaseIO
 	 */
 	public SqlDatabaseIO()
 	{
-		DecodesSettings settings = DecodesSettings.instance();
-
 		// Initialize the child IO objects
 		// Their are dependencies among them, which should be enforced
 		// by their various constructors.  For example, the PlatformListIO
@@ -270,18 +252,13 @@ public class SqlDatabaseIO
 		_engineeringUnitIO = new EngineeringUnitIO(this);
 		_unitConverterIO = new UnitConverterIO(this);
 		_networkListListIO = new NetworkListListIO(this);
-		_formatStatementIO = new FormatStatementIO(this);
-		_scriptSensorIO = new ScriptSensorIO(this, _unitConverterIO);
-		_decodesScriptIO = new DecodesScriptIO(this, _formatStatementIO,
-			_scriptSensorIO);
-		_configListIO = new ConfigListIO(this, _decodesScriptIO);
+		_configListIO = new ConfigListIO(this, _unitConverterIO);
 		_equipmentModelListIO = new EquipmentModelListIO(this);
-		_platformListIO = new PlatformListIO(this, _configListIO,
-			_equipmentModelListIO, _decodesScriptIO);
+		_platformListIO = new PlatformListIO(this, _configListIO, _equipmentModelListIO);
 		_dataSourceListIO = new DataSourceListIO(this);
 		_presentationGroupListIO = new PresentationGroupListIO(this);
-		_routingSpecListIO = new RoutingSpecListIO(this,
-		_presentationGroupListIO, _networkListListIO);
+		_routingSpecListIO = new RoutingSpecListIO(this, _presentationGroupListIO, _networkListListIO,
+			_dataSourceListIO);
 
 		// Truncate lastLMT back to half-hour boundary
 		lastLMT = (System.currentTimeMillis() / 1800000L) * 1800000L;
@@ -302,26 +279,6 @@ public class SqlDatabaseIO
 		connectToDatabase(sqlDbLocation);
 		keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
 			DecodesSettings.instance().sqlKeyGenerator, _conn);
-	}
-
-	/**
-	* To create a SqlDatabaseIO that uses an externally provided JDBC
-	* connection, call the no-args constructor, then call this method.
-	* The passed connection is connected and authenticated and ready for
-	* SQL statements.
-	*
-	* @param conn the JDBC connection
-	* @param keyGenerator the Key Generator to use
-	* @param location the database location string for log messages
-	*/
-	public void useExternalConnection(Connection conn,
-		KeyGenerator keyGenerator, String location)
-	{
-		_conn = conn;
-		this.keyGenerator = keyGenerator;
-		_sqlDbLocation = location;
-		if (writeDateFmt == null)
-			determineVersion();
 	}
 
 	/**
@@ -395,10 +352,10 @@ public class SqlDatabaseIO
 			Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
 		}
 
-		determineVersion();
+		determineVersion(_conn);
 
 		try {
-			setDBDatetimeFormat();
+			setDBDatetimeFormat(_conn);
 		} catch (SQLException e) {
 			Logger.instance().debug3(e.toString());
 		}
@@ -451,10 +408,10 @@ public class SqlDatabaseIO
 	protected void postConnectInit()
 		throws DatabaseException
 	{
-
+		_isConnected = true;
 	}
 
-	protected void setDBDatetimeFormat()
+	protected void setDBDatetimeFormat(Connection conn)
 		throws SQLException
 	{
 		String q = null;
@@ -464,7 +421,7 @@ public class SqlDatabaseIO
 			if (_isOracle)
 			{
 
-				stmnt = getConnection().createStatement();
+				stmnt = conn.createStatement();
 
 				q = "SELECT PARAM_VALUE FROM REF_DB_PARAMETER WHERE PARAM_NAME = 'TIME_ZONE'";
 				ResultSet rs = null;
@@ -489,7 +446,6 @@ public class SqlDatabaseIO
 					rs = null;
 				}
 
-				stmnt = getConnection().createStatement();
 				q = "ALTER SESSION SET TIME_ZONE = '" + databaseTimeZone + "'";
 				Logger.instance().debug3(q);
 				stmnt.execute(q);
@@ -518,11 +474,11 @@ public class SqlDatabaseIO
 		}
 	}
 
-	public synchronized void determineVersion()
+	public synchronized void determineVersion(Connection conn)
 	{
 		try
 		{
-			String productName = getConnection().getMetaData().getDatabaseProductName();
+			String productName = conn.getMetaData().getDatabaseProductName();
 			_isOracle = productName.toLowerCase().contains("oracle");
 		}
 		catch (SQLException ex)
@@ -546,11 +502,11 @@ public class SqlDatabaseIO
 		readDateFmt.setTimeZone(tz);
 		readCal = Calendar.getInstance(tz);
 
-		readVersionInfo(this);
-		TimeSeriesDb.readVersionInfo(this);
+		readVersionInfo(this, conn);
+		TimeSeriesDb.readVersionInfo(this, conn);
 	}
 
-	public static void readVersionInfo(DatabaseConnectionOwner dco)
+	public static void readVersionInfo(DatabaseConnectionOwner dco, Connection conn)
 	{
 		/*
 		  Attempt to read the database's version number.
@@ -562,7 +518,7 @@ public class SqlDatabaseIO
 		Statement stmt = null;
 		try
 		{
-			stmt = dco.getConnection().createStatement();
+			stmt = conn.createStatement();
 			ResultSet rs = null;
 			try
 			{
@@ -634,44 +590,19 @@ public class SqlDatabaseIO
 	}
 
 	/**
-	  @return true if this database type requires login.
-	  @deprecated This always returns false -- implemented a different way.
-	*/
-	@Deprecated
-	public boolean requiresLogin( )
-	{
-		//System.out.println("SqlDatabaseIO.requiresLogin()");
-		return false;
-	}
-
-	/** Does nothing. */
-	public void doLogin(String user, String passwd)
-	{
-		//System.out.println("SqlDatabaseIO.doLogin()");
-	}
-
-	/** Does nothing. */
-	public boolean isLoggedIn()
-	{
-		//System.out.println("SqlDatabaseIO.isLoggedIn()");
-		return true;
-	}
-
-	/**
 	  Closes the JDBC connection.
 	*/
 	public void close( )
 	{
 		try
 		{
-			if (_conn.isClosed())
-				return;
-			commit();
 			Logger.instance().info("Closing  database connection.");
+			if (_conn == null || _conn.isClosed())
+				return;
 			_conn.close();
 		}
-		catch (SQLException e) {
-			// ignore; we did our best
+		catch (SQLException e)
+		{
 		}
 	}
 
@@ -679,6 +610,7 @@ public class SqlDatabaseIO
 	* Reads the set of known enumeration objects in this database.
 	* @param top the EnumList object to populate
 	*/
+	@Override
 	public synchronized void readEnumList(EnumList top)
 		throws DatabaseException
 	{
@@ -721,6 +653,7 @@ public class SqlDatabaseIO
 	* Objects in this collection are complete.
 	* @param dts the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readDataTypeSet(DataTypeSet dts)
 		throws DatabaseException
 	{
@@ -737,6 +670,7 @@ public class SqlDatabaseIO
 	  Reads a single data-type object given its numeric key.
 	  @return data type or null if not found
 	*/
+	@Override
 	public synchronized DataType readDataType(DbKey id)
 		throws DatabaseException
 	{
@@ -766,16 +700,28 @@ public class SqlDatabaseIO
 	* </p>
 	* @param euList the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readEngineeringUnitList(EngineeringUnitList euList)
 		throws DatabaseException
 	{
-		_engineeringUnitIO.read(euList);
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_engineeringUnitIO.setConnection(conn);
+			_engineeringUnitIO.read(euList);
 
-		UnitConverterSet ucs = euList.getDatabase().unitConverterSet;
-		_unitConverterIO.read(ucs);
-		if (commitAfterSelect)
-			try { commit(); }
-			catch(SQLException ex) {}
+			_unitConverterIO.setConnection(conn);
+			_unitConverterIO.read(euList.getDatabase().unitConverterSet);
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_engineeringUnitIO.setConnection(null);
+			_unitConverterIO.setConnection(null);
+		}
 	}
 
 	/**
@@ -784,6 +730,7 @@ public class SqlDatabaseIO
 	* and primary display attributes only).
 	* @param sl the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readSiteList(SiteList sl)
 		throws DatabaseException
 	{
@@ -806,22 +753,29 @@ public class SqlDatabaseIO
 	* PlatformList object.
 	* @param platformList the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readPlatformList(PlatformList platformList)
 		throws DatabaseException
 	{
-		//System.out.println("  SqlDatabaseIO.readPlatformList()");
-
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_platformListIO.setConnection(conn);
 			_platformListIO.read(platformList);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
 			System.err.println(e);
 			e.printStackTrace(System.err);
 			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_platformListIO.setConnection(null);
 		}
 	}
 
@@ -830,16 +784,17 @@ public class SqlDatabaseIO
 	* @param pcList the object to populate from the database.
 	* @throws DatabaseException if there's an error.
 	*/
+	@Override
 	public synchronized void readConfigList(PlatformConfigList pcList)
 		throws DatabaseException
 	{
-		//System.out.println("  SqlDatabaseIO.readConfigList()");
-
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_configListIO.setConnection(conn);
 			_configListIO.read(pcList);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
@@ -847,16 +802,36 @@ public class SqlDatabaseIO
 			e.printStackTrace(System.err);
 			throw new DatabaseException(e.toString());
 		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_configListIO.setConnection(null);
+		}
 	}
 
+	@Override
 	public synchronized PlatformConfig newPlatformConfig(PlatformConfig pc, String deviceId,
 		String originator)
     	throws DatabaseException
 	{
-		try {
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_configListIO.setConnection(conn);
 			return(_configListIO.newPlatformConfig(pc, deviceId, originator));
-		} catch (SQLException e) {
+		} 
+		catch (SQLException e) 
+		{
 			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_configListIO.setConnection(null);
 		}
 	}
 
@@ -865,18 +840,27 @@ public class SqlDatabaseIO
 	* Objects in this collection are complete.
 	* @param eml the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readEquipmentModelList(EquipmentModelList eml)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_equipmentModelListIO.setConnection(conn);
 			_equipmentModelListIO.read(eml);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_equipmentModelListIO.setConnection(null);
 		}
 	}
 
@@ -886,21 +870,28 @@ public class SqlDatabaseIO
 	* and primary display attributes only).
 	* @param rsList the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readRoutingSpecList(RoutingSpecList rsList)
 		throws DatabaseException
 	{
-		//System.out.println("  SqlDatabaseIO.readRoutingSpecList()");
-
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_routingSpecListIO.setConnection(conn);
 			_routingSpecListIO.read(rsList);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
 			e.printStackTrace(System.err);
 			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_routingSpecListIO.setConnection(null);
 		}
 	}
 
@@ -911,20 +902,27 @@ public class SqlDatabaseIO
 	* @param dsList the object to populate from the database.
 	* @throws DatabaseException if can't list the directory.
 	*/
+	@Override
 	public synchronized void readDataSourceList(DataSourceList dsList)
 		throws DatabaseException
 	{
-		//System.out.println("  SqlDatabaseIO.readDataSourceList()");
-
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_dataSourceListIO.setConnection(conn);
 			_dataSourceListIO.read(dsList);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_dataSourceListIO.setConnection(null);
 		}
 	}
 
@@ -934,18 +932,27 @@ public class SqlDatabaseIO
 	* and primary display attributes only).
 	* @param nlList the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readNetworkListList(NetworkListList nlList)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_networkListListIO.setConnection(conn);
 			_networkListListIO.read(nlList);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_networkListListIO.setConnection(null);
 		}
 	}
 
@@ -954,22 +961,30 @@ public class SqlDatabaseIO
 	 * defined in the database.
 	 * @return ArrayList of currently defined network list specs.
 	 */
+	@Override
 	public synchronized ArrayList<NetworkListSpec> getNetlistSpecs()
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_networkListListIO.setConnection(conn);
 			ArrayList<NetworkListSpec> ret =
 				_networkListListIO.getNetlistSpecs();
-			if (commitAfterSelect)
-				commit();
 			return ret;
 		}
 		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
-
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_networkListListIO.setConnection(null);
+		}
 	}
 
 
@@ -979,20 +994,29 @@ public class SqlDatabaseIO
 	* (key values and primary display attributes only).
 	* @param pgList the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readPresentationGroupList(PresentationGroupList pgList)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_presentationGroupListIO.setConnection(conn);
 			_presentationGroupListIO.read(pgList);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
 			System.err.println(e);
 			e.printStackTrace(System.err);
 			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_presentationGroupListIO.setConnection(null);
 		}
 	}
 
@@ -1001,6 +1025,7 @@ public class SqlDatabaseIO
  	* Writes the DataTypeSet to the SQL database.
 	* @param dts the object to write to the database.
  	*/
+	@Override
 	public void writeDataTypeSet( DataTypeSet dts )
 		throws DatabaseException
 	{
@@ -1044,40 +1069,48 @@ public class SqlDatabaseIO
  	* and primary display attributes only).
 	* @param ucs the object to populate from the database.
  	*/
+	@Override
 	public synchronized void readUnitConverterSet(UnitConverterSet ucs)
 		throws DatabaseException
 	{
 		//System.out.println("SqlDatabaseIO.readUnitConverterSet()");
 	}
 
-
+	
 	/**
  	* Writes the entire collection of engineering units to the database.
 	* @param top the object to write to the database.
  	*/
+	@Override
 	public synchronized void writeEngineeringUnitList(EngineeringUnitList top)
 		throws DatabaseException
 	{
 		Logger.instance().log(Logger.E_INFORMATION,
 			"Writing engineering unit list.");
 
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_engineeringUnitIO.setConnection(conn);
+			_unitConverterIO.setConnection(conn);
+		
 			_engineeringUnitIO.write(top);
-			UnitConverterSet ucs = top.getDatabase().unitConverterSet;
-			_unitConverterIO.write(ucs);
-//			commit();
+			_unitConverterIO.write(top.getDatabase().unitConverterSet);
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("writeEngineeringUnitList: " + e.toString());
 		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_engineeringUnitIO.setConnection(null);
+			_unitConverterIO.setConnection(null);
+		}
+
 	}
 
 
@@ -1089,6 +1122,7 @@ public class SqlDatabaseIO
 	  to this site.
 	  @param site the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readSite( Site site )
 		throws DatabaseException
 	{
@@ -1112,6 +1146,7 @@ public class SqlDatabaseIO
 	  @throws DatabaseException if no name is assigned to this object or
 	  if the write fails.
 	*/
+	@Override
 	public synchronized void writeSite(Site site)
 		throws DatabaseException
 	{
@@ -1136,6 +1171,7 @@ public class SqlDatabaseIO
 	  to locate the correct records in the database for deletion.
 	  @param site the object to delete from the database.
 	*/
+	@Override
 	public synchronized void deleteSite(Site site)
 		throws DatabaseException
 	{
@@ -1153,6 +1189,7 @@ public class SqlDatabaseIO
 		}
 	}
 
+	@Override
 	public synchronized Site getSiteBySiteName(SiteName sn)
 		throws DatabaseException
 	{
@@ -1182,16 +1219,17 @@ public class SqlDatabaseIO
 	  </p>
 	  @param p the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readPlatform( Platform p )
 		throws DatabaseException
 	{
-		//System.out.println("SqlDatabaseIO.readPlatform()");
-
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_platformListIO.setConnection(conn);
 			_platformListIO.readPlatform(p);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException ex)
 		{
@@ -1199,47 +1237,71 @@ public class SqlDatabaseIO
 			ex.printStackTrace();
 			throw new DatabaseException(ex.toString());
 		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_platformListIO.setConnection(null);
+		}
 	}
 
+	@Override
 	public synchronized DbKey lookupPlatformId(String mediumType, String mediumId,
 		Date timeStamp)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_platformListIO.setConnection(conn);
 			DbKey id = _platformListIO.lookupPlatformId(
 				mediumType, mediumId, timeStamp);
-			if (commitAfterSelect)
-				commit();
 			return id;
 		}
-		catch (SQLException ex)
+		catch (Exception ex)
 		{
 			System.err.println(ex);
 			ex.printStackTrace();
 			throw new DatabaseException(ex.toString());
 		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_platformListIO.setConnection(null);
+		}
 	}
 
 	/** Find a platform ID by site name, and optionally, designator */
+	@Override
 	public synchronized DbKey lookupCurrentPlatformId(SiteName sn,
 		String designator, boolean useDesignator)
 		throws DatabaseException
 	{
-			try
-			{
-				DbKey id = _platformListIO.lookupCurrentPlatformId(sn,
-					designator, useDesignator);
-				if (commitAfterSelect)
-					commit();
-				return id;
-			}
-			catch (SQLException ex)
-			{
-				System.err.println(ex);
-				ex.printStackTrace();
-				throw new DatabaseException(ex.toString());
-			}
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_platformListIO.setConnection(conn);
+			DbKey id = _platformListIO.lookupCurrentPlatformId(sn,
+				designator, useDesignator);
+			return id;
+		}
+		catch (Exception ex)
+		{
+			System.err.println(ex);
+			ex.printStackTrace();
+			throw new DatabaseException(ex.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_platformListIO.setConnection(null);
+		}
 	}
 
 
@@ -1248,13 +1310,17 @@ public class SqlDatabaseIO
 	  Writes a complete platform back to the database.
 	  @param p the object to write to the database.
 	*/
+	@Override
 	public synchronized void writePlatform( Platform p )
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_platformListIO.setConnection(conn);
 			_platformListIO.writePlatform(p);
-			commit();
 		}
 		catch (SQLException e)
 		{
@@ -1264,12 +1330,13 @@ public class SqlDatabaseIO
 				System.err.println("" + e);
 				e.printStackTrace(System.err);
 			}
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("writePlatform: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_platformListIO.setConnection(null);
 		}
 	}
 
@@ -1279,18 +1346,44 @@ public class SqlDatabaseIO
 	  platform in the database, or null if the platform no longer exists
 	  in the database.
 	*/
+	@Override
 	public synchronized Date getPlatformLMT(Platform p)
 		throws DatabaseException
 	{
-		Date d = _platformListIO.getLMT(p);
-//		try { commit(); }
-//		catch(SQLException ex) {}
-		return d;
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_platformListIO.setConnection(conn);
+			Date d = _platformListIO.getLMT(p);
+			return d;
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_platformListIO.setConnection(null);
+		}
 	}
 
+	@Override
 	public synchronized Date getPlatformListLMT()
 	{
-		return _platformListIO.getListLMT();
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_platformListIO.setConnection(conn);
+			return _platformListIO.getListLMT();
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_platformListIO.setConnection(null);
+		}
 	}
 
 
@@ -1300,10 +1393,11 @@ public class SqlDatabaseIO
 	  Platform table.
 	  @param pl ignored
 	*/
+	@Override
 	public void writePlatformList(PlatformList pl)
 		throws DatabaseException
 	{
-		//System.out.println("SqlDatabaseIO.writePlatformList()");
+Logger.instance().debug1("SqlDatabaseIO.writePlatformList() - doing nothing");
 	}
 
 
@@ -1312,22 +1406,27 @@ public class SqlDatabaseIO
 	  media. It's configuration is not deleted.
 	  @param p the object to delete from the database.
 	*/
+	@Override
 	public synchronized void deletePlatform( Platform p )
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_platformListIO.setConnection(conn);
 			_platformListIO.delete(p);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("deletePlatform: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_platformListIO.setConnection(null);
 		}
 	}
 
@@ -1343,19 +1442,28 @@ public class SqlDatabaseIO
 	  @param pc the object to populate from the database.
 	*/
 // MJM NOT Synchronized because it can be called from the SQL Platform Helper
+	@Override
 	public void readConfig(PlatformConfig pc)
 		throws DatabaseException
 	{
+		Connection conn = null;
+
 		try
 		{
+			conn = getConnection();
+			_configListIO.setConnection(conn);
 			_configListIO.readConfig(pc.getId());
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
 			e.printStackTrace(System.err);
 			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_configListIO.setConnection(null);
 		}
 	}
 
@@ -1366,13 +1474,19 @@ public class SqlDatabaseIO
 	  it in the database (not its ID number).
 	  @param pc the object to write to the database.
 	*/
+	@Override
 	public synchronized void writeConfig(PlatformConfig pc)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
+//TODO delete:
+Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 		try
 		{
+			conn = getConnection();
+			_configListIO.setConnection(conn);
 			_configListIO.write(pc);
-			commit();
 		}
 		catch (SQLException e)
 		{
@@ -1382,12 +1496,13 @@ public class SqlDatabaseIO
 				System.err.println(e);
 				e.printStackTrace(System.err);
 			}
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("writeConfig: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_configListIO.setConnection(null);
 		}
 	}
 
@@ -1397,23 +1512,29 @@ public class SqlDatabaseIO
 	  it in the database (not its ID number).
 	  @param pc the object to delete from the database.
 	*/
+	@Override
 	public synchronized void deleteConfig(PlatformConfig pc)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_configListIO.setConnection(conn);
 			_configListIO.delete(pc);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("deleteConfig: " + e.toString());
 		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_configListIO.setConnection(null);
+		}
+
 	}
 
 	/**
@@ -1422,6 +1543,7 @@ public class SqlDatabaseIO
 	  uniquely identify the record in the database.
 	  @param em the object to populate from the database.
 	*/
+	@Override
 	public void readEquipmentModel( EquipmentModel em )
 		throws DatabaseException
 	{
@@ -1435,22 +1557,27 @@ public class SqlDatabaseIO
 	  uniquely identify the record in the database.
 	  @param eqm the object to write to the database.
 	*/
+	@Override
 	public void writeEquipmentModel(EquipmentModel eqm)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_equipmentModelListIO.setConnection(conn);
 			_equipmentModelListIO.write(eqm);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("writeEquipmentModel: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_equipmentModelListIO.setConnection(null);
 		}
 	}
 
@@ -1458,22 +1585,27 @@ public class SqlDatabaseIO
 	  Deletes an EquipmentModel from the database.
 	  @param eqm the object to delete from the database.
 	*/
+	@Override
 	public synchronized void deleteEquipmentModel(EquipmentModel eqm)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_equipmentModelListIO.setConnection(conn);
 			_equipmentModelListIO.delete(eqm);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("deleteEquipmentModel: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_equipmentModelListIO.setConnection(null);
 		}
 	}
 
@@ -1487,12 +1619,24 @@ public class SqlDatabaseIO
 	  occurance for this object not to be in the database.
 	  @param pg the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readPresentationGroup(PresentationGroup pg)
 		throws DatabaseException
 	{
-		_presentationGroupListIO.readPresentationGroup(pg, true);
-		try { if ( commitAfterSelect ) commit(); }
-		catch(SQLException ex) {}
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_presentationGroupListIO.setConnection(conn);
+			_presentationGroupListIO.readPresentationGroup(pg, true);
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_presentationGroupListIO.setConnection(null);
+		}
 	}
 
 
@@ -1501,22 +1645,27 @@ public class SqlDatabaseIO
 	  might be either new or old-and-changed.
 	  @param pg the object to write to the database.
 	*/
+	@Override
 	public synchronized void writePresentationGroup(PresentationGroup pg)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_presentationGroupListIO.setConnection(conn);
 			_presentationGroupListIO.write(pg);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("writePresentationGroup: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_presentationGroupListIO.setConnection(null);
 		}
 	}
 
@@ -1524,22 +1673,27 @@ public class SqlDatabaseIO
 	  Deletes a presentation group from the database.
 	  @param pg the object to delete from the database.
 	*/
+	@Override
 	public synchronized void deletePresentationGroup(PresentationGroup pg)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_presentationGroupListIO.setConnection(conn);
 			_presentationGroupListIO.delete(pg);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("deletePresentationGroup: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_presentationGroupListIO.setConnection(null);
 		}
 	}
 
@@ -1549,15 +1703,25 @@ public class SqlDatabaseIO
 	  presentation group in the database, or null if the group no
 	  longer exists in the database.
 	*/
+	@Override
 	public Date getPresentationGroupLMT(PresentationGroup pg)
 		throws DatabaseException
 	{
-		Date d = _presentationGroupListIO.getLMT(pg);
-		try { commit(); }
-		catch(SQLException ex) {}
-		return d;
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_presentationGroupListIO.setConnection(conn);
+			return _presentationGroupListIO.getLMT(pg);
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_presentationGroupListIO.setConnection(null);
+		}
 	}
-
 
 	/**
 	  Attempt to read a RoutingSpec from the database.  The argument
@@ -1568,34 +1732,51 @@ public class SqlDatabaseIO
 	  database.
 	  @param rs the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readRoutingSpec(RoutingSpec rs)
 		throws DatabaseException
 	{
-		_routingSpecListIO.readRoutingSpec(rs);
-		try { if ( commitAfterSelect ) commit(); }
-		catch(SQLException ex) {}
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_routingSpecListIO.setConnection(conn);
+			_routingSpecListIO.readRoutingSpec(rs);
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_routingSpecListIO.setConnection(null);
+		}
 	}
 
 	/**
 	  Writes a routing spec to the database.
 	  @param rs the object to write to the database.
 	*/
+	@Override
 	public synchronized void writeRoutingSpec(RoutingSpec rs)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_routingSpecListIO.setConnection(conn);
 			_routingSpecListIO.write(rs);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("writeRoutingSpec: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_routingSpecListIO.setConnection(null);
 		}
 	}
 
@@ -1603,22 +1784,27 @@ public class SqlDatabaseIO
 	  Deletes a routing spec from the database.
 	  @param rs the object to delete from the database.
 	*/
+	@Override
 	public synchronized void deleteRoutingSpec(RoutingSpec rs)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_routingSpecListIO.setConnection(conn);
 			_routingSpecListIO.delete(rs);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("deleteRoutingSpec: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_routingSpecListIO.setConnection(null);
 		}
 	}
 
@@ -1628,17 +1814,29 @@ public class SqlDatabaseIO
 	  routing spec in the database, or null if the routing spec no longer
 	  exists in the database.
 	*/
+	@Override
 	public synchronized Date getRoutingSpecLMT(RoutingSpec rs)
 		throws DatabaseException
 	{
-		Date d = _routingSpecListIO.getLMT(rs);
-		try { if ( commitAfterSelect ) commit(); }
-		catch(SQLException ex) {}
-		return d;
+		Connection conn = null;
+		
+		try
+		{
+			conn = getConnection();
+			_routingSpecListIO.setConnection(conn);
+			return _routingSpecListIO.getLMT(rs);
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_routingSpecListIO.setConnection(null);
+		}
 	}
 
 
 	/** Does nothing. */
+	@Override
 	public synchronized void readDataSource(DataSource ds)
 		throws DatabaseException
 	{
@@ -1651,22 +1849,27 @@ public class SqlDatabaseIO
  	* pre-existing (presumably with changed data), or it can be new.
 	* @param ds the object to write to the database.
  	*/
+	@Override
 	public void writeDataSource(DataSource ds)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_dataSourceListIO.setConnection(conn);
 			_dataSourceListIO.write(ds);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("writeDataSource: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_dataSourceListIO.setConnection(null);
 		}
 	}
 
@@ -1675,22 +1878,27 @@ public class SqlDatabaseIO
  	* ID number.
 	* @param ds the object to delete from the database.
  	*/
+	@Override
 	public synchronized void deleteDataSource(DataSource ds)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_dataSourceListIO.setConnection(conn);
 			_dataSourceListIO.delete(ds);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("deleteDataSource: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_dataSourceListIO.setConnection(null);
 		}
 	}
 
@@ -1701,18 +1909,27 @@ public class SqlDatabaseIO
 	  record in the database.
 	  @param ob the object to populate from the database.
 	*/
+	@Override
 	public synchronized void readNetworkList( NetworkList ob )
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_networkListListIO.setConnection(conn);
 			_networkListListIO.readNetworkList(ob);
-			if (commitAfterSelect)
-				commit();
 		}
 		catch (SQLException e)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("readNetworkList: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_networkListListIO.setConnection(null);
 		}
 	}
 
@@ -1722,22 +1939,27 @@ public class SqlDatabaseIO
 	  record in the database.
 	  @param nl the object to write to the database.
 	*/
+	@Override
 	public synchronized void writeNetworkList(NetworkList nl)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_networkListListIO.setConnection(conn);
 			_networkListListIO.write(nl);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("writeNetworkList: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_networkListListIO.setConnection(null);
 		}
 	}
 
@@ -1745,22 +1967,27 @@ public class SqlDatabaseIO
 	  Deletes a network list from the database.
 	  @param nl the object to delete from the database.
 	*/
+	@Override
 	public synchronized void deleteNetworkList(NetworkList nl)
 		throws DatabaseException
 	{
+		Connection conn = null;
+		
 		try
 		{
+			conn = getConnection();
+			_networkListListIO.setConnection(conn);
 			_networkListListIO.delete(nl);
-			commit();
 		}
 		catch (SQLException e)
 		{
-			try { rollback(); }
-			catch (SQLException e1)
-			{
-				throw new DatabaseException(e1.toString());
-			}
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException("deleteNetworkList: " + e.toString());
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_networkListListIO.setConnection(null);
 		}
 	}
 
@@ -1770,24 +1997,31 @@ public class SqlDatabaseIO
 	  network list in the database, or null if the network list no longer
 	  exists in the database.
 	*/
+	@Override
 	public synchronized Date getNetworkListLMT(NetworkList nl)
 		throws DatabaseException
 	{
-		if (getDecodesDatabaseVersion() >= 6)
+		if (getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
 		{
+			Connection conn = null;
+			
 			try
 			{
-				Date d = _networkListListIO.getLMT(nl);
-				if (commitAfterSelect)
-					commit();
-				return d;
+				conn = getConnection();
+				_networkListListIO.setConnection(conn);
+				return _networkListListIO.getLMT(nl);
 			}
 			catch(Exception ex)
 			{
-				String msg = "getNetworkListLMT - Can't read Network List LMT: "
-					+ ex;
+				String msg = "getNetworkListLMT - Can't read Network List LMT: " + ex;
 				Logger.instance().warning(msg);
 				throw new DatabaseException(msg);
+			}
+			finally
+			{
+				if (conn != null)
+					freeConnection(conn);
+				_networkListListIO.setConnection(null);
 			}
 		}
 
@@ -1806,6 +2040,7 @@ public class SqlDatabaseIO
  	* Writes the enumeration list data to the SQL database.
 	* @param enumList the object to write to the database.
  	*/
+	@Override
 	public synchronized void writeEnumList(EnumList enumList)
 		throws DatabaseException
 	{
@@ -1825,72 +2060,39 @@ public class SqlDatabaseIO
 		}
 	}
 
-
-	/**
-	  @deprecated Platform IDs are now assigned with the getKey method
-	  in this class.
-	  @see SqlDatabaseIO#getKey
-	*/
-	@Deprecated
-	public Counter getPlatformIdCounter()
-	{
-		//System.out.println("SqlDatabaseIO.getPlatformIdCounter()");
-		return null;
-	}
-
 	/**
 	  Generates a surrogate key using the installed KeyGenerator.
 	  @param tableName name of the table for which a new key is needed.
 	*/
-	public DbKey getKey(String tableName)
+	public DbKey getKey(String tableName, Connection conn)
 		throws DatabaseException
 	{
-		DbKey k = keyGenerator.getKey(tableName, getConnection());
-/*
-		try { if ( commitAfterSelect ) commit(); }
-		catch(SQLException ex) {}
-*/
+		DbKey k = keyGenerator.getKey(tableName, conn);
 		return k;
 	}
 
 	/**
 	  Returns the JDBC Connection object.
 	*/
+	@Override
 	public Connection getConnection()
 	{
+		if (poolingDataSource != null)
+			try
+			{
+				return poolingDataSource.getConnection();
+			}
+			catch (SQLException ex)
+			{
+				Logger.instance().warning(
+					"SqlDatabaseIO.getConnection() Cannot get pooled connection: " + ex);
+			}
 		return _conn;
 	}
 
 	public void setConnection(Connection conn)
 	{
 		_conn = conn;
-	}
-
-	/**
-	 * Commits any pending transactions.
-	 */
-	public void commit()
-		throws SQLException
-	{
-		// MJM 2017/03/03 Everything is now auto commit.
-//		Connection con = getConnection();
-//		if (con != null)
-//		{
-//			con.commit();
-//			try { con.clearWarnings(); }
-//			catch(SQLException ex) {}
-//		}
-	}
-	public void rollback()
-		throws SQLException
-	{
-//		Connection con = getConnection();
-//		if (con != null)
-//		{
-//			con.rollback();
-//			try { con.clearWarnings(); }
-//			catch(SQLException ex) {}
-//		}
 	}
 
 	public boolean commitAfterSelectStatus()
@@ -1901,61 +2103,6 @@ public class SqlDatabaseIO
 	{
 		commitAfterSelect=status;
 	}
-
-	/**
-	  Reads  names of NetworkList  from the database.  This uses
-	  the transport id to uniquely identify the networklist containing that transport id
-	   in the database.
-	  @param transportId the value of transport id contained in network list.
-	*/
-	public synchronized ArrayList<String> readNetworkListName( String transportId )
-		throws DatabaseException
-	{
-		try
-		{
-			 ArrayList<String> networkListArray=_platformListIO.readNetworKListName(transportId);
-			if (commitAfterSelect)
-				commit();
-			return networkListArray;
-		}
-		catch (SQLException e)
-		{
-			throw new DatabaseException(e.toString());
-		}
-	}
-
-//	/**
-//	  Reads  names of NetworkList  from the database.  This uses
-//	  the transport id to uniquely identify the networklist containing that transport id
-//	   in the database.
-//	  @param transportId the value of transport id contained in network list.
-//	*/
-//	public synchronized void updateTransportId( String oldtransportId, String newTransportId )
-//
-//	{
-//		try{
-//		_platformListIO.updateTransportId(oldtransportId, newTransportId);
-//		}
-//		catch(DatabaseException ex)
-//		{
-//			//System.out.println(ex);
-//			ex.printStackTrace(System.out);
-//		}
-//			catch (SQLException e)
-//			{
-//				//System.out.println(e);
-//				e.printStackTrace(System.out);
-//				try { rollback(); }
-//				catch (SQLException e1)
-//				{
-//					//System.err.println(e1);
-//					e1.printStackTrace(System.err);
-//
-//				}
-//
-//			}
-//
-//	}
 
 	public boolean isOracle()
 	{
@@ -2256,5 +2403,31 @@ public class SqlDatabaseIO
 			return true;
 	}
 
+	@Override
+	public void freeConnection(Connection conn)
+	{
+		// If we are pooling, close the connection which puts it back into the pool.
+		if (poolingDataSource != null)
+			try { conn.close(); } catch (Exception ex) {} 
+	}
 
+	public boolean isConnected()
+	{
+		return _isConnected;
+	}
+
+	public javax.sql.DataSource getPoolingDataSource()
+	{
+		return poolingDataSource;
+	}
+
+	public void setPoolingDataSource(javax.sql.DataSource poolingDataSource)
+	{
+		this.poolingDataSource = poolingDataSource;
+	}
+
+	public void setKeyGenerator(KeyGenerator keyGenerator)
+	{
+		this.keyGenerator = keyGenerator;
+	}
 }

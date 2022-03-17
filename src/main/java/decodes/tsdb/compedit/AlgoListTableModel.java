@@ -92,15 +92,20 @@ public class AlgoListTableModel
 	{
 
 		TimeSeriesDb tsdb = CAPEdit.instance().getTimeSeriesDb();
+		AlgorithmDAI algoDao = tsdb.makeAlgorithmDAO();
 		try
 		{
-			myList = tsdb.listAlgorithmsForGui();
+			myList = algoDao.listAlgorithmsForGui();
 		}
 		catch(DbIoException ex)
 		{
 			CAPEdit.instance().getFrame().showError(
 				"Cannot list algorithms: " + ex);
 			myList = new ArrayList<AlgorithmInList>();
+		}
+		finally
+		{
+			algoDao.close();
 		}
 		if (sortedBy != -1)
 			sortByColumn(sortedBy);
@@ -113,6 +118,11 @@ public class AlgoListTableModel
 	}
 
 	public Object getRowObject(int idx) 
+	{
+		return myList.get(idx);
+	}
+	
+	public DbCompAlgorithm getRowAlgorithm(int idx)
 	{
 		TimeSeriesDb tsdb = CAPEdit.instance().getTimeSeriesDb();
 		AlgorithmDAI algorithmDAO = tsdb.makeAlgorithmDAO();
@@ -133,7 +143,6 @@ public class AlgoListTableModel
 		{
 			algorithmDAO.close();
 		}
-
 	}
 
 	public int getRowCount() 

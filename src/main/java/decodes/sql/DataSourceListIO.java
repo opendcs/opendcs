@@ -306,7 +306,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	* Update a pre-existing DataSource into the database.
 	* @param ds the DataSource
 	*/
-	public void update(DataSource ds)
+	private void update(DataSource ds)
 		throws DatabaseException, SQLException
 	{
 		Logger.instance().debug3("Updating data source '" + ds.getName() + "' id=" + ds.getId());
@@ -330,7 +330,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	* Insert a new DataSource into the database.
 	* @param ds the DataSource
 	*/
-	public void insert(DataSource ds)
+	private void insert(DataSource ds)
 		throws DatabaseException, SQLException
 	{
 		DbKey id = getKey("DataSource");
@@ -355,7 +355,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	* each member of a group-type DataSource.
 	* @param ds the DataSource
 	*/
-	public void insertGroupMembers(DataSource ds)
+	private void insertGroupMembers(DataSource ds)
 		throws DatabaseException, SQLException
 	{
 		Vector<DataSource> members = ds.groupMembers;
@@ -414,7 +414,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	* DataSource.
 	* @param ds the DataSource
 	*/
-	public void deleteGroupMembers(DataSource ds)
+	private void deleteGroupMembers(DataSource ds)
 		throws DatabaseException, SQLException
 	{
 		String q = "DELETE FROM DataSourceGroupMember " +

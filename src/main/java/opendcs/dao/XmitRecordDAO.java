@@ -310,7 +310,7 @@ public class XmitRecordDAO
 		doModify(q);
 		
 		// Reset sequence so record_id starts at 1. We don't want it wrapping.
-		try { db.getKeyGenerator().reset("DCP_TRANS_"+suffix, db.getConnection()); }
+		try { db.getKeyGenerator().reset("DCP_TRANS_"+suffix, getConnection()); }
 		catch(Exception ex)
 		{
 			throw new DbIoException(ex.toString());
@@ -465,7 +465,7 @@ public class XmitRecordDAO
 				q = q + 
 					" VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
 							"?, ?, ?, ?, ?, ?)";
-				insertStatement[idx] = db.getConnection().prepareStatement(q);
+				insertStatement[idx] = getConnection().prepareStatement(q);
 				info("Created new prepared statement for '" + q + "'");
 			}
 			return insertStatement[idx];
@@ -508,7 +508,7 @@ public class XmitRecordDAO
 				// The final token in the update statement is for the where clause.
 				q.append(" where record_id = ? ");
 				
-				updateXmit[idx] = db.getConnection().prepareStatement(q.toString());
+				updateXmit[idx] = getConnection().prepareStatement(q.toString());
 				info("Created new prepared statement for '" + q + "'");
 			}
 			return updateXmit[idx];
@@ -745,7 +745,7 @@ public class XmitRecordDAO
 					" AND medium_id = ?" +
 					" AND transmit_time >= ?" +
 					" AND transmit_time <= ?";
-				selectByIdAndTime[idx] = db.getConnection().prepareStatement(q);
+				selectByIdAndTime[idx] = getConnection().prepareStatement(q);
 				info("Created select prepared " +
 						"statement for '" + q + "'");
 			}

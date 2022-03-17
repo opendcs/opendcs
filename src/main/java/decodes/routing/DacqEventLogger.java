@@ -3,8 +3,11 @@ package decodes.routing;
 import java.util.Date;
 
 import opendcs.dai.DacqEventDAI;
+import opendcs.dao.DatabaseConnectionOwner;
+import decodes.db.Database;
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
+import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbAppTemplate;
 import ilex.util.Logger;
@@ -16,7 +19,6 @@ public class DacqEventLogger
 	private DbKey schedEntryStatusId = DbKey.NullKey;
 	private DbKey platformId = DbKey.NullKey;
 	private String subsystem = null;
-	private DacqEventDAI dacqEventDAO = null;
 	private DbKey appId = DbKey.NullKey;
 	private Date msgStart = null;
 
@@ -26,6 +28,7 @@ public class DacqEventLogger
 		this.parent = parent;
 		if (parent != null)
 			this.setMinLogPriority(parent.getMinLogPriority());
+		
 		if (TsdbAppTemplate.getAppInstance() != null)
 			appId = TsdbAppTemplate.getAppInstance().getAppId();
 	}
@@ -40,7 +43,7 @@ public class DacqEventLogger
 	{
 		if (parent != null)
 			parent.doLog(priority, text);
-		if (priority < Logger.E_INFORMATION || dacqEventDAO == null)
+		if (priority < Logger.E_INFORMATION)
 			return;
 		DacqEvent evt = new DacqEvent();
 		evt.setPlatformId(platformId);
@@ -55,11 +58,12 @@ public class DacqEventLogger
 	
 	public void writeDacqEvent(DacqEvent evt)
 	{
-		if (dacqEventDAO == null)
+		if (!(Database.getDb().getDbIo() instanceof SqlDatabaseIO))
 			return;
-		evt.setScheduleEntryStatusId(schedEntryStatusId);
-		try
+		
+		try (DacqEventDAI dacqEventDAO = ((SqlDatabaseIO)Database.getDb().getDbIo()).makeDacqEventDAO())
 		{
+			evt.setScheduleEntryStatusId(schedEntryStatusId);
 			dacqEventDAO.writeEvent(evt);
 		}
 		catch (DbIoException ex)
@@ -67,10 +71,7 @@ public class DacqEventLogger
 			System.err.println("DacqEventLogger cannot write event to database: " 
 				+ ex + " -- will disable DB events until next run.");
 			ex.printStackTrace();
-			dacqEventDAO.close();
-			dacqEventDAO = null;
 		}
-
 	}
 
 	public void setSchedEntryStatusId(DbKey schedEntryStatusId)
@@ -86,15 +87,6 @@ public class DacqEventLogger
 	public void setSubsystem(String subsystem)
 	{
 		this.subsystem = subsystem;
-	}
-
-	public void setDacqEventDAO(DacqEventDAI dacqEventDAO)
-	{
-		this.dacqEventDAO = dacqEventDAO;
-	}
-	public DacqEventDAI getDacqEventDAO()
-	{
-		return dacqEventDAO;
 	}
 
 	public void setAppId(DbKey appId)

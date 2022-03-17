@@ -1,12 +1,11 @@
 package decodes.tsdb.test;
 
 import java.util.Iterator;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 import opendcs.dai.AlgorithmDAI;
 import decodes.tsdb.*;
-import decodes.util.CmdLineArgs;
 
 public class ListAlgo extends TestProg
 {
@@ -25,17 +24,18 @@ public class ListAlgo extends TestProg
 	protected void runTest()
 		throws Exception
 	{
-		List<String> algos = theDb.listAlgorithms();
-		System.out.println("" + algos.size() + " Algorithm Names Retrieved:");
-		for(String algo : algos)
-			System.out.println("\t" + algo);
-
 		System.out.println("Retrieving & Displaying Algorithm Data:");
 	
 		AlgorithmDAI algorithmDAO = theDb.makeAlgorithmDAO();
-		for(String algo : algos)
+		
+		ArrayList<DbCompAlgorithm> algos = algorithmDAO.listAlgorithms();
+		System.out.println("" + algos.size() + " Algorithm Names Retrieved:");
+		for(DbCompAlgorithm algo : algos)
+			System.out.println("\t" + algo.getName());
+
+		
+		for(DbCompAlgorithm dca : algos)
 		{
-			DbCompAlgorithm dca = algorithmDAO.getAlgorithm(algo);
 			System.out.println("Algo '" + dca.getName() + "' id="
 				+ dca.getId() + " class=" + dca.getExecClass());
 			System.out.println("\t comment: " + dca.getComment());

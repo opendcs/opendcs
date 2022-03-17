@@ -64,7 +64,7 @@ public class CompDependsList
 		String joins = "a.computation_id = b.computation_id"
 			+ " and b.loading_application_id = c.loading_application_id";
 		
-		TimeSeriesDAI tsDAO = null;
+		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
 		
 		if (theDb.isHdb())
 		{
@@ -80,7 +80,6 @@ public class CompDependsList
 		}
 		else if (theDb.isOpenTSDB())
 		{
-			tsDAO = theDb.makeTimeSeriesDAO();
 			tsDAO.reloadTsIdCache();
 		}
 		
@@ -89,41 +88,48 @@ public class CompDependsList
 				+ appFilterArg.getValue().toLowerCase() + "'";
 		
 		String q = "select " + columns + " from " + tables + " where " + joins;
-		ResultSet rs = theDb.doQuery(q);
-		while(rs != null && rs.next())
+		try
 		{
-			DbKey tsKey = DbKey.createDbKey(rs, 1);
-			DbKey compId = DbKey.createDbKey(rs, 2);
-			String compName = rs.getString(3);
-			DbKey appId = DbKey.createDbKey(rs, 4);
-			String appName = rs.getString(5);
-			
-			String tsid = "";
-			if (theDb.isHdb())
+			ResultSet rs = tsDAO.doQuery(q);
+			while(rs != null && rs.next())
 			{
-				DbKey siteId = DbKey.createDbKey(rs, 6);
-				Site site = Database.getDb().siteList.getSiteById(siteId);
-				String sn = site == null ? "nullsite" : site.getPreferredName().getNameValue();
-				DbKey datatypeId = DbKey.createDbKey(rs, 7);
-				String interval = rs.getString(8);
-				String tabsel = rs.getString(9);
-				DbKey modelId = DbKey.createDbKey(rs, 10);
-				tsid = sn + "." + datatypeId + "." + interval + "." + tabsel;
-				if (modelId != null && modelId.getValue() != -1L)
-					tsid = tsid + "." + modelId;
+				DbKey tsKey = DbKey.createDbKey(rs, 1);
+				DbKey compId = DbKey.createDbKey(rs, 2);
+				String compName = rs.getString(3);
+				DbKey appId = DbKey.createDbKey(rs, 4);
+				String appName = rs.getString(5);
+				
+				String tsid = "";
+				if (theDb.isHdb())
+				{
+					DbKey siteId = DbKey.createDbKey(rs, 6);
+					Site site = Database.getDb().siteList.getSiteById(siteId);
+					String sn = site == null ? "nullsite" : site.getPreferredName().getNameValue();
+					DbKey datatypeId = DbKey.createDbKey(rs, 7);
+					String interval = rs.getString(8);
+					String tabsel = rs.getString(9);
+					DbKey modelId = DbKey.createDbKey(rs, 10);
+					tsid = sn + "." + datatypeId + "." + interval + "." + tabsel;
+					if (modelId != null && modelId.getValue() != -1L)
+						tsid = tsid + "." + modelId;
+				}
+				else if (theDb.isCwms())
+					tsid = rs.getString(6);
+				else if (theDb.isOpenTSDB())
+				{
+					TimeSeriesIdentifier tmptsid = tsDAO.getTimeSeriesIdentifier(tsKey);
+					if (tmptsid != null)
+						tsid = tmptsid.getUniqueString();
+				}
+				System.out.println("" + tsKey + ",    "
+					+ "\""+tsid+"\"" + ",   "
+					+ compId + ",  " + "\"" + compName + "\"" + ",  "
+					+ appId + ",  " + "\"" + appName + "\"");
 			}
-			else if (theDb.isCwms())
-				tsid = rs.getString(6);
-			else if (theDb.isOpenTSDB())
-			{
-				TimeSeriesIdentifier tmptsid = tsDAO.getTimeSeriesIdentifier(tsKey);
-				if (tmptsid != null)
-					tsid = tmptsid.getUniqueString();
-			}
-			System.out.println("" + tsKey + ",    "
-				+ "\""+tsid+"\"" + ",   "
-				+ compId + ",  " + "\"" + compName + "\"" + ",  "
-				+ appId + ",  " + "\"" + appName + "\"");
+		}
+		finally
+		{
+			tsDAO.close();
 		}
 
 	}

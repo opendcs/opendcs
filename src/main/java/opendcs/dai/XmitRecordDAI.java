@@ -4,15 +4,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
-import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import decodes.db.NetworkList;
 import decodes.dcpmon.XmitMediumType;
 import decodes.dcpmon.XmitRecSpec;
-import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
 public interface XmitRecordDAI
+	extends DaiBase
 {
 	/**
 	 * This is a new Method for the new DCP Monitor. This method will

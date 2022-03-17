@@ -20,6 +20,7 @@ import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.tsdb.TsdbAppTemplate;
+import opendcs.dao.DaoBase;
 
 /**
  * Copies CWMS Parameters to DECODES Data Type records.
@@ -36,23 +37,32 @@ public class CwmsParam2DataType extends TsdbAppTemplate
 	protected void runApp() throws Exception
 	{
 		String q = "select distinct parameter_id from cwms_v_parameter";
-		ResultSet rs = theDb.doQuery(q);
-		int numNew = 0;
-		while(rs != null && rs.next())
+		DaoBase dao = new DaoBase(theDb, "CwmsParam2DataType");
+		
+		try
 		{
-			String dtCode = rs.getString(1);
-			DataType dt = DataType.getDataType(
-				Constants.datatype_CWMS, dtCode);
-			if (dt.getId().isNull())
+			ResultSet rs = dao.doQuery(q);
+			int numNew = 0;
+			while(rs != null && rs.next())
 			{
-				System.out.println("New CWMS Data Type: " + dt.getCode());
-				numNew++;
+				String dtCode = rs.getString(1);
+				DataType dt = DataType.getDataType(
+					Constants.datatype_CWMS, dtCode);
+				if (dt.getId().isNull())
+				{
+					System.out.println("New CWMS Data Type: " + dt.getCode());
+					numNew++;
+				}
+			}
+			if (numNew > 0)
+			{
+				System.out.println("Writing " + numNew + " CWMS data types to DECODES db.");
+				Database.getDb().dataTypeSet.write();
 			}
 		}
-		if (numNew > 0)
+		finally
 		{
-			System.out.println("Writing " + numNew + " CWMS data types to DECODES db.");
-			Database.getDb().dataTypeSet.write();
+			dao.close();
 		}
 	}
 	

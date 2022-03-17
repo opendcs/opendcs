@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import decodes.sql.DbKey;
+import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
 
 public interface CompDependsDAI
+	extends DaiBase
 {
 	/**
 	 * Removes any CompDepends records that reference the passed TSID
@@ -62,6 +64,14 @@ public interface CompDependsDAI
 	 */
 	public ArrayList<DbKey> getCompIdsFor(Collection<TimeSeriesIdentifier> tsids, DbKey appId)
 		throws DbIoException;
+	
+	/**
+	 * Get next CP_COMP_DEPENDS_NOTIFY record and remove it from the table.
+	 * @return next CP_COMP_DEPENDS_NOTIFY record or null if none.
+	 */
+	public CpDependsNotify getCpCompDependsNotify()
+		throws DbIoException;
+
 
 	/**
 	 * Closes any resources opened by the DAO

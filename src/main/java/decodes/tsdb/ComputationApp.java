@@ -326,177 +326,183 @@ public class ComputationApp
 		long lastTimedCompCheck = 0L;
 
 		String action="starting";
-		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
-		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+		
 		
 		try
 		{
 			while(!shutdownFlag)
 			{
-				long now = System.currentTimeMillis();
-
-				action = "Checking lock";
-				if (myLock != null && now - lastLockCheck > 5000L)
+				Logger.instance().debug3("ComputationApp start of main loop.");
+				try(
+					TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+					LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+					TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+					)
 				{
-					setAppStatus("Cmps: " + compsTried + "/" + compErrors);
-					loadingAppDAO.checkCompProcLock(myLock);
-					lastLockCheck = now;
-				}
-				
-				if (now - lastCacheMaintenance > 3600 * 2 * 1000L)
-				{
-					lastCacheMaintenance = now;
-					refillSiteCache();
-				}
-				
-				if (now - lastTimedCompCheck > checkTimedCompsSec * 1000L) 
-				{
-					checkTimedCompList(now, timedCompCal);
-					lastTimedCompCheck = now;
-				}
-				
-				// Check to see if it's time to run any timed computations.
-				action = "Running timed computations";
-				DataCollection dataCollection = null;
-				int numTimed = 0;
-				for(Iterator<DbComputation> tcit = timedComps.iterator(); tcit.hasNext(); )
-				{
-					DbComputation tc = tcit.next();
-					if (now >= tc.getNextRunTime().getTime())
-					{
-						if (dataCollection == null)
-							dataCollection = new DataCollection();
-						executeTimedComp(tc, timedCompCal, dataCollection, timeSeriesDAO, tsGroupDAO);
-						numTimed++;
-						Date nextRun = computeNextRunTime(
-							tc.getProperty("timedCompInterval"),
-							tc.getProperty("timedCompOffset"), timedCompCal, 
-							new Date(now + 1000L));
-						if (nextRun == null)
-						{
-							warning("Cannot compute nextRun for computation "
-								+ tc.getId() + ": " + tc.getName()
-								+ " with interval '" + tc.getProperty("timedCompInterval") + "'"
-								+ " -- is this no longer a timed computation?");
-							tcit.remove();
-						}
-						else
-						{
-							tc.setNextRunTime(nextRun);
-							Logger.instance().debug3("Computation " + tc.getKey() + ":" + tc.getName()
-								+ " scheduled for " + debugSdf.format(nextRun));
-						}
-					}
-				}
-				if (numTimed > 0)
-				{
-					action = "Saving timed results";
-					List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
-Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
-
-					for(CTimeSeries cts : tsList)
-					{
-						try { timeSeriesDAO.saveTimeSeries(cts); }
-						catch(BadTimeSeriesException ex)
-						{
-							warning("Cannot save time series " + cts.getNameString()
-								+ ": " + ex);
-						}
-					}
-
-				}
-
-				action = "Getting new data";
-				dataCollection = theDb.getNewData(getAppId());
-				// In Regression Test Mode, exit after 5 sec of idle
-				if (!dataCollection.isEmpty())
-					lastDataTime = System.currentTimeMillis();
-				else if (regressionTestModeArg.getValue()
-				 && System.currentTimeMillis() - lastDataTime > 10000L)
-				{
-					Logger.instance().info("Regression Test Mode - Exiting after 10 sec idle.");
-					shutdownFlag = true;
-					loadingAppDAO.releaseCompProcLock(myLock);
-				}
-				
-
-				if (!dataCollection.isEmpty())
-				{
-					action = "Resolving computations";
-					DbComputation comps[] = resolver.resolve(dataCollection);
+					long now = System.currentTimeMillis();
 	
-					action = "Applying computations";
-					for(DbComputation comp : comps)
+					action = "Checking lock";
+					if (myLock != null && now - lastLockCheck > 5000L)
 					{
-						Logger.instance().debug1("Trying computation '" 
-							+ comp.getName() + "' #trigs=" + comp.getTriggeringRecNums().size());
-						compsTried++;
-						try
-						{
-							comp.prepareForExec(theDb);
-							comp.apply(dataCollection, theDb);
-						}
-						catch(DbCompException ex)
-						{
-							String msg = "Computation '" + comp.getName() 
-								+ "' DbCompException: " + ex;
-							warning(msg);
-							compErrors++;
-							for(Integer rn : comp.getTriggeringRecNums())
-								 dataCollection.getTasklistHandle().markComputationFailed(rn);
-						}
-						catch(Exception ex)
-						{
-							compErrors++;
-							String msg = "Computation '" + comp.getName() 
-								+ "' Exception: " + ex;
-							warning(msg);
-							System.err.println(msg);
-							ex.printStackTrace(System.err);
-							for(Integer rn : comp.getTriggeringRecNums())
-								 dataCollection.getTasklistHandle().markComputationFailed(rn);
-						}
-						comp.getTriggeringRecNums().clear();
-						Logger.instance().debug1("End of computation '" 
-							+ comp.getName() + "'");
+						setAppStatus("Cmps: " + compsTried + "/" + compErrors);
+						loadingAppDAO.checkCompProcLock(myLock);
+						lastLockCheck = now;
 					}
-	
-					action = "Saving results";
-					List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
+					
+					if (now - lastCacheMaintenance > 3600 * 2 * 1000L)
+					{
+						lastCacheMaintenance = now;
+						refillSiteCache();
+					}
+					
+					if (now - lastTimedCompCheck > checkTimedCompsSec * 1000L) 
+					{
+						checkTimedCompList(now, timedCompCal);
+						lastTimedCompCheck = now;
+					}
+					
+					// Check to see if it's time to run any timed computations.
+					action = "Running timed computations";
+					DataCollection dataCollection = null;
+					int numTimed = 0;
+					for(Iterator<DbComputation> tcit = timedComps.iterator(); tcit.hasNext(); )
+					{
+						DbComputation tc = tcit.next();
+						if (now >= tc.getNextRunTime().getTime())
+						{
+							if (dataCollection == null)
+								dataCollection = new DataCollection();
+							executeTimedComp(tc, timedCompCal, dataCollection, timeSeriesDAO, tsGroupDAO);
+							numTimed++;
+							Date nextRun = computeNextRunTime(
+								tc.getProperty("timedCompInterval"),
+								tc.getProperty("timedCompOffset"), timedCompCal, 
+								new Date(now + 1000L));
+							if (nextRun == null)
+							{
+								warning("Cannot compute nextRun for computation "
+									+ tc.getId() + ": " + tc.getName()
+									+ " with interval '" + tc.getProperty("timedCompInterval") + "'"
+									+ " -- is this no longer a timed computation?");
+								tcit.remove();
+							}
+							else
+							{
+								tc.setNextRunTime(nextRun);
+								Logger.instance().debug3("Computation " + tc.getKey() + ":" + tc.getName()
+									+ " scheduled for " + debugSdf.format(nextRun));
+							}
+						}
+					}
+					if (numTimed > 0)
+					{
+						action = "Saving timed results";
+						List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
 	Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
-					for(CTimeSeries ts : tsList)
-					{
-						try { timeSeriesDAO.saveTimeSeries(ts); }
-						catch(Exception ex)
+	
+						for(CTimeSeries cts : tsList)
 						{
-							warning("Cannot save time series " + ts.getNameString()
-								+ ": " + ex);
+							try { timeSeriesDAO.saveTimeSeries(cts); }
+							catch(BadTimeSeriesException ex)
+							{
+								warning("Cannot save time series " + cts.getNameString()
+									+ ": " + ex);
+							}
 						}
+	
 					}
 	
-					action = "Releasing new data";
-					theDb.releaseNewData(dataCollection);
-					lastDataTime = System.currentTimeMillis();
-				}
-				else // MJM 6.4 RC08 Only sleep if data was empty.
-				{
-					try { Thread.sleep(compRunWaitTime); }
-					catch(InterruptedException ex) {}
-				}
-	
-				if (!theDb.isCwms())
-				{
-					now = System.currentTimeMillis();
-					int idx = 0;
-					for(; idx < missingChecks.size() && now > missingChecks.get(idx).nextRunMsec; idx++)
-						doMissingCheck(missingChecks.get(idx), timeSeriesDAO);
-					if (idx > 0)
-						sortMissingChecks();
-					if (now - lastMissingCheckMsec > 600L * 1000L) // ten minutes
+					action = "Getting new data";
+					dataCollection = timeSeriesDAO.getNewData(getAppId());
+					// In Regression Test Mode, exit after 5 sec of idle
+					if (!dataCollection.isEmpty())
+						lastDataTime = System.currentTimeMillis();
+					else if (regressionTestModeArg.getValue()
+					 && System.currentTimeMillis() - lastDataTime > 10000L)
 					{
-						checkMissingChecks(timeSeriesDAO, tsGroupDAO);
-						lastMissingCheckMsec = now;
+						Logger.instance().info("Regression Test Mode - Exiting after 10 sec idle.");
+						shutdownFlag = true;
+						loadingAppDAO.releaseCompProcLock(myLock);
+					}
+					
+	
+					if (!dataCollection.isEmpty())
+					{
+						action = "Resolving computations";
+						DbComputation comps[] = resolver.resolve(dataCollection);
+		
+						action = "Applying computations";
+						for(DbComputation comp : comps)
+						{
+							Logger.instance().debug1("Trying computation '" 
+								+ comp.getName() + "' #trigs=" + comp.getTriggeringRecNums().size());
+							compsTried++;
+							try
+							{
+								comp.prepareForExec(theDb);
+								comp.apply(dataCollection, theDb);
+							}
+							catch(DbCompException ex)
+							{
+								String msg = "Computation '" + comp.getName() 
+									+ "' DbCompException: " + ex;
+								warning(msg);
+								compErrors++;
+								for(Integer rn : comp.getTriggeringRecNums())
+									 dataCollection.getTasklistHandle().markComputationFailed(rn);
+							}
+							catch(Exception ex)
+							{
+								compErrors++;
+								String msg = "Computation '" + comp.getName() 
+									+ "' Exception: " + ex;
+								warning(msg);
+								System.err.println(msg);
+								ex.printStackTrace(System.err);
+								for(Integer rn : comp.getTriggeringRecNums())
+									 dataCollection.getTasklistHandle().markComputationFailed(rn);
+							}
+							comp.getTriggeringRecNums().clear();
+							Logger.instance().debug1("End of computation '" 
+								+ comp.getName() + "'");
+						}
+		
+						action = "Saving results";
+						List<CTimeSeries> tsList = dataCollection.getAllTimeSeries();
+		Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
+						for(CTimeSeries ts : tsList)
+						{
+							try { timeSeriesDAO.saveTimeSeries(ts); }
+							catch(Exception ex)
+							{
+								warning("Cannot save time series " + ts.getNameString()
+									+ ": " + ex);
+							}
+						}
+		
+						action = "Releasing new data";
+						theDb.releaseNewData(dataCollection, timeSeriesDAO);
+						lastDataTime = System.currentTimeMillis();
+					}
+					else // MJM 6.4 RC08 Only sleep if data was empty.
+					{
+						try { Thread.sleep(compRunWaitTime); }
+						catch(InterruptedException ex) {}
+					}
+		
+					if (!theDb.isCwms())
+					{
+						now = System.currentTimeMillis();
+						int idx = 0;
+						for(; idx < missingChecks.size() && now > missingChecks.get(idx).nextRunMsec; idx++)
+							doMissingCheck(missingChecks.get(idx), timeSeriesDAO);
+						if (idx > 0)
+							sortMissingChecks();
+						if (now - lastMissingCheckMsec > 600L * 1000L) // ten minutes
+						{
+							checkMissingChecks(timeSeriesDAO, tsGroupDAO);
+							lastMissingCheckMsec = now;
+						}
 					}
 				}
 			}
@@ -519,12 +525,6 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 			shutdownFlag = true;
-		}
-		finally
-		{
-			tsGroupDAO.close();
-			timeSeriesDAO.close();
-			loadingAppDAO.close();
 		}
 		resolver = null;
 		Logger.instance().debug1("runApp() exiting.");
@@ -800,27 +800,25 @@ Logger.instance().debug3(action + " " + tsList.size() +" time series in data.");
 				+ "and cmp.loading_application_id = " + getAppId() + ")";
 		ResultSet rs = null;
 		HashMap<DbKey,Date> timedCompsLMT = new HashMap<DbKey,Date>();
-		try
-		{
-			rs = theDb.doQuery(q);
-			while(rs.next())
-				timedCompsLMT.put(DbKey.createDbKey(rs, 1), theDb.getFullDate(rs, 2));
-			Logger.instance().debug3("" + timedCompsLMT.size() + " timed computations found for this process.");
-		}
-		catch (Exception ex)
-		{
-			warning("Error reading timed computation IDs: " + ex.toString());
-			return;
-		}
-		finally
-		{
-			if (rs != null)
-				try { rs.close(); } catch(Exception ex) {}
-		}
-		HashSet<DbKey> checkedComps = new HashSet<DbKey>();
 		ComputationDAI compDAO = theDb.makeComputationDAO();
+
+		HashSet<DbKey> checkedComps = new HashSet<DbKey>();
 		try
 		{
+			try
+			{
+				rs = compDAO.doQuery(q);
+				while(rs.next())
+					timedCompsLMT.put(DbKey.createDbKey(rs, 1), theDb.getFullDate(rs, 2));
+				Logger.instance().debug3("" + timedCompsLMT.size() 
+					+ " timed computations found for this process.");
+			}
+			catch (Exception ex)
+			{
+				warning("Error reading timed computation IDs: " + ex.toString());
+				return;
+			}
+	
 			Date nowd = new Date(now);
 			for(DbKey compId : timedCompsLMT.keySet())
 			{

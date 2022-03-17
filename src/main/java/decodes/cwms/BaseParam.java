@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import decodes.tsdb.DbIoException;
+import opendcs.dao.DaoBase;
 
 /**
  * Provides access to base parameters, parameters, and unit associations.
@@ -54,29 +55,37 @@ public class BaseParam
 			+ "where a.base_parameter_id = b.base_parameter_id "
 			+ " and (db_office_code = " + db.getDbOfficeCode() + " or db_office_code=53)"
 			+ " order by upper(a.base_parameter_id)";
-		ResultSet rs = db.doQuery(q);
 		
-		while(rs.next())
+		DaoBase dao = new DaoBase(db, "BaseParam");
+		
+		try
 		{
-			String bparam = rs.getString(1);
-			String units = rs.getString(2);
-//Logger.instance().debug3("baseParam '" + bparam + "' units '" + units + "'");
-			bparamUnitsMap.put(bparam, units);
+			ResultSet rs = dao.doQuery(q);
+			while(rs.next())
+			{
+				String bparam = rs.getString(1);
+				String units = rs.getString(2);
+				bparamUnitsMap.put(bparam, units);
+			}
+			
+			
+			q = "select parameter_id, unit_id from cwms_v_display_units "
+				+ " where office_id = '" + db.getDbOfficeId() + "'"
+				+ " and unit_system = 'EN'";
+			rs = dao.doQuery(q);
+			
+			while(rs.next())
+			{
+				String p = rs.getString(1);
+				if (p.contains("-"))
+					continue; // we only want base params
+				String units = rs.getString(2);
+				bparamEnglishUnitsMap.put(p.toUpperCase(), units);
+			}
 		}
-		
-		q = "select parameter_id, unit_id from cwms_v_display_units "
-			+ " where office_id = '" + db.getDbOfficeId() + "'"
-			+ " and unit_system = 'EN'";
-		rs = db.doQuery(q);
-		
-		while(rs.next())
+		finally
 		{
-			String p = rs.getString(1);
-			if (p.contains("-"))
-				continue; // we only want base params
-			String units = rs.getString(2);
-//Logger.instance().debug3("baseParam '" + p + "' engUnits '" + units + "'");
-			bparamEnglishUnitsMap.put(p.toUpperCase(), units);
+			dao.close();
 		}
 	}
 	

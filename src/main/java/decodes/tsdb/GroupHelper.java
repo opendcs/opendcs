@@ -40,7 +40,6 @@ public abstract class GroupHelper
 		}
 	}
 
-	
 	public GroupHelper(TimeSeriesDb tsdb)
 	{
 		this.tsdb = tsdb;
@@ -49,23 +48,18 @@ public abstract class GroupHelper
 	public void evalAll()
 		throws DbIoException
 	{
-		TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO();
-		ArrayList<TsGroup> allGroups = null;
-		try
+		try ( TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO(); )
 		{
+			ArrayList<TsGroup> allGroups = null;
 			allGroups = tsGroupDAO.getTsGroupList(null);
+			for(TsGroup grp : allGroups)
+				expandTsGroup(grp);
 		}
 		catch(DbIoException ex)
 		{
 			tsdb.warning("GroupHelper.evalAll error listing groups: " + ex);
 			return;
 		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-		for(TsGroup grp : allGroups)
-			expandTsGroup(grp);
 	}
 	
 	/**
@@ -139,8 +133,7 @@ public abstract class GroupHelper
 			tsIdSet.add(tsid);
 
 		// Check the TSID part filters against the entire TSID cache.
-		TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
-		try
+		try ( TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO() )
 		{
 			ArrayList<TimeSeriesIdentifier> cachedTsids = timeSeriesDAO.listTimeSeries();
 			tsdb.debug2("...cached TSID list has " + cachedTsids.size() + " TSIDs.");
@@ -150,10 +143,6 @@ public abstract class GroupHelper
 					tsIdSet.add(tsid);
 			tsdb.debug2("...after passesParts loop '" + grp.getGroupName() + "' has "
 				+ tsIdSet.size() + " TSIDs.");
-		}
-		finally
-		{
-			timeSeriesDAO.close();
 		}
 
 		// Do the include/exclude/intersect with sub-groups
@@ -193,8 +182,7 @@ public abstract class GroupHelper
 	{
 		TreeSet<DbKey> needsEval = new TreeSet<DbKey>();
 		
-		TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO();
-		try
+		try ( TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO() )
 		{
 			findParentsOf(groupId, needsEval, tsGroupDAO);
 			for(DbKey affectedGroupId : needsEval)
@@ -205,10 +193,6 @@ public abstract class GroupHelper
 				expandTsGroup(affectedGroup);
 				affected.add(affectedGroupId);
 			}
-		}
-		finally
-		{
-			tsGroupDAO.close();
 		}
 	}
 	
@@ -391,15 +375,10 @@ if (testmode) Logger.instance().debug2("... PASSES because in INCLUDED sub group
 		throws DbIoException
 	{
 		ArrayList<DbKey> grpIdsDone = new ArrayList<DbKey>();
-		TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO();
-		try
+		try ( TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO() )
 		{
 			for(TsGroup grp : tsGroupDAO.getTsGroupList(null))
 				checkMembership(grp, tsid, grpIdsDone);
-		}
-		finally
-		{
-			tsGroupDAO.close();
 		}
 	}
 

@@ -33,6 +33,7 @@
 package opendcs.dao;
 
 import ilex.util.Logger;
+import ilex.util.TextUtil;
 import ilex.util.Base64;
 
 import java.sql.ResultSet;
@@ -51,6 +52,7 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ScriptType;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.compedit.AlgorithmInList;
 
 
 /**
@@ -61,13 +63,11 @@ public class AlgorithmDAO
 	extends DaoBase 
 	implements AlgorithmDAI
 {
-	private PropertiesSqlDao propertiesSqlDao = null;
 	public AlgorithmDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "AlgorithmDao");
-		propertiesSqlDao = new PropertiesSqlDao(tsdb);
 	}
-	
+
 	@Override
 	public DbKey getAlgorithmId(String name)
 		throws DbIoException, NoSuchObjectException
@@ -126,7 +126,7 @@ public class AlgorithmDAO
 	{
 		ArrayList<DbCompAlgorithm> ret = new ArrayList<DbCompAlgorithm>();
 		String q = "select * from CP_ALGORITHM";
-		try
+		try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
 		{
 			ResultSet rs = doQuery(q);
 			while (rs.next())
@@ -235,9 +235,12 @@ public class AlgorithmDAO
 			String type = rs.getString(3);
 			algo.addParm(new DbAlgoParm(role, type));
 		}
-		
-		propertiesSqlDao.readProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
-			algo.getId(), algo.getProperties());
+
+		try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
+		{
+			propertiesSqlDao.readProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
+				algo.getId(), algo.getProperties());
+		}
 		
 		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
 		{
@@ -321,8 +324,11 @@ Logger.instance().debug1("DAO fill subord: b64='" + b64 + "' scriptData='" + scr
 				doModify(q);
 			}
 			
-			propertiesSqlDao.writeProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
-				id, algo.getProperties());
+			try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
+			{
+				propertiesSqlDao.writeProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
+						id, algo.getProperties());
+			}
 			
 			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
 			{
@@ -385,7 +391,11 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType
 			}
 			q = "delete from CP_ALGO_TS_PARM where ALGORITHM_ID = " + id;
 			doModify(q);
-			propertiesSqlDao.deleteProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", id);
+			
+			try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
+			{
+				propertiesSqlDao.deleteProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", id);
+			}
 			
 			q = "delete from CP_ALGO_SCRIPT where ALGORITHM_ID = " + id;
 			doModify(q);
@@ -405,7 +415,71 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType
 	public void close()
 	{
 		super.close();
-		propertiesSqlDao.close();
 	}
+
+	@Override
+	public ArrayList<String> listAlgorithmNames() throws DbIoException
+	{
+		String q = "select ALGORITHM_NAME from CP_ALGORITHM";
+		try
+		{
+			ResultSet rs = doQuery(q);
+			ArrayList<String> ret = new ArrayList<String>();
+			while(rs.next())
+				ret.add(rs.getString(1));
+			return ret;
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error listing algorithms: " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+	}
+
+	@Override
+	public ArrayList<AlgorithmInList> listAlgorithmsForGui()
+		throws DbIoException
+	{
+		String q = "select algorithm_id, algorithm_name, "
+			+ "exec_class, cmmnt "
+			+ "from cp_algorithm";
+		try
+		{
+			ResultSet rs = doQuery(q);
+			ArrayList<AlgorithmInList> ret = new ArrayList<AlgorithmInList>();
+			while(rs != null && rs.next())
+				ret.add(new AlgorithmInList(DbKey.createDbKey(rs, 1), rs.getString(2),
+					rs.getString(3), 0, TextUtil.getFirstLine(rs.getString(4))));
+			
+			q = "select a.algorithm_id, count(1) as CompsUsingAlgo "
+				+ "from cp_algorithm a, cp_computation b "
+				+ "where a.algorithm_id = b.algorithm_id "
+				+ "group by a.algorithm_id";
+			rs = doQuery(q);
+			while(rs != null && rs.next())
+			{
+				DbKey algoId = DbKey.createDbKey(rs, 1);
+				int numCompsUsing = rs.getInt(2);
+				for(AlgorithmInList ail : ret)
+				{
+					if (ail.getAlgorithmId().equals(algoId))
+					{
+						ail.setNumCompsUsing(numCompsUsing);
+						break;
+					}
+				}
+			}
+		
+			return ret;
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error listing algorithms for GUI: " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+	}
+
 
 }

@@ -24,6 +24,7 @@ import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.DaoBase;
 import opendcs.opentsdb.OpenTimeSeriesDAO;
 import opendcs.opentsdb.OpenTsdb;
 import opendcs.opentsdb.StorageTableSpec;
@@ -249,10 +250,11 @@ public class DbUtil extends TsdbAppTemplate
 		String q = "select " + column + " from " + table + " where " + where;
 		System.out.println("Executing '" + q + "'");
 		String what = "Executing '" + q + "'";
+		DaoBase dao = new DaoBase(theDb, "DbUtil");
+
 		try
 		{
-			
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			if (!rs.next())
 			{
 				System.out.println("Query returned no rows.");
@@ -274,7 +276,7 @@ public class DbUtil extends TsdbAppTemplate
 			System.err.println("Error while " + what);
 			e.printStackTrace();
 		}
-
+		dao.close();
 	}
 
 	protected void parmMorph(String[] tokens)
@@ -311,7 +313,7 @@ public class DbUtil extends TsdbAppTemplate
 			{
 				String tableName = "TS_NUM_" + tsdao.suffixFmt.format(spec.getTableNum());
 				String q = "select count(*) from " + tableName;
-				ResultSet rs = theDb.doQuery(q);
+				ResultSet rs = tsdao.doQuery(q);
 				int totalValues = rs.next() ? rs.getInt(1) : 0;
 
 				System.out.println("" + spec.getTableNum() + ": numTimeSeries=" 
@@ -323,7 +325,7 @@ public class DbUtil extends TsdbAppTemplate
 					if (ctsid.getStorageTable() == spec.getTableNum())
 					{
 						q = "select count(*) from " + tableName + " where TS_ID = " + ctsid.getKey();
-						rs = theDb.doQuery(q);
+						rs = tsdao.doQuery(q);
 						System.out.println("    key=" + tsid.getKey() + ", "
 							+ tsid.getUniqueString() + ", numValues="
 							+ (rs.next() ? rs.getInt(1) : 0)
@@ -350,11 +352,12 @@ public class DbUtil extends TsdbAppTemplate
 		String q = "select a.site_datatype_id from hdb_site_datatype a, hdb_site b "
 			+ "where a.site_id = b.site_id and b.site_common_name = 'TESTSITE1' "
 			+ "and a.datatype_id = 65";
-		Statement st = null;
+		DaoBase dao = null;
 		try
 		{
-			st = theDb.getConnection().createStatement();
-			ResultSet rs = st.executeQuery(q);
+			dao = new DaoBase(theDb, "test");
+			
+			ResultSet rs = dao.doQuery(q);
 			if (!rs.next())
 			{
 				System.out.println("Statement '" + q + "' did not return any results.");
@@ -363,9 +366,9 @@ public class DbUtil extends TsdbAppTemplate
 			DbKey sdi = DbKey.createDbKey(rs, 1);
 			rs.close();
 			q = "{ call RATINGS.create_site_rating(" + sdi + ", 'Stage Flow', null, null, 7, 'test rating') }";
-			st.executeUpdate(q);
+			dao.doModify(q);
 			q = "select rating_id from ref_site_rating where indep_site_datatype_id = " + sdi;
-			rs = st.executeQuery(q);
+			rs = dao.doQuery(q);
 			if (!rs.next())
 			{
 				System.out.println("Statement '" + q + "' did not return any results.");
@@ -379,7 +382,7 @@ public class DbUtil extends TsdbAppTemplate
 			for(int i = 0; i<indep.length; i++)
 			{
 				q = "{ call RATINGS.modify_rating_point(" + ratingId + ", " + indep[i] + ", " + dep[i] + ") }";
-				st.executeUpdate(q);
+				dao.doModify(q);
 			}
 		}
 		catch(Exception ex)
@@ -389,11 +392,7 @@ public class DbUtil extends TsdbAppTemplate
 		}
 		finally
 		{
-			try
-			{
-				st.close();
-			}
-			catch(Exception ex) {}
+			dao.close();
 		}
 	}
 
@@ -403,12 +402,16 @@ public class DbUtil extends TsdbAppTemplate
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
+		
+		DaoBase dao = null;
 		try
 		{
-			Statement st = theDb.getConnection().createStatement();
+			dao = new DaoBase(theDb, "test");
 			q = sb.toString();
 			System.out.println("Executing: " + q);
-			ResultSet rs = st.executeQuery(q);
+			
+			ResultSet rs = dao.doQuery(q);
+			
 			ArrayList<String[]> rows = new ArrayList<String[]>();
 			ResultSetMetaData rsmd = rs.getMetaData();
 			int numCols = rsmd.getColumnCount();
@@ -447,10 +450,14 @@ public class DbUtil extends TsdbAppTemplate
 				System.out.println("");
 			}
 		}
-		catch (SQLException ex)
+		catch (Exception ex)
 		{
 			System.err.println("Error in '" + q + "': " + ex);
 			ex.printStackTrace();
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 	
@@ -460,18 +467,23 @@ public class DbUtil extends TsdbAppTemplate
 		for(String t : tokens)
 			sb.append(t + " ");
 		String q = "";
+		DaoBase dao = null;
 		try
 		{
-			Statement st = theDb.getConnection().createStatement();
+			dao = new DaoBase(theDb, "test");
 			q = sb.toString();
 			System.out.println("Executing: " + q);
-			int rows = st.executeUpdate(q);
+			int rows = dao.doModify(q);
 			System.out.println("" + rows + " rows update.");
 		}
-		catch (SQLException ex)
+		catch (Exception ex)
 		{
 			System.err.println("Error in '" + q + "': " + ex);
 			ex.printStackTrace();
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 
@@ -495,9 +507,10 @@ public class DbUtil extends TsdbAppTemplate
 	protected void doTsAliases(String[] tokens)
 	{
 		String q = "select * from cwms_v_ts_id where aliased_item is not null";
+		DaoBase dao = new DaoBase(theDb, "DbUtil");
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			printRS(rs, q);
 		}
 		catch (Exception ex)
@@ -507,21 +520,23 @@ public class DbUtil extends TsdbAppTemplate
 		q = "select * from cwms_v_ts_id2 where aliased_item is not null";
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			printRS(rs, q);
 		}
 		catch (Exception ex)
 		{
 			System.out.println("Query '" + q + "' threw exception: " + ex);
 		}
+		dao.close();
 	}
 
 	protected void doLocAliases(String[] tokens)
 	{
 		String q = "select * from cwms_v_loc where aliased_item is not null";
+		DaoBase dao = new DaoBase(theDb, "DbUtil");
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			printRS(rs, q);
 		}
 		catch (Exception ex)
@@ -531,13 +546,14 @@ public class DbUtil extends TsdbAppTemplate
 		q = "select * from cwms_v_loc2 where aliased_item is not null";
 		try
 		{
-			ResultSet rs = theDb.doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			printRS(rs, q);
 		}
 		catch (Exception ex)
 		{
 			System.out.println("Query '" + q + "' threw exception: " + ex);
 		}
+		dao.close();
 	}
 
 	private void printRS(ResultSet rs, String q)

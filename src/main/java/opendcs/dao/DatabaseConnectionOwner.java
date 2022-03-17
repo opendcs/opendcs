@@ -76,6 +76,14 @@ public interface DatabaseConnectionOwner
 	/** @return a database connection */
 	public Connection getConnection();
 	
+	/** 
+	 * After usage, a DAO must call freeConnection.
+	 * Base classes TimeSeriesDb and SqlDatabaseIO implement stubs that do nothing.
+	 * Sub classes (e.g. CWMS) that use connection pooling can use this to put a 
+	 * connection back into the pool.
+	 */
+	public void freeConnection(Connection conn);
+	
 	/** @return the DECODES database connection */
 	public int getDecodesDatabaseVersion();
 	

@@ -53,9 +53,11 @@ public class SqlDbObjIo
 	/** Used to parse dates & timestamps read from the database */
 	private SimpleDateFormat readDateFmt = null;
 
-	private Calendar readCal = null;
+//	private Calendar readCal = null;
 
-	private OracleDateParser oracleDateParser = null;
+//	private OracleDateParser oracleDateParser = null;
+	
+	protected Connection connection = null;
 
 	/**
 	 * Lazy initialization, called at the first time a date or timestamp
@@ -68,7 +70,7 @@ public class SqlDbObjIo
 		String writeFmt, readFmt;
 		if (_dbio.isOracle())
 		{
-			oracleDateParser = _dbio.makeOracleDateParser(TimeZone.getTimeZone(_dbio.databaseTimeZone));
+//			oracleDateParser = _dbio.makeOracleDateParser(TimeZone.getTimeZone(_dbio.databaseTimeZone));
 			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
 			readFmt = "yyyy-MM-dd HH:mm:ss";
 		}
@@ -84,7 +86,7 @@ public class SqlDbObjIo
 
 		readDateFmt = new SimpleDateFormat(readFmt);
 		readDateFmt.setTimeZone(TimeZone.getTimeZone(_dbio.databaseTimeZone));
-		readCal = Calendar.getInstance(TimeZone.getTimeZone(_dbio.databaseTimeZone));
+//		readCal = Calendar.getInstance(TimeZone.getTimeZone(_dbio.databaseTimeZone));
 //		debug3("set readDateFmt to '" + readFmt + "' with timezone '" + _dbio.databaseTimeZone + "'");
 	}
 
@@ -337,7 +339,12 @@ public class SqlDbObjIo
 	/** @return the database connection. */
 	public Connection connection()
 	{
-		return _dbio.getConnection();
+		if (connection == null)
+		{
+			warning(this.getClass().getName() + " using connection without initializing the DbIo object first!");
+			connection = _dbio.getConnection();
+		}
+		return connection;
 	}
 
 	public SqlDatabaseIO getDbio()
@@ -384,7 +391,7 @@ public class SqlDbObjIo
 	protected DbKey getKey(String tableName)
 		throws DatabaseException
 	{
-		return _dbio.getKey(tableName);
+		return _dbio.getKey(tableName, connection());
 	}
 
 	/**
@@ -471,5 +478,16 @@ public class SqlDbObjIo
 	public void failure(String msg)
 	{
 		Logger.instance().log(Logger.E_FAILURE, msg);
+	}
+
+	public Connection getConnection()
+	{
+		return connection;
+	}
+
+	public void setConnection(Connection conn)
+	{
+debug1(this.getClass().getName() + ".setConnection(" + (conn!=null?conn.hashCode():"null") + ")");
+		this.connection = conn;
 	}
 }

@@ -64,6 +64,7 @@ import java.util.TimeZone;
 
 import lrgs.common.DcpMsg;
 import lrgs.gui.DecodesInterface;
+import opendcs.dai.ScheduleEntryDAI;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.RoutingSpec;
@@ -71,6 +72,7 @@ import decodes.db.ScheduleEntry;
 import decodes.routing.RoutingScheduler;
 import decodes.routing.RunState;
 import decodes.routing.ScheduleEntryExecutive;
+import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
 import decodes.util.CmdLineArgs;
 import decodes.util.PropertySpec;
@@ -311,94 +313,94 @@ public class DcpMonitor
 		// Can be 0, 1, or 2. for realtime and recover.
 		// If they don't exist, they will be created.
 		ArrayList<ScheduleEntry> dcpMonSched = null;
-		try
+		
+		// If this isn't a SQL DB, DCPmon can't run anyway, so let the cast fail.
+		SqlDatabaseIO sqlDbIo = (SqlDatabaseIO)Database.getDb().getDbIo();
+		String action = "reading DCP Mon Schedule Entries";
+		
+		try (ScheduleEntryDAI scheduleEntryDAO = sqlDbIo.makeScheduleEntryDAO())
 		{
 			dcpMonSched = scheduleEntryDAO.listScheduleEntries(appInfo);
 			info("Read DCP Mon Schedule: " + dcpMonSched.size() + " entries:");
 			for(ScheduleEntry se : dcpMonSched)
 				info("\tid=" + se.getId() + ", name='" + se.getName() + "'");
+			for(ScheduleEntry se : dcpMonSched)
+				if (se.getName().equalsIgnoreCase("dcpmon-realtime"))
+				{	rtScheduleEntry = se;
+					break;
+				}
+			if (rtScheduleEntry == null)
+			{
+				rtScheduleEntry = new ScheduleEntry("dcpmon-realtime");
+				info("Creating new schedule entry '" + rtScheduleEntry.getName() + "'");
+			}
+			rtScheduleEntry.setLoadingAppId(getAppId());
+			rtScheduleEntry.setRoutingSpecId(rtRoutingSpec.getId());
+			rtScheduleEntry.setStartTime(null); // null start time means real-time schedule entry.
+			rtScheduleEntry.setEnabled(true);
+			rtScheduleEntry.setLoadingAppName(appNameArg.getValue());
+			rtScheduleEntry.setRoutingSpecName(rtRoutingSpec.getName());
+			
+			action = "writing initial DCP mon schedule entry";
+			scheduleEntryDAO.writeScheduleEntry(rtScheduleEntry);
+
+			// We don't want to 'refresh' our mocked-up routing specs from the db template.
+			ScheduleEntryExecutive.setRereadRsBeforeExec(false);
+	
+			executives.clear();
+			ScheduleEntryExecutive see = new ScheduleEntryExecutive(rtScheduleEntry, this);
+			executives.add(see);
+
+			// If we've been down for too long, we have to make a recover routing spec too.
+			if (lastLocalRecvTime.before(rtSince))
+			{
+				RoutingSpec recRoutingSpec = new DcpMonRoutingSpec();
+				recRoutingSpec.setName("dcpmon-recover");
+				RoutingSpec.copy(recRoutingSpec, rtRoutingSpec);
+				info("Creating recovery routing spec '" + recRoutingSpec.getName()
+					+ "' to handle data from " + debugSdf.format(lastLocalRecvTime)
+					+ " to " + debugSdf.format(rtSince));
+				Database.getDb().routingSpecList.add(recRoutingSpec);
+				recRoutingSpec.sinceTime = IDateFormat.toString(lastLocalRecvTime, false);
+				recRoutingSpec.untilTime = IDateFormat.toString(rtSince, false);
+				recRoutingSpec.setProperty("sc:RT_SETTLE_DELAY", "false");
+	
+				ScheduleEntry recScheduleEntry = null;
+				for(ScheduleEntry se : dcpMonSched)
+					if (se.getName().equalsIgnoreCase("dcpmon-recover"))
+					{	recScheduleEntry = se;
+						break;
+					}
+				if (recScheduleEntry == null)
+				{
+					recScheduleEntry = new ScheduleEntry("dcpmon-recover");
+					info("Creating new schedule entry '" + recScheduleEntry.getName() + "'");
+				}
+				recScheduleEntry.setLoadingAppId(getAppId());
+				recScheduleEntry.setRoutingSpecId(recRoutingSpec.getId());
+				recScheduleEntry.setStartTime(new Date()); // start time means run once.
+				recScheduleEntry.setEnabled(true);
+				recScheduleEntry.setLoadingAppName(appNameArg.getValue());
+				recScheduleEntry.setRoutingSpecName(recRoutingSpec.getName());
+				action = "writing recover schedule entry";
+				try { scheduleEntryDAO.writeScheduleEntry(recScheduleEntry); }
+				catch(DbIoException ex)
+				{
+					failure("Cannot write recScheduleEntry: " + ex);
+					databaseFailed = true;
+					shutdownFlag = true;
+					return;
+				}
+				recoveryScheduleEntryExec = new ScheduleEntryExecutive(recScheduleEntry, this);
+				executives.add(recoveryScheduleEntryExec);
+			}
 		}
 		catch (DbIoException ex)
 		{
-			failure("Cannot read DCP Mon Schedule Entries: " + ex);
+			failure("Error while " + action + ": " + ex);
 			databaseFailed = true;
 			shutdownFlag = true;
 			return;
-		}
-		
-		for(ScheduleEntry se : dcpMonSched)
-			if (se.getName().equalsIgnoreCase("dcpmon-realtime"))
-			{	rtScheduleEntry = se;
-				break;
-			}
-		if (rtScheduleEntry == null)
-		{
-			rtScheduleEntry = new ScheduleEntry("dcpmon-realtime");
-			info("Creating new schedule entry '" + rtScheduleEntry.getName() + "'");
-		}
-		rtScheduleEntry.setLoadingAppId(getAppId());
-		rtScheduleEntry.setRoutingSpecId(rtRoutingSpec.getId());
-		rtScheduleEntry.setStartTime(null); // null start time means real-time schedule entry.
-		rtScheduleEntry.setEnabled(true);
-		rtScheduleEntry.setLoadingAppName(appNameArg.getValue());
-		rtScheduleEntry.setRoutingSpecName(rtRoutingSpec.getName());
-		try { scheduleEntryDAO.writeScheduleEntry(rtScheduleEntry); }
-		catch(DbIoException ex)
-		{
-			failure("Cannot write rtScheduleEntry: " + ex);
-			databaseFailed = true;
-			shutdownFlag = true;
-			return;
-		}
-		
-		// We don't want to 'refresh' our mocked-up routing specs from the db template.
-		ScheduleEntryExecutive.setRereadRsBeforeExec(false);
-
-		executives.clear();
-		ScheduleEntryExecutive see = new ScheduleEntryExecutive(rtScheduleEntry, this);
-		executives.add(see);
-
-		// If we've been down for too long, we have to make a recover routing spec too.
-		if (lastLocalRecvTime.before(rtSince))
-		{
-			RoutingSpec recRoutingSpec = new DcpMonRoutingSpec();
-			recRoutingSpec.setName("dcpmon-recover");
-			RoutingSpec.copy(recRoutingSpec, rtRoutingSpec);
-			info("Creating recovery routing spec '" + recRoutingSpec.getName()
-				+ "' to handle data from " + debugSdf.format(lastLocalRecvTime)
-				+ " to " + debugSdf.format(rtSince));
-			Database.getDb().routingSpecList.add(recRoutingSpec);
-			recRoutingSpec.sinceTime = IDateFormat.toString(lastLocalRecvTime, false);
-			recRoutingSpec.untilTime = IDateFormat.toString(rtSince, false);
-			recRoutingSpec.setProperty("sc:RT_SETTLE_DELAY", "false");
-
-			ScheduleEntry recScheduleEntry = null;
-			for(ScheduleEntry se : dcpMonSched)
-				if (se.getName().equalsIgnoreCase("dcpmon-recover"))
-				{	recScheduleEntry = se;
-					break;
-				}
-			if (recScheduleEntry == null)
-			{
-				recScheduleEntry = new ScheduleEntry("dcpmon-recover");
-				info("Creating new schedule entry '" + recScheduleEntry.getName() + "'");
-			}
-			recScheduleEntry.setLoadingAppId(getAppId());
-			recScheduleEntry.setRoutingSpecId(recRoutingSpec.getId());
-			recScheduleEntry.setStartTime(new Date()); // start time means run once.
-			recScheduleEntry.setEnabled(true);
-			recScheduleEntry.setLoadingAppName(appNameArg.getValue());
-			recScheduleEntry.setRoutingSpecName(recRoutingSpec.getName());
-			try { scheduleEntryDAO.writeScheduleEntry(recScheduleEntry); }
-			catch(DbIoException ex)
-			{
-				failure("Cannot write recScheduleEntry: " + ex);
-				databaseFailed = true;
-				shutdownFlag = true;
-				return;
-			}
-			recoveryScheduleEntryExec = new ScheduleEntryExecutive(recScheduleEntry, this);
-			executives.add(recoveryScheduleEntryExec);
 		}
 	}
 	

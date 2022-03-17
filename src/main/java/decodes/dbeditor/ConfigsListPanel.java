@@ -88,12 +88,6 @@ public class ConfigsListPanel extends JPanel
 				dbeditLabels.getString("ConfigsListPanel.openSelect"));
 		else
 		{
-// MJM New:
-			try { pc.read(); }
-			catch(DatabaseException ex)
-			{
-			}
-// ^^^
 		    doOpen(pc);
 		}
 	}

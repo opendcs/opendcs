@@ -45,6 +45,8 @@ import ilex.util.Logger;
 import lrgs.gui.DecodesInterface;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.DaoBase;
 
 /**
  * General purpose database command-line utility
@@ -483,26 +485,31 @@ public class TestRunner extends TsdbAppTemplate
 	protected void disableComps(String[] tokens)
 	{
 		Logger.instance().info("DISABLECOMPS for app ID = " + getAppId());
+		DaoBase daoBase = new DaoBase(theDb, "test");
 		
 		try
 		{
 			String q = "update cp_computation set enabled = 'N' "
 				+ "where loading_application_id = " + getAppId();
-			theDb.doModify(q);
+			daoBase.doModify(q);
 	
 			// And just to be thorough ...
 			q = "delete from cp_comp_depends where computation_id in ("
 				+ "select computation_id from cp_computation where loading_application_id = "
 				+ getAppId() + ")";
-			theDb.doModify(q);
+			daoBase.doModify(q);
 	
 			// Now delete any stray tasklist entries.
 			q = "delete from cp_comp_tasklist where loading_application_id = " + getAppId();
-			theDb.doModify(q);
+			daoBase.doModify(q);
 		}
 		catch(Exception ex)
 		{
 			error("Error in DISABLECOMPS: " + ex, ex);
+		}
+		finally
+		{
+			daoBase.close();
 		}
 	}
 	
@@ -541,16 +548,21 @@ public class TestRunner extends TsdbAppTemplate
 	
 	protected void flushtriggers(String[] tokens)
 	{
+		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
 		try
 		{
 			Logger.instance().info("FLUSHTRIGGERS");
 			DataCollection dc = null;
-			while(!(dc = theDb.getNewData(getAppId())).isEmpty())
-				theDb.releaseNewData(dc);
+			while(!(dc = tsDAO.getNewData(getAppId())).isEmpty())
+				theDb.releaseNewData(dc, tsDAO);
 		}
 		catch(DbIoException ex)
 		{
 			error("Error in flushtriggers: " + ex, ex);
+		}
+		finally
+		{
+			tsDAO.close();
 		}
 	}
 

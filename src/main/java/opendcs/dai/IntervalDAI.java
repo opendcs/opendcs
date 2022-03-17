@@ -4,6 +4,7 @@ import opendcs.opentsdb.Interval;
 import decodes.tsdb.DbIoException;
 
 public interface IntervalDAI
+	extends DaiBase
 {
 	/**
 	 * Read the interval codes from the database and store them into

@@ -412,6 +412,7 @@ import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
+//import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -421,7 +422,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -430,6 +430,7 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
+import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
@@ -445,6 +446,7 @@ import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.ComputationDAO;
 import opendcs.dao.DacqEventDAO;
+import opendcs.dao.DaoBase;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DeviceStatusDAO;
@@ -455,13 +457,11 @@ import opendcs.dao.PropertiesSqlDao;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import decodes.tsdb.compedit.AlgorithmInList;
 import decodes.util.DecodesSettings;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
-import decodes.db.DatabaseException;
 import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -500,13 +500,11 @@ public abstract class TimeSeriesDb
 	protected Connection conn;
 
 	/** The default statement for queries */
-	private Statement queryStmt;
-	private ResultSet queryResults = null;
-	private Statement queryStmt2;
-
-
-	/** The default statement for modifies */
-	private Statement modStmt;
+//	private Statement queryStmt;
+//	private ResultSet queryResults = null;
+//
+//	/** The default statement for modifies */
+//	private Statement modStmt;
 
 	/** The logger */
 	protected Logger logger;
@@ -548,8 +546,7 @@ public abstract class TimeSeriesDb
 
 	protected String cpCompDepends_col1 = null;
 //	protected TsIdCache tsIdCache = null;
-	protected long lastTsidCacheRead = 0L;
-	protected SimpleDateFormat debugDateFmt =
+	protected SimpleDateFormat debugDateFmt = 
 		new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss z");
 
 	protected Calendar readCal = null;
@@ -565,6 +562,8 @@ public abstract class TimeSeriesDb
 
 	// If reclaimTasklistSec > 0, this is the time the reclaim was last done.
 	protected long lastReclaimMsec = 0L;
+	
+	private boolean connected = false;
 
 	/**
 	 * Lazy initialization, called at the first time a date or timestamp
@@ -581,7 +580,8 @@ public abstract class TimeSeriesDb
 		writeModelRunId = Constants.undefinedIntKey;
 		testMode = false;
 		conn = null;
-		queryStmt = modStmt = queryStmt2 = null;
+//		queryStmt = null;
+//		modStmt = null;
 		logger = Logger.instance();
 		tsdbVersion = 1;
 
@@ -629,169 +629,10 @@ public abstract class TimeSeriesDb
 	}
 
 
-	public DbKey getKey(String tableName)
-		throws DbIoException
-	{
-		try { return keyGenerator.getKey(tableName, conn); }
-		catch(decodes.db.DatabaseException ex)
-		{
-			throw new DbIoException("Cannot generate key for '" + tableName
-				+ "': " + ex);
-		}
-
-	}
-
 	//==================================================================
 	// The following helper-methods may be called or overloaded by the
 	// concrete subclass.
 	//==================================================================
-
-	/**
-	 * Does a SQL query with the default static statement & returns the
-	 * result set.
-	 * Warning: this method is not thread and nested-loop safe.
-	 * If you need to do nested queries, you must create a separate
-	 * statement and do the inside query yourself. Likewise, if called
-	 * from multiple threads, an external synchronization mechanism is
-	 * needed.
-	 * @param q the query
-	 * @return the result set
-	 */
-	public ResultSet doQuery(String q)
-		throws DbIoException
-	{
-		if (queryStmt != null)
-		{
-			try { queryStmt.close(); }
-			catch(Exception ex) {}
-			queryStmt = null;
-		}
-		if (queryResults != null)
-		{
-			try { queryResults.close(); }
-			catch(Exception ex) {}
-			queryResults = null;
-		}
-		try
-		{
-			if (conn == null)
-			{
-				String msg = "doQuery() Invalid connection" +
-							" object, conn = " + conn;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-			queryStmt = conn.createStatement();
-			debug3("Query1 '" + q + "'");
-			return queryResults = queryStmt.executeQuery(q);
-		}
-		catch(SQLException ex)
-		{
-			String msg = "SQL Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
-
-	/** An extra do-query for inside-loop queries. */
-	public ResultSet doQuery2(String q) throws DbIoException
-	{
-		if (queryStmt2 != null)
-		{
-			try
-			{
-				queryStmt2.close();
-			}
-			catch (Exception ex)
-			{
-			}
-			queryStmt2 = null;
-		}
-		try
-		{
-			if (queryStmt2 != null)
-				queryStmt2.close();
-			if (conn == null)
-			{
-				String msg = "doQuery2() Invalid connection"
-						+ " object, conn = " + conn;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-			queryStmt2 = conn.createStatement();
-			Logger.instance().debug3("Query2 '" + q + "'");
-			return queryStmt2.executeQuery(q);
-		}
-		catch (SQLException ex)
-		{
-			String msg = "SQL Error in query '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
-
-
-
-	/**
-	* Executes an UPDATE or INSERT query.
-	* Thread safe: internally synchronized on the modify-statement.
-	* @param q the query string
-	* @param silent false to print warning on error, true if not.
-	* @throws DatabaseException  if the update fails.
-	*/
-	public int doModify(String q, boolean silent)
-		throws DbIoException
-	{
-		try
-		{
-			if (conn == null)
-			{
-				String msg = "TimeSeriesDb doModify() Invalid connection" +
-							" object, conn = " + conn;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-			modStmt = conn.createStatement();
-			if (!q.equals("COMMIT"))
-				logger.debug3("Executing statement '" + q + "'");
-			int numChanged = modStmt.executeUpdate(q);
-			return numChanged;
-// Don't do this. Some queries are OK if they modify nothing.
-//			if (numChanged == 0)
-//			{
-//				String msg = "Failure in modify query '" + q + "'";
-//				Logger.instance().warning(msg);
-//				throw new DbIoException(msg);
-//			}
-		}
-		catch(SQLException ex)
-		{
-			String msg = "SQL Error in modify query '" + q + "': " + ex;
-			if (!silent)
-				warning(msg);
-			throw new DbIoException(msg);
-		}
-		finally
-		{
-			if (modStmt != null)
-			{
-				try { modStmt.close(); }
-				catch(Exception ex) {}
-				modStmt = null;
-			}
-		}
-	}
-
-	/**
-	 * Execute a modify query.
-	 * Print warning on error.
-	 */
-	public int doModify(String q)
-		throws DbIoException
-	{
-		return doModify(q, false);
-	}
-
 
 	/** @return string representation for a boolean value in this db. */
 	public String sqlBoolean(boolean v)
@@ -821,18 +662,19 @@ public abstract class TimeSeriesDb
 	public void commit()
 		throws DbIoException
 	{
-		try
-		{
-			conn.commit();
-			conn.clearWarnings();
-		}
-		catch(SQLException ex) {}
+		// OPENDCS assumes that autocommit is on. So do nothing here.
+//		try 
+//		{
+//			conn.commit();
+//			conn.clearWarnings(); 
+//		}
+//		catch(SQLException ex) {}
 	}
 
 	public void rollback()
 	{
-		try { doModify("ROLLBACK"); }
-		catch(Exception ex) {}
+//		try { doModify("ROLLBACK"); }
+//		catch(Exception ex) {}
 	}
 
 	/**
@@ -881,17 +723,17 @@ public abstract class TimeSeriesDb
 	 * Provides common post-connect initialization like loading the intervals
 	 * and setting the application ID.
 	 */
-	public void postConnectInit(String appName)
+	public void postConnectInit(String appName, Connection conn)
 		throws BadConnectException
 	{
-		determineTsdbVersion(getConnection(), this);
+		determineTsdbVersion(conn, this);
 
 		// If an application name is provided, lookup the ID.
 		if (appName != null && appName.trim().length() > 0)
 		{
-			LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
-			try
+			try(LoadingAppDAI loadingAppDAO = makeLoadingAppDAO())
 			{
+				loadingAppDAO.setManualConnection(conn);
 				appId = loadingAppDAO.lookupAppId(appName);
 				info("Connected to " + module + " with app name '"
 					+ appName + "' appId=" + appId + ", tsdbVersion=" + tsdbVersion);
@@ -905,8 +747,11 @@ public abstract class TimeSeriesDb
 		}
 
 		// Load the intervals
-		IntervalDAI intervalDAO = this.makeIntervalDAO();
-		try { intervalDAO.loadAllIntervals(); }
+		try (IntervalDAI intervalDAO = this.makeIntervalDAO())
+		{
+			intervalDAO.setManualConnection(conn);
+			intervalDAO.loadAllIntervals();
+		}
 		catch(Exception ex)
 		{
 			String msg = "Cannot load intervals: " + ex;
@@ -914,6 +759,8 @@ public abstract class TimeSeriesDb
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 		}
+		
+		connected = true;
 	}
 
 	/**
@@ -924,18 +771,11 @@ public abstract class TimeSeriesDb
 		info("Closing database connection.");
 		try
 		{
-			if (queryStmt != null)
-				queryStmt.close();
-			if (queryStmt2 != null)
-				queryStmt2.close();
 			if (conn != null)
 				conn.close();
 		}
 		catch(Exception ex) {}
 		conn = null;
-		queryStmt = null;
-		queryStmt2 = null;
-//		lockCheckStmt = null;
 	}
 
 	/**
@@ -943,14 +783,7 @@ public abstract class TimeSeriesDb
 	 */
 	public boolean isConnected()
 	{
-		try { return conn != null && !conn.isClosed(); }
-		catch(Exception ex)
-		{
-			warning(
-				"Error testing whether connection closed: " + ex);
-			closeConnection();
-			return false;
-		}
+		return connected;
 	}
 
 	/**
@@ -1133,27 +966,27 @@ public abstract class TimeSeriesDb
 		}
 	}
 
-	/**
-	 * Returns an DataCollection containing zero or more TimeSeries,
-	 * containing all data added or deleted since the last call of this
-	 * method by this application ID.
-	 * <p>
-	 * New values are marked with the DB_ADDED flag. Deleted values
-	 * marked with the DB_DELETED flag.
-	 * @param applicationId used to lookup & save the since time.
-	 * @return DataCollection with newly added or deleted values.
-	 * @throws DbIoException on Database IO error.
-	 */
-	public abstract DataCollection getNewData( DbKey applicationId )
-		throws DbIoException;
-
+//	/**
+//	 * Returns an DataCollection containing zero or more TimeSeries,
+//	 * containing all data added or deleted since the last call of this 
+//	 * method by this application ID.
+//	 * <p>
+//	 * New values are marked with the DB_ADDED flag. Deleted values 
+//	 * marked with the DB_DELETED flag.
+//	 * @param applicationId used to lookup & save the since time.
+//	 * @return DataCollection with newly added or deleted values.
+//	 * @throws DbIoException on Database IO error.
+//	 */
+//	public abstract DataCollection getNewData( DbKey applicationId )
+//		throws DbIoException;
+	
 	/**
 	 * Releases triggers associated with the new data in the passed collection.
 	 * The implementation may use information contained in the collection's
 	 * opaque handle.
 	 * @param dc the data collection to be released.
 	 */
-	public void releaseNewData(DataCollection dc)
+	public void releaseNewData(DataCollection dc, TimeSeriesDAI tsDAO)
 		throws DbIoException
 	{
 		RecordRangeHandle rrh = dc.getTasklistHandle();
@@ -1166,17 +999,18 @@ public abstract class TimeSeriesDb
 		// Oracle was providing things in the wrong timestamp using current_timestamp.
 		// TODO: needs to be checked against Postgres
 		String curTime = this.isOracle() ? "sysdate" : "current_timestamp" ;
+		Connection tcon = getConnection();
 		try(
-			PreparedStatement deleteNormal = conn.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
-			PreparedStatement deleteFailedAfterMaxRetries = conn.prepareStatement(
+			PreparedStatement deleteNormal = tcon.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
+			PreparedStatement deleteFailedAfterMaxRetries = tcon.prepareStatement(
 					  "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM = ? " // failRecList
 					+ "and ((" + curTime + " - DATE_TIME_LOADED) > " // curTimeName
 					+ "INTERVAL '? hour')" ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
-			PreparedStatement updateFailedRetry = conn.prepareStatement(
+			PreparedStatement updateFailedRetry = tcon.prepareStatement(
 				"update CP_COMP_TASKLIST set FAIL_TIME = ? where RECORD_NUM = ? and "
 			+	"( (" + curTime + " - DATE_TIME_LOADED) <= INTERVAL '? hour')");
-			PreparedStatement updateFailTime = conn.prepareStatement(
+			PreparedStatement updateFailTime = tcon.prepareStatement(
 				"UPDATE CP_COMP_TASKLIST "
 			+	" SET FAIL_TIME = " + curTime
 			+   " where record_num = ?"
@@ -1251,6 +1085,7 @@ public abstract class TimeSeriesDb
 					}
 					commit();
 				}
+
 			}
 
 		} catch( SQLException err ){
@@ -1262,6 +1097,11 @@ public abstract class TimeSeriesDb
 					warning(sw.toString());
 					throw new DbIoException(err.getLocalizedMessage());
 		}
+		finally
+		{
+			if (tcon != null)
+				freeConnection(tcon);
+		}
 	}
 
 	/**
@@ -1271,7 +1111,7 @@ public abstract class TimeSeriesDb
 	 * then compproc will attempt to reclaim space this often, and only when the
 	 * tasklist is empty.
 	 */
-	public void reclaimTasklistSpace()
+	public void reclaimTasklistSpace(TimeSeriesDAI dao)
 		throws DbIoException
 	{
 		if (isOracle()
@@ -1280,81 +1120,12 @@ public abstract class TimeSeriesDb
 		{
 			 lastReclaimMsec = System.currentTimeMillis();
 			 debug1("Relaiming unused CP_COMP_TASKLIST space...");
-			 doQuery("ALTER TABLE cp_comp_tasklist ENABLE ROW MOVEMENT");
-			 doQuery("ALTER TABLE cp_comp_tasklist SHRINK SPACE CASCADE");
-			 doQuery("ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT");
+			 dao.doQuery("ALTER TABLE cp_comp_tasklist ENABLE ROW MOVEMENT");
+			 dao.doQuery("ALTER TABLE cp_comp_tasklist SHRINK SPACE CASCADE");
+			 dao.doQuery("ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT");
 		}
 		// Unnecessary for PostgreSQL because auto-vacuum should be on
 	}
-
-
-	/**
-	 * @return a list of names of all algorithms defined in thie database.
-	 * @throws DbIoException on Database IO error.
-	 */
-	public List<String> listAlgorithms( )
-		throws DbIoException
-	{
-		String q = "select ALGORITHM_NAME from CP_ALGORITHM";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			ArrayList<String> ret = new ArrayList<String>();
-			while(rs.next())
-				ret.add(rs.getString(1));
-			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error listing algorithms: " + ex;
-			logger.warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
-
-	public ArrayList<AlgorithmInList> listAlgorithmsForGui()
-		throws DbIoException
-	{
-		String q = "select algorithm_id, algorithm_name, "
-			+ "exec_class, cmmnt "
-			+ "from cp_algorithm";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			ArrayList<AlgorithmInList> ret = new ArrayList<AlgorithmInList>();
-			while(rs != null && rs.next())
-				ret.add(new AlgorithmInList(DbKey.createDbKey(rs, 1), rs.getString(2),
-					rs.getString(3), 0, TextUtil.getFirstLine(rs.getString(4))));
-
-			q = "select a.algorithm_id, count(1) as CompsUsingAlgo "
-				+ "from cp_algorithm a, cp_computation b "
-				+ "where a.algorithm_id = b.algorithm_id "
-				+ "group by a.algorithm_id";
-			rs = doQuery(q);
-			while(rs != null && rs.next())
-			{
-				DbKey algoId = DbKey.createDbKey(rs, 1);
-				int numCompsUsing = rs.getInt(2);
-				for(AlgorithmInList ail : ret)
-				{
-					if (ail.getAlgorithmId().equals(algoId))
-					{
-						ail.setNumCompsUsing(numCompsUsing);
-						break;
-					}
-				}
-			}
-
-			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error listing algorithms for GUI: " + ex;
-			logger.warning(msg);
-			throw new DbIoException(msg);
-		}
-	}
-
 
 	/**
 	 * Sets the model run id for subsequent write operations of modeled data.
@@ -1436,37 +1207,15 @@ public abstract class TimeSeriesDb
 	public DataType lookupDataType(String dtcode)
 		throws DbIoException, NoSuchObjectException
 	{
+		DataTypeDAI dtDao = this.makeDataTypeDAO();
+		
 		try
 		{
-			String q = "SELECT id, standard FROM DataType WHERE upper(code) = "
-				+ sqlString(dtcode.toUpperCase());
-			DataType pref = null;
-			DataType first = null;
-
-			ResultSet rs = doQuery2(q);
-			while(rs != null && rs.next())
-			{
-				DbKey id = DbKey.createDbKey(rs, 1);
-				String std = rs.getString(2);
-				DataType dt = DataType.getDataType(std, dtcode, id);
-				if (first == null)
-					first = dt;
-				if (std.equalsIgnoreCase(
-					DecodesSettings.instance().dataTypeStdPreference))
-					pref = dt;
-			}
-			if (pref != null)
-				return pref;
-			else if (first == null)
-				throw new NoSuchObjectException(
-			"No data type with code '"+dtcode+"' exists. "
-			+ " We suggest adding it to one of your presentation groups" +
-			" in the DECODES Database Editor, Presentation tab.");
-			return first;
+			return dtDao.lookupDataType(dtcode);
 		}
-		catch(SQLException ex)
+		finally
 		{
-			throw new DbIoException("lookupDataTypeId: " + ex);
+			dtDao.close();
 		}
 	}
 
@@ -1481,7 +1230,7 @@ public abstract class TimeSeriesDb
 	 * @param siteId the ID of the site
 	 * @return 2-dimensional array of strings, containing data types.
 	 */
-	public ArrayList<String[]> getDataTypesForSite(DbKey siteId)
+	public ArrayList<String[]> getDataTypesForSite(DbKey siteId, DaiBase dao)
 		throws DbIoException
 	{
 		// Default impl here just returns an empty array with 1 column
@@ -1532,37 +1281,6 @@ public abstract class TimeSeriesDb
 		return decodesDatabaseVersion;
 	}
 
-	/**
-	 * Given an EU abbreviation, read the EU object with full name.
-	 */
-	public EngineeringUnit readEngineeringUnit(String abbr)
-		throws DbIoException
-	{
-		EngineeringUnit eu = EngineeringUnit.getEngineeringUnit(abbr);
-		if (eu.getFamily() != null)
-			return eu;
-
-		String q = "SELECT name, family, measures "
-			+ "FROM EngineeringUnit "
-			+ "WHERE unitAbbr = " + sqlString(abbr);
-		try
-		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-			{
-				eu.setName(rs.getString(1));
-				eu.setFamily(rs.getString(2));
-				eu.setMeasures(rs.getString(3));
-			}
-		}
-		catch(SQLException ex)
-		{
-			String msg = "readEngineeringUnit: " + ex;
-			logger.warning(msg);
-		}
-		return eu;
-	}
-
 	public static void determineTsdbVersion(Connection con, TimeSeriesDb tsdb)
 	{
 		try
@@ -1595,11 +1313,11 @@ public abstract class TimeSeriesDb
 		tsdb.readDateFmt.setTimeZone(tz);
 		tsdb.readCal = Calendar.getInstance(tz);
 
-		SqlDatabaseIO.readVersionInfo(tsdb);
-		readVersionInfo(tsdb);
+		SqlDatabaseIO.readVersionInfo(tsdb, con);
+		readVersionInfo(tsdb, con);
 		tsdb.info("Connected to TSDB Version " + tsdb.tsdbVersion + ", Description: " + tsdb.tsdbDescription);
-		tsdb.readTsdbProperties();
-		tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9
+		tsdb.readTsdbProperties(con);
+		tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
 			? "TS_ID" : "SITE_DATATYPE_ID";
 
 	}
@@ -1609,7 +1327,7 @@ public abstract class TimeSeriesDb
 		return new OracleDateParser(tz);
 	}
 
-	public static void readVersionInfo(DatabaseConnectionOwner dco)
+	public static void readVersionInfo(DatabaseConnectionOwner dco, Connection conn)
 	{
 		/*
 		  Attempt to read the database's version number.
@@ -1620,7 +1338,7 @@ public abstract class TimeSeriesDb
 		Statement stmt = null;
 		try
 		{
-			stmt = dco.getConnection().createStatement();
+			stmt = conn.createStatement();
 
 			ResultSet rs = stmt.executeQuery(q);
 			while (rs != null && rs.next())
@@ -1651,12 +1369,16 @@ public abstract class TimeSeriesDb
 		dco.setTsdbVersion(tsdbVersion, tsdbDescription);
 	}
 
-	public void readTsdbProperties()
+	public void readTsdbProperties(Connection con)
 	{
 		String q = "SELECT prop_name, prop_value FROM tsdb_property";
+		Statement stmt = null;
 		try
 		{
-			ResultSet rs = doQuery(q);
+			stmt = con.createStatement();
+			debug3("Query1 '" + q + "'");
+			ResultSet rs = stmt.executeQuery(q);
+
 			while (rs != null && rs.next())
 			{
 				String nm = rs.getString(1);
@@ -1670,6 +1392,10 @@ public abstract class TimeSeriesDb
 				"Cannot read TimeSeries Database properties: " + ex;
 			logger.warning(msg);
 		}
+		finally
+		{
+			if (stmt != null) try { stmt.close(); } catch(Exception ex) {}
+		}
 	}
 
 	public void writeTsdbProperties(Properties props)
@@ -1678,22 +1404,30 @@ public abstract class TimeSeriesDb
 		if (props == null)
 			return;
 
-		for(Object keyo : props.keySet())
+		DaiBase dao = new DaoBase(this,"writeTsdbProperties");
+		try
 		{
-			String key = (String)keyo;
-			String val = props.getProperty(key);
-			if (val != null)
-				setProperty(key, val);
-			else
-				props.remove(key);
-			String q = "delete from tsdb_property where prop_name = " + sqlString(key);
-			doModify(q);
-			if (val != null)
+			for(Object keyo : props.keySet())
 			{
-				q = "insert into tsdb_property values(" + sqlString(key)
-					+ ", " + sqlString(val) + ")";
-				doModify(q);
+				String key = (String)keyo;
+				String val = props.getProperty(key);
+				if (val != null)
+					setProperty(key, val);
+				else
+					props.remove(key);
+				String q = "delete from tsdb_property where prop_name = " + sqlString(key);
+				dao.doModify(q);
+				if (val != null)
+				{
+					q = "insert into tsdb_property values(" + sqlString(key) 
+						+ ", " + sqlString(val) + ")";
+					dao.doModify(q);
+				}
 			}
+		}
+		finally
+		{
+			dao.close();
 		}
 	}
 
@@ -1793,163 +1527,163 @@ public abstract class TimeSeriesDb
 	 */
 	public abstract TimeSeriesIdentifier makeEmptyTsId();
 
-	/**
-	 * Lists the Time Series Groups.
-	 * @param groupType type of groups to list, null to list all groups.
-	 * @return ArrayList of un-expanded TS Groups.
-	 */
-	public ArrayList<TsGroup> getTsGroupList(String groupType)
-		throws DbIoException
-	{
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			return tsGroupDAO.getTsGroupList(groupType);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-	}
+//	/**
+//	 * Lists the Time Series Groups.
+//	 * @param groupType type of groups to list, null to list all groups.
+//	 * @return ArrayList of un-expanded TS Groups.
+//	 */
+//	public ArrayList<TsGroup> getTsGroupList(String groupType)
+//		throws DbIoException
+//	{
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			return tsGroupDAO.getTsGroupList(groupType);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//	}
+	
+//	/**
+//	 * @return a TsGroup by its unique name.
+//	 */
+//	public TsGroup getTsGroupByName(String grpName)
+//		throws DbIoException
+//	{
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			return tsGroupDAO.getTsGroupByName(grpName);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//	}
 
-	/**
-	 * @return a TsGroup by its unique name.
-	 */
-	public TsGroup getTsGroupByName(String grpName)
-		throws DbIoException
-	{
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			return tsGroupDAO.getTsGroupByName(grpName);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-	}
+//	/**
+//	 * @return a TsGroup by its surrogate key.
+//	 */
+//	public TsGroup getTsGroupById(DbKey id)
+//		throws DbIoException
+//	{
+//		if (id == null || id.isNull())
+//			return null;
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			return tsGroupDAO.getTsGroupById(id);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//	}
 
-	/**
-	 * @return a TsGroup by its surrogate key.
-	 */
-	public TsGroup getTsGroupById(DbKey id)
-		throws DbIoException
-	{
-		if (id == null || id.isNull())
-			return null;
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			return tsGroupDAO.getTsGroupById(id);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-	}
-
-	/**
-	 * Writes a group to the database.
-	 * @param group the group
-	 */
-	public void writeTsGroup(TsGroup group)
-		throws DbIoException
-	{
-		// Save ID before write
-		DbKey id = group.getGroupId();
-
-		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
-		try
-		{
-			tsGroupDAO.writeTsGroup(group);
-		}
-		finally
-		{
-			tsGroupDAO.close();
-		}
-
-		// If previously existed and is used by any comps, then we have
-		// to re-evalute the computation dependencies with the new group
-		// definition.
-		if (!id.isNull())
-		{
-			ComputationDAI computationDAO = makeComputationDAO();
-			CompDependsDAI compDependsDAO = makeCompDependsDAO();
-			try
-			{
-				ArrayList<DbKey> affected = new ArrayList<DbKey>();
-				affected.add(id);
-				findAffectedGroups(id, affected);
-
-				StringBuilder whereClause = new StringBuilder("where group_id in (");
-				for(DbKey groupId : affected)
-					whereClause.append("" + groupId + ",");
-				whereClause.deleteCharAt(whereClause.length()-1);
-				whereClause.append(")");
-
-				String q = tsdbVersion < TsdbDatabaseVersion.VERSION_6
-					? ("SELECT DISTINCT COMPUTATION_ID FROM CP_COMP_TS_PARM "
-						+ whereClause.toString())
-					: ("SELECT COMPUTATION_ID FROM CP_COMPUTATION "
-						+ whereClause.toString());
-
-				ArrayList<DbKey> compIds = new ArrayList<DbKey>();
-				ResultSet rs = doQuery(q);
-				while (rs.next())
-					compIds.add(DbKey.createDbKey(rs, 1));
-				for(DbKey compId : compIds)
-				{
-					try
-					{
-						DbComputation comp = computationDAO.getComputationById(compId);
-						compDependsDAO.writeCompDepends(comp);
-					}
-					catch(NoSuchObjectException ex) {}
-				}
-//				commit();
-			}
-			catch(SQLException ex)
-			{
-				String msg = " Error setting comp-dependencies: " + ex;
-				warning(msg);
-				throw new DbIoException(msg);
-			}
-			finally
-			{
-				computationDAO.close();
-				compDependsDAO.close();
-			}
-		}
-	}
-
-	/**
-	 * Recursive function to find all of the group IDs that are 'affected' by
-	 * the passed groupId. That is, find groups that either include or exclude
-	 * the passed groupId.
-	 * @param groupId
-	 * @param affectedGroupIds
-	 */
-	private void findAffectedGroups(DbKey groupId, ArrayList<DbKey> affectedGroupIds)
-		throws DbIoException, SQLException
-	{
-		String q = "select parent_group_id from tsdb_group_member_group "
-			+ "where child_group_id = " + groupId;
-		ResultSet rs = doQuery(q);
-		ArrayList<DbKey> tmp = new ArrayList<DbKey>();
-		while (rs.next())
-		{
-			DbKey parentGroupId = DbKey.createDbKey(rs, 1);
-			tmp.add(parentGroupId);
-		}
-		for(DbKey parentGroupId : tmp)
-		{
-			if (!affectedGroupIds.contains(parentGroupId))
-			{
-				affectedGroupIds.add(parentGroupId);
-				findAffectedGroups(parentGroupId, affectedGroupIds);
-			}
-		}
-	}
+//	/**
+//	 * Writes a group to the database.
+//	 * @param group the group
+//	 */
+//	public void writeTsGroup(TsGroup group)
+//		throws DbIoException
+//	{
+//		// Save ID before write
+//		DbKey id = group.getGroupId();
+//		
+//		TsGroupDAI tsGroupDAO = makeTsGroupDAO();
+//		try
+//		{
+//			tsGroupDAO.writeTsGroup(group);
+//		}
+//		finally
+//		{
+//			tsGroupDAO.close();
+//		}
+//
+//		// If previously existed and is used by any comps, then we have
+//		// to re-evalute the computation dependencies with the new group
+//		// definition.
+//		if (!id.isNull())
+//		{
+//			ComputationDAI computationDAO = makeComputationDAO();
+//			CompDependsDAI compDependsDAO = makeCompDependsDAO();
+//			try
+//			{
+//				ArrayList<DbKey> affected = new ArrayList<DbKey>();
+//				affected.add(id);
+//				findAffectedGroups(id, affected);
+//
+//				StringBuilder whereClause = new StringBuilder("where group_id in (");
+//				for(DbKey groupId : affected)
+//					whereClause.append("" + groupId + ",");
+//				whereClause.deleteCharAt(whereClause.length()-1);
+//				whereClause.append(")");
+//				
+//				String q = tsdbVersion < TsdbDatabaseVersion.VERSION_6
+//					? ("SELECT DISTINCT COMPUTATION_ID FROM CP_COMP_TS_PARM "
+//						+ whereClause.toString())
+//					: ("SELECT COMPUTATION_ID FROM CP_COMPUTATION "
+//						+ whereClause.toString());
+//				
+//				ArrayList<DbKey> compIds = new ArrayList<DbKey>();
+//				ResultSet rs = doQuery(q);
+//				while (rs.next())
+//					compIds.add(DbKey.createDbKey(rs, 1));
+//				for(DbKey compId : compIds)
+//				{
+//					try
+//					{
+//						DbComputation comp = computationDAO.getComputationById(compId);
+//						compDependsDAO.writeCompDepends(comp);
+//					}
+//					catch(NoSuchObjectException ex) {}
+//				}
+////				commit();
+//			}
+//			catch(SQLException ex)
+//			{
+//				String msg = " Error setting comp-dependencies: " + ex;
+//				warning(msg);
+//				throw new DbIoException(msg);
+//			}
+//			finally
+//			{
+//				computationDAO.close();
+//				compDependsDAO.close();
+//			}
+//		}
+//	}
+//	
+//	/**
+//	 * Recursive function to find all of the group IDs that are 'affected' by
+//	 * the passed groupId. That is, find groups that either include or exclude
+//	 * the passed groupId.
+//	 * @param groupId
+//	 * @param affectedGroupIds
+//	 */
+//	private void findAffectedGroups(DbKey groupId, ArrayList<DbKey> affectedGroupIds)
+//		throws DbIoException, SQLException
+//	{
+//		String q = "select parent_group_id from tsdb_group_member_group "
+//			+ "where child_group_id = " + groupId;
+//		ResultSet rs = doQuery(q);
+//		ArrayList<DbKey> tmp = new ArrayList<DbKey>();
+//		while (rs.next())
+//		{
+//			DbKey parentGroupId = DbKey.createDbKey(rs, 1);
+//			tmp.add(parentGroupId);
+//		}
+//		for(DbKey parentGroupId : tmp)
+//		{
+//			if (!affectedGroupIds.contains(parentGroupId))
+//			{
+//				affectedGroupIds.add(parentGroupId);
+//				findAffectedGroups(parentGroupId, affectedGroupIds);
+//			}
+//		}
+//	}
 
 	/**
 	 * @return number of computations that are using the passed group ID.
@@ -1978,53 +1712,6 @@ public abstract class TimeSeriesDb
 	 */
 	public abstract boolean transformUniqueString(TimeSeriesIdentifier tsidRet,
 		DbCompParm parm);
-
-
-	//TODO: After CWMS uses daemon CompDependsUpdater, remove this method
-	/**
-	 * Rebuilds the entire CP_COMP_DEPENDS table. This is done after database
-	 * upgrades only.
-	 * @throws DbIoException
-	 */
-	public void makeCpCompDepends()
-		throws DbIoException
-	{
-		if (isHdb())
-			return;
-		String q = "DELETE from CP_COMP_DEPENDS";
-		doModify(q);
-
-		q = "SELECT COMPUTATION_ID FROM CP_COMPUTATION where ENABLED = 'Y'";
-		ArrayList<DbKey> compIds = new ArrayList<DbKey>();
-		ResultSet rs = doQuery(q);
-		ComputationDAI computationDAO = makeComputationDAO();
-		CompDependsDAI compDependsDAO = makeCompDependsDAO();
-		try
-		{
-			while (rs.next())
-				compIds.add(DbKey.createDbKey(rs, 1));
-			for(DbKey compId : compIds)
-			{
-				try
-				{
-					DbComputation comp = computationDAO.getComputationById(compId);
-					compDependsDAO.writeCompDepends(comp);
-				}
-				catch(NoSuchObjectException ex) {}
-			}
-		}
-		catch(SQLException ex)
-		{
-			warning("makeCpCompDepends: " + ex);
-		}
-		finally
-		{
-			computationDAO.close();
-			compDependsDAO.close();
-		}
-//		commit();
-	}
-
 
 	public String getDbUser() { return dbUser; }
 
@@ -2056,12 +1743,9 @@ public abstract class TimeSeriesDb
 
 		String q = "SELECT code FROM DataType where lower(standard) = lower("
 			+ sqlString(dataTypeStandard) + ")";
-		Statement stmt = null;
-		try
+		try (DaoBase dao = new DaoBase(this, "tsdb.getDataTypesByStd"))
 		{
-			stmt = conn.createStatement();
-			debug("getDataTypesByStandard '" + q + "'");
-			ResultSet rs = stmt.executeQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			while (rs != null && rs.next())
 				ret.add(rs.getString(1));
 		}
@@ -2069,10 +1753,6 @@ public abstract class TimeSeriesDb
 		{
 			String msg = "SQL Error in query '" + q + "': " + ex;
 			warning(msg);
-		}
-		finally
-		{
-			try { if (stmt != null) stmt.close(); } catch (Exception ex) {}
 		}
 
 		String retString[] = new String[ret.size()];
@@ -2136,8 +1816,6 @@ public abstract class TimeSeriesDb
 		return ret;
 	}
 
-// TODO MJM Consider moving the following into CompDependsDAO.
-
 	/**
 	 * Passed a time series with valid meta data (tsid).
 	 * Determine the computations that depend on this time series.
@@ -2145,7 +1823,7 @@ public abstract class TimeSeriesDb
 	 * @param cts
 	 * @return
 	 */
-	public int fillDependentCompIds(CTimeSeries cts, DbKey loadingAppId)
+	public int fillDependentCompIds(CTimeSeries cts, DbKey loadingAppId, TimeSeriesDAI dao)
 	{
 		cts.getDependentCompIds().clear();
 		String q = "select a.computation_id from cp_comp_depends a, cp_computation b"
@@ -2154,7 +1832,7 @@ public abstract class TimeSeriesDb
 			+ " and b.loading_application_id = " + loadingAppId;
 		try
 		{
-			ResultSet rs = doQuery(q);
+			ResultSet rs = dao.doQuery(q);
 			while (rs.next())
 				cts.addDependentCompId(DbKey.createDbKey(rs, 1));
 		}
@@ -2164,100 +1842,7 @@ public abstract class TimeSeriesDb
 		}
 		return cts.getDependentCompIds().size();
 	}
-
-//	public void removeTsDependencies(TimeSeriesIdentifier tsid)
-//		throws DbIoException
-//	{
-//		DbKey key = tsid.getKey();
-//		// Remove any computation dependencies to this time-series.
-//		doModify("DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = "
-//			+ key);
-//
-//		// Disable any computations that use this time-series as input or
-//		// output.
-//		String q = "select distinct a.computation_id from "
-//			+ "cp_computation a, cp_comp_ts_parm b "
-//			+ "where a.computation_id = b.computation_id "
-//			+ "and a.enabled = 'Y' "
-//			+ "and b.site_datatype_id = " + key;
-//		String mq = "update cp_computation set enabled = 'N' "
-//			+ "where computation_id in (" + q + ")";
-//		doModify(mq);
-//
-//		// If this ts is explicitly included in a group, remove it.
-//		q = "delete from tsdb_group_member_ts where "
-//			+ (getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-//			+ " = "+key;
-//		doModify(q);
-//	}
-//
-	/**
-	 * Return the platform ID of a given type for the specified platform, or null
-	 * if there is none.
-	 * @param platformID the platform ID
-	 * @param mediumType type medium type
-	 * @return
-	 */
-	protected String getMediumIdForPlatform(DbKey platformID, String mediumType)
-	{
-		String q = "select mediumid from transportmedium"
-			+ " where platformId = " + platformID
-			+ " and upper(mediumtype) = " + sqlString(mediumType.toUpperCase());
-
-		try
-		{
-			ResultSet rs = doQuery2(q);
-			if (rs != null && rs.next())
-				return rs.getString(1);
-			else
-				return null;
-		}
-		catch(Exception ex)
-		{
-			warning("Error getting medium ID for platform " + platformID
-				+ ": " + ex);
-			return null;
-		}
-	}
-
-	/**
-	 * Get next CP_COMP_DEPENDS_NOTIFY record and remove it from the table.
-	 * @return next CP_COMP_DEPENDS_NOTIFY record or null if none.
-	 */
-	public CpDependsNotify getCpCompDependsNotify()
-	{
-		if (this.tsdbVersion < TsdbDatabaseVersion.VERSION_8)
-			return null;
-		String q = "select RECORD_NUM, EVENT_TYPE, KEY, DATE_TIME_LOADED "
-				 + "from CP_DEPENDS_NOTIFY "
-				 + "where DATE_TIME_LOADED = "
-				 + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
-		try
-		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-			{
-				CpDependsNotify ret = new CpDependsNotify();
-				ret.setRecordNum(rs.getLong(1));
-				String s = rs.getString(2);
-				if (s != null && s.length() >= 1)
-					ret.setEventType(s.charAt(0));
-				ret.setKey(DbKey.createDbKey(rs, 3));
-				ret.setDateTimeLoaded(getFullDate(rs, 4));
-
-				doModify("delete from CP_DEPENDS_NOTIFY where RECORD_NUM = "
-					+ ret.getRecordNum(), true);
-
-				return ret;
-			}
-		}
-		catch(Exception ex)
-		{
-			warning("Error CpCompDependsNotify: " + ex);
-		}
-		return null;
-	}
-
+	
 	/**
 	 * Given a unique time-series identifier string, make a CTimeSeries
 	 * object, populated with meta-data from the database.
@@ -2323,19 +1908,6 @@ public abstract class TimeSeriesDb
 			}
 		}
 		return ret;
-	}
-
-	/**
-	 * The underlying database subclass should overload this method if it wants
-	 * to implement this capability. The base class implementation logs a warning
-	 * and returns.
-	 * @param tsid The time series identifier.
-	 * @param since write tasklist records that were _loaded_ since this time.
-	 */
-	public void writeTasklistRecords(TimeSeriesIdentifier tsid, Date since)
-		throws NoSuchObjectException, DbIoException, BadTimeSeriesException
-	{
-		warning("writeTasklistRecord not implemented");
 	}
 
 	/**
@@ -2600,6 +2172,13 @@ public abstract class TimeSeriesDb
 	{
 		// Base class does nothing.
 		return "";
+	}
+	
+	
+	@Override
+	public void freeConnection(Connection conn)
+	{
+		
 	}
 
 }

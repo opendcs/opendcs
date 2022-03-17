@@ -40,6 +40,7 @@ package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
+import opendcs.dai.TsGroupDAI;
 
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
@@ -393,9 +394,10 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 		ArrayList<TsGroup> tsGroups = new ArrayList<TsGroup>();
 		if (panel.theTsDb != null)
 		{
+			TsGroupDAI groupDAO = panel.theTsDb.makeTsGroupDAO();
 			try
 			{
-				tsGroups = panel.theTsDb.getTsGroupList(null);
+				tsGroups = groupDAO.getTsGroupList(null);
 				if (tsGroups == null)
 				{
 					Logger.instance().warning(
@@ -409,6 +411,10 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 						+ ex.getMessage();
 				Logger.instance().failure(msg);
 				panel.showError(msg);
+			}
+			finally
+			{
+				groupDAO.close();
 			}
 		}
 		else
