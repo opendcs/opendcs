@@ -192,7 +192,40 @@ public class DbUtil extends TsdbAppTemplate
 				updateCmd(tokens);
 			}
 		};
+	private CmdLine insertCmd = 
+		new CmdLine("insert", " -- An arbitrary database INSERT statement.")
+		{
+			public void execute(String[] tokens)
+			{
+				insertCmd(tokens);
+			}
+		};
+	private CmdLine deleteCmd = 
+		new CmdLine("delete", " -- An arbitrary database DELETE statement.")
+		{
+			public void execute(String[] tokens)
+			{
+				deleteCmd(tokens);
+			}
+		};
+	private CmdLine dropCmd = 
+		new CmdLine("drop", " -- An arbitrary database DROP statement.")
+		{
+			public void execute(String[] tokens)
+			{
+				dropCmd(tokens);
+			}
+		};
+	private CmdLine createCmd = 
+		new CmdLine("create", " -- An arbitrary database CREATE statement.")
+		{
+			public void execute(String[] tokens)
+			{
+				createCmd(tokens);
+			}
+		};
 
+		
 	private CmdLine hdbRatingCmd = 
 		new CmdLine("hdbRating", " -- Install a test rating in HDB.")
 		{
@@ -407,7 +440,9 @@ public class DbUtil extends TsdbAppTemplate
 		try
 		{
 			dao = new DaoBase(theDb, "test");
-			q = sb.toString();
+			q = sb.toString().trim();
+			if (q.charAt(q.length()-1) == ';')
+				q = q.substring(0, q.length()-1);
 			System.out.println("Executing: " + q);
 			
 			ResultSet rs = dao.doQuery(q);
@@ -471,7 +506,9 @@ public class DbUtil extends TsdbAppTemplate
 		try
 		{
 			dao = new DaoBase(theDb, "test");
-			q = sb.toString();
+			q = sb.toString().trim();
+			if (q.charAt(q.length()-1) == ';')
+				q = q.substring(0, q.length()-1);
 			System.out.println("Executing: " + q);
 			int rows = dao.doModify(q);
 			System.out.println("" + rows + " rows update.");
@@ -486,6 +523,121 @@ public class DbUtil extends TsdbAppTemplate
 			dao.close();
 		}
 	}
+	
+	protected void createCmd(String[] tokens)
+	{
+		StringBuilder sb = new StringBuilder();
+		for(String t : tokens)
+			sb.append(t + " ");
+		String q = "";
+		DaoBase dao = null;
+		try
+		{
+			dao = new DaoBase(theDb, "test");
+			q = sb.toString().trim();
+			if (q.charAt(q.length()-1) == ';')
+				q = q.substring(0, q.length()-1);
+			System.out.println("Executing: " + q);
+			int rows = dao.doModify(q);
+			System.out.println("DROP returned " + rows);
+		}
+		catch (Exception ex)
+		{
+			System.err.println("Error in '" + q + "': " + ex);
+			ex.printStackTrace();
+		}
+		finally
+		{
+			dao.close();
+		}
+	}
+
+	protected void dropCmd(String[] tokens)
+	{
+		StringBuilder sb = new StringBuilder();
+		for(String t : tokens)
+			sb.append(t + " ");
+		String q = "";
+		DaoBase dao = null;
+		try
+		{
+			dao = new DaoBase(theDb, "test");
+			q = sb.toString().trim();
+			if (q.charAt(q.length()-1) == ';')
+				q = q.substring(0, q.length()-1);
+			System.out.println("Executing: " + q);
+			int rows = dao.doModify(q);
+			System.out.println("DROP returned " + rows);
+		}
+		catch (Exception ex)
+		{
+			System.err.println("Error in '" + q + "': " + ex);
+			ex.printStackTrace();
+		}
+		finally
+		{
+			dao.close();
+		}
+	}
+
+	protected void deleteCmd(String[] tokens)
+	{
+		StringBuilder sb = new StringBuilder();
+		for(String t : tokens)
+			sb.append(t + " ");
+		String q = "";
+		DaoBase dao = null;
+		try
+		{
+			dao = new DaoBase(theDb, "test");
+			q = sb.toString().trim();
+			if (q.charAt(q.length()-1) == ';')
+				q = q.substring(0, q.length()-1);
+			System.out.println("Executing: " + q);
+			int rows = dao.doModify(q);
+			System.out.println("" + rows + " rows deleted.");
+		}
+		catch (Exception ex)
+		{
+			System.err.println("Error in '" + q + "': " + ex);
+			ex.printStackTrace();
+		}
+		finally
+		{
+			dao.close();
+		}
+	}
+
+	protected void insertCmd(String[] tokens)
+	{
+		StringBuilder sb = new StringBuilder();
+		for(String t : tokens)
+			sb.append(t + " ");
+		String q = "";
+		DaoBase dao = null;
+		try
+		{
+			dao = new DaoBase(theDb, "test");
+			q = sb.toString().trim();
+			if (q.charAt(q.length()-1) == ';')
+				q = q.substring(0, q.length()-1);
+			System.out.println("Executing: " + q);
+			int rows = dao.doModify(q);
+			System.out.println("" + rows + " rows inserted.");
+		}
+		catch (Exception ex)
+		{
+			System.err.println("Error in '" + q + "': " + ex);
+			ex.printStackTrace();
+		}
+		finally
+		{
+			dao.close();
+		}
+	}
+
+
+	
 
 	protected void bparamCmd(String[] tokens)
 	{
@@ -590,6 +742,12 @@ public class DbUtil extends TsdbAppTemplate
 		cmdLineProc.addCmd(selectCmd);
 		cmdLineProc.addCmd(alterCmd);
 		cmdLineProc.addCmd(updateCmd);
+
+		cmdLineProc.addCmd(deleteCmd);
+		cmdLineProc.addCmd(insertCmd);
+		cmdLineProc.addCmd(dropCmd);
+		cmdLineProc.addCmd(createCmd);
+
 		cmdLineProc.addCmd(hdbRatingCmd);
 		cmdLineProc.addCmd(tsdbStatsCmd);
 		cmdLineProc.addCmd(parmMorphCmd);
