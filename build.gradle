@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'com.bmuschko.izpack' version "3.0"
+    id 'com.bmuschko.izpack' version "3.2"
     id 'jacoco' // code coverage
     id 'maven-publish'
     id "io.gitlab.jkushmaul.url2maven" version "0.9.2"
