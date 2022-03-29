@@ -4,13 +4,18 @@ plugins {
     id 'jacoco' // code coverage
     id 'maven-publish'
     id "io.gitlab.jkushmaul.url2maven" version "0.9.2"
+    id "com.palantir.git-version" version "0.13.0"
 }
-def RCNUM="02"
-def VERSION="6-7-RC${RCNUM}"
-def DATE = new Date().format('yyyyMMddHHmmss')
 
-version = VERSION
-group = 'covesoftware'
+def versionLabel(gitInfo) {
+    def branch = gitInfo.branchName // all branches are snapshots, only tags get released
+    def tag = gitInfo.lastTag
+    // tag is returned as is. Branch may need cleanup
+    return branch == null ? tag : branch.replace("/","-") + "-SNAPSHOT"
+}
+
+version = versionLabel(versionDetails())
+group = 'com.opendcs'
 
 
 build.finalizedBy(publishToMavenLocal)
@@ -23,8 +28,7 @@ publishing {
 }
 
 /* dependencies for the application */
-repositories {
-    mavenLocal()
+repositories {    
     mavenCentral()
     jcenter()
 
@@ -86,25 +90,6 @@ dependencies {
 
 import org.apache.tools.ant.filters.ReplaceTokens
 
-/*https://stackoverflow.com/questions/30038540/replace-token-in-file-before-building-but-keep-token-in-sources
-(Anwser by Aaron)
-
-This does slow down the build somewhat, but it was the cleanest
-quick way I could find to replace the behavoir.
-There were a log of suggestion to replace modifiing the
-java with creating a properties file that gets changed.
- */
-task processSource(type: Sync ){
-    from sourceSets.main.java
-    inputs.property 'RCNUM', RCNUM
-    inputs.property 'DATE', DATE
-    filter(ReplaceTokens, tokens: ['RCNUM': RCNUM, 'DATE': DATE])
-    into "$buildDir/src"
-}
-
-compileJava {
-    source = processSource.outputs
-}
 
 import org.apache.tools.ant.filters.*;
 task stage( type: Copy ){
@@ -212,11 +197,11 @@ task opentsdb(type: com.bmuschko.gradle.izpack.CreateInstallerTask) {
 
         baseDir = file("$buildDir/stage")
         installFile = file("$buildDir/stage/opendcs-6-7.xml")
-        outputFile = file("$buildDir/opendcs-ot-${VERSION}.jar")
+        outputFile = file("$buildDir/opendcs-ot-${project.version}.jar")
         compression = 'deflate'
         compressionLevel = 9
         appProperties = ['app.group': "$group", 'app.name': 'opendcs', 'app.title': 'OpenDCS',
-                        'app.version': VERSION, 'app.subpath': "OpenDCS-$VERSION"]
+                        'app.version': project.version, 'app.subpath': "OpenDCS-${project.version}"]
 
 }
 
@@ -224,7 +209,7 @@ task opentsdb(type: com.bmuschko.gradle.izpack.CreateInstallerTask) {
 task cwmstar( type: Tar){
     dependsOn stage
 
-    archiveFileName = "${buildDir}/opendcs-cwms-${VERSION}.tgz"
+    archiveFileName = "${buildDir}/opendcs-cwms-${project.version}.tgz"
     compression = Compression.GZIP
 
 
