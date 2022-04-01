@@ -109,6 +109,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -117,6 +118,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.ResourceBundle;
 
 import ilex.cmdline.BooleanToken;
@@ -688,7 +690,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 		dcstoolLayout.setRows(rows);
 		dcstoolLayout.setColumns(1);
 		decodesButtonPanel.setBorder(dcstoolButtonBorder);
-
+		
 		lrgsStatButton.setText(labels.getString("LauncherFrame.lrgsStatButton"));
 		lrgsStatButton.addActionListener(new java.awt.event.ActionListener()
 		{
@@ -1330,6 +1332,44 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 			"Error!", JOptionPane.ERROR_MESSAGE);
 	}
 
+	
+	private void profileComboChanged()
+	{
+		// Activate/Deactivate tsdb buttons when profile selection changes
+		String profileName = getSelectedProfile();
+		String profilePath;
+		
+		if(profileName == null) {
+			profilePath = "$DECODES_INSTALL_DIR" + File.separatorChar + "decodes.properties";
+		} else {
+			profilePath = "$DECODES_INSTALL_DIR" + File.separatorChar + profileName + ".profile";
+		}
+		profilePath = EnvExpander.expand(profilePath);
+		
+		DecodesSettings ProfileSettings = new DecodesSettings();
+		Properties props = new Properties();
+		
+		try
+		{
+			FileInputStream fis = new FileInputStream(profilePath);
+			props.load(fis);
+			fis.close();
+		}
+		catch (IOException ex)
+		{
+			Logger.instance().failure("Cannot open DECODES Properties File '" + profilePath + "': " + ex);
+		}
+		
+		ProfileSettings.loadFromProperties(props);
+		
+		boolean dbSupportsTS = ProfileSettings.editDatabaseTypeCode != DecodesSettings.DB_XML;
+		tseditButton.setEnabled(dbSupportsTS);
+		groupEditButton.setEnabled(dbSupportsTS);
+		compeditButton.setEnabled(dbSupportsTS);
+		runcompButton.setEnabled(dbSupportsTS);
+		algoeditButton.setEnabled(dbSupportsTS);
+		
+	}
 	// Time Series Button
 	private void groupEditButtonPressed()
 	{
@@ -2052,6 +2092,12 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 				new GridBagConstraints(0, 0, 1, 1, 0, 0,
 					GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 0), 0, 0));
 			profileCombo = new JComboBox();
+			profileCombo.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+						profileComboChanged();
+						}
+				}
+			);
 			profPanel.add(profileCombo,
 				new GridBagConstraints(1, 0, 1, 1, .5, 0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 2, 2), 10, 0));
