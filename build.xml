@@ -57,6 +57,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<filterchain><striplinebreaks/></filterchain>
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
+
+	<property name="version" value="7.1.${RCNUM}"/>
+	<echo message="VERSION=${version}"/>
 	
 	<target name="compile.dependencies">
 		<mkdir dir="${build.dir}/deps"/>
@@ -190,6 +193,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
               tofile="${build.classes}/lrgs/gui/LrgsBuild.java"
               overwrite="true">
             <filterset>
+				<filter token="VERSION" value="${version}"/>
                 <filter token="DATE" value="${buildDate}" />
                 <filter token="RCNUM" value="${RCNUM}" />
             </filterset>
@@ -458,32 +462,41 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
 		<delete file="stage/dep/Cobra.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
-				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-install.xml"
+				output="stage/opendcs-nf-${version}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}">
+			<property name="version" value="${version}"/>
+			<property name="hdb.preselect" value="no"/>
 		</izpack>
 	</target>
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
 	<target name="opendcs" depends="stage,izpack.dependencies">
-		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
-				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
+		<!-- Invokes izpack to build installable package with defaults for CWMS -->		
+		<property name="hdb.preselect" value="no"/>
+		<izpack input="${project.dir}/izpack/opendcs-install.xml"
+				output="stage/opendcs-ot-${version}.jar"
 				installerType="standard"
+				inheritAll="true"
 				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+				izPackDir="${izpack.dir}">
+			
+		</izpack>
 	</target>
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
 	<target name="hdb" depends="stage,izpack.dependencies">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
-				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-install.xml"
+				output="stage/opendcs-hdb-${version}.jar"
 				installerType="standard"
 				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+				izPackDir="${izpack.dir}">
+			<property name="version" value="${version}"/>
+			<property name="hdb.preselect" value="yes"/>
+		</izpack>
 	</target>
 
 	<target name="cwmstar" depends="stage">
