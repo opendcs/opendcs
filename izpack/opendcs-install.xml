@@ -650,11 +650,7 @@ IMPORTANT: For a new installation, you should also select the Template Database.
         <pack name="Bureau of Reclamation Hydrologic Database (HDB) Components" required="no" preselected="@{hdb.preselect}">
             <description>Schema, Scripts, and Jars for HDB</description>
 
-			<fileset dir="dep" targetdir="$INSTALL_PATH/dep"
-				includes="ojdbc6.jar">
-			</fileset>
-
-            <file src="schema/hdb/cp52to63.sql" targetdir="$INSTALL_PATH/schema/hdb" override="true"/>
+			<file src="schema/hdb/cp52to63.sql" targetdir="$INSTALL_PATH/schema/hdb" override="true"/>
             <file src="schema/hdb/cp63to64.sql" targetdir="$INSTALL_PATH/schema/hdb" override="true"/>
             <file src="schema/hdb/cp64to66.sql" targetdir="$INSTALL_PATH/schema/hdb" override="true"/>
 

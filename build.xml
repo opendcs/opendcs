@@ -489,13 +489,13 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
 	<target name="hdb" depends="stage,izpack.dependencies">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
+		<property name="hdb.preselect" value="yes"/>
 		<izpack input="${project.dir}/izpack/opendcs-install.xml"
 				output="stage/opendcs-hdb-${version}.jar"
 				installerType="standard"
+				inheritAll="true"
 				basedir="stage"
 				izPackDir="${izpack.dir}">
-			<property name="version" value="${version}"/>
-			<property name="hdb.preselect" value="yes"/>
 		</izpack>
 	</target>
 
