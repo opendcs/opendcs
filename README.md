@@ -19,3 +19,13 @@ To better learn what the system does and how it works see the PDFs in the doc di
 
 Checkout the CONTRIBUTING.md file. Contribution to this branch are welcome, however new features and general bugfixes
 should be submitted to the master branch.
+
+# Compiling
+
+To build the file opendcs.jar run the following
+
+`ant jar`
+
+If you want to build the installer run
+
+`ant opendcs`

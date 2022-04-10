@@ -467,7 +467,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	</target>
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
-	<target name="opentsdb" depends="stage,izpack.dependencies">
+	<target name="opendcs" depends="stage,izpack.dependencies">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
 				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
