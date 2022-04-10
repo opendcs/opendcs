@@ -796,7 +796,7 @@ public class CwmsTimeSeriesDAO
 					getConnection(),
 					dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_ALL, 
-					overrideProtection, versionDate);
+					overrideProtection, versionDate,false);
 			}
 
 			// Handle the special values with No OVERWRITE flag:
@@ -821,10 +821,10 @@ public class CwmsTimeSeriesDAO
 				//  -- Do not overwrite if a value exists at that time-slice.
 				debug1(" Calling store (no overwrite) for ts_id="
 						+ path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
-
+				
 				cwmsDbTs.store(getConnection(), dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
-					overrideProtection, versionDate);
+					overrideProtection, versionDate, false);
 			}
 		}
 		catch(SQLException ex)
