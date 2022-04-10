@@ -52,8 +52,8 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<!-- Settable Directories -->
 	<property name="home.dir" value="${env.HOME}"/>
-	<property name="project.dir" value="${env.OPENDCS_REPO}"/>
-	<property name="thirdpartyjar.dir" value="dep"/>
+	<property name="project.dir" value="${basedir}"/>
+	<property name="thirdpartyjar.dir" value="build/deps"/>
 	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
 	<property name="izpack.dir" value="${env.IZPACK_HOME}"/>
 	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
@@ -64,88 +64,115 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<!-- Directories -->
 	<property name="ant.home" value="/usr/local/ant"/>
-	<property name="build.dir" value="build"/>
+	<property name="build.dir" value="${basedir}/build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
 	<property name="build.lib" value="${build.dir}/lib"/>
 	<property name="build.test.classes" value="${build.dir}/test-classes"/>
 	<property name="build.test.lib" value="${build.dir}/test-libs"/>
-	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
-	<property name="cwmsDbAPI.dir" value="${project.dir}/cwmsDbAPI"/>
-	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>
-	<property name="cwmsSystemJars.dir" value="${project.dir}/cwmsSystemJars"/>
+	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>	
+	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>	
 
 	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
-		classpath="${project.dir}/lib/maven-resolver-ant-tasks-1.2.1-uber.jar" />
+		classpath="${project.dir}/lib/maven-resolver-ant-tasks-1.4.0-uber.jar" />
+
+	<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
+		classpath="${project.dir}/lib/ant-junitlauncher-1.10.12.jar"/>
+
+	<resolver:remoterepo id="hec" url="https://www.hec.usace.army.mil/nexus/repository/maven-public" type="default" releases="true" snapshots="true"/>
 
 	<resolver:remoterepos id="resolver.repositories">
         <resolver:remoterepo refid="central" />
+		<resolver:remoterepo refid="hec"/>
 	</resolver:remoterepos>
 
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
+	
+	<target name="compile.dependencies">
+		<mkdir dir="${build.dir}/deps"/>
+		<get src="https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar" 
+			 dest="${build.dir}/deps/cobra.jar"
+			 verbose="true"
+			 skipexisting="true"
+			 usetimestamp="true"
+			 />
+		<resolver:resolve>
+			<resolver:dependencies>
+				<resolver:dependency coords="com.oracle.ojdbc:ojdbc8:19.3.0.0"/>
+				<resolver:dependency coords="org.postgresql:postgresql:42.2.23"/>
+				<resolver:dependency coords="asm:asm:3.3"/>
+				<resolver:dependency coords="cglib:cglib:2.1_3"/>
+				<resolver:dependency coords="commons-logging:commons-logging:1.0.4"/>
+				<resolver:dependency coords="commons-net:commons-net:3.3"/>
+				<resolver:dependency coords="dom4j:dom4j:1.6.1"/>
+				<resolver:dependency coords="ch.ethz.ganymed:ganymed-ssh2:build210"/>
+				<resolver:dependency coords="org.apache.poi:poi:5.0.0"/>
+				<resolver:dependency coords="com.toedter:jcalendar:1.3.2"/>
+				<resolver:dependency coords="jfree:jcommon:1.0.12"/>
+				<resolver:dependency coords="jfree:jfreechart:1.0.13"/>
+				<resolver:dependency coords="org.python:jython:2.7.2"/>
+				<resolver:dependency coords="org.jooq:jooq:3.11.2"/>
+				<resolver:dependency coords="org.lobobrowser:LoboBrowser:1.0.0"/>
+				<resolver:dependency coords="org.lobobrowser:Cobra:1.0.2" scope="system" systemPath="${build.dir}/deps/cobra.jar"/>
+				<resolver:dependency coords="org.scijava:jep:2.4.1">
+					<resolver:exclusion coords="jama:jama"/>
+				</resolver:dependency>
+				<resolver:dependency coords="gov.nist.math:jama:1.0.2"/>
+				<resolver:dependency coords="io.dropwizard.metrics:metrics-core:4.1.0-rc2"/>
+				<resolver:dependency coords="org.passay:passay:1.3.1"/>
+				<resolver:dependency coords="com.sun.mail:mailapi:1.6.2"/>
+				<resolver:dependency coords="com.jcraft:jsch:0.1.55"/>
+				<resolver:dependency coords="org.aspectj:aspectjrt:1.8.10"/>
+				<resolver:dependency coords="org.json:json:20200518"/>
 
-	<path id="lib.path">
-		<fileset dir="${izpack.dir}/lib" includes="*.jar"/>
-	</path>
-	<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask"
-		classpathref="lib.path"/>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq:6.0.2">
+					<resolver:exclusion coords="org.jooq.pro"/>					
+				</resolver:dependency>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-aspects:6.0.2">
+					<resolver:exclusion coords="org.jooq.pro"/>					
+				</resolver:dependency>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-dao:6.0.2">
+					<resolver:exclusion coords="org.jooq.pro"/>					
+				</resolver:dependency>
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jdbc:6.0.2">
+					<resolver:exclusion coords="org.jooq.pro"/>					
+				</resolver:dependency>
 
-<!--
-	<taskdef name="izpack" classpath="${izpack.dir}/lib/compiler.jar"
-		classname="com.izforge.izpack.ant.IzPackTask"/>
--->
+				<resolver:dependency coords="mil.army.usace.hec:hec-monolith:0.1.1-SNAPSHOT">
+					<resolver:exclusion coords="codebase"/>					
+				</resolver:dependency>
+				<resolver:dependency coords="mil.army.usace.hec:hec-cwms-ratings-intesting:0.0.2-SNAPSHOT"/>
 
-	<path id="project.class.path">
-		<pathelement path="${build.classes}/"/>
-		<fileset dir="${thirdpartyjar.dir}">
-			<include name="Cobra.jar"/>
-			<include name="LoboBrowser-1.0.0.jar"/>
-			<include name="asm-3.3.jar"/>
-			<include name="aspectjrt-1.8.10.jar"/>
-			<include name="cglib-2.1_3.jar"/>
-			<include name="commons-codec-1.10.jar"/>
-			<include name="commons-collections-2.1.1.jar"/>
-			<include name="commons-logging-1.1.1.jar"/>
-			<include name="commons-net-3.3.jar"/>
-			<include name="ganymed-ssh2-build210.jar"/>
-			<include name="jama-1.0.2.jar"/>
-			<include name="javassist-3.7.ga.jar"/>
-			<include name="jaxb-api-2.3.0.jar"/>
-			<include name="jcalendar-1.3.2.jar"/>
-			<include name="jcommon-1.0.16.jar"/>
-			<include name="jep-2.4.1.jar"/>
-			<include name="jfreechart-1.0.13.jar"/>
-			<include name="jsch-0.1.55.jar"/>
-			<include name="json-20200518.jar"/>
-			<include name="jta-spec-1.0.1.jar"/>
-			<include name="junit-3.8.1.jar"/>
-			<include name="jython-2.7.2.jar"/>
-			<include name="log4j-1.2.13.jar"/>
-			<include name="mailapi-1.6.2.jar"/>
-			<include name="ognl-2.7.3.jar"/>
-			<include name="ojdbc8-19.3.0.0.jar"/>
-			<include name="ons-19.3.0.0.jar"/>
-			<include name="oraclepki-19.3.0.0.jar"/>
-			<include name="osdt_cert-19.3.0.0.jar"/>
-			<include name="osdt_core-19.3.0.0.jar"/>
-			<include name="passay-1.3.1.jar"/>
-			<include name="poi-5.0.0.jar"/>
-			<include name="postgresql-9.1-901-1.jdbc4.jar"/>
-			<include name="simplefan-19.3.0.0.jar"/>
-			<include name="spring-test-2.5.6.jar"/>
-			<include name="xml-apis-1.0.b2.jar"/>
-			<include name="xwork-core-2.1.6.jar"/>
-			<include name="bmp5-java-sdk.jar"/>
-		</fileset>
-		<fileset dir="${cwmsSystemJars.dir}">
-			<include name="*.jar"/>
-		</fileset>
-	</path>
+				<resolver:exclusion coords="mil.army.usace.hec:loading-gui-lib"/>
+				<resolver:exclusion coords="mil.army.usace.hec:dssgui"/>
+				<resolver:exclusion coords="mil.army.usace.hec:hec-data-ui"/>
+				<resolver:exclusion coords="mil.army.usace.hec:metrics-services"/>
+				<resolver:exclusion coords="mil.army.usace.hec:metrics-codahale"/>
+			</resolver:dependencies>
+			<path refid="project.class.path" scopes="compile,test"/>				
+		</resolver:resolve>
+		<!-- if not present the mappedresources in the stage section won't function -->		
+		<property name="jars" refid="project.class.path"/>
+	</target>
 
+	<target name="izpack.dependencies">
+		<mkdir dir="${build.dir}/deps"/>
+		<get src="https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar" dest="${build.dir}/deps/cobra.jar" verbose="true" skipexisting="true"/>
+		<resolver:resolve>
+			<resolver:dependencies>
+				<resolver:dependency coords="org.codehaus.izpack:izpack-standalone-compiler:4.3.5"/>
+			</resolver:dependencies>			
+			<path refid="izpack.classpath" scopes=""/>
+		</resolver:resolve>
+		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
+	</target>
+	
+	
+	
 	<!-- get test dependencies -->
-	<target name="test.dependencies">
+	<target name="test.dependencies" depends="compile.dependencies">
 		<mkdir dir="junit.libs/platform"/>
 		<mkdir dir="junit.libs/engine"/>
 		<resolver:resolve>
@@ -159,9 +186,10 @@ can find your git source tree and your directory with the downloaded jars.
 			</resolver:dependencies>
 			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
 		</resolver:resolve>
+		<property name="test.jars" refid="junit.platform.libs.classpath"/>
 	</target>
-
-	<target name="prepare" depends="clean" description="Makes build environment.">
+<!-- depends="clean" -->
+	<target name="prepare"  description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
@@ -177,7 +205,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete dir="combined-src"/>
 	</target>
 
-	<target name="compile" depends="prepare"
+	<target name="compile" depends="prepare,compile.dependencies"
 		description="Compiles all source code.">
 
 		<!-- create build date -->
@@ -224,8 +252,11 @@ can find your git source tree and your directory with the downloaded jars.
 			target="1.8" source="1.8" includeantruntime="false"
 		>
 			<src path="${src.test.dir}"/>
-			<classpath refid="project.class.path"/>
-			<classpath refid="junit.platform.libs.classpath"/>
+			<classpath>
+				<pathelement location="${build.classes}"/>
+				<pathelement path="${jars}"/>
+				<pathelement path="${test.jars}"/>
+			</classpath>			
 		</javac>
 
 	</target>
@@ -233,10 +264,12 @@ can find your git source tree and your directory with the downloaded jars.
 	<target name="test" depends="compile-test">
 		<mkdir dir="${build.dir}/test-results"/>
 		<junitlauncher haltOnFailure="true" printSummary="true">
-			<classpath refid="junit.platform.libs.classpath"/>
-			<classpath refid="project.class.path"/>
+			
 			<classpath>
+				<pathelement location="${build.classes}"/>
 				<pathelement location="${build.test.classes}"/>
+				<pathelement path="${test.jars}"/>
+				<pathelement path="${jars}"/>
 			</classpath>
 
 			<testclasses outputdir="${build.dir}/test-results">
@@ -272,9 +305,9 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<target name="all" depends="clean,jar"
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
-
+	
 	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="jar">
+	<target name="stage" depends="jar">	
 		<mkdir dir="stage"/>
 		<mkdir dir="stage/doc"/>
 		<mkdir dir="stage/netlist"/>
@@ -330,19 +363,28 @@ can find your git source tree and your directory with the downloaded jars.
 		</copy>
 
 		<copy todir="stage/dep">
-			<mappedresources>
+			<mappedresources enablemultiplemappings="false">
 				<!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
-				<fileset dir="${thirdpartyjar.dir}">
-					<include name="LoboBrowser-1.0.0.jar"/>
-				</fileset>
-				<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>
+				<restrict>
+					<path path="${jars}"/>
+					<type type="file"/>
+				</restrict>
+				<chainedmapper>
+					<flattenmapper/>
+					<regexpmapper from="^(LoboBrowser-1.0.0.jar)" to="zzz\1"/>
+				</chainedmapper>
 			</mappedresources>
-			<fileset dir="${thirdpartyjar.dir}">
-				<exclude name="LoboBrowser-1.0.0.jar"/>
-			</fileset>
-			<fileset dir="${cwmsSystemJars.dir}">
-				<include name="*.jar"/>
-			</fileset>
+			<mappedresources enablemultiplemappings="false">				
+				<restrict>
+					<path path="${jars}"/>
+					<type type="file"/>
+				</restrict>
+				<chainedmapper>
+					<flattenmapper/>
+					<regexpmapper from="^(?!LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
+				</chainedmapper>
+			</mappedresources>
+
 		</copy>
 
 <!--
@@ -450,12 +492,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 		<copy todir="stage/python">
 			<fileset dir="${project.dir}/python"/>
-		</copy>
-
-		<mkdir dir="stage/cwmsDbAPI"/>
-		<copy todir="stage/cwmsDbAPI">
-			<fileset dir="${cwmsDbAPI.dir}"/>
-		</copy>
+		</copy>		
 
 	</target>
 
@@ -476,7 +513,7 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
-	<target name="opentsdb" depends="stage">
+	<target name="opentsdb" depends="stage,izpack.dependencies">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
 				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
@@ -486,7 +523,7 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
-	<target name="hdb" depends="stage">
+	<target name="hdb" depends="stage,izpack.dependencies">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
 				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
