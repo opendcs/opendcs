@@ -22,4 +22,4 @@ jobs:
       - name: Compile test and stage
         run: |          
           ant test
-          ant opentsdb
+          ant opendcs

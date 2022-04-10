@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
 
 <!-- 
-    OPENDCS 6.8 installation file.
+    OPENDCS installation file.
 -->
 
 <installation version="1.0">
@@ -11,13 +11,15 @@
     -->
     <info>
         <appname>OPENDCS</appname>
-        <appversion>Open Data Collection System 6.8.09</appversion>
+        <appversion>Open Data Collection System @{version}</appversion>
         <authors>
+            <author name="OpenDCS Team" email="https://github.com/opendcs/opendcs"/>
             <author name="Cove Software, LLC" email="info@covesw.com"/>
             <author name="U.S. Army Corps of Engineers" email="Webmaster-HEC@usace.army.mil"/>
             <author name="U.S. Bureau of Reclamation" email="hdbsupport@precisionwre.com"/>
+            
         </authors>
-        <url>http://www.covesw.com</url>
+        <url>https://github.com/opendcs/opendcs</url>
     </info>
     
 
@@ -645,7 +647,7 @@ IMPORTANT: For a new installation, you should also select the Template Database.
 
         </pack>
 
-        <pack name="Bureau of Reclamation Hydrologic Database (HDB) Components" required="no" preselected="no">
+        <pack name="Bureau of Reclamation Hydrologic Database (HDB) Components" required="no" preselected="@{hdb.preselect}">
             <description>Schema, Scripts, and Jars for HDB</description>
 
 			<fileset dir="dep" targetdir="$INSTALL_PATH/dep"

@@ -21,5 +21,6 @@ public class LrgsBuild
 {
 	public static final String buildDate = "@DATE@";
 	public static final String rcNum = "@RCNUM@";
+	public static final String version = "@VERSION@";
 }
 
