@@ -5,40 +5,14 @@
 This is the ANT build file for OpenDCS 6.7 RC02 and Later.
 The intent is that this will eventually be replaced with a Maven pom.xml.
 
-DO NOT BUILD IN THE SOURCE TREE. Rather follow these instructions:
+To get started run
 
-1. #    Eventually we want to be able to build with gradle or at least use it
-   #    to download dependency jar files needed by opendcs. To do that, something
-   #    like the following will be done:
-   #    cd $HOME/git/opendcs     (or wherever it is for you)
-   #    ./gradlew opentsdb
-   HOWEVER, in the mean time, dependencies are available in a file "opendcs-dep.tgz"
-   which you can download from:
-       http://www.covesw.com/download/build/opendcs-dep.tgz
-   You will also need the IzPack installer files downloaded from:
-       http://www.covesw.com/download/build/IzPack-4.3.3.tgz
+ant test
 
-2. Create a build directory for yourself somewhere outside the source tree.
 
-3. Copy this build.xml file (if changes or needed) or just ln if it's ok as it.
-   It needs to be in your build directory you created in step 2.
+This will verify that everything can compile and tests can run
 
-4. Unpack the IzPack-4.3.3.tgz file somewhere. Set the environment variable
-   IZPACK_HOME pointing to this directory.
-
-5. Unpack the opendcs-dep.tgz tarball in the build directory so that there is
-   a subdirectory here called 'dep' containing the needed jars.
-
-6. Edit the "Settable Directories" section below so that the ant build
-can find your git source tree and your directory with the downloaded jars.
-    project.dir - set this to the 'opendcs' git working directory
-    izpack.dir - set this to the location of the IzPack download
-    dcpmon.dir - if you are building DCP Monitor, set this to location of DCPMON
-                 web app source.
-    HydroJSON - if you are building HydroJSON, set this to the location of the
-                HdroJSON web app source.
-
-7. CD to your build directory and run ant here.
+NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 -->
 
@@ -50,27 +24,21 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<property environment="env"/>
 
-	<!-- Settable Directories -->
-	<property name="home.dir" value="${env.HOME}"/>
-	<property name="project.dir" value="${basedir}"/>
-	<property name="thirdpartyjar.dir" value="build/deps"/>
-	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
-	<property name="izpack.dir" value="${env.IZPACK_HOME}"/>
-	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
-	<property name="hydrojson.dir" value="${workspace.dir}/HydroJSON"/>
+	<!-- Settable Directories -->	
+	<property name="project.dir" value="${basedir}"/>	
+	<property name="dcpmon.dir" value="not merged in yet"/>
+	<property name="hydrojson.dir" value="not merged in yet"/>
 	<property name="src.dir" value="${project.dir}/src/main/java"/>
 	<property name="src.test.dir" value="${project.dir}/src/test/java"/>
 	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
 
-	<!-- Directories -->
-	<property name="ant.home" value="/usr/local/ant"/>
+	<!-- Directories -->	
 	<property name="build.dir" value="${basedir}/build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
 	<property name="build.lib" value="${build.dir}/lib"/>
 	<property name="build.test.classes" value="${build.dir}/test-classes"/>
 	<property name="build.test.lib" value="${build.dir}/test-libs"/>
-	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>	
-	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>	
+	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>		
 
 	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
 		classpath="${project.dir}/lib/maven-resolver-ant-tasks-1.4.0-uber.jar" />
@@ -172,9 +140,7 @@ can find your git source tree and your directory with the downloaded jars.
 	
 	
 	<!-- get test dependencies -->
-	<target name="test.dependencies" depends="compile.dependencies">
-		<mkdir dir="junit.libs/platform"/>
-		<mkdir dir="junit.libs/engine"/>
+	<target name="test.dependencies" depends="compile.dependencies">		
 		<resolver:resolve>
 			<resolver:dependencies>
 				<resolver:dependency coords="org.junit.platform:junit-platform-launcher:1.8.1"/>
@@ -314,8 +280,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<touch file="stage/netlist/empty.nl"/>
 		<mkdir dir="stage/icons"/>
 		<mkdir dir="stage/bin"/>
-		<mkdir dir="stage/dep"/>
-		<mkdir dir="stage/dep/ext"/>
+		<mkdir dir="stage/dep"/>		
 		<mkdir dir="stage/dep/Lib"/>
 		<mkdir dir="stage/examples"/>
 		<mkdir dir="stage/python"/>
@@ -386,17 +351,6 @@ can find your git source tree and your directory with the downloaded jars.
 			</mappedresources>
 
 		</copy>
-
-<!--
-		<copy todir="stage/dep/ext">
-			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/ext">
-				<include name="*.jar"/>
-			</fileset>
-		</copy>
-		<copy todir="stage/dep/Lib">
-			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/Lib"/>
-		</copy>
--->
 
 		<copy todir="stage/imports/comp-standard">
 			<fileset dir="${src.dir}/decodes/tsdb/algo">
