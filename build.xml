@@ -122,7 +122,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 				<resolver:exclusion coords="mil.army.usace.hec:metrics-services"/>
 				<resolver:exclusion coords="mil.army.usace.hec:metrics-codahale"/>
 			</resolver:dependencies>
-			<path refid="project.class.path" scopes="compile,test"/>				
+			<path refid="project.class.path" scopes="compile,test"/>	
+			<path refid="libs" scopes="compile,test"/>			
 		</resolver:resolve>
 		<!-- if not present the mappedresources in the stage section won't function -->		
 		<property name="jars" refid="project.class.path"/>
@@ -154,6 +155,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 			</resolver:dependencies>
 			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
+			<path refid="test_libs" scopes="compile,test"/>
 		</resolver:resolve>
 		<property name="test.jars" refid="junit.platform.libs.classpath"/>
 	</target>
@@ -600,5 +602,106 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			basedir="stage"
 			includes="hydrojson-build/**"
 			compression="gzip"/>
+	</target>
+
+	<macrodef name="cpentries">
+		<sequential>
+			<classpathentry type="lib" path=""/>
+		</sequential>
+	</macrodef>
+
+	<target name="eclipse-ide-files" depends="test.dependencies,compile.dependencies">
+		<!-- 
+			Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
+			coming up with this!
+			https://stackoverflow.com/a/11617592
+		-->
+		<!-- resolve -->		
+		<resolver:resolve>
+			<resolver:dependencies>
+				<resolver:dependency coords="org.codehaus.groovy:groovy-ant:3.0.10"/>
+				<resolver:dependency coords="org.codehaus.groovy:groovy:3.0.10"/>
+				<resolver:dependency coords="org.codehaus.groovy:groovy-xml:3.0.10"/>
+			</resolver:dependencies>
+			<path refid="build.class.path" scopes="compile"/>
+		</resolver:resolve>
+		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="build.class.path"/>
+
+		<groovy>		
+			import groovy.xml.MarkupBuilder
+		
+			//
+			// Generate the project file
+			//
+			project.log("Creating .project")
+		
+			new File(".project").withWriter { writer ->
+				def xml = new MarkupBuilder(writer)
+		
+				xml.projectDescription() {
+					name(project.name)
+					comment()
+					projects()
+					buildSpec() {
+						buildCommand() {
+							name("org.eclipse.jdt.core.javabuilder")
+							arguments()
+						}
+						buildCommand() {
+							name("org.eclipse.ui.externaltools.ExternalToolBuilder")
+							triggers("full,incremental")
+							arguments() {
+								dictionary() {
+									key("LaunchConfigHandle")
+			                  		value("&lt;project&gt;/.externalToolBuilders/jar.launch")
+								}
+							}
+						}
+					}
+					natures() {
+						nature("org.eclipse.jdt.core.javanature")
+					}
+				}
+			}
+		
+			//
+			// Generate the classpath file
+			//
+			// The "lib" classpathentry fields are populated using the ivy artifact report
+			//
+			project.log("Creating .classpath")
+		
+			new File(".classpath").withWriter { writer ->
+				def xml = new MarkupBuilder(writer)
+		
+				xml.classpath() {
+					classpathentry(kind:"src",    path:"src/main/java", output="bin/main")
+					classpathentry(kind:"src",    path:"src/main/resources", output="bin/main")
+					classpathentry(kind:"src",    path:"src/test/java", output="bin/test")					
+					classpathentry(kind:"output", path:"bin")
+					classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
+		
+					project.references.libs.each {
+						classpathentry(kind:"lib", path:it)
+					}
+
+					project.references.test_libs.each {
+						classpathentry(kind:"lib", path:it)
+					}
+				}
+			}
+		</groovy>
+        <mkdir dir=".externalToolBuilders"/>
+        <mkdir dir=".settings"/>
+        <copy file="ide-support/eclipse/jar.launch" todir=".externalToolBuilders"/>
+        <copy file="ide-support/eclipse/org.eclipse.jdt.core.prefs" todir=".settings"/>
+        <echo>
+            As it is impossible to know everyone's configuration and preferences this target does the bar minimum 
+            to get Eclipse going. You will have to do a "build all" or run ant jar on the command line to make
+            sure dependencies are in place.
+
+            The project currently requires Java 8 due to a dependencies on tools.jar. It is left to the eclipse user
+            to make sure a JDK is available and configured correctly for that need.
+        </echo>
 	</target>
 </project>

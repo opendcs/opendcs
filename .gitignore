@@ -9,3 +9,4 @@ dep/
 .classpath
 .project
 bin
+.externalToolBuilders/
