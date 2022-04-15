@@ -18,6 +18,7 @@ import java.util.logging.Logger;
  */
 public class ResWtCompute
 {
+    private static final Logger LOGGER = Logger.getLogger(ResWtCompute.class.getName());
     BufferedWriter _tout = null;
 
     // reservoir layers, segments.
@@ -551,28 +552,46 @@ public class ResWtCompute
         {
             try
             {
-                    _tout.write(dateTimeStr+vals1+vals2); _tout.newLine();
+                    _tout.write(dateTimeStr+vals1+vals2);
+                    _tout.newLine();
             }
             catch ( IOException ioe )
             {
-            	
-            	
-            	String msg =  dateTimeStr + "\n";
-            	msg += "resj " + resj + "\n";
-            	msg += "sum_energy_in " + sum_energy_in + "\n";
-            	msg += "sum_energy_diff " + sum_energy_diff + "\n";
-            	msg += "fi_check " + fi_check + "\n";
-            	msg += "changeEng " + changeEng + "\n";
-            	msg += "engBalance " + engBalance + "\n";
-            	msg += "efficiency " + efficiency + "\n";
-            	msg += "zarea[resj] " + zarea[resj] + "\n";
+            	StringBuilder msg = new StringBuilder(dateTimeStr + System.lineSeparator());
+            	msg.append("resj ")
+                   .append(resj)
+                   .append(System.lineSeparator());
+            	msg.append("sum_energy_in ")
+                   .append(sum_energy_in)
+                   .append(System.lineSeparator());
+            	msg.append("sum_energy_diff ")
+                   .append(sum_energy_diff)
+                   .append(System.lineSeparator());
+            	msg.append("fi_check ")
+                   .append(fi_check)
+                   .append(System.lineSeparator());
+            	msg.append("changeEng ")
+                   .append(changeEng)
+                   .append(System.lineSeparator());
+            	msg.append("engBalance ")
+                   .append(engBalance)
+                   .append(System.lineSeparator());
+            	msg.append("efficiency ")
+                   .append(efficiency)
+                   .append(System.lineSeparator());
+            	msg.append("zarea[resj] ")
+                   .append(zarea[resj])
+                   .append(System.lineSeparator());
             	
                 for ( i=resj; i>=0; i--)
                 {            	
-                	msg += " i, wt[i], zvol[i] " + wt[i] + "  " + zvol[i]+ "\n";
+                	msg.append(" i, wt[i], zvol[i] ")
+                       .append(wt[i])
+                       .append("  ")
+                       .append(zvol[i])
+                       .append(System.lineSeparator());
                 }
-            	Logger logger = Logger.getLogger(ResWtCompute.class.getName());
-            	logger.log(Level.SEVERE, msg, ioe);
+            	LOGGER.log(Level.SEVERE, ioe, msg::toString);
             	
             	return false;
             }
