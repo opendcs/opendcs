@@ -168,7 +168,7 @@ public class EvapReservoir
         }
         catch ( UnitsConversionException ue )
         {
-        	
+            LOGGER.log(Level.SEVERE, "Exception occurred while transforming hourly temperature profile data to daily for .", ue);
         }
         
         return elev;
@@ -417,8 +417,7 @@ public class EvapReservoir
         }
         catch (IOException e)
         {
-			Logger.getLogger(EvapReservoir.class.getName()).log(Level.SEVERE,
-																"Exception:  Error Reading intial water temperature file", e);
+			LOGGER.log(Level.SEVERE, "Exception:  Error Reading intial water temperature file", e);
             return false;
         }
         // parse the text
@@ -582,7 +581,7 @@ public class EvapReservoir
         int nResBottom = -1;
         for ( int i = 0; i<_nSurfArea; i++ )
         {
-        	Logger.getLogger(EvapReservoir.class.getName()).log(Level.FINE, "i, surfA, nResBottom  " + i + ", " + nResBottom  + ", " +  _surfA[i]);
+        	LOGGER.log(Level.FINE, "i, surfA, nResBottom  " + i + ", " + nResBottom  + ", " +  _surfA[i]);
             if (_surfA[i] > 0.) 
             {
                 if ( i == 0 )
@@ -622,14 +621,14 @@ public class EvapReservoir
         if ( depth <= 0. )
         {
             String msg = "Water Elev less than Reservoir Bottom Elevation";
-			Logger.getLogger(EvapReservoir.class.getName()).log(Level.WARNING, msg);
+			LOGGER.log(Level.WARNING, msg);
             return false;
         }
 
         // save in global variables
         _depth = depth;
         _nResBottom = nResBottom;
-		Logger.getLogger(EvapReservoir.class.getName()).log(Level.FINE, "nResBottom  {0}, {1}", new Object[]{_nResBottom, _nSurfArea});
+		LOGGER.log(Level.FINE, "nResBottom  {0}, {1}", new Object[]{_nResBottom, _nSurfArea});
         // compute surface area
         double surfArea = intArea(_elev);
         _surfArea = surfArea/(1000.*1000.);
@@ -687,7 +686,7 @@ public class EvapReservoir
         int resj = j-1;
         
         // Put last step at bottom
-		Logger.getLogger(EvapReservoir.class.getName()).log(Level.FINE, " resj,  depth, wsel {0}  {1}  {2}", new Object[]{resj, _depth, wsel});
+		LOGGER.log(Level.FINE, " resj,  depth, wsel {0}  {1}  {2}", new Object[]{resj, _depth, wsel});
    
         if ( zdx[resj] < _depth )
         {
@@ -773,7 +772,7 @@ public class EvapReservoir
     	}
     	catch ( IOException ioe )
     	{
-    		
+            LOGGER.log(Level.FINE, "Exception occurred while writing layer debug info.", ioe);
     	}
     }
     
