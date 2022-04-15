@@ -9,6 +9,7 @@ package usace.rowcps.computation.resevap;
 import hec.data.ParameterType;
 import hec.data.Units;
 import hec.data.UnitsConversionException;
+import hec.heclib.dss.DssDataType;
 import hec.heclib.util.HecTime;
 import hec.heclib.util.Heclib;
 import hec.hecmath.HecMathException;
@@ -27,7 +28,9 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import rma.lang.RmaMath;
 import rma.util.RMAConst;
 
 /**
@@ -42,6 +45,8 @@ import rma.util.RMAConst;
  */
 public class ResEvap
 {
+	private static final Logger LOGGER = Logger.getLogger(ResEvap.class.getName());
+
     // Some global constant parameter vaiues set here
     public static final double EMITTANCE_H20 = 0.98;
     public static final double PENFRAC = 0.4;
@@ -65,7 +70,7 @@ public class ResEvap
     TimeSeriesContainer _IR_OutTsc;
     TimeSeriesContainer _sensibleHeatTsc;
     TimeSeriesContainer _latentHeatTsc;
-    TimeSeriesContainer _evapHourlyTsc;
+    TimeSeriesContainer _evapRateHourlyTsc;
     TimeSeriesContainer _evapDailyTsc;
     TimeSeriesContainer _surfaceTempTsc;
     NavigableMap<Integer, Integer> _timeMap;
@@ -86,7 +91,6 @@ public class ResEvap
     
     public ResEvap()
     {
-        
     }
     
     public ResEvap( EvapReservoir reservoir, EvapMetData metData )
@@ -219,9 +223,9 @@ public class ResEvap
                 tout = new BufferedWriter( new FileWriter( toutfil ) );
                 resWtCompute.setOutfile( tout );
             }
-            catch ( IOException ioe )
+            catch ( IOException ex )
             {
-
+				LOGGER.log(Level.FINE, "Unable to read " + toutfil.getAbsolutePath(), ex);
             }
         }
 
@@ -234,9 +238,9 @@ public class ResEvap
             	xout = new BufferedWriter( new FileWriter( xoutfil ) );
             	_reservoir.setDebugFile(xout);
             }
-            catch ( IOException ioe )
+            catch (IOException ex)
             {
-
+				LOGGER.log(Level.FINE, "Unable to read " + xoutfil.getAbsolutePath(), ex);
             }
         }
 
@@ -248,9 +252,9 @@ public class ResEvap
             {
                 out = new BufferedWriter( new FileWriter( outfil ) );
             }
-            catch ( IOException ioe )
+            catch ( IOException ex )
             {
-
+				LOGGER.log(Level.FINE, "Unable to read " + outfil.getAbsolutePath(), ex);
             }
         }
         
@@ -262,20 +266,20 @@ public class ResEvap
             {
                 metout = new BufferedWriter( new FileWriter( metoutfil ) );
             
-                if ( metout != null ) 
+                if ( metout != null )
                 {
-                    String heading = 
+                    String heading =
                     "    Date    JD  GMT     U       T      RH       P       Ts      K       u*        R*       L          Hs        HL        Qs        IR       IR_out     Evap";
                     metout.write(heading); metout.newLine();
-                    
-                    heading = 
+
+                    heading =
                     "                       m/s    deg C     %      mb      deg C           m/s                m      ********** W/m**2 ***********************     mm/d";
                     metout.write(heading); metout.newLine();
                 }
             }
-            catch ( IOException ioe )
+            catch (IOException ex)
             {
-            	
+				LOGGER.log(Level.FINE, "Unable to read " + metoutfil.getAbsolutePath(), ex);
             }
         }
         
@@ -319,7 +323,7 @@ public class ResEvap
 		        		
 		        		if ( xout != null )
 		        		{
-			        		xout.write (currentTime.date(4) + " " + currentTime.getTime(false) +   "  wselCurrent  " + (float)wselCurrent);
+							xout.write (currentTime.date(4) + " " + currentTime.getTime(false) +   "  wselCurrent  " + (float)wselCurrent);
 		        		}
 		        		_reservoir.setElevationMeters(wselCurrent);
 		        		_reservoir.resSetup( true );
@@ -369,8 +373,9 @@ public class ResEvap
 		                    }
 			                out.newLine();
 		                }
-		                catch ( IOException ioe )
+		                catch ( IOException ex )
 		                {
+							LOGGER.log(Level.FINE, "Unable to read " + outfil.getAbsolutePath(), ex);
 		                }
 
 		                // write met and computed evap + surface heat exchange
@@ -391,7 +396,7 @@ public class ResEvap
 	                    
 	                    // evap is in mm/day.  Divide by 24 to get instantaneous
 	                    // hourly value
-	                    _evapHourlyTsc.values[idx] 
+	                    _evapRateHourlyTsc.values[idx] 
 	                    		=  metComputation._evapWater._evap / 24.;
 	                    
 	                    // store wt profile
@@ -408,34 +413,31 @@ public class ResEvap
 	        
 	        try
 	        {
-	        	if ( out != null )  out.close();;
-	        	if ( metout != null )  metout.close();
+	        	if ( out != null )  out.close();
+				if ( metout != null )  metout.close();
 	        	if ( tout != null )  tout.close();
 	        	if ( xout != null )  xout.close();
 	        }
 	        catch ( IOException ioe )
 	        {
-	        	
+				LOGGER.log(Level.SEVERE, "IOException occurred while closing files", ioe);
 	        }
 		}
-
-
-		catch ( Exception ec )
+		catch (IOException | RuntimeException ex)
 		{
 		    try
 		    {
-		    	if ( out != null )  out.close();;
-		    	if ( metout != null )  metout.close();
+		    	if ( out != null )  out.close();
+				if ( metout != null )  metout.close();
 		    	if ( tout != null )  tout.close();
 		    	if ( xout != null )  xout.close();
 		    }
 		    catch ( IOException ioe )
 		    {
-
+				LOGGER.log(Level.SEVERE, "IOException occurred while closing files", ioe);
 		    }
-			Logger.getLogger(ResEvap.class.getName()).log(Level.SEVERE, "Error within computation",
-														  ec);
-	    	throw new ResEvapException (ec);
+			LOGGER.log(Level.SEVERE, "Error within computation", ex);
+	    	throw new ResEvapException (ex);
 		}
 
 	    return true;
@@ -546,7 +548,7 @@ public class ResEvap
         }
         catch ( IOException ioe )
         {
-
+			LOGGER.log(Level.FINE, "Unable to write output to ", ioe);
         }
     
     }
@@ -614,11 +616,11 @@ public class ResEvap
             dsspath.setCPart(_latentHeatTsc.parameter);
             _latentHeatTsc.fullName = dsspath.toString();
             
-            _evapHourlyTsc = (TimeSeriesContainer)hourlyTsc.clone();
-            _evapHourlyTsc.parameter = "Evap";
-            _evapHourlyTsc.units = "mm";
-            dsspath.setCPart(_evapHourlyTsc.parameter);
-            _evapHourlyTsc.fullName = dsspath.toString();
+            _evapRateHourlyTsc = (TimeSeriesContainer)hourlyTsc.clone();
+            _evapRateHourlyTsc.parameter = "EvapRate";
+            _evapRateHourlyTsc.units = "mm/hr";
+            dsspath.setCPart(_evapRateHourlyTsc.parameter);
+            _evapRateHourlyTsc.fullName = dsspath.toString();
                            
             // put indices to tsc.times[] into a treemap by date
             _timeMap = new TreeMap<Integer, Integer>();
@@ -634,6 +636,7 @@ public class ResEvap
         }
         catch ( HecMathException hme )
         {
+			LOGGER.log(Level.SEVERE, "IOException occurred while closing files", hme);
             return false;
         }
         
@@ -653,7 +656,7 @@ public class ResEvap
     	computedTsList.add( (TimeSeriesContainer)_solarRadTsc.clone() );
     	computedTsList.add( (TimeSeriesContainer)_IR_DownTsc.clone() );
     	computedTsList.add( (TimeSeriesContainer)_IR_OutTsc.clone() );
-    	computedTsList.add( (TimeSeriesContainer)_evapHourlyTsc.clone() );
+    	computedTsList.add((TimeSeriesContainer)_evapRateHourlyTsc.clone() );
     	
     	return computedTsList;
     }
@@ -662,11 +665,33 @@ public class ResEvap
      * Get the computed hourly evaporation for the reservoir
      * @return
      */
-    public TimeSeriesContainer getEvapTimeSeries()
+    public TimeSeriesContainer getHourlyEvapRateTimeSeries()
     {
-    	
-    	return _evapHourlyTsc;
+    	return _evapRateHourlyTsc;
     }
+	
+	public TimeSeriesContainer getHourlyEvapTimeSeries()
+	{
+		TimeSeriesMath math = null;
+		try
+		{
+			TimeSeriesMath tsMath = new TimeSeriesMath( _evapRateHourlyTsc );
+			math = (TimeSeriesMath) tsMath.transformTimeSeries("1HOUR", "", "AVE", false);
+		}
+		catch (HecMathException ex)
+		{
+			LOGGER.log(Level.SEVERE, "HecMathException occurred while converting hourly evap rate to hourly total evap", ex);
+		}
+		TimeSeriesContainer output = null;
+		if (math != null)
+		{
+			output = math.getContainer();
+			output.units = "mm";
+			output.parameter = "Evap";
+			output.type = DssDataType.PER_CUM.toString();
+		}
+		return output;
+	}
     
     /**
      * Get the computed daily evaporation for the reservoir
@@ -675,20 +700,17 @@ public class ResEvap
      */
     public TimeSeriesContainer getDailyEvapTimeSeries()
     {
+		TimeSeriesContainer evapTs = getHourlyEvapTimeSeries();
     	TimeSeriesMath tsAcc = null;
     	try 
     	{
-    		TimeSeriesMath tsMath = new TimeSeriesMath( _evapHourlyTsc );
-    		// need to set to dss type INST-VAL for transformTimeSeries to work
-    		//tsMath.getContainer().type = "INST-VAL";
-    		tsMath.getContainer().type = "PER-CUM";
+    		TimeSeriesMath tsMath = new TimeSeriesMath( evapTs );
     		tsAcc = (TimeSeriesMath)tsMath.transformTimeSeries("1DAY", "", "ACC", false);
     	}
 
         catch ( HecMathException hme )
         {
-        	hme.printStackTrace();
-            return null;
+			LOGGER.log(Level.SEVERE, "HecMathException occurred while converting hourly total evap to daily total evap", hme);
         }
   	
     	if ( tsAcc != null )
@@ -718,7 +740,7 @@ public class ResEvap
         }
         catch ( UnitsConversionException ue )
         {
-        	ue.printStackTrace();
+			LOGGER.log(Level.SEVERE, "Unable to convert " + dailyEvapTs.units + " to m", ue);
         	return null;
         }
     	
@@ -869,6 +891,7 @@ public class ResEvap
     public TimeSeriesContainer[] getDailyTemperatureProfileTs(double surfaceDepth, 
     		double bottomDepth, double intervalDepth)
     {
+    	LOGGER.log(Level.SEVERE, "getDailyTemperatureProfileTs");
     	TimeSeriesContainer[] hourlyTsArray = getTemperatureProfileTs(
     			surfaceDepth, bottomDepth, intervalDepth );
     	
@@ -876,21 +899,32 @@ public class ResEvap
     	TimeSeriesContainer[] dayTsArray = new TimeSeriesContainer[nlayers];
 
 		int icnt = 0;
-		for ( TimeSeriesContainer tsc : hourlyTsArray )
+		for ( TimeSeriesContainer hourlyTsc : hourlyTsArray )
 		{
+			if (Arrays.stream(hourlyTsc.values).noneMatch(RMAConst::isValidValue))
+			{
+				LOGGER.log(Level.FINE, () -> "No data found for " + hourlyTsc.parameter);
+				icnt++;
+				continue;
+			}
+
 			try 
 			{
-				TimeSeriesMath tsMath = new TimeSeriesMath( tsc );
+				TimeSeriesMath tsMath = new TimeSeriesMath( hourlyTsc );
 	    		// need to set to dss type INST-VAL for transformTimeSeries to work
 	    		tsMath.getContainer().type = "INST-VAL";
     			TimeSeriesMath tsMath24 =
     					(TimeSeriesMath)tsMath.transformTimeSeries("1DAY", "", "INT", false);
     			
-    			dayTsArray[icnt] = tsMath24.getContainer();
-	    	}
-	        catch ( HecMathException hme )
-	        {
+    			TimeSeriesContainer dailyTsc = tsMath24.getContainer();
 
+    			verifyHourlyAndDailyMatch(hourlyTsc, dailyTsc);
+
+				dayTsArray[icnt] = dailyTsc;
+	    	}
+	        catch ( HecMathException ex )
+	        {
+				LOGGER.log(Level.SEVERE, ex, () -> "Exception occurred while transforming hourly temperature profile data to daily for " + hourlyTsc.parameter + ".");
 	        	dayTsArray[icnt] = null;
 	        }
 
@@ -899,6 +933,41 @@ public class ResEvap
     		
     	return dayTsArray;
     }
+
+    private void verifyHourlyAndDailyMatch(TimeSeriesContainer hourlyTsc, TimeSeriesContainer dailyTsc)
+	{
+		if (LOGGER.isLoggable(Level.FINE))
+		{
+			LOGGER.log(Level.SEVERE, () -> "Checking Daily and Hourly timeseries " + dailyTsc.fullName + " for discrepancies in values and times");
+
+			//Only verify when the log level is fine
+			List<Integer> hourlyTimes = Arrays.stream(hourlyTsc.times).boxed().collect(Collectors.toList());
+			int dailyIndex = 0;
+
+			for (int dailyTime : dailyTsc.times)
+			{
+				HecTime dailyHecTime = dailyTsc.getTimes().elementAt(dailyIndex);
+				int hourlyIndex = hourlyTimes.indexOf(dailyTime);
+				if (hourlyIndex == -1)
+				{
+					//Can't find an index for this time in the hourly data.
+					LOGGER.log(Level.SEVERE, () -> "Hourly data doesn't contain a time for " + dailyHecTime.dateAndTime());
+					continue;
+				}
+				double hourlyValue = hourlyTsc.values[hourlyIndex];
+				double dailyValue = dailyTsc.values[dailyIndex];
+
+				if (!RmaMath.equals(hourlyValue, dailyValue, 0.00001f))
+				{
+					LOGGER.log(Level.SEVERE, () -> "Hourly and Daily value don't match at " + dailyHecTime.dateAndTime()
+							+ System.lineSeparator() + "\tExpected: " + hourlyValue
+							+ System.lineSeparator() + "\tReceived: " + dailyValue);
+				}
+
+				dailyIndex++;
+			}
+		}
+	}
 
     /** make some data for starting test run 
      * 
@@ -936,6 +1005,7 @@ public class ResEvap
         }
         catch ( HecMathException hme )
         {
+			LOGGER.log(Level.SEVERE, "Exception occurred while generating daily temperature profile data.", hme);
             return null;
         }
         
