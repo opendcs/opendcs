@@ -1335,7 +1335,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 	
 	private void profileComboChanged()
 	{
-		// Activate/Deactivate tsdb buttons when profile selection changes
+		// Each time the profile selection combo box changes, check the new properties file
+		// Activate/Deactivate tsdb buttons depending on database type
 		String profileName = getSelectedProfile();
 		String profilePath;
 		
