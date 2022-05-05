@@ -214,6 +214,8 @@ public abstract class AW_AlgorithmBase
 	
 	private PropertySpec basePropertySpecs[] = 
 	{
+		new PropertySpec("OverwriteFlag", PropertySpec.BOOLEAN,
+				"True to write 'O' to the Overwrite flag field (currently only supported for hdb)"),
 		new PropertySpec("interpDeltas", PropertySpec.BOOLEAN,
 			"True to allow interpolation when computing deltas"),
 		new PropertySpec("maxInterpIntervals", PropertySpec.INT,
@@ -1229,6 +1231,12 @@ public abstract class AW_AlgorithmBase
 
 		// Set the output's source ID from the computation.
 		v.setSourceId(comp.getDataSourceId());
+		
+		// Check overwrite flag property, only implemented for hdb (default false)
+		if (tsdb.isHdb() && TextUtil.str2boolean(comp.getProperty("OverwriteFlag"))) 
+		{
+			v.setFlags(v.getFlags() | HdbFlags.HDBF_OVERWRITE_FLAG);
+		}
 
 		if (_inTimeSlice)
 			_timeSliceVars.add(v);

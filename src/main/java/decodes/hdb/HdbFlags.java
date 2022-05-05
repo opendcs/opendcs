@@ -91,6 +91,10 @@ public class HdbFlags
 	// The following is NOT stored in data values, but used by the
 	// alarm system only
 	public static final int SCR_MISSING_VALUES_EXCEEDED   = 0x01000000;
+	
+	// Use this bit to indicate whether an 'O' should be written to the HDB Overwrite Flag
+	public static final int HDBF_OVERWRITE_FLAG = 0x02000000;
+	public static final char HDB_OVERWRITE_FLAG = 'O';
 		
 	// All screening faults, 0 means value good, no faults detected
 	public static final int SCREENING_FAULTS = SCR_VALUE_MASK 
@@ -420,5 +424,16 @@ public class HdbFlags
 
 		return sb.toString();
 	}
+	
+	/**
+	 * Determine if the overwrite flag field in HDB should be written to.
+	 * That field contains the character 'O' or is null
+	 * @param flag integer flag word
+	 * @return boolean
+	 */
+	public static boolean flag2Overwrite(int flag) {
+		return (flag & HDBF_OVERWRITE_FLAG) != 0;		
+	}
+	
 
 }

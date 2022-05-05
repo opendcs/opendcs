@@ -691,6 +691,8 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 				modelrun_id = db.findMaxModelRunId(model_id);
 			}
 		}
+	// Added the four default arguments from the write_to_hdb procedure, so that the CP can set the OVERWRITE_FLAG if specified	
+		
 	// PROCEDURE write_to_hdb
 	//  Argument Name                  Type                    In/Out Default?
 	//  ------------------------------ ----------------------- ------ --------
@@ -703,9 +705,13 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 	//7 MODELRUN_ID                    NUMBER                  IN
 	//8 VALIDATION_FLAG                CHAR                    IN
 	//9 DATA_FLAGS                     VARCHAR2                IN
+	//10 TIME_ZONE					   VARCHAR2				   IN	DEFAULT NULL
+	//11 OVERWRITE_FLAG				   VARCHAR2				   IN	DEFAULT NULL
+	//12 AGEN_ID					   NUMBER				   IN	DEFAULT NULL
+	//13 SAMPLE_END_DATE_TIME		   DATE				   	   IN	DEFAULT NULL
 
 		String q =
-	"{ call write_to_hdb(?,to_date(?,'DD.MM.YYYY HH24:MI:SS'),?,?,?,?,?,?,?)}";
+	"{ call write_to_hdb(?,to_date(?,'DD.MM.YYYY HH24:MI:SS'),?,?,?,?,?,?,?,?,?)}";
 
 		CallableStatement cstmt =  null;
 		DbKey compId = ts.getComputationId();
@@ -730,6 +736,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			cstmt.setLong(5, db.getAppId().getValue());
 			cstmt.setLong(6, compId.getValue());
 			cstmt.setLong(7, modelrun_id);
+			cstmt.setNull(10,java.sql.Types.VARCHAR); //parameter 10, time zone, defaults to null
 		}
 		catch(SQLException ex)
 		{
@@ -755,6 +762,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 	//3 SAMPLE_VALUE                   NUMBER(126)             IN
 	//8 VALIDATION_FLAG                CHAR                    IN
 	//9 DATA_FLAGS                     VARCHAR2                IN
+	//11 OVERWRITE_FLAG				   VARCHAR2				   IN	DEFAULT NULL
 	 				// Populate & execute the stored procedure call.
 					timestr = rwdf.format(tv.getTime());
 					cstmt.setString(2, timestr);
@@ -766,6 +774,12 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 					cstmt.setString(8, valfs);
 					String derf = HdbFlags.flag2HdbDerivation(tv.getFlags());
 					cstmt.setString(9, derf);
+					
+					if(HdbFlags.flag2Overwrite(tv.getFlags())) {
+						cstmt.setString(11,Character.toString(HdbFlags.HDB_OVERWRITE_FLAG));						
+					}else {
+						cstmt.setNull(11,java.sql.Types.VARCHAR);
+					}
 
 Logger.instance().debug3("Saving variable " + v + " at time " + timestr
 + ", val=" + valfs + ", der=" + derf);
