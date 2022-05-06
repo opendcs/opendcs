@@ -775,9 +775,11 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 					String derf = HdbFlags.flag2HdbDerivation(tv.getFlags());
 					cstmt.setString(9, derf);
 					
-					if(HdbFlags.flag2Overwrite(tv.getFlags())) {
+					if(HdbFlags.flag2Overwrite(tv.getFlags())) 
+					{
 						cstmt.setString(11,Character.toString(HdbFlags.HDB_OVERWRITE_FLAG));						
-					}else {
+					}else 
+					{
 						cstmt.setNull(11,java.sql.Types.VARCHAR);
 					}
 

@@ -431,7 +431,8 @@ public class HdbFlags
 	 * @param flag integer flag word
 	 * @return boolean
 	 */
-	public static boolean flag2Overwrite(int flag) {
+	public static boolean flag2Overwrite(int flag) 
+	{
 		return (flag & HDBF_OVERWRITE_FLAG) != 0;		
 	}
 	
