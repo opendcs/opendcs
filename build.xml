@@ -74,6 +74,10 @@ can find your git source tree and your directory with the downloaded jars.
 	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>
 	<property name="cwmsSystemJars.dir" value="${project.dir}/cwmsSystemJars"/>
 
+	<!-- VERSION NUMBERS -->
+	<property name="MAJ_VER" value="7"/>
+	<property name="MIN_VER" value="0"/>
+
 	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
 		classpath="${project.dir}/lib/maven-resolver-ant-tasks-1.2.1-uber.jar" />
 
@@ -171,8 +175,9 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete dir="${build.dir}"/>
 		<delete dir="stage"/>
 		<delete>
- 			<fileset dir="." includes="opendcs-6-8-RC*-unix-install.tgz"/>
-            <fileset dir="." includes="opendcs-src-6-8-*.tgz"/>
+ 			<fileset dir="." includes="opendcs-*-unix-install.tgz"/>
+            <fileset dir="." includes="opendcs-src-*.tgz"/>
+            <fileset dir="." includes="opendcs-cwms-*.tgz"/>
 		</delete>
 		<delete dir="combined-src"/>
 	</target>
@@ -383,7 +388,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 		<copy todir="stage">
 			<fileset dir="${project.dir}/izpack">
-				<include name="opendcs-6-8.xml"/>
+				<include name="opendcs-${MAJ_VER}-${MIN_VER}.xml"/>
 				<include name="*.txt"/>
 				<include name="unixOpenDcsShortcutSpec.xml"/>
 				<include name="winOpenDcsShortcutSpec.xml"/>
@@ -467,8 +472,8 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
 		<delete file="stage/dep/Cobra.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-nf-6-8.xml"
-				output="stage/opendcs-nf-6-8-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-nf-${MAJ_VER}-${MIN_VER}.xml"
+				output="stage/opendcs-nf-${MAJ_VER}-${MIN_VER}-${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}">
@@ -478,8 +483,8 @@ can find your git source tree and your directory with the downloaded jars.
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
 	<target name="opentsdb" depends="stage">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-6-8.xml"
-				output="stage/opendcs-ot-6-8-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-${MAJ_VER}-${MIN_VER}.xml"
+				output="stage/opendcs-ot-${MAJ_VER}-${MIN_VER}-${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}"/>
@@ -488,8 +493,8 @@ can find your git source tree and your directory with the downloaded jars.
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
 	<target name="hdb" depends="stage">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-hdb-6-8.xml"
-				output="stage/opendcs-hdb-6-8-RC${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-hdb-${MAJ_VER}-${MIN_VER}.xml"
+				output="stage/opendcs-hdb-${MAJ_VER}-${MIN_VER}-${RCNUM}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}"/>
@@ -502,7 +507,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
-			<fileset dir="stage" includes="dospath.txt,opendcs-6-8.xml,readme.txt,LddsConnections"/>
+			<fileset dir="stage" includes="dospath.txt,opendcs-${MAJ_VER}-${MIN_VER}.xml,readme.txt,LddsConnections"/>
 		</delete>
 		<move file="stage/lrgs.conf" tofile="stage/lrgs.conf.sample"/>
 		<move file="stage/ddsrecv.conf" tofile="stage/ddsrecv.conf.sample"/>
@@ -511,7 +516,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<move file="stage/edit-db" tofile="stage/edit-db.init"/>
 		<move file="stage/users" tofile="stage/users.init"/>
 		<replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
-		<tar destfile="opendcs-cwms-6-8-RC${RCNUM}.tgz" compression="gzip">
+		<tar destfile="opendcs-cwms-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz" compression="gzip">
 			<tarfileset dir="stage">
 				<exclude name="bin/*"/>
 				<exclude name="schema/cwms/createDb.sh"/>
@@ -566,7 +571,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/makeDcpmon.sh"/>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/README"/>
-		<tar tarfile="stage/dcpmon-build-6-8-${RCNUM}.tgz"
+		<tar tarfile="stage/dcpmon-build-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz"
 			basedir="stage"
 			includes="dcpmon-build/**"
 			compression="gzip"/>
@@ -592,7 +597,7 @@ can find your git source tree and your directory with the downloaded jars.
 		</javac>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/makehydrojson.sh"/>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/README"/>
-		<tar tarfile="stage/hydrojson-build-6-8-${RCNUM}.tgz"
+		<tar tarfile="stage/hydrojson-build-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz"
 			basedir="stage"
 			includes="hydrojson-build/**"
 			compression="gzip"/>
