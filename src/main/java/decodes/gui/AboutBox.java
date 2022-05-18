@@ -87,7 +87,7 @@ public class AboutBox extends JDialog implements ActionListener
 		ossLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		labelsPanel.add(ossLabel);
 
-		JLabel coveLabel = new JLabel("Cove Software, LLC (www.covesw.com)");
+		JLabel coveLabel = new JLabel("OpenDCS Consortium (https://github.com/opendcs/opendcs)");
 		coveLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		labelsPanel.add(coveLabel);
 		
