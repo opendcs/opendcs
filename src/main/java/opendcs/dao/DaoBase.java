@@ -117,9 +117,42 @@ public class DaoBase
 	protected Connection getConnection()
 	{
 		// local getConnection() method that saves the connection locally
-		if (myCon == null)
+		if (myCon == null || connectionClosed() )
+		{
+			// If the connection is closed or invalid so are these objects.
+			this.queryStmt1 = null;
+			this.queryStmt2 = null;
+			this.queryResults1 = null;
+			this.queryResults2 = null;
 			myCon = db.getConnection();
+		}
+			
+			
 		return myCon;
+	}
+
+	/**
+	 * 
+	 * @return connection state (open -> false, closed -> true)
+	 */
+	private boolean connectionClosed()
+	{
+		try{
+			return myCon.isClosed();
+		} catch( SQLException err){
+			// There is no compelling reason here to distinguish between a failed and closed connection.						
+			return true;	
+		}
+	}
+
+	private boolean statementInvalid(Statement stmt) {
+		try
+		{  // similar to above, it doesn't matter why the staement is no longer valid.
+			return stmt.isClosed();
+		} catch( SQLException err )
+		{
+			return true;
+		}		
 	}
 	
 	/**
@@ -144,7 +177,7 @@ public class DaoBase
 		}
 		try
 		{
-			if (queryStmt1 == null)
+			if (queryStmt1 == null || statementInvalid(queryStmt1))
 				queryStmt1 = getConnection().createStatement();
 			if (fetchSize > 0)
 				queryStmt1.setFetchSize(fetchSize);
@@ -164,7 +197,7 @@ public class DaoBase
 		}
 	}
 	
-	/** An extra do-query for inside-loop queries. */
+		/** An extra do-query for inside-loop queries. */
 	public ResultSet doQuery2(String q) throws DbIoException
 	{
 		if (queryResults2 != null)
