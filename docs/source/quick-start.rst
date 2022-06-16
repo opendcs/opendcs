@@ -1,10 +1,10 @@
-OPENDCS 6
 
+###################
 Quick Start Guide
+###################
 
-Document Revision 2
 
-February 2016
+
 
 This Document is part of the OpenDCS Software Suite for environmental
 data acquisition and processing. The project home is:
@@ -12,49 +12,10 @@ https://github.com/opendcs/opendcs
 
 See INTENT.md at the project home for information on licensing.
 
-Table of Contents
+.. contents:: Table of Contents
+   :depth: 3
 
-1 Introduction `1 <#introduction>`__
 
-2 GUIs to Interact with an LRGS `2 <#guis-to-interact-with-an-lrgs>`__
-
-3 A Simple ASCII DCP `5 <#a-simple-ascii-dcp>`__
-
-3.1 Create a Data Source Record `5 <#create-a-data-source-record>`__
-
-3.2 The Site Record `6 <#the-site-record>`__
-
-3.3 The Config Record `7 <#the-config-record>`__
-
-3.4 The Platform Record `10 <#the-platform-record>`__
-
-4 A More Complex ASCII DCP `11 <#a-more-complex-ascii-dcp>`__
-
-4.1 The Site Record `11 <#the-site-record-1>`__
-
-4.2 The Config Record `12 <#the-config-record-1>`__
-
-4.3 The Platform Record `15 <#the-platform-record-1>`__
-
-5 A Simple Routing Spec `16 <#a-simple-routing-spec>`__
-
-5.1 Network List Record `16 <#network-list-record>`__
-
-5.2 Interactive Routing Spec to Print to Screen
-`16 <#interactive-routing-spec-to-print-to-screen>`__
-
-5.3 Routing Spec to Drop Files `18 <#routing-spec-to-drop-files>`__
-
-6 Scheduling a Background Routing Spec
-`20 <#scheduling-a-background-routing-spec>`__
-
-6.1 Create a Schedule Entry `20 <#create-a-schedule-entry>`__
-
-6.2 Review and Start the RoutingScheduler Process
-`21 <#review-and-start-the-routingscheduler-process>`__
-
-6.3 Run Routing Scheduler as a Service
-`22 <#run-routing-scheduler-as-a-service>`__
 
 Introduction
 ============
@@ -163,25 +124,17 @@ follow.
 A Simple ASCII DCP
 ==================
 
-Messages for DCP 5531E462 look like this:
+Messages for DCP 5531E462 look like this::
 
-5531E46216026183812G49-0NN038WUB00159
-
-4.48 0.07 0.28
-
-4.48 0.07 0.29
-
-4.47 0.07 0.29
-
-4.47 0.06 0.29
-
-4.48 0.06 0.29
-
-4.48 0.06 0.29
-
-4.47 0.06 0.29
-
-4.48 0.06 0.28 14.3
+    5531E46216026183812G49-0NN038WUB00159
+    4.48 0.07 0.28
+    4.48 0.07 0.29
+    4.47 0.07 0.29
+    4.47 0.06 0.29
+    4.48 0.06 0.29
+    4.48 0.06 0.29
+    4.47 0.06 0.29
+    4.48 0.06 0.28 14.3
 
 We will use descriptive information from the National Weather Service,
 HADS system to populate the records and verify the decoding:
