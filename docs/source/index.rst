@@ -1,7 +1,7 @@
 Welcome to OpenDCS's documentation!
 ===================================
 
-**OpenDCS** (/lu'make/) suite of software for collecting, decodes, storing, and 
+**OpenDCS** suite of software for collecting, decodes, storing, and 
 manipulating time series data.
 
 Check out the :doc:`quick-start` section for how to get started.
@@ -14,6 +14,8 @@ Contents
 --------
 
 .. toctree::
+   :maxdepth: 0
+   
 
-   quick-start
-   cp-userguide
+   Quick Start <./quick-start.rst>
+   Computation Guide <./cp-userguide.rst>
