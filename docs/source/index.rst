@@ -18,4 +18,6 @@ Contents
    
 
    Quick Start <./quick-start.rst>
+   Install Guide <./install-guide.rst>
    Computation Guide <./cp-userguide.rst>
+   
