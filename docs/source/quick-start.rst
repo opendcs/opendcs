@@ -284,10 +284,10 @@ Hit Commit and Close when finished.
 A More Complex ASCII DCP
 ========================
 
-Messages for DCP CE2066DA look like this:
+Messages for DCP CE2066DA look like this::
 
-CE2066DA16055133801G45-0NN162WUP00076":HG 8 #30 9.22 9.09 8.92 8.80 :PC
-8 #30 87.59 87.59 87.59 87.58 :BL 12.17
+   CE2066DA16055133801G45-0NN162WUP00076":HG 8 #30 9.22 9.09 8.92 8.80 :PC
+   8 #30 87.59 87.59 87.59 87.58 :BL 12.17
 
 There are *thousands* of DCPs using GOES that follow this format:
 
@@ -549,11 +549,10 @@ Click Commit and Close.
 
 Now, open a terminal screen. On Windows, click Start, then Run: cmd.
 First CD (change directory) to the OpenDCS installation. Then run the
-routing spec as follows:
+routing spec as follows::
 
-cd C:\OPENDCS
-
-bin\rs -d3 test
+   cd C:\OPENDCS
+   bin\rs -d3 test
 
 If all goes well, you will see the human-readable output appear on your
 screen for 4 hours worth of DCP messages. If you see nothing, or some
@@ -598,68 +597,43 @@ Re open the “test” routing spec, and:
    :height: 2.12361in
 
 Now, back on your terminal screen, run the routing spec exactly as
-before:
+before::
 
-bin\rs -d3 test
+   bin\rs -d3 test
 
 This time it will not produce an output. Look in the ‘data’ directory
 under the OpenDCS installation. It should have created files there.
 
 *Again, if not, check the log file for an explanatory message.*
 
-Here’s what the file looks like:
+Here’s what the file looks like::
 
-5531E462,00065,1 ,16026/14:30:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
-
-5531E462,00065,1 ,16026/14:15:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
-
-5531E462,00065,1 ,16026/14:00:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
-
-5531E462,00065,1 ,16026/13:45:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
-
-5531E462,00065,1 ,16026/13:30:00,4.48 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
-
-5531E462,00065,1 ,16026/13:15:00,4.48 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
-
-5531E462,00065,1 ,16026/13:00:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
-
-5531E462,00065,1 ,16026/12:45:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
-
-5531E462,00045,2 ,16026/14:30:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
-
-5531E462,00045,2 ,16026/14:15:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
-
-5531E462,00045,2 ,16026/14:00:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
-
-5531E462,00045,2 ,16026/13:45:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
-
-5531E462,00045,2 ,16026/13:30:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
-
-5531E462,00045,2 ,16026/13:15:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
-
-5531E462,00045,2 ,16026/13:00:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
-
-5531E462,00045,2 ,16026/12:45:00,0.06 ,I,LMBM5 ,Precip ,PC,900 ,I,in
-
-5531E462,0 ,3 ,16026/14:30:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
-
-5531E462,0 ,3 ,16026/14:15:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
-
-5531E462,0 ,3 ,16026/14:00:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
-
-5531E462,0 ,3 ,16026/13:45:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
-
-5531E462,0 ,3 ,16026/13:30:00,0.28 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
-
-5531E462,0 ,3 ,16026/13:15:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
-
-5531E462,0 ,3 ,16026/13:00:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
-
-5531E462,0 ,3 ,16026/12:45:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
-
-5531E462,70969,4 ,16026/14:00:00,14.4 ,I,LMBM5 ,Battery ,VB,3600,I,V
-
-ZZZZ
+   5531E462,00065,1 ,16026/14:30:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
+   5531E462,00065,1 ,16026/14:15:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
+   5531E462,00065,1 ,16026/14:00:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
+   5531E462,00065,1 ,16026/13:45:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
+   5531E462,00065,1 ,16026/13:30:00,4.48 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
+   5531E462,00065,1 ,16026/13:15:00,4.48 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
+   5531E462,00065,1 ,16026/13:00:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
+   5531E462,00065,1 ,16026/12:45:00,4.47 ,I,LMBM5 ,Water-Level,HG,900 ,I,ft
+   5531E462,00045,2 ,16026/14:30:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
+   5531E462,00045,2 ,16026/14:15:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
+   5531E462,00045,2 ,16026/14:00:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
+   5531E462,00045,2 ,16026/13:45:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
+   5531E462,00045,2 ,16026/13:30:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
+   5531E462,00045,2 ,16026/13:15:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
+   5531E462,00045,2 ,16026/13:00:00,0.07 ,I,LMBM5 ,Precip ,PC,900 ,I,in
+   5531E462,00045,2 ,16026/12:45:00,0.06 ,I,LMBM5 ,Precip ,PC,900 ,I,in
+   5531E462,0 ,3 ,16026/14:30:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
+   5531E462,0 ,3 ,16026/14:15:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
+   5531E462,0 ,3 ,16026/14:00:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
+   5531E462,0 ,3 ,16026/13:45:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
+   5531E462,0 ,3 ,16026/13:30:00,0.28 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
+   5531E462,0 ,3 ,16026/13:15:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
+   5531E462,0 ,3 ,16026/13:00:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
+   5531E462,0 ,3 ,16026/12:45:00,0.29 ,I,LMBM5 ,Soil-Temp,TV,900 ,I,degF
+   5531E462,70969,4 ,16026/14:00:00,14.4 ,I,LMBM5 ,Battery ,VB,3600,I,V
+   ZZZZ
 
 Dropping files is a very common way to interface OpenDCS with other
 system, like a time series database. You have OpenDCS routing spec drop
@@ -739,6 +713,13 @@ You will need system administrative privileges to do this.
 
 **Windows**
 
+.. 
+   Update to list with 
+   https://wrapper.tanukisoftware.com/doc/english/introduction.html
+   https://commons.apache.org/proper/commons-daemon/index.html
+   http://nssm.cc/
+   https://yajsw.sourceforge.io/
+
 Run the script installRsWrapper.bat, which you will find in the OpenDCS
 bin directory. This will create a Windows service called
 “OpenDCS-RoutSched”.
@@ -776,18 +757,14 @@ installation is user “opendcs” and that it was installed at
 ~opendcs/OPENDCS. Make substitutions if you installed under a different
 user or at a different location.
 
-Create a script in ~opendcs/bin/startRoutSched:
+Create a script in ~opendcs/bin/startRoutSched::
 
-#!/bin/bash
+   #!/bin/bash
+   cd $HOME
+   . ./.bash_profile
+   cd $DCSTOOL_HOME
+   nohup bin/routsched –d2 –l routsched.log &
 
-cd $HOME
+Now the script in rc5.d will call that script::
 
-. ./.bash_profile
-
-cd $DCSTOOL_HOME
-
-nohup bin/routsched –d2 –l routsched.log &
-
-Now the script in rc5.d will call that script:
-
-su – opendcs –c ~opendcs/bin/startRoutSched
+   su – opendcs –c ~opendcs/bin/startRoutSched

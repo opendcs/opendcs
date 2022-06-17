@@ -1,6 +1,6 @@
-#####################
+################################
 Computation Processor User Guide
-#####################
+################################
 This Document is part of the OpenDCS Software Suite for environmental
 data acquisition and processing. The project home is:
 https://github.com/opendcs/opendcs
@@ -141,121 +141,6 @@ USBR U. S. Bureau of Reclamation
 USGS U. S. Geological Survey
 
 XML Extensible Markup Language
-
-Document History
-----------------
-
-Changes made for Revision 2 (April, 2015)
-
--  DATCHK Configuration Files are described in section 12.3.2.
-
-Changes made for Revision 11 (July 2016)
-
--  Added chapter on HDB-specific features.
-
--  Added section on the Stat (Statistics) Algorithm.
-
--  Added description of the Resample Algorithm “method” property.
-
-Changes made for Revision 12 (September 2016)
-
--  Sections added to Chapter 15 on the HDB-specific algorithms.
-
--  Improved section 9.2 on the compimport utility by describing the
-   command line arguments, including the new –o (no overwrite) argument
-   for OpenDCS 6.2 RC13.
-
-Changes for revision 13 (November 2016)
-
--  Consolidated HDB-specific stuff into a single chapter. Previously
-   there were two separate chapters.
-
--  Removed information on the obsolete “local tasklist” feature. This is
-   no longer necessary or supported.
-
--  The previous section 3 on HDB-specific installation has been removed.
-   All installation instructions are in the separate OpenDCS
-   Installation Guide.
-
--  Likewise, the previous section 4 on configuration has been removed.
-   The OpenDCS Installation Guide covers this information.
-
--  Added discussion of Process Types to the section of compedit that
-   deals with the Process Edit Tab (section 3.5).
-
--  Expanded section 4.2 describing time series identifiers in CWMS,
-   including information from the new CMWS Naming Standards document.
-
--  Expanded sections 4.5 through 4.8 describing how computation
-   parameters use substitution for group members, and how CWMS wildcard
-   characters work for time series ID components.
-
-Changes for revision 14 (December 2016)
-
--  CwmsRatingMultiIndep now supports “locationOverride” property.
-
-Changes for revision 15 (Jan 2017)
-
--  The CwmsRatingMultiIndep algorithm, locationOverride property may now
-   contain wildcard chars (12.5).
-
-Changes made for revision 16 (June 2017)
-
--  negativeReplacement property in Average Algorithm
-
-Changes made for revision 16 (July 2017)
-
--  Added documentation for all built-in USBR algorithms.
-
-Changes made for revision 17 (November, 2017)
-
--  Added PeriodToDate Algorithm
-
-Changes made for revision 18 (February, 2018)
-
--  Added description of reclaimTasklistSec application property.
-
-Changes made for revision 20 (November 2018)
-
--  Timed Computations feature was added for OpenDCS 6.5 RC03. These are
-   described in section 2.7.
-
-Changes made for revision 21 (January 2019)
-
--  Section 6.4: Improved explanation on time series meta-data that is
-   available for both HDB and CWMS.
-
--  New GroupAdder algorithm. See section 5.27.
-
-Changes made for revision 22 (April 2019)
-
--  Added explanation of standard properties maxMissingValuesForFill and
-   maxMissingTimeForFill
-
--  Enhanced FillForward algorithm for new feature of filling to present
-   time or next input value.
-
-Changes for revision 23 (July 2019)
-
--  Section 2.7 added describing Timed Computations
-
-Changes for revision 24 (September 2019)
-
--  Fill Forward Algorithm clarified.
-
-Changes for revision 25 (September 2020)
-
--  Computations are now supported for OpenTSDB/PostgreSQL.
-
-Changes made for revision 26 (March 2021)
-
--  Improvements to section 10.11 to go along with bug fixes in the
-   compexec utility.
-
-Changes for revision 27 (October 2021)
-
--  Section 14.1 on HDB Model Run ID. The inputModelRunId property is
-   implemented.
 
 Theory of Operation
 ===================
@@ -750,7 +635,7 @@ properties to the computation meta-data. Table 2‑1 lists the
 possibilities.
 
 +------------------+---------------------------------------------------+
-| **               | **Meaning**                                       |
+| **\              | **Meaning**                                       |
 | rolename_MISSING |                                                   |
 | Property Value** |                                                   |
 +------------------+---------------------------------------------------+
@@ -864,7 +749,7 @@ Table 2‑2 lists the type-codes for inputs to computations.
 +-----------+----------------------------------------------------------+
 | idlwy     | Input delta since September 30 of the last year.         |
 +-----------+----------------------------------------------------------+
-| id\ *NNN* | … where\ *NN* is a number of minutes: Input delta        |
+| id\ *NNN* | Where\ *NN* is a number of minutes: Input delta          |
 |           | between this time and specified number of minutes ago.   |
 +-----------+----------------------------------------------------------+
 | o         | The parameter is an output.                              |
@@ -905,14 +790,14 @@ what happens to a tasklist record a when a computation fails:
 In some databases (CWMS) the processing required to support
 failed-computation-retries has been seen to be prohibitively expensive.
 We recommend for CWMS that you disable failed computation retries by
-setting the variable in your “decodes.properties” file:
+setting the variable in your “decodes.properties” file::
 
-retryFailedComputations=false
+   retryFailedComputations=false
 
 If you *do* want to attempt to retry computations, set this to true and
-then set an additional variable:
+then set an additional variable::
 
-maxComputationRetries=3
+   maxComputationRetries=3
 
 Set this to the maximum number of times you want a computation
 attempted. The special value of zero means to retry indefinitely.
@@ -941,7 +826,7 @@ Executable Programs Included with CP
 | complist    | List all computations defined in      | 10.1           |
 |             | meta-data                             |                |
 +-------------+---------------------------------------+----------------+
-| c           | List all current                      | 0              |
+| c\          | List all current                      | 0              |
 | omplocklist | computation-processor locks. This     |                |
 |             | will show you which CPs are currently |                |
 |             | running.                              |                |
@@ -965,7 +850,7 @@ Executable Programs Included with CP
 | importts    | Import Time Series data from an ASCII | 10.8           |
 |             | file into HDB                         |                |
 +-------------+---------------------------------------+----------------+
-| lau         | Start the combined GUI with the       | **Error!       |
+| lau\        | Start the combined GUI with the       | **Error!       |
 | ncher_start | launcher-buttons on the left side of  | Reference      |
 |             | the screen.                           | source not     |
 |             |                                       | found.**       |
@@ -985,13 +870,13 @@ Executable Programs Included with CP
 | pxport,     | Programs                              | Reference      |
 | dbimport    |                                       | Manual         |
 +-------------+---------------------------------------+----------------+
-| e           | (CWMS Only) programs for editing,     | 12.1           |
+| e\          | (CWMS Only) programs for editing,     | 12.1           |
 | ditRatings, | viewing, exporting and importing      |                |
-| l           | Rating Tables within the database     |                |
+| l\          | Rating Tables within the database     |                |
 | istRatings, |                                       |                |
-| im          |                                       |                |
+| im\         |                                       |                |
 | portRating, |                                       |                |
-| e           |                                       |                |
+| e\          |                                       |                |
 | xportRating |                                       |                |
 +-------------+---------------------------------------+----------------+
 
@@ -1063,19 +948,14 @@ The Computation Editor
 Section 0 explains the computation meta-data stored in the database.
 This section will explain how to view and modify this meta-data.
 
-Start the GUI computation editor with the command:
+Start the GUI computation editor with the command::
 
-compedit
-
-The command accepts the following arguments
-
--d1 Set to debug level 1.
-
--d2 Set to debug level 2.
-
--d3 Set to debug level 3 (the most verbose).
-
--l logfile Default log name is “compedit.log” in the current directory.
+   compedit
+   The command accepts the following arguments
+   -d1 Set to debug level 1.
+   -d2 Set to debug level 2.
+   -d3 Set to debug level 3 (the most verbose).
+   -l logfile Default log name is “compedit.log” in the current directory.
 
 The program starts by reading summaries of all the records in the
 database. These are displayed in three list tabs on the main screen:
@@ -1291,9 +1171,9 @@ records that modify the defaults defined in the Java code. See Figure
 14.
 
 The USGS Equation Algorithm takes one input, one output and four
-coefficients. It executes the equation:
+coefficients. It executes the equation::
 
-output = A \* (B + input)^^C + D
+   output = A \* (B + input)^^C + D
 
 Note the “type code” assigned to input. It is “id360” meaning that
 instead of operating on the input value directly, it will take the
@@ -1302,9 +1182,9 @@ instead of operating on the input value directly, it will take the
 Next we define A to be 2.0167. Why? Look at the EU (engineering units)
 definitions: The input is in ac-ft (Acre Feet). So we are looking at the
 change in storage in Acre Feet over 6 hours. But we want to output a
-FLOW in cfs (cubic feet per second), So …
+FLOW in cfs (cubic feet per second), So …::
 
-ac-ft/6Hours = cfs \* 2.0167
+   ac-ft/6Hours = cfs \* 2.0167
 
 Thus we co-opted an existing algorithm to do a special purpose without
 writing any Java code!
@@ -1366,8 +1246,6 @@ The fields in the computation edit tab include:
 -  Specified date/time – You specify a hard date/time value that is
    used.
 
-..
-
    **Effective End:** Input data after the specified time will not be
    processed by this computation. You can specify the limit in four
    ways:
@@ -1383,8 +1261,6 @@ The fields in the computation edit tab include:
 
 -  Specified date/time – You specify a hard date/time value that is
    used.
-
-..
 
    **Enabled:** Only computations that are enabled will be executed.
 
@@ -1541,7 +1417,7 @@ available to all daemon processes:
 
 For OpenDCS 6.4 RC08 a new Computation Daemon property was added:
 
--  reclaimTasklistSec– set to a number of seconds (default = 0). This is
+-  reclaimTasklistSec – set to a number of seconds (default = 0). This is
    only used on Oracle Databases. If set to a positive number of
    seconds, then, when the tasklist is empty and this number of seconds
    has elapsed since the last attempt, the code will attempt to reclaim
@@ -1549,12 +1425,10 @@ For OpenDCS 6.4 RC08 a new Computation Daemon property was added:
    following queries. The purpose is to shrink the allocated space back
    to something reasonable in case it has grown large.
 
-..
+::
 
    ALTER TABLE cp_comp_tasklist ENABLE ROW MOVEMENT
-
    ALTER TABLE cp_comp_tasklist SHRINK SPACE CASCADE
-
    ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT
 
 .. image:: ./media/image23.png
@@ -1597,19 +1471,17 @@ An HDB Time Series is uniquely identified by:
 -  Model-run-ID (modeled data only)
 
 Some applications, such as the “outputts” (output time series) program
-described below, specify time series with a 4, 5, or 6 “path name”:
+described below, specify time series with a 4, 5, or 6 “path name”::
 
    RUEWEACO.7.instant.R\_ Instantaneous real precip at site ‘RUEWEACO’
-
-   RUEWEACO.8.hour.M\_.1.1 Hourly modeled precip at the same site, model
-   id and model run ID are both 1.
+   RUEWEACO.8.hour.M\_.1.1 Hourly modeled precip at the same site, model id and model run ID are both 1.
 
 Time Series Identifiers in CWMS
 -------------------------------
 
-CWMS uses a 6-part key:
+CWMS uses a 6-part key::
 
-Location.Param.ParamType.Interval.Duration.Version
+   Location.Param.ParamType.Interval.Duration.Version
 
 For a complete discussion of CWMS Time Series Identifiers, see: *U.S.
 Army Corps of Engineers (USACE) CWMS Standard Naming Conventions*. WMIST
@@ -2067,13 +1939,13 @@ Property names are NOT case sensitive.
 |                 |               | is subject to the ‘maxInterpIntervals’     |
 |                 |               | property.                                  |
 +-----------------+---------------+--------------------------------------------+
-| max             | long          | Default = 10. See ‘interpDeltas’ above.    |
+| max\            | long          | Default = 10. See ‘interpDeltas’ above.    |
 | InterpIntervals |               | When CP interpolates in order to compute   |
 |                 |               | an automatic delta. It will not            |
 |                 |               | interpolate if more than this many         |
 |                 |               | contiguous values are missing.             |
 +-----------------+---------------+--------------------------------------------+
-| ag              | String        | Default is set in decodes.properties. This |
+| ag\             | String        | Default is set in decodes.properties. This |
 | gregateTimeZone |               | can be set on an algorithm or computation  |
 |                 |               | to override the default. It must be one of |
 |                 |               | Java’s valid time-zone identifiers. This   |
@@ -2094,11 +1966,11 @@ Property names are NOT case sensitive.
 +----------------------+--------+--------------------------------------+
 | aggregateTimeZone    | String | (default set in decodes.properties)  |
 +----------------------+--------+--------------------------------------+
-| aggLowerBoundClosed  | B      | (default=true) True means to include |
+| aggLowerBoundClosed  | B\     | (default=true) True means to include |
 |                      | oolean | the lower bound of the aggregate     |
 |                      |        | period in the calculation.           |
 +----------------------+--------+--------------------------------------+
-| aggUpperBoundClosed  | B      | (default=false) True means to        |
+| aggUpperBoundClosed  | B\     | (default=false) True means to        |
 |                      | oolean | include the upper bound of the       |
 |                      |        | aggregate period in the calculation. |
 +----------------------+--------+--------------------------------------+
@@ -2115,20 +1987,20 @@ Property names are NOT case sensitive.
 |                      |        |                                      |
 |                      |        | “1 day 4 hours”                      |
 +----------------------+--------+--------------------------------------+
-| noAggregateFill      | B      | (default=false) If set to True, then |
+| noAggregateFill      | B\     | (default=false) If set to True, then |
 |                      | oolean | CP will not iterate time slices for  |
 |                      |        | aggregate computations. This         |
 |                      |        | accommodates algorithms that want to |
 |                      |        | perform the aggregate in the         |
 |                      |        | database.                            |
 +----------------------+--------+--------------------------------------+
-| max                  | I      | See section 2.5.6. This property     |
+| max\                 | I\     | See section 2.5.6. This property     |
 | MissingValuesForFill | nteger | provides an upper limit to the       |
 |                      |        | number of values that the            |
 |                      |        | computation processor will           |
 |                      |        | automatically fill missing values.   |
 +----------------------+--------+--------------------------------------+
-| m                    | I      | This is a number of seconds. See     |
+| m\                   | I\     | This is a number of seconds. See     |
 | axMissingTimeForFill | nteger | section 2.5.6. This property         |
 |                      |        | provides an upper limit to the       |
 |                      |        | amount of time that the computation  |
@@ -2160,11 +2032,11 @@ Property names are NOT case sensitive.
 +--------------------+----------+--------------------------------------+
 | aggregateTimeZone  | String   | (default set in decodes.properties)  |
 +--------------------+----------+--------------------------------------+
-| a                  | Boolean  | (default=true) True means to include |
+| a\                 | Boolean  | (default=true) True means to include |
 | ggLowerBoundClosed |          | the lower bound of the aggregate     |
 |                    |          | period in the calculation.           |
 +--------------------+----------+--------------------------------------+
-| a                  | Boolean  | (default=false) True means to        |
+| a\                 | Boolean  | (default=false) True means to        |
 | ggUpperBoundClosed |          | include the upper bound of the       |
 |                    |          | aggregate period in the calculation. |
 +--------------------+----------+--------------------------------------+
@@ -2962,9 +2834,9 @@ This algorithm uses the rating table files to do a stage-to-flow (or
 elevation-to-volume) conversion.
 
 It looks for a file in the specified “tableDir” directory with a name of
-the form:
+the form::
 
-*SiteName + suffix*
+   SiteName + suffix
 
 Or, you can completely specify the “tableName” property directly.
 
@@ -3008,9 +2880,9 @@ output : double precision
 
 **Description:**
 
-Implements the USGS Equation:
+Implements the USGS Equation::
 
-output = A \* (B + input)^C + D
+   output = A \* (B + input)^C + D
 
 where A, B, C, and D are provided as properties.
 
@@ -3112,11 +2984,10 @@ Expression Parser Algorithm
 
 **Introduced in Version:** 6.1 RC11
 
-To make this algorithm visible after installing an update, run:
+To make this algorithm visible after installing an update, run::
 
-cd $DCSTOOL_HOME
-
-bin/compimport imports/comp-standard/ExpressionParserAlgorithm.xml
+   cd $DCSTOOL_HOME
+   bin/compimport imports/comp-standard/ExpressionParserAlgorithm.xml
 
 **Input Parameters:**
 
@@ -3184,9 +3055,9 @@ constants and functions, the following custom functions have also been
 added:
 
 +---------------------+------------------------------------------------+
-| l                   | FUTURE IMPLEMENTATION. This function looks up  |
-| ookupMeta(location, | meta data for a given location.                |
-| param)              |                                                |
+|l\                   | FUTURE IMPLEMENTATION. This function looks up  |
+|ookupMeta(location,  | meta data for a given location.                |
+|param)               |                                                |
 +=====================+================================================+
 | cond(*cond, expr*)  | If the *cond* expression evaluates to true,    |
 |                     | then execute the second argument *expr* and    |
@@ -3231,7 +3102,7 @@ added:
 |                     | an error, then execution jumps to the named    |
 |                     | label.                                         |
 +---------------------+------------------------------------------------+
-| rating(specId, in1, | The first argument is the string rating spec   |
+| rating(specId, in1,\| The first argument is the string rating spec   |
 | in2...inN)          | ID. Subsequent arguments are the independent   |
 |                     | input values for the rating. The rating spec   |
 |                     | determines the number of input variables       |
@@ -3249,10 +3120,10 @@ added:
 |                     |                                                |
 |                     | in1.flags = datchk("in1")                      |
 +=====================+================================================+
-| s                   | This performs screening according to screening |
+| s\                  | This performs screening according to screening |
 | creening(inputName) | records in the CWMS database.                  |
 +---------------------+------------------------------------------------+
-| isQuestio           | Returns true if the passed flags-value         |
+| isQuestio\          | Returns true if the passed flags-value         |
 | nable(*parm*.flags) | indicates that the value is marked as          |
 |                     | QUESTIONABLE. This is used to check the result |
 |                     | of screening.                                  |
@@ -3268,7 +3139,7 @@ added:
 |                     | cond(isQuestionable(in1.flags),                |
 |                     | warning("..."))                                |
 +---------------------+------------------------------------------------+
-| isRej               | Returns true if the passed flags-value         |
+| isRej\              | Returns true if the passed flags-value         |
 | ected(*parm*.flags) | indicates that the value is marked as          |
 |                     | REJECTED. This is used to check the result of  |
 |                     | screening.                                     |
@@ -3297,47 +3168,47 @@ The following constants can be used in your expressions:
 | in1       | Number | The value of the in1 parameter in this          |
 |           |        | timeslice.                                      |
 +-----------+--------+-------------------------------------------------+
-| in1       | String | Location of the time series associated with in1 |
+| in1\      | String | Location of the time series associated with in1 |
 | .Location |        |                                                 |
 +-----------+--------+-------------------------------------------------+
 | in1.Param | String | The ‘param’ part of the time series ID          |
 |           |        | associated with in1                             |
 +-----------+--------+-------------------------------------------------+
-| in1.      | String | ParamType part of the TS ID associated with in1 |
+| in1.\     | String | ParamType part of the TS ID associated with in1 |
 | ParamType |        |                                                 |
 +-----------+--------+-------------------------------------------------+
-| in1       | String | Interval part of the TS ID associated with in1  |
+| in1\      | String | Interval part of the TS ID associated with in1  |
 | .Interval |        |                                                 |
 +-----------+--------+-------------------------------------------------+
-| in1       | String | Duration part of the TS ID associated with in1  |
+| in1\      | String | Duration part of the TS ID associated with in1  |
 | .Duration |        |                                                 |
 +-----------+--------+-------------------------------------------------+
-| in        | String | Version part of the TS ID associated with in1   |
+| in\       | String | Version part of the TS ID associated with in1   |
 | 1.Version |        |                                                 |
 +-----------+--------+-------------------------------------------------+
-| in1.      | String | ParamType part of the TS ID associated with in1 |
+| in1.\     | String | ParamType part of the TS ID associated with in1 |
 | ParamType |        |                                                 |
 +-----------+--------+-------------------------------------------------+
-| in1.      | String | ParamType part of the TS ID associated with in1 |
+| in1.\     | String | ParamType part of the TS ID associated with in1 |
 | ParamType |        |                                                 |
 +-----------+--------+-------------------------------------------------+
-| in        | String | The base location of the TS ID associated with  |
+| in\       | String | The base location of the TS ID associated with  |
 | 1.baseloc |        | in1                                             |
 +-----------+--------+-------------------------------------------------+
-| i         | String | The sub location of the TS ID associated with   |
+| i\        | String | The sub location of the TS ID associated with   |
 | n1.subloc |        | in1                                             |
 +-----------+--------+-------------------------------------------------+
-| in1.      | String | The base param of the TS ID associated with in1 |
+| in1.\     | String | The base param of the TS ID associated with in1 |
 | baseparam |        |                                                 |
 +-----------+--------+-------------------------------------------------+
-| in1       | String | The sub param of the TS ID associated with in1  |
+| in1\      | String | The sub param of the TS ID associated with in1  |
 | .subparam |        |                                                 |
 +-----------+--------+-------------------------------------------------+
-| in1.ba    | String | The portion of the version string up to the     |
+| in1.ba\   | String | The portion of the version string up to the     |
 | seversion |        | first hyphen, of the entire string if no hyphen |
 |           |        | is present                                      |
 +-----------+--------+-------------------------------------------------+
-| in1.s     | String | The portion of the version string after the     |
+| in1.s\    | String | The portion of the version string after the     |
 | ubversion |        | first hyphen, or unassigned if no hyphen is     |
 |           |        | present                                         |
 +-----------+--------+-------------------------------------------------+
@@ -3383,9 +3254,9 @@ the database.
 A quirk of the JEP parser is apparent when combining strings and
 numbers, which will be common in the expressions in the logging
 functions. Use JEP’s str() function to convert numbers to strings before
-combining with other strings:
+combining with other strings::
 
-info("in1 = " + str(in1) + ", in2=" + str(in2))
+   info("in1 = " + str(in1) + ", in2=" + str(in2))
 
 Example of Using Expression Parser for Conditional Rating
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3400,11 +3271,10 @@ algorithm for a conditional rating.
 Figure 30: Expression Parser used for Conditional Rating
 
 Note the three inputs defined and the single output. Now see the two
-properties ex_1 and ex_2. these form the following script:
+properties ex_1 and ex_2. these form the following script::
 
-cond(in2 < 5, out1 = rating(stab, in2))
-
-else(out1 = rating(mtab, in1, in2, in3))
+   cond(in2 < 5, out1 = rating(stab, in2))
+   else(out1 = rating(mtab, in1, in2, in3))
 
 Thus if the value at a given time for in2
 (TESTSITE1.Opening-Conduit_Gates.Inst.1Hour.0.test) is less than 5, then
@@ -3501,10 +3371,10 @@ output : double precision
 
 **Description:**
 
-Implement the equation:
+Implement the equation::
 
-output = ((input1 / input2) \* input3) + (1 – (input1 / input2) \*
-input4)
+   output = ((input1 / input2) \* input3) + (1 – (input1 / input2) \*
+   input4)
 
 No output is produced if the input2 is less than or equal to zero.
 
@@ -3515,11 +3385,10 @@ FlowResIn – Compute Reservoir Inflow at LRP
 
 **Introduced in Version:** 6.2 RC05
 
-To make this algorithm visible after installing an update, run:
+To make this algorithm visible after installing an update, run::
 
-cd $DCSTOOL_HOME
-
-bin/compimport imports/comp-standard/FlowResIn.xml
+   cd $DCSTOOL_HOME
+   bin/compimport imports/comp-standard/FlowResIn.xml
 
 **Input Parameters:**
 
@@ -3569,11 +3438,10 @@ Multiplication Algorithm
 
 **Introduced in Version:** 6.2 RC05
 
-To make this algorithm visible after installing an update, run:
+To make this algorithm visible after installing an update, run::
 
-cd $DCSTOOL_HOME
-
-bin/compimport imports/comp-standard/Multiplication.xml
+   cd $DCSTOOL_HOME
+   bin/compimport imports/comp-standard/Multiplication.xml
 
 **Input Parameters:**
 
@@ -3606,9 +3474,9 @@ output : double precision
 
 **Description:**
 
-Implement the equation:
+Implement the equation::
 
-output = ((a \* input1) + b) \* ((c \* input2) + d)
+   output = ((a \* input1) + b) \* ((c \* input2) + d)
 
 Stat (Statistics) Algorithm
 ---------------------------
@@ -3617,11 +3485,10 @@ Stat (Statistics) Algorithm
 
 **Introduced in Version:** 6.2 RC09
 
-To make this algorithm visible after installing an update, run:
+To make this algorithm visible after installing an update, run::
 
-cd $DCSTOOL_HOME
-
-bin/compimport imports/comp-standard/Stat.xml
+   cd $DCSTOOL_HOME
+   bin/compimport imports/comp-standard/Stat.xml
 
 Time Series Parameters:
 
@@ -3667,29 +3534,29 @@ Properties:
 | **Property   | **Java | **D      | **Description**                 |
 | Name**       | Type** | efault** |                                 |
 +==============+========+==========+=================================+
-| aggPe        | String | (none)   | If defined, this will be used   |
+| aggPe\       | String | (none)   | If defined, this will be used   |
 | riodInterval |        |          | to define the aggregate period. |
 |              |        |          | Normally this is taken from the |
 |              |        |          | Interval of the time series     |
 |              |        |          | assigned to the ‘average’       |
 |              |        |          | output.                         |
 +--------------+--------+----------+---------------------------------+
-| aveEnabled   | b      | true     | If false, no average output is  |
+| aveEnabled   | b\     | true     | If false, no average output is  |
 |              | oolean |          | produced.                       |
 +--------------+--------+----------+---------------------------------+
-| minEnabled   | b      | true     | If false, no minimum output is  |
+| minEnabled   | b\     | true     | If false, no minimum output is  |
 |              | oolean |          | produced.                       |
 +--------------+--------+----------+---------------------------------+
-| maxEnabled   | b      | true     | If false, no maximum output is  |
+| maxEnabled   | b\     | true     | If false, no maximum output is  |
 |              | oolean |          | produced.                       |
 +--------------+--------+----------+---------------------------------+
-| medEnabled   | b      | true     | If false, no median output is   |
+| medEnabled   | b\     | true     | If false, no median output is   |
 |              | oolean |          | produced.                       |
 +--------------+--------+----------+---------------------------------+
-| devi         | b      | true     | If false, no standard_deviation |
+| devi\        | b\     | true     | If false, no standard_deviation |
 | ationEnabled | oolean |          | output is produced.             |
 +--------------+--------+----------+---------------------------------+
-| minS         | long   | 1        | If fewer than this many inputs  |
+| minS\        | long   | 1        | If fewer than this many inputs  |
 | amplesNeeded | int    |          | are present in the period, then |
 |              |        |          | no output is produced.          |
 +--------------+--------+----------+---------------------------------+
@@ -3717,7 +3584,7 @@ Time Series Parameters:
 | periodToDate  | output     | The output period-to-date values go     |
 |               |            | here. Must have same interval as input. |
 +---------------+------------+-----------------------------------------+
-| deter         | output     | Used only to determine the aggregate    |
+| deter\        | output     | Used only to determine the aggregate    |
 | mineAggPeriod |            | period. See below.                      |
 +---------------+------------+-----------------------------------------+
 
@@ -3741,7 +3608,7 @@ Properties:
 | **Property   | **Java  | **D      | **Description**                  |
 | Name**       | Type**  | efault** |                                  |
 +==============+=========+==========+==================================+
-| goo          | boolean | false    | If set to true, then only good   |
+| goo\         | boolean | false    | If set to true, then only good   |
 | dQualityOnly |         |          | quality input values will        |
 |              |         |          | contribute to the output         |
 |              |         |          | periodToDate tally.              |
@@ -3896,21 +3763,17 @@ from the dialog to have it inserted into your code.
 
 Here is the script text. We will go through it line by line.
 
-if isNew('rawstage'):
+::
+   if isNew('rawstage'):
+      screening('rawstage')
+   if isGoodQuality('rawstage'):
+      setOutputAndQual('revstage', rawstage.value, rawstage.qual)
+   setOutput('flow', rating(ratingSpecId, revstage.value))
 
-screening('rawstage')
+The first two lines of the script are::
 
-if isGoodQuality('rawstage'):
-
-setOutputAndQual('revstage', rawstage.value, rawstage.qual)
-
-setOutput('flow', rating(ratingSpecId, revstage.value))
-
-The first two lines of the script are:
-
-if isNew('rawstage'):
-
-screening('rawstage')
+   if isNew('rawstage'):
+      screening('rawstage')
 
 The isNew() function will return true if the named parameter is either a
 triggering value or a derived value in this time slice:
@@ -3929,11 +3792,10 @@ The screening() function looks for a CWMS Screening record for the named
 parameter. If found, it is applied to the current timeslice value and
 the quality flags set appropriately.
 
-The next two lines are:
+The next two lines are::
 
-if isGoodQuality('rawstage'):
-
-setOutputAndQual('revstage', rawstage.value, rawstage.qual)
+   if isGoodQuality('rawstage'):
+      setOutputAndQual('revstage', rawstage.value, rawstage.qual)
 
 The isGoodQuality() function will return true if the results of the
 screening are OK. That is, the value is present, and it is not flagged
@@ -3944,13 +3806,13 @@ The setOutputAndQual() function copies the passed value and quality to
 the named parameter. Notice how the value and quality of rawstage are
 referenced.
 
-The final block of code is:
+The final block of code is::
 
-setOutput('flow', rating(ratingSpecId, revstage.value))
+   setOutput('flow', rating(ratingSpecId, revstage.value))
 
-Notice call to the rating function embedded in the call to setOutput():
+Notice call to the rating function embedded in the call to setOutput()::
 
-rating(ratingSpecId, revstage.value)
+   rating(ratingSpecId, revstage.value)
 
 We pass it the ratingSpecId that was computed in the Before Time Slices
 script. We then pass it the current value for revstage. The rating()
@@ -4303,7 +4165,7 @@ Figure 31 contains an example meta-data file. The file contains:
 -  Two Computation Records called “GRZU1-Copy-65-120” and
    “GRZU1-Rdb-65-60”.
 
-The example illustrates all aspects of the XML format.
+The example illustrates all aspects of the XML format
 
 <?xml version="1.0" standalone="yes"?>
 
