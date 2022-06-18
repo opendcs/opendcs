@@ -3764,6 +3764,7 @@ from the dialog to have it inserted into your code.
 Here is the script text. We will go through it line by line.
 
 ::
+
    if isNew('rawstage'):
       screening('rawstage')
    if isGoodQuality('rawstage'):
@@ -4648,19 +4649,14 @@ Description:
    showing the command and its output for the HDB database. The format
    for a Time Series Identifier will vary for HDB, Tempest, and CWMS.
 
-decj decodes.tsdb.ShowCompDepends
+:: 
 
-9936, "TESTSITE1.65.instant.R\_", 146, "regtest_006-1-DailyAverage", 50,
-"compproc_regtest"
+   decj decodes.tsdb.ShowCompDepends
 
-9944, "TESTSITE3.65.instant.R\_", 146, "regtest_006-1-DailyAverage", 50,
-"compproc_regtest"
-
-9945, "TESTSITE1.66.day.R\_", 147, "regtest_006-2-Disagg", 50,
-"compproc_regtest"
-
-9946, "TESTSITE3.66.day.R\_", 147, "regtest_006-2-Disagg", 50,
-"compproc_regtest"
+   9936, "TESTSITE1.65.instant.R_", 146, "regtest_006-1-DailyAverage", 50, "compproc_regtest"
+   9944, "TESTSITE3.65.instant.R_", 146, "regtest_006-1-DailyAverage", 50, "compproc_regtest"
+   9945, "TESTSITE1.66.day.R_", 147, "regtest_006-2-Disagg", 50, "compproc_regtest"
+   9946, "TESTSITE3.66.day.R_", 147, "regtest_006-2-Disagg", 50, "compproc_regtest"
 
 The columns are:
 
@@ -5202,7 +5198,7 @@ Time Series Parameters:
 | **Role     | **Type**   | **Description**                           |
 | Name**     |            |                                           |
 +============+============+===========================================+
-| input      | input      | The input time series parameters.         |
+| input\     | input      | The input time series parameters.         |
 | 1...input5 |            |                                           |
 +------------+------------+-------------------------------------------+
 | output     | output     | This is a dummy output parameter and is   |
@@ -5277,18 +5273,18 @@ Properties:
 | agregate_name | String | (none)   | The name of the Oracle          |
 |               |        |          | aggregate function.             |
 +---------------+--------+----------+---------------------------------+
-| min_va        | int    | 1        | No output is produced if there  |
+| min_va\       | int    | 1        | No output is produced if there  |
 | lues_required |        |          | are fewer than this many inputs |
 |               |        |          | in the aggregate period. See    |
 |               |        |          | description below of min-value  |
 |               |        |          | processing for months.          |
 +---------------+--------+----------+---------------------------------+
-| min_v         | int    | 0        | If fewer than this many inputs  |
+| min_v\        | int    | 0        | If fewer than this many inputs  |
 | alues_desired |        |          | are present then the output is  |
 |               |        |          | flagged as a “partial”          |
 |               |        |          | calculation.                    |
 +---------------+--------+----------+---------------------------------+
-| partial       | b      | false    | If true, then partial           |
+| partial\      | b      | false    | If true, then partial           |
 | _calculations | oolean |          | calculations are accepted, but  |
 |               |        |          | are flagged at ‘T’ (Temporary)  |
 +---------------+--------+----------+---------------------------------+
@@ -5345,7 +5341,7 @@ Properties:
 | **Property      | **Java | **D      | **Description**               |
 | Name**          | Type** | efault** |                               |
 +=================+========+==========+===============================+
-| req_window      | i      | 0        | If >0, then this represents   |
+| req_window\     | i      | 0        | If >0, then this represents   |
 | period          | nteger |          | the maximum number of input   |
 |                 |        |          | intervals from the end of     |
 |                 |        |          | period in which there must be |
@@ -5356,7 +5352,7 @@ Properties:
 |                 |        |          | input is present within the   |
 |                 |        |          | last 3 hours of the day.      |
 +-----------------+--------+----------+-------------------------------+
-| desire          | i      | 0        | Like req_window_period, but   |
+| desire\         | i      | 0        | Like req_window_period, but   |
 | d_window_period | nteger |          | an output can still be        |
 |                 |        |          | produced, but it will be      |
 |                 |        |          | flagged with the supplied     |
@@ -5394,7 +5390,7 @@ Time Series Parameters:
 | **Role     | **Type**   | **Description**                           |
 | Name**     |            |                                           |
 +============+============+===========================================+
-| input      | input      | The input time series parameters.         |
+| input\     | input      | The input time series parameters.         |
 | 1...input5 |            |                                           |
 +------------+------------+-------------------------------------------+
 | output     | output     | Will be set to the result of the          |
@@ -5450,18 +5446,18 @@ Properties:
 | **Property      | **Java | **D      | **Description**               |
 | Name**          | Type** | efault** |                               |
 +=================+========+==========+===============================+
-| parti           | b      | false    | Set to true to allow output   |
+| parti\          | b      | false    | Set to true to allow output   |
 | al_calculations | oolean |          | when only part of the period  |
 |                 |        |          | is known.                     |
 +-----------------+--------+----------+-------------------------------+
-| observati       | b      | false    |                               |
+| observati\      | b      | false    |                               |
 | ons_calculation | oolean |          |                               |
 +-----------------+--------+----------+-------------------------------+
-| min\_           | i      | 1        | Number of input values        |
+| min\_\          | i      | 1        | Number of input values        |
 | values_required | nteger |          | required before output can be |
 |                 |        |          | made. Zero means all.         |
 +-----------------+--------+----------+-------------------------------+
-| min             | i      | 0        | If specified number of inputs |
+| min\            | i      | 0        | If specified number of inputs |
 | _values_desired | nteger |          | is not present, then ‘w’      |
 |                 |        |          | validation flag will be set.  |
 +-----------------+--------+----------+-------------------------------+
@@ -5551,7 +5547,7 @@ The state table is:
 |               | Typ |         |                                     |
 |               | e** |         |                                     |
 +---------------+-----+---------+-------------------------------------+
-| ign           | B   | false   | If set to true, then ignore the     |
+| ign\          | B   | false   | If set to true, then ignore the     |
 | oreTimeSeries | ool |         | evapCoeff time series, even if it   |
 |               | ean |         | is provided. Always look up the     |
 |               |     |         | evaporation coefficient from the    |
@@ -5590,29 +5586,29 @@ decodes.tsdb.algo.HdbShiftRating
 |                | Ty   |         |                                  |
 |                | pe** |         |                                  |
 +----------------+------+---------+----------------------------------+
-| ex             | Boo  | false   | Set to true to allow rating to   |
+| ex\            | Boo\ | false   | Set to true to allow rating to   |
 | ceedLowerBound | lean |         | extend the rating below the      |
 |                |      |         | lowest value of the table. May   |
 |                |      |         | be invalid for certain rating    |
 |                |      |         | types.                           |
 +----------------+------+---------+----------------------------------+
-| ex             | Boo  | false   | Set to true to allow rating to   |
+| ex\            | Boo\ | false   | Set to true to allow rating to   |
 | ceedUpperBound | lean |         | extend the rating above the      |
 |                |      |         | highest value of the table. May  |
 |                |      |         | be invalid for certain rating    |
 |                |      |         | types.                           |
 +----------------+------+---------+----------------------------------+
-| ratingType     | St   | Shift   | This property provides the       |
+| ratingType     | St\  | Shift   | This property provides the       |
 |                | ring | A       | HDB_TABLE type for the actual    |
 |                |      | djusted | rating table, which indirectly   |
 |                |      | Stage   | determines the lookup algorithm. |
 |                |      | Flow    |                                  |
 +----------------+------+---------+----------------------------------+
-| applyShifts    | Boo  | false   | If true, add the ‘shift’         |
+| applyShifts    | Boo\ | false   | If true, add the ‘shift’         |
 |                | lean |         | property value before table      |
 |                |      |         | lookup.                          |
 +----------------+------+---------+----------------------------------+
-| shift          | do   | 0       | Constant shift value added to    |
+| shift          | do\  | 0       | Constant shift value added to    |
 |                | uble |         | indep before look, but only if   |
 |                |      |         | applyShifts == true.             |
 +----------------+------+---------+----------------------------------+
@@ -5679,7 +5675,7 @@ decodes.hdb.algo.HdbShiftRating
 |                |        |        | slice. This property provides the  |
 |                |        |        | HDB_TABLE type.                    |
 +----------------+--------+--------+------------------------------------+
-| l              | String | Stage  | This property is new in OpenDCS    |
+| l\             | String | Stage  | This property is new in OpenDCS    |
 | ookupTableType |        | Flow   | 6.3. In previous releases it was   |
 |                |        |        | hard-coded to “Stage Flow”. This   |
 |                |        |        | property provides the HDB_TABLE    |
@@ -5762,9 +5758,9 @@ Class Name: decodes.hdb.algo.InflowAdvancedAlg
 +---------------+------------+----------------------------------------+
 | total_release | input      |                                        |
 +---------------+------------+----------------------------------------+
-| delta storage | input      |                                        |
+| delta\_storage| input      |                                        |
 +---------------+------------+----------------------------------------+
-| delta_bs      | input      | bank storage                           |
+| delta\_bs     | input      | bank storage                           |
 +---------------+------------+----------------------------------------+
 | evap          | input      |                                        |
 +---------------+------------+----------------------------------------+
@@ -6001,21 +5997,21 @@ output : double precision (optional – see below)
 |              | T     |        |                                     |
 |              | ype** |        |                                     |
 +--------------+-------+--------+-------------------------------------+
-| noOverwrite  | Bo    | False  | If set to true, then don’t          |
+| noOverwrite  | Bo\   | False  | If set to true, then don’t          |
 |              | olean |        | overwrite output values that        |
 |              |       |        | already exist at a given time. Can  |
 |              |       |        | only be used if the input and       |
 |              |       |        | output refer to different time      |
 |              |       |        | series.                             |
 +--------------+-------+--------+-------------------------------------+
-| s            | Bo    | False  | If set to true, then set the flag   |
+| s\           | Bo\   | False  | If set to true, then set the flag   |
 | etInputFlags | olean |        | bits on the input parameter in      |
 |              |       |        | addition to the output parameter.   |
 |              |       |        | Can only be used if the input and   |
 |              |       |        | output refer to different time      |
 |              |       |        | series.                             |
 +--------------+-------+--------+-------------------------------------+
-| setR         | Bo    | False  | If set to true, then if the         |
+| setR\        | Bo\   | False  | If set to true, then if the         |
 | ejectMissing | olean |        | validation results in the value     |
 |              |       |        | being rejected, then write a dummy  |
 |              |       |        | output value with flags indicating  |
@@ -6023,7 +6019,7 @@ output : double precision (optional – see below)
 |              |       |        | used if the input and output refer  |
 |              |       |        | to different time series.           |
 +--------------+-------+--------+-------------------------------------+
-| noOu         | Bo    | False  | If set to true and the output time  |
+| noOu\        | Bo\   | False  | If set to true and the output time  |
 | tputOnReject | olean |        | series is different from the input, |
 |              |       |        | then when a value is flagged as     |
 |              |       |        | REJECTED as the result of           |
@@ -6072,29 +6068,20 @@ The CWMS user should not need to care about the internal representation
 of flag bits. This section is included for completeness and technical
 reference only.
 
-**       3                   2                   1                    
-     2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1**
-
-**     P - - - - - T T - T - T T T T T T M M M M C C C D R R V V V V S
-     \|           <---------+---------> <--+--> <-+-> \| <+> <--+--> \|
-     \|                     \|              \|      \|   \|  \|    
-\|    +------Screened T/F
-     \|                     \|              \|      \|   \|  \|    
-+-----------Validity Mutually-Exclusive Flags
-     \|                     \|              \|      \|   \| 
-+--------------Value Range Integer
-     \|                     \|              \|      \|  
-+-------------------Different T/F
-     \|                     \|              \|     
-+---------------Replacement Cause Integer
-     \|                     \|             
-+---------------------Replacement Method Integer
-     \|                    
-+-------------------------------------------Test Failed
-Mutually-Exclusive Flags
-    
-+-------------------------------------------------------------------Protected
-T/F**
+::
+   
+          3                   2                   1                    
+        2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1
+        P - - - - - T T - T - T T T T T T M M M M C C C D R R V V V V S
+        |           <---------+---------> <--+--> <-+-> | <+> <--+--> |
+        |                     |              |      |   |  |     |    +------Screened T/F
+        |                     |              |      |   |  |     +-----------Validity Mutually-Exclusive Flags
+        |                     |              |      |   |  +--------------Value Range Integer
+        |                     |              |      |   +-------------------Different T/F
+        |                     |              |      +---------------Replacement Cause Integer
+        |                     |              +---------------------Replacement Method Integer
+        |                     +-------------------------------------------Test Failed Mutually-Exclusive Flags
+        +-------------------------------------------------------------------Protected T/F
 
 Figure 37: CWMS Time Series Value Quality Flags.
 
@@ -6329,13 +6316,13 @@ dep : double precision
 +-------------+--------+----------------------------------------------+
 | specVersion | String | “Production”                                 |
 +-------------+--------+----------------------------------------------+
-| temp        | String | “USGS-EXSA”                                  |
+| temp\       | String | “USGS-EXSA”                                  |
 | lateVersion |        |                                              |
 +-------------+--------+----------------------------------------------+
-| use         | B      | false                                        |
+| use\        | B\     | false                                        |
 | DepLocation | oolean |                                              |
 +-------------+--------+----------------------------------------------+
-| locat       | String | Use this to directly specify the location    |
+| locat\      | String | Use this to directly specify the location    |
 | ionOverride |        | for the rating spec, or to apply a wildcard  |
 |             |        | (*) mask to either the indep1 or dep (if     |
 |             |        | UseDepLocation is set) location              |
@@ -6446,9 +6433,9 @@ There are places in the DECODES and CCP GUIs where a list of data types
 (a.k.a. Parameter) values are presented for the user to select from. We
 have prepared a utility you can run at any time to copy all CWMS
 Parameter values so that they are visible to DECODES and CP. Run this
-utility with the following command:
+utility with the following command::
 
-decj decodes.cwms.CwmsParam2DataType
+   decj decodes.cwms.CwmsParam2DataType
 
 It may be necessary to re-run this utility from time to time as your
 CWMS database is populated with Parameter values outside of the CCP.
@@ -6544,9 +6531,9 @@ screening tests are specified. They involve three types of files:
 -  Crit files contain the DATCHK criteria. A file may be optionally
    assigned to a season.
 
-The utility is started as follows:
+The utility is started as follows::
 
-datchkImport [-C] datchk-config-file
+   datchkImport [-C] datchk-config-file
 
 The –C argument means to confirm each screening before it is written to
 the database. It is a good idea to include this argument.
@@ -6580,10 +6567,9 @@ assign multiple time series to the same screening after the import.
 Export Screening Information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Synopsis:
+Synopsis::
 
-screeningExport [-n *screeningId*] [-q] [-G *presgrp*] [-A] [-E] [-T
-*tsid*]
+   screeningExport [-n *screeningId*] [-q] [-G *presgrp*] [-A] [-E] [-T *tsid*]
 
 ...where:
 
@@ -6604,9 +6590,9 @@ screeningExport [-n *screeningId*] [-q] [-G *presgrp*] [-A] [-E] [-T
 Screenings are exported in a plain text format as depicted below.
 Information is printed to the standard output. You can redirect to a
 file to capture the output. For example, to take a backup of all your
-screenings in English units to a file called “screenings.bak”:
+screenings in English units to a file called “screenings.bak”::
 
-screeningExport –A –E >screenings.bak
+   screeningExport –A –E >screenings.bak
 
 Note that the CRITERIA records are identical to DATCHK criteria files:
 
