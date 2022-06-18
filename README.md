@@ -13,7 +13,8 @@ OpenDCS is a tool for doing the following:
 
 # Getting started
 
-To better learn what the system does and how it works see the PDFs in the doc directory.
+Documentation on how to use OpenDCS is available at https://opendcs-env.readthedocs.io/en/7.1/index.html
+NOTE: Currently 7.1 is a tracking branch to handle several improvements to the build system. Not all documentation is available.
 
 # Contributing
 
