@@ -688,7 +688,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 		dcstoolLayout.setRows(rows);
 		dcstoolLayout.setColumns(1);
 		decodesButtonPanel.setBorder(dcstoolButtonBorder);
-
+		
 		lrgsStatButton.setText(labels.getString("LauncherFrame.lrgsStatButton"));
 		lrgsStatButton.addActionListener(new java.awt.event.ActionListener()
 		{
