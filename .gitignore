@@ -1,4 +1,6 @@
-#bin/
+# This Needs to say, bin directories not under root are fine.
+# but some IDEs dump class files here.
+bin/
 build
 .gradle
 *.tgz
@@ -6,3 +8,4 @@ build
 .vscode
 .settings
 dep/
+**/.externalToolBuilders
