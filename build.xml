@@ -99,27 +99,46 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 				<resolver:dependency coords="org.aspectj:aspectjrt:1.8.10"/>
 				<resolver:dependency coords="org.json:json:20200518"/>
 
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq:6.0.2">
-					<resolver:exclusion coords="org.jooq.pro"/>					
+				<resolver:dependency coords="mil.army.usace.hec:hec-db-core:9.1.0">
+					<resolver:exclusion coords="org.jooq.pro"/>
+					<resolver:exclusion coords="mil.army.usace.hec:cwms-database-schema"/>
+					<resolver:exclusion coords="mil.army.usace.hec:cwms-db-jooq-codegen"/>
 				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-aspects:6.0.2">
-					<resolver:exclusion coords="org.jooq.pro"/>					
+				<resolver:dependency coords="mil.army.usace.hec:hec-db-jdbc:9.1.0">
+					<resolver:exclusion coords="org.jooq.pro"/>
+					<resolver:exclusion coords="mil.army.usace.hec:cwms-database-schema"/>	
+					<resolver:exclusion coords="mil.army.usace.hec:cwms-db-jooq-codegen"/>
 				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-dao:6.0.2">
-					<resolver:exclusion coords="org.jooq.pro"/>					
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq:9.1.0">
+					<resolver:exclusion coords="org.jooq.pro"/>		
+					<resolver:exclusion coords="com.oracle"/>
+					<resolver:exclusion coords="com.oracle.database.jdbc"/>
+					<resolver:exclusion coords="log4j:log4j"/>
+					<resolver:exclusion coords="org.slf4j:slf4j-log4j12"/>
+					<resolver:exclusion coords="mil.army.usace.hec:cwms-database-schema"/>
+					<resolver:exclusion coords="mil.army.usace.hec:cwms-db-jooq-codegen"/>
 				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jdbc:6.0.2">
-					<resolver:exclusion coords="org.jooq.pro"/>					
+				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq-codegen:21.1.1">
+					<resolver:exclusion coords="mil.army.usace.hec:cwms-database-schema"/>
 				</resolver:dependency>
 
-				<resolver:dependency coords="mil.army.usace.hec:hec-monolith:0.1.1-SNAPSHOT">
-					<resolver:exclusion coords="codebase"/>					
+				<resolver:dependency coords="org.jooq:jooq-meta:3.11.2"/>
+				<resolver:dependency coords='org.jooq.pro:jooq:3.11.2'>
+					<resolver:exclusion coords="com.oracle"/>
+					<resolver:exclusion coords="com.oracle.database.jdbc"/>
+					<resolver:exclusion coords="javax.xml.bind"/>
 				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:hec-cwms-ratings-intesting:0.0.2-SNAPSHOT"/>
+
+				<resolver:dependency coords="mil.army.usace.hec:hec-monolith:2.0.2">
+					<resolver:exclusion coords="codebase"/>
+				</resolver:dependency>
+				<resolver:dependency coords="mil.army.usace.hec:hec-cwms-ratings-core:1.0.0"/>					
 
 				<resolver:exclusion coords="mil.army.usace.hec:loading-gui-lib"/>
 				<resolver:exclusion coords="mil.army.usace.hec:dssgui"/>
 				<resolver:exclusion coords="mil.army.usace.hec:hec-data-ui"/>
+				<resolver:exclusion coords="mil.army.usace.hec:cwms-db-jooq-codegen"/>
+				<resolver:exclusion coords="mil.army.usace.hec:cwms-database-schema"/>
 				<resolver:exclusion coords="mil.army.usace.hec:metrics-services"/>
 				<resolver:exclusion coords="mil.army.usace.hec:metrics-codahale"/>
 			</resolver:dependencies>
