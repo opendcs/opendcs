@@ -650,7 +650,7 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <description>Schema, Scripts, and Jars for HDB</description>
 
 			<fileset dir="dep" targetdir="$INSTALL_PATH/dep"
-				includes="ojdbc6.jar">
+				includes="ojdbc8*">
 			</fileset>
 
             <file src="schema/hdb/cp52to63.sql" targetdir="$INSTALL_PATH/schema/hdb" override="true"/>
