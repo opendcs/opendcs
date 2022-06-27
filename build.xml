@@ -40,6 +40,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	<property name="build.test.lib" value="${build.dir}/test-libs"/>
 	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>		
 
+	<!-- VERSION NUMBERS -->
+	<property name="MAJ_VER" value="7"/>
+	<property name="MIN_VER" value="0"/>
+
 	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
 		classpath="${project.dir}/lib/maven-resolver-ant-tasks-1.4.0-uber.jar" />
 
@@ -58,7 +62,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
 
-	<property name="version" value="7.1.${RCNUM}"/>
+	<property name="version" value="${MAJ_VER}.${MIN_VER}.${RCNUM}"/>
 	<echo message="VERSION=${version}"/>
 	
 	<target name="compile.dependencies">
@@ -189,8 +193,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<delete dir="${build.dir}"/>
 		<delete dir="stage"/>
 		<delete>
- 			<fileset dir="." includes="opendcs-6-8-RC*-unix-install.tgz"/>
-            <fileset dir="." includes="opendcs-src-6-8-*.tgz"/>
+ 			<fileset dir="." includes="opendcs-*-unix-install.tgz"/>
+            <fileset dir="." includes="opendcs-src-*.tgz"/>
+            <fileset dir="." includes="opendcs-cwms-*.tgz"/>
 		</delete>
 		<delete dir="combined-src"/>
 	</target>
@@ -404,7 +409,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 		<copy todir="stage">
 			<fileset dir="${project.dir}/izpack">
-				<include name="opendcs-6-8.xml"/>
+				<include name="opendcs-${MAJ_VER}-${MIN_VER}.xml"/>
 				<include name="*.txt"/>
 				<include name="unixOpenDcsShortcutSpec.xml"/>
 				<include name="winOpenDcsShortcutSpec.xml"/>
@@ -527,7 +532,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
-			<fileset dir="stage" includes="dospath.txt,opendcs-6-8.xml,readme.txt,LddsConnections"/>
+			<fileset dir="stage" includes="dospath.txt,opendcs-${MAJ_VER}-${MIN_VER}.xml,readme.txt,LddsConnections"/>
 		</delete>
 		<move file="stage/lrgs.conf" tofile="stage/lrgs.conf.sample"/>
 		<move file="stage/ddsrecv.conf" tofile="stage/ddsrecv.conf.sample"/>
@@ -536,7 +541,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<move file="stage/edit-db" tofile="stage/edit-db.init"/>
 		<move file="stage/users" tofile="stage/users.init"/>
 		<replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
-		<tar destfile="opendcs-cwms-6-8-RC${RCNUM}.tgz" compression="gzip">
+		<tar destfile="opendcs-cwms-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz" compression="gzip">
 			<tarfileset dir="stage">
 				<exclude name="bin/*"/>
 				<exclude name="schema/cwms/createDb.sh"/>
@@ -591,7 +596,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		</javac>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/makeDcpmon.sh"/>
 		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/README"/>
-		<tar tarfile="stage/dcpmon-build-6-8-${RCNUM}.tgz"
+		<tar tarfile="stage/dcpmon-build-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz"
 			basedir="stage"
 			includes="dcpmon-build/**"
 			compression="gzip"/>
@@ -617,7 +622,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		</javac>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/makehydrojson.sh"/>
 		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/README"/>
-		<tar tarfile="stage/hydrojson-build-6-8-${RCNUM}.tgz"
+		<tar tarfile="stage/hydrojson-build-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz"
 			basedir="stage"
 			includes="hydrojson-build/**"
 			compression="gzip"/>

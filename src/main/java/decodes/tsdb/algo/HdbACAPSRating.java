@@ -164,7 +164,7 @@ public class HdbACAPSRating
 			//See Documents from Rick Clayton on these equations.
 			double loc_storage = round((A0 + A1*diff + A2*Math.pow(diff,M)),2);
 
-			double loc_area = round((A1 + M*A2*diff),2);
+			double loc_area = round((A1 + M*A2*Math.pow(diff,M-1.0)),2);
 
 			setOutput(storage, loc_storage);
 			setOutput(area, loc_area);
