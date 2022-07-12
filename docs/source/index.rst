@@ -21,4 +21,5 @@ Contents
    Install Guide <./install-guide.rst>
    Computation Guide <./cp-userguide.rst>
    DECODES Guide <./decoding-guide.rst>
+   Routing & Scheduling Guide <./routesched-guide.rst>
    
