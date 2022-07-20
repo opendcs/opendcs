@@ -95,4 +95,9 @@ public class UsgsStdConverter extends UnitConverter
 	{
 		return 3.0; // guess
 	}
+	
+	public String toString()
+	{
+		return "USGS Converter a=" + a + ", b=" + b + ", c=" + c + ", d=" + d;
+	}
 }
