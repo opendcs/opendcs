@@ -7,7 +7,9 @@ package decodes.decoder;
  */
 public class TokenPosition
 {
-	private int start, end;
+	private int start=0, end=0;
+	
+	public TokenPosition() {}
 	
 	public TokenPosition(int start, int end)
 	{
@@ -34,5 +36,15 @@ public class TokenPosition
 	public String toString()
 	{
 		return "(" + start + ", " + end + ")";
+	}
+
+	public void setStart(int start)
+	{
+		this.start = start;
+	}
+
+	public void setEnd(int end)
+	{
+		this.end = end;
 	}
 }

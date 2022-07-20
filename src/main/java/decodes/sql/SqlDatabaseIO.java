@@ -76,6 +76,7 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
@@ -113,6 +114,7 @@ import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.util.UserAuthFile;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
@@ -1840,7 +1842,28 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	public synchronized void readDataSource(DataSource ds)
 		throws DatabaseException
 	{
-		//System.out.println("SqlDatabaseIO.readDataSource()");
+		Connection conn = null;
+		try
+		{
+			conn = getConnection();
+			_dataSourceListIO.setConnection(conn);
+			DataSource tds = _dataSourceListIO.readDS(ds.getId());
+			if (tds != null)
+			{
+				ds.setName(tds.getName());
+				ds.dataSourceType = tds.dataSourceType;
+				ds.setDataSourceArg(tds.getDataSourceArg());
+				ds.groupMembers.clear();
+				Collections.copy(ds.groupMembers, tds.groupMembers);
+			}
+		}
+		finally
+		{
+			if (conn != null)
+				freeConnection(conn);
+			_dataSourceListIO.setConnection(null);
+		}
+
 	}
 
 

@@ -207,7 +207,8 @@ public class DataSourceListIO extends SqlDbObjIo
 					"No DataSource found with id " + id);
 
 			DataSource ret = rs2ds(rs);
-			_dsList.add(ret);
+			if (_dsList != null)
+				_dsList.add(ret);
 			resolveGroupMembers(ret);
 			return ret;
 		}
