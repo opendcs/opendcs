@@ -26,4 +26,5 @@ Contents
    Snotel Addendum <./snotel.rst>
    TimeSeriesDatabase <./tsdb.rst>
    Alarms <./alarms.rst>
+   CWMS Interface <./cwms-interface.rst>
    
