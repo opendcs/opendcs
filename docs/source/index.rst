@@ -23,4 +23,5 @@ Contents
    DECODES Guide <./decoding-guide.rst>
    Routing & Scheduling Guide <./routesched-guide.rst>
    Snotel Addendum <./snotel.rst>
+   TimeSeriesDatabase <./tsdb.rst>
    
