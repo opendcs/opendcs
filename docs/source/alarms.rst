@@ -773,7 +773,7 @@ supported OpenDCS processes and collect events as they happen. It
 searches for events with a matching priority that contains the specified
 pattern. If these are detected then become email notifications.
 
-.. image:: ./media/alarm\process_monitor_screenshot.png
+.. image:: ./media/alarm/process_monitor_screenshot.png
    :alt: Process monitor screenshot
    :width: 5.06191in
    :height: 3.625in
