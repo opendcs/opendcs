@@ -22,4 +22,5 @@ Contents
    Computation Guide <./cp-userguide.rst>
    DECODES Guide <./decoding-guide.rst>
    Routing & Scheduling Guide <./routesched-guide.rst>
+   Snotel Addendum <./snotel.rst>
    
