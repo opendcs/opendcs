@@ -10,3 +10,5 @@ dep/
 .project
 bin
 .externalToolBuilders/
+doc-source/media/**
+doc-source/*.rst

@@ -464,7 +464,7 @@ Reference List Editor (rledit). On the Enumerations Tab, select the Data
 Consumer enumeration. Make sure there is an entry for opentsdb and the
 the java class is exactly as shown below.
 
-.. image:: ./media/image1.png
+.. image:: ./media/tsdb/image1.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2018-04-26 at 11.29.14 AM.png
    :width: 6.49444in
    :height: 4.64028in
@@ -607,7 +607,7 @@ override the default.
 The following routing spec runs in real time and ingests data into the
 OpenTSDB:
 
-.. image:: ./media/image2.png
+.. image:: ./media/tsdb/image2.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2018-05-23 at 3.39.45 PM.png
    :width: 6.48333in
    :height: 4.75278in
@@ -646,7 +646,7 @@ GUI Time Series List
 The Time Series List GUI can be activated from the Launcher Button panel
 or from the “tslist” script:
 
-.. image:: ./media/image3.png
+.. image:: ./media/tsdb/image3.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2018-05-23 at 3.18.37 PM.png
    :width: 6.48333in
    :height: 3.04514in
