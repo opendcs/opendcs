@@ -2,11 +2,12 @@
 Routing and Scheduling Guide
 ############################
 
-This Document is part of the OpenDCS Software Suite for environmental
-data acquisition and processing. The project home is:
-https://github.com/opendcs/opendcs
+.. 
+    This Document is part of the OpenDCS Software Suite for environmental
+    data acquisition and processing. The project home is:
+    https://github.com/opendcs/opendcs
 
-See INTENT.md at the project home for information on licensing.
+    See INTENT.md at the project home for information on licensing.
 
 .. contents. Table of Contents
    :depth: 3
