@@ -37,11 +37,11 @@ import decodes.tsdb.alarm.EmailAddr;
 
 public class AlarmMailer
 {
-	private static final String module = "AlarmMailer";
-	private Session session = null;
-	private String fromAddr = null;
-	private String fromName = null;
-	private Properties mailProps = null;
+	protected static String module = "AlarmMailer";
+	protected Session session = null;
+	protected String fromAddr = null;
+	protected String fromName = null;
+	protected Properties mailProps = null;
 	
 	/**
 	 * The following properties should be supplied:
@@ -102,7 +102,7 @@ public class AlarmMailer
 		session = null;
 	}
 	
-	private void makeSession()
+	protected void makeSession()
 	{
 		final String username = PropertiesUtil.getIgnoreCase(mailProps, "smtp.username");
 		final String password = PropertiesUtil.getIgnoreCase(mailProps, "smtp.password");
