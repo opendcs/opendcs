@@ -24,4 +24,5 @@ Contents
    Routing & Scheduling Guide <./routesched-guide.rst>
    Snotel Addendum <./snotel.rst>
    TimeSeriesDatabase <./tsdb.rst>
+   Alarms <./alarms.rst>
    
