@@ -14,8 +14,7 @@ Open Time Series Database
 
     See INTENT.md at the project home for information on licensing.
 
-.. contents. Table of Contents
-   :depth: 3
+
 
 Overview
 ========
