@@ -19,7 +19,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 
 <project name="OPENDCS Toolkit" default="jar" basedir="."
-	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant">
+	
+    >
 	<description>Open DCS</description>
 
 	<property environment="env"/>
@@ -42,20 +43,13 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 	<!-- VERSION NUMBERS -->
 	<property name="MAJ_VER" value="7"/>
-	<property name="MIN_VER" value="0"/>
-
-	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
-		classpath="${project.dir}/lib/maven-resolver-ant-tasks-1.4.0-uber.jar" />
+	<property name="MIN_VER" value="1"/>
+	
 
 	<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
 		classpath="${project.dir}/lib/ant-junitlauncher-1.10.12.jar"/>
 
-	<resolver:remoterepo id="hec" url="https://www.hec.usace.army.mil/nexus/repository/maven-public" type="default" releases="true" snapshots="true"/>
-
-	<resolver:remoterepos id="resolver.repositories">
-        <resolver:remoterepo refid="central" />
-		<resolver:remoterepo refid="hec"/>
-	</resolver:remoterepos>
+    <include file="common.xml"/>	
 
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
@@ -65,104 +59,23 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	<property name="version" value="${MAJ_VER}.${MIN_VER}.${RCNUM}"/>
 	<echo message="VERSION=${version}"/>
 	
-	<target name="compile.dependencies">
+	<target name="compile.dependencies" depends="common.resolve">
 		<mkdir dir="${build.dir}/deps"/>
-		<get src="https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar" 
-			 dest="${build.dir}/deps/cobra.jar"
-			 verbose="true"
-			 skipexisting="true"
-			 usetimestamp="true"
-			 />
-		<resolver:resolve>
-			<resolver:dependencies>
-				<resolver:dependency coords="com.oracle.ojdbc:ojdbc8:19.3.0.0"/>
-				<resolver:dependency coords="org.postgresql:postgresql:42.2.23"/>
-				<resolver:dependency coords="asm:asm:3.3"/>
-				<resolver:dependency coords="cglib:cglib:2.1_3"/>
-				<resolver:dependency coords="commons-logging:commons-logging:1.0.4"/>
-				<resolver:dependency coords="commons-net:commons-net:3.3"/>
-				<resolver:dependency coords="dom4j:dom4j:1.6.1"/>
-				<resolver:dependency coords="ch.ethz.ganymed:ganymed-ssh2:build210"/>
-				<resolver:dependency coords="org.apache.poi:poi:5.0.0"/>
-				<resolver:dependency coords="com.toedter:jcalendar:1.3.2"/>
-				<resolver:dependency coords="jfree:jcommon:1.0.12"/>
-				<resolver:dependency coords="jfree:jfreechart:1.0.13"/>
-				<resolver:dependency coords="org.python:jython:2.7.2"/>
-				<resolver:dependency coords="org.jooq:jooq:3.11.2"/>
-				<resolver:dependency coords="org.lobobrowser:LoboBrowser:1.0.0"/>
-				<resolver:dependency coords="org.lobobrowser:Cobra:1.0.2" scope="system" systemPath="${build.dir}/deps/cobra.jar"/>
-				<resolver:dependency coords="org.scijava:jep:2.4.1">
-					<resolver:exclusion coords="jama:jama"/>
-				</resolver:dependency>
-				<resolver:dependency coords="gov.nist.math:jama:1.0.2"/>
-				<resolver:dependency coords="io.dropwizard.metrics:metrics-core:4.1.0-rc2"/>
-				<resolver:dependency coords="org.passay:passay:1.3.1"/>
-				<resolver:dependency coords="com.sun.mail:mailapi:1.6.2"/>
-				<resolver:dependency coords="com.jcraft:jsch:0.1.55"/>
-				<resolver:dependency coords="org.aspectj:aspectjrt:1.8.10"/>
-				<resolver:dependency coords="org.json:json:20200518"/>
-
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jooq:6.0.2">
-					<resolver:exclusion coords="org.jooq.pro"/>					
-				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-aspects:6.0.2">
-					<resolver:exclusion coords="org.jooq.pro"/>					
-				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-dao:6.0.2">
-					<resolver:exclusion coords="org.jooq.pro"/>					
-				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:cwms-db-jdbc:6.0.2">
-					<resolver:exclusion coords="org.jooq.pro"/>					
-				</resolver:dependency>
-
-				<resolver:dependency coords="mil.army.usace.hec:hec-monolith:0.1.1-SNAPSHOT">
-					<resolver:exclusion coords="codebase"/>					
-				</resolver:dependency>
-				<resolver:dependency coords="mil.army.usace.hec:hec-cwms-ratings-intesting:0.0.2-SNAPSHOT"/>
-
-				<resolver:exclusion coords="mil.army.usace.hec:loading-gui-lib"/>
-				<resolver:exclusion coords="mil.army.usace.hec:dssgui"/>
-				<resolver:exclusion coords="mil.army.usace.hec:hec-data-ui"/>
-				<resolver:exclusion coords="mil.army.usace.hec:metrics-services"/>
-				<resolver:exclusion coords="mil.army.usace.hec:metrics-codahale"/>
-			</resolver:dependencies>
-			<path refid="project.class.path" scopes="compile,test"/>	
+		
+        <!-- 
+            <path refid="project.class.path" scopes="compile,test"/>	
 			<path refid="libs" scopes="compile,test"/>			
-		</resolver:resolve>
+        -->
 		<!-- if not present the mappedresources in the stage section won't function -->		
 		<property name="jars" refid="project.class.path"/>
 	</target>
 
-	<target name="izpack.dependencies">
-		<mkdir dir="${build.dir}/deps"/>
-		<get src="https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar" dest="${build.dir}/deps/cobra.jar" verbose="true" skipexisting="true"/>
-		<resolver:resolve>
-			<resolver:dependencies>
-				<resolver:dependency coords="org.codehaus.izpack:izpack-standalone-compiler:4.3.5"/>
-			</resolver:dependencies>			
-			<path refid="izpack.classpath" scopes=""/>
-		</resolver:resolve>
+	<target name="izpack.dependencies" depends="common.resolve">		
 		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
 	</target>
 	
 	
 	
-	<!-- get test dependencies -->
-	<target name="test.dependencies" depends="compile.dependencies">		
-		<resolver:resolve>
-			<resolver:dependencies>
-				<resolver:dependency coords="org.junit.platform:junit-platform-launcher:1.8.1"/>
-				<resolver:dependency coords="org.junit.platform:junit-platform-engine:1.8.1"/>
-				<resolver:dependency coords="org.junit.platform:junit-platform-commons:1.8.1"/>
-				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-api:5.8.1"/>
-				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-engine:5.8.1"/>
-
-			</resolver:dependencies>
-			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
-			<path refid="test_libs" scopes="compile,test"/>
-		</resolver:resolve>
-		<property name="test.jars" refid="junit.platform.libs.classpath"/>
-	</target>
 <!-- depends="clean" -->
 	<target name="prepare"  description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
@@ -181,7 +94,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<delete dir="combined-src"/>
 	</target>
 
-	<target name="compile" depends="prepare,compile.dependencies"
+	<target name="compile" depends="prepare,common.resolve"
 		description="Compiles all source code.">
 
 		<!-- create build date -->
@@ -209,21 +122,21 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			target="1.7" source="1.7"
 			includeantruntime="true"
 			includes="lrgs/gui/LrgsBuild.java">
-			<src path="${build.classes}"/>
-			<classpath refid="project.class.path"/>
+			<src path="${build.classes}"/>			
+            <classpath refid="runtime.classpath"/>
 		</javac>
 
 		<javac debug="true" destdir="${build.classes}"
 			target="1.7" source="1.7"
 			includeantruntime="true"
 			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
-			<src path="${src.dir}"/>
-			<classpath refid="project.class.path"/>
+			<src path="${src.dir}"/>			
+            <classpath refid="runtime.classpath"/>
 		</javac>
 
 	</target>
 
-	<target name="compile-test" depends="compile,test.dependencies">
+	<target name="compile-test" depends="compile,common.resolve">
 		<mkdir dir="${build.test.classes}"/>
 		<javac debug="true" destdir="${build.test.classes}"
 			target="1.8" source="1.8" includeantruntime="false"
@@ -231,30 +144,31 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			<src path="${src.test.dir}"/>
 			<classpath>
 				<pathelement location="${build.classes}"/>
-				<pathelement path="${jars}"/>
-				<pathelement path="${test.jars}"/>
+                <path refid="runtime.classpath"/>
+                <path refid="test.classpath"/>
 			</classpath>			
 		</javac>
 
 	</target>
 
-	<target name="test" depends="compile-test">
+	<target name="test" depends="compile-test">        
 		<mkdir dir="${build.dir}/test-results"/>
 		<junitlauncher haltOnFailure="true" printSummary="true">
-			
-			<classpath>
-				<pathelement location="${build.classes}"/>
-				<pathelement location="${build.test.classes}"/>
-				<pathelement path="${test.jars}"/>
-				<pathelement path="${jars}"/>
-			</classpath>
-
+			<classpath refid="test.classpath"/>
+            <classpath refid="runtime.classpath"/>
+            <classpath refid="junit.platform.libs.classpath"/>
+            <classpath>
+                <pathelement location="${build.test.classes}"/>
+                <pathelement location="${build.classes}"/>
+            </classpath>
+           
 			<testclasses outputdir="${build.dir}/test-results">
 				<!-- <fork dir="${build.dir}"/>-->
 				<fileset dir="${build.test.classes}"/>
 				<listener type="legacy-brief" sendSysOut="true"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>                
 			</testclasses>
+            
 		</junitlauncher>
 	</target>
 
@@ -284,7 +198,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
 	
 	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="jar">	
+	<target name="stage" depends="jar,common.resolve">	
 		<mkdir dir="stage"/>
 		<mkdir dir="stage/doc"/>
 		<mkdir dir="stage/netlist"/>
@@ -337,12 +251,12 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 				<include name="opendcs.jar"/>
 			</fileset>
 		</copy>
-
+        
 		<copy todir="stage/dep">
 			<mappedresources enablemultiplemappings="false">
 				<!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
 				<restrict>
-					<path path="${jars}"/>
+					<path refid="runtime.classpath"/>
 					<type type="file"/>
 				</restrict>
 				<chainedmapper>
@@ -352,7 +266,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			</mappedresources>
 			<mappedresources enablemultiplemappings="false">				
 				<restrict>
-					<path path="${jars}"/>
+					<path refid="runtime.classpath"/>
 					<type type="file"/>
 				</restrict>
 				<chainedmapper>
@@ -615,22 +529,15 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		</sequential>
 	</macrodef>
 
-	<target name="eclipse-ide-files" depends="test.dependencies,compile.dependencies">
+	<target name="eclipse-ide-files" depends="common.resolve">
 		<!-- 
 			Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
 			coming up with this!
 			https://stackoverflow.com/a/11617592
 		-->
 		<!-- resolve -->		
-		<resolver:resolve>
-			<resolver:dependencies>
-				<resolver:dependency coords="org.codehaus.groovy:groovy-ant:3.0.10"/>
-				<resolver:dependency coords="org.codehaus.groovy:groovy:3.0.10"/>
-				<resolver:dependency coords="org.codehaus.groovy:groovy-xml:3.0.10"/>
-			</resolver:dependencies>
-			<path refid="build.class.path" scopes="compile"/>
-		</resolver:resolve>
-		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="build.class.path"/>
+		
+		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="groovy.classpath"/>
 
 		<groovy>		
 			import groovy.xml.MarkupBuilder
@@ -686,11 +593,11 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 					classpathentry(kind:"output", path:"bin")
 					classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
 		
-					project.references.libs.each {
+					project.getReference("runtime.classpath").each {
 						classpathentry(kind:"lib", path:it)
 					}
 
-					project.references.test_libs.each {
+					project.getReference("test.classpath").each {
 						classpathentry(kind:"lib", path:it)
 					}
 				}
@@ -701,7 +608,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <copy file="ide-support/eclipse/jar.launch" todir=".externalToolBuilders"/>
         <copy file="ide-support/eclipse/org.eclipse.jdt.core.prefs" todir=".settings"/>
         <echo>
-            As it is impossible to know everyone's configuration and preferences this target does the bar minimum 
+            As it is impossible to know everyone's configuration and preferences this target does the bear minimum 
             to get Eclipse going. You will have to do a "build all" or run ant jar on the command line to make
             sure dependencies are in place.
 
