@@ -61,10 +61,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<filterchain><striplinebreaks/></filterchain>
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
-	
+
 	<target name="compile.dependencies">
 		<mkdir dir="${build.dir}/deps"/>
-		<get src="https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar" 
+		<get src="https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar"
 			 dest="${build.dir}/deps/cobra.jar"
 			 verbose="true"
 			 skipexisting="true"
@@ -142,10 +142,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 				<resolver:exclusion coords="mil.army.usace.hec:metrics-services"/>
 				<resolver:exclusion coords="mil.army.usace.hec:metrics-codahale"/>
 			</resolver:dependencies>
-			<path refid="project.class.path" scopes="compile,test"/>	
-			<path refid="libs" scopes="compile,test"/>			
+			<path refid="project.class.path" scopes="compile,test"/>
+			<path refid="libs" scopes="compile,test"/>
 		</resolver:resolve>
-		<!-- if not present the mappedresources in the stage section won't function -->		
+		<!-- if not present the mappedresources in the stage section won't function -->
 		<property name="jars" refid="project.class.path"/>
 	</target>
 
@@ -155,7 +155,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<resolver:resolve>
 			<resolver:dependencies>
 				<resolver:dependency coords="org.codehaus.izpack:izpack-standalone-compiler:4.3.5"/>
-			</resolver:dependencies>			
+			</resolver:dependencies>
 			<path refid="izpack.classpath" scopes=""/>
 		</resolver:resolve>
 		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
@@ -164,7 +164,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	
 	
 	<!-- get test dependencies -->
-	<target name="test.dependencies" depends="compile.dependencies">		
+	<target name="test.dependencies" depends="compile.dependencies">
 		<resolver:resolve>
 			<resolver:dependencies>
 				<resolver:dependency coords="org.junit.platform:junit-platform-launcher:1.8.1"/>
@@ -256,7 +256,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	<target name="test" depends="compile-test">
 		<mkdir dir="${build.dir}/test-results"/>
 		<junitlauncher haltOnFailure="true" printSummary="true">
-			
+
 			<classpath>
 				<pathelement location="${build.classes}"/>
 				<pathelement location="${build.test.classes}"/>
@@ -299,7 +299,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
 	
 	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="jar">	
+	<target name="stage" depends="jar">
 		<mkdir dir="stage"/>
 		<mkdir dir="stage/doc"/>
 		<mkdir dir="stage/netlist"/>
@@ -707,7 +707,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <copy file="ide-support/eclipse/jar.launch" todir=".externalToolBuilders"/>
         <copy file="ide-support/eclipse/org.eclipse.jdt.core.prefs" todir=".settings"/>
         <echo>
-            As it is impossible to know everyone's configuration and preferences this target does the bar minimum 
+            As it is impossible to know everyone's configuration and preferences this target does the bar minimum
             to get Eclipse going. You will have to do a "build all" or run ant jar on the command line to make
             sure dependencies are in place.
 
