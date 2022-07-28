@@ -8,7 +8,6 @@
         <conf name="test_platform" visibility="private"/>
         <conf name="izpack" visibility="private"/>
         <conf name="groovy" visibility="private"/>
-        <conf name="cwms-api" visibility="private"/>
     </configurations>
     <dependencies>
         <dependency org="com.oracle.ojdbc" name="ojdbc8" rev="19.3.0.0"/>
@@ -38,10 +37,10 @@
         <dependency org="org.aspectj" name="aspectjrt" rev="1.8.10"/>
         <dependency org="org.json" name="json" rev="20200518"/>
 
-        <dependency org="mil.army.usace.hec" name="cwms-db-jooq" rev="9.3.5" conf="cwms-api->default">
+        <dependency org="mil.army.usace.hec" name="cwms-db-jooq" rev="9.3.5" conf="runtime">
             <exclude org="org.jooq.pro"/>					
         </dependency>
-        <dependency org="mil.army.usace.hec" name="cwms-db-aspects" rev="9.3.5" conf="cwms-api->default">
+        <dependency org="mil.army.usace.hec" name="cwms-db-aspects" rev="9.3.5" conf="runtime">
             <exclude org="org.jooq.pro"/>					
         </dependency>
         <dependency org="mil.army.usace.hec" name="cwms-db-dao" rev="9.3.5">
