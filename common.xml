@@ -29,7 +29,7 @@
     </target>
 
     <target name="resolve" description="--> retreive dependencies with ivy" depends="init-ivy">
-        <ivy:retrieve conf="runtime,test,test_platform,izpack,groovy" 
+        <ivy:retrieve conf="runtime,test,test_platform,izpack,groovy,cwms-api" 
                       sync="true"
                       pattern="build/ivy/[conf]/[artifact].[ext]"              
         />
@@ -38,6 +38,7 @@
         <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>
         <ivy:cachepath pathid="izpack.classpath" conf="izpack"/>
         <ivy:cachepath pathid="groovy.classpath" conf="groovy"/>
+        <ivy:cachepath pathid="cwms-api.classpath" conf="cwms-api"/>
     </target>
 
     <target name="report" depends="resolve" description="--> generates a report of dependencies">

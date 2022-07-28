@@ -8,6 +8,7 @@
         <conf name="test_platform" visibility="private"/>
         <conf name="izpack" visibility="private"/>
         <conf name="groovy" visibility="private"/>
+        <conf name="cwms-api" visibility="private"/>
     </configurations>
     <dependencies>
         <dependency org="com.oracle.ojdbc" name="ojdbc8" rev="19.3.0.0"/>
@@ -37,20 +38,25 @@
         <dependency org="org.aspectj" name="aspectjrt" rev="1.8.10"/>
         <dependency org="org.json" name="json" rev="20200518"/>
 
-        <dependency org="mil.army.usace.hec" name="cwms-db-jooq" rev="6.0.2">
+        <dependency org="mil.army.usace.hec" name="cwms-db-jooq" rev="9.3.5" conf="cwms-api->default">
             <exclude org="org.jooq.pro"/>					
         </dependency>
-        <dependency org="mil.army.usace.hec" name="cwms-db-aspects" rev="6.0.2">
+        <dependency org="mil.army.usace.hec" name="cwms-db-aspects" rev="9.3.5" conf="cwms-api->default">
             <exclude org="org.jooq.pro"/>					
         </dependency>
-        <dependency org="mil.army.usace.hec" name="cwms-db-dao" rev="6.0.2">
+        <dependency org="mil.army.usace.hec" name="cwms-db-dao" rev="9.3.5">
             <exclude org="org.jooq.pro"/>					
+        </dependency>        
+
+        <dependency org="mil.army.usace.hec" name="hec-db-core" rev="9.3.5">
+            <exclude org="org.jooq.pro"/>
         </dependency>
-        <dependency org="mil.army.usace.hec" name="cwms-db-jdbc" rev="6.0.2">
-            <exclude org="org.jooq.pro"/>					
+        <dependency org="mil.army.usace.hec" name="hec-db-jdbc" rev="9.3.5">
+            <exclude org="org.jooq.pro"/>
+            <exclude org="mil.army.usace.hec" module="cwms-db-jooq-codegen"/>
         </dependency>
 
-        <dependency org="mil.army.usace.hec" name="hec-monolith" rev="0.1.1-SNAPSHOT">
+        <dependency org="mil.army.usace.hec" name="hec-monolith" rev="2.0.2">
             <exclude org="codebase"/>
             <exclude org="org.jdom"/>
             <exclude org="org.bouncycastle"/>
@@ -70,7 +76,7 @@
             <exclude org="com.mrsid"/>
             <exclude org="javax.help"/>
         </dependency>
-        <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-intesting" rev="0.0.2-SNAPSHOT"/>
+        <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-core" rev="1.1.0"/>
 
 
         <!-- test dependencies -->
