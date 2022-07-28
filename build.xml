@@ -203,7 +203,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<mkdir dir="stage/examples"/>
 		<mkdir dir="stage/python"/>
 		<mkdir dir="stage/poll"/>
-		<mkdir dir="stage/cwmsDbAPI"/>
 
 		<!-- build the sample database -->
 		<mkdir dir="stage/edit-db"/>
@@ -244,19 +243,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			<fileset dir="build/lib">
 				<include name="opendcs.jar"/>
 			</fileset>
-		</copy>
-        <copy todir="stage/cwmsDbAPI">
-			<mappedresources enablemultiplemappings="false">
-				<!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
-				<restrict>
-					<path refid="cwms-api.classpath"/>
-					<type type="file"/>
-				</restrict>
-				<chainedmapper>
-					<flattenmapper/>
-					<regexpmapper from="^(cwms-db-jooq.*)" to="\1"/>
-				</chainedmapper>
-			</mappedresources>			
 		</copy>
 		<copy todir="stage/dep">
 			<mappedresources enablemultiplemappings="false">
