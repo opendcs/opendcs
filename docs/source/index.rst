@@ -19,5 +19,12 @@ Contents
 
    Quick Start <./quick-start.rst>
    Install Guide <./install-guide.rst>
+   LRGS Guide <./lrgs-userguide.rst>
    Computation Guide <./cp-userguide.rst>
+   DECODES Guide <./decoding-guide.rst>
+   Routing & Scheduling Guide <./routesched-guide.rst>
+   Snotel Addendum <./snotel.rst>
+   TimeSeriesDatabase <./tsdb.rst>
+   Alarms <./alarms.rst>
+   CWMS Interface <./cwms-interface.rst>
    

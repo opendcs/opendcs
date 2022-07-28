@@ -165,7 +165,7 @@ Application” is a Java program that runs continually in the background.
 -  When results are written, this may recursively fire *other*
    computations, and so on.
 
-.. image:: ./media/image1.emf
+.. image:: ./media/cp-userguide/image1.emf
 
 Figure 1: Workflow for the Computation Processor.
 
@@ -235,7 +235,7 @@ numeric site ID appears as the “hdb” site name type. In Figure 2, note
 the different name types. Also note the “hdb” column containing the
 numeric IDs.
 
-.. image:: ./media/image2.png
+.. image:: ./media/cp-userguide/image2.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-08-31 at 9.29.22 AM.png
    :width: 6.49444in
    :height: 4.66319in
@@ -249,7 +249,7 @@ Figure 3 shows the reference list editor. There are many “Enumerations”
 that you can modify in this GUI. After making changes select File – Save
 to DB to make your changes permanent.
 
-.. image:: ./media/image3.png
+.. image:: ./media/cp-userguide/image3.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-08-31 at 9.34.15 AM.png
    :width: 6.49444in
    :height: 3.78958in
@@ -265,7 +265,7 @@ physical element codes.
 In DECODES Sensors, you can control this directly by entering multiple
 data types for each sensor.
 
-.. image:: ./media/image4.png
+.. image:: ./media/cp-userguide/image4.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-08-31 at 9.43.12 AM.png
    :width: 3.875in
    :height: 2.89548in
@@ -279,7 +279,7 @@ your area (for example Colorado Division of Natural Resources uses a
 data type coding system called “transform”), you may add their coding
 system and establish equivalences to HDB data types.
 
-.. image:: ./media/image5.png
+.. image:: ./media/cp-userguide/image5.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-08-31 at 9.56.00 AM.png
    :width: 6.25in
    :height: 3.14037in
@@ -312,7 +312,7 @@ verses modeled (M\_) data.
 Computation Meta-Data
 ---------------------
 
-.. image:: ./media/image6.png
+.. image:: ./media/cp-userguide/image6.png
    :width: 6in
    :height: 2.21042in
 
@@ -415,7 +415,7 @@ Computations Meta-Data ERD
 The following figure shows computation meta-data as it is defined in the
 HDB database.
 
-.. image:: ./media/image7.jpeg
+.. image:: ./media/cp-userguide/image7.jpeg
    :alt: Macintosh HD:Users:mmaloney:covesoftware:Clients:USBR:2012-CP-Work:ERD-Computations.jpg
    :width: 6.5in
    :height: 7.33333in
@@ -429,7 +429,7 @@ Figure 8 shows how the tools interact with each other and the time
 series database. For completeness we also show some of the DECODES tools
 which process raw data as it arrives from the field.
 
-.. image:: ./media/image8.emf
+.. image:: ./media/cp-userguide/image8.emf
 
 Figure 8: Workflow through the Provided Tools.
 
@@ -978,13 +978,13 @@ of object. For algorithms and processes, these are simple lists as shown
 in the following two figures. You can sort the list by clicking on a
 column header.
 
-.. image:: ./media/image9.png
+.. image:: ./media/cp-userguide/image9.png
    :width: 6.48958in
    :height: 2.95833in
 
 Figure 9: Computation Editor - Algorithms List Tab.
 
-.. image:: ./media/image10.png
+.. image:: ./media/cp-userguide/image10.png
    :width: 6.48958in
    :height: 2.95833in
 
@@ -1011,7 +1011,7 @@ filter-values and hit the ‘Refresh List’ button. The fields are …
 -  ‘Algorithm’ Select an algorithm. Only computations using that
       algorithm are shown.
 
-.. image:: ./media/image11.png
+.. image:: ./media/cp-userguide/image11.png
    :width: 6.48958in
    :height: 3.875in
 
@@ -1082,7 +1082,7 @@ and algorithm records. You could have several algorithm records that use
 the same Java class with different property settings, and even parameter
 definitions.
 
-.. image:: ./media/image12.png
+.. image:: ./media/cp-userguide/image12.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2015-11-18 at 9.34.07 AM.png
    :width: 6in
    :height: 5.15835in
@@ -1142,7 +1142,7 @@ Exec Class name. Prior to this you had to type the class name. Click the
 button and you are presented with a list of all known classes, as shown
 in the figure below:
 
-.. image:: ./media/image15.png
+.. image:: ./media/cp-userguide/image15.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2015-11-18 at 9.33.22 AM.png
    :width: 6.49514in
    :height: 4.54444in
@@ -1189,7 +1189,7 @@ FLOW in cfs (cubic feet per second), So …::
 Thus we co-opted an existing algorithm to do a special purpose without
 writing any Java code!
 
-.. image:: ./media/image16.png
+.. image:: ./media/cp-userguide/image16.png
    :width: 5.89098in
    :height: 4.96454in
 
@@ -1203,14 +1203,14 @@ After pressing ‘Open’, ‘New’, or ‘Copy’ on the Computation List tab,
 will see an open editor tab as shown in Figure 15 (for HDB) and Figure
 16 (for CWMS).
 
-.. image:: ./media/image17.png
+.. image:: ./media/cp-userguide/image17.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-09-03 at 10.34.20 AM.png
    :width: 5.25in
    :height: 3.6759in
 
 Figure 15: Computation Edit Tab for HDB.
 
-.. image:: ./media/image18.png
+.. image:: ./media/cp-userguide/image18.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2013-08-19 at 9.03.13 AM.png
    :width: 5.75in
    :height: 3.62874in
@@ -1375,7 +1375,7 @@ After you are satisfied that the computation is running properly, click
 the “Enabled” checkbox and assign it to the background computation
 processor “compproc”.
 
-.. image:: ./media/image21.png
+.. image:: ./media/cp-userguide/image21.png
    :width: 6.5in
    :height: 7.15in
 
@@ -1391,7 +1391,7 @@ In HDB, a computation process is the same thing as a “LOADING APP”. It
 has a unique process name and ID (assigned by the database). It also has
 a free-form comment area.
 
-.. image:: ./media/image22.png
+.. image:: ./media/cp-userguide/image22.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-11-03 at 10.50.34 AM.png
    :width: 6.49514in
    :height: 3.06944in
@@ -1431,7 +1431,7 @@ For OpenDCS 6.4 RC08 a new Computation Daemon property was added:
    ALTER TABLE cp_comp_tasklist SHRINK SPACE CASCADE
    ALTER TABLE cp_comp_tasklist DISABLE ROW MOVEMENT
 
-.. image:: ./media/image23.png
+.. image:: ./media/cp-userguide/image23.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-11-03 at 10.56.07 AM.png
    :width: 6.49514in
    :height: 5.42569in
@@ -1573,7 +1573,7 @@ computation processor and DECODES a list screen shows all the objects
 (groups) currently defined in the database. At the bottom you can open a
 group, create a new group, delete a group, or refresh the list.
 
-.. image:: ./media/image24.png
+.. image:: ./media/cp-userguide/image24.png
    :width: 6.5in
    :height: 3.53958in
 
@@ -1586,7 +1586,7 @@ Identifier. The concepts are identical however.
 Figure 22 shows a group that has been opened for editing. Following the
 figure, we will describe all the editing functions.
 
-.. image:: ./media/image25.png
+.. image:: ./media/cp-userguide/image25.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-09-03 at 11.29.21 AM.png
    :width: 6.49444in
    :height: 5.16875in
@@ -1596,7 +1596,7 @@ Figure 22: Time Series Group Editor - Open Group Screen.
 The editor looks the same for HDB and CWMS except for the time series
 identifier components:
 
-.. image:: ./media/image26.png
+.. image:: ./media/cp-userguide/image26.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-11-03 at 11.33.03 AM.png
    :width: 6.49514in
    :height: 5.82153in
@@ -1657,7 +1657,7 @@ The Location, Param, and Version buttons in the lower right of the
 editor bring up special dialogs in CWMS in which you can specify full,
 base, or sub part.
 
-.. image:: ./media/image27.png
+.. image:: ./media/cp-userguide/image27.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-10-11 at 1.46.43 PM.png
    :width: 5.98889in
    :height: 1.50763in
@@ -1670,7 +1670,7 @@ currently defined in the database. By clicking on the column headers,
 you can sort by base-part, sub-part, or the number of time series IDs
 that are currently defined at that location.
 
-.. image:: ./media/image28.png
+.. image:: ./media/cp-userguide/image28.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-10-11 at 1.51.37 PM.png
    :width: 4.34762in
    :height: 4.63243in
@@ -1738,7 +1738,7 @@ To use a group in a computation, open the computation in the editor and
 select it from the list of groups. Then for each time series parameter,
 you specify a *mask* to be applied to each group member.
 
-.. image:: ./media/image29.png
+.. image:: ./media/cp-userguide/image29.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-11-03 at 1.57.38 PM.png
    :width: 6.48542in
    :height: 3.94028in
@@ -1841,7 +1841,7 @@ members.
 -  For Outputs, this will determine the time series identifiers written
    to HDB.
 
-.. image:: ./media/image30.png
+.. image:: ./media/cp-userguide/image30.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-09-03 at 11.34.56 AM.png
    :width: 6.49444in
    :height: 4.49444in
@@ -1859,7 +1859,7 @@ concept is the same for HDB). Suppose you have a group called
 shown. Then you define the parameters as shown and see how the chain
 works!
 
-.. image:: ./media/image31.emf
+.. image:: ./media/cp-userguide/image31.emf
 
 Figure 28: Chain of Computations with a Single Group.
 
@@ -1877,7 +1877,7 @@ The select buttons on the computation parameter screens bring up dialogs
 that are almost the same as the dialogs for groups. The location dialog
 is shown below.
 
-.. image:: ./media/image32.png
+.. image:: ./media/cp-userguide/image32.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-10-11 at 2.23.55 PM.png
    :width: 4.25in
    :height: 3.66922in
@@ -3264,7 +3264,7 @@ Example of Using Expression Parser for Conditional Rating
 The figure below shows an example of using the Expression Parser
 algorithm for a conditional rating.
 
-.. image:: ./media/image33.png
+.. image:: ./media/cp-userguide/image33.png
    :width: 6.5in
    :height: 3.59514in
 
@@ -3682,7 +3682,7 @@ In the Computation Editor, on the Algorithm tab, click New. Then click
 the Select button to the right of Exec Class. Select
 decodes.tsdb.algo.PythonAlgorithm from the list.
 
-.. image:: ./media/image34.png
+.. image:: ./media/cp-userguide/image34.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-19 at 4.08.30 PM.png
    :width: 6.48542in
    :height: 4.61389in
@@ -3698,7 +3698,7 @@ Flow is defined as an output.
 Use the Add button to the right of the Parameters window to create the
 time series parameters for the algorithm:
 
-.. image:: ./media/image35.png
+.. image:: ./media/cp-userguide/image35.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-19 at 4.20.52 PM.png
    :width: 6.49514in
    :height: 1.26736in
@@ -3739,7 +3739,7 @@ Our example is a simple TIME_SLICE algorithm.
 Now in the ‘Before Time Slices’ tab we create a simple script that sets
 a CWMS Rating Spec ID. The script is shown below.
 
-.. image:: ./media/image36.png
+.. image:: ./media/cp-userguide/image36.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-22 at 12.43.35 PM.png
    :width: 6.49514in
    :height: 3.24722in
@@ -3751,12 +3751,12 @@ button. This gives you an annotated list of built-in functions for
 interfacing with CCP and the CWMS database. You can select a function
 from the dialog to have it inserted into your code.
 
-.. image:: ./media/image37.png
+.. image:: ./media/cp-userguide/image37.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-19 at 4.43.07 PM.png
    :width: 4.875in
    :height: 3.90135in
 
-.. image:: ./media/image38.png
+.. image:: ./media/cp-userguide/image38.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-22 at 12.44.55 PM.png
    :width: 6.49514in
    :height: 3.22778in
@@ -3893,7 +3893,7 @@ holds the double-precision “tick” value of the time slice base time. You
 can use any of the functions in the Python “time” package to manipulate
 the value as date/time components or strings.
 
-.. image:: ./media/image39.png
+.. image:: ./media/cp-userguide/image39.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2018-05-30 at 4.16.46 PM.png
    :width: 6.48542in
    :height: 2.03958in
@@ -3906,7 +3906,7 @@ any other algorithm. The figure below shows a computation assigned to
 our new “Python1” algorithm. Concrete time series identifiers are
 assigned to each of the “roles” defined in the algorithm.
 
-.. image:: ./media/image40.png
+.. image:: ./media/cp-userguide/image40.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-21 at 7.23.31 PM.png
    :width: 6.49514in
    :height: 3.85139in
@@ -3998,7 +3998,7 @@ Conditional Rating Example
 For another example we will do a conditional rating. We define a new
 Python Algorithm with the following parameters:
 
-.. image:: ./media/image41.png
+.. image:: ./media/cp-userguide/image41.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-22 at 4.29.48 PM.png
    :width: 6.07369in
    :height: 2.94431in
@@ -4017,7 +4017,7 @@ parameter flow is rated as follows:
 There are two CWMS-resident rating tables. In the Before Time Slices
 script we construct the CWMS Rating Spec IDs:
 
-.. image:: ./media/image42.png
+.. image:: ./media/cp-userguide/image42.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-22 at 4.34.46 PM.png
    :width: 5.967in
    :height: 1.79208in
@@ -4028,7 +4028,7 @@ tables to the log.
 
 The Time Slice script is now very simple:
 
-.. image:: ./media/image43.png
+.. image:: ./media/cp-userguide/image43.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-22 at 4.37.24 PM.png
    :width: 6.125in
    :height: 1.51275in
@@ -4040,7 +4040,7 @@ For a more complex example we will computed estimated inflow for a
 reservoir that measures only pool elevation and tail-water stage. The
 computation is illustrated as follows:
 
-.. image:: ./media/image44.png
+.. image:: ./media/cp-userguide/image44.png
    :width: 5.86744in
    :height: 5.49381in
 
@@ -4053,7 +4053,7 @@ and right of the figure above. Also, the yellow boxes labeled
 inside the Python script. They will not be written to time series in the
 database.
 
-.. image:: ./media/image45.png
+.. image:: ./media/cp-userguide/image45.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-22 at 4.52.24 PM.png
    :width: 6.49514in
    :height: 3.525in
@@ -4062,7 +4062,7 @@ We will be doing two ratings using RDB and simple TAB files. In the
 Before script we define the file names, again using the location from
 the time series parameters:
 
-.. image:: ./media/image46.png
+.. image:: ./media/cp-userguide/image46.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-03-22 at 5.12.19 PM.png
    :width: 6.49514in
    :height: 1.35625in
@@ -4505,7 +4505,7 @@ determination directly. For the new CP, a separate Java daemon performs
 this task and places computation dependencies in a simple two-column
 relation. Two new tables are shown in the ERD in Figure 32.
 
-.. image:: ./media/image47.jpeg
+.. image:: ./media/cp-userguide/image47.jpeg
    :alt: Macintosh HD:Users:mmaloney:Desktop:CP_COMP_DEPENDS.jpg
    :width: 6.49444in
    :height: 2.61042in
@@ -4588,7 +4588,7 @@ are retrieved, the computations are run, and the results are shown in
 the graph and in the table at the bottom. You can zoom-in/out by
 dragging and right-clicking the mouse in the graph.
 
-.. image:: ./media/image48.png
+.. image:: ./media/cp-userguide/image48.png
    :width: 5.45833in
    :height: 6.01042in
 
@@ -4834,7 +4834,7 @@ available. Save the group and press the Evaluate button at the lower
 right. Verify that the group contains the parameters that you want to
 use for input to the group computation.
 
-.. image:: ./media/image49.png
+.. image:: ./media/cp-userguide/image49.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-09-03 at 1.49.22 PM.png
    :width: 5.125in
    :height: 1.43689in
@@ -4846,7 +4846,7 @@ Algorithm to copy these time series values to a modeled (M\_) table with
 model ID 1. One such computation is shown in Figure 35. (Assume that
 this computation is enabled.)
 
-.. image:: ./media/image50.png
+.. image:: ./media/cp-userguide/image50.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-09-03 at 1.51.03 PM.png
    :width: 5.75in
    :height: 3.61588in
@@ -4861,7 +4861,7 @@ Now we prepare a computation as shown in Figure 36. Note that the
 computation is not yet enabled. This will happen when we run the
 utility.
 
-.. image:: ./media/image51.png
+.. image:: ./media/cp-userguide/image51.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-09-03 at 1.51.52 PM.png
    :width: 5.75in
    :height: 3.62511in
@@ -6358,7 +6358,7 @@ don’t need from the computation record. For example, Figure 38 shows the
 computation editor screen for a rating with three independent
 parameters. Note that “indep4” through “indep9” have been deleted.
 
-.. image:: ./media/image52.png
+.. image:: ./media/cp-userguide/image52.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-11-20 at 11.15.26 AM.png
    :width: 6.49444in
    :height: 4.52639in
@@ -6366,7 +6366,7 @@ parameters. Note that “indep4” through “indep9” have been deleted.
 Figure 38: Computation Editor showing Rating with Three Independent
 Parameters.
 
-.. image:: ./media/image52.png
+.. image:: ./media/cp-userguide/image52.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-11-20 at 11.15.26 AM.png
    :width: 6.49444in
    :height: 4.52639in
@@ -6395,7 +6395,7 @@ something other than “Ignore”:
 Figure 40 shows the dialog for the indep3 parameter (Elev). We have
 chosen FAIL.
 
-.. image:: ./media/image53.png
+.. image:: ./media/cp-userguide/image53.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-11-20 at 11.20.08 AM.png
    :width: 3in
    :height: 3.88271in
@@ -6411,7 +6411,7 @@ we had to add these parameters. We entered them into our “CWMS-English”
 Presentation group, as shown in Figure 41. Be sure to also enter the
 appropriate units for the new parameters.
 
-.. image:: ./media/image54.png
+.. image:: ./media/cp-userguide/image54.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-11-20 at 11.08.28 AM.png
    :width: 6.49444in
    :height: 4.12639in
@@ -6474,7 +6474,7 @@ screening records is depicted in Figure 42.
 -  Each criteria record (season) may have multiple Duration/Magnitude
    checks, each denoted by a different duration.
 
-.. image:: ./media/image55.png
+.. image:: ./media/cp-userguide/image55.png
    :width: 4.8352in
    :height: 3.46159in
 
@@ -6594,7 +6594,7 @@ screenings in English units to a file called “screenings.bak”::
 
    screeningExport –A –E >screenings.bak
 
-Note that the CRITERIA records are identical to DATCHK criteria files:
+Note that the CRITERIA records are identical to DATCHK criteria files::
 
 SCREENING *unique-16-char-ID*
 
@@ -6759,7 +6759,7 @@ It takes the normal options that other OpenDCS programs take, like:
 The initial screen is a tabbed pane with two tabs. The Screening IDs tab
 shows a list of all screening IDs that exist in your database:
 
-.. image:: ./media/image56.png
+.. image:: ./media/cp-userguide/image56.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2015-11-17 at 4.34.09 PM.png
    :width: 6.49514in
    :height: 3.88819in
@@ -6781,7 +6781,7 @@ Use the buttons at the bottom to:
 The TS Assignments tab shows you all current time series assignments to
 screenings:
 
-.. image:: ./media/image57.png
+.. image:: ./media/cp-userguide/image57.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2015-11-17 at 4.37.03 PM.png
    :width: 6.49514in
    :height: 3.93472in
@@ -6805,7 +6805,7 @@ buttons at the bottom to:
 When you open a screening ID for edit, you get a new tab (it works just
 like the DECODES database editor):
 
-.. image:: ./media/image58.png
+.. image:: ./media/cp-userguide/image58.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2015-11-17 at 4.42.18 PM.png
    :width: 6.49514in
    :height: 5.69167in
@@ -6841,15 +6841,15 @@ Reject limits are highlighted in red, Questionable limits in yellow.
 Hover over any of the fields to get a tooltip with a detail explanation
 of what the control does.
 
-.. |image1| image:: ./media/image13.png
+.. |image1| image:: ./media/cp-userguide/image13.png
    :width: 3.10417in
    :height: 1.51042in
-.. |image2| image:: ./media/image14.png
+.. |image2| image:: ./media/cp-userguide/image14.png
    :width: 2.72917in
    :height: 1.02083in
-.. |image3| image:: ./media/image19.png
+.. |image3| image:: ./media/cp-userguide/image19.png
    :width: 2.75016in
    :height: 3.91717in
-.. |Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-11-12 at 4.10.31 PM.png| image:: ./media/image20.png
+.. |Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2012-11-12 at 4.10.31 PM.png| image:: ./media/cp-userguide/image20.png
    :width: 3.42858in
    :height: 3.87798in
