@@ -78,8 +78,8 @@
         <dependency org="org.junit.platform" name="junit-platform-launcher" rev="1.8.2" conf="test_platform->default"/>
         <dependency org="org.junit.platform" name="junit-platform-engine" rev="1.8.2" conf="test_platform->default"/>
         <dependency org="org.junit.platform" name="junit-platform-commons" rev="1.8.2" conf="test_platform->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="5.8.1" conf="test"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="5.8.1" conf="test"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="5.8.1" conf="test->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="5.8.1" conf="test->default"/>
 
         <!-- izpack -->
         <dependency org="org.codehaus.izpack" name="izpack-standalone-compiler" rev="4.3.5" conf="izpack->default"/>
