@@ -643,8 +643,6 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <file src="schema/cwms/update65to66.sh" targetdir="$INSTALL_PATH/schema/cwms" override="true"/>
             <file src="schema/cwms/update66to68.sql" targetdir="$INSTALL_PATH/schema/cwms" override="true"/>
             <file src="schema/cwms/alarm.sql" targetdir="$INSTALL_PATH/schema/cwms" override="true"/>
- 
-            <file src="cwmsDbAPI" targetdir="$INSTALL_PATH"/>
         </pack>
 
         <pack name="Bureau of Reclamation Hydrologic Database (HDB) Components" required="no" preselected="@{hdb.preselect}">
