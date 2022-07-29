@@ -12,12 +12,12 @@
 
 	
 	<property name="project.dir" value="${basedir}"/>	
-	<property name="src.dir" value="${project.dir}/src/main/java"/>
-    <property name="resources.dir" value="${project.dir}/src/main/resources"/>
-	<property name="src.test.dir" value="${project.dir}/src/test/java"/>
-    <property name="resources.test.dir" value="${project.dir}/src/test/resources"/>
+	<property name="src.dir" value="src/main/java"/>
+    <property name="resources.dir" value="src/main/resources"/>
+	<property name="src.test.dir" value="src/test/java"/>
+    <property name="resources.test.dir" value="/src/test/resources"/>
 		
-	<property name="build.dir" value="${basedir}/build"/>
+	<property name="build.dir" value="build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
 	<property name="build.lib" value="${build.dir}/lib"/>
 	<property name="build.test.classes" value="${build.dir}/test-classes"/>
