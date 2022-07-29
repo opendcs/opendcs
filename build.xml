@@ -150,7 +150,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
 	
 	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="jar,common.resolve">	
+	<target name="stage" depends="jar,common.resolve">
 		<mkdir dir="stage"/>
 		<mkdir dir="stage/doc"/>
 		<mkdir dir="stage/netlist"/>
@@ -158,7 +158,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<mkdir dir="stage/icons"/>
 		<mkdir dir="stage/bin"/>
 		<mkdir dir="stage/dep"/>		
-		<mkdir dir="stage/dep/Lib"/>
 		<mkdir dir="stage/examples"/>
 		<mkdir dir="stage/python"/>
 		<mkdir dir="stage/poll"/>
@@ -328,7 +327,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 	<!-- same as package, but remove libraries not needed by USACE or USBR -->
 	<target name="nonfed" depends="stage">
-		<delete dir="stage/dep/Lib"/>
 		<delete file="stage/dep/jep-2.4.1.jar"/>
 		<delete file="stage/dep/jython-2.7.2.jar"/>
 		<delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
