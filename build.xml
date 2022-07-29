@@ -22,49 +22,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	
     >
 	<description>Open DCS</description>
-
-	<property environment="env"/>
-
-	<!-- Settable Directories -->	
-	<property name="project.dir" value="${basedir}"/>	
-	<property name="dcpmon.dir" value="not merged in yet"/>
-	<property name="hydrojson.dir" value="not merged in yet"/>
-	<property name="src.dir" value="${project.dir}/src/main/java"/>
-	<property name="src.test.dir" value="${project.dir}/src/test/java"/>
-	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
-
-	<!-- Directories -->	
-	<property name="build.dir" value="${basedir}/build"/>
-	<property name="build.classes" value="${build.dir}/classes"/>
-	<property name="build.lib" value="${build.dir}/lib"/>
-	<property name="build.test.classes" value="${build.dir}/test-classes"/>
-	<property name="build.test.lib" value="${build.dir}/test-libs"/>
-	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>		
-
-	<!-- VERSION NUMBERS -->
-	<property name="MAJ_VER" value="7"/>
-	<property name="MIN_VER" value="1"/>
-	
-
-	<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
-		classpath="${project.dir}/lib/ant-junitlauncher-1.10.12.jar"/>
-
-    <include file="common.xml"/>	
-
-	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
-		<filterchain><striplinebreaks/></filterchain>
-	</loadfile>
-	<echo message="RCNUM=${RCNUM}"/>
-
-	<property name="version" value="${MAJ_VER}.${MIN_VER}.${RCNUM}"/>
-	<echo message="VERSION=${version}"/>
-	
-	
-
-	<target name="izpack.dependencies" depends="common.resolve">		
-		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
-	</target>
-	
+    
+    <include file="common.xml"/>
 	
 	
 <!-- depends="clean" -->
@@ -386,7 +345,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	</target>
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
-	<target name="opendcs" depends="stage,izpack.dependencies">
+	<target name="opendcs" depends="stage,common.izpack.dependencies">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->		
 		<property name="hdb.preselect" value="no"/>
 		<izpack input="${project.dir}/izpack/opendcs-install.xml"
@@ -400,7 +359,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	</target>
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
-	<target name="hdb" depends="stage,izpack.dependencies">
+	<target name="hdb" depends="stage,common.izpack.dependencies">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<property name="hdb.preselect" value="yes"/>
 		<izpack input="${project.dir}/izpack/opendcs-install.xml"

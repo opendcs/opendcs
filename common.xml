@@ -7,7 +7,41 @@
     <property name="ivy.jar.dir" value="${ivy.home}/lib"/>
     <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar"/>
 
-    <target name="download-ivy" unless="offline">
+
+    <property environment="env"/>
+
+	
+	<property name="project.dir" value="${basedir}"/>	
+	<property name="src.dir" value="${project.dir}/src/main/java"/>
+    <property name="resources.dir" value="${project.dir}/src/main/resources"/>
+	<property name="src.test.dir" value="${project.dir}/src/test/java"/>
+    <property name="resources.test.dir" value="${project.dir}/src/test/resources"/>
+		
+	<property name="build.dir" value="${basedir}/build"/>
+	<property name="build.classes" value="${build.dir}/classes"/>
+	<property name="build.lib" value="${build.dir}/lib"/>
+	<property name="build.test.classes" value="${build.dir}/test-classes"/>
+	<property name="build.test.lib" value="${build.dir}/test-libs"/>
+	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>		
+
+	<!-- VERSION NUMBERS -->
+	<property name="MAJ_VER" value="7"/>
+	<property name="MIN_VER" value="1"/>
+	
+	<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
+		classpath="${project.dir}/lib/ant-junitlauncher-1.10.12.jar"/>
+
+	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
+		<filterchain><striplinebreaks/></filterchain>
+	</loadfile>
+	<echo message="RCNUM=${RCNUM}"/>
+
+	<property name="version" value="${MAJ_VER}.${MIN_VER}.${RCNUM}"/>
+	<echo message="VERSION=${version}"/>
+	
+	
+
+	<target name="download-ivy" unless="offline">
         <echo message="IVY jar dir ${ivy.jar.dir}"/>
         <mkdir dir="${ivy.jar.dir}"/>
         <!-- download Ivy from web site so that it can be used even without any special installation -->
@@ -43,4 +77,9 @@
     <target name="report" depends="resolve" description="--> generates a report of dependencies">
         <ivy:report todir="${build.dir}"/>
     </target>
+
+
+    <target name="izpack.dependencies" depends="resolve">		
+		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
+	</target>
 </project>
