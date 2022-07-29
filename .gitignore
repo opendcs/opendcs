@@ -1,4 +1,7 @@
 stage
+# This Needs to say, bin directories not under root are fine.
+# but some IDEs dump class files here.
+bin/
 build
 .gradle
 *.tgz
@@ -12,3 +15,4 @@ bin
 .externalToolBuilders/
 doc-source/media/**
 doc-source/*.rst
+**/.externalToolBuilders
