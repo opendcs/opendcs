@@ -56,6 +56,7 @@ import decodes.routing.DacqEventLogger;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompEventSvr;
+import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.LockBusyException;
@@ -118,7 +119,8 @@ public class AlarmMonitor
 			"(required) plain text name corresponding to the from address."),
 		new PropertySpec("fromName", PropertySpec.STRING,
 			"(required) Plain text name that outgoing mail will be coming FROM."),
-
+		new PropertySpec("mailer.class", PropertySpec.STRING,
+			"Alternate class to use for sending mail.")
 	};
 	
 	SimpleDateFormat msgSdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss ");
@@ -232,7 +234,40 @@ public class AlarmMonitor
 			loadingAppDao.close();
 		}
 
-		alarmMailer = new AlarmMailer();
+		String mailerClass = appInfo.getProperty("mailer.class");
+		if (mailerClass != null)
+		{
+			info("Loading Mailer class '" + mailerClass + "'");
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			try
+			{
+				Class<?> cls = cl.loadClass(mailerClass);
+				alarmMailer = (AlarmMailer)cls.newInstance();
+			}
+			catch (ClassNotFoundException ex)
+			{
+				String errmsg = "AlarmMonitor.initialize() cannot load mailer class '" 
+					+ mailerClass + "': " + ex;
+				failure(errmsg);
+				throw new MailerException(errmsg);
+			}
+			catch (InstantiationException ex)
+			{
+				String errmsg = "AlarmMonitor.initialize() cannot instantiate mailer class '" 
+					+ mailerClass + "': " + ex;
+				failure(errmsg);
+				throw new MailerException(errmsg);
+			}
+			catch (IllegalAccessException ex)
+			{
+				String errmsg = "AlarmMonitor.initialize() Error initializing mailer class '" 
+					+ mailerClass + "': " + ex;
+				failure(errmsg);
+				throw new MailerException(errmsg);
+			}
+		}
+		else
+			alarmMailer = new AlarmMailer();
 		alarmMailer.configure(appInfo.getProperties());
 
 		File lastEvtIdFile = new File(EnvExpander.expand("$DCSTOOL_USERDIR/last-alarm"));

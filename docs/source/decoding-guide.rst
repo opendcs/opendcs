@@ -147,6 +147,11 @@ Revision 8, October 2020:
 
 -  New Field Type TZ Added with new Manual Section
 
+Revision 9, August 2022:
+
+-  Improvements to Load Message Dialog in the Configuration Script Edit
+   Dialog in section 5.1.
+
 Import and Export
 =================
 
@@ -357,15 +362,15 @@ database.
 DECODES Database Editor
 =======================
 
-Start the Database Editor (dbedit) from the launcher with the command:
+Start the Database Editor (dbedit) from the launcher with the command::
 
-launcher_start
+    launcher_start
 
 Then press the button for DECODES Database Editor.
 
-You can also start the dbedit directly from a terminal with the command:
+You can also start the dbedit directly from a terminal with the command::
 
-dbedit *<options>*
+    dbedit *<options>*
 
 **Options:**
 
@@ -601,9 +606,26 @@ To load a sample GOES DCP message from your LRGS server, do this:
 
 -  Select an LRGS server from the list.
 
--  Enter the DCP address, and optionally, the channel number.
+-  Enter or select the DCP address, and optionally, the channel number.
 
 -  Click OK.
+
+Improvement made for OpenDCS 7.0.2 and later versions: You can either
+type in the DCP Address in the area provided, or select it from the
+list. This list is populated like this:
+
+-  If you entered the configuration editor by clicking the “Edit”
+   (config) button on a platform edit panel, then just the medium IDs
+   for that platform will be present in the list.
+
+-  ELSE If this is a previously-existing configuration, the list will be
+   populated with all platforms that use this configuration.
+
+-  ELSE (i.e., this is a new configuration), the list will be populated
+   with the medium IDs for all platforms.
+
+-  NOTE: In any case, you can always type the DCP address directly as
+   you could in previous versions.
 
 To load a sample message of any type from a file, do this:
 
@@ -639,12 +661,17 @@ characters “DKz” within the message.
 
 Figure 10: Decoding Script Edit Dialog Showing Interactive Decoding.
 
-.. image:: ./media/decoding-guide/image11.png
+.. image:: ./media/decoding-guide/load_platform_lrgs.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 4.57.40 PM.png
    :width: 4in
    :height: 3.85358in
 
-Figure 11: Load Sample Message Dialog.
+.. image:: ./media/decoding-guide/load_platform_file.png
+   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 4.57.40 PM.png
+   :width: 4in
+   :height: 3.85358in
+
+Figure : Load Sample Message Dialog (load from LRGS or from File).
 
 For even more information on how the script was executed, you can hit
 the ‘Trace’ button after decoding. A detailed list of operations is
@@ -1062,7 +1089,7 @@ case-sensitive, so ‘X’ and ‘x’ can both be used for skipping characters.
 |           | and linefeed.                |                           |
 +-----------+------------------------------+---------------------------+
       
-    
+
 Table 6‑1: Common DECODES Format Operations.
 
 Skipping and Positioning Operations
@@ -1136,7 +1163,7 @@ to position to a particular location based upon a specified condition.
 
 Scan operations have the following syntax:
 
-S(*n*, *condition*, *label*)
+S(\ *n*, *condition*, *label*)
 
 …where **n** is the number of characters to scan (or to the end of the
 current line), **condition** specifies what we are scanning for (see

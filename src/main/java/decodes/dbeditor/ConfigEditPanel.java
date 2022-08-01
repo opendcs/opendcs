@@ -67,7 +67,7 @@ public class ConfigEditPanel extends DbEditorTab
     JPanel jPanel2 = new JPanel();
     JPanel jPanel1 = new JPanel();
 
-	PlatformConfig theConfig, origConfig;
+	private PlatformConfig theConfig, origConfig;
 	DbEditorFrame parent = null;
     GridBagLayout gridBagLayout1 = new GridBagLayout();
     JButton editSensorButton = new JButton();
@@ -115,6 +115,11 @@ public class ConfigEditPanel extends DbEditorTab
 	//launcher
 
 	DecodingScriptEditDialog dsEditDlg = null;
+	
+	// If this edit panel was created from a PlatformEditPanel by hitting the
+	// "Edit" (config) button, it will also set a transport medium select list
+	// to be used by the LoadMessageDialog.
+	private ArrayList<String> tmSelectList = null;
 
 	/** no args c'tor for JBuilder only. */
     public ConfigEditPanel()
@@ -548,7 +553,7 @@ public class ConfigEditPanel extends DbEditorTab
 		
 		if (dsEditDlg == null)
 		{
-			dsEditDlg = new DecodingScriptEditDialog(ds);
+			dsEditDlg = new DecodingScriptEditDialog(ds, this);
 			launchDialog(dsEditDlg);
 		}
 		else
@@ -587,7 +592,7 @@ public class ConfigEditPanel extends DbEditorTab
 		
 		if (dsEditDlg == null)
 		{
-			dsEditDlg = new DecodingScriptEditDialog(ds);
+			dsEditDlg = new DecodingScriptEditDialog(ds, this);
 			launchDialog(dsEditDlg);
 		}
 		else
@@ -1098,6 +1103,21 @@ Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform list.")
 	    numPlatformsField.setEnabled(true);
 	    addDcpPmsButton.setEnabled(true);
     	equipmentModelSelectButton.setEnabled(true);
+	}
+
+	public ArrayList<String> getTmSelectList()
+	{
+		return tmSelectList;
+	}
+
+	public void setTmSelectList(ArrayList<String> tmSelectList)
+	{
+		this.tmSelectList = tmSelectList;
+	}
+
+	public PlatformConfig getOrigConfig()
+	{
+		return origConfig;
 	}
 
 }

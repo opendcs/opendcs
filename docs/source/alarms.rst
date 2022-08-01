@@ -697,7 +697,7 @@ into Excel. The following shows that there are no currently-asserted
 alarms and several recent (but historical) alarms for
 TESTSITE1-66.hour.R\_::
 
-All times in UTC
+    All times in UTC
 
 Current Alarms(0)::
 
@@ -739,6 +739,9 @@ Processor. A special “Alarm Monitor” task can be started with the
 “alarmmonitor” script. The AlarmMonitor daemon will look in the database
 for Email Groups, File Monitors, and Process Monitors and then run in
 the background performing the indicated checks.
+
+The AlarmMonitor process record should be given the same properties
+described above for the Computation Processor in section 4.2.
 
 A File Monitor allows you to watch a directory or normal file for
 abnormal conditions, and then to send email notifications when they are
@@ -785,3 +788,12 @@ monitored, not DEBUG messages.)
 
 When it sees a WARNING message containing the string “Cannot find rating
 table”. The event message will be emailed to the members of the group.
+
+BC Hydro Alarm Mailer
+=====================
+
+For version 7.0.2, a special alarm mailer class was added to support the
+special alarm email format required by BC Hydro. To activate this, add a
+property “mailer.class” to the process record and set the value to::
+
+    decodes.tsdb.alarm.mail.BCHydroAlarmMailer

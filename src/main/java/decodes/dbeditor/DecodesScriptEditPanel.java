@@ -91,11 +91,12 @@ import decodes.db.FormatStatement;
 import decodes.db.ScriptSensor;
 import decodes.db.UnitConverterDb;
 import decodes.db.Constants;
+import decodes.db.Database;
 import decodes.db.Platform;
+import decodes.db.PlatformConfig;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.TransportMedium;
-import decodes.dbeditor.DbEditorFrame;
 import decodes.datasource.RawMessage;
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.EdlPMParser;
@@ -194,6 +195,8 @@ public class DecodesScriptEditPanel
 	/** After decoding, this is set to the header length. */
 	int headerLength = 0;
 	
+	private boolean firstSampleThisScript = true;
+	
 	/** Noargs constructor */
 	public DecodesScriptEditPanel()
 	{
@@ -250,6 +253,7 @@ public class DecodesScriptEditPanel
 		formatStatementTableModel.setScript(theScript);
 		unitConversionTableModel.setScript(theScript);
 		fillValues();
+		firstSampleThisScript = true;
 	}
 
 	/**
@@ -654,7 +658,6 @@ public class DecodesScriptEditPanel
 				@Override
 				public void caretUpdate(CaretEvent e)
 				{
-//System.out.println("rawMessagePane CaretEvent: " + e);
 					MutableAttributeSet inputAttr = rawMessagePane.getInputAttributes();
 					inputAttr.removeAttribute(StyleConstants.Foreground);
 				}
@@ -663,7 +666,6 @@ public class DecodesScriptEditPanel
 		FontMetrics metrics = formatStatementTable.getFontMetrics(
 			formatStatementTable.getFont());
 		int fontHeight = metrics.getHeight();
-//System.out.println("format statement table font height=" + fontHeight);
 		formatStatementTable.setRowHeight((int)(fontHeight*1.4));
 	}
 
@@ -671,15 +673,12 @@ public class DecodesScriptEditPanel
 	{
 		if (row < 0 || col < 0)
 		{
-//System.out.println("selectDecodedDataCell called with negative! " + row + "," + col);
 			return;
 		}
 
 		if (row != selectedDecodedDataRow
 		 || col != selectedDecodedDataCol)
 		{
-//System.out.println("selectDecodedDataCell(" + row + ", " + col + ")");
-//System.out.println("Unhighlighting all");
 			rawMessagePane.getStyledDocument().setCharacterAttributes(
 				0, rawMessagePane.getStyledDocument().getLength(),
 				unhighlightStyle, false);
@@ -691,9 +690,6 @@ public class DecodesScriptEditPanel
 				{
 					
 				}
-//System.out.println("column 0 (time) selected");
-				//TODO Highlight all cells in this row.
-				//TODO Highlight corresponding raw data
 			}
 			else
 			{
@@ -701,12 +697,10 @@ public class DecodesScriptEditPanel
 					decodedDataTableModel.getTimedVariableAt(row, col));
 				if (decSamp == null)
 				{
-//System.out.println("No decoded sample at row " + row + ", col " + col);
 				}
 				else
 				{
 					TokenPosition rawpos = decSamp.getRawDataPosition();
-//					TimeSeries ts = decSamp.getTimeSeries();
 					highlightRawData(rawpos.getStart(), 
 						rawpos.getEnd()-rawpos.getStart(), (col-1) % sensorColorStyle.length,
 						true);
@@ -862,8 +856,84 @@ public class DecodesScriptEditPanel
 		else
 			loadMessageDialog.reset();
 		
+			
 		if (parentDialog != null)
+		{
+			if (firstSampleThisScript)
+			{
+				if (parentDialog.getParentCfgEditPanel() != null)
+				{
+					PlatformConfig cfg = parentDialog.getParentCfgEditPanel().getOrigConfig();
+					if (parentDialog.getParentCfgEditPanel().getTmSelectList() != null)
+					{
+						// This means that the config was open from a platform edit
+						// panel. Add that platform's addresses to the dialog.
+						LoadMessageDialog.clearDcpAddresses();
+						for(String tm : parentDialog.getParentCfgEditPanel().getTmSelectList())
+							LoadMessageDialog.addDcpAddress(tm);
+					}
+					else if (cfg != null && cfg.numPlatformsUsing > 0)
+					{
+						// This means that the config is not new. It previously existed
+						// in the database. Populate list with all TMs for platforms that
+						// use this config.
+						LoadMessageDialog.clearDcpAddresses();
+						ArrayList<String> addrs = new ArrayList<String>();
+						for(Platform p : Database.getDb().platformList.getPlatformVector())
+						{
+							if (p.getConfig() != null 
+							 && cfg.configName.equals(p.getConfig().configName))
+							{
+								String pname = p.getDisplayName();
+								
+								boolean didGoes = false;
+								for(TransportMedium tm : p.transportMedia)
+								{
+									if (tm.isGoes() && didGoes)
+										continue;
+									if (tm.isGoes())
+										didGoes = true;
+									
+									String s = tm.getMediumId() + " - " + pname;
+									addrs.add(s);
+								}
+							}
+						}
+						Collections.sort(addrs);
+						for(String addr : addrs)
+							LoadMessageDialog.addDcpAddress(addr);
+					}
+					else
+					{
+						// This is a newly created config, populate list with all platforms.
+						LoadMessageDialog.clearDcpAddresses();
+						ArrayList<String> addrs = new ArrayList<String>();
+						for(Platform p : Database.getDb().platformList.getPlatformVector())
+						{
+							String pname = p.getDisplayName();
+							
+							boolean didGoes = false;
+							for(TransportMedium tm : p.transportMedia)
+							{
+								if (tm.isGoes() && didGoes)
+									continue;
+								if (tm.isGoes())
+									didGoes = true;
+								
+								String s = tm.getMediumId() + " - " + pname;
+								addrs.add(s);
+							}
+						}
+						Collections.sort(addrs);
+						for(String addr : addrs)
+							LoadMessageDialog.addDcpAddress(addr);
+					}
+				}
+			}
+			loadMessageDialog.pack();
+			firstSampleThisScript = false;
 			parentDialog.launchDialog(loadMessageDialog); // called from dbedit
+		}
 		else
 			TopFrame.getDbEditFrame().launchDialog(loadMessageDialog); // called from platwiz
 		decodingDone = false;
@@ -1039,7 +1109,6 @@ public class DecodesScriptEditPanel
 				String d = (String)decodedDataTableModel.getValueAt(0, 0);
 				JLabel t = new JLabel(d);
 				int w = t.getPreferredSize().width;
-//System.out.println("preferred width of '" + d + "' is " + w);
 				decodedDataTable.getColumnModel().getColumn(0).setPreferredWidth(w + 20);
 			}
 			
@@ -1139,7 +1208,6 @@ public class DecodesScriptEditPanel
 	@Override
 	public void setRawMessage(String msgData)
 	{
-//		rawMessagePane.setText(msgData);
 		StyledDocument sdoc = rawMessagePane.getStyledDocument();
 		try
 		{
@@ -1151,7 +1219,6 @@ public class DecodesScriptEditPanel
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-//System.out.println("set raw msg '" + msgData + "'");
 	}
 	
 	public void highlightRawData(int start, int length, int sensorColorIdx, boolean highlight)
@@ -1160,8 +1227,6 @@ public class DecodesScriptEditPanel
 		sdoc.setCharacterAttributes(headerLength+start, length, 
 			highlight ? highlightStyle : unhighlightStyle, false);
 		
-//System.out.println("Highlighted (after headerlen=" + headerLength + ") start=" 
-//+ start + ", len=" + length + ", highlight=" + highlight);
 	}
 
 	public void setParentDialog(DecodingScriptEditDialog parentDialog)
@@ -1672,7 +1737,6 @@ class DecodedDataTableModel extends AbstractTableModel
 					return o1.rowDate.compareTo(o2.rowDate);
 				}
 			});
-//System.out.println("There are now " + getColumnCount() + " columns.");
 		fireTableStructureChanged();
 	}
 	
@@ -1725,13 +1789,11 @@ class FmtStatementEditor
 		JTextField ec = (JTextField)super.getTableCellEditorComponent(table,
 			value, isSelected, row, column);
 		origText = ec.getText();
-//System.out.println("Starting edit of text '" + origText + "'");
 		return ec;
 	}
 	
 	public boolean stopCellEditing()
 	{
-//System.out.println("in stopCellEditing, text is now '" + ((JTextField)editorComponent).getText() + "'");
 		return super.stopCellEditing();
 	}
 }
