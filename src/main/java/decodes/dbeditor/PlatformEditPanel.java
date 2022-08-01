@@ -37,7 +37,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Vector;
 import java.util.Iterator;
 import java.util.Date;
@@ -611,9 +610,31 @@ ConfigSelectController
 			return;
 		}
 
-		// Call ConfigsListPanel.doOpen
-		parent.getConfigsListPanel().doOpen(cfg);
+		// Call ConfigsListPanel.doOpen. This creates the config edit panel.
+		ConfigEditPanel cfgEditPanel = parent.getConfigsListPanel().doOpen(cfg);
+		
+		// Build list of transport media for user to select from if loading a 
+		// sample message.
+		boolean didGoes = false;
+		String pname = siteNameField.getText();
+		if (designatorField.getText().length() > 0)
+			pname = pname + "-" + designatorField.getText();
+		ArrayList<String> tmSelectList = new ArrayList<String>();
+		for(int row = 0; row < transportTableModel.getRowCount(); row++)
+		{
+			TransportMedium tm = transportTableModel.getObjectAt(row);
+			if (tm.isGoes())
+			{	
+				if (didGoes)
+					continue;
+				didGoes = true;
+			}
+			String s = tm.getMediumId() + " - " + pname;
 
+			tmSelectList.add(s);
+		}
+		cfgEditPanel.setTmSelectList(tmSelectList);
+		
 		// Make the Config tab the currently selected tab
 		parent.activateConfigsTab();
 	}

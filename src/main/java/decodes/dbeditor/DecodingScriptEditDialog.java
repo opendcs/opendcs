@@ -59,47 +59,24 @@ public class DecodingScriptEditDialog
 	JButton cancelButton = new JButton();
 	FlowLayout flowLayout3 = new FlowLayout();
 	static DecodesScriptEditPanel decodingScriptEditPanel = null;
-
-	/** 
-	  Constructor.
-	  @param frame the parent frame
-	  @param title the Title of this dialog
-	  @param modal true if this is a modal dialog
-	*/
-	public DecodingScriptEditDialog(Frame frame, String title, boolean modal)
-	{
-		super(frame, title, modal);
-		try {
-			jbInit();
-			pack();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
-		trackChanges("DecodingScriptDialog");
-	}
-
-	/** No args constructor for JBuilder */
-	public DecodingScriptEditDialog() 
-	{
-		this(null, "", false);
-	}
+	private ConfigEditPanel parentCfgEditPanel = null;
 
 	/**
 	 * This is the constructor called by the GUI. Passed the DecodesScript
 	 * object to be edited.
 	 * @param ds the DecodesScript to edit.
 	 */
-	public DecodingScriptEditDialog(DecodesScript ds)
+	public DecodingScriptEditDialog(DecodesScript ds, ConfigEditPanel parentCfgEditPanel)
 	{
 		super(getDbEditFrame(), 
 			dbeditLabels.getString("DecodingScriptEditDialog.title")
 			+ ": " + ds.platformConfig.configName, true);
+		this.parentCfgEditPanel = parentCfgEditPanel;
 		if (decodingScriptEditPanel == null)
 		{
 			decodingScriptEditPanel = new DecodesScriptEditPanel();
-			decodingScriptEditPanel.setParentDialog(this);
 		}
+		decodingScriptEditPanel.setParentDialog(this);
 
 		setDecodesScript(ds);
 		try 
@@ -212,6 +189,16 @@ public class DecodingScriptEditDialog
 	void cancelButton_actionPerformed(ActionEvent e)
 	{
 		closeDlg();
+	}
+
+	public ConfigEditPanel getParentCfgEditPanel()
+	{
+		return parentCfgEditPanel;
+	}
+
+	public void setParentCfgEditPanel(ConfigEditPanel parentCfgEditPanel)
+	{
+		this.parentCfgEditPanel = parentCfgEditPanel;
 	}
 }
 

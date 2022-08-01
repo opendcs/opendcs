@@ -125,7 +125,7 @@ public class ScriptEditPanel extends JPanel
 		String addr = platwiz.getDcpAddress();
 		if (addr != null)
 		{
-			LoadMessageDialog.setDcpAddress(addr);
+			LoadMessageDialog.addDcpAddress(addr);
 			if (name.equals("ST"))
 				LoadMessageDialog.setGoesChannel(platwiz.getSTChannel());
 			else if (name.equals("RD"))

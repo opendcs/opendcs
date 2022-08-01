@@ -116,7 +116,7 @@ public class LoadMessageDialog extends GuiDialog
 	JCheckBox autoCloseCheck = new JCheckBox();
 	JButton selectFileButton = new JButton();
 	static JTextField channelField = new JTextField();
-	static JTextField dcpAddressField = new JTextField();
+	static JComboBox<String> dcpAddressCombo = new JComboBox<String>();
 	JRadioButton loadFromFileButton = new JRadioButton();
 	JTextField filePathField = new JTextField();
 	JRadioButton loadFromLrgsButton = new JRadioButton();
@@ -157,7 +157,9 @@ public class LoadMessageDialog extends GuiDialog
 		sourceButtonGroup.add(loadFromLrgsButton);
 		sourceButtonGroup.add(loadFromFileButton);
 		loadFromLrgsButton.setSelected(true);
-		dcpAddressField.setEnabled(true);
+		dcpAddressCombo.setEnabled(true);
+		dcpAddressCombo.setEditable(true);
+		dcpAddressCombo.addItem(""); // blank item always at the top for manual entry.
 		channelField.setEnabled(true);
 		filePathField.setEnabled(false);
 		selectFileButton.setEnabled(false);
@@ -249,7 +251,7 @@ public class LoadMessageDialog extends GuiDialog
 		});
 		
 		channelField.setFont(new java.awt.Font("Monospaced", 0, 12));
-		dcpAddressField.setFont(new java.awt.Font("Monospaced", 0, 12));
+		dcpAddressCombo.setFont(new java.awt.Font("Monospaced", 0, 12));
 		loadFromFileButton.setText(dbeditLabels.getString("LoadMessageDialog.LoadButton"));
 		loadFromFileButton.addActionListener(new java.awt.event.ActionListener()
 		{
@@ -302,17 +304,17 @@ public class LoadMessageDialog extends GuiDialog
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE, 
 				new Insets(5, 20, 5, 2), 0, 0));
-		whereToLoadFromPanel.add(dcpAddressField,
-			new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0, 
+		whereToLoadFromPanel.add(dcpAddressCombo,
+			new GridBagConstraints(1, 1, 1, 1, 0.75, 0.0, 
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
-				new Insets(5, 0, 5, 0), 30, 0));
+				new Insets(5, 0, 5, 0), 50, 0));
 		whereToLoadFromPanel.add(
 			new JLabel(dbeditLabels.getString("LoadMessageDialog.ChannelLabel")),
 			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.EAST, GridBagConstraints.NONE, 
 				new Insets(5, 20, 5, 2), 0, 0));
 		whereToLoadFromPanel.add(channelField, 
-			new GridBagConstraints(3, 1, 1, 1, 0.5, 0.0,
+			new GridBagConstraints(3, 1, 1, 1, 0.25, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
 				new Insets(5, 0, 5, 10), 10, 0));
 		
@@ -343,7 +345,7 @@ public class LoadMessageDialog extends GuiDialog
 	 */
 	void loadFromLrgsButtonPressed()
 	{
-		dcpAddressField.setEnabled(true);
+		dcpAddressCombo.setEnabled(true);
 		channelField.setEnabled(true);
 		filePathField.setEnabled(false);
 		selectFileButton.setEnabled(false);
@@ -353,7 +355,7 @@ public class LoadMessageDialog extends GuiDialog
 	/** Called when File Load button pressed. */
 	void loadFromFileButtonPressed()
 	{
-		dcpAddressField.setEnabled(false);
+		dcpAddressCombo.setEnabled(false);
 		channelField.setEnabled(false);
 		filePathField.setEnabled(true);
 		selectFileButton.setEnabled(true);
@@ -409,27 +411,11 @@ public class LoadMessageDialog extends GuiDialog
 		{
 			resultsArea.setText(dbeditLabels.getString("LoadMessageDialog.Validating") + "\n");
 
-			// Validate DCP address and channel. Channel is optional.
-			String dcpaddr = dcpAddressField.getText().trim();
-			// MJM Don't do this validation. The address might be an Iridium ID,
-			// or some other
-			// kind of ID in the future.
-			// if (dcpaddr.length() != 8)
-			// {
-			// showError(
-			// dbeditLabels.getString("LoadMessageDialog.ValidateError1"));
-			// return;
-			// }
-			// long xaddr;
-			// try { xaddr = Long.parseLong(dcpaddr, 16); }
-			// catch(NumberFormatException ex)
-			// {
-			// showError( "'" + dcpaddr +
-			// dbeditLabels.getString("LoadMessageDialog.ValidateError2"));
-			// return;
-			// }
-			// resultsArea.append(
-			// dbeditLabels.getString("LoadMessageDialog.ValidResults")+"\n");
+			String dcpaddr = (String)dcpAddressCombo.getSelectedItem();
+			int idx = dcpaddr.indexOf(' ');
+			if (idx > 0)
+				dcpaddr = dcpaddr.substring(0,idx);
+			
 			int chan = -1;
 			String s = channelField.getText().trim();
 			if (s.length() > 0)
@@ -631,10 +617,18 @@ public class LoadMessageDialog extends GuiDialog
 	 * @param addr
 	 *            the DCP address
 	 */
-	public static void setDcpAddress(String addr)
+	public static void addDcpAddress(String addr)
 	{
-		dcpAddressField.setText(addr == null ? "" : addr);
+//		dcpAddressCombo.setText(addr == null ? "" : addr);
+		dcpAddressCombo.addItem(addr);
+		dcpAddressCombo.setSelectedIndex(0);
 	}
+	
+	public static void clearDcpAddresses()
+	{
+		dcpAddressCombo.removeAllItems();
+	}
+
 
 	/**
 	 * Sets the GOES channel field externally.
@@ -680,6 +674,7 @@ public class LoadMessageDialog extends GuiDialog
 		okButton.setEnabled(true);
 		fillLrgsCombo();
 	}
+
 }
 
 /**
