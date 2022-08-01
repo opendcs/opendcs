@@ -571,7 +571,12 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 			// Some file entity types must be explicitly added to the database.
 			// Some are implicitely added during the XML read.
 			if (ob instanceof Platform)
-				stageDb.platformList.add((Platform)ob);
+			{
+				Platform p = (Platform)ob;
+				// Ignore historical versions unless the -H arg was given
+				if (p.expiration == null || allowHistoricalArg.getValue())
+					stageDb.platformList.add((Platform)ob);
+			}
 			else if (ob instanceof Site)
 				stageDb.siteList.addSite((Site)ob);
 			else if (ob instanceof RoutingSpec)
