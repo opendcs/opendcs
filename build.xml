@@ -15,16 +15,11 @@ DO NOT BUILD IN THE SOURCE TREE. Rather follow these instructions:
    HOWEVER, in the mean time, dependencies are available in a file "opendcs-dep.tgz"
    which you can download from:
        http://www.covesw.com/download/build/opendcs-dep.tgz
-   You will also need the IzPack installer files downloaded from:
-       http://www.covesw.com/download/build/IzPack-4.3.3.tgz
 
 2. Create a build directory for yourself somewhere outside the source tree.
 
 3. Copy this build.xml file (if changes or needed) or just ln if it's ok as it.
    It needs to be in your build directory you created in step 2.
-
-4. Unpack the IzPack-4.3.3.tgz file somewhere. Set the environment variable
-   IZPACK_HOME pointing to this directory.
 
 5. Unpack the opendcs-dep.tgz tarball in the build directory so that there is
    a subdirectory here called 'dep' containing the needed jars.
@@ -90,9 +85,6 @@ can find your git source tree and your directory with the downloaded jars.
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
 
-	<get src="https://repo1.maven.org/maven2/org/codehaus/izpack/izpack-standalone-compiler/4.3.5/izpack-standalone-compiler-4.3.5.jar"
-                dest="${build.dir}/izpack" usetimestamp="true"/>
-	
 	<target name="izpack_deps">
 		<mkdir dir="${build.dir}/izpack"/>
 		<get src="https://repo1.maven.org/maven2/org/codehaus/izpack/izpack-standalone-compiler/4.3.5/izpack-standalone-compiler-4.3.5.jar"
