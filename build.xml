@@ -90,12 +90,20 @@ can find your git source tree and your directory with the downloaded jars.
 	</loadfile>
 	<echo message="RCNUM=${RCNUM}"/>
 
-	<path id="lib.path">
-		<fileset dir="${izpack.dir}/lib" includes="*.jar"/>
-	</path>
-	<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask"
-		classpathref="lib.path"/>
-
+	<get src="https://repo1.maven.org/maven2/org/codehaus/izpack/izpack-standalone-compiler/4.3.5/izpack-standalone-compiler-4.3.5.jar"
+                dest="${build.dir}/izpack" usetimestamp="true"/>
+	
+	<target name="izpack_deps">
+		<mkdir dir="${build.dir}/izpack"/>
+		<get src="https://repo1.maven.org/maven2/org/codehaus/izpack/izpack-standalone-compiler/4.3.5/izpack-standalone-compiler-4.3.5.jar"
+					dest="${build.dir}/izpack/izpack.jar" usetimestamp="true"/>
+		
+		<path id="lib.path">
+			<fileset dir="${build.dir}/izpack" includes="*.jar"/>
+		</path>
+		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask"
+			classpathref="lib.path"/>
+	</target>
 <!--
 	<taskdef name="izpack" classpath="${izpack.dir}/lib/compiler.jar"
 		classname="com.izforge.izpack.ant.IzPackTask"/>
@@ -465,7 +473,7 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 	<!-- same as package, but remove libraries not needed by USACE or USBR -->
-	<target name="nonfed" depends="stage">
+	<target name="nonfed" depends="stage,izpack_deps">
 		<delete dir="stage/dep/Lib"/>
 		<delete file="stage/dep/jep-2.4.1.jar"/>
 		<delete file="stage/dep/jython-2.7.2.jar"/>
@@ -481,7 +489,7 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
-	<target name="opentsdb" depends="stage">
+	<target name="opentsdb" depends="stage,izpack_deps">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-${MAJ_VER}-${MIN_VER}.xml"
 				output="stage/opendcs-ot-${MAJ_VER}-${MIN_VER}-${RCNUM}.jar"
@@ -491,7 +499,7 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
-	<target name="hdb" depends="stage">
+	<target name="hdb" depends="stage,izpack_deps">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
 		<izpack input="${project.dir}/izpack/opendcs-hdb-${MAJ_VER}-${MIN_VER}.xml"
 				output="stage/opendcs-hdb-${MAJ_VER}-${MIN_VER}-${RCNUM}.jar"
@@ -502,8 +510,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<target name="cwmstar" depends="stage">
 		<delete file="stage/dep/ojdbc8.jar"/>
-		<delete file="stage/dep/ojdbc6.jar"/>
-		<delete dir="stage/dep/IzPack-4.3.3"/>
+		<delete file="stage/dep/ojdbc6.jar"/>		
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
