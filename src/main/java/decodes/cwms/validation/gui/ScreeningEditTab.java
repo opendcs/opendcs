@@ -53,7 +53,6 @@ import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.db.NoConversionException;
 import decodes.sql.DbKey;
-import decodes.util.DecodesSettings;
 
 public class ScreeningEditTab extends JPanel
 {
@@ -512,6 +511,14 @@ public class ScreeningEditTab extends JPanel
 		try
 		{
 			screeningDAO = frame.getTheDb().makeScreeningDAO();
+			
+			// If screening ID was changed. Need to rename it in the DB before making updates.
+			if (!screening.getScreeningName().equals(screeningIdField.getText()))
+			{
+				screeningDAO.renameScreening(screening.getScreeningName(), screeningIdField.getText());
+				screening.setScreeningName(screeningIdField.getText());
+			}
+
 			screeningDAO.writeScreening(screening);
 		}
 		catch(Exception ex)
@@ -550,6 +557,20 @@ public class ScreeningEditTab extends JPanel
 		String newName = JOptionPane.showInputDialog("Enter new unique name:");
 		if (newName == null)
 			return;
+		newName = newName.trim();
+		if (newName.length() == 0)
+		{
+			frame.showError("The Screening ID cannot be blank!");
+			screeningIdField.setText(screening.getScreeningName());
+			return;
+		}
+		if (newName.length() > 16)
+		{
+			frame.showError("The Screening ID too long! Max length=16 characters.");
+			screeningIdField.setText(screening.getScreeningName());
+			return;
+		}
+
 		if (frame.getScreeningIdListTab().nameExists(newName))
 		{
 			frame.showError("A screening already exists with that name. Screening IDs must be unique.");
