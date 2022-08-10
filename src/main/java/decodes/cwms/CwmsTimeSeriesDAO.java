@@ -115,6 +115,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -154,6 +155,7 @@ public class CwmsTimeSeriesDAO
 {
 	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
 		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
+	private static final long MAX_TIME_GAP_FOR_HISTORICAL = Integer.getInteger("opendcs.cwmstsdb.max_timegap_historical.days", 7) - 1L;
 	protected SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	private String dbOfficeId = null;
@@ -821,7 +823,7 @@ public class CwmsTimeSeriesDAO
 				//  -- Do not overwrite if a value exists at that time-slice.
 				debug1(" Calling store (no overwrite) for ts_id="
 						+ path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
-
+				
 				cwmsDbTs.store(getConnection(), dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
 					overrideProtection, versionDate);
@@ -1312,18 +1314,24 @@ public class CwmsTimeSeriesDAO
 
 		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
 		ArrayList<Integer> badRecs = new ArrayList<Integer>();
-		try
+		debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
+		try(ResultSet rs = getTaskListStmt.executeQuery())
 		{
-			debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
-			ResultSet rs = getTaskListStmt.executeQuery();
+			Date lastTimestamp = null;
 			while (rs.next())
 			{
 				// Extract the info needed from the result set row.
+				Date timeStamp = new Date(rs.getLong(4));
+				boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
+				if(exceedsMaxTimeGap)
+				{
+					break;
+				}
+				lastTimestamp = timeStamp;
 				int recordNum = rs.getInt(1);
 				DbKey sdi = DbKey.createDbKey(rs, 2);
 				double value = rs.getDouble(3);
 				boolean valueWasNull = rs.wasNull();
-				Date timeStamp = db.getFullDate(rs, 4);
 				String df = rs.getString(5);
 				char c = df.toLowerCase().charAt(0);
 				boolean deleted = false;
@@ -1407,9 +1415,16 @@ public class CwmsTimeSeriesDAO
 			ex.printStackTrace();
 			throw new DbIoException("Error reading new data: " + ex);
 		}
-		finally
+	}
+
+	final boolean exceedsMaxTimeGap(Date lastTimestamp, Date currentTimestamp)
+	{
+		if(lastTimestamp == null || currentTimestamp == null)
 		{
+			return false;
 		}
+		long daysBetween = TimeUnit.MILLISECONDS.toDays(currentTimestamp.getTime() - lastTimestamp.getTime());
+		return daysBetween > MAX_TIME_GAP_FOR_HISTORICAL;
 	}
 
 
