@@ -343,6 +343,9 @@ public class DecodesSettings
 	/** Set to true to allow DECODES to write CWMS Location records */
 	public boolean writeCwmsLocations = false;
 
+	/** Set to the count of days before CWMS TS getNewData will assume gaps are between historical and current data */
+	public int cp_cwmstsdb_getNewData_max_timegap_days = 7;
+
 	/** Show the Platform Wizard button on the button panel */
 	public boolean showPlatformWizard = false;
 
@@ -569,6 +572,8 @@ public class DecodesSettings
 			" in querying the database."),
 		new PropertySpec("writeCwmsLocations", PropertySpec.BOOLEAN,
 			"Set to true to allow DECODES to write CWMS Location records"),
+		new PropertySpec("cp_cwmstsdb_getNewData_max_timegap_days", PropertySpec.INT,
+			"Set to the count of days before CWMS TS getNewData will assume gaps are between historical and current data"),
 		new PropertySpec("showPlatformWizard", PropertySpec.BOOLEAN,
 			"Show the Platform Wizard button on the button panel"),
 		new PropertySpec("showNetlistEditor", PropertySpec.BOOLEAN,

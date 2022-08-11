@@ -155,7 +155,6 @@ public class CwmsTimeSeriesDAO
 {
 	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
 		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
-	private static final long MAX_TIME_GAP_FOR_HISTORICAL = Integer.getInteger("opendcs.cwmstsdb.max_timegap_historical.days", 7) - 1L;
 	protected SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	private String dbOfficeId = null;
@@ -1424,7 +1423,7 @@ public class CwmsTimeSeriesDAO
 			return false;
 		}
 		long daysBetween = TimeUnit.MILLISECONDS.toDays(currentTimestamp.getTime() - lastTimestamp.getTime());
-		return daysBetween > MAX_TIME_GAP_FOR_HISTORICAL;
+		return daysBetween > (DecodesSettings.instance().cp_cwmstsdb_getNewData_max_timegap_days - 1);
 	}
 
 
