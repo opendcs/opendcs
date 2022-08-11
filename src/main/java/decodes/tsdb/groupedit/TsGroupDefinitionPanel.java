@@ -483,7 +483,7 @@ public class TsGroupDefinitionPanel
 		tsGroupMembersPanel.setBorder(new TitledBorder(
 				BorderFactory.createEtchedBorder(Color.white, new Color(148, 145, 140)),
 				tsGroupMembersTitleLabelStr));
-		tsListSelectPanel = new TsListSelectPanel(tsdb, false, true);
+		tsListSelectPanel = new TsListSelectPanel(tsdb, false, false);
 		tsListSelectPanel.setMultipleSelection(true);
 		
 		addTimeSeriesMemberButton = new JButton(addButtonLabelStr);
