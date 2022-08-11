@@ -91,6 +91,7 @@ package decodes.tsdb.groupedit;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -460,7 +461,7 @@ public class TsGroupDefinitionPanel
 	private void initCenterPanel()
 	{
 		JSplitPane upperSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		upperSplitPane.setDividerLocation(.5);
+		upperSplitPane.setDividerLocation(160);
 		centerPanel = new JPanel(new BorderLayout(0, 5));
 		centerPanel.add(upperSplitPane, BorderLayout.CENTER);
 
@@ -470,7 +471,7 @@ public class TsGroupDefinitionPanel
 
 
 		JSplitPane lowerSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		lowerSplitPane.setDividerLocation(.5);
+//		upperSplitPane.setDividerLocation(.5);
 
 		// Initiate subgroup member panel
 		createSubGroupMembersComponents();

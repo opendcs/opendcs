@@ -48,17 +48,16 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.Vector;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
-import decodes.dbeditor.ConfigSelectPanel;
-import decodes.dbeditor.ConfigsListPanel;
 import decodes.gui.GuiDialog;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -124,7 +123,7 @@ public class TsGroupListPanel extends JPanel
 		//Initialize components for jScrollPane and tsGroupsListTable
 		jScrollPane = new JScrollPane();
 		model = new TsGroupsSelectTableModel(this);
-		tsGroupsListTable = new SortingListTable(model, new int[] { 17, 22, 24, 48 });
+		tsGroupsListTable = new SortingListTable(model, new int[] { 17, 22, 24, 48, 20, 20 });
 		tsGroupsListTable.getSelectionModel().setSelectionMode(
 				ListSelectionModel.SINGLE_SELECTION);
 		setMultipleSelection(false);
@@ -316,6 +315,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 	private static String[] columnNames;
 	private TsGroupListPanel panel;
 	private ArrayList<TsGroup> theGroupList = new ArrayList<TsGroup>();
+	private Map<TsGroup, Integer> compCount = new HashMap<TsGroup, Integer>();
 	private int sortColumn = -1;
 	private String module;
 //	private ArrayList<TsGroup> tsGroupList;
@@ -330,20 +330,14 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 			"decodes/resources/groupedit",
 			DecodesSettings.instance().language);
 
-		columnNames = new String[4];
+		columnNames = new String[6];
 		
-		columnNames[0] = 
-			groupResources.getString(
-				"TsGroupsListSelectPanel.groupIdColumnLabel");
-		columnNames[1] = 
-			groupResources.getString(
-				"TsGroupsListSelectPanel.nameColumnLabel");
-		columnNames[2] = 
-			groupResources.getString(
-				"TsGroupsListSelectPanel.typeColumnLabel");
-		columnNames[3] = 
-			groupResources.getString(
-				"TsGroupsListSelectPanel.descriptionColumnLabel");
+		columnNames[0] = groupResources.getString("TsGroupsListSelectPanel.groupIdColumnLabel");
+		columnNames[1] = groupResources.getString("TsGroupsListSelectPanel.nameColumnLabel");
+		columnNames[2] = groupResources.getString("TsGroupsListSelectPanel.typeColumnLabel");
+		columnNames[3] = groupResources.getString("TsGroupsListSelectPanel.descriptionColumnLabel");
+		columnNames[4] = groupResources.getString("TsGroupsListSelectPanel.tsCountColumnLabel");
+		columnNames[5] = groupResources.getString("TsGroupsListSelectPanel.compsUsedColumnLabel");
 	}
 
 	public void setTsGroupListFromDb()
@@ -394,8 +388,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 		ArrayList<TsGroup> tsGroups = new ArrayList<TsGroup>();
 		if (panel.theTsDb != null)
 		{
-			TsGroupDAI groupDAO = panel.theTsDb.makeTsGroupDAO();
-			try
+			try(TsGroupDAI groupDAO = panel.theTsDb.makeTsGroupDAO())
 			{
 				tsGroups = groupDAO.getTsGroupList(null);
 				if (tsGroups == null)
@@ -404,6 +397,11 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 							module + " The Ts Group List is null.");
 					panel.showError("The Ts Group List is empty.");
 				}
+				for(TsGroup tsGroup : tsGroups)
+				{
+					int count = groupDAO.countCompsUsingGroup(tsGroup.getGroupId());
+					this.compCount.put(tsGroup, count);
+				}
 			}
 			catch (DbIoException ex)
 			{
@@ -411,10 +409,6 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 						+ ex.getMessage();
 				Logger.instance().failure(msg);
 				panel.showError(msg);
-			}
-			finally
-			{
-				groupDAO.close();
 			}
 		}
 		else
@@ -519,9 +513,15 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 		return (TsGroup) getRowObject(r);
 	}
 
+	@Override
 	public Object getValueAt(int r, int c)
 	{
-	  return TsGroupsSelectColumnizer.getColumn(getTsGroupAt(r), c);
+		TsGroup tsGroupAt = getTsGroupAt(r);
+		if(c == 5)
+		{
+			return compCount.get(tsGroupAt);
+		}
+	  return TsGroupsSelectColumnizer.getColumn(tsGroupAt, c);
 	}
 
 	public Object getRowObject(int r)
@@ -604,26 +604,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
  */
 class TsGroupsSelectColumnizer
 {
-	static String getColumn(TsGroup tsGroup, String colName, ResourceBundle groupResources)
-	{
-	    if (tsGroup == null || colName == null || colName.isEmpty())
-	    	return "";
-    
-		if (colName.equalsIgnoreCase(groupResources.
-				getString("TsGroupsListSelectPanel.groupIdColumnLabel")))
-			return "" + tsGroup.getGroupId();
-		else if (colName.equalsIgnoreCase(groupResources.
-				getString("TsGroupsListSelectPanel.nameColumnLabel")))
-			return tsGroup.getGroupName() == null ? "" : tsGroup.getGroupName();
-		else if (colName.equalsIgnoreCase(groupResources.
-				getString("TsGroupsListSelectPanel.typeColumnLabel")))
-			return tsGroup.getGroupType() == null ? "" : tsGroup.getGroupType();
-		else if (colName.equalsIgnoreCase(groupResources.
-				getString("TsGroupsListSelectPanel.descriptionColumnLabel")))
-			return tsGroup.getDescription() == null ? "" : getFirstLine(tsGroup.getDescription());
-		else return "";
-	}
-	
+
 	static String getColumn(TsGroup tsGroup, int c)
 	{
 		switch (c)
@@ -658,6 +639,8 @@ class TsGroupsSelectColumnizer
 						: getFirstLine(tsGroup.getDescription());
 			} else
 				return "";
+		case 4: // TS Count
+			return tsGroup.getTsMemberList().size() + "";
 		default:
 			return "";
 		}
