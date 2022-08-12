@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="Last Value From Period">
+    <Comment>
+      Within a given window select the most recent valid value to be at the end
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.LastValueFromPeriod</ExecClass>
+    <AlgoProperty name="minSamplesNeeded">1</AlgoProperty>
+    <AlgoProperty name="aggregateTimeZone">UTC</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>
