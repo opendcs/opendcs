@@ -865,7 +865,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
 		try
 		{
 			List<ScreenAssignT> screenAssignTS = Collections.singletonList(
-				new ScreenAssignT(tsid.getUniqueString(), true, null));
+				new ScreenAssignT(tsid.getUniqueString(), active, null));
 			
 			csdbio.assignScreeningId(getConnection(),
 				screening.getScreeningName(),
@@ -909,6 +909,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
 	{
 		try
 		{
+			Logger.instance().info("Renaming screening '" + oldId + "' to '" + newId + "'");
 			csdbio.renameScreeningId(getConnection(),
 				oldId, 
 				newId, 

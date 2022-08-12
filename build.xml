@@ -9,10 +9,10 @@ To get started run
 
 ant test
 
-
 This will verify that everything can compile and tests can run
 
 NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
+
 
 -->
 
@@ -22,12 +22,14 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	
     >
 	<description>Open DCS</description>
+
     
     <include file="common.xml"/>
 	
 	
 <!-- depends="clean" -->
 	<target name="prepare"  description="Makes build environment.">
+
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
@@ -371,8 +373,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 	<target name="cwmstar" depends="stage">
 		<delete file="stage/dep/ojdbc8.jar"/>
-		<delete file="stage/dep/ojdbc6.jar"/>
-		<delete dir="stage/dep/IzPack-4.3.3"/>
+		<delete file="stage/dep/ojdbc6.jar"/>		
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>

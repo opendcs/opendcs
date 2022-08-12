@@ -183,13 +183,23 @@ public class SubSample
 			hr = (hr / outputIncr.getCount()) * outputIncr.getCount();
 			outputCal.set(Calendar.HOUR_OF_DAY, hr);
 		}
-		else if (outputIncr.getCalConstant() >= Calendar.DAY_OF_MONTH)
+		else if (outputIncr.getCalConstant() == Calendar.DAY_OF_MONTH)
 		{
 			outputCal.set(Calendar.MINUTE, 0);
 			outputCal.set(Calendar.HOUR_OF_DAY, 0);
 			int day = outputCal.get(Calendar.DAY_OF_MONTH);
 			day = (day / outputIncr.getCount()) * outputIncr.getCount();
 			outputCal.set(Calendar.DAY_OF_MONTH, day);
+		}
+		else if (outputIncr.getCalConstant() == Calendar.MONTH)
+		{
+			// Note count should be 1, 2, 3, 4, or 6. Anything else will give weird results.
+			outputCal.set(Calendar.MINUTE, 0);
+			outputCal.set(Calendar.HOUR_OF_DAY, 0);
+			outputCal.set(Calendar.DAY_OF_MONTH, 1);
+			int month = outputCal.get(Calendar.MONTH);
+			month = (month / outputIncr.getCount()) * outputIncr.getCount();
+			outputCal.set(Calendar.MONTH, month);
 		}
 		else
 		{
@@ -204,26 +214,7 @@ public class SubSample
 			for(IntervalIncrement ii : offsetIncr)
 			{
 				outputCal.set(ii.getCalConstant(), ii.getCount());
-			}
-		
-		
-		// 20160226
-		// MJM -- I think the following code is broken. Why would I do this?
-		// It says: if there is a change in time zone between the first data I have and the
-		// next expected output, then adjust the next expected output.
-		// 
-//		TimeZone tz = outputCal.getTimeZone();
-//		if (tz.inDaylightTime(firstInputT)
-//		 && !tz.inDaylightTime(outputCal.getTime()))
-//		{
-//			outputCal.add(Calendar.HOUR_OF_DAY, -1);
-//		}
-//		else if (!tz.inDaylightTime(firstInputT)
-//		 	  && tz.inDaylightTime(outputCal.getTime()))
-//		{
-//			outputCal.add(Calendar.HOUR_OF_DAY, 1);
-//		}
-		
+			}		
 		
 		// Because of the added increment, I could end up with an outputCal time that
 		// is before the first input time.
