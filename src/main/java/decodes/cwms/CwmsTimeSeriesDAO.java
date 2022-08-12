@@ -1423,7 +1423,7 @@ public class CwmsTimeSeriesDAO
 			return false;
 		}
 		long daysBetween = TimeUnit.MILLISECONDS.toDays(currentTimestamp.getTime() - lastTimestamp.getTime());
-		return daysBetween > (DecodesSettings.instance().cp_cwmstsdb_getNewData_max_timegap_days - 1);
+		return daysBetween >= DecodesSettings.instance().cp_cwmstsdb_getNewData_max_timegap_days;
 	}
 
 
