@@ -33,6 +33,12 @@
                 <condition property="VENV_PATH" value="${docs.venv}/Scripts" else="${docs.venv}/bin">
                     <os family="windows"/>
                 </condition>
+                <exec executable="pip" failonerror="true">
+                    <arg value="install"/>
+                    <arg value="-r"/>
+                    <arg value="${docs.dir}/requirements.txt"/>
+                    <env key="PATH" path="${VENV_PATH}:${PATH}"/>
+                </exec>
 
                 <condition property="sphinx.target" value="latexpdf" else="html">
                     <isset property="have.latexmk"/>
@@ -56,6 +62,10 @@
     <target name="build" depends="check.prereqs" description="Build the document PDFs" if="canbuilddocs">
         <exec executable="cmd" dir="${docs.dir}" osfamily="windows" failonerror="true">
             <arg line="/c make.bat ${sphinx.target}"/>
+            <env key="PATH" path="${VENV_PATH}:${PATH}"/>
+        </exec>
+        <exec executable="make" dir="${docs.dir}" osfamily="unix" failonerror="true">
+            <arg value="${sphinx.target}"/>
             <env key="PATH" path="${VENV_PATH}:${PATH}"/>
         </exec>
     </target>
