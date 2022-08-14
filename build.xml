@@ -269,12 +269,30 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			</fileset>
 		</copy>
 
-		<copy todir="stage/doc">
-			<fileset dir="${docs.output}">
-				<include name="**"/>
-				<exclude name=".buildinfo"/>
-			</fileset>
-		</copy>
+		<echo message="tgt -> ${sphinx.target} ${docs.output}"/>
+		<if>
+			<!-- the output between PDF and html is a bit different -->
+			<equals arg1="${sphinx.target}" arg2="latexpdf"/>
+			<then>
+				<echo message="copying opendcs.pdf."/>
+				<copy todir="stage/doc">
+					<fileset dir="${docs.output}">
+						<include name="*.pdf"/>
+					</fileset>
+				</copy>
+			</then>
+			<else>
+				<echo message="copying html files."/>
+				<copy todir="stage/doc">
+					<fileset dir="${docs.output}">
+						<include name="**"/>
+						<exclude name=".buildinfo"/>
+					</fileset>
+				
+				</copy>
+			</else>
+		</if>
+
 		<tar destfile="stage/doc.tar.gz" compression="gzip">
 			<tarfileset dir="stage" includes="doc/**">
 			</tarfileset>

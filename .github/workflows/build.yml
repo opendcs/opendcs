@@ -18,7 +18,10 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '8'
-          distribution: adopt      
+          distribution: adopt
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
       - name: Compile test and stage
         run: |          
           ant test

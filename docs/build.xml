@@ -9,7 +9,7 @@
     <condition property="PATH" value="${env.Path}" else="${env.PATH}">
         <os family="windows"/>
     </condition>
-    <condition property="PYTHON_EXE" value="python.exe" else="python">
+    <condition property="PYTHON_EXE" value="python.exe" else="python3">
         <os family="windows"/>
     </condition>
     <available property="have.python" file="${PYTHON_EXE}" filepath="${PATH}"/>
@@ -25,7 +25,7 @@
             </then>
             <else>
                 <echo message="Creating virtual env and installing sphinx"/>
-                <exec executable="python" dir="${docs.dir}">
+                <exec executable="${PYTHON_EXE}" dir="${docs.dir}">
                     <arg value="-m"/>
                     <arg value="venv"/>
                     <arg value="${docs.venv}"/>
@@ -33,7 +33,8 @@
                 <condition property="VENV_PATH" value="${docs.venv}/Scripts" else="${docs.venv}/bin">
                     <os family="windows"/>
                 </condition>
-                <exec executable="pip" failonerror="true">
+                <exec executable="${PYTHON_EXE}" failonerror="true">
+                    <arg value="-m"/><arg value="pip"/>
                     <arg value="install"/>
                     <arg value="-r"/>
                     <arg value="${docs.dir}/requirements.txt"/>
@@ -43,17 +44,18 @@
                 <condition property="sphinx.target" value="latexpdf" else="html">
                     <isset property="have.latexmk"/>
                 </condition>
-                <condition property="docs.output" value="${docs.dir}/build/latexpdf" else="${docs.dir}/build/html">
+                <condition property="docs.output" value="${docs.dir}/build/latex" else="${docs.dir}/build/html">
                     <isset property="have.latexmk"/>
                 </condition>
                 <if>
                     <not><isset property="have.latexmk"/></not>
                     <then>
                         <echo message="Command 'latexmk' is not available. Will build html files for documentation."/>
-                        <echo message="If you want to generate PDFs please install pdflatex and set in PATH as appropriate to your system"/>
+                        <echo message="If you want to generate PDFs please install a LaTeX distribution, latexmk and set in PATH as appropriate to your system"/>
+                        <echo message="on ubuntu `sudo apt install texlive-latex-base texlive-latex-recommended texlive-latex-extra latexmk"/>
                     </then>
                 </if>
-                <property name="canbuilddocs" value="true"/>
+                <property name="canbuilddocs" value="true"/>                
             </else>
         </if>        
     </target>
