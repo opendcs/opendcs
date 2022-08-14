@@ -165,7 +165,7 @@ Application” is a Java program that runs continually in the background.
 -  When results are written, this may recursively fire *other*
    computations, and so on.
 
-.. image:: ./media/cp-userguide/image1.emf
+.. image:: ./media/cp-userguide/cp-data-flow.png
 
 Figure 1: Workflow for the Computation Processor.
 
@@ -429,7 +429,7 @@ Figure 8 shows how the tools interact with each other and the time
 series database. For completeness we also show some of the DECODES tools
 which process raw data as it arrives from the field.
 
-.. image:: ./media/cp-userguide/image8.emf
+.. image:: ./media/cp-userguide/decodes-cp-interactions.png
 
 Figure 8: Workflow through the Provided Tools.
 
@@ -551,7 +551,7 @@ The CCP distinguishes between three general types of algorithms:
 
 -  *Aggregating* – These algorithms iterate over a defined time-period.
    After iterating, they produce an aggregate for the period. An example
-   would be an averaging algorithm, e.g. “daily = ∑(hourly A)”. When new
+   would be an averaging algorithm, e.g. :math:`daily = \sum(hourly A)`. When new
    ‘A’ values are placed in the database, we iterate over each day for
    which we have ‘A’ samples. We produce an output for each day.
 
@@ -1859,7 +1859,7 @@ concept is the same for HDB). Suppose you have a group called
 shown. Then you define the parameters as shown and see how the chain
 works!
 
-.. image:: ./media/cp-userguide/image31.emf
+.. image:: ./media/cp-userguide/group-comp-chain.png
 
 Figure 28: Chain of Computations with a Single Group.
 

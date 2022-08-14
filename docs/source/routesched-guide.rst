@@ -3280,7 +3280,7 @@ related data. The DECODES software suite has a module allowing it to
 place incoming data directly into the CWMS database. This obviates the
 need for intermediate flat-files used in the pass.
 
-.. image:: ./media/routing/image42.emf
+.. image:: ./media/routing/cwms-consumer-flow.png
 
 Figure ‑: CWMS Consumer Data Flow
 
@@ -4724,7 +4724,7 @@ processed directly through DECODES. However, a recommended way is to use
 LRGS to store raw message data. This arrangement is illustrated in
 Figure 44.
 
-.. image:: ./media/routing/image58.gif
+.. image:: ./media/routing/image58.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:EDL-LRGS.gif
    :width: 6in
    :height: 3.79927in
