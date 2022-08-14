@@ -8,6 +8,7 @@
         <conf name="test_platform" visibility="private"/>
         <conf name="izpack" visibility="private"/>
         <conf name="groovy" visibility="private"/>
+        <conf name="build" visibility="private"/>
     </configurations>
     <dependencies>
         <dependency org="com.oracle.ojdbc" name="ojdbc8" rev="19.3.0.0"/>
@@ -81,6 +82,9 @@
         <dependency org="org.codehaus.groovy" name="groovy-ant" rev="3.0.10" conf="groovy->default"/>
         <dependency org="org.codehaus.groovy" name="groovy" rev="3.0.10" conf="groovy->default"/>
         <dependency org="org.codehaus.groovy" name="groovy-xml" rev="3.0.10" conf="groovy->default"/>
+
+        <!-- other build dependencies -->
+        <dependency org="ant-contrib" name="ant-contrib" rev="1.0b3" conf="build->default"/>
 
         <!-- keep unused transient dependencies out -->
 

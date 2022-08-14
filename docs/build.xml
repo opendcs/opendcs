@@ -1,0 +1,67 @@
+<project name="docs">
+    
+    <include file="../common.xml"/>
+    
+    <property name="docs.dir" value="${project.dir}/docs"/>
+    <property name="docs.venv" value="${docs.dir}/build/sphinx"/>
+    
+
+    <condition property="PATH" value="${env.Path}" else="${env.PATH}">
+        <os family="windows"/>
+    </condition>
+    <condition property="PYTHON_EXE" value="python.exe" else="python">
+        <os family="windows"/>
+    </condition>
+    <available property="have.python" file="${PYTHON_EXE}" filepath="${PATH}"/>
+    <available property="have.latexmk" file="latexmk" filepath="${PATH}"/>
+
+    <target name="check.prereqs" depends="common.resolve.build" description="Determine if we have what we need and inform the user if we don't.">        
+        <if>
+            <not>
+                <isset property="have.python"/>
+            </not>
+            <then>
+                <echo message="python is required to build the documentation, please install as appropriate to your platform"/>
+            </then>
+            <else>
+                <echo message="Creating virtual env and installing sphinx"/>
+                <exec executable="python" dir="${docs.dir}">
+                    <arg value="-m"/>
+                    <arg value="venv"/>
+                    <arg value="${docs.venv}"/>
+                </exec>
+                <condition property="VENV_PATH" value="${docs.venv}/Scripts" else="${docs.venv}/bin">
+                    <os family="windows"/>
+                </condition>
+
+                <condition property="sphinx.target" value="latexpdf" else="html">
+                    <isset property="have.latexmk"/>
+                </condition>
+                <condition property="docs.output" value="${docs.dir}/build/latexpdf" else="${docs.dir}/build/html">
+                    <isset property="have.latexmk"/>
+                </condition>
+                <if>
+                    <not><isset property="have.latexmk"/></not>
+                    <then>
+                        <echo message="Command 'latexmk' is not available. Will build html files for documentation."/>
+                        <echo message="If you want to generate PDFs please install pdflatex and set in PATH as appropriate to your system"/>
+                    </then>
+                </if>
+                <property name="canbuilddocs" value="true"/>
+            </else>
+        </if>        
+    </target>
+
+
+    <target name="build" depends="check.prereqs" description="Build the document PDFs" if="canbuilddocs">
+        <exec executable="cmd" dir="${docs.dir}" osfamily="windows" failonerror="true">
+            <arg line="/c make.bat ${sphinx.target}"/>
+            <env key="PATH" path="${VENV_PATH}:${PATH}"/>
+        </exec>
+    </target>
+
+    <target name="clean">
+        <delete dir="${docs.dir}/build"/>
+    </target>
+
+</project>

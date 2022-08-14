@@ -25,7 +25,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
     
     <include file="common.xml"/>
-	
+	<include file="docs/build.xml"/>
 	
 <!-- depends="clean" -->
 	<target name="prepare"  description="Makes build environment.">
@@ -44,6 +44,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <fileset dir="." includes="opendcs-cwms-*.tgz"/>
 		</delete>
 		<delete dir="combined-src"/>
+        <antcall target="docs.clean"/>        
 	</target>
 
 	<target name="compile" depends="prepare,common.resolve"
@@ -152,7 +153,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
 	
 	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="jar,common.resolve">
+	<target name="stage" depends="jar,common.resolve.build,docs.build">
 		<mkdir dir="stage"/>
 		<mkdir dir="stage/doc"/>
 		<mkdir dir="stage/netlist"/>
@@ -269,9 +270,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		</copy>
 
 		<copy todir="stage/doc">
-			<fileset dir="${project.dir}/doc">
-				<include name="*.pdf"/>
-				<include name="algorithms.txt"/>
+			<fileset dir="${docs.output}">
+				<include name="**"/>
+				<exclude name=".buildinfo"/>
 			</fileset>
 		</copy>
 		<tar destfile="stage/doc.tar.gz" compression="gzip">
@@ -405,7 +406,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		</tar>
 	</target>
 
-	<target name="eclipse-ide-files" depends="common.resolve">
+	<target name="eclipse-ide-files" depends="common.resolve.build">
 		<!-- 
 			Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
 			coming up with this!

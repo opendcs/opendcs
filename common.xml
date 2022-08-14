@@ -63,15 +63,25 @@
     </target>
 
     <target name="resolve" description="--> retreive dependencies with ivy" depends="init-ivy">
-        <ivy:retrieve conf="runtime,test,test_platform,izpack,groovy"
+        <ivy:retrieve conf="runtime,test,test_platform"
                       sync="true"
-                      pattern="build/ivy/[conf]/[artifact].[ext]"              
+                      pattern="build/ivy/[conf]/[artifact].[ext]"
         />
         <ivy:cachepath pathid="runtime.classpath" conf="runtime"/>
         <ivy:cachepath pathid="test.classpath" conf="test"/>
-        <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>
+        <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>        
+    </target>
+
+
+    <target name="resolve.build" depends="init-ivy" description="--> retrieve build script dependencies">
+        <ivy:retrieve conf="build,groovy,izpack"
+                      sync="true"
+                      pattern="build/ivy/[conf]/[artifact].[ext]"              
+        />
         <ivy:cachepath pathid="izpack.classpath" conf="izpack"/>
         <ivy:cachepath pathid="groovy.classpath" conf="groovy"/>
+        <ivy:cachepath pathid="build.classpath" conf="build"/>
+        <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="build.classpath"/>
     </target>
 
     <target name="report" depends="resolve" description="--> generates a report of dependencies">
