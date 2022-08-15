@@ -155,7 +155,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	<!-- Builds staging area for IzPack Installer -->
 	<target name="stage" depends="jar,common.resolve.build,docs.build">
 		<mkdir dir="stage"/>
-		<mkdir dir="stage/doc"/>
+		<mkdir dir="stage/doc/html"/>
 		<mkdir dir="stage/netlist"/>
 		<touch file="stage/netlist/empty.nl"/>
 		<mkdir dir="stage/icons"/>
@@ -269,27 +269,29 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			</fileset>
 		</copy>
 
-		<echo message="tgt -> ${sphinx.target} ${docs.output}"/>
+
+		<copy todir="stage/doc/html">
+			<fileset dir="${docs.output}/html">
+				<include name="**"/>
+				<exclude name=".buildinfo"/>
+			</fileset>		
+		</copy>
+
+
 		<if>
 			<!-- the output between PDF and html is a bit different -->
 			<equals arg1="${sphinx.target}" arg2="latexpdf"/>
 			<then>
+				<mkdir dir="stage/doc/pdf"/>
 				<echo message="copying opendcs.pdf."/>
-				<copy todir="stage/doc">
-					<fileset dir="${docs.output}">
+				<copy todir="stage/doc/pdf">
+					<fileset dir="${docs.output}/latex">
 						<include name="*.pdf"/>
 					</fileset>
 				</copy>
 			</then>
 			<else>
 				<echo message="copying html files."/>
-				<copy todir="stage/doc">
-					<fileset dir="${docs.output}">
-						<include name="**"/>
-						<exclude name=".buildinfo"/>
-					</fileset>
-				
-				</copy>
 			</else>
 		</if>
 

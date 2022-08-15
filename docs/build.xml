@@ -44,13 +44,11 @@
                 <condition property="sphinx.target" value="latexpdf" else="html">
                     <isset property="have.latexmk"/>
                 </condition>
-                <condition property="docs.output" value="${docs.dir}/build/latex" else="${docs.dir}/build/html">
-                    <isset property="have.latexmk"/>
-                </condition>
+                <property name="docs.output" value="${docs.dir}/build"/>                    
                 <if>
                     <not><isset property="have.latexmk"/></not>
                     <then>
-                        <echo message="Command 'latexmk' is not available. Will build html files for documentation."/>
+                        <echo message="Command 'latexmk' is not available. Will only build html files for documentation."/>
                         <echo message="If you want to generate PDFs please install a LaTeX distribution, latexmk and set in PATH as appropriate to your system"/>
                         <echo message="on ubuntu `sudo apt install texlive-latex-base texlive-latex-recommended texlive-latex-extra latexmk"/>
                     </then>
@@ -60,16 +58,30 @@
         </if>        
     </target>
 
+    <macrodef name="builddocs">
+        <attribute name="target"/>
+        <attribute name="musthaveprop"/>
+        <sequential>
+            <if>
+                <isset property="@{musthaveprop}"/>            
+                <then>
+                    <exec executable="cmd" dir="${docs.dir}" osfamily="windows" failonerror="true">
+                        <arg line="/c make.bat ${target}"/>
+                        <env key="PATH" path="${VENV_PATH}:${PATH}"/>
+                    </exec>
+                    <exec executable="make" dir="${docs.dir}" osfamily="unix" failonerror="true">
+                        <arg value="@{target}"/>
+                        <env key="PATH" path="${VENV_PATH}:${PATH}"/>
+                    </exec>        
+                </then>
+            </if>
+        </sequential>
+    </macrodef>
 
-    <target name="build" depends="check.prereqs" description="Build the document PDFs" if="canbuilddocs">
-        <exec executable="cmd" dir="${docs.dir}" osfamily="windows" failonerror="true">
-            <arg line="/c make.bat ${sphinx.target}"/>
-            <env key="PATH" path="${VENV_PATH}:${PATH}"/>
-        </exec>
-        <exec executable="make" dir="${docs.dir}" osfamily="unix" failonerror="true">
-            <arg value="${sphinx.target}"/>
-            <env key="PATH" path="${VENV_PATH}:${PATH}"/>
-        </exec>
+
+    <target name="build" depends="check.prereqs" if="canbuilddocs">
+        <builddocs target="html" musthaveprop="canbuilddocs"/>
+        <builddocs target="latexpdf" musthaveprop="have.latexmk"/>
     </target>
 
     <target name="clean">
