@@ -10,6 +10,9 @@
         <conf name="groovy" visibility="private"/>
         <conf name="build" visibility="private"/>
     </configurations>
+    <publications>
+        <artifact name="opendcs" type="jar" conf="runtime" ext="jar"/>
+    </publications>
     <dependencies>
         <dependency org="com.oracle.ojdbc" name="ojdbc8" rev="19.3.0.0"/>
         <dependency org="org.postgresql" name="postgresql" rev="42.2.23"/>

@@ -72,7 +72,6 @@
         <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>        
     </target>
 
-
     <target name="resolve.build" depends="init-ivy" description="--> retrieve build script dependencies">
         <ivy:retrieve conf="build,groovy,izpack"
                       sync="true"
@@ -92,4 +91,14 @@
     <target name="izpack.dependencies" depends="resolve">		
 		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
 	</target>
+
+    <macrodef name="publish">
+        <sequential>
+            <ivy:deliver deliverpattern="build/ivy.xml" pubrevision="${ivy.revision}"/>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/${ivy.module}.pom"/>
+            <ivy:publish resolver="local" organisation="com.opendcs" module="opendcs" update="true">
+                <artifacts pattern="build/lib/[artifact].[ext]"/>
+            </ivy:publish>
+        </sequential>
+    </macrodef>
 </project>

@@ -149,6 +149,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			 update="true"/>
 	</target>
 
+	<target name="publish" depends="jar,common.init-ivy" description="--> publish ivy artifacts">
+        <publish/>
+    </target>
+
 	<target name="all" depends="clean,jar"
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
 	

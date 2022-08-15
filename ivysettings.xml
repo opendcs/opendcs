@@ -1,7 +1,10 @@
 <ivysettings>
-    <settings defaultResolver="default"/>
-
+    <settings defaultResolver="default"/>    
     <resolvers>
+        <filesystem name="local" cache="default-cache">
+            <ivy pattern="${ivy.settings.dir}/build/localivy/[organisation]/[module]/ivys/ivy-[revision].xml"/>
+            <artifact pattern="${ivy.settings.dir}/build/localivy/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>  
+        </filesystem>
         <chain name="default" returnFirst="true" checkmodified="true" changingPattern=".*SNAPSHOT">
             <ibiblio name="central-https" m2compatible="true" root="https://repo1.maven.org/maven2/"/>
             <ibiblio name="hec" m2compatible="true" root="https://www.hec.usace.army.mil/nexus/repository/maven-public"/>
