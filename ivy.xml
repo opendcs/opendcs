@@ -85,7 +85,7 @@
 
         <!-- other build dependencies -->
         <dependency org="ant-contrib" name="ant-contrib" rev="1.0b3" conf="build->default"/>
-
+        <dependency org="com.puppycrawl.tools" name="checkstyle" rev="10.3.2" conf="build->default"/>
         <!-- keep unused transient dependencies out -->
 
         <exclude org="mil.army.usace.hec" module="loading-gui-lib"/>

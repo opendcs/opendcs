@@ -513,4 +513,12 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             to make sure a JDK is available and configured correctly for that need.
         </echo>
 	</target>
+
+
+	<target name="checkstyle" depends="common.resolve.build" description="Verify files are formatted correctly.">		
+		<checkstyle config="config/checkstyle.xml">
+			<fileset dir="src/main/java" includes="**/*.java"/>
+			<formatter type="plain"/>
+		</checkstyle>
+	</target>
 </project>
