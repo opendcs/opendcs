@@ -85,7 +85,9 @@
 
         <!-- other build dependencies -->
         <dependency org="ant-contrib" name="ant-contrib" rev="1.0b3" conf="build->default"/>
-        <dependency org="com.puppycrawl.tools" name="checkstyle" rev="10.3.2" conf="build->default"/>
+        <!-- for some reason the github action build requires classes built for java 8 but my local environment 
+            does not. Downgrade for now to people can review.-->
+        <dependency org="com.puppycrawl.tools" name="checkstyle" rev="9.3" conf="build->default"/>
         <!-- keep unused transient dependencies out -->
 
         <exclude org="mil.army.usace.hec" module="loading-gui-lib"/>
