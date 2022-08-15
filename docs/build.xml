@@ -33,7 +33,7 @@
                 <condition property="VENV_PATH" value="${docs.venv}/Scripts" else="${docs.venv}/bin">
                     <os family="windows"/>
                 </condition>
-                <exec executable="${PYTHON_EXE}" failonerror="true">
+                <exec executable="${VENV_PATH}/${PYTHON_EXE}" failonerror="true">
                     <arg value="-m"/><arg value="pip"/>
                     <arg value="install"/>
                     <arg value="-r"/>
@@ -66,13 +66,13 @@
                 <isset property="@{musthaveprop}"/>            
                 <then>
                     <exec executable="cmd" dir="${docs.dir}" osfamily="windows" failonerror="true">
-                        <arg line="/c make.bat ${target}"/>
+                        <arg line="/c make.bat @{target}"/>
                         <env key="PATH" path="${VENV_PATH}:${PATH}"/>
                     </exec>
                     <exec executable="make" dir="${docs.dir}" osfamily="unix" failonerror="true">
                         <arg value="@{target}"/>
                         <env key="PATH" path="${VENV_PATH}:${PATH}"/>
-                    </exec>        
+                    </exec>
                 </then>
             </if>
         </sequential>
