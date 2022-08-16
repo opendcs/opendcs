@@ -1,7 +1,21 @@
 <ivysettings>
-    <settings defaultResolver="default"/>
-
+    <property name="deploy-host" value="${deploy.host}"/>
+    <property name="deploy-user" value="${deploy.user}"/>
+    <property name="deploy-password" value="${deploy.password}"/>
+    <property name="maven-releases" value="${deploy.url.release}"/>
+    <property name="maven-snapshots" value="${deploy.url.snapshot}"/>
+    <property name="snapshot-time" value="${snapshot.time}"/>
+    <property name="root-version" value="${version}"/>
+    <settings defaultResolver="default">
+        <credentials host="${deploy-host}"
+                     realm="Sonatype Nexus Repository Manager"
+                     username="${deploy-user}" passwd="${deploy-password}"/>
+    </settings>
     <resolvers>
+        <url name="maven-snapshots" m2compatible="true" checkmodified="true" changingPattern=".*SNAPSHOT">
+            <artifact pattern="${maven-snapshots}/[organisation]/[module]/[revision]/[artifact]-${root-version}-${snapshot-time}.[ext]"/>
+        </url>
+        <ibiblio name="maven-releases" m2compatible="true" root="${maven-releases}"/>
         <chain name="default" returnFirst="true" checkmodified="true" changingPattern=".*SNAPSHOT">
             <ibiblio name="central-https" m2compatible="true" root="https://repo1.maven.org/maven2/"/>
             <ibiblio name="hec" m2compatible="true" root="https://www.hec.usace.army.mil/nexus/repository/maven-public"/>

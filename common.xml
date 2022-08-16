@@ -9,7 +9,9 @@
 
 
     <property environment="env"/>
-
+    <tstamp>
+        <format property="snapshot.time" pattern="yyyyMMdd.hhmmss-1"/>
+    </tstamp>
 	
 	<property name="project.dir" value="${basedir}"/>	
 	<property name="src.dir" value="src/main/java"/>
@@ -72,7 +74,6 @@
         <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>        
     </target>
 
-
     <target name="resolve.build" depends="init-ivy" description="--> retrieve build script dependencies">
         <ivy:retrieve conf="build,groovy,izpack"
                       sync="true"
@@ -95,4 +96,31 @@
     <target name="izpack.dependencies" depends="resolve">		
 		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
 	</target>
+
+    <macrodef name="publish">
+        <sequential>
+            <ivy:deliver deliverpattern="build/ivy.xml"/>
+            <if>
+                <isset property="DEPLOY_RELEASE"/>
+                <then>
+                    <property name="deploy.resolver" value="maven-releases"/>
+                    <property name="deploy.version" value="${ivy.revision}"/>
+                    <property name="deploy.status" value="release"/>
+                    <property name="deploy.update" value="false"/>
+                </then>
+                <else>
+                    <property name="deploy.resolver" value="maven-snapshots"/>                    
+                    <property name="deploy.version" value="${ivy.revision}-SNAPSHOT"/>
+                    <property name="deploy.status" value="integration"/>
+                    <property name="deploy.update" value="true"/>
+                </else>
+            </if>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build//lib/${ivy.module}.pom"/>
+            <ivy:publish resolver="${deploy.resolver}" organisation="com.opendcs" module="opendcs"
+                         update="${deploy.update}" overwrite="${deploy.update}" publishivy="false"
+                         pubrevision="${deploy.version}" status="${deploy.status}">
+                <artifacts pattern="build/lib/[artifact].[ext]"/>
+            </ivy:publish>
+        </sequential>
+    </macrodef>
 </project>
