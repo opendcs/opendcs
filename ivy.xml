@@ -1,7 +1,10 @@
 
 
-<ivy-module version="2.0">
-    <info organisation="com.opendcs" module="opendcs"/>
+<ivy-module version="2.0" xmlns:e="https//ant.apache.org/ivy/extra">
+    <info organisation="com.opendcs" 
+          module="opendcs"
+          revision="${version}"
+          e:snapshot="a${snapshot.time}"/>
     <configurations defaultconf="runtime" defaultconfmapping="runtime->default">
         <conf name="runtime" visibility="public"/>
         <conf name="test"  visibility="private"/>
@@ -11,6 +14,7 @@
         <conf name="build" visibility="private"/>
     </configurations>
     <publications>
+        <artifact name="opendcs" type="pom" conf="runtime" ext="pom"/>
         <artifact name="opendcs" type="jar" conf="runtime" ext="jar"/>
     </publications>
     <dependencies>

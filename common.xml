@@ -9,7 +9,9 @@
 
 
     <property environment="env"/>
-
+    <tstamp>
+        <format property="snapshot.time" pattern="yyyyMMdd.hhmmss-1"/>
+    </tstamp>
 	
 	<property name="project.dir" value="${basedir}"/>	
 	<property name="src.dir" value="src/main/java"/>
@@ -94,9 +96,26 @@
 
     <macrodef name="publish">
         <sequential>
-            <ivy:deliver deliverpattern="build/ivy.xml" pubrevision="${ivy.revision}"/>
-            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/${ivy.module}.pom"/>
-            <ivy:publish resolver="local" organisation="com.opendcs" module="opendcs" update="true">
+            <ivy:deliver deliverpattern="build/ivy.xml"/>
+            <if>
+                <isset property="DEPLOY_RELEASE"/>
+                <then>
+                    <property name="deploy.resolver" value="maven-releases"/>
+                    <property name="deploy.version" value="${ivy.revision}"/>
+                    <property name="deploy.status" value="release"/>
+                    <property name="deploy.update" value="false"/>
+                </then>
+                <else>
+                    <property name="deploy.resolver" value="maven-snapshots"/>                    
+                    <property name="deploy.version" value="${ivy.revision}-SNAPSHOT"/>
+                    <property name="deploy.status" value="integration"/>
+                    <property name="deploy.update" value="true"/>
+                </else>
+            </if>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build//lib/${ivy.module}.pom"/>
+            <ivy:publish resolver="${deploy.resolver}" organisation="com.opendcs" module="opendcs"
+                         update="${deploy.update}" overwrite="${deploy.update}" publishivy="false"
+                         pubrevision="${deploy.version}" status="${deploy.status}">
                 <artifacts pattern="build/lib/[artifact].[ext]"/>
             </ivy:publish>
         </sequential>
