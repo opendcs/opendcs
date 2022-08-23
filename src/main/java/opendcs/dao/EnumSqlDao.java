@@ -58,7 +58,7 @@ public class EnumSqlDao
 	}
 	
 	private DbEnum rs2Enum(ResultSet rs, int dbVer)
-		throws DbIoException, SQLException
+		throws SQLException
 	{
 		DbKey id = DbKey.createDbKey(rs, 1);
 		DbEnum en = new DbEnum(id, rs.getString(2));
@@ -117,36 +117,36 @@ public class EnumSqlDao
 		throws DbIoException
 	{
 		int dbVer = db.getDecodesDatabaseVersion();
-		String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
-		ResultSet rs = doQuery(q);
 
 		try
 		{
 			synchronized(cache)
 			{
-				while (rs != null && rs.next())
-				{
-					DbEnum en = rs2Enum(rs, dbVer);
-					cache.put(en);
-				}
+				/**				 
+				 * This could also be a single query with a join.
+				 * though a little trickier with the different versions columns
+				 */
+				doQuery("SELECT " + getEnumColumns(dbVer) + " FROM Enum", 
+							  (rs) -> {
+								DbEnum en = rs2Enum(rs, dbVer);
+								cache.put(en);
+							});
 				
-				q = "SELECT enumId, enumValue, description, execClass, editClass";
+				String q = "SELECT enumId, enumValue, description, execClass, editClass";
 				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 					q = q + ", sortNumber";
 				q = q + " FROM EnumValue";
-				rs = doQuery(q);
-				while(rs != null && rs.next())
-				{
+				doQuery(q, (rs) -> {
 					DbKey key = DbKey.createDbKey(rs, 1);
 					DbEnum dbEnum = cache.getByKey(key);
 					if (dbEnum != null)
 						rs2EnumValue(rs, dbEnum);
-				}
+				});				
 			}
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error in query '" + q + "': " + ex;
+			String msg = "Error in query: " + ex;
 			warning(msg);
 			throw new DbIoException(msg);
 		}
@@ -245,11 +245,11 @@ public class EnumSqlDao
 			"execClass, editClass";
 		if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 			q = q + ", sortNumber";
-		q = q + " FROM EnumValue WHERE EnumID = " + dbenum.getId();
-		ResultSet rs = doQuery2(q);
-
-		while (rs != null && rs.next()) 
+		q = q + " FROM EnumValue WHERE EnumID = ?";// + dbenum.getId();
+		//ResultSet rs = doQuery2(q);
+		doQuery(q,(rs)-> {
 			rs2EnumValue(rs, dbenum);
+		},dbenum.getId());
 	}
 	
 	private void rs2EnumValue(ResultSet rs, DbEnum dbEnum)
@@ -281,21 +281,42 @@ public class EnumSqlDao
 	public void writeEnumValue(EnumValue ev)
 		throws DbIoException
 	{
+		ArrayList<Object> args = new ArrayList<>();
+		args.add(ev.getDbenum().getId().getValue());
+		args.add(ev.getValue());
+		args.add(ev.getDescription());
+		args.add(ev.getExecClassName());
+		args.add(ev.getEditClassName());
 		String q =
 			"INSERT INTO EnumValue VALUES(" +
-				ev.getDbenum().getId() + ", " +
-				sqlString(ev.getValue()) + ", " +
-				sqlString(ev.getDescription()) + ", " +
-				sqlString(ev.getExecClassName()) + ", " +
-				sqlString(ev.getEditClassName());
+				"?," + /*ev.getDbenum().getId() + ", " +*/
+				"?," + /*sqlString(ev.getValue()) + ", " +*/
+				"?," + /*sqlString(ev.getDescription()) + ", " +*/
+				"?," + /*sqlString(ev.getExecClassName()) + ", " +*/
+				"?"; /*sqlString(ev.getEditClassName());*/
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
+		{
 			q += ")";
+		}			
 		else if (ev.getSortNumber() == EnumValue.UNDEFINED_SORT_NUMBER)
+		{
 			q += ", NULL)";
+		}
 		else
-			q = q + ", " + ev.getSortNumber() + ")";
-
-		doModify(q);
+		{
+			q = q + ", ?)";
+			args.add(ev.getSortNumber());
+		}
+		try
+		{
+			doModify(q,args.toArray());
+		} 
+		catch(SQLException er)
+		{
+			System.out.println(er);
+			throw new DbIoException("Failed to add enum to database", er);
+		}
+		
 	}
 
 }

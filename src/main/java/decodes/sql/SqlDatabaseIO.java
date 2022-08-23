@@ -2074,7 +2074,7 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 			enumSqlDao.writeEnumList(enumList);
 		}
 		catch (DbIoException ex)
-		{
+		{			
 			throw new DatabaseException(ex.toString());
 		}
 		finally

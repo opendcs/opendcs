@@ -25,4 +25,9 @@ public class TsdbException extends Exception
 	{
 		super(msg);
 	}
+
+	public TsdbException(String msg, Throwable ex)
+	{
+		super(msg,ex);
+	}
 }
