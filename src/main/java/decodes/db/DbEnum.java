@@ -92,6 +92,7 @@
 package decodes.db;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import opendcs.dao.CachableDbObject;
 
@@ -368,6 +369,26 @@ public class DbEnum
 	public void clear()
 	{
 		enumValues.clear();
+	}
+
+	@Override
+	public String toString()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append(enumName).append("{")
+          .append("id=").append(getId().getValue()).append(",")
+		  .append("description=").append(description).append(",")
+		  .append("defaultValue=")
+		  	.append(defaultValue != null ? defaultValue : "not set").append(",")
+		  .append("values=[")
+		  .append(String.join(",",
+		  		              enumValues.stream()
+							            .map(EnumValue::getFullName)
+										.collect(Collectors.toList())
+							)
+		   )
+		  .append("]}");
+		return sb.toString();
 	}
 }
 
