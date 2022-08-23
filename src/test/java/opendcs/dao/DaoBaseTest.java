@@ -26,7 +26,7 @@ public class DaoBaseTest
     @BeforeAll
     public static void setup() throws Exception
     {
-        Class.forName("org.apache.derby.iapi.jdbc.AutoloadedDriver").newInstance();
+        Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
     }
 
     @BeforeEach

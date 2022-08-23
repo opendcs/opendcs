@@ -162,7 +162,7 @@ can find your git source tree and your directory with the downloaded jars.
 				<resolver:dependency coords="org.junit.platform:junit-platform-commons:1.8.1"/>
 				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-api:5.8.1"/>
 				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-engine:5.8.1"/>
-				<resolver:dependency coords="org.apache.derby:derby:10.15.2.0"/>
+				<resolver:dependency coords="org.apache.derby:derby:10.14.2.0"/>
 				<resolver:dependency coords="commons-io:commons-io:2.11.0"/>
 			</resolver:dependencies>
 			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
