@@ -40,7 +40,9 @@ can find your git source tree and your directory with the downloaded jars.
 
 
 <project name="OPENDCS Toolkit" default="jar" basedir="."
-	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant">
+	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant"
+	xmlns:if="ant:if"
+    >
 	<description>Open DCS</description>
 
 	<property environment="env"/>
@@ -56,6 +58,7 @@ can find your git source tree and your directory with the downloaded jars.
 	<property name="src.dir" value="${project.dir}/src/main/java"/>
 	<property name="src.test.dir" value="${project.dir}/src/test/java"/>
 	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
+	<property name="resources.test.dir" value="${project.dir}/src/test/resources"/>
 
 	<!-- Directories -->
 	<property name="ant.home" value="/usr/local/ant"/>
@@ -159,7 +162,8 @@ can find your git source tree and your directory with the downloaded jars.
 				<resolver:dependency coords="org.junit.platform:junit-platform-commons:1.8.1"/>
 				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-api:5.8.1"/>
 				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-engine:5.8.1"/>
-
+				<resolver:dependency coords="org.apache.derby:derby:10.15.2.0"/>
+				<resolver:dependency coords="commons-io:commons-io:2.11.0"/>
 			</resolver:dependencies>
 			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
 		</resolver:resolve>
@@ -232,22 +236,26 @@ can find your git source tree and your directory with the downloaded jars.
 			<classpath refid="project.class.path"/>
 			<classpath refid="junit.platform.libs.classpath"/>
 		</javac>
-
+		<copy todir="${build.test.classes}">
+    		<fileset dir="${resources.test.dir}"/>			
+		</copy>
 	</target>
 
-	<target name="test" depends="compile-test">
+	<target name="test" depends="compile-test">		
 		<mkdir dir="${build.dir}/test-results"/>
-		<junitlauncher haltOnFailure="true" printSummary="true">
-			<classpath refid="junit.platform.libs.classpath"/>
-			<classpath refid="project.class.path"/>
-			<classpath>
-				<pathelement location="${build.test.classes}"/>
-			</classpath>
-
+		<junitlauncher haltOnFailure="true" printSummary="true">			
+            <classpath refid="project.class.path"/>
+            <classpath refid="junit.platform.libs.classpath"/>
+            <classpath>
+                <pathelement location="${build.test.classes}"/>
+                <pathelement location="${build.classes}"/>
+            </classpath>
 			<testclasses outputdir="${build.dir}/test-results">
-				<!-- <fork dir="${build.dir}"/>-->
+				<fork>
+					<jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+				</fork>
 				<fileset dir="${build.test.classes}"/>
-				<listener type="legacy-brief" sendSysOut="true"/>
+				<listener type="legacy-brief" sendSysOut="true" sendSysErr="true"/>
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
 			</testclasses>
 		</junitlauncher>
