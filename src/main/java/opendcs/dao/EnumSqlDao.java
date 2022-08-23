@@ -88,26 +88,31 @@ public class EnumSqlDao
 			
 			int dbVer = db.getDecodesDatabaseVersion();
 			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
-			q = q + " where lower(name) = " + sqlString(enumName.toLowerCase());
-			ResultSet rs = doQuery(q);
-	
+			q = q + " where lower(name) = lower(?)";// + sqlString(enumName.toLowerCase());
+			
 			try
 			{
-				if (rs == null || !rs.next())
+				ret = getSingleResult(q,(rs) -> {
+					DbEnum en = rs2Enum(rs, dbVer);
+					return en;
+				},enumName);
+				if (ret == null)
 				{
 					warning("No such enum '" + enumName + "'");
 					return null;
 				}
-				DbEnum en = rs2Enum(rs, dbVer);
-				readValues(en);
-				cache.put(en);
-				return en;
+				else
+				{
+					readValues(ret);
+					cache.put(ret);
+					return ret;
+				}		
 			}
 			catch (SQLException ex)
 			{
 				String msg = "Error in query '" + q + "': " + ex;
 				warning(msg);
-				throw new DbIoException(msg);
+				throw new DbIoException(msg,ex);
 			}
 		}
 	}
@@ -178,11 +183,20 @@ public class EnumSqlDao
 		// Anything left in the list is an enumeration that needs to be completely removed.
 		for(DbEnum oldenum : enumList.getEnumList())
 		{
-			info("writeEnumList Deleting enum '" + oldenum.enumName + "'");
-			String q = "DELETE FROM EnumValue WHERE enumId = " + oldenum.getId();
-			doModify(q);
-			q = "delete from enum where id = " + oldenum.getId();
-			doModify(q);
+			try
+			{
+				info("writeEnumList Deleting enum '" + oldenum.enumName + "'");
+				String q = "DELETE FROM EnumValue WHERE enumId = ?";// + oldenum.getId();
+				long id = oldenum.getId().getValue();
+				doModify(q,id);
+				q = "delete from enum where id = ?";// + oldenum.getId();
+				doModify(q,id);
+			}
+			catch(SQLException ex)
+			{
+				throw new DbIoException("Failed to clean up " + oldenum.toString(),ex);
+			}
+			
 		}
 		for(DbEnum newenum : newenums)
 			enumList.addEnum(newenum);
@@ -194,16 +208,21 @@ public class EnumSqlDao
 	{
 		int dbVer = db.getDecodesDatabaseVersion();
 		String q = "";
+		ArrayList<Object> args = new ArrayList<>();
 		if (dbenum.idIsSet())
-		{
-			q = "update enum set name = " + sqlString(dbenum.getUniqueName());
+		{			
+			args.add(dbenum.getUniqueName());
+			q = "update enum set name = ?";// + sqlString(dbenum.getUniqueName());
 			if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 			{
-				q = q + ", defaultvalue = " + sqlString(dbenum.getDefault());
+				q = q + ", defaultvalue = ?";// + sqlString(dbenum.getDefault());
+				args.add(dbenum.getDefault());
 				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_10)
-					q = q + ", description = " + sqlString(dbenum.getDescription());
+					q = q + ", description = ?";// + sqlString(dbenum.getDescription());
+					args.add(dbenum.getDescription());
 			}
-			q = q + " where id = " + dbenum.getId();
+			q = q + " where id = ?" /*+ dbenum.getId()*/;
+			args.add(dbenum.getId().getValue());
 		}
 		else // New enum, allocate a key and insert
 		{
@@ -211,28 +230,52 @@ public class EnumSqlDao
 			dbenum.forceSetId(id);
 			q = "insert into enum";
 			if (dbVer < DecodesDatabaseVersion.DECODES_DB_6)
-				q = q + "(id, name) values (" 
-					+ id + ", " + sqlString(dbenum.getUniqueName()) + ")";
+			{
+				q = q + "(id, name) values (?,?)"; 
+					//+ id + ", " + sqlString(dbenum.getUniqueName()) + ")";
+				args.add(id.getValue());
+				args.add(dbenum.getUniqueName());
+			}
 			else if (dbVer < DecodesDatabaseVersion.DECODES_DB_10)
-				q = q + "(id, name, defaultValue) values (" 
-					+ id + ", " + sqlString(dbenum.getUniqueName())
-					+ ", " + sqlString(dbenum.getDefault()) + ")";
+			{
+				q = q + "(id, name, defaultValue) values (?,?,?)";
+				args.add(id.getValue());
+				args.add(dbenum.getUniqueName());
+				args.add(dbenum.getDefault());
+					/*+ id + ", " + sqlString(dbenum.getUniqueName())
+					+ ", " + sqlString(dbenum.getDefault()) + ")";*/
+			}
 			else
-				q = q + "(id, name, defaultValue, description) values (" 
-					+ id + ", " + sqlString(dbenum.getUniqueName())
+			{
+				q = q + "(id, name, defaultValue, description) values (?,?,?,?)";
+				args.add(id.getValue());
+				args.add(dbenum.getUniqueName());
+				args.add(dbenum.getDefault());
+				args.add(dbenum.getDescription());
+					/*+ id + ", " + sqlString(dbenum.getUniqueName())
 					+ ", " + sqlString(dbenum.getDefault()) 
-					+ ", " + sqlString(dbenum.getDescription()) + ")";
+					+ ", " + sqlString(dbenum.getDescription()) + ")";*/
+			}
 			cache.put(dbenum);
 		}
-		doModify(q);
+		try
+		{
+			doModify(q,args.toArray());
 
-		// Delete all enum values. They'll be re-added below.
-		info("writeEnum deleting values from enum '" + dbenum.enumName + "'");
-		q = "DELETE FROM EnumValue WHERE enumId = " + dbenum.getId();
-		doModify(q);
-		
-		for (Iterator<EnumValue> it = dbenum.iterator(); it.hasNext(); )
-			writeEnumValue(it.next());
+			// Delete all enum values. They'll be re-added below.
+			info("writeEnum deleting values from enum '" + dbenum.enumName + "'");
+			q = "DELETE FROM EnumValue WHERE enumId = ?";// + dbenum.getId();
+			doModify(q,dbenum.getId().getValue());
+			
+			for (Iterator<EnumValue> it = dbenum.iterator(); it.hasNext(); )
+			{
+				writeEnumValue(it.next());
+			}
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("enum modify/delete failed for " + dbenum.toString(), ex);
+		}
 	}
 	
 	private void readValues(DbEnum dbenum)
@@ -313,7 +356,7 @@ public class EnumSqlDao
 		} 
 		catch(SQLException er)
 		{
-			System.out.println(er);
+			debug3(er.getLocalizedMessage());
 			throw new DbIoException("Failed to add enum to database", er);
 		}
 		
