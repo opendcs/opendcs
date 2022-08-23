@@ -36,6 +36,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import decodes.db.Constants;
@@ -367,7 +368,7 @@ public class DaoBase
 
 	/**
 	 * Provides connection to consumer, closing/return the connection when done.
-	 * 
+	 *
 	 * NOTE: Thread safe IF the TimeseriesDB implementation supports connection pooling.
 	 * @param consumer @see opendcs.util.functional.ConnectionConsumer
 	 * @throws SQLException
@@ -379,7 +380,7 @@ public class DaoBase
 		{
 			conn = db.getConnection();
 			consumer.accept(conn);
-		} 
+		}
 		finally
 		{
 			if( conn != null)
@@ -391,7 +392,7 @@ public class DaoBase
 
 	/**
 	 * Prepare a statement and let caller deal with setting parameters and calling the execution
-	 * 
+	 *
 	 * @see DaoBase#withConnection(ConnectionConsumer) for thread safety
 	 * @param statement SQL statement
 	 * @param consumer Function that will handle the operations. @see opendcs.util.functional.StatementConsumer
@@ -420,15 +421,15 @@ public class DaoBase
 				}
 
 				consumer.accept(stmt);
-			}		
+			}
 		});
-		
+
 	}
 
 	/**
 	 * Prepare and run a statement with the given parameters.
 	 * Each element of the result set is passed to the consumer
-	 * 
+	 *
 	 * System will make best effort to automatically convert datatypes.
 	 * @see DaoBase#withConnection(ConnectionConsumer) for thread safety
 	 * @param query SQL Query string with ? for bind variables
@@ -439,7 +440,6 @@ public class DaoBase
 	public void doQuery(String query, ResultSetConsumer consumer, Object... parameters) throws SQLException
 	{
 		withStatement(query, (stmt) -> {
-			
 			try (ResultSet rs = stmt.executeQuery();)
 			{
 				while(rs.next())
@@ -447,7 +447,7 @@ public class DaoBase
 					consumer.accept(rs);
 				}
 			}
-		},parameters);		
+		},parameters);
 	}
 
 	public int doModify(String query, Object... args) throws SQLException
@@ -463,13 +463,16 @@ public class DaoBase
 	/**
 	 * Given a query string and bind variables execute the query.
 	 * The provided function should process the single valid result set and return an object R.
+	 *
+	 * The query should return a single result.
+	 *
 	 * @param query SQL query with ? for bind vars.
-	 * @param consumer Function that Takes a ResultSet and returns R
+	 * @param consumer Function that Takes a ResultSet and returns an instance of R
 	 * @param parameters arg list of query inputs
 	 * @returns Object of type R determined by the caller.
-	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
 	 */
-	public <R> R getResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
 	{
 		final ArrayList<R> result = new ArrayList<>();
 		withStatement(query,(stmt)->{
@@ -478,20 +481,45 @@ public class DaoBase
 				if (rs.next())
 				{
 					result.add(consumer.accept(rs));
-				}
-				if (rs.next())
-				{
-					throw new SQLException(String.format("Query '%s' returned more than one row",query));
+					if (rs.next())
+					{
+						throw new SQLException(String.format("Query '%s' returned more than one row",query));
+					}
 				}
 			}
 		},parameters);
 		if( result.isEmpty() )
 		{
 			return null;
-		} 
+		}
 		else
 		{
 			return result.get(0);
 		}
+	}
+
+	/**
+	 * Given a query string and bind variables execute the query.
+	 * The provided function should process the single valid result set and return an object R.
+	 * Each return will be added to a list and returned.
+	 * @param query SQL query with ? for bind vars.
+	 * @param consumer Function that Takes a ResultSet and returns an instance of R
+	 * @param parameters arg list of query inputs
+	 * @returns Object of type R determined by the caller.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
+	 */
+	public <R> List<R> getResults(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	{
+		final ArrayList<R> result = new ArrayList<>();
+		withStatement(query,(stmt)->{
+			try(ResultSet rs = stmt.executeQuery())
+			{
+				while(rs.next())
+				{
+					result.add(consumer.accept(rs));
+				}
+			}
+		},parameters);
+		return result;
 	}
 }
