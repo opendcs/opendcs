@@ -152,9 +152,10 @@ can find your git source tree and your directory with the downloaded jars.
 	</path>
 
 	<!-- get test dependencies -->
-	<target name="test.dependencies">
+	<target name="test.dependencies" depends="-get-junitlauncher">
 		<mkdir dir="junit.libs/platform"/>
 		<mkdir dir="junit.libs/engine"/>
+		<mkdir dir="${build.test.libs}"/>
 		<resolver:resolve>
 			<resolver:dependencies>
 				<resolver:dependency coords="org.junit.platform:junit-platform-launcher:1.8.1"/>
@@ -167,12 +168,29 @@ can find your git source tree and your directory with the downloaded jars.
 			</resolver:dependencies>
 			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
 		</resolver:resolve>
+		<path id="build.test.classpath" location="${build.test.libs}"/>
 	</target>
 
 	<target name="prepare" depends="clean" description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
+		<pathconvert property="junitlauncherPresent" setonempty="false" pathsep=" ">
+			<path>
+				<fileset dir="${ant.home}">
+					<include name="**/ant-junitlauncher*.jar"/>
+				</fileset>
+			</path>
+		</pathconvert>
+	</target>
+
+	<target name="-get-junitlauncher" unless="junitlauncherPresent">
+		<echo message="You're environment doesn't have the junitlauncher jar. getting it for you"/>
+		<antversion property="ant_version"/>
+		<get src="https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/${ant_version}/ant-junitlauncher-${ant_version}.jar"
+			dest="${build.dir}/ant-junitlauncher.jar" usetimestamp="true"/>
+		<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
+			classpath="${build.dir}/ant-junitlauncher.jar"/>
 	</target>
 
 	<target name="clean" description="Removes all generated files.">
@@ -212,6 +230,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<javac debug="true" destdir="${build.classes}"
 			target="1.8" source="1.8"
 			includeantruntime="true"
+			encoding="UTF-8"
 			includes="lrgs/gui/LrgsBuild.java">
 			<src path="${build.classes}"/>
 			<classpath refid="project.class.path"/>
@@ -220,6 +239,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<javac debug="true" destdir="${build.classes}"
 			target="1.8" source="1.8"
 			includeantruntime="true"
+			encoding="UTF-8"
 			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
 			<src path="${src.dir}"/>
 			<classpath refid="project.class.path"/>
@@ -231,6 +251,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="${build.test.classes}"/>
 		<javac debug="true" destdir="${build.test.classes}"
 			target="1.8" source="1.8" includeantruntime="false"
+			encoding="UTF-8"
 		>
 			<src path="${src.test.dir}"/>
 			<classpath refid="project.class.path"/>
@@ -245,6 +266,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="${build.dir}/test-results"/>
 		<junitlauncher haltOnFailure="true" printSummary="true">			
             <classpath refid="project.class.path"/>
+			<classpath refid="build.test.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
             <classpath>
                 <pathelement location="${build.test.classes}"/>
