@@ -216,7 +216,7 @@ public class DaoBase
 		}
 		try
 		{
-			if (queryStmt2 == null)
+			if (queryStmt2 == null|| statementInvalid(queryStmt2))
 				queryStmt2 = getConnection().createStatement();
 			debug3("Query2 '" + q + "'");
 			return queryResults2 = queryStmt2.executeQuery(q);
