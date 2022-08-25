@@ -400,8 +400,12 @@ public class DaoBase
 	public void withStatement( String statement, StatementConsumer consumer,Object... parameters) throws SQLException
 	{
 		withConnection((conn) -> {
-			try(PreparedStatement stmt = conn.prepareStatement(statement);)
+			try (PreparedStatement stmt = conn.prepareStatement(statement);)
 			{
+				if (fetchSize > 0)
+				{
+					stmt.setFetchSize(fetchSize);;
+				}
 				int index=1;
 				for( Object param: parameters)
 				{
