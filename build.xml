@@ -40,7 +40,9 @@ can find your git source tree and your directory with the downloaded jars.
 
 
 <project name="OPENDCS Toolkit" default="jar" basedir="."
-	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant">
+	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant"
+	xmlns:if="ant:if"
+    >
 	<description>Open DCS</description>
 
 	<property environment="env"/>
@@ -56,6 +58,7 @@ can find your git source tree and your directory with the downloaded jars.
 	<property name="src.dir" value="${project.dir}/src/main/java"/>
 	<property name="src.test.dir" value="${project.dir}/src/test/java"/>
 	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
+	<property name="resources.test.dir" value="${project.dir}/src/test/resources"/>
 
 	<!-- Directories -->
 	<property name="ant.home" value="/usr/local/ant"/>
@@ -89,7 +92,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="${build.dir}/izpack"/>
 		<get src="https://repo1.maven.org/maven2/org/codehaus/izpack/izpack-standalone-compiler/4.3.5/izpack-standalone-compiler-4.3.5.jar"
 					dest="${build.dir}/izpack/izpack.jar" usetimestamp="true"/>
-		
+
 		<path id="lib.path">
 			<fileset dir="${build.dir}/izpack" includes="*.jar"/>
 		</path>
@@ -149,9 +152,10 @@ can find your git source tree and your directory with the downloaded jars.
 	</path>
 
 	<!-- get test dependencies -->
-	<target name="test.dependencies">
+	<target name="test.dependencies" depends="-get-junitlauncher">
 		<mkdir dir="junit.libs/platform"/>
 		<mkdir dir="junit.libs/engine"/>
+		<mkdir dir="${build.test.libs}"/>
 		<resolver:resolve>
 			<resolver:dependencies>
 				<resolver:dependency coords="org.junit.platform:junit-platform-launcher:1.8.1"/>
@@ -159,16 +163,34 @@ can find your git source tree and your directory with the downloaded jars.
 				<resolver:dependency coords="org.junit.platform:junit-platform-commons:1.8.1"/>
 				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-api:5.8.1"/>
 				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-engine:5.8.1"/>
-
+				<resolver:dependency coords="org.apache.derby:derby:10.14.2.0"/>
+				<resolver:dependency coords="commons-io:commons-io:2.11.0"/>
 			</resolver:dependencies>
 			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
 		</resolver:resolve>
+		<path id="build.test.classpath" location="${build.test.libs}"/>
 	</target>
 
 	<target name="prepare" depends="clean" description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
+		<pathconvert property="junitlauncherPresent" setonempty="false" pathsep=" ">
+			<path>
+				<fileset dir="${ant.home}">
+					<include name="**/ant-junitlauncher*.jar"/>
+				</fileset>
+			</path>
+		</pathconvert>
+	</target>
+
+	<target name="-get-junitlauncher" unless="junitlauncherPresent">
+		<echo message="You're environment doesn't have the junitlauncher jar. getting it for you"/>
+		<antversion property="ant_version"/>
+		<get src="https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/${ant_version}/ant-junitlauncher-${ant_version}.jar"
+			dest="${build.dir}/ant-junitlauncher.jar" usetimestamp="true"/>
+		<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
+			classpath="${build.dir}/ant-junitlauncher.jar"/>
 	</target>
 
 	<target name="clean" description="Removes all generated files.">
@@ -206,16 +228,18 @@ can find your git source tree and your directory with the downloaded jars.
             </filterset>
         </copy>
 		<javac debug="true" destdir="${build.classes}"
-			target="1.7" source="1.7"
+			target="1.8" source="1.8"
 			includeantruntime="true"
+			encoding="UTF-8"
 			includes="lrgs/gui/LrgsBuild.java">
 			<src path="${build.classes}"/>
 			<classpath refid="project.class.path"/>
 		</javac>
 
 		<javac debug="true" destdir="${build.classes}"
-			target="1.7" source="1.7"
+			target="1.8" source="1.8"
 			includeantruntime="true"
+			encoding="UTF-8"
 			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
 			<src path="${src.dir}"/>
 			<classpath refid="project.class.path"/>
@@ -227,27 +251,33 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="${build.test.classes}"/>
 		<javac debug="true" destdir="${build.test.classes}"
 			target="1.8" source="1.8" includeantruntime="false"
+			encoding="UTF-8"
 		>
 			<src path="${src.test.dir}"/>
 			<classpath refid="project.class.path"/>
 			<classpath refid="junit.platform.libs.classpath"/>
 		</javac>
-
+		<copy todir="${build.test.classes}">
+    		<fileset dir="${resources.test.dir}"/>
+		</copy>
 	</target>
 
 	<target name="test" depends="compile-test">
 		<mkdir dir="${build.dir}/test-results"/>
 		<junitlauncher haltOnFailure="true" printSummary="true">
-			<classpath refid="junit.platform.libs.classpath"/>
-			<classpath refid="project.class.path"/>
-			<classpath>
-				<pathelement location="${build.test.classes}"/>
-			</classpath>
-
+            <classpath refid="project.class.path"/>
+			<classpath refid="build.test.classpath"/>
+            <classpath refid="junit.platform.libs.classpath"/>
+            <classpath>
+                <pathelement location="${build.test.classes}"/>
+                <pathelement location="${build.classes}"/>
+            </classpath>
 			<testclasses outputdir="${build.dir}/test-results">
-				<!-- <fork dir="${build.dir}"/>-->
+				<fork>
+					<jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+				</fork>
 				<fileset dir="${build.test.classes}"/>
-				<listener type="legacy-brief" sendSysOut="true"/>
+				<listener type="legacy-brief" sendSysOut="true" sendSysErr="true"/>
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
 			</testclasses>
 		</junitlauncher>
@@ -502,7 +532,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<target name="cwmstar" depends="stage">
 		<delete file="stage/dep/ojdbc8.jar"/>
-		<delete file="stage/dep/ojdbc6.jar"/>		
+		<delete file="stage/dep/ojdbc6.jar"/>
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
