@@ -92,7 +92,7 @@ can find your git source tree and your directory with the downloaded jars.
 		<mkdir dir="${build.dir}/izpack"/>
 		<get src="https://repo1.maven.org/maven2/org/codehaus/izpack/izpack-standalone-compiler/4.3.5/izpack-standalone-compiler-4.3.5.jar"
 					dest="${build.dir}/izpack/izpack.jar" usetimestamp="true"/>
-		
+
 		<path id="lib.path">
 			<fileset dir="${build.dir}/izpack" includes="*.jar"/>
 		</path>
@@ -258,13 +258,13 @@ can find your git source tree and your directory with the downloaded jars.
 			<classpath refid="junit.platform.libs.classpath"/>
 		</javac>
 		<copy todir="${build.test.classes}">
-    		<fileset dir="${resources.test.dir}"/>			
+    		<fileset dir="${resources.test.dir}"/>
 		</copy>
 	</target>
 
-	<target name="test" depends="compile-test">		
+	<target name="test" depends="compile-test">
 		<mkdir dir="${build.dir}/test-results"/>
-		<junitlauncher haltOnFailure="true" printSummary="true">			
+		<junitlauncher haltOnFailure="true" printSummary="true">
             <classpath refid="project.class.path"/>
 			<classpath refid="build.test.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
@@ -532,7 +532,7 @@ can find your git source tree and your directory with the downloaded jars.
 
 	<target name="cwmstar" depends="stage">
 		<delete file="stage/dep/ojdbc8.jar"/>
-		<delete file="stage/dep/ojdbc6.jar"/>		
+		<delete file="stage/dep/ojdbc6.jar"/>
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>

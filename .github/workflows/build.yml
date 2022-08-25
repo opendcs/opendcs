@@ -20,13 +20,13 @@ jobs:
       - name: initial setup
         run: |
           mkdir -p $HOME/Documents/workspace-2019
-          mkdir izpack_home          
-          curl --connect-timeout 300 http://www.covesw.com/download/build/opendcs-dep.tgz --output opendcs-dep.tgz          
+          mkdir izpack_home
+          curl --connect-timeout 300 http://www.covesw.com/download/build/opendcs-dep.tgz --output opendcs-dep.tgz
           tar -xzf opendcs-dep.tgz
       - name: Compile
         run: |
           echo $ANT_HOME
-          ant test -lib $OPENDCS_REPO/lib          
+          ant test -lib lib
           ant jar -lib lib
         env:
           OPENDCS_REPO: ${{github.workspace}}
