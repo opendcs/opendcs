@@ -450,6 +450,13 @@ public class DaoBase
 		},parameters);
 	}
 
+	/**
+	 * perform an update or insert operations with given parameters.
+	 * @param query SQL query passed directly to prepareStatement
+	 * @param args variables to bind on the statement in order.
+	 * @return number of rows affected
+	 * @throws SQLException anything goes wrong talking to the database
+	 */
 	public int doModify(String query, Object... args) throws SQLException
 	{
 		int result[] = new int[1];
