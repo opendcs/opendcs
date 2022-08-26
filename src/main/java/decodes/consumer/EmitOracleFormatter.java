@@ -64,7 +64,7 @@ public class EmitOracleFormatter extends OutputFormatter
 	};
 
 	/** default constructor */
-	protected EmitOracleFormatter()
+	public EmitOracleFormatter()
 	{
 		super();
 	}

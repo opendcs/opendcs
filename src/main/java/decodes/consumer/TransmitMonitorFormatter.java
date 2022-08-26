@@ -73,7 +73,7 @@ public class TransmitMonitorFormatter extends OutputFormatter
 	private NumberFormat bvFormat;
 
 	/** default constructor */
-	protected TransmitMonitorFormatter()
+	public TransmitMonitorFormatter()
 	{
 		super();
 		delimiter = " ";

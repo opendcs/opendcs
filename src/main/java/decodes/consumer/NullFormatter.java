@@ -38,7 +38,7 @@ import decodes.decoder.DecodedMessage;
 public class NullFormatter extends OutputFormatter
 {
 	/** default constructor */
-	protected NullFormatter()
+	public NullFormatter()
 	{
 		super();
 	}

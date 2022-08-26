@@ -5,7 +5,6 @@ package decodes.consumer;
 
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.Date;
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
 

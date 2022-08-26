@@ -41,7 +41,7 @@ public class ShefitFormatter extends OutputFormatter
 	private String siteNameType = null;
 
 	/** default constructor */
-	protected ShefitFormatter()
+	public ShefitFormatter()
 	{
 		super();
 		dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");

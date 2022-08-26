@@ -56,7 +56,7 @@ public class HumanReadableFormatter extends OutputFormatter
 	boolean includeSensorNum = false;
 
 	/** default constructor */
-	protected HumanReadableFormatter()
+	public HumanReadableFormatter()
 	{
 		super();
 		delimiter = " | ";
