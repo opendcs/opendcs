@@ -53,6 +53,7 @@ import ilex.util.PropertiesUtil;
 
 import decodes.datasource.RawMessage;
 import decodes.decoder.DecodedMessage;
+import decodes.util.PropertySpec;
 import decodes.db.*;
 
 /**
@@ -73,6 +74,14 @@ public class PipeConsumer extends DataConsumer
 	Process childProc;
 	private String before;
 	private String after;
+
+	private PropertySpec[] myspecs = new PropertySpec[]
+	{
+		new PropertySpec("ConsumerBefore", PropertySpec.STRING, 
+			"Optional string placed at the start of each message."),
+		new PropertySpec("ConsumerAfter", PropertySpec.STRING, 
+			"Optional string placed at the end of each message.")
+	};
 
 	/** default constructor */
 	public PipeConsumer()
@@ -209,5 +218,10 @@ public class PipeConsumer extends DataConsumer
 		return "Command";
 	}
 
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return myspecs;
+	}
 }
 
