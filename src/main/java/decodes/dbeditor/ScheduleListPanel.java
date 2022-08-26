@@ -32,6 +32,7 @@ import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.gui.TopFrame;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.NoSuchObjectException;
 
 /**
  * This JPanel contains a list of ScheduleEntry objects and allow the user to
@@ -133,7 +134,17 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 					dbeditLabels.getString("ScheduleEntryPanel.OpenNoSelection"),
 					getEntityType()));
 		else
-			doOpen(se);
+		{
+			try (ScheduleEntryDAI schedDAO = Database.getDb().getDbIo().makeScheduleEntryDAO())
+			{
+				schedDAO.checkScheduleEntry(se);
+				doOpen(se);
+			}
+			catch (Exception ex)
+			{
+				parent.showError("Cannot (re)load schedule entry " + se.getName() + ": " + ex);
+			}
+		}
 	}
 
 	/** Called when the 'New' button is pressed. */
@@ -148,7 +159,7 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 
 		if (findInDb(newName) != null)
 		{
-			TopFrame.instance().showError(
+			parent.showError(
 				LoadResourceBundle.sprintf(
 					dbeditLabels.getString("ScheduleEntryPanel.NewAlreadyExists"),
 					getEntityType()));
