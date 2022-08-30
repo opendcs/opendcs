@@ -91,6 +91,7 @@ package decodes.tsdb.groupedit;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -111,6 +112,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -458,19 +460,27 @@ public class TsGroupDefinitionPanel
 	
 	private void initCenterPanel()
 	{
-		centerPanel = new JPanel(new GridLayout(3,1));
+		JSplitPane upperSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		upperSplitPane.setDividerLocation(160);
+		centerPanel = new JPanel(new BorderLayout(0, 5));
+		centerPanel.add(upperSplitPane, BorderLayout.CENTER);
 
 		// Initiate time series group member panel
 		createTsGroupMembersComponents();
-		centerPanel.add(tsGroupMembersPanel);
+		upperSplitPane.add(tsGroupMembersPanel, JSplitPane.TOP);
+
+
+		JSplitPane lowerSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+//		upperSplitPane.setDividerLocation(.5);
 
 		// Initiate subgroup member panel
 		createSubGroupMembersComponents();
-		centerPanel.add(subGroupMembersPanel);
+		upperSplitPane.add(lowerSplitPane, JSplitPane.BOTTOM);
+		lowerSplitPane.add(subGroupMembersPanel, JSplitPane.TOP);
 
 		// Initiate other member panel
 		createQueryPanelMembers();
-		centerPanel.add(queryPanel);
+		lowerSplitPane.add(queryPanel, JSplitPane.BOTTOM);
 	}
 	
 	
@@ -483,7 +493,7 @@ public class TsGroupDefinitionPanel
 		tsGroupMembersPanel.setBorder(new TitledBorder(
 				BorderFactory.createEtchedBorder(Color.white, new Color(148, 145, 140)),
 				tsGroupMembersTitleLabelStr));
-		tsListSelectPanel = new TsListSelectPanel(tsdb, false, true);
+		tsListSelectPanel = new TsListSelectPanel(tsdb, false, false);
 		tsListSelectPanel.setMultipleSelection(true);
 		
 		addTimeSeriesMemberButton = new JButton(addButtonLabelStr);

@@ -161,7 +161,7 @@ public class TsDbGrpEditorFrame extends TopFrame
 		tsGroupsListPanel = new TsDbGrpListPanel();
 
 		//Set up the frame dimension
-		this.setSize(new Dimension(863, 768));//763, 803 763, 760
+		this.setSize(new Dimension(900, 768));//763, 803 763, 760
 		this.setTitle(frameTitle);   
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
