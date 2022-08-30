@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 
-import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import opendcs.opentsdb.OpenTsdbFlags;
 import ilex.util.TextUtil;
@@ -29,6 +28,7 @@ import decodes.db.DatabaseIO;
 import decodes.db.Platform;
 import decodes.db.PresentationGroup;
 import decodes.util.DecodesSettings;
+import decodes.util.PropertySpec;
 
 /**
   This class formats decoded data in an easy-to-read row/column format.
@@ -54,6 +54,20 @@ public class HumanReadableFormatter extends OutputFormatter
 	private ArrayList<Column> columns;
 	boolean showFlags = false;
 	boolean includeSensorNum = false;
+	
+	private PropertySpec propSpecs[] = 
+	{		
+		new PropertySpec("delimiter", PropertySpec.STRING,
+			"(default=' | ') delimiter between colums of data"),
+		new PropertySpec("dateformat", PropertySpec.STRING,
+			"(default=MM/dd/yyyy HH:mm:ss) format for date/time in left column"),
+		new PropertySpec("datatype", PropertySpec.STRING,
+			"(default taken from decodes.properties) preferred data type standard to display in column header"),
+		new PropertySpec("cwmsflags", PropertySpec.BOOLEAN,
+			"(default=false) display CWMS flag values alongside values"),
+		new PropertySpec("showflags", PropertySpec.BOOLEAN,
+			"(default=false) display validation flags alongside values")
+	};
 
 	/** default constructor */
 	public HumanReadableFormatter()
@@ -411,6 +425,12 @@ Logger.instance().debug3("colWidth=" + colWidth + ", dotPos=" + dotPos + ", data
 		if (ret == null)
 			ret = "";
 		return ret;
+	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return propSpecs;
 	}
 }
 
