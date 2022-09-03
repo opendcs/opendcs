@@ -115,6 +115,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -1312,18 +1313,24 @@ public class CwmsTimeSeriesDAO
 
 		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
 		ArrayList<Integer> badRecs = new ArrayList<Integer>();
-		try
+		debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
+		try(ResultSet rs = getTaskListStmt.executeQuery())
 		{
-			debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
-			ResultSet rs = getTaskListStmt.executeQuery();
+			Date lastTimestamp = null;
 			while (rs.next())
 			{
 				// Extract the info needed from the result set row.
+				Date timeStamp = new Date(rs.getLong(4));
+				boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
+				if(exceedsMaxTimeGap)
+				{
+					break;
+				}
+				lastTimestamp = timeStamp;
 				int recordNum = rs.getInt(1);
 				DbKey sdi = DbKey.createDbKey(rs, 2);
 				double value = rs.getDouble(3);
 				boolean valueWasNull = rs.wasNull();
-				Date timeStamp = db.getFullDate(rs, 4);
 				String df = rs.getString(5);
 				char c = df.toLowerCase().charAt(0);
 				boolean deleted = false;
@@ -1407,9 +1414,16 @@ public class CwmsTimeSeriesDAO
 			ex.printStackTrace();
 			throw new DbIoException("Error reading new data: " + ex);
 		}
-		finally
+	}
+
+	final boolean exceedsMaxTimeGap(Date lastTimestamp, Date currentTimestamp)
+	{
+		if(lastTimestamp == null || currentTimestamp == null)
 		{
+			return false;
 		}
+		long daysBetween = TimeUnit.MILLISECONDS.toDays(currentTimestamp.getTime() - lastTimestamp.getTime());
+		return daysBetween >= DecodesSettings.instance().cp_cwmstsdb_getNewData_max_timegap_days;
 	}
 
 

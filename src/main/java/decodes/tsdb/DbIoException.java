@@ -26,4 +26,9 @@ public class DbIoException extends TsdbException
 	{
 		super(msg);
 	}
+
+	public DbIoException(String msg, Throwable ex)
+	{
+		super(msg,ex);
+	}
 }

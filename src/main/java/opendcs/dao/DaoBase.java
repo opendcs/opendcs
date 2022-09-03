@@ -25,11 +25,19 @@ package opendcs.dao;
 
 import ilex.util.Logger;
 import opendcs.dai.DaiBase;
+import opendcs.util.functional.ConnectionConsumer;
+import opendcs.util.functional.ResultSetConsumer;
+import opendcs.util.functional.ResultSetFunction;
+import opendcs.util.functional.StatementConsumer;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
@@ -208,7 +216,7 @@ public class DaoBase
 		}
 		try
 		{
-			if (queryStmt2 == null)
+			if (queryStmt2 == null|| statementInvalid(queryStmt2))
 				queryStmt2 = getConnection().createStatement();
 			debug3("Query2 '" + q + "'");
 			return queryResults2 = queryStmt2.executeQuery(q);
@@ -356,5 +364,173 @@ public class DaoBase
 	public void setFetchSize(int fetchSize)
 	{
 		this.fetchSize = fetchSize;
+	}
+
+	/**
+	 * Provides connection to consumer, closing/return the connection when done.
+	 *
+	 * NOTE: Thread safe IF the TimeseriesDB implementation supports connection pooling.
+	 * @param consumer @see opendcs.util.functional.ConnectionConsumer
+	 * @throws SQLException
+	 */
+	public void withConnection(ConnectionConsumer consumer) throws SQLException
+	{
+		Connection conn = null;
+		try
+		{
+			conn = db.getConnection();
+			consumer.accept(conn);
+		}
+		finally
+		{
+			if( conn != null)
+			{
+				db.freeConnection(conn);
+			}
+		}
+	}
+
+	/**
+	 * Prepare a statement and let caller deal with setting parameters and calling the execution
+	 *
+	 * @see DaoBase#withConnection(ConnectionConsumer) for thread safety
+	 * @param statement SQL statement
+	 * @param consumer Function that will handle the operations. @see opendcs.util.functional.StatementConsumer
+	 */
+	public void withStatement( String statement, StatementConsumer consumer,Object... parameters) throws SQLException
+	{
+		withConnection((conn) -> {
+			try (PreparedStatement stmt = conn.prepareStatement(statement);)
+			{
+				if (fetchSize > 0)
+				{
+					stmt.setFetchSize(fetchSize);;
+				}
+				int index=1;
+				for( Object param: parameters)
+				{
+					if (param instanceof Integer)
+					{
+						stmt.setInt(index,(Integer)param);
+					}
+					else if (param instanceof String)
+					{
+						stmt.setString(index,(String)param);
+					}
+					else
+					{
+						stmt.setObject(index,param);
+					}
+					index++;
+				}
+
+				consumer.accept(stmt);
+			}
+		});
+
+	}
+
+	/**
+	 * Prepare and run a statement with the given parameters.
+	 * Each element of the result set is passed to the consumer
+	 *
+	 * System will make best effort to automatically convert datatypes.
+	 * @see DaoBase#withConnection(ConnectionConsumer) for thread safety
+	 * @param query SQL Query string with ? for bind variables
+	 * @param consumer User provided function to use the result set. @see opendcs.util.functional.ResultSetConsumer
+	 * @param parameters Variables for the query
+	 * @throws SQLException
+	 */
+	public void doQuery(String query, ResultSetConsumer consumer, Object... parameters) throws SQLException
+	{
+		withStatement(query, (stmt) -> {
+			try (ResultSet rs = stmt.executeQuery();)
+			{
+				while(rs.next())
+				{
+					consumer.accept(rs);
+				}
+			}
+		},parameters);
+	}
+
+	/**
+	 * perform an update or insert operations with given parameters.
+	 * @param query SQL query passed directly to prepareStatement
+	 * @param args variables to bind on the statement in order.
+	 * @return number of rows affected
+	 * @throws SQLException anything goes wrong talking to the database
+	 */
+	public int doModify(String query, Object... args) throws SQLException
+	{
+		int result[] = new int[1];
+		result[0] = 0;
+		withStatement(query, (stmt) -> {
+			result[0] = stmt.executeUpdate();
+		},args);
+		return result[0];
+	}
+
+	/**
+	 * Given a query string and bind variables execute the query.
+	 * The provided function should process the single valid result set and return an object R.
+	 *
+	 * The query should return a single result.
+	 *
+	 * @param query SQL query with ? for bind vars.
+	 * @param consumer Function that Takes a ResultSet and returns an instance of R
+	 * @param parameters arg list of query inputs
+	 * @returns Object of type R determined by the caller.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
+	 */
+	public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	{
+		final ArrayList<R> result = new ArrayList<>();
+		withStatement(query,(stmt)->{
+			try(ResultSet rs = stmt.executeQuery())
+			{
+				if (rs.next())
+				{
+					result.add(consumer.accept(rs));
+					if (rs.next())
+					{
+						throw new SQLException(String.format("Query '%s' returned more than one row",query));
+					}
+				}
+			}
+		},parameters);
+		if( result.isEmpty() )
+		{
+			return null;
+		}
+		else
+		{
+			return result.get(0);
+		}
+	}
+
+	/**
+	 * Given a query string and bind variables execute the query.
+	 * The provided function should process the single valid result set and return an object R.
+	 * Each return will be added to a list and returned.
+	 * @param query SQL query with ? for bind vars.
+	 * @param consumer Function that Takes a ResultSet and returns an instance of R
+	 * @param parameters arg list of query inputs
+	 * @returns Object of type R determined by the caller.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
+	 */
+	public <R> List<R> getResults(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	{
+		final ArrayList<R> result = new ArrayList<>();
+		withStatement(query,(stmt)->{
+			try(ResultSet rs = stmt.executeQuery())
+			{
+				while(rs.next())
+				{
+					result.add(consumer.accept(rs));
+				}
+			}
+		},parameters);
+		return result;
 	}
 }

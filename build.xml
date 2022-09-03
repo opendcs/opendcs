@@ -19,7 +19,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 
 <project name="OPENDCS Toolkit" default="jar" basedir="."
-	
+	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant"
+	xmlns:if="ant:if"
     >
 	<description>Open DCS</description>
 
@@ -72,16 +73,18 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </filterset>
         </copy>
 		<javac debug="true" destdir="${build.classes}"
-			target="1.7" source="1.7"
+			target="1.8" source="1.8"
 			includeantruntime="true"
+			encoding="UTF-8"
 			includes="lrgs/gui/LrgsBuild.java">
 			<src path="${build.classes}"/>			
             <classpath refid="runtime.classpath"/>
 		</javac>
 
 		<javac debug="true" destdir="${build.classes}"
-			target="1.7" source="1.7"
+			target="1.8" source="1.8"
 			includeantruntime="true"
+			encoding="UTF-8"
 			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
 			<src path="${src.dir}"/>			
             <classpath refid="runtime.classpath"/>
@@ -93,6 +96,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<mkdir dir="${build.test.classes}"/>
 		<javac debug="true" destdir="${build.test.classes}"
 			target="1.8" source="1.8" includeantruntime="false"
+			encoding="UTF-8"
 		>
 			<src path="${src.test.dir}"/>
 			<classpath>
@@ -101,7 +105,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="test.classpath"/>
 			</classpath>			
 		</javac>
-
+		<copy todir="${build.test.classes}">
+    		<fileset dir="${resources.test.dir}"/>
+		</copy>
 	</target>
 
 	<target name="test" depends="compile-test">
@@ -118,7 +124,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </classpath>
            
 			<testclasses outputdir="${build.dir}/test-results">
-				<!-- <fork dir="${build.dir}"/>-->
+				<fork>
+					<jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+				</fork>
 				<fileset dir="${build.test.classes}"/>
 				<listener type="legacy-brief" sendSysOut="true"/>
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>                
@@ -398,7 +406,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 	<target name="cwmstar" depends="stage">
 		<delete file="stage/dep/ojdbc8.jar"/>
-		<delete file="stage/dep/ojdbc6.jar"/>		
+		<delete file="stage/dep/ojdbc6.jar"/>
 		<delete>
 			<fileset dir="stage/bin" includes="*.bat"/>
 			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
