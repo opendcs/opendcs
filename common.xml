@@ -17,7 +17,7 @@
 	<property name="src.dir" value="src/main/java"/>
     <property name="resources.dir" value="src/main/resources"/>
 	<property name="src.test.dir" value="src/test/java"/>
-    <property name="resources.test.dir" value="/src/test/resources"/>
+    <property name="resources.test.dir" value="src/test/resources"/>
 		
 	<property name="build.dir" value="build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
@@ -29,9 +29,6 @@
 	<!-- VERSION NUMBERS -->
 	<property name="MAJ_VER" value="7"/>
 	<property name="MIN_VER" value="1"/>
-	
-	<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
-		classpath="${project.dir}/lib/ant-junitlauncher-1.10.12.jar"/>
 
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
@@ -51,7 +48,7 @@
                 dest="${ivy.jar.file}" usetimestamp="true"/>
     </target>
 
-    <target name="init-ivy" depends="download-ivy">
+    <target name="init-ivy" depends="download-ivy,-get-junitlauncher">
         <!-- try to load Ivy here from Ivy home, in case the user has not already dropped
                 it into Ant's lib dir (note that the latter copy will always take precedence).
                 We will not fail as long as local lib dir exists (it may be empty) and
@@ -123,4 +120,13 @@
             </ivy:publish>
         </sequential>
     </macrodef>
+
+    <target name="-get-junitlauncher" unless="junitlauncherPresent">
+		<echo message="You're environment doesn't have the junitlauncher jar. getting it for you"/>
+		<antversion property="ant_version"/>
+		<get src="https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/${ant_version}/ant-junitlauncher-${ant_version}.jar"
+			dest="${build.dir}/ant-junitlauncher.jar" usetimestamp="true"/>
+		<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
+			classpath="${build.dir}/ant-junitlauncher.jar"/>
+	</target>
 </project>

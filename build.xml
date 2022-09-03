@@ -30,10 +30,16 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	
 <!-- depends="clean" -->
 	<target name="prepare"  description="Makes build environment.">
-
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
+		<pathconvert property="junitlauncherPresent" setonempty="false" pathsep=" ">
+			<path>
+				<fileset dir="${ant.home}">
+					<include name="**/ant-junitlauncher*.jar"/>
+				</fileset>
+			</path>
+		</pathconvert>
 	</target>
 
 	<target name="clean" description="Removes all generated files.">
