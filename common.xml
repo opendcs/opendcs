@@ -28,7 +28,7 @@
 
 	<!-- VERSION NUMBERS -->
 	<property name="MAJ_VER" value="7"/>
-	<property name="MIN_VER" value="1"/>
+	<property name="MIN_VER" value="0"/>
 
 	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
 		<filterchain><striplinebreaks/></filterchain>
