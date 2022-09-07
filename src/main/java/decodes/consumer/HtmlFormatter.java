@@ -80,7 +80,7 @@ public class HtmlFormatter extends OutputFormatter
 
 
 	/** default constructor */
-	protected HtmlFormatter()
+	public HtmlFormatter()
 	{
 		super();
 	}

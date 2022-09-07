@@ -19,7 +19,6 @@ import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.DataType;
-import decodes.db.EngineeringUnit;
 import decodes.db.Platform;
 import decodes.db.PresentationGroup;
 import decodes.db.Site;
@@ -41,7 +40,7 @@ public class ShefitFormatter extends OutputFormatter
 	private String siteNameType = null;
 
 	/** default constructor */
-	protected ShefitFormatter()
+	public ShefitFormatter()
 	{
 		super();
 		dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");

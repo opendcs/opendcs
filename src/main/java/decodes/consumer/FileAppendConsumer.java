@@ -69,6 +69,7 @@
 */
 package decodes.consumer;
 
+import ilex.util.ArrayUtil;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -90,6 +91,7 @@ import decodes.datasource.UnknownPlatformException;
 import decodes.db.Platform;
 import decodes.db.TransportMedium;
 import decodes.decoder.DecodedMessage;
+import decodes.util.PropertySpec;
 
 /**
   FileAppendConsumer appends data to a file in a named directory.
@@ -116,8 +118,14 @@ public class FileAppendConsumer extends DataConsumer
 	DecimalFormat decimalFormat = new DecimalFormat("00");
 
 	private int fileSeqNo = 0;
-	/** default constructor */
-
+	
+	private PropertySpec[] myspecs = new PropertySpec[]
+	{
+		new PropertySpec("outputfilenameprefix", PropertySpec.STRING, 
+			"(default=stdmsg) prefix for file names"),
+		new PropertySpec("maxfilesize", PropertySpec.INT, 
+			"Maximum allowable file size (default=no limit).")
+	};
 
 	public FileAppendConsumer()
 	{
@@ -336,6 +344,12 @@ public class FileAppendConsumer extends DataConsumer
 	public String getArgLabel()
 	{
 		return "File Name";
+	}
+
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return (PropertySpec[])ArrayUtil.combined((new FileConsumer()).getSupportedProps(), myspecs);
 	}
 
 }

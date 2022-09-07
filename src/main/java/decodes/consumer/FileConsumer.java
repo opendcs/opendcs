@@ -20,6 +20,7 @@ import ilex.util.TextUtil;
 
 import decodes.datasource.RawMessage;
 import decodes.decoder.DecodedMessage;
+import decodes.util.PropertySpec;
 import decodes.db.*;
 
 /**
@@ -57,6 +58,18 @@ public class FileConsumer extends DataConsumer
 	private String cmdInProgress;
 	private Properties props;
 
+	private PropertySpec[] myspecs = new PropertySpec[]
+	{
+		new PropertySpec("file.overwrite", PropertySpec.BOOLEAN, 
+			"(default=true) set to false to append."),
+		new PropertySpec("ConsumerBefore", PropertySpec.STRING, 
+			"Optional string placed at the start of each message."),
+		new PropertySpec("ConsumerAfter", PropertySpec.STRING, 
+			"Optional string placed at the end of each message."),
+		new PropertySpec("cmdAfterFile", PropertySpec.STRING, 
+			"Optional command executed after completion of file. "
+			+ "May contain '$FILENAME' to pass the name of file to the command.")
+	};
 
 	/** 
 	  In the absense of a file.overwrite property, this defines the default
@@ -243,5 +256,10 @@ public class FileConsumer extends DataConsumer
 		return "File Name";
 	}
 
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return myspecs;
+	}
 }
 

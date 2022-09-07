@@ -5,7 +5,6 @@ package decodes.consumer;
 
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.text.NumberFormat;
 
@@ -31,7 +30,7 @@ public class TvaFormatter extends OutputFormatter
 	private NumberFormat tvaNumberFormat = NumberFormat.getNumberInstance();
 
 	/** default constructor */
-	protected TvaFormatter()
+	public TvaFormatter()
 	{
 		super();
 		tvaNumberFormat.setMaximumFractionDigits(2);

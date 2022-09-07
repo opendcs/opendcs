@@ -174,7 +174,7 @@ public class ShefFormatter extends OutputFormatter
 
 
 	/** default constructor */
-	protected ShefFormatter()
+	public ShefFormatter()
 	{
 		super();
 		dateFormat = new SimpleDateFormat("yyMMdd  'DH'HHmmss");

@@ -108,6 +108,7 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbCompLock;
+import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
 
 /**
@@ -183,6 +184,14 @@ public class CwmsConsumer extends DataConsumer
 	private TsdbCompLock myLock = null;
 	private int msgsProcessed = 0;
 	private boolean lockDeleted = false;
+	
+	private PropertySpec[] myspecs = new PropertySpec[]
+	{
+		new PropertySpec("cwmsOfficeId", PropertySpec.BOOLEAN, 
+			"Optional override Office ID to use when connecting to CWMS."),
+		new PropertySpec("cwmsVersion", PropertySpec.STRING, 
+			"Optional VERSION to use when creating new time series.")
+	};
 
 	/** Default constructor */
 	public CwmsConsumer()
@@ -520,7 +529,6 @@ public class CwmsConsumer extends DataConsumer
 	{
 		return null;
 	}
-
 
 	/**
 	 * This method gets properties from the Routing Spec.
@@ -872,5 +880,11 @@ Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
 		shefCwmsProps.setProperty(CwmsConstants.US, CwmsConstants.SPEED_WIND);
 		shefCwmsProps.setProperty(CwmsConstants.UP, CwmsConstants.SPEED_WIND);
 		shefCwmsProps.setProperty(CwmsConstants.UD, CwmsConstants.DIR_WIND);
+	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return myspecs;
 	}
 }

@@ -22,8 +22,6 @@
 package decodes.consumer;
 
 import ilex.util.PropertiesUtil;
-import ilex.util.TextUtil;
-import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import opendcs.opentsdb.OpenTsdbConsumer;
 
@@ -40,7 +38,6 @@ import decodes.cwms.CwmsDbConfig;
 import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.DataType;
-import decodes.db.EngineeringUnit;
 import decodes.db.PresentationGroup;
 import decodes.db.Site;
 import decodes.db.SiteName;

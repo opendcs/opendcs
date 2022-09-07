@@ -66,7 +66,7 @@ public class KHydstraFormatter extends OutputFormatter
 
 
 	/** default constructor */
-	protected KHydstraFormatter()
+	public KHydstraFormatter()
 	{
 		super();
 		delimiter = ", ";
