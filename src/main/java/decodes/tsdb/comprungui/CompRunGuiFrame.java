@@ -60,6 +60,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 
+import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 
@@ -955,7 +956,7 @@ public class CompRunGuiFrame extends TopFrame
 					outputParms.add(parm);
 				}
 			}
-			try
+			try (AlgorithmDAI algoDAO = theDb.makeAlgorithmDAO())
 			{
 				Logger.instance().info(
 					"Running computation " + comp.getName() + " modelRunId=" + comp.getModelRunId()
@@ -984,6 +985,7 @@ public class CompRunGuiFrame extends TopFrame
 								+ tsid.getUniqueString()));
 				}
 				// run inputs through computation
+				comp.setAlgorithm(algoDAO.getAlgorithmById(comp.getAlgorithmId()));
 				comp.prepareForExec(theDb);
 				comp.apply(runme, theDb);
 			}
@@ -996,6 +998,11 @@ public class CompRunGuiFrame extends TopFrame
 			catch (DbIoException e)
 			{
 				showError(module + " DbIOException in " + "runButtonPressed() " + e.getMessage());
+				continue;
+			}
+			catch (NoSuchObjectException e)
+			{
+				showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + e.getMessage());
 				continue;
 			}
 
