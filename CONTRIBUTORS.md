@@ -8,6 +8,8 @@
 -                     Michael A Neilson (michael.a.neilson@usace.army.mil)
 - Copyright 2021 Resource Management Associates Inc.
 -                    Adam Korynta (adam@rmanet.com)
+- Copyright 2021 Michael A Neilson (m.allan.neilson@gmail.com)
+- 
 - _Add the copyright date, your name, and email address here. (PLEASE KEEP THIS LINE)_
 
 ## Note for U.S. Federal Employees

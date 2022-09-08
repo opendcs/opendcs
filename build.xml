@@ -5,35 +5,14 @@
 This is the ANT build file for OpenDCS 6.7 RC02 and Later.
 The intent is that this will eventually be replaced with a Maven pom.xml.
 
-DO NOT BUILD IN THE SOURCE TREE. Rather follow these instructions:
+To get started run
 
-1. #    Eventually we want to be able to build with gradle or at least use it
-   #    to download dependency jar files needed by opendcs. To do that, something
-   #    like the following will be done:
-   #    cd $HOME/git/opendcs     (or wherever it is for you)
-   #    ./gradlew opentsdb
-   HOWEVER, in the mean time, dependencies are available in a file "opendcs-dep.tgz"
-   which you can download from:
-       http://www.covesw.com/download/build/opendcs-dep.tgz
+ant test
 
-2. Create a build directory for yourself somewhere outside the source tree.
+This will verify that everything can compile and tests can run
 
-3. Copy this build.xml file (if changes or needed) or just ln if it's ok as it.
-   It needs to be in your build directory you created in step 2.
+NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
-5. Unpack the opendcs-dep.tgz tarball in the build directory so that there is
-   a subdirectory here called 'dep' containing the needed jars.
-
-6. Edit the "Settable Directories" section below so that the ant build
-can find your git source tree and your directory with the downloaded jars.
-    project.dir - set this to the 'opendcs' git working directory
-    izpack.dir - set this to the location of the IzPack download
-    dcpmon.dir - if you are building DCP Monitor, set this to location of DCPMON
-                 web app source.
-    HydroJSON - if you are building HydroJSON, set this to the location of the
-                HdroJSON web app source.
-
-7. CD to your build directory and run ant here.
 
 -->
 
@@ -45,133 +24,12 @@ can find your git source tree and your directory with the downloaded jars.
     >
 	<description>Open DCS</description>
 
-	<property environment="env"/>
-
-	<!-- Settable Directories -->
-	<property name="home.dir" value="${env.HOME}"/>
-	<property name="project.dir" value="${env.OPENDCS_REPO}"/>
-	<property name="thirdpartyjar.dir" value="dep"/>
-	<property name="workspace.dir" value="${home.dir}/Documents/workspace-2019"/>
-	<property name="izpack.dir" value="${env.IZPACK_HOME}"/>
-	<property name="dcpmon.dir" value="${workspace.dir}/dcpmon"/>
-	<property name="hydrojson.dir" value="${workspace.dir}/HydroJSON"/>
-	<property name="src.dir" value="${project.dir}/src/main/java"/>
-	<property name="src.test.dir" value="${project.dir}/src/test/java"/>
-	<property name="resources.dir" value="${project.dir}/src/main/resources"/>
-	<property name="resources.test.dir" value="${project.dir}/src/test/resources"/>
-
-	<!-- Directories -->
-	<property name="ant.home" value="/usr/local/ant"/>
-	<property name="build.dir" value="build"/>
-	<property name="build.classes" value="${build.dir}/classes"/>
-	<property name="build.lib" value="${build.dir}/lib"/>
-	<property name="build.test.classes" value="${build.dir}/test-classes"/>
-	<property name="build.test.lib" value="${build.dir}/test-libs"/>
-	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
-	<property name="cwmsDbAPI.dir" value="${project.dir}/cwmsDbAPI"/>
-	<property name="thirdpartyextjar.dir" value="${thirdpartyjar.dir}/ext/"/>
-	<property name="cwmsSystemJars.dir" value="${project.dir}/cwmsSystemJars"/>
-
-	<!-- VERSION NUMBERS -->
-	<property name="MAJ_VER" value="7"/>
-	<property name="MIN_VER" value="0"/>
-
-	<taskdef uri="antlib:org.apache.maven.resolver.ant" resource="org/apache/maven/resolver/ant/antlib.xml"
-		classpath="${project.dir}/lib/maven-resolver-ant-tasks-1.2.1-uber.jar" />
-
-	<resolver:remoterepos id="resolver.repositories">
-        <resolver:remoterepo refid="central" />
-	</resolver:remoterepos>
-
-	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
-		<filterchain><striplinebreaks/></filterchain>
-	</loadfile>
-	<echo message="RCNUM=${RCNUM}"/>
-
-	<target name="izpack_deps">
-		<mkdir dir="${build.dir}/izpack"/>
-		<get src="https://repo1.maven.org/maven2/org/codehaus/izpack/izpack-standalone-compiler/4.3.5/izpack-standalone-compiler-4.3.5.jar"
-					dest="${build.dir}/izpack/izpack.jar" usetimestamp="true"/>
-
-		<path id="lib.path">
-			<fileset dir="${build.dir}/izpack" includes="*.jar"/>
-		</path>
-		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask"
-			classpathref="lib.path"/>
-	</target>
-<!--
-	<taskdef name="izpack" classpath="${izpack.dir}/lib/compiler.jar"
-		classname="com.izforge.izpack.ant.IzPackTask"/>
--->
-
-	<path id="project.class.path">
-		<pathelement path="${build.classes}/"/>
-		<fileset dir="${thirdpartyjar.dir}">
-			<include name="Cobra.jar"/>
-			<include name="LoboBrowser-1.0.0.jar"/>
-			<include name="asm-3.3.jar"/>
-			<include name="aspectjrt-1.8.10.jar"/>
-			<include name="cglib-2.1_3.jar"/>
-			<include name="commons-codec-1.10.jar"/>
-			<include name="commons-collections-2.1.1.jar"/>
-			<include name="commons-logging-1.1.1.jar"/>
-			<include name="commons-net-3.3.jar"/>
-			<include name="ganymed-ssh2-build210.jar"/>
-			<include name="jama-1.0.2.jar"/>
-			<include name="javassist-3.7.ga.jar"/>
-			<include name="jaxb-api-2.3.0.jar"/>
-			<include name="jcalendar-1.3.2.jar"/>
-			<include name="jcommon-1.0.16.jar"/>
-			<include name="jep-2.4.1.jar"/>
-			<include name="jfreechart-1.0.13.jar"/>
-			<include name="jsch-0.1.55.jar"/>
-			<include name="json-20200518.jar"/>
-			<include name="jta-spec-1.0.1.jar"/>
-			<include name="junit-3.8.1.jar"/>
-			<include name="jython-2.7.2.jar"/>
-			<include name="log4j-1.2.13.jar"/>
-			<include name="mailapi-1.6.2.jar"/>
-			<include name="ognl-2.7.3.jar"/>
-			<include name="ojdbc8-19.3.0.0.jar"/>
-			<include name="ons-19.3.0.0.jar"/>
-			<include name="oraclepki-19.3.0.0.jar"/>
-			<include name="osdt_cert-19.3.0.0.jar"/>
-			<include name="osdt_core-19.3.0.0.jar"/>
-			<include name="passay-1.3.1.jar"/>
-			<include name="poi-5.0.0.jar"/>
-			<include name="postgresql-9.1-901-1.jdbc4.jar"/>
-			<include name="simplefan-19.3.0.0.jar"/>
-			<include name="spring-test-2.5.6.jar"/>
-			<include name="xml-apis-1.0.b2.jar"/>
-			<include name="xwork-core-2.1.6.jar"/>
-			<include name="bmp5-java-sdk.jar"/>
-		</fileset>
-		<fileset dir="${cwmsSystemJars.dir}">
-			<include name="*.jar"/>
-		</fileset>
-	</path>
-
-	<!-- get test dependencies -->
-	<target name="test.dependencies" depends="-get-junitlauncher">
-		<mkdir dir="junit.libs/platform"/>
-		<mkdir dir="junit.libs/engine"/>
-		<mkdir dir="${build.test.libs}"/>
-		<resolver:resolve>
-			<resolver:dependencies>
-				<resolver:dependency coords="org.junit.platform:junit-platform-launcher:1.8.1"/>
-				<resolver:dependency coords="org.junit.platform:junit-platform-engine:1.8.1"/>
-				<resolver:dependency coords="org.junit.platform:junit-platform-commons:1.8.1"/>
-				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-api:5.8.1"/>
-				<resolver:dependency coords="org.junit.jupiter:junit-jupiter-engine:5.8.1"/>
-				<resolver:dependency coords="org.apache.derby:derby:10.14.2.0"/>
-				<resolver:dependency coords="commons-io:commons-io:2.11.0"/>
-			</resolver:dependencies>
-			<path refid="junit.platform.libs.classpath" scopes="compile,test"/>
-		</resolver:resolve>
-		<path id="build.test.classpath" location="${build.test.libs}"/>
-	</target>
-
-	<target name="prepare" depends="clean" description="Makes build environment.">
+    
+    <include file="common.xml"/>
+	<include file="docs/build.xml"/>
+	
+<!-- depends="clean" -->
+	<target name="prepare"  description="Makes build environment.">
 		<mkdir dir="${build.dir}"/>
 		<mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.lib}"/>
@@ -184,15 +42,6 @@ can find your git source tree and your directory with the downloaded jars.
 		</pathconvert>
 	</target>
 
-	<target name="-get-junitlauncher" unless="junitlauncherPresent">
-		<echo message="You're environment doesn't have the junitlauncher jar. getting it for you"/>
-		<antversion property="ant_version"/>
-		<get src="https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/${ant_version}/ant-junitlauncher-${ant_version}.jar"
-			dest="${build.dir}/ant-junitlauncher.jar" usetimestamp="true"/>
-		<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
-			classpath="${build.dir}/ant-junitlauncher.jar"/>
-	</target>
-
 	<target name="clean" description="Removes all generated files.">
 		<delete dir="${build.dir}"/>
 		<delete dir="stage"/>
@@ -202,9 +51,10 @@ can find your git source tree and your directory with the downloaded jars.
             <fileset dir="." includes="opendcs-cwms-*.tgz"/>
 		</delete>
 		<delete dir="combined-src"/>
+        <antcall target="docs.clean"/>        
 	</target>
 
-	<target name="compile" depends="prepare"
+	<target name="compile" depends="prepare,common.resolve"
 		description="Compiles all source code.">
 
 		<!-- create build date -->
@@ -223,6 +73,7 @@ can find your git source tree and your directory with the downloaded jars.
               tofile="${build.classes}/lrgs/gui/LrgsBuild.java"
               overwrite="true">
             <filterset>
+				<filter token="VERSION" value="${version}"/>
                 <filter token="DATE" value="${buildDate}" />
                 <filter token="RCNUM" value="${RCNUM}" />
             </filterset>
@@ -232,8 +83,8 @@ can find your git source tree and your directory with the downloaded jars.
 			includeantruntime="true"
 			encoding="UTF-8"
 			includes="lrgs/gui/LrgsBuild.java">
-			<src path="${build.classes}"/>
-			<classpath refid="project.class.path"/>
+			<src path="${build.classes}"/>			
+            <classpath refid="runtime.classpath"/>
 		</javac>
 
 		<javac debug="true" destdir="${build.classes}"
@@ -241,21 +92,24 @@ can find your git source tree and your directory with the downloaded jars.
 			includeantruntime="true"
 			encoding="UTF-8"
 			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
-			<src path="${src.dir}"/>
-			<classpath refid="project.class.path"/>
+			<src path="${src.dir}"/>			
+            <classpath refid="runtime.classpath"/>
 		</javac>
 
 	</target>
 
-	<target name="compile-test" depends="compile,test.dependencies">
+	<target name="compile-test" depends="compile,common.resolve">
 		<mkdir dir="${build.test.classes}"/>
 		<javac debug="true" destdir="${build.test.classes}"
 			target="1.8" source="1.8" includeantruntime="false"
 			encoding="UTF-8"
 		>
 			<src path="${src.test.dir}"/>
-			<classpath refid="project.class.path"/>
-			<classpath refid="junit.platform.libs.classpath"/>
+			<classpath>
+				<pathelement location="${build.classes}"/>
+                <path refid="runtime.classpath"/>
+                <path refid="test.classpath"/>
+			</classpath>			
 		</javac>
 		<copy todir="${build.test.classes}">
     		<fileset dir="${resources.test.dir}"/>
@@ -263,23 +117,27 @@ can find your git source tree and your directory with the downloaded jars.
 	</target>
 
 	<target name="test" depends="compile-test">
+		<pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
+		<echo message="platform path: ${platform_path}"/>
 		<mkdir dir="${build.dir}/test-results"/>
 		<junitlauncher haltOnFailure="true" printSummary="true">
-            <classpath refid="project.class.path"/>
-			<classpath refid="build.test.classpath"/>
+			<classpath refid="test.classpath"/>
+            <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
             <classpath>
                 <pathelement location="${build.test.classes}"/>
                 <pathelement location="${build.classes}"/>
             </classpath>
+           
 			<testclasses outputdir="${build.dir}/test-results">
 				<fork>
 					<jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
 				</fork>
 				<fileset dir="${build.test.classes}"/>
-				<listener type="legacy-brief" sendSysOut="true" sendSysErr="true"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+				<listener type="legacy-brief" sendSysOut="true"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>                
 			</testclasses>
+            
 		</junitlauncher>
 	</target>
 
@@ -305,20 +163,22 @@ can find your git source tree and your directory with the downloaded jars.
 			 update="true"/>
 	</target>
 
+	<target name="publish" depends="jar,common.init-ivy,common.resolve.build" description="--> publish ivy artifacts">
+        <publish/>
+    </target>
+
 	<target name="all" depends="clean,jar"
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
-
+	
 	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="jar">
+	<target name="stage" depends="jar,common.resolve.build,docs.build">
 		<mkdir dir="stage"/>
-		<mkdir dir="stage/doc"/>
+		<mkdir dir="stage/doc/html"/>
 		<mkdir dir="stage/netlist"/>
 		<touch file="stage/netlist/empty.nl"/>
 		<mkdir dir="stage/icons"/>
 		<mkdir dir="stage/bin"/>
-		<mkdir dir="stage/dep"/>
-		<mkdir dir="stage/dep/ext"/>
-		<mkdir dir="stage/dep/Lib"/>
+		<mkdir dir="stage/dep"/>		
 		<mkdir dir="stage/examples"/>
 		<mkdir dir="stage/python"/>
 		<mkdir dir="stage/poll"/>
@@ -363,33 +223,30 @@ can find your git source tree and your directory with the downloaded jars.
 				<include name="opendcs.jar"/>
 			</fileset>
 		</copy>
-
 		<copy todir="stage/dep">
-			<mappedresources>
+			<mappedresources enablemultiplemappings="false">
 				<!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
-				<fileset dir="${thirdpartyjar.dir}">
-					<include name="LoboBrowser-1.0.0.jar"/>
-				</fileset>
-				<globmapper from="LoboBrowser-1.0.0.jar" to="zzzLoboBrowser-1.0.0.jar"/>
+				<restrict>
+					<path refid="runtime.classpath"/>
+					<type type="file"/>
+				</restrict>
+				<chainedmapper>
+					<flattenmapper/>
+					<regexpmapper from="^(LoboBrowser-1.0.0.jar)" to="zzz\1"/>
+				</chainedmapper>
 			</mappedresources>
-			<fileset dir="${thirdpartyjar.dir}">
-				<exclude name="LoboBrowser-1.0.0.jar"/>
-			</fileset>
-			<fileset dir="${cwmsSystemJars.dir}">
-				<include name="*.jar"/>
-			</fileset>
+			<mappedresources enablemultiplemappings="false">				
+				<restrict>
+					<path refid="runtime.classpath"/>
+					<type type="file"/>
+				</restrict>
+				<chainedmapper>
+					<flattenmapper/>
+					<regexpmapper from="^(?!LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
+				</chainedmapper>
+			</mappedresources>
+			
 		</copy>
-
-<!--
-		<copy todir="stage/dep/ext">
-			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/ext">
-				<include name="*.jar"/>
-			</fileset>
-		</copy>
-		<copy todir="stage/dep/Lib">
-			<fileset dir="${workspace.dir}/opendcs-cove/3rd_party/Lib"/>
-		</copy>
--->
 
 		<copy todir="stage/imports/comp-standard">
 			<fileset dir="${src.dir}/decodes/tsdb/algo">
@@ -430,12 +287,32 @@ can find your git source tree and your directory with the downloaded jars.
 			</fileset>
 		</copy>
 
-		<copy todir="stage/doc">
-			<fileset dir="${project.dir}/doc">
-				<include name="*.pdf"/>
-				<include name="algorithms.txt"/>
-			</fileset>
+
+		<copy todir="stage/doc/html">
+			<fileset dir="${docs.output}/html">
+				<include name="**"/>
+				<exclude name=".buildinfo"/>
+			</fileset>		
 		</copy>
+
+
+		<if>
+			<!-- the output between PDF and html is a bit different -->
+			<equals arg1="${sphinx.target}" arg2="latexpdf"/>
+			<then>
+				<mkdir dir="stage/doc/pdf"/>
+				<echo message="copying opendcs.pdf."/>
+				<copy todir="stage/doc/pdf">
+					<fileset dir="${docs.output}/latex">
+						<include name="*.pdf"/>
+					</fileset>
+				</copy>
+			</then>
+			<else>
+				<echo message="copying html files."/>
+			</else>
+		</if>
+
 		<tar destfile="stage/doc.tar.gz" compression="gzip">
 			<tarfileset dir="stage" includes="doc/**">
 			</tarfileset>
@@ -485,49 +362,52 @@ can find your git source tree and your directory with the downloaded jars.
 
 		<copy todir="stage/python">
 			<fileset dir="${project.dir}/python"/>
-		</copy>
-
-		<mkdir dir="stage/cwmsDbAPI"/>
-		<copy todir="stage/cwmsDbAPI">
-			<fileset dir="${cwmsDbAPI.dir}"/>
-		</copy>
+		</copy>		
 
 	</target>
 
 	<!-- same as package, but remove libraries not needed by USACE or USBR -->
-	<target name="nonfed" depends="stage,izpack_deps">
-		<delete dir="stage/dep/Lib"/>
+	<target name="nonfed" depends="stage">
 		<delete file="stage/dep/jep-2.4.1.jar"/>
 		<delete file="stage/dep/jython-2.7.2.jar"/>
 		<delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
 		<delete file="stage/dep/Cobra.jar"/>
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-nf-${MAJ_VER}-${MIN_VER}.xml"
-				output="stage/opendcs-nf-${MAJ_VER}-${MIN_VER}-${RCNUM}.jar"
+		<izpack input="${project.dir}/izpack/opendcs-install.xml"
+				output="stage/opendcs-nf-${version}.jar"
 				installerType="standard"
 				basedir="stage"
 				izPackDir="${izpack.dir}">
+			<property name="version" value="${version}"/>
+			<property name="hdb.preselect" value="no"/>
 		</izpack>
 	</target>
 
 	<!-- same as nonfed, but includes OpenTSDB and computation files -->
-	<target name="opentsdb" depends="stage,izpack_deps">
-		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-${MAJ_VER}-${MIN_VER}.xml"
-				output="stage/opendcs-ot-${MAJ_VER}-${MIN_VER}-${RCNUM}.jar"
+	<target name="opendcs" depends="stage,common.izpack.dependencies">
+		<!-- Invokes izpack to build installable package with defaults for CWMS -->		
+		<property name="hdb.preselect" value="no"/>
+		<izpack input="${project.dir}/izpack/opendcs-install.xml"
+				output="stage/opendcs-ot-${version}.jar"
 				installerType="standard"
+				inheritAll="true"
 				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+				izPackDir="${izpack.dir}">
+			
+		</izpack>
 	</target>
 
 	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
-	<target name="hdb" depends="stage,izpack_deps">
+	<target name="hdb" depends="stage,common.izpack.dependencies">
 		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-hdb-${MAJ_VER}-${MIN_VER}.xml"
-				output="stage/opendcs-hdb-${MAJ_VER}-${MIN_VER}-${RCNUM}.jar"
+		<property name="hdb.preselect" value="yes"/>
+		<izpack input="${project.dir}/izpack/opendcs-install.xml"
+				output="stage/opendcs-hdb-${version}.jar"
 				installerType="standard"
+				inheritAll="true"
 				basedir="stage"
-				izPackDir="${izpack.dir}"/>
+				izPackDir="${izpack.dir}">
+		</izpack>
 	</target>
 
 	<target name="cwmstar" depends="stage">
@@ -564,71 +444,99 @@ can find your git source tree and your directory with the downloaded jars.
 		</tar>
 	</target>
 
-	<path id="dcpmon.class.path">
-		<pathelement path="${build.classes}/"/>
-		<pathelement path="${env.CATALINA_HOME}/lib/servlet-api.jar"/>
-		<fileset dir="${dcpmon.dir}/WebContent/WEB-INF/lib">
-			<include name="**/*.jar"/>
-		</fileset>
-	</path>
+	<target name="eclipse-ide-files" depends="common.resolve.build">
+		<!-- 
+			Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
+			coming up with this!
+			https://stackoverflow.com/a/11617592
+		-->
+		<!-- resolve -->		
+		
+		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="groovy.classpath"/>
 
-	<path id="hydrojson.class.path">
-		<pathelement path="${build.classes}/"/>
-		<pathelement path="${env.CATALINA_HOME}/lib/servlet-api.jar"/>
-		<fileset dir="${hydrojson.dir}/WebContent/WEB-INF/lib">
-			<include name="**/*.jar"/>
-		</fileset>
-	</path>
+		<groovy>		
+			import groovy.xml.MarkupBuilder
+		
+			//
+			// Generate the project file
+			//
+			project.log("Creating .project")
+		
+			new File(".project").withWriter { writer ->
+				def xml = new MarkupBuilder(writer)
+		
+				xml.projectDescription() {
+					name(project.name)
+					comment()
+					projects()
+					buildSpec() {
+						buildCommand() {
+							name("org.eclipse.jdt.core.javabuilder")
+							arguments()
+						}
+						buildCommand() {
+							name("org.eclipse.ui.externaltools.ExternalToolBuilder")
+							triggers("full,incremental")
+							arguments() {
+								dictionary() {
+									key("LaunchConfigHandle")
+			                  		value("&lt;project&gt;/.externalToolBuilders/jar.launch")
+								}
+							}
+						}
+					}
+					natures() {
+						nature("org.eclipse.jdt.core.javanature")
+					}
+				}
+			}
+		
+			//
+			// Generate the classpath file
+			//
+			// The "lib" classpathentry fields are populated using the ivy artifact report
+			//
+			project.log("Creating .classpath")
+		
+			new File(".classpath").withWriter { writer ->
+				def xml = new MarkupBuilder(writer)
+		
+				xml.classpath() {
+					classpathentry(kind:"src",    path:"src/main/java", output="bin/main")
+					classpathentry(kind:"src",    path:"src/main/resources", output="bin/main")
+					classpathentry(kind:"src",    path:"src/test/java", output="bin/test")					
+					classpathentry(kind:"output", path:"bin")
+					classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
+		
+					project.getReference("runtime.classpath").each {
+						classpathentry(kind:"lib", path:it)
+					}
 
-	<target name="dcpmon" depends="jar">
+					project.getReference("test.classpath").each {
+						classpathentry(kind:"lib", path:it)
+					}
+				}
+			}
+		</groovy>
+        <mkdir dir=".externalToolBuilders"/>
+        <mkdir dir=".settings"/>
+        <copy file="ide-support/eclipse/jar.launch" todir=".externalToolBuilders"/>
+        <copy file="ide-support/eclipse/org.eclipse.jdt.core.prefs" todir=".settings"/>
+        <echo>
+            As it is impossible to know everyone's configuration and preferences this target does the bear minimum 
+            to get Eclipse going. You will have to do a "build all" or run ant jar on the command line to make
+            sure dependencies are in place.
 
-		<mkdir dir="stage/dcpmon-build"/>
-		<mkdir dir="stage/dcpmon-build/war-distro"/>
-		<copy todir="stage/dcpmon-build/war-distro">
-			<fileset dir="${dcpmon.dir}/WebContent"/>
-		</copy>
-		<mkdir dir="stage/dcpmon-build/war-custom"/>
-		<copy todir="stage/dcpmon-build/war-custom">
-			<fileset dir="${dcpmon.dir}/install/war-custom"/>
-		</copy>
-		<mkdir dir="stage/dcpmon-build/war-distro/WEB-INF/classes"/>
-		<copy todir="stage/dcpmon-build/war-distro/WEB-INF/lib" file="build/lib/opendcs.jar" overwrite="true"/>
-		<javac debug="true" destdir="stage/dcpmon-build/war-distro/WEB-INF/classes"
-			target="1.7" source="1.7">
-			<src path="${dcpmon.dir}/src"/>
-			<classpath refid="dcpmon.class.path"/>
-		</javac>
-		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/makeDcpmon.sh"/>
-		<copy todir="stage/dcpmon-build" file="${dcpmon.dir}/install/README"/>
-		<tar tarfile="stage/dcpmon-build-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz"
-			basedir="stage"
-			includes="dcpmon-build/**"
-			compression="gzip"/>
+            The project currently requires Java 8 due to a dependencies on tools.jar. It is left to the eclipse user
+            to make sure a JDK is available and configured correctly for that need.
+        </echo>
 	</target>
 
-	<target name="hydrojson" depends="jar">
 
-		<mkdir dir="stage/hydrojson-build"/>
-		<mkdir dir="stage/hydrojson-build/war-distro"/>
-		<copy todir="stage/hydrojson-build/war-distro">
-			<fileset dir="${hydrojson.dir}/WebContent"/>
-		</copy>
-		<mkdir dir="stage/hydrojson-build/war-custom"/>
-		<copy todir="stage/hydrojson-build/war-custom">
-			<fileset dir="${hydrojson.dir}/install/war-custom"/>
-		</copy>
-		<mkdir dir="stage/hydrojson-build/war-distro/WEB-INF/classes"/>
-		<copy todir="stage/hydrojson-build/war-distro/WEB-INF/lib" file="build/lib/opendcs.jar" overwrite="true"/>
-		<javac debug="true" destdir="stage/hydrojson-build/war-distro/WEB-INF/classes"
-			target="1.7" source="1.7">
-			<src path="${hydrojson.dir}/src"/>
-			<classpath refid="hydrojson.class.path"/>
-		</javac>
-		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/makehydrojson.sh"/>
-		<copy todir="stage/hydrojson-build" file="${hydrojson.dir}/install/README"/>
-		<tar tarfile="stage/hydrojson-build-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz"
-			basedir="stage"
-			includes="hydrojson-build/**"
-			compression="gzip"/>
+	<target name="checkstyle" depends="common.resolve.build" description="Verify files are formatted correctly.">		
+		<checkstyle config="config/checkstyle.xml">
+			<fileset dir="src/main/java" includes="**/*.java"/>
+			<formatter type="plain"/>
+		</checkstyle>
 	</target>
 </project>

@@ -1,3 +1,4 @@
+stage
 # This Needs to say, bin directories not under root are fine.
 # but some IDEs dump class files here.
 bin/
@@ -8,4 +9,11 @@ build
 .vscode
 .settings
 dep/
+.classpath
+.project
+bin
+.externalToolBuilders/
+doc-source/media/**
+doc-source/*.rst
 **/.externalToolBuilders
+*.log

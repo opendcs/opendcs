@@ -1,0 +1,91 @@
+<project name="docs">
+    
+    <include file="../common.xml"/>
+    
+    <property name="docs.dir" value="${project.dir}/docs"/>
+    <property name="docs.venv" value="${docs.dir}/build/sphinx"/>
+    
+
+    <condition property="PATH" value="${env.Path}" else="${env.PATH}">
+        <os family="windows"/>
+    </condition>
+    <condition property="PYTHON_EXE" value="python.exe" else="python3">
+        <os family="windows"/>
+    </condition>
+    <available property="have.python" file="${PYTHON_EXE}" filepath="${PATH}"/>
+    <available property="have.latexmk" file="latexmk" filepath="${PATH}"/>
+
+    <target name="check.prereqs" depends="common.resolve.build" description="Determine if we have what we need and inform the user if we don't.">        
+        <if>
+            <not>
+                <isset property="have.python"/>
+            </not>
+            <then>
+                <echo message="python is required to build the documentation, please install as appropriate to your platform"/>
+            </then>
+            <else>
+                <echo message="Creating virtual env and installing sphinx"/>
+                <exec executable="${PYTHON_EXE}" dir="${docs.dir}">
+                    <arg value="-m"/>
+                    <arg value="venv"/>
+                    <arg value="${docs.venv}"/>
+                </exec>
+                <condition property="VENV_PATH" value="${docs.venv}/Scripts" else="${docs.venv}/bin">
+                    <os family="windows"/>
+                </condition>
+                <exec executable="${VENV_PATH}/${PYTHON_EXE}" failonerror="true">
+                    <arg value="-m"/><arg value="pip"/>
+                    <arg value="install"/>
+                    <arg value="-r"/>
+                    <arg value="${docs.dir}/requirements.txt"/>
+                    <env key="PATH" path="${VENV_PATH}:${PATH}"/>
+                </exec>
+
+                <condition property="sphinx.target" value="latexpdf" else="html">
+                    <isset property="have.latexmk"/>
+                </condition>
+                <property name="docs.output" value="${docs.dir}/build"/>                    
+                <if>
+                    <not><isset property="have.latexmk"/></not>
+                    <then>
+                        <echo message="Command 'latexmk' is not available. Will only build html files for documentation."/>
+                        <echo message="If you want to generate PDFs please install a LaTeX distribution, latexmk and set in PATH as appropriate to your system"/>
+                        <echo message="on ubuntu `sudo apt install texlive-latex-base texlive-latex-recommended texlive-latex-extra latexmk"/>
+                    </then>
+                </if>
+                <property name="canbuilddocs" value="true"/>                
+            </else>
+        </if>        
+    </target>
+
+    <macrodef name="builddocs">
+        <attribute name="target"/>
+        <attribute name="musthaveprop"/>
+        <sequential>
+            <if>
+                <isset property="@{musthaveprop}"/>            
+                <then>
+                    <exec executable="cmd" dir="${docs.dir}" osfamily="windows" failonerror="true">
+                        <arg line="/c make.bat @{target}"/>
+                        <env key="PATH" path="${VENV_PATH}:${PATH}"/>
+                    </exec>
+                    <exec executable="make" dir="${docs.dir}" osfamily="unix" failonerror="true">
+                        <arg value="@{target}"/>
+                        <env key="PATH" path="${VENV_PATH}:${PATH}"/>
+                    </exec>
+                </then>
+            </if>
+        </sequential>
+    </macrodef>
+
+
+    <target name="build" depends="check.prereqs" if="canbuilddocs">
+        <builddocs target="html" musthaveprop="canbuilddocs"/>
+        <builddocs target="latexpdf" musthaveprop="have.latexmk"/>
+    </target>
+
+    <target name="clean">
+        <delete dir="${docs.dir}/build"/>
+    </target>
+
+</project>
