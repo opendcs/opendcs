@@ -1,9 +1,3 @@
-## 7.1 branch
-
-This branch will track the master branch code wise. The purpose of this branch is to improve the 
-local build system and automated pipeline for tests. No restructuring of code (except moving existing tests into junit test)
-will be done.
-
 # OpenDCS 
 
 OpenDCS is a tool for doing the following:
