@@ -38,6 +38,14 @@ public class DecodesException extends Exception
 	{
 		super(msg);
 	}
+
+	/**
+	 * 
+	 * @param msg the explanation
+	 * @param original exception to rethrow
+	 */
+	public DecodesException(String msg, Throwable original)
+	{
+		super(msg,original);
+	}
 }
-
-

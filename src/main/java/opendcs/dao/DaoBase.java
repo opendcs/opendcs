@@ -417,6 +417,10 @@ public class DaoBase
 					{
 						stmt.setString(index,(String)param);
 					}
+					else if (param instanceof DbKey)
+					{
+						stmt.setLong(index,((DbKey)param).getValue());
+					}
 					else
 					{
 						stmt.setObject(index,param);

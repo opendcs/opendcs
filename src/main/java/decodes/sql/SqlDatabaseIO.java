@@ -642,7 +642,7 @@ public class SqlDatabaseIO
 		}
 		catch (DbIoException ex)
 		{
-			throw new DatabaseException(ex.toString());
+			throw new DatabaseException(String.format("failed to read enum '%s' from database",enumName), ex);
 		}
 		finally
 		{
@@ -663,7 +663,7 @@ public class SqlDatabaseIO
 		try { dtdao.readDataTypeSet(dts); }
 		catch(DbIoException ex)
 		{
-			throw new DatabaseException(ex.getMessage());
+			throw new DatabaseException("Failed to read site datatype set", ex);
 		}
 		finally { dtdao.close(); }
 	}
@@ -742,7 +742,7 @@ public class SqlDatabaseIO
 		{
 			System.err.println(ex);
 			ex.printStackTrace();
-			throw new DatabaseException(ex.getMessage());
+			throw new DatabaseException("Failed to read site list",ex);
 		}
 		finally
 		{

@@ -29,5 +29,14 @@ public class DatabaseException extends decodes.util.DecodesException
 	{
 		super(msg);
 	}
-}
 
+	/**
+	 * 
+	 * @param msg the explanation
+	 * @param original exception we're rethrowing
+	 */
+	public DatabaseException(String msg, Throwable original)
+	{
+		super(msg,original);
+	}
+}
