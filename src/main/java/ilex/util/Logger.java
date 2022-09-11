@@ -130,7 +130,9 @@ public abstract class Logger
 	public static Logger instance( )
 	{
 		if (theLogger == null)
+		{
 			theLogger = new StderrLogger("");
+		}
 		return theLogger;
 	}
 
