@@ -116,7 +116,7 @@ public class DecodesDbEditor
 	public static void main(String[] args)
 		throws Exception
 	{
-		Logger.setLogger(new StderrLogger("DecodesDbEditor"));
+		Logger.instance("DecodesDbEditor");
 
 		// Parse command line arguments.
 		try { cmdLineArgs.parseArgs(args); }

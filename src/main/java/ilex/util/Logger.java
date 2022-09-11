@@ -8,6 +8,8 @@ import java.util.TimeZone;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
 * Abstract logging mechanism.  Most code can be written to write log
@@ -32,6 +34,7 @@ import java.io.*;
 */
 public abstract class Logger
 {
+	private static String DEFAULT_LOGGER="ilex.util.StderrLogger";
 	protected static TimeZone tz;
 	/** Process name to be included in log messages (optional). */
 	protected String procName;
@@ -79,6 +82,9 @@ public abstract class Logger
 	*/
 	public static final int E_DEFAULT_MIN_LOG_PRIORITY = E_INFORMATION;
 
+	/** If true, calls to setLogger will silently fail */
+	private static boolean preventChange = false;
+
 	/** If true, include priority in output messages. */
 	protected boolean usePriority;
 
@@ -118,7 +124,11 @@ public abstract class Logger
 	*/
 	public static void setLogger( Logger logger )
 	{
-		theLogger = logger;
+		if (!preventChange)
+		{
+			theLogger = logger;
+		}
+		
 	}
 
 	/**
@@ -129,11 +139,46 @@ public abstract class Logger
 	*/
 	public static Logger instance( )
 	{
+		return instance("");
+	}
+
+	/**
+	 * Get instance of logger. Create with given process name
+	 * if it doesn't exist yet. 
+	 * Process name will not be reset on subsequent calls.
+	 * @param procName
+	 * @return
+	 */
+	public static Logger instance(String procName)
+	{
 		if (theLogger == null)
-		{
-			theLogger = new StderrLogger("");
+		{			
+			theLogger = initializeLogger(procName);
 		}
 		return theLogger;
+	}
+
+	private static Logger initializeLogger(String procName)
+	{
+		try {
+			preventChange = System.getProperty("opendcs.logger",null) != null;
+			String loggerClassName = System.getProperty("opendcs.logger", "ilex.util.StderrLogger");			
+			System.err.println("Loading Logger Class " + loggerClassName);
+			Class<?> loggerClass = Class.forName(loggerClassName);
+			Constructor<?> constructor = loggerClass.getDeclaredConstructor(String.class);
+			Logger logger = (Logger)constructor.newInstance(procName);
+			logger.info(String.format("Logger %s started",loggerClassName));
+			return logger;
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException("Unable to initialize logging system. Logger not found.",e);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Unable to initialize logging system. No default constructor",e);
+		} catch (SecurityException e) {
+			throw new RuntimeException("Unable to initialize logging system. Security Manager configuration",e);
+		} catch (InstantiationException|IllegalAccessException|IllegalArgumentException|InvocationTargetException e) {
+			throw new RuntimeException("Unable to create instance of logger.",e);
+		}
+		
 	}
 
 	/**
