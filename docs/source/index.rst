@@ -19,6 +19,7 @@ Contents
 
    Quick Start <./quick-start.rst>
    Install Guide <./install-guide.rst>
+   Logging <./logging.rst>
    LRGS Guide <./lrgs-userguide.rst>
    Computation Guide <./cp-userguide.rst>
    DECODES Guide <./decoding-guide.rst>
