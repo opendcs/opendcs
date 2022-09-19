@@ -81,16 +81,16 @@ be considered given to "The OpenDCS Consortium" which does not directly take any
 
 ### 6. You are a contractor funded by one of those agencies
 
-Welcome. Please keep reading this document, regardless of the deliverables text in that contract you will be held to our standards and desired.
+Welcome. Please keep reading this document, regardless of the deliverables text in that contract you will be held to our standards and desires.
 
 Management of the project itself is handled by volunteers, regardless of government employee or contractor employee status.
 Your contributions will be reviewed and judged by a combination of volunteers (private citizens,gov't employees), and other contractors also paid to work on the software. We do not currently have a formal structure, but that will likely change in the future.
 
 As software is used for getting field data from satellited based delivery platforms, collaboration happens with the Satellite Telemetry Interagency Working Group. Consider contacting NOAA and joining that group if you are not already part of it.
 
-Commit access to the project will granted to individuals after demonstration of concern for the project. Concern is a combination of participation in discussions, issues, pull-requests, and contributions of code that meets standards and respects the different systems used. Even a small amount.
+Commit access to the project will be granted to individuals after demonstration of concern for the project. Concern is a combination of participation in discussions, issues, pull-requests, and contributions of code that meets standards and respects the different systems used. Even a small amount.
 
-Those with commit access *MUST* be willing and able to operate as volunteers for contributions from and discussions with others. However that does not preclude getting paid for specific work. The project may alter the way commit access is granted in the future.
+Those with commit access *MUST* be willing and able to operate as volunteers for contributions from and discussions with others. However, that does not preclude getting paid for specific work. The project may alter the way commit access is granted in the future.
 
 You are welcome to offer support for pay, and if any employees have commit access you can advertise that.
 
@@ -101,7 +101,7 @@ However, some additional points of order:
 - The project is managed by The OpenDCS Consortium not a single vendor. Use the OpenDCS name in adverts/leaflets appropriately.
 - Before starting on a large project
   - Review the project, milestones, discussions, and issues sections of each opendcs repository to know what current plans are.
-  - Please contact us through github tools or the mailing list *before* starting on a large project.
+  - Please contact us through GitHub tools or the mailing list *before* starting on a large project.
 
 Commit access will be revoked if a given developer continually push changes that negatively affect other supported components.
 Pull-requests will be denied if they don't me the guidelines below are not followed and the developer is unwilling to make corrections.
@@ -109,27 +109,27 @@ Pull-requests will be denied if they don't me the guidelines below are not follo
 The following could result in a ban, of an individual:
 
 - Harassing anyone participating in the project.
-- Constantly providing contributions that don't meet standards and expecting others to fix it
+- Constantly providing contributions that don't meet standards and expecting others to fix it.
 
 
 ## Getting Started
 
-This project is used by multiple agencies to handle gathering data from multiple sources and do complex computations prepared that data for reports.
-It supports 3 different database for TimeSeries data:
+This project is used by multiple agencies to handle gathering data from multiple sources, do complex computations, and prepare that data for reports.
+It supports 3 different databases for TimeSeries data:
 
-- Built-In, currently called OpenTSDB but it has nothing to do with OpenTSDB.org; we will be changing the name.
+- Built-In, currently called OpenTSDB but has nothing to do with OpenTSDB.org; we will be changing the name.
 - CWMS, the Corps Water Management System database used by the US Army Corps of Engineers
-- HDB, the hydrologic databased used by the US Bureau of Reclamation
+- HDB, the hydrologic database used by the US Bureau of Reclamation
 
-The built-in is course build in and available and can be loaded into PostgreSQL or Oracle, see the schema directory.
-HDB is available at github.com/usbr/hdb however requires oracle and the setup is a little complex.
+The built-in is course built in and available and can be loaded into PostgreSQL or Oracle, see the schema directory.
+HDB is available at github.com/usbr/hdb however requires Oracle and the setup is a little complex.
 CWMS is not currently available for public access.
 
-If you are new and contributing changes to the computation processor or DECODES systems we recommend setting up the built-in postgres database. Work to get you're changes to work there and we will guide you where changes are required.
+If you are new and contributing changes to the Computation Processor or DECODES systems we recommend setting up the built-in postgres database. Work to get your changes to work there and we will guide you where changes are required.
 
-Additionally the program will call LRGS uses a simple database or a config file to store information. This is separate from the time series database and all forms of configuration storage should be tested by contributors.
+Additionally, the program we call LRGS uses a simple database or a config file to store information. This is separate from the time series database and all forms of configuration storage should be tested by contributors.
 
-All that said, we don't currently have a large suite of easily automated tests. We are starting the process to set them up, in the mean time expect a lot of manual work.
+All that said, we don't currently have a large suite of easily automated tests. We are starting the process to set them up, in the meantime expect a lot of manual work.
 
 The current java target is java 8. This will change at the next major release. Please make sure you do not add java 9+ features at this time.
 
@@ -142,9 +142,8 @@ Now you're ready to [clone the repository](https://help.github.com/articles/clon
 
 There is a checkstyle file, `configs/checkstyle.xml` please follow the established rules. You are welcome to argue for different rules.
 
-You can run `ant checkstyle` to verify your new code. There is a lot of code that hasn't been moved yet so ignore any files that aren't what you worked on. If working
-on that code please put format changes in separate commits. You will only be required to format your new code to that standard.
-However if you want to handle the whole file it would be appreciated.
+You can run `ant checkstyle` to verify your new code. There is a lot of code that hasn't been moved yet so ignore any files that aren't what you worked on. If working on that code please put format changes in separate commits. You will only be required to format your new code to that standard.
+However, if you want to handle the whole file it would be appreciated.
 
 ## Submitting an Issue
 
@@ -155,7 +154,7 @@ Please fill out the template as appropriate.
 
 ## Submitting Code
 
-Please [fork](https://help.github.com/en/articles/fork-a-repo) the repository on github and create a [branch in Git](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) if you are making changes to existing code.
+Please [fork](https://help.github.com/en/articles/fork-a-repo) the repository on GitHub and create a [branch in Git](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) if you are making changes to existing code.
 
 Once you have made your changes submit a [pull request](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork).
 
@@ -164,13 +163,13 @@ Fill in the PR template as appropriate.
 Pull requests should be kept small. If you are doing a larger effort please request merges as you make progress.
 Failure to keep requests small will likely result in denial.
 
-A large PR *may* allowed in the following conditions
+A large PR *may* be allowed in the following conditions
 
-1. You coordinate with the about the changes, and we agree they need to be done at once.
-2. You start the PR immediately and continuously update it with existing progress so we can comment or decided when to merge things.
+1. You coordinate with us about the changes, and we agree they need to be done at once.
+2. You start the PR immediately and continuously update it with existing progress, so we can comment or decided when to merge things.
 3. You add tests as you go to cover all these changes.
 
-Changes made *must* pass any tests that exists with the built-in postgres database.
+Changes made *must* pass any tests that exist with the built-in Postgres database.
 
 Code Changes *should* have a test provided. Preferably automated, description of a procedure is acceptable.
 
@@ -180,12 +179,12 @@ A trivial change *may* be accepted without changes but comment and approval by o
 
 Before submitting your pull request, you should run the build process locally first to ensure things are working as expected.
 
-We are in the process of improving the build system. Please see the build.xml file for the current recommendations
+We are in the process of improving the build system. Please see the build.xml file for the current recommendations.
 
 We are working on baseline automated tests.
 
 
-### I figured out how to do something were can I document it
+### I figured out how to do something where can I document it
 
-1. The documentation, submit a PR with you're new example added.
-2. the wiki at https://github.com/opendcs/opendcs/wiki
+1. The documentation, submit a PR with your new example added.
+2. The wiki at https://github.com/opendcs/opendcs/wiki
