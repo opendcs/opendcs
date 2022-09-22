@@ -345,8 +345,7 @@ public class CwmsSqlDatabaseIO
 				ex.printStackTrace(ps);
 			else
 				ex.printStackTrace(System.err);
-			return null;
-			// TODO Should this method throw BadConnectException?
+			throw new RuntimeException(new BadConnectException(msg,ex));
 		}
 
 		// Force autoCommit on.
@@ -368,9 +367,8 @@ public class CwmsSqlDatabaseIO
 				+ conInfo.getDbOfficePrivilege() + "':" + ex;
 			Logger.instance().failure(msg);
 			try { CwmsDbConnectionPool.close(ret); } catch(Exception ex2) {}
-			return null;
-			// TODO Should this method throw BadConnectException?
-//			throw new BadConnectException(msg);
+			throw new RuntimeException(new BadConnectException(msg,ex));
+
 		}
 		
 		// These debug messages will allow us to detect leaks: connections open but never closed:

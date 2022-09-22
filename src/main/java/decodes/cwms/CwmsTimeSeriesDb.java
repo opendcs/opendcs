@@ -1934,7 +1934,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				ex.printStackTrace(ps);
 			else
 				ex.printStackTrace(System.err);
-			return null;
+			throw new RuntimeException(new BadConnectException(msg,ex));
 		}
 
 		// Force autoCommit on.
@@ -1957,7 +1957,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				+ conInfo.getDbOfficePrivilege() + "':" + ex;
 			failure(msg);
 			try { CwmsDbConnectionPool.close(ret); } catch(Exception ex2) {}
-			return null;
+			throw new RuntimeException(new BadConnectException(msg,ex));
 		}
 		
 		// These debug messages will allow us to detect leaks: connections open but never closed:
