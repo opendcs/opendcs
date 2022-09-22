@@ -36,8 +36,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.function.Consumer;
 
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
@@ -416,11 +416,40 @@ public class DaoBase
 					}
 					else if (param instanceof String)
 					{
+						setStmtString(stmt, index, (String)param);
 						stmt.setString(index,(String)param);
+					}
+					else if (param instanceof NullableParameter<?>){
+						NullableParameter<?> p = (NullableParameter<?>)param;
+						if (p.type().equals(String.class))
+						{
+							setStmtString(stmt, index, (String)p.get());
+						}
+						else if (p.type().equals(Date.class))
+						{
+							setStmtDate(stmt, index,(Date)p.get());
+						}
+						else
+						{
+							throw new SQLException(String.format("Unable to save type %s, for parameter at index '%d'"
+															     + " for query '%s'",p.type().getName(),index,statement));
+						}
 					}
 					else if (param instanceof DbKey)
 					{
-						stmt.setLong(index,((DbKey)param).getValue());
+						DbKey key = (DbKey)param;
+						if( key.isNull() )
+						{
+							stmt.setNull(index, java.sql.Types.NUMERIC);
+						}
+						else
+						{
+							stmt.setLong(index,key.getValue());
+						}
+					}
+					else if( param instanceof Date)
+					{
+						setStmtDate(stmt,index,(Date)param);
 					}
 					else
 					{
@@ -433,7 +462,7 @@ public class DaoBase
 			}
 		});
 
-	}
+	}	
 
 	/**
 	 * Prepare and run a statement with the given parameters.
@@ -537,5 +566,90 @@ public class DaoBase
 			}
 		},parameters);
 		return result;
+	}
+
+	/**
+	 * Wrapper for possibly null text values
+	 * @param stmt
+	 * @param index
+	 * @param value
+	 * @throws SQLException
+	 */
+	private void setStmtString(PreparedStatement stmt, int index, String value)
+		throws SQLException
+	{
+		stmt.setString(index,value);
+	}
+
+	/**
+	 * Wrapper for handling possibly Null Date values
+	 * @param stmt PrepareStatement
+	 * @param index 
+	 * @param value java.util.Date value, can be null
+	 */
+	private void setStmtDate(PreparedStatement stmt, int index, Date value)
+		throws SQLException
+	{
+		if( value == null )
+		{
+			stmt.setNull(index,
+							db.isOpenTSDB()
+							? java.sql.Types.NUMERIC
+							: java.sql.Types.DATE
+							);
+		}
+		else if( db.isOpenTSDB() )
+		{
+			stmt.setLong(index,value.getTime());
+		}
+		else
+		{
+			stmt.setDate(index,new java.sql.Date(value.getTime()));
+		}
+	}
+
+	/**
+	 * Helper to allow for null values so the preparedstatement code and match types correctly.
+	 */
+	public static class NullableParameter<T extends Object> {
+		private T value;
+		private Class<T> clazz;
+
+		private NullableParameter(T value, Class<T> clazz)
+		{
+			this.value = value;
+			this.clazz = clazz;
+		}
+
+		/**
+		 * Creates a wrapped value for the database that may or may not be null.
+		 * saves the datatype separately in cases of null values
+		 * @param <T> Actual data type
+		 * @param value value that can be null
+		 * @param clazz the Class represenation for type T
+		 * @return NullableParameter that can be passed as a DaoBase "parameter"
+		 */
+		public static <T> NullableParameter<T> of(T value, Class<T> clazz)
+		{
+			return new NullableParameter<T>(value,clazz);
+		}
+
+		/**
+		 * 
+		 * @return the wrapped object
+		 */
+		public T get()
+		{
+			return this.value;
+		}
+		
+		/**
+		 * 
+		 * @return the type class
+		 */
+		public Class<T> type()
+		{
+			return clazz;
+		}
 	}
 }

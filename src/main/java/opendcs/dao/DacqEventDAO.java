@@ -13,6 +13,7 @@ import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.DacqEventDAI;
+import java.util.Optional;
 
 public class DacqEventDAO 
 	extends DaoBase implements DacqEventDAI
@@ -60,41 +61,35 @@ public class DacqEventDAO
 		if (txt.length() >= 256)
 			txt = txt.substring(0,255);
 		
-		String q = "INSERT INTO " + tableName + "(" + columns + ") VALUES("
-			+ evt.getDacqEventId() + ", "
-			+ evt.getScheduleEntryStatusId() + ", "
-			+ evt.getPlatformId() + ", "
-			+ db.sqlDate(evt.getEventTime()) + ", "
-			+ evt.getEventPriority() + ", "
-			+ sqlString(evt.getSubsystem()) + ", "
-			+ db.sqlDate(evt.getMsgRecvTime()) + ", "
-			+ sqlString(txt);
+		ArrayList<Object> parameters = new ArrayList<>();		
+
+		parameters.add(evt.getDacqEventId());
+		parameters.add(evt.getScheduleEntryStatusId());
+		parameters.add(evt.getPlatformId());
+		parameters.add(evt.getEventTime());
+		parameters.add(evt.getEventPriority());
+		parameters.add(DaoBase.NullableParameter.of(evt.getSubsystem(),String.class));
+		parameters.add(DaoBase.NullableParameter.of(evt.getMsgRecvTime(),Date.class));
+		parameters.add(txt);
+		String q = "INSERT INTO " + tableName + "(" + columns + ") VALUES(";
+		int size = parameters.size();
+		for(int i = 0; i < size; i++) {
+			q = q + "?" + (i < (size-1) ? "," : "");
+		}
 		if (hasAppId)
-			q = q + ", " + evt.getAppId();
-		
+		{
+			q = q + ",?";
+			parameters.add(evt.getAppId());
+		}
 		q = q + ")";
-		
-		// NOTE: Cannot use doModify(q) because it will log the statement, which will cause
-		// an endless loop.
-		Statement modStmt = null;
 		try
 		{
-			modStmt = getConnection().createStatement();
-			modStmt.executeUpdate(q);
+			doModify(q,parameters.toArray());
 		}
 		catch(SQLException ex)
 		{
 			String msg = "SQL Error in modify query '" + q + "': " + ex;
-			throw new DbIoException(msg);
-		}
-		finally
-		{
-			if (modStmt != null)
-			{
-				try { modStmt.close(); }
-				catch(Exception ex) {}
-				modStmt = null;
-			}
+			throw new DbIoException(msg,ex);
 		}
 	}
 
