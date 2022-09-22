@@ -127,6 +127,7 @@ public class DaoBase
 		// local getConnection() method that saves the connection locally
 		if (myCon == null || connectionClosed() )
 		{
+			Logger.instance().debug3("DaoBase -> resetting connection");
 			// If the connection is closed or invalid so are these objects.
 			this.queryStmt1 = null;
 			this.queryStmt2 = null;
