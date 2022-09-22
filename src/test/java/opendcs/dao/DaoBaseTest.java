@@ -36,6 +36,21 @@ public class DaoBaseTest
         Connection conn = DriverManager.getConnection("jdbc:derby:memory:db;create=true");
         assertNotNull(conn,"Failed to acquire Derby database.");
         dbOwner.setConnection(conn);
+        try( DaoBase dao = new DaoBase(dbOwner,"test"); )
+        {
+            for( String statement: IOUtils.resourceToString("/opendcs/dao/testdb.sql",StandardCharsets.UTF_8).trim().split(";"))
+            {
+                if (!statement.trim().isEmpty())
+                {
+                    System.out.println("Running: ");
+                    System.out.println("=============");
+                    System.out.println(statement);
+                    System.out.println("=====end=====");
+                    dao.doModify(statement, new Object[0]); // have to force with one we're using
+                }
+
+            }
+        }
     }
 
     @AfterEach
@@ -68,21 +83,7 @@ public class DaoBaseTest
     public void test_do_query() throws Exception
     {
         try( DaoBase dao = new DaoBase(dbOwner,"test"); )
-        {
-            for( String statement: IOUtils.resourceToString("/opendcs/dao/testdb.sql",StandardCharsets.UTF_8).trim().split(";"))
-            {
-                if (!statement.trim().isEmpty())
-                {
-                    System.out.println("Running: ");
-                    System.out.println("=============");
-                    System.out.println(statement);
-                    System.out.println("=====end=====");
-                    dao.doModify(statement, new Object[0]); // have to force with one we're using
-                }
-
-            }
-            
-
+        {                       
             List<DaoBaseTest.SimpleComp> result = dao.getResults("select id,name from cp_computation", rs -> { return new SimpleComp(rs);});
             assertEquals(2, result.size(), "not all results returned");
 
@@ -102,7 +103,17 @@ public class DaoBaseTest
             assertEquals("To Add->AddComp",comp_depends.get(0));
             assertEquals("To Add 2->AddComp",comp_depends.get(1));
         }
-    }   
+    }
+
+    @Test
+    public void test_get_multiple_results() throws Exception
+    {
+        try( DaoBase dao = new DaoBase(dbOwner,"test"); )
+        {                       
+            List<DaoBaseTest.SimpleComp> result = dao.getResults("select id,name from cp_computation", rs -> { return new SimpleComp(rs);});
+            assertEquals(2, result.size(), "not all results returned");        
+        }
+    }
 
     public static SimpleComp fromRS(ResultSet rs) throws SQLException
     {
