@@ -670,7 +670,7 @@ public class LoadingAppDao
 		try
 		{
 			List<TsdbCompLock> ret = getResults("SELECT * from CP_COMP_PROC_LOCK",(rs) -> rs2lock(rs) );
-			doQuery("SELECT LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME FROM HDB_LOADING_APPLICATION", 
+			doQuery("SELECT LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME FROM HDB_LOADING_APPLICATION",
 				(rs) -> {
 					DbKey appId = DbKey.createDbKey(rs, 1);
 					String appName = rs.getString(2);
