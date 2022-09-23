@@ -542,25 +542,29 @@ public class LoadingAppDao
 			q = "SELECT * from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?";
 			lock = getSingleResult(	q, (rs) -> rs2lock(rs), appInfo.getAppId());
 			// Same application is re-connecting? (pid will be same)
-			if (lock.getPID() == pid)
-			{
-				// No need to re-create. Update the existing lock.
-				checkCompProcLock(lock);
-				return lock;
-			}
-			if (!lock.isStale())
-			{
-				String msg =
-					"Cannot obtain lock for app ID " + appInfo.getAppId()
-					+ ". Currently owned by PID " + lock.getPID()
-					+ " on host '" + lock.getHost() + "'";
-				fatal(msg);
-				throw new LockBusyException(msg);
-			}
 			if (lock != null)
 			{
+				if (lock.getPID() == pid)
+				{
+					// No need to re-create. Update the existing lock.
+					checkCompProcLock(lock);
+					return lock;
+				} 
+				else if (!lock.isStale())
+				{
+					String msg =
+						"Cannot obtain lock for app ID " + appInfo.getAppId()
+						+ ". Currently owned by PID " + lock.getPID()
+						+ " on host '" + lock.getHost() + "'";
+					fatal(msg);
+					throw new LockBusyException(msg);
+				}
+				else
+				{
 				releaseCompProcLock(lock);
+				}
 			}
+						
 			lock = new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting");
 			lock.setAppName(appInfo.getAppName());
 			Object lockHearbeat = db.isOpenTSDB()
