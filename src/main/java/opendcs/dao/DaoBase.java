@@ -38,6 +38,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
@@ -566,6 +567,23 @@ public class DaoBase
 			}
 		},parameters);
 		return result;
+	}
+
+	/**
+	 * Same as getResults except null values are removed from the
+	 * generated list.
+	 * @param query SQL query with ? for bind vars.
+	 * @param consumer Function that Takes a ResultSet and returns an instance of R
+	 * @param parameters arg list of query inputs
+	 * @returns Object of type R determined by the caller.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
+	 */
+	public <R> List<R> getResultsIgnoringNull(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	{
+		return getResults(query, consumer, parameters)
+				.stream()
+				.filter(r -> r != null)
+				.collect(Collectors.toList());
 	}
 
 	/**
