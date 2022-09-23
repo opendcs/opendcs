@@ -1852,16 +1852,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		String q = "select distinct version_id from cwms_v_ts_id order by version_id";
 		try(DaoBase dao = new DaoBase(this, "CWMS");)
 		{
-			List<String> ret = null;
-			ret = dao.getResults(q,rs -> rs.getString(1));
-			if (ret != null)
-			{
-				return (ArrayList<String>)ret;
-			}
-			else
-			{
-				return new ArrayList<>();
-			}
+			return (ArrayList<String>)dao.getResults(q,rs -> rs.getString(1));
 		}
 		catch (SQLException ex)
 		{
