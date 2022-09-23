@@ -52,13 +52,10 @@ public class PlatformStatusDAO
 			return null;
 		
 		String q = "select " + ps_attrs + " from platform_status "
-			+ "where platform_id = " + platformId;
-		
-		ResultSet rs = doQuery(q);
+			+ "where platform_id = ?";
 		try
 		{
-			if (rs != null && rs.next())
-				return rs2ps(rs);
+			return getSingleResult(q,rs->rs2ps(rs),platformId);
 		}
 		catch (SQLException ex)
 		{
@@ -91,41 +88,46 @@ public class PlatformStatusDAO
 
 		PlatformStatus existing = readPlatformStatus(platformStatus.getPlatformId());
 		String q = "";
+		ArrayList<Object> parameters = new ArrayList<>();
 		if (existing != null)
 		{
 			q = "update platform_status set ";
 			String sets = "";
 			if (!datesEqual(platformStatus.getLastContactTime(), existing.getLastContactTime()))
-				sets = "last_contact_time = " + db.sqlDate(platformStatus.getLastContactTime());
+			{
+				sets += "last_contact_time = ?";
+				parameters.add(platformStatus.getLastContactTime());
+			}
 			if (!datesEqual(platformStatus.getLastMessageTime(), existing.getLastMessageTime()))
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
-				sets = sets + 
-					"last_message_time = " + db.sqlDate(platformStatus.getLastMessageTime());
+				sets = sets + "last_message_time = ?";//
+				parameters.add(platformStatus.getLastMessageTime());
 			}
 			if (!TextUtil.strEqual(platformStatus.getLastFailureCodes(), 
 				existing.getLastFailureCodes()))
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
-				sets = sets + 
-					"last_failure_codes = " + sqlString(platformStatus.getLastFailureCodes());
+				sets = sets + "last_failure_codes = ?";
+				parameters.add(NullableParameter.of(platformStatus.getLastFailureCodes(),String.class));
 			}
 			if (!datesEqual(platformStatus.getLastErrorTime(), existing.getLastErrorTime()))
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
 				sets = sets + 
-					"last_error_time = " + db.sqlDate(platformStatus.getLastErrorTime());
+					"last_error_time = ?";
+				parameters.add(platformStatus.getLastErrorTime());
 			}
 			if (!platformStatus.getLastScheduleEntryStatusId().equals(
 				existing.getLastScheduleEntryStatusId()))
 			{
 				if (sets.length() > 0)
 					sets = sets + ", ";
-				sets = sets + "last_schedule_entry_status_id = " 
-					+ platformStatus.getLastScheduleEntryStatusId();
+				sets = sets + "last_schedule_entry_status_id = ?";
+				parameters.add(platformStatus.getLastScheduleEntryStatusId());
 			}
 			if (!TextUtil.strEqual(platformStatus.getAnnotation(), 
 				existing.getAnnotation()))
@@ -133,25 +135,36 @@ public class PlatformStatusDAO
 				if (sets.length() > 0)
 					sets = sets + ", ";
 				sets = sets + 
-					"annotation = " + sqlString(platformStatus.getAnnotation());
+					"annotation = ?";
+				parameters.add(NullableParameter.of(platformStatus.getAnnotation(),String.class));
 			}
 			if (sets.length() == 0)
 				return; // No changes
-			q = q + sets + " where platform_id = " + platformStatus.getPlatformId();
+			q = q + sets + " where platform_id = ?";
+			parameters.add(platformStatus.getPlatformId());
 		}
 		else
 		{
-			q = "insert into platform_status(" + ps_attrs + ") values("
-				+ platformStatus.getPlatformId() + ", "
-				+ db.sqlDate(platformStatus.getLastContactTime()) + ", "
-				+ db.sqlDate(platformStatus.getLastMessageTime()) + ", "
-				+ sqlString(platformStatus.getLastFailureCodes()) + ", "
-				+ db.sqlDate(platformStatus.getLastErrorTime()) + ", "
-				+ platformStatus.getLastScheduleEntryStatusId() + ", "
-				+ sqlString(platformStatus.getAnnotation())
-				+ ")";
+
+			q = "insert into platform_status(" + ps_attrs + ") values(";
+			parameters.add(platformStatus.getPlatformId());
+			parameters.add(NullableParameter.of(platformStatus.getLastContactTime(),Date.class));
+			parameters.add(NullableParameter.of(platformStatus.getLastMessageTime(),Date.class));
+			parameters.add(NullableParameter.of(platformStatus.getLastFailureCodes(),String.class));
+			parameters.add(NullableParameter.of(platformStatus.getLastErrorTime(),Date.class));
+			parameters.add(platformStatus.getLastScheduleEntryStatusId());
+			parameters.add(NullableParameter.of(platformStatus.getAnnotation(),String.class));
+			q += ")";
 		}
-		doModify(q);
+		try
+		{
+			doModify(q,parameters.toArray());
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Failed to update/insert platform status. Query '%s'";
+			throw new DbIoException(String.format(msg,q),ex);
+		}
 	}
 	
 	private boolean datesEqual(Date d1, Date d2)
@@ -171,25 +184,20 @@ public class PlatformStatusDAO
 		if (db.isCwms())
 			q = q + " where platform_id in (select distinct a.id from platform a, "
 			+ "transportmedium b where a.id = b.platformid)";
-
-		ArrayList<PlatformStatus> ret = new ArrayList<PlatformStatus>();
 		
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
-			return ret;
+			return new ArrayList<PlatformStatus>();
 
-		ResultSet rs = doQuery(q);
 		try
 		{
-			while (rs != null && rs.next())
-				ret.add(rs2ps(rs));
+			return (ArrayList<PlatformStatus>)getResults(q,rs->rs2ps(rs));
 		}
 		catch (SQLException ex)
 		{
 			String msg = "Error in query '" + q + "': " + ex;
 			warning(msg);
+			throw new DbIoException(msg,ex);
 		}
-
-		return ret;
 	}
 
 	@Override
@@ -198,9 +206,16 @@ public class PlatformStatusDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return;
 
-		String q = "delete from platform_status "
-			+ "where platform_id = " + platformId;
-		doModify(q);
+		String q = "delete from platform_status where platform_id = ?";
+		try
+		{
+			doModify(q,platformId);
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error deleting platform status. Query '%s'";
+			throw new DbIoException(String.format(msg,q),ex);
+		}
 	}
 
 }
