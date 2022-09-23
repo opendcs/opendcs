@@ -609,6 +609,27 @@ public class DaoBase
 	}
 
 	/**
+	 * Generate the requisite number of ?, for a sql insert statement 
+	 * given the length of the provided list
+	 * Will correctly leave of the last , for last value
+	 * @param list used to get the count of objects we need the bind placeolder for.
+	 * @return String with a series of "?[,?]""
+	 */
+	public String valueBinds(List<Object> list)
+	{
+		StringBuilder sb = new StringBuilder();
+		for( int i = 0; i < list.size(); i++)
+		{
+			sb.append("?");
+			if (i < (list.size() - 1))
+			{
+				sb.append(",");
+			}
+		}
+		return sb.toString();
+	}
+
+	/**
 	 * Helper to allow for null values so the preparedstatement code and match types correctly.
 	 */
 	public static class NullableParameter<T extends Object> {
