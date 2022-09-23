@@ -114,8 +114,10 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -153,6 +155,11 @@ public class CwmsTimeSeriesDAO
 	extends DaoBase 
 	implements TimeSeriesDAI
 {
+	private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	static
+	{
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+	}
 	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
 		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
 	protected SiteDAI siteDAO = null;
@@ -208,20 +215,18 @@ public class CwmsTimeSeriesDAO
 			}
 		
 			String q = cwmsTsidQueryBase
-				+ " WHERE a.TS_CODE = " + key;
+				+ " WHERE a.TS_CODE = ?";
 			// Don't need to add DB_OFFICE_ID because TS_CODE is unique.
 			
 			try
 			{
 				long now = System.currentTimeMillis();
-				ResultSet rs = doQuery(q);
-				if (rs != null && rs.next())
+				CwmsTsId tsId = getSingleResult(q,rs->rs2TsId(rs,true),key);
+				if(tsId != null)
 				{
-					ret = rs2TsId(rs, true);
-					ret.setReadTime(now);
-					cache.put(ret);
-					
-					return ret;
+					tsId.setReadTime(now);
+					cache.put(tsId);
+					return tsId;
 				}
 			}
 			catch(Exception ex)
@@ -229,14 +234,14 @@ public class CwmsTimeSeriesDAO
 				System.err.println(ex.toString());
 				ex.printStackTrace(System.err);
 				throw new DbIoException(
-					"Error looking up TS Info for TS_CODE=" + key + ": " + ex);
+					"Error looking up TS Info for TS_CODE=" + key + ": " + ex,ex);
 			}
 		}
 		throw new NoSuchObjectException("No time-series with ts_code=" + key);
 	}
 
 	private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType)
-		throws SQLException, DbIoException, NoSuchObjectException
+		throws SQLException
 	{
 //		private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
 //			+ "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
@@ -260,11 +265,11 @@ public class CwmsTimeSeriesDAO
 		DbKey siteId = DbKey.createDbKey(rs, 8);
 		Site site = null;
 		try { site = siteDAO.getSiteById(siteId); }
-		catch(NoSuchObjectException ex)
+		catch(DbIoException | NoSuchObjectException ex)
 		{
 			warning("rs2TsId No such Site for TS_ID '" + desc 
 				+ "' with ts_code=" + key + " and location_code=" + siteId);
-			throw ex;
+			throw new SQLException("unable to retrieve site information for timeseries",ex);
 		}
 		site.addName(new SiteName(site, Constants.snt_CWMS, rs.getString(9)));
 		ret.setSite(site);
@@ -280,18 +285,24 @@ public class CwmsTimeSeriesDAO
 		if (createDataType && dt.getId() == Constants.undefinedId)
 		{
 			DataType dbdt = null;
-			try { dbdt = dataTypeDAO.lookupDataType(param); }
-			catch(NoSuchObjectException ex) { dbdt = null; }
-			
-			if (dbdt == null 
-			 || !dbdt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS))
+			try
 			{
-				dataTypeDAO.writeDataType(dt);
+				dbdt = dataTypeDAO.lookupDataType(param);
+				if (dbdt == null
+				|| !dbdt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS))
+				{
+					dataTypeDAO.writeDataType(dt);
+				}
+				else // The datatype already exists, add it to the cache.
+				{
+					decodes.db.Database.getDb().dataTypeSet.add(dbdt);
+					ret.setDataType(dbdt);
+				}
 			}
-			else // The datatype already exists, add it to the cache.
+			catch(NoSuchObjectException ex) { dbdt = null; }
+			catch(DbIoException ex)
 			{
-				decodes.db.Database.getDb().dataTypeSet.add(dbdt);
-				ret.setDataType(dbdt);
+				throw new SQLException("Unable to add DateType",ex);
 			}
 		}
 
@@ -354,16 +365,24 @@ public class CwmsTimeSeriesDAO
 	 */
 	private DbKey ts_id2ts_code(String tsid)
 	{
+		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "SELECT TS_CODE FROM CWMS_V_TS_ID "
-			+ "WHERE upper(CWMS_TS_ID) = " + sqlString(tsid.toUpperCase());
-		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
-			q = q + " AND upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
+			+ "WHERE upper(CWMS_TS_ID) = upper(?)";
+		parameters.add(tsid);
 
+		if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
+		{
+			q = q + " AND upper(DB_OFFICE_ID) = upper(?)";
+			parameters.add(dbOfficeId);
+		}
+		DbKey ret = Constants.undefinedId;
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-				return DbKey.createDbKey(rs, 1);
+			DbKey tmp = getSingleResult(q,rs->DbKey.createDbKey(rs,"ts_code"),parameters.toArray());
+			if( ret != null)
+			{
+				ret = tmp;
+			}
 		}
 		catch(Exception ex)
 		{
@@ -402,9 +421,10 @@ public class CwmsTimeSeriesDAO
 			fillTimeSeriesMetadata(cts); // may throw BadTimeSeriesException
 			cts.setIsExpanded();
 		}
+		ArrayList<Object> parameters = new ArrayList<>();
 		StringBuffer q = new StringBuffer();
 		q.append("SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
-			+ " WHERE TS_CODE = " + ts_code);
+			+ " WHERE TS_CODE = ?)");
 		
 		TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
 		if (tsid == null)
@@ -419,44 +439,38 @@ public class CwmsTimeSeriesDAO
 				warning("fillTimeSeries: " + ex);
 			}
 		}
-		
+		parameters.add(tsid.getKey());
 		// Part of the contract is to honor the units already specified
 		// in the CTimeSeries.
 		UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
 		if (from != null)
-			q.append(" AND DATE_TIME " + lower_check + db.sqlDate(from));
+		{
+			q.append(" AND DATE_TIME " + lower_check + " ? ");
+			parameters.add(from);
+		}
 		if (until != null)
-			q.append(" AND DATE_TIME " + upper_check + db.sqlDate(until));
+		{
+			q.append(" AND DATE_TIME " + upper_check + " ? ");
+			parameters.add(until);
+		}
 		q.append(" AND VALUE IS NOT INFINITE");
 		try
 		{
-			ResultSet rs = doQuery(q.toString());
-			int numAdded = 0;
-			while(rs != null && rs.next())
-			{
-				TimedVariable tv = null;
-				try
+			int numAdded[] = new int[0];
+			numAdded[0] = 0;
+			doQuery(q.toString(),rs -> {
+				TimedVariable tv = rs2TimedVariable(rs);
+				if (tv == null)
 				{
-					tv = rs2TimedVariable(rs);
-					if (tv == null)
-						continue;
-				}
-				catch(SQLException ex)
-				{
-					String msg = "Error getting data for time series="
-						+ cts.getNameString() + ": " + ex;
-					warning(msg);
-					ex.printStackTrace(Logger.instance().getLogOutput());
-					continue;
-				}
-				
+					return;
+				} // TODO: does this need more of a check
 				// For computation processor, we never want to overwrite data
 				// we already have. For a report generator, we DO.
 				Date d = tv.getTime();
 				if (!overwriteExisting
 				 && cts.findWithin(d.getTime()/1000L, 10) != null)
-					continue;
+					return;
 
 				if (tv != null)
 				{
@@ -472,10 +486,10 @@ public class CwmsTimeSeriesDAO
 						}
 					}
 					cts.addSample(tv);
-					numAdded++;
+					numAdded[0]++;
 				}
-			}
-			return numAdded;
+			},parameters.toArray());
+			return numAdded[0];
 		}
 		catch(SQLException ex)
 		{
@@ -502,89 +516,74 @@ public class CwmsTimeSeriesDAO
 		// in the CTimeSeries.
 		UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
-		String qbase = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
-			+ " WHERE TS_CODE = " + cts.getSDI()
-			+ " and DATE_TIME IN (";
+		String q = "declare "
+			+ " p_times str_tab_t  := cwms_util.split_text(?,',');"
+			+ " l_times date_table_type;"
+			+ "begin"
+			+ " l_times.extend(p_times.count);"
+			+ " for i in 1..p_times.count loop "
+			+ "  l_times(i) := to_date('YYYY-MM-DD HH24:MI:SI,p_times(i));"
+			+ " end loop;"
+			+ "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+			+ " WHERE TS_CODE = ?"// + cts.getSDI()
+			+ " and DATE_TIME IN l_date_times AND VALUE IS NOT INFINITE"
+			+ " end";
+
+		List<String> timeStr = queryTimes.stream().map(d -> sdf.format(d)).collect(Collectors.toList());
 
 		int datesPerQuery = 300;
 		int start = 0;
-		int end = 0;
-		int numAdded = 0;
-		StringBuilder sb = new StringBuilder();
-		int size = queryTimes.size();
-		Date times[] = new Date[size];
-		times = queryTimes.toArray(times);
-		while (end < size)
+		int numAdded[] = new int[1];
+		numAdded[0] = 0;
+		int size = timeStr.size();
+		while( start < size )
 		{
-			sb.append(db.sqlDate(times[end]));
-			end++;
-			if (end - start >= datesPerQuery || end == size)
+			int remains = size - start;
+			int toIndex = (remains < datesPerQuery ? remains : datesPerQuery);
+			List<String> batch = timeStr.subList(start,start + toIndex);
+			start += toIndex;
+			try
 			{
-				sb.append(")");
-				sb.append(" AND VALUE IS NOT INFINITE");
-				String q = qbase + sb.toString();
-				sb.setLength(0);
-				start = end;
-				try
-				{
-					ResultSet rs = doQuery(q);
-					while (rs.next())
+				doQuery(q, rs -> {
+					TimedVariable tv = rs2TimedVariable(rs);
+					if (tv == null)
+						return;
+
+					if (tv != null)
 					{
-						TimedVariable tv = null;
-						try
-						{
-							tv = rs2TimedVariable(rs);
-							if (tv == null)
-								continue;
-						}
-						catch(SQLException ex)
-						{
-							String msg= "Error reading data with query '" + q
-								+ "': " + ex;
-							warning(msg);
-							System.err.println(msg);
-							ex.printStackTrace(System.err);
-							continue;
-						}
+						// For computation processor, we never want to overwrite data
+						// we already have.
+						Date d = tv.getTime();
+						if (cts.findWithin(d.getTime()/1000L, 10) != null)
+							return;
 						
-						if (tv != null)
+						if (unitConverter != null)
 						{
-							// For computation processor, we never want to overwrite data
-							// we already have.
-							Date d = tv.getTime();
-							if (cts.findWithin(d.getTime()/1000L, 10) != null)
-								continue;
-							
-							if (unitConverter != null)
+							try
 							{
-								try
-								{
-									tv.setValue(unitConverter.convert(tv.getDoubleValue()));
-								}
-								catch (Exception ex)
-								{
-									warning("fillTimeSeries: " + ex);
-								}
+								tv.setValue(unitConverter.convert(tv.getDoubleValue()));
 							}
-							cts.addSample(tv);
-							numAdded++;
+							catch (Exception ex)
+							{
+								warning("fillTimeSeries: " + ex);
+							}
 						}
-						numAdded++;
+						cts.addSample(tv);
+						numAdded[0]++;
 					}
-				}
-				catch(SQLException ex)
-				{
-					String msg= "Error reading data with query '" + q
-						+ "': " + ex;
-					warning(msg);
-					System.err.println(msg);
-					ex.printStackTrace(System.err);
-				}
+					numAdded[0]++;
+				},String.join(",",batch),cts.getSDI());
 			}
-			else if (end < size)
-				sb.append(", ");
+			catch(SQLException ex)
+			{
+				String msg= "Error reading data with query '" + q
+					+ "': " + ex;
+				warning(msg);
+				System.err.println(msg);
+				ex.printStackTrace(System.err);
+			}
 		}
-		return numAdded;
+		return numAdded[0];
 	}
 
 	@Override
@@ -758,75 +757,77 @@ public class CwmsTimeSeriesDAO
 		// We use the RMA Java interface to write to DB
 		try
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
+			withConnection(conn -> {
+				CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
 
-//			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(getConnection());
-			
-			ArrayList<Long> msecArray = new ArrayList<Long>();
-			ArrayList<Double> valueArray = new ArrayList<Double>();
-			ArrayList<Integer> qualArray = new ArrayList<Integer>();
+	//			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(getConnection());
 
-			
-			// Handle the normal WRITE/DELETE values.
-			fillTsArrays(ts, msecArray, valueArray, qualArray, false);
-			int num2write = msecArray.size();
-			if (num2write > 0)
-			{
-				long[] times = new long[num2write];
-				double[] values = new double[num2write];
-				int[] qualities = new int[num2write];
-				for(int idx = 0; idx<num2write; idx++)
+				ArrayList<Long> msecArray = new ArrayList<Long>();
+				ArrayList<Double> valueArray = new ArrayList<Double>();
+				ArrayList<Integer> qualArray = new ArrayList<Integer>();
+
+
+				// Handle the normal WRITE/DELETE values.
+				fillTsArrays(ts, msecArray, valueArray, qualArray, false);
+				int num2write = msecArray.size();
+				if (num2write > 0)
 				{
-					times[idx] = msecArray.get(idx);
-					values[idx] = valueArray.get(idx);
-					qualities[idx] = qualArray.get(idx);
-					
-					debug3("sample[" + idx + "] time=" + 
-						db.getLogDateFormat().format(new Date(times[idx]))
-						+ ", value=" + values[idx] 
-						+ ", qual=0x" + Integer.toHexString(qualities[idx]));
-				}
-				// The "Replace All" store-rule means: 
-				//  -- Values at same time stamp I provide will replace existing values
-				//  -- Any new values will be written. 
-				//  -- Existing values at different time stamps will be left alone.
-				debug1(" Calling store for ts_id="
-					+ path + ", office='" + dbOfficeId 
-					+ "' with " + num2write + " values, units=" + ts.getUnitsAbbr());
-				cwmsDbTs.store(
-					getConnection(),
-					dbOfficeId, path, ts.getUnitsAbbr(), times, values,
-					qualities, num2write, CwmsConstants.REPLACE_ALL, 
-					overrideProtection, versionDate,false);
-			}
+					long[] times = new long[num2write];
+					double[] values = new double[num2write];
+					int[] qualities = new int[num2write];
+					for(int idx = 0; idx<num2write; idx++)
+					{
+						times[idx] = msecArray.get(idx);
+						values[idx] = valueArray.get(idx);
+						qualities[idx] = qualArray.get(idx);
 
-			// Handle the special values with No OVERWRITE flag:
-			fillTsArrays(ts, msecArray, valueArray, qualArray, true);
-			num2write = msecArray.size();
-			if (num2write > 0)
-			{
-				long[] times = new long[num2write];
-				double[] values = new double[num2write];
-				int[] qualities = new int[num2write];
-				for(int idx = 0; idx<num2write; idx++)
-				{
-					times[idx] = msecArray.get(idx);
-					values[idx] = valueArray.get(idx);
-					qualities[idx] = qualArray.get(idx);
-					
-					debug3("sample[" + idx + "] time=" 
-						+ db.getLogDateFormat().format(times[idx])
-						+ ", value=" + values[idx] + ", qual=" + qualities[idx]);
+						debug3("sample[" + idx + "] time=" +
+							db.getLogDateFormat().format(new Date(times[idx]))
+							+ ", value=" + values[idx]
+							+ ", qual=0x" + Integer.toHexString(qualities[idx]));
+					}
+					// The "Replace All" store-rule means:
+					//  -- Values at same time stamp I provide will replace existing values
+					//  -- Any new values will be written.
+					//  -- Existing values at different time stamps will be left alone.
+					debug1(" Calling store for ts_id="
+						+ path + ", office='" + dbOfficeId
+						+ "' with " + num2write + " values, units=" + ts.getUnitsAbbr());
+					cwmsDbTs.store(
+						conn,
+						dbOfficeId, path, ts.getUnitsAbbr(), times, values,
+						qualities, num2write, CwmsConstants.REPLACE_ALL,
+						overrideProtection, versionDate,false);
 				}
-				// The "REPLACE_MISSING_VALUES_ONLY" store-rule means: 
-				//  -- Do not overwrite if a value exists at that time-slice.
-				debug1(" Calling store (no overwrite) for ts_id="
-						+ path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
-				
-				cwmsDbTs.store(getConnection(), dbOfficeId, path, ts.getUnitsAbbr(), times, values,
+
+				// Handle the special values with No OVERWRITE flag:
+				fillTsArrays(ts, msecArray, valueArray, qualArray, true);
+				num2write = msecArray.size();
+				if (num2write > 0)
+				{
+					long[] times = new long[num2write];
+					double[] values = new double[num2write];
+					int[] qualities = new int[num2write];
+					for(int idx = 0; idx<num2write; idx++)
+					{
+						times[idx] = msecArray.get(idx);
+						values[idx] = valueArray.get(idx);
+						qualities[idx] = qualArray.get(idx);
+
+						debug3("sample[" + idx + "] time="
+							+ db.getLogDateFormat().format(times[idx])
+							+ ", value=" + values[idx] + ", qual=" + qualities[idx]);
+					}
+					// The "REPLACE_MISSING_VALUES_ONLY" store-rule means:
+					//  -- Do not overwrite if a value exists at that time-slice.
+					debug1(" Calling store (no overwrite) for ts_id="
+							+ path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
+					
+					cwmsDbTs.store(conn, dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
 					overrideProtection, versionDate, false);
-			}
+				}
+			});
 		}
 		catch(SQLException ex)
 		{
@@ -921,22 +922,22 @@ public class CwmsTimeSeriesDAO
 		}
 
 		String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
 		try
 		{
 			debug1("Calling deleteTs for tsid '"
 				+ tsid + "' for date range: "
 				+ sdf.format(from) + " to " + sdf.format(until));
-			
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
-			cwmsDbTs.deleteTs(getConnection(), dbOfficeId, tsid,
-				from, until, true, true,   // date range inclusive on both ends
-				null,                      // version date
-				null,                      // NavigableSet<Date> use to delete specific dates
-				true,                      // use latest version if version date is null (which it is)
-				1,                         // item mask. 1 means delete values only
-				"F");                      // Override Protection, F=do not delete protected data.
+			withConnection(conn -> {
+				CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
+				cwmsDbTs.deleteTs(conn, dbOfficeId, tsid,
+					from, until, true, true,   // date range inclusive on both ends
+					null,                      // version date
+					null,                      // NavigableSet<Date> use to delete specific dates
+					true,                      // use latest version if version date is null (which it is)
+					1,                         // item mask. 1 means delete values only
+					"F");                      // Override Protection, F=do not delete protected data.
+			});
 		}
 		catch(SQLException ex)
 		{
@@ -1045,9 +1046,11 @@ public class CwmsTimeSeriesDAO
 		}
 		try
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
 			debug1("Deleting TSID '" + tsid.getUniqueString() + "' from office ID=" + dbOfficeId);
-			cwmsDbTs.deleteAll(getConnection(), dbOfficeId, tsid.getUniqueString());
+			withConnection(conn -> {
+				CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
+				cwmsDbTs.deleteAll(conn, dbOfficeId, tsid.getUniqueString());
+			});
 			synchronized(cache)
 			{
 				cache.remove(tsid.getKey());
@@ -1111,36 +1114,33 @@ public class CwmsTimeSeriesDAO
 //		siteDAO.fillCache();
 		
 		String q = cwmsTsidQueryBase
-			+ " WHERE upper(a.DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
+			+ " WHERE upper(a.DB_OFFICE_ID) = upper(?)";
 
 		try
 		{
 			int origFetchSize = getFetchSize();
 			int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
 			if (tsidFetchSize > 0)
-				setFetchSize(tsidFetchSize); 
-			ResultSet rs = doQuery(q);
-			setFetchSize(origFetchSize);
-			
+				setFetchSize(tsidFetchSize);
 			ArrayList<TimeSeriesIdentifier> tsidList = new ArrayList<TimeSeriesIdentifier>();
-			
-			while (rs != null && rs.next())
+			doQuery(q,rs -> {
 				try
 				{
 					tsidList.add(rs2TsId(rs, false));
 				}
-				catch (NoSuchObjectException ex)
+				catch (SQLException ex)
 				{
 					warning("Error creating Cwms TSID: " + ex
 						+ " -- " + ex.getLocalizedMessage() + " -- skipped.");
 				}
-			
+			},dbOfficeId);
+
 			synchronized(cache)
 			{
 				for(TimeSeriesIdentifier tsid: tsidList)
 					cache.put(tsid);
 			}
-			
+			setFetchSize(origFetchSize);
 			debug1("After fill, cache has " + cache.size() + " TSIDs.");
 		}
 		catch (SQLException ex)
@@ -1243,7 +1243,7 @@ public class CwmsTimeSeriesDAO
 		
 		// MJM 1/12/2011 After we delete a time-series we must explicitly
 		// refresh the CWMS_V_TS_ID view, otherwise it can take up to 5 min.
-		try { doModify("call cwms_util.refresh_mv_cwms_ts_id()"); }
+		try { doModify("call cwms_util.refresh_mv_cwms_ts_id()",new ArrayList<Object>()); }
 		catch(Exception ex)
 		{
 			warning("Error in cwms_util.refresh_mv_cwms_ts_id: " + ex);
@@ -1281,91 +1281,29 @@ public class CwmsTimeSeriesDAO
 		}
 
 		DataCollection dataCollection = new DataCollection();
-
+		List<TasklistRec> tasklistRecs = null;
+		ArrayList<Integer> badRecs = new ArrayList<Integer>();
+		final Date lastTimestamp[] = new Date[1];
+		final DbKey lastTs[] = new DbKey[1];
 		try
 		{
-			if (getTaskListStmt == null)
-			{
-				String failTimeClause =
-					DecodesSettings.instance().retryFailedComputations
-					? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
-					: "";
+			String failTimeClause =
+				DecodesSettings.instance().retryFailedComputations
+				? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
+				: "";
 
-				getTaskListStmtQuery =
-					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
-					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
-					+ "from CP_COMP_TASKLIST a "
-					+ "where a.LOADING_APPLICATION_ID = ?" // + applicationId
-					+ " and ROWNUM < 20000"
-					+ failTimeClause
-					+ " ORDER BY a.site_datatype_id, a.start_date_time";
-				getTaskListStmt = getConnection().prepareStatement(getTaskListStmtQuery);
-			}
+			getTaskListStmtQuery =
+				"select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
+				+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
+				+ "from CP_COMP_TASKLIST a "
+				+ "where a.LOADING_APPLICATION_ID = ?" // + applicationId
+				+ " and ROWNUM < 20000"
+				+ failTimeClause
+				+ " ORDER BY a.site_datatype_id, a.start_date_time";
 
-			getTaskListStmt.setLong(1,applicationId.getValue());
+			debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
 
-		}
-		catch(SQLException ex)
-		{
-			warning("Error preparing tasklist query '" + getTaskListStmtQuery + "': " + ex);
-			return dataCollection;
-		}
-
-		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
-		ArrayList<Integer> badRecs = new ArrayList<Integer>();
-		debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
-		try(ResultSet rs = getTaskListStmt.executeQuery())
-		{
-			Date lastTimestamp = null;
-			while (rs.next())
-			{
-				// Extract the info needed from the result set row.
-				Date timeStamp = new Date(rs.getLong(4));
-				boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
-				if(exceedsMaxTimeGap)
-				{
-					break;
-				}
-				lastTimestamp = timeStamp;
-				int recordNum = rs.getInt(1);
-				DbKey sdi = DbKey.createDbKey(rs, 2);
-				double value = rs.getDouble(3);
-				boolean valueWasNull = rs.wasNull();
-				String df = rs.getString(5);
-				char c = df.toLowerCase().charAt(0);
-				boolean deleted = false;
-				if (c == 'u')
-				{
-					// msg handler will send this when he gets
-					// TsCodeChanged. It tells me to update my cache.
-					DbObjectCache<TimeSeriesIdentifier> cache = getCache();
-					synchronized(cache)
-					{
-						TimeSeriesIdentifier tsid = cache.getByKey(sdi);
-						if (tsid != null)
-						{
-							DbKey newCode = DbKey.createDbKey(rs, 9);
-							cache.remove(sdi);
-							tsid.setKey(newCode);
-							cache.put(tsid);
-							continue;
-						}
-					}
-				}
-				else
-					deleted = TextUtil.str2boolean(df);
-
-				String unitsAbbr = rs.getString(6);
-				Date versionDate = db.getFullDate(rs, 7);
-				BigDecimal qc = rs.getBigDecimal(8);
-				long qualityCode = qc == null ? 0 : qc.longValue();
-
-				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
-					valueWasNull, timeStamp, deleted,
-					unitsAbbr, versionDate, qualityCode);
-				tasklistRecs.add(rec);
-			}
-
+			tasklistRecs = getResults(getTaskListStmtQuery,rs -> rs2TasklistRec(rs,lastTimestamp[0],lastTs[0]),applicationId);
 			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
 
 			// Process the real-time records collected above.
@@ -1376,24 +1314,30 @@ public class CwmsTimeSeriesDAO
 
 			// Delete the bad tasklist recs, 250 at a time.
 			if (badRecs.size() > 0)
+			{
 				Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
 					+ " bad tasklist records.");
-			while (badRecs.size() > 0)
-			{
-				StringBuilder inList = new StringBuilder();
-				int n = badRecs.size();
-				int x=0;
-				for(; x<250 && x<n; x++)
-				{
-					if (x > 0)
-						inList.append(", ");
-					inList.append(badRecs.get(x).toString());
-				}
 				String q = "delete from CP_COMP_TASKLIST "
-					+ "where RECORD_NUM IN (" + inList.toString() + ")";
-				doModify(q);
-				for(int i=0; i<x; i++)
-					badRecs.remove(0);
+					+ "where RECORD_NUM = ?";//IN (" + inList.toString() + ")";
+				withStatement(q,stmt -> {
+					int count = 0;
+					int batchSize = 250;
+					for(Integer recNum: badRecs)
+					{
+						stmt.clearParameters();
+						stmt.setInt(1,recNum);
+						stmt.addBatch();
+						count += 1;
+						if( count % batchSize == 0)
+						{
+							stmt.executeBatch();
+						}
+					}
+					if( count < badRecs.size() )
+					{
+						stmt.executeBatch();
+					}
+				});
 			}
 
 			// Show each tasklist entry in the log if we're at debug level 3
@@ -1405,15 +1349,12 @@ public class CwmsTimeSeriesDAO
 					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " "
 						+ ts.size() + " values.");
 			}
-
-			return dataCollection;
 		}
 		catch(SQLException ex)
 		{
-			System.err.println("Error reading new data: " + ex);
-			ex.printStackTrace();
-			throw new DbIoException("Error reading new data: " + ex);
+			warning("Error preparing tasklist query '" + getTaskListStmtQuery + "': " + ex);
 		}
+		return dataCollection;
 	}
 
 	final boolean exceedsMaxTimeGap(Date lastTimestamp, Date currentTimestamp)
@@ -1424,6 +1365,59 @@ public class CwmsTimeSeriesDAO
 		}
 		long daysBetween = TimeUnit.MILLISECONDS.toDays(currentTimestamp.getTime() - lastTimestamp.getTime());
 		return daysBetween >= DecodesSettings.instance().cp_cwmstsdb_getNewData_max_timegap_days;
+	}
+
+	/**
+	 * handle initial processing of tasklist entries
+	 */
+	private TasklistRec rs2TasklistRec(ResultSet rs,Date lastTimestamp, DbKey currentTs)
+		throws SQLException
+	{
+		// Extract the info needed from the result set row.
+		Date timeStamp = new Date(rs.getLong(4));
+		boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
+		if(exceedsMaxTimeGap)
+		{
+			return null;
+		}
+		lastTimestamp = timeStamp; // TODO: add additional check for SDI to reset timestamp
+		int recordNum = rs.getInt(1);
+		DbKey sdi = DbKey.createDbKey(rs, 2);
+		double value = rs.getDouble(3);
+		boolean valueWasNull = rs.wasNull();
+		String df = rs.getString(5);
+		char c = df.toLowerCase().charAt(0);
+		boolean deleted = false;
+		if (c == 'u')
+		{
+			// msg handler will send this when he gets
+			// TsCodeChanged. It tells me to update my cache.
+			DbObjectCache<TimeSeriesIdentifier> cache = getCache();
+			synchronized(cache)
+			{
+				TimeSeriesIdentifier tsid = cache.getByKey(sdi);
+				if (tsid != null)
+				{
+					DbKey newCode = DbKey.createDbKey(rs, 9);
+					cache.remove(sdi);
+					tsid.setKey(newCode);
+					cache.put(tsid);
+					return null;
+				}
+			}
+		}
+		else
+			deleted = TextUtil.str2boolean(df);
+
+		String unitsAbbr = rs.getString(6);
+		Date versionDate = db.getFullDate(rs, 7);
+		BigDecimal qc = rs.getBigDecimal(8);
+		long qualityCode = qc == null ? 0 : qc.longValue();
+
+		TasklistRec rec = new TasklistRec(recordNum, sdi, value,
+			valueWasNull, timeStamp, deleted,
+			unitsAbbr, versionDate, qualityCode);
+		return rec;
 	}
 
 
@@ -1540,7 +1534,7 @@ public class CwmsTimeSeriesDAO
 				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
 		}
 	}
-	
+
 	protected Connection getConnection()
 	{
 		// local getConnection() method that saves the connection locally
