@@ -98,29 +98,23 @@ public class ScheduleEntryDAO
 	{
 		String q = "select " + seColumns + " from " + seTables
 			+ " where " + seJoinClause
-			+ " and a.name = " + sqlString(name);
-		ResultSet rs = doQuery(q);
+			+ " and a.name = ?";// + sqlString(name);		
 		try
-		{
-			if (!rs.next())
-				return null;
-			ScheduleEntry ret = new ScheduleEntry(DbKey.createDbKey(rs, 1));
-			rs2scheduleEntry(rs, ret);
-			
+		{			
+			ScheduleEntry ret = getSingleResult(q, rs -> rs2scheduleEntry(rs), name);			
 			if (!ret.getLoadingAppId().isNull())
 			{
 				CompAppInfo appInfo = loadingAppDAO.getComputationApp(ret.getLoadingAppId());
 				if (appInfo != null)
 					ret.setLoadingAppName(appInfo.getAppName());
 			}
-
 			return ret;
 		}
 		catch(Exception ex)
 		{
 			String msg = "Error in query '" + q + "': " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 
@@ -137,14 +131,11 @@ public class ScheduleEntryDAO
 		String q = "select " + seColumns + " from " + seTables
 			+ " where " + seJoinClause;
 		if (app != null)
-			q = q + " and a.loading_application_id = " + app.getKey();
-		ResultSet rs = doQuery(q);
+			q = q + " and a.loading_application_id = ?";		
 		try
 		{
-			while(rs != null && rs.next())
-			{
-				ScheduleEntry se = new ScheduleEntry(DbKey.createDbKey(rs, 1));
-				rs2scheduleEntry(rs, se);
+			ret = (ArrayList<ScheduleEntry>)getResults(q,rs-> {
+				ScheduleEntry se = rs2scheduleEntry(rs);
 				if (!se.getLoadingAppId().isNull())
 					for(CompAppInfo appInfo : appInfos)
 						if (se.getLoadingAppId().equals(appInfo.getAppId()))
@@ -152,8 +143,8 @@ public class ScheduleEntryDAO
 							se.setLoadingAppName(appInfo.getAppName());
 							break;
 						}
-				ret.add(se);
-			}
+				return se;
+			},app.getKey());			
 		}
 		catch (SQLException ex)
 		{
@@ -165,12 +156,13 @@ public class ScheduleEntryDAO
 	/**
 	 * Fill a schedule entry from a result set. SE should already contain the key
 	 * @param rs the result set
-	 * @param se the schedule entry
+	 * @return the schedule entry
 	 * @throws SQLException on error
 	 */
-	private void  rs2scheduleEntry(ResultSet rs, ScheduleEntry se)
+	private ScheduleEntry rs2scheduleEntry(ResultSet rs)
 		throws SQLException
 	{
+		ScheduleEntry se = new ScheduleEntry(DbKey.createDbKey(rs, 1));
 		se.setName(rs.getString(2));
 		se.setLoadingAppId(DbKey.createDbKey(rs, 3));
 		se.setRoutingSpecId(DbKey.createDbKey(rs, 4));
@@ -180,6 +172,7 @@ public class ScheduleEntryDAO
 		se.setEnabled(TextUtil.str2boolean(rs.getString(8)));
 		se.setLastModified(db.getFullDate(rs, 9));
 		se.setRoutingSpecName(rs.getString(10));
+		return se;
 	}
 
 	@Override
@@ -190,21 +183,21 @@ public class ScheduleEntryDAO
 			return false;
 
 		String q = "select last_modified from schedule_entry "
-			+ " where schedule_entry_id = " + scheduleEntry.getKey();
-		ResultSet rs = doQuery(q);
+			+ " where schedule_entry_id = ?";
 		try
 		{
-			if (rs != null && rs.next())
-			{
-				Date lmt = db.getFullDate(rs, 1);
+			Date lmt = getSingleResult(q,rs->db.getFullDate(rs,1),scheduleEntry.getId());
+			if (lmt != null)
+			{				
 				if (lmt.after(scheduleEntry.getLastModified()))
 				{
 					q = "select " + seColumns + " from " + seTables
 						+ " where " + seJoinClause
-						+ " and a.schedule_entry_id = " + scheduleEntry.getKey();
-					rs = doQuery(q);
-					if (rs != null && rs.next())
-						rs2scheduleEntry(rs, scheduleEntry);
+						+ " and a.schedule_entry_id = ?";// + scheduleEntry.getKey();
+					
+					ScheduleEntry tmp = getSingleResult(q,rs->rs2scheduleEntry(rs),scheduleEntry.getId());
+					if (tmp!= null)
+						scheduleEntry = tmp;
 					return true;
 				}
 				else
@@ -219,7 +212,7 @@ public class ScheduleEntryDAO
 		{
 			throw new DbIoException("Error checking ScheduleEntry id="
 				+ scheduleEntry.getKey() + " '"
-				+ scheduleEntry.getName() + "': " + ex);
+				+ scheduleEntry.getName() + "': " + ex,ex);
 		}
 	}
 
@@ -237,20 +230,19 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 		 && scheduleEntry.getRoutingSpecName() != null
 		 && scheduleEntry.getRoutingSpecName().length() > 0)
 		{
-			String q = "select id from RoutingSpec where upper(name) = "
-				+ sqlString(scheduleEntry.getRoutingSpecName().toUpperCase());
-			ResultSet rs = doQuery(q);
+			String q = "select id from RoutingSpec where upper(name) = upper(?)";			
 			try
 			{
-				if (rs != null && rs.next())
+				DbKey routingSpecKey = getSingleResult(q,rs-> DbKey.createDbKey(rs, "id"),scheduleEntry.getRoutingSpecName());
+				if (routingSpecKey != null)
 				{
-					scheduleEntry.setRoutingSpecId(DbKey.createDbKey(rs, 1));
+					scheduleEntry.setRoutingSpecId(routingSpecKey);
 				}
 			}
 			catch (SQLException ex)
 			{
 				throw new DbIoException(
-					"writeScheduleEntry Error in query '" + q + "': " + ex);
+					"writeScheduleEntry Error in query '" + q + "': " + ex,ex);
 			}
 		}
 		
@@ -259,20 +251,24 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 		 && scheduleEntry.getLoadingAppName().length() > 0)
 		{
 			String q = "select loading_application_id from "
-				+ "hdb_loading_application where upper(loading_application_name) = "
-				+ sqlString(scheduleEntry.getLoadingAppName().toUpperCase());
-			ResultSet rs = doQuery(q);
+				+ "hdb_loading_application where upper(loading_application_name) = upper(?)";
+				//+ sqlString(scheduleEntry.getLoadingAppName().toUpperCase());			
 			try
 			{
-				if (rs != null && rs.next())
+				DbKey loadingAppKey = 
+						getSingleResult(q,
+										rs->DbKey.createDbKey(rs, "loading_application_id"),
+										scheduleEntry.getLoadingAppName()
+						);
+				if (loadingAppKey != null)
 				{
-					scheduleEntry.setLoadingAppId(DbKey.createDbKey(rs, 1));
+					scheduleEntry.setLoadingAppId(loadingAppKey);
 				}
 			}
 			catch (SQLException ex)
 			{
 				throw new DbIoException(
-					"writeScheduleEntry Error in query '" + q + "': " + ex);
+					"writeScheduleEntry Error in query '" + q + "': " + ex,ex);
 			}
 		}
 
@@ -282,49 +278,72 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 		if (scheduleEntry.getKey().isNull())
 		{
 			String q = "select schedule_entry_id from schedule_entry where "
-				+ " upper(name) = " + sqlString(scheduleEntry.getName().toUpperCase());
-			ResultSet rs = doQuery(q);
+				+ " upper(name) = upper(?)";// + sqlString(scheduleEntry.getName().toUpperCase());			
 			try
 			{
-				if (rs != null && rs.next())
-					scheduleEntry.forceSetId(DbKey.createDbKey(rs, 1));
+				DbKey schedEntryKey = getSingleResult(q,rs->DbKey.createDbKey(rs, "schedule_entry_id"),scheduleEntry.getName());
+				if (schedEntryKey != null)
+					scheduleEntry.forceSetId(schedEntryKey);
 			}
 			catch (SQLException ex)
 			{
 				warning("Error in query '" + q + "': " + ex);
 			}
 		}
-		if (scheduleEntry.getKey().isNull())
+		String q = null;
+		try
 		{
-			scheduleEntry.forceSetId(getKey("schedule_entry"));
-			String q = "insert into schedule_entry("
-				+ "schedule_entry_id, name, loading_application_id, routingspec_id, start_time, "
-				+ "timezone, run_interval, enabled, last_modified)"
-				+ " values("
-				+ scheduleEntry.getKey() + ", "
-				+ sqlString(scheduleEntry.getName()) + ", "
-				+ scheduleEntry.getLoadingAppId() + ", "
-				+ scheduleEntry.getRoutingSpecId() + ", "
-				+ db.sqlDate(scheduleEntry.getStartTime()) + ", "
-				+ sqlString(scheduleEntry.getTimezone()) + ", "
-				+ sqlString(scheduleEntry.getRunInterval()) + ", "
-				+ sqlBoolean(scheduleEntry.isEnabled()) + ", "
-				+ db.sqlDate(scheduleEntry.getLastModified()) + ")";
-			doModify(q);
+			if (scheduleEntry.getKey().isNull())
+			{
+				scheduleEntry.forceSetId(getKey("schedule_entry"));
+				ArrayList<Object> parameters = new ArrayList<>();
+				q = "insert into schedule_entry("
+					+ "schedule_entry_id, name, loading_application_id, routingspec_id, start_time, "
+					+ "timezone, run_interval, enabled, last_modified)"
+					+ " values(";
+
+				parameters.add(scheduleEntry.getKey());
+				parameters.add(scheduleEntry.getName());
+				parameters.add(scheduleEntry.getLoadingAppId());
+				parameters.add(scheduleEntry.getRoutingSpecId());
+				parameters.add(NullableParameter.of(scheduleEntry.getStartTime(),Date.class));
+				parameters.add(scheduleEntry.getTimezone());
+				parameters.add(NullableParameter.of(scheduleEntry.getRunInterval(),String.class));
+				parameters.add(sqlBoolean(scheduleEntry.isEnabled()));
+				parameters.add(scheduleEntry.getLastModified());
+				q += valueBinds(parameters);				
+				q += ")";
+				doModify(q,parameters.toArray());
+			}
+			else // do an update
+			{
+				q = "update schedule_entry set "
+					+ "name = ?,"
+					+ "loading_application_id = ?,"
+					+ "routingspec_id = ?,"
+					+ "start_time = ?,"
+					+ "timezone = ?,"
+					+ "run_interval = ?,"
+					+ "enabled = ?,"
+					+ "last_modified = ?,"
+					+ " where schedule_entry_id = ?";
+				ArrayList<Object> parameters = new ArrayList<>();
+				parameters.add(scheduleEntry.getLoadingAppId());
+				parameters.add(scheduleEntry.getRoutingSpecId());
+				parameters.add(scheduleEntry.getStartTime());
+				parameters.add(NullableParameter.of(scheduleEntry.getTimezone(),String.class));
+				parameters.add(NullableParameter.of(scheduleEntry.getRunInterval(),String.class));
+				parameters.add(sqlBoolean(scheduleEntry.isEnabled()));
+				parameters.add(scheduleEntry.getLastModified());
+				parameters.add(scheduleEntry.getKey());
+
+				doModify(q,parameters.toArray());
+			}
 		}
-		else // do an update
+		catch(SQLException ex)
 		{
-			String q = "update schedule_entry set "
-				+ "name = " + sqlString(scheduleEntry.getName()) + ", "
-				+ "loading_application_id = " + scheduleEntry.getLoadingAppId() + ", "
-				+ "routingspec_id = " + scheduleEntry.getRoutingSpecId() + ", "
-				+ "start_time = " + db.sqlDate(scheduleEntry.getStartTime()) + ", "
-				+ "timezone = " + sqlString(scheduleEntry.getTimezone()) + ", "
-				+ "run_interval = " + sqlString(scheduleEntry.getRunInterval()) + ", "
-				+ "enabled = " + sqlBoolean(scheduleEntry.isEnabled()) + ", "
-				+ "last_modified = " + db.sqlDate(scheduleEntry.getLastModified())
-				+ " where schedule_entry_id = " + scheduleEntry.getKey();
-			doModify(q);
+			String msg = String.format("Failed to save scheduled entry. Query '%s'",q);
+			throw new DbIoException(msg,ex);
 		}
 	}
 
@@ -332,52 +351,58 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 	public void deleteScheduleEntry(ScheduleEntry scheduleEntry)
 		throws DbIoException
 	{
-		deleteScheduleStatusFor(scheduleEntry);
-		String q = "delete from schedule_entry where schedule_entry_id = "
-			+ scheduleEntry.getKey();
-		doModify(q);
+		
+		String q = "delete from schedule_entry where schedule_entry_id = ?";
+		try
+		{	
+			deleteScheduleStatusFor(scheduleEntry);		
+			doModify(q,scheduleEntry.getKey());
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Failed to delete Scheduled Entry with query '%s'";
+			throw new DbIoException(String.format(msg,q),ex);
+		}
 	}
 
 	@Override
 	public ArrayList<ScheduleEntryStatus> readScheduleStatus(
 		ScheduleEntry scheduleEntry) throws DbIoException
-	{
-		ArrayList<ScheduleEntryStatus> ret = new ArrayList<ScheduleEntryStatus>();
+	{		
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
-			return ret;
+			return new ArrayList<ScheduleEntryStatus>();
 
+		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "select " + sesColumns + " from " + sesTables + " where " + sesJoinClause;
 		if (scheduleEntry != null)
-			q = q + " and a.schedule_entry_id = " + scheduleEntry.getKey();
+		{
+			q = q + " and a.schedule_entry_id = ?";
+			parameters.add(scheduleEntry.getKey());
+		}
+			
 		q = q + " order by a.run_start_time desc";
 		
-		ResultSet rs = doQuery(q);
 		try
 		{
-			while(rs != null && rs.next())
-			{
-				ScheduleEntryStatus ses = new ScheduleEntryStatus(DbKey.createDbKey(rs, 1));
-				rs2scheduleEntryStatus(rs, ses);
-				ret.add(ses);
-			}
+			return (ArrayList<ScheduleEntryStatus>)
+				getResults(q,rs->rs2scheduleEntryStatus(rs),parameters.toArray());
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error in query '" + q + "': " + ex);
-		}
-		return ret;
+			throw new DbIoException("Error in query '" + q + "': " + ex,ex);
+		}		
 	}
 	
 	/**
 	 * Fill a schedule entry status from a result set. SSE should already contain the key
 	 * @param rs the result set
-	 * @param ses the schedule entry status
+	 * @return the schedule entry status
 	 * @throws SQLException on error
 	 */
-	private void rs2scheduleEntryStatus(ResultSet rs, ScheduleEntryStatus ses)
+	private ScheduleEntryStatus rs2scheduleEntryStatus(ResultSet rs)
 		throws SQLException
 	{
-		ses.setScheduleEntryId(DbKey.createDbKey(rs, 2));
+		ScheduleEntryStatus ses = new ScheduleEntryStatus(DbKey.createDbKey(rs, 2));
 		ses.setRunStart(db.getFullDate(rs, 3));
 		ses.setLastMessageTime(db.getFullDate(rs, 4));
 		ses.setRunStop(db.getFullDate(rs, 5));
@@ -390,6 +415,7 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 		ses.setLastConsumer(rs.getString(12));
 		ses.setLastModified(db.getFullDate(rs, 13));
 		ses.setScheduleEntryName(rs.getString(14));
+		return ses;
 	}
 
 
@@ -411,42 +437,71 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 		String lastCon = seStatus.getLastConsumer();
 		if (lastCon != null && lastCon.length() > 31)
 			lastCon = lastCon.substring(lastCon.length()-31);
-		if (seStatus.getKey().isNull())
+
+		String q = null;
+		try
 		{
-			seStatus.forceSetId(getKey("schedule_entry_status"));
-			String q = "insert into schedule_entry_status values("
-				+ seStatus.getKey() + ", "
-				+ seStatus.getScheduleEntryId() + ", "
-				+ db.sqlDate(seStatus.getRunStart()) + ", "
-				+ db.sqlDate(seStatus.getLastMessageTime()) + ", "
-				+ db.sqlDate(seStatus.getRunStop()) + ", "
-				+ sqlString(seStatus.getHostname()) + ", "
-				+ sqlString(seStatus.getRunStatus()) + ", "
-				+ seStatus.getNumMessages() + ", "
-				+ seStatus.getNumDecodesErrors() + ", "
-				+ seStatus.getNumPlatforms() + ", "
-				+ sqlString(lastSrc) + ", "
-				+ sqlString(lastCon) + ", "
-				+ db.sqlDate(seStatus.getLastModified()) + ")";
-			doModify(q);
+
+		
+			if (seStatus.getKey().isNull())
+			{
+				seStatus.forceSetId(getKey("schedule_entry_status"));
+				q = "insert into schedule_entry_status values(";
+				ArrayList<Object> parameters = new ArrayList<>();
+				parameters.add(seStatus.getKey());
+				parameters.add(seStatus.getScheduleEntryId());
+				parameters.add(NullableParameter.of(seStatus.getRunStart(),Date.class));
+				parameters.add(NullableParameter.of(seStatus.getLastMessageTime(),Date.class));
+				parameters.add(NullableParameter.of(seStatus.getRunStop(),Date.class));
+				parameters.add(NullableParameter.of(seStatus.getHostname(),String.class));
+				parameters.add(NullableParameter.of(seStatus.getRunStatus(),String.class));
+				parameters.add(seStatus.getNumMessages());
+				parameters.add(seStatus.getNumDecodesErrors());
+				parameters.add(seStatus.getNumPlatforms());
+				parameters.add(NullableParameter.of(lastSrc,String.class));
+				parameters.add(NullableParameter.of(lastCon,String.class));
+				parameters.add(seStatus.getLastModified());
+				q += valueBinds(parameters);
+				q += ")";				
+				doModify(q,parameters.toArray());
+			}
+			else // do an update
+			{
+				q = "update schedule_entry_status set "
+					+ "schedule_entry_id = ?,"
+					+ "run_start_time = ?,"
+					+ "last_message_time = ?,"
+					+ "run_complete_time = ?,"
+					+ "hostname = ?,"
+					+ "run_status = ?,"
+					+ "num_messages = ?,"
+					+ "num_decode_errors = ?,"
+					+ "num_platforms = ?,"
+					+ "last_source = ?,"
+					+ "last_consumer = ?,"
+					+ "last_modified = ?,"
+					+ " where schedule_entry_status_id = ?";
+				ArrayList<Object> parameters = new ArrayList<>();				
+				parameters.add(seStatus.getScheduleEntryId());
+				parameters.add(NullableParameter.of(seStatus.getRunStart(),Date.class));
+				parameters.add(NullableParameter.of(seStatus.getLastMessageTime(),Date.class));
+				parameters.add(NullableParameter.of(seStatus.getRunStop(),Date.class));
+				parameters.add(NullableParameter.of(seStatus.getHostname(),String.class));
+				parameters.add(NullableParameter.of(seStatus.getRunStatus(),String.class));
+				parameters.add(seStatus.getNumMessages());
+				parameters.add(seStatus.getNumDecodesErrors());
+				parameters.add(seStatus.getNumPlatforms());
+				parameters.add(NullableParameter.of(lastSrc,String.class));
+				parameters.add(NullableParameter.of(lastCon,String.class));
+				parameters.add(seStatus.getLastModified());
+				parameters.add(seStatus.getKey());
+				doModify(q,parameters.toArray());
+			}
 		}
-		else // do an update
+		catch(SQLException ex)
 		{
-			String q = "update schedule_entry_status set "
-				+ "schedule_entry_id = " + seStatus.getScheduleEntryId() + ", "
-				+ "run_start_time = " + db.sqlDate(seStatus.getRunStart()) + ", "
-				+ "last_message_time = " + db.sqlDate(seStatus.getLastMessageTime()) + ", "
-				+ "run_complete_time = " + db.sqlDate(seStatus.getRunStop()) + ", "
-				+ "hostname = " + sqlString(seStatus.getHostname()) + ", "
-				+ "run_status = " + sqlString(seStatus.getRunStatus()) + ", "
-				+ "num_messages = " + seStatus.getNumMessages() + ", "
-				+ "num_decode_errors = " + seStatus.getNumDecodesErrors() + ", "
-				+ "num_platforms = " + seStatus.getNumPlatforms() + ", "
-				+ "last_source = " + sqlString(lastSrc) + ", "
-				+ "last_consumer = " + sqlString(lastCon) + ", "
-				+ "last_modified = " + db.sqlDate(seStatus.getLastModified())
-				+ " where schedule_entry_status_id = " + seStatus.getKey();
-			doModify(q);
+			String msg = "Error writing/updating schedule status entry with query '%s'";
+			throw new DbIoException(String.format(msg,q),ex);
 		}
 	}
 
@@ -459,27 +514,32 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 
 		String q = "delete from platform_status where last_schedule_entry_status_id in "
 			+ "(select schedule_entry_status_id from schedule_entry_status "
-			+ "where run_start_time < " + db.sqlDate(cutoff)
+			+ "where run_start_time < ?"
 			+ " and schedule_entry_id in "
-			+ "(select schedule_entry_id from schedule_entry where loading_application_id = "
-			+ appInfo.getAppId() + "))";
-		doModify(q);
+			+ "(select schedule_entry_id from schedule_entry where loading_application_id = ?))";
+		try
+		{
+			doModify(q,cutoff,appInfo.getAppId());
+			q = 
+				db.isOracle() ? // Oracle uses inner join syntax
+					"DELETE from schedule_entry_status "
+					+ "where run_start_time < ?"
+					+ " and schedule_entry_id in "
+					+ "(select schedule_entry_id from schedule_entry where loading_application_id = ?)"					
+				: // else postgres 'using' syntax:
+					"delete from schedule_entry_status a "
+					+ "using schedule_entry b "
+					+ "where b.schedule_entry_id = a.schedule_entry_id "
+					+ "and a.run_start_time < ?"
+					+ " and b.loading_application_id = ?";
 			
-		q = 
-			db.isOracle() ? // Oracle uses inner join syntax
-				"DELETE from schedule_entry_status "
-				+ "where run_start_time < " + db.sqlDate(cutoff)
-				+ " and schedule_entry_id in "
-				+ "(select schedule_entry_id from schedule_entry where loading_application_id = "
-				+ appInfo.getAppId() + ")"
-			: // else postgres 'using' syntax:
-				"delete from schedule_entry_status a "
-				+ "using schedule_entry b "
-				+ "where b.schedule_entry_id = a.schedule_entry_id "
-				+ "and a.run_start_time < " + db.sqlDate(cutoff)
-				+ " and b.loading_application_id = " + appInfo.getAppId();
-		
-		doModify(q);
+			doModify(q,cutoff,appInfo.getAppId());
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Failed to schedule status before. '%s'";
+			throw new DbIoException(String.format(msg,q),ex);
+		}
 	}
 
 	@Override
@@ -488,20 +548,26 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 			return;
-		
+
 		String q = "delete from dacq_event where schedule_entry_status_id in "
-			+ "(select schedule_entry_status_id from schedule_entry_status where schedule_entry_id = "
-			+ scheduleEntry.getId() + ")";
-		doModify(q);
-		
-		q = "delete from platform_status where last_schedule_entry_status_id in "
-			+ "(select schedule_entry_status_id from schedule_entry_status "
-			+ "where schedule_entry_id = " + scheduleEntry.getKey() + ")";
-		doModify(q);
-		
-		q = "delete from schedule_entry_status where schedule_entry_id = "
-			+ scheduleEntry.getKey();
-		doModify(q);
+				+ "(select schedule_entry_status_id from schedule_entry_status where schedule_entry_id = ?)";
+		try
+		{
+			doModify(q,scheduleEntry.getId());
+
+			q = "delete from platform_status where last_schedule_entry_status_id in "
+				+ "(select schedule_entry_status_id from schedule_entry_status "
+				+ "where schedule_entry_id = ?)";
+			doModify(q,scheduleEntry.getKey());
+			
+			q = "delete from schedule_entry_status where schedule_entry_id = ?";				
+			doModify(q,scheduleEntry.getKey());
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Failed to delete Schedule status for query '%s'";
+			throw new DbIoException(String.format(msg,q),ex);
+		}
 	}
 
 	@Override
@@ -512,21 +578,13 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 			return null;
 		
 		String q = "select " + sesColumns + " from " + sesTables + " where " + sesJoinClause;
-		q = q + " and a.schedule_entry_id = " + scheduleEntry.getKey()
+		q = q + " and a.schedule_entry_id = ?"
 			+ " and a.last_modified = "
 			+ "(select max(last_modified) from schedule_entry_status "
-			+ " where schedule_entry_id = " + scheduleEntry.getKey() + ")";
-		
-		ResultSet rs = doQuery(q);
+			+ " where schedule_entry_id = ?)";
 		try
 		{
-			while(rs != null && rs.next())
-			{
-				ScheduleEntryStatus ses = new ScheduleEntryStatus(DbKey.createDbKey(rs, 1));
-				rs2scheduleEntryStatus(rs, ses);
-				return ses;
-			}
-			return null;
+			return getSingleResult(q,rs -> rs2scheduleEntryStatus(rs), scheduleEntry.getKey(),scheduleEntry.getKey());			
 		}
 		catch (SQLException ex)
 		{
