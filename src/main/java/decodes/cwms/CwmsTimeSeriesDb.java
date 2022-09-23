@@ -671,6 +671,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.GregorianCalendar;
 import java.io.PrintStream;
 import java.sql.CallableStatement;
@@ -1206,18 +1207,16 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		String q = "SELECT PARAMETER_ID, PARAMETER_TYPE_ID, INTERVAL_ID, "
 			+ "DURATION_ID, VERSION_ID "
 			+ "FROM CWMS_V_TS_ID "
-			+ " where location_code = " + siteId
+			+ " where location_code = ?"
 			+ " order by PARAMETER_ID, PARAMETER_TYPE_ID, INTERVAL_ID";
 		try
 		{
-			ResultSet rs = dao.doQuery(q);
-			while(rs.next())
-			{
+			((DaoBase)dao).doQuery(q, rs -> {
 				String dtl[] = new String[5];
 				for(int i=0; i<5; i++)
 					dtl[i] = rs.getString(i+1);
 				ret.add(dtl);
-			}
+			},siteId);
 		}
 		catch(SQLException ex)
 		{
@@ -1558,22 +1557,15 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	{
 		ArrayList<String> ret = new ArrayList<String>();
 		String q = "select distinct parameter_type_id FROM CWMS_V_TS_ID"
-			+ " WHERE upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
+			+ " WHERE upper(DB_OFFICE_ID) = upper(?)";// + sqlString(dbOfficeId.toUpperCase());
 
-		DaiBase dao = new DaoBase(this, "CWMSDB");
-		try
+		try(DaoBase dao = new DaoBase(this, "CWMSDB");)
 		{
-			ResultSet rs = dao.doQuery(q);
-			while (rs != null && rs.next())
-				ret.add(rs.getString(1));
+			dao.doQuery(q,rs-> ret.add(rs.getString(1)),dbOfficeId);
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("CwmsTimeSeriesDb.listParamTypes: " + ex);
-		}
-		finally
-		{
-			dao.close();
 		}
 
 		// MJM - these are the ones we know about for sure:
@@ -1729,31 +1721,28 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	 */
 	public static DbKey officeId2code(Connection con, String officeId)
 	{
-		String q = "select cwms_util.get_office_code('" +
-				officeId + "') from dual";
-
-		ResultSet rs = null;
-		Statement stmt = null;
-		try
+		String q = "select cwms_util.get_office_code(?) from dual";
+		Logger.instance().debug3(q.replace("?","'"+officeId+"'"));
+		try(PreparedStatement stmt = con.prepareStatement(q);)
         {
-			stmt = con.createStatement();
-			rs = stmt.executeQuery(q);
-			Logger.instance().debug3(q);
-			if (rs.next())
-				return DbKey.createDbKey(rs, 1);
-			else
-				return Constants.undefinedId;
+			stmt.setString(1, officeId);
+			try(ResultSet rs = stmt.executeQuery())
+			{
+				if (rs.next())
+				{
+					return DbKey.createDbKey(rs,1);
+				}
+				else
+				{
+					return Constants.undefinedId;
+				}
+			}
         }
 		catch (Exception ex)
 		{
 			Logger.instance().warning("Error getting office code for id '"
 				+ officeId + "': " + ex);
 			return Constants.undefinedId;
-		}
-		finally
-		{
-			if (rs != null) { try { rs.close(); } catch(Exception ex) {} }
-			if (stmt != null) { try { stmt.close(); } catch(Exception ex) {} }
 		}
 	}
 
@@ -1860,26 +1849,24 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	public ArrayList<String> listVersions()
 		throws DbIoException
 	{
-		ArrayList<String> ret = new ArrayList<String>();
 		String q = "select distinct version_id from cwms_v_ts_id order by version_id";
-
-		DaiBase dao = new DaoBase(this, "CWMS");
-		try
+		try(DaoBase dao = new DaoBase(this, "CWMS");)
 		{
-			ResultSet rs = dao.doQuery(q);
-			while (rs != null && rs.next())
-					ret.add(rs.getString(1));
+			List<String> ret = null;
+			ret = dao.getResults(q,rs -> rs.getString(1));
+			if (ret != null)
+			{
+				return (ArrayList<String>)ret;
+			}
+			else
+			{
+				return new ArrayList<>();
+			}
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("CwmsTimeSeriesDb.listVersions: " + ex);
+			throw new DbIoException("CwmsTimeSeriesDb.listVersions: " + ex,ex);
 		}
-		finally
-		{
-			dao.close();
-		}
-
-		return ret;
 	}
 
 	@Override
