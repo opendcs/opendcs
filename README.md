@@ -1,9 +1,3 @@
-## 7.1 branch
-
-This branch will track the master branch code wise. The purpose of this branch is to improve the 
-local build system and automated pipeline for tests. No restructuring of code (except moving existing tests into junit test)
-will be done.
-
 # OpenDCS 
 
 OpenDCS is a tool for doing the following:
@@ -13,13 +7,17 @@ OpenDCS is a tool for doing the following:
 
 # Getting started
 
-Documentation on how to use OpenDCS is available at https://opendcs-env.readthedocs.io/en/7.1/index.html
-NOTE: Currently 7.1 is a tracking branch to handle several improvements to the build system. Not all documentation is available.
+Documentation on how to use OpenDCS is available at https://opendcs-env.readthedocs.io/en/latest/index.html
+
+# Getting help
+
+We have a mailing list at https://www.freelists.org/list/opendcs.
+
+Additionally you can open a discussion at https://github.com/opendcs/opendcs/discussions
 
 # Contributing
 
-Checkout the CONTRIBUTING.md file. Contribution to this branch are welcome, however new features and general bugfixes
-should be submitted to the master branch.
+Checkout the CONTRIBUTING.md file. Changes should be contributed to the default branch.
 
 # Compiling
 
