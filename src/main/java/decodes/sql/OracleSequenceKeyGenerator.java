@@ -51,6 +51,7 @@
 package decodes.sql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -94,30 +95,22 @@ public class OracleSequenceKeyGenerator
 			seqname = tableName.trim() + "IdSeq";
 		String q = "SELECT " + seqname.trim() + ".nextval from dual";
 
-		Statement stmt = null;
-		try
+		try(PreparedStatement stmt = conn.prepareStatement(q);
+			ResultSet rs = stmt.executeQuery();
+			)
 		{
-			stmt = conn.createStatement();
-	
-			ResultSet rs = stmt.executeQuery(q);
 			if (rs == null || !rs.next())
 			{
 				String err = "Cannot read sequence value from '" + seqname 
 					+ "': " + (rs == null ? "Null Return" : "Empty Return");
 				throw new DatabaseException(err);
 			}
-	
 			return DbKey.createDbKey(rs, 1);
 		}
 		catch(SQLException ex)
 		{
 			String err = "SQL Error executing '" + q + "': " + ex;
-			throw new DatabaseException(err);
-		}
-		finally
-		{
-			if (stmt != null)
-				try { stmt.close(); } catch(Exception ex) {}
+			throw new DatabaseException(err,ex);
 		}
 
 	}
@@ -156,4 +149,3 @@ public class OracleSequenceKeyGenerator
 		}
 	}
 }
-
