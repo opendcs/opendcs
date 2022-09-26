@@ -55,6 +55,7 @@ import ilex.util.TextUtil;
 
 import java.io.PrintStream;
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -192,49 +193,56 @@ public class CwmsRatingDao extends DaoBase
 	public void deleteRating(CwmsRatingRef crr)
 		throws RatingException
 	{
-		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), 
-			((CwmsTimeSeriesDb)db).getDbOfficeId(),
-			crr.getRatingSpecId());
+		String q =
+			"{ call cwms_rating.delete_ratings(?," +
+			"to_date(?,'DD.MM.YYYY HH24:MI:SS')," +
+			"to_date(?,'DD.MM.YYYY HH24:MI:SS'),null, ?) }";
+
+		final ArrayList<String> doing = new ArrayList<>();
+		doing.add("prepare call");
+		Connection conn = getConnection();
+		try
+		{
+			RatingSet ratingSet = RatingSet.fromDatabase(conn,
+				((CwmsTimeSeriesDb)db).getDbOfficeId(),
+				crr.getRatingSpecId());
+			if(ratingSet.getRatingCount() <= 1)
+			{
+				deleteRatingSpec(crr);
+				return;
+			}
 
 //		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE,
 //			getConnection(), 
 //			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 //			crr.getRatingSpecId());
 		
-		if(ratingSet.getRatingCount() <= 1)
-		{
-			deleteRatingSpec(crr);
-			return;
-		}
 		
-		SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+			SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+			sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-		String q =
-			"{ call cwms_rating.delete_ratings(?," +
-			"to_date(?,'DD.MM.YYYY HH24:MI:SS')," +
-			"to_date(?,'DD.MM.YYYY HH24:MI:SS'),null, ?) }";
-		CallableStatement cstmt =  null;
-		String doing = "prepare call";
-		try
-		{
-			cstmt = getConnection().prepareCall(q);
-			doing = "set params for";
-			cstmt.setString(1, crr.getRatingSpecId());
-			cstmt.setString(2, sdf.format(crr.getEffectiveDate()));
-			cstmt.setString(3, sdf.format(crr.getEffectiveDate()));
-			cstmt.setString(4, crr.getOfficeId());
-			doing = "execute";
-			cstmt.execute();
+			try(CallableStatement cstmt = conn.prepareCall(q);)
+			{
+				doing.set(0, "set params for");
+				cstmt.setString(1, crr.getRatingSpecId());
+				cstmt.setString(2, sdf.format(crr.getEffectiveDate()));
+				cstmt.setString(3, sdf.format(crr.getEffectiveDate()));
+				cstmt.setString(4, crr.getOfficeId());
+				doing.set(0, "execute");
+				cstmt.execute();
+			}
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Cannot " + doing + " '" + q + "' " 
+			String msg = "Cannot " + doing.get(0) + " '" + q + "' "
 				+ " for specId '" + crr.getRatingSpecId()
 				+ "' and office '" + crr.getOfficeId() + "': " + ex;
 				
 			Logger.instance().warning(msg);
-			try { cstmt.close(); } catch(Exception ignore) {}
+		}
+		finally
+		{
+			db.freeConnection(conn);
 		}
 	}
 	
@@ -246,25 +254,30 @@ public class CwmsRatingDao extends DaoBase
 	{
 		String q =
 			"{ call cwms_rating.delete_specs(?,'DELETE ALL', ?) }";
-		CallableStatement cstmt =  null;
-		String doing = "prepare call";
 		try
 		{
-			cstmt = getConnection().prepareCall(q);
-			doing = "set params for";
-			cstmt.setString(1, crr.getRatingSpecId()); 
-			cstmt.setString(2, crr.getOfficeId());
-			doing = "execute";
-			cstmt.execute();
+			withConnection( conn -> {
+				try (CallableStatement cstmt = conn.prepareCall(q);)
+				{
+					cstmt.setString(1, crr.getRatingSpecId());
+					cstmt.setString(2, crr.getOfficeId());
+					cstmt.execute();
+				}
+			});
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Cannot " + doing + " '" + q + "' " 
-				+ " for specId '" + crr.getRatingSpecId()
-				+ "' and office '" + crr.getOfficeId() + "': " + ex;
-				
-			Logger.instance().warning(msg);
-			try { cstmt.close(); } catch(Exception ignore) {}
+			StringBuilder builder = new StringBuilder(
+						"failed to delete rating spec with query '%s' "
+						+ " for specId '" + crr.getRatingSpecId()
+						+ "' and office '" + crr.getOfficeId() + "': ");
+			builder.append(ex.getLocalizedMessage());
+			SQLException next = null;
+			while( (next = ex.getNextException()) != null)
+			{
+				builder.append("Because: ").append(next.getLocalizedMessage());
+			}
+			Logger.instance().warning(builder.toString());
 		}
 	}
 	
