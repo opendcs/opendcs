@@ -601,24 +601,20 @@ public class CwmsTimeSeriesDAO
 		UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
 		String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
-			+ " WHERE TS_CODE = " + cts.getSDI()
+			+ " WHERE TS_CODE = ?"
 			+ " and DATE_TIME = "
 			+   "(select max(date_time) from CWMS_V_TSV "
-			+   	"where TS_CODE = " + cts.getSDI()
- 			+   	" and date_time < " + db.sqlDate(refTime)
+			+   	"where TS_CODE = ?"
+ 			+   	" and date_time < ?"
 			+ 		" AND VALUE IS NOT NULL "
-			+ 		" AND BITAND(QUALITY_CODE, " 
-						+ CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
+			+ 		" AND BITAND(QUALITY_CODE, ?)=0 "						
 			+	")"
 			+ " AND VALUE IS NOT INFINITE";
 
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (!rs.next())
-				return null;  // There is no previous value.
-			TimedVariable tv = rs2TimedVariable(rs);
-			
+			TimedVariable tv = getSingleResult(q,rs-> rs2TimedVariable(rs),
+											   cts.getSDI(),cts.getSDI(),refTime,CwmsFlags.QC_MISSING_OR_REJECTED);
 			if (tv != null)
 			{
 				if (unitConverter != null)
@@ -643,7 +639,7 @@ public class CwmsTimeSeriesDAO
 			warning(msg);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 
@@ -662,24 +658,20 @@ public class CwmsTimeSeriesDAO
 		UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
 		String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
-			+ " WHERE TS_CODE = " + cts.getSDI()
+			+ " WHERE TS_CODE = ?"// + cts.getSDI()
 			+ " and DATE_TIME = "
 			+   "(select min(date_time) from CWMS_V_TSV "
-			+   	"where TS_CODE = " + cts.getSDI()
- 			+   	" and date_time > " + db.sqlDate(refTime)
+			+   	"where TS_CODE = ?"
+ 			+   	" and date_time > ?"
 			+ 		" AND VALUE IS NOT NULL "
-			+ 		" AND BITAND(QUALITY_CODE, " 
-						+ CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
+			+ 		" AND BITAND(QUALITY_CODE, ?) = 0"
 			+	")"
 			+ " AND VALUE IS NOT INFINITE";
 
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (!rs.next())
-				return null;  // There is no next value.
-			
-			TimedVariable tv = rs2TimedVariable(rs);
+			TimedVariable tv = getSingleResult(q,rs->rs2TimedVariable(rs),
+									   cts.getSDI(),cts.getSDI(),refTime,CwmsFlags.QC_MISSING_OR_REJECTED);						
 			if (tv != null)
 			{
 				if (unitConverter != null)
