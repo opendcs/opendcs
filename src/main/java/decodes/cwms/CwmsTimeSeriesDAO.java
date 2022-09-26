@@ -1180,28 +1180,32 @@ public class CwmsTimeSeriesDAO
 			}
 		}
 		String path = tsid.getUniqueString();
+		final DbKey tsKey[] = new DbKey[1];
+		tsKey[0] = Constants.undefinedId;
 		try
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
-			int utcOffset = 
-				IntervalCodes.getIntervalSeconds(tsid.getInterval()) == 0 ?
-				HecConstants.NO_UTC_OFFSET : HecConstants.UNDEFINED_UTC_OFFSET;
-			DbKey tsKey = Constants.undefinedId;
+			withConnection(conn -> {
+				CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
+				int utcOffset =
+					IntervalCodes.getIntervalSeconds(tsid.getInterval()) == 0 ?
+					HecConstants.NO_UTC_OFFSET : HecConstants.UNDEFINED_UTC_OFFSET;
 
-			BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(getConnection(),
-				dbOfficeId,
-				path,   // 6-part path name 
-				utcOffset, // utcOfficeMinutes 
-				null,   // intervalForward
-				null,   // intervalBackward
-				false,  // versionFlag
-				true);  // active
-				tsKey = DbKey.createDbKey(tsCode.longValue());
-			tsid.setKey(tsKey);
+				BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(conn,
+					dbOfficeId,
+					path,   // 6-part path name
+					utcOffset, // utcOfficeMinutes
+					null,   // intervalForward
+					null,   // intervalBackward
+					false,  // versionFlag
+					true);  // active
+				tsKey[0] = DbKey.createDbKey(tsCode.longValue());
+				tsid.setKey(tsKey[0]);
+
+				refreshTsView();
+			});
 			
-			refreshTsView();
 			
-			return tsKey;
+			return tsKey[0];
 		}
 		catch(SQLException ex)
 		{
