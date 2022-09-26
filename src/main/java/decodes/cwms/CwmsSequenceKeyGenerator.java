@@ -46,6 +46,7 @@
 package decodes.cwms;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -100,11 +101,10 @@ public class CwmsSequenceKeyGenerator
 		
 		String q = "SELECT " + seqname + ".nextval from dual";
 
-		try
+		try(PreparedStatement stmt = conn.prepareStatement(q);
+			ResultSet rs = stmt.executeQuery();
+			)
 		{
-			Statement stmt = conn.createStatement();
-	
-			ResultSet rs = stmt.executeQuery(q);
 			if (rs == null || !rs.next())
 			{
 				String err = "Cannot read sequence with '" + q 
@@ -114,7 +114,6 @@ public class CwmsSequenceKeyGenerator
 			}
 	
 			DbKey ret = DbKey.createDbKey(rs, 1);
-			stmt.close();
 			return ret;
 		}
 		catch(SQLException ex)
@@ -132,4 +131,3 @@ public class CwmsSequenceKeyGenerator
 	}
 	
 }
-
