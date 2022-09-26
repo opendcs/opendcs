@@ -250,12 +250,12 @@ debug1("Setting manual connection for algorithmDAO");
 		DbComputation ret = compCache.getByKey(compId, this);
 		if (ret != null)
 			return ret;
-
+		Connection conn = getConnection();
 		try(
-			PreparedStatement getComp = getConnection().prepareStatement(
+			PreparedStatement getComp = conn.prepareStatement(
 				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_ID = ?"
 			);
-			PreparedStatement getAppId = getConnection().prepareStatement(
+			PreparedStatement getAppId = conn.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			);
 		)
@@ -307,6 +307,10 @@ debug1("Setting manual connection for algorithmDAO");
 			String msg = "Error reading computation id=" + compId + ": " + ex;
 			warning(msg);
 			throw new DbIoException(msg);
+		}
+		finally
+		{
+			try{ conn.close(); } catch( SQLException er) {}
 		}
 	}
 
@@ -483,7 +487,7 @@ debug1("Setting manual connection for algorithmDAO");
 			PreparedStatement getComp = conn.prepareStatement(
 				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_NAME = ?"
 			);
-			PreparedStatement getAppId = getConnection().prepareStatement(
+			PreparedStatement getAppId = conn.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			);
 		){
@@ -530,6 +534,10 @@ debug1("Setting manual connection for algorithmDAO");
 			String msg = "Error reading computation '" + name + "': " + ex;
 			warning(msg);
 			throw new DbIoException(msg);
+		}
+		finally
+		{
+			try {conn.close();} catch (SQLException ex) {}
 		}
 	}
 
