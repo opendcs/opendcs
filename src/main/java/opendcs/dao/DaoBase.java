@@ -116,6 +116,20 @@ public class DaoBase
 			db.freeConnection(myCon);
 		myCon = null;
 	}
+
+
+	/**
+	 * So that local functions can follow the usual workflow
+	 * @param conn Connection given from this Dao instance's getConnection
+	 */
+	private void closeConnection(Connection conn)
+	{
+		if( myCon != null && !conSetManually)
+		{
+			db.freeConnection(conn);
+			myCon = null;
+		}
+	}
 	
 	public void finalize()
 	{
@@ -401,7 +415,7 @@ public class DaoBase
 		{
 			if( conn != null)
 			{
-				db.freeConnection(conn);
+				this.closeConnection(conn);
 			}
 		}
 	}
