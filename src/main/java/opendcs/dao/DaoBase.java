@@ -37,6 +37,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -692,7 +693,7 @@ public class DaoBase
 	 * @param list used to get the count of objects we need the bind placeolder for.
 	 * @return String with a series of "?[,?]""
 	 */
-	public String valueBinds(List<Object> list)
+	public String valueBinds(Collection<? extends Object> list)
 	{
 		StringBuilder sb = new StringBuilder();
 		for( int i = 0; i < list.size(); i++)
