@@ -44,7 +44,6 @@ import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
-import decodes.util.DecodesException;
 
 /**
  * Base class for Data Access Objects within OpenDCS.
@@ -320,10 +319,25 @@ public class DaoBase
 	public DbKey getKey(String tableName)
 		throws DbIoException
 	{
-		try { return db.getKeyGenerator().getKey(tableName, getConnection()); }
-		catch(DecodesException ex)
+		final DbKey ret[] = new DbKey[1];
+		ret[0] = Constants.undefinedId;
+		try
 		{
-			throw new DbIoException(ex.getMessage());
+			withConnection( conn -> {
+				try
+				{
+					ret[0] = db.getKeyGenerator().getKey(tableName, getConnection());
+				}
+				catch(DatabaseException ex)
+				{
+					throw new SQLException("failed to generate key",ex);
+				}
+			});
+			return ret[0];
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("Failed to get key for table",ex);
 		}
 	}
 	
