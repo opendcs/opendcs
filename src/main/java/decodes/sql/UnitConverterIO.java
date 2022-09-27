@@ -23,9 +23,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 
 import ilex.util.Logger;
+import opendcs.dao.DaoBase;
 import decodes.db.DatabaseException;
 import decodes.db.UnitConverterDb;
 import decodes.db.UnitConverterSet;
@@ -57,73 +59,56 @@ public class UnitConverterIO extends SqlDbObjIo
 	{
 		Logger.instance().debug1("Reading UnitConversions...");
 
-		Statement stmt = null;
-		try
+		try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName());)
 		{
-			stmt = createStatement();
 			String q =
 				"SELECT " + columns + " FROM UnitConverter WHERE fromUnitsAbbr != 'raw'";
-
+			
 			debug3("Executing '" + q + "'");
 
-			ResultSet rs = stmt.executeQuery(q);
-
-			while (rs != null && rs.next())
-			{
-				UnitConverterDb ucdb = rs2Uc(rs);
-				ucs.addDbConverter(ucdb);
-			}
+			dao.doQuery(q, rs-> {
+				ucs.addDbConverter(rs2Uc(rs));
+			});
 		}
 		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
-		finally
-		{
-			if (stmt != null)
-				try {stmt.close();} catch(Exception ex) {}
-		}
 	}
 
 	/**
-	 * In clause should be complete a complete list of IDs, containing surrounding parens.
-	 * @param inClause
-	 * @return
+	 * Retrieve unit converions for the given unit keys
+	 * @param keys
+	 * @return initialized unit conversion objects. Empty list is returned on empty input
 	 */
-	public ArrayList<UnitConverterDb> readUCsIn(String inClause)
+	public ArrayList<UnitConverterDb> readUCsIn(Collection<DbKey> keys)
 		throws DatabaseException
 	{
 		ArrayList<UnitConverterDb> ret = new  ArrayList<UnitConverterDb>();
-		Logger.instance().debug1("Reading UnitConversions in " + inClause);
-
-		Statement stmt = null;
-		try
+		Logger.instance().debug1("Reading UnitConversions in for " + keys.size() + " units");
+		if( keys.isEmpty() )
 		{
-			stmt = createStatement();
-			String q = "SELECT " + columns + " FROM UnitConverter WHERE id in " + inClause;
-
+			return ret;
+		}
+		try(DaoBase dao = new DaoBase(this._dbio, this.getClass().getName()))
+		{
+			
+			String q = "SELECT " + columns + " FROM UnitConverter WHERE id in (%s)";
 			debug3("Executing '" + q + "'");
-
-			ResultSet rs = stmt.executeQuery(q);
-
-			while (rs != null && rs.next())
-			{
-				UnitConverterDb ucdb = rs2Uc(rs);
-				ret.add(ucdb);
-			}
+			ret.addAll( 
+				dao.getResults(
+					String.format(q,dao.valueBinds(keys)),
+					rs -> rs2Uc(rs),
+					keys.toArray()
+				)
+			);
 
 			return ret;
 		}
 		catch (SQLException e)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException(e.toString(),e);
 		}
-		finally
-		{
-			if (stmt != null)
-				try {stmt.close();} catch(Exception ex) {}
-		}
-
 	}
 
 	private UnitConverterDb rs2Uc(ResultSet rs)
@@ -171,18 +156,29 @@ public class UnitConverterIO extends SqlDbObjIo
 				{
 					if (!inDb.equals(uc2write))
 					{
+						ArrayList<Object> parameters = new ArrayList<>();
+						parameters.add(uc2write.algorithm);
+						for(double v: uc2write.coefficients)
+						{
+							parameters.add(Double.valueOf(v));
+						}
+						parameters.add(inDb.fromAbbr);
+						parameters.add(inDb.toAbbr);
 						uc2write.forceSetId(inDb.getId());
 						q = "update UnitConverter set "
-							+ "algorithm=" + sqlString(uc2write.algorithm) + ", "
-							+ "a=" + sqlOptDouble(uc2write.coefficients[0]) + ", "
-							+ "b=" + sqlOptDouble(uc2write.coefficients[1]) + ", "
-							+ "c=" + sqlOptDouble(uc2write.coefficients[2]) + ", "
-							+ "d=" + sqlOptDouble(uc2write.coefficients[3]) + ", "
-							+ "e=" + sqlOptDouble(uc2write.coefficients[4]) + ", "
-							+ "f=" + sqlOptDouble(uc2write.coefficients[5])
+							+ "algorithm=?, "
+							+ "a=?, "
+							+ "b=?, "
+							+ "c=?, "
+							+ "d=?, "
+							+ "e=?, "
+							+ "f=?,"
 							+ " where fromUnitsAbbr=" + sqlString(inDb.fromAbbr)
 							+ " and toUnitsAbbr=" + sqlString(inDb.toAbbr);
-						executeUpdate(q);
+						try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName()))
+						{
+							dao.doModify(q,parameters.toArray());
+						}
 					}
 					dbUcs.removeDbConverter(inDb.fromAbbr, inDb.toAbbr);
 				}
@@ -190,20 +186,7 @@ public class UnitConverterIO extends SqlDbObjIo
 				{
 					DbKey id = getKey("UnitConverter");
 					uc2write.forceSetId(id);
-					q = "insert into UnitConverter("
-						+ "id, fromUnitsAbbr, toUnitsAbbr, "
-						+ "algorithm, a, b, c, d, e, f) values( "
-						+ id + ", " + sqlString(uc2write.fromAbbr)
-						+ ", " + sqlString(uc2write.toAbbr)
-						+ ", " + sqlString(uc2write.algorithm)
-						+ ", " + sqlOptDouble(uc2write.coefficients[0])
-						+ ", " + sqlOptDouble(uc2write.coefficients[1])
-						+ ", " + sqlOptDouble(uc2write.coefficients[2])
-						+ ", " + sqlOptDouble(uc2write.coefficients[3])
-						+ ", " + sqlOptDouble(uc2write.coefficients[4])
-						+ ", " + sqlOptDouble(uc2write.coefficients[5])
-						+ ")";
-					executeUpdate(q);
+					insert(uc2write);
 				}
 			}
 			catch (SQLException ex)
@@ -214,13 +197,13 @@ public class UnitConverterIO extends SqlDbObjIo
 		// Now anything left in the db set needs to be deleted.
 		for(Iterator<UnitConverterDb> it = dbUcs.iteratorDb(); it.hasNext(); )
 		{
-			try
+			try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName());)
 			{
 				UnitConverterDb inDb = it.next();
 				q = "delete from UnitConverter "
-					+ " where fromUnitsAbbr=" + sqlString(inDb.fromAbbr)
-					+ " and toUnitsAbbr=" + sqlString(inDb.toAbbr);
-				executeUpdate(q);
+					+ " where fromUnitsAbbr=?"
+					+ " and toUnitsAbbr=?";
+				dao.doModify(q,inDb.fromAbbr,inDb.toAbbr);
 			}
 			catch (SQLException ex)
 			{
@@ -253,16 +236,6 @@ public class UnitConverterIO extends SqlDbObjIo
 	public void insert(UnitConverterDb ucdb)
 		throws DatabaseException, SQLException
 	{
-		DbKey id = ucdb.getId();
-
-		String coeffStr = "";
-		for (int i = 0; i < UnitConverterDb.MAX_COEFFICIENTS; ++i) {
-			coeffStr += sqlOptDouble(ucdb.coefficients[i]);
-			if (i < UnitConverterDb.MAX_COEFFICIENTS - 1) {
-				coeffStr += ", ";
-			}
-		}
-
 		if (ucdb.fromAbbr == null || ucdb.fromAbbr.trim().length() == 0
 		 || ucdb.toAbbr == null || ucdb.toAbbr.trim().length() == 0)
 		{
@@ -272,17 +245,23 @@ public class UnitConverterIO extends SqlDbObjIo
 			return;
 		}
 
+		ArrayList<Object> parameters = new ArrayList<>();
+		parameters.add(ucdb.getId());
+		parameters.add(ucdb.fromAbbr);
+		parameters.add(ucdb.toAbbr);
+		parameters.add(ucdb.algorithm);
+		for(double v: ucdb.coefficients)
+		{
+			parameters.add(Double.valueOf(v));
+		}
+
 		String q = "INSERT INTO " +
 				"UnitConverter(ID, FROMUNITSABBR, TOUNITSABBR, ALGORITHM, A, B, C, D, E, F)" +
-				" VALUES (" +
-					 id + ", " +
-					 sqlReqString(ucdb.fromAbbr) + ", " +
-					 sqlReqString(ucdb.toAbbr) + ", " +
-					 sqlReqString(ucdb.algorithm) + ", " +
-					 coeffStr +
-				   ")";
-
-		executeUpdate(q);
+				" VALUES (%s)";
+		try( DaoBase dao = new DaoBase(this._dbio,this.getClass().getName()))
+		{
+			dao.doModify(String.format(q,dao.valueBinds(parameters)),parameters.toArray());
+		}
 	}
 
 	public void setContext(String context)

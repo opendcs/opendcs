@@ -1098,45 +1098,35 @@ public class ConfigListIO extends SqlDbObjIo
 
 		Statement stmt = createStatement();
 		String q = "SELECT SensorNumber, UnitConverterId " +
-			"FROM ScriptSensor " + "WHERE DecodesScriptId = " + dsId;
-		Logger.instance().debug3("Query: " + q);
-		ResultSet rs = stmt.executeQuery(q);
+			"FROM ScriptSensor " + "WHERE DecodesScriptId = ?" + dsId;
+		Logger.instance().debug3("Query: " + q);		
 
-		if (rs != null)
+		try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName()))
 		{
-			StringBuilder inList = new StringBuilder();
-			while (rs.next())
-			{
+			final ArrayList<DbKey> ucsKeys = new ArrayList<>();
+			dao.doQuery(q,rs -> {
 				int sensorNum = rs.getInt(1);
 				DbKey ucid = DbKey.createDbKey(rs, 2);
 				
-				if (inList.length() > 0)
-					inList.append(", ");
-				inList.append("" + ucid);
+				ucsKeys.add(ucid);				
 
 				ScriptSensor ss = new ScriptSensor(ds, sensorNum);
 				ds.scriptSensors.add(ss);
 				ss.setUnitConverterId(ucid);
-//				ss.rawConverter = _unitConverterIO.readUnitConverter(ucid);
+			},dsId);
+
+			ArrayList<UnitConverterDb> ucs = _unitConverterIO.readUCsIn(ucsKeys);
+			for (ScriptSensor ss : ds.scriptSensors)
+			{
+				for(UnitConverterDb uc : ucs)
+					if (ss.getUnitConverterId().equals(uc.getId()))
+					{
+						ss.rawConverter = uc;
+						break;
+					}
 			}
 			
-			if (inList.length() > 0)
-			{
-				String inClause = "(" + inList.toString() + ")";
-				ArrayList<UnitConverterDb> ucs = _unitConverterIO.readUCsIn(inClause);
-				for (ScriptSensor ss : ds.scriptSensors)
-				{
-					for(UnitConverterDb uc : ucs)
-						if (ss.getUnitConverterId().equals(uc.getId()))
-						{
-							ss.rawConverter = uc;
-							break;
-						}
-				}
-			}
 		}
-
-		stmt.close();
 	}
 
 	/**
