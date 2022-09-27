@@ -49,6 +49,7 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import decodes.db.Constants;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CpDependsNotify;
@@ -98,51 +99,61 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		throws DbIoException
 	{
 		DbKey key = tsid.getKey();
-		Connection conn = getConnection();
-		boolean defaultAutoCommit = false;
-		try(
-			PreparedStatement deleteFromDepends = conn.prepareStatement(
-				"DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 +" = ?"
-			);
-			PreparedStatement updateEnabled = conn.prepareStatement(
-				"update cp_computation set enabled = 'N' "
-				+ "where computation_id in ("
-				+ 	"select distinct a.computation_id from "
-				+	 "cp_computation a, cp_comp_ts_parm b "
-				+ 	"where a.computation_id = b.computation_id "
-				+ 	"and a.enabled = 'Y' "
-				+ 	"and b.site_datatype_id = ?"
-				+ ")"
-			);
-			PreparedStatement deleteGroupMembershit = conn.prepareStatement(
-				"delete from tsdb_group_member_ts where "
-				+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-				+ " = ?"
-			);
-		){
-			defaultAutoCommit = conn.getAutoCommit();
-			conn.setAutoCommit(false);
-			// Remove any computation dependencies to this time-series.
-			deleteFromDepends.setLong(1,key.getValue());
-			deleteFromDepends.execute();
+		try
+		{
+			withConnection( conn -> {
+				boolean defaultAutoCommit = conn.getAutoCommit();
+				try(
+					PreparedStatement deleteFromDepends = conn.prepareStatement(
+						"DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 +" = ?"
+					);
+					PreparedStatement updateEnabled = conn.prepareStatement(
+						"update cp_computation set enabled = 'N' "
+						+ "where computation_id in ("
+						+ 	"select distinct a.computation_id from "
+						+	 "cp_computation a, cp_comp_ts_parm b "
+						+ 	"where a.computation_id = b.computation_id "
+						+ 	"and a.enabled = 'Y' "
+						+ 	"and b.site_datatype_id = ?"
+						+ ")"
+					);
+					PreparedStatement deleteGroupMembershit = conn.prepareStatement(
+						"delete from tsdb_group_member_ts where "
+						+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+						+ " = ?"
+					);
+				){
+					conn.setAutoCommit(false);
+					// Remove any computation dependencies to this time-series.
+					deleteFromDepends.setLong(1,key.getValue());
+					deleteFromDepends.execute();
 
-			updateEnabled.setLong(1,key.getValue());
-			updateEnabled.execute();
+					updateEnabled.setLong(1,key.getValue());
+					updateEnabled.execute();
 
-			deleteFromDepends.setLong(1, key.getValue() );
-			deleteFromDepends.execute();
+					deleteFromDepends.setLong(1, key.getValue() );
+					deleteFromDepends.execute();
 
-			conn.commit(); // now that all parts of the transaction have gone through we know we're ready.
-		} catch( SQLException err ){
-			throw new DbIoException("failed to remove computations dependencies " + err.getLocalizedMessage());
+					conn.commit(); // now that all parts of the transaction have gone through we know we're ready.
+				}
+				catch(SQLException ex)
+				{
+					try
+					{
+						conn.setAutoCommit(defaultAutoCommit);
+					}
+					catch(SQLException ex2)
+					{
+						warning("Error resetting autocommit " + ex.getLocalizedMessage());
+					}
+					throw ex;
+				}
+			});
+
 		}
-
-		finally {
-			try{
-				conn.setAutoCommit(defaultAutoCommit);
-			} catch( Exception ex ){
-				warning("failed to reset autocommit: " + ex);
-			}
+		catch( SQLException err )
+		{
+			throw new DbIoException("failed to remove computations dependencies " + err.getLocalizedMessage());
 		}
 
 	}
@@ -227,22 +238,16 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 			}
 
 			debug3("Total dds for dependencies=" + dataIds.size());
-			Connection conn = getConnection();
-			try(
-				PreparedStatement insertDepends = conn.prepareStatement(
-				"INSERT INTO CP_COMP_DEPENDS(" + cpCompDepends_col1 + ",COMPUTATION_ID) "
-					+ "VALUES(?,?)"
-				);
-			){ //NOTE: this may need some tuning for batch size,
-				// fairly simple to do with an on modulus size = 0 executeBatch statement
-				for(DbKey dataId : dataIds)
-				{
-					insertDepends.setLong(1, dataId.getValue() );
-					insertDepends.setLong(2, compId.getValue() );
-					insertDepends.addBatch();
-				}
-				insertDepends.executeBatch();
-			}
+			//NOTE: this may need some tuning for batch size,
+			// fairly simple to do with an on modulus size = 0 executeBatch statement
+			doBatch("INSERT INTO CP_COMP_DEPENDS(" + cpCompDepends_col1 + ",COMPUTATION_ID) VALUES(?,?)",
+					250,
+					(stmt,dataId) -> {
+						stmt.setLong(1, dataId.getValue() );
+						stmt.setLong(2, compId.getValue() );
+					},
+					dataIds
+			);
 		}
 		catch(Exception ex)
 		{
@@ -259,13 +264,19 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	{
 		if (db.isHdb())
 			return;
-
-		// Remove the CP_COMP_DEPENDS records & re-add.
-		String q = "DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = "
-			+ timeSeriesKey;
-		doModify(q);
-		doModify("delete from cp_comp_depends_scratchpad where " + cpCompDepends_col1 + " = "
-			+ timeSeriesKey);
+		String q = "DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = ?";
+		try
+		{
+			// Remove the CP_COMP_DEPENDS records & re-add.
+			doModify(q,timeSeriesKey);
+			q = "delete from cp_comp_depends_scratchpad where " + cpCompDepends_col1 + " = ?";
+			doModify(q,timeSeriesKey);
+		}
+		catch(SQLException ex)
+		{
+			String msg = String.format("failed deleteCompDependsForTsKey. query '%s'",q);
+			throw new DbIoException(msg,ex);
+		}
 	}
 
 	@Override
@@ -275,10 +286,19 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		if (db.isHdb())
 			return;
 		// Remove the CP_COMP_DEPENDS records & re-add.
-		String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId;
-		doModify(q);
+		String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = ?";// + compId;
+		try
+		{
+			doModify(q,compId);
+			q = "delete from cp_comp_depends_scratchpad where COMPUTATION_ID = ";
+			doModify(q,compId);
+		}
+		catch(SQLException ex)
+		{
+			String msg = String.format("failed deleteCompDependsForCompId. query '%s'",q);
+			throw new DbIoException(msg,ex);
+		}
 
-		doModify("delete from cp_comp_depends_scratchpad where COMPUTATION_ID = " + compId);
 	}
 
 	public void close()
@@ -292,42 +312,45 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbKey compID)
 		throws DbIoException
 	{
-		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
-		timeSeriesDAO.setManualConnection(getConnection());
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
-		Connection conn = getConnection();
-		try(
-			PreparedStatement getTriggers = conn.prepareStatement(
-				"SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
-				+ "WHERE COMPUTATION_ID = ?"
-			);
-		)
+		try
 		{
-			getTriggers.setLong(1,compID.getValue());
-			try( ResultSet rs = getTriggers.executeQuery(); ){
-				while(rs.next())
-			{
-				DbKey tsKey = DbKey.createDbKey(rs, 1);
-				try
+			withConnection( conn -> {
+				try(TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();)
 				{
-					ret.add(timeSeriesDAO.getTimeSeriesIdentifier(tsKey));
+					timeSeriesDAO.setManualConnection(getConnection());
+					ret.addAll(
+						getResultsIgnoringNull(
+							"SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
+							+ "WHERE COMPUTATION_ID = ?",
+							rs -> {
+								DbKey tsKey = Constants.undefinedId;
+								try
+								{
+									tsKey = DbKey.createDbKey(rs, cpCompDepends_col1);
+									return timeSeriesDAO.getTimeSeriesIdentifier(tsKey);
+								}
+								catch (NoSuchObjectException e)
+								{
+									warning("Bogus Time Series Key " + tsKey + " in CP_COMP_DEPENDS "
+										+ "for computation " + compID);
+								}
+								catch (DbIoException e)
+								{
+									warning("Error retrieving Key column from database in CP_COMP_DEPENDS "
+										+ "for computation " + compID);
+									debug1(e.getLocalizedMessage());
+								}
+								return null;
+							},
+							compID
+					));
 				}
-				catch (NoSuchObjectException e)
-				{
-					warning("Bogus Time Series Key " + tsKey + " in CP_COMP_DEPENDS "
-						+ "for computation " + compID);
-				}
-			}
-			}
-
+			});
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error executing trigger comp retrieval: " + ex);
-		}
-		finally
-		{
-			timeSeriesDAO.close();
+			throw new DbIoException("Error executing trigger comp retrieval: " + ex,ex);
 		}
 		return ret;
 	}
@@ -338,29 +361,29 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	{
 		ArrayList<DbKey> ret = new ArrayList<DbKey>();
 
-		StringBuilder inClause = new StringBuilder(" in (");
-		int n = 0;
-		for (TimeSeriesIdentifier tsid : tsids)
+		if(tsids.isEmpty())
 		{
-			if (n++ > 0)
-				inClause.append(", ");
-			inClause.append(tsid.getKey().toString());
-		}
-		inClause.append(")");
-		if (n == 0)
 			return ret;
+		}
 
 		String q = "select a.computation_id from cp_comp_depends a, cp_computation b"
 			+ " where a.computation_id = b.computation_id"
-			+ " and a." + cpCompDepends_col1 + inClause.toString();
-		if (!DbKey.isNull(appId))
-			q = q + " and b.loading_application_id = " + appId;
+			+ " and a." + cpCompDepends_col1 + "in (" + valueBinds(tsids) + " )";
 
+		ArrayList<Object> parameters = new ArrayList<>();
+		// TODO: what is the limit of parameters? in Postgres it's 32767 which *should* be enough
+		parameters.addAll(tsids);
+
+		if (!DbKey.isNull(appId))
+		{
+			q = q + " and b.loading_application_id = ?";
+			parameters.add(appId);
+		}
 		try
 		{
-			ResultSet rs = doQuery(q);
-			while (rs.next())
-				ret.add(DbKey.createDbKey(rs, 1));
+			ret.addAll(
+				getResults(q, rs -> DbKey.createDbKey(rs, "computation_id"),parameters.toArray())
+			);
 		}
 		catch(Exception ex)
 		{
@@ -368,7 +391,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		}
 		return ret;
 	}
-	
+
 	@Override
 	public CpDependsNotify getCpCompDependsNotify()
 	{
@@ -380,9 +403,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				 + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-			{
+			return getSingleResult(q, rs -> {
 				CpDependsNotify ret = new CpDependsNotify();
 				ret.setRecordNum(rs.getLong(1));
 				String s = rs.getString(2);
@@ -390,12 +411,11 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 					ret.setEventType(s.charAt(0));
 				ret.setKey(DbKey.createDbKey(rs, 3));
 				ret.setDateTimeLoaded(db.getFullDate(rs, 4));
-				
-				doModify("delete from CP_DEPENDS_NOTIFY where RECORD_NUM = " 
-					+ ret.getRecordNum());
-				
+
+				doModify("delete from CP_DEPENDS_NOTIFY where RECORD_NUM = ?",ret.getRecordNum());
+
 				return ret;
-			}
+			});
 		}
 		catch(Exception ex)
 		{
