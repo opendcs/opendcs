@@ -94,6 +94,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -677,15 +678,15 @@ public class CpCompDependsUpdater
 						{
 							grp.getTsMemberList().remove(tsid);
 							q = "delete from TSDB_GROUP_MEMBER_TS where "
-								+ "GROUP_ID = " + grp.getGroupId()
+								+ "GROUP_ID = ?"// + grp.getGroupId()
 								+ " and "
 								+ (theDb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-								+ " = " + tsKey;
+								+ " = ?";// + tsKey;
 							try
 							{
-								tsGroupDAO.doModify(q);
+								tsGroupDAO.doModify(q,grp.getGroupId(),tsKey);
 							}
-							catch (DbIoException ex)
+							catch (SQLException ex)
 							{
 								String msg = "tsDeleted Error in query '" + q + "': " + ex;
 								System.err.print(msg);
@@ -710,12 +711,12 @@ public class CpCompDependsUpdater
 			}
 	
 			// Delete from cp_comp_depends table any tupple with this ts_id.
-			q = "delete from CP_COMP_DEPENDS " + "where TS_ID = " + tsKey;
+			q = "delete from CP_COMP_DEPENDS where TS_ID = ?";// + tsKey;
 
-			tsGroupDAO.doModify(q);
+			tsGroupDAO.doModify(q,tsKey);
 			return true;
 		}
-		catch (DbIoException ex)
+		catch (DbIoException | SQLException ex)
 		{
 			String msg = "tsDeleted Error in query '" + q + "': " + ex;
 			System.err.print(msg);
@@ -856,13 +857,13 @@ public class CpCompDependsUpdater
 		else
 		{
 			// Have to remove comp-depends for the now-disabled or deleted comp.
-			String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId;
+			String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = ?";
 			DaiBase dao = new DaoBase(theDb, "CompModified");
 			try
 			{
-				dao.doModify(q);
+				dao.doModify(q,compId);
 			}
-			catch (DbIoException ex)
+			catch (SQLException ex)
 			{
 				warning("Error in '" + q + "': " + ex);
 			}
@@ -1092,23 +1093,17 @@ public class CpCompDependsUpdater
 			// delete any comp-depends records.
 			if (disabledCompIds.size() > 0)
 			{
-				StringBuilder q = new StringBuilder(
-					"delete from cp_comp_depends where computation_id in(");
-				for(int idx = 0; idx < disabledCompIds.size(); idx++)
-				{
-					if (idx > 0)
-						q.append(", ");
-					q.append(disabledCompIds.get(idx));
-				}
-				q.append(")");
+				String q = "delete from cp_comp_depends where computation_id =?";
+				final int batchSize = 250;
 				try
 				{
-					info(q.toString());
-					tsGroupDAO.doModify(q.toString());
+					tsGroupDAO.doBatch(q,batchSize, (stmt,compId) -> {
+						stmt.setLong(1,compId.getValue());
+					},disabledCompIds);
 				}
-				catch (DbIoException ex)
+				catch (SQLException ex)
 				{
-					warning("Error in query '" + q.toString() + "': " + ex);
+					warning("Error in query '" + q + "': " + ex.getLocalizedMessage());
 				}
 			}
 		}
@@ -1143,13 +1138,13 @@ public class CpCompDependsUpdater
 
 			// Insert all the toAdd records into the scratchpad
 			clearScratchpad(dao);
-			for(CpCompDependsRecord ccd : toAdd)
-			{
-				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
-					+ " VALUES(" + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
-info(q);
-				dao.doModify(q);
-			}
+			q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
+					+ " VALUES(?,?)";// + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
+			int batchSize = 250;
+			dao.doBatch(q, batchSize, (stmt,rec) -> {
+				stmt.setLong(1,rec.getTsKey().getValue());
+				stmt.setLong(2,rec.getCompId().getValue());
+			}, toAdd);
 		
 			// The scratchpad is now what we want CP_COMP_DEPENDS to look like.
 			// Mark's 2-line SQL to move the scratchpad to CP_COMP_DEPENDS.
@@ -1157,15 +1152,15 @@ info(q);
 			+ "where(computation_id, ts_id) in "
 			+ "(select computation_id, ts_id from cp_comp_depends " +
 				"minus select computation_id, ts_id from cp_comp_depends_scratchpad)";
-			dao.doModify(q);
+			dao.doModify(q,new Object[0]); // force handler to use prepared statement
 		
 			q = "insert into cp_comp_depends( computation_id, ts_id) "
 				+ "(select computation_id, ts_id from cp_comp_depends_scratchpad "
 				+ "minus select computation_id, ts_id from cp_comp_depends)";
-			dao.doModify(q);
+			dao.doModify(q,new Object[0]); // force handler to use prepared statement
 			return true;
 		}		
-		catch(DbIoException ex)
+		catch(DbIoException | SQLException ex)
 		{
 			String msg = "fullEval Error in '" + q + "': " + ex;
 			warning(msg);
@@ -1202,12 +1197,12 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 		try
 		{
 			info(q);
-			dao.doModify(q);
+			dao.doModify(q,new Object[0]); // force prepared statement use.
 		}
-		catch (DbIoException ex)
+		catch (SQLException ex)
 		{
 			warning("Error in query '" + q + "': " + ex);
-			throw ex;
+			throw new DbIoException("Query '" + q +"' failed",ex);
 		}
 		
 	}
@@ -1223,20 +1218,17 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 		DaiBase dao = new DaoBase(theDb, "writeToAdd2Db");
 		try
 		{
-			dao.doModify(q);
+			dao.doModify(q, new Object[0]);
 			
-			// Insert all the toAdd records into the scratchpad
-			for(CpCompDependsRecord ccd : toAdd)
-			{
-				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
-					+ " VALUES(" + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
-				dao.doModify(q);
-			}
-			
+			dao.doBatch(q, 250, (stmt,rec) -> {
+				stmt.setLong(1,rec.getTsKey().getValue());
+				stmt.setLong(2,rec.getCompId().getValue());
+			}, toAdd);
+
 			if (compId2Delete != Constants.undefinedId)
 			{
 				q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId2Delete;
-				dao.doModify(q);
+				dao.doModify(q,new Object[0]);
 			}
 			
 			// Just in case, delete any records from the scratchpad that are already
@@ -1244,16 +1236,16 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 			q = "delete from cp_comp_depends_scratchpad sp "
 				+ "where exists(select * from cp_comp_depends cd where cd.computation_id = sp.computation_id "
 				+ "and cd.ts_id = sp.ts_id)";
-			dao.doModify(q);
+			dao.doModify(q,new Object[0]);
 			
 			// Copy the scratchpad to the cp_comp_depends table
 			q = "INSERT INTO CP_COMP_DEPENDS SELECT * FROM CP_COMP_DEPENDS_SCRATCHPAD";
-			dao.doModify(q);
+			dao.doModify(q,new Object[0]);
 			
 			// Finally, clear the scratchpad, otherwise this can leave a foreign key to TS_ID
 			// that may prevent time series from being deleted.
 			q = "delete from cp_comp_depends_scratchpad";
-			dao.doModify(q);
+			dao.doModify(q,new Object[0]);
 			
 //			if (compId2Delete != Constants.undefinedId)
 //				theDb.commit(); // This should terminate the transaction.
@@ -1268,10 +1260,11 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 // and there is no index on date_time_loaded. Each time series was talking
 // well over a minute to do the query. So punt for now.
 		}
-		catch (DbIoException ex)
+		catch (SQLException ex)
 		{
-			warning("Error in query '" + q + "': " + ex);
-			throw ex;
+			String msg = String.format("writeToAdd2Db failed at step %s",q);
+			warning(msg);
+			throw new DbIoException(msg,ex);
 		}
 		finally
 		{
@@ -1324,13 +1317,11 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 		DaoBase dao = new DaoBase(theDb, "CompDependsUpdater");
 		try
 		{
-			ResultSet rs = dao.doQuery(q);
-			while (rs != null && rs.next())
-			{
+			dao.doQuery(q, rs -> {
 				CpCompDependsRecord rec = new CpCompDependsRecord(
 					DbKey.createDbKey(rs, 1), DbKey.createDbKey(rs, 2));
 				cpCompDependsCache.add(rec);
-			}
+			});
 		}
 		catch (Exception ex)
 		{
@@ -1401,4 +1392,3 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 	}
 
 }
-
