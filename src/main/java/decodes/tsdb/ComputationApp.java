@@ -520,11 +520,21 @@ public class ComputationApp
 		}
 		catch(Exception ex)
 		{
-			String msg = "Unexpected exception while " + action + ": " + ex;
-			warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			shutdownFlag = true;
+			if( ex instanceof BadConnectException)
+			{
+				warning("Database connection failure while " + action + ": " + ex.getLocalizedMessage());
+				shutdownFlag = true;
+				databaseFailed = true;
+			}
+			else
+			{
+				String msg = "Unexpected exception while " + action + ": " + ex;
+				warning(msg);
+				System.err.println(msg);
+				ex.printStackTrace(System.err);
+				shutdownFlag = true;
+			}
+
 		}
 		resolver = null;
 		Logger.instance().debug1("runApp() exiting.");
@@ -1397,4 +1407,3 @@ Logger.instance().debug3("doCMC missing check interval='" + mIntv
 
 
 }
-
