@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import decodes.tsdb.DbIoException;
+import opendcs.util.functional.BatchStatementConsumer;
 import opendcs.util.functional.ConnectionConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
@@ -97,4 +98,14 @@ public interface DaiBase
 	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
 	 */
 	public <R> List<R> getResultsIgnoringNull(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException;
+
+	/**
+	 * Helper to wrap batch calls for various insert/delete operations
+	 * @param query the query with bind vars
+	 * @param batchSize how many items to add to each batch
+	 * @param consumer operation that sets the appropriate columns
+	 * @param items list of items to insert
+	 * @throws SQLException
+	 */
+	public <R> void doBatch(String query, int batchSize, BatchStatementConsumer<R> consumer, Iterable<R> items) throws SQLException;
 }

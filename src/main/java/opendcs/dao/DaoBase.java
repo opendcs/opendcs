@@ -25,6 +25,7 @@ package opendcs.dao;
 
 import ilex.util.Logger;
 import opendcs.dai.DaiBase;
+import opendcs.util.functional.BatchStatementConsumer;
 import opendcs.util.functional.ConnectionConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
@@ -612,6 +613,36 @@ public class DaoBase
 				.stream()
 				.filter(r -> r != null)
 				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Helper to wrap batch calls for various insert/delete operations
+	 * @param query the query with bind vars
+	 * @param batchSize how many items to add to each batch
+	 * @param consumer operation that sets the appropriate columns
+	 * @param items list of items to insert
+	 * @throws SQLException
+	 */
+	public <R> void doBatch(String query, int batchSize, BatchStatementConsumer<R> consumer, Iterable<R> items) throws SQLException
+	{
+		withStatement(query, stmt -> {
+			int count = 0;
+			for(R item: items)
+			{
+				stmt.clearParameters();
+				consumer.accept(stmt,item);
+				stmt.addBatch();
+				count++;
+				if( count % batchSize == 0)
+				{
+					stmt.executeBatch();
+				}
+			}
+			if( count % batchSize != 0)
+			{
+				stmt.executeBatch();
+			}
+		});
 	}
 
 	/**
