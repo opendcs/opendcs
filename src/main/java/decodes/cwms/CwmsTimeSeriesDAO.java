@@ -459,7 +459,7 @@ public class CwmsTimeSeriesDAO
 		q.append(" AND VALUE IS NOT INFINITE");
 		try
 		{
-			int numAdded[] = new int[0];
+			int numAdded[] = new int[1];
 			numAdded[0] = 0;
 			doQuery(q.toString(),rs -> {
 				TimedVariable tv = rs2TimedVariable(rs);
