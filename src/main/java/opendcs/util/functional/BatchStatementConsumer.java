@@ -8,7 +8,7 @@ public interface BatchStatementConsumer<R> extends BiThrowingConsumer<PreparedSt
 {
     /**
      * User provided function that operates on a valid PreparedStatement
-     * 
+     *
      */
     public void accept(PreparedStatement stmt, R item) throws SQLException;
 }
