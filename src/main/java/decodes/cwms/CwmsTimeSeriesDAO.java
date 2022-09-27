@@ -102,6 +102,8 @@ import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -1348,7 +1350,21 @@ public class CwmsTimeSeriesDAO
 		}
 		catch(SQLException ex)
 		{
-			warning("Error preparing tasklist query '" + getTaskListStmtQuery + "': " + ex);
+			warning("Error retrieve new data. Query '" + getTaskListStmtQuery + "'. Because:");
+			warning(ex.getLocalizedMessage());
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			debug3(sw.toString());
+			SQLException next = ex;
+			while( (next = next.getNextException()) != null)
+			{
+				debug2("\tBecause: ");
+				debug2(next.getLocalizedMessage());
+				sw.flush();
+				next.printStackTrace(pw);
+				debug3(sw.toString());
+			}
 		}
 		return dataCollection;
 	}
@@ -1370,7 +1386,7 @@ public class CwmsTimeSeriesDAO
 		throws SQLException
 	{
 		// Extract the info needed from the result set row.
-		Date timeStamp = new Date(rs.getLong(4));
+		Date timeStamp = rs.getDate(4);
 		boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
 		if(exceedsMaxTimeGap)
 		{
@@ -1406,7 +1422,7 @@ public class CwmsTimeSeriesDAO
 			deleted = TextUtil.str2boolean(df);
 
 		String unitsAbbr = rs.getString(6);
-		Date versionDate = db.getFullDate(rs, 7);
+		Date versionDate = rs.getDate(7);
 		BigDecimal qc = rs.getBigDecimal(8);
 		long qualityCode = qc == null ? 0 : qc.longValue();
 
