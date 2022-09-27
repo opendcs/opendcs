@@ -272,8 +272,8 @@ public class CwmsRatingDao extends DaoBase
 						+ " for specId '" + crr.getRatingSpecId()
 						+ "' and office '" + crr.getOfficeId() + "': ");
 			builder.append(ex.getLocalizedMessage());
-			SQLException next = null;
-			while( (next = ex.getNextException()) != null)
+			SQLException next = ex;
+			while( (next = next.getNextException()) != null)
 			{
 				builder.append("Because: ").append(next.getLocalizedMessage());
 			}
