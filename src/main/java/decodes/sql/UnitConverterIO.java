@@ -1,8 +1,8 @@
 /*
  * $Id$
- * 
+ *
  * Open Source Software
- * 
+ *
  * $Log$
  * Revision 1.2  2015/07/17 13:03:55  mmaloney
  * Added context to improve debug/error messages.
@@ -27,9 +27,6 @@ import java.util.Iterator;
 
 import ilex.util.Logger;
 import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
-import decodes.db.EngineeringUnit;
-import decodes.db.EngineeringUnitList;
 import decodes.db.UnitConverterDb;
 import decodes.db.UnitConverterSet;
 
@@ -41,9 +38,9 @@ public class UnitConverterIO extends SqlDbObjIo
 {
 	private String context = "";
 	private String columns = "id, fromUnitsAbbr, toUnitsAbbr, algorithm, a, b, c, d, e, f";
-	
-	/** 
-	* Constructor. 
+
+	/**
+	* Constructor.
 	* @param dbio parent SqlDatabaseIO object
 	*/
 	public UnitConverterIO(SqlDatabaseIO dbio)
@@ -51,8 +48,8 @@ public class UnitConverterIO extends SqlDbObjIo
 		super(dbio);
 	}
 
-	/** 
-	* Reads in all the UnitConverters from the SQL database. 
+	/**
+	* Reads in all the UnitConverters from the SQL database.
 	* @param ucs the object to read
 	*/
 	public void read(UnitConverterSet ucs)
@@ -61,14 +58,14 @@ public class UnitConverterIO extends SqlDbObjIo
 		Logger.instance().debug1("Reading UnitConversions...");
 
 		Statement stmt = null;
-		try 
+		try
 		{
 			stmt = createStatement();
-			String q = 
+			String q =
 				"SELECT " + columns + " FROM UnitConverter WHERE fromUnitsAbbr != 'raw'";
-			
+
 			debug3("Executing '" + q + "'");
-			
+
 			ResultSet rs = stmt.executeQuery(q);
 
 			while (rs != null && rs.next())
@@ -87,7 +84,7 @@ public class UnitConverterIO extends SqlDbObjIo
 				try {stmt.close();} catch(Exception ex) {}
 		}
 	}
-	
+
 	/**
 	 * In clause should be complete a complete list of IDs, containing surrounding parens.
 	 * @param inClause
@@ -100,13 +97,13 @@ public class UnitConverterIO extends SqlDbObjIo
 		Logger.instance().debug1("Reading UnitConversions in " + inClause);
 
 		Statement stmt = null;
-		try 
+		try
 		{
 			stmt = createStatement();
 			String q = "SELECT " + columns + " FROM UnitConverter WHERE id in " + inClause;
-			
+
 			debug3("Executing '" + q + "'");
-			
+
 			ResultSet rs = stmt.executeQuery(q);
 
 			while (rs != null && rs.next())
@@ -129,39 +126,6 @@ public class UnitConverterIO extends SqlDbObjIo
 
 	}
 
-//	/**
-//	* Reads a particular unit converter from the database, by ID.
-//	* @param id the UC ID
-//	* @return UnitConverterDb or null if no match
-//	*/
-//	public UnitConverterDb readUnitConverter(DbKey id)
-//		throws DatabaseException
-//	{
-//		Statement stmt = null;
-//		try 
-//		{
-//			stmt = createStatement();
-//			
-//			String q = "SELECT " + columns + " FROM UnitConverter WHERE id = " + id;
-//			
-//			debug3("Query:" + q);
-//			ResultSet rs = stmt.executeQuery(q);
-//
-//			if (rs != null && rs.next())
-//				return rs2Uc(rs);
-//		}
-//		catch (SQLException e)
-//		{
-//			throw new DatabaseException(e.toString());
-//		}
-//		finally
-//		{
-//			if (stmt != null)
-//				try {stmt.close();} catch(Exception ex) {}
-//		}
-//		return null;
-//	}
-	
 	private UnitConverterDb rs2Uc(ResultSet rs)
 		throws SQLException
 	{
@@ -173,14 +137,14 @@ public class UnitConverterIO extends SqlDbObjIo
 		ucdb.forceSetId(key);
 
 		ucdb.algorithm = rs.getString(4);
-		
+
 		for (int i = 0; i < 6; ++i)
 			ucdb.coefficients[i] = rs.getDouble(5 + i);
 		return ucdb;
 	}
 
-	/** 
-	  Writes the UnitConverters to the SQL database. 
+	/**
+	  Writes the UnitConverters to the SQL database.
 	  @param ucs2write the object to write
 	*/
 	public void write(UnitConverterSet ucs2write)
@@ -188,7 +152,7 @@ public class UnitConverterIO extends SqlDbObjIo
 	{
 		UnitConverterSet dbUcs = new UnitConverterSet();
 		read(dbUcs);
-		
+
 		String q = "";
 		for(Iterator<UnitConverterDb> it = ucs2write.iteratorDb(); it.hasNext(); )
 		{
@@ -196,7 +160,7 @@ public class UnitConverterIO extends SqlDbObjIo
 			if (uc2write.fromAbbr == null || uc2write.fromAbbr.trim().length() == 0
 			 || uc2write.toAbbr == null || uc2write.toAbbr.trim().length() == 0)
 			{
-				warning("Unit Converter Set: Neither from nor to may be null: from='" 
+				warning("Unit Converter Set: Neither from nor to may be null: from='"
 					+ uc2write.fromAbbr + "' to='" + uc2write.toAbbr + "'");
 				continue;
 			}
@@ -229,8 +193,8 @@ public class UnitConverterIO extends SqlDbObjIo
 					q = "insert into UnitConverter("
 						+ "id, fromUnitsAbbr, toUnitsAbbr, "
 						+ "algorithm, a, b, c, d, e, f) values( "
-						+ id + ", " + sqlString(uc2write.fromAbbr) 
-						+ ", " + sqlString(uc2write.toAbbr) 
+						+ id + ", " + sqlString(uc2write.fromAbbr)
+						+ ", " + sqlString(uc2write.toAbbr)
 						+ ", " + sqlString(uc2write.algorithm)
 						+ ", " + sqlOptDouble(uc2write.coefficients[0])
 						+ ", " + sqlOptDouble(uc2write.coefficients[1])
@@ -242,7 +206,7 @@ public class UnitConverterIO extends SqlDbObjIo
 					executeUpdate(q);
 				}
 			}
-			catch (SQLException ex) 
+			catch (SQLException ex)
 			{
 				warning("Error in query '" + q + "': " + ex.toString());
 			}
@@ -258,7 +222,7 @@ public class UnitConverterIO extends SqlDbObjIo
 					+ " and toUnitsAbbr=" + sqlString(inDb.toAbbr);
 				executeUpdate(q);
 			}
-			catch (SQLException ex) 
+			catch (SQLException ex)
 			{
 				warning("Error in query '" + q + "': " + ex.toString());
 			}
@@ -298,12 +262,12 @@ public class UnitConverterIO extends SqlDbObjIo
 				coeffStr += ", ";
 			}
 		}
-		
+
 		if (ucdb.fromAbbr == null || ucdb.fromAbbr.trim().length() == 0
 		 || ucdb.toAbbr == null || ucdb.toAbbr.trim().length() == 0)
 		{
-			warning(context 
-				+ " Unit Converter -- neither from nor to may be null: from='" 
+			warning(context
+				+ " Unit Converter -- neither from nor to may be null: from='"
 				+ ucdb.fromAbbr + "' to='" + ucdb.toAbbr + "'");
 			return;
 		}
@@ -320,19 +284,6 @@ public class UnitConverterIO extends SqlDbObjIo
 
 		executeUpdate(q);
 	}
-
-//	/**
-//	* This deletes a single UnitConverterDb from the database, and unsets
-//	* the object's ID.  The argument must have had its SQL database ID
-//	* already set.
-//	* @param ucdb the object to delete
-//	*/
-//	public void delete(UnitConverterDb ucdb)
-//		throws DatabaseException, SQLException
-//	{
-//		String q = "DELETE FROM UnitConverter WHERE ID = " + ucdb.getId();
-//		executeUpdate(q);
-//	}
 
 	public void setContext(String context)
 	{
