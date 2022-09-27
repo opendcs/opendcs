@@ -106,13 +106,13 @@ public class ComputationDAO
 {
 	protected static DbObjectCache<DbComputation> compCache =
 		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
-
+/*
 	protected PropertiesDAI propsDao = null;
 	protected AlgorithmDAI algorithmDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	protected TsGroupDAI tsGroupDAO = null;
 	protected LoadingAppDAI loadingAppDAO = null;
-
+*/
 	/** Defines columns to match the rs2comp method */
 	public String compTableColumns =
 		"cp_computation.computation_id, computation_name, "
@@ -128,11 +128,11 @@ public class ComputationDAO
 	public ComputationDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "ComputationDao");
-		propsDao = db.makePropertiesDAO();
+		/*propsDao = db.makePropertiesDAO();
 		algorithmDAO = db.makeAlgorithmDAO();
 		dataTypeDAO = db.makeDataTypeDAO();
 		tsGroupDAO = db.makeTsGroupDAO();
-		loadingAppDAO = db.makeLoadingAppDAO();
+		loadingAppDAO = db.makeLoadingAppDAO();*/
 		if (tsdb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
 		{
 			compTableColumns = compTableColumns + ", group_id";
@@ -148,12 +148,12 @@ public class ComputationDAO
 		if (myCon == null)
 		{
 			super.getConnection();
-			propsDao.setManualConnection(myCon);
+			/*propsDao.setManualConnection(myCon);
 debug1("Setting manual connection for algorithmDAO");
 			algorithmDAO.setManualConnection(myCon);
 			dataTypeDAO.setManualConnection(myCon);
 			tsGroupDAO.setManualConnection(myCon);
-			loadingAppDAO.setManualConnection(myCon);
+			loadingAppDAO.setManualConnection(myCon);*/
 		}
 		return myCon;
 	}
@@ -162,77 +162,92 @@ debug1("Setting manual connection for algorithmDAO");
 	{
 		debug1("ComputationDAO.fillCache()");
 
-		String q = "select " + compTableColumns + " from CP_COMPUTATION ";
-
+		
 		try
 		{
-			ResultSet rs = doQuery(q);
-			int n = 0;
-			while(rs != null && rs.next())
-			{
-				compCache.put(rs2comp(rs));
-				n++;
-			}
-			Logger.instance().debug1("" + n + " cp_computation recs read.");
-
-			n = propsDao.readPropertiesIntoCache("CP_COMP_PROPERTY", compCache);
-			Logger.instance().debug1("" + n + " cp_comp_property recs read.");
-
-			ArrayList<CompAppInfo> apps = loadingAppDAO.listComputationApps(true);
-			ArrayList<DbCompAlgorithm> algos = algorithmDAO.listAlgorithms();
-
-			// Associate comps with groups, apps & algorithms.
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
-			{
-				DbComputation comp = (DbComputation)it.next();
-				if (!DbKey.isNull(comp.getGroupId()))
-					comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
-
-				if (!DbKey.isNull(comp.getAppId()))
-					for(CompAppInfo cai : apps)
-						if (comp.getAppId().equals(cai.getAppId()))
-							comp.setApplicationName(cai.getAppName());
-
-				if (!DbKey.isNull(comp.getAlgorithmId()))
-					for(DbCompAlgorithm algo : algos)
-						if (comp.getAlgorithmId().equals(algo.getId()))
-						{
-							comp.setAlgorithm(algo);
-							comp.setAlgorithmName(algo.getName());
-						}
-			}
-
-			// Note the parms rely on the algorithms being in place. So get them now.
-			q = "select a.* from CP_COMP_TS_PARM a, CP_COMPUTATION b "
-				+ "where a.COMPUTATION_ID = b.COMPUTATION_ID";
-			rs = doQuery(q);
-			n = 0;
-			while(rs.next())
-			{
-				DbKey compId = DbKey.createDbKey(rs, 1);
-				DbComputation comp = compCache.getByKey(compId);
-				if (comp == null)
+			withConnection( conn -> {
+				try(PropertiesDAI propsDao = db.makePropertiesDAO();
+					LoadingAppDAI loadingAppDAO = db.makeLoadingAppDAO();
+					AlgorithmDAI algorithmDAO = db.makeAlgorithmDAO();
+					TsGroupDAI tsGroupDAO = db.makeTsGroupDAO();
+				)
 				{
-					warning("CP_COMP_TS_PARM with comp id=" + compId + " with no matching computation.");
-					continue;
+					propsDao.setManualConnection(conn);
+					loadingAppDAO.setManualConnection(conn);
+					algorithmDAO.setManualConnection(conn);
+					String q = "select " + compTableColumns + " from CP_COMPUTATION ";
+					int n[] = new int[1];
+					n[0] = 0;
+
+					doQuery(q,rs-> { compCache.put(rs2comp(rs));n[0]++;});
+					Logger.instance().debug1("" + n[0] + " cp_computation recs read.");
+					n[0] = propsDao.readPropertiesIntoCache("CP_COMP_PROPERTY", compCache);
+					Logger.instance().debug1("" + n[0] + " cp_comp_property recs read.");
+
+
+					ArrayList<CompAppInfo> apps = loadingAppDAO.listComputationApps(true);
+					ArrayList<DbCompAlgorithm> algos = algorithmDAO.listAlgorithms();
+
+					// Associate comps with groups, apps & algorithms.
+					for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+					{
+						DbComputation comp = (DbComputation)it.next();
+						if (!DbKey.isNull(comp.getGroupId()))
+							comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
+
+						if (!DbKey.isNull(comp.getAppId()))
+							for(CompAppInfo cai : apps)
+								if (comp.getAppId().equals(cai.getAppId()))
+									comp.setApplicationName(cai.getAppName());
+
+						if (!DbKey.isNull(comp.getAlgorithmId()))
+							for(DbCompAlgorithm algo : algos)
+								if (comp.getAlgorithmId().equals(algo.getId()))
+								{
+									comp.setAlgorithm(algo);
+									comp.setAlgorithmName(algo.getName());
+								}
+					}
+
+					// Note the parms rely on the algorithms being in place. So get them now.
+					q = "select a.* from CP_COMP_TS_PARM a, CP_COMPUTATION b "
+					+ "where a.COMPUTATION_ID = b.COMPUTATION_ID";
+					n[0] = 0;
+					doQuery(q,rs -> {
+						DbKey compId = DbKey.createDbKey(rs, 1);
+						DbComputation comp = compCache.getByKey(compId);
+						if (comp == null)
+						{
+							warning("CP_COMP_TS_PARM with comp id=" + compId + " with no matching computation.");
+							return;
+						}
+
+						rs2compParm(comp, rs);
+						n[0]++;
+					});
+					Logger.instance().debug1("" + n[0] + " cp_comp_ts_parm recs read.");
+
+					for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+					{
+						DbComputation comp = (DbComputation)it.next();
+
+						// Make sure site IDs and datatype IDs are set in the parms
+						for(DbCompParm parm : comp.getParmList())
+							if (!parm.getSiteDataTypeId().isNull())
+								try { db.expandSDI(parm); }
+								catch (NoSuchObjectException e) {}
+								catch (DbIoException e)
+								{
+									throw new SQLException("Error expanding SDI in CompatationDAO::fillCache",e);
+								} 
+					}
+					debug1("fillCache finished, " + compCache.size() + " computations cached.");
 				}
-
-				rs2compParm(comp, rs);
-				n++;
-			}
-			Logger.instance().debug1("" + n + " cp_comp_ts_parm recs read.");
-
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
-			{
-				DbComputation comp = (DbComputation)it.next();
-
-				// Make sure site IDs and datatype IDs are set in the parms
-				for(DbCompParm parm : comp.getParmList())
-					if (!parm.getSiteDataTypeId().isNull())
-						try { db.expandSDI(parm); }
-						catch (NoSuchObjectException e) {}
-			}
-			debug1("fillCache finished, " + compCache.size() + " computations cached.");
+				catch(DbIoException ex)
+				{
+					throw new SQLException("Error retrieving dependant information",ex);
+				}
+			});
 		}
 		catch(Exception ex)
 		{
@@ -247,71 +262,85 @@ debug1("Setting manual connection for algorithmDAO");
 	public DbComputation getComputationById(DbKey compId) throws DbIoException,
 		NoSuchObjectException
 	{
-		DbComputation ret = compCache.getByKey(compId, this);
-		if (ret != null)
-			return ret;
-		Connection conn = getConnection();
-		try(
-			PreparedStatement getComp = conn.prepareStatement(
-				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_ID = ?"
-			);
-			PreparedStatement getAppId = conn.prepareStatement(
-				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-			);
-		)
+		DbComputation ret[] = new DbComputation[1];
+		
+		ret[0] = compCache.getByKey(compId, this);
+		if (ret[0] != null)
+			return ret[0];
+				
+		try
 		{
-			getComp.setLong(1,compId.getValue());
-			try( ResultSet rs = getComp.executeQuery(); ) {
-				if (rs.next())
-				{
-					DbComputation comp = rs2comp(rs);
-					if (!comp.getAlgorithmId().isNull())
+			withConnection(conn -> {
+				try(
+					PreparedStatement getComp = conn.prepareStatement(
+						"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_ID = ?"
+					);
+					PreparedStatement getAppId = conn.prepareStatement(
+						"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
+					);
+					AlgorithmDAI algorithmDAO = db.makeAlgorithmDAO();
+				){
+					algorithmDAO.setManualConnection(conn);
+					getComp.setLong(1,compId.getValue());
+					try( ResultSet rs = getComp.executeQuery(); ) 
 					{
-						try
+						if (rs.next())
 						{
-							comp.setAlgorithm(algorithmDAO.getAlgorithmById(comp.getAlgorithmId()));
+							DbComputation comp = rs2comp(rs);
+							if (!comp.getAlgorithmId().isNull())
+							{
+								try
+								{
+									comp.setAlgorithm(algorithmDAO.getAlgorithmById(comp.getAlgorithmId()));
+								}
+								catch(NoSuchObjectException ex)
+								{
+									warning("Computation ID="
+										+ compId + " with algo ID="
+										+ comp.getAlgorithmId() + " -- cannot find matching "
+										+ "algorithm.");
+								}
+							}
+							fillCompSubordinates(comp);
+
+							DbKey appId = comp.getAppId();
+							if (!appId.isNull())
+							{
+								getAppId.setLong(1,appId.getValue());
+								try( ResultSet rs2 = getAppId.executeQuery(); ){
+									if (rs.next())
+									comp.setApplicationName(rs.getString(1));
+								}
+
+
+							}
+							compCache.put(comp);
+							ret[0] = comp;
 						}
-						catch(NoSuchObjectException ex)
-						{
-							warning("Computation ID="
-								+ compId + " with algo ID="
-								+ comp.getAlgorithmId() + " -- cannot find matching "
-								+ "algorithm.");
-						}
+						else
+							throw new SQLException("no results",new NoSuchObjectException("No computation with ID="
+								+ compId));
 					}
-					fillCompSubordinates(comp);
-
-					DbKey appId = comp.getAppId();
-					if (!appId.isNull())
-					{
-						getAppId.setLong(1,appId.getValue());
-						try( ResultSet rs2 = getAppId.executeQuery(); ){
-							if (rs.next())
-							comp.setApplicationName(rs.getString(1));
-						}
-
-
-					}
-					compCache.put(comp);
-					return comp;
 				}
-				else
-					throw new NoSuchObjectException("No computation with ID="
-						+ compId);
-			}
+				catch(DbIoException ex)
+				{
+					throw new SQLException("Failed to get dependant information",ex);
+				}
 
-
-		}
+			});
+			return ret[0];
+		}	
 		catch(SQLException ex)
 		{
+			if( ex.getCause() instanceof NoSuchObjectException)
+			{
+				throw (NoSuchObjectException)ex.getCause();
+			}
 			String msg = "Error reading computation id=" + compId + ": " + ex;
 			warning(msg);
 			throw new DbIoException(msg);
 		}
-		finally
-		{
-			try{ conn.close(); } catch( SQLException er) {}
-		}
+		
 	}
 
 	/**
@@ -349,48 +378,59 @@ debug1("Setting manual connection for algorithmDAO");
 	protected void fillCompSubordinates(DbComputation comp)
 		throws SQLException, DbIoException
 	{
-		Connection conn = getConnection();
-		try(
-			PreparedStatement getParms = conn.prepareStatement(
-				"select * from CP_COMP_TS_PARM where computation_id = ?"
-			);
-			PreparedStatement getProps = conn.prepareStatement(
-				"select * from CP_COMP_PROPERTY where computation_id= ?"
-			);
-		){
-			getParms.setLong(1,comp.getId().getValue());
+		try
+		{
+			withConnection(conn -> {			
+				try(
+					PreparedStatement getProps = conn.prepareStatement(
+						"select * from CP_COMP_PROPERTY where computation_id= ?"
+					);
+					TsGroupDAI tsGroupDAO = db.makeTsGroupDAO();
+				){
+					tsGroupDAO.setManualConnection(conn);
+		
+					String q = "select * from CP_COMP_TS_PARM where computation_id = ?";// + comp.getId();
+					tsGroupDAO.doQuery(q,rs -> rs2compParm(comp,rs),comp.getId());
+					q = "select * from CP_COMP_PROPERTY where computation_id= ?";
+					tsGroupDAO.doQuery(q, rs ->  {
+						String name = rs.getString(2);
+						String value = rs.getString(3);
+						if (value == null)
+							value = "";
+		
+						comp.setProperty(name, value);
+					},comp.getId());
 
-			String q = "select * from CP_COMP_TS_PARM where computation_id = " + comp.getId();
-			try( ResultSet rs = getParms.executeQuery() ){
-				while(rs.next())
-				rs2compParm(comp, rs);
-			}
-
-			getProps.setLong(1,comp.getId().getValue());
-			try( ResultSet rs = getProps.executeQuery()){
-				while(rs.next())
-				{
-					String name = rs.getString(2);
-					String value = rs.getString(3);
-					if (value == null)
-						value = "";
-
-					comp.setProperty(name, value);
+					// Retrieve groups used by computations (group DAO will cache)
+					if (!comp.getGroupId().isNull())
+						comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
+		
+					// Make sure site IDs and datatype IDs are set in the parms
+					for(DbCompParm parm : comp.getParmList())
+						if (!parm.getSiteDataTypeId().isNull())
+							try { db.expandSDI(parm); }
+							catch (NoSuchObjectException e) {}
+		
 				}
-			}
-
-
-			// Retrieve groups used by computations (group DAO will cache)
-			if (!comp.getGroupId().isNull())
-				comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
-
-			// Make sure site IDs and datatype IDs are set in the parms
-			for(DbCompParm parm : comp.getParmList())
-				if (!parm.getSiteDataTypeId().isNull())
-					try { db.expandSDI(parm); }
-					catch (NoSuchObjectException e) {}
-
+				catch(DbIoException ex)
+				{
+					throw new SQLException("wrapped DbIoException",ex);
+				}
+			});
 		}
+		catch(SQLException ex)
+		{
+			if( ex.getCause() instanceof DbIoException)
+			{
+				throw (DbIoException)ex.getCause();
+			}
+			else
+			{
+				throw ex;
+			}
+			
+		}
+		
 	}
 
 	/**
@@ -445,25 +485,21 @@ debug1("Setting manual connection for algorithmDAO");
 	{
 		DbComputation comp = (DbComputation)ob;
 		String q = "select DATE_TIME_LOADED from CP_COMPUTATION "
-			+ " where COMPUTATION_ID = " + comp.getKey();
-		Connection conn = getConnection();
-		try(
-			PreparedStatement getTimeLoaded = conn.prepareStatement(
-				"select DATE_TIME_LOADED from CP_COMPUTATION where COMPUTATION_ID = ?"
-			);
-		) {
-			getTimeLoaded.setLong(1,comp.getId().getValue());
-			try(ResultSet rs = getTimeLoaded.executeQuery(); )
+			+ " where COMPUTATION_ID = ?";
+		
+		try
+		{
+			Date lmt = getSingleResult(q, rs -> db.getFullDate(rs,1),comp.getId());
+			if( lmt == null)
 			{
-				if (!rs.next())
-				{
-					String msg
+				String msg
 						= "No match finding DATE_TIME_LOADED for computation "
 						+ "id=" + comp.getKey() + ", name=" + comp.getUniqueName();
-					debug1(msg);
-					return false;
-				}
-				Date lmt = db.getFullDate(rs, 1);
+				debug1(msg);
+				return false;
+			}
+			else
+			{
 				return lmt.getTime() <= comp.getLastModified().getTime();
 			}
 		}
@@ -479,65 +515,74 @@ debug1("Setting manual connection for algorithmDAO");
 	public DbComputation getComputationByName(String name)
 		throws DbIoException, NoSuchObjectException
 	{
-		String q = "select " + compTableColumns
-			+ " from CP_COMPUTATION where COMPUTATION_NAME = '"
-			+ name + "'";
-		Connection conn = getConnection();
-		try(
-			PreparedStatement getComp = conn.prepareStatement(
-				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_NAME = ?"
-			);
-			PreparedStatement getAppId = conn.prepareStatement(
-				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-			);
-		){
-			getComp.setString(1,name);
+		
+		DbComputation ret[] = new DbComputation[1];
+		try
+		{
+			withConnection(conn -> {
+				String q = "select " + compTableColumns
+				+ " from CP_COMPUTATION where COMPUTATION_NAME = ?";
 
-			try(ResultSet rs = getComp.executeQuery(); )
-			{
-				if (rs.next())
-				{
-					DbComputation comp = rs2comp(rs);
-					if (comp.getAlgorithmId() != Constants.undefinedId)
+				try(
+					AlgorithmDAI algorithmDAO = db.makeAlgorithmDAO();
+				){
+					algorithmDAO.setManualConnection(conn);
+					
+					DbComputation comp = algorithmDAO.getSingleResult(q, rs-> rs2comp(rs),name);
+					if (comp != null)
 					{
-						try
+						if (comp.getAlgorithmId() != Constants.undefinedId)
 						{
-							comp.setAlgorithm(algorithmDAO.getAlgorithmById(comp.getAlgorithmId()));
+							try
+							{
+								comp.setAlgorithm(algorithmDAO.getAlgorithmById(comp.getAlgorithmId()));
+							}
+							catch(NoSuchObjectException ex)
+							{
+								warning("Computation '" +name + "' with algo ID="
+									+ comp.getAlgorithmId() + " -- cannot find matching "
+									+ "algorithm.");
+							}
 						}
-						catch(NoSuchObjectException ex)
-						{
-							warning("Computation '" +name + "' with algo ID="
-								+ comp.getAlgorithmId() + " -- cannot find matching "
-								+ "algorithm.");
-						}
-					}
-					fillCompSubordinates(comp);
+						fillCompSubordinates(comp);
 
-					DbKey appId = comp.getAppId();
-					if (!appId.isNull())
-					{
-						getAppId.setLong(1,appId.getValue());
-						try(ResultSet rs2 = getAppId.executeQuery() ) {
-							if (rs.next())
-							comp.setApplicationName(rs.getString(1));
+						DbKey appId = comp.getAppId();
+						q = "select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?";
+						if (!appId.isNull())
+						{
+							algorithmDAO.doQuery(
+									q,
+									rs -> comp.setApplicationName(
+											rs.getString("loading_application_id")
+									),
+									appId);
 						}
+						ret[0] = comp;
 					}
-					return comp;
+					else
+						throw new SQLException("wrapped no such object",new NoSuchObjectException("No computation named '"
+							+ name + "'"));
 				}
-				else
-					throw new NoSuchObjectException("No computation named '"
-						+ name + "'");
-			}
+				catch(DbIoException ex)
+				{
+					throw new SQLException("wrapped dbio",ex);
+				}
+			});
+			return ret[0];
 		}
 		catch(SQLException ex)
 		{
+			if( ex.getCause() instanceof NoSuchObjectException)
+			{
+				throw (NoSuchObjectException)ex.getCause();
+			}
+			else if (ex.getCause() instanceof DbIoException)
+			{
+				throw (DbIoException)ex.getCause();
+			}
 			String msg = "Error reading computation '" + name + "': " + ex;
 			warning(msg);
 			throw new DbIoException(msg);
-		}
-		finally
-		{
-			try {conn.close();} catch (SQLException ex) {}
 		}
 	}
 
@@ -1105,22 +1150,16 @@ debug1("Setting manual connection for algorithmDAO");
 		throws DbIoException, NoSuchObjectException
 	{
 		String q = "select COMPUTATION_ID from CP_COMPUTATION "
-			+ "where COMPUTATION_NAME = '" + name + "'";
-		Connection conn = getConnection();
-		try(
-			PreparedStatement getCompId = conn.prepareStatement(
-				"select COMPUTATION_ID from CP_COMPUTATION where COMPUTATION_NAME = ?"
-			);
-		) {
-			getCompId.setString(1,name);
-			try(ResultSet rs = getCompId.executeQuery();)
+			+ "where COMPUTATION_NAME = ?";
+		try
+		{
+			DbKey key = getSingleResult(q, rs->DbKey.createDbKey(rs, "computation_id"),name);
+			if( key == null)
 			{
-
-				if (rs.next())
-					return DbKey.createDbKey(rs.getLong("COMPUTATION_ID"));
 				throw new NoSuchObjectException("No computation for name '" + name
-					+ "'");
+				+ "'");
 			}
+			return key;
 		}
 		catch(SQLException ex)
 		{
@@ -1136,75 +1175,57 @@ debug1("Setting manual connection for algorithmDAO");
 	public void deleteComputation(DbKey id)
 		throws DbIoException, ConstraintException
 	{
-
-		Connection conn = getConnection();
-		boolean defaultAutoCommit = false;
-
-
-
 		/*
 			I'm pretty sure this could just be a delete ... cascade on cp_computation
 			but that can go overboard so it'll require a little investigation first
 			so as not to break anything.
 		*/
-		try(
-			PreparedStatement deleteParms = conn.prepareStatement(
-				"delete from CP_COMP_TS_PARM where COMPUTATION_ID = ?"
-			);
-			PreparedStatement deleteProps = conn.prepareStatement(
-				"delete from CP_COMP_PROPERTY where COMPUTATION_ID = ?"
-			);
-			PreparedStatement deleteComp = conn.prepareStatement(
-				"delete from CP_COMPUTATION where COMPUTATION_ID = ?"
-			);
-		 ){
-			defaultAutoCommit = conn.getAutoCommit();
-			conn.setAutoCommit(false);
-				// Have to delete the dependencies, otherwise foreign key will prevent comp delete.
-			CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-			compDependsDAO.setManualConnection(getConnection());
-			try
-			{
-				compDependsDAO.deleteCompDependsForCompId(id);
-			}
-			finally { compDependsDAO.close(); }
+		try
+		{
+			withConnection(conn -> {
+				boolean defaultAutoCommit = conn.getAutoCommit();
+				conn.setAutoCommit(false);
+				try(CompDependsDAI compDependsDAO = db.makeCompDependsDAO();)
+				{
+					compDependsDAO.setManualConnection(conn);
+					// Have to delete the dependencies, otherwise foreign key will prevent comp delete.
+					compDependsDAO.deleteCompDependsForCompId(id);
+					
+					compDependsDAO.doModify("delete from CP_COMP_TS_PARM where COMPUTATION_ID = ?",id);
+					compDependsDAO.doModify("delete from CP_COMP_PROPERTY where COMPUTATION_ID = ?",id);
+					compDependsDAO.doModify("delete from CP_COMPUTATION where COMPUTATION_ID = ?",id);
+					
+					conn.commit();
 
-
-			deleteParms.setLong(1,id.getValue());
-			deleteParms.execute();
-
-			deleteProps.setLong(1,id.getValue());
-			deleteProps.execute();
-
-			deleteComp.setLong(1,id.getValue());
-			deleteProps.execute();
-
-			conn.commit(); // now we commit knowing we deleted everything
-
-		} catch( SQLException err ){
-
-		} finally {
-			try{ conn.setAutoCommit(defaultAutoCommit); } catch(Exception err){ warning("could not reset autocommit on connection"); }
+				}
+				catch(SQLException ex)
+				{
+					try{conn.setAutoCommit(defaultAutoCommit);} catch(SQLException ex2) {}
+					throw ex;
+				}
+				catch(DbIoException ex)
+				{
+					throw new SQLException("wrapped dbio",ex);
+				}
+			});				
 		}
-
-		String q = "delete from CP_COMP_TS_PARM where COMPUTATION_ID = " + id;
-		doModify(q);
-		q = "delete from CP_COMP_PROPERTY where COMPUTATION_ID = " + id;
-		doModify(q);
-
-		q = "delete from CP_COMPUTATION where COMPUTATION_ID = "+id;
-		doModify(q);
+		catch( SQLException ex )
+		{
+			if (ex.getCause() instanceof DbIoException)
+			{
+				throw (DbIoException)ex.getCause();
+			}
+			else
+			{
+				throw new DbIoException(String.format("Failed to delete computation %s.",id),ex);
+			}
+		}
 	}
 
 	@Override
 	public void close()
 	{
 		super.close();
-		loadingAppDAO.close();
-		tsGroupDAO.close();
-		dataTypeDAO.close();
-		algorithmDAO.close();
-		propsDao.close();
 	}
 
 }
