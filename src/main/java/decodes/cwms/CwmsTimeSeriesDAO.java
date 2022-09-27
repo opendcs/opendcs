@@ -426,7 +426,7 @@ public class CwmsTimeSeriesDAO
 		ArrayList<Object> parameters = new ArrayList<>();
 		StringBuffer q = new StringBuffer();
 		q.append("SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
-			+ " WHERE TS_CODE = ?)");
+			+ " WHERE TS_CODE = ?");
 		
 		TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
 		if (tsid == null)
@@ -498,6 +498,7 @@ public class CwmsTimeSeriesDAO
 			String msg = "Error getting data for time series="
 				+ cts.getNameString() + ": " + ex;
 			warning(msg);
+			warning("Query was "+ q);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 			throw new DbIoException(msg);
