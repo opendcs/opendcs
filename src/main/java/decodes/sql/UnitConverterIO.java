@@ -59,7 +59,7 @@ public class UnitConverterIO extends SqlDbObjIo
 	{
 		Logger.instance().debug1("Reading UnitConversions...");
 
-		try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName());)
+		try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName(),connection());)
 		{
 			String q =
 				"SELECT " + columns + " FROM UnitConverter WHERE fromUnitsAbbr != 'raw'";
@@ -90,9 +90,8 @@ public class UnitConverterIO extends SqlDbObjIo
 		{
 			return ret;
 		}
-		try(DaoBase dao = new DaoBase(this._dbio, this.getClass().getName()))
+		try(DaoBase dao = new DaoBase(this._dbio, this.getClass().getName(),connection()))
 		{
-			
 			String q = "SELECT " + columns + " FROM UnitConverter WHERE id in (%s)";
 			debug3("Executing '" + q + "'");
 			ret.addAll( 
@@ -175,7 +174,7 @@ public class UnitConverterIO extends SqlDbObjIo
 							+ "f=?,"
 							+ " where fromUnitsAbbr=" + sqlString(inDb.fromAbbr)
 							+ " and toUnitsAbbr=" + sqlString(inDb.toAbbr);
-						try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName()))
+						try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName(),connection()))
 						{
 							dao.doModify(q,parameters.toArray());
 						}
@@ -197,7 +196,7 @@ public class UnitConverterIO extends SqlDbObjIo
 		// Now anything left in the db set needs to be deleted.
 		for(Iterator<UnitConverterDb> it = dbUcs.iteratorDb(); it.hasNext(); )
 		{
-			try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName());)
+			try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName(),connection());)
 			{
 				UnitConverterDb inDb = it.next();
 				q = "delete from UnitConverter "
@@ -258,7 +257,7 @@ public class UnitConverterIO extends SqlDbObjIo
 		String q = "INSERT INTO " +
 				"UnitConverter(ID, FROMUNITSABBR, TOUNITSABBR, ALGORITHM, A, B, C, D, E, F)" +
 				" VALUES (%s)";
-		try( DaoBase dao = new DaoBase(this._dbio,this.getClass().getName()))
+		try( DaoBase dao = new DaoBase(this._dbio,this.getClass().getName(),connection()))
 		{
 			dao.doModify(String.format(q,dao.valueBinds(parameters)),parameters.toArray());
 		}

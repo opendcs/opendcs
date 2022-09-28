@@ -1096,12 +1096,11 @@ public class ConfigListIO extends SqlDbObjIo
 		// Note:  the UnitConverter here always has the fromUnits set
 		// to "raw".
 
-		Statement stmt = createStatement();
 		String q = "SELECT SensorNumber, UnitConverterId " +
-			"FROM ScriptSensor " + "WHERE DecodesScriptId = ?" + dsId;
+			"FROM ScriptSensor " + "WHERE DecodesScriptId = ?";
 		Logger.instance().debug3("Query: " + q);		
 
-		try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName()))
+		try(DaoBase dao = new DaoBase(this._dbio,this.getClass().getName(),connection()))
 		{
 			final ArrayList<DbKey> ucsKeys = new ArrayList<>();
 			dao.doQuery(q,rs -> {
