@@ -248,42 +248,63 @@ public class LoadingAppDao
 			+ "LOADING_APPLICATION_NAME, MANUAL_EDIT_APP, CMMNT "
 			+ "from HDB_LOADING_APPLICATION "
 			+ "where LOADING_APPLICATION_ID = ?";
-		PropertiesDAI propsDao = db.makePropertiesDAO();
-		propsDao.setManualConnection(getConnection());
+		CompAppInfo ret[] = new CompAppInfo[1];
+		ret[0] = null;
 		try
 		{
-			CompAppInfo ret = getSingleResult(q, rs -> {
-				CompAppInfo cai = new CompAppInfo(id);
-				cai.setAppName(rs.getString(1));
-				cai.setManualEditApp(TextUtil.str2boolean(rs.getString(2)));
-				cai.setComment(rs.getString(3));
-				return cai;
-			},id);
-			if( ret == null )
-			{
-				throw new NoSuchObjectException("No application with id=" + id);
-			}
-			// TODO: investigate if this actually would be better in the above block.
-			propsDao.readProperties("REF_LOADING_APPLICATION_PROP", "LOADING_APPLICATION_ID", id,
-					ret.getProperties());
-			String lmp = PropertiesUtil.getIgnoreCase(ret.getProperties(), "LastModified");
-			if (lmp != null)
-				try { ret.setLastModified(lastModifiedSdf.parse(lmp)); }
-				catch(ParseException ex)
+			withConnection(conn -> {
+				try(PropertiesDAI propsDao = db.makePropertiesDAO();)
 				{
-					warning("Cannot parse LastModified '" + lmp + "': " + ex);
+					propsDao.setManualConnection(conn);
+					ret[0] = getSingleResult(q, rs -> {
+						CompAppInfo cai = new CompAppInfo(id);
+						cai.setAppName(rs.getString(1));
+						cai.setManualEditApp(TextUtil.str2boolean(rs.getString(2)));
+						cai.setComment(rs.getString(3));
+						return cai;
+					},id);
+					if( ret[0] == null )
+					{
+						throw new NoSuchObjectException("No application with id=" + id);
+					}
+					// TODO: investigate if this actually would be better in the above block.
+					propsDao.readProperties(
+							"REF_LOADING_APPLICATION_PROP",
+							"LOADING_APPLICATION_ID",
+							id,
+							ret[0].getProperties());
+					String lmp = PropertiesUtil.getIgnoreCase(ret[0].getProperties(), "LastModified");
+					if (lmp != null)
+						try { ret[0].setLastModified(lastModifiedSdf.parse(lmp)); }
+						catch(ParseException ex)
+						{
+							warning("Cannot parse LastModified '" + lmp + "': " + ex);
+						}
 				}
-			return ret;
+				catch(DbIoException ex)
+				{
+					throw new SQLException("wrapped DbIoException",ex);
+				}
+				catch(NoSuchObjectException ex)
+				{
+					throw new SQLException("wrapped no such object",ex);
+				}
+			});
+			return ret[0];
 		}
 		catch(SQLException ex)
 		{
+			if( ex.getCause() instanceof DbIoException)
+			{
+				throw (DbIoException)ex.getCause();
+			}
+			else if(ex.getCause() instanceof NoSuchObjectException)
+			{
+				throw (NoSuchObjectException)ex.getCause();
+			}
 			String msg = "Error in getComputationApp(" + id + "): " + ex;
 			warning(msg);
 			throw new DbIoException(msg);
-		}
-		finally
-		{
-			propsDao.close();
 		}
 	}
 
