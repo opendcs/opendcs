@@ -1,6 +1,6 @@
 /*
  * $Id$
- * 
+ *
  * $Log$
  * Revision 1.2  2014/07/03 12:53:40  mmaloney
  * debug improvements.
@@ -9,7 +9,7 @@
  * OPENDCS 6.0 Initial Checkin
  *
  * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
+ * to the United States Government. No warranty is provided or implied other
  * than specific contractual terms between COVE and the U.S. Government.
  *
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
@@ -36,25 +36,25 @@ import decodes.tsdb.DbIoException;
  * For backward compatibility we do not name the columns (some DECODES tables had
  * columns named 'name' and 'value').
  * The name of the id column varies. For this reason it must be passed to the read/write methods.
- * 
+ *
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class PropertiesSqlDao 
-	extends DaoBase 
+public class PropertiesSqlDao
+	extends DaoBase
 	implements PropertiesDAI
 {
 	public PropertiesSqlDao(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "PropertiesSqlDao");
 	}
-	
+
 	@Override
-	public void readProperties(String tableName, String idColumn, 
+	public void readProperties(String tableName, String idColumn,
 		DbKey parentKey, Properties props)
 			throws DbIoException
 	{
 		String q = "select * from " + tableName + " where " + idColumn + " = " + parentKey;
-		
+
 		ResultSet rs = doQuery(q);
 		try
 		{
@@ -74,7 +74,7 @@ public class PropertiesSqlDao
 			throw new DbIoException(msg);
 		}
 	}
-	
+
 	@Override
 	public void readProperties(String tableName, String idColumn,
 		String id2Column, DbKey parentKey, int key2, Properties props)
@@ -82,7 +82,7 @@ public class PropertiesSqlDao
 	{
 		String q = "select * from " + tableName + " where " + idColumn + " = " + parentKey
 			+ " and " + id2Column + " = " + key2;
-		
+
 		ResultSet rs = doQuery(q);
 		try
 		{
@@ -112,7 +112,7 @@ public class PropertiesSqlDao
 		{
 			String key = (String)kob;
 			String q = "insert into " + tableName + " values(" + parentKey
-				+ ", " + sqlString(key) + ", " + sqlString(props.getProperty(key)) + ")"; 
+				+ ", " + sqlString(key) + ", " + sqlString(props.getProperty(key)) + ")";
 			doModify(q);
 		}
 	}
@@ -128,7 +128,7 @@ public class PropertiesSqlDao
 			String propName = (String)kob;
 			String q = "insert into " + tableName + " values(" + parentKey
 				+ ", " + key2
-				+ ", " + sqlString(propName) + ", " + sqlString(props.getProperty(propName)) + ")"; 
+				+ ", " + sqlString(propName) + ", " + sqlString(props.getProperty(propName)) + ")";
 			doModify(q);
 		}
 	}
@@ -145,7 +145,7 @@ public class PropertiesSqlDao
 
 	@Override
 	public void deleteProperties(String tableName, String idColumn,
-		String id2Column, DbKey parentKey, int key2) 
+		String id2Column, DbKey parentKey, int key2)
 			throws DbIoException
 	{
 		String q = "delete from " + tableName + " where " + idColumn + " = " + parentKey
@@ -175,7 +175,7 @@ public class PropertiesSqlDao
 				String value = rs.getString(3);
 				if (value == null)
 					value = "";
-				
+
 				HasProperties hp = (HasProperties)ob;
 				hp.setProperty(name, value);
 				n++;
@@ -184,7 +184,7 @@ public class PropertiesSqlDao
 		}
 		catch (SQLException e)
 		{
-			throw new DbIoException("Error reading properties for table " 
+			throw new DbIoException("Error reading properties for table "
 				+ tableName + ": " + e.getMessage());
 		}
 	}
@@ -217,14 +217,14 @@ public class PropertiesSqlDao
 						n++;
 						continue nextProp;
 					}
-				//warning("Table '" + tableName + "' has property with key=" + key 
+				//warning("Table '" + tableName + "' has property with key=" + key
 				//	+ " and no matching object in list.");
 			}
 			return n;
 		}
 		catch (SQLException e)
 		{
-			throw new DbIoException("Error reading properties for table " 
+			throw new DbIoException("Error reading properties for table "
 				+ tableName + ": " + e.getMessage());
 		}
 	}
