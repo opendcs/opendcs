@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import decodes.db.Constants;
@@ -550,13 +551,31 @@ public class DaoBase
 	 */
 	public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
 	{
+		return getSingleResultOr(query,consumer, () -> null,parameters);
+	}
+
+		/**
+	 * Given a query string and bind variables execute the query.
+	 * The provided function should process the single valid result set and return an object R.
+	 *
+	 * The query should return a single result.
+	 *
+	 * @param query SQL query with ? for bind vars.
+	 * @param onValidRs Function that Takes a ResultSet and returns an instance of R
+	 * @param onNoResult Function that returns desired value on no result
+	 * @param parameters arg list of query inputs
+	 * @returns Object of type R determined by the caller.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
+	 */
+	public <R> R getSingleResultOr(String query, ResultSetFunction<R> onValidRs,Supplier<R> onNoResult, Object... parameters ) throws SQLException
+	{
 		final ArrayList<R> result = new ArrayList<>();
 		withStatement(query,(stmt)->{
 			try(ResultSet rs = stmt.executeQuery())
 			{
 				if (rs.next())
 				{
-					result.add(consumer.accept(rs));
+					result.add(onValidRs.accept(rs));
 					if (rs.next())
 					{
 						throw new SQLException(String.format("Query '%s' returned more than one row",query));
@@ -566,13 +585,14 @@ public class DaoBase
 		},parameters);
 		if( result.isEmpty() )
 		{
-			return null;
+			return onNoResult.get();
 		}
 		else
 		{
 			return result.get(0);
 		}
 	}
+
 
 	/**
 	 * Given a query string and bind variables execute the query.
