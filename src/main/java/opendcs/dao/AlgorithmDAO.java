@@ -40,7 +40,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 
 import opendcs.dai.AlgorithmDAI;
 import decodes.sql.DbKey;
@@ -73,14 +75,16 @@ public class AlgorithmDAO
 		throws DbIoException, NoSuchObjectException
 	{
 		String q = "select ALGORITHM_ID from CP_ALGORITHM "
-			+ "where ALGORITHM_NAME = '" + name + "'";
+			+ "where ALGORITHM_NAME = ?";
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (rs.next())
-				return DbKey.createDbKey(rs, 1);
-			throw new NoSuchObjectException("No algorithm for name '" + name 
+			DbKey ret = getSingleResultOr(q,rs->DbKey.createDbKey(rs, 1),()-> DbKey.NullKey,name);			
+			if( ret.isNull() )
+			{
+				throw new NoSuchObjectException("No algorithm for name '" + name 
 				+ "'");
+			}
+			return ret;
 		}
 		catch(SQLException ex)
 		{
@@ -94,18 +98,12 @@ public class AlgorithmDAO
 	public DbCompAlgorithm getAlgorithmById(DbKey id)
 		throws DbIoException, NoSuchObjectException
 	{
-		String q = "select * from CP_ALGORITHM where ALGORITHM_ID = " + id;
+		String q = "select * from CP_ALGORITHM where ALGORITHM_ID = ?";
 		try
-		{
-			ResultSet rs = doQuery(q);
-			if (rs.next())
-			{
-				//int id = rs.getInt(1);
-				String nm = rs.getString(2);
-				String cls = rs.getString(3);
-				String cmmt = rs.getString(4);
-				DbCompAlgorithm algo = new DbCompAlgorithm(id, nm, cls, cmmt);
-
+		{			
+			DbCompAlgorithm algo = getSingleResult(q,this::rs2Algorithm,id);
+			if( algo != null)
+			{				
 				fillAlgorithmSubordinates(algo);
 				return algo;
 			}
@@ -119,43 +117,44 @@ public class AlgorithmDAO
 			throw new DbIoException(msg);
 		}
 	}
+
+	protected DbCompAlgorithm rs2Algorithm(ResultSet rs) throws SQLException
+	{
+		DbKey id = DbKey.createDbKey(rs, 1);
+		String nm = rs.getString(2);
+		String cls = rs.getString(3);
+		String cmmt = rs.getString(4);
+		return new DbCompAlgorithm(id, nm, cls, cmmt);
+	}
 	
 	@Override
 	public ArrayList<DbCompAlgorithm> listAlgorithms()
 		throws DbIoException
 	{
-		ArrayList<DbCompAlgorithm> ret = new ArrayList<DbCompAlgorithm>();
+		// TODO: create a join.
+		HashMap<DbKey,DbCompAlgorithm> algos = new HashMap<>();
 		String q = "select * from CP_ALGORITHM";
 		try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
 		{
-			ResultSet rs = doQuery(q);
-			while (rs.next())
-			{
-				DbKey id = DbKey.createDbKey(rs, 1);
-				String nm = rs.getString(2);
-				String cls = rs.getString(3);
-				String cmmt = rs.getString(4);
-				DbCompAlgorithm algo = new DbCompAlgorithm(id, nm, cls, cmmt);
-
-				ret.add(algo);
-			}
+			doQuery(q, rs -> {
+				DbCompAlgorithm algo = rs2Algorithm(rs);
+				algos.put(algo.getId(),algo);
+			});
 	
 			q = "select a.* from CP_ALGO_TS_PARM a, CP_ALGORITHM b "
 				+ "where a.ALGORITHM_ID = b.ALGORITHM_ID";
-			rs = doQuery(q);
-			while(rs.next())
-			{
+			doQuery(q,rs -> {
 				DbKey algoId = DbKey.createDbKey(rs, 1);
 				String role = rs.getString(2);
 				String type = rs.getString(3);
-				for(DbCompAlgorithm algo : ret)
-					if (algo.getId().equals(algoId))
-					{
-						algo.addParm(new DbAlgoParm(role, type));
-						break;
-					}
-			}
-			propertiesSqlDao.readPropertiesIntoList("CP_ALGO_PROPERTY", ret, null);
+				DbCompAlgorithm algo = algos.get(algoId);
+				if (algo != null)
+				{
+					algo.addParm(new DbAlgoParm(role, type));
+				}
+
+			});
+			propertiesSqlDao.readPropertiesIntoList("CP_ALGO_PROPERTY", algos, null);
 			
 			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
 			{
@@ -164,27 +163,20 @@ public class AlgorithmDAO
 					+ "from CP_ALGO_SCRIPT a, CP_ALGORITHM b "
 					+ "where a.ALGORITHM_ID = b.ALGORITHM_ID "
 					+ "order by ALGORITHM_ID, SCRIPT_TYPE, BLOCK_NUM";
-				rs = doQuery(q);
-				DbCompAlgorithm lastAlgo = null;
-				while(rs.next())
-				{
+				DbCompAlgorithm lastAlgo[] = new DbCompAlgorithm[1];
+				lastAlgo[0] = null;
+				doQuery(q,rs -> {
 					DbKey algoId = DbKey.createDbKey(rs, 1);
-					DbCompAlgorithm algo = null;
-					for(DbCompAlgorithm dca : ret)
-						if (dca.getId().equals(algoId))
-						{
-							algo = dca;
-							break;
-						}
+					DbCompAlgorithm algo = algos.get(algoId);
 					if (algo == null)
 					{
 						// Shouldn't happen because of the join
-						continue;
+						return;
 					}
-					if (algo != lastAlgo)
+					if (algo != lastAlgo[0])
 					{
 						algo.clearScripts();
-						lastAlgo = algo;
+						lastAlgo[0] = algo;
 					}
 					ScriptType scriptType = ScriptType.fromDbChar(rs.getString(2).charAt(0));
 					String scriptData = rs.getString(3);
@@ -197,10 +189,14 @@ public class AlgorithmDAO
 						algo.putScript(script);
 					}
 					script.addToText(scriptData);
-				}
+				});
 			}
 			
-			return ret;
+			return new ArrayList<>(algos.entrySet()
+										.stream()
+										.map(e->e.getValue())
+										.collect(Collectors.toList())
+						);
 		}
 		catch(SQLException ex)
 		{
@@ -226,16 +222,12 @@ public class AlgorithmDAO
 	private void fillAlgorithmSubordinates(DbCompAlgorithm algo)
 		throws SQLException, DbIoException
 	{
-		String q = "select * from CP_ALGO_TS_PARM where ALGORITHM_ID = "
-			+ algo.getId();
-		ResultSet rs = doQuery(q);
-		while(rs.next())
-		{
+		String q = "select * from CP_ALGO_TS_PARM where ALGORITHM_ID = ?";
+		doQuery(q,rs -> {
 			String role = rs.getString(2);
 			String type = rs.getString(3);
 			algo.addParm(new DbAlgoParm(role, type));
-		}
-
+		},algo.getId());
 		try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
 		{
 			propertiesSqlDao.readProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", 
@@ -246,11 +238,9 @@ public class AlgorithmDAO
 		{
 			algo.clearScripts();
 			q = "select SCRIPT_TYPE, SCRIPT_DATA from CP_ALGO_SCRIPT "
-				+ "where ALGORITHM_ID = " + algo.getId()
+				+ "where ALGORITHM_ID = ?"
 				+ " order by SCRIPT_TYPE, BLOCK_NUM";
-			rs = doQuery(q);
-			while(rs.next())
-			{
+			doQuery(q,rs -> {
 				ScriptType scriptType = ScriptType.fromDbChar(rs.getString(1).charAt(0));
 				String b64 = rs.getString(2);
 				String scriptData = new String(Base64.decodeBase64(b64.getBytes()));
@@ -262,7 +252,7 @@ Logger.instance().debug1("DAO fill subord: b64='" + b64 + "' scriptData='" + scr
 					algo.putScript(script);
 				}
 				script.addToText(scriptData);
-			}
+			},algo.getId());
 		}
 	}
 
@@ -284,45 +274,59 @@ Logger.instance().debug1("DAO fill subord: b64='" + b64 + "' scriptData='" + scr
 			catch(NoSuchObjectException ex) { /* ignore */ }
 		}
 
-		String q;
+		StringBuilder q = new StringBuilder();
 		try 
 		{
+			ArrayList<Object> parameters = new ArrayList<>();
 			if (isNew)
 			{
 				id = getKey("CP_ALGORITHM");
-				q = "INSERT INTO CP_ALGORITHM(algorithm_id, algorithm_name, "
-					+ "exec_class, cmmnt) VALUES("
-					+ id
-					+ ", " + sqlString(algo.getName())
-					+ ", " + sqlString(algo.getExecClass())
-					+ ", " + sqlString(algo.getComment())
-					+ ")";
+				q.append("INSERT INTO CP_ALGORITHM(algorithm_id, algorithm_name, ")
+			     .append("exec_class, cmmnt) VALUES(");
+				parameters.add(id);
+				parameters.add(algo.getName());
+				parameters.add(algo.getExecClass());
+				parameters.add(NullableParameter.of(algo.getComment(),String.class));
+				q.append(this.valueBinds(parameters));
+				q.append(")");
 				
 				algo.setId(id);
 			}
 			else // update
-				q = "UPDATE CP_ALGORITHM "
-			  	+ "SET ALGORITHM_NAME = " + sqlString(algo.getName()) 
-			  	+ ", EXEC_CLASS = " + sqlString(algo.getExecClass())
-			  	+ ", CMMNT = " + sqlString(algo.getComment())
-				+ " WHERE ALGORITHM_ID = " + id;
+			{
+				q.append("UPDATE CP_ALGORITHM ")
+			  	 .append("SET ALGORITHM_NAME = ?")// + sqlString(algo.getName()) 
+			  	 .append(", EXEC_CLASS = ?")// + sqlString(algo.getExecClass())
+			  	 .append(", CMMNT = ")// + sqlString(algo.getComment())
+				 .append( " WHERE ALGORITHM_ID = ?");// + id;
+				parameters.add(algo.getName());
+				parameters.add(algo.getExecClass());
+				parameters.add(NullableParameter.of(algo.getComment(),String.class));
+				parameters.add(id);
+			}
 
-			doModify(q);
+			doModify(q.toString(),parameters.toArray());
 			if (!isNew)
 			{
 				// Delete & re-add parameters
-				q = "DELETE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = " + id;
-				doModify(q);
+				q.setLength(0);
+				q.append("DELETE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ?");
+				doModify(q.toString(),id);
 			}
-			for(Iterator<DbAlgoParm> it = algo.getParms(); it.hasNext(); )
-			{
-				DbAlgoParm dap = it.next();
-				q = "INSERT INTO CP_ALGO_TS_PARM VALUES ("
-					+ id + ", "
-					+ sqlString(dap.getRoleName()) + ", " 
-					+ sqlString(dap.getParmType()) + ")"; 
-				doModify(q);
-			}
+			q.setLength(0);
+			q.append("INSERT INTO CP_ALGO_TS_PARM VALUES (?,?,?)");
+			// While better if batch... let's be honest if someone has that many properties...sheesh.
+			withStatement(q.toString(), stmt -> {
+				for (Iterator<DbAlgoParm> it = algo.getParms(); it.hasNext();)
+				{
+					DbAlgoParm dap = it.next();
+					stmt.setLong(1,id.getValue());
+					stmt.setString(2,dap.getRoleName());
+					stmt.setString(3,dap.getParmType());
+				}
+				stmt.executeBatch();
+			});
+			
 			
 			try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
 			{
@@ -332,8 +336,9 @@ Logger.instance().debug1("DAO fill subord: b64='" + b64 + "' scriptData='" + scr
 			
 			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
 			{
-				q = "DELETE FROM CP_ALGO_SCRIPT WHERE ALGORITHM_ID = " + algo.getId();
-				doModify(q);
+				q.setLength(0);
+				q.append("DELETE FROM CP_ALGO_SCRIPT WHERE ALGORITHM_ID = ?");// + algo.getId();
+				doModify(q.toString(),algo.getId());
 Logger.instance().debug1("AlgorithmDAO.writeAlgo algorithm has " + algo.getScripts().size() + " scripts.");
 				for(DbCompAlgorithmScript script : algo.getScripts())
 				{
@@ -344,31 +349,40 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo algorithm has " + algo.getScrip
 					String b64 = new String(Base64.encodeBase64(text.getBytes()));
 Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType() + " text '"
 	+ text + "' b64=" + b64);
-					int blockNum = 1;
-					while(b64 != null)
-					{
-						String block = b64.length() < 4000 ? b64 : b64.substring(0, 4000);
-						b64 = (block == b64) ? null : b64.substring(4000);
-						q = "INSERT INTO CP_ALGO_SCRIPT VALUES("
-							+ algo.getId() + ", " 
-							+ "'" + script.getScriptType().getDbChar() + "', "
-							+ (blockNum++) + ", "
-							+ sqlString(block)
-							+ ")";
-						doModify(q);
-					}
+					int blockNum[] = new int[1];
+					blockNum[0] = 1;
+					// TODO: b64 -> string builder
+					
+					withStatement(
+						"INSERT INTO CP_ALGO_SCRIPT VALUES(?,?,?,?)",
+						stmt -> {
+							while(b64 != null)
+							{
+								String block = b64.length() < 4000 ? b64 : b64.substring(0, 4000);
+								b64 = (block == b64) ? null : b64.substring(4000);
+								stmt.setLong(1,algo.getId().getValue());
+								stmt.setString(2,String.valueOf((script.getScriptType().getDbChar())));
+								blockNum[0]++;
+								stmt.setInt(3,blockNum[0]);
+								stmt.setString(4,block);
+												
+							}
+					});
+					
 				}
 			}
-			
-			q = "UPDATE CP_COMPUTATION "
-			    + "SET DATE_TIME_LOADED = " + db.sqlDate(new Date())
-			    + " WHERE ALGORITHM_ID = " + id;
-			doModify(q);
+			q.setLength(0);
+			q.append("UPDATE CP_COMPUTATION SET DATE_TIME_LOADED = ? WHERE ALGORITHM_ID = ?");
+			doModify(q.toString(),new Date(),id);
 		}
 		catch(DbIoException ex)
 		{
 			warning(ex.getMessage());
 			throw ex;
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException(String.format("Error with statement '%s'",q.toString(),ex));
 		}
 	}
 	
@@ -379,29 +393,26 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType
 		try
 		{
 			String q = "select count(*) from CP_COMPUTATION "
-				+ "where ALGORITHM_ID = " + id;
-			ResultSet rs = doQuery(q);
-			if (rs.next())
-			{
-				int n = rs.getInt(1);
-				if (n > 0)
-					throw new ConstraintException(
-						"Cannot delete algorithm with ID=" + id
-						+ " because " + n + " computations rely on it.");
-			}
-			q = "delete from CP_ALGO_TS_PARM where ALGORITHM_ID = " + id;
-			doModify(q);
+				+ "where ALGORITHM_ID = ?";
+			int count = getSingleResult(q,rs->rs.getInt(1),id);
+			if (count > 0)
+				throw new ConstraintException(
+					"Cannot delete algorithm with ID=" + id
+					+ " because " + count + " computations rely on it.");
+
+			q = "delete from CP_ALGO_TS_PARM where ALGORITHM_ID = ?";
+			doModify(q,id);
 			
 			try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
 			{
 				propertiesSqlDao.deleteProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID", id);
 			}
 			
-			q = "delete from CP_ALGO_SCRIPT where ALGORITHM_ID = " + id;
-			doModify(q);
+			q = "delete from CP_ALGO_SCRIPT where ALGORITHM_ID = ?";
+			doModify(q,id);
 
-			q = "delete from CP_ALGORITHM where ALGORITHM_ID = " + id;
-			doModify(q);
+			q = "delete from CP_ALGORITHM where ALGORITHM_ID = ?";
+			doModify(q,id);
 		}
 		catch(SQLException ex)
 		{
@@ -423,11 +434,7 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType
 		String q = "select ALGORITHM_NAME from CP_ALGORITHM";
 		try
 		{
-			ResultSet rs = doQuery(q);
-			ArrayList<String> ret = new ArrayList<String>();
-			while(rs.next())
-				ret.add(rs.getString(1));
-			return ret;
+			return new ArrayList<>(getResults(q, rs->rs.getString(1)));
 		}
 		catch(SQLException ex)
 		{

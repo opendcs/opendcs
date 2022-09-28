@@ -1,7 +1,9 @@
 package opendcs.dai;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import opendcs.dao.CachableHasProperties;
 import opendcs.dao.DbObjectCache;
@@ -72,7 +74,7 @@ public interface PropertiesDAI
 	 * @param whereClause Usually either blank or an IN clause containing IDs.
 	 * @return
 	 */
-	public int readPropertiesIntoList(String tableName, List<? extends CachableHasProperties> list,
+	public int readPropertiesIntoList(String tableName, Map<DbKey,? extends CachableHasProperties> list,
 		String whereClause)
 		throws DbIoException;
 

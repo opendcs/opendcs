@@ -22,7 +22,9 @@ import ilex.util.HasProperties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import opendcs.dai.PropertiesDAI;
 
@@ -219,7 +221,7 @@ public class PropertiesSqlDao
 	}
 
 	@Override
-	public int readPropertiesIntoList(String tableName, List<? extends CachableHasProperties> list,
+	public int readPropertiesIntoList(String tableName, Map<DbKey,? extends CachableHasProperties> map,
 		String whereClause)
 		throws DbIoException
 	{
@@ -232,19 +234,17 @@ public class PropertiesSqlDao
 		{
 			doQuery(q, rs -> {
 				DbKey key = DbKey.createDbKey(rs, 1);
-				for(CachableHasProperties chp : list)
+				CachableHasProperties chp = map.get(key);
+				if (chp != null)
 				{
-					if (chp.getKey().equals(key))
-					{
-						String name = rs.getString(2);
-						String value = rs.getString(3);
-						if (value == null)
-							value = "";
+					String name = rs.getString(2);
+					String value = rs.getString(3);
+					if (value == null)
+						value = "";
 
-						chp.setProperty(name, value);
-						n[0]++;
-						return; // move on to next property
-					}
+					chp.setProperty(name, value);
+					n[0]++;
+					return; // move on to next property
 				}
 			});
 		  
