@@ -338,7 +338,7 @@ debug1("Setting manual connection for algorithmDAO");
 			}
 			String msg = "Error reading computation id=" + compId + ": " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 
 	}
