@@ -53,19 +53,16 @@ public class PropertiesSqlDao
 		DbKey parentKey, Properties props)
 			throws DbIoException
 	{
-		String q = "select * from " + tableName + " where " + idColumn + " = " + parentKey;
-
-		ResultSet rs = doQuery(q);
+		String q = "select * from " + tableName + " where " + idColumn + " = ?";
 		try
 		{
-			while (rs != null && rs.next())
-			{
+			doQuery(q,rs -> {
 				String name = rs.getString(2);
 				String value = rs.getString(3);
 				if (value == null)
 					value = "";
 				props.setProperty(name, value);
-			}
+			},parentKey);
 		}
 		catch (SQLException ex)
 		{
@@ -80,20 +77,18 @@ public class PropertiesSqlDao
 		String id2Column, DbKey parentKey, int key2, Properties props)
 		throws DbIoException
 	{
-		String q = "select * from " + tableName + " where " + idColumn + " = " + parentKey
-			+ " and " + id2Column + " = " + key2;
-
-		ResultSet rs = doQuery(q);
+		// TODO: column names should be explicit here.
+		String q = "select * from " + tableName + " where " + idColumn + " = ?"
+			+ " and " + id2Column + " = ?";
 		try
 		{
-			while (rs != null && rs.next())
-			{
+			doQuery(q,rs -> {
 				String name = rs.getString(3);
 				String value = rs.getString(4);
 				if (value == null)
 					value = "";
 				props.setProperty(name, value);
-			}
+			},parentKey,key2);
 		}
 		catch (SQLException ex)
 		{
@@ -108,12 +103,18 @@ public class PropertiesSqlDao
 		DbKey parentKey, Properties props) throws DbIoException
 	{
 		deleteProperties(tableName, idColumn, parentKey);
-		for(Object kob : props.keySet())
+		String q = "insert into " + tableName + " values(?,?,?)";
+		try
 		{
-			String key = (String)kob;
-			String q = "insert into " + tableName + " values(" + parentKey
-				+ ", " + sqlString(key) + ", " + sqlString(props.getProperty(key)) + ")";
-			doModify(q);
+			doBatch(q,250,(stmt,prop) ->{
+				stmt.setLong(1,parentKey.getValue());
+				stmt.setString(2,(String)prop);
+				stmt.setString(3,props.getProperty((String)prop));
+			},props.keySet());
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("failed to save property names",ex);
 		}
 	}
 
@@ -123,13 +124,19 @@ public class PropertiesSqlDao
 		throws DbIoException
 	{
 		deleteProperties(tableName, idColumn, id2Column, parentKey, key2);
-		for(Object kob : props.keySet())
+		String q = "insert into " + tableName + " values(?,?,?,?)";
+		try
 		{
-			String propName = (String)kob;
-			String q = "insert into " + tableName + " values(" + parentKey
-				+ ", " + key2
-				+ ", " + sqlString(propName) + ", " + sqlString(props.getProperty(propName)) + ")";
-			doModify(q);
+			doBatch(q,250,(stmt,prop) ->{
+				stmt.setLong(1,parentKey.getValue());
+				stmt.setInt(2,key2);
+				stmt.setString(3,(String)prop);
+				stmt.setString(4,props.getProperty((String)prop));
+			},props.keySet());
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("failed to save property names",ex);
 		}
 	}
 
@@ -138,8 +145,16 @@ public class PropertiesSqlDao
 	public void deleteProperties(String tableName, String idColumn,
 		DbKey parentKey) throws DbIoException
 	{
-		String q = "delete from " + tableName + " where " + idColumn + " = " + parentKey;
-		doModify(q);
+		String q = "delete from " + tableName + " where " + idColumn + " = ?";// + parentKey;
+		try
+		{
+			doModify(q,parentKey);
+		}
+		catch(SQLException ex)
+		{
+			String msg = String.format("Unable to delete properties for %s.%s for key %s",tableName,idColumn,parentKey);
+			throw new DbIoException(msg,ex);
+		}
 	}
 
 
@@ -148,9 +163,20 @@ public class PropertiesSqlDao
 		String id2Column, DbKey parentKey, int key2)
 			throws DbIoException
 	{
-		String q = "delete from " + tableName + " where " + idColumn + " = " + parentKey
-			+ " and " + id2Column + " = " + key2;
-		doModify(q);
+		String q = "delete from " + tableName + " where " + idColumn + " = ?"
+			+ " and " + id2Column + " = ?";
+		try
+		{
+			doModify(q,parentKey,key2);
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Failed to delete properties for %s (%s,%s) -> (%s,%s)";
+			throw new DbIoException(
+				String.format(msg,tableName,idColumn,id2Column,parentKey,key2),
+				ex
+			);
+		}
 	}
 
 	@Override
@@ -158,18 +184,17 @@ public class PropertiesSqlDao
 		throws DbIoException
 	{
 		String q = "select * from " + tableName;
-		ResultSet rs = doQuery(q);
-		int n = 0;
+		int n[] = new int[1];
+		n[0] = 0;
 		try
 		{
-			while(rs != null && rs.next())
-			{
+			doQuery(q, rs -> {
 				Object ob = cache.getByKey(DbKey.createDbKey(rs, 1));
 				if (ob == null)
-					continue;
+					return;
 				if (!(ob instanceof HasProperties))
-					throw new DbIoException(
-						"Cannot read properties because cached object is not HasProperties");
+					throw new SQLException("wrapped dbio",new DbIoException(
+						"Cannot read properties because cached object is not HasProperties"));
 
 				String name = rs.getString(2);
 				String value = rs.getString(3);
@@ -178,12 +203,16 @@ public class PropertiesSqlDao
 
 				HasProperties hp = (HasProperties)ob;
 				hp.setProperty(name, value);
-				n++;
-			}
-			return n;
+				n[0]++;
+			});
+			return n[0];
 		}
 		catch (SQLException e)
 		{
+			if( e.getCause() instanceof DbIoException)
+			{
+				throw (DbIoException)e.getCause();
+			}
 			throw new DbIoException("Error reading properties for table "
 				+ tableName + ": " + e.getMessage());
 		}
@@ -197,15 +226,14 @@ public class PropertiesSqlDao
 		String q = "select * from " + tableName;
 		if (whereClause != null)
 			q = q + " " + whereClause;
-		ResultSet rs = doQuery(q);
-		int n = 0;
+		int n[] = new int[1];
+		n[0] = 0;
 		try
 		{
-		  nextProp:
-			while(rs != null && rs.next())
-			{
+			doQuery(q, rs -> {
 				DbKey key = DbKey.createDbKey(rs, 1);
 				for(CachableHasProperties chp : list)
+				{
 					if (chp.getKey().equals(key))
 					{
 						String name = rs.getString(2);
@@ -214,18 +242,18 @@ public class PropertiesSqlDao
 							value = "";
 
 						chp.setProperty(name, value);
-						n++;
-						continue nextProp;
+						n[0]++;
+						return; // move on to next property
 					}
-				//warning("Table '" + tableName + "' has property with key=" + key
-				//	+ " and no matching object in list.");
-			}
-			return n;
+				}
+			});
+		  
+			return n[0];
 		}
 		catch (SQLException e)
 		{
 			throw new DbIoException("Error reading properties for table "
-				+ tableName + ": " + e.getMessage());
+				+ tableName + ": " + e.getMessage(),e);
 		}
 	}
 
