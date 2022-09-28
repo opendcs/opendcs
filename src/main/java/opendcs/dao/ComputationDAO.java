@@ -174,11 +174,12 @@ debug1("Setting manual connection for algorithmDAO");
 					propsDao.setManualConnection(conn);
 					loadingAppDAO.setManualConnection(conn);
 					algorithmDAO.setManualConnection(conn);
+					tsGroupDAO.setManualConnection(conn);
 					String q = "select " + compTableColumns + " from CP_COMPUTATION ";
 					int n[] = new int[1];
 					n[0] = 0;
 
-					doQuery(q,rs-> { compCache.put(rs2comp(rs));n[0]++;});
+					propsDao.doQuery(q,rs-> { compCache.put(rs2comp(rs));n[0]++;});
 					Logger.instance().debug1("" + n[0] + " cp_computation recs read.");
 					n[0] = propsDao.readPropertiesIntoCache("CP_COMP_PROPERTY", compCache);
 					Logger.instance().debug1("" + n[0] + " cp_comp_property recs read.");
@@ -212,7 +213,7 @@ debug1("Setting manual connection for algorithmDAO");
 					q = "select a.* from CP_COMP_TS_PARM a, CP_COMPUTATION b "
 					+ "where a.COMPUTATION_ID = b.COMPUTATION_ID";
 					n[0] = 0;
-					doQuery(q,rs -> {
+					propsDao.doQuery(q,rs -> {
 						DbKey compId = DbKey.createDbKey(rs, 1);
 						DbComputation comp = compCache.getByKey(compId);
 						if (comp == null)
