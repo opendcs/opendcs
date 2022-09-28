@@ -417,9 +417,19 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				return ret;
 			});
 		}
-		catch(Exception ex)
+		catch(SQLException ex)
 		{
-			warning("Error CpCompDependsNotify: " + ex);
+			warning("Error CpCompDependsNotify: " + ex.getLocalizedMessage());
+			SQLException next = ex;
+			while( (next = next.getNextException()) != null )
+			{
+				debug2("Because: ");
+				debug2(ex.getLocalizedMessage());
+			}
+			if( Logger.instance().getMinLogPriority() == Logger.E_DEBUG3)
+			{
+				ex.printStackTrace(Logger.instance().getLogOutput());
+			}
 		}
 		return null;
 	}
