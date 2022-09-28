@@ -461,7 +461,7 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 				parameters.add(NullableParameter.of(lastSrc,String.class));
 				parameters.add(NullableParameter.of(lastCon,String.class));
 				parameters.add(seStatus.getLastModified());
-				q += valueBinds(parameters);
+				q += this.valueBinds(parameters);
 				q += ")";				
 				doModify(q,parameters.toArray());
 			}
