@@ -411,7 +411,7 @@ public class DaoBase
 		Connection conn = null;
 		try
 		{
-			conn = db.getConnection();
+			conn = this.getConnection();
 			consumer.accept(conn);
 		}
 		finally
