@@ -271,56 +271,54 @@ debug1("Setting manual connection for algorithmDAO");
 		try
 		{
 			withConnection(conn -> {
-				try(
-					PreparedStatement getComp = conn.prepareStatement(
-						"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_ID = ?"
-					);
-					PreparedStatement getAppId = conn.prepareStatement(
-						"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
-					);
-					AlgorithmDAI algorithmDAO = db.makeAlgorithmDAO();
-				){
+				try(AlgorithmDAI algorithmDAO = db.makeAlgorithmDAO();)
+				{
 					algorithmDAO.setManualConnection(conn);
-					getComp.setLong(1,compId.getValue());
-					try( ResultSet rs = getComp.executeQuery(); )
+					DbComputation comp =
+						algorithmDAO.getSingleResultOr(
+							"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_ID = ?",
+							rs -> rs2comp(rs),
+							() -> {throw new NoSuchObjectException("No computation with ID=" + compId);},
+							compId
+					);
+
+					if (!comp.getAlgorithmId().isNull())
 					{
-						if (rs.next())
+						try
 						{
-							DbComputation comp = rs2comp(rs);
-							if (!comp.getAlgorithmId().isNull())
-							{
-								try
-								{
-									comp.setAlgorithm(algorithmDAO.getAlgorithmById(comp.getAlgorithmId()));
-								}
-								catch(NoSuchObjectException ex)
-								{
-									warning("Computation ID="
-										+ compId + " with algo ID="
-										+ comp.getAlgorithmId() + " -- cannot find matching "
-										+ "algorithm.");
-								}
-							}
-							fillCompSubordinates(comp);
-
-							DbKey appId = comp.getAppId();
-							if (!appId.isNull())
-							{
-								getAppId.setLong(1,appId.getValue());
-								try( ResultSet rs2 = getAppId.executeQuery(); ){
-									if (rs.next())
-									comp.setApplicationName(rs.getString(1));
-								}
-
-
-							}
-							compCache.put(comp);
-							ret[0] = comp;
+							comp.setAlgorithm(algorithmDAO.getAlgorithmById(comp.getAlgorithmId()));
 						}
-						else
-							throw new SQLException("no results",new NoSuchObjectException("No computation with ID="
-								+ compId));
+						catch(NoSuchObjectException ex)
+						{
+							warning("Computation ID="
+								+ compId + " with algo ID="
+								+ comp.getAlgorithmId() + " -- cannot find matching "
+								+ "algorithm.");
+						}
 					}
+					fillCompSubordinates(comp);
+
+					DbKey appId = comp.getAppId();
+
+					if (!appId.isNull())
+					{
+						String appName = algorithmDAO.getSingleResult(
+							"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?",
+							rs -> rs.getString(1),
+							appId);
+						if( appName != null)
+						{
+							comp.setApplicationName(appName); // shouldn't this throw an exception?
+						}
+
+
+					}
+					compCache.put(comp);
+					ret[0] = comp;
+				}
+				catch(NoSuchObjectException ex)
+				{
+					throw new SQLException("wrapped no such object",ex);
 				}
 				catch(DbIoException ex)
 				{
@@ -336,8 +334,8 @@ debug1("Setting manual connection for algorithmDAO");
 			{
 				throw (NoSuchObjectException)ex.getCause();
 			}
-			String msg = "Error reading computation id=" + compId + ": " + ex;
-			warning(msg);
+			String msg = "Error reading computation id=" + compId + ": ";
+			Logger.instance().log(Logger.E_WARNING,msg,ex);
 			throw new DbIoException(msg,ex);
 		}
 
