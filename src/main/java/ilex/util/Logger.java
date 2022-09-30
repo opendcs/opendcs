@@ -144,6 +144,20 @@ public abstract class Logger
 	*/
 	public void log( int priority, String text )
 	{
+		log(priority,text,null);
+	}
+
+	/**
+	* Logs a message if the priority is greater than or equal to
+	* minLogPriority.
+	* If priority is less than minLogPriority the message will be
+	* discarded.
+	* @param priority the message priority
+	* @param text the message
+	* @param cause an exception to log with this message, only printed if debug level >= 1.
+	*/
+	public void log( int priority, String text, Throwable cause)
+	{
 		// Guard against endless recursion that could be called by a log message
 		// being generated inside the doLog method.
 		if (insideLog)
@@ -152,7 +166,21 @@ public abstract class Logger
 		try
 		{
 			if (priority >= minLogPriority)
+			{
 				doLog(priority, text);
+				if( cause != null )
+				{
+					doLog(priority, cause.getLocalizedMessage());
+					if (
+						(priority >= E_WARNING)
+						||
+						(minLogPriority >= E_DEBUG1)
+					)
+					{
+						cause.printStackTrace(this.getLogOutput());
+					}
+				}
+			}
 		}
 		finally
 		{
@@ -366,4 +394,3 @@ public abstract class Logger
 		return tz;
 	}
 }
-
