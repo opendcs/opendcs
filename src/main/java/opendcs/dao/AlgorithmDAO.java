@@ -320,7 +320,7 @@ Logger.instance().debug1("DAO fill subord: b64='" + b64 + "' scriptData='" + scr
 				for (Iterator<DbAlgoParm> it = algo.getParms(); it.hasNext();)
 				{
 					DbAlgoParm dap = it.next();
-					stmt.setLong(1,id.getValue());
+					stmt.setLong(1,algo.getId().getValue());
 					stmt.setString(2,dap.getRoleName());
 					stmt.setString(3,dap.getParmType());
 				}
@@ -346,26 +346,32 @@ Logger.instance().debug1("AlgorithmDAO.writeAlgo algorithm has " + algo.getScrip
 					if (text == null || text.length() == 0)
 						continue;
 					// Have to convert to Base64 to preserve quotes, newlines, etc.
-					String b64 = new String(Base64.encodeBase64(text.getBytes()));
-Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType() + " text '"
-	+ text + "' b64=" + b64);
-					int blockNum[] = new int[1];
-					blockNum[0] = 1;
-					// TODO: b64 -> string builder
-					
+					final StringBuffer b64 =
+						new StringBuffer(
+							new String(
+								Base64.encodeBase64(
+									text.getBytes()
+								)
+							)
+						);
+					Logger.instance().debug1("AlgorithmDAO.writeAlgo script " + script.getScriptType() + " text '"
+						+ text + "' b64=" + b64.toString());
+
 					withStatement(
 						"INSERT INTO CP_ALGO_SCRIPT VALUES(?,?,?,?)",
 						stmt -> {
+							int blockNum = 0;
 							while(b64 != null)
 							{
-								String block = b64.length() < 4000 ? b64 : b64.substring(0, 4000);
-								b64 = (block == b64) ? null : b64.substring(4000);
+								int to = b64.length() < 4000 ? b64.length() : 4000;
+								String block = b64.substring(0, to);
+								//b64 = (block == b64) ? null : b64.substring(4000);
+								blockNum++;
+								b64.delete(0,to);
 								stmt.setLong(1,algo.getId().getValue());
 								stmt.setString(2,String.valueOf((script.getScriptType().getDbChar())));
-								blockNum[0]++;
-								stmt.setInt(3,blockNum[0]);
+								stmt.setInt(3,blockNum);
 								stmt.setString(4,block);
-												
 							}
 					});
 					
