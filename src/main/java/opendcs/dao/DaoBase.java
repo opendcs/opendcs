@@ -30,6 +30,7 @@ import opendcs.util.functional.ConnectionConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
+import opendcs.util.functional.ThrowingSupplier;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -219,7 +220,7 @@ public class DaoBase
 		{
 			String msg = "SQL Error in query '" + q + "': " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 	
@@ -241,9 +242,9 @@ public class DaoBase
 		}
 		catch(SQLException ex)
 		{
-			String msg = "SQL Error in query '" + q + "': " + ex;
+			String msg = "SQL Error in query '" + q + "'";
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 
@@ -269,7 +270,7 @@ public class DaoBase
 		catch(SQLException ex)
 		{
 			String msg = "SQL Error in modify query '" + q + "': " + ex;
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 		finally
 		{
@@ -567,7 +568,7 @@ public class DaoBase
 	 * @returns Object of type R determined by the caller.
 	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
 	 */
-	public <R> R getSingleResultOr(String query, ResultSetFunction<R> onValidRs,Supplier<R> onNoResult, Object... parameters ) throws SQLException
+	public <R,E extends Exception> R getSingleResultOr(String query, ResultSetFunction<R> onValidRs,ThrowingSupplier<R,E> onNoResult, Object... parameters ) throws SQLException, E
 	{
 		final ArrayList<R> result = new ArrayList<>();
 		withStatement(query,(stmt)->{

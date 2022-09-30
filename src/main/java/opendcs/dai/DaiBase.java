@@ -12,6 +12,7 @@ import opendcs.util.functional.ConnectionConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
+import opendcs.util.functional.ThrowingSupplier;
 
 public interface DaiBase
 	extends AutoCloseable
@@ -90,7 +91,7 @@ public interface DaiBase
 	 * @returns Object of type R determined by the caller.
 	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
 	 */
-	public <R> R getSingleResultOr(String query, ResultSetFunction<R> onValidRs,Supplier<R> onNoResult, Object... parameters ) throws SQLException;
+	public <R,E extends Exception> R getSingleResultOr(String query, ResultSetFunction<R> onValidRs,ThrowingSupplier<R,E> onNoResult, Object... parameters ) throws SQLException, E;
 
 	/**
 	 * Given a query string and bind variables execute the query.
