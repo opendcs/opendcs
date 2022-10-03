@@ -451,6 +451,7 @@ dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
 		catch (DbIoException ex)
 		{
 			dacqEventLogger.warning(getName() + " Cannot write status: " + ex);
+			dacqEventLogger.log(Logger.E_DEBUG3,"Because:",ex);
 		}
 		finally
 		{

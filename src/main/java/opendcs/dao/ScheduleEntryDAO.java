@@ -49,6 +49,7 @@
  */
 package opendcs.dao;
 
+import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.sql.ResultSet;
@@ -328,6 +329,7 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 					+ "last_modified = ?,"
 					+ " where schedule_entry_id = ?";
 				ArrayList<Object> parameters = new ArrayList<>();
+				parameters.add(scheduleEntry.getName());
 				parameters.add(scheduleEntry.getLoadingAppId());
 				parameters.add(scheduleEntry.getRoutingSpecId());
 				parameters.add(scheduleEntry.getStartTime());
@@ -343,6 +345,7 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 		catch(SQLException ex)
 		{
 			String msg = String.format("Failed to save scheduled entry. Query '%s'",q);
+			Logger.instance().log(Logger.E_DEBUG3,"saving/updating ScheduleEntry",ex);
 			throw new DbIoException(msg,ex);
 		}
 	}
@@ -479,7 +482,7 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 					+ "num_platforms = ?,"
 					+ "last_source = ?,"
 					+ "last_consumer = ?,"
-					+ "last_modified = ?,"
+					+ "last_modified = ?"
 					+ " where schedule_entry_status_id = ?";
 				ArrayList<Object> parameters = new ArrayList<>();				
 				parameters.add(seStatus.getScheduleEntryId());
@@ -501,6 +504,8 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 		catch(SQLException ex)
 		{
 			String msg = "Error writing/updating schedule status entry with query '%s'";
+			Logger.instance().log(Logger.E_DEBUG3, "Saving/Updating ScheduleEntryStatus",ex);
+			Logger.instance().log(Logger.E_DEBUG3,"because " + ex.getLocalizedMessage());
 			throw new DbIoException(String.format(msg,q),ex);
 		}
 	}
