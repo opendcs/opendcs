@@ -105,7 +105,9 @@
 package decodes.tsdb;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -328,7 +330,7 @@ public class ComputationApp
 		String action="starting";
 		
 		
-		try
+		try(Connection conn = theDb.getConnection();)
 		{
 			while(!shutdownFlag)
 			{
@@ -339,6 +341,9 @@ public class ComputationApp
 					TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 					)
 				{
+					timeSeriesDAO.setManualConnection(conn);
+					loadingAppDAO.setManualConnection(conn);
+					tsGroupDAO.setManualConnection(conn);
 					long now = System.currentTimeMillis();
 	
 					action = "Checking lock";
@@ -352,7 +357,7 @@ public class ComputationApp
 					if (now - lastCacheMaintenance > 3600 * 2 * 1000L)
 					{
 						lastCacheMaintenance = now;
-						refillSiteCache();
+						refillSiteCache(conn);
 					}
 					
 					if (now - lastTimedCompCheck > checkTimedCompsSec * 1000L) 
@@ -544,23 +549,19 @@ public class ComputationApp
 	/**
 	 * MJM Added for 6.4 RC08 to refresh site cache every 2 hours.
 	 */
-	private void refillSiteCache()
+	private void refillSiteCache(Connection conn)
 	{
 		info("Doing Periodic Cache Maintenance ...");
-		SiteDAI siteDAO = theDb.makeSiteDAO();
-		try
+		
+		try(SiteDAI siteDAO = theDb.makeSiteDAO();)
 		{
+			siteDAO.setManualConnection(conn);
 			siteDAO.fillCache();
 		}
 		catch (DbIoException ex)
 		{
 			warning("Error filling site cache: " + ex);
 		}
-		finally
-		{
-			siteDAO.close();
-		}
-		
 	}
 
 	/**
@@ -572,11 +573,16 @@ public class ComputationApp
 	private void runAppInit()
 	{
 		debugSdf.setTimeZone(TimeZone.getTimeZone(theDb.databaseTimezone));
-		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
-		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
-		TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
-		try
+		
+		try(Connection conn = theDb.getConnection();
+			LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
+			TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
+			TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+		)
 		{
+			loadingAppDao.setManualConnection(conn);
+			tsDAO.setManualConnection(conn);
+			groupDAO.setManualConnection(conn);
 			appInfo = loadingAppDao.getComputationApp(getAppId());
 
 			// Construct the resolver & load it.
@@ -652,11 +658,12 @@ public class ComputationApp
 			shutdownFlag = true;
 			databaseFailed = true;
 		}
-		finally
+		catch(SQLException ex)
 		{
-			groupDAO.close();
-			tsDAO.close();
-			loadingAppDao.close();
+			Logger.instance().fatal("App Name " + getAppName() + " error in runAppInit()");
+			Logger.instance().log(Logger.E_FATAL,"Cause:",ex);
+			shutdownFlag = true;
+			databaseFailed = true;
 		}
 	}
 	

@@ -403,12 +403,16 @@ public class DaoBase
 	/**
 	 * Provides connection to consumer, closing/return the connection when done.
 	 *
-	 * NOTE: Thread safe IF the TimeseriesDB implementation supports connection pooling.
+	 * NOTE: This may get a new connection from a pool or an existing manual connection.
 	 * @param consumer @see opendcs.util.functional.ConnectionConsumer
 	 * @throws SQLException
 	 */
 	public void withConnection(ConnectionConsumer consumer) throws SQLException
 	{
+		/**
+		 * we don't use the Wrapped Connection here as this particular DAO may 
+		 * already be using a wrapped connection.
+		 */
 		Connection conn = null;
 		try
 		{

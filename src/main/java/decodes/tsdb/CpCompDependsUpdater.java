@@ -93,6 +93,7 @@ package decodes.tsdb;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -239,11 +240,15 @@ public class CpCompDependsUpdater
 		String action="";
 		while(!shutdownFlag)
 		{
-			LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
-			CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
+			
 
-			try
+			try(Connection conn = theDb.getConnection();
+				LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+				CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
+			)
 			{
+				loadingAppDAO.setManualConnection(conn);
+				compDependsDAO.setManualConnection(conn);
 				// Make sure this process's lock is still valid.
 				action = "Checking lock";
 				if (myLock == null)
@@ -317,11 +322,6 @@ public class CpCompDependsUpdater
 				shutdownFlag = true;
 				databaseFailed = true;
 			}
-			finally
-			{
-				compDependsDAO.close();
-				loadingAppDAO.close();
-			}
 		}
 		closeDb();
 	}
@@ -330,9 +330,11 @@ public class CpCompDependsUpdater
 	private void initialize()
 		throws LockBusyException, DbIoException, NoSuchObjectException
 	{
-		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
-		try
+		try(Connection conn = theDb.getConnection();
+			LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
+		)
 		{
+			loadingAppDao.setManualConnection(conn);
 			appInfo = loadingAppDao.getComputationApp(getAppId());
 
 			try { hostname = InetAddress.getLocalHost().getHostName(); }
@@ -363,9 +365,10 @@ public class CpCompDependsUpdater
 			Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
 			throw ex;
 		}
-		finally
+		catch(SQLException ex)
 		{
-			loadingAppDao.close();
+			Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
+			throw new DbIoException("Database failure",ex);
 		}
 	}
 
