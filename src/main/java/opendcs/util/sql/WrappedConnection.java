@@ -20,8 +20,8 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import decodes.tsdb.TimeSeriesDb;
 import ilex.util.Logger;
+import opendcs.dao.DatabaseConnectionOwner;
 
 /**
  * Used for pooled connection system. Allows code
@@ -35,9 +35,9 @@ public class WrappedConnection implements Connection{
     private static Logger log = Logger.instance();
 
     private Connection realConnection;
-    private final TimeSeriesDb theDb;
+    private final DatabaseConnectionOwner theDb;
 
-    public WrappedConnection(Connection realConnection, final TimeSeriesDb theDb)
+    public WrappedConnection(Connection realConnection, final DatabaseConnectionOwner theDb)
     {
         Objects.requireNonNull(realConnection, "WrappedConnection cannot wrap a null connection");
         Objects.requireNonNull(theDb, "WrappedConnections requires a valid TimeSeries DB instance");

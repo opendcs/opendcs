@@ -38,6 +38,8 @@
 */
 package decodes.tsdb;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -80,9 +82,15 @@ public class DbCompResolver
 		throws DbIoException
 	{
 		trimPythonWrittenQueue();
-		ComputationDAI computationDAO = theDb.makeComputationDAO();
-		try
+		
+		
+		try(Connection conn = theDb.getConnection();
+			ComputationDAI computationDAO = theDb.makeComputationDAO();
+			CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
+		)
 		{
+			computationDAO.setManualConnection(conn);
+			compDependsDAO.setManualConnection(conn);
 			Vector<DbComputation> results = new Vector<DbComputation>();
 			for(CTimeSeries trigger : data.getAllTimeSeries())
 				if (trigger.hasAddedOrDeleted())
@@ -151,8 +159,7 @@ public class DbCompResolver
 							//    BaseLoc-Spillway1-Gate1.Opening.Inst.15Minutes.0.rev
 							//    BaseLoc-Spillway1-Gate2.Opening.Inst.15Minutes.0.rev
 							//    BaseLoc-Spillway2-Gate1.Opening.Inst.15Minutes.0.rev
-					
-							CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
+
 							try
 							{
 								ArrayList<TimeSeriesIdentifier> triggers = compDependsDAO.getTriggersFor(origComp.getId());
@@ -195,9 +202,9 @@ Logger.instance().debug3(module + otherTrig.getUniqueString());
 			DbComputation[] r = new DbComputation[results.size()];
 			return results.toArray(r);
 		}
-		finally
+		catch(SQLException ex)
 		{
-			computationDAO.close();
+			throw new DbIoException("Database Error",ex);
 		}
 	}
 

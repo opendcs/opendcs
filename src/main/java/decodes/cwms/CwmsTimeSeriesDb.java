@@ -689,7 +689,9 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
+import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.opentsdb.OpenTsdbSettings;
+import opendcs.util.sql.WrappedConnection;
 import lrgs.gui.DecodesInterface;
 
 import java.sql.PreparedStatement;
@@ -781,6 +783,7 @@ public class CwmsTimeSeriesDb
 //		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
 //System.err.println("Connecting to '" + dbUri + "' as '" + username + "' with pw '" + password + "' and office '" + dbOfficeId + "'");
 		ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);
+		System.setProperty("cwms.oracle.caching.connectionreuse.time","180");
 		CwmsDbConnectionPool connectionPool = CwmsDbConnectionPool.getInstance();
 		try
 		{
@@ -1957,17 +1960,35 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			}
 		}
 		
-		return ret;
+		return new WrappedConnection(ret,(DatabaseConnectionOwner)this);
 	}
 
 
 	@Override
 	public void freeConnection(Connection con)
 	{
-		if (!openConnections.remove(con))
-			warning("freeConnection() - weird! Passed a connection that wasn't in my open-list.");
-		
-		try { CwmsDbConnectionPool.close(con); }
+		try
+		{
+			if( con instanceof WrappedConnection )
+			{
+				con.close();
+				return;
+			}
+			else if (!openConnections.remove(con))
+			{
+				Logger.instance().warning(module
+					+ String.format(".freeConnection() - weird! Passed a connection (%s) that wasn't in my open-list.",con.hashCode()));
+				Logger.instance().debug3("from:");
+				StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
+				for(int n = 2; n < stk.length; n++)
+				{
+					String s = stk[n].toString().toLowerCase();
+					if (s.contains("dao") || s.contains("io."))
+						Logger.instance().debug3("\t" + n + ": " + stk[n]);
+				}
+			}
+			CwmsDbConnectionPool.close(con);
+		}
 		catch(SQLException ex)
 		{
 			warning("freeConnection() Error in CwmsDbConnectionPool.close: " + ex);

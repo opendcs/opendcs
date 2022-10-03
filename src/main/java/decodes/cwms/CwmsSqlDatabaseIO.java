@@ -25,6 +25,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.opentsdb.OpenTsdbSettings;
+import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import lrgs.gui.DecodesInterface;
 import ilex.util.Logger;
@@ -387,18 +388,34 @@ public class CwmsSqlDatabaseIO
 					Logger.instance().debug1("\t" + n + ": " + stk[n]);
 			}
 		}		
-		return ret;
+		return new WrappedConnection(ret, this);
 	}
 
 
 	@Override
 	public void freeConnection(Connection con)
 	{
-		if (!openConnections.remove(con))
-			Logger.instance().warning(module 
-				+ ".freeConnection() - weird! Passed a connection that wasn't in my open-list.");
-		
-		try { CwmsDbConnectionPool.close(con); }
+		try {
+			if( con instanceof WrappedConnection )
+			{
+				con.close();
+				return;
+			}
+			else if (!openConnections.remove(con))
+			{
+				Logger.instance().warning(module 
+					+ String.format(".freeConnection() - weird! Passed a connection (%s) that wasn't in my open-list.",con.hashCode()));
+				Logger.instance().debug3("from:");
+				StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
+				for(int n = 2; n < stk.length; n++) 
+				{
+					String s = stk[n].toString().toLowerCase();
+					if (s.contains("dao") || s.contains("io.")) 
+						Logger.instance().debug3("\t" + n + ": " + stk[n]);
+				}
+			}
+			CwmsDbConnectionPool.close(con);
+		}
 		catch(SQLException ex)
 		{
 			Logger.instance().warning(module 
