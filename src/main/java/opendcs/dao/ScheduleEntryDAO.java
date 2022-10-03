@@ -129,10 +129,15 @@ public class ScheduleEntryDAO
 
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 			return ret;
+
+		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "select " + seColumns + " from " + seTables
 			+ " where " + seJoinClause;
 		if (app != null)
-			q = q + " and a.loading_application_id = ?";		
+		{
+			q = q + " and a.loading_application_id = ?";
+			parameters.add(app.getId());
+		}
 		try
 		{
 			ret = (ArrayList<ScheduleEntry>)getResults(q,rs-> {
@@ -145,7 +150,7 @@ public class ScheduleEntryDAO
 							break;
 						}
 				return se;
-			},app.getKey());			
+			},parameters.toArray());
 		}
 		catch (SQLException ex)
 		{
@@ -326,7 +331,7 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 					+ "timezone = ?,"
 					+ "run_interval = ?,"
 					+ "enabled = ?,"
-					+ "last_modified = ?,"
+					+ "last_modified = ?"
 					+ " where schedule_entry_id = ?";
 				ArrayList<Object> parameters = new ArrayList<>();
 				parameters.add(scheduleEntry.getName());
