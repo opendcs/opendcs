@@ -31,7 +31,10 @@ public interface DaiBase
 	public void setManualConnection(Connection conn);
 
 
-	public void withConnection(ConnectionConsumer consumer) throws SQLException;
+	default public void withConnection(ConnectionConsumer consumer) throws SQLException
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
 
 	/**
 	 * Prepare a statement and let caller deal with setting parameters and calling the execution
@@ -40,7 +43,10 @@ public interface DaiBase
 	 * @param statement SQL statement
 	 * @param consumer Function that will handle the operations. @see opendcs.util.functional.StatementConsumer
 	 */
-	public void withStatement( String statement, StatementConsumer consumer,Object... parameters) throws SQLException;
+	default public void withStatement( String statement, StatementConsumer consumer,Object... parameters) throws SQLException
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
 
 	/**
 	 * Prepare and run a statement with the given parameters.
@@ -53,7 +59,10 @@ public interface DaiBase
 	 * @param parameters Variables for the query
 	 * @throws SQLException
 	 */
-	public void doQuery(String query, ResultSetConsumer consumer, Object... parameters) throws SQLException;
+	default public void doQuery(String query, ResultSetConsumer consumer, Object... parameters) throws SQLException
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
 
 	/**
 	 * perform an update or insert operations with given parameters.
@@ -62,7 +71,10 @@ public interface DaiBase
 	 * @return number of rows affected
 	 * @throws SQLException anything goes wrong talking to the database
 	 */
-	public int doModify(String query, Object... args) throws SQLException;
+	default public int doModify(String query, Object... args) throws SQLException
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
 
 	/**
 	 * Given a query string and bind variables execute the query.
@@ -76,7 +88,10 @@ public interface DaiBase
 	 * @returns Object of type R determined by the caller.
 	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
 	 */
-	public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException;
+	default public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
 
 	/**
 	 * Given a query string and bind variables execute the query.
@@ -91,7 +106,10 @@ public interface DaiBase
 	 * @returns Object of type R determined by the caller.
 	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
 	 */
-	public <R,E extends Exception> R getSingleResultOr(String query, ResultSetFunction<R> onValidRs,ThrowingSupplier<R,E> onNoResult, Object... parameters ) throws SQLException, E;
+	default public <R,E extends Exception> R getSingleResultOr(String query, ResultSetFunction<R> onValidRs,ThrowingSupplier<R,E> onNoResult, Object... parameters ) throws SQLException, E
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
 
 	/**
 	 * Given a query string and bind variables execute the query.
@@ -103,7 +121,10 @@ public interface DaiBase
 	 * @returns Object of type R determined by the caller.
 	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
 	 */
-	public  <R> List<R> getResults(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException;	
+	default public  <R> List<R> getResults(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
 
 	/**
 	 * Same as getResults except null values are removed from the
@@ -114,7 +135,10 @@ public interface DaiBase
 	 * @returns Object of type R determined by the caller.
 	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
 	 */
-	public <R> List<R> getResultsIgnoringNull(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException;
+	default public <R> List<R> getResultsIgnoringNull(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
 
 	/**
 	 * Helper to wrap batch calls for various insert/delete operations
@@ -124,5 +148,9 @@ public interface DaiBase
 	 * @param items list of items to insert
 	 * @throws SQLException
 	 */
-	public <R> void doBatch(String query, int batchSize, BatchStatementConsumer<R> consumer, Iterable<R> items) throws SQLException;
+	default public <R> void doBatch(String query, int batchSize, BatchStatementConsumer<R> consumer, Iterable<R> items) throws SQLException
+	{
+		throw new SQLException("XML database should not call sql functions");
+	}
+
 }
