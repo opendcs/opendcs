@@ -455,6 +455,10 @@ public class DaoBase
 					{
 						stmt.setInt(index,(Integer)param);
 					}
+					else if(param instanceof Boolean)
+					{
+						setStmtBoolean(stmt, index, (Boolean)param);
+					}
 					else if (param instanceof String)
 					{
 						setStmtString(stmt, index, (String)param);
@@ -686,6 +690,19 @@ public class DaoBase
 		throws SQLException
 	{
 		stmt.setString(index,value);
+	}
+
+	private void setStmtBoolean(PreparedStatement stmt, int index, boolean value)
+		throws SQLException
+	{
+		if(db.isOracle())
+		{
+			stmt.setString(index, value ? "Y" : "N");
+		}
+		else
+		{
+			stmt.setBoolean(index,value);
+		}
 	}
 
 	/**

@@ -1038,7 +1038,7 @@ debug1("Setting manual connection for algorithmDAO");
 						parameters.add(NullableParameter.of(comp.getComment(),String.class));
 						parameters.add(appId);
 						parameters.add(comp.getLastModified());
-						parameters.add(db.sqlBoolean(comp.isEnabled()));
+						parameters.add(comp.isEnabled());
 						parameters.add(NullableParameter.of(comp.getValidStart(),Date.class));
 						parameters.add(NullableParameter.of(comp.getValidEnd(),Date.class));
 						if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_6)
@@ -1065,7 +1065,7 @@ debug1("Setting manual connection for algorithmDAO");
 						parameters.add(NullableParameter.of(comp.getComment(),String.class));
 						parameters.add(appId);
 						parameters.add(comp.getLastModified());
-						parameters.add(db.sqlBoolean(comp.isEnabled()));
+						parameters.add(comp.isEnabled());
 						parameters.add(NullableParameter.of(comp.getValidStart(),Date.class));
 						parameters.add(NullableParameter.of(comp.getValidEnd(),Date.class));
 

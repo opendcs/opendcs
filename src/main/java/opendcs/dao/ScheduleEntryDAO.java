@@ -52,6 +52,7 @@ package opendcs.dao;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -85,12 +86,9 @@ public class ScheduleEntryDAO
 	private static String sesTables = "schedule_entry_status a, schedule_entry b";
 	private static String sesJoinClause = "a.schedule_entry_id = b.schedule_entry_id";
 	
-	private LoadingAppDAI loadingAppDAO = null;
-
 	public ScheduleEntryDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "ScheduleEntryDAO");
-		loadingAppDAO = tsdb.makeLoadingAppDAO();
 	}
 
 	@Override
@@ -100,9 +98,11 @@ public class ScheduleEntryDAO
 		String q = "select " + seColumns + " from " + seTables
 			+ " where " + seJoinClause
 			+ " and a.name = ?";// + sqlString(name);		
-		try
+		try(Connection conn = getConnection();
+			LoadingAppDAI loadingAppDAO = db.makeLoadingAppDAO();)
 		{			
-			ScheduleEntry ret = getSingleResult(q, rs -> rs2scheduleEntry(rs), name);			
+			loadingAppDAO.setManualConnection(conn);
+			ScheduleEntry ret = loadingAppDAO.getSingleResult(q, rs -> rs2scheduleEntry(rs), name);			
 			if (!ret.getLoadingAppId().isNull())
 			{
 				CompAppInfo appInfo = loadingAppDAO.getComputationApp(ret.getLoadingAppId());
@@ -123,24 +123,30 @@ public class ScheduleEntryDAO
 	public ArrayList<ScheduleEntry> listScheduleEntries(CompAppInfo app)
 		throws DbIoException
 	{
-		ArrayList<CompAppInfo> appInfos = loadingAppDAO.listComputationApps(false);
-
-		ArrayList<ScheduleEntry> ret = new ArrayList<ScheduleEntry>();
-
-		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
-			return ret;
-
-		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "select " + seColumns + " from " + seTables
-			+ " where " + seJoinClause;
-		if (app != null)
+				+ " where " + seJoinClause;
+		try(Connection conn = getConnection();
+			LoadingAppDAI loadingAppDAO = db.makeLoadingAppDAO();)
 		{
-			q = q + " and a.loading_application_id = ?";
-			parameters.add(app.getId());
-		}
-		try
-		{
-			ret = (ArrayList<ScheduleEntry>)getResults(q,rs-> {
+			loadingAppDAO.setManualConnection(conn);
+			final DaoBase dao = (DaoBase)loadingAppDAO;
+		
+			ArrayList<CompAppInfo> appInfos = loadingAppDAO.listComputationApps(false);
+
+			ArrayList<ScheduleEntry> ret = new ArrayList<ScheduleEntry>();
+
+			if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
+				return ret;
+
+			ArrayList<Object> parameters = new ArrayList<>();
+			
+			if (app != null)
+			{
+				q = q + " and a.loading_application_id = ?";
+				parameters.add(app.getId());
+			}
+		
+			ret = (ArrayList<ScheduleEntry>)dao.getResults(q,rs-> {
 				ScheduleEntry se = rs2scheduleEntry(rs);
 				if (!se.getLoadingAppId().isNull())
 					for(CompAppInfo appInfo : appInfos)
@@ -151,12 +157,12 @@ public class ScheduleEntryDAO
 						}
 				return se;
 			},parameters.toArray());
+			return ret;
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("Error in query '" + q + "': " + ex);
 		}
-		return ret;
 	}
 	
 	/**
@@ -315,7 +321,7 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 				parameters.add(NullableParameter.of(scheduleEntry.getStartTime(),Date.class));
 				parameters.add(scheduleEntry.getTimezone());
 				parameters.add(NullableParameter.of(scheduleEntry.getRunInterval(),String.class));
-				parameters.add(sqlBoolean(scheduleEntry.isEnabled()));
+				parameters.add(scheduleEntry.isEnabled());
 				parameters.add(scheduleEntry.getLastModified());
 				q += valueBinds(parameters);				
 				q += ")";
@@ -340,7 +346,7 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 				parameters.add(scheduleEntry.getStartTime());
 				parameters.add(NullableParameter.of(scheduleEntry.getTimezone(),String.class));
 				parameters.add(NullableParameter.of(scheduleEntry.getRunInterval(),String.class));
-				parameters.add(sqlBoolean(scheduleEntry.isEnabled()));
+				parameters.add(scheduleEntry.isEnabled());
 				parameters.add(scheduleEntry.getLastModified());
 				parameters.add(scheduleEntry.getKey());
 
@@ -605,7 +611,6 @@ debug3("writeScheduleEntry(" + scheduleEntry.getName() + ") rsID=" + scheduleEnt
 	@Override
 	public void close()
 	{
-		loadingAppDAO.close();
 		super.close();
 	}
 
