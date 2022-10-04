@@ -133,41 +133,20 @@ public class LoadingAppDao
 	public ArrayList<CompAppInfo> listComputationApps(boolean usedOnly)
 		throws DbIoException
 	{
-		String q;
+		StringBuffer q = new StringBuffer(300);
 		if (usedOnly)
-			q = "select LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME, "
+			q.append("select LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME, "
 			+ "MANUAL_EDIT_APP, CMMNT from HDB_LOADING_APPLICATION "
 			+ "where LOADING_APPLICATION_ID in "
-			+ "(select distinct LOADING_APPLICATION_ID from CP_COMPUTATION)";
+			+ "(select distinct LOADING_APPLICATION_ID from CP_COMPUTATION)");
 		else
-			q = "select * from HDB_LOADING_APPLICATION";
-		PropertiesDAI propsDao = db.makePropertiesDAO();
-		propsDao.setManualConnection(getConnection());
-		try
+			q.append("select * from HDB_LOADING_APPLICATION");
+
+		try(Connection conn = getConnection();
+			DaoBase dao = new DaoBase(this.db,"LoadingAppDao",conn);
+		)
 		{
-			List<CompAppInfo> ret = getResults(q, (rs) -> {
-				CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, 1));
-				cai.setAppName(rs.getString(2));
-				cai.setManualEditApp(TextUtil.str2boolean(rs.getString(3)));
-				cai.setComment(rs.getString(4));
-				return cai;
-			});
-			q = "in fill props";
-			fillInProperties(ret, "");
-
-			q = "select a.loading_application_id, count(1) as CompsUsingProc "
-				+ "from hdb_loading_application a, cp_computation b "
-				+ "where a.loading_application_id = b.loading_application_id "
-				+ "group by a.loading_application_id";
-
-			doQuery(q, (rs)-> {
-				DbKey appId = DbKey.createDbKey(rs, 1);
-				int numComps = rs.getInt(2);
-				for(CompAppInfo cai : ret)
-					if (cai.getAppId().equals(appId))
-						cai.setNumComputations(numComps);
-			});
-
+			List<CompAppInfo> ret = dao.getResults(q.toString(), (rs) -> rs2CompApp(rs,conn));
 			return (ArrayList<CompAppInfo>)ret;
 		}
 		catch(SQLException ex)
@@ -176,10 +155,6 @@ public class LoadingAppDao
 			msg += String.format(", query was %s",q);
 			warning(msg);
 			throw new DbIoException(msg,ex);
-		}
-		finally
-		{
-			propsDao.close();
 		}
 	}
 
@@ -251,6 +226,13 @@ public class LoadingAppDao
 		return cai;
 	}
 
+	/**
+	 * Build a complete CompAppInfo, reusing a provided connection
+	 * @param rs result set that contains the hdb_loading_app_columns
+	 * @param conn a valid connection
+	 * @return a valid CompAppInfo object
+	 * @throws SQLException anything goes wrong, will wrap DbIoException if error in readProperties
+	 */
 	private CompAppInfo rs2CompApp(ResultSet rs, Connection conn) throws SQLException
 	{
 		try(PropertiesDAI dao = db.makePropertiesDAO())
@@ -262,6 +244,11 @@ public class LoadingAppDao
 							"LOADING_APPLICATION_ID",
 							cai.getAppId(),
 							cai.getProperties());
+			String q= "select count(*) as count "
+						+ "from hdb_loading_application a, cp_computation b "
+						+ "where a.loading_application_id = b.loading_application_id "
+						+ "and b.loading_application_id = ?";
+			cai.setNumComputations(dao.getSingleResultOr(q, rs2->rs2.getInt(1), ()->0, cai.getAppId()));
 			return cai;
 		}
 		catch(DbIoException ex)
