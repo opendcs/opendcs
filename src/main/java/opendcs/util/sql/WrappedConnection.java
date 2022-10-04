@@ -109,12 +109,10 @@ public class WrappedConnection implements Connection{
     private void logPlainCreate() {
         log.debug2("Dev Msg: Plain create statement from:");
         StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
-			for(int n = 2; n < stk.length; n++) 
-			{
-				String s = stk[n].toString().toLowerCase();
-				if (s.contains("dao") || s.contains("io.")) 
-					log.debug2("\t" + n + ": " + stk[n]);
-			}
+        for(int n = 2; n < stk.length; n++) 
+        {
+                log.debug3("\t" + n + ": " + stk[n]);
+        }
     }
 
     @Override

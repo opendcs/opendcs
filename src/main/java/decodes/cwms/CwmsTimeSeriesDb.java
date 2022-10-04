@@ -1953,10 +1953,10 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			boolean lastWasDao = true;
 			for(int n = 2; n < stk.length; n++) 
 			{
-				if (lastWasDao)
+				//if (lastWasDao)
 					Logger.instance().debug1("\t" + n + ": " + stk[n]);
 				String s = stk[n].toString().toLowerCase();
-				lastWasDao = s.contains("dao") || s.contains("io.");
+				//lastWasDao = s.contains("dao") || s.contains("io.");
 			}
 		}
 		
@@ -1983,7 +1983,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				for(int n = 2; n < stk.length; n++)
 				{
 					String s = stk[n].toString().toLowerCase();
-					if (s.contains("dao") || s.contains("io."))
+					//if (s.contains("dao") || s.contains("io."))
 						Logger.instance().debug3("\t" + n + ": " + stk[n]);
 				}
 			}
@@ -2004,7 +2004,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 				boolean lastWasDao = true;
 				for(int n = 2; n < stk.length; n++) 
 				{
-					if (lastWasDao)
+					//if (lastWasDao)
 						Logger.instance().debug1("\t" + n + ": " + stk[n]);
 					String s = stk[n].toString().toLowerCase();
 					lastWasDao = s.contains("dao") || s.contains("io.");
