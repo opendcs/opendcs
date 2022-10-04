@@ -27,6 +27,7 @@ public class DaoBaseTest
     public static void setup() throws Exception
     {
         Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
+        
     }
 
     @BeforeEach
