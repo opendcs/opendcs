@@ -51,6 +51,7 @@ import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -76,6 +77,7 @@ import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.ConstraintException;
+import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
@@ -240,12 +242,40 @@ public class LoadingAppDao
 		}
 	}
 
+	private CompAppInfo rs2CompApp(ResultSet rs) throws SQLException
+	{
+		CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, 1));
+		cai.setAppName(rs.getString(2));
+		cai.setManualEditApp(TextUtil.str2boolean(rs.getString(3)));
+		cai.setComment(rs.getString(4));
+		return cai;
+	}
+
+	private CompAppInfo rs2CompApp(ResultSet rs, Connection conn) throws SQLException
+	{
+		try(PropertiesDAI dao = db.makePropertiesDAO())
+		{
+			dao.setManualConnection(conn);
+			CompAppInfo cai = rs2CompApp(rs);
+			dao.readProperties(
+							"REF_LOADING_APPLICATION_PROP",
+							"LOADING_APPLICATION_ID",
+							cai.getAppId(),
+							cai.getProperties());
+			return cai;
+		}
+		catch(DbIoException ex)
+		{
+			throw new SQLException("Failed to retrieve properties",ex);
+		}
+	}
+
 	@Override
 	public CompAppInfo getComputationApp(DbKey id)
 		throws DbIoException, NoSuchObjectException
 	{
 		String q = "select "
-			+ "LOADING_APPLICATION_NAME, MANUAL_EDIT_APP, CMMNT "
+			+ "LOADING_APPLICATION_ID,LOADING_APPLICATION_NAME, MANUAL_EDIT_APP, CMMNT "
 			+ "from HDB_LOADING_APPLICATION "
 			+ "where LOADING_APPLICATION_ID = ?";
 		CompAppInfo ret[] = new CompAppInfo[1];
@@ -256,23 +286,10 @@ public class LoadingAppDao
 				try(PropertiesDAI propsDao = db.makePropertiesDAO();)
 				{
 					propsDao.setManualConnection(conn);
-					ret[0] = getSingleResult(q, rs -> {
-						CompAppInfo cai = new CompAppInfo(id);
-						cai.setAppName(rs.getString(1));
-						cai.setManualEditApp(TextUtil.str2boolean(rs.getString(2)));
-						cai.setComment(rs.getString(3));
-						return cai;
-					},id);
-					if( ret[0] == null )
-					{
-						throw new NoSuchObjectException("No application with id=" + id);
-					}
-					// TODO: investigate if this actually would be better in the above block.
-					propsDao.readProperties(
-							"REF_LOADING_APPLICATION_PROP",
-							"LOADING_APPLICATION_ID",
-							id,
-							ret[0].getProperties());
+					ret[0] = getSingleResultOr(
+											q,
+											rs -> rs2CompApp(rs,conn),
+							 				()-> {throw new NoSuchObjectException("No application with id=" + id);},id);
 					String lmp = PropertiesUtil.getIgnoreCase(ret[0].getProperties(), "LastModified");
 					if (lmp != null)
 						try { ret[0].setLastModified(lastModifiedSdf.parse(lmp)); }
@@ -280,10 +297,6 @@ public class LoadingAppDao
 						{
 							warning("Cannot parse LastModified '" + lmp + "': " + ex);
 						}
-				}
-				catch(DbIoException ex)
-				{
-					throw new SQLException("wrapped DbIoException",ex);
 				}
 				catch(NoSuchObjectException ex)
 				{
@@ -304,7 +317,8 @@ public class LoadingAppDao
 			}
 			String msg = "Error in getComputationApp(" + id + "): " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			Logger.instance().log(Logger.E_DEBUG3,"Cause:",ex);
+			throw new DbIoException(msg,ex);
 		}
 	}
 
@@ -312,135 +326,123 @@ public class LoadingAppDao
 	public void writeComputationApp(CompAppInfo app)
 		throws DbIoException
 	{
-		DbKey id = app.getAppId();
-		boolean isNew = id.isNull();
-		String q = null;
-		String appName = app.getAppName();
-		if (appName.length() > 24)
-			appName = appName.substring(0, 24);
-
-		if (isNew)
+		StringBuffer q = new StringBuffer();
+		final String appName = app.getAppName()
+								  .substring(0, 
+								  			 Math.min(24,
+											          app.getAppName()
+													     .length()
+													)
+											);		
+		CompAppInfo tmp = null;
+		try
 		{
-			// Could be import from XML to overwrite existing algorithm.
-			q = "select LOADING_APPLICATION_ID as id from HDB_LOADING_APPLICATION"
-			  + " where upper(LOADING_APPLICATION_NAME) = upper(?)";
-			try
-			{
-				DbKey existing = getSingleResult(q,rs-> DbKey.createDbKey(rs, "id"), appName);
-				if (existing != null)
-				{
-					id = existing;
-					app.setAppId(id);
-					isNew = false;
-				}
-			}
-			catch(SQLException ex)
-			{
-				warning(
-					String.format("Query '%s' failed when it should have return results or not results without failure: %s",
-								  q,
-								  ex.getLocalizedMessage())
-				);
-			}
+			tmp  = getComputationApp(appName);
+			app.setAppId(tmp.getAppId());
+			debug1("Updating existing Loading App");
 		}
-
-		CompAppInfo oldcai = null;
-		if (!isNew)
+		catch(NoSuchObjectException ex)
 		{
-			try { oldcai = getComputationApp(id); }
-			catch(NoSuchObjectException ex)
-			{
-				isNew = true;
-			}
+			debug1("Writing new Loading App");
 		}
-
-		PropertiesDAI propsDao = db.makePropertiesDAO();
-		propsDao.setManualConnection(getConnection());
+		final CompAppInfo oldCai = tmp;
 
 		try
 		{
-			if (isNew)
-			{
-				id = getKey("HDB_LOADING_APPLICATION");
-				q = "INSERT INTO HDB_LOADING_APPLICATION(loading_application_id, "
-					+ "loading_application_name, manual_edit_app, cmmnt"
-					+ ") VALUES(?,?,'N',?)";
-				doModify(q,id,appName,app.getComment());
-				if (id.getValue() == 0L) // HDB does auto-sequence
+			withConnection(conn->{
+				try(PropertiesDAI propsDao = db.makePropertiesDAO();)
 				{
-					q =	  "select LOADING_APPLICATION_ID as ID from HDB_LOADING_APPLICATION"
-                        + " where upper(LOADING_APPLICATION_NAME) = upper(?)";
-					try
+					propsDao.setManualConnection(conn);
+					if (oldCai == null)
 					{
-						DbKey tmpKey = getSingleResult(q,rs->DbKey.createDbKey(rs,"id"),appName);
-						if( tmpKey != null )
+						DbKey newId = getKey("HDB_LOADING_APPLICATION");
+						q.setLength(0);
+						q.append("INSERT INTO HDB_LOADING_APPLICATION(loading_application_id, "
+							+ "loading_application_name, manual_edit_app, cmmnt"
+							+ ") VALUES(?,?,'N',?)");
+						propsDao.doModify(q.toString(),newId,appName,NullableParameter.of(app.getComment(),String.class));
+						if (newId.getValue() == 0L) // HDB does auto-sequence
 						{
-							id = tmpKey;
+							q.setLength(0);
+							q.append("select LOADING_APPLICATION_ID as ID from HDB_LOADING_APPLICATION"
+								+ " where upper(LOADING_APPLICATION_NAME) = upper(?)");
+							try
+							{
+								DbKey tmpKey = getSingleResult(q.toString(),rs->DbKey.createDbKey(rs,"id"),appName);
+								if( tmpKey != null )
+								{
+									newId = tmpKey;
+								}
+							}
+							catch(SQLException ex)
+							{
+								warning("Error getting app ID: " + ex);
+							}
+						}
+						app.setAppId(newId);
+					}
+					else // update
+					{
+						String setClause = "";
+						ArrayList<Object> parameters = new ArrayList<>();
+
+						if (!TextUtil.strEqual(app.getAppName(), oldCai.getAppName()))
+						{
+							setClause = "LOADING_APPLICATION_NAME = ?";
+							parameters.add(appName);
+						}
+
+						if (!TextUtil.strEqual(app.getComment(), oldCai.getComment()))
+						{
+							if (setClause != "")
+								setClause += ", ";
+							setClause = setClause + "CMMNT = ?";
+							parameters.add(NullableParameter.of(app.getComment(),String.class));
+						}
+						if (app.getManualEditApp() != oldCai.getManualEditApp())
+						{
+							if (setClause != "")
+								setClause += ", ";
+							setClause = setClause + "MANUAL_EDIT_APP = ?";
+							parameters.add(app.getManualEditApp() ? "'Y'" : "'N'");
+						}
+
+						if (setClause != "")
+						{
+							q.setLength(0);
+							q.append("UPDATE HDB_LOADING_APPLICATION SET "
+								+ setClause
+								+ " WHERE LOADING_APPLICATION_ID = ?");
+							parameters.add(app.getAppId());
+							propsDao.doModify(q.toString(),parameters.toArray());
 						}
 					}
-					catch(SQLException ex)
-					{
-						warning("Error getting app ID: " + ex);
-					}
-				}
-				app.setAppId(id);
-			}
-			else // update
-			{
-				String setClause = "";
-				ArrayList<Object> parameters = new ArrayList<>();
 
-				if (!TextUtil.strEqual(app.getAppName(), oldcai.getAppName()))
-				{
-					setClause = "LOADING_APPLICATION_NAME = ?";
-					parameters.add(appName);
+					app.getProperties().setProperty("LastModified", lastModifiedSdf.format(new Date()));
+					propsDao.writeProperties("REF_LOADING_APPLICATION_PROP", "LOADING_APPLICATION_ID",
+						app.getKey(), app.getProperties());
 				}
-
-				if (!TextUtil.strEqual(app.getComment(), oldcai.getComment()))
+				catch (DbIoException ex)
 				{
-					if (setClause != "")
-						setClause += ", ";
-					setClause = setClause + "CMMNT = ?";
-					parameters.add(app.getComment());
+					throw new SQLException("wrapped exception",ex);
 				}
-				if (app.getManualEditApp() != oldcai.getManualEditApp())
-				{
-					if (setClause != "")
-						setClause += ", ";
-					setClause = setClause + "MANUAL_EDIT_APP = ?";
-					parameters.add(app.getManualEditApp() ? "'Y'" : "'N'");
-				}
-
-				if (setClause != "")
-				{
-					q = "UPDATE HDB_LOADING_APPLICATION SET "
-						+ setClause
-						+ " WHERE LOADING_APPLICATION_ID = ?";
-					parameters.add(id);
-					doModify(q,parameters.toArray());
-				}
-			}
-
-			app.getProperties().setProperty("LastModified", lastModifiedSdf.format(new Date()));
-			propsDao.writeProperties("REF_LOADING_APPLICATION_PROP", "LOADING_APPLICATION_ID",
-				app.getKey(), app.getProperties());
+				
+			});
 		}
 		catch(SQLException ex)
 		{
-			String msg = String.format("Query '%s' failed",q);
-			warning(msg);
-			throw new DbIoException(msg,ex);
+			if( ex.getCause() instanceof DbIoException)
+			{
+				warning(ex.getCause().getMessage());
+				throw (DbIoException)ex.getCause();
+			}
+			else
+			{
+				String msg = String.format("Query '%s' failed",q);
+				warning(msg);
+				throw new DbIoException(msg,ex);
+			}
 		}
-		catch(DbIoException ex)
-		{
-			warning(ex.getMessage());
-			throw ex;
-		}
-		finally
-		{
-			propsDao.close();
-		}
-
 	}
 
 	@Override
@@ -551,6 +553,7 @@ public class LoadingAppDao
 	{
 		return getComputationApp(lookupAppId(name));
 	}
+	
 
 	@Override
 	public TsdbCompLock obtainCompProcLock(CompAppInfo appInfo, int pid, String host)
