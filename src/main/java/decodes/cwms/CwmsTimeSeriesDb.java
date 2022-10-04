@@ -1987,6 +1987,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 						Logger.instance().debug3("\t" + n + ": " + stk[n]);
 				}
 			}
+
 			CwmsDbConnectionPool.close(con);
 		}
 		catch(SQLException ex)
@@ -1997,7 +1998,18 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		}
 		
 		if (OpenTsdbSettings.instance().traceConnections)
+		{
 			debug1("freeConnection() After free there are now " + openConnections.size() + " open connections.");
+			StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
+				boolean lastWasDao = true;
+				for(int n = 2; n < stk.length; n++) 
+				{
+					if (lastWasDao)
+						Logger.instance().debug1("\t" + n + ": " + stk[n]);
+					String s = stk[n].toString().toLowerCase();
+					lastWasDao = s.contains("dao") || s.contains("io.");
+				}
+		}
 	}
 		
 	

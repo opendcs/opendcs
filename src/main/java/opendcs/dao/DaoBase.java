@@ -99,6 +99,7 @@ public class DaoBase
 	
 	public void setManualConnection(Connection con)
 	{
+		debug3(String.format("Manual connection set (%s)",con.hashCode()));
 		this.myCon = con;
 		conSetManually = true;
 	}
@@ -117,7 +118,10 @@ public class DaoBase
 		
 		// for pooling: return the connection (if there is one) back to the pool.
 		if (myCon != null && !conSetManually)
+		{
+			debug3(String.format("Freeing Connection (%s)",myCon.hashCode()));
 			db.freeConnection(myCon);
+		}
 		myCon = null;
 	}
 
