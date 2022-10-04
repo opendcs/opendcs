@@ -318,7 +318,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 			withConnection( conn -> {
 				try(TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();)
 				{
-					timeSeriesDAO.setManualConnection(getConnection());
+					timeSeriesDAO.setManualConnection(conn);
 					ret.addAll(
 						getResultsIgnoringNull(
 							"SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
