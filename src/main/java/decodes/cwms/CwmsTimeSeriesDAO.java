@@ -164,8 +164,6 @@ public class CwmsTimeSeriesDAO
 	}
 	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
 		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
-	protected SiteDAI siteDAO = null;
-	protected DataTypeDAI dataTypeDAO = null;
 	private String dbOfficeId = null;
 	private static boolean noUnitConv = false;
 	private static long lastCacheReload = 0L;
@@ -180,8 +178,6 @@ public class CwmsTimeSeriesDAO
 	protected CwmsTimeSeriesDAO(DatabaseConnectionOwner tsdb, String dbOfficeId)
 	{
 		super(tsdb, "CwmsTimeSeriesDAO");
-		siteDAO = tsdb.makeSiteDAO();
-		dataTypeDAO = tsdb.makeDataTypeDAO();
 		this.dbOfficeId = dbOfficeId;
 	}
 
@@ -220,10 +216,12 @@ public class CwmsTimeSeriesDAO
 				+ " WHERE a.TS_CODE = ?";
 			// Don't need to add DB_OFFICE_ID because TS_CODE is unique.
 			
-			try
+			try(Connection conn = getConnection();
+			    DaoBase dao = new DaoBase(this.db,"CwmsTimeSeriesDao",conn);
+			)
 			{
 				long now = System.currentTimeMillis();
-				CwmsTsId tsId = getSingleResult(q,rs->rs2TsId(rs,true),key);
+				CwmsTsId tsId = dao.getSingleResult(q,rs->rs2TsId(rs,true,conn),key);
 				if(tsId != null)
 				{
 					tsId.setReadTime(now);
@@ -242,73 +240,79 @@ public class CwmsTimeSeriesDAO
 		throw new NoSuchObjectException("No time-series with ts_code=" + key);
 	}
 
-	private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType)
+	private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType,Connection conn)
 		throws SQLException
 	{
 //		private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
 //			+ "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
 //			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a, CWMS_V_LOC c";
-
-		DbKey key = DbKey.createDbKey(rs, 7);
-		String desc = rs.getString(1);
-		String param = rs.getString(5);
-//		String publicSiteName = rs.getString(6);
-		DataType dt = 
-			DataType.getDataType(Constants.datatype_CWMS, param);
-		
-		int x = rs.getInt(3);
-		Integer utcOffset = rs.wasNull() ? null : x;
-		
-		CwmsTsId ret = new CwmsTsId(key, desc, dt, 
-			desc, TextUtil.str2boolean(rs.getString(2)),
-			utcOffset, rs.getString(4));
-		
-		
-		DbKey siteId = DbKey.createDbKey(rs, 8);
-		Site site = null;
-		try { site = siteDAO.getSiteById(siteId); }
-		catch(DbIoException | NoSuchObjectException ex)
+		try(SiteDAI siteDAO = db.makeSiteDAO();
+			DataTypeDAI dataTypeDAO = db.makeDataTypeDAO();
+		   )
 		{
-			warning("rs2TsId No such Site for TS_ID '" + desc 
-				+ "' with ts_code=" + key + " and location_code=" + siteId);
-			throw new SQLException("unable to retrieve site information for timeseries",ex);
-		}
-		site.addName(new SiteName(site, Constants.snt_CWMS, rs.getString(9)));
-		ret.setSite(site);
+			siteDAO.setManualConnection(conn);
+			dataTypeDAO.setManualConnection(conn);
+			DbKey key = DbKey.createDbKey(rs, 7);
+			String desc = rs.getString(1);
+			String param = rs.getString(5);
+	//		String publicSiteName = rs.getString(6);
+			DataType dt = 
+				DataType.getDataType(Constants.datatype_CWMS, param);
+			
+			int x = rs.getInt(3);
+			Integer utcOffset = rs.wasNull() ? null : x;
+			
+			CwmsTsId ret = new CwmsTsId(key, desc, dt, 
+				desc, TextUtil.str2boolean(rs.getString(2)),
+				utcOffset, rs.getString(4));
+			
+			
+			DbKey siteId = DbKey.createDbKey(rs, 8);
+			Site site = null;
+			try { site = siteDAO.getSiteById(siteId); }
+			catch(DbIoException | NoSuchObjectException ex)
+			{
+				warning("rs2TsId No such Site for TS_ID '" + desc 
+					+ "' with ts_code=" + key + " and location_code=" + siteId);
+				throw new SQLException("unable to retrieve site information for timeseries",ex);
+			}
+			site.addName(new SiteName(site, Constants.snt_CWMS, rs.getString(9)));
+			ret.setSite(site);
+			
+			ret.setSiteDisplayName(site.getPublicName());
+			ret.setDescription(param + " at " + site.getPublicName());
+			
+			ret.setActive(TextUtil.str2boolean(rs.getString(10)));
 		
-		ret.setSiteDisplayName(site.getPublicName());
-		ret.setDescription(param + " at " + site.getPublicName());
+			if (decodes.db.Database.getDb().getDbIo().getDatabaseType().equalsIgnoreCase("XML"))
+				return ret;
 		
-		ret.setActive(TextUtil.str2boolean(rs.getString(10)));
-	
-		if (decodes.db.Database.getDb().getDbIo().getDatabaseType().equalsIgnoreCase("XML"))
+			if (createDataType && dt.getId() == Constants.undefinedId)
+			{
+				DataType dbdt = null;
+				try
+				{
+					dbdt = dataTypeDAO.lookupDataType(param);
+					if (dbdt == null
+					|| !dbdt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS))
+					{
+						dataTypeDAO.writeDataType(dt);
+					}
+					else // The datatype already exists, add it to the cache.
+					{
+						decodes.db.Database.getDb().dataTypeSet.add(dbdt);
+						ret.setDataType(dbdt);
+					}
+				}
+				catch(NoSuchObjectException ex) { dbdt = null; }
+				catch(DbIoException ex)
+				{
+					throw new SQLException("Unable to add DateType",ex);
+				}
+			}
+
 			return ret;
-	
-		if (createDataType && dt.getId() == Constants.undefinedId)
-		{
-			DataType dbdt = null;
-			try
-			{
-				dbdt = dataTypeDAO.lookupDataType(param);
-				if (dbdt == null
-				|| !dbdt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS))
-				{
-					dataTypeDAO.writeDataType(dt);
-				}
-				else // The datatype already exists, add it to the cache.
-				{
-					decodes.db.Database.getDb().dataTypeSet.add(dbdt);
-					ret.setDataType(dbdt);
-				}
-			}
-			catch(NoSuchObjectException ex) { dbdt = null; }
-			catch(DbIoException ex)
-			{
-				throw new SQLException("Unable to add DateType",ex);
-			}
 		}
-
-		return ret;
 	}
 
 
@@ -398,8 +402,6 @@ public class CwmsTimeSeriesDAO
 	@Override
 	public void close()
 	{
-		dataTypeDAO.close();
-		siteDAO.close();
 		super.close();
 	}
 	
@@ -754,8 +756,6 @@ public class CwmsTimeSeriesDAO
 		{
 			withConnection(conn -> {
 				CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
-
-	//			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(getConnection());
 
 				ArrayList<Long> msecArray = new ArrayList<Long>();
 				ArrayList<Double> valueArray = new ArrayList<Double>();
@@ -1548,7 +1548,7 @@ public class CwmsTimeSeriesDAO
 		}
 	}
 
-	protected Connection getConnection()
+	/*protected Connection getConnection()
 	{
 		// local getConnection() method that saves the connection locally
 		if (myCon == null)
@@ -1556,7 +1556,7 @@ public class CwmsTimeSeriesDAO
 		siteDAO.setManualConnection(myCon);
 		dataTypeDAO.setManualConnection(myCon);
 		return myCon;
-	}
+	}*/
 
 
 }

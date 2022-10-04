@@ -64,6 +64,7 @@ import ilex.util.Location;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -245,13 +246,13 @@ public class CwmsSiteDAO extends SiteDAO
 		Double dlat = new Double(lat);
 		Double dlon = new Double(lon);
 		Double delev = (elev == Constants.undefinedDouble ? null : new Double(elev));
-		try
+		try(Connection conn = getConnection())
 		{
 			if (DecodesSettings.instance().writeCwmsLocations)
 			{
 				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue() 
 					+ "' with officeId=" + officeId);
-				CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, getConnection());
+				CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, conn);
 				
 				if (newSite.country == null || newSite.country.trim().length() == 0
 				 || newSite.country.trim().toLowerCase().startsWith("us"))
@@ -260,7 +261,7 @@ public class CwmsSiteDAO extends SiteDAO
 				// MJM for release 5.3 use the new improved version of store
 				// This allows us to save country and nearest city.
 				cwmsDbLoc.store(
-					getConnection(),
+					conn,
 					officeId, 
 					cwmsName.getNameValue(), 
 					state, 
@@ -369,7 +370,7 @@ public class CwmsSiteDAO extends SiteDAO
 		String q = "select count(*) from cwms_v_ts_id where upper(location_id) = "
 			+ sqlString(cwmsName.getNameValue().toUpperCase());
 		ResultSet rs = null;
-		try
+		try(Connection conn = getConnection();)
 		{
 			rs = doQuery(q);
 			if (rs != null && rs.next())
@@ -408,8 +409,8 @@ public class CwmsSiteDAO extends SiteDAO
 			q = "DELETE FROM SITE_PROPERTY WHERE site_id = " + site.getId();
 			doModify(q);
 
-			CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, getConnection());
-			cwmsDbLoc.delete(getConnection(), officeId, cwmsName.getNameValue());
+			CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, conn);
+			cwmsDbLoc.delete(conn, officeId, cwmsName.getNameValue());
 			cache.remove(location_code);
 		}
 		catch(SQLException ex)
