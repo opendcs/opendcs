@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import fixtures.NonPoolingConnectionOwner;
 import fixtures.TestConnectionOwner;
 
-public class DaoBaseTest 
+public class DaoBaseTest
 {
     TestConnectionOwner dbOwner = new NonPoolingConnectionOwner();
 
@@ -32,7 +32,7 @@ public class DaoBaseTest
     @BeforeEach
     public void create_db() throws Exception
     {
-          
+
         Connection conn = DriverManager.getConnection("jdbc:derby:memory:db;create=true");
         assertNotNull(conn,"Failed to acquire Derby database.");
         dbOwner.setConnection(conn);
@@ -65,13 +65,13 @@ public class DaoBaseTest
             if (err.getSQLState().equals("08006") )
             {
                 dbOwner.setConnection(null);
-            } 
+            }
             else
             {
                 throw err;
             }
         }
-        
+
     }
 
     /**
@@ -83,7 +83,7 @@ public class DaoBaseTest
     public void test_do_query() throws Exception
     {
         try( DaoBase dao = new DaoBase(dbOwner,"test"); )
-        {                       
+        {
             List<DaoBaseTest.SimpleComp> result = dao.getResults("select id,name from cp_computation", rs -> { return new SimpleComp(rs);});
             assertEquals(2, result.size(), "not all results returned");
 
@@ -109,9 +109,9 @@ public class DaoBaseTest
     public void test_get_multiple_results() throws Exception
     {
         try( DaoBase dao = new DaoBase(dbOwner,"test"); )
-        {                       
+        {
             List<DaoBaseTest.SimpleComp> result = dao.getResults("select id,name from cp_computation", rs -> { return new SimpleComp(rs);});
-            assertEquals(2, result.size(), "not all results returned");        
+            assertEquals(2, result.size(), "not all results returned");
         }
     }
 
@@ -131,7 +131,7 @@ public class DaoBaseTest
             name = rs.getString("name");
         }
 
-        
+
 
         public int getId()
         {
