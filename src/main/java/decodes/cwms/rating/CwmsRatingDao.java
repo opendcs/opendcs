@@ -363,16 +363,23 @@ public class CwmsRatingDao extends DaoBase
 		}
 
 		Logger.instance().debug3(module + " calling storeToDatabase");
-		newSet.storeToDatabase(getConnection(), true);
+		try(Connection conn = getConnection())
+		{
+			newSet.storeToDatabase(conn, true);
+		}
+		catch(SQLException ex)
+		{
+			throw new RatingException("Unable to store ratings",ex);
+		}
 	}
-	
+
 	public RatingSet getRatingSet(String specId)
 		throws RatingException
 	{
 		// Internally use specId all in upper case.
 		String ucSpecId = specId.toUpperCase();
 		String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
-		
+
 		RatingWrapper rw = ratingCache.get(ucSpecId);
 		if (rw != null)
 		{
@@ -416,13 +423,20 @@ public class CwmsRatingDao extends DaoBase
 		Logger.instance().debug3(module + " constructing RatingSet with officeId=" 
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
-		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), officeId, specId);
+		try(Connection conn = getConnection())
+		{
+			RatingSet ratingSet = RatingSet.fromDatabase(conn, officeId, specId);
 
-		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
-		
-		Logger.instance().debug3(module + " reading rating from database took "
-			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
-		
-		return ratingSet;
+			ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
+
+			Logger.instance().debug3(module + " reading rating from database took "
+				+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
+
+			return ratingSet;
+		}
+		catch(SQLException ex)
+		{
+			throw new RatingException("Unable to access database",ex);
+		}
 	}
 }
