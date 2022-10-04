@@ -64,12 +64,14 @@ package opendcs.dao;
 
 import hec.util.TextUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Stack;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -105,10 +107,28 @@ public class TsGroupDAO
 	{
 		return getTsGroupById(groupId, false);
 	}
-	
+
 	@Override
 	public TsGroup getTsGroupById(DbKey groupId, boolean forceDbRead)
 		throws DbIoException
+	{
+		TsGroup ret[] = new TsGroup[1];
+		ret[0] = null;
+		try
+		{
+			withConnection(conn-> {
+				ret[0] = getTsGroupById(groupId, forceDbRead, conn);
+			});
+			return ret[0];
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("Unable to get group by ID",ex);
+		}
+	}
+
+	private TsGroup getTsGroupById(DbKey groupId, boolean forceDbRead, Connection conn)
+		throws SQLException
 	{
 		TsGroup ret = null;
 		
@@ -120,30 +140,14 @@ public class TsGroupDAO
 //else debug2("READING FROM DATABASE group id " + groupId);
 		
 		String q = "SELECT " + GroupAttributes + " FROM tsdb_group "
-			+ "WHERE group_id = " + groupId;
-		try
+			+ "WHERE group_id = ?";// + groupId;
+		
+		try(DaoBase dao = new DaoBase(this.db,"TsGroupDAO",conn);)
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-			{
-				ret = rs2group(rs);
-
-				loopGuard.push(groupId);
-				readTsGroupMembers(ret);
-				loopGuard.pop();
-				cache.put(ret);
-				return ret;
-			}
-			else
-			{
-				cache.remove(groupId);
-				return null;
-			}
-		}
-		catch(Exception ex)
-		{
-			throw new DbIoException(
-				"getTsGroupById: Cannot get group for id=" + groupId + ": "+ex);
+			return getSingleResultOr(q,
+					     			rs->rs2group(rs,conn),
+									()->{cache.remove(groupId);return null;},
+									groupId);
 		}
 	}
 
@@ -164,59 +168,86 @@ public class TsGroupDAO
 		ret.setDescription(rs.getString(4));
 		return ret;
 	}
+
+	/**
+	 * Handle filling in Group Members
+	 * @param rs result set with appropriate Ts Group Columns
+	 * @return complete TsGroup
+	 */
+	protected TsGroup rs2group(ResultSet rs, Connection conn) throws SQLException
+	{
+		TsGroup ret = rs2group(rs);
+		try
+		{
+			loopGuard.push(ret.getGroupId());
+			readTsGroupMembers(ret, conn);
+			loopGuard.pop();
+		}
+		catch(DbIoException ex)
+		{
+			throw new SQLException("failed to read group members",ex);
+		}
+		return ret;
+	}
 	
-	public void readTsGroupMembers(TsGroup group)
+	public void readTsGroupMembers(TsGroup group, Connection conn)
 		throws DbIoException
 	{
 		group.clear();
 
-		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
-		try
+		
+		try(TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();)
 		{
-			timeSeriesDAO.setManualConnection(getConnection());
-			String q = "select * from tsdb_group_member_ts "
-				+ "where group_id = " + group.getGroupId();
+			final DaoBase dao = (DaoBase)timeSeriesDAO;// make sure we reuse the connection we have
+			timeSeriesDAO.setManualConnection(conn);
+			StringBuffer q = new StringBuffer("select * from tsdb_group_member_ts "
+				+ "where group_id = ?");
 			
-			ResultSet rs = doQuery(q);
-			ArrayList<DbKey> dataIds = new ArrayList<DbKey>();
-			while(rs != null && rs.next())
-				dataIds.add(DbKey.createDbKey(rs, 2));
-			
-			for(DbKey dataId : dataIds)
-			{
-				try { group.addTsMember(timeSeriesDAO.getTimeSeriesIdentifier(dataId)); }
-				catch(NoSuchObjectException ex)
-				{
-					warning("tsdb_group id=" + group.getGroupId()
-						+ " contains invalid ts member with data_id="
-						+ dataId + " -- ignored.");
-				}
-			}
+			// add direct timeseries
+			dao.getResults(q.toString(),rs->DbKey.createDbKey(rs,1),group.getGroupId())
+					.forEach((tsId)->{
+						try { group.addTsMember(timeSeriesDAO.getTimeSeriesIdentifier(tsId)); }
+						catch(NoSuchObjectException ex)
+						{
+							warning("tsdb_group id=" + group.getGroupId()
+								+ " contains invalid ts member with data_id="
+								+ tsId + " -- ignored.");
+						}
+						catch(DbIoException ex)
+						{
+							warning("tsdb_group id=" + group.getGroupId()
+								+ " contains invalid ts member with data_id="
+								+ tsId + " ,Unable to process timeseries identifier-- ignored.");
+						}
+					});
 
 			// Now read the site list.
-			q = "SELECT site_id  from tsdb_group_member_site "
-				+ "WHERE group_id = " + group.getGroupId();
-			rs = doQuery(q);
-			while(rs != null && rs.next())
-				group.addSiteId(DbKey.createDbKey(rs, 1));
+			q.setLength(0);
+			q.append("SELECT site_id  from tsdb_group_member_site "
+				+ "WHERE group_id = ?");
+			dao.doQuery(q.toString(),rs -> {
+				group.addSiteId(DbKey.createDbKey(rs,"site_id"));
+			},group.getGroupId());
 
 			// Now read the data-type list.
-			q = "SELECT data_type_id  from tsdb_group_member_dt "
-				+ "WHERE group_id = " + group.getGroupId();
-			rs = doQuery(q);
-			while(rs != null && rs.next())
+			q.setLength(0);
+			q.append("SELECT data_type_id  from tsdb_group_member_dt "
+				+ "WHERE group_id = ?");
+			dao.doQuery(q.toString(),rs -> {
 				group.addDataTypeId(DbKey.createDbKey(rs, 1));
-
-			q = "select member_type, member_value from "
-			  + "tsdb_group_member_other where group_id = "
-			  + group.getGroupId();
-			rs = doQuery(q);
-			while(rs != null && rs.next())
+			},group.getGroupId());			
+				
+			q.setLength(0);
+			q.append("select member_type, member_value from "
+			  + "tsdb_group_member_other where group_id = ?");
+			dao.doQuery(q.toString(),rs->{
 				group.addOtherMember(rs.getString(1), rs.getString(2));
+			},group.getGroupId());
 
 			// Now get the sub-groups.
-			q = "SELECT child_group_id, include_group from tsdb_group_member_group "
-				+ "where parent_group_id = " + group.getGroupId();
+			q.setLength(0);
+			q.append("SELECT child_group_id, include_group from tsdb_group_member_group "
+				+ "where parent_group_id = ?");// + group.getGroupId();
 			
 			class ChildGroup 
 			{
@@ -227,12 +258,8 @@ public class TsGroupDAO
 					this.combine = combine;
 				}
 			}
-			ArrayList<ChildGroup> children = new ArrayList<ChildGroup>();
 			
-			// Have to read first then recurse. Otherwise ResultSet gets closed in recursion.
-			rs = doQuery(q);
-			while(rs != null && rs.next())
-			{
+			List<ChildGroup> children = dao.getResultsIgnoringNull(q.toString(),rs->{
 				DbKey childId = DbKey.createDbKey(rs, 1);
 				String s = rs.getString(2);
 				char combine = (s != null && s.length() > 0) ? s.charAt(0) : 'A';
@@ -241,15 +268,14 @@ public class TsGroupDAO
 					warning("Group (id=" + group.getGroupId() + ") " + group.getGroupName()
 						+ " -- has sub group ID=" + childId 
 						+ " Circular reference detected -- Ignored.");
-					continue;
+					return null;
 				}
-
-				children.add(new ChildGroup(childId, combine));
-			}
+				return new ChildGroup(childId, combine);
+			},group.getGroupId());
 			
 			for(ChildGroup cg : children)
 			{
-				TsGroup child = getTsGroupById(cg.gid);
+				TsGroup child = getTsGroupById(cg.gid,false,conn);
 				
 				if (child != null)
 					group.addSubGroup(child, cg.combine);
@@ -265,10 +291,6 @@ public class TsGroupDAO
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 			throw new DbIoException(msg);
-		}
-		finally
-		{
-			timeSeriesDAO.close();
 		}
 	}
 
@@ -296,19 +318,23 @@ public class TsGroupDAO
 		throws DbIoException
 	{
 		String q = "SELECT group_id FROM tsdb_group "
-			+ "WHERE lower(group_name) = " + sqlString(grpName.toLowerCase());
-		try
+			+ "WHERE lower(group_name) = lower(?)";
+		try(Connection conn = getConnection();
+			DaoBase dao = new DaoBase(this.db,"TsGroupDAO",conn);)
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-				return getTsGroupById(DbKey.createDbKey(rs, 1));
+			DbKey groupId = dao.getSingleResultOr(q,
+												  rs->DbKey.createDbKey(rs, 1),
+												  ()->DbKey.NullKey,
+												  grpName);
+			if (!groupId.isNull())
+				return getTsGroupById(groupId,false,conn);
 			else
 				return null;
 		}
 		catch(Exception ex)
 		{
 			throw new DbIoException(
-				"getTsGroupByName: Cannot get group '" + grpName + "': " + ex);
+				"getTsGroupByName: Cannot get group '" + grpName + "': " + ex,ex);
 		}
 	}
 
@@ -446,44 +472,46 @@ public class TsGroupDAO
 			return;
 		
 		removeDependenciesFor(groupId);
-
+		String q = "DELETE from tsdb_group_member_ts WHERE group_id = ?";// + groupId;
+		try
+		{
 		//First delete all time-series member links.
-		String q = "DELETE from tsdb_group_member_ts WHERE group_id = " + groupId;
-		doModify(q);
-			
-		//Delete sub-group associations, also delete any Group link
-		//that has this group id
-		q = "DELETE from tsdb_group_member_group "
-			+ "WHERE parent_group_id = " + groupId
-			+ " OR child_group_id = "  + groupId;
-		doModify(q);
-			
-		q = "DELETE from tsdb_group_member_site where group_id = " + groupId;
-		doModify(q);
-		q = "DELETE from tsdb_group_member_dt where group_id = " + groupId;
-		doModify(q);
+		
+			doModify(q,groupId);
+				
+			//Delete sub-group associations, also delete any Group link
+			//that has this group id
+			q = "DELETE from tsdb_group_member_group "
+				+ "WHERE parent_group_id = ?"
+				+ " OR child_group_id = ?";
+			doModify(q,groupId,groupId);
+				
+			q = "DELETE from tsdb_group_member_site where group_id = ?";
+			doModify(q,groupId);
+			q = "DELETE from tsdb_group_member_dt where group_id = ?";
+			doModify(q,groupId);
 
-		q = "DELETE from tsdb_group_member_other where group_id = " + groupId;
-		doModify(q);
+			q = "DELETE from tsdb_group_member_other where group_id = ?";
+			doModify(q,groupId);
 
-		q = "DELETE from tsdb_group WHERE group_id = " + groupId;
-		doModify(q);
+			q = "DELETE from tsdb_group WHERE group_id = ?";
+			doModify(q,groupId);
+		}
+		catch(SQLException ex)
+		{
+			String msg = String.format("Failed to delete TsGroup. Query %s",q);
+			throw new DbIoException(msg,ex);
+		}
 	}
 
 	@Override
 	public int countCompsUsingGroup(DbKey groupId)
 		throws DbIoException
 	{
-		String q = "select count(*) from cp_computation where group_id = " + groupId;
-		ResultSet rs = doQuery(q);
+		String q = "select count(*) from cp_computation where group_id = ?";
 		try
 		{
-			if (rs != null && rs.next())
-			{
-				return rs.getInt(1);
-			}
-			else
-				return 0;
+			return getSingleResultOr(q, rs->rs.getInt(1),()->0,groupId);
 		}
 		catch (SQLException ex)
 		{
@@ -499,12 +527,16 @@ public class TsGroupDAO
 		String q = "";
 
 		cache.clear();
-		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
-		if (timeSeriesDAO == null)
-			throw new DbIoException("Can't make timeSeriesDAO!");
-		try
+		
+		
+		try(Connection conn = getConnection();
+			TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();)
 		{
-			timeSeriesDAO.setManualConnection(getConnection());
+			if (timeSeriesDAO == null)
+				throw new DbIoException("Can't make timeSeriesDAO!");
+			
+			timeSeriesDAO.setManualConnection(conn);
+			final DaoBase dao = (DaoBase)timeSeriesDAO; // make sure we only have one connection out.
 			q = "SELECT " + GroupAttributes + " FROM tsdb_group";
 			ResultSet rs = doQuery(q);
 			while(rs != null && rs.next())
@@ -616,10 +648,6 @@ if (group == null)
 		{
 			throw new DbIoException("TsGroupDAO.fillCache: Error in query '" + q + "': " + ex);
 		}
-		finally
-		{
-			timeSeriesDAO.close();
-		}
 		lastCacheFill = System.currentTimeMillis();
 	}
 
@@ -721,6 +749,3 @@ if (group == null)
 	}
 
 }
-
-
-
