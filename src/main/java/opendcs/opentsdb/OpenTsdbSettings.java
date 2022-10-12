@@ -28,7 +28,7 @@ public class OpenTsdbSettings
 	/** Name of presentation group that determines storage units */
 	public String storagePresentationGroup = "CWMS-English";
 	
-	public boolean traceConnections = false;
+	public boolean traceConnections = true;
 	
 	private static PropertySpec propSpecs[] =
 	{

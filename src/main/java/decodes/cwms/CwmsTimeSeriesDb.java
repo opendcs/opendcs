@@ -671,8 +671,10 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.GregorianCalendar;
 import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -680,6 +682,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.TimeZone;
+
+import javax.management.JMException;
+import javax.management.ObjectName;
+import javax.management.openmbean.TabularData;
 
 import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
@@ -689,6 +695,8 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.opentsdb.OpenTsdbSettings;
+import opendcs.org.opendcs.jmx.ConnectionTrackingMXBean;
+import opendcs.util.sql.WrappedConnection;
 import lrgs.gui.DecodesInterface;
 
 import java.sql.PreparedStatement;
@@ -726,7 +734,7 @@ a mechanism to persistently store time series and computational meta
 data.
 */
 public class CwmsTimeSeriesDb
-	extends TimeSeriesDb
+	extends TimeSeriesDb implements ConnectionTrackingMXBean
 {
 	private String dbOfficeId = null;
 
@@ -747,7 +755,10 @@ public class CwmsTimeSeriesDb
 	/** Set after first connect, reused by getConnection() called from DAOs */
 	private CwmsConnectionInfo conInfo = null;
 	private ArrayList<Connection> openConnections = new ArrayList<Connection>();
-
+	private int connectiossRequested = 0;
+	private int connectionsFreed = 0;
+	private int unknownConnReturned = 0;
+	private List<WrappedConnection> beanTrackedConnections = new ArrayList<>();
 
 	/**
 	 * No args constructor required because this is instantiated from
@@ -766,6 +777,16 @@ public class CwmsTimeSeriesDb
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
 		module = "CwmsTimeSeriesDb";
+
+		try
+		{
+			ManagementFactory.getPlatformMBeanServer()
+							 .registerMBean(this, new ObjectName("org.opendcs:type=TimeSeriesDb,name=CwmsTimeSeriesDb("+this.hashCode()+")"));
+		}
+		catch(JMException ex)
+		{
+			warning("Unable to register tracking bean " + ex.getLocalizedMessage());
+		}
 	}
 
 	public static CwmsConnectionInfo getDbConnection(String dbUri, String username, String password, String dbOfficeId)
@@ -1918,11 +1939,12 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			failure("CwmsTimeSeriesDb.getConnection -- loginInfo is null! DB not initialized?");
 			return null;
 		}
-		
+		this.connectiossRequested++;
 		Connection ret = null;
 		try
 		{
 			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo(), module);
+			CwmsDbConnectionPool.startTrace(ret);
 		}
 		catch (SQLException ex)
 		{
@@ -1986,8 +2008,13 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	@Override
 	public void freeConnection(Connection con)
 	{
+		this.connectionsFreed++;
 		if (!openConnections.remove(con))
+		{
+			unknownConnReturned++;
 			warning("freeConnection() - weird! Passed a connection that wasn't in my open-list.");
+			return; // probably shouldn't do anything with it.
+		}
 		
 		try { CwmsDbConnectionPool.close(con); }
 		catch(SQLException ex)
@@ -1999,6 +2026,52 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		
 		if (OpenTsdbSettings.instance().traceConnections)
 			debug1("freeConnection() After free there are now " + openConnections.size() + " open connections.");
+	}
+
+	@Override
+	public int getConnectionsOut() {
+		return openConnections.size();
+	}
+
+	@Override
+	public int getConnectionsAvailable() {
+		return 10 - openConnections.size();
+	}
+
+	@Override
+	public String getThreadName() {
+		return Thread.currentThread().getName();
+	}
+
+	@Override
+	public int getGetConnCalled() {
+		return this.connectiossRequested;
+	}
+
+	@Override
+	public int getFreeConnCalled() {
+		return this.connectionsFreed;
+	}
+
+	@Override
+	public int getUnknownReturned() {
+		return this.unknownConnReturned;
+	}
+
+	@Override
+	public TabularData getConnectionsList() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void addBeanTrackedConnection(WrappedConnection conn)
+	{
+		beanTrackedConnections.add(conn);
+	}
+
+	public void removeBeanTrackedConnection(WrappedConnection conn)
+	{
+		beanTrackedConnections.remove(conn);
 	}
 		
 	

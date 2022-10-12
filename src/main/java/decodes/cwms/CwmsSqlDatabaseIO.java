@@ -13,18 +13,31 @@
 package decodes.cwms;
 
 import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
+
+import javax.management.JMException;
+import javax.management.ObjectName;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.opentsdb.OpenTsdbSettings;
+import opendcs.org.opendcs.jmx.ConnectionTrackingMXBean;
+import opendcs.org.opendcs.jmx.connections.JMXTypes;
+import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import lrgs.gui.DecodesInterface;
 import ilex.util.Logger;
@@ -49,7 +62,7 @@ import decodes.util.DecodesSettings;
  */
 public class CwmsSqlDatabaseIO
 	extends SqlDatabaseIO
-	implements DatabaseConnectionOwner
+	implements DatabaseConnectionOwner,ConnectionTrackingMXBean
 {
 	public final static String module = "CwmsSqlDatabaseIO";
 	/** The office ID associated with this connection. This implicitely
@@ -60,6 +73,10 @@ public class CwmsSqlDatabaseIO
 	private String sqlDbLocation = null;
 	private ArrayList<Connection> openConnections = new ArrayList<Connection>();
 
+	private int getConnCalled = 0;
+	private int freeConnCalled = 0;
+	private int unknownConnReturned = 0;
+	private List<WrappedConnection> beanTrackedConnections = new ArrayList<>();
 	
 	/**
  	* Constructor.  The argument is the "location" of the
@@ -109,6 +126,16 @@ public class CwmsSqlDatabaseIO
 		// Oracle 11g requires that backslashes NOT be escaped in SQL strings.
 		SqlDbObjIo.escapeBackslash = false;
 		_isOracle = true;
+
+		try
+		{
+			ManagementFactory.getPlatformMBeanServer()
+							 .registerMBean(this, new ObjectName("org.opendcs:type=DatabaseIO,name=CwmsSqlDatabaseIO("+this.hashCode()+")"));
+		}
+		catch(JMException ex)
+		{
+			Logger.instance().warning("Unable to register tracking bean " + ex.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -332,7 +359,9 @@ public class CwmsSqlDatabaseIO
 		Connection ret = null;
 		try
 		{
+			getConnCalled++;
 			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo(), module);
+			CwmsDbConnectionPool.startTrace(ret);
 		}
 		catch (SQLException ex)
 		{
@@ -367,7 +396,7 @@ public class CwmsSqlDatabaseIO
 				+ "', officeId='" + dbOfficeId + "', officeCode=" + conInfo.getDbOfficeCode() + ", priv='"
 				+ conInfo.getDbOfficePrivilege() + "':" + ex;
 			Logger.instance().failure(msg);
-			try { CwmsDbConnectionPool.close(ret); } catch(Exception ex2) {}
+			try { CwmsDbConnectionPool.close(ret.unwrap(Connection.class)); } catch(Exception ex2) {}
 			return null;
 			// TODO Should this method throw BadConnectException?
 //			throw new BadConnectException(msg);
@@ -388,7 +417,10 @@ public class CwmsSqlDatabaseIO
 				if (s.contains("dao") || s.contains("io.")) 
 					Logger.instance().debug1("\t" + n + ": " + stk[n]);
 			}
-		}		
+		}
+		ret = new WrappedConnection(ret,(c) -> this.freeConnection(c)
+				,Optional.of(this));
+		addBeanTrackedConnection((WrappedConnection)ret);	
 		return ret;
 	}
 
@@ -396,9 +428,21 @@ public class CwmsSqlDatabaseIO
 	@Override
 	public void freeConnection(Connection con)
 	{
+		if( con instanceof WrappedConnection)
+		{
+			
+			try {con.close();} catch(SQLException ex) {}
+			removeBeanTrackedConnection((WrappedConnection)con);
+			return;
+		}
+		freeConnCalled++;
 		if (!openConnections.remove(con))
+		{
+			unknownConnReturned++;
 			Logger.instance().warning(module 
 				+ ".freeConnection() - weird! Passed a connection that wasn't in my open-list.");
+			return;
+		}
 		
 		try { CwmsDbConnectionPool.close(con); }
 		catch(SQLException ex)
@@ -412,6 +456,70 @@ public class CwmsSqlDatabaseIO
 		if (OpenTsdbSettings.instance().traceConnections)
 			Logger.instance().debug1(module + ".freeConnection() After free there are now " 
 				+ openConnections.size() + " open connections.");
+	}
+
+	@Override
+	public int getConnectionsOut()
+	{
+		return openConnections.size();
+	}
+
+	@Override
+	public int getConnectionsAvailable()
+	{
+		return 10-openConnections.size();
+	}
+
+	@Override
+	public String getThreadName()
+	{
+		return Thread.currentThread().getName();
+	}
+
+	@Override
+	public int getGetConnCalled()
+	{
+		return getConnCalled;
+	}
+
+	@Override
+	public int getFreeConnCalled()
+	{
+		return freeConnCalled;
+	}
+
+	@Override
+	public int getUnknownReturned()
+	{
+		return unknownConnReturned;
+	}
+
+	@Override
+	public TabularData getConnectionsList() throws OpenDataException
+	{
+		TabularData td = new TabularDataSupport(JMXTypes.CONNECTION_LIST);
+		for(WrappedConnection conn: this.beanTrackedConnections)
+		{
+			td.put(conn.asCompositeData());
+		}
+		return td;
+	}
+
+	/**
+	 * Called by WrappedConnection on create
+	 */
+	public void addBeanTrackedConnection(WrappedConnection conn)
+	{
+		beanTrackedConnections.add(conn);
+		
+	}
+
+	/**
+	 * Called by WrappedConnection on close
+	 */
+	public void removeBeanTrackedConnection(WrappedConnection conn)
+	{
+		beanTrackedConnections.remove(conn);
 	}
 
 	
