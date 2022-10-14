@@ -5,7 +5,7 @@ import javax.management.openmbean.TabularData;
 
 import opendcs.util.sql.WrappedConnection;
 
-public interface ConnectionTrackingMXBean {
+public interface ConnectionPoolMXBean {
     public int getConnectionsOut();
     public int getConnectionsAvailable();
     public String getThreadName();

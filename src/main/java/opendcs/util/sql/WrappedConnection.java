@@ -29,8 +29,9 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 
+import decodes.cwms.CwmsConnectionPool;
 import ilex.util.Logger;
-import opendcs.org.opendcs.jmx.ConnectionTrackingMXBean;
+import opendcs.org.opendcs.jmx.ConnectionPoolMXBean;
 import opendcs.org.opendcs.jmx.connections.JMXTypes;
 import opendcs.util.functional.ThrowingConsumer;
 
@@ -47,7 +48,7 @@ public class WrappedConnection implements Connection{
 
     private Connection realConnection;
     private final ThrowingConsumer<Connection,SQLException> onClose;
-    private Optional<ConnectionTrackingMXBean> mbean;
+    private Optional<CwmsConnectionPool> pool;
     private List<StackTraceElement> openTrace = null;
     private List<StackTraceElement> closeTrace = null;
     private ZonedDateTime start = ZonedDateTime.now();
@@ -59,14 +60,14 @@ public class WrappedConnection implements Connection{
         this(realConnection, (c) -> {},Optional.ofNullable(null));
     }
 
-    public WrappedConnection(Connection realConnection, final ThrowingConsumer<Connection,SQLException> onClose, Optional<ConnectionTrackingMXBean> trackingBean)
+    public WrappedConnection(Connection realConnection, final ThrowingConsumer<Connection,SQLException> onClose, Optional<CwmsConnectionPool> pool )
     {
         Objects.requireNonNull(realConnection, "WrappedConnection cannot wrap a null connection");
         Objects.requireNonNull(onClose, "WrappedConnections requires a valid Consumer for the close operation");
         this.realConnection = realConnection;
         this.onClose = onClose;
-        this.mbean = trackingBean;
-        if(trackingBean.isPresent())
+        this.pool = pool;
+        if(pool.isPresent())
         {
             openTrace = new ArrayList<>();
             StackTraceElement ste[] = Thread.currentThread().getStackTrace();
@@ -101,7 +102,7 @@ public class WrappedConnection implements Connection{
 
     @Override
     public void close() throws SQLException {
-        if (mbean.isPresent())
+        if (pool.isPresent())
         {
             openTrace = new ArrayList<>();
             StackTraceElement ste[] = Thread.currentThread().getStackTrace();
