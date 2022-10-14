@@ -38,6 +38,8 @@ import opendcs.opentsdb.OpenTsdbSettings;
 import opendcs.org.opendcs.jmx.ConnectionTrackingMXBean;
 import opendcs.org.opendcs.jmx.connections.JMXTypes;
 import opendcs.util.sql.WrappedConnection;
+import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
+import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import lrgs.gui.DecodesInterface;
 import ilex.util.Logger;
@@ -206,18 +208,91 @@ public class CwmsSqlDatabaseIO
 			_dbUser = authFile.getUsername();
 			password = authFile.getPassword();
 		}
-		
-		try
+		if( conInfo == null)
 		{
-			conInfo = CwmsTimeSeriesDb.getDbConnection(sqlDbLocation, _dbUser, password, dbOfficeId);
-			openConnections.add(conInfo.getConnection());
-			
-			//TODO Should I set an internal connection object? Shouldn't everybody be calling getConnection()?
-//			setConnection(conInfo.getConnection());
+			conInfo = new CwmsConnectionInfo();
+			ConnectionLoginInfo info = new ConnectionLoginInfoImpl(sqlDbLocation, _dbUser,password, dbOfficeId);
+			conInfo.setLoginInfo(info);
+		}
+		
+		try(Connection conn = CwmsTimeSeriesDb.getDbConnection(sqlDbLocation, _dbUser, password, dbOfficeId);)
+		{					
+			readVersionInfo(this, conn);
+		
+			// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
+			// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
+			int decodesDbVersion = getDecodesDatabaseVersion();
+			Logger.instance().info(module + " decodesDbVersion=" + decodesDbVersion);
+			keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
+					new OracleSequenceKeyGenerator() :
+					new CwmsSequenceKeyGenerator(decodesDbVersion);
+				TimeSeriesDb.readVersionInfo(this, conInfo.getConnection());
+				cgl.setLoginSuccess(true);
 
-			
-			TimeSeriesDb.readVersionInfo(this, conInfo.getConnection());
+			String q = null;
+			try(Statement st = conn.createStatement();)
+			{
+				// Hard-code date & timestamp format for reads. Always use GMT.
+				q = "ALTER SESSION SET TIME_ZONE = 'GMT'";
+				Logger.instance().info(q);
+				st.execute(q);
+
+				q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
+				Logger.instance().info(q);
+				st.execute(q);
+				
+				q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
+				Logger.instance().info(q);
+				st.execute(q);
+
+				q = "ALTER SESSION SET nls_timestamp_tz_format = 'yyyy-mm-dd hh24:mi:ss'";
+				Logger.instance().info(q);
+				st.execute(q);
+				
+				Logger.instance().info("DECODES IF Connected to TSDB Version " + tsdbVersion);
+			}
+			catch(SQLException ex)
+			{
+				String msg = "Error in '" + q + "': " + ex
+					+ " -- will proceed anyway.";
+				Logger.instance().failure(msg + " " + ex);
+			}
+
 			cgl.setLoginSuccess(true);
+			Logger.instance().info(module + 
+				" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
+				+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + conInfo.getDbOfficeCode() + ")");
+
+			// CWMS-8979 Allow settings in the database to override values in user.properties.
+			String settingsApp = System.getProperty("SETTINGS");
+			if (settingsApp != null)
+			{
+				Logger.instance().info("SqlDatabaseIO Overriding Decodes Settings with properties in "
+					+ "Process Record '" + settingsApp + "'");
+				LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
+				try
+				{
+					CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+					PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+				}
+				catch (DbIoException ex)
+				{
+					Logger.instance().warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+				}
+				catch (NoSuchObjectException ex)
+				{
+					Logger.instance().warning("Cannot load settings from non-existent app '" 
+						+ settingsApp + "': " + ex);
+				}
+				finally
+				{
+					loadingAppDAO.close();
+				}
+			}
+		}
+		catch(SQLException ex)
+		{
+			throw new DatabaseException("unable to get connection",ex);
 		}
 		catch(BadConnectException ex)
 		{
@@ -225,95 +300,9 @@ public class CwmsSqlDatabaseIO
 			Logger.instance().failure(msg);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
-			cgl.setLoginSuccess(false);
-			if (conInfo.getConnection() != null)
-				freeConnection(conInfo.getConnection());
-			conInfo = null;
+			cgl.setLoginSuccess(false);			
 			throw new DatabaseException(msg);
 		}
-		
-		readVersionInfo(this, conInfo.getConnection());
-		
-		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
-		// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
-		int decodesDbVersion = getDecodesDatabaseVersion();
-		Logger.instance().info(module + " decodesDbVersion=" + decodesDbVersion);
-		keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
-				new OracleSequenceKeyGenerator() :
-				new CwmsSequenceKeyGenerator(decodesDbVersion);
-
-		String q = null;
-		Statement st = null;
-		try
-		{
-			st = conInfo.getConnection().createStatement();
-			
-			// Hard-code date & timestamp format for reads. Always use GMT.
-			q = "ALTER SESSION SET TIME_ZONE = 'GMT'";
-			Logger.instance().info(q);
-			st.execute(q);
-
-			q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
-			Logger.instance().info(q);
-			st.execute(q);
-			
-			q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
-			Logger.instance().info(q);
-			st.execute(q);
-
-			q = "ALTER SESSION SET nls_timestamp_tz_format = 'yyyy-mm-dd hh24:mi:ss'";
-			Logger.instance().info(q);
-			st.execute(q);
-			
-			Logger.instance().info("DECODES IF Connected to TSDB Version " + tsdbVersion);
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error in '" + q + "': " + ex
-				+ " -- will proceed anyway.";
-			Logger.instance().failure(msg + " " + ex);
-		}
-		finally
-		{
-			try { st.close(); } catch(Exception ex) {}
-		}
-
-		cgl.setLoginSuccess(true);
-		Logger.instance().info(module + 
-			" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
-			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + conInfo.getDbOfficeCode() + ")");
-		
-		// CWMS-8979 Allow settings in the database to override values in user.properties.
-		String settingsApp = System.getProperty("SETTINGS");
-		if (settingsApp != null)
-		{
-			Logger.instance().info("SqlDatabaseIO Overriding Decodes Settings with properties in "
-				+ "Process Record '" + settingsApp + "'");
-			LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
-			try
-			{
-				CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
-				PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
-			}
-			catch (DbIoException ex)
-			{
-				Logger.instance().warning("Cannot load settings from app '" + settingsApp + "': " + ex);
-			}
-			catch (NoSuchObjectException ex)
-			{
-				Logger.instance().warning("Cannot load settings from non-existent app '" 
-					+ settingsApp + "': " + ex);
-			}
-			finally
-			{
-				loadingAppDAO.close();
-			}
-		}
-		
-		// Finally free the initial connection.
-		freeConnection(conInfo.getConnection());
-		openConnections.remove(conInfo.getConnection());
-		conInfo.setConnection(null);
 	}
 
 	/** @return 'CWMS'. */
@@ -349,13 +338,26 @@ public class CwmsSqlDatabaseIO
 	@Override
 	public Connection getConnection()
 	{
+		getConnCalled++;
 		// Called from DAOs and DbIo to get a new connection from the pool.
 		if (conInfo == null || conInfo.getLoginInfo() == null)
 		{
 			Logger.instance().failure(module + ".getConnection -- loginInfo is null! DB not initialized?");
 			return null;
 		}
-		
+		try
+		{
+			return CwmsTimeSeriesDb.getDbConnection( conInfo.getLoginInfo().getUrl(), 
+													 conInfo.getLoginInfo().getUser(),
+													 conInfo.getLoginInfo().getPassword(),
+													 conInfo.getLoginInfo().getUserOfficeId());
+		}
+		catch(BadConnectException ex)
+		{
+			Logger.instance().fatal("Unabled to get connection " + ex.getLocalizedMessage());
+			return null;
+		}
+/*
 		Connection ret = null;
 		try
 		{
@@ -422,6 +424,7 @@ public class CwmsSqlDatabaseIO
 				,Optional.of(this));
 		addBeanTrackedConnection((WrappedConnection)ret);	
 		return ret;
+		*/
 	}
 
 
@@ -467,7 +470,7 @@ public class CwmsSqlDatabaseIO
 	@Override
 	public int getConnectionsAvailable()
 	{
-		return 10-openConnections.size();
+		return 10-openConnections.size(); // 10 is the CWMS default pool size
 	}
 
 	@Override

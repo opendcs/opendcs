@@ -25,4 +25,9 @@ public class BadConnectException extends TsdbException
 	{
 		super(msg);
 	}
+
+	public BadConnectException(String msg, Throwable cause)
+	{
+		super(msg,cause);
+	}
 }
