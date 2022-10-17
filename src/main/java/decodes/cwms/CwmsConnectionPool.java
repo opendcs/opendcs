@@ -196,7 +196,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     {
         connectionsRequested++;
         Connection conn = pool.getConnection(info.getLoginInfo());
-        conn.setAutoCommit(false);
+        conn.setAutoCommit(true);
         setCtxDbOfficeId(conn, info.getLoginInfo().getUserOfficeId(), info.getDbOfficeCode(), info.getDbOfficePrivilege());
         WrappedConnection wc = new WrappedConnection(conn,(c)->{
             connectionsFreed++;
