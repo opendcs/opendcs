@@ -158,6 +158,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     {
         connectionsRequested++;
         Connection conn = pool.getConnection(info.getLoginInfo());
+        conn.setAutoCommit(false);
         WrappedConnection wc = new WrappedConnection(conn,(c)->CwmsDbConnectionPool.close(c),Optional.of(this));
         connectionsOut.add(wc);
         return wc;
