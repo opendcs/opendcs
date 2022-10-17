@@ -249,17 +249,17 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 			{
 				if (op == null)
 				{
-					log.warning("Skipping null privilege string pair!");
+					log.finest("Skipping null privilege string pair!");
 					continue;
 				}
 				if (op.first == null)
 				{
-					log.warning("Skipping null op.first privilege string pair!");
+					log.finest("Skipping null op.first privilege string pair!");
 					continue;
 				}
 				if (op.second == null)
 				{
-					log.warning("Skipping null op.first privilege string pair!");
+					log.finest("Skipping null op.first privilege string pair!");
 					continue;
 				}
 				log.finest("Privilege: " + op.first + ":" + op.second);
