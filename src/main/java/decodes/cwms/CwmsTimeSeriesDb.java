@@ -691,10 +691,12 @@ import javax.management.openmbean.TabularData;
 import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
+import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
+import opendcs.dao.LoadingAppDao;
 import opendcs.opentsdb.OpenTsdbSettings;
 import opendcs.org.opendcs.jmx.ConnectionPoolMXBean;
 import opendcs.util.sql.WrappedConnection;
@@ -875,8 +877,14 @@ public class CwmsTimeSeriesDb
 					String msg = "Cannot load baseParam Units Map: " + ex;
 					failure(msg);
 				}
-
-				return appId;
+				try(LoadingAppDAI la = this.makeLoadingAppDAO())
+				{
+					appId = la.lookupAppId(appName);
+				}
+				catch (DbIoException | NoSuchObjectException ex)
+				{
+					throw new BadConnectException("Unable to get loading app info",ex);
+				}
 			}
 			catch(SQLException ex)
 			{
@@ -887,7 +895,7 @@ public class CwmsTimeSeriesDb
 		{
 			throw new BadConnectException("unable to initialize pool for " + conInfo);
 		}
-						
+		return appId;
 	}
 
 
