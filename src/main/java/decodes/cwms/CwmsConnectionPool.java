@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 import javax.management.JMException;
 import javax.management.ObjectName;
+import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
@@ -41,7 +42,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 
     private static HashMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new HashMap<>();
     private HashSet<WrappedConnection> connectionsOut = new HashSet<>();
-    private CwmsConnectionInfo info = null;	
+    private CwmsConnectionInfo info = null;
 	private int connectionsRequested = 0;
 	private int connectionsFreed = 0;
 	private int unknownConnReturned = 0;
@@ -56,7 +57,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
             try(Connection conn = pool.getConnection(info.getLoginInfo());)
 			{
                 ret = new CwmsConnectionPool(info,conn);
-                pools.put(info,ret);        
+                pools.put(info,ret);
             }
             catch(SQLException ex)
             {
@@ -101,7 +102,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 			log.warning("Unable to register tracking bean " + ex.getLocalizedMessage());
 		}
 
-    }    
+    }
 
     @Override
 	public int getConnectionsOut()
@@ -142,11 +143,13 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 	@Override
 	public TabularData getConnectionsList() throws OpenDataException
     {
-		TabularData td = new TabularDataSupport(JMXTypes.CONNECTION_LIST);
+		TabularDataSupport td = new TabularDataSupport(JMXTypes.CONNECTION_LIST);
+        ArrayList<CompositeData> data = new ArrayList<>();
         for(WrappedConnection conn: this.connectionsOut)
         {
-            td.put(conn.asCompositeData());
+            data.add(conn.asCompositeData());
         }
+        td.putAll(data.toArray(new CompositeData[0]));
         return td;
 	}
 
@@ -156,7 +159,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         connectionsRequested++;
         Connection conn = pool.getConnection(info.getLoginInfo());
         WrappedConnection wc = new WrappedConnection(conn,(c)->CwmsDbConnectionPool.close(c),Optional.of(this));
-        connectionsOut.add(wc);        
+        connectionsOut.add(wc);
         return wc;
     }
 
@@ -172,7 +175,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         else
         {
             unknownConnReturned++;
-        }     
+        }
     }
 
 
