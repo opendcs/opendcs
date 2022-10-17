@@ -32,7 +32,6 @@ import opendcs.org.opendcs.jmx.ConnectionPoolMXBean;
 import opendcs.org.opendcs.jmx.connections.JMXTypes;
 import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
-import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
@@ -67,7 +66,8 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         {
             try(Connection conn = pool.getConnection(info.getLoginInfo());)
 			{
-                ret = new CwmsConnectionPool(info,conn);
+                fillOutConnectionInfo(info,conn);
+                ret = new CwmsConnectionPool(info);
                 pools.put(info,ret);
             }
             catch(SQLException ex)
@@ -83,16 +83,15 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     }
 
     /**
-     * Initializes the Pool on first open
-     * @param info info object with baseline info (URL,user,password). Additional information will be added.
-     * @param conn a valid open connection from the CwmsDbConnectionPool
-     * @throws BadConnectException Unable to lookup baseline information or set VPD context.
-     * @throws SQLException Anything wrong with a query/connection
-     * @throws DbIoException Unable to retrieve general database contents.
+     * Fill out the connection info object with the given connection and verify by calling setCtx.
+     * @param info minimally filled out info (URL,username,password)
+     * @param conn valid connection.
+     * @throws BadConnectException
+     * @throws SQLException
+     * @throws DbIoException
      */
-    private CwmsConnectionPool(CwmsConnectionInfo info, Connection conn) throws BadConnectException,SQLException,DbIoException
+    private static void fillOutConnectionInfo(CwmsConnectionInfo info, Connection conn) throws BadConnectException,SQLException,DbIoException
     {
-        this.info = info;
         String officeId = info.getLoginInfo().getUserOfficeId();
         info.setConnection(conn);
         info.setDbOfficeCode(officeId2code(conn, officeId));
@@ -107,7 +106,19 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         String priv = getOfficePrivileges(conn, info.getLoginInfo().getUrl(), officeId);
         info.setDbOfficePrivilege(priv);
         setCtxDbOfficeId(conn, officeId, info.getDbOfficeCode(), info.getDbOfficePrivilege());
+    }
 
+    /**
+     * Initializes the Pool on first open
+     * @param info info object with baseline info (URL,user,password). Additional information will be added.
+     * @param conn a valid open connection from the CwmsDbConnectionPool
+     * @throws BadConnectException Unable to lookup baseline information or set VPD context.
+     * @throws SQLException Anything wrong with a query/connection
+     * @throws DbIoException Unable to retrieve general database contents.
+     */
+    private CwmsConnectionPool(CwmsConnectionInfo info) 
+    {
+        this.info = info;
         try
 		{
             String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl(),info.getLoginInfo().getUser());
@@ -225,7 +236,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
      * @return The privilege name.
      * @throws BadConnectException if unable to retrieve the privilege list.
      */
-    private String getOfficePrivileges(Connection conn, String user, String dbOfficeId) throws BadConnectException
+    private static String getOfficePrivileges(Connection conn, String user, String dbOfficeId) throws BadConnectException
 	{
 		String ret = null;
 		try
@@ -285,7 +296,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 	 * @return array of string pairs: officeId,Privilege for that office
 	 * @throws SQLException
 	 */
-	private ArrayList<StringPair> determinePrivilegedOfficeIds(Connection conn) throws SQLException
+	private static ArrayList<StringPair> determinePrivilegedOfficeIds(Connection conn) throws SQLException
     {
 
         CwmsDbSec dbSec = CwmsDbServiceLookup.buildCwmsDb(CwmsDbSec.class, conn);
@@ -356,7 +367,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 	 * @param officeId the String office ID
 	 * @return the office code as a DbKey or Constants.undefinedId if no match.
 	 */
-	private DbKey officeId2code(Connection con, String officeId) throws SQLException
+	private static DbKey officeId2code(Connection con, String officeId) throws SQLException
 	{
 		String q = "select cwms_util.get_office_code(?) from dual";
 		try(PreparedStatement stmt = con.prepareStatement(q);)
