@@ -76,7 +76,6 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     {
         this.info = info;
         String officeId = info.getLoginInfo().getUserOfficeId();
-        String username = info.getLoginInfo().getUser();
         info.setConnection(conn);
         info.setDbOfficeCode(officeId2code(conn, officeId));
 
@@ -90,18 +89,16 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         String priv = getOfficePrivileges(conn, info.getLoginInfo().getUrl(), officeId);
         setCtxDbOfficeId(conn, officeId, info.getDbOfficeCode(), priv);
 
-
         try
 		{
             String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl(),info.getLoginInfo().getUser());
 			ManagementFactory.getPlatformMBeanServer()
-							 .registerMBean(this, new ObjectName("org.opendcs:type=TimeSeriesDb,name=\""+name+"\""));
+							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\""));
 		}
 		catch(JMException ex)
 		{
 			log.warning("Unable to register tracking bean " + ex.getLocalizedMessage());
 		}
-
     }
 
     @Override
@@ -171,7 +168,6 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
             connectionsFreed++;
             connectionsOut.remove(conn);
             conn.close();
-
         }
         else
         {
@@ -231,7 +227,6 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 		catch (Exception ex)
 		{
             String msg = "Cannot determine privileged office IDs: ";
-			log.log(Level.SEVERE,msg,ex);
 			throw new BadConnectException(msg,ex);
 		}
 
@@ -341,7 +336,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 	 */
 	public static void setCtxDbOfficeId(Connection conn, String dbOfficeId,
                                         DbKey dbOfficeCode, String dbOfficePrivilege)
-        throws DbIoException
+        throws SQLException
     {
         String errMsg = null;
         PreparedStatement storeProcStmt = null;
@@ -376,14 +371,6 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     //			Logger.instance().debug2("Calling '" + q + "' with "
     //				+ "schema=CCP and table=PLATFORMCONFIG");
             testStmt.execute();
-        }
-        catch (SQLException ex)
-        {
-            errMsg = "Error setting VPD context for '" + dbOfficeId + "': " + ex;
-            log.severe(errMsg);
-            System.err.println(errMsg);
-            ex.printStackTrace(System.err);
-            throw new DbIoException(errMsg);
         }
         finally
         {
