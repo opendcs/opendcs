@@ -7,6 +7,9 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
+/**
+ * Pregenerated JMX Tabular and Composite types for JMX reporting.
+ */
 public final class JMXTypes
 {
     public static TabularType CONNECTION_LIST;

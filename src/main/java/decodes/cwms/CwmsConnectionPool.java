@@ -36,6 +36,11 @@ import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
+/**
+ * Wrapped the CWMS Connection Pool to centralize logic and logging.
+ * Additionally implements a JMX MBean for runtime diagnostics.
+ * @since 2022-10-17
+ */
 public class CwmsConnectionPool implements ConnectionPoolMXBean
 {
     private static Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
@@ -49,6 +54,12 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
 
 
+    /**
+     * Get a Pool for a given database.
+     * @param info Filled out CWMS Connection Info Object. Used to lookup an existing Pool.
+     * @return Connection pool instance to which connections can be retrieved from and returned.
+     * @throws BadConnectException
+     */
     public static CwmsConnectionPool getPoolFor(CwmsConnectionInfo info) throws BadConnectException
     {
         CwmsConnectionPool ret = pools.get(info);
@@ -71,7 +82,14 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         return ret;
     }
 
-
+    /**
+     * Initializes the Pool on first open
+     * @param info info object with baseline info (URL,user,password). Additional information will be added.
+     * @param conn a valid open connection from the CwmsDbConnectionPool
+     * @throws BadConnectException Unable to lookup baseline information or set VPD context.
+     * @throws SQLException Anything wrong with a query/connection
+     * @throws DbIoException Unable to retrieve general database contents.
+     */
     private CwmsConnectionPool(CwmsConnectionInfo info, Connection conn) throws BadConnectException,SQLException,DbIoException
     {
         this.info = info;
@@ -87,7 +105,8 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         }
 
         String priv = getOfficePrivileges(conn, info.getLoginInfo().getUrl(), officeId);
-        setCtxDbOfficeId(conn, officeId, info.getDbOfficeCode(), priv);
+        info.setDbOfficePrivilege(priv);
+        setCtxDbOfficeId(conn, officeId, info.getDbOfficeCode(), info.getDbOfficePrivilege());
 
         try
 		{
@@ -137,6 +156,9 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 		return this.unknownConnReturned;
 	}
 
+    /**
+     * Builds a list for JConsole to render information.
+     */
 	@Override
 	public TabularData getConnectionsList() throws OpenDataException
     {
@@ -150,17 +172,36 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         return td;
 	}
 
-
+    /**
+     * Retrieve a valid connection from the pool.
+     * 
+     * Callers can either call Connection::close on the returned connection or This pool's returnConnection.
+     * The effect is the same.
+     * 
+     * @return a valid, through Wrapped for tracking connection
+     * @throws SQLException if auto commit can't be set or the Session context can be set, or no connections available.
+     */
     public Connection getConnection() throws SQLException
     {
         connectionsRequested++;
         Connection conn = pool.getConnection(info.getLoginInfo());
         conn.setAutoCommit(false);
-        WrappedConnection wc = new WrappedConnection(conn,(c)->CwmsDbConnectionPool.close(c),Optional.of(this));
+        setCtxDbOfficeId(conn, info.getLoginInfo().getUserOfficeId(), info.getDbOfficeCode(), info.getDbOfficePrivilege());
+        WrappedConnection wc = new WrappedConnection(conn,(c)->{
+            connectionsFreed++;
+            CwmsDbConnectionPool.close(c);
+        },Optional.of(this));
         connectionsOut.add(wc);
         return wc;
     }
 
+    /**
+     * Frees a connection for later use.
+     * 
+     * If given a connection this pool doesn't track no error is returned but a counter is incremented.
+     * @param conn A connection from this pool.
+     * @throws SQLException Unable to close/return the connection.
+     */
     public void returnConnection(Connection conn) throws SQLException
     {
         if(connectionsOut.contains(conn))
@@ -176,7 +217,14 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     }
 
 
-
+    /**
+     * Get the max privilege set set the context for.
+     * @param conn valid open connection
+     * @param user username we are looking for
+     * @param dbOfficeId User CWMS Office
+     * @return The privilege name.
+     * @throws BadConnectException if unable to retrieve the privilege list.
+     */
     private String getOfficePrivileges(Connection conn, String user, String dbOfficeId) throws BadConnectException
 	{
 		String ret = null;
