@@ -298,67 +298,67 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 	 */
 	private static ArrayList<StringPair> determinePrivilegedOfficeIds(Connection conn) throws SQLException
     {
-
         CwmsDbSec dbSec = CwmsDbServiceLookup.buildCwmsDb(CwmsDbSec.class, conn);
-        ResultSet rs = dbSec.getAssignedPrivGroups(conn, null);
-
-        ArrayList<StringPair> ret = new ArrayList<StringPair>();
-
-        // 4/8/13 phone call with Pete Morris - call with Null. and the columns returned are:
-        // username, user_db_office_id, db_office_id, user_group_type, user_group_owner, user_group_id,
-        // is_member, user_group_desc
-        while(rs != null && rs.next())
+        try(ResultSet rs = dbSec.getAssignedPrivGroups(conn, null);)
         {
-            String username = rs.getString(1);
-            String db_office_id = rs.getString(2);
-            String user_group_id = rs.getString(5);
+            ArrayList<StringPair> ret = new ArrayList<StringPair>();
 
-            log.fine("privilegedOfficeId: username='" + username + "' "
-                + "db_office_id='" + db_office_id + "' "
-                + "user_group_id='" + user_group_id + "' "
-                );
-
-            // We look for groups "CCP Proc", "CCP Mgr", and "CCP Reviewer".
-            // Ignore anything else.
-            String gid = user_group_id.trim();
-            if (!TextUtil.startsWithIgnoreCase(gid, "CCP"))
-                continue;
-
-            // See if we have an existing privilege for this office ID.
-            int existingIdx = 0;
-            String existingPriv = null;
-            for(; existingIdx < ret.size(); existingIdx++)
+            // 4/8/13 phone call with Pete Morris - call with Null. and the columns returned are:
+            // username, user_db_office_id, db_office_id, user_group_type, user_group_owner, user_group_id,
+            // is_member, user_group_desc
+            while(rs != null && rs.next())
             {
-                StringPair sp = ret.get(existingIdx);
-                if (sp.first.equalsIgnoreCase(db_office_id))
-                {
-                    existingPriv = sp.second;
-                    break;
-                }
-            }
-            // If we do have an existing privilege, determine whether to keep this
-            // one or the existing one (keep the one with more privilege).
-            if (existingPriv != null)
-            {
-                if (existingPriv.toUpperCase().contains("MGR"))
-                    continue; // We are already manager in this office. Discard this item.
-                else if (gid.toUpperCase().contains("MGR"))
-                {
-                    // This item is MGR, replace existing one.
-                    ret.get(existingIdx).second = gid;
+                String username = rs.getString(1);
+                String db_office_id = rs.getString(2);
+                String user_group_id = rs.getString(5);
+
+                log.fine("privilegedOfficeId: username='" + username + "' "
+                    + "db_office_id='" + db_office_id + "' "
+                    + "user_group_id='" + user_group_id + "' "
+                    );
+
+                // We look for groups "CCP Proc", "CCP Mgr", and "CCP Reviewer".
+                // Ignore anything else.
+                String gid = user_group_id.trim();
+                if (!TextUtil.startsWithIgnoreCase(gid, "CCP"))
                     continue;
-                }
-                else if (gid.toUpperCase().contains("PROC"))
+
+                // See if we have an existing privilege for this office ID.
+                int existingIdx = 0;
+                String existingPriv = null;
+                for(; existingIdx < ret.size(); existingIdx++)
                 {
-                    // This is for PROC, existing must be PROC or Reviewer. Replace.
-                    ret.get(existingIdx).second = gid;
-                    continue;
+                    StringPair sp = ret.get(existingIdx);
+                    if (sp.first.equalsIgnoreCase(db_office_id))
+                    {
+                        existingPriv = sp.second;
+                        break;
+                    }
                 }
+                // If we do have an existing privilege, determine whether to keep this
+                // one or the existing one (keep the one with more privilege).
+                if (existingPriv != null)
+                {
+                    if (existingPriv.toUpperCase().contains("MGR"))
+                        continue; // We are already manager in this office. Discard this item.
+                    else if (gid.toUpperCase().contains("MGR"))
+                    {
+                        // This item is MGR, replace existing one.
+                        ret.get(existingIdx).second = gid;
+                        continue;
+                    }
+                    else if (gid.toUpperCase().contains("PROC"))
+                    {
+                        // This is for PROC, existing must be PROC or Reviewer. Replace.
+                        ret.get(existingIdx).second = gid;
+                        continue;
+                    }
+                }
+                else // this item is first privilege seen for this office.
+                    ret.add(new StringPair(db_office_id, gid));
             }
-            else // this item is first privilege seen for this office.
-                ret.add(new StringPair(db_office_id, gid));
+            return ret;
         }
-        return ret;
     }
 
     /**
@@ -397,53 +397,28 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
                                         DbKey dbOfficeCode, String dbOfficePrivilege)
         throws SQLException
     {
-        String errMsg = null;
-        PreparedStatement storeProcStmt = null;
-        CallableStatement testStmt = null;
-
-        try
+        try(
+            PreparedStatement storeProcStmt = conn.prepareStatement(
+                                         /* office code, priv, levelofficeId ) */
+                "begin cwms_ccp_vpd.set_ccp_session_ctx(:1, :2, :3 ); end;");
+            CallableStatement testStmt = conn.prepareCall(
+                "{ ? = call cwms_ccp_vpd.get_pred_session_office_code_v(?, ?) }");
+        )
         {
-            String q = null;
             int privLevel =
                 dbOfficeId == null ? 0 :
                 dbOfficePrivilege.toUpperCase().contains("MGR") ? 1 :
                 dbOfficePrivilege.toUpperCase().contains("PROC") ? 2 : 3;
-            q =
-                "begin cwms_ccp_vpd.set_ccp_session_ctx(" +
-                ":1 /* office code */, :2 /* priv level*/, :3 /* officeId */); end;";
-            storeProcStmt  = conn.prepareCall(q);
+         
             storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
             storeProcStmt.setInt(2, privLevel);
             storeProcStmt.setString(3, dbOfficeId);
-    //			Logger.instance().debug2("Executing '" + q + "' with "
-    //				+ "dbOfficeCode=" + dbOfficeCode
-    //				+ ", privLevel=" + privLevel
-    //				+ ", dbOfficeId='" + dbOfficeId + "'");
             storeProcStmt.execute();
-    //			conn.commit();
 
-            q = "{ ? = call cwms_ccp_vpd.get_pred_session_office_code_v(?, ?) }";
-            testStmt = conn.prepareCall(q);
             testStmt.registerOutParameter(1, Types.VARCHAR);
             testStmt.setString(2, "CC");
-            testStmt.setString(3, "PLATFORMCONFIG");
-    //			Logger.instance().debug2("Calling '" + q + "' with "
-    //				+ "schema=CCP and table=PLATFORMCONFIG");
+            testStmt.setString(3, "PLATFORMCONFIG");    
             testStmt.execute();
         }
-        finally
-        {
-            if (storeProcStmt != null)
-            {
-                try { storeProcStmt.close(); }
-                catch(Exception ex) {}
-            }
-            if (testStmt != null)
-            {
-                try { testStmt.close(); }
-                catch(Exception ex) {}
-            }
-        }
     }
-
 }
