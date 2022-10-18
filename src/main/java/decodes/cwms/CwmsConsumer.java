@@ -73,6 +73,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -405,9 +407,10 @@ public class CwmsConsumer extends DataConsumer
 	{
 		TimeSeriesIdentifier tsid = null;
 
-		TimeSeriesDAI timeSeriesDAO = cwmsTsdb.makeTimeSeriesDAO();
-		try
+		try(Connection conn = cwmsTsdb.getConnection();
+			TimeSeriesDAI timeSeriesDAO = cwmsTsdb.makeTimeSeriesDAO();)
 		{
+			timeSeriesDAO.setManualConnection(conn);
 			try
 			{
 				tsid = timeSeriesDAO.getTimeSeriesIdentifier(timeSeriesDesc);
@@ -462,9 +465,9 @@ public class CwmsConsumer extends DataConsumer
 					+ timeSeriesDesc + "': " + ex);
 			}
 		}
-		finally
+		catch(SQLException ex)
 		{
-			timeSeriesDAO.close();
+			throw new DbIoException("Unable to acquire connection.", ex);
 		}
 	}
 	
