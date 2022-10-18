@@ -1,6 +1,7 @@
 package decodes.cwms;
 
-import java.io.PrintWriter;
+import static opendcs.util.logging.JulUtils.*;
+
 import java.lang.management.ManagementFactory;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -11,6 +12,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.management.JMException;
@@ -26,6 +28,7 @@ import decodes.tsdb.BadConnectException;
 import decodes.tsdb.DbIoException;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
+import opendcs.opentsdb.OpenTsdbSettings;
 import opendcs.org.opendcs.jmx.ConnectionPoolMXBean;
 import opendcs.org.opendcs.jmx.connections.JMXTypes;
 import opendcs.util.sql.WrappedConnection;
@@ -49,6 +52,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 	private int connectionsFreed = 0;
 	private int unknownConnReturned = 0;
     private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
+    private static boolean trace = OpenTsdbSettings.instance().traceConnections;
 
 
     /**
@@ -217,7 +221,7 @@ try_again:
         WrappedConnection wc = new WrappedConnection(conn,(c)->{
             connectionsFreed++;
             CwmsDbConnectionPool.close(c);
-        },true);
+        },trace);
         connectionsOut.add(wc);
         return wc;
     }
@@ -241,6 +245,14 @@ try_again:
         {
             log.warning("Unknown connection returned to my pool.");
             unknownConnReturned++;
+            if(trace)
+            {
+                if(log.isLoggable(Level.FINE))
+                {
+                    log.fine("Connection is from");
+                    logStackTrace(log,Level.FINE,Thread.currentThread().getStackTrace(),BEFORE_CUR_THREAD_STACK_CALL+1);
+                }
+            }
         }
     }
 

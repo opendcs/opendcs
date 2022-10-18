@@ -106,12 +106,12 @@ public class WrappedConnection implements Connection{
     public void close() throws SQLException {
         if (trace)
         {
-            openTrace = new ArrayList<>();
+            closeTrace = new ArrayList<>();
             StackTraceElement ste[] = Thread.currentThread().getStackTrace();
             // start at 3, after this constructor and the getThread/Stack trace call
             for(int i = 3; i < ste.length; i++)
             {
-                openTrace.add(ste[i]);
+                closeTrace.add(ste[i]);
             }
             // send notice
             end = ZonedDateTime.now();
