@@ -28,8 +28,9 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 
+import org.opendcs.jmx.connections.JMXTypes;
+
 import ilex.util.Logger;
-import opendcs.org.opendcs.jmx.connections.JMXTypes;
 import opendcs.util.functional.ThrowingConsumer;
 
 /**

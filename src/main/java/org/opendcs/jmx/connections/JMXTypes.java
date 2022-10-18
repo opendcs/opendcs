@@ -1,4 +1,4 @@
-package opendcs.org.opendcs.jmx.connections;
+package org.opendcs.jmx.connections;
 
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenType;
@@ -19,7 +19,7 @@ public final class JMXTypes
     {
         try
         {
-            createConnectionTypes();
+            createConnectionTypes();s
         }
         catch(Exception e)
         {

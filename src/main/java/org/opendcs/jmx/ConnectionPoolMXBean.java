@@ -1,4 +1,4 @@
-package opendcs.org.opendcs.jmx;
+package org.opendcs.jmx;
 
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.TabularData;
