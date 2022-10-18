@@ -194,8 +194,26 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     {
         connectionsRequested++;
         Connection conn = pool.getConnection(info.getLoginInfo());
-        conn.setAutoCommit(true);
-        setCtxDbOfficeId(conn, info.getLoginInfo().getUserOfficeId(), info.getDbOfficeCode(), info.getDbOfficePrivilege());
+try_again:
+        try
+        {
+            conn.setAutoCommit(true);
+            setCtxDbOfficeId(conn, info.getLoginInfo().getUserOfficeId(), info.getDbOfficeCode(), info.getDbOfficePrivilege());
+        }
+        catch(SQLException ex)
+        {
+            if( ex.getErrorCode() == 2399)
+            {
+                conn.close();
+                CwmsDbConnectionPool.close(conn);
+                conn = null;
+                break try_again;
+            }
+            else
+            {
+                throw ex;
+            }
+        }
         WrappedConnection wc = new WrappedConnection(conn,(c)->{
             connectionsFreed++;
             CwmsDbConnectionPool.close(c);
@@ -215,12 +233,13 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
     {
         if(connectionsOut.contains(conn))
         {
-            connectionsFreed++;
+            // the lambda handler above handles the count
             connectionsOut.remove(conn);
             conn.close();
         }
         else
         {
+            log.warning("Unknown connection returned to my pool.");
             unknownConnReturned++;
         }
     }
