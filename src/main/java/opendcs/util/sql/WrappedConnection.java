@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
@@ -29,9 +28,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 
-import decodes.cwms.CwmsConnectionPool;
 import ilex.util.Logger;
-import opendcs.org.opendcs.jmx.ConnectionPoolMXBean;
 import opendcs.org.opendcs.jmx.connections.JMXTypes;
 import opendcs.util.functional.ThrowingConsumer;
 
@@ -48,7 +45,7 @@ public class WrappedConnection implements Connection{
 
     private Connection realConnection;
     private final ThrowingConsumer<Connection,SQLException> onClose;
-    private Optional<CwmsConnectionPool> pool;
+    private boolean trace;
     private List<StackTraceElement> openTrace = null;
     private List<StackTraceElement> closeTrace = null;
     private ZonedDateTime start = ZonedDateTime.now();
@@ -57,17 +54,22 @@ public class WrappedConnection implements Connection{
     
 
     public WrappedConnection(Connection realConnection){
-        this(realConnection, (c) -> {},Optional.ofNullable(null));
+        this(realConnection, (c) -> {},false);
     }
 
-    public WrappedConnection(Connection realConnection, final ThrowingConsumer<Connection,SQLException> onClose, Optional<CwmsConnectionPool> pool )
+    public WrappedConnection(Connection realConnection, final ThrowingConsumer<Connection,SQLException> onClose)
+    {
+        this(realConnection,onClose,false);
+    }
+
+    public WrappedConnection(Connection realConnection, final ThrowingConsumer<Connection,SQLException> onClose, boolean trace )
     {
         Objects.requireNonNull(realConnection, "WrappedConnection cannot wrap a null connection");
         Objects.requireNonNull(onClose, "WrappedConnections requires a valid Consumer for the close operation");
         this.realConnection = realConnection;
         this.onClose = onClose;
-        this.pool = pool;
-        if(pool.isPresent())
+        this.trace = trace;
+        if(trace)
         {
             openTrace = new ArrayList<>();
             StackTraceElement ste[] = Thread.currentThread().getStackTrace();
@@ -102,7 +104,7 @@ public class WrappedConnection implements Connection{
 
     @Override
     public void close() throws SQLException {
-        if (pool.isPresent())
+        if (trace)
         {
             openTrace = new ArrayList<>();
             StackTraceElement ste[] = Thread.currentThread().getStackTrace();

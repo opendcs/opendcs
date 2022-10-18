@@ -11,8 +11,6 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.management.JMException;
@@ -201,7 +199,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
         WrappedConnection wc = new WrappedConnection(conn,(c)->{
             connectionsFreed++;
             CwmsDbConnectionPool.close(c);
-        },Optional.of(this));
+        },true);
         connectionsOut.add(wc);
         return wc;
     }
