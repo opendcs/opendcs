@@ -22,6 +22,9 @@ import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 
+import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.opendcs.jmx.connections.JMXTypes;
+
 import decodes.db.Constants;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
@@ -29,8 +32,6 @@ import decodes.tsdb.DbIoException;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import opendcs.opentsdb.OpenTsdbSettings;
-import opendcs.org.opendcs.jmx.ConnectionPoolMXBean;
-import opendcs.org.opendcs.jmx.connections.JMXTypes;
 import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;

@@ -19,7 +19,7 @@ public final class JMXTypes
     {
         try
         {
-            createConnectionTypes();s
+            createConnectionTypes();
         }
         catch(Exception e)
         {

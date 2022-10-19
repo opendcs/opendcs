@@ -688,6 +688,8 @@ import javax.management.JMException;
 import javax.management.ObjectName;
 import javax.management.openmbean.TabularData;
 
+import org.opendcs.jmx.ConnectionPoolMXBean;
+
 import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
@@ -698,7 +700,6 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
 import opendcs.opentsdb.OpenTsdbSettings;
-import opendcs.org.opendcs.jmx.ConnectionPoolMXBean;
 import opendcs.util.sql.WrappedConnection;
 import lrgs.gui.DecodesInterface;
 
