@@ -349,7 +349,7 @@ public class CwmsSqlDatabaseIO
 		catch(SQLException ex)
 		{
 			Logger.instance().fatal("Unabled to get connection " + ex.getLocalizedMessage());
-			return null;
+			throw new RuntimeException("Pool is likely full",ex);
 		}
 	}
 

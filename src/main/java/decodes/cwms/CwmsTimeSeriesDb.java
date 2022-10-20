@@ -1632,7 +1632,7 @@ public class CwmsTimeSeriesDb
 		if (conInfo == null || conInfo.getLoginInfo() == null || pool == null)
 		{
 			failure("CwmsTimeSeriesDb.getConnection -- loginInfo is null! DB not initialized?");
-			return null;
+			throw new RuntimeException("Invalid sequence of events. Attempt to retrieve DB connection before information initialized.");
 		}
 		try
 		{
@@ -1641,8 +1641,8 @@ public class CwmsTimeSeriesDb
 		catch(SQLException ex)
 		{
 			failure("Unable to get connection from pool: " + ex.getLocalizedMessage());
+			throw new RuntimeException("Pool Likely full. Cannot get connection",ex);
 		}
-		return null;
 	}
 
 
