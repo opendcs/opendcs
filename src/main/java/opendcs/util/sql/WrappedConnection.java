@@ -398,4 +398,51 @@ public class WrappedConnection implements Connection{
         return new CompositeDataSupport(JMXTypes.CONNECTION_LIST_TYPE,itemNames,values);
     }
     
+
+    public void dumpData()
+    {
+        boolean closed = false;
+        try
+        {
+            closed =  this.isClosed();
+        }
+        catch(SQLException ex)
+        {
+            System.err.println("Unable to verify if connection open.");
+            
+        }
+        printStackTraceOnExit(closed);
+    }
+
+    private void printStackTraceOnExit(boolean closed)
+    {
+        System.err.println(String.format("Connection(closed state -> %s) with life time of %d seconds remains from:",closed,Duration.between(start, ZonedDateTime.now()).getSeconds()));
+        if( openTrace != null)
+        {
+            System.err.println("\tOpened from");
+            for(StackTraceElement ste: openTrace)
+            {
+                System.err.println("\t\t" + ste.toString());
+            }
+        }
+        if( closeTrace != null)
+        {
+            System.err.println("\tClosed from");
+            for(StackTraceElement ste: closeTrace)
+            {
+                System.err.println("\t\t" + ste.toString());
+            }
+        }
+        
+    }
+
+    /**
+     * Get the underlying wrapped connection.
+     * Primarily for the close lambda to search the out list
+     * @return the connection in whatever state it's in.
+     */
+    public final Connection getRealConnection()
+    {
+        return this.realConnection;
+    }
 }

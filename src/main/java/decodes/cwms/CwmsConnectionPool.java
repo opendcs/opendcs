@@ -12,6 +12,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +35,7 @@ import ilex.util.TextUtil;
 import opendcs.opentsdb.OpenTsdbSettings;
 import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
+import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
@@ -46,7 +48,10 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 {
     private static Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
 
-    private static HashMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new HashMap<>();
+    private static TreeMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new TreeMap<>((left,right)->{
+        return mapCompare(left,right);
+    });
+    
     private HashSet<WrappedConnection> connectionsOut = new HashSet<>();
     private CwmsConnectionInfo info = null;
 	private int connectionsRequested = 0;
@@ -72,6 +77,16 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
                 fillOutConnectionInfo(info,conn);
                 ret = new CwmsConnectionPool(info);
                 pools.put(info,ret);
+                
+                if (trace)
+                {
+                    final CwmsConnectionPool forHook = ret;
+                    Runtime.getRuntime().addShutdownHook(new Thread() {
+                        public void run() {
+                            forHook.dumpStatus();
+                        }
+                    });
+                }
             }
             catch(SQLException ex)
             {
@@ -83,6 +98,30 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
             }
         }
         return ret;
+    }
+
+    /**
+     * The instance connection info will have been initialized
+     * The version sent to getConnectionFor may not, but it's only checked on 
+     * url,username
+     * @param left
+     * @param right
+     * @return
+     */
+    private static int mapCompare(CwmsConnectionInfo left, CwmsConnectionInfo right) {
+        ConnectionLoginInfo leftInfo = left.getLoginInfo();
+        ConnectionLoginInfo rightInfo = right.getLoginInfo();
+        String leftStr = leftInfo.getUrl() + "|" + leftInfo.getUser();
+        String rightStr = rightInfo.getUrl() + "|" + rightInfo.getUser();
+        return leftStr.compareTo(rightStr);
+    }
+
+    protected void dumpStatus() {
+        System.err.println("Pool for " + this.info.toString() + " has " + connectionsOut.size() + " open Connections still");
+        for(WrappedConnection c: connectionsOut)
+        {
+            c.dumpData();
+        }
     }
 
     /**
@@ -126,7 +165,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 		{
             String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl(),info.getLoginInfo().getUser());
 			ManagementFactory.getPlatformMBeanServer()
-							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\""));
+							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\",hashCode=" + this.hashCode()));
 		}
 		catch(JMException ex)
 		{
@@ -219,9 +258,18 @@ try_again:
                 throw ex;
             }
         }
-        WrappedConnection wc = new WrappedConnection(conn,(c)->{
+        final WrappedConnection wc = new WrappedConnection(conn,(c)->{
             connectionsFreed++;
             CwmsDbConnectionPool.close(c);
+            for(WrappedConnection wcs: connectionsOut)
+            {
+                Connection realConn = wcs.getRealConnection();
+                if(realConn.equals(c))
+                {
+                    connectionsOut.remove(wcs);
+                    return;
+                }
+            }
         },trace);
         connectionsOut.add(wc);
         return wc;

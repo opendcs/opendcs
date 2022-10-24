@@ -59,4 +59,39 @@ public class CwmsConnectionInfo
 		this.dbOfficePrivilege = dbOfficePrivilege;
 	}
 
+	@Override
+	public String toString()
+	{
+		StringBuilder builder = new StringBuilder();
+		builder.append("CwmsConnectionInfo{");
+		if (loginInfo != null)
+		{
+			builder.append("url=").append(loginInfo.getUrl());
+			builder.append(",");
+			builder.append("user=").append(loginInfo.getUser());
+		}
+		else
+		{
+			builder.append("unitialized");
+		}
+		builder.append("}");
+		return builder.toString();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if(!(other instanceof CwmsConnectionInfo))
+		{
+			return false;
+		}
+		else
+		{
+			CwmsConnectionInfo oc = (CwmsConnectionInfo)other;
+			return this.dbOfficeCode == oc.dbOfficeCode 
+				&& this.dbOfficePrivilege.equals(oc.dbOfficePrivilege)
+				&& this.loginInfo.getUrl().equals(oc.loginInfo.getUrl())
+				&& this.loginInfo.getUser().equals(oc.getLoginInfo().getUser());
+		}		
+	}
+
 }
