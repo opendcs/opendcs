@@ -57,8 +57,10 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 	private int connectionsRequested = 0;
 	private int connectionsFreed = 0;
 	private int unknownConnReturned = 0;
+    private int connectionsClosedDuringGet = 0;
     private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
     private static boolean trace = OpenTsdbSettings.instance().traceConnections;
+    
 
 
     /**
@@ -209,6 +211,12 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 		return this.unknownConnReturned;
 	}
 
+    @Override
+    public int getConnectionsClosedDuringGet()
+    {
+        return this.connectionsClosedDuringGet;
+    }
+
     /**
      * Builds a list for JConsole to render information.
      */
@@ -248,8 +256,10 @@ try_again:
         {
             if( ex.getErrorCode() == 2399)
             {
+                connectionsClosedDuringGet++;
                 conn.close();
                 CwmsDbConnectionPool.close(conn);
+
                 conn = null;
                 break try_again;
             }
