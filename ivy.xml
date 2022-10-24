@@ -44,7 +44,7 @@
         <dependency org="org.aspectj" name="aspectjrt" rev="1.8.10"/>
         <dependency org="org.json" name="json" rev="20200518"/>
 
-        <dependency org="mil.army.usace.hec" name="cwms-db-jooq" rev="enhancement-pool_parameters-SNAPSHOT"> <!--rev="9.3.5">-->
+        <dependency org="mil.army.usace.hec" name="cwms-db-jooq" rev="9.3.5">
             <exclude org="org.jooq.pro" module="jooq-meta"/>
             <exclude org="org.jooq.pro" module="jooq-codegen"/>
         </dependency>
