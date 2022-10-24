@@ -298,8 +298,6 @@ public class RoutingSpecThread
 		currentStatus = "Running";
 		statusWriteThread = new StatusWriteThread(this);
 		statusWriteThread.start();
-		PlatformStatusDAI platformStatusDAO = 
-			updatePlatformStatus ? Database.getDb().getDbIo().makePlatformStatusDAO() : null;
 
 			
 //// Test Code to kill a database connection a specified # of seconds after starting.
@@ -509,93 +507,90 @@ public class RoutingSpecThread
 			
 			PlatformStatus platstat = null;
 			Platform platform = rm.getPlatformOrNull();
-			if (platform != null && platformStatusDAO != null)
+			try(PlatformStatusDAI platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();)
 			{
-				try
+				if (platform != null && updatePlatformStatus)
 				{
-					platstat = platformStatusDAO.readPlatformStatus(platform.getId());
+					try
+					{
+						platstat = platformStatusDAO.readPlatformStatus(platform.getId());
+					}
+					catch (DbIoException ex)
+					{
+						log(Logger.E_WARNING, "Cannot read platform status: " + ex);
+						platstat = null;
+					}
+					if (platstat == null)
+						platstat = new PlatformStatus(platform.getId());
+					Date x = new Date();
+					// PollingDataSource manages its own contact and message times.
+					if (!(source instanceof PollingDataSource))
+					{
+						platstat.setLastContactTime(x);
+						platstat.setLastMessageTime(x);
+					}
+					String annot = platstat.getAnnotation();
+					if (annot != null && annot.toUpperCase().startsWith("STALE"))
+						platstat.setAnnotation("");
+					Variable fc = rm.getPM(GoesPMParser.FAILURE_CODE);
+					if (fc != null)
+						platstat.setLastFailureCodes(fc.toString());
+					platstat.setLastScheduleEntryStatusId(scheduleEntryStatusId);
 				}
-				catch (DbIoException ex)
-				{
-					log(Logger.E_WARNING, "Cannot read platform status: " + ex);
-					platstat = null;
-				}
-				if (platstat == null)
-					platstat = new PlatformStatus(platform.getId());
-				Date x = new Date();
-				// PollingDataSource manages its own contact and message times.
-				if (!(source instanceof PollingDataSource))
-				{
-					platstat.setLastContactTime(x);
-					platstat.setLastMessageTime(x);
-				}
-				String annot = platstat.getAnnotation();
-				if (annot != null && annot.toUpperCase().startsWith("STALE"))
-					platstat.setAnnotation("");
-				Variable fc = rm.getPM(GoesPMParser.FAILURE_CODE);
-				if (fc != null)
-					platstat.setLastFailureCodes(fc.toString());
-				platstat.setLastScheduleEntryStatusId(scheduleEntryStatusId);
-			}
 
-			//=====================================================
-			// Retrieve the platform, transport medium, decodes script,
-			// and prepare them for execution. Then decode the message.
-			//=====================================================
-			DecodedMessage dm = null;
-			DcpMsg dcpMsg = rm.getOrigDcpMsg();
-			if (dcpMsg != null)
-				lastDcpMsg = dcpMsg;
+				//=====================================================
+				// Retrieve the platform, transport medium, decodes script,
+				// and prepare them for execution. Then decode the message.
+				//=====================================================
+				DecodedMessage dm = null;
+				DcpMsg dcpMsg = rm.getOrigDcpMsg();
+				if (dcpMsg != null)
+					lastDcpMsg = dcpMsg;
 
-			if (formatter.attemptDecode()
-			 && (dcpMsg == null || !dcpMsg.isDapsStatusMsg()))
-			{
-				myExec.setSubsystem("decode");
-				dm = attemptDecode(rm, platstat);
-			}
-			else // Just make the Decoded message a wrapper around raw.
-			{
-				try
+				if (formatter.attemptDecode()
+				&& (dcpMsg == null || !dcpMsg.isDapsStatusMsg()))
 				{
-					dm = new DecodedMessage(rm, false);
+					myExec.setSubsystem("decode");
+					dm = attemptDecode(rm, platstat);
 				}
-				catch(Exception ex)
+				else // Just make the Decoded message a wrapper around raw.
 				{
-			 		String msg = "Unexpected Error: " + ex;
-			 		log(Logger.E_FAILURE, msg);
-					System.err.println(msg);
-					ex.printStackTrace(System.err);
+					try
+					{
+						dm = new DecodedMessage(rm, false);
+					}
+					catch(Exception ex)
+					{
+						String msg = "Unexpected Error: " + ex;
+						log(Logger.E_FAILURE, msg);
+						System.err.println(msg);
+						ex.printStackTrace(System.err);
+					}
 				}
-			}
-			
-			if (dm != null)
-			{
-				myExec.setSubsystem("format-output");
-				formatAndOutputMessage(dm, platstat);
-			}
-			
-			if (platstat != null && platformStatusDAO != null)
-			{
-				try
-				{
-					myExec.setSubsystem("platstat");
-					platformStatusDAO.writePlatformStatus(platstat);
-				}
-				catch (DbIoException ex)
-				{
-					log(Logger.E_WARNING, "Cannot write platform status: " + ex);
-				}
-				
-			}
-			myExec.setPlatform(null);
-			myExec.setMessageStart(null);
 
-			currentStatus = "Running";
-		}
-		if (platformStatusDAO != null)
-		{
-			platformStatusDAO.close();
-			platformStatusDAO = null;
+				if (dm != null)
+				{
+					myExec.setSubsystem("format-output");
+					formatAndOutputMessage(dm, platstat);
+				}
+
+				if (platstat != null && updatePlatformStatus)
+				{
+					try
+					{
+						myExec.setSubsystem("platstat");
+						platformStatusDAO.writePlatformStatus(platstat);
+					}
+					catch (DbIoException ex)
+					{
+						log(Logger.E_WARNING, "Cannot write platform status: " + ex);
+					}
+				}
+				myExec.setPlatform(null);
+				myExec.setMessageStart(null);
+
+				currentStatus = "Running";
+			}
 		}
 
 		quit();

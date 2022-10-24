@@ -6,7 +6,7 @@ import decodes.db.PlatformStatus;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
-public interface PlatformStatusDAI
+public interface PlatformStatusDAI extends AutoCloseable
 {
 	/**
 	 * Read the status record for a given platform
