@@ -10,23 +10,12 @@ import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
  */
 public class CwmsConnectionInfo
 {
-	private Connection connection = null;
 	private DbKey dbOfficeCode = DbKey.NullKey;
 	private ConnectionLoginInfo loginInfo = null;
 	private String dbOfficePrivilege = null;
 
 	public CwmsConnectionInfo()
 	{
-	}
-
-	public Connection getConnection()
-	{
-		return connection;
-	}
-
-	public void setConnection(Connection connection)
-	{
-		this.connection = connection;
 	}
 
 	public DbKey getDbOfficeCode()

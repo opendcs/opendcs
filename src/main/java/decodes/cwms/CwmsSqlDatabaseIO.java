@@ -220,7 +220,7 @@ public class CwmsSqlDatabaseIO
 					keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
 							new OracleSequenceKeyGenerator() :
 							new CwmsSequenceKeyGenerator(decodesDbVersion);
-						TimeSeriesDb.readVersionInfo(this, conInfo.getConnection());
+						TimeSeriesDb.readVersionInfo(this, conn);
 						cgl.setLoginSuccess(true);
 
 					String q = null;

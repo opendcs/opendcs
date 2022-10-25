@@ -137,7 +137,6 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
     private static void fillOutConnectionInfo(CwmsConnectionInfo info, Connection conn) throws BadConnectException,SQLException,DbIoException
     {
         String officeId = info.getLoginInfo().getUserOfficeId();
-        info.setConnection(conn);
         info.setDbOfficeCode(officeId2code(conn, officeId));
 
         // MJM 2018-2/21 Force autoCommit on.
