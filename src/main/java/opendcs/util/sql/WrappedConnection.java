@@ -45,7 +45,7 @@ public class WrappedConnection implements Connection{
     private static Logger log = Logger.instance();
 
     private Connection realConnection;
-    private final ThrowingConsumer<Connection,SQLException> onClose;
+    private final ThrowingConsumer<WrappedConnection,SQLException> onClose;
     private boolean trace;
     private List<StackTraceElement> openTrace = null;
     private List<StackTraceElement> closeTrace = null;
@@ -58,12 +58,12 @@ public class WrappedConnection implements Connection{
         this(realConnection, (c) -> {},false);
     }
 
-    public WrappedConnection(Connection realConnection, final ThrowingConsumer<Connection,SQLException> onClose)
+    public WrappedConnection(Connection realConnection, final ThrowingConsumer<WrappedConnection,SQLException> onClose)
     {
         this(realConnection,onClose,false);
     }
 
-    public WrappedConnection(Connection realConnection, final ThrowingConsumer<Connection,SQLException> onClose, boolean trace )
+    public WrappedConnection(Connection realConnection, final ThrowingConsumer<WrappedConnection,SQLException> onClose, boolean trace )
     {
         Objects.requireNonNull(realConnection, "WrappedConnection cannot wrap a null connection");
         Objects.requireNonNull(onClose, "WrappedConnections requires a valid Consumer for the close operation");
@@ -119,7 +119,7 @@ public class WrappedConnection implements Connection{
         }
 
 
-        onClose.accept(realConnection);
+        onClose.accept(this);
     }
 
     @Override

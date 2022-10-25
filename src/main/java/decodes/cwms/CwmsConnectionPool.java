@@ -44,7 +44,7 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
  * Additionally implements a JMX MBean for runtime diagnostics.
  * @since 2022-10-17
  */
-public class CwmsConnectionPool implements ConnectionPoolMXBean
+public final class CwmsConnectionPool implements ConnectionPoolMXBean
 {
     private static Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
 
@@ -171,7 +171,7 @@ public class CwmsConnectionPool implements ConnectionPoolMXBean
 		}
 		catch(JMException ex)
 		{
-			log.warning("Unable to register tracking bean " + ex.getLocalizedMessage());
+            log.log(Level.WARNING,"Unable to register tracking bean.",ex);
 		}
     }
 
@@ -269,17 +269,7 @@ try_again:
             }
         }
         final WrappedConnection wc = new WrappedConnection(conn,(c)->{
-            connectionsFreed++;
-            CwmsDbConnectionPool.close(c);
-            for(WrappedConnection wcs: connectionsOut)
-            {
-                Connection realConn = wcs.getRealConnection();
-                if(realConn.equals(c))
-                {
-                    connectionsOut.remove(wcs);
-                    return;
-                }
-            }
+            this.returnConnection(c);
         },trace);
         connectionsOut.add(wc);
         return wc;
@@ -297,8 +287,10 @@ try_again:
         if(connectionsOut.contains(conn))
         {
             // the lambda handler above handles the count
+            connectionsFreed++;
             connectionsOut.remove(conn);
-            conn.close();
+            Connection rc = ((WrappedConnection)conn).getRealConnection();
+            CwmsDbConnectionPool.close(rc);
         }
         else
         {
