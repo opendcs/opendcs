@@ -104,9 +104,11 @@ import decodes.util.*;
 import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.db.*;
 import decodes.xml.DataTypeEquivalenceListParser;
+import decodes.xml.ElementFilter;
 import decodes.xml.EngineeringUnitParser;
 import decodes.xml.UnitConverterParser;
 import decodes.xml.XmlDatabaseIO;
+import decodes.xml.XmlDbTags;
 import decodes.xml.TopLevelParser;
 import decodes.xml.EnumParser;
 
@@ -153,6 +155,9 @@ public class DbImport
 	static BooleanToken allowHistoricalArg = new BooleanToken("H",
 		"Allow import of historical versions. (default=ignore.)", "",
 		TokenOptions.optSwitch, false);
+	static BooleanToken platformRelatedOnlyArg = new BooleanToken("p",
+		"Import ONLY platform-related elements. (default=import all.)", "",
+		TokenOptions.optSwitch, false);
 
 	
 	static
@@ -170,6 +175,7 @@ public class DbImport
 		cmdLineArgs.addToken(overwriteDb);
 		cmdLineArgs.addToken(overwriteDbConfirm);
 		cmdLineArgs.addToken(reflistArg);
+		cmdLineArgs.addToken(platformRelatedOnlyArg);
 	}
 
 	/**
@@ -323,8 +329,10 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 			}
 			if (!overwriteDbConfirm.getValue())
 			{
-				System.out.print("Are you sure you want to replace the "
-					+ "ENTIRE contents of the database at '" + dbloc + "' (y/n)?");
+				System.out.print("Are you sure you want to replace "
+					+ (platformRelatedOnlyArg.getValue() ? "ALL Platform Related Records"
+					   : "ALL DECODES records")
+					+ " from the database at '" + dbloc + "' (y/n)?");
 				String answer = System.console().readLine();
 				if (!answer.toLowerCase().equals("y"))
 					System.exit(1);
@@ -391,68 +399,73 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 		throws DatabaseException
 	{
 		Logger.instance().info("Since the OVERWRITE option was given, deleting current database.");
-		ScheduleEntryDAI scheduleEntryDAO = theDbio.makeScheduleEntryDAO();
-		if (scheduleEntryDAO != null)
+		if (!platformRelatedOnlyArg.getValue())
 		{
-			try
-			{
-				for(ScheduleEntry se : theDb.schedEntryList)
-					scheduleEntryDAO.deleteScheduleEntry(se);
-			}
-			catch (DbIoException ex)
-			{
-				warning("Cannot delete schedule entry: " + ex);
-			}
-			finally
-			{
-				scheduleEntryDAO.close();
-			}
-			theDb.schedEntryList.clear();
-		}
-		for(Iterator<RoutingSpec> rsit = theDb.routingSpecList.iterator(); rsit.hasNext(); )
-		{
-			RoutingSpec rs = rsit.next();
-			theDbio.deleteRoutingSpec(rs);
-		}
-		theDb.routingSpecList.clear();
-		
-		for(Iterator<DataSource> dsit = theDb.dataSourceList.iterator(); dsit.hasNext(); )
-		{
-			DataSource ds = dsit.next();
-			theDbio.deleteDataSource(ds);
-		}
-		theDb.dataSourceList.clear();
-
-		LoadingAppDAI loadingAppDAO = theDbio.makeLoadingAppDAO();
-		try
-		{
-			for(CompAppInfo cai : theDb.loadingAppList)
+			Logger.instance().info("ONLY deleting platform-related entities.");
+			ScheduleEntryDAI scheduleEntryDAO = theDbio.makeScheduleEntryDAO();
+			if (scheduleEntryDAO != null)
 			{
 				try
 				{
-					loadingAppDAO.deleteComputationApp(cai);
+					for(ScheduleEntry se : theDb.schedEntryList)
+						scheduleEntryDAO.deleteScheduleEntry(se);
 				}
-				catch (ConstraintException ex)
+				catch (DbIoException ex)
 				{
-					warning("Cannot delete app '" + cai.getAppName() + "': " + ex);
-				}	
+					warning("Cannot delete schedule entry: " + ex);
+				}
+				finally
+				{
+					scheduleEntryDAO.close();
+				}
+				theDb.schedEntryList.clear();
 			}
-			// Now recreate the 'utility' application which is required by compimport and
-			// others.
-			CompAppInfo utility = new CompAppInfo();
-			utility.setAppName("utility");
-			utility.setProperty("appType", "utility");
-			loadingAppDAO.writeComputationApp(utility);
+			for(Iterator<RoutingSpec> rsit = theDb.routingSpecList.iterator(); rsit.hasNext(); )
+			{
+				RoutingSpec rs = rsit.next();
+				theDbio.deleteRoutingSpec(rs);
+			}
+			theDb.routingSpecList.clear();
+			
+			for(Iterator<DataSource> dsit = theDb.dataSourceList.iterator(); dsit.hasNext(); )
+			{
+				DataSource ds = dsit.next();
+				theDbio.deleteDataSource(ds);
+			}
+			theDb.dataSourceList.clear();
+	
+			// NOTE: Never delete loading apps -- too many dependencies outside of DECODES.
+//			LoadingAppDAI loadingAppDAO = theDbio.makeLoadingAppDAO();
+//			try
+//			{
+//				for(CompAppInfo cai : theDb.loadingAppList)
+//				{
+//					try
+//					{
+//						loadingAppDAO.deleteComputationApp(cai);
+//					}
+//					catch (ConstraintException ex)
+//					{
+//						warning("Cannot delete app '" + cai.getAppName() + "': " + ex);
+//					}	
+//				}
+//				// Now recreate the 'utility' application which is required by compimport and
+//				// others.
+//				CompAppInfo utility = new CompAppInfo();
+//				utility.setAppName("utility");
+//				utility.setProperty("appType", "utility");
+//				loadingAppDAO.writeComputationApp(utility);
+//			}
+//			catch (DbIoException ex)
+//			{
+//				warning("Cannot delete loading apps: " + ex);
+//			}
+//			finally
+//			{
+//				loadingAppDAO.close();
+//			}
+//			theDb.loadingAppList.clear();
 		}
-		catch (DbIoException ex)
-		{
-			warning("Cannot delete loading apps: " + ex);
-		}
-		finally
-		{
-			loadingAppDAO.close();
-		}
-		theDb.loadingAppList.clear();
 
 		for(NetworkList nl : theDb.networkListList.getList())
 			theDbio.deleteNetworkList(nl);
@@ -462,15 +475,16 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 			theDbio.deletePlatform(p);
 		theDb.platformList.clear();
 
-		if (!(theDbio instanceof CwmsSqlDatabaseIO))
-		{
-			for(Iterator<Site> sit = theDb.siteList.iterator(); sit.hasNext(); )
-			{
-				Site s = sit.next();
-				theDbio.deleteSite(s);
-			}
-			theDb.siteList.clear();
-		}
+		// NOTE: Never delete SITE records. Too many dependencies outside of DECODES. 
+//		if (!(theDbio instanceof CwmsSqlDatabaseIO))
+//		{
+//			for(Iterator<Site> sit = theDb.siteList.iterator(); sit.hasNext(); )
+//			{
+//				Site s = sit.next();
+//				theDbio.deleteSite(s);
+//			}
+//			theDb.siteList.clear();
+//		}
 		
 		
 		for(PlatformConfig pc : theDb.platformConfigList.values())
@@ -484,15 +498,18 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 		// Note: EU list and conversions are always assumed to be complete.
 		// Therefore just empty the Java collections. When new ones are read
 		// they will automatically delete all the old ones.
-		theDb.unitConverterSet.clear();
-		theDb.engineeringUnitList.clear();
-
-		// Likewise DataTypes are read/written as a set. Just clear the
-		// Java collection and only the new ones will survive.
-		theDb.dataTypeSet.clear();
-
-		// Likewise again for enumerations.
-		theDb.enumList.clear();
+		if (!platformRelatedOnlyArg.getValue())
+		{
+			theDb.unitConverterSet.clear();
+			theDb.engineeringUnitList.clear();
+	
+			// Likewise DataTypes are read/written as a set. Just clear the
+			// Java collection and only the new ones will survive.
+			theDb.dataTypeSet.clear();
+	
+			// Likewise again for enumerations.
+			theDb.enumList.clear();
+		}
 	}
 
 	/** 
@@ -560,6 +577,25 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 
 			info("Processing '" + s + "'");
 			DatabaseObject ob = null;
+			
+			// If -p argument is used set a filter to skip non-platform-related elements.
+			if (platformRelatedOnlyArg.getValue())
+			{
+				topParser.setElementFilter(
+					new ElementFilter()
+						{
+							@Override
+							public boolean acceptElement(String elementName)
+							{
+								return elementName.equalsIgnoreCase(XmlDbTags.Platform_el)
+									|| elementName.equalsIgnoreCase(XmlDbTags.NetworkList_el)
+									|| elementName.equalsIgnoreCase(XmlDbTags.PlatformConfig_el)
+									|| elementName.equalsIgnoreCase(XmlDbTags.EquipmentModel_el)
+									|| elementName.equalsIgnoreCase(XmlDbTags.Site_el);
+							}
+						});
+			}
+
 			try { ob = topParser.parse(new File(s)); }
 			catch(org.xml.sax.SAXException e)
 			{

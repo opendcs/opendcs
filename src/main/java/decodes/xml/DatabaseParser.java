@@ -10,12 +10,9 @@
 */
 package decodes.xml;
 
-import opendcs.dai.LoadingAppDAI;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import decodes.db.*;
@@ -24,6 +21,7 @@ import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.xml.CompXio;
 import decodes.tsdb.xml.CompXioTags;
 import ilex.util.TextUtil;
+import ilex.util.Logger;
 import java.io.IOException;
 import ilex.xml.*;
 
@@ -35,6 +33,7 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 	/** The database we parse records into and out of. */
 	private Database theDb;
 	private Date fileLMT = new Date();
+	private ElementFilter elementFilter = null;
 
 	/**
 	 * Constructor.
@@ -87,7 +86,13 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 		String localName, String qname, Attributes atts ) 
 			throws SAXException
 	{
-		if (localName.equalsIgnoreCase(XmlDbTags.Platform_el))
+		if (elementFilter != null && !elementFilter.acceptElement(localName))
+		{
+			Logger.instance().info("DatabaseParser: Ignoring element '" + localName 
+				+ "' because filter returned false.");
+			hier.pushObjectParser(new ElementIgnorer());
+		}
+		else if (localName.equalsIgnoreCase(XmlDbTags.Platform_el))
 		{
 			String id = atts.getValue(XmlDbTags.PlatformId_at);
 			DbKey pid = Constants.undefinedId;
@@ -363,5 +368,15 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 //		}
 
 		xos.endElement(myName());
+	}
+	
+	public ElementFilter getElementFilter()
+	{
+		return elementFilter;
+	}
+
+	public void setElementFilter(ElementFilter elementFilter)
+	{
+		this.elementFilter = elementFilter;
 	}
 }
