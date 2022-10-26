@@ -59,7 +59,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 	private int unknownConnReturned = 0;
     private int connectionsClosedDuringGet = 0;
     private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
-    private static boolean trace = OpenTsdbSettings.instance().traceConnections;
+    private static boolean trace = Boolean.parseBoolean(System.getProperty("cwms.connection.pool.trace", "false"));
     
 
 
@@ -92,11 +92,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             }
             catch(SQLException ex)
             {
-                throw new BadConnectException("Unable to initialize pool.",ex);
-            }
-            catch(DbIoException ex)
-            {
-                throw new BadConnectException("Unable to set office context.",ex);
+                throw new BadConnectException("Unable to initialize pool for " + info ,ex);
             }
         }
         return ret;
@@ -130,25 +126,30 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * Fill out the connection info object with the given connection and verify by calling setCtx.
      * @param info minimally filled out info (URL,username,password)
      * @param conn valid connection.
-     * @throws BadConnectException
      * @throws SQLException
-     * @throws DbIoException
      */
-    private static void fillOutConnectionInfo(CwmsConnectionInfo info, Connection conn) throws BadConnectException,SQLException,DbIoException
+    private static void fillOutConnectionInfo(CwmsConnectionInfo info, Connection conn) throws SQLException
     {
-        String officeId = info.getLoginInfo().getUserOfficeId();
-        info.setDbOfficeCode(officeId2code(conn, officeId));
+        try
+        {
+            String officeId = info.getLoginInfo().getUserOfficeId();
+            info.setDbOfficeCode(officeId2code(conn, officeId));
 
-        // MJM 2018-2/21 Force autoCommit on.
-        try{ conn.setAutoCommit(true); }
+            // MJM 2018-2/21 Force autoCommit on.
+            try{ conn.setAutoCommit(true); }
+            catch(SQLException ex)
+            {
+                log.warning("Cannot set SQL AutoCommit to true: " + ex);
+            }
+
+            String priv = getOfficePrivileges(conn, info);
+            info.setDbOfficePrivilege(priv);
+            setCtxDbOfficeId(conn, info);
+        }
         catch(SQLException ex)
         {
-            log.warning("Cannot set SQL AutoCommit to true: " + ex);
+            throw new SQLException("Unable to properly initialize CwmsConnectionInfo: " + info, ex);
         }
-
-        String priv = getOfficePrivileges(conn, info.getLoginInfo().getUrl(), officeId);
-        info.setDbOfficePrivilege(priv);
-        setCtxDbOfficeId(conn, officeId, info.getDbOfficeCode(), info.getDbOfficePrivilege());
     }
 
     /**
@@ -249,7 +250,7 @@ try_again:
         try
         {
             conn.setAutoCommit(true);
-            setCtxDbOfficeId(conn, info.getLoginInfo().getUserOfficeId(), info.getDbOfficeCode(), info.getDbOfficePrivilege());
+            setCtxDbOfficeId(conn, info);
         }
         catch(SQLException ex)
         {
@@ -313,9 +314,9 @@ try_again:
      * @param user username we are looking for
      * @param dbOfficeId User CWMS Office
      * @return The privilege name.
-     * @throws BadConnectException if unable to retrieve the privilege list.
+     * @throws SQLException if unable to retrieve the privilege list.
      */
-    private static String getOfficePrivileges(Connection conn, String user, String dbOfficeId) throws BadConnectException
+    private static String getOfficePrivileges(Connection conn, CwmsConnectionInfo info) throws SQLException
 	{
 		String ret = null;
 		try
@@ -323,7 +324,7 @@ try_again:
 			ArrayList<StringPair>officePrivileges = determinePrivilegedOfficeIds(conn);
 			// MJM 2018-12-05 now determine the highest privilege level that this user has in
 			// the specified office ID:
-			log.finest("Office Privileges for user '" + user + "'");
+			log.finest("Office Privileges for user '" + info.getLoginInfo().getUser() + "'");
 			for(StringPair op : officePrivileges)
 			{
 				if (op == null)
@@ -344,7 +345,7 @@ try_again:
 				log.finest("Privilege: " + op.first + ":" + op.second);
 
 				String priv = op.second.toLowerCase();
-				if (TextUtil.strEqualIgnoreCase(op.first, dbOfficeId) && priv.startsWith("ccp"))
+				if (TextUtil.strEqualIgnoreCase(op.first, info.getLoginInfo().getUserOfficeId()) && priv.startsWith("ccp"))
 				{
 					if (priv.contains("mgr"))
 					{
@@ -362,10 +363,10 @@ try_again:
 			}
 			return ret;
 		}
-		catch (Exception ex)
+		catch (SQLException ex)
 		{
             String msg = "Cannot determine privileged office IDs: ";
-			throw new BadConnectException(msg,ex);
+			throw new SQLException(msg,ex);
 		}
 
     }
@@ -438,6 +439,10 @@ try_again:
             }
             return ret;
         }
+        catch(SQLException ex)
+        {
+            throw new SQLException("Unable to retrieve assigned privilege group for connected user.",ex);
+        }
     }
 
     /**
@@ -466,16 +471,22 @@ try_again:
 				}
 			}
 		}
+        catch(SQLException ex)
+        {
+            throw new SQLException("Unable to find office_code for " + officeId,ex);
+        }
 	}
 
     /**
 	 * Reset the VPD context variable with user specified office Id
 	 * @throws DbIoException
 	 */
-	public static void setCtxDbOfficeId(Connection conn, String dbOfficeId,
-                                        DbKey dbOfficeCode, String dbOfficePrivilege)
+	public static void setCtxDbOfficeId(Connection conn, CwmsConnectionInfo info)
         throws SQLException
     {
+        final String dbOfficeId = info.getLoginInfo().getUserOfficeId();
+        final String dbOfficePrivilege = info.getDbOfficePrivilege();
+        final DbKey dbOfficeCode = info.getDbOfficeCode();
         try(
             PreparedStatement storeProcStmt = conn.prepareStatement(
                                          /* office code, priv, levelofficeId ) */
@@ -498,6 +509,10 @@ try_again:
             testStmt.setString(2, "CC");
             testStmt.setString(3, "PLATFORMCONFIG");    
             testStmt.execute();
+        }
+        catch(SQLException ex)
+        {
+            throw new SQLException("Unable to set Session context with Info="+info,ex);
         }
     }
 }

@@ -53,15 +53,23 @@ public class CwmsConnectionInfo
 	{
 		StringBuilder builder = new StringBuilder();
 		builder.append("CwmsConnectionInfo{");
+		builder.append("priv=").append(this.dbOfficePrivilege).append(",")
+		       .append("OfficeCode=").append(dbOfficeCode.getValue()).append(",")
+			   .append("loginInfo=");
 		if (loginInfo != null)
 		{
-			builder.append("url=").append(loginInfo.getUrl());
-			builder.append(",");
-			builder.append("user=").append(loginInfo.getUser());
+			String url = loginInfo.getUrl();
+			String user = loginInfo.getUser();
+			String office = loginInfo.getUserOfficeId();
+			builder.append("LoginInfo{")
+				   .append("url=").append(url).append(",")
+				   .append("user=").append(user).append(",")
+				   .append("officeId=").append(office);
+			builder.append("}");
 		}
 		else
 		{
-			builder.append("unitialized");
+			builder.append("{uninitialized}");
 		}
 		builder.append("}");
 		return builder.toString();

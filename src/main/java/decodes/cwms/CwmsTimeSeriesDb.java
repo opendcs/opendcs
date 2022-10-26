@@ -1559,17 +1559,6 @@ public class CwmsTimeSeriesDb
 			catch(Exception ex) {}
 			getTaskListStmt = null;
 		}
-
-		// If there is a connection, return the connection to the CWMS connection pool. Do not close directly.
-		if (conInfo != null)
-		{
-			if (conInfo.getConnection() != null)
-			{
-				freeConnection(conInfo.getConnection());
-				conInfo.setConnection(null);
-			}
-			conInfo = null; // Force re-init if db is reopened.
-		}
 	}
 
 	@Override
@@ -1641,7 +1630,7 @@ public class CwmsTimeSeriesDb
 		catch(SQLException ex)
 		{
 			failure("Unable to get connection from pool: " + ex.getLocalizedMessage());
-			throw new RuntimeException("Pool Likely full. Cannot get connection",ex);
+			throw new RuntimeException("Error retrieving connection.",ex);
 		}
 	}
 

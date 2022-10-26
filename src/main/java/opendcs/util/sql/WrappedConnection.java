@@ -159,16 +159,18 @@ public class WrappedConnection implements Connection{
     }
 
     private void logPlainCreate() {
-        log.debug2("Dev Msg: Plain create statement from:");
-        if(log.getMinLogPriority() == Logger.E_DEBUG3)
+        if(trace)
         {
-            StackTraceElement stk[] = Thread.currentThread().getStackTrace();
-            for(int n = 2; n < stk.length; n++) 
+            log.debug2("Dev Msg: Plain create statement from:");
+            if(log.getMinLogPriority() == Logger.E_DEBUG3)
             {
-                    log.debug3("\t" + n + ": " + stk[n]);
+                StackTraceElement stk[] = Thread.currentThread().getStackTrace();
+                for(int n = 2; n < stk.length; n++) 
+                {
+                        log.debug3("\t" + n + ": " + stk[n]);
+                }
             }
         }
-        
     }
 
     @Override
