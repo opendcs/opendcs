@@ -16,7 +16,6 @@ package decodes.xml;
 import java.net.URL;
 import org.xml.sax.*;
 
-import java.util.ArrayList;
 import java.util.Date;
 import decodes.db.*;
 import decodes.sql.DbKey;
@@ -35,7 +34,6 @@ import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.io.FileOutputStream;
 import ilex.xml.*;
-import opendcs.opentsdb.Interval;
 
 /**
  * This class maps the DECODES XML files into the object model.
@@ -46,8 +44,9 @@ public class TopLevelParser implements XmlObjectParser
 	private XMLReader parser;               // SAX parser object
 	private XmlHierarchyParser xhp;         // Manages hierarchy of parsers
 	private static TopLevelParser _instance;
-	String inputName;
-	File inputFile;
+	private String inputName;
+	private File inputFile;
+	private ElementFilter elementFilter = null;
 
 	/**
 	  Constructor.
@@ -329,8 +328,27 @@ public class TopLevelParser implements XmlObjectParser
 		String localName, String qname, Attributes atts )
 			throws SAXException
 	{
-
-		if (localName.equalsIgnoreCase(XmlDbTags.EnumList_el))
+		if (localName.equalsIgnoreCase(XmlDbTags.Database_el))
+		{
+			if (topLevelObject != null)
+			{
+				if (!(topLevelObject instanceof Database))
+					throw new SAXException("Wrong top-object in file, expected "
+						+ topLevelObject.getObjectType());
+			}
+			else
+				topLevelObject = Database.getDb();
+			DatabaseParser dp = new DatabaseParser((Database)topLevelObject);
+			dp.setFileLMT(getFileLMT());
+			hier.pushObjectParser(dp);
+		}
+		else if (elementFilter != null && !elementFilter.acceptElement(localName))
+		{
+			Logger.instance().info("In file '" + inputFile.getPath() 
+				+ "', Ignoring element '" + localName + "' because filter returned false.");
+			hier.pushObjectParser(new ElementIgnorer());
+		}
+		else if (localName.equalsIgnoreCase(XmlDbTags.EnumList_el))
 		{
 			if (topLevelObject != null)
 			{
@@ -487,20 +505,6 @@ public class TopLevelParser implements XmlObjectParser
 			else
 				top.lastModifyTime = new Date();
 			hier.pushObjectParser(new PresentationGroupParser(top));
-		}
-		else if (localName.equalsIgnoreCase(XmlDbTags.Database_el))
-		{
-			if (topLevelObject != null)
-			{
-				if (!(topLevelObject instanceof Database))
-					throw new SAXException("Wrong top-object in file, expected "
-						+ topLevelObject.getObjectType());
-			}
-			else
-				topLevelObject = Database.getDb();
-			DatabaseParser dp = new DatabaseParser((Database)topLevelObject);
-			dp.setFileLMT(getFileLMT());
-			hier.pushObjectParser(dp);
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.PlatformConfig_el))
 		{
@@ -714,5 +718,15 @@ public class TopLevelParser implements XmlObjectParser
 			tlp.parse(new File(args[i]));
 			TopLevelParser.write(System.out, tlp.topLevelObject);
 		}
+	}
+	
+	public ElementFilter getElementFilter()
+	{
+		return elementFilter;
+	}
+
+	public void setElementFilter(ElementFilter elementFilter)
+	{
+		this.elementFilter = elementFilter;
 	}
 }
