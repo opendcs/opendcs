@@ -98,10 +98,8 @@ import decodes.sql.DbKey;
 import decodes.sql.PlatformListIO;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbIoException;
 import decodes.util.*;
-import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.db.*;
 import decodes.xml.DataTypeEquivalenceListParser;
 import decodes.xml.ElementFilter;
@@ -269,9 +267,7 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 	TopLevelParser topParser; // Top level XML parser.
 	Vector<IdDatabaseObject> newObjects;   // Stores new DatabaseObjects to be added.
 	ArrayList<IdDatabaseObject> toDelete = new ArrayList<IdDatabaseObject>();
-//	boolean writeEnumList;
 	boolean writePlatformList;
-//	boolean writeDataTypes;
 	private Pdt pdt = null;
 	
 	DbImport()
@@ -435,36 +431,7 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 			theDb.dataSourceList.clear();
 	
 			// NOTE: Never delete loading apps -- too many dependencies outside of DECODES.
-//			LoadingAppDAI loadingAppDAO = theDbio.makeLoadingAppDAO();
-//			try
-//			{
-//				for(CompAppInfo cai : theDb.loadingAppList)
-//				{
-//					try
-//					{
-//						loadingAppDAO.deleteComputationApp(cai);
-//					}
-//					catch (ConstraintException ex)
-//					{
-//						warning("Cannot delete app '" + cai.getAppName() + "': " + ex);
-//					}	
-//				}
-//				// Now recreate the 'utility' application which is required by compimport and
-//				// others.
-//				CompAppInfo utility = new CompAppInfo();
-//				utility.setAppName("utility");
-//				utility.setProperty("appType", "utility");
-//				loadingAppDAO.writeComputationApp(utility);
-//			}
-//			catch (DbIoException ex)
-//			{
-//				warning("Cannot delete loading apps: " + ex);
-//			}
-//			finally
-//			{
-//				loadingAppDAO.close();
-//			}
-//			theDb.loadingAppList.clear();
+			// (block of code for removing loading apps removed 10/26/2022)
 		}
 
 		for(NetworkList nl : theDb.networkListList.getList())
@@ -476,16 +443,7 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 		theDb.platformList.clear();
 
 		// NOTE: Never delete SITE records. Too many dependencies outside of DECODES. 
-//		if (!(theDbio instanceof CwmsSqlDatabaseIO))
-//		{
-//			for(Iterator<Site> sit = theDb.siteList.iterator(); sit.hasNext(); )
-//			{
-//				Site s = sit.next();
-//				theDbio.deleteSite(s);
-//			}
-//			theDb.siteList.clear();
-//		}
-		
+		// (block of code for removing sites removed 10/26/2022)
 		
 		for(PlatformConfig pc : theDb.platformConfigList.values())
 			theDbio.deleteConfig(pc);
@@ -630,26 +588,6 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 				failure("Cannot import PlatformList files! '" + s + "'");
 				throw new DatabaseException("Cannot import PlatformList XML files!");
 			}
-//			else if (ob instanceof EnumList)
-//			{
-//				// XML parser will add any enums it sees into the EnumList
-//				// of the current database (stageDb). So I just need to record
-//				// the fact that I saw an EnumList file.
-//				enumsModified = true;
-//			}
-//			else if (ob instanceof EngineeringUnitList)
-//			{
-//				// XML parser will add any EUs and Converters that it sees to
-//				// the EU List and UC Set of the current database (stageDb). 
-//				// So I just need to record the fact that I saw an EUList File.
-//				euListSeen = true;
-//			}
-			
-//Logger.instance().info("After readXmlFiles...");
-//DataType dt = DataType.getDataType("NRCS", "SRDOX");
-//Logger.instance().info("From DataType.getDatatype: " + dt + ", displayName=" + dt.getDisplayName());
-//dt = stageDb.dataTypeSet.get("NRCS", "SRDOX");
-//Logger.instance().info("From stageDb.dataTypeSet.get: " + dt + ", displayName=" + dt.getDisplayName());
 		}
 
 		/*
@@ -704,10 +642,6 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 	*/
 	private void mergeStageToTheDb()
 	{
-//Logger.instance().debug3("mergeStageToTheDb 0: #EUs=" + theDb.engineeringUnitList.size());
-//Logger.instance().debug3("the db and stage EU lists are "
-//+ (theDb.engineeringUnitList == stageDb.engineeringUnitList ? "" : "NOT") + " the same.");
-
 		Database.setDb(theDb);
 		
 		if (overwriteDb.getValue())
@@ -744,8 +678,8 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 			newDT.setDisplayName(stageDT.getDisplayName());
 		}
 
-Logger.instance().debug3("mergeStageToTheDb 1: #EUs=" + theDb.engineeringUnitList.size());
-Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineeringUnitList.size());
+		Logger.instance().debug3("mergeStageToTheDb 1: #EUs=" + theDb.engineeringUnitList.size());
+		Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineeringUnitList.size());
 
 		if (validateOnly)
 		{
@@ -843,7 +777,6 @@ Logger.instance().debug3("mergeStageToTheDb 3: #stageEUs=" + stageDb.engineering
 		//    ==> Import New Platform
 		//    ==> Remove TM from the different existing platform, and if that platform now has
 		//        no remaining TMs, remove it entirely.
-		//TODO Implement above
 		writePlatformList = false;
 		for(Iterator<Platform> it = stageDb.platformList.iterator(); it.hasNext(); )
 		{
