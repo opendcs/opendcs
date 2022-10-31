@@ -28,6 +28,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 
+import org.opendcs.jmx.WrappedConnectionMXBean;
 import org.opendcs.jmx.connections.JMXTypes;
 
 import ilex.util.Logger;
@@ -38,10 +39,10 @@ import opendcs.util.functional.ThrowingConsumer;
  * to otherwise write a normal try-with-resources
  * to close the connection but will correctly call
  * theDb.freeConnection on behalf of the user
- * 
+ *
  * Otherwise it's just a passthrough to the realConnection
  */
-public class WrappedConnection implements Connection{
+public class WrappedConnection implements Connection, WrappedConnectionMXBean{
     private static Logger log = Logger.instance();
 
     private Connection realConnection;
@@ -52,7 +53,7 @@ public class WrappedConnection implements Connection{
     private ZonedDateTime start = ZonedDateTime.now();
     private ZonedDateTime end = null;
 
-    
+
 
     public WrappedConnection(Connection realConnection){
         this(realConnection, (c) -> {},false);
@@ -80,7 +81,7 @@ public class WrappedConnection implements Connection{
                 openTrace.add(ste[i]);
             }
         }
-        
+
     }
 
     @Override
@@ -165,7 +166,7 @@ public class WrappedConnection implements Connection{
             if(log.getMinLogPriority() == Logger.E_DEBUG3)
             {
                 StackTraceElement stk[] = Thread.currentThread().getStackTrace();
-                for(int n = 2; n < stk.length; n++) 
+                for(int n = 2; n < stk.length; n++)
                 {
                         log.debug3("\t" + n + ": " + stk[n]);
                 }
@@ -361,7 +362,7 @@ public class WrappedConnection implements Connection{
 
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-        realConnection.setReadOnly(readOnly);   
+        realConnection.setReadOnly(readOnly);
     }
 
     @Override
@@ -377,7 +378,7 @@ public class WrappedConnection implements Connection{
     @Override
     public void setSchema(String schema) throws SQLException {
         realConnection.setSchema(schema);
-        
+
     }
 
     @Override
@@ -399,7 +400,7 @@ public class WrappedConnection implements Connection{
                             .getSeconds();
         return new CompositeDataSupport(JMXTypes.CONNECTION_LIST_TYPE,itemNames,values);
     }
-    
+
 
     public void dumpData()
     {
@@ -411,7 +412,7 @@ public class WrappedConnection implements Connection{
         catch(SQLException ex)
         {
             System.err.println("Unable to verify if connection open.");
-            
+
         }
         printStackTraceOnExit(closed);
     }
@@ -435,7 +436,6 @@ public class WrappedConnection implements Connection{
                 System.err.println("\t\t" + ste.toString());
             }
         }
-        
     }
 
     /**
@@ -447,4 +447,40 @@ public class WrappedConnection implements Connection{
     {
         return this.realConnection;
     }
+
+	@Override
+	public int getRealConnectionHashCode()
+    {
+		return realConnection.hashCode();
+	}
+
+	@Override
+	public String getConnectionOpened()
+    {
+		return start.toString();
+	}
+
+	@Override
+	public long getConnectionLifetimeSeconds()
+    {
+		return Duration.between(start,
+                                end == null
+                                    ? ZonedDateTime.now()
+                                    : end)
+                       .getSeconds();
+	}
+
+	@Override
+	public String[] getOpenStackTrace()
+    {
+		return openTrace != null
+                    ? openTrace.toArray(new String[0])
+                    : null;
+	}
+
+	@Override
+	public boolean getTracingOn()
+    {
+		return trace;
+	}
 }

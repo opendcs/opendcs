@@ -24,6 +24,7 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 
 import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.opendcs.jmx.WrappedConnectionMXBean;
 import org.opendcs.jmx.connections.JMXTypes;
 
 import decodes.db.Constants;
@@ -51,7 +52,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
     private static TreeMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new TreeMap<>((left,right)->{
         return mapCompare(left,right);
     });
-    
+
     private HashSet<WrappedConnection> connectionsOut = new HashSet<>();
     private CwmsConnectionInfo info = null;
 	private int connectionsRequested = 0;
@@ -60,7 +61,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
     private int connectionsClosedDuringGet = 0;
     private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
     private static boolean trace = Boolean.parseBoolean(System.getProperty("cwms.connection.pool.trace", "false"));
-    
+
 
 
     /**
@@ -79,7 +80,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
                 fillOutConnectionInfo(info,conn);
                 ret = new CwmsConnectionPool(info);
                 pools.put(info,ret);
-                
+
                 if (trace)
                 {
                     final CwmsConnectionPool forHook = ret;
@@ -100,7 +101,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 
     /**
      * The instance connection info will have been initialized
-     * The version sent to getConnectionFor may not, but it's only checked on 
+     * The version sent to getConnectionFor may not, but it's only checked on
      * url,username
      * @param left
      * @param right
@@ -160,7 +161,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * @throws SQLException Anything wrong with a query/connection
      * @throws DbIoException Unable to retrieve general database contents.
      */
-    private CwmsConnectionPool(CwmsConnectionInfo info) 
+    private CwmsConnectionPool(CwmsConnectionInfo info)
     {
         this.info = info;
         try
@@ -221,24 +222,17 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * Builds a list for JConsole to render information.
      */
 	@Override
-	public TabularData getConnectionsList() throws OpenDataException
+	public WrappedConnectionMXBean[] getConnectionsList() throws OpenDataException
     {
-		TabularDataSupport td = new TabularDataSupport(JMXTypes.CONNECTION_LIST);
-        ArrayList<CompositeData> data = new ArrayList<>();
-        for(WrappedConnection conn: this.connectionsOut)
-        {
-            data.add(conn.asCompositeData());
-        }
-        td.putAll(data.toArray(new CompositeData[0]));
-        return td;
+		return this.connectionsOut.toArray(new WrappedConnection[0]);
 	}
 
     /**
      * Retrieve a valid connection from the pool.
-     * 
+     *
      * Callers can either call Connection::close on the returned connection or This pool's returnConnection.
      * The effect is the same.
-     * 
+     *
      * @return a valid, through Wrapped for tracking connection
      * @throws SQLException if auto commit can't be set or the Session context can be set, or no connections available.
      */
@@ -254,7 +248,8 @@ try_again:
         }
         catch(SQLException ex)
         {
-            if( ex.getErrorCode() == 2399)
+
+            if (isTimeoutError(ex))
             {
                 connectionsClosedDuringGet++;
                 conn.close();
@@ -275,9 +270,26 @@ try_again:
         return wc;
     }
 
-    /**
+    private boolean isTimeoutError(SQLException ex)
+    {
+        if( ex.getCause() instanceof SQLException)
+        {
+            SQLException next = (SQLException)ex.getCause();
+            if (next.getErrorCode() == 0)
+            {
+                return isTimeoutError(next);
+            }
+            else if (next.getErrorCode() == 2399)
+            {
+                return true;
+            }
+        }
+		return false;
+	}
+
+	/**
      * Frees a connection for later use.
-     * 
+     *
      * If given a connection this pool doesn't track no error is returned but a counter is incremented.
      * @param conn A connection from this pool.
      * @throws SQLException Unable to close/return the connection.
@@ -499,7 +511,7 @@ try_again:
                 dbOfficeId == null ? 0 :
                 dbOfficePrivilege.toUpperCase().contains("MGR") ? 1 :
                 dbOfficePrivilege.toUpperCase().contains("PROC") ? 2 : 3;
-         
+
             storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
             storeProcStmt.setInt(2, privLevel);
             storeProcStmt.setString(3, dbOfficeId);
@@ -507,7 +519,7 @@ try_again:
 
             testStmt.registerOutParameter(1, Types.VARCHAR);
             testStmt.setString(2, "CC");
-            testStmt.setString(3, "PLATFORMCONFIG");    
+            testStmt.setString(3, "PLATFORMCONFIG");
             testStmt.execute();
         }
         catch(SQLException ex)
