@@ -24,7 +24,7 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 
 import org.opendcs.jmx.ConnectionPoolMXBean;
-import org.opendcs.jmx.WrappedConnectionMXBean;
+import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.jmx.connections.JMXTypes;
 
 import decodes.db.Constants;
@@ -222,7 +222,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * Builds a list for JConsole to render information.
      */
 	@Override
-	public WrappedConnectionMXBean[] getConnectionsList() throws OpenDataException
+	public WrappedConnectionMBean[] getConnectionsList() throws OpenDataException
     {
 		return this.connectionsOut.toArray(new WrappedConnection[0]);
 	}

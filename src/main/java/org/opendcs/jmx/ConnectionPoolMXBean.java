@@ -43,5 +43,5 @@ public interface ConnectionPoolMXBean {
      *         stack trace for where it was opened from.
      * @throws OpenDataException
      */
-    public WrappedConnectionMXBean[] getConnectionsList() throws OpenDataException;
+    public WrappedConnectionMBean[] getConnectionsList() throws OpenDataException;
 }

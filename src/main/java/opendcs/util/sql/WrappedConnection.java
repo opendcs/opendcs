@@ -23,12 +23,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
 
-import org.opendcs.jmx.WrappedConnectionMXBean;
+import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.jmx.connections.JMXTypes;
 
 import ilex.util.Logger;
@@ -42,7 +43,7 @@ import opendcs.util.functional.ThrowingConsumer;
  *
  * Otherwise it's just a passthrough to the realConnection
  */
-public class WrappedConnection implements Connection, WrappedConnectionMXBean{
+public class WrappedConnection implements Connection, WrappedConnectionMBean{
     private static Logger log = Logger.instance();
 
     private Connection realConnection;
@@ -474,8 +475,11 @@ public class WrappedConnection implements Connection, WrappedConnectionMXBean{
 	public String[] getOpenStackTrace()
     {
 		return openTrace != null
-                    ? openTrace.toArray(new String[0])
-                    : null;
+                    ? openTrace.stream()
+                               .map(ste->ste.toString())
+                               .collect(Collectors.toList())
+                               .toArray(new String[0])
+                    : new String[]{"No Trace."};
 	}
 
 	@Override

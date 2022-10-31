@@ -1,6 +1,6 @@
 package org.opendcs.jmx;
 
-public interface WrappedConnectionMXBean
+public interface WrappedConnectionMBean
 {
     public int getRealConnectionHashCode();
     public String getConnectionOpened();
