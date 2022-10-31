@@ -241,9 +241,10 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         connectionsRequested++;
         for(int i = 0; i < 3; i++)
         {
-            Connection conn = pool.getConnection(info.getLoginInfo());
+            Connection conn = null;
             try
             {
+                conn = pool.getConnection(info.getLoginInfo());
                 conn.setAutoCommit(true);
                 setCtxDbOfficeId(conn, info);
                 final WrappedConnection wc = new WrappedConnection(conn,(c)->{
@@ -254,13 +255,14 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             }
             catch(SQLException ex)
             {
-
                 if (isTimeoutError(ex))
                 {
                     connectionsClosedDuringGet++;
-                    conn.close();
-                    CwmsDbConnectionPool.close(conn);
-                    conn = null;
+                    if (conn != null) {
+                        conn.close();
+                        CwmsDbConnectionPool.close(conn);
+                        conn = null;
+                    }
                 }
                 else if (isFullPoolError(ex))
                 {
