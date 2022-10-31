@@ -239,50 +239,63 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
     public Connection getConnection() throws SQLException
     {
         connectionsRequested++;
-        Connection conn = pool.getConnection(info.getLoginInfo());
-try_again:
-        try
+        for(int i = 0; i < 3; i++)
         {
-            conn.setAutoCommit(true);
-            setCtxDbOfficeId(conn, info);
+            Connection conn = pool.getConnection(info.getLoginInfo());
+            try
+            {
+                conn.setAutoCommit(true);
+                setCtxDbOfficeId(conn, info);
+                final WrappedConnection wc = new WrappedConnection(conn,(c)->{
+                    this.returnConnection(c);
+                },trace);
+                connectionsOut.add(wc);
+                return wc;
+            }
+            catch(SQLException ex)
+            {
+
+                if (isTimeoutError(ex))
+                {
+                    connectionsClosedDuringGet++;
+                    conn.close();
+                    CwmsDbConnectionPool.close(conn);
+                    conn = null;
+                }
+                else if (isFullPoolError(ex))
+                {
+                    // we don't care if interrupted or just done.
+                    try{Thread.sleep(500);} catch( InterruptedException iex) {}
+                }
+                else
+                {
+                    throw ex;
+                }
+            }
         }
-        catch(SQLException ex)
+        throw new SQLException("No connections available after 3 attempts.");
+    }
+
+    private boolean isFullPoolError(SQLException ex) {
+        if( ex.getCause() != null && ex.getCause() instanceof oracle.ucp.NoAvailableConnectionsException)
         {
-
-            if (isTimeoutError(ex))
-            {
-                connectionsClosedDuringGet++;
-                conn.close();
-                CwmsDbConnectionPool.close(conn);
-
-                conn = null;
-                break try_again;
-            }
-            else
-            {
-                throw ex;
-            }
+            return true;
         }
-        final WrappedConnection wc = new WrappedConnection(conn,(c)->{
-            this.returnConnection(c);
-        },trace);
-        connectionsOut.add(wc);
-        return wc;
+        else
+        {
+            return false;
+        }
     }
 
     private boolean isTimeoutError(SQLException ex)
     {
-        if( ex.getCause() instanceof SQLException)
+        if( ex.getErrorCode() == 2399)
         {
-            SQLException next = (SQLException)ex.getCause();
-            if (next.getErrorCode() == 0)
-            {
-                return isTimeoutError(next);
-            }
-            else if (next.getErrorCode() == 2399)
-            {
-                return true;
-            }
+            return true;
+        }
+        else if( ex.getCause() instanceof SQLException)
+        {
+            return isTimeoutError((SQLException)ex.getCause());
         }
 		return false;
 	}
