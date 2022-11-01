@@ -17,3 +17,7 @@ doc-source/media/**
 doc-source/*.rst
 **/.externalToolBuilders
 *.log
+
+.idea/
+*.iml
+$DCSTOOL_USERDIR/
