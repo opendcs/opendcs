@@ -2,13 +2,9 @@ package decodes.db;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.datasource.EdlPMParser;
 import decodes.datasource.RawMessage;
-import decodes.dbeditor.ConfigEditPanel;
-import decodes.dbeditor.DecodingScriptEditDialog;
 import decodes.decoder.DecodedSample;
-import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 import ilex.var.NoConversionException;
 import java.nio.file.Files;
@@ -16,8 +12,6 @@ import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.Properties;
-import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +43,7 @@ final class DecodesScriptSampleTest {
         decodesScript.formatStatements.add(datetime);
         FormatStatement data = new FormatStatement(decodesScript, 5);
         data.label = "data";
-        data.format = "setMissing(Ssn), F(S,A,5d'\t',1), /, >timezone";
+        data.format = "setMissing(Ssn), F(S,A,5d' \\t',1), /, >timezone";
         decodesScript.formatStatements.add(data);
 
         ScriptSensor stage = new ScriptSensor(decodesScript, 1);
@@ -89,19 +83,19 @@ final class DecodesScriptSampleTest {
         decodesScript.prepareForExec();
         tmpMedium.prepareForExec();
         decodesScript.decodeMessage(rawMessage);
-        assertEquals(5, decodesScript.getDecodedSamples().size(), "Sample message contains 4 samples");
+        assertEquals(5, decodesScript.getDecodedSamples().size(), "Sample message contains 5 samples");
     }
 
     @Test
-    public void testDecodesScriptSetValid() throws NoConversionException {
+    void testDecodesScriptSetValid() throws NoConversionException {
         DecodedSample sampleValid = decodesScript.getDecodedSamples().get(0);
         assertEquals(ZonedDateTime.of(2022, 10, 17, 16, 30, 0, 0, ZoneId.of("UTC")).toInstant(),
             sampleValid.getSample().getTime().toInstant(), "Time should match the parsed sample message");
-        assertEquals(1.23, sampleValid.getSample().getDoubleValue(), 0.0);
+        assertEquals(1.23, sampleValid.getSample().getDoubleValue(), 0.0, "The sample message contains a valid double value");
     }
 
     @Test
-    public void testDecodesScriptSampleMissingStandard() {
+    void testDecodesScriptSampleMissingStandard() {
         DecodedSample sampleMissingStandard = decodesScript.getDecodedSamples().get(1);
         assertEquals(ZonedDateTime.of(2022, 10, 17, 16, 45, 0, 0, ZoneId.of("UTC")).toInstant(),
             sampleMissingStandard.getSample().getTime().toInstant(), "Time should match the parsed sample message");
@@ -109,23 +103,25 @@ final class DecodesScriptSampleTest {
     }
 
     @Test
-    public void testDecodesScriptSampleMissingCustomWithTabs() {
+    void testDecodesScriptSampleMissingCustomWithTabs() {
         DecodedSample sampleMissingCustom = decodesScript.getDecodedSamples().get(2);
         assertEquals(ZonedDateTime.of(2022, 10, 17, 17, 0, 0, 0, ZoneId.of("UTC")).toInstant(),
             sampleMissingCustom.getSample().getTime().toInstant(), "Time should match the parsed sample message");
-        assertEquals("missing", sampleMissingCustom.getTimeSeries().formattedSampleAt(2), "Custom missing symbol is not used correctly due to tab delimiter");
+        assertEquals("missing", sampleMissingCustom.getTimeSeries().formattedSampleAt(2),
+            "Custom missing symbol is not used correctly due to tab delimiter");
     }
 
     @Test
-    public void testDecodesScriptSampleMissingCustomWithSpaces() {
+    void testDecodesScriptSampleMissingCustomWithSpaces() {
         DecodedSample sampleError = decodesScript.getDecodedSamples().get(3);
         assertEquals(ZonedDateTime.of(2022, 10, 17, 17, 15, 0, 0, ZoneId.of("UTC")).toInstant(),
             sampleError.getSample().getTime().toInstant(), "Time should match the parsed sample message");
-        assertEquals("missing", sampleError.getTimeSeries().formattedSampleAt(3), "Custom missing symbol is not used correctly due to space delimiter");
+        assertEquals("missing", sampleError.getTimeSeries().formattedSampleAt(3),
+            "Custom missing symbol is not used correctly due to space delimiter");
     }
 
     @Test
-    public void testDecodesScriptError() {
+    void testDecodesScriptError() {
         DecodedSample sampleError = decodesScript.getDecodedSamples().get(4);
         assertEquals(ZonedDateTime.of(2022, 10, 17, 17, 30, 0, 0, ZoneId.of("UTC")).toInstant(),
             sampleError.getSample().getTime().toInstant(), "Time should match the parsed sample message");
