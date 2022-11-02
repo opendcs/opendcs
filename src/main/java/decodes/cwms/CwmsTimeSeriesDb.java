@@ -856,7 +856,9 @@ public class CwmsTimeSeriesDb
 			{
 					Logger.instance().info(module +
 				" Connected to DECODES CWMS Database " + dbUri + " as user " + username
-				+ " with officeID=" + dbOfficeId);			
+				+ " with officeID=" + dbOfficeId);
+
+				postConnectInit(appName, conn); // Make sure the versions and such are set
 
 				cgl.setLoginSuccess(true);
 
