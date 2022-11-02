@@ -1320,7 +1320,7 @@ public class CwmsTimeSeriesDAO
 			while (rs.next())
 			{
 				// Extract the info needed from the result set row.
-				Date timeStamp = new Date(rs.getLong(4));
+				Date timeStamp = new Date(rs.getDate(4).getTime());
 				boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
 				if(exceedsMaxTimeGap)
 				{
