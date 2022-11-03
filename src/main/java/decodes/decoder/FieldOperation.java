@@ -229,11 +229,10 @@ class FieldOperation extends DecodesOperation
 
 		/* Special processing for delimiters */
 
-		if ( delimiter != null && delimiter.length() == 2 && delimiter.charAt(0) == '\\' ) {
-			delimiter = delimiter.substring(1);
-			delimiter = delimiter.replace("t","\t");
-			delimiter = delimiter.replace("n","\n");
-			delimiter = delimiter.replace("r","\r");
+		if (delimiter != null && delimiter.length() >= 2 && delimiter.indexOf('\\') > -1) {
+			delimiter = delimiter.replace("\\t","\t");
+			delimiter = delimiter.replace("\\n","\n");
+			delimiter = delimiter.replace("\\r","\r");
 		}	
 		// If delimiter contains either sign, add the other one.
 		if (delimiter != null)
