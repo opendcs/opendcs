@@ -671,8 +671,11 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import java.util.GregorianCalendar;
 import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -681,14 +684,23 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.TimeZone;
 
+import javax.management.JMException;
+import javax.management.ObjectName;
+import javax.management.openmbean.TabularData;
+
+import org.opendcs.jmx.ConnectionPoolMXBean;
+
 import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
+import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
+import opendcs.dao.LoadingAppDao;
 import opendcs.opentsdb.OpenTsdbSettings;
+import opendcs.util.sql.WrappedConnection;
 import lrgs.gui.DecodesInterface;
 
 import java.sql.PreparedStatement;
@@ -728,6 +740,8 @@ data.
 public class CwmsTimeSeriesDb
 	extends TimeSeriesDb
 {
+	private CwmsConnectionPool pool = null;
+
 	private String dbOfficeId = null;
 
 	private String[] currentlyUsedVersions = { "" };
@@ -746,8 +760,6 @@ public class CwmsTimeSeriesDb
 	
 	/** Set after first connect, reused by getConnection() called from DAOs */
 	private CwmsConnectionInfo conInfo = null;
-	private ArrayList<Connection> openConnections = new ArrayList<Connection>();
-
 
 	/**
 	 * No args constructor required because this is instantiated from
@@ -766,120 +778,22 @@ public class CwmsTimeSeriesDb
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
 		module = "CwmsTimeSeriesDb";
+		
 	}
 
-	public static CwmsConnectionInfo getDbConnection(String dbUri, String username, String password, String dbOfficeId)
-		throws BadConnectException
+	public static Connection getDbConnection(final CwmsConnectionInfo info) throws BadConnectException
 	{
-		if (dbOfficeId == null)
-			dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
-
-		CwmsConnectionInfo ret = new CwmsConnectionInfo();
-
-		// Make a call to the new connection pool.
-//		System.setProperty("oracle.jdbc.autoCommitSpecCompliant", "false");
-//System.err.println("Connecting to '" + dbUri + "' as '" + username + "' with pw '" + password + "' and office '" + dbOfficeId + "'");
-		ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);
-		CwmsDbConnectionPool connectionPool = CwmsDbConnectionPool.getInstance();
 		try
 		{
-			ret.setConnection(connectionPool.getConnection(loginInfo));
-			ret.setLoginInfo(loginInfo);
+			Connection conn = CwmsConnectionPool.getPoolFor(info).getConnection();
+			return conn;
 		}
-		catch (SQLException ex)
-		{
-			if (ret.getConnection() != null)
-				try { CwmsDbConnectionPool.close(ret.getConnection()); } catch(Exception ex2) {}
-			ret.setConnection(null);
-			String msg = "Cannot get CWMS connection for user '" + username
-				+ "', officeId='" + dbOfficeId + "' and dbURI='" + dbUri + ": " + ex;
-			Logger.instance().failure(msg);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
-			else
-				ex.printStackTrace(System.err);
-			throw new BadConnectException(msg);
-		}
-
-		// MJM 2018-2/21 Force autoCommit on.
-		try{ ret.getConnection().setAutoCommit(true); }
 		catch(SQLException ex)
 		{
-			Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
+			throw new BadConnectException("Unable to get connection from pool",ex);
 		}
-
-		// After connection set the context for VPD to work.
-		ret.setDbOfficeCode(officeId2code(ret.getConnection(), dbOfficeId));
-
-		ArrayList<StringPair> officePrivileges = null;
-		try
-		{
-			officePrivileges = determinePrivilegedOfficeIds(ret.getConnection());
-			// MJM 2018-12-05 now determine the highest privilege level that this user has in
-			// the specified office ID:
-Logger.instance().debug3("Office Privileges for user '" + username + "'");
-			for(StringPair op : officePrivileges)
-			{
-				if (op == null)
-				{
-					Logger.instance().warning("Skipping null privilege string pair!");
-					continue;
-				}
-				if (op.first == null)
-				{
-					Logger.instance().warning("Skipping null op.first privilege string pair!");
-					continue;
-				}
-				if (op.second == null)
-				{
-					Logger.instance().warning("Skipping null op.first privilege string pair!");
-					continue;
-				}
-				Logger.instance().debug3("Privilege: " + op.first + ":" + op.second);
-
-				String priv = op.second.toLowerCase();
-				if (TextUtil.strEqualIgnoreCase(op.first, dbOfficeId) && priv.startsWith("ccp"))
-				{
-					if (priv.contains("mgr"))
-					{
-						ret.setDbOfficePrivilege(op.second);
-						break;
-					}
-					else if (priv.contains("proc"))
-					{
-						if (ret.getDbOfficePrivilege() == null 
-						 || !ret.getDbOfficePrivilege().toLowerCase().contains("mgr"))
-							ret.setDbOfficePrivilege(op.second);
-					}
-					else if (ret.getDbOfficePrivilege() == null)
-						ret.setDbOfficePrivilege(op.second);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			String msg = "Cannot determine privileged office IDs: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			Logger.instance().failure(msg);
-			throw new BadConnectException(msg);
-		}
-		try
-		{
-			setCtxDbOfficeId(ret.getConnection(), dbOfficeId, ret.getDbOfficeCode(), ret.getDbOfficePrivilege());
-		}
-		catch (Exception ex)
-		{
-			String msg = "Cannot set VPD context username/officeId username='" + username
-				+ "', officeId='" + dbOfficeId + "'";
-			Logger.instance().failure(msg);
-			try { CwmsDbConnectionPool.close(ret.getConnection()); } catch(Exception ex2) {}
-			throw new BadConnectException(msg);
-		}
-
-		return ret;
 	}
+	
 
 	/**
 	 * Connect this app to the database and return appID.
@@ -927,162 +841,66 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 		// CWMS is Always GMT.
 		DecodesSettings.instance().sqlTimeZone = "GMT";
 
-		try
+
+		if (conInfo == null )
 		{
-			conInfo = getDbConnection(dbUri, username, password, dbOfficeId);
-			openConnections.add(conInfo.getConnection());
-			
-			postConnectInit(appName, conInfo.getConnection());
-			OpenTsdbSettings.instance().setFromProperties(props);
-			cgl.setLoginSuccess(true);
-		}
-		catch(BadConnectException ex)
-		{
-			String msg = "Cannot connect to database: " + ex;
-			failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			cgl.setLoginSuccess(false);
-			closeConnection();
+			conInfo = new CwmsConnectionInfo();		
+			ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);			
+			conInfo.setLoginInfo(loginInfo);
 		}
 
-		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
-		// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
-		int decodesDbVersion = getDecodesDatabaseVersion();
-		keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
-				new OracleSequenceKeyGenerator() :
-				new CwmsSequenceKeyGenerator(decodesDbVersion);
-
-		if (dbOfficeId != null && dbOfficeId.length() > 0)
+		pool = CwmsConnectionPool.getPoolFor(conInfo);
+		if( pool != null)
 		{
-			ResultSet rs = null;
-			String q = "";
-			DaiBase dao = new DaoBase(this, "Connecting");
-			try
+			try(Connection conn = pool.getConnection();)
 			{
-				q = "SELECT DISTINCT VERSION_ID FROM CWMS_V_TS_ID "
-					+ "WHERE upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
-				ArrayList<String> versionIds = new ArrayList<String>();
-				rs = dao.doQuery(q);
-				while(rs != null && rs.next())
-					versionIds.add(rs.getString(1));
-				currentlyUsedVersions = new String[versionIds.size()];
-				for(int i = 0; i<currentlyUsedVersions.length; i++)
-					currentlyUsedVersions[i] = versionIds.get(i);
+					Logger.instance().info(module +
+				" Connected to DECODES CWMS Database " + dbUri + " as user " + username
+				+ " with officeID=" + dbOfficeId);
+
+				postConnectInit(appName, conn); // Make sure the versions and such are set
+
+				cgl.setLoginSuccess(true);
+
+				try
+				{
+					hec.data.Units.getAvailableUnits();
+				}
+				catch (Exception ex)
+				{
+					Logger.instance().warning(module + " Exception in hec.data.Units.getAvailableUnits: " + ex);
+				}
+
+				try
+				{
+					baseParam.load(this);
+				}
+				catch (Exception ex)
+				{
+					String msg = "Cannot load baseParam Units Map: " + ex;
+					failure(msg);
+				}
+				try(LoadingAppDAI la = this.makeLoadingAppDAO())
+				{
+					appId = la.lookupAppId(appName);
+				}
+				catch (DbIoException | NoSuchObjectException ex)
+				{
+					throw new BadConnectException("Unable to get loading app info",ex);
+				}
 			}
-			catch(Exception ex)
+			catch(SQLException ex)
 			{
-				warning("Error executing '" + q + "':" + ex);
-			}
-			finally
-			{
-				dao.close();
+				throw new BadConnectException("Pool was able to start but not retrieve connection",ex);
 			}
 		}
-
-		Logger.instance().info(module +
-			" Connected to DECODES CWMS Database " + dbUri + " as user " + username
-			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + conInfo.getDbOfficeCode() + ")");
-
-		cgl.setLoginSuccess(true);
-
-		try
+		else
 		{
-			hec.data.Units.getAvailableUnits();
+			throw new BadConnectException("unable to initialize pool for " + conInfo);
 		}
-		catch (Exception ex)
-		{
-			Logger.instance().warning(module + " Exception in hec.data.Units.getAvailableUnits: " + ex);
-		}
-
-		try
-		{
-			baseParam.load(this);
-		}
-		catch (Exception ex)
-		{
-			String msg = "Cannot load baseParam Units Map: " + ex;
-			failure(msg);
-		}
-
-		// Finally free the initial connection from login.
-		freeConnection(conInfo.getConnection());
-		conInfo.setConnection(null);
-		
 		return appId;
 	}
 
-
-	/**
-	 * Fills in the internal list of privileged office IDs.
-	 * @return array of string pairs: officeId,Privilege for that office
-	 * @throws SQLException
-	 */
-	public static ArrayList<StringPair> determinePrivilegedOfficeIds(Connection conn)
-		throws SQLException
-	{
-
-		CwmsDbSec dbSec = CwmsDbServiceLookup.buildCwmsDb(CwmsDbSec.class, conn);
-		ResultSet rs = dbSec.getAssignedPrivGroups(conn, null);
-
-		ArrayList<StringPair> ret = new ArrayList<StringPair>();
-
-		// 4/8/13 phone call with Pete Morris - call with Null. and the columns returned are:
-		// username, user_db_office_id, db_office_id, user_group_type, user_group_owner, user_group_id,
-		// is_member, user_group_desc
-		while(rs != null && rs.next())
-		{
-			String username = rs.getString(1);
-			String db_office_id = rs.getString(2);
-			String user_group_id = rs.getString(5);
-
-			Logger.instance().debug1("privilegedOfficeId: username='" + username + "' "
-				+ "db_office_id='" + db_office_id + "' "
-				+ "user_group_id='" + user_group_id + "' "
-				);
-
-			// We look for groups "CCP Proc", "CCP Mgr", and "CCP Reviewer".
-			// Ignore anything else.
-			String gid = user_group_id.trim();
-			if (!TextUtil.startsWithIgnoreCase(gid, "CCP"))
-				continue;
-
-			// See if we have an existing privilege for this office ID.
-			int existingIdx = 0;
-			String existingPriv = null;
-			for(; existingIdx < ret.size(); existingIdx++)
-			{
-				StringPair sp = ret.get(existingIdx);
-				if (sp.first.equalsIgnoreCase(db_office_id))
-				{
-					existingPriv = sp.second;
-					break;
-				}
-			}
-			// If we do have an existing privilege, determine whether to keep this
-			// one or the existing one (keep the one with more privilege).
-			if (existingPriv != null)
-			{
-				if (existingPriv.toUpperCase().contains("MGR"))
-					continue; // We are already manager in this office. Discard this item.
-				else if (gid.toUpperCase().contains("MGR"))
-				{
-					// This item is MGR, replace existing one.
-					ret.get(existingIdx).second = gid;
-					continue;
-				}
-				else if (gid.toUpperCase().contains("PROC"))
-				{
-					// This is for PROC, existing must be PROC or Reviewer. Replace.
-					ret.get(existingIdx).second = gid;
-					continue;
-				}
-			}
-			else // this item is first privilege seen for this office.
-				ret.add(new StringPair(db_office_id, gid));
-		}
-		return ret;
-	}
 
 
 	public void setParmSDI(DbCompParm parm, DbKey siteId, String dtcode)
@@ -1606,71 +1424,7 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	}
 
 
-	/**
-	 * Reset the VPD context variable with user specified office Id
-	 * @throws DbIoException
-	 */
-	public static void setCtxDbOfficeId(Connection conn, String dbOfficeId,
-		DbKey dbOfficeCode, String dbOfficePrivilege)
-		throws DbIoException
-	{
-		String errMsg = null;
-		PreparedStatement storeProcStmt = null;
-		CallableStatement testStmt = null;
-
-		try
-		{
-			String q = null;
-			int privLevel =
-				dbOfficeId == null ? 0 :
-				dbOfficePrivilege.toUpperCase().contains("MGR") ? 1 :
-				dbOfficePrivilege.toUpperCase().contains("PROC") ? 2 : 3;
-			q =
-				"begin cwms_ccp_vpd.set_ccp_session_ctx(" +
-				":1 /* office code */, :2 /* priv level*/, :3 /* officeId */); end;";
-			storeProcStmt  = conn.prepareCall(q);
-			storeProcStmt.setInt(1, (int)dbOfficeCode.getValue());
-			storeProcStmt.setInt(2, privLevel);
-			storeProcStmt.setString(3, dbOfficeId);
-//			Logger.instance().debug2("Executing '" + q + "' with "
-//				+ "dbOfficeCode=" + dbOfficeCode
-//				+ ", privLevel=" + privLevel
-//				+ ", dbOfficeId='" + dbOfficeId + "'");
-			storeProcStmt.execute();
-//			conn.commit();
-
-			q = "{ ? = call cwms_ccp_vpd.get_pred_session_office_code_v(?, ?) }";
-			testStmt = conn.prepareCall(q);
-			testStmt.registerOutParameter(1, Types.VARCHAR);
-			testStmt.setString(2, "CC");
-			testStmt.setString(3, "PLATFORMCONFIG");
-//			Logger.instance().debug2("Calling '" + q + "' with "
-//				+ "schema=CCP and table=PLATFORMCONFIG");
-			testStmt.execute();
-		}
-		catch (SQLException ex)
-		{
-			errMsg = "Error setting VPD context for '" + dbOfficeId + "': " + ex;
-			Logger.instance().failure(errMsg);
-			System.err.println(errMsg);
-			ex.printStackTrace(System.err);
-			throw new DbIoException(errMsg);
-		}
-		finally
-		{
-			if (storeProcStmt != null)
-			{
-				try { storeProcStmt.close(); }
-				catch(Exception ex) {}
-			}
-			if (testStmt != null)
-			{
-				try { testStmt.close(); }
-				catch(Exception ex) {}
-			}
-		}
-	}
-
+	
 	/**
 	 * Use database-specific flag definitions to determine whether the
 	 * passed variable should be considered 'questionable'.
@@ -1719,42 +1473,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	public ScheduleEntryDAI makeScheduleEntryDAO()
 	{
 		return null;
-	}
-
-	/**
-	 * Converts a CWMS String Office ID to the numeric office Code.
-	 * @param con the Connection
-	 * @param officeId the String office ID
-	 * @return the office code as a DbKey or Constants.undefinedId if no match.
-	 */
-	public static DbKey officeId2code(Connection con, String officeId)
-	{
-		String q = "select cwms_util.get_office_code('" +
-				officeId + "') from dual";
-
-		ResultSet rs = null;
-		Statement stmt = null;
-		try
-        {
-			stmt = con.createStatement();
-			rs = stmt.executeQuery(q);
-			Logger.instance().debug3(q);
-			if (rs.next())
-				return DbKey.createDbKey(rs, 1);
-			else
-				return Constants.undefinedId;
-        }
-		catch (Exception ex)
-		{
-			Logger.instance().warning("Error getting office code for id '"
-				+ officeId + "': " + ex);
-			return Constants.undefinedId;
-		}
-		finally
-		{
-			if (rs != null) { try { rs.close(); } catch(Exception ex) {} }
-			if (stmt != null) { try { stmt.close(); } catch(Exception ex) {} }
-		}
 	}
 
 	public void setDbUri(String dbUri)
@@ -1843,17 +1561,6 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 			catch(Exception ex) {}
 			getTaskListStmt = null;
 		}
-
-		// If there is a connection, return the connection to the CWMS connection pool. Do not close directly.
-		if (conInfo != null)
-		{
-			if (conInfo.getConnection() != null)
-			{
-				freeConnection(conInfo.getConnection());
-				conInfo.setConnection(null);
-			}
-			conInfo = null; // Force re-init if db is reopened.
-		}
 	}
 
 	@Override
@@ -1913,93 +1620,35 @@ Logger.instance().debug3("Office Privileges for user '" + username + "'");
 	public Connection getConnection()
 	{
 		// Called from DAOs to get a new connection from the pool.
-		if (conInfo == null || conInfo.getLoginInfo() == null)
+		if (conInfo == null || conInfo.getLoginInfo() == null || pool == null)
 		{
 			failure("CwmsTimeSeriesDb.getConnection -- loginInfo is null! DB not initialized?");
-			return null;
+			throw new RuntimeException("Invalid sequence of events. Attempt to retrieve DB connection before information initialized.");
 		}
-		
-		Connection ret = null;
 		try
 		{
-			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo(), module);
+			return pool.getConnection();
 		}
-		catch (SQLException ex)
-		{
-			String msg = "getConnection() Cannot get CWMS connection for user '"
-				+ conInfo.getLoginInfo().getUser() + "' and dbURI '" + conInfo.getLoginInfo().getUrl() + "'";
-			failure(msg);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
-			else
-				ex.printStackTrace(System.err);
-			return null;
-		}
-
-		// Force autoCommit on.
-		try{ ret.setAutoCommit(true); }
 		catch(SQLException ex)
 		{
-			warning("getConnection() Cannot set SQL AutoCommit to true: " + ex);
+			failure("Unable to get connection from pool: " + ex.getLocalizedMessage());
+			throw new RuntimeException("Error retrieving connection.",ex);
 		}
-
-		try
-		{
-			setCtxDbOfficeId(ret, dbOfficeId, conInfo.getDbOfficeCode(), 
-				conInfo.getDbOfficePrivilege());
-		}
-		catch (Exception ex)
-		{
-			String msg = "getConnection() Cannot set VPD context username/officeId username='" 
-				+ conInfo.getLoginInfo().getUser()
-				+ "', officeId='" + dbOfficeId + "', officeCode=" + conInfo.getDbOfficeCode() + ", priv='"
-				+ conInfo.getDbOfficePrivilege() + "':" + ex;
-			failure(msg);
-			try { CwmsDbConnectionPool.close(ret); } catch(Exception ex2) {}
-			return null;
-		}
-		
-		// These debug messages will allow us to detect leaks: connections open but never closed:
-		openConnections.add(ret);
-		
-		if (OpenTsdbSettings.instance().traceConnections)
-		{
-			debug1("getConnection() After allocate there are now " + openConnections.size() + " open connections. "
-				+ "Called from:");
-		
-			StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
-			boolean lastWasDao = true;
-			for(int n = 2; n < stk.length; n++) 
-			{
-				if (lastWasDao)
-					Logger.instance().debug1("\t" + n + ": " + stk[n]);
-				String s = stk[n].toString().toLowerCase();
-				lastWasDao = s.contains("dao") || s.contains("io.");
-			}
-		}
-		
-		return ret;
 	}
 
 
 	@Override
 	public void freeConnection(Connection con)
 	{
-		if (!openConnections.remove(con))
-			warning("freeConnection() - weird! Passed a connection that wasn't in my open-list.");
-		
-		try { CwmsDbConnectionPool.close(con); }
+		try
+		{
+			pool.returnConnection(con);
+		}
 		catch(SQLException ex)
 		{
-			warning("freeConnection() Error in CwmsDbConnectionPool.close: " + ex);
-			ex.printStackTrace(Logger.instance().getLogOutput() != null ? 
-				Logger.instance().getLogOutput() : System.err);
+			Logger.instance().warning("Unable to close returned connection: " + ex.getLocalizedMessage());
 		}
-		
-		if (OpenTsdbSettings.instance().traceConnections)
-			debug1("freeConnection() After free there are now " + openConnections.size() + " open connections.");
 	}
-		
+	
 	
 }

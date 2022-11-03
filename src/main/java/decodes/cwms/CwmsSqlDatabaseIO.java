@@ -13,18 +13,34 @@
 package decodes.cwms;
 
 import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
+
+import javax.management.JMException;
+import javax.management.ObjectName;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+
+import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.opendcs.jmx.connections.JMXTypes;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.opentsdb.OpenTsdbSettings;
+import opendcs.util.sql.WrappedConnection;
+import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
+import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
 import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import lrgs.gui.DecodesInterface;
 import ilex.util.Logger;
@@ -58,8 +74,7 @@ public class CwmsSqlDatabaseIO
 	private String dbOfficeId = null;
 	private CwmsConnectionInfo conInfo = null;
 	private String sqlDbLocation = null;
-	private ArrayList<Connection> openConnections = new ArrayList<Connection>();
-
+	private CwmsConnectionPool pool = null;
 	
 	/**
  	* Constructor.  The argument is the "location" of the
@@ -179,114 +194,113 @@ public class CwmsSqlDatabaseIO
 			_dbUser = authFile.getUsername();
 			password = authFile.getPassword();
 		}
-		
+		if( conInfo == null)
+		{
+			conInfo = new CwmsConnectionInfo();
+			ConnectionLoginInfo info = new ConnectionLoginInfoImpl(sqlDbLocation, _dbUser,password, dbOfficeId);
+			conInfo.setLoginInfo(info);
+		}
+
 		try
 		{
-			conInfo = CwmsTimeSeriesDb.getDbConnection(sqlDbLocation, _dbUser, password, dbOfficeId);
-			openConnections.add(conInfo.getConnection());
-			
-			//TODO Should I set an internal connection object? Shouldn't everybody be calling getConnection()?
-//			setConnection(conInfo.getConnection());
+			pool = CwmsConnectionPool.getPoolFor(conInfo);
+			if( pool != null)
+			{
+				try(Connection conn = pool.getConnection();)
+				{
+					Logger.instance().info(module +
+						" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
+						+ " with officeID=" + dbOfficeId);
+					readVersionInfo(this, conn);
 
-			
-			TimeSeriesDb.readVersionInfo(this, conInfo.getConnection());
-			cgl.setLoginSuccess(true);
+					// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
+					// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
+					int decodesDbVersion = getDecodesDatabaseVersion();
+					Logger.instance().info(module + " decodesDbVersion=" + decodesDbVersion);
+					keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
+							new OracleSequenceKeyGenerator() :
+							new CwmsSequenceKeyGenerator(decodesDbVersion);
+						TimeSeriesDb.readVersionInfo(this, conn);
+						cgl.setLoginSuccess(true);
+
+					String q = null;
+					try(Statement st = conn.createStatement();)
+					{
+						// Hard-code date & timestamp format for reads. Always use GMT.
+						q = "ALTER SESSION SET TIME_ZONE = 'GMT'";
+						Logger.instance().info(q);
+						st.execute(q);
+
+						q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
+						Logger.instance().info(q);
+						st.execute(q);
+
+						q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
+						Logger.instance().info(q);
+						st.execute(q);
+
+						q = "ALTER SESSION SET nls_timestamp_tz_format = 'yyyy-mm-dd hh24:mi:ss'";
+						Logger.instance().info(q);
+						st.execute(q);
+
+						Logger.instance().info("DECODES IF Connected to TSDB Version " + tsdbVersion);
+					}
+					catch(SQLException ex)
+					{
+						String msg = "Error in '" + q + "': " + ex
+							+ " -- will proceed anyway.";
+						Logger.instance().failure(msg + " " + ex);
+					}
+
+					cgl.setLoginSuccess(true);
+					Logger.instance().info(module + 
+						" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
+						+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + conInfo.getDbOfficeCode() + ")");
+
+					// CWMS-8979 Allow settings in the database to override values in user.properties.
+					String settingsApp = System.getProperty("SETTINGS");
+					if (settingsApp != null)
+					{
+						Logger.instance().info("SqlDatabaseIO Overriding Decodes Settings with properties in "
+							+ "Process Record '" + settingsApp + "'");
+						LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
+						try
+						{
+							CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+							PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+						}
+						catch (DbIoException ex)
+						{
+							Logger.instance().warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+						}
+						catch (NoSuchObjectException ex)
+						{
+							Logger.instance().warning("Cannot load settings from non-existent app '" 
+								+ settingsApp + "': " + ex);
+						}
+						finally
+						{
+							loadingAppDAO.close();
+						}
+					}
+
+					cgl.setLoginSuccess(true);
+					
+				}
+				catch(SQLException ex)
+				{
+					throw new DatabaseException("Pool was able to start but not retrieve connection",ex);
+				}
+			}
+			else
+			{
+				throw new DatabaseException("unable to initialize pool for " + conInfo);
+			}
 		}
 		catch(BadConnectException ex)
 		{
-			String msg = "Cannot connect to database: " + ex;
-			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			cgl.setLoginSuccess(false);
-			if (conInfo.getConnection() != null)
-				freeConnection(conInfo.getConnection());
-			conInfo = null;
-			throw new DatabaseException(msg);
+			throw new DatabaseException("Unable to initialize for " + conInfo,ex);
 		}
-		
-		readVersionInfo(this, conInfo.getConnection());
-		
-		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
-		// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
-		int decodesDbVersion = getDecodesDatabaseVersion();
-		Logger.instance().info(module + " decodesDbVersion=" + decodesDbVersion);
-		keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
-				new OracleSequenceKeyGenerator() :
-				new CwmsSequenceKeyGenerator(decodesDbVersion);
-
-		String q = null;
-		Statement st = null;
-		try
-		{
-			st = conInfo.getConnection().createStatement();
-			
-			// Hard-code date & timestamp format for reads. Always use GMT.
-			q = "ALTER SESSION SET TIME_ZONE = 'GMT'";
-			Logger.instance().info(q);
-			st.execute(q);
-
-			q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
-			Logger.instance().info(q);
-			st.execute(q);
-			
-			q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
-			Logger.instance().info(q);
-			st.execute(q);
-
-			q = "ALTER SESSION SET nls_timestamp_tz_format = 'yyyy-mm-dd hh24:mi:ss'";
-			Logger.instance().info(q);
-			st.execute(q);
-			
-			Logger.instance().info("DECODES IF Connected to TSDB Version " + tsdbVersion);
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error in '" + q + "': " + ex
-				+ " -- will proceed anyway.";
-			Logger.instance().failure(msg + " " + ex);
-		}
-		finally
-		{
-			try { st.close(); } catch(Exception ex) {}
-		}
-
-		cgl.setLoginSuccess(true);
-		Logger.instance().info(module + 
-			" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
-			+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + conInfo.getDbOfficeCode() + ")");
-		
-		// CWMS-8979 Allow settings in the database to override values in user.properties.
-		String settingsApp = System.getProperty("SETTINGS");
-		if (settingsApp != null)
-		{
-			Logger.instance().info("SqlDatabaseIO Overriding Decodes Settings with properties in "
-				+ "Process Record '" + settingsApp + "'");
-			LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
-			try
-			{
-				CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
-				PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
-			}
-			catch (DbIoException ex)
-			{
-				Logger.instance().warning("Cannot load settings from app '" + settingsApp + "': " + ex);
-			}
-			catch (NoSuchObjectException ex)
-			{
-				Logger.instance().warning("Cannot load settings from non-existent app '" 
-					+ settingsApp + "': " + ex);
-			}
-			finally
-			{
-				loadingAppDAO.close();
-			}
-		}
-		
-		// Finally free the initial connection.
-		freeConnection(conInfo.getConnection());
-		openConnections.remove(conInfo.getConnection());
-		conInfo.setConnection(null);
 	}
 
 	/** @return 'CWMS'. */
@@ -323,97 +337,32 @@ public class CwmsSqlDatabaseIO
 	public Connection getConnection()
 	{
 		// Called from DAOs and DbIo to get a new connection from the pool.
-		if (conInfo == null || conInfo.getLoginInfo() == null)
+		if (conInfo == null || conInfo.getLoginInfo() == null || pool == null)
 		{
-			Logger.instance().failure(module + ".getConnection -- loginInfo is null! DB not initialized?");
-			return null;
+			throw new RuntimeException(module + ".getConnection -- loginInfo is null! DB not initialized?");
 		}
-		
-		Connection ret = null;
 		try
 		{
-			ret = CwmsDbConnectionPool.getInstance().getConnection(conInfo.getLoginInfo(), module);
+			return pool.getConnection();
 		}
-		catch (SQLException ex)
-		{
-			String msg = module + ".getConnection() Cannot get CWMS connection for user '"
-				+ conInfo.getLoginInfo().getUser() + "' and dbURI '" 
-				+ conInfo.getLoginInfo().getUrl() + "'";
-			Logger.instance().failure(msg);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
-			else
-				ex.printStackTrace(System.err);
-			return null;
-			// TODO Should this method throw BadConnectException?
-		}
-
-		// Force autoCommit on.
-		try{ ret.setAutoCommit(true); }
 		catch(SQLException ex)
 		{
-			Logger.instance().warning(module + ".getConnection() Cannot set SQL AutoCommit to true: " + ex);
+			throw new RuntimeException("Error retrieving connection",ex);
 		}
-
-		try
-		{
-			CwmsTimeSeriesDb.setCtxDbOfficeId(ret, dbOfficeId, conInfo.getDbOfficeCode(), conInfo.getDbOfficePrivilege());
-		}
-		catch (Exception ex)
-		{
-			String msg = module + ".getConnection() Cannot set VPD context username/officeId username='" 
-				+ conInfo.getLoginInfo().getUser()
-				+ "', officeId='" + dbOfficeId + "', officeCode=" + conInfo.getDbOfficeCode() + ", priv='"
-				+ conInfo.getDbOfficePrivilege() + "':" + ex;
-			Logger.instance().failure(msg);
-			try { CwmsDbConnectionPool.close(ret); } catch(Exception ex2) {}
-			return null;
-			// TODO Should this method throw BadConnectException?
-//			throw new BadConnectException(msg);
-		}
-		
-		// These debug messages will allow us to detect leaks: connections open but never closed:
-		openConnections.add(ret);
-
-		if (OpenTsdbSettings.instance().traceConnections)
-		{
-			Logger.instance().debug1(module + ".getConnection() After allocate there are now " 
-				+ openConnections.size() + " open connections. Called from:");
-		
-			StackTraceElement stk[] = Thread.getAllStackTraces().get(Thread.currentThread());
-			for(int n = 2; n < stk.length; n++) 
-			{
-				String s = stk[n].toString().toLowerCase();
-				if (s.contains("dao") || s.contains("io.")) 
-					Logger.instance().debug1("\t" + n + ": " + stk[n]);
-			}
-		}		
-		return ret;
 	}
 
 
 	@Override
 	public void freeConnection(Connection con)
 	{
-		if (!openConnections.remove(con))
-			Logger.instance().warning(module 
-				+ ".freeConnection() - weird! Passed a connection that wasn't in my open-list.");
-		
-		try { CwmsDbConnectionPool.close(con); }
+		try
+		{
+			pool.returnConnection(con);
+		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning(module 
-				+ ".freeConnection() Error in CwmsDbConnectionPool.close: " + ex);
-			ex.printStackTrace(Logger.instance().getLogOutput() != null ? 
-				Logger.instance().getLogOutput() : System.err);
+			Logger.instance().warning("Unable to close returned connection: " + ex.getLocalizedMessage());
 		}
-		
-		if (OpenTsdbSettings.instance().traceConnections)
-			Logger.instance().debug1(module + ".freeConnection() After free there are now " 
-				+ openConnections.size() + " open connections.");
 	}
-
-	
 	
 }
