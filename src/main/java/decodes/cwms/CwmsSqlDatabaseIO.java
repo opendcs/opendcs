@@ -339,8 +339,7 @@ public class CwmsSqlDatabaseIO
 		// Called from DAOs and DbIo to get a new connection from the pool.
 		if (conInfo == null || conInfo.getLoginInfo() == null || pool == null)
 		{
-			Logger.instance().failure(module + ".getConnection -- loginInfo is null! DB not initialized?");
-			return null;
+			throw new RuntimeException(module + ".getConnection -- loginInfo is null! DB not initialized?");
 		}
 		try
 		{
@@ -348,7 +347,6 @@ public class CwmsSqlDatabaseIO
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().fatal("Unabled to get connection " + ex.getLocalizedMessage());
 			throw new RuntimeException("Error retrieving connection",ex);
 		}
 	}
