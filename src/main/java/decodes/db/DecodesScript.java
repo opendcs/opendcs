@@ -16,6 +16,10 @@ import decodes.util.DecodesSettings;
 import ilex.util.Logger;
 import ilex.var.Variable;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Vector;
@@ -550,4 +554,42 @@ Logger.instance().debug1("addPM: added pm '" + pmname + "' to sensor " + cs.sens
 		}
 	}
 
+	public static DecodesScriptBuilder from(final DecodesScriptReader scriptReader) throws IOException
+	{
+		DecodesScriptBuilder builder = new DecodesScriptBuilder();
+		builder.script = new DecodesScript(null);
+		FormatStatement fs = null;
+		while ((fs = scriptReader.nextStatement(builder.script)) != null)
+		{
+			builder.script.formatStatements.add(fs);
+		}
+		return builder;
+	}
+
+
+	public static class DecodesScriptBuilder
+	{
+		private DecodesScript script;
+
+		public DecodesScript build() throws DecodesScriptException
+		{
+			if (script.scriptName == null)
+			{
+				throw new DecodesScriptException("A script name must be supplied.");
+			}
+			return script;
+		}
+
+		public DecodesScriptBuilder platformConfig(PlatformConfig pc)
+		{
+			script.platformConfig = pc;
+			return this;
+		}
+
+		public DecodesScriptBuilder scriptName(String name)
+		{
+			script.scriptName = name;
+			return this;
+		}
+	}
 }

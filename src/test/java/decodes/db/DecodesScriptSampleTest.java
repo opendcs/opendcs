@@ -1,12 +1,16 @@
 package decodes.db;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import decodes.datasource.EdlPMParser;
 import decodes.datasource.RawMessage;
 import decodes.decoder.DecodedSample;
 import decodes.util.ResourceFactory;
+import ilex.util.FileLogger;
+import ilex.util.Logger;
 import ilex.var.NoConversionException;
+
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.ZoneId;
@@ -24,28 +28,14 @@ final class DecodesScriptSampleTest {
         ResourceFactory.instance().initializeFunctionList();
         DecodesScript.trackDecoding = true;
         PlatformConfig platformConfig = new PlatformConfig();
-        decodesScript = new DecodesScript(platformConfig, "WEB");
-        FormatStatement skipheader = new FormatStatement(decodesScript, 1);
-        skipheader.label = "skip_header";
-        skipheader.format = "C('#', col_labels), /, >skip_header";
-        decodesScript.formatStatements.add(skipheader);
-        FormatStatement collabels = new FormatStatement(decodesScript, 2);
-        collabels.label = "col_labels";
-        collabels.format = "2/, >timezone";
-        decodesScript.formatStatements.add(collabels);
-        FormatStatement timezone = new FormatStatement(decodesScript, 3);
-        timezone.label = "timezone";
-        timezone.format = "3(S(30,'\\t',data), w), F(TZ,A,9D'\\t'), 1P, >datetime";
-        decodesScript.formatStatements.add(timezone);
-        FormatStatement datetime = new FormatStatement(decodesScript, 4);
-        datetime.label = "datetime";
-        datetime.format = "2(S(30,'\\t',data), w), F(D,A,10,1), w, F(T,A,5), w, S(30,'\\t',data), w, >data";
-        decodesScript.formatStatements.add(datetime);
-        FormatStatement data = new FormatStatement(decodesScript, 5);
-        data.label = "data";
-        data.format = "setMissing(Ssn), F(S,A,5d' \\t',1), /, >timezone";
-        decodesScript.formatStatements.add(data);
+        URL script = DecodesScript.class.getResource("/decodes/db/WEB.decodescript");
+        decodesScript = DecodesScript.from(new StreamDecodesScriptReader(script.openStream()))
+                                     .platformConfig(platformConfig)
+                                     .scriptName("WEB")
+                                     .build();;
 
+        assertFalse(decodesScript.formatStatements.isEmpty());
+        decodesScript.scriptName = "WEB";
         ScriptSensor stage = new ScriptSensor(decodesScript, 1);
         stage.rawConverter = new UnitConverterDb("raw", "ft");
         stage.rawConverter.algorithm = Constants.eucvt_none;
