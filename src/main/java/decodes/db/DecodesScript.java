@@ -17,9 +17,6 @@ import ilex.util.Logger;
 import ilex.var.Variable;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Vector;
@@ -30,6 +27,7 @@ import java.util.Iterator;
  */
 public class DecodesScript extends IdDatabaseObject
 {
+    public static final Logger logger = Logger.instance();
     public static final EmptyDecodesScriptReader EMPTY_SCRIPT = new EmptyDecodesScriptReader();
     // _id is stored in the IdDatabaseObject superclass.
 
@@ -460,22 +458,22 @@ public class DecodesScript extends IdDatabaseObject
             }
             catch(EndOfDataException ex)
             {
-                Logger.instance().log(Logger.E_DEBUG1,
+                logger.log(Logger.E_DEBUG1,
                 "Format statements attempted to read past the end of message.");
                 fs = null;
             }
             catch(SwitchFormatException ex)
             {
-                Logger.instance().debug3(ex.toString());
+                logger.debug3(ex.toString());
                 fs = ex.getNewFormat();
             }
             catch(FieldParseException ex)
             {
-                Logger.instance().log(Logger.E_DEBUG1, ex.toString());
+                logger.log(Logger.E_DEBUG1, ex.toString());
                 fs = getFormatStatement("ERROR");
                 if (fs == null)
                 {
-                    Logger.instance().log(Logger.E_WARNING,
+                    logger.log(Logger.E_WARNING,
                         "No ERROR statement, terminating script: "
                         + ex.toString());
                     throw ex;
@@ -483,7 +481,7 @@ public class DecodesScript extends IdDatabaseObject
             }
             catch(EndlessLoopException ex )
             {
-                Logger.instance().log(Logger.E_WARNING,
+                logger.log(Logger.E_WARNING,
                         "Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated: " + ex);
                 throw new DecoderException("Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated.");
             }
@@ -555,8 +553,7 @@ public class DecodesScript extends IdDatabaseObject
             this.includePMs = null;
         if (this.includePMs != null)
         {
-            Logger.instance()
-                  .debug1("setIncludePMs: includePMs has "
+            logger.debug1("setIncludePMs: includePMs has "
                          + includePMs.size() + " strings. [0]=" + includePMs.get(0));
         }
     }
@@ -592,11 +589,11 @@ public class DecodesScript extends IdDatabaseObject
       nextPM:
         for(String pmname : includePMs)
         {
-Logger.instance().debug1("addPMs looking for '" + pmname + "'");
+            logger.debug1("addPMs looking for '" + pmname + "'");
             Variable v = rm.getPM(pmname);
             if (v == null)
             {
-                Logger.instance().info(
+                logger.info(
                     "addPMs: Message for '" + new String(rm.getHeader())
                     + "' does not have requested performance measurement '" + pmname + "' -- ignored.");
                 continue;
@@ -606,13 +603,12 @@ Logger.instance().debug1("addPMs looking for '" + pmname + "'");
                 if (cs.sensorName.equalsIgnoreCase(pmname))
                 {
                     decodedMessage.addSample(cs.sensorNumber, v, 0);
-                    Logger.instance()
-                          .debug1("addPM: added pm '" + pmname + "' to sensor " + cs.sensorNumber + " with value '" + v.toString() + "'");
+                    logger.debug1("addPM: added pm '" + pmname + "' to sensor " + cs.sensorNumber + " with value '" + v.toString() + "'");
                     continue nextPM;
                 }
             }
             // Fell through, no matching sensor:
-            Logger.instance().info("addPMs: The platform config for '" + new String(rm.getHeader())
+            logger.info("addPMs: The platform config for '" + new String(rm.getHeader())
                 + "' does not have a sensor named '" + pmname + "' -- discarded.");
         }
     }
