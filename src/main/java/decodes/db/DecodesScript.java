@@ -613,22 +613,42 @@ public class DecodesScript extends IdDatabaseObject
         }
     }
 
+    /**
+     * Start a builder for a decodes script with a given reader.
+     * @param scriptReader concrete implementation that provides the required statements
+     * @return a Builder object for further operations.
+     * @since 2022-11-05
+     */
     public static DecodesScriptBuilder from(final DecodesScriptReader scriptReader)
     {
         DecodesScriptBuilder builder = new DecodesScriptBuilder(scriptReader);
         return builder;
     }
 
+    /**
+     * Used for starting a new blank decodes script. 
+     * @return a Builder object for further operations
+     */
     public static DecodesScriptBuilder empty()
     {
         return from(EMPTY_SCRIPT);
     }
 
+    /**
+     * NOTE: in the future this will return an immutable copy/reference
+     * @return the Vector of format statements
+     * @since 2022-11-05
+     */
     public Vector<FormatStatement> getFormatStatements()
     {
         return this.formatStatements;
     }
 
+    /**
+     * Utility class to help with creating DecodesScript objects 
+     * and making sure they're in a valid state.
+     * @since 2022-11-05
+     */
     public static class DecodesScriptBuilder
     {
         private DecodesScript script;
@@ -640,6 +660,13 @@ public class DecodesScript extends IdDatabaseObject
             script = new DecodesScript("");
         }
 
+        /**
+         * Finalize the creation of a decodes script. After this 
+         * the script should be ready for decoding operations.
+         * @return DecodesScript
+         * @throws DecodesScriptException Any issues preparing the script
+         * @throws IOException any issues retrieving format statements
+         */
         public DecodesScript build() throws DecodesScriptException, IOException
         {
             try
@@ -658,12 +685,22 @@ public class DecodesScript extends IdDatabaseObject
             }
         }
 
+        /**
+         * Assign a platform configuration 
+         * @param pc initialized PlatformConfig
+         * @return the builder for further operations
+         */
         public DecodesScriptBuilder platformConfig(PlatformConfig pc)
         {
             script.platformConfig = pc;
             return this;
         }
 
+        /**
+         * Set the name
+         * @param name valid decodes script name. Letters, Numbers, -, _
+         * @return the builder for further operations
+         */
         public DecodesScriptBuilder scriptName(String name)
         {
             script.scriptName = name;

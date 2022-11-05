@@ -815,19 +815,18 @@ public class ConfigListIO extends SqlDbObjIo
 			if (s != null && s.length() > 0)
 				dataOrder = s.charAt(0);
 		}
-		try
+		try(SQLDecodesScriptReader reader = new SQLDecodesScriptReader(connection(), id))
 		{
-			DecodesScript ds = DecodesScript.from(new SQLDecodesScriptReader(connection(), id))
+			DecodesScript ds = DecodesScript.from(reader)
 											.scriptName(name)
 											.build();
 			ds.setDataOrder(dataOrder);
 			ds.setId(id);
-			//readFormatStatements(ds);
 			readScriptSensors(ds);
 			ds.scriptType = type;
 			pc.addScript(ds);
 		}
-		catch (DecodesScriptException | IOException ex)
+		catch (Exception ex)
 		{
 			throw new DatabaseException("Unable to read decodes script (" + name + ") from database", ex);
 		}
