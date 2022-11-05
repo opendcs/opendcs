@@ -20,6 +20,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ResourceBundle;
@@ -36,6 +37,7 @@ import decodes.db.ScriptSensor;
 import decodes.db.EquipmentModel;
 import decodes.db.Constants;
 import decodes.db.DecodesScript;
+import decodes.db.DecodesScriptException;
 import decodes.db.UnitConverterDb;
 import decodes.util.TimeOfDay;
 import decodes.db.Database;
@@ -539,29 +541,39 @@ public class ConfigEditPanel extends DbEditorTab
 	*/
     void addScriptButton_actionPerformed(ActionEvent e)
 	{
-		DecodesScript ds = new DecodesScript(theConfig, "");
-		ds.scriptType = Constants.scriptTypeDecodes;
-		for(Iterator it = theConfig.getSensors(); it.hasNext(); )
+		try
 		{
-			ConfigSensor cs = (ConfigSensor)it.next();
-			ScriptSensor ss = new ScriptSensor(ds, cs.sensorNumber);
-			ss.rawConverter = new UnitConverterDb("raw", "raw");
-			ss.rawConverter.algorithm = Constants.eucvt_none;
-			ds.addScriptSensor(ss);
-			//ds.scriptSensors.add(ss);
+			DecodesScript ds = DecodesScript.empty()
+											.scriptName("")
+											.platformConfig(theConfig)
+											.build();
+			ds.scriptType = Constants.scriptTypeDecodes;
+			for(Iterator it = theConfig.getSensors(); it.hasNext(); )
+			{
+				ConfigSensor cs = (ConfigSensor)it.next();
+				ScriptSensor ss = new ScriptSensor(ds, cs.sensorNumber);
+				ss.rawConverter = new UnitConverterDb("raw", "raw");
+				ss.rawConverter.algorithm = Constants.eucvt_none;
+				ds.addScriptSensor(ss);
+				//ds.scriptSensors.add(ss);
+			}
+
+			if (dsEditDlg == null)
+			{
+				dsEditDlg = new DecodingScriptEditDialog(ds, this);
+				launchDialog(dsEditDlg);
+			}
+			else
+			{
+				dsEditDlg.setDecodesScript(ds);
+				dsEditDlg.setVisible(true);
+			}
+			decodingScriptTableModel.fireTableDataChanged();
 		}
-		
-		if (dsEditDlg == null)
+		catch (DecodesScriptException | IOException ex)
 		{
-			dsEditDlg = new DecodingScriptEditDialog(ds, this);
-			launchDialog(dsEditDlg);
+			throw new RuntimeException("Unable to create Decodes Script for GUI",ex);
 		}
-		else
-		{
-			dsEditDlg.setDecodesScript(ds);
-			dsEditDlg.setVisible(true);
-		}
-		decodingScriptTableModel.fireTableDataChanged();
    }
 
 	/**

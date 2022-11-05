@@ -255,24 +255,36 @@ public class EmitImport
 
 		em.equipmentType = Constants.eqType_dcp;
 		String type = line.substring(12, 12+3).trim();
-
-		if (type.length() == 0 || type.equalsIgnoreCase("DCP"))
+		try
 		{
-			selfTimedScript = 
-				new DecodesScript(platformConfig,Constants.script_ST);
-			selfTimedScript.setDataOrder(dataOrderST);
-			randomScript = 
-				new DecodesScript(platformConfig,Constants.script_RD);
-			randomScript.setDataOrder(dataOrderRD);
-			edlScript = null;
+			if (type.length() == 0 || type.equalsIgnoreCase("DCP"))
+			{
+				selfTimedScript = DecodesScript.empty()
+											.platformConfig(platformConfig)
+											.scriptName(Constants.script_ST)
+											.build();
+				selfTimedScript.setDataOrder(dataOrderST);
+				randomScript = DecodesScript.empty()
+											.platformConfig(platformConfig)
+											.scriptName(Constants.script_RD)
+											.build();
+				randomScript.setDataOrder(dataOrderRD);
+				edlScript = null;
+			}
+			else if (type.equalsIgnoreCase("EDL"))
+			{
+				edlScript = DecodesScript.empty()
+										.platformConfig(platformConfig)
+										.scriptName(Constants.script_EDL)
+										.build();
+				edlScript.setDataOrder('A');
+				selfTimedScript = randomScript = null;
+			}
 		}
-		else if (type.equalsIgnoreCase("EDL"))
+		catch( DecodesScriptException | IOException ex)
 		{
-			edlScript = new DecodesScript(platformConfig,Constants.script_EDL);
-			edlScript.setDataOrder('A');
-			selfTimedScript = randomScript = null;
+			throw new RuntimeException("Unable to prepare Decodes Scripts",ex);
 		}
-
 		formats.clear();
 		currentFormat = null;
 
@@ -731,7 +743,7 @@ public class EmitImport
 					FormatStatement fs = new FormatStatement(selfTimedScript,j);
 					fs.label = sp.first;
 					fs.format = sp.second;
-					selfTimedScript.formatStatements.add(fs);
+					selfTimedScript.getFormatStatements().add(fs);
 				}
 			}
 			if (randomScript != null)
@@ -742,7 +754,7 @@ public class EmitImport
 					FormatStatement fs = new FormatStatement(randomScript, j);
 					fs.label = sp.first;
 					fs.format = sp.second;
-					randomScript.formatStatements.add(fs);
+					randomScript.getFormatStatements().add(fs);
 				}
 			}
 			if (edlScript != null)
@@ -750,7 +762,7 @@ public class EmitImport
 				FormatStatement fs = new FormatStatement(edlScript, j);
 				fs.label = sp.first;
 				fs.format = sp.second;
-				edlScript.formatStatements.add(fs);
+				edlScript.getFormatStatements().add(fs);
 			}
 		}
 		if (selfTimedScript != null)

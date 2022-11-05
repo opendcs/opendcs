@@ -19,4 +19,9 @@ public class PanelException extends Exception
 	{
 		super(msg);
 	}
+
+	public PanelException(String msg, Throwable cause)
+	{
+		super(msg,cause);
+	}
 }

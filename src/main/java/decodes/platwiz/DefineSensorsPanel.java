@@ -9,15 +9,18 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.util.ResourceBundle;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.DecodesScript;
+import decodes.db.DecodesScriptException;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
 import decodes.db.EquipmentModel;
 import decodes.db.TransportMedium;
+import decodes.db.DecodesScript.DecodesScriptBuilder;
 import decodes.db.DatabaseException;
 import decodes.dbeditor.ConfigEditPanel;
 import decodes.dbeditor.ConfigSelectDialog;
@@ -229,13 +232,29 @@ public class DefineSensorsPanel extends JPanel
 		Platform p = PlatformWizard.instance().getPlatform();
 		configNameField.setText(pc.getName());
 		p.setConfig(pc);
-		if (PlatformWizard.instance().processGoesST())
-			pc.addScript(new DecodesScript(pc, "ST"));
-		if (PlatformWizard.instance().processGoesRD())
-			pc.addScript(new DecodesScript(pc, "RD"));
-		if (PlatformWizard.instance().processEDL()) 
-			setTransportMedium(p, pc, em);
-		try { activate(); }
+		DecodesScriptBuilder dsb = DecodesScript.empty();
+		try
+		{
+			try
+			{
+				if (PlatformWizard.instance().processGoesST())
+				{
+					pc.addScript(dsb.platformConfig(pc).scriptName("ST").build());
+				}
+
+				if (PlatformWizard.instance().processGoesRD())
+					pc.addScript(dsb.platformConfig(pc).scriptName("RD").build());
+			}
+			catch( DecodesScriptException | IOException ex)
+			{
+				throw new PanelException("Unable to create decodes script",ex);
+			}
+
+			if (PlatformWizard.instance().processEDL()) 
+				setTransportMedium(p, pc, em);
+
+			activate();
+		}
 		catch(PanelException ex)
 		{
 			PlatformWizard.instance().getFrame().showError(ex.toString());

@@ -4,6 +4,7 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.util.ResourceBundle;
 import java.util.Iterator;
 
@@ -14,6 +15,7 @@ import decodes.db.PlatformConfig;
 import decodes.db.PlatformSensor;
 import decodes.db.ConfigSensor;
 import decodes.db.DecodesScript;
+import decodes.db.DecodesScriptException;
 import decodes.db.ScriptSensor;
 import decodes.db.TransportMedium;
 import decodes.dbeditor.DecodesScriptEditPanel;
@@ -140,15 +142,25 @@ public class ScriptEditPanel extends JPanel
 		DecodesScript ds = pc.getScript(name);
 		if (ds == null)
 		{
-			ds = new DecodesScript(pc, name);
-			int numberOfSensors = pc.getNumSensors();
-			PlatformSensor ps;
-			int i = 0;
-			for(Iterator it = pc.getSensors(); it.hasNext(); ) {
-				ConfigSensor cs = (ConfigSensor)it.next();
-				ds.addScriptSensor(new ScriptSensor(ds, cs.sensorNumber));
+			try
+			{
+				ds = DecodesScript.empty()
+								.platformConfig(pc)
+								.scriptName(name)
+								.build();
+				int numberOfSensors = pc.getNumSensors();
+				PlatformSensor ps;
+				int i = 0;
+				for(Iterator it = pc.getSensors(); it.hasNext(); ) {
+					ConfigSensor cs = (ConfigSensor)it.next();
+					ds.addScriptSensor(new ScriptSensor(ds, cs.sensorNumber));
+				}
+				pc.addScript(ds);
 			}
-			pc.addScript(ds);
+			catch (DecodesScriptException | IOException ex)
+			{
+				throw new PanelException("Unable to create initial empty script.",ex);
+			}
 		}
 
 		decodingScriptEditPanel.setDecodesScript(ds);

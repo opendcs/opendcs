@@ -34,7 +34,7 @@ final class DecodesScriptSampleTest {
                                      .scriptName("WEB")
                                      .build();;
 
-        assertFalse(decodesScript.formatStatements.isEmpty());
+        assertFalse(decodesScript.getFormatStatements().isEmpty());
         decodesScript.scriptName = "WEB";
         ScriptSensor stage = new ScriptSensor(decodesScript, 1);
         stage.rawConverter = new UnitConverterDb("raw", "ft");

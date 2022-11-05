@@ -3,6 +3,7 @@
 */
 package decodes.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +23,8 @@ import decodes.db.Database;
 import decodes.db.ConfigSensor;
 import decodes.db.DatabaseException;
 import decodes.db.DecodesScript;
+import decodes.db.DecodesScriptException;
+import decodes.db.DecodesScriptReader;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformConfigList;
@@ -812,16 +815,22 @@ public class ConfigListIO extends SqlDbObjIo
 			if (s != null && s.length() > 0)
 				dataOrder = s.charAt(0);
 		}
-
-		DecodesScript ds;
-
-		ds = new DecodesScript(pc, name);
-		ds.setDataOrder(dataOrder);
-		ds.setId(id);
-		readFormatStatements(ds);
-		readScriptSensors(ds);
-		ds.scriptType = type;
-		pc.addScript(ds);
+		try
+		{
+			DecodesScript ds = DecodesScript.from(new SQLDecodesScriptReader(connection(), id))
+											.scriptName(name)
+											.build();
+			ds.setDataOrder(dataOrder);
+			ds.setId(id);
+			//readFormatStatements(ds);
+			readScriptSensors(ds);
+			ds.scriptType = type;
+			pc.addScript(ds);
+		}
+		catch (DecodesScriptException | IOException ex)
+		{
+			throw new DatabaseException("Unable to read decodes script (" + name + ") from database", ex);
+		}
 	}
 
 	/**
@@ -1022,7 +1031,7 @@ public class ConfigListIO extends SqlDbObjIo
 				fmt.label = label;
 				fmt.format = format;
 
-				ds.formatStatements.add(fmt);
+				//ds.formatStatements.add(fmt);
 			}
 		}
 
@@ -1040,7 +1049,7 @@ public class ConfigListIO extends SqlDbObjIo
 		throws DatabaseException, SQLException
 	{
 
-		Vector<FormatStatement> v = ds.formatStatements;
+		Vector<FormatStatement> v = ds.getFormatStatements();
 		for (int i = 0; i < v.size(); ++i) 
 		{
 			FormatStatement fs = v.get(i);

@@ -30,6 +30,7 @@ import java.util.Iterator;
  */
 public class DecodesScript extends IdDatabaseObject
 {
+	public static final EmptyDecodesScriptReader EMPTY_SCRIPT = new EmptyDecodesScriptReader();
 	// _id is stored in the IdDatabaseObject superclass.
 
 	/**
@@ -52,7 +53,7 @@ public class DecodesScript extends IdDatabaseObject
 	public Vector<ScriptSensor> scriptSensors;
 
 	/** The format statments that make up the executable script.*/
-	public Vector<FormatStatement> formatStatements;
+	private Vector<FormatStatement> formatStatements;
 
 	/**
 	  Data Order for this script is Ascending, Descending or Undefined.
@@ -85,7 +86,7 @@ public class DecodesScript extends IdDatabaseObject
 	 * Constructor
 	 * @param name Name of this script.
 	 */
-	public DecodesScript(String name)
+	private DecodesScript(String name)
 	{
 		super(); // sets _id to Constants.undefinedId;
 
@@ -106,7 +107,7 @@ public class DecodesScript extends IdDatabaseObject
 	 * @param platformConfig The config that owns this script.
 	 * @param name the name of the script.
 	 */
-	public DecodesScript(PlatformConfig platformConfig, String name)
+	private DecodesScript(PlatformConfig platformConfig, String name)
 	{
 		this(name);
 		this.platformConfig = platformConfig;
@@ -554,30 +555,49 @@ Logger.instance().debug1("addPM: added pm '" + pmname + "' to sensor " + cs.sens
 		}
 	}
 
-	public static DecodesScriptBuilder from(final DecodesScriptReader scriptReader) throws IOException
+	public static DecodesScriptBuilder from(final DecodesScriptReader scriptReader)
 	{
-		DecodesScriptBuilder builder = new DecodesScriptBuilder();
-		builder.script = new DecodesScript(null);
-		FormatStatement fs = null;
-		while ((fs = scriptReader.nextStatement(builder.script)) != null)
-		{
-			builder.script.formatStatements.add(fs);
-		}
+		DecodesScriptBuilder builder = new DecodesScriptBuilder(scriptReader);
 		return builder;
 	}
 
+	public static DecodesScriptBuilder empty()
+	{
+		return from(EMPTY_SCRIPT);
+	}
+
+	public Vector<FormatStatement> getFormatStatements()
+	{
+        return this.formatStatements;
+    }
 
 	public static class DecodesScriptBuilder
 	{
 		private DecodesScript script;
+		private DecodesScriptReader scriptReader;
 
-		public DecodesScript build() throws DecodesScriptException
+		public DecodesScriptBuilder(DecodesScriptReader reader)
 		{
-			if (script.scriptName == null)
+			this.scriptReader = reader;
+			script = new DecodesScript("");
+		}
+
+		public DecodesScript build() throws DecodesScriptException, IOException
+		{
+			try
 			{
-				throw new DecodesScriptException("A script name must be supplied.");
+				FormatStatement fs = null;
+				while ((fs = scriptReader.nextStatement(script)) != null)
+				{
+					script.formatStatements.add(fs);
+				}
+				script.prepareForExec();
+				return script;
 			}
-			return script;
+			catch(Exception ex)
+			{
+				throw new DecodesScriptException("Unable to finalize Decodes Script (" + script.scriptName + ") for use.");
+			}
 		}
 
 		public DecodesScriptBuilder platformConfig(PlatformConfig pc)

@@ -294,7 +294,7 @@ public class SavePanel extends JPanel
 			{
 				DecodesScript ds = (DecodesScript)pc.getScript("ST");
 				if (ds != null
-				 && ds.formatStatements.size() == 0)
+				 && ds.getFormatStatements().size() == 0)
 					summaryArea.append(LoadResourceBundle.sprintf(
 						platwizLabels.getString("SavePanel.noScriptFSErr"),
 						ds.scriptName));
@@ -303,7 +303,7 @@ public class SavePanel extends JPanel
 			{
 				DecodesScript ds = (DecodesScript)pc.getScript("RD");
 				if (ds != null
-				 && ds.formatStatements.size() == 0)
+				 && ds.getFormatStatements().size() == 0)
 					summaryArea.append(LoadResourceBundle.sprintf(
 							platwizLabels.getString("SavePanel.noScriptFSErr"),
 							ds.scriptName));
@@ -312,7 +312,7 @@ public class SavePanel extends JPanel
 			{
 				DecodesScript ds = (DecodesScript)pc.getScript("EDL");
 				if (ds != null
-				 && ds.formatStatements.size() == 0)
+				 && ds.getFormatStatements().size() == 0)
 					summaryArea.append(LoadResourceBundle.sprintf(
 							platwizLabels.getString("SavePanel.noScriptFSErr"),
 							ds.scriptName));
