@@ -92,7 +92,9 @@ public class DecodesScript extends IdDatabaseObject
 
         DecodesSettings settings = DecodesSettings.instance();
         if ( settings.decodesFormatLabelMode.equals("case-sensitive" ) )
+        {
             labelIsCaseSensitive = true;
+        }
         scriptName = name;
         scriptType = Constants.scriptTypeDecodes;
         platformConfig = null;
@@ -125,7 +127,9 @@ public class DecodesScript extends IdDatabaseObject
         {
             ScriptSensor ss = it.next();
             if (ss.sensorNumber == sensorNumber)
+            {
                 return ss;
+            }
         }
         return null;
     }
@@ -138,7 +142,9 @@ public class DecodesScript extends IdDatabaseObject
     {
         ScriptSensor ss = getScriptSensor(newss.sensorNumber);
         if (ss != null)
+        {
             scriptSensors.remove(ss);
+        }
         for(int i=0; i<scriptSensors.size(); i++)
         {
             ss = scriptSensors.elementAt(i);
@@ -156,14 +162,20 @@ public class DecodesScript extends IdDatabaseObject
       in Constants.java.
      * @return the data order for this script
      */
-    public char getDataOrder() { return dataOrder; }
+    public char getDataOrder()
+    {
+        return dataOrder;
+    }
 
     /**
       Sets the data order for this script (must one of values defined
       in Constants.java.
      * @param order the data order.
      */
-    public void setDataOrder(char order) { dataOrder = order; }
+    public void setDataOrder(char order)
+    {
+        dataOrder = order;
+    }
 
     /**
     * This compares two DecodesScripts, and returns true if they can be
@@ -192,18 +204,25 @@ public class DecodesScript extends IdDatabaseObject
             return false;
         DecodesScript ds = (DecodesScript)ob;
         if (this == ds)
+        {
             return true;
+        }
         if (!scriptName.equals(ds.scriptName)
          || !scriptType.equals(ds.scriptType)
          || scriptSensors.size() != ds.scriptSensors.size()
          || formatStatements.size() != ds.formatStatements.size()
          || dataOrder != ds.dataOrder)
+        {
             return false;
+        }
         for (int i = 0; i < scriptSensors.size(); i++)
         {
             ScriptSensor ss1 = (ScriptSensor) scriptSensors.elementAt(i);
             ScriptSensor ss2 = (ScriptSensor) ds.scriptSensors.elementAt(i);
-            if (!ss1.equals(ss2)) return false;
+            if (!ss1.equals(ss2))
+            {
+                return false;
+            }
         }
         for (int i = 0; i < formatStatements.size(); i++)
         {
@@ -211,7 +230,10 @@ public class DecodesScript extends IdDatabaseObject
                 (FormatStatement) formatStatements.elementAt(i);
             FormatStatement fs2 =
                 (FormatStatement) ds.formatStatements.elementAt(i);
-            if (!fs1.equals(fs2)) return false;
+            if (!fs1.equals(fs2))
+            {
+                return false;
+            }
         }
         return true;
     }
@@ -220,7 +242,8 @@ public class DecodesScript extends IdDatabaseObject
     * This is inherited from the DatabaseObject interface.  This always
     * returns "DecodesScript".
     */
-    public String getObjectType() {
+    public String getObjectType()
+    {
         return "DecodesScript";
     }
 
@@ -233,8 +256,14 @@ public class DecodesScript extends IdDatabaseObject
     public DecodesScript copy(PlatformConfig newPc)
     {
         DecodesScript ret = noIdCopy(newPc);
-        try { ret.setId(getId()); }
-        catch(DatabaseException ex) {} // won't happen.
+        try
+        {
+            ret.setId(getId());
+        }
+        catch(DatabaseException ex)
+        {
+            // won't happen.
+        }
         return ret;
     }
 
@@ -255,7 +284,9 @@ public class DecodesScript extends IdDatabaseObject
             ScriptSensor newSs = new ScriptSensor(ret, ss.sensorNumber);
             //newSs.unitConverterId = ss.unitConverterId;
             if (ss.rawConverter != null)
+            {
                 newSs.rawConverter = ss.rawConverter.copy();
+            }
             //newSs.rawConverter = ss.rawConverter;
             ret.scriptSensors.add(newSs);
         }
@@ -325,7 +356,9 @@ public class DecodesScript extends IdDatabaseObject
             }
         }
         if (execFmt != null)
+        {
             execFmt.prepareForExec();
+        }
 
         _prepared = true;
     }
@@ -335,7 +368,7 @@ public class DecodesScript extends IdDatabaseObject
      */
     public boolean isPrepared()
     {
-            return _prepared;
+        return _prepared;
     }
 
     /** From DatabaseObject interface; this does nothing.  */
@@ -373,12 +406,19 @@ public class DecodesScript extends IdDatabaseObject
         for(Iterator<FormatStatement> it = formatStatements.iterator(); it.hasNext(); )
         {
             FormatStatement fs = it.next();
-            if ( !labelIsCaseSensitive  ) {
+            if ( !labelIsCaseSensitive  )
+            {
                 if ( label.equalsIgnoreCase(fs.label))
-                      return fs;
-            } else {
-                if (label.equals(fs.label))
+                {
                     return fs;
+                }
+            }
+            else
+            {
+                if (label.equals(fs.label))
+                {
+                    return fs;
+                }
             }
         }
         return null;
@@ -394,13 +434,19 @@ public class DecodesScript extends IdDatabaseObject
             IncompleteDatabaseException, InvalidDatabaseException
     {
         if (!isPrepared())
+        {
             prepareForExec();
+        }
 
         if (trackDecoding)
+        {
             decodedSamples = new ArrayList<DecodedSample>();
+        }
 
         if (formatStatements.size() == 0)
+        {
             throw new DecoderException("No format statements");
+        }
 
         FormatStatement fs = formatStatements.elementAt(0);
         DecodedMessage decmsg = new DecodedMessage(rawmsg);
@@ -448,7 +494,9 @@ public class DecodesScript extends IdDatabaseObject
         // performance measurements to be set as sensors. Do it here so that the sensor
         // interval and offset can be used for proper timing.
         if (includePMs != null && includePMs.size() > 0)
+        {
             addPMs(decmsg);
+        }
 
         decmsg.finishMessage();
         decmsg.applyInitialEuConversions();
@@ -462,7 +510,9 @@ public class DecodesScript extends IdDatabaseObject
     public void addDecodedSample(DecodedSample decodedSample)
     {
         if (decodedSamples != null)
+        {
             decodedSamples.add(decodedSample);
+        }
     }
 
     /**
@@ -482,7 +532,9 @@ public class DecodesScript extends IdDatabaseObject
     {
         int idx = scriptType.indexOf(':');
         if (idx < 0 || scriptType.length() <= idx+1)
+        {
             return null;
+        }
         return scriptType.substring(idx+1);
     }
 
@@ -493,14 +545,7 @@ public class DecodesScript extends IdDatabaseObject
 
     public boolean isMissingSymbol(String symbol)
     {
-//Logger.instance().debug3("script.isMissingSymbol '" + symbol + "' checking against " + missingSymbols.size()
-//    + " defined symbols.");
         return missingSymbols.contains(symbol);
-//        for(String s : missingSymbols)
-//            if (s.equals(symbol))
-//                return true;
-//else Logger.instance().debug3("   doesn't equal '" + s + "'");
-//        return false;
     }
 
     public void setIncludePMs(ArrayList<String> includePMs)
@@ -508,8 +553,12 @@ public class DecodesScript extends IdDatabaseObject
         this.includePMs = includePMs;
         if (includePMs != null && includePMs.size() == 0)
             this.includePMs = null;
-if (this.includePMs != null) Logger.instance().debug1("setIncludePMs: includePMs has "
-+ includePMs.size() + " strings. [0]=" + includePMs.get(0));
+        if (this.includePMs != null)
+        {
+            Logger.instance()
+                  .debug1("setIncludePMs: includePMs has "
+                         + includePMs.size() + " strings. [0]=" + includePMs.get(0));
+        }
     }
 
     /**
@@ -519,15 +568,27 @@ if (this.includePMs != null) Logger.instance().debug1("setIncludePMs: includePMs
     {
         RawMessage rm = decodedMessage.getRawMessage();
         if (rm == null)
+        {
             return;
+        }
         Platform p = null;
-        try { p = rm.getPlatform(); }
-        catch(UnknownPlatformException ex) { return; }
-        if (p == null)
+        try
+        {
+            p = rm.getPlatform();
+        }
+        catch(UnknownPlatformException ex)
+        {
             return;
+        }
+        if (p == null)
+        {
+            return;
+        }
         PlatformConfig pc = p.getConfig();
         if (pc == null)
+        {
             return;
+        }
       nextPM:
         for(String pmname : includePMs)
         {
@@ -545,7 +606,8 @@ Logger.instance().debug1("addPMs looking for '" + pmname + "'");
                 if (cs.sensorName.equalsIgnoreCase(pmname))
                 {
                     decodedMessage.addSample(cs.sensorNumber, v, 0);
-Logger.instance().debug1("addPM: added pm '" + pmname + "' to sensor " + cs.sensorNumber + " with value '" + v.toString() + "'");
+                    Logger.instance()
+                          .debug1("addPM: added pm '" + pmname + "' to sensor " + cs.sensorNumber + " with value '" + v.toString() + "'");
                     continue nextPM;
                 }
             }
