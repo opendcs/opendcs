@@ -859,6 +859,9 @@ public class CwmsTimeSeriesDb
 				+ " with officeID=" + dbOfficeId);
 
 				postConnectInit(appName, conn); // Make sure the versions and such are set
+				setConnection(conn);
+				setupKeyGenerator(); // TODO: this should take the connection as a parameter
+				setConnection(null);
 
 				cgl.setLoginSuccess(true);
 

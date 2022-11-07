@@ -74,14 +74,14 @@ public class KeyGeneratorFactory
 		catch(InstantiationException ex)
 		{
 			String err = "Cannot instantiate KeyGenerator of type '"
-			  + clsname + "': (Check configuration and CLASSPATH setting) + ex";
+			  + clsname + "': (Check configuration and CLASSPATH setting) ex" + ex;
 			Logger.instance().failure(err);
 			throw new DatabaseException(err);
 		}
 		catch(IllegalAccessException ex)
 		{
 			String err = "Cannot instantiate KeyGenerator of type '"
-			  + clsname + "': (Does class have public no-arg constructor?)+ex"; 
+			  + clsname + "': (Does class have public no-arg constructor?)" + ex; 
 			Logger.instance().failure(err);
 			throw new DatabaseException(err);
 		}
