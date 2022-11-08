@@ -21,6 +21,9 @@ Checkout the CONTRIBUTING.md file. Changes should be contributed to the default 
 
 # Compiling
 
+Installing Ant and adding to your PATH
+- Follow the instructions listed [here](https://ant.apache.org/manual/install.html)
+
 To build the file opendcs.jar run the following
 
 `ant jar`
