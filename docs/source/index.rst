@@ -27,4 +27,5 @@ Contents
    TimeSeriesDatabase <./tsdb.rst>
    Alarms <./alarms.rst>
    CWMS Interface <./cwms-interface.rst>
+   Developer Documentation <./dev-docs.rst>
    
