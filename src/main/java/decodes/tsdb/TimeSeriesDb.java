@@ -602,7 +602,10 @@ public abstract class TimeSeriesDb
 	public void setConnection(Connection conn)
 	{
 		this.conn = conn;
-		determineTsdbVersion(getConnection(), this);
+		if (conn != null)
+		{
+			determineTsdbVersion(conn, this);
+		}
 	}
 
 	public KeyGenerator getKeyGenerator() { return keyGenerator; }
