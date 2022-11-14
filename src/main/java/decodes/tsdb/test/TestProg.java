@@ -53,7 +53,6 @@
 */
 package decodes.tsdb.test;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import lrgs.gui.DecodesInterface;
@@ -61,15 +60,12 @@ import lrgs.gui.DecodesInterface;
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.StderrLogger;
 import ilex.util.UserAuthFile;
 
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.tsdb.*;
 import decodes.sql.DbKey;
-import decodes.sql.SqlDatabaseIO;
-import decodes.db.Database;
 
 public abstract class TestProg
 {

@@ -114,7 +114,6 @@ import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
 import ilex.util.Logger;
-import ilex.util.PropertiesUtil;
 import ilex.util.UserAuthFile;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;

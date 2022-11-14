@@ -76,10 +76,6 @@ import java.io.FileWriter;
 import java.io.FileInputStream;
 import java.io.FileReader;
 
-import ilex.cmdline.ApplicationSettings;
-import ilex.util.AuthException;
-import ilex.util.DesEncrypter;
-
 /**
 Daemons require the SQL username and password to be placed in the user's
 home directory in an encrypted file. This class provides access to an

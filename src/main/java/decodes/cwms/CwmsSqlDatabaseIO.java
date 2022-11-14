@@ -12,36 +12,18 @@
  */
 package decodes.cwms;
 
-import java.io.PrintStream;
-import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.TimeZone;
-
-import javax.management.JMException;
-import javax.management.ObjectName;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-
-import org.opendcs.jmx.ConnectionPoolMXBean;
-import org.opendcs.jmx.connections.JMXTypes;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.opentsdb.OpenTsdbSettings;
-import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
-import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import lrgs.gui.DecodesInterface;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;

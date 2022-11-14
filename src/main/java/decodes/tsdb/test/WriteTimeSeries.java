@@ -3,18 +3,12 @@
 */
 package decodes.tsdb.test;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.Properties;
 import java.util.StringTokenizer;
 
 import opendcs.dai.TimeSeriesDAI;
 
 import ilex.cmdline.*;
-import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
-import ilex.util.UserAuthFile;
 import ilex.var.TimedVariable;
 
 import decodes.util.CmdLineArgs;

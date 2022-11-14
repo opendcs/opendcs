@@ -49,7 +49,6 @@
 package decodes.launcher;
 
 import java.util.*;
-import java.util.List;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
@@ -61,12 +60,10 @@ import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.UserAuthFile;
-import ilex.util.TextUtil;
 import ilex.gui.LoginDialog;
 import decodes.gui.PropertiesEditPanel;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
-import decodes.util.ResourceFactory;
 
 public class DecodesPropsPanel extends JPanel
 {
