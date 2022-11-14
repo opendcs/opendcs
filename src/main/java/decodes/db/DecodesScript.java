@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Vector;
+import java.util.function.Supplier;
 import java.util.Iterator;
 
 /**
@@ -651,13 +652,14 @@ public class DecodesScript extends IdDatabaseObject
      */
     public static class DecodesScriptBuilder
     {
-        private DecodesScript script;
         private DecodesScriptReader scriptReader;
+        private Supplier<PlatformConfig> platformSupplier;
+        private Supplier<String> nameSupplier;
 
         public DecodesScriptBuilder(DecodesScriptReader reader)
         {
             this.scriptReader = reader;
-            script = new DecodesScript("");
+            nameSupplier = () -> "";
         }
 
         /**
@@ -669,6 +671,8 @@ public class DecodesScript extends IdDatabaseObject
          */
         public DecodesScript build() throws DecodesScriptException, IOException
         {
+            DecodesScript script = new DecodesScript(nameSupplier.get());
+            script.platformConfig = platformSupplier.get();
             try
             {
                 FormatStatement fs = null;
@@ -690,9 +694,20 @@ public class DecodesScript extends IdDatabaseObject
          * @param pc initialized PlatformConfig
          * @return the builder for further operations
          */
-        public DecodesScriptBuilder platformConfig(PlatformConfig pc)
+        public DecodesScriptBuilder platformConfig(final PlatformConfig pc)
         {
-            script.platformConfig = pc;
+            this.platformSupplier = () -> pc;
+            return this;
+        }
+
+        /**
+         * Assign a supplier for a platformConfiguration, retrieved during the script building process
+         * @param platformSupplier function called in the build method to setup the script
+         * @return the builder for further operations
+         */
+        public DecodesScriptBuilder platformConfig(Supplier<PlatformConfig> platformSupplier)
+        {
+            this.platformSupplier = platformSupplier;
             return this;
         }
 
@@ -703,7 +718,18 @@ public class DecodesScript extends IdDatabaseObject
          */
         public DecodesScriptBuilder scriptName(String name)
         {
-            script.scriptName = name;
+            nameSupplier = () -> name;
+            return this;
+        }
+
+        /**
+         * Assign a supplier to set the name during the build call.
+         * @param nameSupplier function call in the build method to retrieve the script name.
+         * @return the script for further operations.
+         */
+        public DecodesScriptBuilder scriptName(Supplier<String> nameSupplier)
+        {
+            this.nameSupplier = nameSupplier;
             return this;
         }
     }
