@@ -17,5 +17,14 @@ public class DatabaseConnectException extends DatabaseException
 	{
 		super(msg);
 	}
-}
 
+	/** 
+	  constructor with cause
+	  @param msg the message.
+	  @param 
+ 	*/
+	 public DatabaseConnectException(String msg, Throwable ex)
+	 {
+		 super(msg,ex);
+	 }
+}

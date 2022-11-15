@@ -262,7 +262,7 @@ public class DecodesPropsPanel extends JPanel
 			String afn = propsEditPanel.getProperty("DbAuthFile");
 			if (afn == null)
 				afn = "$HOME/.decodes.auth";
-			afn = EnvExpander.expand(afn);
+			afn = EnvExpander.expand(afn);			
 			UserAuthFile uaf = new UserAuthFile(afn);
 			try
 			{

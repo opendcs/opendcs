@@ -67,7 +67,6 @@ import ilex.util.AuthException;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
-import ilex.util.UserAuthFile;
 
 import java.io.File;
 import java.io.FileInputStream;

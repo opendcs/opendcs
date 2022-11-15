@@ -74,13 +74,14 @@ package decodes.tsdb;
 
 import java.util.Properties;
 
+import org.opendcs.authentication.AuthSourceService;
+
 import opendcs.dai.LoadingAppDAI;
 import ilex.cmdline.*;
-import ilex.util.EnvExpander;
+import ilex.util.AuthException;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.StderrLogger;
-import ilex.util.UserAuthFile;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesVersion;
@@ -388,23 +389,24 @@ public abstract class TsdbAppTemplate
 			warning("Closing connection before reconnect.");
 			theDb.closeConnection();
 		}
-		Properties credentials = new Properties();
+		Properties credentials = null;
 		String nm = appNameArg.getValue();
 		if (!DecodesInterface.isGUI() || !theDb.isCwms())
 		{
 			// Get authorization parameters.
-			String afn = EnvExpander.expand(DecodesSettings.instance().DbAuthFile);
-			UserAuthFile authFile = new UserAuthFile(afn);
-			try { authFile.read(); }
-			catch(Exception ex)
+			String afn = DecodesSettings.instance().DbAuthFile;
+			try
+			{
+				credentials = AuthSourceService.getFromString(afn)
+											   .getCredentials();
+			}
+			catch(AuthException ex)
 			{
 				authFileEx(afn, ex);
 				throw new BadConnectException("Cannot read auth file: " + ex);
 			}
 	
 			// Connect to the database!
-			credentials.setProperty("username", authFile.getUsername());
-			credentials.setProperty("password", authFile.getPassword());
 		}
 		// Else this is a CWMS GUI -- user will be prompted for credentials
 		// Leave the property set empty.

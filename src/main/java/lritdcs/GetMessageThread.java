@@ -79,6 +79,8 @@ import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.opendcs.authentication.AuthSourceService;
+
 import java.io.File;
 
 import ilex.util.*;
@@ -589,10 +591,10 @@ public class GetMessageThread
 		}
 		try
 		{
-			UserAuthFile uaf = new UserAuthFile(authFile);
-			uaf.read();
+			Properties credentials = AuthSourceService.getFromString(authFile.getPath())
+													  .getCredentials();
 			Logger.instance().debug1("Read password from " + authFile.getPath());
-			return uaf.getPassword();
+			return credentials.getProperty("password");
 		}
 		catch(Exception ex)
 		{

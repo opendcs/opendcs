@@ -21,11 +21,11 @@
 */
 package opendcs.opentsdb;
 
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-import ilex.util.UserAuthFile;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,6 +34,8 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.Properties;
+
+import org.opendcs.authentication.AuthSourceService;
 
 import opendcs.dai.TimeSeriesDAI;
 import decodes.consumer.DataConsumer;
@@ -164,23 +166,21 @@ public class OpenTsdbConsumer extends DataConsumer
 	{		
 		Logger.instance().info(module + " initializing.");
 		// Get username & password from Auth file
-		Properties credentials = new Properties();
+		Properties credentials = null;
 		dbAuthFile = PropertiesUtil.getIgnoreCase(props, "dbAuthFile");
 		if (dbAuthFile == null)
 			dbAuthFile = DecodesSettings.instance().DbAuthFile;
-		String authPath = EnvExpander.expand(dbAuthFile);
+		String authPath = dbAuthFile;
 		try 
 		{
-			UserAuthFile authFile = new UserAuthFile(authPath);
-			authFile.read();
-			credentials.setProperty("username", authFile.getUsername());
-			credentials.setProperty("password", authFile.getPassword());
+			credentials = AuthSourceService.getFromString(authPath)
+										   .getCredentials();
 		}
-		catch(Exception ex)
+		catch(AuthException ex)
 		{
-			String msg = module + " Cannot read DB auth from file '" 
-				+ authPath + "': " + ex;
-			Logger.instance().warning(module + " " + msg);
+			String msg = module + " Cannot read DB auth from configuration '" 
+				+ authPath;
+			throw new DataConsumerException(msg,ex);
 		}
 		
 		// Get the Oracle Data Source & open a connection.

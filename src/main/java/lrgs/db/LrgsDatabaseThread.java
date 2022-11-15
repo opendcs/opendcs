@@ -19,11 +19,13 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
+
+import org.opendcs.authentication.AuthSourceService;
+
 import java.util.Properties;
 
-import ilex.util.EnvExpander;
+import ilex.util.AuthException;
 import ilex.util.Logger;
-import ilex.util.UserAuthFile;
 import lrgs.lrgsmain.LrgsConfig;
 
 /**
@@ -155,26 +157,21 @@ public class LrgsDatabaseThread
 		lastConnectAttempt = System.currentTimeMillis();
 
 		// Get username & password
-		String username = "lrgs_adm";
-		String password = "";
-		String authFileName = EnvExpander.expand("$LRGSHOME/.lrgsdb.auth");
-		UserAuthFile authFile = new UserAuthFile(authFileName);
+		String username = "lrgs_adm";		
+		String authFileName = "$LRGSHOME/.lrgsdb.auth";
+		Properties credentials = null;
 		try 
 		{
-			authFile.read();
-			username = authFile.getUsername();
-			password = authFile.getPassword();
+			credentials = AuthSourceService.getFromString(authFileName)
+										   .getCredentials();
+			username = credentials.getProperty("username");
 		}
-		catch(Exception ex)
+		catch(AuthException ex)
 		{
-			String msg = module + " Cannot read DB auth from file '" 
-				+ authFileName+ "': " + ex;
-			Logger.instance().warning(msg);
+			String msg = module + " Cannot read DB auth from configuration '" 
+				+ authFileName;
+			throw new RuntimeException(msg,ex);
 		}
-
-		Properties credentials = new Properties();
-		credentials.setProperty("username", username);
-        credentials.setProperty("password", password);
 
 		info("Attempting connection to db at '"
 			+ LrgsConfig.instance().dbUrl + "' as user '" + username + "'");

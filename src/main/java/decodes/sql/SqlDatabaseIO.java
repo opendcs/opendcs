@@ -81,6 +81,9 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.spi.authentication.AuthSource;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -113,8 +116,8 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
+import ilex.util.AuthException;
 import ilex.util.Logger;
-import ilex.util.UserAuthFile;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompParm;
@@ -332,9 +335,13 @@ public class SqlDatabaseIO
 		{
 			// Retrieve username and password for database
 			String authFileName = DecodesSettings.instance().DbAuthFile;
-			UserAuthFile authFile = new UserAuthFile(authFileName);
-			try { authFile.read(); }
-			catch(Exception ex)
+			Properties credentials = null;
+			try
+			{
+				credentials = AuthSourceService.getFromString(authFileName)
+											   .getCredentials();
+			}
+			catch(AuthException ex)
 			{
 				String msg = "Cannot read username and password from '"
 					+ authFileName + "' (run setDecodesUser first): " + ex;
@@ -343,7 +350,8 @@ public class SqlDatabaseIO
 				throw new DatabaseConnectException(msg);
 			}
 
-			connectUserPassword(authFile.getUsername(), authFile.getPassword());
+			connectUserPassword(credentials.getProperty("username"), 
+							    credentials.getProperty("password"));
 		}
 
 		// MJM 2018-2/21 Force autoCommit on.

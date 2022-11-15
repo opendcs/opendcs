@@ -16,7 +16,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.spi.authentication.AuthSource;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -25,9 +29,9 @@ import opendcs.dao.DatabaseConnectionOwner;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
 import lrgs.gui.DecodesInterface;
+import ilex.util.AuthException;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
-import ilex.util.UserAuthFile;
 import decodes.db.*;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.OracleSequenceKeyGenerator;
@@ -162,19 +166,18 @@ public class CwmsSqlDatabaseIO
 			
 			// Retrieve username and password for database
 			String authFileName = DecodesSettings.instance().DbAuthFile;
-			UserAuthFile authFile = new UserAuthFile(authFileName);
-			try { authFile.read(); }
-			catch(Exception ex)
+			try
 			{
-				String msg = "Cannot read username and password from '"
-					+ authFileName + "' (run setDecodesUser first): " + ex;
-				System.err.println(msg);
-				Logger.instance().log(Logger.E_FATAL, msg);
-				throw new DatabaseConnectException(msg);
+				AuthSource as = AuthSourceService.getFromString(authFileName);
+				Properties props = as.getCredentials();
+				_dbUser = props.getProperty("username");
+				password = props.getProperty("password");
 			}
-
-			_dbUser = authFile.getUsername();
-			password = authFile.getPassword();
+			catch(AuthException ex)
+			{
+				String msg = "Cannot process credential information provided";				
+				throw new DatabaseConnectException(msg,ex);
+			}
 		}
 		if( conInfo == null)
 		{
