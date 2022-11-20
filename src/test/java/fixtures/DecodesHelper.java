@@ -9,6 +9,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.stream.Stream;
 
@@ -34,6 +36,7 @@ import decodes.db.TransportMedium;
 import decodes.db.UnitConverterDb;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecoderException;
+import ilex.var.Variable;
 
 /**
  * Functions to help make decodes tests easier
@@ -65,6 +68,7 @@ public class DecodesHelper {
                                                               UnknownPlatformException, IncompleteDatabaseException,
                                                               InvalidDatabaseException, DecoderException
     {
+        ArrayList<DecodesAssertion> assertions = new ArrayList<>();
         DecodesScript.trackDecoding = true;
         PlatformConfig platformConfig = new PlatformConfig();
         URL script = DecodesScript.class.getResource("/decodes/db/"+ testName + ".decodescript");
@@ -74,6 +78,7 @@ public class DecodesHelper {
                                      .build();
 
         URL sensors = DecodesScript.class.getResource("/decodes/db/"+ testName + ".sensors");
+        URL assertionsURL = DecodesScript.class.getResource("/decodes/db/"+testName + ".assertions");
 
         int sensorIndex = 0;
         String sensorLine = null;
@@ -94,6 +99,9 @@ public class DecodesHelper {
                 decodesScript.platformConfig.addSensor(configSensor);
             }
         }
+
+
+        
 
         Platform tmpPlatform = new Platform();
         tmpPlatform.setSite(new Site());
@@ -124,8 +132,60 @@ public class DecodesHelper {
         tmpMedium.prepareForExec();
         DecodedMessage decodedMessage = decodesScript.decodeMessage(rawMessage);
 
-        return arguments(decodesScript,rawMessage,decodedMessage);
+        return arguments(testName,decodesScript,rawMessage,decodedMessage,assertions);
+    }
+
+    public static Stream<Arguments> decodesTestSets() {
+        final ArrayList<String> scripts = new ArrayList<>();
+        scripts.add("WEB");
+        return scripts.stream().map(name -> {
+            try
+            {
+                return getScript(name);
+            }
+            catch(Exception ex)
+            {
+                throw new RuntimeException("unable to load test information for: " +name, ex);
+            }
+            
+        });
+        
     }
 
 
+    public static class DecodesAssertion
+    {
+        //sensor number, time ISO UTC, expected value (double or string), precision, message
+        private int sensor;
+        private ZonedDateTime time;
+        private Variable expectedValue;
+        private double precision;
+        private String message;
+
+        private DecodesAssertion(int sensor,ZonedDateTime time, Variable expectedValue,
+                              double precision,String message)
+        {
+            this.sensor = sensor;
+            this.time = time;
+            this.expectedValue = expectedValue;
+            this.precision = precision;
+            this.message = message;
+        }
+
+        public int getSensor()
+        {
+            return sensor;
+        }
+
+        public ZonedDateTime getTime()
+        {
+            return time;
+        }        
+
+        @Override
+        public boolean equals(Object other)
+        {
+            return false;
+        }
+    }
 }
