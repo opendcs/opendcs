@@ -9,9 +9,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.provider.Arguments;
@@ -35,8 +38,11 @@ import decodes.db.StreamDecodesScriptReader;
 import decodes.db.TransportMedium;
 import decodes.db.UnitConverterDb;
 import decodes.decoder.DecodedMessage;
+import decodes.decoder.DecodedSample;
 import decodes.decoder.DecoderException;
+import ilex.var.TimedVariable;
 import ilex.var.Variable;
+import ilex.var.VariableType;
 
 /**
  * Functions to help make decodes tests easier
@@ -100,7 +106,36 @@ public class DecodesHelper {
             }
         }
 
-
+        String assertionLine = null;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(assertionsURL.openStream())))
+        {
+            while((assertionLine = reader.readLine() ) != null)
+            {
+                if( assertionLine.trim().startsWith("#"))
+                {
+                    continue;
+                }
+                String parts[] = assertionLine.trim().split(",");
+                Variable v = null;
+                try
+                {
+                    v = new Variable(Double.parseDouble(parts[2].trim()));
+                }
+                catch(NumberFormatException ex)
+                {
+                    /* String was provided, use as-is. */
+                    v = new Variable(parts[2].trim());
+                }
+                DecodesAssertion a = new DecodesAssertion(
+                    Integer.parseInt(parts[0].trim()),
+                    ZonedDateTime.parse(parts[1].trim()),
+                    v,
+                    Double.parseDouble(parts[3].trim()),
+                    parts[4].trim()
+                );
+                assertions.add(a);
+            }
+        }
         
 
         Platform tmpPlatform = new Platform();
@@ -152,6 +187,24 @@ public class DecodesHelper {
         
     }
 
+    public static DecodedSample sampleFor(int sensor, ZonedDateTime sampleTime,
+                                          ArrayList<DecodedSample> samples) throws NoSuchElementException
+    {
+        for(DecodedSample s: samples)
+        {
+            TimedVariable tv = s.getSample();
+            if( s.getTimeSeries().getSensorId() == sensor 
+                && tv.getTime().getTime() == sampleTime.toInstant().toEpochMilli()
+            )
+            {
+                return s;
+            }
+        }
+
+        throw new NoSuchElementException("Expected Sample for sensor " 
+                                     + sensor + " at time "
+                                     + sampleTime + " doesn't exist");
+    }
 
     public static class DecodesAssertion
     {
@@ -165,6 +218,16 @@ public class DecodesHelper {
         private DecodesAssertion(int sensor,ZonedDateTime time, Variable expectedValue,
                               double precision,String message)
         {
+            Objects.requireNonNull(message, "A message must be provided");
+            Objects.requireNonNull(expectedValue, "An initialized expected value must be provided.");
+            if( message.isEmpty())
+            {
+                throw new RuntimeException("Message should not be empty");
+            }
+            if( expectedValue.getStringValue().isEmpty())
+            {
+                throw new RuntimeException("A non-empty expected value must be provided.");
+            }
             this.sensor = sensor;
             this.time = time;
             this.expectedValue = expectedValue;
@@ -180,12 +243,21 @@ public class DecodesHelper {
         public ZonedDateTime getTime()
         {
             return time;
-        }        
+        }
 
-        @Override
-        public boolean equals(Object other)
+        public double getPrecision()
         {
-            return false;
+            return precision;
+        }
+
+        public String getMessage()
+        {
+            return message;
+        }
+
+        public Variable getExpectedValue()
+        {
+            return expectedValue;
         }
     }
 }

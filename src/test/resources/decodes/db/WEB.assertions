@@ -1,6 +1,6 @@
-#sensor number, time ISO UTC, expected value (double or string), precision, message
-1,2022-10-17T16:30:00:00,1.23,  0.0, The sample message contains a valid double value but it could not be parsed.
-1,2022-10-17T16:45:00:00, missing, 0.0,Standard missing symbol is not used correctly.
-1,2022-10-17T17:00:00:00, missing, 0.0,Custom missing symbol is not used correctly due to tab delimiter.
-1,2022-10-17T17:15:00:00, missing, 0.0,Custom missing symbol is not used correctly due to space delimiter.
-1,2022-10-17T17:30:00:00, error, 0.0, "Error sample not correctly identified.
+#sensor number, time (ISO8601), expected value (double or string), precision, message
+1,2022-10-17T16:30:00Z,1.23,  0.0, The sample message contains a valid double value but it could not be parsed.
+1,2022-10-17T16:45:00Z, m, 0.0,Standard missing symbol is not used correctly.
+1,2022-10-17T17:00:00Z, m, 0.0,Custom missing symbol is not used correctly due to tab delimiter.
+1,2022-10-17T17:15:00Z, m, 0.0,Custom missing symbol is not used correctly due to space delimiter.
+1,2022-10-17T17:30:00Z, e, 0.0, Error sample not correctly identified.
