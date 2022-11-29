@@ -49,10 +49,9 @@ public class KeyGeneratorFactory
 	 * Makes & returns a key generator, given a class name.
 	 * Also calls the generator's init method with the passed connection object.
 	 * @param clsname the class name.
-	 * @param con the database connection
 	 * @return the key generator object.
 	 */
-	public static KeyGenerator makeKeyGenerator(String clsname, Connection con)
+	public static KeyGenerator makeKeyGenerator(String clsname)
 		throws DatabaseException
 	{
 		Logger.instance().debug3("Making KeyGenerator for class '" + clsname + "'");

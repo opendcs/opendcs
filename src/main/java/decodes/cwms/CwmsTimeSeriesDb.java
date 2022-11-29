@@ -859,7 +859,7 @@ public class CwmsTimeSeriesDb
 				+ " with officeID=" + dbOfficeId);
 
 				postConnectInit(appName, conn); // Make sure the versions and such are set
-				setupKeyGenerator(conn);
+				setupKeyGenerator();
 
 				cgl.setLoginSuccess(true);
 
