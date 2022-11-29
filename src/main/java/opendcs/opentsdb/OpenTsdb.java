@@ -118,7 +118,7 @@ public class OpenTsdb extends TimeSeriesDb
 			setConnection(
 				DriverManager.getConnection(dbUri, username, password));
 		
-			setupKeyGenerator();
+			setupKeyGenerator(getConnection());
 
 			// MJM 2018-2/21 Force autoCommit on.
 			try { getConnection().setAutoCommit(true); }

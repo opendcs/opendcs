@@ -614,14 +614,14 @@ public abstract class TimeSeriesDb
 	 * Uses the class in DecodesSettings to create a key generator.
 	 * @throws BadConnectException on any error.
 	 */
-	protected void setupKeyGenerator()
+	protected void setupKeyGenerator(Connection providedConn)
 		throws BadConnectException
 	{
 		String keyGenClass = DecodesSettings.instance().sqlKeyGenerator;
 		try
 		{
 			keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
-				keyGenClass, conn);
+				keyGenClass, providedConn);
 		}
 		catch (Exception ex)
 		{
