@@ -412,7 +412,7 @@ public class LrgsDatabase
 		try
 		{
 			keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
-				keyGeneratorClass, conn);
+				keyGeneratorClass);
 		}
 		catch (Exception ex) 
 		{

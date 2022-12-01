@@ -280,7 +280,7 @@ public class SqlDatabaseIO
 
 		connectToDatabase(sqlDbLocation);
 		keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
-			DecodesSettings.instance().sqlKeyGenerator, _conn);
+			DecodesSettings.instance().sqlKeyGenerator);
 	}
 
 	/**
