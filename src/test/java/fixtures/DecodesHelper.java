@@ -13,11 +13,13 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.provider.Arguments;
+import org.opendcs.utils.ClasspathIO;
 
 import decodes.datasource.EdlPMParser;
 import decodes.datasource.HeaderParseException;
@@ -77,7 +79,8 @@ public class DecodesHelper {
         ArrayList<DecodesAssertion> assertions = new ArrayList<>();
         DecodesScript.trackDecoding = true;
         PlatformConfig platformConfig = new PlatformConfig();
-        URL script = DecodesScript.class.getResource("/decodes/db/"+ testName + ".decodescript");
+        URL script = DecodesScript.class.getResource("/decodes/db/" + testName + ".decodescript");
+        URL input = DecodesScript.class.getResource("/decodes/db/" + testName + ".input");
         DecodesScript decodesScript = DecodesScript.from(new StreamDecodesScriptReader(script.openStream()))
                                      .platformConfig(platformConfig)
                                      .scriptName("WEB")
@@ -150,7 +153,7 @@ public class DecodesHelper {
         tmpPlatform.transportMedia.add(tmpMedium);
 
         String sampleMessage =
-            String.join("\n", Files.readAllLines(Paths.get(DecodesHelper.class.getResource("/decodes/db/WEB.input").toURI())));
+            String.join("\n", Files.readAllLines(Paths.get(input.toURI())));
         int len = sampleMessage.length();
         RawMessage rawMessage = new RawMessage(sampleMessage.getBytes(), len);
         rawMessage.setPlatform(tmpPlatform);
@@ -170,21 +173,27 @@ public class DecodesHelper {
         return arguments(testName,decodesScript,rawMessage,decodedMessage,assertions);
     }
 
-    public static Stream<Arguments> decodesTestSets() {
-        final ArrayList<String> scripts = new ArrayList<>();
-        scripts.add("WEB");
-        return scripts.stream().map(name -> {
-            try
-            {
-                return getScript(name);
-            }
-            catch(Exception ex)
-            {
-                throw new RuntimeException("unable to load test information for: " +name, ex);
-            }
-            
-        });
-        
+    public static Stream<Arguments> decodesTestSets() throws Exception {
+        List<URL> scripts = ClasspathIO.getAllResourcesIn("decodes/db");
+        return scripts.stream()
+            .filter( u-> u.toString().endsWith(".decodescript"))
+            .map(u-> {
+                    String fileName = u.toString();
+                    int lastSlash = fileName.lastIndexOf("/");
+                    String testName = fileName.substring(lastSlash+1)
+                                                                  .replace(".decodescript","");
+                    return testName;
+           })
+            .map(name -> {
+                try
+                {
+                    return getScript(name);
+                }
+                catch(Exception ex)
+                {
+                    throw new RuntimeException("unable to load test information for: " +name, ex);
+                }
+            });
     }
 
     public static DecodedSample sampleFor(int sensor, ZonedDateTime sampleTime,
