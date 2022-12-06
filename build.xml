@@ -91,7 +91,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			target="1.8" source="1.8"
 			includeantruntime="true"
 			encoding="UTF-8"
-			includes="decodes/**,ilex/**,lrgs/**,lritdcs/**,opendcs/**,covesw/**">
+			includes="**"
+			excludes="lrgs/gui/LrgsBuild.java">
 			<src path="${src.dir}"/>			
             <classpath refid="runtime.classpath"/>
 		</javac>
