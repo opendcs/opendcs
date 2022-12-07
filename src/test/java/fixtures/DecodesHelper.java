@@ -83,7 +83,7 @@ public class DecodesHelper {
         URL input = DecodesScript.class.getResource("/decodes/db/" + testName + ".input");
         DecodesScript decodesScript = DecodesScript.from(new StreamDecodesScriptReader(script.openStream()))
                                      .platformConfig(platformConfig)
-                                     .scriptName("WEB")
+                                     .scriptName(testName)
                                      .build();
 
         URL sensors = DecodesScript.class.getResource("/decodes/db/"+ testName + ".sensors");
@@ -103,8 +103,8 @@ public class DecodesHelper {
                 // TODO: lookup algo and parts
                 stage.rawConverter.algorithm = Constants.eucvt_none;
                 decodesScript.scriptSensors.add(stage);
-                ConfigSensor configSensor = new ConfigSensor(decodesScript.platformConfig, 1);
-                configSensor.sensorName = parts[0];
+                ConfigSensor configSensor = new ConfigSensor(decodesScript.platformConfig, Integer.parseInt(parts[0]));
+                configSensor.sensorName = parts[1];
                 decodesScript.platformConfig.addSensor(configSensor);
             }
         }

@@ -685,7 +685,7 @@ public class DecodesScript extends IdDatabaseObject
             }
             catch(Exception ex)
             {
-                throw new DecodesScriptException("Unable to finalize Decodes Script (" + script.scriptName + ") for use.");
+                throw new DecodesScriptException("Unable to finalize Decodes Script (" + script.scriptName + ") for use.",ex);
             }
         }
 
