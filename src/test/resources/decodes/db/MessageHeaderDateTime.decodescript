@@ -1,0 +1,12 @@
+Prime: S(300,':YD',Start),4x,C(12N,ParseTimeOnly),F(MHD,A,6,1),F(MHT,A,4),1p,T(M1),>Start
+ParseTimeOnly: F(MHT,A,4),1p,T(M1),>Start
+Start: S(300,':',End),x,f(F,A,8D' ')
+Batt: f(moff,a,3D' '),2x,f(mint,a,2,8),T(M15),4f(s,a,7D' ',8)>Start
+AT: f(moff,a,3D' '),2x,f(mint,a,2,2),T(M15),4f(s,a,7D' ',2)>Start
+RH: f(moff,a,3D' '),2x,f(mint,a,2,4),T(M15),4f(s,a,7D' ',4)>Start
+Stage: f(moff,a,3D' '),2x,f(mint,a,2,1),T(M15),4f(s,a,7D' ',1)>Start
+Dewpoint: f(moff,a,3D' '),2x,f(mint,a,2,7),T(M15),4f(s,a,7D' ',7)>Start
+YB: f(moff-,"60",2),f(mint,"60",2,6),T(H),f(s,a,7D' ',6)>Start
+BL: >YB
+End: 
+ERROR: >Start

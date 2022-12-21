@@ -22,7 +22,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.opendcs.utils.ClasspathIO;
 
 import decodes.datasource.EdlPMParser;
+import decodes.datasource.GoesPMParser;
 import decodes.datasource.HeaderParseException;
+import decodes.datasource.IridiumPMParser;
+import decodes.datasource.PMParser;
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.db.ConfigSensor;
@@ -42,6 +45,7 @@ import decodes.db.UnitConverterDb;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecodedSample;
 import decodes.decoder.DecoderException;
+import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import ilex.var.VariableType;
@@ -70,24 +74,26 @@ public class DecodesHelper {
      * @throws InvalidDatabaseException
      * @throws IncompleteDatabaseException
      * @throws UnknownPlatformException
+     * @throws NoConversionException
      */
-    public static Arguments getScript(String testName) throws DecodesScriptException, IOException,
+    public static Arguments getScript(String testName, String resourcePath) throws DecodesScriptException, IOException,
                                                               URISyntaxException, HeaderParseException,
                                                               UnknownPlatformException, IncompleteDatabaseException,
-                                                              InvalidDatabaseException, DecoderException
+                                                              InvalidDatabaseException, DecoderException, NoConversionException
     {
         ArrayList<DecodesAssertion> assertions = new ArrayList<>();
         DecodesScript.trackDecoding = true;
         PlatformConfig platformConfig = new PlatformConfig();
-        URL script = DecodesScript.class.getResource("/decodes/db/" + testName + ".decodescript");
-        URL input = DecodesScript.class.getResource("/decodes/db/" + testName + ".input");
+        String path = "/" + resourcePath + "/";
+        URL script = DecodesScript.class.getResource(path + testName + ".decodescript");
+        URL input = getInputResource(path, testName);
         DecodesScript decodesScript = DecodesScript.from(new StreamDecodesScriptReader(script.openStream()))
                                      .platformConfig(platformConfig)
                                      .scriptName(testName)
                                      .build();
 
-        URL sensors = DecodesScript.class.getResource("/decodes/db/"+ testName + ".sensors");
-        URL assertionsURL = DecodesScript.class.getResource("/decodes/db/"+testName + ".assertions");
+        URL sensors = DecodesScript.class.getResource(path + testName + ".sensors");
+        URL assertionsURL = DecodesScript.class.getResource(path + testName + ".assertions");
 
         int sensorIndex = 0;
         String sensorLine = null;
@@ -140,13 +146,53 @@ public class DecodesHelper {
             }
         }
         
+        RawMessage rawMessage = prepareRawMessage(input, decodesScript);
+        DecodedMessage decodedMessage = decodesScript.decodeMessage(rawMessage);
+        return arguments(testName,decodesScript,rawMessage,decodedMessage,assertions);
+    }
 
+    private static URL getInputResource(final String path, final String testName)
+    {
+        String[] extensions = {".input_iridium", ".input_goes", ".input_edl", ".input_data-logger", ".input"};
+        for( String ext: extensions) {
+
+            URL input = DecodesScript.class.getResource(path + testName + ext);
+            if( input != null )
+                return input;
+        }
+        return null;
+    }
+
+    private static String getMediumFromResource(final URL input)
+    {
+        String inputStr = input.toString();
+        if( inputStr.contains("input_") ) {
+            String[] parts = inputStr.split("_");
+            String part = parts[parts.length - 1];
+
+            if( part.equalsIgnoreCase(Constants.medium_Goes) )
+                return Constants.medium_Goes;
+            else if( part.equalsIgnoreCase(Constants.medium_IRIDIUM) )
+                return Constants.medium_IRIDIUM;
+            else if( part.equalsIgnoreCase(Constants.medium_EDL) )
+                return Constants.medium_EDL;
+            else if( part.equalsIgnoreCase("edl") )
+                return Constants.medium_EDL;
+        }
+        // If there was no medium detected, assume EDL.
+        return Constants.medium_EDL;
+    }
+
+    private static RawMessage prepareRawMessage(final URL input, DecodesScript decodesScript) throws IOException, URISyntaxException,
+                                                                                        HeaderParseException, IncompleteDatabaseException,
+                                                                                        InvalidDatabaseException, NoConversionException
+    {
+        String mediumType = getMediumFromResource(input);
         Platform tmpPlatform = new Platform();
         tmpPlatform.setSite(new Site());
         tmpPlatform.getSite().addName(new SiteName(tmpPlatform.getSite(), "USGS", "dummy"));
         tmpPlatform.setConfig(decodesScript.platformConfig);
         tmpPlatform.setConfigName(decodesScript.platformConfig.configName);
-        String mediumType = Constants.medium_Goes;
         TransportMedium tmpMedium = new TransportMedium(tmpPlatform, mediumType, "11111111");
         tmpMedium.scriptName = decodesScript.scriptName;
         tmpMedium.setDecodesScript(decodesScript);
@@ -160,21 +206,36 @@ public class DecodesHelper {
         rawMessage.setTransportMedium(tmpMedium);
         String tz = "UTC";
         tmpMedium.setTimeZone(tz);
-        tmpMedium.setMediumType(Constants.medium_EDL);
+
+        tmpMedium.setMediumType(mediumType);
         rawMessage.setMediumId("11111111");
-        EdlPMParser parser = new EdlPMParser();
+
+        PMParser parser = null;
+        if( mediumType.equals(Constants.medium_Goes) )
+            parser = new GoesPMParser();
+        else if( mediumType.equals(Constants.medium_IRIDIUM) )
+            parser = new IridiumPMParser();
+        else
+            parser = new EdlPMParser();
+
         parser.parsePerformanceMeasurements(rawMessage);
-        Date timeStamp = new Date();
-        rawMessage.setTimeStamp(timeStamp);
+
+        // If the message contained a parseable timestamp (e.g. Iridium), use that as the raw timestamp
+        Variable ts = rawMessage.getPM(GoesPMParser.MESSAGE_TIME);
+        if( ts != null )
+            rawMessage.setTimeStamp(ts.getDateValue());
+        else
+            rawMessage.setTimeStamp(new Date());
+
         decodesScript.prepareForExec();
         tmpMedium.prepareForExec();
-        DecodedMessage decodedMessage = decodesScript.decodeMessage(rawMessage);
 
-        return arguments(testName,decodesScript,rawMessage,decodedMessage,assertions);
+        return rawMessage;
     }
 
-    public static Stream<Arguments> decodesTestSets() throws Exception {
-        List<URL> scripts = ClasspathIO.getAllResourcesIn("decodes/db");
+    public static Stream<Arguments> decodesTestSets(final String path) throws Exception
+    {
+        List<URL> scripts = ClasspathIO.getAllResourcesIn(path);
         return scripts.stream()
             .filter( u-> u.toString().endsWith(".decodescript"))
             .map(u-> {
@@ -187,13 +248,18 @@ public class DecodesHelper {
             .map(name -> {
                 try
                 {
-                    return getScript(name);
+                    return getScript(name, path);
                 }
                 catch(Exception ex)
                 {
                     throw new RuntimeException("unable to load test information for: " +name, ex);
                 }
             });
+    }
+
+    public static Stream<Arguments> decodesTestSets() throws Exception
+    {
+        return decodesTestSets("decodes/db");
     }
 
     public static DecodedSample sampleFor(int sensor, ZonedDateTime sampleTime,
