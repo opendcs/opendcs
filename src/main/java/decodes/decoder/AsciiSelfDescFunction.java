@@ -153,7 +153,7 @@ public class AsciiSelfDescFunction
 					if (processMOFF && moff > 0)
 					{
 						// Reset 'current' time to 'message' time minus offset.
-						Date msgTime = decmsg.getRawMessage().getTimeStamp();
+						Date msgTime = decmsg.getUntruncatedMessageTime();
 						if (msgTime == null) msgTime = new Date();
 						long msec = msgTime.getTime();
 						// moff implies that we truncate to minute boundary

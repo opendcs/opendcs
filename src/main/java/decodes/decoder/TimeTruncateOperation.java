@@ -85,9 +85,8 @@ class TimeTruncateOperation extends DecodesOperation
 			long sub = (truncArg == 'h')
 				? (mmsec % 3600000L) : (mmsec % (60000L*count));
 			mmsec -= sub;
-			messageTime.setTime(mmsec);
+			msg.truncateTime(new Date(mmsec));
 			Logger.instance().debug3("   Message time truncated to " + messageTime);
-			msg.timeWasTruncated = true;
 		}
 		rts.setSecond(0);
 		if (truncArg == 'h')
