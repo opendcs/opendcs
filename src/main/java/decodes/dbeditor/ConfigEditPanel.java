@@ -555,7 +555,6 @@ public class ConfigEditPanel extends DbEditorTab
 				ss.rawConverter = new UnitConverterDb("raw", "raw");
 				ss.rawConverter.algorithm = Constants.eucvt_none;
 				ds.addScriptSensor(ss);
-				//ds.scriptSensors.add(ss);
 			}
 
 			if (dsEditDlg == null)

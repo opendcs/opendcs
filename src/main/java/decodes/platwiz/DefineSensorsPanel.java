@@ -243,15 +243,19 @@ public class DefineSensorsPanel extends JPanel
 				}
 
 				if (PlatformWizard.instance().processGoesRD())
+				{
 					pc.addScript(dsb.platformConfig(pc).scriptName("RD").build());
+				}
 			}
 			catch( DecodesScriptException | IOException ex)
 			{
 				throw new PanelException("Unable to create decodes script",ex);
 			}
 
-			if (PlatformWizard.instance().processEDL()) 
+			if (PlatformWizard.instance().processEDL())
+			{
 				setTransportMedium(p, pc, em);
+			}
 
 			activate();
 		}

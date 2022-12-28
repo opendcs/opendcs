@@ -653,7 +653,7 @@ public class DecodesScript extends IdDatabaseObject
      */
     public static class DecodesScriptBuilder
     {
-        private DecodesScriptReader scriptReader;
+        final private DecodesScriptReader scriptReader;
         private Supplier<PlatformConfig> platformSupplier;
         private Supplier<String> nameSupplier;
 
