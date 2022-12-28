@@ -19,7 +19,7 @@ import decodes.db.FormatStatement;
  * 
  * @since 2022-11-05
  */
-public final class SQLDecodesScriptReader implements DecodesScriptReader, AutoCloseable
+public final class SQLDecodesScriptReader implements DecodesScriptReader
 {
     ResultSet rs = null;
     PreparedStatement query = null;
@@ -53,6 +53,7 @@ public final class SQLDecodesScriptReader implements DecodesScriptReader, AutoCl
             {
                 return Optional.of(fromRS(rs,script));
             }
+            close();
             return Optional.empty();
         }
         catch(SQLException ex)
@@ -84,15 +85,16 @@ public final class SQLDecodesScriptReader implements DecodesScriptReader, AutoCl
     /**
      * Close the ResultSet and PreparedStatement.
      */
-    @Override
-    public void close() throws Exception {
+    public void close()
+    {
+        
         if(rs != null)
         {
-            rs.close();
-        }        
+            try { rs.close(); } catch (SQLException ex) {};
+        }
         if (query != null)
         {
-            query.close();
+            try { query.close(); } catch (SQLException ex) {};
         }
     }
 }

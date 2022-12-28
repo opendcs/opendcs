@@ -815,8 +815,9 @@ public class ConfigListIO extends SqlDbObjIo
 			if (s != null && s.length() > 0)
 				dataOrder = s.charAt(0);
 		}
-		try(SQLDecodesScriptReader reader = new SQLDecodesScriptReader(connection(), id))
+		try
 		{
+			SQLDecodesScriptReader reader = new SQLDecodesScriptReader(connection(), id);
 			DecodesScript ds = DecodesScript.from(reader)
 											.scriptName(name)
 											.build();
