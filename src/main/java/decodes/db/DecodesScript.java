@@ -621,7 +621,7 @@ public class DecodesScript extends IdDatabaseObject
      * @return a Builder object for further operations.
      * @since 2022-11-05
      */
-    public static DecodesScriptBuilder from(final DecodesScriptReader scriptReader)
+    public static DecodesScriptBuilder from(DecodesScriptReader scriptReader)
     {
         DecodesScriptBuilder builder = new DecodesScriptBuilder(scriptReader);
         return builder;

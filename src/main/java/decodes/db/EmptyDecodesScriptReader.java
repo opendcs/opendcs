@@ -10,7 +10,7 @@ import java.util.Optional;
  * NOTE: At least until the editors can be moved to using their own "reader" implementation
  * @since 2022-11-05
  */
-public class EmptyDecodesScriptReader implements DecodesScriptReader
+public final class EmptyDecodesScriptReader implements DecodesScriptReader
 {
 
     @Override

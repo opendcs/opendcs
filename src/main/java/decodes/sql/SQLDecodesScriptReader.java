@@ -19,7 +19,7 @@ import decodes.db.FormatStatement;
  * 
  * @since 2022-11-05
  */
-public class SQLDecodesScriptReader implements DecodesScriptReader, AutoCloseable
+public final class SQLDecodesScriptReader implements DecodesScriptReader, AutoCloseable
 {
     ResultSet rs = null;
     PreparedStatement query = null;
