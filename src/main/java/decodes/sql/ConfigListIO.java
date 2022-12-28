@@ -999,44 +999,6 @@ public class ConfigListIO extends SqlDbObjIo
 	//======================================================================
 	// Format Statement Methods
 	//======================================================================
-	
-	/**
-	* Reads all the FormatStatements for a particular DecodesScript.
-	* The DecodesScript must have already had its SQL database ID set.
-	* Note that we aren't guaranteed that these FormatStatements haven't
-	* already been read.
-	* @param ds the DecodesScript
-	*/
-	private void readFormatStatements(DecodesScript ds)
-		throws DatabaseException, SQLException
-	{
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT decodesScriptId, sequenceNum, " +
-			"label, format " +
-			"FROM FormatStatement " +
-			"WHERE DecodesScriptId = " + ds.getId() + " " +
-			"ORDER BY SequenceNum"
-		);
-
-		if (rs != null) {
-			while (rs.next()) {
-				int seqNum = rs.getInt(2);
-				String label = rs.getString(3);
-				String format = rs.getString(4);
-				if (format == null) format = "";
-
-				FormatStatement fmt = new FormatStatement(ds, seqNum);
-				fmt.label = label;
-				fmt.format = format;
-
-				//ds.formatStatements.add(fmt);
-			}
-		}
-
-		stmt.close();
-	}
-
 
 	/**
 	* Insert all the FormatStatements associated with a particular
