@@ -1,6 +1,7 @@
 package decodes.db;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * A reader that provides no actual data.
@@ -13,9 +14,9 @@ public class EmptyDecodesScriptReader implements DecodesScriptReader
 {
 
     @Override
-    public FormatStatement nextStatement(DecodesScript script) throws IOException
+    public Optional<FormatStatement> nextStatement(DecodesScript script) throws IOException
     {
-        return null;
+        return Optional.empty();
     }
     
 }

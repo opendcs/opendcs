@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Vector;
 import java.util.function.Supplier;
 import java.util.Iterator;
+import java.util.Optional;
 
 /**
  * This class encapsulates information about a decoding script.
@@ -675,10 +676,10 @@ public class DecodesScript extends IdDatabaseObject
             script.platformConfig = platformSupplier.get();
             try
             {
-                FormatStatement fs = null;
-                while ((fs = scriptReader.nextStatement(script)) != null)
+                Optional<FormatStatement> fs = null;
+                while ((fs = scriptReader.nextStatement(script)).isPresent())
                 {
-                    script.formatStatements.add(fs);
+                    script.formatStatements.add(fs.get());
                 }
                 script.prepareForExec();
                 return script;

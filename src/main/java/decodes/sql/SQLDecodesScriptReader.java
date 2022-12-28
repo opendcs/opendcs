@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import decodes.db.DecodesScript;
 import decodes.db.DecodesScriptReader;
@@ -45,14 +46,14 @@ public class SQLDecodesScriptReader implements DecodesScriptReader, AutoCloseabl
      * Returns the next statemetn from the query result.
      */
     @Override
-    public FormatStatement nextStatement(DecodesScript script) throws IOException {        
+    public Optional<FormatStatement> nextStatement(DecodesScript script) throws IOException {        
         try
         {
             if(rs.next())
             {
-                return fromRS(rs,script);
+                return Optional.of(fromRS(rs,script));
             }
-            return null;
+            return Optional.empty();
         }
         catch(SQLException ex)
         {

@@ -1,6 +1,7 @@
 package decodes.db;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Provide format statements to a DecodesScriptBuilder
@@ -17,5 +18,5 @@ public interface DecodesScriptReader
      * @return a new FormatStatement or null when all statements have been read in
      * @throws IOException any error retrieving a statement from a source
      */
-    public FormatStatement nextStatement(DecodesScript script) throws IOException;
+    public Optional<FormatStatement> nextStatement(DecodesScript script) throws IOException;
 }

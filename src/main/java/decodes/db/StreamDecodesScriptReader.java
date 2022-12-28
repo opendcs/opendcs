@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Optional;
 
 /**
  * Read a decodes script from a text file.
@@ -20,7 +21,7 @@ public class StreamDecodesScriptReader implements DecodesScriptReader
     }
 
     @Override
-    public FormatStatement nextStatement(DecodesScript script) throws IOException
+    public Optional<FormatStatement> nextStatement(DecodesScript script) throws IOException
     {
         FormatStatement fs = null;
         String line = reader.readLine();
@@ -38,6 +39,6 @@ public class StreamDecodesScriptReader implements DecodesScriptReader
             fs.label = label;
             fs.format = statement.trim();
         }
-        return fs;
+        return Optional.ofNullable(fs);
     }
 }
