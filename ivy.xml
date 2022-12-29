@@ -50,6 +50,7 @@
         </dependency>
         <dependency org="mil.army.usace.hec" name="cwms-db-aspects" rev="9.3.5"/>
         <dependency org="mil.army.usace.hec" name="cwms-db-dao" rev="9.3.5"/>
+        <dependency org="mil.army.usace.hec" name="hec-db-jdbc" rev="9.3.5"/>
 
         <dependency org="mil.army.usace.hec" name="hec-monolith" rev="2.0.2">
             <exclude org="codebase"/>
