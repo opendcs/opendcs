@@ -46,3 +46,12 @@ system you can turn pool tracing on for an application with the following java f
 
 With tracing on the WrappedConnectionMBean will show where a connection was created from. This useful for identifing 
 what code to fix for connection pool leaks.
+
+DDS Protocol
+============
+
+.. toctree::
+   :maxdepth: 1
+   
+
+   DDS <lrgs/dds.rst>
