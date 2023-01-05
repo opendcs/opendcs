@@ -1,10 +1,9 @@
-package decodes.test;
+package exploratory.decodes;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ConcurrentQueueTest
-	implements Runnable
+class ConcurrentQueueTest
 {
 	ConcurrentLinkedQueue<Integer> theQ = new ConcurrentLinkedQueue<Integer>();
 	int nextval = 0;
@@ -18,7 +17,6 @@ public class ConcurrentQueueTest
 		cqt.run();
 	}
 
-	@Override
 	public void run()
 	{
 		System.out.println("Adding 5");

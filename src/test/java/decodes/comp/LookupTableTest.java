@@ -21,32 +21,39 @@
 package decodes.comp;
 
 import java.io.File;
+import java.util.logging.Logger;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /** Stand-alone test class for LookupTable */
-public class LookupTableTest
+class LookupTableTest
 {
+	private static final Logger LOGGER = Logger.getLogger(LookupTableTest.class.getName());
 	/** 
-	  Do the test 
-	  @param args command line args.
 	  @throws TableBoundsException if lookup error.
 	*/
-	public static void main(String args[])
-		throws Exception
+	@ParameterizedTest
+	@EmptySource
+	//TODO: get example files
+	void testLooupTable(String filename, double startingLow, double high) throws TableBoundsException, ComputationParseException
 	{
-		File f = new File(args[0]);
+		File f = new File(filename);
 		TabRatingReader rr = new TabRatingReader(f.getPath());
 		LookupTable.debug = true;
-		LookupTable lt = new LookupTable();
 		RatingComputation rc = new RatingComputation(rr);
 		rc.setProperty("DepName", "output");
 		rc.setApplyShifts(false);
-		rc.read();
-		double low = Double.parseDouble(args[1]);
-		double high = Double.parseDouble(args[2]);
+		assertDoesNotThrow(rc::read);
+		LookupTable lookupTable = rc.getLookupTable();
+		double low = startingLow;
 		while(low <= high)
 		{
-			double out = rc.getLookupTable().lookup(low);
-			System.out.println("" + low + ", " + out);
+			double fLow = low;
+			double out = assertDoesNotThrow(() -> lookupTable.lookup(fLow));
+			LOGGER.info(low + ", " + out);
 			low += .01;
 		}
 	}

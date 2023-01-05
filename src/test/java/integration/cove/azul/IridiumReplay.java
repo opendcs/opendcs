@@ -1,7 +1,6 @@
-package covesw.azul.test;
+package integration.cove.azul;
 
 import java.io.File;
-import java.io.IOException;
 
 import ilex.net.BasicClient;
 import ilex.util.FileUtil;

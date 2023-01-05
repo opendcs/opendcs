@@ -1,6 +1,5 @@
-package decodes.test;
+package exploratory.decodes;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class JvmTest
