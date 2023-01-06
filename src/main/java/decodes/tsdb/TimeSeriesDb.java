@@ -602,7 +602,10 @@ public abstract class TimeSeriesDb
 	public void setConnection(Connection conn)
 	{
 		this.conn = conn;
-		determineTsdbVersion(getConnection(), this);
+		if (conn != null)
+		{
+			determineTsdbVersion(conn, this);
+		}
 	}
 
 	public KeyGenerator getKeyGenerator() { return keyGenerator; }
@@ -618,7 +621,7 @@ public abstract class TimeSeriesDb
 		try
 		{
 			keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
-				keyGenClass, conn);
+				keyGenClass);
 		}
 		catch (Exception ex)
 		{
@@ -999,6 +1002,7 @@ public abstract class TimeSeriesDb
 		// Oracle was providing things in the wrong timestamp using current_timestamp.
 		// TODO: needs to be checked against Postgres
 		String curTime = this.isOracle() ? "sysdate" : "current_timestamp" ;
+		String inter = this.isOracle() ? " ?/24 )" : " ? * INTERVAL '1' hour )" ; // Oracle datemath
 		Connection tcon = getConnection();
 		try(
 			PreparedStatement deleteNormal = tcon.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
@@ -1006,10 +1010,10 @@ public abstract class TimeSeriesDb
 					  "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM = ? " // failRecList
 					+ "and ((" + curTime + " - DATE_TIME_LOADED) > " // curTimeName
-					+ "INTERVAL '? hour')" ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
+					+ inter ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
 			PreparedStatement updateFailedRetry = tcon.prepareStatement(
 				"update CP_COMP_TASKLIST set FAIL_TIME = ? where RECORD_NUM = ? and "
-			+	"( (" + curTime + " - DATE_TIME_LOADED) <= INTERVAL '? hour')");
+			+	"( (" + curTime + " - DATE_TIME_LOADED) <= " + inter);
 			PreparedStatement updateFailTime = tcon.prepareStatement(
 				"UPDATE CP_COMP_TASKLIST "
 			+	" SET FAIL_TIME = " + curTime
