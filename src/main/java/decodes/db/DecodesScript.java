@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Vector;
 import java.util.function.Supplier;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -672,8 +673,11 @@ public class DecodesScript extends IdDatabaseObject
          */
         public DecodesScript build() throws DecodesScriptException, IOException
         {
+            Objects.requireNonNull(platformSupplier, "PlatformConfig cannot be null. Set before calling build.");
             DecodesScript script = new DecodesScript(nameSupplier.get());
+            
             script.platformConfig = platformSupplier.get();
+            Objects.requireNonNull(script.platformConfig, "A valid platform configuration was not available.");
             try
             {
                 Optional<FormatStatement> fs = null;
@@ -697,6 +701,7 @@ public class DecodesScript extends IdDatabaseObject
          */
         public DecodesScriptBuilder platformConfig(final PlatformConfig pc)
         {
+            Objects.requireNonNull(pc, "PlatformConfig cannot be null.");
             this.platformSupplier = () -> pc;
             return this;
         }
@@ -708,6 +713,7 @@ public class DecodesScript extends IdDatabaseObject
          */
         public DecodesScriptBuilder platformConfig(Supplier<PlatformConfig> platformSupplier)
         {
+            Objects.requireNonNull(platformSupplier, "PlatformConfig cannot be null.");
             this.platformSupplier = platformSupplier;
             return this;
         }
@@ -719,6 +725,7 @@ public class DecodesScript extends IdDatabaseObject
          */
         public DecodesScriptBuilder scriptName(String name)
         {
+            Objects.requireNonNull(name, "Name cannot be set to null.");
             nameSupplier = () -> name;
             return this;
         }
@@ -730,6 +737,7 @@ public class DecodesScript extends IdDatabaseObject
          */
         public DecodesScriptBuilder scriptName(Supplier<String> nameSupplier)
         {
+            Objects.requireNonNull(nameSupplier, "Name cannot be set to null.");
             this.nameSupplier = nameSupplier;
             return this;
         }

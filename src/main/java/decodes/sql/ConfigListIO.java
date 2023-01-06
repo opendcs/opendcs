@@ -46,6 +46,7 @@ import opendcs.dao.DaoBase;
 */
 public class ConfigListIO extends SqlDbObjIo
 {
+	private static final Logger log = Logger.instance();
 	/**
 	* Transient reference to the PlatformConfigList that we're currently 
 	* operating on.
@@ -783,7 +784,7 @@ public class ConfigListIO extends SqlDbObjIo
 		Statement stmt = createStatement();
 		String q = "SELECT * FROM DecodesScript WHERE ConfigId = " + pc.getId();
 		
-		//debug3("Executing '" + q + "'");
+		debug3("Executing '" + q + "'");
 		ResultSet rs = stmt.executeQuery(q);
 
 		if (rs != null) 
@@ -817,9 +818,11 @@ public class ConfigListIO extends SqlDbObjIo
 		}
 		try
 		{
+			log.debug3("Loading Script " + name + " for configuration " + pc.configName);
 			SQLDecodesScriptReader reader = new SQLDecodesScriptReader(connection(), id);
 			DecodesScript ds = DecodesScript.from(reader)
 											.scriptName(name)
+											.platformConfig(pc)
 											.build();
 			ds.setDataOrder(dataOrder);
 			ds.setId(id);
