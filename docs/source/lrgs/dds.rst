@@ -45,8 +45,15 @@ Text within square brackets is optional.
 |Hello        |a |username [dds version]     |- username [dds version]       |Unauthenticated login.           |
 |             |  |                           |- hello ?                      |                                 |
 |             |  |                           |- hello ???                    |                                 |
++-------------+--+---------------------------+-------------------------------+---------------------------------+            
+|Goodbye      |b |nothing                    |(goodbye)                      |Inform the LRGS we're            |
+|             |  |                           |                               |disconnecting                    |
 +-------------+--+---------------------------+-------------------------------+---------------------------------+
-| AuthHello   |m |username timestr           |- username timestr dds version |Authenticated login              |
+|Status       |c |? (the character)          |xml data                       |status of the LRGS system.       |
+|             |  |                           |                               |                                 |
+|             |  |                           |                               |                                 |
++-------------+--+---------------------------+-------------------------------+---------------------------------+
+|AuthHello    |m |username timestr           |- username timestr dds version |Authenticated login              |
 |             |  |authenticator [dss version]|- ?                            |Uses a digest form of the        |
 |             |  |                           |                               |password                         |
 +-------------+--+---------------------------+-------------------------------+---------------------------------+
