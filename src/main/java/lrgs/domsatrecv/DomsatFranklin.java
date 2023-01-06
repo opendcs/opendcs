@@ -183,77 +183,9 @@ public class DomsatFranklin
 		}
 	}
 
-	/**
-	 * Test main method continually receives frames and sends them to stdout.
-	 */
-	public static void main(String args[])
-		throws Exception
-	{
-		DomsatFranklinTest dt = new DomsatFranklinTest();
-		dt.start();
-	}
-
-//	/* (non-Javadoc)
-//     * @see lrgs.domsatrecv.DomsatHardware#reset()
-//     */
-//    @Override
-//    public void reset()
-//    {
-//    }
+	@Override
 	public void timeout()
 	{
+		//No-op
 	}
 }
-
-class DomsatFranklinTest
-	extends Thread
-{
-	public void run()
-	{
-		try
-		{
-			DomsatFranklin ds = new DomsatFranklin();
-			ds.init();
-			if (!ds.setEnabled(true))
-			{
-				System.out.println("Enable failed -- see log messages.");
-				System.exit(1);
-			}
-			byte packet[] = new byte[1024];
-			while(true)
-			{
-				int len = ds.getPacket(packet);
-				if (len == 0)
-					System.out.println("Timeout");
-				else if (len == -1)
-					System.out.println("Recoverable Error: " + ds.getErrorMsg());
-				else if (len == -2)
-				{
-					System.out.println("Fatal Error: " + ds.getErrorMsg());
-					break;
-				}
-				else
-				{
-					System.out.println("Frame received, len=" + len);
-					System.out.println(" "
-						+ Integer.toHexString((int)packet[0] & 0xff) + ", "
-						+ Integer.toHexString((int)packet[1] & 0xff) + ", "
-						+ Integer.toHexString((int)packet[2] & 0xff) + ", "
-						+ Integer.toHexString((int)packet[3] & 0xff) + ", "
-						+ Integer.toHexString((int)packet[4] & 0xff) + ", "
-						+ Integer.toHexString((int)packet[5] & 0xff) + ", "
-						+ Integer.toHexString((int)packet[6] & 0xff) + ", "
-						+ Integer.toHexString((int)packet[7] & 0xff) + ", ... "
-						+ Integer.toHexString((int)packet[len-2] & 0xff) + ", "
-						+ Integer.toHexString((int)packet[len-1] & 0xff));
-				}
-			}
-			ds.shutdown();
-		}
-		catch(Exception ex)
-		{
-			System.err.println("Exception in get-thread: " + ex);
-		}
-	}
-}
-
