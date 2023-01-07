@@ -2,8 +2,7 @@ package integration.lrgs.domsatrecv;
 
 import java.util.logging.Logger;
 
-import lrgs.domsatrecv.DomsatDpc;
-import lrgs.lrgsmain.LrgsConfig;
+import lrgs.domsatrecv.DomsatFranklin;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -12,20 +11,16 @@ import org.junit.jupiter.api.RepeatedTest;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Requires DOMSAT DPC installed on localhost")
-final class DpcDomsatTest
+@Disabled("Requires domsat.win on java.library.path")
+final class TestDomsatFranklin extends Thread
 {
-	private static final Logger LOGGER = Logger.getLogger(DpcDomsatTest.class.getName());
-	private static DomsatDpc ds;
+	private static final Logger LOGGER = Logger.getLogger(TestDomsatFranklin.class.getName());
+	private static DomsatFranklin ds;
 
 	@BeforeAll
 	public static void setup()
 	{
-		String host = System.getProperty("domsat.dpc.test.host", "localhost");
-		int port = Integer.getInteger("domsat.dpc.test.post", 9000);
-		LrgsConfig.instance().dpcHost = host;
-		LrgsConfig.instance().dpcPort = port;
-		ds = new DomsatDpc();
+		ds = new DomsatFranklin();
 		ds.init();
 		assertTrue(ds.setEnabled(true), () -> "Enable failed -- see log messages.");
 	}
@@ -37,19 +32,13 @@ final class DpcDomsatTest
 	}
 
 	@RepeatedTest(value = 20, name = RepeatedTest.LONG_DISPLAY_NAME)
-	void dpcDomsat() throws Exception
+	void domsatFranklin()
 	{
-		byte packet[] = new byte[1024];
+		byte[] packet = new byte[1024];
 		int len = ds.getPacket(packet);
-
 		assertNotEquals(0, len, () -> "Timeout");
 		assertNotEquals(-1, len, () -> "Recoverable Error: " + ds.getErrorMsg());
 		assertNotEquals(-2, len, () -> "Fatal Error: " + ds.getErrorMsg());
-		while(len == -3)
-		{
-			Thread.sleep(100L);
-			len = ds.getPacket(packet);
-		}
 		LOGGER.info("Frame received, len=" + len);
 		LOGGER.info(" "
 				+ Integer.toHexString((int) packet[0] & 0xff) + ", "

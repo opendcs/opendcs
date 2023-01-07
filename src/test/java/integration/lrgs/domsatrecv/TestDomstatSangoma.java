@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Disabled("Requires WinDomsatSangoma.dll on java.library.path")
-final class DomstatTest
+final class TestDomstatSangoma
 {
 
 	private static DomsatSangoma ds;
