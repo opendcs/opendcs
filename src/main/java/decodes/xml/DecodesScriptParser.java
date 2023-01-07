@@ -46,6 +46,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Vector;
+
 import decodes.db.*;
 import ilex.util.TextUtil;
 import ilex.util.Logger;
@@ -114,9 +116,9 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 				throw new SAXException(XmlDbTags.FormatStatement_el + 
 					" without " + XmlDbTags.label_at +" attribute");
 			tmpFmt = new FormatStatement(decodesScript, 
-				decodesScript.formatStatements.size());
+				decodesScript.getFormatStatements().size());
 			tmpFmt.label = nm;
-			decodesScript.formatStatements.add(tmpFmt);
+			decodesScript.getFormatStatements().add(tmpFmt);
 
 			hier.pushObjectParser(new TaggedStringSetter(this, 
 				formatStatementTag));
@@ -231,11 +233,10 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 		if (decodesScript.getDataOrder() != Constants.dataOrderUndefined)
 			xos.writeElement(XmlDbTags.dataOrder_el,
 				"" + decodesScript.getDataOrder());
-
-		for(int i = 0; i < decodesScript.formatStatements.size(); i++)
+		Vector<FormatStatement> formatStatements = decodesScript.getFormatStatements();
+		for(int i = 0; i < formatStatements.size(); i++)
 		{
-			FormatStatement fs = 
-				decodesScript.formatStatements.elementAt(i);
+			FormatStatement fs = formatStatements.elementAt(i);
 			xos.writeElement(XmlDbTags.FormatStatement_el, 
 				XmlDbTags.label_at, fs.label, fs.format);
 		}

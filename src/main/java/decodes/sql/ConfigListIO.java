@@ -3,6 +3,7 @@
 */
 package decodes.sql;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +23,8 @@ import decodes.db.Database;
 import decodes.db.ConfigSensor;
 import decodes.db.DatabaseException;
 import decodes.db.DecodesScript;
+import decodes.db.DecodesScriptException;
+import decodes.db.DecodesScriptReader;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformConfigList;
@@ -43,6 +46,7 @@ import opendcs.dao.DaoBase;
 */
 public class ConfigListIO extends SqlDbObjIo
 {
+	private static final Logger log = Logger.instance();
 	/**
 	* Transient reference to the PlatformConfigList that we're currently 
 	* operating on.
@@ -780,7 +784,7 @@ public class ConfigListIO extends SqlDbObjIo
 		Statement stmt = createStatement();
 		String q = "SELECT * FROM DecodesScript WHERE ConfigId = " + pc.getId();
 		
-		//debug3("Executing '" + q + "'");
+		debug3("Executing '" + q + "'");
 		ResultSet rs = stmt.executeQuery(q);
 
 		if (rs != null) 
@@ -812,16 +816,24 @@ public class ConfigListIO extends SqlDbObjIo
 			if (s != null && s.length() > 0)
 				dataOrder = s.charAt(0);
 		}
-
-		DecodesScript ds;
-
-		ds = new DecodesScript(pc, name);
-		ds.setDataOrder(dataOrder);
-		ds.setId(id);
-		readFormatStatements(ds);
-		readScriptSensors(ds);
-		ds.scriptType = type;
-		pc.addScript(ds);
+		try
+		{
+			log.debug3("Loading Script " + name + " for configuration " + pc.configName);
+			SQLDecodesScriptReader reader = new SQLDecodesScriptReader(connection(), id);
+			DecodesScript ds = DecodesScript.from(reader)
+											.scriptName(name)
+											.platformConfig(pc)
+											.build();
+			ds.setDataOrder(dataOrder);
+			ds.setId(id);
+			readScriptSensors(ds);
+			ds.scriptType = type;
+			pc.addScript(ds);
+		}
+		catch (Exception ex)
+		{
+			throw new DatabaseException("Unable to read decodes script (" + name + ") from database", ex);
+		}
 	}
 
 	/**
@@ -991,44 +1003,6 @@ public class ConfigListIO extends SqlDbObjIo
 	//======================================================================
 	// Format Statement Methods
 	//======================================================================
-	
-	/**
-	* Reads all the FormatStatements for a particular DecodesScript.
-	* The DecodesScript must have already had its SQL database ID set.
-	* Note that we aren't guaranteed that these FormatStatements haven't
-	* already been read.
-	* @param ds the DecodesScript
-	*/
-	private void readFormatStatements(DecodesScript ds)
-		throws DatabaseException, SQLException
-	{
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT decodesScriptId, sequenceNum, " +
-			"label, format " +
-			"FROM FormatStatement " +
-			"WHERE DecodesScriptId = " + ds.getId() + " " +
-			"ORDER BY SequenceNum"
-		);
-
-		if (rs != null) {
-			while (rs.next()) {
-				int seqNum = rs.getInt(2);
-				String label = rs.getString(3);
-				String format = rs.getString(4);
-				if (format == null) format = "";
-
-				FormatStatement fmt = new FormatStatement(ds, seqNum);
-				fmt.label = label;
-				fmt.format = format;
-
-				ds.formatStatements.add(fmt);
-			}
-		}
-
-		stmt.close();
-	}
-
 
 	/**
 	* Insert all the FormatStatements associated with a particular
@@ -1040,7 +1014,7 @@ public class ConfigListIO extends SqlDbObjIo
 		throws DatabaseException, SQLException
 	{
 
-		Vector<FormatStatement> v = ds.formatStatements;
+		Vector<FormatStatement> v = ds.getFormatStatements();
 		for (int i = 0; i < v.size(); ++i) 
 		{
 			FormatStatement fs = v.get(i);

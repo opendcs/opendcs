@@ -98,11 +98,22 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 				throw new SAXException(XmlDbTags.DecodesScript_el + " without "
 					+ XmlDbTags.DecodesScript_scriptName_at +" attribute");
 
-            DecodesScript ds = new DecodesScript(platformConfig, nm);
+			try
+			{
+				// TODO: move this to build the script after creating an XML reader
+				DecodesScript ds = DecodesScript.empty()
+											.platformConfig(platformConfig)
+											.scriptName(nm)
+											.build();
 
-			platformConfig.addScript(ds);
+				platformConfig.addScript(ds);
 
-			hier.pushObjectParser(new DecodesScriptParser(ds));
+				hier.pushObjectParser(new DecodesScriptParser(ds));
+			}
+			catch( DecodesScriptException | IOException ex)
+			{
+				throw new SAXException("Failed to load Decodes Script",ex);
+			}
 		}
 		else
 		{

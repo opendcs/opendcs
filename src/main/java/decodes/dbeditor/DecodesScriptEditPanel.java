@@ -1259,7 +1259,7 @@ class FormatStatementTableModel extends AbstractTableModel
 
 	public int getRowCount()
 	{
-		return theScript == null ? 0 : theScript.formatStatements.size();
+		return theScript == null ? 0 : theScript.getFormatStatements().size();
 	}
 
 	public int getColumnCount()
@@ -1276,7 +1276,7 @@ class FormatStatementTableModel extends AbstractTableModel
 	{
 		if (r < 0 || r >= getRowCount())
 			return null;
-		return theScript.formatStatements.elementAt(r);
+		return theScript.getFormatStatements().elementAt(r);
 	}
 
 	public Object getValueAt(int r, int c)
@@ -1299,14 +1299,14 @@ class FormatStatementTableModel extends AbstractTableModel
 	void add(FormatStatement ob)
 	{
 		if (theScript != null)
-			theScript.formatStatements.add(ob);
+			theScript.getFormatStatements().add(ob);
 		fireTableDataChanged();
 	}
 
 	void remove(FormatStatement ob)
 	{
 		if (theScript != null)
-			theScript.formatStatements.remove(ob);
+			theScript.getFormatStatements().remove(ob);
 		fireTableDataChanged();
 	}
 
@@ -1339,20 +1339,20 @@ class FormatStatementTableModel extends AbstractTableModel
 	{
 		if (r <= 0)
 			return;
-		FormatStatement tmp = theScript.formatStatements.elementAt(r - 1);
-		theScript.formatStatements.setElementAt(ob, r - 1);
-		theScript.formatStatements.setElementAt(tmp, r);
+		FormatStatement tmp = theScript.getFormatStatements().elementAt(r - 1);
+		theScript.getFormatStatements().setElementAt(ob, r - 1);
+		theScript.getFormatStatements().setElementAt(tmp, r);
 		fireTableDataChanged();
 	}
 
 	void moveDown(FormatStatement ob, int r)
 	{
-		int n = theScript.formatStatements.size();
+		int n = theScript.getFormatStatements().size();
 		if (r >= n - 1)
 			return;
-		FormatStatement tmp = theScript.formatStatements.elementAt(r + 1);
-		theScript.formatStatements.setElementAt(ob, r + 1);
-		theScript.formatStatements.setElementAt(tmp, r);
+		FormatStatement tmp = theScript.getFormatStatements().elementAt(r + 1);
+		theScript.getFormatStatements().setElementAt(ob, r + 1);
+		theScript.getFormatStatements().setElementAt(tmp, r);
 		fireTableDataChanged();
 	}
 

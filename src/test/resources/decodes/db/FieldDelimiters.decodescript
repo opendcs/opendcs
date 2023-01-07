@@ -1,0 +1,5 @@
+skip_header: C('#', col_labels), /, >skip_header
+col_labels: 2/, >timezone
+timezone: 3(S(30,'\t',data), w), F(TZ,A,9D'\t'), 1P, >datetime
+datetime: 2(S(30,'\t',data), w), F(D,A,10,1), w, F(T,A,5), w, S(30,'\t',data), w, >data
+data: setMissing(Ssn), F(S,A,5d' \t',1), /, >timezone
