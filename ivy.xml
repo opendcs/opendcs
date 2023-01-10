@@ -1,7 +1,7 @@
 
 
 <ivy-module version="2.0" xmlns:e="https//ant.apache.org/ivy/extra">
-    <info organisation="com.opendcs" 
+    <info organisation="com.opendcs"
           module="opendcs"
           revision="${version}"
           e:snapshot="a${snapshot.time}"/>
@@ -76,19 +76,19 @@
 
 
         <!-- test dependencies -->
-        
+
         <dependency org="org.junit.platform" name="junit-platform-launcher" rev="1.8.2" conf="test_platform->default"/>
         <dependency org="org.junit.platform" name="junit-platform-engine" rev="1.8.2" conf="test_platform->default"/>
         <dependency org="org.junit.platform" name="junit-platform-commons" rev="1.8.2" conf="test_platform->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="5.8.1" conf="test->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="5.8.1" conf="test->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-params" rev="5.8.1" conf="test->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="5.9.1" conf="test->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="5.9.1" conf="test->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-params" rev="5.9.1" conf="test->default"/>
         <dependency org="commons-io" name="commons-io" rev="2.11.0" conf="test->default"/>
         <dependency org="org.apache.derby" name="derby" rev="10.14.2.0" conf="test->default"/>
         <!-- izpack -->
         <dependency org="org.codehaus.izpack" name="izpack-standalone-compiler" rev="4.3.5" conf="izpack->default"/>
 
-        <!-- groovy deps for biuld script -->
+        <!-- groovy deps for build script -->
         <dependency org="org.codehaus.groovy" name="groovy-ant" rev="3.0.10" conf="groovy->default"/>
         <dependency org="org.codehaus.groovy" name="groovy" rev="3.0.10" conf="groovy->default"/>
         <dependency org="org.codehaus.groovy" name="groovy-xml" rev="3.0.10" conf="groovy->default"/>
@@ -108,7 +108,7 @@
         <exclude org="com.sun.media"/>
         <exclude org="log4j"/>
 
-        
+
 
     </dependencies>
 </ivy-module>
