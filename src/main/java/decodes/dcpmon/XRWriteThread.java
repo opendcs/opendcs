@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.XmitRecordDAO;
 import decodes.db.Database;
 import decodes.tsdb.DbIoException;
 import lrgs.common.DcpAddress;
@@ -51,7 +52,6 @@ public class XRWriteThread extends Thread
 	public static long numQueued = 0L;
 	public static long lastMsgMsec = 0L;
 	private DcpMonitor dcpMonitor = null;
-	private XmitRecordDAI xmitRecordDao = null;
 	private static final long MS_PER_DAY = 3600L * 24L * 1000L;
 	public static long numWrittenToday = 0L;
 	private int daynum = -1;
@@ -159,8 +159,13 @@ int dCallNum = 0;
 		String mediumId = msg.getDcpAddress().toString();
 		XRWrapper xrw = findInQueue(mediumType, mediumId, xmitTime);
 		if (xrw != null)
+		{
 			return xrw.xr;
-		try { return xmitRecordDao.findDcpTranmission(mediumType, mediumId, xmitTime); }
+		}
+		try(XmitRecordDAO dao = getXmitRecordDao();)
+		{
+			return dao.findDcpTranmission(mediumType, mediumId, xmitTime);
+		}
 		catch(DbIoException ex)
 		{
 			dcpMonitor.handleDbIoException("Finding Xmit", ex);
@@ -191,42 +196,49 @@ int dCallNum = 0;
 		return null;
 	}
 
+	private XmitRecordDAO getXmitRecordDao() {
+		DatabaseConnectionOwner dbo = (DatabaseConnectionOwner)Database.getDb().getDbIo();
+		// 4/30/19 setNumDaysStorage will call deleteOldTableData. After that, call delete periodically.
+		XmitRecordDAO dao = (XmitRecordDAO)dbo.makeXmitRecordDao(31);
+		dao.setNumDaysStorage(DcpMonitorConfig.instance().numDaysStorage);
+		return dao;
+	}
+
 	/** The Thread run method. */
 	public void run()
 	{
 		dcpMonitor.info(module + " started.");
-		
-		DatabaseConnectionOwner dbo = (DatabaseConnectionOwner)Database.getDb().getDbIo();
-		xmitRecordDao = dbo.makeXmitRecordDao(31);
-		
-		// 4/30/19 setNumDaysStorage will call deleteOldTableData. After that, call delete periodically.
-		xmitRecordDao.setNumDaysStorage(DcpMonitorConfig.instance().numDaysStorage);
+
 		long lastDeleteOld = System.currentTimeMillis();
 
 		while(!_shutdown)
 		{
 			try { sleep(1000L); } catch(InterruptedException ex) {}
-			processQueue();
+			try(XmitRecordDAO xmitRecordDao = getXmitRecordDao();)
+			{
+				processQueue(xmitRecordDao);
 			
-			if (System.currentTimeMillis() - lastDeleteOld > MS_PER_DAY)
-				try
+				if (System.currentTimeMillis() - lastDeleteOld > MS_PER_DAY)
 				{
-					xmitRecordDao.deleteOldTableData();
-				}
-				catch (DbIoException ex)
-				{
-					Logger.instance().failure("Exception in deleteOldTableData: " + ex);
-					if (Logger.instance().getLogOutput() != null)
+					try
 					{
-						ex.printStackTrace(Logger.instance().getLogOutput());
+						xmitRecordDao.deleteOldTableData();
+					}
+					catch (DbIoException ex)
+					{
+						Logger.instance().failure("Exception in deleteOldTableData: " + ex);
+						if (Logger.instance().getLogOutput() != null)
+						{
+							ex.printStackTrace(Logger.instance().getLogOutput());
+						}
 					}
 				}
+			}
 		}
-		xmitRecordDao.close();
 		dcpMonitor.info(module + " exiting.");
 	}
 
-	public synchronized void processQueue()
+	public synchronized void processQueue(XmitRecordDAO xmitRecordDao)
 	{
 		Calendar cal = Calendar.getInstance();
 		if (cal.get(Calendar.DAY_OF_YEAR) != daynum)
@@ -285,7 +297,10 @@ int dCallNum = 0;
 
 	public synchronized Date getLastLocalRecvTime()
 	{
-		try { return xmitRecordDao.getLastLocalRecvTime(); }
+		try(XmitRecordDAO dao = (XmitRecordDAO)getXmitRecordDao();)
+		{
+			return dao.getLastLocalRecvTime(); 
+		}
 		catch(Exception ex)
 		{
 			Logger.instance().warning(module + " getLastLocalRecvTime: " + ex);
