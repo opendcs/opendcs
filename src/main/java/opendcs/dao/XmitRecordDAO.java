@@ -72,6 +72,7 @@ import opendcs.dai.XmitRecordDAI;
 import lrgs.archive.XmitWindow;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
+import decodes.db.DatabaseException;
 import decodes.db.NetworkList;
 import decodes.dcpmon.XmitMediumType;
 import decodes.dcpmon.XmitRecSpec;
@@ -109,14 +110,14 @@ public class XmitRecordDAO
 	private int numXmitsSaved = 0;
 	
 	/** Prepared Statements for inserting into DCP Mon my-dcps table */
-	private PreparedStatement insertStatement[] = null;
+	private String insertStatement[] = null;
 	
 	/** Prepared Statements for updating into DCP Mon my-dcps table */
-	private PreparedStatement updateXmit[] = null;
+	private String updateXmit[] = null;
 
 	/** Prepared Statements used when trying to find existing DCPs in the
 	 * my_dcp_tran<sufix> tables */
-	private PreparedStatement selectByIdAndTime[];
+	private String selectByIdAndTime[] = null;
 
 	protected Calendar resultSetCalendar = null;
 	
@@ -138,13 +139,14 @@ public class XmitRecordDAO
 	{
 		super(tsdb, module);
 		debugSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		insertStatement = new PreparedStatement[maxXmitDays];
-		selectByIdAndTime = new PreparedStatement[maxXmitDays];
-		updateXmit = new PreparedStatement[maxXmitDays];
-		insertStatement = new PreparedStatement[maxXmitDays];
+		insertStatement = new String[maxXmitDays];
+		selectByIdAndTime = new String[maxXmitDays];
+		updateXmit = new String[maxXmitDays];
 
 		for(int i=0; i<maxXmitDays; i++)
+		{
 			insertStatement[i] = updateXmit[i] = selectByIdAndTime[i] = null;
+		}
 //
 //		resultSetCalendar = Calendar.getInstance(tz);
 	}
@@ -177,32 +179,32 @@ public class XmitRecordDAO
 	{
 		Logger.instance().debug2("loadDayNumSuffixMap");
 		String q = "SELECT TABLE_SUFFIX, DAY_NUMBER FROM dcp_trans_day_map ORDER BY table_suffix";
-		ResultSet rs = doQuery(q);
 		dayNumSuffixMap.clear();
-		int latestDayNum = -1;
+		int latestDayNum[] = new int[1];
+		latestDayNum[0] = -1;
 		try
 		{
-			while(rs != null && rs.next())
-			{
+			doQuery(q, (rs) -> {
 				String suffix = rs.getString(1);
 				int dayNum = rs.getInt(2);
 				if (rs.wasNull())
 					dayNum = -1;
-				else if (dayNum > latestDayNum)
-					latestDayNum = dayNum;
+				else if (dayNum > latestDayNum[0])
+					latestDayNum[0] = dayNum;
 					
 				dayNumSuffixMap.add(new XmitDayMapEntry(suffix, dayNum));
-			}
+			});
+			
 			dayNumSuffixMapLoadedMsec = System.currentTimeMillis();
 		}
 		catch(SQLException ex)
 		{
 			throw new DbIoException("Error iterating from query '"
-			 	+ q + "': " + ex);
+			 	+ q,ex);
 		}
 		dayNumSuffixMapLoadedMsec = System.currentTimeMillis();
 		info("loadDayNumSuffixMap latestDayNum=" + latestDayNum + ", "
-			+ new Date(latestDayNum*MS_PER_DAY));
+			+ new Date(latestDayNum[0]*MS_PER_DAY));
 	}
 
 	@Override
@@ -210,67 +212,84 @@ public class XmitRecordDAO
 		throws DbIoException
 	{
 		String method = "getDcpXmitSuffix ";
+		String q = null;
 		if (dayNumSuffixMap.isEmpty())
+		{
 			loadDayNumSuffixMap();
+		}
 
 		XmitDayMapEntry firstFree = null;
 		XmitDayMapEntry oldestDay = null;
 		for(XmitDayMapEntry xdme : dayNumSuffixMap)
 		{
 			if (xdme.dayNum == dayNum)
+			{
 				return xdme.suffix;
+			}
 			if (xdme.dayNum <= 0)
 			{
 				if (firstFree == null)
 					firstFree = xdme;
 			}
 			else if (oldestDay == null || xdme.dayNum < oldestDay.dayNum)
+			{
 				oldestDay = xdme;
+			}
 		}
 		
 		// Fell through without finding specified dayNum.
 		if (!doAllocate)
-			return null;
-
-		// if there is a free slot, use it.
-		if (firstFree != null)
 		{
-			info(method + "Using free suffix "
-				+ firstFree.suffix + " for day num " + dayNum);
-			firstFree.dayNum = dayNum;
-			String q = "UPDATE dcp_trans_day_map SET day_number = " + dayNum
-				+ " WHERE table_suffix = " + sqlString(firstFree.suffix);
-			Logger.instance().debug2("getDcpXmitSuffix: " + q);
-			doModify(q);
-			
-//			// MJM 20181113 Go through map and discard too-old days
-//			deleteOldTableData();
-			
-			return firstFree.suffix;
-		}
-
-		// There is no free slot.
-		if (dayNum < oldestDay.dayNum)
-		{
-			warning(method + "Cannot allocate table "
-				+ "for old day number "	+ dayNum + ", oldest day in storage is " 
-				+ oldestDay.dayNum);
 			return null;
 		}
 
-		// We will re-assign the oldest day to the specified day.
-		// Delete all records from the oldest day.
-		clearTable(oldestDay.suffix);
-		info(method + 
-			"Cleared tables for day num "
-			+ oldestDay.dayNum + " to make room for new day number " + dayNum);
+		try
+		{
+			// if there is a free slot, use it.
+			if (firstFree != null)
+			{
+				info(method + "Using free suffix "
+					+ firstFree.suffix + " for day num " + dayNum);
+				firstFree.dayNum = dayNum;
+				q = "UPDATE dcp_trans_day_map SET day_number = ?"
+					+ " WHERE table_suffix = ?";
+				Logger.instance().debug2("getDcpXmitSuffix: " + q);
+				doModify(q,dayNum,firstFree.suffix);
+				
+			//			// MJM 20181113 Go through map and discard too-old days
+			//			deleteOldTableData();
+				
+				return firstFree.suffix;
+			}
+
+			// There is no free slot.
+			if (oldestDay == null || dayNum < oldestDay.dayNum)
+			{
+				warning(method + "Cannot allocate table "
+					+ "for old day number "	+ dayNum + ", oldest day in storage is " 
+					+ (oldestDay != null ? oldestDay.dayNum : "'could not identify oldest day'"));
+				return null;
+			}
+
+			// We will re-assign the oldest day to the specified day.
+			// Delete all records from the oldest day.
+			clearTable(oldestDay.suffix);
+			info(method + 
+				"Cleared tables for day num "
+				+ oldestDay.dayNum + " to make room for new day number " + dayNum);
+
+			oldestDay.dayNum = dayNum;
+
+			q = "UPDATE dcp_trans_day_map SET day_number = ?"
+				+ " WHERE table_suffix = ?";
+			doModify(q,dayNum,oldestDay.suffix);
+			return oldestDay.suffix;
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException(String.format("Unable to update day map. Query '%'",q),ex);
+		}
 		
-		oldestDay.dayNum = dayNum;
-
-		String q = "UPDATE dcp_trans_day_map SET day_number = " + dayNum
-			+ " WHERE table_suffix = " + sqlString(oldestDay.suffix);
-		doModify(q);
-		return oldestDay.suffix;
 	}
 	
 	public void deleteOldTableData()
@@ -299,21 +318,37 @@ public class XmitRecordDAO
 	private void clearTable(String suffix)
 		throws DbIoException
 	{
-		String q = "delete from DCP_TRANS_DATA_" + suffix;
-		doModify(q);
-		
-		q = "DELETE FROM DCP_TRANS_" + suffix;
-		doModify(q);
-		
-		q = "UPDATE dcp_trans_day_map SET day_number = null"
-			+ " WHERE table_suffix = " + sqlString(suffix);
-		doModify(q);
-		
-		// Reset sequence so record_id starts at 1. We don't want it wrapping.
-		try { db.getKeyGenerator().reset("DCP_TRANS_"+suffix, getConnection()); }
+		String q = null;
+		try 
+		{
+			final Object empty[] = new Object[0];
+			q = "delete from DCP_TRANS_DATA_" + suffix;
+			doModify(q,empty);
+			
+			q = "DELETE FROM DCP_TRANS_" + suffix;
+			doModify(q,empty);
+			
+			q = "UPDATE dcp_trans_day_map SET day_number = null"
+				+ " WHERE table_suffix = ?";
+			
+			doModify(q,suffix);
+			q = "DCP data queries have finished";
+			withConnection( conn -> {
+				// Reset sequence so record_id starts at 1. We don't want it wrapping.
+				try
+				{
+					db.getKeyGenerator().reset("DCP_TRANS_"+suffix, conn); 	
+				}
+				catch (DatabaseException ex)
+				{
+					throw new SQLException("Unable to reset sequence.",ex);
+				}
+			});
+		}
 		catch(Exception ex)
 		{
-			throw new DbIoException(ex.toString());
+			String msg= String.format("Unable to clear table. Last query '%s'",q);
+			throw new DbIoException(msg,ex);
 		}
 	}
 	
@@ -326,21 +361,18 @@ public class XmitRecordDAO
 			return null;
 		
 		String tab = "DCP_TRANS_" + suffix;
-		String q = "SELECT MAX(transmit_time) as maxDate FROM " + tab;
-		ResultSet rs = doQuery(q);
-
+		String q = "SELECT MAX(transmit_time) as maxDate FROM " + tab;		
+		
 		try
 		{
-			if (rs != null && rs.next())
-				return getFullDate(rs, 1);
-			else
-				return null;
+			return getSingleResult(q, (rs) -> {
+				return getFullDate(rs,1);
+			});
 		}
 		catch (SQLException ex)
 		{
-			String msg = "getLatestTimeStamp Cannot parse xmit result: " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "getLatestTimeStamp Cannot parse xmit result to date. Query was '%s'";
+			throw new DbIoException(String.format(msg,q),ex);
 		}
 	}
 
@@ -371,8 +403,8 @@ public class XmitRecordDAO
 		if (suffix == null)
 			return;
 		String tab = "DCP_TRANS_" + suffix;
-		String base64data = new String(Base64.encodeBase64(xr.getData()));
-		
+		final String base64data = new String(Base64.encodeBase64(xr.getData()));		
+
 		if (xr.getRecordId().isNull())
 		{
 			xr.setRecordId(getKey(tab));
@@ -382,25 +414,27 @@ public class XmitRecordDAO
 					+ " at time " + debugSdf.format(xmitTime)
 					+ ", day=" + dayNum + " to " + tab);
 			
-			PreparedStatement ps = getInsertStatement(suffix);
-			if (ps == null)
+			String insertStatement = getInsertStatement(suffix);
+			if (insertStatement == null)
 			{
 				String msg = module + ":saveDcpTranmission() " +
-							" Invalid PreparedStatement, ps = " + ps;
+							" Invalid PreparedStatement for suffix, " + suffix;
 				warning(msg);
 				throw new DbIoException(msg);
 			}
 			try
 			{
-				fillWriteStatement(ps, xr, base64data);
-				ps.executeUpdate();
+				withStatement(getInsertStatement(suffix), stmt -> {
+					fillWriteStatement(stmt, xr, base64data);
+					stmt.executeUpdate();
+				});
+				
 			}
 			catch(SQLException ex)
 			{
 				throw new DbIoException(module + ":saveDcpTranmission failed: "
 					+ " xmitTime=" + debugSdf.format(xmitTime)
-					+ ", tab='" + tab + "': "
-					+ ex);
+					+ ", tab='" + tab + "': ", ex);					
 			}
 		}
 		else
@@ -408,43 +442,53 @@ public class XmitRecordDAO
 			debug1("Updating msg at time " + debugSdf.format(xmitTime)
 				+ ", day=" + dayNum + " to " + tab);
 			
-			PreparedStatement ps = getUpdateStatement(suffix);
-			if (ps == null)
+			String updateStatement = getUpdateStatement(suffix);
+			if (updateStatement == null)
 			{
 				String msg = module + ":saveDcpTranmission() " +
-							" Invalid Update PreparedStatement, ps = " + ps;
+							" Invalid Update Statement, for suffix = " + suffix;
 				warning(msg);
 				throw new DbIoException(msg);
 			}
 			try 
 			{ 
-				fillWriteStatement(ps, xr, base64data);
-				// 17th param is the record_id in the where clause
-				ps.setLong(17, xr.getRecordId().getValue());
-				ps.executeUpdate();
+				withStatement(updateStatement, stmt -> {
+					fillWriteStatement(stmt, xr, base64data);
+					// 17th param is the record_id in the where clause
+					stmt.setLong(17, xr.getRecordId().getValue());
+					stmt.executeUpdate();
+				});
+				
 				String q = "delete from DCP_TRANS_DATA_" + suffix
-					+ " where RECORD_ID = " + xr.getRecordId();
-				doModify(q);
+					+ " where RECORD_ID = ?";
+				doModify(q,xr.getRecordId());
 			}
 			catch(SQLException ex)
 			{
-				throw new DbIoException(module + ":saveDcpTranmission: " +
-						"updating XmitRecord " + ex);
+				throw new DbIoException(module + ":saveDcpTransmission: " +
+						"updating XmitRecord.", ex);
 			}
 		}
 		
 		// Very long message have extended blocks stored in the
 		// DATA_TRANS_DATA_SUFFIX table. Write blocks in 4000 byte chunks.
 		tab = "DCP_TRANS_DATA_" + suffix;
-		for (int blockNum = 0; base64data.length() > 4000; blockNum++)
+		StringBuffer data = new StringBuffer(base64data);
+		try
 		{
-			base64data = base64data.substring(4000);
-			String toWrite = base64data.length() <= 4000 ? base64data : 
-				base64data.substring(0, 4000);
-			String q = "insert into " + tab + " values("
-				+ xr.getRecordId() + ", " + blockNum + ", "
-				+ sqlString(new String(toWrite)) + ")";
-			doModify(q);
+			for (int blockNum = 0; data.length() > 4000; blockNum++)
+			{
+				int blockSize = Math.max(4000,data.length());			
+				String toWrite = data.substring(0, blockSize);
+				data.delete(0,blockSize);
+				String q = "insert into " + tab + " values(?,?,?)";
+				doModify(q,xr.getRecordId(),blockNum,toWrite);
+			}
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException(module + ":saveDcpTransmission: " +
+					"saving overflow data for XmitRecord ", ex);
 		}
 	}
 
@@ -453,7 +497,7 @@ public class XmitRecordDAO
 	 * suffix.
 	 * @return the prepared statement.
 	 */
-	protected PreparedStatement getInsertStatement(String suffix)
+	protected String getInsertStatement(String suffix)
 	{
 		try
 		{
@@ -465,7 +509,7 @@ public class XmitRecordDAO
 				q = q + 
 					" VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
 							"?, ?, ?, ?, ?, ?)";
-				insertStatement[idx] = getConnection().prepareStatement(q);
+				insertStatement[idx] = q;
 				info("Created new prepared statement for '" + q + "'");
 			}
 			return insertStatement[idx];
@@ -481,9 +525,9 @@ public class XmitRecordDAO
 	/**
 	 * The update statement must have the same params in the same order as the
 	 * insert statement so that fillWriteStatement() will work for both.
-	 * @return the prepared statement.
+	 * @return the statement as a string.
 	 */
-	protected PreparedStatement getUpdateStatement(String suffix)
+	protected String getUpdateStatement(String suffix)
 	{
 		try
 		{
@@ -508,7 +552,7 @@ public class XmitRecordDAO
 				// The final token in the update statement is for the where clause.
 				q.append(" where record_id = ? ");
 				
-				updateXmit[idx] = getConnection().prepareStatement(q.toString());
+				updateXmit[idx] = q.toString();
 				info("Created new prepared statement for '" + q + "'");
 			}
 			return updateXmit[idx];
@@ -588,25 +632,26 @@ public class XmitRecordDAO
 		if (suffix == null)
 			return null;
 		String q = "select " + dcpTransFields + " from DCP_TRANS_" + suffix
-			+ " where RECORD_ID = " + recordId;
-		ResultSet rs = doQuery(q);
+				 + " where RECORD_ID = ?";
 		try
 		{
-			if (rs != null && rs.next())
-			{
+			DcpMsg msg =  getSingleResult(q, (rs)-> {
 				DcpMsg ret = rs2XmitRecord(rs);
 				ret.setDayNumber(dayNum);
-				fillCompleteMsg(ret);
 				return ret;
+			},recordId);
+			
+			if (msg != null)
+			{
+				fillCompleteMsg(msg);
 			}
-			else
-				return null;
+			return msg;
 		}
 		catch (SQLException ex)
 		{
-			String msg = "readDcpMsg: Error in query '" + q + "': " + ex;
+			String msg = String.format("readDcpMsg: Error in query '%s'",q);
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 	
@@ -618,19 +663,15 @@ public class XmitRecordDAO
 		if (suffix == null)
 			return -1;
 		String q = "select min(record_id) from DCP_TRANS_" + suffix;
-		ResultSet rs = doQuery(q);
+		//ResultSet rs = doQuery(q);
 		try
 		{
-			if (rs != null && rs.next())
-				return rs.getLong(1);
-			else
-				return -1;
+			return getSingleResultOr(q, (rs)->rs.getLong(1), ()-> -1L);
 		}
 		catch (SQLException ex)
 		{
-			String msg = "getFirstRecordId: Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "getFirstRecordId: Error in query '" + q + "': ";
+			throw new DbIoException(msg,ex);
 		}
 	}
 	
@@ -642,19 +683,14 @@ public class XmitRecordDAO
 		if (suffix == null)
 			return -1;
 		String q = "select max(record_id) from DCP_TRANS_" + suffix;
-		ResultSet rs = doQuery(q);
 		try
 		{
-			if (rs != null && rs.next())
-				return rs.getLong(1);
-			else
-				return -1;
+			return getSingleResultOr(q, (rs)->rs.getLong(1), ()-> -1L);
 		}
 		catch (SQLException ex)
 		{
 			String msg = "getFirstRecordId: Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 
@@ -687,11 +723,11 @@ public class XmitRecordDAO
 		String suffix = getDcpXmitSuffix(dayNum, false);
 		if (suffix == null)
 			return null;
-		PreparedStatement ps = getSelectByIdAndTime(suffix);
-		if (ps == null)
+		String selectByIdAndTime = getSelectByIdAndTime(suffix);
+		if (selectByIdAndTime == null)
 		{
 			String msg = "findDcpTranmission() " +
-						" Invalid PreparedStatement, ps = " + ps;
+						" Invalid query, for suffix, " + suffix;
 			warning(msg);
 			throw new DbIoException(msg);
 		}
@@ -702,27 +738,24 @@ public class XmitRecordDAO
 		
 		try
 		{
-			ps.setString(1, "" + mediumType.getCode());
-			ps.setString(2, mediumId);
-			ps.setLong(3, dBefore);
-			ps.setLong(4, dAfter);
-			ResultSet rs = ps.executeQuery();
-			if (rs != null && rs.next())
-			{
+			DcpMsg msg = getSingleResult(selectByIdAndTime, (rs)-> {
 				DcpMsg ret = rs2XmitRecord(rs);
-				ret.setDayNumber(dayNum);
-				fillCompleteMsg(ret);
+				ret.setDayNumber(dayNum);			
 				return ret;
+			},""+mediumType.getCode(),mediumId,dBefore,dAfter);
+			
+			if (msg != null)
+			{
+				fillCompleteMsg(msg);
 			}
-			else
-				return null;
+			return msg;			
 		}
 		catch (SQLException ex)
 		{
 			String msg = module + ":findDcpTranmission Cannot parse xmit " +
 					"result: " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 	
@@ -731,7 +764,7 @@ public class XmitRecordDAO
 	 * suffix.
 	 * @return the prepared statement.
 	 */
-	protected PreparedStatement getSelectByIdAndTime(String suffix)
+	protected String getSelectByIdAndTime(String suffix)
 	{
 		String q = null;
 		try
@@ -745,7 +778,7 @@ public class XmitRecordDAO
 					" AND medium_id = ?" +
 					" AND transmit_time >= ?" +
 					" AND transmit_time <= ?";
-				selectByIdAndTime[idx] = getConnection().prepareStatement(q);
+				selectByIdAndTime[idx] = q;
 				info("Created select prepared " +
 						"statement for '" + q + "'");
 			}
@@ -766,87 +799,77 @@ public class XmitRecordDAO
 	 * 
 	 * @param rs
 	 * @return XmitRecord
-	 * @throws DbIoException
+	 * @throws SQLException
 	 */
 	private DcpMsg rs2XmitRecord(ResultSet rs) 
-		throws DbIoException
-	{
-		try
+		throws SQLException
+	{		
+		// Parse columns from the result set:
+		//"record_id, medium_type, medium_id, local_recv_time, " +
+		//"transmit_time, failure_codes, window_start_sod, window_length, xmit_interval, " +
+		//"carrier_start, carrier_stop, flags, channel, battery, msg_length, msg_data";
+		DbKey recId = DbKey.createDbKey(rs, 1);
+		//String mediumType = rs.getString(2);
+		String mediumId = rs.getString(3);
+		long ms = rs.getLong(4);
+		Date localRecvTime = new Date(ms);
+		ms = rs.getLong(5);
+		Date xmitTime = rs.wasNull() ? null : new Date(ms);
+		String failCodes = rs.getString(6);
+		int windowStart = rs.getInt(7);
+		if (rs.wasNull()) windowStart = -1;
+		int windowLength = rs.getInt(8);
+		if (rs.wasNull()) windowLength = -1;
+		int xmitInterval = rs.getInt(9);
+		if (rs.wasNull()) xmitInterval = -1;
+		ms = rs.getLong(10);
+		Date carrierStart = rs.wasNull() ? null : new Date(ms);
+		ms = rs.getLong(11);
+		Date carrierStop = rs.wasNull() ? null : new Date(ms);
+		int flags = rs.getInt(12);
+		//int channel = rs.getInt(13);
+		//if (rs.wasNull()) channel = -1;
+		double battery = rs.getDouble(14);
+		if (rs.wasNull()) battery = 0.0;
+		int msgLength = rs.getInt(15);
+		String base64data = rs.getString(16);
+		byte data[] = Base64.decodeBase64(base64data.getBytes());
+		
+		XmitWindow xmitWindow = null;
+		if (windowStart != -1 && xmitInterval > 0)
 		{
-			// Parse columns from the result set:
-			//"record_id, medium_type, medium_id, local_recv_time, " +
-			//"transmit_time, failure_codes, window_start_sod, window_length, xmit_interval, " +
-			//"carrier_start, carrier_stop, flags, channel, battery, msg_length, msg_data";
-			DbKey recId = DbKey.createDbKey(rs, 1);
-			//String mediumType = rs.getString(2);
-			String mediumId = rs.getString(3);
-			long ms = rs.getLong(4);
-			Date localRecvTime = new Date(ms);
-			ms = rs.getLong(5);
-			Date xmitTime = rs.wasNull() ? null : new Date(ms);
-			String failCodes = rs.getString(6);
-			int windowStart = rs.getInt(7);
-			if (rs.wasNull()) windowStart = -1;
-			int windowLength = rs.getInt(8);
-			if (rs.wasNull()) windowLength = -1;
-			int xmitInterval = rs.getInt(9);
-			if (rs.wasNull()) xmitInterval = -1;
-			ms = rs.getLong(10);
-			Date carrierStart = rs.wasNull() ? null : new Date(ms);
-			ms = rs.getLong(11);
-			Date carrierStop = rs.wasNull() ? null : new Date(ms);
-			int flags = rs.getInt(12);
-			//int channel = rs.getInt(13);
-			//if (rs.wasNull()) channel = -1;
-			double battery = rs.getDouble(14);
-			if (rs.wasNull()) battery = 0.0;
-			int msgLength = rs.getInt(15);
-			String base64data = rs.getString(16);
-			byte data[] = Base64.decodeBase64(base64data.getBytes());
-			
-			XmitWindow xmitWindow = null;
-			if (windowStart != -1 && xmitInterval > 0)
-			{
-				// If a xmit window is present, parse it.
-				int firstWindowStart = windowStart;
-				while(firstWindowStart - xmitInterval >= 0)
-					firstWindowStart -= xmitInterval;
-				xmitWindow = new XmitWindow(firstWindowStart, windowLength, xmitInterval, windowStart);
-			}
+			// If a xmit window is present, parse it.
+			int firstWindowStart = windowStart;
+			while(firstWindowStart - xmitInterval >= 0)
+				firstWindowStart -= xmitInterval;
+			xmitWindow = new XmitWindow(firstWindowStart, windowLength, xmitInterval, windowStart);
+		}
 
-			// Create DcpMsg and fill in the fields.
-			DcpMsg xr = new DcpMsg();
-			xr.setRecordId(recId);
-			xr.setFlagbits(flags);
-			xr.setLocalReceiveTime(localRecvTime);
-			xr.setXmitTime(xmitTime);
-			xr.setCarrierStart(carrierStart);
-			xr.setCarrierStop(carrierStop);
-			xr.setFailureCode(failCodes.charAt(0));
-			for(int i=0; i<failCodes.length(); i++)
-				xr.addXmitFailureCode(failCodes.charAt(i));
-			xr.setData(data);
-			xr.setDcpAddress(new DcpAddress(mediumId));
-			if (msgLength > data.length)
-			{
-				xr.setMsgLength(msgLength);
-Logger.instance().debug1("XmitRecordDAO.rs2XmitRecord read a partial message: data.len="
-+ data.length + ", msgLength=" + msgLength);
-			}
-			xr.setBattVolt(battery);
-			xr.setXmitWindow(xmitWindow);
-			// Don't need to save channel -- it is read from GOES Header.
-			// Don't need to save mediumType -- it is encapsulated in flag bits.
-			
-			return xr;
-		}
-		catch(SQLException ex)
+		// Create DcpMsg and fill in the fields.
+		DcpMsg xr = new DcpMsg();
+		xr.setRecordId(recId);
+		xr.setFlagbits(flags);
+		xr.setLocalReceiveTime(localRecvTime);
+		xr.setXmitTime(xmitTime);
+		xr.setCarrierStart(carrierStart);
+		xr.setCarrierStop(carrierStop);
+		xr.setFailureCode(failCodes.charAt(0));
+		for(int i=0; i<failCodes.length(); i++)
+			xr.addXmitFailureCode(failCodes.charAt(i));
+		xr.setData(data);
+		xr.setDcpAddress(new DcpAddress(mediumId));
+		if (msgLength > data.length)
 		{
-			String msg = module + ":rs2XmitRecord Cannot parse xmit " +
-					"results: " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			xr.setMsgLength(msgLength);
+			Logger.instance().debug1("XmitRecordDAO.rs2XmitRecord read a partial message: data.len="
+									+ data.length + ", msgLength=" + msgLength);
 		}
+		xr.setBattVolt(battery);
+		xr.setXmitWindow(xmitWindow);
+		// Don't need to save channel -- it is read from GOES Header.
+		// Don't need to save mediumType -- it is encapsulated in flag bits.
+		
+		return xr;				
 	}
 
 	@Override
@@ -860,7 +883,7 @@ Logger.instance().debug1("XmitRecordDAO.rs2XmitRecord read a partial message: da
 		if (suffix == null)
 			return;
 		String q = "select msg_data from dcp_trans_data_" + suffix
-			+ " where record_id = " + msg.getRecordId()
+			+ " where record_id = ?"// + msg.getRecordId()
 			+ " order by block_num";
 		ResultSet rs = doQuery(q);
 		byte completeMsgData[] = new byte[msg.getMessageLength()];
