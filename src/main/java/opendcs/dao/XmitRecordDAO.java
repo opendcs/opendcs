@@ -92,7 +92,8 @@ public class XmitRecordDAO
 {
 	public static final String module = "XmitRecordDao";
 	protected static int numDaysStorage=5;
-	
+	private static final int MSG_BLOCK_SIZE = 4000;
+
 	/** Maps day numbers to xmit-rec table suffixes. */
 	class XmitDayMapEntry
 	{
@@ -107,7 +108,7 @@ public class XmitRecordDAO
 	
 	/** Milliseconds per day */
 	public static final long MS_PER_DAY = 1000L*3600L*24L;
-	
+
 	private int numXmitsSaved = 0;
 	
 	/** Prepared Statements for inserting into DCP Mon my-dcps table */
@@ -472,14 +473,14 @@ public class XmitRecordDAO
 		}
 		
 		// Very long message have extended blocks stored in the
-		// DATA_TRANS_DATA_SUFFIX table. Write blocks in 4000 byte chunks.
+		// DATA_TRANS_DATA_SUFFIX table. Write blocks in MSG_BLOCK_SIZE byte chunks.
 		tab = "DCP_TRANS_DATA_" + suffix;
 		StringBuffer data = new StringBuffer(base64data);
 		try
 		{
-			for (int blockNum = 0; data.length() > 4000; blockNum++)
+			for (int blockNum = 0; data.length() > MSG_BLOCK_SIZE; blockNum++)
 			{
-				int blockSize = Math.max(4000,data.length());			
+				int blockSize = Math.max(MSG_BLOCK_SIZE,data.length());
 				String toWrite = data.substring(0, blockSize);
 				data.delete(0,blockSize);
 				String q = "insert into " + tab + " values(?,?,?)";
@@ -613,8 +614,8 @@ public class XmitRecordDAO
 			ps.setInt(13, xr.getGoesChannel());
 			ps.setFloat(14, (float)xr.getBattVolt());
 			ps.setInt(15, xr.getMessageLength());
-			if (base64data.length() > 4000)
-				base64data = base64data.substring(0, 4000);
+			if (base64data.length() > MSG_BLOCK_SIZE)
+				base64data = base64data.substring(0, MSG_BLOCK_SIZE);
 			ps.setString(16, base64data);
 			
 		}
@@ -883,30 +884,29 @@ public class XmitRecordDAO
 		String suffix = getDcpXmitSuffix(msg.getDayNumber(), false);
 		if (suffix == null)
 			return;
-		String q = "select msg_data from dcp_trans_data_" + suffix
+		String q = "select block_num,msg_data from dcp_trans_data_" + suffix
 			+ " where record_id = ?"// + msg.getRecordId()
 			+ " order by block_num";
-		ResultSet rs = doQuery(q);
-		byte completeMsgData[] = new byte[msg.getMessageLength()];
-		byte firstBlock[] = msg.getData();
-		int cmdi = 0;
-		for(; cmdi<firstBlock.length && cmdi < completeMsgData.length; cmdi++)
-			completeMsgData[cmdi] = firstBlock[cmdi];
+		final byte completeMsgData[] = new byte[msg.getMessageLength()];
+
+		final byte firstBlock[] = msg.getData();
+		System.arraycopy(firstBlock, 0, completeMsgData, 0, firstBlock.length);
 		try
 		{
-			while(rs != null && rs.next())
-			{
-				String base64data = rs.getString(1);
-				byte data[] = Base64.decodeBase64(base64data.getBytes());
-				for(int idx = 0; idx<data.length && cmdi < completeMsgData.length; idx++, cmdi++)
-					completeMsgData[cmdi] = data[idx];
-			}
+			doQuery(q,rs->{
+				final String base64data = rs.getString("msg_data");
+				final int blockNum = rs.getInt("block_num");
+				final byte data[] = Base64.decodeBase64(base64data.getBytes());
+				System.arraycopy(data, 0, completeMsgData, blockNum*MSG_BLOCK_SIZE,data.length);
+			},msg.getRecordId());
 			msg.setData(completeMsgData);
 		}
 		catch (SQLException ex)
 		{
-			warning("Error in fillCompleteMsg(" + msg.getDcpAddress() + ") "
-				+ "dataLen=" + cmdi + ", totlen=" + completeMsgData.length + ": " + ex);
+			String errMsg = "Error in fillCompleteMsg(" + msg.getDcpAddress() + ") "
+			+ ", totlen=" + completeMsgData.length + ": " + ex;
+			warning(errMsg);
+			throw new DbIoException(errMsg,ex);
 		}
 	}
 
