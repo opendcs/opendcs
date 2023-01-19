@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLRecoverableException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -258,11 +259,21 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
                 if (isTimeoutError(ex))
                 {
                     connectionsClosedDuringGet++;
-                    if (conn != null) {
+                    if (conn != null)
+                    {
                         conn.close();
                         CwmsDbConnectionPool.close(conn);
                         conn = null;
                     }
+                }
+                else if (ex instanceof SQLRecoverableException)
+                {
+                    log.log(Level.WARNING,
+                            String.format("Unmanaged Recoverable error on connection retrieve attempt %s",i),
+                            ex);
+                    connectionsClosedDuringGet++;
+                    CwmsDbConnectionPool.close(conn);
+                    conn = null;
                 }
                 else if (isFullPoolError(ex))
                 {
