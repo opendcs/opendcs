@@ -65,6 +65,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
@@ -952,30 +953,29 @@ public class XmitRecordDAO
 	{
 		String suffix = getDcpXmitSuffix(dayNum, false);
 		if (suffix == null)
+		{
 			return 0;
+		}
 		String q = "select " + dcpTransFields + " from DCP_TRANS_" + suffix
-			+ " where channel = " + chan
+			+ " where channel = ?"// + chan
 			+ " order by transmit_time";
-			
-		ResultSet rs = doQuery(q);
-		int n = 0;
+					
 		try
 		{
-			while (rs != null && rs.next())
-			{
+			List<DcpMsg> queryResults = getResults(q,rs -> {
 				DcpMsg ret = rs2XmitRecord(rs);
 				ret.setDayNumber(dayNum);
-				results.add(ret);
-			}
+				return ret;
+			}, chan);
+			results.addAll(queryResults);
+			return queryResults.size();			
 		}
 		catch (SQLException ex)
 		{
 			String msg = "readXmitsByChannel: Error in query '" + q + "': " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
-
-		return n;
 	}
 
 	@Override
@@ -985,31 +985,29 @@ public class XmitRecordDAO
 	{
 		String suffix = getDcpXmitSuffix(dayNum, false);
 		if (suffix == null)
+		{
 			return 0;
+		}
 		String q = "select " + dcpTransFields + " from DCP_TRANS_" + suffix
-			+ " where medium_type = '" + mediumType.getCode() + "' "
-			+ " and medium_id = " + sqlString(mediumId)
-			+ " order by transmit_time";
-			
-		ResultSet rs = doQuery(q);
-		int n = 0;
+			+ " where medium_type = ?"// + mediumType.getCode() + "' "
+			+ " and medium_id = ?"// + sqlString(mediumId)
+			+ " order by transmit_time";				
 		try
 		{
-			while (rs != null && rs.next())
-			{
+			List<DcpMsg> queryResult = getResults(q,rs->{
 				DcpMsg ret = rs2XmitRecord(rs);
 				ret.setDayNumber(dayNum);
-				results.add(ret);
-			}
+				return ret;
+			},mediumType.getCode(),mediumId);	
+			results.addAll(queryResult);
+			return queryResult.size();
 		}
 		catch (SQLException ex)
 		{
 			String msg = "readXmitsByGroup: Error in query '" + q + "': " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
-
-		return n;
 	}
 
 	@Override
@@ -1053,42 +1051,51 @@ Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
 			return ret;
 		}
 		
+		ArrayList<Object> parameters = new ArrayList<>();
 		String tab = "DCP_TRANS_" + suffix;
 		String q = "SELECT RECORD_ID, MEDIUM_TYPE, MEDIUM_ID, TRANSMIT_TIME, FAILURE_CODES, CHANNEL"
 			+ " FROM " + tab;
 		if (lastRecId != -1)
-			q = q + " WHERE RECORD_ID > " + lastRecId;
+		{
+			q = q + " WHERE RECORD_ID > ?";// + lastRecId;
+			parameters.add(lastRecId);
+		}
+			
 		q = q + " ORDER BY RECORD_ID";
 		
-		ResultSet rs = doQuery(q);
-		debug2("Query complete");
+		//ResultSet rs = doQuery(q);
+		//debug2("Query complete");
 
 		try
 		{
-			int n = 0;
-			while (rs != null && rs.next())
-			{
-				XmitRecSpec xrs = new XmitRecSpec(rs.getLong(1));
-				String s = rs.getString(2);
-				if (s == null || s.length() == 0)
-					xrs.setMediumType('G');
-				else
-					xrs.setMediumType(s.charAt(0));
-				xrs.setMediumId(rs.getString(3));
-				xrs.setXmitTime(new Date(rs.getLong(4)));
-				xrs.setFailureCodes(rs.getString(5));
-				xrs.setGoesChannel(rs.getInt(6));
-				ret.add(xrs);
-				if (++n % 1000 == 0)
-					debug2("" + n + " records so far");
-			}
+			int n[] = new int[1];
+			n[0] = 0;
+			ret.addAll( 
+				getResults(q, (rs) -> {
+					XmitRecSpec xrs = new XmitRecSpec(rs.getLong(1));
+					String s = rs.getString(2);
+					if (s == null || s.length() == 0)
+						xrs.setMediumType('G');
+					else
+						xrs.setMediumType(s.charAt(0));
+					xrs.setMediumId(rs.getString(3));
+					xrs.setXmitTime(new Date(rs.getLong(4)));
+					xrs.setFailureCodes(rs.getString(5));
+					xrs.setGoesChannel(rs.getInt(6));
+					
+					if (++n[0] % 1000 == 0)
+						debug2("" + n[0] + " records so far");
+					return xrs;
+				}, parameters.toArray())
+			);
+			
 			debug2("" + n + " records received.");
 		}
 		catch (SQLException ex)
 		{
-			String msg = "getLatestTimeStamp Cannot parse xmit result: " + ex;
+			String msg = "readSince Cannot parse xmit result: " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 
 		return ret;
