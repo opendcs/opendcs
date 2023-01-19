@@ -85,6 +85,7 @@
         <dependency org="org.junit.jupiter" name="junit-jupiter-params" rev="5.8.1" conf="test->default"/>
         <dependency org="commons-io" name="commons-io" rev="2.11.0" conf="test->default"/>
         <dependency org="org.apache.derby" name="derby" rev="10.14.2.0" conf="test->default"/>
+        <dependency org="org.xerial" name="sqlite-jdbc" rev="3.40.0.0" conf="test->default"/>
         <!-- izpack -->
         <dependency org="org.codehaus.izpack" name="izpack-standalone-compiler" rev="4.3.5" conf="izpack->default"/>
 
