@@ -3,6 +3,7 @@ package fixtures;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
@@ -151,33 +152,46 @@ public class DecodesHelper {
         return arguments(testName,decodesScript,rawMessage,decodedMessage,assertions);
     }
 
-    private static URL getInputResource(final String path, final String testName)
+    private static URL getInputResource(final String path, final String testName) throws FileNotFoundException
     {
         String[] extensions = {".input_iridium", ".input_goes", ".input_edl", ".input_data-logger", ".input"};
-        for( String ext: extensions) {
-
+        for( String ext: extensions)
+        {
             URL input = DecodesScript.class.getResource(path + testName + ext);
             if( input != null )
+            {
                 return input;
+            }
         }
-        return null;
+        throw new FileNotFoundException(
+            String.format("Could not find test input file for %s. It should be present in '%s' and have one of the following extensions: %s", 
+            testName, path, String.join(", ", extensions)));
     }
 
     private static String getMediumFromResource(final URL input)
     {
         String inputStr = input.toString();
-        if( inputStr.contains("input_") ) {
+        if( inputStr.contains("input_") )
+        {
             String[] parts = inputStr.split("_");
             String part = parts[parts.length - 1];
 
             if( part.equalsIgnoreCase(Constants.medium_Goes) )
+            {
                 return Constants.medium_Goes;
+            }
             else if( part.equalsIgnoreCase(Constants.medium_IRIDIUM) )
+            {
                 return Constants.medium_IRIDIUM;
+            }
             else if( part.equalsIgnoreCase(Constants.medium_EDL) )
+            {
                 return Constants.medium_EDL;
+            }
             else if( part.equalsIgnoreCase("edl") )
+            {
                 return Constants.medium_EDL;
+            }
         }
         // If there was no medium detected, assume EDL.
         return Constants.medium_EDL;
@@ -212,20 +226,30 @@ public class DecodesHelper {
 
         PMParser parser = null;
         if( mediumType.equals(Constants.medium_Goes) )
+        {
             parser = new GoesPMParser();
+        }
         else if( mediumType.equals(Constants.medium_IRIDIUM) )
+        {
             parser = new IridiumPMParser();
+        }
         else
+        {
             parser = new EdlPMParser();
+        }
 
         parser.parsePerformanceMeasurements(rawMessage);
 
         // If the message contained a parseable timestamp (e.g. Iridium), use that as the raw timestamp
         Variable ts = rawMessage.getPM(GoesPMParser.MESSAGE_TIME);
         if( ts != null )
+        {
             rawMessage.setTimeStamp(ts.getDateValue());
+        }
         else
+        {
             rawMessage.setTimeStamp(new Date());
+        }
 
         decodesScript.prepareForExec();
         tmpMedium.prepareForExec();
@@ -244,7 +268,7 @@ public class DecodesHelper {
                     String testName = fileName.substring(lastSlash+1)
                                                                   .replace(".decodescript","");
                     return testName;
-           })
+            })
             .map(name -> {
                 try
                 {

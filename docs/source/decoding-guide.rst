@@ -1639,7 +1639,7 @@ interval data that places the most recent sensor value at 14:15.
 However, if only relying on the message header time, the decoded time
 would instead be 14:20, which is incorrect.
 
-This sensor values and timestamps can be decoded with the following DECODES script::
+The sensor values and timestamps can be decoded with the following DECODES script::
 
    Prime          S(300,':YD',Start),4x,C(12N,ParseTimeOnly),F(MHD,A,6,1),F(MHT,A,4),1p,T(M1),>Start
    ParseTimeOnly  F(MHT,A,4),1p,T(M1),>Start

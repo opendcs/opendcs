@@ -81,7 +81,7 @@ public class IridiumPMParser extends PMParser
 			int idx = hdr.indexOf("ID=");
 			if (idx == -1)
 				throw new HeaderParseException(
-					"No ID (EMEI) in iridium header");
+					"No ID (EMEI) in Iridium header");
 			String s = hdr.substring(idx+3, idx+3+15);
 			msg.setMediumId(s);
 			msg.setPM(GoesPMParser.DCP_ADDRESS, new Variable(s));
@@ -96,7 +96,7 @@ public class IridiumPMParser extends PMParser
 			idx = hdr.indexOf("TIME=");
 			if (idx == -1)
 				throw new HeaderParseException(
-					"No TIME in iridium header");
+					"No TIME in Iridium header");
 			s = hdr.substring(idx+5, idx+5+11);
 			try
 			{
@@ -106,7 +106,7 @@ public class IridiumPMParser extends PMParser
 			catch(Exception ex)
 			{
 				throw new HeaderParseException(
-					"Cannot parse time from iridium header '" + s + "'");
+					"Cannot parse time from Iridium header '" + s + "'");
 			}
 			
 			idx = hdr.indexOf("STAT=");
@@ -121,7 +121,7 @@ public class IridiumPMParser extends PMParser
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning("Bad STAT field in iridium header '"
+					Logger.instance().warning("Bad STAT field in Iridium header '"
 						+ hdr + "'");
 				}
 			}
@@ -140,7 +140,7 @@ public class IridiumPMParser extends PMParser
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Bad LAT field in iridium header '"
+				Logger.instance().warning("Bad LAT field in Iridium header '"
 					+ hdr + "'");
 			}
 		}
@@ -156,7 +156,7 @@ public class IridiumPMParser extends PMParser
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Bad LON field in iridium header '"
+				Logger.instance().warning("Bad LON field in Iridium header '"
 					+ hdr + "'");
 			}
 		}
@@ -172,7 +172,7 @@ public class IridiumPMParser extends PMParser
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Bad RAD field in iridium header '"
+				Logger.instance().warning("Bad RAD field in Iridium header '"
 					+ hdr + "'");
 			}
 		}
