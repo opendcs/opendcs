@@ -474,18 +474,25 @@ public class XmitRecordDAO
 		
 		// Very long message have extended blocks stored in the
 		// DATA_TRANS_DATA_SUFFIX table. Write blocks in MSG_BLOCK_SIZE byte chunks.
-		tab = "DCP_TRANS_DATA_" + suffix;
+		tab = "DCP_TRANS_DATA_" + suffix;		
 		StringBuffer data = new StringBuffer(base64data);
 		try
 		{
-			for (int blockNum = 0; data.length() > MSG_BLOCK_SIZE; blockNum++)
+			if( data.length() > MSG_BLOCK_SIZE )
 			{
-				int blockSize = Math.max(MSG_BLOCK_SIZE,data.length());
-				String toWrite = data.substring(0, blockSize);
-				data.delete(0,blockSize);
-				String q = "insert into " + tab + " values(?,?,?)";
-				doModify(q,xr.getRecordId(),blockNum,toWrite);
+				data.delete(0,MSG_BLOCK_SIZE);// first block already written
+				for (int blockNum = 1; data.length() > 0; blockNum++)
+				{
+					
+					final int blockSize = Math.min(MSG_BLOCK_SIZE,data.length());
+					final String toWrite = data.substring(0, blockSize);
+					data.delete(0,blockSize);
+					String q = "insert into " + tab + " values(?,?,?)";
+					doModify(q,xr.getRecordId(),blockNum,toWrite);
+				}
 			}
+
+			
 		}
 		catch(SQLException ex)
 		{
@@ -891,13 +898,16 @@ public class XmitRecordDAO
 
 		final byte firstBlock[] = msg.getData();
 		System.arraycopy(firstBlock, 0, completeMsgData, 0, firstBlock.length);
+		int nextDest[] = new int[1];
+		nextDest[0] = firstBlock.length;
 		try
 		{
 			doQuery(q,rs->{
 				final String base64data = rs.getString("msg_data");
-				final int blockNum = rs.getInt("block_num");
+				//final int blockNum = rs.getInt("block_num");
 				final byte data[] = Base64.decodeBase64(base64data.getBytes());
-				System.arraycopy(data, 0, completeMsgData, blockNum*MSG_BLOCK_SIZE,data.length);
+				System.arraycopy(data, 0, completeMsgData, nextDest[0],data.length);
+				nextDest[0] += data.length;
 			},msg.getRecordId());
 			msg.setData(completeMsgData);
 		}
