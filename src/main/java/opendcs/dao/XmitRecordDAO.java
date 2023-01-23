@@ -264,8 +264,8 @@ public class XmitRecordDAO
 				return firstFree.suffix;
 			}
 
-			// There is no free slot.
-			if (oldestDay == null || dayNum < oldestDay.dayNum)
+			// There is no free slot.			
+			if (dayNum < oldestDay.dayNum)
 			{
 				warning(method + "Cannot allocate table "
 					+ "for old day number "	+ dayNum + ", oldest day in storage is " 

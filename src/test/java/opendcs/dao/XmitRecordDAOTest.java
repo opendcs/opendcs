@@ -1,7 +1,11 @@
 package opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,16 +17,22 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.opendcs.utils.ClasspathIO;
 
 import decodes.cwms.validation.dao.ScreeningDAI;
+import decodes.db.DatabaseException;
 import decodes.db.UnitConverter;
+import decodes.dcpmon.XmitMediumType;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.KeyGenerator;
@@ -35,6 +45,9 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
+import lrgs.common.DcpAddress;
+import lrgs.common.DcpMsg;
+import lrgs.common.DcpMsgFlag;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -53,43 +66,55 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
 
-public class XmitRecordDAOTest {
 
-    //private Connection conn = null;
+/**
+ * NOTE: This test maintains it's own copy of the dcp_trans_xx tables
+ * instead of just using the database schema the schema directory.
+ * it will need to be kept up to date manually for the moment.
+ */
+public class XmitRecordDAOTest {
+    private static Logger log = Logger.getLogger(XmitRecordDAOTest.class.getName());
+
+    private Connection conn = null;
     private DatabaseConnectionOwner db = null;
+    
 
     @BeforeEach
-    public void setup_database() throws SQLException, IOException
+    public void setup_database(TestInfo info) throws SQLException, IOException
     {
-        Connection conn = DriverManager.getConnection("jdbc:sqlite::memory:");
+        String dbName = info.getDisplayName()
+                            .replace(" ","_")
+                            .replace("(","")
+                            .replace(")","")
+                        +".db";
+        /* don't care = */ new File(dbName).delete();
+        conn = DriverManager.getConnection("jdbc:sqlite:"+dbName);
+        conn.setAutoCommit(true);
         db = new FakeDbOwner(conn);
         Statement stmt = conn.createStatement();
         // build the basic database structure
         String baseSql = readStream(this.getClass().getResourceAsStream("/opendcs/dao/XmitDAOTestBase.sql"));
         String template = readStream(this.getClass().getResourceAsStream("/opendcs/dao/XmitDAOTestTemplate.sql"));
-        try
+        
+        for(String sql: baseSql.split(";"))
         {
-            for(String sql: baseSql.split(";"))
-            {
-                stmt.executeUpdate(sql);
-            }
-            
-            String templates[] = template.split(";");
-            for( int i = 0; i < 31; i++)
-            {
-                for(String t: templates)
-                {
-                    stmt.executeUpdate(t.replace("SUFFIX",String.format("%02d",i)));
-                }
-            }
+            stmt.executeUpdate(sql);
         }
-        catch(SQLException ex)
+        
+        String templates[] = template.split(";");
+        for( int i = 1; i <= 31; i++)
         {
-            System.out.println(ex.getMessage());
-            throw ex;
+            for(String t: templates)
+            {
+                stmt.executeUpdate(t.replace("SUFFIX",String.format("%02d",i)));
+            }
+        }                
+    }
 
-        }
-    
+    @AfterEach
+    public void close_database() throws SQLException 
+    {
+        conn.close();
     }
 
     private String readStream(InputStream is) throws IOException
@@ -108,10 +133,42 @@ public class XmitRecordDAOTest {
     }
     
     @Test
-    public void save_restore_large_message() 
+    public void save_restore_small_message() throws Exception
     {
-        try(XmitRecordDAI dai = db.makeXmitRecordDao(1);)
+        final String smallAddr = "smalladdr";
+        try(XmitRecordDAI dai = db.makeXmitRecordDao(10);)
         {
+            Date carrierStart = new Date();
+            Date carrierEnd = new Date(carrierStart.getTime()+5000 /*seconds*/);
+
+
+            String msg = readStream(this.getClass().getResourceAsStream("/opendcs/dao/XmitDAOSmallMsg.txt"));
+            DcpMsg smallMsg = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER,msg.getBytes(),msg.length(),0);
+            smallMsg.setDcpAddress(new DcpAddress(smallAddr));
+            smallMsg.setCarrierStart(carrierStart);
+            smallMsg.setCarrierStop(carrierEnd);
+            smallMsg.setDataSourceId(1);
+            smallMsg.setFailureCode('G');
+            smallMsg.setXmitTime(carrierStart);
+
+
+            dai.saveDcpTranmission(smallMsg);
+
+            List<DcpMsg> records = ((DaoBase)dai).getResults("select * from dcp_trans_01 where medium_id=?", 
+                                rs -> {
+                                    DcpMsg m = new DcpMsg();
+                                    m.setDcpAddress(new DcpAddress(rs.getString("medium_id")));
+                                    m.setXmitTime(new Date (rs.getLong("transmit_time")));
+                                    return m;
+                                },smallAddr);
+            assertFalse(records.isEmpty(), "no records were stored.");
+            records.forEach(r->{
+                System.err.println(r.getDcpAddress().toString() + ", Data length:" +r.getMessageLength());
+            });
+
+            DcpMsg returned = dai.findDcpTranmission(XmitMediumType.LOGGER, smallAddr, carrierEnd);
+
+            assertNotNull(returned, "Could not retrieve saved message.");
 
         }
         // generate message
@@ -131,7 +188,7 @@ public class XmitRecordDAOTest {
         public FakeDbOwner(Connection conn)
         {
             this.conn = conn;
-            this.keyGen = new SequenceKeyGenerator();
+            this.keyGen = new MemoryKeyGenerator();
         }
         @Override
         public Connection getConnection()
@@ -383,7 +440,33 @@ public class XmitRecordDAOTest {
         public AlarmDAI makeAlarmDAO() {
             // TODO Auto-generated method stub
             return null;
+        }        
+
+    }
+
+    public static class MemoryKeyGenerator implements KeyGenerator
+    {
+
+        private HashMap<String,Long> sequences = new HashMap<>();
+        @Override
+        public DbKey getKey(String tableName, Connection conn) throws DatabaseException
+        {
+            if( !sequences.containsKey(tableName))
+            {
+                sequences.put(tableName,0L);
+            }
+            Long sequence = sequences.get(tableName);
+            sequence = sequence + 1;
+            sequences.put(tableName,sequence);
+            
+            return DbKey.createDbKey(sequence);
         }
 
+        @Override
+        public void reset(String tableName, Connection conn) throws DatabaseException
+        {        
+            sequences.remove(tableName);
+        }
+        
     }
 }
