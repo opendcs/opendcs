@@ -1026,21 +1026,23 @@ public class XmitRecordDAO
 		loadDayNumSuffixMap();
 		XmitDayMapEntry latestDay = null;
 		for(XmitDayMapEntry xdme : dayNumSuffixMap)
+		{
 			if (xdme.dayNum != -1
-			 && (latestDay == null || xdme.dayNum > latestDay.dayNum))
+			&& (latestDay == null || xdme.dayNum > latestDay.dayNum))
+			{
 				latestDay = xdme;
-Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: latestDay=" + 
-(latestDay == null ? "null" : ""+latestDay.dayNum));
+			}
+		}
+		Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: latestDay=" +
+								 (latestDay == null ? "null" : ""+latestDay.dayNum));
 		if (latestDay == null)
 			return null;
 		
 		String q = "select max(local_recv_time) from " + "DCP_TRANS_" + latestDay.suffix;
-Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
-		ResultSet rs = doQuery(q);
+		Logger.instance().debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
 		try
 		{
-			if (rs.next())
-				return new Date(rs.getLong(1));
+			return getSingleResult(q, rs->new Date(rs.getLong(1)));
 		}
 		catch(SQLException ex)
 		{

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -138,9 +139,31 @@ public class XmitRecordDAOTest {
             }
             return sb.toString();
         }
-        
+
     }
-        
+
+    private static byte[] readByteStream(String resource) throws IOException
+    {
+        InputStream is = XmitRecordDAOTest.class.getClassLoader().getResourceAsStream(resource);
+        return readByteStream(is);
+    }
+
+    private static byte[] readByteStream(InputStream is) throws IOException
+    {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(1000);
+
+        int available = 0;
+        int retrieved = 0;
+        while((available = is.available()) > 0)
+        {
+            byte []buff = new byte[available];
+            is.read(buff,0,available);
+            bos.write(buff, retrieved, available);
+            retrieved += available;
+        }
+        return bos.toByteArray();
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"smalladdr:/opendcs/dao/XmitDAOSmallMsg.txt",
                             "largeaddr:/opendcs/dao/XmitDAOBigMsg.txt"})
@@ -157,8 +180,8 @@ public class XmitRecordDAOTest {
             Date carrierEnd = new Date(carrierStart.getTime()+5000 /*seconds*/);
 
 
-            String theMsg = readStream(this.getClass().getResourceAsStream(msgFile));
-            DcpMsg msg = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER,theMsg.getBytes(),theMsg.length(),0);
+            byte theMsg[] = readByteStream(this.getClass().getResourceAsStream(msgFile));
+            DcpMsg msg = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER,theMsg,theMsg.length,0);
             msg.setDcpAddress(new DcpAddress(addr));
             msg.setCarrierStart(carrierStart);
             msg.setCarrierStop(carrierEnd);
@@ -166,16 +189,16 @@ public class XmitRecordDAOTest {
             msg.setFailureCode('G');
             msg.setXmitTime(carrierStart);
 
-            dai.saveDcpTranmission(msg);            
+            dai.saveDcpTranmission(msg);
 
             DcpMsg returned = dai.findDcpTranmission(XmitMediumType.LOGGER, addr, carrierEnd);
             System.err.println("************************************");
             System.err.println(new String(returned.getData(),"UTF8"));
             System.err.println("************************************");
             assertNotNull(returned, "Could not retrieve saved message.");
-            assertArrayEquals(theMsg.getBytes(Charset.forName("UTF8")),returned.getData(),"Saved message is not the same as the stored message");
+            assertArrayEquals(theMsg,returned.getData(),"Saved message is not the same as the stored message");
         }
-    }    
+    }
 
     private static class FakeDbOwner implements DatabaseConnectionOwner
     {
