@@ -82,7 +82,7 @@ public class XmitRecordDAOTest {
 
     private static Connection conn = null;
     private static DatabaseConnectionOwner db = null;
-    
+
 
     @BeforeAll
     public static void setup_database(TestInfo info) throws SQLException, IOException
@@ -96,12 +96,12 @@ public class XmitRecordDAOTest {
         // build the basic database structure
         String baseSql = readStream("opendcs/dao/XmitDAOTestBase.sql");
         String template = readStream("opendcs/dao/XmitDAOTestTemplate.sql");
-        
+
         for(String sql: baseSql.split(";"))
         {
             stmt.executeUpdate(sql);
         }
-        
+
         String templates[] = template.split(";");
         for( int i = 1; i <= 31; i++)
         {
@@ -109,11 +109,11 @@ public class XmitRecordDAOTest {
             {
                 stmt.executeUpdate(t.replace("SUFFIX",String.format("%02d",i)));
             }
-        }                
+        }
     }
 
     @AfterAll
-    public static void close_database() throws SQLException 
+    public static void close_database() throws SQLException
     {
         if(conn!=null)
         {
@@ -226,14 +226,14 @@ public class XmitRecordDAOTest {
         public int getDecodesDatabaseVersion()
         {
             // we only care about mimicking the newest features
-            return DecodesDatabaseVersion.DECODES_DB_68; 
+            return DecodesDatabaseVersion.DECODES_DB_68;
         }
 
         @Override
         public void setDecodesDatabaseVersion(int version, String options) {}
 
         @Override
-        public int getTsdbVersion() 
+        public int getTsdbVersion()
         {
             // TODO Auto-generated method stub
             return TsdbDatabaseVersion.VERSION_68;
@@ -321,7 +321,7 @@ public class XmitRecordDAOTest {
         @Override
         public DbKey getAppId()
         {
-            
+
             return DbKey.createDbKey(1L);
         }
 
@@ -463,7 +463,7 @@ public class XmitRecordDAOTest {
         public AlarmDAI makeAlarmDAO() {
             // TODO Auto-generated method stub
             return null;
-        }        
+        }
 
     }
 
@@ -481,15 +481,15 @@ public class XmitRecordDAOTest {
             Long sequence = sequences.get(tableName);
             sequence = sequence + 1;
             sequences.put(tableName,sequence);
-            
+
             return DbKey.createDbKey(sequence);
         }
 
         @Override
         public void reset(String tableName, Connection conn) throws DatabaseException
-        {        
+        {
             sequences.remove(tableName);
         }
-        
+
     }
 }
