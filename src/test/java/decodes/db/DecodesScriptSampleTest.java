@@ -28,37 +28,38 @@ final class DecodesScriptSampleTest {
 
     @ParameterizedTest
     @MethodSource("fixtures.DecodesHelper#decodesTestSets")
-    void test_delimiter(final String testName, final DecodesScript script,
+    void test_decodes_script(final String testName, final DecodesScript script,
                         final RawMessage rawMessage, final DecodedMessage decodedMessage,
-                        final ArrayList<DecodesHelper.DecodesAssertion> assertions) throws Exception {        
+                        final ArrayList<DecodesHelper.DecodesAssertion> assertions) throws Exception
+        {
         assertions.forEach(a -> {
-           DecodedSample actual = DecodesHelper.sampleFor(a.getSensor(), a.getTime(), script.getDecodedSamples());
-           Variable ev = a.getExpectedValue();
-           TimedVariable av = actual.getSample();
-           try
-           {
+            DecodedSample actual = DecodesHelper.sampleFor(a.getSensor(), a.getTime(), script.getDecodedSamples());
+            Variable ev = a.getExpectedValue();
+            TimedVariable av = actual.getSample();
+            try
+            {
                 switch (ev.getNativeType())
                 {
-                        case VariableType.STRING:
-                        {
-                            final String avS = ((av.getFlags() & IFlags.IS_MISSING) == 0) 
-                                                ? av.getStringValue()
-                                                : "m";
-                            assertEquals(ev.getStringValue(),avS,a.getMessage());
-                            break;
-                        }
-                        case VariableType.DOUBLE:
-                        {
-                            assertEquals(ev.getDoubleValue(),av.getDoubleValue(),a.getPrecision(),a.getMessage());
-                            break;
-                        }
+                    case VariableType.STRING:
+                    {
+                        final String avS = ((av.getFlags() & IFlags.IS_MISSING) == 0) 
+                                            ? av.getStringValue()
+                                            : "m";
+                        assertEquals(ev.getStringValue(),avS,a.getMessage());
+                        break;
+                    }
+                    case VariableType.DOUBLE:
+                    {
+                        assertEquals(ev.getDoubleValue(),av.getDoubleValue(),a.getPrecision(),a.getMessage());
+                        break;
+                    }
                 }
-           }
-           catch(Exception ex)
-           {
-            ex.printStackTrace(System.err);
-            fail("exception thrown");
-           }
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace(System.err);
+                fail("exception thrown");
+            }
         });
     }
 }

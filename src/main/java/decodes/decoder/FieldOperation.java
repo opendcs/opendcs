@@ -461,6 +461,23 @@ class FieldOperation extends DecodesOperation
 				msg.justGotNonYearField();
 				// Note - parseDate does its own upgradeToStoredTimes.
 			}
+			else if (field_type.equals("mhd")) // Message Header Date
+			{
+				// This overrides the message time in the header.
+				// Future operations, including MOFF, will operate on this time.
+				// This is needed for Iridium, where the message can arrive
+				// many minutes later than the original DCP transmission time, 
+				// but the header time is the time it was sent from the SBD gateway.
+				RecordedTimeStamp rts = new RecordedTimeStamp();
+				Date messageTime = msg.getMessageTime();
+				rts.setComplete(messageTime);
+				
+				parseDate(field, rts);
+
+				Logger.instance().debug3("Setting message date messageTime=" + rts.getTime() 
+					+ ", currentTime=" + msg.getTimer().getTime() + ", timeWasTruncated=" + msg.timeWasTruncated);
+				msg.setMessageTime(rts.getTime());
+			}
 			else if ( field_type.equals("mn") )  // Month Field
 			{
 				int t = 0;
@@ -532,6 +549,19 @@ class FieldOperation extends DecodesOperation
 					msg.addSample(sensorNumber, new Variable(1.0), lineNum);
 				msg.justGotNonYearField();
 			}
+			else if (field_type.equals("mht") )  // Message Header Time
+			{
+				// See comment for "mhd" above
+				RecordedTimeStamp rts = new RecordedTimeStamp();
+				Date messageTime = msg.getMessageTime();
+				rts.setComplete(messageTime);
+				
+				parseTime(field, rts);
+
+				Logger.instance().debug3("Setting message time messageTime=" + rts.getTime() 
+					+ ", currentTime=" + msg.getTimer().getTime() + ", timeWasTruncated=" + msg.timeWasTruncated);
+				msg.setMessageTime(rts.getTime());
+			}
 			else if (field_type.equals("ti") ) 
 			{
 				if (sensorNumber == -1)
@@ -560,8 +590,8 @@ class FieldOperation extends DecodesOperation
 					if (field_type.equals("mint-") 
 					 && decodesScript.getDataOrder() == Constants.dataOrderAscending)
 						m = -m;
-Logger.instance().log(Logger.E_DEBUG3,
-"Setting interval for sensor " + sensorNumber + " to " + (m*60) + " seconds.");
+					Logger.instance().log(Logger.E_DEBUG3,
+						"Setting interval for sensor " + sensorNumber + " to " + (m*60) + " seconds.");
 					msg.setTimeInterval(sensorNumber, m*60);
 				}
 				catch(IllegalArgumentException ex)
@@ -576,7 +606,7 @@ Logger.instance().log(Logger.E_DEBUG3,
 					int m = numberParser.parseIntValue(field);
 
 					// Reset 'current' time to 'message' time minus offset.
-					Date msgTime = msg.getRawMessage().getTimeStamp();
+					Date msgTime = msg.getUntruncatedMessageTime();
 					if (msgTime == null) msgTime = new Date();
 					long msec = msgTime.getTime();
 					// moff implies that we truncate to minute boundary
@@ -611,7 +641,7 @@ Logger.instance().log(Logger.E_DEBUG3,
 				if (tzid == null)
 					tzid = sfield;
 				msg.getTimer().setTimeZoneName(tzid);
-Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().getTimeZoneName() + ")");
+				Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().getTimeZoneName() + ")");
 			}
 		}
 	}
@@ -675,7 +705,69 @@ Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().ge
 		// Get the timer & save the status before any updates.
 		RecordedTimeStamp rts = msg.getTimer();
 		int stat = msg.getTimer().getStatus();
+		
+		// Note sensorNumber doubles as field_id for date ops
+		switch(sensorNumber)
+		{
+		case 1:  // YYMMDD or YY/MM/DD or YYYY/MM/DD
+			parseDate(field, rts);
 
+			msg.setJustGotFullDateTime(true);
+			if (!increment)
+				rts.decrementDay();
+			if (stat != msg.getTimer().getStatus())
+				msg.upgradeStoredTimes();
+			rts.incrementDay();
+			break;
+
+		case 2: // ddd, yyddd, yy/ddd, or yyyyddd
+			parseDate(field, rts);
+
+			if (rts.getHaveYear())
+				msg.setJustGotFullDateTime(true);
+			else
+				msg.justGotNonYearField();
+
+			if (!increment)  // see comment above for jdy field type.
+				rts.decrementDay();
+			if (stat != msg.getTimer().getStatus())
+				msg.upgradeStoredTimes();
+			rts.incrementDay();
+			break;
+
+		case 3: // mmdd or mm/dd
+			parseDate(field, rts);
+			
+			if ( !increment )
+				rts.decrementDay();
+			if (stat != msg.getTimer().getStatus())
+				msg.upgradeStoredTimes();
+			Logger.instance().debug3("After M field with month=" + rts.getMonth() + ", day=" + rts.getDayOfMonth() + ", dayOfYear=" + rts.getDayOfYear() + ", incr=" + increment);
+			rts.incrementDay();
+			msg.justGotNonYearField();
+			break;
+
+		case 4: // mmddyy, mm/dd/yy
+			parseDate(field, rts);
+
+			if (!increment)
+				rts.decrementDay();
+			if (stat != msg.getTimer().getStatus())
+				msg.upgradeStoredTimes();
+			rts.incrementDay();
+			msg.setJustGotFullDateTime(true);
+			break;
+
+		default:
+			throw new ScriptException("Unknown date format " + sensorNumber);
+		}
+	}
+
+	private void parseDate(byte[] field, RecordedTimeStamp rts)
+		throws DecoderException
+	{
+		int y, m, d;
+		
 		// Note sensorNumber doubles as field_id for date ops
 		switch(sensorNumber)
 		{
@@ -703,14 +795,8 @@ Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().ge
 					"Date format 1 bad date format '" + field + "'");
 
 			rts.setYear(y);
-			msg.setJustGotFullDateTime(true);
 			rts.setMonth(m);
 			rts.setDayOfMonth(d);
-			if (!increment)
-				rts.decrementDay();
-			if (stat != msg.getTimer().getStatus())
-				msg.upgradeStoredTimes();
-			rts.incrementDay();
 			break;
 
 		case 2: // ddd, yyddd, yy/ddd, or yyyyddd
@@ -739,12 +825,7 @@ Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().ge
 					"Date format 2 bad data '" + field + "'");
 
 			if (y != -1)
-			{
 				rts.setYear(y);
-				msg.setJustGotFullDateTime(true);
-			}
-			else
-				msg.justGotNonYearField();
 
 			if ( d == 366 ) 
 			{
@@ -756,11 +837,6 @@ Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().ge
 				}
 			}
 			rts.setDayOfYear(d);
-			if (!increment)  // see comment above for jdy field type.
-				rts.decrementDay();
-			if (stat != msg.getTimer().getStatus())
-				msg.upgradeStoredTimes();
-			rts.incrementDay();
 			break;
 
 		case 3: // mmdd or mm/dd
@@ -780,13 +856,7 @@ Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().ge
 
 			rts.setMonth(m);
 			rts.setDayOfMonth(d);
-			if ( !increment )
-				rts.decrementDay();
-			if (stat != msg.getTimer().getStatus())
-				msg.upgradeStoredTimes();
-			rts.incrementDay();
-Logger.instance().debug3("After M field with month=" + m + ", day=" + d + ", dayOfYear=" + rts.getDayOfYear() + ", incr=" + increment);
-			msg.justGotNonYearField();
+			Logger.instance().debug3("After M field with month=" + m + ", day=" + d + ", dayOfYear=" + rts.getDayOfYear());
 			break;
 
 		case 4: // mmddyy, mm/dd/yy
@@ -809,12 +879,6 @@ Logger.instance().debug3("After M field with month=" + m + ", day=" + d + ", day
 			rts.setYear(y);
 			rts.setMonth(m);
 			rts.setDayOfMonth(d);
-			if (!increment)
-				rts.decrementDay();
-			if (stat != msg.getTimer().getStatus())
-				msg.upgradeStoredTimes();
-			rts.incrementDay();
-			msg.setJustGotFullDateTime(true);
 			break;
 
 		default:

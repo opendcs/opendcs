@@ -53,7 +53,12 @@ public class DecodedMessage implements IDataCollection
 
 	/** Extracted from message (or file) header. */
 	private Date messageTime;
-
+	
+	/** If the Truncation operator [T(x)] was used, this is set to original
+	 * (pre-truncated) time. This is for use with MOFF.
+	 */
+	private Date untruncatedMessageTime;
+	
 	/** Set from time/date operations within the message. */
 	private RecordedTimeStamp currentTime;
 
@@ -274,6 +279,14 @@ public class DecodedMessage implements IDataCollection
 	public void setMessageTime(Date mt)
 	{
 		this.messageTime = mt;
+		
+		// If the time is explicitly set, any prior truncation operation is
+		// invalid and needs to be cleared.
+		if (timeWasTruncated)
+		{
+			untruncatedMessageTime = null;
+			timeWasTruncated = false;
+		}
 	}
 
 	/**
@@ -1164,5 +1177,21 @@ public class DecodedMessage implements IDataCollection
 	public ArrayList<TimeSeries> getTimeSeriesArray()
 	{
 		return timeSeriesArray;
+	}
+	
+	/** This should be passed a time that has already been truncated
+	 * appropriately.
+	 * Do not use the return from getMessageTime() without making a copy first.
+	 */
+	void truncateTime(Date time)
+	{
+		untruncatedMessageTime = messageTime;
+		messageTime = time;
+		timeWasTruncated = true;
+	}
+	
+	Date getUntruncatedMessageTime()
+	{
+		return timeWasTruncated ? untruncatedMessageTime : messageTime;
 	}
 }

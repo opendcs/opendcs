@@ -1278,7 +1278,11 @@ The field type can be one of the following:
 
    F Format Label Field (see 0)
 
-   S Sensor Value Field (see7.10.4)
+   S Sensor Value Field (see 7.10.4)
+
+   MHD Message Header Date (see :ref:`decodes.format.field.message_header`)
+
+   MHT Message Header Time (see :ref:`decodes.format.field.message_header`)
 
 The data type can be one of the following:
 
@@ -1395,6 +1399,8 @@ parsing the field.
 If the delimiter is not found, the pointer is advanced by *length*
 characters.
 
+.. _decodes.format.field.date:
+
 Date Fields
 ~~~~~~~~~~~
 
@@ -1489,6 +1495,8 @@ Notice that the line with the label “004” contains the year and the
 Julian day (335) that has just ended. Data prior to this line is day
 335, data after this line is day 336. Hence we want to increment the day
 after parsing it. So use the JDY+ operator.
+
+.. _decodes.format.field.time:
 
 Time Fields
 ~~~~~~~~~~~
@@ -1599,6 +1607,53 @@ Remember: Time Zone must be parsed before any date/time values to which
 it applies. This might necessitate jumping forward in the string and
 then back.
 
+.. _decodes.format.field.message_header:
+
+Message Header Fields 
+~~~~~~~~~~~~~~~~~~~~~
+
+Message Header field descriptions have a field type of 'MHD' for date,
+and 'MHT' for time. These are used to override the date and time in the
+message header. Once set, all future operations will treat this value as
+the original message timestamp. This is useful when the time in the
+header does not match the actual transmission time (e.g., Iridium), and
+the true timestamp is present in the message content.
+
+This should be set at the beginning of the script, before parsing any
+sensor values. Any truncation operators (if used) should be placed after
+the MHD and MHT field type operators.
+
+   MHD syntax is identical to D, see :ref:`decodes.format.field.date`.
+
+   MHT syntax is identical to T, see :ref:`decodes.format.field.time`.
+
+For example, this is an Iridium message which shows the timestamp offset:
+``ID=000000000000000,TIME=22350143405,STAT=00,MO=05593,MT=00000,CDR=1F9D8EC7,LAT=0.00000,LON=0.00000,RAD=3 IE:0200D0 0:Batt 14 #15 12.59 12.57 12.61 12.60 :AT 14 #15 34.7 34.9 35.2 35.1 :RH 14 #15 100 100 100 100 :Stage 14 #15 1.36 1.36 1.36 1.36 :Dewpoint 14 #15 34.74 34.89 35.19 35.09 :YB 12.61 :YN Iridium Test :YD 221216142915``
+
+The original transmission occurred at 14:29:15, but the time in the
+header is 14:34:05, nearly 5 minutes later. This will cause the sensor
+value times to be incorrect, particularly if using :ref:`MOFF <decodes.format.field.interval_offset>` to read
+offsets from the message. The offset from the transmission to most
+recent sensor value in this example is 14 minutes, with 15 minute
+interval data that places the most recent sensor value at 14:15.
+However, if only relying on the message header time, the decoded time
+would instead be 14:20, which is incorrect.
+
+The sensor values and timestamps can be decoded with the following DECODES script::
+
+   Prime          S(300,':YD',Start),4x,C(12N,ParseTimeOnly),F(MHD,A,6,1),F(MHT,A,4),1p,T(M1),>Start
+   ParseTimeOnly  F(MHT,A,4),1p,T(M1),>Start
+   Start          S(300,':',End),x,f(F,A,8D' ')
+   Batt           f(moff,a,3D' '),2x,f(mint,a,2,8),4f(s,a,7D' ',8)>Start
+   AT             f(moff,a,3D' '),2x,f(mint,a,2,2),4f(s,a,7D' ',2)>Start
+   RH             f(moff,a,3D' '),2x,f(mint,a,2,4),4f(s,a,7D' ',4)>Start
+   Stage          f(moff,a,3D' '),2x,f(mint,a,2,1),4f(s,a,7D' ',1)>Start
+   Dewpoint       f(moff,a,3D' '),2x,f(mint,a,2,7),4f(s,a,7D' ',7)>Start
+   YB             f(moff-,"60",2),f(mint,"60",2,6),T(H),f(s,a,7D' ',6)>Start
+   BL             >YB
+   End            
+   ERROR          >Start
+
 The Time Truncation Operator
 ----------------------------
 
@@ -1615,6 +1670,13 @@ subsequent FIELD operations.
    T(H) Truncate current time to previous hour (discard minutes and
    seconds)
 
+Note: The first call of a Truncation operator will also truncate the
+message time, as well as the sensor field time. Subsequent calls will
+only truncate the sensor field time. If the message header timestamp
+is changed with :ref:`MHD <decodes.format.field.message_header>` or MHT field type operators, the truncation state
+of the message header will be reset. It is recommended to place any
+truncation operators after MHD and MHT field statements.
+
 Time Interval Fields
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -1627,6 +1689,8 @@ field description for a time interval is as follows. The data field
 format is the same as those for the time field description.
 
 F(TI, A, length<Dc>, sensorNum)
+
+.. _decodes.format.field.interval_offset:
 
 Minute Interval and Offset Fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

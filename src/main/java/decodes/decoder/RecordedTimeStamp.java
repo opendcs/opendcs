@@ -187,7 +187,13 @@ public class RecordedTimeStamp
 
 	public boolean getHaveYDay() { return haveYDay; }
 
+	public boolean getHaveYear() { return haveYear; }
+
 	public int getYear() { return cal.get(Calendar.YEAR); }
+	
+	public int getMonth() { return (cal.get(Calendar.MONTH) - Calendar.JANUARY) + 1; }
+	
+	public int getDayOfMonth() { return cal.get(Calendar.DAY_OF_MONTH); }
 
 	/**
 	  Sets the month number (1=Jan ... 12=Dec).
@@ -429,7 +435,7 @@ public class RecordedTimeStamp
 	/** Return true if TZ was set manually */
 	public boolean isTzManual() { return tzIsManual; }
 
-	/** Return internal calandar object */
+	/** Return internal calendar object */
 	public GregorianCalendar getCalendar() { return cal; }
 
 	public int getDayOfYear()

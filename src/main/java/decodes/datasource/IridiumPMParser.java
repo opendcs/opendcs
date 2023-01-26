@@ -42,7 +42,7 @@ public class IridiumPMParser extends PMParser
 
 	/**
 	  Parses the DOMSAT header.
-	  Sets the mediumID to the GOES DCP Address.
+	  Sets the mediumID to the DCP's IMEI.
 	  @param msg the message to parse.
 	*/
 	public void parsePerformanceMeasurements(RawMessage msg)
@@ -81,15 +81,22 @@ public class IridiumPMParser extends PMParser
 			int idx = hdr.indexOf("ID=");
 			if (idx == -1)
 				throw new HeaderParseException(
-					"No ID (EMEI) in Iridium Header");
+					"No ID (EMEI) in Iridium header");
 			String s = hdr.substring(idx+3, idx+3+15);
 			msg.setMediumId(s);
 			msg.setPM(GoesPMParser.DCP_ADDRESS, new Variable(s));
 
+			// The TIME in the header is the time the message was sent from the
+			// SBD gateway (over the internet). It is not the DCP's original
+			// transmission time. The difference between the two times can vary
+			// from a few seconds to several minutes. Users decoding these
+			// messages and, in particular, use F(MOFF) must be aware of this.
+			// DECODES F(MHD) and F(MHT) operations can be used to change this
+			// time in the decoded message (the raw value doesn't change).
 			idx = hdr.indexOf("TIME=");
 			if (idx == -1)
 				throw new HeaderParseException(
-					"No ID (EMEI) in Iridium Header");
+					"No TIME in Iridium header");
 			s = hdr.substring(idx+5, idx+5+11);
 			try
 			{
@@ -99,7 +106,7 @@ public class IridiumPMParser extends PMParser
 			catch(Exception ex)
 			{
 				throw new HeaderParseException(
-					"Cannot parse time from Iridium Header '" + s + "'");
+					"Cannot parse time from Iridium header '" + s + "'");
 			}
 			
 			idx = hdr.indexOf("STAT=");
@@ -114,7 +121,7 @@ public class IridiumPMParser extends PMParser
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning("Bad STAT field in iridium header '"
+					Logger.instance().warning("Bad STAT field in Iridium header '"
 						+ hdr + "'");
 				}
 			}
@@ -133,7 +140,7 @@ public class IridiumPMParser extends PMParser
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Bad LAT field in iridium header '"
+				Logger.instance().warning("Bad LAT field in Iridium header '"
 					+ hdr + "'");
 			}
 		}
@@ -149,7 +156,7 @@ public class IridiumPMParser extends PMParser
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Bad LON field in iridium header '"
+				Logger.instance().warning("Bad LON field in Iridium header '"
 					+ hdr + "'");
 			}
 		}
@@ -165,7 +172,7 @@ public class IridiumPMParser extends PMParser
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Bad RAD field in iridium header '"
+				Logger.instance().warning("Bad RAD field in Iridium header '"
 					+ hdr + "'");
 			}
 		}
