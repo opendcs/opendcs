@@ -31,3 +31,11 @@ To build the file opendcs.jar run the following
 If you want to build the installer run
 
 `ant opendcs`
+
+# IDE integration
+
+For the purposes of setting up the project VS Code or Eclipse you can run the following task:
+
+`ant eclipse-ide-files`
+
+This will create the appropriate .project and .classpath files for code completion and following.
