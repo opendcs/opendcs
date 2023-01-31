@@ -67,6 +67,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 				<include name="*.gif"/>
 			</fileset>
 		</copy>
+		<sync todir="${build.resources}">
+			<fileset dir="${resources.dir}"/>
+		</sync>
 
 		<delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
         <copy file="${src.dir}/lrgs/gui/LrgsBuild.java"
@@ -112,9 +115,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="test.classpath"/>
 			</classpath>			
 		</javac>
-		<copy todir="${build.test.classes}">
+		<sync todir="${build.test.resources}">
     		<fileset dir="${resources.test.dir}"/>
-		</copy>
+		</sync>
 	</target>
 
 	<target name="test" depends="compile-test,jar">
@@ -126,6 +129,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
             <classpath>
+				<pathelement location="${build.resources}"/>
+				<pathelement location="${build.test.resources}"/>
                 <pathelement location="${build.test.classes}"/>
                 <pathelement location="${build.classes}"/>
             </classpath>

@@ -21,8 +21,10 @@
 		
 	<property name="build.dir" value="build"/>
 	<property name="build.classes" value="${build.dir}/classes"/>
+    <property name="build.resources" value="${build.dir}/resources"/>
 	<property name="build.lib" value="${build.dir}/lib"/>
 	<property name="build.test.classes" value="${build.dir}/test-classes"/>
+    <property name="build.test.resources" value="${build.dir}/test-resources"/>
 	<property name="build.test.lib" value="${build.dir}/test-libs"/>
 	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>		
 
