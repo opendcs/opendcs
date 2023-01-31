@@ -1,1 +1,2 @@
 org.opendcs.authentication.impl.UserAuthFileProvider
+org.opendcs.authentication.impl.EnvironmentAuthSourceProvider
