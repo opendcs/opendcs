@@ -612,6 +612,7 @@ public class LrgsMain
 					addInput(input);
 					nm2if.put(nm, input);
 					input.initLrgsInput();
+					input.setMsgArchive(msgArchive);
 				}
 				catch (Exception ex)
 				{

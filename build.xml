@@ -85,7 +85,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             includes="lrgs/gui/LrgsBuild.java">
             <src path="${build.classes}"/>
             <classpath refid="runtime.classpath"/>
-        </javac>
+			<compilerarg value="-parameters"/>
+		</javac>
 
         <javac debug="true" destdir="${build.classes}"
             target="1.8" source="1.8"
@@ -95,7 +96,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             excludes="lrgs/gui/LrgsBuild.java">
             <src path="${src.dir}"/>
             <classpath refid="runtime.classpath"/>
-        </javac>
+			<compilerarg value="-parameters"/>
+		</javac>
 
     </target>
 
