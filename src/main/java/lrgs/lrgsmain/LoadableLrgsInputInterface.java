@@ -21,7 +21,7 @@ public interface LoadableLrgsInputInterface extends LrgsInputInterface
 
 	/**
 	 * Allow interaction with the message archive.
-	 * 
+	 *
 	 * @param archive The message archive to store what we've received.
 	 */
 	public void setMsgArchive(MsgArchive archive);
