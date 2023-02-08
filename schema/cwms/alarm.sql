@@ -8,8 +8,8 @@ CREATE TABLE ALARM_CURRENT
     ALARM_FLAGS int NOT NULL,
     MESSAGE varchar2(256),
     LAST_NOTIFICATION_SENT NUMBER(19),
-	db_office_code integer default &dflt_office_code
-) &TBL_SPACE_SPEC;
+	db_office_code integer default &&dflt_office_code
+) &&TBL_SPACE_SPEC;
 
 CREATE TABLE ALARM_EVENT
 (
@@ -18,8 +18,8 @@ CREATE TABLE ALARM_EVENT
 	LOADING_APPLICATION_ID INT NOT NULL,
 	PRIORITY INT NOT NULL,
 	PATTERN varchar2(256),
-	db_office_code integer default &dflt_office_code
-) &TBL_SPACE_SPEC;
+	db_office_code integer default &&dflt_office_code
+) &&TBL_SPACE_SPEC;
 
 
 CREATE TABLE ALARM_GROUP
@@ -27,8 +27,8 @@ CREATE TABLE ALARM_GROUP
 	ALARM_GROUP_ID INT NOT NULL UNIQUE,
 	ALARM_GROUP_NAME VARCHAR2(32) NOT NULL UNIQUE,
 	LAST_MODIFIED NUMBER(19) NOT NULL,
-	db_office_code integer default &dflt_office_code
-) &TBL_SPACE_SPEC;
+	db_office_code integer default &&dflt_office_code
+) &&TBL_SPACE_SPEC;
 
 CREATE TABLE ALARM_HISTORY
 (
@@ -41,9 +41,9 @@ CREATE TABLE ALARM_HISTORY
     MESSAGE varchar2(256),
     END_TIME NUMBER(19) NOT NULL,
     CANCELLED_BY varchar2(32),
-	db_office_code integer default &dflt_office_code,
+	db_office_code integer default &&dflt_office_code,
     PRIMARY KEY (TS_ID, LIMIT_SET_ID, ASSERT_TIME)
-) &TBL_SPACE_SPEC;
+) &&TBL_SPACE_SPEC;
 
 CREATE TABLE ALARM_LIMIT_SET
 (
@@ -71,9 +71,9 @@ CREATE TABLE ALARM_LIMIT_SET
     missing_interval varchar2(32),
     missing_max_values int,
     hint_text varchar2(256),
-	db_office_code integer default &dflt_office_code,
+	db_office_code integer default &&dflt_office_code,
 	CONSTRAINT LIMIT_SET_SCRSEA_UNIQUE UNIQUE(SCREENING_ID, season_name)
-) &TBL_SPACE_SPEC;
+) &&TBL_SPACE_SPEC;
 
 CREATE TABLE ALARM_SCREENING
 (
@@ -86,17 +86,17 @@ CREATE TABLE ALARM_SCREENING
     ENABLED VARCHAR2(5) DEFAULT 'true' NOT NULL,
     ALARM_GROUP_ID int,
     SCREENING_DESC varchar2(1024),
-	db_office_code integer default &dflt_office_code,
+	db_office_code integer default &&dflt_office_code,
 	CONSTRAINT AS_SDI_START_UNIQUE UNIQUE(SITE_ID, DATATYPE_ID, START_DATE_TIME)
-) &TBL_SPACE_SPEC;
+) &&TBL_SPACE_SPEC;
 
 CREATE TABLE EMAIL_ADDR
 (
 	ALARM_GROUP_ID INT NOT NULL,
 	ADDR VARCHAR2(256) NOT NULL,
-	db_office_code integer default &dflt_office_code,
+	db_office_code integer default &&dflt_office_code,
 	PRIMARY KEY (ALARM_GROUP_ID, ADDR)
-) &TBL_SPACE_SPEC;
+) &&TBL_SPACE_SPEC;
 
 CREATE TABLE FILE_MONITOR
 (
@@ -115,18 +115,18 @@ CREATE TABLE FILE_MONITOR
 	ALARM_ON_EXISTS VARCHAR2(5),
 	ON_EXISTS_HINT VARCHAR2(128),
 	ENABLED VARCHAR2(5),
-	db_office_code integer default &dflt_office_code,
+	db_office_code integer default &&dflt_office_code,
 	PRIMARY KEY (ALARM_GROUP_ID, PATH)
-) &TBL_SPACE_SPEC;
+) &&TBL_SPACE_SPEC;
 
 CREATE TABLE PROCESS_MONITOR
 (
 	ALARM_GROUP_ID INT NOT NULL,
 	LOADING_APPLICATION_ID INT NOT NULL,
 	ENABLED VARCHAR2(5),
-	db_office_code integer default &dflt_office_code,
+	db_office_code integer default &&dflt_office_code,
 	PRIMARY KEY (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
-) &TBL_SPACE_SPEC;
+) &&TBL_SPACE_SPEC;
 
 ALTER TABLE PROCESS_MONITOR
 	ADD CONSTRAINT PROCESS_MONITOR_FK1
