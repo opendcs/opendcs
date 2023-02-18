@@ -1,11 +1,8 @@
 package jython;
 
 import org.junit.jupiter.api.Test;
-import org.python.core.PyCode;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class SitePackageTest {
     @Test
@@ -13,10 +10,13 @@ public class SitePackageTest {
     {
         try(PythonInterpreter python = new PythonInterpreter();)
         {
-            PyCode testCode = python.compile("import test \r\ntest.say_hello()");
-            PyObject result = python.eval(testCode);
-    
-            assertEquals("hello",result.asString());
+            python.exec("import sys");
+            String path = String.format("%s/lib/opendcs.jar/python-packages",System.getProperty("build.dir"));
+            python.exec(String.format("sys.path.append(\"%s\")",path));
+            PyObject sysPath = python.eval("repr(sys.path)");
+            System.err.println(sysPath.asString());
+            python.exec("import requests");
+            /* We're just making sure the above doesn't throw an exception */
         }
     }
 }

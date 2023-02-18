@@ -6,6 +6,10 @@ from decodes.tsdb.algo import PythonAlgorithm
 from decodes.tsdb import NoSuchObjectException
 from decodes.tsdb import NoValueException
 
+import sys,os
+custom_packages = os.environ.get("DCSTOOL_HOME")+"/bin/opendcs.jar/python-packages"
+if custom_packages not in sys.path:
+	sys.path.append(custom_packages)
 # The Java code places the running instance into a static var
 # so that it is availabe to Python:
 algo = PythonAlgorithm.getRunningInstance()
