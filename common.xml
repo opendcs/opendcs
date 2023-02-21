@@ -6,7 +6,9 @@
     <property name="ivy.home" value="${user.home}/.ant"/>
     <property name="ivy.jar.dir" value="${ivy.home}/lib"/>
     <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar"/>
-
+    <condition property="isUnix" value="true">
+        <os family="unix" />
+    </condition>
 
     <property environment="env"/>
     <tstamp>
@@ -26,7 +28,9 @@
 	<property name="build.test.classes" value="${build.dir}/test-classes"/>
     <property name="build.test.resources" value="${build.dir}/test-resources"/>
 	<property name="build.test.lib" value="${build.dir}/test-libs"/>
-	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>		
+	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
+
+    <property name="build.release.dir" value="${build.dir}/release"/>
 
 	<!-- VERSION NUMBERS -->
 	<property name="MAJ_VER" value="7"/>
@@ -114,12 +118,7 @@
                     <property name="deploy.update" value="true"/>
                 </else>
             </if>
-            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build//lib/${ivy.module}.pom"/>
-            <ivy:publish resolver="${deploy.resolver}" organisation="com.opendcs" module="opendcs"
-                         update="${deploy.update}" overwrite="${deploy.update}" publishivy="false"
-                         pubrevision="${deploy.version}" status="${deploy.status}">
-                <artifacts pattern="build/lib/[artifact].[ext]"/>
-            </ivy:publish>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/lib/${ivy.module}.pom"/>
         </sequential>
     </macrodef>
 
@@ -131,4 +130,17 @@
 		<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
 			classpath="${build.dir}/ant-junitlauncher.jar"/>
 	</target>
+
+
+    <macrodef name="gpgsignfile">
+        <attribute name="target"/>
+        <sequential>            
+            <exec executable="gpg" dir="${build.release.dir}" failonerror="true">
+                <arg value="-ab"/>
+                <arg value="--yes"/>
+                <arg value="@{target}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
 </project>

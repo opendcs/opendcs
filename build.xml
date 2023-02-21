@@ -173,6 +173,51 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 	<target name="all" depends="clean,jar"
 		description="Cleans, compiles, and builds the distrubtion Jar file."/>
+
+	<target name="javadocs" depends="compile">
+		<javadoc destdir="${build.dir}/javadocs"
+				 author="true"
+				 version="true"
+				 use="true"
+				 windowTitle="OpenDCS API"
+				 classpathref="runtime.classpath">
+			<fileset dir="${src.dir}"/>
+			<tag name="todo" scope="all" description="To do:"/>
+		</javadoc>
+	</target>
+
+	<target name="release" depends="jar,javadocs,test,opendcs,publish" description="Generates signed bundle suitable for maven central upload."
+			if="isUnix"
+	>
+		<mkdir dir="${build.release.dir}"/>		
+		<copy file="${dist.jar}" tofile="${build.release.dir}/opendcs-${version}.jar"/>
+		<copy file="${build.dir}/lib/opendcs.pom" tofile="${build.release.dir}/opendcs-${version}.pom"/>
+		<jar jarfile="${build.release.dir}/opendcs-${version}-javadoc.jar"
+		     basedir="${build.dir}/javadocs"
+			 update="true"/>
+		<jar jarfile="${build.release.dir}/opendcs-${version}-sources.jar">
+			<fileset dir="${src.dir}" includes="**/*.java"/>
+		</jar>
+		
+		<available property="have.gpg" file="gpg" filepath="${PATH}"/>
+		<if>
+            <not>
+                <isset property="have.python"/>
+            </not>
+            <then>
+                <echo message="GPG is required to sign the components"/>
+            </then>
+            <else>
+				<gpgsignfile target="opendcs-${version}.pom"/>
+				<gpgsignfile target="opendcs-${version}.jar"/>
+				<gpgsignfile target="opendcs-${version}-javadoc.jar"/>
+				<gpgsignfile target="opendcs-${version}-sources.jar"/>
+				<jar jarfile="${build.release.dir}/bundle.jar">
+					<fileset dir="${build.release.dir}" excludes="bundle.jar"/>
+				</jar>
+			</else>
+		</if>
+	</target>
 	
 	<!-- Builds staging area for IzPack Installer -->
 	<target name="stage" depends="jar,common.resolve.build,docs.build">
