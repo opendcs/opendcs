@@ -117,7 +117,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		</copy>
 	</target>
 
-	<target name="test" depends="compile-test">
+	<target name="test" depends="compile-test,jar">
 		<pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
 		<echo message="platform path: ${platform_path}"/>
 		<mkdir dir="${build.dir}/test-results"/>
@@ -132,6 +132,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
            
 			<testclasses outputdir="${build.dir}/test-results">
 				<fork>
+					<jvmarg value="-Dbuild.dir=${build.dir}"/>
 					<jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
 				</fork>
 				<fileset dir="${build.test.classes}"/>
@@ -145,12 +146,14 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 	<target name="jar" depends="compile" description="Generates opendcs.jar.">
 
 		<!-- copy the resource files to the build directory. -->
-		<copy todir="${build.classes}/decodes/resources">
-    		<fileset dir="${resources.dir}/decodes/resources"/>
+		<copy todir="${build.classes}">
+			<fileset dir="${resources.dir}"/>
 		</copy>
+		<!--
 		<copy todir="${build.classes}/ilex/resources">
     		<fileset dir="${resources.dir}/ilex/resources"/>
 		</copy>
+		-->
 
 		<!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
 		<copy todir="${build.classes}/decodes/tsdb/algo">
