@@ -156,29 +156,19 @@ public class LrgsDatabaseThread
 	{
 		lastConnectAttempt = System.currentTimeMillis();
 
-		// Get username & password
-		String username = "lrgs_adm";		
 		String authFileName = "$LRGSHOME/.lrgsdb.auth";
-		Properties credentials = null;
 		try 
 		{
-			credentials = AuthSourceService.getFromString(authFileName)
+			Properties credentials = AuthSourceService.getFromString(authFileName)
 										   .getCredentials();
-			username = credentials.getProperty("username");
-		}
-		catch(AuthException ex)
-		{
-			String msg = module + " Cannot read DB auth from configuration '" 
-				+ authFileName;
-			throw new RuntimeException(msg,ex);
-		}
 
-		info("Attempting connection to db at '"
-			+ LrgsConfig.instance().dbUrl + "' as user '" + username + "'");
-		try
-		{
+			String username = credentials.getProperty("username");
+			info("Attempting connection to db at '"
+				+ LrgsConfig.instance().dbUrl + "' as user '" + username + "'");
+
 			lrgsDb.connect(credentials);
 			info("Successful database connection");
+
 			if (_firstConnect)
 			{
 				debug("Reading data sources and outages.");
@@ -192,21 +182,33 @@ public class LrgsDatabaseThread
 				for(Outage otg : ol)
 				{
 					if (otg.getBeginTime().compareTo(weekAgo) < 0)
+					{
 						lrgsDb.deleteOutage(otg);
+					}
 					else
 					{
 						// Don't allow open-ended historical outages.
 						if (otg.getEndTime() == null)
+						{
 							otg.setEndTime(now);
+						}
 
 						int id = otg.getOutageId();
 						if (id >= nextOutageId)
+						{
 							nextOutageId = id+1;
+						}
 						outages.add(otg);
 					}
 				}
 				_firstConnect = false;
 			}
+		}
+		catch(AuthException ex)
+		{
+			String msg = module + " Cannot read DB auth from configuration '"
+				+ authFileName;
+			throw new RuntimeException(msg,ex);
 		}
 		catch(LrgsDatabaseException ex)
 		{
