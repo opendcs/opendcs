@@ -1006,7 +1006,11 @@ public class RoutingSpecThread
 		catch(DataConsumerException e)
 		{
 			log(Logger.E_FAILURE, "Cannot initialize consumer '" + rs.consumerType
-				+ "': " + e.toString());
+				+ "': " + e.getLocalizedMessage());
+			if (e.getCause() != null)
+			{
+				log(Logger.E_FAILURE,e.getCause().getLocalizedMessage());
+			}
 			done = true;
 			currentStatus = "ERR-OutputInit";
 			return;

@@ -72,6 +72,10 @@ package ilex.util;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.util.Properties;
+
+import org.opendcs.spi.authentication.AuthSource;
+
 import java.io.FileWriter;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -82,7 +86,7 @@ home directory in an encrypted file. This class provides access to an
 encrypted file in the user's home directory. This file should be protected
 so that only the owner has access to it. The default file name is ".db.auth".
 */
-public class UserAuthFile
+public class UserAuthFile implements AuthSource
 {
 	/** The file to read */
 	private File authFile;
@@ -361,5 +365,16 @@ public class UserAuthFile
 				+ "', password '" + authFile.getPassword() + "'"
 				+ ", file version = " + authFile.getFileVersion());
 		}
+	}
+
+	/**
+	 * @returns Properties file with username and password fields.
+	 */
+	@Override
+	public Properties getCredentials() {
+		Properties props = new Properties();
+		props.put("username",getUsername());
+		props.put("password",getPassword());
+		return props;
 	}
 }
