@@ -12,40 +12,26 @@
  */
 package decodes.cwms;
 
-import java.io.PrintStream;
-import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.Properties;
 import java.util.TimeZone;
 
-import javax.management.JMException;
-import javax.management.ObjectName;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-
-import org.opendcs.jmx.ConnectionPoolMXBean;
-import org.opendcs.jmx.connections.JMXTypes;
+import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.spi.authentication.AuthSource;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.opentsdb.OpenTsdbSettings;
-import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
-import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
 import lrgs.gui.DecodesInterface;
+import ilex.util.AuthException;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
-import ilex.util.UserAuthFile;
 import decodes.db.*;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.OracleSequenceKeyGenerator;
@@ -180,19 +166,18 @@ public class CwmsSqlDatabaseIO
 			
 			// Retrieve username and password for database
 			String authFileName = DecodesSettings.instance().DbAuthFile;
-			UserAuthFile authFile = new UserAuthFile(authFileName);
-			try { authFile.read(); }
-			catch(Exception ex)
+			try
 			{
-				String msg = "Cannot read username and password from '"
-					+ authFileName + "' (run setDecodesUser first): " + ex;
-				System.err.println(msg);
-				Logger.instance().log(Logger.E_FATAL, msg);
-				throw new DatabaseConnectException(msg);
+				AuthSource as = AuthSourceService.getFromString(authFileName);
+				Properties props = as.getCredentials();
+				_dbUser = props.getProperty("username");
+				password = props.getProperty("password");
 			}
-
-			_dbUser = authFile.getUsername();
-			password = authFile.getPassword();
+			catch(AuthException ex)
+			{
+				String msg = "Cannot process credential information provided";				
+				throw new DatabaseConnectException(msg,ex);
+			}
 		}
 		if( conInfo == null)
 		{

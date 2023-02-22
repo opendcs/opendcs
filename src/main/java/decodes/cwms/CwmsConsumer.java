@@ -63,22 +63,22 @@
 */
 package decodes.cwms;
 
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
-import ilex.util.UserAuthFile;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
+
+import org.opendcs.authentication.AuthSourceService;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -102,13 +102,10 @@ import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.CompEventSvr;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbCompLock;
 import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
@@ -227,16 +224,14 @@ public class CwmsConsumer extends DataConsumer
 			EnvExpander.expand(cwmsCfg.getDbAuthFile());
 		try 
 		{
-			UserAuthFile authFile = new UserAuthFile(authFileName);
-			authFile.read();
-			credentials.setProperty("username", authFile.getUsername());
-			credentials.setProperty("password", authFile.getPassword());
+			credentials = AuthSourceService.getFromString(authFileName)
+										   .getCredentials();
 		}
-		catch(Exception ex)
+		catch(AuthException ex)
 		{
-			String msg = module + " Cannot read DB auth from file '" 
-				+ authFileName+ "': " + ex;
-			Logger.instance().warning(msg);
+			String msg = module + " Cannot read DB credentials '" 
+				+ authFileName + "'";			
+			throw new DataConsumerException(msg,ex);
 		}
 		
 		// Get the Oracle Data Source & open a connection.
@@ -288,8 +283,11 @@ public class CwmsConsumer extends DataConsumer
 			}
 		}
 
-		cwmsTsdb.closeConnection();
-		cwmsTsdb = null;
+		if (cwmsTsdb != null)
+		{
+			cwmsTsdb.closeConnection();
+			cwmsTsdb = null;
+		}
 	}
 
 	/**

@@ -573,14 +573,14 @@ the Launcher button panel.
 |                  |               | default to the sqlTimeZone        |
 |                  |               | setting.                          |
 +------------------+---------------+-----------------------------------+
-| DbAuthFile       | $HOME/\       | For SQL Database connections,     |
-|                  | .decodes.auth | this file stores the database     |
+| DbAuthFile       |$HOME/\        | For SQL Database connections,     |
+|                  |.decodes.auth  | this file stores the database     |
 |                  |               | username and password. It is      |
-|                  |               | encrypted and should have         |
+|                  |or             | encrypted and should have         |
 |                  |               | protected permissions in the      |
-|                  |               | user’s home directory. Thus each  |
-|                  |               | user can have a different         |
-|                  |               | database role.                    |
+|                  |authtype:config| user’s home directory. Thus each  |
+|                  |See below for  | user can have a different         |
+|                  |more.          | database role.                    |
 +------------------+---------------+-----------------------------------+
 | language         | en            | For internationalization, “en” is |
 |                  |               | the default (English).            |
@@ -674,6 +674,35 @@ the Launcher button panel.
 +------------------+---------------+-----------------------------------+
 
 Table 3‑1: DECODES Property Values.
+
+
+DbAuthFile can reference a file directly, or configuration for other auth sources.
+The full syntax is::
+
+  auth-type:configuration
+
+If no auth-type + : is present, the normal user auth file is assumed.
+
+UserAuthFile and env-auth-source are provided in the installation. See the developer Documenation
+for instructions on creating new sources.
+
+Table 3-2: DbAuthFile values
+
++----------------+-------------------------+-------------------------------------------------------------------+
+|Type            |Description              |Configuration                                                      |
++----------------+-------------------------+-------------------------------------------------------------------+
+|UserAuthFile    |Traditional file         |File name. Environment variables are expanded                      |
+|                |Control by setDecodesUser|                                                                   |
+|                |command                  |                                                                   |
++----------------+-------------------------+-------------------------------------------------------------------+
+|env-auth-source |pull credentials from    |Mapping of internal name to environment vars.                      |
+|                |environment variables.   |For example if your environment creds are                          |
+|                |                         |OPENDCS_USERNAME and OPENDCS_PASSWORD                              |
+|                |                         |the line would be:                                                 |
+|                |                         |env-auth-source:username=OPENDCS_USERNAME,password=OPENDCS_PASSWORD|
+|                |                         |                                                                   |
++----------------+-------------------------+-------------------------------------------------------------------+
+
 
 The “decodes.properties” file is read when an OPENDCS program is
 started. Therefore, in most cases, after making changes you must restart

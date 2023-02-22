@@ -53,23 +53,20 @@
 */
 package decodes.tsdb.test;
 
-import java.io.IOException;
 import java.util.Properties;
+
+import org.opendcs.authentication.AuthSourceService;
 
 import lrgs.gui.DecodesInterface;
 
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.StderrLogger;
-import ilex.util.UserAuthFile;
 
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.tsdb.*;
 import decodes.sql.DbKey;
-import decodes.sql.SqlDatabaseIO;
-import decodes.db.Database;
 
 public abstract class TestProg
 {
@@ -171,17 +168,9 @@ public abstract class TestProg
 			throw ex;
 		}
 
-		// Get authorization parameters.
-		UserAuthFile authFile = new UserAuthFile(authFileName);
-		try { authFile.read(); }
-		catch(Exception ex)
-		{
-			String msg = "Cannot read DB auth info from '" + authFileName + "': " + ex;
-			System.err.println(msg);
-			Logger.instance().fatal(msg);
-			throw ex;
-		}
-
+		// Get authorization parameters.	
+		Properties props = AuthSourceService.getFromString(authFileName)
+											.getCredentials();		
 		// Set test-mode flag & model run ID in the database interface.
 		theDb.setTestMode(testModeArg.getValue());
 		int modelRunId = modelRunArg.getValue();
@@ -189,10 +178,6 @@ public abstract class TestProg
 			theDb.setWriteModelRunId(modelRunId);
 
 		// Connect to the database!
-		Properties props = new Properties();
-		props.setProperty("username", authFile.getUsername());
-		props.setProperty("password", authFile.getPassword());
-
 		TestProg app;
 		try
 		{

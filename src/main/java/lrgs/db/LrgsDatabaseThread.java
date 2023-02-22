@@ -15,16 +15,17 @@ package lrgs.db;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
+
+import org.opendcs.authentication.AuthSourceService;
+
 import java.util.Properties;
 
-import ilex.util.EnvExpander;
+import ilex.util.AuthException;
 import ilex.util.Logger;
-import ilex.util.UserAuthFile;
 import lrgs.lrgsmain.LrgsConfig;
 
 /**
@@ -155,34 +156,19 @@ public class LrgsDatabaseThread
 	{
 		lastConnectAttempt = System.currentTimeMillis();
 
-		// Get username & password
-		String username = "lrgs_adm";
-		String password = "";
-		String authFileName = EnvExpander.expand("$LRGSHOME/.lrgsdb.auth");
-		UserAuthFile authFile = new UserAuthFile(authFileName);
+		String authFileName = "$LRGSHOME/.lrgsdb.auth";
 		try 
 		{
-			authFile.read();
-			username = authFile.getUsername();
-			password = authFile.getPassword();
-		}
-		catch(Exception ex)
-		{
-			String msg = module + " Cannot read DB auth from file '" 
-				+ authFileName+ "': " + ex;
-			Logger.instance().warning(msg);
-		}
+			Properties credentials = AuthSourceService.getFromString(authFileName)
+										   .getCredentials();
 
-		Properties credentials = new Properties();
-		credentials.setProperty("username", username);
-        credentials.setProperty("password", password);
+			String username = credentials.getProperty("username");
+			info("Attempting connection to db at '"
+				+ LrgsConfig.instance().dbUrl + "' as user '" + username + "'");
 
-		info("Attempting connection to db at '"
-			+ LrgsConfig.instance().dbUrl + "' as user '" + username + "'");
-		try
-		{
 			lrgsDb.connect(credentials);
 			info("Successful database connection");
+
 			if (_firstConnect)
 			{
 				debug("Reading data sources and outages.");
@@ -196,21 +182,33 @@ public class LrgsDatabaseThread
 				for(Outage otg : ol)
 				{
 					if (otg.getBeginTime().compareTo(weekAgo) < 0)
+					{
 						lrgsDb.deleteOutage(otg);
+					}
 					else
 					{
 						// Don't allow open-ended historical outages.
 						if (otg.getEndTime() == null)
+						{
 							otg.setEndTime(now);
+						}
 
 						int id = otg.getOutageId();
 						if (id >= nextOutageId)
+						{
 							nextOutageId = id+1;
+						}
 						outages.add(otg);
 					}
 				}
 				_firstConnect = false;
 			}
+		}
+		catch(AuthException ex)
+		{
+			String msg = module + " Cannot read DB auth from configuration '"
+				+ authFileName;
+			throw new RuntimeException(msg,ex);
 		}
 		catch(LrgsDatabaseException ex)
 		{

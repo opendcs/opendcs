@@ -24,4 +24,14 @@ public class AuthException extends Exception
 	{
 		super(msg);
 	}
+
+	/**
+	 * Constructor with cause
+	 * @param msg the message
+	 * @param cause root cause
+	 */
+	public AuthException(String msg, Throwable cause)
+	{
+		super(msg,cause);
+	}
 }

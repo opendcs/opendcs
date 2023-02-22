@@ -76,11 +76,13 @@ import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Properties;
 
+import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.spi.authentication.AuthSource;
+
 import opendcs.dai.TimeSeriesDAI;
-import ilex.util.EnvExpander;
+import ilex.util.AuthException;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
-import ilex.util.UserAuthFile;
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.decoder.DecodedMessage;
@@ -144,22 +146,18 @@ public class HdbConsumer extends DataConsumer
 		throws DataConsumerException
 	{
 		// Get username & password from Auth file
-		Properties credentials = new Properties();
-		String authFileName = 
-			EnvExpander.expand(DecodesSettings.instance().DbAuthFile);
-		UserAuthFile authFile = null;
+		Properties credentials = null;
+		String authFileName = DecodesSettings.instance().DbAuthFile;		
 		try 
 		{
-			authFile = new UserAuthFile(authFileName);
-			authFile.read();
-			credentials.setProperty("username", authFile.getUsername());
-			credentials.setProperty("password", authFile.getPassword());
+			credentials = AuthSourceService.getFromString(authFileName)
+											 .getCredentials();
 		}
-		catch(Exception ex)
+		catch(AuthException ex)
 		{
-			String msg = "Cannot read DB auth from file '" 
-				+ authFileName+ "': " + ex;
-			warning(msg);
+			String msg = "Cannot read DB auth from settings '" 
+				+ authFileName+ "': ";
+			throw new DataConsumerException(msg,ex);
 		}
 		
 		// Get the Oracle Data Source & open a connection.
@@ -168,7 +166,7 @@ public class HdbConsumer extends DataConsumer
 			hdbTsDb = new HdbTimeSeriesDb();
 			hdbTsDb.connect("decodes", credentials);
 			info("Connected to HDB Time Series Database as user " 
-				+ authFile.getUsername());
+				+ credentials.getProperty("username"));
 			autoCreateTs = TextUtil.str2boolean(hdbTsDb.getProperty("autoCreateTs"));
 			timeSeriesDAO = hdbTsDb.makeTimeSeriesDAO();
 		}

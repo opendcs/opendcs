@@ -31,5 +31,14 @@ public class DataConsumerException extends DecodesException
 	{
 		super(msg);
 	}
-}
 
+	/**
+	  Constructs new exception.
+	  @param msg the message
+	  @param cause the root cause
+	*/
+	public DataConsumerException(String msg, Throwable cause)
+	{
+		super(msg,cause);
+	}
+}

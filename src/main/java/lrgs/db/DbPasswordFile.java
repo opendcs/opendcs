@@ -8,6 +8,8 @@ import java.sql.Statement;
 import java.util.Date;
 import java.util.Properties;
 
+import org.opendcs.authentication.AuthSourceService;
+
 import lrgs.lrgsmain.LrgsConfig;
 import ilex.util.AuthException;
 import ilex.util.ByteUtil;
@@ -17,7 +19,6 @@ import ilex.util.PasswordFile;
 import ilex.util.PasswordFileEntry;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-import ilex.util.UserAuthFile;
 
 public class DbPasswordFile extends PasswordFile
 {
@@ -279,25 +280,22 @@ public class DbPasswordFile extends PasswordFile
 		LrgsConfig.instance().loadConfig();
 		LrgsDatabase lrgsDb = new LrgsDatabase();
 		String username = "lrgs_adm";
-		String password = "";
-		String authFileName = EnvExpander.expand("$LRGSHOME/.lrgsdb.auth");
-		UserAuthFile authFile = new UserAuthFile(authFileName);
-		try 
+		//String password = "";
+		String authFileName = "$LRGSHOME/.lrgsdb.auth";
+		Properties credentials = null;
+		try
 		{
-			authFile.read();
-			username = authFile.getUsername();
-			password = authFile.getPassword();
+			credentials = AuthSourceService.getFromString(authFileName)
+													  .getCredentials();
+			username = credentials.getProperty("username");
 		}
-		catch(Exception ex)
+		catch(AuthException ex)
 		{
 			String msg = module + " Cannot read DB auth from file '" 
-				+ authFileName+ "': " + ex;
+				+ authFileName+ "': " + ex + ", using default username and empty password";
 			Logger.instance().warning(msg);
-		}
-
-		Properties credentials = new Properties();
-		credentials.setProperty("username", username);
-        credentials.setProperty("password", password);
+			throw ex;
+		}		
 
 		Logger.instance().info("Attempting connection to db at '"
 			+ LrgsConfig.instance().dbUrl + "' as user '" + username + "'");
