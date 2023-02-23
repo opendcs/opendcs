@@ -126,3 +126,65 @@ to run each do the following:
     # output will be in build/reports/pmd/cpd/cpd.txt
 
 Only CPD is fast. checkstyle and SpotBugs are rather slow.
+Containers
+==========
+
+Theory of operation
+-------------------
+
+Each "application" will have it's own container, derived from a baseline image.
+This allows organization while also minimizing downstream disk usage. The base image layer will be shared so each
+application will only be a minor additional layer.
+
+Some applications like LRGS, RoutingScheduler, CompProc will have a default CMD and parameters and be suitable for:
+
+   docker run -d ...
+
+To run as a service.
+
+Other applications, like importts, complocklist, etc, will have an ENTRYPOINT and a user can call it like they normally would except prefixing with:
+   
+   docker run -v `pwd`/decodes.properties:/dcs_user/decodes.properties complocklist
+
+NOTE: this is still a work in progress, we may switch or there will also be support for environment variables. However, the commandline apps will
+likely not see common usage in docker directly.
+
+The build
+---------
+
+The build is done in multiple stages. 
+
+Stage 1 Build
+^^^^^^^^^^^^^
+
+The build uses the openjdk:8-jdk-bullseye image as it was easier to handle some of the basic dependencies. The documentation is not 
+generated as it wouldn't be easily accessible anyways.
+
+Stage 2 baseline
+^^^^^^^^^^^^^^^^
+
+This setups the basic "OpenDCS" install in /opt/opendcs. We use the openjdk:8-jre-alpine to save space for the final image.
+We may experiment in the future with additional image reductions.
+
+The baseline sets up the "DCSTOOL_HOME" directory in /opt/opendcs and alters the bin files with the appropriate full location.
+
+The baseline "env.sh" script, our docker equivalent to opendcs.init, is added here.
+The opendcs user, to avoid running as root, and group are added as well as the default entrypoint.
+
+The build/stage directory is copied from the build stage
+
+Stage 3+ lrgs
+^^^^^^^^^^^^^
+
+LRGSHOME  and LRGS_ADMIN_PASSWORD ENV variable is registered.
+/lrgs_home volume is registered.
+The default 16003 port is defined.
+
+The runtime user is set to opendcs:opendcs
+
+CMD is set to lrgs.sh
+
+lrgs.sh handles first time setup, copy default config, initial admin user, and starting LRGS in the foreground.
+
+The lrgs.lock file is currently ignored and docker just kills the process. Currently investigating better ways to 
+handle shutdown. Will likely just add a flag to remove the lock file entirely.
