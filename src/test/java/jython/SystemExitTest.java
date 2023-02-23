@@ -31,13 +31,9 @@ public class SystemExitTest {
                     return;
                 }
             }
-            else
-            {
-                String msg = "Error executing test script: " + ex;
-                logger.warning(msg);
-                throw ex;
-            }
+            String msg = "Error executing test script: " + ex;
+            logger.warning(msg);
+            throw ex;
         }
-
     }
 }

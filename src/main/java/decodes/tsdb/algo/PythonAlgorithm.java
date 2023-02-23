@@ -316,7 +316,7 @@ public class PythonAlgorithm
 					PyException pe = ((PyException) ex);
 					if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
 							&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
-						debug3("afterScript exited with system exit and zero exit code");
+						debug3("beforeScript exited with system exit and zero exit code");
 						return;
 					}
 				}
@@ -387,7 +387,8 @@ debug3("Missing action for '" + roleName + "' now set to " + parmRef.missingActi
 				PyException pe = ((PyException) ex);
 				if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
 						&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
-					debug3("afterScript exited with system exit and zero exit code");
+					debug3("paramInitScript exited with system exit and zero exit code");
+					firstTsGroup = false;
 					return;
 				}
 			}
@@ -529,7 +530,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 					PyException pe = ((PyException) ex);
 					if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
 							&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
-						debug3("afterScript exited with system exit and zero exit code");
+						debug3("tsScript exited with system exit and zero exit code");
 						return;
 					}
 				}
