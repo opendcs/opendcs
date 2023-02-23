@@ -6,6 +6,7 @@ if [ ! -d $LRGSHOME/netlist ]; then
     cp $DCSTOOL_HOME/*.conf .
     cp $DCSTOOL_HOME/*.xml .
     cp $DCSTOOL_HOME/lrgs.conf .
+    cp -r $DCSTOOL_HOME/netlist .
 
     if [ "$LRGS_ADMIN_PASSWORD" == "" ]; then
         LRGS_ADMIN_PASSWORD=`tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1`
