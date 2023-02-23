@@ -108,7 +108,7 @@ import java.util.TreeSet;
 
 import opendcs.dai.TimeSeriesDAI;
 
-import org.python.core.PyFloat;
+import org.python.core.*;
 import org.python.util.PythonInterpreter;
 
 import ilex.util.EnvExpander;
@@ -153,6 +153,8 @@ import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
+
+import static decodes.db.DecodesScript.logger;
 
 //AW:IMPORTS
 // Place an import statements you need here.
@@ -310,6 +312,14 @@ public class PythonAlgorithm
 			}
 			catch(Exception ex)
 			{
+				if (ex instanceof PyException) {
+					PyException pe = ((PyException) ex);
+					if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
+							&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
+						debug3("beforeScript exited with system exit and zero exit code");
+						return;
+					}
+				}
 				String msg = "Error executing beforeScript : " + ex;
 				warning(msg + linesep + beforeScript.getText());
 				throw new DbCompException(msg);
@@ -373,6 +383,15 @@ debug3("Missing action for '" + roleName + "' now set to " + parmRef.missingActi
 		}
 		catch(Exception ex)
 		{
+			if (ex instanceof PyException) {
+				PyException pe = ((PyException) ex);
+				if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
+						&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
+					debug3("paramInitScript exited with system exit and zero exit code");
+					firstTsGroup = false;
+					return;
+				}
+			}
 			String msg = "Error executing parmInitScript : " + ex;
 			warning(msg + linesep + parmInitScript);
 			throw new DbCompException(msg);
@@ -507,6 +526,14 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			}
 			catch(Exception ex)
 			{
+				if (ex instanceof PyException) {
+					PyException pe = ((PyException) ex);
+					if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
+							&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
+						debug3("tsScript exited with system exit and zero exit code");
+						return;
+					}
+				}
 				String msg = "Error executing tsScript : " + ex;
 				warning(msg + linesep + tsScript.getText());
 //				throw new DbCompException(msg);
@@ -537,6 +564,14 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			}
 			catch(Exception ex)
 			{
+				if (ex instanceof PyException) {
+					PyException pe = ((PyException) ex);
+					if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
+							&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
+						debug3("afterScript exited with system exit and zero exit code");
+						return;
+					}
+				}
 				String msg = "Error executing afterScript : " + ex;
 				warning(msg + linesep + afterScript.getText());
 				throw new DbCompException(msg);
