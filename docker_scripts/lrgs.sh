@@ -4,6 +4,7 @@ if [ ! -d $LRGSHOME/netlist ]; then
     echo "Generating initial LRGS HOME Directory."
     cp -r $DCSTOOL_HOME/users .
     cp $DCSTOOL_HOME/*.conf .
+    cp $DCSTOOL_HOME/*.xml .
     cp $DCSTOOL_HOME/lrgs.conf .
 
     if [ "$LRGS_ADMIN_PASSWORD" == "" ]; then
