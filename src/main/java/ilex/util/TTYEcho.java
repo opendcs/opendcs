@@ -58,12 +58,12 @@ public class TTYEcho
 	* @param prompt the prompt to display
 	* @return the entered password string.
 	*/
-	public static String readPassword( String prompt ) 
+	public static String readPassword(String prompt, Reader in) 
 	{
 		echoCtl(false);
 		System.out.print(prompt); 
 		System.out.flush();
-		String password = readLn();
+		String password = readLn(in);
 		System.out.println("");
 		echoCtl(true);
 		return password;
@@ -72,17 +72,17 @@ public class TTYEcho
 	/**
 	 * @return a line of text from stdin, discarding any newlines.
 	 */
-	public static String readLn()
+	public static String readLn(Reader in)
 	{
 		try
 		{
-			Reader rdr = new InputStreamReader(System.in);
+			
 			StringBuffer sb = new StringBuffer();
 			int c;
-			while ((c=rdr.read()) != -1 && c != '\n' && c != '\r')
+			while ((c=in.read()) != -1 && c != '\n' && c != '\r')
 				sb.append((char)c);
-			while(rdr.ready())
-				rdr.read();
+			//while(in.ready())
+			//	in.read();
 			return sb.toString();
 		}
 		catch(IOException e) 
