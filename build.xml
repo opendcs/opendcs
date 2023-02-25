@@ -175,11 +175,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <copy todir="${build.classes}">
             <fileset dir="${resources.dir}"/>
         </copy>
-        <!--
-        <copy todir="${build.classes}/ilex/resources">
-            <fileset dir="${resources.dir}/ilex/resources"/>
-        </copy>
-        -->
 
         <!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
         <copy todir="${build.classes}/decodes/tsdb/algo">
@@ -198,7 +193,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
     </target>
 
     <target name="all" depends="clean,jar"
-        description="Cleans, compiles, and builds the distrubtion Jar file."/>
+        description="Cleans, compiles, and builds the distribution Jar file."/>
 
     <target name="javadocs" depends="compile">
         <javadoc destdir="${build.dir}/javadocs"
