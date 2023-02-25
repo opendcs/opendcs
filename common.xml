@@ -14,11 +14,11 @@
     <tstamp>
         <format property="snapshot.time" pattern="yyyyMMdd.hhmmss-1"/>
     </tstamp>
-	
-	<property name="project.dir" value="${basedir}"/>	
-	<property name="src.dir" value="src/main/java"/>
+
+    <property name="project.dir" value="${basedir}"/>
+    <property name="src.dir" value="src/main/java"/>
     <property name="resources.dir" value="src/main/resources"/>
-	<property name="src.test.dir" value="src/test/java"/>
+    <property name="src.test.dir" value="src/test/java"/>
     <property name="resources.test.dir" value="src/test/resources"/>
 		
 	<property name="build.dir" value="build"/>
@@ -32,21 +32,21 @@
 
     <property name="build.release.dir" value="${build.dir}/release"/>
 
-	<!-- VERSION NUMBERS -->
-	<property name="MAJ_VER" value="7"/>
-	<property name="MIN_VER" value="0"/>
+    <!-- VERSION NUMBERS -->
+    <property name="MAJ_VER" value="7"/>
+    <property name="MIN_VER" value="0"/>
 
-	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
-		<filterchain><striplinebreaks/></filterchain>
-	</loadfile>
-	<echo message="RCNUM=${RCNUM}"/>
+    <loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
+        <filterchain><striplinebreaks/></filterchain>
+    </loadfile>
+    <echo message="RCNUM=${RCNUM}"/>
 
-	<property name="version" value="${MAJ_VER}.${MIN_VER}.${RCNUM}"/>
-	<echo message="VERSION=${version}"/>
-	
-	
+    <property name="version" value="${MAJ_VER}.${MIN_VER}.${RCNUM}"/>
+    <echo message="VERSION=${version}"/>
 
-	<target name="download-ivy" unless="offline">
+
+
+    <target name="download-ivy" unless="offline">
         <echo message="IVY jar dir ${ivy.jar.dir}"/>
         <mkdir dir="${ivy.jar.dir}"/>
         <!-- download Ivy from web site so that it can be used even without any special installation -->
@@ -74,13 +74,13 @@
         />
         <ivy:cachepath pathid="runtime.classpath" conf="runtime"/>
         <ivy:cachepath pathid="test.classpath" conf="test"/>
-        <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>        
+        <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>
     </target>
 
     <target name="resolve.build" depends="init-ivy" description="--> retrieve build script dependencies">
         <ivy:retrieve conf="build,groovy,izpack"
                       sync="true"
-                      pattern="build/ivy/[conf]/[artifact].[ext]"              
+                      pattern="build/ivy/[conf]/[artifact].[ext]"
         />
         <ivy:cachepath pathid="izpack.classpath" conf="izpack"/>
         <ivy:cachepath pathid="groovy.classpath" conf="groovy"/>
@@ -96,9 +96,9 @@
     </target>
 
 
-    <target name="izpack.dependencies" depends="resolve">		
-		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
-	</target>
+    <target name="izpack.dependencies" depends="resolve">
+        <taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
+    </target>
 
     <macrodef name="publish">
         <sequential>
@@ -112,7 +112,7 @@
                     <property name="deploy.update" value="false"/>
                 </then>
                 <else>
-                    <property name="deploy.resolver" value="maven-snapshots"/>                    
+                    <property name="deploy.resolver" value="maven-snapshots"/>
                     <property name="deploy.version" value="${ivy.revision}-SNAPSHOT"/>
                     <property name="deploy.status" value="integration"/>
                     <property name="deploy.update" value="true"/>
@@ -123,18 +123,18 @@
     </macrodef>
 
     <target name="-get-junitlauncher" unless="junitlauncherPresent">
-		<echo message="You're environment doesn't have the junitlauncher jar. getting it for you"/>
-		<antversion property="ant_version"/>
-		<get src="https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/${ant_version}/ant-junitlauncher-${ant_version}.jar"
-			dest="${build.dir}/ant-junitlauncher.jar" usetimestamp="true"/>
-		<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
-			classpath="${build.dir}/ant-junitlauncher.jar"/>
-	</target>
+        <echo message="You're environment doesn't have the junitlauncher jar. getting it for you"/>
+        <antversion property="ant_version"/>
+        <get src="https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/${ant_version}/ant-junitlauncher-${ant_version}.jar"
+            dest="${build.dir}/ant-junitlauncher.jar" usetimestamp="true"/>
+        <taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
+            classpath="${build.dir}/ant-junitlauncher.jar"/>
+    </target>
 
 
     <macrodef name="gpgsignfile">
         <attribute name="target"/>
-        <sequential>            
+        <sequential>
             <exec executable="gpg" dir="${build.release.dir}" failonerror="true">
                 <arg value="-ab"/>
                 <arg value="--yes"/>
