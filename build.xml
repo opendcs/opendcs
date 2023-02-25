@@ -59,7 +59,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <format property="buildDate" pattern="MMM dd, yyyy"/>
         </tstamp>
 
-<<<<<<< HEAD
 		<copy todir="${build.classes}/lrgs/nledit">
 			<fileset dir="${src.dir}/lrgs/nledit">
 				<include name="*.gif"/>
@@ -68,13 +67,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 		<sync todir="${build.resources}">
 			<fileset dir="${resources.dir}"/>
 		</sync>
-=======
-        <copy todir="${build.classes}/lrgs/nledit">
-            <fileset dir="${src.dir}/lrgs/nledit">
-                <include name="*.gif"/>
-            </fileset>
-        </copy>
->>>>>>> 577cba24 (fix formatting.)
 
         <delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
         <copy file="${src.dir}/lrgs/gui/LrgsBuild.java"
@@ -118,21 +110,12 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <pathelement location="${build.classes}"/>
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
-<<<<<<< HEAD
 			</classpath>			
 		</javac>
 		<sync todir="${build.test.resources}">
     		<fileset dir="${resources.test.dir}"/>
 		</sync>
 	</target>
-=======
-            </classpath>
-        </javac>
-        <copy todir="${build.test.classes}">
-            <fileset dir="${resources.test.dir}"/>
-        </copy>
-    </target>
->>>>>>> 577cba24 (fix formatting.)
 
     <target name="test" depends="compile-test,jar">
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
@@ -159,15 +142,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
             </testclasses>
 
-<<<<<<< HEAD
-		<!-- copy the resource files to the build directory. -->
-		<copy todir="${build.classes}">
-			<fileset dir="${resources.dir}"/>
-		</copy>
-=======
         </junitlauncher>
     </target>
->>>>>>> 577cba24 (fix formatting.)
 
     <target name="jar" depends="compile" description="Generates opendcs.jar.">
 
