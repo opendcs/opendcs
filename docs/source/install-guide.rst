@@ -335,20 +335,16 @@ the shared settings are stored in $DCSTOOL_USERDIR/user.properties. When
 you run the OPENDCS setup menu as a normal user, your settings will be
 stored in your configuration file and will only apply to you.
 
-CWMS modules require access to a few JAR (Java Archive) files that are
-found in your CWMS installation. Please set the following two
-environment variables:
-
--  $CWMS_JAR_DIR – Location of CWMS Jar Files (usually /usr/cwms/jar
-
--  $CWMS_SYSJAR_DIR – Location of system Jars used by CWMS (usually
-   (/usr/cwms/jar/system)
-
 Installing from a Compressed Tar Image
 ---------------------------------------
 
 USACE requested that we prepare a compressed TAR (Tape Archive) image
 file for easy command-line installations.
+
+NOTE:
+
+   We are not distributing this particular file anymore; however we
+   are working letting the normal installer allow this type of installation.
 
 The installation file will be called:
 opendcs-*version*-unix-install.tgz. For example release 6.0 is called:
@@ -410,6 +406,23 @@ included in the TAR file.
 
 For a fresh install, rename the sample included in the TAR file to the
 operational name before starting the software for the first time.
+
+Unattended Installation
+-----------------------
+
+After performing a normal install the final panel of the installer will have a
+button to generate an "installation script":
+
+.. image:: ./media/install-guide/gen_install_script.png
+   :alt: Final Panel
+   :width: 3.42336in
+   :height: 2.75in
+
+If you need to perform the same install in several places with the same options,
+like which packs to use, you can use this file as follows (assuming you've called it auto-install.xml):
+
+    java -jar *downloaded-file-name* auto-install.xml
+
 
 Upgrading Database for a Previous Release
 =========================================
