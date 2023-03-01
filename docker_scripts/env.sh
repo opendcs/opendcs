@@ -2,4 +2,5 @@
 
 export PATH=/opt/opendcs/bin:$PATH
 
-$*
+
+exec $*

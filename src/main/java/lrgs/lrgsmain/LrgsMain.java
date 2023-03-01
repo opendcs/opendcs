@@ -252,10 +252,9 @@ public class LrgsMain
 		writeStatusSnapshot();
 		statusProvider.detach();
 
+		myServerLock.releaseLock();
 		Logger.instance().info("============ " + LrgsCmdLineArgs.progname 
 			+ " Exiting ============");
-		myServerLock.releaseLock();
-        System.exit(0);
 	}
 
 	/**
@@ -729,7 +728,28 @@ public class LrgsMain
 			ServerLock.setWindowsService(true);
 		
 		Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
-		LrgsMain lm = new LrgsMain();
+		final LrgsMain lm = new LrgsMain();
+		if (cmdLineArgs.runInForGround() )
+		{
+			final Thread mainThread = Thread.currentThread();
+			Runtime.getRuntime().addShutdownHook( new Thread() {
+				@Override
+				public void run()
+				{
+					try
+					{
+						Logger.instance().debug3("SIGTERM Caught, Setting shutdown flag to true.");
+						lm.shutdown();
+						mainThread.join();
+					}
+					catch (InterruptedException ex)
+					{
+						System.err.println(ex);
+					}
+				}
+			});
+		}
+
 		lm.run();
 	}
 
