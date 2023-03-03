@@ -543,4 +543,19 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			<formatter type="plain"/>
 		</checkstyle>
 	</target>
+
+	<target name="spotbugs" depends="common.resolve.build,jar" description="Various static analysis">
+		
+		<mkdir dir="${spotbugs.output.dir}"/>
+		<spotbugs output="xml:withMessages"
+            	  outputFile="${spotbugs.output.dir}/spotbugs.html"
+				  excludeFilter="spotbugs-filter.xml"
+				  debug="true">
+			<auxClasspath refid="runtime.classpath"/>
+    		<sourcePath path="${src.dir}" />
+	    	<class location="${build.dir}/lib/opendcs.jar" />
+			<classpath refid="spotbugs.classpath"/>
+			
+  		</spotbugs>
+	</target>
 </project>

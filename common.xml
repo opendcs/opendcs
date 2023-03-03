@@ -26,7 +26,8 @@
 	<property name="build.test.classes" value="${build.dir}/test-classes"/>
     <property name="build.test.resources" value="${build.dir}/test-resources"/>
 	<property name="build.test.lib" value="${build.dir}/test-libs"/>
-	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>		
+	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
+    <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
 
 	<!-- VERSION NUMBERS -->
 	<property name="MAJ_VER" value="7"/>
@@ -74,16 +75,20 @@
     </target>
 
     <target name="resolve.build" depends="init-ivy" description="--> retrieve build script dependencies">
-        <ivy:retrieve conf="build,groovy,izpack"
+        <ivy:retrieve conf="build,groovy,izpack,spotbugs"
                       sync="true"
-                      pattern="build/ivy/[conf]/[artifact].[ext]"              
+                      pattern="build/ivy-build/[conf]/[artifact].[ext]"              
         />
         <ivy:cachepath pathid="izpack.classpath" conf="izpack"/>
         <ivy:cachepath pathid="groovy.classpath" conf="groovy"/>
         <ivy:cachepath pathid="build.classpath" conf="build"/>
+        <ivy:cachepath pathid="spotbugs.classpath" conf="spotbugs"/>
         <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="build.classpath"/>
 
         <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties"
+                 classpathref="build.classpath"/>
+
+        <taskdef resource="edu/umd/cs/findbugs/anttask/tasks.properties"
                  classpathref="build.classpath"/>
     </target>
 

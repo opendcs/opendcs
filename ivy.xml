@@ -12,6 +12,7 @@
         <conf name="izpack" visibility="private"/>
         <conf name="groovy" visibility="private"/>
         <conf name="build" visibility="private"/>
+        <conf name="spotbugs" visibility="private"/>
     </configurations>
     <publications>
         <artifact name="opendcs" type="pom" conf="runtime" ext="pom"/>
@@ -100,6 +101,9 @@
         <!-- for some reason the github action build requires classes built for java 8 but my local environment
             does not. Downgrade for now to people can review.-->
         <dependency org="com.puppycrawl.tools" name="checkstyle" rev="9.3" conf="build->default"/>
+        <dependency org="com.github.spotbugs" name="spotbugs-ant" rev="4.7.3" conf="build->default"/>
+        <dependency org="com.github.spotbugs" name="spotbugs" rev="4.7.3" conf="spotbugs->default"/>
+
         <!-- keep unused transient dependencies out -->
 
         <exclude org="mil.army.usace.hec" module="loading-gui-lib"/>
