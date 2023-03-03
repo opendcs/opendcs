@@ -4,6 +4,17 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
     <Match>
-        <Class name="~.*py" />
+        <Or>
+            <!-- ignore the python code -->
+            <Class name="~.*certifi.*"/>
+            <Class name="~.*chardet.*"/>
+            <Class name="~.*idna.*"/>
+            <Class name="~.*pkg_resources.*"/>
+            <Class name="~.*requests.*"/>
+            <Class name="~.*urllib3.*"/>
+
+            <!-- The security manager is getting deprecated and we don't use it. -->
+            <Bug pattern="DP"/>
+        </Or>
     </Match>
 </FindBugsFilter>

@@ -77,7 +77,7 @@
     <target name="resolve.build" depends="init-ivy" description="--> retrieve build script dependencies">
         <ivy:retrieve conf="build,groovy,izpack,spotbugs"
                       sync="true"
-                      pattern="build/ivy-build/[conf]/[artifact].[ext]"              
+                      pattern="build/ivy-build/[conf]/[artifact](-[classifier]).[ext]"
         />
         <ivy:cachepath pathid="izpack.classpath" conf="izpack"/>
         <ivy:cachepath pathid="groovy.classpath" conf="groovy"/>
@@ -92,7 +92,7 @@
                  classpathref="build.classpath"/>
     </target>
 
-    <target name="report" depends="resolve" description="--> generates a report of dependencies">
+    <target name="report" depends="resolve,resolve.build" description="--> generates a report of dependencies">
         <ivy:report todir="${build.dir}"/>
     </target>
 
