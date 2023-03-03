@@ -13,6 +13,7 @@
         <conf name="groovy" visibility="private"/>
         <conf name="build" visibility="private"/>
         <conf name="spotbugs" visibility="private"/>
+        <conf name="pmd" visibility="private"/>
     </configurations>
     <publications>
         <artifact name="opendcs" type="pom" conf="runtime" ext="pom"/>
@@ -112,6 +113,12 @@
         <dependency org="org.xmlresolver" name="xmlresolver" rev="4.4.3" conf="spotbugs->default">
             <include name="*"/>
         </dependency>
+
+
+        <dependency org="net.sourceforge.pmd" name="pmd-core" rev="6.55.0" conf="pmd->default"/>
+        <dependency org="net.sourceforge.pmd" name="pmd-doc" rev="6.55.0" conf="pmd->default"/>
+        <dependency org="net.sourceforge.pmd" name="pmd-java" rev="6.55.0" conf="pmd->default"/>
+        <dependency org="net.sourceforge.pmd" name="pmd-java8" rev="6.55.0" conf="pmd->default"/>
 
         <!-- keep unused transient dependencies out -->
 

@@ -558,4 +558,17 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 			<classpath refid="spotbugs.classpath"/>
   		</spotbugs>
 	</target>
+
+
+	<target name="cpd" depends="common.resolve.build" description="Duplicate code checker">
+		<mkdir dir="${pmd.output.dir}/cpd"/>
+		<cpd minimumTokenCount="100" outputFile="${pmd.output.dir}/cpd/cpd.txt" format="text" encoding="UTF-8"
+			 ignoreAnnotations="true">
+			<fileset dir="${src.dir}">
+				<include name="**/*.java"/>
+			</fileset>
+		</cpd>
+	</target>
+
+	<target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
 </project>
