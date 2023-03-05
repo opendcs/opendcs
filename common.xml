@@ -1,4 +1,5 @@
-<project name="common" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="common" xmlns:ivy="antlib:org.apache.ivy.ant"
+    xmlns:if="ant:if" xmlns:unless="ant:unless">
     <property name="ivy.install.version" value="2.5.0"/>
     <condition property="ivy.home" value="${env.IVY_HOME}">
         <isset property="env.IVY_HOME"/>
@@ -6,45 +7,47 @@
     <property name="ivy.home" value="${user.home}/.ant"/>
     <property name="ivy.jar.dir" value="${ivy.home}/lib"/>
     <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar"/>
-
+    <condition property="isUnix" value="true">
+        <os family="unix" />
+    </condition>
 
     <property environment="env"/>
     <tstamp>
         <format property="snapshot.time" pattern="yyyyMMdd.hhmmss-1"/>
     </tstamp>
 
-	<property name="project.dir" value="${basedir}"/>
-	<property name="src.dir" value="src/main/java"/>
+    <property name="project.dir" value="${basedir}"/>
+    <property name="src.dir" value="src/main/java"/>
     <property name="resources.dir" value="src/main/resources"/>
-	<property name="src.test.dir" value="src/test/java"/>
+    <property name="src.test.dir" value="src/test/java"/>
     <property name="resources.test.dir" value="src/test/resources"/>
 
-	<property name="build.dir" value="build"/>
-	<property name="build.classes" value="${build.dir}/classes"/>
+    <property name="build.dir" value="build"/>
+    <property name="build.classes" value="${build.dir}/classes"/>
     <property name="build.resources" value="${build.dir}/resources"/>
-	<property name="build.lib" value="${build.dir}/lib"/>
-	<property name="build.test.classes" value="${build.dir}/test-classes"/>
+    <property name="build.lib" value="${build.dir}/lib"/>
+    <property name="build.test.classes" value="${build.dir}/test-classes"/>
     <property name="build.test.resources" value="${build.dir}/test-resources"/>
-	<property name="build.test.lib" value="${build.dir}/test-libs"/>
-	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
+    <property name="build.test.lib" value="${build.dir}/test-libs"/>
+    <property name="dist.jar" value="${build.lib}/opendcs.jar"/>
     <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
     <property name="pmd.output.dir" value="${build.dir}/reports/pmd"/>
 
-	<!-- VERSION NUMBERS -->
-	<property name="MAJ_VER" value="7"/>
-	<property name="MIN_VER" value="0"/>
+    <!-- VERSION NUMBERS -->
+    <property name="MAJ_VER" value="7"/>
+    <property name="MIN_VER" value="0"/>
 
-	<loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
-		<filterchain><striplinebreaks/></filterchain>
-	</loadfile>
-	<echo message="RCNUM=${RCNUM}"/>
+    <loadfile property="RCNUM" srcFile="${project.dir}/rcnum.txt">
+        <filterchain><striplinebreaks/></filterchain>
+    </loadfile>
+    <echo message="RCNUM=${RCNUM}"/>
 
-	<property name="version" value="${MAJ_VER}.${MIN_VER}.${RCNUM}"/>
-	<echo message="VERSION=${version}"/>
+    <property name="version" value="${MAJ_VER}.${MIN_VER}.${RCNUM}"/>
+    <echo message="VERSION=${version}"/>
 
 
 
-	<target name="download-ivy" unless="offline">
+    <target name="download-ivy" unless="offline">
         <echo message="IVY jar dir ${ivy.jar.dir}"/>
         <mkdir dir="${ivy.jar.dir}"/>
         <!-- download Ivy from web site so that it can be used even without any special installation -->
@@ -102,8 +105,8 @@
 
 
     <target name="izpack.dependencies" depends="resolve">
-		<taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
-	</target>
+        <taskdef name="izpack" classname="com.izforge.izpack.ant.IzPackTask" classpathref="izpack.classpath"/>
+    </target>
 
     <macrodef name="publish">
         <sequential>
@@ -123,21 +126,39 @@
                     <property name="deploy.update" value="true"/>
                 </else>
             </if>
-            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build//lib/${ivy.module}.pom"/>
-            <ivy:publish resolver="${deploy.resolver}" organisation="com.opendcs" module="opendcs"
-                         update="${deploy.update}" overwrite="${deploy.update}" publishivy="false"
-                         pubrevision="${deploy.version}" status="${deploy.status}">
-                <artifacts pattern="build/lib/[artifact].[ext]"/>
-            </ivy:publish>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/lib/${ivy.module}.pom"/>
         </sequential>
     </macrodef>
 
     <target name="-get-junitlauncher" unless="junitlauncherPresent">
-		<echo message="You're environment doesn't have the junitlauncher jar. getting it for you"/>
-		<antversion property="ant_version"/>
-		<get src="https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/${ant_version}/ant-junitlauncher-${ant_version}.jar"
-			dest="${build.dir}/ant-junitlauncher.jar" usetimestamp="true"/>
-		<taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
-			classpath="${build.dir}/ant-junitlauncher.jar"/>
-	</target>
+        <echo message="You're environment doesn't have the junitlauncher jar. getting it for you"/>
+        <antversion property="ant_version"/>
+        <get src="https://repo1.maven.org/maven2/org/apache/ant/ant-junitlauncher/${ant_version}/ant-junitlauncher-${ant_version}.jar"
+            dest="${build.dir}/ant-junitlauncher.jar" usetimestamp="true"/>
+        <taskdef name="junitlauncher" classname="org.apache.tools.ant.taskdefs.optional.junitlauncher.confined.JUnitLauncherTask"
+            classpath="${build.dir}/ant-junitlauncher.jar"/>
+    </target>
+
+
+    <macrodef name="gpgsignfile">
+        <attribute name="target"/>
+        <sequential>
+            <if>
+                <not>
+                    <isset property="gpg.key.id"/>
+                </not>
+                <then>
+                    <fail message="Please set the GPG key for signing."/>
+                </then>
+            </if>
+            <exec executable="gpg" dir="${build.release.dir}" failonerror="true">
+                <arg value="-ab"/>
+                <arg value="-u"/>
+                <arg value="${gpg.key.id}"/>
+                <arg value="--yes"/>
+                <arg value="@{target}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
 </project>

@@ -15,560 +15,604 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
 
 -->
-
-
-
 <project name="OPENDCS Toolkit" default="jar" basedir="."
-	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant"
-	xmlns:if="ant:if"
+    xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant"
+    xmlns:if="ant:if" xmlns:unless="ant:unless"
     >
-	<description>Open DCS</description>
+    <description>Open DCS</description>
 
-    
+
     <include file="common.xml"/>
-	<include file="docs/build.xml"/>
-	
-<!-- depends="clean" -->
-	<target name="prepare"  description="Makes build environment.">
-		<mkdir dir="${build.dir}"/>
-		<mkdir dir="${build.classes}"/>
-		<mkdir dir="${build.lib}"/>
-		<pathconvert property="junitlauncherPresent" setonempty="false" pathsep=" ">
-			<path>
-				<fileset dir="${ant.home}">
-					<include name="**/ant-junitlauncher*.jar"/>
-				</fileset>
-			</path>
-		</pathconvert>
-	</target>
+    <include file="docs/build.xml"/>
 
-	<target name="clean" description="Removes all generated files.">
-		<delete dir="${build.dir}"/>
-		<delete dir="stage"/>
-		<delete>
- 			<fileset dir="." includes="opendcs-*-unix-install.tgz"/>
+<!-- depends="clean" -->
+    <target name="prepare"  description="Makes build environment.">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.classes}"/>
+        <mkdir dir="${build.lib}"/>
+        <pathconvert property="junitlauncherPresent" setonempty="false" pathsep=" ">
+            <path>
+                <fileset dir="${ant.home}">
+                    <include name="**/ant-junitlauncher*.jar"/>
+                </fileset>
+            </path>
+        </pathconvert>
+    </target>
+
+    <target name="clean" description="Removes all generated files.">
+        <delete dir="${build.dir}"/>
+        <delete dir="stage"/>
+        <delete>
+             <fileset dir="." includes="opendcs-*-unix-install.tgz"/>
             <fileset dir="." includes="opendcs-src-*.tgz"/>
             <fileset dir="." includes="opendcs-cwms-*.tgz"/>
-		</delete>
-		<delete dir="combined-src"/>
-        <antcall target="docs.clean"/>        
-	</target>
+        </delete>
+        <delete dir="combined-src"/>
+        <antcall target="docs.clean"/>
+    </target>
 
-	<target name="compile" depends="prepare,common.resolve"
-		description="Compiles all source code.">
+    <target name="compile" depends="prepare,common.resolve"
+        description="Compiles all source code.">
 
-		<!-- create build date -->
-		<tstamp>
-			<format property="buildDate" pattern="MMM dd, yyyy"/>
-		</tstamp>
+        <!-- create build date -->
+        <tstamp>
+            <format property="buildDate" pattern="MMM dd, yyyy"/>
+        </tstamp>
 
-		<copy todir="${build.classes}/lrgs/nledit">
-			<fileset dir="${src.dir}/lrgs/nledit">
-				<include name="*.gif"/>
-			</fileset>
-		</copy>
-		<sync todir="${build.resources}">
-			<fileset dir="${resources.dir}"/>
-		</sync>
+        <copy todir="${build.classes}/lrgs/nledit">
+            <fileset dir="${src.dir}/lrgs/nledit">
+                <include name="*.gif"/>
+            </fileset>
+        </copy>
+        <sync todir="${build.resources}">
+            <fileset dir="${resources.dir}"/>
+        </sync>
 
-		<delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
+        <delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
         <copy file="${src.dir}/lrgs/gui/LrgsBuild.java"
               tofile="${build.classes}/lrgs/gui/LrgsBuild.java"
               overwrite="true">
             <filterset>
-				<filter token="VERSION" value="${version}"/>
+                <filter token="VERSION" value="${version}"/>
                 <filter token="DATE" value="${buildDate}" />
                 <filter token="RCNUM" value="${RCNUM}" />
             </filterset>
         </copy>
-		<javac debug="true" destdir="${build.classes}"
-			target="1.8" source="1.8"
-			includeantruntime="true"
-			encoding="UTF-8"
-			includes="lrgs/gui/LrgsBuild.java">
-			<src path="${build.classes}"/>			
+        <javac debug="true" destdir="${build.classes}"
+            target="1.8" source="1.8"
+            includeantruntime="true"
+            encoding="UTF-8"
+            includes="lrgs/gui/LrgsBuild.java">
+            <src path="${build.classes}"/>
             <classpath refid="runtime.classpath"/>
-		</javac>
+        </javac>
 
-		<javac debug="true" destdir="${build.classes}"
-			target="1.8" source="1.8"
-			includeantruntime="true"
-			encoding="UTF-8"
-			includes="**"
-			excludes="lrgs/gui/LrgsBuild.java">
-			<src path="${src.dir}"/>			
+        <javac debug="true" destdir="${build.classes}"
+            target="1.8" source="1.8"
+            includeantruntime="true"
+            encoding="UTF-8"
+            includes="**"
+            excludes="lrgs/gui/LrgsBuild.java">
+            <src path="${src.dir}"/>
             <classpath refid="runtime.classpath"/>
-		</javac>
+        </javac>
 
-	</target>
+    </target>
 
-	<target name="compile-test" depends="compile,common.resolve">
-		<mkdir dir="${build.test.classes}"/>
-		<javac debug="true" destdir="${build.test.classes}"
-			target="1.8" source="1.8" includeantruntime="false"
-			encoding="UTF-8"
-		>
-			<src path="${src.test.dir}"/>
-			<classpath>
-				<pathelement location="${build.classes}"/>
+    <target name="compile-test" depends="compile,common.resolve">
+        <mkdir dir="${build.test.classes}"/>
+        <javac debug="true" destdir="${build.test.classes}"
+            target="1.8" source="1.8" includeantruntime="false"
+            encoding="UTF-8"
+        >
+            <src path="${src.test.dir}"/>
+            <classpath>
+                <pathelement location="${build.classes}"/>
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
-			</classpath>			
-		</javac>
-		<sync todir="${build.test.resources}">
-    		<fileset dir="${resources.test.dir}"/>
-		</sync>
-	</target>
+            </classpath>
+        </javac>
+        <sync todir="${build.test.resources}">
+            <fileset dir="${resources.test.dir}"/>
+        </sync>
+    </target>
 
-	<target name="test" depends="compile-test,jar">
-		<pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
-		<echo message="platform path: ${platform_path}"/>
-		<mkdir dir="${build.dir}/test-results"/>
-		<junitlauncher haltOnFailure="true" printSummary="true">
-			<classpath refid="test.classpath"/>
+    <target name="test" depends="compile-test,jar">
+        <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
+        <echo message="platform path: ${platform_path}"/>
+        <mkdir dir="${build.dir}/test-results"/>
+        <junitlauncher haltOnFailure="true" printSummary="true">
+            <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
             <classpath>
-				<pathelement location="${build.resources}"/>
-				<pathelement location="${build.test.resources}"/>
+                <pathelement location="${build.resources}"/>
+                <pathelement location="${build.test.resources}"/>
                 <pathelement location="${build.test.classes}"/>
                 <pathelement location="${build.classes}"/>
             </classpath>
-           
-			<testclasses outputdir="${build.dir}/test-results">
-				<fork>
-					<jvmarg value="-Dbuild.dir=${build.dir}"/>
-					<jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
-				</fork>
-				<fileset dir="${build.test.classes}"/>
-				<listener type="legacy-brief" sendSysOut="true"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>                
-			</testclasses>
-            
-		</junitlauncher>
-	</target>
 
-	<target name="jar" depends="compile" description="Generates opendcs.jar.">
+            <testclasses outputdir="${build.dir}/test-results">
+                <fork>
+                    <jvmarg value="-Dbuild.dir=${build.dir}"/>
+                    <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                </fork>
+                <fileset dir="${build.test.classes}"/>
+                <listener type="legacy-brief" sendSysOut="true"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+            </testclasses>
 
-		<!-- copy the resource files to the build directory. -->
-		<copy todir="${build.classes}">
-			<fileset dir="${resources.dir}"/>
-		</copy>
+        </junitlauncher>
+    </target>
 
-		<!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
-		<copy todir="${build.classes}/decodes/tsdb/algo">
-			<fileset dir="${src.dir}/decodes/tsdb/algo">
-				<include name="AW_AlgorithmTemplate.java"/>
-			</fileset>
-		</copy>
+    <target name="jar" depends="compile" description="Generates opendcs.jar.">
 
-		<jar jarfile="${dist.jar}"
-		     basedir="${build.classes}"
-			 update="true"/>
-	</target>
+        <!-- copy the resource files to the build directory. -->
+        <copy todir="${build.classes}">
+            <fileset dir="${resources.dir}"/>
+        </copy>
 
-	<target name="publish" depends="jar,common.init-ivy,common.resolve.build" description="--> publish ivy artifacts">
+        <!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
+        <copy todir="${build.classes}/decodes/tsdb/algo">
+            <fileset dir="${src.dir}/decodes/tsdb/algo">
+                <include name="AW_AlgorithmTemplate.java"/>
+            </fileset>
+        </copy>
+
+        <jar jarfile="${dist.jar}"
+             basedir="${build.classes}"
+             update="true"/>
+    </target>
+
+    <target name="publish" depends="jar,common.init-ivy,common.resolve.build" description="--> publish ivy artifacts">
         <publish/>
     </target>
 
-	<target name="all" depends="clean,jar"
-		description="Cleans, compiles, and builds the distrubtion Jar file."/>
-	
-	<!-- Builds staging area for IzPack Installer -->
-	<target name="stage" depends="jar,common.resolve.build,docs.build">
-		<mkdir dir="stage"/>
-		<mkdir dir="stage/doc/html"/>
-		<mkdir dir="stage/netlist"/>
-		<touch file="stage/netlist/empty.nl"/>
-		<mkdir dir="stage/icons"/>
-		<mkdir dir="stage/bin"/>
-		<mkdir dir="stage/dep"/>		
-		<mkdir dir="stage/examples"/>
-		<mkdir dir="stage/python"/>
-		<mkdir dir="stage/poll"/>
+    <target name="all" depends="clean,jar"
+        description="Cleans, compiles, and builds the distribution Jar file."/>
 
-		<!-- build the sample database -->
-		<mkdir dir="stage/edit-db"/>
-		<mkdir dir="stage/edit-db/config"/>
-		<mkdir dir="stage/edit-db/datasource"/>
-		<mkdir dir="stage/edit-db/datatype"/>
-		<mkdir dir="stage/edit-db/enum"/>
-		<mkdir dir="stage/edit-db/equipment"/>
-		<mkdir dir="stage/edit-db/eu"/>
-		<mkdir dir="stage/edit-db/netlist"/>
-		<mkdir dir="stage/edit-db/platform"/>
-		<mkdir dir="stage/edit-db/presentation"/>
-		<mkdir dir="stage/edit-db/routing"/>
-		<mkdir dir="stage/edit-db/site"/>
-		<mkdir dir="stage/schema"/>
-		<mkdir dir="stage/schema/cwms"/>
-		<mkdir dir="stage/schema/hdb"/>
-		<mkdir dir="stage/schema/opendcs-pg"/>
-		<mkdir dir="stage/schema/opendcs-oracle"/>
-		<mkdir dir="stage/schema/noaa"/>
+    <target name="javadocs" depends="compile">
+        <javadoc destdir="${build.dir}/javadocs"
+                 author="true"
+                 version="true"
+                 use="true"
+                 windowTitle="OpenDCS API"
+                 classpathref="runtime.classpath">
+            <fileset dir="${src.dir}"/>
+            <tag name="todo" scope="all" description="To do:"/>
+        </javadoc>
+    </target>
 
-		<copy todir="stage/edit-db">
-			<fileset dir="${project.dir}/install/edit-db">
-				<include name="**/*.xml"/>
-			</fileset>
-		</copy>
+    <target name="release" depends="jar,javadocs,test,opendcs,publish" description="Generates signed bundle suitable for maven central upload."
+            if="isUnix"
+    >
+        <mkdir dir="${build.release.dir}"/>
+        <copy file="${dist.jar}" tofile="${build.release.dir}/opendcs-${version}.jar"/>
+        <copy file="${build.dir}/lib/opendcs.pom" tofile="${build.release.dir}/opendcs-${version}.pom"/>
 
-		<copy todir="stage/icons">
-			<fileset dir="${project.dir}/install/icons"/>
-		</copy>
-		<tar destfile="stage/icons.tar.gz" compression="gzip">
-			<tarfileset dir="stage" includes="icons/**">
-			</tarfileset>
-		</tar>
+        <jar jarfile="${build.release.dir}/opendcs-${version}-javadoc.jar"
+             basedir="${build.dir}/javadocs"
+             update="true"/>
 
-		<copy todir="stage/bin">
-			<fileset dir="${project.dir}/install/bin"/>
-			<fileset dir="build/lib">
-				<include name="opendcs.jar"/>
-			</fileset>
-		</copy>
-		<copy todir="stage/dep">
-			<mappedresources enablemultiplemappings="false">
-				<!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
-				<restrict>
-					<path refid="runtime.classpath"/>
-					<type type="file"/>
-				</restrict>
-				<chainedmapper>
-					<flattenmapper/>
-					<regexpmapper from="^(LoboBrowser-1.0.0.jar)" to="zzz\1"/>
-				</chainedmapper>
-			</mappedresources>
-			<mappedresources enablemultiplemappings="false">				
-				<restrict>
-					<path refid="runtime.classpath"/>
-					<type type="file"/>
-				</restrict>
-				<chainedmapper>
-					<flattenmapper/>
-					<regexpmapper from="^(?!LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
-				</chainedmapper>
-			</mappedresources>
-			
-		</copy>
+        <jar jarfile="${build.release.dir}/opendcs-${version}-sources.jar">
+            <fileset dir="${src.dir}" includes="**/*.java"/>
+        </jar>
 
-		<copy todir="stage/imports/comp-standard">
-			<fileset dir="${src.dir}/decodes/tsdb/algo">
-				<include name="*.xml"/>
-			</fileset>
-			<fileset dir="${project.dir}/install/imports/comp-standard">
-				<include name="*.xml"/>
-			</fileset>
-		</copy>
-		<copy todir="stage/imports/comp-cwms">
-			<fileset dir="${src.dir}/decodes/cwms/rating">
-				<include name="*.xml"/>
-			</fileset>
-			<fileset dir="${src.dir}/decodes/cwms/validation">
-				<include name="*.xml"/>
-			</fileset>
-			<fileset dir="${src.dir}/decodes/tsdb/algo">
-				<include name="ExpressionParserAlgorithm.xml"/>
-			</fileset>
-		</copy>
-		<copy todir="stage/imports/updates">
-			<fileset dir="${project.dir}/install/imports/updates">
-				<include name="*.xml"/>
-			</fileset>
-		</copy>
+        <available property="have.gpg" file="gpg" filepath="${PATH}"/>
+        <if>
+            <not>
+                <isset property="have.gpg"/>
+            </not>
+            <then>
+                <echo message="GPG is required to sign the components"/>
+            </then>
+            <else>
+                <gpgsignfile target="opendcs-${version}.pom"/>
+                <gpgsignfile target="opendcs-${version}.jar"/>
+                <gpgsignfile target="opendcs-${version}-javadoc.jar"/>
+                <gpgsignfile target="opendcs-${version}-sources.jar"/>
+                <jar jarfile="${build.release.dir}/bundle.jar">
+                    <fileset dir="${build.release.dir}" excludes="bundle.jar"/>
+                </jar>
+            </else>
+        </if>
+    </target>
 
-		<copy todir="stage">
-			<fileset dir="${project.dir}/izpack">
-				<include name="opendcs-${MAJ_VER}-${MIN_VER}.xml"/>
-				<include name="*.txt"/>
-				<include name="unixOpenDcsShortcutSpec.xml"/>
-				<include name="winOpenDcsShortcutSpec.xml"/>
-			</fileset>
-			<fileset dir="${project.dir}/install">
-				<include name="decodes.properties"/>
-				<include name="computations.conf"/>
-				<include name="LddsConnections"/>
-			</fileset>
-		</copy>
+    <!-- Builds staging area for IzPack Installer -->
+    <target name="stage" depends="jar,common.resolve.build,docs.build">
+        <mkdir dir="stage"/>
+        <mkdir dir="stage/doc/html"/>
+        <mkdir dir="stage/netlist"/>
+        <touch file="stage/netlist/empty.nl"/>
+        <mkdir dir="stage/icons"/>
+        <mkdir dir="stage/bin"/>
+        <mkdir dir="stage/dep"/>
+        <mkdir dir="stage/examples"/>
+        <mkdir dir="stage/python"/>
+        <mkdir dir="stage/poll"/>
+
+        <!-- build the sample database -->
+        <mkdir dir="stage/edit-db"/>
+        <mkdir dir="stage/edit-db/config"/>
+        <mkdir dir="stage/edit-db/datasource"/>
+        <mkdir dir="stage/edit-db/datatype"/>
+        <mkdir dir="stage/edit-db/enum"/>
+        <mkdir dir="stage/edit-db/equipment"/>
+        <mkdir dir="stage/edit-db/eu"/>
+        <mkdir dir="stage/edit-db/netlist"/>
+        <mkdir dir="stage/edit-db/platform"/>
+        <mkdir dir="stage/edit-db/presentation"/>
+        <mkdir dir="stage/edit-db/routing"/>
+        <mkdir dir="stage/edit-db/site"/>
+        <mkdir dir="stage/schema"/>
+        <mkdir dir="stage/schema/cwms"/>
+        <mkdir dir="stage/schema/hdb"/>
+        <mkdir dir="stage/schema/opendcs-pg"/>
+        <mkdir dir="stage/schema/opendcs-oracle"/>
+        <mkdir dir="stage/schema/noaa"/>
+
+        <copy todir="stage/edit-db">
+            <fileset dir="${project.dir}/install/edit-db">
+                <include name="**/*.xml"/>
+            </fileset>
+        </copy>
+
+        <copy todir="stage/icons">
+            <fileset dir="${project.dir}/install/icons"/>
+        </copy>
+        <tar destfile="stage/icons.tar.gz" compression="gzip">
+            <tarfileset dir="stage" includes="icons/**">
+            </tarfileset>
+        </tar>
+
+        <copy todir="stage/bin">
+            <fileset dir="${project.dir}/install/bin"/>
+            <fileset dir="build/lib">
+                <include name="opendcs.jar"/>
+            </fileset>
+        </copy>
+        <copy todir="stage/dep">
+            <mappedresources enablemultiplemappings="false">
+                <!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
+                <restrict>
+                    <path refid="runtime.classpath"/>
+                    <type type="file"/>
+                </restrict>
+                <chainedmapper>
+                    <flattenmapper/>
+                    <regexpmapper from="^(LoboBrowser-1.0.0.jar)" to="zzz\1"/>
+                </chainedmapper>
+            </mappedresources>
+            <mappedresources enablemultiplemappings="false">
+                <restrict>
+                    <path refid="runtime.classpath"/>
+                    <type type="file"/>
+                </restrict>
+                <chainedmapper>
+                    <flattenmapper/>
+                    <regexpmapper from="^(?!LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
+                </chainedmapper>
+            </mappedresources>
+
+        </copy>
+
+        <copy todir="stage/imports/comp-standard">
+            <fileset dir="${src.dir}/decodes/tsdb/algo">
+                <include name="*.xml"/>
+            </fileset>
+            <fileset dir="${project.dir}/install/imports/comp-standard">
+                <include name="*.xml"/>
+            </fileset>
+        </copy>
+        <copy todir="stage/imports/comp-cwms">
+            <fileset dir="${src.dir}/decodes/cwms/rating">
+                <include name="*.xml"/>
+            </fileset>
+            <fileset dir="${src.dir}/decodes/cwms/validation">
+                <include name="*.xml"/>
+            </fileset>
+            <fileset dir="${src.dir}/decodes/tsdb/algo">
+                <include name="ExpressionParserAlgorithm.xml"/>
+            </fileset>
+        </copy>
+        <copy todir="stage/imports/updates">
+            <fileset dir="${project.dir}/install/imports/updates">
+                <include name="*.xml"/>
+            </fileset>
+        </copy>
+
+        <copy todir="stage">
+            <fileset dir="${project.dir}/izpack">
+                <include name="opendcs-${MAJ_VER}-${MIN_VER}.xml"/>
+                <include name="*.txt"/>
+                <include name="unixOpenDcsShortcutSpec.xml"/>
+                <include name="winOpenDcsShortcutSpec.xml"/>
+            </fileset>
+            <fileset dir="${project.dir}/install">
+                <include name="decodes.properties"/>
+                <include name="computations.conf"/>
+                <include name="LddsConnections"/>
+            </fileset>
+        </copy>
 
 
-		<copy todir="stage/doc/html">
-			<fileset dir="${docs.output}/html">
-				<include name="**"/>
-				<exclude name=".buildinfo"/>
-			</fileset>		
-		</copy>
+        <copy todir="stage/doc/html">
+            <fileset dir="${docs.output}/html">
+                <include name="**"/>
+                <exclude name=".buildinfo"/>
+            </fileset>
+        </copy>
 
 
-		<if>
-			<!-- the output between PDF and html is a bit different -->
-			<equals arg1="${sphinx.target}" arg2="latexpdf"/>
-			<then>
-				<mkdir dir="stage/doc/pdf"/>
-				<echo message="copying opendcs.pdf."/>
-				<copy todir="stage/doc/pdf">
-					<fileset dir="${docs.output}/latex">
-						<include name="*.pdf"/>
-					</fileset>
-				</copy>
-			</then>
-			<else>
-				<echo message="copying html files."/>
-			</else>
-		</if>
+        <if>
+            <!-- the output between PDF and html is a bit different -->
+            <equals arg1="${sphinx.target}" arg2="latexpdf"/>
+            <then>
+                <mkdir dir="stage/doc/pdf"/>
+                <echo message="copying opendcs.pdf."/>
+                <copy todir="stage/doc/pdf">
+                    <fileset dir="${docs.output}/latex">
+                        <include name="*.pdf"/>
+                    </fileset>
+                </copy>
+            </then>
+            <else>
+                <echo message="copying html files."/>
+            </else>
+        </if>
 
-		<tar destfile="stage/doc.tar.gz" compression="gzip">
-			<tarfileset dir="stage" includes="doc/**">
-			</tarfileset>
-		</tar>
+        <tar destfile="stage/doc.tar.gz" compression="gzip">
+            <tarfileset dir="stage" includes="doc/**">
+            </tarfileset>
+        </tar>
 
 
-		<copy todir="stage/poll">
-			<fileset dir="${project.dir}/install/poll">
-				<include name="*.poll"/>
-			</fileset>
-		</copy>
+        <copy todir="stage/poll">
+            <fileset dir="${project.dir}/install/poll">
+                <include name="*.poll"/>
+            </fileset>
+        </copy>
 
-		<copy todir="stage">
-			<fileset dir="${project.dir}/install/lrgs">
-				<include name="archive"/>
-				<include name="users"/>
-				<include name="users/lrgsadmin"/>
-				<include name="ddsrecv.conf"/>
-				<include name="drgsconf.xml"/>
-				<include name="drivers"/>
-				<include name="lrgs.conf"/>
-				<include name="netlist"/>
-				<include name=".lrgs.passwd"/>
-				<include name="lrgs.service"/>
-			</fileset>
-		</copy>
+        <copy todir="stage">
+            <fileset dir="${project.dir}/install/lrgs">
+                <include name="archive"/>
+                <include name="users"/>
+                <include name="users/lrgsadmin"/>
+                <include name="ddsrecv.conf"/>
+                <include name="drgsconf.xml"/>
+                <include name="drivers"/>
+                <include name="lrgs.conf"/>
+                <include name="netlist"/>
+                <include name=".lrgs.passwd"/>
+                <include name="lrgs.service"/>
+            </fileset>
+        </copy>
 
-		<copy todir="stage/schema/cwms">
-			<fileset dir="${project.dir}/schema/cwms"/>
-		</copy>
+        <copy todir="stage/schema/cwms">
+            <fileset dir="${project.dir}/schema/cwms"/>
+        </copy>
 
-		<copy todir="stage/schema/hdb">
-			<fileset dir="${project.dir}/schema/hdb"/>
-		</copy>
+        <copy todir="stage/schema/hdb">
+            <fileset dir="${project.dir}/schema/hdb"/>
+        </copy>
 
-		<copy todir="stage/schema/opendcs-pg">
-			<fileset dir="${project.dir}/schema/opendcs-pg"/>
-		</copy>
+        <copy todir="stage/schema/opendcs-pg">
+            <fileset dir="${project.dir}/schema/opendcs-pg"/>
+        </copy>
 
-		<copy todir="stage/schema/opendcs-oracle">
-			<fileset dir="${project.dir}/schema/opendcs-oracle"/>
-		</copy>
+        <copy todir="stage/schema/opendcs-oracle">
+            <fileset dir="${project.dir}/schema/opendcs-oracle"/>
+        </copy>
 
-		<copy todir="stage/schema/noaa">
-			<fileset dir="${project.dir}/schema/noaa"/>
-		</copy>
+        <copy todir="stage/schema/noaa">
+            <fileset dir="${project.dir}/schema/noaa"/>
+        </copy>
 
-		<copy todir="stage/python">
-			<fileset dir="${project.dir}/python"/>
-		</copy>		
+        <copy todir="stage/python">
+            <fileset dir="${project.dir}/python"/>
+        </copy>
 
-	</target>
+    </target>
 
-	<!-- same as package, but remove libraries not needed by USACE or USBR -->
-	<target name="nonfed" depends="stage">
-		<delete file="stage/dep/jep-2.4.1.jar"/>
-		<delete file="stage/dep/jython-2.7.2.jar"/>
-		<delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
-		<delete file="stage/dep/Cobra.jar"/>
-		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<izpack input="${project.dir}/izpack/opendcs-install.xml"
-				output="stage/opendcs-nf-${version}.jar"
-				installerType="standard"
-				basedir="stage"
-				izPackDir="${izpack.dir}">
-			<property name="version" value="${version}"/>
-			<property name="hdb.preselect" value="no"/>
-		</izpack>
-	</target>
+    <!-- same as package, but remove libraries not needed by USACE or USBR -->
+    <target name="nonfed" depends="stage">
+        <delete file="stage/dep/jep-2.4.1.jar"/>
+        <delete file="stage/dep/jython-2.7.2.jar"/>
+        <delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
+        <delete file="stage/dep/Cobra.jar"/>
+        <!-- Invokes izpack to build installable package with defaults for CWMS -->
+        <izpack input="${project.dir}/izpack/opendcs-install.xml"
+                output="stage/opendcs-nf-${version}.jar"
+                installerType="standard"
+                basedir="stage"
+                izPackDir="${izpack.dir}">
+            <property name="version" value="${version}"/>
+            <property name="hdb.preselect" value="no"/>
+        </izpack>
+    </target>
 
-	<!-- same as nonfed, but includes OpenTSDB and computation files -->
-	<target name="opendcs" depends="stage,common.izpack.dependencies">
-		<!-- Invokes izpack to build installable package with defaults for CWMS -->		
-		<property name="hdb.preselect" value="no"/>
-		<izpack input="${project.dir}/izpack/opendcs-install.xml"
-				output="stage/opendcs-ot-${version}.jar"
-				installerType="standard"
-				inheritAll="true"
-				basedir="stage"
-				izPackDir="${izpack.dir}">
-			
-		</izpack>
-	</target>
+    <!-- same as nonfed, but includes OpenTSDB and computation files -->
+    <target name="opendcs" depends="stage,common.izpack.dependencies">
+        <!-- Invokes izpack to build installable package with defaults for CWMS -->
+        <property name="hdb.preselect" value="no"/>
+        <izpack input="${project.dir}/izpack/opendcs-install.xml"
+                output="stage/opendcs-ot-${version}.jar"
+                installerType="standard"
+                inheritAll="true"
+                basedir="stage"
+                izPackDir="${izpack.dir}">
 
-	<!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
-	<target name="hdb" depends="stage,common.izpack.dependencies">
-		<!-- Invokes izpack to build installable package with defaults for CWMS -->
-		<property name="hdb.preselect" value="yes"/>
-		<izpack input="${project.dir}/izpack/opendcs-install.xml"
-				output="stage/opendcs-hdb-${version}.jar"
-				installerType="standard"
-				inheritAll="true"
-				basedir="stage"
-				izPackDir="${izpack.dir}">
-		</izpack>
-	</target>
+        </izpack>
+    </target>
 
-	<target name="cwmstar" depends="stage">
-		<delete file="stage/dep/ojdbc8.jar"/>
-		<delete file="stage/dep/ojdbc6.jar"/>
-		<delete>
-			<fileset dir="stage/bin" includes="*.bat"/>
-			<fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
-			<fileset dir="stage" includes="dospath.txt,opendcs-${MAJ_VER}-${MIN_VER}.xml,readme.txt,LddsConnections"/>
-		</delete>
-		<move file="stage/lrgs.conf" tofile="stage/lrgs.conf.sample"/>
-		<move file="stage/ddsrecv.conf" tofile="stage/ddsrecv.conf.sample"/>
-		<move file="stage/decodes.properties" tofile="stage/decodes.properties.sample"/>
-		<move file="stage/drgsconf.xml" tofile="stage/drgsconf.xml.sample"/>
-		<move file="stage/edit-db" tofile="stage/edit-db.init"/>
-		<move file="stage/users" tofile="stage/users.init"/>
-		<replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
-		<tar destfile="opendcs-cwms-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz" compression="gzip">
-			<tarfileset dir="stage">
-				<exclude name="bin/*"/>
-				<exclude name="schema/cwms/createDb.sh"/>
-				<exclude name="schema/cwms/importDecodesTemplate.sh"/>
-				<exclude name="schema/cwms/createDefinesSql.sh"/>
-				<exclude name="schema/cwms/createTableSpaces.sh"/>
-				<exclude name="doc.tar.gz"/>
-				<exclude name="icons.tar.gz"/>
-			</tarfileset>
-			<tarfileset dir="stage/bin" filemode="755" prefix="bin"/>
-			<tarfileset file="stage/schema/cwms/createDb.sh" filemode="755" prefix="schema/cwms"/>
-			<tarfileset file="stage/schema/cwms/importDecodesTemplate.sh" filemode="755" prefix="schema/cwms"/>
-			<tarfileset file="stage/schema/cwms/createDefinesSql.sh" filemode="755" prefix="schema/cwms"/>
-			<tarfileset file="stage/schema/cwms/createTableSpaces.sh" filemode="755" prefix="schema/cwms"/>
+    <!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
+    <target name="hdb" depends="stage,common.izpack.dependencies">
+        <!-- Invokes izpack to build installable package with defaults for CWMS -->
+        <property name="hdb.preselect" value="yes"/>
+        <izpack input="${project.dir}/izpack/opendcs-install.xml"
+                output="stage/opendcs-hdb-${version}.jar"
+                installerType="standard"
+                inheritAll="true"
+                basedir="stage"
+                izPackDir="${izpack.dir}">
+        </izpack>
+    </target>
 
-		</tar>
-	</target>
+    <target name="cwmstar" depends="stage">
+        <delete file="stage/dep/ojdbc8.jar"/>
+        <delete file="stage/dep/ojdbc6.jar"/>
+        <delete>
+            <fileset dir="stage/bin" includes="*.bat"/>
+            <fileset dir="stage" includes="unixOpenDcsShortcutSpec.xml,winOpenDcsShortcutSpec.xml"/>
+            <fileset dir="stage" includes="dospath.txt,opendcs-${MAJ_VER}-${MIN_VER}.xml,readme.txt,LddsConnections"/>
+        </delete>
+        <move file="stage/lrgs.conf" tofile="stage/lrgs.conf.sample"/>
+        <move file="stage/ddsrecv.conf" tofile="stage/ddsrecv.conf.sample"/>
+        <move file="stage/decodes.properties" tofile="stage/decodes.properties.sample"/>
+        <move file="stage/drgsconf.xml" tofile="stage/drgsconf.xml.sample"/>
+        <move file="stage/edit-db" tofile="stage/edit-db.init"/>
+        <move file="stage/users" tofile="stage/users.init"/>
+        <replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
+        <tar destfile="opendcs-cwms-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz" compression="gzip">
+            <tarfileset dir="stage">
+                <exclude name="bin/*"/>
+                <exclude name="schema/cwms/createDb.sh"/>
+                <exclude name="schema/cwms/importDecodesTemplate.sh"/>
+                <exclude name="schema/cwms/createDefinesSql.sh"/>
+                <exclude name="schema/cwms/createTableSpaces.sh"/>
+                <exclude name="doc.tar.gz"/>
+                <exclude name="icons.tar.gz"/>
+            </tarfileset>
+            <tarfileset dir="stage/bin" filemode="755" prefix="bin"/>
+            <tarfileset file="stage/schema/cwms/createDb.sh" filemode="755" prefix="schema/cwms"/>
+            <tarfileset file="stage/schema/cwms/importDecodesTemplate.sh" filemode="755" prefix="schema/cwms"/>
+            <tarfileset file="stage/schema/cwms/createDefinesSql.sh" filemode="755" prefix="schema/cwms"/>
+            <tarfileset file="stage/schema/cwms/createTableSpaces.sh" filemode="755" prefix="schema/cwms"/>
 
-	<target name="eclipse-ide-files" depends="common.resolve,common.resolve.build">
-		<!-- 
-			Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
-			coming up with this!
-			https://stackoverflow.com/a/11617592
-		-->
-		<!-- resolve -->		
-		
-		<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="groovy.classpath"/>
+        </tar>
+    </target>
 
-		<groovy>		
-			import groovy.xml.MarkupBuilder
-		
-			//
-			// Generate the project file
-			//
-			project.log("Creating .project")
-		
-			new File(".project").withWriter { writer ->
-				def xml = new MarkupBuilder(writer)
-		
-				xml.projectDescription() {
-					name(project.name)
-					comment()
-					projects()
-					buildSpec() {
-						buildCommand() {
-							name("org.eclipse.jdt.core.javabuilder")
-							arguments()
-						}
-						buildCommand() {
-							name("org.eclipse.ui.externaltools.ExternalToolBuilder")
-							triggers("full,incremental")
-							arguments() {
-								dictionary() {
-									key("LaunchConfigHandle")
-			                  		value("&lt;project&gt;/.externalToolBuilders/jar.launch")
-								}
-							}
-						}
-					}
-					natures() {
-						nature("org.eclipse.jdt.core.javanature")
-					}
-				}
-			}
-		
-			//
-			// Generate the classpath file
-			//
-			// The "lib" classpathentry fields are populated using the ivy artifact report
-			//
-			project.log("Creating .classpath")
-		
-			new File(".classpath").withWriter { writer ->
-				def xml = new MarkupBuilder(writer)
-		
-				xml.classpath() {
-					classpathentry(kind:"src",    path:"src/main/java", output="bin/main")
-					classpathentry(kind:"src",    path:"src/main/resources", output="bin/main")
-					classpathentry(kind:"src",    path:"src/test/java", output="bin/test")					
-					classpathentry(kind:"output", path:"bin")
-					classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
-		
-					project.getReference("runtime.classpath").each {
-						classpathentry(kind:"lib", path:it)
-					}
+    <target name="eclipse-ide-files" depends="common.resolve,common.resolve.build">
+        <!--
+            Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
+            coming up with this!
+            https://stackoverflow.com/a/11617592
+        -->
+        <!-- resolve -->
 
-					project.getReference("test.classpath").each {
-						classpathentry(kind:"lib", path:it)
-					}
-				}
-			}
-		</groovy>
+        <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="groovy.classpath"/>
+
+        <groovy>
+            import groovy.xml.MarkupBuilder
+
+            //
+            // Generate the project file
+            //
+            project.log("Creating .project")
+
+            new File(".project").withWriter { writer ->
+                def xml = new MarkupBuilder(writer)
+
+                xml.projectDescription() {
+                    name(project.name)
+                    comment()
+                    projects()
+                    buildSpec() {
+                        buildCommand() {
+                            name("org.eclipse.jdt.core.javabuilder")
+                            arguments()
+                        }
+                        buildCommand() {
+                            name("org.eclipse.ui.externaltools.ExternalToolBuilder")
+                            triggers("full,incremental")
+                            arguments() {
+                                dictionary() {
+                                    key("LaunchConfigHandle")
+                                      value("&lt;project&gt;/.externalToolBuilders/jar.launch")
+                                }
+                            }
+                        }
+                    }
+                    natures() {
+                        nature("org.eclipse.jdt.core.javanature")
+                    }
+                }
+            }
+
+            //
+            // Generate the classpath file
+            //
+            // The "lib" classpathentry fields are populated using the ivy artifact report
+            //
+            project.log("Creating .classpath")
+
+            new File(".classpath").withWriter { writer ->
+                def xml = new MarkupBuilder(writer)
+
+                xml.classpath() {
+                    classpathentry(kind:"src",    path:"src/main/java", output="bin/main")
+                    classpathentry(kind:"src",    path:"src/main/resources", output="bin/main")
+                    classpathentry(kind:"src",    path:"src/test/java", output="bin/test")
+                    classpathentry(kind:"output", path:"bin")
+                    classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
+
+                    project.getReference("runtime.classpath").each {
+                        classpathentry(kind:"lib", path:it)
+                    }
+
+                    project.getReference("test.classpath").each {
+                        classpathentry(kind:"lib", path:it)
+                    }
+                }
+            }
+        </groovy>
         <mkdir dir=".externalToolBuilders"/>
         <mkdir dir=".settings"/>
         <copy file="ide-support/eclipse/jar.launch" todir=".externalToolBuilders"/>
         <copy file="ide-support/eclipse/org.eclipse.jdt.core.prefs" todir=".settings"/>
         <echo>
-            As it is impossible to know everyone's configuration and preferences this target does the bear minimum 
+            As it is impossible to know everyone's configuration and preferences this target does the bear minimum
             to get Eclipse going. You will have to do a "build all" or run ant jar on the command line to make
             sure dependencies are in place.
 
             The project currently requires Java 8 due to a dependencies on tools.jar. It is left to the eclipse user
             to make sure a JDK is available and configured correctly for that need.
         </echo>
-	</target>
+    </target>
 
 
-	<target name="checkstyle" depends="common.resolve.build" description="Verify files are formatted correctly.">		
-		<checkstyle config="config/checkstyle.xml">
-			<fileset dir="src/main/java" includes="**/*.java"/>
-			<formatter type="plain"/>
-		</checkstyle>
-	</target>
+    <target name="checkstyle" depends="common.resolve.build" description="Verify files are formatted correctly.">
+        <checkstyle config="config/checkstyle.xml">
+            <fileset dir="src/main/java" includes="**/*.java"/>
+            <formatter type="plain"/>
+        </checkstyle>
+    </target>
 
-	<target name="spotbugs" depends="common.resolve.build,jar" description="Various static analysis">
-		<mkdir dir="${spotbugs.output.dir}"/>
-		<spotbugs output="html"
-				  stylesheet="fancy.xsl"
-            	  outputFile="${spotbugs.output.dir}/spotbugs.html"
-				  excludeFilter="spotbugs-filter.xml"
-				  effort="max"
-				  debug="false">
-			<auxClasspath refid="runtime.classpath"/>
-    		<sourcePath path="${src.dir}" />
-	    	<class location="${build.dir}/lib/opendcs.jar" />
-			<classpath refid="spotbugs.classpath"/>
-  		</spotbugs>
-	</target>
+    <target name="spotbugs" depends="common.resolve.build,jar" description="Various static analysis">
+        <mkdir dir="${spotbugs.output.dir}"/>
+        <spotbugs output="html"
+                  stylesheet="fancy.xsl"
+                  outputFile="${spotbugs.output.dir}/spotbugs.html"
+                  excludeFilter="spotbugs-filter.xml"
+                  effort="max"
+                  debug="false">
+            <auxClasspath refid="runtime.classpath"/>
+            <sourcePath path="${src.dir}" />
+            <class location="${build.dir}/lib/opendcs.jar" />
+            <classpath refid="spotbugs.classpath"/>
+          </spotbugs>
+    </target>
 
 
-	<target name="cpd" depends="common.resolve.build" description="Duplicate code checker">
-		<mkdir dir="${pmd.output.dir}/cpd"/>
-		<cpd minimumTokenCount="100" outputFile="${pmd.output.dir}/cpd/cpd.txt" format="text" encoding="UTF-8"
-			 ignoreAnnotations="true">
-			<fileset dir="${src.dir}">
-				<include name="**/*.java"/>
-			</fileset>
-		</cpd>
-	</target>
+    <target name="cpd" depends="common.resolve.build" description="Duplicate code checker">
+        <mkdir dir="${pmd.output.dir}/cpd"/>
+        <cpd minimumTokenCount="100" outputFile="${pmd.output.dir}/cpd/cpd.txt" format="text" encoding="UTF-8"
+             ignoreAnnotations="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </cpd>
+    </target>
 
-	<target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
+    <target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
 </project>
