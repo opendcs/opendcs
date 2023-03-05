@@ -59,14 +59,14 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <format property="buildDate" pattern="MMM dd, yyyy"/>
         </tstamp>
 
-		<copy todir="${build.classes}/lrgs/nledit">
-			<fileset dir="${src.dir}/lrgs/nledit">
-				<include name="*.gif"/>
-			</fileset>
-		</copy>
-		<sync todir="${build.resources}">
-			<fileset dir="${resources.dir}"/>
-		</sync>
+        <copy todir="${build.classes}/lrgs/nledit">
+            <fileset dir="${src.dir}/lrgs/nledit">
+                <include name="*.gif"/>
+            </fileset>
+        </copy>
+        <sync todir="${build.resources}">
+            <fileset dir="${resources.dir}"/>
+        </sync>
 
         <delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
         <copy file="${src.dir}/lrgs/gui/LrgsBuild.java"
@@ -110,12 +110,12 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <pathelement location="${build.classes}"/>
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
-			</classpath>			
-		</javac>
-		<sync todir="${build.test.resources}">
-    		<fileset dir="${resources.test.dir}"/>
-		</sync>
-	</target>
+            </classpath>
+        </javac>
+        <sync todir="${build.test.resources}">
+            <fileset dir="${resources.test.dir}"/>
+        </sync>
+    </target>
 
     <target name="test" depends="compile-test,jar">
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
@@ -126,8 +126,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
             <classpath>
-				<pathelement location="${build.resources}"/>
-				<pathelement location="${build.test.resources}"/>
+                <pathelement location="${build.resources}"/>
+                <pathelement location="${build.test.resources}"/>
                 <pathelement location="${build.test.classes}"/>
                 <pathelement location="${build.classes}"/>
             </classpath>
@@ -587,4 +587,32 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <formatter type="plain"/>
         </checkstyle>
     </target>
+
+    <target name="spotbugs" depends="common.resolve.build,jar" description="Various static analysis">
+        <mkdir dir="${spotbugs.output.dir}"/>
+        <spotbugs output="html"
+                  stylesheet="fancy.xsl"
+                  outputFile="${spotbugs.output.dir}/spotbugs.html"
+                  excludeFilter="spotbugs-filter.xml"
+                  effort="max"
+                  debug="false">
+            <auxClasspath refid="runtime.classpath"/>
+            <sourcePath path="${src.dir}" />
+            <class location="${build.dir}/lib/opendcs.jar" />
+            <classpath refid="spotbugs.classpath"/>
+          </spotbugs>
+    </target>
+
+
+    <target name="cpd" depends="common.resolve.build" description="Duplicate code checker">
+        <mkdir dir="${pmd.output.dir}/cpd"/>
+        <cpd minimumTokenCount="100" outputFile="${pmd.output.dir}/cpd/cpd.txt" format="text" encoding="UTF-8"
+             ignoreAnnotations="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </cpd>
+    </target>
+
+    <target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
 </project>

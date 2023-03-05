@@ -21,17 +21,17 @@
     <property name="resources.dir" value="src/main/resources"/>
     <property name="src.test.dir" value="src/test/java"/>
     <property name="resources.test.dir" value="src/test/resources"/>
-		
-	<property name="build.dir" value="build"/>
-	<property name="build.classes" value="${build.dir}/classes"/>
-    <property name="build.resources" value="${build.dir}/resources"/>
-	<property name="build.lib" value="${build.dir}/lib"/>
-	<property name="build.test.classes" value="${build.dir}/test-classes"/>
-    <property name="build.test.resources" value="${build.dir}/test-resources"/>
-	<property name="build.test.lib" value="${build.dir}/test-libs"/>
-	<property name="dist.jar" value="${build.lib}/opendcs.jar"/>
 
-    <property name="build.release.dir" value="${build.dir}/release"/>
+    <property name="build.dir" value="build"/>
+    <property name="build.classes" value="${build.dir}/classes"/>
+    <property name="build.resources" value="${build.dir}/resources"/>
+    <property name="build.lib" value="${build.dir}/lib"/>
+    <property name="build.test.classes" value="${build.dir}/test-classes"/>
+    <property name="build.test.resources" value="${build.dir}/test-resources"/>
+    <property name="build.test.lib" value="${build.dir}/test-libs"/>
+    <property name="dist.jar" value="${build.lib}/opendcs.jar"/>
+    <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
+    <property name="pmd.output.dir" value="${build.dir}/reports/pmd"/>
 
     <!-- VERSION NUMBERS -->
     <property name="MAJ_VER" value="7"/>
@@ -79,20 +79,27 @@
     </target>
 
     <target name="resolve.build" depends="init-ivy" description="--> retrieve build script dependencies">
-        <ivy:retrieve conf="build,groovy,izpack"
+        <ivy:retrieve conf="build,groovy,izpack,spotbugs,pmd"
                       sync="true"
-                      pattern="build/ivy/[conf]/[artifact].[ext]"
+                      pattern="build/ivy-build/[conf]/[artifact](-[classifier]).[ext]"
         />
         <ivy:cachepath pathid="izpack.classpath" conf="izpack"/>
         <ivy:cachepath pathid="groovy.classpath" conf="groovy"/>
         <ivy:cachepath pathid="build.classpath" conf="build"/>
+        <ivy:cachepath pathid="spotbugs.classpath" conf="spotbugs"/>
+        <ivy:cachepath pathid="pmd.classpath" conf="pmd"/>
         <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="build.classpath"/>
 
         <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties"
                  classpathref="build.classpath"/>
+
+        <taskdef resource="edu/umd/cs/findbugs/anttask/tasks.properties"
+                 classpathref="build.classpath"/>
+        <taskdef name="cpd" classname="net.sourceforge.pmd.cpd.CPDTask"
+                 classpathref="pmd.classpath"/>
     </target>
 
-    <target name="report" depends="resolve" description="--> generates a report of dependencies">
+    <target name="report" depends="resolve,resolve.build" description="--> generates a report of dependencies">
         <ivy:report todir="${build.dir}"/>
     </target>
 

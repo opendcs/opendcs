@@ -12,6 +12,8 @@
         <conf name="izpack" visibility="private"/>
         <conf name="groovy" visibility="private"/>
         <conf name="build" visibility="private"/>
+        <conf name="spotbugs" visibility="private"/>
+        <conf name="pmd" visibility="private"/>
     </configurations>
     <publications>
         <artifact name="opendcs" type="pom" conf="runtime" ext="pom"/>
@@ -100,6 +102,24 @@
         <!-- for some reason the github action build requires classes built for java 8 but my local environment
             does not. Downgrade for now to people can review.-->
         <dependency org="com.puppycrawl.tools" name="checkstyle" rev="9.3" conf="build->default"/>
+        <dependency org="com.github.spotbugs" name="spotbugs-ant" rev="4.7.3" conf="build->default"/>
+        <dependency org="com.github.spotbugs" name="spotbugs" rev="4.7.3" conf="spotbugs->default">
+            <!-- Ivy wasn't pulling the dependency in directly. Instead of the actual jar
+                it was getting only the "-data" artifact and spotbugs was unable to use it.
+                So we exclude and manually bring it in.
+            -->
+            <exclude org="org.xmlresolver"/>
+        </dependency>
+        <dependency org="org.xmlresolver" name="xmlresolver" rev="4.4.3" conf="spotbugs->default">
+            <include name="*"/>
+        </dependency>
+
+
+        <dependency org="net.sourceforge.pmd" name="pmd-core" rev="6.55.0" conf="pmd->default"/>
+        <dependency org="net.sourceforge.pmd" name="pmd-doc" rev="6.55.0" conf="pmd->default"/>
+        <dependency org="net.sourceforge.pmd" name="pmd-java" rev="6.55.0" conf="pmd->default"/>
+        <dependency org="net.sourceforge.pmd" name="pmd-java8" rev="6.55.0" conf="pmd->default"/>
+
         <!-- keep unused transient dependencies out -->
 
         <exclude org="mil.army.usace.hec" module="loading-gui-lib"/>

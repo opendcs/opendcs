@@ -17,7 +17,7 @@
         </url>
         <ibiblio name="maven-releases" m2compatible="true" root="${maven-releases}"/>
         <chain name="default" returnFirst="true" checkmodified="true" changingPattern=".*SNAPSHOT">
-            <ibiblio name="central-https" m2compatible="true" root="https://repo1.maven.org/maven2/"/>
+            <ibiblio name="central-https" m2compatible="true" root="https://repo1.maven.org/maven2/" usepoms="true"/>
             <ibiblio name="hec" m2compatible="true" root="https://www.hec.usace.army.mil/nexus/repository/maven-public"/>
             <url name="github" m2compatible="false">
                 <!-- https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar -->

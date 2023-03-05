@@ -62,18 +62,18 @@ To do so implement the following interfaces:
 
    org.opendcs.spi.authentication.AuthSourceProvider
 
-AuthSource handles actually creating the credentials properties. All current implementations provide "username" and "password" 
+AuthSource handles actually creating the credentials properties. All current implementations provide "username" and "password"
 as that is the only need.
 
 
-AuthSourceProvider gives the source implementation a name and takes the 
+AuthSourceProvider gives the source implementation a name and takes the
 configuration string from the user.properties or decodes.properties and instantiates the AuthSource instance.
 
 You must also add a file:
-  
+
     META-INF/services/org.opendcs.spi.authentication.AuthSourceProvider
 
-that contains the fully qualified class name of your new AuthSource. 
+that contains the fully qualified class name of your new AuthSource.
 
 Usage
 +++++
@@ -84,13 +84,13 @@ To acquire the configured credentials the following can be used:
 
     ...
     String authFileName = DecodesSettings.instance().DbAuthFile;
-    
+
     try
     {
         Properties credentials = null;
         credentials = AuthSourceService.getFromString(authFileName)
                                         .getCredentials();
-        // ... work using the credentials                                        
+        // ... work using the credentials
     }
     catch(AuthException ex)
     {
@@ -101,3 +101,28 @@ To acquire the configured credentials the following can be used:
         throw new DatabaseConnectException(msg);
     }
     ...
+
+
+Code Analysis
+-------------
+
+Checkstyle, Spotbugs, and the PMD/CPD tools are available for anaylzing the code.
+
+to run each do the following:
+
+
+.. code-block: bash
+
+    # SpotBugs
+    ant spotbugs
+    # output will be in build/reports/spotbugs/spotbugs.html
+
+    # Checkstyle
+    ant Checkstyle
+    # output will output to the terminal
+
+    # CPD
+    ant cpd
+    # output will be in build/reports/pmd/cpd/cpd.txt
+
+Only CPD is fast. checkstyle and SpotBugs are rather slow.
