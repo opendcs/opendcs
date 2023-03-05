@@ -29,12 +29,12 @@ begin
   loop
     begin
       DBMS_RLS.drop_policy (
-        object_schema       => '&CCP_SCHEMA',
+        object_schema       => '&&&CCP_SCHEMA',
         object_name         => rec.table_name,
         policy_name         => 'plcy_cwms_ccp_office_v'
       );
       DBMS_RLS.drop_policy (
-        object_schema       => '&CCP_SCHEMA',
+        object_schema       => '&&&CCP_SCHEMA',
         object_name         => rec.table_name,
         policy_name         => 'plcy_cwms_ccp_office_u'
       );
@@ -43,19 +43,19 @@ begin
     end;
 
     DBMS_RLS.add_policy (
-      object_schema       => '&CCP_SCHEMA',
+      object_schema       => '&&CCP_SCHEMA',
       object_name         => rec.table_name,
       policy_name         => 'plcy_cwms_ccp_office_v',
-      function_schema     => '&CCP_SCHEMA',
+      function_schema     => '&&CCP_SCHEMA',
       policy_function     => 'cwms_ccp_vpd.get_pred_session_office_code_v',
       statement_types     => 'select'
     );
 
     DBMS_RLS.add_policy (
-      object_schema       => '&CCP_SCHEMA',
+      object_schema       => '&&CCP_SCHEMA',
       object_name         => rec.table_name,
       policy_name         => 'plcy_cwms_ccp_office_u',
-      function_schema     => '&CCP_SCHEMA',
+      function_schema     => '&&CCP_SCHEMA',
       policy_function     => 'cwms_ccp_vpd.get_pred_session_office_code_u',
       statement_types     => 'update, delete'
     );
