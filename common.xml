@@ -1,4 +1,5 @@
-<project name="common" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="common" xmlns:ivy="antlib:org.apache.ivy.ant"
+    xmlns:if="ant:if" xmlns:unless="ant:unless">
     <property name="ivy.install.version" value="2.5.0"/>
     <condition property="ivy.home" value="${env.IVY_HOME}">
         <isset property="env.IVY_HOME"/>
@@ -135,8 +136,18 @@
     <macrodef name="gpgsignfile">
         <attribute name="target"/>
         <sequential>
+            <if>
+                <not>
+                    <isset property="gpg.key.id"/>
+                </not>
+                <then>
+                    <fail message="Please set the GPG key for signing."/>
+                </then>
+            </if>
             <exec executable="gpg" dir="${build.release.dir}" failonerror="true">
                 <arg value="-ab"/>
+                <arg value="-u"/>
+                <arg value="${gpg.key.id}"/>
                 <arg value="--yes"/>
                 <arg value="@{target}"/>
             </exec>
