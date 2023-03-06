@@ -37,7 +37,6 @@ package decodes.consumer;
 
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
@@ -45,7 +44,6 @@ import java.text.NumberFormat;
 
 import ilex.var.Variable;
 import ilex.var.NoConversionException;
-import ilex.var.IFlags;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.util.Logger;
@@ -57,6 +55,7 @@ import decodes.decoder.Sensor;
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.datasource.GoesPMParser;
+import decodes.util.PropertySpec;
 
 /**
 Formats the GOES header into a simple space-delimited row-column format,
@@ -71,6 +70,19 @@ public class TransmitMonitorFormatter extends OutputFormatter
 	private boolean justify;
 	private int colwidths[];
 	private NumberFormat bvFormat;
+	
+	private static PropertySpec propSpecs[] = 
+	{
+		new PropertySpec("delimiter", PropertySpec.STRING, 
+			"(default=space) delimits columns in output"),
+		new PropertySpec("columns", PropertySpec.STRING, 
+			"Comma-separated list of columns to include. Default is date/time followed by GOES header columns."),
+		new PropertySpec("colwidths", PropertySpec.STRING, 
+			"Comma-separated list of column widths. Columns are padded with blanks to specified width."),
+		new PropertySpec("justify", PropertySpec.BOOLEAN, 
+			"(default=false) If true, justify data in specified column width. Negative width=left justify. Positive=right.")
+		
+	};
 
 	/** default constructor */
 	public TransmitMonitorFormatter()
@@ -293,5 +305,12 @@ public class TransmitMonitorFormatter extends OutputFormatter
 
 	/** All this format to work on DAPS status messages. */
 	public boolean acceptRealDcpMessagesOnly() { return false; }
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return propSpecs;
+	}
+
 }
 
