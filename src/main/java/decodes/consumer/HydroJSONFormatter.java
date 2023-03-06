@@ -49,6 +49,7 @@ import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
 import decodes.util.DecodesSensorCnvt;
 import decodes.util.DecodesSettings;
+import decodes.util.PropertySpec;
 
 /**
  * HydroJSON format is described at https://github.com/gunnarleffler/hydroJSON
@@ -66,11 +67,22 @@ public class HydroJSONFormatter extends OutputFormatter
 	private CwmsConsumer cwmsConsumer = null;
 	private Strftime strftime = null;
 
+	private static PropertySpec propSpecs[] = 
+	{
+		new PropertySpec("siteNameTypePreference", 
+			PropertySpec.DECODES_ENUM + Constants.enum_SiteName, 
+			"(default='local' specify site name type to use in output"),
+		new PropertySpec("timeFormat", PropertySpec.STRING, 
+			"(default=%Y-%m-%dT%H:%M:%S%z) SimpleDateFormat time/date format string.")
+	};
+
 	@Override
 	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp, 
 		Properties rsProps)
 		throws OutputFormatterException
 	{
+		ofPropSpecs = propSpecs;
+
 		this.tz = tz;
 		String s = PropertiesUtil.getIgnoreCase(rsProps, "timeFormat");
 		if (s != null)
@@ -345,6 +357,12 @@ public class HydroJSONFormatter extends OutputFormatter
 	private String formatTime(Date d)
 	{
 		return strftime.format(d);
+	}
+
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return propSpecs;
 	}
 
 }
