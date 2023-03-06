@@ -30,6 +30,8 @@ public class OpenTsdbSettings
 	
 	public boolean traceConnections = false;
 	
+	public Properties props = new Properties();
+
 	private static PropertySpec propSpecs[] =
 	{
 		new PropertySpec("allowDstOffsetVariation", PropertySpec.BOOLEAN,
@@ -44,6 +46,7 @@ public class OpenTsdbSettings
 	
 	public void setFromProperties(Properties props)
 	{
+		this.props = props;
 		PropertiesUtil.loadFromProps(this, props);
 		
 		try
@@ -61,6 +64,8 @@ public class OpenTsdbSettings
 	public Properties getPropertiesSet()
 	{
 		Properties ret = new Properties();
+		PropertiesUtil.copyProps(ret, props);
+
 		ret.setProperty("allowDstOffsetVariation", "" + allowDstOffsetVariation);
 		ret.setProperty("offsetErrorAction", offsetErrorAction);
 		ret.setProperty("storagePresentationGroup", storagePresentationGroup);
@@ -84,6 +89,6 @@ public class OpenTsdbSettings
 	@Override
 	public boolean additionalPropsAllowed()
 	{
-		return false;
+		return true;
 	}
 }
