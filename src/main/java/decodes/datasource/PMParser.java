@@ -118,6 +118,8 @@ public abstract class PMParser
 
 		// First use enum to lookup headerType, retrieve class
 		// name. Then instantiate the class.
+		if (Database.getDb() == null || Database.getDb().enumList == null)
+			return null;
 		DbEnum tmTypeEnum = Database.getDb().enumList.getEnum(Constants.enum_TMType);
 		if (tmTypeEnum != null)
 		{
