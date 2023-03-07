@@ -675,9 +675,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
     <target name="spotbugs" depends="common.resolve.build,jar" description="Various static analysis">
         <mkdir dir="${spotbugs.output.dir}"/>
-        <spotbugs output="html"
+        <spotbugs output="xml:withMessages"
                   stylesheet="fancy.xsl"
-                  outputFile="${spotbugs.output.dir}/spotbugs.html"
+                  outputFile="${spotbugs.output.dir}/spotbugs.xml"
                   excludeFilter="spotbugs-filter.xml"
                   effort="max"
                   debug="false">
@@ -685,18 +685,26 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <sourcePath path="${src.dir}" />
             <class location="${build.dir}/lib/opendcs.jar" />
             <classpath refid="spotbugs.classpath"/>
-          </spotbugs>
+        </spotbugs>
+        <xslt in="${spotbugs.output.dir}/spotbugs.xml" out="${spotbugs.output.dir}/spotbugs.html" >
+            <style>
+                <javaresource name="fancy.xsl">
+                    <classpath refid="spotbugs.classpath"/>
+                </javaresource>
+            </style>
+        </xslt>
     </target>
 
 
     <target name="cpd" depends="common.resolve.build" description="Duplicate code checker">
         <mkdir dir="${pmd.output.dir}/cpd"/>
-        <cpd minimumTokenCount="100" outputFile="${pmd.output.dir}/cpd/cpd.txt" format="text" encoding="UTF-8"
+        <cpd minimumTokenCount="100" outputFile="${pmd.output.dir}/cpd/cpd.xml" format="xml" encoding="UTF-8"
              ignoreAnnotations="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
             </fileset>
         </cpd>
+        <xslt in="${pmd.output.dir}/cpd/cpd.xml" style="config/cpdhtml.xslt" out="${pmd.output.dir}/cpd/cpd.html" />
     </target>
 
     <target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
