@@ -33,6 +33,7 @@
     <property name="build.test.resources" value="${build.dir}/test-resources"/>
     <property name="build.test.lib" value="${build.dir}/test-libs"/>
     <property name="dist.jar" value="${build.lib}/opendcs.jar"/>
+    <property name="build.release.dir" value="${build.dir}/release"/>
     <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
     <property name="pmd.output.dir" value="${build.dir}/reports/pmd"/>
 
