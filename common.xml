@@ -150,6 +150,7 @@
 
     <macrodef name="gpgsignfile">
         <attribute name="target"/>
+        <attribute name="workingDir" default="${build.release.dir}"/>
         <sequential>
             <if>
                 <not>
@@ -159,7 +160,7 @@
                     <fail message="Please set the GPG key for signing."/>
                 </then>
             </if>
-            <exec executable="gpg" dir="${build.release.dir}" failonerror="true">
+            <exec executable="gpg" dir="@{workingDir}" failonerror="true">
                 <arg value="-ab"/>
                 <arg value="-u"/>
                 <arg value="${gpg.key.id}"/>
