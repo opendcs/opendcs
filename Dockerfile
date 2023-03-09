@@ -55,6 +55,8 @@ ENV DATABASE_PASSWORD=""
 ENV DATABASE_DRIVER=""
 ENV CWMS_OFFICE=""
 ENV DATATYPE_STANDARD=""
+ENV KEYGENERATOR=""
+ENV APPLICATION_NAME="RoutingScheduler"
 
 FROM tsdbapp as routingscheduler
 COPY docker_scripts/routingscheduler.sh /

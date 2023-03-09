@@ -20,7 +20,9 @@ do
    CP=$CP:$f
 done
 
+
+
 exec java -Xms120m $DECJ_MAXHEAP -cp $CP \
      -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH \
      -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR \
-     decodes.routing.RoutingScheduler -d3 -l /dev/stdout $*
+     decodes.routing.RoutingScheduler -d3 -l /dev/stdout -a $APPLICATION_NAME
