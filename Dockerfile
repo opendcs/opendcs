@@ -39,3 +39,25 @@ ENV LRGS_ADMIN_PASSWORD=""
 # DDS Port
 EXPOSE 16003 
 CMD ["/lrgs.sh"]
+
+
+FROM opendcs_base as tsdbapp
+COPY docker_scripts/tsdb_config.sh /opt/opendcs
+COPY docker_scripts/decodes.properties /opt/opendcs/decodes.properties.template
+USER opendcs:opendcs
+VOLUME /dcs_user_dir
+WORKDIR /dcs_user_dir
+ENV DCSTOOL_USERDIR=/dcs_user_dir
+ENV DATABASE_TYPE=xml
+ENV DATABASE_URL="${DCSTOOL_USERDIR}/edit-db"
+ENV DATABASE_USERNAME=""
+ENV DATABASE_PASSWORD=""
+ENV DATABASE_DRIVER=""
+ENV CWMS_OFFICE=""
+ENV DATATYPE_STANDARD=""
+
+FROM tsdbapp as routingscheduler
+COPY docker_scripts/routingscheduler.sh /
+RUN mkdir routstat
+
+CMD ["/routingscheduler.sh"]
