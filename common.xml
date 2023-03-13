@@ -7,6 +7,9 @@
     <property name="ivy.home" value="${user.home}/.ant"/>
     <property name="ivy.jar.dir" value="${ivy.home}/lib"/>
     <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar"/>
+    <property name="ivy.pom.url" value="https://github.com/opendcs/opendcs"/>
+    <property name="ivy.pom.name" value="OpenDCS"/>
+    <property name="ivy.pom.description" value="A collection of software for aggregatting and processing environmental data such as from NOAA GOES satellites."/>
     <condition property="isUnix" value="true">
         <os family="unix" />
     </condition>
@@ -30,6 +33,7 @@
     <property name="build.test.resources" value="${build.dir}/test-resources"/>
     <property name="build.test.lib" value="${build.dir}/test-libs"/>
     <property name="dist.jar" value="${build.lib}/opendcs.jar"/>
+    <property name="build.release.dir" value="${build.dir}/release"/>
     <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
     <property name="pmd.output.dir" value="${build.dir}/reports/pmd"/>
 
@@ -126,7 +130,11 @@
                     <property name="deploy.update" value="true"/>
                 </else>
             </if>
-            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/lib/${ivy.module}.pom"/>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/lib/${ivy.module}.pom" conf="default,runtime"
+                         templateFile="config/pom.template">
+                <mapping conf="default" scope="compile"/>
+                <mapping conf="runtime" scope="runtime"/>
+            </ivy:makepom>
         </sequential>
     </macrodef>
 
@@ -142,6 +150,7 @@
 
     <macrodef name="gpgsignfile">
         <attribute name="target"/>
+        <attribute name="workingDir" default="${build.release.dir}"/>
         <sequential>
             <if>
                 <not>
@@ -151,7 +160,7 @@
                     <fail message="Please set the GPG key for signing."/>
                 </then>
             </if>
-            <exec executable="gpg" dir="${build.release.dir}" failonerror="true">
+            <exec executable="gpg" dir="@{workingDir}" failonerror="true">
                 <arg value="-ab"/>
                 <arg value="-u"/>
                 <arg value="${gpg.key.id}"/>

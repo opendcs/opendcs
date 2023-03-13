@@ -207,6 +207,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <echo message="GPG is required to sign the components"/>
             </then>
             <else>
+                <gpgsignfile target="opendcs-ot-${version}.jar" workingDir="stage"/>
                 <gpgsignfile target="opendcs-${version}.pom"/>
                 <gpgsignfile target="opendcs-${version}.jar"/>
                 <gpgsignfile target="opendcs-${version}-javadoc.jar"/>
