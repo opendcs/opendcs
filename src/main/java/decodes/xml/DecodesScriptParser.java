@@ -44,11 +44,15 @@ package decodes.xml;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Vector;
 
 import decodes.db.*;
+import decodes.db.DecodesScript.DecodesScriptBuilder;
 import ilex.util.TextUtil;
 import ilex.util.Logger;
 import java.io.IOException;
@@ -57,24 +61,36 @@ import ilex.xml.*;
 /**
  * This class maps the DECODES XML representation for DecodesScript elements.
  */
-public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
+public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner, DecodesScriptReader
 {
-	private DecodesScript decodesScript; // object that we will build.
-	private FormatStatement tmpFmt;  // Tmp for building label & statement
+	private DecodesScript decodesScript = null;
+	private FormatStatement tmpFmt = null;  // Tmp for building label & statement
+	private ArrayList<FormatStatement> statements = new ArrayList<>();
+	private int currentStatementPosition = 0;
+	private ArrayList<ScriptSensor> sensors = new ArrayList<>();
+	private String scriptType = null;
+	private char dataOrder;
 
 	private static final int scriptTypeTag = 0;
 	private static final int formatStatementTag = 1;
 	private static final int dataOrderTag = 2;
 
 	/**
-	 * Constructor.
 	 * @param ob the object in which to store the data.
+	 * 
 	 */
-	public DecodesScriptParser( DecodesScript ob )
+	public DecodesScriptParser(DecodesScript script)
+	{
+		this.decodesScript = script;
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 */
+	public DecodesScriptParser( )
 	{
 		super();
-		this.decodesScript = ob;
-		tmpFmt = null;
 	}
 
 	/**
@@ -115,10 +131,10 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 			if (nm == null)
 				throw new SAXException(XmlDbTags.FormatStatement_el + 
 					" without " + XmlDbTags.label_at +" attribute");
-			tmpFmt = new FormatStatement(decodesScript, 
-				decodesScript.getFormatStatements().size());
+			/*tmpFmt = new FormatStatement(decodesScript, 
+				decodesScript.getFormatStatements().size());*/
+			tmpFmt = new FormatStatement(null, statements.size());
 			tmpFmt.label = nm;
-			decodesScript.getFormatStatements().add(tmpFmt);
 
 			hier.pushObjectParser(new TaggedStringSetter(this, 
 				formatStatementTag));
@@ -135,8 +151,8 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 			{
 				throw new SAXException("Sensor number must be an integer");
 			}
-			ScriptSensor ob = new ScriptSensor(decodesScript, snum);
-			decodesScript.scriptSensors.add(ob);
+			ScriptSensor ob = new ScriptSensor(null, snum);
+			sensors.add(ob);
 			hier.pushObjectParser(new ScriptSensorParser(ob));
 		}
 		else if (localName.equalsIgnoreCase(XmlDbTags.dataOrder_el))
@@ -190,31 +206,60 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 	{
 		switch(tag)
 		{
-		case scriptTypeTag:
-			decodesScript.scriptType = str;
-			break;
-		case formatStatementTag:
-			tmpFmt.format = TextUtil.collapseWhitespace(str);
-			break;
-		case dataOrderTag:
+			case scriptTypeTag:
 			{
-				char m = Constants.dataOrderUndefined;
-				if (str.length() > 0)
-				{
-					m = Character.toUpperCase(str.charAt(0));
-					if (m != Constants.dataOrderAscending
-					 && m != Constants.dataOrderDescending
-					 && m != Constants.dataOrderUndefined)
-					{
-						TopLevelParser.instance().parseWarning(
-							"Invalid dataOrder '" + m + "'");
-						m = Constants.dataOrderUndefined;
-					}
-				}
-				decodesScript.setDataOrder(m);
+				scriptType = str;
 				break;
 			}
-		}
+			case formatStatementTag:
+			{
+				tmpFmt.format = TextUtil.collapseWhitespace(str);
+				statements.add(tmpFmt);
+				break;
+			}
+			case dataOrderTag:
+				{
+					char m = Constants.dataOrderUndefined;
+					if (str.length() > 0)
+					{
+						m = Character.toUpperCase(str.charAt(0));
+						if (m != Constants.dataOrderAscending
+						&& m != Constants.dataOrderDescending
+						&& m != Constants.dataOrderUndefined)
+						{
+							TopLevelParser.instance().parseWarning(
+								"Invalid dataOrder '" + m + "'");
+							m = Constants.dataOrderUndefined;
+						}
+					}
+					dataOrder = m;
+					break;
+				}
+			}
+	}
+
+	/**
+	 * Retrieve the parsed data order.
+	 * @return
+	 */
+	public char getDataOrder() {
+		return dataOrder;
+	}
+
+	/**
+	 * Retrieve the parsed script type.
+	 * @return
+	 */
+	public String getType() {
+		return scriptType;
+	}
+
+	/**
+	 * Retrieve the Parsed sensor information.
+	 */
+	public ArrayList<ScriptSensor> getSensors()
+	{
+		return sensors;
 	}
 
 	/**
@@ -249,5 +294,18 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 			p.writeXml(xos);
 		}
 		xos.endElement(myName());
+	}
+
+	@Override
+	public Optional<FormatStatement> nextStatement(DecodesScript script) throws IOException {
+		// TODO Auto-generated method stub
+		if( currentStatementPosition < statements.size() ) {
+			int cur = currentStatementPosition;
+			currentStatementPosition++;
+			return Optional.of(statements.get(cur));
+		} else {
+			return Optional.empty();
+		}
+		
 	}
 }

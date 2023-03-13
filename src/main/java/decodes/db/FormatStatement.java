@@ -136,4 +136,3 @@ public class FormatStatement extends DatabaseObject
 		return decodesScript;
 	}
 }
-
