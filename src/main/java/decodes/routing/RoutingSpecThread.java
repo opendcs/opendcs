@@ -818,9 +818,14 @@ public class RoutingSpecThread
 			if (p != null)
 				platname = p.makeFileName();
 			String msg = "Exception processing data from platform '" + platname + "': " + ex.toString();
+			PrintStream ps = Logger.instance().getLogOutput();
+			if (ps == null)
+			{
+				ps = System.out; // at least get it somewhere
+			}
 			assertPlatformError(msg, platstat);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			Logger.instance().warning(msg);
+			ex.printStackTrace(ps);
 			return null;
 		}		
 	}

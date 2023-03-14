@@ -8,6 +8,7 @@ import org.xml.sax.SAXException;
 import java.util.Collection;
 import java.util.Iterator;
 import decodes.db.*;
+import decodes.db.DecodesScript.DecodesScriptBuilder;
 import ilex.util.TextUtil;
 import ilex.util.AsciiUtil;
 import ilex.util.Logger;
@@ -20,6 +21,11 @@ import ilex.xml.*;
 public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, TaggedStringOwner
 {
 	private PlatformConfig platformConfig; // object that we will build.
+	/**
+	 * Reference to the DecodesScriptBuilder so we can finalized after we've read it in.
+	 */
+	private DecodesScriptBuilder scriptBuilder; 
+	private DecodesScriptParser scriptParser;
 
 	private static final int descriptionTag = 0;
 
@@ -97,23 +103,17 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 			if (nm == null)
 				throw new SAXException(XmlDbTags.DecodesScript_el + " without "
 					+ XmlDbTags.DecodesScript_scriptName_at +" attribute");
-
-			try
-			{
-				// TODO: move this to build the script after creating an XML reader
-				DecodesScript ds = DecodesScript.empty()
-											.platformConfig(platformConfig)
-											.scriptName(nm)
-											.build();
-
-				platformConfig.addScript(ds);
-
-				hier.pushObjectParser(new DecodesScriptParser(ds));
-			}
-			catch( DecodesScriptException | IOException ex)
-			{
-				throw new SAXException("Failed to load Decodes Script",ex);
-			}
+			
+			/**
+			 * Since the script data hasn't been read in yet, we punt
+			 * the creation and assignment of the decodes script to the endtag
+			 * when it's all ready.
+			 */
+			scriptParser = new DecodesScriptParser();
+			scriptBuilder = DecodesScript.from(scriptParser)
+										.platformConfig(platformConfig)
+										.scriptName(nm);
+			hier.pushObjectParser(scriptParser);
 		}
 		else
 		{
@@ -135,10 +135,28 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 	public void endElement( XmlHierarchyParser hier, String namespaceURI, String localName, String qname ) throws SAXException
 	{
 		if (!localName.equalsIgnoreCase(myName()))
+		{
 			throw new SAXException(
 				"Parse stack corrupted: got end tag for " + localName
 				+ ", expected " + myName());
+		}		
 		hier.popObjectParser();
+		try
+		{
+			DecodesScript ds = scriptBuilder.build();
+			ds.scriptType = scriptParser.getType();
+			for(ScriptSensor s: scriptParser.getSensors())
+			{
+				s.decodesScript = ds;
+				ds.scriptSensors.add(s);
+			}
+			ds.setDataOrder(scriptParser.getDataOrder());
+			this.platformConfig.addScript(ds);
+		}
+		catch (DecodesScriptException | IOException ex)
+		{
+			throw new SAXException("Failed to load Decodes Script",ex);
+		}
 	}
 
 	/**
