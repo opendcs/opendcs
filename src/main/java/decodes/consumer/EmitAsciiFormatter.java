@@ -40,7 +40,7 @@ public class EmitAsciiFormatter extends OutputFormatter
 	};
 
 	/** default constructor */
-	protected EmitAsciiFormatter()
+	public EmitAsciiFormatter()
 	{
 		super();
 		delimiter = " ";

@@ -141,7 +141,13 @@ public class StationExcludeCompResolver
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
-		return propSpecs;
+		PropertySpec[] ret = new PropertySpec[super.getSupportedProps().length + propSpecs.length];
+		int i = 0;
+		for (PropertySpec ps : super.getSupportedProps())
+			ret[i++] = ps;
+		for(PropertySpec ps : propSpecs)
+			ret[i++] = ps;
+		return ret;
 	}
 
 }

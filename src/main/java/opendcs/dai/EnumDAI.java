@@ -14,6 +14,7 @@ import decodes.tsdb.DbIoException;
  * @author mmaloney Mike Maloney
  */
 public interface EnumDAI
+	extends AutoCloseable
 {
 	public DbEnum getEnum(String enumName)
 		throws DbIoException;

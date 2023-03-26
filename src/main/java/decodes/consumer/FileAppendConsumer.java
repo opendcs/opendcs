@@ -349,7 +349,15 @@ public class FileAppendConsumer extends DataConsumer
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
-		return (PropertySpec[])ArrayUtil.combined((new FileConsumer()).getSupportedProps(), myspecs);
+		FileConsumer fc = new FileConsumer();
+		PropertySpec[] fcprops = fc.getSupportedProps();
+		PropertySpec[] ret = new PropertySpec[myspecs.length + fcprops.length];
+		int i = 0;
+		for (PropertySpec ps : fcprops)
+			ret[i++] = ps;
+		for (PropertySpec ps : myspecs)
+			ret[i++] = ps;
+		return ret;
 	}
 
 }

@@ -104,13 +104,12 @@ import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.Constants;
 import decodes.db.TransportMedium;
-import decodes.db.DataSource;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.DatabaseException;
+import decodes.util.PropertySpec;
 
-import lrgs.common.DcpMsg;
 
 /**
   This is the implementation of the DataSourceInterface for receiving data
@@ -155,6 +154,27 @@ public class SocketStreamDataSource extends DataSourceExec
 	private NetworkList myNetworkList;
 	private boolean reconnect;
 	private byte msgbuf[];
+
+	static final PropertySpec[] propSpecs =
+	{
+		new PropertySpec("port", PropertySpec.INT, 
+			"(default=5001) TCP Port to connect to"),
+		new PropertySpec("host", PropertySpec.HOSTNAME, 
+			"(required) Host name or IP Address to connect to"),
+		new PropertySpec("header", 
+			PropertySpec.DECODES_ENUM + "TransportMediumType", 
+			"(default GOES) Determines the format of the message header." +
+			" Legacy systems called this 'mediumType'"),
+		new PropertySpec("lengthAdj", PropertySpec.INT, 
+			"(default=-1) adjustment to header length for reading "
+			+ "socket. Will read 'adjusted length' bytes following header."),
+		new PropertySpec("delimiter", PropertySpec.STRING, 
+				"(default \" \r\n\") used for finding sync'ing stream."),
+		new PropertySpec("endDelimiter", PropertySpec.STRING, 
+			"(default null) marks end of message. In legacy"),
+		new PropertySpec("reconnect", PropertySpec.BOOLEAN,
+			"(default=false) if remote server closes socket, attempt to reconnect.")
+	};
 
 	/**
 	  No-args constructor is necessary because this is instantiated from
@@ -715,6 +735,12 @@ to end-delim.
 				+ "': " + e);
 		}
 		return buflen;
+	}
+	
+	@Override
+	public PropertySpec[] getSupportedProps()
+	{
+		return propSpecs;
 	}
 
 }
