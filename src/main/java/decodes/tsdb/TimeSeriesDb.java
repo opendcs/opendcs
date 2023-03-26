@@ -1012,7 +1012,7 @@ public abstract class TimeSeriesDb
 					+ "and ((" + curTime + " - DATE_TIME_LOADED) > " // curTimeName
 					+ inter ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
 			PreparedStatement updateFailedRetry = tcon.prepareStatement(
-				"update CP_COMP_TASKLIST set FAIL_TIME = ? where RECORD_NUM = ? and "
+				"update CP_COMP_TASKLIST set FAIL_TIME = " + curTime + " where RECORD_NUM = ? and "
 			+	"( (" + curTime + " - DATE_TIME_LOADED) <= " + inter);
 			PreparedStatement updateFailTime = tcon.prepareStatement(
 				"UPDATE CP_COMP_TASKLIST "
