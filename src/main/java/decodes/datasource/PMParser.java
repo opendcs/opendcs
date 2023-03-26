@@ -83,6 +83,7 @@ package decodes.datasource;
 import ilex.util.Logger;
 
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.Properties;
 
 import decodes.datasource.RawMessage;
@@ -113,13 +114,21 @@ public abstract class PMParser
 	public static PMParser getPMParser(String headerType)
 		throws HeaderParseException
 	{
+		/** 
+		 * If we get here and the database and enum list is null, something is very wrong.
+		 * Be more drastic. Nothing downstream is likely to work anyways.
+		 * 
+		 */
+		Objects.requireNonNull(Database.getDb(), "The database is not available and " +
+											     " we're parsing a header. Check configuration.");
+		Objects.requireNonNull(Database.getDb().enumList, "The database enum list is not available and " +
+														  " we're parsing a header. Check configuration.");
 		headerType = headerType.toLowerCase();
 		Logger.instance().debug3("Constructing PMParser for headerType='" + headerType + "'");
 
 		// First use enum to lookup headerType, retrieve class
 		// name. Then instantiate the class.
-		if (Database.getDb() == null || Database.getDb().enumList == null)
-			return null;
+
 		DbEnum tmTypeEnum = Database.getDb().enumList.getEnum(Constants.enum_TMType);
 		if (tmTypeEnum != null)
 		{
