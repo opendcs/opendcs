@@ -1001,22 +1001,22 @@ public abstract class TimeSeriesDb
 
 		// Oracle was providing things in the wrong timestamp using current_timestamp.
 		// TODO: needs to be checked against Postgres
-		String curTime = this.isOracle() ? "sysdate" : "current_timestamp" ;
-		String inter = this.isOracle() ? " ?/24 )" : " ? * INTERVAL '1' hour )" ; // Oracle datemath
+		final String curTimeSqlCommand = this.isOracle() ? "sysdate" : "current_timestamp" ;
+		final String intervalSqlCommand = this.isOracle() ? " ?/24 )" : " ? * INTERVAL '1' hour )" ; // Oracle date math
 		Connection tcon = getConnection();
 		try(
 			PreparedStatement deleteNormal = tcon.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
 			PreparedStatement deleteFailedAfterMaxRetries = tcon.prepareStatement(
 					  "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM = ? " // failRecList
-					+ "and ((" + curTime + " - DATE_TIME_LOADED) > " // curTimeName
-					+ inter ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
+					+ "and ((" + curTimeSqlCommand + " - DATE_TIME_LOADED) > " // curTimeName
+					+ intervalSqlCommand ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
 			PreparedStatement updateFailedRetry = tcon.prepareStatement(
-				"update CP_COMP_TASKLIST set FAIL_TIME = " + curTime + " where RECORD_NUM = ? and "
-			+	"( (" + curTime + " - DATE_TIME_LOADED) <= " + inter);
+				"update CP_COMP_TASKLIST set FAIL_TIME = " + curTimeSqlCommand + " where RECORD_NUM = ? and "
+			+	"( (" + curTimeSqlCommand + " - DATE_TIME_LOADED) <= " + intervalSqlCommand);
 			PreparedStatement updateFailTime = tcon.prepareStatement(
 				"UPDATE CP_COMP_TASKLIST "
-			+	" SET FAIL_TIME = " + curTime
+			+	" SET FAIL_TIME = " + curTimeSqlCommand
 			+   " where record_num = ?"
 				);
 
