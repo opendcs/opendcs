@@ -24,14 +24,20 @@
     <property name="resources.dir" value="src/main/resources"/>
     <property name="src.test.dir" value="src/test/java"/>
     <property name="resources.test.dir" value="src/test/resources"/>
+    <property name="src.test-integration.dir" value="src/test-integration/java"/>
+    <property name="resources.test-integration.dir" value="src/test-integration/resources"/>
 
     <property name="build.dir" value="build"/>
     <property name="build.classes" value="${build.dir}/classes"/>
     <property name="build.resources" value="${build.dir}/resources"/>
     <property name="build.lib" value="${build.dir}/lib"/>
+    <property name="stage.dir" value="stage"/>
     <property name="build.test.classes" value="${build.dir}/test-classes"/>
     <property name="build.test.resources" value="${build.dir}/test-resources"/>
     <property name="build.test.lib" value="${build.dir}/test-libs"/>
+    <property name="build.test-integration.classes" value="${build.dir}/test-integration/classes"/>
+    <property name="build.test-integration.resources" value="${build.dir}/test-integration/resources"/>
+    <property name="build.test.lib" value="${build.dir}/test-integration/libs"/>
     <property name="dist.jar" value="${build.lib}/opendcs.jar"/>
     <property name="build.release.dir" value="${build.dir}/release"/>
     <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
