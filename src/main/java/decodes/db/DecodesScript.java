@@ -488,6 +488,11 @@ public class DecodesScript extends IdDatabaseObject
                         "Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated: " + ex);
                 throw new DecoderException("Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated.");
             }
+               catch(Exception ex)  // ING-569
+               {
+                    Logger.instance().debug1("DecodesScript: Nonspecific exception. Platform Config: "+ platformConfig.getName()+", script <"+scriptName+">: " + ex);
+//                    throw ex;
+               }
             // All other decoding exception will cause failure.
         }
 
