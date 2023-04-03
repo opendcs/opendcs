@@ -39,8 +39,11 @@ public class SimpleDecodesTest extends AppTestBase
                            "-d3",
                            getResource("SimpleDecodesTest/OKVI4-decodes.xml")));
 
-        String output = SystemStubs.tapSystemOut( () -> RoutingSpecThread.main(args("-l","/dev/stdout","OKVI4-input")));        
-        System.out.println(output);
+        String output = SystemStubs.tapSystemOut(
+            () -> RoutingSpecThread.main(
+                    args("-l","/dev/null","-d3","OKVI4-input")
+            )
+        );
 
         File goldenFile = new File(getResource("SimpleDecodesTest/golden"));
         String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
