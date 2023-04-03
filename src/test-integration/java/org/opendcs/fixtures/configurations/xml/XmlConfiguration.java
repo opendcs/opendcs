@@ -25,7 +25,6 @@ public class XmlConfiguration implements Configuration
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
-
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
         configBuilder.withDatabaseLocation("$DCSTOOL_USERDIR/edit-db");
         configBuilder.withEditDatabaseType("XML");
