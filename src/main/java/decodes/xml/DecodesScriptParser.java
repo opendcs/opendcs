@@ -302,7 +302,11 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 		if( currentStatementPosition < statements.size() ) {
 			int cur = currentStatementPosition;
 			currentStatementPosition++;
-			return Optional.of(statements.get(cur));
+			FormatStatement curStmt = statements.get(cur);
+			FormatStatement newStmt = new FormatStatement(script, cur);
+			newStmt.format = curStmt.format;
+			newStmt.label = curStmt.label;
+			return Optional.of(newStmt);
 		} else {
 			return Optional.empty();
 		}
