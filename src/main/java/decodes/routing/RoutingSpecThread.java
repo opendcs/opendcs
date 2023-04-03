@@ -1492,7 +1492,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 	@param args the command line arguments
 	*/
 	public static void main(String args[])
-		throws DecodesException, IOException, DbIoException
+		throws DecodesException, IOException, DbIoException, InterruptedException
 	{
 		Logger.setLogger(new StderrLogger("RoutingSpecThread"));
 		
@@ -1768,6 +1768,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		}
 
 		mainThread.start();
+		mainThread.join();
 	}
 	
 	/**
