@@ -2,9 +2,7 @@ package org.opendcs.fixtures;
 
 import java.io.File;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestTemplate;
@@ -39,10 +37,6 @@ public class AppTestBase {
         properties.set("INPUT_DATA",new File(resourceDir,"/shared").getAbsolutePath());
         properties.setup();
         environment.setup();
-
-        
-
-
     }
 
     @AfterAll
