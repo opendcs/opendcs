@@ -116,7 +116,6 @@ DECODES database.
 */
 public class DbImport
 {
-	static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
 	static BooleanToken validateOnlyArg = new BooleanToken("v",
 		"Validate Only", "", TokenOptions.optSwitch, false);
 	static BooleanToken keepOldArg = new BooleanToken("o",
@@ -158,7 +157,7 @@ public class DbImport
 		TokenOptions.optSwitch, false);
 
 	
-	static
+	public static void setupArgs(CmdLineArgs cmdLineArgs)
 	{
 		cmdLineArgs.addToken(validateOnlyArg);
 		cmdLineArgs.addToken(keepOldArg);
@@ -194,7 +193,8 @@ public class DbImport
 		       SAXException, ParserConfigurationException
 	{
 		Logger.setLogger(new StderrLogger("DbImport"));
-
+		CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
+		setupArgs(cmdLineArgs);
 		// Parse command line arguments.
 		cmdLineArgs.parseArgs(args);
 
