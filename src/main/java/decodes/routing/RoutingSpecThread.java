@@ -889,9 +889,9 @@ public class RoutingSpecThread
 			"-------------- RoutingSpec '" + rs.getName()
 			+ "' Terminating --------------");
 		
-		try { sleep(2000L); } catch(InterruptedException ex) {}
+		/*try { sleep(2000L); } catch(InterruptedException ex) {}
 		if (exitOnCompletion)
-			System.exit(0);
+			System.exit(0);*/
 	}
 
 	private void init(long lastMsgRecvMsec)
@@ -1404,7 +1404,6 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 	// Main Method and Command Line Arguments
 	//===============================================================
 	static String defaultLogFile = "routing.log";
-	static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, defaultLogFile);
 	static BooleanToken noLimitsArg = new BooleanToken("m", 
 		"Do NOT apply Sensor min/max limits.", "", 
 		TokenOptions.optSwitch, false);
@@ -1445,8 +1444,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 	static BooleanToken editDbArg = new BooleanToken("e", 
 		"(deprecated -- does nothing)", "", TokenOptions.optSwitch, false);
 
-
-	static
+	private static void setupArgs(CmdLineArgs cmdLineArgs)
 	{
 		cmdLineArgs.addToken(noLimitsArg);
 		scriptNameArg.setType("Script-Name");
@@ -1495,7 +1493,8 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		throws DecodesException, IOException, DbIoException, InterruptedException
 	{
 		Logger.setLogger(new StderrLogger("RoutingSpecThread"));
-		
+		final CmdLineArgs cmdLineArgs = new CmdLineArgs(false, defaultLogFile);
+		setupArgs(cmdLineArgs);
 		// MJM 20171206 set to false to allow command line args to override settings
 		// in the routing spec.
 		ScheduleEntryExecutive.setRereadRsBeforeExec(false);
