@@ -15,7 +15,7 @@ public class UserPropertiesBuilder
 
     public UserPropertiesBuilder withDatabaseLocation(String dbLocation)
     {
-        props.setProperty("location", dbLocation);
+        props.setProperty("EditDatabaseLocation", dbLocation);
         return this;
     }
 
@@ -25,8 +25,15 @@ public class UserPropertiesBuilder
         return this;
     }
 
-    public UserPropertiesBuilder withEditDatabaseType(String type) {
+    public UserPropertiesBuilder withEditDatabaseType(String type)
+    {
         props.setProperty("editDatabaseType", type);
+        return this;
+    }
+
+    public UserPropertiesBuilder withSiteNameTypePreference(String preference)
+    {
+        props.setProperty("siteNameTypePreference", preference);
         return this;
     }
 /**

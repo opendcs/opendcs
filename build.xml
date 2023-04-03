@@ -183,6 +183,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <testclasses outputdir="${build.dir}/test-integration/results">
                 <fork>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
+                    <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>

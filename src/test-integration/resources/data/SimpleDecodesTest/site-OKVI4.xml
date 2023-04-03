@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <Site>
+      <Latitude>N 42&#176;16&apos;22&quot;</Latitude>
+      <Longitude>W 91&#176;03&apos;49&quot;</Longitude>
+      <Elevation>1.7976931348623157E308</Elevation>
+      <ElevationUnits>ft</ElevationUnits>
+      <Description>Iowa River at Oakville, IA (USGS)</Description>
+      <SiteProperty PropertyName="PUBLIC_NAME">Iowa River at Oakville</SiteProperty>
+      <SiteName NameType="local">OKVI4</SiteName>
+      <SiteName NameType="cwms">OKVI4</SiteName>
+      <SiteName NameType="usgs" AgencyCode="USGS" UsgsDbno="01">
+        05465700
+      </SiteName>
+    </Site>
