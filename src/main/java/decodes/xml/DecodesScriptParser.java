@@ -69,7 +69,7 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 	private int currentStatementPosition = 0;
 	private ArrayList<ScriptSensor> sensors = new ArrayList<>();
 	private String scriptType = null;
-	private char dataOrder;
+	private char dataOrder = Constants.dataOrderUndefined;
 
 	private static final int scriptTypeTag = 0;
 	private static final int formatStatementTag = 1;
