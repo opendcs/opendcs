@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.Extension;
  */
 public interface Configuration {
     public File getPropertiesFile();
+    public File getUserDir();
     public boolean isSql();
     public default List<Extension> getExtensions() {
         return new ArrayList<>();

@@ -10,13 +10,12 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
-import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
 
 public class ConfigurationContextProvider implements TestTemplateInvocationContextProvider {
 
     @Override
-    public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext arg0) {
+    public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext ctx) {
         final ArrayList<TestTemplateInvocationContext> contexts = new ArrayList<>();
         ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
         Iterator<ConfigurationProvider> configs = loader.iterator();
@@ -28,7 +27,7 @@ public class ConfigurationContextProvider implements TestTemplateInvocationConte
                 contexts.add(
                     config.getConfig(
                         Files.createTempDirectory("configs").toFile()
-                )
+                    )
                 );
             }
             catch( IOException ex)
