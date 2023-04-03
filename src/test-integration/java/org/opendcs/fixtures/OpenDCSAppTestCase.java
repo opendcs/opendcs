@@ -25,6 +25,11 @@ public class OpenDCSAppTestCase
         return this.configurationName + "-" + config.isSql() + "-" + config.getPropertiesFile().getAbsolutePath();
     }
 
+    public String getConfigurationName()
+    {
+        return this.configurationName;
+    }
+
     public Configuration getConfiguration()
     {
         return config;
