@@ -141,21 +141,24 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 				+ ", expected " + myName());
 		}		
 		hier.popObjectParser();
-		try
+		if (scriptBuilder != null)
 		{
-			DecodesScript ds = scriptBuilder.build();
-			ds.scriptType = scriptParser.getType();
-			for(ScriptSensor s: scriptParser.getSensors())
+			try
 			{
-				s.decodesScript = ds;
-				ds.scriptSensors.add(s);
+				DecodesScript ds = scriptBuilder.build();
+				ds.scriptType = scriptParser.getType();
+				for(ScriptSensor s: scriptParser.getSensors())
+				{
+					s.decodesScript = ds;
+					ds.scriptSensors.add(s);
+				}
+				ds.setDataOrder(scriptParser.getDataOrder());
+				this.platformConfig.addScript(ds);
 			}
-			ds.setDataOrder(scriptParser.getDataOrder());
-			this.platformConfig.addScript(ds);
-		}
-		catch (DecodesScriptException | IOException ex)
-		{
-			throw new SAXException("Failed to load Decodes Script",ex);
+			catch (DecodesScriptException | IOException ex)
+			{
+				throw new SAXException("Failed to load Decodes Script",ex);
+			}
 		}
 	}
 
