@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <RoutingSpec Name="HydroJSON-Test">
+    <IsProduction>false</IsProduction>
+    <DataSource Name="MROI4-ROWI4" Type="file">
+      <DataSourceArg>
+        filename=$INPUT_DATA/MROI4-ROWI4.data,
+        MediumType=GOES,
+        before=&#92;001, after=&#92;002&#92;n
+      </DataSourceArg>
+    </DataSource>
+    <EnableEquations>false</EnableEquations>
+    <UsePerformanceMeasurements>false</UsePerformanceMeasurements>
+    <OutputFormat>hydrojson</OutputFormat>
+    <OutputTimeZone>UTC</OutputTimeZone>
+    <PresentationGroupName>CWMS</PresentationGroupName>
+    <ConsumerType>pipe</ConsumerType>
+    <ConsumerArg></ConsumerArg>
+    <SinceTime>now - 1 hour</SinceTime>
+    <RoutingSpecNetworkList Name="&lt;all&gt;"/>
+    <RoutingSpecProperty PropertyName="rs.timeApplyTo">
+      l
+    </RoutingSpecProperty>
+  </RoutingSpec>
+</Database>

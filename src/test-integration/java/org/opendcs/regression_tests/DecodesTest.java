@@ -43,17 +43,48 @@ public class DecodesTest extends AppTestBase
                            "-d3",
                            getResource("SimpleDecodesTest/OKVI4-decodes.xml")));
         });
-
-        String output = SystemStubs.tapSystemOut(
-            () -> RoutingSpecThread.main(
-                    args("-l",logFile,"-d3","OKVI4-input")
-            )
-        );
+        
+        
+        String output = SystemStubs.tapSystemOut( 
+                            () -> RoutingSpecThread.main(
+                                    args("-l",logFile,"-d3","OKVI4-input")
+                                )
+                        );
 
         File goldenFile = new File(getResource("SimpleDecodesTest/golden"));
         String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
         assertEquals(golden,output,"Output Doesn't match expected data.");
     }
 
-    
+    @TestTemplate
+    @Order(2)
+    public void test_HydroJsonTest(OpenDCSAppTestCase testCase) throws Exception
+    {
+        SystemStubs.catchSystemExit(() -> {
+            Configuration config = testCase.getConfiguration();
+            String propertiesFile = config.getPropertiesFile().getAbsolutePath();
+            String logFile = new File(config.getUserDir(),"/decodes-json.log").getAbsolutePath();
+            log.info("Importing test db.");
+
+            SystemStubs.tapSystemErrAndOut(() -> {
+                DbImport.main(args("-l", logFile,
+                                "-P", propertiesFile,
+                                "-d3",
+                                getResource("shared/test-sites.xml"),
+                                getResource("shared/ROWI4.xml"),
+                                getResource("shared/presgrp-regtest.xml"),
+                                getResource("HydroJsonTest/HydroJSON-rs.xml")));
+            });
+
+            String output = SystemStubs.tapSystemOut(
+                () -> RoutingSpecThread.main(
+                        args("-l",logFile,"-d3","HydroJSON-Test")
+                )
+            );
+
+            File goldenFile = new File(getResource("HydroJsonTest/golden"));
+            String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
+            assertEquals(golden,output,"Output Doesn't match expected data.");
+        });
+    }
 }
