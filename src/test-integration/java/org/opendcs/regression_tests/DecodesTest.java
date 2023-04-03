@@ -15,16 +15,15 @@ import org.opendcs.spi.configuration.Configuration;
 import decodes.dbimport.DbImport;
 import decodes.routing.RoutingSpecThread;
 import uk.org.webcompere.systemstubs.SystemStubs;
-import uk.org.webcompere.systemstubs.stream.output.Output;
 
-public class SimpleDecodesTest extends AppTestBase
+public class DecodesTest extends AppTestBase
 {
-    private static final Logger log = Logger.getLogger(SimpleDecodesTest.class.getName());
+    private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
 
 
     @TestTemplate
     @Order(1)
-    public void the_test(OpenDCSAppTestCase testCase) throws Exception
+    public void test_SimpleDecodesTest(OpenDCSAppTestCase testCase) throws Exception
     {
         Configuration config = testCase.getConfiguration();
         String propertiesFile = config.getPropertiesFile().getAbsolutePath();
