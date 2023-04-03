@@ -28,20 +28,26 @@ public class SimpleDecodesTest extends AppTestBase
     {
         Configuration config = testCase.getConfiguration();
         String propertiesFile = config.getPropertiesFile().getAbsolutePath();
+        String logFile = new File(config.getUserDir(),"/decodes.log").getAbsolutePath();
         log.info("Import site.");
-        DbImport.main(args("-l", "/dev/stdout",
-                           "-P", propertiesFile,
-                           "-d3",
+
+        SystemStubs.tapSystemErrAndOut(() -> {
+            DbImport.main(args("-l", logFile,
+                               "-P", propertiesFile,
+                               "-d3",
                            getResource("SimpleDecodesTest/site-OKVI4.xml")));
+        });
         log.info("Loading platform, routing spec, etc.");
-        DbImport.main(args("-l","/dev/stdout",
+        SystemStubs.tapSystemErrAndOut(() -> {
+            DbImport.main(args("-l",logFile,
                            "-P", propertiesFile,
                            "-d3",
                            getResource("SimpleDecodesTest/OKVI4-decodes.xml")));
+        });
 
         String output = SystemStubs.tapSystemOut(
             () -> RoutingSpecThread.main(
-                    args("-l","/dev/null","-d3","OKVI4-input")
+                    args("-l",logFile,"-d3","OKVI4-input")
             )
         );
 

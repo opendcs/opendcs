@@ -1,5 +1,6 @@
 package org.opendcs.fixtures;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -14,25 +15,27 @@ import org.opendcs.spi.configuration.ConfigurationProvider;
 
 public class ConfigurationContextProvider implements TestTemplateInvocationContextProvider {
 
+    private static ArrayList<TestTemplateInvocationContext> contexts = null;
+
     @Override
     public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext ctx) {
-        final ArrayList<TestTemplateInvocationContext> contexts = new ArrayList<>();
-        ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
-        Iterator<ConfigurationProvider> configs = loader.iterator();
-        while(configs.hasNext())
+        if (contexts == null)
         {
-            ConfigurationProvider config = configs.next();
-            try
+            contexts = new ArrayList<>();
+            ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
+            Iterator<ConfigurationProvider> configs = loader.iterator();
+            while(configs.hasNext())
             {
-                contexts.add(
-                    config.getConfig(
-                        Files.createTempDirectory("configs").toFile()
-                    )
-                );
-            }
-            catch( IOException ex)
-            {
-                throw new RuntimeException("Unable to create temp directories for configuration",ex);
+                ConfigurationProvider config = configs.next();
+                try
+                {
+                    File tmp = Files.createTempDirectory("configs").toFile();
+                    contexts.add(config.getConfig(tmp));
+                }
+                catch( IOException ex)
+                {
+                    throw new RuntimeException("Unable to create temp directories for configuration",ex);
+                }
             }
         }
         return contexts.stream();
@@ -42,5 +45,4 @@ public class ConfigurationContextProvider implements TestTemplateInvocationConte
     public boolean supportsTestTemplate(ExtensionContext ctx) {
         return true;
     }
-    
 }
