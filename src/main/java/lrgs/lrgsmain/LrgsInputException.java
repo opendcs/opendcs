@@ -26,4 +26,9 @@ public class LrgsInputException extends Exception
 	{
 		super(msg);
 	}
+
+	public LrgsInputException(String msg, Throwable cause)
+	{
+		super(msg,cause);
+	}
 }

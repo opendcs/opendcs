@@ -18,7 +18,9 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.TimeZone;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.net.InetAddress;
 
 import opendcs.dai.LoadingAppDAI;
@@ -65,6 +67,7 @@ Main class for LRGS process.
 public class LrgsMain
 	implements Runnable, ServerLockable, SignalHandler, ProcWaiterCallback
 {
+	private static final Logger logger = Logger.instance();
 	public static final String module = "LrgsMain";
 
 	public static final int EVT_TIMEOUT = 1;
@@ -588,73 +591,60 @@ public class LrgsMain
 		// Note that each input interface must have a unique name and must not
 		// clash with any of the standard interface type-names defined in
 		// LrgsInputInterface.java
-		HashMap<String, LoadableLrgsInputInterface> nm2if = 
-			new HashMap<String,LoadableLrgsInputInterface>();
-		Properties props = cfg.getOtherProps();
-		for(Enumeration<Object> kenum = props.keys(); kenum.hasMoreElements(); )
-		{
-			String key = (String)kenum.nextElement();
-			if (TextUtil.startsWithIgnoreCase(key, "LrgsInput.")
-			 && TextUtil.endsWithIgnoreCase(key, ".class"))
+		
+		final HashMap<String, Properties> loadableInterfaces = new HashMap<>();
+		cfg.getOtherProps()
+		   .forEach((key,val) -> {
+				if (((String)key).startsWith("LrgsInput."))
+				{
+					final String keyParts[] = ((String)key).split("\\.");
+					final String name = keyParts[1];
+					final String var = keyParts[2]; // NOTE: consider possible extra hierarchy
+					if (!loadableInterfaces.containsKey(name))
+					{
+						loadableInterfaces.put(name,new Properties());
+					}
+					final Properties props = loadableInterfaces.get(name);
+					props.put(var,val);
+				}
+			});
+
+		loadableInterfaces.forEach((loadableName,props)-> {
+			try
 			{
-				// Isolate the name between "LrgsInput." and ".class"
-				String nm = key.substring(10);
-				int idx = nm.indexOf('.');
-				nm = nm.substring(0, idx);
-				
-				String clsName = props.getProperty(key);
-				try
-				{
-					Class<?> inputClass = Class.forName(clsName);
-					LoadableLrgsInputInterface input = 
-						(LoadableLrgsInputInterface)inputClass.newInstance();
-					input.setInterfaceName(nm);
-					addInput(input);
-					nm2if.put(nm, input);
-					input.initLrgsInput();
-				}
-				catch (Exception ex)
-				{
-					Logger.instance().warning(module 
-						+ " Cannot instantiate LrgsInput class '"
-						+ clsName + "': " + ex);
-				}
+				Class<?> inputClass = Class.forName(props.getProperty("class"));
+				LoadableLrgsInputInterface input = 
+					(LoadableLrgsInputInterface)inputClass.newInstance();
+				input.setInterfaceName(loadableName);
+				input.setMsgArchive(msgArchive);
+				addInput(input);				
+
+				props.entrySet()
+						.stream()
+						.filter((k_v)  -> !(((String)k_v.getKey()).equalsIgnoreCase("enable")
+											||
+											((String)k_v.getKey()).equalsIgnoreCase("enabled")
+						))
+						.forEach((k_v) -> {
+							input.setConfigParam((String)k_v.getKey(),(String)k_v.getValue());
+						}
+				);
+				input.initLrgsInput();
+				input.enableLrgsInput(Boolean.parseBoolean(props.getProperty("enable",
+														   props.getProperty("enabled",
+														   "false"))));
 			}
-		}
-		// Now process enabled and other properties.
-		for(Enumeration<Object> kenum = props.keys(); kenum.hasMoreElements(); )
-		{
-			String key = (String)kenum.nextElement();
-			if (TextUtil.startsWithIgnoreCase(key, "LrgsInput."))
+			catch (IllegalAccessException | InstantiationException | ClassNotFoundException | ClassCastException ex)
 			{
-				String ifName = key.substring(10);
-				int idx = ifName.indexOf('.');
-				if (idx == -1 || idx == ifName.length())
-					continue;
-				String param = ifName.substring(idx+1);
-				if (param.equalsIgnoreCase("class"))
-					continue;
-				ifName = ifName.substring(0, idx);
-				LoadableLrgsInputInterface input = nm2if.get(ifName);
-				if (input == null)
-				{
-					Logger.instance().warning(module 
-						+ " Config param '" + key + "' is for unknown input interface '"
-						+ ifName + "'. Did you forget the '.class' param?");
-					continue;
-				}
-				if (param.equalsIgnoreCase("enable") || param.equalsIgnoreCase("enabled"))
-				{
-					// Set the input to enabled true/false value
-					input.enableLrgsInput(TextUtil.str2boolean(props.getProperty(key)));
-				}
-				else
-				{
-					// Set the input's property.
-					input.setConfigParam(param, props.getProperty(key));
-				}
+				String msg = "Unable to create Loadable Input %s, because %s";
+				logger.warning(String.format(msg,loadableName,ex.getLocalizedMessage()));
 			}
-		}
+			catch (LrgsInputException ex)
+			{
+				String msg = "Unable to configure Loadable Input %s, because %s";
+				logger.warning(String.format(msg,loadableName,ex.getLocalizedMessage()));
+			}
+		});
 
 		return true;
 	}
