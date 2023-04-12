@@ -19,3 +19,5 @@ doc-source/*.rst
 *.log
 *.iml
 .idea/
+/cwmsSystemJars/
+/3rd_party
