@@ -338,31 +338,35 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </fileset>
         </copy>
 
+		<if>
+			<not><equals arg1="${no.docs}" arg2="true"/></not>
+			<then>
+				<copy todir="stage/doc/html">
+					<fileset dir="${docs.output}/html">
+						<include name="**"/>
+						<exclude name=".buildinfo"/>
+					</fileset>		
+				</copy>
 
-        <copy todir="stage/doc/html">
-            <fileset dir="${docs.output}/html">
-                <include name="**"/>
-                <exclude name=".buildinfo"/>
-            </fileset>
-        </copy>
 
-
-        <if>
-            <!-- the output between PDF and html is a bit different -->
-            <equals arg1="${sphinx.target}" arg2="latexpdf"/>
-            <then>
-                <mkdir dir="stage/doc/pdf"/>
-                <echo message="copying opendcs.pdf."/>
-                <copy todir="stage/doc/pdf">
-                    <fileset dir="${docs.output}/latex">
-                        <include name="*.pdf"/>
-                    </fileset>
-                </copy>
-            </then>
-            <else>
-                <echo message="copying html files."/>
-            </else>
-        </if>
+				<if>
+					<!-- the output between PDF and html is a bit different -->
+					<equals arg1="${sphinx.target}" arg2="latexpdf"/>
+					<then>
+						<mkdir dir="stage/doc/pdf"/>
+						<echo message="copying opendcs.pdf."/>
+						<copy todir="stage/doc/pdf">
+							<fileset dir="${docs.output}/latex">
+								<include name="*.pdf"/>
+							</fileset>
+						</copy>
+					</then>
+					<else>
+						<echo message="copying html files."/>
+					</else>
+				</if>
+			</then>
+		</if>
 
         <tar destfile="stage/doc.tar.gz" compression="gzip">
             <tarfileset dir="stage" includes="doc/**">

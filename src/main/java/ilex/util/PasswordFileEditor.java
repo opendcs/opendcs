@@ -239,8 +239,8 @@ public class PasswordFileEditor extends CmdLineProcessor
 			System.out.println("No such user '" + user + "'");
 			return false;
 		}
-		String s1 = TTYEcho.readPassword("Enter Password: ");
-		String s2 = TTYEcho.readPassword("Re-enter Password: ");
+		String s1 = TTYEcho.readPassword("Enter Password: ",this.input);
+		String s2 = TTYEcho.readPassword("Re-enter Password: ",this.input);
 		if (s1.compareTo(s2) != 0)
 		{
 			System.out.println("Passwords do not match, record unchanged.");

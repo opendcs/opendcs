@@ -1,0 +1,7 @@
+build
+Dockerfile
+.gitignore
+.readthedocs.yaml
+bin
+.github
+.externalToolBuilders

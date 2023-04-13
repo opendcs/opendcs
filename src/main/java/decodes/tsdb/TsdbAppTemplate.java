@@ -72,6 +72,7 @@
 */
 package decodes.tsdb;
 
+import java.io.PrintStream;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
@@ -228,6 +229,11 @@ public abstract class TsdbAppTemplate
 			catch(DecodesException ex)
 			{
 				warning("Cannot init Decodes: " + ex);
+				final PrintStream log = Logger.instance().getLogOutput();
+				if (log!=null)
+				{
+					ex.printStackTrace(log);
+				}
 				databaseFailed = true;
 				continue;
 			}

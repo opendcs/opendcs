@@ -31,14 +31,18 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	private StringToken configFile_arg;
 	private IntegerToken maxLogSize_arg;
 	private IntegerToken numOldLogs_arg;
-	private StringToken lockArg = new StringToken("k", "lock-file", "",
-		TokenOptions.optSwitch, "$LRGSHOME/lrgs.lock");
+	private final StringToken lockArg = new StringToken("k", "lock-file",
+	"",TokenOptions.optSwitch, "$LRGSHOME/lrgs.lock");
+	public final BooleanToken windowsSvcArg = new BooleanToken("w",
+	"Run as Windows Service", "", TokenOptions.optSwitch, false);
+	private final BooleanToken foreground = new BooleanToken("F",
+		"Run in forground. Captures SigTerm Directly","",
+		TokenOptions.optSwitch,false);
+
 	public static final String progname = "lrgs";
+
 	QueueLogger qLogger;
 	SequenceFileLogger fLogger;
-	BooleanToken windowsSvcArg = new BooleanToken("w", "Run as Windows Service", "", 
-		TokenOptions.optSwitch, false);
-
 
 	public LrgsCmdLineArgs()
 	{
@@ -67,9 +71,12 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 		addToken(numOldLogs_arg);
 		addToken(lockArg);
 		addToken(windowsSvcArg);
+		addToken(foreground);
 
 		qLogger = null;
 		fLogger = null;
+
+
 	}
 
     /**
@@ -142,5 +149,9 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	public String getLockFile()
 	{
 		return lockArg.getValue();
+	}
+
+	public boolean runInForGround() {
+		return this.foreground.getValue();
 	}
 }
