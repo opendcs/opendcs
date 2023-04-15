@@ -30,7 +30,7 @@ public class ConfigurationContextProvider implements TestTemplateInvocationConte
                 try
                 {
                     File tmp = Files.createTempDirectory("configs").toFile();
-                    contexts.add(config.getConfig(tmp));
+                    //contexts.add(config.getConfig(tmp));
                 }
                 catch( IOException ex)
                 {

@@ -2,7 +2,7 @@ package org.opendcs.spi.configuration;
 
 import java.io.File;
 
-import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
+import org.opendcs.fixtures.OpenDCSAppTestCase;
 
 public interface ConfigurationProvider {
     /**
@@ -19,5 +19,5 @@ public interface ConfigurationProvider {
      *                DCSTOOL_USERDIR will point to this location.
      * @return
      */
-    public TestTemplateInvocationContext getConfig(File tempDir);
+    public OpenDCSAppTestCase getConfig(File tempDir);
 }

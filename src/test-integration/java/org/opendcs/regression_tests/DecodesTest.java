@@ -1,12 +1,17 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.io.File;
 import java.io.StringWriter;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.TestTemplate;
 import org.opendcs.fixtures.AppTestBase;
@@ -18,11 +23,12 @@ import uk.org.webcompere.systemstubs.SystemStubs;
 
 public class DecodesTest extends AppTestBase
 {
+    public DecodesTest(OpenDCSAppTestCase testCase) {
+        super(testCase);
+    }
+
     private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
-
-
-    @TestTemplate
-    @Order(1)
+    
     public void test_SimpleDecodesTest(OpenDCSAppTestCase testCase) throws Exception
     {
         Configuration config = testCase.getConfiguration();
@@ -56,8 +62,6 @@ public class DecodesTest extends AppTestBase
         assertEquals(golden,output,"Output Doesn't match expected data.");
     }
 
-    @TestTemplate
-    @Order(2)
     public void test_HydroJsonTest(OpenDCSAppTestCase testCase) throws Exception
     {
         SystemStubs.catchSystemExit(() -> {
@@ -86,5 +90,13 @@ public class DecodesTest extends AppTestBase
             String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
             assertEquals(golden,output,"Output Doesn't match expected data.");
         });
+    }
+
+    @Override
+    public DynamicNode tests() {
+        return dynamicContainer("actual tests", Stream.of(
+            dynamicTest("Decodes", () -> test_SimpleDecodesTest(testCase)),
+            dynamicTest("HydroJSON", () -> test_HydroJsonTest(testCase))
+        ));
     }
 }
