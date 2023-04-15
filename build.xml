@@ -139,6 +139,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
     </target>
 
     <target name="test" depends="compile-test,jar">
+        <mkdir dir="${junit.html.output.dir}"/>
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <echo message="platform path: ${platform_path}"/>
         <mkdir dir="${build.dir}/test-results"/>
@@ -159,11 +160,17 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>
                 <fileset dir="${build.test.classes}"/>
-                <listener type="legacy-brief" sendSysOut="true"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
 
         </junitlauncher>
+        <junitreport todir="${junit.html.output.dir}">
+            <fileset dir="${build.dir}/test-results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="noframes" todir="${junit.html.output.dir}"/>
+        </junitreport>
     </target>
 
     <target name="integration-test" depends="compile-test-integration,stage,common.resolve,common.resolve.build"
@@ -188,11 +195,20 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>
                 <fileset dir="${build.test-integration.classes}"/>
-                <listener type="legacy-brief" sendSysOut="true"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
 
         </junitlauncher>
+        <junitreport todir="${junit.html.output.dir}">
+            <fileset dir="${build.dir}/test-integration/results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <fileset dir="${build.dir}/test-results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.html.output.dir}"/>
+        </junitreport>
     </target>
 
 

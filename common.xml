@@ -42,6 +42,7 @@
     <property name="build.release.dir" value="${build.dir}/release"/>
     <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
     <property name="pmd.output.dir" value="${build.dir}/reports/pmd"/>
+    <property name="junit.html.output.dir" value="${build.dir}/reports/junit"/>
 
     <!-- VERSION NUMBERS -->
     <property name="MAJ_VER" value="7"/>
@@ -72,7 +73,6 @@
                 Ivy is in at least one of Ant's lib dir or the local lib dir. -->
         <path id="ivy.lib.path">
             <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
-
         </path>
         <taskdef resource="org/apache/ivy/ant/antlib.xml"
                     uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
