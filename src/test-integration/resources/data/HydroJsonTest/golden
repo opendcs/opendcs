@@ -15,7 +15,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -165,7 +165,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -315,7 +315,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -465,7 +465,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -615,7 +615,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -765,7 +765,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -915,7 +915,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -1065,7 +1065,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -1215,7 +1215,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -1365,7 +1365,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -1515,7 +1515,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -1665,7 +1665,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -1815,7 +1815,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -1965,7 +1965,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -2115,7 +2115,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -2265,7 +2265,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -2415,7 +2415,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -2565,7 +2565,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -2715,7 +2715,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -2865,7 +2865,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -3015,7 +3015,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -3165,7 +3165,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -3315,7 +3315,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -3465,7 +3465,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -3615,7 +3615,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -3765,7 +3765,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -3915,7 +3915,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -4065,7 +4065,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -4215,7 +4215,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -4365,7 +4365,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -4515,7 +4515,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -4665,7 +4665,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -4815,7 +4815,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -4965,7 +4965,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -5115,7 +5115,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -5265,7 +5265,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -5415,7 +5415,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -5565,7 +5565,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -5715,7 +5715,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -5865,7 +5865,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -6015,7 +6015,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -6165,7 +6165,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -6315,7 +6315,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -6465,7 +6465,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -6615,7 +6615,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -6765,7 +6765,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -6915,7 +6915,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -7065,7 +7065,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -7215,7 +7215,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -7365,7 +7365,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -7515,7 +7515,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -7665,7 +7665,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -7815,7 +7815,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -7965,7 +7965,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -8115,7 +8115,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -8265,7 +8265,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -8415,7 +8415,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -8565,7 +8565,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -8715,7 +8715,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -8865,7 +8865,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -9015,7 +9015,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -9165,7 +9165,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -9315,7 +9315,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -9465,7 +9465,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -9615,7 +9615,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -9765,7 +9765,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -9915,7 +9915,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -10065,7 +10065,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -10215,7 +10215,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -10365,7 +10365,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -10515,7 +10515,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -10665,7 +10665,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR ROWAN",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "ROWI4.Stage.Inst.15Minutes.0.raw": {
@@ -10815,7 +10815,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -10905,7 +10905,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -10995,7 +10995,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11085,7 +11085,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11175,7 +11175,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11265,7 +11265,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11355,7 +11355,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11445,7 +11445,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11535,7 +11535,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11625,7 +11625,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11715,7 +11715,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11805,7 +11805,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11895,7 +11895,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -11985,7 +11985,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12075,7 +12075,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12165,7 +12165,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12255,7 +12255,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12345,7 +12345,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12435,7 +12435,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12525,7 +12525,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12615,7 +12615,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12705,7 +12705,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12795,7 +12795,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12885,7 +12885,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -12975,7 +12975,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13065,7 +13065,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13155,7 +13155,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13245,7 +13245,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13335,7 +13335,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13425,7 +13425,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13515,7 +13515,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13605,7 +13605,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13695,7 +13695,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13785,7 +13785,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13875,7 +13875,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -13965,7 +13965,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14055,7 +14055,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14145,7 +14145,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14235,7 +14235,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14325,7 +14325,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14415,7 +14415,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14505,7 +14505,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14595,7 +14595,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14685,7 +14685,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14775,7 +14775,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14865,7 +14865,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -14955,7 +14955,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15045,7 +15045,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15135,7 +15135,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15225,7 +15225,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15315,7 +15315,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15405,7 +15405,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15495,7 +15495,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15585,7 +15585,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15675,7 +15675,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15765,7 +15765,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15855,7 +15855,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -15945,7 +15945,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16035,7 +16035,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16125,7 +16125,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16215,7 +16215,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16305,7 +16305,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16395,7 +16395,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16485,7 +16485,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16575,7 +16575,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16665,7 +16665,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16755,7 +16755,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16845,7 +16845,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -16935,7 +16935,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -17025,7 +17025,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -17115,7 +17115,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {
@@ -17205,7 +17205,7 @@
     },
     "location_type": "",
     "name": "IOWA RIVER NEAR MARENGO",
-    "responsibility": "SWT",
+    "responsibility": "",
     "time_format": "%Y-%m-%dT%H:%M:%S%z",
     "timeseries": {
       "MROI4.Stage.Inst.30Minutes.0.raw": {

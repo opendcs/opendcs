@@ -1,5 +1,6 @@
 package org.opendcs.fixtures;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
@@ -19,6 +20,7 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
+import uk.org.webcompere.systemstubs.security.SystemExit;
 
 
 @ExtendWith(SystemStubsExtension.class)
@@ -27,10 +29,13 @@ public abstract class AppTestBase {
     private static File resourceDir = new File(System.getProperty("resource.dir"),"data");
 
     @SystemStub
-    protected EnvironmentVariables environment = new EnvironmentVariables();
+    protected final EnvironmentVariables environment = new EnvironmentVariables();
 
     @SystemStub
-    protected SystemProperties properties = new SystemProperties();
+    protected final SystemProperties properties = new SystemProperties();
+
+    @SystemStub
+    protected final SystemExit exit = new SystemExit();
 
     protected OpenDCSAppTestCase testCase = null;
 
@@ -42,11 +47,17 @@ public abstract class AppTestBase {
     private void setup() throws Exception
     {
         File userDir = testCase.getConfiguration().getUserDir();
+        System.out.println("DCSTOOL_USERDIR="+userDir);
         environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("INPUT_DATA",new File(resourceDir,"/shared").getAbsolutePath());
         properties.setup();
         environment.setup();
+    }
+
+    protected void assertExitNullOrZero()
+    {
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, "System.exit called with unexpected code.");
     }
 
     

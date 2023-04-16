@@ -1471,6 +1471,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		cmdLineArgs.addToken(officeIdArg);
 		cmdLineArgs.addToken(dirConsumerArg);
 		cmdLineArgs.addToken(editDbArg);
+		rsArg.reset(); // Required for integration tests since the objects are currently static and the JVM is thus shared.
 		cmdLineArgs.addToken(rsArg);
 	}
 	

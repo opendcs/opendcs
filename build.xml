@@ -143,7 +143,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <echo message="platform path: ${platform_path}"/>
         <mkdir dir="${build.dir}/test-results"/>
-        <junitlauncher haltOnFailure="true" printSummary="true">
+        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
@@ -171,13 +171,19 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </fileset>
             <report format="noframes" todir="${junit.html.output.dir}"/>
         </junitreport>
+        <if>
+            <isset property="test.failed"/>
+            <then>
+                <fail message="Tests have failures."/>
+            </then>
+        </if>
     </target>
 
     <target name="integration-test" depends="compile-test-integration,stage,common.resolve,common.resolve.build"
             description="Run the integration test suite with available implementations.">
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-integration/results"/>
-        <junitlauncher haltOnFailure="true" printSummary="true">
+        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
@@ -209,6 +215,12 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </fileset>
             <report format="frames" todir="${junit.html.output.dir}"/>
         </junitreport>
+        <if>
+            <isset property="integration.failed"/>
+            <then>
+                <fail message="Integration tests have failures."/>
+            </then>
+        </if>
     </target>
 
 
