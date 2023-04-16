@@ -18,7 +18,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import decodes.dbimport.DbImport;
 import decodes.routing.RoutingSpecThread;
-import decodes.util.DecodesSettings;
 import uk.org.webcompere.systemstubs.SystemStubs;
 
 public class DecodesTest extends AppTestBase
@@ -29,7 +28,7 @@ public class DecodesTest extends AppTestBase
 
     private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
 
-    public void test_SimpleDecodesTest(OpenDCSAppTestCase testCase) throws Exception
+    public void test_SimpleDecodesTest() throws Exception
     {
         Configuration config = testCase.getConfiguration();
         String propertiesFile = config.getPropertiesFile().getAbsolutePath();
@@ -68,7 +67,7 @@ public class DecodesTest extends AppTestBase
         assertEquals(golden,output,"Output Doesn't match expected data.");
     }
 
-    public void test_HydroJsonTest(OpenDCSAppTestCase testCase) throws Exception
+    public void test_HydroJsonTest() throws Exception
     {
         Configuration config = testCase.getConfiguration();
         String propertiesFile = config.getPropertiesFile().getAbsolutePath();
@@ -113,8 +112,8 @@ public class DecodesTest extends AppTestBase
     @Override
     public DynamicNode tests() {
         return dynamicContainer("actual tests", Stream.of(
-            dynamicTest("Decodes", () -> test_SimpleDecodesTest(testCase)),
-            dynamicTest("HydroJSON", () -> test_HydroJsonTest(testCase))
+            dynamicTest("Decodes", () -> test_SimpleDecodesTest()),
+            dynamicTest("HydroJSON", () -> test_HydroJsonTest())
         ));
     }
 }
