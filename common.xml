@@ -99,6 +99,7 @@
         <ivy:cachepath pathid="spotbugs.classpath" conf="spotbugs"/>
         <ivy:cachepath pathid="pmd.classpath" conf="pmd"/>
         <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="build.classpath"/>
+        <taskdef resource="net/sf/antcontrib/antlib.xml" classpathref="build.classpath"/>
 
         <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties"
                  classpathref="build.classpath"/>

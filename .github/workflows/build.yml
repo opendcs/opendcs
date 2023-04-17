@@ -22,9 +22,9 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: "3.8"
-      - name: Compile test and stage
+      - name: Compile, test, and bundle jar
         run: |          
-          ant test
+          ant test stage integration-test -Dno.docs=true
           ant opendcs
 #docker-images:
 #  runs-on: ubuntu-latest

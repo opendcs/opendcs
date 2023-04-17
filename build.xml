@@ -138,7 +138,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </sync>
     </target>
 
-    <target name="test" depends="compile-test,jar">
+    <target name="test" depends="compile-test,jar,common.resolve.build">
         <mkdir dir="${junit.html.output.dir}"/>
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <echo message="platform path: ${platform_path}"/>
