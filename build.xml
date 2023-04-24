@@ -179,7 +179,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </if>
     </target>
 
-    <target name="integration-test" depends="compile-test-integration,stage,common.resolve,common.resolve.build"
+    <target name="integration-test" depends="compile-test-integration,stage,common.resolve"
             description="Run the integration test suite with available implementations.">
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-integration/results"/>
