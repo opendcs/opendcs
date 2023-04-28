@@ -3,7 +3,8 @@ name: Code Refactoring
 about: Record to track modernization of the software
 title: ''
 labels: refactor
-assignees: @opendcs-core-devs
+assignees: '@opendcs-core-devs'
+
 ---
 
 <!-- This template is intended for developer discussion. Both internal and external developers are welcome to propose things. 
