@@ -173,7 +173,7 @@ public class FileLogger extends Logger
 		{
 			System.err.println("IOException trying to open log file '" 
 				+ filename + "': " + ex);
-			close();
+			throw new RuntimeException("Unable to open log file.",ex);
 		}
 	}
 
