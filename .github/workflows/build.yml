@@ -26,6 +26,7 @@ jobs:
         run: |
           ant test
       - name: integration tests
+        if: matrix.platform != 'windows-latest' # no /dev/stdout on 
         run: |
           ant integration-test
       - name: Documentation and Create installer jar
@@ -35,7 +36,7 @@ jobs:
         uses: actions/upload-artifact@v3.1.2
         if: success() || failure()
         with:
-          name: test-results
+          name: test-results-${{matrix.platform}}
           path: |
             build/reports/**
 #docker-images:
