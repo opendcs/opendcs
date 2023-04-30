@@ -31,6 +31,13 @@ jobs:
       - name: Documentation and Create installer jar
         run: |
           ant opendcs
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3.1.2
+        if: success() || failure()
+        with:
+          name: test-results
+          path: |
+            build/reports/**
 #docker-images:
 #  runs-on: ubuntu-latest
 #  steps:
