@@ -24,18 +24,25 @@
     <property name="resources.dir" value="src/main/resources"/>
     <property name="src.test.dir" value="src/test/java"/>
     <property name="resources.test.dir" value="src/test/resources"/>
+    <property name="src.test-integration.dir" value="src/test-integration/java"/>
+    <property name="resources.test-integration.dir" value="src/test-integration/resources"/>
 
     <property name="build.dir" value="build"/>
     <property name="build.classes" value="${build.dir}/classes"/>
     <property name="build.resources" value="${build.dir}/resources"/>
     <property name="build.lib" value="${build.dir}/lib"/>
+    <property name="stage.dir" value="stage"/>
     <property name="build.test.classes" value="${build.dir}/test-classes"/>
     <property name="build.test.resources" value="${build.dir}/test-resources"/>
     <property name="build.test.lib" value="${build.dir}/test-libs"/>
+    <property name="build.test-integration.classes" value="${build.dir}/test-integration/classes"/>
+    <property name="build.test-integration.resources" value="${build.dir}/test-integration/resources"/>
+    <property name="build.test.lib" value="${build.dir}/test-integration/libs"/>
     <property name="dist.jar" value="${build.lib}/opendcs.jar"/>
     <property name="build.release.dir" value="${build.dir}/release"/>
     <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
     <property name="pmd.output.dir" value="${build.dir}/reports/pmd"/>
+    <property name="junit.html.output.dir" value="${build.dir}/reports/junit"/>
 
     <!-- VERSION NUMBERS -->
     <property name="MAJ_VER" value="7"/>
@@ -66,7 +73,6 @@
                 Ivy is in at least one of Ant's lib dir or the local lib dir. -->
         <path id="ivy.lib.path">
             <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
-
         </path>
         <taskdef resource="org/apache/ivy/ant/antlib.xml"
                     uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
@@ -93,6 +99,7 @@
         <ivy:cachepath pathid="spotbugs.classpath" conf="spotbugs"/>
         <ivy:cachepath pathid="pmd.classpath" conf="pmd"/>
         <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="build.classpath"/>
+        <taskdef resource="net/sf/antcontrib/antlib.xml" classpathref="build.classpath"/>
 
         <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties"
                  classpathref="build.classpath"/>

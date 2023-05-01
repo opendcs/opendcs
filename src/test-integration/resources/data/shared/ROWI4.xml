@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <Platform PlatformId="79417">
+    <Description>Iowa River @ Rowan, IA</Description>
+    <Agency>MVR</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>10/06/2012 13:28:56</LastModifyTime>
+    <Site>
+      <Latitude>42.76</Latitude>
+      <Longitude>-93.623</Longitude>
+      <Elevation>0.0</Elevation>
+      <ElevationUnits>m</ElevationUnits>
+      <Timezone>CST</Timezone>
+      <Country>USA</Country>
+      <State>00</State>
+      <NearestCity>ROWI4</NearestCity>
+      <Description>IOWA RIVER NEAR ROWAN 4NW</Description>
+      <SiteProperty PropertyName="PUBLIC_NAME">IOWA RIVER NEAR ROWAN</SiteProperty>
+      <SiteName NameType="CWMS">ROWI4</SiteName>
+      <SiteName NameType="USGS">05449500</SiteName>
+    </Site>
+    <PlatformConfig ConfigName="ROWI4">
+      <Description></Description>
+      <ConfigSensor SensorNumber="1">
+        <SensorName>Stage</SensorName>
+        <DataType Standard="SHEF-PE" Code="HG"/>
+        <RecordingMode>F</RecordingMode>
+        <RecordingInterval>00:15</RecordingInterval>
+        <TimeOfFirstSample>00:00</TimeOfFirstSample>
+        <AbsoluteMin>0.009999999776482582</AbsoluteMin>
+        <AbsoluteMax>30.0</AbsoluteMax>
+      </ConfigSensor>
+      <ConfigSensor SensorNumber="2">
+        <SensorName>Precip</SensorName>
+        <DataType Standard="SHEF-PE" Code="PC"/>
+        <RecordingMode>F</RecordingMode>
+        <RecordingInterval>00:15</RecordingInterval>
+        <TimeOfFirstSample>00:00</TimeOfFirstSample>
+        <AbsoluteMin>-0.10000000149011612</AbsoluteMin>
+        <AbsoluteMax>251.0</AbsoluteMax>
+      </ConfigSensor>
+      <ConfigSensor SensorNumber="3">
+        <SensorName>Battery</SensorName>
+        <DataType Standard="SHEF-PE" Code="VB"/>
+        <RecordingMode>F</RecordingMode>
+        <RecordingInterval>01:00</RecordingInterval>
+        <TimeOfFirstSample>00:00</TimeOfFirstSample>
+      </ConfigSensor>
+      <DecodesScript ScriptName="ST">
+        <ScriptType>Decodes</ScriptType>
+        <FormatStatement Label="st">
+          4x,8(f(s,b,3,1),f(s,b,3,2)),f(s,b,1,3)
+        </FormatStatement>
+        <ScriptSensor SensorNumber="1">
+          <UnitConverter FromUnitsAbbr="raw" ToUnitsAbbr="ft">
+            <Algorithm>usgs-standard</Algorithm>
+            <A>0.01</A>
+            <B>0.0</B>
+            <C>1.0</C>
+            <D>0.0</D>
+            <E>0.0</E>
+            <F>0.0</F>
+          </UnitConverter>
+        </ScriptSensor>
+        <ScriptSensor SensorNumber="2">
+          <UnitConverter FromUnitsAbbr="raw" ToUnitsAbbr="in">
+            <Algorithm>usgs-standard</Algorithm>
+            <A>0.01</A>
+            <B>0.0</B>
+            <C>1.0</C>
+            <D>0.0</D>
+            <E>0.0</E>
+            <F>0.0</F>
+          </UnitConverter>
+        </ScriptSensor>
+        <ScriptSensor SensorNumber="3">
+          <UnitConverter FromUnitsAbbr="raw" ToUnitsAbbr="v">
+            <Algorithm>usgs-standard</Algorithm>
+            <A>0.3125</A>
+            <B>0.0</B>
+            <C>1.0</C>
+            <D>0.311</D>
+            <E>0.0</E>
+            <F>0.0</F>
+          </UnitConverter>
+        </ScriptSensor>
+      </DecodesScript>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="CE2DD632">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>49</ChannelNum>
+      <AssignedTime>00:06:20</AssignedTime>
+      <TransmitWindow>00:00:20</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+    </TransportMedium>
+    <PlatformSensor SensorNumber="1">
+      <PlatformSensorProperty PropertyName="RdbShef">QR</PlatformSensorProperty>
+      <PlatformSensorProperty PropertyName="RdbFile">
+        ROWI4.rdb
+      </PlatformSensorProperty>
+      <PlatformSensorProperty PropertyName="ExceedBounds">
+        true
+      </PlatformSensorProperty>
+    </PlatformSensor>
+  </Platform>
+</Database>

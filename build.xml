@@ -119,11 +119,31 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </sync>
     </target>
 
-    <target name="test" depends="compile-test,jar">
+    <target name="compile-test-integration" depends="stage,test,common.resolve,common.resolve.build">
+        <mkdir dir="${build.test-integration.classes}"/>
+        <javac debug="true" destdir="${build.test-integration.classes}"
+            target="1.8" source="1.8" includeantruntime="false"
+            encoding="UTF-8"
+        >
+            <src path="${src.test-integration.dir}"/>
+            <classpath>
+                <pathelement location="${stage.dir}/bin/opendcs.jar"/>
+                <!--<pathelement location="${build.classes}"/>-->
+                <path refid="runtime.classpath"/>
+                <path refid="test.classpath"/>
+            </classpath>
+        </javac>
+        <sync todir="${build.test-integration.resources}">
+            <fileset dir="${resources.test-integration.dir}"/>
+        </sync>
+    </target>
+
+    <target name="test" depends="compile-test,jar,common.resolve.build">
+        <mkdir dir="${junit.html.output.dir}"/>
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <echo message="platform path: ${platform_path}"/>
         <mkdir dir="${build.dir}/test-results"/>
-        <junitlauncher haltOnFailure="true" printSummary="true">
+        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
@@ -140,12 +160,69 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>
                 <fileset dir="${build.test.classes}"/>
-                <listener type="legacy-brief" sendSysOut="true"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
 
         </junitlauncher>
+        <junitreport todir="${junit.html.output.dir}">
+            <fileset dir="${build.dir}/test-results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="noframes" todir="${junit.html.output.dir}"/>
+        </junitreport>
+        <if>
+            <isset property="test.failed"/>
+            <then>
+                <fail message="Tests have failures."/>
+            </then>
+        </if>
     </target>
+
+    <target name="integration-test" depends="compile-test-integration,stage,common.resolve"
+            description="Run the integration test suite with available implementations.">
+        <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
+        <mkdir dir="${build.dir}/test-integration/results"/>
+        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
+            <classpath refid="test.classpath"/>
+            <classpath refid="runtime.classpath"/>
+            <classpath refid="junit.platform.libs.classpath"/>
+            <classpath>
+                <pathelement location="${stage.dir}/bin/opendcs.jar"/>
+                <pathelement location="${build.test-integration.resources}"/>
+                <pathelement location="${build.test-integration.classes}"/>
+            </classpath>
+
+            <testclasses outputdir="${build.dir}/test-integration/results">
+                <fork>
+                    <jvmarg value="-Dbuild.dir=${build.dir}"/>
+                    <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
+                    <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
+                    <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                </fork>
+                <fileset dir="${build.test-integration.classes}"/>
+                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
+            </testclasses>
+
+        </junitlauncher>
+        <junitreport todir="${junit.html.output.dir}">
+            <fileset dir="${build.dir}/test-integration/results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <fileset dir="${build.dir}/test-results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.html.output.dir}"/>
+        </junitreport>
+        <if>
+            <isset property="integration.failed"/>
+            <then>
+                <fail message="Integration tests have failures."/>
+            </then>
+        </if>
+    </target>
+
 
     <target name="jar" depends="compile" description="Generates opendcs.jar.">
 
@@ -560,6 +637,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     classpathentry(kind:"src",    path:"src/main/java", output="bin/main")
                     classpathentry(kind:"src",    path:"src/main/resources", output="bin/main")
                     classpathentry(kind:"src",    path:"src/test/java", output="bin/test")
+                    classpathentry(kind:"src",    path:"src/test-integration/java", output="bin/test-integration")
                     classpathentry(kind:"output", path:"bin")
                     classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
 

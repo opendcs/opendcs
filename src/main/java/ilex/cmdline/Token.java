@@ -150,7 +150,7 @@ public abstract class Token
 
 	//--------------------------------------------------------------
 	// These methods are used by the ApplicationSettings class
-	// Thast' why they are protected
+	// That's why they are protected
 	//--------------------------------------------------------------
 
   /**
@@ -287,7 +287,17 @@ public abstract class Token
 		return (m_flags & TokenOptions.optAlreadyUsed) == TokenOptions.optAlreadyUsed;
 	};
 
-	protected void setUsed() {m_flags |= TokenOptions.optAlreadyUsed;};
+	protected void setUsed() {m_flags |= TokenOptions.optAlreadyUsed;}
+
+	/**
+	 * Reset used state of this token. Primarily used in unit tests
+	 * to allow repeatedly calling main.
+	 */
+	public void reset() {
+		m_flags &= ~TokenOptions.optAlreadyUsed;
+		m_values.clear();
+		m_firstTime = true;
+	}
 
 	protected void AddValueFromLexeme(String lexeme)
 	{

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <PresentationGroup Name="regtest">
+    <IsProduction>false</IsProduction>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage-Pool">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor-Res">
+      </DataType>
+      <UnitsAbbr>ft^3</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stor">
+      </DataType>
+      <UnitsAbbr>ac-ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Stage">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Temp-Water">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Elev-Pool">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Precip">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-Out">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-In">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Water">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="TEMP-AIR">
+      </DataType>
+      <UnitsAbbr>degF</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="FLOW-INFLOW">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Speed-Air">
+      </DataType>
+      <UnitsAbbr>mph</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="FLOW-HOLDOUT">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="STAGE-TAILWATER">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Precip-Incr">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Flow-2">
+      </DataType>
+      <UnitsAbbr>cfs</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Precip-Cum">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Opening-Conduit_Gates">
+      </DataType>
+      <UnitsAbbr>ft</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+    <DataPresentation>
+      <DataType Standard="CWMS" Code="Precip-Cumulative">
+      </DataType>
+      <UnitsAbbr>in</UnitsAbbr>
+      <MaxDecimals>2</MaxDecimals>
+    </DataPresentation>
+  </PresentationGroup>
+</Database>
