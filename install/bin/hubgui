@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-# dbhub - Access the DECODES Database Hub
-#
-%INSTALL_PATH/bin/decj decodes.syncgui.SyncGui $*

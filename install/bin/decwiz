@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-# decwiz - Run the Decoding Wizard
-#
-%INSTALL_PATH/bin/decj decodes.decwiz.DecodingWizard $*

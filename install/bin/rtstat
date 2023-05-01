@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-# This script starts the LRGS Real Time Status GUI
-#
-%INSTALL_PATH/bin/decj lrgs.rtstat.RtStat $*

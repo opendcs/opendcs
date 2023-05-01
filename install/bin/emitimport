@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-# usage: emitimport <file1> <file2> ...
-#
-%INSTALL_PATH/bin/decj decodes.dbimport.EmitImport $*

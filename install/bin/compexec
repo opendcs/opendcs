@@ -1,9 +1,0 @@
-#!/bin/sh
-
-cmd="%INSTALL_PATH/bin/decj decodes.tsdb.comprungui.CompExec "
-
-for a
-do
-    cmd=`echo $cmd \"$a\"`
-done
-eval $cmd

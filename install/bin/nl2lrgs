@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# nl2lrgs - Convert Network Lists to LRGS file format
-#
-# usage: nl2lrgs <options> <netlist1> <netlist2> ...
-# options:
-#	-e               Export from 'editable' database (default is installed)
-#
-%INSTALL_PATH/bin/decj decodes.dbimport.LrgsNetlist $*

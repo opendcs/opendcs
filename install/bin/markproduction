@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# usage: 
-#	markproduction
-#		Sets all isProduction flags in the database to true
-#	markproduction false
-#		Sets all isProduction flags in the database to false
-#
-%INSTALL_PATH/bin/decj decodes.db.MarkProduction $*

@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-# This script starts the message browser GUI for the local LRGS machine.
-#
-%INSTALL_PATH/bin/decj lrgs.lddc.GetDcpMessages $*

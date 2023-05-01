@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-# platwiz - Run the Platform Wizard
-#
-%INSTALL_PATH/bin/decj decodes.platwiz.PlatformWizard $*
