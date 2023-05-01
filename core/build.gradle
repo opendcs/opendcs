@@ -112,7 +112,8 @@ dependencies {
 test
 {
     useJUnitPlatform()
-    jvmArgs += "-Dgradle.buildDir=$buildDir"
+    jvmArgs += "-Dbuild.dir=$buildDir"
+    systemProperty "build.dir", "$buildDir"
 }
 
 configurations.all 

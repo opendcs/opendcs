@@ -160,7 +160,6 @@ import decodes.platstat.PlatformMonitor;
 import decodes.platwiz.Frame1;
 import decodes.platwiz.PlatformWizard;
 import decodes.routmon2.RoutingMonitor;
-import decodes.tsdb.algoedit.AlgorithmWizard;
 import decodes.tsdb.compedit.CAPEdit;
 import decodes.tsdb.comprungui.CompRunGuiFrame;
 import decodes.tsdb.comprungui.RunComputationsFrameTester;
@@ -1797,31 +1796,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 		{
 			algorithmWizFrame.toFront();
 			return;
-		}
-		
-
-		try
-		{
-			AlgorithmWizard algoWiz = new AlgorithmWizard();
-			algoWiz.execute(myArgs);
-			algorithmWizFrame = algoWiz.getFrame();
-			if (algorithmWizFrame != null)
-			{
-				algoWiz.setExitOnClose(false);
-				algorithmWizFrame.addWindowListener(algorithmWizReaper);
-			}
-		}
-		catch (Exception ex)
-		{
-			algorithmWizFrame = null;
-			String msg = LoadResourceBundle.sprintf(
-				labels.getString("LauncherFrame.cannotLaunch"),
-				labels.getString("LauncherFrame.algorithmsButton"))
-					+ ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
-			showError(msg);
 		}
 	}
 
