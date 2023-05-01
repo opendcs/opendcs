@@ -24,10 +24,10 @@ jobs:
           python-version: "3.8"
       - name: units tests
         run: |
-          ant test
+          ant test -D"no.docs=true"
       - name: integration tests
         run: |
-          ant integration-test
+          ant integration-test -D"no.docs=true"
       - name: Documentation and Create installer jar
         run: |
           ant opendcs
