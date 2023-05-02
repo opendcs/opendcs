@@ -645,7 +645,7 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <file src="schema/cwms/alarm.sql" targetdir="$INSTALL_PATH/schema/cwms" override="true"/>
         </pack>
 
-        <pack name="Bureau of Reclamation Hydrologic Database (HDB) Components" required="no" preselected="@{hdb.preselect}">
+        <pack name="Bureau of Reclamation Hydrologic Database (HDB) Components" required="no" preselected="no">
             <description>Schema, Scripts, and Jars for HDB</description>
 
             <fileset dir="dep" targetdir="$INSTALL_PATH/dep"
@@ -668,16 +668,16 @@ IMPORTANT: For a new installation, you should also select the Template Database.
 
         <pack name="LRGS" required="no">
             <description>Open LRGS (Local Readout Ground Station) supplies raw data acquisition functions.</description>
-	    	<fileset dir="archive" targetdir="$INSTALL_PATH"/>
-            <file src="users" targetdir="$INSTALL_PATH"/>
-            <file src="users/lrgsadmin" targetdir="$INSTALL_PATH/users" override="false"/>
-            <file src="ddsrecv.conf" targetdir="$INSTALL_PATH" override="false"/>
-            <file src="drgsconf.xml" targetdir="$INSTALL_PATH" override="false"/>
-            <file src="drivers" targetdir="$INSTALL_PATH"/>
-            <file src="lrgs.conf" targetdir="$INSTALL_PATH" override="false"/>
-            <file src="netlist" targetdir="$INSTALL_PATH"/>
-            <file src="netlist/empty.nl" targetdir="$INSTALL_PATH/netlist"/>
-            <file src=".lrgs.passwd" targetdir="$INSTALL_PATH" override="false"/>
+	    	<fileset dir="lrgs/archive" targetdir="$INSTALL_PATH"/>
+            <file src="lrgs/users" targetdir="$INSTALL_PATH"/>
+            <file src="lrgs/users/lrgsadmin" targetdir="$INSTALL_PATH/users" override="false"/>
+            <file src="lrgs/ddsrecv.conf" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="lrgs/drgsconf.xml" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="lrgs/drivers" targetdir="$INSTALL_PATH"/>
+            <file src="lrgs/lrgs.conf" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="lrgs/netlist" targetdir="$INSTALL_PATH"/>
+            <file src="lrgs/netlist/empty.nl" targetdir="$INSTALL_PATH/netlist"/>
+            <file src="lrgs/.lrgs.passwd" targetdir="$INSTALL_PATH" override="false"/>
 
             <executable targetfile="$INSTALL_PATH/bin/startLRGS" stage="never" os="unix"/>
             <parsable   targetfile="$INSTALL_PATH/bin/startLRGS" type="shell" os="unix"/>
@@ -692,7 +692,7 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <parsable   targetfile="$INSTALL_PATH/bin/elp.bat" type="shell" os="windows"/>
 
 
-            <file src="lrgs.service" targetdir="$INSTALL_PATH" override="false"/>
+            <file src="lrgs/lrgs.service" targetdir="$INSTALL_PATH" override="false"/>
             <executable targetfile="$INSTALL_PATH/bin/startLrgsService" stage="never" os="unix"/>
             <parsable   targetfile="$INSTALL_PATH/bin/startLrgsService" type="shell" os="unix"/>
             <executable targetfile="$INSTALL_PATH/bin/stopLrgsService" stage="never" os="unix"/>

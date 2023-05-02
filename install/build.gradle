@@ -1,0 +1,70 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+    }
+
+    dependencies {
+        classpath 'com.bmuschko:gradle-izpack-plugin:3.2'
+    }
+}
+
+
+plugins {
+    id 'com.bmuschko.izpack' version '3.2'
+    id 'java'
+}
+
+configurations {
+    opendcs
+}
+
+dependencies {
+    izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'
+    opendcs project(":opendcs")
+    //implementation project(":docs")
+}
+
+task stage(type: Copy) {
+    //project.mkdir("$buildDir/assemble/izpack")
+    from 'src/main/install'
+    into "$buildDir/assemble/izpack"
+
+    from 'src/main/izpack'
+
+    from("$rootDir/schema") {
+        into "schema"
+    }
+    from("$rootDir/python") {
+        into "python"
+    }
+
+    from(configurations.opendcs) {
+        into 'bin'
+        include 'opendcs-*.jar'
+        rename 'opendcs-.*.jar', 'opendcs.jar'
+    }
+
+    from(configurations.opendcs) {
+        into 'dep'
+        exclude 'opendcs-*.jar'
+    }
+
+    doLast {
+        project.mkdir("$buildDir/assemble/izpack/dep")
+        project.mkdir("$buildDir/assemble/izpack/edit-db/config")
+        project.mkdir("$buildDir/assemble/izpack/edit-db/routing")
+        project.mkdir("$buildDir/assemble/izpack/edit-db/platform")
+        project.mkdir("$buildDir/assemble/izpack/edit-db/netlist")
+        project.mkdir("$buildDir/assemble/izpack/edit-db/equipment")
+        project.mkdir("$buildDir/assemble/izpack/edit-db/site")
+        project.mkdir("$buildDir/assemble/izpack/doc")
+    }
+}
+
+izPackCreateInstaller.dependsOn stage
+
+izpack {
+    
+    appProperties = ['version': version]
+    outputFile = file("$buildDir/distributions/opendcs-ot-${version}.jar")
+}

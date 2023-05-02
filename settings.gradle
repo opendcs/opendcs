@@ -11,6 +11,8 @@ rootProject.name = 'opendcs-build'
 include ":opendcs"
 project(":opendcs").projectDir=file("core")
 
+include ":install"
+
 dependencyResolutionManagement
 {
     repositories 
