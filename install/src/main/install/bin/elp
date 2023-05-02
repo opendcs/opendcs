@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# OPENDCS
+
+DH=%INSTALL_PATH
+
+if [ -z "$LRGSHOME" ] 
+then
+  LRGSHOME=$DH
+  export LRGSHOME
+fi
+%INSTALL_PATH/bin/decj ilex.util.PasswordFileEditor -f $LRGSHOME/.lrgs.passwd

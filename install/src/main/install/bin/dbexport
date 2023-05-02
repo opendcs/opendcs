@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# dbxport - Export entire DECODES database to XML
+#
+# usage: pxport <options>
+# options:
+#		-i               Export from 'installed' database (default is edit db)
+#
+%INSTALL_PATH/bin/decj decodes.dbimport.DbExport $*

@@ -346,11 +346,6 @@ IMPORTANT: For a new installation, you should also select the Template Database.
 				includes="Lib/**,jython*">
 			</fileset>
 
-            <executable targetfile="$INSTALL_PATH/bin/algoedit" stage="never" os="unix"/>
-            <parsable   targetfile="$INSTALL_PATH/bin/algoedit" type="shell" os="unix"/>
-            <executable targetfile="$INSTALL_PATH/bin/algoedit.bat" stage="never" os="windows"/>
-            <parsable   targetfile="$INSTALL_PATH/bin/algoedit.bat" os="windows"/>
-
             <executable targetfile="$INSTALL_PATH/bin/algolist" stage="never" os="unix"/>
             <parsable   targetfile="$INSTALL_PATH/bin/algolist" type="shell" os="unix"/>
             <executable targetfile="$INSTALL_PATH/bin/algolist.bat" stage="never" os="windows"/>

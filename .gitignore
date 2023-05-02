@@ -1,8 +1,9 @@
 stage
-!install/src/main/install/bin
+
 # This Needs to say, bin directories not under root are fine.
 # but some IDEs dump class files here.
-bin/
+**/bin
+!install/src/main/install/bin
 build
 .gradle
 *.tgz
@@ -12,7 +13,6 @@ build
 dep/
 .classpath
 .project
-bin
 .externalToolBuilders/
 doc-source/media/**
 doc-source/*.rst

@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# dbimport - Import XML files into this editable database.
+#
+# usage: dbimport <options>
+# options:
+#	-v               Validate only. Issue messages about what would
+#	                 have been done if the files were imported.
+#	-o               Keep OLD records in case of a clash (i.e. don't overwrite
+#	                 existing records with the contents of the XML files.
+#
+%INSTALL_PATH/bin/decj decodes.dbimport.DbImport $*

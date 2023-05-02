@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+
+#
+# This script is to be placed in the $DCSTOOL/bin directory.
+# It is a cygwin bash shell script which must be run as follows on Windows machines:
+#
+#	bash.exe sfwmd-import <options ...>
+#
+
+# Supported options:
+#
+# -G			Import GOES Platforms Only
+# -I			Ignore designators (match site name only)
+# -L			Preserve location (site & platform description) info
+# -F			Employ SFWMD rules and sensor code suffixes
+# -S			Preserve additional sensor info
+# -U			Update only (don't take any new platforms)
+# -O owner		Set the platform owner to 'owner'
+# -N            Only import platforms that have a Newer last-modify-date.
+# -M updated.out Make a list of platforms that were updated in 'updated.out'.
+#
+
+java -cp "C:/DCSTOOL/bin/dcstool.jar;C:/DCSTOOL/bin/postgresql-8.3-604.jdbc4.jar;%CLASSPATH%" -DDCSTOOL_HOME=C:/DCSTOOL -DDECODES_INSTALL_DIR=C:/DCSTOOL -DResourceFactory=com.ilexeng.util.ResourceFactory com.ilexeng.decodes.dbimport.ImportXml -G -I -U -O SFMWD -L -F -S -N -M updated.out $*
+

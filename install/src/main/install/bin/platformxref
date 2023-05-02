@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# platformxref - Create platform cross reference file
+#
+# usage: platformxref
+# options:
+#		-e        Create cross reference in editable database (default = installed)
+#
+%INSTALL_PATH/bin/decj decodes.xml.CreatePlatformXref $*
