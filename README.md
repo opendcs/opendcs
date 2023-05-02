@@ -1,6 +1,6 @@
-![current build](https://github.com/opendcs/opendcs/actions/workflows/build.yml/badge.svg)
+# OpenDCS 8.0
 
-# OpenDCS 
+NOTE: This is currently a staging branch for the 8.0 release. Do not use this in production.
 
 OpenDCS is a tool for doing the following:
  - retrieving data from the NOAA GOES Satellite system and processing it to a more usual form
@@ -17,7 +17,7 @@ of plain text.
 
 # Getting started
 
-Documentation on how to use OpenDCS is available at https://opendcs-env.readthedocs.io/en/latest/index.html
+Documentation on how to use OpenDCS is available at https://opendcs-env.readthedocs.io/en/8.0/index.html
 
 # Getting help
 
