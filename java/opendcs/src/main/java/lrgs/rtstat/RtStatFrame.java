@@ -3,6 +3,8 @@ package lrgs.rtstat;
 import java.awt.*;
 import java.awt.event.*;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 import javax.swing.*;
 import javax.swing.event.*;
 
@@ -365,7 +367,9 @@ public class RtStatFrame
     {
         closeConnection();
         client = null;
-        final LddsClient tclient = new LddsClient(host, port);
+        SocketFactory socketFactory = SSLSocketFactory.getDefault();
+		
+		final LddsClient tclient = new LddsClient(host, port,socketFactory);
         final JobDialog connectionJobDialog = new JobDialog(
             this,
             labels.getString("RtStatFrame.connectingToInfo") + host+":"+port,
