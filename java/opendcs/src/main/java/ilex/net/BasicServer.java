@@ -89,6 +89,9 @@ package ilex.net;
 import ilex.net.BasicSvrThread;
 import java.net.*;
 import java.util.LinkedList;
+
+import javax.net.ServerSocketFactory;
+
 import java.util.Iterator;
 import java.io.*;
 
@@ -118,6 +121,9 @@ public abstract class BasicServer
 	/** The bind address if one is specified. */
 	private InetAddress bindaddr;
 
+	/** The server socket factory so SSL can be injected */
+	private ServerSocketFactory socketFactory;
+
 	/** Should be set by concrete subclass calling setModuleName() */
 	String module = "BasicServer";
 
@@ -145,6 +151,22 @@ public abstract class BasicServer
 	public BasicServer( int port, InetAddress bindaddr ) 
 		throws IOException
 	{
+		this(port,bindaddr,ServerSocketFactory.getDefault());
+	}
+
+	/**
+	* This version of the constructor allows you to specify the inet
+	* address for the listening socket. This should be used if your
+	* host has more than one network connection and you need to specify
+	* which to use.
+	* @param port port to listen on
+	* @param bindaddr used if you have multiple NICs and only want to listen 
+	* on one.
+	* @param socketFactory used to allow setup of SSL for those servers that need it.
+	*/
+	public BasicServer( int port, InetAddress bindaddr, ServerSocketFactory socketFactory)
+		throws IOException
+	{
 		if (port <= 0)
 			throw new IOException(
 				"BasicServer: port number must be a positive integer.");
@@ -152,7 +174,7 @@ public abstract class BasicServer
 		portNum = port;
 		this.bindaddr = bindaddr;
 		makeServerSocket();
-		mySvrThreads = new LinkedList();
+		mySvrThreads = new LinkedList<>();
 		listeningThread = null;
 	}
 
@@ -162,8 +184,8 @@ public abstract class BasicServer
 	* @throws IOException if can't open.
 	*/
 	protected void makeServerSocket( ) throws IllegalArgumentException, IOException
-	{
-		listeningSocket = new ServerSocket(portNum, 50, bindaddr);
+	{		
+		listeningSocket = this.socketFactory.createServerSocket(portNum, portNum, bindaddr);
 	}
 
 	/**
@@ -352,4 +374,3 @@ public abstract class BasicServer
 	protected void setModuleName(String nm) { module = nm; }
 
 }
-

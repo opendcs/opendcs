@@ -57,6 +57,8 @@ import java.net.*;
 import java.io.*;
 import java.rmi.UnknownHostException;
 
+import javax.net.SocketFactory;
+
 /**
 This class encapsulates common functions for a TCP/IP client.
 You can implement a client by subclassing this class or by wrapping an
@@ -71,6 +73,9 @@ public class BasicClient
 
 	/** The socket is opened and I/O streams are created. */
 	protected Socket socket;
+
+	/** SocketFactory used to open the connection so SSL can be injected. */
+	private SocketFactory socketFactory;
 	/** The input stream */
 	protected InputStream input;
 	/** The output stream */
@@ -91,6 +96,11 @@ public class BasicClient
 	*/
 	public BasicClient( String host, int port )
 	{
+		this(host,port,SocketFactory.getDefault());
+	}
+
+	public BasicClient( String host, int port, SocketFactory socketFactory)
+	{
 		this.port = port;
 		this.host = host;
 		socket = null;
@@ -98,6 +108,7 @@ public class BasicClient
 		output = null;
 		debug = null;
 		lastConnectAttempt = 0L;
+		this.socketFactory = socketFactory;
 	}
 
 	/**
@@ -155,12 +166,14 @@ public class BasicClient
 	* @throws IOException if can't open socket.
 	* @throws UnknownHostException if host cannot be resolved.
 	*/
-	private static synchronized Socket doConnect( String host, int port ) throws IOException, UnknownHostException
+	private synchronized Socket doConnect( String host, int port ) throws IOException, UnknownHostException
 	{
-		Socket ret = new Socket();
+		Socket ret = socketFactory.createSocket();
 		InetSocketAddress iaddr = new InetSocketAddress(host, port);
 		if (iaddr.isUnresolved())
+		{
 			throw new UnknownHostException(host);
+		}
 		ret.connect(iaddr, 20000);
 		return ret;
 	}
@@ -174,7 +187,7 @@ public class BasicClient
 	*/
 	public void disconnect( )
 	{
-Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
+		Logger.instance().debug2("BasicClient " + getName() + " disconnect()");
 		try
 		{
 			try
