@@ -23,7 +23,7 @@ import decodes.util.DecodesSettings;
 
 /**
 Displays a sorting-list of Platform objects in the database.
-*/
+ */
 @SuppressWarnings("serial")
 public class PlatformSelectPanel extends JPanel
 {
@@ -42,7 +42,7 @@ public class PlatformSelectPanel extends JPanel
 		model = new PlatformSelectTableModel(this, mediumType);
 		platformListTable = new SortingListTable(model, model.columnWidths);
 		platformListTable.getSelectionModel().setSelectionMode(
-			ListSelectionModel.SINGLE_SELECTION);
+				ListSelectionModel.SINGLE_SELECTION);
 		setMultipleSelection(false);
 		platformListTable.addMouseListener(new MouseAdapter()
 		{
@@ -66,12 +66,12 @@ public class PlatformSelectPanel extends JPanel
 			ex.printStackTrace();
 		}
 	}
-	
+
 	public void setParentDialog(PlatformSelectDialog dlg)
 	{
 		parentDialog = dlg;
 	}
-	
+
 	public PlatformSelectPanel(final PlatformSelectDialog psd, Site site, String mediumType)
 	{
 		if ( site == null ) 
@@ -79,15 +79,15 @@ public class PlatformSelectPanel extends JPanel
 		else
 			model = new PlatformSelectTableModel(this, site);
 		platformListTable = new SortingListTable(model,
-			new int[] { 22, 6, 20, 20,10, 33 });
+				new int[] { 22, 6, 20, 20, 10, 33 });
 
 		platformListTable.getSelectionModel().setSelectionMode(
-			ListSelectionModel.SINGLE_SELECTION);
+				ListSelectionModel.SINGLE_SELECTION);
 		setMultipleSelection(false);
 		platformListTable.addMouseListener(new MouseAdapter(){
 			public void mouseClicked(MouseEvent e){
 				if (e.getClickCount() == 2){
-	       				psd.openPressed();
+					psd.openPressed();
 				}
 			}
 		} );
@@ -112,9 +112,9 @@ public class PlatformSelectPanel extends JPanel
 		private void jbInit() throws Exception
 	{
 		this.setPreferredSize(new Dimension(800,500));
-	    this.setLayout(borderLayout1);
-	    this.add(jScrollPane1, BorderLayout.CENTER);
-	    jScrollPane1.getViewport().add(platformListTable, null);
+		this.setLayout(borderLayout1);
+		this.add(jScrollPane1, BorderLayout.CENTER);
+		jScrollPane1.getViewport().add(platformListTable, null);
 	}
 
 	/**
@@ -122,7 +122,7 @@ public class PlatformSelectPanel extends JPanel
 	  with the newly modified one. It calls this method to do this.
 	  @param oldp the old object
 	  @param newp the new object
-	*/
+	 */
 	public void replacePlatform(Platform oldp, Platform newp)
 	{
 		model.replacePlatform(oldp, newp);
@@ -179,6 +179,14 @@ public class PlatformSelectPanel extends JPanel
 	{
 		this.parentPanel = parentPanel;
 	}
+
+	public SortingListTable getPlatformListTable() {
+		return platformListTable;
+	}
+
+	public void setPlatformListTable(SortingListTable platformListTable) {
+		this.platformListTable = platformListTable;
+	}
 }
 
 class PlatformSelectTableModel extends AbstractTableModel
@@ -194,24 +202,24 @@ class PlatformSelectTableModel extends AbstractTableModel
 
 	static String colNamesNoDesig[] = 
 	{
-		PlatformSelectPanel.genericLabels.getString("platform"),
-		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.agency"),
-		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.transport"),
-		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.config"),
-		PlatformSelectPanel.genericLabels.getString("expiration"),
-		PlatformSelectPanel.genericLabels.getString("description")
+			PlatformSelectPanel.genericLabels.getString("platform"),
+			PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.agency"),
+			PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.transport"),
+			PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.config"),
+			PlatformSelectPanel.genericLabels.getString("expiration"),
+			PlatformSelectPanel.genericLabels.getString("description")
 	};
 	static String colNamesDesig[] = 
 	{
-		PlatformSelectPanel.genericLabels.getString("platform"),
-		"Designator",
-		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.agency"),
-		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.transport"),
-		PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.config"),
-		PlatformSelectPanel.genericLabels.getString("expiration"),
-		PlatformSelectPanel.genericLabels.getString("description")
+			PlatformSelectPanel.genericLabels.getString("platform"),
+			"Designator",
+			PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.agency"),
+			PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.transport"),
+			PlatformSelectPanel.dbeditLabels.getString("PlatformSelectPanel.config"),
+			PlatformSelectPanel.genericLabels.getString("expiration"),
+			PlatformSelectPanel.genericLabels.getString("description")
 	};
-	
+
 	String columnNames[] = DecodesSettings.instance().platformListDesignatorCol
 		? colNamesDesig : colNamesNoDesig;
 
@@ -227,24 +235,24 @@ class PlatformSelectTableModel extends AbstractTableModel
 		columnizer = new PlatformSelectColumnizer(mediumType);
 		for(Platform platform : Database.getDb().platformList.getPlatformVector())
 		{
-			// NOTE: Medium Type NULL means display all platforms. 
-			if (mediumType == null 
-				 // Direct match for specified TM type
-			 || platform.getTransportMedium(mediumType) != null
-			     // If any GOES type then only display GOES platforms.
-			 || (mediumType.equalsIgnoreCase(Constants.medium_Goes)
-				 && (platform.getTransportMedium(Constants.medium_GoesST) != null
-				  || platform.getTransportMedium(Constants.medium_GoesRD) != null))
-				  // If MT='Poll', display any polling-type platform.
-			 || (mediumType.equalsIgnoreCase("poll")
-				 && (platform.getTransportMedium("polled-modem") != null
-				  || platform.getTransportMedium("polled-tcp") != null
-				  || platform.getTransportMedium("incoming-tcp") != null)))
+			// NOTE: Medium Type NULL means display all platforms.
+			if (mediumType == null
+					// Direct match for specified TM type
+					|| platform.getTransportMedium(mediumType) != null
+					// If any GOES type then only display GOES platforms.
+					|| (mediumType.equalsIgnoreCase(Constants.medium_Goes)
+							&& (platform.getTransportMedium(Constants.medium_GoesST) != null
+									|| platform.getTransportMedium(Constants.medium_GoesRD) != null))
+					// If MT='Poll', display any polling-type platform.
+					|| (mediumType.equalsIgnoreCase("poll")
+							&& (platform.getTransportMedium("polled-modem") != null
+									|| platform.getTransportMedium("polled-tcp") != null
+									|| platform.getTransportMedium("incoming-tcp") != null)))
 				platformList.add(platform);
 		}
 		this.sortByColumn(0);
 	}
-	
+
 	public PlatformSelectTableModel(PlatformSelectPanel panel, Site site)
 	{
 		super();
@@ -267,7 +275,7 @@ class PlatformSelectTableModel extends AbstractTableModel
 						if ( sn.equals(usgsName) )
 							platformList.add(p);
 					}
-					
+
 				}
 			}
 		}
@@ -364,25 +372,25 @@ class PlatformSelectTableModel extends AbstractTableModel
 /**
  Helper class to retrieve platform fields by column number. Used for
  displaying values in the table and for sorting.
-*/
+ */
 class PlatformSelectColumnizer
 {
 	private boolean desig = DecodesSettings.instance().platformListDesignatorCol;
 	String mediumType = null;
 	boolean isGOES = false, isPoll = false;
-	
+
 	public PlatformSelectColumnizer(String mediumType)
 	{
 		this.mediumType = mediumType;
 		if (mediumType != null)
 		{
 			isGOES = mediumType.equalsIgnoreCase(Constants.medium_Goes)
-				|| mediumType.equalsIgnoreCase(Constants.medium_GoesST)
-				|| mediumType.equalsIgnoreCase(Constants.medium_GoesRD);
+					|| mediumType.equalsIgnoreCase(Constants.medium_GoesST)
+					|| mediumType.equalsIgnoreCase(Constants.medium_GoesRD);
 			isPoll = mediumType.equalsIgnoreCase("poll")
-				|| mediumType.equalsIgnoreCase("polled-modem")
-				|| mediumType.equalsIgnoreCase("polled-tcp")
-				|| mediumType.equalsIgnoreCase("incoming-tcp");
+					|| mediumType.equalsIgnoreCase("polled-modem")
+					|| mediumType.equalsIgnoreCase("polled-tcp")
+					|| mediumType.equalsIgnoreCase("incoming-tcp");
 		}
 //System.out.println("psc mt=" + mediumType + ", isGOES=" + isGOES + ", isPoll=" + isPoll);
 	}
@@ -435,7 +443,7 @@ class PlatformSelectColumnizer
 				else
 				{
 					return decodes.db.Constants.defaultDateFormat.format(
-						p.expiration).toString();
+							p.expiration).toString();
 				}
 			}
 			case 5: // Expiration or Description
@@ -447,7 +455,7 @@ class PlatformSelectColumnizer
 					else
 					{
 						return decodes.db.Constants.defaultDateFormat.format(
-							p.expiration).toString();
+								p.expiration).toString();
 					}
 				}
 				else
@@ -459,34 +467,34 @@ class PlatformSelectColumnizer
 				return "";
 		}
 	}
-	
+
 	private String getTM(Platform p)
 	{
 		if (mediumType == null)
 			return p.getPreferredTransportId();
-		
+
 		TransportMedium tm = p.getTransportMedium(mediumType);
 		if (tm != null)
 			return tm.getMediumId();
-		
+
 //System.out.println("getTM mt='" + mediumType + "' but no TM of that type.");
 //for(Iterator<TransportMedium> tmit = p.getTransportMedia(); tmit.hasNext(); )
 //{
 //	tm = tmit.next();
 //	System.out.println(tm.getMediumType() + ":" + tm.getMediumId());
 //}
-		
+
 		// If  GOES type display any GOES TM.
 		if (isGOES
-		 && ((tm = p.getTransportMedium(Constants.medium_GoesST)) != null
-		  || (tm = p.getTransportMedium(Constants.medium_GoesRD)) != null))
+				&& ((tm = p.getTransportMedium(Constants.medium_GoesST)) != null
+						|| (tm = p.getTransportMedium(Constants.medium_GoesRD)) != null))
 			return tm.getMediumId();
-		
+
 		if (isPoll
-			 && ((tm = p.getTransportMedium(Constants.medium_PolledModem)) != null
-			  || (tm = p.getTransportMedium(Constants.medium_PolledTcp)) != null
-			  || (tm = p.getTransportMedium("incoming-tcp")) != null))
-				return tm.getMediumId();
+				&& ((tm = p.getTransportMedium(Constants.medium_PolledModem)) != null
+						|| (tm = p.getTransportMedium(Constants.medium_PolledTcp)) != null
+						|| (tm = p.getTransportMedium("incoming-tcp")) != null))
+			return tm.getMediumId();
 
 		return p.getPreferredTransportId();
 	}
@@ -508,12 +516,12 @@ class PlatformColumnComparator implements Comparator<Platform>
 		if (p1 == p2)
 			return 0;
 		int r = columnizer.getColumn(p1, col).compareToIgnoreCase(
-			columnizer.getColumn(p2, col));
+				columnizer.getColumn(p2, col));
 		if (r != 0)
 			return r;
 		// Selected column is the same, secondary sort by platform name
 		// which is supposed to be unique.
 		return columnizer.getColumn(p1, 0).compareToIgnoreCase(
-			columnizer.getColumn(p2, 0));
+				columnizer.getColumn(p2, 0));
 	}
 }

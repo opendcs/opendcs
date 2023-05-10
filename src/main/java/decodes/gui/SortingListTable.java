@@ -34,17 +34,19 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.*;
 import javax.swing.table.*;
+import javax.swing.table.TableRowSorter;
 
 /**
 This class handles much of the dirty work for tables that appear within
 the DECODES database editor.
 It allows you to specify width-weights for the colums.
 It allows sorting of the table by clicking in the column headers.
-*/
+ */
 public class SortingListTable extends JTable
 {
- 	SortingListTableModel model = null;
+	SortingListTableModel model = null;
 	TableColumnModel columns = null;
+	TableRowSorter<SortingListTableModel> rowSorter = null;
 	JTableHeader header = null;
 	float widthFactor[];
 	private boolean firstPaint;
@@ -61,7 +63,7 @@ public class SortingListTable extends JTable
 	  Constructor.
 	  @param model the table model.
 	  @param widths the column width-weights.
-	*/
+	 */
 	public SortingListTable(SortingListTableModel model, int widths[])
 	{
 		this();
@@ -72,7 +74,7 @@ public class SortingListTable extends JTable
 	  Post-initialization.
 	  @param model the table model.
 	  @param widths the column width-weights.
-	*/
+	 */
 	public void init(SortingListTableModel model, int widths[])
 	{
 		if (widths != null && widths.length > 0)
@@ -91,17 +93,20 @@ public class SortingListTable extends JTable
 		setModel(model);
 		this.setAutoCreateColumnsFromModel(false);
 
+		rowSorter = new TableRowSorter<SortingListTableModel>(model); // Row Sorter
+		this.setRowSorter(rowSorter);
+
 		columns = new DefaultTableColumnModel();
 		ButtonHeaderRenderer renderer = new ButtonHeaderRenderer();
 
 		for(int i = 0; i < model.getColumnCount(); i++)
 		{
-	    	TableColumn c = new TableColumn(i);
+			TableColumn c = new TableColumn(i);
 			c.setHeaderValue(model.getColumnName(i));
 			c.setIdentifier("NESS-ID");
 			if (widths != null)
 			{
-		    	c.setPreferredWidth(widths[i]);
+				c.setPreferredWidth(widths[i]);
 				c.setMinWidth(widths[i]);
 			}
 //			c.setCellEditor(new DcpAddressEditor(new JTextField(), this));
@@ -115,13 +120,13 @@ public class SortingListTable extends JTable
 		header.addMouseListener(new HeaderListener(this, header, renderer));
 		setAutoResizeMode(AUTO_RESIZE_NEXT_COLUMN);
 		this.getTableHeader().setReorderingAllowed(false);
-    }
+	}
 
 	/**
 	  We need to sets after the object has been activated. The approach is
 	  to do it on the first call to the paint method.
 	  param g delegated to super
-	*/
+	 */
 	public void paint(java.awt.Graphics g)
 	{
 		if (firstPaint && widthFactor != null)
@@ -133,10 +138,10 @@ public class SortingListTable extends JTable
 				colModel.getColumn(i).setPreferredWidth(
 					(int)(totWidth * widthFactor[i]));
 		}
-		
+
 		super.paint(g);
 	}
-	
+
 	@Override
 	public void setFont(Font font)
 	{
@@ -151,7 +156,7 @@ public class SortingListTable extends JTable
 	/**
 	  This inner-class uses a JButton for the column header, allowing us
 	  to act when the column header is clicked.
-	*/
+	 */
 	class ButtonHeaderRenderer extends JButton
 		implements TableCellRenderer
 	{
@@ -164,25 +169,25 @@ public class SortingListTable extends JTable
 		}
 
 		public java.awt.Component getTableCellRendererComponent(JTable table,
-			Object value, boolean isSelected, boolean hasFocus, int row,
+				Object value, boolean isSelected, boolean hasFocus, int row,
 			int column)
 		{
 			setText((value ==null) ? "" : value.toString());
-		    boolean isPressed = (column == pushedColumn);
-		    getModel().setPressed(isPressed);
-		    getModel().setArmed(isPressed);
-		    return this;
+			boolean isPressed = (column == pushedColumn);
+			getModel().setPressed(isPressed);
+			getModel().setArmed(isPressed);
+			return this;
 		}
 
 		public void setPressedColumn(int col)
 		{
-		    pushedColumn = col;
+			pushedColumn = col;
 		}
 	}
 
 	/**
 	  This class allows us to capture the mouse clicks on the header.
-	*/
+	 */
 	class HeaderListener extends MouseAdapter
 	{
 		JTableHeader   header;
@@ -193,8 +198,8 @@ public class SortingListTable extends JTable
 			ButtonHeaderRenderer renderer)
 		{
 			this.table = table;
-		    this.header = header;
-		    this.renderer = renderer;
+			this.header = header;
+			this.renderer = renderer;
 		}
 
 		public void mousePressed(MouseEvent e)
@@ -205,14 +210,14 @@ public class SortingListTable extends JTable
 			for(int i=0; i<selectedRows.length; i++)
 				selectedObjects[i] = model.getRowObject(selectedRows[i]);
 
-		    int col = header.columnAtPoint(e.getPoint());
-		    renderer.setPressedColumn(col);
-		    header.repaint();
+			int col = header.columnAtPoint(e.getPoint());
+			renderer.setPressedColumn(col);
+			header.repaint();
 			model.sortByColumn(col);
 
 			// Now re-select the objects that were selected before the sort.
 			table.clearSelection();
-			int rowCount = model.getRowCount(); 
+			int rowCount = model.getRowCount();
 			for(int i=0; i<selectedObjects.length; i++)
 			{
 				for (int r = 0; r < rowCount; r++)
@@ -229,9 +234,9 @@ public class SortingListTable extends JTable
 
 		public void mouseReleased(MouseEvent e)
 		{
-		    int col = header.columnAtPoint(e.getPoint());
+			int col = header.columnAtPoint(e.getPoint());
 		    renderer.setPressedColumn(-1);                // clear
-		    header.repaint();
+			header.repaint();
 		}
 	}
 }
