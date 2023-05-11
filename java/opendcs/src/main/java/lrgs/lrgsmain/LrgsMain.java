@@ -14,7 +14,9 @@ package lrgs.lrgsmain;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -23,10 +25,21 @@ import java.util.TimeZone;
 import java.util.Map.Entry;
 
 import javax.net.ServerSocketFactory;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 import java.util.Properties;
 import java.util.Set;
 import java.net.InetAddress;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 import opendcs.dai.LoadingAppDAI;
 import ilex.util.Logger;
@@ -670,16 +683,16 @@ public class LrgsMain
         LrgsConfig cfg = LrgsConfig.instance();
         if (cfg.ddsBindAddr != null && cfg.ddsBindAddr.trim().length() == 0)
             cfg.ddsBindAddr = null;
-
         try
         {
+            ServerSocketFactory socketFactory = initSocketFactory(cfg);
             InetAddress ia =
                 (cfg.ddsBindAddr != null && cfg.ddsBindAddr.length() > 0) ?
                 InetAddress.getByName(cfg.ddsBindAddr) : null;
-            // TODO: check for SSL requirements
             ddsServer = new DdsServer(cfg.ddsListenPort, ia, msgArchive,
-                    queueLogger, statusProvider, ServerSocketFactory.getDefault());
+                    queueLogger, statusProvider, socketFactory);
             ddsServer.init();
+            return true;
         }
         catch(Exception ex)
         {
@@ -688,11 +701,33 @@ public class LrgsMain
             Logger.instance().fatal(msg);
             System.err.println(msg);
             ex.printStackTrace(System.err);
-            return false;
+            throw new RuntimeException("Unable to start DDS server",ex);
+            //return false;
         }
-        return true;
     }
 
+
+    private ServerSocketFactory initSocketFactory(LrgsConfig cfg) 
+        throws NoSuchAlgorithmException, CertificateException, 
+               FileNotFoundException, IOException, KeyStoreException, UnrecoverableKeyException, KeyManagementException
+    {
+        ServerSocketFactory socketFactory = ServerSocketFactory.getDefault();
+        if(cfg.keyStoreFile != null && cfg.keyStorePassword != null) {
+            SSLContext context = SSLContext.getInstance("TLS");
+            //TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            KeyStore ks = KeyStore.getInstance("jks");
+            ks.load(new FileInputStream(EnvExpander.expand(cfg.keyStoreFile)),cfg.keyStorePassword.toCharArray());
+            kmf.init(ks,cfg.keyStorePassword.toCharArray());
+            context.init(kmf.getKeyManagers(),null,null);
+            socketFactory = context.getServerSocketFactory();
+            if(socketFactory == null)
+            {
+                System.err.println("Socket factory not initialized.");
+            }
+        }
+        return socketFactory;
+    }
 
     public void shutdown()
     {
