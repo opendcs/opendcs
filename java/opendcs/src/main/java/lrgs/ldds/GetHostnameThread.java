@@ -21,6 +21,7 @@ import lrgs.lrgsmain.LrgsConfig;
 public class GetHostnameThread
     extends Thread
 {
+<<<<<<< HEAD
     private static int max=20;
     private LinkedBlockingQueue<LddsThread> ltq
         = new LinkedBlockingQueue<LddsThread>();
@@ -29,6 +30,83 @@ public class GetHostnameThread
     private String localIpMask = null;
     private int localIpMaskInt = 0;
     private int localIpAddr = 0;
+=======
+	private static int max=20;
+	private LinkedBlockingQueue<LddsThread> ltq
+		= new LinkedBlockingQueue<LddsThread>();
+	public static final String module = "GetHostnameThread";
+	private static GetHostnameThread _instance = null;
+	private String localIpMask = null;
+	private int localIpMaskInt = 0;
+	private int localIpAddr = 0;
+	
+	public static GetHostnameThread instance()
+	{
+		if (_instance == null)
+		{
+			_instance = new GetHostnameThread();
+			_instance.setDaemon(true); // Allow the JVM to just up and die even if this is still running.
+		}
+		return _instance;
+	}
+	
+	public GetHostnameThread()
+	{
+		super("GetHostnameThread");
+		setLocalIpMask(LrgsConfig.instance().getMiscProp("localIpMask"));
+	}
+	
+	private void setLocalIpMask(String lim)
+	{
+		localIpMask = lim;
+		if (localIpMask == null || localIpMask.trim().length() == 0)
+		{
+			localIpMaskInt = 0;
+			localIpAddr = 0;
+		}
+		else
+		{
+			String ipaddr = localIpMask.trim();
+			int slash = ipaddr.indexOf('/');
+			int nbits=32;
+			if (slash > 0)
+			{
+				try { nbits = Integer.parseInt(ipaddr.substring(slash+1)); }
+				catch(Exception ex)
+				{
+					Logger.instance().warning(module + " bad localIpMask setting '" + localIpMask + "': '"
+						+ ex + " -- ignored.");
+					localIpMaskInt = 0;
+					localIpAddr = 0;
+					return;
+				}
+				ipaddr = ipaddr.substring(0, slash);
+			}
+			
+			try
+			{
+				Inet4Address a;
+				a = (Inet4Address) InetAddress.getByName(ipaddr);
+				byte[] b = a.getAddress();
+				int ai = ((b[0] & 0xFF) << 24) |
+					((b[1] & 0xFF) << 16) |
+				    ((b[2] & 0xFF) << 8)  |
+				    ((b[3] & 0xFF) << 0);
+				localIpMaskInt = -1<<(32-nbits);
+				localIpAddr = ai & localIpMaskInt;
+			}
+			catch (UnknownHostException ex)
+			{
+				Logger.instance().warning(module + " unusable localIpMask setting '" + localIpMask + "': "
+					+ ex + " -- ignored.");
+				localIpMaskInt = 0;
+				localIpAddr = 0;
+				return;
+			}
+		}
+	}
+	
+>>>>>>> 11e582f0 (SSL connection itself works.)
 
     public static GetHostnameThread instance()
     {

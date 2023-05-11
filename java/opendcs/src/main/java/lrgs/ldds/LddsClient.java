@@ -106,7 +106,7 @@ public class LddsClient extends BasicClient
     */
     public LddsClient(String host, int port, SocketFactory socketFactory)
     {
-        super(host, port);
+        super(host, port,socketFactory);
 
         goesDateFormat = new SimpleDateFormat("yyDDDHHmmss");
         TimeZone jtz = TimeZone.getTimeZone("UTC");

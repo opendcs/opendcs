@@ -107,6 +107,7 @@ public class JLddsThread extends LddsThread
         attachedProcess.type = "DDS-CLI";
         attachedProcess.user = "(unknown)";
         attachedProcess.status = "user?";
+        this.setName("DDS-Client "+socket.getInetAddress().toString());
     }
 
     /**
