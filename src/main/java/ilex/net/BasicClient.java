@@ -58,6 +58,7 @@ import java.io.*;
 import java.rmi.UnknownHostException;
 
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocket;
 
 /**
 This class encapsulates common functions for a TCP/IP client.
@@ -175,6 +176,7 @@ public class BasicClient
 			throw new UnknownHostException(host);
 		}
 		ret.connect(iaddr, 20000);
+		Logger.instance().info("Connected to:" + String.format("%s:%d",host,port));
 		return ret;
 	}
 

@@ -470,6 +470,7 @@ public class RtStatFrame
 		client = null;
 
 		SocketFactory socketFactory = SSLSocketFactory.getDefault();
+		Logger.instance().info(socketFactory.getClass().getName());
 		
 		final LddsClient tclient = new LddsClient(host, port,socketFactory);
 		final JobDialog dlg =
@@ -527,6 +528,7 @@ public class RtStatFrame
 						}
 						catch(ServerError ex)
 						{
+							ex.printStackTrace(System.out);
 							dlg.addToProgress(labels.getString(
 									"RtStatFrame.connectionRejectedErr") 
 									+ ex);
@@ -534,12 +536,14 @@ public class RtStatFrame
 						}
 						catch(ProtocolError ex)
 						{
+							ex.printStackTrace(System.out);
 							dlg.addToProgress(
 							labels.getString("RtStatFrame.protocolErr") + ex);
 							tclient.disconnect();
 						}
 						catch(Exception ex)
 						{
+							ex.printStackTrace(System.out);
 							dlg.addToProgress(labels.getString(
 							  "RtStatFrame.authenticationErr") + ex);
 							tclient.disconnect();
