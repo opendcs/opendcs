@@ -211,7 +211,7 @@ public class MessageBrowser extends MenuFrame
             {
                 public void actionPerformed(ActionEvent ae)
                 {
-                    RtStatFrame.setFieldsFromHostSelection(hostField, connectionList, portField, 
+                    RtStatFrame.setFieldsFromHostSelection(hostField, connectionList, portField, null,
                         userField, passwordField);
                 }
             });
