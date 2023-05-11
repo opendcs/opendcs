@@ -22,6 +22,7 @@ import lrgs.gui.MessageBrowser;
 import java.awt.Component;
 import java.awt.Dimension;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 
 import java.util.Date;
 import java.util.Locale;
@@ -39,6 +40,7 @@ public final class LrgsConnectionPanel extends JPanel
     private static final long serialVersionUID = 1L;
     private JComboBox<LrgsConnection> hostCombo;
     private JTextField portField;
+    private JCheckBox tlsCheck = new JCheckBox(labels.getString("RtStatFrame.tls"),false);
     private JTextField usernameField;
     private JButton pausedButton;
     private PasswordWithShow passwordField;
@@ -92,9 +94,10 @@ public final class LrgsConnectionPanel extends JPanel
 
         portField = new JTextField();
         portField.setMaximumSize(new Dimension(32, 2147483647));
-        panel_1.add(portField);
+        panel_1.add(portField);        
         portField.setText("16003");
         portField.setColumns(10);
+        panel_1.add(tlsCheck);
 
         JPanel panel_2 = new JPanel();
         add(panel_2);
@@ -263,7 +266,8 @@ public final class LrgsConnectionPanel extends JPanel
         final int port = Integer.parseInt(portField.getText());
         final String username = usernameField.getText();
         final String password = LrgsConnection.encryptPassword(passwordField.getText(), LrgsConnectionPanel.pwk);
-        return new LrgsConnection(hostName, port, username, password, null);
+        final boolean tls = tlsCheck.isSelected();
+        return new LrgsConnection(hostName, port, username, password, null, tls);
     }
 
     public static class ConnectionRender extends JLabel implements ListCellRenderer<LrgsConnection>

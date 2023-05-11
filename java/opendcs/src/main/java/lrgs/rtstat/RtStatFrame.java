@@ -107,11 +107,12 @@ public class RtStatFrame
     private int dividerLoc;
     private int splitPaneHeight;
 
-    /** the currently connected host -- null if not connected. */
-    String host;
-    int port;
-    String user;
-    String passwd;
+	/** the currently connected host -- null if not connected. */
+	String host;
+	int port;
+	String user;
+	String passwd;
+	SocketFactory socketFactory;
 
     /** Dialog for editing users. */
     private UserListDialog userListDialog = null;
@@ -376,22 +377,8 @@ public class RtStatFrame
     {
         closeConnection();
         client = null;
-        SocketFactory socketFactory = SocketFactory.getDefault();
-		// TODO: check for actual condition
-		try {
-			SSLContext sslContext = SSLContext.getInstance("TLS");
-			TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-			KeyStore ks = KeyStore.getInstance("JKS");
-			ks.load(new FileInputStream(EnvExpander.expand("$DCSTOOL_USERDIR/lrgs/lrgs.ks")),"lrgspass".toCharArray());
-			tmf.init(ks);
-			sslContext.init(null,tmf.getTrustManagers(),null);
-			socketFactory = sslContext.getSocketFactory();
-		} catch (NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | KeyManagementException ex) {
-			throw new RuntimeException("Unable to connect to SSL Server.",ex);
-		}
-		
-		
-		
+        SocketFactory socketFactory = c.getSocketFactory();
+
 		final LddsClient tclient = new LddsClient(host, port,socketFactory);
         final JobDialog connectionJobDialog = new JobDialog(
             this,
@@ -476,7 +463,7 @@ public class RtStatFrame
         {
             setTitle(labels.getString("RtStatFrame.frameTitle")+": " + host);
             client = tclient;
-            displayEvent("Connected to " + host + ":" + port + " as user '" + user + "'");
+            displayEvent("Connected to " + host + ":" + port + " as user '" + user + "'" + "with TLS" + c.getTls());
             return true;
         }
         else
@@ -930,7 +917,7 @@ public class RtStatFrame
                 return;
             }
         }
-        hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null));
+        hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null, false));
         hostCombo.setSelectedIndex(n);
     }
 
