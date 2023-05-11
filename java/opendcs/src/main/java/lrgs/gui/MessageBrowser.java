@@ -35,6 +35,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.*;
 
+import javax.net.SocketFactory;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
@@ -696,9 +697,10 @@ public class MessageBrowser extends MenuFrame
         hostName = c.getHostName();
         String pw = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
         String username = c.getUsername();
+        SocketFactory socketFactory = c.getSocketFactory();
         try
         {
-            client = new LddsClient(hostName, port);
+            client = new LddsClient(hostName, port,socketFactory);
             client.connect();
 
             client.sendAuthHello(username, pw);
