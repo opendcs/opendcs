@@ -4,7 +4,9 @@ import java.awt.*;
 import java.awt.event.*;
 
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import javax.swing.*;
 import javax.swing.event.*;
 
@@ -13,6 +15,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.ResourceBundle;
@@ -32,6 +39,8 @@ import ilex.gui.LoginDialog;
 import ilex.gui.WindowUtility;
 import ilex.util.AsciiUtil;
 import ilex.util.AuthException;
+import ilex.util.DesEncrypter;
+import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -367,7 +376,21 @@ public class RtStatFrame
     {
         closeConnection();
         client = null;
-        SocketFactory socketFactory = SSLSocketFactory.getDefault();
+        SocketFactory socketFactory = SocketFactory.getDefault();
+		// TODO: check for actual condition
+		try {
+			SSLContext sslContext = SSLContext.getInstance("TLS");
+			TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+			KeyStore ks = KeyStore.getInstance("JKS");
+			ks.load(new FileInputStream(EnvExpander.expand("$DCSTOOL_USERDIR/lrgs/lrgs.ks")),"lrgspass".toCharArray());
+			tmf.init(ks);
+			sslContext.init(null,tmf.getTrustManagers(),null);
+			socketFactory = sslContext.getSocketFactory();
+		} catch (NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | KeyManagementException ex) {
+			throw new RuntimeException("Unable to connect to SSL Server.",ex);
+		}
+		
+		
 		
 		final LddsClient tclient = new LddsClient(host, port,socketFactory);
         final JobDialog connectionJobDialog = new JobDialog(

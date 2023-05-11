@@ -169,6 +169,12 @@ public class BasicClient
 	*/
 	private synchronized Socket doConnect( String host, int port ) throws IOException, UnknownHostException
 	{
+		Logger.instance().info("SocketFactory class: " + socketFactory.getClass().getName());
+		StackTraceElement ste[] = Thread.currentThread().getStackTrace();
+		for(int i=0; i < ste.length; i++)
+		{
+			Logger.instance().debug3(ste[i].toString());
+		}
 		Socket ret = socketFactory.createSocket();
 		InetSocketAddress iaddr = new InetSocketAddress(host, port);
 		if (iaddr.isUnresolved())
@@ -176,6 +182,7 @@ public class BasicClient
 			throw new UnknownHostException(host);
 		}
 		ret.connect(iaddr, 20000);
+		Logger.instance().info("Socket class: " + ret.getClass().getName());
 		Logger.instance().info("Connected to:" + String.format("%s:%d",host,port));
 		return ret;
 	}
