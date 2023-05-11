@@ -6,6 +6,10 @@ package lrgs.rtstat;
 import java.awt.*;
 import java.awt.event.*;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import javax.swing.*;
 import javax.swing.event.*;
 
@@ -16,6 +20,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -81,6 +90,7 @@ public class RtStatFrame
 	private JComboBox hostCombo = new JComboBox();
 	private JLabel portLabel = new JLabel();
 	private JTextField portField = new JTextField(6);
+	private JCheckBox tlsCheck = new JCheckBox(labels.getString("RtStatFrame.tls"),false);
 	private JLabel userLabel = new JLabel();
 	JTextField userField = new JTextField(8);
 	private JPasswordField passwordField = new JPasswordField(12);
@@ -116,6 +126,7 @@ public class RtStatFrame
 	int port;
 	String user;
 	String passwd;
+	SocketFactory socketFactory;
 
 	/** Dialog for editing users. */
 	private UserListDialog userListDialog = null;
@@ -191,7 +202,7 @@ public class RtStatFrame
 				public void actionPerformed(ActionEvent ae)
 				{
 					setFieldsFromHostSelection(hostCombo, 
-						connectionList, portField, userField, passwordField);
+						connectionList, portField, tlsCheck, userField, passwordField);
 					passwordCheck.setSelected(passwordField.getText().length() > 0);
 					passwordField.setEnabled(passwordField.getText().length() > 0);
 				}
@@ -388,22 +399,25 @@ public class RtStatFrame
 		topPanel.add(portField,  new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0
 	        ,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
 			new Insets(4, 0, 4, 6), 0, 0));
-		topPanel.add(userLabel,   new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0
+		topPanel.add(tlsCheck, new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0
+		,GridBagConstraints.EAST, GridBagConstraints.NONE,
+		new Insets(4, 6, 4, 1), 0, 0));
+		topPanel.add(userLabel,   new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0
 	        ,GridBagConstraints.EAST, GridBagConstraints.NONE, 
 			new Insets(4, 6, 4, 1), 0, 0));
-		topPanel.add(userField,  new GridBagConstraints(5, 0, 1, 1, 0.5, 0.0
+		topPanel.add(userField,  new GridBagConstraints(6, 0, 1, 1, 0.5, 0.0
 	        ,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
 			new Insets(4, 0, 4, 6), 0, 0));
-		topPanel.add(passwordCheck,  new GridBagConstraints(6, 0, 1, 1, 0.0, 0.0
+		topPanel.add(passwordCheck,  new GridBagConstraints(7, 0, 1, 1, 0.0, 0.0
 	        ,GridBagConstraints.EAST, GridBagConstraints.NONE, 
 			new Insets(4, 6, 4, 1), 0, 0));
-		topPanel.add(passwordField,  new GridBagConstraints(8, 0, 1, 1, 0.5, 0.0
+		topPanel.add(passwordField,  new GridBagConstraints(9, 0, 1, 1, 0.5, 0.0
 	        ,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
 			new Insets(4, 0, 4, 6), 0, 0));
-		topPanel.add(connectButton,  new GridBagConstraints(9, 0, 1, 1, 0.0, 0.0
+		topPanel.add(connectButton,  new GridBagConstraints(10, 0, 1, 1, 0.0, 0.0
 	        ,GridBagConstraints.CENTER, GridBagConstraints.NONE, 
 			new Insets(4, 20, 4, 0), 0, 0));
-		topPanel.add(pauseButton,  new GridBagConstraints(10, 0, 1, 1, 0.0, 0.0
+		topPanel.add(pauseButton,  new GridBagConstraints(11, 0, 1, 1, 0.0, 0.0
 	        ,GridBagConstraints.CENTER, GridBagConstraints.NONE, 
 			new Insets(4, 10, 4, 5), 0, 0));
 		contentPane.add(jSplitPane1, BorderLayout.CENTER);
@@ -487,6 +501,22 @@ public class RtStatFrame
 			}
 		}
 
+		socketFactory = SocketFactory.getDefault();
+		if (tlsCheck.isSelected()) {
+			Logger.instance().info("TLS checked, creating SSLSocket.");
+			try {
+				SSLContext sslContext = SSLContext.getInstance("TLS");
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+				KeyStore ks = KeyStore.getInstance("JKS");
+				ks.load(new FileInputStream(EnvExpander.expand("$DCSTOOL_USERDIR/lrgs/lrgs.ks")),"lrgspass".toCharArray());
+				tmf.init(ks);
+				sslContext.init(null,tmf.getTrustManagers(),null);
+				socketFactory = sslContext.getSocketFactory();
+			} catch (NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | KeyManagementException ex) {
+				throw new RuntimeException("Unable to connect to SSL Server.",ex);
+			}
+		}
+
 		setTitle(labels.getString("RtStatFrame.frameTitle"));
 		host = thost;
 		doConnect();
@@ -500,7 +530,11 @@ public class RtStatFrame
 			client.disconnect();
 		}
 		client = null;
-		final LddsClient tclient = new LddsClient(host, port);
+		
+		
+		Logger.instance().debug3("Using socket factory type: " + socketFactory.getClass().getName());
+		
+		final LddsClient tclient = new LddsClient(host, port,socketFactory);
 		final JobDialog dlg =
 			new JobDialog(this, 
 				labels.getString("RtStatFrame.connectingToInfo") + host, true);
@@ -556,6 +590,7 @@ public class RtStatFrame
 						}
 						catch(ServerError ex)
 						{
+							ex.printStackTrace(System.out);
 							dlg.addToProgress(labels.getString(
 									"RtStatFrame.connectionRejectedErr") 
 									+ ex);
@@ -563,12 +598,14 @@ public class RtStatFrame
 						}
 						catch(ProtocolError ex)
 						{
+							ex.printStackTrace(System.out);
 							dlg.addToProgress(
 							labels.getString("RtStatFrame.protocolErr") + ex);
 							tclient.disconnect();
 						}
 						catch(Exception ex)
 						{
+							ex.printStackTrace(System.out);
 							dlg.addToProgress(labels.getString(
 							  "RtStatFrame.authenticationErr") + ex);
 							tclient.disconnect();
@@ -585,10 +622,11 @@ public class RtStatFrame
 		{
 			setTitle(labels.getString("RtStatFrame.frameTitle")+": " + host);
 			client = tclient;
-			updateConnectionList(connectedHostName = host, "" + port, user, connectionList, passwd);
+			String tlsValue = tlsCheck.isSelected() ? "/TLS" : "";
+			updateConnectionList(connectedHostName = host, "" + port + tlsValue, user, connectionList, passwd);
 			loadConnectionsField(hostCombo, connectionList, connectedHostName);
 			displayEvent("Connected to " + host + ":"
-				+ port + " as user '" + user + "'");
+				+ port + " as user '" + user + "'" + " TLS: " + tlsCheck.isSelected());
 		}
 
 		//rtStatPanel.setPage("file:///C:/tmp/lrgsstatus.html");
@@ -1058,7 +1096,7 @@ public class RtStatFrame
 	}
 
 	public static void setFieldsFromHostSelection(JComboBox hostCombo, 
-		Properties connectionList, JTextField portField, JTextField userField,
+		Properties connectionList, JTextField portField, JCheckBox tlsCheck,JTextField userField,
 		JPasswordField passwordField)
 	{
 		String host = (String)hostCombo.getSelectedItem();
@@ -1076,9 +1114,24 @@ public class RtStatFrame
 		}
 		StringTokenizer st = new StringTokenizer(hl);
 		if (st.hasMoreTokens())
-			portField.setText(st.nextToken());
+		{
+			String txt = st.nextToken();
+			int tls = txt.indexOf("/TLS");
+			portField.setText(txt);
+			if (tls > 0)
+			{
+				portField.setText(txt.substring(0, tls));
+				tlsCheck.setSelected(true);
+			}
+			else
+			{
+				tlsCheck.setSelected(false);
+			}
+		}
 		else
+		{
 			portField.setText("16003");
+		}
 		if (st.hasMoreTokens())
 			userField.setText(st.nextToken());
 		if (st.hasMoreTokens())

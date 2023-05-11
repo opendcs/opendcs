@@ -1105,6 +1105,8 @@ class CheckpointThread extends Thread
 	{
 		shutdown = false;
 		archive = ma;
+		this.setName("MsgArchive-Checkpoint Thread");
+		//this.setDaemon(true);
 	}
 
 	public void run()

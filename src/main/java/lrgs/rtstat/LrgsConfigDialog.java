@@ -35,6 +35,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -118,6 +119,8 @@ public class LrgsConfigDialog extends GuiDialog
 //	private JTextField domsatDpcPort = new JTextField();;
 	private JTextField ddsListenPortField = null;
 	private JTextField ddsBindAddrField = null;
+	private JTextField ddsKeystoreFile = new JTextField();
+	private JPasswordField ddsKeystorePass = new JPasswordField();
 	private JTextField ddsMaxClientsField = null;
 	private JTextField ddsParentDirectoryField = null;
 	private JTextField ddsLogFileField = null;
@@ -199,7 +202,7 @@ public class LrgsConfigDialog extends GuiDialog
 	private EdlConfigPanel edlConfigPanel = null;
 	private JTextField ddsMinHourlyField = new JTextField(9);
 	private JTextField drgsMinHourlyField = new JTextField(9);
-	
+
 	public LrgsConfigDialog(JFrame parent, String title)
 	{
 		super(parent, title, true);
@@ -223,7 +226,7 @@ public class LrgsConfigDialog extends GuiDialog
 		lrgsConfig=null;
 		ddsSettings=null;
 		drgsSettings=null;
-		
+
 		//Archive Tab
 		getArchiveDirField().setText("");
 		getArchiveLengthField().setText("");
@@ -249,7 +252,7 @@ public class LrgsConfigDialog extends GuiDialog
 		pdtUrlField.setText("");
 		cdtUrlField.setText("");
 		goesXmitCheck.setSelected(false);
-		
+
 		//Domsat Tab
 //		getInitializeDOMSATcheck().setSelected(false);
 //		getDomsatHardwareCombo().setSelectedItem(0);
@@ -259,7 +262,7 @@ public class LrgsConfigDialog extends GuiDialog
 //		domsatDpcPort.setText("" + LrgsConfig.def_dpcPort);
 //		chkDpcEnabled();
 //		acceptDomsatARMsCheck.setSelected(true);
-		
+
 		//dds server tab
 		getDdsListenPortField().setText("");
 		getDdsBindAddrField().setText("");
@@ -267,7 +270,7 @@ public class LrgsConfigDialog extends GuiDialog
 		getDdsParentDirectoryField().setText("");
 		getDdsLogFileField().setText("");
 		getDdsRequireAuthCheck().setSelected(false);
-		
+
 		//DDS Receive tab
 //		recoveryCombo.setSelectedIndex(0);
 		enableDDSReceiveCheck.setSelected(true);
@@ -280,7 +283,7 @@ public class LrgsConfigDialog extends GuiDialog
 		drgsTableModel.clear();
 
 		tabbedPane.setSelectedIndex(0);
-		
+
 		// Network DCP Tab
 		this.networkDcpCfgPanel.clear();
 	}
@@ -293,7 +296,7 @@ public class LrgsConfigDialog extends GuiDialog
 		this.ddsSettings=tmpDdsSettings;
 		this.drgsSettings=tmpDrgsSettings;
 		this.networkDcpSettings = networkDcpSettings;
-		
+
 		//Archive Tab
 		getArchiveDirField().setText(lrgsConfig.archiveDir);
 		getArchiveLengthField().setText(String.valueOf(lrgsConfig.numDayFiles));
@@ -343,7 +346,7 @@ public class LrgsConfigDialog extends GuiDialog
 		lritCfgPanel.fillFields(lrgsConfig);
 		hritFileCfgPanel.fillFields(lrgsConfig);
 		edlConfigPanel.fillFields(lrgsConfig);
-		
+
 		miscPanel.setProperties(lrgsConfig.getOtherProps());
 
 //		//Domsat Tab
@@ -358,9 +361,11 @@ public class LrgsConfigDialog extends GuiDialog
 //		getDomsatTimeoutField().setText(String.valueOf(lrgsConfig.domsatTimeout));
 //		getDomsatLinkCheck().setSelected(lrgsConfig.enableDomsatRecv);
 //		acceptDomsatARMsCheck.setSelected(lrgsConfig.acceptDomsatARMs);
-		
+
 		//dds server tab
 		getDdsListenPortField().setText(String.valueOf(lrgsConfig.ddsListenPort));
+		ddsKeystoreFile.setText(lrgsConfig.keyStoreFile);
+		ddsKeystorePass.setText(lrgsConfig.keyStorePassword);
 		getDdsBindAddrField().setText(lrgsConfig.ddsBindAddr);
 		getDdsMaxClientsField().setText(String.valueOf(lrgsConfig.ddsMaxClients));
 		getDdsParentDirectoryField().setText(lrgsConfig.ddsUserRootDir);
@@ -369,7 +374,7 @@ public class LrgsConfigDialog extends GuiDialog
 		localAdminOnlyCheck.setSelected(lrgsConfig.localAdminOnly);
 		localSandboxDir.setText(lrgsConfig.ddsUserRootDirLocal);
 		requireStrongAuthCheck.setSelected(lrgsConfig.reqStrongEncryption);
-		
+
 		//DDS Receive tab
 //		if (lrgsConfig.recoverOutages)
 //			recoveryCombo.setSelectedIndex(1);
@@ -397,7 +402,7 @@ public class LrgsConfigDialog extends GuiDialog
 		// Network DCP Tab
 		networkDcpCfgPanel.setContents(networkDcpSettings,
 			lrgsConfig.networkDcpEnable);
-		
+
 		miscPanel.setPropertiesOwner(lrgsConfig);
 	}
 
@@ -409,7 +414,7 @@ public class LrgsConfigDialog extends GuiDialog
 		throws ParseException
 	{
 		boolean changed = false;
-		
+
 		String fieldName = "Archive Directory";
 		try
 		{
@@ -421,7 +426,7 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.archiveDir = sv;
 				changed = true;
 			}
-			
+
 			fieldName = "Archive Length";
 			int iv = getIntFieldValue(getArchiveLengthField(), 
 				lrgsConfig.def_numDayFiles);
@@ -467,7 +472,7 @@ public class LrgsConfigDialog extends GuiDialog
 				changed = true;
 			}
 
-			
+
 			boolean bv = preferredGoodCheck.isSelected();
 			if (bv != lrgsConfig.archivePreferredGood)
 			{
@@ -483,7 +488,7 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.mergePref1 = sv;
 				changed = true;
 			}
-			
+
 			fieldName = "Merge Pref2";
 			iv = getMergePref2Combo().getSelectedIndex();
 			sv = iv == 0 ? null : mergePrefs[iv];
@@ -562,7 +567,7 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.sqlReadDateFormat = sv;
 				changed = true;
 			}
-			
+
 			fieldName = "GOES Xmit Check";
 			bv = goesXmitCheck.isSelected();
 			if (bv != lrgsConfig.storeXmitRecords)
@@ -570,7 +575,7 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.storeXmitRecords = bv;
 				changed = true;
 			}
-			
+
 			fieldName = "PDT Validation Check";
 			bv = pdtValidationCheck.isSelected();
 			if (bv != lrgsConfig.getDoPdtValidation())
@@ -594,7 +599,7 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.channelMapUrl = sv;
 				changed = true;
 			}
-			
+
 //			// DOMSAT Tab
 //			fieldName = "DOMSAT Load";
 //			bv = getInitializeDOMSATcheck().isSelected();
@@ -619,7 +624,7 @@ public class LrgsConfigDialog extends GuiDialog
 //				lrgsConfig.dpcHost = sv;
 //				changed = true;
 //			}
-			
+
 //			try
 //			{
 //				int p = Integer.parseInt(domsatDpcPort.getText().trim());
@@ -662,6 +667,22 @@ public class LrgsConfigDialog extends GuiDialog
 			if (lrgsConfig.ddsListenPort != iv)
 			{
 				lrgsConfig.ddsListenPort = iv;
+				changed = true;
+			}
+
+			fieldName = "DDS Keystore File";
+			sv = getStringFieldValue(ddsKeystoreFile, LrgsConfig.def_keyStoreFile);
+			if (lrgsConfig.keyStoreFile != sv)
+			{
+				lrgsConfig.keyStoreFile = sv;
+				changed = true;
+			}
+
+			fieldName = "DDS Keystore Password";
+			sv = getStringFieldValue(ddsKeystorePass, null);
+			if (lrgsConfig.keyStorePassword != sv)
+			{
+				lrgsConfig.keyStorePassword = sv;
 				changed = true;
 			}
 
@@ -708,7 +729,7 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.ddsRequireAuth = bv;
 				changed = true;
 			}
-			
+
 			fieldName = "DDS Local Admin Only";
 			bv = localAdminOnlyCheck.isSelected();
 			if (lrgsConfig.localAdminOnly != bv)
@@ -716,7 +737,7 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.localAdminOnly = bv;
 				changed = true;
 			}
-			
+
 			bv = requireStrongAuthCheck.isSelected();
 			if (lrgsConfig.reqStrongEncryption != bv)
 			{
@@ -758,7 +779,7 @@ public class LrgsConfigDialog extends GuiDialog
 				ddsSettings.timeout = iv;
 				changed = true;
 			}
-			
+
 			fieldName = "DDS Min Hourly";
 			iv = getIntFieldValue(ddsMinHourlyField, 0);
 			if (lrgsConfig.ddsMinHourly != iv)
@@ -766,7 +787,7 @@ public class LrgsConfigDialog extends GuiDialog
 				lrgsConfig.ddsMinHourly = iv;
 				changed = true;
 			}
-			
+
 			fieldName = "DRGS Min Hourly";
 			iv = getIntFieldValue(drgsMinHourlyField, 0);
 			if (lrgsConfig.drgsMinHourly != iv)
@@ -824,21 +845,21 @@ public class LrgsConfigDialog extends GuiDialog
 			ddsSettings.connectCfgs.add(cc);
 
 		//DDS Receive tab
-		
+
 		for(int i = 0; i < netlistTableModel.getRowCount(); i++)
 		{
 			String netlistName  = (String)netlistTableModel.getValueAt(i,0);
 			netlistName = netlistName.trim();
 			if (netlistName.length() == 0)
 				continue;
-			
+
 			String group = (String)netlistTableModel.getValueAt(i,1);
 			if (group == null || group.trim().length() == 0)
 				group = NetlistGroupAssoc.DEFAULT_GROUP;
 
 			ddsSettings.addNetlistAssoc(netlistName, group);
 		}
-	
+
 		return true;
 	}
 
@@ -857,7 +878,7 @@ public class LrgsConfigDialog extends GuiDialog
 			drgsSettings.connections.add(cc);
 		return true;
 	}
-	
+
 	/**
 	 * Copy data from controls back to the Network DCP Settings object.
 	 * @return true if anything was changed.
@@ -867,7 +888,7 @@ public class LrgsConfigDialog extends GuiDialog
 		// On the Network DCP Tab
 		if (!networkDcpCfgPanel.hasChanged())
 			return false;
-		
+
 		networkDcpSettings.resetToDefaults();
 		for(DrgsConnectCfg dcc : networkDcpCfgPanel.getConnections())
 			networkDcpSettings.connections.add(dcc);
@@ -879,7 +900,7 @@ public class LrgsConfigDialog extends GuiDialog
 	{
 		ddsClientIf = dcif;
 	}
-	
+
 	/**
 	 * This method initializes tabbedPane	
 	 * 	
@@ -912,11 +933,11 @@ public class LrgsConfigDialog extends GuiDialog
 			tabbedPane.addTab(hritFileCfgPanel.getLabel(), hritFileCfgPanel);
 			edlConfigPanel = new EdlConfigPanel(this);
 			tabbedPane.addTab(edlConfigPanel.getLabel(), edlConfigPanel);
-			
+
 			tabbedPane.addTab(labels.getString("LrgsConfigDialog.miscTab"),
 					null, getMiscConfigTab(),
 				labels.getString("LrgsConfigDialog.miscPars"));
-			
+
 		}
 		return tabbedPane;
 	}
@@ -1127,56 +1148,79 @@ public class LrgsConfigDialog extends GuiDialog
 					TitledBorder.CENTER, TitledBorder.BELOW_TOP, new Font("Dialog", Font.BOLD, 14), new Color(51, 51, 51)));
 
 			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsListeningPort")), 
-				new GridBagConstraints(0, 0, 1, 1, 0, .5,
+				new GridBagConstraints(0, 0, 1, 1, 0, 0,
 					GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
 					new Insets(6, 0, 6, 2), 0, 0));
 			ddsServerConfigTab.add(getDdsListenPortField(), 
-				new GridBagConstraints(1, 0, 1, 1, .25, 0.,
+				new GridBagConstraints(1, 0, 1, 1, .5, 0.,
 					GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
 					new Insets(6, 0, 6, 0), 0, 0));
-			
+
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDiaolog.ddsKeystoreFile")),
+				new GridBagConstraints(0, 1, 1, 1, 0, 0,
+					GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
+					new Insets(6, 0, 6, 2), 0, 0));
+			ddsServerConfigTab.add(ddsKeystoreFile, 
+				new GridBagConstraints(1, 1, 1, 1, .5, 0.,
+					GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 6, 0), 0, 0));
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.warnReconnectRequired")), 
+					new GridBagConstraints(2, 1, 1, 1, 0.5, 0.0,
+						GridBagConstraints.WEST, GridBagConstraints.NONE,
+						new Insets(6, 0, 6, 10), 0, 0));
+
+			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDiaolog.ddsKeystorePassword")),
+				new GridBagConstraints(0, 2, 1, 1, 0, 0,
+					GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
+					new Insets(6, 0, 6, 2), 0, 0));
+			ddsServerConfigTab.add(ddsKeystorePass, 
+				new GridBagConstraints(1, 2, 1, 1, .5, 0.,
+					GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
+					new Insets(6, 0, 6, 0), 0, 0));
+
+
 			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsBindIPAddress")), 
-				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(6, 0, 6, 2), 0, 0));
 			ddsServerConfigTab.add(getDdsBindAddrField(), 
-				new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0,
+				new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(6, 0, 6, 0), 80, 0));
 			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsMultiNICSystems")), 
-				new GridBagConstraints(2, 1, 1, 1, 0.5, 0.0,
+				new GridBagConstraints(2, 3, 1, 1, 0.5, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(6, 0, 6, 10), 0, 0));
-			
+
 			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsMaxClients")),
-				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+				new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(6, 10, 6, 2), 0, 0));
 			ddsServerConfigTab.add(getDdsMaxClientsField(),
-				new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
+				new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(6, 0, 6, 0), 0, 0));
-	
+
 			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsSandboxDir")), 
-				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+				new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(6, 10, 6, 2), 0, 0));
 			ddsServerConfigTab.add(getDdsParentDirectoryField(), 
-				new GridBagConstraints(1, 3, 2, 1, 1.0, 0.0,
+				new GridBagConstraints(1, 5, 2, 1, 1.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(6, 0, 6, 40), 0, 0));
-			
+
 			ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsUsageLogFile")), 
-				new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0, 
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(6, 10, 6, 2), 0, 0));
 			ddsServerConfigTab.add(getDdsLogFileField(), 
-				new GridBagConstraints(1, 4, 2, 1, 1.0, 0.0,
+				new GridBagConstraints(1, 6, 2, 1, 1.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(6, 0, 6, 40), 0, 0));
 
 			ddsServerConfigTab.add(getDdsRequireAuthCheck(), 
-				new GridBagConstraints(1, 5, 2, 1, 0.0, 0.0,
+				new GridBagConstraints(1, 7, 2, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(6, 0, 6, 0), 0, 0));
 
@@ -1184,23 +1228,23 @@ public class LrgsConfigDialog extends GuiDialog
 			localAdminOnlyCheck.setToolTipText(
 				"Do not allow administration from remotely shared accounts.");
 			ddsServerConfigTab.add(localAdminOnlyCheck,
-				new GridBagConstraints(1, 6, 2, 1, 0.0, 0.0,
+				new GridBagConstraints(1, 8, 2, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(6, 0, 6, 5), 0, 0));
 
 			requireStrongAuthCheck.setText("Require SHA-256 Authentication");
 			ddsServerConfigTab.add(requireStrongAuthCheck,
-				new GridBagConstraints(1, 7, 2, 1, 0.0, 0.0,
+				new GridBagConstraints(1, 9, 2, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(6, 0, 6, 5), 0, 0));
-			
+
 			JLabel lb = new JLabel("Local Sandbox Directory:");
 			ddsServerConfigTab.add(lb,
-				new GridBagConstraints(0, 8, 1, 1, 0.0, 0.5,
+				new GridBagConstraints(0, 10, 1, 1, 0.0, 0.5,
 					GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 					new Insets(6, 10, 6, 2), 0, 0));
 			ddsServerConfigTab.add(localSandboxDir,
-				new GridBagConstraints(1, 8, 1, 1, 1.0, 0.5,
+				new GridBagConstraints(1, 10, 1, 1, 1.0, 0.5,
 					GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
 					new Insets(5, 0, 5, 40), 0, 0));
 		}
@@ -1249,7 +1293,7 @@ public class LrgsConfigDialog extends GuiDialog
 		miscConfigTab.add(miscPanel, BorderLayout.CENTER);
 		return miscConfigTab;
 	}
-	
+
 	private JPanel getNetworkDcpTab()
 	{
 		networkDcpTab = new JPanel(new BorderLayout());
@@ -1257,7 +1301,7 @@ public class LrgsConfigDialog extends GuiDialog
 		networkDcpTab.add(networkDcpCfgPanel, BorderLayout.CENTER);
 		return networkDcpTab;
 	}
-	
+
 	/**
 	 * This method initializes lrgsArchiveConfigPanel	
 	 * 	
@@ -1421,7 +1465,7 @@ public class LrgsConfigDialog extends GuiDialog
 			lrgsArchiveConfigPanel.add(getSharedNetlistDirectoryField(), sharedNetlistDirectoryFieldConstraints);
 			lrgsArchiveConfigPanel.add(emptyLabel1, emptyLabel1Constraints);
 			lrgsArchiveConfigPanel.add(emptyLabel2, emptyLabel2Constraints);
-			
+
 			lrgsArchiveConfigPanel.add(pdtValidationCheck,
 				new GridBagConstraints(1, 6, 1, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
@@ -1437,7 +1481,7 @@ public class LrgsConfigDialog extends GuiDialog
 				new GridBagConstraints(1, 7, 1, 1, 1.0, 0.0, 
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 0, 2, 20), 0, 0));
-			
+
 			lrgsArchiveConfigPanel.add(
 				new JLabel(labels.getString("LrgsConfigDialog.CDTURL")),
 				new GridBagConstraints(0, 8, 1, 1, 0.0, 0.5, 
@@ -1524,18 +1568,18 @@ public class LrgsConfigDialog extends GuiDialog
 				new GridBagConstraints(0, 0, 2, 1, 0.5, 0.0,
 					GridBagConstraints.SOUTH, GridBagConstraints.NONE,
 					new Insets(5, 10, 10, 5), 0, 0));
-			
+
 			dataSourcePrefPanel.add(
 				new JLabel(labels.getString("LrgsConfigDialog.preference1")),
 				new GridBagConstraints(0, 1, 1, 1, 0.5, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(0, 10, 0, 2), 0, 0));
-				
+
 			dataSourcePrefPanel.add(getMergePref1Combo(),
 				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 0, 2, 10), 50, 0));
-		
+
 			dataSourcePrefPanel.add(preference2Label, preference2LabelConstraints);
 			dataSourcePrefPanel.add(preference3Label, preference3LabelConstraints);
 			dataSourcePrefPanel.add(preference4Label, preference4LabelConstraints);
@@ -1726,7 +1770,7 @@ public class LrgsConfigDialog extends GuiDialog
 //		}
 //		return domsatHardwareCombo;
 //	}
-	
+
 //	private void chkDpcEnabled()
 //	{
 //		String cn = (String)domsatHardwareCombo.getSelectedItem();
@@ -1758,7 +1802,7 @@ public class LrgsConfigDialog extends GuiDialog
 			ddsListenPortField = new JTextField();
 		}
 		return ddsListenPortField;
-	}
+	}	
 
 	/**
 	 * This method initializes ddsBindAddrField	
@@ -1851,7 +1895,7 @@ public class LrgsConfigDialog extends GuiDialog
 				new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(4, 0, 4, 10), 0, 0));
-			
+
 			recoverPanel.add(getEnableDDSReceiveCheck(), 
 				new GridBagConstraints(0, 3, 2, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
@@ -1935,7 +1979,7 @@ public class LrgsConfigDialog extends GuiDialog
 			addButtonConstraints.insets = new Insets(20, 5, 2, 5);
 			addButtonConstraints.weighty = 0.0D;
 			addButtonConstraints.gridy = 0;
-			
+
 			GridBagConstraints testButtonConstraints = new GridBagConstraints();
 			testButtonConstraints.gridx = 0;
 			testButtonConstraints.gridwidth = 1;
@@ -1982,15 +2026,15 @@ public class LrgsConfigDialog extends GuiDialog
 			return;
 		}
 		DdsRecvConnectCfg cfg = (DdsRecvConnectCfg)ddsTableModel.getRowObject(idx);
-		
+
 		LddsClient myClient = new LddsClient(cfg.host,cfg.port);
-		
+
 		//TODO add option for password sending
 		LrgsConnectionTest myTester = new LrgsConnectionTest(this, myClient, cfg.username,null);
 		myTester.startConnect();
-		
+
 	}
-	
+
 	/**
 	 * This method initializes ddsConAddButton	
 	 * 	
@@ -2238,14 +2282,14 @@ public class LrgsConfigDialog extends GuiDialog
 //			networkListsAddButton.setPreferredSize(new Dimension(110, 26));
 			networkListsAddButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
-					
+
 					//Now metwork list can be associated with thr groups, primary, secondary or both
 					JPanel panel = new JPanel(new GridLayout(4,1));
 					panel.add(new JLabel(labels.getString("LrgsConfigDialog.enterNLToAdd")));
 					JTextField netlist = new JTextField();
 					panel.add(netlist);
 					Object[] items = {"Primary", "Secondary","Both"};
-				
+
 					JComboBox jcb = new JComboBox(items);
 
 					jcb.setEditable(false);
@@ -2326,7 +2370,7 @@ public class LrgsConfigDialog extends GuiDialog
 		}
 		return drgsConfigPanel;
 	}
-	
+
 	/**
 	 * This method initializes drgsButtonPanel	
 	 * 	
@@ -2353,7 +2397,7 @@ public class LrgsConfigDialog extends GuiDialog
 				new GridBagConstraints(0, 3, 1, 1, 0.0, 1.0,
 					GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 4, 2, 4), 0, 0);
-			
+
 
 			drgsButtonPanel = new JPanel();
 			drgsButtonPanel.setLayout(new GridBagLayout());
@@ -2378,7 +2422,7 @@ public class LrgsConfigDialog extends GuiDialog
 		}
 		return drgsTestButton;
 	}
-	
+
 	private void drgsTestButtonPressed()
 	{
 		int idx = drgsConTable.getSelectedRow();
@@ -2389,14 +2433,14 @@ public class LrgsConfigDialog extends GuiDialog
 			return;
 		}
 		DrgsConnectCfg cfg = (DrgsConnectCfg)drgsTableModel.getRowObject(idx);
-		
+
 		BasicClient myClient = new BasicClient(cfg.host,cfg.msgPort);
-		
+
 		//TODO add option for password sending
 		LrgsConnectionTest myTester = new LrgsConnectionTest(this, myClient);
 		myTester.startConnect();
 	}
-	
+
 	/**
 	 * This method initializes drgsAddButton	
 	 * 	
@@ -2538,18 +2582,18 @@ public class LrgsConfigDialog extends GuiDialog
 		return networkList;
 	}
 
-	
+
 	/**
 	 * This method initializes networkList	
 	 * 	
 	 * @return javax.swing.JList	
 	 */
 	private JTable getNetworkListTable() {
-	
-		
-		
-		
-		
+
+
+
+
+
 		if (networkListTable == null) {
 			networkListTable = new JTable(netlistTableModel);
 			TableColumn tblCol = new TableColumn();
@@ -2561,14 +2605,14 @@ public class LrgsConfigDialog extends GuiDialog
 			header.setBackground(Color.white);
 			header.setFocusable(false);
 			networkListTable.setTableHeader(header);
-			
+
 			networkListTable.setVisible(true);
-			
+
 		}
 		return networkListTable;
 	}
 
-	
+
 	/**
 	 * This method initializes drgsTablePanel	
 	 * 	
@@ -2579,7 +2623,7 @@ public class LrgsConfigDialog extends GuiDialog
 		if (drgsTablePanel == null) 
 		{
 			drgsTablePanel = new JPanel(new GridBagLayout());
-			
+
 			drgsTablePanel.add(new JLabel(labels.getString("minHourly")),
 				new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -2593,13 +2637,13 @@ public class LrgsConfigDialog extends GuiDialog
 				new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0, 
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(4, 10, 2, 10), 0, 0));
-				
+
 			drgsTablePanel.add(getConnectionsScrollPane(), 
 				new GridBagConstraints(0, 2, 2, 1, 1.0, 1.0, 
 					GridBagConstraints.WEST, GridBagConstraints.BOTH,
 					new Insets(5, 5, 5, 5), 0, 0));  
 
-				
+
 			drgsTablePanel.add(getDrgsButtonPanel(), 
 				new GridBagConstraints(2, 2, 1, 1, 0.0, 1.0, 
 					GridBagConstraints.NORTH, GridBagConstraints.NONE,
@@ -2622,8 +2666,8 @@ public class LrgsConfigDialog extends GuiDialog
 		return enableDRGSCheck;
 	}
 
-	
-	
+
+
 	/**
 	 * This method initializes drgsConTable	
 	 * 	
@@ -2634,14 +2678,14 @@ public class LrgsConfigDialog extends GuiDialog
 			drgsTableModel = new DrgsSortingListTableModel();
 			drgsConTable = new SortingListTable(drgsTableModel,drgsTableModel.columnWidths);
 
-			
+
 		}
 		return drgsConTable;
 	}
 
-	
-	
-	
+
+
+
 	/**
 	 * This method initializes ddsConTable	
 	 * 	
@@ -2651,7 +2695,7 @@ public class LrgsConfigDialog extends GuiDialog
 		if (ddsConTable == null) {
 			ddsTableModel = new DdsSortingListTableModel();
 			ddsConTable = new SortingListTable(ddsTableModel,ddsTableModel.columnWidths);
-			
+
 		}
 		return ddsConTable;
 	}
@@ -2790,7 +2834,7 @@ public class LrgsConfigDialog extends GuiDialog
 			SqlDatabasePanel.add(sqlKeyLabel, sqlKeyLabelConstraints);
 			SqlDatabasePanel.add(getSqlDriverField(), sqlDriverFieldConstraints);
 			SqlDatabasePanel.add(getSqlKeyField(), sqlKeyFieldConstraints);
-			
+
 			SqlDatabasePanel.add(goesXmitCheck,
 				new GridBagConstraints(0, 6, 2, 1, 0.0, 0.5,
 					GridBagConstraints.CENTER, GridBagConstraints.NORTH,
@@ -2942,7 +2986,7 @@ public class LrgsConfigDialog extends GuiDialog
 		if (ddsReceiveScrollPane == null) {
 			ddsReceiveScrollPane = new JScrollPane(getDdsReceiveTable());
 			//ddsReceiveScrollPane.setViewportView(getDdsReceiveTable());
-			
+
 		}
 		return ddsReceiveScrollPane;
 	}
@@ -2999,7 +3043,7 @@ public class LrgsConfigDialog extends GuiDialog
 			}
 			if (copyBackLrgsConfig() || force || extraChanges)
 				ddsClientIf.applyLrgsConfig(lrgsConfig);
-			
+
 			if (copyBackDdsSettings() || force)
 				ddsClientIf.applyDdsRecvSettings(ddsSettings);
 
@@ -3048,7 +3092,7 @@ class DdsSortingListTableModel
 		columnNames[6] = labels.getString("LrgsConfigDialog.seqColumn");
 		columnNames[7] = "ARMs?";
 		columnNames[8] = labels.getString("LrgsConfigDialog.group");
-		
+
 		cons = new ArrayList<DdsRecvConnectCfg>();
 	}
 
@@ -3141,19 +3185,19 @@ class DdsSortingListTableModel
 	{
 		// NO SORTING, always sorted by connection number.
 	}
-	
+
 	public Object getRowObject(int r)
 	{
 		if (r >=0 && r < cons.size())
 			return cons.get(r);
 		return null;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return columnNames[col];
 	}
-	
+
 
 	public int getColumnCount() 
 	{
@@ -3166,12 +3210,12 @@ class DrgsSortingListTableModel
 {
 	private static ResourceBundle labels = 
 		RtStat.getLabels();
-	
+
 	String columnNames[] = null;
 	int columnWidths[] = { 10, 20, 30, 10, 10, 20};
 	ArrayList<DrgsConnectCfg> cons;
 	boolean modified = false;
-	
+
 	public DrgsSortingListTableModel()
 	{
 		columnNames = new String[6];
@@ -3229,19 +3273,19 @@ class DrgsSortingListTableModel
 	{
 		// No Sorting!
 	}
-	
+
 	public Object getRowObject(int r)
 	{
 		if (r >=0 && r < cons.size())
 			return cons.get(r);
 		return null;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return columnNames[col];
 	}
-	
+
 	public Object getValueAt(int r, int c)
 	{
 		DrgsConnectCfg cfg = (DrgsConnectCfg)getRowObject(r);

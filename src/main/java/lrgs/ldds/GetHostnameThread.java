@@ -34,7 +34,10 @@ public class GetHostnameThread
 	public static GetHostnameThread instance()
 	{
 		if (_instance == null)
+		{
 			_instance = new GetHostnameThread();
+			_instance.setDaemon(true); // Allow the JVM to just up and die even if this is still running.
+		}
 		return _instance;
 	}
 	

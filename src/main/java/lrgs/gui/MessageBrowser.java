@@ -35,6 +35,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.*;
 
+import javax.net.SocketFactory;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.border.BevelBorder;
@@ -83,6 +84,7 @@ public class MessageBrowser extends MenuFrame
 
 	private JComboBox hostField;
 	private JTextField portField = new JTextField(15), userField = new JTextField(15);
+	private JCheckBox tlsField = new JCheckBox();
 	private JPasswordField passwordField = new JPasswordField(15);
 	private JButton connectButton;
 	private JTextField scfileField;
@@ -208,7 +210,7 @@ public class MessageBrowser extends MenuFrame
 			{
 				public void actionPerformed(ActionEvent ae)
 				{
-					RtStatFrame.setFieldsFromHostSelection(hostField, connectionList, portField, 
+					RtStatFrame.setFieldsFromHostSelection(hostField, connectionList, portField, tlsField,
 						userField, passwordField);
 				}
 			});
@@ -226,18 +228,26 @@ public class MessageBrowser extends MenuFrame
 			new GridBagConstraints(1, 1, 1, 1, 0.8, 1.0,
 				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0)); 
-		portField.setText(GuiApp.getProperty("MessageBrowser.Port"));
 
+		northwest.add(new JLabel(labels.getString("MessageBrowser.useTLS")),
+			new GridBagConstraints(0, 2, 1, 1, 0.2, 1.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(2, 5, 2, 5), 0, 0)); 
+		northwest.add(tlsField,
+			new GridBagConstraints(1, 2, 1, 1, 0.8, 1.0,
+				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 5, 2, 5), 0, 0));		
+		
 		Dimension d = portField.getPreferredSize();
 		hostField.setPreferredSize(d);
 
 		northwest.add(new JLabel(
 				labels.getString("MessageBrowser.userName")),
-			new GridBagConstraints(0, 2, 1, 1, 0.2, 1.0,
+			new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 		northwest.add(userField,
-			new GridBagConstraints(1, 2, 1, 1, 0.8, 1.0,
+			new GridBagConstraints(1, 3, 1, 1, 0.8, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 		if(this.userName.length()>0)
@@ -247,12 +257,12 @@ public class MessageBrowser extends MenuFrame
 
 		northwest.add(new JLabel(
 				labels.getString("MessageBrowser.password")),
-			new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
+			new GridBagConstraints(0, 4, 1, 1, 0.2, 1.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 		//northwest.add(passwordField = new JTextField(15),
 		northwest.add(passwordField,
-			new GridBagConstraints(1, 3, 1, 1, 0.8, 1.0,
+			new GridBagConstraints(1, 4, 1, 1, 0.8, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 
@@ -266,7 +276,7 @@ public class MessageBrowser extends MenuFrame
 				}
 			};
 		northwest.add(connectButton, 
-			new GridBagConstraints(0, 4, 2, 1, 0.0, 0.0,
+			new GridBagConstraints(0, 5, 2, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0)); 
 
@@ -849,10 +859,14 @@ public class MessageBrowser extends MenuFrame
 		String errmsg = null;
 		hostName = (String)hostField.getSelectedItem();
 		String pw = new String(passwordField.getPassword());
-
+		SocketFactory socketFactory = SocketFactory.getDefault();
+		/*
+		 * 
+		 * Now I'd be duplicating the TLS settings
+		 */
 		try
 		{
-			client = new LddsClient(hostName, port);
+			client = new LddsClient(hostName, port,socketFactory);
 			client.connect();
 
 			//String pw = passwordField.getText().trim();
