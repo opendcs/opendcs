@@ -87,8 +87,11 @@
 package ilex.net;
 
 import ilex.net.BasicSvrThread;
+import ilex.util.Logger;
+
 import java.net.*;
 import java.util.LinkedList;
+import java.util.Objects;
 
 import javax.net.ServerSocketFactory;
 
@@ -122,7 +125,7 @@ public abstract class BasicServer
 	private InetAddress bindaddr;
 
 	/** The server socket factory so SSL can be injected */
-	private ServerSocketFactory socketFactory;
+	protected ServerSocketFactory socketFactory;
 
 	/** Should be set by concrete subclass calling setModuleName() */
 	String module = "BasicServer";
@@ -167,10 +170,11 @@ public abstract class BasicServer
 	public BasicServer( int port, InetAddress bindaddr, ServerSocketFactory socketFactory)
 		throws IOException
 	{
+		Objects.requireNonNull(socketFactory, "Socket Factory MUST non-null with this constructor.");
 		if (port <= 0)
 			throw new IOException(
 				"BasicServer: port number must be a positive integer.");
-
+		this.socketFactory = socketFactory;
 		portNum = port;
 		this.bindaddr = bindaddr;
 		makeServerSocket();
@@ -209,6 +213,7 @@ public abstract class BasicServer
 			{
 				listeningThread = Thread.currentThread();
 				Socket client = listeningSocket.accept();
+				Logger.instance().info("Socket connection of type: " + client.getClass().getName());
 				listeningThread = null;
 				serviceNewClient(client);
 			}
