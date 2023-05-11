@@ -74,150 +74,149 @@ This subclass of LddsThread uses the Java-Only Archive.
 */
 public class JLddsThread extends LddsThread
 {
-	/** The one and only archive object. */
-	private MsgArchive msgArchive;
+    /** The one and only archive object. */
+    private MsgArchive msgArchive;
 
-	/** The global name mapper. */
-	private DcpNameMapper globalMapper;
+    /** The global name mapper. */
+    private DcpNameMapper globalMapper;
 
-	/** The AttachedProcess structure for tracking status info. */
-	private AttachedProcess attachedProcess;
+    /** The AttachedProcess structure for tracking status info. */
+    private AttachedProcess attachedProcess;
 
-	/**
-	  Constructor.
-	  @param parent the server object
-	  @param socket the socket to the client
-	  @param ID unique integer ID for this client.
-	  @param msgArchive the archive from which to serve data.
-	*/
-	public JLddsThread(BasicServer parent, Socket socket, int id, 
-		MsgArchive msgArchive, DcpNameMapper globalMapper, AttachedProcess ap)
-		throws IOException
-	{
-		super(parent, socket, id);
-		this.msgArchive = msgArchive;
-		this.globalMapper = globalMapper;
-		this.attachedProcess = ap;
-		attachedProcess.pid = id;
-		attachedProcess.type = "DDS-CLI";
-		attachedProcess.user = "(unknown)";
-		attachedProcess.status = "user?";
-	}
+    /**
+      Constructor.
+      @param parent the server object
+      @param socket the socket to the client
+      @param ID unique integer ID for this client.
+      @param msgArchive the archive from which to serve data.
+    */
+    public JLddsThread(BasicServer parent, Socket socket, int id, 
+        MsgArchive msgArchive, DcpNameMapper globalMapper, AttachedProcess ap)
+        throws IOException
+    {
+        super(parent, socket, id);
+        this.msgArchive = msgArchive;
+        this.globalMapper = globalMapper;
+        this.attachedProcess = ap;
+        attachedProcess.pid = id;
+        attachedProcess.type = "DDS-CLI";
+        attachedProcess.user = "(unknown)";
+        attachedProcess.status = "user?";
+    }
 
-	/**
-	  Template method to create the name mapper.
-	  This version is for the Java-Only DDS server. It returns a name
-	  mapper that first looks for a mapping in network lists in the user's
-	  sandbox directory, and then in the global directory.
-	*/
-	protected DcpNameMapper makeDcpNameMapper()
-	{
-		// This can happen if user disconnects in the middle of Hello sequence.
-		if (user == null)
-			return null;
+    /**
+      Template method to create the name mapper.
+      This version is for the Java-Only DDS server. It returns a name
+      mapper that first looks for a mapping in network lists in the user's
+      sandbox directory, and then in the global directory.
+    */
+    protected DcpNameMapper makeDcpNameMapper()
+    {
+        // This can happen if user disconnects in the middle of Hello sequence.
+        if (user == null)
+            return null;
 
-		return new NetlistDcpNameMapper(user.getDirectory(), globalMapper);
-	}
+        return new NetlistDcpNameMapper(user.getDirectory(), globalMapper);
+    }
 
-	/**
-	  Template method to create the DcpMsgSource object.
-	  This version creates a MessageArchiveRetriever, which acts as both
-	  the source and the retriever.
-	*/
-	protected DcpMsgSource makeDcpMsgSource()
-		throws ArchiveUnavailableException
-	{
-		LinkedList clients = parent.getAllSvrThreads();
-		String myhostname = getHostName();
-if (user == null) System.err.println("JLddsThread: makeDcpMsgSrc, user is null!");
-		String myusername = user.getName();
-		int nsame = 0;
-		Date oldestDate = null;
-		JLddsThread oldestPeer = null;
-		for(Object ob : clients)
-		{
-			JLddsThread peer = (JLddsThread)ob;
-			if (peer == this)
-				continue;
-			String peerhostname = peer.getHostName();
-			String peerusername = peer.user != null ? peer.user.getName():null;
-			Date peerLastActivity = peer.getLastActivity();
-			if (peerLastActivity == null)
-				peerLastActivity = new Date(0L);
-			if (myhostname != null
-			 && peerhostname != null
-			 && myhostname.equalsIgnoreCase(peerhostname)
-			 && myusername != null
-			 && peerusername != null
-			 && myusername.equals(peerusername))
-			{
-				nsame++;
-				if (oldestDate == null
-				 || peerLastActivity.compareTo(oldestDate) < 0)
-				{
-					oldestDate = peerLastActivity;
-					oldestPeer = peer;
-				}
-			}
-		}
-		if (nsame > 50)
-		{
-			Logger.instance().warning("More than 50 connections with same "
-				+ "user/host = " + myusername + "/" + myhostname
-				+ " -- Hanging up oldest.");
-			oldestPeer.disconnect();
-		}
-		MessageArchiveRetriever ret = 
-			new MessageArchiveRetriever(msgArchive, attachedProcess);
-		ret.setForceAscending(user.getDisableBackLinkSearch());
-		ret.setGoodOnly(user.isGoodOnly());
-		return ret;
-	}
+    /**
+      Template method to create the DcpMsgSource object.
+      This version creates a MessageArchiveRetriever, which acts as both
+      the source and the retriever.
+    */
+    protected DcpMsgSource makeDcpMsgSource()
+        throws ArchiveUnavailableException
+    {
+        LinkedList clients = parent.getAllSvrThreads();
+        String myhostname = getHostName();
+        if (user == null)
+        {
+            System.err.println("JLddsThread: makeDcpMsgSrc, user is null!");
+        }
+        String myusername = user.getName();
+        int nsame = 0;
+        Date oldestDate = null;
+        JLddsThread oldestPeer = null;
+        for(Object ob : clients)
+        {
+            JLddsThread peer = (JLddsThread)ob;
+            if (peer == this)
+                continue;
+            String peerhostname = peer.getHostName();
+            String peerusername = peer.user != null ? peer.user.getName():null;
+            Date peerLastActivity = peer.getLastActivity();
+            if (peerLastActivity == null)
+            {
+                peerLastActivity = new Date(0L);
+            }
+            if (myhostname != null
+             && peerhostname != null
+             && myhostname.equalsIgnoreCase(peerhostname)
+             && myusername != null
+             && peerusername != null
+             && myusername.equals(peerusername))
+            {
+                nsame++;
+                if (oldestDate == null
+                 || peerLastActivity.compareTo(oldestDate) < 0)
+                {
+                    oldestDate = peerLastActivity;
+                    oldestPeer = peer;
+                }
+            }
+        }
+        if (nsame > 50)
+        {
+            Logger.instance().warning("More than 50 connections with same "
+                + "user/host = " + myusername + "/" + myhostname
+                + " -- Hanging up oldest.");
+            oldestPeer.disconnect();
+        }
+        MessageArchiveRetriever ret = 
+            new MessageArchiveRetriever(msgArchive, attachedProcess);
+        ret.setForceAscending(user.getDisableBackLinkSearch());
+        ret.setGoodOnly(user.isGoodOnly());
+        return ret;
+    }
 
-	/**
-	  Template method to create the DcpMsgRetriever object.
-	  The source is created first. This method just returns the source
-	  object, which also acts as the retriever.
-	*/
-	protected DcpMsgRetriever makeDcpMsgRetriever()
-	{
-		return (DcpMsgRetriever)msgacc;
-	}
+    /**
+      Template method to create the DcpMsgRetriever object.
+      The source is created first. This method just returns the source
+      object, which also acts as the retriever.
+    */
+    protected DcpMsgRetriever makeDcpMsgRetriever()
+    {
+        return (DcpMsgRetriever)msgacc;
+    }
 
-	/**
-	 * @return true if authentication is required by this server.
-	 */
-	public boolean isAuthRequired()
-	{
-		return LrgsConfig.instance().ddsRequireAuth;
-	}
+    /**
+     * @return true if authentication is required by this server.
+     */
+    public boolean isAuthRequired()
+    {
+        return LrgsConfig.instance().ddsRequireAuth;
+    }
 
-	/**
-	 * @return true if same user is allowed multiple connections.
-	 */
-	public boolean isSameUserMultAttachOK()
-	{
-		return true;
-	}
+    /**
+     * @return true if same user is allowed multiple connections.
+     */
+    public boolean isSameUserMultAttachOK()
+    {
+        return true;
+    }    
 
-	/**
-	 * @return the root directory for user sandbox directories.
-	 */
-//	public String getDdsUserRootDir()
-//	{
-//		return LrgsConfig.instance().ddsUserRootDir;
-//	}
-
-	public void disconnect()
-	{
-		attachedProcess.pid = -1;
-		super.disconnect();
-	}
-	
-	public void setHostName(String hostname)
-	{
-		super.setHostName(hostname);
-		if (attachedProcess != null)
-			attachedProcess.setName(hostname);
-	}
+    public void disconnect()
+    {
+        attachedProcess.pid = -1;
+        super.disconnect();
+    }
+    
+    public void setHostName(String hostname)
+    {
+        super.setHostName(hostname);
+        if (attachedProcess != null)
+        {
+            attachedProcess.setName(hostname);
+        }
+    }
 }

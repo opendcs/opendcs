@@ -6,7 +6,7 @@
 *  source code for your own purposes, except that no part of this source
 *  code may be claimed to be proprietary.
 *
-*  Except for specific contractual terms between ILEX and the federal 
+*  Except for specific contractual terms between ILEX and the federal
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *
@@ -22,13 +22,13 @@ package lrgs.lrgsmain;
 
 public class LrgsInputException extends Exception
 {
-	public LrgsInputException(String msg)
-	{
-		super(msg);
-	}
+    public LrgsInputException(String msg)
+    {
+        super(msg);
+    }
 
-	public LrgsInputException(String msg, Throwable cause)
-	{
-		super(msg,cause);
-	}
+    public LrgsInputException(String msg, Throwable cause)
+    {
+        super(msg,cause);
+    }
 }

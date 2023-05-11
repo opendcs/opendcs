@@ -3,10 +3,7 @@
 */
 package lrgs.ldds;
 
-import java.io.OutputStream;
 import java.io.IOException;
-
-import ilex.util.ArrayUtil;
 
 import lrgs.common.*;
 
@@ -34,4 +31,3 @@ public abstract class LddsCommand
 	 */
 	public abstract char getCommandCode();
 }
-
