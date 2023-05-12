@@ -101,11 +101,6 @@ public class NumberParser
 	/** @return the data type code */
 	public char getDataType() { return dataType; }
 
-	/** 
-	  Do not call this method.
-	*/
-	public void setMask(int m) { pbinaryMask = m; }
-
 	/**
 	  Parses an integer value from the passed field data.
 	  @param field the raw data extracted from the message.
@@ -1070,4 +1065,3 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 		System.out.println("BIN_UNSIGNED_LSB Parsed '" + args[0] + "' to: " + v);
 	}
 }
-

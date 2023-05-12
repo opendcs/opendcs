@@ -7,31 +7,14 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
-import java.util.Enumeration;
-import java.util.Properties;
-import org.w3c.dom.Document;
-
-import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
-import ilex.util.AuthException;
-import ilex.util.ByteUtil;
-import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
-import ilex.util.PropertiesUtil;
 
 
 /**

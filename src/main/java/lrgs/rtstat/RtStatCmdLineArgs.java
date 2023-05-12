@@ -12,7 +12,6 @@ import decodes.util.DecodesSettings;
 
 import ilex.cmdline.*;
 import ilex.util.Logger;
-import ilex.util.FileLogger;
 import ilex.util.EnvExpander;
 
 public class RtStatCmdLineArgs

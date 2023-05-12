@@ -24,26 +24,25 @@ package lrgs.ldds;
 
 /**
   ProtocolError is used by the various LRGS Servers and the corresponding
-  client interfaces.  
+  client interfaces.
   It either means that the message received could not be parsed (bad
-  format) or that it was not the expected message type. 
+  format) or that it was not the expected message type.
 */
 public class ProtocolError extends Exception
 {
-	/**
-	  Constructor.
-	  @param msg the message
-	*/
-	public ProtocolError(String msg)
-	{
-		super(msg);
-	}
+    /**
+      Constructor.
+      @param msg the message
+    */
+    public ProtocolError(String msg)
+    {
+        super(msg);
+    }
 
-	/** @return string representation of this exception. */
-	public String toString()
-	{
-		return "Protocol Error: " + super.toString();
-	}
+    /** @return string representation of this exception. */
+    public String toString()
+    {
+        return "Protocol Error: " + super.toString();
+    }
 
 }
-

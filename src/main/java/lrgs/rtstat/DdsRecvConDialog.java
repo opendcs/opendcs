@@ -235,8 +235,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JTextField	
 	 */
-	private JTextField getDdsDialogNumberField() {
-		if (ddsDialogNumberField == null) {
+	private JTextField getDdsDialogNumberField()
+	{
+		if (ddsDialogNumberField == null)
+		{
 			ddsDialogNumberField = new JTextField();
 		}
 		return ddsDialogNumberField;
@@ -247,8 +249,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JCheckBox	
 	 */
-	private JCheckBox getDdsDialogEnabledCheck() {
-		if (ddsDialogEnabledCheck == null) {
+	private JCheckBox getDdsDialogEnabledCheck()
+	{
+		if (ddsDialogEnabledCheck == null)
+		{
 			ddsDialogEnabledCheck = new JCheckBox();
 			ddsDialogEnabledCheck.setText(labels.getString(
 					"DdsRecvConDialog.enabled"));
@@ -261,8 +265,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JTextField	
 	 */
-	private JTextField getDdsDialogHostField() {
-		if (ddsDialogHostField == null) {
+	private JTextField getDdsDialogHostField()
+	{
+		if (ddsDialogHostField == null)
+		{
 			ddsDialogHostField = new JTextField();
 		}
 		return ddsDialogHostField;
@@ -273,8 +279,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JTextField	
 	 */
-	private JTextField getDdsDialogNameField() {
-		if (ddsDialogNameField == null) {
+	private JTextField getDdsDialogNameField()
+	{
+		if (ddsDialogNameField == null)
+		{
 			ddsDialogNameField = new JTextField();
 		}
 		return ddsDialogNameField;
@@ -285,8 +293,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JTextField	
 	 */
-	private JTextField getDdsDialogPortField() {
-		if (ddsDialogPortField == null) {
+	private JTextField getDdsDialogPortField()
+	{
+		if (ddsDialogPortField == null)
+		{
 			ddsDialogPortField = new JTextField();
 		}
 		return ddsDialogPortField;
@@ -297,8 +307,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JTextField	
 	 */
-	private JTextField getDdsDialogUserField() {
-		if (ddsDialogUserField == null) {
+	private JTextField getDdsDialogUserField()
+	{
+		if (ddsDialogUserField == null)
+		{
 			ddsDialogUserField = new JTextField();
 		}
 		return ddsDialogUserField;
@@ -309,8 +321,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JCheckBox	
 	 */
-	private JCheckBox getDdsDialogPasswordCheck() {
-		if (ddsDialogPasswordCheck == null) {
+	private JCheckBox getDdsDialogPasswordCheck()
+	{
+		if (ddsDialogPasswordCheck == null)
+		{
 			ddsDialogPasswordCheck = new JCheckBox();
 			ddsDialogPasswordCheck.setText(
 				labels.getString("DdsRecvConDialog.usePassword"));
@@ -324,12 +338,13 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JComboBox	
 	 */
-	private JComboBox getDdsGroupCombo() {
-		if (ddsGroupCombo == null) {
+	private JComboBox getDdsGroupCombo()
+	{
+		if (ddsGroupCombo == null)
+		{
 			ddsGroupCombo = new JComboBox();
 			ddsGroupCombo.addItem("Primary");
-			ddsGroupCombo.addItem("Secondary");
-			
+			ddsGroupCombo.addItem("Secondary");	
 		}
 		return ddsGroupCombo;
 	}
@@ -338,8 +353,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JCheckBox	
 	 */
-	private JCheckBox getDdsDialogDomsatCheck() {
-		if (ddsDialogDomsatCheck == null) {
+	private JCheckBox getDdsDialogDomsatCheck()
+	{
+		if (ddsDialogDomsatCheck == null)
+		{
 			ddsDialogDomsatCheck = new JCheckBox();
 			ddsDialogDomsatCheck.setText(
 					labels.getString("DdsRecvConDialog.seqNumbers"));
@@ -375,8 +392,10 @@ public class DdsRecvConDialog
 	 * 	
 	 * @return javax.swing.JButton	
 	 */
-	private JButton getDdsDialogCancelButton() {
-		if (ddsDialogCancelButton == null) {
+	private JButton getDdsDialogCancelButton()
+	{
+		if (ddsDialogCancelButton == null)
+		{
 			ddsDialogCancelButton = new JButton();
 			ddsDialogCancelButton.setText(genericLabels.getString("cancel"));
 			ddsDialogCancelButton.setPreferredSize(new Dimension(82, 26));
@@ -400,7 +419,9 @@ public class DdsRecvConDialog
 	{
 		wasOk = copyBackToObject();
 		if (wasOk)
+		{
 			setVisible(false);
+		}
 	}
 
 	private void cancelButtonPressed()
