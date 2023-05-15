@@ -79,13 +79,14 @@ public class PlatformListPanel extends JPanel
 	 * 
 	 * @param parent the DbEditorFrame
 	 */
-	void setParent(DbEditorFrame parent) {
+	void setParent(DbEditorFrame parent) 
+	{
 		this.parent = parent;
 	}
 
 	/** Initializes GUI components. */
-	private void jbInit() throws Exception {
-		// this.setLayout(borderLayout1);
+	private void jbInit() throws Exception 
+	{
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		jLabelTitle.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelTitle.setText(dbeditLabels.getString("PlatformListPanel.title"));
@@ -142,7 +143,6 @@ public class PlatformListPanel extends JPanel
 		platformSelectPanel.getPlatformListTable().setRowSorter(sorter);
 
 		this.add(filterComboBoxesPanel);
-		// this.add(jLabel1, BorderLayout.NORTH);
 		this.add(platformSelectPanel, BorderLayout.CENTER); // The JTable
 		this.add(listOpsPanel);
 	}
@@ -150,16 +150,21 @@ public class PlatformListPanel extends JPanel
 	/**
 	 * Load the combo boxes with the filter lists
 	 */
-	private void loadFilterLists() {
+	private void loadFilterLists() 
+	{
 		vectplatf = Database.getDb().platformList.getPlatformVector();
-		if (vectplatf.size() > 0) {
+		if (vectplatf.size() > 0) 
+		{
 			Vector<String> platformNames = new Vector<String>(vectplatf.size() + 1);
 			platformNames.add(0, "");
-			for (int x = 1; x < vectplatf.size(); x++) {
+			for (int x = 1; x < vectplatf.size(); x++) 
+			{
 				platformNames.add(x, vectplatf.get(x).getDisplayName());
 			}
-			for (int x = 0; x < platformNames.size(); x++) {
-				if (null == platformNames.get(x)) {
+			for (int x = 0; x < platformNames.size(); x++) 
+			{
+				if (null == platformNames.get(x)) 
+				{
 					platformNames.remove(x);
 				}
 			}
@@ -171,12 +176,15 @@ public class PlatformListPanel extends JPanel
 			// Agency filter list
 			Vector<String> agencies = new Vector<String>(vectplatf.size() + 1);
 			agencies.add(0, "");
-			for (int y = 1; y < vectplatf.size(); y++) {
+			for (int y = 1; y < vectplatf.size(); y++) 
+			{
 				agencies.add(y, vectplatf.get(y).getAgency());
 			}
 			agencies = agencies.stream().distinct().collect(Collectors.toCollection(Vector::new));
-			for (int x = 0; x < agencies.size(); x++) {
-				if (null == agencies.get(x)) {
+			for (int x = 0; x < agencies.size(); x++) 
+			{
+				if (null == agencies.get(x)) 
+				{
 					agencies.remove(x);
 				}
 			}
@@ -189,12 +197,15 @@ public class PlatformListPanel extends JPanel
 			// Transport Id filter list
 			Vector<String> transportIds = new Vector<String>(vectplatf.size() + 1);
 			transportIds.add(0, "");
-			for (int x = 1; x < vectplatf.size(); x++) {
+			for (int x = 1; x < vectplatf.size(); x++) 
+			{
 				transportIds.add(x, vectplatf.get(x).getPreferredTransportId());
 			}
 			transportIds = transportIds.stream().distinct().collect(Collectors.toCollection(Vector::new));
-			for (int x = 0; x < transportIds.size(); x++) {
-				if (null == transportIds.get(x)) {
+			for (int x = 0; x < transportIds.size(); x++) 
+			{
+				if (null == transportIds.get(x)) 
+				{
 					transportIds.remove(x);
 				}
 			}
@@ -206,12 +217,15 @@ public class PlatformListPanel extends JPanel
 			// Config filter list
 			Vector<String> configNames = new Vector<String>(vectplatf.size() + 1);
 			configNames.add(0, "");
-			for (int x = 1; x < vectplatf.size(); x++) {
+			for (int x = 1; x < vectplatf.size(); x++) 
+			{
 				configNames.add(x, vectplatf.get(x).getConfigName());
 			}
 			configNames = configNames.stream().distinct().collect(Collectors.toCollection(Vector::new));
-			for (int x = 0; x < configNames.size(); x++) {
-				if (null == configNames.get(x)) {
+			for (int x = 0; x < configNames.size(); x++) 
+			{
+				if (null == configNames.get(x)) 
+				{
 					configNames.remove(x);
 				}
 			}
@@ -228,43 +242,41 @@ public class PlatformListPanel extends JPanel
 	private void updateFilters() {
 		filters.clear();
 
-		if (platformCbx.getSelectedIndex() > 0) {
-			if (platformCbx.getSelectedItem().toString().length() > 0) {
-				RowFilter<TableModel, Integer> filterName = RowFilter
-						.regexFilter(platformCbx.getSelectedItem().toString(), 0);
-				filters.add(filterName);
-			}
+		if ((platformCbx.getSelectedIndex() > 0) && (platformCbx.getSelectedItem().toString().length() > 0))
+		{
+			RowFilter<TableModel, Integer> filterName = RowFilter
+				.regexFilter(platformCbx.getSelectedItem().toString(), 0);
+			filters.add(filterName);			
 		}
 
-		if (agencyCbx.getSelectedIndex() > 0) {
-			if (agencyCbx.getSelectedItem().toString().length() > 0) {
-				RowFilter<TableModel, Integer> filterAgency = RowFilter
-						.regexFilter(agencyCbx.getSelectedItem().toString(), 1);
-				filters.add(filterAgency);
-			}
+		if ((agencyCbx.getSelectedIndex() > 0) && (agencyCbx.getSelectedItem().toString().length() > 0))
+		{
+			RowFilter<TableModel, Integer> filterAgency = RowFilter
+				.regexFilter(agencyCbx.getSelectedItem().toString(), 1);
+			filters.add(filterAgency);			
 		}
 
-		if (transportCbx.getSelectedIndex() > 0) {
-			if (transportCbx.getSelectedItem().toString().length() > 0) {
-				RowFilter<TableModel, Integer> filterTransport = RowFilter
-						.regexFilter(transportCbx.getSelectedItem().toString(), 2);
-				filters.add(filterTransport);
-			}
+		if ((transportCbx.getSelectedIndex() > 0) && (transportCbx.getSelectedItem().toString().length() > 0)) 
+		{
+			RowFilter<TableModel, Integer> filterTransport = RowFilter
+				.regexFilter(transportCbx.getSelectedItem().toString(), 2);
+			filters.add(filterTransport);			
 		}
 
-		if (configCbx.getSelectedIndex() > 0) {
-			if (configCbx.getSelectedItem().toString().length() > 0) {
-				RowFilter<TableModel, Integer> filterConfig = RowFilter
-						.regexFilter(configCbx.getSelectedItem().toString(), 3);
-				filters.add(filterConfig);
-			}
+		if ((configCbx.getSelectedIndex() > 0) && (configCbx.getSelectedItem().toString().length() > 0))
+		{
+			RowFilter<TableModel, Integer> filterConfig = RowFilter
+				.regexFilter(configCbx.getSelectedItem().toString(), 3);
+			filters.add(filterConfig);
 		}
 
-		if (!filters.isEmpty()) {
-			RowFilter<TableModel, Integer> comboFilter = RowFilter.andFilter(filters); // sorter
-																						// setup
+		if (!filters.isEmpty()) 
+		{
+			RowFilter<TableModel, Integer> comboFilter = RowFilter.andFilter(filters); // sorter setup
 			sorter.setRowFilter(comboFilter);
-		} else {
+		} 
+		else 
+		{
 			sorter.setRowFilter(null);
 		}
 	}
@@ -282,29 +294,35 @@ public class PlatformListPanel extends JPanel
 	 * 
 	 * @return Platform
 	 */
-	public Platform getSelectedItem() {
+	public Platform getSelectedItem() 
+	{
 		int rowNumb = this.platformSelectPanel.getPlatformListTable().getSelectedRow();
 		int rowModel = this.platformSelectPanel.getPlatformListTable().convertRowIndexToModel(rowNumb);
 		PlatformSelectTableModel model = (PlatformSelectTableModel) platformSelectPanel.getPlatformListTable()
-				.getModel();
+																					   .getModel();
 		Platform platform = model.getPlatformAt(rowModel);
 		return platform;
 	}
 
 	/** Called when the 'Open' button is pressed. */
-	public void openPressed() {
+	public void openPressed() 
+	{
 		int rows = this.platformSelectPanel.getPlatformListTable().getRowCount();
 		// System.out.println("Open rows: " + rows);
 		Platform p = getSelectedItem();
 		// Platform p = platformSelectPanel.getSelectedPlatform();
 		if (p == null)
+		{
 			TopFrame.instance().showError(
 					dbeditLabels.getString("PlatformListPanel.selectOpen"));
-		else {
+		} 
+		else 
+		{
 			try {
 				p.read();
 				doOpen(p);
-			} catch (Exception ex) {
+			} 
+			catch (Exception ex) {
 				TopFrame.instance().showError(
 						LoadResourceBundle.sprintf(
 								dbeditLabels.getString("PlatformListPanel.cannotOpen"),
@@ -331,8 +349,10 @@ public class PlatformListPanel extends JPanel
 	{
 		Platform p = platformSelectPanel.getSelectedPlatform();
 		if (p == null)
+		{
 			TopFrame.instance().showError(
 					dbeditLabels.getString("PlatformListPanel.selectCopy"));
+		} 
 		else
 		{
 			if (!p.isComplete())

@@ -42,7 +42,7 @@ public class PlatformSelectPanel extends JPanel
 		model = new PlatformSelectTableModel(this, mediumType);
 		platformListTable = new SortingListTable(model, model.columnWidths);
 		platformListTable.getSelectionModel().setSelectionMode(
-				ListSelectionModel.SINGLE_SELECTION);
+			ListSelectionModel.SINGLE_SELECTION);
 		setMultipleSelection(false);
 		platformListTable.addMouseListener(new MouseAdapter()
 		{
