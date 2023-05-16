@@ -111,7 +111,8 @@
     </target>
 
     <target name="report" depends="resolve,resolve.build" description="--> generates a report of dependencies">
-        <ivy:report todir="${build.dir}"/>
+        <mkdir dir="${build.dir}/reports/dependencies"/>
+        <ivy:report todir="${build.dir}/reports/dependencies" conf="runtime,test,test_platform,izpack,groovy,build,spotbugs,pmd"/>
     </target>
 
 
