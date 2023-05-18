@@ -298,7 +298,7 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		// this SDI initialization was modified by M. Bogner Mar 2013 for the
 		// dbkey surrogate key i
 		// class for the 5.3 CP upgrade project
-		Integer sdi = new Integer((int) getSDI("input").getValue());
+		Integer sdi = (int) getSDI("input").getValue();
 		String dt_fmt = "dd-MMM-yyyy HH:mm";
 
 		RBASEUtils rbu = new RBASEUtils(dbobj, conn);
@@ -400,7 +400,7 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			debug3("FlowToVolumeAlg: Derivation FLAGS: " + flags);
 			if (flags != null)
 				setHdbDerivationFlag(output, flags);
-			Double volume = new Double(dbobj.get("volume").toString());
+			Double volume = Double.valueOf(dbobj.get("volume").toString());
 			//
 			/* added to allow users to automatically set the Validation column */
 			if (validation_flag.length() > 0)

@@ -107,6 +107,6 @@ public class DatchkFunction
 					+ " is not a number '" + tv.getStringValue() + "'");
 			}
 		}
-		inStack.push(new Double(retFlags));
+		inStack.push(Double.valueOf(retFlags));
 	}
 }

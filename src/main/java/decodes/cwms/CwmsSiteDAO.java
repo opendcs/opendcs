@@ -242,8 +242,8 @@ public class CwmsSiteDAO extends SiteDAO
 			lat = Location.parseLatitude(newSite.latitude);
 		if (newSite.longitude != null)
 			lon = Location.parseLongitude(newSite.longitude);
-		Double dlat = new Double(lat);
-		Double dlon = new Double(lon);
+		Double dlat = lat;
+		Double dlon = lon;
 		Double delev = (elev == Constants.undefinedDouble ? null : new Double(elev));
 		try
 		{

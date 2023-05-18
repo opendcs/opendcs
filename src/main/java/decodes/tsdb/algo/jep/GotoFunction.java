@@ -28,6 +28,6 @@ public class GotoFunction
 		checkStack(inStack);
 		String label = inStack.pop().toString();
 		ctx.setGotoLabel(label);
-		inStack.push(new Double(0.0));
+		inStack.push(Double.valueOf(0.0));
 	}
 }

@@ -41,18 +41,17 @@ public class ElseFunction
 	public Object evaluate(Node node, EvaluatorI evaluator) throws ParseException
 	{
 		if (!checkNumberOfParameters(node.jjtGetNumChildren()))
+		{
 			throw new ParseException("else function requires 1 argument!");
+		}
 		
 		if (ctx.getLastConditionFailed())
 		{
-//Logger.instance().info("executing the else arg");
 			return evaluator.eval(node.jjtGetChild(0));
 		}
 		else
 		{
-//Logger.instance().info("Else failed");
-			return new Double(0.0);
-	//throw new ParseException("Else failed");
+			return Double.valueOf(0.0);	
 		}
 	}
 }

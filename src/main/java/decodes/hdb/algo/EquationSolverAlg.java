@@ -128,7 +128,7 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		
 		// MJM 2017-04-30 replace with "null" if missing.
 		// Note: if we get to here and value is missing, it means that missing action = ignore.
-		String repl = !isMissing(input1) ? (new Double(input1)).toString() : "null";
+		String repl = !isMissing(input1) ? (Double.valueOf(input1)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input1>>", repl);
 		if (!isMissing(input1))
 		{
@@ -145,7 +145,7 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 						"" + hdbTsid.getModelRunId());
 			}
 		}
-		repl = !isMissing(input2) ? (new Double(input2)).toString() : "null";
+		repl = !isMissing(input2) ? (Double.valueOf(input2)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input2>>", repl);
 		if (!isMissing(input2))
 		{
@@ -163,7 +163,7 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 		}
 		
-		repl = !isMissing(input3) ? (new Double(input3)).toString() : "null";
+		repl = !isMissing(input3) ? (Double.valueOf(input3)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input3>>", repl);
 		if (!isMissing(input3))
 		{
@@ -181,7 +181,7 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 		}
 		
-		repl = !isMissing(input4) ? (new Double(input4)).toString() : "null";
+		repl = !isMissing(input4) ? (Double.valueOf(input4)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input4>>", repl);
 		if (!isMissing(input4))
 		{
@@ -200,7 +200,7 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 
 		
-		repl = !isMissing(input5) ? (new Double(input5)).toString() : "null";
+		repl = !isMissing(input5) ? (Double.valueOf(input5)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input5>>", repl);
 		if (!isMissing(input5))
 		{
@@ -280,7 +280,7 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 			else
 			{
-				Double result_value = new Double(dbobj.get("result_value").toString());
+				Double result_value = Double.valueOf(dbobj.get("result_value").toString());
 				//
 				/*
 				 * added to allow users to automatically set the Validation

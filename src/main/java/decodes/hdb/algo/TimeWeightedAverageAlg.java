@@ -74,7 +74,7 @@ public class TimeWeightedAverageAlg
 	String flags;
 	Connection conn = null;
 	Date[] date_out = new Date[60];
-	Double[] value_out = new Double[60];
+	Double[] value_out = Double.valueOf[60];
 	int total_count;
 	int index;
 	double tally;
@@ -388,7 +388,7 @@ public class TimeWeightedAverageAlg
                    if (((String)dbobj.get("PWDV")).length() != 0)
                    {
                    // now get the date, value of first record in previous interval to see if it passes muster
-                   new_window_value = new Double(dbobj.get("pwdv").toString());
+                   new_window_value = Double.valueOf(dbobj.get("pwdv").toString());
                    new_window_sdt   = new Date(dbobj.get("pwsdt").toString());
                    // now do the interpolation of the eop of previous period to the BOP for this period
                    milly_diff_total = date_out[1].getTime() - new_window_sdt.getTime();
@@ -450,7 +450,7 @@ public class TimeWeightedAverageAlg
                    if (((String)dbobj.get("NWDV")).length() != 0)
                    {
                    // now get the date, value of first record in next interval to see if it passes muster
-                   new_window_value = new Double(dbobj.get("nwdv").toString());
+                   new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
                    new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
                    // now do the interpolation of the eop of this period to the BOP for next period
 			debug3(new_window_sdt + "  " + index);

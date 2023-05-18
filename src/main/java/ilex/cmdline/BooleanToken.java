@@ -45,7 +45,7 @@ public class BooleanToken extends Token
 		          	    boolean def_value)
 	{
 		super(name, message, environment_variable, tokenOptions);
-		setDefaultValue(new Boolean(def_value));
+		setDefaultValue(Boolean.valueOf(def_value));
 	}
 
   	/** @return the empty String.  */
@@ -70,7 +70,7 @@ public class BooleanToken extends Token
 	}
 
 	public Object toObject(String lexeme) {
-		return new Boolean(true);
+		return Boolean.valueOf(true);
 	}
 
 	/** This returns false, since a boolean switch takes no arguments.  */

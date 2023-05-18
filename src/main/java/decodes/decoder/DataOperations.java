@@ -59,7 +59,7 @@ public class DataOperations
 		startLineNum = rawMsg.getStartLineNum();
 		curLine = startLineNum;
 		begLineBytePos = new Vector<Integer>();
-		begLineBytePos.add(new Integer(0));
+		begLineBytePos.add(0);
 		settings = DecodesSettings.instance();
 if (data.length >=2)
 Logger.instance().debug3("DataOperations instantiated with length=" + data.length
@@ -688,10 +688,13 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 		}
 
 		// Now at first char past NL? increment line.
-		if (bytePos > 0 && data[bytePos-1] == NL) {
+		if (bytePos > 0 && data[bytePos-1] == NL)
+		{
 			curLine++;
 			if ( curLine - startLineNum  >= begLineBytePos.size() )
-				begLineBytePos.add(new Integer(bytePos));
+			{
+				begLineBytePos.add(bytePos);
+			}
 		}
 	}
 
@@ -788,4 +791,3 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 			formatPositions.remove(0);
 	}
 }
-

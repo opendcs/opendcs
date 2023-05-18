@@ -587,7 +587,7 @@ public class ExcelConsumer extends DataConsumer
 					s = col.getBlankSample();
 				
 				try {
-					double val = new Double(s).doubleValue();
+					double val = Double.valueOf(s);
 					createNumberCell(wb, sheet, sampleRowNum, sampleColumnNum,
 							HorizontalAlignment.RIGHT, val);
 				}

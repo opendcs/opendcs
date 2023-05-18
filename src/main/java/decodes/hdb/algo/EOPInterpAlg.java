@@ -224,7 +224,7 @@ public class EOPInterpAlg
 //   I cast it to an int
 //   mod March 2013 by M. Bogner for CP upgrade 5.3.  get SDI must have been changed to an object so
 //   I cast it to an int after I get a long with the getValue method
-		Integer sdi = new Integer( (int) getSDI("input").getValue());
+		Integer sdi = (int) getSDI("input").getValue();
 		conn = tsdb.getConnection();
 		String dt_fmt = "dd-MMM-yyyy HH:mm";
 		RBASEUtils rbu = new RBASEUtils(dbobj,conn);

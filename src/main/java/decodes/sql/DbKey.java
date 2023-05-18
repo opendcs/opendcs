@@ -89,19 +89,20 @@ public class DbKey
 			return NullKey;
 
 		// See if this key value is already created.
-		Long kv = new Long(keyValue);
-		DbKey ret = createdKeys.get(kv);
+		
+		DbKey ret = createdKeys.get(keyValue);
 		if (ret != null)
 		{
 			return ret;
 		}
 		// Not in key hash. Have to create new key.
 		if (createdKeys.size() >= MaxHashSize)
+		{
 			trimHash();
-		
-		ret = new DbKey(kv);
+		}		
+		ret = new DbKey(keyValue);
 		ret.createOrder = createCounter++;
-		createdKeys.put(kv, ret);
+		createdKeys.put(keyValue, ret);
 		return ret;
 	}
 	

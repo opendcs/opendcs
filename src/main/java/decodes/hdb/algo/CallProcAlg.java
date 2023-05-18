@@ -102,23 +102,33 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	   SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
            String new_proccall = proccall.replaceAll("<<INPUT","<<input");
            String tsbt_time = "to_date('" + sdf.format(_timeSliceBaseTime) + "','dd-mon-yyyy HH24:mi')";
-	   new_proccall = new_proccall.replaceAll("<<tsbt>>",tsbt_time);
-	   if (!isMissing(input1))
-	     new_proccall = new_proccall.replaceAll("<<input1>>",(new Double(input1)).toString());
-	   if (!isMissing(input2))
-	     new_proccall = new_proccall.replaceAll("<<input2>>",(new Double(input2)).toString());
-	   if (!isMissing(input3))
-	     new_proccall = new_proccall.replaceAll("<<input3>>",(new Double(input3)).toString());
-	   if (!isMissing(input4))
-	     new_proccall = new_proccall.replaceAll("<<input4>>",(new Double(input4)).toString());
-	   if (!isMissing(input5))
-	     new_proccall = new_proccall.replaceAll("<<input5>>",(new Double(input5)).toString());
-debug3("doAWTimeSlice input1=" + input1 +", input2=" + input2);
+		new_proccall = new_proccall.replaceAll("<<tsbt>>",tsbt_time);
+		if (!isMissing(input1))
+		{
+			new_proccall = new_proccall.replaceAll("<<input1>>",(Double.valueOf(input1)).toString());
+		}
+		if (!isMissing(input2))
+		{
+			new_proccall = new_proccall.replaceAll("<<input2>>",(Double.valueOf(input2)).toString());
+		}
+		if (!isMissing(input3))
+		{
+			new_proccall = new_proccall.replaceAll("<<input3>>",(Double.valueOf(input3)).toString());
+		}
+		if (!isMissing(input4))
+		{
+			new_proccall = new_proccall.replaceAll("<<input4>>",(Double.valueOf(input4)).toString());
+		}
+		if (!isMissing(input5))
+		{
+			new_proccall = new_proccall.replaceAll("<<input5>>",(Double.valueOf(input5)).toString());
+		}
+		debug3("doAWTimeSlice input1=" + input1 +", input2=" + input2);
 
-	   do_setoutput = true;
-	   if (do_setoutput)
-//           Then continue with the calling of the Procedure
-           {
+		do_setoutput = true;
+		if (do_setoutput)
+		//           Then continue with the calling of the Procedure
+        {
              // get the connection and a few other classes so we can do some sql
              conn = tsdb.getConnection();
              DBAccess db = new DBAccess(conn);
