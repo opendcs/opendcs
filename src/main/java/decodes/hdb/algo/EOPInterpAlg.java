@@ -274,7 +274,7 @@ public class EOPInterpAlg
 			debug2 ("EOPINTERP- " + alg_ver + "  " + dbobj.toString());
 			//
 			// now get the date, value of first record in next interval to see if it passes muster
-			new_window_value = new Double(dbobj.get("nwdv").toString());
+			new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
 			new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
 			milly_diff = new_window_sdt.getTime() - _aggregatePeriodEnd.getTime(); 
 			milly_window = 0;

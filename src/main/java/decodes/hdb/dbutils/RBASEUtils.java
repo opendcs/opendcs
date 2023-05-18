@@ -287,8 +287,11 @@ public class RBASEUtils
 
        if (debug) log.debug( this,"  " + query + "  :" + " PASSED DMI_SDI GET");
 
-      if ((String)do2.get("site_datatype_id") != null && ((String)do2.get("site_datatype_id")).length() != 0) ret_sdi = new Integer ((String )do2.get("site_datatype_id")); 
-
+      if ((String)do2.get("site_datatype_id") != null 
+      && ((String)do2.get("site_datatype_id")).length() != 0)
+      {
+        ret_sdi = Integer.valueOf((String )do2.get("site_datatype_id")); 
+      }
        return ret_sdi;
  
     } // end of get_DMI_SDI method
@@ -428,7 +431,7 @@ public class RBASEUtils
 
        String query = null;
        String result = null;
-       Integer ret_sdi = new Integer(-9999);
+       Integer ret_sdi = -9999;
 
        // get the site_datatype_id
        query = "select edm.hdb_site_datatype_id site_datatype_id from hdb_ext_data_source eds , ref_ext_site_data_map edm "

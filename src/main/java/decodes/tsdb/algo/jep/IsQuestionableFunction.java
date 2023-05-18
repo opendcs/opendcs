@@ -32,10 +32,12 @@ public class IsQuestionableFunction
 		
 		Object o = inStack.pop().toString();
 		if (!(o instanceof Number))
+		{
 			throw new ParseException(funcName + " must be passed parmname.flags.");
-		int flags = (int)((Number)o).intValue();
+		}
+		int flags = ((Number)o).intValue();
 		inStack.push(
-			new Double(
+			Double.valueOf(
 				(flags & CwmsFlags.VALIDITY_MASK) == CwmsFlags.VALIDITY_QUESTIONABLE ? 1.0 : 0.0));
 	}
 }

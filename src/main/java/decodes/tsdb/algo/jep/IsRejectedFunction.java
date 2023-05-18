@@ -32,11 +32,13 @@ public class IsRejectedFunction
 		
 		Object o = inStack.pop();
 		if (!(o instanceof Number))
+		{
 			throw new ParseException(funcName + " must be passed 'parmname.flags'. Value passed was: "
 				+ o.toString() + " with type " + o.getClass().getName());
-		int flags = (int)((Number)o).intValue();
+		}
+		int flags = ((Number)o).intValue();
 		inStack.push(
-			new Double(
+			Double.valueOf(
 				(flags & CwmsFlags.VALIDITY_MASK) == CwmsFlags.VALIDITY_REJECTED ? 1.0 : 0.0));
 	}
 }

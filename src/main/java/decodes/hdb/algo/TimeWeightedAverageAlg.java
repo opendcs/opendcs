@@ -74,7 +74,7 @@ public class TimeWeightedAverageAlg
 	String flags;
 	Connection conn = null;
 	Date[] date_out = new Date[60];
-	Double[] value_out = Double.valueOf[60];
+	Double[] value_out = new Double[60];
 	int total_count;
 	int index;
 	double tally;
@@ -294,7 +294,7 @@ public class TimeWeightedAverageAlg
 		String status = null;
 //   getSDI method casted to int since it was changed sometime to a long, M. Bogner Aug 2012
 //   getSDI getValue method since it was changed to a Dbkey object for CP 5.3 project, M. Bogner March 2013
-                Integer sdi = new Integer( (int) getSDI("input").getValue());
+                Integer sdi = (int) getSDI("input").getValue();
 		RBASEUtils rbu = new RBASEUtils(dbobj,conn);
 		GregorianCalendar cal2 = new GregorianCalendar();
 		int calIntervalRoll = 0;

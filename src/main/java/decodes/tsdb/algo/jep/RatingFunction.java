@@ -90,7 +90,7 @@ public class RatingFunction
 			for(double v : valueSet)
 				sum += v;
 			Logger.instance().warning("TEST-MODE: No database, rating returning sum of all inputs=" + sum);
-			inStack.push(new Double(sum));
+			inStack.push(Double.valueOf(sum));
 			return;
 		}
 
@@ -102,8 +102,10 @@ public class RatingFunction
 			what = "performing rating";
 			double d = ratingSet.rateOne(valueSet, tsbt.getTime());
 			if (d == Const.UNDEFINED_DOUBLE)
+			{
 				throw new RatingException("input value(s) outside rating bounds.");
-			inStack.push(new Double(d));
+			}
+			inStack.push(Double.valueOf(d));
 		}
 		catch (RatingException ex)
 		{

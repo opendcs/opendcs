@@ -331,7 +331,7 @@ public class VolumeToFlowAlg
 		                   }
 		   debug3("VolumeToFlowAlg: Derivation FLAGS: " + flags);
 		   if (flags != null) setHdbDerivationFlag(output,flags);
-		                   Double flow = new Double(dbobj.get("flow").toString());
+		                   Double flow = Double.valueOf(dbobj.get("flow").toString());
 		   //
 		                   /* added to allow users to automatically set the Validation column  */
 		                   if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
