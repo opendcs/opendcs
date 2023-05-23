@@ -46,7 +46,7 @@ public class LrgsDataSource extends DataSourceExec
     String password;
     int timeout;
     int consecutiveBadMessages;
-    static public final int MaxConsecutiveBadMessages = 3;
+    int MaxConsecutiveBadMessages = -1;
     boolean oldChannelRanges;
     boolean sendnl;
     private PMParser goesPMP;
@@ -84,6 +84,9 @@ public class LrgsDataSource extends DataSourceExec
         new PropertySpec("lrgs.timeout", PropertySpec.INT,
             "LRGS Data Source: Number of idle seconds after which to assume server has failed (default=60)." +
             " For sparse data (i.e. small netlist) you should set this to a large value."),
+        new PropertySpec("lrgs.maxConsecutiveBadmessages", PropertySpec.INT,
+            "LRGS Data Source: How many bad messages in a row before it's decided this connection" +
+            " is bad (default=-1 which means never assume bad messages should cause the connection to drop.)."),
     };
 
 
@@ -537,6 +540,18 @@ public class LrgsDataSource extends DataSourceExec
             log(Logger.E_DEBUG1,
                 "Will use old channel ranges to determine Transport Medium");
         }
+
+        ts = PropertiesUtil.getIgnoreCase(allProps,"lrgs.maxConsecutiveBadMessages","-1");
+        try
+        {
+            MaxConsecutiveBadMessages = Integer.parseInt(ts);
+        }
+        catch (NumberFormatException ex)
+        {
+            log(Logger.E_FAILURE,"MaxConsectiveBadMessage value (" + ts + ") is not a valid integer."
+                 + " System will use default value of -1."
+                 + ex.getLocalizedMessage());
+        }
     }
 
     /**
@@ -701,7 +716,12 @@ public class LrgsDataSource extends DataSourceExec
         }
         catch(HeaderParseException e)
         {
-            if (++consecutiveBadMessages >= MaxConsecutiveBadMessages)
+            consecutiveBadMessages++;
+            if (MaxConsecutiveBadMessages < 0)
+            {
+                log(Logger.E_DEBUG1, "Unable to parse header for station because: " + e.getLocalizedMessage());
+            }
+            else if (consecutiveBadMessages >= MaxConsecutiveBadMessages)
             {
                 close();
                 lastError = System.currentTimeMillis();
@@ -709,12 +729,9 @@ public class LrgsDataSource extends DataSourceExec
                     "Too many consecutive bad messages from '"
                     + dbDataSource.getName() + "': closing.");
             }
-            else
-            {
-                return getRawMessage();
-            }
+            return getRawMessage();
         }
-        // Allow UnknownPlatformException to be propegated.
+        // Allow UnknownPlatformException to be propagated.
     }
 
     /**
