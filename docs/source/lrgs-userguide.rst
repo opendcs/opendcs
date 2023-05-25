@@ -73,8 +73,8 @@ data in real-time. The LRGS provides local storage of raw DCP data
 limited only by your disk capacity.
 
 With the LRGS you can receive and archive data from any combinations of
-input interfaces: DOMSAT, LRIT (DAMS-NT), GOES-DRGS, Internet-DDS, or
-NOAAPORT. Platform messages are merged according to a user-settable
+input interfaces: HRIT (DAMS-NT), GOES-DRGS, Internet-DDS, or
+NOAAPORT, HRIT Files, custom. Platform messages are merged according to a user-settable
 priority scheme for ultra-reliable data collection.
 
 The LRGS provides the de-facto standard DDS (DCP Data Service) for
@@ -82,10 +82,8 @@ distributing raw data to your processing applications. Your
 data-processing applications can run on the same machine as the LRGS, or
 over the network.
 
-The latest release of the LRGS is written in almost 100% Java. (The only
-‘native’ code is a small amount of driver code for the high-speed DOMSAT
-serial card.) Consequently, the LRGS will run on any modern computing
-platform (Linux, Macintosh, Windows, Solaris, AIX).
+The LRGS is written in 100% Java. Consequently, the LRGS will run on any modern computing
+platform such as Linux, Macintosh, Windows, Solaris, AIX, and running on various architectures.
 
 The NOAA/NESDIS Data Collection System
 --------------------------------------
@@ -118,12 +116,6 @@ all GOES RF channels for incoming DCP messages. DAPS can support the
 receipt and archival of messages from up to 100,000 platforms,
 redistributing them to up to 5,000 users.
 
-DAPS supports the distribution of DCP messages to the user-organizations
-via a domestic communications satellite (DOMSAT). DAPS continuously
-broadcasts all incom­ing DCP messages over DOMSAT using a single
-high-speed channel. Thus for a fraction of the cost of a DRGS, users can
-receive the entire DCS data stream via DOMSAT.
-
 NOAA also supports the direct transmission of DCP data to users via
 internet. This uses a TCP socket protocol called DDS (DCP Data Service).
 DDS allows users to specify data of interest by DCP address, channel, or
@@ -131,13 +123,13 @@ time range. Users can retrieve historical data or a real-time stream.
 
 Figure 2‑1: GOES DCS Overview.
 
-In 2004, NOAA started a new service called LRIT (Low Rate Information
+In 2004, NOAA started a new service called HRIT (High Rate Information
 Transfer). This service combines low resolution WEFAX images and all DCS
 data. It operates on a separate frequency on both GOES East and West
 Satellites.
 
-Finally, the NOAAPORT data stream is similar to DOMSAT in that it
-operates on a separate domestic satellite. It differs from DOMSAT in the
+Finally, the NOAAPORT data stream is similar to the old DOMSAT (no longer supported )
+in that it operates on a separate domestic satellite. It differs from DOMSAT in the
 following ways:
 
 -  NOAAPORT contains imagery data, weather bulletins and other products,
@@ -145,7 +137,8 @@ following ways:
 -  Only DCP messages processed by the National Weather Service are
    transmitted over NOAAPORT.
 -  There can be a several minute delay in retrieving DCP data via
-   NOAAPORT. DOMSAT is almost instantaneous.
+   NOAAPORT. DOMSAT was almost instantaneous.
+
 
 The Role of the LRGS
 --------------------
@@ -305,7 +298,7 @@ internal schedule. NOAA assigns time-slices and GOES channel numbers.
    channel. Since there is a possibility of collision, the DCP will
    typically send 3 copies of the message at random time intervals.
 2. Retransmitted DCP messages: If you are receiving data from one of the
-   DAPS-rebroadcasts (DOMSAT, NOAAPORT, LRIT, DDS) you may see
+   DAPS-rebroadcasts (NOAAPORT, HRIT, DDS) you may see
    historical messages. These are sent from time to time in response to
    a user’s request.
 
@@ -319,33 +312,14 @@ on ‘Failure Code’ for a list of possible codes.
 The DOMSAT Re-Broadcast
 -----------------------
 
-NOAA provides a re-broadcast of all DCS data over a domestic
-communications satellite (DOMSAT). The service has moved to different
-satellites since its inception in 1991. Currently it uses the SES-1
-Satellite, with a downlink frequency of 11,997.525 MHz. As shown in
-`Figure 2-3 <#anchor-21>`__, the service is roughly aimed at the
-continental United States. However it can be received in the outlying
-areas with larger antennas.
+The DOMSAT re-broadcast is no longer supported by NOAA. For a similar capability
+use either an HRIT system or NOAA port.
 
-More information can be found on the web at:
-
-http://www.ses-americom.com/satellites/amc-4.html
-
-.. image:: ./media/lrgs-userguide/Pictures/10000000000002040000018183CEAE52.jpg
-   :width: 5.5138in
-   :height: 2.6252in
-
-Figure 2‑3: DOMSAT (AMC-4) Footprint and Frequency Plan
-
-`Figure 2-4 <#anchor-22>`__ depicts hardware components necessary for
-DOMSAT. The antenna collects the Ku-band DOMSAT signal and directs it to
-the LNB at the antenna focus. The LNB down-converts the signal to L-band
-and transmits it via coaxial cable to a receiver. The receiver
-demodulates the signal and sends synchronous X.25 blocks to a high-speed
-serial board in the PC. The LRGS software decodes the X.25 packets and
-constructs complete DOMSAT messages.
-
-Figure 2‑4: DOMSAT Hardware Components.
+While the DOMSAT system is no longer supported, some of the mechanisms present from it,
+such as the "DOMSAT Header" still permeate the software. You may seen references to such a 
+header or various elements. These generally apply generically to various connections such as DRGS
+and HRIT in some way. Consider this while reading the documentation as we are still cleaning up the text
+ and variable naming. 
 
 LRGS Software Overview
 ======================
@@ -365,10 +339,6 @@ Major modules include:
    corresponding index files. By default, a system is configured to
    store 30 days worth of data. This can be increased, limited only by
    available disk capacity.
--  The DOMSAT Receive Module handles data reception from DOMSAT using
-   special purpose HDLC hardware. This is the only LRGS module that is
-   not 100% Java because it contains a small amount of C-Language code
-   to interface with the hardware drivers.
 -  The DRGS Receive Module handles data reception from any number of
    DAMS-NT connections. You can mix and match demodulator systems from
    different vendors as long as they support DAMS-NT.
@@ -692,50 +662,6 @@ beginning of the line.
 |              |              |              | local DDS    |        |
 |              |              |              | users        |        |
 +--------------+--------------+--------------+--------------+--------+
-| domsatClass  | Class Name   | lrgs.\       | Class name   | No     |
-|              |              | domsatrecv.D | for the      |        |
-|              |              | omsatSangoma | hardware     |        |
-|              |              |              | interface.   |        |
-|              |              |              | DOMSAT also  |        |
-|              |              |              | supports the |        |
-|              |              |              | old Franklin |        |
-|              |              |              | ICP188 card  |        |
-|              |              |              | by setting   |        |
-|              |              |              | this to      |        |
-|              |              |              | lrgs.d       |        |
-|              |              |              | omsatrecv.Do |        |
-|              |              |              | msatFranklin |        |
-+--------------+--------------+--------------+--------------+--------+
-| d\           | # seconds    | 60           | Number of    | Yes    |
-| omsatTimeout |              |              | seconds      |        |
-|              |              |              | after which  |        |
-|              |              |              | a timeout is |        |
-|              |              |              | declared if  |        |
-|              |              |              | there is no  |        |
-|              |              |              | activity on  |        |
-|              |              |              | the DOMSAT   |        |
-|              |              |              | link.        |        |
-+--------------+--------------+--------------+--------------+--------+
-| dpcHost      | Host or IP   | none         | If you       | No     |
-|              | Addr         |              | receive data |        |
-|              |              |              | from a       |        |
-|              |              |              | DOMSAT       |        |
-|              |              |              | Protocol     |        |
-|              |              |              | Converter,   |        |
-|              |              |              | enter the    |        |
-|              |              |              | host name    |        |
-|              |              |              | here         |        |
-+--------------+--------------+--------------+--------------+--------+
-| dpcPort      | Integer      | 9000         | If you       | No     |
-|              |              |              | receive data |        |
-|              |              |              | from a       |        |
-|              |              |              | DOMSAT       |        |
-|              |              |              | Protocol     |        |
-|              |              |              | Converter,   |        |
-|              |              |              | enter the    |        |
-|              |              |              | port number  |        |
-|              |              |              | here         |        |
-+--------------+--------------+--------------+--------------+--------+
 | doP\         | Boolean      | false        | Set to true  | No.    |
 | dtValidation |              |              | to have this |        |
 |              |              |              | local LRGS   |        |
@@ -890,11 +816,6 @@ beginning of the line.
 |              |              |              | LRGS         |        |
 |              |              |              | systems.     |        |
 +--------------+--------------+--------------+--------------+--------+
-| enab\        | true/false   | False        | Set to true  | Yes    |
-| leDomsatRecv |              |              | if you have  |        |
-|              |              |              | a DOMSAT     |        |
-|              |              |              | interface.   |        |
-+--------------+--------------+--------------+--------------+--------+
 | en\          | true/false   | False        | Set to true  | Yes    |
 | ableDrgsRecv |              |              | to enable    |        |
 |              |              |              | reception of |        |
@@ -953,11 +874,6 @@ beginning of the line.
 |              |              |              | to DECODES   |        |
 |              |              |              | network      |        |
 |              |              |              | lists.       |        |
-+--------------+--------------+--------------+--------------+--------+
-| loadDomsat   | Boolean      | True         | Loads the    | No     |
-|              |              |              | DOMSAT       |        |
-|              |              |              | native       |        |
-|              |              |              | interface.   |        |
 +--------------+--------------+--------------+--------------+--------+
 | lo\          | Boolean      | false        | Set to true  | No     |
 | calAdminOnly |              |              | if this LRGS |        |
@@ -1059,7 +975,7 @@ beginning of the line.
 |              |              |              | specify 3    |        |
 |              |              |              | DRGS         |        |
 |              |              |              | connections, |        |
-|              |              |              | DOMSAT, and  |        |
+|              |              |              | HRIT, and  |        |
 |              |              |              | 4 DDS        |        |
 |              |              |              | Receive      |        |
 |              |              |              | Connections, |        |
@@ -1084,8 +1000,7 @@ beginning of the line.
 |              |              |              | be one of    |        |
 |              |              |              | “DDS”,       |        |
 |              |              |              | “DRGS”,      |        |
-|              |              |              | “LRIT”,      |        |
-|              |              |              | “DOMSAT”, or |        |
+|              |              |              | “LRIT”, or   |        |
 |              |              |              | “NOAAPORT”.  |        |
 +--------------+--------------+--------------+--------------+--------+
 | mergePref2   | Name         | None         | Specifies    | No     |
@@ -1443,7 +1358,6 @@ operated by NOAA/NESDIS. Note the hierarchical nature of the file.
             <enabled>true</enabled>
             <username>ilex</username>
             <authenticate>false</authenticate>
-            <hasDomsatSeqNums>true</hasDomsatSeqNums>
         </connection>
         <connection number="2" host="cdadata.wcda.noaa.gov">
             <name>CDADATA</name>
@@ -1451,7 +1365,6 @@ operated by NOAA/NESDIS. Note the hierarchical nature of the file.
             <enabled>true</enabled>
             <username>ilex</username>
             <authenticate>false</authenticate>
-            <hasDomsatSeqNums>false</hasDomsatSeqNums>
         </connection>
     </ddsrecvconf>
 
@@ -1480,11 +1393,6 @@ File:
    secure hash-password method. In order to use this, add an entry in
    your password file (see above). You do not need to specify a roles
    since you are using this entry to access external systems only.
--  The “hasDomsatSeqNums” element defaults to false. If your system is a
-   DOMSAT system and you want to recover DOMSAT Transient Sequence
-   Number Outages, then you need to tell the DDS Recv module which
-   connections have DOMSAT sequence numbers, by setting this value to
-   true.
 -  The “timeout” element specifies the number of seconds, after which,
    if no messages have been received from the server, that we will
    hang-up from this server and try the next one.
@@ -1761,17 +1669,17 @@ or FAILURE alarm with a positive event number when an alarm condition is
 asserted. Later when the alarm condition has been rectified, an INFO
 alarm is generated with the corresponding negative number.
 
-For example, if the DOMSAT Hardware times-out – meaning that no data has
+For example, if the HRIT Hardware times-out – meaning that no data has
 been seen in more than 60 seconds, you will see an alarm with even
 number 5, that looks like this:
 
-WARNING YYYY-MM-DD/HH:MM:SS DomsatRecv:5 No data in more than 60
-seconds.
+    WARNING YYYY-MM-DD/HH:MM:SS LritRecv:3 No data in more than 60
+    seconds.
 
 Later, suppose that data starts flowing again. You will see an alarm
 with the number -5:
 
-INFO YYYY-MM-DD/HH:MM:SS DomsatRecv:-5 DOMSAT Link Recovered.
+    INFO YYYY-MM-DD/HH:MM:SS LritRecv:3 Lrit Link Recovered.
 
 You could associate different commands with events 5 and -5.
 
@@ -1780,18 +1688,6 @@ numbers, along with an explanation of each alarm.
 
 +------------+-----------+-------------------------------------------+
 | Module     | Event Num | Meaning                                   |
-+------------+-----------+-------------------------------------------+
-| DomsatRecv | 1         | DOMSAT Hardware Initialization Failed.    |
-|            |           | This is a non-recoverable alarm. It       |
-|            |           | typically means that the DOMSAT hardware  |
-|            |           | interface is not working or the driver is |
-|            |           | incorrectly installed.                    |
-+------------+-----------+-------------------------------------------+
-| DomsatRecv | 5         | DOMSAT Link Timeout. No data seen in more |
-|            |           | than 60 seconds.                          |
-+------------+-----------+-------------------------------------------+
-| DomsatRecv | -5        | DOMSAT Link Recovery – cancels the        |
-|            |           | timeout event.                            |
 +------------+-----------+-------------------------------------------+
 | DrgsRecv   | 1         | Connection to a DRGS server failed. This  |
 |            |           | can be due to the server not running, the |
@@ -1866,7 +1762,6 @@ the message priority. This will be one of the following:
 -  INFO – Normal processing, not an error.
 -  WARNING – abnormal but recoverable condition
 -  FAILURE – a requested operation could not be performed
-
 -  FATAL – a fatal error occurred in an LRGS process (the process
    subsequently aborted).
 
@@ -1884,7 +1779,7 @@ event.
 On Linux or Unix systems, a good way to view the log file in real-time
 is with the command:
 
-tail –f lrgslog
+    tail –f lrgslog
 
 Log File Rotation
 ~~~~~~~~~~~~~~~~~
@@ -2256,7 +2151,7 @@ The display shows the following columns:
 -  **LRGS Status**: “OK” means that the system is receiving current data
    from one of its interfaces.
 -  **Primary Downlink Status**: States the name of the primary downlink
-   (e.g. DOMSAT or DRGS) and the status on that link.
+   (e.g. HRIT or DRGS) and the status on that link.
 -  **Primary Quality Last Hour**: This is a measure of good vs. parity
    error messages.
 -  **Aggregate Quality Last Hour**: This is also a measure of good vs.
@@ -2653,7 +2548,7 @@ string value. Here are the available keywords:
    spacecraft identifier (‘E’ or ‘W’) is not necessary.
 
    **SOURCE** Specifies that the client only wants to retrieve data that
-   was received from the named source. Possible arguments are DOMSAT,
+   was received from the named source. Possible arguments are 
    NETBACK, DRGS, NOAAPORT, LRIT, or OTHER. For multiple sources, put
    multiple lines starting with ‘SOURCE:’, each with a single argument.
 
@@ -2981,8 +2876,8 @@ A. Glossary
 
    DAPS DCS Automated Processing System – This is a large computer
    system operated by NESDIS in Wallops, VA. A primary function is to
-   receive data from all platforms and rebroadcast via DOMSAT and an NMC
-   X.25 link. NESDIS has plans to renovate DAPS in the near future.
+   receive data from all platforms and rebroadcast via HRIT.
+   NESDIS has plans to renovate DAPS in the near future.
 
 
 
@@ -2991,16 +2886,7 @@ A. Glossary
    and have a vested interest in environmental monitoring via GOES.
 
    DECODES DEvice COnversion and DElivery System – This is a legacy
-   software package developed by USGS/WRD.
-
-   DOMSAT Domestic Satellite – This is used as a high-speed broadcast of
-   data from all platforms in the DCS.
-
-   DROT DOMSAT Receive Only Terminal – Public domain prototype system
-   developed for NOAA/NESDIS.
-
-   DRS DOMSAT Receive Station – This is a proprietary system for
-   receiving DOMSAT data. Also see LRGS
+   software package developed by USGS/WRD.  
 
    EMIT Environmental Message Interpreter Translator – A proprietary
    software package in wide use within USACE.
@@ -3026,7 +2912,7 @@ A. Glossary
    enabling you to run Java programs.
 
    LRGS Local Readout Ground Station – This is a freely available,
-   open-source system for receiving environmental data via DOMSAT.
+   open-source system for receiving environmental data via DAMS-NT protocol, HRIT, and other methods.
 
    NESDIS National Environmental Satellite Data Information Service –
    This is the division of NOAA that operates the GOES spacecraft and

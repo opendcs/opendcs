@@ -846,7 +846,7 @@ Transport Media
 
 Transport Media define how the data from this platform is retrieved. The
 data may need to be decoded differently depending on whether it was
-received over DOMSAT, DRGS, or EDL file, even though it came from the
+received over HRIT, DRGS, or EDL file, even though it came from the
 same platform.
 
 The example shown shows two transport media for GOES-Self-Timed on
@@ -940,7 +940,7 @@ As it is executing, the script keeps track of three things:
 
 -  The current position within the message data
 
-The message header (e.g. 37-byte DOMSAT header) is not processed by the
+The message header (e.g. GOES header, first row of CSV, etc) is not processed by the
 script. The data pointer is initialized to the first actual message
 byte.
 

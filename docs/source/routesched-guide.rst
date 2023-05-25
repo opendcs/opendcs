@@ -508,7 +508,7 @@ Socket Stream Data Source
 -------------------------
 
 A socket stream data source opens a socket and reads a one-way stream of
-data containing raw DCP messages. Some DRGS and DOMSAT product provide
+data containing raw DCP messages. Some DRGS and HRIT product provide
 such a stream.
 
 Accepted properties for SocketStreamDataSource are:
@@ -550,15 +550,6 @@ settings for a Vitel DRGS are:
 lengthAdj = -4
 
 delimiter = \\r\n
-
-The DataWise DOMSAT system reports a length that is one greater than the
-number actually present. It terminates each message with 3 sets of
-carriage-return/linefeed. The proper settings for a DataWise DOMSAT
-socket stream are:
-
-lengthAdj = 0
-
-delimiter = \\r\n\r\n\r\n
 
 **How messages are parsed**
 

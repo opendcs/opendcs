@@ -108,8 +108,6 @@ public class LrgsMain
 	/** Used to write period status snapshots. */
 	private DetailReportGenerator statusRptGen;
 
-//	/** The DOMSAT Receive Module */
-//	private DomsatRecv domsatRecv;
 
 	/** The singleton configuration object. */
 	private LrgsConfig cfg;
@@ -418,24 +416,6 @@ public class LrgsMain
 		// Initialize the DDS server
 		if (!initDdsServer())
 			return false;
-
-//		// Initialize the DOMSAT Receive Module.
-//		if (cfg.loadDomsat)
-//		{
-//			try
-//			{
-//				domsatRecv = new DomsatRecv(this, msgArchive, statusProvider);
-//				addInput(domsatRecv);
-//			}
-//			catch(UnsatisfiedLinkError ex)
-//			{
-//				System.err.println(ex);
-//				ex.printStackTrace();
-//				Logger.instance().failure(
-//					"Cannot load DOMSAT native interface."
-//					+ " This will prevent DOMSAT from working!");
-//			}
-//		}
 
 		// Add any custom features and extensions for this particular LRGS.
 		addCustomFeatures();

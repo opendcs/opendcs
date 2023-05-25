@@ -46,8 +46,8 @@ LRGS and DECODES Usage by USACE
 `Figure 2-1 <#anchor-2>`__ shows data-flow for hydro-met data collection
 by a typical Corps office:
 
--  The LRGS receives data from a satellite link (DOMSAT, NOAAPORT, DRGS,
-   Internet, LRIT, etc.)
+-  The LRGS receives data from a satellite link (NOAAPORT, DRGS,
+   Internet, HRIT, etc.)
 -  DECODES is a client application that pulls raw data from the LRGS and
    decodes it into engineering units. Many districts run DECODES on the
    same machine as the LRGS, but as shown, it does not need to be done
