@@ -154,10 +154,14 @@ public class FileAppendConsumer extends DataConsumer
 //				".$DATE(" + Constants.suffixDateFormat_fmt + ")";
 				".$DATE(yyMMdd.hhmmss)";
 		maxFileSize = PropertiesUtil.getIgnoreCase(props, "maxfilesize");
-		if ( maxFileSize == null )
+		if (maxFileSize == null)
+		{
 			maxSize = -1;
+		}
 		else
-			maxSize = new Integer(maxFileSize).longValue();
+		{
+			maxSize = Long.valueOf(maxFileSize);
+		}
 	}
 
 	/**
@@ -288,7 +292,7 @@ public class FileAppendConsumer extends DataConsumer
 					int k = 0;
 					while  ( new File(path).exists() && k++ < 99 ) {
 						String[] fcomps = path.split("\\.");
-						int s = new Integer(fcomps[fcomps.length-1].substring(4));
+						int s = Integer.valueOf(fcomps[fcomps.length-1].substring(4));
 						if ( ++s > 99 )
 							s = 0;
 						String sec = decimalFormat.format(s);
@@ -361,4 +365,3 @@ public class FileAppendConsumer extends DataConsumer
 	}
 
 }
-

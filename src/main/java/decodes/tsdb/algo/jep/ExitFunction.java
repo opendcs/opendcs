@@ -32,6 +32,6 @@ public class ExitFunction
 		checkStack(inStack);
 		ctx.setExitCalled(true);
 		
-		inStack.push(new Double(0.0));
+		inStack.push(Double.valueOf(0.0));
 	}
 }

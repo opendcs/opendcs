@@ -55,7 +55,7 @@ public class ConditionFunction
 Logger.instance().info("condition is false, returning zero.");
 			// Return zero and don't evaluate the second expression, which is probably
 			// an assignment.
-			return new Double(0.0);
+			return Double.valueOf(0.0);
 		}
 		else // evaluate & return value of second arg
 			return evaluator.eval(node.jjtGetChild(1));

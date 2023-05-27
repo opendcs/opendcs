@@ -44,7 +44,7 @@ public class IntegerToken extends Token
                         int def_value)
 	{
 		super(name, message, environment_variable, tokenOptions);
-		setDefaultValue(new Integer(def_value));
+		setDefaultValue(Integer.valueOf(def_value));
 	}
 
   	/** @return "<Int>"  */

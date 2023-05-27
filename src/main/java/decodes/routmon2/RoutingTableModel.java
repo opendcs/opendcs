@@ -328,7 +328,7 @@ class RSColumnizer
 	{
 		switch(col)
 		{
-		case 0: return new Boolean(rsb.isEnabled());
+		case 0: return Boolean.valueOf(rsb.isEnabled());
 		case 1: return rsb.getScheduleEntry().getName().toLowerCase().endsWith("manual")
 					? (rsb.getRsName() + " (manual)") : rsb.getRsName();
 		case 2: return rsb.getAppName();

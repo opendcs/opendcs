@@ -26,7 +26,7 @@ public class RtSummaryStat
 	//Construct the application
 	public RtSummaryStat(String args[])
 	{
-		cmdLineArgs.scan_arg.setDefaultValue(new Integer(30));
+		cmdLineArgs.scan_arg.setDefaultValue(Integer.valueOf(30));
 		cmdLineArgs.parseArgs(args);
 		getMyLabelDescriptions();
 		final RtSummaryStatFrame frame = new RtSummaryStatFrame(

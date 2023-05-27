@@ -290,9 +290,9 @@ public class ExpressionParserAlgorithm
 			symTab.remove(flagName);
 			if (!isMissing(inputVal))
 			{
-				symTab.addVariable(inputName, new Double(inputVal));
+				symTab.addVariable(inputName, Double.valueOf(inputVal));
 				int f = getInputFlagBits(inputName);
-				symTab.addVariable(flagName, new Double(f));
+				symTab.addVariable(flagName, Double.valueOf(f));
 
 				debug1("" + debugSdf.format(_timeSliceBaseTime) + " " + inputName + "=" + inputVal
 					+ ", " + flagName + "=0x" + Integer.toHexString(f));

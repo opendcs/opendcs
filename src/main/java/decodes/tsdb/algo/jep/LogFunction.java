@@ -45,6 +45,6 @@ public class LogFunction
 		default:
 			ctx.getAlgo().warning(logMsg);
 		}
-		inStack.push(new Double(0.0));
+		inStack.push(Double.valueOf(0.0));
 	}
 }

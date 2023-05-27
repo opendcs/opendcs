@@ -53,7 +53,7 @@ public class AppInfoStatus
 	
 	private TsdbCompLock compLock = null;
 	
-	private Boolean retrieveEvents = new Boolean(false);
+	private Boolean retrieveEvents = false;
 	
 	private EventClient eventPollClient = null;
 	private ProcessMonitorFrame frame = null;

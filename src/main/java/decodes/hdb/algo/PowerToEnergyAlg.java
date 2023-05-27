@@ -269,7 +269,7 @@ public class PowerToEnergyAlg
                 dbobj.put("ALG_VERSION",alg_ver);
 // Cast to in  resulted from mod for CP 3.0 Upgrade project by M. Bogner Aug 2012
 // call to getValue method resulted from mod for CP 5.3 Upgrade project by M. Bogner March 2013
-                Integer sdi = new Integer((int) getSDI("input").getValue());
+                Integer sdi = (int) getSDI("input").getValue();
                 String dt_fmt = "dd-MMM-yyyy HH:mm";
  
 		RBASEUtils rbu = new RBASEUtils(dbobj,conn);
@@ -345,12 +345,19 @@ public class PowerToEnergyAlg
                    }
 
 		   debug3("PowerToEnergyAlg-"+alg_ver+": Derivation FLAGS: " + flags);
-		   if (flags != null) setHdbDerivationFlag(output,flags);
-                   Double energy = new Double(dbobj.get("energy").toString());
+		   if (flags != null)
+		   {	
+				setHdbDerivationFlag(output,flags);
+		   }
+
+			Double energy = Double.valueOf(dbobj.get("energy").toString());
 		   //
                    /* added to allow users to automatically set the Validation column  */
-                   if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
-		   setOutput(output,energy);
+			if (validation_flag.length() > 0) 
+			{
+				setHdbValidationFlag(output,validation_flag.charAt(1));
+			}
+		   	setOutput(output,energy);
 		}
 //
 		//  delete any existing value if this calculation failed

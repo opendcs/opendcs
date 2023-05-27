@@ -294,7 +294,7 @@ public class TimeWeightedAverageAlg
 		String status = null;
 //   getSDI method casted to int since it was changed sometime to a long, M. Bogner Aug 2012
 //   getSDI getValue method since it was changed to a Dbkey object for CP 5.3 project, M. Bogner March 2013
-                Integer sdi = new Integer( (int) getSDI("input").getValue());
+                Integer sdi = (int) getSDI("input").getValue();
 		RBASEUtils rbu = new RBASEUtils(dbobj,conn);
 		GregorianCalendar cal2 = new GregorianCalendar();
 		int calIntervalRoll = 0;
@@ -388,7 +388,7 @@ public class TimeWeightedAverageAlg
                    if (((String)dbobj.get("PWDV")).length() != 0)
                    {
                    // now get the date, value of first record in previous interval to see if it passes muster
-                   new_window_value = new Double(dbobj.get("pwdv").toString());
+                   new_window_value = Double.valueOf(dbobj.get("pwdv").toString());
                    new_window_sdt   = new Date(dbobj.get("pwsdt").toString());
                    // now do the interpolation of the eop of previous period to the BOP for this period
                    milly_diff_total = date_out[1].getTime() - new_window_sdt.getTime();
@@ -450,7 +450,7 @@ public class TimeWeightedAverageAlg
                    if (((String)dbobj.get("NWDV")).length() != 0)
                    {
                    // now get the date, value of first record in next interval to see if it passes muster
-                   new_window_value = new Double(dbobj.get("nwdv").toString());
+                   new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
                    new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
                    // now do the interpolation of the eop of this period to the BOP for next period
 			debug3(new_window_sdt + "  " + index);

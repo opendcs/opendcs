@@ -194,8 +194,7 @@ public class ScriptEditPanel extends JPanel
 					int tmIndex = p.transportMedia.indexOf(tm); 
 					if (tm != null)
 					{	
-						tm.channelNum = 
-							new Integer(chanNumFromRawMsg).intValue();
+						tm.channelNum = Integer.valueOf(chanNumFromRawMsg);
 						//Update the transportMedia
 						if (tmIndex != -1)
 							p.transportMedia.set(tmIndex, tm);						

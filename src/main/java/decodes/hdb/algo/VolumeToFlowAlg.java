@@ -266,7 +266,7 @@ public class VolumeToFlowAlg
 // mod 1.0.06 added int cast by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 // mod 1.0.07 added new getValue method call by M. Bogner March 2013 for the 5.3 CP upgrade project
 // since surrogate keys (like SDI's) where changed to a DbKey class instead of a long
-		                Integer sdi = new Integer( (int) getSDI("input").getValue());
+		                Integer sdi = (int) getSDI("input").getValue();
 		                String dt_fmt = "dd-MMM-yyyy HH:mm";
 		 
 		RBASEUtils rbu = new RBASEUtils(dbobj,conn);
@@ -331,7 +331,7 @@ public class VolumeToFlowAlg
 		                   }
 		   debug3("VolumeToFlowAlg: Derivation FLAGS: " + flags);
 		   if (flags != null) setHdbDerivationFlag(output,flags);
-		                   Double flow = new Double(dbobj.get("flow").toString());
+		                   Double flow = Double.valueOf(dbobj.get("flow").toString());
 		   //
 		                   /* added to allow users to automatically set the Validation column  */
 		                   if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));

@@ -250,7 +250,7 @@ public class RBASEUtils
  
        conn = db.getConnection(do2);
 
-       Integer t_int = new Integer(minutes);
+       Integer t_int = minutes;
        query = "select to_char(trunc(to_date('31-DEC-1899')) + "
              + t_int.toString()
              + "/(60*24),'YYYYMONDD HH24:MI') dss_date from dual";
@@ -274,8 +274,8 @@ public class RBASEUtils
 
        conn = db.getConnection(do2);
 
-       Integer t_int = new Integer(modelId);
-       Integer ret_sdi = new Integer(-9999);
+       Integer t_int = modelId;
+       Integer ret_sdi = -9999;
 
        query = "select  site_datatype_id site_datatype_id from ref_dmi_data_map where "
              + "model_id = " + t_int.toString()
@@ -287,8 +287,11 @@ public class RBASEUtils
 
        if (debug) log.debug( this,"  " + query + "  :" + " PASSED DMI_SDI GET");
 
-      if ((String)do2.get("site_datatype_id") != null && ((String)do2.get("site_datatype_id")).length() != 0) ret_sdi = new Integer ((String )do2.get("site_datatype_id")); 
-
+      if ((String)do2.get("site_datatype_id") != null 
+      && ((String)do2.get("site_datatype_id")).length() != 0)
+      {
+        ret_sdi = Integer.valueOf((String )do2.get("site_datatype_id")); 
+      }
        return ret_sdi;
  
     } // end of get_DMI_SDI method
@@ -428,7 +431,7 @@ public class RBASEUtils
 
        String query = null;
        String result = null;
-       Integer ret_sdi = new Integer(-9999);
+       Integer ret_sdi = -9999;
 
        // get the site_datatype_id
        query = "select edm.hdb_site_datatype_id site_datatype_id from hdb_ext_data_source eds , ref_ext_site_data_map edm "
@@ -448,7 +451,10 @@ public class RBASEUtils
 
        if (debug) log.debug( this,"  " + query + "  :" + " PASSED EXTERNAL SDI GET");
 
-      if ((String)do2.get("site_datatype_id") != null && ((String)do2.get("site_datatype_id")).length() != 0) ret_sdi = new Integer ((String )do2.get("site_datatype_id")); 
+      if ((String)do2.get("site_datatype_id") != null && ((String)do2.get("site_datatype_id")).length() != 0)
+      {
+          ret_sdi = Integer.valueOf((String )do2.get("site_datatype_id")); 
+      }
 
        return ret_sdi;
 
@@ -457,5 +463,3 @@ public class RBASEUtils
 
 
 }  // end of RBASEUtils class
-
-

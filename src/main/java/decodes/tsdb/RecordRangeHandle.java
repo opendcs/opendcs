@@ -43,7 +43,10 @@ public class RecordRangeHandle
 	 * Adds a record number.
 	 * @param recnum the record number
 	 */
-	public void addRecNum(int recnum) { recnums.add(new Integer(recnum)); }
+	public void addRecNum(int recordNumber)
+	{
+		recnums.add(recordNumber);
+	}
 
 	/**
 	 * Returns a string containing comma-separated integer record numbers.

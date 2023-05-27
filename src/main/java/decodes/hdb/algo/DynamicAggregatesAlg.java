@@ -396,7 +396,7 @@ public class DynamicAggregatesAlg
 					_aggregatePeriodBegin, _aggregatePeriodEnd, "dd-MM-yyyy HH:mm",
 					tsdb.getWriteModelRunId(), table_selector);
 			}
-			Double value_out = new Double(dbobj.get("result").toString());
+			Double value_out = Double.valueOf(dbobj.get("result").toString());
 			debug3("FLAGS: " + flags);
 			if (flags != null)
 				setHdbDerivationFlag(output, flags);

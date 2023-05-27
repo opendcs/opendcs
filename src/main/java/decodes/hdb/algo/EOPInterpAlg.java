@@ -224,7 +224,7 @@ public class EOPInterpAlg
 //   I cast it to an int
 //   mod March 2013 by M. Bogner for CP upgrade 5.3.  get SDI must have been changed to an object so
 //   I cast it to an int after I get a long with the getValue method
-		Integer sdi = new Integer( (int) getSDI("input").getValue());
+		Integer sdi = (int) getSDI("input").getValue();
 		conn = tsdb.getConnection();
 		String dt_fmt = "dd-MMM-yyyy HH:mm";
 		RBASEUtils rbu = new RBASEUtils(dbobj,conn);
@@ -274,7 +274,7 @@ public class EOPInterpAlg
 			debug2 ("EOPINTERP- " + alg_ver + "  " + dbobj.toString());
 			//
 			// now get the date, value of first record in next interval to see if it passes muster
-			new_window_value = new Double(dbobj.get("nwdv").toString());
+			new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
 			new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
 			milly_diff = new_window_sdt.getTime() - _aggregatePeriodEnd.getTime(); 
 			milly_window = 0;

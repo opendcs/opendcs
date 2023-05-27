@@ -1251,7 +1251,7 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 		if (!cfgFile.canRead())
 			log(Logger.E_DEBUG1, DrgsRecv.EVT_BAD_CONFIG,
 				"Cannot read channel config '" + cfgFileName + "'");
-		Vector chanvec = new Vector();
+		Vector<Integer> chanvec = new Vector<>();
 		BufferedReader br = null;
 		try
 		{
@@ -1272,7 +1272,7 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 					{
 						int chan = Integer.parseInt(cs);
 						if (chan > 0)
-							chanvec.add(new Integer(chan));
+							chanvec.add(chan);
 					}
 					catch(Exception ex) {}
 				}
@@ -1283,12 +1283,16 @@ Logger.instance().debug3("Looking for property '" + s + "'");
 			{
 				chanArray = new int[chanvec.size()];
 				for(int i=0; i<chanArray.length; i++)
+				{
 					chanArray[i] = ((Integer)chanvec.get(i)).intValue();
+				}
 			}
 			Logger.instance().debug1("DRGS " + getName() + " monitoring "
 				+ chanArray.length + " channels: ");
 			for(int i=0; i<chanArray.length; i++)
+			{
 				Logger.instance().debug1("" + chanArray[i]);
+			}
 					
 		}
 		catch(IOException ex)
@@ -1384,4 +1388,3 @@ class BadHeader extends Exception
 {
 	public BadHeader(String s) { super(s); }
 }
-
