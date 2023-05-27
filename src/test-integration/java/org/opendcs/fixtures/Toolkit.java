@@ -22,7 +22,7 @@ import org.opendcs.spi.configuration.ConfigurationProvider;
 public class Toolkit
 {
     @TestFactory
-    Stream<DynamicNode> opendcsCompatibilityKit() throws IOException
+    Stream<DynamicNode> opendcsCompatibilityKit() throws Exception
     {
         ArrayList<DynamicNode> tests = new ArrayList<>();
         ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
@@ -37,11 +37,31 @@ public class Toolkit
         return tests.stream();
     }
 
-    private DynamicContainer testsFor(OpenDCSAppTestCase openDCSAppTestCase)
+    private DynamicContainer testsFor(OpenDCSAppTestCase testCase) throws Exception
     {
-        return dynamicContainer(openDCSAppTestCase.getConfigurationName(),Stream.of(
-            dynamicTest("Config not null", ()-> assertNotNull(openDCSAppTestCase,"Test Case definition can't be null.")),
-            new DecodesTest(openDCSAppTestCase).getTests()
+        System.err.println("Setting up tests for: " + testCase.getDisplayName());
+        return dynamicContainer(testCase.getDisplayName(),Stream.of(
+            dynamicTest(testName(testCase,null,":Config not null"), ()-> assertNotNull(testCase,"Test Case definition can't be null.")),
+            new DecodesTest(testCase).getTests(testCase.getDisplayName())
         ));
+    }
+
+    public static String testName(OpenDCSAppTestCase testCase, AppTestBase base, String method)
+    {
+        return testCase.getDisplayName()
+              + ":"
+              + (base != null ? base.getClass().getSimpleName() : "Toolkit")
+              + ":"
+              + method;
+    }
+
+    public static String testName(String base, String ...part)
+    {
+        StringBuilder sb = new StringBuilder(base);
+        for (String p: part)
+        {
+            sb.append(":").append(p);
+        }
+        return sb.toString();
     }
 }

@@ -12,6 +12,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.DynamicNode;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.OpenDCSAppTestCase;
+import org.opendcs.fixtures.Toolkit;
 import org.opendcs.spi.configuration.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,11 +23,12 @@ import uk.org.webcompere.systemstubs.SystemStubs;
 
 public class DecodesTest extends AppTestBase
 {
+    private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
+    private static final String TEST_SET_NAME = "Decodes Test";
+    
     public DecodesTest(OpenDCSAppTestCase testCase) {
         super(testCase);
     }
-
-    private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
 
     public void test_SimpleDecodesTest() throws Exception
     {
@@ -110,10 +112,10 @@ public class DecodesTest extends AppTestBase
     }
 
     @Override
-    public DynamicNode tests() {
-        return dynamicContainer("actual tests", Stream.of(
-            dynamicTest("Decodes", () -> test_SimpleDecodesTest()),
-            dynamicTest("HydroJSON", () -> test_HydroJsonTest())
+    public DynamicNode tests(String baseName) {
+        return dynamicContainer(Toolkit.testName(baseName,TEST_SET_NAME), Stream.of(
+            dynamicTest(Toolkit.testName(baseName,TEST_SET_NAME,"Routing"), () -> test_SimpleDecodesTest()),
+            dynamicTest(Toolkit.testName(baseName,TEST_SET_NAME,"HydroJSON"), () -> test_HydroJsonTest())
         ));
     }
 }

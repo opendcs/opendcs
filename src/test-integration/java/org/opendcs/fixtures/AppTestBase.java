@@ -49,6 +49,7 @@ public abstract class AppTestBase {
         File userDir = testCase.getConfiguration().getUserDir();
         System.out.println("DCSTOOL_USERDIR="+userDir);
         environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
+        environment.set(testCase.getConfiguration().getEnvironment());
         properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("INPUT_DATA",new File(resourceDir,"/shared").getAbsolutePath());
         properties.setup();
@@ -67,14 +68,15 @@ public abstract class AppTestBase {
         properties.teardown();
     }
 
-    public abstract DynamicNode tests();
+    public abstract DynamicNode tests(String baseName) throws Exception;
 
-    public DynamicNode getTests()
+    public DynamicNode getTests(String baseName) throws Exception
     {
-        return dynamicContainer(this.getClass().getName(), Stream.of(
-            dynamicTest("Setup", () -> setup()),
-            tests(),
-            dynamicTest("Teardown", () -> teardown())
+        return dynamicContainer(Toolkit.testName(baseName, this.getClass().getName()), Stream.of(
+            dynamicTest(Toolkit.testName(baseName,"Configuration::start"),()->this.testCase.getConfiguration().start()),
+            dynamicTest(Toolkit.testName(baseName,"Setup"), () -> setup()),
+            tests(baseName),
+            dynamicTest(Toolkit.testName(baseName,"Teardown"), () -> teardown())
         ));        
     }
 

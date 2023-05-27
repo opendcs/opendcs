@@ -36,6 +36,12 @@ public class UserPropertiesBuilder
         props.setProperty("siteNameTypePreference", preference);
         return this;
     }
+
+    public UserPropertiesBuilder withDecodesAuth(String auth)
+    {
+        props.setProperty("DbAuthFile", auth);
+        return this;
+    }
 /**
  * For reference
  

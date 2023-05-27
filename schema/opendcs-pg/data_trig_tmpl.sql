@@ -11,11 +11,11 @@
 --
 -------------------------------------------------------------------------------
 
-drop trigger if exists TS_NUM_0000_TRIG
+drop trigger if exists TS_NUM_<TableNumber>_TRIG
 	on TS_NUM_0000;
 
-create trigger TS_NUM_0000_TRIG
+create trigger TS_NUM_<TableNumber>_TRIG
     before update or insert or delete
-    on TS_NUM_0000
+    on TS_NUM_<TableNumber>
     for each row execute procedure comp_trigger();
 

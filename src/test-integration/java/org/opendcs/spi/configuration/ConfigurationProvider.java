@@ -19,5 +19,5 @@ public interface ConfigurationProvider {
      *                DCSTOOL_USERDIR will point to this location.
      * @return
      */
-    public OpenDCSAppTestCase getConfig(File tempDir);
+    public OpenDCSAppTestCase getConfig(File tempDir) throws Exception;
 }
