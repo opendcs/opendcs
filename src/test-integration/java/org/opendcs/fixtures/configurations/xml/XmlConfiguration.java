@@ -9,6 +9,9 @@ import org.apache.commons.io.FileUtils;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.security.SystemExit;
+
 /**
  * Handles setup for XML Database based tests.
  */
@@ -43,7 +46,7 @@ public class XmlConfiguration implements Configuration
     }
 
     @Override
-    public void start() throws Exception {
+    public void start(SystemExit exit, EnvironmentVariables environment) throws Exception {
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();

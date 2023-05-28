@@ -64,4 +64,14 @@ public class Toolkit
         }
         return sb.toString();
     }
+
+    /**
+     * Helper to make calling mains easier
+     * @param arg
+     * @return
+     */
+    public static String[] args(String... arg)
+    {
+        return arg;
+    }
 }
