@@ -28,7 +28,10 @@ jobs:
       - name: integration tests
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
-        if: matrix.platform != 'windows-latest'
+        # Integration tests require docker now for test containers.
+        # More work required to deal with the other platforms. Should be workable
+        # at some point though.
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           ant integration-test -D"no.docs=true"
       - name: Documentation and Create installer jar

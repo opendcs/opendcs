@@ -30,7 +30,7 @@ public class Toolkit
         while(configs.hasNext())
         {
             ConfigurationProvider config = configs.next();
-            File tmp = Files.createTempDirectory("configs").toFile();
+            File tmp = Files.createTempDirectory("configs-"+config.getImplementation()).toFile();
             tests.add(testsFor(config.getConfig(tmp)));
             
         }
