@@ -41,6 +41,7 @@ jobs:
           name: test-results-${{matrix.platform}}
           path: |
             build/reports/**
+            /tmp/config**
 #docker-images:
 #  runs-on: ubuntu-latest
 #  steps:
