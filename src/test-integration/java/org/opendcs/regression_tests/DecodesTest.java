@@ -15,6 +15,7 @@ import org.junit.jupiter.api.DynamicNode;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.OpenDCSAppTestCase;
 import org.opendcs.fixtures.Toolkit;
+import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,33 +36,22 @@ public class DecodesTest extends AppTestBase
     public void test_SimpleDecodesTest() throws Exception
     {
         Configuration config = testCase.getConfiguration();
-        String propertiesFile = config.getPropertiesFile().getAbsolutePath();
-        String logFile = new File(config.getUserDir(),"/decodes.log").getAbsolutePath();
+        File propertiesFile = config.getPropertiesFile();
+        File logFile = new File(config.getUserDir(),"/decodes.log");
         log.info("Import site.");
-
-        exit.execute(() ->
-            SystemStubs.tapSystemErrAndOut(() -> {
-                DbImport.main(args("-l", logFile,
-                                "-P", propertiesFile,
-                                "-d3",
-                            getResource("SimpleDecodesTest/site-OKVI4.xml")));
-                })
-        );
+        Programs.DbImport(logFile, propertiesFile, environment, exit,
+                            getResource("SimpleDecodesTest/site-OKVI4.xml"));
+        
         assertExitNullOrZero();
         log.info("Loading platform, routing spec, etc.");
-        exit.execute(() ->
-        SystemStubs.tapSystemErrAndOut(() -> {
-            DbImport.main(args("-l",logFile,
-                           "-P", propertiesFile,
-                           "-d3",
-                           getResource("SimpleDecodesTest/OKVI4-decodes.xml")));
-        }));
-        assertExitNullOrZero();
+
+        Programs.DbImport(logFile,propertiesFile,environment,exit,
+                           getResource("SimpleDecodesTest/OKVI4-decodes.xml"));
 
         String output = SystemStubs.tapSystemOut(
                             () -> exit.execute(() ->
                                 RoutingSpecThread.main(
-                                    args("-l",logFile,"-d3","OKVI4-input")
+                                    args("-l",logFile.getAbsolutePath(),"-d3","OKVI4-input")
                                 )
                             )
                         );
@@ -74,27 +64,20 @@ public class DecodesTest extends AppTestBase
     public void test_HydroJsonTest() throws Exception
     {
         Configuration config = testCase.getConfiguration();
-        String propertiesFile = config.getPropertiesFile().getAbsolutePath();
-        String logFile = new File(config.getUserDir(),"/decodes-json.log").getAbsolutePath();
+        File propertiesFile = config.getPropertiesFile();
+        File logFile = new File(config.getUserDir(),"/decodes-json.log");
         log.info("Importing test db.");
-        exit.execute(() -> {
-            SystemStubs.tapSystemErrAndOut(() -> {
-                DbImport.main(args("-l", logFile,
-                                "-P", propertiesFile,
-                                "-d3",
+        Programs.DbImport(logFile, propertiesFile, environment, exit,
                                 getResource("shared/test-sites.xml"),
                                 getResource("shared/ROWI4.xml"),
                                 new File(config.getUserDir(),"/schema/cwms/cwms-import.xml").getAbsolutePath(),
                                 getResource("shared/presgrp-regtest.xml"),
-                                getResource("HydroJsonTest/HydroJSON-rs.xml")));
-            });
-        });
-        assertExitNullOrZero();
+                                getResource("HydroJsonTest/HydroJSON-rs.xml"));
 
         String output = SystemStubs.tapSystemOut(
             () -> exit.execute(() ->
                         RoutingSpecThread.main(
-                            args("-l",logFile,"-d3","HydroJSON-Test")
+                            args("-l",logFile.getAbsolutePath(),"-d3","HydroJSON-Test")
                         )
                     )
         );

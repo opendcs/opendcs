@@ -18,6 +18,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.fixtures.UserPropertiesBuilder;
+import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
 import decodes.dbimport.DbImport;
@@ -103,23 +104,29 @@ public class OpenDCSPGConfiguration implements Configuration
             environment.set("DB_USERNAME","dcs_proc");
             environment.set("DB_PASSWORD","dcs_proc");
 
-            environment.execute(() ->
-                exit.execute(() ->
-                    SystemStubs.tapSystemErrAndOut(() -> {
-                        ArrayList<String> theArgs = new ArrayList<>();
-                        theArgs.add("-l"); theArgs.add(new File(this.getUserDir(),"/db-install.log").getAbsolutePath());
-                        theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
-                        theArgs.add("-d3");
-                        theArgs.addAll(
-                            FileUtils.listFiles(new File("stage/edit-db/enum"),null,true)
-                                     .stream()
-                                     .map(f->f.getAbsolutePath())
-                                     .collect(Collectors.toList())
-                                    );
-                        DbImport.main(theArgs.toArray(new String[0]));
-                    })
-                )
+            Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
+                              propertiesFile,
+                              environment,exit,
+                              "stage/edit-db/enum",
+                              "stage/edit-db/eu/EngineeringUnitList.xml",
+                              "stage/edit-db/datatype/DataTypeEquivalenceList.xml",
+                              "stage/edit-db/presentation",
+                              "stage/edit-db/loading-app"
             );
+
+            /*
+             * $DH/bin/dbimport -l $LOG -r $EDITDB/enum/*.xml >>$LOG 2>&1
+echo "Importing Standard Engineering Units and Conversions from edit-db ..."
+$DH/bin/dbimport -l $LOG -r $EDITDB/eu/EngineeringUnitList.xml >>$LOG 2>&1
+echo "Importing Standard Data Types from edit-db ..."
+$DH/bin/dbimport -l $LOG -r $EDITDB/datatype/DataTypeEquivalenceList.xml >>$LOG 2>&1
+echo "Importing Presentation Groups ..."
+$DH/bin/dbimport -l $LOG -r $EDITDB/presentation/*.xml >>$LOG 2>&1
+echo "Importing standard computation apps and algorithms ..."
+$DH/bin/compimport -l $LOG $EDITDB/comp-standard/*.xml >>$LOG 2>&1
+echo "Importing DECODES loading apps ..."
+$DH/bin/dbimport -l $LOG -r $EDITDB/loading-app/*.xml >>$LOG 2>&1
+             */
         });
         started = true;
     }
