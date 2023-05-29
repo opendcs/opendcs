@@ -19,6 +19,17 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  */
 public class Programs
 {    
+    /**
+     * Call DbImport on a set of files or directories. Execution is wrapped 
+     * in the SystemStubs EnvironmentVariables and SystemExit stubs.
+     * 
+     * @param log Log file to use for this import
+     * @param propertiesFile userProperties file for this execution
+     * @param env SystemStubs environment instance
+     * @param exit SystemStubs exit instance
+     * @param filesOrDirectories list of specific files or directories. Will be expanded recursively.
+     * @throws Exception If DbImport exists with a code other than 0 (or null)
+     */
     public static void DbImport(File log, File propertiesFile,
                                 EnvironmentVariables env, SystemExit exit,
                                 String... filesOrDirectories) throws Exception

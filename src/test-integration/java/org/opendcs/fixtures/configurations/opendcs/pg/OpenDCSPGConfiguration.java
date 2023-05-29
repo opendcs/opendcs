@@ -5,27 +5,25 @@ import static org.opendcs.fixtures.Toolkit.args;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
-import decodes.dbimport.DbImport;
-import uk.org.webcompere.systemstubs.SystemStubs;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
+/**
+ * Handles setup of an OpenDCS Postgres SQL Database instance.
+ * 
+ */
 public class OpenDCSPGConfiguration implements Configuration
 {
     private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
@@ -92,18 +90,25 @@ public class OpenDCSPGConfiguration implements Configuration
                                     "stage/schema/opendcs-pg/sequences.sql"),
                                     Charset.forName("UTF8")
                                     );
+            log.info("Loading Groups.");
             h.createScript(groups).executeAsSeparateStatements();
+            log.info("Loading base tables.");
             h.createScript(opendcs).executeAsSeparateStatements();
+            log.info("Loading Sequences.");
             h.createScript(sequences).executeAsSeparateStatements();
+            log.info("Setting version.");
             h.createScript("insert into DecodesDatabaseVersion values(68, '');"
                          + "insert into tsdb_database_version values(68, '');")                         
              .executeAsSeparateStatements();
+            log.info("Creating application user.");
             h.execute("create user dcs_proc with password 'dcs_proc'");
             h.execute("GRANT \"OTSDB_ADMIN\" TO dcs_proc");
             h.execute("GRANT \"OTSDB_MGR\" TO dcs_proc");
+            log.info("Setting authentication environment vars.");
             environment.set("DB_USERNAME","dcs_proc");
             environment.set("DB_PASSWORD","dcs_proc");
 
+            log.info("Loading base data.");
             Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
                               propertiesFile,
                               environment,exit,
@@ -113,20 +118,6 @@ public class OpenDCSPGConfiguration implements Configuration
                               "stage/edit-db/presentation",
                               "stage/edit-db/loading-app"
             );
-
-            /*
-             * $DH/bin/dbimport -l $LOG -r $EDITDB/enum/*.xml >>$LOG 2>&1
-echo "Importing Standard Engineering Units and Conversions from edit-db ..."
-$DH/bin/dbimport -l $LOG -r $EDITDB/eu/EngineeringUnitList.xml >>$LOG 2>&1
-echo "Importing Standard Data Types from edit-db ..."
-$DH/bin/dbimport -l $LOG -r $EDITDB/datatype/DataTypeEquivalenceList.xml >>$LOG 2>&1
-echo "Importing Presentation Groups ..."
-$DH/bin/dbimport -l $LOG -r $EDITDB/presentation/*.xml >>$LOG 2>&1
-echo "Importing standard computation apps and algorithms ..."
-$DH/bin/compimport -l $LOG $EDITDB/comp-standard/*.xml >>$LOG 2>&1
-echo "Importing DECODES loading apps ..."
-$DH/bin/dbimport -l $LOG -r $EDITDB/loading-app/*.xml >>$LOG 2>&1
-             */
         });
         started = true;
     }

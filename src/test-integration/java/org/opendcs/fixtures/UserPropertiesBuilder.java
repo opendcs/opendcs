@@ -8,35 +8,66 @@ public class UserPropertiesBuilder
 {
     private Properties props = new Properties();
     
+    /**
+     * Create the actual properties file.
+     * @param out prepared output stream to write the properties
+     * @throws IOException
+     */
     public void build(OutputStream out) throws IOException
     {
         props.store(out,"Test Configuration");
     }
 
+    /**
+     * Set Database location
+     * @param dbLocation directory or jdbc URL
+     * @return
+     */
     public UserPropertiesBuilder withDatabaseLocation(String dbLocation)
     {
         props.setProperty("EditDatabaseLocation", dbLocation);
         return this;
     }
 
+    /**
+     * Set the required SQLDate format
+     * @param format SimpleDateFormat used to generating or parsing certain results.
+     * @return
+     */
     public UserPropertiesBuilder withSqlDateFormat(String format)
     {
         props.setProperty("sqlDateFormat", format);
         return this;
     }
 
+    /**
+     * Sets what type of database we're using
+     * @param type XML,OPENDCS,CWMS,HDB are currently valid
+     * @return
+     */
     public UserPropertiesBuilder withEditDatabaseType(String type)
     {
         props.setProperty("editDatabaseType", type);
         return this;
     }
 
+    /**
+     * Default site name style (CWMS,HDB,USGS,NWS, etc) to look for.
+     * @param preference
+     * @return
+     */
     public UserPropertiesBuilder withSiteNameTypePreference(String preference)
     {
         props.setProperty("siteNameTypePreference", preference);
         return this;
     }
 
+    /**
+     * Pointer to authentication information. defaults to $DCSTOOL_USERDIR/.decodes.auth
+     * Required for SQL based instances.
+     * @param auth
+     * @return
+     */
     public UserPropertiesBuilder withDecodesAuth(String auth)
     {
         props.setProperty("DbAuthFile", auth);
