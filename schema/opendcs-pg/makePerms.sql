@@ -1,37 +1,34 @@
-#!/bin/bash
+do $$
+declare
+    r record;
+begin
+    for r in select table_schema, table_name from information_schema.tables
+             WHERE table_type = 'BASE TABLE' and table_schema = 'public'
+    loop
+        execute 'GRANT SELECT ON ' || quote_ident(r.table_schema) || '.'
+                || quote_ident(r.table_name) || ' TO "OTSDB_USER"';
+        if starts_with(upper(r.table_name), 'DCP_TRANS') OR
+           starts_with(upper(r.table_name), 'TS_NUM') OR
+           starts_with(upper(r.table_name), 'TS_STRING') OR
+           upper(r.table_name) = 'TS_SPEC' OR
+           upper(r.table_name) = 'CP_COMP_PROC_LOCK'
+        then
+            execute  'GRANT ALL ON TABLE ' || quote_ident(r.table_schema) || '.' || quote_ident(r.table_name) || ' TO "OTSDB_DATA_ACQ"';
+        elsif upper(r.table_name) = 'CP_COMP_DEPENDS' OR
+                upper(r.table_name) = 'CP_COMP_TASKLIST' OR
+                upper(r.table_name) = 'CP_DEPENDS_SCRATCHPAD'
+        then
+            execute 'GRANT ALL ON TABLE ' || quote_ident(r.table_schema) || '.' || quote_ident(r.table_name) || ' TO "OTSDB_COMP_EXEC"';
+        else
+            execute 'GRANT ALL ON TABLE ' || quote_ident(r.table_schema) || '.' || quote_ident(r.table_name) || ' TO "OTSDB_MGR"';
+        end if;
+    end loop;
 
-INPUT=$1
-OUTPUT=setPerms.sql
+    for r in select sequence_schema, sequence_name from information_schema.Sequences
+        where sequence_schema = 'public'
+    loop
+        EXECUTE 'GRANT USAGE, SELECT ON SEQUENCE ' || quote_ident(r.sequence_schema) || '.'
+                || quote_ident(r.sequence_name) || ' TO "OTSDB_USER"';
+    end loop;
 
-echo -n "-- created on " > $OUTPUT
-date >> $OUTPUT
-
-grep -ih "create table " $1 | sed -e "s/CREATE TABLE //" | sort>/tmp/table-list
-#dos2unix /tmp/table-list
-
-for TABLE in `cat /tmp/table-list`
-do
-	echo "ALTER TABLE $TABLE OWNER TO \"OTSDB_ADMIN\";" >> $OUTPUT
-	# OTSDB_USER can select all tables
-	echo "GRANT SELECT ON TABLE $TABLE TO \"OTSDB_USER\";" >> $OUTPUT
-	if [[ $TABLE == DCP_TRANS_* ]] || [[ $TABLE == TS_NUM_* ]] || [[ $TABLE == TS_STRING_* ]] || [[ $TABLE == "TS_SPEC" ]] || [[ $TABLE == "CP_COMP_PROC_LOCK" ]]
-	then
-		echo "GRANT ALL ON TABLE $TABLE TO \"OTSDB_DATA_ACQ\";" >> $OUTPUT
-	elif [[ $TABLE == "CP_COMP_DEPENDS" ]] || [[ $TABLE == "CP_COMP_TASKLIST" ]] || [[ $TABLE == "CP_DEPENDS_SCRATCHPAD" ]]
-	then
-		echo "GRANT ALL ON TABLE $TABLE TO \"OTSDB_COMP_EXEC\";" >> $OUTPUT
-	else
-		echo "GRANT ALL ON TABLE $TABLE TO \"OTSDB_MGR\";" >> $OUTPUT
-	fi
-	echo >> $OUTPUT
-done
-
-grep -ih "create sequence " $1 | sed -e "s/CREATE SEQUENCE //" | sed -e "s/;//" | sort>/tmp/seq-list
-for SEQ in `cat /tmp/seq-list`
-do
-	echo "ALTER SEQUENCE $SEQ OWNER TO \"OTSDB_ADMIN\";" >> $OUTPUT
-	echo "GRANT USAGE, SELECT ON SEQUENCE $SEQ TO \"OTSDB_USER\";" >>$OUTPUT
-done
-
-rm /tmp/table-list
-
+END$$;

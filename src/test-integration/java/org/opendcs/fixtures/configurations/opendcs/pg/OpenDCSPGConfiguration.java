@@ -90,16 +90,30 @@ public class OpenDCSPGConfiguration implements Configuration
                                     "stage/schema/opendcs-pg/sequences.sql"),
                                     Charset.forName("UTF8")
                                     );
+            String permissions = FileUtils.readFileToString(
+                new File(
+                    "stage/schema/opendcs-pg/makePerms.sql"),
+                    Charset.forName("UTF8")
+                    );
+
             log.info("Loading Groups.");
             h.createScript(groups).executeAsSeparateStatements();
+
             log.info("Loading base tables.");
             h.createScript(opendcs).executeAsSeparateStatements();
+
             log.info("Loading Sequences.");
             h.createScript(sequences).executeAsSeparateStatements();
+
+            log.info("Set permissions.");
+            h.createUpdate(permissions).execute();
+
             log.info("Setting version.");
             h.createScript("insert into DecodesDatabaseVersion values(68, '');"
                          + "insert into tsdb_database_version values(68, '');")                         
              .executeAsSeparateStatements();
+
+
             log.info("Creating application user.");
             h.execute("create user dcs_proc with password 'dcs_proc'");
             h.execute("GRANT \"OTSDB_ADMIN\" TO dcs_proc");
