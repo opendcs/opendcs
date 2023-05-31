@@ -17,6 +17,7 @@ BEGIN
 END;
 $unit_conf_check$ language plpgsql;
 
+drop trigger unit_conv_check_trigger on unitconverter;
 create trigger unit_conv_check_trigger
 before insert on unitconverter
 for each row
@@ -46,6 +47,7 @@ BEGIN
 END;
 $cfg_dt_std_check$ language plpgsql;
 
+drop trigger cfg_dt_std_check_trigger on configsensordatatype;
 create trigger cfg_dt_std_check_trigger
 before insert on configsensordatatype
 for each row
