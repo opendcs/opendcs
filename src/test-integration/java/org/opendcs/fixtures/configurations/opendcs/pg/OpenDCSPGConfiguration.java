@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
@@ -74,46 +75,19 @@ public class OpenDCSPGConfiguration implements Configuration
         {
             return;
         }
+        HashMap<String,String> placeHolders = new HashMap<>();
+        placeHolders.put("NUM_TS_TABLES","1");
+        placeHolders.put("NUM_TEXT_TABLES","1");
+
+        Flyway flyway = Flyway.configure()
+                              .dataSource(dbUrl,null,null)
+                              .placeholders(placeHolders)
+                              .locations("db/opendcs-pg")
+                              .load();
+
+        flyway.migrate();
         Jdbi jdbi = Jdbi.create(dbUrl);
         jdbi.useHandle(h->{
-            String groups = FileUtils.readFileToString(
-                                new File(
-                                    "stage/schema/opendcs-pg/group_roles.sql"),
-                                    Charset.forName("UTF8"));
-            String opendcs = FileUtils.readFileToString(
-                                new File(
-                                    "stage/schema/opendcs-pg/opendcs.sql"),
-                                    Charset.forName("UTF8")
-                                    );
-            String sequences = FileUtils.readFileToString(
-                                new File(
-                                    "stage/schema/opendcs-pg/sequences.sql"),
-                                    Charset.forName("UTF8")
-                                    );
-            String permissions = FileUtils.readFileToString(
-                new File(
-                    "stage/schema/opendcs-pg/makePerms.sql"),
-                    Charset.forName("UTF8")
-                    );
-
-            log.info("Loading Groups.");
-            h.createScript(groups).executeAsSeparateStatements();
-
-            log.info("Loading base tables.");
-            h.createScript(opendcs).executeAsSeparateStatements();
-
-            log.info("Loading Sequences.");
-            h.createScript(sequences).executeAsSeparateStatements();
-
-            log.info("Set permissions.");
-            h.createUpdate(permissions).execute();
-
-            log.info("Setting version.");
-            h.createScript("insert into DecodesDatabaseVersion values(68, '');"
-                         + "insert into tsdb_database_version values(68, '');")                         
-             .executeAsSeparateStatements();
-
-
             log.info("Creating application user.");
             h.execute("create user dcs_proc with password 'dcs_proc'");
             h.execute("GRANT \"OTSDB_ADMIN\" TO dcs_proc");

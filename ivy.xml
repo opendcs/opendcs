@@ -94,6 +94,7 @@
         <dependency org="org.jdbi" name="jdbi3-core" rev="3.38.2" conf="test->default"/>
         <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="3.38.2" conf="test->default"/>
         <dependency org="org.jdbi" name="jdbi3-postgres" rev="3.38.2" conf="test->default"/>
+        <dependency org="org.flywaydb" name="flyway-core" rev="9.8.1" conf="test->default"/>
 
         <!-- izpack -->
         <dependency org="org.codehaus.izpack" name="izpack-standalone-compiler" rev="4.3.5" conf="izpack->default"/>
