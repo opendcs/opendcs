@@ -68,3 +68,5 @@ izpack {
     appProperties = ['version': version]
     outputFile = file("$buildDir/distributions/opendcs-ot-${version}.jar")
 }
+
+build.finalizedBy izPackCreateInstaller

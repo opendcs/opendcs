@@ -7,11 +7,12 @@
  * in the user manual at https://docs.gradle.org/7.2/userguide/multi_project_builds.html
  */
 
-rootProject.name = 'opendcs-build'
+rootProject.name = 'OpenDCS Build'
 include ":opendcs"
 project(":opendcs").projectDir=file("core")
 
 include ":install"
+project(":install").projectDir=file("install")
 
 dependencyResolutionManagement
 {
