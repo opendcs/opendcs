@@ -11,7 +11,7 @@ public class SitePackageTest {
         try(PythonInterpreter python = new PythonInterpreter();)
         {
             python.exec("import sys");
-            String path = String.format("%s/libs/opendcs.jar/python-packages",System.getProperty("build.dir"));
+            String path = String.format("%s/python-packages",System.getProperty("opendcs.jarfile"));
             python.exec(String.format("sys.path.append(\"%s\")",path));
             PyObject sysPath = python.eval("repr(sys.path)");
             System.err.println(sysPath.asString());

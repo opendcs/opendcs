@@ -113,8 +113,11 @@ test
 {
     useJUnitPlatform()
     jvmArgs += "-Dbuild.dir=$buildDir"
+    jvmArgs += "-Dopendcs.jarfile=$buildDir/libs/opendcs-${version}.jar"
     systemProperty "build.dir", "$buildDir"
 }
+
+test.dependsOn jar
 
 configurations.all 
 {
