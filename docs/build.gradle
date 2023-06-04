@@ -1,0 +1,10 @@
+plugins
+{
+    id "kr.motd.sphinx" version "2.10.0"
+}
+
+sphinx {
+  // Change the source directory.
+  sourceDirectory = "${projectDir}/source"
+  outputDirectory = "${buildDir}/site/html"
+}

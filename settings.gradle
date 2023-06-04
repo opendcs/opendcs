@@ -14,6 +14,9 @@ project(":opendcs").projectDir=file("core")
 include ":install"
 project(":install").projectDir=file("install")
 
+include ":docs"
+project(":docs").projectDir=file("docs")
+
 dependencyResolutionManagement
 {
     repositories 
