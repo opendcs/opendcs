@@ -16,12 +16,13 @@ plugins {
 
 configurations {
     opendcs
+    docs
 }
 
 dependencies {
     izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'
     opendcs project(":opendcs")
-    //implementation project(":docs")
+    docs project(path: ":docs", configuration: 'docs')
 }
 
 task stage(type: Copy) {
@@ -47,6 +48,10 @@ task stage(type: Copy) {
     from(configurations.opendcs) {
         into 'dep'
         exclude 'opendcs-*.jar'
+    }
+
+    from(configurations.docs) {
+        into 'doc'
     }
 
     doLast {

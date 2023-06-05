@@ -6,6 +6,16 @@ def docsVenv = "$buildDir/sphinx"
 def docsDir = projectDir
 def venvPath = (osWin ? "${docsVenv}/Scipts" : "${docsVenv}/bin")
 
+
+
+configurations {
+    docs {
+        canBeConsumed = true
+        canBeResolved = false        
+    }
+}
+
+
 task prepVenv(type: Exec) {
     executable pythonExe
     workingDir projectDir
@@ -54,7 +64,14 @@ tasks.addRule("Pattern: buidDocs<ID>") { String taskName ->
     }
 }
 
-tasks.register('buildDocs') {
+task buildDocs {
     dependsOn 'buildDocsHtml' 
     // work on PDF later,'buildDocsLatexpdf'
+}
+
+
+artifacts {
+    docs(file("${buildDir}/html")) {
+        builtBy(buildDocs)
+    }
 }
