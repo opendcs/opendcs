@@ -1,10 +1,60 @@
-plugins
-{
-    id "kr.motd.sphinx" version "2.10.0"
+import org.apache.tools.ant.taskdefs.condition.Os
+
+def osWin = Os.isFamily(Os.FAMILY_WINDOWS)
+def pythonExe = osWin ? "python.exe" : "python3"
+def docsVenv = "$buildDir/sphinx"
+def docsDir = projectDir
+def venvPath = (osWin ? "${docsVenv}/Scipts" : "${docsVenv}/bin")
+
+task prepVenv(type: Exec) {
+    executable pythonExe
+    workingDir projectDir
+    args += "-m"
+    args += "venv"
+    args += docsVenv
+    outputs.dir(docsVenv)
+           .withPropertyName('outputDir')
 }
 
-sphinx {
-  // Change the source directory.
-  sourceDirectory = "${projectDir}/source"
-  outputDirectory = "${buildDir}/site/html"
+task installReqs(type: Exec) {
+    dependsOn prepVenv
+
+    executable pythonExe
+    workingDir projectDir
+    args += "-m"
+    args += "pip"
+    args += "install"
+    args += "-r"
+    args += "${docsDir}/requirements.txt"
+    environment "VENV_PATH", venvPath
+}
+
+
+tasks.addRule("Pattern: buidDocs<ID>") { String taskName ->
+    def builder = taskName.toLowerCase().replace("builddocs","")
+    if (taskName.startsWith("buildDocs")) {
+        def theArgs = osWin ? ["/c","make.bat",builder]
+                         : [builder]
+        def cmd = osWin ? "cmd" : "make"
+        task(taskName, type: Exec) {
+            dependsOn installReqs
+
+            executable cmd
+            workingDir projectDir
+            args = theArgs
+            environment "PATH": "${venvPath}:${System.getenv('PATH')}"
+
+            inputs.files(fileTree('source'))
+                  .withPropertyName('sourceFiles')
+                  .withPathSensitivity(PathSensitivity.RELATIVE)
+    
+            outputs.dir("${buildDir}/${builder}")
+                   .withPropertyName('outputDir')
+        }
+    }
+}
+
+tasks.register('buildDocs') {
+    dependsOn 'buildDocsHtml' 
+    // work on PDF later,'buildDocsLatexpdf'
 }
