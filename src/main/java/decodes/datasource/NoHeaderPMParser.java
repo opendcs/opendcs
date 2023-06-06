@@ -11,7 +11,7 @@ import decodes.db.Constants;
 /**
   Concrete subclass of PMParser for parsing performance measurements
   out of a file with no header. Sets header length to 0 and message length
-  to the endire raw message.
+  to the entire raw message.
   Used when parsing files and medium ID has been given via some other means.
   Also sets the MESSAGE_TIME to current time.
 */
