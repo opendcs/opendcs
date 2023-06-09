@@ -179,6 +179,17 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 	*/
 	public static String getIgnoreCase( Properties pr, String key )
 	{
+		return getIgnoreCase(pr, key, null);
+	}
+
+	/**
+	* Search for a property, ignoring case
+	* @param pr the Properties
+	* @param key the key
+	* @return the value, or null if no match
+	*/
+	public static String getIgnoreCase( Properties pr, String key, String defaultValue)
+	{
 		Enumeration en = pr.propertyNames();		
 		while(en.hasMoreElements())
 		{
@@ -186,7 +197,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 			if (key.trim().equalsIgnoreCase(k.trim()))
 				return pr.getProperty(k);
 		}
-		return null;
+		return defaultValue;
 	}
 
 	/**
