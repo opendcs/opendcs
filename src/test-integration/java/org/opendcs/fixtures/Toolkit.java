@@ -22,9 +22,9 @@ import org.opendcs.spi.configuration.ConfigurationProvider;
 public class Toolkit
 {
     @TestFactory
-    Stream<DynamicNode> opendcsCompatibilityKit() throws Exception
+    Stream<DynamicContainer> opendcsCompatibilityKit() throws Exception
     {
-        ArrayList<DynamicNode> tests = new ArrayList<>();
+        ArrayList<DynamicContainer> tests = new ArrayList<>();
         ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
         Iterator<ConfigurationProvider> configs = loader.iterator();
         while(configs.hasNext())
@@ -32,7 +32,6 @@ public class Toolkit
             ConfigurationProvider config = configs.next();
             File tmp = Files.createTempDirectory("configs-"+config.getImplementation()).toFile();
             tests.add(testsFor(config.getConfig(tmp)));
-            
         }
         return tests.stream();
     }
