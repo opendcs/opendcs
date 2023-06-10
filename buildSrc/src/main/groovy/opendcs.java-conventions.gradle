@@ -1,0 +1,11 @@
+plugins {
+    id 'java'
+    id 'checkstyle'
+
+    // NOTE: external plugin version is specified in implementation dependency artifact of the project's build file
+    id 'com.github.spotbugs'
+}
+
+checkstyle {
+    
+}
