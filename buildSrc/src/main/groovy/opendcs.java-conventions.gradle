@@ -9,3 +9,27 @@ plugins {
 checkstyle {
 
 }
+
+spotbugs {
+    ignoreFailures = true
+    toolVersion = '4.7.3'
+    reportsDir = file("$buildDir/reports/spotbugs")
+    effort = 'max'
+    excludeFilter = file("${rootDir}/spotbugs-filter.xml")
+}
+
+spotbugsMain {
+    reports {
+        xml {
+            required = true
+            outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.xml")
+            withMessages = true
+        }
+        html {
+            withMessages = true
+            required = true
+            outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+            stylesheet = 'fancy-hist.xsl'
+        }
+    }
+}
