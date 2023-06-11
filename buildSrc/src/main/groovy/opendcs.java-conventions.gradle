@@ -6,6 +6,21 @@ plugins {
     id 'com.github.spotbugs'
 }
 
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    pmd
+}
+
+dependencies {
+    pmd 'net.sourceforge.pmd:pmd-core:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-doc:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-java:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-java8:6.55.0'
+}
+
 checkstyle {
 
 }
@@ -23,13 +38,27 @@ spotbugsMain {
         xml {
             required = true
             outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.xml")
-            withMessages = true
+            //withMessages = true
         }
         html {
-            withMessages = true
+            //withMessages = true
             required = true
             outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
             stylesheet = 'fancy-hist.xsl'
+        }
+    }
+}
+
+task cpd {
+    doLast {
+        project.mkdir("$buildDir/reports")
+        ant.taskdef(name: "cpd",
+                    classname: "net.sourceforge.pmd.cpd.CPDTask",
+                    classpath: configurations.pmd.asPath
+        )
+        ant.cpd(minimumTokenCount: 100, outputFile: "$buildDir/reports/cpd.xml",
+                format: "xml", encoding: "UTF-8", ignoreAnnotations: true) {
+            fileset(dir: "src", includes: "**/*.java")
         }
     }
 }
