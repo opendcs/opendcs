@@ -596,6 +596,7 @@ public class LrgsMain
 					(LoadableLrgsInputInterface)inputClass.newInstance();
 				input.setInterfaceName(loadableName);
 				input.setMsgArchive(msgArchive);
+				input.setLrgsMain(this);
 				addInput(input);				
 
 				props.entrySet()

@@ -1,13 +1,13 @@
 package org.opendcs.lrgs.http;
 
-import decodes.datasource.LrgsDataSource;
 import io.javalin.Javalin;
 import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LoadableLrgsInputInterface;
 import lrgs.lrgsmain.LrgsInputException;
 import lrgs.lrgsmain.LrgsInputInterface;
+import lrgs.lrgsmain.LrgsMain;
 
-public class LrgsHttp implements LoadableLrgsInputInterface
+public class LrgsHttpInterface implements LoadableLrgsInputInterface
 {
     private static final String TYPE = "HTTP";
 
@@ -16,11 +16,7 @@ public class LrgsHttp implements LoadableLrgsInputInterface
     private int port = 7000;
     private String interfaceName;
     private MsgArchive archive;
-
-    public LrgsHttp()
-    {
-
-    }
+    private LrgsMain lrgs;
 
     @Override
     public int getType()
@@ -48,7 +44,7 @@ public class LrgsHttp implements LoadableLrgsInputInterface
     public void initLrgsInput() throws LrgsInputException
     {
         app = Javalin.create()
-            .get("/health", ctx -> LrgsHealth.get(ctx) );        
+            .get("/health", ctx -> LrgsHealth.get(ctx, archive, lrgs) );
     }
 
     @Override
@@ -104,9 +100,9 @@ public class LrgsHttp implements LoadableLrgsInputInterface
     }
 
     @Override
-    public String getGroup() 
+    public String getGroup()
     {
-        throw new UnsupportedOperationException("Unimplemented method 'getGroup'");
+        return null;
     }
 
     @Override
@@ -128,5 +124,11 @@ public class LrgsHttp implements LoadableLrgsInputInterface
     public void setMsgArchive(MsgArchive archive)
     {
         this.archive = archive;
+    }
+
+    @Override
+    public void setLrgsMain(LrgsMain lrgsMain)
+    {
+        this.lrgs = lrgsMain;
     }
 }
