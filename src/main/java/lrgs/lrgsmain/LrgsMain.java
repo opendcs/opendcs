@@ -710,7 +710,7 @@ public class LrgsMain
 					{
 						Logger.instance().debug3("SIGTERM Caught, Setting shutdown flag to true.");
 						lm.shutdown();
-						mainThread.join();
+						mainThread.join(1000);
 					}
 					catch (InterruptedException ex)
 					{

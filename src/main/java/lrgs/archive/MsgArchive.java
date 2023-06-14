@@ -1103,8 +1103,10 @@ class CheckpointThread extends Thread
 
 	CheckpointThread(MsgArchive ma)
 	{
+		super();
 		shutdown = false;
 		archive = ma;
+		this.setDaemon(true);
 	}
 
 	public void run()
