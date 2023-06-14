@@ -810,6 +810,16 @@ public class LrgsMain
         statusRptGen.write(f, lsse.hostname, lsse, cfg.htmlStatusSeconds);
     }
 
+    public DetailReportGenerator getReportGenerator()
+    {
+        return statusRptGen;
+    }
+
+    public JavaLrgsStatusProvider getStatusProvider()
+    {
+        return this.statusProvider;
+    }
+
     /**
      * Called on Linux when SIGHUP has been received.
      */

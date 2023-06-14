@@ -18,11 +18,11 @@ public class LrgsHealth
     {
         if (lrgs.getDdsServer().statusProvider.getStatusSnapshot().isUsable)
         {
-            ctx.status(HttpCode.OK);
+            ctx.status(HttpCode.OK).json("Active");
         }
         else
         {
-            ctx.status(HttpCode.SERVICE_UNAVAILABLE);
+            ctx.status(HttpCode.SERVICE_UNAVAILABLE).json("Inactive");
         }
     }
 }

@@ -1,11 +1,19 @@
 package org.opendcs.lrgs.http;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
+import ilex.xml.XmlOutputStream;
 import io.javalin.Javalin;
+import io.javalin.http.ContentType;
+import io.javalin.http.HttpCode;
 import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LoadableLrgsInputInterface;
 import lrgs.lrgsmain.LrgsInputException;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
+import lrgs.lrgsmon.DetailReportGenerator;
+import lrgs.statusxml.LrgsStatusSnapshotExt;
 
 public class LrgsHttpInterface implements LoadableLrgsInputInterface
 {
@@ -44,7 +52,24 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     public void initLrgsInput() throws LrgsInputException
     {
         app = Javalin.create()
-            .get("/health", ctx -> LrgsHealth.get(ctx, archive, lrgs) );
+            .get("/health", ctx -> LrgsHealth.get(ctx, archive, lrgs))
+            .get("/status", ctx -> {
+                LrgsStatusSnapshotExt status = lrgs.getStatusProvider().getStatusSnapshot();
+                DetailReportGenerator gen = lrgs.getReportGenerator();
+                try(ByteArrayOutputStream bos = new ByteArrayOutputStream();)
+                {
+                    XmlOutputStream xos = new XmlOutputStream(bos, "html");
+                        gen.writeReport(xos, status.hostname, status, 10);
+                        ctx.status(HttpCode.OK)
+                           .result(bos.toByteArray())
+                           .contentType(ContentType.TEXT_HTML);
+                }
+                catch (Exception ex)
+                {
+                    ctx.status(HttpCode.SERVICE_UNAVAILABLE).json("Cannot generate report.");
+                }
+            })
+            ;
     }
 
     @Override
