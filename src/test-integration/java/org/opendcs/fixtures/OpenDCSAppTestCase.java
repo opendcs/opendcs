@@ -22,7 +22,7 @@ public class OpenDCSAppTestCase
 
     public String getDisplayName()
     {
-        return this.configurationName + "-" + config.isSql() + "-" + config.getPropertiesFile().getAbsolutePath();
+        return this.configurationName + "-" + (config.isSql() ? "SQL" : "XML"); //+ config.getPropertiesFile().getAbsolutePath();
     }
 
     public String getConfigurationName()

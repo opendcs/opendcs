@@ -271,11 +271,11 @@ public class ConfigListIO extends SqlDbObjIo
 			{
 				// DB Version 6 or later, read ConfigSensorDataType table.
 				Statement dtstmt = createStatement();
-				ResultSet dtrs = dtstmt.executeQuery(
-					"SELECT sensorNumber, dataTypeId, standard, code "
-					+ "FROM ConfigSensorDataType, DataType "
-					+ "WHERE ConfigId = " + platformConfigId
-					+ "AND ConfigSensorDataType.dataTypeId = DataType.id");
+				String stmtStr = "SELECT sensorNumber, dataTypeId, standard, code "
+				+ "FROM ConfigSensorDataType, DataType "
+				+ "WHERE ConfigId = " + platformConfigId
+				+ " AND ConfigSensorDataType.dataTypeId = DataType.id";
+				ResultSet dtrs = dtstmt.executeQuery(stmtStr);
 				while (dtrs.next()) 
 				{
 					int sensorNum = dtrs.getInt(1);

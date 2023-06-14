@@ -75,7 +75,7 @@
             <exclude org="javax.help"/>
         </dependency>
         <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-core" rev="1.1.0"/>
-
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.7.36"/>
 
         <!-- test dependencies -->
 
@@ -89,6 +89,12 @@
         <dependency org="org.apache.derby" name="derby" rev="10.14.2.0" conf="test->default"/>
         <dependency org="uk.org.webcompere" name="system-stubs-jupiter" rev="2.0.2" conf="test->default"/>
         <dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.14.2" conf="test->default"/>
+        <dependency org="org.testcontainers" name="testcontainers" rev="1.18.1" conf="test->default"/>
+        <dependency org="org.testcontainers" name="postgresql" rev="1.18.1" conf="test->default"/>
+        <dependency org="org.jdbi" name="jdbi3-core" rev="3.38.2" conf="test->default"/>
+        <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="3.38.2" conf="test->default"/>
+        <dependency org="org.jdbi" name="jdbi3-postgres" rev="3.38.2" conf="test->default"/>
+        <dependency org="org.flywaydb" name="flyway-core" rev="9.8.1" conf="test->default"/>
 
         <!-- izpack -->
         <dependency org="org.codehaus.izpack" name="izpack-standalone-compiler" rev="4.3.5" conf="izpack->default"/>
