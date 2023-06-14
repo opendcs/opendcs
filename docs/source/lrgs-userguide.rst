@@ -2160,6 +2160,36 @@ The display shows the following columns:
 -  **LRGS Version**: Version of the LRGS software running on the remote
    server.
 
+LRGS Web Interface
+------------------
+
+The LRGS now has a simple Healthcheck end point and access to the status page over HTTPs.
+At present the design is simple, readonly, and meant to be access from behind some sort of proxy 
+if TLS is required.
+
+To enable add the following elements to your lrgs.conf file
+
+   LrgsInput.httpStatus.class=org.opendcs.lrgs.http.LrgsHttpInterface
+   LrgsInput.httpStatus.enabled=true
+   LrgsInput.httpStatus.port=7000
+
+7000 is the default port and can be left off. Include the property and set the value is 
+required in your environment.
+
+These values can also be set on the "Misc" tab of of the RtStat configuration dialog.
+
+The following paths are provided:
+
++-------|--------------------------------------------------------------+
+| path  | purpose                                                      |
++-------+--------------------------------------------------------------+
+|/health|Returns "200 OK" if the Lrgs thinks it's in a usable state.   |
+|/status|Returns the default Lrgs Status page, same as lrgsstatus.html.|
++-------+--------------------------------------------------------------|
+
+Future work will include authentication, authorization, and other DDS operations
+once that protocol is designed.
+
 DDS Implementation
 ==================
 
