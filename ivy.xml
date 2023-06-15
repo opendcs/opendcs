@@ -7,6 +7,7 @@
           e:snapshot="a${snapshot.time}"/>
     <configurations defaultconf="runtime" defaultconfmapping="runtime->default">
         <conf name="runtime" visibility="public"/>
+        <conf name="runtime_last" visibility="public"/>
         <conf name="test"  visibility="private"/>
         <conf name="test_platform" visibility="private"/>
         <conf name="izpack" visibility="private"/>
@@ -34,8 +35,9 @@
         <dependency org="jfree" name="jcommon" rev="1.0.12"/>
         <dependency org="jfree" name="jfreechart" rev="1.0.13"/>
         <dependency org="org.python" name="jython-standalone" rev="2.7.3"/>
-        <dependency org="org.lobobrowser" name="LoboBrowser" rev="1.0.0"/>
-        <dependency org="lobobrowser" name="Cobra" rev="1.0.2"/>
+        <!-- Lobo needs to always go last, as for some awful reason they decided to embed their dependencies as class files -->
+        <dependency org="org.lobobrowser" name="LoboBrowser" rev="1.0.0" conf="runtime_last->default"/>
+        <dependency org="lobobrowser" name="Cobra" rev="1.0.2" conf="runtime_last->default"/>
         <dependency org="org.scijava" name="jep" rev="2.4.1">
             <exclude org="jama" module="jama"/>
         </dependency>
@@ -76,8 +78,10 @@
             <exclude org="javax.help"/>
         </dependency>
         <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-core" rev="1.1.0"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="2.0.7"/>
-        <dependency org="org.slf4j" name="slf4j-api" rev="2.0.7"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="2.0.6"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="2.0.6"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="2.0.6"/>
+        
         <dependency org="io.javalin" name="javalin" rev="4.6.8" />
 
         <!-- test dependencies -->
@@ -139,8 +143,10 @@
         <exclude org="javax.media"/>
         <exclude org="com.sun.media"/>
         <exclude org="log4j"/>
+        
 
-
+        <conflict org="org.slf4j" module="slf4j-api" rev="2.0.6"/>
+        <conflict org="org.slf4j" module="jcl-over-slf4j" rev="2.0.6"/>
 
     </dependencies>
 </ivy-module>
