@@ -353,14 +353,16 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </copy>
         <copy todir="stage/dep">
             <mappedresources enablemultiplemappings="false">
-                <!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
+                <!-- tweak to load at end as Cobra and LoboBrowser here is including it's own jooq 
+                     and other libaries for some reason breaking several things
+                -->
                 <restrict>
                     <path refid="runtime.classpath"/>
                     <type type="file"/>
                 </restrict>
                 <chainedmapper>
                     <flattenmapper/>
-                    <regexpmapper from="^(LoboBrowser-1.0.0.jar)" to="zzz\1"/>
+                    <regexpmapper from="^(Cobra-1.0.2|LoboBrowser-1.0.0.jar)" to="zzz\1"/>
                 </chainedmapper>
             </mappedresources>
             <mappedresources enablemultiplemappings="false">
@@ -370,7 +372,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 </restrict>
                 <chainedmapper>
                     <flattenmapper/>
-                    <regexpmapper from="^(?!LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
+                    <regexpmapper from="^(?!Cobra-1.0.2|LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
                 </chainedmapper>
             </mappedresources>
 
