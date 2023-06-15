@@ -92,6 +92,7 @@ public class JavaLoggerAdapter extends Handler
 	
 	private JavaLoggerAdapter()
 	{
+		this.setLevel(Level.ALL);
 	}
 
 	/**
@@ -110,39 +111,8 @@ public class JavaLoggerAdapter extends Handler
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
 		
 		java.util.logging.Logger globalLogger = LogManager.getLogManager().getLogger(globalName);
-		Handler handlers[] = globalLogger.getHandlers();
-		while (handlers != null && handlers.length > 0)
-		{
-			//&& handlers[0] instanceof ConsoleHandler)
-			globalLogger.removeHandler(handlers[0]);
-			handlers = globalLogger.getHandlers();
-		}
-		globalLogger.addHandler(instance());
-		globalLogger.setLevel(Level.ALL);
 		
-		for(String path : paths)
-		{
-			java.util.logging.Logger logger = java.util.logging.Logger.getLogger(path);
-			if (logger == null)
-				Logger.instance().debug3("logger is null for path '" + path + "'.");
-			else if (logger == globalLogger)
-				continue;
-			else
-			{
-				handlers = logger.getHandlers();
-				if (handlers == null || handlers.length == 0)
-					Logger.instance().debug3("Path '" + path + "' No loggers present.");
-				while (handlers != null && handlers.length > 0)
-				{
-					//&& handlers[0] instanceof ConsoleHandler)
-					Logger.instance().debug3("Path '" + path + "': Removing " + handlers[0].getClass().getName());
-					logger.removeHandler(handlers[0]);
-					handlers = logger.getHandlers();
-				}
-				logger.addHandler(instance());
-				logger.setLevel(Level.ALL);
-			}
-		}
+		globalLogger.addHandler(instance());		
 	}
 
 	@Override
