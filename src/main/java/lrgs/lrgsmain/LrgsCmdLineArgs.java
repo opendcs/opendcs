@@ -15,6 +15,10 @@ package lrgs.lrgsmain;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.SimpleFormatter;
 
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
@@ -106,29 +110,63 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 
         try
         {
-            qLogger = new QueueLogger(progname);
+			qLogger = new QueueLogger(progname);
+            // temporary name until all original logging removed.
+			final FileHandler fh = new FileHandler(getLogFile()+"jullog.%g",
+												   maxLogSize_arg.getValue(),
+												   numOldLogs_arg.getValue(),
+												   true);
 
-            fLogger = new SequenceFileLogger(progname, getLogFile());
-            fLogger.setNumOldLogs(numOldLogs_arg.getValue());
-            fLogger.setMaxLength(maxLogSize_arg.getValue());
+			java.util.logging.Logger global = java.util.logging.Logger.getLogger("");
 
-            TeeLogger tLogger = new TeeLogger(progname, fLogger, qLogger);
-            Logger.setLogger(tLogger);
+			SimpleFormatter sf = new SimpleFormatter();
+			fh.setFormatter(sf);
+            fh.setLevel(Level.ALL);
+            global.addHandler(fh);
+			fLogger = new SequenceFileLogger(progname, getLogFile());
+			fLogger.setNumOldLogs(numOldLogs_arg.getValue());
+			fLogger.setMaxLength(maxLogSize_arg.getValue());
 
-            SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-            df.setTimeZone(TimeZone.getTimeZone("UTC"));
-            Logger.setDateFormat(df);
+			TeeLogger tLogger = new TeeLogger(progname, fLogger, qLogger);
+			Logger.setLogger(tLogger);
 
-            // Set debug level.
-            int dl = getDebugLevel();
-            if (dl > 0)
-            {
-                int dv =
-                    dl == 1 ? Logger.E_DEBUG1 :
-                    dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3;
-                // Debug info only goes to file, never to clients.
-                fLogger.setMinLogPriority(dv);
-            }
+			SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
+			df.setTimeZone(TimeZone.getTimeZone("UTC"));
+			Logger.setDateFormat(df);
+
+			// Set debug level.
+			int dl = getDebugLevel();
+			global.setLevel(Level.INFO);
+			if (dl >0)
+			{
+				switch(dl)
+				{
+					case 1:
+					{
+						global.setLevel(Level.FINE);
+						break;
+					}
+					case 2:
+					{
+						global.setLevel(Level.FINER);
+						break;
+					}
+					case 3:
+					{
+						global.setLevel(Level.FINEST);
+						break;
+					}
+					default:
+					{
+						global.setLevel(Level.ALL);
+					}
+				}
+				int dv =
+					dl == 1 ? Logger.E_DEBUG1 :
+					dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3;
+				// Debug info only goes to file, never to clients.
+				fLogger.setMinLogPriority(dv);
+			}
         }
         catch(IOException ex)
         {
