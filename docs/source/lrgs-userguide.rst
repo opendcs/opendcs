@@ -2173,8 +2173,8 @@ To enable add the following elements to your lrgs.conf file
    LrgsInput.httpStatus.enabled=true
    LrgsInput.httpStatus.port=7000
 
-7000 is the default port and can be left off. Include the property and set the value is 
-required in your environment.
+7000 is the default port and can be left out of the lrgs.conf file.
+Include the property and set the value if required in your environment.
 
 These values can also be set on the "Misc" tab of of the RtStat configuration dialog.
 
