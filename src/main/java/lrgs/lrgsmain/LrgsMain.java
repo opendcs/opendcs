@@ -139,7 +139,7 @@ public class LrgsMain
 
 
     /** Constructor. */
-    public LrgsMain()
+    public LrgsMain(AlarmHandler alarmHandler)
     {
         msgArchive = null;
         myServerLock = null;
@@ -150,7 +150,7 @@ public class LrgsMain
         ddsRecv = null;
         drgsRecv = null;
         statusRptGen = new DetailReportGenerator("icons/satdish.jpg");
-        alarmHandler = new AlarmHandler(cmdLineArgs.qLogger);
+        this.alarmHandler = alarmHandler;
         dbThread = null;
         noaaportRecv = null;
         ddsRecv2=null;
@@ -722,8 +722,7 @@ public class LrgsMain
         if (cmdLineArgs.windowsSvcArg.getValue())
             ServerLock.setWindowsService(true);
 
-        //Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
-        final LrgsMain lm = new LrgsMain();
+        final LrgsMain lm = new LrgsMain(new AlarmHandler(cmdLineArgs.qLogger));
         if (cmdLineArgs.runInForGround() )
         {
             final Thread mainThread = Thread.currentThread();

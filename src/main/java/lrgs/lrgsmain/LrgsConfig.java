@@ -18,10 +18,13 @@ import java.io.IOException;
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import lrgs.ldds.PasswordChecker;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -30,6 +33,7 @@ This class holds all of the configuration variables for the archive module.
 */
 public class LrgsConfig implements PropertiesOwner
 {
+    private static final Logger logger = LoggerFactory.getLogger(getCallingClass());
     /** True if noaaport interface is enabled. */
     public boolean noaaportEnabled;
 
@@ -429,9 +433,9 @@ public class LrgsConfig implements PropertiesOwner
     public void loadConfig()
         throws IOException
     {
-        Logger.instance().warning(
-            LrgsMain.module + ":" + LrgsMain.EVT_CONFIG_CHANGE
-            + " Loading configuration file '" + cfgFile.getPath() + "'");
+        logger.warn(":{} Loading configuration file '{}'.",
+                    LrgsMain.EVT_CONFIG_CHANGE,
+                    cfgFile.getPath());
         lastLoadTime = System.currentTimeMillis();
         Properties props = new Properties();
         FileInputStream is = new FileInputStream(cfgFile);
@@ -460,8 +464,11 @@ public class LrgsConfig implements PropertiesOwner
             try { loadConfig(); }
             catch(IOException ex)
             {
-                Logger.instance().failure("Cannot load config file '"
-                    + cfgFile.getPath() + "': " + ex);
+                logger.atError()
+                      .setCause(ex)
+                      .setMessage("Cannot load config file '{}'")
+                      .addArgument(() -> cfgFile.getPath())
+                      .log();
             }
         }
     }
@@ -517,8 +524,7 @@ public class LrgsConfig implements PropertiesOwner
         }
         catch(Exception ex)
         {
-            Logger.instance().warning("Bad format for config value '" + name
-                + "': expected integer");
+            logger.warn("Bad format for config value '{}': expected integer",name);
             return defaultV;
         }
     }

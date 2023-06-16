@@ -15,13 +15,19 @@ package lrgs.lrgsmain;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
+
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;
 
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
+import ilex.util.JavaLoggerAdapter;
+import ilex.util.JavaLoggerFormatter;
 import ilex.util.SequenceFileLogger;
 import ilex.util.QueueLogger;
 import ilex.util.Logger;
@@ -29,6 +35,7 @@ import ilex.util.TeeLogger;
 
 public class LrgsCmdLineArgs extends ApplicationSettings
 {
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(getCallingClass());
     // Public strings set by command line options:
     private IntegerToken debuglevel_arg;
     private StringToken log_arg;
@@ -126,6 +133,24 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 			fLogger = new SequenceFileLogger(progname, getLogFile());
 			fLogger.setNumOldLogs(numOldLogs_arg.getValue());
 			fLogger.setMaxLength(maxLogSize_arg.getValue());
+            final JavaLoggerFormatter formatter = new JavaLoggerFormatter();
+            global.addHandler(new Handler() {
+                @Override
+                public void publish(LogRecord record) {
+                    qLogger.log(JavaLoggerAdapter.mapPriority(record),formatter.format(record));
+                }
+
+                @Override
+                public void flush() {
+                    // do nothing.
+                }
+
+                @Override
+                public void close() throws SecurityException {
+                    // do nothing.
+                }
+
+            });
 
 			TeeLogger tLogger = new TeeLogger(progname, fLogger, qLogger);
 			Logger.setLogger(tLogger);
@@ -170,13 +195,10 @@ public class LrgsCmdLineArgs extends ApplicationSettings
         }
         catch(IOException ex)
         {
-            System.err.println("Cannot open log file '" + getLogFile()
-                + "': " + ex);
-            System.exit(1);
+            throw new RuntimeException("Cannot open log file.",ex);
         }
 
-        Logger.instance().log(Logger.E_INFORMATION, "========== Process '"
-            + progname + "' Starting ==========");
+        logger.info("========== Process '{}' Starting ==========", progname);
     }
 
     public String getConfigFile()

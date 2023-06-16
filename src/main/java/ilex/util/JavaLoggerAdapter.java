@@ -130,7 +130,7 @@ public class JavaLoggerAdapter extends Handler
 		ilexLogger.log(mapPriority(record), s);
 	}
 	
-	private int mapPriority(LogRecord record)
+	public static int mapPriority(LogRecord record)
 	{
 		if (record.getLevel() == Level.SEVERE) return Logger.E_FAILURE;
 		if (record.getLevel() == Level.WARNING) return Logger.E_WARNING;
@@ -178,33 +178,5 @@ public class JavaLoggerAdapter extends Handler
 		myLogger.log(Level.FINER, "FINER for cname=" + cname);
 		myLogger.log(Level.FINEST, "FINEST for cname=" + cname);
 		Logger.instance().debug3("Direct DEBUG_3 message to IlexLogger.");
-	}
-}
-
-class JavaLoggerFormatter
-	extends Formatter
-{
-	@Override
-	public String format(LogRecord record)
-	{
-    	String msg = record.getMessage();
-        try 
-        {
-            Object parameters[] = record.getParameters();
-            if ((parameters != null && parameters.length > 0)
-             &&    (msg.indexOf("{0") >= 0 || msg.indexOf("{1") >=0 
-                 || msg.indexOf("{2") >= 0 || msg.indexOf("{3") >=0))
-            {
-            	msg = java.text.MessageFormat.format(msg, parameters);
-            }
-        } catch (Exception ex) { msg = record.getMessage(); }
-		
-        Throwable t = record.getThrown();
-        if (t != null)
-        	msg = msg + " (" + t.toString() + ")";
-        
-        String ret = record.getLoggerName() + ": " + msg;
-//System.err.println("JavaLoggerFormatter returning '" + ret + "'");
-		return ret;
 	}
 }
