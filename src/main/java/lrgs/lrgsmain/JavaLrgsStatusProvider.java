@@ -8,8 +8,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import ilex.util.Logger;
-
 import lrgs.apistatus.AttachedProcess;
 import lrgs.apistatus.DownLink;
 import lrgs.apistatus.ArchiveStatistics;
@@ -24,6 +22,10 @@ import lrgs.ldds.LddsParams;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
 import lrgs.dqm.DqmInterface;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;;
+
 /**
   Class JavaLrgsStatusProvider implements the LrgsStatusProvide interface
   by accessing java-only methods in the archive and downlinks.
@@ -31,6 +33,7 @@ import lrgs.dqm.DqmInterface;
 public class JavaLrgsStatusProvider
     implements LrgsStatusProvider
 {
+    private static final Logger logger = LoggerFactory.getLogger(getCallingClass());
     /** Reference back to parent. */
     private LrgsMain lrgsMain;
 
@@ -198,18 +201,13 @@ public class JavaLrgsStatusProvider
             if (lsse.isUsable)
             {
                 lsse.isUsable = false;
-                Logger.instance().failure(
-                    LrgsMain.module + ":" + LrgsMain.EVT_TIMEOUT
-                    + " LRGS Timeout: No data in "
-                    + cfg.timeoutSeconds + " seconds.");
+                logger.error(":{} LRGS Timeout: No data in {} seconds", LrgsMain.EVT_TIMEOUT, cfg.timeoutSeconds);
             }
             lsse.systemStatus = "Timeout";
         }
         else if (!lsse.isUsable)
         {
-            Logger.instance().info(
-                LrgsMain.module + ":" + (-LrgsMain.EVT_TIMEOUT)
-                + " LRGS Recovery: Receiving Data Again!");
+            logger.info(":{} LRGS Recovery: Receiving Data Again!", -LrgsMain.EVT_TIMEOUT);
             lsse.isUsable = true;
             lsse.systemStatus = "Running";
         }
@@ -368,9 +366,7 @@ public class JavaLrgsStatusProvider
 
         if (!lsse.isUsable)
         {
-            Logger.instance().info(
-                LrgsMain.module + ":" + (-LrgsMain.EVT_TIMEOUT)
-                + " LRGS Recovery: Receiving Data Again!");
+            logger.info(":{} LRGS Recovery: Receiving Data Again!",-LrgsMain.EVT_TIMEOUT);
             lsse.isUsable = true;
             lsse.systemStatus = "Running";
         }
@@ -568,15 +564,15 @@ public class JavaLrgsStatusProvider
     {
         if (ddsRecvMainSlotNum == -1)
         {
-            Logger.instance().debug1("StatusProvider.getLastDdsReceiveTime no " +
+            logger.debug("StatusProvider.getLastDdsReceiveTime no " +
                 "ddsRecvMainSlotNum, returning now - 1 hour");
             return System.currentTimeMillis() - 3600000L;
         }
         else
         {
             DownLink dl = lsse.lss.downLinks[ddsRecvMainSlotNum];
-            Logger.instance().debug1("StatusProvider.getLastDdsReceiveTime "
-                + "returning " + new Date(dl.lastMsgRecvTime * 1000L));
+            logger.debug("StatusProvider.getLastDdsReceiveTime returning {}.",
+                         new Date(dl.lastMsgRecvTime * 1000L));
             return dl.lastMsgRecvTime * 1000L;
         }
     }
@@ -618,8 +614,9 @@ public class JavaLrgsStatusProvider
                 }
             }
         }
-        Logger.instance().info("At LRGS Startup, last msg was received at "
-            + new Date(latest) + " on downlink " + latestName);
+        logger.info("At LRGS Startup, last msg was received at {} on downlink {}.",
+                    new Date(latest),
+                    latestName);
         return latest;
     }
 
