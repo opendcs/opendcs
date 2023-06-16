@@ -126,6 +126,7 @@ to run each do the following:
     # output will be in build/reports/pmd/cpd/cpd.txt
 
 Only CPD is fast. checkstyle and SpotBugs are rather slow.
+
 Containers
 ==========
 
@@ -188,3 +189,21 @@ lrgs.sh handles first time setup, copy default config, initial admin user, and s
 
 The lrgs.lock file is currently ignored and docker just kills the process. Currently investigating better ways to 
 handle shutdown. Will likely just add a flag to remove the lock file entirely.
+
+Logging
+=======
+
+SLF4j is used as the logging interface for all components. No OpenDCS components should make assumptions about the logging
+implementation used.
+
+That said, OpenDCS as an application will use java.util.logging for the forseeable future and many components tee off of logged values.
+Thus static main functions or classes dedicated solely to log bridging may reference the logging implementation. OpenDCS
+components may only reference the java.util.logging implementation. However the project will pull dependencies on loggers we aren't actively using.
+
+Any class or method beyond a static main that references the logging implementation directly will introduce a direct dependency on that particular implementation.
+SLF4j is chosen to avoid this type of dependency so opendcs.jar can be used as a library.
+
+Projects wishing to use OpenDCS as a library should review examples of how log teeing is setup if similar behavior is required. However,
+the primary use-case is for internal components where that still makes sense or that have not yet been modernized.
+
+Downstream users should consider a more direct separation of concerns.
