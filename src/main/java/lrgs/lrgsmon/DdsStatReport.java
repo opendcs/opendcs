@@ -5,7 +5,6 @@ package lrgs.lrgsmon;
 
 import ilex.util.AuthException;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,15 +24,20 @@ import lrgs.db.LrgsDatabase;
 import lrgs.db.LrgsDatabaseException;
 import lrgs.lrgsmain.LrgsConfig;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;
+
 /**
  * Main class for the Lrgs User Utilization Reports.
  * 
  */
 public class DdsStatReport
 {
+	private static final Logger logger = LoggerFactory.getLogger(getCallingClass());
 	private DdsStatReportGenerator ddsStatRptGen;
 	/** The logger */
-	private Logger logger;
+	//private Logger logger;
 	private String module = "DdsStatReport";
 	private Date startTime;
 	private Date endTime;
@@ -54,16 +58,6 @@ public class DdsStatReport
 						String inHourlyFileName, String inHtmlFilesDirectory,
 						String inLrgsConfigFilePath, String inLrgsName)
 	{
-		logger = Logger.instance();
-		//logger.info(module + " startTime arg= " + inStartTime);
-		//logger.info(module + " endTime arg = " + inEndTime);
-		//logger.info(module + " hourlyFileName arg = " + inHourlyFileName);
-		//logger.info(module + " htmlFilesDirectory arg = " + 
-		//												inHtmlFilesDirectory);
-		//logger.info(module + " lrgs Config file path arg = " + 
-		//												inLrgsConfigFilePath);
-		//logger.info(module + " lrgs name arg = " + inLrgsName);
-
 		// Load the LRGS DB Configuration file.
 		loadLrgsDBConfiguration(inLrgsConfigFilePath);
 		
@@ -122,9 +116,8 @@ public class DdsStatReport
 			outputDir.mkdirs();
 			if (!outputDir.isDirectory())
 			{
-				logger.fatal(module + 
-						" Cannot access or create output directory '"
-						+ outputDir.getPath() + "' -- aborting.");
+				logger.error("Cannot access or create output directory '{}'"
+						   + " -- aborting.",outputDir.getPath());
 				System.exit(1);
 			}
 		}
@@ -187,9 +180,9 @@ public class DdsStatReport
 					}
 				} catch (ParseException ex)
 				{
-					logger.fatal("Cannot parse the following input time '"
-							+ givenDate + "' -- aborting. Use Format for"
-							+ " start/end time yyyyMMdd -or- yyyyMMddHH");
+					logger.error("Cannot parse the following input time '{}'"
+							   + " -- aborting. Use Format for"
+							   + " start/end time yyyyMMdd -or- yyyyMMddHH", givenDate);
 					System.exit(1);
 				}
  			}
@@ -209,12 +202,7 @@ public class DdsStatReport
 				timeInMs = timeInMs + MS_PER_DAY -1;
 				retDate.setTime(timeInMs);
 			}
- 		}
- 		// This code is for debugging purpose only
- 		//DateFormat dateFmt = new SimpleDateFormat("yyyyMMddHHmmssSSS");
- 		//dateFmt.setTimeZone(tz);
- 		//logger.info("Date Time after formatted= " + dateFmt.format(retDate));
- 		
+ 		} 		
  		return retDate;
 	}
 	
@@ -241,14 +229,12 @@ public class DdsStatReport
 		{
 			String msg = module + " Cannot read DB auth from configuration '" 
 				+ authFileName;
-			Logger.instance().warning(msg);
-			throw new RuntimeException("msg",ex);
+			throw new RuntimeException(msg,ex);
 		}
-	
+
 	    LrgsDatabase lrgsDb = null;
 	    lrgsDb = new LrgsDatabase();
-		//logger.info(module + " Attempting connection to LRGS db '"
-		//			+ "' as user '" + username + "'");
+
 		// Connect to LRGS Database and fill out dds arrays.
 		try
 		{
@@ -259,8 +245,10 @@ public class DdsStatReport
 		}
 		catch(LrgsDatabaseException ex)
 		{
-			logger.fatal(module + ":" +
-					" Cannot interface with LRGS database: " + ex);
+			logger.atError()
+				  .setCause(ex)
+				  .setMessage("Cannot interface with LRGS database")
+				  .log();
 			System.exit(1);
 		}
 	}
@@ -283,8 +271,10 @@ public class DdsStatReport
 				timeZone = tz;
 		} catch (IOException ex)
 		{
-			logger.fatal(module + ":" +
-					" Cannot load the LRGS database config file: " + ex);
+			logger.atError()
+			      .setCause(ex)
+				  .setMessage("Cannot load the LRGS database config file.")
+				  .log();
 			System.exit(1);
 		}
 	}

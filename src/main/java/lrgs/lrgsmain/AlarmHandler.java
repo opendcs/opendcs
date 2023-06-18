@@ -38,10 +38,14 @@ import java.util.StringTokenizer;
 
 import ilex.util.EnvExpander;
 import ilex.util.IndexRangeException;
-import ilex.util.Logger;
+//import ilex.util.Logger;
 import ilex.util.QueueLogger;
 import ilex.util.ProcWaiterThread;
 import ilex.util.ProcWaiterCallback;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;
 
 /**
 This class is a thread that monitors the event queue for alarm assertions
@@ -60,6 +64,7 @@ The configuration file is monitored for changes once every minute.
 public class AlarmHandler extends Thread
 	implements ProcWaiterCallback
 {
+	private final static Logger logger = LoggerFactory.getLogger(getCallingClass());
 	/** This module's name. */
 	public static final String module = "Alarm"; 
 
@@ -134,8 +139,7 @@ public class AlarmHandler extends Thread
 			}
 			catch(IndexRangeException ex)
 			{
-				Logger.instance().warning(module 
-					+ " invalid event queue index " + qIndex + " -- resync.");
+				logger.warn("Invalid event queue index {} -- resync.", qIndex);
 				qIndex = qLogger.getStartIdx();
 			}
 		}
@@ -149,15 +153,13 @@ public class AlarmHandler extends Thread
 	{
 		if (!configFile.canRead())
 		{
-			Logger.instance().debug2(module + 
-				" config file '" + configFile.getPath() 
-				+ "' does not exist or is not readable!");
+			logger.debug("Config file '{}' does not exist or is not readable!",
+					     configFile.getPath());
 			return;
 		}
 		if (configFile.lastModified() > lastConfigLoad)
 		{
-			Logger.instance().info(module + " Reading config file '"
-				+ configFile.getPath() + "'");
+			logger.info("Reading config file '{}'", configFile.getPath());
 			lastConfigLoad = System.currentTimeMillis();
 			alarmAssoc.clear();
 			LineNumberReader rdr = null;
@@ -173,18 +175,18 @@ public class AlarmHandler extends Thread
 					int idx = line.indexOf(':');
 					if (idx < 1 || idx == line.length()-1)
 					{
-						Logger.instance().warning(module + " "
-							+ configFile.getPath() + ":" + rdr.getLineNumber()
-							+ " bad syntax: no ':', need 'module:num cmd ...'");
+						logger.warn("{}:{} bad syntax: no ':', need 'module:num cmd ...'",
+									configFile.getPath(),
+									rdr.getLineNumber());
 						continue;
 					}
 					String alarmModule = line.substring(0, idx);
 					int idx2 = line.indexOf(' ', idx);
 					if (idx2 == -1)
 					{
-						Logger.instance().warning(module + " "
-							+ configFile.getPath() + ":" + rdr.getLineNumber()
-							+ " bad syntax, no ' ', need 'module:num cmd ...'");
+						logger.warn("{}:{} bad syntax, no ' ', need 'module:num cmd ...'",
+									configFile.getPath(),
+									rdr.getLineNumber());
 						continue;
 					}
 					int alarmNum;
@@ -195,23 +197,26 @@ public class AlarmHandler extends Thread
 					}
 					catch(NumberFormatException ex)
 					{
-						Logger.instance().warning(module + " "
-							+ configFile.getPath() + ":" + rdr.getLineNumber()
-							+ " bad syntax, no num, need 'module:num cmd ...'");
+						logger.warn("{}:{} bad syntax, no num, need 'module:num cmd ...'",
+									configFile.getPath(),
+									rdr.getLineNumber());
 						continue;
 					}
 					String cmd = line.substring(idx2+1);
-					Logger.instance().debug1(module + " Associating "
-						+ alarmModule + ":" + alarmNum + " with cmd '"
-						+ cmd + "'");
+					logger.debug("Associating {}:{} with cmd '{}'",
+								 alarmModule,
+								 alarmNum,
+								 cmd);
 					alarmAssoc.add(new AlarmAssoc(alarmModule, alarmNum, cmd));
 				}
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning(module 
-					+ " Error reading config file '" + configFile.getPath()
-					+ "': " + ex);
+				logger.atWarn()
+					  .setCause(ex)
+					  .setMessage("Error reading config file '{}'")
+					  .addArgument(()->configFile.getPath())
+					  .log();
 			}
 			finally
 			{
@@ -274,14 +279,13 @@ public class AlarmHandler extends Thread
 							String name = module + ":" + evtNum;
 							if (runningProcs >= maxAlarmProcs)
 							{
-								Logger.instance().warning(module
-									+ " could not start alarm process " + name
-									+ ", cmd '" + aa.cmd+ "': Already " 
-									+ runningProcs + " processes running.");
+								logger.warn(
+									"Could not start alarm process {} "
+								  + ", cmd '{}': Already {} processes running.",
+								  name,aa.cmd,runningProcs);
 								return;
 							}
-							Logger.instance().info(module + " executing '"
-								+ aa.cmd + "'");
+							logger.info("Executing '{}'.", aa.cmd);
 							try 
 							{
 								ProcWaiterThread.runBackground(
@@ -290,16 +294,20 @@ public class AlarmHandler extends Thread
 							}
 							catch(IOException ex)
 							{
-								Logger.instance().warning(module
-									+ " could not start alarm process " + name
-									+ ", cmd '" + aa.cmd+ "': " + ex);
+								logger.atWarn()
+									  .setCause(ex)
+									  .setMessage("Could not start alarm process {}, cmd '{}'.")
+									  .addArgument(name)
+									  .addArgument(aa.cmd)
+									  .log();
 							}
 						}
 					}
 					else
-						Logger.instance().warning(module
-							+ "Cannot start alarm " + module + ":" + evtNum
-							+ " -- previous process has not yet finished.");
+					{
+						logger.warn("Cannot start alarm {}:{} -- previous process"
+								  + " has not yet finished.", module, evtNum);
+					}
 				}
 			}
 		}
@@ -317,8 +325,8 @@ public class AlarmHandler extends Thread
 		runningProcs--;
 		AlarmAssoc aa = (AlarmAssoc)obj;
 		aa.isRunning = false;
-		Logger.instance().info(module + " Alarm process '" + procName
-			+ "' finished with exit status " + exitStatus);
+		logger.info("Alarm process '{}' finished with exit status {}.",
+					procName, exitStatus);
 	}
 
 }
