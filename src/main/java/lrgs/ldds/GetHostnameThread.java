@@ -39,9 +39,10 @@ public class GetHostnameThread
         return _instance;
     }
 
-    public GetHostnameThread()
+    private GetHostnameThread()
     {
-        super("GetHostnameThread");
+        super(module);
+        this.setDaemon(true);
         setLocalIpMask(LrgsConfig.instance().getMiscProp("localIpMask"));
     }
 
