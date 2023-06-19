@@ -2163,7 +2163,7 @@ The display shows the following columns:
 LRGS Web Interface
 ------------------
 
-The LRGS now has a simple Healthcheck end point and access to the status page over HTTPs.
+The LRGS now has a simple Healthcheck end point and access to the status page over HTTP.
 At present the design is simple, readonly, and meant to be access from behind some sort of proxy 
 if TLS is required.
 
