@@ -1305,7 +1305,7 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
 		return groupField.getText().trim().length() > 0;
 	}
 	/**
-	 * &sed by the comp-parm dialog
+	 * Used by the comp-parm dialog
 	 * @param name the name of the property
 	 * @return the property value from the properties panel, or null if no match
 	 */

@@ -33,16 +33,11 @@
 */
 package decodes.datasource;
 
-import java.util.HashMap;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Calendar;
 import java.util.TimeZone;
-import java.text.ParsePosition;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import ilex.util.ArrayUtil;
 import ilex.util.ByteUtil;
 import ilex.util.Logger;
 import ilex.var.Variable;
@@ -111,7 +106,7 @@ public class NoaaportPMParser extends PMParser
 		<li>NN is a placeholder for IFPD, always set to NN</li>
 		<li>CCC is GOES channel number, padded left with blanks, not zeros.</li>
 		<li>s is spacecraft (E or W)</li>
-	  </ul
+	  </ul>
 	  This parser assumes that you use 0x1e to \r\r\nETX as the socket stream
 	  framing sequences. This means that the NOAAPORT sequence number and
 	  HHH header are ignored. Hence only the DDD data field, as described above

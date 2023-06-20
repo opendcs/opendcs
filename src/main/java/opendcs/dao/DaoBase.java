@@ -37,7 +37,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
@@ -164,7 +163,7 @@ public class DaoBase
 	}
 	
 	/**
-	 * Does a SQL query with the default static statement & returns the
+	 * Does a SQL query with the default static statement &amp; returns the
 	 * result set.
 	 * Warning: this method is not thread and nested-loop safe.
 	 * If you need to do nested queries, you must create a separate

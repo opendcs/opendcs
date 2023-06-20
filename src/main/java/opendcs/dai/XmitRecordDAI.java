@@ -85,11 +85,13 @@ public interface XmitRecordDAI
 	 * Reads transmissions by dcp address for the specified
 	 * day and dcp address into the passed results array.
 	 * Used from DcpMonitorServerThread - sendWazzupDcp() method
-	 * 
+	 *
 	 * Requires the DCP Monitor Extensions to the Time Series Database.
-	 * @param results the collection to store the results
-	 * @param dayNum the day number
-	 * @param addr the DCP address or -1 to get all.
+	 *
+	 * @param results the collection to store the results.
+	 * @param dayNum the day number.
+	 * @param mediumType source of data to return.
+	 * @param mediumId the DCP address or -1 to get all.
 	 * @return the number of records returned.
 	 */
 	public int readXmitsByMediumId(Collection<DcpMsg> results, int dayNum, 
@@ -126,7 +128,7 @@ public interface XmitRecordDAI
 	 * DCP_TRANS_DATA_SUFFIX table. The DCP Monitor will read records en-mas from
 	 * DCP_TRANS_SUFFIX. Only when needed (at the lowest level of detail) will the
 	 * fillCompleteMsg method be called.
-	 * You can tell a message is incomplete if msgLength() > data.length
+	 * You can tell a message is incomplete if msgLength() &gt; data.length
 	 * @param msg
 	 */
 	public void fillCompleteMsg(DcpMsg msg)
@@ -140,7 +142,7 @@ public interface XmitRecordDAI
 	
 	/**
 	 * Read XmitRecSpecs from the specified day number that have been created
-	 * since the lastRecId. That is, they have a recordId > lastRecId.
+	 * since the lastRecId. That is, they have a recordId &gt; lastRecId.
 	 * @param dayNum
 	 * @param lastRecId
 	 * @return

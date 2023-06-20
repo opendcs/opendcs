@@ -46,7 +46,7 @@ public class TvaFormatter extends OutputFormatter
 	  need to call it explicitly.
 	  @param type the type of this output formatter.
 	  @param tz the time zone as specified in the routing spec.
-	  @param presGrp The presentation group to handle rounding & EU conversions.
+	  @param presGrp The presentation group to handle rounding &amp; EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
 	protected void initFormatter(String type, java.util.TimeZone tz,

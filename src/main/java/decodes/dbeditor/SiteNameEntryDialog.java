@@ -6,12 +6,9 @@ package decodes.dbeditor;
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
-import javax.swing.border.*;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
-import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.Site;
@@ -19,7 +16,6 @@ import decodes.db.SiteFactory;
 import decodes.db.SiteName;
 import decodes.gui.EnumComboBox;
 import decodes.gui.GuiDialog;
-import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
 
 
@@ -49,7 +45,7 @@ public class SiteNameEntryDialog extends GuiDialog
 	private JLabel agencyCodeLabel = new JLabel();
     private JComboBox agencyCodeCombo;
 
-	/** Used to validate name & make a Site object after user enters name. */
+	/** Used to validate name &amp; make a Site object after user enters name. */
 	public static SiteFactory siteFactory = new SiteFactory();
 
 	/** After OK pressed, this is the newly-created site. */

@@ -39,7 +39,6 @@ public class DcpMonRoutingSpec extends RoutingSpec
 	/**
 	 * Constructs a DcpMonRoutingSpec from the 'dcpmon' routing spec
 	 * stored in the database
-	 * @param copyFrom the database routing spec
 	 */
 	public DcpMonRoutingSpec()
 	{

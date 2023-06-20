@@ -26,13 +26,13 @@ import ilex.util.TextUtil;
 
 import decodes.gui.*;
 import decodes.db.*;
-import decodes.util.DecodesSettings;
 
 /**
 This panel edits an open routing spec.
 Opened from the RoutingSpecListPanel.
 */
 @SuppressWarnings("serial")
+@Deprecated(forRemoval = true)
 public class RoutingSpecEditPanelOld extends DbEditorTab
 	implements ChangeTracker, EntityOpsController
 {
@@ -384,7 +384,7 @@ public class RoutingSpecEditPanelOld extends DbEditorTab
 
 	/**
 	 * From ChangeTracker interface, save the changes back to the database 
-	 * & reset the hasChanged flag.
+	 * &amp; reset the hasChanged flag.
 	 * @return true if object was successfully saved.
 	 */
 	public boolean saveChanges()

@@ -97,7 +97,7 @@ public interface TsGroupDAI
 	 * Removes any computation dependencies for the group. That is computations
 	 * that use the group, or that use a group that uses this group somewhere
 	 * in its hierarchy.
-	 * @param group
+	 * @param deletedGroupId
 	 * @throws DbIoException
 	 */
 	public void removeDependenciesFor(DbKey deletedGroupId)

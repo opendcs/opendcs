@@ -87,8 +87,11 @@ public class JLddsThread extends LddsThread
       Constructor.
       @param parent the server object
       @param socket the socket to the client
-      @param ID unique integer ID for this client.
+      @param id unique integer ID for this client.
       @param msgArchive the archive from which to serve data.
+      @param globalMapper
+      @param ap
+      @throws IOException
     */
     public JLddsThread(BasicServer parent, Socket socket, int id, 
         MsgArchive msgArchive, DcpNameMapper globalMapper, AttachedProcess ap)

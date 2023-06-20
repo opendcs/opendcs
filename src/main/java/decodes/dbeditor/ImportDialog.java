@@ -109,8 +109,6 @@ public class ImportDialog extends GuiDialog
 
 	/**
 	 * Constructor.
-	 * @param owner the db editor top-frame.
-	 * @param title
 	 */
 	public ImportDialog()
 	{

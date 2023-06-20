@@ -299,7 +299,8 @@ public class TransportMedium extends DatabaseObject
 			&& mediumType.toLowerCase().startsWith("goes");
 	}
 
-	/** @return the timezone or null if none is assigned.
+	/** 
+	 * @return the timezone or null if none is assigned.
 	*/
 	public String getTimeZone() { return timeZone; }
 
@@ -310,10 +311,10 @@ public class TransportMedium extends DatabaseObject
 	public void setTimeZone(String tz) { timeZone = tz; }
 
 	/**
-	  Returns a string containing the medium type and ID.
-	  Used by the PlatformList as a partial key to efficiently search for 
-	  platforms matching a given type & id.
-	  @return a string containing the medium type and ID.
+	  * Returns a string containing the medium type and ID.
+	  * Used by the PlatformList as a partial key to efficiently search for 
+	  * platforms matching a given type and id.
+	  * @return a string containing the medium type and ID.
 	*/
 	public String getTmKey()
 	{
@@ -321,8 +322,8 @@ public class TransportMedium extends DatabaseObject
 	}
 
 	/**
-	  Build a string containing type and ID for use as a key.
-	  @return the key as a String
+	  * Build a string containing type and ID for use as a key.
+	  * @return the key as a String
 	*/
 	static String makeTmKey(String typ, String id)
 	{
@@ -333,7 +334,7 @@ public class TransportMedium extends DatabaseObject
 	}
 
 	/**
-	* Overrides the DatabaseObject method.
+	  * Overrides the DatabaseObject method.
 	*/
 	public void prepareForExec()
 		throws IncompleteDatabaseException, InvalidDatabaseException
@@ -348,8 +349,8 @@ public class TransportMedium extends DatabaseObject
 	}
 
 	/**
-	* Overrides the DatabaseObject method.
-	  @return true if prepared
+	  * Overrides the DatabaseObject method.
+	  * @return true if prepared
 	*/
 	public boolean isPrepared()
 	{

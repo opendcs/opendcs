@@ -259,7 +259,7 @@ public class ConfigEditPanel extends DbEditorTab
 	}
 
 	/**
-	  Gets the data from the fields & puts it back into the config object.
+	  Gets the data from the fields &amp; puts it back into the config object.
 	  @return the internal copy of the configuration.
 	*/
 	public PlatformConfig getDataFromFields()
@@ -665,7 +665,7 @@ public class ConfigEditPanel extends DbEditorTab
 
 	/**
 	 * From ChangeTracker interface, save the changes back to the database 
-	 * & reset the hasChanged flag.
+	 * &amp; reset the hasChanged flag.
 	 * @return true if object was successfully saved.
 	 */
 	public boolean saveChanges()

@@ -25,7 +25,7 @@ public class CwmsFlags
 	// Definitions for use by computations:
 	// NOTE: They are NOT the same as the bit-definitions used within the
 	// Quality-Code value in the time-series table. Shifting had to be
-	// done to protected the reservied bits above.
+	// done to protected the reserved bits above.
 	public static final int SCREENED_MASK         = 0x00000010;
 	public static final int UNSCREENED            = 0x00000000;
 	public static final int SCREENED              = 0x00000010;
@@ -89,13 +89,13 @@ public class CwmsFlags
 	 * @param flag the flag value from the timed variable.
 	 * @return single-character validation flag to write to HDB.
 	 */
-	public static int flag2CwmsQualityCode(int f)
+	public static int flag2CwmsQualityCode(int flag)
 	{
-		int r = (f & 0x0003FFF0) >> 4;
-		r |=    (f & 0x00FC0000) >> 3;
-		r |=    (f & 0x01000000) >> 2;
-		r |=    (f & 0x06000000) >> 1;
-		if ((f & PROTECTED) != 0) r |= 0x80000000;
+		int r = (flag & 0x0003FFF0) >> 4;
+		r |=    (flag & 0x00FC0000) >> 3;
+		r |=    (flag & 0x01000000) >> 2;
+		r |=    (flag & 0x06000000) >> 1;
+		if ((flag & PROTECTED) != 0) r |= 0x80000000;
 		return r;
 	}
 

@@ -188,7 +188,7 @@ public class UnitConverterDb extends IdDatabaseObject
 	}
 
 	/**
-	  @return String of the form  from_abbr->to_abbr
+	  @return String of the form  from_abbr-&gt;to_abbr
 	*/
 	public String toString()
 	{

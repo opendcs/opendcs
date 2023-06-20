@@ -21,19 +21,15 @@
  */
 package opendcs.dao;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import ilex.util.Logger;
 import decodes.sql.DbKey;
 
 /**
  * Implements a cache for DAOs
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
- * @param <DBT> type type of database object to be cached
- * @param <HasUniqueName> 
  */
 public class DbObjectCache<DBT extends CachableDbObject>
 {
@@ -76,8 +72,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 		String un = dbObj.getUniqueName();
 		if (un == null || un.trim().length() == 0)
 			return;
-//if (testMode) Logger.instance().info("Adding key=" + dbObj.getKey() + " name=" + dbObj.getUniqueName() +
-//" to map with " + keyObjMap.size() + " elements.");
+
 		ObjWrapper ow = new ObjWrapper(dbObj);
 		keyObjMap.put(dbObj.getKey(), ow);
 		
@@ -85,8 +80,9 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	}
 	
 	/**
-	 * Removes an object from the cache
-	 * @param dbObj the object to remove.
+	 * Removes an object from the cache.
+	 *
+	 * @param key DbKey of the object to be removed.
 	 */
 	public void remove(DbKey key)
 	{
@@ -109,15 +105,11 @@ public class DbObjectCache<DBT extends CachableDbObject>
 
 		if (ow == null)
 		{
-//if (testMode) Logger.instance().info("getByKey(" + key + ") object not in map.");
 			return null;
 		}
-//if (testMode) Logger.instance().info("getByKey(" + key + ") object in map with timeLoaded = " + ow.timeLoaded); 
 		long now = System.currentTimeMillis();
 		if (now - ow.timeLoaded > maxAge)
 		{
-//if (testMode) Logger.instance().info("getByKey(" + key + ") maxAge " + maxAge + " exceeded age="
-//+ (now - ow.timeLoaded));
 			remove(key);
 			return null;
 		}

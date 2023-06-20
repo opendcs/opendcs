@@ -154,7 +154,7 @@ public class Logger
      file if wanted and to allow java to close the file if there is an abnormal
      termination
 
-     @author Mark A. Bogner
+
     
      Date: 18-April-2001
    */

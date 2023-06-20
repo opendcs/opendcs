@@ -165,9 +165,8 @@ public class EngineeringUnitList extends DatabaseObject
 	}
 
 	/**
-	Removes an engineering unit from the collection.
-	* @param eu The engineering unit to remove.
-	@return true if one was removed, false if not found.
+	  * Removes an engineering unit from the collection.
+	  * @param eu The engineering unit to remove.
 	*/
 	public void remove(EngineeringUnit eu)
 	{

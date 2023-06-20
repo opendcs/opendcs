@@ -219,7 +219,7 @@ public class DdsPeriodStats
 	/**
 	 * This method sets the number of authentications.
 	 * 
-	 * @param number of authentications
+	 * @param numAuth of authentications
 	 */
 	public void setNumAuth(int numAuth)
 	{
@@ -229,7 +229,7 @@ public class DdsPeriodStats
 	/**
 	 * This method returns the number of unauths.
 	 *   
-	 * @return numUnAuth number of unauths
+	 * @return number of unauths
 	 */
 	public int getNumUnAuth()
 	{

@@ -391,64 +391,43 @@ debug("Adding object to dbWriteQueue.");
 
 	/**
 	 * Retrieve the outages within a time range.
+	 * 
+	 * @param ret List of outages
 	 * @param startTime specifies the time to start reading Outage records
 	 * @param endTime specifies the time to stop reading Outage records
+	 * 
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated(forRemoval = true, since = "6.2")
 	public synchronized void 
-		getOutages(ArrayList<Outage> ret, Date start, Date end)
+		getOutages(ArrayList<Outage> ret, Date startTime, Date endTime)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		for(Outage outage : outages)
-//		{
-//			Date ostart = outage.getBeginTime();
-//			Date oend = outage.getEndTime();
-//
-//			if ((start == null || ostart.compareTo(start) >= 0)
-//			 && (end   == null || (oend != null && oend.compareTo(end) <= 0)))
-//				ret.add(outage);
-//		}
 	}
 
 	/**
 	 * Since changing the outage status will modify its place in the sorted
 	 * collection, we need to remove it, modify the status, and then put it
 	 * back in.
+	 * @param otg Outage definition
+	 * @param newstat new status
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated(forRemoval = true, since = "6.2")
 	public synchronized void changeOutageStatus(Outage otg, char newstat)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		outages.remove(otg);
-//		otg.setStatusCode(newstat);
-//		outages.add(otg);
-//		doEnqueue(otg);
 	}
 
 	/**
 	 * Asserts an outage.
-	 * @param newout the outage
+	 * @param newout the outage	 
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated(forRemoval = true, since = "6.2")
 	public synchronized void assertOutage(Outage newout)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-//		if (!LrgsConfig.instance().recoverOutages)
-			return;
-
-//		int id = newout.getOutageId();
-//		if (id <= 0)
-//			newout.setOutageId(nextOutageId++);
-//		else if (id >= nextOutageId)
-//			nextOutageId = id+1;
-//
-//		doEnqueue(newout);
-//		outages.add(newout);
-//		debug(" outages.size()=" + outages.size());
-//		while (outages.size() > MAX_NUM_OUTAGES)
-//		{
-//			Outage otg = outages.last();
-//			outages.remove(otg);
-//		}
 	}
 
 	/**
@@ -458,42 +437,36 @@ debug("Adding object to dbWriteQueue.");
 	 * assertOutage method once again so that the new value is re-sorted.
 	 * @return the highest priority outage in the queue, or null if
 	 * queue is empty.
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated(forRemoval = true, since = "6.2")
 	public synchronized Outage highestPriorityOutage()
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		if (!outages.isEmpty())
-//			return outages.first();
-//		else
-			return null;
+		return null;
 	}
 
 	/**
 	 * Deletes an outage from the queue.
 	 * @param otg the outage
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated(forRemoval = true, since = "6.2")
 	public synchronized void deleteOutage(Outage otg)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		dbDeleteQueue.add(otg);
-//		boolean wasThere = outages.remove(otg);
-//debug(" Attempted to delete Outage (" + otg + ") wasThere=" +wasThere);
 	}
 
 	/**
 	 * Returns an outage by its unique ID number.
 	 * @param id the unique ID number
 	 * @return an outage by its unique ID number, or null if not found.
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated(forRemoval = true, since = "6.2")
 	public synchronized Outage getOutageById(int id)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		for(Outage otg : outages)
-//			if (otg.getOutageId() == id)
-//				return otg;
 		return null;
 	}
 

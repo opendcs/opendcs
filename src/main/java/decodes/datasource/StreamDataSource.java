@@ -159,13 +159,11 @@ import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.Constants;
 import decodes.db.TransportMedium;
-import decodes.db.DataSource;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.DatabaseException;
 import decodes.util.PropertySpec;
-import lrgs.common.DcpMsg;
 
 /**
   Abstract class for implementing data sources that read from a one-way
@@ -180,8 +178,8 @@ import lrgs.common.DcpMsg;
    <li>before - synonym for 'delimiter'</li>
    <li>endDelimiter - (default null) marks end of message</li>
    <li>after - synonym for 'endDelimiter'</li>
-   <li>oldChannelRanges - (default=false) If true, then chan<100 assumed to
-       be self-timed, >100 assumed to be random.</li>
+   <li>oldChannelRanges - (default=false) If true, then chan &lt; 100 assumed to
+       be self-timed, &gt; 100 assumed to be random.</li>
    <li>header - (default "GOES"), either GOES or VITEL. The Vitel DRGS is
 	   slightly different. It does not include the 'failure code', causing
 	   subsequent fields to be shifted by one byte.
@@ -215,7 +213,7 @@ public abstract class StreamDataSource extends DataSourceExec
 	/** Byte sequence after messages in the file. */
 	protected byte[] endDelimiter = null;
 
-	/** Asserts GOES channels < 100 are Self-Timed for backward compatibility. */
+	/** Asserts GOES channels &lt; 100 are Self-Timed for backward compatibility. */
 	protected boolean oldChannelRanges;
 
 	/** The input stream provided by the concrete subclass. */

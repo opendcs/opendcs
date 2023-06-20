@@ -13,7 +13,7 @@ import java.util.Enumeration;
 
 /**
 * Implements area table computations.
-* Holds the lookup table & shift values.
+* Holds the lookup table &amp; shift values.
 * Delegates table reads to supplied reader.
 */
 public class AreaComputation 

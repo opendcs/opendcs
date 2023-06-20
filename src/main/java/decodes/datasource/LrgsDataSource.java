@@ -115,7 +115,7 @@ public class LrgsDataSource extends DataSourceExec
     }
 
     /**
-      Extract host, port, & username.
+      Extract host, port, and username.
       Do NOT make connection to LRGS here. Wait until first call to getMessage.
     */
     public void processDataSource()
@@ -131,8 +131,8 @@ public class LrgsDataSource extends DataSourceExec
 
     /**
       This data source is about to be used.
-      Open the connection, construct search-criteria & network lists.
-      Send network list & search criteria messages.
+      Open the connection, construct search-criteria &amp; network lists.
+      Send network list &amp; search criteria messages.
       <p>
       @param routingSpecProps the routing spec properties.
       @param since the since time from the routing spec.

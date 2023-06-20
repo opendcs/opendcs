@@ -121,14 +121,15 @@ public class UnitConverterSet extends DatabaseObject
 	public String getObjectType() { return "UnitConverterSet"; }
 
 	/**
-	  Gets an executable converter to get from one engineering unit to
-	  another. If one was not defined in the database, this method attempts
-	  to build one by stringing together other converters.
-	  <p>
-	  For example, cm->in might string together cm->m, m->ft, ft->in
-	  @param from the from EU
-	  @param to the to EU
-	  @return executable converter, or null if no match and can't build one.
+	  * Gets an executable converter to get from one engineering unit to
+	  * another. If one was not defined in the database, this method attempts
+	  * to build one by stringing together other converters.
+	  *
+	  * For example, cm-&gt;in might string together cm-&gt;m, m-&gt;ft, ft-&gt;in
+	  *
+	  * @param from the from EU
+	  * @param to the to EU
+	  * @return executable converter, or null if no match and can't build one.
 	*/
 	public UnitConverter get(EngineeringUnit from, EngineeringUnit to)
 	{

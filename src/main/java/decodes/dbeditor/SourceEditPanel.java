@@ -40,8 +40,6 @@ import ilex.util.Logger;
 import decodes.gui.*;
 import decodes.datasource.DataSourceExec;
 import decodes.db.*;
-import decodes.util.DecodesSettings;
-import decodes.util.PropertySpec;
 
 
 /**
@@ -408,7 +406,7 @@ public class SourceEditPanel extends DbEditorTab
 
 	/**
 	 * From ChangeTracker interface, save the changes back to the database 
-	 * & reset the hasChanged flag.
+	 * &amp; reset the hasChanged flag.
 	 * @return true if object was successfully saved.
 	 */
 	public boolean saveChanges()

@@ -50,7 +50,7 @@ public class PlatformSensor
 	 */
 	private int usgsDdno;
 
-	/** Flag used by GUIs to coordinate platform & config sensor records. */
+	/** Flag used by GUIs to coordinate platform &amp; config sensor records. */
 	public boolean guiCheck;
 
 	/** USGS list of valid DDNOs for this sensor and param-code. */
@@ -286,7 +286,7 @@ public class PlatformSensor
 	}
 
 	/**
-	 * @return the list of valid DDNO's for this site & param code, or null
+	 * @return the list of valid DDNO's for this site and param code, or null
 	 * if there are no known DDNOs.
 	 */
 	public String[] getValidDdnos()

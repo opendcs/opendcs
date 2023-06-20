@@ -226,7 +226,8 @@ public interface DatabaseConnectionOwner
 	 * Given a DbCompParm object containing an SDI and possibly a siteId
 	 * and/or datatypeId, expand it into site and datatype objects.
 	 * Store these back into  the parameter object.
-	 * @param siteDatatype the object to expand
+	 *
+	 * @param parm the object to expand
 	 * @return TimeSeries Identifier is one can be identified, otherwise, null.
 	 * @throws NoSuchObjectException if an SDI is present but it is invalid.
 	 */

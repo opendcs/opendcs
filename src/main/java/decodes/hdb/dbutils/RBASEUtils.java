@@ -6,6 +6,10 @@ import java.util.*;
 import java.lang.Long;
 import java.text.SimpleDateFormat;
 
+/**
+ *  @author Mark A. Bogner  27-DEC-2007
+ *  @author Mark A. Bogner  Sutron Corporation  07-April-2011
+ */
 public class RBASEUtils 
 {
     private Logger log = null;
@@ -264,9 +268,16 @@ public class RBASEUtils
     } // end of get_DSS_Date method
 
 
-    public Integer  get_DMI_SDI(int modelId, String objectName, String dataName)  // method used to get the
-    // observation date from dss that is in minutes since 1900 to a formatted date
-    //  that the observation class can handle
+    /**
+     * method used to get the observation date from dss that is in minutes
+     * since 1900 to a formatted date that the observation class can handle
+     * 
+     * @param modelId
+     * @param objectName
+     * @param dataName
+     * @return
+     */
+    public Integer  get_DMI_SDI(int modelId, String objectName, String dataName)  // 
     {
 
        String query = null;
@@ -296,12 +307,9 @@ public class RBASEUtils
  
     } // end of get_DMI_SDI method
 
-
-
     /** Public method getStandardDates performs the database procedure call
         that requests the date passed in to be standardized by the stored procedure
 
-        @author Mark A. Bogner
         @param _sdi  The  SDI for the particular record
         @param _interval  The  SDI's interval for the particular record
         @param _sdt       The start_datetime for the record
@@ -364,18 +372,18 @@ public class RBASEUtils
 
 
     /** Public method merge_r_base_update performs the   update of the cp_historic_computations table
-	when there is a partial calulation.  This method does a merge statement since we don't
+	when there is a partial calculation.  This method does a merge statement since we don't
 	need multiple records in that table.  We only want a basic seed record that says this 
 	record is a candidate for one final calculation in the future.
 
-        @author Mark A. Bogner  27-DEC-2007
+        @param _ldapp
         @param _sdi  The  SDI for the particular record
         @param _interval  The  SDI's interval for the particular record
         @param _sdt       The start_datetime for the record
         @param _edt       The end date time for the record
         @param _fmt     The string format of the dates
         @param _mrid	The model_run_id of input record (0 for real data) 
-        @param _fmt     The table selector of the record (either R_ or M_; model or real indicator) 
+        @param _tbl     The table selector of the record (either R_ or M_; model or real indicator) 
         
         Date: 17-December-2007
     */
@@ -413,20 +421,16 @@ public class RBASEUtils
      } // end of  merge_r_base_update method
 
 
-
-    public Integer get_external_data_sdi()
-
     /** Public method get_external_data_sdi performs the database query to get the Site_datatype_id (SDI)
         of the external data based on the entries in the data object passed into the constructor of this class
         method used to get the SDI from the external data source tables
         this procedure assumes the the data source, site, and parameter_code has already been established
         so all that is necessary is to go to the external mapping tables and get the sdi
         the data object entries needed to be populated are: DATA_SOURCE, SITE_CODE, and PARAMETER_CODE 
-   
-        @author Mark A. Bogner  Sutron Corporation  07-April-2011
-        
-        Date: 07-April-2011
+
+        @since Date: 07-April-2011
     */
+    public Integer get_external_data_sdi()    
     {
 
        String query = null;

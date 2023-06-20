@@ -3,29 +3,12 @@
 */
 package decodes.consumer;
 
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.text.DecimalFormat;
-
-import ilex.var.TimedVariable;
-import ilex.var.IFlags;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
-import ilex.util.TextUtil;
-
 import decodes.db.*;
 import decodes.decoder.DecodedMessage;
-import decodes.decoder.TimeSeries;
-import decodes.decoder.Sensor;
 import decodes.datasource.RawMessage;
-import decodes.datasource.UnknownPlatformException;
-import decodes.consumer.DataConsumer;
-import decodes.consumer.DataConsumerException;
-import decodes.consumer.OutputFormatter;
-import decodes.consumer.OutputFormatterException;
 
 /**
   This class outputs the raw message data.
@@ -44,10 +27,10 @@ public class RawFormatter extends OutputFormatter
 	/**
 	  Initializes the Formatter. This method is called from the static
 	  makeOutputFormatter method in this class. The RoutingSpec does not
-	  need to call it explicitely.
+	  need to call it explicitly.
 	  @param type the type of this output formatter.
 	  @param tz the time zone as specified in the routing spec.
-	  @param presGrp The presentation group to handle rounding & EU conversions.
+	  @param presGrp The presentation group to handle rounding &amp; EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
 	protected void initFormatter(String type, java.util.TimeZone tz,

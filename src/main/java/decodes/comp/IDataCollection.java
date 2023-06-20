@@ -39,7 +39,7 @@ public interface IDataCollection
 	public ITimeSeries getITimeSeries(int sensorId);
 
 	/**
-	* Collection must support capability to create & add new time series.
+	* Collection must support capability to create &amp; add new time series.
 	* @param sensorId the sensor identifier
 	* @param name the sensor name
 	*/

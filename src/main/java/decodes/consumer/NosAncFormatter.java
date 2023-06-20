@@ -10,8 +10,6 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
-import lrgs.common.DcpMsg;
-
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.RawMessage;
 import decodes.db.Constants;
@@ -26,7 +24,7 @@ import decodes.decoder.TimeSeries;
 *
 *
 * 2023/02/15 Baoyu Yin
-* Fixing issues with twos complement and undefined number - ING629 & ING 631
+* Fixing issues with twos complement and undefined number - ING629 &amp; ING 631
 *
  * ING-545  2022/06/06  Jim Pantos
  * Correct ANC file case

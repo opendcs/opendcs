@@ -52,9 +52,9 @@ public interface LoadingAppDAI
 	
 	/**
 	 * List computation applications defined in this database.
-	 * That is, list only the ones in the inlist 
-	 * @param usedOnly true if you only want to retrieve processes that are
-	 * actually assigned to a computation.
+	 * That is, list only the ones in the inList.
+	 *
+	 * @param inList inlist clause to limit the returned computations.
 	 * @return list of computations.
 	 */
 	public ArrayList<CompAppInfo> ComputationAppsIn(String inList)
@@ -101,7 +101,7 @@ public interface LoadingAppDAI
 	/**
 	 * Called by a comp proc to obtain the lock for 
 	 * the specified application ID. 
-	 * @param appId the application ID returned by connect()
+	 * @param appInfo the application ID returned by connect()
 	 * @param pid the system-unique process ID.
 	 * @param host the host name where this process is running.
 	 * @return the lock object.

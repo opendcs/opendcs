@@ -5,14 +5,11 @@ package decodes.datasource;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.Vector;
 
 
-import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -38,7 +35,7 @@ import decodes.util.PropertySpec;
  * for many kinds of data including SNOTEL and USGS data.
  * 
  * Here is an example URL:
- * https://waterservices.usgs.gov/nwis/iv/?format=rdb,1.0&sites=01646500&startDT=2020-10-11T12:00-0400&endDT=2020-10-12T08:00-0400&parameterCd=00060,00065
+ * <a href="https://waterservices.usgs.gov/nwis/iv/?format=rdb,1.0&amp;sites=01646500&amp;startDT=2020-10-11T12:00-0400&amp;endDT=2020-10-12T08:00-0400&amp;parameterCd=00060,00065">USGS RDB Link</a>
  * 
  * The "sites" argument provides a USGS Site Number. The data source gets the platform record from
  * the network list, and then the site record from the platform record, and the USGS site name from the

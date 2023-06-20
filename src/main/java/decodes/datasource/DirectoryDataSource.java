@@ -165,8 +165,8 @@ import decodes.util.PropertySpec;
    <li>before - synonym for 'delimiter'</li>
    <li>endDelimiter - (default null) marks end of message</li>
    <li>after - synonym for 'endDelimiter'</li>
-   <li>oldChannelRanges - (default=false) If true, then chan<100 assumed to
-       be self-timed, >100 assumed to be random.</li>
+   <li>oldChannelRanges - (default=false) If true, then chan &lt; 100 assumed to
+       be self-timed, &gt; 100 assumed to be random.</li>
    <li>OneMessageFile - (default=false) If true, assume entire file is a
 	   single message, meaning no delimiters needed and file length is the
 	   message length.</li>

@@ -25,7 +25,7 @@ public class CwmsDbConfig
 	/** URI containing host:portnumber:SID  (tnsName value) */
 	private String DbUri;
 
-	/** Path plus Name of file containing encrypted username & password */
+	/** Path plus Name of file containing encrypted username &amp; password */
 	public String DbAuthFile;
 
 	/** The Cwms Time Series descriptor version default value */
@@ -102,7 +102,9 @@ public class CwmsDbConfig
 		return DbUri;
 	}
 
-	/** Path plus Name of file containing encrypted username & password */
+	/**
+	 *  Path plus Name of file containing encrypted username &amp; password 
+	 */
 	public String getDbAuthFile()
 	{
 		DecodesSettings ds = DecodesSettings.instance();

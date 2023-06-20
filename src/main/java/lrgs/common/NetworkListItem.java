@@ -233,8 +233,8 @@ public class NetworkListItem implements Serializable, Cloneable, Comparable
 	  Note that for name comparisons, a case-insensitive string compare is
 	  done.
 
-	  Return: 0 if objects are equal, <0 if 'this' is less than the
-	  passed object. Return >0 if 'this is greater than the passed object.
+	  Return: 0 if objects are equal, &lt; 0 if 'this' is less than the
+	  passed object. Return &gt; 0 if 'this is greater than the passed object.
      */
 	public int compareTo(Object o)
 	{

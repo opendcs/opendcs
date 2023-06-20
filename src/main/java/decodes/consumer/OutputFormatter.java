@@ -94,10 +94,10 @@ public abstract class OutputFormatter
 	/**
 	  Initializes the Formatter. This method is called from the static
 	  makeOutputFormatter method in this class. The RoutingSpec does not
-	  need to call it explicitely.
+	  need to call it explicitly.
 	  @param type the type of this output formatter.
 	  @param tz the time zone as specified in the routing spec.
-	  @param presGrp The presentation group to handle rounding & EU conversions.
+	  @param presGrp The presentation group to handle rounding &amp; EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
 	protected abstract void initFormatter(String type, java.util.TimeZone tz,
@@ -179,7 +179,7 @@ public abstract class OutputFormatter
 			{
 				try
 				{
-					Class myClass = myType.getExecClass();
+					Class<?> myClass = myType.getExecClass();
 					ret = (OutputFormatter)myClass.newInstance();
 				}
 				catch(Exception e)

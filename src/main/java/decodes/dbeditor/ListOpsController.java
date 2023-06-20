@@ -11,31 +11,26 @@ public interface ListOpsController
 
 	/**
 	  Called when user presses the 'Open' Button.
-	  @param e ignored.
 	*/
 	public void openPressed();
 
 	/**
 	  Called when user presses the 'New' Button.
-	  @param e ignored.
 	*/
 	public void newPressed();
 
 	/**
 	  Called when user presses the 'Copy' Button.
-	  @param e ignored.
 	*/
 	public void copyPressed();
 
 	/**
 	  Called when user presses the 'Delete' Button.
-	  @param e ignored.
 	*/
 	public void deletePressed();
 
 	/**
 	  Called when user presses the 'Help' Button.
-	  @param e ignored.
 	*/
 	public void refreshPressed();
 }

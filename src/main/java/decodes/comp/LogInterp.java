@@ -89,7 +89,7 @@ public class LogInterp
 	  @param x1 the lower independent variable
 	  @param y1 the upper independent variable
 	  @param x2 the lower dependent variable
-	  @param x2 the upper dependent variable
+	  @param y2 the upper dependent variable
 	  @param xOffset the offset
 	*/
 	public void setPoints(double x1, double y1, double x2, double y2, 
@@ -110,8 +110,8 @@ public class LogInterp
 		{
 			overflowFlag = true;
 		}
-Logger.instance().debug3("LogInterp(x1=" + x1 + ", y1=" + y1 + ", x2=" + x2 + ", y2=" 
-+ y2 + " overflow=" + overflowFlag);
+		Logger.instance().debug3("LogInterp(x1=" + x1 + ", y1=" + y1 + ", x2=" + x2 + ", y2=" 
+		+ y2 + " overflow=" + overflowFlag);
 
 		// Do as much computation as possible up front.
 		if (overflowFlag) 
@@ -121,7 +121,8 @@ Logger.instance().debug3("LogInterp(x1=" + x1 + ", y1=" + y1 + ", x2=" + x2 + ",
 			lx1 = x1;
 			rangeX = x2 - lx1;
 		}
-		else {								//Using logarithmic algorithm
+		else
+		{								//Using logarithmic algorithm
 			ly1 = Math.log(y1);
 			rangeY = Math.log(y2) - ly1;
 			lx1 = Math.log(x1-off);

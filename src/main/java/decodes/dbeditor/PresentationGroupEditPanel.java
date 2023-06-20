@@ -14,18 +14,14 @@ import java.awt.event.*;
 
 import javax.swing.table.*;
 import javax.swing.border.*;
-//import javax.swing.event.ListSelectionEvent;
-//import javax.swing.event.ListSelectionListener;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
 import ilex.util.TextUtil;
 
 import decodes.db.*;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 import decodes.sql.DecodesDatabaseVersion;
-import decodes.util.DecodesSettings;
 import decodes.xml.XmlDatabaseIO;
 
 /**
@@ -53,11 +49,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 	SortingListTable dataPresentationTable = null;
 	private boolean supportsMinMaxValue = false;
 
-//	RoundingRulesTableModel roundingRulesTableModel;
-//	JTable roundingRulesTable = new JTable();
-//	JTextField dataTypeField = new JTextField();
-
-	/** no-args ctor for Jbuilder */
+	/** no-args ctor for JBuilder */
 	public PresentationGroupEditPanel()
 	{
 		try
@@ -85,10 +77,6 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 			origObject = ob;
 			theObject = origObject.copy();
 			setTopObject(origObject);
-
-//			roundingRulesTableModel = new RoundingRulesTableModel(null);
-//			roundingRulesTable = new JTable(roundingRulesTableModel);
-//			roundingRulesTable.getTableHeader().setReorderingAllowed(false);
 
 			dataPresentationTable.getSelectionModel().setSelectionMode(
 				ListSelectionModel.SINGLE_SELECTION);
@@ -131,10 +119,6 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 	 */
 	private boolean getDataFromFields()
 	{
-//		tce = roundingRulesTable.getCellEditor();
-//		if (tce != null)
-//			tce.stopCellEditing();
-
 		theObject.inheritsFrom = inheritsFromCombo.getSelectedIndex() == 0
 			? null : (String)inheritsFromCombo.getSelectedItem();
 		
@@ -162,16 +146,6 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 			dataPresentationTableModel,
 			DataPresentationTableModel.columnWidths);
 
-//		JButton addRoundingRuleButton = new JButton(genericLabels.getString("add"));
-//		addRoundingRuleButton.addActionListener(
-//			new java.awt.event.ActionListener()
-//			{
-//				public void actionPerformed(ActionEvent e)
-//				{
-//					addRoundingRulePressed();
-//				}
-//			});
-		
 		JButton deletePresentationButton = new JButton(genericLabels.getString("delete"));
 		deletePresentationButton.addActionListener(
 			new java.awt.event.ActionListener()
@@ -191,18 +165,6 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 					addPresentationPressed();
 				}
 			});
-		
-//		dataTypeField.setEditable(false);
-		
-//		JButton deleteRoundingRuleButton = new JButton(genericLabels.getString("delete"));
-//		deleteRoundingRuleButton.addActionListener(
-//			new java.awt.event.ActionListener()
-//			{
-//				public void actionPerformed(ActionEvent e)
-//				{
-//					deleteRoundingRulePressed();
-//				}
-//			});
 
 		JPanel peButtonPanel = new JPanel(new GridBagLayout());
 		
@@ -217,11 +179,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 			});
 		
 		JPanel pePanel = new JPanel(new BorderLayout());
-//		JSplitPane jSplitPane1 = new JSplitPane();
-//		jSplitPane1.setDividerSize(5);
-//		jSplitPane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
-//		JPanel roundingRulesTitlePanel = new JPanel(new FlowLayout());
-				
+
 		JPanel titlePanel = new JPanel(new GridBagLayout());
 		isProductionCheckBox.setText(dbeditLabels.getString("PresentationGroupEditPanel.production"));
 		nameField.setEditable(false);
@@ -298,11 +256,9 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0, 
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(6, 20, 9, 10), 0, 0));
-		
-//		rrScrollPane.getViewport().add(roundingRulesTable, null);
+
 		peScrollPane.getViewport().add(dataPresentationTable, null);
-//		jSplitPane1.setDividerLocation(200);
-		
+
 		dataPresentationTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -376,60 +332,6 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 			dataPresentationTableModel.removeAt(idx);
 	}
 
-//	/**
-//	 * Called when the 'Add rounding rule' button is pressed.
-//	 */
-//	void addRoundingRulePressed()
-//	{
-//		int idx = dataPresentationTable.getSelectedRow();
-//		DataPresentation dp = null;
-//		if (idx != -1)
-//			dp = dataPresentationTableModel.getObjectAt(idx);
-//		if (idx == -1 || dp == null)
-//		{
-//			DbEditorFrame.instance().showError(
-//				dbeditLabels.getString("PresentationGroupEditPanel.selectAdd"));
-//			return;
-//		}
-//		RoundingRule rr = new RoundingRule(dp);
-//		dp.addRoundingRule(rr);
-//		dp.sortRoundingRules();
-//		roundingRulesTableModel.fireTableDataChanged();
-//	}
-//
-//	/**
-//	 * Called when the 'Delete rounding rule' button is pressed.
-//	 */
-//	void deleteRoundingRulePressed()
-//	{
-//		int idx = dataPresentationTable.getSelectedRow();
-//		DataPresentation dp = null;
-//		if (idx != -1)
-//			dp = dataPresentationTableModel.getObjectAt(idx);
-//		if (idx == -1 || dp == null)
-//		{
-//			DbEditorFrame.instance().showError(
-//				dbeditLabels
-//					.getString("PresentationGroupEditPanel.selectDeleteRR"));
-//			return;
-//		}
-//
-//		idx = roundingRulesTable.getSelectedRow();
-//		RoundingRule rr = null;
-//		if (idx != -1)
-//			rr = roundingRulesTableModel.getObjectAt(idx);
-//		if (idx == -1 || rr == null)
-//		{
-//			DbEditorFrame.instance().showError(
-//				dbeditLabels
-//					.getString("PresentationGroupEditPanel.selectDeleteRR2"));
-//			return;
-//		}
-//
-//		dp.roundingRules.remove(rr);
-//		roundingRulesTableModel.fireTableDataChanged();
-//	}
-
 	/**
 	 * From ChangeTracker interface.
 	 * 
@@ -443,7 +345,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 	}
 
 	/**
-	 * From ChangeTracker interface, save the changes back to the database &
+	 * From ChangeTracker interface, save the changes back to the database &amp;
 	 * reset the hasChanged flag.
 	 * 
 	 * @return true if object was successfully saved.

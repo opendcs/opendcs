@@ -91,7 +91,7 @@ public class DdsRecvConList
 
 	/**
 	 * Adds a connection.
-	 * @param con the connection.
+	 * @param cfg the connection configuration.
 	 */
 	public void addConnection(DdsRecvConnectCfg cfg)
 	{

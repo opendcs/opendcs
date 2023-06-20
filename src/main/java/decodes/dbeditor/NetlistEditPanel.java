@@ -341,7 +341,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 
 	protected void selectFromPdtButtonPressed()
 	{
-System.out.println("Select From PDT Pressed.");
+		System.out.println("Select From PDT Pressed.");
 		if (pdtSelectDialog == null)
 			pdtSelectDialog = new PdtSelectDialog(null);
 		launchDialog(pdtSelectDialog);
@@ -399,7 +399,6 @@ System.out.println("Select From PDT Pressed.");
 							nle.setPlatformName(sn.getNameValue());
 						else
 						{
-							// nle.platformName = "";
 							// **In this case it cannot find any site name
 							// for the nl.siteNameTypePref so use the default or
 							// what ever site name it has.
@@ -522,7 +521,7 @@ System.out.println("Select From PDT Pressed.");
 	}
 
 	/**
-	 * From ChangeTracker interface, save the changes back to the database &
+	 * From ChangeTracker interface, save the changes back to the database &amp;
 	 * reset the hasChanged flag.
 	 * 
 	 * @return true if object was successfully saved.

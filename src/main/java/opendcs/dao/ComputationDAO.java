@@ -311,7 +311,7 @@ debug1("Setting manual connection for algorithmDAO");
 	}
 
 	/**
-	 * Create computation object & fill with current row of result set.
+	 * Create computation object &amp; fill with current row of result set.
 	 */
 	protected DbComputation rs2comp(ResultSet rs)
 		throws SQLException
@@ -338,7 +338,7 @@ debug1("Setting manual connection for algorithmDAO");
 
 	/**
 	 * Fills in the computation parameters, properties, and groups
-	 * @param comps The list of computations to fill.
+	 * @param comp The computation to fill.
 	 * @throws SQLException
 	 * @throws DbIoException
 	 */

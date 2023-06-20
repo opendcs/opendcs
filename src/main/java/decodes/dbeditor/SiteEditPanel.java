@@ -564,7 +564,7 @@ public class SiteEditPanel extends DbEditorTab
 
 	/**
 	 * From ChangeTracker interface, save the changes back to the database 
-	 * & reset the hasChanged flag.
+	 * &amp; reset the hasChanged flag.
 	 * @return true if object was successfully saved.
 	 */
 	public boolean saveChanges()

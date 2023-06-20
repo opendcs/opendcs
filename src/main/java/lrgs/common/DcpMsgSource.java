@@ -30,7 +30,7 @@ import java.util.Date;
 public interface DcpMsgSource
 {
 	/**
-	 * Attaches & initializes the archive for a new client connection.
+	 * Attaches &amp; initializes the archive for a new client connection.
 	 * @throws ArchiveUnavailableException on any error.
 	 */
 	public void attachSource()
@@ -57,7 +57,7 @@ public interface DcpMsgSource
 	  The index data is placed in the passed DcpMsgIndex
 	  object.
 
-	  @return index number, that is, the index of the index (>=0)
+	  @return index number, that is, the index of the index (&gt;=0)
 	
 	  @throws ArchiveUnavailableException if not attached, LRGS is down,
 	   or other IO error.
@@ -85,13 +85,13 @@ public interface DcpMsgSource
 
 	/**
 	  This function will do a binary search of the message index to find
-	  the first message with a time >= the passed time. The next call to
+	  the first message with a time &gt;= the passed time. The next call to
 	  getNextIndex will return this index.
 
 	  Call with null to cancel any previous since time set.
 
 	  @return true if at least 1 message exists in storage with a time that
-	    is >= the passed time. Otherwise false.
+	    is &gt;= the passed time. Otherwise false.
 
 	  @throws ArchiveUnavailableException if LRGS is down or other internal
 	  error occurs.
@@ -147,7 +147,7 @@ public interface DcpMsgSource
 		throws ArchiveUnavailableException;
 
 	/**
-	  Detach from the archive & discard any resources allocated for this
+	  Detach from the archive &amp; discard any resources allocated for this
 	  connection. All errors are handled silently.
 	*/
 	public void detachSource();

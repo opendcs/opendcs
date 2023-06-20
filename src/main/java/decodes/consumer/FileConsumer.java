@@ -18,10 +18,8 @@ import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
 import ilex.util.TextUtil;
 
-import decodes.datasource.RawMessage;
 import decodes.decoder.DecodedMessage;
 import decodes.util.PropertySpec;
-import decodes.db.*;
 
 /**
 FileConsumer sends data to a named file.
@@ -95,7 +93,7 @@ public class FileConsumer extends DataConsumer
 	/**
 	  Opens and initializes the consumer.
 	  @param consumerArg file name template.
-	  @param props routing spec properties.
+	  @param rsProps routing spec properties.
 	  @throws DataConsumerException if the consumer could not be initialized.
 	*/
 	public void open(String consumerArg, Properties rsProps)

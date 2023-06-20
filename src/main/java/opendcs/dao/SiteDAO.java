@@ -62,7 +62,6 @@ import ilex.util.TextUtil;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -78,7 +77,6 @@ import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.util.DecodesSettings;
 
 public class SiteDAO
 	extends DaoBase 
@@ -527,9 +525,10 @@ public class SiteDAO
 	}
 
 	/**
-	 * Update Sitename records for the given site
-	 * @param newSite
-	 * @param siteId
+	 * Update SiteName records for the given site.
+	 *
+	 * @param newSite Site object with new information.
+	 * @param dbSite Site object as it was from the database.
 	 * @throws DatabaseException
 	 * @throws SQLException
 	 */

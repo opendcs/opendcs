@@ -3,16 +3,13 @@
  */
 package decodes.datasource;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.Vector;
 
 
-import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -36,19 +33,20 @@ import decodes.util.PropertySpec;
  * for many kinds of data including SNOTEL and USGS data.
  * 
  * Here is an example URL:
- * https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customMultiTimeSeriesGroupByStationReport/hourly/id="806"|name/-31,-7/BATT::value,TOBS::value
+ * {@link https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customMultiTimeSeriesGroupByStationReport/hourly/id="806"|name/-31,-7/BATT::value,TOBS::value}
+ *
  * 
  * The data source uses a property to specify the interval ("hourly" in the above.)
  * the IDs are retrieved one at a time and supplied by a networklist.
- * The time range ("-31,-7" in the above is expressed as a number of intervals and is calculated
- * from the specified interval property and the routing spec's since & until times.
+ * The time range ("-31,-7") in the above is expressed as a number of intervals and is calculated
+ * from the specified interval property and the routing spec's since &amp; until times.
  * The sensor list (BATT, TOBS) is taken from the platform's configuration. Any sensor with an
  * NRCS sensor will be retrieved.
  * 
  * Properties:
  * 	baseUrl - The base URL for the data mart. d
  *     the default baseUrl is:
- *     https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customMultiTimeSeriesGroupByStationReport/
+ *     <a href="https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customMultiTimeSeriesGroupByStationReport/"/>
  *  interval - one of "hourly", "daily", "monthly"
  *  dataTypeStandard - default="nrcs". This determines which sensor data types to include in the URL.
  *  
