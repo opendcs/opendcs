@@ -3,7 +3,6 @@
 */
 package lrgs.lrgsmon;
 
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.xml.XmlOutputStream;
 
@@ -22,11 +21,17 @@ import lrgs.db.DdsConnectionStats;
 import lrgs.db.DdsPeriodStats;
 import lrgs.db.LrgsConstants;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;
+
 /**
 This class writes the detail report for LRGS User Utilization Reports.
 */
 public class DdsStatReportGenerator
 {
+	private static final Logger logger = LoggerFactory.getLogger(getCallingClass());
+
 	/** Used to format dates in columns in the HTML report. */
 	private SimpleDateFormat columnHourDF;
 
@@ -93,13 +98,17 @@ public class DdsStatReportGenerator
 	{		
 		// Create the file that will hold the DDS Connection Statistics
 		FileOutputStream mainFos = null;
-		File mainHourlyFile = null;
+		// This is the main file that will be created for all the hours
+		final File mainHourlyFile = new File(outputDir.getPath()
+										   + File.separator
+										   + hourlyFileName
+										   + ".html");
 		try
-		{	// This is the main file that will be created for all the hours
-			mainHourlyFile = new File(outputDir.getPath() +
-					File.separator + hourlyFileName + ".html");
-			//Logger.instance().info("Main Hourly File Name = "+
-			//										mainHourlyFile.toString());
+		{
+			logger.atTrace()
+			      .setMessage("Main Hourly File Name = ")
+				  .addArgument(() -> mainHourlyFile.toString())
+				  .log();
 			mainFos = new FileOutputStream(mainHourlyFile);
 			XmlOutputStream mainXos = 
 							new XmlOutputStream(mainFos, "html");
@@ -121,20 +130,21 @@ public class DdsStatReportGenerator
 			
 				if (!connectionsIterator.hasNext())
 				{
-					Logger.instance().info("No records found for DDS " +
-											"Connection table.");
+					logger.info("No records found for DDS Connection table.");
 				}
 				FileOutputStream fos = null;
 				String hrHtmlFileName = "";
-				File tmp = null;
+				
+				
 				Date currentHourlyTime = new Date(hour);
+				hrHtmlFileName = hourlyFileName + //"DDSConnections"
+				fileDF.format(currentHourlyTime) + ".html";
+				// This is the file that will be created per hour
+				final File tmp = new File(outputDir.getPath()
+										+ File.separator
+										+ hrHtmlFileName);
 				try
-				{	// This is the file that will be created per hour
-					hrHtmlFileName = hourlyFileName + //"DDSConnections"
-						fileDF.format(currentHourlyTime) + ".html"; 
-					tmp = new File(outputDir.getPath() +
-							File.separator + hrHtmlFileName);
-					//Logger.instance().info("Per hour file= "+tmp.toString());
+				{
 					fos = new FileOutputStream(tmp);
 					XmlOutputStream xos = 
 									new XmlOutputStream(fos, "html");
@@ -189,8 +199,11 @@ public class DdsStatReportGenerator
 				}
 				catch(IOException ex)
 				{
-					Logger.instance().warning("Cannot write " +
-										tmp.toString() + ": " + ex);
+					logger.atWarn()
+						  .setCause(ex)
+						  .setMessage("Cannot write file {}.")
+						  .addArgument(() -> tmp.toString())
+						  .log();
 				}
 				finally
 				{
@@ -203,12 +216,11 @@ public class DdsStatReportGenerator
 	
 				// Loop dds period stats array to extract data for a single 
 				// hour
-				Iterator periodStatIterator = ddsPeriodStatsList.iterator();
+				Iterator<DdsPeriodStats> periodStatIterator = ddsPeriodStatsList.iterator();
 				
 				if (!periodStatIterator.hasNext())
 				{
-					Logger.instance().info("No records found for DDS " +
-											"Period Stats table.");
+					logger.info("No records found for DDS Period Stats table.");
 				}
 				while (periodStatIterator.hasNext())
 				{
@@ -254,8 +266,11 @@ public class DdsStatReportGenerator
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot write " + 
-					mainHourlyFile.toString() + ": " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Cannot write file {}.")
+				  .addArgument(() -> mainHourlyFile.toString())
+				  .log();
 		}
 		finally
 		{
