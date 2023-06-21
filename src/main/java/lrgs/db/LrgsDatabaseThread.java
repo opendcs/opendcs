@@ -398,7 +398,7 @@ debug("Adding object to dbWriteQueue.");
 	 * 
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	public synchronized void 
 		getOutages(ArrayList<Outage> ret, Date startTime, Date endTime)
 	{
@@ -413,7 +413,7 @@ debug("Adding object to dbWriteQueue.");
 	 * @param newstat new status
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	public synchronized void changeOutageStatus(Outage otg, char newstat)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
@@ -424,7 +424,7 @@ debug("Adding object to dbWriteQueue.");
 	 * @param newout the outage	 
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	public synchronized void assertOutage(Outage newout)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
@@ -439,7 +439,7 @@ debug("Adding object to dbWriteQueue.");
 	 * queue is empty.
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	public synchronized Outage highestPriorityOutage()
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
@@ -451,7 +451,7 @@ debug("Adding object to dbWriteQueue.");
 	 * @param otg the outage
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	public synchronized void deleteOutage(Outage otg)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
@@ -463,7 +463,7 @@ debug("Adding object to dbWriteQueue.");
 	 * @return an outage by its unique ID number, or null if not found.
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	public synchronized Outage getOutageById(int id)
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery

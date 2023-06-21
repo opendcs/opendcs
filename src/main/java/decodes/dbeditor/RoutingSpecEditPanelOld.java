@@ -32,7 +32,7 @@ This panel edits an open routing spec.
 Opened from the RoutingSpecListPanel.
 */
 @SuppressWarnings("serial")
-@Deprecated(forRemoval = true)
+@Deprecated /*(forRemoval = true)*/
 public class RoutingSpecEditPanelOld extends DbEditorTab
 	implements ChangeTracker, EntityOpsController
 {

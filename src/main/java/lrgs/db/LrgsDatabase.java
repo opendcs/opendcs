@@ -1134,7 +1134,7 @@ public class LrgsDatabase
 	 *  reading from DB
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private ArrayList<Outage> selectSystemOutage(Date startTime, Date endTime, 
 		ArrayList<Outage> outageList) throws LrgsDatabaseException
 	{
@@ -1152,7 +1152,7 @@ public class LrgsDatabase
 	 * @throws LrgsDatabaseException exception thrown in case of error while reading from DB
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private ArrayList<Outage>  selectDomsatGap(Date startTime, Date endTime, 
 		ArrayList<Outage> outageList) 
 		throws LrgsDatabaseException
@@ -1172,7 +1172,7 @@ public class LrgsDatabase
 	 *  reading from DB
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private ArrayList<Outage> selectDamsntOutage(Date startTime, Date endTime, 
 		ArrayList<Outage> outageList) 
 		throws LrgsDatabaseException
@@ -1286,7 +1286,7 @@ public class LrgsDatabase
 	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB 
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	public void deleteOutage(Outage outage) throws LrgsDatabaseException
 	{
 		// Verify that we have a valid Outage object.
@@ -1315,7 +1315,7 @@ public class LrgsDatabase
 	 *  deleting from DB
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private void deleteFromDamsntOutage(Outage outage) 
 		throws LrgsDatabaseException
 	{
@@ -1341,7 +1341,7 @@ public class LrgsDatabase
 	 *  deleting from DB
 	 * @deprecated @since 6.2
 	 */
-	@Deprecated(forRemoval = true, since = "6.2")
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private void deleteFromDomsatGap(Outage outage) throws LrgsDatabaseException
 	{
 		String q = 
