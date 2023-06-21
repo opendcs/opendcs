@@ -125,7 +125,7 @@ public class LrgsDatabase
 	}
 
 	/**
-	 * Does a SQL query with the default static statement & returns the
+	 * Does a SQL query with the default static statement &amp; returns the
 	 * result set.
 	 * Warning: this method is not thread and nested-loop safe.
 	 * If you need to do nested queries, you must create a separate
@@ -210,7 +210,7 @@ public class LrgsDatabase
 	/**
 	 * This method converts a boolean type to a DB String representation.
 	 * 
-	 * @param boolean value from user to be converted to SQL representation 
+	 * @param v value from user to be converted to SQL representation 
 	 * @return string representation for a boolean value in this db. 
 	 * */
 	public String sqlBoolean(boolean v)
@@ -1132,52 +1132,13 @@ public class LrgsDatabase
 	 * @return outageList the outage list containing the info
 	 * @throws LrgsDatabaseException exception thrown in case of error while 
 	 *  reading from DB
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private ArrayList<Outage> selectSystemOutage(Date startTime, Date endTime, 
 		ArrayList<Outage> outageList) throws LrgsDatabaseException
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		Outage outage = null;
-//		StringBuffer q = new StringBuffer();
-//		q.append( 
-//			"SELECT outage_id, begin_time, end_time, status_code" +
-//			" FROM system_outage");
-//		if (startTime != null && endTime != null)
-//		{
-//			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
-//					" AND end_time <= " + sqlDate(endTime));
-//		}
-//		else if (startTime == null && endTime != null)
-//		{
-//			q.append(" WHERE end_time <= " + sqlDate(endTime));
-//		} 
-//		else if (startTime != null && endTime == null)
-//		{
-//			q.append(" WHERE begin_time >= " + sqlDate(startTime));
-//		}
-//		try
-//		{
-//			ResultSet rs = doQuery(q.toString());
-//			// Set Outage Array List.
-//			while(rs.next())
-//			{   // Set outageId, beginTime, endTime, statusCode and
-//				// outageType
-//				// Set sourceId, dcpAddress, beginSeq and endSeq to 0
-//				outage = new Outage(rs.getInt(1), getFullDate(rs, 2), 
-//						getFullDate(rs, 3), LrgsConstants.systemOutageType,
-//						getChar(rs, 4), 0, 0, 0, 0);
-//				outage.setInDb(true);
-//				outageList.add(outage);
-//			}
-//		}
-//		catch(SQLException ex)
-//		{
-//			String msg = "Error while reading the system_outage table " + ex;
-//			logger.failure(msg);
-//			closeConnection();
-//			throw new LrgsDatabaseException(msg);
-//		}
 		return outageList;
 	}
 	
@@ -1189,53 +1150,14 @@ public class LrgsDatabase
 	 * @param outageList the outage list to be filled with the table info
 	 * @return outageList the outage list containing the info
 	 * @throws LrgsDatabaseException exception thrown in case of error while reading from DB
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private ArrayList<Outage>  selectDomsatGap(Date startTime, Date endTime, 
 		ArrayList<Outage> outageList) 
 		throws LrgsDatabaseException
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		Outage outage = null;
-//		StringBuffer q = new StringBuffer();
-//		q.append( 
-//			"SELECT outage_id, begin_time, begin_seq, end_time, end_seq, status_code" +
-//			" FROM domsat_gap");
-//		if (startTime != null && endTime != null)
-//		{
-//			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
-//					" AND end_time <= " + sqlDate(endTime));
-//		}
-//		else if (startTime == null && endTime != null)
-//		{
-//			q.append(" WHERE end_time <= " + sqlDate(endTime));
-//		} 
-//		else if (startTime != null && endTime == null)
-//		{
-//			q.append(" WHERE begin_time >= " + sqlDate(startTime));
-//		}
-//		try
-//		{
-//			ResultSet rs = doQuery(q.toString());
-//			// Set Outage Array List.
-//			while(rs.next())
-//			{   // Set outageId, beginTime, beginSeq, endTime, endSeq , 
-//				// statusCode and outageType
-//				// Set sourceId and dcpAddress to 0
-//				outage = new Outage(rs.getInt(1), getFullDate(rs, 2), 
-//						getFullDate(rs, 4), LrgsConstants.domsatGapOutageType,
-//						getChar(rs, 6), 0, 0, rs.getInt(3), rs.getInt(5));
-//				outage.setInDb(true);
-//				outageList.add(outage);
-//			}
-//		}
-//		catch(SQLException ex)
-//		{
-//			String msg = "Error while reading the domsat_gap table " + ex;
-//			logger.failure(msg);
-//			closeConnection();
-//			throw new LrgsDatabaseException(msg);
-//		}
 		return outageList;
 	}
 	
@@ -1248,60 +1170,21 @@ public class LrgsDatabase
 	 * @return outageList the outage list containing the info
 	 * @throws LrgsDatabaseException exception thrown in case of error while 
 	 *  reading from DB
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private ArrayList<Outage> selectDamsntOutage(Date startTime, Date endTime, 
 		ArrayList<Outage> outageList) 
 		throws LrgsDatabaseException
 	{
 		//MJM OpenDCS 6.2 does not support Outage recovery
-
-//		Outage outage = null;
-//		StringBuffer q = new StringBuffer();
-//		q.append(
-//			"SELECT outage_id, data_source_id, begin_time, end_time, status_code" +
-//			" FROM damsnt_outage");
-//		if (startTime != null && endTime != null)
-//		{
-//			q.append(" WHERE begin_time >= " + sqlDate(startTime) +
-//					" AND end_time <= " + sqlDate(endTime));
-//		}
-//		else if (startTime == null && endTime != null)
-//		{
-//			q.append(" WHERE end_time <= " + sqlDate(endTime));
-//		} 
-//		else if (startTime != null && endTime == null)
-//		{
-//			q.append(" WHERE begin_time >= " + sqlDate(startTime));
-//		}
-//		try
-//		{
-//			ResultSet rs = doQuery(q.toString());
-//			// Set Outage Array List.
-//			while(rs.next())
-//			{   // Set outageId, dataSourceId, beginTime, endTime 
-//				// statusCode and outageType
-//				// Set dcpAddress, beginSeq and endSeq to 0
-//				outage = new Outage(rs.getInt(1), getFullDate(rs, 3), 
-//						getFullDate(rs, 4), LrgsConstants.damsntOutageType,
-//						getChar(rs, 5), rs.getInt(2), 0, 0, 0);
-//				outage.setInDb(true);
-//				outageList.add(outage);
-//			}
-//		}
-//		catch(SQLException ex)
-//		{
-//			String msg = "Error while reading the damsnt_outage table " + ex;
-//			logger.failure(msg);
-//			closeConnection();
-//			throw new LrgsDatabaseException(msg);
-//		}
 		return outageList;
 	}
 
 	/**
 	 * This method deletes a Data Source record from the lrgs data_source table.
 	 *   
-	 * @param DataSource the Data Source object to be deleted
+	 * @param dataSource the Data Source object to be deleted
 	 * @throws LrgsDatabaseException exception thrown in case of error while 
 	 *  deleting from DB 
 	 */
@@ -1399,9 +1282,11 @@ public class LrgsDatabase
 	 * remove from one of the following tables depending on the Outage type:
 	 * system_outage, domsat_gap or damsnt.
 	 *   
-	 * @param Outage the Outage object to be deleted
+	 * @param outage the Outage object to be deleted
 	 * @throws LrgsDatabaseException exception thrown in case of error while deleting from DB 
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	public void deleteOutage(Outage outage) throws LrgsDatabaseException
 	{
 		// Verify that we have a valid Outage object.
@@ -1428,7 +1313,9 @@ public class LrgsDatabase
 	 * @param outage the object to delete
 	 * @throws LrgsDatabaseException exception thrown in case of error while 
 	 *  deleting from DB
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private void deleteFromDamsntOutage(Outage outage) 
 		throws LrgsDatabaseException
 	{
@@ -1452,7 +1339,9 @@ public class LrgsDatabase
 	 * @param outage the object to delete
 	 * @throws LrgsDatabaseException exception thrown in case of error while 
 	 *  deleting from DB
+	 * @deprecated @since 6.2
 	 */
+	@Deprecated /*(forRemoval = true, since = "6.2")*/
 	private void deleteFromDomsatGap(Outage outage) throws LrgsDatabaseException
 	{
 		String q = 

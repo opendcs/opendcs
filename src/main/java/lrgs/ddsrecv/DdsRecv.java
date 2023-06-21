@@ -264,10 +264,8 @@ public class DdsRecv extends Thread implements LrgsInputInterface
     /**
      * Template method to archive a message.
      *
-     * @param dcpMsg
-     *            the message
-     * @param slotNum
-     *            the input interface's slot number
+     * @param dcpMsg the message
+     * @param con receive connections
      */
     protected void archiveMsg(DcpMsg dcpMsg, DdsRecvConnection con)
     {

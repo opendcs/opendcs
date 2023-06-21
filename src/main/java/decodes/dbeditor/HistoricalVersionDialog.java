@@ -75,7 +75,7 @@ public class HistoricalVersionDialog extends GuiDialog
 	/**
 	  Constructor.
 	  @param currentVersion The platform opened in the PlatformEditPanel
-	  @param the owning panel.
+	  @param ctl owning panel.
 	*/
     public HistoricalVersionDialog(Platform currentVersion,
 		HistoricalVersionController ctl)

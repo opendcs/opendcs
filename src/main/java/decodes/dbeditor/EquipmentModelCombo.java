@@ -24,7 +24,6 @@ package decodes.dbeditor;
 
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
 import javax.swing.JComboBox;
 import java.util.Iterator;
 import decodes.db.*;
@@ -74,7 +73,7 @@ public class EquipmentModelCombo extends JComboBox
 	/**
 	  Sets the current selection from an Equipment Model object.
 	  If null, set selection to the first (empty) slot in the list.
-	  @param v the current selection.
+	  @param em the current selection.
 	*/
 	public void set(EquipmentModel em)
 	{

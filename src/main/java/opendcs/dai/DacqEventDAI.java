@@ -112,7 +112,7 @@ public interface DacqEventDAI
 		throws DbIoException;
 	
 	/**
-	 * Read all events with event time >= the specified time.
+	 * Read all events with event time &gt;= the specified time.
 	 * @param since the time or null to read all events
 	 * @param evtList the array into which events are placed.
 	 * @return the number of events placed into the passed array.
@@ -122,7 +122,7 @@ public interface DacqEventDAI
 		throws DbIoException;
 	
 	/**
-	 * Read all events with event ID > the specified ID.
+	 * Read all events with event ID &gt; the specified ID.
 	 * @param eventId the ID
 	 * @param evtList the array into which events are placed.
 	 * @return the number of events placed into the passed array.

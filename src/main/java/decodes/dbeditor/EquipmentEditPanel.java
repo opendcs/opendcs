@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
@@ -22,8 +21,6 @@ import decodes.db.Platform;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.Constants;
-import decodes.util.DecodesSettings;
-
 import decodes.gui.*;
 
 /**
@@ -110,7 +107,7 @@ public class EquipmentEditPanel extends DbEditorTab
 	/**
 	  Used specifically for import function, make the editing copy of the
 	  object look like the imported object, then reinitialize the fields.
-	  @param ob The object
+	  @param imported The object
 	*/
 	public void setImportedEquipmentModel(EquipmentModel imported)
 	{

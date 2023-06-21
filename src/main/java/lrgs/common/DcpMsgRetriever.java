@@ -3,7 +3,6 @@
 */
 package lrgs.common;
 
-import ilex.util.ArrayUtil;
 import ilex.util.EnvExpander;
 
 import java.io.IOException;
@@ -99,8 +98,8 @@ public class DcpMsgRetriever
 	}
 
 	/** 
-	  User sandbox directores are sub-directories under this.
-	  @param root the parent of user directories
+	  User sandbox directors are sub-directories under this.
+	  @param sandboxDir the parent of user directories
 	*/
 	public void setUserSandbox(File sandboxDir)
 	{
@@ -214,22 +213,6 @@ public class DcpMsgRetriever
 			"This method overloaded by MessageArchiveRetriever. "
 			+ "Should never be called!",
 			LrgsErrorCode.DDDSINTERNAL);
-//		timedOut = false;
-//		long end = System.currentTimeMillis() + (timeout*1000L);
-//		while(true)
-//		{
-//			int r = source.getNextIndex(idx);
-//			// Allow EndOfArchive, ArchiveUnavail and UntilReached to propegate.
-//
-//			if (testCriteria(idx))
-//				return r;
-//
-//			if (System.currentTimeMillis() > end)
-//			{
-//				timedOut = true;
-//				throw new SearchTimeoutException("time out");
-//			}
-//		}
 	}
 
 	/**
@@ -238,7 +221,6 @@ public class DcpMsgRetriever
 	  @param idx the DcpMsgIndex structure to populate
 	  @return the DcpMsg from the source
 	  @see lrgs.common.DcpMsgSource
-	  @see lrgs.internal.LocalMsgAccess
 	*/
 	public DcpMsg readMsg(DcpMsgIndex idx)
 		throws ArchiveUnavailableException, NoSuchMessageException

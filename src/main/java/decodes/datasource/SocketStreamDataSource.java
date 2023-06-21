@@ -126,8 +126,8 @@ import decodes.util.PropertySpec;
 	   socket. Will read 'adjusted length' bytes following header.</li>
    <li>delimiter - (default " \r\n") used for finding sync'ing stream</li>
    <li>endDelimiter - (default null) marks end of message</li>
-   <li>oldChannelRanges - (default=false) If true, then chan<100 assumed to
-       be self-timed, >100 assumed to be random.</li>
+   <li>oldChannelRanges - (default=false) If true, then chan &lt; 100 assumed to
+       be self-timed, &gt; 100 assumed to be random.</li>
    <li>header - (default "GOES"), either GOES or VITEL. The Vitel DRGS is
 	   slightly different. It does not include the 'failure code', causing
 	   subsequent fields to be shifted by one byte.
@@ -201,7 +201,7 @@ public class SocketStreamDataSource extends DataSourceExec
 	}
 
 	/**
-	  Extract host, port, & username.
+	  Extract host, port, and username.
 	  Do NOT make connection to LRGS here. Wait until first call to getMessage.
 	*/
 	public void processDataSource()

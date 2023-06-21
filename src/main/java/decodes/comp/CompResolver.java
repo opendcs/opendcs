@@ -115,7 +115,7 @@ public abstract class CompResolver
 	/**
 	* Finds a free unused sensor number suitable for creating a new
 	* time series.
-	* @param the data collection
+	* @param msg data collection
 	* @return the free sensor number.
 	*/
 	protected int findFreeSensorNum( IDataCollection msg )

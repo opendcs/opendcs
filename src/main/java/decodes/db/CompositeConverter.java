@@ -44,7 +44,6 @@
 package decodes.db;
 
 import java.util.Vector;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Stack;
 
@@ -53,11 +52,11 @@ import ilex.util.Logger;
 import decodes.util.DecodesException;
 
 /**
-Composit engineering unit converter.
+Composite engineering unit converter.
 Converts from one EU to another by combining other converters. For example,
 to convert from inches to millimeters we might go:
 <p>
-inches -> feet -> meters -> millimeters
+inches -&gt; feet -&gt; meters -&gt; millimeters
 */
 public class CompositeConverter extends UnitConverter
 {

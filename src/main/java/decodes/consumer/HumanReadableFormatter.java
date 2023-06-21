@@ -35,7 +35,7 @@ import decodes.util.PropertySpec;
   Properties honored:
   <ul>
     <li>delimiter - Delimits each column, default=" | "</li>
-    <li>dateformat> - A template handled by java.util.SimpleDateFormat</li>
+    <li>dateformat - A template handled by java.util.SimpleDateFormat</li>
     <li>datatype - the preferred data type standard (e.g. SHEF-PE) </li>
     <li>displayempty - display empty colums (default is to omit) </li>
     <li>cwmsflags - default=false, if true, display cwms flag values </li>
@@ -80,10 +80,10 @@ public class HumanReadableFormatter extends OutputFormatter
 	/**
 	  Initializes the Formatter. This method is called from the static
 	  makeOutputFormatter method in this class. The RoutingSpec does not
-	  need to call it explicitely.
+	  need to call it explicitly.
 	  @param type the type of this output formatter.
 	  @param tz the time zone as specified in the routing spec.
-	  @param presGrp The presentation group to handle rounding & EU conversions.
+	  @param presGrp The presentation group to handle rounding &amp; EU conversions.
 	  @param rsProps the routing-spec properties.
 	*/
 	protected void initFormatter(String type, java.util.TimeZone tz,

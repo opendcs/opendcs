@@ -632,7 +632,7 @@ public class Platform
 	/**
 	 * An 'equals' method for use by import programs.
 	 * - Does deep compare through site constituents.
-	 * - Ignores differences in platform ID & isProduction.
+	 * - Ignores differences in platform ID &amp; isProduction.
 	 * @param op the imported platform we are comparing to.
 	 * @return
 	 */

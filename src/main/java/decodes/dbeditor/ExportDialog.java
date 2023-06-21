@@ -10,7 +10,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
-import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -38,10 +37,8 @@ import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
-import decodes.db.NetworkListList;
 import decodes.db.Platform;
 import decodes.db.PlatformList;
-import decodes.gui.TopFrame;
 import decodes.gui.GuiDialog;
 import decodes.xml.DatabaseParser;
 import decodes.xml.PlatformParser;
@@ -114,8 +111,6 @@ public class ExportDialog extends GuiDialog
 
 	/**
 	 * Constructor.
-	 * @param owner the db editor top-frame.
-	 * @param title
 	 */
 	public ExportDialog()
 	{

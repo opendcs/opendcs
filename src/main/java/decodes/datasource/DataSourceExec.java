@@ -96,23 +96,12 @@
 */
 package decodes.datasource;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.Vector;
 
-import lrgs.common.SearchCriteria;
-
 import ilex.util.Logger;
-import ilex.util.PropertiesUtil;
-import ilex.util.TextUtil;
-
 import decodes.db.DataSource;
 import decodes.db.Constants;
-import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.db.TransportMedium;
@@ -262,7 +251,7 @@ public abstract class DataSourceExec
 	  Find the matching transport medium for this platform.
 	  This logic is a bit messy because GOES can have different TM
 	  types (ST, RD, or simply 'GOES'), and because we want to support
-	  the old logic of channels < 100 being self-timed.
+	  the old logic of channels &lt; 100 being self-timed.
 	  <p>
 	  The logic is implemented here in the base class so that it can
 	  be used consistently for all data sources that return GOES messages.
@@ -272,7 +261,7 @@ public abstract class DataSourceExec
 	  @param p the platform resolved from the message.
 	  @param tmid the transport medium ID (e.g. DCP address, Site ID)
 	  @param chan the channel number from the message or -1 if undefined.
-	  @param oldChannelRanges deprecated flag indicating channels < 100 are ST
+	  @param oldChannelRanges deprecated flag indicating channels &lt; 100 are ST
 	  @return TransportMedium matching the arguments.
 	*/
 	protected TransportMedium resolveTransportMedium(Platform p,

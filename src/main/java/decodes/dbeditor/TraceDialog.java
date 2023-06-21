@@ -5,8 +5,6 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
-
 /**
 Dialog to show the trace events for decoding.
 Used in dbedit, platwiz, and decwiz.
@@ -33,7 +31,7 @@ public class TraceDialog extends JDialog
 	/**
 	 * Constructor for Dialog parent.
 	 * @param owner the owning component
-	 * @param model true if this dialog is to be modal.
+	 * @param modal true if this dialog is to be modal.
 	 */
 	public TraceDialog(JDialog owner, boolean modal)
 	{
@@ -58,7 +56,7 @@ public class TraceDialog extends JDialog
 	/**
 	 * Constructor for Frame parent.
 	 * @param owner the owning component
-	 * @param model true if this dialog is to be modal.
+	 * @param modal true if this dialog is to be modal.
 	 */
 	public TraceDialog(Frame owner, boolean modal)
 	{

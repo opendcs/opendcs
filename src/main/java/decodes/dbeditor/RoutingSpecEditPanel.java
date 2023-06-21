@@ -9,7 +9,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.io.IOException;
 import java.io.StringReader;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -27,7 +26,6 @@ import javax.swing.SwingUtilities;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.SearchCriteria;
-import lrgs.common.SearchSyntaxException;
 import lrgs.gui.SearchCriteriaEditPanel;
 
 import ilex.util.LoadResourceBundle;
@@ -36,7 +34,6 @@ import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
 import decodes.consumer.DataConsumer;
-import decodes.consumer.DataConsumerException;
 import decodes.consumer.OutputFormatter;
 import decodes.datasource.DataSourceExec;
 import decodes.datasource.HotBackupGroup;
@@ -45,14 +42,10 @@ import decodes.db.Constants;
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
-import decodes.db.DbEnum;
-import decodes.db.EnumValue;
 import decodes.db.InvalidDatabaseException;
-import decodes.db.PresentationGroup;
 import decodes.db.RoutingSpec;
 import decodes.gui.EnumComboBox;
 import decodes.gui.PropertiesEditPanel;
-import decodes.util.DecodesSettings;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
@@ -604,7 +597,7 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 	}
 
 	/**
-	 * From ChangeTracker interface, save the changes back to the database &
+	 * From ChangeTracker interface, save the changes back to the database &amp;
 	 * reset the hasChanged flag.
 	 * 
 	 * @return true if object was successfully saved.

@@ -6,16 +6,12 @@ package decodes.dbimport;
 import java.io.LineNumberReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.text.ParsePosition;
 import java.util.Vector;
-import java.util.Properties;
 import java.util.Iterator;
 import java.util.Date;
-import java.util.TimeZone;
-
 import ilex.util.*;
 import ilex.cmdline.*;
 
@@ -24,7 +20,6 @@ import decodes.util.*;
 import decodes.db.*;
 import decodes.xml.XmlDatabaseIO;
 import decodes.xml.TopLevelParser;
-import decodes.xml.PlatformConfigParser;
 
 /**
 Imports legacy database files from an EMIT or USGS-DECODES-C. This
@@ -1452,7 +1447,7 @@ public class EmitImport
 
 	/**
 	  Parses ES (End of Site) lines.
-	  Finish construction of platform & save into database.
+	  Finish construction of platform &amp; save into database.
 	  @param line the line of data to parse
 	*/
 	public void parseES(String line)

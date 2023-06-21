@@ -806,7 +806,7 @@ ConfigSelectController
 	}
 
 	/**
-	 * Saves the changes back to the database & reset the hasChanged flag.
+	 * Saves the changes back to the database &amp; reset the hasChanged flag.
 	 * (from ChangeTracker interface)
 	 * @return true if save was successful.
 	 */

@@ -12,7 +12,7 @@ public interface ChangeTracker
 	public boolean hasChanged();
 
 	/**
-	 * Saves the changes back to the database & reset the hasChanged flag.
+	 * Saves the changes back to the database &amp; reset the hasChanged flag.
 	 * @return true if save was successful, false if aborted.
 	 */
 	public boolean saveChanges();

@@ -133,7 +133,7 @@ public class FileDataSource
 	}
 
 	/**
-	  Sets a property by name & value.
+	  Sets a property by name &amp; value.
 	  @param name the property name
 	  @param value the property value
 	  @return true if property is understood and accepted, false otherwise.
@@ -151,7 +151,7 @@ public class FileDataSource
 		return true;
 	}
 
-	/** Does nothing: Reopen is for sockets & serial ports, not files. */
+	/** Does nothing: Reopen is for sockets &amp; serial ports, not files. */
 	public boolean doReOpen() { return false; }
 
 	/**

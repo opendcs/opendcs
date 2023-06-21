@@ -376,7 +376,7 @@ public class DecodesScriptEditPanel
 	}
 
 	/**
-	 * Gets the data from the fields & puts it back into the object.
+	 * Gets the data from the fields &amp; puts it back into the object.
 	 * 
 	 * @return the internal copy of the object being edited.
 	 */

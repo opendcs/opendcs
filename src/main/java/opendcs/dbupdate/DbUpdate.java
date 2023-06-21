@@ -516,7 +516,7 @@ public class DbUpdate extends TsdbAppTemplate
 	}
 
 	/**
-	 * Ask user for username & password for database connection.
+	 * Ask user for username &amp; password for database connection.
 	 * Then connect.
 	 * Use console.
 	 */

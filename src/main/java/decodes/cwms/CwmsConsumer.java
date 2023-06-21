@@ -392,7 +392,7 @@ public class CwmsConsumer extends DataConsumer
 	 * and call the insertInStoreTs to insert the data in the CWMS Database.
 	 * 
 	 * @param ts the time series object containing current data
-	 * @param timeseriesDesc CWMS time series descriptor
+	 * @param timeSeriesDesc CWMS time series descriptor
 	 * @param unit the units of the data set
 	 * @param Platform current platform in process
 	 * @param DCPAddress current DCP in process
@@ -543,70 +543,23 @@ public class CwmsConsumer extends DataConsumer
 			PropertiesUtil.getIgnoreCase(props,CwmsConstants.CWMS_OFFICE_ID);
 		if (s != null)
 			cwmsCfg.cwmsOfficeId = s;
-		
-		//Logger.instance().info(module +	" cwmsOfficeId = " + cwmsOfficeId);
-		// Get the Store Rule value
-//		s = PropertiesUtil.getIgnoreCase(props,CwmsConstants.CWMS_STORE_RULE);
-//		if (s != null)
-//			storeRuleValue = s;
-		// Get the override protection value
-//		s = PropertiesUtil.getIgnoreCase(props, CwmsConstants.CWMS_OVERRIDE_PROT);
-//		if (s != null)
-//		{
-//			try 
-//			{
-//				overrideProtValue = Integer.parseInt(s);
-//			}
-//			catch(NumberFormatException ex)
-//			{
-//				String msg = module + 
-//				" Wrong value for overrideprot property, using default: " 
-//				+ ex.toString();
-//				Logger.instance().warning(msg);
-//				overrideProtValue = 0;
-//			}
-//		}
-//		// Get Version Date, NOTE: This property is not going to 
-//		// be used for now, it is here as a placed holder.
-//		s = PropertiesUtil.getIgnoreCase(props,
-//				CwmsConstants.CWMS_VERSION_DATE);
-//		if (s != null)
-//		{
-//			DateFormat dateFormat =	new SimpleDateFormat("yyyyMMdd");
-//			dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-//			try
-//			{
-//				versionDateValue = dateFormat.parse(s);
-//			} catch (ParseException ex)
-//			{
-//				Logger.instance().warning(module +
-//						" Cannot parse the version date '"
-//						+ s + "' Use the following format: "
-//						+ " yyyyMMdd");
-//				versionDateValue = null;
-//			}
-//		}
-//		// Get the debug flag from Routing Spec properties
-//		s = PropertiesUtil.getIgnoreCase(props,CwmsConstants.DEBUG_FLAG);
-//		if (s != null)
-//			debugFlag = s;
 
 		// Get the "cwmsVersion" property, which overrides the config file.
 		s = PropertiesUtil.getIgnoreCase(props, CwmsConstants.CWMS_VERSION);
 		if (s != null && s.trim().length() > 0)
 		{
 			cwmsVersion = s;
-Logger.instance().debug3("Using rs property version '" + cwmsVersion + "'");
+			Logger.instance().debug3("Using rs property version '" + cwmsVersion + "'");
 		}
 	}
 	
 	/**
-	 * This method builds the Cwms timeseries descriptor. The descriptor
+	 * This method builds the Cwms time series descriptor. The descriptor
 	 * has  six parts: location.param.paramtype.interval.duration.version
 	 * 
-	 * @param TimeSeries the time series object containing current data
-	 * @param Site current site
-	 * @return String timeseries descriptor or null if can not build the
+	 * @param ts the time series object containing current data
+	 * @param platformSite current site
+	 * @return String time series descriptor or null if can not build the
 	 * 			param part
 	 */
 	public String createTimeSeriesDesc(TimeSeries ts, Site platformSite)
@@ -701,7 +654,7 @@ Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
 	
 	/**
 	 * This method fills out the Param "Parameter Element" value 
-	 * of the timeseries descriptor. It uses the data type code 
+	 * of the time series descriptor. It uses the data type code 
 	 * from Decodes Database editor. If the data type is CWMS it 
 	 * will use the code directly, but if the data type is SHEF it
 	 * will convert from SHEF to CWMS codes using an external text file
@@ -755,7 +708,7 @@ Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
 	 * if intervalInSeconds passed in was 122, the return value will be
 	 * 2Minutes.
 	 * 
-	 * @param intervalInSeconds the recording interval from timeseries obj
+	 * @param intervalInSeconds the recording interval from time series obj
 	 * @return the formatted string according to seconds given
 	 */
 	private String getIntervalValue(int intervalInSeconds)
@@ -833,7 +786,7 @@ Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
 	 * on the DECODES_INSTALL_DIR/shefCwmsParam.prop file. It 
 	 * stores all the properties on the shefCwmsProps Properties 
 	 * object class. These properties will be used when creating 
-	 * the Cwms Param part timeseries descriptor. If it cannot read
+	 * the Cwms Param part time series descriptor. If it cannot read
 	 * this properties file, this method will fill out the shefCwmsProps
 	 * Properties object with some hard coded shef-cwms mapping values.
 	 * 

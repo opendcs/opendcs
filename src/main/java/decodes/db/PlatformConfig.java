@@ -479,8 +479,7 @@ public class PlatformConfig extends IdDatabaseObject
 	}
 	
 	/**
-	* Removes all sensors from this platformconfig
-	  @param cs the sensor to remove
+	  * Removes all sensors from this platformconfig	  
 	*/
 	public void removeAllSensors()
 	{

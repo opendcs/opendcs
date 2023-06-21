@@ -3,14 +3,8 @@
 */
 package decodes.comp;
 
-import decodes.comp.Computation;
-import decodes.comp.RatingTableReader;
-import decodes.cwms.CwmsConstants;
-import decodes.comp.LookupTable;
-import decodes.comp.ComputationParseException;
 import java.util.Enumeration;
 import java.util.Date;
-import decodes.db.ConfigSensor;
 import ilex.util.Logger;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
@@ -18,7 +12,7 @@ import ilex.var.NoConversionException;
 
 /**
 * Implements rating table computations.
-* Holds the lookup table & shift values.
+* Holds the lookup table &amp; shift values.
 * Delegates table reads to supplied reader.
 */
 public class RatingComputation 

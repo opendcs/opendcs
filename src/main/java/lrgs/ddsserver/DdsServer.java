@@ -82,8 +82,9 @@ public class DdsServer extends BasicServer
       Constructor.
       @param port the listening port.
       @param bindaddr indicates the NIC to listen on if there are more than one.
-      @param archive the MsgArchive object to serve data from.
+      @param msgArchive the MsgArchive object to serve data from.
       @param qlog the QueueLogger to serve event messages from.
+      @param statusProvider
       @throws IOException on invalid port number or socket already bound.
     */
     public DdsServer(int port, InetAddress bindaddr, MsgArchive msgArchive,

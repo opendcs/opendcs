@@ -246,7 +246,7 @@ public interface TimeSeriesDAI
 	 * <p>
 	 * New values are marked with the DB_ADDED flag. Deleted values 
 	 * marked with the DB_DELETED flag.
-	 * @param applicationId used to lookup & save the since time.
+	 * @param applicationId used to lookup &amp; save the since time.
 	 * @return DataCollection with newly added or deleted values.
 	 * @throws DbIoException on Database IO error.
 	 */

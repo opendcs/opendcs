@@ -149,8 +149,9 @@ int dCallNum = 0;
 	/**
 	 * Search the queue for a message with matching address and xmit time.
 	 * The time may be off by as much as maxTimeDiffMS.
-	 * @param dcpAddr the dcp address
-	 * @param tsms the time stamp as a millisecond value
+	 *
+	 * @param msg A message object with address defined
+	 * @param xmitTime java date with the xmit time of the message.
 	 * @return the XmitRecord if one exists, or null if not.
 	 */
 	public synchronized DcpMsg find(DcpMsg msg, Date xmitTime)

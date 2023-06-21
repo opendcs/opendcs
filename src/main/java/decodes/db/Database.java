@@ -144,7 +144,7 @@ MJM 20031104 - removed - do not use this constructor!
 	public static Database getDb() { return _theDb; }
 
 	/**
-	 * Gets the interface for reading & writing this database.
+	 * Gets the interface for reading &amp; writing this database.
 	 */
 
 	public DatabaseIO getDbIo() { return dbio; }
