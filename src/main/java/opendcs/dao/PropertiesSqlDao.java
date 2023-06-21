@@ -62,19 +62,20 @@ public class PropertiesSqlDao
 
 		try
 		{
-			doQuery(q,rs->{
+			doQuery(q,rs -> {
 				String name = rs.getString(2);
-					String value = rs.getString(3);
-					if (value == null)
-						value = "";
-					props.setProperty(name, value);
+				String value = rs.getString(3);
+				if (value == null)
+				{
+					value = "";
+				}
+				props.setProperty(name, value);
 			}, parentKey);
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "Error in query '" + q + "'";
+			throw new DbIoException(msg,ex);
 		}
 	}
 
