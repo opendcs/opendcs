@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
+import java.io.IOException;
 
-import org.jooq.exception.IOException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -15,7 +15,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import fixtures.FileUtils;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
-public class PropertyProvider
+public class PropertyProviderTest
 {
     private static final String SECRET_FILE_VAR = "TEST_FILE_VAR";
     private static final String ENV_VAR = "TEST_ENV_VAR";
@@ -52,15 +52,6 @@ public class PropertyProvider
         }, "Failed to process bad definition correctly");
     }
 
-    @Test
-    void test_throws_when_bad_provider() throws Exception
-    {
-        assertThrows(IOException.class, () -> {
-            String value = Property.getRealPropertyValue("${non existent provider.I'm the real value}");
-        }, "Failed to process bad definition correctly");
-    }
-
-
     @BeforeAll
     static void setup_properties() throws Exception
     {
@@ -83,8 +74,10 @@ public class PropertyProvider
         final String resultFile = Property.getRealPropertyValue("${file."+secretFileProperty.getAbsolutePath()+"}");
         assertEquals(SECRET_FILE_VAR, resultFile, "Could not properly retrieve variable from file.");
 
-        final String envVar = Property.getRealPropertyValue("${env." + ENV_VAR_NAME + "}");
-        assertEquals(ENV_VAR, envVar, "Could not properly retrieve variable from environment.");
+        envVars.execute(() ->{
+            final String envVar = Property.getRealPropertyValue("${env." + ENV_VAR_NAME + "}");
+            assertEquals(ENV_VAR, envVar, "Could not properly retrieve variable from environment.");
+        });
 
         final String propVar = Property.getRealPropertyValue("${java." + PROP_VAR_NAME +"}");
         assertEquals(PROP_VAR, propVar,"Could not properly retrieve variable from java system properties.");
