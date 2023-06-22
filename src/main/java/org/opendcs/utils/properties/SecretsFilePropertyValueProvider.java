@@ -35,5 +35,4 @@ public class SecretsFilePropertyValueProvider implements PropertyValueProvider
         final String fileName = value.substring(prefix.length());
         return FileUtil.getFileContents(new File(fileName));
     }
-
 }
