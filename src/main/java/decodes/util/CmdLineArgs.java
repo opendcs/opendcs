@@ -425,7 +425,7 @@ public class CmdLineArgs
 		
 		Logger.instance().debug1("Forwarding javax.logging to ilex log.");
 		// We forward everything now since we're transitioning to standard logging tools
-		JavaLoggerAdapter.initialize(Logger.instance(), true);
+		JavaLoggerAdapter.initialize(Logger.instance());
 		
 		Logger.instance().info("After parseArgs, DecodesSettings src file=" + DecodesSettings.instance().getSourceFile().getPath());
 	}

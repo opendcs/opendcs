@@ -65,12 +65,10 @@
  */
 package ilex.util;
 
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.logging.LogManager;
 
 /**
  * This class is an adapter to make the log messages from libraries that use 
@@ -80,12 +78,10 @@ import java.util.logging.LogManager;
  */
 public class JavaLoggerAdapter extends Handler
 {
-	private final static String globalName = java.util.logging.Logger.GLOBAL_LOGGER_NAME;
 	private static ilex.util.Logger ilexLogger = null;
 	private static final JavaLoggerAdapter _instance = new JavaLoggerAdapter();
 	private static Formatter myFormatter = new JavaLoggerFormatter();;
 	private static boolean initialized = false;
-	private static boolean doForward = true;
 	
 	/** Singleton access only */
 	public static JavaLoggerAdapter instance() { return _instance; }
@@ -102,16 +98,18 @@ public class JavaLoggerAdapter extends Handler
 	 * @param _doForward set to true to forward log messages, false to squelch them.
 	 * @param paths a list of root level logger paths to forward. Use the empty string "" to forward all.
 	 */
-	public static void initialize(ilex.util.Logger ilexLogger, boolean _doForward, String ... paths)
+	public static void initialize(ilex.util.Logger ilexLogger)
 	{
 		if (initialized)
+		{
 			return;
+		}
 		initialized = true;
-		doForward = _doForward;
+
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
-		
-		java.util.logging.Logger globalLogger = LogManager.getLogManager().getLogger(globalName);
-		
+
+		java.util.logging.Logger globalLogger = java.util.logging.Logger.getLogger("");
+
 		globalLogger.addHandler(instance());		
 	}
 

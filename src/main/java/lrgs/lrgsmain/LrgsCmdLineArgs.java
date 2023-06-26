@@ -133,7 +133,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 			fLogger = new SequenceFileLogger(progname, getLogFile());
 			fLogger.setNumOldLogs(numOldLogs_arg.getValue());
 			fLogger.setMaxLength(maxLogSize_arg.getValue());
-            JavaLoggerAdapter.initialize(fLogger, true);
+            JavaLoggerAdapter.initialize(fLogger);
             final JavaLoggerFormatter formatter = new JavaLoggerFormatter();
             global.addHandler(new Handler() {
                 @Override
