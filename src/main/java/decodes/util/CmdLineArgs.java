@@ -423,13 +423,11 @@ public class CmdLineArgs
 			}
 		}
 		
-		// This will forward log messages for the CWMS JOOQ Interface to the Ilex Logger.
 		Logger.instance().debug1("Forwarding javax.logging to ilex log.");
-		JavaLoggerAdapter.initialize(Logger.instance(), forwardLogArg.getValue(), "", 
-			"usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
-			"org.jooq", "usace.cwms.db.jooq.util");
+		// We forward everything now since we're transitioning to standard logging tools
+		JavaLoggerAdapter.initialize(Logger.instance(), true);
 		
-Logger.instance().info("After parseArgs, DecodesSettings src file=" + DecodesSettings.instance().getSourceFile().getPath());
+		Logger.instance().info("After parseArgs, DecodesSettings src file=" + DecodesSettings.instance().getSourceFile().getPath());
 	}
 
 	/** @return DECODES Properties file name */

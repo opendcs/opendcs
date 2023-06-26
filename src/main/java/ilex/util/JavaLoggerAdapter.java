@@ -83,7 +83,7 @@ public class JavaLoggerAdapter extends Handler
 	private final static String globalName = java.util.logging.Logger.GLOBAL_LOGGER_NAME;
 	private static ilex.util.Logger ilexLogger = null;
 	private static final JavaLoggerAdapter _instance = new JavaLoggerAdapter();
-	private static Formatter myFormatter = null;
+	private static Formatter myFormatter = new JavaLoggerFormatter();;
 	private static boolean initialized = false;
 	private static boolean doForward = true;
 	
@@ -117,16 +117,8 @@ public class JavaLoggerAdapter extends Handler
 
 	@Override
 	public void publish(LogRecord record)
-	{
-		if (!doForward)
-			return;
-		if (myFormatter == null)
-			myFormatter = new JavaLoggerFormatter();
+	{				
 		String s = myFormatter.format(record);
-//if (record.getLoggerName().contains("ConnectionPersistenceManager")
-// || record.getLoggerName().contains("AbstractCwmsDbDao"))
-//	System.err.println("JavaLoggerAdapter '" + s + "'");
-		
 		ilexLogger.log(mapPriority(record), s);
 	}
 	
@@ -154,29 +146,4 @@ public class JavaLoggerAdapter extends Handler
 		// Nothing to do
 	}
 
-	public static void main(String[] args)
-	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
-		Logger.instance().info("Before initialize -- message direct to Ilex Logger.");
-		
-		JavaLoggerAdapter.initialize(Logger.instance(), true, "");
-		
-		Logger.instance().info("After initialize -- message direct to Ilex Logger.");
-		
-		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
-		
-		rootLogger.log(Level.INFO, "INFO message sent to java root logger.");
-		
-		String cname = JavaLoggerAdapter.class.getName();
-		java.util.logging.Logger myLogger = java.util.logging.Logger.getLogger(cname);
-		myLogger.setLevel(Level.FINEST);
-		myLogger.log(Level.SEVERE, "SEVERE for cname=" + cname);
-		myLogger.log(Level.WARNING, "WARNING for cname=" + cname);
-		myLogger.log(Level.INFO, "INFO for cname=" + cname);
-		myLogger.log(Level.CONFIG, "CONFIG for cname=" + cname);
-		myLogger.log(Level.FINE, "FINE for cname=" + cname);
-		myLogger.log(Level.FINER, "FINER for cname=" + cname);
-		myLogger.log(Level.FINEST, "FINEST for cname=" + cname);
-		Logger.instance().debug3("Direct DEBUG_3 message to IlexLogger.");
-	}
 }
