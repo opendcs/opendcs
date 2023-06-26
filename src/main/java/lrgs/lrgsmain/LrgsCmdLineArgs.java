@@ -125,7 +125,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 												   true);
 
 			java.util.logging.Logger global = java.util.logging.Logger.getLogger("");
-
+            
 			SimpleFormatter sf = new SimpleFormatter();
 			fh.setFormatter(sf);
             fh.setLevel(Level.ALL);
@@ -133,6 +133,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 			fLogger = new SequenceFileLogger(progname, getLogFile());
 			fLogger.setNumOldLogs(numOldLogs_arg.getValue());
 			fLogger.setMaxLength(maxLogSize_arg.getValue());
+            JavaLoggerAdapter.initialize(fLogger, true);
             final JavaLoggerFormatter formatter = new JavaLoggerFormatter();
             global.addHandler(new Handler() {
                 @Override
