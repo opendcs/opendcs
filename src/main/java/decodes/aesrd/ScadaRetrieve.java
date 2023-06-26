@@ -22,7 +22,7 @@ package decodes.aesrd;
 
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
+//import ilex.util.Logger;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
 import ilex.util.PropertiesUtil;
@@ -65,6 +65,10 @@ import decodes.util.CmdLineArgs;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;
+
 /**
  * Main class for Alberta ESRD SCADA Retrieval.
  * @author mmaloney
@@ -73,6 +77,7 @@ public class ScadaRetrieve
 	extends TsdbAppTemplate
 	implements PropertiesOwner, ProcWaiterCallback
 {
+	private static final Logger logger = LoggerFactory.getLogger(getCallingClass());
 	private static final String module = "ScadaRetrieve";
 	private CompAppInfo appInfo = null;
 	private TsdbCompLock myLock = null;
@@ -209,7 +214,9 @@ public class ScadaRetrieve
 				determineNextQuery();
 			}
 			else
-				debug("Awaiting next query at " + nextQuery);
+			{
+				logger.debug("Awaiting next query at {}.", nextQuery);
+			}
 			
 			if (System.currentTimeMillis() - lastLockCheck > 10000L)
 			{
@@ -223,7 +230,10 @@ public class ScadaRetrieve
 				}
 				catch (LockBusyException ex)
 				{
-					warning("Shutting down: lock removed: " + ex);
+					logger.atWarn()
+						  .setCause(ex)
+						  .setMessage("Shutting down: lock removed")
+						  .log();
 					shutdown = true;
 					haveLock = false;
 				}
@@ -236,14 +246,14 @@ public class ScadaRetrieve
 			try { Thread.sleep(5000L); }
 			catch(InterruptedException ex) {}
 		}
-		info("shutting down.");
+		logger.info("shutting down.");
 		cleanup();
 		System.exit(0);
 	}
 	
 	private void query()
 	{
-		info("Starting query");
+		logger.info("Starting query");
 		lastFile = null;
 		loadTags();
 		if (tagList.length() == 0)
@@ -272,9 +282,9 @@ public class ScadaRetrieve
 		ResultSet rs = null;
 		try
 		{
-			debug("Creating statement");
+			logger.debug("Creating statement");
 			stmt = con.createStatement();
-			debug("Executing query '" + q + "'");
+			logger.debug("Executing query '{}'", q);
 			rs = stmt.executeQuery(q);
 			while(rs != null && rs.next())
 			{
@@ -283,12 +293,13 @@ public class ScadaRetrieve
 				String data = rs.getString(3);
 				String quality = rs.getString(4);
 				
-debug("row: ds='" + ds + "', tag='" + tag + "', data='" + data + "', qual='" + quality + "'");
+				logger.debug("row: ds='{}', tag='{}', data='{}', qual='{}'",
+							 ds,tag,data,quality);
 				
 				if (ds == null || tag == null)
 				{
-					debug("Discarding null result row: " + ds + ", " + tag + ", "
-						+ data + ", " + quality);
+					logger.debug("Discarding null result row: {}, {}, {}, {}",
+					             quality,ds,tag,data,quality);
 					continue;
 				}
 				ds = ds.trim();
@@ -303,13 +314,14 @@ debug("row: ds='" + ds + "', tag='" + tag + "', data='" + data + "', qual='" + q
 					if (dot > 0 && ds.length() > dot+3)
 						ds = ds.substring(0, dot+4);
 					d = dbSdf.parse(ds);
-if (tag.equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
-	debug("\tds='" + ds + "' parsed to " + d + " with tz=" + dbSdf.getTimeZone().getID());
+					if (tag.equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
+					{
+						logger.debug("\tds='{}' parsed to {} with tz={}", ds, d, dbSdf.getTimeZone().getID());
+					}
 				}
 				catch(ParseException ex)
 				{
-					warning("Cannot parse date for result set: " + ds + ", " + tag + ", "
-						+ data + ", " + quality);
+					logger.warn("Cannot parse date for result set: {}, {}, {}, {}.", ds, tag, data, quality);
 					continue;
 				}
 				rows.add(new ScadaQueryRow(d, tag, data, quality));
@@ -317,10 +329,11 @@ if (tag.equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error executing query '" + q + ": " + ex;
-			warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Error executing query '{}'")
+				  .addArgument(q)
+				  .log();
 			numErrors++;
 			return;
 		}
@@ -367,22 +380,39 @@ if (tag.equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 							ScadaQueryRow nr = new ScadaQueryRow(new Date(t), sqr.getTag(), 
 								numberFormat.format(v), sqr.getQuality());
 							displayRows.add(nr);
-debug("Added interpolated" + nr);
-if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
-	debug("\t1=" + new Date(t1) + ", t2=" + new Date(t2) + ", t=" + new Date(t));
-
+							logger.debug("Added interpolated {}", nr);
+							if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
+							{
+								final long tFinal = t;
+								logger.atDebug()
+									  .setMessage("\t1={}, t2={}, t={}")
+									  .addArgument(() -> new Date(t1))
+									  .addArgument(() -> new Date(t2))
+									  .addArgument(() -> new Date(tFinal))
+									  .log();
+							}
 						}
 					}
 				}
 				catch(Exception ex)
 				{
-					warning("Bad number, cannot interpolate: '" + lastRow.getData() + "', '" + sqr.getData() + "'");
+					final ScadaQueryRow lastRowFinal = lastRow;
+					final ScadaQueryRow sqrFinal = sqr;
+					logger.atWarn()
+						  .setCause(ex)
+						  .setMessage("Bad number, cannot interpolate: '{}' , '{}'")
+						  .addArgument(() -> lastRowFinal.getData())
+						  .addArgument(() -> sqrFinal.getData())
+						  .log();
 				}
 			}
 			lastRow = sqr;
 		}
-		info("After normalization, " + rows.size() + " query rows reduced to " + displayRows.size() 
-			+ " display rows.");
+		logger.atInfo()
+			  .setMessage("After normalization, {} query rows reduced to {} display rows.")
+			  .addArgument(() -> rows.size())
+			  .addArgument(() -> displayRows.size())
+			  .log();
 		
 		String filename = EnvExpander.expand(filenameTemplate);
 		File tmpOut = new File(tmpDir, filename);
@@ -409,7 +439,11 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		}
 		catch(IOException ex)
 		{
-			warning("Error writing to '" + tmpOut.getPath() + "': " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Error writing to '{}'")
+				  .addArgument(() -> tmpOut.getPath())
+				  .log();
 			numErrors++;
 			return;
 		}
@@ -422,8 +456,12 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		try { FileUtil.moveFile(tmpOut, outfile); }
 		catch(IOException ex)
 		{
-			warning("Cannot move '" + tmpOut.getPath() + "' to '" 
-				+ outfile.getPath() + "': " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Cannot move '{}' to '{}'")
+				  .addArgument(() -> tmpOut.getPath())
+				  .addArgument(() -> outfile.getPath())
+				  .log();
 			numErrors++;
 			return;
 		}
@@ -433,8 +471,12 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 	
 	private Connection connect()
 	{
-		Logger.instance().info("Connecting to '" + dbUrl + "' as user '" + username 
-			+ "' with driver '" + jdbcDriverClass + "'");
+		logger.atInfo()
+		      .setMessage("Connecting to '{}' as user '{}' with driver '{}'")
+			  .addArgument(dbUrl)
+			  .addArgument(username)
+			  .addArgument(jdbcDriverClass)
+			  .log();
 		try
 		{
 			Class.forName(jdbcDriverClass);
@@ -442,19 +484,21 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		}
 		catch (ClassNotFoundException ex)
 		{
-			String msg = "Bad jdbcDriverClass '" + jdbcDriverClass + "': " + ex;
-			failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			logger.atError()
+				  .setCause(ex)
+				  .setMessage("Bad jdbcDriverClass '{}'")
+				  .addArgument(jdbcDriverClass)
+				  .log();
 			return null;
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error connecting to database at  '" + dbUrl 
-				+ "' as user " + username + ": " + ex;
-			failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			logger.atError()
+				  .setCause(ex)
+				  .setMessage("Error connecting to database at  '{}' as user '{}'")
+				  .addArgument(dbUrl)
+				  .addArgument(username)
+				  .log();
 			return null;
 		}
 	}
@@ -483,16 +527,20 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 			}
 			lnr.close();
 			tagList = sb.toString();
-			debug("taglist=" + tagList);
+			logger.debug("taglist={}", tagList);
 		}
 		catch (FileNotFoundException e)
 		{
-			warning("Tag file '" + tagFile.getPath() + "' does not exist.");
+			logger.warn("Tag file '{}' does not exist.",tagFile.getPath());
 			tagList = "";
 		}
 		catch (IOException ex)
 		{
-			warning("Error reading tag file '" + tagFile.getPath() + "': " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Error reading tag file '{}'")
+				  .addArgument(() -> tagFile.getPath())
+				  .log();
 			tagList = "";
 		}
 	}
@@ -501,9 +549,9 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 	{
 		this.cmdInProgress = cmd;
 		int cmdTimeout = 20;
-		debug("Executing '" + cmdInProgress 
-			+ "' and waiting up to " + cmdTimeout 
-			+ " seconds for completion.");
+		logger.debug("Executing '{}'"
+			+ "' and waiting up to {}"
+			+ " seconds for completion.",cmdInProgress, cmdTimeout);
 		cmdFinished = false;
 		try 
 		{
@@ -513,8 +561,11 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		}
 		catch(IOException ex)
 		{
-			warning("Cannot execute '" 
-				+ cmdInProgress + "': " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Cannot execute '{}'")
+				  .addArgument(cmdInProgress)
+				  .log();
 			cmdInProgress = null;
 			cmdFinished = true;
 			return;
@@ -527,10 +578,13 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 			catch(InterruptedException ex) {}
 		}
 		if (cmdFinished)
-			debug("Command '" + cmdInProgress 
-				+ "' completed with exit status " + cmdExitStatus);
+		{
+			logger.debug("Command '{}' completed with exit status ", cmdInProgress, cmdExitStatus);
+		}
 		else
-			warning("Command '" + cmdInProgress + "' Did not complete!");
+		{
+			logger.warn("Command '{}' Did not complete!", cmdInProgress);
+		}
 	}
 
 
@@ -544,7 +598,11 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		}
 		catch (IOException ex)
 		{
-			warning("Error writing to daily archive '" + archFile.getPath() + "': " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Error writing to daily archive '{}'")
+				  .addArgument(() -> archFile.getPath())
+				  .log();
 		}
 	}
 
@@ -566,8 +624,10 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 				}
 				catch(IOException ex)
 				{
-					failure("Cannot create Event server: " + ex
-						+ " -- no events available to external clients.");
+					logger.atError()
+						  .setCause(ex)
+						  .setMessage("Cannot create Event server: -- no events available to external clients.")
+						  .log();
 				}
 			}
 
@@ -586,13 +646,20 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		}
 		catch (DbIoException ex)
 		{
-			warning("Database I/O Error: " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Database I/O Error.")
+				  .log();
 			shutdown = true;
 			return;
 		}
 		catch (NoSuchObjectException ex)
 		{
-			warning("Cannot run: No such app name '" + appNameArg.getValue() + "': " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Cannot run: No such app name '{}'")
+				  .addArgument(() -> appNameArg.getValue())
+				  .log();
 			shutdown = true;
 			return;
 		}
@@ -604,13 +671,15 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 	
 	private void configure()
 	{
-		info("Loading configuration");
+		logger.info("Loading configuration");
 		
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try { appInfo = loadingAppDao.getComputationApp(getAppId()); }
 		catch(Exception ex)
 		{
-			warning("Cannot read application info: " + ex);
+			logger.atWarn()
+				  .setCause(ex)
+				  .setMessage("Cannot read application info.");
 			shutdown = true;
 			return;
 		}
@@ -619,7 +688,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		dbUrl = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "dbUrl");
 		if (dbUrl == null)
 		{
-			warning("Missing required 'dbUrl' application property.");
+			logger.warn("Missing required 'dbUrl' application property.");
 			shutdown = true;
 			return;
 		}
@@ -630,7 +699,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 			try { numDays = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
-				warning("Bad 'numDays' property '" + s + "' -- will use default of 2.");
+				logger.warn("Bad 'numDays' property '{}' -- will use default of 2.", s);
 				numDays = 2;
 			}
 		}
@@ -653,7 +722,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		tagFile = new File(EnvExpander.expand(s));
 		if (!tagFile.canRead())
 		{
-			warning("Cannot read tag file '" + s + "'");
+			logger.warn("Cannot read tag file '{}'", s);
 			shutdown = true;
 			return;
 		}
@@ -662,7 +731,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		outputDir = new File(EnvExpander.expand(s));
 		if (!outputDir.isDirectory() && !outputDir.mkdirs())
 		{
-			warning("Output Directory '" + s + "' does not exist and cannot be created.");
+			logger.warn("Output Directory '{}' does not exist and cannot be created.", s);
 			shutdown = true;
 			return;
 		}
@@ -671,7 +740,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 		tmpDir = new File(EnvExpander.expand(s));
 		if (!tmpDir.isDirectory() && !tmpDir.mkdirs())
 		{
-			warning("Temporary Directory '" + s + "' does not exist and cannot be created.");
+			logger.warn("Temporary Directory '{}' does not exist and cannot be created.",s);
 			shutdown = true;
 			return;
 		}
@@ -687,7 +756,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 			dailyArchiveDir = new File(s);
 			if (!dailyArchiveDir.isDirectory())
 			{
-				warning("Specified daily archive directory '" + s + "' is not a directory.");
+				logger.warn("Specified daily archive directory '{}' is not a directory.", s);
 				shutdown = true;
 				return;
 			}
@@ -726,7 +795,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 			}
 			catch(Exception ex)
 			{
-				warning("Bad firstQuery property '" + s + "' -- will use 00:00");
+				logger.warn("Bad firstQuery property '{}' -- will use 00:00", s);
 				firstHour = firstMinute = 0;
 			}
 		}
@@ -748,7 +817,11 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 			}
 			catch(IOException ex)
 			{
-				warning("Cannot load query from '" + fn + "':" + ex + " -- will use default query.");
+				logger.atWarn()
+					  .setCause(ex)
+					  .setMessage("Cannot load query from '{}' -- will use default query.")
+					  .addArgument(fn)
+					  .log();
 				queryTemplate = queryTemplateDefault;
 			}
 		}
@@ -776,7 +849,7 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 			cal.set(Calendar.MINUTE, firstMinute);
 		}
 		nextQuery = cal.getTime();
-		info("Next query will be at " + dbSdf.format(nextQuery));
+		logger.info("Next query will be at {}", dbSdf.format(nextQuery));
 	}
 
 	private void cleanup()
@@ -790,7 +863,10 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 			}
 			catch (DbIoException ex)
 			{
-				warning("Error attempting to release lock: " + ex);
+				logger.atWarn()
+					  .setCause(ex)
+					  .setMessage("Error attempting to release lock.")
+					  .log();
 			}
 			finally
 			{
@@ -816,15 +892,6 @@ if (sqr.getTag().equalsIgnoreCase("DDDTHY_Pwr_Plant_Flo_cms"))
 	{
 		TsdbAppTemplate theApp = new ScadaRetrieve();
 		theApp.execute(args);
-	}
-
-	public void info(String msg)
-	{
-		Logger.instance().info(module + " " + msg);
-	}
-	private void debug(String msg)
-	{
-		Logger.instance().debug1(module + " " + msg);
 	}
 	
 	@Override

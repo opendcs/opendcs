@@ -6,24 +6,30 @@ import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;
+
+
 public class MITMConnector 
 	extends Thread
 {
+	private static final Logger logger = LoggerFactory.getLogger(getCallingClass());
 	private InputStream from;
 	private OutputStream to;
 	private String pfx;
 	private byte buf[] = new byte[1024];
 	boolean shutdown = false;
 	MITMConnector mate = null;
-	MITMLogger logger = null;
+	MITMLogger mitmLogger = null;
 	
 	public MITMConnector(String pfx, InputStream from,
-		OutputStream to, MITMLogger logger)
+		OutputStream to, MITMLogger mitmLogger)
 	{
 		this.from = from;
 		this.to = to;
 		this.pfx = pfx;
-		this.logger = logger;
+		this.mitmLogger = mitmLogger;
 	}
 	
 	@Override
@@ -38,7 +44,7 @@ public class MITMConnector
 					try { sleep(100L); } catch(InterruptedException ex) {}
 				else if (len > 0)
 				{
-					logger.log(pfx, buf, len);
+					mitmLogger.log(pfx, buf, len);
 					to.write(buf, 0, len);
 					to.flush();
 				}
@@ -52,8 +58,11 @@ public class MITMConnector
 		catch(Exception ex)
 		{
 			shutdown = true;
-			System.out.println("pfx=" + pfx + " terminated by exception: ex");
-			ex.printStackTrace();
+			logger.atError()
+			      .setCause(ex)
+				  .setMessage("pfx={}terminated by exception: ex")
+				  .addArgument(pfx)
+				  .log();
 		}
 		if (mate != null)
 			mate.shutdown = true;
