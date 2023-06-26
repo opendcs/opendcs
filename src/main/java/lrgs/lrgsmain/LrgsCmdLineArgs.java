@@ -118,18 +118,9 @@ public class LrgsCmdLineArgs extends ApplicationSettings
         try
         {
 			qLogger = new QueueLogger(progname);
-            // temporary name until all original logging removed.
-			final FileHandler fh = new FileHandler(getLogFile()+"jullog.%g",
-												   maxLogSize_arg.getValue(),
-												   numOldLogs_arg.getValue(),
-												   true);
 
 			java.util.logging.Logger global = java.util.logging.Logger.getLogger("");
-            
-			SimpleFormatter sf = new SimpleFormatter();
-			fh.setFormatter(sf);
-            fh.setLevel(Level.ALL);
-            global.addHandler(fh);
+
 			fLogger = new SequenceFileLogger(progname, getLogFile());
 			fLogger.setNumOldLogs(numOldLogs_arg.getValue());
 			fLogger.setMaxLength(maxLogSize_arg.getValue());
