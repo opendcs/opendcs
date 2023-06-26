@@ -18,12 +18,16 @@
 package opendcs.dao;
 
 import ilex.util.HasProperties;
+import ilex.util.Logger;
 
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+
+import org.opendcs.utils.Property;
 
 import opendcs.dai.PropertiesDAI;
 
@@ -69,12 +73,16 @@ public class PropertiesSqlDao
 				{
 					value = "";
 				}
-				props.setProperty(name, value);
+				try {
+					props.setProperty(name, Property.getRealPropertyValue(value,value));
+				} catch (IOException e) {
+					Logger.instance().warning("Unable to retrieve property value for: " + name);
+				}
 			}, parentKey);
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error in query '" + q + "'";
+			String msg = "Error in query '" + q + "'. Unable to retrieve Properties";
 			throw new DbIoException(msg,ex);
 		}
 	}
