@@ -1,5 +1,7 @@
 package ilex.util;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -22,10 +24,15 @@ public class JavaLoggerFormatter
         } catch (Exception ex) { msg = record.getMessage(); }
 		
         Throwable t = record.getThrown();
+        String causeMessage = null;
         if (t != null)
-        	msg = msg + " (" + t.toString() + ")";
-        
-        String ret = record.getLoggerName() + ": " + msg;
+        {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            t.printStackTrace(pw);
+            causeMessage = sw.toString();
+        }
+        String ret = record.getLoggerName() + ": " + msg + (causeMessage == null ? "" : ": " + causeMessage);
 		return ret;
 	}
 }
