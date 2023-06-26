@@ -217,40 +217,47 @@ public class RoutingSpecParser implements XmlObjectParser, XmlObjectWriter, Tagg
 	 */
 	public void set( int tag, String str ) throws SAXException
 	{
-		switch(tag)
+		try
 		{
+			final String realValue = Property.getRealPropertyValue(str, str);
+			switch(tag)
+			{
 			case outputFormatTag:
-				routingSpec.outputFormat = str;
+				routingSpec.outputFormat = realValue;
 				break;
 			case outputTimeZoneAbbrTag:
-				routingSpec.outputTimeZoneAbbr = str;
+				routingSpec.outputTimeZoneAbbr = realValue;
 				break;
 			case presentationGroupNameTag:
-				routingSpec.presentationGroupName = str;
+				routingSpec.presentationGroupName = realValue;
 				break;
 			case sinceTimeTag:
-				routingSpec.sinceTime = str;
+				routingSpec.sinceTime = realValue;
 				break;
 			case untilTimeTag:
-				routingSpec.untilTime = str;
+				routingSpec.untilTime = realValue;
 				break;
 			case consumerTypeTag:
-				routingSpec.consumerType = str;
+				routingSpec.consumerType = realValue;
 				break;
 			case consumerArgTag:
-				routingSpec.consumerArg = str;
+				routingSpec.consumerArg = realValue;
 				break;
 			case propertyTag:
 				if (propName == null)
 				{
 					throw new SAXException("Property value without name!");
 				}
-				routingSpec.getProperties().setProperty(propName, str);
+				routingSpec.getProperties().setProperty(propName, realValue);
 				propName = null;
 				break;
 			case lastModifyTimeTag: // MJM 20031023 - Don't use the LMT contained in XML file. It may not agree
 				break;
-		
+			}
+		}
+		catch(IOException ex)
+		{
+			throw new SAXException("Could not retrieve real property value from source.",ex);
 		}
 	}
 
