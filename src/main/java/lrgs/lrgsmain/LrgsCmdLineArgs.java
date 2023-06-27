@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
+import org.opendcs.logging.JavaUtilLoggingBridge;
 import org.slf4j.LoggerFactory;
 import static org.slf4j.helpers.Util.getCallingClass;
 
@@ -53,7 +54,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
     public static final String progname = "lrgs";
 
     QueueLogger qLogger;
-    SequenceFileLogger fLogger;
+    Logger bridgeLogger;
 
     public LrgsCmdLineArgs()
     {
@@ -85,7 +86,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
         addToken(foreground);
 
         qLogger = null;
-        fLogger = null;
+        bridgeLogger = null;
 
 
     }
@@ -118,14 +119,20 @@ public class LrgsCmdLineArgs extends ApplicationSettings
         try
         {
 			qLogger = new QueueLogger(progname);
+            // temporary name until all original logging removed.
+			final FileHandler fh = new FileHandler(getLogFile()+".%g",
+												   maxLogSize_arg.getValue(),
+												   numOldLogs_arg.getValue(),
+												   true);
 
 			java.util.logging.Logger global = java.util.logging.Logger.getLogger("");
-
-			fLogger = new SequenceFileLogger(progname, getLogFile());
-			fLogger.setNumOldLogs(numOldLogs_arg.getValue());
-			fLogger.setMaxLength(maxLogSize_arg.getValue());
-            JavaLoggerAdapter.initialize(fLogger);
+            
             final JavaLoggerFormatter formatter = new JavaLoggerFormatter();
+			fh.setFormatter(formatter);
+            fh.setLevel(Level.ALL);
+            global.addHandler(fh);
+			bridgeLogger = new JavaUtilLoggingBridge();			
+
             global.addHandler(new Handler() {
                 @Override
                 public void publish(LogRecord record) {
@@ -144,7 +151,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 
             });
 
-			TeeLogger tLogger = new TeeLogger(progname, fLogger, qLogger);
+			TeeLogger tLogger = new TeeLogger(progname, bridgeLogger, qLogger);
 			Logger.setLogger(tLogger);
 
 			SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
@@ -182,7 +189,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 					dl == 1 ? Logger.E_DEBUG1 :
 					dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3;
 				// Debug info only goes to file, never to clients.
-				fLogger.setMinLogPriority(dv);
+				bridgeLogger.setMinLogPriority(dv);
 			}
         }
         catch(IOException ex)

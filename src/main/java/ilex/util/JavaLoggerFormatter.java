@@ -33,6 +33,6 @@ public class JavaLoggerFormatter
             causeMessage = sw.toString();
         }
         String ret = record.getLoggerName() + ": " + msg + (causeMessage == null ? "" : ": " + causeMessage);
-		return ret;
+		return ret + System.lineSeparator();
 	}
 }

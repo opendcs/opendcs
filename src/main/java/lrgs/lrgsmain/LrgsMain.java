@@ -847,7 +847,6 @@ public class LrgsMain
     public void handleSignal(int sig)
     {
         logger.info("SIGHUP received -- rotating logs.");
-        cmdLineArgs.fLogger.rotateLogs();
         if (ddsServer != null
          && DdsServer.statLoggerThread != null)
             DdsServer.statLoggerThread.rotateLogs();
