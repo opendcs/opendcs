@@ -32,7 +32,7 @@ public class JavaLoggerFormatter
             t.printStackTrace(pw);
             causeMessage = sw.toString();
         }
-        String ret = record.getLoggerName() + ": " + msg + (causeMessage == null ? "" : ": " + causeMessage);
+        String ret = record.getLoggerName() + ":" + msg + (causeMessage == null ? "" : ": " + causeMessage);
 		return ret + System.lineSeparator();
 	}
 }

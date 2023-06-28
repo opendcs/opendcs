@@ -201,13 +201,13 @@ public class JavaLrgsStatusProvider
             if (lsse.isUsable)
             {
                 lsse.isUsable = false;
-                logger.error(":{} LRGS Timeout: No data in {} seconds", LrgsMain.EVT_TIMEOUT, cfg.timeoutSeconds);
+                logger.error("{} LRGS Timeout: No data in {} seconds", LrgsMain.EVT_TIMEOUT, cfg.timeoutSeconds);
             }
             lsse.systemStatus = "Timeout";
         }
         else if (!lsse.isUsable)
         {
-            logger.info(":{} LRGS Recovery: Receiving Data Again!", -LrgsMain.EVT_TIMEOUT);
+            logger.info("{} LRGS Recovery: Receiving Data Again!", -LrgsMain.EVT_TIMEOUT);
             lsse.isUsable = true;
             lsse.systemStatus = "Running";
         }
@@ -366,7 +366,7 @@ public class JavaLrgsStatusProvider
 
         if (!lsse.isUsable)
         {
-            logger.info(":{} LRGS Recovery: Receiving Data Again!",-LrgsMain.EVT_TIMEOUT);
+            logger.info("{} LRGS Recovery: Receiving Data Again!",-LrgsMain.EVT_TIMEOUT);
             lsse.isUsable = true;
             lsse.systemStatus = "Running";
         }
