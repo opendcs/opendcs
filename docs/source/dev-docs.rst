@@ -126,6 +126,7 @@ to run each do the following:
     # output will be in build/reports/pmd/cpd/cpd.txt
 
 Only CPD is fast. checkstyle and SpotBugs are rather slow.
+
 Containers
 ==========
 
