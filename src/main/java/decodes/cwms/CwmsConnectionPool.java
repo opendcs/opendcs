@@ -324,12 +324,9 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             log.warning("Unknown connection returned to my pool.");
             unknownConnReturned++;
             if(trace)
-            {
-                if(log.isLoggable(Level.FINE))
-                {
-                    log.fine("Connection is from");
-                    logStackTrace(log,Level.FINE,Thread.currentThread().getStackTrace(),BEFORE_CUR_THREAD_STACK_CALL+1);
-                }
+            {            
+                log.warning("Connection is from");
+                logStackTrace(log,Level.WARNING,Thread.currentThread().getStackTrace(),BEFORE_CUR_THREAD_STACK_CALL+1);
             }
         }
     }

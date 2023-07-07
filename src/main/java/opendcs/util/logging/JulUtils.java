@@ -21,9 +21,11 @@ public class JulUtils {
         Objects.requireNonNull(log,"We can't do anything without a valid Logger.");
         Objects.requireNonNull(level, "A java.util.logging Level must be provided.");
         Objects.requireNonNull(elements, "A valid (empty is valid) stack trace should be provided to this function.");
+        StringBuilder sb = new StringBuilder();
         for (int i = startIndex; i < elements.length; i++)
         {
-            log.log(level,elements[0].toString());
+            sb.append(elements[i].toString()).append(System.lineSeparator());
         }
+        log.log(level,sb.toString());
     }
 }

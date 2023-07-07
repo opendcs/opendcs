@@ -53,7 +53,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
     private List<StackTraceElement> closeTrace = null;
     private ZonedDateTime start = ZonedDateTime.now();
     private ZonedDateTime end = null;
-
+    private final Thread openingThread;
 
 
     public WrappedConnection(Connection realConnection){
@@ -72,6 +72,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
         this.realConnection = realConnection;
         this.onClose = onClose;
         this.trace = trace;
+        this.openingThread = Thread.currentThread();
         if(trace)
         {
             openTrace = new ArrayList<>();
@@ -423,7 +424,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
         System.err.println(String.format("Connection(closed state -> %s) with life time of %d seconds remains from:",closed,Duration.between(start, ZonedDateTime.now()).getSeconds()));
         if( openTrace != null)
         {
-            System.err.println("\tOpened from");
+            System.err.println(String.format("\tOpened from (in thread %s)",(openingThread != null) ? this.openingThread.getName(): "no thread?"));
             for(StackTraceElement ste: openTrace)
             {
                 System.err.println("\t\t" + ste.toString());
@@ -487,4 +488,9 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
     {
 		return trace;
 	}
+
+    @Override
+    public String getThread() {
+        return openingThread.getName();
+    }
 }
