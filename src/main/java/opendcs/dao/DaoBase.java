@@ -35,7 +35,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import decodes.db.Constants;
@@ -419,6 +421,14 @@ public class DaoBase
 					else if (param instanceof DbKey)
 					{
 						stmt.setLong(index,((DbKey)param).getValue());
+					}
+					else if (param instanceof Date)
+					{
+						stmt.setDate(index,new java.sql.Date(((Date)param).getTime()));
+					}
+					else if (param == null)
+					{
+						stmt.setNull(index,Types.NULL);
 					}
 					else
 					{

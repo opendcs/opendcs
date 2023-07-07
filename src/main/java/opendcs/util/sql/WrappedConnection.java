@@ -51,7 +51,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
     private boolean trace;
     private List<StackTraceElement> openTrace = null;
     private List<StackTraceElement> closeTrace = null;
-    private ZonedDateTime start = ZonedDateTime.now();
+    private final ZonedDateTime start;
     private ZonedDateTime end = null;
     private final Thread openingThread;
 
@@ -69,6 +69,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
     {
         Objects.requireNonNull(realConnection, "WrappedConnection cannot wrap a null connection");
         Objects.requireNonNull(onClose, "WrappedConnections requires a valid Consumer for the close operation");
+        start = ZonedDateTime.now();
         this.realConnection = realConnection;
         this.onClose = onClose;
         this.trace = trace;
@@ -490,7 +491,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
 	}
 
     @Override
-    public String getThread() {
+    public String getOpeningThreadName() {
         return openingThread.getName();
     }
 }

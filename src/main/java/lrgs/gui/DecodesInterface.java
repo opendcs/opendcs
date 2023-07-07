@@ -116,7 +116,7 @@ public class DecodesInterface
 	*/
 	DecodesInterface()
 	{
-		dataSource = new LrgsDataSource();
+		dataSource = new LrgsDataSource(null,null);
 		decodeBuf = new StringBuffer();
 		consumer = new StringBufferConsumer(decodeBuf);
 		timeZone = null;

@@ -82,7 +82,8 @@ import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
-
+import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.util.PropertySpec;
 
@@ -108,9 +109,9 @@ public class FileDataSource
 	};
 	
 	/** default constructor */
-	public FileDataSource()
+	public FileDataSource(DataSource ds, Database db)
 	{
-		super();
+		super(ds,db);
         file = null;
 		filename = null;
 	}

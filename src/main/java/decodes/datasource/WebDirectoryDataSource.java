@@ -27,6 +27,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.InvalidDatabaseException;
@@ -91,6 +92,12 @@ public class WebDirectoryDataSource extends DataSourceExec
 	private Calendar nextDirectoryCal = Calendar.getInstance();
 	private Calendar fileTimeCal = Calendar.getInstance();
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MMM/dd-HH:mm:ss");
+
+
+	public WebDirectoryDataSource(DataSource source, Database db) {
+		super(source, db);
+	}
+
 
 	@Override
 	public void processDataSource() 

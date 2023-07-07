@@ -28,6 +28,8 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
 
+import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.util.PropertySpec;
@@ -75,6 +77,11 @@ public class ScpDataSource
 	private Vector<NetworkList> myNetworkLists;
 	private File currentFile = null;
 	private boolean useSftp = false;
+
+	public ScpDataSource(DataSource ds, Database db)
+	{
+		super(ds,db);
+	}
 	
 	public boolean setProperty(String name, String value)
 	{
@@ -111,7 +118,7 @@ public class ScpDataSource
 	public PropertySpec[] getSupportedProps()
 	{
 		// Remove 'filename' from file data source specs, but keep everything else.
-		FileDataSource fds = new FileDataSource();
+		FileDataSource fds = new FileDataSource(null,null);
 		PropertySpec[] x = fds.getSupportedProps();
 		PropertySpec[] y = new PropertySpec[x.length-1];
 		int xidx = 0, yidx = 0;
@@ -287,7 +294,7 @@ public class ScpDataSource
 				+ " files processed.");
 		
 		currentFile = downloadedFiles.get(downloadedFileIndex++);
-		currentFileDS = new FileDataSource();
+		currentFileDS = new FileDataSource(this.dbDataSource,db);
 		allProps.setProperty("filename", currentFile.getPath());
 		if (TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(allProps, "NameIsMediumId")))
 			allProps.setProperty("mediumid", currentFile.getName());

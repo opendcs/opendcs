@@ -32,5 +32,9 @@ public class InvalidDatabaseException extends DatabaseException
 	{
 		super(msg);
 	}
-}
 
+	public InvalidDatabaseException(String msg, Throwable ex)
+	{
+		super(msg,ex);
+	}
+}

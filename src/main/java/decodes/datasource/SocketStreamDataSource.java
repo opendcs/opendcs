@@ -103,6 +103,7 @@ import ilex.var.NoConversionException;
 import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.Constants;
+import decodes.db.DataSource;
 import decodes.db.TransportMedium;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
@@ -180,9 +181,9 @@ public class SocketStreamDataSource extends DataSourceExec
 	  No-args constructor is necessary because this is instantiated from
 	  a Class object that was loaded dynamically.
 	*/
-	public SocketStreamDataSource()
+	public SocketStreamDataSource(DataSource ds, Database db)
 	{
-		super();
+		super(ds,db);
 		host = null;
 		port = 5001;
 		reconnect = false;
@@ -447,7 +448,7 @@ public class SocketStreamDataSource extends DataSourceExec
 		Platform p = null;
 		try
 		{
-			p = Database.getDb().platformList.getPlatform(
+			p = db.platformList.getPlatform(
 				Constants.medium_Goes, addrField, ret.getTimeStamp());
 		}
 		catch(DatabaseException e)

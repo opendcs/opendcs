@@ -34,7 +34,7 @@ public class ByteArrayDataSource
 
 	public ByteArrayDataSource(byte[] bytes)
 	{
-		super();
+		super(null,null);
 		this.bytes = bytes;
 		pmParser = null;
 		allowNullPlatform = false;

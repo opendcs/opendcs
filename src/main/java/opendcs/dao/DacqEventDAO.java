@@ -34,7 +34,7 @@ public class DacqEventDAO
 		{
 			try
 			{
-				doQuery(q);
+				doQuery(q,rs-> {});
 			}
 			catch (Exception ex)
 			{
@@ -59,43 +59,36 @@ public class DacqEventDAO
 		String txt = evt.getEventText();
 		if (txt.length() >= 256)
 			txt = txt.substring(0,255);
+
+		StringBuilder q = new StringBuilder();
+		q.append("INSERT INTO " + tableName + "(" + columns + ") VALUES(?,?,?,?,?,?,?,?");
+
+		ArrayList<Object> parameters = new ArrayList<>();
+		parameters.add(evt.getDacqEventId());
+		parameters.add(evt.getScheduleEntryStatusId());
+		parameters.add(evt.getPlatformId());
+		parameters.add(evt.getEventTime());
+		parameters.add(evt.getEventPriority());
+		parameters.add(evt.getSubsystem());
+		parameters.add(evt.getMsgRecvTime());
+		parameters.add(txt);
 		
-		String q = "INSERT INTO " + tableName + "(" + columns + ") VALUES("
-			+ evt.getDacqEventId() + ", "
-			+ evt.getScheduleEntryStatusId() + ", "
-			+ evt.getPlatformId() + ", "
-			+ db.sqlDate(evt.getEventTime()) + ", "
-			+ evt.getEventPriority() + ", "
-			+ sqlString(evt.getSubsystem()) + ", "
-			+ db.sqlDate(evt.getMsgRecvTime()) + ", "
-			+ sqlString(txt);
-		if (hasAppId)
-			q = q + ", " + evt.getAppId();
-		
-		q = q + ")";
-		
-		// NOTE: Cannot use doModify(q) because it will log the statement, which will cause
-		// an endless loop.
-		Statement modStmt = null;
+		if(hasAppId)
+		{
+			q.append(",?");
+			parameters.add(evt.getAppId());
+		}
+		q.append(")");
+
 		try
 		{
-			modStmt = getConnection().createStatement();
-			modStmt.executeUpdate(q);
+			doModify(q.toString(), parameters.toArray());
 		}
 		catch(SQLException ex)
 		{
 			String msg = "SQL Error in modify query '" + q + "': " + ex;
-			throw new DbIoException(msg);
-		}
-		finally
-		{
-			if (modStmt != null)
-			{
-				try { modStmt.close(); }
-				catch(Exception ex) {}
-				modStmt = null;
-			}
-		}
+			throw new DbIoException(msg,ex);
+		}		
 	}
 
 	@Override
