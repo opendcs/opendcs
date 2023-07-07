@@ -320,9 +320,9 @@ public abstract class StreamDataSource extends DataSourceExec
 	  No-args constructor is necessary because this is instantiated from
 	  a Class object that was loaded dynamically.
 	*/
-	public StreamDataSource()
+	public StreamDataSource(DataSource ds, Database db)
 	{
-		super();
+		super(ds,db);
 
 		oldChannelRanges = false;
 		msgbuf = new byte[MAX_MESSAGE_LENGTH];
@@ -632,7 +632,7 @@ public abstract class StreamDataSource extends DataSourceExec
 		try
 		{
 
-			p = Database.getDb().platformList.getPlatform(
+			p = db.platformList.getPlatform(
 				pmp.getMediumType(), ret.getMediumId(), ret.getTimeStamp());
 		}
 		catch(DatabaseException e)

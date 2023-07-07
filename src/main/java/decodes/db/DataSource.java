@@ -11,6 +11,7 @@ import ilex.util.TextUtil;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
@@ -325,27 +326,30 @@ public class DataSource extends IdDatabaseObject
 		DataSourceExec ret;
 		try
 		{
-			Class dsClass = mySourceType.getExecClass();
+			Class<?> dsClass = mySourceType.getExecClass();
 			if (dsClass == null)
-				Logger.instance().log(Logger.E_FAILURE,
-					"No exec class defined for data source type '"
-					+ mySourceType.getValue() + "'");
+			{
+				throw new InvalidDatabaseException("Exec class " + mySourceType.getExecClassName() + " Doesn't exist");
+			}
 			Logger.instance().debug2("Making data source delegate '" 
 				+ mySourceType.getValue() + "' class='" + dsClass.getCanonicalName()
 				+ "'");
-			ret = (DataSourceExec)dsClass.newInstance();
+			//ret = (DataSourceExec)dsClass.newInstance();
+			Constructor<?> execCon = dsClass.getConstructor(DataSource.class, Database.class);
+			ret = (DataSourceExec) execCon.newInstance(this,db);
 			if (ret == null)
+			{
 				Logger.instance().log(Logger.E_FAILURE,
 					"newInstance for class '" + dsClass.getName()
 					+ "' returned null");
-			ret.setDataSource(this);
+			}
 		}
 		catch(Exception e)
 		{
 			throw new InvalidDatabaseException(
 				"Cannot prepare data source '" + getName() +
 				"': Cannot instantiate a Data Source of type '" + dataSourceType
-				+ "': " + e.toString());
+				+ "': " + e.toString(),e);
 		}
 		return ret;
 	}
@@ -447,4 +451,3 @@ public class DataSource extends IdDatabaseObject
 	}
 
 }
-

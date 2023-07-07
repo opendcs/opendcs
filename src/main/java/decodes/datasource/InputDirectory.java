@@ -36,6 +36,7 @@ import java.util.Properties;
 import java.util.Vector;
 
 import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 
@@ -47,9 +48,9 @@ public class InputDirectory
 	extends DataSourceExec
 {
 	/** default constructor */
-	public InputDirectory()
+	public InputDirectory(DataSource ds, Database db)
 	{
-		super();
+		super(ds,db);
 	}
 
 	/** Does nothing. */
@@ -105,4 +106,3 @@ public class InputDirectory
 		throw new DataSourceException("InputDirectory not implemented");
 	}
 }
-

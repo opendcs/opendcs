@@ -140,10 +140,13 @@ public abstract class DataSourceExec
 	
 	protected RoutingSpecThread routingSpecThread = null;
 
+	protected Database db = null;
+
 	/** default constructor */
-	protected DataSourceExec()
+	protected DataSourceExec(DataSource source, Database db)
 	{
-		dbDataSource = null;
+		dbDataSource = source;
+		this.db=db;
 		allowNullPlatform = false;
 		allowDapsStatusMessages = false;
 	}
@@ -388,4 +391,3 @@ public abstract class DataSourceExec
 		return false;
 	}
 }
-
