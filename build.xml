@@ -633,6 +633,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <tar destfile="opendcs-cwms-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz" compression="gzip">
             <tarfileset dir="stage">
                 <exclude name="bin/*"/>
+                <exclude name="opendcs-ot*"/>
                 <exclude name="schema/cwms/createDb.sh"/>
                 <exclude name="schema/cwms/importDecodesTemplate.sh"/>
                 <exclude name="schema/cwms/createDefinesSql.sh"/>
