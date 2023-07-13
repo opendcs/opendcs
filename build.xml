@@ -143,7 +143,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <echo message="platform path: ${platform_path}"/>
         <mkdir dir="${build.dir}/test-results"/>
-        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
+        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="test.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
