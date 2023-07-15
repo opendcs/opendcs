@@ -19,6 +19,7 @@ public class UserAuthFileTest
     @Test
     public void test_user_auth_file_default(@TempDir Path configDir) throws Exception
     {
+        System.out.println(configDir.resolve("test.txt").toString());
         final String USERNAME = "Testuser";
         final String PASSWORD = "Testpassword";
         File uaf = configDir.resolve("uaf.txt").toFile();
@@ -42,7 +43,7 @@ public class UserAuthFileTest
     {
         final String badAuthTypeName = "BAD_AUTH_TYPE_NAME:location_doesn't_matter";
         assertThrows( AuthException.class, () -> {
-            final AuthSource source = AuthSourceService.getFromString(badAuthTypeName);            
+            final AuthSource source = AuthSourceService.getFromString(badAuthTypeName);
         });
     }
 }
