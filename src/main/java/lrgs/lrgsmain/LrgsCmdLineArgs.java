@@ -119,7 +119,6 @@ public class LrgsCmdLineArgs extends ApplicationSettings
         try
         {
 			qLogger = new QueueLogger(progname);
-            // temporary name until all original logging removed.
 			final FileHandler fh = new FileHandler(getLogFile()+".%g",
 												   maxLogSize_arg.getValue(),
 												   numOldLogs_arg.getValue(),
