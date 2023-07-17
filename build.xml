@@ -143,7 +143,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <echo message="platform path: ${platform_path}"/>
         <mkdir dir="${build.dir}/test-results"/>
-        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
+        <mkdir dir="${build.dir}/test-tmp"/>
+        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="test.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
@@ -157,6 +158,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <testclasses outputdir="${build.dir}/test-results">
                 <fork>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
+                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-tmp"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>
                 <fileset dir="${build.test.classes}"/>
@@ -183,6 +185,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             description="Run the integration test suite with available implementations.">
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-integration/results"/>
+        <mkdir dir="${build.dir}/test-integration/tmp"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -196,6 +199,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <testclasses outputdir="${build.dir}/test-integration/results">
                 <fork>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
+                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-integration/tmp"/>
                     <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>

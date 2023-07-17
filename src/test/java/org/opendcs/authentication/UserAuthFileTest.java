@@ -42,7 +42,7 @@ public class UserAuthFileTest
     {
         final String badAuthTypeName = "BAD_AUTH_TYPE_NAME:location_doesn't_matter";
         assertThrows( AuthException.class, () -> {
-            final AuthSource source = AuthSourceService.getFromString(badAuthTypeName);            
+            final AuthSource source = AuthSourceService.getFromString(badAuthTypeName);
         });
     }
 }
