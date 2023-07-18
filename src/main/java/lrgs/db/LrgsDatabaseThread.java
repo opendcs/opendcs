@@ -79,6 +79,8 @@ public class LrgsDatabaseThread
 	private LrgsDatabaseThread()
 	{
 		super();
+		setDaemon(true);
+		setName("LrgsDatabaseThread");
 		_firstConnect = true;
 		dataSources = new ArrayList<DataSource>();
 		dbWriteQueue = new LinkedList<LrgsDatabaseObject>();

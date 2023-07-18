@@ -95,6 +95,7 @@ public class AlarmHandler extends Thread
 	/** Constructor. */
 	public AlarmHandler(QueueLogger qLogger)
 	{
+		setDaemon(true);
 		setName("AlarmHandler");
 		lastConfigLoad = 0L;
 		isShutdown = false;
