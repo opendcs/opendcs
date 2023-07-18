@@ -19,7 +19,6 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.logging.SimpleFormatter;
 
 import org.opendcs.logging.JavaUtilLoggingBridge;
 import org.slf4j.LoggerFactory;
@@ -27,9 +26,9 @@ import static org.slf4j.helpers.Util.getCallingClass;
 
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
+import ilex.util.FileLogger;
 import ilex.util.JavaLoggerAdapter;
 import ilex.util.JavaLoggerFormatter;
-import ilex.util.SequenceFileLogger;
 import ilex.util.QueueLogger;
 import ilex.util.Logger;
 import ilex.util.TeeLogger;
@@ -130,7 +129,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 			fh.setFormatter(formatter);
             fh.setLevel(Level.ALL);
             global.addHandler(fh);
-			bridgeLogger = new JavaUtilLoggingBridge();			
+			bridgeLogger = new FileLogger("LRGS",getLogFile(),maxLogSize_arg.getValue(),numOldLogs_arg.getValue());
 
             global.addHandler(new Handler() {
                 @Override

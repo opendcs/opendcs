@@ -60,7 +60,7 @@ public class JavaUtilLoggingBridge extends ilex.util.Logger
     }
     
 
-    public Level mapPriorityToLevel(int priority)
+    public static Level mapPriorityToLevel(int priority)
     {
         switch(priority)
         {

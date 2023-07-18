@@ -3,9 +3,14 @@
 */
 package ilex.util;
 
-import java.util.Date;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+
+import org.opendcs.logging.JavaUtilLoggingBridge;
+
 import java.io.*;
-import java.nio.channels.FileChannel;
 
 
 /**
@@ -18,43 +23,27 @@ import java.nio.channels.FileChannel;
 * length, it will be closed, ".old" will be appended to its name, and
 * then a new log file will be opened with the original name.
 * </p>
+* <p>
+* This class is now a light weight wrapper around java.util.Logging and either
+* a ConsoleHandler (/dev/stdout) or an Actual FileHandler
 */
 public class FileLogger extends Logger
 {
 	/**
-	* The current output PrintStream
+	* The Java Util Logging elements
 	*/
-	private PrintStream output = null;
-
-	/**
-	* The filename supplied to the constructor.
-	*/
-	protected String filename = null;
-
-	/**
-	* File object constructed from the file name.
-	*/
-	protected File outputFile = null;
+	protected Handler handler = null;
+	private static java.util.logging.Logger julLogger = java.util.logging.Logger.getLogger("");
 
 	/**
 	* Default length if none supplied by user.
 	*/
-	private static int defaultMaxLength = 10000000;  // 10 meg.
+	private static final int defaultMaxLength = 10000000;  // 10 meg.
 
 	/**
 	* User-settable maximum log file length.
 	*/
 	private int maxLength = defaultMaxLength;
-
-	/**
-	* Flag determining whether constructor overwrites or appends.
-	* By default, set to true, meaning that the constructor will append
-	* to an existing file when it starts up.
-	* Set to false to cause the constructor to zero and start a new log.
-	*/
-	public static boolean appendFlag = true;
-
-	private FileChannel fileChan = null;
 	
 	/**
 	* Construct with a process name and a filename.
@@ -62,10 +51,15 @@ public class FileLogger extends Logger
 	* @param filename Name of log file.
 	* @throws FileNotFoundException if can't open file
 	*/
-	public FileLogger( String procName, String filename )
-		throws FileNotFoundException
+	public FileLogger( String procName, String fileName )
+		throws IOException
 	{
-		this(procName, filename, defaultMaxLength);
+		this(procName, fileName, defaultMaxLength);
+	}
+
+	public FileLogger(String procName, String fileName, int maxLength) throws IOException
+	{
+		this(procName,fileName,maxLength,2);
 	}
 
 	/**
@@ -78,17 +72,32 @@ public class FileLogger extends Logger
 	* @param maxLength Maximum length of log file
 	* @throws FileNotFoundException if can't open file
 	*/
-	public FileLogger( String procName, String filename, int maxLength )
-		throws FileNotFoundException
-	{
+	public FileLogger( String procName, String filename, int maxLength, int maxCount )
+		throws IOException
+	{		
 		super(procName);
-		this.filename = EnvExpander.expand(filename);
-		this.maxLength = maxLength;
-//		outputFile = new File(EnvExpander.expand(filename));
-		openNewLog();
+		if("/dev/stdout".equalsIgnoreCase(filename))
+		{
+			// clear any existing console handlers
+			for(Handler handler: julLogger.getHandlers())
+			{
+				if (handler instanceof ConsoleHandler)
+				{
+					julLogger.removeHandler(handler);
+				}
+			}
+			handler = new ConsoleHandler();
+		}
+		else
+		{
+			final String filenameRoot = EnvExpander.expand(filename);
+			this.maxLength = maxLength;
+			handler = new FileHandler(filenameRoot+".%g",this.maxLength,maxCount,true);
+		}
 		
-//		FileOutputStream fos = new FileOutputStream(outputFile, appendFlag);
-//		output = new PrintStream(fos, true);
+		handler.setFormatter(new JavaLoggerFormatter());
+		handler.setLevel(Level.ALL); // Messages are filtered before arriving here
+		julLogger.addHandler(handler);
 	}
 
 	/**
@@ -96,10 +105,6 @@ public class FileLogger extends Logger
 	*/
 	public void close( )
 	{
-		if (output != null)
-			output.close();
-		fileChan = null;
-		output = null;
 	}
 
 	/**
@@ -111,28 +116,8 @@ public class FileLogger extends Logger
 	*/
 	public synchronized void doLog( int priority, String text )
 	{
-		output.println(standardMessage(priority, text));
-		
-		// MJM 2013/05/21: If multiple processes are writing to the same file,
-		// we can get in a situation where 'outputFile' refers to the current
-		// log but output (print stream) refers to the old renamed stream.
-		// The fix is to use the file channel position rather than
-		// File.length().
-		try 
-		{
-			long pos = fileChan.position();
-//System.out.println("pos=" + pos);
-//			if (outputFile.length() > maxLength)
-			if (pos > maxLength)
-			{
-				// MJM the close and opening of a new file are done inside rotate();
-				rotate();
-			}
-		}
-		catch(Exception ex)
-		{
-			System.err.println("Error rotating log: " + ex);
-		}
+		Level lvl = JavaUtilLoggingBridge.mapPriorityToLevel(priority);
+		julLogger.log(lvl, text);
 	}
 
 	/**
@@ -141,75 +126,9 @@ public class FileLogger extends Logger
 	 */
 	public synchronized void rotateLogs()
 	{
-		// Note: This needs to be a separate method because it must be
-		// synchronized with doLog(). 
-		// And because doLog() calls rotate(), it can't be syncrhonized.
-		rotate();
+		// now do nothing. JUL fileHandler will rotate the logs.
 	}
 
-	/**
-	 * Does the actual rotation.
-	 * Called internally when the log reaches its maximum size. May also
-	 * be called by the synchronized rotateLogs() method which can be
-	 * called externally by the application.
-	 */
-	protected void rotate()
-	{
-		close();
-		renameCurrentLog();
-		openNewLog();
-	}
+	
 
-	protected void openNewLog()
-	{
-		outputFile = new File(filename);
-		try
-		{
-			FileOutputStream fos = new FileOutputStream(outputFile, appendFlag);
-			output = new PrintStream(fos, true);
-			fileChan = fos.getChannel();
-		}
-		catch(IOException ex)
-		{
-			System.err.println("IOException trying to open log file '" 
-				+ filename + "': " + ex);
-			throw new RuntimeException("Unable to open log file.",ex);
-		}
-	}
-
-	/**
-	 * Renames the current log with a suffix indicating it is now old.
-	 */
-	protected void renameCurrentLog()
-	{
-		File oldFile = new File(filename + ".old");
-		if (oldFile.exists())
-			oldFile.delete();
-		outputFile.renameTo(oldFile);
-	}
-
-	/**
-	* Returns the PrintStream currently being used for log output. Allows
-	* caller to print directly to the file. E.g. for exception stack traces.
-	* @return PrintStream for direct log file output
-	*/
-	public PrintStream getLogOutput( )
-	{
-		return output;
-	}
-
-	/**
-	* Sets the maximum length of the file. When the file reaches this length
-	* it is renamed with a ".old" extension, and a new file is created.
-	* The software appends log messages until the specified length has
-	* been exceeded. Hence the actual length of the file may be slightly
-	* more than the specified maximum.
-	* 
-	* @param len Length of file in bytes.
-	*/
-	public void setMaxLength( int len )
-	{
-		maxLength = len;
-	}
 }
-

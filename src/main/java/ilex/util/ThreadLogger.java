@@ -92,13 +92,7 @@ public class ThreadLogger extends Logger
 	*/
 	public void setMaxLength( int maxLen )
 	{
-		maxLength = maxLen;
-		for(Iterator<Logger> it = loggers.values().iterator(); it.hasNext(); )
-		{
-			Logger lg = it.next();
-			if (lg instanceof FileLogger)
-				((FileLogger)lg).setMaxLength(maxLength);
-		}
+		// this is now a set one during log creation thing.
 	}
 
 	/**
@@ -159,6 +153,7 @@ public class ThreadLogger extends Logger
 
 	/**
 	* @return current thread's logger, creating one if necessary.
+	 * @throws IOException
 	*/
 	protected Logger getCurrentThreadLogger( )
 	{
@@ -176,7 +171,7 @@ public class ThreadLogger extends Logger
 				loggers.put(th.getName(), lg);
 				return lg;
 			}
-			catch(FileNotFoundException ex)
+			catch(IOException ex)
 			{
 				defaultLogger.warning("Cannot create log file '" + logname
 					+ "': " + ex);
@@ -198,4 +193,3 @@ public class ThreadLogger extends Logger
 		this.moduleName = moduleName;
 	}
 }
-

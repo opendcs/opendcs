@@ -2,6 +2,7 @@ package ilex.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Date;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -32,7 +33,15 @@ public class JavaLoggerFormatter
             t.printStackTrace(pw);
             causeMessage = sw.toString();
         }
-        String ret = record.getLoggerName() + ":" + msg + (causeMessage == null ? "" : ": " + causeMessage);
-		return ret + System.lineSeparator();
+        //   date,level, logger, msg, cause
+        String fmt = "%s %s %s %s %s%s";
+        String ret = String.format(fmt,
+                                   new Date(record.getMillis()),
+                                   record.getLevel().getName(),
+                                   record.getLoggerName(),
+                                   msg,
+                                   (causeMessage == null ? "" : ": " + causeMessage),
+                                   System.lineSeparator());
+		return ret;
 	}
 }

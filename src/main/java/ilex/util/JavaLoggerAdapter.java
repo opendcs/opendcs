@@ -81,7 +81,7 @@ public class JavaLoggerAdapter extends Handler
 	private static ilex.util.Logger ilexLogger = null;
 	private static final JavaLoggerAdapter _instance = new JavaLoggerAdapter();
 	private static Formatter myFormatter = new JavaLoggerFormatter();;
-	private static boolean initialized = false;
+	private static boolean initialized = true;
 	
 	/** Singleton access only */
 	public static JavaLoggerAdapter instance() { return _instance; }

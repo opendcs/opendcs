@@ -10,9 +10,9 @@ import java.util.LinkedList;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
 
-import ilex.util.SequenceFileLogger;
 import ilex.util.Logger;
 import ilex.util.EnvExpander;
+import ilex.util.FileLogger;
 import ilex.net.BasicServer;
 
 import lrgs.db.LrgsDatabaseThread;
@@ -27,7 +27,7 @@ public class LddsLoggerThread extends Thread
     implements StatLogger
 {
     BasicServer theServer;
-    SequenceFileLogger statLogger;
+    Logger statLogger;
     SimpleDateFormat dateFormat;
     private boolean shutdownFlag;
     private LrgsDatabaseThread ldt;
@@ -51,8 +51,7 @@ public class LddsLoggerThread extends Thread
         String logFileName = EnvExpander.expand(logname);
         try
         {
-            statLogger = new SequenceFileLogger("DDS", logFileName);
-            statLogger.setMaxLength(5000000);
+            statLogger = new FileLogger("DDS", logFileName, 5000000);
             statLogger.setUsePriority(false);
         }
         catch(IOException ex)
@@ -202,7 +201,7 @@ public class LddsLoggerThread extends Thread
 
     public synchronized void rotateLogs()
     {
-        statLogger.rotateLogs();
+        // handled by JUL
     }
 
     /**
