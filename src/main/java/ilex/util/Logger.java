@@ -5,6 +5,9 @@ package ilex.util;
 
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.logging.IlexToSlf4jBridge;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.io.*;
@@ -130,7 +133,9 @@ public abstract class Logger
     public static Logger instance( )
     {
         if (theLogger == null)
-            theLogger = new StderrLogger("");
+		{
+            theLogger = new IlexToSlf4jBridge("");
+		}
         return theLogger;
     }
 
