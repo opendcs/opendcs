@@ -181,7 +181,7 @@
     <target name="resolve.build.real" depends="init-ivy,check.ivy.build" description="--> retrieve build script dependencies" unless="ivy.build.current">
         <ivy:retrieve conf="build,groovy,izpack,spotbugs,pmd"
                       sync="true"
-                      pattern="build/ivy-build/[conf]/[artifact](-[classifier]).[ext]"
+                      pattern="build/ivy-build/[conf]/[artifact](-[classifier])-[revision].[ext]"
         />
         <ivy:cachepath pathid="izpack.classpath" conf="izpack"/>
         <ivy:cachepath pathid="groovy.classpath" conf="groovy"/>

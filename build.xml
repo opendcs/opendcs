@@ -93,8 +93,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             includes="lrgs/gui/LrgsBuild.java">
             <src path="${build.classes}"/>
             <classpath refid="runtime.classpath"/>
-			<compilerarg value="-parameters"/>
-		</javac>
+            <compilerarg value="-parameters"/>
+        </javac>
 
         <javac debug="true" destdir="${build.classes}"
             target="1.8" source="1.8"
@@ -539,7 +539,7 @@ more information about each.
                 </restrict>
                 <chainedmapper>
                     <flattenmapper/>
-                    <regexpmapper from="^(LoboBrowser-1.0.0.jar)" to="zzz\1"/>
+                    <regexpmapper from="^(Cobra-1.0.2|LoboBrowser-1.0.0.jar)" to="zzz\1"/>
                 </chainedmapper>
             </mappedresources>
             <mappedresources enablemultiplemappings="false">
@@ -549,7 +549,7 @@ more information about each.
                 </restrict>
                 <chainedmapper>
                     <flattenmapper/>
-                    <regexpmapper from="^(?!LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
+                    <regexpmapper from="^(?!Cobra-1.0.2|LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
                 </chainedmapper>
             </mappedresources>
 
@@ -605,24 +605,24 @@ more information about each.
 				</copy>
 
 
-				<if>
-					<!-- the output between PDF and html is a bit different -->
-					<equals arg1="${sphinx.target}" arg2="latexpdf"/>
-					<then>
-						<mkdir dir="stage/doc/pdf"/>
-						<echo message="copying opendcs.pdf."/>
-						<copy todir="stage/doc/pdf">
-							<fileset dir="${docs.output}/latex">
-								<include name="*.pdf"/>
-							</fileset>
-						</copy>
-					</then>
-					<else>
-						<echo message="copying html files."/>
-					</else>
-				</if>
-			</then>
-		</if>
+                <if>
+                    <!-- the output between PDF and html is a bit different -->
+                    <equals arg1="${sphinx.target}" arg2="latexpdf"/>
+                    <then>
+                        <mkdir dir="stage/doc/pdf"/>
+                        <echo message="copying opendcs.pdf."/>
+                        <copy todir="stage/doc/pdf">
+                            <fileset dir="${docs.output}/latex">
+                                <include name="*.pdf"/>
+                            </fileset>
+                        </copy>
+                    </then>
+                    <else>
+                        <echo message="copying html files."/>
+                    </else>
+                </if>
+            </then>
+        </if>
 
         <tar destfile="stage/doc.tar.gz" compression="gzip">
             <tarfileset dir="stage" includes="doc/**">
@@ -822,9 +822,13 @@ more information about each.
                     classpathentry(kind:"output", path:"bin")
                     classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
 
+                    xml.mkp.comment("Runtime Classpath")
+
                     project.getReference("runtime.classpath").each {
                         classpathentry(kind:"lib", path:it)
                     }
+
+                    xml.mkp.comment("Test Classpath")
 
                     project.getReference("test.classpath").each {
                         classpathentry(kind:"lib", path:it)

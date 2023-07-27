@@ -76,7 +76,9 @@
             <exclude org="javax.help"/>
         </dependency>
         <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-core" rev="1.1.0"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.7.36"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="${slf4j.version}"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="${slf4j.version}"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="${slf4j.version}"/>
         <dependency org="io.javalin" name="javalin" rev="4.6.8" />
 
 
@@ -144,7 +146,8 @@
         <exclude org="com.sun.media"/>
         <exclude org="log4j"/>
 
-
+        <conflict org="org.slf4j" module="slf4j-api" rev="${slf4j.version}"/>
+        <conflict org="org.slf4j" module="jcl-over-slf4j" rev="${slf4j.version}"/>
 
     </dependencies>
 </ivy-module>
