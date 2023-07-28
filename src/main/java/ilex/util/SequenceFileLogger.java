@@ -16,55 +16,26 @@ import java.io.*;
 */
 public class SequenceFileLogger extends FileLogger
 {
-	private int numOldLogs;
 
 	/**
 	* Construct with a process name and a filename.
 	* @param procName Name of this process, to appear in each log message.
 	* @param filename Name of log file.
+	* @param maxLength how many bytes each log can be
+	* @param count how many total files we will keep
 	* @throws FileNotFoundException if can't open file
 	*/
-	public SequenceFileLogger( String procName, String filename)
-		throws FileNotFoundException
+	public SequenceFileLogger( String procName, String filename, int maxLength, int count)
+		throws IOException
 	{
-		super(procName, filename);
-		this.numOldLogs = 5;
-	}
-
-	/** 
-	* Sets the number of old logs to use.
-	* @param numOldLogs the number of sequenced old logs to keep.
-	*/
-	public void setNumOldLogs(int numOldLogs)
-	{
-		this.numOldLogs = numOldLogs;
-	}
+		super(procName, filename,maxLength,count);
+	}	
 
 	/**
 	 * Renames the current log with a suffix indicating it is now old.
 	 */
 	protected void renameCurrentLog()
 	{
-//System.out.println("Renaming logs.");
-		// Delete the oldest log if it exists.
-		File oldFile = new File(filename + "." + numOldLogs);
-		if (oldFile.exists())
-//{System.out.println("Deleting '" + oldFile.getName() + "'");
-			oldFile.delete();
-//}
-
-		// Increase the number on each log.
-		for(int i=numOldLogs-1; i>0; i--)
-		{
-			oldFile = new File(filename + "." + i);
-			if (oldFile.exists())
-				oldFile.renameTo(new File(filename + "." + (i+1)));
-		}
-
-		// Finally change current file with a ".1" extension.
-		oldFile = new File(filename + ".1");
-		outputFile.renameTo(oldFile);
-//try { Thread.sleep(3000L); } catch(InterruptedException ex) {}
+		// controlled by JULHandler
 	}
 }
-

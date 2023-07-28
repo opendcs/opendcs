@@ -296,7 +296,12 @@ public abstract class Logger
     */
     public PrintStream getLogOutput( )
     {
-        return System.err;
+        return new PrintStream(new OutputStream(){
+            StringBuilder sb = new StringBuilder();
+            @Override
+            public void write(int b) throws IOException {
+                
+            }});
     }
 
     /**

@@ -26,6 +26,7 @@ special log file.
 public class LddsLoggerThread extends Thread
     implements StatLogger
 {
+    private static final int DEFAULT_LOG_SIZE = 5000000;
     BasicServer theServer;
     SequenceFileLogger statLogger;
     SimpleDateFormat dateFormat;
@@ -51,9 +52,7 @@ public class LddsLoggerThread extends Thread
         String logFileName = EnvExpander.expand(logname);
         try
         {
-            statLogger = new SequenceFileLogger("DDS", logFileName);
-            statLogger.setMaxLength(5000000);
-            statLogger.setUsePriority(false);
+            statLogger = new SequenceFileLogger("DDS", logFileName,DEFAULT_LOG_SIZE,2);
         }
         catch(IOException ex)
         {

@@ -108,9 +108,12 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 		{
 			qLogger = new QueueLogger(progname);
 
-			fLogger = new SequenceFileLogger(progname, getLogFile()); 
-			fLogger.setNumOldLogs(numOldLogs_arg.getValue());
-			fLogger.setMaxLength(maxLogSize_arg.getValue());
+			fLogger = new SequenceFileLogger(
+						progname,
+						getLogFile(),
+						maxLogSize_arg.getValue(),
+						numOldLogs_arg.getValue()			
+			);
 
 			TeeLogger tLogger = new TeeLogger(progname, fLogger, qLogger);
 			Logger.setLogger(tLogger); 

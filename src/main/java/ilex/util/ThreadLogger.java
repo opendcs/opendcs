@@ -176,7 +176,7 @@ public class ThreadLogger extends Logger
 				loggers.put(th.getName(), lg);
 				return lg;
 			}
-			catch(FileNotFoundException ex)
+			catch(IOException ex)
 			{
 				defaultLogger.warning("Cannot create log file '" + logname
 					+ "': " + ex);
@@ -198,4 +198,3 @@ public class ThreadLogger extends Logger
 		this.moduleName = moduleName;
 	}
 }
-
