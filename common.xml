@@ -107,12 +107,12 @@
         </uptodate>
     </target>
 
-    <target name="resolve.real" depends="init-ivy" unless="ivy.current">
-        <ivy:retrieve conf="runtime,test,test_platform"
+    <target name="resolve.real" depends="init-ivy" unless="ivy.current" description="--> retreive dependencies with ivy">
+        <ivy:retrieve conf="runtime,runtime_last,test,test_platform"
                       sync="true"
                       pattern="build/ivy/[conf]/[artifact](-[classifier])-[revision].[ext]"
         />
-        <ivy:cachepath pathid="runtime.classpath" conf="runtime"/>
+        <ivy:cachepath pathid="runtime.classpath" conf="runtime,runtime_last"/>
         <ivy:cachepath pathid="test.classpath" conf="test"/>
         <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>
 
