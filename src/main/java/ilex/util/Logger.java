@@ -291,17 +291,27 @@ public abstract class Logger
     * Returns the print-stream being used for output if there is one.
     * This method should not be used unless you are sure that the concrete
     * class supports direct output to its print stream.
-    * The base class simply returns System.err.
+    * The base class creates a simple PrintStream for feeding to the
+    * Real logger
     * @return PrintStream for direct log output.
     */
     public PrintStream getLogOutput( )
     {
         return new PrintStream(new OutputStream(){
-            StringBuilder sb = new StringBuilder();
+            StringBuffer sb = new StringBuffer();
             @Override
-            public void write(int b) throws IOException {
-                
-            }});
+            public void write(int b) throws IOException
+            {
+                sb.append(sb);
+            }
+
+            @Override
+            public void flush()
+            {
+                doLog(E_INFORMATION,sb.toString());
+                sb.setLength(0);
+            }
+        });
     }
 
     /**

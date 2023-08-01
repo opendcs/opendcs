@@ -87,21 +87,6 @@ public class ThreadLogger extends Logger
 	}
 
 	/**
-	* Sets the maximum length of all log files.
-	* @param maxLen the max length
-	*/
-	public void setMaxLength( int maxLen )
-	{
-		maxLength = maxLen;
-		for(Iterator<Logger> it = loggers.values().iterator(); it.hasNext(); )
-		{
-			Logger lg = it.next();
-			if (lg instanceof FileLogger)
-				((FileLogger)lg).setMaxLength(maxLength);
-		}
-	}
-
-	/**
 	* Explicitly sets a logger for a thread. You do not need to call
 	* this method normally. When a log message is generated, if no logger
 	* yet exists for the current thread, a new FileLogger is created.
