@@ -363,7 +363,7 @@ Logger.instance().info(module + " " + myName + " starting"
 		{
 			String nm = "DRGS-";
 			if (cfg.drgsSourceCode != null) nm += cfg.drgsSourceCode;
-			try { activityLogger = new FileLogger(nm, activityLogName); }
+			try { activityLogger = new FileLogger(nm, activityLogName, Logger.E_INFORMATION); }
 			catch(IOException ex)
 			{
 				Logger.instance().warning("Cannot create DRGS activity log '"

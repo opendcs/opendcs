@@ -113,12 +113,7 @@ public class GetEvents extends Thread
 			
 			String lf = logArg.getValue();
 			if (lf != null && lf.length() > 0)
-				Logger.setLogger(new FileLogger("GetDcpMessages", lf));
-			int dba = debugArg.getValue();
-			if (dba > 0)
-				Logger.instance().setMinLogPriority(
-					dba == 1 ? Logger.E_DEBUG1 :
-					dba == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
+				Logger.setLogger(new FileLogger("GetDcpMessages", lf, debugArg.getValue()));
 
 			GetEvents gdm = new GetEvents(
 				hostArg.getValue(), portArg.getValue(), userArg.getValue());
@@ -132,4 +127,3 @@ public class GetEvents extends Thread
 		}
 	}
 }
-

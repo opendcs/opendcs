@@ -74,21 +74,14 @@ public class LqmCmdLineArgs extends ApplicationSettings
 		String fn = getLogFile();
 		try 
 		{
-			Logger.setLogger(new FileLogger(progname, fn)); 
+			Logger.setLogger(new FileLogger(progname, fn, getDebugLevel())); 
 		}
 		catch(IOException e)
 		{
 			System.err.println("Cannot open log file '" + fn + "': " + e);
-			System.exit(1);
+			System.exit(1); // TODO: remove this System.exit
 		}
-
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-
+		
 		Logger.instance().log(Logger.E_INFORMATION, "Process '"
 			+ progname + "' Starting.....");
 	}

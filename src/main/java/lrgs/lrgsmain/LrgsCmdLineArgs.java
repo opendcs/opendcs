@@ -111,6 +111,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 			fLogger = new SequenceFileLogger(
 						progname,
 						getLogFile(),
+						getDebugLevel(),
 						maxLogSize_arg.getValue(),
 						numOldLogs_arg.getValue()			
 			);
@@ -121,17 +122,6 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 			SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 			df.setTimeZone(TimeZone.getTimeZone("UTC"));
 			Logger.setDateFormat(df);
-
-			// Set debug level.
-			int dl = getDebugLevel();
-			if (dl > 0)
-			{
-				int dv = 
-					dl == 1 ? Logger.E_DEBUG1 :
-					dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3;
-				// Debug info only goes to file, never to clients.
-				fLogger.setMinLogPriority(dv);
-			}
 		}
 		catch(IOException ex)
 		{

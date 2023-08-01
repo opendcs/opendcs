@@ -284,12 +284,12 @@ public class CmdLineArgs
 			String procname = Logger.instance().getProcName();
 			try
 			{
-				Logger.setLogger(new FileLogger(procname, fn,100*1024*1024)); // 100 MegaBytes
+				Logger.setLogger(new FileLogger(procname, fn, getDebugLevel()));
 			}
-			catch(IOException e)
+			catch (IOException e)
 			{
 				System.err.println("Cannot open log file '" + fn + "': " + e);
-				System.exit(1);
+				System.exit(1); // TODO: remove System.exit
 			}
 		}
 
@@ -401,14 +401,6 @@ public class CmdLineArgs
 				"Cannot open User Properties File '"+propFileName+"': "+e);
 			}
 		}
-		
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-
 		
 		if (DecodesSettings.instance().fontAdjust != 0)
 		{

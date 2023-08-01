@@ -92,20 +92,13 @@ public class DcsCmdLineArgs extends ApplicationSettings
 		String fn = getLogFile();
 		try 
 		{
-			Logger.setLogger(new FileLogger(progname, fn)); 
+			Logger.setLogger(new FileLogger(progname, fn, getDebugLevel())); 
 		}
 		catch(IOException e)
 		{
 			System.err.println("Cannot open log file '" + fn + "': " + e);
 			System.exit(1);
-		}
-
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
+		}		
 
 		Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
 		Logger.instance().log(Logger.E_INFORMATION, "LRIT Process '"

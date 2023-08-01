@@ -25,10 +25,10 @@ public class SequenceFileLogger extends FileLogger
 	* @param count how many total files we will keep
 	* @throws FileNotFoundException if can't open file
 	*/
-	public SequenceFileLogger( String procName, String filename, int maxLength, int count)
+	public SequenceFileLogger( String procName, String filename, int logLevel, int maxLength, int count)
 		throws IOException
 	{
-		super(procName, filename,maxLength,count);
+		super(procName, filename,logLevel, maxLength, count);
 	}	
 
 	/**

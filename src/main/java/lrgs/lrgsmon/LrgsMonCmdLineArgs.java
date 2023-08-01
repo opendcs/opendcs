@@ -180,20 +180,13 @@ public class LrgsMonCmdLineArgs
 		if (fn != null && fn.length() > 0)
 		{
 			String procname = Logger.instance().getProcName();
-			try { Logger.setLogger(new FileLogger(procname, fn)); }
+			try { Logger.setLogger(new FileLogger(procname, fn,getDebugLevel())); }
 			catch(IOException e)
 			{
 				System.err.println("Cannot open log file '" + fn + "': " + e);
 				System.exit(1);
 			}
 		}
-
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-			Logger.instance().setMinLogPriority(
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
 	}
 
 	/** @return scan period in seconds. */

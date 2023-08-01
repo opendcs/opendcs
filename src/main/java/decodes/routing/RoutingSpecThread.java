@@ -1531,9 +1531,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		if (cmdLineArgs.getLogFile() == defaultLogFile)
 		{
 			String logFile = routmonDir + "/" + rsName.toLowerCase() + ".log";
-			Logger.setLogger(new FileLogger("rs:"+rsName, logFile));
-			Logger.instance().setMinLogPriority(oldLogger.getMinLogPriority());
-			Logger.instance().setProcName(oldLogger.getProcName());
+			Logger.setLogger(new FileLogger("rs:"+rsName, logFile,oldLogger.getMinLogPriority()));
 		}
 
 		/** Optional server lock ensures only one instance runs at a time. */

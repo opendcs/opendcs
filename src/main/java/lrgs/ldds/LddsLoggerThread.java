@@ -52,7 +52,7 @@ public class LddsLoggerThread extends Thread
         String logFileName = EnvExpander.expand(logname);
         try
         {
-            statLogger = new SequenceFileLogger("DDS", logFileName,DEFAULT_LOG_SIZE,2);
+            statLogger = new SequenceFileLogger("DDS", logFileName,Logger.E_INFORMATION, DEFAULT_LOG_SIZE,2);
         }
         catch(IOException ex)
         {

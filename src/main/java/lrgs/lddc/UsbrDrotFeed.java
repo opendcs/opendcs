@@ -200,14 +200,9 @@ Logger.instance().log(Logger.E_DEBUG1, "UsbrDrotFeed.outputMessage");
 			
 			String lf = logArg.getValue();
 			if (lf != null && lf.length() > 0)
-				Logger.setLogger(new FileLogger("drotfeed.err", lf));
-			int dba = debugArg.getValue();
-			if (dba > 0)
-				Logger.instance().setMinLogPriority(
-					dba == 1 ? Logger.E_DEBUG1 :
-					dba == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-			Logger.instance().setProcName("UsbrDrotFeed");
-			Logger.instance().setUseProcName(true);
+			{
+				Logger.setLogger(new FileLogger("drotfeed.err", lf, debugArg.getValue()));
+			}
 
 			String crit = searchcritArg.getValue();
 			if (crit != null && crit.length() == 0)
@@ -229,4 +224,3 @@ Logger.instance().log(Logger.E_DEBUG1, "UsbrDrotFeed.outputMessage");
 		}
 	}
 }
-

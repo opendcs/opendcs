@@ -59,10 +59,10 @@ public class FileLogger extends IlexToSlf4jBridge
     * @param filename Name of log file.
     * @throws FileNotFoundException if can't open file
     */
-    public FileLogger( String procName, String filename )
+    public FileLogger( String procName, String filename, int logLevel )
         throws IOException
     {
-        this(procName, filename, defaultMaxLength);
+        this(procName, filename, defaultMaxLength, logLevel);
     }
 
     /**
@@ -75,16 +75,17 @@ public class FileLogger extends IlexToSlf4jBridge
     * @param maxLength Maximum length of log file
     * @throws IOException if can't open file
     */
-    public FileLogger( String procName, String filename, int maxLength)
+    public FileLogger( String procName, String filename, int logLevel, int maxLength)
         throws IOException
     {
-        this(procName,filename,maxLength,2);
+        this(procName,filename,maxLength,logLevel,2);
     }
 
-    public FileLogger( String procName, String filename, int maxLength, int count)
+    public FileLogger( String procName, String filename, int logLevel, int maxLength, int count)
         throws IOException
     {
         super(procName);
+        this.minLogPriority = logLevel;
         this.filename = EnvExpander.expand(filename);
         this.maxLength = maxLength;
 

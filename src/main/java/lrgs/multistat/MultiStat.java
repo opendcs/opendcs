@@ -1,9 +1,10 @@
 package lrgs.multistat;
 
-import java.awt.*;
 import javax.swing.*;
 
-import java.io.File;
+import org.slf4j.LoggerFactory;
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.IOException;
 
 import ilex.util.EnvExpander;
@@ -15,6 +16,8 @@ import ilex.util.IndexRangeException;
 
 public class MultiStat
 {
+	private static org.slf4j.Logger logger = LoggerFactory.getLogger(getCallingClass());
+
 	boolean packFrame = false;
 	MultiStatFrame msFrame = null;
 	public static final String module = "GUI";
@@ -49,11 +52,11 @@ public class MultiStat
 		Logger defLogger;
 		try
 		{
-			defLogger = new FileLogger("multistat", "multistat.log");
+			defLogger = new FileLogger("multistat", "multistat.log",Logger.E_INFORMATION);
 		}
 		catch(IOException ex)
 		{
-			System.err.println("Cannot create log file 'multistat.log'");
+			logger.error("Cannot create log file 'multistat.log'. Sending logs to default log.");
 			defLogger = Logger.instance();
 		}
 		QueueLogger qLogger = new QueueLogger("local");
