@@ -69,7 +69,7 @@ public class PollGUI extends TsdbAppTemplate
 	private JButton selectStationButton = new JButton("Select");
 	private boolean pollingInProgress = false;
 	private EventsPanel eventsPanel = new EventsPanel();
-	private QueueLogger queueLogger = new QueueLogger(module);
+	private QueueLogger queueLogger = null;
 	private EventsPanelQueueThread epqt = null;
 	private PrintStream sessionLogPrintStream = null;
 	private RoutingSpecThread routingSpecThread = null;
@@ -91,10 +91,9 @@ public class PollGUI extends TsdbAppTemplate
 		makeFrame();
 		noExitAfterRunApp = true;
 		int minPri = Logger.instance().getMinLogPriority();
+		queueLogger = new QueueLogger(module,minPri);
 		TeeLogger teeLogger = new TeeLogger(module, Logger.instance(), queueLogger);
 		Logger.setLogger(teeLogger);
-		teeLogger.setMinLogPriority(minPri);
-		queueLogger.setMinLogPriority(minPri);
 		epqt = new EventsPanelQueueThread(queueLogger, eventsPanel);
 		epqt.start();
 		theFrame.setVisible(true);
@@ -527,4 +526,3 @@ Logger.instance().debug3("set PollingThread.staticSessionLogger" +
 	{
 	}
 }
-

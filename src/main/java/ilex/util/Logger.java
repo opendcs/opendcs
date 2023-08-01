@@ -108,8 +108,19 @@ public abstract class Logger
     */
     protected Logger( String procName )
     {
+        this(procName,E_DEFAULT_MIN_LOG_PRIORITY);
+    }
+
+    /**
+    * Construct with a process name.
+    * The process name can be the empty string, if desired.
+    * @param procName the process name to appear in log messages.
+    * @param minLogPriority minimum log level we should log
+    */
+    protected Logger(String procName, int minLogPriority)
+    {
         this.procName = procName;
-        minLogPriority = E_DEFAULT_MIN_LOG_PRIORITY;
+        this.minLogPriority = minLogPriority;
         usePriority = true;
         useDateTime = true;
         useProcName = false;
@@ -152,7 +163,9 @@ public abstract class Logger
         // Guard against endless recursion that could be called by a log message
         // being generated inside the doLog method.
         if (insideLog)
+        {
             return;
+        }
         insideLog = true;
         try
         {
@@ -168,10 +181,13 @@ public abstract class Logger
     /**
     * Sets the minimum log priority
     * @param minPriority minimu priority
+    * @deprecated Changing the log level after log creation is no longer supported.
+    *             This is now a no-op
     */
+    @Deprecated
     public void setMinLogPriority( int minPriority )
     {
-        minLogPriority = minPriority;
+        //minLogPriority = minPriority;
     }
 
     /**
@@ -384,5 +400,21 @@ public abstract class Logger
     public TimeZone getTz()
     {
         return tz;
+    }
+
+    /**
+     * Convert the commandline argument value to the appropriate log level
+     * @param argValue
+     * @return ilex.util.Logger value
+     */
+    public static int debugLevelFromArgValue(int argValue)
+    {
+		switch(argValue)
+		{
+			case 1: return Logger.E_DEBUG1;
+			case 2: return Logger.E_DEBUG2;
+			case 3: return Logger.E_DEBUG3;
+			default: return Logger.E_INFORMATION;
+		}
     }
 }

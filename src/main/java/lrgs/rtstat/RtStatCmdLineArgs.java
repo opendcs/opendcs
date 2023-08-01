@@ -101,16 +101,8 @@ public class RtStatCmdLineArgs
 			System.err.println("Illegal arguments ... program exiting.");
 			System.exit(1);
 		}
-		// Set debug level.
-		int dl = getDebugLevel();
-		if (dl > 0)
-		{
-			int dv = 
-				dl == 1 ? Logger.E_DEBUG1 :
-				dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3;
-			// Debug info only goes to file, never to clients.
-			Logger.instance().setMinLogPriority(dv);
-		}
+		// Set debug level. NOTE: with current changes this likely has no effect
+		Logger.instance().setMinLogPriority(getDebugLevel());
 	}
 
 	/** @return scan period in seconds. */

@@ -57,9 +57,9 @@ public class QueueLogger extends Logger
 	* empty string (i.e. "").
 	* @param procName the process name
 	*/
-	public QueueLogger( String procName )
+	public QueueLogger( String procName, int minLogPriority )
 	{
-		super(procName);
+		super(procName,minLogPriority);
 		messages = new PublicRRVector(MAX_MESSAGES, QUEUE_INCREMENT);
 		startIndex = 0;
 	}

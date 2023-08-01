@@ -219,12 +219,10 @@ public class LritDcsMain implements ServerLockable
 		 * that logs to both the file and a queue.
 		 */		
 		Logger fl = Logger.instance();
-		logQueue = new QueueLogger(fl.getProcName());
+		logQueue = new QueueLogger(fl.getProcName(),fl.getMinLogPriority());
 		TeeLogger tl = new TeeLogger(fl.getProcName(), fl, logQueue);
 		Logger.setLogger(tl);
 		tl.setTimeZone(TimeZone.getTimeZone("UTC"));
-		logQueue.setMinLogPriority(fl.getMinLogPriority());
-		tl.setMinLogPriority(fl.getMinLogPriority());
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 		Logger.setDateFormat(df);

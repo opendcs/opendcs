@@ -31,11 +31,9 @@ public class CompEventSvr extends BasicServer
 		// Current logger is typically a FileLogger
 		Logger fl = Logger.instance();
 		TimeZone tmpTz = fl.getTz();
-		eventQueue = new QueueLogger(fl.getProcName());
-		eventQueue.setMinLogPriority(fl.getMinLogPriority());
+		eventQueue = new QueueLogger(fl.getProcName(),fl.getMinLogPriority());
 		TeeLogger tl = new TeeLogger(fl.getProcName(), fl, eventQueue);
 		tl.setTimeZone(tmpTz);
-//		tl.setMinLogPriority(fl.getMinLogPriority());
 		Logger.setLogger(tl);
 		
 		Logger.instance().info("Will listen for event clients on port " 

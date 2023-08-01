@@ -10,7 +10,7 @@ public class IlexToSlf4jBridge extends ilex.util.Logger
 
     public IlexToSlf4jBridge(String procName)
     {
-        super(procName);
+        super(procName, E_DEBUG3); // The bridge will capture everything.
         realLogger = LoggerFactory.getLogger(procName);
     }
 
@@ -23,9 +23,10 @@ public class IlexToSlf4jBridge extends ilex.util.Logger
     @Override
     public void doLog(int priority, String text)
     {
-         realLogger.makeLoggingEventBuilder(ilexLevelToSLF4J(priority))
-                   .log(text);
-                   
+        Level level = ilexLevelToSLF4J(priority);
+        realLogger.makeLoggingEventBuilder(level)
+                  .setMessage(text)
+                  .log();
     }
 
     private Level ilexLevelToSLF4J(int priority)
@@ -42,5 +43,4 @@ public class IlexToSlf4jBridge extends ilex.util.Logger
             default: return Level.INFO;
         }
     }
-    
 }

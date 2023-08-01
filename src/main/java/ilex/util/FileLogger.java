@@ -8,8 +8,10 @@ import java.io.PrintStream;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 
 import org.opendcs.logging.IlexToSlf4jBridge;
+import org.opendcs.logging.OpenDcsJulFormatter;
 
 import static org.opendcs.logging.JULHelpers.ilexLevelToJulLevel;
 
@@ -106,8 +108,11 @@ public class FileLogger extends IlexToSlf4jBridge
         {
             handler = new FileHandler(filename+".%g", maxLength, count);
         }
-        handler.setLevel(ilexLevelToJulLevel(this.minLogPriority));
+        Level level = ilexLevelToJulLevel(this.minLogPriority);
+        handler.setLevel(level);
+        handler.setFormatter(new OpenDcsJulFormatter());
         root.addHandler(handler);
+        root.setLevel(level);
     }
 
     /**
@@ -151,15 +156,5 @@ public class FileLogger extends IlexToSlf4jBridge
     protected void renameCurrentLog()
     {
         // handled by JUL Handler
-    }
-
-    /**
-    * Returns the PrintStream currently being used for log output. Allows
-    * caller to print directly to the file. E.g. for exception stack traces.
-    * @return PrintStream for direct log file output
-    */
-    public PrintStream getLogOutput( )
-    {
-        return null;
     }
 }

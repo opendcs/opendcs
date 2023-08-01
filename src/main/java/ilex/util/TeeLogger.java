@@ -51,7 +51,7 @@ public class TeeLogger extends Logger
 	*/
 	public TeeLogger( String procName, Logger logger1, Logger logger2 )
 	{
-		super(procName);
+		super(procName,E_DEBUG3); // send everything to each and let the loggers sort it out
 		this.logger1 = logger1;
 		this.logger2 = logger2;
 	}
@@ -78,13 +78,14 @@ public class TeeLogger extends Logger
 	}
 
 	/**
-	* This method delegates to logger1. Logger2 remains unchanged.
+	* No-Op
 	* @param minPriority minimum priority to log
+	* @deprecated Setting log priority after log creation is no long supported.
 	*/
+	@Deprecated
 	public void setMinLogPriority( int minPriority )
 	{
-		logger1.setMinLogPriority(minPriority);
-//		logger2.setMinLogPriority(minPriority);
+		// No-Op
 	}
 
 	/**
@@ -149,4 +150,3 @@ public class TeeLogger extends Logger
 		return logger1.getLogOutput();
 	}
 }
-

@@ -68,7 +68,7 @@ public class ThreadLogger extends Logger
 	public ThreadLogger( String procName, String prefix, String suffix,
 		boolean autoCreate )
 	{
-		super(procName);
+		super(procName,E_DEBUG3);
 		this.prefix = prefix;
 		this.suffix = suffix;
 		this.autoCreate = autoCreate;

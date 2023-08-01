@@ -53,12 +53,12 @@ public class LqmCmdLineArgs extends ApplicationSettings
 	}
 
     /**
-     * Returns the numeric debug-level specified on the command line, or
-     * 0 if none was specified.
+     * @return the numeric debug-level specified on the command line, or
+     * E_INFORMATION not specified as d1,2, or 3
      */
 	public int getDebugLevel()
 	{
-		return debuglevel_arg.getValue();
+		return Logger.debugLevelFromArgValue(debuglevel_arg.getValue());
 	}
 
 	public String getLogFile()

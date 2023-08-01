@@ -59,8 +59,7 @@ public class MultiStat
 			logger.error("Cannot create log file 'multistat.log'. Sending logs to default log.");
 			defLogger = Logger.instance();
 		}
-		QueueLogger qLogger = new QueueLogger("local");
-		qLogger.setMinLogPriority(defLogger.getMinLogPriority());
+		QueueLogger qLogger = new QueueLogger("local",defLogger.getMinLogPriority());
 		TeeLogger tLogger = new TeeLogger("local", defLogger, qLogger);
 		Logger.setLogger(tLogger);
 		LogMonitor logMon = new LogMonitor(msFrame, qLogger);

@@ -31,6 +31,7 @@
 */
 package ilex.cmdline;
 
+import ilex.util.Logger;
 
 /**
  * StdAppSettings encapsulates a group of common command-line arguments
@@ -134,10 +135,10 @@ public class StdAppSettings extends ApplicationSettings
 
     /**
      * @return the numeric debug-level specified on the command line, or
-     * 0 if none was specified.
+     * E_INFORMATION not specified as d1,2, or 3
      */
 	public int getDebugLevel()
 	{
-		return debuglevel_arg.getValue();
+		return Logger.debugLevelFromArgValue(debuglevel_arg.getValue());
 	}
 }
