@@ -1,15 +1,15 @@
 /**
  * $Id$
- * 
+ *
  * Copyright 2018 United States Government
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
  *    http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under 
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
- * ANY KIND, either express or implied. See the License for the specific language governing 
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
- * 
+ *
  * $Log$
  * Revision 1.17  2019/01/18 16:10:27  mmaloney
  * dev
@@ -76,7 +76,7 @@ import org.opendcs.logging.OpenDcsJulFormatter;
 import java.util.logging.LogManager;
 
 /**
- * This class is an adapter to make the log messages from libraries that use 
+ * This class is an adapter to make the log messages from libraries that use
  * "java.util.logging" visible in OpenDCS. It funnels log messages to the
  * OpenDCS logging infrastructure.
  * @author mmaloney
@@ -89,10 +89,12 @@ public class JavaLoggerAdapter extends Handler
 	private static Formatter myFormatter = null;
 	private static boolean initialized = false;
 	private static boolean doForward = true;
-	
+	// The following get really noisy at even FINE (JUL Level) so exclude them unless explicitly called out in a properties file.
+	private static final String HIDE_BY_DEFAULT[] = new String[] {"java.awt","oracle","sun.awt", "javax.swing"};
+
 	/** Singleton access only */
 	public static JavaLoggerAdapter instance() { return _instance; }
-	
+
 	private JavaLoggerAdapter()
 	{
 	}
@@ -120,7 +122,8 @@ public class JavaLoggerAdapter extends Handler
 =======
 
 		/* if the property wasn't set. tweak the log, otherwise let the user have what they wanted. */
-		if(System.getProperty("java.util.logging.config.file") == null) {
+		if(System.getProperty("java.util.logging.config.file") == null)
+		{
 			OpenDcsJulFormatter formatter = new OpenDcsJulFormatter();
 			java.util.logging.Logger globalLogger = java.util.logging.Logger.getLogger("");
 			Handler handlers[] = globalLogger.getHandlers();
@@ -134,6 +137,19 @@ public class JavaLoggerAdapter extends Handler
 					}
 				}
 			}
+
+			for(String path : HIDE_BY_DEFAULT)
+			{
+				java.util.logging.Logger logger = java.util.logging.Logger.getLogger(path);
+				if (logger == null || logger == globalLogger)
+				{
+					continue;
+				}
+				else
+				{
+					logger.setLevel(Level.SEVERE); // HIDE detail but make sure critical message are sent
+				}
+			}
 		}
 >>>>>>> 0348befa (Modifiy Adapter to only do work if user has not set the property.)
 	}
@@ -143,7 +159,7 @@ public class JavaLoggerAdapter extends Handler
 	{
 		throw new RuntimeException("This should no longer get called.");
 	}
-	
+
 	private int mapPriority(LogRecord record)
 	{
 		if (record.getLevel() == Level.SEVERE) return Logger.E_FAILURE;
