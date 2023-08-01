@@ -70,6 +70,9 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
+import org.opendcs.logging.OpenDcsJulFormatter;
+
 import java.util.logging.LogManager;
 
 /**
@@ -106,6 +109,7 @@ public class JavaLoggerAdapter extends Handler
 		if (initialized)
 			return;
 		initialized = true;
+<<<<<<< HEAD
 		doForward = _doForward;
 		JavaLoggerAdapter.ilexLogger = ilexLogger;
 		
@@ -113,21 +117,31 @@ public class JavaLoggerAdapter extends Handler
 		
 		globalLogger.addHandler(instance());
 		globalLogger.setLevel(Level.ALL);
+=======
+
+		/* if the property wasn't set. tweak the log, otherwise let the user have what they wanted. */
+		if(System.getProperty("java.util.logging.config.file") == null) {
+			OpenDcsJulFormatter formatter = new OpenDcsJulFormatter();
+			java.util.logging.Logger globalLogger = java.util.logging.Logger.getLogger("");
+			Handler handlers[] = globalLogger.getHandlers();
+			if (handlers != null && handlers.length > 0)
+			{
+				for( Handler h: handlers)
+				{
+					if(h instanceof ConsoleHandler) {
+						h.setFormatter(formatter);
+						h.setLevel(Level.SEVERE);
+					}
+				}
+			}
+		}
+>>>>>>> 0348befa (Modifiy Adapter to only do work if user has not set the property.)
 	}
 
 	@Override
 	public void publish(LogRecord record)
 	{
-		if (!doForward)
-			return;
-		if (myFormatter == null)
-			myFormatter = new JavaLoggerFormatter();
-		String s = myFormatter.format(record);
-//if (record.getLoggerName().contains("ConnectionPersistenceManager")
-// || record.getLoggerName().contains("AbstractCwmsDbDao"))
-//	System.err.println("JavaLoggerAdapter '" + s + "'");
-		
-		ilexLogger.log(mapPriority(record), s);
+		throw new RuntimeException("This should no longer get called.");
 	}
 	
 	private int mapPriority(LogRecord record)
@@ -152,59 +166,5 @@ public class JavaLoggerAdapter extends Handler
 	public void close() throws SecurityException
 	{
 		// Nothing to do
-	}
-
-	public static void main(String[] args)
-	{
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
-		Logger.instance().info("Before initialize -- message direct to Ilex Logger.");
-		
-		JavaLoggerAdapter.initialize(Logger.instance(), true, "");
-		
-		Logger.instance().info("After initialize -- message direct to Ilex Logger.");
-		
-		java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
-		
-		rootLogger.log(Level.INFO, "INFO message sent to java root logger.");
-		
-		String cname = JavaLoggerAdapter.class.getName();
-		java.util.logging.Logger myLogger = java.util.logging.Logger.getLogger(cname);
-		myLogger.setLevel(Level.FINEST);
-		myLogger.log(Level.SEVERE, "SEVERE for cname=" + cname);
-		myLogger.log(Level.WARNING, "WARNING for cname=" + cname);
-		myLogger.log(Level.INFO, "INFO for cname=" + cname);
-		myLogger.log(Level.CONFIG, "CONFIG for cname=" + cname);
-		myLogger.log(Level.FINE, "FINE for cname=" + cname);
-		myLogger.log(Level.FINER, "FINER for cname=" + cname);
-		myLogger.log(Level.FINEST, "FINEST for cname=" + cname);
-		Logger.instance().debug3("Direct DEBUG_3 message to IlexLogger.");
-	}
-}
-
-class JavaLoggerFormatter
-	extends Formatter
-{
-	@Override
-	public String format(LogRecord record)
-	{
-    	String msg = record.getMessage();
-        try 
-        {
-            Object parameters[] = record.getParameters();
-            if ((parameters != null && parameters.length > 0)
-             &&    (msg.indexOf("{0") >= 0 || msg.indexOf("{1") >=0 
-                 || msg.indexOf("{2") >= 0 || msg.indexOf("{3") >=0))
-            {
-            	msg = java.text.MessageFormat.format(msg, parameters);
-            }
-        } catch (Exception ex) { msg = record.getMessage(); }
-		
-        Throwable t = record.getThrown();
-        if (t != null)
-        	msg = msg + " (" + t.toString() + ")";
-        
-        String ret = record.getLoggerName() + ": " + msg;
-//System.err.println("JavaLoggerFormatter returning '" + ret + "'");
-		return ret;
 	}
 }
