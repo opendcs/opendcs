@@ -66,10 +66,13 @@ public class Property
     }
 
     /**
-     * Retrieve the real value of a property from a location that may be the value itself
+     * Retrieve the real value of a property from a location that may be defined in the provided the value itself
      * or perhaps the environment as determined by a given provider.
      *
-     * If the value cannot be retrieved the defaultValue is returned
+     * If the value cannot be retrieved the defaultValue is returned.
+     *
+     * If called directly should only have the contents of the parts between ${ and }
+     * for an individual value. Otherwise this is intended to be called from EnvExpander
      *
      * @param value value from a source such as the database or xml files
      * @param defaultValue
@@ -84,28 +87,14 @@ public class Property
         {
             return defaultValue;
         }
-        else if(!value.startsWith("${"))
-        {
-            return value;
-        }
-        else if(value.startsWith("\\${"))
-        {
-            return value.substring(1);
-        }
         else
         {
             Iterator<PropertyValueProvider> providers = loader.iterator();
-            int closingCurly = value.lastIndexOf("}");
-            if(closingCurly <= 2)
-            {
-                throw new IOException("A property value to be expanded must be a string enclosed by ${ and }. Value was " + value);
-            }
-            String valueStr = value.substring(2,closingCurly);
             while(providers.hasNext())
             {
                 PropertyValueProvider p = providers.next();
-                if (p.canProcess(valueStr)) {
-                    String realValue = p.processValue(valueStr, props, env);
+                if (p.canProcess(value)) {
+                    String realValue = p.processValue(value, props, env);
                     if (realValue == null)
                     {
                         return defaultValue;
@@ -116,8 +105,8 @@ public class Property
                     }
                 }
             }
-            Logger.instance().warning("Unable to find processor for variable: " + value + " returning default.");
+            Logger.instance().warning("Unable to find processor for variable: " + value + " origin value.");
         }
-        return defaultValue;
+        return value;
     }
 }
