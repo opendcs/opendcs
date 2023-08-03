@@ -22,8 +22,8 @@ public class PropertyProviderTest
     private static final String ENV_VAR_NAME ="THE_TEST_ENV_VAR";
     private static final String PROP_VAR = "TEST_PROP_VAR";
     private static final String PROP_VAR_NAME ="test.provider.prop";
-    static File secretFileProperty = null; 
-    
+    static File secretFileProperty = null;
+
     static EnvironmentVariables envVars = new EnvironmentVariables();
 
     @ParameterizedTest
@@ -42,14 +42,6 @@ public class PropertyProviderTest
     {
         final String value = "TEST_DEFAULT_VALUE";
         assertEquals(value,Property.getRealPropertyValue(null, value));
-    }
-
-    @Test 
-    void test_throws_when_def_not_right() throws Exception
-    {
-        assertThrows(IOException.class, () -> {
-            String value = Property.getRealPropertyValue("${missing end curly");
-        }, "Failed to process bad definition correctly");
     }
 
     @BeforeAll
@@ -71,15 +63,15 @@ public class PropertyProviderTest
     @Test
     public void test_default_providers() throws Exception
     {
-        final String resultFile = Property.getRealPropertyValue("${file."+secretFileProperty.getAbsolutePath()+"}");
+        final String resultFile = Property.getRealPropertyValue("file."+secretFileProperty.getAbsolutePath());
         assertEquals(SECRET_FILE_VAR, resultFile, "Could not properly retrieve variable from file.");
 
-        envVars.execute(() ->{
-            final String envVar = Property.getRealPropertyValue("${env." + ENV_VAR_NAME + "}");
+        envVars.execute(() -> {
+            final String envVar = Property.getRealPropertyValue("env." + ENV_VAR_NAME);
             assertEquals(ENV_VAR, envVar, "Could not properly retrieve variable from environment.");
         });
 
-        final String propVar = Property.getRealPropertyValue("${java." + PROP_VAR_NAME +"}");
+        final String propVar = Property.getRealPropertyValue("java." + PROP_VAR_NAME);
         assertEquals(PROP_VAR, propVar,"Could not properly retrieve variable from java system properties.");
 
         final String passThroughExpected = "\\${test}";
