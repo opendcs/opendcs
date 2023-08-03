@@ -108,7 +108,7 @@ public class Property
             {
                 PropertyValueProvider p = providers.next();
                 if (p.canProcess(valueStr)) {
-                    String realValue = p.processValue(valueStr);
+                    String realValue = p.processValue(valueStr, props, env);
                     if (realValue == null)
                     {
                         return defaultValue;
