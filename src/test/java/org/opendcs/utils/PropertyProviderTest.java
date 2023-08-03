@@ -13,14 +13,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import fixtures.FileUtils;
+import ilex.util.EnvExpander;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 public class PropertyProviderTest
 {
-    private static final String SECRET_FILE_VAR = "TEST_FILE_VAR";
-    private static final String ENV_VAR = "TEST_ENV_VAR";
+    private static final String SECRET_FILE_VAR = "secret file value";
+    private static final String ENV_VAR = "test env value";
     private static final String ENV_VAR_NAME ="THE_TEST_ENV_VAR";
-    private static final String PROP_VAR = "TEST_PROP_VAR";
+    private static final String PROP_VAR = "test prop value";
     private static final String PROP_VAR_NAME ="test.provider.prop";
     static File secretFileProperty = null;
 
@@ -78,5 +79,18 @@ public class PropertyProviderTest
         final String passThroughVar = Property.getRealPropertyValue(passThroughExpected);
         assertEquals(passThroughExpected, passThroughVar, "Passthrough did not work.");
 
+    }
+
+
+    @ParameterizedTest
+    @CsvSource({
+        "Hello ${env." + ENV_VAR_NAME + "}_${" + PROP_VAR_NAME + "},Hello test env value_test prop value"
+    })
+    public void test_expansion(String valueIn, String valueExpanded) throws Exception
+    {
+        envVars.execute(() -> {
+            final String expansion = EnvExpander.expand(valueIn);
+            assertEquals(valueExpanded,expansion, "Could not set all values.");
+        });
     }
 }
