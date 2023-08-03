@@ -2,6 +2,8 @@ package org.opendcs.utils;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceLoader;
 
 import org.opendcs.spi.properties.PropertyValueProvider;
@@ -15,13 +17,14 @@ public class Property
     /**
      * Retrieve the real value of a property from a location that may be the value itself
      * or perhaps the environment as determined by a given provider.
-     * 
+     *
      * If the value cannot be retrieved null is returned.
-     * 
+     *
+     * For properties and environment System.getProperties and System.getenv are used.
+     *
      * @param value value from a source such as the database or xml files
-     * @param defaultValue 
      * @return expanded value
-     * @throws IOException any error with the definition of the value or retrieving it from it's real source.
+     * @throws IOException any error with the definition of the value source or retrieving it from it's real source.
      */
     public static String getRealPropertyValue(String value) throws IOException
     {
@@ -31,15 +34,51 @@ public class Property
     /**
      * Retrieve the real value of a property from a location that may be the value itself
      * or perhaps the environment as determined by a given provider.
-     * 
-     * If the value cannot be retrieved the defaultValue is returned
-     * 
+     *
+     * If the value cannot be retrieved null is returned.
+     *
      * @param value value from a source such as the database or xml files
-     * @param defaultValue 
+     * @param defaultValue value returned if none founded
+     * @return expanded value
+     * @throws IOException any error with the definition of the value source or retrieving it from it's real source.
+     */
+    public static String getRealPropertyValue(String value, String defaultValue) throws IOException
+    {
+        return getRealPropertyValue(value, defaultValue, System.getProperties(), System.getenv());
+    }
+
+    /**
+     * Retrieve the real value of a property from a location that may be the value itself
+     * or perhaps the environment as determined by a given provider.
+     *
+     * If the value cannot be retrieved null is returned.
+     *
+     * @param value value from a source such as the database or xml files
+     * @param defaultValue value returned if none founded
+     * @param props Java Properties object to use for properties source
+     * @param env env map to use for retrieving environment values.
+     * @return expanded value
+     * @throws IOException any error with the definition of the value source or retrieving it from it's real source.
+     */
+    public static String getRealPropertyValue(String value, Properties props, Map<String,String> env) throws IOException
+    {
+        return getRealPropertyValue(value, null, props, env);
+    }
+
+    /**
+     * Retrieve the real value of a property from a location that may be the value itself
+     * or perhaps the environment as determined by a given provider.
+     *
+     * If the value cannot be retrieved the defaultValue is returned
+     *
+     * @param value value from a source such as the database or xml files
+     * @param defaultValue
+     * @param props Java Properties object to use for properties source
+     * @param env env map to use for retrieving environment values.
      * @return expanded value
      * @throws IOException any error with the definition of the value or retrieving it from it's real source.
      */
-    public static String getRealPropertyValue(String value, String defaultValue) throws IOException
+    public static String getRealPropertyValue(String value, String defaultValue, Properties props, Map<String,String> env) throws IOException
     {
         if(value == null)
         {
@@ -66,7 +105,7 @@ public class Property
             {
                 PropertyValueProvider p = providers.next();
                 if (p.canProcess(valueStr)) {
-                    String realValue = p.processValue(valueStr);
+                    String realValue = p.processValue(valueStr, props, env);
                     if (realValue == null)
                     {
                         return defaultValue;
