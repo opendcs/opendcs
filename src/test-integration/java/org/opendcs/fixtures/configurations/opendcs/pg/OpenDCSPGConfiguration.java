@@ -187,6 +187,10 @@ public class OpenDCSPGConfiguration implements Configuration
         {
             started.set(true);
         }
+        catch(Exception ex)
+        {
+            fail("Unable to initialize configuration",ex);
+        }
     }
 
     @Override
