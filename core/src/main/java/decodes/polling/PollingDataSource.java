@@ -22,6 +22,7 @@
  */
 package decodes.polling;
 
+import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -305,7 +306,7 @@ public class PollingDataSource extends DataSourceExec
 		if (routingSpecThread != null && routingSpecThread.getMyExec() != null)
 			controller.setDacqEventLogger(routingSpecThread.getMyExec().getDacqEventLogger());
 		
-		authenticateClient = PropertiesUtil.getIgnoreCase(aggProps, "authenticateClient");
+		authenticateClient = EnvExpander.expand(PropertiesUtil.getIgnoreCase(aggProps, "authenticateClient"));
 		
 		controller.start();
 	}
