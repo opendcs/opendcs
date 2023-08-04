@@ -1,5 +1,7 @@
 package org.opendcs.fixtures.configurations.opendcs.pg;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -184,6 +186,10 @@ public class OpenDCSPGConfiguration implements Configuration
         synchronized(started)
         {
             started.set(true);
+        }
+        catch(Exception ex)
+        {
+            fail("Unable to initialize configuration",ex);
         }
     }
 
