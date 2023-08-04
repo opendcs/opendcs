@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.io.File;
 
+import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
@@ -175,7 +176,7 @@ public class LrgsDataSource extends DataSourceExec
         }
         if (h != null)
         {
-            host = h;
+            host = EnvExpander.expand(h);
         }
         log(Logger.E_DEBUG3,
             "LrgsDataSource '" + dbDataSource.getName() + "' host="
@@ -184,7 +185,10 @@ public class LrgsDataSource extends DataSourceExec
         String ports = PropertiesUtil.getIgnoreCase(allProps, "port");
         if (ports != null)
         {
-            try { port = Integer.parseInt(ports); }
+            try
+            {
+                port = Integer.parseInt(EnvExpander.expand(ports));
+            }
             catch(NumberFormatException e)
             {
                 throw new DataSourceException("LRGS Data source '"
@@ -197,7 +201,9 @@ public class LrgsDataSource extends DataSourceExec
             // No port specified -- use default
             port = -1;
         }
-
+        // Username and password, if stored in properties
+        // will be expanded at time of use to reduce the time they are 
+        // in memory... and to avoid logging them.
         username = PropertiesUtil.getIgnoreCase(allProps, "username");
         if (username == null)
         {
@@ -208,11 +214,27 @@ public class LrgsDataSource extends DataSourceExec
             throw new DataSourceException("LRGS Data source '"
                     + host + "': missing user name");
         }
+        if (!(username.startsWith("${") && username.endsWith("}")))
+        {
+            Logger.instance()
+                  .warning(
+                    "It appears that your username is saved directly in the property. This is not secure. " +
+                    "It recommended that you migrate to one of the properties providers such as environment or secrets files."
+                );
+        }
 
         password = PropertiesUtil.getIgnoreCase(allProps, "password");
         if (password != null && password.trim().length() == 0)
         {
             password = null;
+        }
+        else if (!(password.startsWith("${") && password.endsWith("}")))
+        {
+            Logger.instance()
+                  .warning(
+                    "It appears that your password is saved directly in the property. This is not secure. " +
+                    "It recommended that you migrate to one of the properties providers such as environment or secrets files."
+                );
         }
 
         String snl = PropertiesUtil.getIgnoreCase(allProps, "sendnl");
@@ -923,6 +945,8 @@ public class LrgsDataSource extends DataSourceExec
         hangup();
         try
         {
+            final String realUserName = EnvExpander.expand(username);
+            final String realPassword = EnvExpander.expand(password);
             if (port == -1)
             {
                 lddsClient = new LddsClient(host);
@@ -941,11 +965,11 @@ public class LrgsDataSource extends DataSourceExec
             lddsClient.connect();
             if (password != null)
             {
-                lddsClient.sendAuthHello(username, password);
+                lddsClient.sendAuthHello(realUserName, realPassword);
             }
             else
             {
-                lddsClient.sendHello(username);
+                lddsClient.sendHello(realUserName);
             }
 
             log(Logger.E_INFORMATION, "Connected to DDS server at "
