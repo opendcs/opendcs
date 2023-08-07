@@ -720,6 +720,17 @@ public class LrgsDataSource extends DataSourceExec
             if (MaxConsecutiveBadMessages < 0)
             {
                 log(Logger.E_DEBUG1, "Unable to parse header for station because: " + e.getLocalizedMessage());
+                if( dcpMsg != null)
+                {
+                    RawMessage ret = new RawMessage(dcpMsg.getData());
+                    ret.setOrigDcpMsg(dcpMsg);
+                    ret.dataSourceName = getName();
+                    return ret;
+                }
+                else
+                {
+                    return null;
+                }
             }
             else if (consecutiveBadMessages >= MaxConsecutiveBadMessages)
             {
@@ -729,7 +740,10 @@ public class LrgsDataSource extends DataSourceExec
                     "Too many consecutive bad messages from '"
                     + dbDataSource.getName() + "': closing.");
             }
-            return getRawMessage();
+            else
+            {
+                return getRawMessage();
+            }
         }
         // Allow UnknownPlatformException to be propagated.
     }
