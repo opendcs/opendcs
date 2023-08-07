@@ -282,7 +282,10 @@ public class CmdLineArgs
 		if (fn != null && fn.length() > 0)
 		{
 			String procname = Logger.instance().getProcName();
-			try { Logger.setLogger(new FileLogger(procname, fn)); }
+			try
+			{
+				Logger.setLogger(new FileLogger(procname, fn,100*1024*1024)); // 100 MegaBytes
+			}
 			catch(IOException e)
 			{
 				System.err.println("Cannot open log file '" + fn + "': " + e);
