@@ -3,6 +3,9 @@
 *
 * $Log$
 *
+* 2023/08/04 Baoyu Yin
+* Fixed wrong timestamps for U1 data for the first 0-5 minutes during day change - ING -681
+*
 * 2023/02/21 Baoyu Yin
 * Adding raw messages to the printout messages - ING 633
 *
@@ -161,6 +164,7 @@ public class Nos6Min
                                 }
                                 cal.add(Calendar.MINUTE, -6);
                                 redundantDataTime = cal.getTime();
+                                cal.add(Calendar.MINUTE, 6);
                                 Logger.instance().info(module + " daynum=" + x + ", hr=" + y 
                                         + ", min=" + timeOffset + ", dataTime=" + dataTime 
                                         + ", redundantTime=" + redundantDataTime);
