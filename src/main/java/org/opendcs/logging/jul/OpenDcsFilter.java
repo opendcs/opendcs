@@ -9,8 +9,8 @@ import decodes.cwms.CwmsConnectionPool;
 public class OpenDcsFilter implements Filter
 {
     
-    private static final String HIDE_BY_DEFAULT[] = new String[] {"java.awt","sun.awt", "javax","sun","usace", "cwmsdb", "rma", "hec", "wcds", "com.rma"};
-	private static final String HIDE_IF_CONN_TRACE_NOT_SET[] = new String[] {"org.jooq","oracle", "usace.cwms"};
+    private static final String HIDE_BY_DEFAULT[] = new String[] {"java", "sun", "cwmsdb", "rma", "hec", "wcds", "com.rma"};
+	private static final String HIDE_IF_CONN_TRACE_NOT_SET[] = new String[] {"org.jooq","oracle", "usace"};
     private boolean trace = Boolean.parseBoolean(System.getProperty(CwmsConnectionPool.POOL_TRACE_PROPERTY,"false"));
 
     private ArrayList<String> filterOut = new ArrayList<>();
