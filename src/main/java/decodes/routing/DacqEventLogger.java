@@ -24,13 +24,13 @@ public class DacqEventLogger
 
 	public DacqEventLogger(Logger parent)
 	{
-		super("");
+		super("", parent != null ? parent.getMinLogPriority() : Logger.E_INFORMATION);
 		this.parent = parent;
-		if (parent != null)
-			this.setMinLogPriority(parent.getMinLogPriority());
 		
 		if (TsdbAppTemplate.getAppInstance() != null)
+		{
 			appId = TsdbAppTemplate.getAppInstance().getAppId();
+		}
 	}
 
 	@Override
