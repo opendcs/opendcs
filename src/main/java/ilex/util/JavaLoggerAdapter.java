@@ -73,6 +73,8 @@ import java.util.logging.LogRecord;
 
 import org.opendcs.logging.OpenDcsJulFormatter;
 
+import decodes.cwms.CwmsConnectionPool;
+
 import java.util.logging.LogManager;
 
 /**
@@ -90,7 +92,8 @@ public class JavaLoggerAdapter extends Handler
 	private static boolean initialized = false;
 	private static boolean doForward = true;
 	// The following get really noisy at even FINE (JUL Level) so exclude them unless explicitly called out in a properties file.
-	private static final String HIDE_BY_DEFAULT[] = new String[] {"java.awt","oracle","sun.awt", "javax.swing"};
+	private static final String HIDE_BY_DEFAULT[] = new String[] {"java.awt","sun.awt", "javax","sun","usace", "cwmsdb", "rma", "hec", "wcds", "com.rma"};
+	private static final String HIDE_IF_CONN_TRACE_NOT_SET[] = new String[] {"org.jooq","oracle", "usace.cwms"};
 
 	/** Singleton access only */
 	public static JavaLoggerAdapter instance() { return _instance; }
@@ -111,18 +114,11 @@ public class JavaLoggerAdapter extends Handler
 		if (initialized)
 			return;
 		initialized = true;
-<<<<<<< HEAD
-		doForward = _doForward;
-		JavaLoggerAdapter.ilexLogger = ilexLogger;
-		
-		java.util.logging.Logger globalLogger = java.util.logging.Logger.getLogger("");//LogManager.getLogManager().getLogger(globalName);
-		
-		globalLogger.addHandler(instance());
-		globalLogger.setLevel(Level.ALL);
-=======
+
 
 		/* if the property wasn't set. tweak the log, otherwise let the user have what they wanted. */
-		if(System.getProperty("java.util.logging.config.file") == null)
+		String existingLoggingConfig = System.getProperty("java.util.logging.config.file");
+		if (existingLoggingConfig == null)
 		{
 			OpenDcsJulFormatter formatter = new OpenDcsJulFormatter();
 			java.util.logging.Logger globalLogger = java.util.logging.Logger.getLogger("");
@@ -140,18 +136,40 @@ public class JavaLoggerAdapter extends Handler
 
 			for(String path : HIDE_BY_DEFAULT)
 			{
-				java.util.logging.Logger logger = java.util.logging.Logger.getLogger(path);
-				if (logger == null || logger == globalLogger)
+				setSevere(path, globalLogger);				
+			}
+
+			boolean trace = Boolean.parseBoolean(System.getProperty(CwmsConnectionPool.POOL_TRACE_PROPERTY,"false"));
+			if (!trace)
+			{
+				for(String path: HIDE_IF_CONN_TRACE_NOT_SET)
 				{
-					continue;
-				}
-				else
-				{
-					logger.setLevel(Level.SEVERE); // HIDE detail but make sure critical message are sent
+					setSevere(path, globalLogger);
 				}
 			}
 		}
->>>>>>> 0348befa (Modifiy Adapter to only do work if user has not set the property.)
+		else
+		{
+			System.out.println("Not tweaking logging setup because of existing config at " + existingLoggingConfig);
+		}
+	}
+
+	public static void initialize()
+	{
+		initialize(null, false);
+	}
+
+	private static void setSevere(String path, java.util.logging.Logger globalLogger)
+	{
+		java.util.logging.Logger logger = java.util.logging.Logger.getLogger(path);
+		if (logger == null || logger == globalLogger)
+		{
+			return;
+		}
+		else
+		{
+			logger.setLevel(Level.SEVERE); // HIDE detail but make sure critical message are sent
+		}	
 	}
 
 	@Override

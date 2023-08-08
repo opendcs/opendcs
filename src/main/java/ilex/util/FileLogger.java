@@ -12,6 +12,8 @@ import java.util.logging.Level;
 
 import org.opendcs.logging.IlexToSlf4jBridge;
 import org.opendcs.logging.OpenDcsJulFormatter;
+import org.opendcs.logging.jul.OpenDcsFileHandler;
+import org.opendcs.logging.jul.OpenDcsFilter;
 
 import static org.opendcs.logging.JULHelpers.ilexLevelToJulLevel;
 
@@ -106,11 +108,12 @@ public class FileLogger extends IlexToSlf4jBridge
         }
         else
         {
-            handler = new FileHandler(filename+".%g", maxLength, count);
+            handler = new OpenDcsFileHandler(filename+".%g", maxLength, count);
         }
         Level level = ilexLevelToJulLevel(this.minLogPriority);
         handler.setLevel(level);
         handler.setFormatter(new OpenDcsJulFormatter());
+        handler.setFilter(new OpenDcsFilter()); // to keep out all the extra loggers
         root.addHandler(handler);
         root.setLevel(level);
     }
