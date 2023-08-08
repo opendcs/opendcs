@@ -315,10 +315,12 @@ public class ChannelMap
 
 		ChanMaintenanceThread(ChannelMap cmap, String url, String fn)
 		{
+			super("ChannelMap-MaintenanceThread");
 			this.cmap = cmap;
 			this.localfn = fn;
 			channelsfile = new File(EnvExpander.expand(fn));
 			this.url = url;
+		
 		}
 
 		public void run()

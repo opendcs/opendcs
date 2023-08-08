@@ -76,6 +76,7 @@ public class XRWriteThread extends Thread
 
 	public XRWriteThread()
 	{
+		super("XRWriteThread");
 		dcpMonitor = DcpMonitor.instance();
 		_shutdown = false;
 	}
