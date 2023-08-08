@@ -51,6 +51,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 {
     private static Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
 
+    public static final String POOL_TRACE_PROPERTY = "cwms.connection.pool.trace";
+
     private static TreeMap<CwmsConnectionInfo,CwmsConnectionPool> pools = new TreeMap<>((left,right)->{
         return mapCompare(left,right);
     });
@@ -63,7 +65,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 	private int unknownConnReturned = 0;
     private int connectionsClosedDuringGet = 0;
     private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
-    private static boolean trace = Boolean.parseBoolean(System.getProperty("cwms.connection.pool.trace", "false"));
+    private static boolean trace = Boolean.parseBoolean(System.getProperty(POOL_TRACE_PROPERTY, "false"));
 
 
 
