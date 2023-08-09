@@ -101,6 +101,7 @@ import java.util.Vector;
 
 import ilex.util.Logger;
 import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.Constants;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
