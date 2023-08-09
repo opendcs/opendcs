@@ -11,6 +11,8 @@
 
 package decodes.sql;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -19,6 +21,7 @@ import java.util.Date;
 
 import ilex.util.Logger;
 import ilex.util.TextUtil;
+import opendcs.dao.DaoBase;
 import ilex.util.Pair;
 
 import decodes.db.Constants;
@@ -27,7 +30,6 @@ import decodes.db.DatabaseObject;
 import decodes.db.DataPresentation;
 import decodes.db.PresentationGroup;
 import decodes.db.PresentationGroupList;
-import decodes.db.RoundingRule;
 
 
 /**
@@ -70,32 +72,41 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		// group inherits from).
 		Vector<Pair> parents = new Vector<Pair>();
 
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
+		String q =
 			"SELECT id, name, inheritsFrom, " +
 			"lastModifyTime, isProduction " +
-			"FROM PresentationGroup"
-		);
+			"FROM PresentationGroup";
 
-		while (rs != null && rs.next()) 
+		try(Connection conn = getConnection();
+			DaoBase dao = new DaoBase(this._dbio,"Presentation",conn);)
 		{
-			DbKey id = DbKey.createDbKey(rs, 1);
+			dao.doQuery(q, rs -> {
+				DbKey id = DbKey.createDbKey(rs, 1);
 
 			// We may already have this PG in memory. If so, skip it.
 			if (_pgList.getById(id) != null)
-				continue;
+			{
+				return;
+			}
 
 			// Make a new PresentationGroup object out of this
 			// ResultSet, but defer resolving any "inheritsFrom"
 			// values
-			makePG(rs, false);
+			try
+			{
+				makePG(rs, false);
+			}
+			catch(DatabaseException ex)
+			{
+				throw new SQLException("Unable to make presentation group object.",ex);
+			}
 
 			// Get the InheritsFrom field, and, if not null, store it
 			DbKey inheritsFromId = DbKey.createDbKey(rs, 3);
 			if (!inheritsFromId.isNull())
 				parents.add(new Pair(id, inheritsFromId));
+			});
 		}
-		stmt.close();
 
 		// Now resolve all the parents:
 		for (int i = 0; i < parents.size(); ++i) 
@@ -119,11 +130,12 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	* This is necessary to ensure that the PresentationGroupList is from
 	* the same Database as the PresentationGroup.
 	*
+	* @param conn Connection used for queries
 	* @param dbObj used, if necessary, to retrieve the correct database
 	* @param id the database ID
 	* @throws  DatabaseException if no matching PresentationGroup is found.
 	*/
-	public PresentationGroup get(DatabaseObject dbObj, DbKey id)
+	private PresentationGroup get(Connection conn, DatabaseObject dbObj, DbKey id)
 		throws DatabaseException
 	{
 		_pgList = dbObj.getDatabase().presentationGroupList;
@@ -133,10 +145,34 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		{
 			pg = new PresentationGroup();
 			pg.setId(id);
-			readPresentationGroup(pg, true);
+			readPresentationGroup(conn, pg, true);
 		}
 
 		return pg;
+	}
+
+	/**
+	* Get a PresentationGroup object by its ID number.
+	* This first looks in the list in memory, and if not found there, this
+	* attempts to go to the database to find it.
+	* This is necessary to ensure that the PresentationGroupList is from
+	* the same Database as the PresentationGroup.
+	*
+	* @param dbObj used, if necessary, to retrieve the correct database
+	* @param id the database ID
+	* @throws  DatabaseException if no matching PresentationGroup is found.
+	*/
+	private PresentationGroup get(DatabaseObject dbObj, DbKey id)
+		throws DatabaseException
+	{
+		try (Connection conn = getConnection();)
+		{
+			return get(conn,dbObj,id);
+		}
+		catch (SQLException ex)
+		{
+			throw new DatabaseException("Unable to get Presentation Group",ex);
+		}
 	}
 
 	/**
@@ -145,7 +181,27 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	  @param pg the PresentationGroup
 	  @param resolveInh if true, resolve inheritance also
 	*/
-	public void readPresentationGroup(PresentationGroup pg, boolean resolveInh)
+	public void readPresentationGroup(PresentationGroup pg, boolean resolveInh) throws DatabaseException
+	{
+		try(Connection conn = getConnection();)
+		{
+			readPresentationGroup(conn, pg, resolveInh);
+		}
+		catch (SQLException ex)
+		{
+			throw new DatabaseException("Unable to read Presentation group " + pg.getDisplayName(),ex);
+		}
+	}
+
+	/**
+	  * Passed a partially read PresentationGroup, read the entire contents
+	  * from the database and fill-in the passed object.
+	  * @param conn connection to use for this request
+	  * @param pg the PresentationGroup
+	  * @param resolveInh if true, resolve inheritance also
+	  *
+	  */
+	private void readPresentationGroup(Connection conn, PresentationGroup pg, boolean resolveInh)
 		throws DatabaseException
 	{
 		if (pg.getId() == Constants.undefinedId
@@ -161,42 +217,47 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		String query = "SELECT id, name, inheritsFrom, " +
 			           "lastModifyTime, isProduction " +
 			           "FROM PresentationGroup " + 
-			           "WHERE id = " + pg.getId();
-		try 
+			           "WHERE id = ?";
+		try (DaoBase dao = new DaoBase(this._dbio,"Presentation",conn);)
 		{
-			Statement stmt = createStatement();
-			ResultSet rs = stmt.executeQuery(query);
-			if (rs == null) throw new DatabaseException(
-				"No PresentationGroup found with id " + pg.getId());
+			Boolean found = dao.getSingleResult(query,(rs)-> {
+				pg.groupName = rs.getString(2);
+				// Add to database list of all PGs:
+				pg.getDatabase().presentationGroupList.add(pg);
 
-			// There should be only one row in the result set
-			rs.next();
-			pg.groupName = rs.getString(2);
-
-			// Add to database list of all PGs:
-			pg.getDatabase().presentationGroupList.add(pg);
-
-			// Resolve inheritance if we're supposed to:
-			if (resolveInh)
-			{
-				DbKey inheritsFromId = DbKey.createDbKey(rs, 3);
-				if (!inheritsFromId.isNull())
+				// Resolve inheritance if we're supposed to:
+				if (resolveInh)
 				{
-					PresentationGroup inheritsFrom = get(pg, inheritsFromId);
-					pg.inheritsFrom = inheritsFrom.groupName;
+					DbKey inheritsFromId = DbKey.createDbKey(rs, 3);
+					if (!inheritsFromId.isNull())
+					{
+						try
+						{
+							PresentationGroup inheritsFrom = get(conn, pg, inheritsFromId);
+							pg.inheritsFrom = inheritsFrom.groupName;
+						}
+						catch(DatabaseException ex)
+						{
+							throw new SQLException("Unable to get inherited group.",ex);
+						}
+					}
 				}
-			}
-		
-			pg.lastModifyTime = getTimeStamp(rs, 4, pg.lastModifyTime);
-			pg.isProduction = TextUtil.str2boolean(rs.getString(5));
-			readDataPresentations(pg, pg.getId());
 
-			stmt.close();
+				pg.lastModifyTime = getTimeStamp(rs, 4, pg.lastModifyTime);
+				pg.isProduction = TextUtil.str2boolean(rs.getString(5));
+				readDataPresentations(conn, pg, pg.getId());
+				return true;
+			},pg.getId());
+
+			if (found != true)
+			{
+				throw new DatabaseException("No PresentationGroup found with id " + pg.getId());
+			}
 		}
 		catch (SQLException sqle) 
 		{
 			throw new DatabaseException("Error on query '" + query
-				+ "': " + sqle.toString());
+				+ "': " + sqle.toString(),sqle);
 		}
 	}
 
@@ -253,39 +314,36 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	/**
 	* This reads the DataPresentation objects associated with
 	* a PresentationGroup.
+	* @param conn Connection used to query the database
 	* @param pg the PresentationGroup
 	* @param pgId the PresentationGroup database ID
 	*/
-	private void readDataPresentations(PresentationGroup pg, DbKey pgId)
-		throws DatabaseException
+	private void readDataPresentations(Connection conn, PresentationGroup pg, DbKey pgId)
+		throws SQLException
 	{
-		try 
+		try (DaoBase dao = new DaoBase(this._dbio,"Presentation",conn);)
 		{
-			Statement stmt = createStatement();
-			String q =
-				"SELECT DataPresentation.id, DataTypeId, UnitAbbr, " +
-				"EquipmentID, Standard, Code";
+			StringBuilder q = new StringBuilder();
+			q.append("SELECT DataPresentation.id, DataTypeId, UnitAbbr, " +
+				"EquipmentID, Standard, Code");
+
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-				q = q + ", maxDecimals";
-			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
-				q = q + ", MAX_VALUE, MIN_VALUE";
-
-			q = q + " FROM DataPresentation, DataType " +
-				"WHERE GroupId = " + pgId +
-				" AND DataTypeId = DataType.id";
-
-			ResultSet rs = stmt.executeQuery(q);
-
-			if (rs != null) 
 			{
-				while (rs.next())
-					makeDataPresentation(rs, pg);
+				q.append(", maxDecimals");
 			}
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+			{
+				q.append(", MAX_VALUE, MIN_VALUE");
+			}
+			q.append(" FROM DataPresentation, DataType " +
+				"WHERE GroupId = ?" +
+				" AND DataTypeId = DataType.id");
 
-			stmt.close();
+			dao.doQuery(q.toString(),rs -> makeDataPresentation(rs,pg),pgId);
 		}
-		catch (SQLException sqle) {
-			throw new DatabaseException(sqle.toString());
+		catch (SQLException ex)
+		{
+			throw new SQLException("Unable to read specific presentation group.",ex);
 		}
 	}
 
@@ -296,86 +354,48 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	* @param pg the PresentationGroup
 	*/
 	private void makeDataPresentation(ResultSet rs, PresentationGroup pg)
-		throws SQLException, DatabaseException
+		throws SQLException
 	{
-		DbKey dpId = DbKey.createDbKey(rs, 1);
-		DbKey dataTypeId = DbKey.createDbKey(rs, 2);
-		String unitAbbr = rs.getString(3);
-
-		String st = rs.getString(5);
-		String code = rs.getString(6);
-
-		DataPresentation dp = new DataPresentation(pg);
-		dp.setId(dpId);
-
-		dp.setUnitsAbbr(unitAbbr);
-		dp.setDataType(pg.getDatabase().dataTypeSet.get(dataTypeId, st, code));
-
-		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
+		try
 		{
-			int md = rs.getInt(7);
-			if (rs.wasNull())
-				dp.setMaxDecimals(Integer.MAX_VALUE);
-			else
-				dp.setMaxDecimals(md);
+			DbKey dpId = DbKey.createDbKey(rs, 1);
+			DbKey dataTypeId = DbKey.createDbKey(rs, 2);
+			String unitAbbr = rs.getString(3);
+
+			String st = rs.getString(5);
+			String code = rs.getString(6);
+
+			DataPresentation dp = new DataPresentation(pg);
+			dp.setId(dpId);
+
+			dp.setUnitsAbbr(unitAbbr);
+			dp.setDataType(pg.getDatabase().dataTypeSet.get(dataTypeId, st, code));
+
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
+			{
+				int md = rs.getInt(7);
+				if (rs.wasNull())
+					dp.setMaxDecimals(Integer.MAX_VALUE);
+				else
+					dp.setMaxDecimals(md);
+			}
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+			{
+				double v = rs.getDouble(8);
+				if (!rs.wasNull())
+					dp.setMaxValue(v);
+				v = rs.getDouble(9);
+				if (!rs.wasNull())
+					dp.setMinValue(v);
+			}
+
+			pg.addDataPresentation(dp);
 		}
-		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+		catch (DatabaseException ex)
 		{
-			double v = rs.getDouble(8);
-			if (!rs.wasNull())
-				dp.setMaxValue(v);
-			v = rs.getDouble(9);
-			if (!rs.wasNull())
-				dp.setMinValue(v);
+			throw new SQLException("Unable to set data Presentation ID.",ex);
 		}
-
-		pg.addDataPresentation(dp);
-
-//		// Now read this DataPresentation's RoundingRules
-//
-//		readRoundingRules(dpId, dp);
 	}
-
-//	/**
-//	* Reads the RoundingRules associated with a DataPresentation
-//	* @param dpId the DataPresentation database ID
-//	* @param dp the DataPresentation
-//	*/
-//	public void readRoundingRules(DbKey dpId, DataPresentation dp)
-//		throws SQLException, DatabaseException
-//	{
-//		Statement stmt = createStatement();
-//		ResultSet rs = stmt.executeQuery(
-//			"SELECT dataPresentationId, upperLimit, sigDigits " +
-//			"FROM RoundingRule " +
-//			"WHERE DataPresentationID = " + dpId
-//		);
-//
-//		if (rs != null) {
-//			while (rs.next()) {
-//				makeRoundingRule(rs, dp);
-//			}
-//		}
-//		stmt.close();
-//	}
-
-//	/**
-//	* Make a new RoundingRule associated with a particular DataPresentation
-//	* from a single row of a ResultSet.
-//	* @param rs  the JDBC result set
-//	* @param dp the DataPresentation
-//	*/
-//	private void makeRoundingRule(ResultSet rs, DataPresentation dp)
-//		throws SQLException, DatabaseException
-//	{
-//		RoundingRule rr = new RoundingRule(dp);
-//		
-//		double upperLimit = rs.getDouble(2);
-//		if (!rs.wasNull() && upperLimit != SQL_MAX_DOUBLE)
-//			rr.setUpperLimit(upperLimit);
-//		rr.sigDigits = rs.getInt(3);
-//		dp.addRoundingRule(rr);
-//	}
 
 	/**
 	* Write a PresentationGroup out to the database.  The object might
@@ -471,27 +491,6 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		}
 	}
 
-//	/**
-//	* This deletes a single DataPresentation.  All the RoundingRules
-//	* associated with this DataPresentation are also deleted.
-//	* The SQL database ID value of the DataPresentation must be set.
-//	* @param pg the PresentationGroup
-//	*/
-//	public void delete(DataPresentation dp)
-//		throws DatabaseException, SQLException
-//	{
-//		DbKey id = dp.getId();
-//
-//		String q = "DELETE FROM DataPresentation WHERE ID = " + id;
-//		executeUpdate(q);
-//
-//		dp.setId(Constants.undefinedId);
-//
-//		q = "DELETE FROM RoundingRule " +
-//			"WHERE DataPresentationID = " + id;
-//		tryUpdate(q);
-//	}
-//
 	/**
 	* Insert a new PresentationGroup into the database.
 	* This assigns the object a new ID number.
@@ -536,81 +535,6 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		for (int i = 0; i < v.size(); ++i)
 			insert(v.get(i));
 	}
-
-//	/**
-//	* This writes a DataPresentation into the database, when we're not
-//	* sure whether it's a new object or not.  Its SQL DB ID is examined,
-//	* and if not set, this is considered to be a new object.
-//	* Regardless, db must have its myGroup member set to point to its
-//	* PresentationGroup parent, and that must not be new.
-//	* @param dp the DataPresentation
-//	*/
-//	public void write(DataPresentation dp)
-//		throws DatabaseException, SQLException
-//	{
-//		if (dp.idIsSet()) update(dp);
-//		else insert(dp);
-//	}
-
-//	/**
-//	* This updates an existing DataPresentation in the database.
-//	* This DataPresentation must also have its myGroup member be a valid
-//	* reference to a PresentationGroup, which is not new.
-//	* Note that there is no update method for RoundingRules.  When a set
-//	* of RoundingRules belonging to a DataPresentation has possibly changed,
-//	* this I/O class deletes all of the existing RoundingRules in the
-//	* database, and then adds them all back fresh.
-//	* @param dp the DataPresentation
-//	*/
-//	public void update(DataPresentation dp)
-//		throws DatabaseException, SQLException
-//	{
-//		DbKey id = dp.getId();
-//		DbKey pgId = dp.getGroup().getId();
-//
-//		String q =
-//			"UPDATE DataPresentation SET " +
-//			  "GroupId = " + pgId + ", " +
-//			  "DataTypeId = " + dp.getDataType().getId() + ", " +
-//			  "UnitAbbr = " + sqlString(dp.getUnitsAbbr());
-////			  "EquipmentID = " + getEqIdStr(dp);
-//		int md = dp.getMaxDecimals();
-//		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-//		{
-//			q = q + ", maxDecimals = " + 
-//				(md == Integer.MAX_VALUE ? "NULL" : ("" + md));
-//			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
-//			{
-//				q = q + ", MAX_VALUE = " + sqlOptDouble(dp.getMaxValue());
-//				q = q + ", MIN_VALUE = " + sqlOptDouble(dp.getMinValue());
-//			}
-//		}
-//
-//		q = q + " WHERE ID = " + id;
-//		executeUpdate(q);
-//
-//		// Delete all the existing RoundingRules in the database.
-//
-//		q = "DELETE FROM RoundingRule WHERE DataPresentationID = " + id;
-//		tryUpdate(q);
-//
-//		// Now insert them all back in
-//
-////		insertAllRoundingRules(dp);
-//	}
-
-//	/**
-//	* This method inserts all of the RoundingRules belonging to a
-//	* particular DataPresentation into the database.
-//	* @param dp the DataPresentation
-//	*/
-//	public void insertAllRoundingRules(DataPresentation dp)
-//		throws DatabaseException, SQLException
-//	{
-//		Vector<RoundingRule> rrv = dp.roundingRules;
-//		for (int i = 0; i < rrv.size(); ++i)
-//			insert(rrv.get(i) );
-//	}
 
 	/**
 	* Insert a new DataPresentation into the database.
@@ -672,40 +596,6 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		}
 	}
 
-
-//	/**
-//	* Insert a new RoundingRule into the database.
-//	* rr must have a valid DataPresentation as its parent member, and
-//	* that parent must not be new (i.e. that DataPresentation must have
-//	* its ID set.)
-//	* Note that there is no update method for RoundingRules.  When a set
-//	* of RoundingRules belonging to a DataPresentation has possibly changed,
-//	* this I/O class deletes all of the existing RoundingRules in the
-//	* database, and then adds them all back fresh.
-//	* @param rr the RoundingRule
-//	*/
-//	public void insert(RoundingRule rr)
-//		throws DatabaseException, SQLException
-//	{
-//		DbKey dpId = rr.getParent().getId();
-//
-//		String upperLimit = "" +
-//			(rr.getUpperLimit() == Constants.undefinedDouble ?
-//				SQL_MAX_DOUBLE : rr.getUpperLimit());
-//		
-//		String q;
-//		if (getDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
-//			q = "INSERT INTO RoundingRule VALUES (" +
-//			  	dpId + ", " + upperLimit
-//			  	+ rr.sigDigits + ", " +
-//			  	"100" +
-//				")";
-//		else // No max decimals in new table def.
-//			q = "INSERT INTO RoundingRule VALUES (" +
-//			  	dpId + ", " + upperLimit + ", " + rr.sigDigits + ")";
-//		executeUpdate(q);
-//	}
-
 	/**
 	* This computes the SQL string representation of the "InheritsFrom"
 	* field, from a PresentationGroup's inheritsFrom member.
@@ -765,17 +655,20 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	private DbKey name2id(String name)
 		throws SQLException
 	{
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT id FROM PresentationGroup where name = "
-			+ sqlReqString(name));
-
-		DbKey ret = Constants.undefinedId;
-		if (rs != null && rs.next())
-			ret = DbKey.createDbKey(rs, 1);
-
-		stmt.close();
-		return ret;
+		try(Connection conn = getConnection();
+			PreparedStatement stmt = conn.prepareStatement("SELECT id FROM PresentationGroup where name = ?");)
+		{
+			stmt.setString(1,name);
+			try(ResultSet rs = stmt.executeQuery();)
+			{
+				DbKey ret = Constants.undefinedId;
+				if (rs != null && rs.next())
+				{
+					ret = DbKey.createDbKey(rs, 1);
+				}
+				return ret;
+			}
+		}
 	}
 
 	/**
@@ -784,7 +677,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 	*/
 	public Date getLMT(PresentationGroup pg)
 	{
-		try
+		try(Connection conn = getConnection();)
 		{
 			DbKey id = pg.getId();
 			if (id != null && !id.isNull())
@@ -793,24 +686,27 @@ public class PresentationGroupListIO extends SqlDbObjIo
 				try { pg.setId(id); }
 				catch(DatabaseException ex) {} // guaranteed not to happen.
 			}
-
-			Statement stmt = createStatement();
 			String q = 
-				"SELECT lastModifyTime FROM PresentationGroup WHERE id = " + id;
-			ResultSet rs = stmt.executeQuery(q);
-
-			// Should be only 1 record returned.
-			if (rs == null || !rs.next())
+				"SELECT lastModifyTime FROM PresentationGroup WHERE id = ?";
+			try(PreparedStatement stmt = conn.prepareStatement(q);)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"Cannot get SQL LMT for Presentation Group '"
-					+ pg.groupName + "' id=" + pg.getId());
-				return null;
-			}
+				stmt.setLong(1,id.getValue());
+				try(ResultSet rs = stmt.executeQuery(q);)
+				{
+								// Should be only 1 record returned.
+					if (rs == null || !rs.next())
+					{
+						Logger.instance().log(Logger.E_WARNING,
+							"Cannot get SQL LMT for Presentation Group '"
+							+ pg.groupName + "' id=" + pg.getId());
+						return null;
+					}
 
-			Date ret = getTimeStamp(rs, 1, (Date)null);
-			stmt.close();
-			return ret;
+					Date ret = getTimeStamp(rs, 1, (Date)null);
+					stmt.close();
+					return ret;
+				}
+			}
 		}
 		catch(SQLException ex)
 		{
@@ -821,4 +717,3 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		}
 	}
 }
-
