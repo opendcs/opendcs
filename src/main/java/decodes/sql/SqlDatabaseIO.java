@@ -116,6 +116,7 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
+import opendcs.util.sql.WrappedConnection;
 import ilex.util.AuthException;
 import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
@@ -2074,19 +2075,13 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	public synchronized void writeEnumList(EnumList enumList)
 		throws DatabaseException
 	{
-		EnumDAI enumSqlDao = makeEnumDAO();
-
-		try
+		try (EnumDAI enumSqlDao = makeEnumDAO();)
 		{
 			enumSqlDao.writeEnumList(enumList);
 		}
 		catch (DbIoException ex)
 		{
 			throw new DatabaseException(ex.getLocalizedMessage());
-		}
-		finally
-		{
-			enumSqlDao.close();
 		}
 	}
 
@@ -2108,6 +2103,7 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	public Connection getConnection()
 	{
 		if (poolingDataSource != null)
+		{
 			try
 			{
 				return poolingDataSource.getConnection();
@@ -2117,7 +2113,8 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 				Logger.instance().warning(
 					"SqlDatabaseIO.getConnection() Cannot get pooled connection: " + ex);
 			}
-		return _conn;
+		}
+		return new WrappedConnection(_conn, (c)->{/* do nothing */});
 	}
 
 	public void setConnection(Connection conn)
