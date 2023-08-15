@@ -72,10 +72,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.logging.Level;
 
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
+import opendcs.util.logging.JulUtils;
 import lrgs.gui.DecodesInterface;
 import decodes.comp.ComputationProcessor;
 import decodes.db.Database;
@@ -302,8 +304,10 @@ public class RoutingScheduler
 			}
 			catch(Exception ex)
 			{
+				java.util.logging.Logger log = java.util.logging.Logger.getLogger("");
 				String msg = module + " Unexpected exception while " + action + ": " + ex;
 				Logger.instance().warning(msg);
+				JulUtils.logStackTrace(log, Level.WARNING, ex.getStackTrace(), 0);
 				System.err.println(msg);
 				ex.printStackTrace(System.err);
 				shutdownFlag = true;
