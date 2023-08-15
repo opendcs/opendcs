@@ -25,7 +25,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import ilex.util.Logger;
-
+import opendcs.util.sql.WrappedConnection;
+import decodes.cwms.CwmsConnectionPool;
 import decodes.db.Constants;
 import decodes.db.IdDatabaseObject;
 import decodes.db.DatabaseException;
@@ -482,7 +483,8 @@ public class SqlDbObjIo
 
 	public Connection getConnection()
 	{
-		return connection;
+		// needed as we shift in proper usage of the Connection objects.
+		return new WrappedConnection(connection, (c) -> {});
 	}
 
 	public void setConnection(Connection conn)
