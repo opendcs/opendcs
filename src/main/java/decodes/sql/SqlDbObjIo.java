@@ -297,23 +297,14 @@ public class SqlDbObjIo
 	public void executeUpdate(String q)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = null;
-
-		try
+		try (Statement stmt = createStatement();)
 		{
-			stmt = createStatement();
-
 			Logger.instance().log(Logger.E_DEBUG2,
 				"Executing update query '" + q + "'");
 			int numChanged = stmt.executeUpdate(q);
 			if (numChanged == 0)
 				throw new DatabaseException("Failed to update the " +
 					"SQL database.  The query was \"" + q + "\"");
-		}
-		finally
-		{
-			try { if (stmt != null) stmt.close(); }
-			catch(Exception x) {}
 		}
 	}
 
