@@ -121,6 +121,8 @@ then
 	EDITDB=$DH/edit-db.init
 fi
 
+echo "Importing DECODES loading apps ..."
+$DH/bin/dbimport -l $LOG -r $EDITDB/loading-app/*.xml >>$LOG 2>&1
 echo "Importing Enumerations from edit-db ..."
 $DH/bin/dbimport -l $LOG -r $EDITDB/enum/*.xml >>$LOG 2>&1
 echo "Importing Standard Engineering Units and Conversions from edit-db ..."
@@ -131,5 +133,4 @@ echo "Importing Presentation Groups ..."
 $DH/bin/dbimport -l $LOG -r $EDITDB/presentation/*.xml >>$LOG 2>&1
 echo "Importing standard computation apps and algorithms ..."
 $DH/bin/compimport -l $LOG $EDITDB/comp-standard/*.xml >>$LOG 2>&1
-echo "Importing DECODES loading apps ..."
-$DH/bin/dbimport -l $LOG -r $EDITDB/loading-app/*.xml >>$LOG 2>&1
+
