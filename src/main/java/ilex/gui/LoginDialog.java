@@ -43,9 +43,12 @@ import ilex.util.LoadResourceBundle;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Properties;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
+
+import org.opendcs.spi.authentication.AuthSource;
 
 import decodes.gui.GuiDialog;
 
@@ -59,7 +62,7 @@ import decodes.gui.GuiDialog;
 * You can re-use the same LoginDialog object by calling clear before
 * making it visible.
 */
-public class LoginDialog extends GuiDialog
+public class LoginDialog extends GuiDialog implements AuthSource
 {
 	private static ResourceBundle labels = null;
 	private JButton okButton, cancelButton;
@@ -99,6 +102,7 @@ public class LoginDialog extends GuiDialog
 		JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 7));
 
 		okButton = new JButton(labels.getString("EditPropsAction.ok"));
+		okButton.setName("ok");
 		okButton.addActionListener(
 			new ActionListener()
 			{
@@ -110,6 +114,7 @@ public class LoginDialog extends GuiDialog
 		south.add(okButton);
 		
 		cancelButton = new JButton(labels.getString("EditPropsAction.cancel"));
+		cancelButton.setName("cancel");
 		cancelButton.addActionListener(
 			new ActionListener()
 			{
@@ -131,6 +136,7 @@ public class LoginDialog extends GuiDialog
 				new Insets(5, 10, 3, 2), 0, 0));
 
 		usernameField = new JTextField(10);
+		usernameField.setName("username");
 		center.add(usernameField,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
@@ -144,6 +150,7 @@ public class LoginDialog extends GuiDialog
 				new Insets(3, 10, 5, 2), 0, 0));
 
 		passwordField = new JPasswordField(10);
+		passwordField.setName("password");
 		center.add(passwordField,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
@@ -268,5 +275,24 @@ public class LoginDialog extends GuiDialog
 	{
 		usernameField.setText(user);
 		usernameField.setEnabled(tf);
+	}
+
+	/**
+	 * Primarily intended to be used by areas of code that require authentication. Like GUI app logins
+	 * @return Valid properties with username and password if okay, otherwise null
+	 */
+	@Override
+	public Properties getCredentials()
+	{
+		this.clear();
+		this.setVisible(true);
+		if (this.isOK())
+		{
+			Properties credentials = new Properties();
+			credentials.setProperty("username", getUserName());
+            credentials.setProperty("password", new String(getPassword()));
+            return credentials;
+		}
+		return null;
 	}
 }
