@@ -169,9 +169,12 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
             if(log.getMinLogPriority() == Logger.E_DEBUG3)
             {
                 StackTraceElement stk[] = Thread.currentThread().getStackTrace();
-                for(int n = 2; n < stk.length; n++)
+                if(stk != null)
                 {
-                        log.debug3("\t" + n + ": " + stk[n]);
+                    for(int n = 2; n < stk.length; n++)
+                    {
+                            log.debug3("\t" + n + ": " + stk[n]);
+                    }
                 }
             }
         }

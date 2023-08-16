@@ -680,7 +680,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		try(Connection conn = getConnection();)
 		{
 			DbKey id = pg.getId();
-			if (id != null && !id.isNull())
+			if (id != null && !id.isNull()) // NOTE: pretty sure this should be id == null || !id.isNull()
 			{
 				id = name2id(pg.groupName);    // will throw if unsuccessfull
 				try { pg.setId(id); }
@@ -703,7 +703,6 @@ public class PresentationGroupListIO extends SqlDbObjIo
 					}
 
 					Date ret = getTimeStamp(rs, 1, (Date)null);
-					stmt.close();
 					return ret;
 				}
 			}
