@@ -37,7 +37,7 @@ jobs:
       - name: Gui Tests
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          apt install xvfb
+          sudo apt install xvfb
           xvfb-run ant gui-test -D"no.docs=true"
       - name: Documentation and Create installer jar
         run: |
