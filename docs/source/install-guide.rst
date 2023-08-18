@@ -715,6 +715,9 @@ Table 3-2: DbAuthFile values
 |                |                         |env-auth-source:username=OPENDCS_USERNAME,password=OPENDCS_PASSWORD|
 |                |                         |                                                                   |
 +----------------+-------------------------+-------------------------------------------------------------------+
+|gui-auth-source |Prompt user with a       |Dialog title.                                                      |
+|                | dialog.                 |                                                                   |
++----------------+-------------------------+-------------------------------------------------------------------+
 
 
 The “decodes.properties” file is read when an OPENDCS program is
