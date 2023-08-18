@@ -285,6 +285,7 @@ public class LoginDialog extends GuiDialog implements AuthSource
 	public Properties getCredentials()
 	{
 		this.clear();
+		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 		if (this.isOK())
 		{
