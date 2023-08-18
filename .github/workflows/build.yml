@@ -34,6 +34,11 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           ant integration-test -D"no.docs=true"
+      - name: Gui Tests
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          apt install xvfb
+          xvfb-run ant gui-test -D"no.docs=true"
       - name: Documentation and Create installer jar
         run: |
           ant opendcs
@@ -44,7 +49,7 @@ jobs:
           name: test-results-${{matrix.platform}}
           path: |
             build/reports/**
-            /tmp/config**
+            build/tmp/config**
 #docker-images:
 #  runs-on: ubuntu-latest
 #  steps:
