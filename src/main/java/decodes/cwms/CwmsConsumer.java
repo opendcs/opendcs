@@ -373,6 +373,7 @@ public class CwmsConsumer extends DataConsumer
 			String emsg = module + " Error storing TS data: " + ex;
 			java.util.logging.Logger log = java.util.logging.Logger.getLogger("");
 			Logger.instance().warning(emsg);
+			log.log(Level.WARNING,emsg,ex);
 			JulUtils.logStackTrace(log, Level.WARNING, ex.getStackTrace(), 0);
 			// It might be a business rule exception, like improper units.
 			// So don't kill the whole routing spec, just go on.
