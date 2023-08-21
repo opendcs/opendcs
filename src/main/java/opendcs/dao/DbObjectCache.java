@@ -69,7 +69,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 * Place an object in the cache.
 	 * @param dbObj the object to cache
 	 */
-	public void put(DBT dbObj)
+	public synchronized void put(DBT dbObj)
 	{
 		String un = dbObj.getUniqueName();
 		if (un == null || un.trim().length() == 0)
@@ -86,7 +86,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 *
 	 * @param key DbKey of the object to be removed.
 	 */
-	public void remove(DbKey key)
+	public synchronized void remove(DbKey key)
 	{
 		ObjWrapper ow = keyObjMap.get(key);
 		if (ow == null)

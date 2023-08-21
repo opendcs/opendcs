@@ -307,6 +307,7 @@ public class RoutingScheduler
 				java.util.logging.Logger log = java.util.logging.Logger.getLogger("");
 				String msg = module + " Unexpected exception while " + action + ": " + ex;
 				Logger.instance().warning(msg);
+				log.log(Level.WARNING,msg,ex);
 				JulUtils.logStackTrace(log, Level.WARNING, ex.getStackTrace(), 0);
 				System.err.println(msg);
 				ex.printStackTrace(System.err);
