@@ -218,7 +218,10 @@ public class LocSelectDialog
 		int r = locationTable.getSelectedRow();
 		if (r >= 0)
 		{
-			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)model.getRowObject(r);
+			//Get the correct row from the table model
+			int modelrow = locationTable.convertRowIndexToModel(r);
+			LocTableModel tablemodel = (LocTableModel)locationTable.getModel();			
+			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
 			if (spec != selectedRow)
 			{
 				selectedRow = spec;

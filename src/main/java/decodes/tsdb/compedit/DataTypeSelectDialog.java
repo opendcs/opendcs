@@ -129,7 +129,9 @@ public class DataTypeSelectDialog extends GuiDialog
 	*/
     void selectButtonPressed()
 	{
-		selectedIndex = dtListTable.getSelectedRow();
+		int row = dtListTable.getSelectedRow();
+		//Get the correct row from the table model
+		selectedIndex = dtListTable.convertRowIndexToModel(row);
 		okPressed = true;
 		closeDlg();
     }
