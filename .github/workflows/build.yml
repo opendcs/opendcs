@@ -49,7 +49,7 @@ jobs:
           name: test-results-${{matrix.platform}}
           path: |
             build/reports/**
-            build/tmp/config**
+            build/test-integration/tmp/configs**
 #docker-images:
 #  runs-on: ubuntu-latest
 #  steps:
