@@ -1,10 +1,15 @@
 package org.opendcs.authentication;
 
-import ilex.gui.LoginDialog;
+import static org.assertj.swing.timing.Pause.pause;
+import static org.assertj.swing.timing.Timeout.timeout;
+import static org.assertj.swing.edt.GuiActionRunner.execute;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import ilex.gui.LoginDialog;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -21,6 +26,7 @@ import javax.swing.SwingWorker;
 import org.assertj.swing.edt.GuiActionRunner;
 import org.assertj.swing.fixture.DialogFixture;
 import org.assertj.swing.fixture.FrameFixture;
+import org.assertj.swing.timing.Condition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,8 +67,12 @@ public class GuiAuthSourceTest
     
         Future<Properties> credentialsFuture = executor.submit(() -> loginDialog.getCredentials());
         assertTrue(loginDialog.isValid(), "Our Dialog isn't valid.");
-
-        Thread.sleep(500); // give the dialog a bit of time to actually start
+        pause(new Condition("Gui visible") {
+            @Override
+            public boolean test() {
+                return execute(loginDialog::isVisible);
+            }
+        },timeout(500));
 
         dialog.textBox("username").setText(username);
         dialog.textBox("password").setText(password);
@@ -71,5 +81,23 @@ public class GuiAuthSourceTest
         assertNotNull(creds, "no credentials returned.");
         assertEquals(username,creds.getProperty("username"), "Username did not match");
         assertEquals(password,creds.getProperty("password"), "Password did not match");
+    }
+
+    @Test
+    public void login_cancelled_returns_null() throws Exception
+    {
+        Future<Properties> credentialsFuture = executor.submit(() -> loginDialog.getCredentials());
+        assertTrue(loginDialog.isValid(), "Our Dialog isn't valid.");
+        pause(new Condition("Gui visible") {
+            @Override
+            public boolean test() {
+                return execute(loginDialog::isVisible);
+            }
+        },timeout(500));
+        dialog.textBox("username").setText("doesn't matter");
+        dialog.textBox("password").setText("bad password");
+        dialog.button("cancel").click();
+        Properties creds = credentialsFuture.get();
+        assertNull(creds, "Actual values were returned during cancel.");
     }
 }
