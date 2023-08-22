@@ -214,7 +214,10 @@ public class ParamSelectDialog
 		int r = paramTable.getSelectedRow();
 		if (r >= 0)
 		{
-			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)model.getRowObject(r);
+			//Get the correct row from the table model
+			int modelrow = paramTable.convertRowIndexToModel(r);
+			ParamTableModel tablemodel = (ParamTableModel)paramTable.getModel();			
+			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
 			if (spec != selectedRow)
 			{
 				selectedRow = spec;

@@ -148,7 +148,12 @@ public class EUSelectDialog extends GuiDialog
     	if (idx < 0)
     		selection = null;
     	else
-    		selection = (EngineeringUnit)euTableModel.getRowObject(idx);
+		{
+			//Get the correct row from the table model
+			int modelrow = euTable.convertRowIndexToModel(idx);
+			EUTableModel tablemodel = (EUTableModel)euTable.getModel();			
+			selection = (EngineeringUnit)tablemodel.getRowObject(modelrow);
+		}
 		closeDlg();
     }
 
