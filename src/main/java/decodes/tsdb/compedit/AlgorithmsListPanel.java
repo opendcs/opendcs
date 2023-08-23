@@ -121,7 +121,10 @@ public class AlgorithmsListPanel extends ListPanel
 			showError(openErr);
 			return;
 		}
-		DbCompAlgorithm dca = algoListTableModel.getRowAlgorithm(r);
+		//Get the correct row from the table model
+		int modelrow = algoListTable.convertRowIndexToModel(r);
+		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();			
+		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
 		openEditTab(dca);
 	}
 

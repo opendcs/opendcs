@@ -120,7 +120,10 @@ public class ProcessesListPanel extends ListPanel
 					.getString("ProcessListPanel.OpenError"));
 			return;
 		}
-		CompAppInfo cai = (CompAppInfo)procTableModel.getRowObject(r);
+		//Get the correct row from the table model
+		int modelrow = procTable.convertRowIndexToModel(r);
+		ProcessesListPanelTableModel tablemodel = (ProcessesListPanelTableModel)procTable.getModel();			
+		CompAppInfo cai = (CompAppInfo)tablemodel.getRowObject(modelrow);
 		openEditTab(cai);
 	}
 
