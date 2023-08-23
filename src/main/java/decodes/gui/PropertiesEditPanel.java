@@ -278,10 +278,12 @@ public class PropertiesEditPanel extends JPanel
 	 */
 	void editPressed()
 	{
-		int r = propertiesTable.getSelectedRow();
-		if (r == -1)
+		int tablerow = propertiesTable.getSelectedRow();
+		if (tablerow == -1)
 			return;
-		StringPair sp = ptm.propAt(r);
+		//Get the correct row from the table model
+		int modelrow = propertiesTable.convertRowIndexToModel(tablerow);
+		StringPair sp = ptm.propAt(modelrow);
 		PropertySpec propSpec = null;
 		if (propHash != null)
 			propSpec = propHash.get(sp.first.toUpperCase());
@@ -302,7 +304,7 @@ public class PropertiesEditPanel extends JPanel
 		StringPair res = dlg.getResult();
 		if (res != null)
 		{
-			ptm.setPropAt(r, res);
+			ptm.setPropAt(modelrow, res);
 			changesMade = true;
 		}
 		
