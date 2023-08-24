@@ -119,6 +119,8 @@ private long lastDebug = 0L;
 		
 		if (!scheduleEntry.isEnabled())
 			return;
+		
+		
 
 		if (runState == RunState.initializing)
 		{
@@ -141,6 +143,12 @@ private long lastDebug = 0L;
 		}
 		else if (runState == RunState.running)
 		{
+			if (!this.seThread.isAlive() && runState == RunState.running)
+			{
+				Logger.instance().failure("Thread " + getName() + " has failed.");
+				seThread = null;
+				runState = RunState.initializing;
+			}
 		}
 		else if (runState == RunState.shutdown)
 		{
@@ -168,15 +176,15 @@ private long lastDebug = 0L;
 				if (rs != null && lastDcpMsg != null)
 					rs.sinceTime = IDateFormat.toString(lastDcpMsg.getXmitTime(), false);
 			}
-else
-{
-dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
-	+ "' startTime=" + scheduleEntry.getStartTime()
-	+ ", shutdownComplete=" + shutdownComplete
-	+ ", now=" + now
-	+ ", runStatus=" + seStatus.getRunStatus()
-	+ ", dataSourceFinite=" + dataSourceFinite());
-}
+			else
+			{
+				dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
+				+ "' startTime=" + scheduleEntry.getStartTime()
+				+ ", shutdownComplete=" + shutdownComplete
+				+ ", now=" + now
+				+ ", runStatus=" + seStatus.getRunStatus()
+				+ ", dataSourceFinite=" + dataSourceFinite());
+			}
 		}
 		else // runState == complete.
 		{

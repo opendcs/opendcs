@@ -58,6 +58,7 @@ public class DacqEventLogger
 	
 	public void writeDacqEvent(DacqEvent evt)
 	{
+		/* TODO: Too many Fkey errors, will review later
 		if (!(Database.getDb().getDbIo() instanceof SqlDatabaseIO))
 			return;
 		
@@ -72,6 +73,7 @@ public class DacqEventLogger
 				+ ex + " -- will disable DB events until next run.");
 			ex.printStackTrace();
 		}
+		*/
 	}
 
 	public void setSchedEntryStatusId(DbKey schedEntryStatusId)
