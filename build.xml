@@ -152,9 +152,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="test.classpath"/>
             </classpath>
         </javac>
-       <!-- <sync todir="${build.test-gui.resources}">
+       <sync todir="${build.test-gui.resources}">
             <fileset dir="${resources.test-gui.dir}"/>
-        </sync>-->
+        </sync>
     </target>
 
     <target name="test" depends="compile-test,jar,common.resolve.build">
@@ -267,6 +267,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-gui/tmp"/>
                     <jvmarg value="-Dresource.dir=${build.test-gui.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
+                    <jvmarg value="-DDECODES_INSTALL_DIR=${stage.dir}"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>
                 <fileset dir="${build.test-gui.classes}"/>

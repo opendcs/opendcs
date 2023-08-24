@@ -178,7 +178,7 @@ public class LauncherFrame
 	extends JFrame
 	implements ProcWaiterCallback
 {
-	private static ResourceBundle labels = null;
+	private static ResourceBundle labels = getLabels();
 	String myArgs[] = null;
 //	String compArgs[] = null;
 	JPanel fullPanel = new JPanel();
@@ -246,7 +246,7 @@ public class LauncherFrame
 	private TopFrame platmonFrame = null, routmonFrame = null;
 	private WindowAdapter platmonReaper = null, routmonReaper = null;
 	private String selectedProfile = null;
-	private JComboBox profileCombo = null;
+	private JComboBox<String> profileCombo = null;
 	private JPanel profPanel = null;
 	private boolean profilesShown = false;
 	BasicServer profileLauncherServer = null;
@@ -847,6 +847,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 			tsdbButtonPanel.add(groupEditButton, null);
 
 		// ROW 2: Computations Button
+		compeditButton.setName("computations");
 		compeditButton.setIcon(new ImageIcon(installDir + File.separator + "icons" + File.separator
 			+ "compedit48x48.gif"));
 		compeditButton.setText(labels.getString("LauncherFrame.computationsButton"));
@@ -1338,14 +1339,16 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 		// Each time the profile selection combo box changes, check the new properties file
 		// Activate/Deactivate tsdb buttons depending on database type
 		String profileName = getSelectedProfile();
-		String profilePath;
+		String profilePath = EnvExpander.expand("$DCSTOOL_USERDIR");
 		
-		if(profileName == null) {
-			profilePath = "$DECODES_INSTALL_DIR" + File.separatorChar + "decodes.properties";
-		} else {
-			profilePath = "$DECODES_INSTALL_DIR" + File.separatorChar + profileName + ".profile";
+		if(profileName == null)
+		{
+			profilePath = profilePath + File.separatorChar + "decodes.properties";
 		}
-		profilePath = EnvExpander.expand(profilePath);
+		else
+		{
+			profilePath = profilePath + File.separatorChar + profileName + ".profile";
+		}
 		
 		DecodesSettings ProfileSettings = new DecodesSettings();
 		Properties props = new Properties();
@@ -2083,7 +2086,8 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 		return names;
 	}
 
-	private void checkForProfiles()
+	// package private so GUI test setup can call.
+	void checkForProfiles()
 	{
 
 		if (profPanel == null)
@@ -2092,7 +2096,8 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 			profPanel.add(new JLabel("Profile:"),
 				new GridBagConstraints(0, 0, 1, 1, 0, 0,
 					GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 0), 0, 0));
-			profileCombo = new JComboBox();
+			profileCombo = new JComboBox<>();
+			profileCombo.setName("profileCombo");
 			profileCombo.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 						profileComboChanged();
