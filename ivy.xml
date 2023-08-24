@@ -55,7 +55,7 @@
         <dependency org="mil.army.usace.hec" name="cwms-db-dao" rev="9.3.5"/>
         <dependency org="mil.army.usace.hec" name="hec-db-jdbc" rev="9.3.5"/>
 
-        <dependency org="mil.army.usace.hec" name="hec-monolith" rev="2.0.2">
+        <dependency org="mil.army.usace.hec" name="hec-monolith" rev="2.0.2" force="true">
             <exclude org="codebase"/>
             <exclude org="org.jdom"/>
             <exclude org="org.bouncycastle"/>
