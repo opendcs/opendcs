@@ -143,7 +143,7 @@ private long lastDebug = 0L;
 		}
 		else if (runState == RunState.running)
 		{
-			if (!this.seThread.isAlive() && runState == RunState.running || !"running".equalsIgnoreCase(seThread.currentStatus))
+			if (!this.seThread.isAlive() || seThread.currentStatus.startsWith("ERR"))
 			{
 				Logger.instance().failure("Thread " + getName() + " has failed.");
 				seThread.shutdown();
