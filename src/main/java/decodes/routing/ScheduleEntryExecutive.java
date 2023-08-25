@@ -143,11 +143,12 @@ private long lastDebug = 0L;
 		}
 		else if (runState == RunState.running)
 		{
-			if (!this.seThread.isAlive() && runState == RunState.running)
+			if (!this.seThread.isAlive() && runState == RunState.running || !"running".equalsIgnoreCase(seThread.currentStatus))
 			{
 				Logger.instance().failure("Thread " + getName() + " has failed.");
+				seThread.shutdown();
 				seThread = null;
-				runState = RunState.initializing;
+				runState = RunState.shutdown;
 			}
 		}
 		else if (runState == RunState.shutdown)
