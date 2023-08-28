@@ -108,7 +108,12 @@ public class FileDataSource
 			"(default=false) set to true to un-gzip file before processing.")
 	};
 	
-	/** default constructor */
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public FileDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);

@@ -294,7 +294,12 @@ public class DirectoryDataSource extends DataSourceExec
 	};
 
 	
-	/** default constructor */
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public DirectoryDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);

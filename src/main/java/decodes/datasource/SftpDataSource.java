@@ -71,6 +71,12 @@ public class SftpDataSource
 	private File currentFile = null;
 //	private String newerThan = null;
 
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public SftpDataSource(DataSource source, Database db) {
 		super(source, db);
 	}

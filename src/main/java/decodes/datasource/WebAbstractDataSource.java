@@ -68,7 +68,12 @@ public class WebAbstractDataSource
 			+ " if they are present in the abstract URL."),
 	};
 
-	// No arg ctor required to instantiate from class name
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public WebAbstractDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);

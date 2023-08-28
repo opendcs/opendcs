@@ -47,7 +47,12 @@ import decodes.db.NetworkList;
 public class InputDirectory
 	extends DataSourceExec
 {
-	/** default constructor */
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public InputDirectory(DataSource ds, Database db)
 	{
 		super(ds,db);

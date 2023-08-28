@@ -143,11 +143,28 @@ public abstract class DataSourceExec
 
 	protected Database db = null;
 
-	/** default constructor */
-	protected DataSourceExec(DataSource source, Database db)
+	/**
+	 * Required constructor for any data source.
+	 *
+	 * If you have a DataSource that can be used without
+	 * a constructor it is okay to call @code{super(null,null)}
+	 * as this base class does not call them.
+	 *
+	 * However a constructor that takes as passes the variables
+	 * to this constructor should be provided as the makeExecutive
+	 * function that creates sources needs to call the highest level
+	 * constructor that includes them.
+	 *
+	 * @param dataSource The DataSource that defines the parameters for this DataSourceExecutive
+	 * @param decodesDatabase The Decodes database interface.
+	 *
+	 * @since 7.0.9 perviously this was a default no args constructor. Update your local implementations and avoid
+	 * access to Database.getDb() as we will be removing it.
+	 */
+	protected DataSourceExec(DataSource dataSource, Database decodesDatabase)
 	{
-		dbDataSource = source;
-		this.db=db;
+		dbDataSource = dataSource;
+		this.db=decodesDatabase;
 		allowNullPlatform = false;
 		allowDapsStatusMessages = false;
 	}

@@ -93,7 +93,12 @@ public class WebDirectoryDataSource extends DataSourceExec
 	private Calendar fileTimeCal = Calendar.getInstance();
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MMM/dd-HH:mm:ss");
 
-
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public WebDirectoryDataSource(DataSource source, Database db) {
 		super(source, db);
 	}

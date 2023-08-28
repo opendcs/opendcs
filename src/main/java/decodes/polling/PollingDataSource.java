@@ -117,6 +117,12 @@ public class PollingDataSource extends DataSourceExec
 	private PortPool portPool = null;
 	private PlatformStatusDAI platformStatusDAO = null;
 
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public PollingDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);

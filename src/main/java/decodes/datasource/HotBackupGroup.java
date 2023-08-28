@@ -46,10 +46,15 @@ public class HotBackupGroup
 	Vector delegates;            // Group members to delegate requests to.
 	DataSourceExec activeMember; // Current group member we're delegating to
 
-	/** default constructor */
-	public HotBackupGroup(DataSource ds, Database db)
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public HotBackupGroup(DataSource dataSource, Database decodesDatabase)
 	{
-		super(ds,db);
+		super(dataSource,decodesDatabase);
 
 		props = null;
 		since = null;

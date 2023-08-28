@@ -316,11 +316,12 @@ public abstract class StreamDataSource extends DataSourceExec
 			
 	};
 
-	//=====================================================================
 	/**
-	  No-args constructor is necessary because this is instantiated from
-	  a Class object that was loaded dynamically.
-	*/
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public StreamDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);
