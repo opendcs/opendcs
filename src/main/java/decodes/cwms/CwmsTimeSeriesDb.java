@@ -809,19 +809,21 @@ public class CwmsTimeSeriesDb
 	{
 		String dbUri = this.dbUri != null ? this.dbUri : DecodesSettings.instance().editDatabaseLocation;
 
-		String username = credentials.getProperty("username");
-		String password = credentials.getProperty("password");
-
-		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
-		if (DecodesInterface.isGUI())
-		{
+		String username = null;
+		String password = null;
+		CwmsGuiLogin cgl = null;
+		if (credentials == null && DecodesInterface.isGUI())
+		{			
+			cgl = CwmsGuiLogin.instance();
 			try
 			{
 				if (!cgl.isLoginSuccess())
 				{
 					cgl.doLogin(null);
 					if (!cgl.isLoginSuccess()) // user hit cancel
+					{
 						throw new BadConnectException("Login aborted by user.");
+					}
 				}
 				username = cgl.getUserName();
 				password = new String(cgl.getPassword());
@@ -831,6 +833,15 @@ public class CwmsTimeSeriesDb
 				throw new BadConnectException(
 					"Cannot display login dialog: " + ex);
 			}
+		}
+		else if(credentials == null)
+		{
+			throw new BadConnectException("Cannot connect to CWMS without credentials.");
+		}
+		else
+		{	// use the provided credentials
+			username = credentials.getProperty("username");
+			password = credentials.getProperty("password");
 		}
 
 		// MJM 2018-12-05 The new HEC/RMA connection facility requires that office ID
@@ -861,7 +872,10 @@ public class CwmsTimeSeriesDb
 				postConnectInit(appName, conn); // Make sure the versions and such are set
 				setupKeyGenerator();
 
-				cgl.setLoginSuccess(true);
+				if(cgl!=null)
+				{
+					cgl.setLoginSuccess(true);
+				}
 
 				try
 				{
