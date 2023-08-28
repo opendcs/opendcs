@@ -178,9 +178,11 @@ public class SocketStreamDataSource extends DataSourceExec
 	};
 
 	/**
-	  No-args constructor is necessary because this is instantiated from
-	  a Class object that was loaded dynamically.
-	*/
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public SocketStreamDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);

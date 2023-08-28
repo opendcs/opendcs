@@ -91,7 +91,12 @@ public class NrcsDataSource
 			"To select which sensor data type to use in the URL, default=nrcs")
 	};
 
-	// No arg ctor required to instantiate from class name
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public NrcsDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);

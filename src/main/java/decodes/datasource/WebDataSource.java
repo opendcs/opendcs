@@ -25,7 +25,12 @@ public class WebDataSource
 	private String module = "WebDataSource";
 	private String activeAddr = null;
 	
-	// no args ctor for instantiation via class
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public WebDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);

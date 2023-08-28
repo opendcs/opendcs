@@ -95,6 +95,12 @@ public class FtpDataSource
 	private boolean ftps = false;
 	private String newerThan = null;
 
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public FtpDataSource(DataSource source, Database db) {
 		super(source, db);
 	}

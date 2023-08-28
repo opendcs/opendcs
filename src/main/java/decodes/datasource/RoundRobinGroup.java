@@ -43,7 +43,12 @@ public class RoundRobinGroup
     int currentSource = 0;
 	DataSourceExec activeMember; // Current group member we're delegating to
 
-	/** default constructor */
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public RoundRobinGroup(DataSource ds, Database db)
 	{
 		super(ds,db);

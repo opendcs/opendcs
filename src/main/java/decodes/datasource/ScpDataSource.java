@@ -78,6 +78,12 @@ public class ScpDataSource
 	private File currentFile = null;
 	private boolean useSftp = false;
 
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
 	public ScpDataSource(DataSource ds, Database db)
 	{
 		super(ds,db);
