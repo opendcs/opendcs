@@ -149,6 +149,7 @@ private long lastDebug = 0L;
 				seThread.shutdown();
 				seThread = null;
 				runState = RunState.shutdown;
+				seStatus.setRunStatus("ERROR-system");
 			}
 		}
 		else if (runState == RunState.shutdown)
