@@ -235,7 +235,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <fileset dir="${build.dir}/test-integration/results">
                 <include name="TEST-*.xml"/>
             </fileset>
-            <report format="noframes" todir="${junit.html.output.dir}/test-intregration"/>
+            <report format="noframes" todir="${junit.html.output.dir}/test-integration"/>
         </junitreport>
         <if>
             <isset property="integration.failed"/>
