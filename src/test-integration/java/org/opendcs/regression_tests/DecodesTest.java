@@ -1,47 +1,35 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
-import static org.junit.jupiter.api.DynamicTest.dynamicTest;
-
-import static org.opendcs.fixtures.Toolkit.args;
 
 import java.io.File;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.OpenDCSAppTestCase;
-import org.opendcs.fixtures.Toolkit;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import decodes.dbimport.DbImport;
 import decodes.routing.RoutingSpecThread;
 import uk.org.webcompere.systemstubs.SystemStubs;
 
 public class DecodesTest extends AppTestBase
 {
     private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
-    private static final String TEST_SET_NAME = "Decodes Test";
-    
-    public DecodesTest(OpenDCSAppTestCase testCase) {
-        super(testCase);
-    }
 
+    @Test
     public void test_SimpleDecodesTest() throws Exception
     {
-        Configuration config = testCase.getConfiguration();
+        Configuration config = this.configuration;
         File propertiesFile = config.getPropertiesFile();
         File logFile = new File(config.getUserDir(),"/decodes.log");
         log.info("Import site.");
         Programs.DbImport(logFile, propertiesFile, environment, exit,
                             getResource("SimpleDecodesTest/site-OKVI4.xml"));
-        
+
         assertExitNullOrZero();
         log.info("Loading platform, routing spec, etc.");
 
@@ -61,9 +49,10 @@ public class DecodesTest extends AppTestBase
         assertEquals(golden,output,"Output Doesn't match expected data.");
     }
 
+    @Test
     public void test_HydroJsonTest() throws Exception
     {
-        Configuration config = testCase.getConfiguration();
+        Configuration config = this.configuration;
         File propertiesFile = config.getPropertiesFile();
         File logFile = new File(config.getUserDir(),"/decodes-json.log");
         log.info("Importing test db.");
@@ -94,13 +83,5 @@ public class DecodesTest extends AppTestBase
          * The output should be formatted as a list of objects, not objects separated by a new line.
          */
         //assertEquals(golden,output,"Output Doesn't match expected data.");
-    }
-
-    @Override
-    public DynamicNode tests(String baseName) {
-        return dynamicContainer(Toolkit.testName(baseName,TEST_SET_NAME), Stream.of(
-            dynamicTest(Toolkit.testName(baseName,TEST_SET_NAME,"Routing"), () -> test_SimpleDecodesTest()),
-            dynamicTest(Toolkit.testName(baseName,TEST_SET_NAME,"HydroJSON"), () -> test_HydroJsonTest())
-        ));
     }
 }

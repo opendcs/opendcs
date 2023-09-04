@@ -223,6 +223,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                    <jvmarg if:set="opendcs.test.engine" value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
                 </fork>
                 <fileset dir="${build.test-integration.classes}"/>
                 <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>

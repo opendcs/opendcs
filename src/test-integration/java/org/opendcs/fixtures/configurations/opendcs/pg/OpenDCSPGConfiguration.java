@@ -1,12 +1,8 @@
 package org.opendcs.fixtures.configurations.opendcs.pg;
 
-import static org.opendcs.fixtures.Toolkit.args;
-
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -23,7 +19,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
  * Handles setup of an OpenDCS Postgres SQL Database instance.
- * 
+ *
  */
 public class OpenDCSPGConfiguration implements Configuration
 {
@@ -36,7 +32,7 @@ public class OpenDCSPGConfiguration implements Configuration
     private HashMap<String,String> environmentVars = new HashMap<>();
 
     public OpenDCSPGConfiguration(File userDir) throws Exception
-    {        
+    {
         this.userDir = userDir;
         this.propertiesFile = new File(userDir,"/user.properties");
     }
@@ -58,7 +54,7 @@ public class OpenDCSPGConfiguration implements Configuration
     {
         return true;
     }
-    
+
     @Override
     public Map<String,String> getEnvironment()
     {
@@ -115,7 +111,7 @@ public class OpenDCSPGConfiguration implements Configuration
     {
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
-        editDb.mkdirs();      
+        editDb.mkdirs();
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
         configBuilder.withDatabaseLocation(dbUrl);
         configBuilder.withEditDatabaseType("OPENTSDB");
@@ -128,7 +124,7 @@ public class OpenDCSPGConfiguration implements Configuration
             FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
             FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
             installDb(exit,environment);
-            
+
         }
     }
 

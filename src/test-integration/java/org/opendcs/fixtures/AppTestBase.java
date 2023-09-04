@@ -1,21 +1,22 @@
 package org.opendcs.fixtures;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
-import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.util.stream.Stream;
+import java.nio.file.Files;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DynamicNode;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.commons.PreconditionViolationException;
+import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.spi.configuration.ConfigurationProvider;
 
 import decodes.util.DecodesSettings;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -26,7 +27,8 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
 
 
 @ExtendWith(SystemStubsExtension.class)
-public abstract class AppTestBase {
+@TestInstance(Lifecycle.PER_CLASS)
+public class AppTestBase {
 
     private static File resourceDir = new File(System.getProperty("resource.dir"),"data");
 
@@ -39,22 +41,72 @@ public abstract class AppTestBase {
     @SystemStub
     protected final SystemExit exit = new SystemExit();
 
-    protected OpenDCSAppTestCase testCase = null;
+    protected final Configuration configuration;
 
-    public AppTestBase(OpenDCSAppTestCase testCase)
+    public AppTestBase()
     {
-        this.testCase = testCase;
+        String engine = System.getProperty("opendcs.test.engine");
+        if (engine == null)
+        {
+            throw new PreconditionViolationException("You must set the provide 'opendcs.test.engine' in a system property to run the tests against");
+        }
+
+        ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
+        Iterator<ConfigurationProvider> configs = loader.iterator();
+
+        ConfigurationProvider configProvider = null;
+        while(configs.hasNext())
+        {
+            ConfigurationProvider configProviderTmp = configs.next();
+            if (engine.equals(configProviderTmp.getImplementation()))
+            {
+                configProvider = configProviderTmp;
+            }
+        }
+
+        if (configProvider != null)
+        {
+            try
+            {
+                File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();
+                this.configuration = configProvider.getConfig(tmp);
+            }
+            catch (Exception ex)
+            {
+                throw new PreconditionViolationException("Unable to load load configuration for OpenDCS engine '" + engine + "'. Provider failed to initialize");
+            }
+        }
+        else
+        {
+            throw new PreconditionViolationException("No implementation found for engine '" + engine + "'.");
+        }
     }
 
-    private void setup() throws Exception
+    protected void assertExitNullOrZero()
     {
-        File userDir = testCase.getConfiguration().getUserDir();
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, "System.exit called with unexpected code.");
+    }
+
+    /**
+     * Helper to get a file from the resource directory
+     * @param file file name under the data/ directory to reference
+     * @return
+     */
+    public static String getResource(String file)
+    {
+        return new File(resourceDir,file).getAbsolutePath();
+    }
+
+    @BeforeAll
+    public void beforeAll() throws Exception {
+        configuration.start(exit,environment);
+        File userDir = configuration.getUserDir();
         System.out.println("DCSTOOL_USERDIR="+userDir);
         environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
-        if (testCase.getConfiguration().getEnvironment() != null
-         && !testCase.getConfiguration().getEnvironment().isEmpty())
+        if (configuration.getEnvironment() != null
+         && !configuration.getEnvironment().isEmpty())
         {
-            environment.set(testCase.getConfiguration().getEnvironment());
+            environment.set(configuration.getEnvironment());
         }
         properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
         properties.set("INPUT_DATA",new File(resourceDir,"/shared").getAbsolutePath());
@@ -62,13 +114,8 @@ public abstract class AppTestBase {
         environment.setup();
     }
 
-    protected void assertExitNullOrZero()
-    {
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, "System.exit called with unexpected code.");
-    }
-    
-    private void teardown() throws Exception
-    {
+    @AfterAll
+    public void afterAll() throws Exception {
         environment.teardown();
         properties.teardown();
         DecodesSettings settings = DecodesSettings.instance();
@@ -80,28 +127,15 @@ public abstract class AppTestBase {
 
         theInstance.setAccessible(true);
         theInstance.set(settings,null);
-
-    }
-
-    public abstract DynamicNode tests(String baseName) throws Exception;
-
-    public DynamicNode getTests(String baseName) throws Exception
-    {
-        return dynamicContainer(Toolkit.testName(baseName, this.getClass().getName()), Stream.of(
-            dynamicTest(Toolkit.testName(baseName,"Configuration","start"),()->this.testCase.getConfiguration().start(exit,environment)),
-            dynamicTest(Toolkit.testName(baseName,"Configuration","Setup"), () -> setup()),
-            tests(baseName),
-            dynamicTest(Toolkit.testName(baseName,"Configuration","Teardown"), () -> teardown())
-        ));        
     }
 
     /**
-     * Helper to get a file from the resource directory
-     * @param file file name under the data/ directory to reference
+     * Helper to make calling mains easier
+     * @param arg
      * @return
      */
-    public static String getResource(String file)
+    public static String[] args(String... arg)
     {
-        return new File(resourceDir,file).getAbsolutePath();
+        return arg;
     }
 }
