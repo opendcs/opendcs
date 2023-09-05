@@ -204,8 +204,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
     <target name="integration-test" depends="compile-test-integration,stage,common.resolve"
             description="Run the integration test suite with available implementations.">
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
-        <mkdir dir="${build.dir}/test-integration/results"/>
-        <mkdir dir="${build.dir}/test-integration/tmp"/>
+        <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
+        <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -216,14 +216,14 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <pathelement location="${build.test-integration.classes}"/>
             </classpath>
 
-            <testclasses outputdir="${build.dir}/test-integration/results">
+            <testclasses outputdir="${build.dir}/test-integration/${opendcs.test.engine}/results">
                 <fork>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
-                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-integration/tmp"/>
+                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
                     <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
+                    <jvmarg value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
-                    <jvmarg if:set="opendcs.test.engine" value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
                 </fork>
                 <fileset dir="${build.test-integration.classes}"/>
                 <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
@@ -231,12 +231,12 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </testclasses>
         </junitlauncher>
 
-        <mkdir dir="${junit.html.output.dir}/test-integration"/>
+        <mkdir dir="${junit.html.output.dir}/test-integration/${opendcs.test.engine}"/>
         <junitreport todir="${junit.html.output.dir}">
-            <fileset dir="${build.dir}/test-integration/results">
+            <fileset dir="${build.dir}/test-integration/${opendcs.test.engine}/results">
                 <include name="TEST-*.xml"/>
             </fileset>
-            <report format="noframes" todir="${junit.html.output.dir}/test-integration"/>
+            <report format="noframes" todir="${junit.html.output.dir}/test-integration/${opendcs.test.engine}"/>
         </junitreport>
         <if>
             <isset property="integration.failed"/>

@@ -98,7 +98,8 @@ public class AppTestBase {
     }
 
     @BeforeAll
-    public void beforeAll() throws Exception {
+    public void beforeAll() throws Exception
+    {
         configuration.start(exit,environment);
         File userDir = configuration.getUserDir();
         System.out.println("DCSTOOL_USERDIR="+userDir);
@@ -115,7 +116,8 @@ public class AppTestBase {
     }
 
     @AfterAll
-    public void afterAll() throws Exception {
+    public void afterAll() throws Exception
+    {
         environment.teardown();
         properties.teardown();
         DecodesSettings settings = DecodesSettings.instance();
