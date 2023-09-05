@@ -190,6 +190,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <junitreport todir="${junit.html.output.dir}">
             <fileset dir="${build.dir}/test-results">
                 <include name="TEST-*.xml"/>
+                <exclude name="TEST-fixture*"/>
+                <exclude name="TEST-*$?.xml"/>
             </fileset>
             <report format="noframes" todir="${junit.html.output.dir}/test"/>
         </junitreport>
@@ -235,6 +237,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <junitreport todir="${junit.html.output.dir}">
             <fileset dir="${build.dir}/test-integration/${opendcs.test.engine}/results">
                 <include name="TEST-*.xml"/>
+                <exclude name="TEST-org.opendcs.spi.configuration*"/>
+                <exclude name="TEST-org.opendcs.fixture*"/>
             </fileset>
             <report format="noframes" todir="${junit.html.output.dir}/test-integration/${opendcs.test.engine}"/>
         </junitreport>
@@ -491,7 +495,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 					<fileset dir="${docs.output}/html">
 						<include name="**"/>
 						<exclude name=".buildinfo"/>
-					</fileset>		
+					</fileset>
 				</copy>
 
 
