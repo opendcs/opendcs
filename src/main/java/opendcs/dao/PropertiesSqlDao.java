@@ -1,6 +1,6 @@
 /*
  * $Id$
- * 
+ *
  * $Log$
  * Revision 1.2  2014/07/03 12:53:40  mmaloney
  * debug improvements.
@@ -9,7 +9,7 @@
  * OPENDCS 6.0 Initial Checkin
  *
  * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
+ * to the United States Government. No warranty is provided or implied other
  * than specific contractual terms between COVE and the U.S. Government.
  *
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
@@ -22,6 +22,7 @@ import ilex.util.HasProperties;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 import opendcs.dai.PropertiesDAI;
@@ -36,36 +37,38 @@ import decodes.tsdb.DbIoException;
  * For backward compatibility we do not name the columns (some DECODES tables had
  * columns named 'name' and 'value').
  * The name of the id column varies. For this reason it must be passed to the read/write methods.
- * 
+ *
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class PropertiesSqlDao 
-	extends DaoBase 
+public class PropertiesSqlDao
+	extends DaoBase
 	implements PropertiesDAI
 {
 	public PropertiesSqlDao(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "PropertiesSqlDao");
 	}
-	
+
 	@Override
-	public void readProperties(String tableName, String idColumn, 
+	public void readProperties(String tableName, String idColumn,
 		DbKey parentKey, Properties props)
 			throws DbIoException
 	{
-		String q = "select * from " + tableName + " where " + idColumn + " = " + parentKey;
-		
-		ResultSet rs = doQuery(q);
+		Objects.requireNonNull(props, "A valid properties object must be passed into this function.");
+		Objects.requireNonNull(tableName, "A valid table name is required.");
+		Objects.requireNonNull(parentKey, "A valid Database Identifier is required.");
+		Objects.requireNonNull(idColumn, "The id column must be valid.");
+		String q = "select * from " + tableName + " where " + idColumn + " = ?";
+
 		try
 		{
-			while (rs != null && rs.next())
-			{
+			doQuery(q,rs->{
 				String name = rs.getString(2);
-				String value = rs.getString(3);
-				if (value == null)
-					value = "";
-				props.setProperty(name, value);
-			}
+					String value = rs.getString(3);
+					if (value == null)
+						value = "";
+					props.setProperty(name, value);
+			}, parentKey);
 		}
 		catch (SQLException ex)
 		{
@@ -74,26 +77,28 @@ public class PropertiesSqlDao
 			throw new DbIoException(msg);
 		}
 	}
-	
+
 	@Override
 	public void readProperties(String tableName, String idColumn,
 		String id2Column, DbKey parentKey, int key2, Properties props)
 		throws DbIoException
 	{
-		String q = "select * from " + tableName + " where " + idColumn + " = " + parentKey
-			+ " and " + id2Column + " = " + key2;
-		
-		ResultSet rs = doQuery(q);
+		Objects.requireNonNull(props, "A valid properties object must be passed into this function.");
+		Objects.requireNonNull(tableName, "A valid table name is required.");
+		Objects.requireNonNull(parentKey, "A valid Database Identifier is required.");
+		Objects.requireNonNull(idColumn, "The id column must be valid.");
+		String q = "select * from " + tableName + " where " + idColumn + " = ?"
+			+ " and " + id2Column + " = ?";
+
 		try
 		{
-			while (rs != null && rs.next())
-			{
+			doQuery(q,rs-> {
 				String name = rs.getString(3);
 				String value = rs.getString(4);
 				if (value == null)
 					value = "";
 				props.setProperty(name, value);
-			}
+			},parentKey,key2);
 		}
 		catch (SQLException ex)
 		{
@@ -112,7 +117,7 @@ public class PropertiesSqlDao
 		{
 			String key = (String)kob;
 			String q = "insert into " + tableName + " values(" + parentKey
-				+ ", " + sqlString(key) + ", " + sqlString(props.getProperty(key)) + ")"; 
+				+ ", " + sqlString(key) + ", " + sqlString(props.getProperty(key)) + ")";
 			doModify(q);
 		}
 	}
@@ -128,7 +133,7 @@ public class PropertiesSqlDao
 			String propName = (String)kob;
 			String q = "insert into " + tableName + " values(" + parentKey
 				+ ", " + key2
-				+ ", " + sqlString(propName) + ", " + sqlString(props.getProperty(propName)) + ")"; 
+				+ ", " + sqlString(propName) + ", " + sqlString(props.getProperty(propName)) + ")";
 			doModify(q);
 		}
 	}
@@ -138,19 +143,33 @@ public class PropertiesSqlDao
 	public void deleteProperties(String tableName, String idColumn,
 		DbKey parentKey) throws DbIoException
 	{
-		String q = "delete from " + tableName + " where " + idColumn + " = " + parentKey;
-		doModify(q);
+		String q = "delete from " + tableName + " where " + idColumn + " = ?";
+		try
+		{
+			doModify(q,parentKey);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to delete properties with query '" + q + "'.",ex);
+		}
 	}
 
 
 	@Override
 	public void deleteProperties(String tableName, String idColumn,
-		String id2Column, DbKey parentKey, int key2) 
+		String id2Column, DbKey parentKey, int key2)
 			throws DbIoException
 	{
-		String q = "delete from " + tableName + " where " + idColumn + " = " + parentKey
-			+ " and " + id2Column + " = " + key2;
-		doModify(q);
+		String q = "delete from " + tableName + " where " + idColumn + " = ?"
+			+ " and " + id2Column + " = ?";
+		try
+		{
+			doModify(q,parentKey,key2);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to delete properties with query '" + q + "'.",ex);
+		}
 	}
 
 	@Override
@@ -158,34 +177,33 @@ public class PropertiesSqlDao
 		throws DbIoException
 	{
 		String q = "select * from " + tableName;
-		ResultSet rs = doQuery(q);
-		int n = 0;
+		Integer n[] = new Integer[1];
+		n[0] = 0;
 		try
 		{
-			while(rs != null && rs.next())
-			{
+			doQuery(q, rs -> {
 				Object ob = cache.getByKey(DbKey.createDbKey(rs, 1));
 				if (ob == null)
-					continue;
+					return;
 				if (!(ob instanceof HasProperties))
-					throw new DbIoException(
+					throw new SQLException(
 						"Cannot read properties because cached object is not HasProperties");
 
 				String name = rs.getString(2);
 				String value = rs.getString(3);
 				if (value == null)
 					value = "";
-				
+
 				HasProperties hp = (HasProperties)ob;
 				hp.setProperty(name, value);
-				n++;
-			}
-			return n;
+				n[0]++;
+			});
+			return n[0];
 		}
 		catch (SQLException e)
 		{
-			throw new DbIoException("Error reading properties for table " 
-				+ tableName + ": " + e.getMessage());
+			throw new DbIoException("Error reading properties for table "
+				+ tableName + ": " + e.getMessage(),e);
 		}
 	}
 
@@ -217,14 +235,14 @@ public class PropertiesSqlDao
 						n++;
 						continue nextProp;
 					}
-				//warning("Table '" + tableName + "' has property with key=" + key 
+				//warning("Table '" + tableName + "' has property with key=" + key
 				//	+ " and no matching object in list.");
 			}
 			return n;
 		}
 		catch (SQLException e)
 		{
-			throw new DbIoException("Error reading properties for table " 
+			throw new DbIoException("Error reading properties for table "
 				+ tableName + ": " + e.getMessage());
 		}
 	}
