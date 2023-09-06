@@ -31,7 +31,7 @@ jobs:
         # Integration tests require docker now for test containers.
         # More work required to deal with the other platforms. Should be workable
         # at some point though.
-        #if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           ant integration-test -D"no.docs=true" -D"opendcs.test.engine=OpenDCS-XML"
           ant integration-test -D"no.docs=true" -D"opendcs.test.engine=OpenDCS-Postgres"
