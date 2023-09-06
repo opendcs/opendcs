@@ -147,6 +147,7 @@ private long lastDebug = 0L;
 			{
 				Logger.instance().failure("Thread " + getName() + " has failed.");
 				seThread.shutdown();
+				seThread.quit(); // TODO: shutdown AND quit? why?
 				seThread = null;
 				runState = RunState.shutdown;
 				seStatus.setRunStatus("ERROR-system");
