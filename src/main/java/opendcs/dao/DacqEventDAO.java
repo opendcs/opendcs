@@ -97,12 +97,17 @@ public class DacqEventDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return;
 
-		String q = "DELETE FROM " + tableName + " WHERE EVENT_TIME < " + db.sqlDate(cutoff);
-		doModify(q);
-		q = "UPDATE PLATFORM_STATUS set LAST_ERROR_TIME = null "
-			+ "where LAST_ERROR_TIME < " + db.sqlDate(cutoff);
-		try { doModify(q); }
-		catch(Exception ex) {}
+		String q = "DELETE FROM " + tableName + " WHERE EVENT_TIME < ?";
+		try
+		{
+			doModify(q,cutoff);
+			q = "UPDATE PLATFORM_STATUS set LAST_ERROR_TIME = null where LAST_ERROR_TIME < ?";
+			doModify(q,cutoff);
+		}
+		catch(Exception ex)
+		{
+			throw new DbIoException("Unable to delete platform status.", ex);
+		}
 	}
 
 	@Override
