@@ -86,8 +86,14 @@ public class DacqEventDAO
 		}
 		catch(SQLException ex)
 		{
+			StringBuilder sb = new StringBuilder();
 			String msg = "SQL Error in modify query '" + q + "': " + ex;
-			throw new DbIoException(msg,ex);
+			sb.append(msg);
+			if (Logger.instance().getMinLogPriority() == Logger.E_DEBUG3)
+			{
+				sb.append("With event =").append(evt);
+			}
+			throw new DbIoException(sb.toString(),ex);
 		}		
 	}
 
