@@ -234,18 +234,19 @@ public class DaoBase
 
 	/**
 	* Executes an UPDATE or INSERT query.
-	* Thread safe: internally synchronized on the modify-statement.
+	*
+	* Thread safety: No gaurantees. Uses one statement but may share connection depending on OpenDCS implementation.
+	*
 	* @param q the query string
-	* @throws DatabaseException  if the update fails.
+	* @throws DbIoException  if the update fails.
 	* @return number of records modified in the database
 	*/
 	public int doModify(String q)
 		throws DbIoException
 	{
-		Statement modStmt = null;
-		try
+		try(Connection conn = getConnection();
+			Statement modStmt = conn.createStatement();)
 		{
-			modStmt = getConnection().createStatement();
 			debug3("Executing statement '" + q + "'");
 			return modStmt.executeUpdate(q);
 		}
@@ -253,15 +254,6 @@ public class DaoBase
 		{
 			String msg = "SQL Error in modify query '" + q + "': " + ex;
 			throw new DbIoException(msg);
-		}
-		finally
-		{
-			if (modStmt != null)
-			{
-				try { modStmt.close(); }
-				catch(Exception ex) {}
-				modStmt = null;
-			}
 		}
 	}
 
