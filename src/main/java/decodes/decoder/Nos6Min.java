@@ -3,15 +3,6 @@
 *
 * $Log$
 *
-* 2023/08/28 Baoyu Yin
-* added checking for primary WL sensor with wrong raw data (@@@ and ???) - ING697
-*
-* 2023/08/25 Baoyu Yin
-* added checking for redundant WL sensor with wrong raw data (@@@ and ???) - ING694
-*
-* 2023/08/14 Baoyu Yin
-* added U1 sensor hour and minutes offset checking - ING -690
-*
 * 2023/08/04 Baoyu Yin
 * Fixed wrong timestamps for U1 data for the first 0-5 minutes during day change - ING -681
 *
@@ -252,7 +243,7 @@ public class Nos6Min
                                 if (sensorNum != -1) // sensor number already set from previous flag
                                 {
 			           // Discard ??? (262143) or @@@ (0) from decoding 
-				   if (Integer.valueOf(v.getStringValue()) != 262143 && Integer.valueOf(v.getStringValue()) != 0)
+				   if ( isValid(Integer.valueOf(v.getStringValue())) )
 				   {
                                         msg.addSampleWithTime(sensorNum, v, redundantDataTime, 1);
 			           }
