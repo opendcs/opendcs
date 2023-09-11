@@ -3,6 +3,15 @@
 *
 * $Log$
 *
+* 2023/08/28 Baoyu Yin
+* added checking for primary WL sensor with wrong raw data (@@@ and ???) - ING697
+*
+* 2023/08/25 Baoyu Yin
+* added checking for redundant WL sensor with wrong raw data (@@@ and ???) - ING694
+*
+* 2023/08/14 Baoyu Yin
+* added U1 sensor hour and minutes offset checking - ING -690
+*
 * 2023/08/04 Baoyu Yin
 * Fixed wrong timestamps for U1 data for the first 0-5 minutes during day change - ING -681
 *
@@ -74,6 +83,12 @@ public class Nos6Min
                 return module; 
         }
 
+        public boolean isValid(int wl)
+        { 
+                // Discard ??? (262143) or @@@ (0) from decoding 
+	        return (wl != 262143 && wl != 0) ? true : false;
+        }
+
         /**
          * No arguments expected for NOS 6 Min
          */
@@ -131,7 +146,7 @@ public class Nos6Min
 
                 initSensorIndeces();
 
-                int x, y, z, wl, sigma, outlier;
+                int x, y, z, wl, sigma, outlier, hourOffset, minOffset;
                 Date dataTime = null;
                 Date redundantDataTime = null;
                 Variable v;
@@ -140,6 +155,7 @@ public class Nos6Min
                 char c2;
                 boolean firstTime = true;
                 int Qcount = 0;
+		wl = 0;
 
                 while(dd.moreChars())
                 {
@@ -196,7 +212,13 @@ public class Nos6Min
 
                                 v = new Variable("" + wl + "," + sigma + "," + outlier
                                         + "," + x + "," + y);
-                                msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+		         	if (isValid(wl))
+                                   msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+				else
+				   Logger.instance().warning(module +
+				       	": Aqua or Air Gap WL sensor data is discarded for station "
+                	                + stationId + dcpNum + " WL= " + wl);
+
                                 Qcount++;
                                 break;
                         case '2': // BWL
@@ -207,7 +229,12 @@ public class Nos6Min
                                 if (sensorNum == -1)
                                         continue;
                                 v = new Variable("" + wl + "," + sigma + "," + outlier);
-                                msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+		         	if (isValid(wl))
+                                   msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+				else
+				   Logger.instance().warning(module +
+				       	": BWL sensor data is discarded for station "
+                	                + stationId + dcpNum + " WL= " + wl);
                                 break;
 
                         // The redundant blocks are all handled the same. We have
@@ -224,9 +251,17 @@ public class Nos6Min
                                 v.setFlags(v.getFlags() | NosDecoder.FLAG_REDUNDANT);
                                 if (sensorNum != -1) // sensor number already set from previous flag
                                 {
+			           // Discard ??? (262143) or @@@ (0) from decoding 
+				   if (Integer.valueOf(v.getStringValue()) != 262143 && Integer.valueOf(v.getStringValue()) != 0)
+				   {
                                         msg.addSampleWithTime(sensorNum, v, redundantDataTime, 1);
-                                        Logger.instance().info(module + ": redundant WL sensor " 
-                                                + sensorNum + " =" + v);
+			           }
+				   else
+			           {
+					Logger.instance().warning(module +
+				        	": Redundant WL sensor data is discarded for station "
+                	                        + stationId + " with WL= " + v);
+			           }
                                 }
                                 break;
 
@@ -276,9 +311,12 @@ public class Nos6Min
                                 if (sensorNum == -1)
                                         continue;
                                 v = new Variable("" + wl + "," + sigma + "," + outlier);
-                                msg.addSampleWithTime(sensorNum, v, dataTime, 1);
-                                Logger.instance().info(module + ": SAE sensor " + sensorNum 
-                                        + " ='" + v + "'");
+		         	if (isValid(wl))
+                                   msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+				else
+				   Logger.instance().warning(module +
+				       	": SAE WL sensor data is discarded for station "
+                	                + stationId + dcpNum + " WL= " + wl);
                                 break;
                         case '/': // unused flag
                                 break;
@@ -297,7 +335,12 @@ public class Nos6Min
                                 if (sensorNum == -1)
                                         continue;
                                 v = new Variable("" + wl + "," + sigma + "," + outlier);
-                                msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+		         	if (isValid(wl))
+                                   msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+				else
+				   Logger.instance().warning(module +
+				       	": MWWL sensor data is discarded for station "
+                	                + stationId + dcpNum + " WL= " + wl);
                                 break;
                         case '9': // Rel Hum
                                 v = getNumber(2, false);
@@ -343,7 +386,12 @@ public class Nos6Min
                                 if (sensorNum == -1)
                                         continue;
                                 v = new Variable("" + wl + "," + sigma + "," + outlier);
-                                msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+		         	if (isValid(wl))
+                                   msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+				else
+				   Logger.instance().warning(module +
+				       	": Pressure WL data is discarded for station "
+                	                + stationId + dcpNum + " WL= " + wl);
                                 break;
                         case '&': // Paroscientific #2 - Pressure WL (T1, T2, T3)
                                 wl = getInt(3, false);
@@ -353,7 +401,12 @@ public class Nos6Min
                                 if (sensorNum == -1)
                                         continue;
                                 v = new Variable("" + wl + "," + sigma + "," + outlier);
-                                msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+		         	if (isValid(wl))
+                                   msg.addSampleWithTime(sensorNum, v, dataTime, 1);
+				else
+				   Logger.instance().warning(module +
+				       	": Pressure WL data is discarded for station "
+                	                + stationId + dcpNum + " WL= " + wl);
                                 break;
                         case ',': // Unused flag
                                 break;
@@ -392,16 +445,29 @@ public class Nos6Min
                                 z = dcpNum;
                                 dcpNum = primaryDcpNum;
                                 sensorNum = getSensorNumber('U', config);
-                                cal.set(Calendar.HOUR_OF_DAY, getInt(1, false));
-                                cal.set(Calendar.MINUTE, getInt(1, false));
+				hourOffset = getInt(1, false);
+				minOffset = getInt(1, false);
+
+                                cal.set(Calendar.HOUR_OF_DAY, hourOffset);
+                                cal.set(Calendar.MINUTE, minOffset);
                                 x = getInt(1, false); // WL offset in units of 250mm (1/4m)
                                 for(int i=0; i<6; i++)
                                 {
                                         y = getInt(2, false);
                                         dataTime = cal.getTime();
-                                        // Variable will have units of mm
-                                        msg.addSampleWithTime(sensorNum,
-                                                new Variable(x*250 + y), dataTime, 1);
+					// if hourOffset/minOffset is greater than 23/59, discard the data
+					if (hourOffset > 23 || minOffset > 59)
+					{
+						Logger.instance().warning(module +
+						" U1 Time offset is not correct for station: "
+						+ stationId);
+					}
+					else
+					{
+                                                // Variable will have units of mm
+                                                msg.addSampleWithTime(sensorNum,
+                                                    new Variable(x*250 + y), dataTime, 1);
+					}
                                         cal.add(Calendar.MINUTE, -1);
                                 }
                                 dcpNum = z;
