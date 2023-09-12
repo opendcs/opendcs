@@ -2,7 +2,7 @@ package org.opendcs.fixtures.configurations.opendcs.pg;
 
 import java.io.File;
 
-import org.opendcs.fixtures.OpenDCSAppTestCase;
+import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
 
 public class OpenDCSPGConfigurationProvider implements ConfigurationProvider
@@ -14,10 +14,10 @@ public class OpenDCSPGConfigurationProvider implements ConfigurationProvider
     }
 
     @Override
-    public OpenDCSAppTestCase getConfig(File tempDir) throws Exception
+    public Configuration getConfig(File tempDir) throws Exception
     {
         final OpenDCSPGConfiguration config = new OpenDCSPGConfiguration(tempDir);
-        return new OpenDCSAppTestCase(getImplementation(), config);
+        return config;
     }
-    
+
 }
