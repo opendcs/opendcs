@@ -150,90 +150,88 @@ public class PlatformListPanel extends JPanel
 	/**
 	 * Load the combo boxes with the filter lists
 	 */
-	private void loadFilterLists() 
+	private void loadFilterLists()
 	{
 		vectplatf = Database.getDb().platformList.getPlatformVector();
-		if (vectplatf.size() > 0) 
+		Vector<String> platformNames = new Vector<String>(vectplatf.size() + 1);
+		platformNames.add(0, "");
+		for (int x = 1; x < vectplatf.size(); x++)
 		{
-			Vector<String> platformNames = new Vector<String>(vectplatf.size() + 1);
-			platformNames.add(0, "");
-			for (int x = 1; x < vectplatf.size(); x++) 
-			{
-				platformNames.add(x, vectplatf.get(x).getDisplayName());
-			}
-			for (int x = 0; x < platformNames.size(); x++) 
-			{
-				if (null == platformNames.get(x)) 
-				{
-					platformNames.remove(x);
-				}
-			}
-			Collections.sort(platformNames);
-			platformCbx = new JComboBox(platformNames);
-			platformCbx.setSize(new Dimension(25, 25));
-			platformCbx.setSelectedIndex(-1);
-
-			// Agency filter list
-			Vector<String> agencies = new Vector<String>(vectplatf.size() + 1);
-			agencies.add(0, "");
-			for (int y = 1; y < vectplatf.size(); y++) 
-			{
-				agencies.add(y, vectplatf.get(y).getAgency());
-			}
-			agencies = agencies.stream().distinct().collect(Collectors.toCollection(Vector::new));
-			for (int x = 0; x < agencies.size(); x++) 
-			{
-				if (null == agencies.get(x)) 
-				{
-					agencies.remove(x);
-				}
-			}
-
-			Collections.sort(agencies);
-			agencyCbx = new JComboBox(agencies);
-			agencyCbx.setSize(new Dimension(25, 25));
-			agencyCbx.setSelectedIndex(-1);
-
-			// Transport Id filter list
-			Vector<String> transportIds = new Vector<String>(vectplatf.size() + 1);
-			transportIds.add(0, "");
-			for (int x = 1; x < vectplatf.size(); x++) 
-			{
-				transportIds.add(x, vectplatf.get(x).getPreferredTransportId());
-			}
-			transportIds = transportIds.stream().distinct().collect(Collectors.toCollection(Vector::new));
-			for (int x = 0; x < transportIds.size(); x++) 
-			{
-				if (null == transportIds.get(x)) 
-				{
-					transportIds.remove(x);
-				}
-			}
-			Collections.sort(transportIds);
-			transportCbx = new JComboBox(transportIds);
-			transportCbx.setSize(new Dimension(25, 25));
-			transportCbx.setSelectedIndex(-1);
-
-			// Config filter list
-			Vector<String> configNames = new Vector<String>(vectplatf.size() + 1);
-			configNames.add(0, "");
-			for (int x = 1; x < vectplatf.size(); x++) 
-			{
-				configNames.add(x, vectplatf.get(x).getConfigName());
-			}
-			configNames = configNames.stream().distinct().collect(Collectors.toCollection(Vector::new));
-			for (int x = 0; x < configNames.size(); x++) 
-			{
-				if (null == configNames.get(x)) 
-				{
-					configNames.remove(x);
-				}
-			}
-			Collections.sort(configNames);
-			configCbx = new JComboBox(configNames);
-			configCbx.setSize(new Dimension(25, 25));
-			configCbx.setSelectedIndex(-1);
+			platformNames.add(x, vectplatf.get(x).getDisplayName());
 		}
+		for (int x = 0; x < platformNames.size(); x++)
+		{
+			if (null == platformNames.get(x))
+			{
+				platformNames.remove(x);
+			}
+		}
+		Collections.sort(platformNames);
+		platformCbx = new JComboBox(platformNames);
+		platformCbx.setSize(new Dimension(25, 25));
+		platformCbx.setSelectedIndex(-1);
+
+		// Agency filter list
+		Vector<String> agencies = new Vector<String>(vectplatf.size() + 1);
+		agencies.add(0, "");
+		for (int y = 1; y < vectplatf.size(); y++)
+		{
+			agencies.add(y, vectplatf.get(y).getAgency());
+		}
+		agencies = agencies.stream().distinct().collect(Collectors.toCollection(Vector::new));
+		for (int x = 0; x < agencies.size(); x++)
+		{
+			if (null == agencies.get(x))
+			{
+				agencies.remove(x);
+			}
+		}
+
+		Collections.sort(agencies);
+		agencyCbx = new JComboBox(agencies);
+		agencyCbx.setSize(new Dimension(25, 25));
+		agencyCbx.setSelectedIndex(-1);
+
+		// Transport Id filter list
+		Vector<String> transportIds = new Vector<String>(vectplatf.size() + 1);
+		transportIds.add(0, "");
+		for (int x = 1; x < vectplatf.size(); x++)
+		{
+			transportIds.add(x, vectplatf.get(x).getPreferredTransportId());
+		}
+		transportIds = transportIds.stream().distinct().collect(Collectors.toCollection(Vector::new));
+		for (int x = 0; x < transportIds.size(); x++)
+		{
+			if (null == transportIds.get(x))
+			{
+				transportIds.remove(x);
+			}
+		}
+		Collections.sort(transportIds);
+		transportCbx = new JComboBox(transportIds);
+		transportCbx.setSize(new Dimension(25, 25));
+		transportCbx.setSelectedIndex(-1);
+
+		// Config filter list
+		Vector<String> configNames = new Vector<String>(vectplatf.size() + 1);
+		configNames.add(0, "");
+		for (int x = 1; x < vectplatf.size(); x++)
+		{
+			configNames.add(x, vectplatf.get(x).getConfigName());
+		}
+		configNames = configNames.stream().distinct().collect(Collectors.toCollection(Vector::new));
+		for (int x = 0; x < configNames.size(); x++)
+		{
+			if (null == configNames.get(x))
+			{
+				configNames.remove(x);
+			}
+		}
+		Collections.sort(configNames);
+		configCbx = new JComboBox(configNames);
+		configCbx.setSize(new Dimension(25, 25));
+		configCbx.setSelectedIndex(-1);
+
 	}
 
 	/**
