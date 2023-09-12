@@ -144,6 +144,7 @@ MJM 20031104 - removed - do not use this constructor!
 	 * *MUST* take the Database in its constructor. If upgrading/updating things at least consider trying to move
 	 * to constructor injections; even if it means just moving this call up a level.
 	 */
+	@Deprecated
 	public static Database getDb() { return _theDb; }
 
 	/**
