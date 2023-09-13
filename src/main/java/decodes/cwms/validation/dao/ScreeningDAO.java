@@ -121,7 +121,7 @@ public class ScreeningDAO
             Logger.instance().failure(msg);
             System.err.println(msg);
             ex.printStackTrace(System.err);
-            throw new DbIoException(msg);
+            throw new DbIoException(msg,ex);
         }
     }
 
@@ -758,7 +758,7 @@ public class ScreeningDAO
             Logger.instance().failure(msg);
             System.err.println(msg);
             ex.printStackTrace(System.err);
-            throw new DbIoException(msg);
+            throw new DbIoException(msg,ex);
         }
     }
 
@@ -899,7 +899,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
         }
         catch (SQLException ex)
         {
-            ex.printStackTrace();
+            throw new DbioException("Unable to unassign screening", ex);
         }
     }
 
@@ -932,7 +932,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
         catch (SQLException ex)
         {
             throw new DbIoException(module + ".renameScreening(" + screeningId + ", " + desc
-                + ": Error: " + ex);
+                + ": Error: " + ex,ex);
         }
     }
 }
