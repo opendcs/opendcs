@@ -796,11 +796,11 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
     {
         String q = "select distinct screening_code, ts_code, active_flag "
             + "from CWMS_V_SCREENED_TS_IDS "
-            + "where DB_OFFICE_ID = " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId());
+            + "where DB_OFFICE_ID = ?";
         if (activeOnly)
             q = q + " and (upper(ACTIVE_FLAG) = 'T' or upper(ACTIVE_FLAG) = 'Y')";
 
-        ArrayList<TsidScreeningAssignment> ret = new ArrayList<TsidScreeningAssignment>();
+        final ArrayList<TsidScreeningAssignment> ret = new ArrayList<TsidScreeningAssignment>();
 
         class TSA
         {
@@ -809,18 +809,16 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
         };
 
         ArrayList<TSA> results = new ArrayList<TSA>();
-        ResultSet rs = doQuery(q);
-        TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
-        try
+
+        try (TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();)
         {
-            // Collect results first, then lookup objects to avoid nested queries.
-            while(rs.next())
-            {
+            doQuery(q,rs -> {
                 DbKey screeningCode = DbKey.createDbKey(rs, 1);
                 DbKey tsCode = DbKey.createDbKey(rs, 2);
                 boolean active = TextUtil.str2boolean(rs.getString(3));
                 results.add(new TSA(screeningCode, tsCode, active));
-            }
+            }, ((CwmsTimeSeriesDb)db).getDbOfficeId());
+            // Collect results first, then lookup objects to avoid nested queries.
             for(TSA p : results)
             {
                 Screening screening = null;
@@ -847,10 +845,6 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
         catch(SQLException ex)
         {
             warning(module + ".getTsidScreeningAssociations() error in query '" + q + "': " + ex);
-        }
-        finally
-        {
-            timeSeriesDAO.close();
         }
         return ret;
     }
@@ -899,7 +893,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
         }
         catch (SQLException ex)
         {
-            throw new DbioException("Unable to unassign screening", ex);
+            throw new DbIoException("Unable to unassign screening", ex);
         }
     }
 
