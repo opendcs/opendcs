@@ -7,7 +7,6 @@
  */
 package decodes.cwms.validation.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import decodes.cwms.validation.Screening;
@@ -74,7 +73,7 @@ public interface ScreeningDAI
 	 * @return an array of all screening assignments
 	 * @throws DbIoException on any SQL error
 	 */
-	public ArrayList<TsidScreeningAssignment> getTsidScreeningAssignments(boolean activeOnly)
+	public List<TsidScreeningAssignment> getTsidScreeningAssignments(boolean activeOnly)
 		throws DbIoException;
 	
 	/**
