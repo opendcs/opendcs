@@ -8,6 +8,7 @@
 package decodes.cwms.validation.dao;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import decodes.cwms.validation.Screening;
 import decodes.sql.DbKey;
@@ -64,7 +65,7 @@ public interface ScreeningDAI
 	 * Used by GUI to populate the list tab.
 	 * @return list of all screening objects in the database.
 	 */
-	public ArrayList<Screening> getAllScreenings()
+	public List<Screening> getAllScreenings()
 		throws DbIoException;
 	
 	/**
