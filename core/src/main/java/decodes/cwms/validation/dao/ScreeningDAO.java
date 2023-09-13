@@ -111,7 +111,10 @@ public class ScreeningDAO
         throws DbIoException
     {
         super(tsdb, module);
-        try { csdbio = CwmsDbServiceLookup.buildCwmsDb(CwmsDbVt.class, getConnection()); }
+        try(Connection conn = getConnection())
+        {
+            csdbio = CwmsDbServiceLookup.buildCwmsDb(CwmsDbVt.class, conn);
+        }
         catch(Exception ex)
         {
             String msg = module + " cannot create CwmsScreeningDbIo: " + ex;
@@ -739,11 +742,11 @@ public class ScreeningDAO
     public DbKey getKeyForId(String screeningId)
         throws DbIoException
     {
-        try
+        try (Connection conn = getConnection();)
         {
             String P_SCREENING_ID = screeningId;
             long P_DB_OFFICE_CODE = ((CwmsTimeSeriesDb)db).getDbOfficeCode().getValue();
-            BigDecimal O_RET = csdbio.getScreeningCode(getConnection(), P_SCREENING_ID, (double)P_DB_OFFICE_CODE);
+            BigDecimal O_RET = csdbio.getScreeningCode(conn, P_SCREENING_ID, (double)P_DB_OFFICE_CODE);
             return O_RET == null ? DbKey.NullKey : DbKey.createDbKey(O_RET.longValue());
         }
         catch (SQLException ex)
@@ -858,12 +861,12 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
     {
         // Note: CCP ignores the resultant TS ID in the table. Results are assigned via CCP output params.
 
-        try
+        try (Connection conn = getConnection())
         {
             List<ScreenAssignT> screenAssignTS = Collections.singletonList(
                 new ScreenAssignT(tsid.getUniqueString(), active, null));
 
-            csdbio.assignScreeningId(getConnection(),
+            csdbio.assignScreeningId(conn,
                 screening.getScreeningName(),
                 screenAssignTS, ((CwmsTimeSeriesDb)db).getDbOfficeId());
         }
@@ -879,16 +882,16 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
                 ps.println("Cause is: " + ex);
                 ex.printStackTrace(ps);
             }
-            throw new DbIoException(msg);
+            throw new DbIoException(msg,ex);
         }
     }
 
     @Override
     public void unassignScreening(Screening screening, TimeSeriesIdentifier tsid) throws DbIoException
     {
-        try
+        try (Connection conn = getConnection();)
         {
-            csdbio.unassignScreeningId(getConnection(),
+            csdbio.unassignScreeningId(conn,
                 screening.getScreeningName(),
                 Collections.singletonList(tsid != null ? tsid.getUniqueString() : null),
                 tsid == null,
@@ -903,18 +906,15 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
     @Override
     public void renameScreening(String oldId, String newId) throws DbIoException
     {
-        try
+        try (Connection conn = getConnection();)
         {
             Logger.instance().info("Renaming screening '" + oldId + "' to '" + newId + "'");
-            csdbio.renameScreeningId(getConnection(),
-                oldId,
-                newId,
-                ((CwmsTimeSeriesDb)db).getDbOfficeId());
+            csdbio.renameScreeningId(conn, oldId, newId, ((CwmsTimeSeriesDb)db).getDbOfficeId());
         }
         catch (SQLException ex)
         {
             throw new DbIoException(module + ".renameScreening(" + oldId + ", " + newId
-                + ": Error: " + ex);
+                + ": Error: " + ex, ex);
         }
     }
 
@@ -922,9 +922,9 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
     public void updateScreeningDescription(String screeningId, String desc) throws DbIoException
     {
 
-        try
+        try (Connection conn = getConnection();)
         {
-            csdbio.updateScreeningIdDesc(getConnection(),
+            csdbio.updateScreeningIdDesc(conn,
                 screeningId,
                 desc,
                 ((CwmsTimeSeriesDb)db).getDbOfficeId());
