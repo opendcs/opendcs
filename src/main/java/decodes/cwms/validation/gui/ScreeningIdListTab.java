@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
@@ -383,7 +384,7 @@ class ScreeningIdTableModel
 {
 	static String columnNames[] = { "Screening ID", "Description", "Param", "Param Type", "Duration" };
 	static int columnWidths[] = { 20, 41, 13, 13, 13 };
-	ArrayList<Screening> screenings = new ArrayList<Screening>();
+	List<Screening> screenings = new ArrayList<>();
 	private int sortColumn = 0;
 
 	@Override
@@ -455,11 +456,10 @@ class ScreeningIdTableModel
 		return screenings.get(row);
 	}
 
-	public void setScreenings(ArrayList<Screening> screenings)
+	public void setScreenings(List<Screening> screenings)
 	{
 		this.screenings = screenings;
 		sortByColumn(sortColumn);
 	}
 	
 }
-
