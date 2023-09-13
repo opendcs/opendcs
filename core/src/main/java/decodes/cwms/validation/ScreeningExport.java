@@ -10,6 +10,7 @@ package decodes.cwms.validation;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -123,9 +124,11 @@ public class ScreeningExport extends TsdbAppTemplate
 
 		if (allArg.getValue())
 		{
-			ArrayList<Screening> allScreenings = screeningDAO.getAllScreenings();
+			List<Screening> allScreenings = screeningDAO.getAllScreenings();
 			for(Screening s : allScreenings)
+			{
 				screeningIDs.add(s.getScreeningName());
+			}
 		}
 		else
 		{

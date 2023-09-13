@@ -28,6 +28,7 @@ package decodes.cwms.validation.dao;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -131,7 +132,7 @@ public class ScreeningDAO
 		if (DbKey.isNull(screening.getScreeningCode()))
 			screening.setScreeningCode(getKeyForId(screening.getScreeningName()));
 		
-		try
+		try(Connection conn = getConnection();)
 		{
 			String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
 			String P_SCREENING_ID = screening.getScreeningName();
@@ -153,7 +154,7 @@ public class ScreeningDAO
 					+ screening.getParamId() + ", paramType=" + screening.getParamTypeId() + ", dur="
 					+ screening.getDurationId() + ", officeId=" + officeId);
 //System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER_ID);
-				csdbio.createScreeningId(getConnection(),
+				csdbio.createScreeningId(conn,
 					P_SCREENING_ID, P_SCREENING_ID_DESC, P_PARAMETER_ID,
 					P_PARAMETER_TYPE_ID, P_DURATION_ID, P_DB_OFFICE_ID);
 				
@@ -168,7 +169,7 @@ public class ScreeningDAO
 			{
 				Logger.instance().info("Screening already exists with key=" + screening.getScreeningCode()
 					+ ", updating description.");
-				csdbio.updateScreeningIdDesc(getConnection(),
+				csdbio.updateScreeningIdDesc(conn,
 					P_SCREENING_ID, P_SCREENING_ID_DESC, P_DB_OFFICE_ID);
 			}
 			
@@ -261,7 +262,7 @@ public class ScreeningDAO
 				screening.isDurMagActive() ? "T" : "F");
 			
 			info("Calling storeScreeningCriteria with " + oracleScreenCrit.length + " seasons.");
-			csdbio.storeScreeningCriteria(getConnection(),
+			csdbio.storeScreeningCriteria(conn,
 				P_SCREENING_ID,
 				oracleScreenCritArray,
 				"1Hour",
@@ -277,7 +278,7 @@ public class ScreeningDAO
 			Logger.instance().failure(msg);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 		
 	}
@@ -286,9 +287,9 @@ public class ScreeningDAO
 	public void deleteScreening(Screening screening)
 		throws DbIoException
 	{
-		try
+		try (Connection conn = getConnection();)
 		{
-			csdbio.deleteScreeningId(getConnection(),
+			csdbio.deleteScreeningId(conn,
 				screening.getScreeningName(),
 				screening.getParamId(),
 				screening.getParamTypeId(),
@@ -311,42 +312,40 @@ public class ScreeningDAO
 	{
 		if (DbKey.isNull(screeningCode))
 			return null;
-		
-		Screening ret = cache.getByKey(screeningCode);
-		if (ret != null)
-			return ret;
+
+		Screening tmp = cache.getByKey(screeningCode);
+		if (tmp != null)
+			return tmp;
 
 		String q = "select distinct " + screenIdColumns + " from " + screenIdTable
-			+ " where screening_code = " + screeningCode
+			+ " where screening_code = ?"
 			+ " ORDER BY SCREENING_ID";
-		
+
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (!rs.next())
-				throw new NoSuchObjectException("No screening with code=" + screeningCode);
-			ret = rs2Screening(rs);
-			
-			q = "select distinct " + screenControlColumns + " from " + screenControlTable
-				+ " where screening_code = " + screeningCode;
-			rs = doQuery(q);
-			if (rs.next())
-				rsAddControl(rs, ret);
-			
-			q = "select distinct " + screenCritColumns + " from " + screenCritTable
-				+ " where screening_code = " + screeningCode
-				+ " and unit_system = 'SI'";
-			rs = doQuery(q);
-			while(rs.next())
-				rsAddCriteria(rs, ret);
-			
-			q = "select distinct " + durMagColumns + " from " + durMagTable
-				+ " where screening_code = " + screeningCode
-				+ " and unit_system = 'SI'"
-				+ " and unit_id = " + sqlString(ret.getCheckUnitsAbbr());
-			rs = doQuery(q);
-			while(rs.next())
+			final Screening ret = getSingleResult(q,rs-> {
+					return rs2Screening(rs);
+				}, screeningCode);
+
+			if (ret == null)
 			{
+				throw new NoSuchObjectException("No screening with code=" + screeningCode);
+			}
+
+			q = "select distinct " + screenControlColumns + " from " + screenControlTable
+				+ " where screening_code = ?";
+			doQuery(q, rs -> rsAddControl(rs, ret),screeningCode);
+
+			q = "select distinct " + screenCritColumns + " from " + screenCritTable
+				+ " where screening_code = ?"
+				+ " and unit_system = 'SI'";
+			doQuery(q, rs -> rsAddCriteria(rs, ret),screeningCode);
+
+			q = "select distinct " + durMagColumns + " from " + durMagTable
+				+ " where screening_code = ?"// + screeningCode
+				+ " and unit_system = 'SI'"
+				+ " and unit_id = ?"; // + sqlString(ret.getCheckUnitsAbbr());
+			doQuery(q, rs -> {
 				int day = rs.getInt(2);
 				int month = rs.getInt(3);
 				ScreeningCriteria crit = getCritFor(ret, day, month);
@@ -357,7 +356,8 @@ public class ScreeningDAO
 					ret.add(crit);
 				}
 				rsAddDurMag(rs, crit);
-			}
+			}, screeningCode,ret.getCheckUnitsAbbr());
+
 			checkUnits(ret);
 			cache.put(ret);
 			return ret;
@@ -365,77 +365,31 @@ public class ScreeningDAO
 		catch (SQLException ex)
 		{
 			String msg = module + ".getByKey(): Error parsing results for query '" + q + "': " + ex;
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 	
+	/*
+	 * TODO: This can probably be converted to a join and be cleaner.
+	 */
 	@Override
-	public ArrayList<Screening> getAllScreenings() throws DbIoException
+	public List<Screening> getAllScreenings() throws DbIoException
 	{
 		String q = "select distinct " + screenIdColumns + " from cwms_v_screening_id "
 			+ " ORDER BY SCREENING_ID";
-		
-		ArrayList<Screening> ret = new ArrayList<Screening>();
+
 		try
 		{
-			ResultSet rs = doQuery(q);
-			while (rs.next())
+			final List<Screening> ret = getResults(q, rs -> rs2Screening(rs));
+			for(Screening s: ret)
 			{
-				Screening screening = rs2Screening(rs);
-				ret.add(screening);
-				cache.put(screening);
-			}
-				
-			q = "select distinct " + screenCritColumns + " from " + screenCritTable
-				+ " where upper(db_office_id) = " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
-				+ " and (unit_system = 'SI' or unit_system is null)";
-			rs = doQuery(q);
-			while(rs.next())
-			{
-				DbKey screeningCode = DbKey.createDbKey(rs, 1);
-				Screening screening = null;
-				for(Screening s : ret)
-					if (s.getScreeningCode().equals(screeningCode))
-					{
-						screening = s;
-						break;
-					}
-				if (screening == null)
-				{
-					warning("Screening criteria with code=" + screeningCode + " but there is no "
-						+ "matching screening id");
-					continue; // shouldn't happen
-				}
-				rsAddCriteria(rs, screening);
-			}
-			
-			q = "select distinct " + screenControlColumns + " from " + screenControlTable;
-			rs = doQuery(q);
-			while(rs.next())
-			{
-				DbKey screeningCode = DbKey.createDbKey(rs, 1);
-				Screening screening = null;
-				for(Screening s : ret)
-					if (s.getScreeningCode().equals(screeningCode))
-					{
-						screening = s;
-						break;
-					}
-				if (screening == null)
-				{
-					warning("Screening criteria with code=" + screeningCode + " but there is no "
-						+ "matching screening id");
-					continue; // shouldn't happen
-				}
-				rsAddControl(rs, screening);
+				cache.put(s);
 			}
 
-			q = "select distinct " + durMagColumns + " from " + durMagTable
-				+ " where upper(db_office_id) = " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
+			q = "select distinct " + screenCritColumns + " from " + screenCritTable
+				+ " where upper(db_office_id) = ?"// + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
 				+ " and (unit_system = 'SI' or unit_system is null)";
-			rs = doQuery(q);
-			while(rs.next())
-			{
+			doQuery(q, rs -> {
 				DbKey screeningCode = DbKey.createDbKey(rs, 1);
 				Screening screening = null;
 				for(Screening s : ret)
@@ -445,7 +399,47 @@ public class ScreeningDAO
 						break;
 					}
 				if (screening == null)
-					continue; // shouldn't happen
+				{
+					warning("Screening criteria with code=" + screeningCode + " but there is no "
+						+ "matching screening id");
+					return; // shouldn't happen
+				}
+				rsAddCriteria(rs, screening);
+			}, ((CwmsTimeSeriesDb)db).getDbOfficeId());
+
+			q = "select distinct " + screenControlColumns + " from " + screenControlTable;
+			doQuery(q, rs -> {
+				DbKey screeningCode = DbKey.createDbKey(rs, 1);
+				Screening screening = null;
+				for(Screening s : ret)
+					if (s.getScreeningCode().equals(screeningCode))
+					{
+						screening = s;
+						break;
+					}
+				if (screening == null)
+				{
+					warning("Screening criteria with code=" + screeningCode + " but there is no "
+						+ "matching screening id");
+					return; // shouldn't happen
+				}
+				rsAddControl(rs, screening);
+			});
+
+			q = "select distinct " + durMagColumns + " from " + durMagTable
+				+ " where upper(db_office_id) = ? " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
+				+ " and (unit_system = 'SI' or unit_system is null)";
+			doQuery(q, rs -> {
+				DbKey screeningCode = DbKey.createDbKey(rs, 1);
+				Screening screening = null;
+				for(Screening s : ret)
+					if (s.getScreeningCode().equals(screeningCode))
+					{
+						screening = s;
+						break;
+					}
+				if (screening == null)
+					return; // shouldn't happen
 
 				int day = rs.getInt(2);
 				int month = rs.getInt(3);
@@ -457,17 +451,19 @@ public class ScreeningDAO
 					screening.add(crit);
 				}
 				rsAddDurMag(rs, crit);
-			}
+			},((CwmsTimeSeriesDb)db).getDbOfficeId());
 			
 			for(Screening scr : ret)
+			{
 				checkUnits(scr);
+			}
 			
 			return ret;
 		}
 		catch (SQLException ex)
 		{
 			String msg = module + ".getAllScreenings(): Error parsing results for query '" + q + "': " + ex;
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 	
