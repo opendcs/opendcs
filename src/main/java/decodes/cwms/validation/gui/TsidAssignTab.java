@@ -18,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -270,7 +271,7 @@ class TsidAssignTableModel
 		{ "Screening ID", "Active?", "Location", "Param", "Param Type", "Interval", "Duration", "Version" };
 	static int columnWidths[] = { 28, 10, 12, 10, 10, 10, 10, 10 };
 	
-	ArrayList<TsidScreeningAssignment> assignments = new ArrayList<TsidScreeningAssignment>();
+	List<TsidScreeningAssignment> assignments = new ArrayList<TsidScreeningAssignment>();
 	private int sortColumn = 0;
 
 	@Override
@@ -279,7 +280,7 @@ class TsidAssignTableModel
 		return assignments.size();
 	}
 
-	public void setAssignments(ArrayList<TsidScreeningAssignment> tsidScreeningAssignments)
+	public void setAssignments(List<TsidScreeningAssignment> tsidScreeningAssignments)
 	{
 		this.assignments = tsidScreeningAssignments;
 		sortByColumn(sortColumn);

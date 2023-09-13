@@ -172,7 +172,7 @@ public class ScreeningExport extends TsdbAppTemplate
             System.exit(1);
         }
 
-        ArrayList<TsidScreeningAssignment> tsidAssignments = screeningDAO.getTsidScreeningAssignments(false);
+        List<TsidScreeningAssignment> tsidAssignments = screeningDAO.getTsidScreeningAssignments(false);
         for(String screeningID : screeningIDs)
         {
             DbKey key = screeningDAO.getKeyForId(screeningID);
