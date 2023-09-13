@@ -791,7 +791,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
     }
 
     @Override
-    public ArrayList<TsidScreeningAssignment> getTsidScreeningAssignments(boolean activeOnly)
+    public List<TsidScreeningAssignment> getTsidScreeningAssignments(boolean activeOnly)
         throws DbIoException
     {
         String q = "select distinct screening_code, ts_code, active_flag "
