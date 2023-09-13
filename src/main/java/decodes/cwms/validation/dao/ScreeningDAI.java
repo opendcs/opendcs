@@ -15,7 +15,7 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 
-public interface ScreeningDAI
+public interface ScreeningDAI extends AutoCloseable
 {
 	/**
 	 * Write a screening object to the CWMS database.

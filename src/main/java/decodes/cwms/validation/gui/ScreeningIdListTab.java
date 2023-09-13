@@ -27,7 +27,6 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -39,7 +38,6 @@ import javax.swing.table.AbstractTableModel;
 import opendcs.dai.TimeSeriesDAI;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
-import decodes.syncgui.SyncGuiFrame;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.groupedit.TimeSeriesSelectDialog;
@@ -173,8 +171,8 @@ public class ScreeningIdListTab extends JPanel
 		
 		Screening scr = (Screening)model.getRowObject(screeningIdTable.getSelectedRow());
 		TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(frame.getTheDb(), false, frame);
-		TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();
-		try
+
+		try (TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();)
 		{
 			if (allTsids == null)
 				allTsids = tsDAO.listTimeSeries();
@@ -201,21 +199,15 @@ public class ScreeningIdListTab extends JPanel
 			frame.showError("Error reading TSIDs from the database: " + ex);
 			return;
 		}
-		finally
-		{
-			tsDAO.close();
-		}
-		
-		
+
 		dlg.setMultipleSelection(true);
 		frame.launchDialog(dlg);
 		TimeSeriesIdentifier[] selections = dlg.getSelectedDataDescriptors();
-		
-		ScreeningDAI screeningDAO = null;
+
+
 		TimeSeriesIdentifier tsidT = null;
-		try
+		try (ScreeningDAI screeningDAO = frame.getTheDb().makeScreeningDAO();)
 		{
-			screeningDAO = frame.getTheDb().makeScreeningDAO();
 			if (screeningDAO == null)
 			{
 				frame.showError("This database does not support screening.");
@@ -237,19 +229,12 @@ public class ScreeningIdListTab extends JPanel
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 		}
-		finally
-		{
-			if (screeningDAO != null)
-				screeningDAO.close();
-		}
 	}
 
 	public void refresh()
 	{
-		ScreeningDAI screeningDAO = null;
-		try
+		try (ScreeningDAI screeningDAO = frame.getTheDb().makeScreeningDAO();)
 		{
-			screeningDAO = frame.getTheDb().makeScreeningDAO();
 			if (screeningDAO == null)
 			{
 				frame.showError("This database does not support screening.");
@@ -264,25 +249,17 @@ public class ScreeningIdListTab extends JPanel
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 		}
-		finally
-		{
-			if (screeningDAO != null)
-				screeningDAO.close();
-		}
+
 		frame.getTsidAssignTab().doRefresh();
-		
-		TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();
-		try
+
+
+		try (TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();)
 		{
 			allTsids = tsDAO.listTimeSeries(true);
 		}
 		catch (DbIoException ex)
 		{
 			frame.showError("Error reading TSIDs from the database: " + ex);
-		}
-		finally
-		{
-			tsDAO.close();
 		}
 	}
 
@@ -312,10 +289,9 @@ public class ScreeningIdListTab extends JPanel
 		if (res != JOptionPane.YES_OPTION)
 			return;
 		
-		ScreeningDAI screeningDAO = null;
-		try
+
+		try (ScreeningDAI screeningDAO = frame.getTheDb().makeScreeningDAO();)
 		{
-			screeningDAO = frame.getTheDb().makeScreeningDAO();
 			screeningDAO.deleteScreening(scr);
 			refresh();
 		}
@@ -325,11 +301,6 @@ public class ScreeningIdListTab extends JPanel
 			frame.showError(msg);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
-		}
-		finally
-		{
-			if (screeningDAO != null)
-				screeningDAO.close();
 		}
 	}
 
@@ -359,7 +330,7 @@ public class ScreeningIdListTab extends JPanel
 			frame.showError("Select table row, then press Edit");
 			return;
 		}
-System.out.println("Edit pressed for row " + row);
+		System.out.println("Edit pressed for row " + row);
 		Screening scr = (Screening)model.getRowObject(row);
 		frame.open(scr);
 	}
