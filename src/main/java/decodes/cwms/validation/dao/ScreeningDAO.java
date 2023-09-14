@@ -506,34 +506,34 @@ public class ScreeningDAO
     {
         String q = "select distinct screening_code, active_flag "
             + "from CWMS_V_SCREENED_TS_IDS "
-            + "where DB_OFFICE_ID = " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
-            + " and TS_CODE = " + tsid.getKey();
-        ResultSet rs = doQuery(q);
+            + "where DB_OFFICE_ID = ?"
+            + " and TS_CODE = ?";
 
         try
         {
-            if (rs.next())
-            {
+            TsidScreeningAssignment ret = getSingleResult(q, rs -> {
                 DbKey screeningCode = DbKey.createDbKey(rs, 1);
                 boolean active = TextUtil.str2boolean(rs.getString(2));
-
-                Screening screening = null;
-                try { screening = getByKey(screeningCode); }
+                try
+                {
+                     Screening screening = getByKey(screeningCode);
+                     return new TsidScreeningAssignment(tsid, screening, active);
+                }
+                catch(DbIoException ex)
+                {
+                    throw new SQLException("Unable to retrieved screening for Code: " + screeningCode,ex);
+                }
                 catch(NoSuchObjectException ex)
                 {
-                    warning("Screening Code " + screeningCode + " refers to non-existent screening.");
-                    return null;
+                    throw new SQLException("Screening Code " + screeningCode + " refers to non-existent screening.",ex);
                 }
-
-                return new TsidScreeningAssignment(tsid, screening, active);
-            }
-            else
-                return null;
+            },((CwmsTimeSeriesDb)db).getDbOfficeId(),tsid.getKey());
+            return ret;
         }
         catch (SQLException ex)
         {
             String msg = module + ".getScreeningForTS() Error reading screening assignment: " + ex;
-            throw new DbIoException(msg);
+            throw new DbIoException(msg,ex);
         }
     }
 
