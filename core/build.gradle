@@ -1,11 +1,17 @@
 plugins
-{    
+{
     id 'opendcs.java-conventions'
     id 'java-library'
 }
-
+configurations {
+    all*.exclude group: "com.oracle.database.jdbc"
+}
 dependencies {
-    implementation "com.oracle.ojdbc:ojdbc8:19.3.0.0"
+    implementation("com.oracle.ojdbc:ojdbc8") {
+        version {
+            strictly "19.3.0.0"
+        }
+    }
     implementation "org.postgresql:postgresql:42.2.23"
     implementation "asm:asm:3.3"
     implementation "cglib:cglib:2.1_3"
@@ -34,12 +40,21 @@ dependencies {
     implementation( "mil.army.usace.hec:cwms-db-jooq:9.3.5") {
            exclude group: "org.jooq.pro", module: "jooq-meta"
            exclude group: "org.jooq.pro", module: "jooq-codegen"
+           exclude group: "com.oracle.database.jdbc"
+           exclude group: "mil.army.usace.hec", module: "hec-monolith"
     }
     implementation "mil.army.usace.hec:cwms-db-aspects:9.3.5"
-    implementation "mil.army.usace.hec:cwms-db-dao:9.3.5"
-    implementation "mil.army.usace.hec:hec-db-jdbc:9.3.5"
+    implementation("mil.army.usace.hec:cwms-db-dao:9.3.5") {
+        exclude group: "com.oracle.database.jdbc"
+        exclude group: "com.oracle.database.jdbc", module: "jmscommon"
+        exclude group: "mil.army.usace.hec", module: "hec-monolith"
+    }
+    implementation("mil.army.usace.hec:hec-db-jdbc:9.3.5") {
+        exclude group: "com.oracle.database.jdbc"
+        exclude group: "mil.army.usace.hec", module: "hec-monolith"
+    }
 
-    implementation("mil.army.usace.hec:hec-monolith:2.0.2") {
+    implementation("mil.army.usace.hec:hec-monolith") {
         exclude group: "codebase"
         exclude group: "org.jdom"
         exclude group: "org.bouncycastle"
@@ -48,6 +63,7 @@ dependencies {
         exclude group: "mil.army.usace.hec.swingx"
         exclude group: "com.fifesoft"
         exclude group: "org.python"
+        exclude group: "com.oracle.database.jdbc"
         exclude group: "com.vividsolutions"
         exclude group: "mil.army.usace.hec", module: "context-specific-help"
         exclude group: "mil.army.usace.hec", module: "hec-geojson"
@@ -58,9 +74,19 @@ dependencies {
         exclude group: "org.jfree"
         exclude group: "com.mrsid"
         exclude group: "javax.help"
+        exclude group: "org.jooq.pro"
+        version {
+            strictly "2.0.2"
+        }
     }
 
-    implementation "mil.army.usace.hec:hec-cwms-ratings-core:1.1.0"
+    implementation("mil.army.usace.hec:hec-cwms-ratings-core") {
+        exclude group: "com.oracle.database.jdbc"
+        exclude group: "mil.army.usace.hec", module: "hec-monolith"
+        version {
+            strictly "1.1.0"
+        }
+    }
     implementation 'mil.army.usace.hec:hec-nucleus-metadata:1.1.1' 
 
     testImplementation "org.junit.platform:junit-platform-launcher:1.8.2"
@@ -129,4 +155,6 @@ configurations.all
     exclude group: "javax.media"
     exclude group: "com.sun.media"
     exclude group: "log4j"
+    exclude group: "org.jooq.pro", module: "jooq-meta"
+    exclude group: "org.jooq.pro", module: "jooq-codegen"
 }

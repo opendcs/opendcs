@@ -12,6 +12,7 @@ buildscript {
 plugins {
     id 'com.bmuschko.izpack' version '3.2'
     id 'java'
+    id 'opendcs.java-conventions'
 }
 
 configurations {
