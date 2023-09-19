@@ -33,7 +33,7 @@ final class XmlDatabaseTest {
      * @throws Exception
      */
     @Test
-    public void createTwoDecodesScriptsThenRead() throws Exception
+    public void testReadingDecodesScripts() throws Exception
     {
         Path xmlDir = Files.createTempDirectory("xml-test-dir-{01}");
         try {
@@ -74,7 +74,7 @@ final class XmlDatabaseTest {
                 throw new Exception("Expected 2 scripts (after reading from disk).  Found "+cfg.getNumScripts());
         }
         finally {
-            //deleteDirectory(xmlDir.toFile());
+            deleteDirectory(xmlDir.toFile());
         }
     }
 
