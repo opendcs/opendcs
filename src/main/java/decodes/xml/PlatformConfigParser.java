@@ -5,7 +5,8 @@ package decodes.xml;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import java.util.Collection;
+
+import java.util.ArrayList;
 import java.util.Iterator;
 import decodes.db.*;
 import decodes.db.DecodesScript.DecodesScriptBuilder;
@@ -13,6 +14,8 @@ import ilex.util.TextUtil;
 import ilex.util.AsciiUtil;
 import ilex.util.Logger;
 import java.io.IOException;
+import java.util.List;
+
 import ilex.xml.*;
 
 /**
@@ -24,8 +27,8 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 	/**
 	 * Reference to the DecodesScriptBuilder so we can finalized after we've read it in.
 	 */
-	private DecodesScriptBuilder scriptBuilder; 
-	private DecodesScriptParser scriptParser;
+	private List<DecodesScriptParser> decodesScriptParserList = new ArrayList<>();
+	private List<DecodesScriptBuilder> decodesScriptBuilderList = new ArrayList<>();
 
 	private static final int descriptionTag = 0;
 
@@ -109,10 +112,12 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 			 * the creation and assignment of the decodes script to the endtag
 			 * when it's all ready.
 			 */
-			scriptParser = new DecodesScriptParser();
-			scriptBuilder = DecodesScript.from(scriptParser)
+			DecodesScriptParser scriptParser = new DecodesScriptParser();
+			DecodesScriptBuilder scriptBuilder = DecodesScript.from(scriptParser)
 										.platformConfig(platformConfig)
 										.scriptName(nm);
+			decodesScriptParserList.add(scriptParser);
+			decodesScriptBuilderList.add(scriptBuilder);
 			hier.pushObjectParser(scriptParser);
 		}
 		else
@@ -141,24 +146,22 @@ public class PlatformConfigParser implements XmlObjectParser, XmlObjectWriter, T
 				+ ", expected " + myName());
 		}		
 		hier.popObjectParser();
-		if (scriptBuilder != null)
-		{
-			try
-			{
-				DecodesScript ds = scriptBuilder.build();
-				ds.scriptType = scriptParser.getType();
-				for(ScriptSensor s: scriptParser.getSensors())
-				{
+		try {
+			for (int i = 0; i < decodesScriptBuilderList.size(); i++) {
+				DecodesScriptBuilder sb = decodesScriptBuilderList.get(i);
+				DecodesScriptParser sp = decodesScriptParserList.get(i);
+				DecodesScript ds = sb.build();
+				ds.scriptType = sp.getType();
+				for (ScriptSensor s : sp.getSensors()) {
 					s.decodesScript = ds;
 					ds.scriptSensors.add(s);
 				}
-				ds.setDataOrder(scriptParser.getDataOrder());
+				ds.setDataOrder(sp.getDataOrder());
 				this.platformConfig.addScript(ds);
 			}
-			catch (DecodesScriptException | IOException ex)
-			{
-				throw new SAXException("Failed to load Decodes Script",ex);
-			}
+		}catch (DecodesScriptException | IOException ex)
+		{
+			throw new SAXException("Failed to load Decodes Script",ex);
 		}
 	}
 
