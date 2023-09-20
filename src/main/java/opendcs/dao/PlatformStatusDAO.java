@@ -52,7 +52,7 @@ public class PlatformStatusDAO
 			return null;
 		
 		String q = "select " + ps_attrs + " from platform_status "
-			+ "where platform_id = ?";// + platformId;
+			+ "where platform_id = ?";
 		
 		try
 		{
