@@ -18,10 +18,10 @@ public class DacqEventDAO
 	extends DaoBase implements DacqEventDAI
 {
 	public static final String module = "DacqEventDAO";
-	public static final String tableName = "DACQ_EVENT";
+	public static final String dacqEventTableName = "DACQ_EVENT";
 	public static final String columnsBase = "DACQ_EVENT_ID, SCHEDULE_ENTRY_STATUS_ID, PLATFORM_ID, EVENT_TIME, "
 		+ "EVENT_PRIORITY, SUBSYSTEM, MSG_RECV_TIME, EVENT_TEXT";
-	public static String columns = columnsBase;
+	public static String dacqEventColumns = columnsBase;
 	private boolean hasAppId = false;
 	
 
@@ -44,7 +44,7 @@ public class DacqEventDAO
 			}
 		}
 		if (hasAppId)
-			columns = columnsBase + ", LOADING_APPLICATION_ID";
+			dacqEventColumns = columnsBase + ", LOADING_APPLICATION_ID";
 	}
 
 	@Override
@@ -54,14 +54,14 @@ public class DacqEventDAO
 			return;
 		
 		if (evt.getDacqEventId().isNull())
-			evt.setDacqEventId(getKey(tableName));
+			evt.setDacqEventId(getKey(dacqEventTableName));
 		evt.setEventTime(new Date());
 		String txt = evt.getEventText();
 		if (txt.length() >= 256)
 			txt = txt.substring(0,255);
 
 		StringBuilder q = new StringBuilder();
-		q.append("INSERT INTO " + tableName + "(" + columns + ") VALUES(?,?,?,?,?,?,?,?");
+		q.append("INSERT INTO " + dacqEventTableName + "(" + dacqEventColumns + ") VALUES(?,?,?,?,?,?,?,?");
 
 		ArrayList<Object> parameters = new ArrayList<>();
 		parameters.add(evt.getDacqEventId());
@@ -103,7 +103,7 @@ public class DacqEventDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return;
 
-		String q = "DELETE FROM " + tableName + " WHERE EVENT_TIME < ?";
+		String q = "DELETE FROM " + dacqEventTableName + " WHERE EVENT_TIME < ?";
 		try
 		{
 			doModify(q,cutoff);
@@ -123,7 +123,7 @@ public class DacqEventDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return 0;
 
-		String q = "SELECT " + columns + " FROM " + tableName
+		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
 			+ " WHERE EVENT_TEXT LIKE '%" + text + "%'";
 		if (evtList.size() > 0)
 			q = q + " AND DACQ_EVENT_ID > " + evtList.get(evtList.size()-1).getDacqEventId();
@@ -181,7 +181,7 @@ public class DacqEventDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return 0;
 
-		String q = "SELECT " + columns + " FROM " + tableName
+		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
 			+ " WHERE SCHEDULE_ENTRY_STATUS_ID =" + scheduleEntryStatusId;
 		if (evtList.size() > 0)
 			q = q + " AND DACQ_EVENT_ID > " + evtList.get(evtList.size()-1).getDacqEventId();
@@ -197,7 +197,7 @@ public class DacqEventDAO
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return 0;
 
-		String q = "SELECT " + columns + " FROM " + tableName
+		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
 			+ " WHERE PLATFORM_ID =" + platformId;
 		if (evtList.size() > 0)
 			q = q + " AND DACQ_EVENT_ID > " + evtList.get(evtList.size()-1).getDacqEventId();
@@ -209,7 +209,7 @@ public class DacqEventDAO
 	@Override
 	public void deleteEventsForPlatform(DbKey platformId) throws DbIoException
 	{
-		String q = "DELETE FROM " + tableName + " WHERE PLATFORM_ID =" + platformId;
+		String q = "DELETE FROM " + dacqEventTableName + " WHERE PLATFORM_ID =" + platformId;
 		doModify(q);
 	}
 	
@@ -217,7 +217,7 @@ public class DacqEventDAO
 	public DbKey getFirstIdAfter(Date since)
 			throws DbIoException
 	{
-		String q = "SELECT min(DACQ_EVENT_ID) from " + tableName
+		String q = "SELECT min(DACQ_EVENT_ID) from " + dacqEventTableName
 			+ " WHERE EVENT_TIME > " + db.sqlDate(since);
 		ResultSet rs = doQuery(q);
 		try
@@ -237,7 +237,7 @@ public class DacqEventDAO
 	@Override
 	public int readEventsAfter(Date since, ArrayList<DacqEvent> evtList) throws DbIoException
 	{
-		String q = "SELECT " + columns + " FROM " + tableName;
+		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName;
 		if (since != null)
 			q = q + " WHERE EVENT_TIME >= " + db.sqlDate(since);
 		q = q + " order by DACQ_EVENT_ID";
@@ -247,7 +247,7 @@ public class DacqEventDAO
 	@Override
 	public int readEventsAfter(DbKey eventId, ArrayList<DacqEvent> evtList) throws DbIoException
 	{
-		String q = "SELECT " + columns + " FROM " + tableName
+		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
 			+ " WHERE DACQ_EVENT_ID > " + eventId + " order by DACQ_EVENT_ID";
 		return queryForEvents(q, evtList);
 	}
