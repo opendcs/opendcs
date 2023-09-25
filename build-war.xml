@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+
+<!--
+
+This is the ANT build file for the OpenDCS API Web Application.
+
+Run this file with ANT after building the JETTY version with mvn.
+This file assumes that the java files are compiled along with the
+dependency JARS in the 'target' directory.
+-->
+
+
+
+<project name="OpenDCS-API" default="war" basedir="."
+	xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant">
+	<description>OpenDCS API</description>
+
+	<property environment="env"/>
+
+	<!-- Directories -->
+	<property name="ant.home" value="/usr/local/ant"/>
+	<property name="mvn_target" value="./target"/>
+	<property name="mvn_classes" value="${mvn_target}/classes"/>
+	<property name="mvn_jars" value="${mvn_target}/libs"/>
+	<property name="tomcat_jar" value="${env.CATALINA_HOME}/lib/servlet-api.jar"/>
+	<property name="stage_dir" value="./stage"/>
+
+
+	<!-- VERSION NUMBERS -->
+	<property name="MAJ_VER" value="0"/>
+	<property name="MIN_VER" value="9"/>
+
+	<target name="clean" description="Removes all generated files.">
+		<delete dir="${stage_dir}"/>
+	</target>
+
+	<target name="stage" depends="clean">
+		<mkdir dir="${stage_dir}"/>
+		<mkdir dir="${stage_dir}/WEB-INF"/>
+		<mkdir dir="${stage_dir}/WEB-INF/classes"/>
+		<copy todir="${stage_dir}/WEB-INF/classes">
+			<fileset dir="${mvn_target}/classes">
+				<exclude name="Start.class"/>
+			</fileset>
+		</copy>
+		<mkdir dir="${stage_dir}/WEB-INF/lib"/>
+		<copy todir="${stage_dir}/WEB-INF/lib">
+			<fileset dir="${mvn_jars}">
+				<exclude name="jetty*.jar"/>
+				<exclude name="odcsapi-*.jar"/>
+				<exclude name="jackson-jaxrs-json-provider-2.15.1.jar"/> <!-- This jar actually causes no web pages to be recognized (Everything is 404). -->
+			</fileset>
+		</copy>
+		<copy todir="${stage_dir}/WEB-INF/lib" file="${tomcat_jar}"/>
+		<mkdir dir="${stage_dir}/META-INF"/>
+		<copy todir="${stage_dir}/META-INF" file="./war-files/META-INF/context.xml"/>
+
+	</target>
+
+	<target name="war" depends="stage">
+		<war destfile="odcsapi-${MAJ_VER}-${MIN_VER}.war"
+			basedir="stage" needxmlfile="false">
+		</war>
+
+	</target>
+
+</project>

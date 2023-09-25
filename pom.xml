@@ -1,0 +1,165 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.opendcs</groupId>
+	<artifactId>odcsapi</artifactId>
+	<version>0.0.11-SNAPSHOT</version>
+	<packaging>jtargz</packaging>
+	<name>odcsapi</name>
+	<!-- FIXME change it to the project's website -->
+	<url>http://maven.apache.org</url>
+
+    <properties>
+    	<jetty.version>9.4.48.v20220622</jetty.version>
+    	<jersey.version>2.36</jersey.version>
+    	<jakarta.version>2.1.6</jakarta.version>
+    	<swagger.version>1.6.11</swagger.version>
+    	 
+    	<maven.compiler.source>1.8</maven.compiler.source>
+    	<maven.compiler.target>1.8</maven.compiler.target>
+    	
+    </properties>
+  
+ <!--  
+    <repositories>
+    	<repository>
+    		<id>local.repo</id>
+    		<name>repo</name>
+    		<url>file://${project.basedir}/repo</url>
+    	</repository>
+    </repositories>
+-->  
+    
+	<dependencies>
+	    <dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-server</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
+	    <dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlets</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlet</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api -->
+		<dependency>
+		    <groupId>jakarta.servlet</groupId>
+		    <artifactId>jakarta.servlet-api</artifactId>
+		    <version>5.0.0-M1</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
+		    <groupId>jakarta.ws.rs</groupId>
+		    <artifactId>jakarta.ws.rs-api</artifactId>
+		    <version>${jakarta.version}</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
+		<dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>slf4j-jdk14</artifactId>
+		    <version>2.0.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.glassfish.jersey.core</groupId>
+		    <artifactId>jersey-client</artifactId>
+		    <version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.glassfish.jersey.core</groupId>
+		    <artifactId>jersey-server</artifactId>
+		    <version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.glassfish.jersey.media</groupId>
+		    <artifactId>jersey-media-json-jackson</artifactId>
+		    <version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.glassfish.jersey.core</groupId>
+		    <artifactId>jersey-common</artifactId>
+		    <version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.glassfish.jersey.containers</groupId>
+		    <artifactId>jersey-container-servlet</artifactId>
+		    <version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.glassfish.jersey.inject</groupId>
+		    <artifactId>jersey-hk2</artifactId>
+		    <version>${jersey.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.postgresql</groupId>
+		    <artifactId>postgresql</artifactId>
+		    <version>42.4.2</version>
+		</dependency>
+		<dependency>
+		    <groupId>jakarta.servlet</groupId>
+		    <artifactId>jakarta.servlet-api</artifactId>
+		    <version>5.0.0</version>
+		</dependency>
+		
+<!--		<dependency>
+			<groupId>org.opendcs</groupId>
+			<artifactId>opendcs</artifactId>
+			<version>7.0.2-20220826</version>
+		</dependency>
+-->
+
+		<dependency>
+			<groupId>opendcs_cs</groupId>
+			<artifactId>opendcs_cs</artifactId>
+			<version>7.0.1.5</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
+		<dependency>
+		    <groupId>io.swagger.core.v3</groupId>
+		    <artifactId>swagger-jaxrs2</artifactId>
+		    <version>2.2.15</version>
+		</dependency>
+
+		<dependency>
+	        <groupId>org.webjars</groupId>
+	        <artifactId>swagger-ui</artifactId>
+	        <version>2.1.4</version>
+	        <scope>runtime</scope>
+	    </dependency>
+
+		<dependency>
+		    <groupId>org.glassfish.jaxb</groupId>
+		    <artifactId>jaxb-runtime</artifactId>
+		    <version>2.3.3</version>
+		</dependency>
+
+	    <!-- Test dependencies -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>com.github.easypack</groupId>
+				<artifactId>easypack-maven-plugin</artifactId>
+				<version>1.0.BETA</version>
+				<extensions>true</extensions>
+                <configuration>
+                    <mainClass>org.opendcs.odcsapi.start.Start</mainClass>
+                </configuration>
+            </plugin>
+		</plugins>
+	</build>
+
+</project>
