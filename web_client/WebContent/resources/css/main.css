@@ -1,0 +1,390 @@
+main {
+  font-family: Poppins, sans-serif;
+  height: 100vh;
+  margin-right: 10%;
+  margin-left: 10%;
+}
+
+.formAlert {
+	color: red !important;
+	border: none !important;
+}
+
+.displayNone {
+	display: none;
+}
+
+.noCloseButton .close {
+	display: none;
+}
+
+.forceBootstrapAlertSuccess {
+	background-color: #c3e6cb !important;
+}
+
+.forceBootstrapAlertError {
+	background-color: #f5c6cb !important;
+}
+
+.transparent-75
+{
+	opacity: 0.75;
+}
+
+.transparent-50
+{
+	opacity: 0.50;
+}
+
+.transparent-25
+{
+	opacity: 0.25;
+}
+
+.smallPadding {
+    padding: 5px !important;
+}
+
+.mediumPadding {
+    padding: 10px !important;
+}
+
+.large-padding {
+    padding: 15px !important;
+}
+
+.smallMargin {
+    margin: 5px !important;
+}
+
+.mediumMargin {
+    margin: 10px !important;
+}
+
+.largeMargin {
+    margin: 15px !important;
+}
+
+.smallMarginBottom {
+    margin-bottom: 5px !important;
+}
+
+@media (min-width: 768px) {
+  .modal-xl {
+    width: 90%;
+   max-width:1400px;
+  }
+}
+
+@media (min-width: 768px) {
+  .modal-med {
+    width: 90%;
+   max-width:1200px;
+  }
+}
+
+@media (min-width: 768px) {
+  .modal-sm-med {
+    width: 70%;
+   max-width:900px;
+  }
+}
+
+@media (min-width: 768px) {
+  .modal-height-xl {
+    height: 80%;
+    min-height: 900px;
+   	max-height: 900px;
+  }
+}
+
+.tablerow-cursor tbody tr {
+	cursor: pointer;
+}
+
+.move-cursor {
+	cursor: move;
+}
+
+.slightOpacity {
+	opacity: 0.95;
+}
+
+.loginPageBackground {
+	background-image: url('../img/river_2.jpg');
+	background-size: 100% 100%;
+	
+}
+
+.pointerCursor {
+	cursor: pointer;
+}
+
+.sourceDialog .dt-buttons {
+    margin-bottom: 2px;
+}
+
+.captionTitleCenter { 
+	caption-side: top; 
+	width: auto;
+	text-align: center;
+	margin-bottom: 5px;
+	font-size: 20px;
+}
+
+.captionButton {
+	padding: 1px 6px;
+}
+
+.main-table-button {
+	color: #fff;
+	background-color: #778791;
+}
+
+.grey-background {
+	background-color: #f5f5f5;
+}
+
+.exec-schedule-check
+{
+	padding-left: 12px;
+}
+
+/** This is for removing the greater than sign in the menu on the left **/
+.nav-item>.nav-link:after {
+	display:none;
+}
+
+.dashboardNavbar
+{
+	background-color: #324148;
+	color: white;
+}
+
+.dashboard-button
+{
+	opacity: 0.9;
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
+.dashboard-button-invisible
+{
+	pointer-events: none;
+	opacity: 0;
+}
+
+.dashboardButtonDisabled
+{
+	background-color: #c4c4c4;
+	color: white;
+	pointer-events: none;
+}
+
+.dashboard-button-enabled
+{
+	background-color: #26a69a;
+	color: white;
+	cursor: pointer;
+}
+
+.dashboardButton:hover
+{
+	opacity: 1;
+}
+
+#sinceFile {
+	display: none;
+}
+
+element.style {
+}
+
+html .content {
+	background-color: #dedede;
+}
+
+.dataTable td {
+	padding-top: 0.30rem;
+	padding-bottom: 0.30rem;
+}
+
+.form-group {
+	margin-bottom: 0.25rem;
+}
+
+.form-group .select2-selection--single, .form-group .col-form-label, .form-group input, .form-group select {
+	padding-top: 0.175rem;
+	padding-bottom: 0.175rem;
+	height: auto;
+}
+
+.card {
+	margin-bottom: 0.50rem;
+	background-color: #f7fdff;
+}
+
+.card.opendcs_y_scrollable {
+	overflow-y: auto;
+}
+
+.overflow_y-auto {
+	overflow-y: auto;
+}
+
+.overflowx-auto {
+	overflow-x: auto;
+}
+
+.dataTable tbody, input, select, option, textarea {
+	font-family: ui-monospace;
+}
+
+.opendcs-modal-90 {
+	height: 90vh !important;
+	min-height: 500px !important; 
+	max-height: 90vh !important;
+	width: 90vw;
+	min-width: 600px !important; 
+	max-width: 90vw !important;
+}
+
+.opendcs-modal-tall-narrow {
+	height: 95vh !important;
+	min-height: 500px !important; 
+	max-height: 95vh !important;
+	width: 50vw;
+	min-width: 400px !important; 
+	max-width: 50vw !important;
+}
+
+.opendcs-modal-body-100 {
+	height: 100%;
+	width: 100%;
+}
+
+.opendcs-modal-header-medium {
+	height: 46px;
+	min-height: 46px;
+	max-height: 46px;
+}
+
+.opendcs-modal-footer-medium {
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+}
+
+.disabled_menu_item {
+	cursor: default;
+}
+
+.disabled_menu_item span, .disabled_menu_item i, .disabled_menu_item a {
+	pointer-events: none;
+	color: grey;
+}
+
+.datatable-disabled {
+	pointer-events: none;
+	cursor: default;
+}
+
+.dataTables_empty {
+	cursor: default;
+	pointer-events: none;
+}
+
+.datatable-disabled tbody {
+	background-color: #ddd;
+}
+
+.datatable-disabled tr.selected {
+	background-color: #b3b3b3 !important;
+}
+
+.dataTables_wrapper {
+	background-color: #fafeff;
+}
+
+.modal-header {
+	padding-top: 0.75rem;
+	padding-bottom: 0.75rem;
+}
+
+.h-33 {
+	height: 33%;
+}
+
+.h-40 {
+	height: 40%;
+}
+
+.h-60 {
+	height: 60%;
+}
+
+.h-67 {
+	height: 67%;
+}
+
+.h-80 {
+	height: 80%;
+}
+
+.h-85 {
+	height: 85%;
+}
+
+.h-87 {
+	height: 87%;
+}
+
+.h-90 {
+	height: 90%;
+}
+
+.dataTable tbody tr.over {
+  background-color: #ffa;
+}
+
+.dataTable tbody tr.over i {
+  pointer-events: none;
+}
+
+.rowToBeDeleted, .rowToBeDeleted [data-modified=true] {
+	background-color: #f0756c !important;
+}
+
+/**** Editable Select ****/
+.select-editable {
+     position:relative;
+     background-color:white;
+     border:solid grey 1px;
+     width:120px;
+     height:18px;
+ }
+ 
+ .select-editable select {
+     position:absolute;
+     top:0px;
+     left:0px;
+     font-size:14px;
+     border:none;
+     width:120px;
+     margin:0;
+ }
+ 
+ .select-editable input {
+     position:absolute;
+     top:0px;
+     left:0px;
+     width:100px;
+     padding:1px;
+     font-size:12px;
+     border:none;
+ }
+ 
+ .select-editable select:focus, .select-editable input:focus {
+     outline:none;
+ }
+ /**** /Editable Select *****/
