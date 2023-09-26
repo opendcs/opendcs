@@ -345,9 +345,9 @@ public class ScreeningDAO
             doQuery(q, rs -> rsAddCriteria(rs, ret),screeningCode);
 
             q = "select distinct " + durMagColumns + " from " + durMagTable
-                + " where screening_code = ?"// + screeningCode
+                + " where screening_code = ?"
                 + " and unit_system = 'SI'"
-                + " and unit_id = ?"; // + sqlString(ret.getCheckUnitsAbbr());
+                + " and unit_id = ?";
             doQuery(q, rs -> {
                 int day = rs.getInt(2);
                 int month = rs.getInt(3);
@@ -390,7 +390,7 @@ public class ScreeningDAO
             }
 
             q = "select distinct " + screenCritColumns + " from " + screenCritTable
-                + " where upper(db_office_id) = ?"// + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
+                + " where upper(db_office_id) = ?"
                 + " and (unit_system = 'SI' or unit_system is null)";
             doQuery(q, rs -> {
                 DbKey screeningCode = DbKey.createDbKey(rs, 1);
@@ -430,7 +430,7 @@ public class ScreeningDAO
             });
 
             q = "select distinct " + durMagColumns + " from " + durMagTable
-                + " where upper(db_office_id) = ? " + sqlString(((CwmsTimeSeriesDb)db).getDbOfficeId())
+                + " where upper(db_office_id) = ?"
                 + " and (unit_system = 'SI' or unit_system is null)";
             doQuery(q, rs -> {
                 DbKey screeningCode = DbKey.createDbKey(rs, 1);
