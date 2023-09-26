@@ -72,3 +72,8 @@ To create the appropriate project files for VS Code or Eclipse you can run the f
 `ant eclipse-ide-files`
 
 This will create the appropriate .project and .classpath files for intellisense to behave correctly.
+
+## Intellij
+
+See https://github.com/opendcs/opendcs/wiki/Coding-OpenDCS-with-IntelliJ for guidance in setting up intellij.
+
