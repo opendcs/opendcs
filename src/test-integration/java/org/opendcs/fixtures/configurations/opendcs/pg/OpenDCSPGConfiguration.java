@@ -124,7 +124,6 @@ public class OpenDCSPGConfiguration implements Configuration
             FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
             FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
             installDb(exit,environment);
-
         }
     }
 
@@ -132,5 +131,10 @@ public class OpenDCSPGConfiguration implements Configuration
     public void stop() throws Exception
     {
         System.out.println("Stopping.");
+    }
+
+    @Override
+    public boolean isRunning() {
+        return started;
     }
 }

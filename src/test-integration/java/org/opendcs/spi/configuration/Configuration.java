@@ -25,6 +25,13 @@ public interface Configuration {
      * @throws Exception
      */
     public void start(SystemExit exit, EnvironmentVariables environment) throws Exception;
+
+    /**
+     *
+     * @return true if required services/content are configured and running as appropriate
+     */
+    public boolean isRunning();
+
     public default void stop() throws Exception
     {
         // nothing to do by default
