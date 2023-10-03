@@ -162,7 +162,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
             {
                 try
                 {
-                    File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();                
+                    File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();
                     configuration = configProvider.getConfig(tmp);
                 }
                 catch (Exception ex)
@@ -192,9 +192,9 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
 
     /**
      * Get the appropriate SystemStub instance from the extended class.
-     * 
+     *
      * It is up to the calling code to perform proper conversions
-     * 
+     *
      * @param ctx Junit ExtensionContext
      * @param stubClass which stub to get
      * @return The Stub Instance.
@@ -203,13 +203,13 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
     private Object getStub(ExtensionContext ctx, Class<?> stubClass) throws Exception
     {
 
-        Optional<Object> exit = ctx.getTestInstance().map(testInstance -> 
+        Optional<Object> exit = ctx.getTestInstance().map(testInstance ->
         {
             List<Field> fields = AnnotationSupport.findAnnotatedFields(testInstance.getClass(),SystemStub.class);
             for (Field f: fields)
-            {    
+            {
                 try
-                {            
+                {
                     Object obj = f.get(testInstance);
                     if (obj.getClass().equals(stubClass))
                     {
@@ -223,7 +223,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
             }
             return null;
         });
-        
+
         return exit.orElseThrow(() -> new PreconditionViolationException("No SystemExit field annotated with @SystemStub are present."));
     }
 }
