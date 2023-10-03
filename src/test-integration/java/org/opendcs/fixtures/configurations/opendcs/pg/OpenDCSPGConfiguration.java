@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -14,6 +15,8 @@ import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
+import decodes.tsdb.TimeSeriesDb;
+import opendcs.opentsdb.OpenTsdb;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
@@ -51,6 +54,12 @@ public class OpenDCSPGConfiguration implements Configuration
 
     @Override
     public boolean isSql()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean isTsdb()
     {
         return true;
     }
@@ -115,6 +124,7 @@ public class OpenDCSPGConfiguration implements Configuration
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
         configBuilder.withDatabaseLocation(dbUrl);
         configBuilder.withEditDatabaseType("OPENTSDB");
+        configBuilder.withDatabaseDriver("org.postgresql.Driver");
         configBuilder.withSiteNameTypePreference("CWMS");
         configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
         // set username/pw (env)
@@ -133,7 +143,13 @@ public class OpenDCSPGConfiguration implements Configuration
     }
 
     @Override
-    public void close() throws Throwable {
-        log.info("Would close database.");
+    public TimeSeriesDb getTsdb() throws Throwable
+    {
+        OpenTsdb db = new OpenTsdb();
+        Properties credentials = new Properties();
+        credentials.put("username","dcs_proc");
+        credentials.put("password","dcs_proc");
+        db.connect("utility",credentials);
+        return db;
     }
 }

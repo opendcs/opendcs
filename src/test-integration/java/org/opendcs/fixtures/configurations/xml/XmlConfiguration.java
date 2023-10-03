@@ -69,9 +69,4 @@ public class XmlConfiguration implements Configuration
     public boolean isRunning() {
         return started;
     }
-    
-    @Override
-    public void close() throws Throwable {
-        logger.info("Would close database.");
-    }
 }

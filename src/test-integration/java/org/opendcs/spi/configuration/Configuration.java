@@ -6,15 +6,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.extension.Extension;
-import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 
+import decodes.tsdb.TimeSeriesDb;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
  * Baseline of a test implementation configuration
  */
-public interface Configuration extends CloseableResource {
+public interface Configuration
+{
     /**
      * Do any configuration or initialization options that affect the system.
      * Such as:
@@ -33,9 +34,22 @@ public interface Configuration extends CloseableResource {
      */
     public boolean isRunning();
 
+    /**
+     * Close files, shutdown databases, etc
+     * @throws Exception
+     */
+    public default void stop() throws Throwable
+    {
+        // nothing to do by default
+    }
+
     public File getPropertiesFile();
     public File getUserDir();
     public boolean isSql();
+    default public boolean isTsdb()
+    {
+        return false;
+    }
     public default List<Extension> getExtensions()
     {
         return new ArrayList<>();
@@ -46,6 +60,18 @@ public interface Configuration extends CloseableResource {
      * @return
      */
     public default Map<String,String> getEnvironment()
+    {
+        return null;
+    }
+
+    /**
+     * If available return a valid instead of a TimeSeriesDb based on the current configuration.
+     *
+     * Default implementation returns null;
+     * @return The timeseries database if it can be made.
+     * @throws Throwable any issue with the creation of the TimeSeriesDb object
+     */
+    default public TimeSeriesDb getTsdb() throws Throwable
     {
         return null;
     }

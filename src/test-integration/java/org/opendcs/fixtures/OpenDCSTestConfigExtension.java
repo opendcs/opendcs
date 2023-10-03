@@ -1,33 +1,42 @@
 package org.opendcs.fixtures;
 
 import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.platform.commons.PreconditionViolationException;
 import org.junit.platform.commons.support.AnnotationSupport;
+import org.junit.platform.launcher.TestExecutionListener;
+import org.junit.platform.launcher.TestPlan;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
 
+import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
+import lrgs.gui.DecodesInterface;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
-public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCallback
+public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCallback, TestExecutionListener
 {
     private static final Logger logger = Logger.getLogger(OpenDCSTestConfigExtension.class.getName());
+
+    private static Configuration configuration = null;
 
     /**
      * Perform initial or per test environment setup.
@@ -36,8 +45,101 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
     public void beforeAll(ExtensionContext ctx) throws Exception
     {
         logger.info("Searching for 'opendcs.test.engine'.");
-        final Configuration configuration = (Configuration)ctx.getRoot().getStore(Namespace.GLOBAL).getOrComputeIfAbsent("config", key -> 
+        // Store Configuration object for other extensions.
+        ctx.getRoot().getStore(Namespace.GLOBAL).put("config",configuration);
+
+        ctx.getTestInstance()
+           .ifPresent(testInstance ->
         {
+            try
+            {
+                SystemExit exit = (SystemExit)getStub(ctx,SystemExit.class);
+                EnvironmentVariables environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
+                SystemProperties properties = (SystemProperties)getStub(ctx,SystemProperties.class);
+
+                if (!configuration.isRunning())
+                {
+                    configuration.start(exit,environment);
+                }
+
+                logger.info("Initializing decodes.");
+                DecodesSettings settings = DecodesSettings.instance();
+                Properties props = new Properties();
+                try(InputStream propStream = configuration.getPropertiesFile().toURI().toURL().openStream())
+                {
+                    props.load(propStream);
+                }
+                settings.loadFromUserProperties(props);
+
+                File userDir = configuration.getUserDir();
+                logger.info("DCSTOOL_USERDIR="+userDir);
+                environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
+                if (configuration.getEnvironment() != null
+                && !configuration.getEnvironment().isEmpty())
+                {
+                    environment.set(configuration.getEnvironment());
+                }
+                properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
+                properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
+                properties.setup();
+                environment.setup();
+                List<Field> fields = AnnotationSupport.findAnnotatedFields(testInstance.getClass(),ConfiguredField.class);
+                for (Field f: fields)
+                {
+                    try
+                    {
+                        if( f.getType().equals(Configuration.class))
+                        {
+                            f.setAccessible(true);
+                            f.set(testInstance,configuration);
+                        }
+                        else if (f.getType().equals(TimeSeriesDb.class) && configuration.isRunning())
+                        {
+                            f.setAccessible(true);
+                            f.set(testInstance,configuration.getTsdb());
+                        }
+                    }
+                    catch (Throwable ex)
+                    {
+                        throw new PreconditionViolationException("Unable to assign configuration to field.", ex);
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new PreconditionViolationException("Unable to setup environment or configuration.",ex);
+            }
+        });
+    }
+
+    /**
+     * Reset environment, properties, DecodesSettings, etc;
+     */
+    @Override
+    public void afterAll(ExtensionContext ctx) throws Exception
+    {
+        EnvironmentVariables environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
+        SystemProperties properties = (SystemProperties)getStub(ctx,SystemProperties.class);
+        environment.teardown();
+        properties.teardown();
+        DecodesSettings settings = DecodesSettings.instance();
+        Class<?> clazz = settings.getClass();
+        Field isLoaded = clazz.getDeclaredField("_isLoaded");
+        Field theInstance = clazz.getDeclaredField("_instance");
+        isLoaded.setAccessible(true);
+        isLoaded.setBoolean(settings, false);
+
+        theInstance.setAccessible(true);
+        theInstance.set(settings,null);
+    }
+
+    @Override
+    public void testPlanExecutionStarted(TestPlan testPlan)
+    {
+        logger.info("All tests are starting.");
+        if(configuration == null)
+        {
+            logger.warning("CREATING CONFIGURATION");
             String engine = System.getProperty("opendcs.test.engine");
             if (engine == null)
             {
@@ -61,7 +163,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
                 try
                 {
                     File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();                
-                    return configProvider.getConfig(tmp);
+                    configuration = configProvider.getConfig(tmp);
                 }
                 catch (Exception ex)
                 {
@@ -72,71 +174,20 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
             {
                 throw new PreconditionViolationException("No implementation found for engine '" + engine + "'.");
             }
-        });
-        
-
-        ctx.getTestInstance().ifPresent(testInstance -> 
-        {
-            List<Field> fields = AnnotationSupport.findAnnotatedFields(testInstance.getClass(),ConfiguredField.class);
-            for (Field f: fields)
-            {    
-                try
-                {            
-                    if( f.getType().equals(Configuration.class))
-                    {
-                        f.set(testInstance,configuration);
-                    }
-                    
-                }
-                catch (Exception ex)
-                {
-                    throw new PreconditionViolationException("Unable to assigned configuration to field.", ex);
-                }   
-            }
-        });
-
-        SystemExit exit = (SystemExit)getStub(ctx,SystemExit.class);
-        EnvironmentVariables environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
-        SystemProperties properties = (SystemProperties)getStub(ctx,SystemProperties.class);
-
-        if (!configuration.isRunning())
-        {
-            configuration.start(exit,environment);   
         }
-
-        File userDir = configuration.getUserDir();
-        logger.info("DCSTOOL_USERDIR="+userDir);
-        environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
-        if (configuration.getEnvironment() != null
-        && !configuration.getEnvironment().isEmpty())
-        {
-            environment.set(configuration.getEnvironment());
-        }
-        properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
-        properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
-        properties.setup();
-        environment.setup();
     }
 
-    /**
-     * Reset environment, properties, DecodesSettings, etc;
-     */
     @Override
-    public void afterAll(ExtensionContext ctx) throws Exception 
+    public void testPlanExecutionFinished(TestPlan testPlan)
     {
-        EnvironmentVariables environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
-        SystemProperties properties = (SystemProperties)getStub(ctx,SystemProperties.class);
-        environment.teardown();
-        properties.teardown();
-        DecodesSettings settings = DecodesSettings.instance();
-        Class<?> clazz = settings.getClass();
-        Field isLoaded = clazz.getDeclaredField("_isLoaded");
-        Field theInstance = clazz.getDeclaredField("_instance");
-        isLoaded.setAccessible(true);
-        isLoaded.setBoolean(settings, false);
-
-        theInstance.setAccessible(true);
-        theInstance.set(settings,null);
+        try
+        {
+            configuration.stop();
+        }
+        catch (Throwable t)
+        {
+            throw new RuntimeException("Unable to cleanup resources.",t);
+        }
     }
 
     /**
