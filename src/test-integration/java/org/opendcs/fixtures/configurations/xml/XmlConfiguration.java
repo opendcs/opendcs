@@ -2,7 +2,6 @@ package org.opendcs.fixtures.configurations.xml;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 
 import org.apache.commons.io.FileUtils;
@@ -20,6 +19,7 @@ public class XmlConfiguration implements Configuration
 
     File userDir;
     File propertiesFile;
+    private boolean started = false;
 
     public XmlConfiguration(File userDir) throws Exception
     {
@@ -59,7 +59,13 @@ public class XmlConfiguration implements Configuration
             FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
             FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
             configBuilder.build(out);
+            started = true;
         }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return started;
     }
     
 }
