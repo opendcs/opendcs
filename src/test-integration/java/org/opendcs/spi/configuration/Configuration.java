@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.extension.Extension;
+import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -13,7 +14,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
 /**
  * Baseline of a test implementation configuration
  */
-public interface Configuration {
+public interface Configuration extends CloseableResource {
     /**
      * Do any configuration or initialization options that affect the system.
      * Such as:
@@ -32,10 +33,6 @@ public interface Configuration {
      */
     public boolean isRunning();
 
-    public default void stop() throws Exception
-    {
-        // nothing to do by default
-    }
     public File getPropertiesFile();
     public File getUserDir();
     public boolean isSql();

@@ -225,6 +225,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                     <jvmarg value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
+                    <jvmarg value="-Djava.util.logging.config.file=${build.dir}/../src/test-integration/test-config/logging.properties"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>
                 <fileset dir="${build.test-integration.classes}"/>

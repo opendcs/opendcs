@@ -3,6 +3,7 @@ package org.opendcs.fixtures.configurations.xml;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.opendcs.fixtures.UserPropertiesBuilder;
@@ -16,6 +17,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  */
 public class XmlConfiguration implements Configuration
 {
+    private static final Logger logger = Logger.getLogger(XmlConfiguration.class.getName());
 
     File userDir;
     File propertiesFile;
@@ -68,4 +70,8 @@ public class XmlConfiguration implements Configuration
         return started;
     }
     
+    @Override
+    public void close() throws Throwable {
+        logger.info("Would close database.");
+    }
 }
