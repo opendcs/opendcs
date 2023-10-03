@@ -128,13 +128,12 @@ public class OpenDCSPGConfiguration implements Configuration
     }
 
     @Override
-    public void stop() throws Exception
-    {
-        System.out.println("Stopping.");
+    public boolean isRunning() {
+        return started;
     }
 
     @Override
-    public boolean isRunning() {
-        return started;
+    public void close() throws Throwable {
+        log.info("Would close database.");
     }
 }
