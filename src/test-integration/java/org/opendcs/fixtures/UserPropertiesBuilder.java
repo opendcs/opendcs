@@ -25,7 +25,7 @@ public class UserPropertiesBuilder
      */
     public UserPropertiesBuilder withDatabaseLocation(String dbLocation)
     {
-        props.setProperty("EditDatabaseLocation", dbLocation);
+        props.setProperty("editDatabaseLocation", dbLocation);
         return this;
     }
 
@@ -173,4 +173,9 @@ algoEditCompileOptions=
 routingStatusDir=$DCSTOOL_USERDIR/routstat
 decodesFormatLabelMode=f
 */
+
+    public void withDatabaseDriver(String driverString)
+    {
+        this.props.put("editDatabaseDriver",driverString);
+    }
 }

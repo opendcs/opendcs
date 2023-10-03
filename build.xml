@@ -131,6 +131,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <!--<pathelement location="${build.classes}"/>-->
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
+                <path refid="junit.platform.libs.classpath"/>
             </classpath>
         </javac>
         <sync todir="${build.test-integration.resources}">
@@ -722,6 +723,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     }
 
                     project.getReference("test.classpath").each {
+                        classpathentry(kind:"lib", path:it)
+                    }
+
+                    project.getReference("junit.platform.libs.classpath").each {
                         classpathentry(kind:"lib", path:it)
                     }
                 }
