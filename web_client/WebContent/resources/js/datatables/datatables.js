@@ -220,6 +220,7 @@ class OpenDcsDataTable {
           }
           var targetTable = $(jqTableId).DataTable();
           var clickedCell = targetTable.cell(this);
+          var colOptions = null;
           if (clickedCell.length > 0)
           {
               var colNumOld = clickedCell[0][0].column;
@@ -320,7 +321,7 @@ class OpenDcsDataTable {
                   {
                       for (var x = 0; x < e.data.thisObject.inlineOptions.columnDefs.length; x++)
                       {
-                          var colOptions = e.data.thisObject.inlineOptions.columnDefs[x];
+                          colOptions = e.data.thisObject.inlineOptions.columnDefs[x];
                           if (colOptions.targets.indexOf(dtColNum) != -1)
                           {
                               $(jqTableId).addClass("editing");
@@ -473,7 +474,10 @@ class OpenDcsDataTable {
                       }
                   }
 
-                  if (colOptions != null && colOptions.type != "searchable_select")
+                  //selects the new editable field and opens it by default for 
+                  //the user.
+                  if ((colOptions != null && colOptions.type != "searchable_select")
+                		  || forcedParam != null)
                   {
                       $("#" + inputId).focus();
                       $("#" + inputId).find("select").focus(); //This is to focus on the editable_select option.
