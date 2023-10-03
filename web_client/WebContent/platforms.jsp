@@ -168,7 +168,7 @@
 									class="table table-hover datatable-responsive co-8 border">
 									<caption class="captionTitleCenter">
 										Properties
-										<button
+										<button function="addBlankRow" 
 											class="btn btn-secondary float-right captionButton mt-1"
 											id="addPropertyButton">+</button>
 									</caption>
@@ -690,6 +690,7 @@
 <script src="../resources/js/plugins/forms/styling/switch.min.js"></script>
 <script src="../resources/js/plugins/forms/styling/uniform.min.js"></script>
 <script src="../resources/js/datatables/helpers.js"></script>
+<script src="../resources/js/datatables/datatables.js"></script>
 <script src="../resources/js/lib/dom_utilities.js"></script>
 <script src="../resources/js/lib/object_utilities.js"></script>
 <script src="../resources/js/lib/date_utilities.js"></script>

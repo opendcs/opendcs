@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fullDiv.append(labelDiv);
         fullDiv.append(selectDiv);
         addElementToDataTableHeader("sitesTable", fullDiv);
-        
         siteNamesTable.setInlineOptions({
                 "columnDefs": [
                     {
@@ -377,7 +376,7 @@ function populateSiteDialog(data)
             "onclick": null
         }];
         
-        propertiesTable.updateProps(data.properties) ;
+        propertiesTable.updateProps(data.properties);
     }
     else
     {
@@ -457,16 +456,7 @@ function initializeEvents()
     $("#newSiteButton").on("click", function() {
         openSiteDialog(null);
     });
-    $("#addSiteNameButton").on("click", function() {
-        var targetId = "siteNamesTable";
-        var action = [{
-            "type": "delete",
-            "onclick": null
-        }];
-        
-        siteNamesTable.addBlankRowToDataTable(true);
-    });
-
+    
     $("#modal_site").on('shown.bs.modal', function(){
         siteNamesTable.updateDataTableScroll();
         propertiesTable.updateDataTableScroll();
@@ -480,8 +470,6 @@ function initializeEvents()
  */
 function initializeDataTables()
 {
-	
-	
     sitesTable = $("#sitesTable").DataTable(
             {
                 "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
@@ -504,32 +492,14 @@ function initializeDataTables()
                             "visible": false,
                             "searchable": false
                         }
-                        ]
-
-            });  
+                    ]
+            });
 
     propertiesTable = new PropertiesTable(
     		"propertiesTable", 
     		true);
     
-    siteNamesTable = new OpenDcsDataTable("siteNamesTable", 
-    		{
-		        "searching": false,
-		        "ordering": false,
-		        "paging": false,
-		        "info": false,
-		        "scrollCollapse": true,
-		        "scrollY": 150,
-		        "autoWidth": true,
-		        "dom": 'Bflrtip',
-		        "buttons": []
-		    }, 
-    		null, 
-    		[{
-                "type": "delete",
-                "onclick": null
-            }], 
-    		false) ;
+    siteNamesTable = new BasicTable("siteNamesTable", false);
     $('#sitesTable').on('click', 'tbody tr', openSiteDialog);
     updateDataTableScroll("#sitesTable", 0);
 }

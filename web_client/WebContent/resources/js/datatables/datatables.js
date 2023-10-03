@@ -11,7 +11,7 @@ class OpenDcsDataTable {
     
     this.properties = properties;
     
-    this.inlineOptions = this.setInlineOptions(inlineOptions);
+    this.setInlineOptions(inlineOptions);
     
     this.actions = actions;
     
@@ -28,8 +28,7 @@ class OpenDcsDataTable {
     this.jq.closest(".dataTables_wrapper").find("[function=addBlankRow]")
     	.on("click", {thisObject: this}, function(e) {
             e.data.thisObject.addBlankRowToDataTable(true);
-    	});
-    	
+    	});	
   }
   
   setInlineOptions(inlineOptions)
@@ -198,11 +197,6 @@ class OpenDcsDataTable {
           buttonHeight = objs.buttons.outerHeight(includeMargin=true);
       }
       var bodyHeight = totalHeight - objs.header.height() - buttonHeight - objs.footer.height();
-
-      if (jqTable.attr("id") == "platformSensorPropertiesTable")
-      {
-          console.log("found the table.");
-      }
 
       objs.body.css("max-height", bodyHeight);
       objs.body.css("height", bodyHeight);
@@ -399,7 +393,6 @@ class OpenDcsDataTable {
                                       </select>
                                       </div>`;
                                   thisPosition.empty().append($(objHtml));
-                                  //$("#" + inputId).val(thisPositionText);
                                   $(`#${inputId}`).find("select").select2({
                                       matcher(params, data) {
                                           const originalMatcher = $.fn.select2.defaults.defaults.matcher;
@@ -594,20 +587,21 @@ class OpenDcsDataTable {
 
 }
 
-class PropertiesTable extends OpenDcsDataTable {
-  constructor(domId, initialize) {
-	  var defaultProps = {
-	          "searching": false,
-	          "ordering": false,
-	          "paging": false,
-	          "info": false,
-	          "dom": 'Bflrtip',
-	          "scrollCollapse": true,
-	          "autoWidth": true,
-	          "scrollY": 150,
-	          "buttons": []
 
-	      }
+class BasicTable extends OpenDcsDataTable {
+  constructor(domId, initialize) {
+	  console.log("In constructor for Child Class Basic Table.");
+	  var defaultProps = {
+		        "searching": false,
+		        "ordering": false,
+		        "paging": false,
+		        "info": false,
+		        "scrollCollapse": true,
+		        "scrollY": 150,
+		        "autoWidth": true,
+		        "dom": 'Bflrtip',
+		        "buttons": []
+		    };
 	  var defaultInlineOptions = {
 	          "columnDefs": [
 	              {
@@ -619,18 +613,50 @@ class PropertiesTable extends OpenDcsDataTable {
 	                  }
 	              }
 	          ]
-	      } 
+	      };
 	  var defaultActions = [{
           "type": "delete",
           "onclick": null
       }];
-	  
-	  
 	  super(domId, defaultProps, defaultInlineOptions, 
-			  defaultActions,initialize);
+			  defaultActions, initialize);
+  }
+}
+
+class PropertiesTable extends OpenDcsDataTable {
+  constructor(domId, initialize) {
 	  console.log("In constructor for Child Class Properties Table.");
+	  var defaultProps = {
+	          "searching": false,
+	          "ordering": false,
+	          "paging": false,
+	          "info": false,
+	          "dom": 'Bflrtip',
+	          "scrollCollapse": true,
+	          "autoWidth": true,
+	          "scrollY": 150,
+	          "buttons": []
+
+	      };
+	  var defaultInlineOptions = {
+	          "columnDefs": [
+	              {
+	                  "targets": [0,1],
+	                  "type": "input",
+	                  "data": null,
+	                  "bgcolor": {
+	                      "change": "#c4eeff"
+	                  }
+	              }
+	          ]
+	      };
+	  var defaultActions = [{
+          "type": "delete",
+          "onclick": null
+      }];
+	  super(domId, defaultProps, defaultInlineOptions, 
+			  defaultActions, initialize);
 	  this.propSpecMeta = {};
-	  
   }
   
   setPropspecs(propspecs)
@@ -642,10 +668,6 @@ class PropertiesTable extends OpenDcsDataTable {
 	    }
 	    for (var propSpecObj of propspecs)
 	    {
-	        if (!(propSpecObj.name in actualProperties))
-	        {
-	            actualProperties[propSpecObj.name] = "";
-	        }
 	        this.propSpecMeta[propSpecObj.name] = {
 	                "hover": propSpecObj.description,
 	                "type": propSpecObj.type
@@ -656,6 +678,20 @@ class PropertiesTable extends OpenDcsDataTable {
   updateProps(propertiesWithValues) {
 	  var rowsWithValues = [];
 	  var rowsWithoutValues = [];
+	  
+	  //Adds propspecs to passed properties object so they will show up in the 
+	  //data table.
+	  if (this.propSpecMeta != null)
+	  {
+		  for (var key in this.propSpecMeta)
+		  {
+			  if (propertiesWithValues[key] == null)
+			  {
+				  propertiesWithValues[key] = "";
+			  }
+		  }
+	  }
+	  
 	  for (var key in propertiesWithValues)
 	    {
 	        var newRow = [key, propertiesWithValues[key], this.createActionDropdown(this.actions)];

@@ -94,7 +94,7 @@
 									class="table table-hover datatable-responsive border">
 									<caption id="siteNamesCaption" class="captionTitleCenter">
 										Site Names
-										<button class="btn btn-secondary float-right captionButton"
+										<button function="addBlankRow" class="btn btn-secondary float-right captionButton"
 											id="addSiteNameButton">+</button>
 									</caption>
 									<thead>

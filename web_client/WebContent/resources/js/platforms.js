@@ -38,18 +38,6 @@ var openConfigData;
 /**
  * Inline properties for the properties table.
  */
-var propertiesTableInlineOptions = {
-        "columnDefs": [
-            {
-                "targets": [0,1],
-                "type": "input",
-                "data": null,
-                "bgcolor": {
-                    "change": "#c4eeff"
-                }
-            }
-            ]
-};
 
 /**
  * OpenDCS reflists and propspecs are stored here.  This is an instance of
@@ -265,9 +253,9 @@ function clearPlatformDialog()
     sensorInformationTable.init();
     sensorInformationTable.clear();
     sensorInformationTable.draw(false);
-    propertiesTable.init();
-    propertiesTable.clear();
-    propertiesTable.draw(false);
+
+    propertiesTable.clearDataTable();
+    
     transportMediaTable.init();
     transportMediaTable.clear();
     transportMediaTable.draw(false);
@@ -427,13 +415,8 @@ function populatePlatformDialog(data)
 {
     clearPlatformDialog();
 
-    setOpendcsPropertiesTable("propertiesTable", 
-            openDcsData.propspecs["decodes.db.Platform"].data, 
-            {}, 
-            true, 
-            propertiesTableInlineOptions, 
-            actions);
-
+    propertiesTable.setPropspecs(openDcsData.propspecs["decodes.db.Platform"].data);
+    
     openPlatformData = data;
 
     if (data != null)
@@ -485,12 +468,8 @@ function populatePlatformDialog(data)
             "type": "delete",
             "onclick": null
         }];
-        setOpendcsPropertiesTable("propertiesTable", 
-                openDcsData.propspecs["decodes.db.Platform"].data, 
-                data.properties, 
-                true, 
-                propertiesTableInlineOptions, 
-                actions);
+        
+        propertiesTable.updateProps(data.properties);
 
         data.transportMedia.forEach(tm => {
             var actions = [{
@@ -796,7 +775,7 @@ function initializeEvents()
 
     $("#modal_platform").on('shown.bs.modal', function(){
         updateDataTableScroll("sensorInformationTable");
-        updateDataTableScroll("propertiesTable");
+        propertiesTable.updateDataTableScroll();
         updateDataTableScroll("transportMediaTable");
         updateDataTableScroll("platformSensorPropertiesTable");
     });
@@ -950,8 +929,9 @@ function initializeEvents()
             }
             var props = {};
 
-            var propData = getNonDeletedRowData("propertiesTable");
-
+            var propData = propertiesTable.getNonDeletedRowData();
+            
+            
             for (var x = 0; x < propData.length; x++)
             {
                 var curProp = propData[x];
@@ -1017,13 +997,6 @@ function initializeEvents()
         "bg-secondary");
 
 
-    });
-    $("#addPropertyButton").on("click", function() {
-        var action = [{
-            "type": "delete",
-            "onclick": null
-        }];
-        addBlankRowToDataTable("propertiesTable", true, action, propertiesTableInlineOptions);
     });
 }
 
@@ -1113,23 +1086,9 @@ function initializeDataTables()
 
     $('#transportMediaTable').on('click', 'tbody tr', openTmDialog);
 
-    propertiesTable = $("#propertiesTable").DataTable(
-            {
-                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                "pageLength": 10,
-                "dom": 'flrtip',
-                "searching": false,
-                "ordering": false,
-                "paging": false,
-                "autoWidth": true,
-                "info": false,
-                "scrollY": 1,
-                "scrollCollapse": true,
-                "buttons": [],
-                "columnDefs": []
-
-            });
-
+    propertiesTable = new PropertiesTable(
+    		"propertiesTable", 
+    		true);
 
     platformSensorPropertiesTable = $("#platformSensorPropertiesTable").DataTable(
             {
