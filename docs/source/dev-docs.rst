@@ -130,7 +130,10 @@ Only CPD is fast. checkstyle and SpotBugs are rather slow.
 Integration Test infrastructure
 ===============================
 
-OpenDCS now contains a framework for running integration tests. See the folder src/test-integration for the code.
+OpenDCS now contains a framework for running integration tests. See the folder `src/test-integration` for the code.
+The intent is to be a simple to use "Compatibility Toolkit" where a given implementation is only responsible for identifying
+the OpenDCS concepts (DECODES, Timeseries, computations, etc) that it supports and handling instantiation of external resources
+and setting up the configuration.
 
 Framework
 ---------
@@ -138,7 +141,7 @@ Framework
 There is set of code under :code:`org.opendcs.fixtures` that allows configuration and setup to take place, determine if a given 
 test should be enabled or not and other per test tasks.
 
-All new tests classes should derive from :code:`org.opendcs.fixtures.ApptestBase`. This class is marked with the :code:`OpenDCSTestConfigExtension` 
+All new integration test classes should derive from :code:`org.opendcs.fixtures.ApptestBase`. This class is marked with the :code:`OpenDCSTestConfigExtension` 
 and handles determining which OpenDCS implementation to run, and performing any required "installation and setup steps" needed.
 
 Implementations should derive from :code:`org.opendcs.fixtures.spi.configuration.Configuration` and :code:`org.opendcs.spi.configuration.ConfigurationProvider`
@@ -201,6 +204,17 @@ The sample :code:`LoadingAppDaoTestIT` uses the :code:`@EnableIfSql` :code:`Exec
 Additional ExecutionConditions and parameter injection will be added in the future as needed and as
 we better identify concepts to map to vs implementation details.
 
+
+Caveats
+-------
+
+OpenDCS supports several implementations, the XML database, the baseline Postgres and Oracle database,
+USBR's HDB and USACE's CWMS. While each share the same fundamental concepts portions of the implementation, like Site names
+and Data type parameter names (e.g. are we measuring Stage, Elevation, Precipitation, etc). These tests are 
+intended to be independent of these concerns; however, the current tests getting merged in are for the baseline implementation
+which was Derived from CWMS and directly shares naming and data labelling styles. Given a new implementation it is quite 
+likely that work will be required to handle this situation. We will address this situation when it happens and you should
+not be afraid to reach out in discussions if you are having difficulties.
 
 Containers
 ==========
