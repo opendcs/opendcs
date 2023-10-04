@@ -16,7 +16,7 @@ the project), and security concerns that have been correct.
 ### Supported Versions
 
 OpenDCS will be using sematic versioning (https://semver.org/) to label releases; in short this is "major.minor.patch". We will attempt to support on an N-1 basis
-for major and minor version. We (the OpenDCS project contributors) will support previous major versions for a year after release
+for major versions, or the X in the X.Y.Z version number. We (the OpenDCS project contributors) will support previous major versions for a year after release
 of the next major version.
 
 Current supported versions are:
