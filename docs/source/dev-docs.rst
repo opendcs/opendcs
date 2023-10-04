@@ -1,5 +1,5 @@
 ##################
-Installation Guide
+Developer Guidance
 ##################
 
 This Document is part of the OpenDCS Software Suite for environmental
@@ -126,6 +126,81 @@ to run each do the following:
     # output will be in build/reports/pmd/cpd/cpd.txt
 
 Only CPD is fast. checkstyle and SpotBugs are rather slow.
+
+Integration Test infrastructure
+===============================
+
+OpenDCS now contains a framework for running integration tests. See the folder src/test-integration for the code.
+
+Framework
+---------
+
+There is set of code under :code:`org.opendcs.fixtures` that allows configuration and setup to take place, determine if a given 
+test should be enabled or not and other per test tasks.
+
+All new tests classes should derive from :code:`org.opendcs.fixtures.ApptestBase`. This class is marked with the :code:`OpenDCSTestConfigExtension` 
+and handles determining which OpenDCS implementation to run, and performing any required "installation and setup steps" needed.
+
+Implementations should derive from :code:`org.opendcs.fixtures.spi.configuration.Configuration` and :code:`org.opendcs.spi.configuration.ConfigurationProvider`
+and implement any required setup. All `Configurations` are given a temporary directory to create the `DCSTOOL_USERDIR` contents.
+Application logs are all written into this directory.
+
+Currently Implemented are OpenDCS-XML and OpenDCS-Postgres. OpenDCS-Postgres uses the (Testcontainers)[https://java.testcontainers.org] library
+which requires docker. OpenDCS-XML only depends on the file system.
+
+to run either use the following command::
+
+    ant integration-test -Dno.doc=true -Dopendcs.test.engine=OpenDCS-XML
+    # or 
+    ant integration-test -Dno.doc=true -Dopendcs.test.engine=OpenDCS-Postgres
+
+Adding tests
+------------
+
+New classes, or methods to existing classes, should go under :code:`org.opendcs.regression_tests`
+
+:code:`AppTestBase` contains for members accessible to your tests
+
+
++--------------------------------------------+--------------------------------+
+|Member Variable                             |Description                     |
++============================================+================================+
+|@SystemStub\                                |variables from \                |
+|protected final EnvironmentVariables \      |System.getenv \                 |
+|environment = new EnvironmentVariables();   |that applications will see.     |
++--------------------------------------------+--------------------------------+
+|@SystemStub\                                |variables from \                |
+|protected final SystemProperties \          |System.getProperty \            |
+|properties = new SystemProperties();        |that applications will see.     |
++--------------------------------------------+--------------------------------+
+|@SystemStub\                                |Used to trap System.exit        |
+|protected final SystemExit \                |calls to allow testing          |
+|exit = new SystemExit();                    |without aborting the test run   |
++--------------------------------------------+--------------------------------+
+|@ConfiguredField                            |Instance of the                 |
+|protected Configuration configuration;      |:code:`Configuration` that was  |
+|                                            |create for this run. Contains   |
+|                                            |reference to user.properties and|
+|                                            | other specific information     |
++--------------------------------------------+--------------------------------+
+ 
+Extension and other Junit information
+-------------------------------------
+
+The :code:`OpenDCSTestConfigExtension`, if it knows about a given type, will inject 
+an instance of any field annotated with :code:`@ConfiguredField` as seen in the table 
+above for the configuration.
+
+The only other injected field is a :code:`TimeSeriesDb` which is Provided by the Configuration
+and will already be valid and can be used directly for things like testing DaoObjects or null which 
+indicates the implementation under test doesn't use the any of the timeseries database components.
+
+The sample :code:`LoadingAppDaoTestIT` uses the :code:`@EnableIfSql` :code:`ExecutionCondition`
+ to determine if the test should be run or not.
+
+Additional ExecutionConditions and parameter injection will be added in the future as needed and as
+we better identify concepts to map to vs implementation details.
+
 
 Containers
 ==========
