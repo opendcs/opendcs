@@ -50,10 +50,6 @@ public interface Configuration
     {
         return false;
     }
-    public default List<Extension> getExtensions()
-    {
-        return new ArrayList<>();
-    }
 
     /**
      * Additional environment variables this test configuration requires
