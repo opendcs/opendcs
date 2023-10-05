@@ -62,6 +62,7 @@ import ilex.util.TextUtil;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -598,58 +599,48 @@ public class SiteDAO
 		String desc = s.getDescription();
 		if (desc != null && desc.length() > 800)
 			desc = desc.substring(0,799);
+		ArrayList<String> columns = new ArrayList<>();
+		ArrayList<Object> parameters = new ArrayList<>();
+		StringBuilder q = new StringBuilder("INSERT INTO Site(");
 
-		String q;
-		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
-			q =
-				"INSERT INTO Site VALUES (" +
-			  	id + ", " +
-			  	sqlString(s.latitude) + ", " +
-			  	sqlString(s.longitude) + ", " +
-			  	sqlString(s.nearestCity) + ", " +
-			  	sqlString(s.state) + ", " +
-			  	sqlString(s.region) + ", " +
-			  	sqlString(s.timeZoneAbbr) + ", " +
-			  	sqlString(s.country) +
-				")";
-		else if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
-			q =
-				"INSERT INTO Site VALUES (" +
-			  	id + ", " +
-			  	sqlString(s.latitude) + ", " +
-			  	sqlString(s.longitude) + ", " +
-			  	sqlString(s.nearestCity) + ", " +
-			  	sqlString(s.state) + ", " +
-			  	sqlString(s.region) + ", " +
-			  	sqlString(s.timeZoneAbbr) + ", " +
-			  	sqlString(s.country) + ", " +
-				sqlDouble(s.getElevation()) + ", " +
-				sqlString(s.getElevationUnits()) + ", " +
-				sqlString(desc) + " " +
-				")";
-		else // version 10 or higher
+		columns.add("id"); parameters.add(id);
+		columns.add("latitude"); parameters.add(s.latitude);
+		columns.add("longitude"); parameters.add(s.longitude);
+		columns.add("nearestCity"); parameters.add(s.nearestCity);
+		columns.add("state"); parameters.add(s.state);
+		columns.add("region"); parameters.add(s.region);
+		columns.add("timezone"); parameters.add(s.timeZoneAbbr);
+		columns.add("country"); parameters.add(s.country);
+		int dbVersion = db.getDecodesDatabaseVersion();
+
+		if (dbVersion >= DecodesDatabaseVersion.DECODES_DB_6)
 		{
-			q = "INSERT INTO Site VALUES (" +
-			  	id + ", " +
-			  	sqlString(s.latitude) + ", " +
-			  	sqlString(s.longitude) + ", " +
-			  	sqlString(s.nearestCity) + ", " +
-			  	sqlString(s.state) + ", " +
-			  	sqlString(s.region) + ", " +
-			  	sqlString(s.timeZoneAbbr) + ", " +
-			  	sqlString(s.country) + ", " +
-				sqlDouble(s.getElevation()) + ", " +
-				sqlString(s.getElevationUnits()) + ", " +
-				sqlString(desc) + ", " +
-				sqlBoolean(s.isActive()) + ", " +
-				sqlString(s.getLocationType()) + ", " + 
-				db.sqlDate(s.getLastModifyTime()) + ", " + 
-				sqlString(s.getPublicName()) + 
-				")";
+			columns.add("elevation"); parameters.add(s.getElevation());
+			columns.add("elevUnitAbbr"); parameters.add(s.getElevationUnits());
+			columns.add("description"); parameters.add(desc);
 		}
-
-
-		doModify(q);
+		if (dbVersion >= DecodesDatabaseVersion.DECODES_DB_10) // version 10 or higher
+		{
+			columns.add("active_flag"); parameters.add(s.isActive() ? "TRUE" : "FALSE");
+			columns.add("location_Type"); parameters.add(s.getLocationType());
+			Date modifyTime = s.getLastModifyTime();
+			columns.add("modify_time"); parameters.add(modifyTime != null ? modifyTime : new Date());
+			columns.add("Public_name"); parameters.add(s.getPublicName());
+		}
+		q.append(String.join(",",columns));
+		q.append(") values(");
+		final ArrayList<String> binds = new ArrayList<>();
+		parameters.forEach(bind -> binds.add("?"));
+		q.append(String.join(",",binds));
+		q.append(")");
+		try
+		{
+			doModify(q.toString(),parameters.toArray(new Object[0]));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to insert Site.",ex);
+		}
 
 		for(Iterator<SiteName> snit = s.getNames(); snit.hasNext(); )
 			insertSiteName(s.getKey(), snit.next());
@@ -702,4 +693,3 @@ public class SiteDAO
 		return lastCacheFillMsec;
 	}
 }
-
