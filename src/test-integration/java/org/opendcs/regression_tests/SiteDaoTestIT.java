@@ -2,6 +2,7 @@ package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
@@ -10,6 +11,7 @@ import org.opendcs.fixtures.EnableIfSql;
 
 import decodes.db.Site;
 import decodes.db.SiteName;
+import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import opendcs.dai.SiteDAI;
 
@@ -33,6 +35,35 @@ public class SiteDaoTestIT extends AppTestBase
             Site ret = dao.getSiteBySiteName(new SiteName(null,"CWMS","TestSite"));
             assertNotNull(ret,"Could not round-trip site");
             assertEquals("TestSite",ret.getName("CWMS").getNameValue(),"SiteName mappings are incorrect.");
+
+            dao.deleteSite(ret.getKey());
+            assertThrows(NoSuchObjectException.class, ()-> dao.getSiteById(ret.getId()), "Site was not deleted;");
+        }
+    }
+
+    @Test
+    @EnableIfSql
+    public void test_updating_record() throws Exception
+    {
+        try(SiteDAI dao = tsdb.makeSiteDAO();)
+        {
+            Site s = new Site();
+            s.addName(new SiteName(s,"CWMS","TestSite"));
+            s.setActive(true);
+            s.setDescription("A test site");
+            dao.writeSite(s);
+
+            Site ret = dao.getSiteBySiteName(new SiteName(null,"CWMS","TestSite"));
+            assertNotNull(ret,"Could not round-trip site");
+            assertEquals("TestSite",ret.getName("CWMS").getNameValue(),"SiteName mappings are incorrect.");
+
+            s.removeName("CWMS");
+            s.addName(new SiteName(s,"HDB","915"));
+            dao.writeSite(s);
+
+            Site ret2 = dao.getSiteById(ret.getId());
+            assertNotNull(ret2, "Could not get Site again from database");
+            assertEquals("915",ret2.getName("HDB").getNameValue(), "new sitename was not set.");
         }
     }
 }
