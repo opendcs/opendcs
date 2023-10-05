@@ -66,6 +66,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
@@ -629,9 +630,7 @@ public class SiteDAO
 		}
 		q.append(String.join(",",columns));
 		q.append(") values(");
-		final ArrayList<String> binds = new ArrayList<>();
-		parameters.forEach(bind -> binds.add("?"));
-		q.append(String.join(",",binds));
+		q.append(parameters.stream().map(f -> "?").collect(Collectors.joining(",")));
 		q.append(")");
 		try
 		{
@@ -656,21 +655,35 @@ public class SiteDAO
 	{
 		// Ignore null or missing name values. Oracle can't store them.
 		if (sn.getNameValue() == null || sn.getNameValue().trim().length() == 0)
-			return;
-		
-		String q =
-			"INSERT INTO SiteName VALUES (" +
-				siteId + ", " +
-				sqlString(sn.getNameType()) + ", " +
-				sqlString(sn.getNameValue());
-		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
 		{
-			q = q + ", " + sqlString(sn.getUsgsDbno())
-			      + ", " + sqlString(sn.getAgencyCode());
+			return;
 		}
 
-		q = q + ")";
-		doModify(q);
+		ArrayList<String> columns = new ArrayList<>();
+		ArrayList<Object> parameters = new ArrayList<>();
+		columns.add("siteid"); parameters.add(siteId);
+		columns.add("nametype"); parameters.add(sn.getNameType());
+		columns.add("sitename"); parameters.add(sn.getNameValue());
+
+		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+		{
+			columns.add("dbnum"); parameters.add(sn.getUsgsDbno());
+			columns.add("agency_cd"); parameters.add(sn.getAgencyCode());
+		}
+		StringBuilder q = new StringBuilder("INSERT INTO SiteName(");
+		q.append(String.join(",",columns));
+		q.append(") values (")
+		 .append(parameters.stream().map(f -> "?").collect(Collectors.joining(",")))
+		 .append(")");
+		try
+		{
+			System.out.println(q.toString());
+			doModify(q.toString(),parameters.toArray(new Object[0]));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to store SiteName -> " + sn, ex);
+		}
 	}
 
 	@Override
