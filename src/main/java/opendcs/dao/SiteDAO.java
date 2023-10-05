@@ -735,10 +735,10 @@ public class SiteDAO
         // systems.
         try
         {
-        doModify("delete from sitename where siteid = ?", key);
-        doModify("delete from site_property where site_id = ?", key);
-        doModify("delete from site where " + siteTableKeyColumn + " = ?", key);
-        cache.remove(key);
+            doModify("delete from sitename where siteid = ?", key);
+            doModify("delete from site_property where site_id = ?", key);
+            doModify("delete from site where " + siteTableKeyColumn + " = ?", key);
+            cache.remove(key);
         }
         catch (SQLException ex)
         {
