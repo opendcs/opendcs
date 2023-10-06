@@ -15,9 +15,8 @@ See INTENT.md at the project home for information on licensing.
 Overview
 ========
 
-This is the initial start of the documentation and thus it's still quite empty
-If you are working on OpenDCS and think of something that should be in this section
-help expanding the docs are greatly appreciated.
+The purpose of this document is to describes how different technologies are used for OpenDCS development.
+Extra attention is given to testing and using OpenDCS within containers.
 
 
 MBeans
