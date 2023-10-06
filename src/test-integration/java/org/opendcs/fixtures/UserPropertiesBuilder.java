@@ -73,6 +73,32 @@ public class UserPropertiesBuilder
         props.setProperty("DbAuthFile", auth);
         return this;
     }
+
+    /**
+     * Set the Cwms Office Id to use for connection setup.
+     *
+     * NOTE: only used by CWMS.
+     * @param officeId
+     * @return
+     */
+    public UserPropertiesBuilder withCwmsOffice(String officeId)
+    {
+        props.setProperty("cwmsOfficeId",officeId);
+        return this;
+    }
+
+    /**
+     * Default office id to use for certain interfaces.
+     *
+     * NOTE: CWMS Only
+     * @param officeId
+     * @return
+     */
+    public UserPropertiesBuilder withDbOffice(String officeId)
+    {
+        props.setProperty("dbOfficeId",officeId);
+        return this;
+    }
 /**
  * For reference
  
@@ -176,6 +202,6 @@ decodesFormatLabelMode=f
 
     public void withDatabaseDriver(String driverString)
     {
-        this.props.put("editDatabaseDriver",driverString);
+        this.props.put("jdbcDriverClass",driverString);
     }
 }
