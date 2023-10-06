@@ -13,6 +13,7 @@ import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import opendcs.dao.DatabaseConnectionOwner;
@@ -518,5 +519,84 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 		else if (s2 == null || s2.length() == 0)
 			return false;
 		return s1.equals(s2);
+	}
+
+	@Override
+	public void fillCache()
+		throws DbIoException
+	{
+		debug3("(Generic)SiteDAO.fillCache()");
+
+		HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
+//		ArrayList<Site> siteList = new ArrayList<Site>();
+		int nNames = 0;
+		String q = buildSiteQuery(Constants.undefinedId);
+		try
+		{
+			ResultSet rs = doQuery(q);
+			while (rs != null && rs.next())
+			{
+				Site site = new Site();
+				resultSet2Site(site, rs);
+				siteHash.put(site.getKey(), site);
+				// Can't put in cache because names are not yet known
+			}
+
+			q = buildSiteNameQuery(null);
+			rs = doQuery(q);
+			String prevNameType="", prevNameValue="";
+			DbKey prevId = DbKey.NullKey;
+			while (rs != null && rs.next())
+			{
+				DbKey key = DbKey.createDbKey(rs, 1);
+				Site site = siteHash.get(key);
+				
+				if (site == null)
+				{
+					if (!db.isHdb()) // For some crazy reason, HDB has lots of orphan site names.
+						warning("SiteName for id=" + key + ", but no matching site.");
+					continue;
+				}
+				
+				// There is an issue in HDB with multiple identical site names pointing to different sites.
+				// The HDB site name query orders results by type,value.
+				String nameType = rs.getString(2);
+				String nameValue = rs.getString(3);
+				if (prevNameType.equalsIgnoreCase(nameType) && prevNameValue.equalsIgnoreCase(nameValue))
+				{
+					warning("SiteName for id=" + key + " with nametype=" + nameType + " and nameValue="
+						+ nameValue + " is a duplicate to a name to a different site with id="
+							+ prevId + ". Discarding the name for " + key);
+				}
+				else
+				{
+					prevNameType = nameType;
+					prevNameValue = nameValue;
+					prevId = key;
+				}
+				
+				SiteName sn = new SiteName(site, nameType, nameValue);
+				sn.setUsgsDbno(rs.getString(4));
+				sn.setAgencyCode(rs.getString(5));
+				site.addName(sn);
+				nNames++;
+			}			
+
+		}
+		catch(SQLException ex)
+		{
+			String msg = "fillCache - Error in query '" + q + "': " + ex;
+			warning(msg);
+			throw new DbIoException(msg);
+		}
+//		for(Site site : siteList)
+		for(Site site : siteHash.values())
+			cache.put(site);
+		int nProps = 0;
+		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
+			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
+		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
+			+ " names, " + nProps + " properties.");
+		lastCacheFillMsec = System.currentTimeMillis();
 	}
 }
