@@ -106,7 +106,8 @@ public class CwmsSiteDAO extends SiteDAO
 		this.module = "CwmsSiteDAO";
 	}
 
-	protected void resultSet2Site(Site site, ResultSet rsSite)
+	@Override
+	protected Site resultSet2Site(Site site, ResultSet rsSite)
 		throws SQLException
 	{
 		site.forceSetId(DbKey.createDbKey(rsSite, 1));
@@ -138,6 +139,8 @@ public class CwmsSiteDAO extends SiteDAO
 		s = rsSite.getString(18);
 		if (s != null && s.trim().length() > 0)
 			site.setProperty("location_type", s);
+
+		return site;
 	}
 	
 	@Override
@@ -420,7 +423,7 @@ public class CwmsSiteDAO extends SiteDAO
 		}
 	}
 
-	@Override
+	// no longer used in the parent class.
 	protected String buildSiteQuery(DbKey siteId)
 	{
 		String q = "SELECT " + siteAttributes + " FROM " + siteTableName

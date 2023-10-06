@@ -132,16 +132,17 @@ public class HdbSiteDAO extends SiteDAO
 	}
 	
 	@Override
-	protected void resultSet2Site(Site site, ResultSet rsSite)
+	protected Site resultSet2Site(Site site, ResultSet rsSite)
 		throws SQLException
 	{
 		// Base class handles all the normal attributes, which we've put in the proper order above.
 		super.resultSet2Site(site, rsSite);
 		// Now add the "hdb" site name as the surrogate key
 		site.addName(new SiteName(site, "hdb", "" + site.getKey()));
+		return site;
 	}
 	
-	@Override
+	// No longer used in the parent class
 	protected String buildSiteQuery(DbKey siteId)
 	{
 		String q = "SELECT " + siteAttributes + " FROM " + siteTableName
@@ -270,7 +271,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 
 	}
 	
-	@Override
+	// No longer used in parent class
 	protected String buildSiteNameQuery(Site site)
 	{
 		String r = basicSiteNameQuery(site);

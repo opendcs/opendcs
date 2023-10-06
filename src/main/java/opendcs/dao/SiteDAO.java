@@ -160,7 +160,7 @@ public class SiteDAO
 	{
 		// Next read all Names and then assign them to sites.
 		String q = "SELECT " + siteNameAttributes 
-			+ " FROM SiteName WHERE siteId = ?"; //+ site.getId();
+			+ " FROM SiteName WHERE siteId = ?";
 
 		doQuery(q, rs -> {
 			SiteName sn = new SiteName(site, rs.getString(2),
@@ -175,8 +175,9 @@ public class SiteDAO
 	  Extract values from result set and put them in the passed Site.
 	  @param site the Site object
 	  @param rsSite the JDBC Result Set
+	  @returns Site - the site object that was passed in.
 	*/
-	protected void resultSet2Site(Site site, ResultSet rsSite)
+	protected Site resultSet2Site(Site site, ResultSet rsSite)
 		throws SQLException
 	{
 		site.forceSetId(DbKey.createDbKey(rsSite, 1));
@@ -200,6 +201,7 @@ public class SiteDAO
 			site.setLastModifyTime(db.getFullDate(rsSite, 14));
 			site.setPublicName(rsSite.getString(15));
 		}
+		return site;
 	}
 	
 	@Override
@@ -298,26 +300,27 @@ public class SiteDAO
 	{
 		debug3("(Generic)SiteDAO.fillCache()");
 
-		HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
+		final HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
+		String q = "SELECT " + siteAttributes + " FROM " + siteTableName;
 //		ArrayList<Site> siteList = new ArrayList<Site>();
-		int nNames = 0;
-		String q = buildSiteQuery(Constants.undefinedId);
+		int nNames[] = new int[1];
+		nNames[0] = 0;
+		
 		try
 		{
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
+			doQuery(q, rs -> 
 			{
 				Site site = new Site();
 				resultSet2Site(site, rs);
 				siteHash.put(site.getKey(), site);
-				// Can't put in cache because names are not yet known
-			}
+			});
 
-			q = buildSiteNameQuery(null);
-			rs = doQuery(q);
-			String prevNameType="", prevNameValue="";
-			DbKey prevId = DbKey.NullKey;
-			while (rs != null && rs.next())
+			q = "SELECT " + siteNameAttributes + " FROM SiteName";
+			final SiteName prevName = new SiteName(null, "","");
+			DbKey prevId[] = new DbKey[1];
+			prevId[0] = DbKey.NullKey;
+
+			doQuery(q, rs -> 
 			{
 				DbKey key = DbKey.createDbKey(rs, 1);
 				Site site = siteHash.get(key);
@@ -326,33 +329,32 @@ public class SiteDAO
 				{
 					if (!db.isHdb()) // For some crazy reason, HDB has lots of orphan site names.
 						warning("SiteName for id=" + key + ", but no matching site.");
-					continue;
+					return;
 				}
 				
 				// There is an issue in HDB with multiple identical site names pointing to different sites.
 				// The HDB site name query orders results by type,value.
-				String nameType = rs.getString(2);
-				String nameValue = rs.getString(3);
-				if (prevNameType.equalsIgnoreCase(nameType) && prevNameValue.equalsIgnoreCase(nameValue))
+				final String nameType = rs.getString(2);
+				final String nameValue = rs.getString(3);
+				if (prevName.getNameType().equalsIgnoreCase(nameType) && prevName.getNameValue().equalsIgnoreCase(nameValue))
 				{
 					warning("SiteName for id=" + key + " with nametype=" + nameType + " and nameValue="
 						+ nameValue + " is a duplicate to a name to a different site with id="
-							+ prevId + ". Discarding the name for " + key);
+							+ prevId[0] + ". Discarding the name for " + key);
 				}
 				else
 				{
-					prevNameType = nameType;
-					prevNameValue = nameValue;
-					prevId = key;
+					prevName.setNameType(nameType);
+					prevName.setNameValue(nameValue);
+					prevId[0] = key;
 				}
 				
 				SiteName sn = new SiteName(site, nameType, nameValue);
 				sn.setUsgsDbno(rs.getString(4));
 				sn.setAgencyCode(rs.getString(5));
 				site.addName(sn);
-				nNames++;
-			}			
-
+				nNames[0]++;
+			});
 		}
 		catch(SQLException ex)
 		{
@@ -366,18 +368,9 @@ public class SiteDAO
 		int nProps = 0;
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
-		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
+		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames[0]
 			+ " names, " + nProps + " properties.");
 		lastCacheFillMsec = System.currentTimeMillis();
-	}
-	
-	protected String buildSiteNameQuery(Site site)
-	{
-		String r = "SELECT " + siteNameAttributes 
-			+ " FROM SiteName";
-		if (site != null)
-			r = r + " WHERE siteid = " + site.getKey();
-		return r;
 	}
 
 	@Override
@@ -394,16 +387,14 @@ public class SiteDAO
 		throws DbIoException, NoSuchObjectException
 	{
 		DbKey id = site.getId();
-		String q = buildSiteQuery(id);
 		try
 		{
-			ResultSet rs = doQuery(q);
-		
-			// Should be either 0 or 1 site returned.
-			if (rs == null || !rs.next())
+			Site site2 = getSingleResult("select * from site where id = ?",
+										rs -> resultSet2Site(site, rs), id );
+			if (site2 == null)
+			{
 				throw new NoSuchObjectException("No such site with ID=" + id);
-
-			resultSet2Site(site, rs);
+			}			
 
 			readNames(site);
 			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
@@ -415,21 +406,7 @@ public class SiteDAO
 			failure(err);
 			throw new DbIoException(err);
 		}
-	}
-	
-	/**
-	 * Build a query of the site table.
-	 * @param siteId if !null, include in the query.
-	 * @return a query string.
-	 */
-	protected String buildSiteQuery(DbKey siteId)
-	{
-		String q = "SELECT " + siteAttributes + " FROM " + siteTableName;
-		if (siteId != null && !siteId.isNull())
-			q = q + " where " + siteTableKeyColumn + " = " + siteId;
-			
-		return q;
-	}
+	}	
 	
 	@Override
 	public Site getSiteBySiteName(SiteName sn)

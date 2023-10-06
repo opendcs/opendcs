@@ -3,6 +3,7 @@ package org.opendcs.regression_tests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
@@ -63,7 +64,20 @@ public class SiteDaoTestIT extends AppTestBase
 
             Site ret2 = dao.getSiteById(ret.getId());
             assertNotNull(ret2, "Could not get Site again from database");
-            assertEquals("915",ret2.getName("HDB").getNameValue(), "new sitename was not set.");
+            assertEquals("915",ret2.getName("HDB").getNameValue(), "new SiteName was not set.");
+        }
+    }
+
+    @Test
+    @EnableIfSql
+    public void test_fill_cache() throws Exception
+    {
+        try(SiteDAI dao = tsdb.makeSiteDAO();)
+        {
+            long lastFill = dao.getLastCacheFillMsec();
+            dao.fillCache();
+            long afterFill = dao.getLastCacheFillMsec();
+            assertTrue( afterFill > lastFill, "Cache does not appear to have been filled by this call.");
         }
     }
 }
