@@ -590,7 +590,6 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 			warning(msg);
 			throw new DbIoException(msg);
 		}
-//		for(Site site : siteList)
 		for(Site site : siteHash.values())
 			cache.put(site);
 		int nProps = 0;
