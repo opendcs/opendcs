@@ -15,7 +15,7 @@ See INTENT.md at the project home for information on licensing.
 Overview
 ========
 
-The purpose of this document is to describes how different technologies are used for OpenDCS development.
+The purpose of this document is to describe how different technologies are used for OpenDCS development.
 Extra attention is given to testing and using OpenDCS within containers.
 
 
