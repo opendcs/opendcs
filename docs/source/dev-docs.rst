@@ -137,7 +137,7 @@ and setting up the configuration.
 Framework
 ---------
 
-There is set of code under :code:`org.opendcs.fixtures` that allows configuration and setup to take place, determine if a given 
+There is set of code under :code:`org.opendcs.fixtures` that allows configuration and setup to take place and determine if a given 
 test should be enabled or not and other per test tasks.
 
 All new integration test classes should derive from :code:`org.opendcs.fixtures.ApptestBase`. This class is marked with the :code:`OpenDCSTestConfigExtension` 
@@ -150,7 +150,7 @@ Application logs are all written into this directory.
 Currently Implemented are OpenDCS-XML and OpenDCS-Postgres. OpenDCS-Postgres uses the (Testcontainers)[https://java.testcontainers.org] library
 which requires docker. OpenDCS-XML only depends on the file system.
 
-to run either use the following command::
+To run either use the following command::
 
     ant integration-test -Dno.doc=true -Dopendcs.test.engine=OpenDCS-XML
     # or 
@@ -161,8 +161,7 @@ Adding tests
 
 New classes, or methods to existing classes, should go under :code:`org.opendcs.regression_tests`
 
-:code:`AppTestBase` contains for members accessible to your tests
-
+Integration tests inherit from :code:AppTestBase. This simplifies access to resources, environment, properties, and methods as described below.
 
 +--------------------------------------------+--------------------------------+
 |Member Variable                             |Description                     |
@@ -183,7 +182,11 @@ New classes, or methods to existing classes, should go under :code:`org.opendcs.
 |protected Configuration configuration;      |:code:`Configuration` that was  |
 |                                            |create for this run. Contains   |
 |                                            |reference to user.properties and|
-|                                            | other specific information     |
+|                                            | other specific information.    |
+|                                            |This is provided by default as  |
+|                                            |almost all interactions will    |
+|                                            |require access to the           |
+|                                            |user.properties file            |
 +--------------------------------------------+--------------------------------+
  
 Extension and other Junit information
@@ -196,9 +199,10 @@ above for the configuration.
 The only other injected field is a :code:`TimeSeriesDb` which is Provided by the Configuration
 and will already be valid and can be used directly for things like testing DaoObjects or null which 
 indicates the implementation under test doesn't use the any of the timeseries database components.
+A test may or may not require access to the :code:`TimeSeriesDb` and so is not provided by default.
 
-The sample :code:`LoadingAppDaoTestIT` uses the :code:`@EnableIfSql` :code:`ExecutionCondition`
- to determine if the test should be run or not.
+The sample :code:LoadingAppDaoTestIT uses the :code:@EnableIfSql annotation that extends from Junit's :code:ExecutionCondition
+to determine if the test should be run or not.
 
 Additional ExecutionConditions and parameter injection will be added in the future as needed and as
 we better identify concepts to map to vs implementation details.
@@ -207,10 +211,13 @@ we better identify concepts to map to vs implementation details.
 Caveats
 -------
 
-OpenDCS supports several implementations, the XML database, the baseline Postgres and Oracle database,
-USBR's HDB and USACE's CWMS. While each share the same fundamental concepts portions of the implementation, like Site names
-and Data type parameter names (e.g. are we measuring Stage, Elevation, Precipitation, etc). These tests are 
-intended to be independent of these concerns; however, the current tests getting merged in are for the baseline implementation
+OpenDCS supports several implementations, the XML database, the baseline Postgres and Oracle database, two additional Oracle Databases:
+USBR's HDB and USACE's CWMS.
+
+Each share the same fundamental concepts. However, portions of the implementation, like Site names
+and Data type parameter names (e.g. are we measuring Stage, Elevation, Precipitation, etc) are handle differently.
+
+These tests are intended to be independent of these concerns; however, the current tests getting merged in are for the baseline implementation
 which was Derived from CWMS and directly shares naming and data labelling styles. Given a new implementation it is quite 
 likely that work will be required to handle this situation. We will address this situation when it happens and you should
 not be afraid to reach out in discussions if you are having difficulties.
