@@ -108,11 +108,11 @@
     </target>
 
     <target name="resolve.real" depends="init-ivy" unless="ivy.current">
-        <ivy:retrieve conf="runtime,test,test_platform"
+        <ivy:retrieve conf="runtime,runtime_last,test,test_platform"
                       sync="true"
-                      pattern="build/ivy/[conf]/[artifact].[ext]"
+                      pattern="build/ivy/[conf]/[artifact](-[classifier])-[revision].[ext]"
         />
-        <ivy:cachepath pathid="runtime.classpath" conf="runtime"/>
+        <ivy:cachepath pathid="runtime.classpath" conf="runtime,runtime_last"/>
         <ivy:cachepath pathid="test.classpath" conf="test"/>
         <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>
 
@@ -181,7 +181,7 @@
     <target name="resolve.build.real" depends="init-ivy,check.ivy.build" description="--> retrieve build script dependencies" unless="ivy.build.current">
         <ivy:retrieve conf="build,groovy,izpack,spotbugs,pmd"
                       sync="true"
-                      pattern="build/ivy-build/[conf]/[artifact](-[classifier]).[ext]"
+                      pattern="build/ivy-build/[conf]/[artifact](-[classifier])-[revision].[ext]"
         />
         <ivy:cachepath pathid="izpack.classpath" conf="izpack"/>
         <ivy:cachepath pathid="groovy.classpath" conf="groovy"/>
