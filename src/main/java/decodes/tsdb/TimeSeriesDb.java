@@ -457,6 +457,7 @@ import opendcs.dao.PropertiesSqlDao;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
+import opendcs.util.sql.WrappedConnection;
 import decodes.util.DecodesSettings;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
@@ -593,7 +594,10 @@ public abstract class TimeSeriesDb
 	}
 
 	/** @return the JDBC connection in use by this object. */
-	public Connection getConnection() { return conn; }
+	public Connection getConnection()
+	{
+		return new WrappedConnection(conn, c -> {});
+	}
 
 	/**
 	 * Sets the JDBC connection in use by this object.

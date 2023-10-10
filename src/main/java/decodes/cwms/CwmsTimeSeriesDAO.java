@@ -146,6 +146,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
+import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
@@ -1541,6 +1542,7 @@ public class CwmsTimeSeriesDAO
 		}
 	}
 	
+	@Override
 	protected Connection getConnection()
 	{
 		// local getConnection() method that saves the connection locally
@@ -1548,7 +1550,9 @@ public class CwmsTimeSeriesDAO
 			myCon = db.getConnection();
 		siteDAO.setManualConnection(myCon);
 		dataTypeDAO.setManualConnection(myCon);
-		return myCon;
+		// NOTE: there should already be a pooled connection used by the
+		// CWMS Components. This is primarily to cover the cases we haven't gotten to yet.
+		return new WrappedConnection(myCon, rs -> {},true);
 	}
 
 

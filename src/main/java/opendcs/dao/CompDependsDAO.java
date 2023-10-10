@@ -49,6 +49,7 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import opendcs.util.sql.WrappedConnection;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CpDependsNotify;
@@ -90,7 +91,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 			algorithmDAO.setManualConnection(myCon);
 			tsGroupDAO.setManualConnection(myCon);
 		}
-		return myCon;
+		return new WrappedConnection(myCon, c -> {});
 	}
 	
 	@Override
