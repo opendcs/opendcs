@@ -29,6 +29,7 @@ import opendcs.util.functional.ConnectionConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
+import opendcs.util.sql.WrappedConnection;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -137,7 +138,7 @@ public class DaoBase
 		}
 			
 			
-		return myCon;
+		return new WrappedConnection(myCon, c -> {});
 	}
 
 	/**
@@ -412,11 +413,26 @@ public class DaoBase
 					}
 					else if (param instanceof DbKey)
 					{
-						stmt.setLong(index,((DbKey)param).getValue());
+						DbKey key = (DbKey)param;
+						if (DbKey.isNull(key))
+						{
+							stmt.setNull(index,Types.NULL);
+						}
+						else
+						{
+							stmt.setLong(index,key.getValue());
+						}
 					}
 					else if (param instanceof Date)
 					{
-						stmt.setDate(index,new java.sql.Date(((Date)param).getTime()));
+						if (this.db.isOpenTSDB())
+						{
+							stmt.setLong(index,((Date)param).getTime());
+						}
+						else
+						{
+							stmt.setDate(index,new java.sql.Date(((Date)param).getTime()));
+						}
 					}
 					else if (param == null)
 					{

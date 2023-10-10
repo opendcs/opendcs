@@ -68,6 +68,7 @@ import java.util.Iterator;
 
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.db.Site;
@@ -123,7 +124,7 @@ public class SiteDAO
 	{
 		Connection conn = super.getConnection();
 		propsDao.setManualConnection(conn);
-		return conn;
+		return new WrappedConnection(conn, c -> {});
 	}
 
 

@@ -68,6 +68,7 @@ public class DacqEvent
 			+ ", priority=" + Logger.priorityName[eventPriority].trim() + "(" + eventPriority + ")"
 			+ ", susbsys='" + subsystem + "'"
 			+ ", msgTime=" + msgRecvTime
+			+ ", appId=" + appId
 			+ ", text='" + eventText + "'";
 	}
 

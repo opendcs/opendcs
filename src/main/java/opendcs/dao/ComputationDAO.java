@@ -78,6 +78,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.DbObjectCache.CacheIterator;
+import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
@@ -155,7 +156,7 @@ debug1("Setting manual connection for algorithmDAO");
 			tsGroupDAO.setManualConnection(myCon);
 			loadingAppDAO.setManualConnection(myCon);
 		}
-		return myCon;
+		return new WrappedConnection(myCon, c -> {});
 	}
 
 	private void fillCache()
