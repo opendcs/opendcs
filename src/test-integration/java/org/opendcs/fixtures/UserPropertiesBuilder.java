@@ -99,6 +99,18 @@ public class UserPropertiesBuilder
         props.setProperty("dbOfficeId",officeId);
         return this;
     }
+
+    /**
+     * Default, if not set, is false.
+     *
+     * @param writeCwmsLocations true if you want to allow creating of CWMS locations (sites)
+     * @return
+     */
+    public UserPropertiesBuilder withWriteCwmsLocations(boolean writeCwmsLocations)
+    {
+        props.setProperty("writeCwmsLocations",Boolean.toString(writeCwmsLocations));
+        return this;
+    }
 /**
  * For reference
  

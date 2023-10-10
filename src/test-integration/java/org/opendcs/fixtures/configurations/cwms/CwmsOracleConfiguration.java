@@ -4,13 +4,19 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.jooq.SQLDialect;
+import org.junit.jupiter.api.Assumptions;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.configuration.Configuration;
+import org.python.antlr.PythonParser.try_stmt_return;
 
+import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.tsdb.TimeSeriesDb;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -29,6 +35,8 @@ public class CwmsOracleConfiguration implements Configuration
     private File propertiesFile;
     private boolean started = false;
     private HashMap<String,String> environmentVars = new HashMap<>();
+    private String dcsUser = null;
+    private String dcsUserPassword = null;
 
     public CwmsOracleConfiguration(File userDir)
     {
@@ -42,6 +50,19 @@ public class CwmsOracleConfiguration implements Configuration
         {
             return;
         }
+        /*
+        Assumptions.assumeTrue(() -> {
+            try
+            {
+                SQLDialect dialect = SQLDialect.valueOf("ORACLE12C");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        },"JOOQ dependencies are not correct.");
+        */
         cwmsDb = new CwmsDatabaseContainer<>(CWMS_ORACLE_IMAGE)
                         .withSchemaImage(CWMS_SCHEMA_IMAGE)
                         .withVolumeName(CWMS_ORACLE_VOLUME);
@@ -49,15 +70,17 @@ public class CwmsOracleConfiguration implements Configuration
         cwmsDb.start();
         log.info("CWMS Database started.");
         this.dbUrl = cwmsDb.getJdbcUrl();
-        environment.set("DB_USERNAME",System.getProperty("opendcs.cwms.dcsuser.name",cwmsDb.getUsername()));
-        environment.set("DB_PASSWORD",System.getProperty("opendcs.cwms.dcsuser.password",cwmsDb.getPassword()));
+        dcsUser = System.getProperty("opendcs.cwms.dcsuser.name",cwmsDb.getUsername());
+        dcsUserPassword = System.getProperty("opendcs.cwms.dcsuser.password",cwmsDb.getPassword());
+        environment.set("DB_USERNAME",dcsUser);
+        environment.set("DB_PASSWORD",dcsUserPassword);
         started = true;
         //TODO strip/reinstall schema
     }
 
     @Override
     public void start(SystemExit exit, EnvironmentVariables environment) throws Exception
-    {
+    {        
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
@@ -70,6 +93,7 @@ public class CwmsOracleConfiguration implements Configuration
         configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
         configBuilder.withCwmsOffice(cwmsDb.getOfficeId());
         configBuilder.withDbOffice(cwmsDb.getOfficeId());
+        configBuilder.withWriteCwmsLocations(true);
         
         // set username/pw (env)
         try (OutputStream out = new FileOutputStream(propertiesFile);)
@@ -102,5 +126,22 @@ public class CwmsOracleConfiguration implements Configuration
     public boolean isSql()
     {
         return true;
+    }
+
+    @Override
+    public boolean isTsdb()
+    {
+        return true;
+    }
+
+    @Override
+    public TimeSeriesDb getTsdb() throws Throwable
+    {
+        CwmsTimeSeriesDb db = new CwmsTimeSeriesDb();
+        Properties credentials = new Properties();
+        credentials.put("username",dcsUser);
+        credentials.put("password",dcsUserPassword);
+        db.connect("utility",credentials);
+        return db;
     }
 }
