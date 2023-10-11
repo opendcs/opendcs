@@ -64,10 +64,12 @@ import ilex.util.Location;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -186,7 +188,7 @@ public class CwmsSiteDAO extends SiteDAO
 			parameters.add(siteName.getNameValue());
 			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
 			{
-				q.append(" and upper(b.DB_OFFICE_ID) = upper(?)" + sqlString(officeId));
+				q.append(" and upper(b.DB_OFFICE_ID) = upper(?)");
 				parameters.add(officeId);
 			}
 		}
@@ -256,13 +258,13 @@ public class CwmsSiteDAO extends SiteDAO
 		Double dlat = lat;
 		Double dlon = lon;
 		Double delev = (elev == Constants.undefinedDouble ? null : elev);
-		try
+		try(Connection conn = getConnection())
 		{
 			if (DecodesSettings.instance().writeCwmsLocations)
 			{
 				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue() 
 					+ "' with officeId=" + officeId);
-				CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, getConnection());
+				CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, conn);
 				
 				if (newSite.country == null || newSite.country.trim().length() == 0
 				 || newSite.country.trim().toLowerCase().startsWith("us"))
@@ -271,7 +273,7 @@ public class CwmsSiteDAO extends SiteDAO
 				// MJM for release 5.3 use the new improved version of store
 				// This allows us to save country and nearest city.
 				cwmsDbLoc.store(
-					getConnection(),
+					conn,
 					officeId, 
 					cwmsName.getNameValue(), 
 					state, 
@@ -337,8 +339,16 @@ public class CwmsSiteDAO extends SiteDAO
 		}
 
 		// Drop current names, then re-insert all non-CWMS names.
-		String q = "delete from siteName where siteid = " + newSite.getId();
-		doModify(q);
+		String q = "delete from siteName where siteid = ?";
+		try
+		{
+			doModify(q,newSite.getId());
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to delete location with ID " + newSite.getId(), ex);
+		}
+
 		for(Iterator<SiteName> snit = newSite.getNames(); snit.hasNext(); )
 		{
 			SiteName sn = snit.next();
@@ -377,37 +387,32 @@ public class CwmsSiteDAO extends SiteDAO
 		
 		SiteName cwmsName = site.getName(Constants.snt_CWMS);
 		if (cwmsName == null)
+		{
 			throw new DbIoException("Cannot delete site '" + site.getDisplayName()
 				+ "' because it doesn't have a CWMS name.");
+		}
 		
-		String q = "select count(*) from cwms_v_ts_id where upper(location_id) = "
-			+ sqlString(cwmsName.getNameValue().toUpperCase());
-		ResultSet rs = null;
-		try
+		String q = "select count(*) from cwms_v_ts_id where upper(location_id) = upper(?)";
+		try (Connection conn = getConnection())
 		{
-			rs = doQuery(q);
-			if (rs != null && rs.next())
+			int n = getSingleResult(q,rs->rs.getInt(1),cwmsName.getNameValue());
+			if (n > 0)
 			{
-				int n = rs.getInt(1);
-				if (n > 0)
 					throw new DbIoException("Cannot delete site '" + site.getDisplayName()
 						+ "' because time series exist at this location. Delete the time series first.");
 			}
 
-			q = "select count(*) from platform where siteid = " + location_code;
-			rs = doQuery(q);
-			if (rs != null && rs.next())
+			q = "select count(*) from platform where siteid = ?";
+			n = getSingleResult(q,rs->rs.getInt(1),location_code);
+			if (n > 0)
 			{
-				int n = rs.getInt(1);
-				if (n > 0)
 					throw new DbIoException("Cannot delete site '" + site.getDisplayName()
 						+ "' because platform(s) exist at this location. Delete the platform(s) first.");
 			}
-			q = "select platformid from platformsensor where siteid = " + location_code;
-			rs = doQuery(q);
-			if (rs != null && rs.next())
+			q = "select platformid from platformsensor where siteid = ?";
+			DbKey platformId = getSingleResult(q, rs -> DbKey.createDbKey(rs, 1), location_code);
+			if (platformId != null)
 			{
-				DbKey platformId = DbKey.createDbKey(rs, 1);
 				Platform p = Database.getDb().platformList.getById(platformId);
 				throw new DbIoException("Cannot delete site '" + site.getDisplayName()
 					+ "' because platform '" + p.getDisplayName() + "' has a sensor at this site."
@@ -417,13 +422,13 @@ public class CwmsSiteDAO extends SiteDAO
 			q = "Deleting location_id '" + cwmsName.getNameValue();
 			Logger.instance().info(q);
 
-			q = "delete from sitename where siteid = " + site.getId();
-			doModify(q);
-			q = "DELETE FROM SITE_PROPERTY WHERE site_id = " + site.getId();
-			doModify(q);
+			q = "delete from sitename where siteid = ?";
+			doModify(q,site.getId());
+			q = "DELETE FROM SITE_PROPERTY WHERE site_id = ?";
+			doModify(q,site.getId());
 
-			CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, getConnection());
-			cwmsDbLoc.delete(getConnection(), officeId, cwmsName.getNameValue());
+			CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, conn);
+			cwmsDbLoc.delete(conn, officeId, cwmsName.getNameValue());
 			cache.remove(location_code);
 		}
 		catch(SQLException ex)
@@ -433,21 +438,6 @@ public class CwmsSiteDAO extends SiteDAO
 			throw new DbIoException(msg);
 		}
 	}
-
-	// no longer used in the parent class.
-	protected String buildSiteQuery(DbKey siteId)
-	{
-		String q = "SELECT " + siteAttributes + " FROM " + siteTableName
-			+ " where UNIT_SYSTEM = 'SI'";
-		
-		if (siteId != null && !siteId.isNull())
-			q = q + " and location_code = " + siteId;
-		else // querying all sites, must add the db_office_id
-			q = q + " and upper(DB_OFFICE_ID) = " + sqlString(officeId);
-			
-		return q;
-
-	}
 	
 	@Override
 	public void fillCache()
@@ -455,11 +445,13 @@ public class CwmsSiteDAO extends SiteDAO
 	{
 		debug3("CwmsSiteDAO.fillCache()");
 
-		ArrayList<Site> siteList = new ArrayList<Site>();
-		int nNames = 0;
 		
-		
-		String q = buildSiteQuery(Constants.undefinedId);
+		int nNames[] = new int[1];
+		nNames[0] = 0;
+
+		StringBuffer q = new StringBuffer(255);
+		q.append("SELECT " + siteAttributes + " FROM " + siteTableName + " where UNIT_SYSTEM = 'SI'");
+		q.append(" and upper(DB_OFFICE_ID) = upper(?)");
 		try
 		{
 			int origFetchSize = getFetchSize();
@@ -467,26 +459,26 @@ public class CwmsSiteDAO extends SiteDAO
 			if (tsidFetchSize > 0)
 				setFetchSize(tsidFetchSize); 
 
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
+			final List<Site> siteList = getResults(q.toString(), rs ->
 			{
 				Site site = new Site();
 				resultSet2Site(site, rs);
-				siteList.add(site);
-			}
+				return site;
+			}, officeId);
 
+			q.setLength(0);
+			ArrayList<Object> parameters = new ArrayList<>();
 			// Have to join with cwms_v_loc so I can filter on db_office_id
-			q = "select a.siteid, a.nametype, a.sitename, a.dbnum, a.agency_cd "
+			q.append("select a.siteid, a.nametype, a.sitename, a.dbnum, a.agency_cd "
 				+ " from SiteName a, CWMS_V_LOC b "
-				+ " where a.siteid = b.location_code ";
+				+ " where a.siteid = b.location_code");
 			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
-				q = q + " and upper(b.DB_OFFICE_ID) = " + sqlString(officeId);
+			{
+				q.append(" and upper(b.DB_OFFICE_ID) = upper(?)");
+				parameters.add(officeId);
+			}
 			
-			rs = doQuery(q);
-
-			setFetchSize(origFetchSize);
-
-			while (rs != null && rs.next())
+			doQuery(q.toString(), rs ->
 			{
 				DbKey key = DbKey.createDbKey(rs, 1);
 				Site site = null;
@@ -502,14 +494,31 @@ public class CwmsSiteDAO extends SiteDAO
 				{
 					warning("SiteName for id=" + key + " (" + nameType + ":"
 						+ nameValue + ") but no matching site.");
-					continue;
+					return;
 				}
 				SiteName sn = new SiteName(site, nameType, nameValue);
 				sn.setUsgsDbno(rs.getString(4));
 				sn.setAgencyCode(rs.getString(5));
 				site.addName(sn);
-				nNames++;
-			}			
+				nNames[0]++;
+			}, parameters.toArray(new Object[0]));
+
+			setFetchSize(origFetchSize);
+
+			for(Site site : siteList)
+			{
+				cache.put(site);
+			}
+
+			int nProps = 0;
+			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
+			{
+				nProps = propsDao.readPropertiesIntoCache("site_property", cache);
+			}
+
+			debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames[0]
+				+ " names, " + nProps + " properties.");
+			lastCacheFillMsec = System.currentTimeMillis();
 		}
 		catch(SQLException ex)
 		{
@@ -517,14 +526,6 @@ public class CwmsSiteDAO extends SiteDAO
 			warning(msg);
 			throw new DbIoException(msg);
 		}
-		for(Site site : siteList)
-			cache.put(site);
-		int nProps = 0;
-		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
-			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
-		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
-			+ " names, " + nProps + " properties.");
-		lastCacheFillMsec = System.currentTimeMillis();
 	}
 
 	@Override
@@ -535,7 +536,9 @@ public class CwmsSiteDAO extends SiteDAO
 		SiteName sn = new SiteName(null, Constants.snt_CWMS, nameValue);
 		DbKey siteId = lookupSiteID(sn);
 		if (siteId != null)
+		{
 			return siteId;
+		}
 		
 		// If that fails, the super class will search for any matching value
 		// in the SITENAME table.
