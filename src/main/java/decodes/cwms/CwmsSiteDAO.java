@@ -214,7 +214,6 @@ public class CwmsSiteDAO extends SiteDAO
 				}
 			}
 		}
-		
 		SiteName cwmsName = newSite.getName(Constants.snt_CWMS);
 		if (cwmsName == null)
 		{
@@ -340,6 +339,9 @@ public class CwmsSiteDAO extends SiteDAO
 		}
 		propsDao.writeProperties("site_property", "site_id", 
 			newSite.getKey(), newSite.getProperties());
+
+		cache.remove(newSite.getId());
+		cache.put(newSite);
 	}
 
 	@Override
@@ -529,5 +531,37 @@ public class CwmsSiteDAO extends SiteDAO
 		// If that fails, the super class will search for any matching value
 		// in the SITENAME table.
 		return super.lookupSiteID(nameValue);
+	}
+
+	@Override
+	public void readSite(Site site) throws DbIoException, NoSuchObjectException
+	{
+		DbKey id = site.getId();
+		String q = "select " + siteAttributes + " from " + siteTableName
+		         + " where " + siteTableKeyColumn + " = ?"
+				 + " and UNIT_SYSTEM = 'SI'"
+				 + " and upper(DB_OFFICE_ID) =upper(?)";
+		try
+		{
+			Site ret = getSingleResult(q, rs->
+			{
+				resultSet2Site(site, rs);
+				return site;
+			}, site.getId(),officeId);
+
+			if (ret == null)
+			{
+				throw new NoSuchObjectException("No site for location code =" + site.getId());
+			}
+			readNames(site);
+			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
+			{
+				propsDao.readProperties("site_property", "site_id", id, site.getProperties());
+			}
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to retrieve site.",ex);
+		}
 	}
 }

@@ -42,6 +42,11 @@ public class SiteDaoTestIT extends AppTestBase
         }
     }
 
+    /**
+     * TODO: need to determine a way to properly distiguish a required sitename.
+     * E.G. for CWMS the CWMS location table is used and can't be removed.
+     * @throws Exception
+     */
     @Test
     @EnableIfSql
     public void test_updating_record() throws Exception
@@ -50,6 +55,7 @@ public class SiteDaoTestIT extends AppTestBase
         {
             Site s = new Site();
             s.addName(new SiteName(s,"CWMS","TestSite"));
+            s.addName(new SiteName(s, "local", "TestSite-local name"));
             s.setActive(true);
             s.setDescription("A test site");
             dao.writeSite(s);
@@ -58,7 +64,7 @@ public class SiteDaoTestIT extends AppTestBase
             assertNotNull(ret,"Could not round-trip site");
             assertEquals("TestSite",ret.getName("CWMS").getNameValue(),"SiteName mappings are incorrect.");
 
-            s.removeName("CWMS");
+            s.removeName("local");
             s.addName(new SiteName(s,"HDB","915"));
             dao.writeSite(s);
 
