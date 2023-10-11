@@ -531,9 +531,21 @@ public class DaoBase
 	public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
 	{
 		return getSingleResultOr(query, consumer, null, parameters);
-	}
+	}	
 
-	public <R> R getSingleResultOr(String query, ResultSetFunction<R> consumer, R defaultValue, Object... parameters) throws SQLException
+	/**
+	 * Given a query string and bind variables execute the query.
+	 * The provided function should process the single valid result set and return an object R.
+	 *
+	 * The query should return a single result.
+	 *
+	 * @param query SQL query with ? for bind vars.
+	 * @param consumer Function that Takes a ResultSet and returns an instance of R
+	 * @param parameters arg list of query inputs
+	 * @returns Object of type R determined by the caller.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
+	 */
+	public <R> R getSingleResultOr(String query, ResultSetFunction<R> consumer, R defaultValue, Object... parameters ) throws SQLException
 	{
 		final ArrayList<R> result = new ArrayList<>();
 		withStatement(query,(stmt)->{

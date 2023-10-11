@@ -164,30 +164,39 @@ public class CwmsSiteDAO extends SiteDAO
 		if (site != null)
 			return site.getKey();
 
-		String q = "";
+		StringBuilder q = new StringBuilder();
+		ArrayList<Object> parameters = new ArrayList<>();
 		if (siteName.getNameType().equalsIgnoreCase(Constants.snt_CWMS))
 		{
-			q = "select location_code from cwms_v_loc where lower(location_id) = " 
-				+ sqlString(siteName.getNameValue().toLowerCase());
+			q.append("select location_code from cwms_v_loc where UPPER(location_id) = upper(?) and UNIT_SYSTEM='SI'");
+			parameters.add(siteName.getNameValue());
 			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
-				q = q + " and upper(DB_OFFICE_ID) = " + sqlString(officeId);
+			{
+				q.append(" and upper(DB_OFFICE_ID) = upper(?)");
+				parameters.add(officeId);
+			}
 		}
 		else
 		{
-			q = "select a.siteid from SiteName a, CWMS_V_LOC b "
-			+ " where lower(a.nameType) = " + sqlString(siteName.getNameType().toLowerCase())
-			+ " and lower(a.siteName) = "  + sqlString(siteName.getNameValue().toLowerCase())
-			+ " and a.siteid = b.location_code";
+			q.append("select a.siteid from SiteName a, CWMS_V_LOC b "
+			+ " where lower(a.nameType) = lower(?)"
+			+ " and lower(a.siteName) = lower(?)"
+			+ " and a.siteid = b.location_code");
+			parameters.add(siteName.getNameType());
+			parameters.add(siteName.getNameValue());
 			if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
-				q = q + " and upper(b.DB_OFFICE_ID) = " + sqlString(officeId);
+			{
+				q.append(" and upper(b.DB_OFFICE_ID) = upper(?)" + sqlString(officeId));
+				parameters.add(officeId);
+			}
 		}
 		
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (rs.next())
-				return DbKey.createDbKey(rs, 1);
-			return Constants.undefinedId;
+			return getSingleResultOr(q.toString(),
+								     rs->DbKey.createDbKey(rs, 1),
+									 Constants.undefinedId,
+									 parameters.toArray(new Object[0]));
 		}
 		catch(SQLException ex)
 		{
