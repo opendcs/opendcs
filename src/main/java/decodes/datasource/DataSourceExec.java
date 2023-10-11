@@ -186,7 +186,9 @@ public abstract class DataSourceExec
 	/**
 	  Sets the dbDataSource member.
 	  @param ds the database data source record
+	  @deprecated this not be called directly, the DataSource is now passed in the constructor.
 	*/
+	@Deprecated
 	public void setDataSource(DataSource ds)
 		throws InvalidDatabaseException
 	{

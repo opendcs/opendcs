@@ -343,6 +343,7 @@ public class DataSource extends IdDatabaseObject
 					"newInstance for class '" + dsClass.getName()
 					+ "' returned null");
 			}
+			ret.processDataSource();
 		}
 		catch(Exception e)
 		{
