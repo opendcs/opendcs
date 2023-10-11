@@ -11,7 +11,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider
     @Override
     public String getImplementation()
     {
-        return "OpenDCS-XML";
+        return XmlConfiguration.NAME;
     }
 
     @Override

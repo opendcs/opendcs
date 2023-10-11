@@ -32,7 +32,7 @@ public class DecodesTest extends AppTestBase
 
     @ParameterizedTest
     @CsvSource({
-        "OKVI4-input,SimpleDecodesTest/golden"
+        "OKVI4-input,SimpleDecodesTest/golden${impl}"
     })
     public void test_humanReadable(String specName, String expectedResultFile) throws Exception
     {
@@ -57,7 +57,7 @@ public class DecodesTest extends AppTestBase
 
     @ParameterizedTest
     @CsvSource({
-        "HydroJSON-Test,HydroJsonTest/golden"
+        "HydroJSON-Test,HydroJsonTest/golden${impl}"
     })
     public void test_HydroJsonTest(String specName, String expectedResultFile) throws Exception
     {

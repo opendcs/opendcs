@@ -10,7 +10,7 @@ public class OpenDCSPGConfigurationProvider implements ConfigurationProvider
 
     @Override
     public String getImplementation() {
-        return "OpenDCS-Postgres";
+        return OpenDCSPGConfiguration.NAME;
     }
 
     @Override

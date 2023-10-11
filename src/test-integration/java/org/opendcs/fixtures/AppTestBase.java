@@ -46,15 +46,27 @@ public class AppTestBase
      * @param file file name under the data/ directory to reference
      * @return
      */
-    public static String getResource(String file)
+    public String getResource(String fileName)
     {
-        if ( !file.startsWith("$"))
+        if (!fileName.startsWith("$"))
         {
-            return new File(TestResources.resourceDir,file).getAbsolutePath();
+            String configName = configuration.getName();
+            String newName = fileName.replace("${impl}",configName);
+            File file = new File(TestResources.resourceDir,newName);
+            if (file.exists())
+            {
+                return file.getAbsolutePath();
+            }
+            else
+            {
+                return new File(TestResources.resourceDir,
+                                fileName.replace("${impl}",""))
+                            .getAbsolutePath();
+            }
         }
         else
         {
-            return new File(EnvExpander.expand(file,System.getProperties())).getAbsolutePath();
+            return new File(EnvExpander.expand(fileName,System.getProperties())).getAbsolutePath();
         }
     }
 

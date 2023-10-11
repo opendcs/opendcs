@@ -10,7 +10,7 @@ public class CwmsOracleConfigurationProvider implements ConfigurationProvider
     @Override
     public String getImplementation()
     {
-        return "CWMS-Oracle";
+        return CwmsOracleConfiguration.NAME;
     }
 
     @Override

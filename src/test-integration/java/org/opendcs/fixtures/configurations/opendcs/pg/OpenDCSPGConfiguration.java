@@ -38,6 +38,8 @@ public class OpenDCSPGConfiguration implements Configuration
 {
     private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
 
+    public static final String NAME = "OpenDCS-Postgres";
+
     private static PostgreSQLContainer<?> db = null;
     private File userDir;
     private File propertiesFile;
@@ -236,5 +238,9 @@ public class OpenDCSPGConfiguration implements Configuration
             return true;
         }
         return false;
+    @Override
+    public String getName()
+    {
+        return NAME;
     }
 }
