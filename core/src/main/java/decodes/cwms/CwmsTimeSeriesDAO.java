@@ -756,12 +756,10 @@ public class CwmsTimeSeriesDAO
 		boolean overrideProtection = false;
 		
 		// We use the RMA Java interface to write to DB
-		try
+		try (Connection conn = getConnection();)
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
 
-//			CwmsTsJdbc cwmsTsJdbc = new CwmsTsJdbc(getConnection());
-			
 			ArrayList<Long> msecArray = new ArrayList<Long>();
 			ArrayList<Double> valueArray = new ArrayList<Double>();
 			ArrayList<Integer> qualArray = new ArrayList<Integer>();
@@ -794,7 +792,7 @@ public class CwmsTimeSeriesDAO
 					+ path + ", office='" + dbOfficeId 
 					+ "' with " + num2write + " values, units=" + ts.getUnitsAbbr());
 				cwmsDbTs.store(
-					getConnection(),
+					conn,
 					dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_ALL, 
 					overrideProtection, versionDate,false);
@@ -823,7 +821,7 @@ public class CwmsTimeSeriesDAO
 				debug1(" Calling store (no overwrite) for ts_id="
 						+ path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
 				
-				cwmsDbTs.store(getConnection(), dbOfficeId, path, ts.getUnitsAbbr(), times, values,
+				cwmsDbTs.store(conn, dbOfficeId, path, ts.getUnitsAbbr(), times, values,
 					qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
 					overrideProtection, versionDate, false);
 			}
@@ -834,11 +832,17 @@ public class CwmsTimeSeriesDAO
 			failure(msg);
 			PrintStream ps = Logger.instance().getLogOutput();
 			if (ps != null)
+			{
 				ex.printStackTrace(ps);
+			}
 			else
+			{
 				ex.printStackTrace(System.err);
+			}
 			if (msg.contains("read from socket") || msg.contains("connection is closed"))
+			{
 				throw new DbIoException(msg);
+			}
 			// Note: There are so many business rules in CWMS which can
 			// cause the store to fail, so don't throw DBIO.
 //			throw new DbIoException(msg);
@@ -923,14 +927,14 @@ public class CwmsTimeSeriesDAO
 		String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		try
+		try (Connection conn = getConnection();)
 		{
 			debug1("Calling deleteTs for tsid '"
 				+ tsid + "' for date range: "
 				+ sdf.format(from) + " to " + sdf.format(until));
 			
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
-			cwmsDbTs.deleteTs(getConnection(), dbOfficeId, tsid,
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
+			cwmsDbTs.deleteTs(conn, dbOfficeId, tsid,
 				from, until, true, true,   // date range inclusive on both ends
 				null,                      // version date
 				null,                      // NavigableSet<Date> use to delete specific dates
@@ -1043,11 +1047,11 @@ public class CwmsTimeSeriesDAO
 				compDependsDAO.close();
 			}
 		}
-		try
+		try (Connection conn = getConnection();)
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
 			debug1("Deleting TSID '" + tsid.getUniqueString() + "' from office ID=" + dbOfficeId);
-			cwmsDbTs.deleteAll(getConnection(), dbOfficeId, tsid.getUniqueString());
+			cwmsDbTs.deleteAll(conn, dbOfficeId, tsid.getUniqueString());
 			synchronized(cache)
 			{
 				cache.remove(tsid.getKey());
@@ -1180,15 +1184,16 @@ public class CwmsTimeSeriesDAO
 			}
 		}
 		String path = tsid.getUniqueString();
-		try
+		try (Connection conn = getConnection();)
 		{
-			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, getConnection());
+			CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
 			int utcOffset = 
 				IntervalCodes.getIntervalSeconds(tsid.getInterval()) == 0 ?
 				HecConstants.NO_UTC_OFFSET : HecConstants.UNDEFINED_UTC_OFFSET;
 			DbKey tsKey = Constants.undefinedId;
 
-			BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(getConnection(),
+			BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(
+				conn,
 				dbOfficeId,
 				path,   // 6-part path name 
 				utcOffset, // utcOfficeMinutes 
@@ -1545,6 +1550,4 @@ public class CwmsTimeSeriesDAO
 		// CWMS Components. This is primarily to cover the cases we haven't gotten to yet.
 		return new WrappedConnection(myCon, rs -> {},true);
 	}
-
-
 }

@@ -8,6 +8,7 @@ import org.opendcs.fixtures.EnableIfTsDb;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 
 import decodes.tsdb.TimeSeriesDb;
+import opendcs.dai.TimeSeriesDAI;
 
 public class TimeSeriesDaoTestIT extends AppTestBase
 {
@@ -19,6 +20,9 @@ public class TimeSeriesDaoTestIT extends AppTestBase
     @EnableIfTsDb
     public void test_timeseries_store_and_retrieval()
     {
+        try (TimeSeriesDAI dao = db.makeTimeSeriesDAO();)
+        {
+        }
         assertNotNull(db, "Timeseries Database was not provided to ");
     }
     
