@@ -26,6 +26,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
+import opendcs.dao.LoadingAppDao;
 import opendcs.dao.XmitRecordDAO;
 import opendcs.opentsdb.OpenTsdb;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -237,6 +238,10 @@ public class OpenDCSPGConfiguration implements Configuration
             return true;
         }
         else if(dao.equals(CompDependsDAO.class))
+        {
+            return true;
+        }
+        else if(dao.equals(LoadingAppDao.class))
         {
             return true;
         }
