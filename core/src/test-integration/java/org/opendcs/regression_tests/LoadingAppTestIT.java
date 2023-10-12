@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
-import org.opendcs.fixtures.annotations.EnableIfSql;
+import org.opendcs.fixtures.annotations.EnableIfDaoSupported;
 
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.TimeSeriesDb;
@@ -20,7 +20,7 @@ public class LoadingAppTestIT extends AppTestBase
     protected TimeSeriesDb db;
 
     @Test
-    @EnableIfSql
+    @EnableIfDaoSupported(LoadingAppDao.class)
     public void test_utilityClassIsPresent() throws Exception
     {
         try(LoadingAppDao dao = new LoadingAppDao(db);)

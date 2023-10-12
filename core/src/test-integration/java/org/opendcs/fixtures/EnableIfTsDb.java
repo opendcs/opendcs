@@ -1,4 +1,4 @@
-package org.opendcs.fixtures.annotations;
+package org.opendcs.fixtures;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -18,16 +18,13 @@ import org.opendcs.spi.configuration.Configuration;
  * Only run this test if the database under test is a SQL based database
  */
 @Documented
-<<<<<<< HEAD:src/test-integration/java/org/opendcs/fixtures/annotations/EnableIfSql.java
-@Target({ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
-=======
-@Target({ElementType.METHOD,ElementType.ANNOTATION_TYPE})
->>>>>>> b904d63d (Baseline TimeseriesDAO test infra.):src/test-integration/java/org/opendcs/fixtures/EnableIfSql.java
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(EnableIfSql.EnableIfSqlCondition.class)
-public @interface EnableIfSql
+@EnableIfSql
+@ExtendWith(EnableIfTsDb.EnableIfTsDbCondition.class)
+public @interface EnableIfTsDb
 {
-    static class EnableIfSqlCondition implements ExecutionCondition
+    static class EnableIfTsDbCondition implements ExecutionCondition
     {
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext ctx)
@@ -35,7 +32,7 @@ public @interface EnableIfSql
             Object testInstance = ctx.getRequiredTestInstance();
             List<Configuration> configs = AnnotationSupport.findAnnotatedFieldValues(testInstance, ConfiguredField.class, Configuration.class);
             if (configs.size() == 1 && configs.get(0) != null) {
-                return configs.get(0).isSql() ? ConditionEvaluationResult.enabled("Is a Sql Based Db") : ConditionEvaluationResult.disabled("Not a SQL Based Db");
+                return configs.get(0).isTsdb() ? ConditionEvaluationResult.enabled("Is Timeseries Db") : ConditionEvaluationResult.disabled("Not a Timeseries Db");
             }
             return ConditionEvaluationResult.disabled("No " + Configuration.class.getName() + " member fields present in Test class.");
         }

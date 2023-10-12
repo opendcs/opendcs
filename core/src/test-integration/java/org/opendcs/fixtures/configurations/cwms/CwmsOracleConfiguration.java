@@ -22,6 +22,7 @@ import decodes.tsdb.TsdbAppTemplate;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
+import opendcs.dao.LoadingAppDao;
 import opendcs.dao.XmitRecordDAO;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -181,6 +182,10 @@ public class CwmsOracleConfiguration implements Configuration
             return true;
         }
         else if(dao.equals(CompDependsDAO.class))
+        {
+            return true;
+        }
+        else if(dao.equals(LoadingAppDao.class))
         {
             return true;
         }
