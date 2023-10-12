@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.ConfiguredField;
 import org.opendcs.fixtures.EnableIfTsDb;
+import org.opendcs.fixtures.annotations.ConfiguredField;
 
 import decodes.tsdb.TimeSeriesDb;
 
