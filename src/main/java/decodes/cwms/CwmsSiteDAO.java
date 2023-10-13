@@ -181,8 +181,8 @@ public class CwmsSiteDAO extends SiteDAO
 		else
 		{
 			q.append("select a.siteid from SiteName a, CWMS_V_LOC b "
-			+ " where lower(a.nameType) = lower(?)"
-			+ " and lower(a.siteName) = lower(?)"
+			+ " where upper(a.nameType) = upper(?)"
+			+ " and upper(a.siteName) = upper(?)"
 			+ " and a.siteid = b.location_code");
 			parameters.add(siteName.getNameType());
 			parameters.add(siteName.getNameValue());
@@ -452,9 +452,9 @@ public class CwmsSiteDAO extends SiteDAO
 		StringBuffer q = new StringBuffer(255);
 		q.append("SELECT " + siteAttributes + " FROM " + siteTableName + " where UNIT_SYSTEM = 'SI'");
 		q.append(" and upper(DB_OFFICE_ID) = upper(?)");
+		int origFetchSize = getFetchSize();
 		try
 		{
-			int origFetchSize = getFetchSize();
 			int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
 			if (tsidFetchSize > 0)
 				setFetchSize(tsidFetchSize); 
@@ -503,8 +503,6 @@ public class CwmsSiteDAO extends SiteDAO
 				nNames[0]++;
 			}, parameters.toArray(new Object[0]));
 
-			setFetchSize(origFetchSize);
-
 			for(Site site : siteList)
 			{
 				cache.put(site);
@@ -525,6 +523,11 @@ public class CwmsSiteDAO extends SiteDAO
 			String msg = "fillCache - Error in query '" + q + "': " + ex;
 			warning(msg);
 			throw new DbIoException(msg);
+		}
+		finally
+		{
+			// reset fetch size back to original in case it was changed.
+			setFetchSize(origFetchSize);
 		}
 	}
 
