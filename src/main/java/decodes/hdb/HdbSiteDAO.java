@@ -143,7 +143,7 @@ public class HdbSiteDAO extends SiteDAO
 	}
 	
 	// No longer used in the parent class
-	protected String buildSiteQuery(DbKey siteId)
+	private String buildSiteQuery(DbKey siteId)
 	{
 		String q = "SELECT " + siteAttributes + " FROM " + siteTableName
 			+ " where " + joinClause;
@@ -272,7 +272,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 	}
 	
 	// No longer used in parent class
-	protected String buildSiteNameQuery(Site site)
+	private String buildSiteNameQuery(Site site)
 	{
 		String r = basicSiteNameQuery(site);
 		r = r + " order by b.EXT_SITE_CODE_SYS_NAME, a.PRIMARY_SITE_CODE";
