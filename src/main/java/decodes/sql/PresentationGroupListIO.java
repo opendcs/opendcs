@@ -709,6 +709,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		}
 		catch(SQLException ex)
 		{
+			ex.printStackTrace();
 			Logger.instance().log(Logger.E_WARNING,
 				"SQL Error reading LMT for Presentation Group '"
 				+ pg.groupName + "' ID=" + pg.getId() + ": " + ex);
