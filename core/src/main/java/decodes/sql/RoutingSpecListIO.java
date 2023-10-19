@@ -434,6 +434,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
 			rs.getProperties()); }
 		catch (DbIoException e)
 		{
+			e.printStackTrace();
 			throw new DatabaseException(e.getMessage());
 		}
 
