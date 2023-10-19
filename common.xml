@@ -20,19 +20,23 @@
     </tstamp>
 
     <property name="project.dir" value="${basedir}"/>
+    <property name="src.main.dir" value="src/main"/>
     <property name="src.dir" value="src/main/java"/>
     <property name="resources.dir" value="src/main/resources"/>
     <property name="src.test.dir" value="src/test/java"/>
     <property name="resources.test.dir" value="src/test/resources"/>
     <property name="src.test-integration.dir" value="src/test-integration/java"/>
+    <property name="src.test-integration.main.dir" value="src/test-integration"/>
     <property name="resources.test-integration.dir" value="src/test-integration/resources"/>
     <property name="src.test-gui.dir" value="src/test-gui/java"/>
     <property name="resources.test-gui.dir" value="src/test-gui/resources"/>
+    <property name="src.test-gui.main.dir" value="src/test-gui"/>
 
     <property name="build.dir" value="build"/>
     <property name="build.classes" value="${build.dir}/classes"/>
     <property name="build.resources" value="${build.dir}/resources"/>
     <property name="build.lib" value="${build.dir}/lib"/>
+    <property name="status.dir" value="${build.dir}/.status"/>
     <property name="stage.dir" value="stage"/>
     <property name="build.test.classes" value="${build.dir}/test-classes"/>
     <property name="build.test.resources" value="${build.dir}/test-resources"/>
@@ -82,7 +86,26 @@
                     uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
     </target>
 
-    <target name="resolve" description="--> retreive dependencies with ivy" depends="init-ivy">
+    <target name="check.ivy.src">
+        <uptodate property="ivy.current" targetFile="${status.dir}/src.deps">
+            <srcfiles dir=".">
+                <filename name="ivy.xml"/>
+                <filename name="ivysettings.xml"/>
+            </srcfiles>
+            <mapper type="merge" to="${status.dir}/src.deps"/>
+        </uptodate>
+    </target>
+    <target name="check.ivy.build">
+        <uptodate property="ivy.build.current" targetFile="${status.dir}/build.deps">
+            <srcfiles dir=".">
+                <filename name="ivy.xml"/>
+                <filename name="ivysettings.xml"/>
+            </srcfiles>
+            <mapper type="merge" to="${status.dir}/build.deps"/>
+        </uptodate>
+    </target>
+
+    <target name="resolve.real" depends="init-ivy" unless="ivy.current">
         <ivy:retrieve conf="runtime,test,test_platform"
                       sync="true"
                       pattern="build/ivy/[conf]/[artifact].[ext]"
@@ -90,9 +113,70 @@
         <ivy:cachepath pathid="runtime.classpath" conf="runtime"/>
         <ivy:cachepath pathid="test.classpath" conf="test"/>
         <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>
+
+        <pathconvert property="runtime.classpath">
+            <path refid="runtime.classpath"/>
+        </pathconvert>
+
+        <pathconvert property="test.classpath">
+            <path refid="test.classpath"/>
+        </pathconvert>
+
+        <pathconvert property="junit.platform.libs.classpath">
+            <path refid="junit.platform.libs.classpath"/>
+        </pathconvert>
+        <propertyfile file="${status.dir}/src.deps">
+            <entry key="runtime.classpath" value="${runtime.classpath}"/>
+            <entry key="test.classpath" value="${test.classpath}"/>
+            <entry key="junit.platform.libs.classpath" value="${junit.platform.libs.classpath}"/>
+        </propertyfile>
     </target>
 
-    <target name="resolve.build" depends="init-ivy" description="--> retrieve build script dependencies">
+    <target name="resolve.cached" if="ivy.current" depends="check.ivy.src">
+        <echo message="Loading cached deps (src)."/>
+        <loadproperties prefix="cached" srcFile="${status.dir}/src.deps"/>
+        <path id="junit.platform.libs.classpath">
+            <pathelement path="${cached.junit.platform.libs.classpath}"/>
+        </path>
+
+        <path id="test.classpath">
+            <pathelement path="${cached.test.classpath}"/>
+        </path>
+
+        <path id="runtime.classpath">
+            <pathelement path="${cached.runtime.classpath}"/>
+        </path>
+    </target>
+
+    <target name="resolve" description="--> retreive dependencies with ivy" depends="check.ivy.src,resolve.real,resolve.cached">
+
+    </target>
+
+    <target name="resolve.build.cached" if="ivy.build.current" depends="check.ivy.build">
+        <echo message="Loading cached deps (build)."/>
+        <loadproperties prefix="cached" srcFile="${status.dir}/build.deps"/>
+        <path id="build.classpath">
+            <pathelement path="${cached.build.classpath}"/>
+        </path>
+
+        <path id="izpack.classpath">
+            <pathelement path="${cached.izpack.classpath}"/>
+        </path>
+
+        <path id="groovy.classpath">
+            <pathelement path="${cached.groovy.classpath}"/>
+        </path>
+
+        <path id="spotbugs.classpath">
+            <pathelement path="${cached.spotbugs.classpath}"/>
+        </path>
+
+        <path id="pmd.classpath">
+            <pathelement path="${cached.pmd.classpath}"/>
+        </path>
+    </target>
+
+    <target name="resolve.build.real" depends="init-ivy,check.ivy.build" description="--> retrieve build script dependencies" unless="ivy.build.current">
         <ivy:retrieve conf="build,groovy,izpack,spotbugs,pmd"
                       sync="true"
                       pattern="build/ivy-build/[conf]/[artifact](-[classifier]).[ext]"
@@ -102,6 +186,38 @@
         <ivy:cachepath pathid="build.classpath" conf="build"/>
         <ivy:cachepath pathid="spotbugs.classpath" conf="spotbugs"/>
         <ivy:cachepath pathid="pmd.classpath" conf="pmd"/>
+
+        <pathconvert property="izpack.classpath">
+            <path refid="izpack.classpath"/>
+        </pathconvert>
+
+        <pathconvert property="groovy.classpath">
+            <path refid="groovy.classpath"/>
+        </pathconvert>
+
+        <pathconvert property="build.classpath">
+            <path refid="build.classpath"/>
+        </pathconvert>
+
+        <pathconvert property="spotbugs.classpath">
+            <path refid="spotbugs.classpath"/>
+        </pathconvert>
+
+        <pathconvert property="pmd.classpath">
+            <path refid="pmd.classpath"/>
+        </pathconvert>
+
+
+        <propertyfile file="${status.dir}/build.deps">
+            <entry key="izpack.classpath" value="${izpack.classpath}"/>
+            <entry key="groovy.classpath" value="${groovy.classpath}"/>
+            <entry key="build.classpath" value="${build.classpath}"/>
+            <entry key="spotbugs.classpath" value="${spotbugs.classpath}"/>
+            <entry key="pmd.classpath" value="${pmd.classpath}"/>
+        </propertyfile>
+    </target>
+
+    <target name="resolve.build" description="--> retreive dependencies with ivy" depends="check.ivy.build,resolve,resolve.build.real,resolve.build.cached">
         <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="build.classpath"/>
         <taskdef resource="net/sf/antcontrib/antlib.xml" classpathref="build.classpath"/>
 
