@@ -30,6 +30,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${build.classes}"/>
         <mkdir dir="${build.lib}"/>
+        <mkdir dir="${status.dir}"/>
         <pathconvert property="junitlauncherPresent" setonempty="false" pathsep=" ">
             <path>
                 <fileset dir="${ant.home}">
@@ -51,7 +52,13 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <antcall target="docs.clean"/>
     </target>
 
-    <target name="compile" depends="prepare,common.resolve"
+    <target name="check.src">
+        <uptodate property="src.build.current" targetfile="${status.dir}/src.build.date">
+            <srcfiles dir="${src.main.dir}" includes="*"/>
+        </uptodate>
+    </target>
+
+    <target name="compile" depends="check.src,prepare,common.resolve" unless="src.build.current"
         description="Compiles all source code.">
 
         <!-- create build date -->
@@ -98,10 +105,22 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <classpath refid="runtime.classpath"/>
 			<compilerarg value="-parameters"/>
 		</javac>
-
+        <touch file="${status.dir}/src.build.date"/>
     </target>
 
-    <target name="compile-test" depends="compile,common.resolve">
+    <target name="check.test.src" depends="check.src">
+         <uptodate property="test.src.build.current.local" targetfile="${status.dir}/test.src.build.date">
+            <srcfiles dir="src/test" includes="*"/>
+        </uptodate>
+        <condition property="test.src.build.current">
+            <and>
+                <isset property="src.build.current"/>
+                <isset property="test.src.build.current.local"/>
+            </and>
+        </condition>
+    </target>
+
+    <target name="compile-test" depends="check.test.src,compile,common.resolve" unless="test.src.build.current">
         <mkdir dir="${build.test.classes}"/>
         <javac debug="true" destdir="${build.test.classes}"
             target="1.8" source="1.8" includeantruntime="false"
@@ -117,6 +136,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <sync todir="${build.test.resources}">
             <fileset dir="${resources.test.dir}"/>
         </sync>
+        <touch file="${status.dir}/test.src.build.date"/>
     </target>
 
     <target name="compile-test-integration" depends="stage,test,common.resolve,common.resolve.build">
@@ -137,6 +157,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <sync todir="${build.test-integration.resources}">
             <fileset dir="${resources.test-integration.dir}"/>
         </sync>
+        <touch file="${status.dir}/src.integration.build.date"/>
     </target>
 
     <target name="compile-test-gui" depends="jar,test,common.resolve,common.resolve.build">
@@ -156,9 +177,19 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
        <sync todir="${build.test-gui.resources}">
             <fileset dir="${resources.test-gui.dir}"/>
         </sync>
+        <touch file="${status.dir}/src.gui-test.build.date"/>
     </target>
 
-    <target name="test" depends="compile-test,jar,common.resolve.build">
+    <target name="check.run-tests" depends="check.test.src">
+        <condition property="test.run">
+            <and>
+                <available file="${status.dir}/test.run"/>
+                <isset property="test.src.build.current"/>
+            </and>
+        </condition>
+    </target>
+
+    <target name="test" depends="check.run-tests,compile-test,jar,common.resolve.build" unless="test.run">
         <mkdir dir="${junit.html.output.dir}"/>
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <echo message="platform path: ${platform_path}"/>
@@ -199,13 +230,31 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <if>
             <isset property="test.failed"/>
             <then>
+                <delete file="${status.dir}/test.run" quite="true"/>
                 <fail message="Tests have failures."/>
             </then>
+            <else>
+                <touch file="${status.dir}/test.run"/>
+            </else>
         </if>
     </target>
 
-    <target name="integration-test" depends="compile-test-integration,stage,common.resolve"
-            description="Run the integration test suite with available implementations.">
+    <target name="check.it-run" depends="check.src">
+        <condition property="integration.test.current">
+            <and>
+                <available file="${status.dir}/src.integration.run.${opendcs.test.engine}"/>
+                <isset property="src.build.current"/>
+                <uptodate property="integration.src.current" targetFile="${status.dir}/src.integration.build.date">
+                    <srcFiles dir="${src.test-integration.main.dir}" includes="*"/>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
+
+    <target name="integration-test" depends="check.it-run,compile-test-integration,stage,common.resolve"
+            description="Run the integration test suite with available implementations."
+            unless="integration.test.current"
+            >
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
@@ -247,13 +296,30 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <if>
             <isset property="integration.failed"/>
             <then>
+                <delete file="${status.dir}/src.integration.run.${opendcs.test.engine}" quiet="true"/>
                 <fail message="Integration tests have failures."/>
             </then>
+            <else>
+                <touch file="${status.dir}/src.integration.run.${opendcs.test.engine}"/>
+            </else>
         </if>
     </target>
 
-    <target name="gui-test" depends="compile-test-gui,stage,common.resolve"
-            description="Run available GUI element tests">
+    <target name="check.gui-test" depends="check.src">
+        <condition property="gui.test.current">
+            <and>
+                <available file="${status.dir}/src.gui-test.run"/>
+                <isset property="src.build.current"/>
+                <uptodate property="gui-test.src.current" targetFile="${status.dir}/src.gui-test.build.date">
+                    <srcFiles dir="${src.test-gui.main.dir}" includes="*"/>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
+
+    <target name="gui-test" depends="check.gui-test,compile-test-gui,stage,common.resolve"
+            description="Run available GUI element tests"
+            unless="gui.test.current">
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-gui/results"/>
         <mkdir dir="${build.dir}/test-gui/tmp"/>
@@ -293,13 +359,22 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <if>
             <isset property="gui.failed"/>
             <then>
+                <delete file="${status.dir}/src.gui-test.run" quiet="true"/>
                 <fail message="Gui tests have failures."/>
             </then>
+            <else>
+                <touch file="${status.dir}/src.gui-test.run"/>
+            </else>
         </if>
     </target>
 
+    <target name="check.jar">
+        <uptodate property="jar.current" targetFile="${dist.jar}">
+            <srcfiles dir="${src.main.dir}" includes="*"/>
+        </uptodate>
+    </target>
 
-    <target name="jar" depends="compile" description="Generates opendcs.jar.">
+    <target name="jar" depends="check.jar" description="Generates opendcs.jar." unless="jar.current">
 
         <!-- copy the resource files to the build directory. -->
         <copy todir="${build.classes}">
