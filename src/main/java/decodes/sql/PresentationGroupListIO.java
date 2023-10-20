@@ -691,7 +691,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 			try(PreparedStatement stmt = conn.prepareStatement(q);)
 			{
 				stmt.setLong(1,id.getValue());
-				try(ResultSet rs = stmt.executeQuery(q);)
+				try(ResultSet rs = stmt.executeQuery();)
 				{
 								// Should be only 1 record returned.
 					if (rs == null || !rs.next())
