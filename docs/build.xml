@@ -17,7 +17,7 @@
 
     <target name="check.docs">
         <uptodate property="no.docs" targetFile="${status.dir}/docs.build.date">
-            <srcFiles dir="." includes="**/*" excludes="build"/>
+            <srcFiles dir="docs" includes="source/**,build.xml,Makefile,make.bat"/>
         </uptodate>
     </target>
 
