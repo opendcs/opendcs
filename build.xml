@@ -54,7 +54,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
     <target name="check.src">
         <uptodate property="src.build.current" targetfile="${status.dir}/src.build.date">
-            <srcfiles dir="${src.main.dir}" includes="*"/>
+            <srcfiles dir="${src.main.dir}" includes="**/*"/>
         </uptodate>
     </target>
 
@@ -110,7 +110,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
     <target name="check.test.src" depends="check.src">
          <uptodate property="test.src.build.current.local" targetfile="${status.dir}/test.src.build.date">
-            <srcfiles dir="src/test" includes="*"/>
+            <srcfiles dir="src/test" includes="**/*"/>
         </uptodate>
         <condition property="test.src.build.current">
             <and>
@@ -245,7 +245,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <available file="${status.dir}/src.integration.run.${opendcs.test.engine}"/>
                 <isset property="src.build.current"/>
                 <uptodate property="integration.src.current" targetFile="${status.dir}/src.integration.build.date">
-                    <srcFiles dir="${src.test-integration.main.dir}" includes="*"/>
+                    <srcFiles dir="${src.test-integration.main.dir}" includes="**/*"/>
                 </uptodate>
             </and>
         </condition>
@@ -311,7 +311,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <available file="${status.dir}/src.gui-test.run"/>
                 <isset property="src.build.current"/>
                 <uptodate property="gui-test.src.current" targetFile="${status.dir}/src.gui-test.build.date">
-                    <srcFiles dir="${src.test-gui.main.dir}" includes="*"/>
+                    <srcFiles dir="${src.test-gui.main.dir}" includes="**/*"/>
                 </uptodate>
             </and>
         </condition>
@@ -368,9 +368,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </if>
     </target>
 
-    <target name="check.jar">
+    <target name="check.jar" depends="check.src">
         <uptodate property="jar.current" targetFile="${dist.jar}">
-            <srcfiles dir="${src.main.dir}" includes="*"/>
+            <srcfiles dir="${src.main.dir}" includes="**/*"/>
         </uptodate>
     </target>
 
