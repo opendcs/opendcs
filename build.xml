@@ -374,7 +374,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </uptodate>
     </target>
 
-    <target name="jar" depends="check.jar" description="Generates opendcs.jar." unless="jar.current">
+    <target name="jar" depends="check.jar,compile" description="Generates opendcs.jar." unless="jar.current">
 
         <!-- copy the resource files to the build directory. -->
         <copy todir="${build.classes}">
