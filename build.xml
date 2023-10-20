@@ -230,7 +230,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <if>
             <isset property="test.failed"/>
             <then>
-                <delete file="${status.dir}/test.run" quite="true"/>
+                <delete file="${status.dir}/test.run" quiet="true"/>
                 <fail message="Tests have failures."/>
             </then>
             <else>
@@ -249,12 +249,34 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 </uptodate>
             </and>
         </condition>
+        <condition property="test.engine.set">
+            <isset property="opendcs.test.engine"/>
+        </condition>
     </target>
 
     <target name="integration-test" depends="check.it-run,compile-test-integration,stage,common.resolve"
             description="Run the integration test suite with available implementations."
             unless="integration.test.current"
             >
+        <if>
+            <not>
+                <isset property="opendcs.test.engine"/>
+            </not>
+            <then>
+                <echo level="error">
+To run the integration test you must specify -Dopendcs.test.engine=engine
+Where engine is currently one of the following: OpenDCS-XML, OpenDCS-Postgres
+
+Only OpenDCS-XML will currently work on windows."
+It is also recommend to pass -Dno.docs=true, however the build should now cache the build
+state of the docs correctly and not take an excessive amount of time.
+
+A given implementation may take additional parameters. See https://opendcs-dev.readthedocs.io for
+more information about each.
+                </echo>
+                <fail message="See above message and set correct settings."/>
+            </then>
+        </if>
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
