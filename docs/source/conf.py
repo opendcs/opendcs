@@ -6,8 +6,8 @@ project = 'OpenDCS'
 copyright = '2022, OpenDCS Consortium'
 author = 'OpenDCS Consortium'
 
-release = '7.1'
-version = '7.1.0'
+release = '7.0'
+version = '7.0.10'
 
 # -- General configuration
 
