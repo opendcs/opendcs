@@ -148,7 +148,7 @@ private long lastDebug = 0L;
 				Logger.instance().failure("Thread " + getName() + " has failed.");
 				seThread.shutdown();
 				seThread.quit(); // TODO: shutdown AND quit? why?
-				seThread = null;
+				//seThread = null; // can't set seThread null here as it is within rsFinished
 				runState = RunState.shutdown;
 				seStatus.setRunStatus("ERROR-system");
 			}
