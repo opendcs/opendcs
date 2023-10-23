@@ -63,3 +63,8 @@ COPY docker_scripts/routingscheduler.sh /
 RUN mkdir routstat
 
 CMD ["/routingscheduler.sh"]
+
+FROM tsdbapp as compproc
+COPY docker_scripts/compproc.sh /
+
+CMD ["/compproc.sh"]
