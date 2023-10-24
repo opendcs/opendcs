@@ -249,6 +249,19 @@ html .content {
 	max-width: 90vw !important;
 }
 
+.modalRowSmall {
+	min-height: 250px !important;
+	max-height: 350px !important;
+}
+
+.modalRowMedium {
+	min-height: 350px !important;
+}
+
+.modalRowLarge {
+	min-height: 450px !important;
+}
+
 .opendcs-modal-tall-narrow {
 	height: 95vh !important;
 	min-height: 500px !important; 

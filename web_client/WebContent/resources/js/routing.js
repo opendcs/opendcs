@@ -6,6 +6,8 @@
  */
 var routingTable;
 
+var openDcsData;
+
 /**
  * A DataTable reference to the properties table on the page.
  */
@@ -16,6 +18,18 @@ var propertiesTable;
  * multiple times.
  */
 var routingPropSpecs;
+
+var goesChannelTable;
+
+/**
+ * Array of all of the platform selection types.  This goes into the platform
+ * selection dropdown in the platform selection table, as well as the 
+ * platform selection modal, which populates the platform selection table.
+ */
+var platformSelectionTypes = ["Netlist", 
+							"Platform Name", 
+							"Platform ID", 
+							"GOES Channel"];
 
 /**
  * Inline options for the properties table.
@@ -34,31 +48,20 @@ var propertiesTableInlineOptions = {
 };
 
 /**
- * Inline options for the platform selection table.
- */
-var platformSelectionTableInlineOptions = {
-        "columnDefs": [
-            {
-                "targets": [0],
-                "type": "select",
-                "data": null,
-                "data": ["Netlist", "Platform Name", "Platform ID", "GOES Channel"]
-            },
-            {
-                "targets": [1],
-                "type": "input",
-                "data": null,
-                "bgcolor": {
-                    "change": "#c4eeff"
-                }
-            }
-            ]
-};
-
-/**
  * A DataTable reference to the properties table on the page.
  */
 var platformSelectionTable;
+
+/**
+ * A DataTable reference to the pure platform selection datatable on 
+ * (where you select from a list of platforms) the page.
+ */
+var platformSelectionTable2;
+
+/**
+ * A DataTable reference to the netlist selection datatable.
+ */
+var netlistSelectionTable;
 
 /**
  * A reference to presentation groups retrieved from the API, stored so it does
@@ -327,18 +330,12 @@ function openRoutingDialog(rowClicked, copyRow)
                     for (var x = 0; x < routingSpecDetails.goesChannels.length; x++)
                     {
                         var curGc = routingSpecDetails.goesChannels[x];
-                        var actions = [{
-                            "type": "delete",
-                            "onclick": null
-                        }];
-                        platformSelectionTable.row.add(["GOES Channel", curGc, createActionDropdown(actions)]);
+                        platformSelectionTable.row.add(["GOES Channel", curGc]);
                     }
                 }
 
                 platformSelectionTable.draw(false);
-                makeTableInline("platformSelectionTable", platformSelectionTableInlineOptions);
-                platformSelectionTable.draw(false);
-
+                
                 propertiesTable.draw(false); //Need to draw first so that the "td" elements can be found.
                 makeTableInline("propertiesTable", propertiesTableInlineOptions);
                 propertiesTable.draw(false);
@@ -357,7 +354,7 @@ function openRoutingDialog(rowClicked, copyRow)
                 updateSince(routingSpecDetails.since);
                 updateUntil(routingSpecDetails.until, routingSpecDetails.settlingTimeDelay);
 
-                $("#modal_success").modal("show");
+                $("#modal_routing").modal("show");
             },
             error: function(response) {
                 hide_waiting_modal(500);
@@ -366,7 +363,7 @@ function openRoutingDialog(rowClicked, copyRow)
     }
     else
     {
-        $("#modal_success").modal("show");
+        $("#modal_routing").modal("show");
     }
 }
 
@@ -518,6 +515,69 @@ function untilTimeChanged(enabledValue)
     {
         $("#untilRealTimeDiv").removeClass("displayNone");
     }
+}
+
+/**
+ * Sets the platform selection modal details.
+ */
+function set_platformselection_modal(netlistDetails, platformsList, tmTypes)
+{
+    if (netlistDetails == null)
+    {
+        netlistDetails = {
+                "name": "",
+                "transportMediumType": ""
+        }
+    }
+    $("#netlistName").val("");
+    nlTable.clear();
+    nlTable.search("");
+    if (platformsList != undefined)
+    {
+        if (netlistName == undefined)
+        {
+            netlistName = "";
+        }
+        if ($("#displayedId").val().toString() != "-1")
+        {
+            $("#netlistTitle").text("Netlist - " + netlistDetails.name);
+            $("#modal_netlist #modalTitle #modalSubTitle").html(` (Edit ${netlistDetails["name"]})`);
+            $("#netlistName").val(netlistDetails.name);
+            $("#netlistName").data("originalName", netlistDetails.name);
+        }
+        else
+        {
+            if (netlistDetails == null || netlistDetails.netlistId == null)
+            {
+                $("#modal_netlist #modalTitle #modalSubTitle").html(` (New)`);
+            }
+            else
+            {
+                $("#modal_netlist #modalTitle #modalSubTitle").html(` (Copy ${netlistDetails["name"]})`);
+            }
+
+        }
+        if (netlistName != "")
+        {
+            $("#transportMediumTypeSelectbox").val(netlistDetails.transportMediumType);
+            $("#transportMediumTypeSelectbox").trigger("change");
+        }
+        for (var key in platformsList)
+        {
+            var curPlatform = platformsList[key];
+            var desc = (curPlatform.description != null ? curPlatform.description : "");
+            var tmDataHtml = "";
+            for (var key in curPlatform.transportMedia)
+            {
+                tmDataHtml += key + " - " + curPlatform.transportMedia[key] + "<br>";
+            }
+
+            var platformRow = [curPlatform.platformId, curPlatform.name, curPlatform.agency, tmDataHtml, curPlatform.config, desc];
+
+            var newRow = nlTable.row.add(platformRow).select(curPlatform.inNetlist);
+        }
+    }
+    nlTable.draw(true);
 }
 
 
@@ -746,8 +806,45 @@ function openSaveModal()
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+	openDcsData = new OpenDcsData();
+    openDcsData.getData(["platformrefs", "netlistrefs"], 
+        function(classInstance, response) {
+    	for (var key in classInstance.data.platformrefs.data)
+        {
+            var curPlatform = classInstance.data.platformrefs.data[key];
+            var desc = (curPlatform.description != null ? curPlatform.description : "");
+            var tmDataHtml = "";
+            for (var key in curPlatform.transportMedia)
+            {
+                tmDataHtml += key + " - " + curPlatform.transportMedia[key] + "<br>";
+            }
+            var platformRow = [curPlatform.platformId, curPlatform.name, curPlatform.agency, tmDataHtml, curPlatform.config, desc];
+            var newRow = platformSelectionTable2.row.add(platformRow);
+        }
+
+        platformSelectionTable2.draw(false);
+        netlistSelectionTable.row.add(['all', '<All>', "---", "---"]);
+        netlistSelectionTable.row.add(['production', "<Production>", "---", "---"]);
+    	for (var x = 0; x < classInstance.data.netlistrefs.data.length; x++)
+        {
+            var curNetlist = classInstance.data.netlistrefs.data[x];
+            var nlRow = [curNetlist.netlistId, curNetlist.name,  curNetlist.transportMediumType, curNetlist.numPlatforms];
+            
+            var newRow = netlistSelectionTable.row.add(nlRow);
+            
+        }
+    	netlistSelectionTable.draw(false);
+    },
+    function(response) {
+    }
+    );
+    
     $("#addPlatformSelectionButton").on("click", function( e, dt, node, config ) {
-        var actions = [{
+        
+    	$("#modal_platformselection").modal("show");
+    	
+        return;
+    	var actions = [{
             "type": "delete",
             "onclick": null
         }];
@@ -762,11 +859,46 @@ document.addEventListener('DOMContentLoaded', function() {
         addBlankRowToDataTable("propertiesTable", true, actions, propertiesTableInlineOptions);
     });
 
+    $("#addPlatformModalButton").on("click", function(e) {
+    	console.log("Updating platforms selected.");
+    	var selectedPlatforms = getSelectedRows(platformSelectionTable2);
+    	var selectedNetlists = getSelectedRows(netlistSelectionTable);
+    	var goesChannels = goesChannelTable.getNonDeletedRowData();
+    	
+    	
+    	platformSelectionTable.init();
+        platformSelectionTable.clear();
+        platformSelectionTable.draw(false);
+        
+        for (var x = 0; x < selectedPlatforms.count(); x++)
+    	{
+        	var curData = selectedPlatforms.data()[x];
+        	platformSelectionTable.row.add(["Platform ID", curData[0]]);
+    	}
+        for (var x = 0; x < selectedNetlists.count(); x++)
+    	{
+        	var curData = selectedNetlists.data()[x];
+        	platformSelectionTable.row.add(["Netlist", curData[1]]);
+    	}
+        for (var x = 0; x < goesChannels.length; x++)
+    	{
+        	var curData = goesChannels[x];
+        	platformSelectionTable.row.add(["GOES Channel", curData[0]]);
+    	}
+        
+        platformSelectionTable.draw(false);
+        
+        
+        $("#modal_platformselection").modal("hide");
+    });
+    
+    
     var elems = Array.prototype.slice.call(document.querySelectorAll('.form-check-input-switchery'));
     elems.forEach(function(html) {
         var switchery = new Switchery(html);
     });
 
+    
 
     $.ajax({
         url: `../api/gateway?opendcs_api_call=propspecs`,
@@ -859,6 +991,54 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    platformSelectionTable2 = $("#platformSelectionTable2").DataTable({
+        "select": {
+            "style": "multi+shift"
+        },
+        "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        "pageLength": -1,
+        "scrollY":     100,
+        //add caption to the toolbar
+        "dom": 'f<"toolbar">rt',
+        "buttons": [],
+        "scrollCollapse": true,
+        "autoWidth": true,
+
+        initComplete: function () {
+        	console.log("Initialization complete of the platform selection 2 table.");
+        }
+    });
+    
+    $("#platformSelectionTable2").closest(".dataTables_wrapper").find(".toolbar").html('<div class="w-100 captionTitleCenter text-center">Platform Selection</div>'); 
+
+    netlistSelectionTable = $("#netlistSelectionTable").DataTable({
+        "select": {
+            "style": "multi+shift"
+        },
+        "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        "pageLength": -1,
+        "dom": 'f<"toolbar">rt',
+        "scrollY":     1,
+        "scrollCollapse": true,
+        "scrollResize": true,
+        "autoWidth": true,
+        "columnDefs": [
+        	{
+        		"targets": 1,
+        		//Renders the column as text, vs HTML
+        		"render": $.fn.dataTable.render.text()
+        	}
+        ],
+        initComplete: function () {
+        	console.log("Initialization complete of the netlist table.");
+        }
+    });
+    $("#netlistSelectionTable").closest(".dataTables_wrapper").find(".toolbar").html('<div class="w-100 captionTitleCenter text-center">Netlist Selection</div>'); 
+
+    platformSelectionTable2.init();
+    platformSelectionTable2.clear();
+    platformSelectionTable2.draw(false);
+    
     routingTable = $("#routingTable").DataTable(
             {
                 "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
@@ -890,10 +1070,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 "autoWidth": false,
                 "scrollY":        100,
                 "scrollCollapse": true,
-                "dom": 'Blrt',
+                "dom": 'lrt',
                 "columnDefs": [
                     {"width": "30%", "targets": 0},
-                    {"width": "70%", "targets": 0}
+                    {"width": "70%", "targets": 0},
+                    {
+                		"targets": 1,
+                		//Renders the column as text, vs HTML
+                		"render": $.fn.dataTable.render.text()
+                	}
                     ],
                     "buttons": [],
                     
@@ -903,9 +1088,83 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
             });
 
-    $('#modal_success').on('shown.bs.modal', function () {
+    $('#modal_routing').on('shown.bs.modal', function () {
         updateDataTableScroll("propertiesTable");
         updateDataTableScroll("platformSelectionTable");
+    });
+    
+    $('#modal_platformselection').on('shown.bs.modal', function () {
+        updateDataTableScroll("platformSelectionTable2");
+        updateDataTableScroll("netlistSelectionTable");
+        
+        goesChannelTable.clearDataTable(false);
+        goesChannelTable.updateDataTableScroll();
+        
+        
+        
+        
+        
+        
+        var selectedData = platformSelectionTable.data();
+        
+        var netlistNames = [];
+        var platformIds = [];
+        
+        for (var x = 0; x < selectedData.length; x++)
+    	{
+        	var curSelDat = selectedData[x];
+        	var selType = curSelDat[0].toLowerCase();
+        	if (selType == "netlist")
+    		{
+        		netlistNames.push(curSelDat[1]);
+    		}
+        	else if (selType == "platform id")
+    		{
+        		platformIds.push(curSelDat[1]);
+    		}
+        	else if (selType == "goes channel")
+    		{
+
+                var actions = [{
+                    "type": "delete",
+                    "onclick": null
+                }];
+                var newRow = [curSelDat[1], createActionDropdown(actions)];
+                goesChannelTable.addRow(newRow);
+                goesChannelTable.makeTableInline();
+    		}
+    	}
+        
+        platformSelectionTable2.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+            var data = this.data();
+            // ... do something with data(), or this.node(), etc
+            if (platformIds.indexOf(data[0].toString()) != -1)
+    		{
+        		this.select();
+    		}
+        	else
+    		{
+        		this.deselect();
+    		}
+        } );
+
+        netlistSelectionTable.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+            var data = this.data();
+            // ... do something with data(), or this.node(), etc
+            if (netlistNames.indexOf(data[1]) != -1)
+    		{
+        		this.select();
+    		}
+        	else
+    		{
+        		this.deselect();
+    		}
+        } );
+
+        
+        goesChannelTable.dataTable.draw(false);
+        platformSelectionTable2.draw(false);
+        netlistSelectionTable.draw(false);
     });
 
     platformSelectionTable.init();
@@ -928,12 +1187,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     $("#destinationSelect").trigger("change");
 
-
+    goesChannelTable = new BasicTable("goesChannelTable", false);
+    goesChannelTable.setInlineOptions({
+        "columnDefs": [
+            {
+                "targets": [0],
+                "type": "input",
+                "data": null,
+                "bgcolor": {
+                    "change": "#c4eeff"
+                }
+            }
+            ],
+    });
+    goesChannelTable.initDataTable();
+    
+    
     propertiesTable = $("#propertiesTable").DataTable(
             {
                 "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 "pageLength": 10,
-                "dom": 'Bflrtip',
+                "dom": 'flrtip',
                 "searching": false,
                 "ordering": false,
                 "paging": false,

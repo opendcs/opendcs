@@ -73,23 +73,10 @@
 			</div>
 			<div id="displayedSiteId" class="displayNone"></div>
 			<div class="modal-body grey-background">
-				<!--<h6 class="font-weight-semibold">Network List Name</h6>-->
-				<!-- 
-					<div class="form-group row smallMarginBottom">
-						<div class="col-lg-9">
-						</div>
-						<div class="col-lg-3">
-							<input id="usgsId" type="text float-right" class="form-control float-right" placeholder="Populate with USGS ID">
-						</div>
-					</div>
-					<div class="mb-1">
-						<hr class="solid mb-2"></hr>
-					</div>
-					-->
 				<div class="row h-100">
 					<div class="col-lg-7">
-						<div class="row m-1 h-50">
-							<div class="col-lg-12 card" id="yyy">
+						<div class="row h-50 p-1">
+							<div class="col-lg-12 card">
 								<table id="siteNamesTable" resize_on_window_resize="97"
 									class="table table-hover datatable-responsive border">
 									<caption id="siteNamesCaption" class="captionTitleCenter">
@@ -111,7 +98,7 @@
 								</table>
 							</div>
 						</div>
-						<div class="row m-1 h-50">
+						<div class="row h-50 p-1">
 							<div class="col-lg-12 card">
 								<table id="propertiesTable" resize_on_window_resize="97"
 									class="table table-hover datatable-responsive co-8 border">
@@ -132,7 +119,7 @@
 						</div>
 					</div>
 					<div class="col-lg-5">
-						<div class="row m-1 h-100">
+						<div class="row h-100 p-1">
 							<div class="card col-lg-12">
 								<form class="form-validate-jquery"
 									onkeydown="return event.key != 'Enter';">

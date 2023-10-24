@@ -56,17 +56,17 @@
 	</body>
 
 
-	<!-- Success modal -->
-	<div id="modal_success" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+	<!-- Routing modal -->
+	<div id="modal_routing" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
 		<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
 			<div class="modal-content h-100">
-				<div class="modal-header opendcs-modal-header-medium bg-secondary">
+				<div class="modal-header bg-secondary">
 					<h6 class="modal-title" id="RoutingTitle">Routing</h6>
 				</div>
 				<div id="displayedRoutingSpecId" class="displayNone"></div>
-				<div class="modal-body opendcs-modal-body-100 d-flex flex-column">
-					<div class="row">
-						<div class="col-lg-4">
+				<div class="modal-body grey-background total_height-header-footer">
+					<div class="row h-50">
+						<div class="h-100 col-lg-4 p-1">
 							<div class = "card col-12 h-100 pl-3 pr-3 pt-1 pb-1 opendcs_y_scrollable">
 								<div class="form-group row">
 									<label class="col-form-label col-lg-3">Name:</label>
@@ -149,9 +149,8 @@
 								
 							</div>
 						</div>
-						<div class="col-lg-8">
-							<div class="card h-100">
-							<!-- <label class="col-form-label full1 text-left">Date/Time</label>-->
+						<div class="h-100 col-lg-8 p-1">
+							<div class="card col-12 h-100 pl-3 pr-3 pt-1 pb-1 opendcs_y_scrollable">
 							<table>
 								<caption class="captionTitleCenter">Date/Time</caption>
 							</table>
@@ -238,11 +237,9 @@
 						</div>
 						</div>
 					</div>
-					<div class="row flex-grow-1">
-						<div class="col-lg-4 p-1">
-							<div class="card h-100 w-100">
-								
-								<!-- <label class="col-form-label full1 text-left">Properties</label> -->
+					<div class="row h-50">
+						<div class="col-lg-4 p-1 h-100">
+							<div class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100">
 								<table id="propertiesTable" resize_on_window_resize="96.8" class="table table-hover datatable-responsive">
 									<caption class="captionTitleCenter">Properties
 										<button class="btn btn-secondary float-right captionButton mt-1" id="addPropertyButton">+</button>
@@ -258,9 +255,9 @@
 								</table>
 							</div>
 						</div>
-						<div class="col-lg-5 p-1">
+						<div class="col-lg-5 p-1 h-100">
 							
-								<div class="card col-12 h-100 w-100">
+								<div class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100">
 									
 									<table id="platformSelectionTable" resize_on_window_resize="96.8" class="table table-hover datatable-responsive">
 										<caption class="captionTitleCenter">Platform Selection
@@ -270,15 +267,14 @@
 											<tr>
 												<th>Type</th>
 												<th>Value</th>
-												<th>Actions</th>
 											</tr>
 										</thead>
 									</table>
 								</div>
 						</div>
 						
-						<div class="col-lg-3 p-1">
-								<div class="card w-100 h-100">
+						<div class="col-lg-3 p-1 h-100">
+								<div class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100 opendcs_y_scrollable">
 									<div class="form-group pt-2">
 											<label class="font-weight-semibold">Platform/Message Types</label>
 												
@@ -358,14 +354,87 @@
 			</div>
 		</div>
 	</div>
-	<!-- <script src="/static/js/modal_routing.js"></script> -->
-	<!-- /success modal -->
+	<!-- /routing modal -->
+
+	<!-- Platform selection modal -->
+	<div id="modal_platformselection" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+	    <div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
+	        <div class="modal-content">
+	            <div class="modal-header bg-secondary">
+	            	<h6 class="modal-title" id="modalTitle"><span id="modalMainTitle">Platform Selection</span><span id="modalSubTitle"></span></h6>
+	            </div>
+				<div id="displayedId" class="displayNone"></div>
+	            <div class="modal-body grey-background total_height-header-footer">
+	                <div class="row h-50">
+	                	<div class="col-lg-12 p-1 h-100">
+		                	<div class="card pl-3 pr-3 pt-1 pb-1 h-100">
+				                <table id="platformSelectionTable2" class="table table-hover datatable-responsive" resize_on_window_resize="94">
+				                    <thead>
+				                        <tr>
+				                        	<th>Platform ID</th>
+				                            <th>Platform Name</th>
+				                            <th>Agency</th>
+				                            <th>Transport Medium - ID</th>
+				                            <th>Config</th>
+				                            <th>Description</th>
+				                        </tr>
+				                    </thead>
+				                </table>
+			                </div>
+		                </div>
+	                </div>
+	                <div class="row h-50">
+	                	<div class="col-lg-8 p-1 h-100">
+		                <div class="card pl-3 pr-3 pt-1 pb-1 h-100">
+			                <table id="netlistSelectionTable" class="table table-hover datatable-responsive h-100" resize_on_window_resize="95">
+			                    <thead>
+			                        <tr>
+			                        	<th>ID</th>
+			                        	<th>List Name</th>
+			                            <th>Medium Type</th>
+			                            <th># of Platforms</th>
+			                        </tr>
+			                    </thead>
+			                </table>
+		                </div>
+		                </div>
+		                
+	                	<div class="col-lg-4 p-1 h-100">
+	                	<div class="card pl-3 pr-3 pt-1 pb-1 h-100">
+			                <table id="goesChannelTable" class="table table-hover datatable-responsive h-100" resize_on_window_resize="96">
+			                <caption id="siteNamesCaption" class="captionTitleCenter">
+									GOES Channels
+									<button function="addBlankRow" class="btn btn-secondary float-right captionButton"
+										id="addGoesChannelButton">+</button>
+								</caption>
+			                    <thead>
+			                        <tr>
+			                        	<th>Channel</th>
+			                        	<th>Actions</th>
+			                        </tr>
+			                    </thead>
+			                </table>
+		                </div>
+		                </div>
+	                </div>
+	            </div>
+	      
+	            <div class="modal-footer">
+	                <!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteNetlistModalButton">Delete</button> -->
+	                <button type="button" class="btn btn-secondary" id="cancelPlatformModalButton" data-dismiss="modal">Cancel</button>
+	                <button type="button" class="btn btn-success" id="addPlatformModalButton">Update</button>
+	            </div>
+	        </div>
+	    </div>
+	</div>
+	<!-- /platform selection modal -->
 
 
 <jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
 <script src="../resources/js/plugins/forms/styling/switchery.min.js"></script>
 <script src="../resources/js/plugins/forms/styling/switch.min.js"></script>
 <script src="../resources/js/plugins/forms/styling/uniform.min.js"></script>
+<script src="../resources/js/datatables/datatables.js"></script>
 <script src="../resources/js/datatables/helpers.js"></script>
 <script src="../resources/js/lib/time.js"></script>
 <script src="../resources/js/lib/dom_utilities.js"></script>

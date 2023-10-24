@@ -82,8 +82,6 @@
 		                        	<th>Platform ID</th>
 		                            <th>Platform Name</th>
 		                            <th>Agency</th>
-		                            <!-- <th>Transport Medium</th>                            
-		                            <th>Transport ID</th>-->
 		                            <th>Transport Medium - ID</th>
 		                            <th>Config</th>
 		                            <th>Description</th>

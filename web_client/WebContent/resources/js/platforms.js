@@ -46,6 +46,19 @@ var openConfigData;
  */
 var openDcsData;
 
+var propertiesTableInlineOptions = {
+        "columnDefs": [
+            {
+                "targets": [0,1],
+                "type": "input",
+                "data": null,
+                "bgcolor": {
+                    "change": "#c4eeff"
+                }
+            }
+            ]
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Loaded platforms.js.");
 
@@ -413,9 +426,6 @@ function populateSensorInformationTable(sensorInformation)
  */
 function populatePlatformDialog(data)
 {
-    clearPlatformDialog();
-
-    propertiesTable.setPropspecs(openDcsData.propspecs["decodes.db.Platform"].data);
     
     openPlatformData = data;
 
@@ -1088,13 +1098,14 @@ function initializeDataTables()
 
     propertiesTable = new PropertiesTable(
     		"propertiesTable", 
+    		["decodes.db.Platform"],
     		true);
 
     platformSensorPropertiesTable = $("#platformSensorPropertiesTable").DataTable(
             {
                 "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 "pageLength": 10,
-                "dom": 'Bflrtip',
+                "dom": 'flrtip',
                 "searching": false,
                 "ordering": true,
                 "paging": false,

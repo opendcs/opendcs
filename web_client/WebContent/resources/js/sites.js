@@ -497,7 +497,10 @@ function initializeDataTables()
 
     propertiesTable = new PropertiesTable(
     		"propertiesTable", 
+    		[],
     		true);
+    
+    
     
     siteNamesTable = new BasicTable("siteNamesTable", false);
     $('#sitesTable').on('click', 'tbody tr', openSiteDialog);

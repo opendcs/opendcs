@@ -838,9 +838,98 @@ function updateDataTableScroll(targetTable, fillPercentage)
     var dt = jqTable.DataTable();
     dt.draw();
 
+    var jqWrapper = jqTable.closest(".dataTables_wrapper");
+    var wrapperChildren = jqWrapper.children();
+
+    var wrapperParent = jqWrapper.parent();
+    var dtScrollBody = null;
+    var allObjects = [];
+    var totalOuterHeight = 0;
+    
+    //Trying to separate out all dom objects other than the scroll body.  This
+    //way, we can update the size of the scroll body based on the size/resize
+    //of the window.
+    for (var x = 0; x < wrapperChildren.length; x++)
+	{
+    	var curChild = $(wrapperChildren[x]);
+    	if (curChild.hasClass("dataTables_scroll"))
+		{
+    		var scrollChildren = curChild.children();
+    		for (var y = 0; y < scrollChildren.length;  y++)
+			{
+    			var curScrollChild = $(scrollChildren[y]);
+    			if (curScrollChild.hasClass("dataTables_scrollBody"))
+				{
+    				dtScrollBody = curScrollChild;
+				}
+    			else
+				{
+    				//add the non scroll body to the all other objects.
+    	    		allObjects.push(curScrollChild);
+        			totalOuterHeight += curScrollChild.outerHeight();
+				}
+			}
+    		
+		}
+    	else
+		{
+    		//add the non scroll body to the all other objects.
+    		totalOuterHeight += curChild.outerHeight();
+    		allObjects.push(curChild);
+		}
+	}
+    
+    if (dtScrollBody == null)
+	{
+    	console.log("No scroll body for table.  Exiting now.");
+    	return;
+	}
+    
+    //var parentHeight = wrapperParent.outerHeight();
+    //This is height instead of outerHeight to account for margins and padding.
+    var parentHeight = wrapperParent.height(); 
+    var dtScrollBodyHeight = dtScrollBody.height();
+    var dtScrollBodyOuterHeight = dtScrollBody.outerHeight();
+    var dtScrollBodyDiff = dtScrollBodyOuterHeight - dtScrollBodyHeight;
+    var sbNewHeight = parentHeight-totalOuterHeight;
+    
+    if (jqTable.attr("id") == "propertiesTable")
+	{
+    	console.log("*********PropertiesTable**************");
+        console.log("ParentHeight: " + parentHeight);
+        console.log("TotalOuterHeight: " + totalOuterHeight);
+    	console.log("*********PropertiesTable**************");
+        
+	}
+    if (totalOuterHeight > parentHeight)
+	{
+    	dtScrollBody.css("max-height", sbNewHeight);
+    	dtScrollBody.css("max-height", sbNewHeight);
+        //objs.body.css("height", bodyHeight);
+    	
+	}
+    else if (totalOuterHeight < parentHeight)
+	{
+    	dtScrollBody.css("max-height", sbNewHeight);
+    	dtScrollBody.css("max-height", sbNewHeight);
+	}
+    dt.draw();
+}
+
+function updateDataTableScroll_dep2(targetTable, fillPercentage)
+{
+
+    if (typeof(targetTable) == "string" && !targetTable.startsWith("#"))
+    {
+        targetTable = "#" + targetTable;
+    }
+    var jqTable = $(targetTable);
+    var dt = jqTable.DataTable();
+    dt.draw();
+
     var objs = getDatatableObjects(jqTable);
     var totalHeight = objs["parent_div"].height();
-
+    
     if (fillPercentage == null)
     {
         var resizeVal = jqTable.attr("resize_on_window_resize");
@@ -860,10 +949,35 @@ function updateDataTableScroll(targetTable, fillPercentage)
     var buttonHeight = 0;
     if (objs.buttons.length > 0)
     {
-        buttonHeight = objs.buttons.outerHeight(includeMargin=true);
+        buttonHeight = objs.buttons.outerHeight(true);
     }
-    var bodyHeight = totalHeight - objs.header.height() - buttonHeight - objs.footer.height();
+    
 
+    if (targetTable == "#platformSelectionTable2")
+	{
+    	console.log("hit target table.");
+	}
+    
+    console.log("Target Table: " + targetTable);
+
+    var hdrHt = isNaN(objs.header.height()) ? 0 : objs.header.height();
+    var ftrHt = isNaN(objs.footer.height()) ? 0 : objs.footer.height(); 
+    
+    buttonHeight = isNaN(buttonHeight) ? 0 : buttonHeight;
+    
+    var bodyHeight = totalHeight - hdrHt - buttonHeight - ftrHt;
+
+    var parentHeight = objs.wrapper.parent().height();
+    var wrapperHeight = objs.wrapper.height();
+    if (wrapperHeight > parentHeight)
+	{
+    	console.log("Wrapper Height: " + wrapperHeight);
+    	console.log("Parent Height: " + parentHeight);
+    	bodyHeight -= (wrapperHeight - parentHeight); 
+    	console.log("Setting new body height to " + bodyHeight);
+	}
+    
+    
     if (jqTable.attr("id") == "platformSensorPropertiesTable")
     {
         console.log("found the table.");
@@ -1322,6 +1436,13 @@ function isRowIndexSelected(dtTable, rowIndex)
 {
     var rowCount = dtTable.rows(rowIndex, {selected: true}).count();
     return rowCount > 0 ? true : false;
+}
+
+
+function getSelectedRows(dtTable)
+{
+    var selectedRows = dtTable.rows({selected: true});
+    return selectedRows
 }
 
 function isRowIndexMarkedForDeletion(jqTable, rowIndex)

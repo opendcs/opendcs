@@ -171,39 +171,89 @@ class OpenDcsDataTable {
   
   updateDataTableScroll(fillPercentage)
   {
-      var jqTable = this.jq;
-      var dt = this.dataTable;
-      dt.draw();
 
-      var objs = this.getDatatableObjects();
-      var totalHeight = objs["parent_div"].height();
+	var jqTable = this.jq;
+    var dt = this.dataTable;
+    dt.draw();
 
-      if (fillPercentage == null)
-      {
-          var resizeVal = jqTable.attr("resize_on_window_resize");
-          try {
-              resizeVal = parseFloat(resizeVal)
-          }
-          catch (error) {
-              //Error parsing float ${resizeVal}.
-              resizeVal = 100;
-          }
-          fillPercentage = resizeVal;
-      }
-      totalHeight = totalHeight * (fillPercentage / 100.0);
-      var buttonHeight = 0;
-      if (objs.buttons.length > 0)
-      {
-          buttonHeight = objs.buttons.outerHeight(includeMargin=true);
-      }
-      var bodyHeight = totalHeight - objs.header.height() - buttonHeight - objs.footer.height();
+    var jqWrapper = jqTable.closest(".dataTables_wrapper");
+    var wrapperChildren = jqWrapper.children();
 
-      objs.body.css("max-height", bodyHeight);
-      objs.body.css("height", bodyHeight);
+    var wrapperParent = jqWrapper.parent();
+    var dtScrollBody = null;
+    var allObjects = [];
+    var totalOuterHeight = 0;
+    
+    //Trying to separate out all dom objects other than the scroll body.  This
+    //way, we can update the size of the scroll body based on the size/resize
+    //of the window.
+    for (var x = 0; x < wrapperChildren.length; x++)
+	{
+    	var curChild = $(wrapperChildren[x]);
+    	if (curChild.hasClass("dataTables_scroll"))
+		{
+    		var scrollChildren = curChild.children();
+    		for (var y = 0; y < scrollChildren.length;  y++)
+			{
+    			var curScrollChild = $(scrollChildren[y]);
+    			if (curScrollChild.hasClass("dataTables_scrollBody"))
+				{
+    				dtScrollBody = curScrollChild;
+				}
+    			else
+				{
+    				//add the non scroll body to the all other objects.
+    	    		allObjects.push(curScrollChild);
+        			totalOuterHeight += curScrollChild.outerHeight();
+				}
+			}
+    		
+		}
+    	else
+		{
+    		//add the non scroll body to the all other objects.
+    		totalOuterHeight += curChild.outerHeight();
+    		allObjects.push(curChild);
+		}
+	}
 
-      dt.draw();
-  }
-  
+    if (dtScrollBody == null)
+	{
+    	console.log("No scroll body for table.  Exiting now.");
+    	return;
+	}
+    
+    //var parentHeight = wrapperParent.outerHeight();
+    //This is height instead of outerHeight to account for margins and padding.
+    var parentHeight = wrapperParent.height(); 
+    var dtScrollBodyHeight = dtScrollBody.height();
+    var dtScrollBodyOuterHeight = dtScrollBody.outerHeight();
+    var dtScrollBodyDiff = dtScrollBodyOuterHeight - dtScrollBodyHeight;
+    var sbNewHeight = parentHeight-totalOuterHeight;
+    
+    if (jqTable.attr("id") == "propertiesTable")
+	{
+    	console.log("*********PropertiesTable**************");
+        console.log("ParentHeight: " + parentHeight);
+        console.log("TotalOuterHeight: " + totalOuterHeight);
+    	console.log("*********PropertiesTable**************");
+        
+	}
+    if (totalOuterHeight > parentHeight)
+	{
+    	dtScrollBody.css("max-height", sbNewHeight);
+    	dtScrollBody.css("max-height", sbNewHeight);
+        //objs.body.css("height", bodyHeight);
+    	
+	}
+    else if (totalOuterHeight < parentHeight)
+	{
+    	dtScrollBody.css("max-height", sbNewHeight);
+    	dtScrollBody.css("max-height", sbNewHeight);
+	}
+    dt.draw();
+}
+ 
   makeTableInline(runAtEndClick, runAtEndFocusOut)
   {
       var jqTableId = `#${this.domId}`;
@@ -530,7 +580,7 @@ class OpenDcsDataTable {
           }
           if ((ignoreFocusOut != null && ignoreFocusOut.toLowerCase() == "true") || keepFocus)
           {
-              return
+              return;
           }
           if (clickedCell.length > 0)
           {
@@ -603,7 +653,7 @@ class BasicTable extends OpenDcsDataTable {
 		        "scrollCollapse": true,
 		        "scrollY": 150,
 		        "autoWidth": true,
-		        "dom": 'Bflrtip',
+		        "dom": 'flrtip',
 		        "buttons": []
 		    };
 	  var defaultInlineOptions = {
@@ -628,14 +678,14 @@ class BasicTable extends OpenDcsDataTable {
 }
 
 class PropertiesTable extends OpenDcsDataTable {
-  constructor(domId, initialize) {
+  constructor(domId, propspecClasses, initialize) {
 	  console.log("In constructor for Child Class Properties Table.");
 	  var defaultProps = {
 	          "searching": false,
 	          "ordering": false,
 	          "paging": false,
 	          "info": false,
-	          "dom": 'Bflrtip',
+	          "dom": 'flrtip',
 	          "scrollCollapse": true,
 	          "autoWidth": true,
 	          "scrollY": 150,
@@ -661,6 +711,29 @@ class PropertiesTable extends OpenDcsDataTable {
 	  super(domId, defaultProps, defaultInlineOptions, 
 			  defaultActions, initialize);
 	  this.propSpecMeta = {};
+	  if (propspecClasses != null)
+	  {
+		  var apiData = new ApiData();
+		  var thisClass = this;
+		  apiData.getPropspecs(propspecClasses, 
+				  function(apiClass, response) {
+			  			console.log("At Start.");
+		  			}, 
+		  			function(apiClass, response) {
+		  				console.log("At End.");
+		  				var combinedPropSpecs = [];
+		  				for (var key in apiClass.propspecs)
+	  					{
+		  					var ps = apiClass.propspecs[key];
+		  					if (ps.data != null)
+	  						{
+		  						combinedPropSpecs = combinedPropSpecs.concat(ps.data);
+	  						}
+	  					}
+		  				thisClass.apiData = apiClass;
+		  				thisClass.setPropspecs(combinedPropSpecs);
+		  			});
+	  }
   }
   
   setPropspecs(propspecs)
@@ -740,4 +813,130 @@ class PropertiesTable extends OpenDcsDataTable {
 	        }
 	    }
   }
+}
+
+class ApiData {
+    constructor() {
+        this.data = {};
+        this.propspecs = {}
+    }
+
+    getPropspecs(propspecs, runAtStartOfSuccess, runAtEndOfSuccess)
+    {
+        var thisClass = this;
+        for (var x = 0; x < propspecs.length; x++)
+        {
+            var opendcsApiCall = "propspecs";
+            var propspec = propspecs[x];
+
+            var onSuccess = function(response) {
+            	if (runAtStartOfSuccess != null)
+        		{
+            		runAtStartOfSuccess(thisClass, response);
+        		}
+                const [ , paramString ] = this.url.split( '?' );
+                const urlParams = new URLSearchParams(paramString);
+                var cls = urlParams.get("class");
+                thisClass.propspecs[cls].data = response;
+                thisClass.propspecs[cls].status = "success";
+                thisClass.propspecs[cls].ajaxObject = this;
+            	if (runAtEndOfSuccess != null)
+        		{
+            		runAtEndOfSuccess(thisClass, response);
+        		}
+            };
+            var onError = function(response) {
+                thisClass.propspecs[propspec].status = "error";
+                thisClass.propspecs[propspec].ajaxObject = this;
+            };
+
+            this.propspecs[propspec] = {
+                    "status": "retrieving",
+                    "data": null,
+                    "ajaxObject": null
+            }
+            $.ajax({
+                url: `../api/gateway`,
+                type: "GET",
+                data: {
+                    "opendcs_api_call": opendcsApiCall,
+                    "class": propspec
+                },
+                success: onSuccess,
+                error: onError
+            });
+        }
+    }
+
+    //onSuccess will always be run after setting the class data to the response.
+    //It has parameters for thisClass and response.
+    //onError has parameters for thisClass and response.
+    getData(opendcsApiCalls, onSuccess, onError)
+    {
+        var thisClass = this;
+
+        for (var x = 0; x < opendcsApiCalls.length; x++)
+        {
+            var opendcsApiCall = opendcsApiCalls[x];
+            var k = opendcsApiCall;
+
+
+            var fullOnSuccess = function(response) {
+                // Get everything after the `?`
+                const [ , paramString ] = this.url.split( '?' );
+                const urlParams = new URLSearchParams(paramString);
+                var apiCall = urlParams.get("opendcs_api_call");
+                thisClass.data[apiCall].data = response;
+                thisClass.data[apiCall].status = "success";
+                thisClass.data[apiCall].ajaxObject = this;
+                for (var y = 0; y < thisClass.data[apiCall].grouped_api_calls.length; y++)
+                {
+                    var curApiCall = thisClass.data[apiCall].grouped_api_calls[y];
+                    if (thisClass.data[curApiCall].status != "success")
+                    {
+                        console.log(`Still Waiting for API calls to complete.`);
+                        return;
+                    }
+                }
+                if (onSuccess == null)
+                {
+                    //onSuccess was not passed.
+                }
+                else
+                {
+                    onSuccess(thisClass, response);
+                }
+            };
+            var fullOnError = function(response) {
+                thisClass.data[k].status = "error";
+                thisClass.data[k].ajaxObject = this;
+                if (onError == null)
+                {
+                    //onError was not passed.
+                }
+                else
+                {
+                    onError(thisClass, response);
+                }
+            };
+
+            this.data[k] = {
+                    "status": "retrieving",
+                    "data": null,
+                    "grouped_api_calls": opendcsApiCalls,
+                    "onsuccess": fullOnSuccess,
+                    "onError": fullOnError,
+                    "ajaxObject": null
+            }
+            $.ajax({
+                url: `../api/gateway`,
+                type: "GET",
+                data: {
+                    "opendcs_api_call": opendcsApiCall
+                },
+                success: fullOnSuccess,
+                error: fullOnError
+            });
+        }
+    }
 }

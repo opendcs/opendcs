@@ -77,10 +77,9 @@
 			<div id="displayedPlatformId" class="displayNone"></div>
 			<div class="modal-body grey-background total_height-header-footer">
 				<div class="row h-100">
-					<div class="col-lg-5 h-100 d-flex flex-column">
-						<div class="row m-1 h-50">
-							<div
-								class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100 opendcs_y_scrollable">
+					<div class="col-lg-5 h-100">
+						<div class="row h-50 p-1">
+							<div class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100 opendcs_y_scrollable">
 								<form class="form-validate-jquery"
 									onkeydown="return event.key != 'Enter';">
 									<table
@@ -161,9 +160,8 @@
 							</div>
 						</div>
 
-						<div class="row m-1 flex-grow-1">
-							<div
-								class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100 opendcs_y_scrollable">
+						<div class="row h-50 p-1">
+							<div class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100">
 								<table id="propertiesTable" resize_on_window_resize="96"
 									class="table table-hover datatable-responsive co-8 border">
 									<caption class="captionTitleCenter">
@@ -184,9 +182,9 @@
 							</div>
 						</div>
 					</div>
-					<div class="col-lg-7 h-100 d-flex flex-column">
-						<div class="row m-1 h-50">
-							<div class="col-lg-12 card p-3 h-100  opendcs_y_scrollable">
+					<div class="col-lg-7 h-100">
+						<div class="row h-50 p-1">
+							<div class="col-lg-12 card p-3 h-100">
 								<table id="sensorInformationTable" resize_on_window_resize="97"
 									class="table table-hover datatable-responsive border tablerow-cursor">
 									<caption id="siteNamesCaption" class="captionTitleCenter">
@@ -210,8 +208,8 @@
 								</table>
 							</div>
 						</div>
-						<div class="row m-1 flex-grow-1">
-							<div class="col-lg-12 card p-3 h-100  opendcs_y_scrollable">
+						<div class="row h-50 p-1">
+							<div class="col-lg-12 card p-3 h-100">
 								<table id="transportMediaTable" resize_on_window_resize="96"
 									class="table table-hover datatable-responsive co-8 border tablerow-cursor">
 									<caption class="captionTitleCenter">

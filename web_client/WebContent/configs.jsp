@@ -61,7 +61,6 @@
 				<div class="modal-header bg-secondary">
 					<h6 class="modal-title" id="configTitle">Configs</h6>
 				</div>
-
 				<div class="modal-body">
 					<!--<h6 class="font-weight-semibold">Network List Name</h6>-->
 					<div class="card pt-2 pb-2">
@@ -258,8 +257,6 @@
 				</div>
 			</div>
 		<div class="modal-footer pt-3">
-					<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-                	<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button>-->
 					<button type="button" class="btn btn-secondary" id="configSensorModalCancel">Cancel</button>
 					<button type="button" class="btn btn-success" id="configSensorModalOk">Ok</button>
 				</div>
@@ -397,8 +394,6 @@
 				</div>
 			</div>
 		<div class="modal-footer pt-3">
-					<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-                	<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button>-->
 					<button type="button" class="btn btn-secondary" id="decodingScriptModalCancel">Cancel</button>
 					<button type="button" class="btn btn-success" id="decodingScriptModalOk">Ok</button>
 				</div>

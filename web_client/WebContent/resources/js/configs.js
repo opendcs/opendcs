@@ -961,7 +961,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 "searching": false,
                 "bPaginate": false,
                 "dom": 'Bfrt',
-                "scrollY":        "500px",
+                "scrollY": "500px",
                 "scrollCollapse": true,
                 "autoWidth": true,
                 "columnDefs": [
