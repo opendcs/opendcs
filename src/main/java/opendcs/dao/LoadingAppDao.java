@@ -86,10 +86,10 @@ public class LoadingAppDao
     extends DaoBase
     implements LoadingAppDAI
 {
-    private final String lockCheckQuery = 
-		"SELECT loading_application_id,pid,hostname,heartbeat,cur_status from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?";
-	private final String updateHeartbeatQuery = 
-		"UPDATE CP_COMP_PROC_LOCK SET HEARTBEAT = ?, CUR_STATUS = ? WHERE LOADING_APPLICATION_ID = ?";
+    private final String lockCheckQuery =
+        "SELECT loading_application_id,pid,hostname,heartbeat,cur_status from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?";
+    private final String updateHeartbeatQuery =
+        "UPDATE CP_COMP_PROC_LOCK SET HEARTBEAT = ?, CUR_STATUS = ? WHERE LOADING_APPLICATION_ID = ?";
     private SimpleDateFormat lastModifiedSdf = new SimpleDateFormat("yyyyMMddHHmmss");
 
     public LoadingAppDao(DatabaseConnectionOwner tsdb)
@@ -103,21 +103,21 @@ public class LoadingAppDao
         throws DbIoException
     {
         StringBuilder q = new StringBuilder("select COMPUTATION_NAME from CP_COMPUTATION");
-		ArrayList<Object> parameters = new ArrayList<>();
+        ArrayList<Object> parameters = new ArrayList<>();
         if (appId != Constants.undefinedId)
-		{
+        {
             q.append(" where LOADING_APPLICATION_ID = ?");
-			parameters.add(appId);
-		}
+            parameters.add(appId);
+        }
         if (enabledOnly)
-		{
+        {
             q.append((appId != Constants.undefinedId ? " and " : " where "));
-			q.append("enabled = 'Y'");
-		}
+            q.append("enabled = 'Y'");
+        }
 
         try
         {
-			return getResults(q.toString(), rs -> rs.getString(1), appId);
+            return getResults(q.toString(), rs -> rs.getString(1), appId);
         }
         catch(SQLException ex)
         {
@@ -127,41 +127,39 @@ public class LoadingAppDao
         }
     }
 
-	private CompAppInfo rs2CompAppInfo(ResultSet rs, String prefix) throws SQLException
-	{
-		CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, prefix+"loading_application_id"));
-		cai.setAppName(rs.getString(prefix+"loading_application_name"));
-		cai.setManualEditApp(TextUtil.str2boolean(rs.getString(prefix+"manual_edit_app")));
-		cai.setComment(rs.getString(prefix+"cmmnt"));
-		return cai;
-	}
+    private CompAppInfo rs2CompAppInfo(ResultSet rs, String prefix) throws SQLException
+    {
+        CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, prefix+"loading_application_id"));
+        cai.setAppName(rs.getString(prefix+"loading_application_name"));
+        cai.setManualEditApp(TextUtil.str2boolean(rs.getString(prefix+"manual_edit_app")));
+        cai.setComment(rs.getString(prefix+"cmmnt"));
+        return cai;
+    }
 
-	/**
-	 * TODO: convert to joins at later improvement.
-	 */
+    /**
+     * TODO: convert to joins at later improvement.
+     */
     @Override
     public ArrayList<CompAppInfo> listComputationApps(boolean usedOnly)
         throws DbIoException
     {
         StringBuffer q = new StringBuffer(
-			  "select LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME, "
+              "select LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME, "
             + "MANUAL_EDIT_APP, CMMNT from HDB_LOADING_APPLICATION ");
         if (usedOnly)
-		{
-            q.append("(select distinct LOADING_APPLICATION_ID from CP_COMPUTATION)");
-		}
-        
-        
-        
-        try(Connection conn = getConnection();
-			PropertiesDAI propsDao = db.makePropertiesDAO();)
         {
-			propsDao.setManualConnection(conn);
-            final ArrayList<CompAppInfo> ret = 
-			(ArrayList<CompAppInfo>)getResults(q.toString(), rs -> rs2CompAppInfo(rs, ""));
+            q.append("(select distinct LOADING_APPLICATION_ID from CP_COMPUTATION)");
+        }
+
+        try(Connection conn = getConnection();
+            PropertiesDAI propsDao = db.makePropertiesDAO();)
+        {
+            propsDao.setManualConnection(conn);
+            final ArrayList<CompAppInfo> ret =
+                (ArrayList<CompAppInfo>)getResults(q.toString(), rs -> rs2CompAppInfo(rs, ""));
 
             fillInProperties(ret, "");
-			q.setLength(0);
+            q.setLength(0);
             q.append("select a.loading_application_id, count(1) as CompsUsingProc "
                 + "from hdb_loading_application a, cp_computation b "
                 + "where a.loading_application_id = b.loading_application_id "
@@ -171,12 +169,12 @@ public class LoadingAppDao
                 DbKey appId = DbKey.createDbKey(rs, 1);
                 int numComps = rs.getInt(2);
                 for(CompAppInfo cai : ret)
-				{
+                {
                     if (cai.getAppId().equals(appId))
-					{
+                    {
                         cai.setNumComputations(numComps);
-					}
-				}
+                    }
+                }
             });
 
             return ret;
@@ -248,43 +246,43 @@ public class LoadingAppDao
             + "LOADING_APPLICATION_NAME, MANUAL_EDIT_APP, CMMNT "
             + "from HDB_LOADING_APPLICATION "
             + "where LOADING_APPLICATION_ID = ?";
-        
+
         try (Connection conn = getConnection();
-			 PropertiesDAI propsDao = db.makePropertiesDAO();
-		)
+             PropertiesDAI propsDao = db.makePropertiesDAO();
+        )
         {
-			propsDao.setManualConnection(conn);
-			final CompAppInfo cai = getSingleResult(q, rs -> rs2CompAppInfo(rs, ""), id);
+            propsDao.setManualConnection(conn);
+            final CompAppInfo cai = getSingleResult(q, rs -> rs2CompAppInfo(rs, ""), id);
 
             if (cai == null)
-			{
+            {
                 throw new NoSuchObjectException("No application with id=" + id);
-			}
-			else
-			{
-				propsDao.readProperties("REF_LOADING_APPLICATION_PROP",
-										"LOADING_APPLICATION_ID", id,
-                						cai.getProperties());
+            }
+            else
+            {
+                propsDao.readProperties("REF_LOADING_APPLICATION_PROP",
+                                        "LOADING_APPLICATION_ID", id,
+                                        cai.getProperties());
 
-				String lmp = PropertiesUtil.getIgnoreCase(cai.getProperties(), "LastModified");
-            	if (lmp != null)
-				{
-                	try
-					{
-						cai.setLastModified(lastModifiedSdf.parse(lmp));
-					}
-                	catch(ParseException ex)
-					{
-						warning("Cannot parse LastModified '" + lmp + "': " + ex);
-					}
-				}
-            	return cai;
-			}
+                String lmp = PropertiesUtil.getIgnoreCase(cai.getProperties(), "LastModified");
+                if (lmp != null)
+                {
+                    try
+                    {
+                        cai.setLastModified(lastModifiedSdf.parse(lmp));
+                    }
+                    catch(ParseException ex)
+                    {
+                        warning("Cannot parse LastModified '" + lmp + "': " + ex);
+                    }
+                }
+                return cai;
+            }
         }
         catch(SQLException ex)
         {
             String msg = "Error in getComputationApp(" + id + "): " + ex.getLocalizedMessage();
-			ex.printStackTrace();
+            ex.printStackTrace();
             warning(msg);
             throw new DbIoException(msg, ex);
         }
@@ -299,9 +297,9 @@ public class LoadingAppDao
         String q;
         String appName = app.getAppName();
         if (appName.length() > 24)
-		{
+        {
             appName = appName.substring(0, 24);
-		}
+        }
 
         if (isNew)
         {
@@ -313,7 +311,7 @@ public class LoadingAppDao
                 DbKey existingId = getSingleResult(q, rs -> DbKey.createDbKey(rs,1), appName);
                 if (existingId != null)
                 {
-					id = existingId;
+                    id = existingId;
                     app.setAppId(id);
                     isNew = false;
                 }
@@ -325,9 +323,9 @@ public class LoadingAppDao
         if (!isNew)
         {
             try
-			{
-				oldcai = getComputationApp(id);
-			}
+            {
+                oldcai = getComputationApp(id);
+            }
             catch(NoSuchObjectException ex)
             {
                 isNew = true;
@@ -335,9 +333,9 @@ public class LoadingAppDao
         }
 
         try (Connection conn = getConnection();
-			 PropertiesDAI propsDao = db.makePropertiesDAO();)
+             PropertiesDAI propsDao = db.makePropertiesDAO();)
         {
-			propsDao.setManualConnection(conn);
+            propsDao.setManualConnection(conn);
             if (isNew)
             {
                 id = getKey("HDB_LOADING_APPLICATION");
@@ -364,42 +362,42 @@ public class LoadingAppDao
             }
             else // update
             {
-				StringBuilder updateQuery = new StringBuilder("UPDATE HDB_LOADING_APPLICATION SET ");
-				final Map<String,Object> fields = new LinkedHashMap<>();
+                StringBuilder updateQuery = new StringBuilder("UPDATE HDB_LOADING_APPLICATION SET ");
+                final Map<String,Object> fields = new LinkedHashMap<>();
 
                 if (!TextUtil.strEqual(app.getAppName(), oldcai.getAppName()))
-				{
-					fields.put("LOADING_APPLICATION_NAME",appName);
-				}
+                {
+                    fields.put("LOADING_APPLICATION_NAME",appName);
+                }
                 if (!TextUtil.strEqual(app.getComment(), oldcai.getComment()))
                 {
-					fields.put("CMMNT",app.getComment());
+                    fields.put("CMMNT",app.getComment());
                 }
                 if (app.getManualEditApp() != oldcai.getManualEditApp())
                 {
-					fields.put("MANUAL_EDIT_APP",(app.getManualEditApp() ? "'Y'" : "'N'"));
+                    fields.put("MANUAL_EDIT_APP",(app.getManualEditApp() ? "'Y'" : "'N'"));
                 }
 
                 if (!fields.isEmpty())
                 {
-					Iterator<String> columnSet = fields.keySet().iterator();
-					while(columnSet.hasNext())
-					{
-						updateQuery.append(columnSet.next()).append("=?");
-						if(columnSet.hasNext())
-						{
-							updateQuery.append(",");
-						}
-						updateQuery.append(",");
-					}
-					updateQuery.append(" WHERE LOADING_APPLICATION_ID = ?"); //+ id;
+                    Iterator<String> columnSet = fields.keySet().iterator();
+                    while(columnSet.hasNext())
+                    {
+                        updateQuery.append(columnSet.next()).append("=?");
+                        if(columnSet.hasNext())
+                        {
+                            updateQuery.append(",");
+                        }
+                        updateQuery.append(",");
+                    }
+                    updateQuery.append(" WHERE LOADING_APPLICATION_ID = ?"); //+ id;
 
-					List<Object> parameters =
-						fields.entrySet()
-						      .stream()
-							  .map( e -> e.getValue())
-							  .collect(Collectors.toList());
-					parameters.add(id);
+                    List<Object> parameters =
+                        fields.entrySet()
+                              .stream()
+                              .map( e -> e.getValue())
+                              .collect(Collectors.toList());
+                    parameters.add(id);
                     doModify(updateQuery.toString(),parameters.toArray(new Object[0]));
                 }
             }
@@ -408,10 +406,10 @@ public class LoadingAppDao
             propsDao.writeProperties("REF_LOADING_APPLICATION_PROP", "LOADING_APPLICATION_ID",
                 app.getKey(), app.getProperties());
         }
-		catch(SQLException ex)
-		{
-			throw new DbIoException("Database error writing computation app", ex);
-		}
+        catch(SQLException ex)
+        {
+            throw new DbIoException("Database error writing computation app", ex);
+        }
         catch(DbIoException ex)
         {
             warning(ex.getMessage());
@@ -518,15 +516,15 @@ public class LoadingAppDao
             " where upper(loading_application_name) = upper(?)";
         try
         {
-			DbKey appId = getSingleResult(q, rs-> DbKey.createDbKey(rs, 1),name);
+            DbKey appId = getSingleResult(q, rs-> DbKey.createDbKey(rs, 1),name);
             if (appId == null)
-			{
+            {
                 throw new NoSuchObjectException("No app named '" + name + "'");
-			}
-			else
-			{
-				return appId;
-			}
+            }
+            else
+            {
+                return appId;
+            }
         }
         catch(SQLException ex)
         {
@@ -546,31 +544,31 @@ public class LoadingAppDao
     @Override
     public TsdbCompLock obtainCompProcLock(CompAppInfo appInfo, int pid, String host)
         throws LockBusyException, DbIoException
-    {   
-		TsdbCompLock lock = null;
+    {
+        TsdbCompLock lock = null;
         try
         {
-			lock = getSingleResult(lockCheckQuery, rs -> rs2lock(rs), appInfo.getAppId());
-            
-			if ( lock != null)
-			{
-				// Same application is re-connecting? (pid will be same)
-				if (lock.getPID() == pid)
-				{
-					// No need to re-create. Update the existing lock.
-					checkCompProcLock(lock);
-					return lock;
-				}
-				if (!lock.isStale())
-				{
-					String msg =
-						"Cannot obtain lock for app ID " + appInfo.getAppId()
-						+ ". Currently owned by PID " + lock.getPID()
-						+ " on host '" + lock.getHost() + "'";
-					fatal(msg);
-					throw new LockBusyException(msg);
-				}
-			}
+            lock = getSingleResult(lockCheckQuery, rs -> rs2lock(rs), appInfo.getAppId());
+
+            if ( lock != null)
+            {
+                // Same application is re-connecting? (pid will be same)
+                if (lock.getPID() == pid)
+                {
+                    // No need to re-create. Update the existing lock.
+                    checkCompProcLock(lock);
+                    return lock;
+                }
+                if (!lock.isStale())
+                {
+                    String msg =
+                        "Cannot obtain lock for app ID " + appInfo.getAppId()
+                        + ". Currently owned by PID " + lock.getPID()
+                        + " on host '" + lock.getHost() + "'";
+                    fatal(msg);
+                    throw new LockBusyException(msg);
+                }
+            }
         }
         catch(SQLException ex)
         {
@@ -579,18 +577,18 @@ public class LoadingAppDao
         }
 
         if (lock != null)
-		{
+        {
             releaseCompProcLock(lock);
-		}
+        }
         lock = new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting");
         try (Connection conn = getConnection();
-			 PreparedStatement insertLockInfo =
-            	conn.prepareStatement(
+             PreparedStatement insertLockInfo =
+                conn.prepareStatement(
                   "INSERT INTO CP_COMP_PROC_LOCK VALUES ("
-            	+ "?,?,?,?,?)"
+                + "?,?,?,?,?)"
             );
         )
-		{
+        {
             insertLockInfo.setLong(1,appInfo.getAppId().getValue());
             insertLockInfo.setInt(2,pid);
             insertLockInfo.setString(3,host);
@@ -614,43 +612,43 @@ public class LoadingAppDao
 
     }
 
-	/**
+    /**
      * Helper method Parses result set & returns lock object.
-	 * @param rs ResultSet containing the data
+     * @param rs ResultSet containing the data
      * @return lock or null if unsuccessful.
      */
-	private TsdbCompLock rs2lock(ResultSet rs) throws SQLException
-	{
-		return rs2lock(rs, "");
-	}
+    private TsdbCompLock rs2lock(ResultSet rs) throws SQLException
+    {
+        return rs2lock(rs, "");
+    }
 
     /**
      * Helper method Parses result set & returns lock object.
-	 * @param rs ResultSet containing the data
-	 * @param prefix String prefixed to column names, used for joins. and be empty string.
+     * @param rs ResultSet containing the data
+     * @param prefix String prefixed to column names, used for joins. and be empty string.
      * @return lock or null if unsuccessful.
      */
     private TsdbCompLock rs2lock(ResultSet rs, String prefix) throws SQLException
-    {        
-		DbKey appId = DbKey.createDbKey(rs, prefix+"loading_application_id");
-		int pid = rs.getInt(prefix+"pid");
-		String host = rs.getString(prefix+"hostname");
-		Date heartbeat = db.getFullDate(rs, prefix+"heartbeat");
-		String status = rs.getString(prefix+"cur_status");
+    {
+        DbKey appId = DbKey.createDbKey(rs, prefix+"loading_application_id");
+        int pid = rs.getInt(prefix+"pid");
+        String host = rs.getString(prefix+"hostname");
+        Date heartbeat = db.getFullDate(rs, prefix+"heartbeat");
+        String status = rs.getString(prefix+"cur_status");
 
-		return new TsdbCompLock(appId, pid, host, heartbeat, status);     
+        return new TsdbCompLock(appId, pid, host, heartbeat, status);
     }
 
     @Override
     public void releaseCompProcLock(TsdbCompLock lock) throws DbIoException
     {
         if (lock != null)
-		{
+        {
             try
-			{
-				doModify("DELETE from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?",lock.getAppId());
+            {
+                doModify("DELETE from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?",lock.getAppId());
             } catch (SQLException ex)
-			{
+            {
                 warning(ex.getLocalizedMessage());
                 throw new DbIoException("Failed to delete lock", ex);
             }
@@ -663,8 +661,8 @@ public class LoadingAppDao
     {
         try
         {
-			final TsdbCompLock tlock = getSingleResult(lockCheckQuery, rs->rs2lock(rs), lock.getAppId());
-			
+            final TsdbCompLock tlock = getSingleResult(lockCheckQuery, rs->rs2lock(rs), lock.getAppId());
+
             if (tlock != null)
             {
                 if (lock.getPID() != tlock.getPID()
@@ -679,14 +677,14 @@ public class LoadingAppDao
                 }
                 lock.setHeartbeat(new Date());
 
-				debug3("updating heartbeat");
-				doModify(updateHeartbeatQuery,lock.getHeartbeat(),lock.getStatus(),lock.getAppId());
-			}
+                debug3("updating heartbeat");
+                doModify(updateHeartbeatQuery,lock.getHeartbeat(),lock.getStatus(),lock.getAppId());
+            }
             else
-			{
+            {
                 throw new LockBusyException("Lock for app ID " + lock.getAppId()
                     + " has been deleted.");
-			}
+            }
         }
         catch(SQLException ex)
         {
@@ -701,27 +699,27 @@ public class LoadingAppDao
         String q = "SELECT loading_application_id,pid,hostname,heartbeat,cur_status from CP_COMP_PROC_LOCK";
         try
         {
-			final List<TsdbCompLock> ret = getResults(q,rs->rs2lock(rs));
-			q = "SELECT LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME FROM HDB_LOADING_APPLICATION";
-			doQuery(q, rs ->
-			{
-				DbKey appId = DbKey.createDbKey(rs, 1);
+            final List<TsdbCompLock> ret = getResults(q,rs->rs2lock(rs));
+            q = "SELECT LOADING_APPLICATION_ID, LOADING_APPLICATION_NAME FROM HDB_LOADING_APPLICATION";
+            doQuery(q, rs ->
+            {
+                DbKey appId = DbKey.createDbKey(rs, 1);
                 String appName = rs.getString(2);
                 for(TsdbCompLock lock : ret)
-				{
+                {
                     if (lock.getAppId().equals(appId))
                     {
                         lock.setAppName(appName);
                         break;
                     }
-				}
-			});
-			return ret;
+                }
+            });
+            return ret;
         }
         catch(SQLException ex)
         {
             warning("Error iterating results for query '" + q + "': " + ex);
-			return new ArrayList<>();
+            return new ArrayList<>();
         }
     }
 
@@ -740,29 +738,29 @@ public class LoadingAppDao
     @Override
     public Date getLastModified(DbKey appId)
     {
-		String q = "select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
+        String q = "select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
                 + "where LOADING_APPLICATION_ID = ?"
                 + " and PROP_NAME = ?" ;
         try
         {
-			return getSingleResult(q, rs ->
-					{
-						try
-						{
-							return lastModifiedSdf.parse(rs.getString(1));
-						}
-						catch (ParseException ex)
-						{
-							throw new SQLException("Unable to parse returned date/time string",ex);
-						}
-					},
-					appId.getValue(),"LastModified");
+            return getSingleResult(q, rs ->
+                    {
+                        try
+                        {
+                            return lastModifiedSdf.parse(rs.getString(1));
+                        }
+                        catch (ParseException ex)
+                        {
+                            throw new SQLException("Unable to parse returned date/time string",ex);
+                        }
+                    },
+                    appId.getValue(),"LastModified");
         }
         catch(Exception ex)
         {
             warning("Cannot retrieve or parse last modify time for appId="
                 + appId + ": " + ex);
         }
-		return null;
+        return null;
     }
 }
