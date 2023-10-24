@@ -38,6 +38,8 @@ package opendcs.dao;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -128,6 +130,27 @@ public interface DatabaseConnectionOwner
 	 * @return a Java Date object, or null if the column was null
 	 */
 	public Date getFullDate(ResultSet rs, int column);
+
+	/**
+	 * Passed a result set and column name, extract the value and return as a
+	 * time-zone corrected java.util.Date object.
+	 * @param rs the result set
+	 * @param column the column name
+	 * @return a Java Date object, or null if the column was null
+	 */
+	public default Date getFullDate(ResultSet rs, String column) throws SQLException
+	{
+		ResultSetMetaData rsMd = rs.getMetaData();
+		// Columns start at 1 not zero.
+		for (int idx = 1; idx < rsMd.getColumnCount()+1; idx++)
+		{
+			if (rsMd.getColumnName(idx).equalsIgnoreCase(column))
+			{
+				return getFullDate(rs,idx);
+			}
+		}
+		return null;
+	}
 	
 	/** @return string representation for a boolean value in this db. */
 	public String sqlBoolean(boolean v);
