@@ -127,6 +127,15 @@ public class LoadingAppDao
         }
     }
 
+	private CompAppInfo rs2CompAppInfo(ResultSet rs, String prefix) throws SQLException
+	{
+		CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, prefix+"loading_application_id"));
+		cai.setAppName(rs.getString(prefix+"loading_application_name"));
+		cai.setManualEditApp(TextUtil.str2boolean(rs.getString(prefix+"manual_edit_app")));
+		cai.setComment(rs.getString(prefix+"cmmnt"));
+		return cai;
+	}
+
 	/**
 	 * TODO: convert to joins at later improvement.
 	 */
@@ -149,15 +158,7 @@ public class LoadingAppDao
         {
 			propsDao.setManualConnection(conn);
             final ArrayList<CompAppInfo> ret = 
-			(ArrayList<CompAppInfo>)getResults(q.toString(), 
-			rs ->
-            {
-                CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, 1));
-                cai.setAppName(rs.getString(2));
-                cai.setManualEditApp(TextUtil.str2boolean(rs.getString(3)));
-                cai.setComment(rs.getString(4));
-                return cai;
-            });
+			(ArrayList<CompAppInfo>)getResults(q.toString(), rs -> rs2CompAppInfo(rs, ""));
 
             fillInProperties(ret, "");
 			q.setLength(0);
@@ -224,11 +225,7 @@ public class LoadingAppDao
             ArrayList<CompAppInfo> ret = new ArrayList<CompAppInfo>();
             while(rs.next())
             {
-                CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, 1));
-                cai.setAppName(rs.getString(2));
-                cai.setManualEditApp(TextUtil.str2boolean(rs.getString(3)));
-                cai.setComment(rs.getString(4));
-                ret.add(cai);
+                ret.add(rs2CompAppInfo(rs, ""));
             }
 
             fillInProperties(ret, "where LOADING_APPLICATION_ID in (" + inList + ")");
@@ -247,7 +244,7 @@ public class LoadingAppDao
     public CompAppInfo getComputationApp(DbKey id)
         throws DbIoException, NoSuchObjectException
     {
-        String q = "select "
+        String q = "select LOADING_APPLICATION_ID, "
             + "LOADING_APPLICATION_NAME, MANUAL_EDIT_APP, CMMNT "
             + "from HDB_LOADING_APPLICATION "
             + "where LOADING_APPLICATION_ID = ?";
@@ -257,16 +254,7 @@ public class LoadingAppDao
 		)
         {
 			propsDao.setManualConnection(conn);
-			final CompAppInfo cai = getSingleResult(q, rs ->
-			{
-				CompAppInfo app = new CompAppInfo(id);
-            	app.setAppName(rs.getString(1));
-            	app.setManualEditApp(TextUtil.str2boolean(rs.getString(2)));
-            	app.setComment(rs.getString(3));
-				
-				return app;
-			},
-			id);
+			final CompAppInfo cai = getSingleResult(q, rs -> rs2CompAppInfo(rs, ""), id);
 
             if (cai == null)
 			{
@@ -295,9 +283,10 @@ public class LoadingAppDao
         }
         catch(SQLException ex)
         {
-            String msg = "Error in getComputationApp(" + id + "): " + ex;
+            String msg = "Error in getComputationApp(" + id + "): " + ex.getLocalizedMessage();
+			ex.printStackTrace();
             warning(msg);
-            throw new DbIoException(msg);
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -329,14 +318,16 @@ public class LoadingAppDao
                     isNew = false;
                 }
             }
-            catch(Exception ex) {
-				ex.printStackTrace(); /* ignore */ }
+            catch(Exception ex) {/* ignore */ }
         }
 
         CompAppInfo oldcai = null;
         if (!isNew)
         {
-            try { oldcai = getComputationApp(id); }
+            try
+			{
+				oldcai = getComputationApp(id);
+			}
             catch(NoSuchObjectException ex)
             {
                 isNew = true;
@@ -359,8 +350,7 @@ public class LoadingAppDao
                 {
                     q =
                     "select LOADING_APPLICATION_ID from HDB_LOADING_APPLICATION"
-                      + " where LOADING_APPLICATION_NAME = ?"
-                      + sqlString(appName);
+                      + " where LOADING_APPLICATION_NAME = ?";
                     try
                     {
                         id = getSingleResult(q, rs -> DbKey.createDbKey(rs,1),appName);
@@ -525,13 +515,18 @@ public class LoadingAppDao
         throws DbIoException, NoSuchObjectException
     {
         String q = "select loading_application_id from HDB_LOADING_APPLICATION" +
-            " where upper(loading_application_name) = " + sqlString(name.toUpperCase());
+            " where upper(loading_application_name) = upper(?)";
         try
         {
-            ResultSet rs = doQuery(q);
-            if (rs == null || !rs.next())
+			DbKey appId = getSingleResult(q, rs-> DbKey.createDbKey(rs, 1),name);
+            if (appId == null)
+			{
                 throw new NoSuchObjectException("No app named '" + name + "'");
-            return DbKey.createDbKey(rs, 1);
+			}
+			else
+			{
+				return appId;
+			}
         }
         catch(SQLException ex)
         {
