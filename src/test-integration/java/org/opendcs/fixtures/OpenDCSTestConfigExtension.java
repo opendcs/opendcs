@@ -78,11 +78,9 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
                 File userDir = configuration.getUserDir();
                 logger.info("DCSTOOL_USERDIR="+userDir);
                 environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
-                if (configuration.getEnvironment() != null
-                && !configuration.getEnvironment().isEmpty())
-                {
-                    environment.set(configuration.getEnvironment());
-                }
+                
+                configuration.getEnvironment().forEach((k,v) -> environment.set(k,v));
+                
                 properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
                 properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
                 properties.setup();

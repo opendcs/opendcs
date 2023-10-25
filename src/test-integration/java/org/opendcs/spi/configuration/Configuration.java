@@ -2,6 +2,7 @@ package org.opendcs.spi.configuration;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,10 +56,7 @@ public interface Configuration
      * Additional environment variables this test configuration requires
      * @return
      */
-    public default Map<String,String> getEnvironment()
-    {
-        return null;
-    }
+    public Map<Object,Object> getEnvironment();
 
     /**
      * If available return a valid instead of a TimeSeriesDb based on the current configuration.

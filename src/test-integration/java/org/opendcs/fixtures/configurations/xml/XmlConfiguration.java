@@ -3,6 +3,8 @@ package org.opendcs.fixtures.configurations.xml;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -66,7 +68,14 @@ public class XmlConfiguration implements Configuration
     }
 
     @Override
-    public boolean isRunning() {
+    public boolean isRunning()
+    {
         return started;
+    }
+
+    @Override
+    public Map<Object, Object> getEnvironment()
+    {
+        return new HashMap<>();
     }
 }
