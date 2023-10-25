@@ -32,7 +32,7 @@ public class OpenDCSPGConfiguration implements Configuration
     private File userDir;
     private File propertiesFile;
     private boolean started = false;
-    private HashMap<String,String> environmentVars = new HashMap<>();
+    private HashMap<Object,Object> environmentVars = new HashMap<>();
 
     public OpenDCSPGConfiguration(File userDir) throws Exception
     {
@@ -65,7 +65,7 @@ public class OpenDCSPGConfiguration implements Configuration
     }
 
     @Override
-    public Map<String,String> getEnvironment()
+    public Map<Object,Object> getEnvironment()
     {
         return this.environmentVars;
     }
@@ -98,6 +98,9 @@ public class OpenDCSPGConfiguration implements Configuration
             h.execute("GRANT \"OTSDB_ADMIN\" TO dcs_proc");
             h.execute("GRANT \"OTSDB_MGR\" TO dcs_proc");
             log.info("Setting authentication environment vars.");
+            environmentVars.put("DB_USERNAME","dcs_proc");
+            environmentVars.put("DB_PASSWORD","dcs_proc");
+
             environment.set("DB_USERNAME","dcs_proc");
             environment.set("DB_PASSWORD","dcs_proc");
 
