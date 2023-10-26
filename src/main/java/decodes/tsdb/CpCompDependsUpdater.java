@@ -1156,12 +1156,12 @@ info(q);
 			q = "delete from cp_comp_depends "
 			+ "where(computation_id, ts_id) in "
 			+ "(select computation_id, ts_id from cp_comp_depends " +
-				"minus select computation_id, ts_id from cp_comp_depends_scratchpad)";
+				(theDb.isOracle() ? "minus" : "except")  + " select computation_id, ts_id from cp_comp_depends_scratchpad)";
 			dao.doModify(q);
 		
 			q = "insert into cp_comp_depends( computation_id, ts_id) "
 				+ "(select computation_id, ts_id from cp_comp_depends_scratchpad "
-				+ "minus select computation_id, ts_id from cp_comp_depends)";
+				+ (theDb.isOracle() ? "minus" : "except") + " select computation_id, ts_id from cp_comp_depends)";
 			dao.doModify(q);
 			return true;
 		}		
