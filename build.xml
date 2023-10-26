@@ -284,6 +284,11 @@ more information about each.
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
         <jacoco:agent property="coverage.agent.param.it" destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
+        <path id="opendcs.runtime">
+            <pathelement location="${stage.dir}/bin/opendcs.jar"/>
+            <fileset dir="${stage.dir}/dep"/>
+        </path>
+        <pathconvert property="opendcs.test.classpath" refid="opendcs.runtime"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -302,6 +307,7 @@ more information about each.
                     <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                     <jvmarg value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
+                    <jvmarg value="-Dopendcs.test.classpath=${opendcs.test.classpath}"/>
                     <jvmarg value="-Djava.util.logging.config.file=${build.dir}/../src/test-integration/test-config/logging.properties"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>

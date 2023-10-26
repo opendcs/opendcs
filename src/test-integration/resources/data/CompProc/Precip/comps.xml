@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <LoadingApplication name="compproc_regtest">
+<!--
+    <AppProperty name="tasklistQueueDir">
+      /home/release/regression-cwms22
+    </AppProperty>
+    <AppProperty name="tasklistQueueThreshold">10</AppProperty>
+-->
+  </LoadingApplication>
+  <Algorithm name="IncrementalPrecip">
+    <Comment>
+      Compute Incremental Precip from Cumulative Precip over a specified period.
+      Period determined by the interval of the output parameter, specified in
+      computation record.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.IncrementalPrecip</ExecClass>
+    <AlgoProperty name="aggUpperBoundClosed">true</AlgoProperty>
+    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
+    <AlgoParm roleName="cumulativePrecip">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="incrementalPrecip">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="regtest_inc-precip-hourly">
+    <Comment>Cumulatiive to Incremental Hourly Precip</Comment>
+    <Enabled>true</Enabled>
+    <CompProcName>compproc_regtest</CompProcName>
+    <AlgorithmName>IncrementalPrecip</AlgorithmName>
+    <LastModified>2012-10-04 09:34:54 EDT</LastModified>
+    <GroupName>Cumulative Precip</GroupName>
+    <CompProperty name="aggUpperBoundClosed">true</CompProperty>
+    <CompProperty name="aggLowerBoundClosed">true</CompProperty>
+    <CompProperty name="cumulativePrecip_EU">in</CompProperty>
+    <CompProperty name="incrementalPrecip_EU">in</CompProperty>
+    <CompProperty name="AggregateTimeZone">UTC</CompProperty>
+    <CompParm roleName="cumulativePrecip">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Precip-Cum"/>
+      </SiteDataType>
+      <TableSelector>Inst..</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="incrementalPrecip">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Precip-Incr"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Total.1Hour.</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+  <Computation name="regtest_inc-precip-daily">
+    <Comment>Daily Incremental Precip</Comment>
+    <Enabled>true</Enabled>
+    <CompProcName>compproc_regtest</CompProcName>
+    <AlgorithmName>SumOverTimeAlgorithm</AlgorithmName>
+    <LastModified>2012-10-04 10:00:01 EDT</LastModified>
+    <GroupName>Cumulative Precip</GroupName>
+    <CompProperty name="sum_EU">in</CompProperty>
+    <CompProperty name="input_EU">in</CompProperty>
+    <CompProperty name="minSamplesNeeded">1</CompProperty>
+    <CompProperty name="AggregateTimeZone">UTC</CompProperty>
+    <CompParm roleName="input">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Precip-Incr"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Total.1Hour.</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="sum">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Precip-Incr"/>
+      </SiteDataType>
+      <Interval>~1Day</Interval>
+      <TableSelector>Total.1Day.</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+  <Computation name="regtest_inc-precip-monthly">
+    <Comment>Monthly Incremental Precip</Comment>
+    <Enabled>true</Enabled>
+    <CompProcName>compproc_regtest</CompProcName>
+    <AlgorithmName>SumOverTimeAlgorithm</AlgorithmName>
+    <LastModified>2012-10-04 10:02:04 EDT</LastModified>
+    <GroupName>Cumulative Precip</GroupName>
+    <CompProperty name="sum_EU">in</CompProperty>
+    <CompProperty name="input_EU">in</CompProperty>
+    <CompProperty name="minSamplesNeeded">1</CompProperty>
+    <CompProperty name="AggregateTimeZone">UTC</CompProperty>
+    <CompParm roleName="input">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Precip-Incr"/>
+      </SiteDataType>
+      <Interval>~1Day</Interval>
+      <TableSelector>Total.1Day.</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="sum">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Precip-Incr"/>
+      </SiteDataType>
+      <Interval>~1Month</Interval>
+      <TableSelector>Total.1Month.</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+  <TsGroup name="Cumulative Precip">
+    <GroupType>data-type</GroupType>
+    <Description></Description>
+    <OfficeId/>
+    <DataType Standard="CWMS" code="Precip-Cum"/>
+    <Member type="Duration" value="0"/>
+    <Member type="ParamType" value="Inst"/>
+  </TsGroup>
+  <Computation name="regtest_precip-screening">
+    <Comment>Screening with input and output same time series</Comment>
+    <Enabled>true</Enabled>
+    <CompProcName>compproc_regtest</CompProcName>
+    <AlgorithmName>DatchkScreening</AlgorithmName>
+    <LastModified>2012-10-04 10:36:07 EDT</LastModified>
+    <GroupName>Cumulative Precip</GroupName>
+    <CompProperty name="input_EU">in</CompProperty>
+    <CompProperty name="output_EU">in</CompProperty>
+    <CompParm roleName="input">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Precip-Incr"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Total.1Hour.</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <DataType Standard="CWMS" code="Precip-Incr"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Total.1Hour.</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>

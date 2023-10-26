@@ -1,0 +1,11 @@
+#
+# This file maps DSS Path Names to CWMS Time Series Identifiers
+#
+
+TESTSITE1.Precip-Incr.Total.1Hour.1Hour.test=/TEST/TESTSITE1/PR//1HOUR/TOTAL;Type=Ave;Units=in
+TESTSITE2.Precip-Incr.Total.1Hour.1Hour.test=/TEST/TESTSITE2/PR//1HOUR/TOTAL;Type=Ave;Units=in
+
+#
+# More pathnames go here.
+# File can contain any number
+#
