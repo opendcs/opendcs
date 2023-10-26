@@ -14,6 +14,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import decodes.tsdb.TimeSeriesDb;
 import opendcs.opentsdb.OpenTsdb;
@@ -29,9 +30,10 @@ public class OpenDCSPGConfiguration implements Configuration
     private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
 
     private static String dbUrl = "jdbc:tc:postgresql:15.3:///dcstest?TC_DAEMON=true&TC_TMPFS=/pg_tmpfs:rw";
+    private static PostgreSQLContainer<?> db = null;
     private File userDir;
     private File propertiesFile;
-    private boolean started = false;
+    private static Boolean started = Boolean.valueOf(false);
     private HashMap<Object,Object> environmentVars = new HashMap<>();
 
     public OpenDCSPGConfiguration(File userDir) throws Exception
@@ -74,27 +76,39 @@ public class OpenDCSPGConfiguration implements Configuration
      * Actually setup the database
      * @throws Exception
     */
-    private void installDb(SystemExit exit,EnvironmentVariables environment) throws Exception
+    private void installDb(SystemExit exit,EnvironmentVariables environment, UserPropertiesBuilder configBuilder) throws Exception
     {
-        if (started)
+        if (isRunning())
         {
             return;
         }
+        if(db == null)
+        {
+            db = new PostgreSQLContainer<>("postgres:15.3")
+                    .withUsername("dcs_owner")
+                    .withDatabaseName("dcs")
+                    .withPassword("dcs_owner");
+        }
+
+        db.start();
+        createPropertiesFile(configBuilder, this.propertiesFile);
         HashMap<String,String> placeHolders = new HashMap<>();
         placeHolders.put("NUM_TS_TABLES","1");
         placeHolders.put("NUM_TEXT_TABLES","1");
 
         Flyway flyway = Flyway.configure()
-                              .dataSource(dbUrl,null,null)
+                              .schemas("public")
+                              .dataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword())
                               .placeholders(placeHolders)
                               .locations("db/opendcs-pg")
+                              .validateMigrationNaming(true)
                               .load();
 
         flyway.migrate();
-        Jdbi jdbi = Jdbi.create(dbUrl);
+        Jdbi jdbi = Jdbi.create(db.getJdbcUrl(),db.getUsername(),db.getPassword());
         jdbi.useHandle(h->{
             log.info("Creating application user.");
-            h.execute("create user dcs_proc with password 'dcs_proc'");
+            h.execute("DO $do$ begin create user dcs_proc with password 'dcs_proc'; exception when duplicate_object then raise notice 'user exists'; end; $do$");
             h.execute("GRANT \"OTSDB_ADMIN\" TO dcs_proc");
             h.execute("GRANT \"OTSDB_MGR\" TO dcs_proc");
             log.info("Setting authentication environment vars.");
@@ -103,7 +117,7 @@ public class OpenDCSPGConfiguration implements Configuration
 
             environment.set("DB_USERNAME","dcs_proc");
             environment.set("DB_PASSWORD","dcs_proc");
-
+            
             log.info("Loading base data.");
             Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
                               propertiesFile,
@@ -115,7 +129,7 @@ public class OpenDCSPGConfiguration implements Configuration
                               "stage/edit-db/loading-app"
             );
         });
-        started = true;
+        setStarted();
     }
 
     @Override
@@ -125,24 +139,41 @@ public class OpenDCSPGConfiguration implements Configuration
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
-        configBuilder.withDatabaseLocation(dbUrl);
-        configBuilder.withEditDatabaseType("OPENTSDB");
-        configBuilder.withDatabaseDriver("org.postgresql.Driver");
-        configBuilder.withSiteNameTypePreference("CWMS");
-        configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
         // set username/pw (env)
+        FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
+        FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
+        installDb(exit,environment,configBuilder);
+        createPropertiesFile(configBuilder, this.propertiesFile);
+    }
+
+    private void createPropertiesFile(UserPropertiesBuilder configBuilder, File propertiesFile) throws Exception
+    {
         try (OutputStream out = new FileOutputStream(propertiesFile);)
         {
+            configBuilder.withDatabaseLocation(db.getJdbcUrl());
+            configBuilder.withEditDatabaseType("OPENTSDB");
+            configBuilder.withDatabaseDriver("org.postgresql.Driver");
+            configBuilder.withSiteNameTypePreference("CWMS");
+            configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
             configBuilder.build(out);
-            FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
-            FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
-            installDb(exit,environment);
+        }
+    }
+    
+    private void setStarted()
+    {
+        synchronized(started)
+        {
+            started = Boolean.valueOf(true);
         }
     }
 
     @Override
-    public boolean isRunning() {
-        return started;
+    public boolean isRunning()
+    {
+        synchronized(started)
+        {
+            return started;
+        }
     }
 
     @Override
