@@ -117,7 +117,7 @@ public class OpenDCSPGConfiguration implements Configuration
 
             environment.set("DB_USERNAME","dcs_proc");
             environment.set("DB_PASSWORD","dcs_proc");
-            
+
             log.info("Loading base data.");
             Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
                               propertiesFile,
@@ -158,7 +158,7 @@ public class OpenDCSPGConfiguration implements Configuration
             configBuilder.build(out);
         }
     }
-    
+
     private void setStarted()
     {
         synchronized(started)

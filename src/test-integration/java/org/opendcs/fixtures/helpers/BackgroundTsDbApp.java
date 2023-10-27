@@ -24,25 +24,25 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> {
     private Process app;
 
     public static <App extends TsdbAppTemplate> BackgroundTsDbApp<App> forApp(
-            Class<App> clazz, String name, File propertiesFile, File logFile, EnvironmentVariables env, 
+            Class<App> clazz, String name, File propertiesFile, File logFile, EnvironmentVariables env,
             String ...args)
         throws Exception
     {
-        BackgroundTsDbApp<App> bga = new BackgroundTsDbApp<App>(clazz, name, propertiesFile, logFile, 
+        BackgroundTsDbApp<App> bga = new BackgroundTsDbApp<App>(clazz, name, propertiesFile, logFile,
                                                                 env, args);
         return bga;
     }
 
-    private BackgroundTsDbApp(Class<?> clazz, String name, File propertiesFile, File logFile, EnvironmentVariables env, 
+    private BackgroundTsDbApp(Class<?> clazz, String name, File propertiesFile, File logFile, EnvironmentVariables env,
                            String ...args) throws Exception
     {
         ArrayList<String> theArgs = new ArrayList<>();
         theArgs.add("java");
-        theArgs.add("-cp");        
+        theArgs.add("-cp");
         theArgs.add(System.getProperty("opendcs.test.classpath")); // setup classpath
         theArgs.add("-DDCSTOOL_USERDIR="+propertiesFile.getParent());
         theArgs.add("-DCSTOOL_HOME="+System.getProperty("DCSTOOL_HOME"));
-        theArgs.add(clazz.getName());        
+        theArgs.add(clazz.getName());
         theArgs.add("-a"); theArgs.add(name);
         theArgs.add("-l"); theArgs.add(logFile.getAbsolutePath());
         theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
