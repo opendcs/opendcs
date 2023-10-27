@@ -51,6 +51,10 @@ public class CompProcTestIT extends AppTestBase
     @BeforeAll
     public void load_sites() throws Exception
     {
+        if (!configuration.isTsdb())
+        {
+            return;
+        }
         log.info("Importing shared data.");
         Configuration config = this.configuration;
         File propertiesFile = config.getPropertiesFile();
@@ -93,6 +97,10 @@ public class CompProcTestIT extends AppTestBase
     @BeforeEach
     public void check_app() throws Exception
     {
+        if (!configuration.isTsdb())
+        {
+            return;
+        }
         assertTrue(compProc.isRunning(), "Required Application failed to stay running.");
     }
 
@@ -100,6 +108,10 @@ public class CompProcTestIT extends AppTestBase
     @AfterAll
     public void stop_compProc() throws Exception
     {
+        if (!configuration.isTsdb())
+        {
+            return;
+        }
         if (compProc != null)
         {
             compProc.stop();
@@ -109,7 +121,11 @@ public class CompProcTestIT extends AppTestBase
     @AfterAll
     public void cleanup_timeseries() throws Exception
     {
-        Programs.DeleteTs(new File(configuration.getUserDir(),"/deleteTs.log"), 
+        if (!configuration.isTsdb())
+        {
+            return;
+        }
+        Programs.DeleteTs(new File(configuration.getUserDir(),"/deleteTs.log"),
                           configuration.getPropertiesFile(),
                           environment,
                           exit,
@@ -121,7 +137,7 @@ public class CompProcTestIT extends AppTestBase
 
     /* NOTE: this should be a chain of 2 comps, the datchk one isn't getting executed,
      * may be because current test environment is Postgres not CWMS. However, purpose
-     * was for even getting a single compproc test going thus I'm going to except that
+     * was for even getting a single compproc test going thus I'm going to accept that
      * for now and improve in a later PR.
      * Current work is from test_012 in the provided discussion at
      * https://github.com/opendcs/opendcs/discussions/348
@@ -134,15 +150,6 @@ public class CompProcTestIT extends AppTestBase
         final File logDir = config.getUserDir();
 
         final File goldenFile = new File(getResource("CompProc/Precip/output.human-readable"));
-
-        try
-        {
-            Thread.sleep(15000); // TODO: eliminate wait
-        }
-        catch (InterruptedException ex)
-        {
-            /* do nothing */
-        }
 
         Programs.UpdateComputationDependencies(new File(config.getUserDir(),"/update-deps.log"), config.getPropertiesFile(), environment, exit);
         Programs.ImportTs(new File(config.getUserDir(),"/importTs.log"), config.getPropertiesFile(),
