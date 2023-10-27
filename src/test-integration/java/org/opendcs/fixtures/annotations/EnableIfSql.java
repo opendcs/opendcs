@@ -18,7 +18,7 @@ import org.opendcs.spi.configuration.Configuration;
  * Only run this test if the database under test is a SQL based database
  */
 @Documented
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(EnableIfSql.EnableIfSqlCondition.class)
 public @interface EnableIfSql
@@ -31,7 +31,7 @@ public @interface EnableIfSql
             Object testInstance = ctx.getRequiredTestInstance();
             List<Configuration> configs = AnnotationSupport.findAnnotatedFieldValues(testInstance, ConfiguredField.class, Configuration.class);
             if (configs.size() == 1 && configs.get(0) != null) {
-                return configs.get(0).isTsdb() ? ConditionEvaluationResult.enabled("Is a Timeseries Db") : ConditionEvaluationResult.disabled("Not a Timeseries Db");
+                return configs.get(0).isSql() ? ConditionEvaluationResult.enabled("Is a Sql Based Db") : ConditionEvaluationResult.disabled("Not a SQL Based Db");
             }
             return ConditionEvaluationResult.disabled("No " + Configuration.class.getName() + " member fields present in Test class.");
         }
