@@ -2,7 +2,9 @@ package org.opendcs.fixtures.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -11,6 +13,7 @@ import org.apache.commons.io.FileUtils;
 import decodes.dbimport.DbImport;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TsImport;
+import decodes.util.ExportTimeSeries;
 import uk.org.webcompere.systemstubs.SystemStubs;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -20,11 +23,11 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  * and increase readability of tests
  */
 public class Programs
-{    
+{
     /**
-     * Call DbImport on a set of files or directories. Execution is wrapped 
+     * Call DbImport on a set of files or directories. Execution is wrapped
      * in the SystemStubs EnvironmentVariables and SystemExit stubs.
-     * 
+     *
      * @param log Log file to use for this import
      * @param propertiesFile userProperties file for this execution
      * @param env SystemStubs environment instance
@@ -60,14 +63,14 @@ public class Programs
                     })
                 )
             );
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
     }
 
     /**
-     * Call CompImport on a set of files or directories. Execution is wrapped 
+     * Call CompImport on a set of files or directories. Execution is wrapped
      * in the SystemStubs EnvironmentVariables and SystemExit stubs.
-     * 
+     *
      * @param log Log file to use for this import
      * @param propertiesFile userProperties file for this execution
      * @param env SystemStubs environment instance
@@ -95,6 +98,8 @@ public class Programs
                         theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
                         theArgs.add("-d3");
                         theArgs.add("-C");
+                        theArgs.add("-Dcwmsflags=true"); // NOTE: current tests are for some somewhat CWMS/OpenDCS specific bits
+                                                           // as it was easier to figure out. Need to deal with HDB eventually.
                         theArgs.addAll(
                             files.stream()
                                  .map(f->f.getAbsolutePath())
@@ -104,14 +109,14 @@ public class Programs
                     })
                 )
             );
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
     }
 
     /**
-     * Call TsImport on a set of files. Execution is wrapped 
+     * Call TsImport on a set of files. Execution is wrapped
      * in the SystemStubs EnvironmentVariables and SystemExit stubs.
-     * 
+     *
      * @param log Log file to use for this import
      * @param propertiesFile userProperties file for this execution
      * @param env SystemStubs environment instance
@@ -147,14 +152,14 @@ public class Programs
                     })
                 )
             );
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
     }
 
     /**
-     * Call DeleteTs on a set of names. Execution is wrapped 
+     * Call DeleteTs on a set of names. Execution is wrapped
      * in the SystemStubs EnvironmentVariables and SystemExit stubs.
-     * 
+     *
      * @param log Log file to use for this import
      * @param propertiesFile userProperties file for this execution
      * @param env SystemStubs environment instance
@@ -182,20 +187,20 @@ public class Programs
                         {
                             theArgs.add(tsName);
                         }
-                        
+
                         decodes.tsdb.DeleteTs.main(theArgs.toArray(new String[0]));
                     })
                 )
             );
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
     }
 
 
     /**
-     * Call OutputTs on a set of names. Execution is wrapped 
+     * Call OutputTs on a set of names. Execution is wrapped
      * in the SystemStubs EnvironmentVariables and SystemExit stubs.
-     * 
+     *
      * @param log Log file to use for this import
      * @param propertiesFile userProperties file for this execution
      * @param env SystemStubs environment instance
@@ -212,37 +217,39 @@ public class Programs
                                   String end, String TZ, String presentationGroup,
                                   String... tsNames) throws Exception
     {
-        String output =
-            env.execute(() ->
-                exit.execute(() ->
-                    SystemStubs.tapSystemErrAndOut(() ->
-                    {
-                        ArrayList<String> theArgs = new ArrayList<>();
-                        theArgs.add("-l"); theArgs.add(log.getAbsolutePath());
-                        theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
-                        theArgs.add("-d3");
-                        theArgs.add("-S"); theArgs.add(start);
-                        theArgs.add("-U"); theArgs.add(end);
-                        theArgs.add("-G"); theArgs.add(presentationGroup);
-                        for (String tsName: tsNames)
-                        {
-                            theArgs.add(tsName);
-                        }
-                        decodes.util.ExportTimeSeries.main(theArgs.toArray(new String[0]));
-                    })                
-                )
-            );      
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
+        final ByteArrayOutputStream bao = new ByteArrayOutputStream();
+        final PrintStream ps = new PrintStream(bao);
+        env.execute(() ->
+            exit.execute(() ->
+            {
+                ExportTimeSeries ets = new ExportTimeSeries();
+                ets.setOutputStream(ps);
+                ArrayList<String> theArgs = new ArrayList<>();
+                theArgs.add("-l"); theArgs.add(log.getAbsolutePath());
+                theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
+                theArgs.add("-d3");
+                theArgs.add("-S"); theArgs.add(start);
+                theArgs.add("-U"); theArgs.add(end);
+                theArgs.add("-G"); theArgs.add(presentationGroup);
+                for (String tsName: tsNames)
+                {
+                    theArgs.add(tsName);
+                }
+                ets.execute(theArgs.toArray(new String[0]));
+            })
+        );
+        String output = bao.toString("UTF8");
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                 () -> "System.exit called with unexpected code. Output = " + output);
         return output;
     }
 
 
-    
+
 /**
-     * Call CpCompDependsUpdater for full eval. Execution is wrapped 
+     * Call CpCompDependsUpdater for full eval. Execution is wrapped
      * in the SystemStubs EnvironmentVariables and SystemExit stubs.
-     * 
+     *
      * @param log Log file to use for this import
      * @param propertiesFile userProperties file for this execution
      * @param env SystemStubs environment instance
@@ -265,7 +272,7 @@ public class Programs
                     })
                 )
             );
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
     }
 }
