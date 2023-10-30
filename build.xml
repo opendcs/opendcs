@@ -909,14 +909,32 @@ more information about each.
             <structure name="OpenDCS">
                 <classfiles>
                     <fileset dir="${build.classes}"
-                             excludes="**/python_packages,**/certifi/**,**/chardet/**,**/urllib3/**,**/requests/**,**/chardet/**,**/urllib3/**,**/idna/**,**/pkg_resources/**"/>
+                             excludes="**/easy_install/**,**/python_packages,**/certifi/**,**/chardet/**,**/urllib3/**,**/requests/**,**/chardet/**,**/urllib3/**,**/idna/**,**/pkg_resources/**"/>
                 </classfiles>
                 <sourcefiles encoding="UTF-8">
                     <fileset dir="${src.dir}"/>
                 </sourcefiles>
             </structure>
 
-            <html destdir="${build.dir}/reports/coverage"/>
+            <html destdir="${reports.dir}/coverage.html"/>
         </jacoco:report>
+        <!--
+
+            Thank you to
+            https://stackoverflow.com/a/71917464
+            and
+            https://stackoverflow.com/a/28476028
+        -->
+        <loadfile encoding="UTF-8" property="coverage.percentage"
+                srcFile="${reports.dir}/coverage.html/index.html">
+            <filterchain>
+                <tokenfilter>
+                    <containsregex
+                        pattern="^.*&lt;td>Total&lt;([^>]+>){4}([^&lt;]*).*"
+                        replace="\2"/>
+                </tokenfilter>
+            </filterchain>
+        </loadfile>
+        <echo message="Total coverage = ${coverage.percentage}"/>
     </target>
 </project>
