@@ -1,4 +1,4 @@
-package org.opendcs.fixtures;
+package org.opendcs.fixtures.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

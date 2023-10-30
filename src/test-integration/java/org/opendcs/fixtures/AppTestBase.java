@@ -7,6 +7,7 @@ import java.io.File;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 
