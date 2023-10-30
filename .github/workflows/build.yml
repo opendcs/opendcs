@@ -40,6 +40,9 @@ jobs:
         run: |
           sudo apt install xvfb
           xvfb-run ant gui-test -D"no.docs=true"
+      - name: Code Coverage
+        run: |
+          ant coverage.report
       - name: Documentation and Create installer jar
         run: |
           ant opendcs

@@ -114,6 +114,9 @@
             does not. Downgrade for now to people can review.-->
         <dependency org="com.puppycrawl.tools" name="checkstyle" rev="9.3" conf="build->default"/>
         <dependency org="com.github.spotbugs" name="spotbugs-ant" rev="4.7.3" conf="build->default"/>
+        <dependency org="org.jacoco" name="org.jacoco.ant" rev="0.8.11" conf="build->default"/>
+
+        <!-- Spotbugs -->
         <dependency org="com.github.spotbugs" name="spotbugs" rev="4.7.3" conf="spotbugs->default">
             <!-- Ivy wasn't pulling the dependency in directly. Instead of the actual jar
                 it was getting only the "-data" artifact and spotbugs was unable to use it.

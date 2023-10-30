@@ -18,6 +18,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 <project name="OPENDCS Toolkit" default="jar" basedir="."
     xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant"
     xmlns:if="ant:if" xmlns:unless="ant:unless"
+    xmlns:jacoco="antlib:org.jacoco.ant"
     >
     <description>Open DCS</description>
 
@@ -195,6 +196,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <echo message="platform path: ${platform_path}"/>
         <mkdir dir="${build.dir}/test-results"/>
         <mkdir dir="${build.dir}/test-tmp"/>
+        <jacoco:agent property="coverage.agent.param.test" destfile="${coverage.dir}/jacoco.test.exec"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="test.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -208,6 +210,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
             <testclasses outputdir="${build.dir}/test-results">
                 <fork>
+                    <jvmarg value="${coverage.agent.param.test}"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-tmp"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
@@ -280,6 +283,7 @@ more information about each.
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
+        <jacoco:agent property="coverage.agent.param.it" destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -292,6 +296,7 @@ more information about each.
 
             <testclasses outputdir="${build.dir}/test-integration/${opendcs.test.engine}/results">
                 <fork>
+                    <jvmarg value="${coverage.agent.param.it}"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
                     <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
@@ -345,6 +350,7 @@ more information about each.
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-gui/results"/>
         <mkdir dir="${build.dir}/test-gui/tmp"/>
+        <jacoco:agent property="coverage.agent.param.gui" destfile="${coverage.dir}/jacoco.test-gui.exec"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="gui.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -358,6 +364,7 @@ more information about each.
 
             <testclasses outputdir="${build.dir}/test-gui/results">
                 <fork>
+                    <jvmarg value="${coverage.agent.param.gui}"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-gui/tmp"/>
                     <jvmarg value="-Dresource.dir=${build.test-gui.resources}"/>
@@ -886,4 +893,30 @@ more information about each.
     </target>
 
     <target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
+
+    <!-- Still debating on if this should depend on all the tests, but it's perfectly valid to only want to see
+         coverage for what's actually been generated. -->
+    <target name="coverage.report" depends="common.resolve.build">
+        <jacoco:merge destfile="${reports.dir}/coverage.exec">
+            <fileset dir="${coverage.dir}" includes="*.exec"/>
+        </jacoco:merge>
+
+        <jacoco:report>
+            <executiondata>
+                <file file="${reports.dir}/coverage.exec"/>
+            </executiondata>
+
+            <structure name="OpenDCS">
+                <classfiles>
+                    <fileset dir="${build.classes}"
+                             excludes="**/python_packages,**/certifi/**,**/chardet/**,**/urllib3/**,**/requests/**,**/chardet/**,**/urllib3/**,**/idna/**,**/pkg_resources/**"/>
+                </classfiles>
+                <sourcefiles encoding="UTF-8">
+                    <fileset dir="${src.dir}"/>
+                </sourcefiles>
+            </structure>
+
+            <html destdir="${build.dir}/reports/coverage"/>
+        </jacoco:report>
+    </target>
 </project>
