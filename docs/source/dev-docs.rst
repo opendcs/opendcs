@@ -236,6 +236,7 @@ to run each do the following:
 Only CPD is fast. checkstyle and SpotBugs are rather slow.
 
 .. _integration_test_infra:
+
 Integration Test infrastructure
 ===============================
 
@@ -301,6 +302,20 @@ Integration tests inherit from :code:AppTestBase. This simplifies access to reso
 |                                            |user.properties file            |
 +--------------------------------------------+--------------------------------+
  
+
+At the Class and method level the following annotations are available.
+
++--------------------------------------------+--------------------------------+
+|Annotation                                  |Description                     |
++============================================+================================+
+|DecodesConfigurationRequired                |List of database import files   |
+|                                            |needs for tests to succeed.     |
+|                                            |Can be set at the Class level,  |
+|                                            |Method level, or both in which  |
+|                                            |case the sets will be merged    |
++--------------------------------------------+--------------------------------+
+
+
 Extension and other Junit information
 -------------------------------------
 
