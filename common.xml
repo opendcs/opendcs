@@ -33,6 +33,7 @@
     <property name="src.test-gui.main.dir" value="src/test-gui"/>
 
     <property name="build.dir" value="build"/>
+    <property name="reports.dir" value="${build.dir}/reports"/>
     <property name="build.classes" value="${build.dir}/classes"/>
     <property name="build.resources" value="${build.dir}/resources"/>
     <property name="build.lib" value="${build.dir}/lib"/>
@@ -48,9 +49,10 @@
     <property name="build.test.lib" value="${build.dir}/test-integration/libs"/>
     <property name="dist.jar" value="${build.lib}/opendcs.jar"/>
     <property name="build.release.dir" value="${build.dir}/release"/>
-    <property name="spotbugs.output.dir" value="${build.dir}/reports/spotbugs"/>
+    <property name="spotbugs.output.dir" value="${reports.dir}/spotbugs"/>
     <property name="pmd.output.dir" value="${build.dir}/reports/pmd"/>
     <property name="junit.html.output.dir" value="${build.dir}/reports/junit"/>
+    <property name="coverage.dir" value="${build.dir}/coverage/"/>
 
     <!-- VERSION NUMBERS -->
     <property name="MAJ_VER" value="7"/>
@@ -228,6 +230,11 @@
                  classpathref="build.classpath"/>
         <taskdef name="cpd" classname="net.sourceforge.pmd.cpd.CPDTask"
                  classpathref="pmd.classpath"/>
+
+        <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml"
+                 classpathref="build.classpath"/>
+
+        <mkdir dir="${coverage.dir}"/>
     </target>
 
     <target name="report" depends="resolve,resolve.build" description="--> generates a report of dependencies">
