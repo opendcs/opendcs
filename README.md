@@ -1,3 +1,5 @@
+![current build](https://github.com/opendcs/opendcs/actions/workflows/build.yml/badge.svg)
+
 # OpenDCS 
 
 OpenDCS is a tool for doing the following:
@@ -76,4 +78,3 @@ This will create the appropriate .project and .classpath files for intellisense 
 ## Intellij
 
 See https://github.com/opendcs/opendcs/wiki/Coding-OpenDCS-with-IntelliJ for guidance in setting up intellij.
-
