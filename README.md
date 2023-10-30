@@ -29,15 +29,19 @@ Additionally you can open a discussion at https://github.com/opendcs/opendcs/dis
 
 First of, if you feel a desire to contribute - which to us includes trying to use the software and reporting issues - thanks!
 
-Checkout the CONTRIBUTING.md file. Changes should be contributed to the default branch.
+Checkout the CONTRIBUTING.md file, and don't be too scared by all the legalese; the project started at several government agencies who
+have chosen to properly open source the project and we felt a little solid copy-pasting from other government contributing documents was
+a good idea.
 
-https://github.com/opendcs/opendcs/projects shows our current major projects, as well as a
+The short version is, add you're name to the CONTRIBUTORS.md file, and submit changes to the default branch, currently named master.
+
+As for what to contribute: https://github.com/opendcs/opendcs/projects shows our current major projects, as well as a
 project each for tracking bugs and features. If you want to contribute and aren't sure where
 to start that should be a good place to see our plans and priorities; please do not hesitate to
 ask questions on the mailing list, discussions, or within an issue itself.
 
 We are currently in the process of some major overhauls to various subsystems and while that
-can be scary we would like to encourage you to join us anyways.
+can be scary we would like to encourage you to join us anyways. 
 
 # Compiling
 
