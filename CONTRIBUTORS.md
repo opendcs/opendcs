@@ -22,12 +22,15 @@ Leave the copyright and year(s) blank.
 
 # OpenDCS Contributors Include:
 
-U.S. Geological Survey
-U.S. Army Corps of Engineers
-U.S. Bureau of Reclamation
-ILEX Engineering Incorporated
-Sutron Corporation
-Cove Software, LLC
-Precision Water Resources Engineering
-Xcellious Consulting
-Resource Management Associates
+- U.S. Geological Survey
+- U.S. Army Corps of Engineers
+- U.S. Bureau of Reclamation
+- ILEX Engineering Incorporated
+- Sutron Corporation
+- Cove Software, LLC
+- Precision Water Resources Engineering
+- Xcellious Consulting
+- Resource Management Associates
+
+This is the list of contributors known at this time. If you know of an existing one
+or are one yourself, please let us know or update the appropriate section in this file.
