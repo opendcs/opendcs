@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 
+import ilex.util.EnvExpander;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -46,7 +47,14 @@ public class AppTestBase
      */
     public static String getResource(String file)
     {
-        return new File(TestResources.resourceDir,file).getAbsolutePath();
+        if ( !file.startsWith("$"))
+        {
+            return new File(TestResources.resourceDir,file).getAbsolutePath();
+        }
+        else
+        {
+            return new File(EnvExpander.expand(file,System.getProperties())).getAbsolutePath();
+        }
     }
 
     /**
