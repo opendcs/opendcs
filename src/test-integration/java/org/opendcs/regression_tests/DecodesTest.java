@@ -6,12 +6,10 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.helpers.Programs;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.spi.configuration.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,27 +17,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.routing.RoutingSpecThread;
 import uk.org.webcompere.systemstubs.SystemStubs;
 
+@DecodesConfigurationRequired({
+        "shared/test-sites.xml",
+        "shared/ROWI4.xml",
+        "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
+        "shared/presgrp-regtest.xml",
+        "HydroJsonTest/HydroJSON-rs.xml",
+        "SimpleDecodesTest/site-OKVI4.xml",
+        "SimpleDecodesTest/OKVI4-decodes.xml"
+})
 public class DecodesTest extends AppTestBase
 {
     private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
-
-
-    @BeforeAll
-    public void load_sites() throws Exception
-    {
-        log.info("Importing shared data.");
-        Configuration config = this.configuration;
-        File propertiesFile = config.getPropertiesFile();
-        File logFile = new File(config.getUserDir(),"/decodes-test-setup.log");
-        Programs.DbImport(logFile, propertiesFile, environment, exit,
-                                getResource("shared/test-sites.xml"),
-                                getResource("shared/ROWI4.xml"),
-                                new File(config.getUserDir(),"/schema/cwms/cwms-import.xml").getAbsolutePath(),
-                                getResource("shared/presgrp-regtest.xml"),
-                                getResource("HydroJsonTest/HydroJSON-rs.xml"),
-                                getResource("SimpleDecodesTest/site-OKVI4.xml"),
-                                getResource("SimpleDecodesTest/OKVI4-decodes.xml"));
-    }
 
     @ParameterizedTest
     @CsvSource({

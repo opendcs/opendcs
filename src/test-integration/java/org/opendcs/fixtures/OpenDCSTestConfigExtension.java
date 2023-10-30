@@ -3,7 +3,9 @@ package org.opendcs.fixtures;
 import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -20,13 +22,14 @@ import org.junit.platform.commons.PreconditionViolationException;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
 
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
-import lrgs.gui.DecodesInterface;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -83,6 +86,9 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
                 properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
                 properties.setup();
                 environment.setup();
+
+                setupDecodesTestData(testInstance,ctx, environment, exit);
+
                 List<Field> fields = AnnotationSupport.findAnnotatedFields(testInstance.getClass(),ConfiguredField.class);
                 for (Field f: fields)
                 {
@@ -110,6 +116,46 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
                 throw new PreconditionViolationException("Unable to setup environment or configuration.",ex);
             }
         });
+    }
+
+    /**
+     * Gather and run dbimport on any required Decodes Test data.
+     * @param testInstance actual instance of the test class
+     * @param ctx Junit extension context, used to get test method
+     * @param env EnvironmentVariables stub used to call DbImport
+     * @param exit SystemExit stub used to call DbImport
+     * @throws Exception
+     */
+    private void setupDecodesTestData(Object testInstance, ExtensionContext ctx, EnvironmentVariables env, SystemExit exit) throws Exception
+    {
+        DecodesConfigurationRequired decodesConfig = testInstance.getClass().getAnnotation(DecodesConfigurationRequired.class);
+        if (decodesConfig != null)
+        {
+            ArrayList<String> files = new ArrayList<>();
+            for(String file: decodesConfig.value())
+            {
+                files.add(AppTestBase.getResource(file));
+            }
+            Programs.DbImport(setupLog(), configuration.getPropertiesFile(), env, exit, files.toArray(new String[0]));
+        }
+
+        Optional<Method> testMethod = ctx.getTestMethod();
+        if (testMethod.isPresent())
+        {
+            decodesConfig = testMethod.get().getAnnotation(DecodesConfigurationRequired.class);
+            if (decodesConfig != null)
+            {
+                Programs.DbImport(setupLog(), configuration.getPropertiesFile(), env, exit, decodesConfig.value());
+            }
+        }
+    }
+
+    /**
+     * Save a little typing to generate a log name in the test data setup handlers.
+     * @return
+     */
+    private File setupLog() {
+        return new File(configuration.getUserDir(),"/decodes-setup.log");
     }
 
     /**
