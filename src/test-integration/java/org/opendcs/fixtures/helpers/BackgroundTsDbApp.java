@@ -85,6 +85,19 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> {
         Map<String,String> processEnv = pb.environment();
         processEnv.putAll(env.getVariables());
         app = pb.start();
+        Runtime.getRuntime().addShutdownHook(
+            new Thread(() -> 
+            {
+                try
+                {
+                this.stop();
+                }
+                catch (Exception ex)
+                {
+                    throw new RuntimeException(ex);
+                }
+            }, "ShutdownHook-name")
+        );
     }
 
     public void stop() throws Exception
