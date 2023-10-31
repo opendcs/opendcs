@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Properties;
 
+import decodes.sql.KeyGenerator;
+
 public class UserPropertiesBuilder
 {
     private Properties props = new Properties();
@@ -109,6 +111,17 @@ public class UserPropertiesBuilder
     public UserPropertiesBuilder withWriteCwmsLocations(boolean writeCwmsLocations)
     {
         props.setProperty("writeCwmsLocations",Boolean.toString(writeCwmsLocations));
+        return this;
+    }
+
+    /**
+     *
+     * @param generator which KeyGenerator implementation to use.
+     * @return
+     */
+    public UserPropertiesBuilder withSqlKeyGenerator(Class<? extends KeyGenerator> generator)
+    {
+        props.setProperty("sqlKeyGenerator",generator.getName());
         return this;
     }
 /**

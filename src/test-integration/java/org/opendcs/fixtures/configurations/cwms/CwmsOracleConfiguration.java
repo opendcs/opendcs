@@ -18,6 +18,7 @@ import org.opendcs.spi.configuration.Configuration;
 import org.python.antlr.PythonParser.try_stmt_return;
 
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
@@ -87,7 +88,7 @@ public class CwmsOracleConfiguration implements Configuration
         configBuilder.withCwmsOffice(cwmsDb.getOfficeId());
         configBuilder.withDbOffice(cwmsDb.getOfficeId());
         configBuilder.withWriteCwmsLocations(true);
-        
+        configBuilder.withSqlKeyGenerator(OracleSequenceKeyGenerator.class);
         // set username/pw (env)
         try (OutputStream out = new FileOutputStream(propertiesFile);)
         {
