@@ -233,7 +233,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         {
             for(String file: decodesConfig.value())
             {
-                files.add(AppTestBase.getResource(file));
+                files.add(TestResources.getResource(configuration,file));
             }
         }
         decodesConfig = testMethod.getAnnotation(DecodesConfigurationRequired.class);
@@ -241,7 +241,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         {
             for(String file: decodesConfig.value())
             {
-                files.add(AppTestBase.getResource(file));
+                files.add(TestResources.getResource(configuration,file));
             }
         }
 
@@ -268,7 +268,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         {
             for(String file: compConfig.value())
             {
-                files.add(AppTestBase.getResource(file));
+                files.add(TestResources.getResource(configuration,file));
             }
         }
 
@@ -277,7 +277,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         {
             for(String file: compConfig.value())
             {
-                files.add(AppTestBase.getResource(file));
+                files.add(TestResources.getResource(configuration,file));
             }
         }
 

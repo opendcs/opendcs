@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -16,7 +18,9 @@ import org.opendcs.spi.configuration.Configuration;
 import org.python.antlr.PythonParser.try_stmt_return;
 
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TsdbAppTemplate;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -36,7 +40,7 @@ public class CwmsOracleConfiguration implements Configuration
     private File userDir;
     private File propertiesFile;
     private boolean started = false;
-    private HashMap<String,String> environmentVars = new HashMap<>();
+    private HashMap<Object,Object> environmentVars = new HashMap<>();
     private String dcsUser = null;
     private String dcsUserPassword = null;
 
@@ -52,19 +56,6 @@ public class CwmsOracleConfiguration implements Configuration
         {
             return;
         }
-        /*
-        Assumptions.assumeTrue(() -> {
-            try
-            {
-                SQLDialect dialect = SQLDialect.valueOf("ORACLE12C");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-        },"JOOQ dependencies are not correct.");
-        */
         cwmsDb = new CwmsDatabaseContainer<>(CWMS_ORACLE_IMAGE)
                         .withSchemaImage(CWMS_SCHEMA_IMAGE)
                         .withVolumeName(CWMS_ORACLE_VOLUME);
@@ -151,5 +142,22 @@ public class CwmsOracleConfiguration implements Configuration
     public String getName()
     {
         return NAME;
+    }
+
+    @Override
+    public Map<Object, Object> getEnvironment()
+    {
+        return environmentVars;
+    }
+
+    @Override
+    public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
+    {
+        Objects.requireNonNull(appClass, "You must specify a valid class, not null.");
+        if (appClass.equals(ComputationApp.class))
+        {
+            return true;
+        } // add more cases here.
+        return false;
     }
 }

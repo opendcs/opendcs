@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.ConfiguredField;
-import org.opendcs.fixtures.EnableIfSql;
+import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.EnableIfSql;
 
 import decodes.db.Site;
 import decodes.db.SiteName;

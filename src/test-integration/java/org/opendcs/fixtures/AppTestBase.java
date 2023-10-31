@@ -42,35 +42,6 @@ public class AppTestBase
     }
 
     /**
-     * Helper to get a file from the resource directory
-     * @param file file name under the data/ directory to reference
-     * @return
-     */
-    public String getResource(String fileName)
-    {
-        if (!fileName.startsWith("$"))
-        {
-            String configName = configuration.getName();
-            String newName = fileName.replace("${impl}",configName);
-            File file = new File(TestResources.resourceDir,newName);
-            if (file.exists())
-            {
-                return file.getAbsolutePath();
-            }
-            else
-            {
-                return new File(TestResources.resourceDir,
-                                fileName.replace("${impl}",""))
-                            .getAbsolutePath();
-            }
-        }
-        else
-        {
-            return new File(EnvExpander.expand(fileName,System.getProperties())).getAbsolutePath();
-        }
-    }
-
-    /**
      * Helper to make calling mains easier
      * @param arg
      * @return

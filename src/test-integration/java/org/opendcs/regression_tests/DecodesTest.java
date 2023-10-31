@@ -10,6 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +51,7 @@ public class DecodesTest extends AppTestBase
                             )
                         );
         assertExitNullOrZero();
-        File goldenFile = new File(getResource(expectedResultFile));
+        File goldenFile = new File(TestResources.getResource(configuration,expectedResultFile));
         String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
         assertEquals(golden,output,"Output Doesn't match expected data.");
     }
@@ -74,7 +75,7 @@ public class DecodesTest extends AppTestBase
         );
         assertExitNullOrZero();
 
-        File goldenFile = new File(getResource(expectedResultFile));
+        File goldenFile = new File(TestResources.getResource(configuration,expectedResultFile));
         String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
 
         ObjectMapper mapper = new ObjectMapper();
