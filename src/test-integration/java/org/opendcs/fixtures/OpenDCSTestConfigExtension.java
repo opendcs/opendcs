@@ -197,19 +197,26 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     private void setupDecodesTestData(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables env, SystemExit exit) throws Exception
     {
         DecodesConfigurationRequired decodesConfig = testInstance.getClass().getAnnotation(DecodesConfigurationRequired.class);
+        ArrayList<String> files = new ArrayList<>();
         if (decodesConfig != null)
         {
-            ArrayList<String> files = new ArrayList<>();
             for(String file: decodesConfig.value())
             {
                 files.add(AppTestBase.getResource(file));
             }
-            Programs.DbImport(setupLog("decodes-setup.log"), configuration.getPropertiesFile(), env, exit, files.toArray(new String[0]));
         }
         decodesConfig = testMethod.getAnnotation(DecodesConfigurationRequired.class);
         if (decodesConfig != null)
         {
-            Programs.DbImport(setupLog("decodes-setup.log"), configuration.getPropertiesFile(), env, exit, decodesConfig.value());
+            for(String file: decodesConfig.value())
+            {
+                files.add(AppTestBase.getResource(file));
+            }
+        }
+
+        if (!files.isEmpty())
+        {
+           Programs.DbImport(setupLog("decodes-setup.log"), configuration.getPropertiesFile(), env, exit, files.toArray(new String[0]));
         }
     }
 
@@ -224,20 +231,27 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     private void setupComputationTestData(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables env, SystemExit exit) throws Exception
     {
         ComputationConfigurationRequired compConfig = testInstance.getClass().getAnnotation(ComputationConfigurationRequired.class);
+        ArrayList<String> files = new ArrayList<>();
         if (compConfig != null)
         {
-            ArrayList<String> files = new ArrayList<>();
             for(String file: compConfig.value())
             {
                 files.add(AppTestBase.getResource(file));
             }
-            Programs.CompImport(setupLog("computation-setup.log"), configuration.getPropertiesFile(), env, exit, files.toArray(new String[0]));
         }
 
         compConfig = testMethod.getAnnotation(ComputationConfigurationRequired.class);
         if (compConfig != null)
         {
-            Programs.DbImport(setupLog("computation-setup.log"), configuration.getPropertiesFile(), env, exit, compConfig.value());
+            for(String file: compConfig.value())
+            {
+                files.add(AppTestBase.getResource(file));
+            }
+        }
+
+        if (!files.isEmpty())
+        {
+            Programs.CompImport(setupLog("computation-setup.log"), configuration.getPropertiesFile(), env, exit, files.toArray(new String[0]));
         }
     }
     /**
