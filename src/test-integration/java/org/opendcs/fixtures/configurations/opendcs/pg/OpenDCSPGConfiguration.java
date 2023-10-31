@@ -5,7 +5,9 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -16,7 +18,9 @@ import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TsdbAppTemplate;
 import opendcs.opentsdb.OpenTsdb;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -29,11 +33,10 @@ public class OpenDCSPGConfiguration implements Configuration
 {
     private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
 
-    private static String dbUrl = "jdbc:tc:postgresql:15.3:///dcstest?TC_DAEMON=true&TC_TMPFS=/pg_tmpfs:rw";
     private static PostgreSQLContainer<?> db = null;
     private File userDir;
     private File propertiesFile;
-    private static Boolean started = Boolean.valueOf(false);
+    private static AtomicBoolean started = new AtomicBoolean(false);
     private HashMap<Object,Object> environmentVars = new HashMap<>();
 
     public OpenDCSPGConfiguration(File userDir) throws Exception
@@ -163,7 +166,7 @@ public class OpenDCSPGConfiguration implements Configuration
     {
         synchronized(started)
         {
-            started = Boolean.valueOf(true);
+            started.set(true);
         }
     }
 
@@ -172,7 +175,7 @@ public class OpenDCSPGConfiguration implements Configuration
     {
         synchronized(started)
         {
-            return started;
+            return started.get();
         }
     }
 
@@ -185,5 +188,16 @@ public class OpenDCSPGConfiguration implements Configuration
         credentials.put("password","dcs_proc");
         db.connect("utility",credentials);
         return db;
+    }
+
+    @Override
+    public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
+    {
+        Objects.requireNonNull(appClass, "You must specify a valid class, not null.");
+        if (appClass.equals(ComputationApp.class))
+        {
+            return true;
+        } // add more cases here.
+        return false;
     }
 }
