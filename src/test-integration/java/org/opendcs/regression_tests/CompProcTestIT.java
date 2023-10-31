@@ -15,12 +15,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.ConfiguredField;
-import org.opendcs.fixtures.EnableIfSql;
+import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.EnableIfSql;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
-import org.python.icu.impl.duration.TimeUnit;
 
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.ComputationApp;
