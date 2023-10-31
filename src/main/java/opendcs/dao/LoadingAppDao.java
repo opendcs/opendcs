@@ -384,7 +384,7 @@ public class LoadingAppDao
                         {
                             updateQuery.append(",");
                         }
-                        updateQuery.append(",");
+                        updateQuery.append(" ");
                     }
                     updateQuery.append(" WHERE LOADING_APPLICATION_ID = ?"); //+ id;
 
