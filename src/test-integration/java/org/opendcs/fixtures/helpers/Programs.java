@@ -98,8 +98,6 @@ public class Programs
                         theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
                         theArgs.add("-d3");
                         theArgs.add("-C");
-                        theArgs.add("-Dcwmsflags=true"); // NOTE: current tests are for some somewhat CWMS/OpenDCS specific bits
-                                                           // as it was easier to figure out. Need to deal with HDB eventually.
                         theArgs.addAll(
                             files.stream()
                                  .map(f->f.getAbsolutePath())

@@ -16,7 +16,6 @@ import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
-import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
@@ -28,9 +27,7 @@ import decodes.tsdb.TimeSeriesDb;
         "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
         "shared/presgrp-regtest.xml"
     })
-@ComputationConfigurationRequired({
-    "CompProc/Precip/comps.xml"
-})
+@ComputationConfigurationRequired("shared/loading-apps.xml")
 public class CompProcTestIT extends AppTestBase
 {
     private static final Logger log = Logger.getLogger(CompProcTestIT.class.getName());
@@ -95,6 +92,7 @@ public class CompProcTestIT extends AppTestBase
      */
     @Test
     @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
+    @ComputationConfigurationRequired("CompProc/Precip/comps.xml")
     public void test_incremental_precip() throws Exception
     {
         final Configuration config = this.configuration;
