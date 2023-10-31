@@ -1,9 +1,6 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.util.logging.Logger;
@@ -15,27 +12,30 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
+import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
-import org.opendcs.fixtures.annotations.EnableIfSql;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.TsdbAppRequired;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
-import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.ComputationApp;
-import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
-import opendcs.dai.LoadingAppDAI;
 
+@DecodesConfigurationRequired({
+        "shared/test-sites.xml",
+        "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
+        "shared/presgrp-regtest.xml"
+    })
+@ComputationConfigurationRequired({
+    "CompProc/Precip/comps.xml"
+})
 public class CompProcTestIT extends AppTestBase
 {
     private static final Logger log = Logger.getLogger(CompProcTestIT.class.getName());
     @ConfiguredField
     protected TimeSeriesDb db;
-
-    private static BackgroundTsDbApp<ComputationApp> compProc = null;
-
-    private static final String appName = "compproc_regtest";
 
     /* there is insufficient test data for the day and month calculations? */
     final static String tsids[] = new String[]{"TESTSITE1.Precip-Cum.Inst.1Hour.0.test(TESTSITE1-PC)",
@@ -57,64 +57,16 @@ public class CompProcTestIT extends AppTestBase
         log.info("Importing shared data.");
         Configuration config = this.configuration;
         File propertiesFile = config.getPropertiesFile();
-        File logFile = new File(config.getUserDir(),"/compproc-setup.log");
-        Programs.DbImport(logFile, propertiesFile, environment, exit,
-                                getResource("shared/test-sites.xml"),
-                                new File(config.getUserDir(),"/schema/cwms/cwms-import.xml").getAbsolutePath(),
-                                getResource("shared/presgrp-regtest.xml"));
-        Programs.CompImport(logFile, config.getPropertiesFile(), environment, exit, getResource("CompProc/Precip/comps.xml"));
         FileUtils.copyFile(new File(getResource("/CompProc/Precip/datchk.cfg")),new File(config.getUserDir(),"/datchk.cfg"));
         FileUtils.copyFile(new File(getResource("/CompProc/Precip/pathmap.txt")),new File(config.getUserDir(),"/pathmap.txt"));
         FileUtils.copyFile(new File(getResource("/CompProc/Precip/test.datchk")),new File(config.getUserDir(),"/test.datchk"));
-        try(LoadingAppDAI loadingDao = db.makeLoadingAppDAO())
-        {
-            try
-            {
-                CompAppInfo cai = loadingDao.getComputationApp(appName);
-            }
-            catch (NoSuchObjectException ex)
-            {
-                fail("Computation app for testing is not setup.");
-            }
-        }
 
-        if (compProc == null)
-        {
-            compProc = BackgroundTsDbApp.forApp(
-                ComputationApp.class,appName,propertiesFile,
-                            new File(config.getUserDir(),"/compproc-run.log"),environment);
-        }
-        assertTrue(compProc.isRunning(), "Required Application did not start correctly");
         // TODO: Create system to register timeseries so this doesn't need to be imported twice.
         Programs.ImportTs(new File(config.getUserDir(),"/importTs.log"), propertiesFile,
                           environment, exit, getResource("CompProc/Precip/input.tsimport"));
         Programs.UpdateComputationDependencies(new File(config.getUserDir(),"/update-deps.log"), propertiesFile, environment, exit);
         Programs.ImportTs(new File(config.getUserDir(),"/importTs.log"), propertiesFile,
                           environment, exit, getResource("CompProc/Precip/input.tsimport"));
-    }
-
-    @BeforeEach
-    public void check_app() throws Exception
-    {
-        if (!configuration.isTsdb())
-        {
-            return;
-        }
-        assertTrue(compProc.isRunning(), "Required Application failed to stay running.");
-    }
-
-
-    @AfterAll
-    public void stop_compProc() throws Exception
-    {
-        if (!configuration.isTsdb())
-        {
-            return;
-        }
-        if (compProc != null)
-        {
-            compProc.stop();
-        }
     }
 
     @AfterAll
@@ -142,7 +94,7 @@ public class CompProcTestIT extends AppTestBase
      * https://github.com/opendcs/opendcs/discussions/348
      */
     @Test
-    @EnableIfSql
+    @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
     public void test_incremental_precip() throws Exception
     {
         final Configuration config = this.configuration;
@@ -150,9 +102,15 @@ public class CompProcTestIT extends AppTestBase
 
         final File goldenFile = new File(getResource("CompProc/Precip/output.human-readable"));
 
-        Programs.UpdateComputationDependencies(new File(config.getUserDir(),"/update-deps.log"), config.getPropertiesFile(), environment, exit);
-        Programs.ImportTs(new File(config.getUserDir(),"/importTs.log"), config.getPropertiesFile(),
-                          environment, exit, getResource("CompProc/Precip/input.tsimport"));
+        Programs.UpdateComputationDependencies(
+                    new File(config.getUserDir(),"/update-deps.log"),
+                    config.getPropertiesFile(),
+                    environment, exit);
+        Programs.ImportTs(
+                    new File(config.getUserDir(),"/importTs.log"),
+                    config.getPropertiesFile(),
+                    environment, exit,
+                    getResource("CompProc/Precip/input.tsimport"));
         try
         {
            Thread.sleep(15000); // TODO: eliminate wait

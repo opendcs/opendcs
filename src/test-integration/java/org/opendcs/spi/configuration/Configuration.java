@@ -9,6 +9,7 @@ import java.util.Map;
 import org.junit.jupiter.api.extension.Extension;
 
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TsdbAppTemplate;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
@@ -68,5 +69,10 @@ public interface Configuration
     default public TimeSeriesDb getTsdb() throws Throwable
     {
         return null;
+    }
+
+    default public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
+    {
+        return false;
     }
 }

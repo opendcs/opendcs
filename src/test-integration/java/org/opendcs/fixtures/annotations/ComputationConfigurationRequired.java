@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target({ElementType.METHOD,ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DecodesConfigurationRequired
+public @interface ComputationConfigurationRequired
 {
     /**
      * List of resource file values
