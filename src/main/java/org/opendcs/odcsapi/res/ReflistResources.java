@@ -24,8 +24,6 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 /**
  * HTTP Resources relating to reference lists and seasons
  * @author mmaloney

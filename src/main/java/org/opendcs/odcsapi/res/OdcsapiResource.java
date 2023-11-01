@@ -1,13 +1,10 @@
 package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import org.opendcs.odcsapi.beans.ApiDecodedMessage;
 import org.opendcs.odcsapi.beans.DecodeRequest;
-import org.opendcs.odcsapi.beans.ApiPropSpec;
 import org.opendcs.odcsapi.beans.TokenBean;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.dao.ApiTsDAO;
@@ -21,7 +18,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponse;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;

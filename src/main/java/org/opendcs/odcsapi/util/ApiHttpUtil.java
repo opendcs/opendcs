@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponse;
 
 public class ApiHttpUtil {
 
