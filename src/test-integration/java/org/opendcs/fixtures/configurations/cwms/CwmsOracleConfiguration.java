@@ -53,21 +53,23 @@ public class CwmsOracleConfiguration implements Configuration
 
     private void installDb(SystemExit exit,EnvironmentVariables environment) throws Exception
     {
-        if (started)
+        if (!started)
         {
-            return;
+            cwmsDb = new CwmsDatabaseContainer<>(CWMS_ORACLE_IMAGE)
+                            .withSchemaImage(CWMS_SCHEMA_IMAGE)
+                            .withVolumeName(CWMS_ORACLE_VOLUME);
+            log.info("starting CWMS Database");
+            cwmsDb.start();
         }
-        cwmsDb = new CwmsDatabaseContainer<>(CWMS_ORACLE_IMAGE)
-                        .withSchemaImage(CWMS_SCHEMA_IMAGE)
-                        .withVolumeName(CWMS_ORACLE_VOLUME);
-        log.info("starting CWMS Database");
-        cwmsDb.start();
+
         log.info("CWMS Database started.");
         this.dbUrl = cwmsDb.getJdbcUrl();
         dcsUser = System.getProperty("opendcs.cwms.dcsuser.name",cwmsDb.getUsername());
         dcsUserPassword = System.getProperty("opendcs.cwms.dcsuser.password",cwmsDb.getPassword());
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
+        environmentVars.put("DB_USERNAME",dcsUser);
+        environmentVars.put("DB_PASSWORD",dcsUserPassword);
         started = true;
         //TODO strip/reinstall schema
     }
