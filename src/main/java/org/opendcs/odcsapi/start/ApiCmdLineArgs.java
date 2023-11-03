@@ -171,6 +171,8 @@ public class ApiCmdLineArgs
 				break;
 			case EXPECT_PROPFILE:
 				decodesPropFile = arg.trim();
+				state = State.IDLE;
+				break;
 			default:
 				throw new StartException("Command line state parser confused. Cannot start.");
 		}
