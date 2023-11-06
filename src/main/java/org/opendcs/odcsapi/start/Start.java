@@ -61,7 +61,7 @@ public class Start
 		corsList.add(new String[] { "Access-Control-Allow-Credentials", CrossOriginFilter.ALLOW_CREDENTIALS_PARAM });
 		
 		// Set up logging
-		String rootlogfile = ApiEnvExpander.expand("$DCSTOOL_HOME/jetty.log");
+		String rootlogfile = ApiEnvExpander.expand("$DCSTOOL_USERDIR/jetty.log");
 		System.out.println("root logger goes to " + rootlogfile);
 		Logger rootLogger = Logger.getLogger("");
 		rootLogger.setLevel(Level.INFO);
@@ -72,10 +72,10 @@ public class Start
 		rootLogger.addHandler(rootHandler);
 		rootLogger.info("================ Starting ===============");
 
-		String applogfile = ApiEnvExpander.expand("$DCSTOOL_HOME/odcsapi.log");
+		String applogfile = ApiEnvExpander.expand("$DCSTOOL_USERDIR/odcsapi.log");
 		System.out.println("app logger goes to " + applogfile);
 		Logger appLogger = Logger.getLogger(ApiConstants.loggerName);
-		appLogger.setLevel(Level.FINEST);
+		appLogger.setLevel(Level.INFO);
 		while (appLogger.getHandlers().length > 0)
 			appLogger.removeHandler(appLogger.getHandlers()[0]);
 		Handler appHandler = new FileHandler(applogfile, 10000000, 5);
@@ -83,7 +83,7 @@ public class Start
 		appLogger.addHandler(appHandler);
 
 		// Parse args
-		appLogger.config("DCSTOOL_HOME=" + System.getProperty("DCSTOOL_HOME") + ", parsing args...");
+		appLogger.config("DCSTOOL_USERDIR=" + System.getProperty("DCSTOOL_USERDIR") + ", parsing args...");
 		apiCmdLineArgs.parseArgs(args);
 		appLogger.config("    Listening Http Port=" + apiCmdLineArgs.getHttpPort());
 		appLogger.config("    Listening Https Port=" + apiCmdLineArgs.getHttpsPort());
@@ -96,7 +96,7 @@ public class Start
 		Server server = new Server();
 		ServletContextHandler ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		ctx.setContextPath("/");
-		
+		server.setHandler(ctx);
 		String corsFile = apiCmdLineArgs.getCorsFile();
 		if (corsFile != null)
 		{
@@ -204,7 +204,7 @@ public class Start
 		openApi.setInitParameter("openApi.configuration.resourcePackages",
 		        "com.cloudian.hfs.handlers");
 		// Setup Swagger-UI static resources
-		String resourceBasePath = ServiceLoader.class.getResource("/swaggerui").toExternalForm();
+		String resourceBasePath = Start.class.getResource("/swaggerui").toExternalForm();
 		ctx.setWelcomeFiles(new String[] {"index.html"});
 		ctx.setResourceBase(resourceBasePath);
 		ctx.addServlet(new ServletHolder(new DefaultServlet()), "/*");
@@ -235,6 +235,7 @@ public class Start
 		server.setConnectors(connectors.toArray(new Connector[connectors.size()]));
 		
 		/******* Controlling Headers ******************/
+	/*
         System.out.println("Removing server header.");
         for(Connector y : server.getConnectors()) {
             for(ConnectionFactory x  : y.getConnectionFactories()) {
@@ -244,7 +245,7 @@ public class Start
                 }
             }
         }
-		
+	*/	
 		// Start the server.
 		server.start();
 		server.join();

@@ -16,7 +16,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.opendcs.odcsapi.beans.ApiSite;
-import org.opendcs.odcsapi.beans.ApiSiteRef;
 import org.opendcs.odcsapi.dao.ApiSiteDAO;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
@@ -24,8 +23,6 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 @Path("/")
 public class SiteResources

@@ -36,8 +36,6 @@ import org.opendcs.odcsapi.util.ApiPropertiesUtil;
 import org.opendcs.odcsapi.util.ProcWaiterCallback;
 import org.opendcs.odcsapi.util.ProcWaiterThread;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 /**
  * Resources for editing, monitoring, stopping, and starting processes.
  */

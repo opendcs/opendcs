@@ -19,25 +19,17 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.opendcs.odcsapi.beans.ApiInterval;
-import org.opendcs.odcsapi.beans.ApiTimeSeriesData;
-import org.opendcs.odcsapi.beans.ApiTimeSeriesIdentifier;
-import org.opendcs.odcsapi.beans.ApiTimeSeriesSpec;
 import org.opendcs.odcsapi.beans.ApiTsGroup;
-import org.opendcs.odcsapi.beans.ApiTsGroupRef;
-import org.opendcs.odcsapi.beans.ApiUnitConverter;
 import org.opendcs.odcsapi.dao.ApiRefListDAO;
 import org.opendcs.odcsapi.dao.ApiTsDAO;
-import org.opendcs.odcsapi.dao.ApiUnitDAO;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.opendcs_dep.CompRunner;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
 import ilex.util.IDateFormat;
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * HTTP resources relating to Time Series data & descriptors

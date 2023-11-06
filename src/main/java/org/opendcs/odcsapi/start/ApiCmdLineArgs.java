@@ -13,7 +13,7 @@ public class ApiCmdLineArgs
 	private String keyStorePath;
 	private String keyStorePassword;
 	
-	private String decodesPropFile = "$DCSTOOL_HOME/decodes.properties";
+	private String decodesPropFile = "$DCSTOOL_USERDIR/user.properties";
 	private boolean secureMode = false;
 	private String corsFile = "$DCSTOOL_HOME/opendcs_api_cors.cfg";
 	
@@ -171,6 +171,8 @@ public class ApiCmdLineArgs
 				break;
 			case EXPECT_PROPFILE:
 				decodesPropFile = arg.trim();
+				state = State.IDLE;
+				break;
 			default:
 				throw new StartException("Command line state parser confused. Cannot start.");
 		}

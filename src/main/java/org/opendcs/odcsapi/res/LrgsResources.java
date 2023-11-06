@@ -20,7 +20,6 @@ import javax.ws.rs.core.Response;
 
 import org.opendcs.odcsapi.beans.ApiDataSource;
 import org.opendcs.odcsapi.beans.ApiDataSourceRef;
-import org.opendcs.odcsapi.beans.ApiLrgsStatus;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiRawMessage;
 import org.opendcs.odcsapi.beans.ApiRawMessageBlock;
@@ -42,7 +41,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
 
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Resources for interacting with an LRGS for DCP messages and status.

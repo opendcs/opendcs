@@ -19,7 +19,6 @@ import javax.ws.rs.core.Response;
 
 import org.opendcs.odcsapi.beans.ApiPlatform;
 import org.opendcs.odcsapi.beans.ApiPlatformRef;
-import org.opendcs.odcsapi.beans.ApiPlatformStatus;
 import org.opendcs.odcsapi.dao.ApiPlatformDAO;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
@@ -27,8 +26,6 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 @Path("/")
 public class PlatformResources

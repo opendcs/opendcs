@@ -1,9 +1,12 @@
 package org.opendcs.odcsapi.opendcs_dep;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Iterator;
+
+import javax.ws.rs.WebApplicationException;
 
 import org.opendcs.odcsapi.beans.ApiDecodedMessage;
 import org.opendcs.odcsapi.beans.ApiDecodesTSValue;
@@ -31,6 +34,7 @@ import decodes.db.ConfigSensor;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.DecodesScript;
+import decodes.db.DecodesScriptException;
 import decodes.db.FormatStatement;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
@@ -240,10 +244,18 @@ public class TestDecoder
 		{
 //			DecodesScript ds = new DecodesScript(ret, apiScript.getName());
 			// 7/18/2023 MJM modified for compatibility with latest opendcs.jar
-			DecodesScript ds = DecodesScript.empty()
+			DecodesScript ds = null;
+			try
+			{
+				ds = DecodesScript.empty()
 					.scriptName(apiScript.getName())
 					.platformConfig(ret)
 					.build();
+			}
+			catch (IOException | DecodesScriptException ex)
+			{
+				throw new WebApplicationException("Unable to process script", ex, 500);
+			}
 
 			ds.setDataOrder(apiScript.getDataOrder());
 			ds.scriptType = Constants.scriptTypeDecodes;

@@ -16,7 +16,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.opendcs.odcsapi.beans.ApiDataType;
 import org.opendcs.odcsapi.beans.ApiUnit;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
 import org.opendcs.odcsapi.dao.ApiUnitDAO;
@@ -26,8 +25,6 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * HTTP Resources relating to DataTypes, Engineering Units, and Conversions
