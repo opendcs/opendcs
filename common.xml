@@ -249,6 +249,7 @@
 
     <macrodef name="publish">
         <sequential>
+            <ivy:resolve/> <!-- required as due to caching resolve may not have been called yet. -->
             <ivy:deliver deliverpattern="build/ivy.xml"/>
             <if>
                 <isset property="DEPLOY_RELEASE"/>

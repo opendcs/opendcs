@@ -26,6 +26,6 @@
         </chain>
     </resolvers>
     <module>
-        <moudle organisation="org.opendcs" name="opendcs" resolver="default"/>
+        <module organisation="org.opendcs" name="opendcs" resolver="default"/>
     </module>
 </ivysettings>
