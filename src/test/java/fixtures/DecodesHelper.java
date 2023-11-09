@@ -301,7 +301,7 @@ public class DecodesHelper {
         for(DecodedSample s: samples)
         {
             TimedVariable tv = s.getSample();
-            if( s.getTimeSeries().getSensorId() == sensor 
+            if( s.getTimeSeries().getSensorId() == sensor
                 && tv.getTime().getTime() == sampleTime.toInstant().toEpochMilli()
             )
             {
@@ -311,7 +311,7 @@ public class DecodesHelper {
 
         throw new NoSuchElementException("Expected Sample for sensor " 
                                      + sensor + " at time "
-                                     + sampleTime + " doesn't exist");
+                                     + sampleTime + " doesn't exist\nDecoded "+samples.size()+" samples");
     }
 
     public static class DecodesAssertion
