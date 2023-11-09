@@ -19,6 +19,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import decodes.datasource.ShefPMParser;
 import org.junit.jupiter.params.provider.Arguments;
 import org.opendcs.utils.ClasspathIO;
 
@@ -154,7 +155,7 @@ public class DecodesHelper {
 
     private static URL getInputResource(final String path, final String testName) throws FileNotFoundException
     {
-        String[] extensions = {".input_iridium", ".input_goes", ".input_edl", ".input_data-logger", ".input"};
+        String[] extensions = {".input_shef", ".input_iridium", ".input_goes", ".input_edl", ".input_data-logger", ".input"};
         for( String ext: extensions)
         {
             URL input = DecodesScript.class.getResource(path + testName + ext);
@@ -191,6 +192,10 @@ public class DecodesHelper {
             else if( part.equalsIgnoreCase("edl") )
             {
                 return Constants.medium_EDL;
+            }
+            else if( part.equalsIgnoreCase("shef"))
+            {
+                return Constants.medium_SHEF;
             }
         }
         // If there was no medium detected, assume EDL.
@@ -232,6 +237,10 @@ public class DecodesHelper {
         else if( mediumType.equals(Constants.medium_IRIDIUM) )
         {
             parser = new IridiumPMParser();
+        }
+        else if( mediumType.equals(Constants.medium_SHEF))
+        {
+            parser = new ShefPMParser();
         }
         else
         {
@@ -276,7 +285,7 @@ public class DecodesHelper {
                 }
                 catch(Exception ex)
                 {
-                    throw new RuntimeException("unable to load test information for: " +name, ex);
+                    throw new RuntimeException("unable to load test information for: " +name+"  , path="+path, ex);
                 }
             });
     }

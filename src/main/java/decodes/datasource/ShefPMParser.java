@@ -47,7 +47,7 @@ import decodes.db.Constants;
 
 /**
   Concrete subclass of PMParser for parsing performance measurements
-  out of GOES DCP messages.
+  out of SHEF messages.
 */
 public class ShefPMParser extends PMParser
 {
