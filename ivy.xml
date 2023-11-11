@@ -18,6 +18,7 @@
     <publications>
         <artifact name="opendcs" type="pom" conf="runtime" ext="pom"/>
         <artifact name="opendcs" type="jar" conf="runtime" ext="jar"/>
+        <artifact name="opendcs-test-extension" type="jar" conf="test,runtime" ext="jar"/>
     </publications>
     <dependencies>
         <dependency org="com.oracle.ojdbc" name="ojdbc8" rev="19.3.0.0"/>

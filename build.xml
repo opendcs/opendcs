@@ -431,6 +431,34 @@ more information about each.
              update="true"/>
     </target>
 
+    <target name="test-extension-jar" depends="integration-test"
+            description="Generates the integration test extension jar">
+        <mkdir dir="${build.dir}/test-integration/javadocs"/>
+        <jar jarfile="${build.dir}/lib/opendcs-test-extension.jar"
+             update="true">
+             <fileset dir="${build.test-integration.classes}"
+                      excludes="**/regression_tests/**"/>
+            <fileset dir="${build.test-integration.resources}"
+                     includes="config/**,META-INF/**"/>
+        </jar>
+        <javadoc destdir="${build.dir}/test-integration/javadocs"
+                 author="true"
+                 version="true"
+                 use="true"
+                 windowTitle="OpenDCS Integration Test Extension API"
+                 classpathref="test.classpath">
+            <fileset dir="${src.test-integration.dir}"/>
+            <tag name="todo" scope="all" description="To do:"/>
+        </javadoc>
+        <jar jarfile="${build.dir}/lib/opendcs-test-extension-javadoc.jar"
+             update="true"
+             basedir="${build.dir}/test-integration/javadocs"/>
+        <jar jarfile="${build.dir}/lib/opendcs-test-extension-sources.jar"
+             update="true">
+            <fileset dir="${src.test-integration.dir}" excludes="**/regression_tests/**"/>
+        </jar>
+    </target>
+
     <target name="publish" depends="jar,common.init-ivy,common.resolve.build" description="--> publish ivy artifacts">
         <publish/>
     </target>
@@ -450,12 +478,22 @@ more information about each.
         </javadoc>
     </target>
 
-    <target name="release" depends="jar,javadocs,test,opendcs,publish" description="Generates signed bundle suitable for maven central upload."
+    <target name="release" depends="jar,javadocs,test,test-extension-jar,opendcs,publish" description="Generates signed bundle suitable for maven central upload."
             if="isUnix"
     >
         <mkdir dir="${build.release.dir}"/>
         <copy file="${dist.jar}" tofile="${build.release.dir}/opendcs-${version}.jar"/>
-        <copy file="${build.dir}/lib/opendcs.pom" tofile="${build.release.dir}/opendcs-${version}.pom"/>
+        <copy file="${build.dir}/lib/opendcs.pom"
+              tofile="${build.release.dir}/opendcs-${version}.pom"/>
+
+        <copy file="${build.dir}/lib/opendcs-test-extension.pom"
+              tofile="${build.release.dir}/opendcs-test-extension-${version}.pom"/>
+        <copy file="${build.dir}/lib/opendcs-test-extension.jar"
+              tofile="${build.release.dir}/opendcs-test-extension-${version}.jar"/>
+        <copy file="${build.dir}/lib/opendcs-test-extension-sources.jar"
+              tofile="${build.release.dir}/opendcs-test-extension-${version}-sources.jar"/>
+        <copy file="${build.dir}/lib/opendcs-test-extension-javadoc.jar"
+              tofile="${build.release.dir}/opendcs-test-extension-${version}-javadoc.jar"/>
 
         <jar jarfile="${build.release.dir}/opendcs-${version}-javadoc.jar"
              basedir="${build.dir}/javadocs"
@@ -479,8 +517,17 @@ more information about each.
                 <gpgsignfile target="opendcs-${version}.jar"/>
                 <gpgsignfile target="opendcs-${version}-javadoc.jar"/>
                 <gpgsignfile target="opendcs-${version}-sources.jar"/>
-                <jar jarfile="${build.release.dir}/bundle.jar">
-                    <fileset dir="${build.release.dir}" excludes="bundle.jar"/>
+                <jar jarfile="${build.release.dir}/opendcs-bundle.jar">
+                    <fileset dir="${build.release.dir}" excludes="*bundle.jar,*extension*"/>
+                </jar>
+                <gpgsignfile target="opendcs-test-extension-${version}.pom"/>
+                <gpgsignfile target="opendcs-test-extension-${version}.jar"/>
+                <gpgsignfile target="opendcs-test-extension-${version}-javadoc.jar"/>
+                <gpgsignfile target="opendcs-test-extension-${version}-sources.jar"/>
+                <jar jarfile="${build.release.dir}/extension-bundle.jar">
+                    <fileset dir="${build.release.dir}"
+                             excludes="*bundle.jar"
+                             includes="*extension*"/>
                 </jar>
             </else>
         </if>

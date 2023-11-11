@@ -271,6 +271,13 @@
                 <mapping conf="default" scope="compile"/>
                 <mapping conf="runtime" scope="provided"/>
             </ivy:makepom>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/lib/opendcs-test-extension.pom" conf="default,runtime,test"
+                         templateFile="config/pom.template"
+                         artifactName="opendcs-test-extension">
+                <mapping conf="default" scope="compile"/>
+                <mapping conf="runtime" scope="provided"/>
+                <dependency group="org.opendcs" artifact="${ivy.module}" version="${version}"/>
+            </ivy:makepom>
         </sequential>
     </macrodef>
 
