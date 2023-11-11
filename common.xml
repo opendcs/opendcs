@@ -269,7 +269,7 @@
             <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/lib/${ivy.module}.pom" conf="default,runtime"
                          templateFile="config/pom.template">
                 <mapping conf="default" scope="compile"/>
-                <mapping conf="runtime" scope="runtime"/>
+                <mapping conf="runtime" scope="provided"/>
             </ivy:makepom>
         </sequential>
     </macrodef>
