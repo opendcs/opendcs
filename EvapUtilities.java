@@ -501,6 +501,31 @@ public class EvapUtilities
         ch.d = c( ru, rt, z0, zt, psim, psiht );    // Transfer coef. for sensible heat
         ce.d = c( ru, rq, z0, zq, psim, psihq );    // Transfer coef. for latent heat
     }
+
+    public static double computeFischerUStar(double ur, double rhoAdc, double rhow)
+    {
+        double cd;
+        if (ur <= 5)
+        {
+            cd = .001;
+        }
+        else if (ur >= 15)
+        {
+            cd = .0015;
+        }
+        else
+        {
+            cd = .001+.0005*((ur-5)/10);
+        }
+
+        return Math.sqrt(cd * (rhoAdc / rhow) * ur * ur);
+    }
+
+    public static double computeDonelanUStar(double ur, double rhoAdc, double rhow)
+    {
+        double cd = (.37+.137*ur)/1000;
+        return Math.sqrt(cd*rhoAdc/rhow)*ur;
+    }
     
     /**
      *  Compute transfer coefficients.
