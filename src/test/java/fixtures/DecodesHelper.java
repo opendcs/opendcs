@@ -10,16 +10,19 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.ZoneId;
+import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import decodes.datasource.ShefPMParser;
+import decodes.db.DataType;
+import decodes.decoder.TimeSeries;
 import org.junit.jupiter.params.provider.Arguments;
 import org.opendcs.utils.ClasspathIO;
 
@@ -50,7 +53,6 @@ import decodes.decoder.DecoderException;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
-import ilex.var.VariableType;
 
 /**
  * Functions to help make decodes tests easier
@@ -113,6 +115,15 @@ public class DecodesHelper {
                 decodesScript.scriptSensors.add(stage);
                 ConfigSensor configSensor = new ConfigSensor(decodesScript.platformConfig, Integer.parseInt(parts[0]));
                 configSensor.sensorName = parts[1];
+
+                if( parts.length >= 5) {
+                    //1, Stage, ft, none,SHEF-PE:HGIFF;
+                    String[] tokens = parts[4].split(":");
+                    if(tokens.length==2) {
+                        //configSensor.addDataType(new DataType("SHEF-PE", "HGIFF"));
+                        configSensor.addDataType(new DataType(tokens[0], tokens[1]));
+                    }
+                }
                 decodesScript.platformConfig.addSensor(configSensor);
             }
         }
@@ -308,10 +319,31 @@ public class DecodesHelper {
                 return s;
             }
         }
+         // Add Debug output first 30 values
+        StringBuilder sb = new StringBuilder();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 
+        for(DecodedSample s: samples)
+        {
+            TimeSeries ts = s.getTimeSeries();
+            if( ts.getSensorId() == sensor)
+            {
+                for (int i = 0; i <ts.size() ; i++)
+                {
+                    Date t =ts.timeAt(i);
+
+                    sb.append(sdf.format(t) +" " +ts.formattedSampleAt(i)+"\n");
+                    if( i>=30)
+                        break;
+                }
+                break;
+            }
+
+        }
         throw new NoSuchElementException("Expected Sample for sensor " 
                                      + sensor + " at time "
-                                     + sampleTime + " doesn't exist\nDecoded "+samples.size()+" samples");
+                                     + sampleTime + " doesn't exist\nDecoded "+samples.size()+" samples\n"+sb);
     }
 
     public static class DecodesAssertion
