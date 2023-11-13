@@ -114,6 +114,9 @@ public class ResWtCompute
         double[] cp = _reservoir._cp;
         double[] wt = _reservoir._wt;
 
+        WindShearMethod windShearMethod = _reservoir._windShearMethod;
+        double thermalDiffusivityCoefficient = _reservoir._thermalDiffusivityCoefficient;
+
         double wsel = _reservoir.getElevation();
         double surfArea = _reservoir._surfArea;
         double grav = Const.GRAV;
@@ -218,7 +221,7 @@ public class ResWtCompute
             kzx = .000817* Math.pow( surfArea_x , 0.56 ) *
                      Math.pow( (Math.abs(sFreq)), (-0.43)); // cm^2/s
             kzx = .0001*kzx;                                // m^2/s
-            kz[i] = 1.2*kzx*cp[i]*rhow[i];                  // j/(s m C) factor to arbitrarly reduce diffusion       
+            kz[i] = thermalDiffusivityCoefficient * kzx * cp[i] * rhow[i]; // j/(s m C) factor to arbitrarly reduce diffusion
         }
         
         // Perform diffusion calculation
@@ -461,8 +464,15 @@ public class ResWtCompute
                         
                         EvapUtilities.den_from_rh( rh, p, tr, Salinity,   
                                 rhoAdc, rhoVdc, spHumdc, IFLAG );
-                        
-                        u_H2O_star = ustar*Math.sqrt(rhoAdc.d/rhow[resj]);
+
+                        if (WindShearMethod.DONELAN.equals(windShearMethod))
+                        {
+                            u_H2O_star = EvapUtilities.computeDonelanUStar(ur, rhoAdc.d, rhow[resj]);
+                        }
+                        else
+                        {
+                            u_H2O_star = EvapUtilities.computeFischerUStar(ur, rhoAdc.d, rhow[resj]);
+                        }
                         KE_stir = eta_stir*rhow[resj]*
                             zarea[resj]* Math.pow( u_H2O_star, 3.)*delT;
                     }
@@ -600,8 +610,7 @@ public class ResWtCompute
         
         return true;
     }
-    
-    
+
     protected double zcom(int itop,int ibottom,
             double xrhow)
     {

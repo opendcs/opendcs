@@ -44,6 +44,8 @@ public class EvapReservoir
     public    double _zeroElevaton;
     public    double _lat;
     public    double _long;
+    public WindShearMethod _windShearMethod = WindShearMethod.DONELAN;
+    public double _thermalDiffusivityCoefficient = 1.2;
     
     // instrument height
     protected double _ru;
@@ -198,6 +200,16 @@ public class EvapReservoir
         }
         
         _attenuationConst =  1.70/_secchiDepth;
+    }
+
+    public void setWindShearMethod(WindShearMethod method)
+    {
+        _windShearMethod = method;
+    }
+
+    public void setThermalDiffusivityCoefficient(double thermalDiffusivityCoefficient)
+    {
+        _thermalDiffusivityCoefficient = thermalDiffusivityCoefficient;
     }
     
     /**
