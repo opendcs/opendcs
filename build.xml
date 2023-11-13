@@ -439,7 +439,7 @@ more information about each.
              <fileset dir="${build.test-integration.classes}"
                       excludes="**/regression_tests/**"/>
             <fileset dir="${build.test-integration.resources}"
-                     includes="config/**,META-INF/**"/>
+                     includes="config/**,META-INF/**,db/**"/>
         </jar>
         <javadoc destdir="${build.dir}/test-integration/javadocs"
                  author="true"
