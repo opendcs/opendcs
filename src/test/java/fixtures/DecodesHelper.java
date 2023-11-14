@@ -319,7 +319,13 @@ public class DecodesHelper {
                 return s;
             }
         }
-         // Add Debug output first 30 values
+        String info = samplesToString(sensor, samples);
+        throw new NoSuchElementException("Expected Sample for sensor " 
+                                     + sensor + " at time "
+                                     + sampleTime + " doesn't exist\nDecoded "+samples.size()+" samples\n"+info);
+    }
+
+    private static String samplesToString(int sensor, ArrayList<DecodedSample> samples) {
         StringBuilder sb = new StringBuilder();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -339,11 +345,8 @@ public class DecodesHelper {
                 }
                 break;
             }
-
         }
-        throw new NoSuchElementException("Expected Sample for sensor " 
-                                     + sensor + " at time "
-                                     + sampleTime + " doesn't exist\nDecoded "+samples.size()+" samples\n"+sb);
+        return sb.toString();
     }
 
     public static class DecodesAssertion
