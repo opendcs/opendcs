@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.opendcs.fixtures.UserPropertiesBuilder;
+import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
 import decodes.db.Database;
@@ -33,7 +34,6 @@ public class XmlConfiguration implements Configuration
     {
         this.userDir = userDir;
         this.propertiesFile = new File(userDir,"/user.properties");
-        
     }
 
     @Override
@@ -64,9 +64,16 @@ public class XmlConfiguration implements Configuration
         configBuilder.withSiteNameTypePreference("CWMS");
         try(OutputStream out = new FileOutputStream(propertiesFile);)
         {
-            FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
             FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
             configBuilder.build(out);
+            Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
+                              propertiesFile,
+                              environment,exit,properties,
+                              "classpath:/edit-db/enum",
+                              "classpath:/edit-db/eu/EngineeringUnitList.xml",
+                              "classpath:/edit-db/datatype/DataTypeEquivalenceList.xml",
+                              "classpath:/edit-db/presentation",
+                              "classpath:/edit-db/loading-app");
             started = true;
         }
     }

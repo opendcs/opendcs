@@ -78,25 +78,28 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 			ArrayList<ScheduleEntry> ret = new ArrayList<ScheduleEntry>();
 			File dbdir = new File(parent.xmldir, XmlDatabaseIO.ScheduleEntryDir);
 			File files[] = dbdir.listFiles();
-			for(File f : files)
+			if (files !=null)
 			{
-				if (!f.isFile())
-					continue;
-				try
+				for(File f : files)
 				{
-					DatabaseObject dbo = parent.getParser().parse(f);
-					if (dbo instanceof ScheduleEntry)
+					if (!f.isFile())
+						continue;
+					try
 					{
-						ScheduleEntry se = (ScheduleEntry)dbo;
-						ret.add(se);
+						DatabaseObject dbo = parent.getParser().parse(f);
+						if (dbo instanceof ScheduleEntry)
+						{
+							ScheduleEntry se = (ScheduleEntry)dbo;
+							ret.add(se);
+						}
+						else
+							Logger.instance().warning("Ignoring non-ScheduleEntry "
+								+ "in file '" + f.getPath() + "'");
 					}
-					else
-						Logger.instance().warning("Ignoring non-ScheduleEntry "
-							+ "in file '" + f.getPath() + "'");
-				}
-				catch (SAXException ex)
-				{
-					Logger.instance().warning("Error parsing '" + f.getPath() + "': " + ex);
+					catch (SAXException ex)
+					{
+						Logger.instance().warning("Error parsing '" + f.getPath() + "': " + ex);
+					}
 				}
 			}
 			return ret;
