@@ -19,7 +19,7 @@ public class ClasspathIOTest {
     @Test
     public void test_classpath_url_handler() throws Exception
     {
-        URL url = new URL("classpath:///hello.txt");
+        URL url = new URL("classpath:/hello.txt");
         assertNotNull(url);
         byte buffer[] = new byte[5];
         url.openStream().read(buffer);

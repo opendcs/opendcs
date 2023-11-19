@@ -301,6 +301,7 @@ more information about each.
                 <pathelement location="${stage.dir}/bin/opendcs.jar"/>
                 <pathelement location="${build.test-integration.resources}"/>
                 <pathelement location="${build.test-integration.classes}"/>
+                <pathelement location="${stage.dir}"/>
             </classpath>
 
             <testclasses outputdir="${build.dir}/test-integration/${opendcs.test.engine}/results">

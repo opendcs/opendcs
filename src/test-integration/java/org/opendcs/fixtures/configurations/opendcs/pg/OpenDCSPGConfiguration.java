@@ -134,11 +134,11 @@ public class OpenDCSPGConfiguration implements Configuration
                         Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
                                 propertiesFile,
                                 environment,exit,properties,
-                                "stage/edit-db/enum",
-                                "stage/edit-db/eu/EngineeringUnitList.xml",
-                                "stage/edit-db/datatype/DataTypeEquivalenceList.xml",
-                                "stage/edit-db/presentation",
-                                "stage/edit-db/loading-app")
+                                "classpath:/edit-db/enum",
+                                "classpath:/edit-db/eu/EngineeringUnitList.xml",
+                                "classpath:/edit-db/datatype/DataTypeEquivalenceList.xml",
+                                "classpath:/edit-db/presentation",
+                                "classpath:/edit-db/loading-app")
                     )
                 );
             }

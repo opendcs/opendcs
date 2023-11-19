@@ -5,11 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.opendcs.utils.ClasspathIO;
+import org.opendcs.utils.UrlUtils;
 
 import decodes.dbimport.DbImport;
 import decodes.tsdb.ImportComp;
@@ -57,9 +59,22 @@ public class Programs
             {
                 urls.add(tempFile.toURI().toURL().toExternalForm());
             }
-            else
+            else if(UrlUtils.isValidUrl(file))
             {
-                urls.add(file);
+                URL url = UrlUtils.urlIfValid(file);
+                File tmpUrlFile = new File(url.openConnection().getURL().toURI());
+                if (tmpUrlFile.isFile()) // the resource exists so add it.
+                {
+                    urls.add(file);
+                }
+                else // the resource may be a directory
+                {
+                    ClasspathIO.getAllResourcesIn(url.getPath())
+                               .stream()
+                               .filter(u -> u.getPath().endsWith("xml"))
+                               .map(u -> u.toExternalForm())
+                               .forEach(urls::add);;
+                }
             }
         }
 

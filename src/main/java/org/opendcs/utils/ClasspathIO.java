@@ -13,9 +13,15 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 public class ClasspathIO {
+    /**
+     * Utility to go through the classpath to find sets of resources.
+     * Code intentionally ignores .class files
+     * @param name starting directory.
+     * @return list of URLs that were found.
+     * @throws IOException
+     */
     public static List<URL> getAllResourcesIn(String name) throws IOException
     {
         return getAllResourcesIn(name, ClasspathIO.class.getClassLoader());
@@ -24,7 +30,12 @@ public class ClasspathIO {
     private static List<URL> getAllResourcesIn(String name, String root, ClassLoader loader) throws IOException
     {
         List<URL> ret = new ArrayList<>();
-        Enumeration<URL> resources = loader.getResources(name);
+        String path = name;
+        if (path.startsWith("/"))
+        {
+            path = path.replaceFirst("/","");
+        }
+        Enumeration<URL> resources = loader.getResources(path);
         while(resources.hasMoreElements())
         {
             URL url = resources.nextElement();

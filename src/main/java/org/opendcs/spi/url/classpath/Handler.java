@@ -16,21 +16,27 @@ public class Handler extends URLStreamHandler
     {
         return new URLConnection(resource)
         {
+            String path = url.getPath();
+            URL resourceURL = this.getClass().getResource(path);
             @Override
             public InputStream getInputStream() throws IOException
             {
-                String path = url.getPath();
-                URL cpUrl = this.getClass().getResource(path);
-                if (cpUrl == null)
+                if (resourceURL == null)
                 {
                     throw new IOException("Cannot file: '" + path + "' on classpath.");
                 }
-                return cpUrl.openStream();
+                return resourceURL.openStream();
             }
 
             @Override
             public void connect() throws IOException
             {
+            }
+
+            @Override
+            public URL getURL()
+            {
+                return resourceURL;
             }
         };
     }
