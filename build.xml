@@ -461,6 +461,10 @@ more information about each.
              update="true">
             <fileset dir="${src.test-integration.dir}" excludes="**/regression_tests/**"/>
         </jar>
+        <jar jarfile="${build.dir}/lib/opendcs-test-initial-data.jar"
+             update="true">
+             <fileset dir="${stage.dir}" includes="edit-db/**"/>
+        </jar>
     </target>
 
     <target name="publish" depends="jar,common.init-ivy,common.resolve.build" description="--> publish ivy artifacts">
@@ -498,6 +502,8 @@ more information about each.
               tofile="${build.release.dir}/opendcs-test-extension-${version}-sources.jar"/>
         <copy file="${build.dir}/lib/opendcs-test-extension-javadoc.jar"
               tofile="${build.release.dir}/opendcs-test-extension-${version}-javadoc.jar"/>
+        <copy file="${build.dir}/lib/opendcs-test-initial-data.jar"
+              tofile="${build.release.dir}/opendcs-test-initial-data-${version}.jar"/>
 
         <jar jarfile="${build.release.dir}/opendcs-${version}-javadoc.jar"
              basedir="${build.dir}/javadocs"
@@ -528,6 +534,7 @@ more information about each.
                 <gpgsignfile target="opendcs-test-extension-${version}.jar"/>
                 <gpgsignfile target="opendcs-test-extension-${version}-javadoc.jar"/>
                 <gpgsignfile target="opendcs-test-extension-${version}-sources.jar"/>
+                <gpgsignfile target="opendcs-test-initial-data-${version}.jar"/>
                 <jar jarfile="${build.release.dir}/extension-bundle.jar">
                     <fileset dir="${build.release.dir}"
                              excludes="*bundle.jar"
