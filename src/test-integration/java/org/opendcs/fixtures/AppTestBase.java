@@ -51,11 +51,13 @@ public class AppTestBase
     {
         if (UrlUtils.isValidUrl(file))
         {
-            return file;
+            return EnvExpander.expand(file,System.getProperties());
         }
         else if ( !file.startsWith("$"))
         {
-            return new File(TestResources.resourceDir,file).getAbsolutePath();
+            return EnvExpander.expand(
+                    new File(TestResources.resourceDir,file).getAbsolutePath(),
+                    System.getProperties());
         }
         else
         {
