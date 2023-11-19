@@ -59,7 +59,7 @@ public class Programs
             }
             else
             {
-                urls.add(file);  
+                urls.add(file);
             }
         }
 
@@ -289,9 +289,9 @@ public class Programs
                     decodes.tsdb.CpCompDependsUpdater.main(theArgs.toArray(new String[0]));
                 })
             )
-        );        
+        );
 
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
     }
 }

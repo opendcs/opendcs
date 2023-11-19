@@ -14,8 +14,8 @@ public class Handler extends URLStreamHandler
     @Override
     protected URLConnection openConnection(URL resource) throws IOException
     {
-        return new URLConnection(resource) 
-        {            
+        return new URLConnection(resource)
+        {
             @Override
             public InputStream getInputStream() throws IOException
             {
@@ -29,7 +29,7 @@ public class Handler extends URLStreamHandler
             }
 
             @Override
-            public void connect() throws IOException 
+            public void connect() throws IOException
             {
             }
         };

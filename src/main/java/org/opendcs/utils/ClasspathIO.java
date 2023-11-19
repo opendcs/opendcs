@@ -22,7 +22,7 @@ public class ClasspathIO {
     }
 
     private static List<URL> getAllResourcesIn(String name, String root, ClassLoader loader) throws IOException
-    {        
+    {
         List<URL> ret = new ArrayList<>();
         Enumeration<URL> resources = loader.getResources(name);
         while(resources.hasMoreElements())
@@ -56,14 +56,14 @@ public class ClasspathIO {
                         ret.add(url);
                     }
                     else
-                    {   
+                    {
                         List<String> nextLevel = childDirectory(url);
                         for(String nextName: nextLevel)
                         {
                             String nextDir = root+"/"+nextName;
                             ret.addAll(getAllResourcesIn(nextDir,nextDir,loader)); // recourse into directories
                         }
-                        
+
                     }
                 }
                 catch (URISyntaxException use)
@@ -76,7 +76,7 @@ public class ClasspathIO {
     }
 
     public static List<URL> getAllResourcesIn(String name, ClassLoader loader) throws IOException
-    {        
+    {
         return getAllResourcesIn(name,name,loader);
     }
 
