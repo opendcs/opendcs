@@ -18,13 +18,13 @@ import decodes.routing.RoutingSpecThread;
 import uk.org.webcompere.systemstubs.SystemStubs;
 
 @DecodesConfigurationRequired({
-        "shared/test-sites.xml",
-        "shared/ROWI4.xml",
+        "classpath:/data/shared/test-sites.xml",
+        "classpath:/data/shared/ROWI4.xml",
         "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
-        "shared/presgrp-regtest.xml",
-        "HydroJsonTest/HydroJSON-rs.xml",
-        "SimpleDecodesTest/site-OKVI4.xml",
-        "SimpleDecodesTest/OKVI4-decodes.xml"
+        "classpath:/data/shared/presgrp-regtest.xml",
+        "classpath:/data/HydroJsonTest/HydroJSON-rs.xml",
+        "classpath:/data/SimpleDecodesTest/site-OKVI4.xml",
+        "classpath:/data/SimpleDecodesTest/OKVI4-decodes.xml"
 })
 public class DecodesTest extends AppTestBase
 {

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.utils.UrlUtils;
 
 import ilex.util.EnvExpander;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -48,7 +49,11 @@ public class AppTestBase
      */
     public static String getResource(String file)
     {
-        if ( !file.startsWith("$"))
+        if (UrlUtils.isValidUrl(file))
+        {
+            return file;
+        }
+        else if ( !file.startsWith("$"))
         {
             return new File(TestResources.resourceDir,file).getAbsolutePath();
         }

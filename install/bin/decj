@@ -79,7 +79,7 @@ then
  done
 fi
 
-cmd="java -Xms120m $DECJ_MAXHEAP -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
+cmd="java -Djava.protocol.handler.pkgs=org.opendcs.spi.url -Xms120m $DECJ_MAXHEAP -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
 
 for a
 do

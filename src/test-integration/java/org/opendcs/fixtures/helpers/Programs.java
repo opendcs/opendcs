@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
@@ -41,10 +42,25 @@ public class Programs
                                 String... filesOrDirectories) throws Exception
     {
         final String extensions[] = {"xml"};
-        final ArrayList<File> files = new ArrayList<>();
-        for(String f: filesOrDirectories)
+        final ArrayList<String> urls = new ArrayList<>();
+        for(String file: filesOrDirectories)
         {
-            files.addAll(FileUtils.listFiles(new File(f),extensions,true));
+            File tempFile = new File(file);
+            if (tempFile.isDirectory())
+            {
+                FileUtils.listFiles(tempFile,extensions,true)
+                         .stream()
+                         .map(f -> f.getAbsolutePath())
+                         .forEach(f -> urls.add(f));
+            }
+            else if(tempFile.exists())
+            {
+                urls.add(tempFile.toURI().toURL().toExternalForm());
+            }
+            else
+            {
+                urls.add(file);  
+            }
         }
 
         properties.execute(() ->
@@ -56,11 +72,7 @@ public class Programs
                         theArgs.add("-l"); theArgs.add(log.getAbsolutePath());
                         theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
                         theArgs.add("-d3");
-                        theArgs.addAll(
-                            files.stream()
-                                 .map(f->f.getAbsolutePath())
-                                 .collect(Collectors.toList())
-                                    );
+                        theArgs.addAll(urls);
                         DbImport.main(theArgs.toArray(new String[0]));
                     })
                 )

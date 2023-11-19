@@ -75,6 +75,8 @@ package decodes.dbimport;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Iterator;
@@ -88,6 +90,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.opentsdb.Interval;
 
+import org.opendcs.utils.UrlUtils;
 import org.xml.sax.SAXException;
 
 import ilex.util.Logger;
@@ -553,8 +556,9 @@ Logger.instance().debug3("After normalizeTheDb, there are "
 							}
 						});
 			}
-
-			try { ob = topParser.parse(new File(s)); }
+			URL url = UrlUtils.urlIfValid(s);
+			url = (url != null ? url : new URL("file:" + s));
+			try { ob = topParser.parse(url); }
 			catch(org.xml.sax.SAXException e)
 			{
 				failure("Cannot open '" + s + "': " + e);
