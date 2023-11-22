@@ -151,10 +151,12 @@ system you can turn pool tracing on for an application with the following java f
 
 .. code-block:: bash
 
-    DECJ_MAXHEAP="-Dcwms.connection.pool.trace=true" routsched ...
+    DECJ_MAXHEAP="-Dopendcs.connection.pool.trace=true" routsched ...
 
-With tracing on the WrappedConnectionMBean will show where a connection was created from. This useful for identifing 
+With tracing on the WrappedConnectionMBean will show where a connection was created from. This useful for identifying
 what code to fix for connection pool leaks.
+
+The property was previously :code:`cwms.connection.pool.trace` which remains available as a fallback.
 
 Authentication Sources
 ----------------------
