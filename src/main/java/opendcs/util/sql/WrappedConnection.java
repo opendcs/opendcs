@@ -31,9 +31,12 @@ import javax.management.openmbean.OpenDataException;
 
 import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.jmx.connections.JMXTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import ilex.util.Logger;
 import opendcs.util.functional.ThrowingConsumer;
+
+import static org.slf4j.helpers.Util.getCallingClass;
 
 /**
  * Used for pooled connection system. Allows code
@@ -43,8 +46,9 @@ import opendcs.util.functional.ThrowingConsumer;
  *
  * Otherwise it's just a passthrough to the realConnection
  */
-public class WrappedConnection implements Connection, WrappedConnectionMBean{
-    private static Logger log = Logger.instance();
+public class WrappedConnection implements Connection, WrappedConnectionMBean
+{
+    private static Logger log = LoggerFactory.getLogger(getCallingClass());
 
     private Connection realConnection;
     private final ThrowingConsumer<WrappedConnection,SQLException> onClose;
@@ -165,15 +169,15 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
     private void logPlainCreate() {
         if(trace)
         {
-            log.debug2("Dev Msg: Plain create statement from:");
-            if(log.getMinLogPriority() == Logger.E_DEBUG3)
+            if(log.isTraceEnabled())
             {
+                log.trace("Dev Msg: Plain create statement from:");
                 StackTraceElement stk[] = Thread.currentThread().getStackTrace();
                 if(stk != null)
                 {
                     for(int n = 2; n < stk.length; n++)
                     {
-                            log.debug3("\t" + n + ": " + stk[n]);
+                            log.trace("\t" + n + ": " + stk[n]);
                     }
                 }
             }

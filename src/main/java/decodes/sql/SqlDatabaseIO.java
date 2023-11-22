@@ -63,6 +63,8 @@
  */
 package decodes.sql;
 
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.*;
@@ -83,6 +85,8 @@ import java.util.TimeZone;
 
 import ilex.util.EnvExpander;
 import org.opendcs.authentication.AuthSourceService;
+
+import org.slf4j.LoggerFactory;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
@@ -140,6 +144,7 @@ public class SqlDatabaseIO
 	extends DatabaseIO
 	implements DatabaseConnectionOwner
 {
+	private static org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
 	/**
  	* The "location" of the SQL database, as passed into the constructor.
  	* This is the full string from either the "DatabaseLocation" or the
@@ -1141,9 +1146,8 @@ public class SqlDatabaseIO
 		try { siteDao.readSite(site); }
 		catch (Exception ex)
 		{
-			System.err.println(ex);
-			ex.printStackTrace(System.err);
-			throw new DatabaseException(ex.getMessage());
+			log.error("Unable to read site",ex);
+			throw new DatabaseException(ex.getMessage(),ex);
 		}
 		finally
 		{

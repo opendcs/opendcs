@@ -554,7 +554,7 @@ more information about each.
                 </restrict>
                 <chainedmapper>
                     <flattenmapper/>
-                    <regexpmapper from="^(LoboBrowser-1.0.0.jar)" to="zzz\1"/>
+                    <regexpmapper from="^(Cobra-1.0.2.jar|LoboBrowser-1.0.0.jar)" to="zzz\1"/>
                 </chainedmapper>
             </mappedresources>
             <mappedresources enablemultiplemappings="false">
@@ -564,7 +564,7 @@ more information about each.
                 </restrict>
                 <chainedmapper>
                     <flattenmapper/>
-                    <regexpmapper from="^(?!LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
+                    <regexpmapper from="^(?!Cobra-1.0.2.jar|LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
                 </chainedmapper>
             </mappedresources>
 
@@ -771,7 +771,9 @@ more information about each.
         </tar>
     </target>
 
-    <target name="eclipse-ide-files" depends="common.resolve,common.resolve.build">
+    <!-- these intentionally depend on .real of the resolve tasks as if the user
+         is asking for these file to be recreate something is likely wrong. -->
+    <target name="eclipse-ide-files" depends="prepare,common.resolve.real,common.resolve.build.real">
         <!--
             Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
             coming up with this!
