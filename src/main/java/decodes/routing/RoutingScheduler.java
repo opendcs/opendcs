@@ -608,7 +608,7 @@ public class RoutingScheduler
 	
 	public void threadFinished(Thread thread)
 	{
-		if (appLogger != null)
+		if (appLogger != null && thread != null)
 			appLogger.setLogger(thread, null);
 	}
 
