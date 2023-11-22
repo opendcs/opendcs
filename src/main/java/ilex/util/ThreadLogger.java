@@ -136,7 +136,7 @@ public class ThreadLogger extends Logger
 	 * its own priority filtering.
 	 */
 	@Override
-	public synchronized void log( int priority, String text )
+	public void log( int priority, String text )
 	{
 		Logger tl = getCurrentThreadLogger();
 		if (tl != this)
@@ -198,4 +198,3 @@ public class ThreadLogger extends Logger
 		this.moduleName = moduleName;
 	}
 }
-
