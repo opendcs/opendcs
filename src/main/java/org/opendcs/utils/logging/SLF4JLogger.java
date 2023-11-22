@@ -1,10 +1,13 @@
 package org.opendcs.utils.logging;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 import org.slf4j.helpers.AbstractLogger;
+import org.slf4j.helpers.MessageFormatter;
 
 public class SLF4JLogger extends AbstractLogger
 {
@@ -87,13 +90,16 @@ public class SLF4JLogger extends AbstractLogger
     protected void handleNormalizedLoggingCall(Level level, Marker marker, String msg, Object[] args, Throwable ex)
     {
         int ilexLevel = slf4jToIlexLevel(level);
-        realLogger.log(ilexLevel,msg);
-        PrintStream out = null;
+        realLogger.log(ilexLevel,MessageFormatter.arrayFormat(msg, args).getMessage());
+        PrintStream ps = null;
+        OutputStream out = null;
         if (realLogger.getMinLogPriority() <= ilexLevel
-            && ex != null 
-            && (out = realLogger.getLogOutput()) != null)
+            && ex != null)
         {
-            ex.printStackTrace(out);
+            out = new ByteArrayOutputStream(ex.getStackTrace().length*50); // assume about 50 characters per line
+            ps = new PrintStream(out);
+            ex.printStackTrace(ps);
+            realLogger.log(ilexLevel, out.toString());
         }
     }
 
