@@ -1,8 +1,9 @@
 package org.opendcs.utils.sql;
 
 /**
- * This classes is to old developer or advanced configuration settings
- * Set as properties as opposed to intended user facing settings.
+ * This class is to hold developer or advanced configuration settings
+ * set as jvm properties as opposed to user facing settings in the application
+ * .properties files.
  */
 public class SqlSettings
 {
@@ -15,7 +16,7 @@ public class SqlSettings
      */
     public static final boolean TRACE_CONNECTIONS = 
         Boolean.parseBoolean(
-            System.getProperty("opendcs.connection.poo..trace",
+            System.getProperty("opendcs.connection.pool.trace",
                 System.getProperty("cwms.connection.pool.trace", "false")
                 )
         );    
