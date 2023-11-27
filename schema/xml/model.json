@@ -1,0 +1,17 @@
+{
+    version: '1.0'
+    defaultSchema: 'decodes',
+    schemas: [
+        {
+            name: 'decodes',
+            type: 'map',
+            tables: [
+                {
+                    name: 'platforms',
+                    columns: ["name"]
+                }
+            ]
+        }
+    ]
+    
+  }

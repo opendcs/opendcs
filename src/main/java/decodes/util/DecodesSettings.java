@@ -185,6 +185,7 @@ public class DecodesSettings
 	/** Code meaning OPEN TSDB Database */
 	public static final int DB_OPENTSDB = 5;
 	public static final int DB_HDB = 6;
+	public static final int DB_XMLCALCITE = 7;
 
 	/** Editable database type (XML, URL, or SQL) */
  	public String editDatabaseType = "";
@@ -787,6 +788,8 @@ public class DecodesSettings
 			editDatabaseTypeCode = DB_OPENTSDB;
 		else if (editDatabaseType.equalsIgnoreCase("hdb"))
 			editDatabaseTypeCode = DB_HDB;
+		else if (editDatabaseType.equalsIgnoreCase("xml-calcite"))
+			editDatabaseTypeCode = DB_XMLCALCITE;
 	}
 
 	/**
@@ -831,6 +834,8 @@ public class DecodesSettings
 			editDatabaseType = "OPENTSDB";
 		else if (editDatabaseTypeCode == DB_HDB)
 			editDatabaseType = "HDB";
+		else if (editDatabaseTypeCode == DB_XMLCALCITE)
+			editDatabaseType = "XML-Calcite";
 
 		PropertiesUtil.storeInProps(this, props, null);
 		props.remove("databaseTypeCode");

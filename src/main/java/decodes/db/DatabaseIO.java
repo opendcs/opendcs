@@ -70,6 +70,9 @@ public abstract class DatabaseIO
 		
 		if (type == DecodesSettings.DB_HDB)
 			return new decodes.hdb.HdbSqlDatabaseIO(location);
+
+		if (type == DecodesSettings.DB_XMLCALCITE)
+			return new org.opendcs.implementations.xml.XmlSqlDatabaseIO(location);
 		
 		// Add other database interface types (URL) here...
 
