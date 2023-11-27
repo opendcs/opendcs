@@ -165,7 +165,6 @@ public class CwmsTimeSeriesDAO
 			+ "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
 			+ "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a";
 	private long lastTsidCacheRead = 0L;
-	private PreparedStatement getTaskListStmt;
     String getMinStmtQuery = null, getTaskListStmtQuery = null;
 
 
@@ -1283,137 +1282,129 @@ public class CwmsTimeSeriesDAO
 
 		DataCollection dataCollection = new DataCollection();
 
-		try
-		{
-			if (getTaskListStmt == null)
-			{
-				String failTimeClause =
+		String failTimeClause =
 					DecodesSettings.instance().retryFailedComputations
 					? " and (a.FAIL_TIME is null OR SYSDATE - a.FAIL_TIME >= 1/24)"
 					: "";
 
-				getTaskListStmtQuery =
-					"select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
-					+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
-					+ "from CP_COMP_TASKLIST a "
-					+ "where a.LOADING_APPLICATION_ID = ?" // + applicationId
-					+ " and ROWNUM < 20000"
-					+ failTimeClause
-					+ " ORDER BY a.site_datatype_id, a.start_date_time";
-				getTaskListStmt = getConnection().prepareStatement(getTaskListStmtQuery);
-			}
+		getTaskListStmtQuery =
+			"select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
+			+ "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
+			+ "from CP_COMP_TASKLIST a "
+			+ "where a.LOADING_APPLICATION_ID = ?" // + applicationId
+			+ " and ROWNUM < 20000"
+			+ failTimeClause
+			+ " ORDER BY a.site_datatype_id, a.start_date_time";
 
+		try (Connection conn = getConnection();
+		     PreparedStatement getTaskListStmt = conn.prepareStatement(getTaskListStmtQuery);
+			)
+		{
 			getTaskListStmt.setLong(1,applicationId.getValue());
 
-		}
-		catch(SQLException ex)
-		{
-			warning("Error preparing tasklist query '" + getTaskListStmtQuery + "': " + ex);
-			return dataCollection;
-		}
-
-		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
-		ArrayList<Integer> badRecs = new ArrayList<Integer>();
-		debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
-		try(ResultSet rs = getTaskListStmt.executeQuery())
-		{
-			Date lastTimestamp = null;
-			while (rs.next())
+			ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
+			ArrayList<Integer> badRecs = new ArrayList<Integer>();
+			debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
+			try(ResultSet rs = getTaskListStmt.executeQuery())
 			{
-				// Extract the info needed from the result set row.
-				Date timeStamp = new Date(rs.getDate(4).getTime());
-				boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
-				if(exceedsMaxTimeGap)
+				Date lastTimestamp = null;
+				while (rs.next())
 				{
-					break;
-				}
-				lastTimestamp = timeStamp;
-				int recordNum = rs.getInt(1);
-				DbKey sdi = DbKey.createDbKey(rs, 2);
-				double value = rs.getDouble(3);
-				boolean valueWasNull = rs.wasNull();
-				String df = rs.getString(5);
-				char c = df.toLowerCase().charAt(0);
-				boolean deleted = false;
-				if (c == 'u')
-				{
-					// msg handler will send this when he gets
-					// TsCodeChanged. It tells me to update my cache.
-					DbObjectCache<TimeSeriesIdentifier> cache = getCache();
-					synchronized(cache)
+					// Extract the info needed from the result set row.
+					Date timeStamp = new Date(rs.getDate(4).getTime());
+					boolean exceedsMaxTimeGap = exceedsMaxTimeGap(lastTimestamp, timeStamp);
+					if(exceedsMaxTimeGap)
 					{
-						TimeSeriesIdentifier tsid = cache.getByKey(sdi);
-						if (tsid != null)
+						break;
+					}
+					lastTimestamp = timeStamp;
+					int recordNum = rs.getInt(1);
+					DbKey sdi = DbKey.createDbKey(rs, 2);
+					double value = rs.getDouble(3);
+					boolean valueWasNull = rs.wasNull();
+					String df = rs.getString(5);
+					char c = df.toLowerCase().charAt(0);
+					boolean deleted = false;
+					if (c == 'u')
+					{
+						// msg handler will send this when he gets
+						// TsCodeChanged. It tells me to update my cache.
+						DbObjectCache<TimeSeriesIdentifier> cache = getCache();
+						synchronized(cache)
 						{
-							DbKey newCode = DbKey.createDbKey(rs, 9);
-							cache.remove(sdi);
-							tsid.setKey(newCode);
-							cache.put(tsid);
-							continue;
+							TimeSeriesIdentifier tsid = cache.getByKey(sdi);
+							if (tsid != null)
+							{
+								DbKey newCode = DbKey.createDbKey(rs, 9);
+								cache.remove(sdi);
+								tsid.setKey(newCode);
+								cache.put(tsid);
+								continue;
+							}
 						}
 					}
+					else
+						deleted = TextUtil.str2boolean(df);
+
+					String unitsAbbr = rs.getString(6);
+					Date versionDate = db.getFullDate(rs, 7);
+					BigDecimal qc = rs.getBigDecimal(8);
+					long qualityCode = qc == null ? 0 : qc.longValue();
+
+					TasklistRec rec = new TasklistRec(recordNum, sdi, value,
+						valueWasNull, timeStamp, deleted,
+						unitsAbbr, versionDate, qualityCode);
+					tasklistRecs.add(rec);
 				}
-				else
-					deleted = TextUtil.str2boolean(df);
 
-				String unitsAbbr = rs.getString(6);
-				Date versionDate = db.getFullDate(rs, 7);
-				BigDecimal qc = rs.getBigDecimal(8);
-				long qualityCode = qc == null ? 0 : qc.longValue();
+				RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
 
-				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
-					valueWasNull, timeStamp, deleted,
-					unitsAbbr, versionDate, qualityCode);
-				tasklistRecs.add(rec);
-			}
+				// Process the real-time records collected above.
+				for(TasklistRec rec : tasklistRecs)
+					processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
 
-			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
+				dataCollection.setTasklistHandle(rrhandle);
 
-			// Process the real-time records collected above.
-			for(TasklistRec rec : tasklistRecs)
-				processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
-
-			dataCollection.setTasklistHandle(rrhandle);
-
-			// Delete the bad tasklist recs, 250 at a time.
-			if (badRecs.size() > 0)
-				Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
-					+ " bad tasklist records.");
-			while (badRecs.size() > 0)
-			{
-				StringBuilder inList = new StringBuilder();
-				int n = badRecs.size();
-				int x=0;
-				for(; x<250 && x<n; x++)
+				// Delete the bad tasklist recs, 250 at a time.
+				if (badRecs.size() > 0)
+					Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
+						+ " bad tasklist records.");
+				while (badRecs.size() > 0)
 				{
-					if (x > 0)
-						inList.append(", ");
-					inList.append(badRecs.get(x).toString());
+					StringBuilder inList = new StringBuilder();
+					int n = badRecs.size();
+					int x=0;
+					for(; x<250 && x<n; x++)
+					{
+						if (x > 0)
+							inList.append(", ");
+						inList.append(badRecs.get(x).toString());
+					}
+					String q = "delete from CP_COMP_TASKLIST "
+						+ "where RECORD_NUM IN (" + inList.toString() + ")";
+					doModify(q);
+					for(int i=0; i<x; i++)
+						badRecs.remove(0);
 				}
-				String q = "delete from CP_COMP_TASKLIST "
-					+ "where RECORD_NUM IN (" + inList.toString() + ")";
-				doModify(q);
-				for(int i=0; i<x; i++)
-					badRecs.remove(0);
-			}
 
-			// Show each tasklist entry in the log if we're at debug level 3
-			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
-			{
-				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
-				debug3("getNewData, returning " + allts.size() + " TimeSeries.");
-				for(CTimeSeries ts : allts)
-					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " "
-						+ ts.size() + " values.");
-			}
+				// Show each tasklist entry in the log if we're at debug level 3
+				if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
+				{
+					List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
+					debug3("getNewData, returning " + allts.size() + " TimeSeries.");
+					for(CTimeSeries ts : allts)
+						debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " "
+							+ ts.size() + " values.");
+				}
 
-			return dataCollection;
+				return dataCollection;
+			}
 		}
 		catch(SQLException ex)
 		{
-			System.err.println("Error reading new data: " + ex);
+			System.err.println("Error reading new data: " + ex.getLocalizedMessage());
 			ex.printStackTrace();
-			throw new DbIoException("Error reading new data: " + ex);
+			throw new DbIoException("Error reading new data: " + ex.getLocalizedMessage(), ex);
 		}
 	}
 

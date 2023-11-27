@@ -1,6 +1,6 @@
 /**
  * $Id$
- * 
+ *
  * $Log$
  * Revision 1.4  2017/01/24 15:38:08  mmaloney
  * CWMS-10060 added support for DecodesSettings.tsidFetchSize
@@ -15,7 +15,7 @@
  * OPENDCS 6.0 Initial Checkin
  *
  * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
+ * to the United States Government. No warranty is provided or implied other
  * than specific contractual terms between COVE and the U.S. Government.
  *
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
@@ -67,7 +67,7 @@ public class DaoBase
 	private boolean conSetManually = false;
 
 	protected String module;
-	
+
 	/**
 	 * Constructor
 	 * @param tsdb the database
@@ -78,8 +78,8 @@ public class DaoBase
 		this.db = tsdb;
 		this.module = module;
 	}
-	
-	/** 
+
+	/**
 	 * Constructor for subordinate DAOs.
 	 * The parent DAO shares its connection with the
 	 * subordinate after creation. Then the subordinate close() will not free
@@ -94,14 +94,14 @@ public class DaoBase
 		this.module = module;
 		setManualConnection(con);
 	}
-	
+
 	public void setManualConnection(Connection con)
 	{
 		this.myCon = con;
 		conSetManually = true;
 	}
 
-	
+
 	/**
 	 * Users should close the DAO after using.
 	 */
@@ -112,18 +112,18 @@ public class DaoBase
 		if (queryStmt2 != null)
 			try { queryStmt2.close(); } catch(Exception ex) {}
 		queryStmt1 = queryStmt2 = null;
-		
+
 		// for pooling: return the connection (if there is one) back to the pool.
 		if (myCon != null && !conSetManually)
 			db.freeConnection(myCon);
 		myCon = null;
 	}
-	
+
 	public void finalize()
 	{
 		close();
 	}
-	
+
 	protected Connection getConnection()
 	{
 		// local getConnection() method that saves the connection locally
@@ -136,13 +136,13 @@ public class DaoBase
 			this.queryResults2 = null;
 			myCon = db.getConnection();
 		}
-			
-			
+
+
 		return new WrappedConnection(myCon, c -> {});
 	}
 
 	/**
-	 * 
+	 *
 	 * @return connection state (open -> false, closed -> true)
 	 */
 	private boolean connectionClosed()
@@ -150,8 +150,8 @@ public class DaoBase
 		try{
 			return myCon.isClosed();
 		} catch( SQLException err){
-			// There is no compelling reason here to distinguish between a failed and closed connection.						
-			return true;	
+			// There is no compelling reason here to distinguish between a failed and closed connection.
+			return true;
 		}
 	}
 
@@ -162,9 +162,9 @@ public class DaoBase
 		} catch( SQLException err )
 		{
 			return true;
-		}		
+		}
 	}
-	
+
 	/**
 	 * Does a SQL query with the default static statement &amp; returns the
 	 * result set.
@@ -175,7 +175,9 @@ public class DaoBase
 	 * needed.
 	 * @param q the query
 	 * @return the result set
+	 * @deprecated Do not use for use code
 	 */
+	@Deprecated
 	public ResultSet doQuery(String q)
 		throws DbIoException
 	{
@@ -192,7 +194,7 @@ public class DaoBase
 			if (fetchSize > 0)
 				queryStmt1.setFetchSize(fetchSize);
 			debug3("Query1 '" + q + "'");
-			
+
 //if (this instanceof decodes.cwms.CwmsTimeSeriesDAO
 // || this instanceof decodes.cwms.CwmsSiteDAO)
 //debug1("Fetch size=" + queryStmt1.getFetchSize());
@@ -206,8 +208,13 @@ public class DaoBase
 			throw new DbIoException(msg);
 		}
 	}
-	
-		/** An extra do-query for inside-loop queries. */
+
+	/**
+	 *
+	 *  An extra do-query for inside-loop queries.
+	 * @Deprecated do not use for new code
+	 */
+	@Deprecated
 	public ResultSet doQuery2(String q) throws DbIoException
 	{
 		if (queryResults2 != null)
@@ -296,7 +303,7 @@ public class DaoBase
 	{
 		if (arg == null)
 			return "NULL";
-		
+
 		String a = "";
 		int from = 0;
 		int to;
@@ -318,7 +325,7 @@ public class DaoBase
 			throw new DbIoException(ex.getMessage());
 		}
 	}
-	
+
 	/**
 	 * Format a double precision float for a sql statement.
 	 * The special value Constants.undefinedDouble (a huge number) will
@@ -331,7 +338,7 @@ public class DaoBase
 		if (d == Constants.undefinedDouble) return "NULL";
 		return Double.toString(d);
 	}
-	
+
 	public String sqlBoolean(boolean b)
 	{
 		return db.sqlBoolean(b);

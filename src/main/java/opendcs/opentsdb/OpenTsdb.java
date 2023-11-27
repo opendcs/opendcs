@@ -4,6 +4,7 @@ import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
 
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,10 +53,10 @@ public class OpenTsdb extends TimeSeriesDb
 {
 	private String jdbcOracleDriver = null;
 	private String databaseLocation = null;
-	
+
 	public static final char TABLE_TYPE_NUMERIC = 'N';
 	public static final char TABLE_TYPE_STRING = 'S';
-	
+
 	String getMinStmtQuery = null, getTaskListStmtQuery = null;
 
 
@@ -64,7 +65,7 @@ public class OpenTsdb extends TimeSeriesDb
 		super();
 		module = "OpenTsdb";
 	}
-	
+
 	@Override
 	public Date getFullDate(ResultSet rs, int column)
 	{
@@ -94,34 +95,37 @@ public class OpenTsdb extends TimeSeriesDb
 		return "" + d.getTime();
 	}
 
-	
+
 	@Override
 	public DbKey connect(String appName, Properties credentials)
 		throws BadConnectException
 	{
 		DecodesSettings settings = DecodesSettings.instance();
-		
+
 		String driverClass = this.jdbcOracleDriver != null ? this.jdbcOracleDriver :
 			DecodesSettings.instance().jdbcDriverClass;
 		String dbUri = this.databaseLocation != null ? this.databaseLocation :
 			DecodesSettings.instance().editDatabaseLocation;
 
-		
+
 		String username = credentials.getProperty("username");
 		String password = credentials.getProperty("password");
 
 		try
 		{
 			Class.forName(driverClass);
-		
+
 			// setConnection will also get the TSDB Version Info and read tsdb_properties
 			setConnection(
 				DriverManager.getConnection(dbUri, username, password));
-		
+
 			setupKeyGenerator();
 
 			// MJM 2018-2/21 Force autoCommit on.
-			try { getConnection().setAutoCommit(true); }
+			try (Connection c = getConnection();)
+			{
+				c.setAutoCommit(true);
+			}
 			catch(SQLException ex)
 			{
 				Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
@@ -129,13 +133,13 @@ public class OpenTsdb extends TimeSeriesDb
 
 			postConnectInit(appName, conn);
 			OpenTsdbSettings.instance().setFromProperties(props);
-			
+
 			return appId;
 		}
 		catch (Exception ex)
 		{
 			String msg = "Error getting JDBC connection using driver '"
-				+ settings.jdbcDriverClass + "' to database at '" 
+				+ settings.jdbcDriverClass + "' to database at '"
 				+ settings.editDatabaseLocation
 				+ "' for user '" + username + "': " + ex.toString();
 			System.err.println(msg);
@@ -188,9 +192,9 @@ public class OpenTsdb extends TimeSeriesDb
 	}
 
 
-	
-	
-	
+
+
+
 
 	@Override
 	public void validateParm(DbKey siteId, String dtcode, String interval,
@@ -233,7 +237,7 @@ public class OpenTsdb extends TimeSeriesDb
 				+ uniqueString + "', parm=" + parm);
 			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
 
-			try 
+			try
 			{
 				tsidRet = timeSeriesDAO.getTimeSeriesIdentifier(uniqueString);
 				debug3(module + " time series '" + uniqueString + "' exists OK.");
@@ -244,12 +248,12 @@ public class OpenTsdb extends TimeSeriesDb
 				{
 					if (timeSeriesDisplayName != null)
 						tsidRet.setDisplayName(timeSeriesDisplayName);
-					
+
 					// If the datatype has changed, set units to null. This will force the DAO
 					// to lookup the correct units for the param.
 					if (!TextUtil.strEqualIgnoreCase(tsid.getPart("param"), tsidRet.getPart("param")))
 						tsidRet.setStorageUnits(null);
-					
+
 					timeSeriesDAO.createTimeSeries(tsidRet);
 					fillInParm = true;
 				}
@@ -266,7 +270,7 @@ public class OpenTsdb extends TimeSeriesDb
 		}
 		else
 			tsidRet = tsid;
-		
+
 		if (fillInParm)
 		{
 			parm.setSiteDataTypeId(tsidRet.getKey());
@@ -290,7 +294,7 @@ public class OpenTsdb extends TimeSeriesDb
 		if (!(tsidRet instanceof CwmsTsId))
 			return false;
 		CwmsTsId ctsid = (CwmsTsId) tsidRet;
-		
+
 		SiteName parmSiteName = parm.getSiteName();
 		if (parmSiteName != null)
 		{
@@ -339,7 +343,7 @@ public class OpenTsdb extends TimeSeriesDb
 			}
 			catch (Exception ex)
 			{
-				Logger.instance().warning("Cannot get site for morphed sitename " 
+				Logger.instance().warning("Cannot get site for morphed sitename "
 					+ morphed + ": " + ex);
 			}
 			finally
@@ -394,7 +398,7 @@ public class OpenTsdb extends TimeSeriesDb
 			{
 				String morphed = TsidMorpher.morph(ctsid.getPart("version"), s);
 				if (morphed == null)
-					debug2("Unable to morph param '" + ctsid.getPart("version") 
+					debug2("Unable to morph param '" + ctsid.getPart("version")
 						+ "' with version spec '" + s + "'");
 				else
 				{
@@ -408,9 +412,9 @@ public class OpenTsdb extends TimeSeriesDb
 		}
 		return transformed;
 	}
-	
-	
-	
+
+
+
 	public XmitRecordDAO makeXmitRecordDao(int maxDays)
 	{
 		return new OpenTsdbXmitRecordDao(this, maxDays);
@@ -433,7 +437,7 @@ public class OpenTsdb extends TimeSeriesDb
 	{
 		return new ScheduleEntryDAO(this);
 	}
-	
+
 	@Override
 	public String flags2LimitCodes(int flags)
 	{
@@ -452,7 +456,7 @@ public class OpenTsdb extends TimeSeriesDb
 
 	@Override
 	public boolean isOpenTSDB() { return true; }
-	
+
 	@Override
 	public ArrayList<String> listParamTypes()
 		throws DbIoException
@@ -515,11 +519,11 @@ public class OpenTsdb extends TimeSeriesDb
 
 		return ret;
 	}
-	
+
 	public String getStorageUnitsForDataType(DataType dt)
 	{
 		String pgname = OpenTsdbSettings.instance().storagePresentationGroup;
-		
+
 		PresentationGroup pg = Database.getDb().presentationGroupList.find(pgname);
 		if (pg == null)
 			return null;
@@ -532,7 +536,7 @@ public class OpenTsdb extends TimeSeriesDb
 	{
 		return OpenTsdbFlags.flags2screeningString(flags);
 	}
-	
+
 	@Override
 	public GroupHelper makeGroupHelper()
 	{
@@ -541,7 +545,7 @@ public class OpenTsdb extends TimeSeriesDb
 
 	/**
 	 * For CWMS we show all 5 path components for the site.
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -554,7 +558,7 @@ public class OpenTsdb extends TimeSeriesDb
 		header[2] = "Interval";
 		header[3] = "Duration";
 		header[4] = "Version";
-		
+
 		ArrayList<String[]> ret = new ArrayList<String[]>();
 		ret.add(header);
 
@@ -565,7 +569,7 @@ public class OpenTsdb extends TimeSeriesDb
 			for(TimeSeriesIdentifier tsid : tsids)
 			{
 				if (tsid.getSite().getId().equals(siteId))
-					ret.add(new String[] { tsid.getPart("param"), tsid.getPart("paramtype"), 
+					ret.add(new String[] { tsid.getPart("param"), tsid.getPart("paramtype"),
 						tsid.getInterval(), tsid.getPart("duration"), tsid.getPart("version")});
 			}
 		}
@@ -573,7 +577,7 @@ public class OpenTsdb extends TimeSeriesDb
 		{
 			tsDAO.close();
 		}
-		
+
 		return ret;
 	}
 

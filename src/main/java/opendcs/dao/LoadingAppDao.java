@@ -51,6 +51,7 @@ import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -531,69 +532,78 @@ public class LoadingAppDao
 	{
 		//ResultSet rs = null; //doQuery(q);
 		TsdbCompLock lock = null;
-		try( PreparedStatement getLock =
-				getConnection().prepareStatement(
-					"SELECT * from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?"
-				);
-		)
+		try (Connection c = getConnection();)
 		{
-			getLock.setLong(1,appInfo.getAppId().getValue());
-			try(ResultSet rs = getLock.executeQuery();){
-				if ( rs.next() && (lock = rs2lock(rs)) != null)
+			try(
+				PreparedStatement getLock =
+					c.prepareStatement(
+						"SELECT * from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?"
+					);
+			)
+			{
+				getLock.setLong(1,appInfo.getAppId().getValue());
+				try(ResultSet rs = getLock.executeQuery();)
 				{
-					// Same application is re-connecting? (pid will be same)
-					if (lock.getPID() == pid)
+					if ( rs.next() && (lock = rs2lock(rs)) != null)
 					{
-						// No need to re-create. Update the existing lock.
-						checkCompProcLock(lock);
-						return lock;
-					}
-					if (!lock.isStale())
-					{
-						String msg =
-							"Cannot obtain lock for app ID " + appInfo.getAppId()
-							+ ". Currently owned by PID " + lock.getPID()
-							+ " on host '" + lock.getHost() + "'";
-						fatal(msg);
-						throw new LockBusyException(msg);
+						// Same application is re-connecting? (pid will be same)
+						if (lock.getPID() == pid)
+						{
+							// No need to re-create. Update the existing lock.
+							checkCompProcLock(lock);
+							return lock;
+						}
+						if (!lock.isStale())
+						{
+							String msg =
+								"Cannot obtain lock for app ID " + appInfo.getAppId()
+								+ ". Currently owned by PID " + lock.getPID()
+								+ " on host '" + lock.getHost() + "'";
+							fatal(msg);
+							throw new LockBusyException(msg);
+						}
 					}
 				}
+
 			}
+			catch(SQLException ex)
+			{
+				String msg = "Obtaining existing lock information: "+ ex;
+				failure(msg);
+			}
+			if (lock != null)
+				releaseCompProcLock(lock);
+			lock = new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting");
+			try( PreparedStatement insertLockInfo =
+				c.prepareStatement(
+					"INSERT INTO CP_COMP_PROC_LOCK VALUES ("
+				+ "?,?,?,?,?)"
+				);
+			){
+				insertLockInfo.setLong(1,appInfo.getAppId().getValue());
+				insertLockInfo.setInt(2,pid);
+				insertLockInfo.setString(3,host);
+				if( db.isOpenTSDB() )
+					insertLockInfo.setLong(4, lock.getHeartbeat().getTime());
+				else
+					insertLockInfo.setDate(4, new java.sql.Date(lock.getHeartbeat().getTime()));
+				insertLockInfo.setString(5,lock.getStatus());
+				insertLockInfo.execute();
 
+				debug1("Obtained lock for application ID " + appInfo.getAppId());
+				lock.setAppName(appInfo.getAppName());
+				return lock;
+			}
+			catch(SQLException ex)
+			{
+				String msg = "Error inserting new lock: " + ex;
+				failure(msg);
+				throw new DbIoException(msg);
+			}
 		}
-		catch(SQLException ex)
+		catch (SQLException ex)
 		{
-			String msg = "Obtaining existing lock information: "+ ex;
-			failure(msg);
-		}
-		if (lock != null)
-			releaseCompProcLock(lock);
-		lock = new TsdbCompLock(appInfo.getAppId(), pid, host, new Date(), "Starting");
-		try( PreparedStatement insertLockInfo =
-			getConnection().prepareStatement(
-				"INSERT INTO CP_COMP_PROC_LOCK VALUES ("
-			+ "?,?,?,?,?)"
-			);
-		){
-			insertLockInfo.setLong(1,appInfo.getAppId().getValue());
-			insertLockInfo.setInt(2,pid);
-			insertLockInfo.setString(3,host);
-			if( db.isOpenTSDB() )
-				insertLockInfo.setLong(4, lock.getHeartbeat().getTime());
-			else
-				insertLockInfo.setDate(4, new java.sql.Date(lock.getHeartbeat().getTime()));
-			insertLockInfo.setString(5,lock.getStatus());
-			insertLockInfo.execute();
-
-			debug1("Obtained lock for application ID " + appInfo.getAppId());
-			lock.setAppName(appInfo.getAppName());
-			return lock;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error inserting new lock: " + ex;
-			failure(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException("Unable to getConnection",ex);
 		}
 
 	}
@@ -625,8 +635,9 @@ public class LoadingAppDao
 	public void releaseCompProcLock(TsdbCompLock lock) throws DbIoException
 	{
 		if (lock != null){
-			try( PreparedStatement deleteLock =
-				getConnection().prepareStatement("DELETE from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?");
+			try (Connection c = getConnection();
+				 PreparedStatement deleteLock =
+				 	c.prepareStatement("DELETE from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?");
 			) {
 				deleteLock.setLong(1, lock.getAppId().getValue());
 				deleteLock.execute();
@@ -643,8 +654,9 @@ public class LoadingAppDao
 	{
 		TsdbCompLock tlock;
 //		Logger.instance().debug3("Checking lock for appID=" + lock.getAppId());
-		try( PreparedStatement updateHeartbeat =
-			getConnection().prepareStatement(
+		try (Connection c = getConnection();
+			 PreparedStatement updateHeartbeat =
+				c.prepareStatement(
 				"UPDATE CP_COMP_PROC_LOCK SET HEARTBEAT = ?, CUR_STATUS = ? WHERE LOADING_APPLICATION_ID = ?"
 			))
 		{
@@ -653,45 +665,45 @@ public class LoadingAppDao
 			{
 				String q = "SELECT * from CP_COMP_PROC_LOCK WHERE "
 					+ "LOADING_APPLICATION_ID = ?";
-				lockCheckStmt = getConnection().prepareStatement(q);
+				lockCheckStmt = c.prepareStatement(q);
 			}
 			lockCheckStmt.setLong(1, lock.getAppId().getValue());
-			ResultSet rs = lockCheckStmt.executeQuery();
-
-			if (rs.next() && (tlock = rs2lock(rs)) != null)
+			try (ResultSet rs = lockCheckStmt.executeQuery();)
 			{
-				if (lock.getPID() != tlock.getPID()
-				 || !lock.getHost().equalsIgnoreCase(tlock.getHost()))
+				if (rs.next() && (tlock = rs2lock(rs)) != null)
 				{
-					throw new LockBusyException(
-						"Lock for app ID " + lock.getAppId()
-						+ " has been stolen by PID " + tlock.getPID()
-						+ " on host '" + tlock.getHost() + "'"
-						+ ", my PID=" + lock.getPID()
-						+ ", my host='" + lock.getHost() + "'");
+					if (lock.getPID() != tlock.getPID()
+					|| !lock.getHost().equalsIgnoreCase(tlock.getHost()))
+					{
+						throw new LockBusyException(
+							"Lock for app ID " + lock.getAppId()
+							+ " has been stolen by PID " + tlock.getPID()
+							+ " on host '" + tlock.getHost() + "'"
+							+ ", my PID=" + lock.getPID()
+							+ ", my host='" + lock.getHost() + "'");
+					}
+					lock.setHeartbeat(new Date());
+
+					if( db.isOpenTSDB() )
+					{
+						updateHeartbeat.setLong(1, lock.getHeartbeat().getTime());
+					}
+					else
+					{
+						updateHeartbeat.setDate(1,new java.sql.Date(lock.getHeartbeat().getTime()));
+					}
+
+					updateHeartbeat.setString(2,lock.getStatus());
+					updateHeartbeat.setLong(3,lock.getAppId().getValue());
+					debug3("updating heartbeat");
+					updateHeartbeat.execute();
 				}
-				lock.setHeartbeat(new Date());
-
-				if( db.isOpenTSDB() )
-					updateHeartbeat.setLong(1, lock.getHeartbeat().getTime());
 				else
-					updateHeartbeat.setDate(1,new java.sql.Date(lock.getHeartbeat().getTime()));
-
-				updateHeartbeat.setString(2,lock.getStatus());
-				updateHeartbeat.setLong(3,lock.getAppId().getValue());
-				debug3("updating heartbeat");
-				updateHeartbeat.execute();
-/*				String q = "UPDATE CP_COMP_PROC_LOCK SET HEARTBEAT = "
-					+ db.sqlDate(lock.getHeartbeat()) + ", CUR_STATUS = "
-					+ sqlString(lock.getStatus())
-					+ " WHERE LOADING_APPLICATION_ID = "
-					+ lock.getAppId();
-
-				doModify(q);*/
+				{
+					throw new LockBusyException("Lock for app ID " + lock.getAppId()
+						+ " has been deleted.");
+				}
 			}
-			else
-				throw new LockBusyException("Lock for app ID " + lock.getAppId()
-					+ " has been deleted.");
 		}
 		catch(SQLException ex)
 		{
@@ -758,8 +770,9 @@ public class LoadingAppDao
 	@Override
 	public Date getLastModified(DbKey appId)
 	{
-		try(PreparedStatement getProperties =
-				getConnection().prepareStatement("select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
+		try(Connection c = getConnection();
+			PreparedStatement getProperties =
+				c.prepareStatement("select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
 				+ "where LOADING_APPLICATION_ID = ?"
 				+ " and PROP_NAME = ?" );)
 		{

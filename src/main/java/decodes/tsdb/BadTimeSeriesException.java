@@ -12,6 +12,8 @@
 */
 package decodes.tsdb;
 
+import java.sql.SQLException;
+
 /**
 Throws when a time series could not be processed because of bad
 internal linkages.
@@ -26,4 +28,9 @@ public class BadTimeSeriesException extends TsdbException
 	{
 		super(msg);
 	}
+
+    public BadTimeSeriesException(String msg, SQLException ex)
+	{
+		super(msg,ex);
+    }
 }
