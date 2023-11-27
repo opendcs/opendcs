@@ -875,7 +875,7 @@ more information about each.
         </checkstyle>
     </target>
 
-    <target name="spotbugs" depends="common.resolve.build,jar" description="Various static analysis">
+    <target name="spotbugs" depends="jar,common.resolve,common.resolve.build" description="Various static analysis">
         <mkdir dir="${spotbugs.output.dir}"/>
         <spotbugs output="xml:withMessages"
                   stylesheet="fancy.xsl"
