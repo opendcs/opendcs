@@ -17,6 +17,7 @@ package decodes.tsdb;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -76,40 +77,45 @@ public class ImageTest extends TsdbAppTemplate
 	{
 		// Table defined as:
 		// CREATE TABLE images (imgname text, img bytea);
-		
-		if (writeArg.getValue())
+		try (Connection c = theDb.getConnection();)
 		{
-			// Get file and write it to database table
-			File file = new File(imageFileArg.getValue());
-			FileInputStream fis = new FileInputStream(file);
-			PreparedStatement ps = theDb.getConnection().prepareStatement(
-				"INSERT INTO images VALUES (?, ?)");
-			ps.setString(1, imageNameArg.getValue());
-			ps.setBinaryStream(2, fis, (int)file.length());
-			ps.executeUpdate();
-			ps.close();
-			fis.close();
-		}
-		else
-		{
-			// Read the image from the database and write it to the file.
-			PreparedStatement ps = theDb.getConnection().prepareStatement(
-				"SELECT img FROM images WHERE imgname=?");
-			ps.setString(1, imageNameArg.getValue());
-			ResultSet rs = ps.executeQuery();
-			if (rs != null)
+			if (writeArg.getValue())
 			{
-			    if (rs.next())
-			    {
-			        byte[] imgBytes = rs.getBytes(1);
-			        FileOutputStream fos = new FileOutputStream(
-			        	imageFileArg.getValue());
-			        fos.write(imgBytes);
-			        fos.close();
-			    }
-			    rs.close();
+				// Get file and write it to database table
+				File file = new File(imageFileArg.getValue());
+				try (FileInputStream fis = new FileInputStream(file);
+					 PreparedStatement ps = c.prepareStatement(
+							"INSERT INTO images VALUES (?, ?)");
+					)
+				{
+					ps.setString(1, imageNameArg.getValue());
+					ps.setBinaryStream(2, fis, (int)file.length());
+					ps.executeUpdate();
+				}
 			}
-			ps.close();
+			else
+			{
+				try (PreparedStatement ps = c.prepareStatement(
+					"SELECT img FROM images WHERE imgname=?");)
+				{
+					// Read the image from the database and write it to the file.	
+					ps.setString(1, imageNameArg.getValue());
+					try (ResultSet rs = ps.executeQuery();)
+					{
+						if (rs != null)
+						{
+							if (rs.next())
+							{
+								byte[] imgBytes = rs.getBytes(1);
+								FileOutputStream fos = new FileOutputStream(
+									imageFileArg.getValue());
+								fos.write(imgBytes);
+								fos.close();
+							}			
+						}
+					}
+				}
+			}
 		}
 	}
 }
