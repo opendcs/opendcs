@@ -509,6 +509,7 @@ more information about each.
         <mkdir dir="stage/schema/opendcs-pg"/>
         <mkdir dir="stage/schema/opendcs-oracle"/>
         <mkdir dir="stage/schema/noaa"/>
+        <mkdir dir="stage/schema/xml"/>
 
         <copy todir="stage/edit-db">
             <fileset dir="${project.dir}/install/edit-db">
@@ -669,6 +670,10 @@ more information about each.
 
         <copy todir="stage/schema/noaa">
             <fileset dir="${project.dir}/schema/noaa"/>
+        </copy>
+
+        <copy todir="stage/schema/xml">
+            <fileset dir="${project.dir}/schema/xml"/>
         </copy>
 
         <copy todir="stage/python">

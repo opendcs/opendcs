@@ -632,7 +632,7 @@ public class SqlDatabaseIO
 		}
 		catch (DbIoException ex)
 		{
-			throw new DatabaseException(ex.toString());
+			throw new DatabaseException("Failed to read enum list", ex);
 		}
 		finally
 		{

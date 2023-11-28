@@ -1,17 +1,20 @@
 {
-    version: '1.0'
-    defaultSchema: 'decodes',
-    schemas: [
+    "version": "1.0",
+    "defaultSchema": "decodes",
+    "schemas": [
         {
-            name: 'decodes',
-            type: 'map',
-            tables: [
+            "name": "decodes",
+            "type": "map",
+            "tables": [
                 {
-                    name: 'platforms',
-                    columns: ["name"]
+                    "name": "platforms",
+                    "factory": "org.opendcs.implementations.xml.tables.XmlTableFactory"
+                },
+                {
+                    "name": "Enum",
+                    "factory": "org.opendcs.implementations.xml.tables.XmlTableFactory"
                 }
             ]
         }
     ]
-    
   }

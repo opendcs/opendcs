@@ -87,7 +87,7 @@ public class EnumSqlDao
 				return ret;
 			
 			int dbVer = db.getDecodesDatabaseVersion();
-			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
+			String q = "SELECT " + getEnumColumns(dbVer) + " FROM enum";
 			q = q + " where lower(name) = lower(?)";// + sqlString(enumName.toLowerCase());
 			
 			try
@@ -153,7 +153,7 @@ public class EnumSqlDao
 		{
 			String msg = "Error in query: " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg,ex);
 		}
 	}
 
@@ -189,7 +189,7 @@ public class EnumSqlDao
 				String q = "DELETE FROM EnumValue WHERE enumId = ?";// + oldenum.getId();
 				long id = oldenum.getId().getValue();
 				doModify(q,id);
-				q = "delete from enum where id = ?";// + oldenum.getId();
+				q = "delete from Enum where id = ?";// + oldenum.getId();
 				doModify(q,id);
 			}
 			catch(SQLException ex)
