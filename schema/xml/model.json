@@ -4,7 +4,8 @@
     "schemas": [
         {
             "name": "decodes",
-            "type": "map",
+            "type": "custom",
+            "factory": "org.opendcs.implementations.xml.XmlSchemaFactory",
             "tables": [
                 {
                     "name": "platforms",
