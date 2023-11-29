@@ -6,6 +6,7 @@ import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaFactory;
 import org.apache.calcite.schema.SchemaPlus;
 import org.opendcs.implementations.xml.tables.XmlEnumTable;
+import org.opendcs.implementations.xml.tables.XmlEnumValueTable;
 
 import decodes.db.DatabaseException;
 import ilex.util.EnvExpander;
@@ -20,6 +21,7 @@ public class XmlSchemaFactory implements SchemaFactory
         XmlSchema schema = new XmlSchema(parent, EnvExpander.expand((String)operands.get("dir")));
         try {
             schema.getTableMap().put("enum", new XmlEnumTable(schema,"enum",null));
+            schema.getTableMap().put("enumvalue", new XmlEnumValueTable(schema, "enumvalue"));
         } catch (DatabaseException ex) {
             throw new RuntimeException("Unable to load database", ex);
         }

@@ -111,7 +111,7 @@ import decodes.sql.DbKey;
  *   e.g. "OutputFormat".
  * </p>
  */
-public class EnumList extends DatabaseObject
+public class EnumList extends DatabaseObject implements HasIterator<DbEnum>
 {
 	/** Enums stored in a hash map by enum name. */
 	private HashMap<String, DbEnum> enums;
@@ -242,4 +242,3 @@ public class EnumList extends DatabaseObject
 		enumIdList.clear();
 	}
 }
-

@@ -19,24 +19,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.db.DatabaseObject;
 import decodes.db.DbEnum;
 import decodes.db.EnumList;
+import decodes.db.HasIterator;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.xml.TopLevelParser;
 
 import static org.apache.calcite.linq4j.Nullness.castNonNull;
 
-public class XmlEnumerator implements Enumerator<Object[]>
+public abstract class XmlEnumerator<L extends HasIterator<E>,E> implements Enumerator<Object[]>
 {
     private final AtomicBoolean cancelFlag;
     private final List<RelDataType> fieldTypes;
     private final List<Integer> fields;
-    private final EnumList list;
-    private Iterator<DbEnum> iterator;
-    private Object[] current;
+    private final L list;
+    private Iterator<E> iterator;
+    private E current;
 
-    XmlEnumerator(EnumList enums, AtomicBoolean cancelFlag,
+    XmlEnumerator(L list, AtomicBoolean cancelFlag,
                   List<RelDataType> fieldTypes, List<Integer> fields)
     {
-        this.list = enums;
+        this.list = list;
         this.cancelFlag = cancelFlag;
         this.fieldTypes = fieldTypes;
         this.fields = fields;
@@ -50,16 +51,10 @@ public class XmlEnumerator implements Enumerator<Object[]>
     @Override
     public Object[] current()
     {
-        return current;
+        return convert(current);
     }
 
-    public Object[] convert(DbEnum theEnum)
-    {
-        Object []fields = new Object[2];
-        fields[0] = theEnum.getId().getValue();
-        fields[1] = theEnum.getUniqueName();
-        return fields;
-    }
+    public abstract Object[] convert(E theValue);
 
     @Override
     public boolean moveNext()
@@ -71,7 +66,7 @@ public class XmlEnumerator implements Enumerator<Object[]>
         }
         else if (iterator.hasNext())
         {
-            current = convert(iterator.next());
+            current = iterator.next();
             return true;
         }
         else
