@@ -27,11 +27,10 @@ public class XmlSqlDatabaseIO extends SqlDatabaseIO
 {
     private DataSource ds;
 
-
 	public XmlSqlDatabaseIO(String location) throws DatabaseException
 	{
 		super();
-		keyGenerator = null;
+		keyGenerator = new MemoryKeyGenerator();
 		connectToDatabase(location);
 	}
 

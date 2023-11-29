@@ -2081,7 +2081,7 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 		}
 		catch (DbIoException ex)
 		{
-			throw new DatabaseException(ex.getLocalizedMessage());
+			throw new DatabaseException(ex.getLocalizedMessage(),ex);
 		}
 	}
 

@@ -75,22 +75,9 @@ public class XmlEnumTable extends XmlTable
         return fieldTypes;
     }
 
-    @Override
-    public Expression getExpression(SchemaPlus schema, String table, Class clazz)
-    {
-        return Schemas.tableExpression(schema, getElementType(), table, clazz);
-    }
-
-    @Override
-    public RelNode toRel(ToRelContext context, RelOptTable relOptTable)
-    {
-        return new XmlTableScan(context.getCluster(),relOptTable,this);
-    }
-    
     /** Returns an enumerable over a given projection of the fields. */
-  @SuppressWarnings("unused") // called from generated code
-  public Enumerable<Object[]> project(final DataContext root,
-      final int[] fields) {
+    @SuppressWarnings("unused") // called from generated code
+    public Enumerable<Object[]> project(final DataContext root, final int[] fields) {
         final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
         return new AbstractEnumerable<Object[]>() {
             @Override public Enumerator<Object[]> enumerator() {
