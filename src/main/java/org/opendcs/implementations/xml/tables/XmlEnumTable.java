@@ -31,26 +31,28 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableIntList;
 import org.apache.calcite.util.Pair;
-import org.apache.calcite.util.Source;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.opendcs.implementations.xml.XmlSchema;
 
-import decodes.sql.DbKey;
+import decodes.db.Database;
+import decodes.db.DatabaseException;
+import decodes.db.EnumList;
+import decodes.xml.XmlDatabaseIO;
 
-public class XmlTable extends AbstractTable implements QueryableTable, TranslatableTable
+
+public class XmlEnumTable extends AbstractTable implements QueryableTable, TranslatableTable
 {
-    private final SchemaPlus schema;
+    private final XmlSchema schema;
     private final String name;
     private final RelProtoDataType type;
-    private final Source source;
 
     private List<RelDataType> fieldTypes;
 
-    public XmlTable(SchemaPlus schema, String tableName, RelProtoDataType relProtoDataType, Source source)
+    public XmlEnumTable(XmlSchema schema, String tableName, RelProtoDataType relProtoDataType) throws DatabaseException
     {
         this.schema = schema;
         this.name = tableName;
         this.type = relProtoDataType;
-        this.source = source;
     }
 
     @Override
@@ -126,7 +128,7 @@ public class XmlTable extends AbstractTable implements QueryableTable, Translata
         return new AbstractEnumerable<Object[]>() {
             @Override public Enumerator<Object[]> enumerator() {
                 JavaTypeFactory typeFactory = root.getTypeFactory();
-                    return new XmlEnumerator(source, cancelFlag,
+                    return new XmlEnumerator(schema.getDb().enumList, cancelFlag,
                         getFieldTypes(), ImmutableIntList.of(fields));
       }
     };

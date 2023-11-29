@@ -15,8 +15,8 @@ import com.google.common.collect.ImmutableList;
 
 public class XmlTableScan extends TableScan implements EnumerableRel
 {
-    final XmlTable xmlTable;
-    public XmlTableScan(RelOptCluster cluster, RelOptTable relOptTable, XmlTable xmlTable)
+    final XmlEnumTable xmlTable;
+    public XmlTableScan(RelOptCluster cluster, RelOptTable relOptTable, XmlEnumTable xmlTable)
     {
         super(cluster, cluster.traitSetOf(EnumerableConvention.INSTANCE),ImmutableList.of(),relOptTable);
         this.xmlTable = xmlTable;
@@ -28,7 +28,7 @@ public class XmlTableScan extends TableScan implements EnumerableRel
         return implementor.result(
             physType,
             Blocks.toBlock(
-                Expressions.call(table.getExpression(XmlTable.class),
+                Expressions.call(table.getExpression(XmlEnumTable.class),
                                  "project",implementor.getRootExpression(),
                                  Expressions.constant(new int[2])
                 )

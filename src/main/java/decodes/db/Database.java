@@ -69,10 +69,25 @@ public class Database extends DatabaseObject
 	 * If there is no "current database", this also sets the current
 	 * database to this.
 	 */
-
 	public Database()
 	{
-		if (getDb() == null) setDb(this);
+		this(false);
+	}
+
+	/**
+	 * Primarily needed by the XML-Calcite implementation. As it is a wrapper around an actual XML
+	 * Database we require two independent instances to exist. One that is XML-Calcite that the systems will use
+	 * and another that wraps the XML DbIo.
+	 * 
+	 * @param independent whether to bypass the entire singleton concept for this instance.
+	 */
+	public Database(boolean independent)
+	{
+		super();
+		if (!independent && Database.getDb() == null)
+		{
+			Database.setDb(this);
+		}
 
 		engineeringUnitList = new EngineeringUnitList();
 		engineeringUnitList.setDatabase(this);
@@ -101,13 +116,7 @@ public class Database extends DatabaseObject
 		dataSourceList.setDatabase(this);
 
 		this.setDatabase(this);
-	}
-
-	/**
-	 * Construct with a database type and a location.
-	 * This constructor takes care of creating the DatabaseIO object
-	 * and reading in the initial data.
-	 */
+	}	
 
 /*
 MJM 20031104 - removed - do not use this constructor!

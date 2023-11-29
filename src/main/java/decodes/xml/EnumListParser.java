@@ -115,8 +115,8 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 	{
 		xos.startElement(XmlDbTags.EnumList_el);
 
-		Collection enums = theDb.enumList.getEnumList();
-		for(Iterator it = enums.iterator(); it.hasNext(); )
+		Collection<DbEnum> enums = theDb.enumList.getEnumList();
+		for(Iterator<DbEnum> it = enums.iterator(); it.hasNext(); )
 		{
 			decodes.db.DbEnum dbenum = (decodes.db.DbEnum)it.next();
 			EnumParser p = new EnumParser(dbenum);

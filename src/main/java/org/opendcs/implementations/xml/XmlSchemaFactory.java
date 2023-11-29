@@ -5,7 +5,9 @@ import java.util.Map;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaFactory;
 import org.apache.calcite.schema.SchemaPlus;
+import org.opendcs.implementations.xml.tables.XmlEnumTable;
 
+import decodes.db.DatabaseException;
 import ilex.util.EnvExpander;
 
 public class XmlSchemaFactory implements SchemaFactory
@@ -15,6 +17,12 @@ public class XmlSchemaFactory implements SchemaFactory
     @Override
     public Schema create(SchemaPlus parent, String name, Map<String, Object> operands)
     {
-        return new XmlSchema(parent, EnvExpander.expand((String)operands.get("schema.dir")));
+        XmlSchema schema = new XmlSchema(parent, EnvExpander.expand((String)operands.get("dir")));
+        try {
+            schema.getTableMap().put("enum", new XmlEnumTable(schema,"enum",null));
+        } catch (DatabaseException ex) {
+            throw new RuntimeException("Unable to load database", ex);
+        }
+        return schema;
     }
 }

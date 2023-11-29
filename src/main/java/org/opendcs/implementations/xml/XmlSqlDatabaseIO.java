@@ -62,7 +62,7 @@ public class XmlSqlDatabaseIO extends SqlDatabaseIO
 			return;
 		_sqlDbLocation = sqlDbLocation;
 
-		String url = EnvExpander.expand("jdbc:calcite:model=$DCSTOOL_HOME/schema/xml/model.json;caseSensitive=false; schema.dir="+sqlDbLocation);
+		String url = EnvExpander.expand("jdbc:calcite:schemaFactory=org.opendcs.implementations.xml.XmlSchemaFactory;caseSensitive=false; schema.dir="+sqlDbLocation);
 		// Load the JDBC Driver Class
 		String driverClass = "org.apache.calcite.jdbc.Driver";
 		try

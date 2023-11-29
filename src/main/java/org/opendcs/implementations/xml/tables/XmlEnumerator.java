@@ -26,47 +26,25 @@ import static org.apache.calcite.linq4j.Nullness.castNonNull;
 
 public class XmlEnumerator implements Enumerator<Object[]>
 {
-    private final Source source;
     private final AtomicBoolean cancelFlag;
     private final List<RelDataType> fieldTypes;
     private final List<Integer> fields;
-    private TopLevelParser parser;    
-    private Object[] current = null;
-    private DatabaseObject top;
-    private EnumList list;
+    private final EnumList list;
     private Iterator<DbEnum> iterator;
+    private Object[] current;
 
-    XmlEnumerator(Source source, AtomicBoolean cancelFlag,
+    XmlEnumerator(EnumList enums, AtomicBoolean cancelFlag,
                   List<RelDataType> fieldTypes, List<Integer> fields)
     {
-        this.source = source;
+        this.list = enums;
         this.cancelFlag = cancelFlag;
         this.fieldTypes = fieldTypes;
         this.fields = fields;
-        
-        try (InputStream is = source.openStream())
-        {
-            parser = new TopLevelParser();
-            top = parser.parse(is);
-            if (!(top instanceof EnumList))
-            {
-                throw new IOException("Referenced source is not an Enum list");
-            }
-            else
-            {
-                list = (EnumList)top;
-                iterator = list.iterator();
-            }
-        }
-        catch (IOException | ParserConfigurationException | SAXException ex)
-        {
-            throw new RuntimeException(ex);
-        }
+        iterator = list.iterator();
     }
     @Override
     public void close()
     {
-        
     }
 
     @Override
@@ -106,8 +84,7 @@ public class XmlEnumerator implements Enumerator<Object[]>
     @Override
     public void reset()
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'reset'");
+        iterator = list.iterator();
     }
     
 }

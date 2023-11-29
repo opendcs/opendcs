@@ -3,6 +3,8 @@
 */
 package decodes.db;
 
+import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
+
 /**
 DatabaseObject is a base class for most objects which are read from the
 database (or XML files). It provides a common interface for validation
@@ -30,7 +32,16 @@ public abstract class DatabaseObject
    */
 	public DatabaseObject()
 	{
-		myDatabase = Database.getDb();
+		this(Database.getDb());
+	}
+
+	/**
+	 * Initialize a database objected as owned by a given database
+	 * @param db
+	 */
+	public DatabaseObject(Database db)
+	{
+
 		timeLastRead = 0L;
 	}
 
@@ -156,4 +167,3 @@ public abstract class DatabaseObject
 		return true; // both are null
 	}
 }
-
