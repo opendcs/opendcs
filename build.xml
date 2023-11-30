@@ -761,7 +761,7 @@ more information about each.
         </tar>
     </target>
 
-    <target name="eclipse-ide-files" depends="common.resolve,common.resolve.build">
+    <target name="eclipse-ide-files" depends="prepare,common.resolve,common.resolve.build">
         <!--
             Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
             coming up with this!
@@ -828,7 +828,13 @@ more information about each.
                     classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
 
                     project.getReference("runtime.classpath").each {
-                        classpathentry(kind:"lib", path:it)
+                        def sources = new File(it.toString().replace("/jars/","/sources/").replace(".jar","-sources.jar"))
+                        println(sources)
+                        if (!sources.exists()) {
+                            classpathentry(kind:"lib", path:it)
+                        } else {
+                            classpathentry(kind:"lib", path:it, sourcepath: sources)
+                        }
                     }
 
                     project.getReference("test.classpath").each {

@@ -108,13 +108,15 @@
     </target>
 
     <target name="resolve.real" depends="init-ivy" unless="ivy.current">
-        <ivy:retrieve conf="runtime,test,test_platform"
-                      sync="true"
-                      pattern="build/ivy/[conf]/[artifact].[ext]"
+        <ivy:retrieve conf="runtime,test,test_platform,javadoc,sources"
+                      sync="true" type="bundle,jar,source,doc"
+                      pattern="build/ivy/[conf]/[artifact](-[revision]).[ext]"
         />
         <ivy:cachepath pathid="runtime.classpath" conf="runtime"/>
         <ivy:cachepath pathid="test.classpath" conf="test"/>
         <ivy:cachepath pathid="junit.platform.libs.classpath" conf="test_platform"/>
+        <ivy:cachepath pathid="runtime.sources" conf="sources"/>
+        <ivy:cachepath pathid="runtime.javadoc" conf="javadoc"/>
 
         <pathconvert property="runtime.classpath">
             <path refid="runtime.classpath"/>
@@ -127,10 +129,21 @@
         <pathconvert property="junit.platform.libs.classpath">
             <path refid="junit.platform.libs.classpath"/>
         </pathconvert>
+
+        <pathconvert property="runtime.sources">
+            <path refid="runtime.sources"/>
+        </pathconvert>
+
+        <pathconvert property="runtime.javadoc">
+            <path refid="runtime.javadoc"/>
+        </pathconvert>
+
         <propertyfile file="${status.dir}/src.deps">
             <entry key="runtime.classpath" value="${runtime.classpath}"/>
             <entry key="test.classpath" value="${test.classpath}"/>
             <entry key="junit.platform.libs.classpath" value="${junit.platform.libs.classpath}"/>
+            <entry key="runtime.sources" value="${runtime.source}"/>
+            <entry key="runtime.javadoc" value="${runtime.javadoc}"/>
         </propertyfile>
     </target>
 
@@ -147,6 +160,14 @@
 
         <path id="runtime.classpath">
             <pathelement path="${cached.runtime.classpath}"/>
+        </path>
+
+        <path id="runtime.javadoc">
+            <pathelement path="${cached.runtime.javadoc}"/>
+        </path>
+
+        <path id="runtime.sources">
+            <pathelement path="${cached.runtime.sources}"/>
         </path>
     </target>
 
