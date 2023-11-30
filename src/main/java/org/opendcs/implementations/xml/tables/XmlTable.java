@@ -11,6 +11,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptTable.ToRelContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
@@ -20,7 +21,7 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-public abstract class XmlTable extends AbstractTable implements QueryableTable, TranslatableTable
+public abstract class XmlTable extends AbstractTable implements TranslatableTable, ModifiableTable
 {
     @Override
     public boolean isRolledUp(String column)

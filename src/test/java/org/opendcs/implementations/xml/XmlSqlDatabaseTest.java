@@ -46,5 +46,4 @@ public class XmlSqlDatabaseTest
         list.addEnum(e);
         list.write();
     }
-    
 }

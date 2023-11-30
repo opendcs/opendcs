@@ -15,12 +15,17 @@ import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.QueryProvider;
 import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.linq4j.tree.Expression;
+import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptTable.ToRelContext;
+import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelProtoDataType;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
@@ -29,6 +34,7 @@ import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.ImmutableIntList;
 import org.apache.calcite.util.Pair;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.opendcs.implementations.xml.XmlSchema;
 
 import decodes.db.DatabaseException;
@@ -102,5 +108,18 @@ public class XmlEnumValueTable extends XmlTable
                     };
             }
         };
+    }
+
+    @Override
+    public @Nullable Collection getModifiableCollection() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getModifiableCollection'");
+    }
+
+    @Override
+    public TableModify toModificationRel(RelOptCluster arg0, RelOptTable arg1, CatalogReader arg2, RelNode arg3,
+            Operation arg4, @Nullable List<String> arg5, @Nullable List<RexNode> arg6, boolean arg7) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'toModificationRel'");
     }
 }

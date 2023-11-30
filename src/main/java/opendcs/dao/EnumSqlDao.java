@@ -274,7 +274,7 @@ public class EnumSqlDao
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException("enum modify/delete failed for " + dbenum.toString(), ex);
+			throw new DbIoException("enum modify/delete failed for " + dbenum.toString() + " " + ex.getLocalizedMessage(), ex);
 		}
 	}
 	
