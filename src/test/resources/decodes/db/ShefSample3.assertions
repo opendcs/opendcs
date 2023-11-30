@@ -1,0 +1,13 @@
+#sensor number, time (ISO8601), expected value (double or string), precision, message
+1,2019-04-01T08:00:00Z,7390.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T09:00:00Z,8893.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T10:00:00Z,7534.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T11:00:00Z,8818.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T12:00:00Z,8865.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T13:00:00Z,7733.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T14:00:00Z,6588.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T15:00:00Z,8909.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T16:00:00Z,7683.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T17:00:00Z,6610.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T18:00:00Z,7521.0, 0.0, Expected value not parsed from Shef (sensor 1)
+1,2019-04-01T19:00:00Z,8577.0, 0.0, Expected value not parsed from Shef (sensor 1)
