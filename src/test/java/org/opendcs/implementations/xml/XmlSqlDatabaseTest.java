@@ -1,5 +1,8 @@
 package org.opendcs.implementations.xml;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -14,6 +17,7 @@ import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.DbEnum;
 import decodes.db.EnumList;
+import decodes.db.EnumValue;
 import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
 
@@ -38,12 +42,31 @@ public class XmlSqlDatabaseTest
     @Test
     public void test_enum_read_write() throws Exception
     {
-        EnumList list = db.enumList;
+        final EnumList list = db.enumList;
         assertTrue(list.getEnumList().isEmpty(), "Unknown elements have been added to what should be an empty list of enums");
-        DbEnum e = new DbEnum(DbKey.NullKey,"test");
-        e.addValue("property1", "first enum", null, null);
-        e.addValue("property2","second enum",null,null);
-        list.addEnum(e);
+        final DbEnum insertedEnum = new DbEnum(DbKey.NullKey,"test");
+        insertedEnum.addValue("property1", "first enum", null, null);
+        insertedEnum.addValue("property2","second enum",null,null);
+        list.addEnum(insertedEnum);
         list.write();
+        assertTrue(list.size() > 0, "Enum was not saved to the database.");
+
+        final DbEnum retrievedEnum = list.getEnum("test");
+        assertNotNull(retrievedEnum);
+        assertTrue(retrievedEnum.size() > 0, "Enum Values were not saved to the enum.");
+
+        retrievedEnum.addValue("property3", "3rd enum", XmlSqlDatabaseTest.class.getName(), null);
+        retrievedEnum.write();
+
+        final DbEnum thirdEnum = list.getEnum("test");
+        final EnumValue value = thirdEnum.findEnumValue("property3");
+        assertEquals("3rd enum",value.getDescription());
+        assertEquals(XmlSqlDatabaseTest.class.getName(),value.getExecClassName());
+
+        list.remove(thirdEnum);
+        list.write();
+        assertTrue(list.size() == 0, "Failed to delete enum.");
+        final DbEnum failedFind = list.getEnum("test");
+        assertNull(failedFind, "Enum exists even though list is empty.");
     }
 }
