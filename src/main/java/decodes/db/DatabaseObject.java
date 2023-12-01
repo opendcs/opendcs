@@ -41,7 +41,7 @@ public abstract class DatabaseObject
 	 */
 	public DatabaseObject(Database db)
 	{
-
+		this.myDatabase = db;
 		timeLastRead = 0L;
 	}
 
