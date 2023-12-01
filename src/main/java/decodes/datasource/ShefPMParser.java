@@ -63,16 +63,6 @@ public class ShefPMParser extends PMParser
 	public ShefPMParser()
 	{
 	}
-	private static class FieldResult {
-		public final String field;
-		public final int nextIndex;
-
-		public FieldResult(String field, int nextIndex) {
-			this.field = field;
-			this.nextIndex = nextIndex;
-		}
-	}
-
 
 	/**
 	  Parses performance measurements from a SHEF message:
@@ -83,8 +73,8 @@ public class ShefPMParser extends PMParser
 		throws HeaderParseException
 	{
 		byte[] data = msg.getData();
-		StringBuilder sb = new StringBuilder();
 		idx = 0;
+		skipCommentLines(data);
 		// In the editor, we may be passed a full message starting with .E or .A
 		skipWhitespace(data);
 		if ((char)data[idx] == '.')
@@ -142,10 +132,11 @@ public class ShefPMParser extends PMParser
 		msg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(msgTime));
 		Logger.instance().debug3("SHEF Message Date=" + ccyymmdd.format(msgTime));
 		msg.setPM(PM_TIMEZONE, new Variable(tz.getID()));
-		msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(data.length - headerEnd));
+		msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(data.length));
 		msg.setPM(GoesPMParser.FAILURE_CODE, new Variable('G'));
 		msg.setPM(GoesPMParser.SITE_NAME, new Variable(stationName));
 	}
+
 
 	private Date parseDate(String dateField, TimeZone tz) throws Exception {
 		Date msgTime;
@@ -178,6 +169,29 @@ public class ShefPMParser extends PMParser
 					+ ", '" + new String(data) + "'");
 		}
 	}
+
+	/**
+	 * comment lines begin with ':'
+	 */
+	private void skipCommentLines(byte[] data) {
+		while ((char) data[idx] == ':') {
+			// find end of line
+			int eol = findLineEnd(data, idx);
+			if (eol > 0)
+				idx = eol + 1;
+		}
+	}
+
+	public static int findLineEnd(byte[] data, int startIndex) {
+		for (int i = startIndex; i < data.length; i++) {
+			if (data[i] == '\n') { // For LF
+				return i;
+			}
+		}
+		return -1; // -1 if not found
+	}
+
+
 
 	private String getField(byte[] data) throws HeaderParseException{
 		return getField(data,false);

@@ -1,3 +1,10 @@
+:CDEC data from FOLSOM LAKE
+:RESERVOIR INFLOW cfs
+:Station ID FOL, sensor number 76, duration H
+:Specified start date '04/01/2019 00:00' and ending date '04/30/2019 00:00'
+:Note:  All data is PST and is displayed in 4-digit year format to comply with Y2K requirements.
+:
+:  sta yyyymmdd PS DHhhmm /code value
 .A FOL 20190401 PS DH0000 /QIH 7390 
 .A FOL 20190401 PS DH0100 /QIH 8893 
 .A FOL 20190401 PS DH0200 /QIH 7534 
