@@ -62,7 +62,7 @@ public class XmlEnumValueTable extends XmlTable
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory)
     {/*  enumId, enumValue, description, execClass, editClass */
-         List<String> names = new ArrayList<>();
+        List<String> names = new ArrayList<>();
         List<RelDataType> types = new ArrayList<>();
         names.add("enumId");
         names.add("enumValue");
@@ -154,6 +154,11 @@ public class XmlEnumValueTable extends XmlTable
                 DbEnum e = list.getById(DbKey.createDbKey((long)columns[0]));
                 EnumValue ev = new EnumValue(e, (String)columns[1],(String)columns[2],(String)columns[3],(String)columns[4]);
                 e.addValue(ev);
+                try {
+                    list.write();
+                } catch (DatabaseException ex) {
+                    throw new RuntimeException("Unable to flush data to XML database on disk.", ex);
+                }
                 return true;
             }
         };
