@@ -235,7 +235,6 @@ public class HdbTimeSeriesDb
 		Statement st = null;
 		try
 		{
-			oracle.jdbc.OracleConnection ocon = (oracle.jdbc.OracleConnection)getConnection();
 			st = conn.createStatement();
 			
 			q = "SELECT PARAM_VALUE FROM REF_DB_PARAMETER WHERE PARAM_NAME = 'TIME_ZONE'";
@@ -264,9 +263,8 @@ public class HdbTimeSeriesDb
 				try { rs.close(); } catch(Exception ex) {}
 				rs = null;
 			}
-			
-			ocon.setSessionTimeZone(databaseTimezone);
-			
+			conn.unwrap(oracle.jdbc.OracleConnection.class).setSessionTimeZone(databaseTimezone);
+
 			// Hard-code date & timestamp format for reads. Always use GMT.
 			q = "ALTER SESSION SET TIME_ZONE = '" + databaseTimezone + "'";
 			info(q);
@@ -285,7 +283,7 @@ public class HdbTimeSeriesDb
 			st.execute(q);
 			
 			// MJM 2018-2/21 Force autoCommit on.
-			try { ocon.setAutoCommit(true);}
+			try { conn.setAutoCommit(true);}
 			catch(SQLException ex)
 			{
 				Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
