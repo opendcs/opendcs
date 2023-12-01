@@ -9,6 +9,7 @@ import opendcs.dai.SiteDAI;
 import decodes.db.DatabaseException;
 import decodes.sql.OracleDateParser;
 import decodes.sql.SqlDatabaseIO;
+import oracle.jdbc.OracleConnection;
 
 public class HdbSqlDatabaseIO extends SqlDatabaseIO
 {
@@ -46,8 +47,7 @@ public class HdbSqlDatabaseIO extends SqlDatabaseIO
 		throws SQLException
 	{
 		super.setDBDatetimeFormat(conn);
-		oracle.jdbc.OracleConnection ocon = (oracle.jdbc.OracleConnection)getConnection();
-		ocon.setSessionTimeZone(databaseTimeZone);
+		conn.unwrap(OracleConnection.class).setSessionTimeZone(databaseTimeZone);
 	}
 	
 	@Override
