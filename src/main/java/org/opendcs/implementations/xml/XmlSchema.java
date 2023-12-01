@@ -18,6 +18,7 @@ import com.google.common.collect.Multimap;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
+import decodes.sql.KeyGenerator;
 import decodes.xml.XmlDatabaseIO;
 
 public class XmlSchema extends AbstractSchema
@@ -25,6 +26,7 @@ public class XmlSchema extends AbstractSchema
     private final Database db;
     private final XmlDatabaseIO xmlDb;
     private final Schema parent;
+    private KeyGenerator keyGenerator;
     private final Map<String, Table> tableMap = new HashMap<>();
 
     public XmlSchema(Schema parent, String location)
@@ -57,5 +59,15 @@ public class XmlSchema extends AbstractSchema
     public Database getDb()
     {
         return db;
+    }
+
+    public void setGenerator(KeyGenerator keyGenerator)
+    {
+        this.keyGenerator = keyGenerator;
+    }
+
+    public KeyGenerator getKeyGenerator()
+    {
+        return this.keyGenerator;
     }
 }

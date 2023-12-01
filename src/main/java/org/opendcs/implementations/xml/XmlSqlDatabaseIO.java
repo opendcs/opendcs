@@ -2,6 +2,7 @@ package org.opendcs.implementations.xml;
 
 import org.apache.calcite.avatica.InternalProperty;
 import org.apache.calcite.jdbc.CalciteConnection;
+import org.apache.calcite.schema.SchemaPlus;
 import org.opendcs.authentication.AuthSourceService;
 
 import decodes.db.DatabaseConnectException;
@@ -71,7 +72,7 @@ public class XmlSqlDatabaseIO extends SqlDatabaseIO
 			final Connection c = DriverManager.getConnection(url);
 			determineVersion(c);
 			setDBDatetimeFormat(c);
-			postConnectInit();
+			postConnectInit(c);
 			ds  = new DataSource()
 			{
 				private Connection conn = c;
@@ -110,13 +111,13 @@ public class XmlSqlDatabaseIO extends SqlDatabaseIO
 				@Override
 				public <T> T unwrap(Class<T> iface) throws SQLException
 				{
-					throw new SQLException("This is not a supported operation.");
+					return conn.unwrap(iface);
 				}
 
 				@Override
 				public boolean isWrapperFor(Class<?> iface) throws SQLException
 				{
-					return false;
+					return conn.isWrapperFor(iface);
 				}
 
 				@Override
@@ -139,4 +140,22 @@ public class XmlSqlDatabaseIO extends SqlDatabaseIO
 			throw new DatabaseConnectException(msg, ex);
 		}
 	}
+
+	private void postConnectInit(Connection c) throws DatabaseException
+	{
+		super.postConnectInit();
+		try
+		{
+			CalciteConnection cc = c.unwrap(CalciteConnection.class);
+			SchemaPlus sp = cc.getRootSchema();
+			XmlSchema schema = sp.getSubSchema("adhoc").unwrap(XmlSchema.class);
+			schema.setGenerator(this.keyGenerator);
+		}
+		catch (SQLException ex)
+		{
+			throw new DatabaseException("Unable to set KeyGenerator",ex);
+		}
+
+	}
+
 }

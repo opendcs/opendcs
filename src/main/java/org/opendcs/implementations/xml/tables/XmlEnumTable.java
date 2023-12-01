@@ -105,10 +105,22 @@ public class XmlEnumTable extends XmlTable
                     @Override
                     public Object[] convert(DbEnum theValue) {
                         {
-                            Object []fields = new Object[2];
-                            fields[0] = theValue.getId().getValue();
-                            fields[1] = theValue.getUniqueName();
-                            return fields;
+                            try
+                            {
+                                Object []fields = new Object[2];
+                                DbKey key = theValue.getId();
+                                if (key.isNull())
+                                {
+                                    key = schema.getKeyGenerator().getKey(name, null);
+                                }
+                                fields[0] = key.getValue();
+                                fields[1] = theValue.getUniqueName();
+                                return fields;
+                            }
+                            catch (DatabaseException ex)
+                            {
+                                throw new RuntimeException("Unable to generate DbKey", ex);
+                            }
                         }
                     }
 
