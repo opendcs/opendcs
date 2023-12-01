@@ -1,6 +1,7 @@
 package org.opendcs.implementations.xml.tables;
 
 import java.lang.reflect.Type;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -22,6 +23,7 @@ import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
+import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelProtoDataType;
@@ -42,6 +44,7 @@ import decodes.db.DbEnum;
 import decodes.db.EnumValue;
 import decodes.db.EnumList;
 import decodes.db.HasIterator;
+import decodes.sql.DbKey;
 
 public class XmlEnumValueTable extends XmlTable
 {
@@ -111,15 +114,56 @@ public class XmlEnumValueTable extends XmlTable
     }
 
     @Override
-    public @Nullable Collection getModifiableCollection() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getModifiableCollection'");
+    public @Nullable Collection<?> getModifiableCollection()
+    {
+            return new AbstractCollection<Object>()
+        {
+            EnumList list = schema.getDb().enumList;
+
+            @Override
+            public Iterator<Object> iterator()
+            {
+                return new Iterator<Object>()
+                {
+                    Iterator<DbEnum> real = list.iterator();
+                    @Override
+                    public boolean hasNext()
+                    {
+                        return real.hasNext();
+                    }
+
+                    @Override
+                    public Object next()
+                    {
+                        return (Object)real.next();
+                    }
+
+                };
+            }
+
+            @Override
+            public int size()
+            {
+                return list.size();
+            }
+
+            @Override
+            public boolean add(Object insert)
+            {
+                Object []columns = (Object[])insert;
+                DbEnum e = list.getById(DbKey.createDbKey((long)columns[0]));
+                EnumValue ev = new EnumValue(e, (String)columns[1],(String)columns[2],(String)columns[3],(String)columns[4]);
+                e.addValue(ev);
+                return true;
+            }
+        };
     }
 
     @Override
-    public TableModify toModificationRel(RelOptCluster arg0, RelOptTable arg1, CatalogReader arg2, RelNode arg3,
-            Operation arg4, @Nullable List<String> arg5, @Nullable List<RexNode> arg6, boolean arg7) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'toModificationRel'");
+    public TableModify toModificationRel(RelOptCluster cluster, RelOptTable table, CatalogReader catalogReader, RelNode child,
+            Operation operation, @Nullable List<String> updateColumnList, @Nullable List<RexNode> sourceExpressionList, boolean flattened)
+    {
+        return LogicalTableModify.create(table, catalogReader, child, operation,
+        updateColumnList, sourceExpressionList, flattened);
     }
 }

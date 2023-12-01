@@ -7,10 +7,14 @@ import java.util.HashMap;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.calcite.linq4j.function.Function;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
 import org.xml.sax.SAXException;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
