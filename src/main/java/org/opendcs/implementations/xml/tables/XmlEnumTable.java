@@ -44,14 +44,13 @@ import org.apache.calcite.util.ImmutableIntList;
 import org.apache.calcite.util.Pair;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.opendcs.implementations.xml.XmlSchema;
+import org.opendcs.implementations.xml.util.XmlEnumerator;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.DbEnum;
 import decodes.db.EnumList;
 import decodes.sql.DbKey;
-import decodes.xml.XmlDatabaseIO;
-
 
 public class XmlEnumTable extends XmlTable
 {
@@ -71,7 +70,6 @@ public class XmlEnumTable extends XmlTable
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory)
     {
-
         List<String> names = new ArrayList<>();
         List<RelDataType> types = new ArrayList<>();
         names.add("id");
@@ -181,7 +179,4 @@ public class XmlEnumTable extends XmlTable
         return LogicalTableModify.create(table, catalogReader, child, operation,
         updateColumnList, sourceExpressionList, flattened);
     }
-
-
-
 }

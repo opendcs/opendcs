@@ -12,7 +12,6 @@ import org.apache.calcite.plan.RelOptTable.ToRelContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.schema.ModifiableTable;
-import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
 import org.apache.calcite.schema.TranslatableTable;
@@ -20,6 +19,7 @@ import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.opendcs.implementations.xml.util.XmlTableScan;
 
 public abstract class XmlTable extends AbstractTable implements TranslatableTable, ModifiableTable
 {
@@ -39,7 +39,6 @@ public abstract class XmlTable extends AbstractTable implements TranslatableTabl
     @Override
     public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName)
     {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'asQueryable'");
     }
 

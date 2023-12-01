@@ -1,4 +1,4 @@
-package org.opendcs.implementations.xml.tables;
+package org.opendcs.implementations.xml.util;
 
 import org.apache.calcite.adapter.enumerable.EnumerableConvention;
 import org.apache.calcite.adapter.enumerable.EnumerableRel;
@@ -10,6 +10,7 @@ import org.apache.calcite.linq4j.tree.Expressions;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.core.TableScan;
+import org.opendcs.implementations.xml.tables.XmlTable;
 
 import com.google.common.collect.ImmutableList;
 

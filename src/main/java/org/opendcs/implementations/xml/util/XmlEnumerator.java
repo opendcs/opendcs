@@ -1,29 +1,14 @@
-package org.opendcs.implementations.xml.tables;
+package org.opendcs.implementations.xml.util;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.util.Source;
-import org.xml.sax.SAXException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import decodes.db.DatabaseObject;
-import decodes.db.DbEnum;
-import decodes.db.EnumList;
 import decodes.db.HasIterator;
-import decodes.tsdb.NoSuchObjectException;
-import decodes.xml.TopLevelParser;
-
-import static org.apache.calcite.linq4j.Nullness.castNonNull;
 
 public abstract class XmlEnumerator<L extends HasIterator<E>,E> implements Enumerator<Object[]>
 {
@@ -34,7 +19,7 @@ public abstract class XmlEnumerator<L extends HasIterator<E>,E> implements Enume
     private Iterator<E> iterator;
     private E current;
 
-    XmlEnumerator(L list, AtomicBoolean cancelFlag,
+    public XmlEnumerator(L list, AtomicBoolean cancelFlag,
                   List<RelDataType> fieldTypes, List<Integer> fields)
     {
         this.list = list;

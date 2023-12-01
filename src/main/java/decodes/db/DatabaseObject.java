@@ -3,8 +3,6 @@
 */
 package decodes.db;
 
-import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
-
 /**
 DatabaseObject is a base class for most objects which are read from the
 database (or XML files). It provides a common interface for validation

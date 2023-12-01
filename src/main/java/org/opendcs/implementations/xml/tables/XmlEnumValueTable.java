@@ -38,12 +38,12 @@ import org.apache.calcite.util.ImmutableIntList;
 import org.apache.calcite.util.Pair;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.opendcs.implementations.xml.XmlSchema;
+import org.opendcs.implementations.xml.util.XmlEnumerator;
 
 import decodes.db.DatabaseException;
 import decodes.db.DbEnum;
 import decodes.db.EnumValue;
 import decodes.db.EnumList;
-import decodes.db.HasIterator;
 import decodes.sql.DbKey;
 
 public class XmlEnumValueTable extends XmlTable
@@ -53,7 +53,7 @@ public class XmlEnumValueTable extends XmlTable
 
     private List<RelDataType> fieldTypes;
 
-     public XmlEnumValueTable(XmlSchema schema, String tableName) throws DatabaseException
+    public XmlEnumValueTable(XmlSchema schema, String tableName) throws DatabaseException
     {
         this.schema = schema;
         this.name = tableName;
@@ -85,8 +85,8 @@ public class XmlEnumValueTable extends XmlTable
     
     /** Returns an enumerable over a given projection of the fields. */
     @SuppressWarnings("unused") // called from generated code
-      public Enumerable<Object[]> project(final DataContext root, final int[] fields)
-      {
+    public Enumerable<Object[]> project(final DataContext root, final int[] fields)
+    {
         final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
         return new AbstractEnumerable<Object[]>()
         {
@@ -116,7 +116,7 @@ public class XmlEnumValueTable extends XmlTable
     @Override
     public @Nullable Collection<?> getModifiableCollection()
     {
-            return new AbstractCollection<Object>()
+        return new AbstractCollection<Object>()
         {
             EnumList list = schema.getDb().enumList;
 
