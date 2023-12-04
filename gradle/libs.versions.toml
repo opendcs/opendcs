@@ -33,6 +33,7 @@ swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "glassfish-jaxb" }
 
 #Test Dependencies
-junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
-junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 
