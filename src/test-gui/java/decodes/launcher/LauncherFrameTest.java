@@ -75,7 +75,9 @@ public class LauncherFrameTest
         assertFalse(frame.button("computations").isEnabled(),"The computation button is enabled but shouldn't be.");
         profileCombo.selectItem("cwms");
         assertTrue(frame.button("computations").isEnabled(),"The computation button was not enabled when it should've been.");
-
+        profileCombo.selectItem("(default)");
+        assertFalse(frame.button("computations").isEnabled(),"The computation was not disabled correctly.");
+        assertTrue(lf.getProfilePath().endsWith("user.properties"));
     }
 
 }

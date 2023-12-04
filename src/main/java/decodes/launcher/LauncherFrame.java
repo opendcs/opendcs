@@ -253,6 +253,9 @@ public class LauncherFrame
 	private WindowAdapter profileMgrReaper = null;
 	private ProfileManagerFrame profileMgrFrame = null;
 
+	// this is defined here to that the test can properly check.
+	// Future improvements will alter how that test works.
+	private String profilePath = null;
 
 	public LauncherFrame(String args[])
 	{
@@ -1333,17 +1336,26 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 			"Error!", JOptionPane.ERROR_MESSAGE);
 	}
 
+	public String getProfilePath()
+	{
+		return profilePath;
+	}
 	
 	private void profileComboChanged()
 	{
 		// Each time the profile selection combo box changes, check the new properties file
 		// Activate/Deactivate tsdb buttons depending on database type
 		String profileName = getSelectedProfile();
-		String profilePath = EnvExpander.expand("$DCSTOOL_USERDIR");
+		profilePath = EnvExpander.expand("$DCSTOOL_USERDIR");
+		String dcstoolPath = EnvExpander.expand("$DCSTOOL_HOME");
+
+		final String defaultFile = profilePath.equalsIgnoreCase(dcstoolPath)
+								 ? "decodes.properties"
+								 : "user.properties";
 		
 		if(profileName == null)
 		{
-			profilePath = profilePath + File.separatorChar + "decodes.properties";
+			profilePath = profilePath + File.separatorChar + defaultFile;
 		}
 		else
 		{
@@ -2098,12 +2110,9 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 					GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 0), 0, 0));
 			profileCombo = new JComboBox<>();
 			profileCombo.setName("profileCombo");
-			profileCombo.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-						profileComboChanged();
-						}
-				}
-			);
+			profileCombo.addActionListener(e -> profileComboChanged());
+
+
 			profPanel.add(profileCombo,
 				new GridBagConstraints(1, 0, 1, 1, .5, 0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 2, 2), 10, 0));
@@ -2111,19 +2120,11 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 			profPanel.add(profMgrButton,
 				new GridBagConstraints(2, 0, 1, 1, 0, 0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
-			profMgrButton.addActionListener(
-				new ActionListener()
-				{
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						startProfileManager();
-					}
-				});
+			profMgrButton.addActionListener(e->startProfileManager());
 		}
 		
 		String [] profileNames = getProfileList();
-Logger.instance().debug3("There are " + profileNames.length + " profiles.");
+		Logger.instance().debug3("There are " + profileNames.length + " profiles.");
 		if (profileNames != null && profileNames.length > 1)
 		{
 			profileCombo.removeAllItems();
