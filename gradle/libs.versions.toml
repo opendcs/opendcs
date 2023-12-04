@@ -1,0 +1,38 @@
+[versions]
+opendcs = "7.0.9"
+
+jetty = "9.4.53.v20231009"
+servlet-api = "3.1.0"
+slf4j = "2.0.0"
+jersey = "2.40"
+postgresql = "42.6.0"
+swagger = "2.2.15"
+swagger-ui = "5.9.0"
+glassfish-jaxb = "2.3.3"
+
+#Test Dependencies
+junit = "5.10.1"
+
+[libraries]
+opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
+
+jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref = "jetty" }
+jetty-servlets = { module = "org.eclipse.jetty:jetty-servlets", version.ref = "jetty" }
+jetty-servlet = { module = "org.eclipse.jetty:jetty-servlet", version.ref = "jetty" }
+servlet-api = { module = "javax.servlet:javax.servlet-api", version.ref = "servlet-api" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+jersey-client = { module = "org.glassfish.jersey.core:jersey-client", version.ref = "jersey" }
+jersey-server = { module = "org.glassfish.jersey.core:jersey-server", version.ref = "jersey" }
+json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref = "jersey" }
+jersey-common = { module = "org.glassfish.jersey.core:jersey-common", version.ref = "jersey" }
+jersey-container-servlet = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref = "jersey" }
+jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2", version.ref = "swagger" }
+swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
+jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "glassfish-jaxb" }
+
+#Test Dependencies
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+
