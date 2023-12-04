@@ -116,7 +116,8 @@ public class DecodesHelper {
                 ConfigSensor configSensor = new ConfigSensor(decodesScript.platformConfig, Integer.parseInt(parts[0]));
                 configSensor.sensorName = parts[1];
 
-                if( parts.length >= 5) {
+                if( parts.length >= 5)
+                {
                     //1, Stage, ft, none,SHEF-PE:HGIFF;
                     String[] tokens = parts[4].split(":");
                     if(tokens.length==2) {
@@ -325,7 +326,8 @@ public class DecodesHelper {
                                      + sampleTime + " doesn't exist\nDecoded "+samples.size()+" samples\n"+info);
     }
 
-    private static String samplesToString(int sensor, ArrayList<DecodedSample> samples) {
+    private static String samplesToString(int sensor, ArrayList<DecodedSample> samples)
+    {
         StringBuilder sb = new StringBuilder();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));

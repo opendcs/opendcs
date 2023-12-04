@@ -139,7 +139,8 @@ public class ShefPMParser extends PMParser
 	}
 
 
-	private Date parseDate(String dateField, TimeZone tz) throws Exception {
+	private Date parseDate(String dateField, TimeZone tz) throws Exception
+	{
 		Date msgTime;
 		if (dateField.length() == 4)
 		{
