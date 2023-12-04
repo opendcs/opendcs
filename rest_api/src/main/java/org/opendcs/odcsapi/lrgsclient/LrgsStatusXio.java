@@ -66,7 +66,6 @@ public class LrgsStatusXio
 	
 	/**
 	  Construct parser.
-	  @param lrgsStatus the LrgsStatusSnapshotExt to populate from XML data
 	*/
 	public LrgsStatusXio()
 		throws ParserConfigurationException, SAXException

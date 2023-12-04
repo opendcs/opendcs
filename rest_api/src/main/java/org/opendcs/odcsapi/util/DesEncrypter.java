@@ -36,10 +36,10 @@ public class DesEncrypter
 	private int iterationCount = 19;
 
 	/**
-	 * Construct an object to handle both encryption & decryption using DES
+	 * Construct an object to handle both encryption and decryption using DES
 	 * with the passed passPhrase.
 	 * @param passPhrase the secret pass phrase.
-	 * @throws AuthException if any errors occur in the underlying DES classes.
+	 * @throws StartException if any errors occur in the underlying DES classes.
 	 */
 	public DesEncrypter(String passPhrase) 
 		throws StartException
@@ -115,8 +115,8 @@ public class DesEncrypter
 	/**
 	 * Decrypts a string.
 	 * @param str BASE-64 encoding of the string to decrypt.
-	 * @param return the decrypted string.
-	 * @throws AuthException if any error occurs in the underlying DES classes.
+	 * @return return the decrypted string.
+	 * @throws StartException if any error occurs in the underlying DES classes.
 	 */
 	public String decrypt(String str) 
 		throws StartException

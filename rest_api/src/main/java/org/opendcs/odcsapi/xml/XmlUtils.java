@@ -24,7 +24,7 @@ import org.xml.sax.Attributes;
 
 /**
 * This class contains static methods that provide convenince functions for
-* writing XML parsers & writers.
+* writing XML parsers and writers.
 */
 public class XmlUtils
 {

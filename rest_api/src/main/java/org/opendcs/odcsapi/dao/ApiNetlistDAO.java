@@ -232,7 +232,7 @@ public class ApiNetlistDAO
 	 * If it is not, return null;
 	 * @param netlistId
 	 * @return
-	 * @throws DbIoException
+	 * @throws DbException
 	 */
 	public String netlistUsedByRs(long netlistId)
 		throws DbException

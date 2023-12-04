@@ -65,7 +65,7 @@ public class DownLinkXio
 	
 	/**
 	  Construct parser.
-	  @param lsse the LrgsStatusSnapshotExt to populate from XML data
+	  @param parent the LrgsStatusSnapshotExt to populate from XML data
 	  @param dl the DownLink to populate
 	*/
 	public DownLinkXio(ApiLrgsDownlinkStatus dl, LrgsStatusXio parent)

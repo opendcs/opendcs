@@ -367,7 +367,7 @@ public class ApiPlatformDAO
 	 * LMT in returned object will be updated.
 	 * @param platform
 	 * @return
-	 * @throws DbIoException
+	 * @throws DbException
 	 * @throws WebAppException
 	 * @throws SQLException 
 	 */

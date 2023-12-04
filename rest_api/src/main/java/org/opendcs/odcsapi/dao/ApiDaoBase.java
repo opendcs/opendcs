@@ -65,7 +65,7 @@ public class ApiDaoBase
 	}
 
 	/**
-	 * Does a SQL query with the default static statement & returns the
+	 * Does a SQL query with the default static statement and returns the
 	 * result set.
 	 * Warning: this method is not thread and nested-loop safe.
 	 * If you need to do nested queries, you must create a separate
@@ -137,7 +137,7 @@ public class ApiDaoBase
 	* Executes an UPDATE or INSERT query.
 	* Thread safe: internally synchronized on the modify-statement.
 	* @param q the query string
-	* @throws DatabaseException  if the update fails.
+	* @throws DbException  if the update fails.
 	* @return number of records modified in the database
 	*/
 	public int doModify(String q)
@@ -299,7 +299,7 @@ public class ApiDaoBase
      * execute the statement, and return the ResultSet. The statement can be
      * used outside of the function.
      * 
-     * @Param conn The connection.  If it's null, it gets set in this function.
+     * @param conn The connection.  If it's null, it gets set in this function.
      * @param query The query statement containing substitution ?s
      * @param parameters variable list of parameters.
      */
@@ -410,10 +410,10 @@ public class ApiDaoBase
 	/**
 	    * Executes an UPDATE or INSERT query using a prepared statement.
 	    * 
-	    * @param q the query string
+	    * @param query the query string
 	    * @param parameters any number of object parameters, which are the 
 	    *                   bind values of the prepared statement.
-	    * @throws DatabaseException  if the update fails.
+	    * @throws DbException  if the update fails.
 	    * @return number of records modified in the database
 	    */
 	public int doModifyV(String query, Object... parameters)

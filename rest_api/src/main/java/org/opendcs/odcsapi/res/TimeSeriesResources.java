@@ -32,7 +32,7 @@ import org.opendcs.odcsapi.util.ApiHttpUtil;
 import ilex.util.IDateFormat;
 
 /**
- * HTTP resources relating to Time Series data & descriptors
+ * HTTP resources relating to Time Series data and descriptors
  * @author mmaloney
  *
  */

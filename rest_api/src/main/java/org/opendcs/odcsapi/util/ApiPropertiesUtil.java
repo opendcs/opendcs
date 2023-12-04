@@ -25,7 +25,7 @@ public class ApiPropertiesUtil
 	* In this method, keys are compared case SENSITIVE.
 	* @param p1 the first properties set.
 	* @param p2 the second properties set.
-	* @return true if keys & values in both sets are equal, or if both are null.
+	* @return true if keys and values in both sets are equal, or if both are null.
 	*/
 	public static boolean propertiesEqual( Properties p1, Properties p2 )
 	{

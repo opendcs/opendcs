@@ -522,7 +522,7 @@ public class ApiComputationDAO
 	}
 		
 	/**
-	 * Create computation object & fill with current row of result set.
+	 * Create computation object and fill with current row of result set.
 	 */
 	protected ApiComputation rs2comp(ResultSet rs)
 		throws DbException, SQLException

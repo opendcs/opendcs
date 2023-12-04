@@ -17,7 +17,7 @@ package org.opendcs.odcsapi.lrgsclient;
  */
 public class DdsVersion
 {
-	/** Current version of servers & clients compiled with this code. */
+	/** Current version of servers and clients compiled with this code. */
 	public static final int DdsVersionNum = 14;
 	
 	/**
@@ -41,7 +41,7 @@ public class DdsVersion
 	/**
 	 * Version 11:
 	 * 	Allow specifying "single mode" in search criteria.
-	 * 	Include <LocalRecvTime> element in xml message block.
+	 * 	Include {@code<LocalRecvTime>} element in xml message block.
 	 */
 	public static final int version_11 = 11;
 
