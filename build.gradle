@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     id "com.palantir.git-version" version "3.0.0"
     id "org.sonarqube" version "4.4.1.3373"
@@ -36,7 +38,15 @@ dependencies {
     implementation(libs.swagger.jaxrs2)
     implementation(libs.swagger.ui)
     implementation(libs.jaxb.runtime)
+}
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'org.opendcs.odcsapi.start.Start',
+                'Class-Path': configurations.runtimeClasspath.files.collect { it.getName() }.join(' ')
+        )
+    }
 }
 
 publishing {
@@ -58,4 +68,26 @@ task startJetty(type: JavaExec) { ->
             "-c", project.findProperty("REST_API_CONTEXT") ?: "odcsapi",
             "-cors", project.findProperty("REST_API_CORS") ?: "${project.buildDir}/OPENDCS/opendcs_web_cors.cfg",
             "-s")
+}
+
+task prepareStartScript(type: Copy) {
+    from './jetty-installer/bin/start.sh'
+    into "${buildDir}/jetty-installer/bin/"
+    filter(ReplaceTokens, tokens: ['jarName': jar.archiveFileName.get()])
+}
+
+task bundle(type: Tar) {
+    dependsOn jar
+    dependsOn prepareStartScript
+    archiveExtension = 'tar.gz'
+
+    into('libs') {
+        from configurations.runtimeClasspath
+    }
+    into('libs') {
+        from jar
+    }
+    into('bin') {
+        from "${buildDir}/jetty-installer/bin/start.sh"
+    }
 }
