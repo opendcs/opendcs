@@ -74,6 +74,7 @@ public class ShefPMParser extends PMParser
 	{
 		byte[] data = msg.getData();
 		idx = 0;
+		skipWhitespace(data);
 		skipCommentLines(data);
 		// In the editor, we may be passed a full message starting with .E or .A
 		skipWhitespace(data);
