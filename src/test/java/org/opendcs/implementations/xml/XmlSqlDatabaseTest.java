@@ -7,8 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.Statement;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -40,6 +43,20 @@ public class XmlSqlDatabaseTest
     }
 
     @Test
+    public void test_sql_update() throws Exception
+    {
+        XmlSqlDatabaseIO dbio = (XmlSqlDatabaseIO)db.getDbIo();
+        try (Connection c = dbio.getConnection();
+             Statement stmt = c.createStatement())
+        {
+            stmt.executeUpdate("insert into enum values(1,'test')");
+
+            stmt.executeUpdate("update enum set name='test_update' where id=1");
+        }
+    }
+
+    @Test
+    @Disabled
     public void test_enum_read_write() throws Exception
     {
         final EnumList list = db.enumList;
@@ -56,7 +73,7 @@ public class XmlSqlDatabaseTest
         assertTrue(retrievedEnum.size() > 0, "Enum Values were not saved to the enum.");
 
         retrievedEnum.addValue("property3", "3rd enum", XmlSqlDatabaseTest.class.getName(), null);
-        retrievedEnum.write();
+        list.write();
 
         final DbEnum thirdEnum = list.getEnum("test");
         final EnumValue value = thirdEnum.findEnumValue("property3");

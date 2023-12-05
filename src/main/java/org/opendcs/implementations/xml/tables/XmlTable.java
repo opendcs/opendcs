@@ -11,6 +11,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptTable.ToRelContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.schema.ModifiableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
@@ -19,6 +20,8 @@ import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.opendcs.implementations.xml.rules.XmlDbRel;
+//import org.opendcs.implementations.xml.rules.UpdateRule;
 import org.opendcs.implementations.xml.util.XmlTableScan;
 
 public abstract class XmlTable extends AbstractTable implements TranslatableTable, ModifiableTable
@@ -60,6 +63,9 @@ public abstract class XmlTable extends AbstractTable implements TranslatableTabl
     @Override
     public RelNode toRel(ToRelContext context, RelOptTable relOptTable)
     {
+        //context.getCluster().getPlanner().addRule(new UpdateRule(null));
         return new XmlTableScan(context.getCluster(),relOptTable,this);
     }
+    
+
 }

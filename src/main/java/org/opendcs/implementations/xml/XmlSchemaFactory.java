@@ -19,7 +19,8 @@ public class XmlSchemaFactory implements SchemaFactory
     public Schema create(SchemaPlus parent, String name, Map<String, Object> operands)
     {
         XmlSchema schema = new XmlSchema(parent, EnvExpander.expand((String)operands.get("dir")));
-        try {
+        try 
+        {
             schema.getTableMap().put("enum", new XmlEnumTable(schema,"enum",null));
             schema.getTableMap().put("enumvalue", new XmlEnumValueTable(schema, "enumvalue"));
         } catch (DatabaseException ex) {

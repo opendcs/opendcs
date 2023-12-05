@@ -8,20 +8,29 @@ import org.apache.calcite.adapter.enumerable.PhysTypeImpl;
 import org.apache.calcite.linq4j.tree.Blocks;
 import org.apache.calcite.linq4j.tree.Expressions;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.core.TableScan;
+import org.opendcs.implementations.xml.rules.XmlDbRel;
+import org.opendcs.implementations.xml.rules.XmlDbToEnumeratorRule;
 import org.opendcs.implementations.xml.tables.XmlTable;
 
 import com.google.common.collect.ImmutableList;
 
-public class XmlTableScan extends TableScan implements EnumerableRel
+public class XmlTableScan extends TableScan implements EnumerableRel, XmlDbRel
 {
     final XmlTable xmlTable;
     public XmlTableScan(RelOptCluster cluster, RelOptTable relOptTable, XmlTable xmlTable)
     {
-        super(cluster, cluster.traitSetOf(EnumerableConvention.INSTANCE),ImmutableList.of(),relOptTable);
+        super(cluster, cluster.traitSetOf(XmlDbRel.XML_CONVENTION),ImmutableList.of(),relOptTable);
         this.xmlTable = xmlTable;
     }
+
+    @Override public void register(RelOptPlanner planner)
+    {
+        planner.addRule(XmlDbToEnumeratorRule.INSTANCE);
+    }
+
     @Override
     public Result implement(EnumerableRelImplementor implementor, Prefer pref)
     {

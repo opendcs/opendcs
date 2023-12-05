@@ -81,6 +81,7 @@
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.7.36"/>
         <dependency org="io.javalin" name="javalin" rev="4.6.8" />
         <dependency org="org.apache.calcite" name="calcite-core" rev="1.36.0" conf="runtime->default;sources->sources;javadoc->javadoc"/>
+        <dependency org="org.immutables" name="value" rev="2.9.2" conf="runtime->default;sources->sources;javadoc->javadoc"/>
 
         <!-- test dependencies -->
 

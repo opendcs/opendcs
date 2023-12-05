@@ -31,6 +31,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
@@ -167,6 +168,11 @@ public class XmlEnumTable extends XmlTable
                 Object []columns = (Object[])insert;
                 DbEnum e = new DbEnum(DbKey.createDbKey((long)columns[0]),(String)columns[1]);
                 list.addEnum(e);
+                try {
+                    list.write();
+                } catch (DatabaseException ex) {
+                    throw new RuntimeException("Unable to flush data to XML database on disk.", ex);
+                }
                 return true;
             }
         };
@@ -179,4 +185,5 @@ public class XmlEnumTable extends XmlTable
         return LogicalTableModify.create(table, catalogReader, child, operation,
         updateColumnList, sourceExpressionList, flattened);
     }
+
 }

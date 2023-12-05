@@ -211,6 +211,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <testclasses outputdir="${build.dir}/test-results">
                 <fork>
                     <jvmarg value="${coverage.agent.param.test}"/>
+                    <jvmarg value="-Dcalcite.debug=true"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-tmp"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
