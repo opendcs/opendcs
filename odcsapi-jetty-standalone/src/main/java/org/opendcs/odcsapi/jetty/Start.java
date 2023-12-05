@@ -1,4 +1,11 @@
-package org.opendcs.odcsapi.start;
+/*
+ * Copyright (c) 2023
+ * United States Army Corps of Engineers - Hydrologic Engineering Center (USACE/HEC)
+ * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
+ * Source may not be released without written approval from HEC
+ */
+
+package org.opendcs.odcsapi.jetty;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,7 +17,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Scanner;
-import java.util.ServiceLoader;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -19,7 +25,6 @@ import java.util.logging.SimpleFormatter;
 
 import javax.servlet.DispatcherType;
 
-import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -35,6 +40,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.start.StartException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiEnvExpander;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;

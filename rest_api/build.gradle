@@ -1,0 +1,31 @@
+plugins {
+    id "opendcs-rest-api.java-conventions"
+    id "opendcs-rest-api.deps-conventions"
+    id "opendcs-rest-api.publishing-conventions"
+    id "war"
+}
+
+dependencies {
+    api(libs.opendcs) {
+        //Workaround for the excessive opendcs dependencies
+        exclude group: '*', module: '*'
+    }
+    implementation(libs.servlet.api)
+    implementation(libs.slf4j.api)
+    implementation(libs.jersey.client)
+    implementation(libs.jersey.server)
+    implementation(libs.json.jackson)
+    implementation(libs.jersey.common)
+    implementation(libs.jersey.hk2)
+    implementation(libs.swagger.ui)
+    implementation(libs.jaxb.runtime)
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = war.archiveBaseName.get()
+            from components.java
+        }
+    }
+}

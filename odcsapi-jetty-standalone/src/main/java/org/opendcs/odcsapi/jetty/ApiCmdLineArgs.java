@@ -1,8 +1,17 @@
-package org.opendcs.odcsapi.start;
+/*
+ * Copyright (c) 2023
+ * United States Army Corps of Engineers - Hydrologic Engineering Center (USACE/HEC)
+ * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
+ * Source may not be released without written approval from HEC
+ */
+
+package org.opendcs.odcsapi.jetty;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.opendcs.odcsapi.start.StartException;
 
 public class ApiCmdLineArgs
 {
@@ -22,7 +31,7 @@ public class ApiCmdLineArgs
 	private String splitArg = null;
 	
 	public void parseArgs(String[] args)
-		throws StartException
+			throws StartException
 	{
 		state = State.IDLE;
 		splitArg = null;

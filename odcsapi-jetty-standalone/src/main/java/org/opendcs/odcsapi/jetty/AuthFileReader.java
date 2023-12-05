@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 2023
+ * United States Army Corps of Engineers - Hydrologic Engineering Center (USACE/HEC)
+ * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
+ * Source may not be released without written approval from HEC
+ */
+
+/*
 *  $Id: AuthFileReader.java,v 1.1 2022/11/29 15:05:13 mmaloney Exp $
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
@@ -70,11 +77,12 @@
 *  dev
 *
 */
-package org.opendcs.odcsapi.start;
+package org.opendcs.odcsapi.jetty;
 
 import java.io.File;
 import java.io.IOException;
 
+import org.opendcs.odcsapi.start.StartException;
 import org.opendcs.odcsapi.util.DesEncrypter;
 
 import java.io.FileInputStream;

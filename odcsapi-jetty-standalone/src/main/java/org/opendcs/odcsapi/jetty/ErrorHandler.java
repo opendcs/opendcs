@@ -1,4 +1,11 @@
-package org.opendcs.odcsapi.errorhandling;
+/*
+ * Copyright (c) 2023
+ * United States Army Corps of Engineers - Hydrologic Engineering Center (USACE/HEC)
+ * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
+ * Source may not be released without written approval from HEC
+ */
+
+package org.opendcs.odcsapi.jetty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.http.MimeTypes;
