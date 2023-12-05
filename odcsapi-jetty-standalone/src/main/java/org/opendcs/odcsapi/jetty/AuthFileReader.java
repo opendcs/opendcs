@@ -1,82 +1,18 @@
 /*
- * Copyright (c) 2023
- * United States Army Corps of Engineers - Hydrologic Engineering Center (USACE/HEC)
- * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
- * Source may not be released without written approval from HEC
+ *  Copyright 2023 OpenDCS Consortium
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
-/*
-*  $Id: AuthFileReader.java,v 1.1 2022/11/29 15:05:13 mmaloney Exp $
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*
-*  $Log: AuthFileReader.java,v $
-*  Revision 1.1  2022/11/29 15:05:13  mmaloney
-*  First cut of refactored DAOs and beans to remove dependency on opendcs.jar
-*
-*  Revision 1.5  2020/04/28 18:18:58  mmaloney
-*  Added -p pwfile feature for USACE NWP
-*
-*  Revision 1.4  2016/08/05 14:46:06  mmaloney
-*  Was using the wrong Console class.
-*
-*  Revision 1.3  2014/11/19 16:13:22  mmaloney
-*  Added constructor taking File object.
-*
-*  Revision 1.2  2014/07/03 12:25:41  mmaloney
-*  Bug fix: use authFile.getAbsoluteFile().getParentFile(). That way it should never be null.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.6  2010/10/29 15:13:45  mmaloney
-*  debugs
-*
-*  Revision 1.5  2010/08/17 17:31:22  mmaloney
-*  Handle case where file was created from CWD and encoded with null parent dir.
-*
-*  Revision 1.4  2010/08/17 17:19:34  mmaloney
-*  Temporary debugs.
-*
-*  Revision 1.3  2009/11/01 20:36:03  mjmaloney
-*  Updated docs
-*
-*  Revision 1.2  2009/09/24 17:02:07  mjmaloney
-*  dev
-*
-*  Revision 1.1  2008/04/04 18:21:10  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.7  2007/11/01 20:07:51  mmaloney
-*  dev
-*
-*  Revision 1.6  2006/12/23 18:16:05  mmaloney
-*  dev
-*
-*  Revision 1.5  2006/09/29 17:52:51  mmaloney
-*  release prep
-*
-*  Revision 1.4  2006/04/22 21:02:13  mmaloney
-*  Removed debugs.
-*
-*  Revision 1.3  2006/03/23 15:56:15  mmaloney
-*  version must be un-encrypted.
-*
-*  Revision 1.2  2006/03/15 13:53:15  mmaloney
-*  UserAuthFile now handled file version 0 (old unsecure decodes format)
-*  as well as version 1 (DES encryption).
-*
-*  Revision 1.1  2006/03/15 13:31:12  mmaloney
-*  dev
-*
-*/
 package org.opendcs.odcsapi.jetty;
 
 import java.io.File;
