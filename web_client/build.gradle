@@ -1,0 +1,26 @@
+plugins {
+    id "opendcs-rest-api.java-conventions"
+    id "opendcs-rest-api.deps-conventions"
+    id "opendcs-rest-api.publishing-conventions"
+    id "war"
+}
+
+dependencies {
+    implementation(libs.jetty.server)
+    implementation(libs.jetty.webapp)
+    implementation(libs.servlet.api)
+    implementation(libs.websocket)
+}
+
+war {
+    webAppDirName = 'src/main/webapp'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = war.archiveBaseName.get()
+            from components.java
+        }
+    }
+}
