@@ -2,6 +2,10 @@
 OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation).
 OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.
 
+# Structure
+./rest_api - contains source files for the OpenDCS REST API
+./web_client - contains source files for the OpenDCS Web Application Client
+
 # Installation and Configuration
 There are two types of installations/configurations.  One is Jetty and the other is a WAR file.
 
