@@ -465,7 +465,7 @@ more information about each.
                 <echo message="GPG is required to sign the components"/>
             </then>
             <else>
-                <gpgsignfile target="opendcs-ot-${version}.jar" workingDir="stage"/>
+                <gpgsignfile target="opendcs-installer-${version}.jar" workingDir="stage"/>
                 <gpgsignfile target="opendcs-${version}.pom"/>
                 <gpgsignfile target="opendcs-${version}.jar"/>
                 <gpgsignfile target="opendcs-${version}-javadoc.jar"/>
@@ -699,7 +699,7 @@ more information about each.
         <!-- Invokes izpack to build installable package with defaults for CWMS -->
         <property name="hdb.preselect" value="no"/>
         <izpack input="${project.dir}/izpack/opendcs-install.xml"
-                output="stage/opendcs-ot-${version}.jar"
+                output="stage/opendcs-installer-${version}.jar"
                 installerType="standard"
                 inheritAll="true"
                 basedir="stage"
