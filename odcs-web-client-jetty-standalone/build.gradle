@@ -1,0 +1,58 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+plugins {
+    id "opendcs-rest-api.java-conventions"
+    id "opendcs-rest-api.deps-conventions"
+    id "opendcs-rest-api.publishing-conventions"
+}
+
+dependencies {
+    implementation(project(":odcs-web-client"))
+    implementation(libs.jetty.server)
+    implementation(libs.jetty.webapp)
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'org.opendcs.odcswebclient.jetty.Start',
+                'Class-Path': configurations.runtimeClasspath.files.collect { it.getName() }.join(' ')
+        )
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = jar.archiveBaseName.get()
+            from components.java
+        }
+    }
+}
+
+task startJetty(type: JavaExec) { ->
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "org.opendcs.odcswebclient.jetty.Start"
+}
+
+task prepareStartScript(type: Copy) {
+    from './bin/start.sh'
+    into "${buildDir}/odcsapi-jetty-standalone/bin/"
+    filter(ReplaceTokens, tokens: ['jarName': jar.archiveFileName.get()])
+}
+
+task bundle(type: Tar) {
+    dependsOn jar
+    dependsOn prepareStartScript
+    archiveExtension = 'tar.gz'
+
+    into('libs') {
+        from configurations.runtimeClasspath
+    }
+    into('libs') {
+        from jar
+    }
+    into('bin') {
+        from "${buildDir}/odcsapi-jetty-standalone/bin/start.sh"
+    }
+}
