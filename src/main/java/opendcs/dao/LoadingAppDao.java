@@ -350,8 +350,13 @@ public class LoadingAppDao
                     q =
                     "select LOADING_APPLICATION_ID from HDB_LOADING_APPLICATION"
                       + " where LOADING_APPLICATION_NAME = ?";
+                    try
                     {
-                        warning("Error getting app ID: ");
+                        id = getSingleResult(q, rs -> DbKey.createDbKey(rs,1),appName);
+                    }
+                    catch (SQLException ex)
+                    {
+                        warning("Error getting app ID: " + ex.getLocalizedMessage());
                     }
                 }
                 app.setAppId(id);
