@@ -283,7 +283,10 @@ more information about each.
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
-        <jacoco:agent property="coverage.agent.param.it" destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
+        <jacoco:agent property="coverage.agent.param.it"
+                      destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
+        <!-- This path is used by the integration test extension when 
+            creating independent OpenDCS application processes-->
         <path id="opendcs.runtime">
             <pathelement location="${stage.dir}/bin/opendcs.jar"/>
             <fileset dir="${stage.dir}/dep"/>
