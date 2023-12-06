@@ -1,0 +1,17 @@
+plugins {
+    id 'maven-publish'
+}
+
+publishing {
+    repositories {
+        maven {
+            credentials {
+                username = ""
+                password = ""
+            }
+            afterEvaluate {
+                url = ""
+            }
+        }
+    }
+}

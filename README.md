@@ -5,9 +5,19 @@ OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embed
 # Structure
 ./rest_api - contains source files for the OpenDCS REST API
 ./web_client - contains source files for the OpenDCS Web Application Client
+./odcs-web-client-jety-standalone - contains build scripts for generating a standalone Jetty installer for the web client
+./odcsapi-jetty-standalone - contains build scripts for generating a standalone Jetty installer for the OPENDCS REST API   
 
 # Installation and Configuration
-There are two types of installations/configurations.  One is Jetty and the other is a WAR file.
+There are two types of installations/configurations.  One is embedded Jetty bundles and the other is WAR files.
+
+## OPENDCS API
+The gradle task `./gradlew :odcsapi:war` will create a war file in the `build/libs` directory.
+
+## OPENDCS Web Client
+The gradle task `./gradlew :odcs-web-client:war` will create a war file in the `build/libs` directory.
+
+##	OPENDCS API Jetty Standalone Installer
 
 The Root URL for the service is specified using the command line arguments when the JETTY server is started. If the defaults are used, you can access the service from the local machine with:
 http://localhost:8080/odcsapi/function-call
@@ -15,12 +25,10 @@ http://localhost:8080/odcsapi/function-call
 For example, to get a list of platform references:
 http://localhost:8080/odcsapi/platformrefs
 
-##	Jetty
--	Change directory to the base directory of the project.
--	Run the following command: `mvn install`
--	In the ‘target’ directory, there will be a .tar.gz file.  This is the newly created jetty tar ball.
--	Move the tar ball to the desired location and extract it.
--	Then change directory to the ‘bin’ directory.  There will be a ‘start.sh’ file.
+The gradle task `./gradlew :odcs-web-client-jetty-standalone:bundle` will create a tar ball in the `build/distributions` directory.  
+This tar ball can be extracted and run with the `start.sh` script.  
+The `start.sh` script can be configured with the following arguments:
+
 -	Create a shell script, to run start.sh with some extra configurations.
      - Example shell script:
         ```
@@ -53,9 +61,15 @@ http://localhost:8080/odcsapi/platformrefs
   - -s
     - Secure mode.  The authentication is done via the header, rather than as parameters passed through parameters.
 
-## WAR file
-Once mvn install has been run to create a jetty instance, a war file can then be created.
-- Run the following command after the jetty embedded server tar ball is created
-- ant -f build-war.xml war
+Additionally, the build can run from a developer environment using the gradle task `./gradlew :odcs-web-client-jetty-standalone:startJetty`.
+Properties read from gradle.properties will be used to configure the server.
+
+##	OPENDCS Web Client Jetty Standalone Installer
+The gradle task `./gradlew :odcs-web-client-jetty-standalone:bundle` will create a tar ball in the `build/distributions` directory.  
+This tar ball can be extracted and run with the `start.sh` script.  
+The `start.sh` script can be configured with the following arguments:
+
+Additionally, the build can run from a developer environment using the gradle task `./gradlew :odcs-web-client-jetty-standalone:startJetty`.
+Properties read from gradle.properties will be used to configure the server.
 
 

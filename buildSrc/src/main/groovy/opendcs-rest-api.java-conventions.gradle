@@ -1,0 +1,23 @@
+plugins {
+    id 'java-library'
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+compileJava   {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+dependencies {
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -1,0 +1,19 @@
+plugins {
+    id "com.palantir.git-version" version "3.0.0"
+    id "org.sonarqube" version "4.4.1.3373"
+    id "opendcs-rest-api.java-conventions"
+    id "opendcs-rest-api.deps-conventions"
+    id "opendcs-rest-api.publishing-conventions"
+}
+
+def static versionLabel(gitInfo) {
+    def branch = gitInfo.branchName // all branches are snapshots, only tags get released
+    def tag = gitInfo.lastTag
+    // tag is returned as is. Branch may need cleanup
+    return branch == null ? tag : 99 + "." + branch.replace("/", "-") + "-SNAPSHOT"
+}
+
+allprojects {
+    group = 'org.opendcs'
+    version = versionLabel(versionDetails())
+}

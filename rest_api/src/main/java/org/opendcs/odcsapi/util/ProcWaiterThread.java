@@ -228,7 +228,7 @@ public class ProcWaiterThread extends Thread
 	}
 
 	/**
-	* Test main. Usage: java ilex.util.ProcWaiterThread <cmd> <name>
+	* Test main. Usage: java ilex.util.ProcWaiterThread {@code<cmd> <name>}
 	* @param args  the args
 	* @throws Exception on any error, printing stack trace.
 	*/

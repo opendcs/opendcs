@@ -59,8 +59,7 @@ public class ApiTsDAO
 	
 	/**
 	 * Note call with null value to delete the property
-	 * @param name
-	 * @param value
+	 * @param props
 	 */
 	public void setTsdbProperties(Properties props)
 		throws DbException

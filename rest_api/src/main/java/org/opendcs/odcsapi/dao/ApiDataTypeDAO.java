@@ -17,12 +17,12 @@ public class ApiDataTypeDAO
 	}
 	
 	/**
-	 * Lookup a data type record by std & code and return the surrogate key ID.
+	 * Lookup a data type record by std and code and return the surrogate key ID.
 	 * @param std
 	 * @param code
 	 * @return
 	 * @throws SQLException 
-	 * @throws DbIoException
+	 * @throws DbException
 	 */
 	public Long lookup(String std, String code)
 		throws DbException, SQLException

@@ -1,0 +1,10 @@
+rootProject.name = "opendcs_rest_api"
+
+include "rest_api"
+include "web_client"
+include "odcsapi-jetty-standalone"
+include "odcs-web-client-jetty-standalone"
+project(':rest_api').name = 'odcsapi'
+project(':web_client').name = 'odcs-web-client'
+project(':odcsapi-jetty-standalone').name = 'odcsapi-jetty-standalone'
+project(':odcs-web-client-jetty-standalone').name = 'odcs-web-client-jetty-standalone'

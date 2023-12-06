@@ -113,7 +113,7 @@ public class ApiBasicClient
 	}
 
 	/**
-	* Disconnect from the server. Close input & output streams and release
+	* Disconnect from the server. Close input and output streams and release
 	* all socket resources.
 	* This function should be called when any of the other methods throws
 	* an exception. You can then call connect() again to reconnect to the

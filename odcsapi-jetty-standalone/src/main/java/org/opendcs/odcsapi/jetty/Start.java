@@ -1,4 +1,19 @@
-package org.opendcs.odcsapi.start;
+/*
+ *  Copyright 2023 OpenDCS Consortium
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.opendcs.odcsapi.jetty;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,7 +25,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Scanner;
-import java.util.ServiceLoader;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -19,7 +33,6 @@ import java.util.logging.SimpleFormatter;
 
 import javax.servlet.DispatcherType;
 
-import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -35,6 +48,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.start.StartException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiEnvExpander;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;

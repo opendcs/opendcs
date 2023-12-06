@@ -30,7 +30,7 @@ import org.opendcs.odcsapi.util.ApiTextUtil;
   This class encapsulates the communication between a client process
   and the LRGS DCP Data Server (LDDS). Construct the LddsClient object
   with a host name and optionally a port number. The LddsClient object
-  contains methods for all of messages & responses supported by the
+  contains methods for all of messages and responses supported by the
   server.
 */
 public class ApiLddsClient extends ApiBasicClient
@@ -95,7 +95,7 @@ public class ApiLddsClient extends ApiBasicClient
 
 	/**
 	  Disconnects from the server. 
-	  Close input & output streams and release all socket resources.
+	  Close input and output streams and release all socket resources.
 
 	  This function should be called when any of the other methods throws
 	  an exception. You can then call connect() again to reconnect to the
@@ -209,8 +209,8 @@ public class ApiLddsClient extends ApiBasicClient
 	  Then awaits the response from the server. If an exception is not thrown, 
 	  then the login was successful.
 
-	  @param name the user name to send to the server
-	  @param passwd the password to send to the server
+	  @param username the user name to send to the server
+	  @param password the password to send to the server
 
 	  @throws DdsServerError if the server rejected this request. In the case
 	     of the this message this means that the authentication failed.
