@@ -16,7 +16,7 @@ jar {
     manifest {
         attributes(
                 'Main-Class': 'org.opendcs.odcswebclient.jetty.Start',
-                'Class-Path': configurations.runtimeClasspath.files.collect { it.getName() }.join(' ')
+                'Class-Path': configurations.runtimeClasspath.files.collect { "libs/" + it.getName() }.join(' ')
         )
     }
 }
