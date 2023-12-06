@@ -1,3 +1,8 @@
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=opendcs_rest_api&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=opendcs_rest_api)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_rest_api&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_rest_api)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=opendcs_rest_api&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=opendcs_rest_api)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=opendcs_rest_api&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=opendcs_rest_api)
+
 # rest_api
 OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation).
 OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.
@@ -72,4 +77,13 @@ The `start.sh` script can be configured with the following arguments:
 Additionally, the build can run from a developer environment using the gradle task `./gradlew :odcs-web-client-jetty-standalone:startJetty`.
 Properties read from gradle.properties will be used to configure the server.
 
+# Static Code Analysis
+
+To view the analysis results, navigate to the project on the SonarCloud website. 
+[OpenDCS REST API SonarCloud](https://sonarcloud.io/project/overview?id=opendcs_rest_api)
+
+The gradle task `./gradlew sonar` will run a SonarLint analysis on the project.  
+The SonarLint analysis will be run against the SonarCloud server with an analysis uploaded to the OpenDCS REST API project.
+Quality Gates and new issues will automatically be added as notes to Pull Requests targeting the main branch.
+The workflow static_analysis.yml includes the analysis step for GitHub Actions.
 
