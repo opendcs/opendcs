@@ -161,20 +161,28 @@ public class ProcWaiterThread extends Thread
 				{
 					try
 					{
-						byte cmdOutBuf[] = new byte[4096];
-						int cmdOutLen = 0;
-						cmdOutLen = is.read(cmdOutBuf);
-						if (cmdOutLen > 0)
+						while(is.available() > 0)
 						{
-							cmdOutput = new String(cmdOutBuf, 0, cmdOutLen);
-							Logger.instance().debug1(
-								"cmd(" + name + ") stdout returned(" 
-								+ cmdOutLen + ") '" + cmdOutput + "'");
+							byte cmdOutBuf[] = new byte[4096];
+							int cmdOutLen = 0;
+							cmdOutLen = is.read(cmdOutBuf);
+							if (cmdOutLen > 0)
+							{
+								cmdOutput = new String(cmdOutBuf, 0, cmdOutLen);
+								Logger.instance().debug1(
+									"cmd(" + name + ") stdout returned(" 
+									+ cmdOutLen + ") '" + cmdOutput + "'");
+							}
+							else
+							{
+								cmdOutput = null;
+							}
 						}
-						else
-							cmdOutput = null;
 					}
-					catch(IOException ex) {}
+					catch(IOException ex)
+					{
+						Logger.instance().warning("cmd(" + name + ") error on output stream." + ex.getLocalizedMessage());
+					}
 				}
 			};
 		isr.start();
@@ -188,14 +196,20 @@ public class ProcWaiterThread extends Thread
 				{
 					try
 					{
-						byte buf[] = new byte[1024];
-						int n = es.read(buf);
-						if (n > 0)
-							Logger.instance().warning(
-								"cmd(" + name + ") stderr returned(" + n + ") '"
-								+ new String(buf, 0, n) + "'");
+						while (es.available() > 0)
+						{
+							byte buf[] = new byte[1024];
+							int n = es.read(buf);
+							if (n > 0)
+								Logger.instance().warning(
+									"cmd(" + name + ") stderr returned(" + n + ") '"
+									+ new String(buf, 0, n) + "'");
+						}
 					}
-					catch(IOException ex) {}
+					catch(IOException ex) 
+					{
+						Logger.instance().warning("cmd(" + name + ") error on error stream." + ex.getLocalizedMessage());
+					}
 				}
 			};
 		esr.start();
