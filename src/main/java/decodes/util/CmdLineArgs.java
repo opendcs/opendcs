@@ -324,7 +324,7 @@ public class CmdLineArgs
 			if (dotPropIdx > 0)
 			{
 				profileName = profileName.substring(0, dotPropIdx);
-				TopFrame.profileName = profileName;
+				TopFrame.profileName = new File(profileName).getName(); // don't include the full path that may be there.
 				profileUsed = true;
 			}
 			int lastSlashIdx = profileName.lastIndexOf('/');
