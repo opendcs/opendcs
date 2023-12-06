@@ -472,8 +472,7 @@ public class LoadingAppDao
             }
             q = "delete from cp_comp_proc_lock where LOADING_APPLICATION_ID = ?";
             doModify(q, app.getKey());
-            if (DecodesSettings.instance().editDatabaseTypeCode == DecodesSettings.DB_OPENTSDB
-             && db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+            if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
             {
                 q = "delete from "
                     + (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_17 ? "ALARM_EVENT"
