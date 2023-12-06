@@ -1,4 +1,4 @@
-name: Static Code Analysis
+name: CI/CD
 on:
   push:
     branches:
@@ -8,7 +8,7 @@ on:
       - main
 jobs:
   build:
-    name: Build and analyze
+    name: Build, Test, and Analyze
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -31,8 +31,26 @@ jobs:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
-      - name: Build and analyze
+      - name: Build
+        run: ./gradlew build
+      - name: Analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonar --info
+        run: ./gradlew sonar
+      - name: Bundle tarballs
+        run: ./gradlew bundle
+      - name: Upload WAR files
+        uses: actions/upload-artifact@v2
+        with:
+          name: warfile
+          path: ./**/build/libs/*.war
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload Tarballs
+        uses: actions/upload-artifact@v2
+        with:
+          name: warfile
+          path: ./**/build/distributions/*.tar.gz
+          retention-days: 1
+          if-no-files-found: error

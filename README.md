@@ -77,7 +77,14 @@ The `start.sh` script can be configured with the following arguments:
 Additionally, the build can run from a developer environment using the gradle task `./gradlew :odcs-web-client-jetty-standalone:startJetty`.
 Properties read from gradle.properties will be used to configure the server.
 
-# Static Code Analysis
+# CI/CD
+The GitHub Action workflow [default.yml](./.github/workflows/default.yml) contains the primary CI/CD pipeline for the project.
+This workflow is responsible for compiling, testing, analyzing, and packaging the project.
+
+WAR and TAR files are generated as part of the CI/CD pipeline and are uploaded as artifacts in the GitHub Action.
+
+## Static Code Analysis
+During the analysis step of the CI/CD pipeline, the project is analyzed using SonarLint.
 
 To view the analysis results, navigate to the project on the SonarCloud website. 
 [OpenDCS REST API SonarCloud](https://sonarcloud.io/project/overview?id=opendcs_rest_api)
@@ -85,5 +92,9 @@ To view the analysis results, navigate to the project on the SonarCloud website.
 The gradle task `./gradlew sonar` will run a SonarLint analysis on the project.  
 The SonarLint analysis will be run against the SonarCloud server with an analysis uploaded to the OpenDCS REST API project.
 Quality Gates and new issues will automatically be added as notes to Pull Requests targeting the main branch.
-The workflow static_analysis.yml includes the analysis step for GitHub Actions.
+The workflow [default.yml](./.github/workflows/default.yml) includes the analysis step for GitHub Actions.
 
+## Java Version Compatibility
+OpenDCS REST API targets JDK 8 compatibility for distribution. 
+In order to ensure compatibility with future versions of Java, the GitHub workflow [java_compatibility.yml](./.github/workflows/java_compatibility.yml)
+will run a matrix build against the project to ensure compatibility with other JDK versions.
