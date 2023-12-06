@@ -1,9 +1,6 @@
 plugins {
     id "com.palantir.git-version" version "3.0.0"
     id "org.sonarqube" version "4.4.1.3373"
-    id "opendcs-rest-api.java-conventions"
-    id "opendcs-rest-api.deps-conventions"
-    id "opendcs-rest-api.publishing-conventions"
 }
 
 def static versionLabel(gitInfo) {
@@ -16,4 +13,12 @@ def static versionLabel(gitInfo) {
 allprojects {
     group = 'org.opendcs'
     version = versionLabel(versionDetails())
+}
+
+sonar {
+    properties {
+        property "sonar.projectKey", "opendcs_rest_api"
+        property "sonar.organization", "opendcs"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
 }
