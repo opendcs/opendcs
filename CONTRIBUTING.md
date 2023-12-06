@@ -116,7 +116,6 @@ The current java target is java 8. Please make sure you do not add java 9+ featu
 
 Now you're ready to [clone the repository](https://help.github.com/articles/cloning-a-repository/) and start looking at things. If you are going to submit any changes you make, please read the Submitting changes section below.
 
-
 ### Code Style
 
 TODO: add checkstyle to gradle build
@@ -155,9 +154,13 @@ A trivial change *may* be accepted without changes but comment and approval by o
 
 Before submitting your pull request, you should run the build process locally first to ensure things are working as expected.
 
-We are in the process of improving the build system. Please see the build.xml file for the current recommendations.
+If you are contributing to the project, please ensure your code meets SonarCloud's quality standards before submitting a pull request.
 
-We are working on baseline automated tests.
+We use SonarCloud to perform static code analysis on our project.
+SonarCloud is a cloud-based service that automatically analyzes and evaluates code quality on every commit and pull request.
+It detects bugs, vulnerabilities, and code smells across a variety of languages and frameworks.
+
+For more information on SonarCloud, visit the [SonarCloud documentation](https://sonarcloud.io/documentation).
 
 
 ### I figured out how to do something where can I document it
