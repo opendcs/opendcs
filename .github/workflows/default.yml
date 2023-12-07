@@ -50,7 +50,7 @@ jobs:
       - name: Upload Tarballs
         uses: actions/upload-artifact@v2
         with:
-          name: warfile
+          name: opendcs-rest-api-artifacts
           path: ./**/build/distributions/*.tar.gz
           retention-days: 1
           if-no-files-found: error
