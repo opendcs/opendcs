@@ -74,7 +74,14 @@ By making a contribution to this project, I certify that:
 
 ### 5. Project History
 
-TODO: Will, please add a brief history of the project here.
+The OpenDCS API was developed for the U.S. Army Corps of Engineers.  It provides the means to interact with the OpenDCS database without the OpenDCS Java Client.  It was developed in conjuntion with the OpenDCS Web Client, which is designed to provide the same functionality as the OpenDCS Java Client.
+
+The OpenDCS API was originally developed to target the open_tsdb database, served on PostgreSQL.  It can be run on Tomcat or Embedded Jetty.
+
+The first implementation enabled the functionality of the 'Network List' page in the OpenDCS Java Client Decodes Database Editor.
+After the 'Network List' page was proven out, the rest of the functionality of the Decodes Database Editor, as well as the Reference List Editor.
+
+Currently, OpenDCS API is being reviewed and updated to build an official release.
 
 ### 6. You are a contractor funded by one of those agencies
 
