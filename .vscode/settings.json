@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "opendcs-rest-api-sonarcloud",
+        "projectKey": "opendcs_rest_api"
+    }
+}
