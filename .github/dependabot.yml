@@ -4,5 +4,12 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      alldependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     reviewers:
       - "@opendcs/opendcs-core-devs"
