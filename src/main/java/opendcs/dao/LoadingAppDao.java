@@ -104,14 +104,15 @@ public class LoadingAppDao
     {
         StringBuilder q = new StringBuilder("select COMPUTATION_NAME from CP_COMPUTATION");
         ArrayList<Object> parameters = new ArrayList<>();
-        if (appId != Constants.undefinedId)
+        boolean isAppIdDefined = appId != Constants.undefinedId;
+        if (isAppIdDefined)
         {
             q.append(" where LOADING_APPLICATION_ID = ?");
             parameters.add(appId);
         }
         if (enabledOnly)
         {
-            q.append((appId != Constants.undefinedId ? " and " : " where "));
+            q.append(isAppIdDefined ? " and " : " where ");
             q.append("enabled = 'Y'");
         }
 
@@ -125,15 +126,6 @@ public class LoadingAppDao
             warning(msg);
             throw new DbIoException(msg);
         }
-    }
-
-    private CompAppInfo rs2CompAppInfo(ResultSet rs, String prefix) throws SQLException
-    {
-        CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, prefix+"loading_application_id"));
-        cai.setAppName(rs.getString(prefix+"loading_application_name"));
-        cai.setManualEditApp(TextUtil.str2boolean(rs.getString(prefix+"manual_edit_app")));
-        cai.setComment(rs.getString(prefix+"cmmnt"));
-        return cai;
     }
 
     /**
@@ -156,7 +148,7 @@ public class LoadingAppDao
         {
             propsDao.setManualConnection(conn);
             final ArrayList<CompAppInfo> ret =
-                (ArrayList<CompAppInfo>)getResults(q.toString(), rs -> rs2CompAppInfo(rs, ""));
+                    (ArrayList<CompAppInfo>)getResults(q.toString(), rs -> new CompAppInfo(rs,""));
 
             fillInProperties(ret, "");
             q.setLength(0);
@@ -223,7 +215,7 @@ public class LoadingAppDao
             ArrayList<CompAppInfo> ret = new ArrayList<CompAppInfo>();
             while(rs.next())
             {
-                ret.add(rs2CompAppInfo(rs, ""));
+                ret.add( new CompAppInfo(rs, ""));
             }
 
             fillInProperties(ret, "where LOADING_APPLICATION_ID in (" + inList + ")");
@@ -252,7 +244,7 @@ public class LoadingAppDao
         )
         {
             propsDao.setManualConnection(conn);
-            final CompAppInfo cai = getSingleResult(q, rs -> rs2CompAppInfo(rs, ""), id);
+            final CompAppInfo cai = getSingleResult(q, rs -> new CompAppInfo(rs, ""), id);
 
             if (cai == null)
             {

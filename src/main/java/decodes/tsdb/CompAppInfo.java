@@ -6,6 +6,8 @@ package decodes.tsdb;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
@@ -89,6 +91,13 @@ public class CompAppInfo
 		numComputations = 0;
 		props = new Properties();
 		manualEditApp = false;
+	}
+	public CompAppInfo(ResultSet rs, String prefix) throws SQLException
+	{
+		CompAppInfo cai = new CompAppInfo(DbKey.createDbKey(rs, prefix+"loading_application_id"));
+		cai.setAppName(rs.getString(prefix+"loading_application_name"));
+		cai.setManualEditApp(TextUtil.str2boolean(rs.getString(prefix+"manual_edit_app")));
+		cai.setComment(rs.getString(prefix+"cmmnt"));
 	}
 
 	/** @see decodes.tsdb.CompMetaData */
