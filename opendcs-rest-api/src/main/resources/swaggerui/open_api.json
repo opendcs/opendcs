@@ -7,9 +7,6 @@
   },
   "servers": [
     {
-      "url": ""
-    },
-    {
       "url": "odcsapi"
     }
   ],
@@ -3671,7 +3668,6 @@
                   "type": "string",
                   "example": "D"
                 },
-                "headerType": "decodes:goes",
                 "formatStatements": {
                   "type": "array",
                   "items": {

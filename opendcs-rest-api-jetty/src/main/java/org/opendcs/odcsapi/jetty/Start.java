@@ -43,6 +43,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.jersey.servlet.ServletContainer;
+import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiEnvExpander;
@@ -168,20 +169,10 @@ public class Start
 
 		PGSimpleDataSource ds = new PGSimpleDataSource();
 		ds.setURL(dbUrl);
-		String afn = ApiEnvExpander.expand(dbAuthFile);
-		AuthFileReader afr = new AuthFileReader(afn);
-		try
-		{
-			afr.read();
-		}
-		catch(Exception ex)
-		{
-			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, ex);
-			LOGGER.error(msg);
-			throw new StartException(String.format("Cannot read auth file: %s", ex));
-		}
-		ds.setUser(afr.getUsername());
-		ds.setPassword(afr.getPassword());
+		Properties credentials = AuthSourceService.getFromString(dbAuthFile)
+				.getCredentials();
+		ds.setUser(credentials.getProperty("username"));
+		ds.setPassword(credentials.getProperty("password"));
 		DbInterface.setDataSource(ds);
 		DbInterface.setDatabaseType(dbType);
 
