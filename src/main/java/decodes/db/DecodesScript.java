@@ -672,11 +672,27 @@ public class DecodesScript extends IdDatabaseObject
         /**
          * Finalize the creation of a decodes script. After this 
          * the script should be ready for decoding operations.
+         *
+         * Defaults to <b>NOT</b> throwing an exception on a script processing error.
+         *
          * @return DecodesScript
          * @throws DecodesScriptException Any issues preparing the script
          * @throws IOException any issues retrieving format statements
          */
         public DecodesScript build() throws DecodesScriptException, IOException
+        {
+            return build(false);
+        }
+
+        /**
+         * Finalize the creation of a decodes script. After this
+         * the script should be ready for decoding operations.
+         * @param failOnError Whether to throw an exception if formatstatement processing fails
+         * @return DecodesScript
+         * @throws DecodesScriptException Any issues preparing the script
+         * @throws IOException any issues retrieving format statements
+         */
+        public DecodesScript build(boolean failOnError) throws DecodesScriptException, IOException
         {
             Objects.requireNonNull(platformSupplier, "PlatformConfig cannot be null. Set before calling build.");
             DecodesScript script = new DecodesScript(nameSupplier.get());
@@ -691,12 +707,20 @@ public class DecodesScript extends IdDatabaseObject
                     script.formatStatements.add(fs.get());
                 }
                 script.prepareForExec();
-                return script;
             }
             catch(Exception ex)
             {
-                throw new DecodesScriptException("Unable to finalize Decodes Script (" + script.scriptName + ") for use.",ex);
+                final String msg = "Unable to finalize Decodes Script (" + script.scriptName + ") for use.";
+                if (failOnError)
+                {
+                    throw new DecodesScriptException(msg, ex);
+                }
+                else
+                {
+                    logger.failure(msg + " " + ex.getLocalizedMessage());
+                }
             }
+            return script;
         }
 
         /**
