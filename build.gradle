@@ -39,3 +39,12 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
         }
     }
 }
+subprojects {
+    if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+        sonarqube {
+            properties {
+                property 'sonar.coverage.jacoco.xmlReportPaths', "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+            }
+        }
+    }
+}
