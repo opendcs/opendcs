@@ -126,17 +126,10 @@ public class DecodingScriptEditDialog
 	{
 		panel1.setLayout(borderLayout1);
 		okButton.setText(genericLabels.getString("OK"));
-		okButton.addActionListener(new java.awt.event.ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				okButton_actionPerformed(e);
-			}
-		});
+		okButton.addActionListener(e -> okButton_actionPerformed(e));
+
 		cancelButton.setText(genericLabels.getString("cancel"));
-		cancelButton.addActionListener(new java.awt.event.ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				cancelButton_actionPerformed(e);
-			}
-		});
+		cancelButton.addActionListener(e -> cancelButton_actionPerformed(e));
 		jPanel4.setLayout(flowLayout3);
 		flowLayout3.setHgap(35);
 		flowLayout3.setVgap(10);
@@ -169,10 +162,21 @@ public class DecodingScriptEditDialog
 			return;
 		}
 
-		PlatformConfig pc = decodingScriptEditPanel.theScript.platformConfig;
-		pc.rmScript(decodingScriptEditPanel.origScript);
-		pc.addScript(decodingScriptEditPanel.theScript);
-		closeDlg();
+		try
+		{
+			final DecodesScript theScript = decodingScriptEditPanel.getScript();
+			theScript.prepareForExec();
+
+			PlatformConfig pc = decodingScriptEditPanel.theScript.platformConfig;
+			pc.rmScript(decodingScriptEditPanel.origScript);
+			pc.addScript(decodingScriptEditPanel.theScript);
+			closeDlg();
+		}
+		catch (DecodesException ex)
+		{
+			TopFrame.instance().showError(
+				dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding") + ex.getLocalizedMessage());
+		}
 	}
 
 	/** Closes the dialog */
