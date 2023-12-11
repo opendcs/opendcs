@@ -13,6 +13,7 @@ websocket = "1.1"
 
 #Test Dependencies
 junit = "5.10.1"
+mockito = "3.12.4"
 
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
@@ -40,4 +41,5 @@ websocket = { module = "javax.websocket:javax.websocket-api", version.ref = "web
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
-
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
