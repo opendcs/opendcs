@@ -41,7 +41,7 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> {
         theArgs.add("-cp");
         theArgs.add(System.getProperty("opendcs.test.classpath")); // setup classpath
         theArgs.add("-DDCSTOOL_USERDIR="+propertiesFile.getParent());
-        theArgs.add("-DCSTOOL_HOME="+System.getProperty("DCSTOOL_HOME"));
+        theArgs.add("-DDCSTOOL_HOME="+System.getProperty("DCSTOOL_HOME"));
         theArgs.add(clazz.getName());
         theArgs.add("-a"); theArgs.add(name);
         theArgs.add("-l"); theArgs.add(logFile.getAbsolutePath());

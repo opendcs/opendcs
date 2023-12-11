@@ -1,7 +1,5 @@
 package org.opendcs.fixtures;
 
-import static org.junit.jupiter.api.Assumptions.abort;
-
 import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -17,7 +15,6 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -60,7 +57,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     {
         Method method = ctx.getRequiredTestMethod();
         Object testInstance = ctx.getRequiredTestInstance();
-        setupStubs(testInstance,ctx);
+        setupStubs(ctx);
         applyPerMethodConfig(testInstance,method,ctx);
     }
 
@@ -71,19 +68,19 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     public void beforeAll(ExtensionContext ctx) throws Exception
     {
         Object testInstance = ctx.getRequiredTestInstance();
-        setupStubs(testInstance,ctx);
-        applyPerInstanceConfig(testInstance,ctx);
+        setupStubs(ctx);
+        applyPerInstanceConfig(ctx);
         assignFields(testInstance);
     }
 
-    private void setupStubs(Object testInstance, ExtensionContext ctx) throws Exception
+    private void setupStubs(ExtensionContext ctx) throws Exception
     {
         exit = (SystemExit)getStub(ctx,SystemExit.class);
         environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
         properties = (SystemProperties)getStub(ctx,SystemProperties.class);
     }
 
-    private void applyPerInstanceConfig(Object testInstance, ExtensionContext ctx) throws Exception
+    private void applyPerInstanceConfig(ExtensionContext ctx) throws Exception
     {
         if (!configuration.isRunning())
         {
