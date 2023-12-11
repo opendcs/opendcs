@@ -37,6 +37,10 @@ import java.net.*;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.PasswordWithShow;
+
 import javax.swing.border.BevelBorder;
 
 import decodes.db.DatabaseException;
@@ -83,7 +87,7 @@ public class MessageBrowser extends MenuFrame
 
     private JComboBox hostField;
     private JTextField portField = new JTextField(15), userField = new JTextField(15);
-    private JPasswordField passwordField = new JPasswordField(15);
+    private PasswordWithShow passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
     private JButton connectButton;
     private JTextField scfileField;
     private JButton scSelectButton, scEditButton;

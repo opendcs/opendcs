@@ -48,6 +48,9 @@ import java.util.ResourceBundle;
 
 import javax.swing.*;
 
+import org.eclipse.jetty.util.security.Password;
+import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.spi.authentication.AuthSource;
 
 import decodes.gui.GuiDialog;
@@ -67,8 +70,8 @@ public class LoginDialog extends GuiDialog implements AuthSource
 	private static ResourceBundle labels = null;
 	private JButton okButton, cancelButton;
 	private JTextField usernameField;
-	private JPasswordField passwordField;
-	private JPasswordField confirmField = null;
+	private PasswordWithShow passwordField;
+	private PasswordWithShow confirmField = null;
 	private boolean ok;
 	
 	public LoginDialog(JFrame f, String title, boolean confirm)
@@ -149,7 +152,7 @@ public class LoginDialog extends GuiDialog implements AuthSource
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 10, 5, 2), 0, 0));
 
-		passwordField = new JPasswordField(10);
+		passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
 		passwordField.setName("password");
 		center.add(passwordField,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
@@ -163,7 +166,7 @@ public class LoginDialog extends GuiDialog implements AuthSource
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(3, 10, 5, 2), 0, 0));
 	
-			confirmField = new JPasswordField(10);
+			confirmField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
 			center.add(confirmField,
 				new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,

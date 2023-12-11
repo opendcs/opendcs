@@ -23,6 +23,8 @@ import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import java.util.Properties;
 
+import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.PasswordWithShow;
 import org.w3c.dom.Document;
 
 import decodes.gui.AboutBox;
@@ -80,7 +82,7 @@ public class RtStatFrame
 	private JTextField portField = new JTextField(6);
 	private JLabel userLabel = new JLabel();
 	JTextField userField = new JTextField(8);
-	private JPasswordField passwordField = new JPasswordField(12);
+	private PasswordWithShow passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
 	private JButton connectButton = new JButton();
 	private GridBagLayout gridBagLayout1 = new GridBagLayout();
 	private JButton pauseButton = new JButton();
@@ -181,17 +183,14 @@ public class RtStatFrame
 			});
 		//loadConnectionsCombo();
 		hostCombo.setEditable(true);
-		hostCombo.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent ae)
-				{
-					setFieldsFromHostSelection(hostCombo, 
-						connectionList, portField, userField, passwordField);
-					passwordCheck.setSelected(passwordField.getText().length() > 0);
-					passwordField.setEnabled(passwordField.getText().length() > 0);
-				}
-			});
+		hostCombo.addActionListener(e ->
+		{
+			setFieldsFromHostSelection(hostCombo, connectionList,
+									   portField, userField, passwordField);
+			boolean haveAPassword = passwordField.getPassword().length > 0;
+			passwordCheck.setSelected(haveAPassword);
+			passwordField.setEnabled(haveAPassword);
+		});
 		loadConnectionsField(hostCombo, connectionList, connectedHostName);
 		netlistDlg = null;
 		rtStatPanel.htmlPanel.addHyperlinkListener(this);
@@ -446,7 +445,7 @@ public class RtStatFrame
 		passwd = null;
 		if (passwordCheck.isSelected())
 		{
-			passwd = passwordField.getText().trim();
+			passwd = new String(passwordField.getPassword()).trim();
 			if (passwd.length() == 0)
 			{
 				showError(labels.getString("RtStatFrame.passAuthErr"));
@@ -1066,7 +1065,7 @@ public class RtStatFrame
 
 	public static void setFieldsFromHostSelection(JComboBox hostCombo, 
 		Properties connectionList, JTextField portField, JTextField userField,
-		JPasswordField passwordField)
+		PasswordWithShow passwordField)
 	{
 		String host = (String)hostCombo.getSelectedItem();
 		if (host == null || host.length() == 0)
