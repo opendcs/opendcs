@@ -9,7 +9,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
@@ -22,6 +21,9 @@ import org.opendcs.spi.configuration.Configuration;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 
+/**
+ * CompProcTestIT tests importing time-series data.
+ */
 @DecodesConfigurationRequired({
         "shared/test-sites.xml",
         "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",

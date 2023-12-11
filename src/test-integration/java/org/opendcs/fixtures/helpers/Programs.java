@@ -170,7 +170,7 @@ public class Programs
      */
     public static void DeleteTs(File log, File propertiesFile,
                                   EnvironmentVariables env, SystemExit exit, String start,
-                                  String end, String TZ,
+                                  String end, String tz,
                                   String... tsNames) throws Exception
     {
         env.execute(() ->
@@ -180,6 +180,10 @@ public class Programs
                         ArrayList<String> theArgs = new ArrayList<>();
                         theArgs.add("-l"); theArgs.add(log.getAbsolutePath());
                         theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
+                        theArgs.add("-S"); theArgs.add(start);
+                        theArgs.add("-U"); theArgs.add(end);
+                        theArgs.add("-Z"); theArgs.add(tz);
+
                         theArgs.add("-d3");
                         for (String tsName: tsNames)
                         {
@@ -212,7 +216,7 @@ public class Programs
      */
     public static String OutputTs(File log, File propertiesFile,
                                   EnvironmentVariables env, SystemExit exit, String start,
-                                  String end, String TZ, String presentationGroup,
+                                  String end, String tz, String presentationGroup,
                                   String... tsNames) throws Exception
     {
         final ByteArrayOutputStream bao = new ByteArrayOutputStream();
@@ -228,6 +232,7 @@ public class Programs
                 theArgs.add("-d3");
                 theArgs.add("-S"); theArgs.add(start);
                 theArgs.add("-U"); theArgs.add(end);
+                theArgs.add("-Z"); theArgs.add(tz);
                 theArgs.add("-G"); theArgs.add(presentationGroup);
                 for (String tsName: tsNames)
                 {

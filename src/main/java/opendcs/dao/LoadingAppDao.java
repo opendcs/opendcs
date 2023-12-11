@@ -104,14 +104,15 @@ public class LoadingAppDao
     {
         StringBuilder q = new StringBuilder("select COMPUTATION_NAME from CP_COMPUTATION");
         ArrayList<Object> parameters = new ArrayList<>();
-        if (appId != Constants.undefinedId)
+        boolean isAppIdDefined = appId != Constants.undefinedId;
+        if (isAppIdDefined)
         {
             q.append(" where LOADING_APPLICATION_ID = ?");
             parameters.add(appId);
         }
         if (enabledOnly)
         {
-            q.append((appId != Constants.undefinedId ? " and " : " where "));
+            q.append(isAppIdDefined ? " and " : " where ");
             q.append("enabled = 'Y'");
         }
 
