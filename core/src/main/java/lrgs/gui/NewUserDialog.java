@@ -16,6 +16,9 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.border.*;
 
+import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.PasswordWithShow;
+
 
 /**
 Simple dialog to enter new DDS user and optionally, password.
@@ -25,7 +28,7 @@ public class NewUserDialog extends JDialog
 	JLabel jLabel1 = new JLabel();
 	JLabel jLabel2 = new JLabel();
 	JTextField userNameField = new JTextField();
-	JTextField passwdField = new JPasswordField();
+	PasswordWithShow passwdField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
 	JPanel jPanel1 = new JPanel();
 	JTextArea infoArea = new JTextArea()
 		{ public boolean isFocusTraversable() { return false; } };

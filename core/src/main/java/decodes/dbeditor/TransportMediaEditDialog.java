@@ -35,6 +35,9 @@ import java.awt.event.*;
 import javax.swing.border.*;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.PasswordWithShow;
+
 import java.util.ResourceBundle;
 
 import ilex.util.LoadResourceBundle;
@@ -94,11 +97,11 @@ public class TransportMediaEditDialog extends GuiDialog
 		new Integer[] { 7, 8 } );
 	private JCheckBox polledTcpDoLoginCheck = new JCheckBox();
 	private JTextField polledTcpUserName = new JTextField();
-	private JPasswordField polledTcpPassword = new JPasswordField();
+	private PasswordWithShow polledTcpPassword = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
 	
 	private JCheckBox polledModemDoLoginCheck = new JCheckBox();
 	private JTextField polledModemUserName = new JTextField();
-	private JPasswordField polledModemPassword = new JPasswordField();
+	private PasswordWithShow polledModemPassword = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
 	private JLabel mediumIdLabel = new JLabel();
 	private JPanel previousSpecialParamsPanel = null;
 
