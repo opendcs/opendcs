@@ -14,6 +14,8 @@ import decodes.tsdb.TsdbAppTemplate;
 /**
  * Inform test extension that this
  * test needs a specific application running.
+ *
+ * Repeat the annotation for as many applications as are required.
  */
 @Documented
 @Target({ElementType.METHOD,ElementType.TYPE, ElementType.ANNOTATION_TYPE})
