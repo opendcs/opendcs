@@ -11,8 +11,8 @@ import org.junit.platform.commons.support.AnnotationSupport;
 import org.opendcs.spi.configuration.Configuration;
 
 /**
- * Simple check to help avoid methods getting call of implementations
- * don't support the requirements.
+ * Simple check to help avoid methods getting called in implementations
+ * that don't support the requirements.
  */
 public class EnableIfAppsSupportedCondition implements ExecutionCondition
 {
