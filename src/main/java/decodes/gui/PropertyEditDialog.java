@@ -9,6 +9,9 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
+import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.PasswordWithShow;
+
 import decodes.dbeditor.TimeZoneSelector;
 import decodes.util.PropertySpec;
 
@@ -189,7 +192,7 @@ public class PropertyEditDialog
 		if (name != null 
 		 && name.toLowerCase().contains("password")
 		 && !name.equalsIgnoreCase("passwordCheckerClass"))
-			valueField = new JPasswordField(10);
+			valueField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
 		else if (propSpec != null)
 		{
 			if (propSpec.getType().equals(PropertySpec.BOOLEAN))
@@ -415,34 +418,65 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 	private String getValueText()
 	{
 		if (valueField instanceof JPasswordField)
-			return new String(((JPasswordField) valueField).getPassword());
+		{
+			return new String(((JPasswordField)valueField).getPassword());
+		}
+		else if (valueField instanceof PasswordWithShow)
+		{
+			return new String(((PasswordWithShow)valueField).getPassword());
+		}
 		else if (valueField instanceof JTextField)
+		{
 			return ((JTextField)valueField).getText();
+		}
 		else if (valueField instanceof JTextArea)
+		{
 			return ((JTextArea)valueField).getText();
+		}
 		else if (valueField instanceof JComboBox)
+		{
 			return ((JComboBox)valueField).getSelectedItem().toString();
-		else return "";
+		}
+		else
+		{
+			return "";
+		}
 	}
 	
 	private void setValue(String value)
 	{
 		if (valueField instanceof JTextField)
+		{
 			((JTextField)valueField).setText(value);
+		}
+		if (valueField instanceof PasswordWithShow)
+		{
+			((PasswordWithShow)valueField).setText(value);
+		}
 		else if (valueField instanceof JTextArea)
+		{
 			((JTextArea)valueField).setText(value);
+		}
 		else if (propSpec != null && propSpec.getType() == PropertySpec.BOOLEAN)
 		{
 			JComboBox trueFalseCombo = (JComboBox)valueField;
 			if (value == null || value.trim().length() == 0)
+			{
 				trueFalseCombo.setSelectedIndex(0);
+			}
 			else if (TextUtil.str2boolean(value))
+			{
 				trueFalseCombo.setSelectedIndex(1);
+			}
 			else
+			{
 				trueFalseCombo.setSelectedIndex(2);
+			}
 		}
 		else if (valueField instanceof JComboBox)
+		{
 			((JComboBox)valueField).setSelectedItem(value);
+		}
 	}
 	
 	
