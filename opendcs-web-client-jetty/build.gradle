@@ -7,7 +7,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":odcs-web-client"))
+    implementation(project(":opendcs-web-client"))
     implementation(libs.jetty.server)
     implementation(libs.jetty.webapp)
 }
