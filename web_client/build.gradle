@@ -20,3 +20,11 @@ publishing {
         }
     }
 }
+
+if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+    sonarqube {
+        properties {
+            property 'sonar.sources', 'src/main/java,src/main/webapp'
+        }
+    }
+}

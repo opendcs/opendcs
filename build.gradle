@@ -28,23 +28,29 @@ def static versionLabel(gitInfo) {
 allprojects {
     group = 'org.opendcs'
     version = versionLabel(versionDetails())
-}
-
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonar {
-        properties {
-            property "sonar.projectKey", "opendcs_rest_api"
-            property "sonar.organization", "opendcs"
-            property "sonar.host.url", "https://sonarcloud.io"
-        }
+    if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+        apply plugin: "org.sonarqube"
     }
 }
 subprojects {
     if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
         sonarqube {
             properties {
+                property "sonar.sources", "src/main/java"
+                property "sonar.tests", "src/test/java"
                 property 'sonar.coverage.jacoco.xmlReportPaths', "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
             }
+        }
+    }
+}
+if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+    sonar {
+        properties {
+            property "sonar.projectKey", "opendcs_rest_api"
+            property "sonar.organization", "opendcs"
+            property "sonar.host.url", "https://sonarcloud.io"
+            property "sonar.pullrequest.provider", "GitHub"
+            property "sonar.pullrequest.github.repository", "opendcs/rest_api"
         }
     }
 }
