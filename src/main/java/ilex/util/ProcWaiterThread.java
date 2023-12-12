@@ -52,211 +52,211 @@ Any output from the process is converted to log messages.
 */
 public class ProcWaiterThread extends Thread
 {
-	/**
-	* The Process I'm waiting for
-	*/
-	private Process proc;
+    /**
+    * The Process I'm waiting for
+    */
+    private Process proc;
 
-	/**
-	* Name used for log messages
-	*/
-	private String name;
+    /**
+    * Name used for log messages
+    */
+    private String name;
 
-	/**
-	 * Optional callback.
-	 */
-	private ProcWaiterCallback callback;
+    /**
+     * Optional callback.
+     */
+    private ProcWaiterCallback callback;
 
-	/**
-	 * Optional object to pass back to the callback.
-	 */
-	private Object callbackObj;
-	
-	public String cmdOutput = null;
+    /**
+     * Optional object to pass back to the callback.
+     */
+    private Object callbackObj;
+
+    public String cmdOutput = null;
 
 
-	/**
-	* Execute a command in the background, starting a ProcWaiterThread to
-	* wait for the process and convert any output to log messages.
-	* @param cmd the command
-	* @param name the name for log messages
-	* @throws IOException if the command could not be executed.
-	*/
-	public static void runBackground( String cmd, String name ) 
-		throws IOException
-	{
-		Logger.instance().debug1("Executing '" + cmd + "' in background");
-		Process proc = Runtime.getRuntime().exec(cmd);
-		ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
-		pwt.start();
-	}
-	
-	/**
-	 * Runs a command in the foreground and returns the output as a string.
-	 * @param cmd
-	 * @param name
-	 * @return
-	 * @throws IOException
-	 */
-	public static String runForeground(String cmd, String name)
-		throws IOException
-	{
-		Logger.instance().debug1("Executing '" + cmd + "' in foreground");
-		Process proc = Runtime.getRuntime().exec(cmd);
-		ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
-		pwt.run();
-		return pwt.cmdOutput;
-	}
+    /**
+    * Execute a command in the background, starting a ProcWaiterThread to
+    * wait for the process and convert any output to log messages.
+    * @param cmd the command
+    * @param name the name for log messages
+    * @throws IOException if the command could not be executed.
+    */
+    public static void runBackground( String cmd, String name )
+        throws IOException
+    {
+        Logger.instance().debug1("Executing '" + cmd + "' in background");
+        Process proc = Runtime.getRuntime().exec(cmd);
+        ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
+        pwt.start();
+    }
 
-	/**
-	* Execute a command in the background, starting a ProcWaiterThread to
-	* wait for the process and convert any output to log messages.
-	* @param cmd the command
-	* @param name the name for log messages
-	* @param callback object to notify when process exits.
-	* @param callbackObj opaque object to pass to the callback.
-	* @throws IOException if the command could not be executed.
-	*/
-	public static void runBackground( String cmd, String name, 
-		ProcWaiterCallback callback, Object callbackObj)
-		throws IOException
-	{
-		Logger.instance().debug1("Executing '" + cmd + "'");
-		ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
-		Map<String,String> env = pb.environment();
-		env.remove("DECJ_MAXHEAP"); // TODO: remove or expand; currently for debuging debug agent gets passed in when it shouldn't.
-		Process proc = pb.start();
-		ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
-		pwt.setCallback(callback, callbackObj);
-		pwt.start();
-	}
+    /**
+     * Runs a command in the foreground and returns the output as a string.
+     * @param cmd
+     * @param name
+     * @return
+     * @throws IOException
+     */
+    public static String runForeground(String cmd, String name)
+        throws IOException
+    {
+        Logger.instance().debug1("Executing '" + cmd + "' in foreground");
+        Process proc = Runtime.getRuntime().exec(cmd);
+        ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
+        pwt.run();
+        return pwt.cmdOutput;
+    }
 
-	/**
-	* Construct a ProcWaiterThread for a particular process.
-	* @param proc the process
-	* @param name the name for log messages
-	*/
-	private ProcWaiterThread( Process proc, String name )
-	{
-		this.proc = proc;
-		this.name = name;
-		callback = null;
-		callbackObj = null;
-	}
+    /**
+    * Execute a command in the background, starting a ProcWaiterThread to
+    * wait for the process and convert any output to log messages.
+    * @param cmd the command
+    * @param name the name for log messages
+    * @param callback object to notify when process exits.
+    * @param callbackObj opaque object to pass to the callback.
+    * @throws IOException if the command could not be executed.
+    */
+    public static void runBackground( String cmd, String name,
+        ProcWaiterCallback callback, Object callbackObj)
+        throws IOException
+    {
+        Logger.instance().debug1("Executing '" + cmd + "'");
+        ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
+        Map<String,String> env = pb.environment();
+        env.remove("DECJ_MAXHEAP"); // TODO: remove or expand; currently for debuging debug agent gets passed in when it shouldn't.
+        Process proc = pb.start();
+        ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
+        pwt.setCallback(callback, callbackObj);
+        pwt.start();
+    }
 
-	/**
-	 * Sets the optional callback.
-	 */
-	public void setCallback(ProcWaiterCallback callback, Object callbackObj)
-	{
-		this.callback = callback;
-		this.callbackObj = callbackObj;
-	}
+    /**
+    * Construct a ProcWaiterThread for a particular process.
+    * @param proc the process
+    * @param name the name for log messages
+    */
+    private ProcWaiterThread( Process proc, String name )
+    {
+        this.proc = proc;
+        this.name = name;
+        callback = null;
+        callbackObj = null;
+    }
 
-	/**
-	* Public run method
-	*/
-	public void run( )
-	{
-		// Start a separate thread to read the input stream.
-		final InputStream is = proc.getInputStream();
-		Thread isr = 
-			new Thread()
-			{
-				public void run()
-				{
-					try
-					{
-						while(is.available() > 0)
-						{
-							byte cmdOutBuf[] = new byte[4096];
-							int cmdOutLen = 0;
-							cmdOutLen = is.read(cmdOutBuf);
-							if (cmdOutLen > 0)
-							{
-								cmdOutput = new String(cmdOutBuf, 0, cmdOutLen);
-								Logger.instance().debug1(
-									"cmd(" + name + ") stdout returned(" 
-									+ cmdOutLen + ") '" + cmdOutput + "'");
-							}
-							else
-							{
-								cmdOutput = null;
-							}
-						}
-					}
-					catch(IOException ex)
-					{
-						Logger.instance().warning("cmd(" + name + ") error on output stream." + ex.getLocalizedMessage());
-					}
-				}
-			};
-		isr.start();
+    /**
+     * Sets the optional callback.
+     */
+    public void setCallback(ProcWaiterCallback callback, Object callbackObj)
+    {
+        this.callback = callback;
+        this.callbackObj = callbackObj;
+    }
 
-		// Likewise for the stderr stream
-		final InputStream es = proc.getErrorStream();
-		Thread esr =
-			new Thread()
-			{
-				public void run()
-				{
-					try
-					{
-						while(true)
-						{
-							while (es.available() > 0)
-							{
-								byte buf[] = new byte[1024];
-								int n = es.read(buf);
-								if (n > 0)
-									Logger.instance().warning(
-										"cmd(" + name + ") stderr returned(" + n + ") '"
-										+ new String(buf, 0, n) + "'");
-							}
-							try
-							{
-								Thread.sleep(2000);
-							}
-							catch (InterruptedException ex)
-							{
-								/* do nothing */
-							}
-						}
-					}
-					catch(IOException ex) 
-					{
-						Logger.instance().warning("cmd(" + name + ") error on error stream." + ex.getLocalizedMessage());
-					}
-				}
-			};
-		esr.start();
- 
-		// Finally, wait for process and catch its exit code.
-		try
-		{
+    /**
+    * Public run method
+    */
+    public void run( )
+    {
+        // Start a separate thread to read the input stream.
+        final InputStream is = proc.getInputStream();
+        Thread isr =
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        while(is.available() > 0)
+                        {
+                            byte cmdOutBuf[] = new byte[4096];
+                            int cmdOutLen = 0;
+                            cmdOutLen = is.read(cmdOutBuf);
+                            if (cmdOutLen > 0)
+                            {
+                                cmdOutput = new String(cmdOutBuf, 0, cmdOutLen);
+                                Logger.instance().debug1(
+                                    "cmd(" + name + ") stdout returned("
+                                    + cmdOutLen + ") '" + cmdOutput + "'");
+                            }
+                            else
+                            {
+                                cmdOutput = null;
+                            }
+                        }
+                    }
+                    catch(IOException ex)
+                    {
+                        Logger.instance().warning("cmd(" + name + ") error on output stream." + ex.getLocalizedMessage());
+                    }
+                }
+            };
+        isr.start();
+
+        // Likewise for the stderr stream
+        final InputStream es = proc.getErrorStream();
+        Thread esr =
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        while(true)
+                        {
+                            while (es.available() > 0)
+                            {
+                                byte buf[] = new byte[1024];
+                                int n = es.read(buf);
+                                if (n > 0)
+                                    Logger.instance().warning(
+                                        "cmd(" + name + ") stderr returned(" + n + ") '"
+                                        + new String(buf, 0, n) + "'");
+                            }
+                            try
+                            {
+                                Thread.sleep(2000);
+                            }
+                            catch (InterruptedException ex)
+                            {
+                                /* do nothing */
+                            }
+                        }
+                    }
+                    catch(IOException ex)
+                    {
+                        Logger.instance().warning("cmd(" + name + ") error on error stream." + ex.getLocalizedMessage());
+                    }
+                }
+            };
+        esr.start();
+
+        // Finally, wait for process and catch its exit code.
+        try
+        {
             int exitStatus = proc.waitFor();
             // Race-condition, after process ends, wait a half sec for
             // reads in isr & esr above to finish.
             sleep(500L);
-			if (exitStatus != 0)
-				Logger.instance().warning("cmd(" + name + ") exit status "
-					+ exitStatus);
-			if (callback != null)
-				callback.procFinished(name, callbackObj, exitStatus);
+            if (exitStatus != 0)
+                Logger.instance().warning("cmd(" + name + ") exit status "
+                    + exitStatus);
+            if (callback != null)
+                callback.procFinished(name, callbackObj, exitStatus);
         }
         catch(InterruptedException ex)
         {
         }
-	}
+    }
 
-	/**
-	* Test main. Usage: java ilex.util.ProcWaiterThread <cmd> <name>
-	* @param args  the args
-	* @throws Exception on any error, printing stack trace.
-	*/
-	public static void main( String[] args ) throws Exception
-	{
-		System.out.println("Executing '" + args[0] + "' output: ");
-		System.out.println(runForeground(args[0], args[1]));
-	}
+    /**
+    * Test main. Usage: java ilex.util.ProcWaiterThread <cmd> <name>
+    * @param args  the args
+    * @throws Exception on any error, printing stack trace.
+    */
+    public static void main( String[] args ) throws Exception
+    {
+        System.out.println("Executing '" + args[0] + "' output: ");
+        System.out.println(runForeground(args[0], args[1]));
+    }
 }

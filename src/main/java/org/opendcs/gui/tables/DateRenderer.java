@@ -21,12 +21,11 @@ public class DateRenderer extends JLabel implements TableCellRenderer
         lmtFormat = format;
     }
 
-	@Override
-	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
-			int row, int column)
-	{
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+            int row, int column)
+    {
         setText(lmtFormat.format((Date)value));
-		return this;
-	}
-	
+        return this;
+    }
 }
