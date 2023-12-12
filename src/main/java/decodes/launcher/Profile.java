@@ -22,17 +22,17 @@ public class Profile
      * The default profile will always be "decodes.properties" or "user.properties"
      * Depending on the given configuration and will not change for the life of the programs.
      */
-	final static Profile defaultProfile;
-    
+    final static Profile defaultProfile;
+
     static
     {
         final String profilePath = EnvExpander.expand("$DCSTOOL_USERDIR");
-		final String dcsToolPath = EnvExpander.expand("$DCSTOOL_HOME");
+        final String dcsToolPath = EnvExpander.expand("$DCSTOOL_HOME");
         String defaultName = profilePath.equalsIgnoreCase(dcsToolPath) ? "decodes.properties" : "user.properties";
         File baseDir = new File(profilePath);
         defaultProfile = getProfile(new File(baseDir,defaultName));
     }
-        
+
     private Profile(File profileFile)
     {
         this.profile = profileFile;
