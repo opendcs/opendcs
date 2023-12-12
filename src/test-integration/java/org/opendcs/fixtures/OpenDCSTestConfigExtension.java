@@ -142,6 +142,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                                 app.app(),app.appName(),configuration.getPropertiesFile(),
                                 setupLog(app.appName()+".log"),environment
                             );
+                runningApps.put(app.appName(),runningApp);
             }
             else if (!runningApp.isRunning())
             {
