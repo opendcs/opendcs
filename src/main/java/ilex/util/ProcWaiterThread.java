@@ -37,6 +37,9 @@ package ilex.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
+
+import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
 
 /**
 You have to be careful when spawning processes from within Java to process
@@ -119,7 +122,10 @@ public class ProcWaiterThread extends Thread
 		throws IOException
 	{
 		Logger.instance().debug1("Executing '" + cmd + "'");
-		Process proc = Runtime.getRuntime().exec(cmd);
+		ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
+		Map<String,String> env = pb.environment();
+		env.remove("DECJ_MAXHEAP"); // TODO: remove or expand; currently for debuging debug agent gets passed in when it shouldn't.
+		Process proc = pb.start();
 		ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
 		pwt.setCallback(callback, callbackObj);
 		pwt.start();
@@ -196,14 +202,25 @@ public class ProcWaiterThread extends Thread
 				{
 					try
 					{
-						while (es.available() > 0)
+						while(true)
 						{
-							byte buf[] = new byte[1024];
-							int n = es.read(buf);
-							if (n > 0)
-								Logger.instance().warning(
-									"cmd(" + name + ") stderr returned(" + n + ") '"
-									+ new String(buf, 0, n) + "'");
+							while (es.available() > 0)
+							{
+								byte buf[] = new byte[1024];
+								int n = es.read(buf);
+								if (n > 0)
+									Logger.instance().warning(
+										"cmd(" + name + ") stderr returned(" + n + ") '"
+										+ new String(buf, 0, n) + "'");
+							}
+							try
+							{
+								Thread.sleep(2000);
+							}
+							catch (InterruptedException ex)
+							{
+								/* do nothing */
+							}
 						}
 					}
 					catch(IOException ex) 
