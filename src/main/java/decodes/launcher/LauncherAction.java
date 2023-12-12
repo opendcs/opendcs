@@ -56,10 +56,10 @@ public abstract class LauncherAction
 
 	public void buttonPressed()
 	{
-		Profile profileName = launcherFrame.getSelectedProfile();
-		if (profileName != null)
+		Profile profile = launcherFrame.getSelectedProfile();
+		if (profile != null)
 		{
-			launcherFrame.sendToProfileLauncher(profileName.getName(), "start " + tag);
+			launcherFrame.sendToProfileLauncher(profile, "start " + tag);
 			return;
 		}
 

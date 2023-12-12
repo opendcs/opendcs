@@ -1348,7 +1348,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 		// Each time the profile selection combo box changes, check the new properties file
 		// Activate/Deactivate tsdb buttons depending on database type
 		profile = getSelectedProfile();
-		
+		if (profile == null)
+		{
+			return; // The combo box is getting updated
+		}
 		DecodesSettings ProfileSettings = new DecodesSettings();
 		Properties props = new Properties();
 		
@@ -2114,20 +2117,37 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 		List<Profile> profiles = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
 		Logger.instance().debug3("There are " + profiles.size() + " profiles.");
+
 		if (profiles.size() > 1)
 		{
+			Profile currentProfile = (Profile)profileCombo.getSelectedItem();
+
 			profileCombo.removeAllItems();
 			for(Profile item : profiles)
 			{
 				profileCombo.addItem(item);
 			}
-			
 			if (!profilesShown)
 			{
 				fullPanel.add(profPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, .1,
 					GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
 				fullPanel.getIgnoreRepaint();
 				profilesShown = true;
+			}
+
+			if (currentProfile != null)
+			{
+				for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
+				{
+					if (profileCombo.getItemAt(idx).getName().equalsIgnoreCase(currentProfile.getName()))
+					{
+						profileCombo.setSelectedIndex(idx);
+					}
+				}
+			}
+			else
+			{
+				profileCombo.setSelectedIndex(0); // set to default
 			}
 		}
 		else // only 1 "default" profile
