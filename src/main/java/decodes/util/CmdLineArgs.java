@@ -140,6 +140,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import decodes.gui.TopFrame;
+import decodes.launcher.Profile;
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
 import ilex.util.JavaLoggerAdapter;
@@ -158,8 +159,8 @@ public class CmdLineArgs
 
 	/** Log file argument (-l) */
 	protected StringToken log_arg;
-	/** properties file argument (-P) */
-	private String propFileName;
+	/** properties file argument (-P), converted to a {@link decodes.launcher.Profile} */
+	private Profile profile;
 	/** Application Define argument (-D) */
 	private StringToken define_arg;
 	private BooleanToken forwardLogArg;
@@ -296,60 +297,35 @@ public class CmdLineArgs
 		DecodesSettings settings = DecodesSettings.instance();
 
 		// if -P arg supplied, use it, else look in install dir.
-		propFileName = super.getPropertiesFile();
-		boolean profileUsed = false;
+		final String propFileName = super.getPropertiesFile();
 		if (propFileName != null && propFileName.length() > 0)
 		{
-			File propFile = new File(propFileName);
-			if (!propFile.canRead())
-			{
-				Logger.instance().warning(
-					"Cannot read properties file '" + propFile.getPath() + 
-					"' will look in DCSTOOL_USERDIR.");
-				propFile = new File(EnvExpander.expand("$DCSTOOL_USERDIR"), propFileName);
-				if (!propFile.canRead())
-				{
-					String msg = "Cannot read properties file '" + propFile.getPath()
-						+ "' -P ARGUMENT PARSING FAILED!";
-					Logger.instance().fatal(msg);
-					System.err.println(msg);
-					throw new IllegalArgumentException(msg);
-				}
-				else
-					propFileName = propFile.getPath();
-			}
-			
-			String profileName = propFileName;
-			int dotPropIdx = profileName.indexOf(".profile");
-			if (dotPropIdx > 0)
-			{
-				profileName = profileName.substring(0, dotPropIdx);
-				TopFrame.profileName = new File(profileName).getName(); // don't include the full path that may be there.
-				profileUsed = true;
-			}
-			int lastSlashIdx = profileName.lastIndexOf('/');
-			if (lastSlashIdx == -1)
-				lastSlashIdx = profileName.lastIndexOf('\\');
-			if (lastSlashIdx > 0 && lastSlashIdx < profileName.length() - 1)
-				profileName = profileName.substring(lastSlashIdx+1);
-			if (!profileName.equalsIgnoreCase("user") && !profileName.equalsIgnoreCase("decodes"))
-				settings.setProfileName(profileName);
+			profile = Profile.getProfile(new File(propFileName));
 		}
-		else // No -P using default name.
+		else // the default profile is always at index 0 in Profile.getProfiles
 		{
-			String userDir = System.getProperty("DCSTOOL_USERDIR");
-			String installDir = System.getProperty("DCSTOOL_HOME");
-			
-			if (userDir != null && !TextUtil.strEqual(userDir, installDir))
-				propFileName = EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
-			else
-				propFileName = EnvExpander.expand("$DCSTOOL_HOME/decodes.properties");
+			profile = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")))
+							 .get(0);
+		}
+		File propFile = profile.getFile();
 
-			if (!((new File(propFileName)).canRead()))
+		if (!propFile.canRead())
+		{
+			String msg = "Cannot read properties file '" + propFile.getPath()
+				+ "' -P ARGUMENT PARSING or retrieval of default properties FAILED!";
+			Logger.instance().fatal(msg);
+			System.err.println(msg);
+			throw new IllegalArgumentException(msg);
+		}
+
+		if (profile.isProfile())
+		{
+			String profileName = profile.getName();			
+			TopFrame.profileName = profileName; // don't include the full path that may be there.
+
+			if (!profileName.equalsIgnoreCase("user") && !profileName.equalsIgnoreCase("decodes"))
 			{
-				Logger.instance().failure("No -P arg supplied and cannot read default settings file '"
-					+ propFileName + "'");
-				//TODO throw something
+				settings.setProfileName(profileName);
 			}
 		}
 
@@ -357,10 +333,8 @@ public class CmdLineArgs
 		if (!settings.isLoaded())
 		{
 			Properties props = new Properties();
-			File propFile = new File(propFileName);
 			try
 			{
-				
 				FileInputStream fis = new FileInputStream(propFile);
 				props.load(fis);
 				fis.close();
@@ -379,29 +353,10 @@ public class CmdLineArgs
 		// That is, assume this is a single-user or windows installation.
 		String userDir = System.getProperty("DCSTOOL_USERDIR");
 		if (userDir == null)
-			System.setProperty("DCSTOOL_USERDIR", System.getProperty("DCSTOOL_HOME"));
-		
-		if (!settings.isToolkitOwner() && !profileUsed)
 		{
-			Properties props = new Properties();
-			try
-			{
-				File propFile = new File(EnvExpander.expand("$DCSTOOL_USERDIR/user.properties"));
-				FileInputStream fis = new FileInputStream(propFile);
-				props.load(fis);
-				fis.close();
-				settings.loadFromUserProperties(props);
-				settings.setLastModified(new Date(propFile.lastModified()));
-				settings.setSourceFile(propFile);
-			}
-			catch(IOException e)
-			{
-				Logger.instance().debug1(
-				"CmdLineArgs:parseArgs " +
-				"Cannot open User Properties File '"+propFileName+"': "+e);
-			}
+			System.setProperty("DCSTOOL_USERDIR", System.getProperty("DCSTOOL_HOME"));
 		}
-		
+
 		// Set debug level.
 		int dl = getDebugLevel();
 		if (dl > 0)
@@ -435,10 +390,13 @@ public class CmdLineArgs
 Logger.instance().info("After parseArgs, DecodesSettings src file=" + DecodesSettings.instance().getSourceFile().getPath());
 	}
 
-	/** @return DECODES Properties file name */
-	public String getPropertiesFile()
+	/**
+	 * May be the default .properties file wrapped in a Profile object
+	 * @return DECODES Properties Profile.
+	 * */
+	public Profile getProfile()
 	{
-		return propFileName;
+		return profile;
 	}
 
 	public Properties getCmdLineProps() { return cmdLineProps; }

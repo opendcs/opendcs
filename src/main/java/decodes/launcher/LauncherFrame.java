@@ -116,8 +116,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
@@ -245,8 +248,7 @@ public class LauncherFrame
 	WindowAdapter setupFrameReaper;
 	private TopFrame platmonFrame = null, routmonFrame = null;
 	private WindowAdapter platmonReaper = null, routmonReaper = null;
-	private String selectedProfile = null;
-	private JComboBox<String> profileCombo = null;
+	private JComboBox<Profile> profileCombo = null;
 	private JPanel profPanel = null;
 	private boolean profilesShown = false;
 	BasicServer profileLauncherServer = null;
@@ -255,7 +257,7 @@ public class LauncherFrame
 
 	// this is defined here to that the test can properly check.
 	// Future improvements will alter how that test works.
-	private String profilePath = null;
+	private Profile profile = null;
 
 	public LauncherFrame(String args[])
 	{
@@ -924,10 +926,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	void rtstatButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start rtstat");
+			sendToProfileLauncher(profile, "start rtstat");
 			return;
 		}
 
@@ -954,10 +956,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 	
 	void msgaccessButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start msgaccess");
+			sendToProfileLauncher(profile, "start msgaccess");
 			return;
 		}
 
@@ -1014,10 +1016,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	void dbeditButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start dbedit");
+			sendToProfileLauncher(profile, "start dbedit");
 			return;
 		}
 
@@ -1055,10 +1057,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	void setupPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start setup");
+			sendToProfileLauncher(profile, "start setup");
 			return;
 		}
 
@@ -1336,44 +1338,37 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 			"Error!", JOptionPane.ERROR_MESSAGE);
 	}
 
-	public String getProfilePath()
+	public Profile getProfile()
 	{
-		return profilePath;
+		return profile;
 	}
 	
 	private void profileComboChanged()
 	{
 		// Each time the profile selection combo box changes, check the new properties file
 		// Activate/Deactivate tsdb buttons depending on database type
-		String profileName = getSelectedProfile();
-		profilePath = EnvExpander.expand("$DCSTOOL_USERDIR");
-		String dcstoolPath = EnvExpander.expand("$DCSTOOL_HOME");
-
-		final String defaultFile = profilePath.equalsIgnoreCase(dcstoolPath)
-								 ? "decodes.properties"
-								 : "user.properties";
-		
-		if(profileName == null)
-		{
-			profilePath = profilePath + File.separatorChar + defaultFile;
-		}
-		else
-		{
-			profilePath = profilePath + File.separatorChar + profileName + ".profile";
-		}
+		profile = getSelectedProfile();
 		
 		DecodesSettings ProfileSettings = new DecodesSettings();
 		Properties props = new Properties();
 		
 		try
 		{
-			FileInputStream fis = new FileInputStream(profilePath);
+			FileInputStream fis = new FileInputStream(profile.getFile());
 			props.load(fis);
 			fis.close();
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().failure("Cannot open DECODES Properties File '" + profilePath + "': " + ex);
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			pw.println("Cannot open DECODES Properties File '" + profile.getFile());
+			ex.printStackTrace(pw);
+			JOptionPane.showMessageDialog(this,
+										  AsciiUtil.wrapString(sw.toString(),80),
+										  "Error!",
+										  JOptionPane.ERROR_MESSAGE);
+			return;
 		}
 		
 		ProfileSettings.loadFromProperties(props);
@@ -1389,10 +1384,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 	// Time Series Button
 	private void groupEditButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start groupedit");
+			sendToProfileLauncher(profile, "start groupedit");
 			return;
 		}
 		if (groupEditFrame != null)
@@ -1444,10 +1439,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 	
 	protected void tseditButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start tsedit");
+			sendToProfileLauncher(profile, "start tsedit");
 			return;
 		}
 
@@ -1503,10 +1498,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	private void compeditButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start compedit");
+			sendToProfileLauncher(profile, "start compedit");
 			return;
 		}
 
@@ -1561,10 +1556,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	protected void routmonButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start routmon");
+			sendToProfileLauncher(profile, "start routmon");
 			return;
 		}
 
@@ -1619,10 +1614,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	protected void platmonButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start platmon");
+			sendToProfileLauncher(profile, "start platmon");
 			return;
 		}
 
@@ -1679,10 +1674,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 	
 	private void runcompButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start runcomp");
+			sendToProfileLauncher(profile, "start runcomp");
 			return;
 		}
 
@@ -1740,10 +1735,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	private void procstatButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start procstat");
+			sendToProfileLauncher(profile, "start procstat");
 			return;
 		}
 
@@ -1798,10 +1793,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	private void algoeditButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start algoedit");
+			sendToProfileLauncher(profile, "start algoedit");
 			return;
 		}
 
@@ -1839,10 +1834,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
 	private void platwizButtonPressed()
 	{
-		String profileName = getSelectedProfile();
-		if (profileName != null)
+		Profile profile = getSelectedProfile();
+		if (profile != null)
 		{
-			sendToProfileLauncher(profileName, "start platwiz");
+			sendToProfileLauncher(profile, "start platwiz");
 			return;
 		}
 
@@ -1929,14 +1924,13 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 		PrintStream outp = System.out;
 		BasicClient client = null;
 		
-		String profileName = cmdLineArgs.getPropertiesFile();
-		if (profileName == null || profileName.trim().length() == 0)
+		Profile profile = cmdLineArgs.getProfile();
+		if (profile == null || !profile.isProfile())
+		{
 			throw new Exception("Missing properties file on cmd line");
-		profileName = profileName.trim();
-		int idx = profileName.lastIndexOf('.');
-		if (idx > 0)
-			profileName = profileName.substring(0, idx);
-		Logger.instance().info("======== Launcher Starting for profile '" + profileName + "', "
+		}
+
+		Logger.instance().info("======== Launcher Starting for profile '" + profile.getName() + "', "
 			+ "debuglevel=" + Logger.priorityName[Logger.instance().getMinLogPriority()]);
 		
 		if (port > 0)
@@ -1944,19 +1938,13 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 			client = new BasicClient("localhost", port);
 			Logger.instance().info("Connecting to parent launcher at localhost:" + port);
 			try
-			{ 
+			{
 				client.connect();
 				Logger.instance().info(".....connect successful.");
 				inp = client.getInputStream();
 				outp = new PrintStream(client.getOutputStream());
-				String pn = profileName;
-				int slash = pn.lastIndexOf('/');
-				if (slash < 0)
-					slash = pn.lastIndexOf('\\');
-				if (slash > 0)
-					pn = pn.substring(slash+1);
-				
-				outp.println(pn);
+				// return to the connecting client the name used for tracking this connection.
+				outp.println(profile.getName());
 			}
 			catch(IOException ex)
 			{
@@ -1978,8 +1966,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 				String cmdnum = words[0];
 				final String cmd = words[1];
 				final String arg = words.length > 2 ? words[2] : "";
-Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + arg + "'");				
-				
+				Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + arg + "'");
+
 				if (cmd.equalsIgnoreCase("kill"))
 				{
 					Logger.instance().info("Exiting due to kill command.");
@@ -2123,13 +2111,16 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 			profMgrButton.addActionListener(e->startProfileManager());
 		}
 		
-		String [] profileNames = getProfileList();
-		Logger.instance().debug3("There are " + profileNames.length + " profiles.");
-		if (profileNames != null && profileNames.length > 1)
+
+		List<Profile> profiles = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
+		Logger.instance().debug3("There are " + profiles.size() + " profiles.");
+		if (profiles.size() > 1)
 		{
 			profileCombo.removeAllItems();
-			for(String item : profileNames)
+			for(Profile item : profiles)
+			{
 				profileCombo.addItem(item);
+			}
 			
 			if (!profilesShown)
 			{
@@ -2185,11 +2176,9 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 	/**
 	 * @return null if default profile is in effect, otherwise, the selected profile name.
 	 */
-	public String getSelectedProfile()
+	public Profile getSelectedProfile()
 	{
-		if (profileCombo == null || profileCombo.getSelectedIndex() == 0)
-			return null;
-		return (String)profileCombo.getSelectedItem();
+		return profileCombo == null ? null : (Profile)profileCombo.getSelectedItem();
 	}
 	
 	
@@ -2202,7 +2191,7 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 	 * @param profileName the profile name
 	 * @param cmd the command to send
 	 */
-	void sendToProfileLauncher(String profileName, String cmd)
+	void sendToProfileLauncher(Profile profile, String cmd)
 	{
 		final int listenPort = DecodesSettings.instance().profileLauncherPort;
 		if (profileLauncherServer == null)
@@ -2254,7 +2243,7 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 		}
 		
 		// Look through the matching connections for the specified profile.
-		ProfileLauncherConn conn = searchForConn(profileName);
+		ProfileLauncherConn conn = searchForConn(profile.getName());
 		if (conn == null)
 		{
 			// Use ilex.util.ProcWaiterThread to spawn the child launcher process.
@@ -2263,13 +2252,13 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 			launchCmd = launchCmd.replace('\\', File.separatorChar);
 			if (File.separatorChar == '\\')
 				launchCmd = launchCmd + ".bat";
-			launchCmd = launchCmd + " -pp " + listenPort + " -P " + profileName + ".profile"
-				+ " -l " + "launcher-" + profileName + ".log -d1";
+			launchCmd = launchCmd + " -pp " + listenPort + " -P " + profile.getFile().getAbsolutePath()
+				+ " -l " + "launcher-" + profile.getName() + ".log -d1";
 			try
 			{
-				Logger.instance().info("No launcher exists for profile '" + profileName
+				Logger.instance().info("No launcher exists for profile '" + profile.getName()
 					+ "' -- launching command '" + launchCmd + "'");
-				ProcWaiterThread.runBackground(launchCmd, "launch-" + profileName, this, profileName);
+				ProcWaiterThread.runBackground(launchCmd, "launch-" + profile.getName(), this, profile.getName());
 			}
 			catch (IOException ex)
 			{
@@ -2283,7 +2272,7 @@ Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + a
 			long start = System.currentTimeMillis();
 			while(conn == null && System.currentTimeMillis() - start < 10000L)
 			{
-				if ((conn = searchForConn(profileName)) == null)
+				if ((conn = searchForConn(profile.getName())) == null)
 					try { Thread.sleep(200L); } catch(InterruptedException ex) {}
 			}
 			if (conn == null)
