@@ -25,7 +25,6 @@ public class ProfileManager
 	protected void runApp() throws Exception
 	{
 		pmFrame = new ProfileManagerFrame();
-		pmFrame.load();
 		pmFrame.setVisible(true);
 		pmFrame.addWindowListener(new WindowAdapter()
 		{
