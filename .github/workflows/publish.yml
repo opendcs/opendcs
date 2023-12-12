@@ -1,0 +1,47 @@
+name: Publish Release Artifacts
+on:
+  release:
+    types: [published]
+jobs:
+  build:
+    name: Attach Artifacts
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4.0.0
+        with:
+          java-version: 17
+          distribution: 'temurin'
+      - name: Cache Gradle packages
+        uses: actions/cache@v3.3.2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+      - name: Build
+        run: ./gradlew build
+      - name: Bundle tarballs
+        run: ./gradlew bundle
+      - name: Attach OpenDCS REST API WAR file
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} opendcs-rest-api/build/libs/opendcs-rest-api-${{ github.event.release.tag_name }}.war --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attach OpenDCS Web Client WAR file
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} opendcs-web-client/build/libs/opendcs-web-client-${{ github.event.release.tag_name }}.war --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attach OpenDCS REST API Jetty Tarball file
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} opendcs-rest-api-jetty/build/distributions/opendcs-rest-api-jetty-${{ github.event.release.tag_name }}.tar.gz --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attach OpenDCS Web Client Jetty Tarball file
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} opendcs-web-client-jetty/build/distributions/opendcs-web-client-jetty-${{ github.event.release.tag_name }}.tar.gz --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
