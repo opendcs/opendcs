@@ -77,6 +77,7 @@ public class ProfileManagerFrameTest extends GuiTest
 
         frame.button("copyProfile").click();
         opf = frame.optionPane();
+        opf.requireMessage(Pattern.compile("Enter name for copy:"));
         opf.textBox().setText("cwms2");
         opf.okButton().click();
 
@@ -88,6 +89,7 @@ public class ProfileManagerFrameTest extends GuiTest
         cwms2.select();
         frame.button("deleteProfile").click();
         opf = frame.optionPane();
+        opf.requireMessage(Pattern.compile("Are you sure you want to delete the.*"));
         opf.yesButton().click();
         assertThrows(ActionFailedException.class, () ->
         {
