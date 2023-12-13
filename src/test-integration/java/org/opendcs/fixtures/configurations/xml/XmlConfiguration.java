@@ -12,6 +12,7 @@ import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
@@ -50,7 +51,7 @@ public class XmlConfiguration implements Configuration
     }
 
     @Override
-    public void start(SystemExit exit, EnvironmentVariables environment) throws Exception {
+    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception {
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();

@@ -16,6 +16,7 @@ import decodes.tsdb.TsImport;
 import decodes.util.ExportTimeSeries;
 import uk.org.webcompere.systemstubs.SystemStubs;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
@@ -36,7 +37,7 @@ public class Programs
      * @throws Exception If DbImport exists with a code other than 0 (or null)
      */
     public static void DbImport(File log, File propertiesFile,
-                                EnvironmentVariables env, SystemExit exit,
+                                EnvironmentVariables env, SystemExit exit, SystemProperties properties,
                                 String... filesOrDirectories) throws Exception
     {
         final String extensions[] = {"xml"};
@@ -46,7 +47,8 @@ public class Programs
             files.addAll(FileUtils.listFiles(new File(f),extensions,true));
         }
 
-        env.execute(() ->
+        properties.execute(() ->
+            env.execute(() ->
                 exit.execute(() ->
                     SystemStubs.tapSystemErrAndOut(() ->
                     {
@@ -62,7 +64,8 @@ public class Programs
                         DbImport.main(theArgs.toArray(new String[0]));
                     })
                 )
-            );
+            )
+        );
         assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
                    "System.exit called with unexpected code.");
     }
@@ -276,6 +279,10 @@ public class Programs
                 )
             );
         assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
+            )
+        );
+
+        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
                    "System.exit called with unexpected code.");
     }
 }
