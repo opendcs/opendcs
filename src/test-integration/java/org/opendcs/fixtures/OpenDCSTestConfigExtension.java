@@ -84,7 +84,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     {
         if (!configuration.isRunning())
         {
-            configuration.start(exit,environment);
+            configuration.start(exit, environment, properties);
         }
 
         logger.info("Initializing decodes.");
@@ -110,13 +110,13 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
 
     private void applyPerMethodConfig(Object testInstance, Method testMethod, ExtensionContext ctx) throws Exception
     {
-        setupDecodesTestData(testInstance, testMethod, ctx, environment, exit);
-        setupComputationTestData(testInstance, testMethod, ctx,environment, exit);
-        startOrCheckApplications(testInstance, testMethod, ctx, environment, exit);
+        setupDecodesTestData(testInstance, testMethod, ctx, environment, properties, exit);
+        setupComputationTestData(testInstance, testMethod, ctx,environment, properties, exit);
+        startOrCheckApplications(testInstance, testMethod, ctx, environment, properties, exit);
     }
 
     private void startOrCheckApplications(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables environment,
-            SystemExit exit) throws Exception
+            SystemProperties properties, SystemExit exit) throws Exception
     {
         logger.info("Starting or Checking required applications.");
         ArrayList<TsdbAppRequired> requiredApps = new ArrayList<>();
@@ -192,7 +192,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
      * @param exit SystemExit stub used to call DbImport
      * @throws Exception
      */
-    private void setupDecodesTestData(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables env, SystemExit exit) throws Exception
+    private void setupDecodesTestData(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables env, SystemProperties properties, SystemExit exit) throws Exception
     {
         DecodesConfigurationRequired decodesConfig = testInstance.getClass().getAnnotation(DecodesConfigurationRequired.class);
         ArrayList<String> files = new ArrayList<>();
@@ -214,7 +214,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
 
         if (!files.isEmpty())
         {
-           Programs.DbImport(setupLog("decodes-setup.log"), configuration.getPropertiesFile(), env, exit, files.toArray(new String[0]));
+           Programs.DbImport(setupLog("decodes-setup.log"), configuration.getPropertiesFile(), env, exit, properties, files.toArray(new String[0]));
         }
     }
 
@@ -226,7 +226,8 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
      * @param exit SystemExit stub used to call DbImport
      * @throws Exception
      */
-    private void setupComputationTestData(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables env, SystemExit exit) throws Exception
+    private void setupComputationTestData(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables env,
+                                          SystemProperties properties, SystemExit exit) throws Exception
     {
         ComputationConfigurationRequired compConfig = testInstance.getClass().getAnnotation(ComputationConfigurationRequired.class);
         ArrayList<String> files = new ArrayList<>();

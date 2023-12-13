@@ -23,6 +23,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import opendcs.opentsdb.OpenTsdb;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
@@ -79,7 +80,7 @@ public class OpenDCSPGConfiguration implements Configuration
      * Actually setup the database
      * @throws Exception
     */
-    private void installDb(SystemExit exit,EnvironmentVariables environment, UserPropertiesBuilder configBuilder) throws Exception
+    private void installDb(SystemExit exit,EnvironmentVariables environment, SystemProperties properties, UserPropertiesBuilder configBuilder) throws Exception
     {
         if (isRunning())
         {
@@ -108,8 +109,8 @@ public class OpenDCSPGConfiguration implements Configuration
                               .load();
 
         flyway.migrate();
-        Jdbi jdbi = Jdbi.create(db.getJdbcUrl(),db.getUsername(),db.getPassword());
-        jdbi.useHandle(h->{
+        Jdbi jdbi = Jdbi.create(db.getJdbcUrl());
+        jdbi.useHandle(h -> {
             log.info("Creating application user.");
             h.execute("DO $do$ begin create user dcs_proc with password 'dcs_proc'; exception when duplicate_object then raise notice 'user exists'; end; $do$");
             h.execute("GRANT \"OTSDB_ADMIN\" TO dcs_proc");
@@ -122,21 +123,31 @@ public class OpenDCSPGConfiguration implements Configuration
             environment.set("DB_PASSWORD","dcs_proc");
 
             log.info("Loading base data.");
-            Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
-                              propertiesFile,
-                              environment,exit,
-                              "stage/edit-db/enum",
-                              "stage/edit-db/eu/EngineeringUnitList.xml",
-                              "stage/edit-db/datatype/DataTypeEquivalenceList.xml",
-                              "stage/edit-db/presentation",
-                              "stage/edit-db/loading-app"
-            );
+            try
+            {
+                environment.execute( () ->
+                    properties.execute( () ->
+                        Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
+                                propertiesFile,
+                                environment,exit,properties,
+                                "stage/edit-db/enum",
+                                "stage/edit-db/eu/EngineeringUnitList.xml",
+                                "stage/edit-db/datatype/DataTypeEquivalenceList.xml",
+                                "stage/edit-db/presentation",
+                                "stage/edit-db/loading-app")
+                    )
+                );
+            }
+            catch (Exception ex)
+            {
+                throw new RuntimeException(ex);
+            }
         });
         setStarted();
     }
 
     @Override
-    public void start(SystemExit exit, EnvironmentVariables environment) throws Exception
+    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
     {
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
@@ -145,7 +156,7 @@ public class OpenDCSPGConfiguration implements Configuration
         // set username/pw (env)
         FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
         FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
-        installDb(exit,environment,configBuilder);
+        installDb(exit, environment, properties, configBuilder);
         createPropertiesFile(configBuilder, this.propertiesFile);
     }
 

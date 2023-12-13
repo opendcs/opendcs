@@ -145,7 +145,6 @@ import ilex.cmdline.*;
 import ilex.util.EnvExpander;
 import ilex.util.JavaLoggerAdapter;
 import ilex.util.Logger;
-import ilex.util.TextUtil;
 import ilex.util.FileLogger;
 
 /**
@@ -300,7 +299,7 @@ public class CmdLineArgs
         final String propFileName = super.getPropertiesFile();
         if (propFileName != null && propFileName.length() > 0)
         {
-            profile = Profile.getProfile(new File(propFileName));
+            profile = Profile.getProfile(new File(EnvExpander.expand(propFileName)));
         }
         else // the default profile is always at index 0 in Profile.getProfiles
         {

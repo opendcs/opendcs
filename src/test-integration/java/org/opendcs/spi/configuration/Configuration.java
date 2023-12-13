@@ -6,6 +6,7 @@ import java.util.Map;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
@@ -19,11 +20,13 @@ public interface Configuration
      *  - copying require files
      *  - creating the user.properties file
      *  - starting and installing database schemas 
-     * @param exit SystemExit stub for configurations needing to use various opendcs functions
+     * @param exit SystemExit stub for configurations needing to use various OpenDCS functions
      *             that may call System.exit.
+     * @param environment The System.getenv environment to hold appropriate values.
+     * @param properties The System.getProperty map to hold appropriate values.
      * @throws Exception
      */
-    public void start(SystemExit exit, EnvironmentVariables environment) throws Exception;
+    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception;
 
     /**
      *
