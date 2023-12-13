@@ -15,10 +15,10 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import org.assertj.swing.data.TableCell;
+import org.assertj.swing.edt.FailOnThreadViolationRepaintManager;
 import org.assertj.swing.edt.GuiActionRunner;
 import org.assertj.swing.exception.ActionFailedException;
 import org.assertj.swing.fixture.FrameFixture;
-import org.assertj.swing.fixture.JComboBoxFixture;
 import org.assertj.swing.fixture.JOptionPaneFixture;
 import org.assertj.swing.fixture.JTableCellFixture;
 import org.assertj.swing.fixture.JTableFixture;
@@ -29,12 +29,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 
+import fixtures.GuiTest;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 
 @ExtendWith(SystemStubsExtension.class)
-public class ProfileManagerFrameTest
+public class ProfileManagerFrameTest extends GuiTest
 {
     @SystemStub
     private static SystemProperties properties = new SystemProperties(System.getProperties());
