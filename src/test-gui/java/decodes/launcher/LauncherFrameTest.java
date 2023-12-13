@@ -10,9 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.assertj.swing.edt.GuiActionRunner;
 import org.assertj.swing.fixture.FrameFixture;
 import org.assertj.swing.fixture.JComboBoxFixture;
@@ -26,8 +23,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 
-
-
 @ExtendWith(SystemStubsExtension.class)
 public class LauncherFrameTest
 {
@@ -36,8 +31,7 @@ public class LauncherFrameTest
     private static SystemProperties properties = new SystemProperties(System.getProperties());
 
     LauncherFrame lf;
-    private FrameFixture frame;    
-    private ExecutorService executor = Executors.newCachedThreadPool();
+    private FrameFixture frame;
 
     @BeforeEach
     public void setup() throws Exception
@@ -59,7 +53,7 @@ public class LauncherFrameTest
 
     @AfterEach
     public void tearDown()
-    {        
+    {
         frame.cleanUp();
     }
 
@@ -71,13 +65,15 @@ public class LauncherFrameTest
         assertTrue(profileCombo.isEnabled(),"Profiles were not found by the launcher.");
         assertNotNull(profileCombo.contents(),"Profile combo was not correctly created");
         assertEquals(3,profileCombo.contents().length,"Specified Profiles are not in the Profile ComboBox.");
-        assertNull(lf.getSelectedProfile(), "Profile combo did not start on default");
+        assertNotNull(lf.getSelectedProfile(), "Profile combo did not start with a selected value");
+        assertFalse(lf.getSelectedProfile().isProfile(), "Profile combo did not start on (default)");
         assertFalse(frame.button("computations").isEnabled(),"The computation button is enabled but shouldn't be.");
         profileCombo.selectItem("cwms");
         assertTrue(frame.button("computations").isEnabled(),"The computation button was not enabled when it should've been.");
         profileCombo.selectItem("(default)");
         assertFalse(frame.button("computations").isEnabled(),"The computation was not disabled correctly.");
-        assertTrue(lf.getProfilePath().endsWith("user.properties"));
+        Profile profile = lf.getProfile();
+        assertTrue(profile.getFile().getAbsolutePath().endsWith("user.properties"));
     }
 
 }

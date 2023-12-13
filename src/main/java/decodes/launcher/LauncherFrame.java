@@ -927,7 +927,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     void rtstatButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start rtstat");
             return;
@@ -957,7 +957,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     void msgaccessButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start msgaccess");
             return;
@@ -1017,7 +1017,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     void dbeditButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start dbedit");
             return;
@@ -1058,7 +1058,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     void setupPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start setup");
             return;
@@ -1388,7 +1388,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     private void groupEditButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start groupedit");
             return;
@@ -1443,7 +1443,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     protected void tseditButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start tsedit");
             return;
@@ -1502,7 +1502,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     private void compeditButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start compedit");
             return;
@@ -1560,7 +1560,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     protected void routmonButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start routmon");
             return;
@@ -1618,7 +1618,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     protected void platmonButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start platmon");
             return;
@@ -1678,7 +1678,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     private void runcompButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start runcomp");
             return;
@@ -1739,7 +1739,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     private void procstatButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start procstat");
             return;
@@ -1797,7 +1797,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     private void algoeditButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start algoedit");
             return;
@@ -1838,7 +1838,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     private void platwizButtonPressed()
     {
         Profile profile = getSelectedProfile();
-        if (profile != null)
+        if (profile != null && profile.isProfile())
         {
             sendToProfileLauncher(profile, "start platwiz");
             return;
