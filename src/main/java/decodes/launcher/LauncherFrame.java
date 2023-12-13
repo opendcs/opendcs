@@ -118,6 +118,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -181,6 +182,8 @@ public class LauncherFrame
     extends JFrame
     implements ProcWaiterCallback
 {
+    private static Logger logger = Logger.instance();
+
     private static ResourceBundle labels = getLabels();
     String myArgs[] = null;
 //    String compArgs[] = null;
@@ -2092,70 +2095,83 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     // package private so GUI test setup can call.
     void checkForProfiles()
     {
-
-        if (profPanel == null)
+        try
         {
-            profPanel = new JPanel(new GridBagLayout());
-            profPanel.add(new JLabel("Profile:"),
-                new GridBagConstraints(0, 0, 1, 1, 0, 0,
-                    GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 0), 0, 0));
-            profileCombo = new JComboBox<>();
-            profileCombo.setName("profileCombo");
-            profileCombo.addActionListener(e -> profileComboChanged());
-
-
-            profPanel.add(profileCombo,
-                new GridBagConstraints(1, 0, 1, 1, .5, 0,
-                    GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 2, 2), 10, 0));
-            JButton profMgrButton = new JButton("...");
-            profPanel.add(profMgrButton,
-                new GridBagConstraints(2, 0, 1, 1, 0, 0,
-                    GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
-            profMgrButton.addActionListener(e->startProfileManager());
-        }
-
-
-        List<Profile> profiles = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
-        Logger.instance().debug3("There are " + profiles.size() + " profiles.");
-
-        if (profiles.size() > 1)
-        {
-            Profile currentProfile = (Profile)profileCombo.getSelectedItem();
-
-            profileCombo.removeAllItems();
-            for(Profile item : profiles)
+            if (profPanel == null)
             {
-                profileCombo.addItem(item);
-            }
-            if (!profilesShown)
-            {
-                fullPanel.add(profPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, .1,
-                    GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
-                fullPanel.getIgnoreRepaint();
-                profilesShown = true;
-            }
-
-            if (currentProfile != null)
-            {
-                for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
+                SwingUtilities.invokeAndWait(() ->
                 {
-                    if (profileCombo.getItemAt(idx).getName().equalsIgnoreCase(currentProfile.getName()))
-                    {
-                        profileCombo.setSelectedIndex(idx);
-                    }
-                }
+                    profPanel = new JPanel(new GridBagLayout());
+                    profPanel.add(new JLabel("Profile:"),
+                        new GridBagConstraints(0, 0, 1, 1, 0, 0,
+                            GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 0), 0, 0));
+                    profileCombo = new JComboBox<>();
+                    profileCombo.setName("profileCombo");
+                    profileCombo.addActionListener(e -> profileComboChanged());
+
+
+                    profPanel.add(profileCombo,
+                        new GridBagConstraints(1, 0, 1, 1, .5, 0,
+                            GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 2, 2), 10, 0));
+                    JButton profMgrButton = new JButton("...");
+                    profPanel.add(profMgrButton,
+                        new GridBagConstraints(2, 0, 1, 1, 0, 0,
+                            GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+                    profMgrButton.addActionListener(e->startProfileManager());
+                });
             }
-            else
+
+            List<Profile> profiles = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
+            Logger.instance().debug3("There are " + profiles.size() + " profiles.");
+
+            if (profiles.size() > 1)
             {
-                profileCombo.setSelectedIndex(0); // set to default
+                Profile currentProfile = (Profile)profileCombo.getSelectedItem();
+                SwingUtilities.invokeLater(() ->
+                {
+                    profileCombo.removeAllItems();
+                    for(Profile item : profiles)
+                    {
+                        profileCombo.addItem(item);
+                    }
+                    if (!profilesShown)
+                    {
+                        fullPanel.add(profPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, .1,
+                            GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
+                        fullPanel.getIgnoreRepaint();
+                        profilesShown = true;
+                    }
+
+                    if (currentProfile != null)
+                    {
+                        for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
+                        {
+                            if (profileCombo.getItemAt(idx).getName().equalsIgnoreCase(currentProfile.getName()))
+                            {
+                                profileCombo.setSelectedIndex(idx);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        profileCombo.setSelectedIndex(0); // set to default
+                    }
+                });
+            }
+            else // only 1 "default" profile
+            {
+                // No harm done if profPanel is currently not displayed.
+                SwingUtilities.invokeLater(() ->
+                {
+                    fullPanel.remove(profPanel);
+                    fullPanel.repaint();
+                    profilesShown = false;
+                });
             }
         }
-        else // only 1 "default" profile
+        catch(InvocationTargetException | InterruptedException ex)
         {
-            // No harm done if profPanel is currently not displayed.
-            fullPanel.remove(profPanel);
-            fullPanel.repaint();
-            profilesShown = false;
+            logger.warning("Unable to create profile Combo." + ex);
         }
 
     }
