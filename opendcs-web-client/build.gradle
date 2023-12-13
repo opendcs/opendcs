@@ -25,6 +25,7 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonarqube {
         properties {
             property 'sonar.sources', 'src/main/java,src/main/webapp'
+            property 'sonar.exclusions', 'src/main/webapp/resources/js/plugins/**,src/main/webapp/resources/js/jquery*,src/main/webapp/resources/js/bootstrap*,src/main/webapp/resources/js/limitless/*'
         }
     }
 }
