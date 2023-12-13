@@ -96,6 +96,7 @@ public class ProfileManagerFrame extends TopFrame
         };
         profileTable.setRowSorter(new TableRowSorter<TableModel>(profileModel));
         profileTable.setDefaultRenderer(Date.class, new DateRenderer(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")));
+        profileTable.setName("profileTable");
 
         JScrollPane scrollPane = new JScrollPane(profileTable,
             JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -103,6 +104,7 @@ public class ProfileManagerFrame extends TopFrame
 
         JPanel buttonPanel = new JPanel(new GridBagLayout());
         JButton copyButton = new JButton(genericLabels.getString("copy"));
+        copyButton.setName("copyProfile");
         copyButton.addActionListener(
             new ActionListener()
             {
@@ -117,6 +119,7 @@ public class ProfileManagerFrame extends TopFrame
                 GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(5, 2, 2, 2), 0, 0));
 
         JButton deleteButton = new JButton(genericLabels.getString("delete"));
+        deleteButton.setName("deleteProfile");
         deleteButton.addActionListener(
             new ActionListener()
             {
@@ -131,25 +134,14 @@ public class ProfileManagerFrame extends TopFrame
                 GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 5, 2), 0, 0));
 
         JButton reloadButton = new JButton(genericLabels.getString("reload"));
-        reloadButton.addActionListener(
-            new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    reloadPressed();
-                }
-            });
+        reloadButton.setName("reloadProfiles");
+        reloadButton.addActionListener(e -> profileModel.updateProfiles(Profile.getProfiles(searchDir)));
+
         buttonPanel.add(reloadButton,
             new GridBagConstraints(0, 2, 1, 1, 0, .5,
                 GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL, new Insets(5, 2, 2, 2), 0, 0));
 
         mainPanel.add(buttonPanel, BorderLayout.EAST);
-    }
-
-    protected void reloadPressed()
-    {
-        profileModel.updateProfiles(Profile.getProfiles(searchDir));
     }
 
     protected void deletePressed()

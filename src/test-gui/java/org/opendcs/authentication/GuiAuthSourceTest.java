@@ -12,28 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ilex.gui.LoginDialog;
 
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.SwingWorker;
-
-import org.assertj.swing.edt.GuiActionRunner;
 import org.assertj.swing.fixture.DialogFixture;
-import org.assertj.swing.fixture.FrameFixture;
 import org.assertj.swing.timing.Condition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.spi.authentication.AuthSource;
-
-import com.github.dockerjava.api.model.Frame;
-
 
 public class GuiAuthSourceTest
 {
