@@ -266,21 +266,18 @@ public class Programs
                                   EnvironmentVariables env, SystemExit exit) throws Exception
     {
         env.execute(() ->
-                exit.execute(() ->
-                    SystemStubs.tapSystemErrAndOut(() ->
-                    {
-                        ArrayList<String> theArgs = new ArrayList<>();
-                        theArgs.add("-l"); theArgs.add(log.getAbsolutePath());
-                        theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
-                        theArgs.add("-d3");
-                        theArgs.add("-O");
-                        decodes.tsdb.CpCompDependsUpdater.main(theArgs.toArray(new String[0]));
-                    })
-                )
-            );
-        assertTrue(exit.getExitCode() == null || exit.getExitCode()==0,
+            exit.execute(() ->
+                SystemStubs.tapSystemErrAndOut(() ->
+                {
+                    ArrayList<String> theArgs = new ArrayList<>();
+                    theArgs.add("-l"); theArgs.add(log.getAbsolutePath());
+                    theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
+                    theArgs.add("-d3");
+                    theArgs.add("-O");
+                    decodes.tsdb.CpCompDependsUpdater.main(theArgs.toArray(new String[0]));
+                })
             )
-        );
+        );        
 
         assertTrue(exit.getExitCode() == null || exit.getExitCode()==0, 
                    "System.exit called with unexpected code.");
