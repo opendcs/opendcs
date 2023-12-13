@@ -7,7 +7,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":odcsapi"))
+    implementation(project(":opendcs-rest-api"))
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlets)
     implementation(libs.jetty.servlet)
