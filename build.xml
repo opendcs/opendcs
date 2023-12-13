@@ -392,7 +392,7 @@ more information about each.
             <fileset dir="${build.dir}/test-gui/results">
                 <include name="TEST-*.xml"/>
             </fileset>
-            <report format="frames" todir="${junit.html.output.dir}/test-gui"/>
+            <report format="noframes" todir="${junit.html.output.dir}/test-gui"/>
         </junitreport>
         <if>
             <isset property="gui.failed"/>
