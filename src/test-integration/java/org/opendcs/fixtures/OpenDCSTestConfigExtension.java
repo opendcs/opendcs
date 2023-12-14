@@ -73,13 +73,36 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         assignFields(testInstance);
     }
 
+    /**
+     * Retrieve the stub instances and make sure the environments
+     * are appropriately setup.
+     */
     private void setupStubs(ExtensionContext ctx) throws Exception
     {
         exit = (SystemExit)getStub(ctx,SystemExit.class);
         environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
         properties = (SystemProperties)getStub(ctx,SystemProperties.class);
+
+        properties.setup();
+        environment.setup();
+        File userDir = configuration.getUserDir();
+        logger.info("DCSTOOL_USERDIR="+userDir);
+        environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
+        properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
+        properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
+        configuration.getEnvironment().forEach((k,v) -> environment.set(k,v));
     }
 
+    /**
+     * This will
+     * <ul>
+     *  <li>Start the configuration (e.g. external resources, final config generation) if it's not already run.</li>
+     *  <li>Set the current DecodesSettings global instance.
+     * </ul>
+     *
+     * @param ctx
+     * @throws Exception
+     */
     private void applyPerInstanceConfig(ExtensionContext ctx) throws Exception
     {
         if (!configuration.isRunning())
@@ -95,19 +118,23 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             props.load(propStream);
         }
         settings.loadFromUserProperties(props);
-
-        File userDir = configuration.getUserDir();
-        logger.info("DCSTOOL_USERDIR="+userDir);
-        environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
-
-        configuration.getEnvironment().forEach((k,v) -> environment.set(k,v));
-
-        properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
-        properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
-        properties.setup();
-        environment.setup();
     }
 
+    /**
+     * This will apply configuration requirements from the following annotations:
+     * <ul>
+     *  <li>{@link org.opendcs.fixtures.annotations.DecodesConfigurationRequired}</li>
+     *  <li>{@link org.opendcs.fixtures.annotations.ComputationConfigurationRequired}<li>
+     * </ul>
+     *
+     * And that applications in {@link org.opendcs.fixtures.annotations.TsdbAppsRequired} annotations
+     * are currently running.
+     *
+     * @param testInstance any Object instance derived from AppTestBase
+     * @param testMethod Current TestMethod
+     * @param ctx {@see org.junit.jupiter.api.extension.ExtensionContext}
+     * @throws Exception
+     */
     private void applyPerMethodConfig(Object testInstance, Method testMethod, ExtensionContext ctx) throws Exception
     {
         setupDecodesTestData(testInstance, testMethod, ctx, environment, properties, exit);

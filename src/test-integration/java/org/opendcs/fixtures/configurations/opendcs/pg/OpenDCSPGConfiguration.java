@@ -109,7 +109,7 @@ public class OpenDCSPGConfiguration implements Configuration
                               .load();
 
         flyway.migrate();
-        Jdbi jdbi = Jdbi.create(db.getJdbcUrl());
+        Jdbi jdbi = Jdbi.create(db.getJdbcUrl(),db.getUsername(),db.getPassword());
         jdbi.useHandle(h -> {
             log.info("Creating application user.");
             h.execute("DO $do$ begin create user dcs_proc with password 'dcs_proc'; exception when duplicate_object then raise notice 'user exists'; end; $do$");
