@@ -5,17 +5,12 @@ import static org.assertj.swing.timing.Pause.pause;
 import static org.assertj.swing.timing.Timeout.timeout;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import org.assertj.swing.data.TableCell;
-import org.assertj.swing.edt.FailOnThreadViolationRepaintManager;
 import org.assertj.swing.edt.GuiActionRunner;
 import org.assertj.swing.exception.ActionFailedException;
 import org.assertj.swing.fixture.FrameFixture;
@@ -23,6 +18,7 @@ import org.assertj.swing.fixture.JOptionPaneFixture;
 import org.assertj.swing.fixture.JTableCellFixture;
 import org.assertj.swing.fixture.JTableFixture;
 import org.assertj.swing.timing.Condition;
+import org.assertj.swing.timing.Timeout;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +34,7 @@ import uk.org.webcompere.systemstubs.properties.SystemProperties;
 public class ProfileManagerFrameTest extends GuiTest
 {
     @SystemStub
-    private static SystemProperties properties = new SystemProperties(System.getProperties());
+    private static SystemProperties properties = new SystemProperties();
 
     @TempDir
     private static File userDir;
@@ -50,6 +46,7 @@ public class ProfileManagerFrameTest extends GuiTest
     public void setup() throws Exception
     {
         String resourceDir = System.getProperty("resource.dir");
+        properties.setup();
         properties.set("DCSTOOL_USERDIR",resourceDir+"/decodes/launcher/profiles");
         pmf = GuiActionRunner.execute(() -> new ProfileManagerFrame());
         pmf.setExitOnClose(false);
@@ -70,25 +67,26 @@ public class ProfileManagerFrameTest extends GuiTest
         JTableCellFixture tc = jtf.cell("cwms");
         tc.select();
         frame.button("copyProfile").click();
-        JOptionPaneFixture opf = frame.optionPane();
+        JOptionPaneFixture opf = frame.optionPane(Timeout.timeout(2, TimeUnit.SECONDS));
+        opf.requireMessage(Pattern.compile("Enter name for copy:"));
         opf.textBox().setText("cwms2");
-        opf.okButton().click();
+        opf.okButton().focus().click();
         JTableCellFixture cwms2 = jtf.cell("cwms2").requireNotEditable();
 
         frame.button("copyProfile").click();
-        opf = frame.optionPane();
+        opf = frame.optionPane(Timeout.timeout(2, TimeUnit.SECONDS));
         opf.requireMessage(Pattern.compile("Enter name for copy:"));
         opf.textBox().setText("cwms2");
-        opf.okButton().click();
+        opf.okButton().focus().click();
 
-        opf = frame.optionPane();
+        opf = frame.optionPane(Timeout.timeout(2, TimeUnit.SECONDS));
         opf.requireTitle("Error!");
         opf.requireMessage(Pattern.compile("A profile with that name already.*"));
-        opf.okButton().click();
+        opf.okButton().focus().click();
 
         cwms2.select();
         frame.button("deleteProfile").click();
-        opf = frame.optionPane();
+        opf = frame.optionPane(Timeout.timeout(2, TimeUnit.SECONDS));
         opf.requireMessage(Pattern.compile("Are you sure you want to delete the.*"));
         opf.yesButton().click();
         assertThrows(ActionFailedException.class, () ->
@@ -101,14 +99,15 @@ public class ProfileManagerFrameTest extends GuiTest
         assertEquals(0,userProfileCell.row());
         userProfileCell.select();
         frame.button("deleteProfile").click();
-        opf = frame.optionPane();
+        opf = frame.optionPane(Timeout.timeout(2, TimeUnit.SECONDS));
         opf.requireMessage(Pattern.compile("Cannot delete the default profile!"));
         opf.okButton().click();
     }
 
     @AfterEach
-    public void tearDown()
+    public void tearDown() throws Exception
     {
         frame.cleanUp();
+        properties.teardown();
     }
 }
