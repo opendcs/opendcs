@@ -161,10 +161,7 @@ public class ProcWaiterThread extends Thread
         // Start a separate thread to read the input stream.
         final InputStream is = proc.getInputStream();
         Thread isr =
-            new Thread()
-            {
-                public void run()
-                {
+                new Thread(() -> {
                     try
                     {
                         while(is.available() > 0)
@@ -189,17 +186,13 @@ public class ProcWaiterThread extends Thread
                     {
                         Logger.instance().warning("cmd(" + name + ") error on output stream." + ex.getLocalizedMessage());
                     }
-                }
-            };
+                });
         isr.start();
 
         // Likewise for the stderr stream
         final InputStream es = proc.getErrorStream();
         Thread esr =
-            new Thread()
-            {
-                public void run()
-                {
+                new Thread(() -> {
                     try
                     {
                         while(true)
@@ -227,8 +220,7 @@ public class ProcWaiterThread extends Thread
                     {
                         Logger.instance().warning("cmd(" + name + ") error on error stream." + ex.getLocalizedMessage());
                     }
-                }
-            };
+                });
         esr.start();
 
         // Finally, wait for process and catch its exit code.
