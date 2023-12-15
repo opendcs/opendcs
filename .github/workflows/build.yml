@@ -25,7 +25,7 @@ jobs:
       - uses: actions/cache@v3.3.2
         with:
           path: ~/.ant
-          key: $${{ matrix.platform }}-ivy-${{hashFiles('ivy.xml')}}
+          key: ${{ matrix.platform }}-ivy-${{hashFiles('ivy.xml')}}
           restore-keys: ${{ matrix.platform }}-ivy
       - name: units tests
         run: |
