@@ -176,7 +176,10 @@ import decodes.util.DecodesVersion;
 import decodes.util.ResourceFactory;
 import decodes.util.CmdLineArgs;
 
-
+/**
+ * LauncherFrame is the high level OpenDCS User Interface.
+ * It is used to launch specific applications in the toolkit
+ */
 @SuppressWarnings("serial")
 public class LauncherFrame
     extends JFrame
@@ -344,9 +347,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             platwizButton.setHorizontalAlignment(SwingConstants.CENTER);
             toolkitConfigButton.setIcon(setupIcon);
             toolkitConfigButton.setHorizontalAlignment(SwingConstants.CENTER);
-            platmonButton.setIcon(platmonIcon);;
+            platmonButton.setIcon(platmonIcon);
             platmonButton.setHorizontalAlignment(SwingConstants.CENTER);
-            routmonButton.setIcon(routmonIcon);;
+            routmonButton.setIcon(routmonIcon);
             routmonButton.setHorizontalAlignment(SwingConstants.CENTER);
 
             setTitle(DecodesVersion.getAbbr() + " " + DecodesVersion.getVersion());
@@ -929,12 +932,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     void rtstatButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start rtstat");
+        if( trySendToProfileLauncher("start rtstat"))
             return;
-        }
 
         if (lrgsStatFrame != null)
         {
@@ -959,12 +958,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     void msgaccessButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start msgaccess");
+        if(trySendToProfileLauncher("start msgaccess"))
             return;
-        }
 
         if (browserFrame != null)
         {
@@ -1019,12 +1014,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     void dbeditButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start dbedit");
+        if( trySendToProfileLauncher("start dbedit"))
             return;
-        }
 
         if (dbEditorFrame != null)
         {
@@ -1060,12 +1051,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     void setupPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start setup");
+        if( trySendToProfileLauncher("start setup"))
             return;
-        }
 
         if (toolkitSetupFrame != null)
         {
@@ -1390,12 +1377,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     // Time Series Button
     private void groupEditButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start groupedit");
+        if( trySendToProfileLauncher("start groupedit"))
             return;
-        }
+
         if (groupEditFrame != null)
         {
             groupEditFrame.toFront();
@@ -1445,12 +1429,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     protected void tseditButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start tsedit");
+        if( trySendToProfileLauncher("start tsedit") )
             return;
-        }
 
         if (tseditFrame != null)
         {
@@ -1504,12 +1484,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     private void compeditButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start compedit");
+        if( trySendToProfileLauncher("start compedit"))
             return;
-        }
 
         if (compEditFrame != null)
         {
@@ -1562,12 +1538,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     protected void routmonButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start routmon");
+        if( trySendToProfileLauncher("start routmon"))
             return;
-        }
 
         if (routmonFrame != null)
         {
@@ -1620,12 +1592,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     protected void platmonButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start platmon");
+        if( trySendToProfileLauncher("start platmon") )
             return;
-        }
 
         if (platmonFrame != null)
         {
@@ -1680,12 +1648,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     private void runcompButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start runcomp");
+        if( trySendToProfileLauncher("start runcomp") )
             return;
-        }
 
         if (runComputationsFrame != null)
         {
@@ -1741,12 +1705,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     private void procstatButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start procstat");
+        if( trySendToProfileLauncher("start procstat"))
             return;
-        }
 
         if (procMonFrame != null)
         {
@@ -1799,12 +1759,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     private void algoeditButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start algoedit");
+        if( trySendToProfileLauncher("start algoedit"))
             return;
-        }
 
         if (algorithmWizFrame != null)
         {
@@ -1840,12 +1796,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     private void platwizButtonPressed()
     {
-        Profile profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
-        {
-            sendToProfileLauncher(profile, "start platwiz");
+        if( trySendToProfileLauncher("start platwiz") )
             return;
-        }
 
         if (platformWizFrame != null)
         {
@@ -2217,12 +2169,22 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         return profileCombo == null ? null : (Profile)profileCombo.getSelectedItem();
     }
 
+    private boolean trySendToProfileLauncher(String cmd)
+    {
+        profile = getSelectedProfile();
+        if (profile != null && profile.isProfile())
+        {
+            sendToProfileLauncher(profile, cmd);
+            return true;
+        }
+        return false;
+    }
     /**
-     * Send the command to the child launcher for the named profile.
-     * If the server is not yet running, start it listening on specifed port.
+     * Send the command to the child launcher for the given profile.
+     * If the server is not yet running, start it listening on specified port.
      * If there is no child launcher for this profile, spawn the process and wait
      * for it to connect.
-     * @param profileName the profile name
+     * @param profile the profile
      * @param cmd the command to send
      */
     void sendToProfileLauncher(Profile profile, String cmd)
