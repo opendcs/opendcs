@@ -98,3 +98,9 @@ The workflow [default.yml](./.github/workflows/default.yml) includes the analysi
 OpenDCS REST API targets JDK 8 compatibility for distribution. 
 In order to ensure compatibility with future versions of Java, the GitHub workflow [java_compatibility.yml](./.github/workflows/java_compatibility.yml)
 will run a matrix build against the project to ensure compatibility with other JDK versions.
+
+# Releases
+Artifact releases from this repository are found in the GitHub Releases page for the repository. 
+
+They can be created by using the GitHub interface. 
+The GitHub workflow [publish.yml](./.github/workflows/publish.yml) will attach the WAR files and TAR files once the release is published.
