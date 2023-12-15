@@ -58,6 +58,7 @@ public class ProfileManagerFrame extends TopFrame
 
     public ProfileManagerFrame()
     {
+        super();
         DecodesSettings settings = DecodesSettings.instance();
         genericLabels = LoadResourceBundle.getLabelDescriptions(
             "decodes/resources/generic", settings.language);
