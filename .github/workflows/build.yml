@@ -41,6 +41,8 @@ jobs:
         shell: bash {0}
         run: |
           sudo apt install xvfb ffmpeg
+          # Precompile the test code so the recording isn't as long.
+          ant compile-test-gui -D"no.docs=true"
           export DISPLAY=:99.0
           Xvfb $DISPLAY -screen 0 1920x1080x24 &
           ffmpeg -nostdin -y -f x11grab -video_size 1920x1080 -i "$DISPLAY" build/test-gui.webm &
