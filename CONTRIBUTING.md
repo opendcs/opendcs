@@ -123,9 +123,11 @@ The current java target is java 8. Please make sure you do not add java 9+ featu
 
 Now you're ready to [clone the repository](https://help.github.com/articles/cloning-a-repository/) and start looking at things. If you are going to submit any changes you make, please read the Submitting changes section below.
 
-### Code Style
+### Coding Practices
 
-TODO: add checkstyle to gradle build
+Code style rules as well as other static analysis rules are setup for the [OpenDCS Organization on SonarCloud](https://sonarcloud.io/organizations/opendcs/quality_profiles/show?name=CWMS_ATO&language=java). 
+At this time only the Java rules contain modifications from the base rules that SonarCloud uses by default (known as the Sonar Way).
+If you feel that rules should be adjusted, please create a GitHub discussion topic.
 
 ## Submitting an Issue
 
