@@ -5,8 +5,9 @@
 ## Signed-off-by
 
 - Copyright 2023 Resource Management Associates Inc.
--                    Adam Korynta (adam@rmanet.com)
--  
+  -                    Adam Korynta (adam@rmanet.com)
+- Copyright 2023 Michael Neilson (m.allan.neilson@gmail.com)
+- Michael Neilson (michael.a.neilson@usace.army.mil)
 - _Add the copyright date, your name, and email address here. (PLEASE KEEP THIS LINE)_
 
 ## Note for U.S. Federal Employees
