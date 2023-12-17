@@ -10,9 +10,13 @@ OpenDCS is a tool for doing the following:
 OpenDCS is currently used by:
 
 - U.S. Army Corps of Engineers
+- U.S. Bureau of Reclimation
+- U.S. National Oceanic and Atmospheric Administration
+
+And others.
 
 If you're agency/company/etc uses OpenDCS and wishes that to be known, please submit either an issue indicating
-you would like the name added, or a pull request that updates the list above. Company Logos are welcome in place
+you would like the name added, or a pull request that updates the list above. Company/Agency Logos are welcome in place
 of plain text.
 
 # Getting started
@@ -36,8 +40,9 @@ a good idea.
 The short version is, add you're name to the CONTRIBUTORS.md file, and submit changes to the default branch, currently named master.
 
 As for what to contribute: https://github.com/opendcs/opendcs/projects shows our current major projects, as well as a
-project each for tracking bugs and features. If you want to contribute and aren't sure where
-to start that should be a good place to see our plans and priorities; please do not hesitate to
+project each for tracking bugs and features; Wiki (https://github.com/opendcs/opendcs) pages prefixed with "Project -" will have more
+information about some projects.
+If you want to contribute and aren't sure where to start that should be a good place to see our plans and priorities; please do not hesitate to
 ask questions on the mailing list, discussions, or within an issue itself.
 
 We are currently in the process of some major overhauls to various subsystems and while that
