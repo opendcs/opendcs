@@ -239,7 +239,7 @@
 
     <target name="report" depends="resolve,resolve.build" description="--> generates a report of dependencies">
         <mkdir dir="${build.dir}/reports/dependencies"/>
-        <ivy:report todir="${build.dir}/reports/dependencies" conf="runtime,test,test_platform,izpack,groovy,build,spotbugs,pmd"/>
+        <ivy:report todir="${build.dir}/reports/dependencies" organisation="org.opendcs" module="opendcs" conf="runtime,test,test_platform,izpack,groovy,build,spotbugs,pmd"/>
     </target>
 
 
@@ -275,9 +275,13 @@
                          templateFile="config/pom.template"
                          artifactName="opendcs-test-extension">
                 <mapping conf="default" scope="compile"/>
+                <mapping conf="test" scope="compile"/>
                 <mapping conf="runtime" scope="provided"/>
                 <dependency group="org.opendcs" artifact="${ivy.module}" version="${version}"/>
             </ivy:makepom>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/lib/opendcs-test-initial-data.pom" conf="none"
+                         templateFile="config/pom.template"
+                         artifactName="opendcs-test-initial-data"/>
         </sequential>
     </macrodef>
 

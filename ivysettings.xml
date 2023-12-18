@@ -6,6 +6,8 @@
     <property name="maven-snapshots" value="${deploy.url.snapshot}"/>
     <property name="snapshot-time" value="${snapshot.time}"/>
     <property name="root-version" value="${version}"/>
+    <property name="junit-version" value="5.10.1"/>
+    <property name="junit-platform-version" value="1.10.1"/>
     <settings defaultResolver="default">
         <credentials host="${deploy-host}"
                      realm="Sonatype Nexus Repository Manager"

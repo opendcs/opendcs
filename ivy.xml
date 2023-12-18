@@ -14,11 +14,12 @@
         <conf name="build" visibility="private"/>
         <conf name="spotbugs" visibility="private"/>
         <conf name="pmd" visibility="private"/>
+        <conf name="none" visibility="private"/>
     </configurations>
     <publications>
-        <artifact name="opendcs" type="pom" conf="runtime" ext="pom"/>
         <artifact name="opendcs" type="jar" conf="runtime" ext="jar"/>
         <artifact name="opendcs-test-extension" type="jar" conf="test,runtime" ext="jar"/>
+        <artifact name="opendcs-test-initial-data" type="jar" ext="jar" conf="none"/>
     </publications>
     <dependencies>
         <dependency org="com.oracle.ojdbc" name="ojdbc8" rev="19.3.0.0"/>
@@ -83,12 +84,12 @@
 
         <!-- test dependencies -->
 
-        <dependency org="org.junit.platform" name="junit-platform-launcher" rev="1.8.2" conf="test_platform->default"/>
-        <dependency org="org.junit.platform" name="junit-platform-engine" rev="1.8.2" conf="test_platform->default"/>
-        <dependency org="org.junit.platform" name="junit-platform-commons" rev="1.8.2" conf="test_platform->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="5.9.1" conf="test->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="5.9.1" conf="test->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-params" rev="5.9.1" conf="test->default"/>
+        <dependency org="org.junit.platform" name="junit-platform-launcher" rev="${junit-platform-version}" conf="test_platform->default"/>
+        <dependency org="org.junit.platform" name="junit-platform-engine" rev="${junit-platform-version}" conf="test_platform->default"/>
+        <dependency org="org.junit.platform" name="junit-platform-commons" rev="${junit-platform-version}" conf="test_platform->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="${junit-version}" conf="test->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="${junit-version}" conf="test->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-params" rev="${junit-version}" conf="test->default"/>
         <dependency org="commons-io" name="commons-io" rev="2.11.0" conf="test->default"/>
         <dependency org="org.apache.derby" name="derby" rev="10.14.2.0" conf="test->default"/>
         <dependency org="uk.org.webcompere" name="system-stubs-jupiter" rev="2.0.2" conf="test->default"/>

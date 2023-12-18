@@ -133,6 +133,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
             </classpath>
+            <compilerarg value="-parameters"/>
         </javac>
         <sync todir="${build.test.resources}">
             <fileset dir="${resources.test.dir}"/>
@@ -154,6 +155,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="test.classpath"/>
                 <path refid="junit.platform.libs.classpath"/>
             </classpath>
+            <compilerarg value="-parameters"/>
         </javac>
         <sync todir="${build.test-integration.resources}">
             <fileset dir="${resources.test-integration.dir}"/>
@@ -174,6 +176,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
             </classpath>
+            <compilerarg value="-parameters"/>
         </javac>
        <sync todir="${build.test-gui.resources}">
             <fileset dir="${resources.test-gui.dir}"/>
