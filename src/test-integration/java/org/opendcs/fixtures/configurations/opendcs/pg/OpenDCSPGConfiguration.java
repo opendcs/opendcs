@@ -157,9 +157,6 @@ public class OpenDCSPGConfiguration implements Configuration
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
-        // set username/pw (env)
-        FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
-        FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
         installDb(exit, environment, properties, configBuilder);
         createPropertiesFile(configBuilder, this.propertiesFile);
     }
