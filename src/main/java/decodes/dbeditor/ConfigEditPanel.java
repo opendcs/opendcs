@@ -40,6 +40,7 @@ import decodes.db.DecodesScript;
 import decodes.db.DecodesScriptException;
 import decodes.db.UnitConverterDb;
 import decodes.util.TimeOfDay;
+import decodes.xml.XmlDatabaseIO;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.Platform;
@@ -640,7 +641,7 @@ public class ConfigEditPanel extends DbEditorTab
     {
         validateDecodingScriptSensors();
         getDataFromFields();
-
+        Database db = Database.getDb(); // at least reduce calls to ::getDdb
         // Write the changes out to the database.
         try
         {
@@ -654,50 +655,53 @@ public class ConfigEditPanel extends DbEditorTab
         }
 
         // Replace origConfig in ConfigList with the modified config.
-        Database.getDb().platformConfigList.remove(origConfig);
-        Database.getDb().platformConfigList.add(theConfig);
+        db.platformConfigList.remove(origConfig);
+        db.platformConfigList.add(theConfig);
 
         // Replace origConfig in every platform using this config.
-        for(Iterator<Platform> it = Database.getDb().platformList.iterator();
-            it.hasNext(); )
+        if (db.getDbIo() instanceof XmlDatabaseIO)
         {
-            Platform p = it.next();
-            if (theConfig.configName.equalsIgnoreCase(p.getConfigName()))
+            for(Iterator<Platform> it = db.platformList.iterator(); it.hasNext(); )
             {
-                try
+                Platform p = it.next();
+                if (theConfig.configName.equalsIgnoreCase(p.getConfigName()))
                 {
-                    if (!p.isComplete())
+                    try
                     {
-                        Logger.instance().debug1("ConfigEditPanel.saveChanges - reading platform.");
-                        p.read();
+                        if (!p.isComplete())
+                        {
+                            Logger.instance().debug1("ConfigEditPanel.saveChanges - reading platform.");
+                            p.read();
+                        }
+                        p.setConfig(theConfig);
+                        {
+                            Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform.");
+                            p.write();
+                        }
                     }
-                    p.setConfig(theConfig);
+                    catch(DatabaseException e)
                     {
-                        Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform.");
-                        p.write();
+                        TopFrame.instance().showError(
+                            LoadResourceBundle.sprintf(
+                                dbeditLabels.getString(
+                                    "ConfigEditPanel.cannotWritePlatform"),
+                                p.makeFileName(), e.toString()));
                     }
-                }
-                catch(DatabaseException e)
-                {
-                    TopFrame.instance().showError(
-                        LoadResourceBundle.sprintf(
-                            dbeditLabels.getString(
-                                "ConfigEditPanel.cannotWritePlatform"),
-                            p.makeFileName(), e.toString()));
                 }
             }
-        }
-        Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform list.");
+            Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform list.");
 
-        try
-        {
-            Database.getDb().platformList.write();
-        }
-        catch(DatabaseException e)
-        {
-            TopFrame.instance().showError(
-                dbeditLabels.getString("ConfigEditPanel.cannotWriteList")
-                + e.toString());
+            try
+            {
+                db.platformList.write();
+            }
+            catch(DatabaseException e)
+            {
+                TopFrame.instance().showError(
+                    dbeditLabels.getString("ConfigEditPanel.cannotWriteList")
+                    + e.toString());
+            }
+
         }
 
         // Config List Panel keeps its own vector, replace old with new:
