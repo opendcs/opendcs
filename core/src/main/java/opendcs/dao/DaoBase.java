@@ -513,6 +513,11 @@ public class DaoBase
 	 */
 	public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
 	{
+		return getSingleResultOr(query, consumer, null, parameters);
+	}
+
+	public <R> R getSingleResultOr(String query, ResultSetFunction<R> consumer, R defaultValue, Object... parameters) throws SQLException
+	{
 		final ArrayList<R> result = new ArrayList<>();
 		withStatement(query,(stmt)->{
 			try(ResultSet rs = stmt.executeQuery())
@@ -529,7 +534,7 @@ public class DaoBase
 		},parameters);
 		if( result.isEmpty() )
 		{
-			return null;
+			return defaultValue;
 		}
 		else
 		{
