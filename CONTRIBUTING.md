@@ -125,7 +125,7 @@ Now you're ready to [clone the repository](https://help.github.com/articles/clon
 
 ### Coding Practices
 
-Code style rules as well as other static analysis rules are setup for the [OpenDCS Organization on SonarCloud](https://sonarcloud.io/organizations/opendcs/quality_profiles/show?name=CWMS_ATO&language=java). 
+Code style rules as well as other static analysis rules are setup for the [OpenDCS Organization on SonarCloud](https://sonarcloud.io/organizations/opendcs/quality_profiles/show?name=OpenDCS&language=java). 
 At this time only the Java rules contain modifications from the base rules that SonarCloud uses by default (known as the Sonar Way).
 If you feel that rules should be adjusted, please create a GitHub discussion topic.
 
