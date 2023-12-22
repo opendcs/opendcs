@@ -45,6 +45,7 @@ jobs:
         # we need time kill Xvfb and let ffmpeg write out the video file
         shell: bash {0}
         run: |
+          sudo apt update -y && sudo apt upgrade -y
           sudo apt install xvfb ffmpeg
           # Precompile the test code so the recording isn't as long.
           ant compile-test-gui -D"no.docs=true"
