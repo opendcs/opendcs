@@ -309,20 +309,29 @@ public class XmitRecordDAO
 	private void clearTable(String suffix)
 		throws DbIoException
 	{
-		String q = "delete from DCP_TRANS_DATA_" + suffix;
+		final StringBuffer q = new StringBuffer(60);
+		q.append("delete from DCP_TRANS_DATA_" + suffix);
 		try(Connection c = getConnection();)
-		{// TODO:  in transaction
-			doModify(q,new Object[0]);
-			
-			q = "DELETE FROM DCP_TRANS_" + suffix;
-			doModify(q,new Object[0]);
-			
-			q = "UPDATE dcp_trans_day_map SET day_number = null"
-				+ " WHERE table_suffix = ?";
-			doModify(q,suffix);
-			q ="Reset Sequence";
-			// Reset sequence so record_id starts at 1. We don't want it wrapping.
-			db.getKeyGenerator().reset("DCP_TRANS_"+suffix, c);
+		{
+			inTransaction(dao ->
+			{
+				dao.doModify(q.toString(), new Object[0]);
+
+				q.setLength(0);
+				q.append("DELETE FROM DCP_TRANS_" + suffix);
+				dao.doModify(q.toString(), new Object[0]);
+
+				q.setLength(0);
+				q.append("UPDATE dcp_trans_day_map SET day_number = null"
+					   + " WHERE table_suffix = ?");
+				dao.doModify(q.toString(),suffix);
+
+				q.setLength(0);
+				q.append("Reset Sequence");
+				// Reset sequence so record_id starts at 1. We don't want it wrapping.
+				db.getKeyGenerator()
+				  .reset("DCP_TRANS_"+suffix, dao.getConnection());
+			});
 		}
 		catch(Exception ex)
 		{
