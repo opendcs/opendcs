@@ -26,6 +26,7 @@ package opendcs.dao;
 import ilex.util.Logger;
 import opendcs.dai.DaiBase;
 import opendcs.util.functional.ConnectionConsumer;
+import opendcs.util.functional.DaoConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
@@ -565,5 +566,31 @@ public class DaoBase
 			}
 		},parameters);
 		return result;
+	}
+
+	/**
+	 * Run a set of queryies with a specific connection in a transaction.
+	 * Use the presented dao for all operations.
+	 *
+	 * The presented Dao is a {@link DaoHelper} which will is very picky
+	 * about which SQL functions can be called.
+	 *
+	 * @param consumer given a new DAO that is manually set to a JDBC transaction.
+	 * @throws SQLException
+	 */
+	public void inTransaction(DaoConsumer consumer) throws Exception
+	{
+		Connection c = getConnection();
+		boolean autoCommit = c.getAutoCommit();
+		c.setAutoCommit(false);
+		try (DaoBase dao = new DaoHelper(this.db,"transaction",c);)
+		{
+			consumer.accept(dao);
+			c.commit();
+		}
+		finally
+		{
+			c.setAutoCommit(autoCommit);
+		}
 	}
 }
