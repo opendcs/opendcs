@@ -163,7 +163,7 @@ public class XmitRecordDAO
 		Logger.instance().debug2("loadDayNumSuffixMap");
 		String q = "SELECT TABLE_SUFFIX, DAY_NUMBER FROM dcp_trans_day_map ORDER BY table_suffix";
 		dayNumSuffixMap.clear();
-		final int[] latestDayNum = new int[0];
+		final int[] latestDayNum = new int[1];
 		latestDayNum[0]=-1;
 		try
 		{
@@ -244,10 +244,6 @@ public class XmitRecordDAO
 			{
 				throw new DbIoException("Unable to update dcp_trans_day_map", ex);
 			}
-			
-//			// MJM 20181113 Go through map and discard too-old days
-//			deleteOldTableData();
-			
 			return firstFree.suffix;
 		}
 

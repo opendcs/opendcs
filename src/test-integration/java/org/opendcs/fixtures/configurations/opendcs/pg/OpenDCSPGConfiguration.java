@@ -21,6 +21,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import opendcs.dao.DaoBase;
+import opendcs.dao.XmitRecordDAO;
 import opendcs.opentsdb.OpenTsdb;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -211,4 +213,22 @@ public class OpenDCSPGConfiguration implements Configuration
         } // add more cases here.
         return false;
     }
+
+    /**
+     * Returns true if this Database implementation supports a given dataset.
+     * @param dao Class that extends from {@link opendcs.dao.DaoBase}
+     * @return
+     */
+    public boolean supportsDao(Class<? extends DaoBase> dao)
+    {
+        Objects.requireNonNull(dao, "You must specifiy a valid class, not null.");
+        /**
+         * Extends this list as specific tests and requirements are added in the future.
+         */
+        if (dao.equals(XmitRecordDAO.class))
+        {
+            return true;
+        }
+        return false;
+    };
 }

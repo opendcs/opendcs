@@ -5,6 +5,7 @@ import java.util.Map;
 
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import opendcs.dao.DaoBase;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -73,4 +74,14 @@ public interface Configuration
     {
         return false;
     }
+
+    /**
+     * Returns true if this Database implementation supports a given dataset.
+     * @param dao Class that extends from {@link opendcs.dao.DaoBase}
+     * @return
+     */
+    default public boolean supportsDao(Class<? extends DaoBase> dao)
+    {
+        return false;
+    };
 }
