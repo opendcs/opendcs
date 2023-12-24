@@ -310,15 +310,6 @@ CREATE TABLE DATATYPEEQUIVALENCE
 ) WITHOUT OIDS;
 
 
-CREATE TABLE DCP_TRANS_DAY_MAP
-(
-	TABLE_SUFFIX VARCHAR(4) NOT NULL UNIQUE,
-	-- Day 0 = Jan 1, 1970. Null means this suffix not used.
-	DAY_NUMBER INT,
-	PRIMARY KEY (TABLE_SUFFIX)
-) WITHOUT OIDS;
-
-
 CREATE TABLE DECODESDATABASEVERSION
 (
 	-- Should be only one record representing the highest numbered version.
@@ -1764,7 +1755,6 @@ COMMENT ON COLUMN DATASOURCE.DATASOURCEARG IS 'interpretation depends on the dat
 COMMENT ON COLUMN DATASOURCEGROUPMEMBER.SEQUENCENUM IS 'Determines order of data sources within the group';
 COMMENT ON COLUMN DATATYPE.DISPLAY_NAME IS 'Used for reports and GUIs.';
 COMMENT ON TABLE DATATYPEEQUIVALENCE IS 'An entry in this table expresses that two different data types are to be considered equivalent.';
-COMMENT ON COLUMN DCP_TRANS_DAY_MAP.DAY_NUMBER IS 'Day 0 = Jan 1, 1970. Null means this suffix not used.';
 COMMENT ON COLUMN DECODESDATABASEVERSION.VERSION_NUM IS 'Should be only one record representing the highest numbered version.
 For backward compat, sw will only look at max version number.';
 COMMENT ON COLUMN DECODESDATABASEVERSION.DB_OPTIONS IS 'Options expressed as comma-separated name=value pairs.';
@@ -2337,6 +2327,92 @@ create trigger cfg_dt_std_check_trigger
 before insert on configsensordatatype
 for each row
 execute procedure cfg_dt_std_check();
+
+create table dcp_trans_day_map
+(
+	table_suffix varchar(4) not null unique,
+	-- day 0 = jan 1, 1970. null means this suffix not used.
+	day_number int,
+	primary key (table_suffix)
+) without oids;
+
+COMMENT ON COLUMN DCP_TRANS_DAY_MAP.DAY_NUMBER IS 'Day 0 = Jan 1, 1970. Null means this suffix not used.';
+
+do $$
+declare
+	i int;
+	suffix varchar(2);
+begin
+    /* Create Tables */
+	for i in 1..31
+	loop
+		suffix := to_char(i,'fm00');
+		execute 'CREATE TABLE DCP_TRANS_DATA_' || suffix ||
+				'(
+					RECORD_ID BIGINT NOT NULL,
+					BLOCK_NUM INT NOT NULL,
+					MSG_DATA VARCHAR(4000) NOT NULL,
+					PRIMARY KEY (RECORD_ID, BLOCK_NUM)
+				) WITHOUT OIDS';
+
+		execute 'CREATE TABLE DCP_TRANS_' || suffix ||
+				'(
+					RECORD_ID BIGINT NOT NULL UNIQUE,
+					-- ''G'' = GOES, ''L'' = Data Logger, ''I'' = Iridium.
+					-- This field determines how the header should be parsed.
+					MEDIUM_TYPE VARCHAR(1) NOT NULL,
+					MEDIUM_ID VARCHAR(64) NOT NULL,
+					LOCAL_RECV_TIME BIGINT NOT NULL,
+					TRANSMIT_TIME BIGINT NOT NULL,
+					FAILURE_CODES VARCHAR(8) NOT NULL,
+					-- Second of day when the transmit window started
+					WINDOW_START_SOD INT,
+					-- Transmit window length in seconds
+					WINDOW_LENGTH INT,
+					XMIT_INTERVAL INT,
+					CARRIER_START BIGINT,
+					CARRIER_STOP BIGINT,
+					FLAGS INT NOT NULL,
+					CHANNEL INT NOT NULL,
+					BATTERY FLOAT,
+					-- Total message length, determines number of additional blocks
+					-- required to store message.
+					MSG_LENGTH INT NOT NULL,
+					-- First block of data. Very long messages will have additional blocks.
+					MSG_DATA VARCHAR(4000) NOT NULL,
+					PRIMARY KEY (RECORD_ID)
+				) WITHOUT OIDS';
+
+		/* Create Foreign Keys */
+		execute 'ALTER TABLE DCP_TRANS_DATA_' || suffix ||
+				' ADD FOREIGN KEY (RECORD_ID)
+				REFERENCES DCP_TRANS_' || suffix || '(RECORD_ID)
+				ON UPDATE RESTRICT
+				ON DELETE RESTRICT';
+
+		execute 'CREATE SEQUENCE DCP_TRANS_' || suffix || 'IDSEQ';
+
+		insert into dcp_trans_day_map(table_suffix,day_number) values(suffix, null);
+
+		/* Create Indexes */
+
+		execute 'CREATE INDEX DCP_TRANS_DATA_REC_IDX_' || suffix || ' ON DCP_TRANS_DATA_' || suffix || ' USING BTREE (RECORD_ID)';
+		execute 'CREATE INDEX DCP_TRANS_ADDR_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE, MEDIUM_ID)';
+		-- Used for GOES channel expansion in DCP Monitor
+		execute 'CREATE INDEX DCP_TRANS_CHAN_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (CHANNEL)';
+		execute 'CREATE INDEX DCP_TRANS_MEDIUM_TYPE_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE)';
+
+		/* Comments */
+
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MEDIUM_TYPE IS '' G = GOES, L = Data Logger, I = Iridium. ' ||
+				'This field determines how the header should be parsed.''';
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.WINDOW_START_SOD IS ''Second of day when the transmit window started''';
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.WINDOW_LENGTH IS ''Transmit window length in seconds''';
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MSG_LENGTH IS ''Total message length, determines number of additional blocks' ||
+				'required to store message.''';
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MSG_DATA IS ''First block of data. Very long messages will have additional blocks.''';
+	end loop;
+end$$;
 
 -- Long term these should go away in favor of the 
 -- built in flyway version table.
