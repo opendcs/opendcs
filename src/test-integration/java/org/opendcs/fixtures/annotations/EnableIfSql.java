@@ -18,7 +18,7 @@ import org.opendcs.spi.configuration.Configuration;
  * Only run this test if the database under test is a SQL based database
  */
 @Documented
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(EnableIfSql.EnableIfSqlCondition.class)
 public @interface EnableIfSql
