@@ -18,6 +18,7 @@ import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import decodes.db.Database;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
@@ -230,5 +231,5 @@ public class OpenDCSPGConfiguration implements Configuration
             return true;
         }
         return false;
-    };
+    }
 }

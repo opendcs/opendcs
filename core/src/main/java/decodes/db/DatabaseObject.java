@@ -22,15 +22,24 @@ public abstract class DatabaseObject
 	*/
 	private long timeLastRead;
 
-  /**
-   * This no-args constructor is called implicitly.
-   * It sets myDatabase to the 'current' database in use.
-   * This is usually what we want. It may
-   * be changed explicitly after creation.
-   */
+	/**
+	 * This no-args constructor is called implicitly.
+	 * It sets myDatabase to the 'current' database in use.
+	 * This is usually what we want. It may
+	 * be changed explicitly after creation.
+	 */
 	public DatabaseObject()
 	{
-		myDatabase = Database.getDb();
+		this(Database.getDb());
+	}
+
+	/**
+	 * Initialize a database objected as owned by a given database
+	 * @param db
+	 */
+	public DatabaseObject(Database db)
+	{
+		myDatabase = db;
 		timeLastRead = 0L;
 	}
 
@@ -156,4 +165,3 @@ public abstract class DatabaseObject
 		return true; // both are null
 	}
 }
-
