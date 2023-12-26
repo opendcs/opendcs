@@ -11,6 +11,9 @@ import org.apache.commons.io.FileUtils;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
+import decodes.db.Database;
+import decodes.db.DatabaseIO;
+import decodes.util.DecodesSettings;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;

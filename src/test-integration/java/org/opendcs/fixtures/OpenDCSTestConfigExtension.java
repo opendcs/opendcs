@@ -33,6 +33,7 @@ import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
 
+import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
@@ -202,6 +203,11 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 {
                     f.setAccessible(true);
                     f.set(testInstance,configuration.getTsdb());
+                }
+                else if (f.getType().equals(Database.class) && configuration.isRunning())
+                {
+                    f.setAccessible(true);
+                    f.set(testInstance,configuration.getDecodesDatabase());
                 }
             }
             catch (Throwable ex)

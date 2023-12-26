@@ -69,10 +69,23 @@ public class Database extends DatabaseObject
 	 * If there is no "current database", this also sets the current
 	 * database to this.
 	 */
-
 	public Database()
 	{
-		if (getDb() == null) setDb(this);
+		this(false);
+	}
+
+	/**
+	 * Used in areas were an completely independent instance of the Decodes Database should be provided.
+	 *
+	 * @param independent whether to bypass the entire singleton concept for this instance.
+	 */
+	public Database(boolean independent)
+	{
+		super();
+		if (!independent && Database.getDb() == null)
+		{
+			Database.setDb(this);
+		}
 
 		engineeringUnitList = new EngineeringUnitList();
 		engineeringUnitList.setDatabase(this);
