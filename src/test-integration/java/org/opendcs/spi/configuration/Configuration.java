@@ -3,8 +3,11 @@ package org.opendcs.spi.configuration;
 import java.io.File;
 import java.util.Map;
 
+import decodes.db.Database;
+import decodes.db.DatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
 import opendcs.dao.DaoBase;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -68,6 +71,22 @@ public interface Configuration
     default public TimeSeriesDb getTsdb() throws Throwable
     {
         return null;
+    }
+
+    /**
+     * Returns an independent instance of the {@decodes.db.Database} Decodes Database for this configuration.
+     *
+     * @return Instance of the Decodes Database for this run/test.
+     * @throws Throwable
+     */
+    default public Database getDecodesDatabase() throws Throwable
+    {
+        DecodesSettings settings = DecodesSettings.instance();
+        Database db = new Database(true);
+        DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode, settings.editDatabaseLocation);
+        db.setDbIo(dbio);
+        db.read();
+        return db;
     }
 
     default public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
