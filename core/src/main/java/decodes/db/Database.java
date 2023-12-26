@@ -117,23 +117,6 @@ public class Database extends DatabaseObject
 	}
 
 	/**
-	 * Construct with a database type and a location.
-	 * This constructor takes care of creating the DatabaseIO object
-	 * and reading in the initial data.
-	 */
-
-/*
-MJM 20031104 - removed - do not use this constructor!
-	  public Database(int type, String location)
-		  throws DatabaseException
-	  {
-		  this();
-		  dbio = DatabaseIO.makeDatabaseIO(type, location);
-		  read();
-	  }
-*/
-
-	/**
 	 * The Database is itself a DatabaseObject; its type is "Database".
 	 */
 
@@ -145,8 +128,11 @@ MJM 20031104 - removed - do not use this constructor!
 	 * <p>
 	 * The first call to the Database constructor will call this method
 	 * implicitly.
+	 * @param db The new database
+	 * @deprecated since 7.0.12 like getDb can be used in old code that is being updated; avoid using it
+	 * in anything new.
 	 */
-
+	@Deprecated
 	public static void setDb(Database db) { _theDb = db; }
 
 	/**
