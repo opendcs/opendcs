@@ -43,6 +43,46 @@ appropriate for LRGS data sources:
 -  port: (optional) You only need to enter this if it is something other
    than the default 16003.
 
+Secure Values
+-------------
+
+DataSource that require a username and password can and should use the new properties mechanism.
+Instead of specifiying the username and password directly a property provider and parameters can
+be set to retrieve the values from appropriate sources such as environment variables or files.
+
+The following providers are provided. Additional providers can be added by downstream users. See the Developer Documentation for
+more information.
+
++--------------+-------------------------------------------------|
+| **Provider **| **Description**                                 |
++--------------|-------------------------------------------------+
+|DcsVariables  |So you acquire values like `DCSTOOL_USERDIR`     |
+|              |By using `${DCSTOOL_USERDIR}`                    |
++--------------+-------------------------------------------------+
+|Environment   |Retreieves arbitrary variable from the           |
+|              |application environment using                    |
+|              |`${env.VARIABLE_NAME`                            |
++--------------+-------------------------------------------------+
+|Java          |Retrieves abritary variable from the application |
+|Properties    |`System.properties` using                        |
+|              |`${java.PROPERTY_NAME}`                          |
++--------------+-------------------------------------------------+
+|Secrets File  |Retreives files contents from a defined file     |
+|              |using `${file.PATH}` where path is suitable for  |
+|              |`new File(String path)`. Assumes text file.      |
++--------------+-------------------------------------------------+
+
+The property value sources can be nested as needed; however, it is prefered to use a single provider per property.
+
+.. warning::
+   The Secrets Properties providers are a recent addition. It is possible that not all DataSource username/password
+   retrievals have been adapted to the new system. Please informs us if the usage is missing on any DataSources you are using.
+
+   Additinoally not all properties support environment expansion at all; if you feel a given property anywhere should please
+   inform us.
+
+   If you have implemented a custom DataSource we recommend updating your code to use the feature as soon as practical.
+
 .. image:: ./media/routing/image1.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 8.55.51 AM.png
    :width: 6.49444in
