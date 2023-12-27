@@ -43,8 +43,10 @@ import ilex.util.LoadResourceBundle;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.*;
 
@@ -287,16 +289,35 @@ public class LoginDialog extends GuiDialog implements AuthSource
 	@Override
 	public Properties getCredentials()
 	{
-		this.clear();
-		this.setLocationRelativeTo(null);
-		this.setVisible(true);
-		if (this.isOK())
+		final Properties credentials = new Properties();
+		final AtomicBoolean valid = new AtomicBoolean(false);
+		try
 		{
-			Properties credentials = new Properties();
-			credentials.setProperty("username", getUserName());
-            credentials.setProperty("password", new String(getPassword()));
-            return credentials;
+			SwingUtilities.invokeAndWait(() ->
+			{
+				this.clear();
+				this.setLocationRelativeTo(null);
+				this.setVisible(true);
+				if (this.isOK())
+				{
+					credentials.setProperty("username", getUserName());
+					credentials.setProperty("password", new String(getPassword()));
+					valid.set(true);
+				}
+			});
+
+			if(valid.get())
+			{
+				return credentials;
+			}
+			else
+			{
+				return null;
+			}
 		}
-		return null;
+		catch (InterruptedException | InvocationTargetException ex)
+		{
+			throw new RuntimeException("Unable to display and operate LoginDialog", ex);
+		}
 	}
 }
