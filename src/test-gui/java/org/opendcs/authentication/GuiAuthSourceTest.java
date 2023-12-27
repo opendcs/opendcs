@@ -5,6 +5,7 @@ import static org.assertj.swing.timing.Timeout.timeout;
 import static org.assertj.swing.edt.GuiActionRunner.execute;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,6 +54,7 @@ public class GuiAuthSourceTest extends GuiTest
         final String password = "password";
 
         Future<Properties> credentialsFuture = executor.submit(() -> loginDialog.getCredentials());
+        assertFalse(credentialsFuture.isCancelled(), "Credentials future should not have been cancelled.");
         assertTrue(loginDialog.isValid(), "Our Dialog isn't valid.");
         pause(new Condition("Gui visible") {
             @Override
@@ -62,8 +64,9 @@ public class GuiAuthSourceTest extends GuiTest
         },timeout(500));
 
         dialog.textBox("username").setText(username);
-        dialog.textBox("password").setText(password);
+        dialog.textBox("password.showablePassword").setText(password);
         dialog.button("ok").click();
+        assertFalse(credentialsFuture.isCancelled(), "Credentials future should not have been cancelled.");
         Properties creds = credentialsFuture.get();
         assertNotNull(creds, "no credentials returned.");
         assertEquals(username,creds.getProperty("username"), "Username did not match");
@@ -74,6 +77,7 @@ public class GuiAuthSourceTest extends GuiTest
     public void login_cancelled_returns_null() throws Exception
     {
         Future<Properties> credentialsFuture = executor.submit(() -> loginDialog.getCredentials());
+        assertFalse(credentialsFuture.isCancelled(), "Credentials future should not have been cancelled.");
         assertTrue(loginDialog.isValid(), "Our Dialog isn't valid.");
         pause(new Condition("Gui visible") {
             @Override
@@ -82,8 +86,9 @@ public class GuiAuthSourceTest extends GuiTest
             }
         },timeout(500));
         dialog.textBox("username").setText("doesn't matter");
-        dialog.textBox("password").setText("bad password");
+        dialog.textBox("password.showablePassword").setText("bad password");
         dialog.button("cancel").click();
+        assertFalse(credentialsFuture.isCancelled(), "Credentials future should not have been cancelled.");
         Properties creds = credentialsFuture.get();
         assertNull(creds, "Actual values were returned during cancel.");
     }
