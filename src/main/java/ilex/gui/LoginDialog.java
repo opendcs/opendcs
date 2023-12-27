@@ -50,7 +50,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.*;
 
-import org.eclipse.jetty.util.security.Password;
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.spi.authentication.AuthSource;
@@ -69,255 +68,244 @@ import decodes.gui.GuiDialog;
 */
 public class LoginDialog extends GuiDialog implements AuthSource
 {
-	private static ResourceBundle labels = null;
-	private JButton okButton, cancelButton;
-	private JTextField usernameField;
-	private PasswordWithShow passwordField;
-	private PasswordWithShow confirmField = null;
-	private boolean ok;
-	
-	public LoginDialog(JFrame f, String title, boolean confirm)
-	{
-		super(f, title, true);
-		guiInit(confirm);
-	}
-	
-	/**
-	* Constructs a new LrgsAccess GUI display.
-	* @param f the owning frame
-	* @param title the title of the dialog
-	*/
-	public LoginDialog( JFrame f, String title )
-	{
-		super(f, title, true);
-		guiInit(false);
-	}
-	
-	private void guiInit(boolean confirm)
-	{
-		getLabels();
-		ok = false;
-//		Point loc = f.getLocation();
-//		setBounds(loc.x+40, loc.y+40, 300, 200);
-		Container contpane = getContentPane();
+    private static ResourceBundle labels = null;
+    private JButton okButton, cancelButton;
+    private JTextField usernameField;
+    private PasswordWithShow passwordField;
+    private PasswordWithShow confirmField = null;
+    private boolean ok;
 
-		contpane.setLayout(new BorderLayout());
+    public LoginDialog(JFrame f, String title, boolean confirm)
+    {
+        super(f, title, true);
+        guiInit(confirm);
+    }
 
-		// South will contain 'OK' and 'Cancel' buttons.
-		JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 7));
+    /**
+    * Constructs a new LrgsAccess GUI display.
+    * @param f the owning frame
+    * @param title the title of the dialog
+    */
+    public LoginDialog( JFrame f, String title )
+    {
+        super(f, title, true);
+        guiInit(false);
+    }
 
-		okButton = new JButton(labels.getString("EditPropsAction.ok"));
-		okButton.setName("ok");
-		okButton.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent av)
-				{
-					doOK();
-				}
-			});
-		south.add(okButton);
-		
-		cancelButton = new JButton(labels.getString("EditPropsAction.cancel"));
-		cancelButton.setName("cancel");
-		cancelButton.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent av)
-				{
-					doCancel();
-				}
-			});
-		south.add(cancelButton);
-		contpane.add(south, BorderLayout.SOUTH);
+    private void guiInit(boolean confirm)
+    {
+        getLabels();
+        ok = false;
+        Container contpane = getContentPane();
 
-		// Center will contain a grid with login and password prompts.
-		JPanel center = new JPanel(new GridBagLayout());
-		JLabel userNameLabel = new JLabel(
-				labels.getString("LoginDialog.username"));
-		center.add(userNameLabel,
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(5, 10, 3, 2), 0, 0));
+        contpane.setLayout(new BorderLayout());
 
-		usernameField = new JTextField(10);
-		usernameField.setName("username");
-		center.add(usernameField,
-			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(5, 0, 3, 10), 0, 0));
+        // South will contain 'OK' and 'Cancel' buttons.
+        JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 7));
 
-		JLabel passwordLabel = new JLabel(
-				labels.getString("LoginDialog.Password"));
-		center.add(passwordLabel,
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE,
-				new Insets(3, 10, 5, 2), 0, 0));
+        okButton = new JButton(labels.getString("EditPropsAction.ok"));
+        okButton.setName("ok");
+        okButton.addActionListener(e -> doOK());
+        south.add(okButton);
 
-		passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
-		passwordField.setName("password");
-		center.add(passwordField,
-			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-				new Insets(3, 0, 5, 10), 0, 0));
-		
-		if (confirm)
-		{
-			center.add(new JLabel(labels.getString("LoginDialog.Confirm")),
-				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-					GridBagConstraints.EAST, GridBagConstraints.NONE,
-					new Insets(3, 10, 5, 2), 0, 0));
-	
-			confirmField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
-			center.add(confirmField,
-				new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-					new Insets(3, 0, 5, 10), 0, 0));
+        cancelButton = new JButton(labels.getString("EditPropsAction.cancel"));
+        cancelButton.setName("cancel");
+        cancelButton.addActionListener(e -> doCancel());
+        south.add(cancelButton);
+        contpane.add(south, BorderLayout.SOUTH);
+
+        // Center will contain a grid with login and password prompts.
+        JPanel center = new JPanel(new GridBagLayout());
+        JLabel userNameLabel = new JLabel(
+                labels.getString("LoginDialog.username"));
+        center.add(userNameLabel,
+            new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.EAST, GridBagConstraints.NONE,
+                new Insets(5, 10, 3, 2), 0, 0));
+
+        usernameField = new JTextField(10);
+        usernameField.setName("username");
+        center.add(usernameField,
+            new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+                GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+                new Insets(5, 0, 3, 10), 0, 0));
+
+        JLabel passwordLabel = new JLabel(
+                labels.getString("LoginDialog.Password"));
+        center.add(passwordLabel,
+            new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                GridBagConstraints.EAST, GridBagConstraints.NONE,
+                new Insets(3, 10, 5, 2), 0, 0));
+
+        passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
+        passwordField.setName("password");
+        center.add(passwordField,
+            new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+                GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+                new Insets(3, 0, 5, 10), 0, 0));
+
+        if (confirm)
+        {
+            center.add(new JLabel(labels.getString("LoginDialog.Confirm")),
+                new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                    GridBagConstraints.EAST, GridBagConstraints.NONE,
+                    new Insets(3, 10, 5, 2), 0, 0));
+
+            confirmField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
+            center.add(confirmField,
+                new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+                    GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+                    new Insets(3, 0, 5, 10), 0, 0));
+        }
+
+        contpane.add(center, BorderLayout.CENTER);
+
+        addWindowListener(
+            new WindowAdapter()
+            {
+                boolean started=false;
+                public void windowActivated(WindowEvent e)
+                {
+                    if (!started)
+                    {
+                        if (usernameField.isEnabled())
+						{
+                            usernameField.requestFocus();
+						}
+                        else
+						{
+                            passwordField.requestFocus();
+						}
+                    }
+                    started = true;
+                }
+            });
+
+        getRootPane().setDefaultButton(okButton);
+        pack();
+    }
+
+    public static ResourceBundle getLabels()
+    {
+        if (labels == null)
+		{            //Load the labels properties file
+            labels = LoadResourceBundle.getLabelDescriptions(
+                    "ilex/resources/gui", null);
 		}
+        return labels;
+    }
 
-		contpane.add(center, BorderLayout.CENTER);
+    /**
+      Clears username and password fields.
+    */
+    public void clear( )
+    {
+        usernameField.setText("");
+        passwordField.setText("");
+        ok = false;
+    }
 
-		addWindowListener(
-			new WindowAdapter()
-			{
-				boolean started=false;
-				public void windowActivated(WindowEvent e)
-				{
-					if (!started)
-					{
-						if (usernameField.isEnabled())
-							usernameField.requestFocus();
-						else
-							passwordField.requestFocus();
-					}
-					started = true;
-				}
-			});
+    /** Called when OK pressed. */
+    private void doOK( )
+    {
+        if (confirmField != null &&
+            ! (new String(confirmField.getPassword())).equals(
+                new String(passwordField.getPassword())))
+        {
+            showError("Password differs from confirmation!");
+            return;
+        }
+        ok = true;
+        closeDlg();
+    }
 
-		getRootPane().setDefaultButton(okButton);
-		pack();
-	}
-	
-	public static ResourceBundle getLabels() 
-	{
-		if (labels == null)
-			//Load the labels properties file
-			labels = LoadResourceBundle.getLabelDescriptions(
-					"ilex/resources/gui", null);
-		return labels;
-	}
-	
-	/**
-	  Clears username and password fields. 
-	*/
-	public void clear( )
-	{
-		usernameField.setText("");
-		passwordField.setText("");
-		ok = false;
-	}
+    /** Called when cancel pressed. */
+    private void doCancel( )
+    {
+        ok = false;
+        closeDlg();
+    }
 
-	/** Called when OK pressed. */
-	private void doOK( )
-	{
-		if (confirmField != null && 
-			! (new String(confirmField.getPassword())).equals(
-				new String(passwordField.getPassword())))
-		{
-			showError("Password differs from confirmation!");
-			return;
-		}
-		ok = true;
-		closeDlg();
-	}
-	
-	/** Called when cancel pressed. */
-	private void doCancel( )
-	{
-		ok = false;
-		closeDlg();
-	}
-	
-	/** Closes the dialog */
-	private void closeDlg( )
-	{
-		setVisible(false);
-		dispose();
-	}
-	
-	/**
-	* @return true if OK was pressed, false if Cancel was pressed.
-	*/
-	public boolean isOK( )
-	{
-		return ok;
-	}
-	
-	/**
-	 * @return the user name entered in the dialog.
-	 */
-	public String getUserName( )
-	{
-		return usernameField.getText();
-	}
-	
-	/**
-	 * For greater security, you should set each character to a blank
-	 * after using the password.
-	 * @return the password entered in the dialog.
-	 */
-	public char[] getPassword( )
-	{
-		return passwordField.getPassword();
-	}
+    /** Closes the dialog */
+    private void closeDlg( )
+    {
+        setVisible(false);
+        dispose();
+    }
 
-	/**
-	 * Enables or Disables the username field.
-	 * @param tf true to enable username field.
-	 * @param user the name to put in the username field.
-	 */
-	public void setEditableUsername(boolean tf, String user)
-	{
-		usernameField.setText(user);
-		usernameField.setEnabled(tf);
-	}
+    /**
+    * @return true if OK was pressed, false if Cancel was pressed.
+    */
+    public boolean isOK( )
+    {
+        return ok;
+    }
 
-	/**
-	 * Primarily intended to be used by areas of code that require authentication. Like GUI app logins
-	 * @return Valid properties with username and password if okay, otherwise null
-	 */
-	@Override
-	public Properties getCredentials()
-	{
-		final Properties credentials = new Properties();
-		final AtomicBoolean valid = new AtomicBoolean(false);
-		try
-		{
-			SwingUtilities.invokeAndWait(() ->
-			{
-				this.clear();
-				this.setLocationRelativeTo(null);
-				this.setVisible(true);
-				if (this.isOK())
-				{
-					credentials.setProperty("username", getUserName());
-					credentials.setProperty("password", new String(getPassword()));
-					valid.set(true);
-				}
-			});
+    /**
+     * @return the user name entered in the dialog.
+     */
+    public String getUserName( )
+    {
+        return usernameField.getText();
+    }
 
-			if(valid.get())
-			{
-				return credentials;
-			}
-			else
-			{
-				return null;
-			}
-		}
-		catch (InterruptedException | InvocationTargetException ex)
-		{
-			throw new RuntimeException("Unable to display and operate LoginDialog", ex);
-		}
-	}
+    /**
+     * For greater security, you should set each character to a blank
+     * after using the password.
+     * @return the password entered in the dialog.
+     */
+    public char[] getPassword( )
+    {
+        return passwordField.getPassword();
+    }
+
+    /**
+     * Enables or Disables the username field.
+     * @param tf true to enable username field.
+     * @param user the name to put in the username field.
+     */
+    public void setEditableUsername(boolean tf, String user)
+    {
+        usernameField.setText(user);
+        usernameField.setEnabled(tf);
+    }
+
+    /**
+     * Primarily intended to be used by areas of code that require authentication. Like GUI app logins
+     * @return Valid properties with username and password if okay, otherwise null
+     */
+    @Override
+    public Properties getCredentials()
+    {
+        final Properties credentials = new Properties();
+        final AtomicBoolean valid = new AtomicBoolean(false);
+        try
+        {
+            SwingUtilities.invokeAndWait(() ->
+            {
+                this.clear();
+                this.setLocationRelativeTo(null);
+                this.setVisible(true);
+                if (this.isOK())
+                {
+                    credentials.setProperty("username", getUserName());
+                    credentials.setProperty("password", new String(getPassword()));
+                    valid.set(true);
+                }
+            });
+
+            if(valid.get())
+            {
+                return credentials;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (InterruptedException | InvocationTargetException ex)
+        {
+            throw new RuntimeException("Unable to display and operate LoginDialog", ex);
+        }
+    }
 }
