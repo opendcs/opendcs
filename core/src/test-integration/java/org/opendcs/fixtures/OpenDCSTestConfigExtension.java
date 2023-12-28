@@ -6,41 +6,60 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.platform.commons.PreconditionViolationException;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
+import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.TsdbAppRequired;
+import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
 
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
-public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCallback, TestExecutionListener
+public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, TestExecutionListener
 {
     private static final Logger logger = Logger.getLogger(OpenDCSTestConfigExtension.class.getName());
 
     private static Configuration configuration = null;
+    private static Map<String,BackgroundTsDbApp<? extends TsdbAppTemplate>> runningApps = new HashMap<>();
+
+    private SystemExit exit = null;
+    private EnvironmentVariables environment = null;
+    private SystemProperties properties = null;
+
+    @Override
+    public void beforeEach(ExtensionContext ctx) throws Exception
+    {
+        Method method = ctx.getRequiredTestMethod();
+        Object testInstance = ctx.getRequiredTestInstance();
+        setupStubs(ctx);
+        applyPerMethodConfig(testInstance,method,ctx);
+    }
 
     /**
      * Perform initial or per test environment setup.
@@ -48,75 +67,148 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
     @Override
     public void beforeAll(ExtensionContext ctx) throws Exception
     {
-        logger.info("Searching for 'opendcs.test.engine'.");
-        // Store Configuration object for other extensions.
-        ctx.getRoot().getStore(Namespace.GLOBAL).put("config",configuration);
+        Object testInstance = ctx.getRequiredTestInstance();
+        setupStubs(ctx);
+        applyPerInstanceConfig(ctx);
+        assignFields(testInstance);
+    }
 
-        ctx.getTestInstance()
-           .ifPresent(testInstance ->
+    /**
+     * Retrieve the stub instances and make sure the environments
+     * are appropriately setup.
+     */
+    private void setupStubs(ExtensionContext ctx) throws Exception
+    {
+        exit = (SystemExit)getStub(ctx,SystemExit.class);
+        environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
+        properties = (SystemProperties)getStub(ctx,SystemProperties.class);
+
+        properties.setup();
+        environment.setup();
+        File userDir = configuration.getUserDir();
+        logger.info("DCSTOOL_USERDIR="+userDir);
+        environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
+        properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
+        properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
+        configuration.getEnvironment().forEach((k,v) -> environment.set(k,v));
+    }
+
+    /**
+     * This will
+     * <ul>
+     *  <li>Start the configuration (e.g. external resources, final config generation) if it's not already run.</li>
+     *  <li>Set the current DecodesSettings global instance.
+     * </ul>
+     *
+     * @param ctx
+     * @throws Exception
+     */
+    private void applyPerInstanceConfig(ExtensionContext ctx) throws Exception
+    {
+        if (!configuration.isRunning())
+        {
+            configuration.start(exit, environment, properties);
+        }
+
+        logger.info("Initializing decodes.");
+        DecodesSettings settings = DecodesSettings.instance();
+        Properties props = new Properties();
+        try(InputStream propStream = configuration.getPropertiesFile().toURI().toURL().openStream())
+        {
+            props.load(propStream);
+        }
+        settings.loadFromUserProperties(props);
+    }
+
+    /**
+     * This will apply configuration requirements from the following annotations:
+     * <ul>
+     *  <li>{@link org.opendcs.fixtures.annotations.DecodesConfigurationRequired}</li>
+     *  <li>{@link org.opendcs.fixtures.annotations.ComputationConfigurationRequired}<li>
+     * </ul>
+     *
+     * And that applications in {@link org.opendcs.fixtures.annotations.TsdbAppsRequired} annotations
+     * are currently running.
+     *
+     * @param testInstance any Object instance derived from AppTestBase
+     * @param testMethod Current TestMethod
+     * @param ctx {@see org.junit.jupiter.api.extension.ExtensionContext}
+     * @throws Exception
+     */
+    private void applyPerMethodConfig(Object testInstance, Method testMethod, ExtensionContext ctx) throws Exception
+    {
+        setupDecodesTestData(testInstance, testMethod, ctx, environment, properties, exit);
+        setupComputationTestData(testInstance, testMethod, ctx,environment, properties, exit);
+        startOrCheckApplications(testInstance, testMethod, ctx, environment, properties, exit);
+    }
+
+    private void startOrCheckApplications(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables environment,
+            SystemProperties properties, SystemExit exit) throws Exception
+    {
+        logger.info("Starting or Checking required applications.");
+        ArrayList<TsdbAppRequired> requiredApps = new ArrayList<>();
+        TsdbAppRequired apps[] = testInstance.getClass().getAnnotationsByType(TsdbAppRequired.class);
+        for (TsdbAppRequired app: apps)
+        {
+            requiredApps.add(app);
+        }
+
+        apps = testMethod.getAnnotationsByType(TsdbAppRequired.class);
+        for (TsdbAppRequired app: apps)
+        {
+            requiredApps.add(app);
+        }
+
+        for (TsdbAppRequired app : apps)
+        {
+            BackgroundTsDbApp<? extends TsdbAppTemplate> runningApp = runningApps.get(app.appName());
+            if (runningApp == null)
+            {
+                logger.info("Starting Application " + app.appName() + "{" + app.app().getName()+"}");
+                runningApp = BackgroundTsDbApp.forApp(
+                                app.app(),app.appName(),configuration.getPropertiesFile(),
+                                setupLog(app.appName()+".log"),environment
+                            );
+                runningApps.put(app.appName(),runningApp);
+            }
+            else if (!runningApp.isRunning())
+            {
+                throw new PreconditionViolationException(
+                    "Application " + app.appName() + "{" + app.app().getName() + "}"
+                  + " has stopped running."
+                );
+            }
+        }
+    }
+
+    /**
+     * Handle assigning configured fields
+     * @param testInstance
+     * @throws Exception
+     */
+    private void assignFields(Object testInstance) throws Exception
+    {
+        List<Field> fields = AnnotationSupport.findAnnotatedFields(testInstance.getClass(),ConfiguredField.class);
+        for (Field f: fields)
         {
             try
             {
-                SystemExit exit = (SystemExit)getStub(ctx,SystemExit.class);
-                EnvironmentVariables environment = (EnvironmentVariables)getStub(ctx,EnvironmentVariables.class);
-                SystemProperties properties = (SystemProperties)getStub(ctx,SystemProperties.class);
-
-                if (!configuration.isRunning())
+                if( f.getType().equals(Configuration.class))
                 {
-                    configuration.start(exit,environment);
+                    f.setAccessible(true);
+                    f.set(testInstance,configuration);
                 }
-
-                logger.info("Initializing decodes.");
-                DecodesSettings settings = DecodesSettings.instance();
-                Properties props = new Properties();
-                try(InputStream propStream = configuration.getPropertiesFile().toURI().toURL().openStream())
+                else if (f.getType().equals(TimeSeriesDb.class) && configuration.isRunning())
                 {
-                    props.load(propStream);
-                }
-                settings.loadFromUserProperties(props);
-
-                File userDir = configuration.getUserDir();
-                logger.info("DCSTOOL_USERDIR="+userDir);
-                environment.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
-                if (configuration.getEnvironment() != null
-                && !configuration.getEnvironment().isEmpty())
-                {
-                    environment.set(configuration.getEnvironment());
-                }
-                properties.set("DCSTOOL_USERDIR",userDir.getAbsolutePath());
-                properties.set("INPUT_DATA",new File(TestResources.resourceDir,"/shared").getAbsolutePath());
-                properties.setup();
-                environment.setup();
-
-                setupDecodesTestData(testInstance,ctx, environment, exit);
-
-                List<Field> fields = AnnotationSupport.findAnnotatedFields(testInstance.getClass(),ConfiguredField.class);
-                for (Field f: fields)
-                {
-                    try
-                    {
-                        if( f.getType().equals(Configuration.class))
-                        {
-                            f.setAccessible(true);
-                            f.set(testInstance,configuration);
-                        }
-                        else if (f.getType().equals(TimeSeriesDb.class) && configuration.isRunning())
-                        {
-                            f.setAccessible(true);
-                            f.set(testInstance,configuration.getTsdb());
-                        }
-                    }
-                    catch (Throwable ex)
-                    {
-                        throw new PreconditionViolationException("Unable to assign configuration to field.", ex);
-                    }
+                    f.setAccessible(true);
+                    f.set(testInstance,configuration.getTsdb());
                 }
             }
-            catch(Exception ex)
+            catch (Throwable ex)
             {
-                throw new PreconditionViolationException("Unable to setup environment or configuration.",ex);
+                throw new PreconditionViolationException("Unable to assign configuration to field.", ex);
             }
-        });
+        }
     }
 
     /**
@@ -127,36 +219,73 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
      * @param exit SystemExit stub used to call DbImport
      * @throws Exception
      */
-    private void setupDecodesTestData(Object testInstance, ExtensionContext ctx, EnvironmentVariables env, SystemExit exit) throws Exception
+    private void setupDecodesTestData(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables env, SystemProperties properties, SystemExit exit) throws Exception
     {
         DecodesConfigurationRequired decodesConfig = testInstance.getClass().getAnnotation(DecodesConfigurationRequired.class);
+        ArrayList<String> files = new ArrayList<>();
         if (decodesConfig != null)
         {
-            ArrayList<String> files = new ArrayList<>();
             for(String file: decodesConfig.value())
             {
                 files.add(AppTestBase.getResource(file));
             }
-            Programs.DbImport(setupLog(), configuration.getPropertiesFile(), env, exit, files.toArray(new String[0]));
+        }
+        decodesConfig = testMethod.getAnnotation(DecodesConfigurationRequired.class);
+        if (decodesConfig != null)
+        {
+            for(String file: decodesConfig.value())
+            {
+                files.add(AppTestBase.getResource(file));
+            }
         }
 
-        Optional<Method> testMethod = ctx.getTestMethod();
-        if (testMethod.isPresent())
+        if (!files.isEmpty())
         {
-            decodesConfig = testMethod.get().getAnnotation(DecodesConfigurationRequired.class);
-            if (decodesConfig != null)
-            {
-                Programs.DbImport(setupLog(), configuration.getPropertiesFile(), env, exit, decodesConfig.value());
-            }
+           Programs.DbImport(setupLog("decodes-setup.log"), configuration.getPropertiesFile(), env, exit, properties, files.toArray(new String[0]));
         }
     }
 
     /**
+     * Gather and run compimport on any required computation setup data Test data.
+     * @param testInstance actual instance of the test class
+     * @param ctx Junit extension context, used to get test method
+     * @param env EnvironmentVariables stub used to call DbImport
+     * @param exit SystemExit stub used to call DbImport
+     * @throws Exception
+     */
+    private void setupComputationTestData(Object testInstance, Method testMethod, ExtensionContext ctx, EnvironmentVariables env,
+                                          SystemProperties properties, SystemExit exit) throws Exception
+    {
+        ComputationConfigurationRequired compConfig = testInstance.getClass().getAnnotation(ComputationConfigurationRequired.class);
+        ArrayList<String> files = new ArrayList<>();
+        if (compConfig != null)
+        {
+            for(String file: compConfig.value())
+            {
+                files.add(AppTestBase.getResource(file));
+            }
+        }
+
+        compConfig = testMethod.getAnnotation(ComputationConfigurationRequired.class);
+        if (compConfig != null)
+        {
+            for(String file: compConfig.value())
+            {
+                files.add(AppTestBase.getResource(file));
+            }
+        }
+
+        if (!files.isEmpty())
+        {
+            Programs.CompImport(setupLog("computation-setup.log"), configuration.getPropertiesFile(), env, exit, files.toArray(new String[0]));
+        }
+    }
+    /**
      * Save a little typing to generate a log name in the test data setup handlers.
      * @return
      */
-    private File setupLog() {
-        return new File(configuration.getUserDir(),"/decodes-setup.log");
+    private File setupLog(String logName) {
+        return new File(configuration.getUserDir(),"/" + logName);
     }
 
     /**
@@ -229,6 +358,11 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, AfterAllCa
     {
         try
         {
+            for (String app: runningApps.keySet())
+            {
+                runningApps.get(app).stop();
+                runningApps.remove(app);
+            }
             configuration.stop();
         }
         catch (Throwable t)

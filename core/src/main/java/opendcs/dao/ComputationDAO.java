@@ -252,11 +252,11 @@ debug1("Setting manual connection for algorithmDAO");
 		if (ret != null)
 			return ret;
 
-		try(
-			PreparedStatement getComp = getConnection().prepareStatement(
+		try(Connection c = getConnection();
+			PreparedStatement getComp = c.prepareStatement(
 				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_ID = ?"
 			);
-			PreparedStatement getAppId = getConnection().prepareStatement(
+			PreparedStatement getAppId = c.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			);
 		)
@@ -476,15 +476,11 @@ debug1("Setting manual connection for algorithmDAO");
 	public DbComputation getComputationByName(String name)
 		throws DbIoException, NoSuchObjectException
 	{
-		String q = "select " + compTableColumns
-			+ " from CP_COMPUTATION where COMPUTATION_NAME = '"
-			+ name + "'";
-		Connection conn = getConnection();
-		try(
+		try(Connection conn = getConnection();
 			PreparedStatement getComp = conn.prepareStatement(
 				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_NAME = ?"
 			);
-			PreparedStatement getAppId = getConnection().prepareStatement(
+			PreparedStatement getAppId = conn.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			);
 		){

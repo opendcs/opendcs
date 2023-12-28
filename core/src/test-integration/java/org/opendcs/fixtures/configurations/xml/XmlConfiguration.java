@@ -3,6 +3,8 @@ package org.opendcs.fixtures.configurations.xml;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -10,6 +12,7 @@ import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
@@ -48,7 +51,7 @@ public class XmlConfiguration implements Configuration
     }
 
     @Override
-    public void start(SystemExit exit, EnvironmentVariables environment) throws Exception {
+    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception {
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
@@ -66,7 +69,14 @@ public class XmlConfiguration implements Configuration
     }
 
     @Override
-    public boolean isRunning() {
+    public boolean isRunning()
+    {
         return started;
+    }
+
+    @Override
+    public Map<Object, Object> getEnvironment()
+    {
+        return new HashMap<>();
     }
 }

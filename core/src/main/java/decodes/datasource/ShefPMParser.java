@@ -47,16 +47,17 @@ import decodes.db.Constants;
 
 /**
   Concrete subclass of PMParser for parsing performance measurements
-  out of GOES DCP messages.
+  out of SHEF messages.
 */
 public class ShefPMParser extends PMParser
 {
-	private static SimpleDateFormat mmdd = new SimpleDateFormat("MMdd");
-	private static SimpleDateFormat yymmdd = new SimpleDateFormat("yyMMdd");
-	private static SimpleDateFormat ccyymmdd = new SimpleDateFormat("yyyyMMdd");
+	private static final SimpleDateFormat mmdd = new SimpleDateFormat("MMdd");
+	private static final SimpleDateFormat yymmdd = new SimpleDateFormat("yyMMdd");
+	private static final SimpleDateFormat ccyymmdd = new SimpleDateFormat("yyyyMMdd");
 	
 	public static final String PM_TIMEZONE = "TIME_ZONE";
 	public static final String PM_MESSAGE_TYPE = "SHEF_MESSAGE_TYPE";
+	private int idx=0;
 	
 	/** default constructor */
 	public ShefPMParser()
@@ -71,85 +72,42 @@ public class ShefPMParser extends PMParser
 	public void parsePerformanceMeasurements(RawMessage msg)
 		throws HeaderParseException
 	{
-		byte data[] = msg.getData();
-		StringBuilder sb = new StringBuilder();
-		int idx = 0;
-
+		byte[] data = msg.getData();
+		idx = 0;
+		skipWhitespace(data);
+		skipCommentLines(data);
 		// In the editor, we may be passed a full message starting with .E or .A
-		while(idx < data.length
-		 && Character.isWhitespace((char)data[idx]))
-			idx++;
-		if (idx == data.length)
-			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
-				+ ", '" + new String(data) + "'");
+		skipWhitespace(data);
 		if ((char)data[idx] == '.')
 		{
 			idx++;
-			msg.setPM(PM_MESSAGE_TYPE, new Variable((char)data[idx]));
-			Logger.instance().debug3("Message Type set to '" + (char)data[idx] + "'");
-			while(idx < data.length && !Character.isWhitespace((char)data[idx]))
-				idx++;
+			String messageType = getField(data);
+			msg.setPM(PM_MESSAGE_TYPE, new Variable(messageType));
+			Logger.instance().debug3("Message Type set to '" + messageType + "'");
 		}
 
-		// Skip white space then get next word - this is station name
-		while(idx < data.length
-		 && Character.isWhitespace((char)data[idx]))
-			idx++;
-		if (idx == data.length)
-			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
-				+ ", '" + new String(data) + "'");
-		while(idx < data.length
-		 && !Character.isWhitespace((char)data[idx]))
-			sb.append((char)data[idx++]);
-		if (idx == data.length)
-			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
-				+ ", '" + new String(data) + "'");
-		String stationName = sb.toString();
+		skipWhitespace(data);
+		String stationName = getField(data);
 		Logger.instance().debug3("SHEF Station name='" + stationName + "'");
 		
-		sb.setLength(0);
-		
-		// Skip white space then get next word - this is date/time field
-		while(idx < data.length
-		 && Character.isWhitespace((char)data[idx]))
-			idx++;
-		if (idx == data.length)
-			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
-				+ ", '" + new String(data) + "'");
-		while(idx < data.length
-		 && !Character.isWhitespace((char)data[idx]))
-			sb.append((char)data[idx++]);
-		if (idx == data.length)
-			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
-				+ ", '" + new String(data) + "'");
-		String dateField = sb.toString();
+		skipWhitespace(data);
+		String dateField = getField(data);
 		Logger.instance().debug3("SHEF Station Time='" + dateField + "'");
-		sb.setLength(0);
+
 
 		// Optional third field for timezone.
-		while(idx < data.length
-		 && Character.isWhitespace((char)data[idx]))
-			idx++;
-		if (idx == data.length)
-			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
-				+ ", '" + new String(data) + "'");
+		skipWhitespace(data);
 		int headerEnd = idx;
-		while(idx < data.length
-		 && !Character.isWhitespace((char)data[idx]) && (char)data[idx] != '/')
-			sb.append((char)data[idx++]);
-		if (idx == data.length)
-			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
-				+ ", '" + new String(data) + "'");
-		String tzField = null;
+		String nextField = getField(data,true);
+
 		TimeZone tz = TimeZone.getTimeZone("UTC");
-		if (sb.charAt(0) != 'D' && sb.charAt(0) != 'd')
-		{
-			tzField = sb.toString();
+		if (nextField.charAt(0) != 'D' && nextField.charAt(0) != 'd')
+		{ // optional time zone is provided (no time zones start with 'D'
 			headerEnd = idx;
-			tz = shefTZ2javaTZ(tzField);
+			tz = shefTZ2javaTZ(nextField);
 			if (tz == null)
 			{
-				Logger.instance().warning("Invalid time-zone '" + tzField
+				Logger.instance().warning("Invalid time-zone '" + nextField
 					+ "' in SHEF message ignored, using UTC.");
 				tz = TimeZone.getTimeZone("UTC");
 			}
@@ -161,26 +119,10 @@ public class ShefPMParser extends PMParser
 		msg.setHeaderLength(headerEnd);
 		Logger.instance().debug3("SHEF Header Length set to " + headerEnd);
 		
-		Date msgTime = null;
+		Date msgTime;
 		try
 		{
-			if (dateField.length() == 4)
-			{
-				mmdd.setTimeZone(tz);
-				msgTime = mmdd.parse(dateField);
-			}
-			else if (dateField.length() == 6)
-			{
-				yymmdd.setTimeZone(tz);
-				msgTime = yymmdd.parse(dateField);
-			}
-			else if (dateField.length() == 8)
-			{
-				ccyymmdd.setTimeZone(tz);
-				msgTime = ccyymmdd.parse(dateField);
-			}
-			else
-				throw new Exception();
+			msgTime = parseDate(dateField, tz);
 		}
 		catch(Exception ex)
 		{
@@ -191,10 +133,85 @@ public class ShefPMParser extends PMParser
 		msg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(msgTime));
 		Logger.instance().debug3("SHEF Message Date=" + ccyymmdd.format(msgTime));
 		msg.setPM(PM_TIMEZONE, new Variable(tz.getID()));
-		msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(data.length - headerEnd));
+		msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(data.length));
 		msg.setPM(GoesPMParser.FAILURE_CODE, new Variable('G'));
 		msg.setPM(GoesPMParser.SITE_NAME, new Variable(stationName));
 	}
+
+
+	private Date parseDate(String dateField, TimeZone tz) throws Exception
+	{
+		Date msgTime;
+		if (dateField.length() == 4)
+		{
+			mmdd.setTimeZone(tz);
+			msgTime = mmdd.parse(dateField);
+		}
+		else if (dateField.length() == 6)
+		{
+			yymmdd.setTimeZone(tz);
+			msgTime = yymmdd.parse(dateField);
+		}
+		else if (dateField.length() == 8)
+		{
+			ccyymmdd.setTimeZone(tz);
+			msgTime = ccyymmdd.parse(dateField);
+		}
+		else
+			throw new Exception();
+		return msgTime;
+	}
+
+	private void skipWhitespace(byte[] data) throws HeaderParseException {
+		while(idx < data.length && Character.isWhitespace((char)data[idx])) {
+			idx++;
+		}
+		if (idx == data.length) {
+			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
+					+ ", '" + new String(data) + "'");
+		}
+	}
+
+	/**
+	 * comment lines begin with ':'
+	 */
+	private void skipCommentLines(byte[] data) {
+		while ((char) data[idx] == ':') {
+			// find end of line
+			int eol = findLineEnd(data, idx);
+			if (eol > 0)
+				idx = eol + 1;
+		}
+	}
+
+	public static int findLineEnd(byte[] data, int startIndex) {
+		for (int i = startIndex; i < data.length; i++) {
+			if (data[i] == '\n') { // For LF
+				return i;
+			}
+		}
+		return -1; // -1 if not found
+	}
+
+
+
+	private String getField(byte[] data) throws HeaderParseException{
+		return getField(data,false);
+	}
+	private String getField(byte[] data, boolean stopOnSlash) throws HeaderParseException {
+		StringBuilder sb = new StringBuilder();
+		while (idx < data.length && !Character.isWhitespace((char)data[idx])) {
+			if( stopOnSlash && data[idx] == '/' )
+				break;
+			sb.append((char)data[idx++]);
+		}
+		if (idx == data.length) {
+			throw new HeaderParseException("Invalid SHEF header, length=" + data.length
+					+ ", '" + new String(data) + "'");
+		}
+		return sb.toString();
+	}
+
 
 	/**
 	 * Converts a SHEF timezone name to a valid Java timezone.

@@ -110,13 +110,14 @@ public class DecodesInterface
 	StringBufferConsumer consumer;
 	StringBuffer decodeBuf;
 
-	/** 
-	  default constructor.
-	  Call initDecodes after construction.
+	/**
+	   Call initDecodes before construction.
+	   This is currently only used by the Message Browser, usage else where
+	   is discouraged.
 	*/
-	DecodesInterface()
+	DecodesInterface(Database db)
 	{
-		dataSource = new LrgsDataSource(null,null);
+		dataSource = new LrgsDataSource(null,db);
 		decodeBuf = new StringBuffer();
 		consumer = new StringBufferConsumer(decodeBuf);
 		timeZone = null;

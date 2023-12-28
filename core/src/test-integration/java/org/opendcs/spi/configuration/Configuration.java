@@ -1,14 +1,12 @@
 package org.opendcs.spi.configuration;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.extension.Extension;
-
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TsdbAppTemplate;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
@@ -22,11 +20,13 @@ public interface Configuration
      *  - copying require files
      *  - creating the user.properties file
      *  - starting and installing database schemas 
-     * @param exit SystemExit stub for configurations needing to use various opendcs functions
+     * @param exit SystemExit stub for configurations needing to use various OpenDCS functions
      *             that may call System.exit.
+     * @param environment The System.getenv environment to hold appropriate values.
+     * @param properties The System.getProperty map to hold appropriate values.
      * @throws Exception
      */
-    public void start(SystemExit exit, EnvironmentVariables environment) throws Exception;
+    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception;
 
     /**
      *
@@ -55,10 +55,7 @@ public interface Configuration
      * Additional environment variables this test configuration requires
      * @return
      */
-    public default Map<String,String> getEnvironment()
-    {
-        return null;
-    }
+    public Map<Object,Object> getEnvironment();
 
     /**
      * If available return a valid instead of a TimeSeriesDb based on the current configuration.
@@ -70,5 +67,10 @@ public interface Configuration
     default public TimeSeriesDb getTsdb() throws Throwable
     {
         return null;
+    }
+
+    default public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
+    {
+        return false;
     }
 }

@@ -12,30 +12,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ilex.gui.LoginDialog;
 
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.SwingWorker;
 
 import org.assertj.swing.edt.GuiActionRunner;
 import org.assertj.swing.fixture.DialogFixture;
-import org.assertj.swing.fixture.FrameFixture;
 import org.assertj.swing.timing.Condition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.opendcs.spi.authentication.AuthSource;
 
-import com.github.dockerjava.api.model.Frame;
+import fixtures.GuiTest;
 
-
-public class GuiAuthSourceTest
+public class GuiAuthSourceTest extends GuiTest
 {
     private DialogFixture dialog;
     //private FrameFixture frame;
@@ -46,25 +36,22 @@ public class GuiAuthSourceTest
     @BeforeEach
     public void setup() throws Exception
     {
-        loginDialog = (LoginDialog)AuthSourceService.getFromString("gui-auth-source:Login");
-        //rootFrame = GuiActionRunner.execute(() -> new JFrame("Root Window"));
-        //frame = new FrameFixture(rootFrame);
+        loginDialog = GuiActionRunner.execute(() -> (LoginDialog)AuthSourceService.getFromString("gui-auth-source:Login"));
         dialog = new DialogFixture(loginDialog);
-        //frame.show();
     }
 
     @AfterEach
     public void tearDown()
-    {        
+    {
         dialog.cleanUp();
     }
 
     @Test
     public void login_accepted() throws Exception
-    {        
+    {
         final String username = "user";
         final String password = "password";
-    
+
         Future<Properties> credentialsFuture = executor.submit(() -> loginDialog.getCredentials());
         assertTrue(loginDialog.isValid(), "Our Dialog isn't valid.");
         pause(new Condition("Gui visible") {

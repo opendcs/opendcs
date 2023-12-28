@@ -24,6 +24,7 @@ import lrgs.common.*;
 import lrgs.ldds.*;
 
 import decodes.consumer.OutputFormatter;
+import decodes.db.Database;
 
 /**
 This works with DcpMsgOutputMonitor. This Thread will do the actual message
@@ -325,7 +326,11 @@ class DcpMsgOutputThread extends Thread
 	{
 		Logger.instance().log(Logger.E_DEBUG1, 
 			"Initializing msgaccess DECODES refs");
-		try { decodesIf = new DecodesInterface(); }
+		try
+		{
+			/* by the time this is called the Database instance is valid or will be appropriately created. */
+			decodesIf = new DecodesInterface(Database.getDb());
+		}
 		catch(NoClassDefFoundError ex)
 		{
 			PrintStream ps = new PrintStream(outs);

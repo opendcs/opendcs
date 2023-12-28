@@ -283,7 +283,15 @@ more information about each.
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
-        <jacoco:agent property="coverage.agent.param.it" destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
+        <jacoco:agent property="coverage.agent.param.it"
+                      destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
+        <!-- This path is used by the integration test extension when 
+            creating independent OpenDCS application processes-->
+        <path id="opendcs.runtime">
+            <pathelement location="${stage.dir}/bin/opendcs.jar"/>
+            <fileset dir="${stage.dir}/dep"/>
+        </path>
+        <pathconvert property="opendcs.test.classpath" refid="opendcs.runtime"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -302,6 +310,7 @@ more information about each.
                     <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                     <jvmarg value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
+                    <jvmarg value="-Dopendcs.test.classpath=${opendcs.test.classpath}"/>
                     <jvmarg value="-Djava.util.logging.config.file=${build.dir}/../src/test-integration/test-config/logging.properties"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>
@@ -383,7 +392,7 @@ more information about each.
             <fileset dir="${build.dir}/test-gui/results">
                 <include name="TEST-*.xml"/>
             </fileset>
-            <report format="frames" todir="${junit.html.output.dir}/test-gui"/>
+            <report format="noframes" todir="${junit.html.output.dir}/test-gui"/>
         </junitreport>
         <if>
             <isset property="gui.failed"/>
@@ -465,7 +474,7 @@ more information about each.
                 <echo message="GPG is required to sign the components"/>
             </then>
             <else>
-                <gpgsignfile target="opendcs-ot-${version}.jar" workingDir="stage"/>
+                <gpgsignfile target="opendcs-installer-${version}.jar" workingDir="stage"/>
                 <gpgsignfile target="opendcs-${version}.pom"/>
                 <gpgsignfile target="opendcs-${version}.jar"/>
                 <gpgsignfile target="opendcs-${version}-javadoc.jar"/>
@@ -699,7 +708,7 @@ more information about each.
         <!-- Invokes izpack to build installable package with defaults for CWMS -->
         <property name="hdb.preselect" value="no"/>
         <izpack input="${project.dir}/izpack/opendcs-install.xml"
-                output="stage/opendcs-ot-${version}.jar"
+                output="stage/opendcs-installer-${version}.jar"
                 installerType="standard"
                 inheritAll="true"
                 basedir="stage"

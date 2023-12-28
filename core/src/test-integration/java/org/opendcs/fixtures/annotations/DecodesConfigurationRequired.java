@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Specify a list of confiugration xml files that need to 
+ * Specify a list of configuration xml files that need to 
  * be imported before any tests in this test class are run.
  * 
  * Values that start with $ will have {@code EnvExpander.expand(string,System.getProperties())}

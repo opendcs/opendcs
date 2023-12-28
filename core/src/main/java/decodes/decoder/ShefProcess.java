@@ -218,31 +218,30 @@ public class ShefProcess
 				if (c == ':')
 				{
 					lineContext = LineContext.InComment;
-					debug(idx, "start of commnet");
-					continue;
+					debug(idx, "start of comment");
 				}
 				else if (Character.isWhitespace(c) || c == '/')
 				{
-					if (field.length() == 0)
-						continue; // ignore contiguous whitespace before field starts
-					else
+					if(c == '\n')
 					{
+					lineContext = LineContext.StartOfLine;
+					debug(idx, "end of line");
+					}
+
+				 	if (field.length() > 0)
+				 	{
 						processField(fieldStart, idx, field.toString(), c);
 						field.setLength(0);
 					}
-					if (c == '\n')
-					{
-						lineContext = LineContext.StartOfLine;
-						debug(idx, "end of line");
-					}
-					
-				}
-				else
-				{
+				 }
+				 else
+				 {
 					if (field.length() == 0)
 						fieldStart = idx;
 					field.append(c);
-				}
+				 }
+
+				 break;
 			}
 		}
 	}

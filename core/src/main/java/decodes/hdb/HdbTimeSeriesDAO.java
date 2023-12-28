@@ -6,6 +6,7 @@ import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -50,12 +51,12 @@ import opendcs.dao.DbObjectCache.CacheIterator;
 public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 {
 	// TODO: Integrate the cache with the methods below.
-	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
+	protected static DbObjectCache<TimeSeriesIdentifier> cache =
 		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
 	private SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	private static SimpleDateFormat rwdf = null;
-	
+
 	// MJM 2016/1/8 Calls to reloadTsIdCache only does a refresh for time series
 	// since the last call.
 	// Once per hour only it does a full load.
@@ -63,8 +64,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	private static final long CACHE_RELOAD_INTERVAL = 3600000L;
 	private static long lastCacheRefresh = 0L;
 	private static final long CACHE_REFRESH_OVERLAP = 120000L;
-	
-	private String tsidQuery = 
+
+	private String tsidQuery =
 		"SELECT a.ts_id, a.site_datatype_id, a.interval, a.table_selector, a.model_id, "
 		+ "b.SITE_ID, b.DATATYPE_ID, d.UNIT_COMMON_NAME, e.site_common_name, c.datatype_common_name "
 		+ "FROM CP_TS_ID a, HDB_SITE_DATATYPE b, HDB_DATATYPE c, HDB_UNIT d, HDB_SITE e ";
@@ -135,18 +136,18 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		htsid.setSdi(sdi);
 		if (htsid.getTableSelector() == null)
 			htsid.setTableSelector("R_");
-		
+
 		// Unique name in cache may be from a different site name type, so
 		// now re-search the cache with the site datatype ID.
 		for(CacheIterator cit = cache.iterator(); cit.hasNext(); )
 		{
 			HdbTsId tsid = (HdbTsId)cit.next();
-			if (sdi.equals(tsid.getSdi()) 
+			if (sdi.equals(tsid.getSdi())
 			 && tsid.getInterval().equalsIgnoreCase(htsid.getInterval())
 			 && tsid.getTableSelector().equalsIgnoreCase(htsid.getTableSelector()))
 			 	return tsid;
 		}
-		
+
 		debug3("cache does not have '" + uniqueString + "'");
 
 		String q = "SELECT TS_ID "
@@ -190,7 +191,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			throws DbIoException, NoSuchObjectException
 	{
 		String q = tsidQuery + tsidJoinClause + " and a.ts_id = " + key;
-			
+
 		try
 		{
 			ResultSet rs = doQuery(q);
@@ -242,14 +243,14 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		DataType dt = DataType.getDataType(DbKey.createDbKey(rs, 7));
 		tsid.setDataType(dt);
 		tsid.setStorageUnits(rs.getString(8));
-	
+
 		String siteCommonName = rs.getString(9);
 		String dtCommonName = rs.getString(10);
 		tsid.setDescription(dtCommonName + " at " + siteCommonName);
 
 		return tsid;
 	}
-	
+
 	@Override
 	public void close()
 	{
@@ -267,7 +268,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		{
 			try
 			{
-				DbKey ts_id = lookupTsId(ts.getSDI(), ts.getInterval(), 
+				DbKey ts_id = lookupTsId(ts.getSDI(), ts.getInterval(),
 					ts.getTableSelector(), ts.getModelId());
 
 				tsid = (HdbTsId)getTimeSeriesIdentifier(ts_id);
@@ -278,11 +279,11 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 				return;
 			}
 		}
-			
+
 		ts.setDisplayName(tsid.getDisplayName());
 		ts.setUnitsAbbr(tsid.getStorageUnits());
 	}
-	
+
 	/**
  	 * Lookup a ts_id from cp_ts_id table.
 	 * @param sdi
@@ -309,7 +310,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			+ " and table_selector = " + sqlString(tabsel);
 		if (tabsel.equals("M_"))
 			q = q + " and model_id = " + modelId;
-	
+
 		try
 		{
 			ResultSet rs = doQuery(q);
@@ -327,7 +328,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			throw new DbIoException(msg);
 		}
 	}
-	
+
 	@Override
 	public int fillTimeSeries( CTimeSeries ts, Date from, Date until )
 		throws DbIoException, BadTimeSeriesException
@@ -342,7 +343,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		throws DbIoException, BadTimeSeriesException
 	{
 		fillTimeSeriesMetadata(ts);
-		
+
 		UnitConverter unitConverter = db.makeUnitConverterForRead(ts);
 
 		String lower_check = " >= ";
@@ -350,15 +351,15 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		if (!include_lower) lower_check = " > ";
 		if (!include_upper) upper_check = " < ";
 		String table = ts.getTableSelector() + ts.getInterval();
-		
+
 		String tabsel = ts.getTableSelector();
 		boolean isModeled = tabsel != null && TextUtil.startsWithIgnoreCase(ts.getTableSelector(), "M");
-		
+
 		String fields = "START_DATE_TIME, VALUE";
 		if (!isModeled)
 			fields = fields + ", DERIVATION_FLAGS"; // Get derivation flags for REAL data only
-		
-		String q = "select " + fields + " from " + table 
+
+		String q = "select " + fields + " from " + table
 			+ " where SITE_DATATYPE_ID = " + ts.getSDI()
 			+ " and START_DATE_TIME " + lower_check  + db.sqlDate(from)
 			+ " and START_DATE_TIME " + upper_check + db.sqlDate(until);
@@ -429,17 +430,17 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		fillTimeSeriesMetadata(ts);
 		HdbTsId tsid = (HdbTsId)ts.getTimeSeriesIdentifier();
 		UnitConverter unitConverter = db.makeUnitConverterForRead(ts);
-		
+
 		String table = tsid.getTableSelector() + tsid.getInterval();
 		String fields = "START_DATE_TIME, VALUE";
-		String qbase = "select " + fields + " from " + table 
+		String qbase = "select " + fields + " from " + table
 			+ " where SITE_DATATYPE_ID = " + tsid.getSdi();
-		
+
 		String tabsel = ts.getTableSelector();
 		if (tabsel != null && tabsel.length() > 0
 		 && tabsel.toLowerCase().charAt(0) == 'm')
 			qbase = qbase + " and model_run_id = " + ts.getModelRunId();
-		
+
 		qbase = qbase + " and START_DATE_TIME IN (";
 
 		int datesPerQuery = 10;
@@ -473,7 +474,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 
 						double value = rs.getDouble(2);
 						TimedVariable tv = new TimedVariable(value);
-						
+
 						if (unitConverter != null)
 						{
 							try { tv.setValue(unitConverter.convert(value)); }
@@ -511,19 +512,19 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		String q = "select " + fields
 			+ " from " + table
 			+ " where SITE_DATATYPE_ID = " + ts.getSDI();
-		
+
 		String tabsel = ts.getTableSelector();
 		if (tabsel != null && tabsel.length() > 0
 		 && tabsel.toLowerCase().charAt(0) == 'm')
 			q = q + " and model_run_id = " + ts.getModelRunId();
-		
+
 		q = q
 			+ " and start_date_time = "
 			+   " (select max(start_date_time) from " + table
 			+   " where SITE_DATATYPE_ID = " + ts.getSDI()
  			+   " and start_date_time < " + db.sqlDate(refTime)
 			+	")";
-		
+
 		UnitConverter unitConverter = db.makeUnitConverterForRead(ts);
 
 		try
@@ -531,11 +532,11 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			ResultSet rs = doQuery(q);
 			if (!rs.next())
 				return null;  // There is no previous value.
-			
+
 			Date timeStamp = db.getFullDate(rs, 1);
 			double value = rs.getDouble(2);
 			TimedVariable tv = new TimedVariable(value);
-			
+
 			if (unitConverter != null)
 			{
 				try { tv.setValue(unitConverter.convert(value)); }
@@ -567,19 +568,19 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		String q = "select " + fields
 			+ " from " + table
 			+ " where SITE_DATATYPE_ID = " + ts.getSDI();
-		
+
 		String tabsel = ts.getTableSelector();
 		if (tabsel != null && tabsel.length() > 0
 		 && tabsel.toLowerCase().charAt(0) == 'm')
 			q = q + " and model_run_id = " + ts.getModelRunId();
-		
+
 		q = q
 			+ " and start_date_time = "
 			+   " (select min(start_date_time) from " + table
 			+   " where SITE_DATATYPE_ID = " + ts.getSDI()
  			+   " and start_date_time > " + db.sqlDate(refTime)
 			+   ")";
-		
+
 		UnitConverter unitConverter = db.makeUnitConverterForRead(ts);
 
 		try
@@ -587,11 +588,11 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			ResultSet rs = doQuery(q);
 			if (!rs.next())
 				return null;  // There is no next value.
-			
+
 			Date timeStamp = db.getFullDate(rs, 1);
 			double value = rs.getDouble(2);
 			TimedVariable tv = new TimedVariable(value);
-			
+
 			if (unitConverter != null)
 			{
 				try { tv.setValue(unitConverter.convert(value)); }
@@ -624,14 +625,14 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		{
 			try
 			{
-				DbKey tsKey = lookupTsId(ts.getSDI(), ts.getInterval(), 
+				DbKey tsKey = lookupTsId(ts.getSDI(), ts.getInterval(),
 					ts.getTableSelector(), ts.getModelId());
 				tsid = this.getTimeSeriesIdentifier(tsKey);
 				ts.setTimeSeriesIdentifier(tsid);
 			}
 			catch (NoSuchObjectException ex)
 			{
-				warning("saveTimeSeries: TSID=" 
+				warning("saveTimeSeries: TSID="
 					+ (ts.getTimeSeriesIdentifier()==null?"null":ts.getTimeSeriesIdentifier().getUniqueString())
 					+ " Cannot lookup tsid: " + ex);
 			}
@@ -691,8 +692,8 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 				modelrun_id = db.findMaxModelRunId(model_id);
 			}
 		}
-	// Added the four default arguments from the write_to_hdb procedure, so that the CP can set the OVERWRITE_FLAG if specified	
-		
+	// Added the four default arguments from the write_to_hdb procedure, so that the CP can set the OVERWRITE_FLAG if specified
+
 	// PROCEDURE write_to_hdb
 	//  Argument Name                  Type                    In/Out Default?
 	//  ------------------------------ ----------------------- ------ --------
@@ -711,9 +712,8 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 	//13 SAMPLE_END_DATE_TIME		   DATE				   	   IN	DEFAULT NULL
 
 		String q =
-	"{ call write_to_hdb(?,to_date(?,'DD.MM.YYYY HH24:MI:SS'),?,?,?,?,?,?,?,?,?)}";
+			"{ call write_to_hdb(?,to_date(?,'DD.MM.YYYY HH24:MI:SS'),?,?,?,?,?,?,?,?,?)}";
 
-		CallableStatement cstmt =  null;
 		DbKey compId = ts.getComputationId();
 		if (compId == Constants.undefinedId)
 			compId = DbKey.createDbKey(1); // Default, meaning 'no computation'
@@ -726,99 +726,97 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 
 		Logger.instance().debug3("Saving to time series '" + idString + "'");
 
-		try 
+		try (Connection c = getConnection();
+			 CallableStatement cstmt = c.prepareCall(q);
+			)
 		{
-			cstmt = getConnection().prepareCall(q);
-	
 			// Set all the proc-input that are the same for all samples.
 			cstmt.setLong(1, ts.getSDI().getValue());
-			cstmt.setString(4, ts.getInterval()); 
+			cstmt.setString(4, ts.getInterval());
 			cstmt.setLong(5, db.getAppId().getValue());
 			cstmt.setLong(6, compId.getValue());
 			cstmt.setLong(7, modelrun_id);
 			cstmt.setNull(10,java.sql.Types.VARCHAR); //parameter 10, time zone, defaults to null
+
+
+			int nsaved = 0;
+			int nerrors = 0;
+			for(int i=0; i<ts.size(); i++)
+			{
+				TimedVariable tv = ts.sampleAt(i);
+				if (VarFlags.mustWrite(tv))
+				{
+					String timestr = "";
+					try
+					{
+						// Populate these fields for each variable:
+						//2 SAMPLE_DATE_TIME               DATE                    IN
+						//3 SAMPLE_VALUE                   NUMBER(126)             IN
+						//8 VALIDATION_FLAG                CHAR                    IN
+						//9 DATA_FLAGS                     VARCHAR2                IN
+						//11 OVERWRITE_FLAG				   VARCHAR2				   IN	DEFAULT NULL
+						// Populate & execute the stored procedure call.
+						timestr = rwdf.format(tv.getTime());
+						cstmt.setString(2, timestr);
+						double v = tv.getDoubleValue();
+						cstmt.setDouble(3, v);
+						char valf = HdbFlags.flag2HdbValidation(tv.getFlags());
+						String valfs = valf == HdbFlags.HDB_BLANK_VALIDATION ? null
+							: "" + valf;
+						cstmt.setString(8, valfs);
+						String derf = HdbFlags.flag2HdbDerivation(tv.getFlags());
+						cstmt.setString(9, derf);
+
+						if(HdbFlags.flag2Overwrite(tv.getFlags()))
+						{
+							cstmt.setString(11,Character.toString(HdbFlags.HDB_OVERWRITE_FLAG));
+						}
+						else
+						{
+							cstmt.setNull(11,java.sql.Types.VARCHAR);
+						}
+
+						Logger.instance().debug3("Saving variable " + v + " at time " + timestr
+							+ ", val=" + valfs + ", der=" + derf);
+						cstmt.execute();
+						VarFlags.clearToWrite(tv);
+						nsaved++;
+					}
+					catch(NoConversionException ex)
+					{
+						String msg = "Cannot save value for " + idString
+							+ " value='" + tv.getStringValue()
+							+ "' - not a number.";
+						Logger.instance().warning(msg);
+						nerrors++;
+					}
+					catch(IllegalArgumentException ex)
+					{
+						String msg = "Cannot save value for " + idString
+								+ " value='" + tv.getStringValue()
+								+ "' - not a number.";
+						Logger.instance().warning(msg);
+						nerrors++;
+					}
+					catch(SQLException ex)
+					{
+						String msg = "SQL Error saving value for " + idString
+							+ " value='" + tv.getStringValue()
+							+ "', date='" + timestr + "': " + ex;
+						Logger.instance().warning(msg);
+						nerrors++;
+					}
+				}
+			}
+			Logger.instance().debug1("Saved " + nsaved + " samples.");
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Cannot prepare statement '" + q + "' " 
+			String msg = "Cannot prepare statement '" + q + "' "
 				+ " for " + idString + ": " + ex;
 			Logger.instance().warning(msg);
-			try { cstmt.close(); } catch(Exception ignore) {}
-			throw new BadTimeSeriesException(msg);
+			throw new BadTimeSeriesException(msg,ex);
 		}
-
-		int nsaved = 0;
-		int nerrors = 0;
-		for(int i=0; i<ts.size(); i++)
-		{
-			TimedVariable tv = ts.sampleAt(i);
-			if (VarFlags.mustWrite(tv))
-			{
-				String timestr = "";
-				try
-				{
-	// Populate these fields for each variable:
-	//2 SAMPLE_DATE_TIME               DATE                    IN
-	//3 SAMPLE_VALUE                   NUMBER(126)             IN
-	//8 VALIDATION_FLAG                CHAR                    IN
-	//9 DATA_FLAGS                     VARCHAR2                IN
-	//11 OVERWRITE_FLAG				   VARCHAR2				   IN	DEFAULT NULL
-	 				// Populate & execute the stored procedure call.
-					timestr = rwdf.format(tv.getTime());
-					cstmt.setString(2, timestr);
-					double v = tv.getDoubleValue();
-					cstmt.setDouble(3, v);
-					char valf = HdbFlags.flag2HdbValidation(tv.getFlags());
-					String valfs = valf == HdbFlags.HDB_BLANK_VALIDATION ? null 
-						: "" + valf;
-					cstmt.setString(8, valfs);
-					String derf = HdbFlags.flag2HdbDerivation(tv.getFlags());
-					cstmt.setString(9, derf);
-					
-					if(HdbFlags.flag2Overwrite(tv.getFlags())) 
-					{
-						cstmt.setString(11,Character.toString(HdbFlags.HDB_OVERWRITE_FLAG));						
-					}
-					else 
-					{
-						cstmt.setNull(11,java.sql.Types.VARCHAR);
-					}
-
-Logger.instance().debug3("Saving variable " + v + " at time " + timestr
-+ ", val=" + valfs + ", der=" + derf);
-					cstmt.execute();
-					VarFlags.clearToWrite(tv);
-					nsaved++;
-				}
-				catch(NoConversionException ex)
-				{
-					String msg = "Cannot save value for " + idString
-						+ " value='" + tv.getStringValue() 
-						+ "' - not a number.";
-					Logger.instance().warning(msg);
-					nerrors++;
-				}
-                catch(IllegalArgumentException ex)
-                {
-                    String msg = "Cannot save value for " + idString
-                               + " value='" + tv.getStringValue()
-                               + "' - not a number.";
-                    Logger.instance().warning(msg);
-                    nerrors++;
-                }
-				catch(SQLException ex)
-				{
-					String msg = "SQL Error saving value for " + idString
-						+ " value='" + tv.getStringValue() 
-						+ "', date='" + timestr + "': " + ex;
-					Logger.instance().warning(msg);
-					nerrors++;
-				}
-			}
-		}
-
-		try { cstmt.close(); } catch(Exception ignore) {}
-Logger.instance().debug1("Saved " + nsaved + " samples.");
 	}
 
 	/**
@@ -831,23 +829,24 @@ Logger.instance().debug1("Saved " + nsaved + " samples.");
 	{
 		String idstr = "SDI=" + ts.getSDI() + ", intv=" + ts.getInterval();
 		String q =  "{ call delete_from_hdb(?,?,?,?,?,?)}";
-		oracle.jdbc.OracleCallableStatement cstmt = null;
+
 		GregorianCalendar gc = new GregorianCalendar(
 			TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
-		try
+		try (Connection c = getConnection();
+			 oracle.jdbc.OracleCallableStatement cstmt =
+			 	(OracleCallableStatement)c.unwrap(oracle.jdbc.OracleConnection.class).prepareCall(q);
+			)
 		{
-			cstmt = (OracleCallableStatement)getConnection().prepareCall(q);
-
 			cstmt.setLong(1, ts.getSDI().getValue());
-			cstmt.setString(4, ts.getInterval()); 
+			cstmt.setString(4, ts.getInterval());
 			cstmt.setLong(5, db.getAppId().getValue());
 
 			String tabsel = ts.getTableSelector();
 			long modelRunId = tabsel.equalsIgnoreCase("M_") ? ts.getModelRunId() : 0L;
 			cstmt.setLong(6, modelRunId);
 
-info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterval()
-+ ", 5(appId)=" + db.getAppId() + ", 6(modelRunId)=" + modelRunId);
+			info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterval()
+				+ ", 5(appId)=" + db.getAppId() + ", 6(modelRunId)=" + modelRunId);
 			for(int i=0; i<ts.size(); i++)
 			{
 				TimedVariable tv = ts.sampleAt(i);
@@ -886,11 +885,11 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 							+ " at start=" + db.getLogDateFormat().format(startTime)
 							+ " end=" + db.getLogDateFormat().format(endTime));
 						HdbTimeSeriesDb hdb = (HdbTimeSeriesDb)db;
-						oracle.sql.DATE startd = 
+						oracle.sql.DATE startd =
 							((HdbOracleDateParser)hdb.getOracleDateParser()).toDATE(startTime);
-						oracle.sql.DATE endd = 
+						oracle.sql.DATE endd =
 							((HdbOracleDateParser)hdb.getOracleDateParser()).toDATE(endTime);
-						
+
 //						StringBuilder sb = new StringBuilder();
 //						for(byte b : startd.getBytes())
 //							sb.append(" " + (int)b);
@@ -899,7 +898,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 //						for(byte b : endd.getBytes())
 //							sb.append(" " + (int)b);
 //						debug3("In callable statement,   end bytes =" + sb.toString());
-						
+
 						cstmt.setDATE(2, startd);
 						cstmt.setDATE(3, endd);
 						cstmt.execute();
@@ -916,17 +915,11 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Cannot prepare statement '" + q + "' " 
+			String msg = "Cannot prepare statement '" + q + "' "
 				+ "for " + idstr;
 			Logger.instance().warning(msg);
 			throw new BadTimeSeriesException(msg);
 		}
-		finally
-		{
-			if (cstmt != null)
-				try { cstmt.close(); } catch(Exception ignore) {}
-		}
-
 	}
 
 	@Override
@@ -947,7 +940,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		{
 			alarmDAO.close();
 		}
-	
+
 		int n = fillTimeSeries(ts, from, until, true, true, true);
 		if (n == 0)
 			return;
@@ -960,10 +953,10 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			if (d.compareTo(from) >= 0 && d.compareTo(until) <= 0)
 				VarFlags.setToDelete(tv);
 		}
-		
+
 		doDelete(ts);
 	}
-	
+
 	@Override
 	public void deleteTimeSeries(TimeSeriesIdentifier tsid)
 		throws DbIoException
@@ -982,7 +975,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		{
 			alarmDAO.close();
 		}
-		
+
 		try
 		{
 			deleteTimeSeriesRange(makeTimeSeries(tsid), new Date(0L), new Date());
@@ -991,7 +984,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		}
 		catch(Exception ex)
 		{
-			String msg = "Cannot delete time series '" 
+			String msg = "Cannot delete time series '"
 				+ tsid.getUniqueString() + ": " + ex;
 			warning(msg);
 		}
@@ -1002,7 +995,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		throws DbIoException, NoSuchObjectException
 	{
 		DbKey sdi = ((HdbTsId)tsid).getSdi();
-		CTimeSeries ret = new CTimeSeries(sdi, tsid.getInterval(), 
+		CTimeSeries ret = new CTimeSeries(sdi, tsid.getInterval(),
 			tsid.getTableSelector());
 		ret.setTimeSeriesIdentifier(tsid);
 		ret.setDisplayName(tsid.getDisplayName());
@@ -1038,13 +1031,13 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		// MJM 20161025 don't reload more if already done within threshold.
 		if (System.currentTimeMillis() - lastCacheRefresh > cacheReloadMS)
 			reloadTsIdCache();
-		
+
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
 		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
 			ret.add(tsidit.next());
 		return ret;
 	}
-	
+
 	@Override
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries(boolean forceRefresh)
 		throws DbIoException
@@ -1064,13 +1057,13 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			siteDAO.fillCache();
 
 		String q = tsidQuery + tsidJoinClause;
-			
+
 		// MJM 2016/1/8 Added this block of code to minimize reloading the entire cache.
 		boolean doFullLoad = System.currentTimeMillis() - lastCacheLoad > CACHE_RELOAD_INTERVAL;
 		debug3("reloadTsIdCache doFullLoad=" + doFullLoad + ", lastCacheLoad=" + new Date(lastCacheLoad)
 			+ ", lastCacheRefresh=" + new Date(lastCacheRefresh));
 		if (!doFullLoad)
-			q = q + " and a.date_time_loaded > " 
+			q = q + " and a.date_time_loaded > "
 				  + db.sqlDate(new Date(lastCacheRefresh-CACHE_REFRESH_OVERLAP));
 		lastCacheRefresh = System.currentTimeMillis();
 		if (doFullLoad)
@@ -1107,12 +1100,12 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException
 	{
 		tsid.checkValid();
-		
+
 		HdbTsId hdbTsId = (HdbTsId)tsid;
 		HdbTimeSeriesDb hdbDb = (HdbTimeSeriesDb)db;
-		
+
 		debug3("createTimeSeries '" + tsid.getUniqueString() + "'");
-		
+
 		// If this is a new SDI add an entry to HDB_SITE_DATATYPE.
 		DbKey sdi = hdbTsId.getSdi();
 		if (sdi == Constants.undefinedId)
@@ -1124,7 +1117,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			DataType dt = tsid.getDataType();
 			if (dt == null)
 				throw new NoSuchObjectException("Cannot create Time Series: no data type!");
-			
+
 			sdi = hdbDb.lookupSDI(siteId, dt.getCode());
 			if (DbKey.isNull(sdi))
 			{
@@ -1134,7 +1127,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 				try { doModify(q); }
 				catch(Exception ex)
 				{
-					throw new BadTimeSeriesException("Cannot create time series for " 
+					throw new BadTimeSeriesException("Cannot create time series for "
 						+ tsid.getUniqueString());
 				}
 				sdi = hdbDb.lookupSDI(siteId, dt.getCode());
@@ -1166,17 +1159,17 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 		{
 			throw new DbIoException("Error in '" + q + "': " + ex);
 		}
-		
+
 		// No such entry yet in CP_TS_ID, create one.
 		// TS_ID and DATE_TIME_LOADED will be provided by the trigger.
 		q = "insert into cp_ts_id values(0, " + sdi + ", "
-			+ sqlString(tsid.getInterval().toLowerCase()) + ", " 
+			+ sqlString(tsid.getInterval().toLowerCase()) + ", "
 			+ sqlString(tsid.getTableSelector()) + ", "
 			+ hdbTsId.modelId + ", null)";
 		doModify(q);
 		return lookupTsIdKey(hdbTsId);
 	}
-	
+
 	@Override
 	public void setAppModule(String module)
 	{
@@ -1189,8 +1182,8 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 	{
 		// Not implemented for HDB
 	}
-	
-	
+
+
 	@Override
 	public DataCollection getNewData(DbKey applicationId)
 		throws DbIoException
@@ -1201,7 +1194,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			lastTsidCacheRead = System.currentTimeMillis();
 			reloadTsIdCache();
 		}
-		
+
 		String q = "";
 		String attrList = "RECORD_NUM, SITE_DATATYPE_ID, INTERVAL, "
 			+ "TABLE_SELECTOR, VALUE, START_DATE_TIME, DELETE_FLAG, "
@@ -1254,26 +1247,26 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 					flags |= VarFlags.DB_ADDED;
 				else
 					flags |= VarFlags.DB_DELETED;
-				
-				
+
+
 				tasklistRecs.add(
 					new TasklistRec(recordNum, sdi, value,
 						timeStamp, deleted,
 						flags, interval, tabsel, modelRunId));
 			}
-			
+
 			if (tasklistRecs.size() == 0)
 			{
 				// MJM 6.4 RC08 this means tasklist is likely empty.
 				((TimeSeriesDb)db).reclaimTasklistSpace(this);
 			}
-			
+
 			ArrayList<Integer> badRecs = new ArrayList<Integer>();
 			for(TasklistRec rec : tasklistRecs)
 			{
 				// Find time series if already in data collection.
 				// If not construct one and add it.
-				CTimeSeries cts = getTimeSeriesFor(dataCollection, 
+				CTimeSeries cts = getTimeSeriesFor(dataCollection,
 					rec.getSdi(), rec.getInterval(), rec.getTableSelector(),
 					rec.getModelRunId(), applicationId);
 				if (cts == null)
@@ -1281,7 +1274,7 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 					badRecs.add(rec.getRecordNum());
 					continue;
 				}
-				
+
 				// Keep track of record number range seen.
 				rrhandle.addRecNum(rec.getRecordNum());
 
@@ -1289,15 +1282,15 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 				TimedVariable tv = new TimedVariable(rec.getValue());
 				tv.setTime(rec.getTimeStamp());
 				tv.setFlags(rec.getFlags());
-				
+
 				cts.addSample(tv);
-				
+
 				// Remember which tasklist records are in this timeseries.
 				cts.addTaskListRecNum(rec.getRecordNum());
 			}
-			
+
 			dataCollection.setTasklistHandle(rrhandle);
-			
+
 			// Delete the bad tasklist recs, 250 at a time.
 			while (badRecs.size() > 0)
 			{
@@ -1337,13 +1330,13 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 	 * @param interval the interval code
 	 * @param tabsel the table selector
 	 * @param modelRunId the model run id.
-	 * @throws NoSuchObjectException 
+	 * @throws NoSuchObjectException
 	 */
 	private CTimeSeries getTimeSeriesFor(DataCollection dataCollection,
 		DbKey sdi, String interval, String tabsel, int modelRunId, DbKey appId)
 		throws DbIoException
 	{
-		CTimeSeries cts = 
+		CTimeSeries cts =
 			dataCollection.getTimeSeries(sdi, interval, tabsel, modelRunId);
 
 		if (cts == null)
@@ -1431,5 +1424,5 @@ info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterv
 			throw new DbIoException("Error in '" + q + "': " + ex);
 		}
 	}
-	
+
 }

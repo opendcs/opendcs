@@ -82,7 +82,6 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import org.opendcs.authentication.AuthSourceService;
-import org.opendcs.spi.authentication.AuthSource;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
@@ -1057,7 +1056,7 @@ public class SqlDatabaseIO
 
 	/**
  	* Writes the DataTypeSet to the SQL database.
-	* @param dts the object to write to the database.
+	* @param dt the object to write to the database.
  	*/
 	public void writeDataType( DataType dt )
 		throws DatabaseException
