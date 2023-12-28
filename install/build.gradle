@@ -72,7 +72,7 @@ izPackCreateInstaller.dependsOn stage
 izpack {
     
     appProperties = ['version': version]
-    outputFile = file("$buildDir/distributions/opendcs-ot-${version}.jar")
+    outputFile = file("$buildDir/distributions/opendcs-install-${version}.jar")
 }
 
 build.finalizedBy izPackCreateInstaller
