@@ -36,6 +36,7 @@ dependencies {
     implementation "com.jcraft:jsch:0.1.55"
     implementation "org.aspectj:aspectjrt:1.8.10"
     implementation "org.json:json:20200518"
+    implementation "io.javalin:javalin:4.6.8"
 
     implementation( "mil.army.usace.hec:cwms-db-jooq:9.3.5") {
            exclude group: "org.jooq.pro", module: "jooq-meta"
