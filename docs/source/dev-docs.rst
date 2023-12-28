@@ -415,3 +415,26 @@ lrgs.sh handles first time setup, copy default config, initial admin user, and s
 
 The lrgs.lock file is currently ignored and docker just kills the process. Currently investigating better ways to 
 handle shutdown. Will likely just add a flag to remove the lock file entirely.
+
+
+Database Scripts
+================
+
+OpenDCS is transitioning to using Flyway to manage database schema installation and upgrades.
+See https://flywaydb.org for detail on the specifics. The following assumes you have read 
+at least some of the documentation.
+
+The following guidance *MUST* be observed:
+
+- DO NOT ALTER a released versioned migration file. For example `src/main/resource/db/opendcs-pg/schema/V6.8__opendcs.sql` is final
+- For each implementation the structure should be as follows:
+  - `src/main/resource/db/<implementation>/callbacks` for the before/after migration handlers
+  - `src/main/resource/db/<implementation>/schema` for the actual versioned migrations
+  - `src/main/resource/db/<implementation>/triggers` for any triggers
+  - and so on. A given implementation may also provide baseline/bootstrap data
+  - Java Migrations, if any, should followed the same structure but within the `src/main/java` folder.
+- Each new change should be add to a new migration file that includes the next version number (listed in `rcnum.txt`).
+  - At the time of writing that would mean V7.0.12, the next would be V7.0.13
+
+While the actual versioned migrations *MUST* stay the same, the other organization is not final; please open a pull-request
+if you think you have a superior organization for these data.
