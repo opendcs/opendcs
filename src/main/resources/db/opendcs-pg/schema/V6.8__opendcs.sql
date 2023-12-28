@@ -309,7 +309,6 @@ CREATE TABLE DATATYPEEQUIVALENCE
 	PRIMARY KEY (ID0, ID1)
 ) WITHOUT OIDS;
 
-
 CREATE TABLE DECODESDATABASEVERSION
 (
 	-- Should be only one record representing the highest numbered version.
@@ -2243,6 +2242,15 @@ CREATE SEQUENCE TS_SPECIdSeq;
 
 CREATE SEQUENCE CP_DEPENDS_NOTIFYIdSeq;
 
+create table dcp_trans_day_map
+(
+	table_suffix varchar(4) not null unique,
+	-- day 0 = jan 1, 1970. null means this suffix not used.
+	day_number int,
+	primary key (table_suffix)
+) without oids;
+
+COMMENT ON COLUMN DCP_TRANS_DAY_MAP.DAY_NUMBER IS 'Day 0 = Jan 1, 1970. Null means this suffix not used.';
 
 do $$
 declare
@@ -2289,8 +2297,6 @@ begin
 			PRIMARY KEY (RECORD_ID)
 		) WITHOUT OIDS';
 
-
-
 		/* Create Foreign Keys */
 		execute 'ALTER TABLE DCP_TRANS_DATA_' || suffix ||
 			' ADD FOREIGN KEY (RECORD_ID)
@@ -2298,7 +2304,9 @@ begin
 			ON UPDATE RESTRICT
 			ON DELETE RESTRICT';
 
+		execute 'CREATE SEQUENCE DCP_TRANS_' || suffix || 'IDSEQ';
 
+		insert into dcp_trans_day_map(table_suffix,day_number) values(suffix, null);
 
 		/* Create Indexes */
 
@@ -2308,9 +2316,7 @@ begin
 		execute 'CREATE INDEX DCP_TRANS_CHAN_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (CHANNEL)';
 		execute 'CREATE INDEX DCP_TRANS_MEDIUM_TYPE_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE)';
 
-
-
-			/* Comments */
+		/* Comments */
 
 		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MEDIUM_TYPE IS '' G = GOES, L = Data Logger, I = Iridium. ' ||
 				'This field determines how the header should be parsed.''';
