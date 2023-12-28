@@ -17,7 +17,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4.0.0
         with:
-          java-version: '8'
+          java-version: '11'
           distribution: temurin
       - uses: actions/setup-python@v4.0.0
         with:
@@ -29,60 +29,8 @@ jobs:
           restore-keys: ${{ matrix.platform }}-ivy
       - name: units tests
         run: |
-          ant test -D"no.docs=true"
-      - name: integration tests
-        # There is an odd issues with the log file name on the windows runner.
-        # It does work locally though. Will work on it later.
-        # Integration tests require docker now for test containers.
-        # More work required to deal with the other platforms. Should be workable
-        # at some point though.
+          ./gradlew test --info      
+      - name: create installer
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ant integration-test -D"no.docs=true" -D"opendcs.test.engine=OpenDCS-XML"
-          ant integration-test -D"no.docs=true" -D"opendcs.test.engine=OpenDCS-Postgres"
-      - name: Gui Tests
-        if: matrix.platform == 'ubuntu-latest'
-        # we need time kill Xvfb and let ffmpeg write out the video file
-        shell: bash {0}
-        run: |
-          sudo apt update -y && sudo apt upgrade -y
-          sudo apt install xvfb ffmpeg
-          # Precompile the test code so the recording isn't as long.
-          ant compile-test-gui -D"no.docs=true"
-          export DISPLAY=:99.0
-          Xvfb $DISPLAY -screen 0 1920x1080x24 &
-          ffmpeg -nostdin -y -f x11grab -video_size 1920x1080 -i "$DISPLAY" build/test-gui.webm &
-          ant gui-test -D"no.docs=true"
-          exit_val=$?
-          pkill Xvfb
-          sleep 1
-          exit $exit_val
-      - name: Code Coverage
-        run: |
-          ant coverage.report
-      - name: Documentation and Create installer jar
-        run: |
-          ant opendcs
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4.0.0
-        if: success() || failure()
-        with:
-          name: test-results-${{matrix.platform}}
-          path: |
-            build/reports/**
-            build/test-integration/**/tmp/configs**
-            build/test-gui.webm
-#docker-images:
-#  runs-on: ubuntu-latest
-#  steps:
-#   - uses: actions/checkout@v2
-#   - name: Set up JDK
-#     uses: actions/setup-java@v2
-#     with:
-#       java-version: '8'
-#       distribution: adopt
-#   - name: Set up Docker Buildx
-#     uses: docker/setup-buildx-action@v2
-#   - name: build images
-#     run: |
-#       docker build --target lrgs -t lrgs:latest-dev .
+          ./gradlew izpack --info
