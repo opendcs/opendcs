@@ -524,13 +524,16 @@ The following guidance *MUST* be observed:
 
 - DO NOT ALTER a released versioned migration file. For example `src/main/resource/db/opendcs-pg/schema/V6.8__opendcs.sql` is final
 - For each implementation the structure should be as follows:
+  
   - `src/main/resource/db/<implementation>/callbacks` for the before/after migration handlers
   - `src/main/resource/db/<implementation>/schema` for the actual versioned migrations
   - `src/main/resource/db/<implementation>/triggers` for any triggers
   - and so on. A given implementation may also provide baseline/bootstrap data
   - Java Migrations, if any, should followed the same structure but within the `src/main/java` folder.
 - Each new change should be add to a new migration file that includes the next version number (listed in `rcnum.txt`).
+  
   - At the time of writing that would mean V7.0.12, the next would be V7.0.13
+
 - If we end up with a large number of migration and only looking at changes becomes confusing we can create a baseline migration
   that gathers up all previous changes.
 

@@ -472,7 +472,7 @@ beginning of the line.
 | Property     | Value Type   | Default      | Description  | Can    |
 | Name         |              |              |              |        |
 |              |              |              |              | Modify |
-+--------------+--------------+--------------+--------------+--------+
++==============+==============+==============+==============+========+
 | acce\        | true/false   | false        | Normally, an | Yes    |
 | ptDomsatARMs |              |              | LRGS does    |        |
 |              |              |              | its own      |        |
@@ -1503,6 +1503,7 @@ is shown below:
 
 .. code-block:: xml
 
+<<<<<<< HEAD:docs/source/legacy-lrgs-userguide.rst
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <drgsconf>
         <validate enable="true"
@@ -1531,6 +1532,34 @@ is shown below:
     </drgsconf>
 
 
+=======
+   <?xml version="1.0"?>
+   <drgsconf>
+      <validate enable="true"
+         pdturl="http://dcs.noaa.gov/ftp_daily/pdts_compressed.txt"
+         cdturl="http://dcs.noaa.gov/ftp_daily/chans_by_baud.txt"/>
+      <connection number="0" host="drgs-e.mydomain.gov">
+         <name>EAST-DRGS</name>
+         <enabled>true</enabled>
+         <msgport>17010</msgport>
+         <evtport>17011</evtport>
+         <evtenabled>false</evtenabled>
+         <startpattern>534D0D0A</startpattern>
+         <cfgfile>$LRGSHOME/EAST-DRGS.cfg</cfgfile>
+         <sourceCode>DE</sourceCode>
+      </connection>
+      <connection number="1" host="drgs-w.mydomain.gov">
+         <name>WEST-DRGS</name>
+         <enabled>false</enabled>
+         <msgport>17010</msgport>
+         <evtport>17011</evtport>
+         <evtenabled>false</evtenabled>
+         <startpattern>534D0D0A</startpattern>
+         <cfgfile>$LRGSHOME/WEST-DRGS.cfg</cfgfile>
+         <sourceCode>DW</sourceCode>
+      </connection>
+   </drgsconf>
+>>>>>>> 9f7b4f31 (Correct Formatting errors in the documentation.):docs/source/lrgs-userguide.rst
 
 Figure 5‑10: DRGS Configuration File Example.
 
@@ -2185,12 +2214,13 @@ These values can also be set on the "Misc" tab of of the RtStat configuration di
 
 The following paths are provided:
 
-+-------+--------------------------------------------------------------+
-| path  | purpose                                                      |
-+-------+--------------------------------------------------------------+
-|/health|Returns "200 OK" if the Lrgs thinks it's in a usable state.   |
-|/status|Returns the default Lrgs Status page, same as lrgsstatus.html.|
-+-------+--------------------------------------------------------------+
++---------+---------------------------------------------------------------+
+|Path     | Purpose                                                       |
++=========+===============================================================+
+|/health  |Returns "200 OK" if the Lrgs thinks it's in a usable state.    |
++---------+---------------------------------------------------------------+
+|/status  |Returns the default Lrgs Status page, same as lrgsstatus.html. |
++---------+---------------------------------------------------------------+
 
 Future work will include authentication, authorization, and other DDS operations
 once that protocol is designed.
