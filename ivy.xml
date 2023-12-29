@@ -79,6 +79,10 @@
         <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-core" rev="1.1.0"/>
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.7.36"/>
         <dependency org="io.javalin" name="javalin" rev="4.6.8" />
+        <dependency org="org.jdbi" name="jdbi3-core" rev="3.38.2"/>
+        <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="3.38.2"/>
+        <dependency org="org.jdbi" name="jdbi3-postgres" rev="3.38.2"/>
+        <dependency org="org.flywaydb" name="flyway-core" rev="9.8.1"/>
 
 
         <!-- test dependencies -->
