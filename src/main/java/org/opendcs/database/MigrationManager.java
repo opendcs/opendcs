@@ -3,16 +3,17 @@ package org.opendcs.database;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceLoader;
 
 import javax.sql.DataSource;
 
-import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.jdbi.v3.core.Jdbi;
+import org.opendcs.spi.database.MigrationProvider;
 
 /**
  * Utility class to handle schema installation and updates in various situations.
@@ -26,59 +27,24 @@ import org.jdbi.v3.core.Jdbi;
  */
 public final class MigrationManager
 {
-    private DataSource ds;
-    private Jdbi jdbi;
-    private FluentConfiguration flywayConfig;
+    private final DataSource ds;
+    private final Jdbi jdbi;
+    private final FluentConfiguration flywayConfig;
     private final String implementation;
+    private final MigrationProvider migrationProvider;
 
-    /**
-     * these much match on every instance. The values can be set but the
-     * quantity in the database takes priority so file checksums will match.
-     *
-     * They are required for the first run. NOTE ignored for any implementation
-     * that doesn't use them; they are set as a flyway placeholder.
-     */
-    private int numText = -1;
-    private int numNumeric = -1;
-
-    public MigrationManager(DataSource ds, String implementation)
+    public MigrationManager(DataSource ds, String implementation) throws NoMigrationProvider
     {
         this.ds = ds;
         this.implementation = implementation;
+        this.migrationProvider = getProviderFor(implementation);
         this.jdbi = Jdbi.create(ds);
+        migrationProvider.registerJdbiPlugins(jdbi);
         flywayConfig = Flyway.configure()
                              .dataSource(ds)
                              .schemas("public")
                              .locations("db/"+implementation)
                              .validateMigrationNaming(true);
-    }
-
-    /**
-     * Retrieve the current number of numeric tables that was set for this database
-     * @return
-     */
-    public int getNumberOfNumericTables()
-    {
-        return numText;
-    }
-
-    public void setNumberOfNumericTable(int numText)
-    {
-        this.numText = numText;
-    }
-
-    /**
-     * Retrieve the current number of text tables that was set for this database.
-     *
-     */
-    public int getNumberOfTextTables()
-    {
-        return numNumeric;
-    }
-
-    public void setNumberOfTextTables(int numText)
-    {
-        this.numText = numText;
     }
 
     /**
@@ -90,12 +56,18 @@ public final class MigrationManager
         return DatabaseVersion.NOT_INSTALLED;
     }
 
+    /**
+     * Retrieve the migration provider so that appropriate values can be set.
+     * @return
+     */
+    public MigrationProvider getMigrationProvider()
+    {
+        return migrationProvider;
+    }
+
     public void migrate()
     {
-        Map<String,String> placeHolders = new HashMap<>();
-        placeHolders.put("NUM_TS_TABLES",Integer.toString(getNumberOfNumericTables()));
-        placeHolders.put("NUM_TEXT_TABLES",Integer.toString(getNumberOfNumericTables()));
-        flywayConfig.placeholders(placeHolders)
+        flywayConfig.placeholders(migrationProvider.getPlaceholderValues())
                     .load()
                     .migrate();
     }
@@ -140,5 +112,21 @@ public final class MigrationManager
     public final Jdbi getJdbiHandle()
     {
         return jdbi;
+    }
+
+    public static MigrationProvider getProviderFor(String implementation) throws NoMigrationProvider
+    {
+        Objects.requireNonNull(implementation, "An implementation name MUST be provided.");
+        ServiceLoader<MigrationProvider> loader = ServiceLoader.load(MigrationProvider.class);
+        Iterator<MigrationProvider> providers = loader.iterator();
+        while(providers.hasNext())
+        {
+            MigrationProvider provider = providers.next();
+            if (provider.getName().equals(implementation))
+            {
+                return provider;
+            }
+        }
+        throw new NoMigrationProvider("No migration provider was found for this implementation.");
     }
 }
