@@ -5,11 +5,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -20,13 +15,13 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 import org.apache.commons.io.FileUtils;
-import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import decodes.db.Database;
@@ -114,16 +109,15 @@ public class OpenDCSPGConfiguration implements Configuration
 
         db.start();
         createPropertiesFile(configBuilder, this.propertiesFile);
-        HashMap<String,String> placeHolders = new HashMap<>();
-        placeHolders.put("NUM_TS_TABLES","1");
-        placeHolders.put("NUM_TEXT_TABLES","1");
+
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());
 
         MigrationManager mm = new MigrationManager(ds,"opendcs-pg");
-        mm.setNumberOfNumericTable(1);
-        mm.setNumberOfTextTables(1);
+        MigrationProvider mp = mm.getMigrationProvider();
+        mp.setPlaceholderValue("NUM_TS_TABLES", "1");
+        mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
         mm.migrate();
-        Jdbi jdbi = mm.getJdbiHandle(); //Jdbi.create(db.getJdbcUrl(),db.getUsername(),db.getPassword());
+        Jdbi jdbi = mm.getJdbiHandle();
         jdbi.useHandle(h -> {
             log.info("Creating application user.");
             h.execute("DO $do$ begin create user dcs_proc with password 'dcs_proc'; exception when duplicate_object then raise notice 'user exists'; end; $do$");
