@@ -435,6 +435,8 @@ The following guidance *MUST* be observed:
   - Java Migrations, if any, should followed the same structure but within the `src/main/java` folder.
 - Each new change should be add to a new migration file that includes the next version number (listed in `rcnum.txt`).
   - At the time of writing that would mean V7.0.12, the next would be V7.0.13
+- If we end up with a large number of migration and only looking at changes becomes confusing we can create a baseline migration
+  that gathers up all previous changes.
 
 While the actual versioned migrations *MUST* stay the same, the other organization is not final; please open a pull-request
 if you think you have a superior organization for these data.
