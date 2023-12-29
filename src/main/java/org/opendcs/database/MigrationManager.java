@@ -40,6 +40,7 @@ public final class MigrationManager
         this.migrationProvider = getProviderFor(implementation);
         this.jdbi = Jdbi.create(ds);
         migrationProvider.registerJdbiPlugins(jdbi);
+        migrationProvider.determineCurrentPlaceHolders(jdbi);
         flywayConfig = Flyway.configure()
                              .dataSource(ds)
                              .schemas("public")
