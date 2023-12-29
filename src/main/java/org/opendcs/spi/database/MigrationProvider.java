@@ -44,6 +44,17 @@ public interface MigrationProvider
     {
     }
 
+    /**
+     * For those implementations that require placeholders, retrieve them
+     * and set the values.
+     *
+     * A JDBI handle is provided and can use to query database information.
+     * @param jdbi
+     */
+    default public void determineCurrentPlaceHolders(Jdbi jdbi)
+    {
+    }
+
     public static class MigrationProperty
     {
         public final String name;
