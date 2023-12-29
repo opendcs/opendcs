@@ -38,6 +38,9 @@ public interface MigrationProvider
      * If this database implementation uses specific Jdbi plugins
      * and the migration code needs them override this function
      * to include them.
+     *
+     * An implementation may save this instance for usage in
+     * updating information.
      * @param jdbi an already prepared Jdbi instance.
      */
     default public void registerJdbiPlugins(Jdbi jdbi)

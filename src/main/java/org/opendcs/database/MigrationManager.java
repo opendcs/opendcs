@@ -37,10 +37,8 @@ public final class MigrationManager
     {
         this.ds = ds;
         this.implementation = implementation;
-        this.migrationProvider = getProviderFor(implementation);
         this.jdbi = Jdbi.create(ds);
-        migrationProvider.registerJdbiPlugins(jdbi);
-        migrationProvider.determineCurrentPlaceHolders(jdbi);
+        this.migrationProvider = getProviderFor(implementation,jdbi);
         flywayConfig = Flyway.configure()
                              .dataSource(ds)
                              .schemas("public")
@@ -115,7 +113,7 @@ public final class MigrationManager
         return jdbi;
     }
 
-    public static MigrationProvider getProviderFor(String implementation) throws NoMigrationProvider
+    public static MigrationProvider getProviderFor(String implementation, Jdbi jdbi) throws NoMigrationProvider
     {
         Objects.requireNonNull(implementation, "An implementation name MUST be provided.");
         ServiceLoader<MigrationProvider> loader = ServiceLoader.load(MigrationProvider.class);
@@ -125,6 +123,8 @@ public final class MigrationManager
             MigrationProvider provider = providers.next();
             if (provider.getName().equals(implementation))
             {
+                provider.registerJdbiPlugins(jdbi);
+                provider.determineCurrentPlaceHolders(jdbi);
                 return provider;
             }
         }
