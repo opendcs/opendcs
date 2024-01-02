@@ -2215,7 +2215,7 @@ These values can also be set on the "Misc" tab of of the RtStat configuration di
 The following paths are provided:
 
 +---------+---------------------------------------------------------------+
-|Path     | Purpose                                                       |
+|Path     |Purpose                                                        |
 +=========+===============================================================+
 |/health  |Returns "200 OK" if the Lrgs thinks it's in a usable state.    |
 +---------+---------------------------------------------------------------+
