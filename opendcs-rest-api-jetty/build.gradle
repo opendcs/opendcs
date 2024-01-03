@@ -1,5 +1,3 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
 plugins {
     id "opendcs-rest-api.java-conventions"
     id "opendcs-rest-api.deps-conventions"
@@ -46,15 +44,19 @@ task startJetty(type: JavaExec) { ->
             "-s")
 }
 
-task prepareStartScript(type: Copy) {
-    from './bin/start.sh'
-    into "${buildDir}/odcsapi-jetty-standalone/bin/"
-    filter(ReplaceTokens, tokens: ['jarName': jar.archiveFileName.get()])
+task createStartScript() {
+    doLast {
+        new File("${buildDir}/bin", "start.sh").text = """
+#!/bin/bash
+cd `dirname \$0`/..
+java \$JAVA_OPTS -jar libs/${project.name}-${project.version}.jar \$JAVA_ARGS
+            """
+    }
 }
 
 task bundle(type: Tar) {
     dependsOn jar
-    dependsOn prepareStartScript
+    dependsOn createStartScript
     archiveExtension = 'tar.gz'
 
     into('libs') {
@@ -64,6 +66,6 @@ task bundle(type: Tar) {
         from jar
     }
     into('bin') {
-        from "${buildDir}/odcsapi-jetty-standalone/bin/start.sh"
+        from "${project.buildDir}/bin/start.sh"
     }
 }

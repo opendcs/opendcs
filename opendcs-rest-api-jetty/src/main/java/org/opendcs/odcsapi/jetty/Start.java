@@ -33,11 +33,9 @@ import java.util.logging.SimpleFormatter;
 
 import javax.servlet.DispatcherType;
 
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -107,7 +105,8 @@ public class Start
 		appLogger.info("================ Starting ===============");
 
 		// Initialize the JETTY server and servlet holders.
-		Server server = new Server();
+		org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
+		//Server server = new Server();
 		ServletContextHandler ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		ctx.setContextPath("/");
 		server.setHandler(ctx);
@@ -157,8 +156,8 @@ public class Start
 				}
 			}
 		}
-		
-		ServletHolder serHol = ctx.addServlet(ServletContainer.class, 
+
+		ServletHolder serHol = ctx.addServlet(ServletContainer.class,
 			"/" + apiCmdLineArgs.getContext() + "/*");
 		serHol.setInitOrder(1);
 		serHol.setInitParameter("jersey.config.server.provider.packages", 
@@ -224,7 +223,7 @@ public class Start
 		ctx.addServlet(new ServletHolder(new DefaultServlet()), "/*");
 		ServerConnector connector = new ServerConnector(server);
 		
-		ArrayList<Connector> connectors = new ArrayList<Connector>();
+		ArrayList<ServerConnector> connectors = new ArrayList<ServerConnector>();
 		if (apiCmdLineArgs.getHttpPort() >= 0)
 		{
 			connector.setPort(apiCmdLineArgs.getHttpPort());
@@ -246,20 +245,10 @@ public class Start
 			connectors.add(sslConnector);
 		}
 		
-		server.setConnectors(connectors.toArray(new Connector[connectors.size()]));
+		server.setConnectors(connectors.toArray(new ServerConnector[connectors.size()]));
 		
 		/******* Controlling Headers ******************/
-	/*
-        System.out.println("Removing server header.");
-        for(Connector y : server.getConnectors()) {
-            for(ConnectionFactory x  : y.getConnectionFactories()) {
-                if(x instanceof HttpConnectionFactory) {
-                    //Removes Server Header from each connector
-                    ((HttpConnectionFactory)x).getHttpConfiguration().setSendServerVersion(false);
-                }
-            }
-        }
-	*/	
+
 		// Start the server.
 		server.start();
 		server.join();
