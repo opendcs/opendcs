@@ -46,7 +46,14 @@ task startJetty(type: JavaExec) { ->
 
 task createStartScript() {
     doLast {
-        new File("${buildDir}/bin", "start.sh").text = """
+
+        //Make bin directory if it does not exist already.  buildDir is now deprecated.
+        File buildDir = project.layout.getBuildDirectory().get().getAsFile();
+        File binDir = new File(buildDir.toString(), "bin");
+        project.mkdir(binDir);
+
+        //Make the start.sh file.
+        new File(binDir, "start.sh").text = """
 #!/bin/bash
 cd `dirname \$0`/..
 java \$JAVA_OPTS -jar libs/${project.name}-${project.version}.jar \$JAVA_ARGS
@@ -66,6 +73,7 @@ task bundle(type: Tar) {
         from jar
     }
     into('bin') {
-        from "${project.buildDir}/bin/start.sh"
+        //from "${project.buildDir}/bin/start.sh"
+        from new File(project.layout.getBuildDirectory().get().getAsFile(), "bin/start.sh");
     }
 }

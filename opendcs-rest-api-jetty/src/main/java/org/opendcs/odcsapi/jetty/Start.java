@@ -61,8 +61,7 @@ import io.swagger.v3.jaxrs2.integration.OpenApiServlet;
 public class Start
 {
 	private static ApiCmdLineArgs apiCmdLineArgs = new ApiCmdLineArgs();
-	
-	
+
 	public static void main(String[] args) 
 		throws Exception
 	{
@@ -106,7 +105,6 @@ public class Start
 
 		// Initialize the JETTY server and servlet holders.
 		org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
-		//Server server = new Server();
 		ServletContextHandler ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		ctx.setContextPath("/");
 		server.setHandler(ctx);
@@ -191,7 +189,10 @@ public class Start
 		ds.setURL(dbUrl);
 		String afn = ApiEnvExpander.expand(dbAuthFile);
 		AuthFileReader afr = new AuthFileReader(afn);
-		try { afr.read(); }
+		try
+		{
+			afr.read();
+		}
 		catch(Exception ex)
 		{
 			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, ex);
