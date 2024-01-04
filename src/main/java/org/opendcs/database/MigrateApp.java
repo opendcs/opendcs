@@ -5,25 +5,31 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.TTYEcho;
 
 import javax.sql.DataSource;
 
+import org.flywaydb.core.api.MigrationInfo;
 import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.spi.database.MigrationProvider.MigrationProperty;
 
-import java.io.BufferedReader;
 import java.io.Console;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * Simple Terminal application to prompt user for required information
+ * and install/update the schema.
+ *
+ * For simplicity and modernization this app forgoes previously implemented
+ * helpers, such as extending from TsdbAppTemplate that would hinder it's
+ * intended operation.
+ */
 public class MigrateApp
-{    
+{
 
     public static void main(String args[]) throws Exception
     {
@@ -39,7 +45,8 @@ public class MigrateApp
         Console console = System.console();
         DataSource ds = getDataSourceFromProfileAndUserInfo(profile,console);
         MigrationManager mm = new MigrationManager(ds, impl);
-        if (mm.getVersion() == MigrationManager.DatabaseVersion.NOT_INSTALLED)
+        MigrationInfo[] applied = mm.currentVersion();
+        if (applied.length == 0)
         {
             console.writer().println("Installing fresh database");
             final MigrationProvider mp = mm.getMigrationProvider();
@@ -55,6 +62,44 @@ public class MigrateApp
             }
             mm.migrate();
         }
+        else
+        {
+            console.printf("Applying migrations to existing database. Current version is:");
+            for (int i = applied.length -1; i >= 0; i--)
+            {
+                if (applied[i].isVersioned())
+                {
+                    console.writer().println(applied[i].getVersion());
+                    break; // exit the loop, we're done.
+                }
+            }
+
+            MigrationInfo[] pending = mm.pendingUpdates();
+            console.writer().println("The following migrations will be performed (only versioned migrations listed):");
+            if (pending.length > 0 )
+            {
+                for (MigrationInfo mi: pending)
+                {
+                    console.printf("%s - %s%s", mi.getVersion(), mi.getDescription(), System.lineSeparator());
+                }
+                console.writer().println();
+                String doMigration = console.readLine("Proceed? (y/N)");
+                if (doMigration.toLowerCase().startsWith("y"))
+                {
+                    console.writer().println("Performing migration.");
+                    mm.migrate();
+                }
+                else
+                {
+                    console.writer().println("Exiting application.");
+                }
+            }
+            else
+            {
+                console.writer().println("Database is already up-to-date.");
+            }
+
+        }
     }
 
     public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c) throws IOException, FileNotFoundException
@@ -69,7 +114,7 @@ public class MigrateApp
             String username = c.readLine();
             char[] pw = c.readPassword("password:");
             String password = new String(pw);
-            c.printf("Using jdbc URL: %s",settings.editDatabaseLocation);
+            c.printf("Using jdbc URL: %s%s",settings.editDatabaseLocation,System.lineSeparator());
             return new SimpleDataSource(settings.editDatabaseLocation,username,password);
         }
     }
