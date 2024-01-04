@@ -16,6 +16,7 @@ import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
+import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
@@ -109,7 +110,7 @@ public class OpenDCSPGConfiguration implements Configuration
 
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());
 
-        MigrationManager mm = new MigrationManager(ds,"opendcs-pg");
+        MigrationManager mm = new MigrationManager(ds,OpenDcsPgProvider.NAME);
         MigrationProvider mp = mm.getMigrationProvider();
         mp.setPlaceholderValue("NUM_TS_TABLES", "1");
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");

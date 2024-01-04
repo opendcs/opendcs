@@ -10,7 +10,7 @@ import org.opendcs.spi.database.MigrationProvider;
 
 public class OpenDcsPgProvider implements MigrationProvider
 {
-    public static final String NAME = "opendcs-pg";
+    public static final String NAME = "OpenDCS-Postgres";
 
     private Map<String,String> placeholders = new HashMap<>();
     private static final List<MigrationProvider.MigrationProperty> properties = new ArrayList<>();
