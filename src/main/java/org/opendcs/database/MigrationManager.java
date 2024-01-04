@@ -1,16 +1,13 @@
 package org.opendcs.database;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
 import java.util.ServiceLoader;
 
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationInfo;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.spi.database.MigrationProvider;
@@ -40,6 +37,7 @@ public final class MigrationManager
         this.jdbi = Jdbi.create(ds);
         this.migrationProvider = getProviderFor(implementation,jdbi);
         flywayConfig = Flyway.configure()
+                             .loggers("org.opendcs.database.logging.MigrationLogCreator")
                              .dataSource(ds)
                              .schemas("public")
                              .locations("db/"+implementation)
@@ -50,9 +48,20 @@ public final class MigrationManager
      * Retrieves the Currently installed flyway history version, tsdb version, and decodes version.
      * @return
      */
-    public DatabaseVersion getVersion()
+    public MigrationInfo[] currentVersion()
     {
-        return DatabaseVersion.NOT_INSTALLED;
+        return flywayConfig.placeholders(migrationProvider.getPlaceholderValues())
+                           .load()
+                           .info()
+                           .applied();
+    }
+
+    public MigrationInfo[] pendingUpdates()
+    {
+        return flywayConfig.placeholders(migrationProvider.getPlaceholderValues())
+                           .load()
+                           .info()
+                           .pending();
     }
 
     /**
@@ -69,43 +78,6 @@ public final class MigrationManager
         flywayConfig.placeholders(migrationProvider.getPlaceholderValues())
                     .load()
                     .migrate();
-    }
-
-    public static class DatabaseVersion
-    {
-        public static final DatabaseVersion NOT_INSTALLED = new DatabaseVersion(null, null,
-                                                                                null, null,
-                                                                                new ArrayList<RepeatableMigration>());
-
-        public final String decodesVersion;
-        public final String tsdbVersion;
-        public final String flywayMigration;
-        public final Date   dateInstalled;
-        public final List<RepeatableMigration> repeatableMigrations;
-
-        public DatabaseVersion(String decodes, String tsdb, String flyway,
-                               Date dateInstalled, List<RepeatableMigration> repeatableMigrations)
-        {
-            this.decodesVersion = decodes;
-            this.tsdbVersion = tsdb;
-            this.flywayMigration = flyway;
-            this.dateInstalled = dateInstalled;
-            this.repeatableMigrations = Collections.unmodifiableList(repeatableMigrations);
-        }
-    }
-
-    public static class RepeatableMigration
-    {
-        public final String migrationFile;
-        public final String checkSum;
-        public final Date dateInstalled;
-
-        public RepeatableMigration(String migrationFile, String checkSum, Date dateInstalled)
-        {
-            this.migrationFile = migrationFile;
-            this.checkSum = checkSum;
-            this.dateInstalled = dateInstalled;
-        }
     }
 
     public final Jdbi getJdbiHandle()
