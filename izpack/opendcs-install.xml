@@ -170,6 +170,11 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <executable targetfile="$INSTALL_PATH/bin/markproduction.bat" stage="never" os="windows"/>
             <parsable   targetfile="$INSTALL_PATH/bin/markproduction.bat" os="windows"/>
 
+            <executable targetfile="$INSTALL_PATH/bin/migrateApp" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/migrateApp" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/migrateApp.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/migrateApp.bat" os="windows"/>
+
             <executable targetfile="$INSTALL_PATH/bin/msgaccess" stage="never" os="unix"/>
             <parsable   targetfile="$INSTALL_PATH/bin/msgaccess" type="shell" os="unix"/>
             <executable targetfile="$INSTALL_PATH/bin/msgaccess.bat" stage="never" os="windows"/>
