@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.Call;
+import org.jdbi.v3.postgres.PostgresPlugin;
 import org.opendcs.spi.database.MigrationProvider;
 
 public class OpenDcsPgProvider implements MigrationProvider
@@ -47,6 +49,12 @@ public class OpenDcsPgProvider implements MigrationProvider
     }
 
     @Override
+    public void registerJdbiPlugins(Jdbi jdbi)
+    {
+        jdbi.installPlugin(new PostgresPlugin());
+    }
+
+    @Override
     public List<MigrationProperty> getPlaceHolderDescriptions()
     {
         return Collections.unmodifiableList(properties);
@@ -55,12 +63,20 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        jdbi.useHandle(h -> 
+        jdbi.useTransaction(h ->
         {
-            h.execute("select create_user(?,?)", username, password);
-            for(String role: roles)
+            try(Call createUser = h.createCall("call create_user(:user,:pw)");
+                Call assignRole = h.createCall("call assign_role(:user,:role)");)
             {
-                h.execute("GRANT quote_ident(?) to quote_ident(?)", role, username);
+                createUser.bind("user",username)
+                          .bind("pw", password)
+                          .invoke();
+                for(String role: roles)
+                {
+                    assignRole.bind("user",username)
+                              .bind("role",role)
+                              .invoke();
+                }
             }
         });
     }

@@ -7,7 +7,7 @@ import org.flywaydb.core.api.logging.LogCreator;
  * Allow us to pipe the logging through the current
  * ilex logger.
  *
- * TODO: can be removed after initial migration to slf4j
+ * TODO: can be removed after initial migration to slf4j or perhaps just adapted.
  * May be useful to tweak current concept to allow
  * GUI to present errors directly.
  */

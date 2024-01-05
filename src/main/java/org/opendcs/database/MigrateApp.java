@@ -82,7 +82,7 @@ public class MigrateApp
             List<String> roles = new ArrayList<>();
             roles.add("OTSDB_MGR");
             roles.add("OTSDB_ADMIN");
-            mp.createUser(mm.getJdbiHandle(), user, user, roles);
+            mp.createUser(mm.getJdbiHandle(), user, password, roles);
         }
         else
         {
