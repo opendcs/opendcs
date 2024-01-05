@@ -974,18 +974,20 @@ To start the initial schema installation:
 
    migrateApp -I OpenDCS-Postgres -P full_path_to.properties
    # enter the Schema owner username and password when prompted.
+   # You will be prompted for the number of numeric and text time series tables
+   # enter appropriate values for you're expected data volume.
    # On a fresh install the schema installation will just happen.
 
+On a fresh installation you will be prompted to create an admin user.
+This user will be able to create new users and assign them appropriate roles, such as
+a user to run compproc or routesched (additional details in <./cp-userguide.rst> and <./routesched-guide.rst> )
+processes.
 
 To update to the latest schema run the above command again. A list of updates 
 will be provided and you will be prompted if you wish to continue.
 
-Now select a user name and password for the OpenTSDB administrator
-account. This will be created during installation. It should *not* be
-the same as the database-wide superuser.
-
-Next you need to point OPENDCS to the database instance we are about to
-create. Start the launcher with the command::
+Instead of creating the properties file manually you can start the launcher to
+begin the configuration process:
 
    launcher_start &
 
@@ -1004,15 +1006,17 @@ Location field enter the string in the format shown::
 
    jdbc:postgresql://**DBHOST**/**DBNAME**
 
-Use the DBHOST and DBNAME that you specified in the createDb.sh script
-above.
+Use the DBHOST and DBNAME for your provided database
 
 Select an administrative user name and password. This is different from
 the postgres superuser name that you specified above. Write it down and
 remember it!
 
 Hit the DB Password button. Type in the administrative user name and
-password that you selected.
+password that you selected. 
+
+Use this username and password combination when prompted by the migrateApp for 
+an admin user.
 
 You may want to peruse the other settable properties. You can hover the
 mouse pointer over the name for a tool-tip for each.
@@ -1020,36 +1024,28 @@ mouse pointer over the name for a tool-tip for each.
 After you are finished, hit the Save Changes button at the bottom and
 exit OpenDCS completely.
 
-You are now read to run the installation script called “createDb.sh”::
+You are now read to run the migration tool as shown above.
 
-   cd $DCSTOOL_HOME/schema/opendcs-pg
-   ./createDb.sh
+You should now run run dbimport in the following order:
 
-The script will do the following:
+.. code-block:: bash
 
-1. Query you for the name of the administrator account that you selected
-   above. This will be a new database user with special privileges just
-   in the new database.
+   export DH=PATH_TO_THE_DECODES_INSTALLATION
+   # if you are using user.properties or decodes.properties you can leave the -P
+   # portion off and dbimport will load the appropriate default file.
 
-2. Query you for the number of numeric and string storage tables for
-   time series data. If you are unsure, just select the default by
-   hitting enter.
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/loading-app/*.xml
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/enum/*.xml
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/eu/EngineeringUnitList.xml
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/datatype/DataTypeEquivalenceList.xml
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/presentation/*.xml
 
-3. Define new database roles (described below). If this is the second
-   time you have run the script then warning messages will be displayed
-   that these roles already exist. These warnings can be safely ignored.
+   # if using computations
+   $DH/bin/compimport -P path_to_your_properties $DH/imports/comp-standard/*.xml
 
-4. Create the administrative user that you entered in step 1, and assign
-   it to the OTSDB_ADMIN role.
 
-5. Create the database instance named *DBNAME* (as you defined at the
-   top of the script).
-
-6. Install the schema (tables, indices, triggers, procedures, etc.).
-
-7. Initialize your time series data storage tables.
-
-8. Import several XML files from the edit-db subdirectory under OpenDCS.
+NOTE: we know this is a bit of a pain. Future work will simplify the processed in a similar way
+as the database schema install.
 
 Database roles created by the script:
 
