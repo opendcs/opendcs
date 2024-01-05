@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jdbi.v3.core.Jdbi;
 import org.opendcs.spi.database.MigrationProvider;
 
 public class OpenDcsPgProvider implements MigrationProvider
@@ -49,6 +50,19 @@ public class OpenDcsPgProvider implements MigrationProvider
     public List<MigrationProperty> getPlaceHolderDescriptions()
     {
         return Collections.unmodifiableList(properties);
+    }
+
+    @Override
+    public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
+    {
+        jdbi.useHandle(h -> 
+        {
+            h.execute("select create_user(?,?)", username, password);
+            for(String role: roles)
+            {
+                h.execute("GRANT quote_ident(?) to quote_ident(?)", role, username);
+            }
+        });
     }
 
 }

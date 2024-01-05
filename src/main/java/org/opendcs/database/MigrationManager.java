@@ -1,6 +1,7 @@
 package org.opendcs.database;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.ServiceLoader;
 
@@ -83,6 +84,11 @@ public final class MigrationManager
     public final Jdbi getJdbiHandle()
     {
         return jdbi;
+    }
+    
+    public void createUser(String username, String password, List<String> roles)
+    {
+        migrationProvider.createUser(jdbi, username, password, roles);
     }
 
     public static MigrationProvider getProviderFor(String implementation, Jdbi jdbi) throws NoMigrationProvider

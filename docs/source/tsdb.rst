@@ -3,7 +3,7 @@ Open Time Series Database
 #########################
 (OpenTSDB)
 
-.. 
+..
     Document Revision 3
 
     March, 2020
@@ -28,7 +28,7 @@ utilities making up OpenTSDB.
 
     Do not confuse with http://opentsdb.net/. We will be renaming our reference
     timeseries database after some work on the build and release infrastructure.
-    
+
 
 Revision History
 ----------------
@@ -58,15 +58,8 @@ Installation and Configuration
 Fresh Schema Install
 --------------------
 
-After installing OpenDCS 6.5 you will find a schema subdirectory
-containing two other subdirectories:
-
--  opendcs-pg – Schema installation scripts for PostgreSQL
-
--  opendcs-oracle – Schema installation scripts for Oracle
-
-Follow the instructions in the README files contained in those
-directories for a fresh install.
+Schema installation and updates are now handled through the MigrateApp CLI interface.
+Please review the database installation section of the installation guide.
 
 Configure OpenDCS
 -----------------

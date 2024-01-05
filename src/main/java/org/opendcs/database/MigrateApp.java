@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -61,6 +62,27 @@ public class MigrateApp
                 });
             }
             mm.migrate();
+            String user = console.readLine("Please provided an admin user:");
+            // TODO: lo
+            boolean match = true;
+            String password;
+            do
+            {
+                if(!match)
+                {
+                    console.writer().println("Passwords did not match, try again.");
+                }
+                char[] pw_chars =  console.readPassword("Please provide a password:");
+                char[] pw2_chars = console.readPassword("Please repeat the password:");
+                String pw = new String(pw_chars);
+                String pw2 = new String(pw2_chars);
+                password = pw;
+                match = pw.equals(pw2);
+            } while (!match);
+            List<String> roles = new ArrayList<>();
+            roles.add("OTSDB_MGR");
+            roles.add("OTSDB_ADMIN");
+            mp.createUser(mm.getJdbiHandle(), user, user, roles);
         }
         else
         {
