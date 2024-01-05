@@ -93,7 +93,9 @@ package decodes.tsdb;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -239,10 +241,8 @@ public class CpCompDependsUpdater
 		String action="";
 		while(!shutdownFlag)
 		{
-			LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
-			CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
-
-			try
+			try(LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+				CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();)
 			{
 				// Make sure this process's lock is still valid.
 				action = "Checking lock";
@@ -317,11 +317,6 @@ public class CpCompDependsUpdater
 				shutdownFlag = true;
 				databaseFailed = true;
 			}
-			finally
-			{
-				compDependsDAO.close();
-				loadingAppDAO.close();
-			}
 		}
 		closeDb();
 	}
@@ -330,8 +325,7 @@ public class CpCompDependsUpdater
 	private void initialize()
 		throws LockBusyException, DbIoException, NoSuchObjectException
 	{
-		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
-		try
+		try (LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();)
 		{
 			appInfo = loadingAppDao.getComputationApp(getAppId());
 
@@ -362,10 +356,6 @@ public class CpCompDependsUpdater
 		{
 			Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
 			throw ex;
-		}
-		finally
-		{
-			loadingAppDao.close();
 		}
 	}
 	
@@ -416,7 +406,7 @@ public class CpCompDependsUpdater
 			info("Refreshing TSID Cache...");
 			timeSeriesDAO.reloadTsIdCache();
 			dumpTsidCache();
-			
+
 			info("Refreshing Computation Cache...");
 			enabledCompCache.clear();
 			
@@ -500,12 +490,15 @@ public class CpCompDependsUpdater
 	private boolean tsCreated(DbKey tsKey)
 	{
 		info("Received TS_CREATED message for TS Key=" + tsKey);
-		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
-		try
+
+		try(TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+			TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();)
 		{
 			TimeSeriesIdentifier tsid = null;
-			try { tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsKey); }
+			try
+			{
+				tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsKey);
+			}
 			catch (NoSuchObjectException e)
 			{
 				warning("Received TS_CREATED message for TS Key="
@@ -624,11 +617,6 @@ public class CpCompDependsUpdater
 			ex.printStackTrace(System.err);
 			return false;
 		}
-		finally
-		{
-			tsGroupDAO.close();
-			timeSeriesDAO.close();
-		}
 	}
 
 	
@@ -640,21 +628,31 @@ public class CpCompDependsUpdater
 	private boolean tsDeleted(DbKey tsKey)
 	{
 		String q = "";
-		try	(
-				TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-				TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+		try	(Connection conn = theDb.getConnection();
+			 TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+			 TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+			 CompDependsDAI compDependsDao = theDb.makeCompDependsDAO();
+			 DaoBase dao = new DaoBase(theDb, "tsDeleted", conn);
 			)
 		{
+			timeSeriesDAO.setManualConnection(conn);
+			tsGroupDAO.setManualConnection(conn);
+
 			TimeSeriesIdentifier tsidRemoved = timeSeriesDAO.getCache().getByKey(tsKey);
 			if (tsidRemoved != null)
-				timeSeriesDAO.getCache().remove(tsKey);
+			{
+				timeSeriesDAO.getCache()
+						     .remove(tsKey);
+			}
 			dumpTsidCache();
 			
 			// Remove this key from all groups
 			for(TsGroup grp : tsGroupDAO.getTsGroupList(null))
 			{
 				if (!grp.getIsExpanded()) // may have timed out in the cache and reread from db.
+				{
 					groupHelper.expandTsGroup(grp);
+				}
 				
 				boolean wasMember = false;
 				for(Iterator<TimeSeriesIdentifier> tsidit = 
@@ -671,21 +669,22 @@ public class CpCompDependsUpdater
 				
 				// If this was an explicit member of a group, remove the TSDB_GROUP_MEMBER_TS record
 				if (wasMember)
+				{
 					for(TimeSeriesIdentifier tsid : grp.getTsMemberList())
 					{
 						if (tsid.getKey() == tsKey)
 						{
 							grp.getTsMemberList().remove(tsid);
 							q = "delete from TSDB_GROUP_MEMBER_TS where "
-								+ "GROUP_ID = " + grp.getGroupId()
+								+ "GROUP_ID = ?"
 								+ " and "
 								+ (theDb.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-								+ " = " + tsKey;
+								+ " = ?";
 							try
 							{
-								tsGroupDAO.doModify(q);
+								dao.doModify(q,grp.getGroupId(), tsKey);
 							}
-							catch (DbIoException ex)
+							catch (SQLException ex)
 							{
 								String msg = "tsDeleted Error in query '" + q + "': " + ex;
 								System.err.print(msg);
@@ -694,6 +693,7 @@ public class CpCompDependsUpdater
 							break;
 						}
 					}
+				}
 			}
 			
 			// Remove this key from all comp-dependencies
@@ -709,13 +709,10 @@ public class CpCompDependsUpdater
 				}
 			}
 	
-			// Delete from cp_comp_depends table any tupple with this ts_id.
-			q = "delete from CP_COMP_DEPENDS " + "where TS_ID = " + tsKey;
-
-			tsGroupDAO.doModify(q);
+			compDependsDao.deleteCompDependsForTsKey(tsKey);
 			return true;
 		}
-		catch (DbIoException ex)
+		catch (SQLException | DbIoException ex)
 		{
 			String msg = "tsDeleted Error in query '" + q + "': " + ex;
 			System.err.print(msg);
@@ -732,9 +729,7 @@ public class CpCompDependsUpdater
 	private void computationTsDeleted(CpCompDependsRecord compDepends, 
 		TimeSeriesIdentifier tsidRemoved)
 	{
-		ComputationDAI computationDAO = theDb.makeComputationDAO();
-		
-		try
+		try (ComputationDAI computationDAO = theDb.makeComputationDAO();)
 		{
 			// Find the computation in the cache & update it.
 			DbComputation comp = this.getCompFromCache(compDepends.getCompId());
@@ -774,10 +769,6 @@ public class CpCompDependsUpdater
 				}
 			}
 		}
-		finally
-		{
-			computationDAO.close();
-		}
 	}
 
 	/**
@@ -788,8 +779,8 @@ public class CpCompDependsUpdater
 	{
 		DbComputation comp = null;
 		info("Received COMP_MODIFIED for compId=" + compId);
-		ComputationDAI computationDAO = theDb.makeComputationDAO();
-		try
+
+		try (ComputationDAI computationDAO = theDb.makeComputationDAO();)
 		{
 			comp = computationDAO.getComputationById(compId);
 			if (comp != null)
@@ -822,10 +813,6 @@ public class CpCompDependsUpdater
 				+ " but it no longer exists in the DB -- assuming comp deleted.");
 			// fall through
 		}
-		finally
-		{
-			computationDAO.close();
-		}
 		
 		// Remove old copy of this computation from cached set of computations
 		for(Iterator<DbComputation> compit = enabledCompCache.iterator(); compit.hasNext(); )
@@ -844,7 +831,9 @@ public class CpCompDependsUpdater
 		{
 			CpCompDependsRecord ccd = ccdit.next();
 			if (ccd.getCompId().equals(compId))
+			{
 				ccdit.remove();
+			}
 		}
 
 		// Only save enabled comps in the cache.
@@ -856,19 +845,13 @@ public class CpCompDependsUpdater
 		else
 		{
 			// Have to remove comp-depends for the now-disabled or deleted comp.
-			String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId;
-			DaiBase dao = new DaoBase(theDb, "CompModified");
-			try
+			try (CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();)
 			{
-				dao.doModify(q);
+				compDependsDAO.deleteCompDependsForCompId(compId);
 			}
 			catch (DbIoException ex)
 			{
-				warning("Error in '" + q + "': " + ex);
-			}
-			finally
-			{
-				dao.close();
+				warning("Error removing dependency entries for disabled computation: " + ex);
 			}
 		}
 
@@ -880,11 +863,11 @@ public class CpCompDependsUpdater
 	{
 		info("Evaluating dependencies for comp " + comp.getId() + " " + comp.getName());
 		if (!doingFullEval)
+		{
 			toAdd.clear();
-		try	(
-				TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-				TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
-			)
+		}
+		try	(TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+			 TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();)
 		{
 			if (comp.isEnabled() && comp.getProperty("timedCompInterval") == null)
 			{
@@ -1000,8 +983,14 @@ public class CpCompDependsUpdater
 			}
 			if (!doingFullEval)
 			{
-				try { writeToAdd2Db(comp.getId()); }
-				catch(DbIoException ex) { /* do nothing -- err msg already logged. */ }
+				try
+				{
+					writeToAdd2Db(comp.getId());
+				}
+				catch(DbIoException ex)
+				{
+					/* do nothing -- err msg already logged. */
+				}
 			}
 		}
 	}
@@ -1009,9 +998,10 @@ public class CpCompDependsUpdater
 	private boolean groupModified(DbKey groupId)
 	{
 		info("groupModified(" + groupId + ")");
-		ComputationDAI computationDAO = theDb.makeComputationDAO();
-		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
-		try
+
+		try (ComputationDAI computationDAO = theDb.makeComputationDAO();
+			 TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+			 CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();)
 		{
 			TsGroup newGrp = null;
 			try
@@ -1031,8 +1021,8 @@ public class CpCompDependsUpdater
 	
 			if (newGrp != null)
 			{
-	info("groupModified " + newGrp.getGroupId() + ":" + newGrp.getGroupName()
-	+ " numSites=" + newGrp.getSiteIdList().size());
+				info("groupModified " + newGrp.getGroupId() + ":" + newGrp.getGroupName()
+				+ " numSites=" + newGrp.getSiteIdList().size());
 				info("Group " + newGrp.getGroupId() + ":" + newGrp.getGroupName()
 					+ " Added/Replaced in cache, numSites=" + newGrp.getSiteIdList().size());
 
@@ -1058,7 +1048,9 @@ public class CpCompDependsUpdater
 			{
 				DbComputation comp = compit.next();
 				if (!comp.isEnabled() || comp.getProperty("timedCompInterval") != null)
+				{
 					continue;
+				}
 				
 				if (comp.getGroupId() != Constants.undefinedId
 				 && affectedGroupIds.contains(comp.getGroupId()))
@@ -1116,11 +1108,6 @@ public class CpCompDependsUpdater
 		{
 			warning("groupModified groupID=" + groupId + ": " + ex);
 		}
-		finally
-		{
-			tsGroupDAO.close();
-			computationDAO.close();
-		}
 		return true;
 	}
 
@@ -1131,151 +1118,98 @@ public class CpCompDependsUpdater
 		
 		// Set the doingFullEval flag which tells evalComp to simply
 		// accumulate results in the scratchpad. Don't merge to CP_COMP_DEPENDS.
-		String q = "clearing scratchpad.";
-		DaiBase dao = new DaoBase(theDb, "fullEval");
-		try
+		try (CompDependsDAI compDepends = theDb.makeCompDependsDAO();)
 		{
 			toAdd.clear();
 			doingFullEval = true;
 			for(DbComputation comp : enabledCompCache)
+			{
 				evalComp(comp);
+			}
 			doingFullEval = false;
 
 			// Insert all the toAdd records into the scratchpad
-			clearScratchpad(dao);
-			for(CpCompDependsRecord ccd : toAdd)
+			compDepends.transaction(dao ->
 			{
-				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
-					+ " VALUES(" + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
-info(q);
-				dao.doModify(q);
-			}
-		
-			// The scratchpad is now what we want CP_COMP_DEPENDS to look like.
-			// Mark's 2-line SQL to move the scratchpad to CP_COMP_DEPENDS.
-			q = "delete from cp_comp_depends "
-			+ "where(computation_id, ts_id) in "
-			+ "(select computation_id, ts_id from cp_comp_depends " +
-				(theDb.isOracle() ? "minus" : "except")  + " select computation_id, ts_id from cp_comp_depends_scratchpad)";
-			dao.doModify(q);
-		
-			q = "insert into cp_comp_depends( computation_id, ts_id) "
-				+ "(select computation_id, ts_id from cp_comp_depends_scratchpad "
-				+ (theDb.isOracle() ? "minus" : "except") + " select computation_id, ts_id from cp_comp_depends)";
-			dao.doModify(q);
+				info("Clearing scratch pad.");
+				compDepends.clearScratchpad();
+				compDepends.addRecordsToScratchPad(toAdd);
+				compDepends.mergeScratchPadToActive();
+			});
 			return true;
-		}		
+		}
 		catch(DbIoException ex)
 		{
-			String msg = "fullEval Error in '" + q + "': " + ex;
+			String msg = "fullEval Error: " + ex;
 			warning(msg);
 			System.err.println(msg);
 			ex.printStackTrace();
 			return false;
-		}
-		finally
-		{
-			dao.close();
 		}
 	}
 	
 	private DbComputation getCompFromCache(DbKey compId)
 	{
 		for(DbComputation comp : enabledCompCache)
+		{
 			if (compId.equals(comp.getId()))
+			{
 				return comp;
+			}
+		}
 		return null;
 	}
 	
 	protected void addCompDepends(DbKey tsKey, DbKey compId)
 	{
 		CpCompDependsRecord rec = new CpCompDependsRecord(tsKey, compId);
-debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAdd.size());
+		debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAdd.size());
 		toAdd.add(rec);
 	}
 	
-	private void clearScratchpad(DaiBase dao)
-		throws DbIoException
-	{
-		// Clear the scratchpad
-		String q = "DELETE FROM CP_COMP_DEPENDS_SCRATCHPAD";
-		try
-		{
-			info(q);
-			dao.doModify(q);
-		}
-		catch (DbIoException ex)
-		{
-			warning("Error in query '" + q + "': " + ex);
-			throw ex;
-		}
-		
-	}
 	protected void writeToAdd2Db(DbKey compId2Delete)
 		throws DbIoException
 	{
 		if (toAdd.size() == 0)
-			return;
-
-		// Clear the scratchpad
-		
-		String q = "DELETE FROM CP_COMP_DEPENDS_SCRATCHPAD";
-		DaiBase dao = new DaoBase(theDb, "writeToAdd2Db");
-		try
 		{
-			dao.doModify(q);
-			
-			// Insert all the toAdd records into the scratchpad
-			for(CpCompDependsRecord ccd : toAdd)
+			return;
+		}
+		try(CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();)
+		{
+			compDependsDAO.transaction(dao ->
 			{
-				q = "INSERT INTO CP_COMP_DEPENDS_SCRATCHPAD(TS_ID, COMPUTATION_ID)"
-					+ " VALUES(" + ccd.getTsKey() + ", " + ccd.getCompId() + ")";
-				dao.doModify(q);
-			}
-			
-			if (compId2Delete != Constants.undefinedId)
-			{
-				q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId2Delete;
-				dao.doModify(q);
-			}
-			
-			// Just in case, delete any records from the scratchpad that are already
-			// in compdepends:
-			q = "delete from cp_comp_depends_scratchpad sp "
-				+ "where exists(select * from cp_comp_depends cd where cd.computation_id = sp.computation_id "
-				+ "and cd.ts_id = sp.ts_id)";
-			dao.doModify(q);
-			
-			// Copy the scratchpad to the cp_comp_depends table
-			q = "INSERT INTO CP_COMP_DEPENDS SELECT * FROM CP_COMP_DEPENDS_SCRATCHPAD";
-			dao.doModify(q);
-			
-			// Finally, clear the scratchpad, otherwise this can leave a foreign key to TS_ID
-			// that may prevent time series from being deleted.
-			q = "delete from cp_comp_depends_scratchpad";
-			dao.doModify(q);
-			
-//			if (compId2Delete != Constants.undefinedId)
-//				theDb.commit(); // This should terminate the transaction.
-			
-			// Now, since we deleted the deps at the start of the operation,
-			// even if the dependency existed before treat it as a new dependency.
-			// Enqueue all data for the time-series back to the notify time
-			// as tasklist records.
-//			createTaskListRecordsFor(toAdd);
-// MJM: We discovered that creating tasklist records takes a very long
-// time since we have to query r_instant (and other tables) by date_time_loaded
-// and there is no index on date_time_loaded. Each time series was talking
-// well over a minute to do the query. So punt for now.
+				// Clear the scratchpad
+				dao.clearScratchpad();
+				compDependsDAO.addRecordsToScratchPad(toAdd);
+
+				if (compId2Delete != Constants.undefinedId)
+				{
+					compDependsDAO.deleteCompDependsForCompId(compId2Delete);
+				}
+
+				// Just in case, delete any records from the scratchpad that are already
+				// in compdepends:
+				dao.removeExistingFromScratch();
+				dao.fillActiveFromScratch();
+				// Finally, clear the scratchpad, otherwise this can leave a foreign key to TS_ID
+				// that may prevent time series from being deleted.
+				compDependsDAO.clearScratchpad();
+
+				// Now, since we deleted the deps at the start of the operation,
+				// even if the dependency existed before treat it as a new dependency.
+				// Enqueue all data for the time-series back to the notify time
+				// as tasklist records.
+				//			createTaskListRecordsFor(toAdd);
+				// MJM: We discovered that creating tasklist records takes a very long
+				// time since we have to query r_instant (and other tables) by date_time_loaded
+				// and there is no index on date_time_loaded. Each time series was talking
+				// well over a minute to do the query. So punt for now.
+			});
 		}
 		catch (DbIoException ex)
 		{
-			warning("Error in query '" + q + "': " + ex);
+			warning("Error in adjusting compdepends tables: " + ex);
 			throw ex;
-		}
-		finally
-		{
-			dao.close();
 		}
 	}
 	
@@ -1319,30 +1253,16 @@ debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAd
 	private void reloadCpCompDependsCache()
 	{
 		cpCompDependsCache.clear();
-		String q = "SELECT TS_ID, COMPUTATION_ID FROM CP_COMP_DEPENDS";
-		
-		DaoBase dao = new DaoBase(theDb, "CompDependsUpdater");
-		try
+		try (CompDependsDAI compDepends = theDb.makeCompDependsDAO();)
 		{
-			ResultSet rs = dao.doQuery(q);
-			while (rs != null && rs.next())
-			{
-				CpCompDependsRecord rec = new CpCompDependsRecord(
-					DbKey.createDbKey(rs, 1), DbKey.createDbKey(rs, 2));
-				cpCompDependsCache.add(rec);
-			}
+			cpCompDependsCache.addAll(compDepends.getAllCompDependsEntries());
 		}
 		catch (Exception ex)
 		{
-			warning("Error in query '" + q + "': " + ex);
+			warning("Unable to reload CompDepends Cache: " + ex);
 			return;
 		}
-		finally
-		{
-			dao.close();
-		}
 	}
-	
 	
 	private void expandComputationInputs(DbComputation comp)
 		throws DbIoException
