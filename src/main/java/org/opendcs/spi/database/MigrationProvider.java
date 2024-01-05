@@ -58,6 +58,8 @@ public interface MigrationProvider
     {
     }
 
+    public void createUser(Jdbi jdbi, String username, String password, List<String> roles);
+
     public static class MigrationProperty
     {
         public final String name;

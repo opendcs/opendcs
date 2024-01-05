@@ -939,36 +939,47 @@ After a successful installation, your XML database is ready to go.
 OpenDCS Database under PostgreSQL 
 -----------------------------------
 
-OPENDCS comes with scripts needed to create a PostgreSQL database
-instance with the entire schema to support DECODES and a fully
-functional time series database.
+OPENDCS comes with the required files to install the schema into a PostgresSQL database.
+Testing has been done with PostgresQL 15; however anything about 14 should work. Older version may work
+but will not be supported.
 
-The SQL schema files and shell scripts are in the “schema/opendcs-pg”
-directory under the installation.
+Previous versions of OpenDCS have made a distinction between the "DECODES" database and the Timeseries Database.
+For the Opendcs-Postgres version The schema now combines everything. You may set the `NUM_TS_TIMESERIES` and `NUM_TEXT_TIMESERIES` 
+values to 1 to reduce the amount of space used and ignore the tables.
 
-In this directory, edit a file called “defines.sh”. This file contains a
-few definitions needed by the installation script::
+The actual schema install scripts are contained within opendcs.jar; if you need to review them you can open the jar with a zip tool or 
+review them at https://github.com/opendcs/opendcs/tree/master/src/main/resources/db/OpenDCS-Postgres
 
-   DBNAME=open_tsdb
-   DBHOST=localhost
-   DBSUPER=postgres
-   LOG=createdb.log
+The installation assumes you have already installed Postgres or otherwise have appropriate access to a Postgres instance. If you do not
+have full control of you're Postgres instance and must go through an IT departer you require the following:
 
-Notes on these settings:
+1. A user to own the schema (this user should *NOT* be the application user.)
+2. A named database (from createdb) owned by that user (e.g. DCS)
+3. The credentials for said user.
+4. The fully-qualified hostname of the database (e.g. mydb.example.local)
 
--  Set DBNAME to the name of the database that you want to create. For
-   example if your organization’s abbreviation is AESRD, a good name
-   might be “aesrd_tsdb”.
+Create a `decodes.properties`, `user.properties`, or `<name>.profile` in the appropriate directory.
 
--  Set DBHOST to the host name where the PostgreSQL server is running.
-   If it is running on the same machine as OpenDCS, then *localhost*
-   will suffice.
+set the following properties:
 
--  Set DBSUPER to the name of the database super user that has
-   permission to create new users and databases.
+.. code-block:: properties
 
--  When you run the install script, all log information will be saved in
-   the file named by LOG. This is useful if any problems occur.
+   editDatabaseType: OPENTSDB
+   editDatabaseLocation: jdbc:postgresql://mydb.example.local/DCS
+
+Set other settings as appropriate to you're environment and needs.
+
+To start the initial schema installation:
+
+.. code-block:: bash
+
+   migrateApp -I OpenDCS-Postgres -P full_path_to.properties
+   # enter the Schema owner username and password when prompted.
+   # On a fresh install the schema installation will just happen.
+
+
+To update to the latest schema run the above command again. A list of updates 
+will be provided and you will be prompted if you wish to continue.
 
 Now select a user name and password for the OpenTSDB administrator
 account. This will be created during installation. It should *not* be
