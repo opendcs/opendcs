@@ -72,6 +72,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Date;
@@ -371,10 +373,12 @@ public class CwmsConsumer extends DataConsumer
 		catch(Exception ex)
 		{
 			String emsg = module + " Error storing TS data: " + ex;
-			java.util.logging.Logger log = java.util.logging.Logger.getLogger("");
 			Logger.instance().warning(emsg);
-			log.log(Level.WARNING,emsg,ex);
-			JulUtils.logStackTrace(log, Level.WARNING, ex.getStackTrace(), 0);
+
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			Logger.instance().warning(sw.toString());
 			// It might be a business rule exception, like improper units.
 			// So don't kill the whole routing spec, just go on.
 //			close();
