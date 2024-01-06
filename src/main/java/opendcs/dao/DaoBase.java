@@ -572,7 +572,7 @@ public class DaoBase
 	 * Run a set of queryies with a specific connection in a transaction.
 	 * Use the presented dao for all operations.
 	 *
-	 * The presented Dao is a {@link DaoHelper} which will is very picky
+	 * The presented Dao is a {@link DaoHelper} which will be very picky
 	 * about which SQL functions can be called.
 	 *
 	 * @param consumer given a new DAO that is manually set to a JDBC transaction.
