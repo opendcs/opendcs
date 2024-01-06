@@ -9,6 +9,7 @@ import decodes.tsdb.DbIoException;
  * A simple Version of a dao used when only a specific connection instance
  * should be used AND only the new handlers.
  *
+ * It is used to constrain connection usage inside a transaction.
  * NOTE: This class is extremely unfriendly to misuse and will
  * throw exception when incorrect calls are made.
  */
