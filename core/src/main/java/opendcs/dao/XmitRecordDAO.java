@@ -908,7 +908,7 @@ public class XmitRecordDAO
             return 0;
         }
         String q = "select " + dcpTransFields + " from DCP_TRANS_" + suffix
-            + " where channel = ?" + chan
+            + " where channel = ?" 
             + " order by transmit_time";
 
         final int[] n = new int[1];
