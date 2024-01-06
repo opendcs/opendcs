@@ -510,7 +510,7 @@ public class DaoBase
 	 * @param consumer Function that Takes a ResultSet and returns an instance of R
 	 * @param parameters arg list of query inputs
 	 * @returns Object of type R determined by the caller.
-	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
+	 * @throws SQLException if anything goes bad during the creation, execution, or processing of the query. Or if more than one result is returned
 	 */
 	public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
 	{
