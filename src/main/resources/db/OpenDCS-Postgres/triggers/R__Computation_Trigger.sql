@@ -1,3 +1,9 @@
+/**
+This file contains the trigger function attached to numeric data tables.
+It uses the comp_depends table to determine if any computations need to
+be run when values are inserted, modified, or deleted, and creates
+cp_comp_tasklist records accordingly.
+*/
 create or replace function comp_trigger () returns trigger
 AS $$
 DECLARE
