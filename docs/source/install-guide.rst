@@ -966,7 +966,7 @@ set the following properties:
    editDatabaseType: OPENTSDB
    editDatabaseLocation: jdbc:postgresql://mydb.example.local/DCS
 
-Set other settings as appropriate to you're environment and needs.
+Set other settings as appropriate to your environment and needs.
 
 To start the initial schema installation:
 
