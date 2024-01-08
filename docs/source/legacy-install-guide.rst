@@ -951,7 +951,7 @@ The actual schema install scripts are contained within opendcs.jar; if you need 
 review them at https://github.com/opendcs/opendcs/tree/master/src/main/resources/db/OpenDCS-Postgres
 
 The installation assumes you have already installed Postgres or otherwise have appropriate access to a Postgres instance. If you do not
-have full control of you're Postgres instance and must go through an IT departer you require the following:
+have full control of your Postgres instance and must go through an IT department you require the following:
 
 1. A user to own the schema (this user should *NOT* be the application user.)
 2. A named database (from createdb) owned by that user (e.g. DCS)
