@@ -1023,7 +1023,7 @@ mouse pointer over the name for a tool-tip for each.
 After you are finished, hit the Save Changes button at the bottom and
 exit OpenDCS completely.
 
-You are now read to run the migration tool as shown above.
+You are now ready to run the migration tool as shown above.
 
 You should now run run dbimport in the following order:
 
