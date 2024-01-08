@@ -48,6 +48,9 @@ jobs:
           sudo apt update -y && sudo apt upgrade -y
           sudo apt install tightvncserver ffmpeg
           # Precompile the test code so the recording isn't as long.
+          mkdir ~/.vnc
+          echo 123456 | vncpasswd -f > ~/.vnc/passwd
+          chmod -v 0600 ~/.vnc/passwd
           ant compile-test-gui -D"no.docs=true"
           export DISPLAY=:99
           vncserver "$DISPLAY" -localhost -geometry 1920x1080 -depth 16
