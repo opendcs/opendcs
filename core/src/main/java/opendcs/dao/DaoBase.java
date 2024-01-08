@@ -93,9 +93,16 @@ public class DaoBase
 	{
 		this.db = tsdb;
 		this.module = module;
-		setManualConnection(con);
+		// Code intentionally duplicated so this form can be used
+		// within DaoHelper for transactions.
+		this.conSetManually = true;
+		this.myCon = con;
 	}
 
+	/**
+	 * Assert what connection will be used for this DAOs operations.
+	 * Caller is responsible for cleaning up the Connection object.
+	 */
 	public void setManualConnection(Connection con)
 	{
 		this.myCon = con;
