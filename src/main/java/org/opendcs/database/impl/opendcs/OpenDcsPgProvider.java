@@ -11,6 +11,10 @@ import org.jdbi.v3.core.statement.Call;
 import org.jdbi.v3.postgres.PostgresPlugin;
 import org.opendcs.spi.database.MigrationProvider;
 
+/**
+ * OpenDCSPgProvider provides support for handling installation and updates of the OpenDCS-Postgres
+ * schema.
+ */
 public class OpenDcsPgProvider implements MigrationProvider
 {
     public static final String NAME = "OpenDCS-Postgres";
