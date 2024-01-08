@@ -23,7 +23,7 @@ public class OpenDcsPgProvider implements MigrationProvider
         properties.add(
             new MigrationProperty(
                 "NUM_TS_TABLES", Integer.class,
-                "How many tables should be used to balance numeric timeseries data."));
+                "How many tables should be used to partition numeric timeseries data."));
         properties.add(
             new MigrationProperty(
                 "NUM_TEXT_TABLES", Integer.class,
