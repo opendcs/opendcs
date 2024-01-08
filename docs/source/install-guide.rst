@@ -982,7 +982,7 @@ On a fresh installation you will be prompted to create an admin user.
 This user will be able to create new users and assign them appropriate roles, such as
 a user to run compproc or routesched processes (additional details in <./cp-userguide.rst> and <./routesched-guide.rst> ).
 
-To update to the latest schema run the above command again. A list of updates 
+To update to the latest schema run the migrateApp command again. A list of updates 
 will be provided and you will be prompted if you wish to continue.
 
 Instead of creating the properties file manually you can start the launcher to
