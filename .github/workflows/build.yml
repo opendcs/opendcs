@@ -52,7 +52,7 @@ jobs:
           echo 123456 | vncpasswd -f > ~/.vnc/passwd
           chmod -v 0600 ~/.vnc/passwd
           ant compile-test-gui -D"no.docs=true"
-          export DISPLAY=:99
+          export DISPLAY=:99.0
           vncserver "$DISPLAY" -localhost -geometry 1920x1080 -depth 24
           ffmpeg -nostdin -y -f x11grab -video_size 1920x1080 -i "$DISPLAY" build/test-gui.webm &
           FF_ID=$!
