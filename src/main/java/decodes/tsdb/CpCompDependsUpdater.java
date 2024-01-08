@@ -93,6 +93,7 @@ package decodes.tsdb;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -613,8 +614,10 @@ public class CpCompDependsUpdater
 		{
 			String msg = "Error processing TS_CREATED for key=" + tsKey + ": " + ex;
 			warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			warning(sw.toString());
 			return false;
 		}
 	}
@@ -990,6 +993,10 @@ public class CpCompDependsUpdater
 				catch(DbIoException ex)
 				{
 					/* do nothing -- err msg already logged. */
+					StringWriter sw = new StringWriter();
+					PrintWriter pw = new PrintWriter(sw);
+					ex.printStackTrace(pw);
+					warning(sw.toString());
 				}
 			}
 		}
@@ -1141,9 +1148,11 @@ public class CpCompDependsUpdater
 		catch(DbIoException ex)
 		{
 			String msg = "fullEval Error: " + ex;
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
 			warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
+			ex.printStackTrace(pw);
+			warning(sw.toString());
 			return false;
 		}
 	}
