@@ -59,6 +59,7 @@ jobs:
           ant gui-test -D"no.docs=true"
           exit_val=$?
           vncserver -kill "$DISPLAY"
+          kill -INT $FF_ID
           wait $FF_ID # give ffmpeg a chance to figure it out and finish writing the file.
           exit $exit_val
       - name: Code Coverage
