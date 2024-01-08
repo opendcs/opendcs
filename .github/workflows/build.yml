@@ -53,7 +53,7 @@ jobs:
           chmod -v 0600 ~/.vnc/passwd
           ant compile-test-gui -D"no.docs=true"
           export DISPLAY=:99
-          vncserver "$DISPLAY" -localhost -geometry 1920x1080 -depth 16
+          vncserver "$DISPLAY" -localhost -geometry 1920x1080 -depth 24
           ffmpeg -nostdin -y -f x11grab -video_size 1920x1080 -i "$DISPLAY" build/test-gui.webm &
           ant gui-test -D"no.docs=true"
           exit_val=$?
