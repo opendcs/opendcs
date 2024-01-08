@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 
+import decodes.util.DecodesSettings;
 import fixtures.GuiTest;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
@@ -47,6 +48,7 @@ public class ProfileManagerFrameTest extends GuiTest
     {
         String resourceDir = System.getProperty("resource.dir");
         properties.setup();
+        DecodesSettings.instance().rememberScreenPosition = false;
         properties.set("DCSTOOL_USERDIR",resourceDir+"/decodes/launcher/profiles");
         pmf = GuiActionRunner.execute(() -> new ProfileManagerFrame());
         pmf.setExitOnClose(false);
