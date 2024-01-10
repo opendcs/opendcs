@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Date;
 
 import decodes.polling.DacqEvent;
@@ -14,37 +15,44 @@ import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.DacqEventDAI;
 
-public class DacqEventDAO 
-	extends DaoBase implements DacqEventDAI
+public class DacqEventDAO extends DaoBase implements DacqEventDAI
 {
 	public static final String module = "DacqEventDAO";
 	public static final String dacqEventTableName = "DACQ_EVENT";
 	public static final String columnsBase = "DACQ_EVENT_ID, SCHEDULE_ENTRY_STATUS_ID, PLATFORM_ID, EVENT_TIME, "
 		+ "EVENT_PRIORITY, SUBSYSTEM, MSG_RECV_TIME, EVENT_TEXT";
 	public static String dacqEventColumns = columnsBase;
-	private boolean hasAppId = false;
+	private static Boolean hasAppId = null;
 	
 
 	public DacqEventDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, module);
 		String q = "select max(LOADING_APPLICATION_ID) from DACQ_EVENT";
-		hasAppId = tsdb.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15;
-		if (hasAppId)
+		if (hasAppId == null)
 		{
-			try
+			// Assume we have the column based on version.
+			hasAppId = tsdb.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15;
+			if (hasAppId)
 			{
-				doQuery(q,rs-> {});
-			}
-			catch (Exception ex)
-			{
-				warning(module 
-					+ " DB Version is > 15 but DACQ_EVENT does not have LOADING_APPLICATION_ID: " + ex);
-				hasAppId = false;
+				// But now actually verify
+				try
+				{
+					doQuery(q,rs-> {});
+				}
+				catch (Exception ex)
+				{
+					warning(module 
+						+ " DB Version is > 15 but DACQ_EVENT does not have LOADING_APPLICATION_ID: " + ex);
+					hasAppId = false;
+				}
 			}
 		}
+		
 		if (hasAppId)
+		{
 			dacqEventColumns = columnsBase + ", LOADING_APPLICATION_ID";
+		}
 	}
 
 	@Override
@@ -54,11 +62,15 @@ public class DacqEventDAO
 			return;
 		
 		if (evt.getDacqEventId().isNull())
+		{
 			evt.setDacqEventId(getKey(dacqEventTableName));
+		}
 		evt.setEventTime(new Date());
 		String txt = evt.getEventText();
 		if (txt.length() >= 256)
+		{
 			txt = txt.substring(0,255);
+		}
 
 		StringBuilder q = new StringBuilder();
 		q.append("INSERT INTO " + dacqEventTableName + "(" + dacqEventColumns + ") VALUES(?,?,?,?,?,?,?,?");
@@ -117,34 +129,39 @@ public class DacqEventDAO
 	}
 
 	@Override
-	public int readEventsContaining(String text, ArrayList<DacqEvent> evtList)
-		throws DbIoException
+	public int readEventsContaining(String text, ArrayList<DacqEvent> evtList) throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return 0;
 
+		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
-			+ " WHERE EVENT_TEXT LIKE '%" + text + "%'";
+			+ " WHERE EVENT_TEXT LIKE '%' || '?' || '%'";
+		parameters.add(text);
 		if (evtList.size() > 0)
-			q = q + " AND DACQ_EVENT_ID > " + evtList.get(evtList.size()-1).getDacqEventId();
+		{
+			q = q + " AND DACQ_EVENT_ID > ?";
+			parameters.add(evtList.get(evtList.size()-1).getDacqEventId());
+		}
 			
 		q = q + " order by DACQ_EVENT_ID";
-		return queryForEvents(q, evtList);
+		return queryForEvents(q, evtList, parameters);
 	}
 	
-	private int queryForEvents(String q, ArrayList<DacqEvent> evtList)
+	private int queryForEvents(String q, ArrayList<DacqEvent> evtList, List<Object> parameters)
 		throws DbIoException
 	{
-		ResultSet rs = this.doQuery(q);
+		int[] newEvts = new int[1];
+		newEvts[0] = 0;
 		try
 		{
-			int newEvts = 0;
-			while(rs != null && rs.next())
+			doQuery(q, rs ->
 			{
 				evtList.add(rs2evt(rs));
-				newEvts++;
-			}
-			return newEvts;
+				newEvts[0]++;
+			},
+			parameters.toArray(new Object[0]));
+			return newEvts[0];
 		}
 		catch (SQLException ex)
 		{
@@ -152,12 +169,11 @@ public class DacqEventDAO
 			Logger.instance().warning(msg);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg, ex);
 		}
 	}
 
-	private DacqEvent rs2evt(ResultSet rs)
-		throws SQLException
+	private DacqEvent rs2evt(ResultSet rs) throws SQLException
 	{
 		DacqEvent evt = new DacqEvent();
 		evt.setDacqEventId(DbKey.createDbKey(rs, 1));
@@ -169,7 +185,9 @@ public class DacqEventDAO
 		evt.setMsgRecvTime(db.getFullDate(rs, 7));
 		evt.setEventText(rs.getString(8));
 		if (hasAppId)
+		{
 			evt.setAppId(DbKey.createDbKey(rs, 9));
+		}
 
 		return evt;
 	}
@@ -179,15 +197,21 @@ public class DacqEventDAO
 		throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+		{
 			return 0;
-
+		}
+		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
-			+ " WHERE SCHEDULE_ENTRY_STATUS_ID =" + scheduleEntryStatusId;
+			     + " WHERE SCHEDULE_ENTRY_STATUS_ID = ?";
+		parameters.add(scheduleEntryStatusId);
 		if (evtList.size() > 0)
-			q = q + " AND DACQ_EVENT_ID > " + evtList.get(evtList.size()-1).getDacqEventId();
+		{
+			q = q + " AND DACQ_EVENT_ID > ?";
+			parameters.add(evtList.get(evtList.size()-1).getDacqEventId());
+		}
 			
 		q = q + " order by DACQ_EVENT_ID";
-		return queryForEvents(q, evtList);
+		return queryForEvents(q, evtList, parameters);
 	}
 
 	@Override
@@ -195,22 +219,35 @@ public class DacqEventDAO
 		throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+		{
 			return 0;
-
+		}
+		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
-			+ " WHERE PLATFORM_ID =" + platformId;
+			 	 + " WHERE PLATFORM_ID = ?";
+		parameters.add(platformId);
 		if (evtList.size() > 0)
-			q = q + " AND DACQ_EVENT_ID > " + evtList.get(evtList.size()-1).getDacqEventId();
-			
+		{
+			q = q + " AND DACQ_EVENT_ID > ?";
+			parameters.add(evtList.get(evtList.size()-1).getDacqEventId());
+		}
+
 		q = q + " order by DACQ_EVENT_ID";
-		return queryForEvents(q, evtList);
+		return queryForEvents(q, evtList, parameters);
 	}
 
 	@Override
 	public void deleteEventsForPlatform(DbKey platformId) throws DbIoException
 	{
-		String q = "DELETE FROM " + dacqEventTableName + " WHERE PLATFORM_ID =" + platformId;
-		doModify(q);
+		String q = "DELETE FROM " + dacqEventTableName + " WHERE PLATFORM_ID = ?";
+		try
+		{
+			doModify(q,platformId);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to delete records for platform " + platformId, ex);
+		}
 	}
 	
 	@Override
@@ -218,19 +255,15 @@ public class DacqEventDAO
 			throws DbIoException
 	{
 		String q = "SELECT min(DACQ_EVENT_ID) from " + dacqEventTableName
-			+ " WHERE EVENT_TIME > " + db.sqlDate(since);
-		ResultSet rs = doQuery(q);
+				 + " WHERE EVENT_TIME > ?";
 		try
 		{
-			if (rs.next())
-				return DbKey.createDbKey(rs, 1);
-			else
-				return DbKey.NullKey;
+			return getSingleResultOr(q, rs -> DbKey.createDbKey(rs, 1), DbKey.NullKey, since);
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException(module + " getFirstIdAfter() Cannot execute query '"
-				+ q + "': " + ex);
+				+ q + "': " + ex, ex);
 		}
 	}
 
@@ -238,17 +271,23 @@ public class DacqEventDAO
 	public int readEventsAfter(Date since, ArrayList<DacqEvent> evtList) throws DbIoException
 	{
 		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName;
+		ArrayList<Object> parameters = new ArrayList<>();
 		if (since != null)
-			q = q + " WHERE EVENT_TIME >= " + db.sqlDate(since);
+		{
+			q = q + " WHERE EVENT_TIME >= ?";
+			parameters.add(since);
+		}
 		q = q + " order by DACQ_EVENT_ID";
-		return queryForEvents(q, evtList);
+		return queryForEvents(q, evtList, parameters);
 	}
 
 	@Override
 	public int readEventsAfter(DbKey eventId, ArrayList<DacqEvent> evtList) throws DbIoException
 	{
 		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
-			+ " WHERE DACQ_EVENT_ID > " + eventId + " order by DACQ_EVENT_ID";
-		return queryForEvents(q, evtList);
+			     + " WHERE DACQ_EVENT_ID > ? order by DACQ_EVENT_ID";
+		ArrayList<Object> parameters = new ArrayList<>();
+		parameters.add(eventId);
+		return queryForEvents(q, evtList, parameters);
 	}
 }
