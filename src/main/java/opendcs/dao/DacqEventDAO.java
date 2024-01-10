@@ -136,7 +136,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 
 		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "SELECT " + dacqEventColumns + " FROM " + dacqEventTableName
-			+ " WHERE EVENT_TEXT LIKE '%' || '?' || '%'";
+			+ " WHERE EVENT_TEXT LIKE '%' || ? || '%'";
 		parameters.add(text);
 		if (evtList.size() > 0)
 		{
