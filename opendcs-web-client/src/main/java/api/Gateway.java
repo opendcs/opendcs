@@ -124,16 +124,27 @@ public class Gateway extends HttpServlet {
      */
     public void setApiDetails(ServletContext sc) throws IOException
     {
-        //Gets the initialization details from the conf file.
-        String apiConfigFilePath;
-        if (sc == null)
-        {
-            apiConfigFilePath = this.getServletContext().getRealPath("/conf/api.conf");
+        //this.baseUrl = "http://108.20.179.32:9876";
+        //this.context = "odcsapi";
+        if (sc == null) {
+            sc = this.getServletContext();
         }
-        else
+        Object configAttr = sc.getAttribute("api_details_file_path");
+        String apiConfigFilePath = (configAttr == null) ? null : configAttr.toString();
+
+        if (apiConfigFilePath == null)
         {
+            //Use the config file within WAR file.
+            //default api file location.
+            //if (sc == null) {
+            //    apiConfigFilePath = this.getServletContext().getRealPath("/conf/api.conf");
+            //} else {
             apiConfigFilePath = sc.getRealPath("/conf/api.conf");
+            //}
         }
+
+        //Gets the initialization details from the conf file.
+        System.out.println("API Config File Path: " + apiConfigFilePath.toString());
         File cf = new File(apiConfigFilePath);
 
         // Creating an object of BufferedReader class
@@ -147,22 +158,20 @@ public class Gateway extends HttpServlet {
         {
             System.out.println(line);
             String nameValue[] = line.split("=");
-            String name = nameValue[0].trim();
-            String value = nameValue[1].trim();
-            if (name.equalsIgnoreCase("url"))
+            if (nameValue.length > 1)
             {
-                tempUrl = value;
-                System.out.println("Setting Base Url to " + tempUrl); 
-            }
-            else if (name.equalsIgnoreCase("port"))
-            {
-                tempPort = ":" + value;
-                System.out.println("Setting Port to " + tempPort);
-            }
-            else if (name.equalsIgnoreCase("context"))
-            {
-                tempContext = value;
-                System.out.println("Setting Context to " + tempContext);
+                String name = nameValue[0].trim();
+                String value = nameValue[1].trim();
+                if (name.equalsIgnoreCase("url")) {
+                    tempUrl = value;
+                    System.out.println("Setting Base Url to " + tempUrl);
+                } else if (name.equalsIgnoreCase("port")) {
+                    tempPort = ":" + value;
+                    System.out.println("Setting Port to " + tempPort);
+                } else if (name.equalsIgnoreCase("context")) {
+                    tempContext = value;
+                    System.out.println("Setting Context to " + tempContext);
+                }
             }
             // read next line
             line = br.readLine();
@@ -172,6 +181,7 @@ public class Gateway extends HttpServlet {
         this.baseUrl = tempUrl + tempPort;
         this.context = tempContext;
         System.out.println(String.format("API base url: %s.", this.baseUrl));
+
     }
 
     /**

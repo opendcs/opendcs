@@ -25,11 +25,17 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Scanner;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+
+
+//import java.util.logging.FileHandler;
+//import java.util.logging.Handler;
+//import java.util.logging.Level;
+//import java.util.logging.Logger;
+//import java.util.logging.SimpleFormatter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import javax.servlet.DispatcherType;
 
@@ -70,38 +76,40 @@ public class Start
 		corsList.add(new String[] { "Access-Control-Allow-Headers", CrossOriginFilter.ALLOWED_HEADERS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Methods", CrossOriginFilter.ALLOWED_METHODS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Credentials", CrossOriginFilter.ALLOW_CREDENTIALS_PARAM });
-		
+
 		// Set up logging
-		String rootlogfile = ApiEnvExpander.expand("$DCSTOOL_USERDIR/jetty.log");
-		System.out.println("root logger goes to " + rootlogfile);
-		Logger rootLogger = Logger.getLogger("");
-		rootLogger.setLevel(Level.INFO);
-		while (rootLogger.getHandlers().length > 0)
-			rootLogger.removeHandler(rootLogger.getHandlers()[0]);
-		Handler rootHandler = new FileHandler(rootlogfile, 10000000, 5);
-		rootHandler.setFormatter(new SimpleFormatter());
-		rootLogger.addHandler(rootHandler);
+		Logger rootLogger = LoggerFactory.getLogger("");
+
+
+		//rootLogger.setLevel(Level.INFO);
+		//while (rootLogger.getHandlers().length > 0)
+		//	rootLogger.removeHandler(rootLogger.getHandlers()[0]);
+		//Handler rootHandler = new FileHandler(rootlogfile, 10000000, 5);
+		//rootHandler.setFormatter(new SimpleFormatter());
+		//rootLogger.addHandler(rootHandler);
 		rootLogger.info("================ Starting ===============");
 
-		String applogfile = ApiEnvExpander.expand("$DCSTOOL_USERDIR/odcsapi.log");
-		System.out.println("app logger goes to " + applogfile);
-		Logger appLogger = Logger.getLogger(ApiConstants.loggerName);
-		appLogger.setLevel(Level.INFO);
-		while (appLogger.getHandlers().length > 0)
-			appLogger.removeHandler(appLogger.getHandlers()[0]);
-		Handler appHandler = new FileHandler(applogfile, 10000000, 5);
-		appHandler.setFormatter(new LogFormatter());
-		appLogger.addHandler(appHandler);
+		//String applogfile = ApiEnvExpander.expand("$DCSTOOL_USERDIR/odcsapi.log");
+		//System.out.println("app logger goes to " + applogfile);
+		Logger appLogger = LoggerFactory.getLogger(ApiConstants.loggerName);
+		//appLogger.setLevel(Level.INFO);
+		//while (appLogger.getHandlers().length > 0)
+		//	appLogger.removeHandler(appLogger.getHandlers()[0]);
+		//Handler appHandler = new FileHandler(applogfile, 10000000, 5);
+		//appHandler.setFormatter(new LogFormatter());
+		//appLogger.addHandler(appHandler);
 
 		// Parse args
-		appLogger.config("DCSTOOL_USERDIR=" + System.getProperty("DCSTOOL_USERDIR") + ", parsing args...");
+		//appLogger.config("DCSTOOL_USERDIR=" + System.getProperty("DCSTOOL_USERDIR") + ", parsing args...");
+		appLogger.info("DCSTOOL_USERDIR={}, parsing args...", System.getProperty("DCSTOOL_USERDIR"));
+
 		apiCmdLineArgs.parseArgs(args);
-		appLogger.config("    Listening Http Port=" + apiCmdLineArgs.getHttpPort());
-		appLogger.config("    Listening Https Port=" + apiCmdLineArgs.getHttpsPort());
-		appLogger.config("    Top Context=" + apiCmdLineArgs.getContext());
-		appLogger.config("    Cors File=" + apiCmdLineArgs.getCorsFile());
-		appLogger.config("    Secure Mode=" + apiCmdLineArgs.isSecureMode());
-		appLogger.info("================ Starting ===============");
+
+		appLogger.info("Listening Http Port={}", apiCmdLineArgs.getHttpPort());
+		appLogger.info("Listening Https Port={}", apiCmdLineArgs.getHttpsPort());
+		appLogger.info("Top Context={}", apiCmdLineArgs.getContext());
+		appLogger.info("Cors File={}", apiCmdLineArgs.getCorsFile());
+		appLogger.info("Secure Mode={}", apiCmdLineArgs.isSecureMode());
 
 		// Initialize the JETTY server and servlet holders.
 		org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
@@ -115,12 +123,12 @@ public class Start
 			boolean fExists = Files.exists(corsPath);
 			if (!fExists)
 			{
-				appLogger.config("    Cors File=" + corsFile + " does not exist.  Doing nothing with CORS for now.");
+				appLogger.warn("Cors File={} does not exist.  Doing nothing with CORS for now.", corsFile);
 			}
 			else
 			{
 				try {
-					System.out.println("Looking for Cors Filters.");
+					appLogger.info("Looking for Cors Filters.");
 					Scanner scanner = new Scanner(new File(corsFile));
 					FilterHolder cors = null;
 					while (scanner.hasNextLine()) {
@@ -137,9 +145,7 @@ public class Start
 								{
 									cors = ctx.addFilter(CrossOriginFilter.class,"/*",EnumSet.of(DispatcherType.REQUEST));
 								}
-								String msg = String.format("Adding the following cors filter: %s : %s", corsList.get(x)[1], corsValue);
-								System.out.println(msg);
-								appLogger.config(msg);
+								appLogger.info("Adding the following cors filter: {} : {}", corsList.get(x)[1], corsValue);
 								cors.setInitParameter(corsList.get(x)[1], corsValue);
 							}
 						}
@@ -197,7 +203,7 @@ public class Start
 		{
 			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, ex);
 			System.err.println(msg);
-			appLogger.severe(msg);
+			appLogger.error(msg);
 			throw new StartException(String.format("Cannot read auth file: %s", ex));
 		}
 		ds.setUser(afr.getUsername());

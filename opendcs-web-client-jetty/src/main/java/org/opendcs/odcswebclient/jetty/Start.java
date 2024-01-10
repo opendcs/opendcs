@@ -24,7 +24,8 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.webapp.WebAppContext;
-
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.log.StdErrLog;
 
 /**
  * Represents a Start.  This will start a jetty server.
@@ -37,13 +38,16 @@ public class Start
     public static void main(String[] args) 
             throws Exception
     {
+        Log.setLog(new StdErrLog());
+
         String warFilePath = null;
         int port = 8080;
         String contextPath = "/";
+        String apiFileDetailsPath = null;
         // Initialize the JETTY server and servlet holders.
         //Server server = new Server(apiCmdLineArgs.getPort());
         ArgParser argParse = new ArgParser(args);
-        String portString = argParse.switchValue("-p", "8080");
+        String portString = argParse.switchValue("-p", "8083");
         System.out.println("Using Port: " + portString);
         try {
             warFilePath = argParse.switchValue("-w", null);
@@ -53,13 +57,35 @@ public class Start
             System.out.println("War File Not Provided!");
             System.exit(1);
         }
+
+        try {
+            apiFileDetailsPath = argParse.switchValue("-f",  null);
+        }
+        catch (Exception e)
+        {
+            System.out.println("No Api File Details Path File Provided.  Using defaults.");
+        }
+
         contextPath = argParse.switchValue("-c", "/");
         if (!contextPath.startsWith("/"))
         {
             contextPath = "/" + contextPath;
         }
         port = Integer.parseInt(portString);
+
+        contextPath = argParse.switchValue("-c", "/");
+        if (!contextPath.startsWith("/"))
+        {
+            contextPath = "/" + contextPath;
+        }
+
+
+
+
         Server server = new Server(port);
+
+
+
 
         /******* Controlling Headers ******************/
         for(Connector y : server.getConnectors()) {
@@ -92,13 +118,13 @@ public class Start
         webapp.setWar(warFilePath);
         server.setHandler(webapp);
 
+        webapp.setAttribute("api_details_file_path", apiFileDetailsPath);
         //This code is to make sure JSP's work.
         webapp.setAttribute("org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern",".*/[^/]*jstl.*\\.jar$");
         webapp.setExtractWAR( true );  
         org.eclipse.jetty.webapp.Configuration.ClassList classlist = org.eclipse.jetty.webapp.Configuration.ClassList.setServerDefault(server);
         classlist.addAfter("org.eclipse.jetty.webapp.FragmentConfiguration", "org.eclipse.jetty.plus.webapp.EnvConfiguration", "org.eclipse.jetty.plus.webapp.PlusConfiguration");
         classlist.addBefore("org.eclipse.jetty.webapp.JettyWebXmlConfiguration", "org.eclipse.jetty.annotations.AnnotationConfiguration");
-
 
         // Start the server!
         server.start();
