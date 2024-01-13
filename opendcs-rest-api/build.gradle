@@ -12,13 +12,9 @@ dependencies {
     }
     implementation(libs.servlet.api)
     implementation(libs.slf4j.api)
-    implementation(libs.jersey.client)
-    implementation(libs.jersey.server)
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
-    implementation(libs.jersey.common)
     implementation(libs.jersey.hk2)
-    implementation(libs.swagger.ui)
     runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.postgresql)
 }

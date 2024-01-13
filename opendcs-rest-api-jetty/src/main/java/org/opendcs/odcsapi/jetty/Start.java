@@ -210,19 +210,7 @@ public class Start
 		ds.setPassword(afr.getPassword());
 		DbInterface.setDataSource(ds);
 		DbInterface.setDatabaseType(dbType);
-		
-		
-		
-		// Setup API resources
-		ServletHolder jersey = ctx.addServlet(ServletContainer.class, "/api/*");
-		jersey.setInitOrder(1);
-		jersey.setInitParameter("jersey.config.server.provider.packages",
-		        "com.cloudian.hfs.handlers;io.swagger.v3.jaxrs2.integration.resources");
-		// Expose API definition independently into yaml/json
-		ServletHolder openApi = ctx.addServlet(OpenApiServlet.class, "/openapi/*");
-		openApi.setInitOrder(2);
-		openApi.setInitParameter("openApi.configuration.resourcePackages",
-		        "com.cloudian.hfs.handlers");
+
 		// Setup Swagger-UI static resources
 		String resourceBasePath = Start.class.getResource("/swaggerui").toExternalForm();
 		ctx.setWelcomeFiles(new String[] {"index.html"});
