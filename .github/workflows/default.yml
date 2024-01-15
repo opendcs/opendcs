@@ -22,13 +22,13 @@ jobs:
           java-version: 17
           distribution: 'temurin'
       - name: Cache SonarCloud packages
-        uses: actions/cache@v3.3.2
+        uses: actions/cache@v3.3.3
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache Gradle packages
-        uses: actions/cache@v3.3.2
+        uses: actions/cache@v3.3.3
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
@@ -43,14 +43,14 @@ jobs:
       - name: Bundle tarballs
         run: ./gradlew bundle
       - name: Upload WAR files
-        uses: actions/upload-artifact@v4.0.0
+        uses: actions/upload-artifact@v4.1.0
         with:
           name: warfile
           path: ./**/build/libs/*.war
           retention-days: 1
           if-no-files-found: error
       - name: Upload Tarballs
-        uses: actions/upload-artifact@v4.0.0
+        uses: actions/upload-artifact@v4.1.0
         with:
           name: opendcs-rest-api-artifacts
           path: ./**/build/distributions/*.tar.gz
