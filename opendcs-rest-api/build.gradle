@@ -14,7 +14,16 @@ dependencies {
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
     implementation(libs.jersey.hk2)
-    runtimeOnly(libs.jaxb.runtime)
+    implementation(libs.swagger.ui)
+    implementation(libs.jaxb.runtime)
+    testImplementation(libs.jersey.test)
+    testImplementation(libs.jersey.providers)
+    testImplementation(libs.junit.api)
+    testImplementation(libs.junit.vintage)
+    testImplementation(libs.junit.engine)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(libs.rest.assured)
     runtimeOnly(libs.postgresql)
 }
 
