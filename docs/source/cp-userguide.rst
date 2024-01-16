@@ -3827,15 +3827,10 @@ values are Rejected. The next two on either side are Questionable. The
 Rating was constructed to output a value ten times the input for easy
 verification.
 
-```rst
+
 +---------------------+---------+---------+---------+
-| rawstage            | revstage| flow    |         |
+| UTC                 |rawstage |revstage | flow    |
 +=====================+=========+=========+=========+
-| Stage               | Stage   | Flow    | UTC     |
-| ft                  | ft      | cfs     |         |
-+---------------------+---------+---------+---------+
-| TESTSITE1           | TESTSITE1 | TESTSITE1 |      |
-+---------------------+---------+---------+---------+
 | 01/01/2012 00:00:00 | 0.00 SR |         |         |
 +---------------------+---------+---------+---------+
 | 01/01/2012 01:00:00 | 1.00 SR |         |         |
@@ -3886,7 +3881,8 @@ verification.
 +---------------------+---------+---------+---------+
 | 01/02/2012 00:00:00 | 24.00 SR|         |         |
 +---------------------+---------+---------+---------+
-```
+
+
 
 Accessing the Time Slice Time Value
 -----------------------------------
@@ -4076,66 +4072,69 @@ You could also use a hard coded path name.
 
 The Time Series script is as follows:
 
-# Copy no-overwrite from stagetail raw to rev
+.. code-block:: python
+   
+   # Copy no-overwrite from stagetail raw to rev
 
-if isNew('stagetail_raw') and not isGoodQuality('stagetail_rev'):
+   if isNew('stagetail_raw') and not isGoodQuality('stagetail_rev'):
 
-setOutputAndQual('stagetail_rev', stagetail_raw.value,
-stagetail_raw.qual)
+   setOutputAndQual('stagetail_rev', stagetail_raw.value,
+   stagetail_raw.qual)
 
-# Rating from stagetail rev to outflow
+   # Rating from stagetail rev to outflow
 
-if isNew('stagetail_rev'):
+   if isNew('stagetail_rev'):
 
-try:
+   try:
 
-setOutput('outflow', rdbrating(rdbfile, stagetail_rev.value))
+   setOutput('outflow', rdbrating(rdbfile, stagetail_rev.value))
 
-except NoValueException as e:
+   except NoValueException as e:
 
-warning(e.toString())
+   warning(e.toString())
 
-# 6 hour running average of outflow is not saved to a time series
+   # 6 hour running average of outflow is not saved to a time series
 
-if isNew('outflow'):
+   if isNew('outflow'):
 
-ave6hrOutflow = runningAverage('outflow', '6Hours', '(]')
+   ave6hrOutflow = runningAverage('outflow', '6Hours', '(]')
 
-# 2nd part of chain: Stage Pool
+   # 2nd part of chain: Stage Pool
 
-if isNew('stagepool_raw') and not isGoodQuality('stagepool_rev'):
+   if isNew('stagepool_raw') and not isGoodQuality('stagepool_rev'):
 
-setOutputAndQual('stagepool_rev', stagepool_raw.value,
-stagepool_raw.qual)
+   setOutputAndQual('stagepool_rev', stagepool_raw.value,
+   stagepool_raw.qual)
 
-# Rating from stagepool to storage
+   # Rating from stagepool to storage
 
-if isNew('stagepool_rev'):
+   if isNew('stagepool_rev'):
 
-try:
+   try:
 
-setOutput('storage', tabrating(tabfile, stagepool_rev.value))
+   setOutput('storage', tabrating(tabfile, stagepool_rev.value))
 
-except NoValueException as e:
+   except NoValueException as e:
 
-warning(e.toString())
+   warning(e.toString())
 
-# Holdout is a 6hr delta storage converted from acre-ft to cfs (not
-saved)
+   # Holdout is a 6hr delta storage converted from acre-ft to cfs (not
+   saved)
 
-if isNew('storage'):
+   if isNew('storage'):
 
-try:
+   try:
 
-holdout = changeSince('storage', '6Hours') \* 2.0167
+   holdout = changeSince('storage', '6Hours') \* 2.0167
 
-# Finally, the inflow is outflow + holdout.
+   # Finally, the inflow is outflow + holdout.
 
-setOutput('inflow', ave6hrOutflow + holdout)
+   setOutput('inflow', ave6hrOutflow + holdout)
 
-except NoValueException as e:
+   except NoValueException as e:
 
-warning('Error in changeSince: ' + e.toString())
+   warning('Error in changeSince: ' + e.toString())
+
 
 Note how each block begins with ‘isNew()’ containing the name of the
 parameter that would trigger that block of code. This is so we only do
@@ -4171,45 +4170,48 @@ Figure 31 contains an example meta-data file. The file contains:
 
 The example illustrates all aspects of the XML format
 
-<?xml version="1.0" standalone="yes"?>
+.. code-block:: xml
 
-<CompMetaData>
+   <?xml version="1.0" standalone="yes"?>
 
-<LoadingApplication name="compTester">
+   <CompMetaData>
 
-<Comment>Test computation process.
+   <LoadingApplication name="compTester">
 
-Modified comment</Comment>
+   <Comment>Test computation process.
 
-</LoadingApplication>
+   Modified comment</Comment>
 
-<Algorithm name="Copy">
+   </LoadingApplication>
 
-<Comment>
+   <Algorithm name="Copy">
 
-Copy input parameter to output. Delete output if input was deleted.
+   <Comment>
 
-</Comment>
+   Copy input parameter to output. Delete output if input was deleted.
 
-<ExecClass>decodes.tsdb.algo.CopyAlgorithm</ExecClass>
+   </Comment>
 
-<AlgoParmroleName="input">
+   <ExecClass>decodes.tsdb.algo.CopyAlgorithm</ExecClass>
 
-<ParmType>i</ParmType>
+   <AlgoParmroleName="input">
 
-</AlgoParm>
+   <ParmType>i</ParmType>
 
-<AlgoParmroleName="output">
+   </AlgoParm>
 
-<ParmType>o</ParmType>
+   <AlgoParmroleName="output">
 
-</AlgoParm>
+   <ParmType>o</ParmType>
 
-</Algorithm>
+   </AlgoParm>
 
-<Algorithm name="RdbRating">
+   </Algorithm>
 
-<Comment>
+   <Algorithm name="RdbRating">
+
+   <Comment>
+
 
 Implements rating table computations. Holds the lookup table &amp; shift
 
