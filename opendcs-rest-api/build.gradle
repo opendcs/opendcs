@@ -11,7 +11,6 @@ dependencies {
         exclude group: '*', module: '*'
     }
     implementation(libs.servlet.api)
-    implementation(libs.slf4j.api)
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
     implementation(libs.jersey.hk2)

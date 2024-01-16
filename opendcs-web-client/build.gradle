@@ -8,8 +8,6 @@ plugins {
 dependencies {
     implementation(libs.jetty.jsp)
     implementation(libs.websocket)
-    implementation(libs.slf4j.api)
-    implementation(libs.logback)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
 }

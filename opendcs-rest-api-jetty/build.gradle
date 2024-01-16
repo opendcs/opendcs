@@ -12,8 +12,8 @@ dependencies {
     implementation(libs.jersey.container.servlet)
     implementation(libs.postgresql)
     implementation(libs.swagger.jaxrs2)
-    implementation(libs.slf4j.api)
-    implementation(libs.logback)
+    implementation(libs.javax.validation)
+    implementation(libs.slf4j.jdk)
 }
 
 jar {
@@ -75,7 +75,6 @@ task bundle(type: Tar) {
         from jar
     }
     into('bin') {
-        //from "${project.buildDir}/bin/start.sh"
         from new File(project.layout.getBuildDirectory().get().getAsFile(), "bin/start.sh");
     }
 }
