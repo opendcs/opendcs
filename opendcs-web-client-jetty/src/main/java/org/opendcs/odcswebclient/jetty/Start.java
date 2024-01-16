@@ -49,7 +49,8 @@ public class Start
         ArgParser argParse = new ArgParser(args);
         String portString = argParse.switchValue("-p", "8083");
         System.out.println("Using Port: " + portString);
-        try {
+        try
+        {
             warFilePath = argParse.switchValue("-w", null);
         }
         catch (Exception e)
@@ -58,7 +59,8 @@ public class Start
             System.exit(1);
         }
 
-        try {
+        try
+        {
             apiFileDetailsPath = argParse.switchValue("-f",  null);
         }
         catch (Exception e)

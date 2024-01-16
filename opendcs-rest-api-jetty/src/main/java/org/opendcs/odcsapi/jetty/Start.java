@@ -15,7 +15,11 @@
 
 package org.opendcs.odcsapi.jetty;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,14 +69,13 @@ public class Start
 		apiCmdLineArgs.parseArgs(args);
 		String loggingFile = apiCmdLineArgs.getLoggingPropertiesFile();
 		InputStream is = null;
-		if (loggingFile == null) {
-			System.out.println("No log file passed.  Using defauts.");
+		if (loggingFile == null)
+		{
 			is = Start.class.getClassLoader().
 					getResourceAsStream("logging.properties");
 		}
 		else
 		{
-			System.out.println("Logging File Passed: " + apiCmdLineArgs.getLoggingPropertiesFile());
 			File lf = new File(loggingFile);
 			is = new FileInputStream(lf);
 		}
@@ -107,7 +110,8 @@ public class Start
 			}
 			else
 			{
-				try {
+				try
+				{
 					logger.info("Looking for Cors Filters.");
 					Scanner scanner = new Scanner(new File(corsFile));
 					FilterHolder cors = null;

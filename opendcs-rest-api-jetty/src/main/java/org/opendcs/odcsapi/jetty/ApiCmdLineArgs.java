@@ -35,7 +35,10 @@ public class ApiCmdLineArgs
 	private boolean secureMode = false;
 	private String corsFile = "$DCSTOOL_HOME/opendcs_api_cors.cfg";
 	
-	private enum State { IDLE, EXPECT_CONTEXT, EXPECT_HTTPPORT, EXPECT_LOGFILE, EXPECT_HTTPSPORT, EXPECT_KEYSTOREPATH, EXPECT_KEYSTOREPASSWORD, EXPECT_PROPFILE, EXPECT_CORS };
+	private enum State
+	{
+		IDLE, EXPECT_CONTEXT, EXPECT_HTTPPORT, EXPECT_LOGFILE, EXPECT_HTTPSPORT, EXPECT_KEYSTOREPATH, EXPECT_KEYSTOREPASSWORD, EXPECT_PROPFILE, EXPECT_CORS
+	};
 	private State state = State.IDLE;
 	private String splitArg = null;
 	
