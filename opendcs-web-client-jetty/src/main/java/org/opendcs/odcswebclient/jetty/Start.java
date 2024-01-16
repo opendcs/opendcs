@@ -45,7 +45,6 @@ public class Start
         String contextPath = "/";
         String apiFileDetailsPath = null;
         // Initialize the JETTY server and servlet holders.
-        //Server server = new Server(apiCmdLineArgs.getPort());
         ArgParser argParse = new ArgParser(args);
         String portString = argParse.switchValue("-p", "8083");
         System.out.println("Using Port: " + portString);
