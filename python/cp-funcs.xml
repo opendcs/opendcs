@@ -73,7 +73,7 @@
         screening('input1')
         if (isGoodQuality('input1')):
              setOutputAndQual('output1', input1.value, input1.qual)
-]>
+]]>
 </func>
 
 <func name="setOutput" sig="setOutput(outputTsParm, value)">
