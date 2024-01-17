@@ -58,26 +58,20 @@ task createStartScript() {
         new File(binDir, "start.sh").text = """
 #!/bin/bash
 cd `dirname \$0`/..
-java  -Djava.util.logging.config.file=logging.properties \$JAVA_OPTS -jar libs/${project.name}-${project.version}.jar \$JAVA_ARGS
+java  -Djava.util.logging.config.file=config/logging.properties \$JAVA_OPTS -jar libs/${project.name}-${project.version}.jar \$JAVA_ARGS
             """
     }
-}
-
-task copyLoggingPropertiesFile(type: Copy) {
-    dependsOn jar
-    from 'src/main/resources/logging.properties'
-    into project.layout.getBuildDirectory().get().getAsFile()
 }
 
 task bundle(type: Tar) {
     dependsOn jar
     dependsOn createStartScript
-    dependsOn copyLoggingPropertiesFile
 
+    compression Compression.GZIP
     archiveExtension = 'tar.gz'
 
-    into('') {
-        from new File(project.layout.getBuildDirectory().get().getAsFile(), "logging.properties");
+    into('config') {
+        from project.file("bin/logging.properties")
     }
     into('libs') {
         from configurations.runtimeClasspath
