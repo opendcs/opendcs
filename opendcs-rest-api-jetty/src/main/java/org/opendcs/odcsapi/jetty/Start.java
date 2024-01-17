@@ -43,7 +43,6 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.start.StartException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiEnvExpander;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
@@ -55,7 +54,7 @@ public class Start
 	private static final Logger LOGGER = LoggerFactory.getLogger(ApiConstants.loggerName);
 
 	public static void main(String[] args)
-		throws Exception
+		//throws Exception
 	{
 		ArrayList<String[]> corsList = new ArrayList<>();
 		corsList.add(new String[] { "Access-Control-Allow-Origin", CrossOriginFilter.ALLOWED_ORIGINS_PARAM });
@@ -63,9 +62,16 @@ public class Start
 		corsList.add(new String[] { "Access-Control-Allow-Methods", CrossOriginFilter.ALLOWED_METHODS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Credentials", CrossOriginFilter.ALLOW_CREDENTIALS_PARAM });
 
-		apiCmdLineArgs.parseArgs(args);
+		try
+		{
+			apiCmdLineArgs.parseArgs(args);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error("Error parsing arguments.  Exiting now.  {}", e.getMessage());
+			System.exit(1);
+		}
 
-		LOGGER.info("DCSTOOL_USERDIR={0}, parsing args...", System.getProperty("DCSTOOL_USERDIR"));
 		LOGGER.info("Listening Http Port={}", apiCmdLineArgs.getHttpPort());
 		LOGGER.info("Listening Https Port={}", apiCmdLineArgs.getHttpsPort());
 		LOGGER.info("Top Context={}", apiCmdLineArgs.getContext());
@@ -140,6 +146,10 @@ public class Start
 		{
 			decodesProps.load(fr);
 		}
+		catch (Exception e)
+		{
+			LOGGER.error("There was an error loading the decodes property file. {}", e.getMessage());
+		}
 		String dbUrl = null;
 		String dbType = null;
 		String dbAuthFile = null;
@@ -166,31 +176,42 @@ public class Start
 		{
 			afr.read();
 		}
-		catch(Exception ex)
+		catch(Exception e)
 		{
-			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, ex);
+			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, e);
 			LOGGER.error(msg);
-			throw new StartException(String.format("Cannot read auth file: %s", ex));
 		}
 		ds.setUser(afr.getUsername());
 		ds.setPassword(afr.getPassword());
 		DbInterface.setDataSource(ds);
-		DbInterface.setDatabaseType(dbType);
+		try
+		{
+			DbInterface.setDatabaseType(dbType);
+		}
+		catch (Exception e)
+		{
+			LOGGER.error("There was an issue setting database type. {}", e.getMessage());
+			if (dbType != null)
+			{
+				LOGGER.error("The attempted database type to be set is {}", dbType);
+			}
+		}
 
 		// Setup Swagger-UI static resources
 		String resourceBasePath = Start.class.getResource("/swaggerui").toExternalForm();
 		ctx.setWelcomeFiles(new String[] {"index.html"});
 		ctx.setResourceBase(resourceBasePath);
 		ctx.addServlet(new ServletHolder(new DefaultServlet()), "/*");
+
 		ServerConnector connector = new ServerConnector(server);
-		
 		ArrayList<ServerConnector> connectors = new ArrayList<>();
+
 		if (apiCmdLineArgs.getHttpPort() >= 0)
 		{
 			connector.setPort(apiCmdLineArgs.getHttpPort());
 			connectors.add(connector);
 		}
-		
+
 		if (apiCmdLineArgs.getHttpsPort() >= 0)
 		{
 			HttpConfiguration https = new HttpConfiguration();
@@ -205,11 +226,19 @@ public class Start
 			sslConnector.setPort(apiCmdLineArgs.getHttpsPort());
 			connectors.add(sslConnector);
 		}
-		
+
 		server.setConnectors(connectors.toArray(new ServerConnector[connectors.size()]));
 
 		// Start the server.
-		server.start();
-		server.join();
+		try
+		{
+			server.start();
+			server.join();
+		}
+		catch (Exception e)
+		{
+			LOGGER.warn("Interrupted!", e);
+			Thread.currentThread().interrupt();
+		}
 	}
 }

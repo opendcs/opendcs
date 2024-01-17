@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.jetty.annotations)
     implementation(libs.jetty.webapp)
     implementation(libs.jersey.container.servlet)
+    implementation(libs.slf4j.jdk)
 }
 
 jar {
