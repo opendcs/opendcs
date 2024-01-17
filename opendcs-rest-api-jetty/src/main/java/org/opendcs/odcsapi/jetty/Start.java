@@ -17,9 +17,7 @@ package org.opendcs.odcsapi.jetty;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.io.FileReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -54,53 +52,50 @@ import org.postgresql.ds.PGSimpleDataSource;
 public class Start
 {
 	private static ApiCmdLineArgs apiCmdLineArgs = new ApiCmdLineArgs();
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApiConstants.loggerName);
 
-	public static void main(String[] args) 
+	public static void main(String[] args)
 		throws Exception
 	{
-		ArrayList<String[]> corsList = new ArrayList<String[]>();
+		ArrayList<String[]> corsList = new ArrayList<>();
 		corsList.add(new String[] { "Access-Control-Allow-Origin", CrossOriginFilter.ALLOWED_ORIGINS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Headers", CrossOriginFilter.ALLOWED_HEADERS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Methods", CrossOriginFilter.ALLOWED_METHODS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Credentials", CrossOriginFilter.ALLOW_CREDENTIALS_PARAM });
 
 		apiCmdLineArgs.parseArgs(args);
-		InputStream is = null;
 
-		// Set up logging
-		Logger logger = LoggerFactory.getLogger(ApiConstants.loggerName);
-
-		// Parse args
-		logger.info("DCSTOOL_USERDIR={}, parsing args...", System.getProperty("DCSTOOL_USERDIR"));
-
-		logger.info("Listening Http Port={}", apiCmdLineArgs.getHttpPort());
-		logger.info("Listening Https Port={}", apiCmdLineArgs.getHttpsPort());
-		logger.info("Top Context={}", apiCmdLineArgs.getContext());
-		logger.info("Cors File={}", apiCmdLineArgs.getCorsFile());
-		logger.info("Secure Mode={}", apiCmdLineArgs.isSecureMode());
+		LOGGER.info("DCSTOOL_USERDIR={0}, parsing args...", System.getProperty("DCSTOOL_USERDIR"));
+		LOGGER.info("Listening Http Port={}", apiCmdLineArgs.getHttpPort());
+		LOGGER.info("Listening Https Port={}", apiCmdLineArgs.getHttpsPort());
+		LOGGER.info("Top Context={}", apiCmdLineArgs.getContext());
+		LOGGER.info("Cors File={}", apiCmdLineArgs.getCorsFile());
+		LOGGER.info("Secure Mode={}", apiCmdLineArgs.isSecureMode());
 
 		// Initialize the JETTY server and servlet holders.
 		org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
 		ServletContextHandler ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		ctx.setContextPath("/");
 		server.setHandler(ctx);
+
 		String corsFile = apiCmdLineArgs.getCorsFile();
 		if (corsFile != null)
 		{
 			Path corsPath = Paths.get(corsFile);
-			boolean fExists = Files.exists(corsPath);
+			boolean fExists = corsPath.toFile().exists();
 			if (!fExists)
 			{
-				logger.warn("Cors File={} does not exist.  Doing nothing with CORS for now.", corsFile);
+				LOGGER.warn("Cors File={} does not exist.  Doing nothing with CORS for now.", corsFile);
 			}
 			else
 			{
 				try
 				{
-					logger.info("Looking for Cors Filters.");
+					LOGGER.info("Looking for Cors Filters.");
 					Scanner scanner = new Scanner(new File(corsFile));
 					FilterHolder cors = null;
-					while (scanner.hasNextLine()) {
+					while (scanner.hasNextLine())
+					{
 						String curLine = scanner.nextLine();
 						String[] splitString = curLine.split(":");
 						String corsId = splitString[0].trim().toLowerCase();
@@ -114,7 +109,8 @@ public class Start
 								{
 									cors = ctx.addFilter(CrossOriginFilter.class,"/*",EnumSet.of(DispatcherType.REQUEST));
 								}
-								logger.info("Adding the following cors filter: {} : {}", corsList.get(x)[1], corsValue);
+								String corsFilter = corsList.get(x)[1];
+								LOGGER.info("Adding the following cors filter: {} : {}", corsFilter, corsValue);
 								cors.setInitParameter(corsList.get(x)[1], corsValue);
 							}
 						}
@@ -124,8 +120,10 @@ public class Start
 						server.setHandler(ctx);
 					}
 					scanner.close();
-				} catch (FileNotFoundException e) {
-					logger.error("There was an error loading file.", e);
+				}
+				catch (FileNotFoundException e)
+				{
+					LOGGER.error("There was an error loading file.", e);
 				}
 			}
 		}
@@ -148,13 +146,13 @@ public class Start
 		for (Object key : decodesProps.keySet())
 		{
 			String n = (String)key;
-			if (n.equalsIgnoreCase("editDatabaseType"))
+			if ("editDatabaseType".equalsIgnoreCase(n))
 				dbType = decodesProps.getProperty(n);
-			else if (n.equalsIgnoreCase("editDatabaseLocation"))
+			else if ("editDatabaseLocation".equalsIgnoreCase(n))
 				dbUrl = decodesProps.getProperty(n);
-			else if (n.equalsIgnoreCase("DbAuthFile"))
+			else if ("DbAuthFile".equalsIgnoreCase(n))
 				dbAuthFile = decodesProps.getProperty(n);
-			else if (n.equalsIgnoreCase("siteNameTypePreference"))
+			else if ("siteNameTypePreference".equalsIgnoreCase(n))
 				DbInterface.siteNameTypePreference = n;
 		}
 		ApiPropertiesUtil.copyProps(DbInterface.decodesProperties, decodesProps);
@@ -171,8 +169,7 @@ public class Start
 		catch(Exception ex)
 		{
 			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, ex);
-			System.err.println(msg);
-			logger.error(msg);
+			LOGGER.error(msg);
 			throw new StartException(String.format("Cannot read auth file: %s", ex));
 		}
 		ds.setUser(afr.getUsername());
@@ -187,7 +184,7 @@ public class Start
 		ctx.addServlet(new ServletHolder(new DefaultServlet()), "/*");
 		ServerConnector connector = new ServerConnector(server);
 		
-		ArrayList<ServerConnector> connectors = new ArrayList<ServerConnector>();
+		ArrayList<ServerConnector> connectors = new ArrayList<>();
 		if (apiCmdLineArgs.getHttpPort() >= 0)
 		{
 			connector.setPort(apiCmdLineArgs.getHttpPort());
@@ -210,8 +207,6 @@ public class Start
 		}
 		
 		server.setConnectors(connectors.toArray(new ServerConnector[connectors.size()]));
-		
-		/******* Controlling Headers ******************/
 
 		// Start the server.
 		server.start();

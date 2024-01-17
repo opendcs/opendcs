@@ -124,7 +124,8 @@ public class Gateway extends HttpServlet {
      */
     public void setApiDetails(ServletContext sc) throws IOException
     {
-        if (sc == null) {
+        if (sc == null)
+        {
             sc = this.getServletContext();
         }
         Object configAttr = sc.getAttribute("api_details_file_path");
@@ -138,7 +139,7 @@ public class Gateway extends HttpServlet {
         }
 
         //Gets the initialization details from the conf file.
-        System.out.println("API Config File Path: " + apiConfigFilePath.toString());
+        System.out.println("API Config File Path: " + apiConfigFilePath);
         File cf = new File(apiConfigFilePath);
 
         // Creating an object of BufferedReader class
@@ -159,10 +160,14 @@ public class Gateway extends HttpServlet {
                 if (name.equalsIgnoreCase("url")) {
                     tempUrl = value;
                     System.out.println("Setting Base Url to " + tempUrl);
-                } else if (name.equalsIgnoreCase("port")) {
+                }
+                else if ("port".equalsIgnoreCase(name))
+                {
                     tempPort = ":" + value;
                     System.out.println("Setting Port to " + tempPort);
-                } else if (name.equalsIgnoreCase("context")) {
+                }
+                else if ("context".equalsIgnoreCase(name))
+                {
                     tempContext = value;
                     System.out.println("Setting Context to " + tempContext);
                 }

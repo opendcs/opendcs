@@ -37,7 +37,7 @@ public class ApiCmdLineArgs
 	private enum State
 	{
 		IDLE, EXPECT_CONTEXT, EXPECT_HTTPPORT, EXPECT_HTTPSPORT, EXPECT_KEYSTOREPATH, EXPECT_KEYSTOREPASSWORD, EXPECT_PROPFILE, EXPECT_CORS
-	};
+	}
 	private State state = State.IDLE;
 	private String splitArg = null;
 	
