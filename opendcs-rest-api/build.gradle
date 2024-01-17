@@ -11,14 +11,11 @@ dependencies {
         exclude group: '*', module: '*'
     }
     implementation(libs.servlet.api)
-    implementation(libs.slf4j.api)
-    implementation(libs.jersey.client)
-    implementation(libs.jersey.server)
     implementation(libs.json.jackson)
-    implementation(libs.jersey.common)
+    implementation(libs.jersey.container.servlet)
     implementation(libs.jersey.hk2)
-    implementation(libs.swagger.ui)
-    implementation(libs.jaxb.runtime)
+    runtimeOnly(libs.jaxb.runtime)
+    runtimeOnly(libs.postgresql)
 }
 
 publishing {

@@ -18,26 +18,22 @@ package org.opendcs.odcsapi.jetty;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Scanner;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+
+import org.opendcs.odcsapi.start.StartException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.DispatcherType;
 
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -48,85 +44,66 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.start.StartException;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiEnvExpander;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
-import org.opendcs.odcsapi.util.LogFormatter;
 import org.postgresql.ds.PGSimpleDataSource;
 
-import io.swagger.v3.jaxrs2.integration.OpenApiServlet;
-
-/**
- * EasyPack Jetty Start
- */
 public class Start
 {
 	private static ApiCmdLineArgs apiCmdLineArgs = new ApiCmdLineArgs();
-	
-	
-	public static void main(String[] args) 
-		throws Exception
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApiConstants.loggerName);
+
+	public static void main(String[] args)
 	{
-		ArrayList<String[]> corsList = new ArrayList<String[]>();
+        try
+		{
+            run(args);
+        } catch (Exception e)
+		{
+            LOGGER.atError().setCause(e).log("There was an error running the opendcs-rest-api-jetty start script.");
+        }
+    }
+	private static void run(String[] args) throws Exception
+	{
+		ArrayList<String[]> corsList = new ArrayList<>();
 		corsList.add(new String[] { "Access-Control-Allow-Origin", CrossOriginFilter.ALLOWED_ORIGINS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Headers", CrossOriginFilter.ALLOWED_HEADERS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Methods", CrossOriginFilter.ALLOWED_METHODS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Credentials", CrossOriginFilter.ALLOW_CREDENTIALS_PARAM });
-		
-		// Set up logging
-		String rootlogfile = ApiEnvExpander.expand("$DCSTOOL_USERDIR/jetty.log");
-		System.out.println("root logger goes to " + rootlogfile);
-		Logger rootLogger = Logger.getLogger("");
-		rootLogger.setLevel(Level.INFO);
-		while (rootLogger.getHandlers().length > 0)
-			rootLogger.removeHandler(rootLogger.getHandlers()[0]);
-		Handler rootHandler = new FileHandler(rootlogfile, 10000000, 5);
-		rootHandler.setFormatter(new SimpleFormatter());
-		rootLogger.addHandler(rootHandler);
-		rootLogger.info("================ Starting ===============");
 
-		String applogfile = ApiEnvExpander.expand("$DCSTOOL_USERDIR/odcsapi.log");
-		System.out.println("app logger goes to " + applogfile);
-		Logger appLogger = Logger.getLogger(ApiConstants.loggerName);
-		appLogger.setLevel(Level.INFO);
-		while (appLogger.getHandlers().length > 0)
-			appLogger.removeHandler(appLogger.getHandlers()[0]);
-		Handler appHandler = new FileHandler(applogfile, 10000000, 5);
-		appHandler.setFormatter(new LogFormatter());
-		appLogger.addHandler(appHandler);
-
-		// Parse args
-		appLogger.config("DCSTOOL_USERDIR=" + System.getProperty("DCSTOOL_USERDIR") + ", parsing args...");
 		apiCmdLineArgs.parseArgs(args);
-		appLogger.config("    Listening Http Port=" + apiCmdLineArgs.getHttpPort());
-		appLogger.config("    Listening Https Port=" + apiCmdLineArgs.getHttpsPort());
-		appLogger.config("    Top Context=" + apiCmdLineArgs.getContext());
-		appLogger.config("    Cors File=" + apiCmdLineArgs.getCorsFile());
-		appLogger.config("    Secure Mode=" + apiCmdLineArgs.isSecureMode());
-		appLogger.info("================ Starting ===============");
+
+		LOGGER.info("Listening Http Port={}", apiCmdLineArgs.getHttpPort());
+		LOGGER.info("Listening Https Port={}", apiCmdLineArgs.getHttpsPort());
+		LOGGER.info("Top Context={}", apiCmdLineArgs.getContext());
+		LOGGER.info("Cors File={}", apiCmdLineArgs.getCorsFile());
+		LOGGER.info("Secure Mode={}", apiCmdLineArgs.isSecureMode());
 
 		// Initialize the JETTY server and servlet holders.
-		Server server = new Server();
+		org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
 		ServletContextHandler ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		ctx.setContextPath("/");
 		server.setHandler(ctx);
+
 		String corsFile = apiCmdLineArgs.getCorsFile();
 		if (corsFile != null)
 		{
 			Path corsPath = Paths.get(corsFile);
-			boolean fExists = Files.exists(corsPath);
+			boolean fExists = corsPath.toFile().exists();
 			if (!fExists)
 			{
-				appLogger.config("    Cors File=" + corsFile + " does not exist.  Doing nothing with CORS for now.");
+				LOGGER.warn("Cors File={} does not exist.  Doing nothing with CORS for now.", corsFile);
 			}
 			else
 			{
-				try {
-					System.out.println("Looking for Cors Filters.");
+				try
+				{
+					LOGGER.info("Looking for Cors Filters.");
 					Scanner scanner = new Scanner(new File(corsFile));
 					FilterHolder cors = null;
-					while (scanner.hasNextLine()) {
+					while (scanner.hasNextLine())
+					{
 						String curLine = scanner.nextLine();
 						String[] splitString = curLine.split(":");
 						String corsId = splitString[0].trim().toLowerCase();
@@ -140,9 +117,8 @@ public class Start
 								{
 									cors = ctx.addFilter(CrossOriginFilter.class,"/*",EnumSet.of(DispatcherType.REQUEST));
 								}
-								String msg = String.format("Adding the following cors filter: %s : %s", corsList.get(x)[1], corsValue);
-								System.out.println(msg);
-								appLogger.config(msg);
+								String corsFilter = corsList.get(x)[1];
+								LOGGER.info("Adding the following cors filter: {} : {}", corsFilter, corsValue);
 								cors.setInitParameter(corsList.get(x)[1], corsValue);
 							}
 						}
@@ -152,18 +128,20 @@ public class Start
 						server.setHandler(ctx);
 					}
 					scanner.close();
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
+				}
+				catch (FileNotFoundException e)
+				{
+					LOGGER.error("There was an error loading file.", e);
 				}
 			}
 		}
-		
-		ServletHolder serHol = ctx.addServlet(ServletContainer.class, 
-			"/" + apiCmdLineArgs.getContext() + "/*");
+
+		ServletHolder serHol = ctx.addServlet(ServletContainer.class,
+				"/" + apiCmdLineArgs.getContext() + "/*");
 		serHol.setInitOrder(1);
-		serHol.setInitParameter("jersey.config.server.provider.packages", 
-			"org.opendcs.odcsapi.res");
-		
+		serHol.setInitParameter("jersey.config.server.provider.packages",
+				"org.opendcs.odcsapi.res");
+
 		// Get whatever is needed from decodes properties.
 		Properties decodesProps = new Properties();
 		try (FileReader fr = new FileReader(ApiEnvExpander.expand(apiCmdLineArgs.getDecodesPropFile())))
@@ -176,61 +154,51 @@ public class Start
 		for (Object key : decodesProps.keySet())
 		{
 			String n = (String)key;
-			if (n.equalsIgnoreCase("editDatabaseType"))
+			if ("editDatabaseType".equalsIgnoreCase(n))
 				dbType = decodesProps.getProperty(n);
-			else if (n.equalsIgnoreCase("editDatabaseLocation"))
+			else if ("editDatabaseLocation".equalsIgnoreCase(n))
 				dbUrl = decodesProps.getProperty(n);
-			else if (n.equalsIgnoreCase("DbAuthFile"))
+			else if ("DbAuthFile".equalsIgnoreCase(n))
 				dbAuthFile = decodesProps.getProperty(n);
-			else if (n.equalsIgnoreCase("siteNameTypePreference"))
+			else if ("siteNameTypePreference".equalsIgnoreCase(n))
 				DbInterface.siteNameTypePreference = n;
 		}
 		ApiPropertiesUtil.copyProps(DbInterface.decodesProperties, decodesProps);
 		DbInterface.secureMode = apiCmdLineArgs.isSecureMode();
-		
+
 		PGSimpleDataSource ds = new PGSimpleDataSource();
 		ds.setURL(dbUrl);
 		String afn = ApiEnvExpander.expand(dbAuthFile);
 		AuthFileReader afr = new AuthFileReader(afn);
-		try { afr.read(); }
+		try
+		{
+			afr.read();
+		}
 		catch(Exception ex)
 		{
 			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, ex);
-			System.err.println(msg);
-			appLogger.severe(msg);
+			LOGGER.error(msg);
 			throw new StartException(String.format("Cannot read auth file: %s", ex));
 		}
 		ds.setUser(afr.getUsername());
 		ds.setPassword(afr.getPassword());
 		DbInterface.setDataSource(ds);
 		DbInterface.setDatabaseType(dbType);
-		
-		
-		
-		// Setup API resources
-		ServletHolder jersey = ctx.addServlet(ServletContainer.class, "/api/*");
-		jersey.setInitOrder(1);
-		jersey.setInitParameter("jersey.config.server.provider.packages",
-		        "com.cloudian.hfs.handlers;io.swagger.v3.jaxrs2.integration.resources");
-		// Expose API definition independently into yaml/json
-		ServletHolder openApi = ctx.addServlet(OpenApiServlet.class, "/openapi/*");
-		openApi.setInitOrder(2);
-		openApi.setInitParameter("openApi.configuration.resourcePackages",
-		        "com.cloudian.hfs.handlers");
+
 		// Setup Swagger-UI static resources
 		String resourceBasePath = Start.class.getResource("/swaggerui").toExternalForm();
 		ctx.setWelcomeFiles(new String[] {"index.html"});
 		ctx.setResourceBase(resourceBasePath);
 		ctx.addServlet(new ServletHolder(new DefaultServlet()), "/*");
 		ServerConnector connector = new ServerConnector(server);
-		
-		ArrayList<Connector> connectors = new ArrayList<Connector>();
+
+		ArrayList<ServerConnector> connectors = new ArrayList<>();
 		if (apiCmdLineArgs.getHttpPort() >= 0)
 		{
 			connector.setPort(apiCmdLineArgs.getHttpPort());
 			connectors.add(connector);
 		}
-		
+
 		if (apiCmdLineArgs.getHttpsPort() >= 0)
 		{
 			HttpConfiguration https = new HttpConfiguration();
@@ -240,26 +208,14 @@ public class Start
 			sslContextFactory.setKeyStorePath(apiCmdLineArgs.getKeyStorePath());
 			sslContextFactory.setKeyStorePassword(apiCmdLineArgs.getKeyStorePassword());
 			ServerConnector sslConnector = new ServerConnector(server,
-			    new SslConnectionFactory(sslContextFactory, "http/1.1"),
-			    new HttpConnectionFactory(https));
+					new SslConnectionFactory(sslContextFactory, "http/1.1"),
+					new HttpConnectionFactory(https));
 			sslConnector.setPort(apiCmdLineArgs.getHttpsPort());
 			connectors.add(sslConnector);
 		}
-		
-		server.setConnectors(connectors.toArray(new Connector[connectors.size()]));
-		
-		/******* Controlling Headers ******************/
-	/*
-        System.out.println("Removing server header.");
-        for(Connector y : server.getConnectors()) {
-            for(ConnectionFactory x  : y.getConnectionFactories()) {
-                if(x instanceof HttpConnectionFactory) {
-                    //Removes Server Header from each connector
-                    ((HttpConnectionFactory)x).getHttpConfiguration().setSendServerVersion(false);
-                }
-            }
-        }
-	*/	
+
+		server.setConnectors(connectors.toArray(new ServerConnector[connectors.size()]));
+
 		// Start the server.
 		server.start();
 		server.join();

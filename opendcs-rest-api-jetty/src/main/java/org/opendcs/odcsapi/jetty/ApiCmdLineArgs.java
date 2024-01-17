@@ -29,12 +29,15 @@ public class ApiCmdLineArgs
 	private int httpsPort = -1;
 	private String keyStorePath;
 	private String keyStorePassword;
-	
+
 	private String decodesPropFile = "$DCSTOOL_USERDIR/user.properties";
 	private boolean secureMode = false;
 	private String corsFile = "$DCSTOOL_HOME/opendcs_api_cors.cfg";
 	
-	private enum State { IDLE, EXPECT_CONTEXT, EXPECT_HTTPPORT,  EXPECT_HTTPSPORT, EXPECT_KEYSTOREPATH, EXPECT_KEYSTOREPASSWORD, EXPECT_PROPFILE, EXPECT_CORS };
+	private enum State
+	{
+		IDLE, EXPECT_CONTEXT, EXPECT_HTTPPORT, EXPECT_HTTPSPORT, EXPECT_KEYSTOREPATH, EXPECT_KEYSTOREPASSWORD, EXPECT_PROPFILE, EXPECT_CORS
+	}
 	private State state = State.IDLE;
 	private String splitArg = null;
 	
@@ -43,15 +46,11 @@ public class ApiCmdLineArgs
 	{
 		state = State.IDLE;
 		splitArg = null;
-		System.out.println("ALL Args: " + args.toString());
 		for(String arg : args)
 		{
-			System.out.println("First Arg: " + arg);
 			parseArg(arg);
-			System.out.println("Arg after parse: " + arg);
 			if (splitArg != null)
 			{
-				System.out.println("Split Arg Before Parse: " + splitArg);
 				parseArg(splitArg);
 				splitArg = null;
 			}
@@ -66,24 +65,17 @@ public class ApiCmdLineArgs
 		switch(state)
 		{
 			case IDLE:
-				System.out.println("IDLE: Arg: " + arg);
 				if (arg.startsWith("-cors"))
 				{
-					System.out.println("-cors argument found.");
 					state = State.EXPECT_CORS;
-					System.out.println("Arg: " + arg);
 					if (arg.length() > 5)
 						splitArg = arg.substring(5);
-					System.out.println("Split Arg: " + splitArg);
 				}
 				else if (arg.startsWith("-c"))
 				{
-					System.out.println("-c argument found.");
 					state = State.EXPECT_CONTEXT;
-					System.out.println("Arg: " + arg);
 					if (arg.length() > 2)
 						splitArg = arg.substring(2);
-					System.out.println("Split Arg: " + splitArg);
 				}
 				else if (arg.startsWith("-p"))
 				{
@@ -172,11 +164,7 @@ public class ApiCmdLineArgs
 				state = State.IDLE;
 				break;
 			case EXPECT_CORS:
-				System.out.println("Cors File!!!");
-				System.out.println("Whole Arg: " + arg);
-				System.out.println("Split Arg: " + splitArg);
 				corsFile = arg.trim();
-				System.out.println("Cors File: " + corsFile);
 				Path corsPath = Paths.get(corsFile);
 				boolean fExists = Files.exists(corsPath);
 				if (!fExists)
@@ -244,7 +232,7 @@ public class ApiCmdLineArgs
 	{
 		this.keyStorePassword = keyStorePassword;
 	}
-	
+
 	public String getDecodesPropFile()
 	{
 		return decodesPropFile;

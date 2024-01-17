@@ -1,5 +1,3 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
 plugins {
     id "opendcs-rest-api.java-conventions"
     id "opendcs-rest-api.deps-conventions"
@@ -14,6 +12,8 @@ dependencies {
     implementation(libs.jersey.container.servlet)
     implementation(libs.postgresql)
     implementation(libs.swagger.jaxrs2)
+    implementation(libs.javax.validation)
+    implementation(libs.slf4j.jdk)
 }
 
 jar {
@@ -46,17 +46,33 @@ task startJetty(type: JavaExec) { ->
             "-s")
 }
 
-task prepareStartScript(type: Copy) {
-    from './bin/start.sh'
-    into "${buildDir}/odcsapi-jetty-standalone/bin/"
-    filter(ReplaceTokens, tokens: ['jarName': jar.archiveFileName.get()])
+task createStartScript() {
+    doLast {
+
+        //Make bin directory if it does not exist already.  buildDir is now deprecated.
+        File buildDir = project.layout.getBuildDirectory().get().getAsFile();
+        File binDir = new File(buildDir.toString(), "bin");
+        project.mkdir(binDir);
+
+        //Make the start.sh file.
+        new File(binDir, "start.sh").text = """
+#!/bin/bash
+cd `dirname \$0`/..
+java  -Djava.util.logging.config.file=config/logging.properties \$JAVA_OPTS -jar libs/${project.name}-${project.version}.jar \$JAVA_ARGS
+            """
+    }
 }
 
 task bundle(type: Tar) {
     dependsOn jar
-    dependsOn prepareStartScript
+    dependsOn createStartScript
+
+    compression Compression.GZIP
     archiveExtension = 'tar.gz'
 
+    into('config') {
+        from project.file("config/logging.properties")
+    }
     into('libs') {
         from configurations.runtimeClasspath
     }
@@ -64,6 +80,6 @@ task bundle(type: Tar) {
         from jar
     }
     into('bin') {
-        from "${buildDir}/odcsapi-jetty-standalone/bin/start.sh"
+        from new File(project.layout.getBuildDirectory().get().getAsFile(), "bin/start.sh");
     }
 }

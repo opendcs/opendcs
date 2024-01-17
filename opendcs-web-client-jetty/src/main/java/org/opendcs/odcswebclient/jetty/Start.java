@@ -15,7 +15,6 @@
 
 package org.opendcs.odcswebclient.jetty;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -24,7 +23,11 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.log.StdErrLog;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a Start.  This will start a jetty server.
@@ -34,37 +37,55 @@ import org.eclipse.jetty.webapp.WebAppContext;
  */
 public class Start
 {
-    public static void main(String[] args) 
-            throws Exception
+    private static final Logger LOGGER = LoggerFactory.getLogger(Start.class);
+    public static void main(String[] args)
     {
+        Log.setLog(new StdErrLog());
+
         String warFilePath = null;
-        int port = 8080;
-        String contextPath = "/";
+        int port;
+        String contextPath;
+        String apiFileDetailsPath = null;
         // Initialize the JETTY server and servlet holders.
-        //Server server = new Server(apiCmdLineArgs.getPort());
         ArgParser argParse = new ArgParser(args);
         String portString = argParse.switchValue("-p", "8080");
-        System.out.println("Using Port: " + portString);
-        try {
+        LOGGER.info("Using Port: {}", portString);
+        try
+        {
             warFilePath = argParse.switchValue("-w", null);
         }
         catch (Exception e)
         {
-            System.out.println("War File Not Provided!");
+            LOGGER.error("War file not provided: {}", e.getMessage());
             System.exit(1);
         }
+
+        try
+        {
+            apiFileDetailsPath = argParse.switchValue("-f",  null);
+        }
+        catch (Exception e)
+        {
+            LOGGER.warn("No Api File Details Path File Provided.  Using defaults {}.", e.getMessage());
+        }
+
+        port = Integer.parseInt(portString);
+
         contextPath = argParse.switchValue("-c", "/");
         if (!contextPath.startsWith("/"))
         {
             contextPath = "/" + contextPath;
         }
-        port = Integer.parseInt(portString);
+
         Server server = new Server(port);
 
         /******* Controlling Headers ******************/
-        for(Connector y : server.getConnectors()) {
-            for(ConnectionFactory x  : y.getConnectionFactories()) {
-                if(x instanceof HttpConnectionFactory) {
+        for(Connector y : server.getConnectors())
+        {
+            for(ConnectionFactory x  : y.getConnectionFactories())
+            {
+                if(x instanceof HttpConnectionFactory)
+                {
                     //Removes Server Header
                     ((HttpConnectionFactory)x).getHttpConfiguration().setSendServerVersion(false);
                 }
@@ -74,17 +95,17 @@ public class Start
         WebAppContext webapp = new WebAppContext();
         webapp.setContextPath(contextPath);
 
-        System.out.println("Setting context path to : " + contextPath);
+        LOGGER.info("Setting context path to {}", contextPath);
 
         Path warPath = Paths.get(warFilePath);
-        boolean fExists = Files.exists(warPath);
-        System.out.println("=============================");
-        System.out.println("Ware File: " + warFilePath);
-        System.out.println("War File Exists: " + fExists);
-        System.out.println("=============================");
+        boolean fExists = warPath.toFile().exists();
+        LOGGER.info("=============================");
+        LOGGER.info("Ware File: {}", warFilePath);
+        LOGGER.info("War File Exists: {}", fExists);
+        LOGGER.info("=============================");
         if (!fExists)
         {
-            System.out.println("War file does not exist.  Please try again and make sure to provide a valid war file.");
+            LOGGER.error("War file does not exist.  Please try again and make sure to provide a valid war file.");
             System.exit(1);
         }
         // Configure JSP support.
@@ -92,6 +113,7 @@ public class Start
         webapp.setWar(warFilePath);
         server.setHandler(webapp);
 
+        webapp.setAttribute("api_details_file_path", apiFileDetailsPath);
         //This code is to make sure JSP's work.
         webapp.setAttribute("org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern",".*/[^/]*jstl.*\\.jar$");
         webapp.setExtractWAR( true );  
@@ -99,9 +121,16 @@ public class Start
         classlist.addAfter("org.eclipse.jetty.webapp.FragmentConfiguration", "org.eclipse.jetty.plus.webapp.EnvConfiguration", "org.eclipse.jetty.plus.webapp.PlusConfiguration");
         classlist.addBefore("org.eclipse.jetty.webapp.JettyWebXmlConfiguration", "org.eclipse.jetty.annotations.AnnotationConfiguration");
 
-
         // Start the server!
-        server.start();
-        server.join();
+        try
+        {
+            server.start();
+            server.join();
+        }
+        catch (Exception e)
+        {
+            LOGGER.warn("Interrupted!", e);
+            Thread.currentThread().interrupt();
+        }
     }
 }

@@ -6,6 +6,7 @@ plugins {
 }
 
 dependencies {
+    implementation(libs.jetty.jsp)
     implementation(libs.servlet.api)
     implementation(libs.websocket)
     testImplementation(libs.mockito.core)

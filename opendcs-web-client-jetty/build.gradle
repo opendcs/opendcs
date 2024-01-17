@@ -4,12 +4,18 @@ plugins {
     id "opendcs-rest-api.java-conventions"
     id "opendcs-rest-api.deps-conventions"
     id "opendcs-rest-api.publishing-conventions"
+    id "war"
 }
 
 dependencies {
-    implementation(project(":opendcs-web-client"))
+    implementation(libs.jetty.jsp)
     implementation(libs.jetty.server)
+    implementation(libs.javax.servlet.jsp)
+    implementation(libs.servlet.api)
+    implementation(libs.jetty.annotations)
     implementation(libs.jetty.webapp)
+    implementation(libs.jersey.container.servlet)
+    implementation(libs.slf4j.jdk)
 }
 
 jar {
@@ -35,15 +41,41 @@ task startJetty(type: JavaExec) { ->
     mainClass = "org.opendcs.odcswebclient.jetty.Start"
 }
 
-task prepareStartScript(type: Copy) {
-    from './bin/start.sh'
-    into "${buildDir}/odcsapi-jetty-standalone/bin/"
-    filter(ReplaceTokens, tokens: ['jarName': jar.archiveFileName.get()])
+task copyWar(type: Copy) {
+    dependsOn ':opendcs-web-client:war' // depends on war task in this project
+    from project(':opendcs-web-client').tasks['war'] // get the war task from this project
+    into "${project.layout.getBuildDirectory().get().getAsFile().toString()}/bin"
+}
+
+task createStartScript() {
+    doLast {
+        //Make bin directory if it does not exist already.  buildDir is now deprecated.
+        File curBuildDir = project.layout.getBuildDirectory().get().getAsFile();
+        File binDir = new File(curBuildDir.toString(), "bin");
+        project.mkdir(binDir);
+        //Make the start.sh file.
+        new File(binDir, "start.sh").text = """
+#!/bin/bash
+cd `dirname \$0`/..
+java \$JAVA_OPTS -jar libs/${project.name}-${project.version}.jar \$JAVA_ARGS
+            """
+
+        //Make a config directory for config files to be built.
+        File configDir = new File(curBuildDir.toString(), "config");
+        project.mkdir(configDir);
+        //Make sample api config file.
+        new File(configDir, "sample_api.conf").text = """
+url=http://127.0.0.1
+port=8080
+context=odcsapi
+"""
+    }
 }
 
 task bundle(type: Tar) {
     dependsOn jar
-    dependsOn prepareStartScript
+    dependsOn copyWar
+    dependsOn createStartScript
     archiveExtension = 'tar.gz'
 
     into('libs') {
@@ -52,7 +84,11 @@ task bundle(type: Tar) {
     into('libs') {
         from jar
     }
+    into('/') {
+        from new File(project.layout.getBuildDirectory().get().getAsFile().toString(), "config/sample_api.conf")
+    }
     into('bin') {
-        from "${buildDir}/odcsapi-jetty-standalone/bin/start.sh"
+        from new File(project.layout.getBuildDirectory().get().getAsFile(), "bin/${project(':opendcs-web-client').name}-${project(':opendcs-web-client').version}.war")
+        from new File(project.layout.getBuildDirectory().get().getAsFile(), "bin/start.sh")
     }
 }
