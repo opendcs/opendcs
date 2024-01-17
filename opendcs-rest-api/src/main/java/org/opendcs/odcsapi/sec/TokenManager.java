@@ -15,6 +15,7 @@
 
 package org.opendcs.odcsapi.sec;
 
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -23,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Random;
 import java.util.logging.Logger;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -45,7 +45,7 @@ public class TokenManager
 	private static String module = "TokenManager";
 	private ArrayList<UserToken> activeTokens = new ArrayList<UserToken>();
 	private boolean secureMode = false;
-	private Random rand = new Random(System.currentTimeMillis());
+	private SecureRandom rand = new SecureRandom();
 	private static final long TOKEN_MAX_AGE = 1000L * 3600 * 3; // A session is only valid for 3 hrs.
 
 	public TokenManager(boolean secureMode)
