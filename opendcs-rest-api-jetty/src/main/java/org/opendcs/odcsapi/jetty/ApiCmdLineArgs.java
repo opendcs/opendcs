@@ -30,14 +30,13 @@ public class ApiCmdLineArgs
 	private String keyStorePath;
 	private String keyStorePassword;
 
-	private String loggingPropertiesFile;
 	private String decodesPropFile = "$DCSTOOL_USERDIR/user.properties";
 	private boolean secureMode = false;
 	private String corsFile = "$DCSTOOL_HOME/opendcs_api_cors.cfg";
 	
 	private enum State
 	{
-		IDLE, EXPECT_CONTEXT, EXPECT_HTTPPORT, EXPECT_LOGFILE, EXPECT_HTTPSPORT, EXPECT_KEYSTOREPATH, EXPECT_KEYSTOREPASSWORD, EXPECT_PROPFILE, EXPECT_CORS
+		IDLE, EXPECT_CONTEXT, EXPECT_HTTPPORT, EXPECT_HTTPSPORT, EXPECT_KEYSTOREPATH, EXPECT_KEYSTOREPASSWORD, EXPECT_PROPFILE, EXPECT_CORS
 	};
 	private State state = State.IDLE;
 	private String splitArg = null;
@@ -108,12 +107,6 @@ public class ApiCmdLineArgs
 					if (arg.length() > 2)
 						splitArg = arg.substring(2);
 				}
-				else if (arg.startsWith("-l"))
-				{
-					state = State.EXPECT_LOGFILE;
-					if (arg.length() > 2)
-						splitArg = arg.substring(2);
-				}
 				else if (arg.startsWith("-s"))
 					secureMode = true;
 				else
@@ -167,14 +160,6 @@ public class ApiCmdLineArgs
 				if (keyStorePassword.length() <= 0)
 				{
 					throw new StartException("You must enter a keystore password after -kp.");
-				}
-				state = State.IDLE;
-				break;
-			case EXPECT_LOGFILE:
-				loggingPropertiesFile = arg.trim();
-				if (loggingPropertiesFile.length() <= 0)
-				{
-					throw new StartException("You must enter a logging.properties file after -l.");
 				}
 				state = State.IDLE;
 				break;
@@ -246,16 +231,6 @@ public class ApiCmdLineArgs
 	public void setKeyStorePassword(String keyStorePassword)
 	{
 		this.keyStorePassword = keyStorePassword;
-	}
-
-	public String getLoggingPropertiesFile()
-	{
-		return loggingPropertiesFile;
-	}
-
-	public void setLoggingPropertiesFile(String logPropFile)
-	{
-		this.loggingPropertiesFile = logPropFile;
 	}
 
 	public String getDecodesPropFile()

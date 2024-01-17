@@ -58,16 +58,94 @@ task createStartScript() {
         new File(binDir, "start.sh").text = """
 #!/bin/bash
 cd `dirname \$0`/..
-java \$JAVA_OPTS -jar libs/${project.name}-${project.version}.jar \$JAVA_ARGS
+java  -Djava.util.logging.config.file=logging.properties \$JAVA_OPTS -jar libs/${project.name}-${project.version}.jar \$JAVA_ARGS
             """
+    }
+}
+
+task createLoggingPropertiesFile() {
+    doLast {
+        File targetBuildDir = project.layout.getBuildDirectory().get().getAsFile();
+        //File binDir = new File(buildDir.toString(), "bin");
+
+        //Make the logging.properties file.
+        new File(targetBuildDir, "logging.properties").text = """
+############################################################
+#  \tDefault Logging Configuration File
+#
+# You can use a different file by specifying a filename
+# with the java.util.logging.config.file system property.  
+# For example java -Djava.util.logging.config.file=myfile
+# or:   -Djava.util.logging.config.file=./config/properties/logging.properties
+############################################################
+
+############################################################
+#  \tGlobal properties
+############################################################
+
+# "handlers" specifies a comma separated list of log Handler 
+# classes.  These handlers will be installed during VM startup.
+# Note that these classes must be on the system classpath.
+# Additional handlers can be added to the list
+handlers = java.util.logging.FileHandler, java.util.logging.ConsoleHandler
+
+# Default global logging level.
+# This specifies which kinds of events are logged across
+# all loggers.  For any given facility this global level
+# can be overriden by a facility specific level
+# Note that the ConsoleHandler also has a separate level
+# setting to limit messages printed to the console.
+.level= CONFIG
+
+############################################################
+# Handler specific properties.
+# Describes specific configuration info for Handlers.
+############################################################
+
+# Individual handlers filter messages by level.
+# Messages at or above this level get output by the handler being configured.
+
+# Setting this level = CONFIG causes CONFIG, INFO, WARNING, and SEVERE messages to be
+# output by this handler. 
+java.util.logging.ConsoleHandler.level = CONFIG
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+
+# The following special tokens can be used in the FileHandler pattern property
+# which specifies the location and name of the log file.
+#   / - standard path separator
+#   %t - system temporary directory
+#   %h - value of the user.home system property
+#   %g - generation number for rotating logs
+#   %u - unique number to avoid conflicts
+# FileHandler writes to %h/demo0.log by default.
+java.util.logging.FileHandler.pattern = %t/opendcs_rest_logging_%g.log
+java.util.logging.FileHandler.level = ALL
+java.util.logging.FileHandler.formatter = java.util.logging.SimpleFormatter
+
+# Formats the messages with a timestamp at the beginning.
+java.util.logging.SimpleFormatter.format=[%1\$tc] %4\$s: %5\$s %n
+
+############################################################
+# Facility specific properties.
+# Provides extra control for each logger.
+############################################################
+
+# Specify logging levels for specific namespaces.
+# org.opendcs.odcsapi.level = FINEST
+        """
     }
 }
 
 task bundle(type: Tar) {
     dependsOn jar
     dependsOn createStartScript
+    dependsOn createLoggingPropertiesFile
+
     archiveExtension = 'tar.gz'
 
+    into('') {
+        from new File(project.layout.getBuildDirectory().get().getAsFile(), "logging.properties");
+    }
     into('libs') {
         from configurations.runtimeClasspath
     }

@@ -124,8 +124,6 @@ public class Gateway extends HttpServlet {
      */
     public void setApiDetails(ServletContext sc) throws IOException
     {
-        //this.baseUrl = "http://108.20.179.32:9876";
-        //this.context = "odcsapi";
         if (sc == null) {
             sc = this.getServletContext();
         }
@@ -136,11 +134,7 @@ public class Gateway extends HttpServlet {
         {
             //Use the config file within WAR file.
             //default api file location.
-            //if (sc == null) {
-            //    apiConfigFilePath = this.getServletContext().getRealPath("/conf/api.conf");
-            //} else {
             apiConfigFilePath = sc.getRealPath("/conf/api.conf");
-            //}
         }
 
         //Gets the initialization details from the conf file.

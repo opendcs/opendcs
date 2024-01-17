@@ -16,7 +16,6 @@
 package org.opendcs.odcsapi.jetty;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.FileReader;
@@ -27,7 +26,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Scanner;
-import java.util.logging.LogManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,32 +65,19 @@ public class Start
 		corsList.add(new String[] { "Access-Control-Allow-Credentials", CrossOriginFilter.ALLOW_CREDENTIALS_PARAM });
 
 		apiCmdLineArgs.parseArgs(args);
-		String loggingFile = apiCmdLineArgs.getLoggingPropertiesFile();
 		InputStream is = null;
-		if (loggingFile == null)
-		{
-			is = Start.class.getClassLoader().
-					getResourceAsStream("logging.properties");
-		}
-		else
-		{
-			File lf = new File(loggingFile);
-			is = new FileInputStream(lf);
-		}
-		LogManager.getLogManager().readConfiguration(is);
+
 		// Set up logging
 		Logger logger = LoggerFactory.getLogger(ApiConstants.loggerName);
 
 		// Parse args
 		logger.info("DCSTOOL_USERDIR={}, parsing args...", System.getProperty("DCSTOOL_USERDIR"));
 
-
 		logger.info("Listening Http Port={}", apiCmdLineArgs.getHttpPort());
 		logger.info("Listening Https Port={}", apiCmdLineArgs.getHttpsPort());
 		logger.info("Top Context={}", apiCmdLineArgs.getContext());
 		logger.info("Cors File={}", apiCmdLineArgs.getCorsFile());
 		logger.info("Secure Mode={}", apiCmdLineArgs.isSecureMode());
-		logger.info("logging.properties file={}", apiCmdLineArgs.getLoggingPropertiesFile());
 
 		// Initialize the JETTY server and servlet holders.
 		org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();

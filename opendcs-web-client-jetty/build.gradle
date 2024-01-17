@@ -15,7 +15,6 @@ dependencies {
     implementation(libs.jetty.annotations)
     implementation(libs.jetty.webapp)
     implementation(libs.jersey.container.servlet)
-    implementation(libs.tomcat.embed)
 }
 
 jar {
@@ -69,16 +68,6 @@ url=http://127.0.0.1
 port=8080
 context=odcsapi
 """
-    }
-}
-
-task filepermission() {
-    doLast {
-        String start_path = "${buildDir}\\bin\\start.sh"
-        System.out.println("Here: " + start_path)
-        project.exec {
-            commandLine('chmod',  '+x', start_path)
-        }
     }
 }
 
