@@ -25,6 +25,7 @@ import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Scanner;
 
+import org.opendcs.odcsapi.start.StartException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +55,16 @@ public class Start
 	private static final Logger LOGGER = LoggerFactory.getLogger(ApiConstants.loggerName);
 
 	public static void main(String[] args)
-		//throws Exception
+	{
+        try
+		{
+            run(args);
+        } catch (Exception e)
+		{
+            LOGGER.atError().setCause(e).log("There was an error running the opendcs-rest-api-jetty start script.");
+        }
+    }
+	private static void run(String[] args) throws Exception
 	{
 		ArrayList<String[]> corsList = new ArrayList<>();
 		corsList.add(new String[] { "Access-Control-Allow-Origin", CrossOriginFilter.ALLOWED_ORIGINS_PARAM });
@@ -62,15 +72,7 @@ public class Start
 		corsList.add(new String[] { "Access-Control-Allow-Methods", CrossOriginFilter.ALLOWED_METHODS_PARAM });
 		corsList.add(new String[] { "Access-Control-Allow-Credentials", CrossOriginFilter.ALLOW_CREDENTIALS_PARAM });
 
-		try
-		{
-			apiCmdLineArgs.parseArgs(args);
-		}
-		catch (Exception e)
-		{
-			LOGGER.error("Error parsing arguments.  Exiting now.  {}", e.getMessage());
-			System.exit(1);
-		}
+		apiCmdLineArgs.parseArgs(args);
 
 		LOGGER.info("Listening Http Port={}", apiCmdLineArgs.getHttpPort());
 		LOGGER.info("Listening Https Port={}", apiCmdLineArgs.getHttpsPort());
@@ -135,20 +137,16 @@ public class Start
 		}
 
 		ServletHolder serHol = ctx.addServlet(ServletContainer.class,
-			"/" + apiCmdLineArgs.getContext() + "/*");
+				"/" + apiCmdLineArgs.getContext() + "/*");
 		serHol.setInitOrder(1);
-		serHol.setInitParameter("jersey.config.server.provider.packages", 
-			"org.opendcs.odcsapi.res");
-		
+		serHol.setInitParameter("jersey.config.server.provider.packages",
+				"org.opendcs.odcsapi.res");
+
 		// Get whatever is needed from decodes properties.
 		Properties decodesProps = new Properties();
 		try (FileReader fr = new FileReader(ApiEnvExpander.expand(apiCmdLineArgs.getDecodesPropFile())))
 		{
 			decodesProps.load(fr);
-		}
-		catch (Exception e)
-		{
-			LOGGER.error("There was an error loading the decodes property file. {}", e.getMessage());
 		}
 		String dbUrl = null;
 		String dbType = null;
@@ -167,7 +165,7 @@ public class Start
 		}
 		ApiPropertiesUtil.copyProps(DbInterface.decodesProperties, decodesProps);
 		DbInterface.secureMode = apiCmdLineArgs.isSecureMode();
-		
+
 		PGSimpleDataSource ds = new PGSimpleDataSource();
 		ds.setURL(dbUrl);
 		String afn = ApiEnvExpander.expand(dbAuthFile);
@@ -176,36 +174,25 @@ public class Start
 		{
 			afr.read();
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, e);
+			String msg = String.format("Cannot read DB auth from file '%s': %s", afn, ex);
 			LOGGER.error(msg);
+			throw new StartException(String.format("Cannot read auth file: %s", ex));
 		}
 		ds.setUser(afr.getUsername());
 		ds.setPassword(afr.getPassword());
 		DbInterface.setDataSource(ds);
-		try
-		{
-			DbInterface.setDatabaseType(dbType);
-		}
-		catch (Exception e)
-		{
-			LOGGER.error("There was an issue setting database type. {}", e.getMessage());
-			if (dbType != null)
-			{
-				LOGGER.error("The attempted database type to be set is {}", dbType);
-			}
-		}
+		DbInterface.setDatabaseType(dbType);
 
 		// Setup Swagger-UI static resources
 		String resourceBasePath = Start.class.getResource("/swaggerui").toExternalForm();
 		ctx.setWelcomeFiles(new String[] {"index.html"});
 		ctx.setResourceBase(resourceBasePath);
 		ctx.addServlet(new ServletHolder(new DefaultServlet()), "/*");
-
 		ServerConnector connector = new ServerConnector(server);
-		ArrayList<ServerConnector> connectors = new ArrayList<>();
 
+		ArrayList<ServerConnector> connectors = new ArrayList<>();
 		if (apiCmdLineArgs.getHttpPort() >= 0)
 		{
 			connector.setPort(apiCmdLineArgs.getHttpPort());
@@ -221,8 +208,8 @@ public class Start
 			sslContextFactory.setKeyStorePath(apiCmdLineArgs.getKeyStorePath());
 			sslContextFactory.setKeyStorePassword(apiCmdLineArgs.getKeyStorePassword());
 			ServerConnector sslConnector = new ServerConnector(server,
-			    new SslConnectionFactory(sslContextFactory, "http/1.1"),
-			    new HttpConnectionFactory(https));
+					new SslConnectionFactory(sslContextFactory, "http/1.1"),
+					new HttpConnectionFactory(https));
 			sslConnector.setPort(apiCmdLineArgs.getHttpsPort());
 			connectors.add(sslConnector);
 		}
@@ -230,15 +217,7 @@ public class Start
 		server.setConnectors(connectors.toArray(new ServerConnector[connectors.size()]));
 
 		// Start the server.
-		try
-		{
-			server.start();
-			server.join();
-		}
-		catch (Exception e)
-		{
-			LOGGER.warn("Interrupted!", e);
-			Thread.currentThread().interrupt();
-		}
+		server.start();
+		server.join();
 	}
 }

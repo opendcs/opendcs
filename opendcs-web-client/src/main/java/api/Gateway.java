@@ -157,7 +157,8 @@ public class Gateway extends HttpServlet {
             {
                 String name = nameValue[0].trim();
                 String value = nameValue[1].trim();
-                if (name.equalsIgnoreCase("url")) {
+                if ("url".equalsIgnoreCase(name))
+                {
                     tempUrl = value;
                     System.out.println("Setting Base Url to " + tempUrl);
                 }

@@ -71,7 +71,7 @@ task bundle(type: Tar) {
     archiveExtension = 'tar.gz'
 
     into('config') {
-        from project.file("bin/logging.properties")
+        from project.file("config/logging.properties")
     }
     into('libs') {
         from configurations.runtimeClasspath
