@@ -537,8 +537,6 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 		{
 			String em = "Error in LrgsStatusXio: " + ex;
 			warning(em);
-			System.err.println(em);
-			ex.printStackTrace();
 			throw new DdsProtocolError(em);
 		}
 	}
@@ -602,8 +600,6 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 		{
 			String em = "Error in RawMessageBlockParser: " + ex;
 			warning(em);
-			System.err.println(em);
-			ex.printStackTrace();
 			throw new DdsProtocolError(em);
 		}
 	}

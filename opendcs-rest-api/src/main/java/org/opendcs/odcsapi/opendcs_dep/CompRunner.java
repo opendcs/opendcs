@@ -274,16 +274,12 @@ Logger.getLogger(ApiConstants.loggerName).info("   parm '" + dcp.getRoleName() +
 		{
 			String emsg = "Unexpected BadTimeSeriesException: " + ex;
 			Logger.getLogger(ApiConstants.loggerName).warning(emsg);
-			System.out.println(emsg);
-			ex.printStackTrace();
 			throw new WebAppException(500, emsg);
 		}
 		catch (DuplicateTimeSeriesException ex)
 		{
 			String emsg = "Unexpected DuplicateTimeSeriesException: " + ex;
 			Logger.getLogger(ApiConstants.loggerName).warning(emsg);
-			System.out.println(emsg);
-			ex.printStackTrace();
 			throw new WebAppException(500, emsg);
 		}
 		catch (DbCompException ex)
@@ -294,7 +290,6 @@ Logger.getLogger(ApiConstants.loggerName).info("   parm '" + dcp.getRoleName() +
 		{
 			String msg = module + ".testComp error from tsdb interface: " + ex;
 			Logger.getLogger(ApiConstants.loggerName).warning(msg);
-			ex.printStackTrace();
 			throw new DbException(module, ex, msg);
 		}
 		finally

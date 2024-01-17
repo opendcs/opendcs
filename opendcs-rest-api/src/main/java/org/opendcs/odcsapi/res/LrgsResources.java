@@ -192,8 +192,9 @@ public class LrgsResources
 			{
 				client.disconnect();
 				userToken.setLddsClient(null);
-				e.printStackTrace();
-				throw new WebAppException(ErrorCodes.DATABASE_ERROR, "Internal exception:" + e);
+				String errmsg = "Internal exception:" + e;
+				Logger.getLogger(ApiConstants.loggerName).severe(errmsg);
+				throw new WebAppException(ErrorCodes.DATABASE_ERROR, errmsg);
 			}
 			catch (UnknownHostException ex)
 			{
@@ -401,8 +402,9 @@ public class LrgsResources
 		}
 		catch (DbException e)
 		{
-			e.printStackTrace();
-			throw new WebAppException(ErrorCodes.DATABASE_ERROR, "Internal exception:" + e);
+			String errmsg = "Internal exception:" + e;
+			Logger.getLogger(ApiConstants.loggerName).severe(errmsg);
+			throw new WebAppException(ErrorCodes.DATABASE_ERROR, errmsg);
 		}
 		catch (UnknownHostException ex)
 		{

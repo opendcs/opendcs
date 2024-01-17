@@ -18,6 +18,7 @@ package org.opendcs.odcsapi.util;
 import java.net.*;
 import java.io.*;
 import java.rmi.UnknownHostException;
+import java.util.logging.Logger;
 
 /**
 This class encapsulates common functions for a TCP/IP client.
@@ -145,8 +146,7 @@ public class ApiBasicClient
 			}
 			catch (Exception e)
 			{
-				System.out.println("Error closing input: "+e.getMessage());
-				e.printStackTrace();
+				Logger.getLogger(ApiConstants.loggerName).severe("Error closing input: " + e);
 			}
 			try
 			{
@@ -155,8 +155,7 @@ public class ApiBasicClient
 			}
 			catch (Exception e)
 			{
-				System.out.println("Error closing ouput: "+e.getMessage());
-				e.printStackTrace();
+				Logger.getLogger(ApiConstants.loggerName).severe("Error closing output: " + e);
 			}
 			try
 			{
@@ -165,8 +164,7 @@ public class ApiBasicClient
 			}
 			catch (Exception e)
 			{
-				System.out.println("Error closing socket: "+e.getMessage());
-				e.printStackTrace();
+				Logger.getLogger(ApiConstants.loggerName).severe("Error closing socket: " + e);
 			}
 
 			if (debug != null)

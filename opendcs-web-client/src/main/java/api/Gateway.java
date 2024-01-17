@@ -35,6 +35,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
@@ -68,10 +69,13 @@ public class Gateway extends HttpServlet {
      */
     public void init() throws ServletException {
         System.out.println("Initializing the Gateway instance.");
-        try {
+        try
+        {
             this.setApiDetails(null);
-        } catch (IOException e) {
-            e.printStackTrace();
+        }
+        catch (IOException e)
+        {
+            Logger.getLogger(Gateway.class.getName()).severe("Error completing request: " + e);
         }
     }    
 
@@ -308,8 +312,10 @@ public class Gateway extends HttpServlet {
                 System.out.println(String.format("Error: %s.", inline));
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        }
+        catch (Exception e)
+        {
+            Logger.getLogger(Gateway.class.getName()).severe("Error completing request: " + e);
             response.setStatus(400);
             inline = "error";
         }
