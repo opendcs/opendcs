@@ -428,6 +428,7 @@ import java.util.TimeZone;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DaiBase;
@@ -444,6 +445,7 @@ import opendcs.dai.TsGroupDAI;
 import opendcs.dao.AlarmDAO;
 import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.CompDependsDAO;
+import opendcs.dao.CompDependsNotifyDAO;
 import opendcs.dao.ComputationDAO;
 import opendcs.dao.DacqEventDAO;
 import opendcs.dao.DaoBase;
@@ -2087,6 +2089,12 @@ public abstract class TimeSeriesDb
 	public CompDependsDAI makeCompDependsDAO()
 	{
 		return new CompDependsDAO(this);
+	}
+
+	@Override
+	public CompDependsNotifyDAI makeCompDependsNotifyDAO()
+	{
+		return new CompDependsNotifyDAO(this);
 	}
 
 	@Override

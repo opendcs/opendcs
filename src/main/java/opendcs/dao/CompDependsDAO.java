@@ -34,6 +34,7 @@ package opendcs.dao;
 
 import ilex.util.Logger;
 
+import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,6 +48,7 @@ import java.util.function.Consumer;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.util.functional.ThrowingConsumer;
@@ -369,38 +371,18 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	@Override
 	public CpDependsNotify getCpCompDependsNotify()
 	{
-		if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_8)
+		try(CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
 		{
-			return null;
+			return dai.getNextRecord();
 		}
-		String q = "select RECORD_NUM, EVENT_TYPE, KEY, DATE_TIME_LOADED "
-				 + "from CP_DEPENDS_NOTIFY "
-				 + "where DATE_TIME_LOADED = "
-				 + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
-		try
+		catch(DbIoException ex)
 		{
-			final CpDependsNotify ret = getSingleResult(q, rs ->
+			warning("Unable to get next record. " + ex.getLocalizedMessage());
+			PrintStream ps = Logger.instance().getLogOutput();
+			if (ps != null)
 			{
-				CpDependsNotify cdn = new CpDependsNotify();
-				cdn.setRecordNum(rs.getLong(1));
-				String s = rs.getString(2);
-				if (s != null && s.length() >= 1)
-				{
-					cdn.setEventType(s.charAt(0));
-				}
-				cdn.setKey(DbKey.createDbKey(rs, 3));
-				cdn.setDateTimeLoaded(db.getFullDate(rs, 4));
-				return cdn;
-			});
-			if (ret != null)
-			{
-				doModify("delete from CP_DEPENDS_NOTIFY where RECORD_NUM = ?",ret.getRecordNum());
+				ex.printStackTrace(ps);
 			}
-			return ret;
-		}
-		catch(Exception ex)
-		{
-			warning("Error CpCompDependsNotify: " + ex);
 		}
 		return null;
 	}
