@@ -18,17 +18,20 @@ jobs:
         with:
           java-version: 17
           distribution: 'temurin'
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2.9.0
-      - name: docker-compose up
+      - name: Cache Gradle packages
+        uses: actions/cache@v3.3.3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+      - name: Run OWASP Zap
         run: ./gradlew runOwaspZap
-      - name: Read file
-        id: read_report
-        run: |
-          content="$(cat ./opendcs-rest-api-jetty/build/test-results/owasp/zap_report.html)"
-          echo "::set-output name=report_content::$content"
-      - name: Generate list using Markdown
-        run: echo "${{ steps.read_report.outputs.report_content }}" > $GITHUB_STEP_SUMMARY
+      - name: Generate GitHub Job Summary
+        uses: x-color/github-actions-job-summary@v0.1.1
+        with:
+          file: ./opendcs-rest-api-jetty/build/test-results/owasp/zap_report.md
+          vars: |
+            empty: empty
       - name: docker-compose down
         if: always()
         run: ./gradlew stopOwaspZap

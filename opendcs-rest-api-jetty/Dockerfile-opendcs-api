@@ -9,5 +9,7 @@ COPY ./docker-config/ /opendcs/
 COPY ./build/tmp/opendcs-installer.jar /opendcs/opendcs-installer.jar
 COPY ./build/distributions/opendcs-rest-api-jetty.tgz /opendcs-api/opendcs-rest-api-jetty.tgz
 RUN java -jar /opendcs/opendcs-installer.jar /opendcs/auto-installation-script.xml
+RUN tar -xvf /opendcs-api/opendcs-rest-api-jetty.tgz -C /opendcs-api/
+RUN chmod +x /opendcs-api/bin/start.sh
 
-CMD ["bash","-c", "tar -xvf /opendcs-api/opendcs-rest-api-jetty.tgz -C /opendcs-api/ && cd /opendcs-api/bin/ && chmod +x ./start.sh && ./start.sh"]
+CMD ["bash","-c", "cd /opendcs-api/bin/ && ./start.sh"]
