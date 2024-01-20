@@ -73,7 +73,6 @@
 			</div>
 			<div id="displayedId" class="displayNone"></div>
 			<div class="modal-body opendcs-modal-body-100 d-flex flex-column">
-				<!--<h6 class="font-weight-semibold">Network List Name</h6>-->
 				<div class="card w-100 p-3">
 					<div class="row smallMarginBottom">
 
@@ -136,8 +135,6 @@
 			</div>
 
 			<div class="modal-footer">
-				<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
-				<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button> -->
 				<button type="button" class="btn btn-secondary"
 					id="cancelSourcesModalButton" data-dismiss="modal">Cancel</button>
 				<button type="button" class="btn btn-success"
@@ -151,7 +148,6 @@
 <jsp:include page="/resources/jsp/includes/decodes.jsp" />
 <script src="../resources/js/datatables/helpers.js"></script>
 <script src="../resources/js/sources.js"></script>
-<script
-	src="https://cdn.datatables.net/rowreorder/1.2.8/js/dataTables.rowReorder.min.js"></script>
+<script src="../resources/js/datatables/dataTables.rowReorder.min.js"></script>
 
 </html>
