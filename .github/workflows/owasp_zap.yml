@@ -26,12 +26,22 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
       - name: Run OWASP Zap
         run: ./gradlew runOwaspZap
-      - name: Generate GitHub Job Summary
-        uses: x-color/github-actions-job-summary@v0.1.1
-        with:
-          file: ./opendcs-rest-api-jetty/build/test-results/owasp/zap_report.md
-          vars: |
-            empty: empty
       - name: docker-compose down
         if: always()
         run: ./gradlew stopOwaspZap
+      - name: Trim Summary Report
+        run: |
+          sudo sed '/## Alert Detail/Q' ./opendcs-rest-api-jetty/build/test-results/owasp/zap_report.md > ./zap_report_summary.md
+      - name: Generate GitHub Job Summary
+        uses: x-color/github-actions-job-summary@v0.1.1
+        with:
+          file: ./zap_report_summary.md
+          vars: |
+            empty: empty
+      - name: Upload Full HTML Report
+        uses: actions/upload-artifact@v4.1.0
+        with:
+          name: zap_report.html
+          path: ./opendcs-rest-api-jetty/build/test-results/owasp/zap_report.html
+          retention-days: 1
+          if-no-files-found: error

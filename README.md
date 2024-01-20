@@ -98,6 +98,7 @@ The workflow [default.yml](./.github/workflows/default.yml) includes the analysi
 The workflow [owasp_zap.yml](./.github/workflows/owasp_zap.yml) runs the OWASP Zap API scan to generate an HTML report
 detailing vulnerabilities in the OpenDCS REST API based on the OpenAPI documentation. OWASP Zap API scan 
 [documentation](https://www.zaproxy.org/docs/docker/api-scan/) details the various options and rules for the scan.
+The OWASP Zap HTML report is attached to the GitHub Workflow run along with a shortened summary rendered in Markdown.
 At this time, the default configuration is used and the results are not used to gatekeep Pull Requests.
 
 ## Java Version Compatibility
