@@ -35,6 +35,14 @@ task extractWebJars(type: Copy) {
     includeEmptyDirs = false
 }
 
+compileTestJava {
+    dependsOn extractWebJars
+}
+
+javadoc {
+    dependsOn extractWebJars
+}
+
 jar {
     dependsOn extractWebJars
 }
