@@ -9,9 +9,11 @@ slf4j = "2.0.10"
 jersey = "2.40"
 postgresql = "42.7.1"
 swagger = "2.2.19"
+swagger-ui = "5.10.3"
 glassfish-jaxb = "2.3.3"
 websocket = "1.1"
 javax-validation = "2.0.1.Final"
+
 #Test Dependencies
 junit = "5.10.1"
 mockito = "3.12.4"
@@ -40,13 +42,12 @@ swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2-jakarta", version
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "glassfish-jaxb" }
 websocket = { module = "javax.websocket:javax.websocket-api", version.ref = "websocket" }
 
+# webjars
+swagger-ui = { module = "org.webjars:swagger-ui", version.ref="swagger-ui" }
+
 #Test Dependencies
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
-junit-vintage = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit" }
-rest-assured = { module = "com.jayway.restassured:rest-assured", version.ref = "rest-assured" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
-jersey-test = { module = "org.glassfish.jersey.test-framework:jersey-test-framework-core", version.ref="jersey" }
-jersey-providers = { module = "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2", version.ref="jersey" }
