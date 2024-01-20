@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<AutomatedInstallation langpack="eng">
+<com.izforge.izpack.panels.HelloPanel id="UNKNOWN (com.izforge.izpack.panels.HelloPanel)"/>
+<com.izforge.izpack.panels.TargetPanel id="UNKNOWN (com.izforge.izpack.panels.TargetPanel)">
+<installpath>/opendcs/</installpath>
+</com.izforge.izpack.panels.TargetPanel>
+<com.izforge.izpack.panels.PacksPanel id="UNKNOWN (com.izforge.izpack.panels.PacksPanel)">
+<pack index="0" name="OpenDCS Base" selected="true"/>
+<pack index="1" name="XML Database Template" selected="true"/>
+<pack index="2" name="Docs" selected="true"/>
+<pack index="3" name="TSDB Computation Components" selected="true"/>
+<pack index="4" name="Open Time Series Database Schema and Components" selected="true"/>
+<pack index="5" name="Corps Water Management System (CWMS) Components" selected="false"/>
+<pack index="6" name="Bureau of Reclamation Hydrologic Database (HDB) Components" selected="false"/>
+<pack index="7" name="LRGS" selected="false"/>
+</com.izforge.izpack.panels.PacksPanel>
+<com.izforge.izpack.panels.InstallPanel id="UNKNOWN (com.izforge.izpack.panels.InstallPanel)"/>
+<com.izforge.izpack.panels.ShortcutPanel id="UNKNOWN (com.izforge.izpack.panels.ShortcutPanel)"/>
+<com.izforge.izpack.panels.FinishPanel id="UNKNOWN (com.izforge.izpack.panels.FinishPanel)"/>
+</AutomatedInstallation>

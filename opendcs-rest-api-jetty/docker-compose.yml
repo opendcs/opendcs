@@ -1,0 +1,76 @@
+version: '3.8'
+services:
+  db:
+    container_name: "OpenTSDB"
+    build:
+      context: .
+      dockerfile: Dockerfile-install-postgres-schema
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_pass
+      DBHOST: db
+      DBUSER: postgres
+      OPENDCS_USERNAME: tsdbadm
+      OPENDCS_PASSWORD: postgres_pass
+      OPENDCS_NUM_STORAGE_TABLES: 10
+      OPENDCS_STRING_STORAGE_TABLES: 5
+      DCSTOOL_HOME: /opendcs
+      DCSTOOL_USERDIR: /opendcs
+      DBHOST_JDBC: jdbc:postgresql://127.0.0.1/open_tsdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "open_tsdb"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+    networks:
+      - backend
+
+  opendcs-api:
+    container_name: "opendcs-api"
+    build:
+      context: .
+      dockerfile: Dockerfile-opendcs-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DBHOST_JDBC: jdbc:postgresql://db/open_tsdb
+      OPENDCS_USERNAME: tsdbadm
+      OPENDCS_PASSWORD: postgres_pass
+      DCSTOOL_HOME: /opendcs/
+      DCSTOOL_USERDIR: /opendcs/
+      JAVA_OPTS: -DDCSTOOL_HOME=/opendcs/ -DDCSTOOL_USERDIR=/opendcs/
+      JAVA_ARGS: -p 8000 -c odcsapi
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/odcsapi/reflists"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+    networks:
+      - backend
+
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    container_name: "zap"
+    depends_on:
+      opendcs-api:
+        condition: service_healthy
+    user: root
+    command: ["/bin/sh", "-c", "touch /zap/wrk/test.txt && zap-api-scan.py -t http://opendcs-api:8000/open_api.json -f openapi -r zap_report.html -w zap_report.md"]
+    volumes:
+      - ./build/test-results/owasp:/zap/wrk:rw
+    networks:
+      - backend
+
+volumes:
+  db-data:
+
+networks:
+  backend:

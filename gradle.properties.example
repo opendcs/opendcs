@@ -1,0 +1,11 @@
+###Point to existing opendcs installation
+#DCSTOOL_HOME=
+#DCSTOOL_USERDIR=
+
+###Point to existing Postgres OpenTS database
+#postgresdb.url=
+#opendcs.db.username=
+#opendcs.db.password=
+
+### Needed for running the testcontainers
+org.gradle.jvmargs=-Xmx4096m

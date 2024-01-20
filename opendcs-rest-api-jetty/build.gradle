@@ -1,7 +1,11 @@
+import de.undercouch.gradle.tasks.download.Download
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     id "opendcs-rest-api.java-conventions"
     id "opendcs-rest-api.deps-conventions"
     id "opendcs-rest-api.publishing-conventions"
+    id "de.undercouch.download" version "5.5.0"
 }
 
 dependencies {
@@ -34,19 +38,56 @@ publishing {
     }
 }
 
-task startJetty(type: JavaExec) { ->
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = "org.opendcs.odcsapi.jetty.Start"
-    jvmArgs("-DDCSTOOL_HOME=" + (project.findProperty("DCSTOOL_HOME") ?: "${project.buildDir}/opendcs/OPENDCS"),
-            "-DDCSTOOL_USERDIR=" + (project.findProperty("DCSTOOL_USERDIR") ?: "${project.buildDir}/OPENDCS"))
-    args(
-            "-p", project.findProperty("REST_API_PORT") ?: "8081",
-            "-c", project.findProperty("REST_API_CONTEXT") ?: "odcsapi",
-            "-cors", project.findProperty("REST_API_CORS") ?: "${project.buildDir}/OPENDCS/opendcs_web_cors.cfg",
-            "-s")
+tasks.register('downloadOpenDcsInstaller', Download) {
+    src 'https://github.com/opendcs/opendcs/releases/download/' + libs.versions.opendcs.get() + '/opendcs-installer-' + libs.versions.opendcs.get() + '.jar'
+    dest new File("${project.layout.buildDirectory.get()}/tmp/opendcs-installer.jar")
+    onlyIfModified true
 }
 
-task createStartScript() {
+tasks.register('copyAutoInstallationScript', Copy) {
+    from 'config'
+    include 'auto-installation-script.xml'
+    into "${project.layout.buildDirectory.get()}/opendcs"
+    outputs.upToDateWhen { false }
+    doFirst {
+        filter(ReplaceTokens, tokens: ['installpath': "build/opendcs"])
+    }
+}
+
+tasks.register('installOpenDcs', JavaExec) {
+    dependsOn downloadOpenDcsInstaller
+    dependsOn copyAutoInstallationScript
+    mainClass = '-jar'
+    args = ["${project.layout.buildDirectory.get()}/tmp/opendcs-installer.jar", "${project.layout.buildDirectory.get()}/opendcs/auto-installation-script.xml"]
+}
+
+tasks.register('copyUserProperties', Copy) {
+    from 'config'
+    include 'user.properties'
+    into "${project.layout.buildDirectory.get()}/opendcs"
+    outputs.upToDateWhen { false }
+    doFirst {
+        filter(ReplaceTokens, tokens: ['postgresdb.url': project.findProperty("postgresdb.url") ?: "jdbc:postgresql://localhost/open_tsdb"])
+    }
+}
+
+tasks.register('startPostgresContainer', Exec) {
+    doFirst() {
+        if (!project.findProperty("postgresdb.url")) {
+            commandLine 'docker-compose', 'up', '-d', 'db'
+        }
+    }
+}
+
+tasks.register('stopPostgresContainer', Exec) {
+    doFirst() {
+        if (!project.findProperty("postgresdb.url")) {
+            commandLine 'docker-compose', 'down', 'db'
+        }
+    }
+}
+
+tasks.register('createStartScript') {
     doLast {
 
         //Make bin directory if it does not exist already.  buildDir is now deprecated.
@@ -63,7 +104,8 @@ java  -Djava.util.logging.config.file=config/logging.properties \$JAVA_OPTS -jar
     }
 }
 
-task bundle(type: Tar) {
+tasks.register('bundle', Tar) {
+    group "build"
     dependsOn jar
     dependsOn createStartScript
 
@@ -81,5 +123,55 @@ task bundle(type: Tar) {
     }
     into('bin') {
         from new File(project.layout.getBuildDirectory().get().getAsFile(), "bin/start.sh");
+    }
+}
+
+tasks.register('startJettyOdcsApi', JavaExec) { ->
+    group = 'run'
+    dependsOn installOpenDcs
+    dependsOn copyUserProperties
+    dependsOn startPostgresContainer
+    finalizedBy stopPostgresContainer
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "org.opendcs.odcsapi.jetty.Start"
+    jvmArgs("-DDCSTOOL_HOME=" + (project.findProperty("DCSTOOL_HOME") ?: "${project.layout.buildDirectory.get()}/opendcs"),
+            "-DDCSTOOL_USERDIR=" + (project.findProperty("DCSTOOL_USERDIR") ?: "${project.layout.buildDirectory.get()}/opendcs"))
+    args(
+            "-p", project.findProperty("REST_API_PORT") ?: "8081",
+            "-c", project.findProperty("REST_API_CONTEXT") ?: "odcsapi",
+            "-cors", project.findProperty("REST_API_CORS") ?: "config/opendcs_web_cors.cfg",
+            "-s")
+    doFirst {
+        if (project.findProperty("postgresdb.url") == null) {
+            environment 'OPENDCS_USERNAME', "tsdbadm"
+            environment 'OPENDCS_PASSWORD', "postgres_pass"
+        } else {
+            environment 'OPENDCS_USERNAME', project.findProperty("postgresdb.username")
+            environment 'OPENDCS_PASSWORD', project.findProperty("postgresdb.password")
+        }
+    }
+}
+
+tasks.register('renameTarball', Copy) {
+    dependsOn 'bundle'
+
+    from bundle.getArchiveFile().get().getAsFile()
+    into bundle.getArchiveFile().get().getAsFile().getParent()
+    rename { 'opendcs-rest-api-jetty.tgz' }
+}
+
+tasks.register('runOwaspZap', Exec) {
+    group = 'run'
+    dependsOn renameTarball
+    dependsOn downloadOpenDcsInstaller
+    doFirst {
+        commandLine 'docker-compose', 'up', "zap"
+    }
+}
+
+tasks.register('stopOwaspZap', Exec) {
+    group = 'run'
+    doFirst {
+        commandLine 'docker-compose', 'down'
     }
 }
