@@ -4,6 +4,7 @@ on:
     types: [published]
 jobs:
   build:
+    permissions: write-all
     name: Attach Artifacts
     runs-on: ubuntu-20.04
     steps:
