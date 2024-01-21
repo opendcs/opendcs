@@ -17,7 +17,6 @@ javax-validation = "2.0.1.Final"
 #Test Dependencies
 junit = "5.10.1"
 mockito = "3.12.4"
-rest-assured = "2.9.0"
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
 jetty-jsp = { module = "org.eclipse.jetty:jetty-jsp", version.ref = "jetty-jsp" }
@@ -50,4 +49,3 @@ junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
-mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }

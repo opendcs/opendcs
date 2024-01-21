@@ -18,7 +18,7 @@ dependencies {
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
     implementation(libs.jersey.hk2)
-    implementation(libs.jaxb.runtime)
+    runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.postgresql)
     webjars(libs.swagger.ui)
 }
