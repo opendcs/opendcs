@@ -26,7 +26,14 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonarqube {
         properties {
             property 'sonar.sources', 'src/main/java,src/main/webapp'
-            property 'sonar.exclusions', 'src/main/webapp/resources/js/plugins/**,src/main/webapp/resources/js/jquery*,src/main/webapp/resources/js/bootstrap*,src/main/webapp/resources/js/limitless/*'
+            property 'sonar.exclusions', 'src/main/webapp/resources/js/plugins/**,' +
+                    'src/main/webapp/resources/js/jquery*,' +
+                    'src/main/webapp/resources/js/bootstrap*,' +
+                    'src/main/webapp/resources/js/limitless/*,' +
+                    'src/main/webapp/resources/js/datatables/dataTables.rowReorder.min.js,' +
+                    'src/main/webapp/resources/css/bootstrap*,' +
+                    'src/main/webapp/resources/css/limitless/*,' +
+                    'src/main/webapp/resources/css/icons/**'
         }
     }
 }

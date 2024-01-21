@@ -142,41 +142,41 @@ public class Gateway extends HttpServlet {
         System.out.println("API Config File Path: " + apiConfigFilePath);
         File cf = new File(apiConfigFilePath);
 
-        // Creating an object of BufferedReader class
-        BufferedReader br = new BufferedReader(new FileReader(cf));
-
-        String line = br.readLine();
         String tempUrl = "";
         String tempPort = "";
         String tempContext = "";
-        while (line != null)
+        // Creating an object of BufferedReader class
+        try(BufferedReader br = new BufferedReader(new FileReader(cf)))
         {
-            System.out.println(line);
-            String nameValue[] = line.split("=");
-            if (nameValue.length > 1)
+            String line = br.readLine();
+            while(line != null)
             {
-                String name = nameValue[0].trim();
-                String value = nameValue[1].trim();
-                if ("url".equalsIgnoreCase(name))
+                System.out.println(line);
+                String nameValue[] = line.split("=");
+                if(nameValue.length > 1)
                 {
-                    tempUrl = value;
-                    System.out.println("Setting Base Url to " + tempUrl);
+                    String name = nameValue[0].trim();
+                    String value = nameValue[1].trim();
+                    if("url".equalsIgnoreCase(name))
+                    {
+                        tempUrl = value;
+                        System.out.println("Setting Base Url to " + tempUrl);
+                    }
+                    else if("port".equalsIgnoreCase(name))
+                    {
+                        tempPort = ":" + value;
+                        System.out.println("Setting Port to " + tempPort);
+                    }
+                    else if("context".equalsIgnoreCase(name))
+                    {
+                        tempContext = value;
+                        System.out.println("Setting Context to " + tempContext);
+                    }
                 }
-                else if ("port".equalsIgnoreCase(name))
-                {
-                    tempPort = ":" + value;
-                    System.out.println("Setting Port to " + tempPort);
-                }
-                else if ("context".equalsIgnoreCase(name))
-                {
-                    tempContext = value;
-                    System.out.println("Setting Context to " + tempContext);
-                }
+                // read next line
+                line = br.readLine();
             }
-            // read next line
-            line = br.readLine();
         }
-        br.close();
         //Sets the URL for the API
         this.baseUrl = tempUrl + tempPort;
         this.context = tempContext;
