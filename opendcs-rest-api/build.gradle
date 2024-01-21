@@ -5,6 +5,10 @@ plugins {
     id "war"
 }
 
+configurations {
+    webjars
+}
+
 dependencies {
     api(libs.opendcs) {
         //Workaround for the excessive opendcs dependencies
@@ -16,6 +20,35 @@ dependencies {
     implementation(libs.jersey.hk2)
     runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.postgresql)
+    webjars(libs.swagger.ui)
+}
+
+task extractWebJars(type: Copy) {
+    from zipTree(configurations.webjars.singleFile)
+
+    into file("${project.layout.getBuildDirectory().get().getAsFile().toString()}/resources/main/swaggerui")
+    includeEmptyDirs false
+    eachFile {
+        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
+    }
+    exclude "**/swagger-initializer.js"
+    includeEmptyDirs = false
+}
+
+compileTestJava {
+    dependsOn extractWebJars
+}
+
+javadoc {
+    dependsOn extractWebJars
+}
+
+jar {
+    dependsOn extractWebJars
+}
+
+war {
+    dependsOn extractWebJars
 }
 
 publishing {

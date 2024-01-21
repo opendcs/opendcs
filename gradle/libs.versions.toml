@@ -9,13 +9,14 @@ slf4j = "2.0.10"
 jersey = "2.40"
 postgresql = "42.7.1"
 swagger = "2.2.19"
+swagger-ui = "5.10.3"
 glassfish-jaxb = "2.3.3"
 websocket = "1.1"
 javax-validation = "2.0.1.Final"
+
 #Test Dependencies
 junit = "5.10.1"
 mockito = "3.12.4"
-
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
 jetty-jsp = { module = "org.eclipse.jetty:jetty-jsp", version.ref = "jetty-jsp" }
@@ -34,10 +35,14 @@ slf4j-jdk = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref = "jersey" }
 jersey-container-servlet = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref = "jersey" }
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
+
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2-jakarta", version.ref = "swagger" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "glassfish-jaxb" }
 websocket = { module = "javax.websocket:javax.websocket-api", version.ref = "websocket" }
+
+# webjars
+swagger-ui = { module = "org.webjars:swagger-ui", version.ref="swagger-ui" }
 
 #Test Dependencies
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }

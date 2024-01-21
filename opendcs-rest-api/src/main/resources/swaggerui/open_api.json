@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "odcsapi"
+      "url": "."
     }
   ],
   "tags": [
