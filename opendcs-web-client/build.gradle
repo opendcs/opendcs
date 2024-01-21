@@ -10,7 +10,6 @@ dependencies {
     implementation(libs.servlet.api)
     implementation(libs.websocket)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.junit.jupiter)
 }
 
 publishing {
