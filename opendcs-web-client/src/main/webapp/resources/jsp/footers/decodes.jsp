@@ -31,7 +31,7 @@
 
 			<li class="nav-item"><a
 				href="<% String swaggerUrl =  (String) request.getAttribute("api_swaggerui_url"); %><%= swaggerUrl %>"
-				class="nav-link" target="_blank"> <i class="icon-code"></i> <span>
+				class="nav-link" target="_blank" rel="noopener"> <i class="icon-code"></i> <span>
 						API Swagger UI </span>
 			</a>
 		</ul>
