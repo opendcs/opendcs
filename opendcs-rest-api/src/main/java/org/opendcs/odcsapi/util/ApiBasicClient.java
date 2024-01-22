@@ -145,27 +145,27 @@ public class ApiBasicClient
 				if (input != null)
 					input.close();
 			}
-			catch (Exception e)
+			catch (IOException ex)
 			{
-				Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,"Error closing input: ", e);
+				throw new IOException("Error closing input: ", ex);
 			}
-			try
+            try
 			{
-				if (output != null)
-					output.close();
-			}
-			catch (Exception e)
+                if (output != null)
+                    output.close();
+            }
+			catch (IOException ex)
 			{
-				Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,"Error closing output: ", e);
-			}
+				throw new IOException("Error closing output: ", ex);
+            }
 			try
 			{
 				if (socket != null)
 					socket.close();
 			}
-			catch (Exception e)
+			catch (IOException ex)
 			{
-				Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,"Error closing socket: ", e);
+				throw new IOException( "Error closing socket: ", ex);
 			}
 
 			if (debug != null)

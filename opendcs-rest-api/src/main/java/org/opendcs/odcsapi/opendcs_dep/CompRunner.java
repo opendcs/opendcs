@@ -272,25 +272,16 @@ Logger.getLogger(ApiConstants.loggerName).info("   parm '" + dcp.getRoleName() +
 			throw new WebAppException(ErrorCodes.BAD_CONFIG, 
 				"Specified triggering time series does not exist in the database: " + ex);
 		}
-		catch (BadTimeSeriesException ex)
+		catch (BadTimeSeriesException | DuplicateTimeSeriesException ex)
 		{
-			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING, "Error in RawMessageBlockParser: %s", ex);
-			throw new WebAppException(500, ex.getMessage());
-		}
-		catch (DuplicateTimeSeriesException ex)
-		{
-			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING,
-					"Unexpected DuplicateTimeSeriesException: %s", ex);
-			throw new WebAppException(500, ex.getMessage());
+			throw new WebAppException(500, ex.getMessage(), ex);
 		}
 		catch (DbCompException ex)
 		{
-			throw new WebAppException(ErrorCodes.BAD_CONFIG, "Error in computation exec: " + ex);
+			throw new WebAppException(ErrorCodes.BAD_CONFIG, "Error in computation exec: ", ex);
 		}
 		catch (DbIoException ex)
 		{
-			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING,
-					"testComp error from tsdb interface: %s", ex);
 			throw new DbException(module, ex, "testComp error from tsdb interface");
 		}
 		finally

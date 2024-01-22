@@ -35,6 +35,11 @@ public class DdsProtocolError extends Exception
 		super(msg);
 	}
 
+	public DdsProtocolError(String msg, Throwable throwable)
+	{
+		super(msg, throwable);
+	}
+
 	/** @return string representation of this exception. */
 	public String toString()
 	{

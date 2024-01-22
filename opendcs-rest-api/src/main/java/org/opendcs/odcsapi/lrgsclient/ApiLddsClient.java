@@ -27,8 +27,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.LoggerFactory;
+
 import java.util.zip.GZIPInputStream;
 
 import org.opendcs.odcsapi.beans.ApiLrgsStatus;
@@ -41,6 +42,9 @@ import org.opendcs.odcsapi.util.ApiBasicClient;
 import org.opendcs.odcsapi.util.ApiByteUtil;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiTextUtil;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
   This class encapsulates the communication between a client process
@@ -156,7 +160,7 @@ public class ApiLddsClient extends ApiBasicClient
 	}
 
 	/**
-	  Sends a Hello message with the specified user name. 
+	  Sends a Hello message with the specified user name.
 	  Then awaits the response from the server. If an exception is not thrown, 
 	  then the login was successful.
 
@@ -525,21 +529,19 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 	}
 	
 	public ApiLrgsStatus getLrgsStatus()
-		throws IOException, DdsProtocolError, DdsServerError 
+		throws IOException, DdsProtocolError, DdsServerError
 	{
 		byte[] statusBytes = getStatusBytes();
-		try
+        try {
+            LrgsStatusXio statParser = new LrgsStatusXio();
+            lastActivity = System.currentTimeMillis();
+            return statParser.parse(statusBytes, 0, statusBytes.length, "dds");
+        }
+		catch (IOException | ParserConfigurationException | SAXException ex)
 		{
-			LrgsStatusXio statParser = new LrgsStatusXio();
-			lastActivity = System.currentTimeMillis();
-			return statParser.parse(statusBytes, 0, statusBytes.length, "dds");
-		}
-		catch(Exception ex)
-		{
-			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING, "Error in LrgsStatusXio: %s", ex);
-			throw new DdsProtocolError(ex.getMessage());
-		}
-	}
+            throw new DdsProtocolError("Error in parsing the lrgs status: ", ex);
+        }
+    }
 
 	public byte[] getMsgBlockExtXml(int timeout)
 		throws IOException, DdsProtocolError, DdsServerError
@@ -571,8 +573,7 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 			bais.close();
 			baos.close();
 			byte ret[] = baos.toByteArray();
-//Logger.instance().info("orig response len=" + resp.MsgData.length 
-//+ " after unzip=" + ret.length);
+
 			lastActivity = System.currentTimeMillis();
 			return ret;
 		}
@@ -596,10 +597,9 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 			lastActivity = System.currentTimeMillis();
 			return parser.parse(xmldata, 0, xmldata.length, "dds");
 		}
-		catch(Exception ex)
+		catch(SAXException | ParserConfigurationException ex)
 		{
-			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING, "Error in RawMessageBlockParser: %s", ex);
-			throw new DdsProtocolError(ex.getMessage());
+			throw new DdsProtocolError("We received a dds message, but could not parse it.", ex);
 		}
 	}
 
@@ -651,17 +651,17 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 
 	public void info(String str)
 	{
-		Logger.getLogger(ApiConstants.loggerName).info("LddsClient INFO: " + str);
+		LoggerFactory.getLogger(ApiConstants.loggerName).info("LddsClient INFO: {}", str);
 	}
 	
 	private void debug(String str)
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine("LddsClient DEBUG: " + str);
+		LoggerFactory.getLogger(ApiConstants.loggerName).trace("LddsClient DEBUG: {}", str);
 	}
 	
 	private void warning(String str)
 	{
-		Logger.getLogger(ApiConstants.loggerName).warning("LddsClient WARNING: " + str);
+		LoggerFactory.getLogger(ApiConstants.loggerName).warn("LddsClient WARNING: {}", str);
 	}
 
 	public long getLastActivity()

@@ -68,15 +68,16 @@ public class Gateway extends HttpServlet {
      *
      * @throws ServletException 
      */
-    public void init() throws ServletException {
+    public void init() throws ServletException
+    {
         System.out.println("Initializing the Gateway instance.");
         try
         {
             this.setApiDetails(null);
         }
-        catch (IOException e)
+        catch (IOException ex)
         {
-            Logger.getLogger(Gateway.class.getName()).log(Level.SEVERE, "Error completing request: ", e);
+            Logger.getLogger(Gateway.class.getName()).log(Level.SEVERE, "Error initializing gateway instance: ", ex);
         }
     }    
 
@@ -312,11 +313,11 @@ public class Gateway extends HttpServlet {
                 inline = "{\"message\": \"error - you must pass the opendcs_api_call parameter.\"}";
                 System.out.println(String.format("Error: %s.", inline));
             }
-
         }
-        catch (Exception e)
+        catch (IOException ex)
         {
-            Logger.getLogger(Gateway.class.getName()).log(Level.SEVERE,"Error completing request: ", e);
+            Logger.getLogger(Gateway.class.getName()).log(Level.SEVERE,
+                    "Error connecting to API from gateway: ", ex);
             response.setStatus(400);
             inline = "error";
         }

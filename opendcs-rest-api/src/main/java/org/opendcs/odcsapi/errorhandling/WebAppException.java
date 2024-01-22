@@ -24,11 +24,18 @@ public class WebAppException
 	private Integer status = 0;
 
 	/** detailed error msg */
-	private String errMessage = "";	
-	
+	private String errMessage = "";
+
 	public WebAppException(Integer status, String errMessage)
 	{
-		super();
+		super(errMessage);
+		this.status = status;
+		this.errMessage = errMessage;
+	}
+
+	public WebAppException(Integer status, String errMessage, Throwable throwable)
+	{
+		super(errMessage, throwable);
 		this.status = status;
 		this.errMessage = errMessage;
 	}
