@@ -17,6 +17,12 @@ public abstract class IdDatabaseObject extends DatabaseObject
 	/** Default constructor. */
 	public IdDatabaseObject()
 	{
+		this(Constants.undefinedId, Database.getDb());
+	}
+
+	public IdDatabaseObject(Database db)
+	{
+		this(Constants.undefinedId, db);
 	}
 
 	/**
@@ -25,6 +31,12 @@ public abstract class IdDatabaseObject extends DatabaseObject
 	*/
 	public IdDatabaseObject(DbKey id)
 	{
+		this(id,Database.getDb());
+	}
+
+	public IdDatabaseObject(DbKey id, Database db)
+	{
+		super(db);
 		_id = id;
 	}
 
