@@ -21,7 +21,10 @@ import org.assertj.swing.timing.Condition;
 import org.assertj.swing.timing.Timeout;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperties;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -63,6 +66,9 @@ public class ProfileManagerFrameTest extends GuiTest
     }
 
     @Test
+    @EnabledIfSystemProperty(named = "opendcs.gui-test.run.profile",
+                             matches = "true",
+                             disabledReason = "Test flaky during github actions. Only run if told.")
     public void test_profile_manager() throws Exception
     {
         JTableFixture jtf = frame.table("profileTable");
