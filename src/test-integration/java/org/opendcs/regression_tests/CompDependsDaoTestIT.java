@@ -34,7 +34,6 @@ import opendcs.dao.CompDependsNotifyDAO;
     "shared/presgrp-regtest.xml"
 })
 @ComputationConfigurationRequired("shared/loading-apps.xml")
-@EnableIfDaoSupported(CompDependsDAO.class)
 public class CompDependsDaoTestIT extends AppTestBase
 {
     @ConfiguredField
@@ -44,6 +43,7 @@ public class CompDependsDaoTestIT extends AppTestBase
     private Database decodesDb;
 
     @Test
+    @EnableIfDaoSupported(CompDependsDAO.class)
     public void test_compdepends_operations() throws Exception
     {
         try(CompDependsDAO cd = (CompDependsDAO)db.makeCompDependsDAO();

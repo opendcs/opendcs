@@ -313,8 +313,10 @@ public class CpCompDependsUpdater
             {
                 msg = "Unexpected exception while " + action + ": " + ex;
                 warning(msg);
-                System.err.println(msg);
-                ex.printStackTrace(System.err);
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                ex.printStackTrace(pw);
+                warning(sw.toString());
                 shutdownFlag = true;
                 databaseFailed = true;
             }
@@ -439,8 +441,10 @@ public class CpCompDependsUpdater
         {
             String msg = "Error refreshing caches: " + ex;
             Logger.instance().failure(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            ex.printStackTrace(pw);
+            warning(sw.toString());
         }
         lastCacheRefresh = System.currentTimeMillis();
     }
@@ -689,9 +693,14 @@ public class CpCompDependsUpdater
                             }
                             catch (SQLException ex)
                             {
-                                String msg = "tsDeleted Error in query '" + q + "': " + ex;
-                                System.err.print(msg);
-                                ex.printStackTrace();
+                                String msg =
+                                    String.format("tsDeleted Error in query '%s', for id '%d' because: %s",
+                                                  q,tsKey.getValue(), ex.getLocalizedMessage());
+                                StringWriter sw = new StringWriter();
+                                PrintWriter pw = new PrintWriter(sw);
+                                ex.printStackTrace(pw);
+                                warning(msg);
+                                warning(sw.toString());
                             }
                             break;
                         }
@@ -717,9 +726,14 @@ public class CpCompDependsUpdater
         }
         catch (SQLException | DbIoException ex)
         {
-            String msg = "tsDeleted Error in query '" + q + "': " + ex;
-            System.err.print(msg);
-            ex.printStackTrace();
+            String msg =
+                String.format("tsDeleted Error in query '%s', for id '%d' because: %s",
+                          q,tsKey.getValue(), ex.getLocalizedMessage());
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            ex.printStackTrace(pw);
+            warning(msg);
+            warning(sw.toString());
             return false;
         }
     }
@@ -763,9 +777,12 @@ public class CpCompDependsUpdater
                             }
                             catch (DbIoException ex)
                             {
-                                String msg = "tsDeleted() Error in writeComputation: " + ex;
-                                System.out.println(msg);
-                                ex.printStackTrace();
+                                String msg = "tsDeleted() Error in writeComputation: " + ex.getLocalizedMessage();
+                                StringWriter sw = new StringWriter();
+                                PrintWriter pw = new PrintWriter(sw);
+                                ex.printStackTrace(pw);
+                                warning(msg);
+                                warning(sw.toString());
                             }
                         }
                     }
@@ -805,8 +822,10 @@ public class CpCompDependsUpdater
             String msg = "Received COMP_MODIFIED for compId=" + compId
                 + " but cannot read computation from DB: " + ex;
             warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace();
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            ex.printStackTrace(pw);
+            warning(sw.toString());
             return false;
         }
         catch (NoSuchObjectException ex)
@@ -992,7 +1011,7 @@ public class CpCompDependsUpdater
                 }
                 catch(DbIoException ex)
                 {
-                    /* do nothing -- err msg already logged. */
+                    warning("Error adding computation to staging area.");
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);
                     ex.printStackTrace(pw);
@@ -1020,8 +1039,10 @@ public class CpCompDependsUpdater
                 String msg = "groupModified(" + groupId + ") cannot get group: "
                         + ex;
                 warning(msg);
-                System.err.println(msg);
-                ex.printStackTrace();
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                ex.printStackTrace(pw);
+                warning(sw.toString());
                 newGrp = null;
                 return false;
             }
@@ -1077,7 +1098,10 @@ public class CpCompDependsUpdater
                         }
                         catch (DbIoException ex)
                         {
-                            ex.printStackTrace();
+                            StringWriter sw = new StringWriter();
+                            PrintWriter pw = new PrintWriter(sw);
+                            ex.printStackTrace(pw);
+                            warning(pw.toString());
                         }
                     }
                     else // Re-evaluate comp depends because the underlying group is changed.
@@ -1282,13 +1306,19 @@ public class CpCompDependsUpdater
             DbCompParm parm = parmit.next();
             if (parm.isInput() && parm.getSiteId() == Constants.undefinedId)
             {
-//                info("Expanding input parm '" + parm.getRoleName() + "' in comp '" + comp.getName() + "'");
-                try { theDb.expandSDI(parm); }
+                try
+                {
+                    theDb.expandSDI(parm);
+                }
                 catch(NoSuchObjectException ex)
                 {
-                    // Do nothing, it may be a group parm with no SDI specified.
+                    String msg = "Error Expanding Parameter information. (NOTE: ignore if group computation.)";
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    ex.printStackTrace(pw);
+                    warning(msg);
+                    warning(sw.toString());
                 }
-//                info("After expanding, siteId=" + parm.getSiteId() + ", sitename='" + parm.getSiteName() + "'");
             }
         }
     }

@@ -2,7 +2,6 @@ package opendcs.dao;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -48,26 +47,27 @@ public class CompDependsNotifyDAO extends DaoBase implements CompDependsNotifyDA
     }
 
     @Override
-    public CpDependsNotify getNextRecord() throws DbIoException {
+    public CpDependsNotify getNextRecord() throws DbIoException
+    {
         if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_8)
-		{
-			return null;
-		}
-		String q = "select RECORD_NUM, EVENT_TYPE, KEY, DATE_TIME_LOADED "
-				 + "from CP_DEPENDS_NOTIFY "
-				 + "where DATE_TIME_LOADED = "
-				 + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
-		try
-		{
-			final CpDependsNotify ret = getSingleResult(q, rs -> rs2cdn(rs));
+        {
+            return null;
+        }
+        String q = "select RECORD_NUM, EVENT_TYPE, KEY, DATE_TIME_LOADED "
+                 + "from CP_DEPENDS_NOTIFY "
+                 + "where DATE_TIME_LOADED = "
+                 + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
+        try
+        {
+            final CpDependsNotify ret = getSingleResult(q, rs -> rs2cdn(rs));
             deleteNotifyRecord(ret);
-			return ret;
-		}
-		catch(Exception ex)
-		{
-			warning("Error CpCompDependsNotify: " + ex);
-		}
-		return null;
+            return ret;
+        }
+        catch(Exception ex)
+        {
+            warning("Error CpCompDependsNotify: " + ex);
+        }
+        return null;
     }
 
     @Override
@@ -91,15 +91,15 @@ public class CompDependsNotifyDAO extends DaoBase implements CompDependsNotifyDA
     public void saveRecord(CpDependsNotify record) throws DbIoException
     {
         String q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-			     + "values(?,?,?,?)";
+                 + "values(?,?,?,?)";
         try
         {
-		    doModify(q,getKey("cp_depends_notify"),record.getEventType(), record.getKey(), new Date());
+            doModify(q,getKey("cp_depends_notify"),record.getEventType(), record.getKey(), new Date());
         }
         catch (SQLException ex)
         {
             throw new DbIoException("Unable to save record.", ex);
         }
     }
-    
+
 }
