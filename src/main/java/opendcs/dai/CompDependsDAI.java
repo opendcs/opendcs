@@ -2,12 +2,16 @@ package opendcs.dai;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
 
 import decodes.sql.DbKey;
+import decodes.tsdb.CpCompDependsRecord;
 import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
+import opendcs.util.functional.ThrowingConsumer;
 
 public interface CompDependsDAI
 	extends DaiBase
@@ -69,13 +73,41 @@ public interface CompDependsDAI
 	 * Get next CP_COMP_DEPENDS_NOTIFY record and remove it from the table.
 	 * @return next CP_COMP_DEPENDS_NOTIFY record or null if none.
 	 */
-	public CpDependsNotify getCpCompDependsNotify()
-		throws DbIoException;
+	public CpDependsNotify getCpCompDependsNotify() throws DbIoException;
 
+	public void clearScratchpad()  throws DbIoException;
 
+	public List<CpCompDependsRecord> getAllCompDependsEntries() throws DbIoException;
+
+	public void addRecords(Collection<CpCompDependsRecord> records) throws DbIoException;
+	/**
+	 * Adds all given records to the scratch pad table
+	 * @param records
+	 * @throws DbIoException
+	 */
+	public void addRecordsToScratchPad(Collection<CpCompDependsRecord> records) throws DbIoException;
+
+	/**
+	 * Move the records from the scratch pad to the active table.
+	 *
+	 * @throws DbIoException
+	 */
+	public void mergeScratchPadToActive() throws DbIoException;
 	/**
 	 * Closes any resources opened by the DAO
 	 */
 	public void close();
 
+	/**
+	 * Given that almost all operations on these tables should be run in a transaction.
+	 * Return an new instance of CompDependsDAI that has a single connection with
+	 * auto commit off.
+	 * @param consumer
+	 * @throws DbIoException
+	 */
+	public void transaction(ThrowingConsumer<CompDependsDAI,DbIoException> consumer) throws DbIoException;
+
+	public void removeExistingFromScratch() throws DbIoException;
+
+	public void fillActiveFromScratch() throws DbIoException;
 }

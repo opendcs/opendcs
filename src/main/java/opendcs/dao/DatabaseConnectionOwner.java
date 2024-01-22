@@ -47,6 +47,7 @@ import java.util.Date;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
@@ -238,6 +239,8 @@ public interface DatabaseConnectionOwner
 	 * @return the DAO
 	 */
 	public ComputationDAI makeComputationDAO();
+
+	public CompDependsNotifyDAI makeCompDependsNotifyDAO();
 	
 	/**
 	 * Factory method to make a DAO for Time Series

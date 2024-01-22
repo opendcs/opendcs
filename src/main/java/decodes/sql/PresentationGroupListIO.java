@@ -143,7 +143,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
 		PresentationGroup pg = _pgList.getById(id);
 		if (pg == null)
 		{
-			pg = new PresentationGroup();
+			pg = new PresentationGroup(dbObj.getDatabase());
 			pg.setId(id);
 			readPresentationGroup(conn, pg, true);
 		}

@@ -20,6 +20,7 @@ import decodes.tsdb.TsGroup;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
@@ -34,7 +35,6 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
-import opendcs.dao.DatabaseConnectionOwner;
 
 public class NonPoolingConnectionOwner implements TestConnectionOwner
 {
@@ -43,7 +43,7 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
     int tsdbVersion = 68;
 
     public NonPoolingConnectionOwner()
-    {        
+    {
     }
 
     public void setConnection(Connection conn)
@@ -60,7 +60,7 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
     @Override
     public void freeConnection(Connection conn)
     {
-        /* noop in this implmentation */        
+        /* noop in this implementation */
     }
 
     @Override
@@ -333,6 +333,12 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
     {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public CompDependsNotifyDAI makeCompDependsNotifyDAO() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'makeCompDependsNotifyDAO'");
     }
     
 }
