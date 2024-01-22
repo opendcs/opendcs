@@ -233,9 +233,15 @@ public class ApiDaoBase
 	}
 
 	public Long getKey(String tableName)
-		throws DbException
+			throws DbException
 	{
-		return dbi.getKey(tableName);
+		try
+		{
+			return dbi.getKey(tableName);
+		} catch (SQLException e)
+		{
+			throw new DbException(e.getMessage());
+		}
 	}
 	
 	/**

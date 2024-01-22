@@ -367,11 +367,7 @@ public class ApiSiteDAO extends ApiDaoBase
 				+ "REGION, TIMEZONE, COUNTRY, ELEVATION, ELEVUNITABBR, "
 				+ "DESCRIPTION, ACTIVE_FLAG, LOCATION_TYPE, MODIFY_TIME, PUBLIC_NAME) "
 				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-				
-		Connection conn = null;
-		try
-		{
-		
+
 		doModifyV(q, site.getSiteId(),
 					site.getLatitude(),
 					site.getLongitude(),
@@ -385,13 +381,9 @@ public class ApiSiteDAO extends ApiDaoBase
 					site.getDescription(),
 					sqlBoolean(site.isActive()),
 					site.getLocationType(),
-					dbi.sqlDate(site.getLastModified()),
+					dbi.sqlDateV(site.getLastModified()),
 					site.getPublicName());
-		}
-		finally
-		{
-			conn.close();
-		}
+
 		updateAllSiteNames(site, new ApiSite());
 		
 		updateSiteProps(site, new ApiSite());

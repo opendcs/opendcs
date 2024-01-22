@@ -15,8 +15,11 @@
 
 package org.opendcs.odcsapi.hydrojson;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -98,48 +101,7 @@ public class DbInterface
 			ex.printStackTrace(System.err);
 			throw new DbException(module, ex, msg);
 		}
-		
-// This doesn't work. isHdb and isCwms are not set yet. They default to false.
-// Also I don't want to have to make a tsdb class, so eventually just get rid of this.
-//		String tsdbClass = 
-//				isHdb ? "decodes.hdb.HdbTimeSeriesDb" :
-//				isCwms ? "decodes.cwms.CwmsTimeSeriesDb" : 
-//				"opendcs.opentsdb.OpenTsdb";
-//		Logger.getLogger(ApiConstants.loggerName).info("tsdbClass=" + tsdbClass);
-//		if (!isTypeDetermined)
-//		{
-//			Logger.getLogger(ApiConstants.loggerName).info(module + " determining database type");
-//			isTypeDetermined = true;
-//
-//			try (ApiDaoBase adb = new ApiDaoBase(this, "DbInterface"))
-//			{
-//				// hdb_damtype table only exists in HDB.
-//				ResultSet rs = adb.doQuery("select * from hdb_damtype");
-//				isHdb = true;
-//				try { rs.close(); } catch(Exception ex) {}
-//			}
-//			catch (Exception ex)
-//			{
-//				isHdb = false;
-//			}
-//			
-//			if (!isHdb)
-//			{
-//				try (ApiDaoBase adb = new ApiDaoBase(this, "DbInterface"))
-//				{
-//					String q = "select distinct parameter_id from cwms_v_parameter";
-//					ResultSet rs = adb.doQuery(q);
-//					isCwms = true;
-//					try { rs.close(); } catch(Exception ex) {}
-//				}
-//				catch (Exception ex)
-//				{
-//					isCwms = false;
-//				}
-//			}
-//			
-//			isOpenTsdb = tsdbClass == "opendcs.opentsdb.OpenTsdb";
-//		}
+
 		if (staleClientChecker == null)
 		{
 			staleClientChecker = new StaleClientChecker();
@@ -200,7 +162,15 @@ Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication 
 		finally
 		{
 			if (userCon != null)
-				try { userCon.close(); } catch(Exception ex) {}
+				try
+				{
+					userCon.close();
+				}
+				catch (Exception ex)
+				{
+					Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,
+							"There was an Issue closing connection: {0}", ex.getMessage());
+				}
 		}
 	}
 
@@ -233,45 +203,51 @@ Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication 
 	}
 
 	public Long getKey(String tableName)
-		throws DbException
+			throws DbException, SQLException
 	{
 		String seqname;
 		if (tableName.equalsIgnoreCase("EquipmentModel"))
 			seqname = "EquipmentIdSeq";
 		else
 			seqname = tableName + sequenceSuffix;
-		
-		String q = isOracle ? ("SELECT " + seqname + ".nextval from dual")
-			: ("SELECT nextval('" + seqname + "')"); // postgresql syntax
 
-		try (Statement stmt = connection.createStatement();
-			ResultSet rs = stmt.executeQuery(q))
+		if (Boolean.TRUE.equals(doesSequenceExist(seqname)))
 		{
-			if (rs == null || !rs.next())
+			String q = isOracle ? ("SELECT " + seqname + ".nextval from dual")
+					: ("SELECT nextval('" + seqname + "')"); // postgresql syntax
+
+			try (Statement stmt = connection.createStatement();
+				 ResultSet rs = stmt.executeQuery(q))
 			{
-				String err = "Cannot read sequence value from '" + seqname 
-					+ "': " + (rs == null ? "Null Return" : "Empty Return");
-				throw new DbException(module, null, err);
+				if (rs == null || !rs.next())
+				{
+					String err = "Cannot read sequence value from '" + seqname
+							+ "': " + (rs == null ? "Null Return" : "Empty Return");
+					throw new DbException(module, null, err);
+				}
+
+				long lv = rs.getLong(1);
+				return (rs.wasNull() ? null : (Long) lv);
 			}
-	
-			long lv =  rs.getLong(1);
-			return (rs.wasNull() ? null : (Long)lv);
+			catch (SQLException ex)
+			{
+				String msg = "SQL Error executing '" + q + "': " + ex;
+				throw new DbException(module, ex, msg);
+			}
 		}
-		catch(SQLException ex)
-		{
-			String msg = "SQL Error executing '" + q + "': " + ex;
-			throw new DbException(module, ex, msg);
-		}
+		Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,
+				"Sequence {0} does not exist, but a call was made to access it.", seqname);
+		//Sequence does not exist.  Returning null;
+		return null;
 	}
-	
+
 	public void resetKey(String tableName)
-		throws DbException
+			throws DbException, SQLException
 	{
 		String seqname = tableName + sequenceSuffix;
-		
-		if (isCwms)
-			; // Do nothing -- never reset cwms sequences.
-		else if (isOracle)
+
+		//NOTE - if isCwms, Do nothing -- never reset cwms sequences.
+		if (isOracle)
 		{
 			// Primitive Oracle SQL requires 4 steps:
 			// 1. Get current sequence value
@@ -279,21 +255,27 @@ Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication 
 			// 3. Get next sequence value (which causes increment to be applied).
 			// 4. Set increment back to 1.
 			Long curval = getKey(tableName);
-			
-			String q = "alter sequence " + seqname + " increment by -" + (curval-2);
-			try (Statement stmt = connection.createStatement())
+			if (curval != null)
 			{
-				stmt.executeUpdate(q);
-				q = "SELECT " + seqname + ".nextval from dual";
-				ResultSet rs = stmt.executeQuery(q);
-				rs.close();
-				q = "alter sequence " + seqname + " increment by 1 minvalue 0";
-				stmt.executeUpdate(q);
+				String q = "alter sequence " + seqname + " increment by -" + (curval - 2);
+				try (Statement stmt = connection.createStatement()) {
+					stmt.executeUpdate(q);
+					q = "SELECT " + seqname + ".nextval from dual";
+					ResultSet rs = stmt.executeQuery(q);
+					rs.close();
+					q = "alter sequence " + seqname + " increment by 1 minvalue 0";
+					stmt.executeUpdate(q);
+				}
+				catch (SQLException ex)
+				{
+					String msg = "SQL Error executing '" + q + "': " + ex;
+					throw new DbException(module, ex, msg);
+				}
 			}
-			catch(SQLException ex)
+			else
 			{
-				String msg = "SQL Error executing '" + q + "': " + ex;
-				throw new DbException(module, ex, msg);
+				Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,
+						"There was an issue resetting sequence {0}.", seqname);
 			}
 		}
 		else // PostgreSQL
@@ -312,6 +294,26 @@ Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication 
 
 		
 		
+	}
+
+	protected List<String> getAllSequenceNames() throws SQLException
+	{
+		String q = "SELECT LOWER(sequence_name) FROM information_schema.sequences ORDER BY sequence_name;";
+		List<String> sequenceNames = new ArrayList<>();
+		try (Statement stmt = connection.createStatement())
+		{
+			ResultSet rs = stmt.executeQuery(q);
+			while (rs.next())
+			{
+				sequenceNames.add(rs.getString(1));
+			}
+		}
+		return sequenceNames;
+	}
+
+	protected Boolean doesSequenceExist(String sequenceName) throws SQLException
+	{
+		return getAllSequenceNames().contains(sequenceName.toLowerCase());
 	}
 
 	public static void setDatabaseType(String dbType)
