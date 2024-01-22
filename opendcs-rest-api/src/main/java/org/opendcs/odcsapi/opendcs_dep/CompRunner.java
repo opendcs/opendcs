@@ -275,13 +275,13 @@ Logger.getLogger(ApiConstants.loggerName).info("   parm '" + dcp.getRoleName() +
 		catch (BadTimeSeriesException ex)
 		{
 			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING, "Error in RawMessageBlockParser: %s", ex);
-			throw new WebAppException(500, String.format("Error in RawMessageBlockParser: %s", ex));
+			throw new WebAppException(500, ex.getMessage());
 		}
 		catch (DuplicateTimeSeriesException ex)
 		{
 			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING,
 					"Unexpected DuplicateTimeSeriesException: %s", ex);
-			throw new WebAppException(500, String.format("Unexpected DuplicateTimeSeriesException: %s", ex));
+			throw new WebAppException(500, ex.getMessage());
 		}
 		catch (DbCompException ex)
 		{
