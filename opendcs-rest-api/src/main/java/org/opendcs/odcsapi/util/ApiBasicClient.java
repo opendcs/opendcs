@@ -18,6 +18,7 @@ package org.opendcs.odcsapi.util;
 import java.net.*;
 import java.io.*;
 import java.rmi.UnknownHostException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -146,7 +147,7 @@ public class ApiBasicClient
 			}
 			catch (Exception e)
 			{
-				Logger.getLogger(ApiConstants.loggerName).severe("Error closing input: " + e);
+				Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,"Error closing input: ", e);
 			}
 			try
 			{
@@ -155,7 +156,7 @@ public class ApiBasicClient
 			}
 			catch (Exception e)
 			{
-				Logger.getLogger(ApiConstants.loggerName).severe("Error closing output: " + e);
+				Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,"Error closing output: ", e);
 			}
 			try
 			{
@@ -164,7 +165,7 @@ public class ApiBasicClient
 			}
 			catch (Exception e)
 			{
-				Logger.getLogger(ApiConstants.loggerName).severe("Error closing socket: " + e);
+				Logger.getLogger(ApiConstants.loggerName).log(Level.SEVERE,"Error closing socket: ", e);
 			}
 
 			if (debug != null)

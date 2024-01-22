@@ -35,6 +35,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -75,7 +76,7 @@ public class Gateway extends HttpServlet {
         }
         catch (IOException e)
         {
-            Logger.getLogger(Gateway.class.getName()).severe("Error completing request: " + e);
+            Logger.getLogger(Gateway.class.getName()).log(Level.SEVERE, "Error completing request: ", e);
         }
     }    
 
@@ -315,7 +316,7 @@ public class Gateway extends HttpServlet {
         }
         catch (Exception e)
         {
-            Logger.getLogger(Gateway.class.getName()).severe("Error completing request: " + e);
+            Logger.getLogger(Gateway.class.getName()).log(Level.SEVERE,"Error completing request: ", e);
             response.setStatus(400);
             inline = "error";
         }

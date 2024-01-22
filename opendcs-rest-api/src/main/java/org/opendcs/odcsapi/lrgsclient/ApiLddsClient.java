@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
@@ -535,9 +536,8 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 		}
 		catch(Exception ex)
 		{
-			String em = "Error in LrgsStatusXio: " + ex;
-			warning(em);
-			throw new DdsProtocolError(em);
+			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING, "Error in LrgsStatusXio: %s", ex);
+			throw new DdsProtocolError(ex.getMessage());
 		}
 	}
 
@@ -598,9 +598,8 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 		}
 		catch(Exception ex)
 		{
-			String em = "Error in RawMessageBlockParser: " + ex;
-			warning(em);
-			throw new DdsProtocolError(em);
+			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING, "Error in RawMessageBlockParser: %s", ex);
+			throw new DdsProtocolError(ex.getMessage());
 		}
 	}
 

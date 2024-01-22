@@ -57,6 +57,8 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.VarFlags;
+
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.DataTypeDAI;
@@ -272,15 +274,14 @@ Logger.getLogger(ApiConstants.loggerName).info("   parm '" + dcp.getRoleName() +
 		}
 		catch (BadTimeSeriesException ex)
 		{
-			String emsg = "Unexpected BadTimeSeriesException: " + ex;
-			Logger.getLogger(ApiConstants.loggerName).warning(emsg);
-			throw new WebAppException(500, emsg);
+			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING, "Error in RawMessageBlockParser: %s", ex);
+			throw new WebAppException(500, String.format("Error in RawMessageBlockParser: %s", ex));
 		}
 		catch (DuplicateTimeSeriesException ex)
 		{
-			String emsg = "Unexpected DuplicateTimeSeriesException: " + ex;
-			Logger.getLogger(ApiConstants.loggerName).warning(emsg);
-			throw new WebAppException(500, emsg);
+			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING,
+					"Unexpected DuplicateTimeSeriesException: %s", ex);
+			throw new WebAppException(500, String.format("Unexpected DuplicateTimeSeriesException: %s", ex));
 		}
 		catch (DbCompException ex)
 		{
@@ -288,9 +289,9 @@ Logger.getLogger(ApiConstants.loggerName).info("   parm '" + dcp.getRoleName() +
 		}
 		catch (DbIoException ex)
 		{
-			String msg = module + ".testComp error from tsdb interface: " + ex;
-			Logger.getLogger(ApiConstants.loggerName).warning(msg);
-			throw new DbException(module, ex, msg);
+			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING,
+					"testComp error from tsdb interface: %s", ex);
+			throw new DbException(module, ex, "testComp error from tsdb interface");
 		}
 		finally
 		{
