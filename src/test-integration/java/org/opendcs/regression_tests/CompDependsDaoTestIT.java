@@ -12,6 +12,7 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfDaoSupported;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 
 import decodes.cwms.CwmsTsId;
@@ -33,6 +34,7 @@ import opendcs.dao.CompDependsNotifyDAO;
     "shared/presgrp-regtest.xml"
 })
 @ComputationConfigurationRequired("shared/loading-apps.xml")
+@EnableIfDaoSupported(CompDependsDAO.class)
 public class CompDependsDaoTestIT extends AppTestBase
 {
     @ConfiguredField
