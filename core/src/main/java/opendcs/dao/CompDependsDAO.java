@@ -34,6 +34,7 @@ package opendcs.dao;
 
 import ilex.util.Logger;
 
+import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -42,16 +43,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-
-import org.h2.command.Prepared;
+import java.util.List;
+import java.util.function.Consumer;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import opendcs.util.functional.ThrowingConsumer;
 import opendcs.util.sql.WrappedConnection;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.CpCompDependsRecord;
 import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
@@ -98,14 +102,11 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	public void removeTsDependencies(TimeSeriesIdentifier tsid)
 		throws DbIoException
 	{
-		DbKey key = tsid.getKey();
-		Connection conn = getConnection();
-		boolean defaultAutoCommit = false;
-		try(
-			PreparedStatement deleteFromDepends = conn.prepareStatement(
-				"DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 +" = ?"
-			);
-			PreparedStatement updateEnabled = conn.prepareStatement(
+		final DbKey key = tsid.getKey();
+		try
+		{
+			doModify("delete from cp_comp_depends where " + cpCompDepends_col1 +" = ?", key);
+			doModify(
 				"update cp_computation set enabled = 'N' "
 				+ "where computation_id in ("
 				+ 	"select distinct a.computation_id from "
@@ -113,39 +114,20 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				+ 	"where a.computation_id = b.computation_id "
 				+ 	"and a.enabled = 'Y' "
 				+ 	"and b.site_datatype_id = ?"
-				+ ")"
+				+ ")",
+				key
 			);
-			PreparedStatement deleteGroupMembershit = conn.prepareStatement(
+			doModify(
 				"delete from tsdb_group_member_ts where "
 				+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-				+ " = ?"
+				+ " = ?",
+				key
 			);
-		){
-			defaultAutoCommit = conn.getAutoCommit();
-			conn.setAutoCommit(false);
-			// Remove any computation dependencies to this time-series.
-			deleteFromDepends.setLong(1,key.getValue());
-			deleteFromDepends.execute();
-
-			updateEnabled.setLong(1,key.getValue());
-			updateEnabled.execute();
-
-			deleteFromDepends.setLong(1, key.getValue() );
-			deleteFromDepends.execute();
-
-			conn.commit(); // now that all parts of the transaction have gone through we know we're ready.
-		} catch( SQLException err ){
-			throw new DbIoException("failed to remove computations dependencies " + err.getLocalizedMessage());
 		}
-
-		finally {
-			try{
-				conn.setAutoCommit(defaultAutoCommit);
-			} catch( Exception ex ){
-				warning("failed to reset autocommit: " + ex);
-			}
+		catch (Exception ex)
+		{
+			throw new DbIoException("failed to remove computations dependencies", ex);
 		}
-
 	}
 
 	@Override
@@ -250,7 +232,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 			String msg = "Exception populating CP_COMP_DEPENDS table: " + ex;
 			warning(msg);
 			ex.printStackTrace(Logger.instance().getLogOutput());
-			throw new DbIoException(msg);
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -259,14 +241,18 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		throws DbIoException
 	{
 		if (db.isHdb())
+		{
 			return;
-
-		// Remove the CP_COMP_DEPENDS records & re-add.
-		String q = "DELETE FROM CP_COMP_DEPENDS WHERE " + cpCompDepends_col1 + " = "
-			+ timeSeriesKey;
-		doModify(q);
-		doModify("delete from cp_comp_depends_scratchpad where " + cpCompDepends_col1 + " = "
-			+ timeSeriesKey);
+		}
+		try
+		{
+			doModify("delete from cp_comp_depends where " + cpCompDepends_col1 + " = ?", timeSeriesKey);
+			doModify("delete from cp_comp_depends_scratchpad where " + cpCompDepends_col1 + " = ?", timeSeriesKey);
+		}
+		catch (Exception ex)
+		{
+			throw new DbIoException("Unable to remove entries for time series.",ex);
+		}
 	}
 
 	@Override
@@ -274,12 +260,19 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		throws DbIoException
 	{
 		if (db.isHdb())
+		{
 			return;
+		}
 		// Remove the CP_COMP_DEPENDS records & re-add.
-		String q = "DELETE FROM CP_COMP_DEPENDS WHERE COMPUTATION_ID = " + compId;
-		doModify(q);
-
-		doModify("delete from cp_comp_depends_scratchpad where COMPUTATION_ID = " + compId);
+		try
+		{
+			doModify("delete from cp_comp_depends where computation_id = ?", compId);
+			doModify("delete from cp_comp_depends_scratchpad where COMPUTATION_ID = ?", compId);
+		}
+		catch (Exception ex)
+		{
+			throw new DbIoException("Unable to remove entries for computation.", ex);
+		}
 	}
 
 	public void close()
@@ -293,46 +286,40 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	public ArrayList<TimeSeriesIdentifier> getTriggersFor(DbKey compID)
 		throws DbIoException
 	{
-		TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
-		timeSeriesDAO.setManualConnection(getConnection());
-		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
-		Connection conn = getConnection();
-		try(
-			PreparedStatement getTriggers = conn.prepareStatement(
-				"SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
-				+ "WHERE COMPUTATION_ID = ?"
-			);
-		)
+		try(Connection conn = getConnection();
+			TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
+			DaoBase dao = new DaoBase(this.db,"triggersFor",conn);)
 		{
-			getTriggers.setLong(1,compID.getValue());
-			try( ResultSet rs = getTriggers.executeQuery(); ){
-				while(rs.next())
-			{
-				DbKey tsKey = DbKey.createDbKey(rs, 1);
-				try
-				{
-					ret.add(timeSeriesDAO.getTimeSeriesIdentifier(tsKey));
-				}
-				catch (NoSuchObjectException e)
-				{
-					warning("Bogus Time Series Key " + tsKey + " in CP_COMP_DEPENDS "
-						+ "for computation " + compID);
-				}
-			}
-			}
-
+			timeSeriesDAO.setManualConnection(conn);
+			return (ArrayList<TimeSeriesIdentifier>)dao.getResults(
+						"SELECT " + cpCompDepends_col1 + " FROM CP_COMP_DEPENDS "
+					  + "WHERE COMPUTATION_ID = ?", rs ->
+					{
+						DbKey tsKey = DbKey.createDbKey(rs, 1);
+						try
+						{
+							return timeSeriesDAO.getTimeSeriesIdentifier(tsKey);
+						}
+						catch (NoSuchObjectException ex)
+						{
+							warning("Bogus Time Series Key " + tsKey + " in CP_COMP_DEPENDS "
+								+ "for computation " + compID);
+						}
+						catch (DbIoException ex)
+						{
+							failure("Database error retrieving identifier: " + ex.getLocalizedMessage());
+						}
+						return null;
+					}, compID);
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("Error executing trigger comp retrieval: " + ex);
 		}
-		finally
-		{
-			timeSeriesDAO.close();
-		}
-		return ret;
 	}
 
+	// NOTE: This is only used by a rarely used command line application to run computation. Thus is on the low
+	// priority list of things to apply bind vars to; however, if you think you can do so by all means do.
 	@Override
 	public ArrayList<DbKey> getCompIdsFor(Collection<TimeSeriesIdentifier> tsids, DbKey appId)
 		throws DbIoException
@@ -344,24 +331,35 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 		for (TimeSeriesIdentifier tsid : tsids)
 		{
 			if (n++ > 0)
+			{
 				inClause.append(", ");
+			}
 			inClause.append(tsid.getKey().toString());
 		}
 		inClause.append(")");
 		if (n == 0)
+		{
 			return ret;
-
+		}
+		ArrayList<Object> parameters = new ArrayList<>();
 		String q = "select a.computation_id from cp_comp_depends a, cp_computation b"
-			+ " where a.computation_id = b.computation_id"
-			+ " and a." + cpCompDepends_col1 + inClause.toString();
+			     + " where a.computation_id = b.computation_id"
+				 + " and a." + cpCompDepends_col1 + inClause.toString();
+
 		if (!DbKey.isNull(appId))
-			q = q + " and b.loading_application_id = " + appId;
+		{
+			q = q + " and b.loading_application_id = ?";
+			parameters.add(appId);
+		}
 
 		try
 		{
-			ResultSet rs = doQuery(q);
-			while (rs.next())
+			// While using bind for the in-list is what's really required, we
+			// at least have a slight improvement no leaving a ResultSet open.
+			doQuery(q, rs ->
+			{
 				ret.add(DbKey.createDbKey(rs, 1));
+			}, parameters.toArray(new Object[0]));
 		}
 		catch(Exception ex)
 		{
@@ -373,36 +371,171 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	@Override
 	public CpDependsNotify getCpCompDependsNotify()
 	{
-		if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_8)
-			return null;
-		String q = "select RECORD_NUM, EVENT_TYPE, KEY, DATE_TIME_LOADED "
-				 + "from CP_DEPENDS_NOTIFY "
-				 + "where DATE_TIME_LOADED = "
-				 + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
-		try
+		try(CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
+			return dai.getNextRecord();
+		}
+		catch(DbIoException ex)
+		{
+			warning("Unable to get next record. " + ex.getLocalizedMessage());
+			PrintStream ps = Logger.instance().getLogOutput();
+			if (ps != null)
 			{
-				CpDependsNotify ret = new CpDependsNotify();
-				ret.setRecordNum(rs.getLong(1));
-				String s = rs.getString(2);
-				if (s != null && s.length() >= 1)
-					ret.setEventType(s.charAt(0));
-				ret.setKey(DbKey.createDbKey(rs, 3));
-				ret.setDateTimeLoaded(db.getFullDate(rs, 4));
-				
-				doModify("delete from CP_DEPENDS_NOTIFY where RECORD_NUM = " 
-					+ ret.getRecordNum());
-				
-				return ret;
+				ex.printStackTrace(ps);
 			}
 		}
-		catch(Exception ex)
-		{
-			warning("Error CpCompDependsNotify: " + ex);
-		}
 		return null;
+	}
+
+	@Override
+	public void clearScratchpad() throws DbIoException
+	{
+		String q = "DELETE FROM CP_COMP_DEPENDS_SCRATCHPAD";
+		try
+		{
+			doModify(q,new Object[0]);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to clear scratch pad.");
+		}
+	}
+
+	@Override
+	public List<CpCompDependsRecord> getAllCompDependsEntries() throws DbIoException
+	{
+		String q = "SELECT TS_ID, COMPUTATION_ID FROM CP_COMP_DEPENDS";
+		try
+		{
+			return getResults(q, rs ->
+			{
+				return new CpCompDependsRecord(DbKey.createDbKey(rs, 1), DbKey.createDbKey(rs, 2));
+			});
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to retrieve comp depends records.", ex);
+		}
+	}
+
+	@Override
+	public void addRecords(Collection<CpCompDependsRecord> records) throws DbIoException
+	{
+		String q = "insert into cp_comp_depends(ts_id, computation_id) values(?,?)"; //+ ccd.getTsKey() + ", " + ccd.getCompId() + ")";
+		try
+		{
+			withStatement(q, stmt ->
+			{
+				for(CpCompDependsRecord ccd : records)
+				{
+					stmt.setLong(1, ccd.getTsKey().getValue());
+					stmt.setLong(2,ccd.getCompId().getValue());
+					stmt.addBatch();
+				}
+				stmt.executeBatch();
+			});
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to save comp depends records.", ex);
+		}
+	}
+
+	@Override
+	public void addRecordsToScratchPad(Collection<CpCompDependsRecord> records) throws DbIoException
+	{
+		String q = "insert into cp_comp_depends_scratchpad(ts_id, computation_id) values(?,?)"; //+ ccd.getTsKey() + ", " + ccd.getCompId() + ")";
+		try
+		{
+			withStatement(q, stmt ->
+			{
+				for(CpCompDependsRecord ccd : records)
+				{
+					stmt.setLong(1, ccd.getTsKey().getValue());
+					stmt.setLong(2,ccd.getCompId().getValue());
+					stmt.addBatch();
+				}
+				stmt.executeBatch();
+			});
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to save comp depends records.", ex);
+		}
+	}
+
+	@Override
+	public void mergeScratchPadToActive() throws DbIoException
+	{
+		try
+		{
+			// The scratchpad is now what we want CP_COMP_DEPENDS to look like.
+			// Mark's 2-line SQL to move the scratchpad to CP_COMP_DEPENDS.
+			String q = "delete from cp_comp_depends "
+				+ "where(computation_id, ts_id) in "
+				+ "(select computation_id, ts_id from cp_comp_depends " +
+					(db.isOracle() ? "minus" : "except")  + " select computation_id, ts_id from cp_comp_depends_scratchpad)";
+			doModify(q, new Object[0]);
+
+			q = "insert into cp_comp_depends( computation_id, ts_id) "
+				+ "(select computation_id, ts_id from cp_comp_depends_scratchpad "
+				+ (db.isOracle() ? "minus" : "except") + " select computation_id, ts_id from cp_comp_depends)";
+			doModify(q, new Object[0]);
+		}
+		catch (Exception ex)
+		{
+			throw new DbIoException("Unable to transfer dependency information from scratch pad to active table.", ex);
+		}
+	}
+
+	@Override
+	public void transaction(ThrowingConsumer<CompDependsDAI,DbIoException> consumer) throws DbIoException
+	{
+		try
+		{
+			inTransaction(dao ->
+			{
+				try (CompDependsDAI dai = db.makeCompDependsDAO();)
+				{
+					// NOTE: we can call getConnection plainly here as
+					// we know we are in a transaction and only have the one connection.
+					dai.setManualConnection(dao.getConnection());
+					consumer.accept(dai);
+				}
+			});
+		}
+		catch (Exception ex)
+		{
+			throw new DbIoException("Unable to finish transaction operations.", ex);
+		}
+	}
+
+	@Override
+	public void removeExistingFromScratch() throws DbIoException
+	{
+		try
+		{
+			doModify("delete from cp_comp_depends_scratchpad sp "
+				+ "where exists(select * from cp_comp_depends cd where cd.computation_id = sp.computation_id "
+				+ "and cd.ts_id = sp.ts_id)", new Object[0]);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to remove existing records from scratch pad.", ex);
+		}
+	}
+
+	@Override
+	public void fillActiveFromScratch() throws DbIoException
+	{
+		try
+		{
+			doModify("INSERT INTO CP_COMP_DEPENDS SELECT * FROM CP_COMP_DEPENDS_SCRATCHPAD", new Object[0]);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to remove existing records from scratch pad.", ex);
+		}
 	}
 
 }

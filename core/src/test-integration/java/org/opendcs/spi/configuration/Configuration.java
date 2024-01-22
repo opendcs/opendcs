@@ -86,6 +86,7 @@ public interface Configuration
         DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode, settings.editDatabaseLocation);
         db.setDbIo(dbio);
         db.read();
+        Database.setDb(db);
         return db;
     }
 

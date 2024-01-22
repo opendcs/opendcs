@@ -72,9 +72,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Stack;
 
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import decodes.sql.DbKey;
+import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -420,20 +422,16 @@ public class TsGroupDAO
 		
 		cache.put(group);
 		
-		if (db.isCwms() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
+		if ((db.isCwms() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
+		  ||(db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67))
 		{
-			q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-				+ "values(cp_depends_notifyidseq.nextval, 'G', "
-				+ groupId + ", " + db.sqlDate(new Date()) + ")";
-			doModify(q);
-		}
-		else if (db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67)
-		{
-			// Computations did not exist in OpenTSDB until OpenDCS Version 6.7 = DB Version 67
-			q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-				+ "values(" + getKey("cp_depends_notify") 
-				+ ", 'G', " + groupId + ", " + System.currentTimeMillis() + ")";
-				doModify(q);
+			try (CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+			{
+				CpDependsNotify cdn = new CpDependsNotify();
+				cdn.setEventType(CpDependsNotify.GRP_MODIFIED);
+				cdn.setKey(groupId);
+				dai.saveRecord(cdn);
+			}
 		}
 		// Note: HDB does notification in trigger.
 	}
@@ -671,48 +669,32 @@ if (group == null)
 		q = "DELETE FROM TSDB_GROUP_MEMBER_GROUP WHERE CHILD_GROUP_ID = " + deletedGroupId;
 		doModify(q);
 
-		if (db.isCwms() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
+		if ((db.isCwms() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
+		  ||(db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67))
 		{
 			// Enqueue "comp modified" notifications for all the now-disabled computations.
-			for(DbKey compId : comps2disable)
+			try(CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
 			{
-				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-					+ "values(cp_depends_notifyidseq.nextval, 'C', "
-					+ compId + ", " + db.sqlDate(new Date()) + ")";
-				doModify(q);
-			}
+				for(DbKey compId : comps2disable)
+				{
+					CpDependsNotify cdn = new CpDependsNotify();
+					cdn.setEventType(CpDependsNotify.CMP_MODIFIED);
+					cdn.setKey(compId);
+					dai.saveRecord(cdn);
+				}
 
-			// Enqueue "group modified" notifications for groups in the hash set.
-			// This will let the comp depends updater manage the computations.
-			for(DbKey groupId : modifiedGroupIds)
-			{
-				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-					+ "values(cp_depends_notifyidseq.nextval, 'G', "
-					+ groupId + ", " + db.sqlDate(new Date()) + ")";
-				doModify(q);
+				// Enqueue "group modified" notifications for groups in the hash set.
+				// This will let the comp depends updater manage the computations.
+				for(DbKey groupId : modifiedGroupIds)
+				{
+					CpDependsNotify cdn = new CpDependsNotify();
+					cdn.setEventType(CpDependsNotify.GRP_MODIFIED);
+					cdn.setKey(groupId);
+					dai.saveRecord(cdn);
+				}
 			}
 		}
-		else if (db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67)
-		{
-			// Enqueue "comp modified" notifications for all the now-disabled computations.
-			for(DbKey compId : comps2disable)
-			{
-				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-					+ "values(" + getKey("cp_depends_notify") + ", 'C', "
-					+ compId + ", " + System.currentTimeMillis() + ")";
-				doModify(q);
-			}
 
-			// Enqueue "group modified" notifications for groups in the hash set.
-			// This will let the comp depends updater manage the computations.
-			for(DbKey groupId : modifiedGroupIds)
-			{
-				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-					+ "values(" + getKey("cp_depends_notify") + ", 'G', "
-					+ groupId + ", " + System.currentTimeMillis() + ")";
-				doModify(q);
-			}
-		}
 		// Note HDB does notify via trigger.
 
 		// Reread any modified groups to keep cache up to date.
@@ -721,6 +703,3 @@ if (group == null)
 	}
 
 }
-
-
-

@@ -72,6 +72,7 @@ import java.util.Iterator;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -85,6 +86,7 @@ import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompFilter;
 import decodes.tsdb.ConstraintException;
+import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
@@ -1058,10 +1060,13 @@ debug1("Setting manual connection for algorithmDAO");
 				// CWMS DB 14 uses the Comp Depends Updater Daemon. So send a NOTIFY.
 				if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
 				{
-					q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-						+ "values(cp_depends_notifyidseq.nextval, 'C', "
-						+ comp.getKey() + ", " + db.sqlDate(new Date()) + ")";
-					doModify(q);
+					try (CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+					{
+						CpDependsNotify cdn = new CpDependsNotify();
+						cdn.setEventType(CpDependsNotify.CMP_MODIFIED);
+						cdn.setKey(comp.getKey());
+						dai.saveRecord(cdn);
+					}
 				}
 				// Older versions the GUI must update dependencies directly.
 				else if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5)
@@ -1074,11 +1079,13 @@ debug1("Setting manual connection for algorithmDAO");
 			}
 			else if (db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67)
 			{
-				// Computations did not exist in OpenTSDB until OpenDCS Version 6.7 = DB Version 67
-				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-					+ "values(" + getKey("cp_depends_notify")
-					+ ", 'C', " + comp.getKey() + ", " + System.currentTimeMillis() + ")";
-					doModify(q);
+				try (CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+				{
+					CpDependsNotify cdn = new CpDependsNotify();
+					cdn.setEventType(CpDependsNotify.CMP_MODIFIED);
+					cdn.setKey(comp.getKey());
+					dai.saveRecord(cdn);
+				}
 			}
 			// Note HDB does the notifications via Trigger, so no need to do anything.
 		}

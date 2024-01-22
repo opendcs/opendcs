@@ -138,7 +138,7 @@ public class PresentationGroupList
 			"Attempting to read '" + groupName + "'");
 		boolean newPg = thePg == null;
 		if (newPg)
-			thePg = new PresentationGroup(groupName);
+			thePg = new PresentationGroup(groupName, this.getDatabase());
 		try
 		{
 			thePg.read();
@@ -261,4 +261,3 @@ public class PresentationGroupList
 		}
 	}
 }
-

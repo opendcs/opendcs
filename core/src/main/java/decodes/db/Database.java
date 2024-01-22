@@ -81,7 +81,7 @@ public class Database extends DatabaseObject
 	 */
 	public Database(boolean independent)
 	{
-		super();
+		super(null); // prevent DatabaseObject from calling the static Database.getDb() method.
 		if (!independent && Database.getDb() == null)
 		{
 			Database.setDb(this);

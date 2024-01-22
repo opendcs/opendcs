@@ -22,6 +22,7 @@ import decodes.db.Database;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.XmitRecordDAO;
 import opendcs.opentsdb.OpenTsdb;
@@ -227,6 +228,10 @@ public class OpenDCSPGConfiguration implements Configuration
          * Extends this list as specific tests and requirements are added in the future.
          */
         if (dao.equals(XmitRecordDAO.class))
+        {
+            return true;
+        }
+        else if(dao.equals(CompDependsDAO.class))
         {
             return true;
         }
