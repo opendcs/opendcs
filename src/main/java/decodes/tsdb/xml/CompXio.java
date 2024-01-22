@@ -1085,5 +1085,3 @@ public class CompXio
 		this.workingObject = workingObject;
 	}
 }
-
-

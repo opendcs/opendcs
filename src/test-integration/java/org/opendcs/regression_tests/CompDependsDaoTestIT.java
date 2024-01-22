@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -39,18 +40,6 @@ public class CompDependsDaoTestIT extends AppTestBase
 
     @ConfiguredField
     private Database decodesDb;
-
-    BackgroundTsDbApp<?> app;
-
-
-    @AfterAll
-    public void stop_apps() throws Exception
-    {
-        if(app != null)
-        {
-            app.stop();
-        }
-    }
 
     @Test
     public void test_compdepends_operations() throws Exception
@@ -88,23 +77,11 @@ public class CompDependsDaoTestIT extends AppTestBase
 
             compDAI.writeComputation(comp);
 
-            app = BackgroundTsDbApp.forApp(CpCompDependsUpdater.class,
+            BackgroundTsDbApp.waitForApp(CpCompDependsUpdater.class,
                                             "compdepends",
                                             configuration.getPropertiesFile(),
                                             new File(configuration.getUserDir(),"cdn-test.log"),
-                                            environment, "-O");
-            long now = System.currentTimeMillis();
-            while(app.isRunning() && (System.currentTimeMillis() - now) < 20000 /* 20 seconds */)
-            {
-                try
-                {
-                    Thread.sleep(20000);
-                }
-                catch (InterruptedException ex)
-                {
-                    /* do nothing, loop again */
-                }
-            }
+                                            environment, 20, TimeUnit.SECONDS, "-O");
             
             assertFalse(cd.getResults("select event_type from cp_depends_notify", 
                        rs -> rs.getString(1)).isEmpty());

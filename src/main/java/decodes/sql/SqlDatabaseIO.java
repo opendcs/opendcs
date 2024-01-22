@@ -86,6 +86,7 @@ import org.opendcs.authentication.AuthSourceService;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
@@ -2342,6 +2343,13 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	public CompDependsDAI makeCompDependsDAO()
 	{
 		// This method should never be called in the DECODES db interface.
+		return null;
+	}
+
+	@Override
+	public CompDependsNotifyDAI makeCompDependsNotifyDAO()
+	{
+		// As CompDependsDAI above, should not be called from DECODES db interface.
 		return null;
 	}
 

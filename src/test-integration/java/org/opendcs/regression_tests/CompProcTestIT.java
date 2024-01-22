@@ -3,6 +3,7 @@ package org.opendcs.regression_tests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -15,10 +16,12 @@ import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
+import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
 import decodes.tsdb.ComputationApp;
+import decodes.tsdb.CpCompDependsUpdater;
 import decodes.tsdb.TimeSeriesDb;
 
 /**
@@ -94,7 +97,7 @@ public class CompProcTestIT extends AppTestBase
      */
     @Test
     @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
-    @ComputationConfigurationRequired("CompProc/Precip/comps.xml")
+    @ComputationConfigurationRequired({"shared/loading-apps.xml", "CompProc/Precip/comps.xml"})
     public void test_incremental_precip() throws Exception
     {
         final Configuration config = this.configuration;
@@ -102,15 +105,16 @@ public class CompProcTestIT extends AppTestBase
 
         final File goldenFile = new File(getResource("CompProc/Precip/output.human-readable"));
 
-        Programs.UpdateComputationDependencies(
-                    new File(config.getUserDir(),"/update-deps.log"),
-                    config.getPropertiesFile(),
-                    environment, exit);
+        BackgroundTsDbApp.waitForApp(CpCompDependsUpdater.class,
+                                            "compdepends_compproc",
+                                            configuration.getPropertiesFile(),
+                                            new File(configuration.getUserDir(),"compproctest-deps-update.log"),
+                                            environment, 60, TimeUnit.SECONDS, "-O");
         Programs.ImportTs(
-                    new File(config.getUserDir(),"/importTs.log"),
-                    config.getPropertiesFile(),
-                    environment, exit,
-                    getResource("CompProc/Precip/input.tsimport"));
+            new File(config.getUserDir(),"/importTs.log"),
+            config.getPropertiesFile(),
+            environment, exit,
+            getResource("CompProc/Precip/input.tsimport"));
         try
         {
            Thread.sleep(15000); // TODO: eliminate wait
