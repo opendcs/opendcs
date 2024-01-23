@@ -184,7 +184,7 @@ public class ApiAppDAO
 			app.setLastModified(new Date());
 			if (app.getAppId() == null)
 			{
-				app.setAppId(getKey("HDB_LOADING_APPLICATION"));
+				app.setAppId(getKey(DbInterface.Sequences.HDB_LOADING_APPLICATION));
 	
 				q = "insert into HDB_LOADING_APPLICATION(LOADING_APPLICATION_ID,"
 					+ " LOADING_APPLICATION_NAME, MANUAL_EDIT_APP, CMMNT) values (?, ?, ?, ?)";

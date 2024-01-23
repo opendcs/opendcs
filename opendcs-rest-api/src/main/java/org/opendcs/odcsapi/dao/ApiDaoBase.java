@@ -232,12 +232,12 @@ public class ApiDaoBase
 		return "'" + a + "'";
 	}
 
-	public Long getKey(String tableName)
+	public Long getKey(DbInterface.Sequences sequenceName)
 			throws DbException
 	{
 		try
 		{
-			return dbi.getKey(tableName);
+			return dbi.getKey(sequenceName);
 		} catch (SQLException e)
 		{
 			throw new DbException(e.getMessage());

@@ -330,7 +330,7 @@ public class ApiConfigDAO
 	private void insert(ApiPlatformConfig config)
 			throws DbException, SQLException
 	{
-		config.setConfigId(getKey("PLATFORMCONFIG"));
+		config.setConfigId(getKey(DbInterface.Sequences.PLATFORMCONFIG));
 
 		String q = "insert into PLATFORMCONFIG(ID, NAME, DESCRIPTION)"
 			+ " values (?, ?, ?)";
@@ -450,7 +450,7 @@ public class ApiConfigDAO
 		
 		for(ApiConfigScript acs : config.getScripts())
 		{
-			long scriptId = getKey("DECODESSCRIPT");
+			long scriptId = getKey(DbInterface.Sequences.DECODESSCRIPT);
 			String q = "insert into DECODESSCRIPT(ID, CONFIGID, NAME, SCRIPT_TYPE, DATAORDER)"
 				+ " values(?, ?, ?, ?, ?)";
 			doModifyV(q, scriptId, config.getConfigId(), acs.getName(), acs.getHeaderType(), acs.getDataOrder());
@@ -465,7 +465,7 @@ public class ApiConfigDAO
 			
 			for(ApiConfigScriptSensor acss : acs.getScriptSensors())
 			{
-				long ucid = getKey("UNITCONVERTER");
+				long ucid = getKey(DbInterface.Sequences.UNITCONVERTER);
 				
 				q = "insert into UNITCONVERTER(ID, FROMUNITSABBR, TOUNITSABBR, ALGORITHM, "
 					+ "A, B, C, D, E, F) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";

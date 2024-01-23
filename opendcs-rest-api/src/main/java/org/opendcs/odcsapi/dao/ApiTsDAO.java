@@ -554,7 +554,7 @@ public class ApiTsDAO
 	{
 		String q = "insert into TSDB_GROUP(GROUP_ID, GROUP_NAME, GROUP_TYPE, GROUP_DESCRIPTION)"
 			+ " values(?,?,?,?)";
-		grp.setGroupId(getKey("TSDB_GROUP"));
+		grp.setGroupId(getKey(DbInterface.Sequences.TSDB_GROUP));
 		doModifyV(q, grp.getGroupId(), grp.getGroupName(), grp.getGroupType(), grp.getDescription());
 	}
 

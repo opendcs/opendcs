@@ -179,7 +179,7 @@ public class ApiDataSourceDAO extends ApiDaoBase
 
 			if (ds.getDataSourceId() == null)
 			{
-				ds.setDataSourceId(getKey("DATASOURCE"));
+				ds.setDataSourceId(getKey(DbInterface.Sequences.DATASOURCE));
 				insert(ds);
 			}
 			else
@@ -213,7 +213,7 @@ public class ApiDataSourceDAO extends ApiDaoBase
 	private void insert(ApiDataSource ds)
 		throws DbException
 	{
-		Long id = getKey("DataSource");
+		Long id = getKey(DbInterface.Sequences.DATASOURCE);
 		ds.setDataSourceId(id);
 		String args = ApiPropertiesUtil.props2string(ds.getProps());
 		String q = "INSERT INTO DataSource(id, name, datasourcetype, datasourcearg) "

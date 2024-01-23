@@ -295,7 +295,7 @@ public class ApiRoutingDAO
 	private void insert(ApiRouting routing)
 		throws DbException
 	{
-		routing.setRoutingId(getKey("ROUTINGSPEC"));
+		routing.setRoutingId(getKey(DbInterface.Sequences.ROUTINGSPEC));
 
 		String q = "insert into ROUTINGSPEC(ID, NAME, DATASOURCEID, ENABLEEQUATIONS, "
 				+ "OUTPUTFORMAT, OUTPUTTIMEZONE, PRESENTATIONGROUPNAME,"
@@ -528,7 +528,7 @@ public class ApiRoutingDAO
 			
 			if (schedule.getSchedEntryId() == null)
 			{
-				schedule.setSchedEntryId(getKey("SCHEDULE_ENTRY"));
+				schedule.setSchedEntryId(getKey(DbInterface.Sequences.SCHEDULE_ENTRY));
 	
 				q = "insert into SCHEDULE_ENTRY(SCHEDULE_ENTRY_ID, NAME, LOADING_APPLICATION_ID,"
 					+ " ROUTINGSPEC_ID, START_TIME, TIMEZONE, RUN_INTERVAL, ENABLED, LAST_MODIFIED)"

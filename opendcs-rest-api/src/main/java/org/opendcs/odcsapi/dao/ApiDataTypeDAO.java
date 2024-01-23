@@ -69,7 +69,7 @@ public class ApiDataTypeDAO
 	public long create(String std, String code)
 		throws DbException
 	{
-		Long id = getKey("DATATYPE");
+		Long id = getKey(DbInterface.Sequences.DATATYPE);
 		String q = "insert into DATATYPE(ID, STANDARD, CODE) values (?, ?, ?)";
 		doModifyV(q, id, std, code);
 		return id;

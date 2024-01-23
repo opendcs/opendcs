@@ -231,7 +231,7 @@ public class ApiSiteDAO extends ApiDaoBase
 				}
 				//this.closePrepConn();
 				// Allocate new ID
-				site.setSiteId(getKey("SITE"));
+				site.setSiteId(getKey(DbInterface.Sequences.SITE));
 				insert(site);
 			}
 			else
@@ -361,7 +361,7 @@ public class ApiSiteDAO extends ApiDaoBase
 	protected void insert(ApiSite site)
 		throws DbException, SQLException
 	{
-		site.setSiteId(getKey("Site"));
+		site.setSiteId(getKey(DbInterface.Sequences.SITE));
 		
 		String q = "insert into SITE(ID, LATITUDE, LONGITUDE, NEARESTCITY, STATE, "
 				+ "REGION, TIMEZONE, COUNTRY, ELEVATION, ELEVUNITABBR, "

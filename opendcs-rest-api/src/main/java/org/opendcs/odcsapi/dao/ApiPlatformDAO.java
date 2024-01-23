@@ -467,7 +467,7 @@ public class ApiPlatformDAO
 	private void insert(ApiPlatform platform)
 		throws DbException, WebAppException
 	{
-		platform.setPlatformId(getKey("PLATFORM"));
+		platform.setPlatformId(getKey(DbInterface.Sequences.PLATFORM));
 		q = "insert into PLATFORM(ID, AGENCY, ISPRODUCTION, SITEID, CONFIGID, DESCRIPTION"
 				+ ", LASTMODIFYTIME, PLATFORMDESIGNATOR)"
 			+ " values (?, ?, ?, ?, ?, ?, ?, ?)";

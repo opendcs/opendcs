@@ -15,6 +15,8 @@
 
 package org.opendcs.odcsapi.dao;
 
+import org.opendcs.odcsapi.hydrojson.DbInterface;
+
 import java.sql.ResultSet;
 
 public interface ApiDaiBase
@@ -31,6 +33,6 @@ public interface ApiDaiBase
 
 	public void close();
 	
-	public Long getKey(String tableName)
+	public Long getKey(DbInterface.Sequences sequenceName)
 		throws DbException;
 }
