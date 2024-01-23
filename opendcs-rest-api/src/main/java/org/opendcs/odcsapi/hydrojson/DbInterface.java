@@ -110,7 +110,8 @@ public class DbInterface
 	}
 	
 	public boolean isUserValid(String username, String password)
-			throws DbException, SQLException {
+			throws DbException, SQLException
+	{
 		if (isOracle)
 			throw new DbException(module, null, "User validation not implemented for Oracle.");
 		
@@ -317,9 +318,9 @@ public class DbInterface
 		TSDB_GROUP("TSDB_GROUP");
 		private final String name;
 
-		Sequences(String name) {
+		Sequences(String name)
+		{
 			this.name = name;
-
 		}
 
 		String getNextVal(boolean isOracle)
