@@ -13,6 +13,7 @@ OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embed
 ./opendcs-web-client - contains source files for the OpenDCS Web Application Client
 ./opendcs-web-client-jetty - contains build scripts for generating a standalone Jetty installer for the web client
 
+
 # Installation and Configuration
 There are two types of installations/configurations.  One is embedded Jetty bundles and the other is WAR files.
 
@@ -116,3 +117,11 @@ Artifact releases from this repository are found in the GitHub Releases page for
 
 They can be created by using the GitHub interface. 
 The GitHub workflow [publish.yml](./.github/workflows/publish.yml) will attach the WAR files and TAR files once the release is published.
+
+# Codespaces
+A basic [GitHub Codespaces](https://docs.github.com/en/codespaces/overview) configuration setup with a dev container with
+Java, Gradle, and SonarCloud integrations. Additionally, GitHub Copilot is available for users with appropriate licensing.
+The Codespaces are intended for the easy and consistent onboarding of developers who may not have access or experience with
+heavy-weight development IDE's.
+
+Configuration for the dev container is found in [devcontainer.json](./.devcontainer/devcontainer.json)
