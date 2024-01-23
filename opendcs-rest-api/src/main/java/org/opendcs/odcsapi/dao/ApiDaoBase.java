@@ -238,9 +238,10 @@ public class ApiDaoBase
 		try
 		{
 			return dbi.getKey(sequenceName);
-		} catch (SQLException e)
+		}
+		catch (DbException | SQLException ex)
 		{
-			throw new DbException(e.getMessage());
+			throw new DbException(module, ex, "There was an issue getting the sequence from the database");
 		}
 	}
 	

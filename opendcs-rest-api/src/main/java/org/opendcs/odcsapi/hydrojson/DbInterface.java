@@ -15,7 +15,6 @@
 
 package org.opendcs.odcsapi.hydrojson;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.sql.Connection;
@@ -293,7 +292,11 @@ public class DbInterface
 		return tokenManager;
 	}
 
-	public enum Sequences {
+	/*
+	*   List of sequences in the database.  If the code needs to reference a sequence or access one, it is done here.
+	 */
+	public enum Sequences
+	{
 		SITE("SITE"),
 		DATATYPE("DATATYPE"),
 		CP_ALGORITHM("CP_ALGORITHM"),
@@ -322,9 +325,8 @@ public class DbInterface
 		String getNextVal(boolean isOracle)
 		{
 			String sequenceName = name + sequenceSuffix;
-			String q = isOracle ? ("SELECT " + sequenceName + ".nextval from dual")
+			return isOracle ? ("SELECT " + sequenceName + ".nextval from dual")
 					: ("SELECT nextval('" + sequenceName + "')"); // postgresql syntax
-			return q;
 		}
 	}
 }

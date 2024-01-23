@@ -22,17 +22,17 @@ import java.sql.ResultSet;
 public interface ApiDaiBase
 	extends AutoCloseable
 {
-	public ResultSet doQuery(String q)
+	ResultSet doQuery(String q)
 		throws DbException;
 	
-	public ResultSet doQuery2(String q) 
+	ResultSet doQuery2(String q)
 		throws DbException;
 
-	public int doModify(String q)
+	int doModify(String q)
 		throws DbException;
 
-	public void close();
+	void close();
 	
-	public Long getKey(DbInterface.Sequences sequenceName)
+	Long getKey(DbInterface.Sequences sequenceName)
 		throws DbException;
 }

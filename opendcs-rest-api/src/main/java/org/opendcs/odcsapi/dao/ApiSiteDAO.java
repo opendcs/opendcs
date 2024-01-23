@@ -359,7 +359,7 @@ public class ApiSiteDAO extends ApiDaoBase
 	}
 
 	protected void insert(ApiSite site)
-		throws DbException, SQLException
+		throws DbException
 	{
 		site.setSiteId(getKey(DbInterface.Sequences.SITE));
 		
