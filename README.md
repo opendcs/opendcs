@@ -100,6 +100,9 @@ The SonarLint analysis will be run against the SonarCloud server with an analysi
 **The SonarCloud Quality Gate status for the Pull Request is reported in the Pull Request checks section for all PR's targeting the main branch.**
 The workflow [default.yml](./.github/workflows/default.yml) includes the analysis step for GitHub Actions.
 
+Jacoco code coverage scans are uploaded to SonarCloud. In order to reduce reporting redundancy, the Jacoco HTML reports are 
+not available through the GitHub interface, but they can be generated locally through the gradle plugin.
+
 ## OWASP Zap API Scan
 The workflow [owasp_zap.yml](./.github/workflows/owasp_zap.yml) runs the OWASP Zap API scan to generate an HTML report
 detailing vulnerabilities in the OpenDCS REST API based on the OpenAPI documentation. OWASP Zap API scan 
