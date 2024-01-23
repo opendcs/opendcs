@@ -97,7 +97,7 @@ To view the analysis results, navigate to the project on the SonarCloud website.
 
 The gradle task `./gradlew sonar` will run a SonarLint analysis on the project.  
 The SonarLint analysis will be run against the SonarCloud server with an analysis uploaded to the OpenDCS REST API project.
-Quality Gates and new issues will automatically be added as notes to Pull Requests targeting the main branch.
+**The SonarCloud Quality Gate status for the Pull Request is reported in the Pull Request checks section for all PR's targeting the main branch.**
 The workflow [default.yml](./.github/workflows/default.yml) includes the analysis step for GitHub Actions.
 
 ## OWASP Zap API Scan
