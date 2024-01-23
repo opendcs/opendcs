@@ -13,6 +13,7 @@ OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embed
 ./opendcs-web-client - contains source files for the OpenDCS Web Application Client
 ./opendcs-web-client-jetty - contains build scripts for generating a standalone Jetty installer for the web client
 
+
 # Installation and Configuration
 There are two types of installations/configurations.  One is embedded Jetty bundles and the other is WAR files.
 
@@ -96,8 +97,11 @@ To view the analysis results, navigate to the project on the SonarCloud website.
 
 The gradle task `./gradlew sonar` will run a SonarLint analysis on the project.  
 The SonarLint analysis will be run against the SonarCloud server with an analysis uploaded to the OpenDCS REST API project.
-Quality Gates and new issues will automatically be added as notes to Pull Requests targeting the main branch.
+**The SonarCloud Quality Gate status for the Pull Request is reported in the Pull Request checks section for all PR's targeting the main branch.**
 The workflow [default.yml](./.github/workflows/default.yml) includes the analysis step for GitHub Actions.
+
+Jacoco code coverage scans are uploaded to SonarCloud. In order to reduce reporting redundancy, the Jacoco HTML reports are 
+not available through the GitHub interface, but they can be generated locally through the gradle plugin.
 
 ## OWASP Zap API Scan
 The workflow [owasp_zap.yml](./.github/workflows/owasp_zap.yml) runs the OWASP Zap API scan to generate an HTML report
@@ -116,3 +120,11 @@ Artifact releases from this repository are found in the GitHub Releases page for
 
 They can be created by using the GitHub interface. 
 The GitHub workflow [publish.yml](./.github/workflows/publish.yml) will attach the WAR files and TAR files once the release is published.
+
+# Codespaces
+A basic [GitHub Codespaces](https://docs.github.com/en/codespaces/overview) configuration setup with a dev container with
+Java, Gradle, and SonarCloud integrations. Additionally, GitHub Copilot is available for users with appropriate licensing.
+The Codespaces are intended for the easy and consistent onboarding of developers who may not have access or experience with
+heavy-weight development IDE's.
+
+Configuration for the dev container is found in [devcontainer.json](./.devcontainer/devcontainer.json)
