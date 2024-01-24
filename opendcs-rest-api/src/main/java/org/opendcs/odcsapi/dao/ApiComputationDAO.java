@@ -609,7 +609,7 @@ public class ApiComputationDAO
 	private void insert(ApiComputation comp)
 		throws DbException
 	{
-		comp.setComputationId(getKey("CP_COMPUTATION"));
+		comp.setComputationId(getKey(DbInterface.Sequences.CP_COMPUTATION));
 		comp.setLastModified(new Date());
 		
 		String q = "insert into CP_COMPUTATION(computation_id, computation_name, "

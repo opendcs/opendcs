@@ -207,7 +207,7 @@ public class ApiAlgorithmDAO
 	private void insert(ApiAlgorithm algo)
 		throws DbException
 	{
-		algo.setAlgorithmId(getKey("CP_ALGORITHM"));
+		algo.setAlgorithmId(getKey(DbInterface.Sequences.CP_ALGORITHM));
 		
 		q = "insert into CP_ALGORITHM(algorithm_id, algorithm_name, "
 			+ "exec_class, cmmnt) "

@@ -232,10 +232,17 @@ public class ApiDaoBase
 		return "'" + a + "'";
 	}
 
-	public Long getKey(String tableName)
-		throws DbException
+	public Long getKey(DbInterface.Sequences sequenceName)
+			throws DbException
 	{
-		return dbi.getKey(tableName);
+		try
+		{
+			return dbi.getKey(sequenceName);
+		}
+		catch (DbException | SQLException ex)
+		{
+			throw new DbException(module, ex, "There was an issue getting the sequence from the database");
+		}
 	}
 	
 	/**

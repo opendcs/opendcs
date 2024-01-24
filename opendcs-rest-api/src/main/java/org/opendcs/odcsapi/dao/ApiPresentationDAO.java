@@ -194,7 +194,7 @@ public class ApiPresentationDAO
 	private void insert(ApiPresentationGroup presGrp)
 		throws DbException, SQLException
 	{
-		presGrp.setGroupId(getKey("PRESENTATIONGROUP"));
+		presGrp.setGroupId(getKey(DbInterface.Sequences.PRESENTATIONGROUP));
 
 		String q = "insert into PRESENTATIONGROUP(ID, NAME, INHERITSFROM, LASTMODIFYTIME, ISPRODUCTION)"
 			+ " values(?, ?, ?, ?, ?)";
@@ -216,7 +216,7 @@ public class ApiPresentationDAO
 				Long dtId = dtDao.lookup(dpe.getDataTypeStd(), dpe.getDataTypeCode());
 				if (dtId == null)
 					dtId = dtDao.create(dpe.getDataTypeStd(), dpe.getDataTypeCode());
-				long id = this.getKey("DATAPRESENTATION");
+				long id = this.getKey(DbInterface.Sequences.DATAPRESENTATION);
 				String q = "insert into DATAPRESENTATION(ID, GROUPID, DATATYPEID, UNITABBR, "
 					+ "MAXDECIMALS, MAX_VALUE, MIN_VALUE) values (?, ?, ?, ?, ?, ?, ?)";
 

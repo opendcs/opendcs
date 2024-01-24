@@ -222,7 +222,7 @@ public class ApiNetlistDAO
 	private void insert(ApiNetList netlist)
 		throws DbException
 	{
-		netlist.setNetlistId(getKey("NETWORKLIST"));
+		netlist.setNetlistId(getKey(DbInterface.Sequences.NETWORKLIST));
 		String q = "insert into NETWORKLIST(ID, NAME, TRANSPORTMEDIUMTYPE, "
 			+ "SITENAMETYPEPREFERENCE, LASTMODIFYTIME) values (?, ?, ?, ?, ?)";
 

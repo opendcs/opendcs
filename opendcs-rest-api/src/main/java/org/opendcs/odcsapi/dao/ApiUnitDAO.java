@@ -293,7 +293,7 @@ public class ApiUnitDAO
 		else // write new converter
 		{
 			q = "insert into UNITCONVERTER values(?,?,?,?,?,?,?,?,?,?)";
-			doModifyV(q, getKey("UNITCONVERTER"), euc.getFromAbbr(),
+			doModifyV(q, getKey(DbInterface.Sequences.UNITCONVERTER), euc.getFromAbbr(),
 				euc.getToAbbr(), euc.getAlgorithm(), euc.getA(), 
 				euc.getB(), euc.getC(), euc.getD(), euc.getE(), euc.getF());
 		}

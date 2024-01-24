@@ -231,7 +231,7 @@ public class ApiSiteDAO extends ApiDaoBase
 				}
 				//this.closePrepConn();
 				// Allocate new ID
-				site.setSiteId(getKey("SITE"));
+				site.setSiteId(getKey(DbInterface.Sequences.SITE));
 				insert(site);
 			}
 			else
@@ -359,19 +359,15 @@ public class ApiSiteDAO extends ApiDaoBase
 	}
 
 	protected void insert(ApiSite site)
-		throws DbException, SQLException
+		throws DbException
 	{
-		site.setSiteId(getKey("Site"));
+		site.setSiteId(getKey(DbInterface.Sequences.SITE));
 		
 		String q = "insert into SITE(ID, LATITUDE, LONGITUDE, NEARESTCITY, STATE, "
 				+ "REGION, TIMEZONE, COUNTRY, ELEVATION, ELEVUNITABBR, "
 				+ "DESCRIPTION, ACTIVE_FLAG, LOCATION_TYPE, MODIFY_TIME, PUBLIC_NAME) "
 				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-				
-		Connection conn = null;
-		try
-		{
-		
+
 		doModifyV(q, site.getSiteId(),
 					site.getLatitude(),
 					site.getLongitude(),
@@ -385,13 +381,9 @@ public class ApiSiteDAO extends ApiDaoBase
 					site.getDescription(),
 					sqlBoolean(site.isActive()),
 					site.getLocationType(),
-					dbi.sqlDate(site.getLastModified()),
+					dbi.sqlDateV(site.getLastModified()),
 					site.getPublicName());
-		}
-		finally
-		{
-			conn.close();
-		}
+
 		updateAllSiteNames(site, new ApiSite());
 		
 		updateSiteProps(site, new ApiSite());

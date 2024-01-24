@@ -98,48 +98,7 @@ public class DbInterface
 			ex.printStackTrace(System.err);
 			throw new DbException(module, ex, msg);
 		}
-		
-// This doesn't work. isHdb and isCwms are not set yet. They default to false.
-// Also I don't want to have to make a tsdb class, so eventually just get rid of this.
-//		String tsdbClass = 
-//				isHdb ? "decodes.hdb.HdbTimeSeriesDb" :
-//				isCwms ? "decodes.cwms.CwmsTimeSeriesDb" : 
-//				"opendcs.opentsdb.OpenTsdb";
-//		Logger.getLogger(ApiConstants.loggerName).info("tsdbClass=" + tsdbClass);
-//		if (!isTypeDetermined)
-//		{
-//			Logger.getLogger(ApiConstants.loggerName).info(module + " determining database type");
-//			isTypeDetermined = true;
-//
-//			try (ApiDaoBase adb = new ApiDaoBase(this, "DbInterface"))
-//			{
-//				// hdb_damtype table only exists in HDB.
-//				ResultSet rs = adb.doQuery("select * from hdb_damtype");
-//				isHdb = true;
-//				try { rs.close(); } catch(Exception ex) {}
-//			}
-//			catch (Exception ex)
-//			{
-//				isHdb = false;
-//			}
-//			
-//			if (!isHdb)
-//			{
-//				try (ApiDaoBase adb = new ApiDaoBase(this, "DbInterface"))
-//				{
-//					String q = "select distinct parameter_id from cwms_v_parameter";
-//					ResultSet rs = adb.doQuery(q);
-//					isCwms = true;
-//					try { rs.close(); } catch(Exception ex) {}
-//				}
-//				catch (Exception ex)
-//				{
-//					isCwms = false;
-//				}
-//			}
-//			
-//			isOpenTsdb = tsdbClass == "opendcs.opentsdb.OpenTsdb";
-//		}
+
 		if (staleClientChecker == null)
 		{
 			staleClientChecker = new StaleClientChecker();
@@ -151,7 +110,7 @@ public class DbInterface
 	}
 	
 	public boolean isUserValid(String username, String password)
-		throws DbException
+			throws DbException, SQLException
 	{
 		if (isOracle)
 			throw new DbException(module, null, "User validation not implemented for Oracle.");
@@ -188,19 +147,25 @@ public class DbInterface
 			reason = "User " + username + " does not have OTSDB_ADMIN or OTSDB_MGR privilege "
 					+ "- Not Authorized.";
 			Logger.getLogger(ApiConstants.loggerName).warning("isUserValid(" + username + ") failed: " + reason);
+			userCon.close();
 			return false;
-
 		}
 		catch (Exception e)
 		{
-Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication failed: " + e);
+			Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication failed: " + e);
+			if (userCon != null)
+			{
+                try
+				{
+                    userCon.close();
+                }
+				catch (SQLException ex)
+				{
+                    throw new SQLException("There was an issue closing the connection.", ex);
+                }
+            }
 			reason = e.getMessage();
 			return false;
-		}
-		finally
-		{
-			if (userCon != null)
-				try { userCon.close(); } catch(Exception ex) {}
 		}
 	}
 
@@ -232,86 +197,29 @@ Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication 
 		}
 	}
 
-	public Long getKey(String tableName)
-		throws DbException
+	public Long getKey(Sequences sequence)
+			throws DbException, SQLException
 	{
-		String seqname;
-		if (tableName.equalsIgnoreCase("EquipmentModel"))
-			seqname = "EquipmentIdSeq";
-		else
-			seqname = tableName + sequenceSuffix;
-		
-		String q = isOracle ? ("SELECT " + seqname + ".nextval from dual")
-			: ("SELECT nextval('" + seqname + "')"); // postgresql syntax
+		String q = sequence.getNextVal(isOracle);
 
 		try (Statement stmt = connection.createStatement();
-			ResultSet rs = stmt.executeQuery(q))
+			 ResultSet rs = stmt.executeQuery(q))
 		{
 			if (rs == null || !rs.next())
 			{
-				String err = "Cannot read sequence value from '" + seqname 
-					+ "': " + (rs == null ? "Null Return" : "Empty Return");
+				String err = "Cannot read sequence value from '" + sequence.name + sequenceSuffix
+						+ "': " + (rs == null ? "Null Return" : "Empty Return");
 				throw new DbException(module, null, err);
 			}
-	
-			long lv =  rs.getLong(1);
-			return (rs.wasNull() ? null : (Long)lv);
+
+			long lv = rs.getLong(1);
+			return (rs.wasNull() ? null : (Long) lv);
 		}
-		catch(SQLException ex)
+		catch (SQLException ex)
 		{
 			String msg = "SQL Error executing '" + q + "': " + ex;
 			throw new DbException(module, ex, msg);
 		}
-	}
-	
-	public void resetKey(String tableName)
-		throws DbException
-	{
-		String seqname = tableName + sequenceSuffix;
-		
-		if (isCwms)
-			; // Do nothing -- never reset cwms sequences.
-		else if (isOracle)
-		{
-			// Primitive Oracle SQL requires 4 steps:
-			// 1. Get current sequence value
-			// 2. Set increment to negative that amount
-			// 3. Get next sequence value (which causes increment to be applied).
-			// 4. Set increment back to 1.
-			Long curval = getKey(tableName);
-			
-			String q = "alter sequence " + seqname + " increment by -" + (curval-2);
-			try (Statement stmt = connection.createStatement())
-			{
-				stmt.executeUpdate(q);
-				q = "SELECT " + seqname + ".nextval from dual";
-				ResultSet rs = stmt.executeQuery(q);
-				rs.close();
-				q = "alter sequence " + seqname + " increment by 1 minvalue 0";
-				stmt.executeUpdate(q);
-			}
-			catch(SQLException ex)
-			{
-				String msg = "SQL Error executing '" + q + "': " + ex;
-				throw new DbException(module, ex, msg);
-			}
-		}
-		else // PostgreSQL
-		{
-			String q = "alter sequence " + seqname + " restart with 1";
-			try (Statement stmt = connection.createStatement())
-			{
-				stmt.executeUpdate(q);
-			}
-			catch(SQLException ex)
-			{
-				String msg = "SQL Error executing '" + q + "': " + ex;
-				throw new DbException(module, ex, msg);
-			}
-		}
-
-		
-		
 	}
 
 	public static void setDatabaseType(String dbType)
@@ -383,5 +291,43 @@ Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication 
 			tokenManager = new TokenManager(secureMode);
 		
 		return tokenManager;
+	}
+
+	/*
+	*   List of sequences in the database.  If the code needs to reference a sequence or access one, it is done here.
+	 */
+	public enum Sequences
+	{
+		SITE("SITE"),
+		DATATYPE("DATATYPE"),
+		CP_ALGORITHM("CP_ALGORITHM"),
+		HDB_LOADING_APPLICATION("HDB_LOADING_APPLICATION"),
+		CP_COMPUTATION("CP_COMPUTATION"),
+		PLATFORMCONFIG("PLATFORMCONFIG"),
+		DECODESSCRIPT("DECODESSCRIPT"),
+		UNITCONVERTER("UNITCONVERTER"),
+		DATASOURCE("DATASOURCE"),
+		NETWORKLIST("NETWORKLIST"),
+		PLATFORM("PLATFORM"),
+		PRESENTATIONGROUP("PRESENTATIONGROUP"),
+		DATAPRESENTATION("DATAPRESENTATION"),
+		INTERVAL_CODE("INTERVAL_CODE"),
+		ENUM("ENUM"),
+		ROUTINGSPEC("ROUTINGSPEC"),
+		SCHEDULE_ENTRY("SCHEDULE_ENTRY"),
+		TSDB_GROUP("TSDB_GROUP");
+		private final String name;
+
+		Sequences(String name)
+		{
+			this.name = name;
+		}
+
+		String getNextVal(boolean isOracle)
+		{
+			String sequenceName = name + sequenceSuffix;
+			return isOracle ? ("SELECT " + sequenceName + ".nextval from dual")
+					: ("SELECT nextval('" + sequenceName + "')"); // postgresql syntax
+		}
 	}
 }

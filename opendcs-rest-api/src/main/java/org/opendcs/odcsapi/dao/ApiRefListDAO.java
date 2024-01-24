@@ -155,7 +155,7 @@ public class ApiRefListDAO extends ApiDaoBase
 			//insert
 			String q = "insert into INTERVAL_CODE(INTERVAL_ID, NAME, CAL_CONSTANT, CAL_MULTIPLIER)"
 				+ " values(?,?,?,?)";
-			intv.setIntervalId(getKey("INTERVAL_CODE"));
+			intv.setIntervalId(getKey(DbInterface.Sequences.INTERVAL_CODE));
 			doModifyV(q, intv.getIntervalId(), intv.getName(), intv.getCalConstant(), 
 				(Integer)intv.getCalMultilier());
 		}
@@ -226,7 +226,7 @@ public class ApiRefListDAO extends ApiDaoBase
 			arl.setReflistId(this.lookupId(q, arl.getEnumName()));
 			if (arl.getReflistId() == null)
 				// Still no ID, assume this is a new ENUM.
-				arl.setReflistId(getKey("ENUM"));
+				arl.setReflistId(getKey(DbInterface.Sequences.ENUM));
 		}
 		ApiRefList oldlist = getRefList(arl.getReflistId());
 		if (oldlist == null)
@@ -358,7 +358,7 @@ public class ApiRefListDAO extends ApiDaoBase
 		catch(WebAppException ex)
 		{
 			// This can only mean that there is no "season" enumeration. Create it.
-			seasonRlId = getKey("ENUM");
+			seasonRlId = getKey(DbInterface.Sequences.ENUM);
 			
 			String q = "insert into ENUM(ID, NAME, DEFAULTVALUE, DESCRIPTION)"
 					+ " values(?, ?, ?, ?)";
