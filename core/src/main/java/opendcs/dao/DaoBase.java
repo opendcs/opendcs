@@ -416,6 +416,7 @@ public class DaoBase
 					stmt.setFetchSize(fetchSize);;
 				}
 				int index=1;
+
 				for( Object param: parameters)
 				{
 					if (param instanceof Integer)
@@ -425,6 +426,10 @@ public class DaoBase
 					else if (param instanceof String)
 					{
 						stmt.setString(index,(String)param);
+					}
+					else if (param instanceof Character)
+					{
+						stmt.setString(index, ((Character)param).toString());
 					}
 					else if (param instanceof DbKey)
 					{
@@ -455,6 +460,10 @@ public class DaoBase
 					}
 					else
 					{
+						warning("Attempting to set parameter of type '"
+							   + param.getClass().getName()
+							   + "'. If you see an invalid column type "
+							   + "message please open an issue on the project page.");
 						stmt.setObject(index,param);
 					}
 					index++;
