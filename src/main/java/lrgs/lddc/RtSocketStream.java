@@ -113,7 +113,7 @@ public class RtSocketStream extends Thread
 	{
 		if (lockFileName != null)
 		{
-			myServerLock = new ServerLock(lockFileName);
+			myServerLock = new FileServerLock(lockFileName);
 			if (!myServerLock.obtainLock(this))
 			{
 				Logger.instance().failure(

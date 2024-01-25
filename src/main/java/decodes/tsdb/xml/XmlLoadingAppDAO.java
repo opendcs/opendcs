@@ -1,8 +1,9 @@
 package decodes.tsdb.xml;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.ServerLock;
+import ilex.util.Logger;
+import ilex.util.FileServerLock;
 import ilex.util.TextUtil;
 import ilex.xml.XmlOutputStream;
 
@@ -249,7 +250,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 				if (appName.equals(fn))
 				{
 //System.out.println("This lock is for app '" + appName + "'");
-					ServerLock serverLock = new ServerLock(lf.getPath());
+					ServerLock serverLock = new FileServerLock(lf.getPath());
 					// Don't care about result, the isLocked method reads the lock info.
 					serverLock.isLocked(true);
 					TsdbCompLock tcl = new TsdbCompLock(DbKey.NullKey, serverLock.getFilePID(),
@@ -268,7 +269,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		throws LockBusyException, DbIoException
 	{
 		String lockpath = makeFilePath(appInfo.getAppName());
-		serverLock = new ServerLock(lockpath);
+		serverLock = new FileServerLock(lockpath);
 		serverLock.setPID(pid);
 		if (!serverLock.obtainLock())
 			throw new LockBusyException("Lock file '" + lockpath + "' is already busy.");

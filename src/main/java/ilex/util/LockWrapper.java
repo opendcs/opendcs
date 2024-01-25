@@ -49,7 +49,7 @@ public class LockWrapper
 			System.exit(1);
 		}
 
-		ServerLock mylock = new ServerLock(args[0]);
+		ServerLock mylock = new FileServerLock(args[0]);
 		if (mylock.obtainLock() == false)
 			System.exit(0);
 		mylock.releaseOnExit();

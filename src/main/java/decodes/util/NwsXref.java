@@ -23,7 +23,7 @@ package decodes.util;
 
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.ServerLock;
+import ilex.util.FileServerLock;
 
 import java.io.File;
 import java.io.FileReader;

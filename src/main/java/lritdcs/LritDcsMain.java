@@ -76,10 +76,11 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
+import ilex.util.ServerLock;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.QueueLogger;
-import ilex.util.ServerLock;
+import ilex.util.FileServerLock;
 import ilex.util.ServerLockable;
 import ilex.util.TeeLogger;
 
@@ -245,7 +246,7 @@ public class LritDcsMain implements ServerLockable
 
 		// Establish a server lock file & start the server lock monitor
 		String lockName = home + File.separator + progname + ".lock";
-		myServerLock = new ServerLock(lockName);
+		myServerLock = new FileServerLock(lockName);
 		if (!myServerLock.obtainLock(this)) {
 			Logger.instance().fatal(
 					"Lock file '" + lockName + "' already taken. "
