@@ -61,6 +61,8 @@ package opendcs.dao;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -1092,6 +1094,10 @@ debug1("Setting manual connection for algorithmDAO");
 		catch(DbIoException ex)
 		{
 			warning(ex.getMessage());
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			warning(sw.toString());
 			throw ex;
 		}
 	}
