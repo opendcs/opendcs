@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.zip.GZIPInputStream;
@@ -55,6 +56,9 @@ import javax.xml.parsers.ParserConfigurationException;
 */
 public class ApiLddsClient extends ApiBasicClient
 {
+	/** Logger for the class **/
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApiLddsClient.class);
+	
 	/** Input stream coming from the server */
 	private LddsInputStream linput;
 
@@ -651,17 +655,17 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 
 	public void info(String str)
 	{
-		LoggerFactory.getLogger(ApiConstants.loggerName).info("LddsClient INFO: {}", str);
+		LOGGER.info("LddsClient INFO: {}", str);
 	}
 	
 	private void debug(String str)
 	{
-		LoggerFactory.getLogger(ApiConstants.loggerName).trace("LddsClient DEBUG: {}", str);
+		LOGGER.trace("LddsClient DEBUG: {}", str);
 	}
 	
 	private void warning(String str)
 	{
-		LoggerFactory.getLogger(ApiConstants.loggerName).warn("LddsClient WARNING: {}", str);
+		LOGGER.warn("LddsClient WARNING: {}", str);
 	}
 
 	public long getLastActivity()

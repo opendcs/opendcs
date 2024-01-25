@@ -309,9 +309,8 @@ System.out.println("Connected to " + appStat.getHostname() + ":" + port);
 		}
 		catch (IOException ex)
 		{
-			Logger.getLogger(ApiConstants.loggerName).log(Level.WARNING,
-					String.format("Error attempting to start appId=%s: %s", appId, ex));
-			throw new WebAppException(ErrorCodes.DATABASE_ERROR, ex.getMessage());
+			throw new WebAppException(ErrorCodes.DATABASE_ERROR,
+					String.format("Error attempting to start appId=%s", appId), ex);
 		}
 	}
 
