@@ -15,8 +15,9 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.PropertiesUtil;
 import ilex.util.ServerLock;
+import ilex.util.PropertiesUtil;
+import ilex.util.FileServerLock;
 import ilex.util.Logger;
 
 /**
@@ -76,7 +77,7 @@ public class SnotelDaemon
 		if (lockpath != null && lockpath.trim().length() > 0)
 		{
 			lockpath = EnvExpander.expand(lockpath.trim());
-			final ServerLock mylock = new ServerLock(lockpath);
+			final ServerLock mylock = new FileServerLock(lockpath);
 
 			if (mylock.obtainLock() == false)
 			{

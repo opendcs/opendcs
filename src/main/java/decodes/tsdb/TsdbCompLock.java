@@ -12,8 +12,8 @@
 */
 package decodes.tsdb;
 
-import ilex.util.Logger;
 import ilex.util.ServerLock;
+import ilex.util.Logger;
 
 import java.net.InetAddress;
 import java.util.Date;

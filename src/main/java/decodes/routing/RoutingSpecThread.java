@@ -1542,7 +1542,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		if (lockpath != null && lockpath.trim().length() > 0)
 		{
 			lockpath = EnvExpander.expand(lockpath.trim());
-			final ServerLock mylock = new ServerLock(lockpath);
+			final ServerLock mylock = new FileServerLock(lockpath);
 
 			if (mylock.obtainLock() == false)
 			{

@@ -25,9 +25,11 @@ import java.net.InetAddress;
 
 import opendcs.dai.LoadingAppDAI;
 import ilex.util.Logger;
-import ilex.util.ServerLock;
+import ilex.util.FileServerLock;
 import ilex.util.ServerLockable;
+import ilex.util.DockerServerLock;
 import ilex.util.EnvExpander;
+import ilex.util.ServerLock;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
 import ilex.util.TextUtil;
@@ -171,14 +173,22 @@ public class LrgsMain
         // Establish a server lock file & start the server lock monitor
 
         String lockName = EnvExpander.expand(cmdLineArgs.getLockFile());
-        myServerLock = new ServerLock(lockName);
-        if (!myServerLock.obtainLock(this))
+        Logger.instance().info("Lock File =" + lockName);
+        if (lockName.equals("-"))
         {
-            Logger.instance().fatal(module + ":" + EVT_LOCK_BUSY
-                + "- Lock file '" + lockName + "' already taken. "
-                + "Is another instance of '" + LrgsCmdLineArgs.progname
-                + "' already running?");
-            System.exit(1);
+            myServerLock = new DockerServerLock();
+        }
+        else
+        {
+            myServerLock = new FileServerLock(lockName);
+            if (!myServerLock.obtainLock(this))
+            {
+                Logger.instance().fatal(module + ":" + EVT_LOCK_BUSY
+                    + "- Lock file '" + lockName + "' already taken. "
+                    + "Is another instance of '" + LrgsCmdLineArgs.progname
+                    + "' already running?");
+                System.exit(1);
+            }
         }
 
         // Do all of the initialization & exit on fatal error.
@@ -696,7 +706,7 @@ public class LrgsMain
          * Tell server lock never to exit as a result of lock file I/O error.
          */
         if (cmdLineArgs.windowsSvcArg.getValue())
-            ServerLock.setWindowsService(true);
+            FileServerLock.setWindowsService(true);
 
         Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
         final LrgsMain lm = new LrgsMain();
