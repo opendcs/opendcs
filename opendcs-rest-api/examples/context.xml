@@ -1,0 +1,15 @@
+<!-- This is an example context.xml file, which tells the rest api how to connect to the OpenDCS database.
+     It goes in the META-INF directory of the opendcs-rest-api application.  It is not needed when being run on
+     embedded Jetty, as that information is acquired passed into the start script -->
+<Context>
+    <Resource name="jdbc/opentsdb"
+              auth="Container"
+              type="javax.sql.DataSource"
+              maxActive="100"
+              maxIdle="30"
+              maxWait="10000"
+              username="username"
+              password="password"
+              driverClassName="org.postgresql.Driver"
+              url="jdbc:postgresql://192.168.1.100/open_tsdb"/>
+</Context>
