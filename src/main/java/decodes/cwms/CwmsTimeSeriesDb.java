@@ -836,7 +836,11 @@ public class CwmsTimeSeriesDb
 		}
 		else if(credentials == null)
 		{
-			throw new BadConnectException("Cannot connect to CWMS without credentials.");
+			throw new BadConnectException(
+				"Cannot connect to CWMS without credentials." +
+				" If you are seeing this from a GUI app please change" +
+				" your properties file 'DbAuthFile' entry to:" +
+				" DbAuthFile=gui-auth-source:Login Prompt");
 		}
 		else
 		{	// use the provided credentials

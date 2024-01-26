@@ -2,6 +2,8 @@ package decodes.tsdb;
 
 import java.util.Properties;
 
+import javax.swing.JOptionPane;
+
 import org.opendcs.authentication.AuthSourceService;
 import org.slf4j.LoggerFactory;
 
@@ -168,7 +170,8 @@ public abstract class TsdbAppTemplate
 			}
 			catch(BadConnectException ex)
 			{
-				warning("Cannot connect to TSDB: " + ex);
+				JOptionPane.showMessageDialog(null,ex.getLocalizedMessage());
+				log.warn("Cannot connect to TSDB.", ex);
 				// CWMS-10402 don't keep trying if the failure was because the
 				// app name is invalid.
 				databaseFailed = !ex.toString().contains("Cannot determine app ID");
@@ -320,25 +323,20 @@ public abstract class TsdbAppTemplate
 		}
 		Properties credentials = null;
 		String nm = appNameArg.getValue();
-		if (!DecodesInterface.isGUI() || !theDb.isCwms())
+		// Get authorization parameters.
+		String afn = DecodesSettings.instance().DbAuthFile;
+		try
 		{
-			// Get authorization parameters.
-			String afn = DecodesSettings.instance().DbAuthFile;
-			try
-			{
-				credentials = AuthSourceService.getFromString(afn)
-											   .getCredentials();
-			}
-			catch(AuthException ex)
-			{
-				authFileEx(afn, ex);
-				throw new BadConnectException("Cannot read auth file: " + ex);
-			}
-	
-			// Connect to the database!
+			credentials = AuthSourceService.getFromString(afn)
+											.getCredentials();
 		}
-		// Else this is a CWMS GUI -- user will be prompted for credentials
-		// Leave the property set empty.
+		catch(AuthException ex)
+		{
+			authFileEx(afn, ex);
+			throw new BadConnectException("Cannot read auth file: " + ex);
+		}
+
+		// Connect to the database!
 		
 		setAppId(theDb.connect(nm, credentials));
 		
