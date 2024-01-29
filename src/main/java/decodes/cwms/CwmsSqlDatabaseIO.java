@@ -146,7 +146,7 @@ public class CwmsSqlDatabaseIO
 		{
 			Logger.instance().warning("Cannot read auth source. If this is from a GUI app please update DbAuthFile in " +
 					" user.properties, decodes.properties, or your .profile to 'DbAuthFile=gui-auth-source:<Prompt>'" +
-					" where <Prompt> should be what you want to see to explain what credentials to use.");
+					" where <Prompt> is the title to the login dialog.");
 		}
 		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
 		if (credentials == null && DecodesInterface.isGUI())
