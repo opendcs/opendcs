@@ -22,10 +22,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
 
-import decodes.db.Database;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
-import ilex.util.FileServerLock;
 import lrgs.common.DcpAddress;
 
 /**

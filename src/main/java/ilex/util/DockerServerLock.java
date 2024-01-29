@@ -3,7 +3,7 @@ package ilex.util;
 
 /**
  * Used in the docker environment, or anywhere else
- * where it is known that a the lock file is neither
+ * where it is known that the lock file is neither
  * necessary nor helpful.
  */
 public class DockerServerLock implements ServerLock
