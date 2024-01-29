@@ -2,11 +2,11 @@ package ilex.util;
 
 
 /**
- * Used in the docker environment, or anywhere else
+ * Primarily for container environment, or anywhere else
  * where it is known that the lock file is neither
  * necessary nor helpful.
  */
-public class DockerServerLock implements ServerLock
+public class NoOpServerLock implements ServerLock
 {
     String status;
     int pid = -1;
