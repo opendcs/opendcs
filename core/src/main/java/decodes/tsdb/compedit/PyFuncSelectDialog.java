@@ -13,10 +13,10 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Iterator;
 
 /**
  * Dialog to select a Computation Function.
@@ -63,6 +63,10 @@ public class PyFuncSelectDialog extends JDialog
 			model.addRow(new Object[]{item.getName(), item.getSignature(), item});
 		}
 		tab = new JTable(model);
+		tab.setCellSelectionEnabled(false);
+		tab.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+		tab.setRowSorter(sorter);
 		hideFunctionColumn(tab);
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setPreferredSize(new Dimension(600, 250));
@@ -117,7 +121,8 @@ public class PyFuncSelectDialog extends JDialog
 		int row = tab.getSelectedRow();
 		if (row >= 0)
 		{
-			return (PyFunction) model.getValueAt(row,2);
+			int selectedModelRow = tab.getRowSorter().convertRowIndexToModel(row);
+			return (PyFunction) model.getValueAt(selectedModelRow,2);
 		}
 		return new PyFunction("","","");
 	}
