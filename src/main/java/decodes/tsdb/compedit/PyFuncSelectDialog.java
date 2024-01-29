@@ -121,6 +121,7 @@ public class PyFuncSelectDialog extends JDialog
 
 	private void updateDescription(){
 		descArea.setText(getSelection().getDesc());
+		descArea.setCaretPosition(0); // Scroll to the top
 	}
 
 	public PyFunction getSelection() {
