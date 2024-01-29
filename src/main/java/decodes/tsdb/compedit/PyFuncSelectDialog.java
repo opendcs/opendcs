@@ -58,12 +58,18 @@ public class PyFuncSelectDialog extends JDialog
 		cancelButton.addActionListener(e -> cancelPressed());
 		buttonPanel.add(cancelButton);
 
-		model = new DefaultTableModel(new String[]{"Name", "Signature","Function"},0);
+		model = new DefaultTableModel(new String[]{"Name", "Signature","Function"},0){
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				return false; // Disable cell editing
+			}
+		};
 		for (PyFunction item : funcList.getList()) {
 			model.addRow(new Object[]{item.getName(), item.getSignature(), item});
 		}
 		tab = new JTable(model);
-		tab.setCellSelectionEnabled(false);
+		tab.setRowSelectionAllowed(true);
+		tab.setColumnSelectionAllowed(false);
 		tab.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
 		tab.setRowSorter(sorter);
