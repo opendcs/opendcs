@@ -238,6 +238,8 @@ public class OpenDCSPGConfiguration implements Configuration
             return true;
         }
         return false;
+    }
+
     @Override
     public String getName()
     {

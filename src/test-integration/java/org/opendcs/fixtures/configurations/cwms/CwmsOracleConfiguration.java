@@ -24,6 +24,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 public class CwmsOracleConfiguration implements Configuration
@@ -75,7 +76,7 @@ public class CwmsOracleConfiguration implements Configuration
     }
 
     @Override
-    public void start(SystemExit exit, EnvironmentVariables environment) throws Exception
+    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
     {        
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
