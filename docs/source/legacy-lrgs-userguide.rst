@@ -415,6 +415,10 @@ rotated.
 -N *numOldLogs* Sets the number of old log files to keep. Default=5. Old
 logs are given a numeric extension 1 (most recent) … *N*\ (oldest).
 
+-k specify a specific lock file name. If '-' is used, a NoOp Lock will be used
+where the process just assumes it has a valid lock. SIGTERM (on unix kill -15) will be required
+to stop the process. The is primarily use use in Container systems, or OS Service Management.
+
 LRGS Configuration
 ==================
 

@@ -27,7 +27,7 @@ import opendcs.dai.LoadingAppDAI;
 import ilex.util.Logger;
 import ilex.util.FileServerLock;
 import ilex.util.ServerLockable;
-import ilex.util.DockerServerLock;
+import ilex.util.NoOpServerLock;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
 import ilex.util.ProcWaiterCallback;
@@ -176,7 +176,7 @@ public class LrgsMain
         Logger.instance().info("Lock File =" + lockName);
         if (lockName.equals("-"))
         {
-            myServerLock = new DockerServerLock();
+            myServerLock = new NoOpServerLock();
         }
         else
         {

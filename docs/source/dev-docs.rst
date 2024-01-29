@@ -512,6 +512,8 @@ lrgs.sh handles first time setup, copy default config, initial admin user, and s
 The lrgs.lock file is currently ignored and docker just kills the process. Currently investigating better ways to 
 handle shutdown. Will likely just add a flag to remove the lock file entirely.
 
+The docker environment no uses the special sequence `lrgsStart -F -k -` to use the NoOpServerLock which causes
+the applications using that Lock to assume it's always valid for them.
 
 Database Scripts
 ================
