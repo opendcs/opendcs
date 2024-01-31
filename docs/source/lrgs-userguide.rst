@@ -67,7 +67,7 @@ Change Log
 GOES Data Collection System Overview
 ====================================
 
-The LRGSis a proven system that provides many federal, state, local, and
+The LRGS is a proven system that provides many federal, state, local, and
 private organizations with the ability to collect remote environmental
 data in real-time. The LRGS provides local storage of raw DCP data
 limited only by your disk capacity.
@@ -120,6 +120,11 @@ NOAA also supports the direct transmission of DCP data to users via
 internet. This uses a TCP socket protocol called DDS (DCP Data Service).
 DDS allows users to specify data of interest by DCP address, channel, or
 time range. Users can retrieve historical data or a real-time stream.
+
+.. image:: ./media/install-guide/Pictures/goes-dsc-overview.png
+   :alt: Image showing GOES DCS Overview
+   :width: 6in
+   :height: 3.2in
 
 Figure 2‑1: GOES DCS Overview.
 
