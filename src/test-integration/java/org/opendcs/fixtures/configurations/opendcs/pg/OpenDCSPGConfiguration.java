@@ -223,6 +223,7 @@ public class OpenDCSPGConfiguration implements Configuration
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
      * @return
      */
+    @Override
     public boolean supportsDao(Class<? extends DaoBase> dao)
     {
         Objects.requireNonNull(dao, "You must specifiy a valid class, not null.");

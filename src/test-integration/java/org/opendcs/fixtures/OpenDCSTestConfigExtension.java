@@ -37,6 +37,7 @@ import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
+import lrgs.gui.DecodesInterface;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -319,6 +320,16 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     public void testPlanExecutionStarted(TestPlan testPlan)
     {
         logger.info("All tests are starting.");
+        try
+        {
+            Field preventDecodesShutdownField = DecodesInterface.class.getDeclaredField("preventDecodesShutdown");
+            preventDecodesShutdownField.setAccessible(true);
+            preventDecodesShutdownField.setBoolean(null, true);
+        }
+        catch (IllegalAccessException | NoSuchFieldException | SecurityException ex)
+        {
+            throw new PreconditionViolationException("Unable to set required base parameters", ex);
+        }
         if(configuration == null)
         {
             logger.warning("CREATING CONFIGURATION");

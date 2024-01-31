@@ -17,12 +17,19 @@ import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.configuration.Configuration;
 import org.python.antlr.PythonParser.try_stmt_return;
 
+import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.db.Database;
+import decodes.db.DatabaseIO;
 import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import opendcs.dao.CompDependsDAO;
+import opendcs.dao.DaoBase;
+import opendcs.dao.XmitRecordDAO;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -162,6 +169,29 @@ public class CwmsOracleConfiguration implements Configuration
         {
             return true;
         } // add more cases here.
+        return false;
+    }
+
+    /**
+     * Returns true if this Database implementation supports a given dataset.
+     * @param dao Class that extends from {@link opendcs.dao.DaoBase}
+     * @return
+     */
+    @Override
+    public boolean supportsDao(Class<? extends DaoBase> dao)
+    {
+        Objects.requireNonNull(dao, "You must specifiy a valid class, not null.");
+        /**
+         * Extends this list as specific tests and requirements are added in the future.
+         */
+        if (dao.equals(XmitRecordDAO.class))
+        {
+            return true;
+        }
+        else if(dao.equals(CompDependsDAO.class))
+        {
+            return true;
+        }
         return false;
     }
 }

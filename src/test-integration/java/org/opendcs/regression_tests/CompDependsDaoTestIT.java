@@ -60,8 +60,9 @@ public class CompDependsDaoTestIT extends AppTestBase
             Database.setDb(decodesDb);
             cd.clearScratchpad();
             cd.doModify("delete from cp_comp_depends", new Object[0]);
+            cd.doModify("delete from cp_depends_notify", new Object[0]);
             assertTrue(cd.getResults("select event_type from cp_depends_notify", 
-                       rs -> rs.getString(0)).isEmpty());
+                       rs -> rs.getString(1)).isEmpty());
             TimeSeriesIdentifier tsIdInput = db.makeEmptyTsId();
             TimeSeriesIdentifier tsIdOutput = db.makeEmptyTsId();
             tsIdInput.setUniqueString("TESTSITE1.Stage.Inst.15Minutes.0.raw");
