@@ -19,8 +19,8 @@ import java.util.ResourceBundle;
 import java.util.MissingResourceException;
 
 /**
- * Loads the properties file that contains all labels used through
- * out the application.
+ * Loads the properties file that contains all labels used throughout
+ * the application.
  * Language supported: English and/or Spanish
  * 
  */
@@ -103,7 +103,7 @@ public class LoadResourceBundle
 		{
 			setLocale(language);
 		}
-		ResourceBundle labelDescriptions = null;
+		ResourceBundle labelDescriptions;
 		try
 		{
 			labelDescriptions = ResourceBundle.getBundle(baseName, 
