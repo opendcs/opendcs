@@ -231,7 +231,8 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString("ComputationsFilterPanel.CopyError1"));
 			return;
 		}
-		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(r);
+		int rowModel = compListTable.convertRowIndexToModel(r);
+		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
 
 	    String newName = JOptionPane.showInputDialog(
 	    	compLabels.getString("ComputationsFilterPanel.NewInput"));
@@ -272,8 +273,8 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString("ComputationsFilterPanel.DeleteError1"));
 			return;
 		}
-
-		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(r);
+		int rowModel = compListTable.convertRowIndexToModel(r);
+		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
 
 		int ok = JOptionPane.showConfirmDialog(this,
 			LoadResourceBundle.sprintf(
