@@ -8,6 +8,9 @@
  */
 package decodes.tsdb.compedit;
 
+import decodes.util.DecodesSettings;
+import ilex.util.LoadResourceBundle;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
@@ -17,6 +20,7 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ResourceBundle;
 
 /**
  * Dialog to select a Computation Function.
@@ -32,6 +36,8 @@ public class PyFuncSelectDialog extends JDialog
 	private final PyFuncList funcList;
 	private final JTextArea descArea = new JTextArea();
 
+	private static ResourceBundle labels = null;
+
 	/** No args constructor for JBuilder */
 	public PyFuncSelectDialog(JFrame theFrame, PyFuncList funcList)
 	{
@@ -40,6 +46,10 @@ public class PyFuncSelectDialog extends JDialog
 		this.funcList = funcList;
 		try
 		{
+			DecodesSettings settings = DecodesSettings.instance();
+			labels = LoadResourceBundle.getLabelDescriptions(
+					"decodes/resources/compedit",
+					settings.language);
 			guiInit();
 			pack();
 			getRootPane().setDefaultButton(insertButton);
@@ -58,7 +68,8 @@ public class PyFuncSelectDialog extends JDialog
 		cancelButton.addActionListener(e -> cancelPressed());
 		buttonPanel.add(cancelButton);
 
-		model = new DefaultTableModel(new String[]{"Name", "Signature","Function"},0){
+		String[] columnNames = getLanguageString("PyFuncSelectDialog.ColumnNames").split(",");
+		model = new DefaultTableModel(columnNames,0){
 			@Override
 			public boolean isCellEditable(int row, int column) {
 				return false; // Disable cell editing
@@ -161,6 +172,11 @@ public class PyFuncSelectDialog extends JDialog
 	public boolean wasCancelled()
 	{
 		return _cancelled;
+	}
+
+	private String getLanguageString(String name)
+	{
+		return labels.getString(name);
 	}
 }
 
