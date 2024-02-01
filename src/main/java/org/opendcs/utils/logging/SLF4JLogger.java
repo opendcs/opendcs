@@ -117,5 +117,4 @@ public class SLF4JLogger extends AbstractLogger
             }
         }
     }
-    
 }

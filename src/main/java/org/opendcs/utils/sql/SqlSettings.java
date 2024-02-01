@@ -8,16 +8,16 @@ package org.opendcs.utils.sql;
 public class SqlSettings
 {
     /**
-     * Determines whether or not to maintain and print track traces of 
+     * Determines whether or not to maintain and print track traces of
      * various java.sql.Connection operations. Primarily @see opendcs.util.sql.WrappedConnection
      * to find instances of createStatement and print stacktraces showing the location.
      *
      * @since 7.0.11 (cwms.connection.pool.trace to be removed)
      */
-    public static final boolean TRACE_CONNECTIONS = 
+    public static final boolean TRACE_CONNECTIONS =
         Boolean.parseBoolean(
             System.getProperty("opendcs.connection.pool.trace",
                 System.getProperty("cwms.connection.pool.trace", "false")
                 )
-        );    
+        );
 }

@@ -42,15 +42,13 @@ public class OpenDcsSLF4JProvider implements SLF4JServiceProvider
     {
         mdc = new BasicMDCAdapter();
         markerFactory = new BasicMarkerFactory();
-        loggerFactory = new ILoggerFactory() {
-
+        loggerFactory = new ILoggerFactory()
+        {
             @Override
             public Logger getLogger(String arg)
             {
                 return new SLF4JLogger(arg,ilex.util.Logger.instance());
             }
-            
         };
     }
-    
 }
