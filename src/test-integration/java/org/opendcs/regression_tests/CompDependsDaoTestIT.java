@@ -57,12 +57,11 @@ public class CompDependsDaoTestIT extends AppTestBase
              * it's an artifact of just how many times Database:setDb gets called during a test run
              * and not an issue with general operation. Further investigate is required.
              */
-            Database.setDb(decodesDb);
+            //Database.setDb(decodesDb);
             cd.clearScratchpad();
             cd.doModify("delete from cp_comp_depends", new Object[0]);
-            cd.doModify("delete from cp_depends_notify", new Object[0]);
-            assertTrue(cd.getResults("select event_type from cp_depends_notify", 
-                       rs -> rs.getString(1)).isEmpty());
+            assertTrue(cd.getResults("select * from cp_comp_depends",
+                                     rs -> rs.getLong(1)).isEmpty());
             TimeSeriesIdentifier tsIdInput = db.makeEmptyTsId();
             TimeSeriesIdentifier tsIdOutput = db.makeEmptyTsId();
             tsIdInput.setUniqueString("TESTSITE1.Stage.Inst.15Minutes.0.raw");
@@ -86,8 +85,8 @@ public class CompDependsDaoTestIT extends AppTestBase
                                             new File(configuration.getUserDir(),"cdn-test.log"),
                                             environment, 20, TimeUnit.SECONDS, "-O");
             
-            assertFalse(cd.getResults("select event_type from cp_depends_notify", 
-                       rs -> rs.getString(1)).isEmpty());
+            assertFalse(cd.getResults("select * from cp_comp_depends",
+                                      rs -> rs.getLong(1)).isEmpty());
         }
     }
 }
