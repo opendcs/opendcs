@@ -166,7 +166,11 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
         return realConnection.createStatement();
     }
 
-    private void logPlainCreate() {
+    /**
+     * Used during development to identify queries that should be updated.
+     */
+    private void logPlainCreate()
+    {
         if(trace)
         {
             if(log.isTraceEnabled())
@@ -185,219 +189,261 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
     }
 
     @Override
-    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException
+    {
         logPlainCreate();
         return realConnection.createStatement(resultSetType, resultSetConcurrency);
     }
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-            throws SQLException {
+            throws SQLException
+    {
         logPlainCreate();
         return realConnection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
     @Override
-    public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+    public Struct createStruct(String typeName, Object[] attributes) throws SQLException
+    {
         return realConnection.createStruct(typeName, attributes);
     }
 
     @Override
-    public boolean getAutoCommit() throws SQLException {
+    public boolean getAutoCommit() throws SQLException
+    {
         return realConnection.getAutoCommit();
     }
 
     @Override
-    public String getCatalog() throws SQLException {
+    public String getCatalog() throws SQLException
+    {
         return realConnection.getCatalog();
     }
 
     @Override
-    public Properties getClientInfo() throws SQLException {
+    public Properties getClientInfo() throws SQLException
+    {
         return realConnection.getClientInfo();
     }
 
     @Override
-    public String getClientInfo(String name) throws SQLException {
+    public String getClientInfo(String name) throws SQLException
+    {
         return realConnection.getClientInfo(name);
     }
 
     @Override
-    public int getHoldability() throws SQLException {
+    public int getHoldability() throws SQLException
+    {
         return realConnection.getHoldability();
     }
 
     @Override
-    public DatabaseMetaData getMetaData() throws SQLException {
+    public DatabaseMetaData getMetaData() throws SQLException
+    {
         return realConnection.getMetaData();
     }
 
     @Override
-    public int getNetworkTimeout() throws SQLException {
+    public int getNetworkTimeout() throws SQLException
+    {
         return realConnection.getNetworkTimeout();
     }
 
     @Override
-    public String getSchema() throws SQLException {
+    public String getSchema() throws SQLException
+    {
         return realConnection.getSchema();
     }
 
     @Override
-    public int getTransactionIsolation() throws SQLException {
+    public int getTransactionIsolation() throws SQLException
+    {
         return realConnection.getTransactionIsolation();
     }
 
     @Override
-    public Map<String, Class<?>> getTypeMap() throws SQLException {
+    public Map<String, Class<?>> getTypeMap() throws SQLException
+    {
         return realConnection.getTypeMap();
     }
 
     @Override
-    public SQLWarning getWarnings() throws SQLException {
+    public SQLWarning getWarnings() throws SQLException
+    {
         return realConnection.getWarnings();
     }
 
     @Override
-    public boolean isClosed() throws SQLException {
+    public boolean isClosed() throws SQLException
+    {
         return realConnection.isClosed();
     }
 
     @Override
-    public boolean isReadOnly() throws SQLException {
+    public boolean isReadOnly() throws SQLException
+    {
         return realConnection.isReadOnly();
     }
 
     @Override
-    public boolean isValid(int timeout) throws SQLException {
+    public boolean isValid(int timeout) throws SQLException
+    {
         return realConnection.isValid(timeout);
     }
 
     @Override
-    public String nativeSQL(String sql) throws SQLException {
+    public String nativeSQL(String sql) throws SQLException
+    {
         return realConnection.nativeSQL(sql);
     }
 
     @Override
-    public CallableStatement prepareCall(String sql) throws SQLException {
+    public CallableStatement prepareCall(String sql) throws SQLException
+    {
         return realConnection.prepareCall(sql);
     }
 
     @Override
-    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException
+    {
         return realConnection.prepareCall(sql,resultSetType,resultSetConcurrency);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
-            int resultSetHoldability) throws SQLException {
+                                         int resultSetHoldability) throws SQLException
+    {
         return realConnection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
     @Override
-    public PreparedStatement prepareStatement(String sql) throws SQLException {
+    public PreparedStatement prepareStatement(String sql) throws SQLException
+    {
         return realConnection.prepareStatement(sql);
     }
 
     @Override
-    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException
+    {
         return realConnection.prepareStatement(sql, autoGeneratedKeys);
     }
 
     @Override
-    public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+    public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException
+    {
         return realConnection.prepareStatement(sql, columnIndexes);
     }
 
     @Override
-    public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+    public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException
+    {
         return realConnection.prepareStatement(sql,columnNames);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
-            throws SQLException {
+            throws SQLException
+    {
         return realConnection.prepareStatement(sql, resultSetType, resultSetConcurrency);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency,
-            int resultSetHoldability) throws SQLException {
+                                              int resultSetHoldability) throws SQLException
+    {
         return realConnection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
     @Override
-    public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+    public void releaseSavepoint(Savepoint savepoint) throws SQLException
+    {
         realConnection.releaseSavepoint(savepoint);
     }
 
     @Override
-    public void rollback() throws SQLException {
+    public void rollback() throws SQLException
+    {
         realConnection.rollback();
     }
 
     @Override
-    public void rollback(Savepoint savepoint) throws SQLException {
+    public void rollback(Savepoint savepoint) throws SQLException
+    {
         realConnection.rollback(savepoint);
     }
 
     @Override
-    public void setAutoCommit(boolean autoCommit) throws SQLException {
+    public void setAutoCommit(boolean autoCommit) throws SQLException
+    {
         realConnection.setAutoCommit(autoCommit);
     }
 
     @Override
-    public void setCatalog(String catalog) throws SQLException {
+    public void setCatalog(String catalog) throws SQLException
+    {
         realConnection.setCatalog(catalog);
     }
 
     @Override
-    public void setClientInfo(Properties properties) throws SQLClientInfoException {
+    public void setClientInfo(Properties properties) throws SQLClientInfoException
+    {
         realConnection.setClientInfo(properties);
     }
 
     @Override
-    public void setClientInfo(String name, String value) throws SQLClientInfoException {
+    public void setClientInfo(String name, String value) throws SQLClientInfoException
+    {
         realConnection.setClientInfo(name, value);
     }
 
     @Override
-    public void setHoldability(int holdability) throws SQLException {
+    public void setHoldability(int holdability) throws SQLException
+    {
         realConnection.setHoldability(holdability);
     }
 
     @Override
-    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException
+    {
         realConnection.setNetworkTimeout(executor, milliseconds);
     }
 
     @Override
-    public void setReadOnly(boolean readOnly) throws SQLException {
+    public void setReadOnly(boolean readOnly) throws SQLException
+    {
         realConnection.setReadOnly(readOnly);
     }
 
     @Override
-    public Savepoint setSavepoint() throws SQLException {
+    public Savepoint setSavepoint() throws SQLException
+    {
         return realConnection.setSavepoint();
     }
 
     @Override
-    public Savepoint setSavepoint(String name) throws SQLException {
+    public Savepoint setSavepoint(String name) throws SQLException
+    {
         return realConnection.setSavepoint(name);
     }
 
     @Override
-    public void setSchema(String schema) throws SQLException {
+    public void setSchema(String schema) throws SQLException
+    {
         realConnection.setSchema(schema);
 
     }
 
     @Override
-    public void setTransactionIsolation(int level) throws SQLException {
+    public void setTransactionIsolation(int level) throws SQLException
+    {
         realConnection.setTransactionIsolation(level);
     }
 
     @Override
-    public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
+    public void setTypeMap(Map<String, Class<?>> map) throws SQLException
+    {
         realConnection.setTypeMap(map);
     }
 
