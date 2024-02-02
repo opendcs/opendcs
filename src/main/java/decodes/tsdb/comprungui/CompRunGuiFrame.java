@@ -53,6 +53,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
@@ -157,6 +158,7 @@ public class CompRunGuiFrame extends TopFrame
 	private RunComputationsFrameTester runCompFrametester;
 	private ComputationsListDialog computationsListDialog = null;
 	private JButton traceButton = new JButton("Trace Execution");
+	private JProgressBar progressBar = new JProgressBar(0,100);
 
 	private TraceDialog traceDialog = null;
 
@@ -184,13 +186,12 @@ public class CompRunGuiFrame extends TopFrame
 		fromDTCal = new DateTimeCalendar(fromLabel, null, "dd MMM yyyy", timeZoneStr);
 		toDTCal = new DateTimeCalendar(toLabel, tempDate, "dd MMM yyyy", timeZoneStr);
 
-//		JPanel mycontent = new JPanel();
 		JPanel mycontent = (JPanel)this.getContentPane();
 		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
-//		this.setContentPane(mycontent);
+
 		this.setTitle(labels.getString("RunComputationsFrame.frameTitle"));
 		this.trackChanges("runcomps");
-		// this.setSize(750,825);//800
+
 		mycontent.add(listPanel());
 		mycontent.add(timePanel());
 		mycontent.add(getChart());
@@ -899,6 +900,7 @@ public class CompRunGuiFrame extends TopFrame
 			public List<CTimeSeries> doInBackground()
 			{
 				Vector<CTimeSeries> outputs = new Vector<CTimeSeries>();
+				int compsRun = 0;
 				for (DbComputation comp : compVector)
 				{
 					DataCollection runme = new DataCollection();
@@ -1009,7 +1011,8 @@ public class CompRunGuiFrame extends TopFrame
 						showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + e.getMessage());
 						continue;
 					}
-
+					compsRun++;
+					setProgress(100*compsRun/compVector.size());
 					// Get all outputs & add outputs to total lists;
 					for (DbCompParm parm : outputParms)
 					{
@@ -1093,6 +1096,7 @@ public class CompRunGuiFrame extends TopFrame
 			@Override
 			protected void done()
 			{
+				setProgress(100);
 				// Stop trace logger and remove frome pipeline
 				traceLogger.setDialog(null);
 				Logger.setLogger(origLogger);
@@ -1106,6 +1110,21 @@ public class CompRunGuiFrame extends TopFrame
 						System.out.println("Done");
 			}
 		};
+		worker.addPropertyChangeListener(event ->
+		{
+			if ("progress".equals(event.getPropertyName()))
+			{
+				int value = (Integer)event.getNewValue();
+				progressBar.setValue(value);
+				if (value == 100)
+				{
+					progressBar.setString("done");
+				}
+			}
+		});
+		progressBar.setStringPainted(true);
+		progressBar.setString("Running");
+		progressBar.setValue(0);
 		worker.execute();
 		needToSave = true;
 	}
@@ -1137,6 +1156,8 @@ public class CompRunGuiFrame extends TopFrame
 			}
 		});
 		closePanel.add(closeButton);
+		closePanel.add(progressBar);
+
 		return closePanel;
 	}
 
