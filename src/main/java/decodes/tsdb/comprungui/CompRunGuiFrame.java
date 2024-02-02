@@ -886,7 +886,7 @@ public class CompRunGuiFrame extends TopFrame
 		// Create the one-time trace dialog if not already done.
 		if (traceDialog == null)
 		{
-			traceDialog = new TraceDialog(this, true);
+			traceDialog = new TraceDialog(this, false);
 			traceDialog.setTraceType("Computation Run");
 		}
 		traceDialog.clear();
@@ -1102,7 +1102,6 @@ public class CompRunGuiFrame extends TopFrame
 				Logger.setLogger(origLogger);
 				//traceLogger = null;
 				//teeLogger = null;
-				traceButton.setEnabled(true);
 
 				//myoutputs = worker.get();
 				plotDataOnChart(both, inputs.size());
@@ -1125,6 +1124,7 @@ public class CompRunGuiFrame extends TopFrame
 		progressBar.setStringPainted(true);
 		progressBar.setString("Running");
 		progressBar.setValue(0);
+		traceButton.setEnabled(true);
 		worker.execute();
 		needToSave = true;
 	}
