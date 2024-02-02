@@ -4,7 +4,7 @@ Welcome to OpenDCS's documentation!
 **OpenDCS** suite of software for collecting, decodes, storing, and 
 manipulating time series data.
 
-Check out the :doc:`quick-start` section for how to get started.
+Check out the :doc:`legacy-quick-start` section for how to get started.
 
 .. note::
 

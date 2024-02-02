@@ -497,7 +497,6 @@ the Launcher button panel.
 | meTypePreference |               | for DCP names. By default this is |
 |                  |               | the Handbook-5 standard used by   |
 |                  |               | the National Weather Service.     |
-|                  |               | use: 'cwms' for CWMS systems      |
 +------------------+---------------+-----------------------------------+
 | EditDatabaseType | “xml”         | The is the type for the Editable  |
 |                  |               | database. The same values allowed |

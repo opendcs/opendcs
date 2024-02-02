@@ -162,7 +162,7 @@ Authentication Sources
 ----------------------
 
 Implementation
-++++++++++++++
+~~~~~~~~~~~~~~
 
 If the simple file based, or environment variable based credential sources are insufficient it is possible to create and 
 load a new source without additional configuration.
@@ -187,7 +187,7 @@ You must also add a file:
 that contains the fully qualified class name of your new AuthSource.
 
 Usage
-+++++
+~~~~~
 
 To acquire the configured credentials the following can be used:
 
@@ -481,13 +481,13 @@ The build
 The build is done in multiple stages. 
 
 Stage 1 Build
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 The build uses the openjdk:8-jdk-bullseye image as it was easier to handle some of the basic dependencies. The documentation is not 
 generated as it wouldn't be easily accessible anyways.
 
 Stage 2 baseline
-^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~
 
 This setups the basic "OpenDCS" install in /opt/opendcs. We use the openjdk:8-jre-alpine to save space for the final image.
 We may experiment in the future with additional image reductions.
@@ -500,7 +500,7 @@ The opendcs user, to avoid running as root, and group are added as well as the d
 The build/stage directory is copied from the build stage
 
 Stage 3+ lrgs
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 LRGSHOME  and LRGS_ADMIN_PASSWORD ENV variable is registered.
 /lrgs_home volume is registered.
