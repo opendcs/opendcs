@@ -233,7 +233,7 @@ public class SiteDAO
 		
 		// Finally search the database for a SiteName with matching value.
 		String q = "select siteid from SiteName "
-			+ " where lower(siteName) = lower(?)";// + sqlString(nameValue.toLowerCase());
+			+ " where lower(siteName) = lower(?)";
 		try
 		{
 			DbKey key = getSingleResult(q, rs -> DbKey.createDbKey(rs, 1),nameValue);
@@ -301,7 +301,6 @@ public class SiteDAO
 
 		final HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
 		String q = "SELECT " + siteAttributes + " FROM " + siteTableName;
-//		ArrayList<Site> siteList = new ArrayList<Site>();
 		int nNames[] = new int[1];
 		nNames[0] = 0;
 		
@@ -665,10 +664,10 @@ public class SiteDAO
 		if (dbVersion >= DecodesDatabaseVersion.DECODES_DB_10) // version 10 or higher
 		{
 			columns.add("active_flag"); parameters.add(s.isActive() ? "TRUE" : "FALSE");
-			columns.add("location_Type"); parameters.add(s.getLocationType());
+			columns.add("location_type"); parameters.add(s.getLocationType());
 			Date modifyTime = s.getLastModifyTime();
 			columns.add("modify_time"); parameters.add(modifyTime != null ? modifyTime : new Date());
-			columns.add("Public_name"); parameters.add(s.getPublicName());
+			columns.add("public_name"); parameters.add(s.getPublicName());
 		}
 		q.append(String.join(",",columns));
 		q.append(") values(");
@@ -719,7 +718,7 @@ public class SiteDAO
 		 .append(")");
 		try
 		{
-			System.out.println(q.toString());
+			Logger.instance().info(q.toString());
 			doModify(q.toString(),parameters.toArray(new Object[0]));
 		}
 		catch (SQLException ex)
