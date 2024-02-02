@@ -1,19 +1,11 @@
 <?xml version="1.0"?>
-
 <!--
-
 This is the ANT build file for OpenDCS 6.7 RC02 and Later.
 The intent is that this will eventually be replaced with a Maven pom.xml.
-
 To get started run
-
 ant test
-
 This will verify that everything can compile and tests can run
-
 NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
-
-
 -->
 <project name="OPENDCS Toolkit" default="jar" basedir="."
     xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant"
@@ -21,11 +13,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
     xmlns:jacoco="antlib:org.jacoco.ant"
     >
     <description>Open DCS</description>
-
-
     <include file="common.xml"/>
     <include file="docs/build.xml"/>
-
 <!-- depends="clean" -->
     <target name="prepare"  description="Makes build environment.">
         <mkdir dir="${build.dir}"/>
@@ -40,7 +29,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </path>
         </pathconvert>
     </target>
-
     <target name="clean" description="Removes all generated files.">
         <delete dir="${build.dir}"/>
         <delete dir="stage"/>
@@ -52,21 +40,17 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <delete dir="combined-src"/>
         <antcall target="docs.clean"/>
     </target>
-
     <target name="check.src">
         <uptodate property="src.build.current" targetfile="${status.dir}/src.build.date">
             <srcfiles dir="${src.main.dir}" includes="**/*"/>
         </uptodate>
     </target>
-
     <target name="compile" depends="check.src,prepare,common.resolve" unless="src.build.current"
         description="Compiles all source code.">
-
         <!-- create build date -->
         <tstamp>
             <format property="buildDate" pattern="MMM dd, yyyy"/>
         </tstamp>
-
         <copy todir="${build.classes}/lrgs/nledit">
             <fileset dir="${src.dir}/lrgs/nledit">
                 <include name="*.gif"/>
@@ -75,7 +59,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <sync todir="${build.resources}">
             <fileset dir="${resources.dir}"/>
         </sync>
-
         <delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
         <copy file="${src.dir}/lrgs/gui/LrgsBuild.java"
               tofile="${build.classes}/lrgs/gui/LrgsBuild.java"
@@ -93,9 +76,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             includes="lrgs/gui/LrgsBuild.java">
             <src path="${build.classes}"/>
             <classpath refid="runtime.classpath"/>
-			<compilerarg value="-parameters"/>
-		</javac>
-
+            <compilerarg value="-parameters"/>
+        </javac>
         <javac debug="true" destdir="${build.classes}"
             target="1.8" source="1.8"
             includeantruntime="true"
@@ -104,11 +86,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             excludes="lrgs/gui/LrgsBuild.java">
             <src path="${src.dir}"/>
             <classpath refid="runtime.classpath"/>
-			<compilerarg value="-parameters"/>
-		</javac>
+            <compilerarg value="-parameters"/>
+        </javac>
         <touch file="${status.dir}/src.build.date"/>
     </target>
-
     <target name="check.test.src" depends="check.src">
          <uptodate property="test.src.build.current.local" targetfile="${status.dir}/test.src.build.date">
             <srcfiles dir="src/test" includes="**/*"/>
@@ -120,7 +101,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </and>
         </condition>
     </target>
-
     <target name="compile-test" depends="check.test.src,compile,common.resolve" unless="test.src.build.current">
         <mkdir dir="${build.test.classes}"/>
         <javac debug="true" destdir="${build.test.classes}"
@@ -139,7 +119,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </sync>
         <touch file="${status.dir}/test.src.build.date"/>
     </target>
-
     <target name="compile-test-integration" depends="stage,test,common.resolve,common.resolve.build">
         <mkdir dir="${build.test-integration.classes}"/>
         <javac debug="true" destdir="${build.test-integration.classes}"
@@ -160,7 +139,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </sync>
         <touch file="${status.dir}/src.integration.build.date"/>
     </target>
-
     <target name="compile-test-gui" depends="jar,test,common.resolve,common.resolve.build">
         <mkdir dir="${build.test-gui.classes}"/>
         <javac debug="true" destdir="${build.test-gui.classes}"
@@ -180,7 +158,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </sync>
         <touch file="${status.dir}/src.gui-test.build.date"/>
     </target>
-
     <target name="check.run-tests" depends="check.test.src">
         <condition property="test.run">
             <and>
@@ -189,7 +166,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </and>
         </condition>
     </target>
-
     <target name="test" depends="check.run-tests,compile-test,jar,common.resolve.build" unless="test.run">
         <mkdir dir="${junit.html.output.dir}"/>
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
@@ -207,7 +183,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <pathelement location="${build.test.classes}"/>
                 <pathelement location="${build.classes}"/>
             </classpath>
-
             <testclasses outputdir="${build.dir}/test-results">
                 <fork>
                     <jvmarg value="${coverage.agent.param.test}"/>
@@ -220,7 +195,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
         </junitlauncher>
-
         <mkdir dir="${junit.html.output.dir}/test"/>
         <junitreport todir="${junit.html.output.dir}">
             <fileset dir="${build.dir}/test-results">
@@ -241,7 +215,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </else>
         </if>
     </target>
-
     <target name="check.it-run" depends="check.src">
         <condition property="integration.test.current">
             <and>
@@ -256,7 +229,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <isset property="opendcs.test.engine"/>
         </condition>
     </target>
-
     <target name="integration-test" depends="check.it-run,compile-test-integration,stage,common.resolve"
             description="Run the integration test suite with available implementations."
             unless="integration.test.current"
@@ -269,11 +241,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <echo level="error">
 To run the integration test you must specify -Dopendcs.test.engine=engine
 Where engine is currently one of the following: OpenDCS-XML, OpenDCS-Postgres
-
 Only OpenDCS-XML will currently work on windows."
 It is also recommend to pass -Dno.docs=true, however the build should now cache the build
 state of the docs correctly and not take an excessive amount of time.
-
 A given implementation may take additional parameters. See https://opendcs-dev.readthedocs.io for
 more information about each.
                 </echo>
@@ -285,7 +255,7 @@ more information about each.
         <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
         <jacoco:agent property="coverage.agent.param.it"
                       destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
-        <!-- This path is used by the integration test extension when 
+        <!-- This path is used by the integration test extension when
             creating independent OpenDCS application processes-->
         <path id="opendcs.runtime">
             <pathelement location="${stage.dir}/bin/opendcs.jar"/>
@@ -301,7 +271,6 @@ more information about each.
                 <pathelement location="${build.test-integration.resources}"/>
                 <pathelement location="${build.test-integration.classes}"/>
             </classpath>
-
             <testclasses outputdir="${build.dir}/test-integration/${opendcs.test.engine}/results">
                 <fork>
                     <jvmarg value="${coverage.agent.param.it}"/>
@@ -325,7 +294,6 @@ more information about each.
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
         </junitlauncher>
-
         <mkdir dir="${junit.html.output.dir}/test-integration/${opendcs.test.engine}"/>
         <junitreport todir="${junit.html.output.dir}">
             <fileset dir="${build.dir}/test-integration/${opendcs.test.engine}/results">
@@ -346,7 +314,6 @@ more information about each.
             </else>
         </if>
     </target>
-
     <target name="check.gui-test" depends="check.src">
         <condition property="gui.test.current">
             <and>
@@ -358,7 +325,6 @@ more information about each.
             </and>
         </condition>
     </target>
-
     <target name="gui-test" depends="check.gui-test,compile-test-gui,stage,common.resolve"
             description="Run available GUI element tests"
             unless="gui.test.current">
@@ -376,7 +342,6 @@ more information about each.
                 <pathelement location="${build.test-gui.resources}"/>
                 <pathelement location="${build.test-gui.classes}"/>
             </classpath>
-
             <testclasses outputdir="${build.dir}/test-gui/results">
                 <fork>
                     <jvmarg value="${coverage.agent.param.gui}"/>
@@ -392,7 +357,6 @@ more information about each.
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
         </junitlauncher>
-
         <mkdir dir="${junit.html.output.dir}/test-gui"/>
         <junitreport todir="${junit.html.output.dir}">
             <fileset dir="${build.dir}/test-gui/results">
@@ -411,39 +375,31 @@ more information about each.
             </else>
         </if>
     </target>
-
     <target name="check.jar" depends="check.src">
         <uptodate property="jar.current" targetFile="${dist.jar}">
             <srcfiles dir="${src.main.dir}" includes="**/*"/>
         </uptodate>
     </target>
-
     <target name="jar" depends="check.jar,compile" description="Generates opendcs.jar." unless="jar.current">
-
         <!-- copy the resource files to the build directory. -->
         <copy todir="${build.classes}">
             <fileset dir="${resources.dir}"/>
         </copy>
-
         <!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
         <copy todir="${build.classes}/decodes/tsdb/algo">
             <fileset dir="${src.dir}/decodes/tsdb/algo">
                 <include name="AW_AlgorithmTemplate.java"/>
             </fileset>
         </copy>
-
         <jar jarfile="${dist.jar}"
              basedir="${build.classes}"
              update="true"/>
     </target>
-
     <target name="publish" depends="jar,common.init-ivy,common.resolve.build" description="--> publish ivy artifacts">
         <publish/>
     </target>
-
     <target name="all" depends="clean,jar"
         description="Cleans, compiles, and builds the distribution Jar file."/>
-
     <target name="javadocs" depends="compile">
         <javadoc destdir="${build.dir}/javadocs"
                  author="true"
@@ -455,22 +411,18 @@ more information about each.
             <tag name="todo" scope="all" description="To do:"/>
         </javadoc>
     </target>
-
     <target name="release" depends="jar,javadocs,test,opendcs,publish" description="Generates signed bundle suitable for maven central upload."
             if="isUnix"
     >
         <mkdir dir="${build.release.dir}"/>
         <copy file="${dist.jar}" tofile="${build.release.dir}/opendcs-${version}.jar"/>
         <copy file="${build.dir}/lib/opendcs.pom" tofile="${build.release.dir}/opendcs-${version}.pom"/>
-
         <jar jarfile="${build.release.dir}/opendcs-${version}-javadoc.jar"
              basedir="${build.dir}/javadocs"
              update="true"/>
-
         <jar jarfile="${build.release.dir}/opendcs-${version}-sources.jar">
             <fileset dir="${src.dir}" includes="**/*.java"/>
         </jar>
-
         <available property="have.gpg" file="gpg" filepath="${PATH}"/>
         <if>
             <not>
@@ -491,7 +443,6 @@ more information about each.
             </else>
         </if>
     </target>
-
     <!-- Builds staging area for IzPack Installer -->
     <target name="stage" depends="jar,common.resolve.build,docs.build">
         <mkdir dir="stage"/>
@@ -504,7 +455,6 @@ more information about each.
         <mkdir dir="stage/examples"/>
         <mkdir dir="stage/python"/>
         <mkdir dir="stage/poll"/>
-
         <!-- build the sample database -->
         <mkdir dir="stage/edit-db"/>
         <mkdir dir="stage/edit-db/config"/>
@@ -523,13 +473,11 @@ more information about each.
         <mkdir dir="stage/schema/hdb"/>
         <mkdir dir="stage/schema/opendcs-oracle"/>
         <mkdir dir="stage/schema/noaa"/>
-
         <copy todir="stage/edit-db">
             <fileset dir="${project.dir}/install/edit-db">
                 <include name="**/*.xml"/>
             </fileset>
         </copy>
-
         <copy todir="stage/icons">
             <fileset dir="${project.dir}/install/icons"/>
         </copy>
@@ -537,7 +485,6 @@ more information about each.
             <tarfileset dir="stage" includes="icons/**">
             </tarfileset>
         </tar>
-
         <copy todir="stage/bin">
             <fileset dir="${project.dir}/install/bin"/>
             <fileset dir="build/lib">
@@ -566,9 +513,7 @@ more information about each.
                     <regexpmapper from="^(?!Cobra-1.0.2.jar|LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
                 </chainedmapper>
             </mappedresources>
-
         </copy>
-
         <copy todir="stage/imports/comp-standard">
             <fileset dir="${src.dir}/decodes/tsdb/algo">
                 <include name="*.xml"/>
@@ -593,7 +538,6 @@ more information about each.
                 <include name="*.xml"/>
             </fileset>
         </copy>
-
         <copy todir="stage">
             <fileset dir="${project.dir}/izpack">
                 <include name="opendcs-${MAJ_VER}-${MIN_VER}.xml"/>
@@ -607,49 +551,42 @@ more information about each.
                 <include name="LddsConnections"/>
             </fileset>
         </copy>
-
-		<if>
-			<not><equals arg1="${no.docs}" arg2="true"/></not>
-			<then>
-				<copy todir="stage/doc/html">
-					<fileset dir="${docs.output}/html">
-						<include name="**"/>
-						<exclude name=".buildinfo"/>
-					</fileset>
-				</copy>
-
-
-				<if>
-					<!-- the output between PDF and html is a bit different -->
-					<equals arg1="${sphinx.target}" arg2="latexpdf"/>
-					<then>
-						<mkdir dir="stage/doc/pdf"/>
-						<echo message="copying opendcs.pdf."/>
-						<copy todir="stage/doc/pdf">
-							<fileset dir="${docs.output}/latex">
-								<include name="*.pdf"/>
-							</fileset>
-						</copy>
-					</then>
-					<else>
-						<echo message="copying html files."/>
-					</else>
-				</if>
-			</then>
-		</if>
-
+        <if>
+            <not><equals arg1="${no.docs}" arg2="true"/></not>
+            <then>
+                <copy todir="stage/doc/html">
+                    <fileset dir="${docs.output}/html">
+                        <include name="**"/>
+                        <exclude name=".buildinfo"/>
+                    </fileset>
+                </copy>
+                <if>
+                    <!-- the output between PDF and html is a bit different -->
+                    <equals arg1="${sphinx.target}" arg2="latexpdf"/>
+                    <then>
+                        <mkdir dir="stage/doc/pdf"/>
+                        <echo message="copying opendcs.pdf."/>
+                        <copy todir="stage/doc/pdf">
+                            <fileset dir="${docs.output}/latex">
+                                <include name="*.pdf"/>
+                            </fileset>
+                        </copy>
+                    </then>
+                    <else>
+                        <echo message="copying html files."/>
+                    </else>
+                </if>
+            </then>
+        </if>
         <tar destfile="stage/doc.tar.gz" compression="gzip">
             <tarfileset dir="stage" includes="doc/**">
             </tarfileset>
         </tar>
-
-
         <copy todir="stage/poll">
             <fileset dir="${project.dir}/install/poll">
                 <include name="*.poll"/>
             </fileset>
         </copy>
-
         <copy todir="stage">
             <fileset dir="${project.dir}/install/lrgs">
                 <include name="archive"/>
@@ -664,29 +601,22 @@ more information about each.
                 <include name="lrgs.service"/>
             </fileset>
         </copy>
-
         <copy todir="stage/schema/cwms">
             <fileset dir="${project.dir}/schema/cwms"/>
         </copy>
-
         <copy todir="stage/schema/hdb">
             <fileset dir="${project.dir}/schema/hdb"/>
         </copy>
-
         <copy todir="stage/schema/opendcs-oracle">
             <fileset dir="${project.dir}/schema/opendcs-oracle"/>
         </copy>
-
         <copy todir="stage/schema/noaa">
             <fileset dir="${project.dir}/schema/noaa"/>
         </copy>
-
         <copy todir="stage/python">
             <fileset dir="${project.dir}/python"/>
         </copy>
-
     </target>
-
     <!-- same as package, but remove libraries not needed by USACE or USBR -->
     <target name="nonfed" depends="stage">
         <delete file="stage/dep/jep-2.4.1.jar"/>
@@ -703,7 +633,6 @@ more information about each.
             <property name="hdb.preselect" value="no"/>
         </izpack>
     </target>
-
     <!-- same as nonfed, but includes OpenTSDB and computation files -->
     <target name="opendcs" depends="stage,common.izpack.dependencies">
         <!-- Invokes izpack to build installable package with defaults for CWMS -->
@@ -714,10 +643,8 @@ more information about each.
                 inheritAll="true"
                 basedir="stage"
                 izPackDir="${izpack.dir}">
-
         </izpack>
     </target>
-
     <!-- same as OpenTSDB, but HDB package is preselected, needed for headless install -->
     <target name="hdb" depends="stage,common.izpack.dependencies">
         <!-- Invokes izpack to build installable package with defaults for CWMS -->
@@ -730,7 +657,6 @@ more information about each.
                 izPackDir="${izpack.dir}">
         </izpack>
     </target>
-
     <target name="cwmstar" depends="stage">
         <delete file="stage/dep/ojdbc8.jar"/>
         <delete file="stage/dep/ojdbc6.jar"/>
@@ -762,7 +688,6 @@ more information about each.
             <tarfileset file="stage/schema/cwms/importDecodesTemplate.sh" filemode="755" prefix="schema/cwms"/>
             <tarfileset file="stage/schema/cwms/createDefinesSql.sh" filemode="755" prefix="schema/cwms"/>
             <tarfileset file="stage/schema/cwms/createTableSpaces.sh" filemode="755" prefix="schema/cwms"/>
-
         </tar>
     </target>
 
@@ -775,20 +700,15 @@ more information about each.
             https://stackoverflow.com/a/11617592
         -->
         <!-- resolve -->
-
         <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="groovy.classpath"/>
-
         <groovy>
             import groovy.xml.MarkupBuilder
-
             //
             // Generate the project file
             //
             project.log("Creating .project")
-
             new File(".project").withWriter { writer ->
                 def xml = new MarkupBuilder(writer)
-
                 xml.projectDescription() {
                     name(project.name)
                     comment()
@@ -814,36 +734,57 @@ more information about each.
                     }
                 }
             }
-
             //
             // Generate the classpath file
             //
             // The "lib" classpathentry fields are populated using the ivy artifact report
             //
             project.log("Creating .classpath")
-
             new File(".classpath").withWriter { writer ->
                 def xml = new MarkupBuilder(writer)
-
                 xml.classpath() {
-                    classpathentry(kind:"src",    path:"src/main/java", output="bin/main")
-                    classpathentry(kind:"src",    path:"src/main/resources", output="bin/main")
-                    classpathentry(kind:"src",    path:"src/test/java", output="bin/test")
-                    classpathentry(kind:"src",    path:"src/test-integration/java", output="bin/test-integration")
-                    classpathentry(kind:"src",    path:"src/test-gui/java", output="bin/test-gui")
-                    classpathentry(kind:"output", path:"bin")
+                    classpathentry(kind:"src",    path:"src/main/java", output: "bin/main")
+                    classpathentry(kind:"src",    path:"src/main/resources", output: "bin/main")
+                    classpathentry(kind:"src",    path:"src/test/java", output: "bin/test") {
+                        attributes() {
+                            attribute(name: "test", value: "true")
+                        }
+                    }
+                    classpathentry(kind:"src",    path:"src/test-integration/java", output: "bin/test-integration") {
+                        attributes() {
+                            attribute(name: "test", value: "true")
+                        }
+                    }
+                    classpathentry(kind:"src",    path:"src/test-gui/java", output: "bin/test-gui") {
+                        attributes() {
+                            attribute(name: "test", value: "true")
+                        }
+                    }
+                    classpathentry(kind:"output", path:"bin/project")
                     classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
-
-                    project.getReference("runtime.classpath").each {
-                        classpathentry(kind:"lib", path:it)
+                    def rtCP = project.getReference("runtime.classpath")
+                    rtCP.each {
+                        classpathentry(kind:"lib", path:it, from:"runtime")
                     }
-
-                    project.getReference("test.classpath").each {
-                        classpathentry(kind:"lib", path:it)
+                    mkp.comment("\ntest\n")
+                    def testCP = project.getReference("test.classpath")
+                    testCP.findAll(tcpe -> !rtCP.contains(tcpe))
+                          .each {
+                            classpathentry(kind:"lib", path:it, from: "test")  {
+                                attributes() {
+                                    attribute(name: "test", value: "true")
+                                }
+                            }
                     }
-
-                    project.getReference("junit.platform.libs.classpath").each {
-                        classpathentry(kind:"lib", path:it)
+                    mkp.comment("testplatform")
+                    project.getReference("junit.platform.libs.classpath")
+                           .findAll(cpe -> !(testCP.contains(cpe) || rtCP.contains(cpe)))
+                           .each {
+                        classpathentry(kind:"lib", path:it, from:"platform") {
+                            attributes() {
+                                attribute(name: "test", value: "true")
+                            }
+                        }
                     }
                 }
             }
@@ -856,13 +797,10 @@ more information about each.
             As it is impossible to know everyone's configuration and preferences this target does the bear minimum
             to get Eclipse going. You will have to do a "build all" or run ant jar on the command line to make
             sure dependencies are in place.
-
             The project currently requires Java 8 due to a dependencies on tools.jar. It is left to the eclipse user
             to make sure a JDK is available and configured correctly for that need.
         </echo>
     </target>
-
-
     <target name="checkstyle" depends="common.resolve.build" description="Verify files are formatted correctly.">
         <checkstyle config="config/checkstyle.xml">
             <fileset dir="src/main/java" includes="**/*.java"/>
@@ -891,8 +829,6 @@ more information about each.
             </style>
         </xslt>
     </target>
-
-
     <target name="cpd" depends="common.resolve.build" description="Duplicate code checker">
         <mkdir dir="${pmd.output.dir}/cpd"/>
         <cpd minimumTokenCount="100" outputFile="${pmd.output.dir}/cpd/cpd.xml" format="xml" encoding="UTF-8"
@@ -903,21 +839,17 @@ more information about each.
         </cpd>
         <xslt in="${pmd.output.dir}/cpd/cpd.xml" style="config/cpdhtml.xslt" out="${pmd.output.dir}/cpd/cpd.html" />
     </target>
-
     <target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
-
     <!-- Still debating on if this should depend on all the tests, but it's perfectly valid to only want to see
          coverage for what's actually been generated. -->
     <target name="coverage.report" depends="common.resolve.build">
         <jacoco:merge destfile="${reports.dir}/coverage.exec">
             <fileset dir="${coverage.dir}" includes="*.exec"/>
         </jacoco:merge>
-
         <jacoco:report>
             <executiondata>
                 <file file="${reports.dir}/coverage.exec"/>
             </executiondata>
-
             <structure name="OpenDCS">
                 <classfiles>
                     <fileset dir="${build.classes}"
@@ -927,11 +859,9 @@ more information about each.
                     <fileset dir="${src.dir}"/>
                 </sourcefiles>
             </structure>
-
             <html destdir="${reports.dir}/coverage.html"/>
         </jacoco:report>
         <!--
-
             Thank you to
             https://stackoverflow.com/a/71917464
             and
