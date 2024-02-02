@@ -96,8 +96,7 @@ public class SiteDAO
 	public String siteAttributes = 
 		"id, latitude, longitude, nearestCity, state, "
 		+ "region, timezone, country, elevation, elevUnitAbbr, description";
-	public String siteNameAttributes =
-		"siteid, nameType, siteName, dbNum, agency_cd";
+	public String siteNameAttributes;
 	public String siteTableName = "Site";
 	protected String siteTableKeyColumn = "id";
 	
