@@ -313,7 +313,7 @@ public class SiteDAO
 				siteHash.put(site.getKey(), site);
 			});
 
-			q = "SELECT " + siteNameAttributes + " FROM SiteName";
+			q = "SELECT " + siteNameAttributes + " FROM SiteName order by nameType, siteName";
 			final SiteName prevName = new SiteName(null, "","");
 			DbKey prevId[] = new DbKey[1];
 			prevId[0] = DbKey.NullKey;
