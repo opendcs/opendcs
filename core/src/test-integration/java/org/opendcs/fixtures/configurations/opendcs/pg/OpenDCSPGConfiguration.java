@@ -38,6 +38,8 @@ public class OpenDCSPGConfiguration implements Configuration
 {
     private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
 
+    public static final String NAME = "OpenDCS-Postgres";
+
     private static PostgreSQLContainer<?> db = null;
     private File userDir;
     private File propertiesFile;
@@ -221,6 +223,7 @@ public class OpenDCSPGConfiguration implements Configuration
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
      * @return
      */
+    @Override
     public boolean supportsDao(Class<? extends DaoBase> dao)
     {
         Objects.requireNonNull(dao, "You must specifiy a valid class, not null.");
@@ -236,5 +239,11 @@ public class OpenDCSPGConfiguration implements Configuration
             return true;
         }
         return false;
+    }
+
+    @Override
+    public String getName()
+    {
+        return NAME;
     }
 }

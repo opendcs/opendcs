@@ -354,9 +354,9 @@ public class LoadingAppDao
                     {
                         id = getSingleResult(q, rs -> DbKey.createDbKey(rs,1),appName);
                     }
-                    catch(SQLException ex)
+                    catch (SQLException ex)
                     {
-                        warning("Error getting app ID: " + ex);
+                        warning("Error getting app ID: " + ex.getLocalizedMessage());
                     }
                 }
                 app.setAppId(id);
@@ -389,7 +389,7 @@ public class LoadingAppDao
                         {
                             updateQuery.append(",");
                         }
-                        updateQuery.append(",");
+                        updateQuery.append(" ");
                     }
                     updateQuery.append(" WHERE LOADING_APPLICATION_ID = ?"); //+ id;
 
@@ -601,7 +601,7 @@ public class LoadingAppDao
 
     }
 
-    /**
+	/**
      * Helper method Parses result set & returns lock object.
      * @param rs ResultSet containing the data
      * @return lock or null if unsuccessful.
@@ -727,29 +727,29 @@ public class LoadingAppDao
     @Override
     public Date getLastModified(DbKey appId)
     {
-        String q = "select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
+		String q = "select PROP_VALUE from REF_LOADING_APPLICATION_PROP "
                 + "where LOADING_APPLICATION_ID = ?"
                 + " and PROP_NAME = ?" ;
         try
         {
-            return getSingleResult(q, rs ->
-                    {
-                        try
-                        {
-                            return lastModifiedSdf.parse(rs.getString(1));
-                        }
-                        catch (ParseException ex)
-                        {
-                            throw new SQLException("Unable to parse returned date/time string",ex);
-                        }
-                    },
-                    appId.getValue(),"LastModified");
+			return getSingleResult(q, rs ->
+					{
+						try
+						{
+							return lastModifiedSdf.parse(rs.getString(1));
+						}
+						catch (ParseException ex)
+						{
+							throw new SQLException("Unable to parse returned date/time string",ex);
+						}
+					},
+					appId.getValue(),"LastModified");
         }
         catch(Exception ex)
         {
             warning("Cannot retrieve or parse last modify time for appId="
                 + appId + ": " + ex);
         }
-        return null;
+		return null;
     }
 }

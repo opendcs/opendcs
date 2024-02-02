@@ -998,7 +998,20 @@ public class XmitRecordDAO
         logger.debug2("XmitRecordDAO.getLastLocalRecvTime: " + q);
         try
         {
-            return getSingleResultOr(q, rs -> new Date(rs.getLong(1)),null);
+            return getSingleResultOr(q, rs ->
+            {
+                /* Some databases will return a single row of NULL during a max operation.
+                 * This will handle that case correctly
+                 */
+                Date ret = null;
+                long timeValue = rs.getLong(1);
+                if (!rs.wasNull())
+                {
+                    ret = new Date(timeValue);
+                }
+                return ret;
+            },
+            null);
         }
         catch(SQLException ex)
         {

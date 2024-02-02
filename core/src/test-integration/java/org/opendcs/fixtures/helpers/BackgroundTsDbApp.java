@@ -1,15 +1,19 @@
 package org.opendcs.fixtures.helpers;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.junit.function.ThrowingRunnable;
+
 import decodes.tsdb.CpCompDependsUpdater;
 import decodes.tsdb.TsdbAppTemplate;
-
+import opendcs.util.functional.ThrowingFunction;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 
@@ -20,7 +24,8 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
  * the moment each assumes it's the only "OpenDCS" process running so that
  * will have to wait until we have more of this testing in place.
  */
-public class BackgroundTsDbApp<App extends TsdbAppTemplate> {
+public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
+{
     private static final Logger log = Logger.getLogger(BackgroundTsDbApp.class.getName());
 
     private String name;
@@ -62,6 +67,35 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> {
         }
     }
 
+    public static boolean waitForResult(ThrowingFunction<Long, Boolean, Exception> task,
+                                        long waitFor, TimeUnit waitForUnit,
+                                        long checkEvery, TimeUnit checkEveryUnit) throws Exception
+    {
+        boolean ret = false;
+        long start = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        long interval = checkEveryUnit.toMillis(checkEvery);
+        long waitLength = waitForUnit.toMillis(waitFor);
+        do
+        {
+            now = System.currentTimeMillis();
+            ret = task.accept(now);
+            if(!ret)
+            {
+                try
+                {
+                    Thread.sleep(interval);
+                }
+                catch (InterruptedException ex)
+                {
+                    /* do nothing, just begin loop again */
+                }
+            }
+        }
+        while(ret!=true && (now - start) < waitLength);
+        return ret;
+    }
+
     private BackgroundTsDbApp(Class<?> clazz, String name, File propertiesFile, File logFile, EnvironmentVariables env,
                            String ...args) throws Exception
     {
@@ -85,6 +119,19 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> {
         Map<String,String> processEnv = pb.environment();
         processEnv.putAll(env.getVariables());
         app = pb.start();
+        Runtime.getRuntime().addShutdownHook(
+            new Thread(() -> 
+            {
+                try
+                {
+                this.stop();
+                }
+                catch (Exception ex)
+                {
+                    throw new RuntimeException(ex);
+                }
+            }, "ShutdownHook-name")
+        );
     }
 
     public void stop() throws Exception
@@ -100,6 +147,19 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> {
         synchronized(app)
         {
             return app.isAlive();
+        }
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        try
+        {
+            this.stop();
+        }
+        catch (Exception ex)
+        {
+            throw new IOException("Stop operation not successful.", ex);
         }
     }
 }

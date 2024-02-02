@@ -25,6 +25,8 @@ public class XmlConfiguration implements Configuration
 {
     private static final Logger logger = Logger.getLogger(XmlConfiguration.class.getName());
 
+    public static final String NAME = "OpenDCS-XML";
+
     File userDir;
     File propertiesFile;
     private boolean started = false;
@@ -81,5 +83,11 @@ public class XmlConfiguration implements Configuration
     public Map<Object, Object> getEnvironment()
     {
         return new HashMap<>();
+    }
+
+    @Override
+    public String getName()
+    {
+        return NAME;
     }
 }
