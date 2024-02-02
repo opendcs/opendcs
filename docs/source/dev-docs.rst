@@ -295,7 +295,7 @@ Integration tests inherit from :code:AppTestBase. This simplifies access to reso
 |protected Configuration configuration;      |:code:`Configuration` that was  |
 |                                            |create for this run. Contains   |
 |                                            |reference to user.properties and|
-|                                            | other specific information.    |
+|                                            |other specific information.     |
 |                                            |This is provided by default as  |
 |                                            |almost all interactions will    |
 |                                            |require access to the           |
@@ -309,7 +309,7 @@ At the Class and method level the following annotations are available.
 |Annotation                                  |Description                     |
 +============================================+================================+
 |DecodesConfigurationRequired                |List of database import files   |
-|                                            |needed for tests to succeed.     |
+|                                            |needed for tests to succeed.    |
 |                                            |Can be set at the Class level,  |
 |                                            |Method level, or both in which  |
 |                                            |case the sets will be merged    |

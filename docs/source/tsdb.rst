@@ -740,14 +740,14 @@ Example: suppose you wanted to transfer data from a group of time series
 on your CWMS database into an OpenTSDB database. Suppose the group is
 called “Stages”.
 
-1. On the CWMS Database, run::
+1. On the CWMS Database, run:
 
    outputts -S all -F tsimport group:Stage > somefile
 
 2. Transfer “somefile” from the CWMS machine to the OpenTSDB
    installation.
 
-3. On the OpenTSDB installation run::
+3. On the OpenTSDB installation run:
 
 
    importts somefile
