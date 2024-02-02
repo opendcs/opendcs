@@ -104,4 +104,9 @@ public interface Configuration
     {
         return false;
     };
+
+    /* The name of this configuration
+    * @return
+    */
+    public String getName();
 }

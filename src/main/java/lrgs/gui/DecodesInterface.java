@@ -102,6 +102,9 @@ public class DecodesInterface
 	static boolean initializedForEditing = false;
 	public static boolean silent = false;
 	private static boolean isGUI = false;
+	// No setter, used by IntegrationTests which will use reflection.
+	// More work required to find a better way.
+	private static boolean preventDecodesShutdown = false;
 
 	LrgsDataSource dataSource;
 	java.util.TimeZone timeZone;
@@ -513,16 +516,20 @@ if (f.exists()) return false;
 	 */
 	public static void shutdownDecodes()
 	{
-		Logger.instance().info("Shutting down Decodes Connection.");
-		Database db = Database.getDb();
-		if (db != null)
+		if (!preventDecodesShutdown)
 		{
-			DatabaseIO dbio = db.getDbIo();
-			if (dbio != null)
-				dbio.close();
-			db.setDbIo(null);
+			Logger.instance().info("Shutting down Decodes Connection.");
+			Database db = Database.getDb();
+			if (db != null)
+			{
+				DatabaseIO dbio = db.getDbIo();
+				if (dbio != null)
+				{
+					dbio.close();
+				}
+				db.setDbIo(null);
+			}
+			decodesInitialized = initializedForDecoding = initializedForEditing = false;
 		}
-		decodesInitialized = initializedForDecoding = initializedForEditing = false;
 	}
-
 }

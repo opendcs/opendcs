@@ -33,7 +33,7 @@ import opendcs.dao.CompDependsNotifyDAO;
     "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
     "shared/presgrp-regtest.xml"
 })
-@ComputationConfigurationRequired("shared/loading-apps.xml")
+@ComputationConfigurationRequired({"shared/loading-apps.xml","${DCSTOOL_HOME}/imports/comp-standard/algorithms.xml"})
 public class CompDependsDaoTestIT extends AppTestBase
 {
     @ConfiguredField
@@ -57,11 +57,12 @@ public class CompDependsDaoTestIT extends AppTestBase
              * it's an artifact of just how many times Database:setDb gets called during a test run
              * and not an issue with general operation. Further investigate is required.
              */
-            Database.setDb(decodesDb);
+            //Database.setDb(decodesDb);
             cd.clearScratchpad();
+            cd.doModify("delete from cp_depends_notify", new Object[0]);
             cd.doModify("delete from cp_comp_depends", new Object[0]);
-            assertTrue(cd.getResults("select event_type from cp_depends_notify", 
-                       rs -> rs.getString(0)).isEmpty());
+            assertTrue(cd.getResults("select * from cp_comp_depends",
+                                     rs -> rs.getLong(1)).isEmpty());
             TimeSeriesIdentifier tsIdInput = db.makeEmptyTsId();
             TimeSeriesIdentifier tsIdOutput = db.makeEmptyTsId();
             tsIdInput.setUniqueString("TESTSITE1.Stage.Inst.15Minutes.0.raw");
@@ -70,23 +71,31 @@ public class CompDependsDaoTestIT extends AppTestBase
             DbKey outputKey = tsDAI.createTimeSeries(tsIdOutput);
 
             DbComputation comp = new DbComputation(DbKey.NullKey, "stage_flow");
-            DbCompParm input = new DbCompParm("input", inputKey, tsIdInput.getInterval(), tsIdInput.getTableSelector(), 0);
-            DbCompParm output = new DbCompParm("output", outputKey, tsIdOutput.getInterval(), tsIdOutput.getTableSelector(), 0);
+            DbCompParm input = new DbCompParm("indep", inputKey, tsIdInput.getInterval(), tsIdInput.getTableSelector(), 0);
+            DbCompParm output = new DbCompParm("dep", outputKey, tsIdOutput.getInterval(), tsIdOutput.getTableSelector(), 0);
             comp.addParm(input);
             comp.addParm(output);
             comp.setAlgorithmName("TabRating");
+            comp.setApplicationName("compproc_regtest");
             comp.setEnabled(true);
 
             compDAI.writeComputation(comp);
 
-            BackgroundTsDbApp.waitForApp(CpCompDependsUpdater.class,
+            try(BackgroundTsDbApp<?> app =
+                    BackgroundTsDbApp.forApp(CpCompDependsUpdater.class,
                                             "compdepends",
                                             configuration.getPropertiesFile(),
                                             new File(configuration.getUserDir(),"cdn-test.log"),
-                                            environment, 20, TimeUnit.SECONDS, "-O");
-            
-            assertFalse(cd.getResults("select event_type from cp_depends_notify", 
-                       rs -> rs.getString(1)).isEmpty());
+                                            environment);)
+            {
+                assertTrue(
+                    BackgroundTsDbApp.waitForResult(
+                        timeMs -> !cd.getResults("select * from cp_comp_depends", rs -> rs.getLong(1))
+                                     .isEmpty(),
+                        2, TimeUnit.MINUTES,
+                        5, TimeUnit.SECONDS)
+                );
+            }
         }
     }
 }

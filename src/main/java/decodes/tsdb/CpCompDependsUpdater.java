@@ -109,6 +109,7 @@ import opendcs.dai.DaiBase;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
+import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
@@ -888,7 +889,7 @@ public class CpCompDependsUpdater
         {
             toAdd.clear();
         }
-        try    (TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+        try (TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
              TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();)
         {
             if (comp.isEnabled() && comp.getProperty("timedCompInterval") == null)
@@ -1200,8 +1201,7 @@ public class CpCompDependsUpdater
         toAdd.add(rec);
     }
 
-    protected void writeToAdd2Db(DbKey compId2Delete)
-        throws DbIoException
+    protected void writeToAdd2Db(DbKey compId2Delete) throws DbIoException
     {
         if (toAdd.size() == 0)
         {
@@ -1213,20 +1213,20 @@ public class CpCompDependsUpdater
             {
                 // Clear the scratchpad
                 dao.clearScratchpad();
-                compDependsDAO.addRecordsToScratchPad(toAdd);
-
                 if (compId2Delete != Constants.undefinedId)
                 {
-                    compDependsDAO.deleteCompDependsForCompId(compId2Delete);
+                    dao.deleteCompDependsForCompId(compId2Delete);
                 }
-
+                // We do this after as deleteCompDependsForCompId
+                // removes from both cp_comp_depends and cp_comp_depends_scratchpad
+                dao.addRecordsToScratchPad(toAdd);
                 // Just in case, delete any records from the scratchpad that are already
                 // in compdepends:
                 dao.removeExistingFromScratch();
                 dao.fillActiveFromScratch();
                 // Finally, clear the scratchpad, otherwise this can leave a foreign key to TS_ID
                 // that may prevent time series from being deleted.
-                compDependsDAO.clearScratchpad();
+                dao.clearScratchpad();
 
                 // Now, since we deleted the deps at the start of the operation,
                 // even if the dependency existed before treat it as a new dependency.
@@ -1278,6 +1278,47 @@ public class CpCompDependsUpdater
 //            }
 //        }
 //    }
+
+    /**
+     * Helper function to print comp_depends table contents as
+     * operations are done.
+     *
+     * Leave it place, only use when doing testing and then remove.
+     * @param dao
+     * @throws DbIoException
+     */
+    private void render_table(DaoBase dao) throws DbIoException
+    {
+        render_table(dao, null);
+    }
+
+    /**
+     * Helper function to print comp_depends table contesnts
+     * as operatiosn are done.
+     * @param dao
+     * @param tableName
+     * @throws DbIoException
+     */
+    private void render_table(DaoBase dao, String tableName) throws DbIoException
+    {
+        final String table = "cp_comp_depends" + (tableName != null ? tableName : "");
+        final String q = "select * from " + table;
+        final Logger log = Logger.instance();
+        try
+        {
+            log.debug3("showing " + table);
+            dao.doQuery(q, rs ->
+            {
+                long tsKey = rs.getLong(1);
+                long compKey = rs.getLong(2);
+                log.debug3(String.format("depends%s(%d,%d)", tableName, tsKey, compKey));
+            });
+        }
+        catch (SQLException ex)
+        {
+            throw new DbIoException("Unable to retrieve table contents.", ex);
+        }
+    }
 
     /**
      * Flush the cache and then load all the CP_COMP_DEPENDS records

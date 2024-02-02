@@ -444,7 +444,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 	@Override
 	public void addRecordsToScratchPad(Collection<CpCompDependsRecord> records) throws DbIoException
 	{
-		String q = "insert into cp_comp_depends_scratchpad(ts_id, computation_id) values(?,?)"; //+ ccd.getTsKey() + ", " + ccd.getCompId() + ")";
+		String q = "insert into cp_comp_depends_scratchpad(ts_id, computation_id) values(?,?)";
 		try
 		{
 			withStatement(q, stmt ->
@@ -452,7 +452,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 				for(CpCompDependsRecord ccd : records)
 				{
 					stmt.setLong(1, ccd.getTsKey().getValue());
-					stmt.setLong(2,ccd.getCompId().getValue());
+					stmt.setLong(2, ccd.getCompId().getValue());
 					stmt.addBatch();
 				}
 				stmt.executeBatch();

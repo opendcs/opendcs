@@ -1,24 +1,22 @@
-package org.opendcs.fixtures.configurations.xml;
+package org.opendcs.fixtures.configurations.cwms;
 
 import java.io.File;
 
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
 
-public class XmlConfigurationProvider implements ConfigurationProvider
+public class CwmsOracleConfigurationProvider implements ConfigurationProvider
 {
-
     @Override
     public String getImplementation()
     {
-        return XmlConfiguration.NAME;
+        return CwmsOracleConfiguration.NAME;
     }
 
     @Override
     public Configuration getConfig(File tempDir) throws Exception
     {
-        final XmlConfiguration config = new XmlConfiguration(tempDir);
+        CwmsOracleConfiguration config = new CwmsOracleConfiguration(tempDir);
         return config;
-    }
-
+    }   
 }
