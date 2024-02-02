@@ -10,22 +10,41 @@ Check out the :doc:`quick-start` section for how to get started.
 
    This project is under active development.
 
-Contents
---------
+Documentation Outline
+---------------------
+OpenDCS documentation is currently divided into three sections
 
 .. toctree::
    :maxdepth: 1
+   :caption: Getting Started
    
-
-   Quick Start <./quick-start.rst>
-   Install Guide <./install-guide.rst>
-   LRGS Guide <./lrgs-userguide.rst>
-   Computation Guide <./cp-userguide.rst>
-   DECODES Guide <./decoding-guide.rst>
-   Routing & Scheduling Guide <./routesched-guide.rst>
-   Snotel Addendum <./snotel.rst>
-   TimeSeriesDatabase <./tsdb.rst>
-   Alarms <./alarms.rst>
-   CWMS Interface <./cwms-interface.rst>
-   Developer Documentation <./dev-docs.rst>
+   Software Set-Up <./start-software.rst>
+   Computations - Intro <./start-computations.rst>
+   Routing Spec - Intro<./start-computations.rst>
+   Screening - Intro <./start-computations.rst>
+   
+.. toctree::
+   :maxdepth: 1
+   :caption: Resources
+   
+   Algorithms <./start-computations.rst>   
+   Computations <./start-computations.rst>
+   DECODING <./start-computations.rst>
+   Screening Editor <./start-computations.rst>
+   
+.. toctree::
+   :maxdepth: 1
+   :caption: Legacy Documentation
+   
+   Quick Start <./legacy-quick-start.rst>
+   Install Guide <./legacy-install-guide.rst>
+   LRGS Guide <./legacy-lrgs-userguide.rst>
+   Computation Guide <./legacy-cp-userguide.rst>
+   DECODES Guide <./legacy-decoding-guide.rst>
+   Routing & Scheduling Guide <./legacy-routesched-guide.rst>
+   Snotel Addendum <./legacy-snotel.rst>
+   TimeSeriesDatabase <./legacy-tsdb.rst>
+   Alarms <./legacy-alarms.rst>
+   CWMS Interface <./legacy-cwms-interface.rst>
+   Developer Documentation <./legacy-dev-docs.rst>
    
