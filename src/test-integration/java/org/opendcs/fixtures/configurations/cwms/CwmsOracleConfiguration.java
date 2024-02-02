@@ -40,7 +40,7 @@ public class CwmsOracleConfiguration implements Configuration
 
     private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","docker pull gvenzl/oracle-xe:21.3.0-faststart");
     private static final String CWMS_ORACLE_VOLUME = System.getProperty("opendcs.cwms.oracle.volume","cwms_opendcs_volume");
-    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","registry.hecdev.net/cwms/schema_installer:23.03.16");
+    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","<must be see on commandline>");
 
     public static final String NAME = "CWMS-Oracle";
 
