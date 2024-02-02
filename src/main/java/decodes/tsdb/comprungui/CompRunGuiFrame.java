@@ -182,10 +182,6 @@ public class CompRunGuiFrame extends TopFrame
 		setAllLabels();
 		chartXLabel = "Time";
 
-		Date tempDate = new Date();
-		fromDTCal = new DateTimeCalendar(fromLabel, null, "dd MMM yyyy", timeZoneStr);
-		toDTCal = new DateTimeCalendar(toLabel, tempDate, "dd MMM yyyy", timeZoneStr);
-
 		JPanel mycontent = (JPanel)this.getContentPane();
 		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
 
@@ -304,17 +300,12 @@ public class CompRunGuiFrame extends TopFrame
 	{
 		JPanel time = new JPanel();
 		time.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED), selectTimeRun));
-		time.setLayout(new BorderLayout());
-
-		JPanel timehalf = new JPanel();
-		timehalf.setLayout(new GridBagLayout());
-		timehalf.add(fromDTCal, new GridBagConstraints(0, 0, 1, 1, 0.5, 0, GridBagConstraints.CENTER,
-			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 4, 10), 0, 0));
-		timehalf.add(new JLabel(" (" + timeZoneStr + ")"), new GridBagConstraints(1, 0, 1, 1, 0, 0,
-			GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 10, 4, 10), 0, 0));
-		timehalf.add(toDTCal, new GridBagConstraints(0, 1, 1, 1, 0.5, 0, GridBagConstraints.CENTER,
-			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 4, 10), 0, 0));
-		time.add(timehalf, BorderLayout.WEST);
+		GridBagLayout gbl_time = new GridBagLayout();
+		gbl_time.columnWidths = new int[]{353, 150, 345, 0};
+		gbl_time.rowHeights = new int[]{76, 0};
+		gbl_time.columnWeights = new double[]{0.0, 1.0, 0.0, Double.MIN_VALUE};
+		gbl_time.rowWeights = new double[]{0.0, Double.MIN_VALUE};
+		time.setLayout(gbl_time);
 
 		JPanel runhalf = new JPanel();
 		runhalf.setLayout(new GridBagLayout());
@@ -342,6 +333,29 @@ public class CompRunGuiFrame extends TopFrame
 				traceButtonPressed();
 			}
 		});
+		Date tempDate = new Date();
+		fromDTCal = new DateTimeCalendar(fromLabel, null, "dd MMM yyyy", timeZoneStr);
+		toDTCal = new DateTimeCalendar(toLabel, tempDate, "dd MMM yyyy", timeZoneStr);
+		JPanel timehalf = new JPanel();
+		timehalf.setLayout(new GridBagLayout());
+		timehalf.add(fromDTCal, new GridBagConstraints(0, 0, 1, 1, 0.5, 0, GridBagConstraints.CENTER,
+			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 4, 10), 0, 0));
+		timehalf.add(new JLabel(" (" + timeZoneStr + ")"), new GridBagConstraints(1, 0, 1, 1, 0, 0,
+			GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 10, 4, 10), 0, 0));
+		timehalf.add(toDTCal, new GridBagConstraints(0, 1, 1, 1, 0.5, 0, GridBagConstraints.CENTER,
+			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 4, 10), 0, 0));
+		GridBagConstraints gbc_timehalf = new GridBagConstraints();
+		gbc_timehalf.anchor = GridBagConstraints.NORTHWEST;
+		gbc_timehalf.insets = new Insets(0, 0, 0, 5);
+		gbc_timehalf.gridx = 0;
+		gbc_timehalf.gridy = 0;
+		time.add(timehalf, gbc_timehalf);
+		GridBagConstraints gbc_progressBar = new GridBagConstraints();
+		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
+		gbc_progressBar.insets = new Insets(0, 0, 0, 5);
+		gbc_progressBar.gridx = 1;
+		gbc_progressBar.gridy = 0;
+		time.add(progressBar, gbc_progressBar);
 
 		runhalf.add(runButton, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
@@ -349,7 +363,12 @@ public class CompRunGuiFrame extends TopFrame
 			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
 		runhalf.add(traceButton, new GridBagConstraints(0, 1, 1, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
-		time.add(runhalf, BorderLayout.EAST);
+		GridBagConstraints gbc_runhalf = new GridBagConstraints();
+		gbc_runhalf.anchor = GridBagConstraints.EAST;
+		gbc_runhalf.fill = GridBagConstraints.VERTICAL;
+		gbc_runhalf.gridx = 2;
+		gbc_runhalf.gridy = 0;
+		time.add(runhalf, gbc_runhalf);
 		return time;
 	}
 
@@ -1156,7 +1175,6 @@ public class CompRunGuiFrame extends TopFrame
 			}
 		});
 		closePanel.add(closeButton);
-		closePanel.add(progressBar);
 
 		return closePanel;
 	}
