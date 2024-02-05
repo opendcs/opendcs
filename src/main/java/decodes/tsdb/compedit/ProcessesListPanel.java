@@ -121,9 +121,9 @@ public class ProcessesListPanel extends ListPanel
 			return;
 		}
 		//Get the correct row from the table model
-		int modelrow = procTable.convertRowIndexToModel(r);
-		ProcessesListPanelTableModel tablemodel = (ProcessesListPanelTableModel)procTable.getModel();			
-		CompAppInfo cai = (CompAppInfo)tablemodel.getRowObject(modelrow);
+		int modelRow = procTable.convertRowIndexToModel(r);
+		ProcessesListPanelTableModel tableModel = (ProcessesListPanelTableModel)procTable.getModel();
+		CompAppInfo cai = (CompAppInfo)tableModel.getRowObject(modelRow);
 		openEditTab(cai);
 	}
 
@@ -157,7 +157,8 @@ public class ProcessesListPanel extends ListPanel
 					.getString("ProcessListPanel.CopyError1"));
 			return;
 		}
-		CompAppInfo existingCai = (CompAppInfo)procTableModel.getRowObject(r);
+		int modelRow = procTable.convertRowIndexToModel(r);
+		CompAppInfo existingCai = (CompAppInfo)procTableModel.getRowObject(modelRow);
 
 	    String newName = JOptionPane.showInputDialog(
 	    		CAPEdit.instance().compeditDescriptions
@@ -219,10 +220,10 @@ public class ProcessesListPanel extends ListPanel
 			return;
 		}
 
-		LoadingAppDAI loadingAppDao = CAPEdit.instance().getTimeSeriesDb().makeLoadingAppDAO();
-		try
+		try (LoadingAppDAI loadingAppDao = CAPEdit.instance().getTimeSeriesDb().makeLoadingAppDAO();)
 		{
-			CompAppInfo app = (CompAppInfo)procTableModel.getRowObject(r);
+			int modelRow = procTable.convertRowIndexToModel(r);
+			CompAppInfo app = (CompAppInfo)procTableModel.getRowObject(modelRow);
 			loadingAppDao.deleteComputationApp(app);
 		}
 		catch (Exception ex)
@@ -232,11 +233,9 @@ public class ProcessesListPanel extends ListPanel
 			Logger.instance().warning("Error attempting to delete process: " + ex);
 			PrintStream ps = Logger.instance().getLogOutput();
 			if (ps != null)
+			{
 				ex.printStackTrace(ps);
-		}
-		finally
-		{
-			loadingAppDao.close();
+			}
 		}
 	}
 

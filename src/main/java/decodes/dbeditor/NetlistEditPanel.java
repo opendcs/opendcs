@@ -302,7 +302,8 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			TopFrame.instance().showError(dbeditLabels.getString("NetlistEditPanel.EditError"));
 			return;
 		}
-		NetworkListEntry nle = tableModel.getObjectAt(netlistContentsTable.convertRowIndexToModel(row));
+		int modelRow = netlistContentsTable.convertRowIndexToModel(row);
+		NetworkListEntry nle = tableModel.getObjectAt(modelRow);
 		NetlistEntryDialog dlg = new NetlistEntryDialog(nle);
 		launchDialog(dlg);
 		if (dlg.wasOkPressed())
@@ -498,14 +499,21 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 		int rows[] = netlistContentsTable.getSelectedRows();
 		NetworkListEntry obs[] = new NetworkListEntry[nrows];
 		for (int i = 0; i < nrows; i++)
-			obs[i] = tableModel.getObjectAt(rows[i]);
+		{
+			int modelRow = netlistContentsTable.convertRowIndexToModel(rows[i]);
+			obs[i] = tableModel.getObjectAt(modelRow);
+		}
 
 		String msg = nrows == 1 ? dbeditLabels.getString("NetlistEditPanel.DeleteSingular")
 			: dbeditLabels.getString("NetlistEditPanel.DeletePlural");
 		int r = JOptionPane.showConfirmDialog(this, msg);
 		if (r == JOptionPane.OK_OPTION)
+		{
 			for (int i = 0; i < nrows; i++)
+			{
 				tableModel.deleteObject(obs[i]);
+			}
+		}
 	}
 
 	/**

@@ -491,7 +491,8 @@ public class ConfigEditPanel extends DbEditorTab
         ConfigSensor cs[] = new ConfigSensor[nrows];
         for (int x = 0; x < nrows; x++)
         {
-            cs[x] = configSensorTableModel.getObjectAt(configSensorTable.convertRowIndexToModel(rows[x]));
+            int modelRow = configSensorTable.convertRowIndexToModel(rows[x]);
+            cs[x] = configSensorTableModel.getObjectAt(modelRow);
         }
 
 

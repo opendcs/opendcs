@@ -366,7 +366,8 @@ public class RoutingSpecEditPanelOld extends DbEditorTab
 				dbeditLabels.getString("RoutingSpecEditPanel.selectNLRemove"));
 			return;
 		}
-	    NetworkList nl = tableModel.getObjectAt(r);
+		int modelRow = networkListTable.convertColumnIndexToView(r);
+	    NetworkList nl = tableModel.getObjectAt(modelRow);
 		tableModel.deleteObject(nl);
     }
 

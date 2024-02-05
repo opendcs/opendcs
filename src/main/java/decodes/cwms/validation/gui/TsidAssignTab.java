@@ -137,11 +137,16 @@ public class TsidAssignTab extends JPanel
 			int idxs[] = tsidAssignTable.getSelectedRows();
 			for(int n = 0; n < idxs.length; n++)
 			{
-				TsidScreeningAssignment tsa = (TsidScreeningAssignment)model.getRowObject(idxs[n]);
+				int modelRow = tsidAssignTable.convertRowIndexToModel(idxs[n]);
+				TsidScreeningAssignment tsa = (TsidScreeningAssignment)model.getRowObject(modelRow);
 				if (tsa.isActive() && result.equals("Active"))
+				{
 					continue;
+				}
 				else if (!tsa.isActive() && result.equals("Inactive"))
+				{
 					continue;
+				}
 				tsa.setActive(result.equals("Active"));
 				screeningDAO.assignScreening(tsa.getScreening(), tsa.getTsid(), tsa.isActive());
 			}
@@ -202,25 +207,22 @@ public class TsidAssignTab extends JPanel
 			"Are you sure you want to delete the selected " + idxs.length + " assignment(s)?", 
 			"Confirm Delete", JOptionPane.YES_NO_OPTION);
 		if (res != JOptionPane.YES_OPTION)
-			return;
-		
-		ScreeningDAI screeningDAO = null;
-		try
 		{
-			screeningDAO = frame.getTheDb().makeScreeningDAO();
+			return;
+		}
+
+		try (ScreeningDAI screeningDAO = frame.getTheDb().makeScreeningDAO();)
+		{
 			for(int n = 0; n < idxs.length; n++)
 			{
-				TsidScreeningAssignment tsa = (TsidScreeningAssignment)model.getRowObject(idxs[n]);
+				int modelRow = tsidAssignTable.convertRowIndexToModel(idxs[n]);
+				TsidScreeningAssignment tsa = (TsidScreeningAssignment)model.getRowObject(modelRow);
 				screeningDAO.unassignScreening(tsa.getScreening(), tsa.getTsid());
 			}
 		}
 		catch(Exception ex)
 		{
 			frame.showError("Error deleting screening assignments: " + ex);
-		}
-		finally
-		{
-			screeningDAO.close();
 		}
 		refresh();
 	}
@@ -233,7 +235,8 @@ public class TsidAssignTab extends JPanel
 			frame.showError("No assignment selected.");
 			return;
 		}
-		TsidScreeningAssignment tsa = (TsidScreeningAssignment)model.getRowObject(idx);
+		int modelRow = tsidAssignTable.convertRowIndexToModel(idx);
+		TsidScreeningAssignment tsa = (TsidScreeningAssignment)model.getRowObject(modelRow);
 		frame.open(tsa.getScreening());
 	}
 

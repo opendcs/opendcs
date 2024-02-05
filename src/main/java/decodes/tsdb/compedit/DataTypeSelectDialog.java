@@ -61,7 +61,7 @@ public class DataTypeSelectDialog extends GuiDialog
 
 	private void allInit()
 	{
-        try 
+        try
 		{
             jbInit();
             pack();
@@ -130,6 +130,10 @@ public class DataTypeSelectDialog extends GuiDialog
     void selectButtonPressed()
 	{
 		int row = dtListTable.getSelectedRow();
+		if (row == -1)
+		{
+			return;
+		}
 		//Get the correct row from the table model
 		selectedIndex = dtListTable.convertRowIndexToModel(row);
 		okPressed = true;

@@ -294,8 +294,9 @@ public class PlatformListPanel extends JPanel
 	 */
 	public Platform getSelectedItem() 
 	{
-		int rowNumb = this.platformSelectPanel.getPlatformListTable().getSelectedRow();
-		int rowModel = this.platformSelectPanel.getPlatformListTable().convertRowIndexToModel(rowNumb);
+		final SortingListTable table = this.platformSelectPanel.getPlatformListTable();
+		int rowNumb = table.getSelectedRow();
+		int rowModel = table.convertRowIndexToModel(rowNumb);
 		PlatformSelectTableModel model = (PlatformSelectTableModel) platformSelectPanel.getPlatformListTable()
 																					   .getModel();
 		Platform platform = model.getPlatformAt(rowModel);

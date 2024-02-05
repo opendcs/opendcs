@@ -139,25 +139,32 @@ public class PyParamSetDialog extends GuiDialog
 			showError("Select param, then press Set Value.");
 			return;
 		}
-		PyParamSpec pps = (PyParamSpec)model.getRowObject(row);
+		int modelRow = paramTable.convertRowIndexToModel(row);
+		PyParamSpec pps = (PyParamSpec)model.getRowObject(modelRow);
 
 
 		String vs = JOptionPane.showInputDialog("Enter Time Series Value: ",
 			pps.value == null ? "" : model.numFmt.format(pps.value));
 		if (vs == null)
+		{
 			return;
+		}
 		if (vs.trim().length() == 0)
-			model.setTsValueAt(row, null);
+		{
+			model.setTsValueAt(modelRow, null);
+		}
 		else
+		{
 			try
 			{
-				model.setTsValueAt(row, Double.parseDouble(vs.trim()));
+				model.setTsValueAt(modelRow, Double.parseDouble(vs.trim()));
 			}
 			catch(NumberFormatException ex)
 			{
 				showError("Invalid floating point number '" + vs.trim() + "'.");
 				return;
 			}
+		}
 	}
 
 	protected void typeTsIdPressed()
@@ -168,11 +175,13 @@ public class PyParamSetDialog extends GuiDialog
 			showError("Select param, then press Type Time Series ID.");
 			return;
 		}
-
+		int modelRow = paramTable.convertRowIndexToModel(row);
 	    String tsidStr = JOptionPane.showInputDialog(
 	    	"Enter Time Series Identifier: ");
 		if (tsidStr == null)
+		{
 			return;
+		}
 		tsidStr = tsidStr.trim();
 			
 		TimeSeriesDAI tsd = TsdbAppTemplate.theDb.makeTimeSeriesDAO();
@@ -219,7 +228,7 @@ public class PyParamSetDialog extends GuiDialog
 			try { tsid.setUniqueString(tsidStr); }
 			catch (BadTimeSeriesException ex){}
 		}
-		model.setTsidAt(row, tsid);
+		model.setTsidAt(modelRow, tsid);
 	}
 
 
@@ -232,7 +241,8 @@ public class PyParamSetDialog extends GuiDialog
 			showError("Select param, then press Select Time Series.");
 			return;
 		}
-		PyParamSpec pps = (PyParamSpec)model.getRowObject(row);
+		int modelRow = paramTable.convertRowIndexToModel(row);
+		PyParamSpec pps = (PyParamSpec)model.getRowObject(modelRow);
 		
 		if (timeSeriesSelectDialog == null)
 		{
@@ -241,13 +251,13 @@ public class PyParamSetDialog extends GuiDialog
 			timeSeriesSelectDialog.setMultipleSelection(false);
 		}
 		if (pps.tsid != null)
+		{
 			timeSeriesSelectDialog.setSelectedTS(pps.tsid);
+		}
 		parent.launchDialog(timeSeriesSelectDialog);
 		TimeSeriesIdentifier ts[] = timeSeriesSelectDialog.getSelectedDataDescriptors();
-System.out.println("Selected " + ts.length + " time series:");
-if (ts.length == 1) System.out.println("\t" + ts[0].getUniqueString());
-		// Should be either zero or 1 in the return value
-		model.setTsidAt(row, ts.length > 0 ? ts[0] : null);
+
+		model.setTsidAt(modelRow, ts.length > 0 ? ts[0] : null);
 	}
 
 	protected void okPressed()

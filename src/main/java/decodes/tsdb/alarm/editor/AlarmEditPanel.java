@@ -400,7 +400,8 @@ public class AlarmEditPanel
 			parentFrame.showError(parentFrame.eventmonLabels.getString("selectPmBeforeDelete"));
 			return;
 		}
-		procMonModel.delete(idx);
+		int modelRow = procMonTable.convertRowIndexToModel(idx);
+		procMonModel.delete(modelRow);
 		changed = true;
 	}
 
@@ -412,7 +413,8 @@ public class AlarmEditPanel
 			parentFrame.showError(parentFrame.eventmonLabels.getString("selectPmBeforeEdit"));
 			return;
 		}
-		ProcessMonitor pm = procMonModel.getProcMonAt(idx);
+		int modelRow = procMonTable.convertRowIndexToModel(idx);
+		ProcessMonitor pm = procMonModel.getProcMonAt(modelRow);
 		ProcessMonitorDialog dlg = new ProcessMonitorDialog(this);
 		dlg.setData(pm);
 		parentFrame.launchDialog(dlg);
@@ -504,7 +506,8 @@ public class AlarmEditPanel
 			parentFrame.showError(parentFrame.eventmonLabels.getString("selectFmBeforeDelete"));
 			return;
 		}
-		fileMonModel.delete(idx);
+		int modelRow = fileMonTable.convertRowIndexToModel(idx);
+		fileMonModel.delete(modelRow);
 		changed = true;
 	}
 
@@ -516,7 +519,8 @@ public class AlarmEditPanel
 			parentFrame.showError(parentFrame.eventmonLabels.getString("selectFmBeforeEdit"));
 			return;
 		}
-		FileMonitor fm = fileMonModel.getFileMonAt(idx);
+		int modelRow = fileMonTable.convertRowIndexToModel(idx);
+		FileMonitor fm = fileMonModel.getFileMonAt(modelRow);
 		FileMonitorDialog dlg = new FileMonitorDialog(this);
 		dlg.setData(fm);
 		parentFrame.launchDialog(dlg);
@@ -820,4 +824,3 @@ class ProcMonComparator implements Comparator<ProcessMonitor>
 			model.getColumnValue(pm2, sortColumn));
 	}
 }
-

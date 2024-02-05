@@ -185,8 +185,8 @@ public class GroupListPanel
 				+ " " + parentFrame.genericLabels.getString("delete") + ".");
 			return;
 		}
-
-		AlarmGroup grp = model.getGroupAt(row);
+		int modelRow = alarmGroupTable.convertRowIndexToModel(row);
+		AlarmGroup grp = model.getGroupAt(modelRow);
 		
 		if (parentFrame.isBeingEdited(grp))
 		{
@@ -216,11 +216,12 @@ public class GroupListPanel
 				+ " " + parentFrame.genericLabels.getString("copy") + ".");
 			return;
 		}
+		int modelRow = alarmGroupTable.convertRowIndexToModel(row);
 		String name = askUniqueName();
 		if (name == null)
 			return;
 		
-		AlarmGroup grp = model.getGroupAt(row);
+		AlarmGroup grp = model.getGroupAt(modelRow);
 		AlarmGroup copy = grp.noIdCopy();
 		copy.setName(name);
 		
@@ -274,7 +275,8 @@ public class GroupListPanel
 				+ " " + parentFrame.genericLabels.getString("open") + ".");
 			return;
 		}
-		AlarmGroup grp = model.getGroupAt(row);
+		int modelRow = alarmGroupTable.convertRowIndexToModel(row);
+		AlarmGroup grp = model.getGroupAt(modelRow);
 		parentFrame.editAlarmGroup(grp);
 	}
 

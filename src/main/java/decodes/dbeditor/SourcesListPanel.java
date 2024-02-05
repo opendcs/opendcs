@@ -108,8 +108,11 @@ public class SourcesListPanel extends JPanel
 	{
 		int idx = dataSourceListTable.getSelectedRow();
 		if (idx == -1)
+		{
 			return null;
-	    return tableModel.getObjectAt(idx);
+		}
+		int modelRow = dataSourceListTable.convertRowIndexToModel(idx);
+	    return tableModel.getObjectAt(modelRow);
 	}
 
 	/** Called when the 'Open' button is pressed. */

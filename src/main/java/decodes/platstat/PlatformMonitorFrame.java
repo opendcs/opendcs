@@ -148,14 +148,19 @@ public class PlatformMonitorFrame
 	protected synchronized void platformSelected()
 	{
 		if (inDbUpdate)
+		{
 			return;
+		}
 
 		int sel = platstatTable.getSelectedRow();
 		if (sel == -1)
+		{
 			return;
+		}
 		else
 		{
-			PlatformStatus ps = (PlatformStatus)platstatModel.getRowObject(sel);
+			int modelRow = platstatTable.convertRowIndexToModel(sel);
+			PlatformStatus ps = (PlatformStatus)platstatModel.getRowObject(modelRow);
 			if (ps != selectedPS)
 			{
 				selectedPS = ps;
@@ -304,4 +309,3 @@ public class PlatformMonitorFrame
 
 	}
 }
-

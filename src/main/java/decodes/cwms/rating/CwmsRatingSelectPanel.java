@@ -117,7 +117,8 @@ public class CwmsRatingSelectPanel extends JPanel
 		int r = ratingListTable.getSelectedRow();
 		if (r == -1)
 			return null;
-		return model.getAt(r);
+		int modelRow = ratingListTable.convertRowIndexToModel(r);
+		return model.getAt(modelRow);
 	}
 
 	public void refresh()
@@ -140,7 +141,8 @@ public class CwmsRatingSelectPanel extends JPanel
 		int r = ratingListTable.getSelectedRow();
 		if (r == -1)
 			return;
-		model.deleteAt(r);
+		int modelRow = ratingListTable.convertRowIndexToModel(r);
+		model.deleteAt(modelRow);
 	}
 
 	public int[] getSelectedRows()

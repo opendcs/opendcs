@@ -168,8 +168,13 @@ public class ScreeningIdListTab extends JPanel
 				+ "screening to one or more time series.");
 			return;
 		}
-
-		Screening scr = (Screening)model.getRowObject(screeningIdTable.getSelectedRow());
+		int r = screeningIdTable.getSelectedRow();
+		if (r == -1)
+		{
+			return;
+		}
+		int modelRow = screeningIdTable.convertRowIndexToView(r);
+		Screening scr = (Screening)model.getRowObject(modelRow);
 		TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(frame.getTheDb(), false, frame);
 
 		try (TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();)
@@ -271,7 +276,8 @@ public class ScreeningIdListTab extends JPanel
 			frame.showError("Select table row, then press Edit");
 			return;
 		}
-		Screening scr = (Screening)model.getRowObject(screeningIdTable.convertRowIndexToModel(row));
+		int modelRow = screeningIdTable.convertRowIndexToModel(row);
+		Screening scr = (Screening)model.getRowObject(modelRow);
 
 		// If there are any assignments, issue error
 		if (frame.getTsidAssignTab().assignmentsExistFor(scr.getScreeningName()))
@@ -330,7 +336,8 @@ public class ScreeningIdListTab extends JPanel
 			frame.showError("Select table row, then press Edit");
 			return;
 		}
-		Screening scr = (Screening)model.getRowObject(screeningIdTable.convertRowIndexToModel(row));
+		int modelRow = screeningIdTable.convertRowIndexToModel(row);
+		Screening scr = (Screening)model.getRowObject(modelRow);
 		frame.open(scr);
 	}
 

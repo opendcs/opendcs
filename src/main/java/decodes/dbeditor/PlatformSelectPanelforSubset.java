@@ -93,8 +93,11 @@ public class PlatformSelectPanelforSubset extends JPanel
 	{
 		int r = platformListTable.getSelectedRow();
 		if (r == -1)
+		{
 			return null;
-		return model.getPlatformAt(r);
+		}
+		int modelRow = platformListTable.convertRowIndexToModel(r);
+		return model.getPlatformAt(modelRow);
 	}
 
 	/**
@@ -105,7 +108,10 @@ public class PlatformSelectPanelforSubset extends JPanel
 		int idx[] = platformListTable.getSelectedRows();
 		Platform ret[] = new Platform[idx.length];
 		for(int i=0; i<idx.length; i++)
-			ret[i] = model.getPlatformAt(idx[i]);
+		{
+			int modelRow = platformListTable.convertRowIndexToModel(idx[i]);
+			ret[i] = model.getPlatformAt(modelRow);
+		}
 		return ret;
 	}
 

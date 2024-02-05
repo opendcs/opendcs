@@ -678,7 +678,8 @@ ConfigSelectController
 					dbeditLabels.getString("PlatformEditPanel.selectSensorError"));
 			return;
 		}
-		PlatformSensor ps = sensorTableModel.getObjectAt(platformSensorTable.convertRowIndexToModel(r));
+		int modelRow = platformSensorTable.convertRowIndexToModel(r);
+		PlatformSensor ps = sensorTableModel.getObjectAt(modelRow);
 		PlatformSensorEditDialog dlg = 
 			new PlatformSensorEditDialog(parent, 
 					dbeditLabels.getString("PlatformEditPanel.editPlatInfoDlgTitle"),
@@ -712,8 +713,8 @@ ConfigSelectController
 		{
 			return;
 		}
-		TransportMedium tm = transportTableModel.getObjectAt(
-			transportMediaTable.convertRowIndexToModel(r));
+		int modelRow = transportMediaTable.convertRowIndexToModel(r);
+		TransportMedium tm = transportTableModel.getObjectAt(modelRow);
 		if (tm == null)
 		{
 			parent.showError(
@@ -728,20 +729,27 @@ ConfigSelectController
 	/** Called when Transport Medium 'Delete' button pressed. */
 	void deleteTransportMediaButton_actionPerformed(ActionEvent e)
 	{
-		TransportMedium tm = transportTableModel.getObjectAt(
-				this.transportMediaTable.getSelectedRow());
+		int r = this.transportMediaTable.getSelectedRow();
+		if (r == -1)
+		{
+			return;
+		}
+		int modelRow = transportMediaTable.convertRowIndexToModel(r);
+		TransportMedium tm = transportTableModel.getObjectAt(modelRow);
 		if (tm == null)
 		{
 			parent.showError(
 					dbeditLabels.getString("PlatformEditPanel.selectTmDelete"));
 			return;
 		}
-		int r = JOptionPane.showConfirmDialog(this,
+		int result = JOptionPane.showConfirmDialog(this,
 				LoadResourceBundle.sprintf(
 						dbeditLabels.getString("PlatformEditPanel.confirmDelete"),
 						tm.getMediumId()));
-		if (r == JOptionPane.OK_OPTION)
+		if (result == JOptionPane.OK_OPTION)
+		{
 			transportTableModel.remove(tm);
+		}
 	}
 
 	/** Called when 'Is Production' checkbox is toggled. */

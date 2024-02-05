@@ -249,10 +249,13 @@ public class RoutingMonitorFrame
 			return;
 		int sel = rsRunTable.getSelectedRow();
 		if (sel == -1 || selectedRS == null)
+		{
 			return;
+		}
 		else
 		{
-			ScheduleEntryStatus ses = selectedRS.getRunHistory().get(sel);
+			int modelRow = rsRunTable.convertRowIndexToModel(sel);
+			ScheduleEntryStatus ses = selectedRS.getRunHistory().get(modelRow);
 			if (ses != selectedRun)
 			{
 				eventsPanel.clear();
@@ -277,10 +280,13 @@ public class RoutingMonitorFrame
 
 		int sel = routingTable.getSelectedRow();
 		if (sel == -1)
+		{
 			return;
+		}
 		else
 		{
-			RSBean rsb = routingModel.getRSAt(sel);
+			int modelRow = routingTable.convertRowIndexToModel(sel);
+			RSBean rsb = routingModel.getRSAt(modelRow);
 			if (rsb != selectedRS)
 			{
 				selectedRun = null;
@@ -507,4 +513,3 @@ public class RoutingMonitorFrame
 	}
 
 }
-

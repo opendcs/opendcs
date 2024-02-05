@@ -484,7 +484,10 @@ public class AlgorithmWizard
 	{
 		int idx = getInputParmTable().getSelectedRow();
 		if (idx >= 0)
-			inputTableModel.deleteInputTimeSeries(idx);
+		{
+			int modelRow = getInputParmTable().convertRowIndexToModel(idx);
+			inputTableModel.deleteInputTimeSeries(modelRow);
+		}
 		else
 		{
 			showError(
@@ -505,29 +508,14 @@ public class AlgorithmWizard
 			showError(labels.getString("AlgorithmWizard.editInputTSTableErr"));
 			return;
 		}
-
-		InputTimeSeries its = (InputTimeSeries)inputTableModel.getRowObject(idx);
+		int modelRow = getInputParmTable().convertRowIndexToModel(idx);
+		InputTimeSeries its = (InputTimeSeries)inputTableModel.getRowObject(modelRow);
 		InputTimeSeriesDialog dlg = new InputTimeSeriesDialog(its, this);
 		getFrame().launchDialog(dlg);
 		if (dlg.isOK())
 			inputTableModel.fireTableDataChanged();
 		dlg.dispose();
 	}
-
-	/**
-	 * method returning the input time series class of the selected item in the
-	 * table.
-	 * 
-	 * @return time series
-	 */
-//	private InputTimeSeries getSelectedInputTimeSeries()
-//	{
-//		int idx = getInputParmTable().getSelectedRow();
-//		if (idx >= 0)
-//			return inputTableModel.getInputTimeSeries(idx);
-//		else
-//			return null;
-//	}
 
 	private JScrollPane getInputParmScrollPane()
 	{
@@ -1227,8 +1215,8 @@ public class AlgorithmWizard
 				labels.getString("AlgorithmWizard.editPropertyTableErr"));
 			return;
 		}
-
-		AlgoProp ap = (AlgoProp)algoPropModel.getRowObject(idx);
+		int modelRow = algoPropTable.convertRowIndexToModel(idx);
+		AlgoProp ap = (AlgoProp)algoPropModel.getRowObject(modelRow);
 		PropDialog dlg = new PropDialog(ap, this);
 		getFrame().launchDialog(dlg);
 		if (dlg.isOK())
@@ -1240,7 +1228,10 @@ public class AlgorithmWizard
 	{
 		int idx = algoPropTable.getSelectedRow();
 		if (idx >= 0)
-			algoPropModel.deleteAt(idx);
+		{
+			int modelRow = algoPropTable.convertRowIndexToModel(idx);
+			algoPropModel.deleteAt(modelRow);
+		}
 		else
 		{
 			showError(

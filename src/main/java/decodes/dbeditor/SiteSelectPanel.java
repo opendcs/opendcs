@@ -122,11 +122,13 @@ public class SiteSelectPanel extends JPanel
 	{
 		int r = siteTable.getSelectedRow();
 		if (r == -1)
+		{
 			return null;
+		}
 		//Get the correct row from the table model
-		int modelrow = siteTable.convertRowIndexToModel(r);
-		SiteSelectTableModel tablemodel = (SiteSelectTableModel)siteTable.getModel();
-		return tablemodel.getSiteAt(modelrow);
+		int modelRow = siteTable.convertRowIndexToModel(r);
+		final SiteSelectTableModel tablemodel = (SiteSelectTableModel)siteTable.getModel();
+		return tablemodel.getSiteAt(modelRow);
 	}
 
 	public void clearSelection()
@@ -142,7 +144,10 @@ public class SiteSelectPanel extends JPanel
 		int idx[] = siteTable.getSelectedRows();
 		Site ret[] = new Site[idx.length];
 		for(int i=0; i<idx.length; i++)
-			ret[i] = model.getSiteAt(idx[i]);
+		{
+			int modelRow = siteTable.convertRowIndexToModel(idx[i]);
+			ret[i] = model.getSiteAt(modelRow);
+		}
 		return ret;
 	}
 
@@ -164,8 +169,11 @@ public class SiteSelectPanel extends JPanel
 	{
 		int r = siteTable.getSelectedRow();
 		if (r == -1)
+		{
 			return;
-		model.deleteSiteAt(r);
+		}
+		int modelRow = siteTable.convertRowIndexToModel(r);
+		model.deleteSiteAt(modelRow);
 	}
 
 	public void setParentDialog(SiteSelectDialog parentDialog)

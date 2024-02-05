@@ -167,8 +167,8 @@ public class ScreeningListPanel extends JPanel
 				+ " " + parentFrame.genericLabels.getString("delete") + ".");
 			return;
 		}
-
-		AlarmScreening scrn = model.getScreeningAt(row);
+		int modelRow = screeningTable.convertRowIndexToModel(row);
+		AlarmScreening scrn = model.getScreeningAt(modelRow);
 		
 		if (parentFrame.isBeingEdited(scrn))
 		{
@@ -199,13 +199,17 @@ public class ScreeningListPanel extends JPanel
 		}
 		String name = askUniqueName();
 		if (name == null)
+		{
 			return;
-		
-		AlarmScreening scrn = model.getScreeningAt(row);
+		}
+		int modelRow = screeningTable.convertRowIndexToModel(row);
+		AlarmScreening scrn = model.getScreeningAt(modelRow);
 		AlarmScreening copy = new AlarmScreening();
 		copy.copyFrom(scrn);
 		for(AlarmLimitSet als : copy.getLimitSets())
+		{
 			als.setLimitSetId(DbKey.NullKey);
+		}
 		
 		copy.setScreeningName(name);
 		
@@ -256,7 +260,8 @@ public class ScreeningListPanel extends JPanel
 				+ " " + parentFrame.genericLabels.getString("new") + ".");
 			return;
 		}
-		AlarmScreening scrn = model.getScreeningAt(row);
+		int modelRow = screeningTable.convertRowIndexToModel(row);
+		AlarmScreening scrn = model.getScreeningAt(modelRow);
 		parentFrame.editAlarmScreening(scrn);
 	}
 

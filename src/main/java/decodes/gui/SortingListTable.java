@@ -187,6 +187,8 @@ public class SortingListTable extends JTable
 
 	/**
 	  This class allows us to capture the mouse clicks on the header.
+	  NOTE: 2024-02-5 which we don't really need to do anymore so we'll
+	  be slowly removing this.
 	 */
 	class HeaderListener extends MouseAdapter
 	{

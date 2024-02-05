@@ -548,8 +548,11 @@ public class ProcessMonitorFrame
 	{
 		int idx = processTable.getSelectedRow();
 		if (idx < 0)
+		{
 			return null;
-		return model.getAppAt(idx);
+		}
+		int modelRow = processTable.convertRowIndexToModel(idx);
+		return model.getAppAt(modelRow);
 	}
 
 	@Override
@@ -577,10 +580,13 @@ public class ProcessMonitorFrame
 		// It is called when the row selection on the table has changed.
 		int sel = processTable.getSelectedRow();
 		if (sel == -1)
+		{
 			selectedProc = null;
+		}
 		else
 		{
-			selectedProc = model.getAppAt(sel);
+			int modelRow = processTable.convertRowIndexToModel(sel);
+			selectedProc = model.getAppAt(modelRow);
 		}
 	}
 	
@@ -607,4 +613,3 @@ public class ProcessMonitorFrame
 		this.dbPollThread = dbPollThread;
 	}
 }
-

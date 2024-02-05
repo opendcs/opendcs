@@ -1093,13 +1093,16 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                     .getString("ComputationsEditPanel.DeleteError1"));
             return;
         }
-        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(r);
+		int modelRow = compParmTable.convertRowIndexToModel(r);
+        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(modelRow);
         int ok = JOptionPane.showConfirmDialog(this,
                 LoadResourceBundle.sprintf(CAPEdit.instance().compeditDescriptions
                 .getString("ComputationsEditPanel.DeleteError2")
             ,dcp.getRoleName()));
         if (ok == JOptionPane.YES_OPTION)
-            compParmTableModel.deleteAt(r);
+		{
+            compParmTableModel.deleteAt(modelRow);
+		}
     }
 
     private void editParamButtonPressed()
@@ -1111,14 +1114,13 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                     .getString("ComputationsEditPanel.EditError"));
             return;
         }
-        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(r);
+		int modelRow = compParmTable.convertRowIndexToModel(r);
+        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(modelRow);
 
         CompParmDialog compParmDialog =
             new CompParmDialog(dcp.isInput(), siteSelectPanel);
         compParmDialog.setInfo(this, r, nameField.getText().trim(), dcp);
         CAPEdit.instance().getFrame().launchDialog(compParmDialog);
-//System.out.println("after dlg close, tabsel='" + dcp.getTableSelector() + "', locspec='"
-//+dcp.getLocSpec() + "', paramspec='" + dcp.getParamSpec() + "', ver='" + dcp.getVersion() + "'");
         if (compParmDialog.okPressed)
         {
             if (!DbKey.isNull(dcp.getSiteDataTypeId()))

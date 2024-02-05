@@ -400,8 +400,8 @@ public class SiteEditPanel extends DbEditorTab
 				dbeditLabels.getString("SiteEditPanel.selectNameEdit"));
 			return;
 		}
-		
-		SiteName sn = theSite.getNameAt(idx);
+		int modelRow = siteNameTable.getSelectedRow();
+		SiteName sn = theSite.getNameAt(modelRow);
 		if (sn != null && isCwms 
 		 && sn.getNameType().equalsIgnoreCase(Constants.snt_CWMS))
 		{
@@ -412,11 +412,13 @@ public class SiteEditPanel extends DbEditorTab
 		
 		SiteNameEntryDialog dlg = new SiteNameEntryDialog();
 		dlg.setSite(theSite);
-		dlg.setSiteName(model.getRowObject(idx));
+		dlg.setSiteName(model.getRowObject(modelRow));
 		launchDialog(dlg);
 		model.redisplay();
 		if (dlg.okPressed)
+		{
 			namesChanged = true;
+		}
 	}
 
     void deleteNameButton_actionPerformed(ActionEvent e)
@@ -434,8 +436,8 @@ public class SiteEditPanel extends DbEditorTab
 				dbeditLabels.getString("SiteEditPanel.selectNameDelete"));
 			return;
 		}
-
-		SiteName sn = theSite.getNameAt(idx);
+		int modelRow = siteNameTable.convertRowIndexToModel(idx);
+		SiteName sn = theSite.getNameAt(modelRow);
 		if (sn != null && isCwms 
 		 && sn.getNameType().equalsIgnoreCase(Constants.snt_CWMS))
 		{
@@ -443,7 +445,7 @@ public class SiteEditPanel extends DbEditorTab
 				"Cannot delete the CWMS name.");
 			return;
 		}
-		theSite.removeNameAt(idx);
+		theSite.removeNameAt(modelRow);
 		model.redisplay();
 		namesChanged = true;
     }

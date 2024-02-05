@@ -81,8 +81,11 @@ public class EquipmentModelSelectPanel extends JPanel
 	{
 		int r = eqTable.getSelectedRow();
 		if (r == -1)
+		{
 			return null;
-		return model.getEquipmentModelAt(eqTable.convertRowIndexToModel(r));
+		}
+		int modelRow = eqTable.convertRowIndexToModel(r);
+		return model.getEquipmentModelAt(modelRow);
 	}
 
 	/** Refresh list from database. */
@@ -109,8 +112,11 @@ public class EquipmentModelSelectPanel extends JPanel
 	{
 		int r = eqTable.getSelectedRow();
 		if (r == -1)
+		{
 			return;
-		model.deleteEquipmentModelAt(eqTable.convertRowIndexToModel(r));
+		}
+		int modelRow = eqTable.convertRowIndexToModel(r);
+		model.deleteEquipmentModelAt(modelRow);
 	}
 
 	/** Clears any selections made. */
