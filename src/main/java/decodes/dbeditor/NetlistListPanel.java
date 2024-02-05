@@ -137,7 +137,7 @@ public class NetlistListPanel extends JPanel
 		int idx = netlistListTable.getSelectedRow();
 		if (idx == -1)
 			return null;
-	    return tableModel.getObjectAt(idx);
+	    return tableModel.getObjectAt(netlistListTable.convertRowIndexToModel(idx));
 	}
 
 	/** @return type of entity that this panel edits. */

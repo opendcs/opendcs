@@ -678,7 +678,7 @@ ConfigSelectController
 					dbeditLabels.getString("PlatformEditPanel.selectSensorError"));
 			return;
 		}
-		PlatformSensor ps = sensorTableModel.getObjectAt(r);
+		PlatformSensor ps = sensorTableModel.getObjectAt(platformSensorTable.convertRowIndexToModel(r));
 		PlatformSensorEditDialog dlg = 
 			new PlatformSensorEditDialog(parent, 
 					dbeditLabels.getString("PlatformEditPanel.editPlatInfoDlgTitle"),
@@ -691,43 +691,6 @@ ConfigSelectController
 		launchDialog(dlg);
 		sensorTableModel.fireTableDataChanged();
 	}
-
-	//	/** Called when 'clear sensor site' button pressed. */
-	//	void clearSensorSiteButton_actionPerformed(ActionEvent e)
-	//	{
-	//		int r = platformSensorTable.getSelectedRow();
-	//		if (r == -1)
-	//		{
-	//			DbEditorFrame.instance().showError("Select sensor, then press Clear...");
-	//			return;
-	//		}
-	//		PlatformSensor ps = sensorTableModel.getObjectAt(r);
-	//		ps.site = null;
-	//		//ps.siteId = Constants.undefinedId;
-	//		sensorTableModel.fireTableDataChanged();
-	//	}
-	//
-	//	/** Called when 'select sensor site' button pressed. */
-	//	void selectSensorSiteButton_actionPerformed(ActionEvent e)
-	//	{
-	//		int r = platformSensorTable.getSelectedRow();
-	//		if (r == -1)
-	//		{
-	//			DbEditorFrame.instance().showError("Select sensor, then press Select Site...");
-	//			return;
-	//		}
-	//		PlatformSensor ps = sensorTableModel.getObjectAt(r);
-	//
-	//		SiteSelectDialog dlg = new SiteSelectDialog();
-	//		launchDialog(dlg);
-	//		Site site = dlg.getSelectedSite();
-	//		if (site != null) // selection was made?
-	//		{
-	//			ps.site = site;
-	//			//ps.siteId = site.siteId;
-	//		}
-	//		sensorTableModel.fireTableDataChanged();
-	//	}
 
 	/** Called when Transport Medium 'Add' button pressed. */
 	void addTransportMediaButton_actionPerformed(ActionEvent e)
@@ -744,8 +707,13 @@ ConfigSelectController
 	/** Called when Transport Medium 'Edit' button pressed. */
 	void editTransportMediaPressed()
 	{
+		int r = transportMediaTable.getSelectedRow();
+		if ( r == -1)
+		{
+			return;
+		}
 		TransportMedium tm = transportTableModel.getObjectAt(
-			transportMediaTable.getSelectedRow());
+			transportMediaTable.convertRowIndexToModel(r));
 		if (tm == null)
 		{
 			parent.showError(

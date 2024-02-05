@@ -102,7 +102,7 @@ public class ConfigSelectPanel extends JPanel
 		int r = configTable.getSelectedRow();
 		if (r == -1)
 			return null;
-		return (PlatformConfig)model.getRowObject(r);
+		return (PlatformConfig)model.getRowObject(configTable.convertRowIndexToModel(r));
 	}
 
 	/** Tells the panel to refresh itself from the database config list. */
@@ -132,7 +132,7 @@ public class ConfigSelectPanel extends JPanel
 		int r = configTable.getSelectedRow();
 		if (r == -1)
 			return;
-		model.deleteAt(r);
+		model.deleteAt(configTable.convertRowIndexToModel(r));
 	}
 
 	/**
@@ -333,4 +333,3 @@ class pcColumnComparator implements Comparator
 		}
 	}
 }
-

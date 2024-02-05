@@ -302,7 +302,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			TopFrame.instance().showError(dbeditLabels.getString("NetlistEditPanel.EditError"));
 			return;
 		}
-		NetworkListEntry nle = tableModel.getObjectAt(row);
+		NetworkListEntry nle = tableModel.getObjectAt(netlistContentsTable.convertRowIndexToModel(row));
 		NetlistEntryDialog dlg = new NetlistEntryDialog(nle);
 		launchDialog(dlg);
 		if (dlg.wasOkPressed())
