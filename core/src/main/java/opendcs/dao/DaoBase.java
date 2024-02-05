@@ -460,11 +460,18 @@ public class DaoBase
 					}
 					else
 					{
-						warning("Attempting to set parameter of type '"
-							   + param.getClass().getName()
-							   + "'. If you see an invalid column type "
-							   + "message please open an issue on the project page.");
-						stmt.setObject(index,param);
+						try
+						{						
+							stmt.setObject(index,param);
+						}
+						catch (SQLException ex)
+						{
+							String msg = String.format(
+								 "Attempting to set parameter of type '%'"
+							   + ". Please open an issue on the project page with this error message.",
+							    param.getClass().getName());
+							throw new SQLException(msg, ex);
+						}
 					}
 					index++;
 				}
