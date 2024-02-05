@@ -41,14 +41,14 @@ jobs:
       - name: Bundle tarballs
         run: ./gradlew bundle
       - name: Upload WAR files
-        uses: actions/upload-artifact@v4.2.0
+        uses: actions/upload-artifact@v4.3.0
         with:
           name: warfile
           path: ./**/build/libs/*.war
           retention-days: 1
           if-no-files-found: error
       - name: Upload Tarballs
-        uses: actions/upload-artifact@v4.2.0
+        uses: actions/upload-artifact@v4.3.0
         with:
           name: opendcs-rest-api-artifacts
           path: ./**/build/distributions/*.tar.gz
