@@ -279,7 +279,7 @@ public class CompAppInfo
 				String msg = "Cannot write loading app '" + getAppName()
 					+ "': " + ex;
 				Logger.instance().warning(msg);
-				throw new DatabaseException(msg);
+				throw new DatabaseException(msg, ex);
 			}
 			finally
 			{
