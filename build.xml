@@ -313,6 +313,12 @@ more information about each.
                     <jvmarg value="-Dopendcs.test.classpath=${opendcs.test.classpath}"/>
                     <jvmarg value="-Djava.util.logging.config.file=${build.dir}/../src/test-integration/test-config/logging.properties"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                    <syspropertyset>
+                        <propertyref prefix="opendcs"/>
+                    </syspropertyset>
+                    <syspropertyset>
+                        <propertyref prefix="testcontainer"/>
+                    </syspropertyset>
                 </fork>
                 <fileset dir="${build.test-integration.classes}"/>
                 <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>

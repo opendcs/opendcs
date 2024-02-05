@@ -60,7 +60,7 @@
       <Description>Other</Description>
     </EnumValue>
   </Enum>
-  <Enum Name="OuputFormat">
+  <Enum Name="OutputFormat">
     <EnumValue EnumValue="hydromet-dms3">
       <ExecClass>decodes.consumer.HydrometDMS3Formatter</ExecClass>
       <Description>Hydromet DMS 3</Description>

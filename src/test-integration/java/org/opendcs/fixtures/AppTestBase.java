@@ -42,23 +42,6 @@ public class AppTestBase
     }
 
     /**
-     * Helper to get a file from the resource directory
-     * @param file file name under the data/ directory to reference
-     * @return
-     */
-    public static String getResource(String file)
-    {
-        if ( !file.startsWith("$"))
-        {
-            return new File(TestResources.resourceDir,file).getAbsolutePath();
-        }
-        else
-        {
-            return new File(EnvExpander.expand(file,System.getProperties())).getAbsolutePath();
-        }
-    }
-
-    /**
      * Helper to make calling mains easier
      * @param arg
      * @return

@@ -6599,7 +6599,7 @@ screenings in English units to a file called “screenings.bak”::
 
    screeningExport –A –E >screenings.bak
 
-Note that the CRITERIA records are identical to DATCHK criteria files::
+Note that the CRITERIA records are identical to DATCHK criteria files
 
 SCREENING *unique-16-char-ID*
 

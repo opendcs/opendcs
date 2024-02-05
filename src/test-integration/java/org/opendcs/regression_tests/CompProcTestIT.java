@@ -2,6 +2,8 @@ package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import static org.opendcs.fixtures.helpers.TestResources.getResource;
+
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -59,16 +61,16 @@ public class CompProcTestIT extends AppTestBase
         log.info("Importing shared data.");
         Configuration config = this.configuration;
         File propertiesFile = config.getPropertiesFile();
-        FileUtils.copyFile(new File(getResource("/CompProc/Precip/datchk.cfg")),new File(config.getUserDir(),"/datchk.cfg"));
-        FileUtils.copyFile(new File(getResource("/CompProc/Precip/pathmap.txt")),new File(config.getUserDir(),"/pathmap.txt"));
-        FileUtils.copyFile(new File(getResource("/CompProc/Precip/test.datchk")),new File(config.getUserDir(),"/test.datchk"));
+        FileUtils.copyFile(new File(getResource(config, "/CompProc/Precip/datchk.cfg")), new File(config.getUserDir(),"/datchk.cfg"));
+        FileUtils.copyFile(new File(getResource(config, "/CompProc/Precip/pathmap.txt")), new File(config.getUserDir(),"/pathmap.txt"));
+        FileUtils.copyFile(new File(getResource(config, "/CompProc/Precip/test.datchk")), new File(config.getUserDir(),"/test.datchk"));
 
         // TODO: Create system to register timeseries so this doesn't need to be imported twice.
         Programs.ImportTs(new File(config.getUserDir(),"/importTs.log"), propertiesFile,
-                          environment, exit, getResource("CompProc/Precip/input.tsimport"));
+                          environment, exit, getResource(config,"CompProc/Precip/input.tsimport"));
         Programs.UpdateComputationDependencies(new File(config.getUserDir(),"/update-deps.log"), propertiesFile, environment, exit);
         Programs.ImportTs(new File(config.getUserDir(),"/importTs.log"), propertiesFile,
-                          environment, exit, getResource("CompProc/Precip/input.tsimport"));
+                          environment, exit, getResource(config, "CompProc/Precip/input.tsimport"));
     }
 
     @AfterAll
@@ -103,7 +105,7 @@ public class CompProcTestIT extends AppTestBase
         final Configuration config = this.configuration;
         final File logDir = config.getUserDir();
 
-        final File goldenFile = new File(getResource("CompProc/Precip/output.human-readable"));
+        final File goldenFile = new File(getResource(config, "CompProc/Precip/output.human-readable"));
 
         BackgroundTsDbApp.waitForApp(CpCompDependsUpdater.class,
                                             "compdepends_compproc",
@@ -114,7 +116,7 @@ public class CompProcTestIT extends AppTestBase
             new File(config.getUserDir(),"/importTs.log"),
             config.getPropertiesFile(),
             environment, exit,
-            getResource("CompProc/Precip/input.tsimport"));
+            getResource(config, "CompProc/Precip/input.tsimport"));
         try
         {
            Thread.sleep(15000); // TODO: eliminate wait

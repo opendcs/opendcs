@@ -169,7 +169,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         this.info = info;
         try
 		{
-            String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl(),info.getLoginInfo().getUser());
+            String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl().replace("?","\\?"),info.getLoginInfo().getUser());
 			ManagementFactory.getPlatformMBeanServer()
 							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\",hashCode=" + this.hashCode()));
 		}
