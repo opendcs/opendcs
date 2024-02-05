@@ -20,17 +20,17 @@ OpenDCS documentation is currently divided into three sections
    
    Software Set-Up <./start-software.rst>
    Computations - Intro <./start-computations.rst>
-   Routing Spec - Intro<./start-computations.rst>
-   Screening - Intro <./start-computations.rst>
+   Routing Spec - Intro<./start-routingspec.rst>
+   Screening - Intro <./start-screening.rst>
    
 .. toctree::
    :maxdepth: 1
    :caption: Resources
    
-   Algorithms <./start-computations.rst>   
-   Computations <./start-computations.rst>
-   DECODING <./start-computations.rst>
-   Screening Editor <./start-computations.rst>
+   Algorithms <./resources-algorithms.rst>   
+   Computations <./resources-computations.rst>
+   DECODING <./resources-decoding.rst>
+   Screening Editor <./resources-screening.rst>
    
 .. toctree::
    :maxdepth: 1

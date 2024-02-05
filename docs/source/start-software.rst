@@ -51,5 +51,38 @@ DECODES Components
 LRGS Status
 ~~~~~~~~~~~
 
-Database Components
------------------------
+DCP Message Browser
+~~~~~~~~~~~~~~~~~~~
+
+DECODES Database Editor
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Platform Monitor
+~~~~~~~~~~~~~~~~
+
+Routing Monitor
+~~~~~~~~~~~~~~~
+
+Setup
+~~~~~
+
+CWMS Database Components
+------------------------
+
+Time Series
+~~~~~~~~~~~
+
+Time Series Groups
+~~~~~~~~~~~~~~~~~~
+
+Computations
+~~~~~~~~~~~~
+
+Test Computations
+~~~~~~~~~~~~~~~~~
+
+Processes
+~~~~~~~~~
+
+Algorithms
+~~~~~~~~~~
