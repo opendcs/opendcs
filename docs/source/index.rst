@@ -12,7 +12,14 @@ Check out the :doc:`legacy-quick-start` section for how to get started.
 
 Documentation Outline
 ---------------------
-OpenDCS documentation is currently divided into three sections
+OpenDCS documentation is currently divided into three sections:
+
+#. Getting Started: Intended for new users
+#. Resources: Intended for intermediate users
+#. Developer Documention: Intended for advanced users or developers
+
+Previous versions of OpenDCS included PDFs documention.  Content from
+those PDFs was migrated to the Developer Documentation section.
 
 .. toctree::
    :maxdepth: 1
@@ -34,7 +41,7 @@ OpenDCS documentation is currently divided into three sections
    
 .. toctree::
    :maxdepth: 1
-   :caption: Legacy Documentation
+   :caption: Developer Documentation
    
    Quick Start <./legacy-quick-start.rst>
    Install Guide <./legacy-install-guide.rst>
