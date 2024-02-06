@@ -66,7 +66,7 @@ Routing Monitor
 Setup
 ~~~~~
 
-CWMS Database Components
+Time Series Database Components
 ------------------------
 
 Time Series
