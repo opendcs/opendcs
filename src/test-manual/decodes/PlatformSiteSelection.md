@@ -1,5 +1,4 @@
-**Scenario**: Platform list sorting by column
-
+**Scenario**: Platform Site selection.
 **Given**
 A database with any platforms in available and several sites.
 
