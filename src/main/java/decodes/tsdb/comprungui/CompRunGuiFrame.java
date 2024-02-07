@@ -165,6 +165,7 @@ public class CompRunGuiFrame extends TopFrame
 	private JProgressBar progressBar = new JProgressBar(0,100);
 	private SwingWorker<List<CTimeSeries>,CTimeSeries> worker = null;
 	private JButton cancelExecutionButton = null;
+	JButton saveButton = null;
 
 	private TraceDialog traceDialog = null;
 	private String cancelComputationExecutionLabel;
@@ -319,29 +320,15 @@ public class CompRunGuiFrame extends TopFrame
 		JPanel runhalf = new JPanel();
 		runhalf.setLayout(new GridBagLayout());
 		JButton runButton = new JButton(runCompsButton);
-		runButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				runButtonPressed();
-			}
-		});
-		JButton saveButton = new JButton(saveOutputButton);
-		saveButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				saveButtonPressed();
-			}
-		});
+		runButton.addActionListener(e -> runButtonPressed());
+
+		saveButton = new JButton(saveOutputButton);
+		saveButton.setEnabled(false);
+		saveButton.addActionListener(e -> saveButtonPressed());
+
 		traceButton.setEnabled(false);
-		traceButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				traceButtonPressed();
-			}
-		});
+		traceButton.addActionListener(e -> traceButtonPressed());
+
 		Date tempDate = new Date();
 		fromDTCal = new DateTimeCalendar(fromLabel, null, "dd MMM yyyy", timeZoneStr);
 		toDTCal = new DateTimeCalendar(toLabel, tempDate, "dd MMM yyyy", timeZoneStr);
@@ -1167,6 +1154,7 @@ public class CompRunGuiFrame extends TopFrame
 				traceLogger.setDialog(null);
 				Logger.setLogger(origLogger);
 				cancelExecutionButton.setEnabled(false);
+				saveButton.setEnabled(true);
 
 				//myoutputs = worker.get();
 				plotDataOnChart(both, inputs.size());
@@ -1190,6 +1178,7 @@ public class CompRunGuiFrame extends TopFrame
 		progressBar.setString("Running");
 		progressBar.setValue(0);
 		traceButton.setEnabled(true);
+		saveButton.setEnabled(false);
 		cancelExecutionButton.setEnabled(true);
 		worker.execute();
 		needToSave = true;
