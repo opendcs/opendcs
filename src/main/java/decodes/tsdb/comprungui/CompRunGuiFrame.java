@@ -33,6 +33,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -380,6 +382,7 @@ public class CompRunGuiFrame extends TopFrame
 		cancelExecutionButton = new JButton(cancelComputationExecutionLabel);
 		cancelExecutionButton.setEnabled(false);
 		GridBagConstraints gbc_cancelExecutionButton = new GridBagConstraints();
+		gbc_cancelExecutionButton.insets = new Insets(4, 10, 5, 10);
 		gbc_cancelExecutionButton.fill = GridBagConstraints.HORIZONTAL;
 		gbc_cancelExecutionButton.gridx = 1;
 		gbc_cancelExecutionButton.gridy = 1;
@@ -390,16 +393,9 @@ public class CompRunGuiFrame extends TopFrame
 			{				
 				SwingUtilities.invokeLater(() ->
 				{
-					try
-					{					
-						this.worker.cancel(true);
-					}
-					catch (Exception ex)
-					{
-						Logger.instance().warning("Error cancelling computation run");
-					}
+					this.worker.cancel(true);
 				});
-				this.setEnabled(false);
+				this.cancelExecutionButton.setEnabled(false);
 			}
 		});
 		return time;
@@ -989,9 +985,15 @@ public class CompRunGuiFrame extends TopFrame
 							{
 								String msg = module + " Exception filling input timeseries in "
 									+ "runButtonPressed() " + ex;
-								showError(msg);
-								System.err.println(msg);
-								ex.printStackTrace(System.err);
+								if (!isCancelled())
+								{
+									showError(msg);
+								}
+								Logger.instance().warning(msg);
+								StringWriter sw = new StringWriter();
+								PrintWriter pw = new PrintWriter(sw);
+								ex.printStackTrace(pw);
+								Logger.instance().warning(sw.toString());
 								continue;
 							}
 							finally
@@ -1053,18 +1055,26 @@ public class CompRunGuiFrame extends TopFrame
 					}
 					catch (DbCompException e)
 					{
-						// e.printStackTrace();
-						showError(module + " DbCompException in " + "runButtonPressed() " + e.getMessage());
+						if (!isCancelled())
+						{
+							showError(module + " DbCompException in " + "runButtonPressed() " + e.getMessage());
+						}
 						continue;
 					}
 					catch (DbIoException e)
 					{
-						showError(module + " DbIOException in " + "runButtonPressed() " + e.getMessage());
+						if (!worker.isCancelled())
+						{
+							showError(module + " DbIOException in " + "runButtonPressed() " + e.getMessage());
+						}
 						continue;
 					}
 					catch (NoSuchObjectException e)
 					{
-						showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + e.getMessage());
+						if (!worker.isCancelled())
+						{
+							showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + e.getMessage());
+						}
 						continue;
 					}
 					compsRun++;
