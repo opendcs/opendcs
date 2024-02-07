@@ -19,3 +19,4 @@ doc-source/*.rst
 *.log
 *.iml
 .idea/
+!install/bin
