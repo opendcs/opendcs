@@ -134,6 +134,7 @@ public class CompRunGuiFrame extends TopFrame
 	private String noCompSelectedErr;
 	private String closeButtonLabel;// generic
 	private String saveCompOutput;
+	private String cancelComputationExecution;
 	public static String okButtonLabel;// generic
 	public static String cancelButtonLabel;// generic
 	public static String dateTimeColumnLabel;
@@ -159,6 +160,7 @@ public class CompRunGuiFrame extends TopFrame
 	private ComputationsListDialog computationsListDialog = null;
 	private JButton traceButton = new JButton("Trace Execution");
 	private JProgressBar progressBar = new JProgressBar(0,100);
+	private SwingWorker<List<CTimeSeries>,CTimeSeries> worker = null;
 
 	private TraceDialog traceDialog = null;
 
@@ -226,6 +228,7 @@ public class CompRunGuiFrame extends TopFrame
 		noCompSelectedErr = labels.getString("RunComputationsFrame.noCompSelectedErr");
 		closeButtonLabel = genericLabels.getString("close");
 		saveCompOutput = labels.getString("RunComputationsFrame.saveCompOutput");
+		cancelComputationExecution = labels.getString("RunComputationsFrame.cancelComputationExecution");
 		okButtonLabel = genericLabels.getString("OK");
 		cancelButtonLabel = genericLabels.getString("cancel");
 		dateTimeColumnLabel = labels.getString("TimeSeriesTable.dateTimeColumnLabel") + " (" + timeZoneStr
@@ -914,7 +917,7 @@ public class CompRunGuiFrame extends TopFrame
 		// Flush the text area inside trace dialog
 		// Create the trace logger here and put in pipe with tee logger.
 		// Put trace dialog reference in trace logger.
-		SwingWorker<?,?> worker = new SwingWorker<List<CTimeSeries>,CTimeSeries>() {
+		worker = new SwingWorker<List<CTimeSeries>,CTimeSeries>() {
 			@Override
 			public List<CTimeSeries> doInBackground()
 			{
@@ -1180,18 +1183,42 @@ public class CompRunGuiFrame extends TopFrame
 	}
 
 	private boolean doClose()
-	{ // depending on the mode that this GUI was started, we'll call
-		// System exit or not
+	{
+		if (worker != null && !worker.isDone())
+		{
+			int r = JOptionPane.showConfirmDialog(this, cancelComputationExecution);
+			if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.NO_OPTION)
+			{
+				return false;
+			}
+			else
+			{
+				worker.cancel(true);
+				needToSave = false;
+			}
+		}
 		if ((myoutputs != null) && (myoutputs.size() != 0) && needToSave)
 		{
 			int r = JOptionPane.showConfirmDialog(this, saveCompOutput);
-			if (r == JOptionPane.CANCEL_OPTION)
-				return false;
-			else if (r == JOptionPane.YES_OPTION)
-				saveCompOutput();
-			else
-				needToSave = false;
+			switch(r)
+			{
+				case JOptionPane.CANCEL_OPTION:
+				{
+					return false;
+				}
+				case JOptionPane.YES_OPTION:
+				{
+					saveCompOutput();
+					break;
+				}
+				default:
+				{
+					needToSave = false;
+				}
+			}
 		}
+		// depending on the mode that this GUI was started, we'll call
+		// System exit or not
 		if (!standAloneMode)
 		{
 			compEditParent.setRunCompGUIUp(false);
@@ -1201,7 +1228,13 @@ public class CompRunGuiFrame extends TopFrame
 		{
 			dispose();
 			if (exitOnClose)
+			{
+				/**
+				 * TODO: This shouldn't be necassary and Java will exit when the last non-daemon
+				 *  thread exits and we should rely on that behavior instead of forcing a System.exit
+				 */ 
 				System.exit(0);
+			}
 		}
 		return true;
 	}
