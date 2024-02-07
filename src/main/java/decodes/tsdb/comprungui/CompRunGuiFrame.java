@@ -56,6 +56,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
@@ -161,8 +162,10 @@ public class CompRunGuiFrame extends TopFrame
 	private JButton traceButton = new JButton("Trace Execution");
 	private JProgressBar progressBar = new JProgressBar(0,100);
 	private SwingWorker<List<CTimeSeries>,CTimeSeries> worker = null;
+	private JButton cancelExecutionButton = null;
 
 	private TraceDialog traceDialog = null;
+	private String cancelComputationExecutionLabel;
 
 	/**
 	 * Constructor
@@ -231,6 +234,7 @@ public class CompRunGuiFrame extends TopFrame
 		cancelComputationExecution = labels.getString("RunComputationsFrame.cancelComputationExecution");
 		okButtonLabel = genericLabels.getString("OK");
 		cancelButtonLabel = genericLabels.getString("cancel");
+		cancelComputationExecutionLabel = cancelButtonLabel;
 		dateTimeColumnLabel = labels.getString("TimeSeriesTable.dateTimeColumnLabel") + " (" + timeZoneStr
 			+ ")";
 		inputLabel = labels.getString("RunComputationsFrame.inputLabel");
@@ -361,9 +365,9 @@ public class CompRunGuiFrame extends TopFrame
 		time.add(progressBar, gbc_progressBar);
 
 		runhalf.add(runButton, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
-			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
+			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 5, 10), 0, 0));
 		runhalf.add(saveButton, new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
-			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
+			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 5, 10), 0, 0));
 		runhalf.add(traceButton, new GridBagConstraints(0, 1, 1, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
 		GridBagConstraints gbc_runhalf = new GridBagConstraints();
@@ -372,6 +376,32 @@ public class CompRunGuiFrame extends TopFrame
 		gbc_runhalf.gridx = 2;
 		gbc_runhalf.gridy = 0;
 		time.add(runhalf, gbc_runhalf);
+		
+		cancelExecutionButton = new JButton(cancelComputationExecutionLabel);
+		cancelExecutionButton.setEnabled(false);
+		GridBagConstraints gbc_cancelExecutionButton = new GridBagConstraints();
+		gbc_cancelExecutionButton.fill = GridBagConstraints.HORIZONTAL;
+		gbc_cancelExecutionButton.gridx = 1;
+		gbc_cancelExecutionButton.gridy = 1;
+		runhalf.add(cancelExecutionButton, gbc_cancelExecutionButton);
+		cancelExecutionButton.addActionListener(e ->
+		{
+			if (this.worker != null && !this.worker.isDone())
+			{				
+				SwingUtilities.invokeLater(() ->
+				{
+					try
+					{					
+						this.worker.cancel(true);
+					}
+					catch (Exception ex)
+					{
+						Logger.instance().warning("Error cancelling computation run");
+					}
+				});
+				this.setEnabled(false);
+			}
+		});
 		return time;
 	}
 
@@ -925,6 +955,10 @@ public class CompRunGuiFrame extends TopFrame
 				int compsRun = 0;
 				for (DbComputation comp : compVector)
 				{
+					if(this.isCancelled())
+					{
+						return outputs;
+					}
 					DataCollection runme = new DataCollection();
 					// ArrayList<Integer> outputIDs = new ArrayList<Integer>();
 					ArrayList<DbCompParm> outputParms = new ArrayList<DbCompParm>();
@@ -1119,11 +1153,10 @@ public class CompRunGuiFrame extends TopFrame
 			protected void done()
 			{
 				setProgress(100);
-				// Stop trace logger and remove frome pipeline
+				// Stop trace logger and remove from pipeline
 				traceLogger.setDialog(null);
 				Logger.setLogger(origLogger);
-				//traceLogger = null;
-				//teeLogger = null;
+				cancelExecutionButton.setEnabled(false);
 
 				//myoutputs = worker.get();
 				plotDataOnChart(both, inputs.size());
@@ -1147,6 +1180,7 @@ public class CompRunGuiFrame extends TopFrame
 		progressBar.setString("Running");
 		progressBar.setValue(0);
 		traceButton.setEnabled(true);
+		cancelExecutionButton.setEnabled(true);
 		worker.execute();
 		needToSave = true;
 	}
