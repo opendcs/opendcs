@@ -1,0 +1,3 @@
+#!/bin/bash
+
+decj org.opendcs.database.MigrateApp $*
