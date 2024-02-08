@@ -47,4 +47,4 @@ done
 exec java -Xms120m $DECJ_MAXHEAP -cp $CP \
      -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH \
      -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR -DLRGSHOME=$LRGSHOME \
-     lrgs.lrgsmain.LrgsMain -d3 -l /dev/stdout -F
+     lrgs.lrgsmain.LrgsMain -d3 -l /dev/stdout -F -k -
