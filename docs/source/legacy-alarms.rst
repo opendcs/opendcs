@@ -123,7 +123,7 @@ Database Tables for Alarms
 
 The Entity Relationship Diagram for Alarms is shown below.
 
-.. image:: ./media/alarm/erd.png
+.. image:: ./media/legacy/alarm/erd.png
    :width: 6.38151in
    :height: 7.30494in
 
@@ -202,7 +202,7 @@ DECODES database editor. At the top level there are two tabs:
 In both cases you can sort the list in various ways by clicking the
 column header.
 
-.. image:: ./media/alarm/editor_screenings_list.png
+.. image:: ./media/legacy/alarm/editor_screenings_list.png
    :alt: Screenshot of the Alarm Editor list of screenings
    :width: 6.49444in
    :height: 1.41597in
@@ -244,7 +244,7 @@ tables shown in section 2. Note the following:
 -  The screening shown does not define a missing data alarm because the
    required Check Every field is left blank.
 
-.. image:: ./media/alarm/editor_individual_screening.png
+.. image:: ./media/legacy/alarm/editor_individual_screening.png
    :alt: Screen shot of the alarm editor
    :width: 6.5in
    :height: 4.67361in
@@ -260,7 +260,7 @@ The snapshot below shows an email group with 3 email addresses. When an
 alarm is generated or resolved that is assigned to this group, email
 notifications will be sent to each recipient.
 
-.. image:: ./media/alarm/editor_email_group.png
+.. image:: ./media/legacy/alarm/editor_email_group.png
    :alt: alarm editor email group
    :width: 6.5in
    :height: 5in
@@ -276,7 +276,7 @@ compimport $DCSTOOL_HOME/imports/comp-standard/AlarmScreening.xml
 After import, restart the computation editor GUI and the Alarm Screening
 will now appear on the Algorithms tab.
 
-.. image:: ./media/alarm/algorithm_definition.png
+.. image:: ./media/legacy/alarm/algorithm_definition.png
    :alt: Alarm Algorithm in comp edit
    :width: 6.49444in
    :height: 4.59583in
@@ -362,7 +362,7 @@ example below is rather contrived. It shows a computation that does a
 screening on datatype 65 (instantaneous stream stage) at a site
 TESTSITE1, and writes the output to TESTSITE2.
 
-.. image:: ./media/alarm/alarm_computation_def.png
+.. image:: ./media/legacy/alarm/alarm_computation_def.png
    :alt: Computation definition
    :width: 6.49444in
    :height: 4.37083in
@@ -747,7 +747,7 @@ A File Monitor allows you to watch a directory or normal file for
 abnormal conditions, and then to send email notifications when they are
 detected. A record in the GUI is shown below.
 
-.. image:: ./media/alarm/file_monitor_settings.png
+.. image:: ./media/legacy/alarm/file_monitor_settings.png
    :alt: File monitor screenshot
    :width: 5.43003in
    :height: 3.29167in
@@ -776,7 +776,7 @@ supported OpenDCS processes and collect events as they happen. It
 searches for events with a matching priority that contains the specified
 pattern. If these are detected then become email notifications.
 
-.. image:: ./media/alarm/process_monitor_screenshot.png
+.. image:: ./media/legacy/alarm/process_monitor_screenshot.png
    :alt: Process monitor screenshot
    :width: 5.06191in
    :height: 3.625in
