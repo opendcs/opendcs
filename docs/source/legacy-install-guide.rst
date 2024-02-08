@@ -132,7 +132,7 @@ The installer guides you through a series of screens:
 
 Welcome Screen:
 
-.. image:: ./media/install-guide/image1.png
+.. image:: ./media/legacy/install-guide/image1.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-01-23 at 3.10.37 PM.png
    :width: 6in
    :height: 3.21319in
@@ -147,21 +147,21 @@ files under the location that you specify.
    names that have embedded spaces. For example, do not place the
    software under ‘C:\Program Files’.
 
-.. image:: ./media/install-guide/image2.png
+.. image:: ./media/legacy/install-guide/image2.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-01-23 at 3.12.54 PM.png
    :width: 6in
    :height: 3.23611in
 
 Select the packages that you want to install.
 
-.. image:: ./media/install-guide/image3.png
+.. image:: ./media/legacy/install-guide/image3.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-01-23 at 3.13.44 PM.png
    :width: 5.98889in
    :height: 3.21319in
 
 Allow the installation to complete:
 
-.. image:: ./media/install-guide/image4.png
+.. image:: ./media/legacy/install-guide/image4.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-01-23 at 3.14.12 PM.png
    :width: 5.98889in
    :height: 3.21319in
@@ -170,7 +170,7 @@ Go all the way to the final screen and hit ‘Done’. *Warning: Exiting the
 installer prior to the final screen may leave the software in an
 unusable state!*
 
-.. image:: ./media/install-guide/image5.png
+.. image:: ./media/legacy/install-guide/image5.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-01-23 at 3.15.27 PM.png
    :width: 6in
    :height: 3.21319in
@@ -234,12 +234,12 @@ Before running the OPENDCS Toolkit installation, do the following:
 |image1|\ Figure 2‑1 shows the group and user creation screens under a
 Red Hat Linux system. Similar menus are available under Solaris.
 
-.. image:: ./media/install-guide/image7.png
+.. image:: ./media/legacy/install-guide/image7.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2013-03-26 at 2.11.55 PM.png
    :width: 3.42336in
    :height: 2.75in
 
-.. image:: ./media/install-guide/image8.png
+.. image:: ./media/legacy/install-guide/image8.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2013-03-26 at 2.21.49 PM.png
    :width: 3.375in
    :height: 2.71115in
@@ -413,7 +413,7 @@ Unattended Installation
 After performing a normal install the final panel of the installer will have a
 button to generate an "installation script":
 
-.. image:: ./media/install-guide/gen_install_script.png
+.. image:: ./media/legacy/install-guide/gen_install_script.png
    :alt: Final Panel
    :width: 3.42336in
    :height: 2.75in
@@ -734,7 +734,7 @@ make changes is through the GUI. Start the launcher with the command::
 Hit the “Setup” button. This brings up the DECODES Properties window as
 shown below.
 
-.. image:: ./media/install-guide/image9.png
+.. image:: ./media/legacy/install-guide/image9.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-01-23 at 3.46.50 PM.png
    :width: 5.98889in
    :height: 4.1125in
@@ -778,7 +778,7 @@ enumeration record as shown below.
 
 Before leaving rledit, be sure to hit File – Save to DB.
 
-.. image:: ./media/install-guide/image10.png
+.. image:: ./media/legacy/install-guide/image10.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-09-30 at 6.09.07 PM.png
    :width: 6.49444in
    :height: 3.65139in
@@ -795,7 +795,7 @@ You can create/modify/delete process records in two ways:
 
 -  From the Processes button on the launcher screen.
 
-.. image:: ./media/install-guide/image11.png
+.. image:: ./media/legacy/install-guide/image11.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-09-30 at 6.05.51 PM.png
    :width: 1.85885in
    :height: 5.375in
@@ -821,7 +821,7 @@ Thus a “process” record here is not really for a process. Rather it is a
 named set of overrides for the DECODES and CCP settings stored in the
 startup files.
 
-.. image:: ./media/install-guide/image12.png
+.. image:: ./media/legacy/install-guide/image12.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-09-30 at 6.14.38 PM.png
    :width: 6.49444in
    :height: 3.34861in
@@ -866,7 +866,7 @@ the same directory as decodes.properties.
 Then restart the launcher GUI and you will see a new pull-down list at
 the top:
 
-.. image:: ./media/install-guide/image13.png
+.. image:: ./media/legacy/install-guide/image13.png
    :width: 2.82732in
    :height: 3.64269in
 
@@ -874,7 +874,7 @@ Select the profile you want to work with. Then click Setup. I selected
 HDBTSTUC. Note the Setup screen indicates the selected profile at the
 top:
 
-.. image:: ./media/install-guide/image14.png
+.. image:: ./media/legacy/install-guide/image14.png
    :width: 6.5in
    :height: 3.54306in
 
@@ -904,7 +904,7 @@ Two items have been added to every GUI screen to avoid confusion. The
 header now shows the profile name, and the footer now shows the profile
 name and the database location:
 
-.. image:: ./media/install-guide/image15.png
+.. image:: ./media/legacy/install-guide/image15.png
    :width: 6.5in
    :height: 2.96111in
 
@@ -913,7 +913,7 @@ decodes.properties file, the feature is now enabled. You can create
 additional profiles from within the GUI. Back on the setup screen, click
 the button labeled “…” to the right of the pull-down list of profiles:
 
-.. image:: ./media/install-guide/image16.png
+.. image:: ./media/legacy/install-guide/image16.png
    :width: 3.878in
    :height: 1.68571in
 
@@ -982,7 +982,7 @@ create. Start the launcher with the command::
 Hit the Setup button in the upper part of the launcher. This brings up
 the DECODES Properties window as shown below.
 
-.. image:: ./media/install-guide/image9.png
+.. image:: ./media/legacy/install-guide/image9.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-01-23 at 3.46.50 PM.png
    :width: 5.98889in
    :height: 4.1125in
@@ -1240,7 +1240,7 @@ Then click on the setup button. Make the following changes:
 When finished, click “Save Changes”. Then exit completely out of the
 OPENDCS GUI.
 
-.. image:: ./media/install-guide/image17.png
+.. image:: ./media/legacy/install-guide/image17.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-02-18 at 3.35.51 PM.png
    :width: 6.49444in
    :height: 5.07847in
@@ -1415,7 +1415,7 @@ Where
 
 -  **SID** Is the unique identifier for your database on the server
 
-.. image:: ./media/install-guide/image18.png
+.. image:: ./media/legacy/install-guide/image18.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-11-03 at 10.38.22 AM.png
    :width: 5.55069in
    :height: 1.55069in
@@ -1440,7 +1440,7 @@ Where
 
 -  **SID** Is the unique identifier for your database on the server
 
-.. image:: ./media/install-guide/image19.png
+.. image:: ./media/legacy/install-guide/image19.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-11-03 at 10.33.10 AM.png
    :width: 6.49444in
    :height: 1.26944in
@@ -1528,7 +1528,7 @@ the four types of reference lists:
 -  Seasons: This tab allows you to define seasons for conditional
    processing.
 
-.. image:: ./media/install-guide/image20.png
+.. image:: ./media/legacy/install-guide/image20.png
    :width: 6.2872in
    :height: 3.95506in
 
@@ -1608,7 +1608,7 @@ referencing it in an enumeration.
 For example, the figure below shows the enumeration value for the FTP
 Data Source.
 
-.. image:: ./media/install-guide/image21.png
+.. image:: ./media/legacy/install-guide/image21.png
    :width: 6.14826in
    :height: 2.4382in
 
@@ -1634,7 +1634,7 @@ You can use the buttons to the right to add, edit, or delete an EU.
 
 Abbreviations must not contain embedded spaces.
 
-.. image:: ./media/install-guide/image22.png
+.. image:: ./media/legacy/install-guide/image22.png
    :width: 6.23195in
    :height: 3.87079in
 
@@ -1645,7 +1645,7 @@ Engineering Unit conversions
 
 The EU conversions tab is shown in Figure 13‑6‑4.
 
-.. image:: ./media/install-guide/image23.png
+.. image:: ./media/legacy/install-guide/image23.png
    :width: 5.98611in
    :height: 3.90278in
 
@@ -1700,7 +1700,7 @@ You are strongly encouraged to enter the specific data types that you
 want into each DECODES Configuration record for each sensor. Thus the
 automatic mapping will never be used.
 
-.. image:: ./media/install-guide/image24.png
+.. image:: ./media/legacy/install-guide/image24.png
    :width: 6in
    :height: 4.01389in
 
@@ -1721,18 +1721,18 @@ as the rainy season.
 To add, edit, or delete seasons, using the buttons on the right. The
 figure below shows a season being edited.
 
-.. image:: ./media/install-guide/image25.png
+.. image:: ./media/legacy/install-guide/image25.png
    :width: 6.5in
    :height: 3.14131in
 
 Figure 6‑6: Reference List Editor - Seasons Tab.
 
-.. image:: ./media/install-guide/image26.png
+.. image:: ./media/legacy/install-guide/image26.png
    :width: 5.625in
    :height: 1.82057in
 
 Figure 6‑7: A Season being edited.
 
-.. |image1| image:: ./media/install-guide/image6.png
+.. |image1| image:: ./media/legacy/install-guide/image6.png
    :width: 6in
    :height: 2.37292in

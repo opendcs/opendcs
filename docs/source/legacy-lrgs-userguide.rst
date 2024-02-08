@@ -121,7 +121,7 @@ internet. This uses a TCP socket protocol called DDS (DCP Data Service).
 DDS allows users to specify data of interest by DCP address, channel, or
 time range. Users can retrieve historical data or a real-time stream.
 
-.. image:: ./media/lrgs-userguide/Pictures/goes-dsc-overview.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/goes-dsc-overview.png
    :alt: Image showing GOES DCS Overview
    :width: 6in
    :height: 3.2in
@@ -440,7 +440,7 @@ left. As shown in `Figure 5-6 <#anchor-31>`__, you will be presented
 with a multi-tabbed configuration GUI in which you can modify all of the
 LRGS configuration parameters by category.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000000000002B900000197A0BAC4A6.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000000000002B900000197A0BAC4A6.png
    :width: 5.6244in
    :height: 3.2839in
 
@@ -1295,7 +1295,7 @@ that has ‘admin’ privilege and connect using a password. Select ‘File’ �
 ‘User Administration’ from the menus at the top left. `Figure
 5-7 <#anchor-45>`__ shows the user administration screen.
 
-.. image:: ./media/lrgs-userguide/Pictures/1000000000000227000001F2971DE49A.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/1000000000000227000001F2971DE49A.png
    :width: 4.6146in
    :height: 4.1654in
 
@@ -1307,7 +1307,7 @@ you will see the dialog shown in `Figure 5-8 <#anchor-46>`__. You are
 require one. We anticipate that authenticated connections will be the
 norm in the near future.
 
-.. image:: ./media/lrgs-userguide/Pictures/100000000000011F000001A15C448AEC.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/100000000000011F000001A15C448AEC.png
    :width: 2.4839in
    :height: 3.6047in
 
@@ -1941,7 +1941,7 @@ browser, as shown in `Figure 6-11 <#anchor-72>`__. The page has an HTML
 header field that causes the browser to refresh the content every 10
 seconds.
 
-.. image:: ./media/lrgs-userguide/Pictures/100000000000038B000003413E3C2BBC.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/100000000000038B000003413E3C2BBC.png
    :width: 5.9992in
    :height: 5.5181in
 
@@ -1987,7 +1987,7 @@ are:
    messages, so no additional setup is required to make status available
    on a network.
 
-.. image:: ./media/lrgs-userguide/Pictures/1000000000000320000003C441392BD4.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/1000000000000320000003C441392BD4.png
    :width: 6.5083in
    :height: 7.8319in
 
@@ -2002,7 +2002,7 @@ this is you have connected to the LRGS with your old password. If you do
 not currently have a password, contact your LRGS administrator to set
 one for you.
 
-.. image:: ./media/lrgs-userguide/Pictures/100000000000012C00000087FBC107F8.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/100000000000012C00000087FBC107F8.png
    :width: 2.4839in
    :height: 1.1189in
 
@@ -2045,49 +2045,49 @@ The OK button will send any information that has changed to the server
 and close the dialog. The Apply button will force-send all configuration
 information regardless of whether it has changed.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000000000002EB000002AC80DA649F.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000000000002EB000002AC80DA649F.png
    :width: 6.4945in
    :height: 5.9465in
 
 Figure 6‑15: LRGS Configuration - Archive Tab.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000000000002E6000001BF1907BD21.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000000000002E6000001BF1907BD21.png
    :width: 6.4925in
    :height: 3.9236in
 
 Figure 6‑16: LRGS Configuration - DOMSAT Tab.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000000000002E7000001CCFE3892D9.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000000000002E7000001CCFE3892D9.png
    :width: 6.4902in
    :height: 4.0181in
 
 Figure 6‑17: LRGS Configuration - DDS Server Configuration Tab.
 
-.. image:: ./media/lrgs-userguide/Pictures/100002010000035A000001F2AE7B5AAA.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/100002010000035A000001F2AE7B5AAA.png
    :width: 6.4945in
    :height: 3.7693in
 
 Figure 6‑18: LRGS Configuration - DDS Receive Tab.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000000000003D0000001886EC05D37.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000000000003D0000001886EC05D37.png
    :width: 6.4929in
    :height: 2.602in
 
 Figure 6‑19: LRGS Configuration - DRGS DAMS-NT Tab.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000000000002DB000001909D9E879F.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000000000002DB000001909D9E879F.png
    :width: 6.4972in
    :height: 3.5555in
 
 Figure 6‑20: LRGS Configuration - NOAAPORT Parameters Tab.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000000000002E300000196AE41FCCF.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000000000002E300000196AE41FCCF.png
    :width: 6.4965in
    :height: 3.5634in
 
 Figure 6‑21: LRGS Configuration - Iridium Parameters Tab.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000201000002B300000152D955E70B.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000201000002B300000152D955E70B.png
    :width: 6.4972in
    :height: 3.178in
 
@@ -2115,13 +2115,13 @@ The right-side buttons allow you to create and edit local copies of
 network lists. When this is done, the selected list is brought up in the
 network list editor shown in `Figure 6-24 <#anchor-84>`__.
 
-.. image:: ./media/lrgs-userguide/Pictures/1000000000000292000001349030FCAB.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/1000000000000292000001349030FCAB.png
    :width: 4.8591in
    :height: 2.278in
 
 Figure 6‑23: Network List Maintenance Dialog.
 
-.. image:: ./media/lrgs-userguide/Pictures/100000000000021F0000014BCF7B3C10.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/100000000000021F0000014BCF7B3C10.png
    :width: 4.8583in
    :height: 2.961in
 
@@ -2147,7 +2147,7 @@ This will start the display shown in `Figure 6-25 <#anchor-87>`__. If
 you don’t supply an initial URL, the field at the top is blank and you
 must type it there.
 
-.. image:: ./media/lrgs-userguide/Pictures/100002010000047E000001AFE5FDD030.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/100002010000047E000001AFE5FDD030.png
    :width: 5.9772in
    :height: 2.2484in
 
@@ -2502,7 +2502,7 @@ timer ranges, as explained in section `8.3 <#anchor-107>`__. A commonly
 used technique is to specify times relative to “now”, as shown in the
 figure.
 
-.. image:: ./media/lrgs-userguide/Pictures/1000000000000333000001A2097ABCE8.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/1000000000000333000001A2097ABCE8.png
    :width: 6.4945in
    :height: 3.3091in
 
@@ -2529,7 +2529,7 @@ continue.
 If you want the window to automatically close when the specified 'UNTIL'
 time is reached, check the box labeled 'Close When Done'.
 
-.. image:: ./media/lrgs-userguide/Pictures/10000000000001B800000104B8A40613.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000000000001B800000104B8A40613.png
    :width: 4.5835in
    :height: 2.7134in
 
@@ -2833,7 +2833,7 @@ the Real Time Status (rtstat) display. Connect as an administrator with
 a password. Then click File – LRGS Configuration. Click on the EDL Files
 Tab:
 
-.. image:: ./media/lrgs-userguide/Pictures/10000201000002B80000019DF9136B0E.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/10000201000002B80000019DF9136B0E.png
    :width: 6.4957in
    :height: 3.8598in
 
@@ -2895,7 +2895,7 @@ Within the search criteria screens in the message browser and DECODES,
 you can select EDL data in multiple ways. To retrieve all EDL data, you
 can check the Network/Modem DCP check box at the right of the screen:
 
-.. image:: ./media/lrgs-userguide/Pictures/100002010000037C000001C07C900F2F.png
+.. image:: ./media/legacy/lrgs-userguide/Pictures/100002010000037C000001C07C900F2F.png
    :width: 5.1283in
    :height: 2.5634in
 
