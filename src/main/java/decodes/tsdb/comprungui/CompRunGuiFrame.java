@@ -348,7 +348,7 @@ public class CompRunGuiFrame extends TopFrame
 		time.add(timehalf, gbc_timehalf);
 		GridBagConstraints gbc_progressBar = new GridBagConstraints();
 		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
-		gbc_progressBar.insets = new Insets(0, 0, 0, 5);
+		gbc_progressBar.insets = new Insets(0, 10, 0, 10);
 		gbc_progressBar.gridx = 1;
 		gbc_progressBar.gridy = 0;
 		time.add(progressBar, gbc_progressBar);
