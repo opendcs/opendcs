@@ -1043,7 +1043,7 @@
     <Family>univ</Family>
     <Measures>Energy</Measures>
   </EngineeringUnit>
-  <UnitConverter FromUnitsAbbr="kMh" ToUnitsAbbr="MWh">
+  <UnitConverter FromUnitsAbbr="kWh" ToUnitsAbbr="MWh">
     <Algorithm>linear</Algorithm>
     <A>0.001</A>
     <B>0</B>
