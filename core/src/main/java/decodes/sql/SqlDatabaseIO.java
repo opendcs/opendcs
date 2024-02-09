@@ -81,6 +81,7 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import ilex.util.EnvExpander;
 import org.opendcs.authentication.AuthSourceService;
 
 import opendcs.dai.AlarmDAI;
@@ -345,7 +346,7 @@ public class SqlDatabaseIO
 			catch(AuthException ex)
 			{
 				String msg = "Cannot read username and password from '"
-					+ authFileName + "' (run setDecodesUser first): " + ex;
+					+ EnvExpander.expand(authFileName) + "' (run setDecodesUser first): " + ex;
 				System.err.println(msg);
 				Logger.instance().log(Logger.E_FATAL, msg);
 				throw new DatabaseConnectException(msg);
