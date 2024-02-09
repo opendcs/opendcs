@@ -348,7 +348,7 @@ public class UserAuthFile implements AuthSource
 					System.err.println("Cannot open password file '" + pwFileArg + "': " + ex);
 				}
 			}
-			System.out.println("writing...");
+			System.out.println("writing to " + pwFileArg +"...");
 			authFile.write(user, password);
 		}
 		else // query only
