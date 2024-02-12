@@ -105,6 +105,8 @@
 package decodes.tsdb;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -515,6 +517,10 @@ public class ComputationApp
 		catch(DbIoException ex)
 		{
 			warning("Database Error while " + action + ": " + ex);
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			warning(sw.toString());
 			shutdownFlag = true;
 			databaseFailed = true;
 		}
@@ -522,8 +528,10 @@ public class ComputationApp
 		{
 			String msg = "Unexpected exception while " + action + ": " + ex;
 			warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			warning(sw.toString());
 			shutdownFlag = true;
 		}
 		resolver = null;
@@ -1397,4 +1405,3 @@ Logger.instance().debug3("doCMC missing check interval='" + mIntv
 
 
 }
-
