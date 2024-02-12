@@ -9,6 +9,7 @@ dependencies {
     implementation(libs.jetty.jsp)
     implementation(libs.servlet.api)
     implementation(libs.websocket)
+    implementation(libs.slf4j.jdk)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
 }

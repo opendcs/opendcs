@@ -18,8 +18,9 @@ package org.opendcs.odcsapi.util;
 import java.net.*;
 import java.io.*;
 import java.rmi.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 This class encapsulates common functions for a TCP/IP client.
@@ -28,6 +29,7 @@ object of this type.
 */
 public class ApiBasicClient
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApiBasicClient.class);
 	/** port to connect to. */
 	protected int port;
 	/** host to connect to. */
@@ -68,7 +70,7 @@ public class ApiBasicClient
 	* Finalizer makes sure socket and stream resources are freed. If
 	* disconnect() was already called, no harm done.
 	*/
-	protected void finalize( )
+	protected void finalize( ) throws IOException
 	{
 		disconnect();
 	}
@@ -140,40 +142,18 @@ public class ApiBasicClient
 	{
 		try
 		{
-			try
-			{
-				if (input != null)
-					input.close();
-			}
-			catch (IOException ex)
-			{
-				throw new IOException("Error closing input: ", ex);
-			}
-            try
-			{
-                if (output != null)
-                    output.close();
-            }
-			catch (IOException ex)
-			{
-				throw new IOException("Error closing output: ", ex);
-            }
-			try
-			{
-				if (socket != null)
-					socket.close();
-			}
-			catch (IOException ex)
-			{
-				throw new IOException( "Error closing socket: ", ex);
-			}
-
-			if (debug != null)
-				debug.println("Disconnected form host '"
-					+ (host != null ? host : "(unknown)")
-					+ "', port " + port);
+			if (input != null)
+				input.close();
+			if (output != null)
+				output.close();
+			if (socket != null)
+				socket.close();
+			LOGGER.debug("Disconnected form host '{}', port {}", (host != null ? host : "(unknown)"), port);
 		}
-		catch(Exception e) {}
+		catch (IOException ex)
+		{
+			LOGGER.error("There was an error closing the socket connections.", ex);
+		}
 		finally
 		{
 			input = null;
