@@ -35,6 +35,9 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
@@ -54,6 +57,7 @@ import javax.websocket.Session;
  */
 public class Gateway extends HttpServlet {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Gateway.class);
 
     /**
      * The base url for the API to get OpenDCS data from.
@@ -66,12 +70,15 @@ public class Gateway extends HttpServlet {
      *
      * @throws ServletException 
      */
-    public void init() throws ServletException {
-        System.out.println("Initializing the Gateway instance.");
-        try {
+    public void init() throws ServletException
+    {
+        try
+        {
             this.setApiDetails(null);
-        } catch (IOException e) {
-            e.printStackTrace();
+        }
+        catch (IOException ex)
+        {
+            LOGGER.error("Error initializing gateway instance", ex);
         }
     }    
 
@@ -307,9 +314,10 @@ public class Gateway extends HttpServlet {
                 inline = "{\"message\": \"error - you must pass the opendcs_api_call parameter.\"}";
                 System.out.println(String.format("Error: %s.", inline));
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        }
+        catch (IOException ex)
+        {
+            LOGGER.error("Error connecting to API from gateway: ", ex);
             response.setStatus(400);
             inline = "error";
         }

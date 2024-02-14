@@ -57,6 +57,8 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.VarFlags;
+
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.DataTypeDAI;
@@ -270,32 +272,17 @@ Logger.getLogger(ApiConstants.loggerName).info("   parm '" + dcp.getRoleName() +
 			throw new WebAppException(ErrorCodes.BAD_CONFIG, 
 				"Specified triggering time series does not exist in the database: " + ex);
 		}
-		catch (BadTimeSeriesException ex)
+		catch (BadTimeSeriesException | DuplicateTimeSeriesException ex)
 		{
-			String emsg = "Unexpected BadTimeSeriesException: " + ex;
-			Logger.getLogger(ApiConstants.loggerName).warning(emsg);
-			System.out.println(emsg);
-			ex.printStackTrace();
-			throw new WebAppException(500, emsg);
-		}
-		catch (DuplicateTimeSeriesException ex)
-		{
-			String emsg = "Unexpected DuplicateTimeSeriesException: " + ex;
-			Logger.getLogger(ApiConstants.loggerName).warning(emsg);
-			System.out.println(emsg);
-			ex.printStackTrace();
-			throw new WebAppException(500, emsg);
+			throw new WebAppException(500, ex.getMessage(), ex);
 		}
 		catch (DbCompException ex)
 		{
-			throw new WebAppException(ErrorCodes.BAD_CONFIG, "Error in computation exec: " + ex);
+			throw new WebAppException(ErrorCodes.BAD_CONFIG, "Error in computation exec: ", ex);
 		}
 		catch (DbIoException ex)
 		{
-			String msg = module + ".testComp error from tsdb interface: " + ex;
-			Logger.getLogger(ApiConstants.loggerName).warning(msg);
-			ex.printStackTrace();
-			throw new DbException(module, ex, msg);
+			throw new DbException(module, ex, "testComp error from tsdb interface");
 		}
 		finally
 		{

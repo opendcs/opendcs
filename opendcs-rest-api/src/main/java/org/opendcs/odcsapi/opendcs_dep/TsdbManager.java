@@ -15,20 +15,14 @@
 
 package org.opendcs.odcsapi.opendcs_dep;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.logging.Logger;
-
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.util.ApiConstants;
 
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.hdb.HdbTimeSeriesDb;
 import decodes.tsdb.BadConnectException;
 import decodes.tsdb.TimeSeriesDb;
 import opendcs.opentsdb.OpenTsdb;
-import opendcs.opentsdb.OpenTsdbSettings;
 
 /**
  * A few operations require using the openDCS TimeSeriesDb subclasses.
@@ -60,25 +54,18 @@ public class TsdbManager
 			ret = new HdbTimeSeriesDb();
 		else
 			ret = new OpenTsdb();
-		
-		ret.setConnection(dbi.getConnection());
-		
+
 		// setConnection will also call determineTsdbVersion()
-		
-		// ret.setupKeyGenerator(); - No need, the API will not use Tsdb to create records.
+		ret.setConnection(dbi.getConnection());
 
 		try
 		{
 			ret.postConnectInit("decodes", dbi.getConnection());
 		}
-		catch (BadConnectException e)
+		catch (BadConnectException ex)
 		{
-			Logger.getLogger(ApiConstants.loggerName).info("Using DataSource provided by Jetty main class.");
-
-			e.printStackTrace();
+			throw new DbException(CompRunner.class.getName(), ex, "Error connecting to the decodes database: ");
 		}
-
-		// OpenTsdbSettings.instance().setFromProperties(props); - No need. Use defaults.
 
 		return ret;
 	}

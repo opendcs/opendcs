@@ -20,6 +20,7 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.Consumes;
@@ -188,12 +189,12 @@ public class LrgsResources
 				action = "sending searchcrit";
 				client.sendSearchCrit(searchcrit, platformDao);
 			}
-			catch (DbException e)
+			catch (DbException ex)
 			{
 				client.disconnect();
 				userToken.setLddsClient(null);
-				e.printStackTrace();
-				throw new WebAppException(ErrorCodes.DATABASE_ERROR, "Internal exception:" + e);
+				throw new WebAppException(ErrorCodes.DATABASE_ERROR,
+						"There was an error getting messages from the LRGS client: ", ex);
 			}
 			catch (UnknownHostException ex)
 			{
@@ -399,32 +400,25 @@ public class LrgsResources
 			action = "getting LRGS status";
 			return ApiHttpUtil.createResponse(client.getLrgsStatus());
 		}
-		catch (DbException e)
+		catch (DbException ex)
 		{
-			e.printStackTrace();
-			throw new WebAppException(ErrorCodes.DATABASE_ERROR, "Internal exception:" + e);
+			throw new WebAppException(ErrorCodes.DATABASE_ERROR,
+					"There was an error connecting to the decodes database", ex);
 		}
 		catch (UnknownHostException ex)
 		{
 			throw new WebAppException(ErrorCodes.BAD_CONFIG, "Cannot connect to LRGS data source "
-				+ dataSource.getName() + ": " + ex);
+				+ dataSource.getName() + ": ", ex);
 		}
 		catch (IOException ex)
 		{
 			throw new WebAppException(ErrorCodes.BAD_CONFIG, "IO Error on LRGS data source "
-				+ dataSource.getName() + ": " + ex);
+				+ dataSource.getName() + ": ", ex);
 		}
-		catch (DdsProtocolError ex)
+		catch (DdsProtocolError | DdsServerError ex)
 		{
-			String em = "Error while " + action + ": " + ex;
-			Logger.getLogger(ApiConstants.loggerName).warning("getMessages " + em);
-			throw new WebAppException(ErrorCodes.IO_ERROR, em);
-		}
-		catch (DdsServerError ex)
-		{
-			String em = "Error while " + action + ": " + ex;
-			Logger.getLogger(ApiConstants.loggerName).warning("getMessages " + em);
-			throw new WebAppException(ErrorCodes.IO_ERROR, em);
+			String em = "Error while " + action + ": ";
+			throw new WebAppException(ErrorCodes.IO_ERROR, em, ex);
 		}
 		finally
 		{

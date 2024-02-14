@@ -19,6 +19,9 @@ import java.net.*;
 import java.io.*;
 import java.rmi.UnknownHostException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
 This class encapsulates common functions for a TCP/IP client.
 You can implement a client by subclassing this class or by wrapping an
@@ -26,6 +29,7 @@ object of this type.
 */
 public class ApiBasicClient
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApiBasicClient.class);
 	/** port to connect to. */
 	protected int port;
 	/** host to connect to. */
@@ -66,7 +70,7 @@ public class ApiBasicClient
 	* Finalizer makes sure socket and stream resources are freed. If
 	* disconnect() was already called, no harm done.
 	*/
-	protected void finalize( )
+	protected void finalize( ) throws IOException
 	{
 		disconnect();
 	}
@@ -138,43 +142,18 @@ public class ApiBasicClient
 	{
 		try
 		{
-			try
-			{
-				if (input != null)
-					input.close();
-			}
-			catch (Exception e)
-			{
-				System.out.println("Error closing input: "+e.getMessage());
-				e.printStackTrace();
-			}
-			try
-			{
-				if (output != null)
-					output.close();
-			}
-			catch (Exception e)
-			{
-				System.out.println("Error closing ouput: "+e.getMessage());
-				e.printStackTrace();
-			}
-			try
-			{
-				if (socket != null)
-					socket.close();
-			}
-			catch (Exception e)
-			{
-				System.out.println("Error closing socket: "+e.getMessage());
-				e.printStackTrace();
-			}
-
-			if (debug != null)
-				debug.println("Disconnected form host '"
-					+ (host != null ? host : "(unknown)")
-					+ "', port " + port);
+			if (socket != null)
+				socket.close();
+			if (input != null)
+				input.close();
+			if (output != null)
+				output.close();
+			LOGGER.debug("Disconnected form host '{}', port {}", (host != null ? host : "(unknown)"), port);
 		}
-		catch(Exception e) {}
+		catch (IOException ex)
+		{
+			LOGGER.error("There was an error closing the socket connections.", ex);
+		}
 		finally
 		{
 			input = null;

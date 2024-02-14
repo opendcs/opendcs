@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.Consumes;
@@ -308,9 +309,8 @@ System.out.println("Connected to " + appStat.getHostname() + ":" + port);
 		}
 		catch (IOException ex)
 		{
-			ex.printStackTrace();
 			throw new WebAppException(ErrorCodes.DATABASE_ERROR,
-				"Error attempting to start appId=" + appId + ": " + ex);
+					String.format("Error attempting to start appId=%s", appId), ex);
 		}
 	}
 
