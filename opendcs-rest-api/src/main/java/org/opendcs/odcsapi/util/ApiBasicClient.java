@@ -142,12 +142,12 @@ public class ApiBasicClient
 	{
 		try
 		{
+			if (socket != null)
+				socket.close();
 			if (input != null)
 				input.close();
 			if (output != null)
 				output.close();
-			if (socket != null)
-				socket.close();
 			LOGGER.debug("Disconnected form host '{}', port {}", (host != null ? host : "(unknown)"), port);
 		}
 		catch (IOException ex)
