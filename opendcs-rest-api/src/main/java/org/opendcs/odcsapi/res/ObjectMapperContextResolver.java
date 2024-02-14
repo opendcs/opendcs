@@ -23,15 +23,10 @@ import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 @Provider
 public class ObjectMapperContextResolver implements ContextResolver<ObjectMapper>
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ObjectMapperContextResolver.class);
 	private final ObjectMapper mapper;
-
 
     public ObjectMapperContextResolver() 
     {
@@ -46,12 +41,9 @@ public class ObjectMapperContextResolver implements ContextResolver<ObjectMapper
 
     private ObjectMapper createObjectMapper() 
     {
-        String dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'[z]";
-        String timezone = "UTC";
-        LOGGER.info("Creating object map using date format '{}' and timezone '{}'", dateFormat, timezone);
         ObjectMapper objMap = new ObjectMapper();
-        SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
-        sdf.setTimeZone(TimeZone.getTimeZone(timezone));
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'[z]");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         objMap.setDateFormat(sdf);
         return objMap;
     }

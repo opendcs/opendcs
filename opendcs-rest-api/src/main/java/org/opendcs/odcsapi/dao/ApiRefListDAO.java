@@ -366,14 +366,12 @@ public class ApiRefListDAO extends ApiDaoBase
 		}
 		
 		String fromAbbr = season.getFromabbr();
-		System.out.println("From ABBR Found: |" + fromAbbr + "|");
 		ApiSeason fromExisting = null;
 		if (fromAbbr != null)
 		{
 			try { fromExisting = getSeason(fromAbbr); }
 			catch(WebAppException ex)
 			{
-				System.out.println("NO FROM ABBR!");
 				if (ex.getStatus() != ErrorCodes.NO_SUCH_OBJECT)
 					throw ex;
 				fromExisting = null;
@@ -402,7 +400,6 @@ public class ApiRefListDAO extends ApiDaoBase
 				throw new WebAppException(ErrorCodes.BAD_CONFIG,
 						"Cannot update season from '" + fromAbbr + "' to '" + season.getAbbr() + "'.  The season '" + season.getAbbr() + "' already exists.");
 			}
-			System.out.println("Updating from existing.");
 			q = "update ENUMVALUE set ENUMVALUE = ?, DESCRIPTION = ?, EDITCLASS = ?, SORTNUMBER = ? "
 					+ "where ENUMID = ? and lower(ENUMVALUE) = ?";
 				doModifyV(q, season.getAbbr(), season.getName(), s_e_tz, season.getSortNumber(),
