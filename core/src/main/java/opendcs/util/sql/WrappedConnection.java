@@ -181,7 +181,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
                 {
                     for(int n = 2; n < stk.length; n++)
                     {
-                            log.trace("\t" + n + ": " + stk[n]);
+                        log.trace("\t" + n + ": " + stk[n]);
                     }
                 }
             }
