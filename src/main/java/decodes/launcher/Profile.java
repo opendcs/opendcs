@@ -87,8 +87,8 @@ public class Profile
             if (p.getFile().equals(this.getFile()))
             {
                 retVal = true;
-            }    
-        }        
+            }
+        }    
         return retVal;
     }
 

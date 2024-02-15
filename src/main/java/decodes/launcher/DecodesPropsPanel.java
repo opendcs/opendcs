@@ -1,6 +1,6 @@
 /*
  * $Id$
- * 
+ *
  * $Log$
  * Revision 1.3  2016/06/07 21:54:00  mmaloney
  * Added HDB selection to Settings GUI.
@@ -36,13 +36,13 @@
  * *** empty log message ***
  *
  * Revision 1.18  2010/06/15 19:50:44  gchen
- * 
+ *
  * This is open-source software written by Sutron Corporation under
  * contract to the federal government. Anyone is free to copy and use this
  * source code for any purpos, except that no part of the information
  * contained in this file may be claimed to be proprietary.
  *
- * Except for specific contractual terms between Sutron and the federal 
+ * Except for specific contractual terms between Sutron and the federal
  * government, this source code is provided completely without warranty.
 */
 
@@ -76,7 +76,7 @@ public class DecodesPropsPanel extends JPanel
     private Properties origProps = new Properties();
 
     JButton dbPasswordButton;
-  
+
     String[] usedfields = new String[]{
         "sitenametypepreference",
         "edittimezone",
@@ -94,15 +94,15 @@ public class DecodesPropsPanel extends JPanel
     ArrayList<JLabel> newLabels= new ArrayList<JLabel>();
     ArrayList<JTextField> newFields = new ArrayList<JTextField>();
     ArrayList<String> newKeys = new ArrayList<String>();
-  
+
     private TopFrame parent;
-    
+
     public DecodesPropsPanel(TopFrame parent, ResourceBundle labels, ResourceBundle genericLabels)
     {
         this.parent = parent;
         this.labels = labels;
         this.genericLabels = genericLabels;
-        
+
         dbPasswordButton = new JButton(
             labels.getString("DecodesPropsPanel.dbPassword"));
         this.parent = parent;
@@ -122,7 +122,7 @@ public class DecodesPropsPanel extends JPanel
     private void jbInit() throws Exception
     {
         setLayout(new BorderLayout());
-        
+
         // North Panel contains params for connecting to the database
         JPanel editDbPanel = new JPanel(new GridBagLayout());
         this.add(editDbPanel, BorderLayout.NORTH);
@@ -137,23 +137,23 @@ public class DecodesPropsPanel extends JPanel
         });
         editDbPanel.add(
             new JLabel(labels.getString("DecodesPropsPanel.type")),
-                new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+                new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                 new Insets(4, 10, 4, 2), 0, 0));
         editDbPanel.add(editDbTypeCombo,
-            new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, 
+            new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                 GridBagConstraints.WEST, GridBagConstraints.NONE,
                 new Insets(4, 0, 4, 0), 0, 0));
-        editDbPanel.add(dbPasswordButton, 
-            new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
+        editDbPanel.add(dbPasswordButton,
+            new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
                 GridBagConstraints.WEST, GridBagConstraints.NONE,
                 new Insets(4, 20, 4, 20), 0, 0));
         editDbPanel.add(new JLabel(labels.getString("DecodesPropsPanel.location")),
             new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
                 GridBagConstraints.EAST, GridBagConstraints.NONE,
                 new Insets(4, 10, 4, 2), 0, 0));
-        editDbPanel.add(editDbLocationField, 
-            new GridBagConstraints(1, 1, 2, 1, 1.0, 0.0, 
+        editDbPanel.add(editDbLocationField,
+            new GridBagConstraints(1, 1, 2, 1, 1.0, 0.0,
                 GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                 new Insets(4, 0, 4, 20), 0, 0));
 
@@ -169,7 +169,7 @@ public class DecodesPropsPanel extends JPanel
         propsEditPanel.setBorder(new TitledBorder(
             labels.getString("DecodesPropsPanel.preferences")));
         this.add(propsEditPanel, BorderLayout.CENTER);
-        
+
         editDbTypeCombo.addActionListener(
             new ActionListener()
             {
@@ -217,21 +217,21 @@ public class DecodesPropsPanel extends JPanel
     {
         origProps.clear();
         settings.saveToProps(origProps);
-        
+
         // Since we show database type & location at the North panel, remove
         // them from the properties list.
         PropertiesUtil.rmIgnoreCase(origProps, "editDatabaseType");
         PropertiesUtil.rmIgnoreCase(origProps, "editDatabaseLocation");
         propsEditPanel.setProperties(origProps);
         propsEditPanel.setPropertiesOwner(settings);
-        
+
         int typ = settings.editDatabaseTypeCode;
         editDbTypeCombo.setSelectedIndex(
-            typ == DecodesSettings.DB_XML ? 0 : 
+            typ == DecodesSettings.DB_XML ? 0 :
             typ == DecodesSettings.DB_SQL ? 1 :
-            typ == DecodesSettings.DB_NWIS ? 2 : 
-            typ == DecodesSettings.DB_CWMS ? 3 : 
-            typ == DecodesSettings.DB_OPENTSDB ? 4 : 
+            typ == DecodesSettings.DB_NWIS ? 2 :
+            typ == DecodesSettings.DB_CWMS ? 3 :
+            typ == DecodesSettings.DB_OPENTSDB ? 4 :
             typ == DecodesSettings.DB_HDB ? 5 : 0);
         editDbLocationField.setText(settings.editDatabaseLocation);
     }
@@ -246,9 +246,9 @@ public class DecodesPropsPanel extends JPanel
         settings.editDatabaseTypeCode =
             idx == 0 ? DecodesSettings.DB_XML :
             idx == 1 ? DecodesSettings.DB_SQL :
-            idx == 2 ? DecodesSettings.DB_NWIS : 
-            idx == 3 ? DecodesSettings.DB_CWMS : 
-            idx == 4 ? DecodesSettings.DB_OPENTSDB : 
+            idx == 2 ? DecodesSettings.DB_NWIS :
+            idx == 3 ? DecodesSettings.DB_CWMS :
+            idx == 4 ? DecodesSettings.DB_OPENTSDB :
             idx == 5 ? DecodesSettings.DB_HDB : DecodesSettings.DB_NONE;
         settings.editDatabaseLocation = editDbLocationField.getText();
         return settings;
@@ -256,7 +256,7 @@ public class DecodesPropsPanel extends JPanel
 
     private void dbPasswordButtonPressed()
     {
-        LoginDialog dlg = new LoginDialog(parent, 
+        LoginDialog dlg = new LoginDialog(parent,
                 labels.getString("DecodesPropsPanel.loginUserInfoTitle"));
         parent.launchDialog(dlg);
         if (dlg.isOK())
