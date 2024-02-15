@@ -121,7 +121,10 @@ public class AlgorithmsListPanel extends ListPanel
 			showError(openErr);
 			return;
 		}
-		DbCompAlgorithm dca = algoListTableModel.getRowAlgorithm(r);
+		//Get the correct row from the table model
+		int modelrow = algoListTable.convertRowIndexToModel(r);
+		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();			
+		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
 		openEditTab(dca);
 	}
 
@@ -173,7 +176,10 @@ public class AlgorithmsListPanel extends ListPanel
 			CAPEdit.instance().getFrame().showError(cpyErr1);
 			return;
 		}
-		DbCompAlgorithm dca = algoListTableModel.getRowAlgorithm(r);
+		//Get the correct row from the table model
+		int modelrow = algoListTable.convertRowIndexToModel(r);
+		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();
+		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
 
 	    String newName = JOptionPane.showInputDialog(cpyInput);
 		if (newName == null)
@@ -198,7 +204,11 @@ public class AlgorithmsListPanel extends ListPanel
 				deleteErr1);
 			return;
 		}
-		DbCompAlgorithm dca = algoListTableModel.getRowAlgorithm(r);
+		//Get the correct row from the table model
+		int modelrow = algoListTable.convertRowIndexToModel(r);
+		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();
+		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
+
 		AlgorithmDAI algorithmDao = CAPEdit.instance().theDb.makeAlgorithmDAO();
 		try
 		{

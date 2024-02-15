@@ -7,4 +7,5 @@ public interface WrappedConnectionMBean
     public long getConnectionLifetimeSeconds();
     public String[] getOpenStackTrace();
     public boolean getTracingOn();
+    public String getOpeningThreadName();
 }

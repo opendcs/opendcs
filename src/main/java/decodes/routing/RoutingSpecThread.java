@@ -175,6 +175,7 @@ public class RoutingSpecThread
 	public RoutingSpecThread()
 	{
 		super();
+		setDaemon(true);
 	}
 
 	/**
@@ -1379,7 +1380,13 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		log(Logger.E_INFORMATION, "shutdown called.");
 		done = true;
 		if (source != null)
+		{
 			source.close();
+		}
+		if (this.statusWriteThread != null)
+		{
+			this.statusWriteThread.shutdown = true;
+		}
 	}
 
 	private void doSummary(DecodedMessage dm)
@@ -1973,6 +1980,8 @@ class StatusWriteThread extends Thread
 	{
 		myrs = rs;
 		shutdown = false;
+		setDaemon(true);
+		setName(rs.getName()+"-status writer");
 	}
 
 	public void run()

@@ -16,6 +16,7 @@ import ilex.util.IDateFormat;
 import ilex.util.PropertiesUtil;
 
 import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 
 /**
@@ -42,10 +43,15 @@ public class RoundRobinGroup
     int currentSource = 0;
 	DataSourceExec activeMember; // Current group member we're delegating to
 
-	/** default constructor */
-	public RoundRobinGroup()
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public RoundRobinGroup(DataSource ds, Database db)
 	{
-		super();
+		super(ds,db);
 
 		props = null;
 		since = null;
@@ -289,4 +295,3 @@ public class RoundRobinGroup
 			Logger.instance().debug1("No currently active data source member.");
 	}
 }
-

@@ -61,6 +61,8 @@ package opendcs.dao;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -72,18 +74,21 @@ import java.util.Iterator;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.DbObjectCache.CacheIterator;
+import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompFilter;
 import decodes.tsdb.ConstraintException;
+import decodes.tsdb.CpDependsNotify;
 import decodes.tsdb.DbAlgoParm;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
@@ -155,7 +160,7 @@ debug1("Setting manual connection for algorithmDAO");
 			tsGroupDAO.setManualConnection(myCon);
 			loadingAppDAO.setManualConnection(myCon);
 		}
-		return myCon;
+		return new WrappedConnection(myCon, c -> {});
 	}
 
 	private void fillCache()
@@ -251,11 +256,11 @@ debug1("Setting manual connection for algorithmDAO");
 		if (ret != null)
 			return ret;
 
-		try(
-			PreparedStatement getComp = getConnection().prepareStatement(
+		try(Connection c = getConnection();
+			PreparedStatement getComp = c.prepareStatement(
 				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_ID = ?"
 			);
-			PreparedStatement getAppId = getConnection().prepareStatement(
+			PreparedStatement getAppId = c.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			);
 		)
@@ -475,15 +480,11 @@ debug1("Setting manual connection for algorithmDAO");
 	public DbComputation getComputationByName(String name)
 		throws DbIoException, NoSuchObjectException
 	{
-		String q = "select " + compTableColumns
-			+ " from CP_COMPUTATION where COMPUTATION_NAME = '"
-			+ name + "'";
-		Connection conn = getConnection();
-		try(
+		try(Connection conn = getConnection();
 			PreparedStatement getComp = conn.prepareStatement(
 				"select " + compTableColumns + " from CP_COMPUTATION where COMPUTATION_NAME = ?"
 			);
-			PreparedStatement getAppId = getConnection().prepareStatement(
+			PreparedStatement getAppId = conn.prepareStatement(
 				"select LOADING_APPLICATION_NAME from HDB_LOADING_APPLICATION where LOADING_APPLICATION_ID = ?"
 			);
 		){
@@ -1061,10 +1062,13 @@ debug1("Setting manual connection for algorithmDAO");
 				// CWMS DB 14 uses the Comp Depends Updater Daemon. So send a NOTIFY.
 				if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_14)
 				{
-					q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-						+ "values(cp_depends_notifyidseq.nextval, 'C', "
-						+ comp.getKey() + ", " + db.sqlDate(new Date()) + ")";
-					doModify(q);
+					try (CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+					{
+						CpDependsNotify cdn = new CpDependsNotify();
+						cdn.setEventType(CpDependsNotify.CMP_MODIFIED);
+						cdn.setKey(comp.getKey());
+						dai.saveRecord(cdn);
+					}
 				}
 				// Older versions the GUI must update dependencies directly.
 				else if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_5)
@@ -1077,17 +1081,23 @@ debug1("Setting manual connection for algorithmDAO");
 			}
 			else if (db.isOpenTSDB() && db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_67)
 			{
-				// Computations did not exist in OpenTSDB until OpenDCS Version 6.7 = DB Version 67
-				q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-					+ "values(" + getKey("cp_depends_notify")
-					+ ", 'C', " + comp.getKey() + ", " + System.currentTimeMillis() + ")";
-					doModify(q);
+				try (CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+				{
+					CpDependsNotify cdn = new CpDependsNotify();
+					cdn.setEventType(CpDependsNotify.CMP_MODIFIED);
+					cdn.setKey(comp.getKey());
+					dai.saveRecord(cdn);
+				}
 			}
 			// Note HDB does the notifications via Trigger, so no need to do anything.
 		}
 		catch(DbIoException ex)
 		{
 			warning(ex.getMessage());
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			warning(sw.toString());
 			throw ex;
 		}
 	}

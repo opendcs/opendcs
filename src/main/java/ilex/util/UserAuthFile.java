@@ -111,11 +111,11 @@ public class UserAuthFile implements AuthSource
 
 	/** 
 	  Construct with filename other than the default.
-	  @param fn the filename
+	  @param authFilename the filename
 	*/
-	public UserAuthFile(String path)
+	public UserAuthFile(String authFilename)
 	{
-		this(new File(EnvExpander.expand(path)));
+		this(new File(EnvExpander.expand(authFilename)));
 	}
 	
 	public UserAuthFile(File af)
@@ -348,7 +348,7 @@ public class UserAuthFile implements AuthSource
 					System.err.println("Cannot open password file '" + pwFileArg + "': " + ex);
 				}
 			}
-			System.out.println("writing...");
+			System.out.println("writing to " + pwFileArg +"...");
 			authFile.write(user, password);
 		}
 		else // query only

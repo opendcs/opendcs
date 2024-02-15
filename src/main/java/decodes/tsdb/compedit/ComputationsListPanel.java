@@ -155,13 +155,14 @@ public class ComputationsListPanel extends ListPanel
 	protected void doOpen()
 	{
 		int r = compListTable.getSelectedRow();
-		if (r == -1)
+		int rowModel = compListTable.convertRowIndexToModel(r);
+		if (rowModel== -1)
 		{
 			parentFrame.showError(
 				compLabels.getString("ComputationsFilterPanel.OpenError"));
 			return;
 		}
-		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(r);
+		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
 		ComputationDAI computationDAO = tsdb.makeComputationDAO();
 		try
 		{
@@ -230,7 +231,8 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString("ComputationsFilterPanel.CopyError1"));
 			return;
 		}
-		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(r);
+		int rowModel = compListTable.convertRowIndexToModel(r);
+		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
 
 	    String newName = JOptionPane.showInputDialog(
 	    	compLabels.getString("ComputationsFilterPanel.NewInput"));
@@ -271,8 +273,8 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString("ComputationsFilterPanel.DeleteError1"));
 			return;
 		}
-
-		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(r);
+		int rowModel = compListTable.convertRowIndexToModel(r);
+		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
 
 		int ok = JOptionPane.showConfirmDialog(this,
 			LoadResourceBundle.sprintf(

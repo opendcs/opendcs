@@ -81,6 +81,23 @@ public class DbKey
 		return createDbKey(keyValue);
 	}
 
+	/**
+	 * Create DbKey from named column
+	 * @param rs
+	 * @param column
+	 * @return Valid DbKey, may be "NullKey"
+	 * @throws SQLException
+	 */
+	public static DbKey createDbKey(ResultSet rs, String column)
+		throws SQLException
+	{
+		long keyValue = rs.getLong(column);
+		if (rs.wasNull())
+			return NullKey;
+
+		return createDbKey(keyValue);
+	}
+
 	/** Factory method to create a key from a long integer key value */
 	public static synchronized DbKey createDbKey(long keyValue)
 	{

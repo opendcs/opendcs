@@ -32,9 +32,16 @@ public class ByteArrayDataSource
 	PMParser pmParser = null;
 	RawMessage rawMessage = null;
 
+	/**
+	 * The byte array DataSource is not used by the general runtime
+	 * and does not need the more specific DataSourceExec constructor.
+	 * as it never uses the DataSource or Database null is always passed to
+	 * super()
+	 * @param bytes
+	 */
 	public ByteArrayDataSource(byte[] bytes)
 	{
-		super();
+		super(null,null);
 		this.bytes = bytes;
 		pmParser = null;
 		allowNullPlatform = false;

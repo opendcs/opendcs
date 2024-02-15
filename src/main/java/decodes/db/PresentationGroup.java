@@ -74,9 +74,28 @@ public class PresentationGroup extends IdDatabaseObject
 	*/
 	public PresentationGroup()
 	{
-		super();  // Sets _id to Constants.undefinedId;
+		this(null, Database.getDb());
+	}
+
+	/**
+	  Constructor with a name.
+	  @param name the name of the group
+	*/
+	public PresentationGroup(String name)
+	{
+		this(name, Database.getDb());
+	}
+
+	public PresentationGroup(Database db)
+	{
+		this(null, db);
+	}
+
+	public PresentationGroup(String name, Database db)
+	{
+		super(db);
 		clear();
-		groupName = null;
+		groupName = name;
 		defaultPresentation = null;
 	}
 
@@ -97,16 +116,6 @@ public class PresentationGroup extends IdDatabaseObject
 	{
 		dataPresentations.clear();
 //		presentationMap.clear();
-	}
-
-	/**
-	  Constructor with a name.
-	  @param name the name of the group
-	*/
-	public PresentationGroup(String name)
-	{
-		this();
-		this.groupName = name;
 	}
 
 	/**

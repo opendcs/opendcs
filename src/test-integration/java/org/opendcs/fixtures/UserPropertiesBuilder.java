@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Properties;
 
+import decodes.sql.KeyGenerator;
+
 public class UserPropertiesBuilder
 {
     private Properties props = new Properties();
@@ -25,7 +27,7 @@ public class UserPropertiesBuilder
      */
     public UserPropertiesBuilder withDatabaseLocation(String dbLocation)
     {
-        props.setProperty("EditDatabaseLocation", dbLocation);
+        props.setProperty("editDatabaseLocation", dbLocation);
         return this;
     }
 
@@ -71,6 +73,55 @@ public class UserPropertiesBuilder
     public UserPropertiesBuilder withDecodesAuth(String auth)
     {
         props.setProperty("DbAuthFile", auth);
+        return this;
+    }
+
+    /**
+     * Set the Cwms Office Id to use for connection setup.
+     *
+     * NOTE: only used by CWMS.
+     * @param officeId
+     * @return
+     */
+    public UserPropertiesBuilder withCwmsOffice(String officeId)
+    {
+        props.setProperty("cwmsOfficeId",officeId);
+        return this;
+    }
+
+    /**
+     * Default office id to use for certain interfaces.
+     *
+     * NOTE: CWMS Only
+     * @param officeId
+     * @return
+     */
+    public UserPropertiesBuilder withDbOffice(String officeId)
+    {
+        props.setProperty("dbOfficeId",officeId);
+        return this;
+    }
+
+    /**
+     * Default, if not set, is false.
+     *
+     * @param writeCwmsLocations true if you want to allow creating of CWMS locations (sites)
+     * @return
+     */
+    public UserPropertiesBuilder withWriteCwmsLocations(boolean writeCwmsLocations)
+    {
+        props.setProperty("writeCwmsLocations",Boolean.toString(writeCwmsLocations));
+        return this;
+    }
+
+    /**
+     *
+     * @param generator which KeyGenerator implementation to use.
+     * @return
+     */
+    public UserPropertiesBuilder withSqlKeyGenerator(Class<? extends KeyGenerator> generator)
+    {
+        props.setProperty("sqlKeyGenerator",generator.getName());
         return this;
     }
 /**
@@ -173,4 +224,9 @@ algoEditCompileOptions=
 routingStatusDir=$DCSTOOL_USERDIR/routstat
 decodesFormatLabelMode=f
 */
+
+    public void withDatabaseDriver(String driverString)
+    {
+        this.props.put("jdbcDriverClass",driverString);
+    }
 }

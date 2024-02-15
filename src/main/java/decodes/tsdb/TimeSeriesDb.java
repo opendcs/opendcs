@@ -428,6 +428,7 @@ import java.util.TimeZone;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DaiBase;
@@ -444,6 +445,7 @@ import opendcs.dai.TsGroupDAI;
 import opendcs.dao.AlarmDAO;
 import opendcs.dao.AlgorithmDAO;
 import opendcs.dao.CompDependsDAO;
+import opendcs.dao.CompDependsNotifyDAO;
 import opendcs.dao.ComputationDAO;
 import opendcs.dao.DacqEventDAO;
 import opendcs.dao.DaoBase;
@@ -457,6 +459,7 @@ import opendcs.dao.PropertiesSqlDao;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
+import opendcs.util.sql.WrappedConnection;
 import decodes.util.DecodesSettings;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
@@ -593,7 +596,10 @@ public abstract class TimeSeriesDb
 	}
 
 	/** @return the JDBC connection in use by this object. */
-	public Connection getConnection() { return conn; }
+	public Connection getConnection()
+	{
+		return new WrappedConnection(conn, c -> {});
+	}
 
 	/**
 	 * Sets the JDBC connection in use by this object.
@@ -2083,6 +2089,12 @@ public abstract class TimeSeriesDb
 	public CompDependsDAI makeCompDependsDAO()
 	{
 		return new CompDependsDAO(this);
+	}
+
+	@Override
+	public CompDependsNotifyDAI makeCompDependsNotifyDAO()
+	{
+		return new CompDependsNotifyDAO(this);
 	}
 
 	@Override

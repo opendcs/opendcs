@@ -1,6 +1,6 @@
 /**
  * $Id$
- * 
+ *
  * $Log$
  * Revision 1.4  2017/01/24 15:38:08  mmaloney
  * CWMS-10060 added support for DecodesSettings.tsidFetchSize
@@ -15,7 +15,7 @@
  * OPENDCS 6.0 Initial Checkin
  *
  * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other 
+ * to the United States Government. No warranty is provided or implied other
  * than specific contractual terms between COVE and the U.S. Government.
  *
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
@@ -26,16 +26,20 @@ package opendcs.dao;
 import ilex.util.Logger;
 import opendcs.dai.DaiBase;
 import opendcs.util.functional.ConnectionConsumer;
+import opendcs.util.functional.DaoConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
+import opendcs.util.sql.WrappedConnection;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import decodes.db.Constants;
@@ -64,7 +68,7 @@ public class DaoBase
 	private boolean conSetManually = false;
 
 	protected String module;
-	
+
 	/**
 	 * Constructor
 	 * @param tsdb the database
@@ -75,8 +79,8 @@ public class DaoBase
 		this.db = tsdb;
 		this.module = module;
 	}
-	
-	/** 
+
+	/**
 	 * Constructor for subordinate DAOs.
 	 * The parent DAO shares its connection with the
 	 * subordinate after creation. Then the subordinate close() will not free
@@ -89,16 +93,23 @@ public class DaoBase
 	{
 		this.db = tsdb;
 		this.module = module;
-		setManualConnection(con);
+		// Code intentionally duplicated so this form can be used
+		// within DaoHelper for transactions.
+		this.conSetManually = true;
+		this.myCon = con;
 	}
-	
+
+	/**
+	 * Assert what connection will be used for this DAOs operations.
+	 * Caller is responsible for cleaning up the Connection object.
+	 */
 	public void setManualConnection(Connection con)
 	{
 		this.myCon = con;
 		conSetManually = true;
 	}
 
-	
+
 	/**
 	 * Users should close the DAO after using.
 	 */
@@ -109,18 +120,18 @@ public class DaoBase
 		if (queryStmt2 != null)
 			try { queryStmt2.close(); } catch(Exception ex) {}
 		queryStmt1 = queryStmt2 = null;
-		
+
 		// for pooling: return the connection (if there is one) back to the pool.
 		if (myCon != null && !conSetManually)
 			db.freeConnection(myCon);
 		myCon = null;
 	}
-	
+
 	public void finalize()
 	{
 		close();
 	}
-	
+
 	protected Connection getConnection()
 	{
 		// local getConnection() method that saves the connection locally
@@ -133,13 +144,13 @@ public class DaoBase
 			this.queryResults2 = null;
 			myCon = db.getConnection();
 		}
-			
-			
-		return myCon;
+
+
+		return new WrappedConnection(myCon, c -> {});
 	}
 
 	/**
-	 * 
+	 *
 	 * @return connection state (open -> false, closed -> true)
 	 */
 	private boolean connectionClosed()
@@ -147,8 +158,8 @@ public class DaoBase
 		try{
 			return myCon.isClosed();
 		} catch( SQLException err){
-			// There is no compelling reason here to distinguish between a failed and closed connection.						
-			return true;	
+			// There is no compelling reason here to distinguish between a failed and closed connection.
+			return true;
 		}
 	}
 
@@ -159,9 +170,9 @@ public class DaoBase
 		} catch( SQLException err )
 		{
 			return true;
-		}		
+		}
 	}
-	
+
 	/**
 	 * Does a SQL query with the default static statement &amp; returns the
 	 * result set.
@@ -172,7 +183,9 @@ public class DaoBase
 	 * needed.
 	 * @param q the query
 	 * @return the result set
+	 * @deprecated Do not use for use code
 	 */
+	@Deprecated
 	public ResultSet doQuery(String q)
 		throws DbIoException
 	{
@@ -189,7 +202,7 @@ public class DaoBase
 			if (fetchSize > 0)
 				queryStmt1.setFetchSize(fetchSize);
 			debug3("Query1 '" + q + "'");
-			
+
 //if (this instanceof decodes.cwms.CwmsTimeSeriesDAO
 // || this instanceof decodes.cwms.CwmsSiteDAO)
 //debug1("Fetch size=" + queryStmt1.getFetchSize());
@@ -203,8 +216,13 @@ public class DaoBase
 			throw new DbIoException(msg);
 		}
 	}
-	
-		/** An extra do-query for inside-loop queries. */
+
+	/**
+	 *
+	 *  An extra do-query for inside-loop queries.
+	 * @Deprecated do not use for new code
+	 */
+	@Deprecated
 	public ResultSet doQuery2(String q) throws DbIoException
 	{
 		if (queryResults2 != null)
@@ -232,18 +250,19 @@ public class DaoBase
 
 	/**
 	* Executes an UPDATE or INSERT query.
-	* Thread safe: internally synchronized on the modify-statement.
+	*
+	* Thread safety: No gaurantees. Uses one statement but may share connection depending on OpenDCS implementation.
+	*
 	* @param q the query string
-	* @throws DatabaseException  if the update fails.
+	* @throws DbIoException  if the update fails.
 	* @return number of records modified in the database
 	*/
 	public int doModify(String q)
 		throws DbIoException
 	{
-		Statement modStmt = null;
-		try
+		try(Connection conn = getConnection();
+			Statement modStmt = conn.createStatement();)
 		{
-			modStmt = getConnection().createStatement();
 			debug3("Executing statement '" + q + "'");
 			return modStmt.executeUpdate(q);
 		}
@@ -251,15 +270,6 @@ public class DaoBase
 		{
 			String msg = "SQL Error in modify query '" + q + "': " + ex;
 			throw new DbIoException(msg);
-		}
-		finally
-		{
-			if (modStmt != null)
-			{
-				try { modStmt.close(); }
-				catch(Exception ex) {}
-				modStmt = null;
-			}
 		}
 	}
 
@@ -301,7 +311,7 @@ public class DaoBase
 	{
 		if (arg == null)
 			return "NULL";
-		
+
 		String a = "";
 		int from = 0;
 		int to;
@@ -323,7 +333,7 @@ public class DaoBase
 			throw new DbIoException(ex.getMessage());
 		}
 	}
-	
+
 	/**
 	 * Format a double precision float for a sql statement.
 	 * The special value Constants.undefinedDouble (a huge number) will
@@ -336,7 +346,7 @@ public class DaoBase
 		if (d == Constants.undefinedDouble) return "NULL";
 		return Double.toString(d);
 	}
-	
+
 	public String sqlBoolean(boolean b)
 	{
 		return db.sqlBoolean(b);
@@ -406,6 +416,7 @@ public class DaoBase
 					stmt.setFetchSize(fetchSize);;
 				}
 				int index=1;
+
 				for( Object param: parameters)
 				{
 					if (param instanceof Integer)
@@ -416,13 +427,51 @@ public class DaoBase
 					{
 						stmt.setString(index,(String)param);
 					}
+					else if (param instanceof Character)
+					{
+						stmt.setString(index, ((Character)param).toString());
+					}
 					else if (param instanceof DbKey)
 					{
-						stmt.setLong(index,((DbKey)param).getValue());
+						DbKey key = (DbKey)param;
+						if (DbKey.isNull(key))
+						{
+							stmt.setNull(index,Types.NULL);
+						}
+						else
+						{
+							stmt.setLong(index,key.getValue());
+						}
+					}
+					else if (param instanceof Date)
+					{
+						if (this.db.isOpenTSDB())
+						{
+							stmt.setLong(index,((Date)param).getTime());
+						}
+						else
+						{
+							stmt.setDate(index,new java.sql.Date(((Date)param).getTime()));
+						}
+					}
+					else if (param == null)
+					{
+						stmt.setNull(index,Types.NULL);
 					}
 					else
 					{
-						stmt.setObject(index,param);
+						try
+						{						
+							stmt.setObject(index,param);
+						}
+						catch (SQLException ex)
+						{
+							String msg = String.format(
+								 "Attempting to set parameter of type '%'"
+							   + ". Please open an issue on the project page with this error message.",
+							    param.getClass().getName());
+							throw new SQLException(msg, ex);
+						}
 					}
 					index++;
 				}
@@ -484,9 +533,28 @@ public class DaoBase
 	 * @param consumer Function that Takes a ResultSet and returns an instance of R
 	 * @param parameters arg list of query inputs
 	 * @returns Object of type R determined by the caller.
-	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned
+	 * @throws SQLException if anything goes bad during the creation, execution, or processing of the query. Or if more than one result is returned
 	 */
 	public <R> R getSingleResult(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	{
+		return getSingleResultOr(query, consumer, null, parameters);
+	}	
+
+	/**
+	 * Given a query string and bind variables execute the query.
+	 * The provided function should process the single valid result set and return an object R.
+	 *
+	 * The query should return a single result.
+	 *
+	 * @param query SQL query with ? for bind vars.
+	 * @param consumer Function that Takes a ResultSet and returns an instance of R.
+	 * @param defaultValue An instance of type R to return if nothing is found in the database.
+	 * @param parameters arg list of query inputs
+	 * @returns Object of type R determined by the caller. If no results in the database, defaultValue is returned,
+	 * 			other wise the result of the consumer is returned.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query. Or if more than one result is returned.
+	 */
+	public <R> R getSingleResultOr(String query, ResultSetFunction<R> consumer, R defaultValue, Object... parameters ) throws SQLException
 	{
 		final ArrayList<R> result = new ArrayList<>();
 		withStatement(query,(stmt)->{
@@ -502,9 +570,9 @@ public class DaoBase
 				}
 			}
 		},parameters);
-		if( result.isEmpty() )
+		if (result.isEmpty())
 		{
-			return null;
+			return defaultValue;
 		}
 		else
 		{
@@ -535,5 +603,31 @@ public class DaoBase
 			}
 		},parameters);
 		return result;
+	}
+
+	/**
+	 * Run a set of queryies with a specific connection in a transaction.
+	 * Use the presented dao for all operations.
+	 *
+	 * The presented Dao is a {@link DaoHelper} which will be very picky
+	 * about which SQL functions can be called.
+	 *
+	 * @param consumer given a new DAO that is manually set to a JDBC transaction.
+	 * @throws SQLException
+	 */
+	public void inTransaction(DaoConsumer consumer) throws Exception
+	{
+		Connection c = getConnection();
+		boolean autoCommit = c.getAutoCommit();
+		c.setAutoCommit(false);
+		try (DaoBase dao = new DaoHelper(this.db,"transaction",c);)
+		{
+			consumer.accept(dao);
+			c.commit();
+		}
+		finally
+		{
+			c.setAutoCommit(autoCommit);
+		}
 	}
 }

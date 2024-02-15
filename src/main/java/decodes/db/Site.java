@@ -137,7 +137,7 @@ public class Site extends IdDatabaseObject
 	 * edit db using the factory. Then this method copies in information
 	 * from the imported site.
 	 */
-	public void copyFrom(Site rhs)
+	public synchronized void copyFrom(Site rhs)
 	{
 		latitude = rhs.latitude;
 		longitude = rhs.longitude;
@@ -176,14 +176,14 @@ public class Site extends IdDatabaseObject
 	public String getObjectType() { return "Site"; }
 
 	/** @return description of this site. */
-	public String getDescription() { return description; }
+	public synchronized String getDescription() { return description; }
 
 
 	/** 
 	  Sets the description for this site. 
 	  @param d the description
 	*/
-	public void setDescription(String d) { description = d; } 
+	public synchronized void setDescription(String d) { description = d; } 
 
 	/**
 	  From DatabaseObject interface,
@@ -216,8 +216,8 @@ public class Site extends IdDatabaseObject
 	  of the passed type already exists, it is overwritten.
 	  @param sn the site name
 	*/
-	public void addName(SiteName sn)
-	{
+	public synchronized void addName(SiteName sn)
+	{		
 		SiteName oldsn = getName(sn.getNameType());
 		if (oldsn != null)
 		{
@@ -225,13 +225,13 @@ public class Site extends IdDatabaseObject
 		}
 
 		sn.site = this;
-		siteNames.add(sn);
+		siteNames.add(sn);	
 	}
 
 	/**
 	 * Removes all names defined for this site (for use by editor).
 	 */
-	public void clearNames()
+	public synchronized void clearNames()
 	{
 		siteNames.clear();
 	}
@@ -241,7 +241,7 @@ public class Site extends IdDatabaseObject
 	  @return the name of this site corresponding to a given name-type,
 	  or null if no name of the given type exists.
 	*/
-	public SiteName getName(String type)
+	public synchronized SiteName getName(String type)
 	{
 		if (type == null)
 			return getPreferredName();
@@ -256,7 +256,7 @@ public class Site extends IdDatabaseObject
 	  decodes settings.
 	  @return the SiteName of the preferred type, or null if no name defined.
  	*/
-	public SiteName getPreferredName()
+	public synchronized SiteName getPreferredName()
 	{
 		SiteName ret = null;
 		String type = DecodesSettings.instance().siteNameTypePreference;
@@ -272,7 +272,7 @@ public class Site extends IdDatabaseObject
 	 * Guaranteed not to return null
 	 * @return site name suitable for display
 	 */
-	public String getDisplayName()
+	public synchronized String getDisplayName()
 	{
 		if (publicName != null)
 			return publicName;
@@ -287,7 +287,7 @@ public class Site extends IdDatabaseObject
 	 * @param nameValue the name value
 	 * @return true if this site has a name with the passed value (case INsensitive)
 	 */
-	public boolean hasNameValue(String nameValue)
+	public synchronized boolean hasNameValue(String nameValue)
 	{
 		for(SiteName sn : siteNames)
 			if (sn.getNameValue().equalsIgnoreCase(nameValue))
@@ -295,31 +295,31 @@ public class Site extends IdDatabaseObject
 		return false;
 	}
 	
-	public String getUniqueName()
+	public synchronized String getUniqueName()
 	{
 		SiteName sn = getPreferredName();
 		return sn != null ? sn.getNameValue() : null;
 	}
 
 	/** @return an iterator into vector of SiteName objects */
-	public Iterator<SiteName> getNames()
+	public synchronized Iterator<SiteName> getNames()
 	{
 		return siteNames.iterator();
 	}
 	
 	/** @return number of names assigned to this site. */
-	public int getNameCount()
+	public synchronized int getNameCount()
 	{
 		return siteNames.size();
 	}
 
-	public SiteName getNameAt(int idx)
+	public synchronized SiteName getNameAt(int idx)
 	{
 		return idx >= siteNames.size() ? null :
 			siteNames.get(idx);
 	}
 
-	public void removeNameAt(int idx)
+	public synchronized void removeNameAt(int idx)
 	{
 		SiteName sn = getNameAt(idx);
 		if (sn != null)
@@ -330,22 +330,22 @@ public class Site extends IdDatabaseObject
 	}
 
 	/** @return the elevation (above mean sea level) for this site. */
-	public double getElevation() { return elevation; }
+	public synchronized double getElevation() { return elevation; }
 
 	/** 
 	  Sets the elevation (above mean sea level) for this site. 
 	  @param elev the elevation
 	*/
-	public void setElevation(double elev) { elevation = elev; }
+	public synchronized void setElevation(double elev) { elevation = elev; }
 
 	/** @return the elevatation units for this site. */
-	public String getElevationUnits() { return elevationUnits; }
+	public synchronized String getElevationUnits() { return elevationUnits; }
 
 	/** 
 	  Set elevation units for this site. 
 	  @param eu the units
 	*/
-	public void setElevationUnits(String eu) { elevationUnits = eu; }
+	public synchronized void setElevationUnits(String eu) { elevationUnits = eu; }
 
 	/** 
 	 * Return the USGS Database Number or null if undefined. 
@@ -354,7 +354,7 @@ public class Site extends IdDatabaseObject
 	 * nn is the DBNO. If it contains no -DB suffix, assume database 01.
 	 * @return the USGS Database Number (defaults to "01" if undefined). 
 	 */
-	public String getUsgsDbno() 
+	public synchronized String getUsgsDbno() 
 	{
 		SiteName usgsName = getName(Constants.snt_USGS);
 		if (usgsName == null)
@@ -364,14 +364,14 @@ public class Site extends IdDatabaseObject
 	}
 
 	/** Reads this site from the database. */
-	public void read()
+	public synchronized void read()
 		throws DatabaseException
 	{
 		myDatabase.getDbIo().readSite(this);
 	}
 
 	/** Writes this site to the database. */
-	public void write()
+	public synchronized void write()
 		throws DatabaseException
 	{
 		myDatabase.getDbIo().writeSite(this);
@@ -382,7 +382,7 @@ public class Site extends IdDatabaseObject
 	 * @param name the property name.
 	 * @param value the property value.
 	 */
-	public void setProperty(String name, String value)
+	public synchronized void setProperty(String name, String value)
 	{
 		if (publicName == null && value.equalsIgnoreCase("PUBLIC_NAME"))
 			setPublicName(name);
@@ -395,7 +395,7 @@ public class Site extends IdDatabaseObject
 	 * @param name the property name.
 	 * @return value of name property, or null if not defined.
 	 */
-	public String getProperty(String name)
+	public synchronized String getProperty(String name)
 	{
 		if (name.equalsIgnoreCase("PUBLIC_NAME") && publicName != null)
 			return publicName;
@@ -405,7 +405,7 @@ public class Site extends IdDatabaseObject
 	/**
 	 * @return enumeration of all names in the property set.
 	 */
-	public Enumeration getPropertyNames()
+	public synchronized Enumeration getPropertyNames()
 	{
 		return siteProps.propertyNames();
 	}
@@ -414,14 +414,14 @@ public class Site extends IdDatabaseObject
 	 * Removes a property assignment.
 	 * @param name the property name.
 	 */
-	public void rmProperty(String name)
+	public synchronized void rmProperty(String name)
 	{
 		siteProps.remove(name);
 	}
 
-	public Properties getProperties() { return siteProps; }
+	public synchronized Properties getProperties() { return siteProps; }
 
-	public String getBriefDescription()
+	public synchronized String getBriefDescription()
 	{
 		if (description == null)
 			return "";
@@ -435,7 +435,7 @@ public class Site extends IdDatabaseObject
 		return description.substring(0, i);
 	}
 	
-	public boolean importEquals(Site os)
+	public synchronized boolean importEquals(Site os)
 	{
 		if (os == null)
 		{
@@ -509,13 +509,13 @@ public class Site extends IdDatabaseObject
 	}
 
 	/** @return the public display name for this site */
-	public String getPublicName()
+	public synchronized String getPublicName()
 	{
 		return publicName;
 	}
 
 	/** Set the public display name for this site */
-	public void setPublicName(String publicName)
+	public synchronized void setPublicName(String publicName)
 	{
 		this.publicName = publicName;
 	}
@@ -524,7 +524,7 @@ public class Site extends IdDatabaseObject
 	 * Remove the name of the given name type
 	 * @param type the name type
 	 */
-	public void removeName(String type)
+	public synchronized void removeName(String type)
 	{
 		for(int idx = 0; idx < siteNames.size(); idx++)
 			if (siteNames.get(idx).getNameType().equalsIgnoreCase(type))
@@ -534,36 +534,35 @@ public class Site extends IdDatabaseObject
 			}
 	}
 
-	public boolean isActive()
+	public synchronized boolean isActive()
 	{
 		return active;
 	}
 
-	public void setActive(boolean active)
+	public synchronized void setActive(boolean active)
 	{
 		this.active = active;
 	}
 
-	public String getLocationType()
+	public synchronized String getLocationType()
 	{
 		return locationType;
 	}
 
-	public void setLocationType(String locationType)
+	public synchronized void setLocationType(String locationType)
 	{
 		this.locationType = locationType;
 	}
 
-	public Date getLastModifyTime()
+	public synchronized Date getLastModifyTime()
 	{
 		return lastModifyTime;
 	}
 
-	public void setLastModifyTime(Date lastModifyTime)
+	public synchronized void setLastModifyTime(Date lastModifyTime)
 	{
 		this.lastModifyTime = lastModifyTime;
 	}
 	
-	public ArrayList<SiteName> getNameArray() { return siteNames; }
+	public synchronized ArrayList<SiteName> getNameArray() { return siteNames; }
 }
-

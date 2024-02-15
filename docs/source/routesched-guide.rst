@@ -38,7 +38,7 @@ appropriate for LRGS data sources:
 -  host: host name or IP address of the LRGS
 
 -  username: The figure shows xxxxxx. You must supply an actual user
-   name given to you bay Wallops CDA.
+   name given to you by Wallops CDA.
 
 -  port: (optional) You only need to enter this if it is something other
    than the default 16003.
@@ -120,7 +120,7 @@ The “response.timeout” property in the LRGS Data Source object controls
 how long to wait for a response from the server after sending a request.
 The purpose of this timeout is to catch connections that have failed.
 For example, the server is no longer responding or a WAN link has gone
-done.
+down.
 
 The “lrgs.timeout” property *in the Routing Spec object*, specifies the
 maximum number of seconds to wait for the next message to arrive. This

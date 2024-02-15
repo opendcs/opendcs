@@ -119,6 +119,12 @@ sqlplus $TSDB_ADM_SCHEMA/$TSDB_ADM_PASSWD@//$DBHOST:$DBPORT/$DB_TNSNAME @combine
 cat combined.log >>$LOG
 rm combined.log
 
+
+echo >>$LOG
+echo "Importing DECODES loading apps ..." >>$LOG
+echo "Importing DECODES loading apps ..."
+$DH/bin/dbimport -l $LOG -r $DH/edit-db/loading-app/*.xml
+
 echo >>$LOG
 echo "Importing Enumerations from edit-db ..." >>$LOG
 echo "Importing Enumerations from edit-db ..."
@@ -144,9 +150,5 @@ echo "Importing standard computation apps and algorithms ..." >>$LOG
 echo "Importing standard computation apps and algorithms ..."
 $DH/bin/compimport -l $LOG $DH/imports/comp-standard/*.xml
 
-echo >>$LOG
-echo "Importing DECODES loading apps ..." >>$LOG
-echo "Importing DECODES loading apps ..."
-$DH/bin/dbimport -l $LOG -r $DH/edit-db/loading-app/*.xml
 
 rm defines.sql

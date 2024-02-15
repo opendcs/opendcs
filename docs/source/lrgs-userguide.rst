@@ -67,7 +67,7 @@ Change Log
 GOES Data Collection System Overview
 ====================================
 
-The LRGSis a proven system that provides many federal, state, local, and
+The LRGS is a proven system that provides many federal, state, local, and
 private organizations with the ability to collect remote environmental
 data in real-time. The LRGS provides local storage of raw DCP data
 limited only by your disk capacity.
@@ -120,6 +120,11 @@ NOAA also supports the direct transmission of DCP data to users via
 internet. This uses a TCP socket protocol called DDS (DCP Data Service).
 DDS allows users to specify data of interest by DCP address, channel, or
 time range. Users can retrieve historical data or a real-time stream.
+
+.. image:: ./media/lrgs-userguide/Pictures/goes-dsc-overview.png
+   :alt: Image showing GOES DCS Overview
+   :width: 6in
+   :height: 3.2in
 
 Figure 2‑1: GOES DCS Overview.
 
@@ -319,7 +324,7 @@ While the DOMSAT system is no longer supported, some of the mechanisms present f
 such as the "DOMSAT Header" still permeate the software. You may seen references to such a 
 header or various elements. These generally apply generically to various connections such as DRGS
 and HRIT in some way. Consider this while reading the documentation as we are still cleaning up the text
- and variable naming. 
+and variable naming. 
 
 LRGS Software Overview
 ======================
@@ -975,7 +980,7 @@ beginning of the line.
 |              |              |              | specify 3    |        |
 |              |              |              | DRGS         |        |
 |              |              |              | connections, |        |
-|              |              |              | HRIT, and  |        |
+|              |              |              | HRIT, and    |        |
 |              |              |              | 4 DDS        |        |
 |              |              |              | Receive      |        |
 |              |              |              | Connections, |        |
@@ -1501,31 +1506,37 @@ is shown below:
 .. code-block:: xml
 
 <?xml version="1.0"?>
-<drgsconf>
-    <validate enable="true"
-        pdturl="http://dcs.noaa.gov/ftp_daily/pdts_compressed.txt"
-        cdturl="http://dcs.noaa.gov/ftp_daily/chans_by_baud.txt"/>
-    <connection number="0" host="drgs-e.mydomain.gov">
-        <name>EAST-DRGS</name>
-        <enabled>true</enabled>
-        <msgport>17010</msgport>
-        <evtport>17011</evtport>
-        <evtenabled>false</evtenabled>
-        <startpattern>534D0D0A</startpattern>
-        <cfgfile>$LRGSHOME/EAST-DRGS.cfg</cfgfile>
-        <sourceCode>DE</sourceCode>
-    </connection>
-    <connection number="1" host="drgs-w.mydomain.gov">
-        <name>WEST-DRGS</name>
-        <enabled>false</enabled>
-        <msgport>17010</msgport>
-        <evtport>17011</evtport>
-        <evtenabled>false</evtenabled>
-        <startpattern>534D0D0A</startpattern>
-        <cfgfile>$LRGSHOME/WEST-DRGS.cfg</cfgfile>
-        <sourceCode>DW</sourceCode>
-    </connection>
-</drgsconf>
+    <drgsconf>
+        <validate enable="true"
+            pdturl="http://dcs.noaa.gov/ftp_daily/pdts_compressed.txt"
+            cdturl="http://dcs.noaa.gov/ftp_daily/chans_by_baud.txt"/>
+        <connection number="0" host="drgs-e.mydomain.gov">
+            <name>EAST-DRGS</name>
+            <enabled>true</enabled>
+            <msgport>17010</msgport>
+            <evtport>17011</evtport>
+            <evtenabled>false</evtenabled>
+            <startpattern>534D0D0A</startpattern>
+            <cfgfile>$LRGSHOME/EAST-DRGS.cfg</cfgfile>
+            <sourceCode>DE</sourceCode>
+
+        </connection>    
+
+        <connection number="1" host="drgs-w.mydomain.gov">
+            <name>WEST-DRGS</name>
+            <enabled>false</enabled>
+            <msgport>17010</msgport>
+            <evtport>17011</evtport>
+            <evtenabled>false</evtenabled>
+            <startpattern>534D0D0A</startpattern>
+            <cfgfile>$LRGSHOME/WEST-DRGS.cfg</cfgfile>
+            <sourceCode>DW</sourceCode>
+
+        </connection>
+
+    </drgsconf>
+
+
 
 Figure 5‑10: DRGS Configuration File Example.
 
@@ -2180,12 +2191,12 @@ These values can also be set on the "Misc" tab of of the RtStat configuration di
 
 The following paths are provided:
 
-+-------|--------------------------------------------------------------+
++-------+--------------------------------------------------------------+
 | path  | purpose                                                      |
 +-------+--------------------------------------------------------------+
 |/health|Returns "200 OK" if the Lrgs thinks it's in a usable state.   |
 |/status|Returns the default Lrgs Status page, same as lrgsstatus.html.|
-+-------+--------------------------------------------------------------|
++-------+--------------------------------------------------------------+
 
 Future work will include authentication, authorization, and other DDS operations
 once that protocol is designed.

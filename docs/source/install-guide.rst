@@ -497,6 +497,7 @@ the Launcher button panel.
 | meTypePreference |               | for DCP names. By default this is |
 |                  |               | the Handbook-5 standard used by   |
 |                  |               | the National Weather Service.     |
+|                  |               | use: 'cwms' for CWMS systems      |
 +------------------+---------------+-----------------------------------+
 | EditDatabaseType | “xml”         | The is the type for the Editable  |
 |                  |               | database. The same values allowed |
@@ -714,6 +715,9 @@ Table 3-2: DbAuthFile values
 |                |                         |the line would be:                                                 |
 |                |                         |env-auth-source:username=OPENDCS_USERNAME,password=OPENDCS_PASSWORD|
 |                |                         |                                                                   |
++----------------+-------------------------+-------------------------------------------------------------------+
+|gui-auth-source |Prompt user with a       |Dialog title.                                                      |
+|                | dialog.                 |                                                                   |
 +----------------+-------------------------+-------------------------------------------------------------------+
 
 

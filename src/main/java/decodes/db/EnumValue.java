@@ -237,7 +237,7 @@ public class EnumValue
 	* @throws ClassNotFoundException if execClassName hasn't been set
 	* or if the class loader cannot find the named class.
 	*/
-	public Class getExecClass()
+	public Class<?> getExecClass()
 		throws ClassNotFoundException
 	{
 		if (execClass != null)

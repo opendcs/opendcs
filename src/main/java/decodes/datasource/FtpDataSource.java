@@ -24,6 +24,8 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Vector;
 
+import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.util.PropertySpec;
@@ -31,6 +33,8 @@ import decodes.util.PropertySpec;
 public class FtpDataSource 
 	extends DataSourceExec
 {
+	
+
 	private String module = "FtpDataSource";
 	private PropertySpec[] ftpDsPropSpecs =
 	{
@@ -90,6 +94,16 @@ public class FtpDataSource
 	private File currentFile = null;
 	private boolean ftps = false;
 	private String newerThan = null;
+
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public FtpDataSource(DataSource source, Database db) {
+		super(source, db);
+	}
 	
 	public boolean setProperty(String name, String value)
 	{
@@ -135,7 +149,7 @@ public class FtpDataSource
 	public PropertySpec[] getSupportedProps()
 	{
 		// Remove 'filename' from file data source specs, but keep everything else.
-		FileDataSource fds = new FileDataSource();
+		FileDataSource fds = new FileDataSource(null,null);
 		PropertySpec[] x = fds.getSupportedProps();
 		PropertySpec[] y = new PropertySpec[x.length-1];
 		int xidx = 0, yidx = 0;
@@ -398,7 +412,7 @@ public class FtpDataSource
 				+ " files processed.");
 		
 		currentFile = downloadedFiles.get(downloadedFileIndex++);
-		currentFileDS = new FileDataSource();
+		currentFileDS = new FileDataSource(this.dbDataSource,this.db);
 		allProps.setProperty("filename", currentFile.getPath());
 		if (TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(allProps, "NameIsMediumId")))
 			allProps.setProperty("mediumid", currentFile.getName());

@@ -7,6 +7,8 @@ import java.io.BufferedInputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 import ilex.util.Logger;
@@ -23,8 +25,16 @@ public class WebDataSource
 	private String module = "WebDataSource";
 	private String activeAddr = null;
 	
-	// no args ctor for instantiation via class
-	public WebDataSource() {}
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public WebDataSource(DataSource ds, Database db)
+	{
+		super(ds,db);
+	}
 
 	private PropertySpec propSpecs[] =
 	{

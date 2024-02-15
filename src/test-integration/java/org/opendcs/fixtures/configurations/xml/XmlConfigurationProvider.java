@@ -2,7 +2,7 @@ package org.opendcs.fixtures.configurations.xml;
 
 import java.io.File;
 
-import org.opendcs.fixtures.OpenDCSAppTestCase;
+import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
 
 public class XmlConfigurationProvider implements ConfigurationProvider
@@ -11,14 +11,14 @@ public class XmlConfigurationProvider implements ConfigurationProvider
     @Override
     public String getImplementation()
     {
-        return "OpenDCS-XML";
+        return XmlConfiguration.NAME;
     }
 
     @Override
-    public OpenDCSAppTestCase getConfig(File tempDir) throws Exception
+    public Configuration getConfig(File tempDir) throws Exception
     {
         final XmlConfiguration config = new XmlConfiguration(tempDir);
-        return new OpenDCSAppTestCase(getImplementation(), config);
+        return config;
     }
-    
+
 }

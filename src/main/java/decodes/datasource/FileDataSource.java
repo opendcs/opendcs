@@ -82,7 +82,8 @@ import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
-
+import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.util.PropertySpec;
 
@@ -107,10 +108,15 @@ public class FileDataSource
 			"(default=false) set to true to un-gzip file before processing.")
 	};
 	
-	/** default constructor */
-	public FileDataSource()
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public FileDataSource(DataSource ds, Database db)
 	{
-		super();
+		super(ds,db);
         file = null;
 		filename = null;
 	}

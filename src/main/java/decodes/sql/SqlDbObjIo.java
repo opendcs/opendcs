@@ -25,7 +25,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import ilex.util.Logger;
-
+import opendcs.util.sql.WrappedConnection;
+import decodes.cwms.CwmsConnectionPool;
 import decodes.db.Constants;
 import decodes.db.IdDatabaseObject;
 import decodes.db.DatabaseException;
@@ -296,23 +297,14 @@ public class SqlDbObjIo
 	public void executeUpdate(String q)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = null;
-
-		try
+		try (Statement stmt = createStatement();)
 		{
-			stmt = createStatement();
-
 			Logger.instance().log(Logger.E_DEBUG2,
 				"Executing update query '" + q + "'");
 			int numChanged = stmt.executeUpdate(q);
 			if (numChanged == 0)
 				throw new DatabaseException("Failed to update the " +
 					"SQL database.  The query was \"" + q + "\"");
-		}
-		finally
-		{
-			try { if (stmt != null) stmt.close(); }
-			catch(Exception x) {}
 		}
 	}
 
@@ -482,7 +474,8 @@ public class SqlDbObjIo
 
 	public Connection getConnection()
 	{
-		return connection;
+		// needed as we shift in proper usage of the Connection objects.
+		return new WrappedConnection(connection, (c) -> {});
 	}
 
 	public void setConnection(Connection conn)

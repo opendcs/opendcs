@@ -72,16 +72,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.logging.Level;
 
 import org.opendcs.authentication.AuthSourceService;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.util.logging.JulUtils;
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
 import decodes.datasource.RawMessage;
@@ -370,13 +374,11 @@ public class CwmsConsumer extends DataConsumer
 		{
 			String emsg = module + " Error storing TS data: " + ex;
 			Logger.instance().warning(emsg);
-			if (Logger.instance().getLogOutput() != null)
-				ex.printStackTrace(Logger.instance().getLogOutput());
 
-			// Also print the message to stderr so it goes to the nohup file.
-			System.err.println("" + new Date());
-			System.err.println(emsg);
-			ex.printStackTrace(System.err);
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			Logger.instance().warning(sw.toString());
 			// It might be a business rule exception, like improper units.
 			// So don't kill the whole routing spec, just go on.
 //			close();

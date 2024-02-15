@@ -69,10 +69,23 @@ public class Database extends DatabaseObject
 	 * If there is no "current database", this also sets the current
 	 * database to this.
 	 */
-
 	public Database()
 	{
-		if (getDb() == null) setDb(this);
+		this(false);
+	}
+
+	/**
+	 * Used in areas were an completely independent instance of the Decodes Database should be provided.
+	 *
+	 * @param independent whether to bypass the entire singleton concept for this instance.
+	 */
+	public Database(boolean independent)
+	{
+		super(null); // prevent DatabaseObject from calling the static Database.getDb() method.
+		if (!independent && Database.getDb() == null)
+		{
+			Database.setDb(this);
+		}
 
 		engineeringUnitList = new EngineeringUnitList();
 		engineeringUnitList.setDatabase(this);
@@ -104,23 +117,6 @@ public class Database extends DatabaseObject
 	}
 
 	/**
-	 * Construct with a database type and a location.
-	 * This constructor takes care of creating the DatabaseIO object
-	 * and reading in the initial data.
-	 */
-
-/*
-MJM 20031104 - removed - do not use this constructor!
-	  public Database(int type, String location)
-		  throws DatabaseException
-	  {
-		  this();
-		  dbio = DatabaseIO.makeDatabaseIO(type, location);
-		  read();
-	  }
-*/
-
-	/**
 	 * The Database is itself a DatabaseObject; its type is "Database".
 	 */
 
@@ -132,15 +128,22 @@ MJM 20031104 - removed - do not use this constructor!
 	 * <p>
 	 * The first call to the Database constructor will call this method
 	 * implicitly.
+	 * @param db The new database
+	 * @deprecated since 7.0.12 like getDb can be used in old code that is being updated; avoid using it
+	 * in anything new.
 	 */
-
+	@Deprecated
 	public static void setDb(Database db) { _theDb = db; }
 
 	/**
 	 * Retrieves the 'current' database.
 	 * The 'current' database is set by a previous call to setDb().
+	 * @returns a global instance of the database
+	 * @deprecated since 7.0.9 existing code can use this, but anything totally new that requires the decodes database
+	 * *MUST* take the Database in its constructor. If upgrading/updating things at least consider trying to move
+	 * to constructor injections; even if it means just moving this call up a level.
 	 */
-
+	@Deprecated
 	public static Database getDb() { return _theDb; }
 
 	/**

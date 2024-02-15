@@ -3709,7 +3709,7 @@ the lower right of the screen is now enabled. Press it now.
 You can write three different scripts:
 
 -  A script executed before each group of time-slices. This is useful
-   for initializing variables (like tallies and countes), as well as
+   for initializing variables (like tallies and counters), as well as
    opening any external resources the algorithm needs.
 
 -  A script executed at each time slice
@@ -3827,63 +3827,62 @@ values are Rejected. The next two on either side are Questionable. The
 Rating was constructed to output a value ten times the input for easy
 verification.
 
-\| rawstage \| revstage \| flow \|
 
-\| Stage \| Stage \| Flow \|
++---------------------+---------+---------+---------+
+| UTC                 |rawstage |revstage | flow    |
++=====================+=========+=========+=========+
+| 01/01/2012 00:00:00 | 0.00 SR |         |         |
++---------------------+---------+---------+---------+
+| 01/01/2012 01:00:00 | 1.00 SR |         |         |
++---------------------+---------+---------+---------+
+| 01/01/2012 02:00:00 | 2.00 SQ |         |         |
++---------------------+---------+---------+---------+
+| 01/01/2012 03:00:00 | 3.00 SQ |         |         |
++---------------------+---------+---------+---------+
+| 01/01/2012 04:00:00 | 4.00 S  | 4.00 S  | 40.00   |
++---------------------+---------+---------+---------+
+| 01/01/2012 05:00:00 | 5.00 S  | 5.00 S  | 50.00   |
++---------------------+---------+---------+---------+
+| 01/01/2012 06:00:00 | 6.00 S  | 6.00 S  | 60.00   |
++---------------------+---------+---------+---------+
+| 01/01/2012 07:00:00 | 7.00 S  | 7.00 S  | 70.00   |
++---------------------+---------+---------+---------+
+| 01/01/2012 08:00:00 | 8.00 S  | 8.00 S  | 80.00   |
++---------------------+---------+---------+---------+
+| 01/01/2012 09:00:00 | 9.00 S  | 9.00 S  | 90.00   |
++---------------------+---------+---------+---------+
+| 01/01/2012 10:00:00 | 10.00 S | 10.00 S | 100.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 11:00:00 | 11.00 S | 11.00 S | 110.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 12:00:00 | 12.00 S | 12.00 S | 120.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 13:00:00 | 13.00 S | 13.00 S | 130.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 14:00:00 | 14.00 S | 14.00 S | 140.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 15:00:00 | 15.00 S | 15.00 S | 150.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 16:00:00 | 16.00 S | 16.00 S | 160.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 17:00:00 | 17.00 S | 17.00 S | 170.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 18:00:00 | 18.00 S | 18.00 S | 180.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 19:00:00 | 19.00 S | 19.00 S | 190.00  |
++---------------------+---------+---------+---------+
+| 01/01/2012 20:00:00 | 20.00 SQ|         |         |
++---------------------+---------+---------+---------+
+| 01/01/2012 21:00:00 | 21.00 SQ|         |         |
++---------------------+---------+---------+---------+
+| 01/01/2012 22:00:00 | 22.00 SQ|         |         |
++---------------------+---------+---------+---------+
+| 01/01/2012 23:00:00 | 23.00 SR|         |         |
++---------------------+---------+---------+---------+
+| 01/02/2012 00:00:00 | 24.00 SR|         |         |
++---------------------+---------+---------+---------+
 
-UTC \| ft \| ft \| cfs \|
 
-\| TESTSITE1 \| TESTSITE1 \| TESTSITE1 \|
-
-01/01/2012 00:00:00 \| 0.00 SR \| \| \|
-
-01/01/2012 01:00:00 \| 1.00 SR \| \| \|
-
-01/01/2012 02:00:00 \| 2.00 SQ \| \| \|
-
-01/01/2012 03:00:00 \| 3.00 SQ \| \| \|
-
-01/01/2012 04:00:00 \| 4.00 S \| 4.00 S \| 40.00 \|
-
-01/01/2012 05:00:00 \| 5.00 S \| 5.00 S \| 50.00 \|
-
-01/01/2012 06:00:00 \| 6.00 S \| 6.00 S \| 60.00 \|
-
-01/01/2012 07:00:00 \| 7.00 S \| 7.00 S \| 70.00 \|
-
-01/01/2012 08:00:00 \| 8.00 S \| 8.00 S \| 80.00 \|
-
-01/01/2012 09:00:00 \| 9.00 S \| 9.00 S \| 90.00 \|
-
-01/01/2012 10:00:00 \| 10.00 S \| 10.00 S \| 100.00 \|
-
-01/01/2012 11:00:00 \| 11.00 S \| 11.00 S \| 110.00 \|
-
-01/01/2012 12:00:00 \| 12.00 S \| 12.00 S \| 120.00 \|
-
-01/01/2012 13:00:00 \| 13.00 S \| 13.00 S \| 130.00 \|
-
-01/01/2012 14:00:00 \| 14.00 S \| 14.00 S \| 140.00 \|
-
-01/01/2012 15:00:00 \| 15.00 S \| 15.00 S \| 150.00 \|
-
-01/01/2012 16:00:00 \| 16.00 S \| 16.00 S \| 160.00 \|
-
-01/01/2012 17:00:00 \| 17.00 S \| 17.00 S \| 170.00 \|
-
-01/01/2012 18:00:00 \| 18.00 S \| 18.00 S \| 180.00 \|
-
-01/01/2012 19:00:00 \| 19.00 S \| 19.00 S \| 190.00 \|
-
-01/01/2012 20:00:00 \| 20.00 SQ \| \| \|
-
-01/01/2012 21:00:00 \| 21.00 SQ \| \| \|
-
-01/01/2012 22:00:00 \| 22.00 SQ \| \| \|
-
-01/01/2012 23:00:00 \| 23.00 SR \| \| \|
-
-01/02/2012 00:00:00 \| 24.00 SR \| \| \|
 
 Accessing the Time Slice Time Value
 -----------------------------------
@@ -4073,66 +4072,69 @@ You could also use a hard coded path name.
 
 The Time Series script is as follows:
 
-# Copy no-overwrite from stagetail raw to rev
+.. code-block:: python
+   
+   # Copy no-overwrite from stagetail raw to rev
 
-if isNew('stagetail_raw') and not isGoodQuality('stagetail_rev'):
+   if isNew('stagetail_raw') and not isGoodQuality('stagetail_rev'):
 
-setOutputAndQual('stagetail_rev', stagetail_raw.value,
-stagetail_raw.qual)
+   setOutputAndQual('stagetail_rev', stagetail_raw.value,
+   stagetail_raw.qual)
 
-# Rating from stagetail rev to outflow
+   # Rating from stagetail rev to outflow
 
-if isNew('stagetail_rev'):
+   if isNew('stagetail_rev'):
 
-try:
+   try:
 
-setOutput('outflow', rdbrating(rdbfile, stagetail_rev.value))
+   setOutput('outflow', rdbrating(rdbfile, stagetail_rev.value))
 
-except NoValueException as e:
+   except NoValueException as e:
 
-warning(e.toString())
+   warning(e.toString())
 
-# 6 hour running average of outflow is not saved to a time series
+   # 6 hour running average of outflow is not saved to a time series
 
-if isNew('outflow'):
+   if isNew('outflow'):
 
-ave6hrOutflow = runningAverage('outflow', '6Hours', '(]')
+   ave6hrOutflow = runningAverage('outflow', '6Hours', '(]')
 
-# 2nd part of chain: Stage Pool
+   # 2nd part of chain: Stage Pool
 
-if isNew('stagepool_raw') and not isGoodQuality('stagepool_rev'):
+   if isNew('stagepool_raw') and not isGoodQuality('stagepool_rev'):
 
-setOutputAndQual('stagepool_rev', stagepool_raw.value,
-stagepool_raw.qual)
+   setOutputAndQual('stagepool_rev', stagepool_raw.value,
+   stagepool_raw.qual)
 
-# Rating from stagepool to storage
+   # Rating from stagepool to storage
 
-if isNew('stagepool_rev'):
+   if isNew('stagepool_rev'):
 
-try:
+   try:
 
-setOutput('storage', tabrating(tabfile, stagepool_rev.value))
+   setOutput('storage', tabrating(tabfile, stagepool_rev.value))
 
-except NoValueException as e:
+   except NoValueException as e:
 
-warning(e.toString())
+   warning(e.toString())
 
-# Holdout is a 6hr delta storage converted from acre-ft to cfs (not
-saved)
+   # Holdout is a 6hr delta storage converted from acre-ft to cfs (not
+   saved)
 
-if isNew('storage'):
+   if isNew('storage'):
 
-try:
+   try:
 
-holdout = changeSince('storage', '6Hours') \* 2.0167
+   holdout = changeSince('storage', '6Hours') \* 2.0167
 
-# Finally, the inflow is outflow + holdout.
+   # Finally, the inflow is outflow + holdout.
 
-setOutput('inflow', ave6hrOutflow + holdout)
+   setOutput('inflow', ave6hrOutflow + holdout)
 
-except NoValueException as e:
+   except NoValueException as e:
 
-warning('Error in changeSince: ' + e.toString())
+   warning('Error in changeSince: ' + e.toString())
+
 
 Note how each block begins with ‘isNew()’ containing the name of the
 parameter that would trigger that block of code. This is so we only do
@@ -4168,45 +4170,48 @@ Figure 31 contains an example meta-data file. The file contains:
 
 The example illustrates all aspects of the XML format
 
-<?xml version="1.0" standalone="yes"?>
+.. code-block:: xml
 
-<CompMetaData>
+   <?xml version="1.0" standalone="yes"?>
 
-<LoadingApplication name="compTester">
+   <CompMetaData>
 
-<Comment>Test computation process.
+   <LoadingApplication name="compTester">
 
-Modified comment</Comment>
+   <Comment>Test computation process.
 
-</LoadingApplication>
+   Modified comment</Comment>
 
-<Algorithm name="Copy">
+   </LoadingApplication>
 
-<Comment>
+   <Algorithm name="Copy">
 
-Copy input parameter to output. Delete output if input was deleted.
+   <Comment>
 
-</Comment>
+   Copy input parameter to output. Delete output if input was deleted.
 
-<ExecClass>decodes.tsdb.algo.CopyAlgorithm</ExecClass>
+   </Comment>
 
-<AlgoParmroleName="input">
+   <ExecClass>decodes.tsdb.algo.CopyAlgorithm</ExecClass>
 
-<ParmType>i</ParmType>
+   <AlgoParmroleName="input">
 
-</AlgoParm>
+   <ParmType>i</ParmType>
 
-<AlgoParmroleName="output">
+   </AlgoParm>
 
-<ParmType>o</ParmType>
+   <AlgoParmroleName="output">
 
-</AlgoParm>
+   <ParmType>o</ParmType>
 
-</Algorithm>
+   </AlgoParm>
 
-<Algorithm name="RdbRating">
+   </Algorithm>
 
-<Comment>
+   <Algorithm name="RdbRating">
+
+   <Comment>
+
 
 Implements rating table computations. Holds the lookup table &amp; shift
 
@@ -6594,7 +6599,7 @@ screenings in English units to a file called “screenings.bak”::
 
    screeningExport –A –E >screenings.bak
 
-Note that the CRITERIA records are identical to DATCHK criteria files::
+Note that the CRITERIA records are identical to DATCHK criteria files
 
 SCREENING *unique-16-char-ID*
 

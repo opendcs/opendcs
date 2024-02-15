@@ -1,6 +1,6 @@
 /*
  * $Id$
- * 
+ *
  * $Log$
  * Revision 1.16  2019/02/04 21:19:17  mmaloney
  * Don't use reference ratings for import/export and edit functions.
@@ -38,13 +38,13 @@
  * user.properties setting. Command line arg -Dsettings=appName, where appName is the
  * name of a process record. Properties assigned to the app will override the file(s).
  *
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
+ *
+ * This software was written by Cove Software, LLC ("COVE") under contract
+ * to the United States Government.
+ *
  * No warranty is provided or implied other than specific contractual terms
  * between COVE and the U.S. Government
- * 
+ *
  * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  * All rights reserved.
  */
@@ -55,6 +55,7 @@ import ilex.util.TextUtil;
 
 import java.io.PrintStream;
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -79,14 +80,14 @@ public class CwmsRatingDao extends DaoBase
 	public static final String module = "CwmsRatingDao";
 	public static final String cwms_v_rating_columns =
 		"RATING_CODE, RATING_ID, EFFECTIVE_DATE, CREATE_DATE, ACTIVE_FLAG";
-	
+
 //	// Suggested by Mike Perryman as a quick way to detect change:
-//	public static final String ratCheckQ = 
+//	public static final String ratCheckQ =
 //		"select greatest(max(effective_date), max(create_date)) "
 //		+ "from cwms_v_rating where upper(rating_id) = ";
-	
+
 	private String officeId = null;
-	
+
 	class RatingWrapper
 	{
 		Date timeLoaded = null;
@@ -106,8 +107,8 @@ public class CwmsRatingDao extends DaoBase
 	public static final int MAX_CACHED = 400;
 	// Ratings older than this in the cache are discarded.
 	private long MAX_AGE_MSEC = 9 * 3600000L;
-	
-	
+
+
 //	static
 //	{
 //		// Mike Perryman's email on March 1, 2017 - Rating API now has a reference mode
@@ -116,7 +117,7 @@ public class CwmsRatingDao extends DaoBase
 //		// remove the 'check for update' operation.
 //		System.setProperty("hec.data.cwmsRating.RatingSet.databaseLoadMethod", "reference");
 //	}
-//	
+//
 	public CwmsRatingDao(CwmsTimeSeriesDb tsdb)
 	{
 		super(tsdb, "CwmsRatingDao");
@@ -126,15 +127,15 @@ public class CwmsRatingDao extends DaoBase
 
 	public void setUseReference(boolean useReference)
 	{
-		System.setProperty("hec.data.cwmsRating.RatingSet.databaseLoadMethod", 
+		System.setProperty("hec.data.cwmsRating.RatingSet.databaseLoadMethod",
 			useReference ? "reference" : "eager");
 	}
-	
+
 	public void setOfficeId(String oid)
 	{
 		officeId = oid;
 	}
-	
+
 	private CwmsRatingRef rs2rr(ResultSet rs)
 		throws SQLException, BadRatingException
 	{
@@ -142,9 +143,9 @@ public class CwmsRatingDao extends DaoBase
 			rs.getString(2), db.getFullDate(rs, 3),
 			db.getFullDate(rs, 4), TextUtil.str2boolean(rs.getString(5)));
 	}
-	
+
 	/**
-	 * List all the rating objects for this office ID. 
+	 * List all the rating objects for this office ID.
 	 * Results are not sorted in any particular way.
 	 * @param locationId location ID or null for no filter
 	 * @return list of CwmsRatingRef objects
@@ -159,7 +160,7 @@ public class CwmsRatingDao extends DaoBase
 			+ " where upper(OFFICE_ID) = " + sqlString(officeId.toUpperCase());
 		if (locationId != null)
 			q = q + " and upper(LOCATION_ID) = " + sqlString(locationId.toUpperCase());
-		
+
 		ArrayList<CwmsRatingRef> ret = new ArrayList<CwmsRatingRef>();
 
 		ResultSet rs;
@@ -185,28 +186,28 @@ public class CwmsRatingDao extends DaoBase
 			ex.printStackTrace(System.err);
 			throw new DbIoException(msg);
 		}
-		
+
 		return ret;
 	}
-	
+
 	public void deleteRating(CwmsRatingRef crr)
 		throws RatingException
 	{
-		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), 
+		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(),
 			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 			crr.getRatingSpecId());
 
 //		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE,
-//			getConnection(), 
+//			getConnection(),
 //			((CwmsTimeSeriesDb)db).getDbOfficeId(),
 //			crr.getRatingSpecId());
-		
+
 		if(ratingSet.getRatingCount() <= 1)
 		{
 			deleteRatingSpec(crr);
 			return;
 		}
-		
+
 		SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 
@@ -214,11 +215,12 @@ public class CwmsRatingDao extends DaoBase
 			"{ call cwms_rating.delete_ratings(?," +
 			"to_date(?,'DD.MM.YYYY HH24:MI:SS')," +
 			"to_date(?,'DD.MM.YYYY HH24:MI:SS'),null, ?) }";
-		CallableStatement cstmt =  null;
+
 		String doing = "prepare call";
-		try
+		try (Connection c = getConnection();
+			 CallableStatement cstmt = c.prepareCall(q);
+			)
 		{
-			cstmt = getConnection().prepareCall(q);
 			doing = "set params for";
 			cstmt.setString(1, crr.getRatingSpecId());
 			cstmt.setString(2, sdf.format(crr.getEffectiveDate()));
@@ -229,15 +231,14 @@ public class CwmsRatingDao extends DaoBase
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Cannot " + doing + " '" + q + "' " 
+			String msg = "Cannot " + doing + " '" + q + "' "
 				+ " for specId '" + crr.getRatingSpecId()
 				+ "' and office '" + crr.getOfficeId() + "': " + ex;
-				
+
 			Logger.instance().warning(msg);
-			try { cstmt.close(); } catch(Exception ignore) {}
 		}
 	}
-	
+
 	/**
 	 * Deletes the RatingSpec associated with crr, including all ratings.
 	 * @param crr The reference to the rating
@@ -246,28 +247,27 @@ public class CwmsRatingDao extends DaoBase
 	{
 		String q =
 			"{ call cwms_rating.delete_specs(?,'DELETE ALL', ?) }";
-		CallableStatement cstmt =  null;
+
 		String doing = "prepare call";
-		try
+		try (Connection c = getConnection();
+			 CallableStatement cstmt = c.prepareCall(q);)
 		{
-			cstmt = getConnection().prepareCall(q);
 			doing = "set params for";
-			cstmt.setString(1, crr.getRatingSpecId()); 
+			cstmt.setString(1, crr.getRatingSpecId());
 			cstmt.setString(2, crr.getOfficeId());
 			doing = "execute";
 			cstmt.execute();
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Cannot " + doing + " '" + q + "' " 
+			String msg = "Cannot " + doing + " '" + q + "' "
 				+ " for specId '" + crr.getRatingSpecId()
 				+ "' and office '" + crr.getOfficeId() + "': " + ex;
-				
+
 			Logger.instance().warning(msg);
-			try { cstmt.close(); } catch(Exception ignore) {}
 		}
 	}
-	
+
 	/**
 	 * Generate an XML string for the referenced rating
 	 * @param crr the referenced rating
@@ -352,14 +352,14 @@ public class CwmsRatingDao extends DaoBase
 		Logger.instance().debug3(module + " calling storeToDatabase");
 		newSet.storeToDatabase(getConnection(), true);
 	}
-	
+
 	public RatingSet getRatingSet(String specId)
 		throws RatingException
 	{
 		// Internally use specId all in upper case.
 		String ucSpecId = specId.toUpperCase();
 		String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
-		
+
 		RatingWrapper rw = ratingCache.get(ucSpecId);
 		if (rw != null)
 		{
@@ -370,14 +370,14 @@ public class CwmsRatingDao extends DaoBase
 			if (System.currentTimeMillis() - rw.timeLoaded.getTime() < MAX_AGE_MSEC)
 			{
 				rw.lastTimeUsed = new Date();
-				Logger.instance().debug3(module 
+				Logger.instance().debug3(module
 					+ " retrieving rating spec from cache with officeId="
 					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
 					+ rw.timeLoaded);
 				return rw.ratingSet;
 			}
 		}
-		
+
 		// If cache is full, have to delete one.
 		if (ratingCache.size() >= MAX_CACHED)
 		{
@@ -400,16 +400,16 @@ public class CwmsRatingDao extends DaoBase
 			}
 		}
 
-		Logger.instance().debug3(module + " constructing RatingSet with officeId=" 
+		Logger.instance().debug3(module + " constructing RatingSet with officeId="
 			+ officeId + " and spec '" + specId + "'");
 		Date timeLoaded = new Date();
 		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), officeId, specId);
 
 		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
-		
+
 		Logger.instance().debug3(module + " reading rating from database took "
 			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
-		
+
 		return ratingSet;
 	}
 }

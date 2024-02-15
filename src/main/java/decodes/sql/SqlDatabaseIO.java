@@ -81,12 +81,13 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import ilex.util.EnvExpander;
 import org.opendcs.authentication.AuthSourceService;
-import org.opendcs.spi.authentication.AuthSource;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
@@ -116,6 +117,7 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
+import opendcs.util.sql.WrappedConnection;
 import ilex.util.AuthException;
 import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
@@ -344,7 +346,7 @@ public class SqlDatabaseIO
 			catch(AuthException ex)
 			{
 				String msg = "Cannot read username and password from '"
-					+ authFileName + "' (run setDecodesUser first): " + ex;
+					+ EnvExpander.expand(authFileName) + "' (run setDecodesUser first): " + ex;
 				System.err.println(msg);
 				Logger.instance().log(Logger.E_FATAL, msg);
 				throw new DatabaseConnectException(msg);
@@ -1056,7 +1058,7 @@ public class SqlDatabaseIO
 
 	/**
  	* Writes the DataTypeSet to the SQL database.
-	* @param dts the object to write to the database.
+	* @param dt the object to write to the database.
  	*/
 	public void writeDataType( DataType dt )
 		throws DatabaseException
@@ -2074,19 +2076,13 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	public synchronized void writeEnumList(EnumList enumList)
 		throws DatabaseException
 	{
-		EnumDAI enumSqlDao = makeEnumDAO();
-
-		try
+		try (EnumDAI enumSqlDao = makeEnumDAO();)
 		{
 			enumSqlDao.writeEnumList(enumList);
 		}
 		catch (DbIoException ex)
 		{
 			throw new DatabaseException(ex.getLocalizedMessage());
-		}
-		finally
-		{
-			enumSqlDao.close();
 		}
 	}
 
@@ -2108,6 +2104,7 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	public Connection getConnection()
 	{
 		if (poolingDataSource != null)
+		{
 			try
 			{
 				return poolingDataSource.getConnection();
@@ -2117,7 +2114,8 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 				Logger.instance().warning(
 					"SqlDatabaseIO.getConnection() Cannot get pooled connection: " + ex);
 			}
-		return _conn;
+		}
+		return new WrappedConnection(_conn, (c)->{/* do nothing */});
 	}
 
 	public void setConnection(Connection conn)
@@ -2346,6 +2344,13 @@ Logger.instance().debug1("SqlDatabaseIO.writeConfig");
 	public CompDependsDAI makeCompDependsDAO()
 	{
 		// This method should never be called in the DECODES db interface.
+		return null;
+	}
+
+	@Override
+	public CompDependsNotifyDAI makeCompDependsNotifyDAO()
+	{
+		// As CompDependsDAI above, should not be called from DECODES db interface.
 		return null;
 	}
 

@@ -1,89 +1,81 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
-import static org.junit.jupiter.api.DynamicTest.dynamicTest;
-
-import static org.opendcs.fixtures.Toolkit.args;
 
 import java.io.File;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
-import org.opendcs.fixtures.OpenDCSAppTestCase;
-import org.opendcs.fixtures.Toolkit;
-import org.opendcs.fixtures.helpers.Programs;
+import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import decodes.dbimport.DbImport;
 import decodes.routing.RoutingSpecThread;
 import uk.org.webcompere.systemstubs.SystemStubs;
 
+@DecodesConfigurationRequired({
+        "shared/test-sites.xml",
+        "shared/ROWI4.xml",
+        "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
+        "shared/presgrp-regtest.xml",
+        "HydroJsonTest/HydroJSON-rs.xml",
+        "SimpleDecodesTest/site-OKVI4.xml",
+        "SimpleDecodesTest/OKVI4-decodes.xml"
+})
 public class DecodesTest extends AppTestBase
 {
     private static final Logger log = Logger.getLogger(DecodesTest.class.getName());
-    private static final String TEST_SET_NAME = "Decodes Test";
-    
-    public DecodesTest(OpenDCSAppTestCase testCase) {
-        super(testCase);
-    }
 
-    public void test_SimpleDecodesTest() throws Exception
+    @ParameterizedTest
+    @CsvSource({
+        "OKVI4-input,SimpleDecodesTest/golden${impl}"
+    })
+    public void test_humanReadable(String specName, String expectedResultFile) throws Exception
     {
-        Configuration config = testCase.getConfiguration();
-        File propertiesFile = config.getPropertiesFile();
-        File logFile = new File(config.getUserDir(),"/decodes.log");
-        log.info("Import site.");
-        Programs.DbImport(logFile, propertiesFile, environment, exit,
-                            getResource("SimpleDecodesTest/site-OKVI4.xml"));
-        
+        Configuration config = this.configuration;
+        File logFile = new File(config.getUserDir(),"/decodes-humanReadable-" + specName + ".log");
+
         assertExitNullOrZero();
         log.info("Loading platform, routing spec, etc.");
-
-        Programs.DbImport(logFile,propertiesFile,environment,exit,
-                           getResource("SimpleDecodesTest/OKVI4-decodes.xml"));
 
         String output = SystemStubs.tapSystemOut(
                             () -> exit.execute(() ->
                                 RoutingSpecThread.main(
-                                    args("-l",logFile.getAbsolutePath(),"-d3","OKVI4-input")
+                                    args("-l",logFile.getAbsolutePath(),"-d3",specName)
                                 )
                             )
                         );
         assertExitNullOrZero();
-        File goldenFile = new File(getResource("SimpleDecodesTest/golden"));
+        File goldenFile = new File(TestResources.getResource(configuration,expectedResultFile));
         String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
         assertEquals(golden,output,"Output Doesn't match expected data.");
     }
 
-    public void test_HydroJsonTest() throws Exception
+    @ParameterizedTest
+    @CsvSource({
+        "HydroJSON-Test,HydroJsonTest/golden${impl}"
+    })
+    public void test_HydroJsonTest(String specName, String expectedResultFile) throws Exception
     {
-        Configuration config = testCase.getConfiguration();
-        File propertiesFile = config.getPropertiesFile();
-        File logFile = new File(config.getUserDir(),"/decodes-json.log");
+        Configuration config = this.configuration;
+        File logFile = new File(config.getUserDir(),"/decodes-HydroJson-" + specName + ".log");
         log.info("Importing test db.");
-        Programs.DbImport(logFile, propertiesFile, environment, exit,
-                                getResource("shared/test-sites.xml"),
-                                getResource("shared/ROWI4.xml"),
-                                new File(config.getUserDir(),"/schema/cwms/cwms-import.xml").getAbsolutePath(),
-                                getResource("shared/presgrp-regtest.xml"),
-                                getResource("HydroJsonTest/HydroJSON-rs.xml"));
 
         String output = SystemStubs.tapSystemOut(
             () -> exit.execute(() ->
                         RoutingSpecThread.main(
-                            args("-l",logFile.getAbsolutePath(),"-d3","HydroJSON-Test")
+                            args("-l",logFile.getAbsolutePath(),"-d3",specName)
                         )
                     )
         );
         assertExitNullOrZero();
 
-        File goldenFile = new File(getResource("HydroJsonTest/golden"));
+        File goldenFile = new File(TestResources.getResource(configuration,expectedResultFile));
         String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
 
         ObjectMapper mapper = new ObjectMapper();
@@ -94,13 +86,5 @@ public class DecodesTest extends AppTestBase
          * The output should be formatted as a list of objects, not objects separated by a new line.
          */
         //assertEquals(golden,output,"Output Doesn't match expected data.");
-    }
-
-    @Override
-    public DynamicNode tests(String baseName) {
-        return dynamicContainer(Toolkit.testName(baseName,TEST_SET_NAME), Stream.of(
-            dynamicTest(Toolkit.testName(baseName,TEST_SET_NAME,"Routing"), () -> test_SimpleDecodesTest()),
-            dynamicTest(Toolkit.testName(baseName,TEST_SET_NAME,"HydroJSON"), () -> test_HydroJsonTest())
-        ));
     }
 }

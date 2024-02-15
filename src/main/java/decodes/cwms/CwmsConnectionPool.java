@@ -10,8 +10,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +55,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         return mapCompare(left,right);
     });
 
-    private HashSet<WrappedConnection> connectionsOut = new HashSet<>();
+    //private HashSet<WrappedConnection> connectionsOut = new HashSet<>();
+    private Set<WrappedConnection> connectionsOut = Collections.synchronizedSet(new HashSet<>());
     private CwmsConnectionInfo info = null;
 	private int connectionsRequested = 0;
 	private int connectionsFreed = 0;
@@ -166,7 +169,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         this.info = info;
         try
 		{
-            String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl(),info.getLoginInfo().getUser());
+            String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl().replace("?","\\?"),info.getLoginInfo().getUser());
 			ManagementFactory.getPlatformMBeanServer()
 							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\",hashCode=" + this.hashCode()));
 		}
@@ -222,7 +225,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * Builds a list for JConsole to render information.
      */
 	@Override
-	public WrappedConnectionMBean[] getConnectionsList() throws OpenDataException
+	public synchronized WrappedConnectionMBean[] getConnectionsList() throws OpenDataException
     {
 		return this.connectionsOut.toArray(new WrappedConnection[0]);
 	}
@@ -236,7 +239,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * @return a valid, through Wrapped for tracking connection
      * @throws SQLException if auto commit can't be set or the Session context can be set, or no connections available.
      */
-    public Connection getConnection() throws SQLException
+    public synchronized Connection getConnection() throws SQLException
     {
         connectionsRequested++;
         for(int i = 0; i < 3; i++)
@@ -309,7 +312,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * @param conn A connection from this pool.
      * @throws SQLException Unable to close/return the connection.
      */
-    public void returnConnection(Connection conn) throws SQLException
+    public synchronized void returnConnection(Connection conn) throws SQLException
     {
         if(connectionsOut.contains(conn))
         {
@@ -324,12 +327,9 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             log.warning("Unknown connection returned to my pool.");
             unknownConnReturned++;
             if(trace)
-            {
-                if(log.isLoggable(Level.FINE))
-                {
-                    log.fine("Connection is from");
-                    logStackTrace(log,Level.FINE,Thread.currentThread().getStackTrace(),BEFORE_CUR_THREAD_STACK_CALL+1);
-                }
+            {            
+                log.warning("Connection is from");
+                logStackTrace(log,Level.WARNING,Thread.currentThread().getStackTrace(),BEFORE_CUR_THREAD_STACK_CALL+1);
             }
         }
     }

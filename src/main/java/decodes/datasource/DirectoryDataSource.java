@@ -117,6 +117,7 @@ import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.PropertiesUtil;
 import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.db.Platform;
@@ -293,10 +294,15 @@ public class DirectoryDataSource extends DataSourceExec
 	};
 
 	
-	/** default constructor */
-	public DirectoryDataSource()
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public DirectoryDataSource(DataSource ds, Database db)
 	{
-		super();
+		super(ds,db);
 	}
 
 	/** Clears internal variables to default states. */
@@ -717,4 +723,3 @@ Logger.instance().log(Logger.E_DEBUG3,"Expanded '" + topdir.getPath()
 	}
 
 }
-

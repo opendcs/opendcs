@@ -73,7 +73,8 @@ public class FormatStatementTokenizer
 			c = nextChar();
 		}
 		if (c == (char)0)
-			throw new ScriptFormatException("Sign with no repetitions.");
+			throw new ScriptFormatException("Sign with no repetitions.", this.fmtStatementText,
+											"-", lastTokenStart);
 
 		// Optional number of repetitions preceding the op code
 		int repetitions = 0;
@@ -92,7 +93,8 @@ public class FormatStatementTokenizer
 		while(Character.isWhitespace(c))
 			c = nextChar();
 		if (c == (char)0)
-			throw new ScriptFormatException("Repetition factor without operator");
+			throw new ScriptFormatException("Repetition factor without operator",
+											fmtStatementText,"" + repetitions,lastTokenStart);
 
 		// Current char is now the beginning of the operator
 		StringBuilder opName = new StringBuilder();
@@ -134,7 +136,8 @@ public class FormatStatementTokenizer
 					ret = func;
 				}
 				else
-					throw new ScriptFormatException("Function '" + op + "' unknown.");
+					throw new ScriptFormatException("Function '" + op + "' unknown.",
+												    fmtStatementText,op,lastTokenStart);
 			}
 		}
 		else if (op.equals("x"))
@@ -182,7 +185,8 @@ public class FormatStatementTokenizer
 		{
 			throw new ScriptFormatException(
 				"Unknown operator '" + op + "', in '" + fmtStatementText 
-				+ "', position=" + lastTokenStart);
+				+ "', position=" + lastTokenStart,
+				fmtStatementText, op, lastTokenStart);
 		}
 
 		// After the above, the last char processed is one of:

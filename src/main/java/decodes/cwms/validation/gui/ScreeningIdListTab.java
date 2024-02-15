@@ -1,8 +1,8 @@
 /**
  * $Id$
- * 
+ *
  * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
+ *
  * $Log$
  * Revision 1.2  2016/11/03 18:58:48  mmaloney
  * Force reload when assessing TSIDs.
@@ -27,7 +27,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
@@ -38,7 +38,6 @@ import javax.swing.table.AbstractTableModel;
 import opendcs.dai.TimeSeriesDAI;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
-import decodes.syncgui.SyncGuiFrame;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.groupedit.TimeSeriesSelectDialog;
@@ -53,13 +52,13 @@ public class ScreeningIdListTab extends JPanel
 	ScreeningIdTableModel model = null;
 	ScreeningEditFrame frame = null;
 	private ArrayList<TimeSeriesIdentifier> allTsids = null;
-	
+
 	public ScreeningIdListTab(ScreeningEditFrame frame)
 	{
 		this.frame = frame;
 		guiInit();
 	}
-	
+
 	private void guiInit()
 	{
 		this.setLayout(new BorderLayout());
@@ -68,7 +67,7 @@ public class ScreeningIdListTab extends JPanel
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.getViewport().add(screeningIdTable);
 		this.add(scrollPane, BorderLayout.CENTER);
-		
+
 		JPanel south = new JPanel(new GridBagLayout());
 		this.add(south, BorderLayout.SOUTH);
 		JButton editButton = new JButton("Edit");
@@ -85,7 +84,7 @@ public class ScreeningIdListTab extends JPanel
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(4, 10, 4, 5), 0, 0));
-		
+
 		JButton newButton = new JButton("New");
 		newButton.addActionListener(
 			new ActionListener()
@@ -100,7 +99,7 @@ public class ScreeningIdListTab extends JPanel
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(4, 5, 4, 5), 0, 0));
-	
+
 		JButton deleteButton = new JButton("Delete");
 		deleteButton.addActionListener(
 			new ActionListener()
@@ -146,7 +145,7 @@ public class ScreeningIdListTab extends JPanel
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 5, 4, 10), 0, 0));
 
-		
+
 		screeningIdTable.addMouseListener(new MouseAdapter()
 		{
 			public void mouseClicked(MouseEvent e)
@@ -169,11 +168,11 @@ public class ScreeningIdListTab extends JPanel
 				+ "screening to one or more time series.");
 			return;
 		}
-		
+
 		Screening scr = (Screening)model.getRowObject(screeningIdTable.getSelectedRow());
 		TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(frame.getTheDb(), false, frame);
-		TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();
-		try
+
+		try (TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();)
 		{
 			if (allTsids == null)
 				allTsids = tsDAO.listTimeSeries();
@@ -200,21 +199,15 @@ public class ScreeningIdListTab extends JPanel
 			frame.showError("Error reading TSIDs from the database: " + ex);
 			return;
 		}
-		finally
-		{
-			tsDAO.close();
-		}
-		
-		
+
 		dlg.setMultipleSelection(true);
 		frame.launchDialog(dlg);
 		TimeSeriesIdentifier[] selections = dlg.getSelectedDataDescriptors();
-		
-		ScreeningDAI screeningDAO = null;
+
+
 		TimeSeriesIdentifier tsidT = null;
-		try
+		try (ScreeningDAI screeningDAO = frame.getTheDb().makeScreeningDAO();)
 		{
-			screeningDAO = frame.getTheDb().makeScreeningDAO();
 			if (screeningDAO == null)
 			{
 				frame.showError("This database does not support screening.");
@@ -236,19 +229,12 @@ public class ScreeningIdListTab extends JPanel
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 		}
-		finally
-		{
-			if (screeningDAO != null)
-				screeningDAO.close();
-		}
 	}
 
 	public void refresh()
 	{
-		ScreeningDAI screeningDAO = null;
-		try
+		try (ScreeningDAI screeningDAO = frame.getTheDb().makeScreeningDAO();)
 		{
-			screeningDAO = frame.getTheDb().makeScreeningDAO();
 			if (screeningDAO == null)
 			{
 				frame.showError("This database does not support screening.");
@@ -263,15 +249,11 @@ public class ScreeningIdListTab extends JPanel
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 		}
-		finally
-		{
-			if (screeningDAO != null)
-				screeningDAO.close();
-		}
+
 		frame.getTsidAssignTab().doRefresh();
-		
-		TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();
-		try
+
+
+		try (TimeSeriesDAI tsDAO = frame.getTheDb().makeTimeSeriesDAO();)
 		{
 			allTsids = tsDAO.listTimeSeries(true);
 		}
@@ -279,22 +261,18 @@ public class ScreeningIdListTab extends JPanel
 		{
 			frame.showError("Error reading TSIDs from the database: " + ex);
 		}
-		finally
-		{
-			tsDAO.close();
-		}
 	}
 
 	protected void deletePressed()
 	{
 		int row = screeningIdTable.getSelectedRow();
 		if (row == -1)
-		{	
+		{
 			frame.showError("Select table row, then press Edit");
 			return;
 		}
-		Screening scr = (Screening)model.getRowObject(row);
-		
+		Screening scr = (Screening)model.getRowObject(screeningIdTable.convertRowIndexToModel(row));
+
 		// If there are any assignments, issue error
 		if (frame.getTsidAssignTab().assignmentsExistFor(scr.getScreeningName()))
 		{
@@ -302,7 +280,7 @@ public class ScreeningIdListTab extends JPanel
 				+ "assignments on the TS Assignments tab. Then retry delete.");
 			return;
 		}
-		
+
 		int res = JOptionPane.showConfirmDialog(frame,
 			AsciiUtil.wrapString(
 			"This permanently delete the screening from the database. "
@@ -310,11 +288,10 @@ public class ScreeningIdListTab extends JPanel
 			"Confirm Overwrite Edit Database", JOptionPane.YES_NO_OPTION);
 		if (res != JOptionPane.YES_OPTION)
 			return;
-		
-		ScreeningDAI screeningDAO = null;
-		try
+
+
+		try (ScreeningDAI screeningDAO = frame.getTheDb().makeScreeningDAO();)
 		{
-			screeningDAO = frame.getTheDb().makeScreeningDAO();
 			screeningDAO.deleteScreening(scr);
 			refresh();
 		}
@@ -324,11 +301,6 @@ public class ScreeningIdListTab extends JPanel
 			frame.showError(msg);
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
-		}
-		finally
-		{
-			if (screeningDAO != null)
-				screeningDAO.close();
 		}
 	}
 
@@ -343,7 +315,7 @@ public class ScreeningIdListTab extends JPanel
 				frame.showError("A screening already exists with that name.");
 				return;
 			}
-		
+
 		Screening scr = new Screening();
 		scr.setScreeningName(id);
 		scr.add(new ScreeningCriteria());
@@ -354,12 +326,11 @@ public class ScreeningIdListTab extends JPanel
 	{
 		int row = screeningIdTable.getSelectedRow();
 		if (row == -1)
-		{	
+		{
 			frame.showError("Select table row, then press Edit");
 			return;
 		}
-System.out.println("Edit pressed for row " + row);
-		Screening scr = (Screening)model.getRowObject(row);
+		Screening scr = (Screening)model.getRowObject(screeningIdTable.convertRowIndexToModel(row));
 		frame.open(scr);
 	}
 
@@ -383,7 +354,7 @@ class ScreeningIdTableModel
 {
 	static String columnNames[] = { "Screening ID", "Description", "Param", "Param Type", "Duration" };
 	static int columnWidths[] = { 20, 41, 13, 13, 13 };
-	ArrayList<Screening> screenings = new ArrayList<Screening>();
+	List<Screening> screenings = new ArrayList<>();
 	private int sortColumn = 0;
 
 	@Override
@@ -410,7 +381,7 @@ class ScreeningIdTableModel
 	{
 		return getColumnValue(screenings.get(rowIndex), columnIndex);
 	}
-	
+
 	private String getColumnValue(Screening scr, int columnIndex)
 	{
 		switch(columnIndex)
@@ -423,7 +394,7 @@ class ScreeningIdTableModel
 		}
 		return scr.getUniqueName(); // won't happen
 	}
-	
+
 	private String briefDesc(String desc)
 	{
 		if (desc == null)
@@ -436,7 +407,7 @@ class ScreeningIdTableModel
 	@Override
 	public void sortByColumn(final int column)
 	{
-		Collections.sort(screenings, 
+		Collections.sort(screenings,
 			new Comparator<Screening>()
 			{
 				@Override
@@ -455,11 +426,10 @@ class ScreeningIdTableModel
 		return screenings.get(row);
 	}
 
-	public void setScreenings(ArrayList<Screening> screenings)
+	public void setScreenings(List<Screening> screenings)
 	{
 		this.screenings = screenings;
 		sortByColumn(sortColumn);
 	}
-	
-}
 
+}

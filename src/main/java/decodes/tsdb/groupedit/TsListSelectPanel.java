@@ -193,7 +193,8 @@ public class TsListSelectPanel extends JPanel
 		int idx[] = tsIdListTable.getSelectedRows();
 		TimeSeriesIdentifier ret[] = new TimeSeriesIdentifier[idx.length];
 		for (int i = 0; i < idx.length; i++)
-			ret[i] = model.getTSIDAt(idx[i]);
+			//Get the correct row from the table model
+			ret[i] = model.getTSIDAt(tsIdListTable.convertRowIndexToModel(idx[i]));
 		return ret;
 	}
 

@@ -63,3 +63,15 @@ COPY docker_scripts/routingscheduler.sh /
 RUN mkdir routstat
 
 CMD ["/routingscheduler.sh"]
+
+FROM tsdbapp as compproc
+COPY docker_scripts/compproc.sh /
+ENV APPLICATION_NAME="compproc"
+
+CMD ["/compproc.sh"]
+
+FROM tsdbapp as compdepends
+COPY docker_scripts/compdepends.sh /
+ENV APPLICATION_NAME="compdepends"
+
+CMD ["/compdepends.sh"]

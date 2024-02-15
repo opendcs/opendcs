@@ -76,7 +76,7 @@ public class DecodesScriptParser implements XmlObjectParser, XmlObjectWriter, Ta
 	private static final int dataOrderTag = 2;
 
 	/**
-	 * @param ob the object in which to store the data.
+	 * @param script the object in which to store the data.
 	 * 
 	 */
 	public DecodesScriptParser(DecodesScript script)

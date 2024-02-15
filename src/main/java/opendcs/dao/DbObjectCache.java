@@ -21,8 +21,10 @@
  */
 package opendcs.dao;
 
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 
 import decodes.sql.DbKey;
 
@@ -49,8 +51,8 @@ public class DbObjectCache<DBT extends CachableDbObject>
 		}
 	}
 	
-	private HashMap<DbKey, ObjWrapper> keyObjMap = new HashMap<DbKey, ObjWrapper>();
-	private HashMap<String, ObjWrapper> nameObjMap = new HashMap<String, ObjWrapper>();
+	private Map<DbKey, ObjWrapper> keyObjMap = new ConcurrentHashMap<DbKey, ObjWrapper>();
+	private Map<String, ObjWrapper> nameObjMap = new ConcurrentHashMap<String, ObjWrapper>();
 	
 	/**
 	 * Constructor.
@@ -67,7 +69,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 * Place an object in the cache.
 	 * @param dbObj the object to cache
 	 */
-	public void put(DBT dbObj)
+	public synchronized void put(DBT dbObj)
 	{
 		String un = dbObj.getUniqueName();
 		if (un == null || un.trim().length() == 0)
@@ -84,14 +86,28 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 *
 	 * @param key DbKey of the object to be removed.
 	 */
-	public void remove(DbKey key)
+	public synchronized void remove(DbKey key)
 	{
 		ObjWrapper ow = keyObjMap.get(key);
 		if (ow == null)
 			return;
-		nameObjMap.remove(
-			nameIsCaseSensitive ? ow.obj.getUniqueName() : ow.obj.getUniqueName().toUpperCase());
-		keyObjMap.remove(key);
+		try
+		{
+			nameObjMap.remove(
+				nameIsCaseSensitive ? ow.obj.getUniqueName() : ow.obj.getUniqueName().toUpperCase());
+		}
+		catch(NoSuchElementException ex)
+		{
+			// another thread already removed it.
+		}
+		try
+		{
+			keyObjMap.remove(key);
+		}
+		catch(NoSuchElementException ex)
+		{
+			// another thread already removed it.
+		}
 	}
 	
 	/**

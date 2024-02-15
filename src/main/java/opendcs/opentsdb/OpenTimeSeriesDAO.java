@@ -91,6 +91,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.VarFlags;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -889,12 +890,13 @@ public class OpenTimeSeriesDAO
 			warning("Error in query '" + q + "': " + ex);
 		}
 		
-		// Send notify to Cp Comp Depends Updater Daemon
-		q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-			+ "values(" + getKey("cp_depends_notify") 
-			+ ", '" + CpDependsNotify.TS_DELETED + "', " + ctsid.getKey() + ", " + System.currentTimeMillis() + ")";
-		doModify(q);
-
+		try(CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+		{
+			CpDependsNotify cdn = new CpDependsNotify();
+			cdn.setEventType(CpDependsNotify.TS_DELETED);
+			cdn.setKey(ctsid.getKey());
+			dai.saveRecord(cdn);
+		}
 	}
 
 	@Override
@@ -1342,12 +1344,14 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 			+ ")";
 		doModify(q);
 		
-		// Send notify to Cp Comp Depends Updater Daemon
-		q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-			+ "values(" + getKey("cp_depends_notify") 
-			+ ", '" + CpDependsNotify.TS_CREATED + "', " + ctsid.getKey() + ", " + System.currentTimeMillis() + ")";
-		doModify(q);
-		
+		try (CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+		{
+			CpDependsNotify cdn = new CpDependsNotify();
+			cdn.setKey(ctsid.getKey());
+			cdn.setEventType(CpDependsNotify.TS_CREATED);
+			dai.saveRecord(cdn);
+		}
+
 		return ctsid.getKey();
 	}
 	
@@ -1583,13 +1587,13 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		cache.remove(tsid.getKey());
 		cache.put(ctsid);
 		
-		// Send notify to Cp Comp Depends Updater Daemon
-		q = "insert into cp_depends_notify(record_num, event_type, key, date_time_loaded) "
-			+ "values(" + getKey("cp_depends_notify") 
-			+ ", '" + CpDependsNotify.TS_MODIFIED + "', " + ctsid.getKey() + ", " + System.currentTimeMillis() + ")";
-		doModify(q);
-
-		
+		try (CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+		{
+			CpDependsNotify cdn = new CpDependsNotify();
+			cdn.setKey(ctsid.getKey());
+			cdn.setEventType(CpDependsNotify.TS_MODIFIED);
+			dai.saveRecord(cdn);
+		}
 	}
 
 	/*

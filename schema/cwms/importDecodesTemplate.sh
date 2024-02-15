@@ -31,6 +31,9 @@ cd $DCSTOOL_HOME
 LOG=$cwd/util.log
 rm $LOG
 
+echo "Importing DECODES loading apps ..."
+$DH/bin/dbimport -l $LOG -r $DH/edit-db/loading-app/*.xml
+
 echo "Importing Enumerations from edit-db ..."
 bin/dbimport -r -l $LOG -d3 $DCSTOOL_HOME/edit-db/enum/*.xml
 

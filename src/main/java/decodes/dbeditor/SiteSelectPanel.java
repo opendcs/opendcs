@@ -123,7 +123,10 @@ public class SiteSelectPanel extends JPanel
 		int r = siteTable.getSelectedRow();
 		if (r == -1)
 			return null;
-		return model.getSiteAt(r);
+		//Get the correct row from the table model
+		int modelrow = siteTable.convertRowIndexToModel(r);
+		SiteSelectTableModel tablemodel = (SiteSelectTableModel)siteTable.getModel();
+		return tablemodel.getSiteAt(modelrow);
 	}
 
 	public void clearSelection()

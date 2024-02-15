@@ -15,7 +15,13 @@
     <available property="have.python" file="${PYTHON_EXE}" filepath="${PATH}"/>
     <available property="have.latexmk" file="latexmk" filepath="${PATH}"/>
 
-    <target name="check.prereqs" depends="common.resolve.build" unless="no.docs" description="Determine if we have what we need and inform the user if we don't.">        
+    <target name="check.docs">
+        <uptodate property="no.docs" targetFile="${status.dir}/docs.build.date">
+            <srcFiles dir="docs" includes="source/**,build.xml,Makefile,make.bat"/>
+        </uptodate>
+    </target>
+
+    <target name="check.prereqs" depends="check.docs,common.resolve.build" unless="no.docs" description="Determine if we have what we need and inform the user if we don't.">
         <echo message="${PYTHON_EXE}"/>
         <if>
             <not>
@@ -79,10 +85,10 @@
         </sequential>
     </macrodef>
 
-
     <target name="build" depends="check.prereqs" if="canbuilddocs">
         <builddocs target="html" musthaveprop="canbuilddocs"/>
         <builddocs target="latexpdf" musthaveprop="have.latexmk"/>
+        <touch file="${status.dir}/docs.build.date"/>
     </target>
 
     <target name="clean">

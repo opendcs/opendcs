@@ -51,9 +51,9 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
     private boolean trace;
     private List<StackTraceElement> openTrace = null;
     private List<StackTraceElement> closeTrace = null;
-    private ZonedDateTime start = ZonedDateTime.now();
+    private final ZonedDateTime start;
     private ZonedDateTime end = null;
-
+    private final Thread openingThread;
 
 
     public WrappedConnection(Connection realConnection){
@@ -69,9 +69,11 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
     {
         Objects.requireNonNull(realConnection, "WrappedConnection cannot wrap a null connection");
         Objects.requireNonNull(onClose, "WrappedConnections requires a valid Consumer for the close operation");
+        start = ZonedDateTime.now();
         this.realConnection = realConnection;
         this.onClose = onClose;
         this.trace = trace;
+        this.openingThread = Thread.currentThread();
         if(trace)
         {
             openTrace = new ArrayList<>();
@@ -167,9 +169,12 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
             if(log.getMinLogPriority() == Logger.E_DEBUG3)
             {
                 StackTraceElement stk[] = Thread.currentThread().getStackTrace();
-                for(int n = 2; n < stk.length; n++)
+                if(stk != null)
                 {
-                        log.debug3("\t" + n + ": " + stk[n]);
+                    for(int n = 2; n < stk.length; n++)
+                    {
+                            log.debug3("\t" + n + ": " + stk[n]);
+                    }
                 }
             }
         }
@@ -423,7 +428,7 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
         System.err.println(String.format("Connection(closed state -> %s) with life time of %d seconds remains from:",closed,Duration.between(start, ZonedDateTime.now()).getSeconds()));
         if( openTrace != null)
         {
-            System.err.println("\tOpened from");
+            System.err.println(String.format("\tOpened from (in thread %s)",(openingThread != null) ? this.openingThread.getName(): "no thread?"));
             for(StackTraceElement ste: openTrace)
             {
                 System.err.println("\t\t" + ste.toString());
@@ -487,4 +492,9 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean{
     {
 		return trace;
 	}
+
+    @Override
+    public String getOpeningThreadName() {
+        return openingThread.getName();
+    }
 }

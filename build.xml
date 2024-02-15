@@ -18,6 +18,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 <project name="OPENDCS Toolkit" default="jar" basedir="."
     xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:resolver="antlib:org.apache.maven.resolver.ant"
     xmlns:if="ant:if" xmlns:unless="ant:unless"
+    xmlns:jacoco="antlib:org.jacoco.ant"
     >
     <description>Open DCS</description>
 
@@ -30,6 +31,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${build.classes}"/>
         <mkdir dir="${build.lib}"/>
+        <mkdir dir="${status.dir}"/>
         <pathconvert property="junitlauncherPresent" setonempty="false" pathsep=" ">
             <path>
                 <fileset dir="${ant.home}">
@@ -51,7 +53,13 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <antcall target="docs.clean"/>
     </target>
 
-    <target name="compile" depends="prepare,common.resolve"
+    <target name="check.src">
+        <uptodate property="src.build.current" targetfile="${status.dir}/src.build.date">
+            <srcfiles dir="${src.main.dir}" includes="**/*"/>
+        </uptodate>
+    </target>
+
+    <target name="compile" depends="check.src,prepare,common.resolve" unless="src.build.current"
         description="Compiles all source code.">
 
         <!-- create build date -->
@@ -98,10 +106,22 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <classpath refid="runtime.classpath"/>
 			<compilerarg value="-parameters"/>
 		</javac>
-
+        <touch file="${status.dir}/src.build.date"/>
     </target>
 
-    <target name="compile-test" depends="compile,common.resolve">
+    <target name="check.test.src" depends="check.src">
+         <uptodate property="test.src.build.current.local" targetfile="${status.dir}/test.src.build.date">
+            <srcfiles dir="src/test" includes="**/*"/>
+        </uptodate>
+        <condition property="test.src.build.current">
+            <and>
+                <isset property="src.build.current"/>
+                <isset property="test.src.build.current.local"/>
+            </and>
+        </condition>
+    </target>
+
+    <target name="compile-test" depends="check.test.src,compile,common.resolve" unless="test.src.build.current">
         <mkdir dir="${build.test.classes}"/>
         <javac debug="true" destdir="${build.test.classes}"
             target="1.8" source="1.8" includeantruntime="false"
@@ -117,6 +137,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <sync todir="${build.test.resources}">
             <fileset dir="${resources.test.dir}"/>
         </sync>
+        <touch file="${status.dir}/test.src.build.date"/>
     </target>
 
     <target name="compile-test-integration" depends="stage,test,common.resolve,common.resolve.build">
@@ -131,19 +152,51 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <!--<pathelement location="${build.classes}"/>-->
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
+                <path refid="junit.platform.libs.classpath"/>
             </classpath>
         </javac>
         <sync todir="${build.test-integration.resources}">
             <fileset dir="${resources.test-integration.dir}"/>
         </sync>
+        <touch file="${status.dir}/src.integration.build.date"/>
     </target>
 
-    <target name="test" depends="compile-test,jar,common.resolve.build">
+    <target name="compile-test-gui" depends="jar,test,common.resolve,common.resolve.build">
+        <mkdir dir="${build.test-gui.classes}"/>
+        <javac debug="true" destdir="${build.test-gui.classes}"
+            target="1.8" source="1.8" includeantruntime="false"
+            encoding="UTF-8"
+        >
+            <src path="${src.test-gui.dir}"/>
+            <classpath>
+                <pathelement location="${build.classes}"/>
+                <!--<pathelement location="${build.classes}"/>-->
+                <path refid="runtime.classpath"/>
+                <path refid="test.classpath"/>
+            </classpath>
+        </javac>
+       <sync todir="${build.test-gui.resources}">
+            <fileset dir="${resources.test-gui.dir}"/>
+        </sync>
+        <touch file="${status.dir}/src.gui-test.build.date"/>
+    </target>
+
+    <target name="check.run-tests" depends="check.test.src">
+        <condition property="test.run">
+            <and>
+                <available file="${status.dir}/test.run"/>
+                <isset property="test.src.build.current"/>
+            </and>
+        </condition>
+    </target>
+
+    <target name="test" depends="check.run-tests,compile-test,jar,common.resolve.build" unless="test.run">
         <mkdir dir="${junit.html.output.dir}"/>
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
         <echo message="platform path: ${platform_path}"/>
         <mkdir dir="${build.dir}/test-results"/>
         <mkdir dir="${build.dir}/test-tmp"/>
+        <jacoco:agent property="coverage.agent.param.test" destfile="${coverage.dir}/jacoco.test.exec"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="test.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -157,6 +210,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 
             <testclasses outputdir="${build.dir}/test-results">
                 <fork>
+                    <jvmarg value="${coverage.agent.param.test}"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-tmp"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
@@ -165,27 +219,79 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
-
         </junitlauncher>
+
+        <mkdir dir="${junit.html.output.dir}/test"/>
         <junitreport todir="${junit.html.output.dir}">
             <fileset dir="${build.dir}/test-results">
                 <include name="TEST-*.xml"/>
+                <exclude name="TEST-fixture*"/>
+                <exclude name="TEST-*$?.xml"/>
             </fileset>
-            <report format="noframes" todir="${junit.html.output.dir}"/>
+            <report format="noframes" todir="${junit.html.output.dir}/test"/>
         </junitreport>
         <if>
             <isset property="test.failed"/>
             <then>
+                <delete file="${status.dir}/test.run" quiet="true"/>
                 <fail message="Tests have failures."/>
             </then>
+            <else>
+                <touch file="${status.dir}/test.run"/>
+            </else>
         </if>
     </target>
 
-    <target name="integration-test" depends="compile-test-integration,stage,common.resolve"
-            description="Run the integration test suite with available implementations.">
+    <target name="check.it-run" depends="check.src">
+        <condition property="integration.test.current">
+            <and>
+                <available file="${status.dir}/src.integration.run.${opendcs.test.engine}"/>
+                <isset property="src.build.current"/>
+                <uptodate property="integration.src.current" targetFile="${status.dir}/src.integration.build.date">
+                    <srcFiles dir="${src.test-integration.main.dir}" includes="**/*"/>
+                </uptodate>
+            </and>
+        </condition>
+        <condition property="test.engine.set">
+            <isset property="opendcs.test.engine"/>
+        </condition>
+    </target>
+
+    <target name="integration-test" depends="check.it-run,compile-test-integration,stage,common.resolve"
+            description="Run the integration test suite with available implementations."
+            unless="integration.test.current"
+            >
+        <if>
+            <not>
+                <isset property="opendcs.test.engine"/>
+            </not>
+            <then>
+                <echo level="error">
+To run the integration test you must specify -Dopendcs.test.engine=engine
+Where engine is currently one of the following: OpenDCS-XML, OpenDCS-Postgres
+
+Only OpenDCS-XML will currently work on windows."
+It is also recommend to pass -Dno.docs=true, however the build should now cache the build
+state of the docs correctly and not take an excessive amount of time.
+
+A given implementation may take additional parameters. See https://opendcs-dev.readthedocs.io for
+more information about each.
+                </echo>
+                <fail message="See above message and set correct settings."/>
+            </then>
+        </if>
         <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
-        <mkdir dir="${build.dir}/test-integration/results"/>
-        <mkdir dir="${build.dir}/test-integration/tmp"/>
+        <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
+        <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
+        <jacoco:agent property="coverage.agent.param.it"
+                      destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
+        <!-- This path is used by the integration test extension when 
+            creating independent OpenDCS application processes-->
+        <path id="opendcs.runtime">
+            <pathelement location="${stage.dir}/bin/opendcs.jar"/>
+            <fileset dir="${stage.dir}/dep"/>
+        </path>
+        <pathconvert property="opendcs.test.classpath" refid="opendcs.runtime"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
             <classpath refid="test.classpath"/>
             <classpath refid="runtime.classpath"/>
@@ -196,39 +302,123 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <pathelement location="${build.test-integration.classes}"/>
             </classpath>
 
-            <testclasses outputdir="${build.dir}/test-integration/results">
+            <testclasses outputdir="${build.dir}/test-integration/${opendcs.test.engine}/results">
                 <fork>
+                    <jvmarg value="${coverage.agent.param.it}"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
-                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-integration/tmp"/>
+                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
                     <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
+                    <jvmarg value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
+                    <jvmarg value="-Dopendcs.test.classpath=${opendcs.test.classpath}"/>
+                    <jvmarg value="-Djava.util.logging.config.file=${build.dir}/../src/test-integration/test-config/logging.properties"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                    <syspropertyset>
+                        <propertyref prefix="opendcs"/>
+                    </syspropertyset>
+                    <syspropertyset>
+                        <propertyref prefix="testcontainer"/>
+                    </syspropertyset>
                 </fork>
                 <fileset dir="${build.test-integration.classes}"/>
                 <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
-
         </junitlauncher>
+
+        <mkdir dir="${junit.html.output.dir}/test-integration/${opendcs.test.engine}"/>
         <junitreport todir="${junit.html.output.dir}">
-            <fileset dir="${build.dir}/test-integration/results">
+            <fileset dir="${build.dir}/test-integration/${opendcs.test.engine}/results">
                 <include name="TEST-*.xml"/>
+                <exclude name="TEST-org.opendcs.spi.configuration*"/>
+                <exclude name="TEST-org.opendcs.fixture*"/>
             </fileset>
-            <fileset dir="${build.dir}/test-results">
-                <include name="TEST-*.xml"/>
-            </fileset>
-            <report format="frames" todir="${junit.html.output.dir}"/>
+            <report format="noframes" todir="${junit.html.output.dir}/test-integration/${opendcs.test.engine}"/>
         </junitreport>
         <if>
             <isset property="integration.failed"/>
             <then>
+                <delete file="${status.dir}/src.integration.run.${opendcs.test.engine}" quiet="true"/>
                 <fail message="Integration tests have failures."/>
             </then>
+            <else>
+                <touch file="${status.dir}/src.integration.run.${opendcs.test.engine}"/>
+            </else>
         </if>
     </target>
 
+    <target name="check.gui-test" depends="check.src">
+        <condition property="gui.test.current">
+            <and>
+                <available file="${status.dir}/src.gui-test.run"/>
+                <isset property="src.build.current"/>
+                <uptodate property="gui-test.src.current" targetFile="${status.dir}/src.gui-test.build.date">
+                    <srcFiles dir="${src.test-gui.main.dir}" includes="**/*"/>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
 
-    <target name="jar" depends="compile" description="Generates opendcs.jar.">
+    <target name="gui-test" depends="check.gui-test,compile-test-gui,stage,common.resolve"
+            description="Run available GUI element tests"
+            unless="gui.test.current">
+        <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
+        <mkdir dir="${build.dir}/test-gui/results"/>
+        <mkdir dir="${build.dir}/test-gui/tmp"/>
+        <jacoco:agent property="coverage.agent.param.gui" destfile="${coverage.dir}/jacoco.test-gui.exec"/>
+        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="gui.failed">
+            <classpath refid="test.classpath"/>
+            <classpath refid="runtime.classpath"/>
+            <classpath refid="junit.platform.libs.classpath"/>
+            <classpath>
+                <pathelement location="${build.classes}"/>
+                <pathelement location="${build.resources}"/>
+                <pathelement location="${build.test-gui.resources}"/>
+                <pathelement location="${build.test-gui.classes}"/>
+            </classpath>
+
+            <testclasses outputdir="${build.dir}/test-gui/results">
+                <fork>
+                    <jvmarg value="${coverage.agent.param.gui}"/>
+                    <jvmarg value="-Dbuild.dir=${build.dir}"/>
+                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-gui/tmp"/>
+                    <jvmarg value="-Dresource.dir=${build.test-gui.resources}"/>
+                    <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
+                    <jvmarg value="-DDECODES_INSTALL_DIR=${stage.dir}"/>
+                    <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                </fork>
+                <fileset dir="${build.test-gui.classes}"/>
+                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
+            </testclasses>
+        </junitlauncher>
+
+        <mkdir dir="${junit.html.output.dir}/test-gui"/>
+        <junitreport todir="${junit.html.output.dir}">
+            <fileset dir="${build.dir}/test-gui/results">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="noframes" todir="${junit.html.output.dir}/test-gui"/>
+        </junitreport>
+        <if>
+            <isset property="gui.failed"/>
+            <then>
+                <delete file="${status.dir}/src.gui-test.run" quiet="true"/>
+                <fail message="Gui tests have failures."/>
+            </then>
+            <else>
+                <touch file="${status.dir}/src.gui-test.run"/>
+            </else>
+        </if>
+    </target>
+
+    <target name="check.jar" depends="check.src">
+        <uptodate property="jar.current" targetFile="${dist.jar}">
+            <srcfiles dir="${src.main.dir}" includes="**/*"/>
+        </uptodate>
+    </target>
+
+    <target name="jar" depends="check.jar,compile" description="Generates opendcs.jar." unless="jar.current">
 
         <!-- copy the resource files to the build directory. -->
         <copy todir="${build.classes}">
@@ -290,7 +480,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <echo message="GPG is required to sign the components"/>
             </then>
             <else>
-                <gpgsignfile target="opendcs-ot-${version}.jar" workingDir="stage"/>
+                <gpgsignfile target="opendcs-installer-${version}.jar" workingDir="stage"/>
                 <gpgsignfile target="opendcs-${version}.pom"/>
                 <gpgsignfile target="opendcs-${version}.jar"/>
                 <gpgsignfile target="opendcs-${version}-javadoc.jar"/>
@@ -426,7 +616,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 					<fileset dir="${docs.output}/html">
 						<include name="**"/>
 						<exclude name=".buildinfo"/>
-					</fileset>		
+					</fileset>
 				</copy>
 
 
@@ -524,7 +714,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <!-- Invokes izpack to build installable package with defaults for CWMS -->
         <property name="hdb.preselect" value="no"/>
         <izpack input="${project.dir}/izpack/opendcs-install.xml"
-                output="stage/opendcs-ot-${version}.jar"
+                output="stage/opendcs-installer-${version}.jar"
                 installerType="standard"
                 inheritAll="true"
                 basedir="stage"
@@ -564,6 +754,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <tar destfile="opendcs-cwms-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz" compression="gzip">
             <tarfileset dir="stage">
                 <exclude name="bin/*"/>
+                <exclude name="opendcs-ot*"/>
                 <exclude name="schema/cwms/createDb.sh"/>
                 <exclude name="schema/cwms/importDecodesTemplate.sh"/>
                 <exclude name="schema/cwms/createDefinesSql.sh"/>
@@ -642,6 +833,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     classpathentry(kind:"src",    path:"src/main/resources", output="bin/main")
                     classpathentry(kind:"src",    path:"src/test/java", output="bin/test")
                     classpathentry(kind:"src",    path:"src/test-integration/java", output="bin/test-integration")
+                    classpathentry(kind:"src",    path:"src/test-gui/java", output="bin/test-gui")
                     classpathentry(kind:"output", path:"bin")
                     classpathentry(kind:"con",    path:"org.eclipse.jdt.launching.JRE_CONTAINER")
 
@@ -650,6 +842,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     }
 
                     project.getReference("test.classpath").each {
+                        classpathentry(kind:"lib", path:it)
+                    }
+
+                    project.getReference("junit.platform.libs.classpath").each {
                         classpathentry(kind:"lib", path:it)
                     }
                 }
@@ -712,4 +908,48 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
     </target>
 
     <target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
+
+    <!-- Still debating on if this should depend on all the tests, but it's perfectly valid to only want to see
+         coverage for what's actually been generated. -->
+    <target name="coverage.report" depends="common.resolve.build">
+        <jacoco:merge destfile="${reports.dir}/coverage.exec">
+            <fileset dir="${coverage.dir}" includes="*.exec"/>
+        </jacoco:merge>
+
+        <jacoco:report>
+            <executiondata>
+                <file file="${reports.dir}/coverage.exec"/>
+            </executiondata>
+
+            <structure name="OpenDCS">
+                <classfiles>
+                    <fileset dir="${build.classes}"
+                             excludes="**/easy_install/**,**/python_packages,**/certifi/**,**/chardet/**,**/urllib3/**,**/requests/**,**/chardet/**,**/urllib3/**,**/idna/**,**/pkg_resources/**"/>
+                </classfiles>
+                <sourcefiles encoding="UTF-8">
+                    <fileset dir="${src.dir}"/>
+                </sourcefiles>
+            </structure>
+
+            <html destdir="${reports.dir}/coverage.html"/>
+        </jacoco:report>
+        <!--
+
+            Thank you to
+            https://stackoverflow.com/a/71917464
+            and
+            https://stackoverflow.com/a/28476028
+        -->
+        <loadfile encoding="UTF-8" property="coverage.percentage"
+                srcFile="${reports.dir}/coverage.html/index.html">
+            <filterchain>
+                <tokenfilter>
+                    <containsregex
+                        pattern="^.*&lt;td>Total&lt;([^>]+>){4}([^&lt;]*).*"
+                        replace="\2"/>
+                </tokenfilter>
+            </filterchain>
+        </loadfile>
+        <echo message="Total coverage = ${coverage.percentage}"/>
+    </target>
 </project>

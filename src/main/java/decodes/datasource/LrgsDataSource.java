@@ -18,6 +18,7 @@ import ilex.var.Variable;
 import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.Constants;
+import decodes.db.DataSource;
 import decodes.db.TransportMedium;
 import decodes.db.NetworkList;
 import decodes.db.InvalidDatabaseException;
@@ -91,12 +92,14 @@ public class LrgsDataSource extends DataSourceExec
 
 
     /**
-      No-args constructor is necessary because this is instantiated from
-      a Class object that was loaded dynamically.
-    */
-    public LrgsDataSource()
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+    public LrgsDataSource(DataSource ds, Database db)
     {
-        super();
+        super(ds,db);
         lddsClient = null;
         host = null;
         port = -1;
@@ -351,15 +354,14 @@ public class LrgsDataSource extends DataSourceExec
                 // Prefer lists from the DECODES DB.
                 // If list is in the DECODES DB, send it.
                 // Look for matching name with or without ".nl" extension.
-                NetworkList decNL = Database.getDb().networkListList.getNetworkList(nm);
+                NetworkList decNL = db.networkListList.getNetworkList(nm);
                 if (decNL == null)
                 {
                     int idx = nm.lastIndexOf(".nl");
                     if (idx != -1)
                     {
                         String nnm = nm.substring(0, idx);
-                        decNL =
-                          Database.getDb().networkListList.getNetworkList(nnm);
+                        decNL = db.networkListList.getNetworkList(nnm);
                     }
                 }
                 if (decNL != null)
@@ -720,6 +722,17 @@ public class LrgsDataSource extends DataSourceExec
             if (MaxConsecutiveBadMessages < 0)
             {
                 log(Logger.E_DEBUG1, "Unable to parse header for station because: " + e.getLocalizedMessage());
+                if( dcpMsg != null)
+                {
+                    RawMessage ret = new RawMessage(dcpMsg.getData());
+                    ret.setOrigDcpMsg(dcpMsg);
+                    ret.dataSourceName = getName();
+                    return ret;
+                }
+                else
+                {
+                    return null;
+                }
             }
             else if (consecutiveBadMessages >= MaxConsecutiveBadMessages)
             {
@@ -729,7 +742,10 @@ public class LrgsDataSource extends DataSourceExec
                     "Too many consecutive bad messages from '"
                     + dbDataSource.getName() + "': closing.");
             }
-            return getRawMessage();
+            else
+            {
+                return getRawMessage();
+            }
         }
         // Allow UnknownPlatformException to be propagated.
     }
@@ -851,10 +867,10 @@ public class LrgsDataSource extends DataSourceExec
         Platform p = null;
         try
         {
-            if (Database.getDb() != null)
+            if (db != null)
             {
-                p = Database.getDb().platformList.getPlatform(
-                    pmp.getMediumType(), addrField, ret.getTimeStamp());
+                p = db.platformList.getPlatform(
+                        pmp.getMediumType(), addrField, ret.getTimeStamp());
             }
         }
         catch(DatabaseException e)

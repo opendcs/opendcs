@@ -2,7 +2,7 @@
 name: Code Refactoring
 about: Record to track modernization of the software
 title: ''
-labels: refactor
+labels: refactor, priority-medium
 assignees: '@opendcs-core-devs'
 
 ---

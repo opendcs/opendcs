@@ -158,6 +158,7 @@ import ilex.var.Variable;
 import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.Constants;
+import decodes.db.DataSource;
 import decodes.db.TransportMedium;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
@@ -315,14 +316,15 @@ public abstract class StreamDataSource extends DataSourceExec
 			
 	};
 
-	//=====================================================================
 	/**
-	  No-args constructor is necessary because this is instantiated from
-	  a Class object that was loaded dynamically.
-	*/
-	public StreamDataSource()
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public StreamDataSource(DataSource ds, Database db)
 	{
-		super();
+		super(ds,db);
 
 		oldChannelRanges = false;
 		msgbuf = new byte[MAX_MESSAGE_LENGTH];
@@ -632,7 +634,7 @@ public abstract class StreamDataSource extends DataSourceExec
 		try
 		{
 
-			p = Database.getDb().platformList.getPlatform(
+			p = db.platformList.getPlatform(
 				pmp.getMediumType(), ret.getMediumId(), ret.getTimeStamp());
 		}
 		catch(DatabaseException e)

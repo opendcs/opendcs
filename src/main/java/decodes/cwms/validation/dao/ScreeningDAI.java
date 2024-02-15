@@ -7,7 +7,7 @@
  */
 package decodes.cwms.validation.dao;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import decodes.cwms.validation.Screening;
 import decodes.sql.DbKey;
@@ -15,7 +15,7 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 
-public interface ScreeningDAI
+public interface ScreeningDAI extends AutoCloseable
 {
 	/**
 	 * Write a screening object to the CWMS database.
@@ -64,7 +64,7 @@ public interface ScreeningDAI
 	 * Used by GUI to populate the list tab.
 	 * @return list of all screening objects in the database.
 	 */
-	public ArrayList<Screening> getAllScreenings()
+	public List<Screening> getAllScreenings()
 		throws DbIoException;
 	
 	/**
@@ -73,7 +73,7 @@ public interface ScreeningDAI
 	 * @return an array of all screening assignments
 	 * @throws DbIoException on any SQL error
 	 */
-	public ArrayList<TsidScreeningAssignment> getTsidScreeningAssignments(boolean activeOnly)
+	public List<TsidScreeningAssignment> getTsidScreeningAssignments(boolean activeOnly)
 		throws DbIoException;
 	
 	/**

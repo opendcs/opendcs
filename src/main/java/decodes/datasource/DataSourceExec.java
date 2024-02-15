@@ -101,6 +101,7 @@ import java.util.Vector;
 
 import ilex.util.Logger;
 import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.Constants;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
@@ -140,10 +141,30 @@ public abstract class DataSourceExec
 	
 	protected RoutingSpecThread routingSpecThread = null;
 
-	/** default constructor */
-	protected DataSourceExec()
+	protected Database db = null;
+
+	/**
+	 * Required constructor for any data source.
+	 *
+	 * If you have a DataSource that can be used without
+	 * a constructor it is okay to call @code{super(null,null)}
+	 * as this base class does not call them.
+	 *
+	 * However a constructor that takes as passes the variables
+	 * to this constructor should be provided as the makeExecutive
+	 * function that creates sources needs to call the highest level
+	 * constructor that includes them.
+	 *
+	 * @param dataSource The DataSource that defines the parameters for this DataSourceExecutive
+	 * @param decodesDatabase The Decodes database interface.
+	 *
+	 * @since 7.0.9 perviously this was a default no args constructor. Update your local implementations and avoid
+	 * access to Database.getDb() as we will be removing it.
+	 */
+	protected DataSourceExec(DataSource dataSource, Database decodesDatabase)
 	{
-		dbDataSource = null;
+		dbDataSource = dataSource;
+		this.db=decodesDatabase;
 		allowNullPlatform = false;
 		allowDapsStatusMessages = false;
 	}
@@ -165,7 +186,9 @@ public abstract class DataSourceExec
 	/**
 	  Sets the dbDataSource member.
 	  @param ds the database data source record
+	  @deprecated this not be called directly, the DataSource is now passed in the constructor.
 	*/
+	@Deprecated
 	public void setDataSource(DataSource ds)
 		throws InvalidDatabaseException
 	{
@@ -388,4 +411,3 @@ public abstract class DataSourceExec
 		return false;
 	}
 }
-

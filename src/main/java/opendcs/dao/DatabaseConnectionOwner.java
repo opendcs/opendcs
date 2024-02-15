@@ -38,6 +38,8 @@ package opendcs.dao;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,6 +47,7 @@ import java.util.Date;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
+import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.DataTypeDAI;
@@ -128,6 +131,27 @@ public interface DatabaseConnectionOwner
 	 * @return a Java Date object, or null if the column was null
 	 */
 	public Date getFullDate(ResultSet rs, int column);
+
+	/**
+	 * Passed a result set and column name, extract the value and return as a
+	 * time-zone corrected java.util.Date object.
+	 * @param rs the result set
+	 * @param column the column name
+	 * @return a Java Date object, or null if the column was null
+	 */
+	public default Date getFullDate(ResultSet rs, String column) throws SQLException
+	{
+		ResultSetMetaData rsMd = rs.getMetaData();
+		// Columns start at 1 not zero.
+		for (int idx = 1; idx < rsMd.getColumnCount()+1; idx++)
+		{
+			if (rsMd.getColumnName(idx).equalsIgnoreCase(column))
+			{
+				return getFullDate(rs,idx);
+			}
+		}
+		return null;
+	}
 	
 	/** @return string representation for a boolean value in this db. */
 	public String sqlBoolean(boolean v);
@@ -215,6 +239,8 @@ public interface DatabaseConnectionOwner
 	 * @return the DAO
 	 */
 	public ComputationDAI makeComputationDAO();
+
+	public CompDependsNotifyDAI makeCompDependsNotifyDAO();
 	
 	/**
 	 * Factory method to make a DAO for Time Series

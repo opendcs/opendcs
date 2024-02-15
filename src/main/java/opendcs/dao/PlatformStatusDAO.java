@@ -52,13 +52,11 @@ public class PlatformStatusDAO
 			return null;
 		
 		String q = "select " + ps_attrs + " from platform_status "
-			+ "where platform_id = " + platformId;
+			+ "where platform_id = ?";
 		
-		ResultSet rs = doQuery(q);
 		try
 		{
-			if (rs != null && rs.next())
-				return rs2ps(rs);
+			return getSingleResult(q, rs->rs2ps(rs),platformId);
 		}
 		catch (SQLException ex)
 		{

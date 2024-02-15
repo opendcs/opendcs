@@ -56,7 +56,10 @@ public interface LoadingAppDAI
 	 *
 	 * @param inList inlist clause to limit the returned computations.
 	 * @return list of computations.
+	 * @deprecated @since 7.0.10 No usages found in code. Will remove in later
+	 *                    version
 	 */
+	@Deprecated
 	public ArrayList<CompAppInfo> ComputationAppsIn(String inList)
 		throws DbIoException;
 

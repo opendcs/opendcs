@@ -15,6 +15,7 @@ import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
@@ -67,8 +68,16 @@ public class WebAbstractDataSource
 			+ " if they are present in the abstract URL."),
 	};
 
-	// No arg ctor required to instantiate from class name
-	public WebAbstractDataSource() {}
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public WebAbstractDataSource(DataSource ds, Database db)
+	{
+		super(ds,db);
+	}
 
 	/**
 	 * Re-evaluate the abstract URL with the next medium ID in the aggregate list.

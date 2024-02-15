@@ -1233,6 +1233,14 @@ public class DecodesScriptEditPanel
 	{
 		this.parentDialog = parentDialog;
 	}
+
+	/**
+	 * Get the edited scripted.
+	 * @return
+	 */
+	public DecodesScript getScript() {
+		return this.theScript;
+	}
 }
 
 class FormatStatementTableModel extends AbstractTableModel

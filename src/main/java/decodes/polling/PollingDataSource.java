@@ -39,6 +39,7 @@ import decodes.datasource.DataSourceExec;
 import decodes.datasource.EdlPMParser;
 import decodes.datasource.HeaderParseException;
 import decodes.datasource.RawMessage;
+import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.DbEnum;
@@ -116,6 +117,17 @@ public class PollingDataSource extends DataSourceExec
 	private PortPool portPool = null;
 	private PlatformStatusDAI platformStatusDAO = null;
 
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public PollingDataSource(DataSource ds, Database db)
+	{
+		super(ds,db);
+	}
+
 	@Override
 	public void processDataSource()
 		throws InvalidDatabaseException
@@ -142,7 +154,7 @@ public class PollingDataSource extends DataSourceExec
 			{
 				try
 				{
-					Platform p = Database.getDb().platformList.getPlatform(nl.transportMediumType,
+					Platform p = db.platformList.getPlatform(nl.transportMediumType,
 						nle.transportId);
 					if (p == null)
 					{
@@ -180,7 +192,7 @@ public class PollingDataSource extends DataSourceExec
 			String value = allProps.getProperty(propName);
 			if (TextUtil.startsWithIgnoreCase(propName, "sc:DCP_NAME"))
 			{
-				Platform p = Database.getDb().platformList.getByFileName(value);
+				Platform p = db.platformList.getByFileName(value);
 				if (!p.isComplete())
 					try
 					{
@@ -214,7 +226,7 @@ public class PollingDataSource extends DataSourceExec
 		String portType = PropertiesUtil.getIgnoreCase(aggProps, "portType");
 		if (portType == null)
 			throw new DataSourceException(module + " Missing required portType property.");
-		DbEnum portTypeEnum = Database.getDb().getDbEnum("PortType");
+		DbEnum portTypeEnum = db.getDbEnum("PortType");
 		if (portTypeEnum == null)
 			throw new DataSourceException(module + " This database does not have a PortType enumeration."
 				+ " Did you run dbimport on edit-db/enum/PortType.xml?");
@@ -288,7 +300,7 @@ public class PollingDataSource extends DataSourceExec
 			controller.setSaveSessionFile(s);
 	
 		
-		platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
+		platformStatusDAO = db.getDbIo().makePlatformStatusDAO();
 		
 		if (routingSpecThread != null && routingSpecThread.getMyExec() != null)
 			controller.setDacqEventLogger(routingSpecThread.getMyExec().getDacqEventLogger());

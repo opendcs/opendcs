@@ -67,15 +67,25 @@ import ilex.util.TextUtil;
 import ilex.util.ThreadLogger;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
+
+import javax.management.JMException;
+import javax.management.ObjectName;
+
+import org.opendcs.jmx.decodes.RoutingSchedulerMXBean;
 
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
+import opendcs.util.logging.JulUtils;
 import lrgs.gui.DecodesInterface;
 import decodes.comp.ComputationProcessor;
 import decodes.db.Database;
@@ -101,7 +111,7 @@ import decodes.util.PropertySpec;
  */
 public class RoutingScheduler 
 	extends TsdbAppTemplate
-	implements PropertiesOwner
+	implements PropertiesOwner, RoutingSchedulerMXBean
 {
 	protected static String module = "RoutingScheduler";
 	static StringToken lockFileArg = new StringToken("k", 
@@ -151,14 +161,23 @@ public class RoutingScheduler
 	
 	public RoutingScheduler()
 	{
-		super("routsched.log");
-		setSilent(true);
+		this("routsched.log");
 	}
 	
 	protected RoutingScheduler(String appName)
 	{
 		super(appName);
 		setSilent(true);
+		try
+		{
+            String name = String.format("RoutingScheduler(%s)",appName);
+			ManagementFactory.getPlatformMBeanServer()
+							 .registerMBean(this, new ObjectName("org.opendcs:type=RoutingScheduler,name="+name));
+		}
+		catch(JMException ex)
+		{
+            Logger.instance().warning("Unable to register tracking bean." + ex.getLocalizedMessage());
+		}
 	}
 
 	@Override
@@ -302,8 +321,11 @@ public class RoutingScheduler
 			}
 			catch(Exception ex)
 			{
+				java.util.logging.Logger log = java.util.logging.Logger.getLogger("");
 				String msg = module + " Unexpected exception while " + action + ": " + ex;
 				Logger.instance().warning(msg);
+				log.log(Level.WARNING,msg,ex);
+				JulUtils.logStackTrace(log, Level.WARNING, ex.getStackTrace(), 0);
 				System.err.println(msg);
 				ex.printStackTrace(System.err);
 				shutdownFlag = true;
@@ -586,12 +608,37 @@ public class RoutingScheduler
 	
 	public void threadFinished(Thread thread)
 	{
-		if (appLogger != null)
+		if (appLogger != null && thread != null)
 			appLogger.setLogger(thread, null);
 	}
 
 	public String getHostname()
 	{
 		return hostname;
+	}
+
+	@Override
+	public synchronized int getNumberActiveRoutingSpecs()	
+	{
+		int active = 0;
+		for(ScheduleEntryExecutive see: executives)
+		{
+			if (see.getRunState() == RunState.running)
+			{
+				active++;
+			}
+		}
+		return active;
+	}
+
+	@Override
+	public synchronized List<String> getScheduledExecutives()
+	{
+		ArrayList<String> execNames = new ArrayList<>();
+		for(ScheduleEntryExecutive see: executives)
+		{
+			execNames.add(see.getName()+"/"+see.getRunState());
+		}
+		return execNames;
 	}
 }

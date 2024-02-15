@@ -68,9 +68,8 @@ public class DacqEventLogger
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println("DacqEventLogger cannot write event to database: " 
+			parent.debug3("DacqEventLogger cannot write event to database: " 
 				+ ex + " -- will disable DB events until next run.");
-			ex.printStackTrace();
 		}
 	}
 

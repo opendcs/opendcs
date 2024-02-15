@@ -18,6 +18,7 @@ import decodes.db.ConfigSensor;
 import decodes.db.Constants;
 import decodes.db.DataSource;
 import decodes.db.DataType;
+import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
@@ -90,8 +91,16 @@ public class NrcsDataSource
 			"To select which sensor data type to use in the URL, default=nrcs")
 	};
 
-	// No arg ctor required to instantiate from class name
-	public NrcsDataSource() {}
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public NrcsDataSource(DataSource ds, Database db)
+	{
+		super(ds,db);
+	}
 
 	/**
 	 * Re-evaluate the abstract URL with the next medium ID in the aggregate list.

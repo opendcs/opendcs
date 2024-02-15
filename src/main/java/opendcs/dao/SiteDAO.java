@@ -57,17 +57,24 @@
 */
 package opendcs.dao;
 
+import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
 import decodes.db.Site;
@@ -89,8 +96,7 @@ public class SiteDAO
 	public String siteAttributes = 
 		"id, latitude, longitude, nearestCity, state, "
 		+ "region, timezone, country, elevation, elevUnitAbbr, description";
-	public String siteNameAttributes =
-		"siteid, nameType, siteName, dbNum, agency_cd";
+	public String siteNameAttributes;
 	public String siteTableName = "Site";
 	protected String siteTableKeyColumn = "id";
 	
@@ -123,7 +129,7 @@ public class SiteDAO
 	{
 		Connection conn = super.getConnection();
 		propsDao.setManualConnection(conn);
-		return conn;
+		return new WrappedConnection(conn, c -> {});
 	}
 
 
@@ -153,25 +159,24 @@ public class SiteDAO
 	{
 		// Next read all Names and then assign them to sites.
 		String q = "SELECT " + siteNameAttributes 
-			+ " FROM SiteName WHERE siteId = " + site.getId();
+			+ " FROM SiteName WHERE siteId = ?";
 
-		ResultSet rs = doQuery(q);
-		while (rs != null && rs.next())
-		{
+		doQuery(q, rs -> {
 			SiteName sn = new SiteName(site, rs.getString(2),
 				rs.getString(3));
 			sn.setUsgsDbno(rs.getString(4));
 			sn.setAgencyCode(rs.getString(5));
 			site.addName(sn);
-		}
+		}, site.getId());
 	}
 	
 	/**
 	  Extract values from result set and put them in the passed Site.
 	  @param site the Site object
 	  @param rsSite the JDBC Result Set
+	  @returns Site - the site object that was passed in.
 	*/
-	protected void resultSet2Site(Site site, ResultSet rsSite)
+	protected Site resultSet2Site(Site site, ResultSet rsSite)
 		throws SQLException
 	{
 		site.forceSetId(DbKey.createDbKey(rsSite, 1));
@@ -195,6 +200,7 @@ public class SiteDAO
 			site.setLastModifyTime(db.getFullDate(rsSite, 14));
 			site.setPublicName(rsSite.getString(15));
 		}
+		return site;
 	}
 	
 	@Override
@@ -227,13 +233,15 @@ public class SiteDAO
 		
 		// Finally search the database for a SiteName with matching value.
 		String q = "select siteid from SiteName "
-			+ " where lower(siteName) = " + sqlString(nameValue.toLowerCase());
+			+ " where lower(siteName) = lower(?)";
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (rs.next())
-				return DbKey.createDbKey(rs, 1);
-			return Constants.undefinedId;
+			DbKey key = getSingleResult(q, rs -> DbKey.createDbKey(rs, 1),nameValue);
+			if (key == null)
+			{
+				key = Constants.undefinedId;
+			}
+			return key;
 		}
 		catch(SQLException ex)
 		{
@@ -266,14 +274,16 @@ public class SiteDAO
 			return site.getKey();
 
 		String q = "select siteid from SiteName "
-			+ " where lower(nameType) = " + sqlString(siteName.getNameType().toLowerCase())
-			+ " and lower(siteName) = "  + sqlString(siteName.getNameValue().toLowerCase());
+			+ " where lower(nameType) = lower(?)"
+			+ " and lower(siteName) = lower(?)";
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (rs.next())
-				return DbKey.createDbKey(rs, 1);
-			return Constants.undefinedId;
+			DbKey key = getSingleResult(q, rs -> DbKey.createDbKey(rs,1), siteName.getNameType(),siteName.getNameValue());
+			if (key == null)
+			{
+				key = Constants.undefinedId;
+			}
+			return key;
 		}
 		catch(SQLException ex)
 		{
@@ -289,26 +299,26 @@ public class SiteDAO
 	{
 		debug3("(Generic)SiteDAO.fillCache()");
 
-		HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
-//		ArrayList<Site> siteList = new ArrayList<Site>();
-		int nNames = 0;
-		String q = buildSiteQuery(Constants.undefinedId);
+		final HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
+		String q = "SELECT " + siteAttributes + " FROM " + siteTableName;
+		int nNames[] = new int[1];
+		nNames[0] = 0;
+		
 		try
 		{
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
+			doQuery(q, rs -> 
 			{
 				Site site = new Site();
 				resultSet2Site(site, rs);
 				siteHash.put(site.getKey(), site);
-				// Can't put in cache because names are not yet known
-			}
+			});
 
-			q = buildSiteNameQuery(null);
-			rs = doQuery(q);
-			String prevNameType="", prevNameValue="";
-			DbKey prevId = DbKey.NullKey;
-			while (rs != null && rs.next())
+			q = "SELECT " + siteNameAttributes + " FROM SiteName order by nameType, siteName";
+			final SiteName prevName = new SiteName(null, "","");
+			DbKey prevId[] = new DbKey[1];
+			prevId[0] = DbKey.NullKey;
+
+			doQuery(q, rs -> 
 			{
 				DbKey key = DbKey.createDbKey(rs, 1);
 				Site site = siteHash.get(key);
@@ -317,33 +327,32 @@ public class SiteDAO
 				{
 					if (!db.isHdb()) // For some crazy reason, HDB has lots of orphan site names.
 						warning("SiteName for id=" + key + ", but no matching site.");
-					continue;
+					return;
 				}
 				
 				// There is an issue in HDB with multiple identical site names pointing to different sites.
 				// The HDB site name query orders results by type,value.
-				String nameType = rs.getString(2);
-				String nameValue = rs.getString(3);
-				if (prevNameType.equalsIgnoreCase(nameType) && prevNameValue.equalsIgnoreCase(nameValue))
+				final String nameType = rs.getString(2);
+				final String nameValue = rs.getString(3);
+				if (prevName.getNameType().equalsIgnoreCase(nameType) && prevName.getNameValue().equalsIgnoreCase(nameValue))
 				{
 					warning("SiteName for id=" + key + " with nametype=" + nameType + " and nameValue="
 						+ nameValue + " is a duplicate to a name to a different site with id="
-							+ prevId + ". Discarding the name for " + key);
+							+ prevId[0] + ". Discarding the name for " + key);
 				}
 				else
 				{
-					prevNameType = nameType;
-					prevNameValue = nameValue;
-					prevId = key;
+					prevName.setNameType(nameType);
+					prevName.setNameValue(nameValue);
+					prevId[0] = key;
 				}
 				
 				SiteName sn = new SiteName(site, nameType, nameValue);
 				sn.setUsgsDbno(rs.getString(4));
 				sn.setAgencyCode(rs.getString(5));
 				site.addName(sn);
-				nNames++;
-			}			
-
+				nNames[0]++;
+			});
 		}
 		catch(SQLException ex)
 		{
@@ -357,18 +366,9 @@ public class SiteDAO
 		int nProps = 0;
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
-		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
+		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames[0]
 			+ " names, " + nProps + " properties.");
 		lastCacheFillMsec = System.currentTimeMillis();
-	}
-	
-	protected String buildSiteNameQuery(Site site)
-	{
-		String r = "SELECT " + siteNameAttributes 
-			+ " FROM SiteName";
-		if (site != null)
-			r = r + " WHERE siteid = " + site.getKey();
-		return r;
 	}
 
 	@Override
@@ -385,16 +385,14 @@ public class SiteDAO
 		throws DbIoException, NoSuchObjectException
 	{
 		DbKey id = site.getId();
-		String q = buildSiteQuery(id);
 		try
 		{
-			ResultSet rs = doQuery(q);
-		
-			// Should be either 0 or 1 site returned.
-			if (rs == null || !rs.next())
+			Site site2 = getSingleResult("select * from site where id = ?",
+										rs -> resultSet2Site(site, rs), id );
+			if (site2 == null)
+			{
 				throw new NoSuchObjectException("No such site with ID=" + id);
-
-			resultSet2Site(site, rs);
+			}			
 
 			readNames(site);
 			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
@@ -406,21 +404,7 @@ public class SiteDAO
 			failure(err);
 			throw new DbIoException(err);
 		}
-	}
-	
-	/**
-	 * Build a query of the site table.
-	 * @param siteId if !null, include in the query.
-	 * @return a query string.
-	 */
-	protected String buildSiteQuery(DbKey siteId)
-	{
-		String q = "SELECT " + siteAttributes + " FROM " + siteTableName;
-		if (siteId != null && !siteId.isNull())
-			q = q + " where " + siteTableKeyColumn + " = " + siteId;
-			
-		return q;
-	}
+	}	
 	
 	@Override
 	public Site getSiteBySiteName(SiteName sn)
@@ -493,30 +477,57 @@ public class SiteDAO
 			desc = "";
 		if (desc.length() > 800)
 			desc = desc.substring(0,799);
+		final Map<String,Object> fields = new LinkedHashMap<>(); // LinkedHashMap to preserve order
 
-		String q = "UPDATE site SET " +
-		  	"Latitude = " + sqlString(newSite.latitude) + ", " +
-		  	"Longitude = " + sqlString(newSite.longitude) + ", " +
-		  	"NearestCity = " + sqlString(newSite.nearestCity) + ", " +
-		  	"State = " + sqlString(newSite.state) + ", " +
-		  	"Region = " + sqlString(newSite.region) + ", " +
-		  	"TimeZone = " + sqlString(newSite.timeZoneAbbr) + ", " +
-		  	"Country = " + sqlString(newSite.country);
+		fields.put("latitude",newSite.latitude);
+		fields.put("longitude", newSite.longitude);
+		fields.put("nearestCity", newSite.nearestCity);
+		fields.put("state", newSite.state);
+		fields.put("region", newSite.region);
+		fields.put("timezone", newSite.timeZoneAbbr);
+		fields.put("country", newSite.country);
+
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-			q = q + ", " +
-			  	"elevation = " + sqlDouble(newSite.getElevation()) + ", " +
-			  	"elevunitabbr = " + sqlString(newSite.getElevationUnits()) + ", " +
-				"description = " + sqlString(desc);
-		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
-			q = q + ", " +
-				"active_flag = " + sqlBoolean(newSite.isActive()) + ", " +
-			  	"location_type = " + sqlString(newSite.getLocationType()) + ", " +
-			  	"modify_time = " + db.sqlDate(newSite.getLastModifyTime()) + ", " +
-			  	"public_name = " + sqlString(newSite.getPublicName());
-		
-		q = q + " WHERE " + siteTableKeyColumn + " = " + id;
+		{
+			fields.put("elevation", newSite.getElevation());
+			fields.put("elevunitabbr", newSite.getElevationUnits());
+			fields.put("description",desc);
+		}
 
-		doModify(q);
+		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+		{
+			fields.put("active_flag",newSite.isActive() ? "TRUE" : "FALSE");
+			fields.put("location_type",newSite.getLocationType());
+			fields.put("modify_time", newSite.getLastModifyTime());
+			fields.put("public_name", newSite.getPublicName());
+		}
+		StringBuilder q = new StringBuilder("UPDATE site SET ");
+		Iterator<String> columnSet = fields.keySet().iterator();
+		while(columnSet.hasNext())
+		{
+			q.append(columnSet.next()).append("=?");
+			if(columnSet.hasNext())
+			{
+				q.append(",");
+			}
+			q.append(" ");
+		}
+		q.append( " WHERE " + siteTableKeyColumn + " = ?");
+		Logger.instance().info(q.toString());
+		try
+		{
+			List<Object> parameters = 
+					 fields.entrySet()
+						   .stream()
+						   .map(e -> e.getValue())
+						   .collect(Collectors.toList());
+			parameters.add(id);
+			doModify(q.toString(), parameters.toArray(new Object[0]));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to update site entry", ex);
+		}
 
 		updateAllSiteNames(newSite, dbSite);
 		// Now delete & re-insert the SiteNames.
@@ -552,8 +563,18 @@ public class SiteDAO
 		
 		// Any names left in dbSite don't exist in newSite and should be removed
 		for (Iterator<SiteName> dbSnIt = dbSite.getNames(); dbSnIt.hasNext(); )
-			doModify("delete from sitename where siteid = " + newSite.getKey()
-				+ " and nametype = " + sqlString(dbSnIt.next().getNameType()));
+		{
+			SiteName sn = dbSnIt.next();
+			try
+			{
+				doModify("delete from sitename where siteid = ? and lower(nametype) = lower(?)",
+						 newSite.getKey(),sn.getNameType());
+			}
+			catch (SQLException ex)
+			{
+				throw new DbIoException("Unable to remove SiteName " + sn, ex);
+			}
+		}
 	}
 	
 	/**
@@ -567,18 +588,41 @@ public class SiteDAO
 	protected void updateSiteName(DbKey siteId, SiteName sn)
 		throws DbIoException
 	{
-		String q =
-			"UPDATE SiteName SET " +
-				"sitename = " + sqlString(sn.getNameValue());		
+		final Map<String, Object> fields = new LinkedHashMap<>();
+		fields.put("sitename",sn.getNameValue());
+
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
 		{
-			q = q + ", dbNum = " + sqlString(sn.getUsgsDbno())
-			      + ", agency_cd = " + sqlString(sn.getAgencyCode());
+			fields.put("dbNum",sn.getUsgsDbno());
+			fields.put("agency_cd",sn.getAgencyCode());
 		}
-
-		q = q + " WHERE siteid = " + siteId
-			+ " AND lower(nametype) = lower(" + sqlString(sn.getNameType()) + ")";
-		doModify(q);
+		StringBuilder q = new StringBuilder("UPDATE SiteName SET ");
+		Iterator<String> columnSet = fields.keySet().iterator();
+		while(columnSet.hasNext())
+		{
+			q.append(columnSet.next()).append("=?");
+			if(columnSet.hasNext())
+			{
+				q.append(",");
+			}
+			q.append(" ");
+		}
+		q.append(" WHERE siteid = ? and lower(nametype) = lower(?)");
+		try
+		{
+			List<Object> parameters =
+					 fields.entrySet()
+						   .stream()
+						   .map(e -> e.getValue())
+						   .collect(Collectors.toList());
+			parameters.add(siteId);
+			parameters.add(sn.getNameType());
+			doModify(q.toString(),parameters.toArray(new Object[0]));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to update SiteName " + sn, ex);
+		}
 	}
 
 	/**
@@ -597,58 +641,46 @@ public class SiteDAO
 		String desc = s.getDescription();
 		if (desc != null && desc.length() > 800)
 			desc = desc.substring(0,799);
+		ArrayList<String> columns = new ArrayList<>();
+		ArrayList<Object> parameters = new ArrayList<>();
+		StringBuilder q = new StringBuilder("INSERT INTO Site(");
 
-		String q;
-		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
-			q =
-				"INSERT INTO Site VALUES (" +
-			  	id + ", " +
-			  	sqlString(s.latitude) + ", " +
-			  	sqlString(s.longitude) + ", " +
-			  	sqlString(s.nearestCity) + ", " +
-			  	sqlString(s.state) + ", " +
-			  	sqlString(s.region) + ", " +
-			  	sqlString(s.timeZoneAbbr) + ", " +
-			  	sqlString(s.country) +
-				")";
-		else if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
-			q =
-				"INSERT INTO Site VALUES (" +
-			  	id + ", " +
-			  	sqlString(s.latitude) + ", " +
-			  	sqlString(s.longitude) + ", " +
-			  	sqlString(s.nearestCity) + ", " +
-			  	sqlString(s.state) + ", " +
-			  	sqlString(s.region) + ", " +
-			  	sqlString(s.timeZoneAbbr) + ", " +
-			  	sqlString(s.country) + ", " +
-				sqlDouble(s.getElevation()) + ", " +
-				sqlString(s.getElevationUnits()) + ", " +
-				sqlString(desc) + " " +
-				")";
-		else // version 10 or higher
+		columns.add("id"); parameters.add(id);
+		columns.add("latitude"); parameters.add(s.latitude);
+		columns.add("longitude"); parameters.add(s.longitude);
+		columns.add("nearestCity"); parameters.add(s.nearestCity);
+		columns.add("state"); parameters.add(s.state);
+		columns.add("region"); parameters.add(s.region);
+		columns.add("timezone"); parameters.add(s.timeZoneAbbr);
+		columns.add("country"); parameters.add(s.country);
+		int dbVersion = db.getDecodesDatabaseVersion();
+
+		if (dbVersion >= DecodesDatabaseVersion.DECODES_DB_6)
 		{
-			q = "INSERT INTO Site VALUES (" +
-			  	id + ", " +
-			  	sqlString(s.latitude) + ", " +
-			  	sqlString(s.longitude) + ", " +
-			  	sqlString(s.nearestCity) + ", " +
-			  	sqlString(s.state) + ", " +
-			  	sqlString(s.region) + ", " +
-			  	sqlString(s.timeZoneAbbr) + ", " +
-			  	sqlString(s.country) + ", " +
-				sqlDouble(s.getElevation()) + ", " +
-				sqlString(s.getElevationUnits()) + ", " +
-				sqlString(desc) + ", " +
-				sqlBoolean(s.isActive()) + ", " +
-				sqlString(s.getLocationType()) + ", " + 
-				db.sqlDate(s.getLastModifyTime()) + ", " + 
-				sqlString(s.getPublicName()) + 
-				")";
+			columns.add("elevation"); parameters.add(s.getElevation());
+			columns.add("elevUnitAbbr"); parameters.add(s.getElevationUnits());
+			columns.add("description"); parameters.add(desc);
 		}
-
-
-		doModify(q);
+		if (dbVersion >= DecodesDatabaseVersion.DECODES_DB_10) // version 10 or higher
+		{
+			columns.add("active_flag"); parameters.add(s.isActive() ? "TRUE" : "FALSE");
+			columns.add("location_type"); parameters.add(s.getLocationType());
+			Date modifyTime = s.getLastModifyTime();
+			columns.add("modify_time"); parameters.add(modifyTime != null ? modifyTime : new Date());
+			columns.add("public_name"); parameters.add(s.getPublicName());
+		}
+		q.append(String.join(",",columns));
+		q.append(") values(");
+		q.append(parameters.stream().map(f -> "?").collect(Collectors.joining(",")));
+		q.append(")");
+		try
+		{
+			doModify(q.toString(),parameters.toArray(new Object[0]));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to insert Site.",ex);
+		}
 
 		for(Iterator<SiteName> snit = s.getNames(); snit.hasNext(); )
 			insertSiteName(s.getKey(), snit.next());
@@ -664,30 +696,54 @@ public class SiteDAO
 	{
 		// Ignore null or missing name values. Oracle can't store them.
 		if (sn.getNameValue() == null || sn.getNameValue().trim().length() == 0)
-			return;
-		
-		String q =
-			"INSERT INTO SiteName VALUES (" +
-				siteId + ", " +
-				sqlString(sn.getNameType()) + ", " +
-				sqlString(sn.getNameValue());
-		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
 		{
-			q = q + ", " + sqlString(sn.getUsgsDbno())
-			      + ", " + sqlString(sn.getAgencyCode());
+			return;
 		}
 
-		q = q + ")";
-		doModify(q);
+		ArrayList<String> columns = new ArrayList<>();
+		ArrayList<Object> parameters = new ArrayList<>();
+		columns.add("siteid"); parameters.add(siteId);
+		columns.add("nametype"); parameters.add(sn.getNameType());
+		columns.add("sitename"); parameters.add(sn.getNameValue());
+
+		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+		{
+			columns.add("dbnum"); parameters.add(sn.getUsgsDbno());
+			columns.add("agency_cd"); parameters.add(sn.getAgencyCode());
+		}
+		StringBuilder q = new StringBuilder("INSERT INTO SiteName(");
+		q.append(String.join(",",columns));
+		q.append(") values (")
+		 .append(parameters.stream().map(f -> "?").collect(Collectors.joining(",")))
+		 .append(")");
+		try
+		{
+			Logger.instance().info(q.toString());
+			doModify(q.toString(),parameters.toArray(new Object[0]));
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to store SiteName -> " + sn, ex);
+		}
 	}
 
 	@Override
 	public void deleteSite(DbKey key) throws DbIoException
 	{
-		doModify("delete from sitename where siteid = " + key);
-		doModify("delete from site_property where site_id = " + key);
-		doModify("delete from site where " + siteTableKeyColumn + " = " + key);
+		// it would be good to do this as a single transaction but I'm
+		// not sure of a good way to handle that given the current design of the
+		// systems.
+		try
+		{
+		doModify("delete from sitename where siteid = ?", key);
+		doModify("delete from site_property where site_id = ?", key);
+		doModify("delete from site where " + siteTableKeyColumn + " = ?", key);
 		cache.remove(key);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to delete site or portions of site.",ex);
+		}
 	}
 	
 	public void close()
@@ -701,4 +757,3 @@ public class SiteDAO
 		return lastCacheFillMsec;
 	}
 }
-

@@ -13,6 +13,7 @@ import ilex.util.IDateFormat;
 import ilex.util.PropertiesUtil;
 
 import decodes.db.DataSource;
+import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 
@@ -45,10 +46,15 @@ public class HotBackupGroup
 	Vector delegates;            // Group members to delegate requests to.
 	DataSourceExec activeMember; // Current group member we're delegating to
 
-	/** default constructor */
-	public HotBackupGroup()
+	/**
+	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
+	 *
+	 * @param dataSource
+	 * @param decodesDatabase
+	 */
+	public HotBackupGroup(DataSource dataSource, Database decodesDatabase)
 	{
-		super();
+		super(dataSource,decodesDatabase);
 
 		props = null;
 		since = null;
@@ -356,4 +362,3 @@ public class HotBackupGroup
 			Logger.instance().debug1("No currently active data source member.");
 	}
 }
-

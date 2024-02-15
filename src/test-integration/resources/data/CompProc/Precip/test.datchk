@@ -1,0 +1,9 @@
+*
+* DATCHK Screening for test precipitation
+*
+
+CRITERIA DUR Q 0.0 2.0 3Hours
+CRITERIA DUR R 0.0 4.0 3Hours
+
+Data $SomeDSSFile:/TEST/TESTSITE1/PR//1HOUR/TOTAL;
+Data $SomeDSSFile:/TEST/TESTSITE2/PR//1HOUR/TOTAL;

@@ -214,7 +214,10 @@ public class VersionSelectDialog
 		int r = versionTable.getSelectedRow();
 		if (r >= 0)
 		{
-			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)model.getRowObject(r);
+			//Get the correct row from the table model
+			int modelrow = versionTable.convertRowIndexToModel(r);
+			VersionTableModel tablemodel = (VersionTableModel)versionTable.getModel();			
+			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
 			if (spec != selectedRow)
 			{
 				selectedRow = spec;
