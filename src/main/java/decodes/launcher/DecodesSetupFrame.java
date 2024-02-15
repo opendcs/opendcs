@@ -5,9 +5,7 @@ import java.awt.*;
 import javax.swing.*;
 
 import java.awt.event.*;
-import java.util.Date;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.ResourceBundle;
 import java.io.*;
 
@@ -151,29 +149,22 @@ public class DecodesSetupFrame
 
     private void saveChangesPressed()
     {
-        DecodesSettings settings = DecodesSettings.instance();
-        decodesPropsPanel.saveToSettings(settings);
-        Properties props = new Properties();
-
-        settings.saveToProps(props);
-
-        File propFile = settings.getSourceFile();
+        DecodesSettings settings = decodesPropsPanel.saveToSettings();
 
         try
         {
-            FileOutputStream fos = new FileOutputStream(propFile);
-            Logger.instance().info("Saving DECODES Settings to '" + propFile.getPath() + "'");
-            props.store(fos, "OPENDCS Toolkit Settings");
-            fos.close();
+            settings.saveToProfile(profile);
         }
         catch (IOException ex)
         {
             Logger.instance().failure(
-                "Cannot save DECODES Properties File '" + propFile + "': "
+                "Cannot save DECODES Properties File '" + profile.getFile().getAbsolutePath() + "': "
                 + ex);
         }
         if (launcherFrame != null)
+        {
             launcherFrame.setupSaved();
+        }
     }
 
     private void abandonChangesPressed()

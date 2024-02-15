@@ -152,6 +152,7 @@ import java.util.Properties;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Enumeration;
@@ -845,6 +846,23 @@ public class DecodesSettings
 		props.remove("editDatabaseTypeCode");
 	}
 
+	/**
+	 * Save Current DecodesSettings values to file of given profile
+	 * @param p
+	 */
+	public void saveToProfile(Profile p) throws IOException
+	{
+		Objects.requireNonNull(p, "A valid profile must be provided to this function.");
+		Properties props = new Properties();
+		this.saveToProps(props);
+		File propFile = p.getFile();
+		try (FileOutputStream fos = new FileOutputStream(propFile))
+		{
+			Logger.instance().info("Saving DECODES Settings to '" + propFile.getAbsolutePath() + "'");
+			props.store(fos, "OPENDCS Toolkit Settings");
+		}
+	}
+
 	public boolean isToolkitOwner()
 	{
 		return TextUtil.strEqual(EnvExpander.expand("$DCSTOOL_HOME"),
@@ -893,7 +911,7 @@ public class DecodesSettings
 
 	public void setSourceFile(File sourceFile)
 	{
-Logger.instance().info("Set DecodesSettings source=" + sourceFile.getPath());
+		Logger.instance().info("Set DecodesSettings source=" + sourceFile.getPath());
 		this.sourceFile = sourceFile;
 	}
 

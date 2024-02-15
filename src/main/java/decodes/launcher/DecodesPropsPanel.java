@@ -236,8 +236,9 @@ public class DecodesPropsPanel extends JPanel
         editDbLocationField.setText(settings.editDatabaseLocation);
     }
 
-    public void saveToSettings(DecodesSettings settings)
+    public DecodesSettings saveToSettings()
     {
+        DecodesSettings settings = new DecodesSettings();
         propsEditPanel.saveChanges(); // this saves back to 'origProps'
         settings.loadFromProperties(origProps);
 
@@ -250,6 +251,7 @@ public class DecodesPropsPanel extends JPanel
             idx == 4 ? DecodesSettings.DB_OPENTSDB : 
             idx == 5 ? DecodesSettings.DB_HDB : DecodesSettings.DB_NONE;
         settings.editDatabaseLocation = editDbLocationField.getText();
+        return settings;
     }
 
     private void dbPasswordButtonPressed()
