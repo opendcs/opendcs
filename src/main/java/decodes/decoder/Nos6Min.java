@@ -80,6 +80,17 @@ public class Nos6Min
 	        return (wl != 262143 && wl != 0) ? true : false;
         }
 
+        public boolean isValidU1(int wl)
+        { 
+                // Discard ?? (4095) or @@ (0) from U1 decoding 
+	        return (wl != 4095 && wl != 0) ? true : false;
+        }
+
+        public boolean isValidOffset(int x)
+        { 
+	        return (x != 63) ? true : false;
+        }
+
         /**
          * No arguments expected for NOS 6 Min
          */
@@ -455,9 +466,18 @@ public class Nos6Min
 					}
 					else
 					{
-                                                // Variable will have units of mm
-                                                msg.addSampleWithTime(sensorNum,
-                                                    new Variable(x*250 + y), dataTime, 1);
+						if (isValidU1(y) && isValidOffset(x))
+						{
+                                                   // Variable will have units of mm
+                                                   msg.addSampleWithTime(sensorNum,
+                                                       new Variable(x*250 + y), dataTime, 1);
+						}
+						else
+						{
+						   Logger.instance().warning(module +
+						      " U1 contains ?? or @@ in the raw data for station or wrong offset ?: "
+					              + stationId);
+						}
 					}
                                         cal.add(Calendar.MINUTE, -1);
                                 }
