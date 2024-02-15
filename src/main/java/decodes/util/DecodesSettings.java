@@ -146,15 +146,23 @@
 package decodes.util;
 
 import java.util.Properties;
+
+
+
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Objects;
 
 import ilex.util.Logger;
 import ilex.util.EnvExpander;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
+import decodes.launcher.Profile;
 
 /**
  * This class is a container for the various settings settable wherever
@@ -908,5 +916,20 @@ Logger.instance().info("Set DecodesSettings source=" + sourceFile.getPath());
 		case DB_OPENTSDB: return "opendcs.opentsdb.OpenTsdb";
 		}
 		return null;
+	}
+
+	public static DecodesSettings fromProfile(Profile p) throws FileNotFoundException, IOException
+	{
+		Objects.requireNonNull(p, "A valid profile must be provided.");
+		DecodesSettings settings = new DecodesSettings();
+		Properties props = new Properties();
+		File propFile = p.getFile();
+		try (FileInputStream fis = new FileInputStream(propFile))
+		{
+			props.load(fis);
+		}
+		settings.loadFromProperties(props);
+		settings.setSourceFile(propFile);
+		return settings;
 	}
 }

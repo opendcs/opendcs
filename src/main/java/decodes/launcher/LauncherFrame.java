@@ -168,9 +168,11 @@ public class LauncherFrame
     // this is defined here to that the test can properly check.
     // Future improvements will alter how that test works.
     private Profile profile = null;
+    private final Profile launchProfile;
 
-    public LauncherFrame(String args[])
+    public LauncherFrame(String args[], Profile launchProfile)
     {
+        this.launchProfile = launchProfile;
         myArgs = args;
         exitOnClose = true;
         dbEditorFrame = null;
@@ -962,7 +964,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             toolkitSetupFrame.toFront();
             return;
         }
-        toolkitSetupFrame = new DecodesSetupFrame(this);
+        toolkitSetupFrame = new DecodesSetupFrame(this, getSelectedProfile());
         toolkitSetupFrame.setExitOnClose(false);
         toolkitSetupFrame.addWindowListener(setupFrameReaper);
         toolkitSetupFrame.setVisible(true);
@@ -1114,7 +1116,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         String argsCopy[] = new String[argsArray.size()];
         argsArray.toArray(argsCopy);
-        LauncherFrame frame = new LauncherFrame(argsCopy);
+        LauncherFrame frame = new LauncherFrame(argsCopy, cmdLineArgs.getProfile());
 
         // compArgs is used as argument only to Computations and Test Computations
         // gui.
@@ -1762,7 +1764,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         BasicClient client = null;
 
         Profile profile = cmdLineArgs.getProfile();
-        if (profile == null || !profile.isProfile())
+        if (profile == null)
         {
             throw new Exception("Missing properties file on cmd line");
         }
@@ -1900,29 +1902,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     }
 
-    static String[] getProfileList()
-    {
-        File userDir = new File(EnvExpander.expand("$DCSTOOL_USERDIR"));
-        File [] profileList = userDir.listFiles(
-            new FilenameFilter()
-            {
-                @Override
-                public boolean accept(File dir, String name)
-                {
-                    // TODO Auto-generated method stub
-                    return TextUtil.endsWithIgnoreCase(name, ".profile");
-                }
-            });
-        String [] names = new String[profileList.length + 1];
-        names[0] = "(default)";
-        for(int idx = 0; idx<profileList.length; idx++)
-        {
-            String n = profileList[idx].getName();
-            names[idx+1] = n.substring(0, n.indexOf(".profile"));
-        }
-        return names;
-    }
-
     // package private so GUI test setup can call.
     void checkForProfiles()
     {
@@ -1954,9 +1933,12 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
             List<Profile> profiles = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
             Logger.instance().debug3("There are " + profiles.size() + " profiles.");
-
             if (profiles.size() > 1)
             {
+                /**
+                 * This current profile is used for the case of the profile manager adding or removing a profile and needing
+                 * to rebuild the combobox entries.
+                 */
                 Profile currentProfile = (Profile)profileCombo.getSelectedItem();
                 SwingUtilities.invokeLater(() ->
                 {
@@ -1986,6 +1968,13 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                     else
                     {
                         profileCombo.setSelectedIndex(0); // set to default
+                        for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
+                        {
+                            if (profileCombo.getItemAt(idx).equals(this.launchProfile))
+                            {
+                                profileCombo.setSelectedIndex(idx);
+                            }
+                        }
                     }
                 });
             }
@@ -2045,13 +2034,13 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
      */
     public Profile getSelectedProfile()
     {
-        return profileCombo == null ? null : (Profile)profileCombo.getSelectedItem();
+        return profileCombo == null ? launchProfile : (Profile)profileCombo.getSelectedItem();
     }
 
     private boolean trySendToProfileLauncher(String cmd)
     {
         profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
+        if (!profile.equals(launchProfile))
         {
             sendToProfileLauncher(profile, cmd);
             return true;

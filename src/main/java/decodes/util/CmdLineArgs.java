@@ -303,8 +303,7 @@ public class CmdLineArgs
         }
         else // the default profile is always at index 0 in Profile.getProfiles
         {
-            profile = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")))
-                             .get(0);
+            profile = Profile.getDefaultProfile();
         }
         File propFile = profile.getFile();
 
