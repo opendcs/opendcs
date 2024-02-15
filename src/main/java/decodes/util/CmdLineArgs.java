@@ -330,20 +330,14 @@ public class CmdLineArgs
         //Load the decodes.properties
         if (!settings.isLoaded())
         {
-            Properties props = new Properties();
             try
             {
-                FileInputStream fis = new FileInputStream(propFile);
-                props.load(fis);
-                fis.close();
+                settings.loadFromProfile(profile);
             }
             catch(Exception ex)
             {
                 Logger.instance().failure("Cannot load decodes properties from '" + propFileName + "': " + ex);
             }
-            settings.loadFromProperties(props);
-            settings.setLastModified(new Date(propFile.lastModified()));
-            settings.setSourceFile(propFile);
         }
 
         // Userdir is needed to support multi-user installations under unix/linux.

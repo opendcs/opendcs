@@ -1223,14 +1223,15 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         {
             return; // The combo box is getting updated
         }
-        DecodesSettings ProfileSettings = new DecodesSettings();
-        Properties props = new Properties();
-
         try
         {
-            FileInputStream fis = new FileInputStream(profile.getFile());
-            props.load(fis);
-            fis.close();
+            DecodesSettings ProfileSettings = DecodesSettings.fromProfile(profile);
+            boolean dbSupportsTS = ProfileSettings.editDatabaseTypeCode != DecodesSettings.DB_XML;
+            tseditButton.setEnabled(dbSupportsTS);
+            groupEditButton.setEnabled(dbSupportsTS);
+            compeditButton.setEnabled(dbSupportsTS);
+            runcompButton.setEnabled(dbSupportsTS);
+            algoeditButton.setEnabled(dbSupportsTS);
         }
         catch (IOException ex)
         {
@@ -1244,16 +1245,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                                           JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        ProfileSettings.loadFromProperties(props);
-
-        boolean dbSupportsTS = ProfileSettings.editDatabaseTypeCode != DecodesSettings.DB_XML;
-        tseditButton.setEnabled(dbSupportsTS);
-        groupEditButton.setEnabled(dbSupportsTS);
-        compeditButton.setEnabled(dbSupportsTS);
-        runcompButton.setEnabled(dbSupportsTS);
-        algoeditButton.setEnabled(dbSupportsTS);
-
     }
     // Time Series Button
     private void groupEditButtonPressed()

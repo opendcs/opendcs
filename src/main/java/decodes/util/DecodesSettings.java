@@ -780,6 +780,23 @@ public class DecodesSettings
 		_isLoaded = true;
 	}
 
+	/**
+	 * Update current instances properties from the given profile
+	 * @param p
+	 * @throws IOException
+	 */
+	public void loadFromProfile(Profile p) throws IOException
+	{
+		Objects.requireNonNull(p, "A valid profile must be provided.");
+		Properties props = new Properties();
+		DecodesSettings settings = DecodesSettings.fromProfile(p);
+		File propFile = p.getFile();
+		settings.saveToProps(props);
+		this.loadFromProperties(props);
+        this.setLastModified(new Date(propFile.lastModified()));
+        this.setSourceFile(propFile);
+	}
+
 	private void setDbTypeCode()
 	{
 		if (editDatabaseType.equalsIgnoreCase("xml"))
