@@ -381,6 +381,9 @@ By default in this computation the "If Missing" is set blank.
    :alt: computation editor - average computation
    :width: 150
 
+By default, the average will use the lowest bound and upper bound. 
+For daily averages, this means the average will use hours 00-23.
+
 Sample Calculation: Precipitation - Cumulative to Incremental
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -420,12 +423,15 @@ The input and output roles are:
    
 By default in this computation the "If Missing" is set blank.
 
-.. image:: ./media/start/computations/im-computations-22.JPG
+.. image:: ./media/start/computations/im-computations-27.JPG
    :alt: computation editor - average computation
    :width: 150
 
 Define the output time series based on the intervals and duration 
 desired.
+
+The output will calculate the difference between the current time 
+step and the next time step, so long as the value is not negative.
 
 Sample Calculation: Precipitation - Daily Total
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -435,21 +441,95 @@ The following example is intended to demonstrate how the
 precipitation, if the most raw data is provided as incremental.
 If the cumulative hourly time series is available, it is best
 practice to use this time series as the input, as opposed to 
-calculating the hourly totals and then summing over the totals.
+calculating the hourly incremental totals and then summing over
+the incremental totals.
 
-
+.. image:: ./media/start/computations/im-computations-28.JPG
+   :alt: computation editor - average computation
+   :width: 450
 
 
 # Step - Test Computation Intro
 -------------------------------
 
-Once one of the calculations above is set up, users can test and
-run the computation to check and verify that the computation is
-calcuting the desired output correctly.  
+Once a calculation is set up, like any of the examples above,
+users can test or run the computation to check and verify that 
+the computation is calcuting the desired output correctly.  
 
-To run the 
+To test or run a computation, simply open the computation from 
+the List. To open the computation from the List, select the desired
+computation, and click "Edit" on the bottom of the page. 
+
+.. image:: ./media/start/computations/im-computations-29.JPG
+   :alt: run computation - intro
+   :width: 500
+
+Once **Run Computations** is launched, a window will pop up with
+a top pane that shows an empty graph area with Time on the X-axis.
+To run a computation, define the time window.  If the input data
+is a high resolution, good practice is to start with a small 
+time window range to reduce the run time. Once the calculation
+has been verified, then increase the time range.
+
+.. image:: ./media/start/computations/im-computations-30.JPG
+   :alt: run computation - time range
+   :width: 500
+
+Dates and Times can either be selected using the small calendar icon
+or by manually entering in the date in form "DD MMM YYYY".
+
+Click "Run Computations" and if the output looks correct, then save
+the output if the user wished to save the output. To save click 
+"Save Output Data".  
+
 Run Calculation: Copy Time Series
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The example outlined above for copying a time series using the
+Computation Processor is demonstrated in the following window.
+The output line (red) covers directly over the input line (black).
+
+.. image:: ./media/start/computations/im-computations-31.JPG
+   :alt: run computation - copy
+   :width: 650
+
+Run Calculation: Stage - Top of Hour
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The example outlined above for sub sampling the top of the hour is 
+demonstrated in the image below.  
+
+.. image:: ./media/start/computations/im-computations-32.JPG
+   :alt: run computation - top of hour
+   :width: 650
+
+Run Calculation: Stage - Daily Average
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The example outlined above for calculating a daily average from 
+hourly values is demonstrated below.  
+
+.. image:: ./media/start/computations/im-computations-33.JPG
+   :alt: run computation - daily average
+   :width: 650
+
+Run Calculation: Precipitation - Cumulative to Incremental
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The example outlined above for calculating hourly icremental
+precipitation totals from cumulative hourly precipitation
+is demonstrated in the graphic below.
+
+.. image:: ./media/start/computations/im-computations-34.JPG
+   :alt: run computation - cumulative to incremental
+   :width: 650
+
+
+Run Calculation: Precipitation - Daily Total
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+There are two 
 
 
 
