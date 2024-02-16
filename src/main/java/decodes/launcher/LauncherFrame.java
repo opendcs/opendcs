@@ -1,97 +1,4 @@
-/*
- * $Id: LauncherFrame.java,v 1.19 2020/04/05 21:18:57 cvs Exp $
- *
- * $Log: LauncherFrame.java,v $
- * Revision 1.19  2020/04/05 21:18:57  cvs
- * Show processes button even if not a TSDB.
- *
- * Revision 1.18  2019/12/11 14:38:02  mmaloney
- * Removed dbClassName. This now set as a function of database type.
- *
- * Revision 1.17  2019/11/13 15:11:16  mmaloney
- * Added multiple profiles feature to launcher.
- *
- * Revision 1.16  2019/10/25 15:15:19  mmaloney
- * dev
- *
- * Revision 1.15  2019/10/22 13:16:41  mmaloney
- * dev
- *
- * Revision 1.14  2019/10/22 12:39:39  mmaloney
- * Pass launcher args to launcher actions.
- *
- * Revision 1.13  2019/10/13 19:24:47  mmaloney
- * Prototypes for multi-profile launcher
- *
- * Revision 1.12  2017/08/22 19:53:58  mmaloney
- * Improve comments
- *
- * Revision 1.11  2017/06/13 20:19:32  mmaloney
- * dev
- *
- * Revision 1.10  2017/06/13 20:02:33  mmaloney
- * dev
- *
- * Revision 1.9  2016/07/21 18:13:17  mmaloney
- * Added Platform Monitor and Routing Monitor buttons to launcher.
- *
- * Revision 1.8  2015/07/17 13:28:07  mmaloney
- * Added showComputationEditor boolean.
- *
- * Revision 1.7  2015/05/21 13:26:14  mmaloney
- * RC08
- *
- * Revision 1.6  2015/05/14 13:52:20  mmaloney
- * RC08 prep
- *
- * Revision 1.5  2015/04/03 19:53:27  mmaloney
- * Fixed CWMS-5626 where by some GUIs would silently exit if user had no privilege.
- *
- * Revision 1.4  2015/02/06 18:46:59  mmaloney
- * Config option to not display certain buttons: Time Series, Groups, Run Comps, & Algorithms.
- *
- * Revision 1.3  2014/10/07 12:34:37  mmaloney
- * DecodesSetting.showNetlistEditor
- *
- * Revision 1.2  2014/05/22 12:14:09  mmaloney
- * Disable TS buttons when database is XML.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.8  2013/04/26 14:29:23  mmaloney
- * gif not png.
- *
- * Revision 1.7  2013/04/26 14:22:28  mmaloney
- * Added ts list
- *
- * Revision 1.6  2013/04/09 13:33:14  mmaloney
- * Removed "Retrieval and Decoding" button that doesn't do anything.
- *
- * Revision 1.5  2013/03/26 17:48:18  mmaloney
- * Change title to OPENDCS <version>
- *
- * Revision 1.4  2013/03/25 18:56:03  mmaloney
- * Plug in Process Monitor
- *
- * Revision 1.3  2013/02/28 16:46:24  mmaloney
- * Start pdt maintenance thread.
- *
- * Revision 1.2  2012/07/24 13:41:04  mmaloney
- * Clean up resource strings.
- *
- * Revision 1.1  2012/05/17 15:14:31  mmaloney
- * Initial implementation for USBR.
- *
- *
- * This is open-source software written by Sutron Corporation under
- * contract to the federal government. Anyone is free to copy and use this
- * source code for any purpos, except that no part of the information
- * contained in this file may be claimed to be proprietary.
- *
- * Except for specific contractual terms between Sutron and the federal
- * government, this source code is provided completely without warranty.
- */
+
 package decodes.launcher;
 
 import java.awt.BorderLayout;
@@ -129,6 +36,7 @@ import ilex.cmdline.BooleanToken;
 import ilex.cmdline.IntegerToken;
 import ilex.cmdline.TokenOptions;
 import ilex.gui.GuiApp;
+import ilex.gui.WindowUtility;
 import ilex.net.BasicClient;
 import ilex.net.BasicServer;
 import ilex.net.BasicSvrThread;
@@ -189,7 +97,6 @@ public class LauncherFrame
 
     private static ResourceBundle labels = getLabels();
     String myArgs[] = null;
-//    String compArgs[] = null;
     JPanel fullPanel = new JPanel();
     GridBagLayout fullLayout = new GridBagLayout();
 
@@ -1148,22 +1055,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         afterDecodesInit = null;
     }
 
-    // private void centerWindow(JFrame frame)
     private void centerWindow(Window frame)
     {
-        // Center the window
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension frameSize = frame.getSize();
-        if (frameSize.height > screenSize.height)
-        {
-            frameSize.height = screenSize.height;
-        }
-        if (frameSize.width > screenSize.width)
-        {
-            frameSize.width = screenSize.width;
-        }
-        frame.setLocation((screenSize.width - frameSize.width) / 2,
-            (screenSize.height - frameSize.height) / 2);
+        WindowUtility.center(frame);
     }
 
     static CmdLineArgs cmdLineArgs = new CmdLineArgs(true, "gui.log");
