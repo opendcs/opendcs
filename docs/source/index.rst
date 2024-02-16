@@ -26,8 +26,9 @@ those PDFs was migrated to the Developer Documentation section.
    :caption: Getting Started
    
    Software Set-Up <./start-software.rst>
-   Computations - Intro <./start-computations.rst>
+   Time Series - Intro <./start-timeseries.rst>
    Routing Spec - Intro<./start-routingspec.rst>
+   Computations - Intro <./start-computations.rst>
    Screening - Intro <./start-screening.rst>
    
 .. toctree::
