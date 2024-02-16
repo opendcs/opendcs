@@ -188,7 +188,7 @@ public class DecodesPropsPanel extends JPanel
         editDbLocationField.setText(settings.editDatabaseLocation);
     }
 
-    public DecodesSettings saveToSettings()
+    DecodesSettings saveToSettings()
     {
         DecodesSettings settings = new DecodesSettings();
         propsEditPanel.saveChanges(); // this saves back to 'origProps'
