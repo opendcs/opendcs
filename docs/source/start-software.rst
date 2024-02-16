@@ -72,6 +72,22 @@ previously developer focused.  Versions 7.0.0 and after include
 html code in the OPENDCS/docs folder.  The content of the older
 PDFs is now contained in the html files.
 
+What is the history of OpenDCS?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* 1999 - Java-based LRGS developed for USGS
+* 2001 - Java-based DECODES developed for USGS and USACE (Database schem for XML and SQL)
+* 2004 - DCP Monitor Tomcat Web App funded by USACE MVR (Also DECODES in-line Rating Computations)
+* 2005 - Computation Processor Design funded by US Bureu of Reclamation and USGS
+* 2007 - Computation Processor implemented for USBR Hydrologic Database (HBD)
+* 2007 - Support LRIT (not HRIT) added to LRGS
+* 2008 - Iridium support added to LRGS
+* 2008 - CP ported to USACE CWMS
+* 2012 - "OpenDCS" released with several improvement to GUI design
+* 2014 - OpenTSBD (Time Series Database) - implemented in PostgreSQL
+* 2015 and later - Improvements to all modules
+
+
 How do I install OpenDCS?
 =========================
 
