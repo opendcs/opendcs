@@ -13,9 +13,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,7 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 import ilex.cmdline.BooleanToken;
@@ -172,7 +170,7 @@ public class LauncherFrame
 
     public LauncherFrame(String args[], Profile launchProfile)
     {
-        this.launchProfile = launchProfile;
+        this.launchProfile = Objects.requireNonNull(launchProfile, "A valid profile must be provided.");
         myArgs = args;
         exitOnClose = true;
         dbEditorFrame = null;
@@ -1974,6 +1972,13 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 // No harm done if profPanel is currently not displayed.
                 SwingUtilities.invokeLater(() ->
                 {
+                    /**
+                     * Even though the combo isn't painted, setting the
+                     * compontent to the profile to provided launch profile
+                     * allows less conditional code later on during operations.
+                     */
+                    profileCombo.addItem(launchProfile);
+                    profileCombo.setSelectedIndex(0);
                     fullPanel.remove(profPanel);
                     fullPanel.repaint();
                     profilesShown = false;
