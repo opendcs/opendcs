@@ -276,4 +276,10 @@ public class Database extends DatabaseObject
 		}
 		return presentationGroupList;
 	}
+
+
+	public <DaoType> DaoType getDao(Class<? extends DaoType> daoClazz)
+	{
+		return null;
+	}
 }

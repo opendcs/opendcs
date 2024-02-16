@@ -465,6 +465,7 @@ import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
+import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -482,7 +483,7 @@ Sub classes must override all the abstract methods and provide
 a mechanism to persistently store time series and computational meta
 data.
 */
-public abstract class TimeSeriesDb
+public abstract class TimeSeriesDb extends Database
     implements HasProperties, DatabaseConnectionOwner
 {
     public static String module = "tsdb";
@@ -578,8 +579,19 @@ public abstract class TimeSeriesDb
      */
     public TimeSeriesDb()
     {
-//        DecodesSettings settings = DecodesSettings.instance();
+        super(true);
 
+        DecodesSettings settings = DecodesSettings.instance();
+        try
+        {
+            DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode, settings.editDatabaseLocation);
+            this.setDbIo(dbio);
+            super.read();
+        }
+        catch (Exception ex)
+        {
+            throw new RuntimeException("Unable to create decodes database io", ex);
+        }
         writeModelRunId = Constants.undefinedIntKey;
         testMode = false;
         conn = null;
