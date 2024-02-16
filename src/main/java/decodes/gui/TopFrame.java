@@ -8,7 +8,6 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
@@ -16,7 +15,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Properties;
 
-import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -24,7 +22,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 
@@ -178,32 +175,17 @@ public class TopFrame extends JFrame
 		dlg.setVisible(true);
 	}
 
-	/**
-	 * Sets this frame's position to center it in the screen.
-	 */
-	public void centerOnScreen()
-	{
-		//Center the window
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		Dimension frameSize = getSize();
-		if (frameSize.height > screenSize.height)
-			frameSize.height = screenSize.height;
-		if (frameSize.width > screenSize.width)
-			frameSize.width = screenSize.width;
-		setLocation((screenSize.width - frameSize.width) / 2,
-			(screenSize.height - frameSize.height) / 2);
-	}
-	
 	public static TopFrame getDbEditFrame()
 	{
 		TopFrame jf = DbEditorFrame.instance();
-		if (jf == null)
-		{
+		if (jf == null) {
 			PlatformWizard pw = PlatformWizard.instance();
-			if (pw != null && pw.getPlatwizFrame() != null)
+			if (pw != null && pw.getPlatwizFrame() != null) {
 				jf = pw.getPlatwizFrame();
-			else
-			jf = TopFrame.instance();
+			}
+			else {
+				jf = TopFrame.instance();
+			}
 		}
 		return jf;
 	}
