@@ -3,15 +3,12 @@ package decodes.launcher;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -941,7 +938,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void run()
                 {
                     launcherFrame.dbEditorFrame = new DbEditorFrame();
-//                    launcherFrame.centerWindow(launcherFrame.dbEditorFrame);
                     launcherFrame.dbEditorFrame.setExitOnClose(false);
                     launcherFrame.dbEditorFrame.addWindowListener(launcherFrame.dbEditorReaper);
                     launcherFrame.dbEditorFrame.setVisible(true);
@@ -1140,18 +1136,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 "Cannot read '" + propFile + "' -- will use defaults.");
         }
 
-        // Center the window
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension frameSize = frame.getSize();
-        if (frameSize.height > screenSize.height)
-        {
-            frameSize.height = screenSize.height;
-        }
-        if (frameSize.width > screenSize.width)
-        {
-            frameSize.width = screenSize.width;
-        }
-        frame.setLocation(0, 0);
+        WindowUtility.center(frame).setLocation(0, 0);
 
         DecodesInterface.maintainGoesPdt();
 
