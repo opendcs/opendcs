@@ -39,7 +39,7 @@ jobs:
           vars: |
             empty: empty
       - name: Upload Full HTML Report
-        uses: actions/upload-artifact@v4.3.0
+        uses: actions/upload-artifact@v4.3.1
         with:
           name: zap_report.html
           path: ./opendcs-rest-api-jetty/build/test-results/owasp/zap_report.html
