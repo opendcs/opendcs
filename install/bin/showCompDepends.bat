@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.CompDependsList %*%
+@"%~dp0\decj" decodes.tsdb.CompDependsList %*%

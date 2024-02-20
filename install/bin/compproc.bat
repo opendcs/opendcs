@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.ComputationApp %*%
+@"%~dp0\decj" decodes.tsdb.ComputationApp %*%

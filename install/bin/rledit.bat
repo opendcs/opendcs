@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.rledit.RefListEditor %*%
+@"%~dp0\decj" decodes.rledit.RefListEditor %*%

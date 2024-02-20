@@ -1,3 +1,3 @@
-@echo off
-$INSTALL_PATH/bin/decj.bat -DDECODES_INSTALL_DIR=$INSTALL_PATH lrgs.rtstat.RtStat %*%
+# DECODES_INSTALL_DIR used for decodes.properties
+@"%~dp0\decj" -DDECODES_INSTALL_DIR=$INSTALL_PATH lrgs.rtstat.RtStat %*%
 

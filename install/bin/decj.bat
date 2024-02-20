@@ -2,17 +2,22 @@
 
 setLocal EnableDelayedExpansion
 
+set "BIN_PATH=%~dp0"
+pushd "%BIN_PATH%.."
+set "APP_PATH=%CD%"
+popd
+
 if defined CP_SHARED_JAR_DIR (
- for /R %CP_SHARED_JAR_DIR% %%a in (*.jar) do (
-   set CLASSPATH=!CLASSPATH!;%%a
+ for /R "%CP_SHARED_JAR_DIR%" %%a in (*.jar) do (
+   set "CLASSPATH=!CLASSPATH!;%%a"
  )
 )
 
-set CLASSPATH="$INSTALL_PATH/bin/opendcs.jar;$INSTALL_PATH/bin/hibernate.cfg.xml;
-for /R $INSTALL_PATH/dep %%a in (*.jar) do (
-  set CLASSPATH=!CLASSPATH!;%%a
-)
+set "CLASSPATH=%BIN_PATH%opendcs.jar;%BIN_PATH%hibernate.cfg.xml;"
+for /R "%APP_PATH%/dep" %%a in (*.jar) do (
+  set "CLASSPATH=!CLASSPATH!;%%a"
+  )
 
-set CLASSPATH=!CLASSPATH!"
+set "CLASSPATH=!CLASSPATH!"
 
-java -Xmx240m -cp !CLASSPATH! -DDCSTOOL_HOME=$INSTALL_PATH -DDECODES_INSTALL_DIR=$INSTALL_PATH -DDCSTOOL_USERDIR=$INSTALL_PATH %*%
+java -Xmx240m -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%APP_PATH%" %*%

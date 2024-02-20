@@ -1,3 +1,2 @@
-@echo off
-$INSTALL_PATH/bin/decj.bat -DLRGSHOME=$INSTALL_PATH lrgs.lrgsmain.LrgsMain %*%
+@"%~dp0\decj" -DLRGSHOME=$INSTALL_PATH lrgs.lrgsmain.LrgsMain %*%
 

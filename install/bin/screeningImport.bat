@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.cwms.validation.ScreeningImport %*%
+@"%~dp0\decj" decodes.cwms.validation.ScreeningImport %*%

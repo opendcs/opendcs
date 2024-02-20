@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.cwms.validation.DatchkImport %*%
+@"%~dp0\decj" decodes.cwms.validation.DatchkImport %*%
