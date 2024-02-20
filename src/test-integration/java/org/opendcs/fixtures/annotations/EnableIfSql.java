@@ -18,11 +18,7 @@ import org.opendcs.spi.configuration.Configuration;
  * Only run this test if the database under test is a SQL based database
  */
 @Documented
-<<<<<<< HEAD:src/test-integration/java/org/opendcs/fixtures/annotations/EnableIfSql.java
 @Target({ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
-=======
-@Target({ElementType.METHOD,ElementType.ANNOTATION_TYPE})
->>>>>>> b904d63d (Baseline TimeseriesDAO test infra.):src/test-integration/java/org/opendcs/fixtures/EnableIfSql.java
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(EnableIfSql.EnableIfSqlCondition.class)
 public @interface EnableIfSql
