@@ -140,7 +140,7 @@ Where can I find releases of OpenDCS
 The latest version releases of OpenDCS can be found online: https://github.com/opendcs/opendcs.
 From the main github site click on the header "Releases" in the image below.
 
-.. image:: ./media/start/software/im-software-01.JPG
+.. image:: ./media/start/software/im-01-github.JPG
    :alt: github opendcs/opendcs respository - with Releases boxed in red
    :width: 800
 
@@ -148,7 +148,7 @@ From the main github site click on the header "Releases" in the image below.
 Alternatively the following link goes straight to the releasese page: https://github.com/opendcs/opendcs/releases 
 For each release, there is a drop down menu "Assets", and in that section download the (opendcs-installer-#.#.#.jar).
 
-.. image:: ./media/start/software/im-software-02.JPG
+.. image:: ./media/start/software/im-02-releases.JPG
    :alt: github releases - example of version to retrieve
    :width: 800
 
@@ -170,7 +170,7 @@ Double click the opendcs-installer-#.#.#.jar to begin the installation.
 
 The first window to pop-up will be a welcome note.  Click next.
 
-.. image:: ./media/start/software/im-software-03.JPG
+.. image:: ./media/start/software/im-03-install.JPG
    :alt: install window - welcome
    :width: 400
 
@@ -180,14 +180,14 @@ the location exists). Or select the the location.  Then click "Next".
 You may get a warning "The directory already exists! Are you sure you
 want to install here and possibly overwrite existing files?".  Click "Yes".
 
-.. image:: ./media/start/software/im-software-04.JPG
+.. image:: ./media/start/software/im-04-install-path.JPG
    :alt: install window - installation path
    :width: 400
 
 Next, a window will pop up prompting the user to check which packs should
 be included in the install.  
 
-.. image:: ./media/start/software/im-software-05.JPG
+.. image:: ./media/start/software/im-05-install-packs.JPG
    :alt: install window - pack selection
    :width: 400
 
@@ -223,7 +223,7 @@ Other Angecy
 Click "Next". Then the installation will begin. Once "Finished"
 shows up in the window, then click "Next".
 
-.. image:: ./media/start/software/im-software-06.JPG
+.. image:: ./media/start/software/im-06-install-progress.JPG
    :alt: install window - finished
    :width: 400
 
@@ -232,7 +232,7 @@ Select your preferences and click "Next".  The final window
 shown below will include a button "Done".  Click "Done" and 
 the installation is completed.  
 
-.. image:: ./media/start/software/im-software-07.JPG
+.. image:: ./media/start/software/im-07-install-complete.JPG
    :alt: install window - done
    :width: 400
 
@@ -259,13 +259,13 @@ How do I launch the software?
 Now that the software is installed.  On windows double click:
 launcher_start.bat (in the OPENDCS/bin directory). 
 
-.. image:: ./media/start/software/im-software-08.JPG
+.. image:: ./media/start/software/im-08-launcher_start.JPG
    :alt: windows launcher_start.bat
    :width: 400
 
 And the following menu will pop up, when installed successfully:
 
-.. image:: ./media/start/software/im-software-09.JPG
+.. image:: ./media/start/software/im-09-mainmenu.JPG
    :alt: main menu components
    :width: 150
 
@@ -287,7 +287,7 @@ DECODES Components
 
 The top part of the menu consists of the DECODES Components
 
-.. image:: ./media/start/software/im-software-10.JPG
+.. image:: ./media/start/software/im-10-decodes-components.JPG
    :alt: main menu - decodes components
    :width: 250
 
@@ -396,7 +396,7 @@ For more information about the Preferences and options, see
 Time Series Database Components
 -------------------------------
 
-.. image:: ./media/start/software/im-software-11.JPG
+.. image:: ./media/start/software/im-11-timeseries-components.JPG
    :alt: main menu - time series components
    :width: 250
 

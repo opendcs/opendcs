@@ -53,7 +53,7 @@ Regular Hourly - DCP Stage, Precip, Water Temp and Volt
 -------------------------------------------------------
 
 
-.. image:: ./media/start/timeseries/im-timeseries-02.JPG
+.. image:: ./media/start/timeseries/im-02-dcp-message.JPG
    :alt: time series - dcp
    :width: 550
 
@@ -64,7 +64,7 @@ Regular Hourly - Water Levels
 
 *Location.Stage.Inst.1Hour.0.xxx-raw*
 
-.. image:: ./media/start/timeseries/im-timeseries-03.JPG
+.. image:: ./media/start/timeseries/im-03-levels-hourly.JPG
    :alt: time series - hourly water levels
    :width: 550
 
@@ -74,7 +74,7 @@ Regular Daily - Water Levels
 
 *Location.Stage.Ave.1Day.1Day.xxx-raw*
 
-.. image:: ./media/start/timeseries/im-timeseries-04.JPG
+.. image:: ./media/start/timeseries/im-04-levels-daily.JPG
    :alt: time series - hourly water levels
    :width: 550
 

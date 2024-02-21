@@ -38,8 +38,8 @@ a routing spec are employed.
 #. Define a configuration or configurations for the routing spec
 #. Define DECODING scripts
 #. Create a platform or platforms
-#. Create a Network List or Lists for the routing spec.
-#. Define the routing spec.
+#. Create a Network List or Lists for the routing spec
+#. Define the routing spec
 #. Schedule Entry
 
 The steps below are intended to help guide a new user through the 
@@ -48,7 +48,7 @@ spec.
 
 To get started, launch the DECODES Database Editor from the main menu.
 
-.. image:: ./media/start/routingspec/im-routingspec-01.JPG
+.. image:: ./media/start/routingspec/im-01-decodes-components.JPG
    :alt: sources
    :width: 150
 
@@ -66,7 +66,7 @@ Sources
 Once the DECODES Database Editor has been launched, navigate to the 
 **Sources** tab. On the bottom of the page, click the "New". 
 
-.. image:: ./media/start/routingspec/im-routingspec-02.JPG
+.. image:: ./media/start/routingspec/im-02-sources-tab.JPG
    :alt: sources
    :width: 600
 
@@ -84,6 +84,9 @@ more information.
 * **hotbackupgroup** - an ordered group of LRGS data sources, where secondary and teriary servers are used with primary or secondary is unavailble, respectively
 * **roundrobingroup** - contains a list of other data sources and is continually read in
 
+Note that the names of sources **cannot be renamed** after they are
+created, so select the source name wisely. 
+
 lrgs
 ~~~~
 
@@ -92,7 +95,7 @@ the network.  This source can set up to connect to an LRGS or
 DRS system.  Properties for the LRGS Data Source can be defined 
 in the Properties section on the right hand side of the window.
 
-.. image:: ./media/start/routingspec/im-routingspec-03.JPG
+.. image:: ./media/start/routingspec/im-03-source-lrgs.JPG
    :alt: sources
    :width: 600
 
@@ -104,41 +107,226 @@ Typical information required for this type of source include:
 * password: 
 
 
-For further information about the other properties see ______
+For further information about lrgs and connection, see ______ .
+For more information about the properties options see _____ .
 
 file
 ~~~~
 
-Users can set up a source to pull from a file to ingest the
+Users can set up a source to pull from a file on a local server.  
+The file mus be in a defined specified location.  For example,
+in the image below the file "catchup.txt" is called upon.  Users
+should add in the whole path for the file where the '<path>'
+placeholder is specified.  
 
-... content coming soon ...
+.. image:: ./media/start/routingspec/im-04-source-file.JPG
+   :alt: sources
+   :width: 600
+
+Users can specify some properties in the Properties section, such
+as where there is one message per file, or whether there is a header.
+Note that the parsing of the information in the file will be
+defined in the DECODING script, along with perhaps some simple 
+properties and/or parameters. 
+
+For more information about the properties options see _____ .
+
 
 directory
 ~~~~~~~~~
 
-... content coming soon ...
+Users can set up a source to pull information from a group of files
+that are in a specified directory.  For example, in the image below
+the directory is called "decodes".  When setting up users should add
+in the whole path for the directory. Some other common parameters 
+to define include:
+
+* fileExt: If set, only process files with a matching extention. Other files ignored.
+* fileRestSeconds: Don't process until x seconds have lapsed, to present processing of a file while it's being written. 
+* doneProcessing: Decision about how processed file are handled. If False, files are deleted. If True, then files are renamed or moved.
+* doneExt: Extention to be added to files once processed (if doneProcessing set True). Do not use same extention as fileExt.
+
+.. image:: ./media/start/routingspec/im-05-source-directory.JPG
+   :alt: sources
+   :width: 600
+
+For more information about the properties options see _____ .
+
 
 web
 ~~~
 
-... content coming soon ...
+Users can also set up a source to retreive or fetch information 
+from a web page.  In the example below the url points towards a web
+page (url) that is static.  The information on the web page is
+updated on a regular basis. For web sources, users must define
+a url in the *url* Properties box.
+
+Additional common parameters defined included for web sources are:
+
+* OneMessageFile: if True entire web page is assumed to contain one message
+* before: 
+* header: 
+
+.. image:: ./media/start/routingspec/im-06-source-web.JPG
+   :alt: sources
+   :width: 600
+
+Below is a snapshot of what the URL looks like:
+
+.. image:: ./media/start/routingspec/im-07-source-web-url.JPG
+   :alt: sources
+   :width: 450
+
+In the example above, the url includes daily levels for multiple
+sites or locations. Each locations' data is separated by a header
+that includes a station identifier number and name.
+
+For more information about the properties options see _____ .
 
 abstractweb
 ~~~~~~~~~~~
 
-... content coming soon ...
+Users can also set up a source that reads data directly over the 
+web.  The abstractweb source differs from the web source by including
+options to build a unique url with parameters such as $Date or 
+$MediumID to specify a time window or station in the url.
+
+If users are not seeing the option "abstractweb" in the list of the 
+types, then see section ____ and use rledit to add it.
+
+.. image:: ./media/start/routingspec/im-08-source-abstractweb.JPG
+   :alt: sources
+   :width: 600
+
+For example - Daily Water Levels from NOAA for one station (bottom of file): 
+
+.. code-block:: shell
+    
+    With Variables: https://tidesandcurrents.noaa.gov/cgi-bin/co-ops_qry.cgi?stn=$MEDIUMID&dcp=1&ssid=V1&pc=W1&datum=NULL&unit=0&edate=$SINCE&date=1&shift=NULL&level=-1&form=0&data_type=pgs&format=View+Report
+    Example: https://tidesandcurrents.noaa.gov/cgi-bin/co-ops_qry.cgi?stn=9087031&dcp=1&ssid=V1&pc=W1&datum=NULL&unit=0&edate=20240218&date=1&shift=NULL&level=-1&form=0&data_type=pgs&format=View+Report
+
+.. image:: ./media/start/routingspec/im-09-source-abstractweb-url.JPG
+   :alt: sources
+   :width: 600
+
+For example - Hourly Water Levels from NOAA for one station: 
+
+.. code-block:: shell
+
+    With Variables: https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=$SINCE&end_date=$UNTIL&station=$MEDIUMID&product=water_level&datum=IGLD&time_zone=gmt&units=metric&application=USACE&format=csv
+    Example - CSV: https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=$SINCE&end_date=$UNTIL&station=$MEDIUMID&product=water_level&datum=IGLD&time_zone=gmt&units=metric&application=USACE&format=csv
+
+.. image:: ./media/start/routingspec/im-10-source-abstractweb-url-csv.JPG
+   :alt: sources
+   :width: 600
 
 Configuration
 -------------
 
-Once a 
-The configuration tab is where 
+The next step, after defining a source, to setting up a routing spec
+is to define a new configuration.  To do this, navigate to the 
+**Config** tab.  Select "New" at the bottom of the screen.  
 
+.. image:: ./media/start/routingspec/im-11-configs-tab.JPG
+   :alt: sources
+   :width: 600
 
+An input window will pop up asking the user to enter a name for
+the new config.  Like the sources, the name selected for the 
+configuration cannot be changed once it is created.  Good practice
+is to select a name that conveys to users some information about 
+the DECODING stored in the configuration.  
+
+.. image:: ./media/start/routingspec/im-12-config-example.JPG
+   :alt: sources
+   :width: 600
+
+Once set up, the configuration record will contain:
+
+* a list of sensors
+* a DECODING script
+* count of number of platforms using the configuration
+* an equipment model (if applicable)
+
+Once the new configuration is opened, the parameters will need to
+be filled in.  Add sensor information.  The sensor information is
+applicable whether the source is an lrgs, or file, or directory or
+abstractweb.  This is where the information is defined about what
+type of time series data will be the output of the DECODING script.
+For example, below are a few examples of what type of information
+could be stored in the Sensor area (ie water levels, precipitation,
+stage, flow, etc). Below is a brief recap of the Sensor headers:
+
+* Name: information about the variable (ie Precipitation, AirTempMax, PeakFlow, etc)
+* Data Type: information about **param** such as (Precip, Temp-Air, Stage, Flow)
+* Mode: information about the time series **interval**
+* Sampling Times: additional information about the sampling time interval
+* Properties: further information about the time series such as **statcode** , **duration** , and **version**.
+
+.. image:: ./media/start/routingspec/im-13-config-sensors-window.JPG
+   :alt: sources
+   :width: 600
+
+In the example above, the USACE database CWMS is noted in the 
+properties. Depending on which agency or version is being used,
+these names may differ.
+
+In this example in getting started, the examples displayed are 
+introductory and will not include offsets or computations or 
+transformations.  
+
+Note that if a user specifies properties in the platform section,
+those properties will overwrite what is defined in the configuration
+record.
+
+Once the sensor information is added, add a new Decoding Script.
+
+.. image:: ./media/start/routingspec/im-14-config-sensors.JPG
+   :alt: sources
+   :width: 600
+
+The next section will go into further detail about how to set up
+a decoding script.
 
 DECODING
 --------
 
+Once the configuration and sensors are defined, then a DECODING script
+can be added.  One can think of the DECODING script as the 
+instructions or recipe for translating the raw lrgs messages or data
+retrieved from the web to human readable time series, formatted such
+that it can be easily entered into the database. 
+
+DECODING Basics
+~~~~~~~~~~~~~~~
+
+DECODES uses Fortran-like statements to intrepet and format the data.
+
+The DECODES format statments consist of two parts:
+
+#. a *label* to identify the format
+#. a *statement* containing a sequence of format operations
+
+Within a stement, the format operations are separated from each other by commas.
+
+**Setting up DECODING script is likely the most challenging part of
+setting up a routing spec.**
+
+
+Overview of the Decoding Script Editor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A few key items must be defined in a DECODING script. There must
+be at least one format statement and a script name.  The default
+"Data Order" is Undefined and there is by default no Header Type.
+
+
+* Script Name:
+* Format Statement - Label: 
+
+Overview of the Decoding Script Editor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Platforms
