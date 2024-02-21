@@ -1,6 +1,7 @@
 package decodes.cwms;
 
-import ilex.util.Logger;
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -20,6 +21,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -58,6 +62,7 @@ public class CwmsTimeSeriesDAO
     extends DaoBase
     implements TimeSeriesDAI
 {
+    private final Logger log = LoggerFactory.getLogger(getCallingClass());
     protected static DbObjectCache<TimeSeriesIdentifier> cache =
         new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
     protected SiteDAI siteDAO = null;
@@ -86,11 +91,15 @@ public class CwmsTimeSeriesDAO
     {
         if (DbKey.isNull(key))
         {
-            try { throw new NoSuchObjectException("Request for TSID with null ts_code"); }
+            try
+            {
+                throw new NoSuchObjectException("Request for TSID with null ts_code");
+            }
             catch(NoSuchObjectException ex)
             {
-                System.err.println(ex);
-                ex.printStackTrace(System.err);
+                log.atError()
+                   .setCause(ex)
+                   .log("Unable to retrieve timeseries identifier by key {}", key.getValue());
             }
         }
 
@@ -103,12 +112,11 @@ public class CwmsTimeSeriesDAO
 
             if (ret != null)
             {
-//                debug3(module + " Received ts_code=" + key + ", id='" + ret.getUniqueString() + "' from cache.");
                 return ret;
             }
             else
             {
-                debug3("Not in cache ts_code=" + key);
+                log.trace("Not in cache ts_code={}", key.getValue());
             }
 
             String q = cwmsTsidQueryBase
@@ -130,10 +138,7 @@ public class CwmsTimeSeriesDAO
             }
             catch(Exception ex)
             {
-                System.err.println(ex.toString());
-                ex.printStackTrace(System.err);
-                throw new DbIoException(
-                    "Error looking up TS Info for TS_CODE=" + key + ": " + ex);
+                throw new DbIoException("Error looking up TS Info for TS_CODE=" + key + ": ", ex);
             }
         }
         throw new NoSuchObjectException("No time-series with ts_code=" + key);
@@ -166,8 +171,9 @@ public class CwmsTimeSeriesDAO
         try { site = siteDAO.getSiteById(siteId); }
         catch(NoSuchObjectException ex)
         {
-            warning("rs2TsId No such Site for TS_ID '" + desc
-                + "' with ts_code=" + key + " and location_code=" + siteId);
+            log.atWarn()
+               .setCause(ex)
+               .log("rs2TsId No such Site for TS_ID '{}' with ts_code={} and location_code={}", desc, key, siteId);
             throw ex;
         }
         site.addName(new SiteName(site, Constants.snt_CWMS, rs.getString(9)));
@@ -179,7 +185,9 @@ public class CwmsTimeSeriesDAO
         ret.setActive(TextUtil.str2boolean(rs.getString(10)));
 
         if (decodes.db.Database.getDb().getDbIo().getDatabaseType().equalsIgnoreCase("XML"))
+        {
             return ret;
+        }
 
         if (createDataType && dt.getId() == Constants.undefinedId)
         {
@@ -208,7 +216,9 @@ public class CwmsTimeSeriesDAO
         throws DbIoException, NoSuchObjectException
     {
         if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
+        {
             reloadTsIdCache();
+        }
 
         int paren = uniqueString.lastIndexOf('(');
         String displayName = null;
@@ -218,7 +228,9 @@ public class CwmsTimeSeriesDAO
             uniqueString = uniqueString.substring(0,  paren);
             int endParen = displayName.indexOf(')');
             if (endParen > 0)
+            {
                 displayName = displayName.substring(0,  endParen);
+            }
         }
 
         TimeSeriesIdentifier ret = null;
@@ -233,18 +245,22 @@ public class CwmsTimeSeriesDAO
             return ret;
         }
         else
-            debug3("cache does not have '" + uniqueString + "'");
+        {
+            log.trace("cache does not have '{}'", uniqueString);
+        }
 
         DbKey ts_code = ts_id2ts_code(uniqueString);
         if (ts_code == Constants.undefinedId)
+        {
             throw new NoSuchObjectException("No CWMS Time Series for ID '"
                 + uniqueString + "' and office ID "
                 + ((CwmsTimeSeriesDb)db).getDbOfficeId());
+        }
 
         ret = getTimeSeriesIdentifier(ts_code);
         if (displayName != null)
         {
-            debug3("Setting display name to '" + displayName + "'");
+            log.trace("Setting display name to '{}'", displayName);
             ret.setDisplayName(displayName);
         }
         return ret;
@@ -261,7 +277,9 @@ public class CwmsTimeSeriesDAO
         String q = "SELECT TS_CODE FROM CWMS_V_TS_ID "
             + "WHERE upper(CWMS_TS_ID) = " + sqlString(tsid.toUpperCase());
         if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
+        {
             q = q + " AND upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
+        }
 
         try
         {
@@ -271,8 +289,9 @@ public class CwmsTimeSeriesDAO
         }
         catch(Exception ex)
         {
-            warning("Error looking up TS_CODE for TS_ID '" + tsid
-                + "': " + ex);
+            log.atWarn()
+               .setCause(ex)
+               .log("Error looking up TS_CODE for TS_ID '{}'", tsid);
         }
         return Constants.undefinedId;
     }
@@ -320,7 +339,7 @@ public class CwmsTimeSeriesDAO
             }
             catch(NoSuchObjectException ex)
             {
-                warning("fillTimeSeries: " + ex);
+                log.warn("unable to fillTimeSeries",ex);
             }
         }
 
@@ -348,19 +367,19 @@ public class CwmsTimeSeriesDAO
                 }
                 catch(SQLException ex)
                 {
-                    String msg = "Error getting data for time series="
-                        + cts.getNameString() + ": " + ex;
-                    warning(msg);
-                    ex.printStackTrace(Logger.instance().getLogOutput());
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Error getting data for time series=%s",cts.getNameString());
                     continue;
                 }
 
                 // For computation processor, we never want to overwrite data
                 // we already have. For a report generator, we DO.
                 Date d = tv.getTime();
-                if (!overwriteExisting
-                 && cts.findWithin(d.getTime()/1000L, 10) != null)
+                if (!overwriteExisting && cts.findWithin(d.getTime()/1000L, 10) != null)
+                {
                     continue;
+                }
 
                 if (tv != null)
                 {
@@ -372,7 +391,7 @@ public class CwmsTimeSeriesDAO
                         }
                         catch (Exception ex)
                         {
-                            warning("fillTimeSeries: " + ex);
+                            log.warn("unable to fillTimeSeries: ", ex);
                         }
                     }
                     cts.addSample(tv);
@@ -383,12 +402,8 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            String msg = "Error getting data for time series="
-                + cts.getNameString() + ": " + ex;
-            warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
-            throw new DbIoException(msg);
+            String msg = "Error getting data for time series=%s";
+            throw new DbIoException(String.format(msg,cts.getNameString()), ex);
         }
     }
 
@@ -443,11 +458,10 @@ public class CwmsTimeSeriesDAO
                         }
                         catch(SQLException ex)
                         {
-                            String msg= "Error reading data with query '" + q
-                                + "': " + ex;
-                            warning(msg);
-                            System.err.println(msg);
-                            ex.printStackTrace(System.err);
+                            String msg= "Error reading data with query '%s'";
+                            log.atWarn()
+                               .setCause(ex)
+                               .log(msg, q);
                             continue;
                         }
 
@@ -457,7 +471,9 @@ public class CwmsTimeSeriesDAO
                             // we already have.
                             Date d = tv.getTime();
                             if (cts.findWithin(d.getTime()/1000L, 10) != null)
+                            {
                                 continue;
+                            }
 
                             if (unitConverter != null)
                             {
@@ -467,7 +483,7 @@ public class CwmsTimeSeriesDAO
                                 }
                                 catch (Exception ex)
                                 {
-                                    warning("fillTimeSeries: " + ex);
+                                    log.warn("unable to set value.", ex);
                                 }
                             }
                             cts.addSample(tv);
@@ -478,15 +494,17 @@ public class CwmsTimeSeriesDAO
                 }
                 catch(SQLException ex)
                 {
-                    String msg= "Error reading data with query '" + q
-                        + "': " + ex;
-                    warning(msg);
-                    System.err.println(msg);
-                    ex.printStackTrace(System.err);
+
+                    String msg= "Error reading data with query '%s'";
+                    log.atWarn()
+                       .setCause(ex)
+                       .log(msg, q);
                 }
             }
             else if (end < size)
+            {
                 sb.append(", ");
+            }
         }
         return numAdded;
     }
@@ -534,7 +552,7 @@ public class CwmsTimeSeriesDAO
                     }
                     catch (Exception ex)
                     {
-                        warning("getNextValue: Error in unit conversion: " + ex);
+                        log.warn("getPreviousValue: Error in unit conversion: ", ex);
                     }
                 }
                 cts.addSample(tv);
@@ -543,12 +561,8 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            String msg= "Error reading data with query '" + q
-                + "': " + ex;
-            warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
-            throw new DbIoException(msg);
+            String msg= "Error reading data with query '%s'";
+            throw new DbIoException(String.format(msg,q), ex);
         }
     }
 
@@ -582,7 +596,9 @@ public class CwmsTimeSeriesDAO
         {
             ResultSet rs = doQuery(q);
             if (!rs.next())
+            {
                 return null;  // There is no next value.
+            }
 
             TimedVariable tv = rs2TimedVariable(rs);
             if (tv != null)
@@ -595,7 +611,7 @@ public class CwmsTimeSeriesDAO
                     }
                     catch (Exception ex)
                     {
-                        warning("getNextValue: Error in unit conversion: " + ex);
+                        log.warn("getNextValue: Error in unit conversion: ", ex);
                     }
                 }
                 cts.addSample(tv);
@@ -604,10 +620,8 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            String msg= "Error reading data with query '" + q
-                + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg= "Error reading data with query '%s'";
+            throw new DbIoException(String.format(msg,q), ex);
         }
     }
 
@@ -623,11 +637,13 @@ public class CwmsTimeSeriesDAO
         try
         {
             if (tsId == null)
+            {
                 tsId = getTimeSeriesIdentifier(ts.getSDI());
+            }
         }
         catch(NoSuchObjectException ex)
         {
-            throw new BadTimeSeriesException(ex.toString());
+            throw new BadTimeSeriesException("Could not find timeseries: " + ts.getDisplayName(), ex);
         }
         String path = tsId.getUniqueString();
 
@@ -643,8 +659,8 @@ public class CwmsTimeSeriesDAO
         if (!noUnitConv)
         {
             // Convert to the required 'storage units'.
-            debug3("Time Series '" + tsId.getUniqueString() + "' have units '"
-                + unitsAbbr + "' require units '" + tsId.getStorageUnits() + "'");
+            log.trace("Time Series '{}' have units '{}' require units '{}'",
+                      tsId.getUniqueString(), unitsAbbr, tsId.getStorageUnits());
             if (!unitsAbbr.equalsIgnoreCase(tsId.getStorageUnits()))
             {
                 TSUtil.convertUnits(ts, tsId.getStorageUnits());
@@ -652,7 +668,10 @@ public class CwmsTimeSeriesDAO
             }
         }
         else
-            debug3("Will write time series " + tsId.getUniqueString() + " with unit " + unitsAbbr);
+        {
+            log.trace("Will write time series {}" + tsId.getUniqueString() + " with unit '{}'",
+                      tsId.getUniqueString(),  unitsAbbr);
+        }
 
         // We do not yet support versioned data
         java.sql.Timestamp versionDate = null;
@@ -683,18 +702,16 @@ public class CwmsTimeSeriesDAO
                     values[idx] = valueArray.get(idx);
                     qualities[idx] = qualArray.get(idx);
 
-                    debug3("sample[" + idx + "] time=" +
-                        db.getLogDateFormat().format(new Date(times[idx]))
-                        + ", value=" + values[idx]
-                        + ", qual=0x" + Integer.toHexString(qualities[idx]));
+                    log.trace("sample[{}] time={}, value={}, qual=0x{}",
+                              idx, db.getLogDateFormat().format(new Date(times[idx])),
+                              values[idx], Integer.toHexString(qualities[idx]));
                 }
                 // The "Replace All" store-rule means:
                 //  -- Values at same time stamp I provide will replace existing values
                 //  -- Any new values will be written.
                 //  -- Existing values at different time stamps will be left alone.
-                debug1(" Calling store for ts_id="
-                    + path + ", office='" + dbOfficeId
-                    + "' with " + num2write + " values, units=" + ts.getUnitsAbbr());
+                log.debug(" Calling store for ts_id='{}', office='{}' with {} values, units='{}'",
+                          path, dbOfficeId, num2write, ts.getUnitsAbbr());
                 cwmsDbTs.store(
                     conn,
                     dbOfficeId, path, ts.getUnitsAbbr(), times, values,
@@ -716,14 +733,14 @@ public class CwmsTimeSeriesDAO
                     values[idx] = valueArray.get(idx);
                     qualities[idx] = qualArray.get(idx);
 
-                    debug3("sample[" + idx + "] time="
-                        + db.getLogDateFormat().format(times[idx])
-                        + ", value=" + values[idx] + ", qual=" + qualities[idx]);
+                    log.trace("sample[{}] time={}, value={}, qual=0x{}",
+                              idx, db.getLogDateFormat().format(new Date(times[idx])),
+                              values[idx], Integer.toHexString(qualities[idx]));
                 }
                 // The "REPLACE_MISSING_VALUES_ONLY" store-rule means:
                 //  -- Do not overwrite if a value exists at that time-slice.
-                debug1(" Calling store (no overwrite) for ts_id="
-                        + path + " with " + num2write + " values, units=" + ts.getUnitsAbbr());
+                log.debug(" Calling store (no overwrite) for ts_id='{}' with {} values, units='{}'",
+                       path, num2write, ts.getUnitsAbbr());
 
                 cwmsDbTs.store(conn, dbOfficeId, path, ts.getUnitsAbbr(), times, values,
                     qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
@@ -732,24 +749,18 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            String msg = "Error in cwmsTsJdbc.store for '" + path + "': " + ex;
-            failure(msg);
-            PrintStream ps = Logger.instance().getLogOutput();
-            if (ps != null)
-            {
-                ex.printStackTrace(ps);
-            }
-            else
-            {
-                ex.printStackTrace(System.err);
-            }
+            String msg = "Error in cwmsTsJdbc.store for '%s'";
+            log.atError()
+               .setCause(ex)
+               .log(msg, path);
+
             if (msg.contains("read from socket") || msg.contains("connection is closed"))
             {
-                throw new DbIoException(msg);
+                throw new DbIoException(msg, ex);
             }
             // Note: There are so many business rules in CWMS which can
             // cause the store to fail, so don't throw DBIO.
-//            throw new DbIoException(msg);
+            //            throw new DbIoException(msg);
         }
     }
 
@@ -780,33 +791,37 @@ public class CwmsTimeSeriesDAO
             {
                 // We only want variables flagged for noOverwrite
                 if (!VarFlags.isNoOverwrite(tv))
+                {
                     continue;
+                }
             }
             else // !noOverwrite -- this is for normal write/delete values
             {
                 if (VarFlags.isNoOverwrite(tv))
+                {
                     continue;
+                }
                 if (VarFlags.mustDelete(tv))
                 {
                     qc = 5; // As per HEC direction. SCREENED | MISSING.
                 }
                 else if (!VarFlags.mustWrite(tv))
+                {
                     continue;
+                }
             }
 
             try
             {
-//                double value = ;
-//                Double dv = deleting ? null : new Double(value);
                 msecArray.add(tv.getTime().getTime());
                 valueArray.add(tv.getDoubleValue());
                 qualArray.add(qc);
             }
             catch(NoConversionException ex)
             {
-                String errMsg = "Cannot prepare value for save '" +
-                    tv.getStringValue()    + "' - not a number.";
-                warning(errMsg);
+                log.atWarn()
+                   .setCause(ex)
+                   .log("Cannot prepare value for save '{}' - not a number.", tv.getStringValue());
             }
             VarFlags.clearToDelete(tv);
             VarFlags.clearToWrite(tv);
@@ -820,7 +835,9 @@ public class CwmsTimeSeriesDAO
         throws DbIoException, BadTimeSeriesException
     {
         if (from == null || until == null)
+        {
             return;
+        }
 
         if (!cts.isExpanded())
         {
@@ -833,9 +850,8 @@ public class CwmsTimeSeriesDAO
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         try (Connection conn = getConnection();)
         {
-            debug1("Calling deleteTs for tsid '"
-                + tsid + "' for date range: "
-                + sdf.format(from) + " to " + sdf.format(until));
+            log.debug("Calling deleteTs for tsid '{}' for date range: {} to {}",
+                      tsid, sdf.format(from), sdf.format(until));
 
             CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
             cwmsDbTs.deleteTs(conn, dbOfficeId, tsid,
@@ -848,11 +864,10 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            warning("deleteTimeSeriesRange - Error in CwmsDbTs.deleteTs for tsid '"
-                + tsid + "' from " + sdf.format(from) + " to " + sdf.format(until) + ": " + ex);
-            PrintStream ps = Logger.instance().getLogOutput();
-            if (ps != null)
-                ex.printStackTrace(ps);
+            log.atWarn()
+               .setCause(ex)
+               .log("deleteTimeSeriesRange - Error in CwmsDbTs.deleteTs for tsid '{}' from {} to {}.",
+                       tsid, sdf.format(from), sdf.format(until));
         }
 
 //        // For CWMS Comps, there are no physical deletes, so first we read, then
@@ -882,7 +897,7 @@ public class CwmsTimeSeriesDAO
     public void fillTimeSeriesMetadata(CTimeSeries ts) throws DbIoException,
         BadTimeSeriesException
     {
-        debug3("fillTimeSeriesMetadata sdi=" + ts.getSDI());
+        log.trace("fillTimeSeriesMetadata sdi={}", ts.getSDI());
         try
         {
             DbKey ts_code = ts.getSDI();
@@ -901,11 +916,13 @@ public class CwmsTimeSeriesDAO
 
             String existingUnits = ts.getUnitsAbbr();
             if (existingUnits == null || existingUnits.isEmpty() || existingUnits.equalsIgnoreCase("unknown"))
+            {
                 ts.setUnitsAbbr(tsid.getStorageUnits());
+            }
         }
         catch(NoSuchObjectException ex)
         {
-            warning("Error expanding SDI: " + ex);
+            log.warn("Error expanding SDI: ", ex);
             ts.setDisplayName("unknownSite:unknownType-unknownIntv");
             ts.setUnitsAbbr("EU??");
         }
@@ -923,11 +940,15 @@ public class CwmsTimeSeriesDAO
 
         // Check for missing, deleted, or rejected data
         if (rs.wasNull())
+        {
             return null;
+        }
         long lf = rs.getLong(3);
         int f =    CwmsFlags.cwmsQuality2flag(lf);
         if ((f & CwmsFlags.VALIDITY_MISSING) != 0)
+        {
             return null;
+        }
 
         TimedVariable tv = new TimedVariable(value);
         tv.setTime(timeStamp);
@@ -944,17 +965,15 @@ public class CwmsTimeSeriesDAO
         // by Gang's message-queue handler.
         if (db.getTsdbVersion() < TsdbDatabaseVersion.VERSION_7)
         {
-            CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-            try { compDependsDAO.removeTsDependencies(tsid); }
-            finally
+            try (CompDependsDAI compDependsDAO = db.makeCompDependsDAO();)
             {
-                compDependsDAO.close();
+                compDependsDAO.removeTsDependencies(tsid);
             }
         }
         try (Connection conn = getConnection();)
         {
             CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
-            debug1("Deleting TSID '" + tsid.getUniqueString() + "' from office ID=" + dbOfficeId);
+            log.debug("Deleting TSID '{}' from office ID={}", tsid.getUniqueString(), dbOfficeId);
             cwmsDbTs.deleteAll(conn, dbOfficeId, tsid.getUniqueString());
             synchronized(cache)
             {
@@ -964,9 +983,10 @@ public class CwmsTimeSeriesDAO
         }
         catch(Exception ex)
         {
-            String msg = "Cannot delete time series '"
-                + tsid.getUniqueString() + ": " + ex;
-            warning(msg);
+            String msg = "Cannot delete time series '{}'";
+            log.atWarn()
+               .setCause(ex)
+               .log(msg, tsid.getUniqueString());
         }
     }
 
@@ -988,13 +1008,17 @@ public class CwmsTimeSeriesDAO
     {
         // MJM 20161025 don't reload more if already done within threshold.
         if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
+        {
             reloadTsIdCache();
+        }
 
         ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
         synchronized(cache)
         {
-            for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
+            for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext();)
+            {
                 ret.add(tsidit.next());
+            }
         }
         return ret;
     }
@@ -1004,7 +1028,9 @@ public class CwmsTimeSeriesDAO
         throws DbIoException
     {
         if (forceRefresh)
+        {
             lastCacheReload = 0L;
+        }
         return listTimeSeries();
     }
 
@@ -1012,7 +1038,7 @@ public class CwmsTimeSeriesDAO
     @Override
     public void reloadTsIdCache() throws DbIoException
     {
-        debug1("reloadTsIdCache()");
+        log.debug("reloadTsIdCache()");
 
         // Each TSID will need a site, so prefill the site cache to prevent
         // it from doing individual reads for each site.
@@ -1026,38 +1052,45 @@ public class CwmsTimeSeriesDAO
             int origFetchSize = getFetchSize();
             int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
             if (tsidFetchSize > 0)
+            {
                 setFetchSize(tsidFetchSize);
+            }
             ResultSet rs = doQuery(q);
             setFetchSize(origFetchSize);
 
             ArrayList<TimeSeriesIdentifier> tsidList = new ArrayList<TimeSeriesIdentifier>();
 
             while (rs != null && rs.next())
+            {
                 try
                 {
                     tsidList.add(rs2TsId(rs, false));
                 }
                 catch (NoSuchObjectException ex)
                 {
-                    warning("Error creating Cwms TSID: " + ex
-                        + " -- " + ex.getLocalizedMessage() + " -- skipped.");
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Error creating Cwms TSID -- skipped.");
                 }
+            }
 
             synchronized(cache)
             {
                 for(TimeSeriesIdentifier tsid: tsidList)
+                {
                     cache.put(tsid);
+                }
             }
 
-            debug1("After fill, cache has " + cache.size() + " TSIDs.");
+            log.debug("After fill, cache has {} TSIDs.", cache.size());
         }
         catch (SQLException ex)
         {
-            String m = "CwmsTimeSeriesDb.reloadTsIdCache: " + ex;
-            failure(m);
-            if (Logger.instance().getLogOutput() != null)
-                ex.printStackTrace(Logger.instance().getLogOutput());
-            throw new DbIoException("CwmsTimeSeriesDb.reloadTsIdCache: " + ex);
+            final String msg = "Failed to reload CwmsTimeSeriesDb TsId Cache.";
+            log.atError()
+               .setCause(ex)
+               .log(msg);
+            throw new DbIoException(msg, ex);
         }
         lastCacheReload = System.currentTimeMillis();
     }
@@ -1078,8 +1111,10 @@ public class CwmsTimeSeriesDAO
         {
             String sn = tsid.getSiteName();
             if (sn == null || sn.trim().length() == 0)
+            {
                 throw new BadTimeSeriesException("TSID '" + tsid.getUniqueString()
                     + "' has no location part.");
+            }
             DbKey siteID = siteDAO.lookupSiteID(sn);
             if (DbKey.isNull(siteID))
             {
@@ -1131,9 +1166,11 @@ public class CwmsTimeSeriesDAO
                     {
                         int oraerr = Integer.parseInt(exs.substring(0, intlen));
                         if (oraerr >= 20000)
+                        {
                             throw new NoSuchObjectException(
                                 "Error creating time series for '" + path + "' with officeId '"
-                                + dbOfficeId + "': " + ex);
+                                + dbOfficeId + "': " + ex, ex);
+                        }
                     }
                     catch(NumberFormatException ex2) { /* fall through & throw DbIoException */ }
                 }
@@ -1141,22 +1178,28 @@ public class CwmsTimeSeriesDAO
             // This must be more serious. Assume db connection is now hosed.
             throw new DbIoException(
                 "Error creating time series for '" + path + "' with officeId '"
-                + dbOfficeId + "': " + ex);
+                + dbOfficeId, ex);
         }
     }
 
     private void refreshTsView()
     {
         if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9)
+        {
             return;
+        }
 
         // MJM 1/12/2011 After we delete a time-series we must explicitly
         // refresh the CWMS_V_TS_ID view, otherwise it can take up to 5 min.
-        try { doModify("call cwms_util.refresh_mv_cwms_ts_id()"); }
+        try
+        {
+            doModify("call cwms_util.refresh_mv_cwms_ts_id()");
+        }
         catch(Exception ex)
         {
-            warning("Error in cwms_util.refresh_mv_cwms_ts_id: " + ex);
-            ex.printStackTrace(Logger.instance().getLogOutput());
+            log.atWarn()
+               .setCause(ex)
+               .log("Error in cwms_util.refresh_mv_cwms_ts_id.");
         }
     }
 
@@ -1200,7 +1243,7 @@ public class CwmsTimeSeriesDAO
             "select a.RECORD_NUM, a.SITE_DATATYPE_ID, a.VALUE, a.START_DATE_TIME, "
             + "a.DELETE_FLAG, a.UNIT_ID, a.VERSION_DATE, a.QUALITY_CODE, a.MODEL_RUN_ID "
             + "from CP_COMP_TASKLIST a "
-            + "where a.LOADING_APPLICATION_ID = ?" // + applicationId
+            + "where a.LOADING_APPLICATION_ID = ?"
             + " and ROWNUM < 20000"
             + failTimeClause
             + " ORDER BY a.site_datatype_id, a.start_date_time";
@@ -1213,8 +1256,8 @@ public class CwmsTimeSeriesDAO
 
             ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
             ArrayList<Integer> badRecs = new ArrayList<Integer>();
-            debug3("Executing '" + getTaskListStmtQuery + "' with appId=" + applicationId);
-            try(ResultSet rs = getTaskListStmt.executeQuery())
+            log.trace("Executing '{}' with appId={}", getTaskListStmtQuery, applicationId);
+            try (ResultSet rs = getTaskListStmt.executeQuery())
             {
                 Date lastTimestamp = null;
                 while (rs.next())
@@ -1253,7 +1296,9 @@ public class CwmsTimeSeriesDAO
                         }
                     }
                     else
+                    {
                         deleted = TextUtil.str2boolean(df);
+                    }
 
                     String unitsAbbr = rs.getString(6);
                     Date versionDate = db.getFullDate(rs, 7);
@@ -1276,8 +1321,9 @@ public class CwmsTimeSeriesDAO
 
                 // Delete the bad tasklist recs, 250 at a time.
                 if (badRecs.size() > 0)
-                    Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
-                        + " bad tasklist records.");
+                {
+                    log.debug("getNewDataSince deleting {} bad tasklist records.", + badRecs.size());
+                }
                 while (badRecs.size() > 0)
                 {
                     StringBuilder inList = new StringBuilder();
@@ -1286,24 +1332,29 @@ public class CwmsTimeSeriesDAO
                     for(; x<250 && x<n; x++)
                     {
                         if (x > 0)
+                        {
                             inList.append(", ");
+                        }
                         inList.append(badRecs.get(x).toString());
                     }
                     String q = "delete from CP_COMP_TASKLIST "
                         + "where RECORD_NUM IN (" + inList.toString() + ")";
                     doModify(q);
                     for(int i=0; i<x; i++)
+                    {
                         badRecs.remove(0);
+                    }
                 }
 
                 // Show each tasklist entry in the log if we're at debug level 3
-                if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
+                if (log.isTraceEnabled())
                 {
-                    List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
-                    debug3("getNewData, returning " + allts.size() + " TimeSeries.");
-                    for(CTimeSeries ts : allts)
-                        debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " "
-                            + ts.size() + " values.");
+                    List<CTimeSeries> allTs = dataCollection.getAllTimeSeries();
+                    log.trace("getNewData, returning {} TimeSeries.", allTs.size());
+                    for(CTimeSeries ts : allTs)
+                    {
+                        log.trace("ts '{}' {} values.", ts.getTimeSeriesIdentifier().getUniqueString(), ts.size());
+                    }
                 }
 
                 return dataCollection;
@@ -1311,8 +1362,9 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            System.err.println("Error reading new data: " + ex.getLocalizedMessage());
-            ex.printStackTrace();
+            log.atWarn()
+               .setCause(ex)
+               .log("Error reading new data.");
             throw new DbIoException("Error reading new data: " + ex.getLocalizedMessage(), ex);
         }
     }
@@ -1350,25 +1402,29 @@ public class CwmsTimeSeriesDAO
                 cts.setUnitsAbbr(rec.getUnitsAbbr());
                 if (((TimeSeriesDb)db).fillDependentCompIds(cts, applicationId, this) == 0)
                 {
-                    warning("Deleting tasklist rec for '"
-                        + tsid.getUniqueString()
-                        + "' because no dependent comps.");
+                    log.warn("Deleting tasklist rec for '{}' because no dependent comps.", tsid.getUniqueString())
                     if (badRecs != null)
+                    {
                         badRecs.add(rec.getRecordNum());
+                    }
                     return;
                 }
 
-                try { dataCollection.addTimeSeries(cts); }
+                try
+                {
+                    dataCollection.addTimeSeries(cts);
+                }
                 catch(decodes.tsdb.DuplicateTimeSeriesException ex)
                 { // won't happen -- already verified it's not there.
                 }
             }
             catch(NoSuchObjectException ex)
             {
-                warning("Deleting tasklist rec for non-existent ts_code "
-                    + rec.getSdi());
+                log.warn("Deleting tasklist rec for non-existent ts_code {}", rec.getSdi());
                 if (badRecs != null)
+                {
                     badRecs.add(rec.getRecordNum());
+                }
                 return;
             }
             finally
@@ -1383,38 +1439,45 @@ public class CwmsTimeSeriesDAO
             String recUnitsAbbr = rec.getUnitsAbbr();
             String ctsUnitsAbbr = cts.getUnitsAbbr();
             if (ctsUnitsAbbr == null) // no units yet assigned?
+            {
                 cts.setUnitsAbbr(ctsUnitsAbbr = recUnitsAbbr);
+            }
             else if (recUnitsAbbr == null) // for some reason, this tasklist record doesn't have units
+            {
                 recUnitsAbbr = ctsUnitsAbbr;
+            }
             else if (!TextUtil.strEqualIgnoreCase(recUnitsAbbr, ctsUnitsAbbr))
             {
-                EngineeringUnit euOld =    EngineeringUnit.getEngineeringUnit(recUnitsAbbr);
+                EngineeringUnit euOld = EngineeringUnit.getEngineeringUnit(recUnitsAbbr);
                 EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(ctsUnitsAbbr);
 
                 UnitConverter converter = Database.getDb().unitConverterSet.get(euOld, euNew);
                 if (converter != null)
                 {
-                    try { rec.setValue(converter.convert(rec.getValue())); }
+                    try
+                    {
+                        rec.setValue(converter.convert(rec.getValue()));
+                    }
                     catch (Exception ex)
                     {
-                        Logger.instance().warning(
-                            "Tasklist for '" + cts.getTimeSeriesIdentifier().getUniqueString()
-                            + "' exception converting " + rec.getValue() + " " + rec.getUnitsAbbr()
-                            + " to " + cts.getUnitsAbbr() + ": " + ex
-                            + " -- will use as-is.");
+                        log.atWarn()
+                           .setCause(ex)
+                           .log(
+                            "Tasklist for '{}' exception converting {} to {} -- will use as-is.",
+                            cts.getTimeSeriesIdentifier().getUniqueString(), rec.getValue(), rec.getUnitsAbbr());
                     }
                 }
                 else
                 {
-                    Logger.instance().warning(
-                        "Tasklist for '" + cts.getTimeSeriesIdentifier().getUniqueString()
-                        + "' cannot convert " + rec.getValue() + " " + rec.getUnitsAbbr()
-                        + " to " + cts.getUnitsAbbr() + ". -- will use as-is.");
+                    log.warn("Tasklist for '{}' cannot convert {} {} to {}",
+                        cts.getTimeSeriesIdentifier().getUniqueString(), rec.getValue(), rec.getUnitsAbbr(), cts.getUnitsAbbr());
                 }
             }
         }
         if (rrhandle != null)
+        {
             rrhandle.addRecNum(rec.getRecordNum());
+        }
 
         // Construct timed variable with appropriate flags & add it.
         TimedVariable tv = new TimedVariable(rec.getValue());
@@ -1427,18 +1490,16 @@ public class CwmsTimeSeriesDAO
             cts.addSample(tv);
             // Remember which tasklist records are in this timeseries.
             cts.addTaskListRecNum(rec.getRecordNum());
-            Logger.instance().debug3("Added value " + tv + " to time series "
-                + cts.getTimeSeriesIdentifier().getUniqueString()
-                + " flags=0x" + Integer.toHexString(tv.getFlags())
-                + " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+            log.trace("Added value {} to time series '{}' flags=0x{} cwms qualcode=0x{}",
+                tv.toString(), cts.getTimeSeriesIdentifier().getUniqueString(),
+                Integer.toHexString(tv.getFlags()), Long.toHexString(rec.getQualityCode()));
         }
         else
         {
             VarFlags.setWasDeleted(tv);
-            Logger.instance().warning("Discarding deleted value " + tv.toString()
-                + " for time series " + cts.getTimeSeriesIdentifier().getUniqueString()
-                + " flags=0x" + Integer.toHexString(tv.getFlags())
-                + " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+            log.warn("Discarding deleted value {} for time series '{}' flags=0x{} cwms qualcode=0x{}",
+                     tv.toString(), cts.getTimeSeriesIdentifier().getUniqueString(),
+                     Integer.toHexString(tv.getFlags()), Long.toHexString(rec.getQualityCode()));
         }
     }
 
@@ -1447,7 +1508,9 @@ public class CwmsTimeSeriesDAO
     {
         // local getConnection() method that saves the connection locally
         if (myCon == null)
+        {
             myCon = db.getConnection();
+        }
         siteDAO.setManualConnection(myCon);
         dataTypeDAO.setManualConnection(myCon);
         // NOTE: there should already be a pooled connection used by the
