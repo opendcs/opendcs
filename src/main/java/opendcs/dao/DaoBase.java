@@ -30,7 +30,10 @@ import opendcs.util.functional.DaoConsumer;
 import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
+import opendcs.util.functional.ThrowingFunction;
 import opendcs.util.sql.WrappedConnection;
+
+import static org.mockito.Answers.values;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -41,6 +44,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 
 import decodes.db.Constants;
 import decodes.db.DatabaseException;
@@ -406,80 +410,84 @@ public class DaoBase
 	 * @param statement SQL statement
 	 * @param consumer Function that will handle the operations. @see opendcs.util.functional.StatementConsumer
 	 */
-	public void withStatement( String statement, StatementConsumer consumer,Object... parameters) throws SQLException
+	public void withStatement( String statement, StatementConsumer consumer, Object... parameters) throws SQLException
 	{
 		withConnection((conn) -> {
 			try (PreparedStatement stmt = conn.prepareStatement(statement);)
 			{
 				if (fetchSize > 0)
 				{
-					stmt.setFetchSize(fetchSize);;
+					stmt.setFetchSize(fetchSize);
 				}
-				int index=1;
-
-				for( Object param: parameters)
-				{
-					if (param instanceof Integer)
-					{
-						stmt.setInt(index,(Integer)param);
-					}
-					else if (param instanceof String)
-					{
-						stmt.setString(index,(String)param);
-					}
-					else if (param instanceof Character)
-					{
-						stmt.setString(index, ((Character)param).toString());
-					}
-					else if (param instanceof DbKey)
-					{
-						DbKey key = (DbKey)param;
-						if (DbKey.isNull(key))
-						{
-							stmt.setNull(index,Types.NULL);
-						}
-						else
-						{
-							stmt.setLong(index,key.getValue());
-						}
-					}
-					else if (param instanceof Date)
-					{
-						if (this.db.isOpenTSDB())
-						{
-							stmt.setLong(index,((Date)param).getTime());
-						}
-						else
-						{
-							stmt.setDate(index,new java.sql.Date(((Date)param).getTime()));
-						}
-					}
-					else if (param == null)
-					{
-						stmt.setNull(index,Types.NULL);
-					}
-					else
-					{
-						try
-						{						
-							stmt.setObject(index,param);
-						}
-						catch (SQLException ex)
-						{
-							String msg = String.format(
-								 "Attempting to set parameter of type '%'"
-							   + ". Please open an issue on the project page with this error message.",
-							    param.getClass().getName());
-							throw new SQLException(msg, ex);
-						}
-					}
-					index++;
-				}
-
+				bind(stmt, parameters);
 				consumer.accept(stmt);
 			}
 		});
 
+	}
+
+	private void bind(PreparedStatement stmt, Object... parameters) throws SQLException
+	{
+		int index=1;
+
+		for( Object param: parameters)
+		{
+			if (param instanceof Integer)
+			{
+				stmt.setInt(index,(Integer)param);
+			}
+			else if (param instanceof String)
+			{
+				stmt.setString(index,(String)param);
+			}
+			else if (param instanceof Character)
+			{
+				stmt.setString(index, ((Character)param).toString());
+			}
+			else if (param instanceof DbKey)
+			{
+				DbKey key = (DbKey)param;
+				if (DbKey.isNull(key))
+				{
+					stmt.setNull(index,Types.NULL);
+				}
+				else
+				{
+					stmt.setLong(index,key.getValue());
+				}
+			}
+			else if (param instanceof Date)
+			{
+				if (this.db.isOpenTSDB())
+				{
+					stmt.setLong(index,((Date)param).getTime());
+				}
+				else
+				{
+					stmt.setDate(index,new java.sql.Date(((Date)param).getTime()));
+				}
+			}
+			else if (param == null)
+			{
+				stmt.setNull(index,Types.NULL);
+			}
+			else
+			{
+				try
+				{
+					stmt.setObject(index,param);
+				}
+				catch (SQLException ex)
+				{
+					String msg = String.format(
+							"Attempting to set parameter of type '%'"
+						+ ". Please open an issue on the project page with this error message.",
+						param.getClass().getName());
+					throw new SQLException(msg, ex);
+				}
+			}
+			index++;
+		}
 	}
 
 	/**
@@ -521,6 +529,28 @@ public class DaoBase
 			result[0] = stmt.executeUpdate();
 		},args);
 		return result[0];
+	}
+
+
+	public <ValueType> void doModifyBatch(String query, ThrowingFunction<ValueType, Object[] , SQLException> bindingFunction, List<ValueType> values, int batchSize) throws SQLException
+	{
+		withStatement(query, (stmt) -> {
+			int count = 0;
+			for (ValueType v: values)
+			{
+				bind(stmt, bindingFunction.accept(v));
+				stmt.addBatch();
+				if(count++ % batchSize == 0)
+				{
+					stmt.executeBatch();
+					stmt.clearBatch();
+				}
+			}
+			if (count < values.size())
+			{
+				stmt.executeBatch();
+			}
+		});
 	}
 
 	/**

@@ -1371,27 +1371,10 @@ public class CwmsTimeSeriesDAO
                 if (badRecs.size() > 0)
                 {
                     log.debug("getNewDataSince deleting {} bad tasklist records.", + badRecs.size());
-                }
-                while (badRecs.size() > 0)
-                {
-                    StringBuilder inList = new StringBuilder();
-                    int n = badRecs.size();
-                    int x=0;
-                    for(; x<250 && x<n; x++)
-                    {
-                        if (x > 0)
-                        {
-                            inList.append(", ");
-                        }
-                        inList.append(badRecs.get(x).toString());
-                    }
-                    String q = "delete from CP_COMP_TASKLIST "
-                        + "where RECORD_NUM IN (" + inList.toString() + ")";
-                    doModify(q);
-                    for(int i=0; i<x; i++)
-                    {
-                        badRecs.remove(0);
-                    }
+					doModifyBatch("delete from cp_comp_tasklist where record_num = ?",
+								  (v) -> new Object[] {v},
+								  badRecs, 250);
+					badRecs.clear();
                 }
 
                 // Show each tasklist entry in the log if we're at debug level 3
