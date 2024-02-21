@@ -8,7 +8,7 @@ database.  It is currently supported for the U.S. Bureau of Reclamation
 Hydrologic Database (HDB)and the U.S. Army Corps of Engineers Corps 
 Water Management System (CWMS).
 
-.. image:: ./media/start/computations/im-computations-01.JPG
+.. image:: ./media/start/computations/im-01-mainmenu-cp.JPG
    :alt: main menu - computations in boxed red
    :width: 250
 
@@ -109,7 +109,7 @@ A small window will pop up to name the group.  Enter a name. Note that
 this name can be edited after creation using the "rename" button displayed
 in the image below.
 
-.. image:: ./media/start/computations/im-computations-03.JPG
+.. image:: ./media/start/computations/im-03-groups.JPG
    :alt: time series groups editor
    :width: 550
 
@@ -130,7 +130,7 @@ or invoked.  Examples of default algorithms are listed below:
 * USGS 
 * Screening
 
-.. image:: ./media/start/computations/im-computations-04.JPG
+.. image:: ./media/start/computations/im-04-algorithms.JPG
    :alt: computation editor - algorithms tab
    :width: 650
    
@@ -153,7 +153,7 @@ from the main menu. To add a new process click "New".
 #. Launch the Computations Editor and navigate to the "Processes"
 tab.To add a new process click "New".
 
-.. image:: ./media/start/computations/im-computations-05.JPG
+.. image:: ./media/start/computations/im-05-process.JPG
    :alt: new process window
    :width: 650
 
@@ -188,7 +188,7 @@ Note that any name entered here can be edited once it is created.  Best
 practices suggest that the name specify some information that easily 
 conveys what type of time series is or are being calculated.
 
-.. image:: ./media/start/computations/im-computations-06.JPG
+.. image:: ./media/start/computations/im-06-comp-new.JPG
    :alt: computation editor - new comp pop up
    :width: 250
 
@@ -210,13 +210,13 @@ the input denoted with "I" and the right hand side is the output denoted
 with "O".  The image is from the "Run Computation" button, which will be
 elaborated on in the Test Computation section below.
 
-.. image:: ./media/start/computations/im-computations-07.JPG
+.. image:: ./media/start/computations/im-07-example-copy-algorithm.JPG
    :alt: example calculation - copy algorithm
    :width: 650
 
 After the computation is named, the following window will pop up.
 
-.. image:: ./media/start/computations/im-computations-08.JPG
+.. image:: ./media/start/computations/im-08-example-copy-algorithm.JPG
    :alt: computation editor - new comp pop up
    :width: 650
 
@@ -225,7 +225,7 @@ the "Select" button next to the Algorithm section. A window will
 pop up with a list of the available algorithms.  Select the 
 *CopyAlgorithm*. 
 
-.. image:: ./media/start/computations/im-computations-09.JPG
+.. image:: ./media/start/computations/im-09-example-copy-algorithm.JPG
    :alt: computation editor - algorithm options
    :width: 650
 
@@ -239,11 +239,11 @@ roles and click "Edit" on the right.  And the following window
 will pop up for the user to enter specifics about the input time
 series for which the algorithm should be applied.
 
-.. image:: ./media/start/computations/im-computations-10.JPG
+.. image:: ./media/start/computations/im-10-example-copy-algorithm.JPG
    :alt: computation editor - new copy algorithm
    :width: 650
 
-.. image:: ./media/start/computations/im-computations-11.JPG
+.. image:: ./media/start/computations/im-11-example-copy-algorithm.JPG
    :alt: computation editor - computation parameter input blank
    :width: 250
 
@@ -261,7 +261,7 @@ Lookup" to view existing time series for the location selected.
 
 Once the time series is selected, the parts will populate.  
 
-.. image:: ./media/start/computations/im-computations-12.JPG
+.. image:: ./media/start/computations/im-12-example-copy-algorithm.JPG
    :alt: computation editor - computation parameter input
    :width: 250
 
@@ -275,7 +275,7 @@ Click "OK" and then select and edit the output time series parameter.
 In the "Edit" output parameters enter the time series parts for which
 the desired output will consist of.  
 
-.. image:: ./media/start/computations/im-computations-13.JPG
+.. image:: ./media/start/computations/im-13-example-copy-algorithm.JPG
    :alt: computation editor - computation parameter output
    :width: 250
 
@@ -284,7 +284,7 @@ the user to allow the creation of the desired time series.  Click
 "Yes". Or if there is something that needs to be modified, click 
 Cancel and correct.  
 
-.. image:: ./media/start/computations/im-computations-14.JPG
+.. image:: ./media/start/computations/im-14-example-copy-algorithm.JPG
    :alt: computation editor - computation parameter output
    :width: 150
    
@@ -292,13 +292,13 @@ As a last step, select the process for which this computation will
 attributed to.  Do this by selecting the drop down menu next to the 
 "Enabled for" box.  Select the process. 
 
-.. image:: ./media/start/computations/im-computations-15.JPG
+.. image:: ./media/start/computations/im-15-example-copy-algorithm.JPG
    :alt: computation editor - enable box
    :width: 500
 
 In the example below the process compproc-examples is selected.
 
-.. image:: ./media/start/computations/im-computations-16.JPG
+.. image:: ./media/start/computations/im-16-example-copy-algorithm.JPG
    :alt: computation editor - process selection
    :width: 500
 
@@ -317,7 +317,7 @@ In this example the input time series consists of 6 minute data.  The
 image below is from the "Run Computation" button, which will be
 elaborated on in the Test Computation section below.
 
-.. image:: ./media/start/computations/im-computations-17.JPG
+.. image:: ./media/start/computations/im-17-example-subsample.JPG
    :alt: computation editor - top of hour computation
    :width: 600
 
@@ -326,7 +326,7 @@ Once the **SubSample** algorithm is selected the Computation Properties
 at the bottom of the screen will populate with some default
 settings.  
 
-.. image:: ./media/start/computations/im-computations-18.JPG
+.. image:: ./media/start/computations/im-18-example-subsample.JPG
    :alt: computation editor - top of hour computation defined
    :width: 600
 
@@ -340,7 +340,7 @@ The input and output roles for this algorithm are called
 * **inputShortInterval**: the input time series which is a higher resolution time series than output
 * **outputLongInterval**: the output time series which is a lower resolution time series than input
 
-.. image:: ./media/start/computations/im-computations-19.JPG
+.. image:: ./media/start/computations/im-19-example-subsample.JPG
    :alt: computation editor - top of hour computation input
    :width: 200
 
@@ -359,7 +359,7 @@ of any kind are applied.  The image below is from the "Run Computation"
 button, which will be elaborated on in the Test Computation section
 below.
 
-.. image:: ./media/start/computations/im-computations-20.JPG
+.. image:: ./media/start/computations/im-20-example-average.JPG
    :alt: computation editor - average computation
    :width: 600
 
@@ -371,13 +371,13 @@ default minSamplesNeeded.  The input and output roles are:
 * **input**:
 * **average**: 
 
-.. image:: ./media/start/computations/im-computations-21.JPG
+.. image:: ./media/start/computations/im-21-example-average.JPG
    :alt: computation editor - average computation
    :width: 600
 
 By default in this computation the "If Missing" is set blank.
 
-.. image:: ./media/start/computations/im-computations-22.JPG
+.. image:: ./media/start/computations/im-22-example-average.JPG
    :alt: computation editor - average computation
    :width: 150
 
@@ -396,11 +396,11 @@ properties for the computation.  The image below is from the
 "Run Computation" button, which will be elaborated on in the Test 
 Computation section below.
 
-.. image:: ./media/start/computations/im-computations-23.JPG
+.. image:: ./media/start/computations/im-23-example-incr-precip.JPG
    :alt: computation editor - incremental precip hourly
    :width: 600
 
-.. image:: ./media/start/computations/im-computations-24.JPG
+.. image:: ./media/start/computations/im-24-example-incr-precip.JPG
    :alt: computation editor - incremental precip daily
    :width: 600
    
@@ -413,17 +413,17 @@ The input and output roles are:
 * **cumulativePrecip (input)**:  cumulative precip time series
 * **incrementalPrecip (output)**: output time series
 
-.. image:: ./media/start/computations/im-computations-25.JPG
+.. image:: ./media/start/computations/im-25-example-incr-precip.JPG
    :alt: computation editor - incremental precip set up hourly
    :width: 600
 
-.. image:: ./media/start/computations/im-computations-26.JPG
+.. image:: ./media/start/computations/im-26-example-incr-precip.JPG
    :alt: computation editor - incremental precip set up daily
    :width: 600
    
 By default in this computation the "If Missing" is set blank.
 
-.. image:: ./media/start/computations/im-computations-27.JPG
+.. image:: ./media/start/computations/im-27-example-incr-precip.JPG
    :alt: computation editor - average computation
    :width: 150
 
@@ -444,7 +444,7 @@ practice to use this time series as the input, as opposed to
 calculating the hourly incremental totals and then summing over
 the incremental totals.
 
-.. image:: ./media/start/computations/im-computations-28.JPG
+.. image:: ./media/start/computations/im-28-example-incr-precip.JPG
    :alt: computation editor - average computation
    :width: 450
 
@@ -460,7 +460,7 @@ To test or run a computation, simply open the computation from
 the List. To open the computation from the List, select the desired
 computation, and click "Edit" on the bottom of the page. 
 
-.. image:: ./media/start/computations/im-computations-29.JPG
+.. image:: ./media/start/computations/im-29-run-comps.JPG
    :alt: run computation - intro
    :width: 500
 
@@ -471,7 +471,7 @@ is a high resolution, good practice is to start with a small
 time window range to reduce the run time. Once the calculation
 has been verified, then increase the time range.
 
-.. image:: ./media/start/computations/im-computations-30.JPG
+.. image:: ./media/start/computations/im-30-run-comps-set-time.JPG
    :alt: run computation - time range
    :width: 500
 
@@ -489,7 +489,7 @@ The example outlined above for copying a time series using the
 Computation Processor is demonstrated in the following window.
 The output line (red) covers directly over the input line (black).
 
-.. image:: ./media/start/computations/im-computations-31.JPG
+.. image:: ./media/start/computations/im-31-run-comps-copy.JPG
    :alt: run computation - copy
    :width: 650
 
@@ -499,7 +499,7 @@ Run Calculation: Stage - Top of Hour
 The example outlined above for sub sampling the top of the hour is 
 demonstrated in the image below.  
 
-.. image:: ./media/start/computations/im-computations-32.JPG
+.. image:: ./media/start/computations/im-32-run-comps-subsample.JPG
    :alt: run computation - top of hour
    :width: 650
 
@@ -509,7 +509,7 @@ Run Calculation: Stage - Daily Average
 The example outlined above for calculating a daily average from 
 hourly values is demonstrated below.  
 
-.. image:: ./media/start/computations/im-computations-33.JPG
+.. image:: ./media/start/computations/im-33-run-comps-average.JPG
    :alt: run computation - daily average
    :width: 650
 
@@ -520,7 +520,7 @@ The example outlined above for calculating hourly icremental
 precipitation totals from cumulative hourly precipitation
 is demonstrated in the graphic below.
 
-.. image:: ./media/start/computations/im-computations-34.JPG
+.. image:: ./media/start/computations/im-34-run-comps-incr-precip.JPG
    :alt: run computation - cumulative to incremental
    :width: 650
 
