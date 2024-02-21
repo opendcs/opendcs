@@ -134,4 +134,17 @@ public class CompProcTestIT extends AppTestBase
             /* do nothing */
         }
     }
+
+    @Test
+    @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
+    @ComputationConfigurationRequired({"shared/loading-apps.xml", "CompProc/Precip/comps.xml"})
+    public void test_bad_recs_cleared() throws Exception
+    {
+        /**
+         * 1. insert into tasklist records with 0 computations enabled.
+         * 2. wait for compproc to remove them.
+         * 
+         * success condition, tasklist entries are removed.
+         */
+    }
 }
