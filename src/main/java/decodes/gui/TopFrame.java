@@ -178,7 +178,8 @@ public class TopFrame extends JFrame
 	public static TopFrame getDbEditFrame()
 	{
 		TopFrame jf = DbEditorFrame.instance();
-		if (jf == null) {
+		if (jf == null)
+		{
 			PlatformWizard pw = PlatformWizard.instance();
 			if (pw != null && pw.getPlatwizFrame() != null)
 			{
