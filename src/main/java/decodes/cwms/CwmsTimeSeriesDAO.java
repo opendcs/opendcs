@@ -1107,7 +1107,7 @@ public class CwmsTimeSeriesDAO
 					CwmsTsId tsId = rs2TsId(rs, false);
 					return tsId;
 				}
-				catch (NoSuchObjectException ex)
+				catch (DbIoException | NoSuchObjectException ex)
                 {
                     log.atWarn()
                        .setCause(ex)
@@ -1450,7 +1450,7 @@ public class CwmsTimeSeriesDAO
                 cts.setUnitsAbbr(rec.getUnitsAbbr());
                 if (((TimeSeriesDb)db).fillDependentCompIds(cts, applicationId, this) == 0)
                 {
-                    log.warn("Deleting tasklist rec for '{}' because no dependent comps.", tsid.getUniqueString())
+                    log.warn("Deleting tasklist rec for '{}' because no dependent comps.", tsid.getUniqueString());
                     if (badRecs != null)
                     {
                         badRecs.add(rec.getRecordNum());
