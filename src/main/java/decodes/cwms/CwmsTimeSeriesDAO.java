@@ -120,19 +120,29 @@ public class CwmsTimeSeriesDAO
             }
 
             String q = cwmsTsidQueryBase
-                + " WHERE a.TS_CODE = " + key;
+                + " WHERE a.TS_CODE = ?";
             // Don't need to add DB_OFFICE_ID because TS_CODE is unique.
 
             try
             {
-                long now = System.currentTimeMillis();
-                ResultSet rs = doQuery(q);
-                if (rs != null && rs.next())
-                {
-                    ret = rs2TsId(rs, true);
-                    ret.setReadTime(now);
-                    cache.put(ret);
+                final long now = System.currentTimeMillis();
+				ret = getSingleResult(q,  rs ->
+				{
+					try
+					{
+						CwmsTsId tmp = rs2TsId(rs, true);
+						tmp.setReadTime(now);
+						return tmp;
+					}
+					catch (Exception ex)
+					{
+						throw new SQLException("Unable to process data returned from database.", ex);
+					}
+				}, key);
 
+                if (ret != null)
+                {
+                    cache.put(ret);
                     return ret;
                 }
             }
@@ -168,7 +178,10 @@ public class CwmsTimeSeriesDAO
 
         DbKey siteId = DbKey.createDbKey(rs, 8);
         Site site = null;
-        try { site = siteDAO.getSiteById(siteId); }
+        try 
+		{
+			site = siteDAO.getSiteById(siteId);
+		}
         catch(NoSuchObjectException ex)
         {
             log.atWarn()
@@ -192,11 +205,16 @@ public class CwmsTimeSeriesDAO
         if (createDataType && dt.getId() == Constants.undefinedId)
         {
             DataType dbdt = null;
-            try { dbdt = dataTypeDAO.lookupDataType(param); }
-            catch(NoSuchObjectException ex) { dbdt = null; }
+            try
+			{
+				dbdt = dataTypeDAO.lookupDataType(param);
+			}
+            catch(NoSuchObjectException ex)
+			{
+				dbdt = null;
+			}
 
-            if (dbdt == null
-             || !dbdt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS))
+            if (dbdt == null || !dbdt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS))
             {
                 dataTypeDAO.writeDataType(dt);
             }
@@ -239,7 +257,7 @@ public class CwmsTimeSeriesDAO
         {
             if (displayName != null)
             {
-                debug3("Setting display name to '" + displayName + "'");
+                log.trace("Setting display name to '{}'", displayName);
                 ret.setDisplayName(displayName);
             }
             return ret;
@@ -275,17 +293,19 @@ public class CwmsTimeSeriesDAO
     private DbKey ts_id2ts_code(String tsid)
     {
         String q = "SELECT TS_CODE FROM CWMS_V_TS_ID "
-            + "WHERE upper(CWMS_TS_ID) = " + sqlString(tsid.toUpperCase());
+            + "WHERE upper(CWMS_TS_ID) = upper(?)";
+		ArrayList<Object> parameters = new ArrayList<>();
+		parameters.add(tsid);
         if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
         {
-            q = q + " AND upper(DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
+            q = q + " AND upper(DB_OFFICE_ID) = upper(?)";
+			parameters.add(dbOfficeId);
         }
 
         try
         {
-            ResultSet rs = doQuery(q);
-            if (rs != null && rs.next())
-                return DbKey.createDbKey(rs, 1);
+			return getSingleResultOr(q, rs -> DbKey.createDbKey(rs, "ts_code"),
+									 Constants.undefinedId, parameters.toArray(new Object[0]));
         }
         catch(Exception ex)
         {
@@ -326,8 +346,10 @@ public class CwmsTimeSeriesDAO
             cts.setIsExpanded();
         }
         StringBuffer q = new StringBuffer();
+		ArrayList<Object> parameters = new ArrayList<>();
         q.append("SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
-            + " WHERE TS_CODE = " + ts_code);
+            + " WHERE TS_CODE = ?");
+		parameters.add(ts_code);
 
         TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
         if (tsid == null)
@@ -348,29 +370,37 @@ public class CwmsTimeSeriesDAO
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
         if (from != null)
-            q.append(" AND DATE_TIME " + lower_check + db.sqlDate(from));
+		{
+            q.append(" AND DATE_TIME " + lower_check + " ?");
+			parameters.add(from);
+		}
         if (until != null)
-            q.append(" AND DATE_TIME " + upper_check + db.sqlDate(until));
+		{
+            q.append(" AND DATE_TIME " + upper_check + " ?");
+			parameters.add(until);
+		}
         q.append(" AND VALUE IS NOT INFINITE");
         try
         {
-            ResultSet rs = doQuery(q.toString());
-            int numAdded = 0;
-            while(rs != null && rs.next())
-            {
-                TimedVariable tv = null;
+			int numAdded[] = new int[1];
+			numAdded[0] = 0;
+			doQuery(q.toString(), rs ->
+			{
+				TimedVariable tv = null;
                 try
                 {
                     tv = rs2TimedVariable(rs);
                     if (tv == null)
-                        continue;
+					{
+                        return;
+					}
                 }
                 catch(SQLException ex)
                 {
                     log.atWarn()
                        .setCause(ex)
                        .log("Error getting data for time series=%s",cts.getNameString());
-                    continue;
+                    return;
                 }
 
                 // For computation processor, we never want to overwrite data
@@ -378,7 +408,7 @@ public class CwmsTimeSeriesDAO
                 Date d = tv.getTime();
                 if (!overwriteExisting && cts.findWithin(d.getTime()/1000L, 10) != null)
                 {
-                    continue;
+                    return;
                 }
 
                 if (tv != null)
@@ -395,10 +425,12 @@ public class CwmsTimeSeriesDAO
                         }
                     }
                     cts.addSample(tv);
-                    numAdded++;
-                }
-            }
-            return numAdded;
+                    numAdded[0]++;
+				}
+			},
+			parameters.toArray(new Object[0]));
+            
+            return numAdded[0];
         }
         catch(SQLException ex)
         {
@@ -428,7 +460,8 @@ public class CwmsTimeSeriesDAO
         int datesPerQuery = 300;
         int start = 0;
         int end = 0;
-        int numAdded = 0;
+        int numAdded[] = new int[1];
+		numAdded[0] = 0;
         StringBuilder sb = new StringBuilder();
         int size = queryTimes.size();
         Date times[] = new Date[size];
@@ -446,15 +479,16 @@ public class CwmsTimeSeriesDAO
                 start = end;
                 try
                 {
-                    ResultSet rs = doQuery(q);
-                    while (rs.next())
-                    {
-                        TimedVariable tv = null;
+					doQuery(q, rs ->
+					{
+						TimedVariable tv = null;
                         try
                         {
                             tv = rs2TimedVariable(rs);
                             if (tv == null)
-                                continue;
+							{
+                                return;
+							}
                         }
                         catch(SQLException ex)
                         {
@@ -462,7 +496,7 @@ public class CwmsTimeSeriesDAO
                             log.atWarn()
                                .setCause(ex)
                                .log(msg, q);
-                            continue;
+                            return;
                         }
 
                         if (tv != null)
@@ -472,7 +506,7 @@ public class CwmsTimeSeriesDAO
                             Date d = tv.getTime();
                             if (cts.findWithin(d.getTime()/1000L, 10) != null)
                             {
-                                continue;
+                                return;
                             }
 
                             if (unitConverter != null)
@@ -487,10 +521,9 @@ public class CwmsTimeSeriesDAO
                                 }
                             }
                             cts.addSample(tv);
-                            numAdded++;
+                            numAdded[0]++;
                         }
-                        numAdded++;
-                    }
+					});
                 }
                 catch(SQLException ex)
                 {
@@ -506,7 +539,7 @@ public class CwmsTimeSeriesDAO
                 sb.append(", ");
             }
         }
-        return numAdded;
+        return numAdded[0];
     }
 
     @Override
@@ -524,40 +557,45 @@ public class CwmsTimeSeriesDAO
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
         String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
-            + " WHERE TS_CODE = " + cts.getSDI()
+            + " WHERE TS_CODE = ?"
             + " and DATE_TIME = "
             +   "(select max(date_time) from CWMS_V_TSV "
-            +       "where TS_CODE = " + cts.getSDI()
-             +       " and date_time < " + db.sqlDate(refTime)
+            +       "where TS_CODE = ?"
+             +       " and date_time < ?"
             +         " AND VALUE IS NOT NULL "
-            +         " AND BITAND(QUALITY_CODE, "
-                        + CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
+            +         " AND BITAND(QUALITY_CODE, ?) = 0 "
             +    ")"
             + " AND VALUE IS NOT INFINITE";
 
+		ArrayList<Object> parameters = new ArrayList<>();
+		parameters.add(cts.getSDI());
+		parameters.add(cts.getSDI());
+		parameters.add(refTime);
+		parameters.add(CwmsFlags.QC_MISSING_OR_REJECTED);
+
         try
         {
-            ResultSet rs = doQuery(q);
-            if (!rs.next())
-                return null;  // There is no previous value.
-            TimedVariable tv = rs2TimedVariable(rs);
-
-            if (tv != null)
-            {
-                if (unitConverter != null)
-                {
-                    try
-                    {
-                        tv.setValue(unitConverter.convert(tv.getDoubleValue()));
-                    }
-                    catch (Exception ex)
-                    {
-                        log.warn("getPreviousValue: Error in unit conversion: ", ex);
-                    }
-                }
-                cts.addSample(tv);
-            }
-            return tv;
+			return getSingleResult(q, rs ->
+			{
+				TimedVariable tv = rs2TimedVariable(rs);
+				if (tv != null)
+				{
+					if (unitConverter != null)
+					{
+						try
+						{
+							tv.setValue(unitConverter.convert(tv.getDoubleValue()));
+						}
+						catch (Exception ex)
+						{
+							log.warn("getPreviousValue: Error in unit conversion: ", ex);
+						}
+					}
+					cts.addSample(tv);
+				}
+				return tv;
+			},
+			parameters.toArray(new Object[0]));
         }
         catch(SQLException ex)
         {
@@ -581,42 +619,44 @@ public class CwmsTimeSeriesDAO
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
         String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
-            + " WHERE TS_CODE = " + cts.getSDI()
+            + " WHERE TS_CODE = ?"
             + " and DATE_TIME = "
             +   "(select min(date_time) from CWMS_V_TSV "
-            +       "where TS_CODE = " + cts.getSDI()
-             +       " and date_time > " + db.sqlDate(refTime)
+            +       "where TS_CODE = ?"
+             +       " and date_time > ?"
             +         " AND VALUE IS NOT NULL "
-            +         " AND BITAND(QUALITY_CODE, "
-                        + CwmsFlags.QC_MISSING_OR_REJECTED + ") = 0 "
+            +         " AND BITAND(QUALITY_CODE, ?) = 0 "
             +    ")"
             + " AND VALUE IS NOT INFINITE";
+		ArrayList<Object> parameters = new ArrayList<>();
+		parameters.add(cts.getSDI());
+		parameters.add(cts.getSDI());
+		parameters.add(refTime);
+		parameters.add(CwmsFlags.QC_MISSING_OR_REJECTED);
 
         try
         {
-            ResultSet rs = doQuery(q);
-            if (!rs.next())
-            {
-                return null;  // There is no next value.
-            }
-
-            TimedVariable tv = rs2TimedVariable(rs);
-            if (tv != null)
-            {
-                if (unitConverter != null)
-                {
-                    try
-                    {
-                        tv.setValue(unitConverter.convert(tv.getDoubleValue()));
-                    }
-                    catch (Exception ex)
-                    {
-                        log.warn("getNextValue: Error in unit conversion: ", ex);
-                    }
-                }
-                cts.addSample(tv);
-            }
-            return tv;
+			return getSingleResult(q, rs ->
+			{
+				TimedVariable tv = rs2TimedVariable(rs);
+				if (tv != null)
+				{
+					if (unitConverter != null)
+					{
+						try
+						{
+							tv.setValue(unitConverter.convert(tv.getDoubleValue()));
+						}
+						catch (Exception ex)
+						{
+							log.warn("getNextValue: Error in unit conversion: ", ex);
+						}
+					}
+					cts.addSample(tv);
+				}
+				return tv;
+			},
+			parameters.toArray(new Object[0]));
         }
         catch(SQLException ex)
         {
@@ -813,8 +853,13 @@ public class CwmsTimeSeriesDAO
 
             try
             {
-                msecArray.add(tv.getTime().getTime());
-                valueArray.add(tv.getDoubleValue());
+				// get the required primitive values first so
+				// that errors will bypass the time getting added 
+				// and offsetting the data.
+				long tvTimeMs = tv.getTime().getTime();
+				double tvValue = tv.getDoubleValue();
+                msecArray.add(tvTimeMs);
+                valueArray.add(tvValue);
                 qualArray.add(qc);
             }
             catch(NoConversionException ex)
@@ -1044,35 +1089,32 @@ public class CwmsTimeSeriesDAO
         // it from doing individual reads for each site.
 //        siteDAO.fillCache();
 
-        String q = cwmsTsidQueryBase
-            + " WHERE upper(a.DB_OFFICE_ID) = " + sqlString(dbOfficeId.toUpperCase());
-
+        String q = cwmsTsidQueryBase + " WHERE upper(a.DB_OFFICE_ID) = upper(?)";
+		int origFetchSize = getFetchSize();
         try
         {
-            int origFetchSize = getFetchSize();
             int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
             if (tsidFetchSize > 0)
             {
                 setFetchSize(tsidFetchSize);
             }
-            ResultSet rs = doQuery(q);
-            setFetchSize(origFetchSize);
+            
 
-            ArrayList<TimeSeriesIdentifier> tsidList = new ArrayList<TimeSeriesIdentifier>();
-
-            while (rs != null && rs.next())
-            {
-                try
-                {
-                    tsidList.add(rs2TsId(rs, false));
-                }
-                catch (NoSuchObjectException ex)
+            List<TimeSeriesIdentifier> tsidList = getResults(q, rs ->
+			{
+				try
+				{
+					CwmsTsId tsId = rs2TsId(rs, false);
+					return tsId;
+				}
+				catch (NoSuchObjectException ex)
                 {
                     log.atWarn()
                        .setCause(ex)
                        .log("Error creating Cwms TSID -- skipped.");
-                }
-            }
+					return null;
+                }				
+			}, dbOfficeId);
 
             synchronized(cache)
             {
@@ -1092,6 +1134,10 @@ public class CwmsTimeSeriesDAO
                .log(msg);
             throw new DbIoException(msg, ex);
         }
+		finally
+		{
+			setFetchSize(origFetchSize);
+		}
         lastCacheReload = System.currentTimeMillis();
     }
 
@@ -1193,7 +1239,7 @@ public class CwmsTimeSeriesDAO
         // refresh the CWMS_V_TS_ID view, otherwise it can take up to 5 min.
         try
         {
-            doModify("call cwms_util.refresh_mv_cwms_ts_id()");
+            doModify("call cwms_util.refresh_mv_cwms_ts_id()", new Object[0]);
         }
         catch(Exception ex)
         {
@@ -1315,7 +1361,9 @@ public class CwmsTimeSeriesDAO
 
                 // Process the real-time records collected above.
                 for(TasklistRec rec : tasklistRecs)
+				{
                     processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
+				}
 
                 dataCollection.setTasklistHandle(rrhandle);
 
