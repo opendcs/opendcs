@@ -184,7 +184,8 @@ public class TopFrame extends JFrame
 			{
 				jf = pw.getPlatwizFrame();
 			}
-			else {
+			else
+			{
 				jf = TopFrame.instance();
 			}
 		}
