@@ -2,14 +2,12 @@ package decodes.syncgui;
 
 import javax.swing.UIManager;
 import javax.swing.JOptionPane;
-import java.awt.*;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.io.*;
-import java.util.Properties;
 
 import decodes.util.CmdLineArgs;
-import decodes.util.DecodesSettings;
+import ilex.gui.WindowUtility;
 import ilex.util.Logger;
 import ilex.util.StderrLogger;
 import ilex.util.EnvExpander;
@@ -33,16 +31,7 @@ public class SyncGui
 		else {
 			frame.validate();
 		}
-		//Center the window
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		Dimension frameSize = frame.getSize();
-		if (frameSize.height > screenSize.height) {
-			frameSize.height = screenSize.height;
-		}
-		if (frameSize.width > screenSize.width) {
-			frameSize.width = screenSize.width;
-		}
-		frame.setLocation((screenSize.width - frameSize.width) / 2, (screenSize.height - frameSize.height) / 2);
+		WindowUtility.center(frame);
 	}
 
 	public void run()
