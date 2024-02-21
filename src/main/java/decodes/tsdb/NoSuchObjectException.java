@@ -26,4 +26,9 @@ public class NoSuchObjectException extends TsdbException
 	{
 		super(msg);
 	}
+
+	public NoSuchObjectException(String msg, Throwable ex)
+	{
+		super(msg, ex);
+	}
 }
