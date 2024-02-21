@@ -119,18 +119,19 @@ public class CompProcTestIT extends AppTestBase
             getResource(config, "CompProc/Precip/input.tsimport"));
         try
         {
-           Thread.sleep(15000); // TODO: eliminate wait
+            final String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
+            BackgroundTsDbApp.waitForResult((t) ->
+            {
+                final String output = Programs.OutputTs(new File(logDir,"/outputTs.log"), config.getPropertiesFile(),
+                                          environment, exit,
+                                          "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
+                                          "regtest", tsids);
+                return golden.equals(output);
+            }, 1, TimeUnit.MINUTES, 15, TimeUnit.SECONDS);
         }
         catch(InterruptedException ex)
         {
             /* do nothing */
         }
-
-        final String output = Programs.OutputTs(new File(logDir,"/outputTs.log"), config.getPropertiesFile(), 
-                                          environment, exit,
-                                          "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
-                                          "regtest", tsids);
-        final String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
-        assertEquals(golden,output,"Output Doesn't match expected data.");
     }
 }
