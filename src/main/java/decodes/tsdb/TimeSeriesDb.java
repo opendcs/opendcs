@@ -1537,6 +1537,13 @@ public abstract class TimeSeriesDb
 	 */
 	public abstract TimeSeriesIdentifier makeEmptyTsId();
 
+	public TimeSeriesIdentifier makeTsId(String uniqueString) throws BadTimeSeriesException
+	{
+		TimeSeriesIdentifier tsId = this.makeEmptyTsId();
+		tsId.setUniqueString(uniqueString);
+		return tsId;
+	}
+
 //	/**
 //	 * Lists the Time Series Groups.
 //	 * @param groupType type of groups to list, null to list all groups.

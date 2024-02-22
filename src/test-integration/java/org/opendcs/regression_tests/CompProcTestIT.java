@@ -1,10 +1,12 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.fixtures.helpers.TestResources.getResource;
 
 import java.io.File;
+import java.sql.Connection;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -22,9 +24,16 @@ import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
+import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.CpCompDependsUpdater;
+import decodes.tsdb.DataCollection;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TimeSeriesIdentifier;
+import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.DaoBase;
 
 /**
  * CompProcTestIT tests importing time-series data.
@@ -146,5 +155,26 @@ public class CompProcTestIT extends AppTestBase
          * 
          * success condition, tasklist entries are removed.
          */
+        try(TimeSeriesDAI tsDAI = db.makeTimeSeriesDAO();
+            LoadingAppDAI laDAI = db.makeLoadingAppDAO();
+            DaoBase dao = new DaoBase(db,"test");
+            Connection c = db.getConnection();)
+        {
+            KeyGenerator keyGen = db.getKeyGenerator();
+            DbKey appKey = laDAI.lookupAppId("compproc_regtest");
+            TimeSeriesIdentifier tsIdInput = db.makeTsId("TESTSITE1.Stage.Inst.15Minutes.0.raw-nocomps");
+            DbKey inputKey = tsDAI.createTimeSeries(tsIdInput);
+
+            dao.doModify("insert into cp_comp_tasklist(record_num, loading_application_id, ts_id, num_value, date_time_loaded, sample_time, flags) "
+                       + "values (?,?,?,?,?,?,?)",keyGen.getKey("cp_comp_tasklist", c), appKey, inputKey, 1.0,new Date(), new Date(),0);
+
+            DataCollection data = tsDAI.getNewData(appKey);
+            assertTrue(data.isEmpty());
+            assertEquals(0,
+                         dao.getSingleResultOr("select count(ts_id) from cp_comp_tasklist where ts_id=?",
+                                             rs -> rs.getInt(1), -1,
+                                             inputKey),
+                         "Bad records were left in the tasklist.");
+        }
     }
 }
