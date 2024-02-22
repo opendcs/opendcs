@@ -103,9 +103,6 @@ public class CwmsTimeSeriesDAO
             }
         }
 
-        if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
-            reloadTsIdCache();
-
         synchronized(cache)
         {
             CwmsTsId ret = (CwmsTsId)cache.getByKey(key);
@@ -178,7 +175,7 @@ public class CwmsTimeSeriesDAO
 
         DbKey siteId = DbKey.createDbKey(rs, 8);
         Site site = null;
-        try 
+        try
 		{
 			site = siteDAO.getSiteById(siteId);
 		}
@@ -233,10 +230,6 @@ public class CwmsTimeSeriesDAO
     public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
         throws DbIoException, NoSuchObjectException
     {
-        if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
-        {
-            reloadTsIdCache();
-        }
 
         int paren = uniqueString.lastIndexOf('(');
         String displayName = null;
@@ -429,7 +422,7 @@ public class CwmsTimeSeriesDAO
 				}
 			},
 			parameters.toArray(new Object[0]));
-            
+
             return numAdded[0];
         }
         catch(SQLException ex)
@@ -854,7 +847,7 @@ public class CwmsTimeSeriesDAO
             try
             {
 				// get the required primitive values first so
-				// that errors will bypass the time getting added 
+				// that errors will bypass the time getting added
 				// and offsetting the data.
 				long tvTimeMs = tv.getTime().getTime();
 				double tvValue = tv.getDoubleValue();
@@ -1098,7 +1091,7 @@ public class CwmsTimeSeriesDAO
             {
                 setFetchSize(tsidFetchSize);
             }
-            
+
 
             List<TimeSeriesIdentifier> tsidList = getResults(q, rs ->
 			{
@@ -1113,7 +1106,7 @@ public class CwmsTimeSeriesDAO
                        .setCause(ex)
                        .log("Error creating Cwms TSID -- skipped.");
 					return null;
-                }				
+                }
 			}, dbOfficeId);
 
             synchronized(cache)
@@ -1271,13 +1264,6 @@ public class CwmsTimeSeriesDAO
     public DataCollection getNewData(DbKey applicationId)
         throws DbIoException
     {
-        // Reload the TSID cache every hour.
-        if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
-        {
-            lastTsidCacheRead = System.currentTimeMillis();
-            reloadTsIdCache();
-        }
-
         DataCollection dataCollection = new DataCollection();
 
         String failTimeClause =

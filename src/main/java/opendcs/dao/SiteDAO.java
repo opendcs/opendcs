@@ -140,9 +140,6 @@ public class SiteDAO
         if (DbKey.isNull(id))
             return null;
 
-        if (cache.size() == 0)
-            fillCache();
-
         Site ret = cache.getByKey(id);
         if (ret != null)
             return ret;
