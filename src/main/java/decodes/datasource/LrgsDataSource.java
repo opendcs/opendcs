@@ -228,7 +228,7 @@ public class LrgsDataSource extends DataSourceExec
         {
             password = null;
         }
-        else if (!(password.startsWith("${") && password.endsWith("}")))
+        else if (password != null && !(password.startsWith("${") && password.endsWith("}")))
         {
             Logger.instance()
                   .warning(
