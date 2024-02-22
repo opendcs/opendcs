@@ -1,5 +1,7 @@
 package org.opendcs.utils;
 
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -7,13 +9,14 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 
 import org.opendcs.spi.properties.PropertyValueProvider;
-
-import ilex.util.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
 
 public class Property
 {
     private static ServiceLoader<PropertyValueProvider> loader = ServiceLoader.load(PropertyValueProvider.class);
-
+    private static final Logger log = LoggerFactory.getLogger(getCallingClass());
     /**
      * Retrieve the real value of a property from a location that may be the value itself
      * or perhaps the environment as determined by a given provider.
@@ -105,7 +108,15 @@ public class Property
                     }
                 }
             }
-            Logger.instance().warning("Unable to find processor for variable: " + value + " origin value.");
+            /*
+             * We really only need this when debugging.
+             */
+            if (log.isTraceEnabled())
+            {
+                log.atTrace()
+                   .setCause(new Exception("Unable to find variable processor."))
+                   .log("Unable to find processor for variable: {} original value.", value);
+            }
         }
         return value;
     }
