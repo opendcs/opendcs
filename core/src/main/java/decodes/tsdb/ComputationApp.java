@@ -544,21 +544,7 @@ public class ComputationApp
 	 */
 	private void refillSiteCache()
 	{
-		info("Doing Periodic Cache Maintenance ...");
-		SiteDAI siteDAO = theDb.makeSiteDAO();
-		try
-		{
-			siteDAO.fillCache();
-		}
-		catch (DbIoException ex)
-		{
-			warning("Error filling site cache: " + ex);
-		}
-		finally
-		{
-			siteDAO.close();
-		}
-		
+		/* few apps will actually ever need everything. */
 	}
 
 	/**

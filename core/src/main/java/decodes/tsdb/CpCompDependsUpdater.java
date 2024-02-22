@@ -407,8 +407,6 @@ public class CpCompDependsUpdater
             TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
             )
         {
-            info("Refreshing TSID Cache...");
-            timeSeriesDAO.reloadTsIdCache();
             dumpTsidCache();
 
             info("Refreshing Computation Cache...");
