@@ -4,6 +4,11 @@
 package decodes.routing;
 
 import java.util.*;
+
+import org.slf4j.LoggerFactory;
+
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.*;
 import java.net.InetAddress;
 
@@ -46,6 +51,7 @@ Each routing spec is intended to run in its own thread.
 public class RoutingSpecThread
 	extends Thread
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
 	/** The routing spec record that this thread is executing. */
 	protected RoutingSpec rs;
 
@@ -1074,18 +1080,15 @@ public class RoutingSpecThread
 				msg = msg + "(null routingspec)";
 			else if (rs.dataSource == null)
 				msg = msg + "(null datasource)";
-			else 
+			else
 				msg = msg + rs.dataSource.getName();
-			msg = msg + "': " + e.toString();
-			log(Logger.E_FAILURE, msg);
-			if (!(e instanceof DataSourceException))
-			{
-				System.err.println(msg);
-				e.printStackTrace(System.err);
-			}
+			log.atError()
+			   .setCause(e)
+			   .log(msg);
+
 			done = true;
 			currentStatus = "ERR-SourceInit";
-			
+
 			return;
 		}
 
