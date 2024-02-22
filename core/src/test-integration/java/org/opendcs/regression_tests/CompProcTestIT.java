@@ -14,11 +14,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
@@ -147,6 +149,7 @@ public class CompProcTestIT extends AppTestBase
     @Test
     @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
     @ComputationConfigurationRequired({"shared/loading-apps.xml", "CompProc/Precip/comps.xml"})
+    @EnableIfTsDb(impl = "OpenDCS-Postgres")
     public void test_bad_recs_cleared() throws Exception
     {
         /**
