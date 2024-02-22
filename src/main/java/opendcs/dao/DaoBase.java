@@ -33,8 +33,6 @@ import opendcs.util.functional.StatementConsumer;
 import opendcs.util.functional.ThrowingFunction;
 import opendcs.util.sql.WrappedConnection;
 
-import static org.mockito.Answers.values;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,10 +42,8 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Supplier;
 
 import decodes.db.Constants;
-import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.util.DecodesException;
