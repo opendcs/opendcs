@@ -133,8 +133,23 @@ public class CwmsSqlDatabaseIO
 
 		String password = null;
 
+		String afn = DecodesSettings.instance().DbAuthFile;
+		Properties credentials = null;
+		try
+		{
+			credentials = AuthSourceService.getFromString(afn)
+											.getCredentials();
+			_dbUser = credentials.getProperty("username");
+			password = credentials.getProperty("password");
+		}
+		catch(AuthException ex)
+		{
+			Logger.instance().warning("Cannot read auth source. If this is from a GUI app please update DbAuthFile in " +
+					" user.properties, decodes.properties, or your .profile to 'DbAuthFile=gui-auth-source:<Prompt>'" +
+					" where <Prompt> is the title to the login dialog.");
+		}
 		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
-		if (DecodesInterface.isGUI())
+		if (credentials == null && DecodesInterface.isGUI())
 		{
 			try 
 			{
@@ -160,25 +175,11 @@ public class CwmsSqlDatabaseIO
 				throw new DatabaseException(msg);
 			}
 		}
-		else // Non-GUI can try auth file mechanism.
+		if (_dbUser == null)
 		{
-			Logger.instance().info("This is not a GUI app.");
-			
-			// Retrieve username and password for database
-			String authFileName = DecodesSettings.instance().DbAuthFile;
-			try
-			{
-				AuthSource as = AuthSourceService.getFromString(authFileName);
-				Properties props = as.getCredentials();
-				_dbUser = props.getProperty("username");
-				password = props.getProperty("password");
-			}
-			catch(AuthException ex)
-			{
-				String msg = "Cannot process credential information provided";				
-				throw new DatabaseConnectException(msg,ex);
-			}
+			throw new DatabaseException("Unable to retrieve any credentials.");
 		}
+
 		if( conInfo == null)
 		{
 			conInfo = new CwmsConnectionInfo();

@@ -73,7 +73,11 @@
 package decodes.tsdb;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Properties;
+
+import javax.swing.JOptionPane;
 
 import org.opendcs.authentication.AuthSourceService;
 
@@ -244,7 +248,12 @@ public abstract class TsdbAppTemplate
 			}
 			catch(BadConnectException ex)
 			{
+				JOptionPane.showMessageDialog(null,ex.getLocalizedMessage());
 				warning("Cannot connect to TSDB: " + ex);
+				StringWriter sw = new StringWriter();
+				PrintWriter pw = new PrintWriter(sw);
+				ex.printStackTrace(pw);
+				warning(sw.toString());
 				// CWMS-10402 don't keep trying if the failure was because the
 				// app name is invalid.
 				databaseFailed = !ex.toString().contains("Cannot determine app ID");
@@ -397,25 +406,20 @@ public abstract class TsdbAppTemplate
 		}
 		Properties credentials = null;
 		String nm = appNameArg.getValue();
-		if (!DecodesInterface.isGUI() || !theDb.isCwms())
+		// Get authorization parameters.
+		String afn = DecodesSettings.instance().DbAuthFile;
+		try
 		{
-			// Get authorization parameters.
-			String afn = DecodesSettings.instance().DbAuthFile;
-			try
-			{
-				credentials = AuthSourceService.getFromString(afn)
-											   .getCredentials();
-			}
-			catch(AuthException ex)
-			{
-				authFileEx(afn, ex);
-				throw new BadConnectException("Cannot read auth file: " + ex);
-			}
-	
-			// Connect to the database!
+			credentials = AuthSourceService.getFromString(afn)
+											.getCredentials();
 		}
-		// Else this is a CWMS GUI -- user will be prompted for credentials
-		// Leave the property set empty.
+		catch(AuthException ex)
+		{
+			authFileEx(afn, ex);
+			throw new BadConnectException("Cannot read auth file: " + ex);
+		}
+
+		// Connect to the database!
 		
 		setAppId(theDb.connect(nm, credentials));
 		
@@ -457,7 +461,7 @@ public abstract class TsdbAppTemplate
 		String msg = "Cannot read DB auth from file '" + afn + "': " + ex;
 		System.err.println(msg);
 		Logger.instance().failure(msg);
-try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); }
+		try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); }
 	}
 	
 	protected void badConnect(String appName, BadConnectException ex)
