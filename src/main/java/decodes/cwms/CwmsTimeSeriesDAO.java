@@ -392,7 +392,7 @@ public class CwmsTimeSeriesDAO
                 {
                     log.atWarn()
                        .setCause(ex)
-                       .log("Error getting data for time series=%s",cts.getNameString());
+                       .log("Error getting data for time series='{}'",cts.getNameString());
                     return;
                 }
 
@@ -485,7 +485,7 @@ public class CwmsTimeSeriesDAO
                         }
                         catch(SQLException ex)
                         {
-                            String msg= "Error reading data with query '%s'";
+                            String msg= "Error reading data with query '{}'";
                             log.atWarn()
                                .setCause(ex)
                                .log(msg, q);
@@ -521,7 +521,7 @@ public class CwmsTimeSeriesDAO
                 catch(SQLException ex)
                 {
 
-                    String msg= "Error reading data with query '%s'";
+                    String msg= "Error reading data with query '{}'";
                     log.atWarn()
                        .setCause(ex)
                        .log(msg, q);
@@ -592,7 +592,7 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            String msg= "Error reading data with query '%s'";
+            String msg= "Error reading data with query '{}'";
             throw new DbIoException(String.format(msg,q), ex);
         }
     }
@@ -702,7 +702,7 @@ public class CwmsTimeSeriesDAO
         }
         else
         {
-            log.trace("Will write time series {}" + tsId.getUniqueString() + " with unit '{}'",
+            log.trace("Will write time series {} with unit '{}'",
                       tsId.getUniqueString(),  unitsAbbr);
         }
 
@@ -712,7 +712,7 @@ public class CwmsTimeSeriesDAO
         boolean overrideProtection = false;
 
         // We use the RMA Java interface to write to DB
-        try (Connection conn = getConnection();)
+        try (Connection conn = getConnection())
         {
             CwmsDbTs cwmsDbTs = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, conn);
 
@@ -782,7 +782,7 @@ public class CwmsTimeSeriesDAO
         }
         catch(SQLException ex)
         {
-            String msg = "Error in cwmsTsJdbc.store for '%s'";
+            String msg = "Error in cwmsTsJdbc.store for '{}'";
             log.atError()
                .setCause(ex)
                .log(msg, path);
@@ -886,7 +886,7 @@ public class CwmsTimeSeriesDAO
         String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        try (Connection conn = getConnection();)
+        try (Connection conn = getConnection())
         {
             log.debug("Calling deleteTs for tsid '{}' for date range: {} to {}",
                       tsid, sdf.format(from), sdf.format(until));
@@ -1232,6 +1232,7 @@ public class CwmsTimeSeriesDAO
         // refresh the CWMS_V_TS_ID view, otherwise it can take up to 5 min.
         try
         {
+            log.warn("calling legacy database method: 'cwms_util.refresh_mv_cwms_ts_id()'");
             doModify("call cwms_util.refresh_mv_cwms_ts_id()", new Object[0]);
         }
         catch(Exception ex)
