@@ -72,8 +72,10 @@ public class DecodesSettings
     /** Timezone for date/time stamps in the SQL database. */
     public String sqlTimeZone = "UTC";
 
-    /** Name of file containing encrypted username & password */
-    public String DbAuthFile = "$DCSTOOL_USERDIR/.decodes.auth";
+    /** Name of file containing encrypted username & password
+     * defaults to null as it is not used in certain implementations, such as XML.
+    */
+    public String DbAuthFile = null;
 
     /** Date format to use for parsing dates read from the database. */
     public String SqlReadDateFormat = "yyyy-MM-dd HH:mm:ss";

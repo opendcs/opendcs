@@ -143,7 +143,7 @@ public class DecodesSetupFrame
             southButtonPanel.add(jb, null);
         this.getContentPane().add(southButtonPanel, BorderLayout.SOUTH);
 
-        decodesPropsPanel = new DecodesPropsPanel(this, labels, genericLabels);
+        decodesPropsPanel = new DecodesPropsPanel(this, labels, genericLabels, this.profile);
         this.getContentPane().add(decodesPropsPanel, BorderLayout.CENTER);
     }
 

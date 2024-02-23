@@ -1,15 +1,18 @@
 package decodes.launcher;
 
-import java.util.*;
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.awt.*;
+import java.awt.event.*;
+import java.io.IOException;
+import java.util.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
-import java.awt.event.*;
-
+import ilex.util.AsciiUtil;
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.UserAuthFile;
 import ilex.gui.LoginDialog;
@@ -17,15 +20,22 @@ import decodes.gui.PropertiesEditPanel;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
 
+import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.spi.authentication.AuthSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DecodesPropsPanel extends JPanel
 {
-    private static ResourceBundle labels;
-    private static ResourceBundle genericLabels;
+    private final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private final ResourceBundle labels;
+    private final ResourceBundle genericLabels;
     String editDbTypes[] = { "XML", "SQL", "NWIS", "CWMS", "OPENTSDB", "HDB"};
-    JComboBox editDbTypeCombo = new JComboBox(editDbTypes);
+    JComboBox<String> editDbTypeCombo = new JComboBox<>(editDbTypes);
     JTextField editDbLocationField = new JTextField(50);
     private PropertiesEditPanel propsEditPanel = null;
     private Properties origProps = new Properties();
+    final Profile profile;
 
     JButton dbPasswordButton;
 
@@ -49,8 +59,9 @@ public class DecodesPropsPanel extends JPanel
 
     private TopFrame parent;
 
-    public DecodesPropsPanel(TopFrame parent, ResourceBundle labels, ResourceBundle genericLabels)
+    public DecodesPropsPanel(TopFrame parent, ResourceBundle labels, ResourceBundle genericLabels, Profile profile)
     {
+        this.profile = profile;
         this.parent = parent;
         this.labels = labels;
         this.genericLabels = genericLabels;
@@ -63,11 +74,13 @@ public class DecodesPropsPanel extends JPanel
         {
             usedFieldsArray.add(pos,usedfields[pos]);
         }
-        try {
+        try
+        {
             jbInit();
         }
-        catch(Exception e) {
-            e.printStackTrace();
+        catch(Exception ex)
+        {
+            log.error("Unable to initialize Properties Panel.", ex);
         }
     }
 
@@ -80,13 +93,7 @@ public class DecodesPropsPanel extends JPanel
         this.add(editDbPanel, BorderLayout.NORTH);
         editDbPanel.setBorder(new TitledBorder(
             labels.getString("DecodesPropsPanel.editableDatabase")));
-        editDbTypeCombo.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
-                editDbTypeComboSelected();
-            }
-        });
+        editDbTypeCombo.addActionListener(e -> editDbTypeComboSelected());
         editDbPanel.add(
             new JLabel(labels.getString("DecodesPropsPanel.type")),
                 new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
@@ -109,28 +116,14 @@ public class DecodesPropsPanel extends JPanel
                 GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                 new Insets(4, 0, 4, 20), 0, 0));
 
-        dbPasswordButton.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
-                dbPasswordButtonPressed();
-            }
-        });
+        dbPasswordButton.addActionListener(e -> dbPasswordButtonPressed());
 
         propsEditPanel = new PropertiesEditPanel(origProps, false);
         propsEditPanel.setBorder(new TitledBorder(
             labels.getString("DecodesPropsPanel.preferences")));
         this.add(propsEditPanel, BorderLayout.CENTER);
 
-        editDbTypeCombo.addActionListener(
-            new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    editDbTypeChanged();
-                }
-            });
+        editDbTypeCombo.addActionListener(e -> editDbTypeChanged());
     }
 
     protected void editDbTypeChanged()
@@ -208,28 +201,89 @@ public class DecodesPropsPanel extends JPanel
 
     private void dbPasswordButtonPressed()
     {
-        LoginDialog dlg = new LoginDialog(parent,
-                labels.getString("DecodesPropsPanel.loginUserInfoTitle"));
-        parent.launchDialog(dlg);
-        if (dlg.isOK())
+        try
         {
-            String afn = propsEditPanel.getProperty("DbAuthFile");
-            if (afn == null)
-                afn = "$HOME/.decodes.auth";
-            afn = EnvExpander.expand(afn);
-            UserAuthFile uaf = new UserAuthFile(afn);
+            DecodesSettings settingsPanel = new DecodesSettings();
+            DecodesSettings settingsProfile = DecodesSettings.fromProfile(profile);
+            settingsPanel.loadFromProperties(origProps); // instead of the profile use the current pro
+            if (!settingsPanel.DbAuthFile.equalsIgnoreCase(settingsProfile.DbAuthFile))
+            {
+                throw new InvalidStateException("nomatch");
+            }
+            else if (settingsProfile.DbAuthFile == null)
+            {
+                throw new InvalidStateException("noauth");
+            }
             try
             {
-                Logger.instance().info("Writing encrypted daemon password to '" + afn + "'");
-                uaf.write(dlg.getUserName(), new String(dlg.getPassword()));
+                AuthSource as = AuthSourceService.getFromString(settingsProfile.DbAuthFile);
+                if (!as.canWrite())
+                {
+                    throw new InvalidStateException("nowrite");
+                }
             }
-            catch(Exception ex)
+            catch (AuthException ex)
             {
-                parent.showError(
-                    LoadResourceBundle.sprintf(
-                    labels.getString("DecodesPropsPanel.cannotSavePassErr"),
-                    afn) + ex);
+                if (!ex.getLocalizedMessage().contains("Unable to read"))
+                {
+                    throw ex; // most likely the file doesn't exist yet.
+                }
             }
+            LoginDialog dlg = new LoginDialog(parent,
+                labels.getString("DecodesPropsPanel.loginUserInfoTitle"));
+            parent.launchDialog(dlg);
+            if (dlg.isOK())
+            {
+
+                final String afn = EnvExpander.expand(settingsProfile.DbAuthFile);
+                final UserAuthFile uaf = new UserAuthFile(afn);
+                try
+                {
+                    log.info("Writing encrypted daemon password to '{}'", afn);
+                    uaf.write(dlg.getUserName(), new String(dlg.getPassword()));
+                }
+                catch(Exception ex)
+                {
+                    parent.showError(
+                        LoadResourceBundle.sprintf(
+                        labels.getString("DecodesPropsPanel.cannotSavePassErr"),
+                        afn) + ex);
+                }
+            }
+        }
+        catch (AuthException ex)
+        {
+            String msg = "There was an error processing the authentication settings." + ex.getLocalizedMessage();
+            log.error("Unable to process DbAuthFile property", ex);
+            JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
+        }
+        catch (IOException ex)
+        {
+            String msg = "The current settings have not been saved to disk. Please save the properties to disk first and then set the password.";
+            JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
+        }
+        catch (InvalidStateException ex)
+        {
+            final String exMsg = ex.getLocalizedMessage();
+            String msg;
+            if (exMsg.equals("nomatch"))
+            {
+                msg = "The active settings and on-disk properties do not match. Please save the properties to disk first and then set the password.";
+            }
+            else if(exMsg.equalsIgnoreCase("noauth"))
+            {
+                msg = "This profile does not require authentication.";
+            }
+            else if (ex.getLocalizedMessage().equals("nowrite"))
+            {
+                msg = "The configured auth settings do not support editing.";
+            }
+            else
+            {
+                msg = "Error processing information. See log";
+                log.error("Unable to process auth file conditions", ex);
+            }
+            JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
