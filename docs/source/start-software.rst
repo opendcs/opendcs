@@ -132,7 +132,7 @@ If a java version (at least 1.8.##) is returned, then java is installed.
 Proceed with installing OpenDCS.
  
 If nothing is returned or the version is older then 1.8, then install
-the latest version from https://adoptium.net/temurin/releases/ . 
+the 1.8 or up to java 17 from https://adoptium.net/temurin/releases/ .
 
 Where can I find releases of OpenDCS
 ------------------------------------
@@ -407,7 +407,7 @@ Time Series can filtered by pathname parts, or Descriptions,
 or Database Keys.  This is one method to identify the Key for
 a given time series in the database. 
 
-Additional information can be retreived about each time series
+Additional information can be retrieved about each time series
 such as number of values, the min and max values, and period of 
 record.  
 
@@ -439,3 +439,30 @@ computations together users can better organize computations and keep
 track of dependencies. 
 
 **Algorithms**
+
+
+**Logging**
+
+All of the application write to a log. The default name is the internal name of the application or "gui.log" for the 
+GUI application. The file on disk can be control in each application with the `-l filename.ext` command line switch
+if run from a terminal.
+
+The logging system has recently (7.0.13, which is not released) be updated to make use of newer, standard, technologies and exposes more information
+from the 3rd party libraries we use to easy development.
+
+You create a file named logfilter.txt in the directory $DCSTOOL_USERDIR, that will be picked up and used to filter out messages that aren't
+needed or wanted. For example most CWMS users will want to have a file of at least the following:
+
+   org.jooq
+
+As not filtering that out can cause excessive messages in the log.
+
+.. warning::
+   
+   DCSTOOL_USERDIR is not fully utilized in windows yet. We are planning to correct that behavior with the release of 7.0.13.
+   As such users should currently only expect this mechanism to work in unix style environment
+
+.. note:: 
+   This mechanism is intentionally limited. It is a goal of the project to switch the current custom logging backend
+   to an available standard, such as logback or just java.util.logging which will provide the end-user with better
+   options for log filtering and storage.
