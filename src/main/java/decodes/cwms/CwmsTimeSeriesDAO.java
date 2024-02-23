@@ -1093,20 +1093,20 @@ public class CwmsTimeSeriesDAO
             }
 
 
-            List<TimeSeriesIdentifier> tsidList = getResults(q, rs ->
+            List<TimeSeriesIdentifier> tsidList = getResultsIgnoringNull(q, rs ->
 			{
+                CwmsTsId retVal = null;
 				try
 				{
-					CwmsTsId tsId = rs2TsId(rs, false);
-					return tsId;
+					retVal = rs2TsId(rs, false);
 				}
 				catch (DbIoException | NoSuchObjectException ex)
                 {
                     log.atWarn()
                        .setCause(ex)
                        .log("Error creating Cwms TSID -- skipped.");
-					return null;
                 }
+                return retVal;
 			}, dbOfficeId);
 
             synchronized(cache)
@@ -1427,13 +1427,11 @@ public class CwmsTimeSeriesDAO
                     return;
                 }
 
-                try
-                {
-                    dataCollection.addTimeSeries(cts);
-                }
-                catch(decodes.tsdb.DuplicateTimeSeriesException ex)
-                { // won't happen -- already verified it's not there.
-                }
+                dataCollection.addTimeSeries(cts);
+            }
+            catch(decodes.tsdb.DuplicateTimeSeriesException ex)
+            { // won't happen -- already verified it's not there.
+                log.trace("An exception has been thrown that shouldn't have been. Please inform the project.", ex);
             }
             catch(NoSuchObjectException ex)
             {
@@ -1443,9 +1441,6 @@ public class CwmsTimeSeriesDAO
                     badRecs.add(rec.getRecordNum());
                 }
                 return;
-            }
-            finally
-            {
             }
         }
         else
