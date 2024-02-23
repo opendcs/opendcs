@@ -44,6 +44,12 @@ those PDFs was migrated to the Developer Documentation section.
    :maxdepth: 1
    :caption: Developer Documentation
    
+   Developer Documentation <./dev-docs.rst>
+   
+.. toctree:: 
+   :maxdepth: 1
+   :caption: Legacy Documentation
+
    Quick Start <./legacy-quick-start.rst>
    Install Guide <./legacy-install-guide.rst>
    LRGS Guide <./legacy-lrgs-userguide.rst>
@@ -54,5 +60,5 @@ those PDFs was migrated to the Developer Documentation section.
    TimeSeriesDatabase <./legacy-tsdb.rst>
    Alarms <./legacy-alarms.rst>
    CWMS Interface <./legacy-cwms-interface.rst>
-   Developer Documentation <./legacy-dev-docs.rst>
+   
    
