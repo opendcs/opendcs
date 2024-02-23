@@ -178,7 +178,8 @@ public class ComputationApp
 	private int checkTimedCompsSec = 600;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
-	private long compRunWaitTime = 1000L;
+	private long compRunWaitTime = 30000L; // wait 30 seconds between runs by default. Drastically reduces system load
+										   // especially with multiple instances pointing to a single database.
 	
 	private static ComputationApp _instance = null;
 	public static ComputationApp instance() { return _instance; }
