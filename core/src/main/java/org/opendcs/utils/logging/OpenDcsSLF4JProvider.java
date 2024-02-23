@@ -5,8 +5,11 @@ import org.slf4j.IMarkerFactory;
 import org.slf4j.Logger;
 import org.slf4j.helpers.BasicMDCAdapter;
 import org.slf4j.helpers.BasicMarkerFactory;
+import org.slf4j.helpers.NOPLogger;
 import org.slf4j.spi.MDCAdapter;
 import org.slf4j.spi.SLF4JServiceProvider;
+
+import ilex.util.EnvExpander;
 
 public class OpenDcsSLF4JProvider implements SLF4JServiceProvider
 {
@@ -42,12 +45,20 @@ public class OpenDcsSLF4JProvider implements SLF4JServiceProvider
     {
         mdc = new BasicMDCAdapter();
         markerFactory = new BasicMarkerFactory();
+        final LogFilter filter = new LogFilter(EnvExpander.expand("${DCSTOOL_USERDIR}/logfilter.txt"));
         loggerFactory = new ILoggerFactory()
         {
             @Override
             public Logger getLogger(String arg)
             {
-                return new SLF4JLogger(arg,ilex.util.Logger.instance());
+                if  (filter.canLog(arg))
+                {
+                    return new SLF4JLogger(arg,ilex.util.Logger.instance());
+                }
+                else
+                {
+                    return NOPLogger.NOP_LOGGER;
+                }
             }
         };
     }

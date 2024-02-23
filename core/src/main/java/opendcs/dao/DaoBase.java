@@ -527,7 +527,15 @@ public class DaoBase
 		return result[0];
 	}
 
-
+	/**
+	 * Perform a repeated SQL query with the given list of values and a bindingFunction
+	 * @param <ValueType> Object we are binding to the query
+	 * @param query The query to use repeatedly
+	 * @param bindingFunction A function that takes the ValueType and creates a Object[] list in bind variable order
+	 * @param values List of values that will be used.
+	 * @param batchSize How many elements of the list to execute for each batch.
+	 * @throws SQLException
+	 */
 	public <ValueType> void doModifyBatch(String query, ThrowingFunction<ValueType, Object[] , SQLException> bindingFunction, List<ValueType> values, int batchSize) throws SQLException
 	{
 		withStatement(query, (stmt) -> {
@@ -607,16 +615,71 @@ public class DaoBase
 	}
 
 	/**
+	 * A query that may return more than one result be we only care about the first one.
+	 * 
+	 * @param <R> The return type
+	 * @param query query that may return more than 1 result
+	 * @param consumer function to take the ResultSet and process it into a Object of type R (or null)
+	 * @param parameters variables to bind into the query.
+	 * @return
+	 * @throws SQLException
+	 */
+	public <R> R getFirstResult(String query, ResultSetFunction<R> consumer, Object... parameters) throws SQLException
+	{
+		final ArrayList<R> result = new ArrayList<>();
+		withStatement(query,(stmt)->{
+			try(ResultSet rs = stmt.executeQuery())
+			{
+				if (rs.next())
+				{
+					result.add(consumer.accept(rs));
+					return;
+				}
+			}
+		},parameters);
+		if (result.size() == 1)
+		{
+			return result.get(0);
+		}
+		else
+		{
+			return null;
+		}
+	}
+
+	/**
 	 * Given a query string and bind variables execute the query.
 	 * The provided function should process the single valid result set and return an object R.
-	 * Each return will be added to a list and returned.
+	 * Each return will be added to a list and returned, including null.
+	 *
 	 * @param query SQL query with ? for bind vars.
 	 * @param consumer Function that Takes a ResultSet and returns an instance of R
 	 * @param parameters arg list of query inputs
 	 * @returns Object of type R determined by the caller.
 	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
 	 */
-	public <R> List<R> getResults(String query, ResultSetFunction<R> consumer, Object... parameters ) throws SQLException
+	public <R> List<R> getResults(String query, ResultSetFunction<R> consumer, Object... parameters) throws SQLException
+	{
+		return getResults(query, consumer, false, parameters);
+	}
+
+	/**
+	 * Given a query string and bind variables execute the query.
+	 * The provided function should process the single valid result set and return an object R.
+	 * Each return will be added to a list and returned. Null values returned will not be added to the list.
+	 *
+	 * @param query SQL query with ? for bind vars.
+	 * @param consumer Function that Takes a ResultSet and returns an instance of R
+	 * @param parameters arg list of query inputs
+	 * @returns Object of type R determined by the caller.
+	 * @throws SQLException any goes during during the creation, execution, or processing of the query.
+	 */
+	public <R> List<R> getResultsIgnoringNull(String query, ResultSetFunction<R> consumer, Object... parameters) throws SQLException
+	{
+		return getResults(query, consumer, true, parameters);
+	}
+
+	private <R> List<R>  getResults(String query, ResultSetFunction<R> consumer, boolean ignoreNull, Object... parameters) throws SQLException
 	{
 		final ArrayList<R> result = new ArrayList<>();
 		withStatement(query,(stmt)->{
@@ -624,7 +687,11 @@ public class DaoBase
 			{
 				while(rs.next())
 				{
-					result.add(consumer.accept(rs));
+					R tmp = consumer.accept(rs);
+					if (tmp != null || ignoreNull == false)
+					{
+						result.add(tmp);
+					}
 				}
 			}
 		},parameters);

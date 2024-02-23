@@ -1837,21 +1837,25 @@ public abstract class TimeSeriesDb
 	 * Passed a time series with valid meta data (tsid).
 	 * Determine the computations that depend on this time series.
 	 * Add these to the internal dependency list in the time-series.
-	 * @param cts
+	 * @param cts The timeseries to add computation dependencies to
+	 * @param loadingAppId which instance of compproc
+	 * @param dao The current Dao to handle the query
 	 * @return
 	 */
-	public int fillDependentCompIds(CTimeSeries cts, DbKey loadingAppId, TimeSeriesDAI dao)
+	public int fillDependentCompIds(CTimeSeries cts, DbKey loadingAppId, DaoBase dao)
 	{
 		cts.getDependentCompIds().clear();
 		String q = "select a.computation_id from cp_comp_depends a, cp_computation b"
-			+ " where a." + cpCompDepends_col1 + " = " + cts.getTimeSeriesIdentifier().getKey()
+			+ " where a." + cpCompDepends_col1 + " = ?"
 			+ " and a.computation_id = b.computation_id"
-			+ " and b.loading_application_id = " + loadingAppId;
+			+ " and b.loading_application_id = ?";
 		try
 		{
-			ResultSet rs = dao.doQuery(q);
-			while (rs.next())
+			dao.doQuery(q, rs ->
+			{
 				cts.addDependentCompId(DbKey.createDbKey(rs, 1));
+			},
+			cts.getTimeSeriesIdentifier().getKey(), loadingAppId);
 		}
 		catch(Exception ex)
 		{
