@@ -186,7 +186,7 @@ CREATE TABLE CP_COMP_TASKLIST
 	SAMPLE_TIME BIGINT NOT NULL,
 	DELETE_FLAG VARCHAR(5) DEFAULT 'FALSE' NOT NULL,
 	FLAGS INT NOT NULL,
-	SOURCE_ID INT , -- TODO: move back to not null after test cleanup.
+	SOURCE_ID INT NOT NULL,
 	-- Null for normal data, if a comp fails, it remains in the tasklist for a finite amount of time.
 	FAIL_TIME BIGINT,
 	PRIMARY KEY (RECORD_NUM)
