@@ -63,7 +63,7 @@ public class CwmsTimeSeriesDAO
     implements TimeSeriesDAI
 {
     private final Logger log = LoggerFactory.getLogger(getCallingClass());
-    protected static DbObjectCache<TimeSeriesIdentifier> cache =
+    protected static final  DbObjectCache<TimeSeriesIdentifier> cache =
         new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
     protected SiteDAI siteDAO = null;
     protected DataTypeDAI dataTypeDAO = null;
@@ -73,7 +73,6 @@ public class CwmsTimeSeriesDAO
     private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
             + "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
             + "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a";
-    private long lastTsidCacheRead = 0L;
     String getMinStmtQuery = null, getTaskListStmtQuery = null;
 
 
@@ -1111,6 +1110,7 @@ public class CwmsTimeSeriesDAO
 
             synchronized(cache)
             {
+                cache.clear();
                 for(TimeSeriesIdentifier tsid: tsidList)
                 {
                     cache.put(tsid);
