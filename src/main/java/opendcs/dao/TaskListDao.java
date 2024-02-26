@@ -1,6 +1,7 @@
 package opendcs.dao;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -46,6 +47,14 @@ public abstract class TaskListDao extends DaoBase
      */
     public void deleteEntries(Collection<TaskListEntry> entries) throws DbIoException
     {
-        doModifyBatch("delete from CP_COMP_TASKLIST where RECORD_NUM = ?", e -> e.getRecordNum(), entries, 250);
+        try
+        {
+            doModifyBatch("delete from CP_COMP_TASKLIST where RECORD_NUM = ?", e ->
+                new Object[] {e.getRecordNum()}, entries, 250);
+        }
+        catch (SQLException ex)
+        {
+            throw new DbIoException("Unable to delete collection of records.", ex);
+        }
     }
 }
