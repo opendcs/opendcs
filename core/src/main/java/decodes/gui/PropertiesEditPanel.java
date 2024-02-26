@@ -306,6 +306,7 @@ public class PropertiesEditPanel extends JPanel
 		{
 			ptm.setPropAt(modelrow, res);
 			changesMade = true;
+			saveChanges();
 		}
 		
 		if (propSpec != null && propSpec.isDynamic())
