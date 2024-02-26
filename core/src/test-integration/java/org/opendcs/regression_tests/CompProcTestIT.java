@@ -149,7 +149,8 @@ public class CompProcTestIT extends AppTestBase
     @Test
     @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
     @ComputationConfigurationRequired({"shared/loading-apps.xml", "CompProc/Precip/comps.xml"})
-    @EnableIfTsDb(impl = "OpenDCS-Postgres")
+    @Disabled("The tasklist table is not mapped to DAO that make this easy to run cross implementation. Remove the sourceid not null constraint on cp_comp_tasklist"
+            + " and you can run it with OpenDCS Postgres implementation. Future work will enable this test.")
     public void test_bad_recs_cleared() throws Exception
     {
         /**
