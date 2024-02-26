@@ -35,16 +35,9 @@ public class OpenHydroDbTaskListDao extends TaskListDao
     }
 
     @Override
-    public List<TaskListEntry> getEntriesFor(DbKey appId, int amount) throws DbIoException
+    public List<TaskListEntry> getEntriesFor(DbKey appId, int amount, boolean includeFailed) throws DbIoException
     {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getEntriesFor'");
-    }
-
-    @Override
-    public void deleteEntries(Collection<TaskListEntry> entries) throws DbIoException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteEntries'");
     }
 }
