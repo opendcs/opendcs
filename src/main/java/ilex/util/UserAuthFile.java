@@ -70,11 +70,18 @@
 package ilex.util;
 
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
 import org.opendcs.spi.authentication.AuthSource;
+
+import decodes.util.CmdLineArgs;
+import decodes.util.DecodesSettings;
+import ilex.cmdline.BooleanToken;
+import ilex.cmdline.StringToken;
+import ilex.cmdline.TokenOptions;
 
 import java.io.FileWriter;
 import java.io.FileInputStream;
@@ -288,82 +295,94 @@ public class UserAuthFile implements AuthSource
 	public static void main(String args[])
 		throws Exception
 	{
-		UserAuthFile authFile = null;
-		String authFileArg = null;
-		String pwFileArg = null;
-		
-		int n = 0;
-		if (args.length > 0 && args[0].startsWith("-p"))
+		final CmdLineArgs cla = new CmdLineArgs(false, "$DCSTOOL_USERDIR/password-update.log");
+		final BooleanToken showPassword = new BooleanToken("s", "Show user name and password", "", TokenOptions.optSwitch, false);
+		final StringToken authFileName = new StringToken("f", "auth file name", "", TokenOptions.optArgument, null);
+		final BooleanToken overwrite = new BooleanToken("y", "Assert that the file should be overwritten.", "", TokenOptions.optSwitch, false);
+		cla.addToken(showPassword);
+		cla.addToken(authFileName);
+
+		cla.parseArgs(args);
+
+		if (cla.getProfileSet() && authFileName.getValue() != null)
 		{
-			if (args[0].length() > 2)
-			{
-				pwFileArg = args[0].substring(2);
-				n++;
-			}
-			else
-			{
-				pwFileArg = args[1];
-				n += 2;
-			}
+			System.err.println("Please specify either the auth file name OR the profile. Not both.");
+			System.exit(1);
 		}
 
-		authFileArg = n >= args.length ? null : args[n];
-		boolean q = false;
-		
-		if (authFileArg == null)
-			authFile = new UserAuthFile();
-		else if (authFileArg.startsWith("-"))
+		File authFile = null;
+		if (cla.getProfileSet())
 		{
-			q = true;
-			authFileArg = authFileArg.substring(1);
-			authFile = new UserAuthFile(authFileArg);
+			DecodesSettings settings = DecodesSettings.fromProfile(cla.getProfile());
+			authFile = new File(EnvExpander.expand(settings.DbAuthFile));
+		}
+		else if (authFileName.getValue() != null )
+		{
+			authFile = new File(EnvExpander.expand(authFileName.getValue()));
+		}
+
+		if (authFile == null)
+		{
+			System.err.println("Please specify either the auth file name or the profile.");
+			System.exit(1);
 		}
 		else
 		{
-			authFile = new UserAuthFile(authFileArg);
-		}
-
-		if (!q)
-		{
-			String user = null, password = null;
-			
-			if (pwFileArg == null)
+			if (showPassword.getValue() && authFile.exists())
 			{
-				System.out.print("User Name: ");
-				user = System.console().readLine();
-				System.out.print("Password: ");
-				password = new String(System.console().readPassword());
+				UserAuthFile userAuthFile = new UserAuthFile(authFile);
+				try
+				{
+					userAuthFile.read();
+					System.out.println("Username '" + userAuthFile.getUsername()
+					+ "', password '" + userAuthFile.getPassword() + "'"
+					+ ", file version = " + userAuthFile.getFileVersion());
+				}
+				catch(Exception ex)
+				{
+					System.err.println(String.format("Error reading '%s'", userAuthFile.getAuthFile().getAbsolutePath()));
+					ex.printStackTrace(System.err);
+					System.exit(3);
+				}
+			}
+			else if (showPassword.getValue() && !authFile.exists())
+			{
+				System.err.println(String.format("No auth file at '%s'. Please write initial data first.", authFile.getAbsolutePath()));
+				System.exit(2);
 			}
 			else
 			{
-				try
+				System.out.println(String.format("Creating or Updating: %s", authFile.getAbsolutePath()));
+				Console console = System.console();
+				if (authFile.exists() && !overwrite.getValue())
 				{
-					BufferedReader br = new BufferedReader(new FileReader(pwFileArg));
-					user = br.readLine();
-					password = br.readLine();
-					br.close();
+					final String response = console.readLine("Overwrite existing file? (y/N)");
+					if (!response.toLowerCase().startsWith("y"))
+					{
+						System.err.println("Not overwriting existing file.");
+						System.exit(0);
+					}
 				}
-				catch(IOException ex)
+				UserAuthFile userAuthFile = new UserAuthFile(authFile);
+				final String userName = console.readLine("Please enter a username: ");
+				boolean match = true;
+				String password;
+				do
 				{
-					System.err.println("Cannot open password file '" + pwFileArg + "': " + ex);
+					if(!match)
+					{
+						console.writer().println("Passwords did not match, try again.");
+					}
+					char[] pw_chars =  console.readPassword("Please provide a password:");
+					char[] pw2_chars = console.readPassword("Please repeat the password:");
+					String pw = new String(pw_chars);
+					String pw2 = new String(pw2_chars);
+					password = pw;
+					match = pw.equals(pw2);
 				}
+				while (!match);
+				userAuthFile.write(userName, password);
 			}
-			System.out.println("writing to " + pwFileArg +"...");
-			authFile.write(user, password);
-		}
-		else // query only
-		{
-			try { authFile.read(); }
-			catch(Exception ex)
-			{
-				System.err.println("Error reading '" + 
-					authFile.getAuthFile().getPath() + "': " + ex);
-				ex.printStackTrace(System.err);
-				System.exit(1);
-			}
-			System.out.println("Username '" + authFile.getUsername()
-				+ "', password '" + authFile.getPassword() + "'"
-				+ ", file version = " + authFile.getFileVersion());
 		}
 	}
 
@@ -371,10 +390,17 @@ public class UserAuthFile implements AuthSource
 	 * @returns Properties file with username and password fields.
 	 */
 	@Override
-	public Properties getCredentials() {
+	public Properties getCredentials()
+	{
 		Properties props = new Properties();
 		props.put("username",getUsername());
 		props.put("password",getPassword());
 		return props;
+	}
+
+	@Override
+	public boolean canWrite()
+	{
+		return true;
 	}
 }

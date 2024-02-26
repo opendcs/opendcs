@@ -47,6 +47,7 @@ public class StdAppSettings extends ApplicationSettings
 	private StringToken host_arg;
 	private StringToken properties_arg;
 	private IntegerToken debuglevel_arg;
+	private boolean profileSet = false;
 
 	/** Default constructor builds set with all standard args. */
 	public StdAppSettings()
@@ -128,8 +129,21 @@ public class StdAppSettings extends ApplicationSettings
 	{
 		String r = properties_arg.getValue();
 		if (r != null && r.length() > 0)
+		{
+			profileSet = true;
 			return r;
+		}
 		return null;
+	}
+
+	/**
+	 * Let's applications know if the user manually set the profile.
+	 *
+	 * @return
+	 */
+	public boolean getProfileSet()
+	{
+		return profileSet;
 	}
 
     /**

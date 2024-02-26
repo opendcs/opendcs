@@ -5,13 +5,11 @@ import java.awt.*;
 import javax.swing.*;
 
 import java.awt.event.*;
-import java.util.Date;
-import java.util.Properties;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.io.*;
 
 import ilex.gui.WindowUtility;
-import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import decodes.gui.TopFrame;
@@ -20,7 +18,7 @@ import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 
 @SuppressWarnings("serial")
-public class DecodesSetupFrame 
+public class DecodesSetupFrame
     extends TopFrame
 {
     private static ResourceBundle labels = getLabels();
@@ -32,12 +30,15 @@ public class DecodesSetupFrame
     private JButton abandonDecodesPropsButton = new JButton();
     private DecodesPropsPanel decodesPropsPanel;
     private LauncherFrame launcherFrame = null;
-    
+    private Profile profile = null;
+
     private static DecodesSetupFrame _lastInstance = null;
     public static DecodesSetupFrame lastInstance() { return _lastInstance; }
 
-    public DecodesSetupFrame(LauncherFrame launcherFrame)
+    public DecodesSetupFrame(LauncherFrame launcherFrame, Profile profile)
     {
+        Objects.requireNonNull(profile, "A valid profile must be provided.");
+        this.profile = profile;
         this.launcherFrame = launcherFrame;
         exitOnClose = false;
         try
@@ -56,7 +57,8 @@ public class DecodesSetupFrame
             });
             pack();
             populateDecodesPropsTab();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             e.printStackTrace();
         }
@@ -74,7 +76,7 @@ public class DecodesSetupFrame
         cmdLineArgs.parseArgs(args);
         labels = getLabels();
         genericLabels = getGenericLabels();
-        DecodesSetupFrame setupFrame = new DecodesSetupFrame(null);
+        DecodesSetupFrame setupFrame = new DecodesSetupFrame(null, cmdLineArgs.getProfile());
         setupFrame.setExitOnClose(true);
         WindowUtility.center(setupFrame).setVisible(true);
     }
@@ -111,11 +113,10 @@ public class DecodesSetupFrame
     private void jbInit() throws Exception
     {
         this.getContentPane().setLayout(new BorderLayout());
-        
+
         jPanel3.setLayout(flowLayout2);
         flowLayout2.setHgap(40);
 
-        
         saveDecodesPropsButton.setText(
             labels.getString("DecodesPropsPanel.saveChanges"));
         saveDecodesPropsButton.addActionListener(
@@ -142,39 +143,28 @@ public class DecodesSetupFrame
             southButtonPanel.add(jb, null);
         this.getContentPane().add(southButtonPanel, BorderLayout.SOUTH);
 
-        decodesPropsPanel = new DecodesPropsPanel(this, labels, genericLabels);
+        decodesPropsPanel = new DecodesPropsPanel(this, labels, genericLabels, this.profile);
         this.getContentPane().add(decodesPropsPanel, BorderLayout.CENTER);
     }
 
     private void saveChangesPressed()
     {
-        DecodesSettings settings = DecodesSettings.instance();
-        decodesPropsPanel.saveToSettings(settings);
-        Properties props = new Properties();
-        
-        settings.saveToProps(props);
-        
-        File propFile = settings.getSourceFile();
-        
-//        // For owner, DCSTOOL_USERDIR == DCSTOOL_HOME
-//        String propFile = settings.isToolkitOwner() ?
-//            LauncherFrame.cmdLineArgs.getPropertiesFile()
-//            : EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
+        DecodesSettings settings = decodesPropsPanel.saveToSettings();
+
         try
         {
-            FileOutputStream fos = new FileOutputStream(propFile);
-            Logger.instance().info("Saving DECODES Settings to '" + propFile.getPath() + "'");
-            props.store(fos, "OPENDCS Toolkit Settings");
-            fos.close();
+            settings.saveToProfile(profile);
         }
         catch (IOException ex)
         {
             Logger.instance().failure(
-                "Cannot save DECODES Properties File '" + propFile + "': "
+                "Cannot save DECODES Properties File '" + profile.getFile().getAbsolutePath() + "': "
                 + ex);
         }
         if (launcherFrame != null)
+        {
             launcherFrame.setupSaved();
+        }
     }
 
     private void abandonChangesPressed()
@@ -184,47 +174,15 @@ public class DecodesSetupFrame
 
     void populateDecodesPropsTab()
     {
-        String propFileName = LauncherFrame.cmdLineArgs.getPropertiesFile();
-        File propFile = new File(propFileName);
-        DecodesSettings settings = DecodesSettings.instance();
-        Properties props = new Properties();
         try
         {
-            FileInputStream fis = new FileInputStream(propFile);
-            props.load(fis);
-            fis.close();
+            DecodesSettings settings = DecodesSettings.fromProfile(this.profile);
+            decodesPropsPanel.loadFromSettings(settings);
         }
         catch (IOException ex)
         {
             Logger.instance().failure(
-                "Cannot open DECODES Properties File '" + propFileName + "': " + ex);
+                "Cannot open DECODES Properties File '" + profile.getFile().getAbsolutePath() + "': " + ex);
         }
-        settings.loadFromProperties(props);
-        settings.setSourceFile(propFile);
-        
-        
-        if (!settings.isToolkitOwner() && !propFileName.contains(".profile"))
-        {
-            props.clear();
-            propFileName = EnvExpander.expand("$DCSTOOL_USERDIR/user.properties");
-            propFile = new File(propFileName);
-            try
-            {
-                FileInputStream fis = new FileInputStream(propFile);
-                props.load(fis);
-                fis.close();
-                settings.loadFromUserProperties(props);
-                settings.setLastModified(new Date(propFile.lastModified()));
-                settings.setSourceFile(propFile);
-            }
-            catch (IOException ex)
-            {
-                Logger.instance().debug1(
-                    "No User-Specific Properties File '" + propFileName + "': " + ex);
-            }
-        }
-        
-        decodesPropsPanel.loadFromSettings(settings);
     }
-
 }
