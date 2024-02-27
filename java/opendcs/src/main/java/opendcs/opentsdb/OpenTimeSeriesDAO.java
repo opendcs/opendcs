@@ -1770,7 +1770,7 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		try (TaskListDAI tl = db.makeTaskListDao())
 		{
 			log.trace("Retrieving task list entries");
-			List<TaskListEntry> taskEntries = tl.getEntriesFor(applicationId, 20000, DecodesSettings.instance().retryFailedComputations);
+			List<? extends TaskListEntry> taskEntries = tl.getEntriesFor(applicationId, 20000, DecodesSettings.instance().retryFailedComputations);
 
 			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
 			
