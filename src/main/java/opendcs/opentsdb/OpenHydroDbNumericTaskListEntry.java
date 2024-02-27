@@ -17,12 +17,12 @@ public class OpenHydroDbNumericTaskListEntry implements TaskListEntry
     private final Date sampleTime;
     private final Date failTime;
     private final TsDataSource source;
-    private final double value;
+    private final Double value;
     private final int flags;
     private final boolean deleted;
 
     public OpenHydroDbNumericTaskListEntry(long recordNum, DbKey loadingApp, TimeSeriesIdentifier tsId, Date loadedTime,
-                                           Date sampleTime, Date failTime, TsDataSource source, double value, int flags, boolean deleted)
+                                           Date sampleTime, Date failTime, TsDataSource source, Double value, int flags, boolean deleted)
     {
         this.recordNum = recordNum;
         this.loadingApp = Objects.requireNonNull(loadingApp, "A loading application is required.");
@@ -31,7 +31,7 @@ public class OpenHydroDbNumericTaskListEntry implements TaskListEntry
         this.sampleTime = Objects.requireNonNull(sampleTime, "A sample time is required");
         this.failTime = failTime;
         this.source = source; //TODO: NOT NULL
-        this.value = value; // TODO: can this be null? should for missing
+        this.value = value;
         this.flags = flags;
         this.deleted = deleted;
     }
@@ -87,5 +87,17 @@ public class OpenHydroDbNumericTaskListEntry implements TaskListEntry
     public TsDataSource getSource()
     {
         return this.source;
+    }
+
+    public Double getValue()
+    {
+        return this.value;
+    }
+
+
+    @Override
+    public boolean valueWasNull()
+    {
+        return this.value == null;
     }
 }
