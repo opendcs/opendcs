@@ -48,6 +48,8 @@
 */
 package opendcs.opentsdb;
 
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
@@ -63,11 +65,19 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+<<<<<<< HEAD:java/opendcs/src/main/java/opendcs/opentsdb/OpenTimeSeriesDAO.java
 import java.util.Optional;
 import java.util.TimeZone;
 
 import org.opendcs.database.ExceptionHelpers;
 import org.opendcs.utils.FailableResult;
+=======
+import java.util.Objects;
+import java.util.TimeZone;
+
+import org.opendcs.tsdb.BadTaskListEntry;
+import org.opendcs.tsdb.TaskListEntry;
+>>>>>>> 2b9b83429 (getNewData Tasklist operations for reference database now through new DAO.):src/main/java/opendcs/opentsdb/OpenTimeSeriesDAO.java
 import org.slf4j.LoggerFactory;
 
 import decodes.cwms.CwmsFlags;
@@ -100,6 +110,7 @@ import opendcs.dai.CompDependsDAI;
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.dai.TaskListDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
@@ -1754,216 +1765,123 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 
 		DataCollection dataCollection = new DataCollection();
 
-		// MJM 2/14/18 - From Dave Portin. Original failTimeClause was:
-		//		" and (a.FAIL_TIME is null OR "
-		//		+ "SYSDATE - to_date("
-		//		+ "to_char(a.FAIL_TIME,'dd-mon-yyyy hh24:mi:ss'),"
-		//		+ "'dd-mon-yyyy hh24:mi:ss') >= 1/24)";
-
-		int minRecNum = -1;
-		String what = "Preparing min statement query";
-		String failTimeClause = "";
-		if (DecodesSettings.instance().retryFailedComputations)
-			failTimeClause = " and (a.FAIL_TIME is null OR "
-				+ System.currentTimeMillis() + " -  a.FAIL_TIME >= 3600000)";
-		String getMinStmtQuery = "select min(a.record_num) from cp_comp_tasklist a "
-				+ "where a.LOADING_APPLICATION_ID = " + applicationId
-				+ failTimeClause;
-		
-		// 2nd query gets tasklist recs within record_num range.
-		String getTaskListStmtQuery = 
-			"select a.RECORD_NUM, a.TS_ID, a.num_value, a.sample_time, "
-			+ "a.DELETE_FLAG, a.flags "
-			+ "from CP_COMP_TASKLIST a "
-			+ "where a.LOADING_APPLICATION_ID = " + applicationId
-			+ failTimeClause;
-		try
+		ArrayList<TaskListEntry> tasklistRecs = new ArrayList<>();
+		ArrayList<BadTaskListEntry> badRecs = new ArrayList<>();
+		try (TaskListDAI tl = db.makeTaskListDao())
 		{
-			if (db.isOracle())
-			{
-				// ROWNUM needs to be part of where clause before ORDER BY clause
-				getTaskListStmtQuery = getTaskListStmtQuery + " and ROWNUM < 20000"
-					+ " order by a.ts_id, a.sample_time";
-			}
-			else // PostgreSQL
-			{
-				// LIMIT goes after the ORDER BY clause.
-				getTaskListStmtQuery = getTaskListStmtQuery 
-					+ " order by a.ts_id, a.sample_time"
-					+ " limit 20000";
-			}
-			
-			ResultSet rs = doQuery(getMinStmtQuery);
-			
-			if (rs == null || !rs.next())
-			{
-				debug1("No new data for appId=" + applicationId);
-				((TimeSeriesDb)db).reclaimTasklistSpace(this);
-				return dataCollection;
-			}
-			
-			minRecNum = rs.getInt(1);
-			if (rs.wasNull())
-			{
-				debug1("No new data for appId=" + applicationId);
-				minRecNum = -1;
-				((TimeSeriesDb)db).reclaimTasklistSpace(this);
-				return dataCollection;
-			}
-			debug3("minRecNum=" + minRecNum);
-		}
-		catch(SQLException ex)
-		{
-			warning("getNewData error while" + what + ": " + ex);
-			return dataCollection;
-		}
-
-		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
-		ArrayList<Integer> badRecs = new ArrayList<Integer>();
-		try
-		{
-			what = "Executing '" + getTaskListStmtQuery + "'";
-			debug3(what);
-			ResultSet rs = doQuery(getTaskListStmtQuery);
-			while (rs.next())
-			{
-				// Extract the info needed from the result set row.
-				int recordNum = rs.getInt(1);
-				DbKey sdi = DbKey.createDbKey(rs, 2);
-				double value = rs.getDouble(3);
-				boolean valueWasNull = rs.wasNull();
-				Date timeStamp = new Date(rs.getLong(4));
-				String df = rs.getString(5);
-				boolean deleted = TextUtil.str2boolean(df);
-				int flags = rs.getInt(6);
-				
-				TasklistRec rec = new TasklistRec(recordNum, sdi, value,
-					valueWasNull, timeStamp, deleted, null, null, flags);
-				tasklistRecs.add(rec);
-			}
+			log.trace("Retrieving task list entries");
+			List<TaskListEntry> taskEntries = tl.getEntriesFor(applicationId, 20000, DecodesSettings.instance().retryFailedComputations);
 
 			RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
 			
 			// Process the real-time records collected above.
-			for(TasklistRec rec : tasklistRecs)
+			for(TaskListEntry rec : taskEntries)
+			{
 				processTasklistEntry(rec, dataCollection, rrhandle, badRecs, applicationId);
+			}
 			
 			dataCollection.setTasklistHandle(rrhandle);
 			
 			// Delete the bad tasklist recs, 250 at a time.
 			if (badRecs.size() > 0)
-				Logger.instance().debug1("getNewDataSince deleting " + badRecs.size()
-					+ " bad tasklist records.");
-			while (badRecs.size() > 0)
 			{
-				StringBuilder inList = new StringBuilder();
-				int n = badRecs.size();
-				int x=0;
-				for(; x<250 && x<n; x++)
-				{
-					if (x > 0)
-						inList.append(", ");
-					inList.append(badRecs.get(x).toString());
-				}
-				String q = "delete from CP_COMP_TASKLIST "
-					+ "where RECORD_NUM IN (" + inList.toString() + ")";
-				doModify(q);
-				for(int i=0; i<x; i++)
-					badRecs.remove(0);
+				log.debug("getNewDataSince deleting {} bad tasklist records.", badRecs.size());
+				tl.deleteEntries(badRecs);
 			}
-			
+
 			// Show each tasklist entry in the log if we're at debug level 3
 			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
 			{
 				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
-				debug3("getNewData, returning " + allts.size() + " TimeSeries.");
-				for(CTimeSeries ts : allts)
-					debug3("ts " + ts.getTimeSeriesIdentifier().getUniqueString() + " " 
-						+ ts.size() + " values.");
+				log.trace("getNewData, returning {} TimeSeries.", allts.size());
+				if (log.isTraceEnabled())
+				{
+					for(CTimeSeries ts : allts)
+					{
+						log.trace("ts '{}' has {} values.", ts.getTimeSeriesIdentifier().getUniqueString(), ts.size());
+					}
+				}
 			}
 			
 			return dataCollection;
 		}
-		catch(SQLException ex)
-		{
-			System.err.println("Error while " + what + ": " + ex);
-			ex.printStackTrace();
-			throw new DbIoException("Error while " + what + ": " + ex);
-		}
 	}
 
 
-	private void processTasklistEntry(TasklistRec rec,
+	private void processTasklistEntry(TaskListEntry rec,
 		DataCollection dataCollection, RecordRangeHandle rrhandle,
-		ArrayList<Integer> badRecs, DbKey applicationId)
+		ArrayList<BadTaskListEntry> badRecs, DbKey applicationId)
 		throws DbIoException
 	{
+		Objects.requireNonNull(rec, "A null TaskListEntry should not be passed to this function.");
+		Objects.requireNonNull(dataCollection, "A null data collection should not be passed to this function.");
+		Objects.requireNonNull(badRecs, "A null Bad Records list should not be passed to this function.");
+
+		if (rec instanceof BadTaskListEntry)
+		{
+			badRecs.add((BadTaskListEntry)rec);
+			return;
+		}
 		// Find time series if already in data collection.
 		// If not construct one and add it.
-		CTimeSeries cts = dataCollection.getTimeSeriesByUniqueSdi(rec.getSdi());
+		CTimeSeries cts = dataCollection.getTimeSeriesByUniqueSdi(rec.getTimeSeriesIdentifier().getKey());
 		if (cts == null)
 		{
 			try
 			{
-				TimeSeriesIdentifier tsid = getTimeSeriesIdentifier(rec.getSdi());
-				String tabsel = tsid.getPart("paramtype") + "." + 
-					tsid.getPart("duration") + "." + tsid.getPart("version");
-				cts = new CTimeSeries(rec.getSdi(), tsid.getInterval(),
-					tabsel);
-				cts.setModelRunId(-1);
-				cts.setTimeSeriesIdentifier(tsid);
-				
+				TimeSeriesIdentifier tsid = rec.getTimeSeriesIdentifier();
+				cts = this.makeTimeSeries(tsid);
+
 				// NOTE: In OpenTsdb, tasklist values are always in storage units.
 				cts.setUnitsAbbr(tsid.getStorageUnits());
 				if (((TimeSeriesDb)db).fillDependentCompIds(cts, applicationId, this) == 0)
 				{
-					warning("Deleting tasklist rec for '" + tsid.getUniqueString() 
-						+ "' because no dependent comps.");
-					if (badRecs != null)
-						badRecs.add(rec.getRecordNum());
+					log.warn("Deleting tasklist rec for '{}' because no dependent comps.", tsid.getUniqueString());
+
+					badRecs.add(new BadTaskListEntry(rec));
 					return;
 				}
 
-				try { dataCollection.addTimeSeries(cts); }
+				try
+				{
+					dataCollection.addTimeSeries(cts);
+				}
 				catch(decodes.tsdb.DuplicateTimeSeriesException ex)
 				{ // won't happen -- already verified it's not there.
+					log.atError().setCause(ex).log("A unlikely exception has occured.");
 				}
 			}
 			catch(NoSuchObjectException ex)
 			{
-				warning("Deleting tasklist rec for non-existent ts_code "
-					+ rec.getSdi());
-				if (badRecs != null)
-					badRecs.add(rec.getRecordNum());
+				log.warn("Deleting tasklist rec for non-existent ts_code '{}'", rec.getTimeSeriesIdentifier().getKey().getValue());
+				badRecs.add(new BadTaskListEntry(rec));
 				return;
 			}
 		}
 		if (rrhandle != null)
 			rrhandle.addRecNum(rec.getRecordNum());
-
+		OpenHydroDbNumericTaskListEntry numericEntry = (OpenHydroDbNumericTaskListEntry)rec;
 		// Construct timed variable with appropriate flags & add it.
-		TimedVariable tv = new TimedVariable(rec.getValue());
-		tv.setTime(rec.getTimeStamp());
-		tv.setFlags((int)rec.getQualityCode());
+		TimedVariable tv = new TimedVariable(numericEntry.getValue());
+		tv.setTime(numericEntry.getSampleTime());
+		tv.setFlags(numericEntry.getFlags());
 		
-		if (!rec.isDeleted() && !rec.isValueWasNull())
+		if (!numericEntry.isDeleted() && !numericEntry.valueWasNull())
 		{
 			VarFlags.setWasAdded(tv);
 			cts.addSample(tv);
 			// Remember which tasklist records are in this timeseries.
 			cts.addTaskListRecNum(rec.getRecordNum());
-			debug3("Added value " + tv + " to time series "
-				+ cts.getTimeSeriesIdentifier().getUniqueString()
-				+ " flags=0x" + Integer.toHexString(tv.getFlags())
-				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+			log.trace("Added value '{}' to time series '{}' flags=0x{} cwms qualcode=0x{}",
+					  tv, cts.getTimeSeriesIdentifier().getUniqueString(),
+					  Integer.toHexString(tv.getFlags()), Long.toHexString(numericEntry.getFlags()));
 		}
 		else
 		{
 			VarFlags.setWasDeleted(tv);
-			warning("Discarding deleted value " + tv.toString()
-				+ " for time series " + cts.getTimeSeriesIdentifier().getUniqueString()
-				+ " flags=0x" + Integer.toHexString(tv.getFlags())
-				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+			log.warn("Discarding deleted value '{}' for time series '{}' flags=0x{} cwms qualcode=0x{}",
+					 tv.toString(), cts.getTimeSeriesIdentifier().getUniqueString(),
+					Integer.toHexString(tv.getFlags()), Long.toHexString(numericEntry.getFlags()));
 		}
 	}
 

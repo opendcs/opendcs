@@ -1,18 +1,16 @@
 package opendcs.dao;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.Duration;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.opendcs.tsdb.TaskListEntry;
-
-import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
-public abstract class TaskListDao extends DaoBase
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Collection;
+
+
+import opendcs.dai.TaskListDAI;
+import org.opendcs.tsdb.TaskListEntry;
+
+public abstract class TaskListDao extends DaoBase implements TaskListDAI
 {
     public TaskListDao(DatabaseConnectionOwner dco)
     {
@@ -30,22 +28,12 @@ public abstract class TaskListDao extends DaoBase
     }
     
     /**
-     * Retrieve a set of entries encoded into appropraite TaskListEntry objects
-     *     
-     * @param appId Current Design: Loading application that we want data for.
-     *              Future Design: Marker for parallel instances to retrieve arbitrary data? (more investigation is required.)
-     * @param amount How much data to retrieve to process this batch.
-     * @param includeFailed Whether data with fail_time set should be retrieved.
-     * @return A list of TaskListEntries that can be further processed.
-     * @throws DbIoException If anything goes wrong during the retrieval.
-     */
-    public abstract List<TaskListEntry> getEntriesFor(DbKey appId, int amount, boolean includeFailed) throws DbIoException;
-    /**
-     * Remove entries
+     * Remove entries by record_num in a batch
      * @param entries
      * @throws DbIoException
      */
-    public void deleteEntries(Collection<TaskListEntry> entries) throws DbIoException
+    @Override
+    public void deleteEntries(Collection<? extends TaskListEntry> entries) throws DbIoException
     {
         try
         {

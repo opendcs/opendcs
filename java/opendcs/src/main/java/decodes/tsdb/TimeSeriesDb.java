@@ -1002,7 +1002,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
 
             while(rrh.getFailedRecnums().size() > 0)
             {
-                String failRecNumList = rrh.getFailedRecNumList(250);
+                String failRecNumList = rrh.getFailedRecNumList(250L);
                 String records[] = failRecNumList.split(",");
                 //Array failRecs = conn.createArrayOf("integer", failRecNumList.split(","));
                 // Add the retry limit for failed computations

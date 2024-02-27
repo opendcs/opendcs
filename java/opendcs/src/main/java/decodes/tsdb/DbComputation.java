@@ -127,7 +127,7 @@ public class DbComputation
 	 * Temporary storage for the tasklist recnums that triggered this 
 	 * execution of the computation.
 	 */
-	private HashSet<Integer> triggeringRecNums;
+	private HashSet<Long> triggeringRecNums;
 	
 	/** New database attribute for db version 9 */
 	private DbKey groupId = Constants.undefinedId;
@@ -164,7 +164,7 @@ public class DbComputation
 		algorithmId = Constants.undefinedId;
 		algorithmName = null;
 		modelRunId = Constants.undefinedIntKey;
-		triggeringRecNums = new HashSet<Integer>();
+		triggeringRecNums = new HashSet<>();
 		groupId = Constants.undefinedId;
 		group = null;
 		groupName = null;
@@ -630,7 +630,7 @@ public class DbComputation
 
 	public DbAlgorithmExecutive getExecutive() { return executive; }
 
-	public HashSet<Integer> getTriggeringRecNums() { return triggeringRecNums;}
+	public HashSet<Long> getTriggeringRecNums() { return triggeringRecNums;}
 
 	public DbKey getGroupId()
 	{

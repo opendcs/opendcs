@@ -52,7 +52,7 @@ public class CTimeSeries
     private ArrayList<TimedVariable> vars;
 
     /** For tracking tasklist records of computations. */
-    private ArrayList<Integer> taskListRecNums; // Note these ARE integers, not DbKey.
+    private ArrayList<Long> taskListRecNums; // Note these ARE integers, not DbKey.
 
     /** timeseries  name .used for customised timeseries name in tables and plots **/
     private String briefDescription;
@@ -100,7 +100,7 @@ public class CTimeSeries
         vars = new ArrayList<TimedVariable>();
         unitsAbbr = "unknown";
         dependentCompIds = null;
-        taskListRecNums = new ArrayList<Integer>();
+        taskListRecNums = new ArrayList<Long>();
     }
 
     public CTimeSeries(TimeSeriesIdentifier tsId)
@@ -116,7 +116,7 @@ public class CTimeSeries
         unitsAbbr = "unknown";
         this.displayName = tsId.getDisplayName();
         dependentCompIds = null;
-        taskListRecNums = new ArrayList<Integer>();
+        taskListRecNums = new ArrayList<Long>();
         setTimeSeriesIdentifier(tsId);
     }
 
@@ -680,11 +680,11 @@ Logger.instance().debug3("findInterp(sec=" + sec + ") prevSec=" + prevSec + ", n
         dependentCompIds.add(compId);
     }
 
-    /** @return the list of tasklist record nums used to populate this ts. */
-    public ArrayList<Integer> getTaskListRecNums() { return taskListRecNums; }
+	/** @return the list of tasklist record nums used to populate this ts. */
+	public ArrayList<Long> getTaskListRecNums() { return taskListRecNums; }
 
-    /** Adds a recnum to the list of tasklist record nums. */
-    public void addTaskListRecNum(int recnum) { taskListRecNums.add(recnum); }
+	/** Adds a recnum to the list of tasklist record nums. */
+	public void addTaskListRecNum(long recnum) { taskListRecNums.add(recnum); }
 
     /** Clears the list of tasklist record nums. */
     public void clearTaskListRecNums() { taskListRecNums.clear(); }

@@ -49,4 +49,10 @@ public interface TaskListEntry
      * @return
      */
     public boolean isDeleted();
+
+    /**
+     * Was the value in the database null.
+     * @return
+     */
+    public boolean valueWasNull();
 }

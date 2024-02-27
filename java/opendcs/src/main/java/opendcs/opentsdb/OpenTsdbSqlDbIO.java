@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.Date;
 
 import opendcs.dai.IntervalDAI;
-
+import opendcs.dai.TaskListDAI;
 import decodes.db.DatabaseException;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
@@ -83,4 +83,9 @@ public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 		return new OpenTsdbIntervalDAO(this);
 	}
 
+	@Override
+	public TaskListDAI makeTaskListDao()
+	{
+		return new OpenHydroDbTaskListDao(this);
+	}
 }
