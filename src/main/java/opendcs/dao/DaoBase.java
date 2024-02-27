@@ -544,7 +544,7 @@ public class DaoBase
             {
                 bind(stmt, bindingFunction.accept(v));
                 stmt.addBatch();
-                if(count++ % batchSize == 0)
+                if(++count % batchSize == 0)
                 {
                     stmt.executeBatch();
                     stmt.clearBatch();
