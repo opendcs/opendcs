@@ -550,7 +550,7 @@ public class DaoBase
                     stmt.clearBatch();
                 }
             }
-            if (count < values.size())
+            if (count % batchSize != 0)
             {
                 stmt.executeBatch();
             }
@@ -615,7 +615,7 @@ public class DaoBase
     }
 
     /**
-     * A query that may return more than one result be we only care about the first one.
+     * A query that may return more than one result; but we only care about the first one.
      *
      * @param <R> The return type
      * @param query query that may return more than 1 result
