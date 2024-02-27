@@ -26,14 +26,14 @@ import decodes.sql.DbKey;
 public class RecordRangeHandle
 {
 	private DbKey appId;
-	private ArrayList<Integer> recnums;
-	private HashSet<Integer> failed_recnums;
+	private ArrayList<Long> recNums;
+	private HashSet<Long> failedRecNums;
 
 	public RecordRangeHandle(DbKey appId)
 	{
 		this.appId = appId;
-		recnums = new ArrayList<Integer>();
-		failed_recnums = new HashSet<Integer>();
+		recNums = new ArrayList<>();
+		failedRecNums = new HashSet<>();
 	}
 
 	/** @return the application ID */
@@ -43,9 +43,9 @@ public class RecordRangeHandle
 	 * Adds a record number.
 	 * @param recnum the record number
 	 */
-	public void addRecNum(int recordNumber)
+	public void addRecNum(long recordNumber)
 	{
-		recnums.add(recordNumber);
+		recNums.add(recordNumber);
 	}
 
 	/**
@@ -56,20 +56,20 @@ public class RecordRangeHandle
 	public String getRecNumList(int max)
 	{
 		StringBuilder sb = new StringBuilder();
-		int n = recnums.size();
+		int n = recNums.size();
 		int x=0;
 		for(; x<max && x<n; x++)
 		{
 			if (x > 0)
 				sb.append(", ");
-			sb.append(recnums.get(x).toString());
+			sb.append(recNums.get(x).toString());
 		}
 		if (x > 0)
 		{
-			ArrayList<Integer> oldrn = recnums;
-			recnums = new ArrayList<Integer>();
+			ArrayList<Long> oldrn = recNums;
+			recNums = new ArrayList<>();
 			for(; x<n; x++)
-				recnums.add(oldrn.get(x));
+				recNums.add(oldrn.get(x));
 		}
 		return sb.toString();
 	}
@@ -79,16 +79,16 @@ public class RecordRangeHandle
 	 * The returned integers are also removed from the list.
 	 * @param max the maximum number of integers to return.
 	 */
-	public String getFailedRecNumList(int max)
+	public String getFailedRecNumList(Long max)
 	{
 		StringBuilder sb = new StringBuilder();
 		int x=0;
-		for(Iterator<Integer> iit = failed_recnums.iterator(); 
+		for(Iterator<Long> iit = failedRecNums.iterator(); 
 			iit.hasNext() && x < max; x++)
 		{
 			if (x > 0)
 				sb.append(", ");
-			Integer rn = iit.next();
+			Long rn = iit.next();
 			sb.append(rn.toString());
 			iit.remove();
 		}
@@ -97,15 +97,15 @@ public class RecordRangeHandle
 
 
 	/** @return number of record numbers in the list. */
-	public int size() { return recnums.size(); }
+	public int size() { return recNums.size(); }
 
 	/** @return list of tasklist rec #s that had failed computations. */
-	public HashSet<Integer> getFailedRecnums() { return failed_recnums; }
+	public HashSet<Long> getFailedRecnums() { return failedRecNums; }
 
 	/** Called after a computation fails, marks this rec# as failed. */
-	public void markComputationFailed(Integer recnum)
+	public void markComputationFailed(Long recnum)
 	{
-		recnums.remove(recnum);
-		failed_recnums.add(recnum);
+		recNums.remove(recnum);
+		failedRecNums.add(recnum);
 	}
 }

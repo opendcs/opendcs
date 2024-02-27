@@ -5,11 +5,10 @@ import static org.slf4j.helpers.Util.getCallingClass;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.tsdb.BadTaskListEntry;
 import org.opendcs.tsdb.TaskListEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,12 +24,12 @@ public class OpenHydroDbTaskListDao extends TaskListDao
 {
     private static final Logger log = LoggerFactory.getLogger(getCallingClass());
     final String getTaskListStmtQuery = 
-			"select a.RECORD_NUM, a.TS_ID, a.num_value, a.txt_value a.sample_time, a.LOADING_APPLICATION_ID "
-			+ "a.DELETE_FLAG, a.flags, a.date_time_loaded, a.fail_time "
-			+ "from CP_COMP_TASKLIST a "
+            "select a.RECORD_NUM, a.TS_ID, a.num_value, a.txt_value a.sample_time, a.LOADING_APPLICATION_ID "
+            + "a.DELETE_FLAG, a.flags, a.date_time_loaded, a.fail_time "
+            + "from CP_COMP_TASKLIST a "
             + ""
-			+ "where a.LOADING_APPLICATION_ID = ?";
-	
+            + "where a.LOADING_APPLICATION_ID = ?";
+    
 
     public OpenHydroDbTaskListDao(DatabaseConnectionOwner dco)
     {
@@ -48,7 +47,7 @@ public class OpenHydroDbTaskListDao extends TaskListDao
     }
 
     @Override
-    public List<TaskListEntry> getEntriesFor(DbKey appId, int amount, boolean includeFailed) throws DbIoException
+    public List<? extends TaskListEntry> getEntriesFor(DbKey appId, int amount, boolean includeFailed) throws DbIoException
     {
         String withFailClause = getTaskListStmtQuery + getFailTimeClause(includeFailed);
         final String withSortAndLimit = withFailClause + 
@@ -101,6 +100,13 @@ public class OpenHydroDbTaskListDao extends TaskListDao
                 if(!rs.wasNull())
                 {
                     log.warn("A text value was present in the text list. This is not yet supported.");
+                    entry = new BadTaskListEntry(recordNum, loadingApp, tsId, dateTimeLoad, sampleTime, failTime);
+                }
+                else
+                {
+                    // we'll assume this was numeric
+                    entry = new OpenHydroDbNumericTaskListEntry(recordNum, loadingApp, tsId, dateTimeLoad,
+                                                            sampleTime, failTime, null, null, flags, deleteFlag);
                 }
             }
         }
@@ -114,6 +120,7 @@ public class OpenHydroDbTaskListDao extends TaskListDao
             log.atWarn()
                .setCause(ex)
                .log("No time series exists for ts id {}", ex);
+            entry = new BadTaskListEntry(recordNum, loadingApp, null, dateTimeLoad, sampleTime, failTime);
         }
         return entry;
     }
