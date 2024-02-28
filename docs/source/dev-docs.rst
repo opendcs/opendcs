@@ -151,12 +151,10 @@ system you can turn pool tracing on for an application with the following java f
 
 .. code-block:: bash
 
-    DECJ_MAXHEAP="-Dopendcs.connection.pool.trace=true" routsched ...
+    DECJ_MAXHEAP="-Dcwms.connection.pool.trace=true" routsched ...
 
-With tracing on the WrappedConnectionMBean will show where a connection was created from. This useful for identifying
+With tracing on the WrappedConnectionMBean will show where a connection was created from. This useful for identifing 
 what code to fix for connection pool leaks.
-
-The property was previously :code:`cwms.connection.pool.trace` which remains available as a fallback.
 
 Authentication Sources
 ----------------------
@@ -212,103 +210,6 @@ To acquire the configured credentials the following can be used:
         throw new DatabaseConnectException(msg);
     }
     ...
-
-PropertyProvider
-----------------
-
-The PropertyProvider system as added to support EnvExpander retrieving values from sources other than the java `System.properties`.
-The mechanism uses the java ServiceProvider mechanism so downstream users can implement any custom sources they need.
-
-To implement a custom implement the following class `org.opendcs.spi.properties.PropertyValueProvider`.
-
-.. code-block:: java
-    :linenos:
-    package org.opendcs.spi.properties;
-
-    import java.io.IOException;
-    import java.util.Map;
-    import java.util.Properties;
-
-    public interface PropertyValueProvider {
-        /**
-        * Determine if a given string can be processed by this provider
-        * @param value
-        * @return
-        */
-        public boolean canProcess(String value);
-
-        /**
-        * Retrieve property from the provided property or environment map.
-        *
-        * It is permissible for a given implemtation to completely ignore either the properties or
-        * environment map. However, it should be made very clear where data is coming from
-        *
-        * @param value actual value to decipher.
-        *
-        * @param properties Properties to use for the given request.
-        * @param environment Environment map to use for the given request.
-        *
-        * @return the real value, or null if not found.
-        */
-        public String processValue(String value, Properties properties, Map<String,String> env) throws IOException;
-    }
-
-Here is the `EnvironmentPropertyValueProvider` for an example:
-
-.. code-block:: java
-    :linenos:
-
-    package org.opendcs.utils.properties;
-
-    import java.util.Map;
-    import java.util.Properties;
-
-    import org.opendcs.spi.properties.PropertyValueProvider;
-
-    /**
-    * Get the real value of a property from the environment.
-    */
-    public class EnvironmentPropertyValueProvider implements PropertyValueProvider
-    {
-        private static final String prefix = "env.";
-
-        @Override
-        public boolean canProcess(String value)
-        {
-            return value.toLowerCase().startsWith(prefix);
-        }
-
-        /**
-        * Retrieve property from the provided envrionment map
-        * @param value actual value to decipher.
-        *
-        * @param properties ignored in this implementation.
-        * @param environment Environment to use for the given request.
-        *
-        * @return the real value, or null if not found.
-        */
-        @Override
-        public String processValue(String value, Properties props, Map<String,String> environment)
-        {
-            String envVar = value.substring(prefix.length());
-            return environment.get(envVar);
-        }
-
-    }
-
-
-The following prefixes are reserved:
-
-+----------+--------------------------------------+
-|<nothing> |no prefix is used for default behavoir|
-+----------+--------------------------------------+
-|env       |Values from `System.getenv`           |
-+----------+--------------------------------------+
-|java      |Values from `System.getProperty`      |
-+----------+--------------------------------------+
-|file      |Values from files on the file system. |
-+----------+--------------------------------------+
-
 
 
 Code Analysis

@@ -53,9 +53,9 @@ be set to retrieve the values from appropriate sources such as environment varia
 The following providers are provided. Additional providers can be added by downstream users. See the Developer Documentation for
 more information.
 
-+--------------+-------------------------------------------------|
-| **Provider **| **Description**                                 |
-+--------------|-------------------------------------------------+
++--------------+-------------------------------------------------+
+| **Provider** | **Description**                                 |
++--------------+-------------------------------------------------+
 |DcsVariables  |So you acquire values like `DCSTOOL_USERDIR`     |
 |              |By using `${DCSTOOL_USERDIR}`                    |
 +--------------+-------------------------------------------------+
@@ -83,9 +83,8 @@ The property value sources can be nested as needed; however, it is prefered to u
 
    If you have implemented a custom DataSource we recommend updating your code to use the feature as soon as practical.
 
-.. image:: ./media/legacy/routing/image1.png
-
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 8.55.51 AM.png
+.. image:: ./media/legacy/routing/im-01-decodes-source-cdadata.png
+   :alt: decodes source cdadata
    :width: 6.49444in
    :height: 3.28056in
 
@@ -726,8 +725,8 @@ to make sure you have the needed Enumeration records:
 
 -  Hit File – Save to DB.
 
-.. image:: ./media/legacy/routing/image2.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 10.29.32 AM.png
+.. image:: ./media/legacy/routing/im-02-rledit-sources.png
+   :alt: reference list sources type
    :width: 6.49444in
    :height: 3in
 
@@ -746,8 +745,8 @@ Note that it has the variable ${MEDIUMID} in the middle. When we run the
 routing spec, this will be replaced by the values in the network list we
 supply.
 
-.. image:: ./media/legacy/routing/image3.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 10.34.15 AM.png
+.. image:: ./media/legacy/routing/im-03-sources-abstractweb.png
+   :alt: sources - abstract web
    :width: 6.49444in
    :height: 3.56181in
 
@@ -767,22 +766,22 @@ http://www.wcc.nrcs.usda.gov/reportGenerator/view_csv/customSingleStationReport%
 
 The resulting report is shown in Figure 6.
 
-.. image:: ./media/legacy/routing/image4.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 10.49.16 AM.png
+.. image:: ./media/legacy/routing/im-04-routing-spec-source-abstractweb.png
+   :alt: routing spec source abstractweb
    :width: 6.49444in
    :height: 5.20208in
 
 Figure : Routing Spec that uses an Abstract Web Data Source
 
-.. image:: ./media/legacy/routing/image5.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 10.52.25 AM.png
+.. image:: ./media/legacy/routing/im-05-network-list.png
+   :alt: network list
    :width: 6.49444in
    :height: 2.85417in
 
 Figure : SNOTEL Network List used by Abstract Web Data Source.
 
-.. image:: ./media/legacy/routing/image6.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 10.56.41 AM.png
+.. image:: ./media/legacy/routing/im-06-snotel-report.png
+   :alt: snotel report
    :width: 6.49444in
    :height: 2.65139in
 
@@ -807,8 +806,8 @@ To do this, run “rledit” and ...
 
 -  Hit File – Save to DB.
 
-.. image:: ./media/legacy/routing/image7.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-09-17 at 10.33.16 AM.png
+.. image:: ./media/legacy/routing/im-07-enum-dialog.png
+   :alt: enumeration dialog
    :width: 5.375in
    :height: 2.11103in
 
@@ -944,8 +943,8 @@ Be careful to enter the Executable Java Class exactly as shown:
 
 decodes.datasource.WebDirectoryDataSource
 
-.. image:: ./media/legacy/routing/image8.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2019-03-19 at 1.55.36 PM.png
+.. image:: ./media/legacy/routing/im-08-enumerations-sources.png
+   :alt: enumerations sources
    :width: 6.49444in
    :height: 5.64028in
 
@@ -996,16 +995,16 @@ Properties used by the Data Source include:
 The following figure shows a DECODES data source record using Web
 Directory. In most of the properties, the defaults can be used
 
-.. image:: ./media/legacy/routing/image9.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2019-03-19 at 1.25.45 PM.png
+.. image:: ./media/legacy/routing/im-09-source-webdirectory.png
+   :alt: sources web directory
    :width: 6.49444in
    :height: 3.75278in
 
 The following figure shows a DECODES routing spec that uses the MSC_sm
 data source shown above:
 
-.. image:: ./media/legacy/routing/image10.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2019-03-19 at 1.35.32 PM.png
+.. image:: ./media/legacy/routing/im-10-routing-spec-source-webdirectory.png
+   :alt: routing spec source web directory
    :width: 6.48333in
    :height: 3.08958in
 
@@ -1208,7 +1207,7 @@ NOTE: The Executable Java Class must be entered exactly:
 
 decodes.datasource.NrcsDataSource
 
-.. image:: ./media/legacy/routing/image11.png
+.. image:: ./media/legacy/routing/im-11-enumerations-source.png
    :width: 6.5in
    :height: 4.20702in
 
@@ -1217,7 +1216,7 @@ Standard’ enumeration. If it is not already in the list, click the ‘Add’
 button to the right of the list and fill out the form. The Mnemonic
 value should be exactly ‘NRCS’. The description is optional.
 
-   .. image:: ./media/legacy/routing/image12.png
+   .. image:: ./media/legacy/routing/im-12-enumerations-data-type.png
       :width: 6.5in
       :height: 3.28339in
 
@@ -1234,7 +1233,7 @@ Now start the DECODES Database Editor and click the ‘Sources’ tab.
 Create a new Data Source record. The one shown below is for downloading
 hourly data:
 
-.. image:: ./media/legacy/routing/image13.png
+.. image:: ./media/legacy/routing/im-13-sources-nrcs.png
    :width: 6.5in
    :height: 2.68681in
 
@@ -1308,7 +1307,7 @@ a config named “NRCS-BATT-TOBS”. It has two sensors with NRCS data types
 assigned. It has a single Decoding Script called “nrcs-report” that will
 parse the report shown above.
 
-.. image:: ./media/legacy/routing/image14.png
+.. image:: ./media/legacy/routing/im-14-configs-nrcs.png
    :width: 6.5in
    :height: 4.23611in
 
@@ -1330,7 +1329,7 @@ Below is a snap of the decoding script. The script has only two lines.
 
 -  Set the units for each sensor in the middle area.
 
-.. image:: ./media/legacy/routing/image15.png
+.. image:: ./media/legacy/routing/im-15-nrcs-decoding-script.png
    :width: 6.5in
    :height: 5.25903in
 
@@ -1339,7 +1338,7 @@ site record for Badger Pass. It uses the SNOTEL identifier as a “local”
 name. It has a description with the site name. No other information is
 needed:
 
-.. image:: ./media/legacy/routing/image16.png
+.. image:: ./media/legacy/routing/im-16-sites-information.png
    :width: 6.5in
    :height: 4.11181in
 
@@ -1348,7 +1347,7 @@ the platform record for 307. Note the Transport Medium is of type
 “other”. It has the identifier ‘307’. It also specifies the time zone
 that will be used when decoding dates & times in the messages.
 
-.. image:: ./media/legacy/routing/image17.png
+.. image:: ./media/legacy/routing/im-17-platform-edit-transport-medium.png
    :width: 6.5in
    :height: 7.00694in
 
@@ -1363,7 +1362,7 @@ Next create a network list with the two stations.
 -  Click Select Platforms. From the list select both platforms and click
    OK.
 
-.. image:: ./media/legacy/routing/image18.png
+.. image:: ./media/legacy/routing/im-18-network-list.png
    :width: 6.5in
    :height: 2.59583in
 
@@ -1399,7 +1398,7 @@ NOTE: The Executable Java Class must be entered exactly:
 
 decodes.datasource.UsgsWebDataSource
 
-.. image:: ./media/legacy/routing/image19.png
+.. image:: ./media/legacy/routing/im-19-enumerations-sources-usgs.png
    :width: 6.30574in
    :height: 3.3954in
 
@@ -1408,7 +1407,7 @@ Standard’ enumeration. If it is not already in the list, click the ‘Add’
 button to the right of the list and fill out the form. The Mnemonic
 value should be exactly ‘USGS’. The description is optional.
 
-   .. image:: ./media/legacy/routing/image20.png
+   .. image:: ./media/legacy/routing/im-20-enumerations-data-type-usgs.png
       :width: 5.76105in
       :height: 3.56804in
 
@@ -1417,7 +1416,7 @@ Remember to click File – Save to DB before exiting from rledit.
 Now start the DECODES Database Editor and click the ‘Sources’ tab.
 Create a new Data Source record.
 
-.. image:: ./media/legacy/routing/image21.png
+.. image:: ./media/legacy/routing/im-21-sources-usgs.png
    :width: 6.5in
    :height: 2.39583in
 
@@ -1492,7 +1491,7 @@ a config named “USGS-STAGE-FLOW”. It has two sensors Stage and Flow,
 both with EPA-CODE (same as USGS) data types. It has a single Decoding
 Script called “web” that will parse the report shown above.
 
-.. image:: ./media/legacy/routing/image22.png
+.. image:: ./media/legacy/routing/im-22-configs-usgs.png
    :width: 6.5in
    :height: 4.16319in
 
@@ -1501,14 +1500,14 @@ script skips the ‘#’ lines, then skips the 2 column header line, and
 then parses each data line by grabbing the time zone first, then the
 date/time, and finally the sensor values.
 
-.. image:: ./media/legacy/routing/image23.png
+.. image:: ./media/legacy/routing/im-23-usgs-decoding-script.png
    :width: 6.5in
    :height: 5.32708in
 
 Next create a Site record for each of your stations. Below is a minimal
 site record for AGNO containing a local name and USGS site number.
 
-.. image:: ./media/legacy/routing/image24.png
+.. image:: ./media/legacy/routing/im-24-sites-usgs-location.png
    :width: 4.76732in
    :height: 3.33458in
 
@@ -1517,7 +1516,7 @@ the platform record for AGNO. Note the Transport Medium is of type
 “other”. It has the identifier ‘14372300’. It also specifies the time
 zone that will be used when decoding dates & times in the messages.
 
-.. image:: ./media/legacy/routing/image25.png
+.. image:: ./media/legacy/routing/im-25-platform-edit-transport-medium.png
    :width: 6.5in
    :height: 5.03056in
 
@@ -1530,7 +1529,7 @@ Now you are ready to create a routing spec. The following one retrieves
 data for the platforms on the “USGS-Sites” network list. It builds URLs
 to retrieve the last 4 hours worth of data:
 
-.. image:: ./media/legacy/routing/image26.png
+.. image:: ./media/legacy/routing/im-26-routing-spec-source-usgs.png
    :width: 5.36939in
    :height: 5.85585in
 
@@ -1563,7 +1562,7 @@ of the list.
 You can click in the headers of the list to cause the list to be sorted
 by Transport ID, Site Name, or Description.
 
-.. image:: ./media/legacy/routing/image27.png
+.. image:: ./media/legacy/routing/im-27-decodes-database.png
    :width: 6in
    :height: 4.94444in
 
@@ -1586,8 +1585,8 @@ This includes:
 See the ‘HG’ line in the example. This asserts that all SHEF-PE HG
 values must be in “ft” and have 2 fractional digits.
 
-.. image:: ./media/legacy/routing/image28.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 11.09.52 AM.png
+.. image:: ./media/legacy/routing/im-28-presentation-group-shef-english.png
+   :alt: presentation group shef 
    :width: 6.49444in
    :height: 2.80903in
 
@@ -1657,12 +1656,14 @@ automatic network lists:
 -  <production> is an automatically generated list that includes all
    platforms that have the ‘Production’ checkbox selected.
 
-.. image:: ./media/legacy/routing/image29.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 11.43.17 AM.png
+.. image:: ./media/legacy/routing/im-29-routing-spec-source-goes.png
+   :alt: routing spec goes
    :width: 6.49444in
    :height: 5.53958in
 
 Figure : Routing Spec Edit Panel.
+
+.. _leg-rout-manual-commands:
 
 Running a Routing Specification Manually
 ========================================
@@ -1888,8 +1889,8 @@ available to you is controlled by the “Output Format” Enumeration in the
 Reference List Editor. Type “rledit” at the command line. Then on the
 Enumerations tab select “Output Format”.
 
-.. image:: ./media/legacy/routing/image30.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 12.28.00 PM.png
+.. image:: ./media/legacy/routing/im-30-enumerations-output.png
+   :alt: enumerations output
    :width: 6.49444in
    :height: 3.85417in
 
@@ -2564,8 +2565,8 @@ code. Start the reference list editor (rledit), click the Enumerations
 tab, then select the Data Type Standard enumeration. Make sure there is
 an entry as follows:
 
-.. image:: ./media/legacy/routing/image31.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2017-02-08 at 2.18.25 PM.png
+.. image:: ./media/legacy/routing/im-31-enumeration-item-dialog.png
+   :alt: enumeration item dialog
    :width: 5.125in
    :height: 2.20794in
 
@@ -2625,8 +2626,8 @@ USBR Hydromet DMS3 Formatter
 Add the following entry to the enumeration for Output Formatters (using
 the ‘rledit’ program):
 
-.. image:: ./media/legacy/routing/image32.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-02-24 at 12.37.55 PM.png
+.. image:: ./media/legacy/routing/im-32-usbr-hydromet-dms3.png
+   :alt: usbr hydro met dms3
    :width: 5.625in
    :height: 2.27719in
 
@@ -2721,8 +2722,8 @@ ZRXP formatter. Start the Reference List Editor with the “rledit”
 command. Then select the OutputFormat enumeration. Click Add and fill
 out the form as shown in Figure 20.
 
-.. image:: ./media/legacy/routing/image33.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-09-03 at 12.58.33 PM.png
+.. image:: ./media/legacy/routing/im-33-enumeration-item-dialog.png
+   :alt: enumeration item dialog
    :width: 5.25in
    :height: 2.32125in
 
@@ -2853,8 +2854,8 @@ formatter. Start the Reference List Editor with the “rledit” command.
 Then select the OutputFormat enumeration. Click Add and fill out the
 form as shown in Figure 21
 
-.. image:: ./media/legacy/routing/image34.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-02-27 at 11.28.52 AM.png
+.. image:: ./media/legacy/routing/im-34-output-format-csv-formatter.png
+   :alt: output format csv formatter
    :width: 4.375in
    :height: 2.20376in
 
@@ -2925,8 +2926,8 @@ form as shown in Figure 22.
 
    -  covesw.azul.consumer.DecodesXml1Formatter
 
-.. image:: ./media/legacy/routing/image35.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2017-03-02 at 5.16.42 PM.png
+.. image:: ./media/legacy/routing/im-35-output-format-xml.png
+   :alt: output format xml
    :width: 5.75in
    :height: 2.58664in
 
@@ -3014,8 +3015,8 @@ form as shown in the figure below.
 
 Note: It is important that the Executable Class be exactly as shown.
 
-.. image:: ./media/legacy/routing/image36.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2017-10-19 at 8.36.14 AM.png
+.. image:: ./media/legacy/routing/im-36-output-hydrojson.png
+   :alt: output hydrojson
    :width: 4.91298in
    :height: 2.125in
 
@@ -3049,7 +3050,7 @@ format in your database. To add it, start the Reference List Editor with
 the “rledit” command. Then select the OutputFormat enumeration. Click
 Add and fill out the form as shown in the figure below.
 
-.. image:: ./media/legacy/routing/image37.png
+.. image:: ./media/legacy/routing/im-37-output-tsimport.png
    :width: 4.8843in
    :height: 2.07374in
 
@@ -3083,7 +3084,7 @@ To use the formatter, start the Reference List Editor (rledit command).
 On the Enumerations tab, select the Output Format enumeration. Then add
 an entry as shown below:
 
-.. image:: ./media/legacy/routing/image38.png
+.. image:: ./media/legacy/routing/im-38-output-snotel.png
    :width: 6.5in
    :height: 4.61111in
 
@@ -3100,7 +3101,7 @@ You must provide a specification file in the following format:
 Next, Open the DECODES Settings dialog and set the variable named
 ‘snotelSpecFile’ to the name of the file.
 
-.. image:: ./media/legacy/routing/image39.png
+.. image:: ./media/legacy/routing/im-39-snotelspecfile.png
    :width: 6.5in
    :height: 4.77778in
 
@@ -3132,7 +3133,7 @@ data will be buffered and a new file created every five seconds. Thus if
 you are processing a large amount of historical data, this will prevent
 a flood of very small files.
 
-.. image:: ./media/legacy/routing/image40.png
+.. image:: ./media/legacy/routing/im-40-routing-output-snotel.png
    :width: 6.5in
    :height: 3.81736in
 
@@ -3144,8 +3145,8 @@ somewhere. The list of consumers available to you is controlled by the
 reference list editor. Type “rledit” at the command line. Select the
 Enumerations Tab, and Data Consumer.
 
-.. image:: ./media/legacy/routing/image41.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 12.43.24 PM.png
+.. image:: ./media/legacy/routing/im-41-data-consumer.png
+   :alt: data consumer
    :width: 6.49444in
    :height: 2.20208in
 
@@ -3312,7 +3313,7 @@ related data. The DECODES software suite has a module allowing it to
 place incoming data directly into the CWMS database. This obviates the
 need for intermediate flat-files used in the pass.
 
-.. image:: ./media/legacy/routing/cwms-consumer-flow.png
+.. image:: ./media/legacy/routing/im-42-cwms-consumer-flow.png
 
 Figure ‑: CWMS Consumer Data Flow
 
@@ -3551,7 +3552,7 @@ The ‘Param’ part must exactly-match one of the CWMS parameter in your
 database. The preferred way is to specify an explicit “CWMS” data-type
 in the Config Sensor record, as shown below.
 
-.. image:: ./media/legacy/routing/image43.png
+.. image:: ./media/legacy/routing/im-43-edit-config-sensor.png
    :width: 3.8875in
    :height: 4in
 
@@ -3724,7 +3725,7 @@ units should be used for each parameter type. When you apply the
 presentation group to a routing spec, DECODES will automatically convert
 the data into the correct units.
 
-.. image:: ./media/legacy/routing/image44.png
+.. image:: ./media/legacy/routing/im-44-presentation-cwms-metric.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 1.35.20 PM.png
    :width: 6.49444in
    :height: 3.41597in
@@ -3878,8 +3879,8 @@ that the executable Java Class be exactly as follows:
 
 decodes.consumer.TcpClientConsumer
 
-.. image:: ./media/legacy/routing/image45.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2018-01-12 at 3.18.14 PM.png
+.. image:: ./media/legacy/routing/im-45-consumer-socketclient.png
+   :alt: consumer socketclient
    :width: 6.38446in
    :height: 4.48455in
 
@@ -3895,8 +3896,8 @@ field just below this now changes to “Host:Port”. Type in the hostname
 (or IP Address) and port number that the server is listening on,
 separated by a colon.
 
-.. image:: ./media/legacy/routing/image46.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2018-01-12 at 3.47.06 PM.png
+.. image:: ./media/legacy/routing/im-46-routing-spec-socketclient.png
+   :alt: routing spec socket client
    :width: 6.49444in
    :height: 5.04514in
 
@@ -3918,6 +3919,8 @@ The TCP Client Consumer has options that are activated by properties:
 -  connectPauseSec – (default=60) The client will pause this many
    seconds between connection attempts.
 
+.. _leg-rout-scheduler:
+
 Running the Routing Spec Scheduler
 ==================================
 
@@ -3930,8 +3933,8 @@ Schedule Entries
 The right-most tab on the database editor is for scheduling the
 automatic execution of your routing specs (Figure 30).
 
-.. image:: ./media/legacy/routing/image47.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 1.32.41 PM.png
+.. image:: ./media/legacy/routing/im-47-routing-spec-scheduler.png
+   :alt: routing spec scheduler
    :width: 6.375in
    :height: 3.39677in
 
@@ -3977,15 +3980,15 @@ You are presented with a list of known processes that do various things.
 Select the RoutingScheduler process and hit Edit. The figures below show
 the list and then the open Routing Scheduler.
 
-.. image:: ./media/legacy/routing/image48.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 1.45.54 PM.png
+.. image:: ./media/legacy/routing/im-48-processes.png
+   :alt: processes
    :width: 6in
    :height: 3.29063in
 
 Figure : Comutation Editor - Processes Tab.
 
-.. image:: ./media/legacy/routing/image49.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 1.46.26 PM.png
+.. image:: ./media/legacy/routing/im-49-processes-routing-scheduler.png
+   :alt: processes routing scheduler
    :width: 6.49444in
    :height: 2.82014in
 
@@ -4063,8 +4066,8 @@ You can click the “Events” checkbox in the table. The GUI will connect
 to the process and display events as they happen in the scrolling
 window.
 
-.. image:: ./media/legacy/routing/image50.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 4.12.33 PM.png
+.. image:: ./media/legacy/routing/im-50-process-monitor.png
+   :alt: process monitor
    :width: 6.49444in
    :height: 3.06736in
 
@@ -4238,14 +4241,14 @@ example, if this is a stage (HG) to flow (QR) conversion, the
 independent variable would be stage (HG). Then press the “Sensor
 Properties” button.
 
-.. image:: ./media/legacy/routing/image51.png
+.. image:: ./media/legacy/routing/im-51-platform-sensor-parameters.png
    :width: 4.54595in
    :height: 3.98455in
 
 Figure : Select Platform Sensor and Press "Sensor Properties".
 
-.. image:: ./media/legacy/routing/image52.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 4.29.34 PM.png
+.. image:: ./media/legacy/routing/im-52-platform-sensor-properties.png
+   :alt: platform sensor properties
    :width: 4.6143in
    :height: 4.375in
 
@@ -4451,8 +4454,8 @@ specified maximum age. Add the property “RawArchiveMaxAge” to the
 Routing Spec. The value of this property can be strings like “1 year”,
 “6 months”, “30 days”, etc.
 
-.. image:: ./media/legacy/routing/image53.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-15 at 4.37.42 PM.png
+.. image:: ./media/legacy/routing/im-53-routing-specs-directory.png
+   :alt: routing specs directory
    :width: 6.49444in
    :height: 3.49444in
 
@@ -4526,8 +4529,8 @@ GUI Platform and Routing Monitor
 These are new features added in OpenDCS 6.2 RC10. The Launcher bar now
 contains two additional buttons:
 
-.. image:: ./media/legacy/routing/image54.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-07-21 at 2.23.08 PM.png
+.. image:: ./media/legacy/routing/im-54-decodes-platform-and-routing-monitor.png
+   :alt: decodes platform and routing monitors
    :width: 2.03442in
    :height: 4.19101in
 
@@ -4568,8 +4571,8 @@ sorted by clicking any of the column headers. The columns are:
 -  Routing Spec – The last routing spec that processed a message from
    this platform.
 
-.. image:: ./media/legacy/routing/image55.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-07-21 at 2.28.58 PM.png
+.. image:: ./media/legacy/routing/im-55-platform-monitor.png
+   :alt: platform monitor
    :width: 6.49444in
    :height: 3.8875in
 
@@ -4584,8 +4587,8 @@ Routing Monitor
 The Routing Monitor screen is shown below in Figure 42. The top panel
 shows routing specs defined in your database.
 
-.. image:: ./media/legacy/routing/image56.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-07-21 at 2.55.31 PM.png
+.. image:: ./media/legacy/routing/im-56-routing-monitor.png
+   :alt: routing monitor
    :width: 6.53958in
    :height: 4.15764in
 
@@ -4662,8 +4665,8 @@ the Processes tab along the top. Find the process called
 “StaleDataChecker” end edit it. It should look something like Figure
 11‑43
 
-.. image:: ./media/legacy/routing/image57.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-03-12 at 2.57.33 PM.png
+.. image:: ./media/legacy/routing/im-57-computation-editor-process.png
+   :alt: computation editor process
    :width: 6.48333in
    :height: 1.58403in
 
@@ -4756,8 +4759,8 @@ processed directly through DECODES. However, a recommended way is to use
 LRGS to store raw message data. This arrangement is illustrated in
 Figure 44.
 
-.. image:: ./media/legacy/routing/image58.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:EDL-LRGS.gif
+.. image:: ./media/legacy/routing/im-58-polling-lrgs.png
+   :alt: polling lrgs
    :width: 6in
    :height: 3.79927in
 
@@ -4794,8 +4797,8 @@ must be entered exactly as shown:
 
 decodes.polling.ListeningPortPool
 
-.. image:: ./media/legacy/routing/image59.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-07 at 5.45.05 PM.png
+.. image:: ./media/legacy/routing/im-59-enumerations-port-type.png
+   :alt: enumerations port type
    :width: 6.50556in
    :height: 4.32569in
 
@@ -4820,8 +4823,8 @@ Also make sure the following records exist:
 
    -  Exec Class: decodes.polling.TcpClientPortPool
 
-.. image:: ./media/legacy/routing/image60.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-10 at 1.54.24 PM.png
+.. image:: ./media/legacy/routing/im-60-enumerations-transport-medium-type.png
+   :alt: enumerations transport medium type
    :width: 6.49444in
    :height: 4.15764in
 
@@ -4843,8 +4846,8 @@ Next, select the Data Source Type enumeration and add a new record with
 mnemonic “Polled” and exec class “decodes.polling.PollingDataSource”. As
 shown below:
 
-.. image:: ./media/legacy/routing/image61.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 11.06.45 AM.png
+.. image:: ./media/legacy/routing/im-61-enumerations-source-polled.png
+   :alt: enumerations source polled
    :width: 6.49444in
    :height: 3.46042in
 
@@ -4895,8 +4898,8 @@ platforms are GOES, as opposed to different types of data loggers. In
 the following snapshot, “camp” indicates that this is a polled logger
 made by Campbell Scientific, Inc.
 
-.. image:: ./media/legacy/routing/image62.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 10.44.32 AM.png
+.. image:: ./media/legacy/routing/im-62-platform-designator.png
+   :alt: platform designator
    :width: 6.49444in
    :height: 3.37083in
 
@@ -4914,14 +4917,14 @@ There is now a separate column for Designator which you can use to sort
 the list. Note also that designator appears as part of the platform
 name.
 
-.. image:: ./media/legacy/routing/image63.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 10.41.45 AM.png
+.. image:: ./media/legacy/routing/im-63-decodes-properties-platformlistdesignatorcol.png
+   :alt: decodes properties platformlistdesignatorcol
    :width: 6in
    :height: 4.19397in
 
 Figure : Set platformListDesignatorCol to True.
 
-.. image:: ./media/legacy/routing/image64.png
+.. image:: ./media/legacy/routing/im-64-platforms-designator.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 10.48.49 AM.png
    :width: 6.50556in
    :height: 3.19097in
@@ -4936,7 +4939,7 @@ Modem Polling Routing Spec
 On the “Sources” tab of the database editor, create a data source record
 for your Digi ConnectPort device:
 
-.. image:: ./media/legacy/routing/image65.png
+.. image:: ./media/legacy/routing/im-65-sources-polled.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 11.38.54 AM.png
    :width: 6.49444in
    :height: 2.775in
@@ -4983,7 +4986,7 @@ for tool-tip help. The properties are:
 For each logger that you will access via modem, you must create a
 transport medium:
 
-.. image:: ./media/legacy/routing/image66.png
+.. image:: ./media/legacy/routing/im-66-edit-transport-medium.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 11.52.05 AM.png
    :width: 4.06419in
    :height: 4.69944in
@@ -5022,8 +5025,8 @@ Platforms. All platforms with a polled-modem transport medium will be
 shown for you to select from. In the following figure we have hidden the
 actual telephone numbers, which will show up as your Transport ID.
 
-.. image:: ./media/legacy/routing/image67.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 2.20.55 PM.png
+.. image:: ./media/legacy/routing/im-67-polled-modem.png
+   :alt: polled modem
    :width: 6.49444in
    :height: 4.91042in
 
@@ -5046,8 +5049,8 @@ disable several fields:
 
 -  Platform Message Types is an LRGS criteria and not applicable.
 
-.. image:: ./media/legacy/routing/image68.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 2.27.46 PM.png
+.. image:: ./media/legacy/routing/im-68-network-list-polled-modem.png
+   :alt: network list polled modem
    :width: 6.49444in
    :height: 3.97778in
 
@@ -5078,8 +5081,8 @@ specified number of times, the routing spec will terminate.
 On the “Schedule” tab, we have created a schedule entry to run the
 routing spec every hour.
 
-.. image:: ./media/legacy/routing/image69.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 2.37.31 PM.png
+.. image:: ./media/legacy/routing/im-69-routing-spc-polled-modem.png
+   :alt: routing spc polled modem
    :width: 6.49444in
    :height: 2.86528in
 
@@ -5130,8 +5133,8 @@ the portType property to “tcpclient”. Available ports here is a simple
 number representing the maximum number of simultaneous polling sessions
 to allow. It is a way to throttle the polling.
 
-.. image:: ./media/legacy/routing/image70.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 3.06.15 PM.png
+.. image:: ./media/legacy/routing/im-70-sources-polled.png
+   :alt: source type - polled
    :width: 6.49444in
    :height: 2.02222in
 
@@ -5149,8 +5152,8 @@ The polled TCP transport medium is shown below.
 
 All other parameters are similar to those shown above for polled modem.
 
-.. image:: ./media/legacy/routing/image71.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-12 at 3.03.12 PM.png
+.. image:: ./media/legacy/routing/im-71-edit-transport-medium-polled-tcp.png
+   :alt: edit transport medium - polled tcp
    :width: 4.01642in
    :height: 4in
 
@@ -5174,8 +5177,8 @@ for your listening socket.
 -  Set the availablePorts property to the number of clients you would
    like to be able to serve simultaneously (default = 50)
 
-.. image:: ./media/legacy/routing/image72.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-10 at 10.18.54 AM.png
+.. image:: ./media/legacy/routing/im-72-sources-polled.png
+   :alt: sources - polled
    :width: 6.48333in
    :height: 3.32569in
 
@@ -5198,8 +5201,8 @@ The EDL must then response with the password: “ToPsEcReT”. If it fails
 to do so, the connection is aborted, and a warning message is issued to
 the routing spec log.
 
-.. image:: ./media/legacy/routing/image73.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-10 at 10.25.05 AM.png
+.. image:: ./media/legacy/routing/im-73-edit-property-value.png
+   :alt: 
    :width: 3in
    :height: 2.80602in
 
@@ -5209,8 +5212,8 @@ Open the Platform record for the loggers that will connect to the
 listening port. Create a transport medium record with Medium Type set to
 “incoming-tcp”:
 
-.. image:: ./media/legacy/routing/image74.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-10 at 2.36.32 PM.png
+.. image:: ./media/legacy/routing/im-74-edit-transport-medium-incoming.png
+   :alt: 
    :width: 6.49444in
    :height: 5.13472in
 
@@ -5267,8 +5270,8 @@ On the Network List Tab of the database editor, create a network list.
 Set the Transport Medium Type to “incoming-tcp” and add all of the
 platforms that are allowed to use the listening socket.
 
-.. image:: ./media/legacy/routing/image75.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-10 at 2.48.35 PM.png
+.. image:: ./media/legacy/routing/im-75-network-list-incoming-tcp.png
+   :alt: 
    :width: 5.79388in
    :height: 2.125in
 
@@ -5296,8 +5299,8 @@ the directory $LRGSHOME/incoming-edl. Note the following:
 -  Date/Time Ranges are not used. A Listening Socket runs continuously,
    accepting client connections as they come.
 
-.. image:: ./media/legacy/routing/image76.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-08-10 at 2.53.31 PM.png
+.. image:: ./media/legacy/routing/im-76-routing-output-raw.png
+   :alt: 
    :width: 6.49444in
    :height: 5.34861in
 
@@ -5316,8 +5319,8 @@ Start the Reference List Editor from the Windows Start menu or from the
 “rledit” command. Select the Logger Type enumeration. Here you can
 create or modify logger types.
 
-.. image:: ./media/legacy/routing/image77.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2017-03-06 at 1.59.18 PM.png
+.. image:: ./media/legacy/routing/im-77-enumerations-logger-type.png
+   :alt: 
    :width: 6.49444in
    :height: 3.775in
 
@@ -5335,16 +5338,16 @@ PollScriptProtocol first. The following snap shows the complete
 enumeration record for the “fts” logger type. Note that under options,
 we specify the name of the script file (“fts.poll” in this case.)
 
-.. image:: ./media/legacy/routing/image78.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2017-03-06 at 2.00.04 PM.png
+.. image:: ./media/legacy/routing/im-78-enumeration-logger-type.png
+   :alt: 
    :width: 3.75in
    :height: 1.89016in
 
 Where are the script files located? This is specified by the DECODES
 Setting called “pollScriptDir”:
 
-.. image:: ./media/legacy/routing/image79.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2017-03-06 at 2.02.50 PM.png
+.. image:: ./media/legacy/routing/im-79-decodes-properties-poll-scripts.png
+   :alt: 
    :width: 6.49444in
    :height: 4.33681in
 
@@ -5467,8 +5470,8 @@ PakBus Protocol
 In the enumeration record for pakbus, it is not necessary to specify a
 poll script:
 
-.. image:: ./media/legacy/routing/image80.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2017-03-06 at 2.00.53 PM.png
+.. image:: ./media/legacy/routing/im-80-enum-item-dialog-pakbus.png
+   :alt: 
    :width: 4.23611in
    :height: 2.13472in
 
@@ -5523,20 +5526,20 @@ To do this, you must first add the sensors to the DECODES Configuration
 records. Open the configuration for the platform(s) for which you want
 performance measurements and click the “Add DCP PMs” button:
 
-.. image:: ./media/legacy/routing/image81.png
+.. image:: ./media/legacy/routing/im-81-dcp-decodes-editor.png
    :width: 6.5in
    :height: 4.15764in
 
 Select the performance measurements you want from the list:
 
-.. image:: ./media/legacy/routing/image82.png
+.. image:: ./media/legacy/routing/im-82-select-measurements.png
    :width: 1.97309in
    :height: 3.71129in
 
 Sensors will be added to the configuration for the PMs that you
 selected:
 
-.. image:: ./media/legacy/routing/image83.png
+.. image:: ./media/legacy/routing/im-83-sensors.png
    :width: 6.5in
    :height: 1.49097in
 
@@ -5559,6 +5562,6 @@ DcpAddress, (message) Length, ans Signal Strength.
 Note: Be sure that the PM names match the sensor names that you added,
 which will match the names in the select dialog:
 
-.. image:: ./media/legacy/routing/image84.png
+.. image:: ./media/legacy/routing/im-84-routing-prop-includepms.png
    :width: 6.5in
    :height: 2.56736in

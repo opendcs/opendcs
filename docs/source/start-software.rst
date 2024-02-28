@@ -67,7 +67,7 @@ Where can I find this information in PDF format?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Previous versions of OpenDCS (before 7.0.0), included a doc folder
-in the install directory (ie OPENDCS/doc), with PDFs, which were
+in the install directory (ie C:\\OPENDCS\doc), with PDFs, which were
 previously developer focused.  Versions 7.0.0 and after include 
 html code in the OPENDCS/docs folder.  The content of the older
 PDFs is now contained in the html files.
@@ -159,8 +159,8 @@ How do I install the jar?
 -------------------------
 
 Prior to double clicking or launching the install jar, decide where you
-want to install the program.  The default location will be "C:\OPENDCS".
-If you already have a previous verion installed in this location, back it 
+want to install the program.  The default location will be "C:\\OPENDCS".
+If you already have a previous version installed in this location, back it 
 up per your own standards. 
 
 Ensure that your desired installation path exists.  Ie if you wish to use 
@@ -211,7 +211,7 @@ USBR
 * Bureau of Reclamation Hydrologic Database (HDB) Components
 * LRGS
 
-Other Angecy
+Other Agency
 
 * OpenDCSBase
 * XML Database Template
@@ -238,26 +238,28 @@ the installation is completed.
 
 Navigate to the install directory to view the contents that just
 installed.  Make note that the folder "doc" contains a folder "html"
-where documentation can be accessed.  Open the index.html.
+where documentation can be accessed.  Open the index.html (ie drag the 
+file into a browser).
 
 What do I need to edit/configure for my set-up?
 -----------------------------------------------
 
-Prior to launching the software, set up the decodes.properties file.
+Prior to launching the software, set up the **decodes.properties** file.
 
-USACE users:
+USACE and USBR users:
 
 * Copy the user.properties file from server to the C:\\OPENDCS directory.
 * Rename the file to decodes.properties.
 
+For more details about the decodes.properties see
+:any:`leg-inst-start-configure`
 
-For more details about the decodes.properties see section 
 
 How do I launch the software?
 -----------------------------
 
 Now that the software is installed.  On windows double click:
-launcher_start.bat (in the OPENDCS/bin directory). 
+**launcher_start.bat** (in the C:\\OPENDCS\bin directory). 
 
 .. image:: ./media/start/software/im-08-launcher_start.JPG
    :alt: windows launcher_start.bat
@@ -388,10 +390,7 @@ For example - the following are potential edits users may modify.
 * Screening Unit System
 
 For more information about the Preferences and options, see 
-:ref:'More on Decodes Properties <./legacy-install-guide.rst>'
-::ref:'Try <./legacy-install-guide.rst>'
-
- 
+:any:`leg-inst-start-configure`
 
 Time Series Database Components
 -------------------------------
@@ -403,7 +402,7 @@ Time Series Database Components
 **Time Series**
 
 This is one method to view the time series in the database.
-Time Series can filtered by pathname parts, or Descriptions,
+Time Series can be filtered by pathname parts, or Descriptions,
 or Database Keys.  This is one method to identify the Key for
 a given time series in the database. 
 
@@ -423,8 +422,11 @@ site-group.
 
 **Computations**
 
-This is the GUI to 1) access, edit, or add new algorithms; 2) set up
-computations for time series in the database and; 3) set up Processes.
+This is the GUI to 
+
+#. Access, edit, or add new algorithms;
+#. Set up computations for time series in the database and;
+#. Set up Processes.
 
 **Test Computations**
 
@@ -440,6 +442,7 @@ track of dependencies.
 
 **Algorithms**
 
+This tab takes users to the Algorithm Wizard. 
 
 **Logging**
 
@@ -466,3 +469,4 @@ As not filtering that out can cause excessive messages in the log.
    This mechanism is intentionally limited. It is a goal of the project to switch the current custom logging backend
    to an available standard, such as logback or just java.util.logging which will provide the end-user with better
    options for log filtering and storage.
+

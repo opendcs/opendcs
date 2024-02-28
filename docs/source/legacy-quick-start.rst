@@ -59,8 +59,8 @@ Press Connect.
 servers. If you do not have one, or you do not know the password,
 contact the WCDAS DCS Operator at (757) 824-3446.*
 
-.. image:: ./media/legacy/quick-start/image1.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 2.19.23 PM.png
+.. image:: ./media/legacy/quick-start/im-01-lrgs-status.png
+   :alt: lrgs status
    :width: 6.2157in
    :height: 5.80625in
 
@@ -72,8 +72,8 @@ Again, type or select the LRGS hostname, type your user name and
 password, then hit Connect. You should see a Connected message along the
 bottom of the screen.
 
-.. image:: ./media/legacy/quick-start/image2.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 2.24.46 PM.png
+.. image:: ./media/legacy/quick-start/im-02-dcp-message-browswer.png
+   :alt: dcp message browser
    :width: 6.125in
    :height: 3.96304in
 
@@ -85,8 +85,8 @@ continue.
 You select the desired messages by time range, platform selection, and a
 message type.
 
-.. image:: ./media/legacy/quick-start/image3.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 2.28.21 PM.png
+.. image:: ./media/legacy/quick-start/im-03-search-criteria.png
+   :alt: dcp message browser search criteria
    :width: 5.625in
    :height: 2.90994in
 
@@ -108,8 +108,8 @@ button three times to enter the following IDs:
 
 -  CE2066DA
 
-.. image:: ./media/legacy/quick-start/image4.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 2.36.40 PM.png
+.. image:: ./media/legacy/quick-start/im-04-search-platform.png
+   :alt: dcp message browser search platform
    :width: 6.49444in
    :height: 3.56181in
 
@@ -155,8 +155,8 @@ enter the user name for your DDS account provided by the server.
 
 When finished, hit Commit and Close.
 
-.. image:: ./media/legacy/quick-start/image5.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 3.40.43 PM.png
+.. image:: ./media/legacy/quick-start/im-05-source-cdadata.png
+   :alt: source cdadata
    :width: 6.49444in
    :height: 3.23611in
 
@@ -166,8 +166,8 @@ The Site Record
 Click the Sites tab. Click New at the bottom. When asked for a name,
 enter the HADS name:
 
-.. image:: ./media/legacy/quick-start/image6.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 2.50.17 PM.png
+.. image:: ./media/legacy/quick-start/im-06-site-name.png
+   :alt: site name
    :width: 3in
    :height: 2.40494in
 
@@ -183,8 +183,8 @@ When you are finished entering descriptive info, click the Commit button
 and the Close button at the bottom. Your site now appears in the site
 list.
 
-.. image:: ./media/legacy/quick-start/image7.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 2.51.10 PM.png
+.. image:: ./media/legacy/quick-start/im-07-decodes-db-editor.png
+   :alt: decodes database editor
    :width: 6.48333in
    :height: 4.41597in
 
@@ -212,16 +212,16 @@ Each sensor must have at least one data type code.
 (or standard) and an identifier. The SHEF Physical element code HG
 (Height of a Gage) corresponds to the CWMS data type “Stage”.*
 
-.. image:: ./media/legacy/quick-start/image8.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 3.26.53 PM.png
+.. image:: ./media/legacy/quick-start/im-08-edit-config-sensor.png
+   :alt: config sensor window
    :width: 3.96566in
    :height: 5.125in
 
 Repeat this process until all of your sensors are entered. After
 completion, our sensor list looks like this:
 
-.. image:: ./media/legacy/quick-start/image9.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-27 at 7.48.48 AM.png
+.. image:: ./media/legacy/quick-start/im-09-sensors-example.png
+   :alt: sensors listed - example
    :width: 6.49444in
    :height: 1.225in
 
@@ -241,8 +241,8 @@ the conversion algorithm and coefficients.
 
 *For ASCII data, conversions are usually not necessary.*
 
-.. image:: ./media/legacy/quick-start/image10.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 3.37.35 PM.png
+.. image:: ./media/legacy/quick-start/im-10-decoding-script.png
+   :alt: decoding script editor
    :width: 6.49444in
    :height: 2.43819in
 
@@ -254,8 +254,8 @@ Write the script. Press the Decode button as often as you like to test
 the script. Here is our script. Refer to the Platform Decoding Guide for
 an explanation of each operation.
 
-.. image:: ./media/legacy/quick-start/image11.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 3.49.48 PM.png
+.. image:: ./media/legacy/quick-start/im-11-decoding-example.png
+   :alt: decoding example
    :width: 6.25698in
    :height: 4.92556in
 
@@ -274,8 +274,8 @@ Then click ‘Add’ at the bottom right to create a new Transport Medium
 record. Select Medium Type “goes-self-timed”. Enter the correct GOES DCP
 Address *and* GOES Channel (It will not work without the channel!)
 
-.. image:: ./media/legacy/quick-start/image12.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 4.03.52 PM.png
+.. image:: ./media/legacy/quick-start/im-12-platform-transport.png
+   :alt: platform transport type
    :width: 6.49444in
    :height: 3.65139in
 
@@ -316,16 +316,16 @@ information about the site and its sensors.
 Click the Sites tab. Click New at the bottom. When asked for a name,
 enter the HADS name:
 
-.. image:: ./media/legacy/quick-start/image13.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-02-24 at 9.31.46 AM.png
+.. image:: ./media/legacy/quick-start/im-13-platform-type.png
+   :alt: platform type editor
    :width: 2.96265in
    :height: 2.375in
 
 In the site form, you can enter other information such as a description,
 location, etc. None of this is strictly required by DECODES.
 
-.. image:: ./media/legacy/quick-start/image14.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-02-24 at 9.34.12 AM.png
+.. image:: ./media/legacy/quick-start/im-14-site-information.png
+   :alt: site information
    :width: 5.25in
    :height: 2.97923in
 
@@ -344,8 +344,8 @@ Go to the Configs tab and click New at the bottom. Call this config
 As we did above in section 3.3 , enter the information you know about
 the sensors on the DCP. Then click the Commit button at the bottom.
 
-.. image:: ./media/legacy/quick-start/image15.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-02-24 at 9.39.18 AM.png
+.. image:: ./media/legacy/quick-start/im-15-sensors-generic.png
+   :alt: sensors example
    :width: 6.25in
    :height: 2.9626in
 
@@ -368,8 +368,8 @@ the self-timed script.
 Finally, click Load and specify the DCP Address CE2066DA. You should get
 a sample message in the window. This is what we have so far:
 
-.. image:: ./media/legacy/quick-start/image16.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-02-24 at 9.47.06 AM.png
+.. image:: ./media/legacy/quick-start/im-16-decoding-script.png
+   :alt: decoding script window
    :width: 6.49444in
    :height: 3.56181in
 
@@ -391,8 +391,8 @@ Our decoding strategy is:
 The figure below shows the complete script. We will explain it
 step-by-step:
 
-.. image:: ./media/legacy/quick-start/image17.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-02-24 at 10.09.47 AM.png
+.. image:: ./media/legacy/quick-start/im-17-decoding-example.png
+   :alt: decoding example
    :width: 6.49444in
    :height: 4.40417in
 
@@ -542,8 +542,8 @@ We have called ours “test”. Then select:
 
 Click Commit and Close.
 
-.. image:: ./media/legacy/quick-start/image18.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 4.14.27 PM.png
+.. image:: ./media/legacy/quick-start/im-18-routing-spec.png
+   :alt: routing spec set up
    :width: 6.49444in
    :height: 5.225in
 
@@ -591,8 +591,8 @@ Re open the “test” routing spec, and:
 
 -  Leave everything else the same.
 
-.. image:: ./media/legacy/quick-start/image19.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 4.29.44 PM.png
+.. image:: ./media/legacy/quick-start/im-19-routing-spec-output.png
+   :alt: routing spec output
    :width: 6.49444in
    :height: 2.12361in
 
@@ -667,8 +667,8 @@ schedule entry the same as the routing spec.*
 In our case we will have the routing spec run once every hour at 5
 minutes after the hour:
 
-.. image:: ./media/legacy/quick-start/image20.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 4.40.28 PM.png
+.. image:: ./media/legacy/quick-start/im-20-scheduled-entry.png
+   :alt: routing scheduler set up
    :width: 6.49444in
    :height: 3.28056in
 
@@ -680,8 +680,8 @@ Review and Start the RoutingScheduler Process
 Back on the Launcher screen, click the Processes button. Double click
 the RoutingScheduler process in the list.
 
-.. image:: ./media/legacy/quick-start/image21.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 4.43.13 PM.png
+.. image:: ./media/legacy/quick-start/im-21-launch-scheduler.png
+   :alt: routing scheduler launcher
    :width: 6.49444in
    :height: 2.80903in
 
@@ -697,8 +697,8 @@ right. Check the ‘Events’ checkbox for the RoutingScheduler process.
 The process should start and you will see events from it in the
 scrolling area at the bottom:
 
-.. image:: ./media/legacy/quick-start/image22.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2016-01-26 at 4.47.40 PM.png
+.. image:: ./media/legacy/quick-start/im-22-process-monitor.png
+   :alt: process monitor
    :width: 6.49444in
    :height: 2.75278in
 
