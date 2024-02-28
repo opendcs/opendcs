@@ -17,10 +17,12 @@ do the following steps:
 The GUI is built to help users set up a routing spec.  Once a routing 
 spec is set up using the GUI, it will have a name.  The routing spec
 can then be executed by running the OpenDCS command "rs".  More
-information on the commands to run routing specs can be found ____.
+information on the commands to run routing specs can be found 
+:any:`leg-rout-manual-commands`
 
 Routing specs can also be set to run on a background scheduler called
-the *Routing Scheduler*.  More information on this can be found _____.
+the *Routing Scheduler*.  More information on this can be found 
+:any:`leg-rout-scheduler`.
 
 The content below is focused on how to set up a routing spec. 
 
@@ -259,7 +261,7 @@ could be stored in the Sensor area (ie water levels, precipitation,
 stage, flow, etc). Below is a brief recap of the Sensor headers:
 
 * Name: information about the variable (ie Precipitation, AirTempMax, PeakFlow, etc)
-* Data Type: information about **param** such as (Precip, Temp-Air, Stage, Flow)
+* Data Type: information about **param** such as (Precip, Temp-Air, Stage, Flow). Users can enter either the Code or Param Type from the tables below.
 * Mode: information about the time series **interval**
 * Sampling Times: additional information about the sampling time interval
 * Properties: further information about the time series such as **statcode** , **duration** , and **version**.
@@ -268,17 +270,57 @@ stage, flow, etc). Below is a brief recap of the Sensor headers:
    :alt: sources
    :width: 600
 
-In the example above, the USACE database CWMS is noted in the 
-properties. Depending on which agency or version is being used,
-these names may differ.
+See the table below for more information about what code or parameter
+should be entered above for the Data Type.
 
-In this example in getting started, the examples displayed are 
+In this example in getting started, the configurations are
 introductory and will not include offsets or computations or 
 transformations.  
 
 Note that if a user specifies properties in the platform section,
 those properties will overwrite what is defined in the configuration
 record.
+
+Below is a table of the codes and the corresponding parameter
+types that need to be entered for the sensors.
+
+.. table:: Table Matching Codes and Parameter Types
+
+   +-----------+-----------------------+
+   | **Code**  | **CWMS Param Type**   |
+   |           |                       |
+   |           |                       |
+   +-----------+-----------------------+
+   | PC        | Precip                |
+   +-----------+-----------------------+
+   | HG        | Stage                 |
+   +-----------+-----------------------+
+   | HP        | Stage-Pool            |
+   +-----------+-----------------------+
+   | HT        | Stage-Tail            |
+   +-----------+-----------------------+
+   | VB        | Volt                  |
+   +-----------+-----------------------+
+   | BV        | Volt                  |
+   +-----------+-----------------------+
+   | HR        | Elev                  |
+   +-----------+-----------------------+
+   | LF        | Stor                  |
+   +-----------+-----------------------+
+   | QI        | Flow-In               |
+   +-----------+-----------------------+
+   | QR        | Flow                  |
+   +-----------+-----------------------+
+   | TA        | Temp-Air              |
+   +-----------+-----------------------+
+   | TW        | Temp-Water            |
+   +-----------+-----------------------+
+   | US        | Speed-Wind            |
+   +-----------+-----------------------+
+   | UP        | Speed-Wind            |
+   +-----------+-----------------------+
+   | UD        | Dir-Wind              |
+   +-----------+-----------------------+
 
 Once the sensor information is added, add a new Decoding Script.
 
@@ -297,6 +339,16 @@ can be added.  One can think of the DECODING script as the
 instructions or recipe for translating the raw lrgs messages or data
 retrieved from the web to human readable time series, formatted such
 that it can be easily entered into the database. 
+
+For example, see in the following window the Sample Message Box
+window contains a raw message, and the bottom shows the data in 
+a time series format.
+
+.. image:: ./media/start/routingspec/im-15-config-decoding-script-example.JPG
+   :alt: sources
+   :width: 600
+
+The next section will go over the window parts.  
 
 DECODING Basics
 ~~~~~~~~~~~~~~~
@@ -324,17 +376,89 @@ be at least one format statement and a script name.  The default
 
 * Script Name:
 * Format Statement - Label: 
+* Format Statement - Format Statement: 
 
-Overview of the Decoding Script Editor
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+On the top of the screen there are additional options including
 
+* Data Order: A drop down menu where Ascending or Descending can be selected
+* Header Type: A drop fown menu for selecting a header type such as a medium or source type
+
+DECODES uses Fortran-like statements to interpret and format the data.
+Within a statement, the format operations are spearated from each
+other by commas.
+
+In the middle of the screen there is a box "Sample Message" where
+users can paste messages.  Users can retreive messages from alternative
+sources and paste directly into the window, or load messages using
+the Load button on the right. 
+
+.. image:: ./media/start/routingspec/im-16-config-decoding-script-new.JPG
+   :alt: sources
+   :width: 600
+
+In the example below, a message is pasted from loading a message. 
+To LOAD a message, users must retreive the message while connected
+to the lrgs.  For USACE users, this means that messages can only
+be retreieved while logged onto the server.  To select a message 
+
+
+DECODING - Statement Basics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once the statements are defined, and a message is in the Sample
+Message area, then DECODING can be executed for testing or debugging
+purposes.  Click the Decode button on the right hand side. 
+
+As it is executed, the script keeps track of three things:
+
+*. The currently executing format statement
+*. The current operation within the format statement
+*. The current position within the message data
+
+The message header is not processed by the script.  The data pointer
+is initialized to the first actual message byte.
+
+The script will start with the first format statement, so position
+is important.  This differs from previous versions of DECODES and EMIT.
+
+Each format statement has a label.  Several operations can cause
+decoding to jump to a new statement, indentified by its label. Labels
+may only contain letters and digits.
+
+Note, that sometimes an entire format statement cannot fit into one 
+line. In these cases, a second adjacent label with the exact same 
+name can be added and the format statement will be treated as a 
+continuation of the first statement. 
+
+The various operations in the format statements step through the 
+message data from beginning to end.  There are operations for 
+skipping characters and lines, and for positioning the data
+pointer within the message data.
+
+Below are a few examples of some common statements, to help a new
+user get familiar with how the statements work.  Typically, DECODING
+that is operational and parses a raw message, is more involved. For more
+information see section _______ .
+
+Recall that the following information is being retreived.
+
+* Date
+* Value for Variable
+
+For a more detailed introduction about DECODING see the :: ref 
 
 Platforms
 ---------
 
+The next step to getting the routing spec set up is to set up a 
+platform.  For example, in this example, the platform will be named
 
 Network Lists
 -------------
+
+Operationally it is common to group a number of platforms together.
+In some cases these may be grouped together by project, or perhaps by 
+seasonanilty, or perhaps something else.  For this examples 
 
 
 Routing Spec

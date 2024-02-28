@@ -1,3 +1,4 @@
+.. _main.legacy.decoding.guide:
 ###############################
 DECODES Platform Decoding Guide
 ###############################
@@ -37,7 +38,7 @@ The types of recording devices include:
 
 The operations performed by DECODES are below.
 
-.. image:: ./media/legacy/decoding-guide/decodes_ops.png
+.. image:: ./media/legacy/decoding-guide/im-01-decodes-ops.png
    :width: 1.30347in
    :height: 3.65139in
 
@@ -183,7 +184,7 @@ the name in the area provided or by pressing the ‘Choose’ button.
 Finally press the ‘Export’ button. As data is exported, a message will
 be added to the ‘Results’ area at the bottom.
 
-.. image:: ./media/legacy/decoding-guide/image2.png
+.. image:: ./media/legacy/decoding-guide/im-02-export-decodes-db.png
    :width: 3.98611in
    :height: 3.80556in
 
@@ -197,7 +198,7 @@ dialog will allow you to open an XML file, scan its records, select
 which records to import, and finally, import them into your editable
 database.
 
-.. image:: ./media/legacy/decoding-guide/image3.png
+.. image:: ./media/legacy/decoding-guide/im-03-import-decodes-db.png
    :width: 4.86111in
    :height: 2.51389in
 
@@ -208,7 +209,7 @@ After selecting a file, press the ‘Scan File’ button. Figure 4 shows the
 dialog after a file has been opened and scanned. The user has selected
 two platforms for import.
 
-.. image:: ./media/legacy/decoding-guide/image4.png
+.. image:: ./media/legacy/decoding-guide/im-04-import-xml-decodes-db.png
    :width: 4.86111in
    :height: 2.40278in
 
@@ -383,8 +384,8 @@ You can also start the dbedit directly from a terminal with the command::
 
 The editor starts as shown in Figure 5.
 
-.. image:: ./media/legacy/decoding-guide/image5.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 3.33.36 PM.png
+.. image:: ./media/legacy/decoding-guide/im-05-decodes-platforms.png
+   :alt: decodes platforms list
    :width: 6.49444in
    :height: 5.58403in
 
@@ -448,8 +449,8 @@ You can exit the editor by selecting File-Exit or by closing the window.
 If you have edit panels open in which changes have not been saved, you
 will be forced to close these panels before you can exit.
 
-.. image:: ./media/legacy/decoding-guide/image6.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 3.45.10 PM.png
+.. image:: ./media/legacy/decoding-guide/im-06-decodes-config.png
+   :alt: decodes configuration tab
    :width: 6.50556in
    :height: 4.66319in
 
@@ -474,8 +475,8 @@ As in many of the DECODES records, you can adorn the site with a set of
 Properties (name=value pairs). Properties are used by various formatters
 and other modules and are described in the appropriate sections.
 
-.. image:: ./media/legacy/decoding-guide/image7.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 3.48.01 PM.png
+.. image:: ./media/legacy/decoding-guide/im-07-sites-information.png
+   :alt: platform sites information
    :width: 6.49444in
    :height: 4.20208in
 
@@ -516,15 +517,15 @@ Using the buttons to the right, you can Delete, Edit, or Add scripts in
 this list. If you edit or add a script, you will see the dialog shown in
 Figure 10
 
-.. image:: ./media/legacy/decoding-guide/image8.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 4.41.53 PM.png
+.. image:: ./media/legacy/decoding-guide/im-08-decodes-configs-sensors.png
+   :alt: decodes config sensors
    :width: 6.25in
    :height: 4.05461in
 
 Figure 8: Platform Config Edit Panel.
 
-.. image:: ./media/legacy/decoding-guide/image9.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 4.43.35 PM.png
+.. image:: ./media/legacy/decoding-guide/im-09-edit-config-sensor.png
+   :alt: edit config sensor
    :width: 3.5in
    :height: 3.93225in
 
@@ -654,20 +655,20 @@ corresponding raw data is highlighted with a yellow background. The
 example shows that the 16:00 Air Temperature value corresponds to raw
 characters “DKz” within the message.
 
-.. image:: ./media/legacy/decoding-guide/image10.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 4.53.34 PM.png
+.. image:: ./media/legacy/decoding-guide/im-10-decoding-script-example.png
+   :alt: decoding example
    :width: 6.49444in
    :height: 5.07847in
 
 Figure 10: Decoding Script Edit Dialog Showing Interactive Decoding.
 
-.. image:: ./media/legacy/decoding-guide/load_platform_lrgs.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 4.57.40 PM.png
+.. image:: ./media/legacy/decoding-guide/im-11-a-load-sample-message.png
+   :alt: load sample message from dcp
    :width: 4in
    :height: 3.85358in
 
-.. image:: ./media/legacy/decoding-guide/load_platform_file.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 4.57.40 PM.png
+.. image:: ./media/legacy/decoding-guide/im-11-b-load-sample-message-file.png
+   :alt: load sample message from file
    :width: 4in
    :height: 3.85358in
 
@@ -677,8 +678,8 @@ For even more information on how the script was executed, you can hit
 the ‘Trace’ button after decoding. A detailed list of operations is
 shown, as in Figure 12.
 
-.. image:: ./media/legacy/decoding-guide/image12.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 5.01.59 PM.png
+.. image:: ./media/legacy/decoding-guide/im-12-decoding-trace.png
+   :alt: decoding trace messages
    :width: 5.625in
    :height: 3.75622in
 
@@ -706,8 +707,8 @@ the same site, then you must add a designator to distinguish them.
 The Owner Agency and Description are simple free-form type-in fields.
 They are informational and not used by other DECODES software.
 
-.. image:: ./media/legacy/decoding-guide/image13.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 5.06.48 PM.png
+.. image:: ./media/legacy/decoding-guide/im-13-decodes-platform.png
+   :alt: decodes platform
    :width: 6.49444in
    :height: 5.01111in
 
@@ -780,8 +781,8 @@ offset and scaling.
 -  “maxReplaceValue” – Add a property with this name if you want a value
    above the maximum to be replaced with a special value.
 
-.. image:: ./media/legacy/decoding-guide/image14.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 5.21.27 PM.png
+.. image:: ./media/legacy/decoding-guide/im-14-platform-sensor.png
+   :alt: platform sensors
    :width: 4.20199in
    :height: 3.67135in
 
@@ -862,8 +863,8 @@ channel 142.
 Also in this dialog, you associate each transport medium with the name
 of a “Script” which will be used to decode the data.
 
-.. image:: ./media/legacy/decoding-guide/image15.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-14 at 5.22.39 PM.png
+.. image:: ./media/legacy/decoding-guide/im-15-transport-medium.png
+   :alt: transport medium
    :width: 3.5in
    :height: 3.47876in
 
@@ -1566,7 +1567,7 @@ We would want to parse the time zone “EDT” right after the time field,
 and then go back to parse the date time fields. This file could be
 parsed thusly:
 
-.. image:: ./media/legacy/decoding-guide/image16.png
+.. image:: ./media/legacy/decoding-guide/im-16-format-statements.png
    :width: 6.5in
    :height: 1.31042in
 
@@ -1900,8 +1901,8 @@ sure an entry “shefcode” exists. If it does not, add it as shown in
 Figure 16. DECODES will use the “shefcode” data type assigned to your
 sensors to map codes that appear in the SHEF input files.
 
-.. image:: ./media/legacy/decoding-guide/image17.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-28 at 3.19.00 AM.png
+.. image:: ./media/legacy/decoding-guide/im-17-enum-item-dialog-shefcode.png
+   :alt: enumerations item dialog box for shef code
    :width: 4.75in
    :height: 2.07889in
 
@@ -1913,8 +1914,8 @@ entry called “shef” exists. If it does not, add it as shown in Figure
 containing the message type (.E or .A), the station name, and the
 message time stamp.
 
-.. image:: ./media/legacy/decoding-guide/image18.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-28 at 3.22.48 AM.png
+.. image:: ./media/legacy/decoding-guide/im-18-enum-item-dialog-shef.png
+   :alt: enumerations item dialog box for shef
    :width: 4.75in
    :height: 2.10018in
 
@@ -1943,7 +1944,7 @@ An optional property “DoneDir” is shown in the example. Thus, after
 files are processed by DECODES, they will be moved to the directory
 “shef-done” under the toolkit installation.
 
-.. image:: ./media/legacy/decoding-guide/image19.png
+.. image:: ./media/legacy/decoding-guide/im-19-source-directory.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-28 at 3.32.34 AM.png
    :width: 6.50556in
    :height: 2.61806in
@@ -1975,14 +1976,14 @@ with datatype “shefcode”. If none is found, it will attempt to match
 “shef-pe” data type codes. If no match is found for either, the sensor
 will be skipped and a warning will be issued to the log.
 
-.. image:: ./media/legacy/decoding-guide/image20.png
+.. image:: ./media/legacy/decoding-guide/im-20-config-sensor-example.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-28 at 3.40.29 AM.png
    :width: 3.75in
    :height: 5.08756in
 
 Figure 19: Define a Sensor with "shefcode" Data Type.
 
-.. image:: ./media/legacy/decoding-guide/image21.png
+.. image:: ./media/legacy/decoding-guide/im-21-decoding-shef.png
    :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-04-28 at 4.07.17 AM.png
    :width: 6.49444in
    :height: 5.39306in
@@ -2055,7 +2056,7 @@ Future versions will allow you to initialize the GUI from remote DECODES
 databases, the National Weather Service HADS System, and from your
 NEWSID PDT (Platform Description Table) records.
 
-.. image:: ./media/legacy/decoding-guide/image22.png
+.. image:: ./media/legacy/decoding-guide/im-22-decodes-platform-wizard.png
    :width: 5.02778in
    :height: 5.25in
 
@@ -2068,7 +2069,7 @@ The Site Panel is shown in Figure 15‑22. Here you enter information
 about the location. We have also entered the NWSHB5 (National Weather
 Service Handbook 5) name “VNDI2” for this site.
 
-.. image:: ./media/legacy/decoding-guide/image23.png
+.. image:: ./media/legacy/decoding-guide/im-23-platform-wizard-site.png
    :width: 5.01389in
    :height: 5.25in
 
@@ -2082,7 +2083,7 @@ about each sensor on this platform. This Platform has three sensors:
 Stage, Precip, and Battery. Each reports a value every 15 minutes within
 a message.
 
-.. image:: ./media/legacy/decoding-guide/image24.png
+.. image:: ./media/legacy/decoding-guide/im-24-platform-wizard-sensors.png
    :width: 4.98611in
    :height: 4.05556in
 
@@ -2093,7 +2094,7 @@ Platform Wizard Equipment Model Panel
 
 This panel allows you to enter information for the equipment model.
 
-.. image:: ./media/legacy/decoding-guide/image25.png
+.. image:: ./media/legacy/decoding-guide/im-25-platform-wizard-equipment.png
    :width: 4.98611in
    :height: 4.05556in
 
@@ -2120,7 +2121,7 @@ operators. This allows us to correctly handle the 4\ :sup:`th` data
 line, where an extra space appears before the stage value, and the
 battery value is only 4 characters long.
 
-.. image:: ./media/legacy/decoding-guide/image26.png
+.. image:: ./media/legacy/decoding-guide/im-26-decoding-script.png
    :width: 5.02778in
    :height: 6.48611in
 
@@ -2134,7 +2135,7 @@ platform-specific information. Make sure that you have one “Transport
 Medium” record at the bottom for each of the 3 ways of retrieving data.
 Our example shows a single record for GOES Self Timed.
 
-.. image:: ./media/legacy/decoding-guide/image27.png
+.. image:: ./media/legacy/decoding-guide/im-27-platform-information.png
    :width: 4.98611in
    :height: 4.66667in
 
@@ -2155,7 +2156,7 @@ The example screen shows that our sample platform validated
 successfully. So we pressed the “Write to Editable Database” button.
 This was also successful.
 
-.. image:: ./media/legacy/decoding-guide/image28.png
+.. image:: ./media/legacy/decoding-guide/im-28-summary-of-actions.png
    :width: 4.98611in
    :height: 4.66667in
 
@@ -2266,7 +2267,7 @@ season from the pull down list.
 To *deselect*, simply make the property value blank. A blank selection
 is always present at the top of the list.
 
-.. image:: ./media/legacy/decoding-guide/image29.png
+.. image:: ./media/legacy/decoding-guide/im-29-platform-properties-seasonal-edit.png
    :width: 6.5in
    :height: 4.43699in
 
@@ -2287,7 +2288,7 @@ click Edit Sensor Info. The properties are at the bottom of the Platform
 Sensor Parameters dialog. Click “ignoreSeason” and press the Edit
 button. Now define the season.
 
-.. image:: ./media/legacy/decoding-guide/image30.png
+.. image:: ./media/legacy/decoding-guide/im-30-platform-sensor-info-sesonal-edit.png
    :width: 6.5in
    :height: 6.6231in
 
