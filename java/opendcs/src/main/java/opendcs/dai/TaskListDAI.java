@@ -3,6 +3,7 @@ package opendcs.dai;
 import java.util.Collection;
 import java.util.List;
 
+import org.opendcs.tsdb.FailedTaskListEntry;
 import org.opendcs.tsdb.TaskListEntry;
 
 import decodes.sql.DbKey;
@@ -27,4 +28,20 @@ public interface TaskListDAI extends DaiBase
      * @throws DbIoException
      */
     public void deleteEntries(Collection<? extends TaskListEntry> entries) throws DbIoException;
+
+    /**
+     * Update TaskList entries for computations that failed during processing. Update to given number of times.
+     * @param entries The task list entries
+     * @param retryFailed whether or not we will actually update the fail time
+     * @param maxRetries how many times we allow reprocessing to happen.
+     * @throws DbIoException
+     */
+    public void updateFailedEntries(Collection<FailedTaskListEntry> entries, int maxRetries) throws DbIoException;
+
+    /**
+     * Update the fail_time, ignoring how many times it's already been updated
+     * @param entries
+     * @throws DbIoException
+     */
+    public void updateFailedEntries(Collection<FailedTaskListEntry> entries) throws DbIoException;
 }

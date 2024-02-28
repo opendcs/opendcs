@@ -99,8 +99,11 @@ public class DaoBase
         this.module = module;
         // Code intentionally duplicated so this form can be used
         // within DaoHelper for transactions.
-        this.conSetManually = true;
-        this.myCon = con;
+        if (con != null)
+        {
+            this.conSetManually = true;
+            this.myCon = con;
+        }
     }
 
     /**

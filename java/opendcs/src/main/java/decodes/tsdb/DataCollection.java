@@ -173,7 +173,10 @@ public class DataCollection
 	}
 
 	/** @return the tasklist record-range handle. */
-	public RecordRangeHandle getTasklistHandle() { return rrHandle; }
+	public RecordRangeHandle getTasklistHandle()
+	{
+		return rrHandle;
+	}
 
 	/**
 	 * Sets the tasklist record-range handle.

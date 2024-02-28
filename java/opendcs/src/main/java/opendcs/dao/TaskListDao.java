@@ -3,15 +3,22 @@ package opendcs.dao;
 import decodes.tsdb.DbIoException;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
 
 
 import opendcs.dai.TaskListDAI;
+
+import org.opendcs.tsdb.FailedTaskListEntry;
 import org.opendcs.tsdb.TaskListEntry;
 
 public abstract class TaskListDao extends DaoBase implements TaskListDAI
 {
+    // Oracle was providing things in the wrong timestamp using current_timestamp.
+    // TODO: needs to be checked against Postgres
+    final String curTimeSqlCommand;
+    final String intervalSqlCommand;
     public TaskListDao(DatabaseConnectionOwner dco)
     {
         this(dco, "tasklist");
@@ -19,12 +26,14 @@ public abstract class TaskListDao extends DaoBase implements TaskListDAI
 
     public TaskListDao(DatabaseConnectionOwner dco, String module)
     {
-        super(dco, module);
+        this(dco, module, null);
     }
 
-    public TaskListDao(DatabaseConnectionOwner tsdb, String module, Connection con)
+    public TaskListDao(DatabaseConnectionOwner dco, String module, Connection con)
     {
-        super(tsdb, module, con);
+        super(dco, module, con);
+        curTimeSqlCommand = dco.isOracle() ? "sysdate" : "current_timestamp" ;
+        intervalSqlCommand = dco.isOracle() ? " ?/24 )" : " ? * INTERVAL '1' hour )" ; // Oracle date math
     }
     
     /**
@@ -43,6 +52,66 @@ public abstract class TaskListDao extends DaoBase implements TaskListDAI
         catch (SQLException ex)
         {
             throw new DbIoException("Unable to delete collection of records.", ex);
+        }
+    }
+
+    @Override
+    public void updateFailedEntries(Collection<FailedTaskListEntry> entries, int maxRetries) throws DbIoException
+    {
+        final String deleteFailedAfterMaxRetries = "delete from CP_COMP_TASKLIST "
+                                                 + "where RECORD_NUM = ? "
+                                                 + "and ((" + curTimeSqlCommand + " - DATE_TIME_LOADED) > " // curTimeName
+                                                 + intervalSqlCommand;
+        final String updateFailedRetry = "update CP_COMP_TASKLIST set FAIL_TIME = " + curTimeSqlCommand + " where RECORD_NUM = ? and "
+                                       + "( (" + curTimeSqlCommand + " - DATE_TIME_LOADED) <= " + intervalSqlCommand;
+        if (maxRetries > 0)
+        {
+            try
+            {
+                doModifyBatch(deleteFailedAfterMaxRetries, e ->
+                    {
+                        return new Object[]{e.getRecordNum(), maxRetries};
+                    },
+                    entries,
+                    250
+                );
+                doModifyBatch(updateFailedRetry, e ->
+                    {
+                        return new Object[]{e.getRecordNum(), maxRetries};
+                    },
+                    entries, 250
+                );
+                }
+                catch (SQLException ex)
+                {
+                    throw new DbIoException("Unable to delete/update failed entries.");
+                }
+        }
+        else
+        {
+            updateFailedEntries(entries);
+        }
+    }
+
+    @Override
+    public void updateFailedEntries(Collection<FailedTaskListEntry> entries) throws DbIoException
+    {
+        final String updateFailTime = "UPDATE CP_COMP_TASKLIST "
+                                    + " SET FAIL_TIME = " + curTimeSqlCommand
+        + " where record_num = ?";
+        try
+        {
+            doModifyBatch(updateFailTime, e ->
+                {
+                    return new Object[]{e.getRecordNum()};
+                },
+                entries,
+                250
+            );
+        }
+        catch (SQLException ex)
+        {
+            throw new DbIoException("Unable to delete/update failed entries.");
         }
     }
 }
