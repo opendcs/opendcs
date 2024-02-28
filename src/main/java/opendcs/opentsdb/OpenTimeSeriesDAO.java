@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
 import org.opendcs.tsdb.BadTaskListEntry;
 import org.opendcs.tsdb.TaskListEntry;
 import org.slf4j.LoggerFactory;
@@ -1743,7 +1744,6 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 
 		DataCollection dataCollection = new DataCollection();
 
-		ArrayList<TaskListEntry> tasklistRecs = new ArrayList<>();
 		ArrayList<BadTaskListEntry> badRecs = new ArrayList<>();
 		try (TaskListDAI tl = db.makeTaskListDao())
 		{
@@ -1768,19 +1768,15 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 			}
 
 			// Show each tasklist entry in the log if we're at debug level 3
-			if (Logger.instance().getMinLogPriority() <= Logger.E_DEBUG3)
+			if (log.isTraceEnabled())
 			{
 				List<CTimeSeries> allts = dataCollection.getAllTimeSeries();
 				log.trace("getNewData, returning {} TimeSeries.", allts.size());
-				if (log.isTraceEnabled())
+				for(CTimeSeries ts : allts)
 				{
-					for(CTimeSeries ts : allts)
-					{
-						log.trace("ts '{}' has {} values.", ts.getTimeSeriesIdentifier().getUniqueString(), ts.size());
-					}
+					log.trace("ts '{}' has {} values.", ts.getTimeSeriesIdentifier().getUniqueString(), ts.size());
 				}
 			}
-			
 			return dataCollection;
 		}
 	}
@@ -1794,7 +1790,7 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		Objects.requireNonNull(rec, "A null TaskListEntry should not be passed to this function.");
 		Objects.requireNonNull(dataCollection, "A null data collection should not be passed to this function.");
 		Objects.requireNonNull(badRecs, "A null Bad Records list should not be passed to this function.");
-
+		Objects.requireNonNull(rrhandle, "REcordRangeHandle can't be null.");
 		if (rec instanceof BadTaskListEntry)
 		{
 			badRecs.add((BadTaskListEntry)rec);
@@ -1836,8 +1832,8 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 				return;
 			}
 		}
-		if (rrhandle != null)
-			rrhandle.addRecNum(rec.getRecordNum());
+
+		rrhandle.addRecNum(rec);
 		OpenHydroDbNumericTaskListEntry numericEntry = (OpenHydroDbNumericTaskListEntry)rec;
 		// Construct timed variable with appropriate flags & add it.
 		TimedVariable tv = new TimedVariable(numericEntry.getValue());
@@ -1849,7 +1845,7 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 			VarFlags.setWasAdded(tv);
 			cts.addSample(tv);
 			// Remember which tasklist records are in this timeseries.
-			cts.addTaskListRecNum(rec.getRecordNum());
+			cts.addTaskListRecNum(rec);
 			log.trace("Added value '{}' to time series '{}' flags=0x{} cwms qualcode=0x{}",
 					  tv, cts.getTimeSeriesIdentifier().getUniqueString(),
 					  Integer.toHexString(tv.getFlags()), Long.toHexString(numericEntry.getFlags()));

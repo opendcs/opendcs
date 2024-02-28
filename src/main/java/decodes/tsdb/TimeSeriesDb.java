@@ -407,6 +407,8 @@ import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -425,6 +427,8 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.slf4j.LoggerFactory;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -440,6 +444,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.dai.TaskListDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.AlarmDAO;
@@ -485,6 +490,7 @@ data.
 public abstract class TimeSeriesDb
     implements HasProperties, DatabaseConnectionOwner
 {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
     public static String module = "tsdb";
 
     /** The application ID of the connected program */
@@ -975,20 +981,6 @@ public abstract class TimeSeriesDb
         }
     }
 
-//    /**
-//     * Returns an DataCollection containing zero or more TimeSeries,
-//     * containing all data added or deleted since the last call of this
-//     * method by this application ID.
-//     * <p>
-//     * New values are marked with the DB_ADDED flag. Deleted values
-//     * marked with the DB_DELETED flag.
-//     * @param applicationId used to lookup & save the since time.
-//     * @return DataCollection with newly added or deleted values.
-//     * @throws DbIoException on Database IO error.
-//     */
-//    public abstract DataCollection getNewData( DbKey applicationId )
-//        throws DbIoException;
-
     /**
      * Releases triggers associated with the new data in the passed collection.
      * The implementation may use information contained in the collection's
@@ -1000,117 +992,31 @@ public abstract class TimeSeriesDb
     {
         RecordRangeHandle rrh = dc.getTasklistHandle();
         if (rrh == null)
+        {
             return;
+        }
 
         int maxRetries = DecodesSettings.instance().maxComputationRetries;
         boolean doRetryFailed = DecodesSettings.instance().retryFailedComputations;
 
-        // Oracle was providing things in the wrong timestamp using current_timestamp.
-        // TODO: needs to be checked against Postgres
-        final String curTimeSqlCommand = this.isOracle() ? "sysdate" : "current_timestamp" ;
-        final String intervalSqlCommand = this.isOracle() ? " ?/24 )" : " ? * INTERVAL '1' hour )" ; // Oracle date math
-        Connection tcon = getConnection();
-        try(
-            PreparedStatement deleteNormal = tcon.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
-            PreparedStatement deleteFailedAfterMaxRetries = tcon.prepareStatement(
-                      "delete from CP_COMP_TASKLIST "
-                    + "where RECORD_NUM = ? " // failRecList
-                    + "and ((" + curTimeSqlCommand + " - DATE_TIME_LOADED) > " // curTimeName
-                    + intervalSqlCommand ); //String.format(maxCompRetryTimeFrmt, maxRetries) + ")"); //
-            PreparedStatement updateFailedRetry = tcon.prepareStatement(
-                "update CP_COMP_TASKLIST set FAIL_TIME = " + curTimeSqlCommand + " where RECORD_NUM = ? and "
-            +    "( (" + curTimeSqlCommand + " - DATE_TIME_LOADED) <= " + intervalSqlCommand);
-            PreparedStatement updateFailTime = tcon.prepareStatement(
-                "UPDATE CP_COMP_TASKLIST "
-            +    " SET FAIL_TIME = " + curTimeSqlCommand
-            +   " where record_num = ?"
-                );
-
-
-        ){
-            while(rrh.size() > 0)
-            {
-                String []records = rrh.getRecNumList(250).split(",");
-                for( String rec: records ){
-                    if( "".equalsIgnoreCase(rec) ) continue;
-                    deleteNormal.setLong(1, Long.parseLong(rec.trim()));
-                    deleteNormal.addBatch();
-                }
-
-                deleteNormal.executeBatch();
-            }
-
-            while(rrh.getFailedRecnums().size() > 0)
-            {
-                String failRecNumList = rrh.getFailedRecNumList(250L);
-                String records[] = failRecNumList.split(",");
-                //Array failRecs = conn.createArrayOf("integer", failRecNumList.split(","));
-                // Add the retry limit for failed computations
-                if (doRetryFailed && maxRetries > 0)
-                {
-                    debug3("updating failed records based on retry count");
-                    for( String rec: records ){
-                        if( "".equalsIgnoreCase(rec) ) continue;
-                        deleteFailedAfterMaxRetries.setLong(1,Long.parseLong(rec.trim()));
-                        //deleteFailedAfterMaxRetries.setString(2,curTimeName);
-                        deleteFailedAfterMaxRetries.setInt(2,maxRetries);
-                        deleteFailedAfterMaxRetries.addBatch();
-                    }
-                    deleteFailedAfterMaxRetries.executeBatch();
-                    info("deleted failed recs past retry in (" + failRecNumList +")" );
-                    for( String rec: records){
-                        if( "".equalsIgnoreCase(rec) ) continue;
-                        //updateFailedRetry.setString(1,curTimeName);
-                        updateFailedRetry.setLong(1,Long.parseLong(rec.trim()));
-                        updateFailedRetry.setInt(2, maxRetries);
-                        updateFailedRetry.addBatch();
-
-                    }
-                    updateFailedRetry.executeBatch();
-                    info("updated fail time on (" + failRecNumList + "))" );
-                }
-                else
-                {
-                    // DB V5 handles failed computations by setting a FAIL_TIME
-                    // on the task list record. Previous version just delete record.
-                    if( tsdbVersion >= 4 && doRetryFailed ) {
-                        debug3("updating failed records");
-                        for( String rec: records ){
-                            //updateFailTime.setString(1, curTimeName);
-                            updateFailTime.setLong(1, Long.parseLong(rec.trim()));
-                            //updateFailTime.setArray(2, failRecs);
-                            updateFailTime.execute();
-                        }
-                        updateFailTime.executeBatch();
-                        info("updated fail time on (" + failRecNumList + "))" );
-                    } else {
-                        for( String rec: records ){
-                            if( "".equalsIgnoreCase(rec) ) continue;
-                            deleteNormal.setLong(1, Long.parseLong(rec.trim()));
-                            deleteNormal.addBatch();
-                        }
-
-                        deleteNormal.executeBatch();
-                        info("deleted failed records: (" +failRecNumList +" )" );
-                    }
-                    commit();
-                }
-
-            }
-
-        } catch( SQLException err ){
-                    //warning(err.getLocalizedMessage());
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    err.printStackTrace(pw);
-                    warning("removing items from task list failed:");
-                    warning(sw.toString());
-                    throw new DbIoException(err.getLocalizedMessage());
-        }
-        finally
+        try (TaskListDAI tl = this.makeTaskListDao())
         {
-            if (tcon != null)
-                freeConnection(tcon);
+            tl.deleteEntries(rrh.getRecNumList(-1));
+            if (doRetryFailed && maxRetries > 0)
+            {
+                log.trace("updating/deleting failed records based on retry count.");
+                tl.updateFailedEntries(rrh.getFailedRecNumList(-1), maxRetries);
+            }
+            /** NOTE: Support for < DB V5 intentionally removed. */
+            else if (doRetryFailed)
+            {
+                log.trace("Updating failed records.");
+                tl.updateFailedEntries(rrh.getFailedRecNumList(-1));
+            }
+            else
+            {
+                tl.deleteEntries(rrh.getFailedRecNumList(-1));
+            }
         }
     }
 

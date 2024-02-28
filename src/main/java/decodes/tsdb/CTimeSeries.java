@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Properties;
 
+import org.opendcs.tsdb.TaskListEntry;
+
 import ilex.util.Logger;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
@@ -52,7 +54,7 @@ public class CTimeSeries
     private ArrayList<TimedVariable> vars;
 
     /** For tracking tasklist records of computations. */
-    private ArrayList<Long> taskListRecNums; // Note these ARE integers, not DbKey.
+    private ArrayList<TaskListEntry> taskListRecNums; // Note these ARE integers, not DbKey.
 
     /** timeseries  name .used for customised timeseries name in tables and plots **/
     private String briefDescription;
@@ -100,7 +102,7 @@ public class CTimeSeries
         vars = new ArrayList<TimedVariable>();
         unitsAbbr = "unknown";
         dependentCompIds = null;
-        taskListRecNums = new ArrayList<Long>();
+        taskListRecNums = new ArrayList<>();
     }
 
     public CTimeSeries(TimeSeriesIdentifier tsId)
@@ -116,7 +118,7 @@ public class CTimeSeries
         unitsAbbr = "unknown";
         this.displayName = tsId.getDisplayName();
         dependentCompIds = null;
-        taskListRecNums = new ArrayList<Long>();
+        taskListRecNums = new ArrayList<>();
         setTimeSeriesIdentifier(tsId);
     }
 
@@ -681,10 +683,16 @@ Logger.instance().debug3("findInterp(sec=" + sec + ") prevSec=" + prevSec + ", n
     }
 
 	/** @return the list of tasklist record nums used to populate this ts. */
-	public ArrayList<Long> getTaskListRecNums() { return taskListRecNums; }
+	public ArrayList<TaskListEntry> getTaskListRecNums()
+	{
+		return taskListRecNums;
+	}
 
 	/** Adds a recnum to the list of tasklist record nums. */
-	public void addTaskListRecNum(long recnum) { taskListRecNums.add(recnum); }
+	public void addTaskListRecNum(TaskListEntry recnum)
+	{
+		taskListRecNums.add(recnum);
+	}
 
     /** Clears the list of tasklist record nums. */
     public void clearTaskListRecNums() { taskListRecNums.clear(); }
