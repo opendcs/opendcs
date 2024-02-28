@@ -39,6 +39,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Properties;
+
+import org.opendcs.tsdb.TaskListEntry;
+
 import java.util.Enumeration;
 import java.util.Iterator;
 
@@ -127,7 +130,7 @@ public class DbComputation
 	 * Temporary storage for the tasklist recnums that triggered this 
 	 * execution of the computation.
 	 */
-	private HashSet<Long> triggeringRecNums;
+	private HashSet<TaskListEntry> triggeringRecNums;
 	
 	/** New database attribute for db version 9 */
 	private DbKey groupId = Constants.undefinedId;
@@ -630,7 +633,10 @@ public class DbComputation
 
 	public DbAlgorithmExecutive getExecutive() { return executive; }
 
-	public HashSet<Long> getTriggeringRecNums() { return triggeringRecNums;}
+	public HashSet<TaskListEntry> getTriggeringRecNums()
+	{
+		return triggeringRecNums;
+	}
 
 	public DbKey getGroupId()
 	{
