@@ -5,15 +5,16 @@ OpenDCS Time Series - Introduction
 OpenDCS Suite includes an extention called OpenTSBD. 
 TSBD = Time Series Database. 
 
-The outputs and import utilities are 
+Whether users are from USACE or USBR, using CWMS or HBD, the databases
+are comprised of time series.  These time series are for storing 
+data, typically hydrological in nature, or related information.  
 
 Overview - what is a Time Series?
 =================================
 
 Definitions:
 
-A **time series** is a series of data points ordered in time. [1]
-[1] https://towardsdatascience.com/time-series-introduction-7484bc25739a
+A **time series** is a series of data points ordered in time. 
 
 A **sample** is a measurement at a point in time.
 
@@ -32,7 +33,7 @@ Constituent Parts
 
 * Value/Sample: the measurement of interest
 * Interval: distance between samples
-* Sample time: ?duration? the sample was measured
+* Sample time: duration the sample was measured
 * Period: synonym for interval
 * Sample Rate: synonym for interval 
 
@@ -62,7 +63,12 @@ Regular Hourly - DCP Stage, Precip, Water Temp and Volt
 Regular Hourly - Water Levels
 -----------------------------
 
+In this example, the time series is of the form:
+
 *Location.Stage.Inst.1Hour.0.xxx-raw*
+
+This means the samples are spaced one hour apart, and the 
+duration of each measurement is instantanous. 
 
 .. image:: ./media/start/timeseries/im-03-levels-hourly.JPG
    :alt: time series - hourly water levels
@@ -71,11 +77,25 @@ Regular Hourly - Water Levels
 
 Regular Daily - Water Levels
 -----------------------------
+In this example, the time series is of the form:
 
 *Location.Stage.Ave.1Day.1Day.xxx-raw*
+
+This means the samples are taken 1 day apart and averaged over the 
+day. 
 
 .. image:: ./media/start/timeseries/im-04-levels-daily.JPG
    :alt: time series - hourly water levels
    :width: 550
 
 
+Time Series and OpenDCS
+=======================
+
+It is important to understand the parts of time series when using
+OpenDCS.  In a nutshell, OpenDCS is used for retreiving
+data and processing time series.  The basis of how data is 
+retreived and decoded and stored relies on the basic time series 
+principals outlined above.  Likewise, the processing, such as 
+computations, assumed users have a solid understanding of the 
+input and output time series that they are executing computation on.
