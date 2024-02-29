@@ -44,7 +44,7 @@ import decodes.tsdb.alarm.AlarmScreening;
  * @author mmaloney
  *
  */
-public interface AlarmDAI
+public interface AlarmDAI extends DaiBase
 {
 	/**
 	 * Using the read time in the config and the last-modify time in each

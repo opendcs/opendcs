@@ -829,37 +829,4 @@ public class TimeSeries
 	 * Set flag indicating that time was set. See discussion for timeJustSet().
 	 */
 	public void setTimeJustSet() { _timeJustSet = true; }
-	
-
-}
-
-
-class SampleComparator implements java.util.Comparator<TSSample>
-{
-	public boolean descending = false;
-	
-	public int compare(TSSample ts1, TSSample ts2)
-	{
-		long r = ts1.tv.getTime().getTime() - ts2.tv.getTime().getTime();
-		int ret = r < 0L ? -1 : r > 0L ? 1 : 0;
-		return descending ? -ret : ret;
-	}
-
-	public boolean equals(Object obj)
-	{
-		return obj == this;
-	}
-}
-
-/** holds a TimedVariable and its formatted string value. */
-class TSSample
-{
-	TimedVariable tv;  // Contains time and numeric value
-	String fv;        // Value formatted by presentation group (may be null)
-
-	TSSample(TimedVariable tv)
-	{
-		this.tv = tv;
-		fv = null;
-	}	
 }
