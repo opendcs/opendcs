@@ -4174,201 +4174,103 @@ The example illustrates all aspects of the XML format
 
 .. code-block:: xml
 
-   <?xml version="1.0" standalone="yes"?>
-
-   <CompMetaData>
-
-   <LoadingApplication name="compTester">
-
-   <Comment>Test computation process.
-
-   Modified comment</Comment>
-
-   </LoadingApplication>
-
-   <Algorithm name="Copy">
-
-   <Comment>
-
-   Copy input parameter to output. Delete output if input was deleted.
-
-   </Comment>
-
-   <ExecClass>decodes.tsdb.algo.CopyAlgorithm</ExecClass>
-
-   <AlgoParmroleName="input">
-
-   <ParmType>i</ParmType>
-
-   </AlgoParm>
-
-   <AlgoParmroleName="output">
-
-   <ParmType>o</ParmType>
-
-   </AlgoParm>
-
-   </Algorithm>
-
-   <Algorithm name="RdbRating">
-
-   <Comment>
-
-
-Implements rating table computations. Holds the lookup table &amp; shift
-
-values. Independent (e.g. STAGE) value is called &quot;indep&quot;.
-
-Dependent (e.g. FLOW) is called &quot;dep&quot;. &lt;p&gt;Properties
-
-include: &lt;ul&gt; &lt;li&gt;applyShifts - true if you want algorithm
-to
-
-apply shifts. Usually unnecessary because RDB files are expanded.
-
-&lt;/li&gt; &lt;li&gt;tableType - default=&quot;RDB&quot;. Also supports
-
-&quot;SimpleTable&quot;. &lt;/li&gt; &lt;li&gt;tableDir - Directory
-
-containing table files.&lt;/li&gt; &lt;/ul&gt;
-
-</Comment>
-
-<ExecClass>decodes.tsdb.algo.RdbRating</ExecClass>
-
-<AlgoProperty name="exceedUpperBound">false</AlgoProperty>
-
-<AlgoProperty name="applyShifts">false</AlgoProperty>
-
-<AlgoProperty name="exceedLowerBound">false</AlgoProperty>
-
-<AlgoProperty name="tableDir">$DECODES_INSTALL_DIR/rdb</AlgoProperty>
-
-<AlgoParmroleName="dep">
-
-<ParmType>o</ParmType>
-
-</AlgoParm>
-
-<AlgoParmroleName="indep">
-
-<ParmType>i</ParmType>
-
-</AlgoParm>
-
-</Algorithm>
-
-<Computation name="GRZU1-Copy-65-120">
-
-<Comment>Copies datatype 65 into datatype 120.</Comment>
-
-<Enabled>false</Enabled>
-
-<CompProcName>compTester</CompProcName>
-
-<AlgorithmName>Copy</AlgorithmName>
-
-<LastModified>2006-09-26 11:33:47 EDT</LastModified>
-
-<CompParmroleName="input">
-
-<SiteDataType>
-
-<SiteNameNameType="nwshb5">GRZU1</SiteName>
-
-<SiteNameNameType="usgs">09234500</SiteName>
-
-<DataType Standard="HDB">65</DataType>
-
-</SiteDataType>
-
-<Interval>instant</Interval>
-
-<TableSelector>R_</TableSelector>
-
-<DeltaT>0</DeltaT>
-
-</CompParm>
-
-<CompParmroleName="output">
-
-<SiteDataType>
-
-<SiteNameNameType="nwshb5">GRZU1</SiteName>
-
-<SiteNameNameType="usgs">09234500</SiteName>
-
-<DataType Standard="HDB">120</DataType>
-
-</SiteDataType>
-
-<Interval>instant</Interval>
-
-<TableSelector>R_</TableSelector>
-
-<DeltaT>0</DeltaT>
-
-</CompParm>
-
-</Computation>
-
-<Computation name="GRZU1-Rdb-65-60">
-
-<Comment>RDB Rating for site GRZU1 input=65, output=60</Comment>
-
-<Enabled>true</Enabled>
-
-<CompProcName>compTester</CompProcName>
-
-<AlgorithmName>RdbRating</AlgorithmName>
-
-<LastModified>2006-09-26 15:04:22 EDT</LastModified>
-
-<CompProperty name="tableDir">.</CompProperty>
-
-<CompParmroleName="dep">
-
-<SiteDataType>
-
-<SiteNameNameType="nwshb5">GRZU1</SiteName>
-
-<SiteNameNameType="usgs">09234500</SiteName>
-
-<DataType Standard="HDB">60</DataType>
-
-</SiteDataType>
-
-<Interval>instant</Interval>
-
-<TableSelector>R_</TableSelector>
-
-<DeltaT>0</DeltaT>
-
-</CompParm>
-
-<CompParmroleName="indep">
-
-<SiteDataType>
-
-<SiteNameNameType="nwshb5">GRZU1</SiteName>
-
-<SiteNameNameType="usgs">09234500</SiteName>
-
-<DataType Standard="HDB">65</DataType>
-
-</SiteDataType>
-
-<Interval>instant</Interval>
-
-<TableSelector>R_</TableSelector>
-
-<DeltaT>0</DeltaT>
-
-</CompParm>
-
-</Computation>
-
-</CompMetaData>
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <CompMetaData>
+        <LoadingApplication name="compTester">
+            <Comment>Test computation process.
+                 Modified comment
+            </Comment>
+        </LoadingApplication>
+        <Algorithm name="Copy">
+            <ExecClass>decodes.tsdb.algo.CopyAlgorithm</ExecClass>
+            <AlgoParm roleName="input">
+                <ParmType>i</ParmType>
+            </AlgoParm>
+            <AlgoParm roleName="output">
+                 <ParmType>o</ParmType>
+            </AlgoParm>
+        </Algorithm>
+        <Algorithm name="RdbRating">
+            <Comment> Implements rating table computations. Holds
+                    the lookup table &amp; shift values. Independent
+                   (e.g. STAGE) value is called &quot;indep&quot;.
+                    Dependent (e.g. FLOW) is called &quot;dep&quot;. 
+                    &lt;p&gt;Properties include: &lt;ul&gt; 
+                    &lt;li&gt;applyShifts - true if you want algorithm 
+                    to apply shifts. Usually unnecessary because RDB 
+                    files are expanded. &lt;/li&gt; &lt;li&gt;tableType
+                    - default=&quot;RDB&quot;. Also supports &quot;SimpleTable&quot;. 
+                    &lt;/li&gt; &lt;li&gt;tableDir - Directory containing
+                    table files.&lt;/li&gt; &lt;/ul&gt;
+            </Comment>
+            <ExecClass>decodes.tsdb.algo.RdbRating</ExecClass>
+            <AlgoProperty name="exceedUpperBound">false</AlgoProperty>
+            <AlgoProperty name="applyShifts">false</AlgoProperty>
+            <AlgoProperty name="exceedLowerBound">false</AlgoProperty>
+            <AlgoProperty name="tableDir">$DECODES_INSTALL_DIR/rdb</AlgoProperty>
+            <AlgoParm roleName="dep">
+                <ParmType>o</ParmType>
+            </AlgoParm>
+            <AlgoParm roleName="indep">
+                <ParmType>i</ParmType>
+            </AlgoParm>
+        </Algorithm>
+        <Computation name="GRZU1-Copy-65-120">
+            <Comment>Copies datatype 65 into datatype 120.</Comment>
+            <Enabled>false</Enabled>
+            <CompProcName>compTester</CompProcName>
+            <AlgorithmName>Copy</AlgorithmName>
+            <LastModified>2006-09-26 11:33:47 EDT</LastModified>
+            <CompParm roleName="input">
+                <SiteDataType>
+                    <SiteName NameType="nwshb5">GRZU1</SiteName>
+                    <SiteName NameType="usgs">09234500</SiteName>
+                    <DataType Standard="HDB">65</DataType>
+                </SiteDataType>
+                <Interval>instant</Interval>
+                <TableSelector>R_</TableSelector>
+                <DeltaT>0</DeltaT>
+            </CompParm>
+            <CompParm roleName="output">
+                <SiteDataType>
+                    <SiteName NameType="nwshb5">GRZU1</SiteName>
+                    <SiteName NameType="usgs">09234500</SiteName>
+                    <DataType Standard="HDB">120</DataType>
+                </SiteDataType>
+                <Interval>instant</Interval>
+                <TableSelector>R_</TableSelector>
+                <DeltaT>0</DeltaT>
+            </CompParm>
+        </Computation>
+        <Computation name="GRZU1-Rdb-65-60">
+            <Comment>RDB Rating for site GRZU1 input=65, output=60</Comment>
+            <Enabled>true</Enabled>
+            <CompProcName>compTester</CompProcName>
+            <AlgorithmName>RdbRating</AlgorithmName>
+            <LastModified>2006-09-26 15:04:22 EDT</LastModified>
+            <CompProperty name="tableDir">.</CompProperty>
+            <CompParm roleName="dep">
+                <SiteDataType>
+                    <SiteName NameType="nwshb5">GRZU1</SiteName>
+                    <SiteName NameType="usgs">09234500</SiteName>
+                    <DataType Standard="HDB">60</DataType>
+                </SiteDataType>
+                <Interval>instant</Interval>
+                <TableSelector>R_</TableSelector>
+                <DeltaT>0</DeltaT>
+            </CompParm>
+            <CompParm roleName="indep">
+                <SiteDataType>
+                    <SiteName NameType="nwshb5">GRZU1</SiteName>
+                    <SiteName NameType="usgs">09234500</SiteName>
+                    <DataType Standard="HDB">65</DataType>
+                </SiteDataType>
+                <Interval>instant</Interval>
+                <TableSelector>R_</TableSelector>
+                <DeltaT>0</DeltaT>
+            </CompParm>
+        </Computation>
+    </CompMetaData>
 
 Figure 31: Example XML Meta-Data File.
 

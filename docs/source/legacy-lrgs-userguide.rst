@@ -1350,9 +1350,7 @@ operated by NOAA/NESDIS. Note the hierarchical nature of the file.
 
 .. code-block:: xml
 
-    <!--
-    This file holds the DDS Receiver Configuration.
-    -->
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <ddsrecvconf>
         <networkList>usace-mvd</networkList>
         <networkList>usace-nwd</networkList>
@@ -1505,7 +1503,7 @@ is shown below:
 
 .. code-block:: xml
 
-<?xml version="1.0"?>
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <drgsconf>
         <validate enable="true"
             pdturl="http://dcs.noaa.gov/ftp_daily/pdts_compressed.txt"
@@ -1519,9 +1517,7 @@ is shown below:
             <startpattern>534D0D0A</startpattern>
             <cfgfile>$LRGSHOME/EAST-DRGS.cfg</cfgfile>
             <sourceCode>DE</sourceCode>
-
         </connection>    
-
         <connection number="1" host="drgs-w.mydomain.gov">
             <name>WEST-DRGS</name>
             <enabled>false</enabled>
@@ -1531,9 +1527,7 @@ is shown below:
             <startpattern>534D0D0A</startpattern>
             <cfgfile>$LRGSHOME/WEST-DRGS.cfg</cfgfile>
             <sourceCode>DW</sourceCode>
-
         </connection>
-
     </drgsconf>
 
 
