@@ -31,6 +31,7 @@ import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
 import opendcs.util.functional.ThrowingFunction;
+import opendcs.util.sql.ConnectionInTransaction;
 import opendcs.util.sql.WrappedConnection;
 
 import java.sql.Connection;
@@ -100,6 +101,20 @@ public class DaoBase
     }
 
     /**
+     * When used within the transaction block of another Dao allow this to assume the same connection.
+     * @param other
+     * @throws IllegalStateException if the other Dao does not already have a connection open this operation is not valid.
+     */
+    public void  inTransactionOf(DaoBase other) throws IllegalStateException
+    {
+        if (other.myCon == null)
+        {
+            throw new IllegalStateException("Provided DAO does not currently have a valid connection that would be in a transaction.");
+        }
+        this.setManualConnection(other.myCon);
+    }
+
+    /**
      * Assert what connection will be used for this DAOs operations.
      * Caller is responsible for cleaning up the Connection object.
      */
@@ -116,14 +131,20 @@ public class DaoBase
     public void close()
     {
         if (queryStmt1 != null)
+        {
             try { queryStmt1.close(); } catch(Exception ex) {}
+        }
         if (queryStmt2 != null)
+        {
             try { queryStmt2.close(); } catch(Exception ex) {}
+        }
         queryStmt1 = queryStmt2 = null;
 
         // for pooling: return the connection (if there is one) back to the pool.
         if (myCon != null && !conSetManually)
+        {
             db.freeConnection(myCon);
+        }
         myCon = null;
     }
 
@@ -699,11 +720,14 @@ public class DaoBase
     }
 
     /**
-     * Run a set of queryies with a specific connection in a transaction.
+     * Run a set of queries with a specific connection in a transaction.
      * Use the presented dao for all operations.
      *
      * The presented Dao is a {@link DaoHelper} which will be very picky
      * about which SQL functions can be called.
+     *
+     * If any component attempts to alter the auto commit state of the connection during
+     * the transaction an exception will be thrown.
      *
      * @param consumer given a new DAO that is manually set to a JDBC transaction.
      * @throws SQLException
@@ -713,14 +737,20 @@ public class DaoBase
         Connection c = getConnection();
         boolean autoCommit = c.getAutoCommit();
         c.setAutoCommit(false);
-        try (DaoBase dao = new DaoHelper(this.db,"transaction",c);)
+        try (DaoBase dao = new DaoHelper(this.db,"transaction",new ConnectionInTransaction(c));)
         {
             consumer.accept(dao);
             c.commit();
         }
+        catch (Exception ex)
+        {
+            c.rollback();
+            throw ex;
+        }
         finally
         {
             c.setAutoCommit(autoCommit);
+            c.close();
         }
     }
 }

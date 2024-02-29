@@ -27,6 +27,8 @@ import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import opendcs.dai.ScheduleEntryDAI;
+import opendcs.dao.DaoBase;
+import opendcs.util.functional.DaoConsumer;
 
 /**
  * This implements the ScheduleEntry Data Access Interface for XML DECODES Databases.
@@ -528,5 +530,18 @@ Logger.instance().debug3("Reading entry[" + n + "] at position " + statusFile.ge
 	@Override
 	public void setManualConnection(Connection conn)
 	{
+	}
+
+
+	@Override
+	public void inTransactionOf(DaoBase other) throws IllegalStateException
+	{
+		throw new UnsupportedOperationException("XML Database does not support transactions.");
+	}
+
+	@Override
+	public void inTransaction(DaoConsumer consumer) throws Exception
+	{
+		throw new UnsupportedOperationException("XML Database does not support transactions.");
 	}
 }

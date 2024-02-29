@@ -497,9 +497,7 @@ public class CompDependsDAO extends DaoBase implements CompDependsDAI
 			{
 				try (CompDependsDAI dai = db.makeCompDependsDAO();)
 				{
-					// NOTE: we can call getConnection plainly here as
-					// we know we are in a transaction and only have the one connection.
-					dai.setManualConnection(dao.getConnection());
+					dai.inTransactionOf(dao);
 					consumer.accept(dai);
 				}
 			});

@@ -26,6 +26,8 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
 import decodes.xml.XmlDatabaseIO;
 import opendcs.dai.LoadingAppDAI;
+import opendcs.dao.DaoBase;
+import opendcs.util.functional.DaoConsumer;
 
 /**
  * This class writes Loading App records into the DECODES XML database.
@@ -345,4 +347,15 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		// Only implemented for sql
 	}
 
+	@Override
+	public void inTransactionOf(DaoBase other) throws IllegalStateException
+	{
+		throw new UnsupportedOperationException("XML Database does not support transactions.");
+	}
+
+	@Override
+	public void inTransaction(DaoConsumer consumer) throws Exception
+	{
+		throw new UnsupportedOperationException("XML Database does not support transactions.");
+	}
 }
