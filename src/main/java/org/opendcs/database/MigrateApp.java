@@ -127,17 +127,13 @@ public class MigrateApp
     public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c) throws IOException, FileNotFoundException
     {
         c.printf("username:");
-        try(InputStream propStream = new FileInputStream(p.getFile());)
-        {
-            Properties props = new Properties();
-            props.load(propStream);
-            DecodesSettings settings = new DecodesSettings();
-            settings.loadFromProperties(props);
-            String username = c.readLine();
-            char[] pw = c.readPassword("password:");
-            String password = new String(pw);
-            c.printf("Using jdbc URL: %s%s",settings.editDatabaseLocation,System.lineSeparator());
-            return new SimpleDataSource(settings.editDatabaseLocation,username,password);
-        }
+        
+        DecodesSettings settings = DecodesSettings.fromProfile(p);
+        
+        String username = c.readLine();
+        char[] pw = c.readPassword("password:");
+        String password = new String(pw);
+        c.printf("Using jdbc URL: %s%s",settings.editDatabaseLocation,System.lineSeparator());
+        return new SimpleDataSource(settings.editDatabaseLocation,username,password);
     }
 }
