@@ -221,6 +221,7 @@ To implement a custom implement the following class `org.opendcs.spi.properties.
 
 .. code-block:: java
     :linenos:
+
     package org.opendcs.spi.properties;
 
     import java.io.IOException;
