@@ -139,6 +139,7 @@ public class OpenDCSPGConfiguration implements Configuration
             ilex.util.Logger.setLogger(fl);
             mp.loadBaselineData(profile, "dcs_proc", "dcs_proc");
             ilex.util.Logger.setLogger(originalLog);
+            fl.close();
         });
         setStarted();
     }
