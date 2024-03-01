@@ -92,6 +92,8 @@ Figure : Data Source Edit Panel showing LRGS Data Source.
 
 The following subsections describe each data source type in detail.
 
+.. _leg-route-source-properties-lrgs:
+
 LRGS Data Source
 ----------------
 
@@ -185,6 +187,8 @@ exception and…
 
 -  If this LRGS is the sole data source, the routing spec will
    terminate.
+
+.. _leg-route-source-properties-file:
 
 File Data Source
 ----------------
@@ -482,6 +486,8 @@ In the Platform Transport Medium record, set Medium Type to “Other”. If
 “Other” is not one of the choices in the pull-down list, use the
 Reference List Editor “rledit” program to add it.
 
+.. _leg-route-source-properties-hotbackup:
+
 Hot Backup Group Data Source
 ----------------------------
 
@@ -543,6 +549,8 @@ A round-robin group contains a list of other data sources.
 The purpose of a round-robin group is to continually read data from all
 data sources in the group. This differs from a hot-backup group, which
 only uses one data source at a time
+
+.. _leg-route-source-properties-socketstream:
 
 Socket Stream Data Source
 -------------------------
@@ -700,6 +708,8 @@ AAAAAAAA DDDHHMMSS *ddd...* SSFFNN CCCs
 
 -  s is the GOES Spacecraft (E or W)
 
+.. _leg-route-source-abstract:
+
 Abstract Web Data Source
 -------------------------
 
@@ -712,7 +722,15 @@ list.
 An example will explain how to use this data source. First run “rledit”
 to make sure you have the needed Enumeration records:
 
--  Run the “rledit” script in the bin directory under OPENDCS.
+-  Run the “rledit” script or rledit.bat in the bin directory under OPENDCS.
+
+::
+
+   rledit
+
+::
+
+   rledit.bat
 
 -  On the Enumerations tab, select Enumeration “Data Source Type”
 
@@ -786,6 +804,8 @@ Figure : SNOTEL Network List used by Abstract Web Data Source.
    :height: 2.65139in
 
 Figure : Snotel Report Downloaded from the Web
+
+.. _leg-route-source-properties-ftp:
 
 FTP Data Source
 ---------------
