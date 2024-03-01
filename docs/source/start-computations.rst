@@ -28,8 +28,9 @@ Computations can be helpful for operations because of the following abilities:
 * Transform one parameter to another parameter
 * Create and employ customized algorithms
 
-Overview - what is a Computation in OpenDCS?
-============================================
+***************************************
+How to Set-Up a Computation in OpenDCS?
+***************************************
 
 In OpenDCS, a computation comprises of a few pieces:
 
@@ -49,16 +50,11 @@ to follow the steps outlined below:
 #. Test computation
 #. Enable computation
 
-The next steps outline an example for put together a very simple 
+The next steps outline an example for putting together a very simple 
 "calculation" using the computation processor.  The steps are 
 intended to provide a template for how to set up a computation
 and familiarize a user with the tabs and tools needed to get started.
-
-Computation Processor - Sample Computation Overview
-===================================================
-
-This section outlines how to set up a calculation. Some steps
-are assumed already completed but will be touched upon.
+Some steps are assumed already completed but will be touched upon.
 
 At the end of this section, a user should know how to set up a 
 calculation that grabs the top of hour value from a higher
@@ -66,8 +62,8 @@ resolution time series and creates a new hourly time series.
 In this example, the higher resolution time series will be 
 six minute data. 
 
-# Step - Time Series Intro
---------------------------
+1.Time Series Check
+===================
 
 The first step to setting up a calculation is knowing the path
 name parts to the time series and ensuring the time series has 
@@ -93,8 +89,8 @@ time series.
 * Version (meta data such as data steward or raw/revised status)
 
 
-# Step - Groups Intro
----------------------
+2.Time Series Groups
+====================
 
 If you plan to use the same algorithm on similar time series multiple 
 times, it is recommended to use OpenDCS Time Series Groups.  This
@@ -114,8 +110,8 @@ in the image below.
    :width: 550
 
 
-# Step - Algorithms Intro 
--------------------------
+3.Algorithms Intro
+==================
 
 The Algorithms tab in the Computations Editor is where default
 Computation Processor algorithms are stored, in addition to custom
@@ -133,10 +129,10 @@ or invoked.  Examples of default algorithms are listed below:
 .. image:: ./media/start/computations/im-04-algorithms.JPG
    :alt: computation editor - algorithms tab
    :width: 650
-   
-   
-# Step - Process Intro
-----------------------
+
+
+4.Process Intro
+===============
 
 Processes are a way of gouping computations together to help
 spread the computational load of the system.  Once a computation
@@ -151,14 +147,14 @@ To create a new process, follow one of the following steps:
 #. Launch the Process Monitor by clicking the "Processes" button 
 from the main menu. To add a new process click "New".
 #. Launch the Computations Editor and navigate to the "Processes"
-tab.To add a new process click "New".
+tab. To add a new process click "New".
 
 .. image:: ./media/start/computations/im-05-process.JPG
    :alt: new process window
    :width: 650
 
-# Step - Computation Editor Intro
----------------------------------
+5.Computation Editor Intro
+==========================
 
 Once algorithms and processes are defined, now a user is ready to 
 set up a computation.  On the "Computations" tab of the Computation
@@ -202,7 +198,7 @@ is effective.  Recall that by default, computations in the computation
 process are triggered when new data is available in the database.  
 
 Sample Calculation: Copy Time Series
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 
 In the following example, the computation is a direct copy of the data 
 in the time series path. See in the image below the left hand side is 
@@ -309,7 +305,7 @@ that all the steps above are saved.
 To see how to test the computation, see the section ____ below. 
 
 Sample Calculation: Stage - Top of Hour
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------
 
 In the following example, the computation uses the **SubSample** algorithm
 to extract the top of hour values from a higher resolution time series. 
@@ -348,7 +344,7 @@ By default in this computation the "If Missing" is set blank.
  
 
 Sample Calculation: Stage - Daily Average
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------
 
 In the following example, the computation uses the **AverageAlgorithm**
 algorithm to calculate a daily average based on hourly inputs. 
@@ -385,7 +381,7 @@ By default, the average will use the lowest bound and upper bound.
 For daily averages, this means the average will use hours 00-23.
 
 Sample Calculation: Precipitation - Cumulative to Incremental
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------------------
 
 In the following example, the computation uses the **IncrementalPrecip**
 algorithm to calculate hourly precip totals from a cumulative precip
@@ -434,7 +430,7 @@ The output will calculate the difference between the current time
 step and the next time step, so long as the value is not negative.
 
 Sample Calculation: Precipitation - Daily Total
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------------
 
 The following example is intended to demonstrate how the 
 "SumOverTimeAlgorithm" can be used to sum up incremental 
@@ -449,8 +445,8 @@ the incremental totals.
    :width: 450
 
 
-# Step - Test Computation Intro
--------------------------------
+6.Test Computation Intro
+========================
 
 Once a calculation is set up, like any of the examples above,
 users can test or run the computation to check and verify that 
@@ -483,7 +479,7 @@ the output if the user wished to save the output. To save click
 "Save Output Data".  
 
 Run Calculation: Copy Time Series
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------
 
 The example outlined above for copying a time series using the
 Computation Processor is demonstrated in the following window.
@@ -494,7 +490,7 @@ The output line (red) covers directly over the input line (black).
    :width: 650
 
 Run Calculation: Stage - Top of Hour
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 
 The example outlined above for sub sampling the top of the hour is 
 demonstrated in the image below.  
@@ -504,7 +500,7 @@ demonstrated in the image below.
    :width: 650
 
 Run Calculation: Stage - Daily Average
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 The example outlined above for calculating a daily average from 
 hourly values is demonstrated below.  
@@ -514,7 +510,7 @@ hourly values is demonstrated below.
    :width: 650
 
 Run Calculation: Precipitation - Cumulative to Incremental
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------------
 
 The example outlined above for calculating hourly icremental
 precipitation totals from cumulative hourly precipitation
@@ -526,12 +522,85 @@ is demonstrated in the graphic below.
 
 
 Run Calculation: Precipitation - Daily Total
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------
+
+There are two methods for calculating the daily total.  One method is
+to sum the hourly totals that are calculated in the previous example. 
+The other method is to use the incremental precipitation algorithms,
+but change the increments and duration in the output time series.  The
+two methods are displayed below.  It is good practice to use the raw
+original data as the input rather than adding in extra calculations and
+steps that can potentially accrue small erros.
+
+.. image:: ./media/start/computations/im-35-run-comps-sum.JPG
+   :alt: run computation - sum total
+   :width: 650
+
+.. image:: ./media/start/computations/im-36-run-comps-incr-precip.JPG
+   :alt: run computation - cumulative to incremental
+   :width: 650
+
+7.Enable & Boot Intro
+=============================
+
+Once the computations are set and tested for accuracy, then the computations
+can be set to run automatically.  This means that the calculations will
+by default be triggered for a time increment for which the input time series
+has new data for such time increment. To clarify, this means that computations 
+are not going to be run for the entire time series period of record.  Rather 
+computations are only going to be run for periods for which there is new input
+data.  
+
+Users can opt to define an Effective start and end date. This can be beneficial
+to help users avoid accidentally triggering calculations for very long periods
+of record.  It is unlikely to occur, however, when such a que of calculations
+is triggerd, depending on the resolution and number of processes defined, the 
+run time can slow down calculations and in some cases take some time to backup.
+
+To enable a calculation, check the enabled box, and make sure the process defined
+above is selected.  Define any effective start or end dates. Click Commit to save
+changes.
+
+.. image:: ./media/start/computations/im-37-enable-process-effective.JPG
+   :alt: enable process and effective dates
+   :width: 650
+
+Once the computation is created and saved and enabled, it needs to be added to the 
+computations daemons to run in the background.  For example, the following line
+should be added to any Boot or Start script for the computations to be fully
+enabled.  
+
+::
+
+   compproc -a compproc-examples 
+
+Until such process is added to a boot script the computations will not be run
+automatically.  However, a user can always run them from the GUI, as demonstrated
+in the previous section.  
+
+To stop a process add the following to a Stop or Off script.
+
+::
+
+   stopcomp -a compproc-examples
 
 
-There are two 
+More about Computations
+=======================
+
+The steps above outline a few simple computations, set-up using default
+settings in algorithms and computations.  The Computation Processor includes
+a set of tools that can be used to create more complex algorithms or 
+computations, including some of the following:
+
+* Time shifts
+* Minimum criteria
+* Redefining floor/ceiling criteria
+* Defining trigger input criteria
+* Writing custom algorithms that pull data from the database
+
+For more information about getting started with these common utilities see  
+:doc:`More on Computations <./resources-computations>`
+(content coming soon)
 
 
-
-# Step - Enable & Boot Intro
-----------------------------

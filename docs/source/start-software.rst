@@ -55,6 +55,12 @@ processing from LRGS satellite data.  Automatically triggered
 calculations can be set-up if data is being stored in CWMS or HDB 
 systems.  
 
+In OpenDCS terms, this means that a user will have the tools
+to do the following (and more):
+
+* Create routing specs
+* Create algorithms and computations
+* Create and manage time series in database
 
 Where can I find more information?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
