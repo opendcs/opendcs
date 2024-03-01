@@ -73,9 +73,12 @@ USACE users:
 1.Database Locations
 ====================
 
+... more content coming soon ...
+
 2.LRGS Connections
 ====================
 
+... more content coming soon ...
 
 3.Sources
 =========
@@ -649,7 +652,7 @@ a window will pop up for a new routing spec name.  **NOTE** that
 the name of the routing spec cannot be changed after it is created,
 so consider the name before saving.
 
-.. image:: ./media/start/routingspec/im-26-new-list-window.JPG
+.. image:: ./media/start/routingspec/im-26-routing-tab.JPG
    :alt: new list window
    :width: 450
 
@@ -664,13 +667,13 @@ Once the new window comes up the user should address the following fields, at le
 +=========================+===================================================+
 |Data Source              |Location in Database                               |
 +-------------------------+---------------------------------------------------+
-|Destination              |Optional note about the site or data type          |
+|Destination              |consumer (pipe, database, file, etc)               |
 +-------------------------+---------------------------------------------------+
-|Output Format            |Select the config set up in the previous steps     |
+|Output Format            |set output format                                  |
 +-------------------------+---------------------------------------------------+
-|Date/Time - Since/Util   |Optional note for agency platform owner            |
+|Date/Time - Since/Util   |define time window for message retreival           |
 +-------------------------+---------------------------------------------------+
-|Platform Selection       |Identify a platform or network list                |
+|Platform Selection       |Specify a platform or network list                 |
 +-------------------------+---------------------------------------------------+
 
 .. image:: ./media/start/routingspec/im-28-rs-source.JPG
