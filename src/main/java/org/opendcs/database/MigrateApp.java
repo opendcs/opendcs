@@ -1,6 +1,8 @@
 package org.opendcs.database;
 
+import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
+import decodes.tsdb.ImportComp;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import ilex.cmdline.StringToken;
@@ -13,6 +15,7 @@ import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.spi.database.MigrationProvider.MigrationProperty;
 
 import java.io.Console;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -20,6 +23,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Simple Terminal application to prompt user for required information
@@ -83,6 +87,30 @@ public class MigrateApp
             roles.add("OTSDB_MGR");
             roles.add("OTSDB_ADMIN");
             mp.createUser(mm.getJdbiHandle(), user, password, roles);
+
+            /* Initializing database with default data */
+            List<File> decodesFiles = mp.getDecodesData();
+            ArrayList<String> theArgs = new ArrayList<>();
+            theArgs.add("-P"); theArgs.add(profile.getFile().getAbsolutePath());
+            theArgs.add("-d3");
+            theArgs.addAll(
+                decodesFiles.stream()
+                        .map(f->f.getAbsolutePath())
+                        .collect(Collectors.toList())
+                        );
+            DbImport.main(theArgs.toArray(new String[0]));
+
+            List<File> compFiles = mp.getComputationData();
+            theArgs.clear();
+            theArgs.add("-P"); theArgs.add(profile.getFile().getAbsolutePath());
+            theArgs.add("-d3");
+            theArgs.add("-C");
+            theArgs.addAll(
+                compFiles.stream()
+                        .map(f->f.getAbsolutePath())
+                        .collect(Collectors.toList())
+                        );                        
+            ImportComp.main(theArgs.toArray(new String[0]));
         }
         else
         {
@@ -114,13 +142,13 @@ public class MigrateApp
                 else
                 {
                     console.writer().println("Exiting application.");
+                    System.exit(0);
                 }
             }
             else
             {
                 console.writer().println("Database is already up-to-date.");
             }
-
         }
     }
 

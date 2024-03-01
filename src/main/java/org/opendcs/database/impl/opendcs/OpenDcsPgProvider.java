@@ -1,5 +1,6 @@
 package org.opendcs.database.impl.opendcs;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -83,6 +84,20 @@ public class OpenDcsPgProvider implements MigrationProvider
                 }
             }
         });
+    }
+
+    @Override
+    public List<URL> getDecodesData() 
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getDecodesData'");
+    }
+
+    @Override
+    public List<URL> getComputationData() 
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getComputationData'");
     }
 
 }

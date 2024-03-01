@@ -1,5 +1,6 @@
 package org.opendcs.spi.database;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +47,17 @@ public interface MigrationProvider
     default public void registerJdbiPlugins(Jdbi jdbi)
     {
     }
+
+    /**
+     * Get baseline Decodes data, like enums, datatype, equipment, presentation groups, etc
+     * @return
+     */
+    public List<File> getDecodesData();
+    /**
+     * Get Baseline computation get, like Algorithm definitions, Loading Apps, etc.
+     * @return
+     */
+    public List<File> getComputationData();
 
     /**
      * For those implementations that require placeholders, retrieve them
