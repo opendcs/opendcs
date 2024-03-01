@@ -168,12 +168,14 @@ public class DbImport
 		}
 
 		final String newDesignatorArg = platDesigArg.getValue().length() == 0 ? null : platDesigArg.getValue();
-		String defAgency = agencyArg.getValue().length() == 0 ? null : agencyArg.getValue();
+		final String defAgency = agencyArg.getValue().length() == 0 ? null : agencyArg.getValue();
+
+		final String newOwner = platOwnerArg.getValue().length() == 0 ? null : platOwnerArg.getValue();
 
 		DbImport dbImport = new DbImport(cmdLineArgs.getProfile(), dbLocArg.getValue(), validateOnlyArg.getValue(),
 										 keepOldArg.getValue(), platformRelatedOnlyArg.getValue(), overwriteDb.getValue(),
 										 allowHistoricalArg.getValue(), pdtFilePath.getValue(), newDesignatorArg, defAgency,
-										 files);
+										 newOwner, files);
 		dbImport.loadCurrentDatabase();
 		dbImport.dumpDTS("after loadCurrentDatabase");
 		if (overwriteDb.getValue())
@@ -221,6 +223,7 @@ public class DbImport
 	boolean overwriteDb;
 	boolean allowHistorical;
 	final String newDesignator;
+	final String newPlatformOwner;
 	final String defaultAgency;
 	Database stageDb;	
 	XmlDatabaseIO stageDbio;  // For reading the input files.
@@ -233,7 +236,7 @@ public class DbImport
 	
 	DbImport(Profile profile, String dbLoc, boolean validateOnly, boolean keepOld, boolean overwriteDb,
 		     boolean platformRelatedOnly, boolean allowHistorical, String pdtFilePath, String newDesignator,
-			 String defaultAgency, List<String> files) throws DatabaseException
+			 String defaultAgency, String newPlatformOwner, List<String> files) throws DatabaseException
 	{
 		
 		this.files = files;
@@ -244,6 +247,7 @@ public class DbImport
 		this.allowHistorical = allowHistorical;
 		this.newDesignator = newDesignator;
 		this.defaultAgency = defaultAgency;
+		this.newPlatformOwner = newPlatformOwner;
 		// Construct the database and the interface specified by properties.
 		theDb = new decodes.db.Database(false);
 		Database.setDb(theDb);
@@ -442,7 +446,7 @@ public class DbImport
 	private void initStageDb()
 		throws SAXException, ParserConfigurationException
 	{
-		debug(3, "Initializing the staging database.");
+		log.debug("Initializing the staging database.");
 		stageDb = new decodes.db.Database(false);
 		Database.setDb(stageDb);
 		stageDbio = new XmlDatabaseIO("");
@@ -498,7 +502,7 @@ public class DbImport
 		// Read all the files into a new 'staging' database.
 		for(String s: files)
 		{
-			info("Processing '" + s + "'");
+			log.info("Processing '{}'", s);
 			DatabaseObject ob = null;
 			
 			// If -p argument is used set a filter to skip non-platform-related elements.
@@ -1401,7 +1405,7 @@ public class DbImport
 		*/
 
 		// First EquipmentModels...
-		log.trace("Writing modified EquipmentModels");
+		log.info("Writing modified EquipmentModels");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
@@ -1424,7 +1428,7 @@ public class DbImport
 		// Then PlatformConfigs
 		//for(Iterator it = newObjects.iterator(); it.hasNext(); )
 
-		log.trace("Writing modified configs");
+		log.info("Writing modified configs");
 		Vector<PlatformConfig> modifiedCfgs = new Vector<PlatformConfig>();
 		for(PlatformConfig pc : theDb.platformConfigList.values())
 		{
@@ -1463,7 +1467,7 @@ public class DbImport
 		}
 
 		// Then Sites
-		debug(2, "Writing modified Sites");
+		log.info("Writing modified Sites");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
@@ -1497,32 +1501,34 @@ public class DbImport
 		}
 
 		// Then Platforms
-		debug(2, "Writing modified Platforms");
+		log.info("Writing modified Platforms");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
-			String newOwner = platOwnerArg.getValue();
-			if (newOwner.length() == 0) newOwner = null;
 			
-			// TODO remove this, the cmdline arg desig was added in mergeStageToTheDb().
-			String newDesig = platDesigArg.getValue();
-			if (newDesig.length() == 0) newDesig = null;
 			if (ob instanceof Platform)
 			{
 				Platform p = (Platform)ob;
 				if (p.transportMedia.size() == 0 || p.getConfig() == null)
 				{
-					info("NOT writing platform " + p.makeFileName()
-						+ (p.transportMedia.size() == 0 ? " it has no TMs" : " it has no config."));
+					log.info("NOT writing platform {} {}",
+							 p.makeFileName(),
+							 (p.transportMedia.size() == 0
+							    ? " it has no TMs" 
+								: " it has no config."));
 					continue;
 				}
 				
-Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' with id=" + p.getId());
-				if (newOwner != null)
-					p.setAgency(newOwner);
+				log.debug("Will try to write platform '{}' with id={}", p.makeFileName(), p.getId());
+				if (newPlatformOwner != null)
+				{
+					p.setAgency(newPlatformOwner);
+				}
 				if ((p.getPlatformDesignator() == null || p.getPlatformDesignator().trim().length() == 0)
-				 && newDesig != null)
-					p.setPlatformDesignator(newDesig);
+				 	&& newDesignator != null)
+				{
+					p.setPlatformDesignator(newDesignator);
+				}
 				
 				//Code added Oct 17, 2007 for DCP Mon Enhancement Prob. #2
 				//To set the Platform Description - if platform description
@@ -1530,7 +1536,9 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 				//is empty - get it from pdt
 				String desc = setPlatformDescription(p);
 				if (desc != null && desc.trim().length() > 0)
+				{
 					p.setDescription(desc);
+				}
 				//End code added Oct 17, 2007
 				try 
 				{
@@ -1538,21 +1546,20 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 				}
 				catch (DatabaseException ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE, 
-							"Could not import platform '" +
-							p.makeFileName() + "' with id=" + p.getId() + ": " + ex);
+					log.atError()
+					   .setCause(ex)
+					   .log("Could not import platform '{}' with id={}", p.makeFileName(), p.getId());
 				}
 			}
 		}
 
 		// Data Sources must be written before RoutingSpec
 		// First Simple Data Sources:
-		debug(2, "Writing modified simple DataSources");
+		log.info("Writing modified simple DataSources");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
-			if (ob instanceof DataSource
-			 && !((DataSource)ob).isGroupType())
+			if (ob instanceof DataSource && !((DataSource)ob).isGroupType())
 			{
 				try
 				{
@@ -1561,18 +1568,18 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 				catch (DatabaseException ex)
 				{
 					DataSource ds = (DataSource)ob;
-					failure("Could not import data source " +
-						ds.getName() + ", " + ex.getMessage());
+					log.atError()
+					   .setCause(ex)
+					   .log("Could not import data source '{}'", ds.getName());
 				}
 			}
 		}
 
-		debug(2, "Writing modified group DataSources");
+		log.info("Writing modified group DataSources");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
-			if (ob instanceof DataSource
-			 && ((DataSource)ob).isGroupType())
+			if (ob instanceof DataSource && ((DataSource)ob).isGroupType())
 			{
 				try
 				{
@@ -1581,15 +1588,14 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 				catch (DatabaseException ex)
 				{
 					DataSource ds = (DataSource)ob;
-					Logger.instance().log(Logger.E_FAILURE, 
-							"Could not import group data source " +
-							 ds.getName() + ", " +
-							ex.getMessage());
+					log.atError()
+					   .setCause(ex)
+					   .log("Could not import group data source '{}'", ds.getName());
 				}
 			}
 		}
 
-		debug(2, "Writing modified RoutingSpecs");
+		log.info("Writing modified RoutingSpecs");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
@@ -1602,14 +1608,14 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 				catch (DatabaseException ex)
 				{
 					RoutingSpec rs = (RoutingSpec)ob;
-					Logger.instance().log(Logger.E_FAILURE, 
-						"Could not import group routing spec " + rs.getName() + ", " +
-						ex.getMessage());
+					log.atError()
+					   .setCause(ex)
+					   .log("Could not import group routing spec '{}'", rs.getName());
 				}
 			}
 		}
 		
-		debug(2, "Writing Processes.");
+		log.info("Writing Processes.");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
@@ -1617,26 +1623,26 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 			{
 				try	
 				{
-					debug(3, "Writing " + ob.getObjectType());
+					log.trace("Writing '{}'", ob.getObjectType());
 					ob.write();
 				}
 				catch (NullPointerException ex) 
 				{
-					System.err.println("Error writing " 
-						+ ob.getObjectType() + ": " + ex);
-					ex.printStackTrace(System.err);
+					log.atError()
+					   .setCause(ex)
+					   .log("Error writing '{}'", ob.getObjectType());
 				}
 				catch (DatabaseException ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE, 
-							"Could not import other modified objs " +
-							ex.getMessage());
+					log.atError()
+					   .setCause(ex)
+					   .log("Could not import other modified objs");
 				}
 			}
 		}
 
 		// Then anything else...
-		debug(2, "Writing other modified objects.");
+		log.info("Writing other modified objects.");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
@@ -1652,22 +1658,20 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 				{
 					try	
 					{
-						debug(3, "Writing " + ob.getObjectType());
+						log.debug("Writing '{}'", ob.getObjectType());
 						ob.write();
 					}
 					catch (NullPointerException ex) 
 					{
-						System.err.println("Error writing " 
-							+ ob.getObjectType() + ": " + ex);
-						ex.printStackTrace(System.err);
+						log.atError()
+					   	   .setCause(ex)
+					       .log("Error writing '{}'", ob.getObjectType());
 					}
 					catch (DatabaseException ex)
 					{
-						Logger.instance().log(Logger.E_FAILURE, 
-							"Could not import other modified objs " +
-							ex.getMessage());
-						if (Logger.instance().getLogOutput() != null)
-							ex.printStackTrace(Logger.instance().getLogOutput());
+						log.atError()
+					   	   .setCause(ex)
+					   	   .log("Could not import other modified objs");
 					}
 				}
 			}
@@ -1676,15 +1680,14 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 
 		if (writePlatformList)
 		{
-			debug(2, "Writing PlatformList.");
+			log.info("Writing PlatformList.");
 			theDb.platformList.write();
 		}
 		
 		IntervalList editList = IntervalList.editInstance();
 		if (editList.getList().size() > 0)
 		{
-			debug(2, "Writing interval list with " + editList.getList().size()
-				+ " elements.");
+			log.info("Writing interval list with {} elements.", editList.getList().size());
 			// This will be true if we ingested an interval list.
 			if (theDbio instanceof SqlDatabaseIO)
 			{
@@ -1694,11 +1697,13 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 					try
 					{
 						for(Interval intv : editList.getList())
+						{
 							intervalDAO.writeInterval(intv);
+						}
 					}
 					catch(DbIoException ex)
 					{
-						warning("Error writing interval: " + ex);
+						log.warn("Error writing interval.", ex);
 					}
 					finally
 					{
@@ -1794,7 +1799,9 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 		{
 			PdtEntry pdtEntry = pdt.find(dcpAddress);
 			if (pdtEntry != null)
+			{
 				desc = pdtEntry.description;
+			}
 		}
 		return desc;
 	}
@@ -1803,46 +1810,13 @@ Logger.instance().debug1("Will try to write platform '" + p.makeFileName() + "' 
 	private boolean isNewObject(IdDatabaseObject ob)
 	{
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
+		{
 			if (ob == it.next())
+			{
 				return true;
+			}
+		}
 		return false;
-	}
-
-	/**
-	  Convenience method to print log message.
-	  @param msg the message.
-	*/
-	private void info(String msg)
-	{
-		lg.log(Logger.E_INFORMATION, msg);
-	}
-
-	/**
-	  Convenience method to print log message.
-	  @param msg the message.
-	*/
-	private void warning(String msg)
-	{
-		lg.log(Logger.E_WARNING, msg);
-	}
-
-	/**
-	  Convenience method to print log message.
-	  @param msg the message.
-	*/
-	private void failure(String msg)
-	{
-		lg.log(Logger.E_FAILURE, msg);
-	}
-
-	/**
-	  Convenience method to print log message.
-	  @param msg the message.
-	*/
-	private void debug(int lev, String msg)
-	{
-		lg.log(lev == 1 ? Logger.E_DEBUG1 :
-		           lev == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3, msg);
 	}
 
 	private void dumpDTS(String when)

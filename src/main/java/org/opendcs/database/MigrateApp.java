@@ -90,17 +90,20 @@ public class MigrateApp
 
             /* Initializing database with default data */
             List<File> decodesFiles = mp.getDecodesData();
-            ArrayList<String> theArgs = new ArrayList<>();
-            theArgs.add("-P"); theArgs.add(profile.getFile().getAbsolutePath());
-            theArgs.add("-d3");
-            theArgs.addAll(
-                decodesFiles.stream()
-                        .map(f->f.getAbsolutePath())
-                        .collect(Collectors.toList())
-                        );
-            DbImport.main(theArgs.toArray(new String[0]));
-
-            List<File> compFiles = mp.getComputationData();
+            if (!decodesFiles.isEmpty())
+            {
+                console.writer().println("Loading baseline decodes data.");
+                ArrayList<String> theArgs = new ArrayList<>();
+                theArgs.add("-P"); theArgs.add(profile.getFile().getAbsolutePath());
+                theArgs.add("-d3");
+                theArgs.addAll(
+                    decodesFiles.stream()
+                            .map(f->f.getAbsolutePath())
+                            .collect(Collectors.toList())
+                            );
+                DbImport.main(theArgs.toArray(new String[0]));
+            }
+            /*List<File> compFiles = mp.getComputationData();
             theArgs.clear();
             theArgs.add("-P"); theArgs.add(profile.getFile().getAbsolutePath());
             theArgs.add("-d3");
@@ -110,7 +113,7 @@ public class MigrateApp
                         .map(f->f.getAbsolutePath())
                         .collect(Collectors.toList())
                         );                        
-            ImportComp.main(theArgs.toArray(new String[0]));
+            ImportComp.main(theArgs.toArray(new String[0]));*/
         }
         else
         {
