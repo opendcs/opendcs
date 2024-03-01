@@ -1,6 +1,12 @@
 package decodes.tsdb;
 
 import java.util.Iterator;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.util.ArrayList;
 
 import opendcs.dai.AlgorithmDAI;
@@ -10,7 +16,6 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import ilex.cmdline.*;
-import ilex.util.Logger;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.SiteName;
@@ -24,6 +29,7 @@ import it into the TSDB.
 */
 public class ImportComp extends TsdbAppTemplate
 {
+    private final Logger log = LoggerFactory.getLogger(getCallingClass());
     private StringToken xmlFileArgs;
     private BooleanToken createTimeSeries;
     private SiteDAI siteDAO = null;
@@ -77,7 +83,9 @@ public class ImportComp extends TsdbAppTemplate
                 }
                 catch(DbXmlException ex)
                 {
-                    System.err.println("Could not parse '" + fn + "': " + ex);
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Could not parse '{}'", fn);
                     continue;
                 }
 
@@ -119,21 +127,22 @@ public class ImportComp extends TsdbAppTemplate
                             {
                                 if (noOverwriteArg.getValue())
                                 {
-                                    Logger.instance().info("Skipping group '" + g.getGroupName()
-                                        + "' because a group with that name already exists in your database.");
+                                    log.info("Skipping group '{}' because a group with "
+                                           + "that name already exists in your database.",g.getGroupName());
 
                                     continue;
                                 }
                                 g.setGroupId(existingGrp.getGroupId());
                             }
-
-                            Logger.instance().info("Importing group '" + g.getGroupName() + "'");
+                            log.info("Importing group '{}'", g.getGroupName());
                             groupDAO.writeTsGroup(g);
                         }
-                        catch (DbIoException E)
+                        catch (DbIoException ex)
                         {
-                            System.err.println("Could not import " + g.getObjectType()
-                                    + " " + g.getObjectName() + ": " + E);
+                            log.atWarn()
+                               .setCause(ex)
+                               .log("Could not import object of type '{}' of name '{}'",
+                                    g.getObjectType(), g.getObjectName());
                         }
                     }
 
@@ -151,20 +160,19 @@ public class ImportComp extends TsdbAppTemplate
                                     {
                                         loadingAppDao.getComputationApp(cai.getAppName());
                                         // If it doesn't throw NoSuchObject, that means it exists.
-                                        Logger.instance().info("Skipping process '" + cai.getAppName()
-                                            + "' because a process with that name already exists in your database.");
+                                        log.info("Skipping process '{}' because a process with that name "
+                                               + "already exists in your database.", cai.getAppName());
                                         continue;
                                     }
                                     catch(NoSuchObjectException ex) {}
                                 }
-                                Logger.instance().info("Importing process '" + cai.getAppName() + "'");
+                                log.info("Importing process '{}'", cai.getAppName());
                                 loadingAppDao.writeComputationApp(cai);
                             }
                             else if (mdobj instanceof DbComputation)
                             {
                                 DbComputation comp = (DbComputation)mdobj;
-                                for(Iterator<DbCompParm> dcpi = comp.getParms();
-                                    dcpi.hasNext(); )
+                                for(Iterator<DbCompParm> dcpi = comp.getParms(); dcpi.hasNext();)
                                 {
                                     DbCompParm parm = dcpi.next();
                                     try
@@ -172,13 +180,15 @@ public class ImportComp extends TsdbAppTemplate
                                         // Lookup the Site
                                         DbKey siteId = Constants.undefinedId;
                                         for(SiteName sn : parm.getSiteNames())
+                                        {
                                             if ((siteId = siteDAO.lookupSiteID(sn)) != Constants.undefinedId)
+                                            {
                                                 break;
+                                            }
+                                        }
                                         if (siteId == Constants.undefinedId)
                                         {
-                                            Logger.instance().debug1("Parm "
-                                                + parm.getRoleName()
-                                                + " No site, assuming dynamic.");
+                                            log.debug("Parm {} No site, assuming dynamic.", parm.getRoleName());
                                             continue;
                                         }
                                         parm.setSiteId(siteId);
@@ -193,19 +203,17 @@ public class ImportComp extends TsdbAppTemplate
                                         {
                                             theDb.setParmSDI(parm, siteId, dtCode);
                                         }
-                                        catch(NoSuchObjectException ex)
+                                        catch (NoSuchObjectException ex)
                                         {
-                                            info("Time Series for parm '"
-                                                + parm.getRoleName() + "' doesn't exist: " + ex);
+                                            log.info("Time Series for parm '{}' doesn't exist.", parm.getRoleName());
                                             if (!createTimeSeries.getValue())
                                             {
-                                                warning("... and the -C (create TS) flag was not used.");
+                                                log.warn("... and the -C (create TS) flag was not used.");
                                                 throw ex;
                                             }
                                         }
                                         // get preferred name if one is provided.
-                                        String nm = comp.getProperty(
-                                            parm.getRoleName() + "_tsname");
+                                        String nm = comp.getProperty(parm.getRoleName() + "_tsname");
                                         if (createTimeSeries.getValue())
                                         {
                                             TimeSeriesIdentifier tsid =
@@ -215,25 +223,19 @@ public class ImportComp extends TsdbAppTemplate
                                     }
                                     catch(NoSuchObjectException ex)
                                     {
-                                        String msg = "Computation '"
-                                            + comp.getName() + "' problem resolving "
-                                            + "parameter " + parm.getRoleName()
-                                            + ": " + ex;
-                                        Logger.instance().warning(msg);
-                                        System.out.println(msg);
-                                        ex.printStackTrace();
+                                        String msg = "Computation '{}' problem resolving parameter {}";
+                                        log.atWarn()
+                                           .setCause(ex)
+                                           .log(msg, comp.getName(), parm.getRoleName());
                                     }
                                     catch(BadTimeSeriesException ex)
                                     {
                                         if (!comp.hasGroupInput())
                                         {
-                                            String msg = "Non-Group Computation '"
-                                                + comp.getName() + "' problem resolving "
-                                                + "parameter " + parm.getRoleName()
-                                                + ": " + ex;
-                                            Logger.instance().warning(msg);
-                                            System.out.println(msg);
-                                            ex.printStackTrace();
+                                            String msg = "Non-Group Computation '{}' problem resolving parameter {}";
+                                                log.atWarn()
+                                                .setCause(ex)
+                                                .log(msg, comp.getName(), parm.getRoleName());
                                         }
                                     }
                                 }
@@ -248,14 +250,14 @@ public class ImportComp extends TsdbAppTemplate
                                     {
                                         computationDAO.getComputationByName(comp.getName());
                                         // If it doesn't throw NoSuchObject, that means it exists.
-                                        Logger.instance().info("Skipping computation '" + comp.getName()
-                                            + "' because a computation with that name already exists in your database.");
+                                        log.info("Skipping computation '{}' because a computation with "
+                                               + "that name already exists in your database.", comp.getName());
                                         continue;
                                     }
                                     catch(NoSuchObjectException ex) {}
                                 }
 
-                                Logger.instance().info("Importing computation '" + comp.getName() + "'");
+                                log.info("Importing computation '{}'", comp.getName());
                                 computationDAO.writeComputation(comp);
                             }
                             else if (mdobj instanceof DbCompAlgorithm)
@@ -267,24 +269,23 @@ public class ImportComp extends TsdbAppTemplate
                                     {
                                         algorithmDao.getAlgorithmId(algo.getName());
                                         // If it doesn't throw NoSuchObject, that means it exists.
-                                        Logger.instance().info("Skipping algorithm '" + algo.getName()
-                                            + "' because an algorithm with that name already exists in your database.");
+                                        log.info("Skipping algorithm '{}' because an algorithm with "
+                                               + "that name already exists in your database.", algo.getName());
                                         continue;
                                     }
                                     catch(NoSuchObjectException ex) {}
                                 }
 
-                                Logger.instance().info("Importing algorithm '" + algo.getName() + "'");
+                                log.info("Importing algorithm '{}'", algo.getName());
                                 algorithmDao.writeAlgorithm(algo);
                             }
                         }
                         catch(DbIoException ex)
                         {
-                            String msg = "Could not import "
-                                + mdobj.getObjectType() + " " + mdobj.getObjectName()
-                                + ": " + ex;
-                            Logger.instance().warning(msg);
-                            ex.printStackTrace(Logger.instance().getLogOutput());
+                            String msg = "Could not import {} {}";
+                            log.atWarn()
+                               .setCause(ex)
+                               .log(msg, mdobj.getObjectType(), mdobj.getObjectName());
                         }
                     }
                 }   
@@ -537,9 +538,11 @@ public class ImportComp extends TsdbAppTemplate
                     }
                 }
             }
-            catch (Exception E)
+            catch (Exception ex)
             {
-                System.out.println(E.toString());
+                log.atWarn()
+                   .setCause(ex)
+                   .log("Error during object lookup for group.");
             }
             finally
             {
