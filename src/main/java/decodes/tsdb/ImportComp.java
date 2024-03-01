@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import static org.slf4j.helpers.Util.getCallingClass;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.ComputationDAI;
@@ -30,33 +31,22 @@ import it into the TSDB.
 public class ImportComp extends TsdbAppTemplate
 {
     private final Logger log = LoggerFactory.getLogger(getCallingClass());
-    private StringToken xmlFileArgs;
-    private BooleanToken createTimeSeries;
     private SiteDAI siteDAO = null;
-    private BooleanToken noOverwriteArg = new BooleanToken("o",
-        "Do not overwrite records with matching name.", "", TokenOptions.optSwitch, false);
+    final private boolean createTimeSeries;
+    final private boolean noOverwrite;
+    final private List<String> files;
 
     //=======================================================================
     /**
      * Constructor called from main method after parsing arguments.
      */
-    public ImportComp()
+    public ImportComp(boolean createTimeSeries, boolean noOverwrite, List<String> files)
     {
         super("import.log");
         setSilent(true);
-    }
-
-    public void addCustomArgs(CmdLineArgs cmdLineArgs)
-    {
-        createTimeSeries = new BooleanToken("C", "create parms as needed",
-            "", TokenOptions.optSwitch, false);
-        cmdLineArgs.addToken(createTimeSeries);
-        cmdLineArgs.addToken(noOverwriteArg);
-
-        xmlFileArgs = new StringToken("", "xml-file",
-            "", TokenOptions.optArgument | TokenOptions.optMultiple|
-            TokenOptions.optRequired, "");
-        cmdLineArgs.addToken(xmlFileArgs);
+        this.createTimeSeries = createTimeSeries;
+        this.noOverwrite = noOverwrite;
+        this.files = files;
     }
 
     /**
@@ -73,9 +63,8 @@ public class ImportComp extends TsdbAppTemplate
         try
         {
             CompXio cx = new CompXio("ImportComp", theDb);
-            for (int i=0; i<xmlFileArgs.NumberOfValues(); i++)
+            for (String fn: files)
             {
-                String fn = xmlFileArgs.getValue(i);
                 ArrayList<CompMetaData> metadata;
                 try
                 {
@@ -125,7 +114,7 @@ public class ImportComp extends TsdbAppTemplate
                             TsGroup existingGrp = groupDAO.getTsGroupByName(g.getGroupName());
                             if (existingGrp != null)
                             {
-                                if (noOverwriteArg.getValue())
+                                if (noOverwrite)
                                 {
                                     log.info("Skipping group '{}' because a group with "
                                            + "that name already exists in your database.",g.getGroupName());
@@ -154,7 +143,7 @@ public class ImportComp extends TsdbAppTemplate
                             if (mdobj instanceof CompAppInfo)
                             {
                                 CompAppInfo cai = (CompAppInfo)mdobj;
-                                if (noOverwriteArg.getValue())
+                                if (noOverwrite)
                                 {
                                     try
                                     {
@@ -206,7 +195,7 @@ public class ImportComp extends TsdbAppTemplate
                                         catch (NoSuchObjectException ex)
                                         {
                                             log.info("Time Series for parm '{}' doesn't exist.", parm.getRoleName());
-                                            if (!createTimeSeries.getValue())
+                                            if (!createTimeSeries)
                                             {
                                                 log.warn("... and the -C (create TS) flag was not used.");
                                                 throw ex;
@@ -214,7 +203,7 @@ public class ImportComp extends TsdbAppTemplate
                                         }
                                         // get preferred name if one is provided.
                                         String nm = comp.getProperty(parm.getRoleName() + "_tsname");
-                                        if (createTimeSeries.getValue())
+                                        if (createTimeSeries)
                                         {
                                             TimeSeriesIdentifier tsid =
                                                 theDb.transformTsidByCompParm(null, parm,
@@ -244,7 +233,7 @@ public class ImportComp extends TsdbAppTemplate
                                 if (tsGrpName != null)
                                 comp.setGroupId(groupDAO.getTsGroupByName(tsGrpName).getGroupId());
 
-                                if (noOverwriteArg.getValue())
+                                if (noOverwrite)
                                 {
                                     try
                                     {
@@ -263,7 +252,7 @@ public class ImportComp extends TsdbAppTemplate
                             else if (mdobj instanceof DbCompAlgorithm)
                             {
                                 DbCompAlgorithm algo = (DbCompAlgorithm)mdobj;
-                                if (noOverwriteArg.getValue())
+                                if (noOverwrite)
                                 {
                                     try
                                     {
@@ -288,7 +277,7 @@ public class ImportComp extends TsdbAppTemplate
                                .log(msg, mdobj.getObjectType(), mdobj.getObjectName());
                         }
                     }
-                }   
+                }
             }
         }
         finally
@@ -436,7 +425,7 @@ public class ImportComp extends TsdbAppTemplate
                 }
                 break;
             }
-            case SiteId: 
+            case SiteId:
             {
                 for(String strObj: tsGrp.getSiteNameList())
                 {
@@ -561,9 +550,31 @@ public class ImportComp extends TsdbAppTemplate
     public static void main( String[] args )
         throws Exception
     {
+        StringToken xmlFileArgs = new StringToken("", "xml-file",
+                                                  "",
+                                                  TokenOptions.optArgument | TokenOptions.optMultiple|
+                                                  TokenOptions.optRequired, "");;
+
+        BooleanToken createTimeSeries = new BooleanToken("C", "create parms as needed",
+                                                         "",
+                                                         TokenOptions.optSwitch, false);;
+
+        BooleanToken noOverwriteArg = new BooleanToken("o", "Do not overwrite records with matching name.",
+                                                       "", TokenOptions.optSwitch, false);
+        CmdLineArgs cmdLineArgs = new CmdLineArgs(true, "compimport");
+        cmdLineArgs.addToken(createTimeSeries);
+        cmdLineArgs.addToken(noOverwriteArg);
+        cmdLineArgs.addToken(xmlFileArgs);
         // Call run method directly. For multi threaded executive, we would
         // create a thread and start it.
-        ImportComp app = new ImportComp();
+        List<String> fileNames = new ArrayList<>();
+        for (int i = 0; i < xmlFileArgs.NumberOfValues(); i++)
+        {
+            fileNames.add(xmlFileArgs.getValue(i));
+        }
+        ImportComp app = new ImportComp(createTimeSeries.getValue(), noOverwriteArg.getValue(), fileNames);
         app.execute(args);
+
+
     }
 }
