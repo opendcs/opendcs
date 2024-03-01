@@ -3,6 +3,8 @@
 */
 package decodes.sql;
 
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -13,9 +15,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import opendcs.dai.PropertiesDAI;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import decodes.db.Constants;
@@ -46,7 +50,7 @@ import opendcs.dao.DaoBase;
 */
 public class ConfigListIO extends SqlDbObjIo
 {
-	private static final Logger log = Logger.instance();
+	private static final Logger log = LoggerFactory.getLogger(getCallingClass());
 	/**
 	* Transient reference to the PlatformConfigList that we're currently 
 	* operating on.
@@ -83,7 +87,7 @@ public class ConfigListIO extends SqlDbObjIo
 	public void read(PlatformConfigList pcList)
 		throws DatabaseException, SQLException
 	{
-		Logger.instance().log(Logger.E_DEBUG1,"Reading PlatformConfigs...");
+		log.debug("Reading PlatformConfigs...");
 		_pcList = pcList;
 
 		// Read entire PlatformConfig table & convert each entry to an object.
@@ -92,7 +96,7 @@ public class ConfigListIO extends SqlDbObjIo
 		String q = "SELECT id, name, description, equipmentId "
 		 	+ " from PlatformConfig";
 
-		Logger.instance().debug3("Executing '" + q + "'");
+		log.trace("Executing '{}'", q);
 		ResultSet rs = stmt.executeQuery(q);
 		while(rs != null && rs.next())
 		{
@@ -120,8 +124,7 @@ public class ConfigListIO extends SqlDbObjIo
 		}
 
 		stmt.close();
-		Logger.instance().debug1("PlatformConfigs done, read "
-			+ _pcList.size() + " configs.");
+		log.debug("PlatformConfigs done, read {} configs.", _pcList.size());
 	}
 
 	/**
@@ -365,7 +368,7 @@ public class ConfigListIO extends SqlDbObjIo
 			String q = "SELECT id, name, description, equipmentId " +
 					   "FROM PlatformConfig WHERE ID = " + id;
 			
-			debug3("Executing '" + q + "'");
+			log.trace("Executing '{}'", q);
 			ResultSet rs = stmt.executeQuery(q);
 	
 			if (rs == null || !rs.next())
@@ -437,7 +440,7 @@ public class ConfigListIO extends SqlDbObjIo
 			"SELECT Name from PlatformConfig where Name = "+
 							sqlString(pc.configName);
 		Statement stmt = createStatement();
-		debug3("Executing '" + q + "'");
+		log.trace("Executing '{}'", q);
 		ResultSet rs = stmt.executeQuery(q);
 		
 		String desc = pc.description;
@@ -587,8 +590,8 @@ public class ConfigListIO extends SqlDbObjIo
 	{
 		if (cs.sensorName == null || cs.sensorName.trim().length() == 0)
 		{
-			warning("PlatformConfig '" + cs.platformConfig.getName() + "' sensor number "
-				+ cs.sensorNumber + " is missing required sensorName. Set to UNKNOWN");
+			log.warn("PlatformConfig '{}"  + "' sensor number {} is missing required sensorName. Set to UNKNOWN",
+					 cs.platformConfig.getName(), cs.sensorNumber);
 			cs.sensorName = "UNKNOWN";
 		}
 		if (getDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
@@ -596,10 +599,8 @@ public class ConfigListIO extends SqlDbObjIo
 			DataType dt = cs.getDataType();
 			if (dt == null)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Config '" + cs.platformConfig.configName + "' sensor "
-					+cs.sensorNumber 
-					+" missing DataType -- Assigned to data type UNKNOWN");
+				log.error("Config '{}' sensor missing DataType -- Assigned to data type UNKNOWN",
+						  cs.platformConfig.configName, cs.sensorNumber);
 				cs.addDataType(DataType.getDataType(Constants.datatype_SHEF,
 					"UNKNOWN"));
 			}
@@ -784,7 +785,7 @@ public class ConfigListIO extends SqlDbObjIo
 		Statement stmt = createStatement();
 		String q = "SELECT * FROM DecodesScript WHERE ConfigId = " + pc.getId();
 		
-		debug3("Executing '" + q + "'");
+		log.trace("Executing '{}'", q);
 		ResultSet rs = stmt.executeQuery(q);
 
 		if (rs != null) 
@@ -818,7 +819,7 @@ public class ConfigListIO extends SqlDbObjIo
 		}
 		try
 		{
-			log.debug3("Loading Script " + name + " for configuration " + pc.configName);
+			log.trace("Loading Script {} for configuration {}", name, pc.configName);
 			SQLDecodesScriptReader reader = new SQLDecodesScriptReader(connection(), id);
 			DecodesScript ds = DecodesScript.from(reader)
 											.scriptName(name)
@@ -881,9 +882,6 @@ public class ConfigListIO extends SqlDbObjIo
 			ds.setId(dsKey);
 		}
 
-		//System.out.println("		  " +
-		//	"DecodesScriptIO.insert(ds #" + id + ", pcId == " + pcId + ")");
-
 		String q;
 		if (getDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_6)
 		{
@@ -894,10 +892,11 @@ public class ConfigListIO extends SqlDbObjIo
 				 sqlReqString(ds.scriptType) +
 			   ")";
 			if (ds.getDataOrder() != Constants.dataOrderUndefined)
-				Logger.instance().log(Logger.E_WARNING,
-					"DecodesScript.dataOrder not supported in database version "
-					+ getDatabaseVersion() + " -- please see DECODES manual"
-					+ " for instructions on upgrading your SQL database.");
+			{
+				log.warn(
+					"DecodesScript.dataOrder not supported in database version {} -- please see DECODES manual"
+				  + " for instructions on upgrading your SQL database.", getDatabaseVersion());
+			}
 		}
 		else
 			q = "INSERT INTO DecodesScript VALUES (" +
@@ -934,7 +933,7 @@ public class ConfigListIO extends SqlDbObjIo
 		String q = "select unitconverterid FROM ScriptSensor,DecodesScript"
 			+ " WHERE ScriptSensor.decodesScriptId = DecodesScript.id"
 			+ " AND DecodesScript.configId = " + pc.getId();
-		debug3("Executing '" + q + "'");
+		log.trace("Executing '{}'", q);
 		ResultSet rs = stmt.executeQuery(q);
 		int n=0;
 		StringBuilder inClause = new StringBuilder(" IN (");
@@ -1028,8 +1027,9 @@ public class ConfigListIO extends SqlDbObjIo
 			try { insert(fs, ds.getId()); }
 			catch(SQLException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"SQLException trying to insert format statement: " + ex);
+				log.atError()
+				   .setCause(ex)
+				   .log("Unable to insert format statement.");
 			}
 		}
 	}
@@ -1073,7 +1073,7 @@ public class ConfigListIO extends SqlDbObjIo
 		Statement stmt = createStatement();
 		String q = "SELECT SensorNumber, UnitConverterId " +
 			"FROM ScriptSensor " + "WHERE DecodesScriptId = " + dsId;
-		Logger.instance().debug3("Query: " + q);
+		log.trace("Query: {}", q);
 		ResultSet rs = stmt.executeQuery(q);
 
 		if (rs != null)

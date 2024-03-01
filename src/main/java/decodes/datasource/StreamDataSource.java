@@ -138,9 +138,15 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
 import java.util.Vector;
+
+import org.slf4j.LoggerFactory;
+
 import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Date;
+
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -199,6 +205,7 @@ import decodes.util.PropertySpec;
 */
 public abstract class StreamDataSource extends DataSourceExec
 {
+	private static org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
 	/** Some file data sources can have quite long messages */
 	public static final int MAX_MESSAGE_LENGTH = 200000;
 	
@@ -637,15 +644,13 @@ public abstract class StreamDataSource extends DataSourceExec
 			p = db.platformList.getPlatform(
 				pmp.getMediumType(), ret.getMediumId(), ret.getTimeStamp());
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{ 
-			String msg = 
-				"Stream Data Source '" + getName() + "' "
-				+ "Cannot read complete platform record for message '"
-				+ new String(ret.getData(), 0, 
-				(ret.getData().length > 19 ? 19 : ret.getData().length))
-				+ "': " + e;
-			log(Logger.E_WARNING, msg);
+			String dataMsg = new String(ret.getData(), 0, (ret.getData().length > 19 ? 19 : ret.getData().length));
+			log.atError()
+			   .setCause(ex)
+			   .log("Stream Data Source '{}' Cannot read complete platform record for message '{}'",
+					getName(), dataMsg);
 			p = null;
 		}
 		if (p != null)
