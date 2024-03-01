@@ -59,7 +59,7 @@ public class DbImport
 	  <li>-v    Validate only: show conflicts but do not import anything.</li>
       <li>-o    Keep old records when there is a conflict.
                 (default is to overwrite old records with new).</li>
-	  <li>-a    AutoInstall option. Records are flagged as production and 
+	  <li>-a    AutoInstall option. Records are flagged as production and
 	            installed to the production database after import.</li>
 	</ul>
 	*/
@@ -71,22 +71,22 @@ public class DbImport
 			"Validate Only", "", TokenOptions.optSwitch, false);
 		BooleanToken keepOldArg = new BooleanToken("o",
 			"Keep old records on conflict", "", TokenOptions.optSwitch, false);
-		StringToken agencyArg = new StringToken("A", "default agency code", 
+		StringToken agencyArg = new StringToken("A", "default agency code",
 			"", TokenOptions.optSwitch, "");
 		StringToken platOwnerArg = new StringToken("O", "Platform Owner", "",
 			TokenOptions.optSwitch, "");
-		StringToken platDesigArg = new StringToken("G", 
+		StringToken platDesigArg = new StringToken("G",
 			"Platform Designator (for platforms with no designator in XML file)", "",
 			TokenOptions.optSwitch, "");
-		StringToken dbLocArg = new StringToken("E", 
+		StringToken dbLocArg = new StringToken("E",
 			"Explicit Database Location", "", TokenOptions.optSwitch, "");
 		StringToken fileArgs = new StringToken("", "XmlFiles", "",
 			TokenOptions.optArgument|TokenOptions.optMultiple
 			|TokenOptions.optRequired, "");
-		StringToken pdtFilePath = new StringToken("t", 
+		StringToken pdtFilePath = new StringToken("t",
 				"pdt file (full file system path, " +
 				"fill descriptions if empty)", "",
-				TokenOptions.optSwitch, 
+				TokenOptions.optSwitch,
 				"");
 		BooleanToken noConfigs = new BooleanToken("C",
 			"Link platforms to existing configs, ignore configs in XML file", "",
@@ -108,7 +108,7 @@ public class DbImport
 			TokenOptions.optSwitch, false);
 			Logger.setLogger(new StderrLogger("DbImport"));
 		CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
-		
+
 		cmdLineArgs.addToken(validateOnlyArg);
 		cmdLineArgs.addToken(keepOldArg);
 		cmdLineArgs.addToken(agencyArg);
@@ -164,54 +164,72 @@ public class DbImport
 			{
 				files.add(f);
 			}
-			
+
 		}
 
+		final String dbLoc = dbLocArg.getValue().length() == 0 ? null : dbLocArg.getValue();
+		final String pdtFile = pdtFilePath.getValue().length() == 0 ? null : pdtFilePath.getValue();
 		final String newDesignatorArg = platDesigArg.getValue().length() == 0 ? null : platDesigArg.getValue();
 		final String defAgency = agencyArg.getValue().length() == 0 ? null : agencyArg.getValue();
 
 		final String newOwner = platOwnerArg.getValue().length() == 0 ? null : platOwnerArg.getValue();
 
-		DbImport dbImport = new DbImport(cmdLineArgs.getProfile(), dbLocArg.getValue(), validateOnlyArg.getValue(),
+		DbImport dbImport = new DbImport(cmdLineArgs.getProfile(), dbLoc, validateOnlyArg.getValue(),
 										 keepOldArg.getValue(), platformRelatedOnlyArg.getValue(), overwriteDb.getValue(),
-										 allowHistoricalArg.getValue(), pdtFilePath.getValue(), newDesignatorArg, defAgency,
+										 allowHistoricalArg.getValue(), pdtFile, newDesignatorArg, defAgency,
 										 newOwner, files);
-		dbImport.loadCurrentDatabase();
-		dbImport.dumpDTS("after loadCurrentDatabase");
-		if (overwriteDb.getValue())
+		dbImport.importDatabase();
+	}
+
+	public void importDatabase() throws DatabaseException
+	{
+		try
 		{
-			dbImport.deleteCurrentDatabase();
-			dbImport.dumpDTS("after deleteCurrentDatabase");
-		}
-		dbImport.initStageDb();
-		dbImport.dumpDTS("after initStageDb");
-		dbImport.readXmlFiles();
-		dbImport.dumpDTS("after readXmlFiles");
-		
-		if (log.isTraceEnabled())
-		{
-			log.trace("After readXmlFiles, there are {} platforms to import:", dbImport.stageDb.platformList.size());
-			for(Iterator<Platform> pit = dbImport.stageDb.platformList.iterator(); pit.hasNext(); )
+			loadCurrentDatabase();
+			dumpDTS("after loadCurrentDatabase");
+			if (overwriteDb)
 			{
-				Platform p = pit.next();
-				log.trace("Platform '{}'", p.makeFileName());
-				for (PlatformSensor ps : p.platformSensors)
+				this.deleteCurrentDatabase();
+				this.dumpDTS("after deleteCurrentDatabase");
+			}
+			initStageDb();
+			dumpDTS("after initStageDb");
+			readXmlFiles();
+			dumpDTS("after readXmlFiles");
+
+			if (log.isTraceEnabled())
+			{
+				log.trace("After readXmlFiles, there are {} platforms to import:", this.stageDb.platformList.size());
+				for(Iterator<Platform> pit = this.stageDb.platformList.iterator(); pit.hasNext(); )
 				{
-					log.trace("   Sensor {}: actualSite={}", 
-							  ps.sensorNumber, (ps.site == null ? "null" : ps.site.getPreferredName()));
+					Platform p = pit.next();
+					log.trace("Platform '{}'", p.makeFileName());
+					for (PlatformSensor ps : p.platformSensors)
+					{
+						log.trace("   Sensor {}: actualSite={}",
+								ps.sensorNumber, (ps.site == null ? "null" : ps.site.getPreferredName()));
+					}
 				}
 			}
-		}
 
-		dbImport.mergeStageToTheDb();
-		dbImport.dumpDTS("after mergeStageToTheDb");
-		log.trace("After mergeStageToTheDb, there are {} EUs", Database.getDb().engineeringUnitList.size());
-		if (!dbImport.validateOnly)
+			mergeStageToTheDb();
+			dumpDTS("after mergeStageToTheDb");
+			log.trace("After mergeStageToTheDb, there are {} EUs", Database.getDb().engineeringUnitList.size());
+			if (!validateOnly)
+			{
+				normalizeTheDb();
+				log.trace("After normalizeTheDb, there are {} EUs", Database.getDb().engineeringUnitList.size());
+				writeTheChanges();
+				dumpDTS("after writeTheChanges");
+			}
+		}
+		catch (ParserConfigurationException | SAXException ex)
 		{
-			dbImport.normalizeTheDb();
-			log.trace("After normalizeTheDb, there are {} EUs", Database.getDb().engineeringUnitList.size());
-			dbImport.writeTheChanges();
-			dbImport.dumpDTS("after writeTheChanges");
+			throw new DatabaseException("Unable to parse or process input XML data.", ex);
+		}
+		catch (IOException ex)
+		{
+			throw new DatabaseException("Unable to read or write required data", ex);
 		}
 	}
 
@@ -225,7 +243,7 @@ public class DbImport
 	final String newDesignator;
 	final String newPlatformOwner;
 	final String defaultAgency;
-	Database stageDb;	
+	Database stageDb;
 	XmlDatabaseIO stageDbio;  // For reading the input files.
 	TopLevelParser topParser; // Top level XML parser.
 	Vector<IdDatabaseObject> newObjects;   // Stores new DatabaseObjects to be added.
@@ -233,12 +251,12 @@ public class DbImport
 	final List<String> files;
 	boolean writePlatformList;
 	private Pdt pdt = null;
-	
-	DbImport(Profile profile, String dbLoc, boolean validateOnly, boolean keepOld, boolean overwriteDb,
+
+	public DbImport(Profile profile, String dbLoc, boolean validateOnly, boolean keepOld, boolean overwriteDb,
 		     boolean platformRelatedOnly, boolean allowHistorical, String pdtFilePath, String newDesignator,
 			 String defaultAgency, String newPlatformOwner, List<String> files) throws DatabaseException
 	{
-		
+
 		this.files = files;
 		this.platformRelatedOnly = platformRelatedOnly;
 		this.overwriteDb = overwriteDb;
@@ -254,16 +272,21 @@ public class DbImport
 
 		try
 		{
-			DecodesSettings settings = DecodesSettings.fromProfile(profile);
-			if (dbLoc.length() > 0)
+
+			DecodesSettings settings = DecodesSettings.instance();
+			// unfortunately we still need to use the global decodes settings here.
+			settings.loadFromProfile(profile);
+			log.info("Using Database...");
+			if (dbLoc != null)
 			{
+				log.info("\t'{}'", dbLoc);
 				theDbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, dbLoc);
 			}
 			else
 			{
+				log.info("\t'{}/{}'", settings.editDatabaseTypeCode, settings.editDatabaseLocation);
 				theDbio = DatabaseIO.makeDatabaseIO(
 					settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-				dbLoc = settings.editDatabaseLocation;
 			}
 		}
 		catch (IOException ex)
@@ -274,8 +297,8 @@ public class DbImport
 		// Standard Database Initialization for all Apps:
 		Site.explicitList = false; // YES Sites automatically added to SiteList
 		theDb.setDbIo(theDbio);
-				
-		if (!pdtFilePath.isEmpty())
+
+		if (pdtFilePath != null)
 		{
 			initializePdt(pdtFilePath);
 		}
@@ -288,15 +311,15 @@ public class DbImport
 			}
 			if (keepOld)
 			{
-				throw new IllegalStateException("Overwrite Flag -W is inconsistent with keep-old -o flag.");				
+				throw new IllegalStateException("Overwrite Flag -W is inconsistent with keep-old -o flag.");
 			}
-			
+
 		}
-		
+
 		PlatformListIO.isDbImport = true;
 	}
 
-	/** 
+	/**
 	 * Reads the entire CURRENT editable database into memory in order to prepare for a merge.
 	 */
 	private void loadCurrentDatabase()
@@ -348,7 +371,7 @@ public class DbImport
 			}
 		}
 	}
-	
+
 	/**
 	 * Called when the Overwrite CURRENT database option is used.
 	 */
@@ -383,14 +406,14 @@ public class DbImport
 				theDbio.deleteRoutingSpec(rs);
 			}
 			theDb.routingSpecList.clear();
-			
+
 			for(Iterator<DataSource> dsit = theDb.dataSourceList.iterator(); dsit.hasNext(); )
 			{
 				DataSource ds = dsit.next();
 				theDbio.deleteDataSource(ds);
 			}
 			theDb.dataSourceList.clear();
-	
+
 			// NOTE: Never delete loading apps -- too many dependencies outside of DECODES.
 			// (block of code for removing loading apps removed 10/26/2022)
 		}
@@ -407,9 +430,9 @@ public class DbImport
 		}
 		theDb.platformList.clear();
 
-		// NOTE: Never delete SITE records. Too many dependencies outside of DECODES. 
+		// NOTE: Never delete SITE records. Too many dependencies outside of DECODES.
 		// (block of code for removing sites removed 10/26/2022)
-		
+
 		for(PlatformConfig pc : theDb.platformConfigList.values())
 		{
 			theDbio.deleteConfig(pc);
@@ -429,17 +452,17 @@ public class DbImport
 		{
 			theDb.unitConverterSet.clear();
 			theDb.engineeringUnitList.clear();
-	
+
 			// Likewise DataTypes are read/written as a set. Just clear the
 			// Java collection and only the new ones will survive.
 			theDb.dataTypeSet.clear();
-	
+
 			// Likewise again for enumerations.
 			theDb.enumList.clear();
 		}
 	}
 
-	/** 
+	/**
 	 * Initialize the staging database by copying 'setup' elements from the CURRENT
 	 * database. XML files will subsequently be read into the staging database.
 	 */
@@ -462,7 +485,7 @@ public class DbImport
 			stageDb.engineeringUnitList = theDb.engineeringUnitList;
 			stageDb.dataTypeSet = theDb.dataTypeSet;
 			stageDb.unitConverterSet = theDb.unitConverterSet;
-	
+
 			log.info("Copying existing enumerations into staging db.");
 			// Copy the dataType, enums, & other 'setup' info into stageDb.
 			for(Iterator<DbEnum> it = theDb.enumList.iterator(); it.hasNext(); )
@@ -474,7 +497,7 @@ public class DbImport
 				for(Iterator<EnumValue> vit = en.iterator(); vit.hasNext(); )
 				{
 					EnumValue ev = vit.next();
-					EnumValue stageEv = stageEnum.replaceValue(ev.getValue(), 
+					EnumValue stageEv = stageEnum.replaceValue(ev.getValue(),
 						ev.getDescription(), ev.getExecClassName(), ev.getEditClassName());
 					stageEv.setSortNumber(ev.getSortNumber());
 				}
@@ -486,7 +509,7 @@ public class DbImport
 		{
 			log.trace("EU and DT lists will remain separate.");
 		}
-		
+
 	}
 
 	/** Read the XML files into the staging database. */
@@ -504,7 +527,7 @@ public class DbImport
 		{
 			log.info("Processing '{}'", s);
 			DatabaseObject ob = null;
-			
+
 			// If -p argument is used set a filter to skip non-platform-related elements.
 			if (platformRelatedOnly)
 			{
@@ -595,7 +618,7 @@ public class DbImport
 					stageDb.equipmentModelList.add(pc.equipmentModel);
 				}
 			}
-		
+
 			if (plat.getSite() != null)
 			{
 				SiteName sn = plat.getSite().getPreferredName();
@@ -607,7 +630,7 @@ public class DbImport
 				stageDb.siteList.addSite(plat.getSite());
 			}
 		}
-		
+
 		// Set presentation group parent objects so that when we write to SQL,
 		// it can write the parent first so that it has an ID for reference.
 		for(PresentationGroup pg : stageDb.presentationGroupList.getVector())
@@ -633,7 +656,7 @@ public class DbImport
 	private void mergeStageToTheDb()
 	{
 		Database.setDb(theDb);
-		
+
 		if (overwriteDb)
 		{
 			theDb.engineeringUnitList.clear();
@@ -644,7 +667,7 @@ public class DbImport
 				theDb.enumList.clear();
 			}
 		}
-		
+
 		// An EU is just a bean, not a DatabaseObject. So I can just copy the objects
 		// from stage into db-to-write.
 		for(Iterator<EngineeringUnit> euit = stageDb.engineeringUnitList.iterator(); euit.hasNext(); )
@@ -703,7 +726,7 @@ public class DbImport
 						{
 							EnumValue ev = evit.next();
 							oldOb.replaceValue(
-								ev.getValue(), ev.getDescription(), 
+								ev.getValue(), ev.getDescription(),
 								ev.getExecClassName(), ev.getEditClassName());
 						}
 					}
@@ -753,8 +776,8 @@ public class DbImport
 				}
 			}
 		}
-		
-		
+
+
 		// Platform matching is tricky because there are two unique keys.
 		// The main key is by matching Site and Platform Designator.
 		// The secondary key is by matching a transport medium (TM).
@@ -783,12 +806,12 @@ public class DbImport
 				log.trace("merging platform '{}'", newPlat.getDisplayName());
 				for (PlatformSensor ps : newPlat.platformSensors)
 				{
-					log.trace("   Sensor {}" + ps.sensorNumber + ": actualSite={}", 
+					log.trace("   Sensor {}" + ps.sensorNumber + ": actualSite={}",
 							  ps.sensorNumber, (ps.site == null ? "null" : ps.site.getPreferredName()));
 				}
 			}
 
-			
+
 			if (newPlat.getSite() == null)
 			{
 				log.warn("Skipping platform with ID={} in the XML input file because "
@@ -819,7 +842,7 @@ public class DbImport
 			}
 			log.trace("    site does {} exist in old database.", (oldSite==null ? "not " : ""));
 
-			// Then find an old platform with matching (site,designator) 
+			// Then find an old platform with matching (site,designator)
 			if (oldSite != null)
 			{
 				oldPlatformMatch = theDb.platformList.findPlatform(oldSite, newPlat.getPlatformDesignator());
@@ -827,7 +850,7 @@ public class DbImport
 						  (oldPlatformMatch==null?"not":""), oldSite.getId(), oldSite.getPreferredName(), newPlat.getPlatformDesignator()
 						 );
 			}
-			
+
 			// Try to find existing platform with a matching transport id.
 			Platform oldTmMatch = null;
 			for(Iterator<TransportMedium> tmit = newPlat.transportMedia.iterator();
@@ -841,13 +864,13 @@ public class DbImport
 				log.atTrace().log(() -> "        - Match was " + (logOldTmMatch==null ? "not found." : ("found with id="+logOldTmMatch.getId())));
 				oldPlatformMatch = oldTmMatch;
 			}
-			
+
 			if (oldPlatformMatch == null)
 			{
 				// use cases 4 & 5: This is a NEW platform.
 				log.info("Adding New Platform '{}'", newPlat.makeFileName());
 				theDb.platformList.add(newPlat);
-				
+
 //				if (oldTmMatch != null)
 //				{
 //					info("Match for tm '" + oldTmMatch.toString() + "' -- will remove from old platform with id="
@@ -874,7 +897,7 @@ public class DbImport
 					{
 						log.trace("   Sensor {}: actualSite={}", ps.sensorNumber,(ps.site == null ? "null" : ps.site.getPreferredName()));
 					}
-				}	
+				}
 				writePlatformList = true;
 			}
 			else if (!oldPlatformMatch.equals(newPlat))
@@ -887,9 +910,9 @@ public class DbImport
 					DbKey oldId = oldPlatformMatch.getId();
 					theDb.platformList.removePlatform(oldPlatformMatch);
 					newPlat.clearId();
-					try 
+					try
 					{
-						newPlat.setId(oldId); 
+						newPlat.setId(oldId);
 					}
 					catch(Exception ex)
 					{
@@ -897,11 +920,11 @@ public class DbImport
 					}
 					log.info("set platform ID to match existing ID={}", oldId);
 					theDb.platformList.add(newPlat);
-					
+
 
 					newObjects.add(newPlat);
-					
-					log.debug("Added platform '{}' with id={} and siteid={} to newObjects list.", 
+
+					log.debug("Added platform '{}' with id={} and siteid={} to newObjects list.",
 							newPlat.makeFileName(), newPlat.getId(),
 							(newPlat.getSite()==null?"<nullsite!>":newPlat.getSite().getId()) );
 					if (log.isTraceEnabled())
@@ -925,7 +948,7 @@ public class DbImport
 		{
 			PresentationGroup ob = it.next();
 			PresentationGroup oldOb= theDb.presentationGroupList.find(ob.groupName);
-		
+
 			if (oldOb == null)
 			{
 				log.info("Adding new {} '{}'", ob.getObjectType(), ob.groupName);
@@ -947,7 +970,7 @@ public class DbImport
 			}
 		}
 
-		// MJM 6/3/04 - Must do DataSources before Routing Specs so that 
+		// MJM 6/3/04 - Must do DataSources before Routing Specs so that
 		// new DS records will have an ID for the RS to reference.
 		for(Iterator<DataSource> it = stageDb.dataSourceList.iterator(); it.hasNext(); )
 		{
@@ -1174,7 +1197,7 @@ public class DbImport
 
 			newObjects.add(stageApp);
 		}
-		
+
 		for(ScheduleEntry stageSE : stageDb.schedEntryList)
 		{
 			// Don't import manual schedule entries, which are created when someone runs
@@ -1184,7 +1207,7 @@ public class DbImport
 				log.info("Skipping manual schedule entry '{}'", stageSE.getName());
 				continue;
 			}
-			
+
 			ScheduleEntry existingSE = null;
 			for(ScheduleEntry x : theDb.schedEntryList)
 			{
@@ -1205,7 +1228,7 @@ public class DbImport
 
 			newObjects.add(stageSE);
 		}
-		
+
 		if (validateOnly)
 		{
 			log.info(
@@ -1239,7 +1262,7 @@ public class DbImport
 		{
 			if (pc.equipmentModel != null)
 			{
-				pc.equipmentModel = 
+				pc.equipmentModel =
 					theDb.equipmentModelList.get(pc.equipmentModel.name);
 			}
 
@@ -1247,7 +1270,7 @@ public class DbImport
 			{
 				ConfigSensor cs = sit.next();
 				if (cs.equipmentModel != null)
-					cs.equipmentModel = 
+					cs.equipmentModel =
 						theDb.equipmentModelList.get(cs.equipmentModel.name);
 			}
 		}
@@ -1260,7 +1283,7 @@ public class DbImport
 				TransportMedium tm = tmit.next();
 				if (tm.equipmentModel != null)
 				{
-					tm.equipmentModel = 
+					tm.equipmentModel =
 						theDb.equipmentModelList.get(tm.equipmentModel.name);
 				}
 			}
@@ -1301,7 +1324,7 @@ public class DbImport
 				PresentationGroup pg = (PresentationGroup)dob;
 				if (pg.parent != null)
 				{
-					PresentationGroup theDbParent = 
+					PresentationGroup theDbParent =
 						theDb.presentationGroupList.find(pg.parent.groupName);
 					if (theDbParent != null)
 					{
@@ -1314,13 +1337,13 @@ public class DbImport
 				}
 			}
 		}
-		
+
 
 		/*
 		  RoutingSpec needs to normalize references to datasource & netlists.
 		*/
-		
-		
+
+
 		// Group data sources may have links to non-imported data sources.
 		// Scenario: import a group with member X. But member X already exists
 		// in my db.
@@ -1331,16 +1354,16 @@ public class DbImport
 		throws DatabaseException
 	{
 		Database.setDb(theDb);
-		
+
 		for(IdDatabaseObject td : toDelete)
 		{
 			if (td instanceof Platform)
 			{
 				log.info("Deleting platform {}", ((Platform)td).makeFileName());
-				theDb.getDbIo().deletePlatform((Platform)td);	
+				theDb.getDbIo().deletePlatform((Platform)td);
 			}
 		}
-		
+
 		// All the new Objects must now have the real database.
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
@@ -1364,7 +1387,7 @@ public class DbImport
 			{
 				st = ((Platform)ob).getSite();
 			}
-			
+
 			if (st != null)
 			{
 				for(Iterator<SiteName> snit = st.getNames(); snit.hasNext(); )
@@ -1411,7 +1434,7 @@ public class DbImport
 			IdDatabaseObject ob = it.next();
 			if (ob instanceof EquipmentModel)
 			{
-				try 
+				try
 				{
 					ob.write();
 				}
@@ -1440,7 +1463,7 @@ public class DbImport
 		for(Iterator<PlatformConfig> it = modifiedCfgs.iterator(); it.hasNext(); )
 		{
 			PlatformConfig pc = it.next();
-			try 
+			try
 			{
 				pc.write();
 			}
@@ -1450,7 +1473,7 @@ public class DbImport
 				   .setCause(ex)
 				   .log("Could not import configuration {}",pc.configName);
 			}
-			
+
 		}
 
 		log.debug("Before writing sites...");
@@ -1505,7 +1528,7 @@ public class DbImport
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
-			
+
 			if (ob instanceof Platform)
 			{
 				Platform p = (Platform)ob;
@@ -1514,11 +1537,11 @@ public class DbImport
 					log.info("NOT writing platform {} {}",
 							 p.makeFileName(),
 							 (p.transportMedia.size() == 0
-							    ? " it has no TMs" 
+							    ? " it has no TMs"
 								: " it has no config."));
 					continue;
 				}
-				
+
 				log.debug("Will try to write platform '{}' with id={}", p.makeFileName(), p.getId());
 				if (newPlatformOwner != null)
 				{
@@ -1529,7 +1552,7 @@ public class DbImport
 				{
 					p.setPlatformDesignator(newDesignator);
 				}
-				
+
 				//Code added Oct 17, 2007 for DCP Mon Enhancement Prob. #2
 				//To set the Platform Description - if platform description
 				//is empty - get it from Site record - if site description
@@ -1540,7 +1563,7 @@ public class DbImport
 					p.setDescription(desc);
 				}
 				//End code added Oct 17, 2007
-				try 
+				try
 				{
 					p.write();
 				}
@@ -1614,19 +1637,19 @@ public class DbImport
 				}
 			}
 		}
-		
+
 		log.info("Writing Processes.");
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{
 			IdDatabaseObject ob = it.next();
 			if (ob instanceof CompAppInfo)
 			{
-				try	
+				try
 				{
 					log.trace("Writing '{}'", ob.getObjectType());
 					ob.write();
 				}
-				catch (NullPointerException ex) 
+				catch (NullPointerException ex)
 				{
 					log.atError()
 					   .setCause(ex)
@@ -1656,12 +1679,12 @@ public class DbImport
 			{
 				if (ob != null)
 				{
-					try	
+					try
 					{
 						log.debug("Writing '{}'", ob.getObjectType());
 						ob.write();
 					}
-					catch (NullPointerException ex) 
+					catch (NullPointerException ex)
 					{
 						log.atError()
 					   	   .setCause(ex)
@@ -1683,7 +1706,7 @@ public class DbImport
 			log.info("Writing PlatformList.");
 			theDb.platformList.write();
 		}
-		
+
 		IntervalList editList = IntervalList.editInstance();
 		if (editList.getList().size() > 0)
 		{
@@ -1716,10 +1739,10 @@ public class DbImport
 
 	/**
 	 * Verify if the platform description is empty. If it is empty it
-	 * will set it from the Site record. If the Site record description 
-	 * is empty it will set the description from the PDT. The pdt file 
+	 * will set it from the Site record. If the Site record description
+	 * is empty it will set the description from the PDT. The pdt file
 	 * is an argument supplied at start up of the program.
-	 * 
+	 *
 	 * @param p Platform record
 	 * @return platform description
 	 */
@@ -1734,7 +1757,7 @@ public class DbImport
 				Site pSite = p.getSite();
 				if (pSite != null)
 				{	//Get description from Site record
-					if (pSite.getDescription() != null 
+					if (pSite.getDescription() != null
 						&& pSite.getDescription().trim().length() > 0)
 					{
 						desc = pSite.getDescription();
@@ -1744,7 +1767,7 @@ public class DbImport
 				{
 					//Get description from pdt
 					String dcpAddress = null;
-					TransportMedium tm = 
+					TransportMedium tm =
 						p.getTransportMedium(Constants.medium_Goes);
 					if (tm == null)
 					{
@@ -1771,10 +1794,10 @@ public class DbImport
 		}
 		return newDesc;
 	}
-	
+
 	/**
 	 * Parse out the pdt file if one was supplied as an argument
-	 * 
+	 *
 	 * @param pdtFilePath
 	 */
 	private void initializePdt(String pdtFilePath)
@@ -1783,14 +1806,14 @@ public class DbImport
 		File pdtFile = new File(pdtFilePath);
 		pdt.load(pdtFile);
 	}
-	
+
 	/**
 	 * This method uses the PDT file to get a description for the
 	 * imported Platform record.
-	 * 
+	 *
 	 * @param dcpAddress
 	 * @return description
-	 * 
+	 *
 	 */
 	private String findPdtDescription(DcpAddress dcpAddress)
 	{
@@ -1805,7 +1828,7 @@ public class DbImport
 		}
 		return desc;
 	}
-	
+
 	/** @return true if the passed object is in the newObjects vector. */
 	private boolean isNewObject(IdDatabaseObject ob)
 	{
@@ -1838,12 +1861,12 @@ public class DbImport
 // Debug method:
 //	private void showEnums(String when)
 //	{
-//		System.out.println(when 
+//		System.out.println(when
 //			+ ", enumList.size() = " + theDb.enumList.size());
 //		for(Iterator eit = theDb.enumList.iterator(); eit.hasNext(); )
 //		{
 //			decodes.db.Enum en = (decodes.db.Enum)eit.next();
-//			System.out.println("\tEnum '" 
+//			System.out.println("\tEnum '"
 //				+ en.enumName + "' size=" + en.size());
 //		}
 //	}

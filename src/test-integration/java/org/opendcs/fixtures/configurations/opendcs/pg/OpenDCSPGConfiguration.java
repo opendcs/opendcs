@@ -26,9 +26,11 @@ import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import decodes.db.Database;
+import decodes.launcher.Profile;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
@@ -110,7 +112,7 @@ public class OpenDCSPGConfiguration implements Configuration
 
         db.start();
         createPropertiesFile(configBuilder, this.propertiesFile);
-
+        final Profile profile = Profile.getProfile(this.propertiesFile);
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());
 
         MigrationManager mm = new MigrationManager(ds,OpenDcsPgProvider.NAME);
@@ -130,27 +132,13 @@ public class OpenDCSPGConfiguration implements Configuration
 
             environment.set("DB_USERNAME","dcs_proc");
             environment.set("DB_PASSWORD","dcs_proc");
-
-            log.info("Loading base data.");
-            try
-            {
-                environment.execute( () ->
-                    properties.execute( () ->
-                        Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
-                                propertiesFile,
-                                environment,exit,properties,
-                                "stage/edit-db/enum",
-                                "stage/edit-db/eu/EngineeringUnitList.xml",
-                                "stage/edit-db/datatype/DataTypeEquivalenceList.xml",
-                                "stage/edit-db/presentation",
-                                "stage/edit-db/loading-app")
-                    )
-                );
-            }
-            catch (Exception ex)
-            {
-                throw new RuntimeException(ex);
-            }
+            ilex.util.Logger originalLog = ilex.util.Logger.instance();
+            ilex.util.FileLogger fl = new FileLogger("test", new File(userDir,"baseline-import.log").getAbsolutePath(), 200*1024*1024);
+            fl.setMinLogPriority(ilex.util.Logger.E_DEBUG3);
+            fl.rotateLogs();
+            ilex.util.Logger.setLogger(fl);
+            mp.loadBaselineData(profile, "dcs_proc", "dcs_proc");
+            ilex.util.Logger.setLogger(originalLog);
         });
         setStarted();
     }

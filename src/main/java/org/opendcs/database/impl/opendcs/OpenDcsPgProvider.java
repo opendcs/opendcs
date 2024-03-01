@@ -1,17 +1,29 @@
 package org.opendcs.database.impl.opendcs;
 
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.File;
-import java.net.URL;
+import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Call;
 import org.jdbi.v3.postgres.PostgresPlugin;
 import org.opendcs.spi.database.MigrationProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import decodes.dbimport.DbImport;
+import decodes.launcher.Profile;
+import decodes.util.DecodesSettings;
+import ilex.util.EnvExpander;
 
 /**
  * OpenDCSPgProvider provides support for handling installation and updates of the OpenDCS-Postgres
@@ -19,6 +31,7 @@ import org.opendcs.spi.database.MigrationProvider;
  */
 public class OpenDcsPgProvider implements MigrationProvider
 {
+    private static final Logger log = LoggerFactory.getLogger(getCallingClass());
     public static final String NAME = "OpenDCS-Postgres";
 
     private Map<String,String> placeholders = new HashMap<>();
@@ -88,15 +101,106 @@ public class OpenDcsPgProvider implements MigrationProvider
     }
 
     @Override
-    public List<File> getDecodesData() 
+    public List<File> getDecodesData()
+    {
+        List<File> files = new ArrayList<>();
+        String decodesData[] = {
+            "${DCSTOOL_HOME}/edit-db/enum",
+            "${DCSTOOL_HOME}/edit-db/eu/EngineeringUnitList.xml",
+            "${DCSTOOL_HOME}/edit-db/datatype/DataTypeEquivalenceList.xml",
+            "${DCSTOOL_HOME}/edit-db/presentation",
+            "${DCSTOOL_HOME}/edit-db/loading-app"};
+        for (String filename: decodesData)
+        {
+            File f = new File(EnvExpander.expand(filename, System.getProperties()));
+            if (f.exists() && f.canRead() && f.isFile())
+            {
+                files.add(f);
+            }
+            else if (f.exists() && f.canRead() && f.isDirectory())
+            {
+                try
+                {
+                    files.addAll(Files.walk(f.toPath())
+                                      .map(p -> p.toFile())
+                                      .filter(file -> file.isFile())
+                                      .filter(file -> file.getAbsolutePath().endsWith(".xml"))
+                                      .collect(Collectors.toList())
+                        );
+                }
+                catch (IOException ex)
+                {
+                    log.atError()
+                       .setCause(ex)
+                       .log("Unable to process diretory '{}'", f.getAbsolutePath());
+                }
+            }
+            else if(f.exists() && !f.canRead())
+            {
+                log.error("Decodes File '{}' is not readable. Skipping.", f.getAbsolutePath());
+            }
+            else
+            {
+                log.error("Decodes File '{}' is not present. Skipping.", f.getAbsolutePath());
+            }
+        }
+        if (log.isTraceEnabled())
+        {
+            for (File f: files)
+            {
+                log.trace("Importing '{}'", f.getAbsolutePath());
+            }
+        }
+        return files;
+    }
+
+    @Override
+    public List<File> getComputationData()
     {
         return new ArrayList<>();
     }
 
     @Override
-    public List<File> getComputationData() 
+    public void loadBaselineData(Profile profile, String username, String password) throws IOException
     {
-        return new ArrayList<>();
+        /* Initializing database with default data */
+        List<File> decodesFiles = getDecodesData();
+        if (!decodesFiles.isEmpty())
+        {
+            try
+            {
+                System.setProperty("DCS_PASS", username);
+                System.setProperty("DCS_USER", password);
+
+                List<String> fileNames = decodesFiles.stream()
+                                                     .map(f -> f.getAbsolutePath())
+                                                     .collect(Collectors.toList());
+
+                File tmp = Files.createTempFile("dcsprofile",".profile").toFile();
+                tmp.deleteOnExit();
+                Profile tmpProfile = Profile.getProfile(tmp);
+                DecodesSettings settings = DecodesSettings.fromProfile(profile);
+                settings.DbAuthFile="java-auth-source:password=DCS_PASS,username=DCS_USER";
+                settings.saveToProfile(tmpProfile);
+                log.info("Loading baseline decodes data.");
+                DbImport dbImportObj = new DbImport(tmpProfile, null, false, false,
+                                                    false, false, true, null,
+                                                    null, null, null, fileNames);
+                dbImportObj.importDatabase();
+            }
+            catch (Exception ex)
+            {
+                log.atError()
+                   .setCause(ex)
+                   .log("Failed to load baseline data.");
+                throw new IOException("Unable to import baseline data.", ex);
+            }
+            finally
+            {
+                //System.setProperty("DCS_PASS", null);
+                //System.setProperty("DCS_USER", null);
+            }
+        }
     }
 
 }

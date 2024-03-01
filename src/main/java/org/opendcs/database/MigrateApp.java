@@ -87,33 +87,7 @@ public class MigrateApp
             roles.add("OTSDB_MGR");
             roles.add("OTSDB_ADMIN");
             mp.createUser(mm.getJdbiHandle(), user, password, roles);
-
-            /* Initializing database with default data */
-            List<File> decodesFiles = mp.getDecodesData();
-            if (!decodesFiles.isEmpty())
-            {
-                console.writer().println("Loading baseline decodes data.");
-                ArrayList<String> theArgs = new ArrayList<>();
-                theArgs.add("-P"); theArgs.add(profile.getFile().getAbsolutePath());
-                theArgs.add("-d3");
-                theArgs.addAll(
-                    decodesFiles.stream()
-                            .map(f->f.getAbsolutePath())
-                            .collect(Collectors.toList())
-                            );
-                DbImport.main(theArgs.toArray(new String[0]));
-            }
-            /*List<File> compFiles = mp.getComputationData();
-            theArgs.clear();
-            theArgs.add("-P"); theArgs.add(profile.getFile().getAbsolutePath());
-            theArgs.add("-d3");
-            theArgs.add("-C");
-            theArgs.addAll(
-                compFiles.stream()
-                        .map(f->f.getAbsolutePath())
-                        .collect(Collectors.toList())
-                        );                        
-            ImportComp.main(theArgs.toArray(new String[0]));*/
+            mp.loadBaselineData(profile, user, password);
         }
         else
         {

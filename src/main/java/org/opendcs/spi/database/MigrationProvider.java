@@ -1,10 +1,13 @@
 package org.opendcs.spi.database;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import org.jdbi.v3.core.Jdbi;
+
+import decodes.launcher.Profile;
 
 public interface MigrationProvider
 {
@@ -47,6 +50,14 @@ public interface MigrationProvider
     default public void registerJdbiPlugins(Jdbi jdbi)
     {
     }
+
+    /**
+     * Loads the baseline data required for operations
+     * @param profile Profile of the system being manipulated.
+     * @param username user with permissions to write data to this database
+     * @param password
+     */
+    public void loadBaselineData(Profile profile, String username, String password) throws IOException;
 
     /**
      * Get baseline Decodes data, like enums, datatype, equipment, presentation groups, etc
