@@ -29,7 +29,7 @@ import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.DeleteTs;
 import decodes.tsdb.DisableComps;
-import decodes.tsdb.ImportComp;
+import decodes.tsdb.ImportCompApp;
 import decodes.tsdb.TsImport;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.alarm.AlarmImport;
@@ -568,8 +568,8 @@ public class TestRunner extends TsdbAppTemplate
 
 	protected void compImport(String[] tokens) 
 	{
-		ImportComp subApp = 
-			new ImportComp()
+		ImportCompApp subApp = 
+			new ImportCompApp(false, false, new ArrayList<String>())
 			{
 				@Override
 				public void createDatabase() {}

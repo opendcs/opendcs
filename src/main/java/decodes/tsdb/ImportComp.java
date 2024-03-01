@@ -16,11 +16,9 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
-import ilex.cmdline.*;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.SiteName;
-import decodes.util.CmdLineArgs;
 import decodes.sql.DbKey;
 import decodes.tsdb.xml.*;
 
@@ -28,25 +26,25 @@ import decodes.tsdb.xml.*;
 This is the Import program to read an xml file of comp meta data and
 import it into the TSDB.
 */
-public class ImportComp extends TsdbAppTemplate
+public class ImportComp
 {
     private final Logger log = LoggerFactory.getLogger(getCallingClass());
     private SiteDAI siteDAO = null;
     final private boolean createTimeSeries;
     final private boolean noOverwrite;
     final private List<String> files;
+    final private TimeSeriesDb theDb;
 
     //=======================================================================
     /**
      * Constructor called from main method after parsing arguments.
      */
-    public ImportComp(boolean createTimeSeries, boolean noOverwrite, List<String> files)
+    public ImportComp(TimeSeriesDb db, boolean createTimeSeries, boolean noOverwrite, List<String> files)
     {
-        super("import.log");
-        setSilent(true);
         this.createTimeSeries = createTimeSeries;
         this.noOverwrite = noOverwrite;
         this.files = files;
+        this.theDb = db;
     }
 
     /**
@@ -547,34 +545,5 @@ public class ImportComp extends TsdbAppTemplate
      * The main method.
      * @param args command line arguments.
      */
-    public static void main( String[] args )
-        throws Exception
-    {
-        StringToken xmlFileArgs = new StringToken("", "xml-file",
-                                                  "",
-                                                  TokenOptions.optArgument | TokenOptions.optMultiple|
-                                                  TokenOptions.optRequired, "");;
 
-        BooleanToken createTimeSeries = new BooleanToken("C", "create parms as needed",
-                                                         "",
-                                                         TokenOptions.optSwitch, false);;
-
-        BooleanToken noOverwriteArg = new BooleanToken("o", "Do not overwrite records with matching name.",
-                                                       "", TokenOptions.optSwitch, false);
-        CmdLineArgs cmdLineArgs = new CmdLineArgs(true, "compimport");
-        cmdLineArgs.addToken(createTimeSeries);
-        cmdLineArgs.addToken(noOverwriteArg);
-        cmdLineArgs.addToken(xmlFileArgs);
-        // Call run method directly. For multi threaded executive, we would
-        // create a thread and start it.
-        List<String> fileNames = new ArrayList<>();
-        for (int i = 0; i < xmlFileArgs.NumberOfValues(); i++)
-        {
-            fileNames.add(xmlFileArgs.getValue(i));
-        }
-        ImportComp app = new ImportComp(createTimeSeries.getValue(), noOverwriteArg.getValue(), fileNames);
-        app.execute(args);
-
-
-    }
 }

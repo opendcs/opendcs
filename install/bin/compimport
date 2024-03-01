@@ -1,2 +1,2 @@
 #!/bin/sh
-%INSTALL_PATH/bin/decj decodes.tsdb.ImportComp $*
+%INSTALL_PATH/bin/decj decodes.tsdb.ImportCompApp $*

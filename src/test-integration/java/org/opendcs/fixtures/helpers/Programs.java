@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 
 import decodes.dbimport.DbImport;
-import decodes.tsdb.ImportComp;
+import decodes.tsdb.ImportCompApp;
 import decodes.tsdb.TsImport;
 import decodes.util.ExportTimeSeries;
 import uk.org.webcompere.systemstubs.SystemStubs;
@@ -106,7 +106,7 @@ public class Programs
                                  .map(f->f.getAbsolutePath())
                                  .collect(Collectors.toList())
                                     );
-                        ImportComp.main(theArgs.toArray(new String[0]));
+                        ImportCompApp.main(theArgs.toArray(new String[0]));
                     })
                 )
             );
