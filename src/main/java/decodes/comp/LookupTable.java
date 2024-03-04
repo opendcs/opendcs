@@ -118,7 +118,7 @@ public class LookupTable
 	/**
 	 * ArrayList of RatingPoint objects used for the lookup.
 	 */
-	private ArrayList points;
+	private ArrayList<RatingPoint> points;
 
 	/**
 	 * Used (if needed) for logarithmic interpolation
@@ -146,7 +146,7 @@ public class LookupTable
 		exceedLowerBound = false;
 		exceedUpperBound = false;
 		lookupType = INTERP_LINEAR;
-		points = new ArrayList();
+		points = new ArrayList<>();
 		xOffset = 0.0;
 	}
 	
