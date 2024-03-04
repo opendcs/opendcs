@@ -105,6 +105,10 @@ public class RdbRatingReader implements RatingTableReader
 			String line;
 			while((line = rdr.readLine()) != null)
 			{
+				if (line.trim().isEmpty())
+				{
+					continue;
+				}
 				switch(state)
 				{
 				case STATE_PARAMS: processParams(line); break;
