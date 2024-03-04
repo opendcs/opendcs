@@ -1,8 +1,6 @@
 package org.opendcs.database;
 
-import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
-import decodes.tsdb.ImportComp;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import ilex.cmdline.StringToken;

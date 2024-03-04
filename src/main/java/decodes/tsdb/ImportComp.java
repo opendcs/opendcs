@@ -75,7 +75,7 @@ public class ImportComp
                        .log("Could not parse '{}'", fn);
                     continue;
                 }
-
+                log.info("Processing Timeseries groups.");
                 //Write the TS groups from the metadata into the tmpTsGrpsList
                 ArrayList<TsGroup> tmpTsGrpsList = new ArrayList<TsGroup>();
                 for(CompMetaData mdobj: metadata)
@@ -89,7 +89,7 @@ public class ImportComp
                 //Reorder the tmpTsGrpsList and
                 //put all subgroups of a TS group in front of it
                 ArrayList<TsGroup> tsGrpsList = sortTsGroupList(tmpTsGrpsList);
-
+                log.info("Saving timeseries groups.");
                 //Write the TS groups into the DB
                 if (tsGrpsList != null)
                 {
@@ -132,148 +132,152 @@ public class ImportComp
                                     g.getObjectType(), g.getObjectName());
                         }
                     }
-
-                    //Import the app infos, the computations, and the algorithms
-                    for(CompMetaData mdobj : metadata)
+                }
+                log.info("Loading Applications, Computations, and Algorithms.");
+                //Import the app infos, the computations, and the algorithms
+                for(CompMetaData mdobj : metadata)
+                {
+                    try
                     {
-                        try
+                        log.trace("Loading element of type {}", mdobj.getClass().getName());
+                        if (mdobj instanceof CompAppInfo)
                         {
-                            if (mdobj instanceof CompAppInfo)
+                            CompAppInfo cai = (CompAppInfo)mdobj;
+                            if (noOverwrite)
                             {
-                                CompAppInfo cai = (CompAppInfo)mdobj;
-                                if (noOverwrite)
+                                try
                                 {
-                                    try
-                                    {
-                                        loadingAppDao.getComputationApp(cai.getAppName());
-                                        // If it doesn't throw NoSuchObject, that means it exists.
-                                        log.info("Skipping process '{}' because a process with that name "
-                                               + "already exists in your database.", cai.getAppName());
-                                        continue;
-                                    }
-                                    catch(NoSuchObjectException ex) {}
+                                    loadingAppDao.getComputationApp(cai.getAppName());
+                                    // If it doesn't throw NoSuchObject, that means it exists.
+                                    log.info("Skipping process '{}' because a process with that name "
+                                            + "already exists in your database.", cai.getAppName());
+                                    continue;
                                 }
-                                log.info("Importing process '{}'", cai.getAppName());
-                                loadingAppDao.writeComputationApp(cai);
+                                catch(NoSuchObjectException ex)
+                                {
+                                    log.info("No overwrite was set, but doesn't exist, will add to database.");
+                                }
                             }
-                            else if (mdobj instanceof DbComputation)
-                            {
-                                DbComputation comp = (DbComputation)mdobj;
-                                for(Iterator<DbCompParm> dcpi = comp.getParms(); dcpi.hasNext();)
-                                {
-                                    DbCompParm parm = dcpi.next();
-                                    try
-                                    {
-                                        // Lookup the Site
-                                        DbKey siteId = Constants.undefinedId;
-                                        for(SiteName sn : parm.getSiteNames())
-                                        {
-                                            if ((siteId = siteDAO.lookupSiteID(sn)) != Constants.undefinedId)
-                                            {
-                                                break;
-                                            }
-                                        }
-                                        if (siteId == Constants.undefinedId)
-                                        {
-                                            log.debug("Parm {} No site, assuming dynamic.", parm.getRoleName());
-                                            continue;
-                                        }
-                                        parm.setSiteId(siteId);
-
-                                        // Lookup the Data Type
-                                        DataType dt = parm.getDataType();
-                                        String dtCode = dt != null ? dt.getCode() : "";
-                                        parm.setDataType(dt);
-
-                                        // Lookup the Time Series
-                                        try
-                                        {
-                                            theDb.setParmSDI(parm, siteId, dtCode);
-                                        }
-                                        catch (NoSuchObjectException ex)
-                                        {
-                                            log.info("Time Series for parm '{}' doesn't exist.", parm.getRoleName());
-                                            if (!createTimeSeries)
-                                            {
-                                                log.warn("... and the -C (create TS) flag was not used.");
-                                                throw ex;
-                                            }
-                                        }
-                                        // get preferred name if one is provided.
-                                        String nm = comp.getProperty(parm.getRoleName() + "_tsname");
-                                        if (createTimeSeries)
-                                        {
-                                            TimeSeriesIdentifier tsid =
-                                                theDb.transformTsidByCompParm(null, parm,
-                                                    true, true, nm);
-                                        }
-                                    }
-                                    catch(NoSuchObjectException ex)
-                                    {
-                                        String msg = "Computation '{}' problem resolving parameter {}";
-                                        log.atWarn()
-                                           .setCause(ex)
-                                           .log(msg, comp.getName(), parm.getRoleName());
-                                    }
-                                    catch(BadTimeSeriesException ex)
-                                    {
-                                        if (!comp.hasGroupInput())
-                                        {
-                                            String msg = "Non-Group Computation '{}' problem resolving parameter {}";
-                                                log.atWarn()
-                                                .setCause(ex)
-                                                .log(msg, comp.getName(), parm.getRoleName());
-                                        }
-                                    }
-                                }
-                                //Get the TS group ID
-                                String tsGrpName = comp.getGroupName();
-                                if (tsGrpName != null)
-                                comp.setGroupId(groupDAO.getTsGroupByName(tsGrpName).getGroupId());
-
-                                if (noOverwrite)
-                                {
-                                    try
-                                    {
-                                        computationDAO.getComputationByName(comp.getName());
-                                        // If it doesn't throw NoSuchObject, that means it exists.
-                                        log.info("Skipping computation '{}' because a computation with "
-                                               + "that name already exists in your database.", comp.getName());
-                                        continue;
-                                    }
-                                    catch(NoSuchObjectException ex) {}
-                                }
-
-                                log.info("Importing computation '{}'", comp.getName());
-                                computationDAO.writeComputation(comp);
-                            }
-                            else if (mdobj instanceof DbCompAlgorithm)
-                            {
-                                DbCompAlgorithm algo = (DbCompAlgorithm)mdobj;
-                                if (noOverwrite)
-                                {
-                                    try
-                                    {
-                                        algorithmDao.getAlgorithmId(algo.getName());
-                                        // If it doesn't throw NoSuchObject, that means it exists.
-                                        log.info("Skipping algorithm '{}' because an algorithm with "
-                                               + "that name already exists in your database.", algo.getName());
-                                        continue;
-                                    }
-                                    catch(NoSuchObjectException ex) {}
-                                }
-
-                                log.info("Importing algorithm '{}'", algo.getName());
-                                algorithmDao.writeAlgorithm(algo);
-                            }
+                            log.info("Importing process '{}'", cai.getAppName());
+                            loadingAppDao.writeComputationApp(cai);
                         }
-                        catch(DbIoException ex)
+                        else if (mdobj instanceof DbComputation)
                         {
-                            String msg = "Could not import {} {}";
-                            log.atWarn()
-                               .setCause(ex)
-                               .log(msg, mdobj.getObjectType(), mdobj.getObjectName());
+                            DbComputation comp = (DbComputation)mdobj;
+                            for(Iterator<DbCompParm> dcpi = comp.getParms(); dcpi.hasNext();)
+                            {
+                                DbCompParm parm = dcpi.next();
+                                try
+                                {
+                                    // Lookup the Site
+                                    DbKey siteId = Constants.undefinedId;
+                                    for(SiteName sn : parm.getSiteNames())
+                                    {
+                                        if ((siteId = siteDAO.lookupSiteID(sn)) != Constants.undefinedId)
+                                        {
+                                            break;
+                                        }
+                                    }
+                                    if (siteId == Constants.undefinedId)
+                                    {
+                                        log.debug("Parm {} No site, assuming dynamic.", parm.getRoleName());
+                                        continue;
+                                    }
+                                    parm.setSiteId(siteId);
+
+                                    // Lookup the Data Type
+                                    DataType dt = parm.getDataType();
+                                    String dtCode = dt != null ? dt.getCode() : "";
+                                    parm.setDataType(dt);
+
+                                    // Lookup the Time Series
+                                    try
+                                    {
+                                        theDb.setParmSDI(parm, siteId, dtCode);
+                                    }
+                                    catch (NoSuchObjectException ex)
+                                    {
+                                        log.info("Time Series for parm '{}' doesn't exist.", parm.getRoleName());
+                                        if (!createTimeSeries)
+                                        {
+                                            log.warn("... and the -C (create TS) flag was not used.");
+                                            throw ex;
+                                        }
+                                    }
+                                    // get preferred name if one is provided.
+                                    String nm = comp.getProperty(parm.getRoleName() + "_tsname");
+                                    if (createTimeSeries)
+                                    {
+                                        TimeSeriesIdentifier tsid =
+                                            theDb.transformTsidByCompParm(null, parm,
+                                                true, true, nm);
+                                    }
+                                }
+                                catch(NoSuchObjectException ex)
+                                {
+                                    String msg = "Computation '{}' problem resolving parameter {}";
+                                    log.atWarn()
+                                        .setCause(ex)
+                                        .log(msg, comp.getName(), parm.getRoleName());
+                                }
+                                catch(BadTimeSeriesException ex)
+                                {
+                                    if (!comp.hasGroupInput())
+                                    {
+                                        String msg = "Non-Group Computation '{}' problem resolving parameter {}";
+                                            log.atWarn()
+                                            .setCause(ex)
+                                            .log(msg, comp.getName(), parm.getRoleName());
+                                    }
+                                }
+                            }
+                            //Get the TS group ID
+                            String tsGrpName = comp.getGroupName();
+                            if (tsGrpName != null)
+                            comp.setGroupId(groupDAO.getTsGroupByName(tsGrpName).getGroupId());
+
+                            if (noOverwrite)
+                            {
+                                try
+                                {
+                                    computationDAO.getComputationByName(comp.getName());
+                                    // If it doesn't throw NoSuchObject, that means it exists.
+                                    log.info("Skipping computation '{}' because a computation with "
+                                            + "that name already exists in your database.", comp.getName());
+                                    continue;
+                                }
+                                catch(NoSuchObjectException ex) {}
+                            }
+
+                            log.info("Importing computation '{}'", comp.getName());
+                            computationDAO.writeComputation(comp);
                         }
+                        else if (mdobj instanceof DbCompAlgorithm)
+                        {
+                            DbCompAlgorithm algo = (DbCompAlgorithm)mdobj;
+                            if (noOverwrite)
+                            {
+                                try
+                                {
+                                    algorithmDao.getAlgorithmId(algo.getName());
+                                    // If it doesn't throw NoSuchObject, that means it exists.
+                                    log.info("Skipping algorithm '{}' because an algorithm with "
+                                            + "that name already exists in your database.", algo.getName());
+                                    continue;
+                                }
+                                catch(NoSuchObjectException ex) {}
+                            }
+
+                            log.info("Importing algorithm '{}'", algo.getName());
+                            algorithmDao.writeAlgorithm(algo);
+                        }
+                    }
+                    catch(DbIoException ex)
+                    {
+                        String msg = "Could not import {} {}";
+                        log.atWarn()
+                            .setCause(ex)
+                            .log(msg, mdobj.getObjectType(), mdobj.getObjectName());
                     }
                 }
             }
@@ -477,7 +481,7 @@ public class ImportComp
                         }
                         else
                         {
-                            System.out.println((String)obj + msgStr);
+                            log.info("{}{}", obj.toString(), msgStr);
                         }
                         break;
                     }
@@ -491,7 +495,7 @@ public class ImportComp
                         }
                         else
                         {
-                            System.out.println((String)obj + msgStr);
+                            log.info("{}{}", obj.toString(), msgStr);
                         }
                       break;
                     }
@@ -505,7 +509,7 @@ public class ImportComp
                         }
                         else
                         {
-                            System.out.println(((TsGroup)obj).getGroupName() + msgStr);
+                            log.info("{}{}", ((TsGroup)obj).getGroupName(), msgStr);
                         }
                         break;
                     }
@@ -519,7 +523,7 @@ public class ImportComp
                         }
                         else
                         {
-                            System.out.println(((TsGroup)obj).getGroupName() + msgStr);
+                            log.info("{}{}", ((TsGroup)obj).getGroupName(), msgStr);
                         }
                         break;
                     }

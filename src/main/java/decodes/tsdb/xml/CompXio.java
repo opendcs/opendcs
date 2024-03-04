@@ -28,6 +28,8 @@
 */
 package decodes.tsdb.xml;
 
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,6 +41,7 @@ import java.util.Iterator;
 
 import opendcs.dai.TsGroupDAI;
 
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -69,6 +72,7 @@ XML Input/Output for Computational Meta Data.
 public class CompXio
 	implements XmlObjectParser, TaggedStringOwner
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
 	private String module;
 	private String filename;
 	private TimeSeriesDb theDb = null;
@@ -137,6 +141,13 @@ public class CompXio
 					addLoadingApplication(metadata, node);
 				else if (nn.equalsIgnoreCase(CompXioTags.tsGroup))
 					addTsGroup(metadata, node);
+			}
+		}
+		if (log.isTraceEnabled())
+		{
+			for (CompMetaData cmd: metadata)
+			{
+				log.trace("Loaded {}", cmd.typeString());
 			}
 		}
 		return metadata;

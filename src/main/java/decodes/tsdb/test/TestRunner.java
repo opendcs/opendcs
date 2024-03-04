@@ -569,7 +569,7 @@ public class TestRunner extends TsdbAppTemplate
 	protected void compImport(String[] tokens) 
 	{
 		ImportCompApp subApp = 
-			new ImportCompApp(false, false, new ArrayList<String>())
+			new ImportCompApp()
 			{
 				@Override
 				public void createDatabase() {}

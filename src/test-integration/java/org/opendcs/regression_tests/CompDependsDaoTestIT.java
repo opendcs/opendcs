@@ -88,6 +88,7 @@ public class CompDependsDaoTestIT extends AppTestBase
                                             new File(configuration.getUserDir(),"cdn-test.log"),
                                             environment);)
             {
+                assertTrue(app.isRunning(), "App did not start correctly.");
                 assertTrue(
                     BackgroundTsDbApp.waitForResult(
                         timeMs -> !cd.getResults("select * from cp_comp_depends", rs -> rs.getLong(1))
