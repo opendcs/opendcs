@@ -915,6 +915,7 @@ public class CpCompDependsUpdater
                         parmit.hasNext(); )
                     {
                         DbCompParm parm = parmit.next();
+                        info("Checking " + parm.getRoleName());
                         if (!parm.isInput())
                             continue;
                         // short-cut: for CWMS, the SDI in the parm _is_

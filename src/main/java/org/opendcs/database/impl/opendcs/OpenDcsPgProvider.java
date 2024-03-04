@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Jdbi;
@@ -22,8 +23,11 @@ import org.slf4j.LoggerFactory;
 
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
+import decodes.tsdb.ImportComp;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import ilex.util.EnvExpander;
+import opendcs.opentsdb.OpenTsdb;
 
 /**
  * OpenDCSPgProvider provides support for handling installation and updates of the OpenDCS-Postgres
@@ -157,50 +161,72 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public List<File> getComputationData()
     {
-        return new ArrayList<>();
+        List<File> files = new ArrayList<>();
+        String computationData[] = {
+            "${DCSTOOL_HOME}/imports/comp-standard/algorithms.xml",
+            "${DCSTOOL_HOME}/imports/comp-standard/Division.xml",
+            "${DCSTOOL_HOME}/imports/comp-standard/Multiplication.xml"
+            };
+        return files;
     }
 
     @Override
     public void loadBaselineData(Profile profile, String username, String password) throws IOException
     {
         /* Initializing database with default data */
+        System.setProperty("DCS_PASS", username);
+        System.setProperty("DCS_USER", password);
+        Properties creds = new Properties();
+        creds.put("username", username);
+        creds.put("password", password);
         List<File> decodesFiles = getDecodesData();
-        if (!decodesFiles.isEmpty())
+        List<File> computationFiles = getComputationData();
+        try
         {
-            try
-            {
-                System.setProperty("DCS_PASS", username);
-                System.setProperty("DCS_USER", password);
+            File tmp = Files.createTempFile("dcsprofile",".profile").toFile();
+            tmp.deleteOnExit();
+            Profile tmpProfile = Profile.getProfile(tmp);
+            DecodesSettings settings = DecodesSettings.fromProfile(profile);
+            settings.DbAuthFile="java-auth-source:password=DCS_PASS,username=DCS_USER";
+            settings.saveToProfile(tmpProfile);
 
+            if (!decodesFiles.isEmpty())
+            {
                 List<String> fileNames = decodesFiles.stream()
                                                      .map(f -> f.getAbsolutePath())
                                                      .collect(Collectors.toList());
-
-                File tmp = Files.createTempFile("dcsprofile",".profile").toFile();
-                tmp.deleteOnExit();
-                Profile tmpProfile = Profile.getProfile(tmp);
-                DecodesSettings settings = DecodesSettings.fromProfile(profile);
-                settings.DbAuthFile="java-auth-source:password=DCS_PASS,username=DCS_USER";
-                settings.saveToProfile(tmpProfile);
                 log.info("Loading baseline decodes data.");
                 DbImport dbImportObj = new DbImport(tmpProfile, null, false, false,
                                                     false, false, true, null,
                                                     null, null, null, fileNames);
                 dbImportObj.importDatabase();
             }
-            catch (Exception ex)
+
+            if (!computationFiles.isEmpty())
             {
-                log.atError()
-                   .setCause(ex)
-                   .log("Failed to load baseline data.");
-                throw new IOException("Unable to import baseline data.", ex);
-            }
-            finally
-            {
-                //System.setProperty("DCS_PASS", null);
-                //System.setProperty("DCS_USER", null);
+                List<String> fileNames = computationFiles.stream()
+                                                     .map(f -> f.getAbsolutePath())
+                                                     .collect(Collectors.toList());
+                log.info("Loading baseline computation data.");
+                TimeSeriesDb tsDb = new OpenTsdb();
+
+                tsDb.connect("utility", creds);
+
+                ImportComp compImport = new ImportComp(tsDb, false, false, fileNames);
+                compImport.runApp();
             }
         }
+        catch (Exception ex)
+        {
+            log.atError()
+                .setCause(ex)
+                .log("Failed to load baseline data.");
+            throw new IOException("Unable to import baseline data.", ex);
+        }
+        finally
+        {
+            System.clearProperty("DCS_PASS");
+            System.clearProperty("DCS_USER");
+        }
     }
-
 }
