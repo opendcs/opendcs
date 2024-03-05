@@ -2,6 +2,7 @@ package decodes.tsdb.algo;
 
 import java.util.Date;
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import ilex.var.NamedVariable;
 import ilex.util.EnvExpander;
@@ -133,11 +134,18 @@ public class RdbRating
             String fn = tableDir + "/" + filePrefix + siteName + fileSuffix;
             tried = tried + " " + fn;
             File f = new File(EnvExpander.expand(fn));
-debug1("trying '" + f.getPath() + "'");
+			debug1("trying '" + f.getPath() + "'");
             if (f.exists())
             {
                 debug3("Constructing RDB reader for '" + fn + "'");
-                tableReader = new RdbRatingReader(fn);
+				try
+				{
+                	tableReader = new RdbRatingReader(fn);
+				}
+				catch (FileNotFoundException ex)
+				{
+					throw new DbCompException(String.format("Cannot read %s", fn), ex);
+				}
             }
         }
         if (tableReader == null)
@@ -152,11 +160,18 @@ debug1("trying '" + f.getPath() + "'");
                 String fn = tableDir + "/" + filePrefix + siteName + ".rdb";
                 tried = tried + " " + fn;
                 File f = new File(EnvExpander.expand(fn));
-debug1("trying '" + f.getPath() + "'");
+					debug1("trying '" + f.getPath() + "'");
                 if (f.exists())
                 {
                     debug3("Constructing RDB reader for '" + fn + "'");
-                    tableReader = new RdbRatingReader(fn);
+                    try
+					{
+						tableReader = new RdbRatingReader(fn);
+					}
+					catch (FileNotFoundException ex)
+					{
+						throw new DbCompException(String.format("Cannot read %s", fn), ex);
+					}
                 }
             }
         }

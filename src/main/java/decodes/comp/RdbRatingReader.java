@@ -5,8 +5,13 @@ import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
 
 import java.io.LineNumberReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -21,7 +26,8 @@ public class RdbRatingReader implements RatingTableReader
     /**
      * The name of the file being read.
      */
-    private String filename;
+	private String filename;
+    private InputStream inputStream;
 
     /**
      * State for reading parameters.
@@ -75,11 +81,19 @@ public class RdbRatingReader implements RatingTableReader
       Constructs new RdbRatingReader for a particular file name.
       @param filename the name of the RDB file
     */
-    public RdbRatingReader( String filename )
+    public RdbRatingReader(String filename) throws FileNotFoundException
     {
-        this.filename = filename;
+		this.filename = filename;
+		this.inputStream = new FileInputStream(EnvExpander.expand(filename));
         rdr = null;
     }
+
+	public RdbRatingReader(InputStream stream)
+	{
+		this.filename = "Provided InputStream";
+		this.inputStream = stream;
+		rdr = null;
+	}
 
     /**
       Reads rating data from the file and populates the computation.
@@ -92,10 +106,9 @@ public class RdbRatingReader implements RatingTableReader
         this.rc = rc;
         state = STATE_PARAMS;
         lastShiftValue = -1.0;
-        try
+        try (InputStreamReader reader = new InputStreamReader(inputStream))
         {
-            LineNumberReader rdr = new LineNumberReader(
-                new FileReader(EnvExpander.expand(filename)));
+            LineNumberReader rdr = new LineNumberReader(reader);
             String line;
             while((line = rdr.readLine()) != null)
             {
