@@ -70,13 +70,13 @@
  */
 package decodes.tsdb;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.PrintStream;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import static org.slf4j.helpers.Util.getCallingClass;
+
+import java.util.Collection;
 import java.util.TimeZone;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -85,16 +85,12 @@ import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import decodes.hdb.HdbTsId;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
-import ilex.util.TextUtil;
-import ilex.var.TimedVariable;
 import lrgs.gui.DecodesInterface;
 
 /**
@@ -135,6 +131,7 @@ import lrgs.gui.DecodesInterface;
  */
 public class TsImport extends TsdbAppTemplate
 {
+	private static final Logger log = LoggerFactory.getLogger(TsImport.class.getName());
 	public static final String module = "TsImport";
 	/** One or more input files specified on end of command line */
 	private StringToken filenameArg = new StringToken("", "input-file", "", 
@@ -142,19 +139,6 @@ public class TsImport extends TsdbAppTemplate
 		|TokenOptions.optMultiple, "");
 	private BooleanToken noUnitConvArg = new BooleanToken("U", "Pass file units directly to CWMS", "",
 		TokenOptions.optSwitch, false);
-
-	private SimpleDateFormat dataSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-	
-	private String filename = null;
-	private int lineNum = 0;
-	private ArrayList<CTimeSeries> timeSeries = new ArrayList<CTimeSeries>();
-	private String siteNameType = null;
-	private String units = null;
-	private CTimeSeries currentTS = null;
-	private SiteDAI siteDAO = null;
-	TimeSeriesDAI timeSeriesDAO = null;
-	private String tsidStr = null;
-
 
 	public TsImport()
 	{
@@ -172,235 +156,68 @@ public class TsImport extends TsdbAppTemplate
 	@Override
 	protected void runApp()
 	{
-		siteDAO = theDb.makeSiteDAO();
-		timeSeriesDAO = theDb.makeTimeSeriesDAO();
-		dataSdf.setTimeZone(TimeZone.getTimeZone(
-			DecodesSettings.instance().sqlTimeZone));
-		siteNameType = DecodesSettings.instance().siteNameTypePreference;
-		CwmsTimeSeriesDAO.setNoUnitConv(noUnitConvArg.getValue());
-		
-		for(int n = filenameArg.NumberOfValues(), i=0; i<n; i++)
+		try (SiteDAI siteDAO = theDb.makeSiteDAO();
+			 TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+			)
 		{
-			filename = filenameArg.getValue(i);
-			info("Processing '" + filename + "'");
-			LineNumberReader lnr = null;
-			lineNum = 0;
-			try
+			DecodesSettings settings = DecodesSettings.instance();
+			CwmsTimeSeriesDAO.setNoUnitConv(noUnitConvArg.getValue());
+			final TimeZone tz = TimeZone.getTimeZone(settings.sqlTimeZone);
+
+			TsImporter importer = new TsImporter(tz, settings.siteNameTypePreference, (tsIdStr) ->
 			{
-				lnr = new LineNumberReader(new FileReader(filename));
-				String line = null;
-				beginFile();
-				while((line = lnr.readLine()) != null)
+				try
 				{
-					lineNum = lnr.getLineNumber();
-					processLine(line);
+					return timeSeriesDAO.getTimeSeriesIdentifier(tsIdStr);
 				}
-				endOfFile();
-			}
-			catch(DbIoException ex)
-			{
-				warning("Error in Database Interface: " + ex);
-			}
-			catch(IOException ex)
-			{
-				warning("I/O Error: " + ex);
-			}
-			finally
-			{
-				if (lnr != null)
-					try { lnr.close(); } catch(Exception ex) {}
-			}
-		}
-		siteDAO.close();
-		timeSeriesDAO.close();
-	}
-
-	/**
-	 * Called after filename is successfully opened.
-	 */
-	private void beginFile()
-	{
-		timeSeries.clear();
-	}
-	
-	/**
-	 * Process a line from the file
-	 * @param line with any termination char stripped
-	 */
-	private void processLine(String line)
-		throws DbIoException
-	{
-		line = line.trim();
-		if (line.length() == 0 || line.charAt(0) == '#')
-			return; // blank  or comment line
-		if (TextUtil.startsWithIgnoreCase(line, "SET:"))
-		{
-			int idx = line.indexOf('=');
-			if (idx == -1)
-			{
-				warning("'SET:' line with no '=' -- ignored.");
-				return;
-			}
-			String nm = line.substring(4, idx).trim();
-			String val = line.substring(idx+1).trim();
-			paramSet(nm, val);
-		}
-		else if (TextUtil.startsWithIgnoreCase(line, "TSID:"))
-		{
-			currentTS = null;
-			tsidStr = line.substring(5).trim();
-			if (tsidStr.length() == 0)
-				warning("TSID line with no Time Series Identifier -- ignored.");
-		}
-		else if (!Character.isDigit(line.charAt(0)))
-		{
-			warning("File '" + filename + "' line " + lineNum + ": expected data line but got '"
-				+ line + "' -- skipped.");
-		}
-		else
-		{
-			if (currentTS == null)
-				instantiateTsid();
-			processDataLine(line);
-		}
-	}
-
-	/**
-	 * Called when EOF is reached.
-	 */
-	private void endOfFile()
-		throws DbIoException
-	{
-		lineNum = -1;
-		for(CTimeSeries cts : timeSeries)
-		{
-			String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
-			info("Saving time series " + tsid);
-			try { timeSeriesDAO.saveTimeSeries(cts); }
-			catch(BadTimeSeriesException ex)
-			{
-				warning("Cannot save time series '" + tsid + "': " + ex);
-			}
-		}
-	}
-	
-	private void paramSet(String paramName, String paramValue)
-	{
-		if (paramName.equalsIgnoreCase("TZ"))
-		{
-			TimeZone tz = TimeZone.getTimeZone(paramValue);
-			if (tz != null)
-				dataSdf.setTimeZone(tz);
-		}
-		else if (paramName.equalsIgnoreCase("SITENAMETYPE"))
-			siteNameType = paramValue;
-		else if (paramName.equalsIgnoreCase("UNITS"))
-		{
-			units = paramValue;
-			if (currentTS != null)
-				currentTS.setUnitsAbbr(units);
-		}
-		else if (paramName.equalsIgnoreCase("DATEFORMAT"))
-		{
-			dataSdf.applyPattern(paramValue);
-		}
-		else
-			warning("Unrecognized param name '" + paramName + "' -- ignored.");
-	}
-
-	private void instantiateTsid()
-		throws DbIoException
-	{
-		try
-		{
-			timeSeries.add(currentTS = theDb.makeTimeSeries(tsidStr));
-		}
-		catch (NoSuchObjectException ex)
-		{
-			warning("No existing time series. Will attempt to create.");
-			TimeSeriesIdentifier tsid = theDb.makeEmptyTsId();
-			try
-			{
-				tsid.setUniqueString(tsidStr);
-				Site site = theDb.getSiteById(siteDAO.lookupSiteID(tsid.getSiteName()));
-				if (site == null)
+				catch (NoSuchObjectException ex)
 				{
-					site = new Site();
-					site.addName(new SiteName(site, Constants.snt_CWMS, tsid.getSiteName()));
-					siteDAO.writeSite(site);
+					log.warn("No existing time series. Will attempt to create.");
+					
+					try
+					{
+						TimeSeriesIdentifier tsId = theDb.makeEmptyTsId();
+						tsId.setUniqueString(tsIdStr);
+						Site site = theDb.getSiteById(siteDAO.lookupSiteID(tsId.getSiteName()));
+						if (site == null)
+						{
+							site = new Site();
+							site.addName(new SiteName(site, Constants.snt_CWMS, tsId.getSiteName()));
+							siteDAO.writeSite(site);
+						}
+						tsId.setSite(site);
+						
+						log.info("Calling createTimeSeries");
+						timeSeriesDAO.createTimeSeries(tsId);
+						log.info("After createTimeSeries, ts key = {}", tsId.getKey());
+						return tsId;
+					}
+					catch(Exception ex2)
+					{
+						throw new DbIoException(String.format("No such time series and cannot create for '%'", tsIdStr), ex);
+					}
 				}
-				tsid.setSite(site);
-				if (units != null)
-					tsid.setStorageUnits(units);
-				info("Calling createTimeSeries");
-				timeSeriesDAO.createTimeSeries(tsid);
-				info("After createTimeSeries, ts key = " + tsid.getKey());
-				timeSeries.add(currentTS = theDb.makeTimeSeries(tsidStr));
-			}
-			catch(Exception ex2)
+			});
+			for(int n = filenameArg.NumberOfValues(), i=0; i<n; i++)
 			{
-				String msg = "No such time series and cannot create for '" + tsidStr + "': " + ex2;
-				failure(msg);
-				PrintStream out = Logger.instance().getLogOutput();
-				if (out != null)
-					ex2.printStackTrace(out);
-				System.err.println(msg);
-				ex2.printStackTrace();
-				currentTS = null;
-			}
-		}
-		if (currentTS != null && units != null)
-			currentTS.setUnitsAbbr(units);
-	}
-	
-	private void processDataLine(String line)
-	{
-		// If there was a problem parsing the TSID, there will be no currentTS.
-		// Then just skip the data.
-		if (currentTS == null)
-			return;
-		
-		int hash = line.indexOf('#');
-		if (hash != -1)
-			line = line.substring(0, hash).trim();
 
-		String x[] = line.split(",");
-		if (x.length < 2)
-		{
-			warning("Unparsable data line '" + line + "' -- ignored");
-			return;
-		}
-		TimedVariable tv = new TimedVariable(0.0);
-		try { tv.setTime(dataSdf.parse(x[0].trim())); }
-		catch(Exception ex)
-		{
-			warning("Unparsable date field '" + x[0] + "' -- line ignored.");
-			return;
-		}
-		try { tv.setValue(Double.parseDouble(x[1].trim())); }
-		catch(Exception ex)
-		{
-			warning("Unparsable value field '" + x[1] + "' -- line ignored.");
-			return;
-		}
-		if (x.length > 2)
-		{
-			String flags = x[2].trim();
-			try
-			{
-				if (TextUtil.startsWithIgnoreCase(flags, "0x"))
-					tv.setFlags(Integer.parseInt(flags.substring(2), 16));
-				else
-					tv.setFlags(Integer.parseInt(flags));
-			}
-			catch(Exception ex)
-			{
-				warning("Unparsable flags field '" + x[0] + "' -- flags assumed to be 0.");
-				return;
+				final String filename = filenameArg.getValue(i);
+				Collection<CTimeSeries> dc = importer.readTimeSeriesFile(filename);
+				for(CTimeSeries cts : dc)
+				{
+					String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
+					info("Saving time series " + tsid);
+					try
+					{
+						timeSeriesDAO.saveTimeSeries(cts);
+					}
+					catch(DbIoException | BadTimeSeriesException ex)
+					{
+						warning("Cannot save time series '" + tsid + "': " + ex);
+					}
+				}
 			}
 		}
-		VarFlags.setToWrite(tv);
-		currentTS.addSample(tv);
 	}
 
 	@Override
@@ -417,16 +234,5 @@ public class TsImport extends TsdbAppTemplate
 	{
 		TsImport app = new TsImport();
 		app.execute(args);
-	}
-	
-	public void info(String msg)
-	{
-		Logger.instance().info(module + " " + msg);
-	}
-	
-	public void warning(String msg)
-	{
-		super.warning(" " + filename 
-			+ (lineNum <= 0 ? " " : "(" + lineNum + ") ") + msg);
 	}
 }

@@ -140,6 +140,22 @@ public class CTimeSeries
 		taskListRecNums = new ArrayList<Integer>();
 	}
 
+	public CTimeSeries(TimeSeriesIdentifier tsId)
+	{
+		this.sdi = tsId.getKey();
+		this.interval = tsId.getInterval();
+		this.tableSelector = tsId.getTableSelector();
+		this.modelRunId = Constants.undefinedIntKey;
+		this.modelId = Constants.undefinedIntKey;
+		this.computationId = Constants.undefinedId;
+		this.displayName = null;
+		vars = new ArrayList<TimedVariable>();
+		unitsAbbr = "unknown";
+		this.displayName = tsId.getDisplayName();
+		dependentCompIds = null;
+		taskListRecNums = new ArrayList<Integer>();
+	}
+
 	/**
 	 * Construct time series for a computation parameter.
 	 */
