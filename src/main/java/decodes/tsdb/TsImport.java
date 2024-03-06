@@ -1,5 +1,6 @@
 package decodes.tsdb;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.TimeZone;
 
@@ -130,19 +131,30 @@ public class TsImport extends TsdbAppTemplate
             {
 
                 final String filename = filenameArg.getValue(i);
-                Collection<CTimeSeries> dc = importer.readTimeSeriesFile(filename);
-                for(CTimeSeries cts : dc)
+                try
                 {
-                    String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
-                    info("Saving time series " + tsid);
-                    try
+                    Collection<CTimeSeries> dc = importer.readTimeSeriesFile(filename);
+                    for(CTimeSeries cts : dc)
                     {
-                        timeSeriesDAO.saveTimeSeries(cts);
+                        String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
+                        log.info("Saving time series {}", tsid);
+                        try
+                        {
+                            timeSeriesDAO.saveTimeSeries(cts);
+                        }
+                        catch(DbIoException | BadTimeSeriesException ex)
+                        {
+                            log.atWarn()
+                               .setCause(ex)
+                               .log("Cannot save time series '{}'", tsid);
+                        }
                     }
-                    catch(DbIoException | BadTimeSeriesException ex)
-                    {
-                        warning("Cannot save time series '" + tsid + "': " + ex);
-                    }
+                }
+                catch (IOException ex)
+                {
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Error reading {} -- skipping", filename);
                 }
             }
         }
