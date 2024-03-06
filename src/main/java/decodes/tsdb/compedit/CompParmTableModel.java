@@ -14,7 +14,9 @@ import decodes.gui.SortingListTableModel;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.TimeSeriesDb;
-
+/**
+ * A table model used for displaying time-series computation parameters in the Computation Editor user interface.
+ */
 public class CompParmTableModel extends AbstractTableModel implements SortingListTableModel
 {
     ArrayList<DbCompParm> myvector = new ArrayList<DbCompParm>();

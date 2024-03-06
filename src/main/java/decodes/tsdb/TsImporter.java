@@ -24,7 +24,7 @@ import ilex.var.TimedVariable;
 import opendcs.util.functional.ThrowingFunction;
 
 /**
- * Utility class to handler importing OpenDCS import/export files
+ * Utility class to handle importing OpenDCS import/export time-series files
  */
 public class TsImporter
 {
