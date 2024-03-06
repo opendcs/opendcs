@@ -1,1 +1,7 @@
-@"%~dp0\decj" ilex.util.PasswordFileEditor -f $INSTALL_PATH/.lrgs.passwd.local
+@echo off
+if not defined LRGSHOME (
+    echo Error: Environment variable LRGSHOME is not set.
+    exit /b 1
+    )
+
+@"%~dp0\decj" ilex.util.PasswordFileEditor -f %LRGSHOME%/.lrgs.passwd.local
