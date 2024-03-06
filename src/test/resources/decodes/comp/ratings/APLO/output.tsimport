@@ -1,6 +1,6 @@
 SET:TZ=UTC
-SET:UNITS=ft
-TSID:TEST1.Stage-Pool.Inst.1hour.0.decodes
+SET:UNITS=cfs
+TSID:TEST1.Flow-Pool.Inst.1hour.0.decodes
 2024/03/04-00:00:00,28.67,0
 2024/03/04-01:00:00,28.67,0
 2024/03/04-02:00:00,27.84,0

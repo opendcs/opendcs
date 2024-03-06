@@ -2,9 +2,14 @@ package decodes.tsdb;
 
 import static org.slf4j.helpers.Util.getCallingClass;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.io.Reader;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,15 +47,28 @@ public class TsImporter
         this.makeTsIdFunc = makeTsFunc;
     }
 
-    public Collection<CTimeSeries> readTimeSeriesFile(String filename)
+    public Collection<CTimeSeries> readTimeSeriesFile(String filename) throws FileNotFoundException, IOException
     {
         this.filename = filename;
+        try (InputStream is = new FileInputStream(filename))
+        {
+            return readTimeSeriesFile(is);
+        }
+    }
+
+    public Collection<CTimeSeries> readTimeSeriesFile(InputStream stream) throws IOException
+    {
+        if (this.filename == null)
+        {
+            this.filename = "Provided InputStream";
+        }
+
         log.info("Processing '{}'", filename);
         LineNumberReader lnr = null;
 		lineNum = 0;
-        try
+        try (Reader reader = new InputStreamReader(stream))
         {
-            lnr = new LineNumberReader(new FileReader(filename));
+            lnr = new LineNumberReader(reader);
             String line = null;
             beginFile();
             while((line = lnr.readLine()) != null)
@@ -75,7 +93,6 @@ public class TsImporter
         }
         return dc.values();
     }
-
 
     /**
 	 * Called after filename is successfully opened.

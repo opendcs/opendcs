@@ -154,6 +154,7 @@ public class CTimeSeries
 		this.displayName = tsId.getDisplayName();
 		dependentCompIds = null;
 		taskListRecNums = new ArrayList<Integer>();
+		setTimeSeriesIdentifier(tsId);
 	}
 
 	/**
