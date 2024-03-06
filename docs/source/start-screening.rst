@@ -33,8 +33,16 @@ Screening Editor is not launched from the Main Menu.
 A window will pop up for log-in information.
 
 For USACE:
+
 * USERNAME: H7
 * PASSWORD: Oracle
+
+Alterantively, if launching from the server, use the following
+command:
+
+::
+
+   screeningEdit
 
 For USBR:
 
