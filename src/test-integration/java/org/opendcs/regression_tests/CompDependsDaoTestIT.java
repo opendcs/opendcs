@@ -1,12 +1,10 @@
 package org.opendcs.regression_tests;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
@@ -15,7 +13,6 @@ import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfDaoSupported;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 
-import decodes.cwms.CwmsTsId;
 import decodes.db.Database;
 import decodes.sql.DbKey;
 import decodes.tsdb.CpCompDependsUpdater;

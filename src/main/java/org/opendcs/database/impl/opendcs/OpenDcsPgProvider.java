@@ -114,40 +114,7 @@ public class OpenDcsPgProvider implements MigrationProvider
             "${DCSTOOL_HOME}/edit-db/datatype/DataTypeEquivalenceList.xml",
             "${DCSTOOL_HOME}/edit-db/presentation",
             "${DCSTOOL_HOME}/edit-db/loading-app"};
-        for (String filename: decodesData)
-        {
-            File f = new File(EnvExpander.expand(filename, System.getProperties()));
-            if (f.exists() && f.canRead() && f.isFile())
-            {
-                files.add(f);
-            }
-            else if (f.exists() && f.canRead() && f.isDirectory())
-            {
-                try
-                {
-                    files.addAll(Files.walk(f.toPath())
-                                      .map(p -> p.toFile())
-                                      .filter(file -> file.isFile())
-                                      .filter(file -> file.getAbsolutePath().endsWith(".xml"))
-                                      .collect(Collectors.toList())
-                        );
-                }
-                catch (IOException ex)
-                {
-                    log.atError()
-                       .setCause(ex)
-                       .log("Unable to process diretory '{}'", f.getAbsolutePath());
-                }
-            }
-            else if(f.exists() && !f.canRead())
-            {
-                log.error("Decodes File '{}' is not readable. Skipping.", f.getAbsolutePath());
-            }
-            else
-            {
-                log.error("Decodes File '{}' is not present. Skipping.", f.getAbsolutePath());
-            }
-        }
+        fillFiles(files, decodesData, ".xml");
         if (log.isTraceEnabled())
         {
             for (File f: files)
@@ -167,7 +134,46 @@ public class OpenDcsPgProvider implements MigrationProvider
             "${DCSTOOL_HOME}/imports/comp-standard/Division.xml",
             "${DCSTOOL_HOME}/imports/comp-standard/Multiplication.xml"
             };
+        fillFiles(files, computationData, ".xml");
         return files;
+    }
+
+    private void fillFiles(List<File> files, String fileNames[], String suffix)
+    {
+        for (String filename: fileNames)
+        {
+            File f = new File(EnvExpander.expand(filename, System.getProperties()));
+            if (f.exists() && f.canRead() && f.isFile())
+            {
+                files.add(f);
+            }
+            else if (f.exists() && f.canRead() && f.isDirectory())
+            {
+                try
+                {
+                    files.addAll(Files.walk(f.toPath())
+                                      .map(p -> p.toFile())
+                                      .filter(file -> file.isFile())
+                                      .filter(file -> file.getAbsolutePath().endsWith(suffix))
+                                      .collect(Collectors.toList())
+                        );
+                }
+                catch (IOException ex)
+                {
+                    log.atError()
+                       .setCause(ex)
+                       .log("Unable to process diretory '{}'", f.getAbsolutePath());
+                }
+            }
+            else if(f.exists() && !f.canRead())
+            {
+                log.error("File '{}' is not readable. Skipping.", f.getAbsolutePath());
+            }
+            else
+            {
+                log.error("File '{}' is not present. Skipping.", f.getAbsolutePath());
+            }
+        }
     }
 
     @Override
