@@ -91,6 +91,7 @@ package decodes.tsdb.algo;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
@@ -1364,18 +1365,20 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 
 		LookupTable lookupTable = filename2table.get(tabFileExp);
 		if (lookupTable == errorTable)
+		{
 			throw new NoValueException("rdbrating: Cannot read table '" + tabFileExp + "'");
+		}
 		if (lookupTable == null)
 		{
-			// first time for this table. Attempt to read it.
-			RdbRatingReader tableReader = new RdbRatingReader(tabFileExp);
-
-			lookupTable = new LookupTable();
 			try
 			{
+					// first time for this table. Attempt to read it.
+				RdbRatingReader tableReader = new RdbRatingReader(tabFileExp);
+
+				lookupTable = new LookupTable();
 				tableReader.readRatingTable(lookupTable);
 			}
-			catch(ComputationParseException ex)
+			catch(FileNotFoundException | ComputationParseException ex)
 			{
 				String msg = "rdbrating Cannot read RDB rating table: " + ex;
 				warning(msg);
@@ -1384,7 +1387,7 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 			}
 			filename2table.put(tabFileExp, lookupTable);
 		}
-		
+
 		try
 		{
 			return lookupTable.lookup(indep);
