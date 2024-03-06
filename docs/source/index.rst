@@ -4,7 +4,7 @@ Welcome to OpenDCS's documentation!
 **OpenDCS** suite of software for collecting, decodes, storing, and 
 manipulating time series data.
 
-Check out the :doc:`legacy-quick-start` section for how to get started.
+Check out the :doc:`start-software` section for how to get started.
 
 .. note::
 
@@ -12,14 +12,15 @@ Check out the :doc:`legacy-quick-start` section for how to get started.
 
 Documentation Outline
 ---------------------
-OpenDCS documentation is currently divided into three sections:
+OpenDCS documentation is currently divided into four sections:
 
 #. Getting Started: Intended for new users
 #. Resources: Intended for intermediate users
 #. Developer Documention: Intended for advanced users or developers
+#. Legacy Documentation: Indended for users familiar with the legacy PDF documentation
 
 Previous versions of OpenDCS included PDFs documention.  Content from
-those PDFs was migrated to the Developer Documentation section.
+those PDFs was migrated to the Legacy section.
 
 .. toctree::
    :maxdepth: 1
@@ -28,6 +29,7 @@ those PDFs was migrated to the Developer Documentation section.
    Software Set-Up <./start-software.rst>
    Time Series - Intro <./start-timeseries.rst>
    Routing Spec - Intro<./start-routingspec.rst>
+   DECODING - Intro<./start-decoding.rst>
    Computations - Intro <./start-computations.rst>
    Screening - Intro <./start-screening.rst>
    
