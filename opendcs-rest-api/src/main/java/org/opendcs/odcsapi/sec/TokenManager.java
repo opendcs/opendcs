@@ -239,8 +239,7 @@ public class TokenManager
 	 * that have gone stale, e.g. client starts a message retrieval and never completes it, or
 	 * event clients with a stale heartbeat.
 	 */
-	public synchronized void checkStaleConnections()
-	{
+	public synchronized void checkStaleConnections() throws DbException {
 		for(UserToken tok : activeTokens)
 		{
 			ApiLddsClient cli = tok.getLddsClient();
@@ -280,8 +279,7 @@ public class TokenManager
 			}
 			catch(DbException ex)
 			{
-				System.out.println("Error checking event clients: " + ex);
-				ex.printStackTrace(System.out);
+				throw new DbException(module, ex, "Error checking event clients.");
 			}
 		}
 	}

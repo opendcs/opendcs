@@ -95,11 +95,7 @@ public class PrintStreamErrorHandler implements ErrorHandler
 	*/
 	public void fatalError( SAXParseException e ) throws SAXException
 	{
-		ps.println("**FATAL ERROR** " + e.getSystemId() + ": " + e.getLineNumber()
-			+ " " + e.getMessage());
-		System.out.println("**FATAL ERROR** " + e.getSystemId() + ": " + e.getLineNumber()
-			+ " " + e.getMessage());
-		throw new SAXException("Fatal error encountered");
+		throw new SAXException("**FATAL ERROR**", e);
 	}
 }
 

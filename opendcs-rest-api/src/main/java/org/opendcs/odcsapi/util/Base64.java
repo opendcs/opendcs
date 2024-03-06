@@ -488,13 +488,9 @@ public class Base64 {
 	public static void main( String[] args ) throws Exception
 	{
 		byte b[] = ApiByteUtil.fromHexString(args[0]);
-		System.out.println("    Original: " + args[0]);
-		System.out.println(" Back to hex: " + ApiByteUtil.toHexString(b));
 		Base64 b64 = new Base64();
 		byte [] ec = b64.encode(b);
-		System.out.println("   To Base64: " + (new String(ec)));
 		b = b64.decode(ec);
-		System.out.println(" Back to hex: " + ApiByteUtil.toHexString(b));
 	}
 
 }
