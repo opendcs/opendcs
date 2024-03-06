@@ -102,7 +102,10 @@ public class DaoBase
 
     /**
      * When used within the transaction block of another Dao allow this to assume the same connection.
-     * @param other
+     *
+     * NOTE: DAOs calling this should be created and discarded within the transaction block.
+     *
+     * @param other DAO with the in-transaction connection.
      * @throws IllegalStateException if the other Dao does not already have a connection open this operation is not valid.
      */
     public void  inTransactionOf(DaoBase other) throws IllegalStateException

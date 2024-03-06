@@ -792,38 +792,58 @@ public class OpenTimeSeriesDAO
 	public void deleteTimeSeriesRange(CTimeSeries ts, Date from, Date until)
 		throws DbIoException, BadTimeSeriesException
 	{
-		AlarmDAI alarmDAO = db.makeAlarmDAO();
 		try
 		{
-			alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey(), null);
-			alarmDAO.deleteHistoryAlarms(ts.getTimeSeriesIdentifier().getKey(), from, until);
+			this.inTransaction(dao ->
+			{
+				try (AlarmDAI alarmDAO = db.makeAlarmDAO())
+				{
+					alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey(), null);
+					alarmDAO.deleteHistoryAlarms(ts.getTimeSeriesIdentifier().getKey(), from, until);
+				}
+
+				CwmsTsId ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
+				if (ctsid == null)
+				{
+					fillTimeSeriesMetadata(ts);
+					ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
+				}
+
+				final String tableName = makeDataTableName(ctsid);
+				ArrayList<Object> parameters = new ArrayList<>();
+				String q = "delete from " + tableName
+					+ " where ts_id = ?"
+					+ " and flags & ? = 0 ";
+				parameters.add(ctsid.getKey());
+				parameters.add(CwmsFlags.PROTECTED);
+				if (from != null)
+				{
+					q = q + " and sample_time >= ?";
+					parameters.add(from);
+				}
+				if (until != null)
+				{
+					q = q + " and sample_time  <= ?" + db.sqlDate(until);
+					parameters.add(until);
+				}
+				doModify(q, parameters.toArray(new Object[0]));
+			});
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
-			warning("deleteTimeSeries error deleting alarm records: " + ex);
+			if (ex.getCause() instanceof BadTimeSeriesException)
+			{
+				throw (BadTimeSeriesException)ex.getCause();
+			}
+			else if(ex.getCause() instanceof DbIoException)
+			{
+				throw (DbIoException)ex.getCause();
+			}
+			else
+			{
+				throw new DbIoException("Unable to delete timeseries data range.", ex);
+			}
 		}
-		finally
-		{
-			alarmDAO.close();
-		}
-	
-		CwmsTsId ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
-		if (ctsid == null)
-		{
-			fillTimeSeriesMetadata(ts);
-			ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
-		}
-		
-		String tableName = makeDataTableName(ctsid);
-		String q = "delete from " + tableName
-			+ " where ts_id = " + ctsid.getKey()
-			+ " and flags & " + CwmsFlags.PROTECTED + " = 0 ";
-		if (from != null)
-			q = q + " and sample_time " + " >= " + db.sqlDate(from);
-		if (until != null)
-			q = q + " and sample_time " + " <= " + db.sqlDate(until);
-		
-		doModify(q);
 	}
 
 	@Override
