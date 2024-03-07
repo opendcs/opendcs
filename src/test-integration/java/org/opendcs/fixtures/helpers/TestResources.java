@@ -1,6 +1,9 @@
 package org.opendcs.fixtures.helpers;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import org.opendcs.spi.configuration.Configuration;
 
@@ -38,5 +41,18 @@ public class TestResources
         {
             return new File(EnvExpander.expand(fileName,System.getProperties())).getAbsolutePath();
         }
+    }
+
+    public static InputStream getResourceAsStream(Configuration config, String fileName) throws IOException
+    {
+        final String resourceFileName = getResource(config, fileName);
+        InputStream stream = ClassLoader.getSystemResourceAsStream(resourceFileName);
+        if (stream == null)
+        {
+            File f = new File(resourceFileName);
+            stream = new FileInputStream(f);
+            
+        }
+        return stream;
     }
 }
